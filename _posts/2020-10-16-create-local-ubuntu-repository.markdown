@@ -4,6 +4,7 @@ title:  "创建本地Ubuntu存储库 Apt-Cacher NG"
 date:   2020-10-16 12:00:00 +0800
 categories: 环境配置
 tags: [Cache, Ubuntu Repository, Apt-Cacher NG]
+lang: zh
 ---
 
 ## 安装 Apt-Cacher-NG
