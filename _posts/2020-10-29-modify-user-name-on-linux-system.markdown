@@ -1,12 +1,12 @@
 ---
 layout: post
 title:  "Linux系统上修改用户名"
-date:   2020-10-29 20:00:00 +0800
+date:   2020-10-29 00:00:00 +0800
 categories: Environment
 tags: [Linux, Ubuntu, 用户名]
 ---
 
-> 当我们安装Linux系统后，需要修改当前的主用户名时。
+> 今天同事安装了一台新的服务器Ubuntu20.04，但用户名和主机名不是我想要的，这里尝试了直接修改Linux文件的方式。
 
 ## 登录root用户
 ```shell
