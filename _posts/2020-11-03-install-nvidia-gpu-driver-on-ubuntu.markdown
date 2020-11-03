@@ -20,9 +20,8 @@ $ sudo nano /etc/modprobe.d/blacklist-nouveau.conf
 blacklist nouveau
 options nouveau modeset=0
 ```
-
-另一种方法
 ```shell
+## 另一种方法
 # cat << EOF >/etc/modprobe.d/blacklist-nouveau.conf
 blacklist nouveau
 options nouveau modeset=0
