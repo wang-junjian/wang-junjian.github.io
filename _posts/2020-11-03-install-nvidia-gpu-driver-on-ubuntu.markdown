@@ -54,6 +54,7 @@ $ lspci | grep -i nvidia
 ```
 
 2. 到[NVIDIA 驱动程序下载]页面下载对应型号的驱动
+![](/images/2020/nvidia-driver-download.png)
 ```shell
 $ wget https://cn.download.nvidia.com/tesla/450.80.02/NVIDIA-Linux-x86_64-450.80.02.run
 ```
