@@ -3,7 +3,7 @@ layout: post
 title:  "使用YOLOv5训练自定义数据集"
 date:   2020-11-04 00:00:00 +0800
 categories: AI 图像识别
-tags: [目标检测, YOLO, PyTorch, Docker, sed, head, wget]
+tags: [目标检测, YOLO, PyTorch, Docker, Shell, for, sed, head, wget]
 ---
 
 > 在 Ubuntu20.04 系统上使用4张GPU卡基于容器训练模型。
@@ -47,7 +47,8 @@ $ docker pull ultralytics/yolov5:latest
 
 * 运行容器
 ```shell
-$ docker run --ipc=host --runtime=nvidia -it --name project_name-yolov5 -v project_dir:/project ultralytics/yolov5:latest
+$ docker run --ipc=host --runtime=nvidia -it --name project_name-yolov5 \
+    -v project_dir:/project ultralytics/yolov5:latest
 ```
 
 ## 拷贝模型网络和下载预模型
@@ -96,24 +97,34 @@ $ rm -r /project/runs-*
 * 训练指定版本
 ```shell
 $ python train.py --epoch 1 --batch-size 16 --data /project/data.yaml \
-         --cfg /project/models/yolov5s.yaml --weights /project/models/yolov5s.pt \
-         --logdir /project/runs
+    --cfg /project/models/yolov5s.yaml --weights /project/models/yolov5s.pt \
+    --logdir /project/runs
 ```
 
-* 一次训练多个版本
+* 批量训练多个版本
 ```shell
 for v in 's' 'm' 'l' 'x'
 do
   python train.py --epoch 100 --batch-size 64 --data /project/data.yaml \
-         --cfg /project/models/yolov5$v.yaml --weights /project/models/yolov5$v.pt \
-         --logdir /project/runs-$v
+    --cfg /project/models/yolov5$v.yaml --weights /project/models/yolov5$v.pt \
+    --logdir /project/runs-$v
 done
 ```
 
 ## 推理
+* 指定版本
 ```shell
 $ python detect.py --weights /project/runs/exp0/weights/best.pt --conf 0.4 \
-         --source /project/inference/images --save-dir /project/inference/output
+    --source /project/inference/images --save-dir /project/inference/output
+```
+
+* 批量多个版本
+```shell
+for v in 's' 'm' 'l' 'x'
+do
+  python detect.py --weights /project/runs-$v/exp0/weights/best.pt --conf 0.4 \
+    --source /project/inference/images --save-dir /project/inference/output-$v
+done
 ```
 
 ## 参考资料
