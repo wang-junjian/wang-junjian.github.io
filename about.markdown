@@ -23,6 +23,31 @@ permalink: /about/
 * [配置Docker镜像源]({% post_url 2020-11-02-configure-docker-image-source %})
 * [在Ubuntu上安装nvidia-docker2]({% post_url 2020-10-18-install-nvidia-docker2-on-ubuntu %})
 
+### 算法－自定义训练集的训练
+* [使用YOLOv5训练自定义数据集]({% post_url 2020-11-04-use-yolov5-to-train-a-custom-dataset %})
+* [使用RetinaNet训练自定义数据集]({% post_url 2020-07-30-use-retinanet-to-train-a-custom-dataset %})
+
 ## 平台建设
+### Kubernetes 集群搭建
+* [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
+
 ### 镜像服务
 * [创建本地Ubuntu存储库 Apt-Cacher NG]({% post_url 2020-10-16-create-local-ubuntu-repository %})
+
+## 参考资料
+* [How To Control URLs and Links in Jekyll](https://www.digitalocean.com/community/tutorials/how-to-control-urls-and-links-in-jekyll)
+
+---
+
+This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](https://jekyllrb.com/)
+
+You can find the source code for Minima at GitHub:
+[jekyll][jekyll-organization] /
+[minima](https://github.com/jekyll/minima)
+
+You can find the source code for Jekyll at GitHub:
+[jekyll][jekyll-organization] /
+[jekyll](https://github.com/jekyll/jekyll)
+
+
+[jekyll-organization]: https://github.com/jekyll
