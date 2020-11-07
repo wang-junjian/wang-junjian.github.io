@@ -9,7 +9,7 @@ tags: [Ubuntu, APT, Mirror]
 > 在国内使用官方的镜像源安装 Ubuntu 应用非常慢，通常配置国内的镜像源来加快速度，如阿里云。
 
 ## 这里以[阿里云镜像源]为例，替换掉官方源。
-> 使用 ```http://mirrors.aliyun.com/ubuntu/``` 替换 ```http://cn.archive.ubuntu.com/ubuntu/```，可能需要查看一下文件 ```/etc/apt/sources.list```，需要替换的可能是 ```http://archive.ubuntu.com/ubuntu/```。
+> 使用 ```http://mirrors.aliyun.com/ubuntu/``` 替换 ```http://cn.archive.ubuntu.com/ubuntu/```，需要查看一下文件 ```/etc/apt/sources.list```，要替换的可能是 ```http://archive.ubuntu.com/ubuntu/```。
 
 ```shell
 sudo sed -i 's/cn.archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
