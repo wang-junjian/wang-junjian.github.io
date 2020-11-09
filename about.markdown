@@ -15,6 +15,12 @@ permalink: /about/
 * [Linux系统禁用交换分区]({% post_url 2020-10-31-disable-devices-and-files-for-paging-and-swapping %})
 
 ## 人工智能
+### 基于CPU硬件服务器的Ubuntu系统搭建
+* [Linux系统DNS设置]({% post_url 2020-10-30-linux-system-dns-settings %})
+* [在Ubuntu上配置apt镜像源]({% post_url 2020-11-01-configure-apt-mirror-source-on-ubuntu %})
+* [在Ubuntu上安装Docker]({% post_url 2020-10-17-install-docker-on-ubuntu %})
+* [配置Docker镜像源]({% post_url 2020-11-02-configure-docker-image-source %})
+
 ### 基于NVIDIA GPU硬件服务器的Ubuntu系统搭建
 * [Linux系统DNS设置]({% post_url 2020-10-30-linux-system-dns-settings %})
 * [在Ubuntu上配置apt镜像源]({% post_url 2020-11-01-configure-apt-mirror-source-on-ubuntu %})
