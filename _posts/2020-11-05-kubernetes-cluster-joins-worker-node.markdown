@@ -29,16 +29,6 @@ apt-get update
 apt-get install -y kubelet=1.18.3-00 kubeadm=1.18.3-00 kubectl=1.18.3-00
 ```
 
-## 加入集群（命令来源于上面的 Master 节点）
-```shell
-kubeadm join 172.16.33.157:6443 --token xxx.yyyyyy     --discovery-token-ca-cert-hash sha256:zzzzzzzzzzzzzzzzzzzzzz
-```
-
-## 查看 Worker 节点的问题
-```shell
-journalctl -xe
-```
-
 ## 拉取 Worker 节点需要的最基础的镜像
 ```shell
 kube_proxy_v=v1.18.3
@@ -53,6 +43,16 @@ docker rmi kubesphere/pause:${pause_v}
 
 docker pull weaveworks/weave-kube:2.6.5
 docker pull weaveworks/weave-npc:2.6.5
+```
+
+## 加入集群（命令来源于上面的 Master 节点）
+```shell
+kubeadm join 172.16.33.157:6443 --token xxx.yyyyyy     --discovery-token-ca-cert-hash sha256:zzzzzzzzzzzzzzzzzzzzzz
+```
+
+## 查看 Worker 节点的问题
+```shell
+journalctl -xe
 ```
 
 ## 在 Master 节点查看集群的状态
