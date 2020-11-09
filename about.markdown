@@ -12,7 +12,7 @@ permalink: /about/
 
 ### Linux
 * [Linux系统上修改用户名]({% post_url 2020-10-29-modify-user-name-on-linux-system %})
-* [Linux系统禁用交换分区]({% post_url 2020-10-31-disable-devices-and-files-for-paging-and-swapping %})
+* [Linux系统网络配置]({% post_url 2020-11-06-linux-system-network-configuration %})
 
 ## 人工智能
 ### 基于CPU硬件服务器的Ubuntu系统搭建
@@ -35,6 +35,7 @@ permalink: /about/
 
 ## 平台建设
 ### Kubernetes 集群搭建
+* [Linux系统禁用交换分区]({% post_url 2020-10-31-disable-devices-and-files-for-paging-and-swapping %})
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
 
 ### 镜像服务
