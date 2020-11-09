@@ -15,6 +15,11 @@ permalink: /about/
 * [Linux系统网络配置]({% post_url 2020-11-06-linux-system-network-configuration %})
 
 ## 人工智能
+### 算法－自定义训练集的训练
+* [使用YOLOv5训练自定义数据集]({% post_url 2020-11-04-use-yolov5-to-train-a-custom-dataset %})
+* [使用RetinaNet训练自定义数据集]({% post_url 2020-07-30-use-retinanet-to-train-a-custom-dataset %})
+
+## 平台建设
 ### 基于CPU硬件服务器的Ubuntu系统搭建
 * [Linux系统DNS设置]({% post_url 2020-10-30-linux-system-dns-settings %})
 * [在Ubuntu上配置apt镜像源]({% post_url 2020-11-01-configure-apt-mirror-source-on-ubuntu %})
@@ -29,11 +34,6 @@ permalink: /about/
 * [配置Docker镜像源]({% post_url 2020-11-02-configure-docker-image-source %})
 * [在Ubuntu上安装nvidia-docker2]({% post_url 2020-10-18-install-nvidia-docker2-on-ubuntu %})
 
-### 算法－自定义训练集的训练
-* [使用YOLOv5训练自定义数据集]({% post_url 2020-11-04-use-yolov5-to-train-a-custom-dataset %})
-* [使用RetinaNet训练自定义数据集]({% post_url 2020-07-30-use-retinanet-to-train-a-custom-dataset %})
-
-## 平台建设
 ### Kubernetes 集群搭建
 * [Linux系统禁用交换分区]({% post_url 2020-10-31-disable-devices-and-files-for-paging-and-swapping %})
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
