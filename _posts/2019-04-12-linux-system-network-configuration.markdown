@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Linux系统网络配置"
-date:   2020-11-06 00:00:00 +0800
+date:   2019-04-12 00:00:00 +0800
 categories: Linux
 tags: [Ubuntu, Network]
 ---
@@ -24,4 +24,7 @@ network:
 * 应用配置
 ```shell
 $ sudo netplan apply
+
+# 推荐使用 debug 参数
+$ sudo netplan --debug apply
 ```
