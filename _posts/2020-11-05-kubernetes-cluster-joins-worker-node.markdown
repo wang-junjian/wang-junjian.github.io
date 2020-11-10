@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Kubernetes集群加入Worker节点"
-date:   2020-11-02 00:00:00 +0800
+date:   2020-11-05 00:00:00 +0800
 categories: Kubernetes
 tags: [Linux, Ubuntu, Docker, Mirror]
 ---
