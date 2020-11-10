@@ -12,7 +12,7 @@ permalink: /about/
 
 ### Linux
 * [Linux系统上修改用户名]({% post_url 2020-10-29-modify-user-name-on-linux-system %})
-* [Linux系统网络配置]({% post_url 2020-11-06-linux-system-network-configuration %})
+* [Linux系统网络配置]({% post_url 2019-04-12-linux-system-network-configuration %})
 
 ## 人工智能
 ### 算法－自定义训练集的训练
