@@ -75,6 +75,7 @@ $ uname -n
 
 ## 下面使用命令的方式来实现更改组名、用户名、HOME路径（如果这个用户登录不能修改成功）
 ```shell
-# groupmod -n old_groupname new_groupname
 # usermod -l newname -d /home/newname oldname
+# groupmod -n new_groupname old_groupname
 ```
+* [Change the Username and Hostname on Ubuntu](https://www.hepeng.me/changing-username-and-hostname-on-ubuntu/)
