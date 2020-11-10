@@ -20,3 +20,14 @@ $ sudo usermod -aG docker username
 ```
 
 ## 需要退出用户会话，重新登录方可生效。
+
+## 卸载Docker
+* 删除Docker及其依赖
+```shell
+$ sudo apt-get remove --auto-remove docker
+```
+
+* 删除所有数据
+```shell
+$ sudo rm -rf /var/lib/docker
+```
