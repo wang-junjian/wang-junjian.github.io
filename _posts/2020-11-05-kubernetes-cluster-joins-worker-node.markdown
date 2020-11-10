@@ -3,7 +3,7 @@ layout: post
 title:  "Kubernetes集群加入Worker节点"
 date:   2020-11-05 00:00:00 +0800
 categories: Kubernetes
-tags: [Linux, Ubuntu, Docker, Mirror]
+tags: [Cluster, Ubuntu, Install, journalctl]
 ---
 
 ## 在 Master 节点创建加入节点用的 Token
@@ -18,18 +18,12 @@ kubeadm join 172.16.33.157:6443 --token xxx.yyyyyy     --discovery-token-ca-cert
 su - root
 ```
 
-## 配置 Kubernetes 镜像源
+## 一键安装
 ```shell
-apt-get update && apt-get install -y apt-transport-https
-curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add - 
-cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
-EOF
-apt-get update
 apt-get install -y kubelet=1.18.3-00 kubeadm=1.18.3-00 kubectl=1.18.3-00
 ```
 
-## 拉取 Worker 节点需要的最基础的镜像
+## 拉取 Worker 节点需要的基础镜像
 ```shell
 kube_proxy_v=v1.18.3
 docker pull kubesphere/kube-proxy:${kube_proxy_v}
@@ -67,6 +61,5 @@ ln3    Ready    <none>   143d    v1.18.3
 ```
 
 ## 参考资料
-* [阿里云-Kubernetes 镜像](https://developer.aliyun.com/mirror/kubernetes)
 * [kubeadm join failed: unable to fetch the kubeadm-config ConfigMap #1596](https://github.com/kubernetes/kubeadm/issues/1596)
 * [runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:docker: network plugin is not ready: cni config uninitialized #1031](https://github.com/kubernetes/kubeadm/issues/1031)
