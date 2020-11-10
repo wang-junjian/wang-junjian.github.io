@@ -16,6 +16,15 @@ $ sudo nano /etc/docker/daemon.json
 }
 ```
 
+```shell
+## 另一种方法()
+cat << EOF >/etc/docker/daemon.json
+{
+  "registry-mirrors": ["https://75oltije.mirror.aliyuncs.com"]
+}
+EOF
+```
+
 ## 重启 Docker daemon 服务
 ```shell
 $ sudo systemctl restart docker
