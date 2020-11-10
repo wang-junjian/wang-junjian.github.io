@@ -2,8 +2,8 @@
 layout: post
 title:  "Linux系统禁用交换分区"
 date:   2020-10-31 00:00:00 +0800
-categories: Environment
-tags: [Linux, Ubuntu, Swap]
+categories: Linux
+tags: [Ubuntu, Swap]
 ---
 
 > Kubernetes集群为了不影响性能要禁用交换分区。

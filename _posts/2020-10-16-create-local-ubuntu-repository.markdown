@@ -2,7 +2,7 @@
 layout: post
 title:  "创建本地Ubuntu存储库 Apt-Cacher NG"
 date:   2020-10-16 12:00:00 +0800
-categories: Environment
+categories: Linux
 tags: [Cache, Ubuntu Repository, Apt-Cacher NG]
 ---
 
