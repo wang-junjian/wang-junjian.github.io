@@ -34,3 +34,5 @@ $ sudo systemctl restart docker
 * [DaoCloud Docker 镜像站](https://www.daocloud.io/mirror)
 * [Docker Hub 公有镜像在国内拉取加速配置](https://developer.aliyun.com/article/696286)
 * [Docker Hub 配置国内加速器](https://blog.csdn.net/qq_26626029/article/details/106788617)
+* [阿里云官方镜像站](https://developer.aliyun.com/mirror/)
+* [拉取缓存的 Docker Hub 映像](https://cloud.google.com/container-registry/docs/pulling-cached-images?hl=zh-cn)
