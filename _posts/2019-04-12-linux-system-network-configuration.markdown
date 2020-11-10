@@ -24,7 +24,6 @@ network:
 * 应用配置
 ```shell
 $ sudo netplan apply
-
 # 推荐使用 debug 参数
 $ sudo netplan --debug apply
 ```
