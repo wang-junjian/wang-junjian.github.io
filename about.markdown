@@ -36,14 +36,13 @@ permalink: /about/
 
 ### Kubernetes 集群搭建
 * [Linux系统禁用交换分区]({% post_url 2020-10-31-disable-devices-and-files-for-paging-and-swapping %})
+* [配置Kubernetes镜像源]({% post_url 2020-11-07-configure-kubernetes-mirror-source %})
+* [Kubernetes集群搭建Master节点]({% post_url 2020-11-06-kubernetes-cluster-build-master-node %})
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
-
-### 镜像服务
-* [创建本地Ubuntu存储库 Apt-Cacher NG]({% post_url 2020-10-16-create-local-ubuntu-repository %})
 
 ## 参考资料
 * [How To Control URLs and Links in Jekyll](https://www.digitalocean.com/community/tutorials/how-to-control-urls-and-links-in-jekyll)
-
+* [justjavac](https://justjavac.com/tags.html)
 ---
 
 This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](https://jekyllrb.com/)
