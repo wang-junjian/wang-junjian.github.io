@@ -1,15 +1,53 @@
 ---
 layout: post
-title:  "Python Directory and Files Management"
+title:  "Python文件、目录、路径操作"
 date:   2020-11-08 00:00:00 +0800
 categories: Python
-tags: [Python, Directory, File, Path]
+tags: [Python, File, Directory, Path]
 ---
 
 ## 导入包
 ```python
 >>> import os
 >>> import shutil
+```
+
+## 文件
+
+### 拷贝文件
+> 目录路径可以是目录名
+```python
+>>> shutil.copy('/home/python/main.py', '/home/python/main.py.bak')
+>>> shutil.copy('/home/python/main.py', '/home/python/bak/')
+```
+
+### 创建文件
+* 方法1
+```python
+open(filename, 'w').close()
+```
+
+* 方法2
+```python
+def touch(path):
+    with open(path, 'a'):
+        os.utime(path, None)
+```
+
+* 方法3
+> OS X需要root特权
+```python
+os.mknod(filename)
+```
+
+### 修改文件名
+```python
+>>> os.rename('filename', 'new_filename')
+```
+
+### 删除文件
+```python
+>>> os.remove('/home/python/main.py')
 ```
 
 ## 目录
@@ -58,43 +96,6 @@ tags: [Python, Directory, File, Path]
 * 多级目录
 ```python
 >>> shutil.rmtree('/home/python')
-```
-
-## 文件
-
-### 拷贝文件
-> 目录路径可以是目录名
-```python
->>> shutil.copy('/home/python/main.py', '/home/python/main.py.bak')
->>> shutil.copy('/home/python/main.py', '/home/python/bak/')
-```
-
-### 创建文件
-* 方法1
-```python
-open(filename, 'w').close()
-```
-
-* 方法2
-```python
-def touch(path):
-    with open(path, 'a'):
-        os.utime(path, None)
-```
-
-* 方法3
-> OS X需要root特权
-```python
-os.mknod(filename)
-```
-
-### 
-```python
-```
-
-### 删除文件
-```python
->>> os.remove('/home/python/main.py')
 ```
 
 ## 路径
