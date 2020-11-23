@@ -44,23 +44,24 @@ username:x:1000:
 ```
 
 ## 修改主机名
+### /etc/hostname
 ```shell
 # nano /etc/hostname
 hostname
 ```
 
-## 修改DNS
+### 修改DNS
 ```shell
 # nano /etc/hosts
 127.0.1.1 username
 ```
 
-## 重启
+### 重启
 ```shell
 # reboot
 ```
 
-## 验证主机名
+### 验证主机名
 * 方法一
 ```shell
 $ hostname
@@ -71,11 +72,24 @@ $ hostname
 $ uname -n
 ```
 
+## 增加用户
+```shell
+# useradd -m -s /bin/bash -g ai -G sudo,docker username
+
+# id username
+uid=1005(username) gid=1000(ai) groups=1000(ai),27(sudo),998(docker)
+```
+
+## 修改用户
+```shell
+# usermod -l new_username -d /home/new_username old_username
+# mv /home/old_username /home/new_username
+```
 ------
 
 ## 下面使用命令的方式来实现更改组名、用户名、HOME路径（如果这个用户登录不能修改成功）
 ```shell
-# usermod -l newname -d /home/newname oldname
+# usermod -l new_username -d /home/new_username old_username
 # groupmod -n new_groupname old_groupname
 ```
 * [Change the Username and Hostname on Ubuntu](https://www.hepeng.me/changing-username-and-hostname-on-ubuntu/)
