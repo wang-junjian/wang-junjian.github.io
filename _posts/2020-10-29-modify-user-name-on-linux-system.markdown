@@ -85,6 +85,11 @@ uid=1005(username) gid=1000(ai) groups=1000(ai),27(sudo),998(docker)
 # usermod -l new_username -d /home/new_username old_username
 # mv /home/old_username /home/new_username
 ```
+
+## 增加组
+```shell
+# usermod -a -G group_name username
+```
 ------
 
 ## 下面使用命令的方式来实现更改组名、用户名、HOME路径（如果这个用户登录不能修改成功）
