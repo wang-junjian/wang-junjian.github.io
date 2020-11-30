@@ -3,17 +3,49 @@ layout: post
 title:  "Linux上查找系统信息"
 date:   2020-11-28 00:00:00 +0800
 categories: Linux
-tags: [Linux, 系统信息, GPU, CUDA, Docker, Memory, 硬盘, grep]
+tags: [Linux, 系统信息, GPU, CUDA, Memory, 硬盘, grep]
 ---
 
-## Ubuntu操作系统版本号
+## Linux内核版本
+* uname
+```shell
+$ uname -r
+4.18.0-147.5.1.el8_1.x86_64
+```
+
+* /proc/version
+```shell
+$ cat /proc/version
+Linux version 4.18.0-147.5.1.el8_1.x86_64 (mockbuild@kbuilder.bsys.centos.org) (gcc version 8.3.1 20190507 (Red Hat 8.3.1-4) (GCC)) #1 SMP Wed Feb 5 02:00:39 UTC 2020
+```
+
+* hostnamectl
+```shell
+$ hostnamectl | grep Kernel
+            Kernel: Linux 4.18.0-147.5.1.el8_1.x86_64
+```
+
+## 操作系统版本
 ```shell
 $ lsb_release -a
+```
+
+* Ubuntu
+```
 No LSB modules are available.
 Distributor ID:	Ubuntu
 Description:	Ubuntu 20.04 LTS
 Release:	20.04
 Codename:	focal
+```
+
+* CentOS
+```
+LSB Version:	:core-4.1-amd64:core-4.1-noarch
+Distributor ID:	CentOS
+Description:	CentOS Linux release 8.1.1911 (Core) 
+Release:	8.1.1911
+Codename:	Core
 ```
 
 ## CPU型号
@@ -121,12 +153,6 @@ tmpfs            26G     0   26G   0% /run/user/1000
 /dev/sdb1       2.0T  4.7G  1.9T   1% /data
 ```
 
-## Docker版本
-```shell
-$ docker --version
-Docker version 19.03.13, build 4484c46d9d
-```
-
 ## 参考资料
 * [How to get the cuda version?](https://stackoverflow.com/questions/9727688/how-to-get-the-cuda-version)
 * [ubuntu 查看内存命令](https://blog.csdn.net/jzp12/article/details/7560450)
@@ -134,3 +160,4 @@ Docker version 19.03.13, build 4484c46d9d
 * [How to get the nvidia driver version from the command line?](https://stackoverflow.com/questions/13125714/how-to-get-the-nvidia-driver-version-from-the-command-line)
 * [How to check NVIDIA driver version on your Linux system](https://linuxconfig.org/how-to-check-nvidia-driver-version-on-your-linux-system)
 * [Linux下如何查看CPU信息, 包括位数和多核信息](https://blog.csdn.net/daniel_h1986/article/details/6318050)
+* [How To Find Which Linux Kernel Version Is Installed On My System](https://www.cyberciti.biz/faq/find-print-linux-unix-kernel-version/)
