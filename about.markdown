@@ -7,12 +7,18 @@ permalink: /about/
 ## 基础技术
 ### Docker
 * [在Ubuntu上安装Docker]({% post_url 2020-10-17-install-docker-on-ubuntu %})
-* [配置Docker镜像源]({% post_url 2020-11-02-configure-docker-image-source %})
+* [配置Docker镜像源]({% post_url 2020-11-02-configure-docker-mirror-source %})
 * [在Ubuntu上安装nvidia-docker2]({% post_url 2020-10-18-install-nvidia-docker2-on-ubuntu %})
 
 ### Linux
 * [Linux系统上修改用户名]({% post_url 2020-10-29-modify-user-name-on-linux-system %})
 * [Linux系统网络配置]({% post_url 2019-04-12-linux-system-network-configuration %})
+
+### 镜像加速
+* [apt]({% post_url 2020-11-01-configure-apt-mirror-source-on-ubuntu %})
+* [pip]({% post_url 2020-11-09-configure-pip-mirror-source %})
+* [Docker]({% post_url 2020-11-02-configure-docker-mirror-source %})
+* [Kubernetes]({% post_url 2020-11-07-configure-kubernetes-mirror-source %})
 
 ## 人工智能
 ### 算法－自定义训练集的训练
