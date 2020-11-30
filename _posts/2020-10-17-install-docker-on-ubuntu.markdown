@@ -3,7 +3,7 @@ layout: post
 title:  "在Ubuntu上安装Docker"
 date:   2020-10-17 00:00:00 +0800
 categories: Docker
-tags: [Linux, Install]
+tags: [Docker, Linux, Install]
 ---
 
 > 在 Ubuntu20.04 上安装 Docker
