@@ -25,6 +25,12 @@ $ hostnamectl | grep Kernel
             Kernel: Linux 4.18.0-147.5.1.el8_1.x86_64
 ```
 
+## 查找CODENAME
+```shell
+$ cat /etc/os-release | grep VERSION_CODENAME 
+VERSION_CODENAME=focal
+```
+
 ## 操作系统版本
 ```shell
 $ lsb_release -a
