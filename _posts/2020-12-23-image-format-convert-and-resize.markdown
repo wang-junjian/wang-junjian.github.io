@@ -3,7 +3,7 @@ layout: post
 title:  "图像格式转换、尺寸调整"
 date:   2020-12-23 00:00:00 +0800
 categories: Linux
-tags: [Linux, Command, Image, ImageMagick, file, convert, ShellScript, for]
+tags: [Linux, Command, Image, ImageMagick, file, find, convert, ShellScript, for]
 ---
 
 ## 查看图像信息
@@ -47,10 +47,17 @@ convert test.jpg -resize 640x640! test.jpg
 ```
 
 ### 批量处理
+* 方法1
 ```shell
 for file in *.jpg; do convert $file -resize 640x640 resize-$file; done
+```
+
+* 方法2
+```shell
+find . -name '*.png' -exec convert {} -resize 640x640 {} \;
 ```
 
 ## 参考资料
 * [How to Quickly Resize, Convert & Modify Images from the Linux Terminal](https://www.howtogeek.com/109369/how-to-quickly-resize-convert-modify-images-from-the-linux-terminal/)
 * [How to convert jpg files into png files with linux command? + Difficulty = Subfolders](https://stackoverflow.com/questions/20975025/how-to-convert-jpg-files-into-png-files-with-linux-command-difficulty-subfo)
+* [Unix shell script find out which directory the script file resides?](https://stackoverflow.com/questions/242538/unix-shell-script-find-out-which-directory-the-script-file-resides)
