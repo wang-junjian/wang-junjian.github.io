@@ -6,18 +6,18 @@ categories: Python
 tags: [Python, pip, Mirror]
 ---
 
-> 加速 pip 下载安装包的速度。下面使用的是来自于阿里云的镜像源：http://mirrors.cloud.aliyuncs.com/pypi/simple/
+> 加速 pip 下载安装包的速度。下面使用的是来自于清华大学的镜像源：https://pypi.tuna.tsinghua.edu.cn/simple
 
 ## 更新pip
 ```shell
 # pip install --upgrade pip
-Looking in indexes: http://mirrors.cloud.aliyuncs.com/pypi/simple/
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
 Requirement already up-to-date: pip in /usr/local/lib/python3.6/site-packages (20.2.4)
 ```
 
 ## 临时使用pip镜像
 ```shell
-# pip install -i http://mirrors.cloud.aliyuncs.com/pypi/simple/ package
+# pip install -i https://pypi.tuna.tsinghua.edu.cn/simple package
 ```
 
 ## 列出加载配置的路径和配置信息
@@ -34,7 +34,7 @@ install.trusted-host='mirrors.cloud.aliyuncs.com'
 
 ## 设置默认镜像
 ```shell
-# pip config set global.index-url http://mirrors.cloud.aliyuncs.com/pypi/simple/
+# pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 Writing to /root/.config/pip/pip.conf
 ```
 
