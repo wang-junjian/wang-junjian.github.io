@@ -1,0 +1,56 @@
+---
+layout: post
+title:  "图像格式转换、尺寸调整"
+date:   2020-12-23 00:00:00 +0800
+categories: Linux
+tags: [Linux, Command, Image, ImageMagick, file, convert, ShellScript, for]
+---
+
+## 查看图像信息
+```shell
+$ file test.jpg
+test.jpg: JPEG image data, JFIF standard 1.02, resolution (DPI), density 96x96, segment length 16, Exif Standard: [TIFF image data, big-endian, direntries=7, orientation=upper-left, xresolution=98, yresolution=106, resolutionunit=2, software=Adobe Photoshop CS Windows, datetime=2013:03:18 11:45:34], baseline, precision 8, 750x499, frames 3
+```
+
+## ImageMagick
+> ImageMagick是一个用于查看、编辑位图文件以及进行图像格式转换的开放源代码软件套装。它可以读取、编辑超过100种图像格式。
+
+### 安装
+```shell
+sudo apt-get install imagemagick
+```
+
+### 格式转换
+```shell
+convert test.jpg test.png
+```
+
+### 尺寸调整
+* 按照指定宽等比调整
+```shell
+convert test.jpg -resize 640 test.jpg
+```
+
+* 按照指定高等比调整
+```shell
+convert test.jpg -resize x640 test.jpg
+```
+
+* 按照指定宽高等比调整
+```shell
+convert test.jpg -resize 640x640 test.jpg
+```
+
+* 按照指定宽高调整
+```shell
+convert test.jpg -resize 640x640! test.jpg
+```
+
+### 批量处理
+```shell
+for file in *.jpg; do convert $file -resize 640x640 resize-$file; done
+```
+
+## 参考资料
+* [How to Quickly Resize, Convert & Modify Images from the Linux Terminal](https://www.howtogeek.com/109369/how-to-quickly-resize-convert-modify-images-from-the-linux-terminal/)
+* [How to convert jpg files into png files with linux command? + Difficulty = Subfolders](https://stackoverflow.com/questions/20975025/how-to-convert-jpg-files-into-png-files-with-linux-command-difficulty-subfo)
