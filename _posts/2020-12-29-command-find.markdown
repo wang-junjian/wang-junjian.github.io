@@ -19,10 +19,14 @@ find . -name ".DS_Store" -type f -delete
 find . -name "._*" -type f -delete
 ```
 
+* -exec
+```shell
+find . -name ".DS_Store" -exec rm {} \;
+```
+
 * xargs
 ```shell
 find . -name ".DS_Store" | xargs rm -rf
-find . -name "._*" | xargs rm -rf
 ```
 
 ## 列出文件或目录
