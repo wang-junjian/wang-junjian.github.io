@@ -34,7 +34,19 @@ $ echo "['hello', 'world']" | sed 's/\[/</g'
 sed -i 's/\['"'"'s'"'"', '"'"'m'"'"', '"'"'l'"'"', '"'"'x'"'"'\]/\['"'"'s'"'"', '"'"'l'"'"'\]/g' yolov5/weights/download_weights.sh
 ```
 
+* 多个文件 (-exec {}) ^指定行的开始位置
+```shell
+find labels/ -name '*.txt' -exec sed -i 's/^1 /0 /g' {} +
+```
+
+* 同时匹配(OR |)
+```shell
+find labels/ -name '*.txt' -exec sed -i -E 's/^1|2 /0 /g' {} +
+```
+
 ## 参考资料
 * [sed, a stream editor](https://www.gnu.org/software/sed/manual/sed.html)
 * [How do I escape double and single quotes in sed?](https://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed)
 * [sed Case Insensitive Search Matching and Replacement](https://www.cyberciti.biz/faq/unixlinux-sed-case-insensitive-search-replace-matching/)
+* [find & sed (search and replace)](https://unix.stackexchange.com/questions/36795/find-sed-search-and-replace)
+* [Regex alternation/or operator (foo|bar) in GNU or BSD Sed](https://unix.stackexchange.com/questions/145402/regex-alternation-or-operator-foobar-in-gnu-or-bsd-sed)
