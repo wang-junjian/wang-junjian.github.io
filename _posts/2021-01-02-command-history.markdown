@@ -18,13 +18,13 @@ HISTCONTROL=ignorespace
 $ nano .bashrc
 export HISTCONTROL=ignorespace
 
-# 执行source命令后，设置生效。你也可以退出后重新登录。
+#执行source命令后，设置生效。你也可以退出后重新登录。
 $ source .bashrc
 ```
 
 ### 所有的操作不记录
 ```shell
-# 只在当前会话中起作用，要想持久化请参考上面的设置。
+#只在当前会话中起作用，要想持久化请参考上面的设置。
 HISTSIZE=0
 ```
 
