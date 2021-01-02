@@ -14,10 +14,10 @@ HISTCONTROL=ignorespace
 ```
 
 * 持久化设置，可以修改配置文件：.bash_profile 或 .bashrc。执行source命令后，设置生效。你也可以退出后重新登录。
+
 ```shell
 $ nano .bashrc
 export HISTCONTROL=ignorespace
-
 $ source .bashrc
 ```
 
