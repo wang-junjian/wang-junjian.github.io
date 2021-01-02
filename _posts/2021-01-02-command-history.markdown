@@ -13,7 +13,7 @@ tags: [Linux, Command, history, source, .bashrc, .bash_profile]
 HISTCONTROL=ignorespace
 ```
 
-* 持久化设置，可以修改配置文件： ```.bash_profile``` 或 ```.bashrc```。执行source命令后，设置生效。你也可以退出后重新登录。
+* 持久化设置，可以修改配置文件：.bash_profile 或 .bashrc。执行source命令后，设置生效。你也可以退出后重新登录。
 ```shell
 $ nano .bashrc
 export HISTCONTROL=ignorespace
@@ -22,10 +22,10 @@ $ source .bashrc
 ```
 
 ### 所有的操作不记录
-> 只在当前会话中起作用，要想持久化请参考上面的设置。
 ```shell
 HISTSIZE=0
 ```
+只在当前会话中起作用，要想持久化请参考上面的设置。
 
 ## 删除历史记录中的某行
 ```shell
