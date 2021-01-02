@@ -1,13 +1,12 @@
 ---
 layout: post
-title:  "下载多个文件"
+title:  "命令wget"
 date:   2020-12-21 00:00:00 +0800
 categories: Linux
-tags: [Linux, wget, Download]
+tags: [Linux, Command, wget, Download]
 ---
 
-## wget
-### 下载多个文件
+## 下载多个文件
 * 空格分割
 ```
 wget https://upload.wikimedia.org/wikipedia/commons/1/13/Intel_CPU_Core_i7_6700K_Skylake_perspective.jpg https://images-na.ssl-images-amazon.com/images/I/51iVSqLIBWL._AC_.jpg
@@ -18,12 +17,12 @@ wget https://upload.wikimedia.org/wikipedia/commons/1/13/Intel_CPU_Core_i7_6700K
 wget -i urls.txt
 ```
 
-### 后台下载
+## 后台下载
 ```shell
 wget -i urls.txt -b
 ```
 
-### 指定输出目录
+## 指定输出目录
 ```shell
 wget -i urls.txt -P output
 ```
