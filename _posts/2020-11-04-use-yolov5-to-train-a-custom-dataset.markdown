@@ -85,7 +85,8 @@ $ cp yolov5?.pt project/models/
 ```
 
 ## 配置训练数据集信息
-* nano project/data.yaml
+$ nano project/data.yaml
+
 ```yaml
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 train: project/images/train/
