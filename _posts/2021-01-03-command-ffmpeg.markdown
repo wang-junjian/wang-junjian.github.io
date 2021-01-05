@@ -7,12 +7,24 @@ tags: [Linux, Command, ffmpeg, GPU, NVIDIA]
 ---
 
 ## FFmpeg
-* 格式转换
+* 格式转换 ```-y```(覆盖输出文件)
 ```shell
-ffmpeg -i input.mp4 output.avi
+ffmpeg -y -i input.mp4 output.avi
 ```
 
-* 每秒(-r)抽取一张图片
+* 生成gif(低质量) ```-pix_fmt```(像素格式) ```-s```(设置帧大小WxH)
+```shell
+ffmpeg -y -i input.mp4 -pix_fmt rgb8 -r 10 -s 320x240 output.gif
+ffmpeg -y -i input.mp4 -pix_fmt rgb8 -r 10 -vf 'scale=320:-1' output.gif
+```
+
+* 生成gif(高质量) ```-ss```(开始时间偏移) ```-t```(持续时间)
+```shell
+ffmpeg -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
+ffmpeg -y -ss 5 -t 5 -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output.gif
+```
+
+* 每秒抽取一张图片 ```-r```(设置帧速率)
 ```shell
 ffmpeg -i input.mp4 -r 1 -s 1024x768 -f image2 input-%03d.jpeg
 ```
@@ -22,11 +34,15 @@ ffmpeg -i input.mp4 -r 1 -s 1024x768 -f image2 input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mp4 -vf select='eq(pict_type\,I)' -f image2 I-input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mp4 -vf select='eq(pict_type\,P)' -f image2 P-input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mp4 -vf select='eq(pict_type\,B)' -f image2 B-input-%03d.jpeg
+
+ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_I)'" -f image2 I-input-%03d.jpeg
+ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_P)'" -f image2 P-input-%03d.jpeg
+ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_B)'" -f image2 B-input-%03d.jpeg
 ```
 
 * 使用一组图片生成视频
 ```shell
-ffmpeg -f image2 -framerate 3 -i input-%03d.jpeg -s 1024x768 foo.avi
+ffmpeg -f image2 -framerate 3 -i input-%03d.jpeg -s 1024x768 input.avi
 ```
 
 ## NVIDIA GPU 加速
@@ -91,3 +107,7 @@ docker run --rm --runtime nvidia -v $(pwd):$(pwd) -w $(pwd) jrottenberg/ffmpeg:4
 * [Trying to do keyframes for a list of videos in a folder](https://www.reddit.com/r/ffmpeg/comments/k2a770/trying_to_do_keyframes_for_a_list_of_videos_in_a/)
 * [How to use GPU to accelerate the processing speed of ffmpeg filter?](https://stackoverflow.com/questions/55687189/how-to-use-gpu-to-accelerate-the-processing-speed-of-ffmpeg-filter/55747785)
 * [Hands-On-FFMPEG](https://github.com/Hong-Bo/hands-on-ffmpeg)
+* [ffmpeg save images with frame type](https://superuser.com/questions/1480729/ffmpeg-save-images-with-frame-type)
+* [How do I convert a video to GIF using ffmpeg, with reasonable quality?](https://superuser.com/questions/556029/how-do-i-convert-a-video-to-gif-using-ffmpeg-with-reasonable-quality)
+* [High quality GIF with FFmpeg](http://blog.pkh.me/p/21-high-quality-gif-with-ffmpeg.html)
+* [【FFMPE系列】之FFMPEG常用命令](https://blog.csdn.net/listener51/article/details/82025541)
