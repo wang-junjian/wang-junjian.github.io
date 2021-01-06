@@ -3,11 +3,10 @@ layout: post
 title:  "NFS配置"
 date:   2020-09-10 00:00:00 +0800
 categories: Linux
-tags: [Linux, Ubuntu, NFS]
+tags: [Linux, Ubuntu, NFS]
 ---
 
 ## Ubuntu
-
 ### 服务端
 * 安装服务端
 ```shell
