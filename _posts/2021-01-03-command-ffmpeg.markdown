@@ -127,4 +127,5 @@ docker run --rm --runtime nvidia -v $(pwd):$(pwd) -w $(pwd) jrottenberg/ffmpeg:4
 * [ffmpeg save images with frame type](https://superuser.com/questions/1480729/ffmpeg-save-images-with-frame-type)
 * [How do I convert a video to GIF using ffmpeg, with reasonable quality?](https://superuser.com/questions/556029/how-do-i-convert-a-video-to-gif-using-ffmpeg-with-reasonable-quality)
 * [High quality GIF with FFmpeg](http://blog.pkh.me/p/21-high-quality-gif-with-ffmpeg.html)
+* [Extract filename and extension in Bash](https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash)
 * [【FFMPE系列】之FFMPEG常用命令](https://blog.csdn.net/listener51/article/details/82025541)
