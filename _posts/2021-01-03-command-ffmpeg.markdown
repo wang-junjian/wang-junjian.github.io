@@ -3,7 +3,7 @@ layout: post
 title:  "命令ffmpeg"
 date:   2021-01-03 00:00:00 +0800
 categories: Linux
-tags: [Linux, Command, ffmpeg, GPU, NVIDIA]
+tags: [Linux, Command, ffmpeg, GPU, NVIDIA, for, basename]
 ---
 
 ## FFmpeg
@@ -42,6 +42,21 @@ ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_P)'" -f imag
 ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_B)'" -f image2 B-input-%03d.jpeg
 ```
 
+* 从多个视频文件中抽取关键帧
+```shell
+for file in *.mp4
+do
+    fname=`basename $file`
+    filename=${fname%%.*}
+    extname=${fname##*.}
+    ffmpeg -y -vsync 0 -i $file -vf select='eq(pict_type\,I)' -f image2 i-$filename-%03d.jpeg;
+done
+```
+
+```shell
+for file in *.jpg; do fname=`basename $file`; filename=${fname%%.*}; extname=${fname##*.}; ffmpeg -y -vsync 0 -i $file -vf select='eq(pict_type\,I)' -f image2 i-$filename-%03d.jpeg; done
+```
+
 * 使用一组图片生成视频
 ```shell
 ffmpeg -f image2 -framerate 3 -i input-%03d.jpeg -s 1024x768 input.avi
@@ -73,7 +88,7 @@ ffmpeg -y -hwaccel cuvid -c:v h264_cuvid -i input.mp4 -vf "scale_npp=format=yuv4
 docker run --rm -v $(pwd):$(pwd) -w $(pwd) jrottenberg/ffmpeg:4.3-alpine 参数
 ```
 
-* 例子
+* 例子：抽取关键帧
 ```shell
 docker run --rm -v $(pwd):$(pwd) -w $(pwd) jrottenberg/ffmpeg:4.3-alpine \
     -y -vsync 0 -i input.mp4 -vf select='eq(pict_type\,I)' \
@@ -86,7 +101,7 @@ docker run --rm -v $(pwd):$(pwd) -w $(pwd) jrottenberg/ffmpeg:4.3-alpine \
 docker run --rm --runtime nvidia -v $(pwd):$(pwd) -w $(pwd) jrottenberg/ffmpeg:4.3-nvidia 参数
 ```
 
-* 例子
+* 例子：格式转换
 ```shell
 docker run --rm --runtime nvidia -v $(pwd):$(pwd) -w $(pwd) jrottenberg/ffmpeg:4.3-nvidia \
     -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda \
