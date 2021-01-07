@@ -34,7 +34,9 @@ ffmpeg -i input.mp4 -r 1 -s 1024x768 -f image2 input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mp4 -vf select='eq(pict_type\,I)' -f image2 I-input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mp4 -vf select='eq(pict_type\,P)' -f image2 P-input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mp4 -vf select='eq(pict_type\,B)' -f image2 B-input-%03d.jpeg
+```
 
+```shell
 ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_I)'" -f image2 I-input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_P)'" -f image2 P-input-%03d.jpeg
 ffmpeg -y -vsync 0 -i input.mts -vf "select='eq(pict_type,PICT_TYPE_B)'" -f image2 B-input-%03d.jpeg
