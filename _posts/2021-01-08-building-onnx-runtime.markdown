@@ -3,10 +3,10 @@ layout: post
 title:  "Building ONNX Runtime"
 date:   2021-01-08 00:00:00 +0800
 categories: Linux
-tags: [Linux, Ubuntu, GPU, Docker, ONNX, ONNXRuntime]
+tags: [Linux, Ubuntu, GPU, CUDA, Docker, ONNX, ONNXRuntime]
 ---
 
-## Building ONNX Runtime GPU
+## NVIDIA CUDA
 ### 下载onnxruntime源代码
 ```shell
 git clone --recursive https://github.com.cnpmjs.org/microsoft/onnxruntime.git
@@ -53,8 +53,9 @@ pip3 install numpy
 
 ### 编译
 ```shell
-./build.sh --use_cuda --cudnn_home /usr/include/x86_64-linux-gnu/ --cuda_home /usr/local/cuda/ \
-    --enable_pybind --build_wheel --build_shared_lib --parallel --config Release
+./build.sh --parallel --build_shared_lib --enable_pybind --build_wheel \
+    --use_cuda --cudnn_home /usr/include/x86_64-linux-gnu/ \
+    --cuda_home /usr/local/cuda/ --config Release
 ```
 
 ### 安装
