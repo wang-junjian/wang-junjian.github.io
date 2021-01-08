@@ -65,7 +65,7 @@ pip3 install onnxruntime-1.6.0-gpu-cp38-cp38m-linux_x86_64.whl
 
 ### 测试
 ```shell
-python -c "import onnxruntime"
+python -c "import onnxruntime"
 ```
 
 ## 参考资料
