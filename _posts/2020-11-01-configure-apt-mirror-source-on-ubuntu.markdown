@@ -11,19 +11,27 @@ tags: [Ubuntu, APT, Mirror]
 ## 这里以[阿里云镜像源]为例，替换掉官方源。
 > 使用 ```http://mirrors.aliyun.com/ubuntu/``` 替换 ```http://cn.archive.ubuntu.com/ubuntu/```，需要查看一下文件 ```/etc/apt/sources.list```，要替换的可能是 ```http://archive.ubuntu.com/ubuntu/```。
 
+### 替换配置
 ```shell
-sudo sed -i 's/cn.archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+sed -i 's/cn.archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
 ```
 
-### 国内主要的 Ubuntu 镜像源
+```shell
+sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+```
+
+### 基于配置的镜像源更新安装包的列表
+```shell
+apt-get update
+```
+
+## 国内主要的 Ubuntu 镜像源
 * [阿里云](http://mirrors.aliyun.com/ubuntu/) ```http://mirrors.aliyun.com/ubuntu/```
 * [网易](http://mirrors.163.com/ubuntu/) ```http://mirrors.163.com/ubuntu/```
 * [清华大学](https://mirrors.tuna.tsinghua.edu.cn/ubuntu/) ```https://mirrors.tuna.tsinghua.edu.cn/ubuntu/```
 * [中科大](https://mirrors.ustc.edu.cn/ubuntu/) ```https://mirrors.ustc.edu.cn/ubuntu/```
 
-## 基于配置的镜像源更新安装包的列表
-```shell
-sudo apt-get update
-```
-
 [阿里云镜像源]: https://developer.aliyun.com/mirror/ubuntu
+
+## 参考资料
+[What does “sudo apt-get update” do?](https://askubuntu.com/questions/222348/what-does-sudo-apt-get-update-do)
