@@ -121,3 +121,4 @@ RUN pip3 install /tmp/$ONNXRUNTIME_INSTALL_PACKAGE
 * [How to install tzdata on a ubuntu docker image?](https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image)
 * [Unable to locate package language-pack-en](https://stackoverflow.com/questions/43708896/unable-to-locate-package-language-pack-en)
 * [修改locale](https://wiki.ubuntu.org.cn/修改locale)
+* [Locale](https://samwhelp.github.io/note-ubuntu-18.04/read/howto/install/locale/)
