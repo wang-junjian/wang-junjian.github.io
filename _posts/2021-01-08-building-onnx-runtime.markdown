@@ -122,3 +122,8 @@ RUN pip3 install /tmp/$ONNXRUNTIME_INSTALL_PACKAGE
 * [Unable to locate package language-pack-en](https://stackoverflow.com/questions/43708896/unable-to-locate-package-language-pack-en)
 * [修改locale](https://wiki.ubuntu.org.cn/修改locale)
 * [Locale](https://samwhelp.github.io/note-ubuntu-18.04/read/howto/install/locale/)
+* [Debian: debian_frontend=noninteractive](https://linuxhint.com/debian_frontend_noninteractive/)
+* [ENV DEBIAN_FRONTEND noninteractive](https://github.com/moby/moby/issues/4032)
+* [CUDA / Docker & GPG error](https://github.com/NVIDIA/nvidia-docker/issues/619)
+* [Use multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/)
+* [Dockerfile 中的 multi-stage(多阶段构建)](https://www.cnblogs.com/sparkdev/p/8508435.html)
