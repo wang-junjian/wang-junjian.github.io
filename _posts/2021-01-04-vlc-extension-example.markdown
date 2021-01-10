@@ -74,3 +74,7 @@ end
 * [Extending VLC with Lua](http://www.coderholic.com/extending-vlc-with-lua/)
 * [vlc lua: how do I get the full path of the current playing item?](https://stackoverflow.com/questions/24966228/vlc-lua-how-do-i-get-the-full-path-of-the-current-playing-item?rq=1)
 * [Compile VLC](https://wiki.videolan.org/Category:Building/)
+* [VLC Object Detection Extension](https://github.com/KarlHajal/VLC-Object-Detection-Extension)
+* [Python ctypes-based bindings for libvlc](https://github.com/oaubert/python-vlc)
+* [vs-media-player](https://github.com/mkloubert/vs-media-player)
+* [VLC-Qt Library](https://github.com/vlc-qt/vlc-qt)
