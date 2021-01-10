@@ -8,7 +8,7 @@ tags: [GitHub]
 
 > 在国内加速下载GitHub工程
 
-## 在路径上增加```.cnpmjs.org
+## 在路径上增加 ```.cnpmjs.org```
 ```shell
 git clone https://github.com/microsoft/onnxruntime.git
 ```
@@ -17,10 +17,10 @@ git clone https://github.com.cnpmjs/microsoft/onnxruntime.git
 ```
 
 ## 查找当前位置距离最快的 GitHub IP
-### 运行测速脚本
-* [gh-check](https://gist.github.com/lilydjwg/93d33ed04547e1b9f7a86b64ef2ed058)
+### 运行测速脚本 [gh-check](https://gist.github.com/lilydjwg/93d33ed04547e1b9f7a86b64ef2ed058)
 ```shell
-curl -fsSL  https://gist.githubusercontent.com/lilydjwg/93d33ed04547e1b9f7a86b64ef2ed058/raw/134c1971ad95930aaec4cf93c8509f0f4927c03c/gh-check | python3 -
+curl -fsSL  https://gist.githubusercontent.com/lilydjwg/93d33ed04547e1b9f7a86b64ef2ed058/raw/134c1971ad95930aaec4cf93c8509f0f4927c03c/gh-check \
+    | python3 -
 ```
 
 ### 修改 ```hosts``` 文件
