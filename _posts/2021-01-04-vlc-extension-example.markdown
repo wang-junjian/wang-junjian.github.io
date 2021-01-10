@@ -78,4 +78,6 @@ end
 * [Python ctypes-based bindings for libvlc](https://github.com/oaubert/python-vlc)
 * [vs-media-player](https://github.com/mkloubert/vs-media-player)
 * [VLC-Qt Library](https://github.com/vlc-qt/vlc-qt)
+* [libVLC](https://www.yuque.com/lengyuezuixue/paayuv)
+* [Python ctypes-based bindings for libvlc](https://github.com/oaubert/python-vlc)
 * [vlc-ffmpeg-thumbnail.lua](https://gist.github.com/xenogenesi/9361b6bc1520527dcffdea34c8fa5e45)
