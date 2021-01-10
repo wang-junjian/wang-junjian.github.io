@@ -10,7 +10,7 @@ tags: [Linux, Ubuntu, GPU, CUDA, Docker, ONNX, ONNXRuntime]
 ### 单步构建
 * 下载onnxruntime源代码
 ```shell
-git clone --recursive https://github.com.cnpmjs.org/microsoft/onnxruntime.git
+git clone --recursive https://github.com/microsoft/onnxruntime.git
 ```
 
 * 拉取容器（编译环境）
@@ -87,7 +87,7 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && 
 
 RUN pip3 install numpy -i https://mirrors.aliyun.com/pypi/simple/
 
-RUN git clone --recursive https://github.com.cnpmjs.org/microsoft/onnxruntime.git
+RUN git clone --recursive https://github.com/microsoft/onnxruntime.git
 WORKDIR /onnxruntime
 RUN ./build.sh --parallel --build_shared_lib --enable_pybind --build_wheel \
     --use_cuda --cudnn_home /usr/include/x86_64-linux-gnu/ \
