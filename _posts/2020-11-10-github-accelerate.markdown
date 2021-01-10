@@ -48,6 +48,7 @@ git clone https://github.com/microsoft/onnxruntime.git
 ```
 
 ## 参考资料
+* [https://github.com.cnpmjs.org/](https://github.com.cnpmjs.org/)
 * [寻找最快的 GitHub IP](https://blog.lilydjwg.me/2019/8/16/gh-check.214730.html)
 * [git clone一个github上的仓库，太慢，经常连接失败，但是github官网流畅访问，为什么？](https://www.zhihu.com/question/27159393)
 * [完美解决github访问速度慢](https://www.cnblogs.com/knuzy/p/9415243.html)
