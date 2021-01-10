@@ -9,12 +9,9 @@ tags: [GitHub]
 > 在国内加速下载GitHub工程
 
 ## 在路径上增加 ```.cnpmjs.org```
-```shell
-git clone https://github.com/microsoft/onnxruntime.git
-```
-```shell
-git clone https://github.com.cnpmjs/microsoft/onnxruntime.git
-```
+正常下载：```git clone https://github.com/microsoft/onnxruntime.git```
+
+加速下载：```git clone https://github.com.cnpmjs/microsoft/onnxruntime.git```
 
 ## 查找当前位置距离最快的 GitHub IP
 ### 运行测速脚本 [gh-check](https://gist.github.com/lilydjwg/93d33ed04547e1b9f7a86b64ef2ed058)
@@ -27,6 +24,11 @@ curl -fsSL  https://gist.githubusercontent.com/lilydjwg/93d33ed04547e1b9f7a86b64
 ```txt
 199.232.69.194 github.global.ssl.fastly.net
 140.82.112.4 github.com
+```
+
+### 下载
+```shell
+git clone https://github.com/microsoft/onnxruntime.git
 ```
 
 ## 参考资料
