@@ -6,7 +6,7 @@ permalink: /categories/
 
 
 {% for category in site.categories %} 
-  <h2 id="{{ category[0] }}-ref">{{ category[0] | join: "/" }} <span>[{{ category[1].size }}]</span></h2>
+  <h2 id="{{ category[0] }}">{{ category[0] | join: "/" }} <span>[{{ category[1].size }}]</span></h2>
   <ul>
     {% assign pages_list = category[1] %}  
 
