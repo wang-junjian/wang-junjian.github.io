@@ -34,7 +34,7 @@ docker run -d --restart=always --name pypiserver -p 8080:8080 \
     pypiserver/pypiserver:latest -P /data/packages/htpasswd.txt
 ```
 
-### 下载软件包到私有存储库（加速）
+### 下载软件包到私有存储库（局域网内加速）
 ```shell
 sudo pip3 download -d /data/pypi-packages/ tensorflow -i https://mirrors.aliyun.com/pypi/simple/
 sudo pip3 download -d /data/pypi-packages/ -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
@@ -43,7 +43,7 @@ sudo pip3 download -d /data/pypi-packages/ -r requirements.txt -i https://mirror
 
 ## 客户端
 ### 使用私有存储库安装软件包
-* 配置 ```pip.conf```
+* 配置 pip.conf
 ```shell
 nano ~/.config/pip/pip.conf
 ```
