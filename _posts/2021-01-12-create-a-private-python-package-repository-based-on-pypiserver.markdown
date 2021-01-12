@@ -43,11 +43,11 @@ sudo pip3 download -d /data/pypi-packages/ -r requirements.txt -i https://mirror
 
 ## 客户端
 ### 使用私有存储库安装软件包
-* 配置 pip.conf
+* 配置 ```pip.conf```
 ```shell
 nano ~/.config/pip/pip.conf
 ```
-```conf
+```
 [global]
 index-url = http://172.16.33.174:8080/simple/
 extra-index-url = https://mirrors.aliyun.com/pypi/simple/
@@ -71,7 +71,7 @@ Collecting tensorflow
 ```shell
 nano ~/.pypirc
 ```
-```conf
+```
 [distutils]
 index-servers =
   local
