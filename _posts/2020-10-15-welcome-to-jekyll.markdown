@@ -24,12 +24,17 @@ print_hi('Tom')
 
 Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
 
-MacOS
+[jekyll-docs]: https://jekyllrb.com/docs/home
+[jekyll-gh]:   https://github.com/jekyll/jekyll
+[jekyll-talk]: https://talk.jekyllrb.com/
+
+
+## macOS 运行Jekyll服务
 ```shell
 bundle exec jekyll serve
 ```
 [http://127.0.0.1:4000/](http://127.0.0.1:4000/)
 
-[jekyll-docs]: https://jekyllrb.com/docs/home
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/
+## 参考资料
+* [jekyll/minima](https://github.com/jekyll/minima/blob/master/_layouts/post.html)
+* [How does Jekyll date formatting work?](https://stackoverflow.com/questions/7395520/how-does-jekyll-date-formatting-work)
