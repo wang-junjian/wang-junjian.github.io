@@ -17,10 +17,13 @@ permalink: /about/
 ### 镜像加速
 * [apt]({% post_url 2020-11-01-configure-apt-mirror-source-on-ubuntu %})
 * [pip]({% post_url 2020-11-09-configure-pip-mirror-source %})
-* [基于PyPIServer创建私有Python软件包存储库]({% post_url 2021-01-12-create-a-private-python-package-repository-based-on-pypiserver %})
 * [GitHub]({% post_url 2020-11-10-github-accelerate %})
 * [Docker]({% post_url 2020-11-02-configure-docker-mirror-source %})
 * [Kubernetes]({% post_url 2020-11-07-configure-kubernetes-mirror-source %})
+
+### 局域网内加速
+* [基于Apt-Cacher NG创建本地Ubuntu存储库]({% post_url 2020-10-16-create-local-ubuntu-repository %})
+* [基于PyPIServer创建私有Python软件包存储库]({% post_url 2021-01-12-create-a-private-python-package-repository-based-on-pypiserver %})
 
 ## 人工智能
 ### 算法－自定义训练集的训练
