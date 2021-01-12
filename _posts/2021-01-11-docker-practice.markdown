@@ -17,18 +17,26 @@ docker run --runtime=nvidia -d gouchicao/yolov5:train
 ```
 
 ## 重启策略(--restart)
-* 启动容器时通过参数指定
+1. 启动容器时通过参数指定
 ```shell
 #如果容器停止总是重新启动。如果手动停止，则仅在Docker守护程序重启或手动重启容器本身时才重启。 
 docker run -d --restart=always --name pypiserver -p 8080:8080 \
     -v /data/pypi-packages/:/data/packages
 ```
 
-* 容器启动后，通过命令来更新。
+2. 容器启动后，通过命令来更新。
 ```shell
 docker run -d --name pypiserver -p 8080:8080 \
     -v /data/pypi-packages/:/data/packages
 docker update --restart=always pypiserver
+```
+
+* 验证
+```shell
+#重启Docker Daemon
+systemctl restart docker
+#查看运行的服务是否存在
+docker ps | grep pypiserver
 ```
 
 ## 退出容器后自动删除(--rm)
