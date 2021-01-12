@@ -28,8 +28,6 @@ sudo mkdir /data/pypi-packages
 sudo htpasswd -sc /data/pypi-packages/htpasswd.txt wjj
 #当您需要再创建用户名时就不需要加参数 -c
 sudo htpasswd -s /data/pypi-packages/htpasswd.txt test
-
-
 #容器部署
 docker run -d --restart=always --name pypiserver -p 8080:8080 \
     -v /data/pypi-packages/:/data/packages \
@@ -99,5 +97,6 @@ twine upload onnxruntime_gpu-1.6.0-cp38-cp38-linux_x86_64.whl --repository-url h
 * [How do you upload a single wheel file to a pypi server?](https://stackoverflow.com/questions/51635611/how-do-you-upload-a-single-wheel-file-to-a-pypi-server)
 * [pip Usage](https://pip.pypa.io/en/stable/reference/pip/)
 * [Welcome to twine’s documentation!](https://twine.readthedocs.io/en/latest/)
+* [pypa/twine](https://github.com/pypa/twine)
 * [基于 pypiserver 的 PyPI 私有仓库搭建实践](https://www.jianshu.com/p/c260b59cd3d0)
 * [搭建pypi私有仓库](https://www.cnblogs.com/-wenli/p/13994155.html)
