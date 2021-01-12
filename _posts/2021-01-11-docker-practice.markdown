@@ -42,7 +42,6 @@ docker ps | grep pypiserver
 ## 退出容器后自动删除(--rm)
 ```shell
 docker run --rm busybox:latest
-#按Ctrl+d
 ```
 
 ## 通过匹配有规则的名称删除容器
