@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "创建本地Ubuntu存储库 Apt-Cacher NG"
+title:  "基于Apt-Cacher NG创建本地Ubuntu存储库"
 date:   2020-10-16 12:00:00 +0800
 categories: Linux
-tags: [Cache, Ubuntu Repository, Apt-Cacher NG]
+tags: [Cache, Ubuntu, apt, apt-cacher-ng]
 ---
 
 ## 安装 Apt-Cacher-NG
@@ -15,7 +15,7 @@ $ sudo service apt-cacher-ng start
 * [Configuration instructions](http://172.16.33.157:3142)
 * [Statistics report and configuration page](http://172.16.33.157:3142/acng-report.html)
 
-## 配置文件
+## 配置
 ```bash
 $ sudo nano /etc/apt-cacher-ng/acng.conf
 ```
