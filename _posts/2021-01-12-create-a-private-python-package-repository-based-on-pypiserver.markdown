@@ -47,11 +47,10 @@ sudo pip3 download -d /data/pypi-packages/ -r requirements.txt -i https://mirror
 ```shell
 nano ~/.config/pip/pip.conf
 ```
-```
+```conf
 [global]
 index-url = http://172.16.33.174:8080/simple/
 extra-index-url = https://mirrors.aliyun.com/pypi/simple/
-
 [install]
 trusted-host = 172.16.33.174
 ```
@@ -71,11 +70,10 @@ Collecting tensorflow
 ```shell
 nano ~/.pypirc
 ```
-```
+```conf
 [distutils]
 index-servers =
   local
-
 [local]
 repository: http://172.16.33.174:8080
 username: wjj
