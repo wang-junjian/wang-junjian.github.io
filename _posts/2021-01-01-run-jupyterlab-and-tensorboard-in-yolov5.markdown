@@ -8,7 +8,7 @@ tags: [Jupyter, JupyterLab, TensorBoard, YOLOv5]
 
 ## 构建可用的JupyterLab和TensorBoard
 * 启动YOLOv5容器
-```
+```shell
 docker run --ipc=host --runtime nvidia -it -p 8888:8888 \
   -v ${dataset_dir}:/usr/src/app/project \
   ultralytics/yolov5:latest
