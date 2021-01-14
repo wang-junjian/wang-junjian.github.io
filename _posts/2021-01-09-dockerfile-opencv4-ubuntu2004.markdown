@@ -62,7 +62,7 @@ ImportError: libgthread-2.0.so.0: cannot open shared object file: No such file o
 > apt install -y libglib2.0-dev
 
 3. 需要交互，不能自动化安装。
-```
+```shell
 apt install libglib2.0-dev 
 Setting up tzdata (2020f-0ubuntu0.20.04.1) ...
 debconf: unable to initialize frontend: Dialog
@@ -74,7 +74,7 @@ Configuring tzdata
 Please select the geographic area in which you live. Subsequent configuration questions will narrow this down by presenting a list of cities, representing the time zones in which they are
 located.
 
-  1. Africa  2. America  3. Antarctica  4. Australia  5. Arctic  6. Asia  7. Atlantic  8. Europe  9. Indian  10. Pacific  11. SystemV  12. US  13. Etc
+#1. Africa  2. America  3. Antarctica  4. Australia  5. Arctic  6. Asia  7. Atlantic  8. Europe  9. Indian  10. Pacific  11. SystemV  12. US  13. Etc
 Geographic area: 
 ```
 > ENV DEBIAN_FRONTEND=noninteractive
