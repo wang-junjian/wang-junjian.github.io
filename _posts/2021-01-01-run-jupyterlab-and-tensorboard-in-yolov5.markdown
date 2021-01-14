@@ -9,7 +9,9 @@ tags: [Jupyter, JupyterLab, TensorBoard, YOLOv5]
 ## 构建可用的JupyterLab和TensorBoard
 * 启动YOLOv5容器
 ```
-$ docker run --ipc=host --runtime nvidia -it -p 8888:8888 -v ${dataset_dir}:/usr/src/app/project ultralytics/yolov5:latest
+docker run --ipc=host --runtime nvidia -it -p 8888:8888 \
+  -v ${dataset_dir}:/usr/src/app/project \
+  ultralytics/yolov5:latest
 ```
 
 * 安装版本1的TensorBoard。（解决```FAQ1```的问题：jupyter-tensorboard 0.2.0不支持高于TensorBoard 2.0的版本。YOLOv5镜像中安装的TensorBoard 2.4的版本。）
