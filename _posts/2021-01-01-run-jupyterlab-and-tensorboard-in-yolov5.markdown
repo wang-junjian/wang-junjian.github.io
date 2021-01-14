@@ -30,7 +30,7 @@ http://ip:8888/lab
 ```
 
 ## FAQ
-* 1. Launcher Error - Invalid response: 500 Internal Server Error
+1. Launcher Error - Invalid response: 500 Internal Server Error
 ```py
 Uncaught exception POST /api/tensorboard?1609481325314 (192.168.1.1)
     HTTPServerRequest(protocol='http', host='hostname:20101', method='POST', uri='/api/tensorboard?1609481325314', version='HTTP/1.1', remote_ip='192.168.1.1')
