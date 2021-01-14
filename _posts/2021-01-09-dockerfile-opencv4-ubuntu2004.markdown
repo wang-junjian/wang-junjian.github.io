@@ -70,10 +70,8 @@ debconf: (No usable dialog-like program is installed, so the dialog based fronte
 debconf: falling back to frontend: Readline
 Configuring tzdata
 ------------------
-
 Please select the geographic area in which you live. Subsequent configuration questions will narrow this down by presenting a list of cities, representing the time zones in which they are
 located.
-
   1. Africa  2. America  3. Antarctica  4. Australia  5. Arctic  6. Asia  7. Atlantic  8. Europe  9. Indian  10. Pacific  11. SystemV  12. US  13. Etc
 Geographic area: 
 ```
