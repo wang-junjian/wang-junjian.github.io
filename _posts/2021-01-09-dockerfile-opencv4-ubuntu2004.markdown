@@ -75,3 +75,19 @@ Please select the geographic area in which you live. Subsequent configuration qu
 Geographic area: 
 ```
 > ENV DEBIAN_FRONTEND=noninteractive
+
+4. ModuleNotFoundError: No module named 'skbuild'
+```shell
+Collecting opencv-python
+  Using cached https://mirrors.aliyun.com/pypi/packages/bb/08/9dbc183a3ac6baa95fabf749ddb531bd26256edfff5b6c2195eca26258e9/opencv-python-4.5.1.48.tar.gz
+    Complete output from command python setup.py egg_info:
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/tmp/pip-build-shxlwar6/opencv-python/setup.py", line 10, in <module>
+        import skbuild
+    ModuleNotFoundError: No module named 'skbuild'
+    
+    ----------------------------------------
+Command "python setup.py egg_info" failed with error code 1 in /tmp/pip-build-shxlwar6/opencv-python/
+```
+> [Installing OpenCV fails because it cannot find “skbuild”](https://stackoverflow.com/questions/63448467/installing-opencv-fails-because-it-cannot-find-skbuild)
