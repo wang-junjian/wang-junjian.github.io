@@ -20,6 +20,7 @@ sudo curl -fsSL https://raw.githubusercontent.com/Stifler6996/apt-mirror/master/
 sudo nano /etc/apt/mirror.list
 ```
 ```conf
+############# config ##################
 set base_path    /data/apt-mirror
 #set mirror_path  $base_path/mirror
 #set skel_path    $base_path/skel
@@ -30,19 +31,17 @@ set base_path    /data/apt-mirror
 #set run_postmirror 0
 set nthreads     20
 set _tilde 0
-
+############# end config ##############
 deb http://archive.ubuntu.com/ubuntu focal main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu focal-security main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu focal-updates main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu focal-proposed main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu focal-backports main restricted universe multiverse
-
 #deb-src http://archive.ubuntu.com/ubuntu focal main restricted universe multiverse
 #deb-src http://archive.ubuntu.com/ubuntu focal-security main restricted universe multiverse
 #deb-src http://archive.ubuntu.com/ubuntu focal-updates main restricted universe multiverse
 #deb-src http://archive.ubuntu.com/ubuntu focal-proposed main restricted universe multiverse
 #deb-src http://archive.ubuntu.com/ubuntu focal-backports main restricted universe multiverse
-
 clean http://archive.ubuntu.com/ubuntu
 ```
 
@@ -61,15 +60,16 @@ sudo apt-get install apache2 -y
 ```shell
 sudo nano /etc/apache2/sites-enabled/000-default.conf
 ```
+
 ```xml
 <VirtualHost *:80>
-    #The ServerName directive sets the request scheme, hostname and port that
-    #the server uses to identify itself. This is used when creating
-    #redirection URLs. In the context of virtual hosts, the ServerName
-    #specifies what hostname must appear in the request's Host: header to
-    #match this virtual host. For the default virtual host (this file) this
-    #value is not decisive as it is used as a last resort host regardless.
-    #However, you must set it for any further virtual host explicitly.
+    # The ServerName directive sets the request scheme, hostname and port that
+    # the server uses to identify itself. This is used when creating
+    # redirection URLs. In the context of virtual hosts, the ServerName
+    # specifies what hostname must appear in the request's Host: header to
+    # match this virtual host. For the default virtual host (this file) this
+    # value is not decisive as it is used as a last resort host regardless.
+    # However, you must set it for any further virtual host explicitly.
     #ServerName www.example.com
 
     ServerAdmin webmaster@localhost
@@ -80,24 +80,24 @@ sudo nano /etc/apache2/sites-enabled/000-default.conf
         Require all granted
     </Directory>
 
-    #Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
-    #error, crit, alert, emerg.
-    #It is also possible to configure the loglevel for particular
-    #modules, e.g.
+    # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+    # error, crit, alert, emerg.
+    # It is also possible to configure the loglevel for particular
+    # modules, e.g.
     #LogLevel info ssl:warn
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-    #For most configuration files from conf-available/, which are
-    #enabled or disabled at a global level, it is possible to
-    #include a line for only one particular virtual host. For example the
-    #following line enables the CGI configuration for this host only
-    #after it has been globally disabled with "a2disconf".
+    # For most configuration files from conf-available/, which are
+    # enabled or disabled at a global level, it is possible to
+    # include a line for only one particular virtual host. For example the
+    # following line enables the CGI configuration for this host only
+    # after it has been globally disabled with "a2disconf".
     #Include conf-available/serve-cgi-bin.conf
 </VirtualHost>
 
-#vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 ```
 
 3. 创建软链接
