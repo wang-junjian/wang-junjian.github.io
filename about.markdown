@@ -23,6 +23,7 @@ permalink: /about/
 
 ### 局域网内加速
 * [基于Apt-Cacher NG创建本地Ubuntu存储库]({% post_url 2020-10-16-create-local-ubuntu-repository %})
+* [基于Apt-Mirror创建私有Ubuntu存储库]({% post_url 2021-01-13-create-a-private-ubuntu-repository-based-on-apt-mirror %})
 * [基于PyPIServer创建私有Python软件包存储库]({% post_url 2021-01-12-create-a-private-python-package-repository-based-on-pypiserver %})
 
 ## 人工智能
