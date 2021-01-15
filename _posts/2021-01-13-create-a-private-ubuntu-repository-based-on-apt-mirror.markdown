@@ -3,7 +3,7 @@ layout: post
 title:  "基于Apt-Mirror创建私有Ubuntu存储库"
 date:   2021-01-13 00:00:00 +0800
 categories: Linux
-tags: [Linux, apt-mirror]
+tags: [Linux, apt-mirror, apache2, curl, ln]
 ---
 
 ## 服务端
