@@ -6,6 +6,14 @@ categories: Linux
 tags: [Linux, Command, ln]
 ---
 
+> 在文件之间建立链接
+```
+    ln [OPTION]... [-T] TARGET LINK_NAME
+    ln [OPTION]... TARGET
+    ln [OPTION]... TARGET... DIRECTORY
+    ln [OPTION]... -t DIRECTORY TARGET...
+```
+
 ## 文件或目录的软链接（类似指针）
 ### 创建
 ```shell
