@@ -51,12 +51,12 @@ sudo apt-mirror
 ```
 
 ### 部署HTTP服务
-1. 安装Apache
+* 1.安装Apache
 ```shell
 sudo apt-get install apache2 -y
 ```
 
-2. 配置
+* 2.配置
 ```shell
 sudo nano /etc/apache2/sites-enabled/000-default.conf
 ```
@@ -100,12 +100,12 @@ sudo nano /etc/apache2/sites-enabled/000-default.conf
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 ```
 
-3. 创建软链接
+* 3.创建软链接
 ```shell
 sudo ln -s /data/apt-mirror/mirror/archive.ubuntu.com/ubuntu /var/www/ubuntu
 ```
 
-4. 重启Apache
+* 4.重启Apache
 ```shell
 sudo service apache2 restart
 ```
