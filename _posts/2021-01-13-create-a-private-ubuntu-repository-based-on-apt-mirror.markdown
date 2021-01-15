@@ -111,7 +111,7 @@ sudo service apache2 restart
 ```
 
 ## 客户端
-### 编辑apt sources.list
+### 编辑软件源
 ```shell
 sudo nano /etc/apt/sources.list
 ```
@@ -123,7 +123,7 @@ deb http://172.16.33.174/ubuntu focal-proposed main restricted universe multiver
 deb http://172.16.33.174/ubuntu focal-backports main restricted universe multiverse
 ```
 
-### apt update
+### 更新软件包索引
 ```shell
 sudo apt update
 ```
