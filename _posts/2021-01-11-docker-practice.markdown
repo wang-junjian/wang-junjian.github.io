@@ -54,6 +54,11 @@ docker rm -f $(docker ps -a | grep face-service- | awk '{print $1}')
 docker rmi --force $(docker images -q --filter "dangling=true")
 ```
 
+## 重新构建镜像（不使用缓存）
+```shell
+docker build --no-cache -t name:tag . 
+```
+
 ## 参考资料
 * [nvidia-docker2.0 GPU 隔离](https://ld246.com/article/1511781062916)
 * [Start containers automatically](https://docs.docker.com/config/containers/start-containers-automatically/)
