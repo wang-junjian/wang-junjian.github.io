@@ -11,10 +11,12 @@ tags: [Linux, Command, Apache]
 ```shell
 sudo nano /etc/apache2/ports.conf
 ```
+
 ```
-#If you just change the port or add more ports here, you will likely also
-#have to change the VirtualHost statement in
-#/etc/apache2/sites-enabled/000-default.conf
+# If you just change the port or add more ports here, you will likely also
+# have to change the VirtualHost statement in
+# /etc/apache2/sites-enabled/000-default.conf
+
 Listen 8081
 ......
 ......
@@ -24,10 +26,11 @@ Listen 8081
 ```shell
 sudo nano /etc/apache2/sites-enabled/000-default.conf
 ```
+
 ```
 <VirtualHost *:8081>
-        ......
-        ......
+......
+......
 </VirtualHost>
 ```
 
