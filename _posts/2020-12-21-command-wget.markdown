@@ -12,12 +12,12 @@ tags: [Linux, Command, wget, Download]
 wget https://upload.wikimedia.org/wikipedia/commons/1/13/Intel_CPU_Core_i7_6700K_Skylake_perspective.jpg https://images-na.ssl-images-amazon.com/images/I/51iVSqLIBWL._AC_.jpg
 ```
 
-* 来自文件
+* 来自文件(-i)
 ```shell
 wget -i urls.txt
 ```
 
-## 后台下载
+## 后台下载(-b)
 ```shell
 wget -i urls.txt -b
 ```
@@ -25,4 +25,9 @@ wget -i urls.txt -b
 ## 指定输出目录
 ```shell
 wget -i urls.txt -P output
+```
+
+## 断点续传(-c --continue)
+```shell
+wget -c https://github.com/goharbor/harbor/releases/download/v2.1.3/harbor-offline-installer-v2.1.3.tgz
 ```
