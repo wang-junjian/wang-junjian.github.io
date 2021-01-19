@@ -157,6 +157,7 @@ PPP]
 * [Official Archive Mirrors for Ubuntu](https://launchpad.net/ubuntu/+archivemirrors)
 * [Setup Local Repositories with ‘apt-mirror’ in Ubuntu and Debian Systems](https://www.tecmint.com/setup-local-repositories-in-ubuntu/)
 * [Ubunut 服务器 auth.log 日志中出现大量localhost CRON[14301]: pam_unix(cron:session): session open/closed for user root](https://blog.yzgod.com/tag/linux)
+* [How to create a Ubuntu repository server](https://linuxconfig.org/how-to-create-a-ubuntu-repository-server)
 * [How to select the fastest apt mirror on Ubuntu Linux](https://linuxconfig.org/how-to-select-the-fastest-apt-mirror-on-ubuntu-linux)
 * [How can I get apt to use a mirror close to me, or choose a faster mirror?](https://askubuntu.com/questions/37753/how-can-i-get-apt-to-use-a-mirror-close-to-me-or-choose-a-faster-mirror)
 * [使用 apt-mirror 和 apt-cacher 创建本地 Ubuntu 仓库](https://blog.fleeto.us/post/build-ubuntu-repository-with-apt-mirror-and-apt-cacher/)
