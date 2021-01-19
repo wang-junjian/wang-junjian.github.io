@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "vim实战"
+title:  "vim实践"
 date:   2021-01-16 00:00:00 +0800
 categories: Linux 实践
 tags: [Linux, vim]
