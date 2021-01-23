@@ -57,9 +57,17 @@ tags: [Linux, vim]
 
 
 ## 设置
+### 配置文件 
+```
+~/.vimrc
+```
+
 ### 显示 | 隐藏行号
 ```
+:set nu
 :set number
+
+:set nonu
 :set nonumber
 ```
 
@@ -78,3 +86,4 @@ tags: [Linux, vim]
 
 ## 参考资料
 * [20+ vi and vim editor tutorials](http://alvinalexander.com/linux/vi-vim-editor-tutorials-collection/)
+* [VIM and Python – A Match Made in Heaven](https://realpython.com/vim-and-python-a-match-made-in-heaven/)
