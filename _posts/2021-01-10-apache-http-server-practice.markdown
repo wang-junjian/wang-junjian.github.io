@@ -7,7 +7,7 @@ tags: [Linux, Command, Apache]
 ---
 
 ## 修改端口号
-1. /etc/apache2/ports.conf
+* /etc/apache2/ports.conf
 ```shell
 sudo nano /etc/apache2/ports.conf
 ```
@@ -22,7 +22,7 @@ Listen 8081
 ......
 ```
 
-2. /etc/apache2/sites-enabled/000-default.conf
+* /etc/apache2/sites-enabled/000-default.conf
 ```shell
 sudo nano /etc/apache2/sites-enabled/000-default.conf
 ```
@@ -34,7 +34,7 @@ sudo nano /etc/apache2/sites-enabled/000-default.conf
 </VirtualHost>
 ```
 
-3. 重启服务
+* 重启服务
 ```shell
 sudo systemctl restart apache2
 ```
