@@ -8,6 +8,7 @@ tags: [Linux, vim]
 
 ## 四种模式
 * 正常模式
+* 插入模式
     * 进入方式
         * ```i``` 光标当前位置进入
         * ```Shift+i``` 光标所在行的开头位置进入
@@ -15,8 +16,15 @@ tags: [Linux, vim]
         * ```Shift+a``` 光标所在行的行尾位置进入
         * ```o``` 光标所在行下插入空行
         * ```Shift+o``` 光标所在行上插入空行
-* 插入模式
+    * 退出
+        * 按esc键
 * 命令模式
+    * 进入方式
+        * ```:``` 设置命令
+        * ```/``` 向下搜索
+        * ```?``` 向上搜索
+    * 退出
+        * 按两次esc键
 * 可视模式
     * 进入方式
         * ```v``` 字符
@@ -24,9 +32,9 @@ tags: [Linux, vim]
         * ```Ctrl+v``` 块
     * 操作
         * ```d``` 删除选择
-        * ```Shift+i``` [块插入](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode) (输入插入字符后，按再次esc键。)
+        * ```Shift+i``` [块插入](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode) (输入插入字符后，按两次esc键。)
     * 退出
-        * 按再次esc键
+        * 按两次esc键
 
 ---
 
