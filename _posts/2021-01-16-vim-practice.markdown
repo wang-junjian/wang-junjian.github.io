@@ -6,6 +6,30 @@ categories: Linux 实践
 tags: [Linux, vim]
 ---
 
+## 四种模式
+* 正常模式
+    * 进入方式
+        * ```i``` 光标当前位置进入
+        * ```Shift+i``` 光标所在行的开头位置进入
+        * ```a``` 光标当前位置下一个字符进入
+        * ```Shift+a``` 光标所在行的行尾位置进入
+        * ```o``` 光标所在行下插入空行
+        * ```Shift+o``` 光标所在行上插入空行
+* 插入模式
+* 命令模式
+* 可视模式
+    * 进入方式
+        * ```v``` 字符
+        * ```Shift+v``` 行
+        * ```Ctrl+v``` 块
+    * 操作
+        * ```d``` 删除选择
+        * ```Shift+i``` [块插入](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode) (输入插入字符后，按再次esc键。)
+
+
+---
+
+
 ## 文件
 * ```:q``` 没有修改直接退出
 * ```:q!``` 放弃修改退出
@@ -13,6 +37,9 @@ tags: [Linux, vim]
     * ```:wq filename``` 保存退出
 * ```ZZ``` 保存退出
 
+* ```:!command``` 运行shell命令
+    * ```:!ls -l``` 查看当前目录列表
+    * ```:!ifconfig``` 查看本地IP地址
 
 ## 编辑
 * ```u``` 撤消（Undo）
@@ -20,6 +47,7 @@ tags: [Linux, vim]
     
 * ```dd``` 剪切当前行
     * ```3dd``` 剪切3行
+* ```y$``` 复制当前字符到行尾
 * ```yy``` 复制当前行
     * ```3yy``` 复制3行
 * ```p``` 粘贴
@@ -29,32 +57,43 @@ tags: [Linux, vim]
 
 
 ## 导航
-* ```0``` 移至当前行的开头
-* ```$``` 移至当前行的末尾
-
-* ```w``` 移至下一个单词的开头
-* ```b``` 向后移到上一个单词的开头
-
-* ```Ctrl+f``` 向前（forward）翻一屏
-* ```Ctrl+b``` 向后（backward）翻一屏
-
-* ```1G``` 移至文件的第一行
-    * ```100G``` 移至文件的第100行
-* ```G``` 移至文件的最后一行
-
-* ```H``` 移至屏幕的第一行
-* ```M``` 移至画面中间（middle）
-* ```L``` 移至屏幕的最后一行
-
+* 字符
+    * ```h``` 光标左移
+    * ```j``` 光标下移
+    * ```k``` 光标上移
+    * ```l``` 光标右移
+* 单词
+    * ```w``` 移至下一个单词的开头
+    * ```b``` 向后移到上一个单词的开头
+* 当前行
+    * ```0``` 移至当前行的开头
+    * ```$``` 移至当前行的末尾
+* 行
+    * ```gg``` 移至文件的第一行
+        * ```1G``` 移至文件的第一行
+        * ```100G``` 移至文件的第100行
+    * ```G``` 移至文件的最后一行
+* 屏幕
+    * ```Ctrl+f``` 向前（forward）翻一屏
+    * ```Ctrl+b``` 向后（backward）翻一屏
+    * ```H``` 移至屏幕的第一行
+    * ```M``` 移至画面中间（middle）
+    * ```L``` 移至屏幕的最后一行
 
 ## 搜索
 * ```/word``` 向前（下）搜索
+    * ```n``` 下一个（next）
+    * ```Shift+n``` 上一个
 * ```?word``` 向后（上）搜索
-* ```n``` 下一个（next）
+    * ```n``` 上一个
+    * ```Shift+n``` 下一个
 
-* ```:1,$s/search_word/replace_word/g``` 替换
-* ```:1,$s/search_word//g``` 删除
-
+* ```:%s/search_word/replace_word/g``` 替换(全文)
+    * ```:1,$s/search_word/replace_word/g``` 替换(全文)
+    * ```:3,4s/search_word/replace_word/g``` 替换(3-4行)
+* ```:%s/search_word//g``` 删除(全文)
+    * ```:1,$s/search_word//g``` 删除(全文)
+    * ```:3,4s/search_word//g``` 删除(3-4行)
 
 ## 设置
 ### 配置文件 
@@ -77,13 +116,21 @@ tags: [Linux, vim]
 :set nowrap
 ```
 
+### 搜索高亮显示 | 不高亮显示
+```
+:set hlsearch
+:set nohlsearch
+```
+
 ### 搜索时忽略大小写敏感 | 大小写敏感
 ```
 :set ignorecase
 :set noignorecase
 ```
 
+---
 
 ## 参考资料
 * [20+ vi and vim editor tutorials](http://alvinalexander.com/linux/vi-vim-editor-tutorials-collection/)
 * [VIM and Python – A Match Made in Heaven](https://realpython.com/vim-and-python-a-match-made-in-heaven/)
+* [Vim: How to insert in visual block mode?](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode)
