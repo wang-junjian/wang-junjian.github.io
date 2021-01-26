@@ -77,7 +77,7 @@ do
     echo "$_prompt Zip file $zip_file exists." 
   else
     echo $_prompt Create zip file: $zip_file
-    zip -qj $zip_file $extract_image_dir
+    zip -rqj $zip_file $extract_image_dir
   fi
 done
 ```
@@ -138,9 +138,9 @@ ffmpeg -y -vsync 0 -i $file -vf scale=1024:-1,select='eq(pict_type\,I)' -f image
 ```
 
 ### zip
-> -q(静音模式，不输出压缩过程的信息) -j(仅存储保存文件的名称，不存储目录名称)
+> -r(递归目录结构) -q(静音模式，不输出压缩过程的信息) -j(仅存储保存文件的名称，不存储目录名称)
 ```shell
-zip -qj race.zip race
+zip -rqj race.zip race
 ```
 
 ## 参考资料
