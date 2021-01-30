@@ -65,7 +65,6 @@ $ echo $str
 hello world
 $ bash
 $ echo $str
-
 $ exit
 $ echo $str
 hello world
@@ -76,13 +75,9 @@ hello world
 $ vim test.sh
 #!/bin/bash
 echo $str
-
 $ chmod u+x test.sh
-
 $ bash test.sh 
-
 $ ./test.sh 
-
 $ source test.sh 
 hello world
 $ . test.sh 
@@ -102,5 +97,4 @@ hello world
 ```shell
 $ unset str
 $ echo $str
-
 ```
