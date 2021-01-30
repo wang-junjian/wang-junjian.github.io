@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Linux shell 执行方式"
+title:  "Linux Shell 执行方式"
 date:   2021-01-29 00:00:00 +0800
 categories: Linux
 tags: [Linux, Shell, source, chmod, du]
