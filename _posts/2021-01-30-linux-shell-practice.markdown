@@ -110,7 +110,6 @@ $ echo $str
 $ ifconfig
 $ echo $?
 0
-
 $ ifconfig eth
 $ echo $?
 1
@@ -153,3 +152,6 @@ NOT NULL
 ```
 * 位置值超过9后需要使用花括号 ```${N}```
 * 没有传入值变量为空，可以给一个默认值 ```${N-DEFAULT_VALUE}```
+
+## 参考资料
+* [Bash shell find out if a variable has NULL value OR not](https://www.cyberciti.biz/faq/bash-shell-find-out-if-a-variable-has-null-value-or-not/)
