@@ -3,7 +3,7 @@ layout: post
 title:  "Linux Shell 实践"
 date:   2021-01-30 00:00:00 +0800
 categories: Linux 实践
-tags: [Linux, Shell]
+tags: [Linux, Shell, if]
 ---
 
 ## 重定向
@@ -98,3 +98,58 @@ hello world
 $ unset str
 $ echo $str
 ```
+
+### 环境变量
+* ```env``` 查看命令
+* ```$PATH``` 命令的搜索路径
+* ```$PS1``` bash提示符
+
+### 预定义变量
+* ```$?``` 上一个命令执行的错误码
+```shell
+$ ifconfig
+$ echo $?
+0
+
+$ ifconfig eth
+$ echo $?
+1
+```
+
+* ```$$``` 当前进程ID
+```shell
+$ echo $$
+26102
+```
+
+* ```$0``` 当前进程名
+```shell
+$ echo $0
+-bash
+```
+
+### 位置变量 ```$1 $2 $3 ... $N```
+```shell
+vim test.sh
+```
+```shell
+echo $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12-DEFAULT_VALUE}
+
+if [ -z ${12} ]
+then
+  echo "NULL"
+else
+  echo "NOT NULL"
+fi
+```
+```shell
+$ chmod u+x test.sh
+$ ./test.sh 1 2 3 4 5 6 7 8 9 10 11
+1 2 3 4 5 6 7 8 9 10 11 DEFAULT_VALUE
+NULL
+$ ./test.sh 1 2 3 4 5 6 7 8 9 10 11 12
+1 2 3 4 5 6 7 8 9 10 11 12
+NOT NULL
+```
+* 位置值超过9后需要使用花括号 ```${N}```
+* 没有传入值变量为空，可以给一个默认值 ```${N-DEFAULT_VALUE}```
