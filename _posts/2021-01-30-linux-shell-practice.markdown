@@ -99,6 +99,28 @@ $ unset str
 $ echo $str
 ```
 
+### 环境变量配置文件
+* /etc/profile
+* /etc/profile.d
+* ~/.bash_profile
+* ~/.bashrc
+* /etc/bashrc
+
+#### su - root 执行顺序
+1. /etc/profile
+2. ~/.bash_profile
+3. ~/.bashrc
+4. /etc/bashrc
+
+#### su root 执行顺序
+1. ~/.bashrc
+2. /etc/bashrc
+
+#### 修改后的配置文件在当前Shell生效
+```shell
+source ~/.bashrc
+```
+
 ### 环境变量
 * ```env``` 查看命令
 * ```$PATH``` 命令的搜索路径
@@ -153,5 +175,77 @@ NOT NULL
 * 位置值超过9后需要使用花括号 ```${N}```
 * 没有传入值变量为空，可以给一个默认值 ```${N-DEFAULT_VALUE}```
 
+### 数组
+* 定义数组
+```shell
+ips=(10.0.0.1 10.0.0.2 10.0.0.3)
+```
+
+* 显示所有数组元素
+```shell
+$ echo ${ips[@]}
+10.0.0.1 10.0.0.2 10.0.0.3
+```
+
+* 数组元素个数
+```shell
+$ echo ${#ips[@]}
+3
+```
+
+* 数组取值
+```shell
+$ echo ${ips}
+10.0.0.1
+$ echo ${ips[0]}
+10.0.0.1
+$ echo ${ips[2]} ${ips[-1]}
+10.0.0.3 10.0.0.3
+```
+
+### 引用
+* 单引号（完全引用）
+```shell
+$ name=wjj
+$ echo 'Hello $name!'
+Hello $name!
+```
+
+* 双引号（不完全引用）
+```shell
+$ name=wjj
+$ echo "Hello $name!"
+Hello wjj!
+```
+
+* 反引号（执行命令）
+```shell
+$ echo `pwd`
+/root
+```
+
+## 运算符
+* 赋值运算符
+```shell
+$ let n=4+5
+$ echo $n
+9
+$ ((n=4+5))
+$ echo $n
+9
+$ ((n++))
+$ echo $n
+10
+$ echo $((3+4))
+7
+```
+
+* 算术运算符（+ - * / ** %）
+```shell
+$ expr 4 + 5
+9
+```
+
 ## 参考资料
 * [Bash shell find out if a variable has NULL value OR not](https://www.cyberciti.biz/faq/bash-shell-find-out-if-a-variable-has-null-value-or-not/)
+* [Bash For Loop Examples](https://www.cyberciti.biz/faq/bash-for-loop/)
