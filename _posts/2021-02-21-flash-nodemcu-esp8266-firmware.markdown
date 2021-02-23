@@ -69,7 +69,7 @@ esptool.py --port /dev/cu.usbserial-0001 --baud 460800 write_flash --flash_size=
 ### Wi-Fi
 烧录成功后，设备会将其自身配置为您可以连接的WiFi接入点（AP）。 ESSID的格式为```MicroPython-xxxxxx```，其中x替换为设备MAC地址的一部分（因此每次都相同，并且对于所有ESP8266芯片而言都不同）。 WiFi的密码为```micropythoN```（注意大写的N）。 连接到其网络后，其IP地址将为```192.168.4.1```。
 
-### ```SecureCRT``` (交互解释器)
+### SecureCRT (交互解释器)
 * Download [SecureCRT](https://www.vandyke.com/cgi-bin/releases.php?product=securecrt)
 * SecureCRT Connect Config
 ![](/images/2021/securecrt-esp8266-connect-config.png)
@@ -84,8 +84,8 @@ True
 >>> 
 ```
 
-### ```WebREPL``` (基于Web浏览器交互解释器)
-WebREPL (通过WebSockets的REPL, 可以通过浏览器使用)。 可以从 https://github.com/micropython/webrepl 下载并打开html文件运行。 (在线托管版可以通过访问 http://micropython.org/webrepl)直接使用, 通过执行以下 命令进行配置:
+### WebREPL (基于Web浏览器交互解释器)
+WebREPL (通过WebSockets的REPL, 可以通过浏览器使用)。 可以从 [https://github.com/micropython/webrepl](https://github.com/micropython/webrepl) 下载并打开html文件运行。 (在线托管版可以通过访问 [http://micropython.org/webrepl](http://micropython.org/webrepl))直接使用, 通过执行以下 命令进行配置:
 ```py
 import webrepl_setup
 ```
