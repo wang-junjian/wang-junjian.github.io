@@ -97,13 +97,65 @@ webrepl.start()
 这个 WebREPL 通过连接到ESP8266的AP使用,如果你的路由器配网络配置正确，这个功能也可以通过STA方式使用，那意味着你可以同时上网和调试ESP8266。(如果遇到不可行的特殊情况，请先使用ESP8266 AP方式)。
 除了终端/命令符的访问方式, WebREPL同时允许传输文件 (包含上传和下载)。Web客户端有相应的功能按钮，也可以通过 webrepl_cli.py 模块上存储的命令行进行操作。
 
-## 点亮开发板的灯
+### 测试例子：点亮开发板的灯
 * 亮 Pin(2, Pin.OUT)
 * 灭 Pin(2, Pin.IN)
 ```py
 >>> from machine import Pin
 >>> pin = Pin(2, Pin.OUT)
 >>> pin = Pin(2, Pin.IN)
+```
+
+## 部署应用到开发板
+### 下载 [pyboard](https://github.com/micropython/micropython/blob/master/tools/pyboard.py)
+```shell
+wget https://raw.githubusercontent.com/micropython/micropython/master/tools/pyboard.py
+```
+
+### 在开发板上运行Python代码
+* 方法1
+```shell
+./pyboard.py --device /dev/cu.usbserial-0001 -c 'print("Hello World!")'
+```
+
+* 方法2
+```shell
+export PYBOARD_DEVICE=/dev/cu.usbserial-0001
+./pyboard.py -c 'print("Hello World!")'
+```
+
+### 在开发板上运行Python脚本
+```shell
+./pyboard.py --device /dev/cu.usbserial-0001 hello.py
+```
+
+### 开发板文件系统访问(-f)
+* cp
+* cat
+* ls
+* rm
+* mkdir
+* rmdir
+
+### 编写应用 main.py
+```shell
+import machine
+import time
+
+#指明 GPIO2 管脚
+pin = machine.Pin(2, machine.Pin.OUT)
+
+while True:
+    time.sleep(2)   #等待 2 秒
+    pin.on()        #控制 LED 关
+    time.sleep(2)   #等待 2 秒
+    pin.off()       #控制 LED 开
+```
+
+### 部署应用到开发板
+这个文件的名字必须是 ```main.py```，系统启动后会自动运行main.py。
+```shell
+./pyboard.py -f cp main.py :
 ```
 
 ## 参考资料
