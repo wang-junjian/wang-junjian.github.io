@@ -165,5 +165,6 @@ while True:
 * [ESP8266 快速参考手册](http://docs.micropython.01studio.org/zh_CN/latest/esp8266/quickref.html)
 * [SecureCRT](https://www.vandyke.com/cgi-bin/releases.php?product=securecrt)
 * [PuTTY](https://www.putty.org)
+* [The pyboard.py tool](https://docs.micropython.org/en/latest/reference/pyboard.py.html)
 * [esp32/esp8266  micropython 教程汇总](https://mc.dfrobot.com.cn/thread-271930-1-1.html)
 * [搞软件的能不能搞硬件，ESP8266刷MicroPython，点个灯](https://www.bilibili.com/read/cv5718920/)
