@@ -11,6 +11,9 @@ tags: [MicroPython, MQTT, NodeMCU, ESP8266]
 * NodeMCU ESP8266
 * 三色LED模块
 * 继电器（开关）
+* 面包板
+* 杜邦线
+* USB数据线
 
 ### NodeMCU 的管脚图
 ![](/images/2021/smart-light/nodemcu-pin-definition.png)
