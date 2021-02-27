@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "烧录NodeMCU ESP8266固件"
+title:  "基于NodeMCU ESP8266搭建Python开发环境"
 date:   2021-02-21 00:00:00 +0800
 categories: IoT
-tags: [MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL]
+tags: [MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL, upip]
 ---
 
 ## 准备
@@ -105,6 +105,14 @@ webrepl.start()
 >>> pin = Pin(2, Pin.OUT)
 >>> pin = Pin(2, Pin.IN)
 ```
+
+## 安装开发库到开发板
+在串口 REPL 中运行下面的命令就可以安装开发库
+```py
+>>> import upip
+>>> upip.install('micropython-umqtt.simple')
+```
+* [micropython-lib](https://github.com/micropython/micropython-lib)
 
 ## 部署应用到开发板
 ### 下载 [pyboard](https://github.com/micropython/micropython/blob/master/tools/pyboard.py)
