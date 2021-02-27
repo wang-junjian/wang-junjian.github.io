@@ -9,7 +9,7 @@ tags: [Ubuntu, Helm, GPU, docker, nvidia-docker2, kubectl]
 ## 配置NVIDIA GPU节点的Docker
 1. 增加```"default-runtime": "nvidia"```
 ```json
-sudo vim /etc/docker/daemon.json
+$ sudo vim /etc/docker/daemon.json
 {
     "registry-mirrors": ["https://75oltije.mirror.aliyuncs.com"],
     "default-runtime": "nvidia",
