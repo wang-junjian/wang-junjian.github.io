@@ -45,6 +45,7 @@ permalink: /about/
 * [在Ubuntu上安装Docker]({% post_url 2020-10-17-install-docker-on-ubuntu %})
 * [配置Docker镜像源]({% post_url 2020-11-02-configure-docker-mirror-source %})
 * [在Ubuntu上安装nvidia-docker2]({% post_url 2020-10-18-install-nvidia-docker2-on-ubuntu %})
+* [Install NVIDIA device plugin for Kubernetes]({% post_url 2021-02-25-install-nvidia-device-plugin-for-kubernetes %})
 
 ### Kubernetes 集群搭建
 * [Linux系统禁用交换分区]({% post_url 2020-10-31-disable-devices-and-files-for-paging-and-swapping %})
