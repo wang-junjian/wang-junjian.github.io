@@ -162,6 +162,8 @@ gpu-pod   1/1     Running   0          22h   10.46.0.8   gpu1   <none>          
 
 ## 参考资料
 * [NVIDIA device plugin for Kubernetes](https://github.com/NVIDIA/k8s-device-plugin/)
+* [调度 GPUs](https://kubernetes.io/zh/docs/tasks/manage-gpus/scheduling-gpus/)
+* [设备插件](https://kubernetes.io/zh/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/)
 * [Install Kubernetes](https://docs.nvidia.com/datacenter/cloud-native/kubernetes/install-k8s.html)
 * [Supporting Multi-Instance GPUs (MIG) in Kubernetes](https://github.com/NVIDIA/k8s-device-plugin/#deployment-via-helm)
 * [Virtual GPU device plugin for inference workloads in Kubernetes](https://aws.amazon.com/cn/blogs/opensource/virtual-gpu-device-plugin-for-inference-workload-in-kubernetes/)
