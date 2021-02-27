@@ -3,7 +3,7 @@ layout: post
 title:  "烧录NodeMCU ESP8266固件"
 date:   2021-02-21 00:00:00 +0800
 categories: IoT
-tags: [Linux, MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL]
+tags: [MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL]
 ---
 
 ## 准备
