@@ -9,7 +9,7 @@ tags: [MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL, upip]
 ## 准备
 ### 硬件
 * NodeMCU 开发板
-![](/images/2021/nodemcu-esp8266.png)
+![](/images/2021/nodemcu-esp8266.jpg)
 
 * 数据线，一头是 USB-A 接口，另一头是 Micro-USB 接口。
 ![](/images/2021/usb.png)
