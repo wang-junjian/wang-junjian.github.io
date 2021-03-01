@@ -6,7 +6,7 @@ categories: Kubernetes
 tags: [Ubuntu, Helm, GPU, docker, nvidia-docker2, kubectl]
 ---
 
-## 配置NVIDIA GPU节点的Docker
+## 配置每个NVIDIA GPU节点上的Docker
 1. 增加```"default-runtime": "nvidia"```
 ```json
 $ sudo vim /etc/docker/daemon.json
@@ -27,6 +27,21 @@ $ sudo vim /etc/docker/daemon.json
 sudo systemctl restart docker
 ```
 
+## 设置每个节点的污点
+### GPU 节点
+```shell
+kubectl taint node gpu1 nvidia.com/gpu:NoSchedule
+kubectl taint node gpu2 nvidia.com/gpu:NoSchedule
+```
+
+### CPU 节点
+```shell
+kubectl taint node ln2 node-type=production:NoSchedule
+kubectl taint node ln3 node-type=production:NoSchedule
+kubectl taint node ln4 node-type=production:NoSchedule
+kubectl taint node ln5 node-type=production:NoSchedule
+```
+
 ## 安装
 1. 更新Helm仓库
 ```shell
@@ -44,7 +59,7 @@ helm install --generate-name nvdp/nvidia-device-plugin
 ```shell
 $ kubectl get daemonset -n kube-system nvidia-device-plugin-1614240442 
 NAME                              DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
-nvidia-device-plugin-1614240442   6         6         1       6            1           <none>          22h
+nvidia-device-plugin-1614240442   2         2         1       2            1           <none>          22h
 ```
 
 ### 查看Pod
@@ -53,10 +68,6 @@ $ kubectl get pod -n kube-system -o wide | grep nvidia-device-plugin
 NAME                                    READY   STATUS              RESTARTS   AGE     IP              NODE   NOMINATED NODE   READINESS GATES
 nvidia-device-plugin-1614240442-6qz7w   1/1     Running             14         22h     10.46.0.5       gpu1   <none>           <none>
 nvidia-device-plugin-1614240442-wfh6c   0/1     CrashLoopBackOff    273        22h     10.34.0.4       gpu2   <none>           <none>
-nvidia-device-plugin-1614240442-jn8k9   0/1     CrashLoopBackOff    273        22h     10.38.0.13      ln2    <none>           <none>
-nvidia-device-plugin-1614240442-tbjqx   0/1     CrashLoopBackOff    273        22h     10.32.0.14      ln3    <none>           <none>
-nvidia-device-plugin-1614240442-s9brf   0/1     CrashLoopBackOff    273        22h     10.42.0.2       ln4    <none>           <none>
-nvidia-device-plugin-1614240442-wg5tv   0/1     CrashLoopBackOff    273        22h     10.45.0.2       ln5    <none>           <none>
 ```
 
 ### 查看Pod日志
@@ -168,3 +179,6 @@ gpu-pod   1/1     Running   0          22h   10.46.0.8   gpu1   <none>          
 * [Supporting Multi-Instance GPUs (MIG) in Kubernetes](https://github.com/NVIDIA/k8s-device-plugin/#deployment-via-helm)
 * [Virtual GPU device plugin for inference workloads in Kubernetes](https://aws.amazon.com/cn/blogs/opensource/virtual-gpu-device-plugin-for-inference-workload-in-kubernetes/)
 * [kubernetes 1.10 Failed to initialize NVML: could not load NVML library. #60](https://github.com/NVIDIA/k8s-device-plugin/issues/60)
+* [污点和容忍度](https://kubernetes.io/zh/docs/concepts/scheduling-eviction/taint-and-toleration/)
+* [Google Kubernetes Engine (GKE) 用节点污点控制调度](https://cloud.google.com/kubernetes-engine/docs/how-to/node-taints)
+* [从零开始入门 K8s | GPU 管理和 Device Plugin 工作机制](https://developer.aliyun.com/article/742566)
