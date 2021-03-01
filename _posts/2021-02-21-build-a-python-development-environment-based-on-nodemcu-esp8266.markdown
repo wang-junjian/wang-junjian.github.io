@@ -62,7 +62,7 @@ esptool.py --port /dev/cu.usbserial-0001 erase_flash
 
 3. 烧录固件
 ```shell
-esptool.py --port /dev/cu.usbserial-0001 --baud 460800 write_flash --flash_size=detect -fm dio 0 /Users/wjj/Downloads/esp8266-20210202-v1.14.bin
+esptool.py --port /dev/cu.usbserial-0001 --baud 460800 write_flash --flash_size=detect -fm dio 0 esp8266-20210202-v1.14.bin
 ```
 
 ## 验证成功
@@ -121,12 +121,12 @@ wget https://raw.githubusercontent.com/micropython/micropython/master/tools/pybo
 ```
 
 ### 在开发板上运行Python代码
-* 方法1
+* 方法1 使用命令参数
 ```shell
 ./pyboard.py --device /dev/cu.usbserial-0001 -c 'print("Hello World!")'
 ```
 
-* 方法2
+* 方法2 使用环境变量
 ```shell
 export PYBOARD_DEVICE=/dev/cu.usbserial-0001
 ./pyboard.py -c 'print("Hello World!")'
