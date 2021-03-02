@@ -30,47 +30,48 @@ tags: [MicroPython, MQTT, NodeMCU, ESP8266]
 ### 平台使用流程
 ![](/images/2021/smart-light/tencent-iot-00.png)
 
-### 实践
-1. 打开[腾讯云物联网开发平台](https://console.cloud.tencent.com/iotexplorer)
+### ① 登录[腾讯云物联网开发平台](https://console.cloud.tencent.com/iotexplorer)控制台
 ![](/images/2021/smart-light/tencent-iot-01.png)
 
-2. 选择公共实例
+### ② 进入公共实例
 ![](/images/2021/smart-light/tencent-iot-02.png)
 
-3. 新建项目
+### ③ 创建项目、产品
+1. 新建项目
 ![](/images/2021/smart-light/tencent-iot-03.png)
 
-4. 保存
+2. 保存
 ![](/images/2021/smart-light/tencent-iot-04.png)
 
-5. 选择智能家居
+3. 选择智能家居
 ![](/images/2021/smart-light/tencent-iot-05.png)
 
-6. 新建产品
+4. 新建产品
 ![](/images/2021/smart-light/tencent-iot-06.png)
 
-7. 保存
+5. 保存
 ![](/images/2021/smart-light/tencent-iot-07.png)
 
-8. 选择智能电灯
+### ④ 定义数据模板
+进入智能电灯的数据模板
 ![](/images/2021/smart-light/tencent-iot-08.png)
 
-9. 删除不需要的属性
+### ⑥ 交互开发
 ![](/images/2021/smart-light/tencent-iot-09.png)
 
-10. 配置小程序，快速入口配置
+* 配置小程序，快速入口配置
 ![](/images/2021/smart-light/tencent-iot-10.png)
 
-11. 设备调试
+### ⑦ 设备调试
 ![](/images/2021/smart-light/tencent-iot-11.png)
 
-12. 新建设备
+1. 新建设备
 ![](/images/2021/smart-light/tencent-iot-12.png)
 
-13. 设备的详细信息，用于开发的三元组（产品ID、设备名称、设备密钥）
+2. 设备的详细信息，用于开发的三元组（产品ID、设备名称、设备密钥）
 ![](/images/2021/smart-light/tencent-iot-13.png)
 
-14. 新建设备的二维码，可以使用腾讯连连扫描快速增加。
+3. 新建设备的二维码，可以使用腾讯连连扫描快速增加。
 ![](/images/2021/smart-light/tencent-iot-14.png)
 
 ## 软件实现
