@@ -17,6 +17,9 @@ tags: [MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL, upip]
 ### 软件
 * [MicroPython](https://docs.micropython.org/en/latest/)
 
+### PINOUT
+![](/images/2021/nodemcu-esp8266-pinout.jpg)
+
 ## 搭建 MicroPython 开发环境
 ### 安装工具
 1. 安装烧录工具 ```esptool```
