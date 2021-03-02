@@ -53,6 +53,11 @@ permalink: /about/
 * [Kubernetes集群搭建Master节点]({% post_url 2020-11-06-kubernetes-cluster-build-master-node %})
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
 
+### 物联网（IoT）
+* [基于NodeMCU(ESP8266)搭建Python开发环境]({% post_url 2021-02-21-build-a-python-development-environment-based-on-nodemcu-esp8266 %})
+* [基于NodeMCU(ESP32)搭建Python开发环境]({% post_url 2021-02-22-build-a-python-development-environment-based-on-nodemcu-esp32 %})
+* [基于腾讯云物联网开发平台的智能电灯]({% post_url 2021-02-24-smart-electric-lights-based-on-tencent-cloud-iot-development-platform %})
+
 ## 参考资料
 * [How To Control URLs and Links in Jekyll](https://www.digitalocean.com/community/tutorials/how-to-control-urls-and-links-in-jekyll)
 * [justjavac](https://justjavac.com/tags.html)
