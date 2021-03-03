@@ -98,3 +98,4 @@ OSError: [Errno 110] ETIMEDOUT
 * [MicroPython libraries - ubluetooth](http://docs.micropython.org/en/latest/library/ubluetooth.html)
 * [MicroPython libraries - ubluetooth（中文）](https://mpython.readthedocs.io/zh/master/library/micropython/ubluetooth.html)
 * [esp32/bluetooth: commit 126f972 breaks ble.active(True) #6423](https://github.com/micropython/micropython/issues/6423)
+* [ESP32: Internal Details and Pinout](https://www.instructables.com/ESP32-Internal-Details-and-Pinout/)
