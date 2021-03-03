@@ -56,7 +56,9 @@ permalink: /about/
 ### 物联网（IoT）
 * [基于NodeMCU(ESP8266)搭建Python开发环境]({% post_url 2021-02-21-build-a-python-development-environment-based-on-nodemcu-esp8266 %})
 * [基于NodeMCU(ESP32)搭建Python开发环境]({% post_url 2021-02-22-build-a-python-development-environment-based-on-nodemcu-esp32 %})
-* [基于腾讯云物联网开发平台的智能电灯]({% post_url 2021-02-24-smart-electric-lights-based-on-tencent-cloud-iot-development-platform %})
+* [基于腾讯云物联网开发平台的智能电灯]({% post_url 2021-02-23-smart-light-based-on-tencent-cloud-iot-development-platform %})
+* [基于腾讯云物联网开发平台的光照传感器]({% post_url 2021-02-24-light-sensor-based-on-tencent-cloud-iot-development-platform %})
+* [基于腾讯云物联网开发平台的场景联动（智能电灯和光照传感器）]({% post_url 2021-02-26-scene-linkage-based-on-tencent-cloud-iot-development-platform-(smart-lights-and-light-sensors) %})
 
 ## 参考资料
 * [How To Control URLs and Links in Jekyll](https://www.digitalocean.com/community/tutorials/how-to-control-urls-and-links-in-jekyll)
