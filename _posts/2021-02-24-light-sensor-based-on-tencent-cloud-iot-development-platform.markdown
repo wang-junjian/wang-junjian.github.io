@@ -245,6 +245,9 @@ $ ./pyboard.py --device /dev/cu.usbserial-0001 -f cp light.py wifi.py main.py te
 ### 添加成功
 ![](/images/2021/light-sensor/tencent-iot-10.png)
 
+### 查看设备状态
+![](/images/2021/light-sensor/light-sensor-status.jpg)
+
 ## 参考资料
 * [腾讯云物联网开发平台入门](https://cloud.tencent.com/product/iotexplorer/getting-started)
 * [MQTT.fx-目前主流的MQTT桌面客户端](http://mqttfx.jensd.de)
