@@ -349,4 +349,5 @@ cp tencent_mqtt.py :tencent_mqtt.py
 * [MicroPython libraries](http://docs.micropython.org/en/latest/library/index.html)
 * [MicroPython 相关库](http://docs.micropython.01studio.org/zh_CN/latest/library/index.html)
 * [Enable two-way SSL/TLS for EMQ X](https://www.emqx.io/blog/enable-two-way-ssl-for-emqx)
+* [Online UUID Generator](https://www.uuidgenerator.net)
 * [乐鑫信息科技](https://www.espressif.com/zh-hans)
