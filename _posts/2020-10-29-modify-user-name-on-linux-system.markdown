@@ -86,6 +86,12 @@ uid=1005(username) gid=1000(ai) groups=1000(ai),27(sudo),998(docker)
 # mv /home/old_username /home/new_username
 ```
 
+## 删除用户
+-r 删除/home/username
+```shell
+# userdel -rf username
+```
+
 ## 增加组
 ```shell
 # usermod -a -G group_name username
