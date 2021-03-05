@@ -2,9 +2,28 @@
 layout: post
 title:  "Linux Shell 实践"
 date:   2021-01-30 00:00:00 +0800
-categories: Linux 实践
+categories: Linux 实践 快捷键
 tags: [Linux, Shell, if]
 ---
+
+## 快捷键
+* ```Ctrl+r``` 快速查找历史命令
+* ```Ctrl+l``` 清理控制台屏幕
+
+### 移动光标
+* ```Ctrl+a``` 移动光标到行首
+* ```Ctrl+e``` 移动光标到行尾
+* ```Alt+Left Arrow``` 移动光标到上一个单词
+* ```Alt+Right Arrow``` 移动光标到下一个单词
+
+### 删除字符
+* ```Ctrl+u``` 删除光标之前的内容
+* ```Ctrl+k``` 删除光标之后的内容
+* ```Ctrl+w``` 删除光标前面的一个单词
+
+### 进程
+* ```Ctrl+d``` 退出。等同于```exit```命令
+* ```Ctrl+z``` 当前运行的程序后台运行。如果一步到位，可以在命令后面加``` &```
 
 ## 重定向
 * 执行时的错误信息输出到文件(```2>```)
@@ -249,3 +268,4 @@ $ expr 4 + 5
 ## 参考资料
 * [Bash shell find out if a variable has NULL value OR not](https://www.cyberciti.biz/faq/bash-shell-find-out-if-a-variable-has-null-value-or-not/)
 * [Bash For Loop Examples](https://www.cyberciti.biz/faq/bash-for-loop/)
+* [13 Linux Terminal Shortcuts Every Power Linux User Must Know](https://linuxhandbook.com/linux-shortcuts/)
