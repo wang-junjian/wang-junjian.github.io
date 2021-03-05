@@ -2,9 +2,13 @@
 layout: post
 title:  "命令top"
 date:   2021-01-17 00:00:00 +0800
-categories: Linux
+categories: Linux 快捷键
 tags: [Linux, Command, top]
 ---
+
+## 快捷键
+* ```Shift+p``` 按CPU使用率排序
+* ```Shift+m``` 按内存使用率排序
 
 ## 查看指定进程
 ```shell
