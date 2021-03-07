@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "ssh允许使用密码进行root登录"
+title:  "SSH允许使用密码进行root登录"
 date:   2020-11-30 00:00:00 +0800
 categories: Linux
 tags: [Linux, root, ssh, systemctl, service, init.d, sed]
