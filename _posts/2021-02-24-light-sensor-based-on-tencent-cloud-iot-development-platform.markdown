@@ -15,7 +15,7 @@ tags: [MicroPython, MQTT, NodeMCU, ESP8266]
 * USB数据线
 
 ### NodeMCU 的管脚图
-![](/images/2021/smart-light/nodemcu-pin-definition.png)
+![](/images/2021/nodemcu-esp32s-pinout.webp)
 
 ### 电路图
 ![](/images/2021/light-sensor/light-sensor-circuit-diagram.png)
