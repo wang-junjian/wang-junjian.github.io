@@ -3,7 +3,7 @@ layout: post
 title:  "命令find"
 date:   2020-12-29 00:00:00 +0800
 categories: Linux
-tags: [Linux, Command, find, delete]
+tags: [Linux, Command, find, delete, DS_Store]
 ---
 
 ## 查找文件
