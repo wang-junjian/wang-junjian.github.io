@@ -3,7 +3,7 @@ layout: post
 title:  "抽取视频关键帧保存zip文件"
 date:   2021-01-24 00:00:00 +0800
 categories: Linux Shell
-tags: [Linux, Shell, ffmpeg, find, basename, dirname, zip, sed, mkdir, if]
+tags: [Linux, Shell, ffmpeg, find, basename, dirname, zip, sed, mkdir, if, for]
 ---
 
 > 抽取视频的关键帧，保存为zip文件。
