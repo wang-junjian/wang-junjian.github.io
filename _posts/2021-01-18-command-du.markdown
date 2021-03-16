@@ -2,8 +2,8 @@
 layout: post
 title:  "命令du"
 date:   2021-01-18 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, du]
+categories: Command
+tags: [Linux, du]
 ---
 
 ## 查看当前文件夹所有文件占用的空间
