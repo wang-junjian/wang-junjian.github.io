@@ -2,8 +2,8 @@
 layout: post
 title:  "命令history"
 date:   2021-01-02 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, history, source, .bashrc, .bash_profile]
+categories: Command
+tags: [Linux, history, source, .bashrc, .bash_profile]
 ---
 
 ## 操作不记录在历史记录中
