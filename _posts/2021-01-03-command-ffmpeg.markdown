@@ -2,8 +2,8 @@
 layout: post
 title:  "命令ffmpeg"
 date:   2021-01-03 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, ffmpeg, GPU, NVIDIA, for, basename]
+categories: Command
+tags: [Linux, ffmpeg, GPU, NVIDIA, for, basename]
 ---
 
 ## FFmpeg
