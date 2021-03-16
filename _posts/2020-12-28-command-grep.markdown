@@ -2,8 +2,8 @@
 layout: post
 title:  "命令grep"
 date:   2020-12-28 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, grep, ll]
+categories: Command
+tags: [Linux, grep, find, ll]
 ---
 
 ## 搜索文件内容
