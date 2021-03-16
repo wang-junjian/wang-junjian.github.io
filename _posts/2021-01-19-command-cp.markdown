@@ -34,5 +34,5 @@ for i in `ls labels/*/*.txt`; do cp $i datasets/yolo/sign/labels/; done
 ```
 
 ## 参考资料
-* [Cp Command in Linux (Copy Files)](https://linuxize.com/post/cp-command-in-linux/)
+* [cp Command in Linux (Copy Files)](https://linuxize.com/post/cp-command-in-linux/)
 * [HowTo: Use bash For Loop In One Line](https://www.cyberciti.biz/faq/linux-unix-bash-for-loop-one-line-command/)
