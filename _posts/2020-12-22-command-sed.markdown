@@ -2,8 +2,8 @@
 layout: post
 title:  "命令sed"
 date:   2020-12-22 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, sed]
+categories: Command
+tags: [Linux, sed]
 ---
 
 ## sed
