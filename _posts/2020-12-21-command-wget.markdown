@@ -2,8 +2,8 @@
 layout: post
 title:  "命令wget"
 date:   2020-12-21 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, wget, Download]
+categories: Command
+tags: [Linux, wget, Download]
 ---
 
 ## 下载多个文件
