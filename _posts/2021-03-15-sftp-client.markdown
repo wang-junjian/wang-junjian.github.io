@@ -14,3 +14,5 @@ tags: [macOS, SFTP]
 
 ## 参考资料
 * [SSH (Secure Shell)](https://www.ssh.com/ssh/)
+* [SecureCRT](https://www.vandyke.com/products/securecrt/)
+* [Transmit](https://www.panic.com/transmit/)
