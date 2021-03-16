@@ -69,7 +69,9 @@ $ cat /proc/sys/fs/inotify/max_user_watches
 $ sudo sysctl -w fs.inotify.max_user_watches=524288
 fs.inotify.max_user_watches = 524288
 ```
-4. 使用VS Code重新连接远程主机，提示信息消失。
+4. 设置```files.watcherExclude```，排除不需要监测的文件。
+![](/images/2021/vscode-remote/files-watcher-exclude.png)
+5. 使用VS Code重新连接远程主机，提示信息消失。
 
 ## 参考资料
 * [vscode](https://github.com/microsoft/vscode)
