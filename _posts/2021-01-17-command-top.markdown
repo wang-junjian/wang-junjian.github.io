@@ -2,8 +2,8 @@
 layout: post
 title:  "命令top"
 date:   2021-01-17 00:00:00 +0800
-categories: Linux 快捷键
-tags: [Linux, Command, top]
+categories: Command 快捷键
+tags: [Linux, top]
 ---
 
 ## 快捷键
