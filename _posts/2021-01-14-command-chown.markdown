@@ -2,8 +2,8 @@
 layout: post
 title:  "命令chown"
 date:   2021-01-14 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, chown]
+categories: Command
+tags: [Linux, chown]
 ---
 
 > 更改文件所有者和组
