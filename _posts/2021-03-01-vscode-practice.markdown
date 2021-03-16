@@ -14,6 +14,10 @@ tags: [vscode]
 * 多列选择 ```Option+Shift```，按住鼠标左键拖动
 * 多选 ```Option```，按住鼠标左键拖动
 
+## 转到
+* 转到行号 ```Ctrl+g```
+* 转到文件 ```Command+p```
+
 ## 窗口
 * 显示|隐藏Side Bar ```Command+b```
 * 显示|隐藏Terminal Ctrl+`
@@ -21,5 +25,14 @@ tags: [vscode]
 * 多个VS Code实例切换 Command+`
 * 一个VS Code实例中多个窗口切换 ```Ctrl+Tab```
 
+## 场景
+### 当有一堆图片使用键盘进行快速浏览
+1. 按 ```Command+Shift+e``` 打开资源管理器。
+2. 使用键盘的上下箭头键选择要浏览的文件。
+3. 按 ```Space```(filesExplorer.openFilePreserveFocus) 打开文件保留焦点。
+
 ## 参考资料
 * [vscode](https://github.com/microsoft/vscode)
+* [Visual Studio Code Keyboard shortcuts for macOS](https://code.visualstudio.com/shortcuts/keyboard-shortcuts-macos.pdf)
+* [122 Shortcuts for Visual Studio Code](https://shortcutworld.com/VSCode/win/Visual-Studio-Code_Shortcuts)
+* [使用 VSCode 打造一站式全平台开发体验](https://www.zhihu.com/search?type=content&q=vscode%20files.watcherExclude)
