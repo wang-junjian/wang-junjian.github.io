@@ -181,4 +181,4 @@ gpu-pod   1/1     Running   0          22h   10.46.0.8   gpu1   <none>          
 * [kubernetes 1.10 Failed to initialize NVML: could not load NVML library. #60](https://github.com/NVIDIA/k8s-device-plugin/issues/60)
 * [污点和容忍度](https://kubernetes.io/zh/docs/concepts/scheduling-eviction/taint-and-toleration/)
 * [Google Kubernetes Engine (GKE) 用节点污点控制调度](https://cloud.google.com/kubernetes-engine/docs/how-to/node-taints)
-* [从零开始入门 K8s | GPU 管理和 Device Plugin 工作机制](https://developer.aliyun.com/article/742566)
+* [从零开始入门 K8s GPU 管理和 Device Plugin 工作机制](https://developer.aliyun.com/article/742566)
