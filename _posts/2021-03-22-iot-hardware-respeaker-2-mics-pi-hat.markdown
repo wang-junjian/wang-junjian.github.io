@@ -30,6 +30,9 @@ ReSpeaker 2-Mics Pi HAT是专为AI和语音应用设计的Raspberry Pi双麦克�
 ![](/images/2021/hardware/respeaker2-mics-pi-hat2.jpg)
 
 ## 配置
+```shell
+$ sudo raspi-config
+```
 ### 打开 I2C
 - 3 Interface Options Configure connections to peripherals
 - P5 I2C Enable/disable automatic loading of I2C kernel module
