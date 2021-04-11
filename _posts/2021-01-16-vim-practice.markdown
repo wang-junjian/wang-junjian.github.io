@@ -69,6 +69,8 @@ tags: [Linux, vim]
         * ```3yy``` 复制3行
 
 * ```x``` 删除当前字符
+* ```dw``` 删除光标所在字符到单词的末尾
+* ```diw``` 删除光标所在的整个单词
 * ```:1,$d``` 删除所有行（1第一行开始，$直到文件末尾，d删除）
 
 
@@ -152,3 +154,4 @@ tags: [Linux, vim]
 * [20+ vi and vim editor tutorials](http://alvinalexander.com/linux/vi-vim-editor-tutorials-collection/)
 * [VIM and Python – A Match Made in Heaven](https://realpython.com/vim-and-python-a-match-made-in-heaven/)
 * [Vim: How to insert in visual block mode?](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode)
+* [Deleting Words in Vim](https://til.hashrocket.com/posts/fbfwnjxgtd-deleting-words-in-vim)
