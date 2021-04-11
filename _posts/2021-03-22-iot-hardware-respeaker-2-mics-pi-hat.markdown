@@ -152,3 +152,4 @@ $ python pixels.py
 * [Snowboy Hotword Detection](https://github.com/kitt-ai/snowboy)
 * [GPIO](https://www.raspberrypi.org/documentation/usage/gpio/README.md)
 * [A Python module to control the GPIO on a Raspberry Pi](https://sourceforge.net/p/raspberry-gpio-python/wiki/BasicUsage/)
+* [树莓派用HDMI连接电视显示"无信号"问题](https://www.jianshu.com/p/c022c6f28c3a)
