@@ -4,7 +4,6 @@ title: 类别
 permalink: /categories/
 ---
 
-
 {% for category in site.categories %} 
   <h2 id="{{ category[0] }}">{{ category[0] | join: "/" }} <span>[{{ category[1].size }}]</span></h2>
   <ul>
