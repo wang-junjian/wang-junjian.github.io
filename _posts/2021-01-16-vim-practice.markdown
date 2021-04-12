@@ -148,6 +148,16 @@ tags: [Linux, vim]
 :set noignorecase
 ```
 
+## 工具
+### 比较两个文件的内容
+```shell
+vim -d file1 file2
+```
+
+```shell
+vimdiff file1 file2
+```
+
 ---
 
 ## 参考资料
