@@ -30,7 +30,7 @@ tags: [thonny]
 
 ![](/images/2021/software/thonny-open-from-micropython-device.png)
 
-### 3. 编写代码
+### 3. 开发
 在编辑器中修改代码，可以保存回 MicroPython 设备。如果需要即时解释执行 Python 语句，只需要在下面的 Shell 窗口输入即可。
 
 ![](/images/2021/software/thonny-edit-file.png)
