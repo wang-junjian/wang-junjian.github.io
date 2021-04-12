@@ -138,6 +138,7 @@ if __name__ == '__main__':
 VCC 电源高电平，GND 是地的意思，就是整个电路中的参考电位，大部分情况下，电路中的参考电位和地球大地是一样的，就叫GND了。
 
 ## 参考资料
+* [Desktop NeoPixel Clock](http://www.whatimade.today/desktop-neopixel-clock/)
 * [WS2812B 智能外控集成 LED 光源](http://www.mateksys.com/Downloads/WS2812B_cn.pdf)
 * [NeoPixel](https://microbit-micropython.readthedocs.io/en/latest/neopixel.html)
 * [Controlling NeoPixels](https://docs.micropython.org/en/latest/esp8266/tutorial/neopixel.html)
