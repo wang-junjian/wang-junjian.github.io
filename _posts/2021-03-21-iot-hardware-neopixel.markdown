@@ -6,9 +6,13 @@ categories: IoT Hardware
 tags: [MicroPython, NodeMCU, ESP32, NeoPixel]
 ---
 
+![](/images/2021/hardware/ws2812b.jpg)
+
+WS2812B 灯带 一个集控制电路与发光电路于一体的智能外控LED光源。可单独寻址数字 LED 灯。 每个像素都有自己的颜色和亮度。 您可以单独控制它们,并将其设置成任何颜色。 256 灰色级别可调节和 16777216 彩色 24 位全彩显示。
+
 ## 硬件清单
 * NodeMCU ESP32
-* WS2812B 灯带 一个集控制电路与发光电路于一体的智能外控LED光源。
+* WS2812B 灯带
 * 面包板
 * 3条杜邦线
 * USB数据线
