@@ -18,6 +18,9 @@ tags: [vscode]
 * 转到行号 ```Ctrl+g```
 * 转到文件 ```Command+p```
 
+## 视图
+* 自动换行 ```Option+z```
+
 ## 窗口
 * 显示或隐藏Side Bar ```Command+b```
 * 显示或隐藏Terminal Ctrl+`
