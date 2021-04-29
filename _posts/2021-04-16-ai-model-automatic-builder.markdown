@@ -32,6 +32,10 @@ DIR_MODELS=models
 if [ -z $1 ]
 then
   echo "Usage: "
+  echo "Environment variable："
+  echo "    MODEL_SERVER_USERNAME Default: username"
+  echo "    MODEL_SERVER_IP       Default: ip"
+  echo ""
   echo "docker run --rm -v /home/ai/models/sign.yaml:/app/config.yaml \\"
   echo "                -v /home/ai/models/sign.onnx:/app/model.onnx \\"
   echo "                lnsoft.com/library/model-builder:latest model-name"
@@ -74,11 +78,21 @@ sed -i "s|model_file.*$|model_file: '$FILE_MODEL'|g" $DIR_MODELS$FILE_CONFIG
 tar czvf $TAR_FILE $DIR_MODELS
 
 # 上传到模型服务器
-MODEL_SERVER_PATH=ai@hostname:/models
+if [ -z $MODEL_SERVER_USERNAME ]
+then
+    MODEL_SERVER_USERNAME=username
+fi
+
+if [ -z $MODEL_SERVER_IP ]
+then
+    MODEL_SERVER_IP=ip
+fi
+
+MODEL_SERVER_PATH=$MODEL_SERVER_USERNAME@$MODEL_SERVER_IP:/data/models
 scp $TAR_FILE $MODEL_SERVER_PATH
 scp $TAR_FILE $MODEL_SERVER_PATH/$TAR_FILE2
 
-echo "Model Path: http://hostname/models/$TAR_FILE"
+echo "Model Path: http://$MODEL_SERVER_IP/models/$TAR_FILE"
 
 rm -rf $DIR_MODELS $TAR_FILE
 ```
@@ -167,6 +181,13 @@ ENTRYPOINT [ "./main.sh" ]
 ## 构建 model-builder 镜像
 ```shell
 docker build -t lnsoft.com/library/model-builder .
+```
+
+## 模型打包发布
+```shell
+docker run --rm -v /home/ai/models/sign.yaml:/app/config.yaml \
+                -v /home/ai/models/sign.onnx:/app/model.onnx \
+                lnsoft.com/library/model-builder:latest model-name
 ```
 
 ## 参考资料
