@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "AI 模型自动构建器"
+title:  "AI 模型打包发布工具"
 date:   2021-04-16 00:00:00 +0800
 categories: AI Docker
 tags: [Shell, Dockerfile, if, sed, tar, scp, ssh]
@@ -8,7 +8,7 @@ tags: [Shell, Dockerfile, if, sed, tar, scp, ssh]
 
 ## 工程目录
 ```
-model-builder/
+model-package-release/
 ├── Dockerfile
 ├── Dockerfile.ubuntu
 ├── main.sh
@@ -38,7 +38,7 @@ then
   echo ""
   echo "docker run --rm -v /home/ai/models/sign.yaml:/app/config.yaml \\"
   echo "                -v /home/ai/models/sign.onnx:/app/model.onnx \\"
-  echo "                lnsoft.com/library/model-builder:latest model-name"
+  echo "                gouchicao.com/library/model-package-release:latest model-name"
   echo ""
   echo "Missing name parameter."
   exit 1
@@ -104,8 +104,8 @@ Generating public/private rsa key pair.
 Enter file in which to save the key (/home/wjj/.ssh/id_rsa): .ssh
 Enter passphrase (empty for no passphrase): 
 Enter same passphrase again: 
-Your identification has been saved in /home/wjj/model-builder/.ssh/id_rsa
-Your public key has been saved in /home/wjj/model-builder/.ssh/id_rsa.pub
+Your identification has been saved in /home/wjj/model-package-release/.ssh/id_rsa
+Your public key has been saved in /home/wjj/model-package-release/.ssh/id_rsa.pub
 The key fingerprint is:
 SHA256:rnyFfHM0VgPOzwrebeu9Wx5twYm0gMXmHjyMKJjrsYk wjj@gpu
 The key's randomart image is:
@@ -157,12 +157,12 @@ ENV DEBIAN_FRONTEND=
 
 ## 构建 Ubuntu20.04 镜像
 ```shell
-docker build -t lnsoft.com/library/ubuntu:20.04 -f Dockerfile.ubuntu .
+docker build -t gouchicao.com/library/ubuntu:20.04 -f Dockerfile.ubuntu .
 ```
 
 ## Dockerfile 构建模型生成器
 ```dockerfile
-FROM lnsoft.com/library/ubuntu:20.04
+FROM gouchicao.com/library/ubuntu:20.04
 LABEL maintainer="wang-junjian@qq.com"
 
 # 安装 scp
@@ -178,16 +178,16 @@ RUN chmod +x main.sh
 ENTRYPOINT [ "./main.sh" ]
 ```
 
-## 构建 model-builder 镜像
+## 构建 model-package-release 镜像
 ```shell
-docker build -t lnsoft.com/library/model-builder .
+docker build -t gouchicao.com/library/model-package-release .
 ```
 
 ## 模型打包发布
 ```shell
 docker run --rm -v /home/ai/models/sign.yaml:/app/config.yaml \
                 -v /home/ai/models/sign.onnx:/app/model.onnx \
-                lnsoft.com/library/model-builder:latest model-name
+                gouchicao.com/library/model-package-release:latest model-name
 ```
 
 ## 参考资料
