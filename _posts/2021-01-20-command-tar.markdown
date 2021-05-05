@@ -50,9 +50,15 @@ tar xzvf filename.tgz
 tar xjvf filename.tbz2
 ```
 
-### 解包到指定目录(目录需要是存在的)
+### 解包到指定目录
+* 方法一（目录需要是存在的）
 ```shell
 tar xf filename.tar -C dir
+```
+
+* 方法二
+```shell
+tar xf filename.tar --one-top-level=dir
 ```
 
 ## 查看包里的文件
