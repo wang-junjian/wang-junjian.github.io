@@ -190,6 +190,37 @@ docker run --rm -v /home/ai/models/sign.yaml:/app/config.yaml \
                 gouchicao.com/library/model-package-release:latest model-name
 ```
 
+## 使用 Docker-Compose 发布
+### docker-compose.yml
+```shell
+version: '3'
+services:
+  model_package_release:
+    image: 'gouchicao.com/library/model-package-release:latest'
+    command: ['${MODEL_NAME}']
+    volumes:
+       - ${MODEL_CONFIG}:/app/config.yaml
+       - ${MODEL_FILE}:/app/model.onnx
+```
+
+### .env
+```shell
+MODEL_NAME=test
+MODEL_CONFIG=./config.yaml
+MODEL_FILE=./model.onnx
+```
+
+### 运行
+* 默认从 .env 中读取环境变量
+```shell
+docker-compose run --rm model_package_release
+```
+
+* 指定环境变量文件
+```shell
+docker-compose --env-file .env-test run --rm model_package_release
+```
+
 ## 参考资料
 * [How can I add a help method to a shell script?](https://stackoverflow.com/questions/5474732/how-can-i-add-a-help-method-to-a-shell-script)
 * [YYYY-MM-DD format date in shell script](https://stackoverflow.com/questions/1401482/yyyy-mm-dd-format-date-in-shell-script)
