@@ -3,7 +3,7 @@ layout: post
 title:  "AI 模型打包发布"
 date:   2021-04-16 00:00:00 +0800
 categories: AI Docker
-tags: [Shell, Dockerfile, if, sed, tar, scp, ssh]
+tags: [Shell, Dockerfile, if, sed, tar, scp, ssh, docker-compose]
 ---
 
 ## 工程目录
@@ -184,14 +184,20 @@ docker build -t gouchicao.com/library/model-package-release .
 ```
 
 ## 模型打包发布
+### Docker
 ```shell
 docker run --rm -v /home/ai/models/sign.yaml:/app/config.yaml \
                 -v /home/ai/models/sign.onnx:/app/model.onnx \
                 gouchicao.com/library/model-package-release:latest model-name
 ```
 
-## 使用 Docker-Compose 发布
-### docker-compose.yml
+### Docker-Compose
+#### 安装
+```shell
+sudo apt install docker-compose
+```
+
+#### docker-compose.yml
 ```shell
 version: '3'
 services:
@@ -203,14 +209,15 @@ services:
        - ${MODEL_FILE}:/app/model.onnx
 ```
 
-### .env
+#### 环境变量
+编辑文件 .env
 ```shell
 MODEL_NAME=test
 MODEL_CONFIG=./config.yaml
 MODEL_FILE=./model.onnx
 ```
 
-### 运行
+运行
 * 默认从 .env 中读取环境变量
 ```shell
 docker-compose run --rm model_package_release
@@ -221,8 +228,17 @@ docker-compose run --rm model_package_release
 docker-compose --env-file .env-test run --rm model_package_release
 ```
 
+通过导出 Shell 环境变量可以替代 .env 文件中定义的环境变量
+```shell
+export MODEL_NAME=TEST
+docker-compose run --rm model_package_release
+```
+
 ## 参考资料
 * [How can I add a help method to a shell script?](https://stackoverflow.com/questions/5474732/how-can-i-add-a-help-method-to-a-shell-script)
 * [YYYY-MM-DD format date in shell script](https://stackoverflow.com/questions/1401482/yyyy-mm-dd-format-date-in-shell-script)
 * [Using Variables with Sed in Bash](https://www.brianchildress.co/using-variables-with-sed/)
 * [How to Check if a File or Directory Exists in Bash](https://linuxize.com/post/bash-check-if-file-exists/)
+* [Environment variables in Compose](https://docs.docker.com/compose/environment-variables/)
+* [Compose file version 3 reference](https://docs.docker.com/compose/compose-file/compose-file-v3/)
+* [docker-compose run](https://docs.docker.com/compose/reference/run/)
