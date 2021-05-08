@@ -138,7 +138,7 @@ mkdir /home/ai/.ssh
 scp .ssh/id_rsa.pub ai@hostname:/home/ai/.ssh/authorized_keys
 ```
 
-## 生成授权文件 known_hosts
+## 启动基容器，在里面使用 ssh 连接模型服务器，生成授权文件 known_hosts。
 
 ## Dockerfile.ubuntu 构建自己的 Ubuntu20.04
 ```dockerfile
