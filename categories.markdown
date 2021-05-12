@@ -5,6 +5,10 @@ permalink: /categories/
 ---
 
 {% for category in site.categories %} 
+  <td><a href="#{{ category[0] }}" style="font-size:{{ category[1].size | plus:12}}px;">{{ category[0] | join: "/" }} &nbsp;</a></td>
+{% endfor %}
+
+{% for category in site.categories %} 
   <h2 id="{{ category[0] }}">{{ category[0] | join: "/" }} <span>[{{ category[1].size }}]</span></h2>
   <ul>
     {% assign pages_list = category[1] %}  
