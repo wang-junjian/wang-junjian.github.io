@@ -5,6 +5,10 @@ permalink: /tags/
 ---
 
 {% for tag in site.tags %} 
+  <td><a href="#{{ tag[0] }}" style="font-size:{{ tag[1].size | plus:12}}px;">{{ tag[0] | join: "/" }} &nbsp;</a></td>
+{% endfor %}
+
+{% for tag in site.tags %} 
   <h2 id="{{ tag[0] }}">{{ tag[0] | join: "/" }} <span>[{{ tag[1].size }}]</span></h2>
   <ul>
     {% assign pages_list = tag[1] %}  
