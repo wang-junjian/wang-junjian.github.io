@@ -63,6 +63,8 @@ permalink: /about/
 ## 参考资料
 * [How To Control URLs and Links in Jekyll](https://www.digitalocean.com/community/tutorials/how-to-control-urls-and-links-in-jekyll)
 * [justjavac](https://justjavac.com/tags.html)
+* [3 Simple steps to setup Jekyll Categories and Tags](https://blog.webjeda.com/jekyll-categories/)
+* [Liquid](https://shopify.github.io/liquid/)
 ---
 
 This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](https://jekyllrb.com/)
