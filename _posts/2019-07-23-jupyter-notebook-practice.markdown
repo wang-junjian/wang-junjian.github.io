@@ -14,7 +14,7 @@ tags: [Jupyter, JupyterHub]
 ## 云端环境
 ### Binder
 * [Binder](https://gke.mybinder.org)
-  - [例子](https://mybinder.org/v2/gh/binder-examples/python2_with_3/master?filepath=index3.ipynb)
+  - [例子](https://mybinder.org/v2/gh/gouchicao/python-practice/master)
 * [Binder 文档](https://mybinder.readthedocs.io/en/latest/index.html)
 
 ### Google Colab
@@ -346,6 +346,7 @@ timeit('list([1, 2, 3, 4, 5, 6])', number=1000000)
 ```
 
 ## 参考资料
+* [Python实践](https://github.com/gouchicao/python-practice)
 * [Python官方文档](https://www.python.org/doc/)
 * [cpython源代码](https://github.com/python/cpython)
 * [关于Jupyter Notebook的28个技巧](https://zhuanlan.zhihu.com/p/32600329)
