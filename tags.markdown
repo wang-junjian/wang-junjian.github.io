@@ -5,7 +5,7 @@ permalink: /tags/
 ---
 
 {% for tag in site.tags %} 
-  <td><a href="#{{ tag[0] }}" style="font-size:{{ tag[1].size | plus:12}}px;">{{ tag[0] | join: "/" }} &nbsp;</a></td>
+  <td><a href="#{{ tag[0] }}" style="font-size:{{ tag[1].size | plus:12}}px;">{{ tag[0] | join: "/" }}</a>&nbsp;</td>
 {% endfor %}
 
 {% for tag in site.tags %} 
