@@ -5,7 +5,7 @@ permalink: /categories/
 ---
 
 {% for category in site.categories %} 
-  <td><a href="#{{ category[0] }}" style="font-size:{{ category[1].size | plus:12}}px;">{{ category[0] | join: "/" }} &nbsp;</a></td>
+  <td><a href="#{{ category[0] }}" style="font-size:{{ category[1].size | plus:12}}px;">{{ category[0] | join: "/" }}</a>&nbsp;</td>
 {% endfor %}
 
 {% for category in site.categories %} 
