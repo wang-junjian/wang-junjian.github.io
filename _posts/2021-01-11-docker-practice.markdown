@@ -3,7 +3,7 @@ layout: post
 title:  "Docker实践"
 date:   2021-01-11 00:00:00 +0800
 categories: Docker 实践
-tags: [Docker, GPU]
+tags: [Docker, GPU, none]
 ---
 
 ## 指定显卡(NVIDIA_VISIBLE_DEVICES)
@@ -17,6 +17,7 @@ docker run --runtime=nvidia -d gouchicao/yolov5:train
 ```
 
 ## 重启策略(--restart)
+### 方法
 1. 启动容器时通过参数指定
 ```shell
 #如果容器停止总是重新启动。如果手动停止，则仅在Docker守护程序重启或手动重启容器本身时才重启。 
@@ -31,7 +32,7 @@ docker run -d --name pypiserver -p 8080:8080 \
 docker update --restart=always pypiserver
 ```
 
-* 验证
+### 验证
 ```shell
 #重启Docker Daemon
 systemctl restart docker
@@ -49,7 +50,7 @@ docker run --rm busybox:latest
 docker rm -f $(docker ps -a | grep face-service- | awk '{print $1}')
 ```
 
-## 删除 <none> TAG 镜像
+## 删除 TAG 为 none 的所有镜像
 ```shell
 docker rmi --force $(docker images -q --filter "dangling=true")
 ```
@@ -62,4 +63,4 @@ docker build --no-cache -t name:tag .
 ## 参考资料
 * [nvidia-docker2.0 GPU 隔离](https://ld246.com/article/1511781062916)
 * [Start containers automatically](https://docs.docker.com/config/containers/start-containers-automatically/)
-* [Docker remove <none> TAG images](docker rmi --force $(docker images -q --filter "dangling=true"))
+* [Docker remove none TAG images](https://stackoverflow.com/questions/33913020/docker-remove-none-tag-images)
