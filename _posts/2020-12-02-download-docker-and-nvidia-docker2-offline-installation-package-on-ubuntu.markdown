@@ -3,7 +3,7 @@ layout: post
 title:  "在Ubuntu上下载docker和nvidia-docker2离线安装包"
 date:   2020-12-02 00:00:00 +0800
 categories: Docker
-tags: [Ubuntu, docker, nvidia-docker2, offline]
+tags: [Ubuntu, Docker, nvidia-docker2, offline]
 ---
 
 ## 选择要依赖的操作系统
