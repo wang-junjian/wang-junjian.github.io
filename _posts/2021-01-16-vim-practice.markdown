@@ -57,8 +57,12 @@ tags: [Linux, vim]
 * 选择
     * ```v``` 进入字符可视
         * ```w``` 选择下一个单词
+        * ```0``` 选择到行首
+        * ```$``` 选择到行尾
     * ```y``` 复制选择的字符
     * ```c``` 剪切选择的字符
+    * ```d``` 删除选择的字符
+    * ```x``` 删除选择的字符
 * ```p``` 粘贴
 
 * 当前行
@@ -68,10 +72,14 @@ tags: [Linux, vim]
     * ```yy``` 复制当前行
         * ```3yy``` 复制3行
 
-* ```x``` 删除当前字符
-* ```dw``` 删除光标所在字符到单词的末尾
-* ```diw``` 删除光标所在的整个单词
-* ```:1,$d``` 删除所有行（1第一行开始，$直到文件末尾，d删除）
+* 删除
+    * ```x``` 删除当前字符
+    * ```:1,$d``` 删除所有行（1第一行开始，$直到文件末尾，d删除）
+    * ```dw``` 删除光标所在字符到单词的末尾
+    * ```diw``` 删除光标所在的整个单词
+    * ```d0``` 删除光标所在字符到行首
+    * ```d$``` 删除光标所在字符到行尾
+    * ```dG``` 删除光标所在行到文件末尾
 
 
 ## 导航
@@ -165,3 +173,4 @@ vimdiff file1 file2
 * [VIM and Python – A Match Made in Heaven](https://realpython.com/vim-and-python-a-match-made-in-heaven/)
 * [Vim: How to insert in visual block mode?](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode)
 * [Deleting Words in Vim](https://til.hashrocket.com/posts/fbfwnjxgtd-deleting-words-in-vim)
+* [How to select/delete until end of file in vim/gvim?](https://unix.stackexchange.com/questions/13904/how-to-select-delete-until-end-of-file-in-vim-gvim)
