@@ -11,7 +11,7 @@ tags: [GitHub, curl, hosts]
 ## 在路径上增加 ```.cnpmjs.org```
 正常下载：```git clone https://github.com/microsoft/onnxruntime.git```
 
-加速下载：```git clone https://github.com.cnpmjs/microsoft/onnxruntime.git```
+加速下载：```git clone https://github.com.cnpmjs.org/microsoft/onnxruntime.git```
 
 ## 查找当前位置距离最快的 GitHub IP
 ### 运行测速脚本 [gh-check](https://gist.github.com/lilydjwg/93d33ed04547e1b9f7a86b64ef2ed058)
