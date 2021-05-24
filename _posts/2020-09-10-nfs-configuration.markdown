@@ -55,9 +55,18 @@ sudo systemctl restart nfs-server
 sudo apt install nfs-common
 ```
 
+* 查看NFS服务器导出列表
+```shell
+showmount -e 172.16.33.157
+```
+```shell
+Export list for 172.16.33.157:
+/data/nfs 172.16.33.0/24,172.16.128.164
+```
+
 * 挂载NFS
 ```shell
-sudo mount -t nfs 172.16.33.44:/ $(pwd)/nfs
+sudo mount -t nfs 172.16.33.157:/ $(pwd)/nfs
 ```
 
 * 移除挂载
