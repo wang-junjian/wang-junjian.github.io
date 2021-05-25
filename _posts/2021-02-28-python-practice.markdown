@@ -443,6 +443,117 @@ python3
 ### ```__init__.py```
 在 Python 2 的规范中，需要在模块所在的文件夹新建一个 ```__init__.py```，内容可以为空，也可以用来表述包对外暴露的模块接口。在 Python 3 规范中，```__init__.py``` 并不是必须的。
 
+## 协程
+* import asyncio 实现协程所需工具
+* async 声明异步函数。调用异步函数，便可得到一个协程对象（coroutine object）。
+* asyncio.run(main()) 作为主程序的入口函数，在程序运行周期内，只调用一次 asyncio.run。
+* asyncio.create_task 创建任务，进入事件循环等待运行。
+* await asyncio.gather(*tasks) 等待所有任务完成。
+
+```py
+import asyncio
+import time
+
+
+async def sleep(id, second):
+    print(f'id: {id} sleep {second}.')
+    await asyncio.sleep(second)
+    print(f'id: {id} end.')
+
+
+async def main(seconds):
+    tasks = [asyncio.create_task(sleep(id, second)) for id, second in enumerate(seconds)]
+    await asyncio.gather(*tasks)
+
+
+begin = time.time()
+asyncio.run(main([1, 2, 3, 4]))
+use_time = time.time()-begin
+print(f'Use time: {use_time:.4f}!')
+```
+```
+id: 0 sleep 1.
+id: 1 sleep 2.
+id: 2 sleep 3.
+id: 3 sleep 4.
+id: 0 end.
+id: 1 end.
+id: 2 end.
+id: 3 end.
+Use time: 4.0030!
+```
+
+通过执行下面的代码来了解相关的异步函数的执行流程。
+```py
+import asyncio
+
+async def worker_1():
+    print('* worker_1 start')
+    await asyncio.sleep(1)
+    print('* worker_1 done')
+
+async def worker_2():
+    print('- worker_2 start')
+    await asyncio.sleep(2)
+    print('- worker_2 done')
+
+async def main():
+    task1 = asyncio.create_task(worker_1())
+    task2 = asyncio.create_task(worker_2())
+
+    await asyncio.sleep(3)
+
+    print('before await')
+    await task1
+    print('awaited worker_1')
+    await task2
+    print('awaited worker_2')
+
+asyncio.run(main())
+```
+```
+* worker_1 start
+- worker_2 start
+* worker_1 done
+- worker_2 done
+before await
+awaited worker_1
+awaited worker_2
+```
+
+return_exceptions=True，如果不设置这个参数，就会抛出（throw）异常，从而需要捕捉（try except），这就意味着其它还没被执行的任务会被全部取消掉。
+```py
+import asyncio
+
+async def worker_1():
+    print('* worker_1 start')
+    await asyncio.sleep(1)
+    print('* worker_1 done')
+
+async def worker_2():
+    print('- worker_2 start')
+    await asyncio.sleep(2)
+    print('- worker_2 done')
+
+async def main():
+    task1 = asyncio.create_task(worker_1())
+    task2 = asyncio.create_task(worker_2())
+
+    await asyncio.sleep(0.5)
+    task2.cancel()
+
+    res = await asyncio.gather(task1, task2, return_exceptions=True)
+    print(res)
+
+asyncio.run(main())
+```
+```
+* worker_1 start
+- worker_2 start
+* worker_1 done
+[None, CancelledError()]
+```
+
 ## 工程
 ### 配置项目的根路径
 在一个 Virtual Environment 里，在 activate 文件的末尾配置 PYTHONHOME。
