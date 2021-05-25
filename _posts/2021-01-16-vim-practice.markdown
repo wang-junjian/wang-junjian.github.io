@@ -50,6 +50,18 @@ tags: [Linux, vim]
     * ```:!ls -l``` 查看当前目录列表
     * ```:!ifconfig``` 查看本地IP地址
 
+### 多文件
+* 浏览（explore）当前目录
+    * ```:E```
+    * ```:e .```
+* ```:e filename``` 浏览文件filename
+* ```:ls``` 列出当前打开过的文件，浏览过的文件都会放在缓存中。
+* ```:bd``` 缓存（buffer）删除（delete），删除之前打开过的文件列表。
+* ```:bn``` 打开缓存ID对应的文件。
+    * ```:b1```
+    * ```:b2```
+* ```Ctrl+o``` 切换上一次打开的文件。
+
 ## 编辑
 * ```u``` 撤消（Undo）
 * ```Ctrl+r``` 恢复（Redo）
@@ -174,3 +186,5 @@ vimdiff file1 file2
 * [Vim: How to insert in visual block mode?](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode)
 * [Deleting Words in Vim](https://til.hashrocket.com/posts/fbfwnjxgtd-deleting-words-in-vim)
 * [How to select/delete until end of file in vim/gvim?](https://unix.stackexchange.com/questions/13904/how-to-select-delete-until-end-of-file-in-vim-gvim)
+* [How to switch to the directory listing from file view in vim?](https://unix.stackexchange.com/questions/52179/how-to-switch-to-the-directory-listing-from-file-view-in-vim/52189)
+* [Linux vi/vim多标签和多窗口, Tab页浏览目录, 多Tab页编辑](https://justcode.ikeepstudying.com/2018/03/linux-vi-vim多标签和多窗口-tab页浏览目录-多tab页编辑/)
