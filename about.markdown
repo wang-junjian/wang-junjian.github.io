@@ -6,6 +6,7 @@ permalink: /about/
 
 ## 基础技术
 ### Docker
+* [容器内幕]({% post_url 2021-04-01-inside-the-container %})
 * [在Ubuntu上安装Docker]({% post_url 2020-10-17-install-docker-on-ubuntu %})
 * [配置Docker镜像源]({% post_url 2020-11-02-configure-docker-mirror-source %})
 * [在Ubuntu上安装nvidia-docker2]({% post_url 2020-10-18-install-nvidia-docker2-on-ubuntu %})
@@ -53,7 +54,9 @@ permalink: /about/
 * [Kubernetes集群搭建Master节点]({% post_url 2020-11-06-kubernetes-cluster-build-master-node %})
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
 
-### 物联网（IoT）
+## 物联网（IoT）
+* [Thonny Python IDE]({% post_url 2021-04-12-thonny-python-ide %})
+* [Fritzing 开源电子设计自动化软件]({% post_url 2021-04-12-fritzing %})
 * [基于NodeMCU(ESP8266)搭建Python开发环境]({% post_url 2021-02-21-build-a-python-development-environment-based-on-nodemcu-esp8266 %})
 * [基于NodeMCU(ESP32)搭建Python开发环境]({% post_url 2021-02-22-build-a-python-development-environment-based-on-nodemcu-esp32 %})
 * [基于腾讯云物联网开发平台的智能电灯]({% post_url 2021-02-23-smart-light-based-on-tencent-cloud-iot-development-platform %})
