@@ -49,7 +49,7 @@ backend backendnodes
     stats uri /admin?stats
 ```
 
-### 运行 hello-world 容器，生成两个实例。
+### 运行 [hello-world](https://github.com/wang-junjian/docker-hello-world) 容器，生成两个实例。
 ```bash
 docker run --rm -p 8001:80 --name APP1 --env NAME=APP1 vwarship/hello-world:latest
 docker run --rm -p 8002:80 --name APP2 --env NAME=APP2 vwarship/hello-world:latest
