@@ -3,7 +3,7 @@ layout: post
 title:  "Linux Shell 实践"
 date:   2021-01-30 00:00:00 +0800
 categories: Linux 实践 快捷键
-tags: [Linux, Shell, if]
+tags: [Linux, Shell, if, for]
 ---
 
 ## 快捷键
@@ -265,7 +265,36 @@ $ expr 4 + 5
 9
 ```
 
+## 表达式
+### 序列表达式 {START..END[..INCREMENT]}
+```shell
+$ echo {1..3}
+1 2 3
+$ echo {1..5..2}
+1 3 5
+$ echo {3..1}
+3 2 1
+$ echo {a..z}
+a b c d e f g h i j k l m n o p q r s t u v w x y z
+echo {01..3}
+01 02 03
+echo file{1..3}.jpg
+file1.jpg file2.jpg file3.jpg
+```
+
+### for
+#### 遍历数字范围
+```shell
+for i in {1..3}; do echo $i; done
+```
+```
+1
+2
+3
+```
+
 ## 参考资料
 * [Bash shell find out if a variable has NULL value OR not](https://www.cyberciti.biz/faq/bash-shell-find-out-if-a-variable-has-null-value-or-not/)
 * [Bash For Loop Examples](https://www.cyberciti.biz/faq/bash-for-loop/)
 * [13 Linux Terminal Shortcuts Every Power Linux User Must Know](https://linuxhandbook.com/linux-shortcuts/)
+* [Bash Sequence Expression (Range)](https://linuxize.com/post/bash-sequence-expression/)
