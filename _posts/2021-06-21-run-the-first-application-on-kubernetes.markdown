@@ -110,6 +110,10 @@ spec:
 ```shell
 kubectl apply -f kubia.yaml
 ```
+```
+service/kubia created
+deployment.apps/kubia created
+```
 
 ### 访问服务
 ```shell
