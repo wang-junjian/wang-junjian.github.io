@@ -9,7 +9,7 @@ tags: [kubectl, apply, logs, port-forward]
 通过端口转发（port-forward）可以连接到 Pod，方便测试和调试服务。
 
 ## 创建 Pod
-### 编写 Pod YAML文件
+### 编写 Pod YAML文件(kubia-manual.yaml)
 ```yaml
 apiVersion: v1
 kind: Pod
