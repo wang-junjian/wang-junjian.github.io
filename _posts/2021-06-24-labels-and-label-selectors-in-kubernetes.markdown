@@ -37,7 +37,7 @@ $ kubectl apply -f kubia-manual-labels.yaml
 pod/kubia-manual-v2 created
 ```
 
-### 查看 Pod 的标签（--show-labels）
+### 查看 Pod 的标签（```--show-labels```）
 ```shell
 $ kubectl get pods --show-labels
 NAME                    READY   STATUS    RESTARTS   AGE     LABELS
@@ -72,7 +72,7 @@ kubia-manual            1/1     Running   0          19h    kubia
 kubia-manual-v2         1/1     Running   0          19m    sc      stable
 ```
 
-* 更新（--overwrite）
+* 更新（```--overwrite```）
 ```shell
 $ kubectl label pod kubia-manual-v2 app=kubia --overwrite
 pod/kubia-manual-v2 labeled
@@ -201,3 +201,20 @@ kubia-manual-v3   1/1     Running   0          7m58s   10.34.0.10   ln6    <none
 ```
 
 每个节点都有一个唯一标签，其中键为 ```kubernetes.io/hostname```，值为该```节点的主机名```，因此可以将 Pod 调度到某个确定的节点。但绝不应该考虑这样使用，因为一旦节点离线了，这个 Pod 将不会重新调度运行，所以应该使用自定义标签，使用一组逻辑节点。
+
+## 使用标签选择器删除对象
+### 删除标签 app=kubia 的 Pod 对象
+```shell
+$ kubectl delete pods -l app=kubia
+pod "kubia-864465c9d-x2xzx" deleted
+pod "kubia-864465c9d-xhsfq" deleted
+```
+
+### 删除标签 app=kubia 的所有对象
+```shell
+$ kubectl delete all -l app=kubia
+pod "kubia-864465c9d-p7dkp" deleted
+pod "kubia-864465c9d-qzxs2" deleted
+service "kubia" deleted
+replicaset.apps "kubia-864465c9d" deleted
+```
