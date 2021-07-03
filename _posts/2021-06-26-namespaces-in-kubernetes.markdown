@@ -49,6 +49,7 @@ kubia   Active   35s
 ```
 
 ### 删除名字空间
+★ 名字空间内创建的所有类型的对象也会被删除。
 ```shell
 $ kubectl delete ns kubia
 namespace "kubia" deleted
@@ -123,7 +124,7 @@ replicaset.apps/kubia-864465c9d   2         2         2       99s
 
 ### 删除指定名字空间的所有类型的所有实例
 * ```all``` 所有资源类型
-* ```--all``` 所有资料实例
+* ```--all``` 所有资源实例
 ```shell
 $ kubectl delete all --all -n kubia 
 pod "kubia-864465c9d-5vntt" deleted
