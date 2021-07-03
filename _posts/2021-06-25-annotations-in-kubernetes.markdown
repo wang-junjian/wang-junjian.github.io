@@ -45,7 +45,7 @@ Namespace:    default
 Annotations:  gouchicao.com/someannotation: test
 ```
 
-### 更新（--overwrite）
+### 更新（```--overwrite```）
 ```shell
 $ kubectl annotate pod kubia-manual gouchicao.com/someannotation="TEST" --overwrite 
 pod/kubia-manual annotated
