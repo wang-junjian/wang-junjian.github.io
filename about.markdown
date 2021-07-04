@@ -5,6 +5,15 @@ permalink: /about/
 ---
 
 ## 基础技术
+### Kubernetes
+* [在Kubernetes上运行第一个应用]({% post_url 2021-06-21-run-the-first-application-on-kubernetes %})
+* [Kubernetes API]({% post_url 2021-06-22-kubernetes-api %})
+* [通过端口转发连接Pod]({% post_url 2021-06-23-connect-pod-via-port-forwarding %})
+* [Kubernetes中的标签和标签选择器]({% post_url 2021-06-24-labels-and-label-selectors-in-kubernetes %})
+* [Kubernetes中的注解]({% post_url 2021-06-25-annotations-in-kubernetes %})
+* [Kubernetes中的名字空间]({% post_url 2021-06-26-namespaces-in-kubernetes %})
+* [Kubernetes中的ReplicationController和ReplicaSet]({% post_url 2021-06-27-replicationcontroller-and-replicaset-in-kubernetes %})
+
 ### Docker
 * [容器内幕]({% post_url 2021-04-01-inside-the-container %})
 * [在Ubuntu上安装Docker]({% post_url 2020-10-17-install-docker-on-ubuntu %})
@@ -29,6 +38,10 @@ permalink: /about/
 
 ## 人工智能
 ### 算法－自定义训练集的训练
+* [使用Darknet在自定义数据集上训练YOLOv3]({% post_url 2019-07-01-use-darknet-to-train-yolov3-on-a-custom-data-set %})
+* [基于Darknet框架的YOLOv3算法开发的模型训练和部署的容器化产品]({% post_url 2019-07-09-a-containerized-product-for-model-training-and-deployment-based-on-the-yolov3-algorithm-developed-by-the-darknet-framework %})
+* [使用Detectron在自定义数据集上训练MaskRCNN]({% post_url 2019-09-01-use-detectron-to-train-maskrcnn-on-a-custom-dataset %})
+* [构建YOLOv4容器应用在自定义数据集上]({% post_url 2020-06-06-build-a-yolov4-container-application-on-a-custom-data-set %})
 * [使用YOLOv5训练自定义数据集]({% post_url 2020-11-04-use-yolov5-to-train-a-custom-dataset %})
 * [使用RetinaNet训练自定义数据集]({% post_url 2020-07-30-use-retinanet-to-train-a-custom-dataset %})
 
@@ -53,6 +66,8 @@ permalink: /about/
 * [配置Kubernetes镜像源]({% post_url 2020-11-07-configure-kubernetes-mirror-source %})
 * [Kubernetes集群搭建Master节点]({% post_url 2020-11-06-kubernetes-cluster-build-master-node %})
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
+* [Kubernetes中删除节点]({% post_url 2021-06-20-delete-node-in-kubernetes %})
+* [Kubernetes集群证书过期]({% post_url 2021-06-19-kubernetes-cluster-certificate-has-expired %})
 
 ## 物联网（IoT）
 * [Thonny Python IDE]({% post_url 2021-04-12-thonny-python-ide %})
