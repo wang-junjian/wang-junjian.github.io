@@ -13,6 +13,7 @@ permalink: /about/
 * [Kubernetes中的注解]({% post_url 2021-06-25-annotations-in-kubernetes %})
 * [Kubernetes中的名字空间]({% post_url 2021-06-26-namespaces-in-kubernetes %})
 * [Kubernetes中的ReplicationController和ReplicaSet]({% post_url 2021-06-27-replicationcontroller-and-replicaset-in-kubernetes %})
+* [Kubernetes中的DaemonSet]({% post_url 2021-06-28-daemonset-in-kubernetes %})
 
 ### Docker
 * [容器内幕]({% post_url 2021-04-01-inside-the-container %})
@@ -68,6 +69,7 @@ permalink: /about/
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
 * [Kubernetes中删除节点]({% post_url 2021-06-20-delete-node-in-kubernetes %})
 * [Kubernetes集群证书过期]({% post_url 2021-06-19-kubernetes-cluster-certificate-has-expired %})
+* [Kubernetes中如何恢复误删的节点]({% post_url 2021-07-06-how-to-restore-accidentally-deleted-nodes-in-kubernetes %})
 
 ## 物联网（IoT）
 * [Thonny Python IDE]({% post_url 2021-04-12-thonny-python-ide %})
