@@ -83,15 +83,14 @@ Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
 ## 主节点
 ### 查看集群的状态
 ```shell
-$ kubectl get nodes -o wide
+$ kubectl get nodes
 ```
 ```shell
-NAME   STATUS     ROLES    AGE    VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE           KERNEL-VERSION     CONTAINER-RUNTIME
-gpu1   NotReady   <none>   242d   v1.18.3   172.16.33.66    <none>        Ubuntu 20.04 LTS   5.4.0-53-generic   docker://20.10.6
-ln1    Ready      master   385d   v1.18.3   172.16.33.157   <none>        Ubuntu 20.04 LTS   5.4.0-26-generic   docker://19.3.12
-ln2    Ready      <none>   385d   v1.18.3   172.16.33.158   <none>        Ubuntu 20.04 LTS   5.4.0-26-generic   docker://19.3.11
-ln3    Ready      <none>   385d   v1.18.3   172.16.33.159   <none>        Ubuntu 20.04 LTS   5.4.0-26-generic   docker://19.3.11
-ln6    NotReady   <none>   9s     v1.18.3   172.16.33.174   <none>        Ubuntu 20.04 LTS   5.4.0-72-generic   docker://20.10.2
+NAME   STATUS     ROLES    AGE    VERSION
+ln1    Ready      master   385d   v1.18.3
+ln2    Ready      <none>   385d   v1.18.3
+ln3    Ready      <none>   385d   v1.18.3
+ln6    NotReady   <none>   9s     v1.18.3
 ```
 可以看到 ln6 节点了，再等一会状态（STATUS）就可以恢复为 Ready。
 
