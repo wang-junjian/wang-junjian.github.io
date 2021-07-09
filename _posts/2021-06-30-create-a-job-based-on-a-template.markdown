@@ -3,7 +3,7 @@ layout: post
 title:  "基于模板创建Job"
 date:   2021-06-30 00:00:00 +0800
 categories: Kubernetes
-tags: [kubectl, Job, sed, apply, logs, delete, Python, Jinja2]
+tags: [kubectl, Job, sed, apply, logs, delete, Python, Jinja2, Jekyll, Liquid]
 ---
 
 > 基于一个公共的模板运行多个Jobs。 你可以用这种方法来并行执行批处理任务。
@@ -100,7 +100,8 @@ pip install --user jinja2
 ```--user``` 可以简写为 ```-U```
 
 ### 创建 Job 模板（job.yaml.jinja2）
-```
+{% highlight liquid %}
+{% raw %}
 {%- set params = [{ "name": "apple", "url": "http://dbpedia.org/resource/Apple", },
                   { "name": "banana", "url": "http://dbpedia.org/resource/Banana", },
                   { "name": "cherry", "url": "http://dbpedia.org/resource/Cherry" }]
@@ -128,7 +129,8 @@ spec:
         command: ["sh", "-c", "echo Processing URL {{ url }} && sleep 5"]
       restartPolicy: Never
 {%- endfor %}
-```
+{% endraw %}
+{% endhighlight %}
 
 ### 设置 render_template 命令，可以加入到 ```~/.bashrc``` 配置文件。
 ```shell
@@ -148,3 +150,5 @@ cat job.yaml.jinja2 | render_template | kubectl apply -f -
 ## 参考资料
 * [Jobs](https://kubernetes.io/zh/docs/concepts/workloads/controllers/job/)
 * [使用展开的方式进行并行处理](https://kubernetes.io/zh/docs/tasks/job/parallel-processing-expansion/)
+* [Writing the endraw tag in Jekyll code blocks](https://blog.slaks.net/2013-06-10/jekyll-endraw-in-code/)
+* [Markdown 基本语法](https://www.markdown.xyz/basic-syntax/)
