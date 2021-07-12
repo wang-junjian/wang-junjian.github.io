@@ -3,7 +3,7 @@ layout: post
 title:  "Kubernetes集群证书过期"
 date:   2021-06-19 00:00:00 +0800
 categories: Kubernetes
-tags: [certificate]
+tags: [certificate, openssl, kubeadm, systemctl]
 ---
 
 ## 证书一年过期了
