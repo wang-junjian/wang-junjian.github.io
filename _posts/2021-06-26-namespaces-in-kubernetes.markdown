@@ -3,7 +3,7 @@ layout: post
 title:  "Kubernetes中的名字空间"
 date:   2021-06-26 00:00:00 +0800
 categories: Kubernetes
-tags: [kubectl, namespace]
+tags: [kubectl, namespace, delete, config, context, alias, bashrc]
 ---
 
 ## 名字空间
