@@ -3,7 +3,7 @@ layout: post
 title:  "Kubernetes中的Job和CronJob"
 date:   2021-06-29 00:00:00 +0800
 categories: Kubernetes
-tags: [kubectl, Job, CronJob, Cron]
+tags: [kubectl, Job, CronJob, Cron, command, args]
 ---
 
 ## Job
@@ -277,7 +277,7 @@ cronjob.batch/hello   */1 * * * *   False     0        57s             23m
 当前任务没有执行完成，要创建新任务的策略
 * concurrencyPolicy
   - Allow(default)　任务可以同时存在。
-  - Forbid　不会创建新的任务，该创建周期被路过。
+  - Forbid　不会创建新的任务，该创建周期被跳过。
   - Replace　新的任务会替换旧的没有执行完的。
 
 ### startingDeadlineSeconds
