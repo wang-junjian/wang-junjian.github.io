@@ -14,6 +14,9 @@ permalink: /about/
 * [Kubernetes中的名字空间]({% post_url 2021-06-26-namespaces-in-kubernetes %})
 * [Kubernetes中的ReplicationController和ReplicaSet]({% post_url 2021-06-27-replicationcontroller-and-replicaset-in-kubernetes %})
 * [Kubernetes中的DaemonSet]({% post_url 2021-06-28-daemonset-in-kubernetes %})
+* [Kubernetes中的Job和CronJob]({% post_url 2021-06-29-job-and-cronjob-in-kubernetes %})
+* [基于模板创建Job]({% post_url 2021-06-30-create-a-job-based-on-a-template %})
+* [Kubernetes中的Service]({% post_url 2021-07-01-service-in-kubernetes %})
 
 ### Docker
 * [容器内幕]({% post_url 2021-04-01-inside-the-container %})
