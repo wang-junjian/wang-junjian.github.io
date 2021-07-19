@@ -218,3 +218,8 @@ pod "kubia-864465c9d-qzxs2" deleted
 service "kubia" deleted
 replicaset.apps "kubia-864465c9d" deleted
 ```
+
+如果需要在所有名字空间中，加入参数 ```--all-namespaces``` 或 ```-A```。
+```shell
+kubectl delete all -l app=kubia -A
+```
