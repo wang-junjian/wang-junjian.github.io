@@ -70,6 +70,7 @@ permalink: /about/
 * [配置Kubernetes镜像源]({% post_url 2020-11-07-configure-kubernetes-mirror-source %})
 * [Kubernetes集群搭建Master节点]({% post_url 2020-11-06-kubernetes-cluster-build-master-node %})
 * [Kubernetes集群加入Worker节点]({% post_url 2020-11-05-kubernetes-cluster-joins-worker-node %})
+* [在Kubernetes上安装Ingress]({% post_url 2021-07-15-install-ingress-on-kubernetes %})
 * [Kubernetes中删除节点]({% post_url 2021-06-20-delete-node-in-kubernetes %})
 * [Kubernetes集群证书过期]({% post_url 2021-06-19-kubernetes-cluster-certificate-has-expired %})
 * [Kubernetes中如何恢复误删的节点]({% post_url 2021-07-06-how-to-restore-accidentally-deleted-nodes-in-kubernetes %})
