@@ -6,6 +6,26 @@ categories: Docker 实践
 tags: [Docker, GPU, none]
 ---
 
+## 安装与卸载
+### 安装
+* 快速安装
+```shell
+curl -fsSL https://get.docker.com | sh -
+```
+
+* [Install Docker Engine](https://docs.docker.com/engine/install/)
+
+### 卸载
+* apt
+```shell
+apt-get remove --auto-remove docker
+```
+
+* yum
+```shell
+yum remove docker docker-common docker-selinux docker-engine
+```
+
 ## 指定显卡(NVIDIA_VISIBLE_DEVICES)
 ```shell
 #指定单张GPU卡
