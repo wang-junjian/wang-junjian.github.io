@@ -287,7 +287,7 @@ options ndots:5
 ```
 可以看到 /etc/resolv.conf 文件里配置的 nameserver ```10.96.0.10``` 地址就是服务 kube-dns 的集群 IP。
 
-注意：这里的 ```kubia``` 是名字空间。
+注意：这里的 ```kubia``` 是名字空间，如果您使用的是默认名字空间应该是 ```default```。
 
 ##### 通过全限定域名(FQDN)来访问
 这里分别使用省略了不同的后缀来访问 kubia 服务。
@@ -440,7 +440,7 @@ external-service   ExternalName   <none>       api.github.com   443/TCP   24m
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubia
+  name: kubia-nodeport
   labels:
     app: kubia
 spec:
@@ -457,15 +457,17 @@ spec:
 
 创建服务对象
 ```shell
+$ kubectl apply -f kubia.yaml 
+deployment.apps/kubia created
 $ kubectl apply -f kubia-nodeport.yaml
-service/kubia created
+service/kubia-nodeport created
 ```
 
 查看服务信息
 ```shell
 $ kubectl get svc kubia 
-NAME    TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
-kubia   NodePort   10.106.34.250   <none>        80:30123/TCP   3m48s
+NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubia-nodeport   NodePort   10.106.34.250   <none>        80:30123/TCP   3m48s
 ```
 
 可以通过以下地址访问服务
@@ -542,6 +544,54 @@ spec:
 * 不记录客户端 IP
 当通过节点端口访问时，跳转到 Pod 前会对数据包做源网络地址转换(SNAT)，所以源 IP 会被修改。
 
+#### Ingress 类型的服务
+
+编写 Ingress 的 YAML 文件（kubia-ingress.yaml）
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kubia
+spec:
+  backend:
+    serviceName: kubia-nodeport
+    servicePort: 80
+  rules:
+  - host: kubia.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kubia-nodeport
+          servicePort: 80
+```
+
+```shell
+$ kubectl apply -f kubia-deployment.yaml 
+deployment.apps/kubia created
+$ kubectl apply -f kubia-nodeport.yaml
+service/kubia-nodeport created
+$ kubectl apply -f kubia-ingress.yaml
+ingress.extensions/kubia created
+```
+
+查看 Ingress 对象
+```shell
+$ kubectl get ingress
+NAME    CLASS    HOSTS               ADDRESS         PORTS   AGE
+kubia   <none>   kubia.example.com   172.16.33.157   80      89s
+```
+
+在客户端配置 DNS。打开 /etc/hosts 文件（Windows 系统为 C:\windows\system32\drivers\etc\hosts），增加下面的配置信息。
+```
+172.16.33.157   kubia.example.com
+```
+
+通过 Ingress 访问服务。
+```shell
+curl http://kubia.example.com
+```
+
 ## 参考资料
 * [服务](https://kubernetes.io/zh/docs/concepts/services-networking/service/)
 * [kubectl 命令帮助](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)
@@ -553,3 +603,6 @@ spec:
 * [GitHub REST API overview](https://docs.github.com/en/rest/overview)
 * [How to test a REST api from command line with curl](https://www.codepedia.org/ama/how-to-test-a-rest-api-from-command-line-with-curl/)
 * [Jinja](https://jinja.palletsprojects.com/en/3.0.x/)
+* [Ingress](https://kubernetes.io/zh/docs/concepts/services-networking/ingress/)
+* [Empty ADDRESS kubernetes ingress](https://stackoverflow.com/questions/51511547/empty-address-kubernetes-ingress)
+* [Lab 10.1 - <error: endpoints "default-http-backend" not found> - Solved](https://forum.linuxfoundation.org/discussion/857080/lab-10-1-solved)
