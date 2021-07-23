@@ -3,7 +3,7 @@ layout: post
 title:  "Docker实践"
 date:   2021-01-11 00:00:00 +0800
 categories: Docker 实践
-tags: [Docker, GPU, none]
+tags: [Docker, GPU, none, xargs, awk]
 ---
 
 ## 安装与卸载
@@ -36,7 +36,7 @@ docker run --runtime=nvidia -d -e NVIDIA_VISIBLE_DEVICES=0,1 gouchicao/yolov5:tr
 docker run --runtime=nvidia -d gouchicao/yolov5:train
 ```
 
-## 重启策略(--restart)
+## 重启策略
 ### 方法
 1. 启动容器时通过参数指定
 ```shell
@@ -60,24 +60,36 @@ systemctl restart docker
 docker ps | grep pypiserver
 ```
 
-## 退出容器后自动删除(--rm)
-```shell
-docker run --rm busybox:latest
-```
-
-## 通过匹配有规则的名称删除容器
-```shell
-docker rm -f $(docker ps -a | grep face-service- | awk '{print $1}')
-```
-
-## 删除 TAG 为 none 的所有镜像
+## 镜像
+### 删除 TAG 为 none 的所有镜像
 ```shell
 docker rmi --force $(docker images -q --filter "dangling=true")
 ```
 
-## 重新构建镜像（不使用缓存）
+### 重新构建镜像（不使用缓存）
 ```shell
 docker build --no-cache -t name:tag . 
+```
+
+## 容器
+### 退出容器后自动删除
+```shell
+docker run --rm busybox:latest
+```
+
+### 删除状态为 Exited 的容器
+```shell
+docker rm -f $(docker ps -qa --filter status=exited)
+```
+
+### 删除状态为 Created 的容器
+```shell
+docker ps -qa --filter status=created | xargs docker rm
+```
+
+### 通过匹配有规则的名称删除容器
+```shell
+docker rm -f $(docker ps -a | grep face-service- | awk '{print $1}')
 ```
 
 ## 参考资料
