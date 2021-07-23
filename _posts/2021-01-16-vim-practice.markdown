@@ -54,6 +54,9 @@ tags: [Linux, vim]
 * 浏览（explore）当前目录
     * ```:E```
     * ```:e .```
+* 从当前文件返回目录
+    * ```:e#```
+    * ```Ctrl+^```
 * ```:e filename``` 浏览文件filename
 * ```:ls``` 列出当前打开过的文件，浏览过的文件都会放在缓存中。
 * ```:bd``` 缓存（buffer）删除（delete），删除之前打开过的文件列表。
@@ -188,3 +191,4 @@ vimdiff file1 file2
 * [How to select/delete until end of file in vim/gvim?](https://unix.stackexchange.com/questions/13904/how-to-select-delete-until-end-of-file-in-vim-gvim)
 * [How to switch to the directory listing from file view in vim?](https://unix.stackexchange.com/questions/52179/how-to-switch-to-the-directory-listing-from-file-view-in-vim/52189)
 * [Linux vi/vim多标签和多窗口, Tab页浏览目录, 多Tab页编辑](https://justcode.ikeepstudying.com/2018/03/linux-vi-vim多标签和多窗口-tab页浏览目录-多tab页编辑/)
+* [Opening and Switching Between Multiple Files and Windows in VI](https://linuxhint.com/opening_switching_multiple_files_vim/)
