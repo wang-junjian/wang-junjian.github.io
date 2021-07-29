@@ -9,6 +9,7 @@ tags: [Linux, top]
 ## 快捷键
 * ```Shift+p``` 按CPU使用率排序
 * ```Shift+m``` 按内存使用率排序
+* ```1``` 显示每个逻辑CPU的状态
 
 ## 查看指定进程
 ```shell
