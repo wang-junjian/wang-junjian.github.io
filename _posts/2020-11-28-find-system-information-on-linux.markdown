@@ -3,7 +3,7 @@ layout: post
 title:  "Linux上查找系统信息"
 date:   2020-11-28 00:00:00 +0800
 categories: Linux
-tags: [Linux, 系统信息, GPU, CUDA, Memory, 硬盘, grep]
+tags: [Linux, 系统信息, GPU, CUDA, Memory, 硬盘, lsb_release, grep, cut, uniq]
 ---
 
 ## Linux内核版本
@@ -59,6 +59,7 @@ Codename:	Core
 $ cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c
      64  Intel(R) Xeon(R) Silver 4216 CPU @ 2.10GHz
 ```
+* 64 逻辑核数
 
 ## 内存容量
 ```shell
