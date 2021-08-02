@@ -3,7 +3,7 @@ layout: post
 title:  "Kubernetes中的卷：将磁盘挂载到容器"
 date:   2021-07-04 00:00:00 +0800
 categories: Kubernetes
-tags: [volume, kubectl, date, Docker, Dockerfile, port-forward]
+tags: [volume, kubectl, date, Docker, Dockerfile, port-forward, nfs]
 ---
 
 ## 通过卷在容器之间共享数据
@@ -95,7 +95,7 @@ emptyDir 默认使用节点的存储磁盘，所以性能也取决于磁盘的�
 ```
 
 ## 访问工作节点文件系统上的文件
-hostPath 卷指向节点文件系统上的特定文件或目录。主要用于访问节点上的数据，在单节点集群中可作持久化存储。
+hostPath 卷指向节点文件系统上的特定文件或目录。主要用于访问节点上的数据（日志文件、Kubernetes配置文件或CA证书），在单节点集群中可作持久化存储。
 
 ### 查看使用 hostPath 卷的 Pod
 #### 查看 nvidia-device-plugin-ds Pod
@@ -156,6 +156,45 @@ apport.log.1           dmesg.0                pods
 apt                    dpkg.log.5.gz          syslog.4.gz
 auth.log               dpkg.log.6.gz          syslog.5.gz
 bootstrap.log          kern.log.1             wtmp
+```
+
+## 持久化存储
+### NFS
+#### 定义 Pod
+```shell
+#nfs.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nfs
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: ln2
+  containers:
+  - name: nfs
+    image: busybox
+    command: ['sh', '-c', 'sleep 864000']
+    volumeMounts:
+    - name: nfs
+      mountPath: /face_analysis/data
+  volumes:
+  - name: nfs
+    nfs:
+      server: 172.16.33.157
+      path: /projects/face_analysis/v1.2/data
+```
+* nfs.server, NFS 服务器的 IP
+* nfs.path, NFS 服务器的路径
+
+#### 部署 nfs.yaml
+```shell
+kubectl apply -f nfs.yaml
+```
+
+#### 查看容器内挂载的 NFS 路径
+```shell
+$ kubectl exec -it nfs -- ls /face_analysis/data
+face_features      pretrained_models
 ```
 
 ## 参考资料
