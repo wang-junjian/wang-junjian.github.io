@@ -67,7 +67,7 @@ spec:
 ```
 * emptyDir 空目录卷。用于两个容器进行数据共享。
 * 卷属于 Pod，可以挂载到同一个 Pod 中的多个容器中。
-* 卷的生命周期与 Pod 的生命周期相关联。
+* 卷的生命周期与 Pod 的生命周期相关联。Pod 被删除，卷也将被删除。
 * Nginx 默认的服务文件目录 /usr/share/nginx/html
 
 ### 访问 [Date HTML] 服务
@@ -92,6 +92,70 @@ emptyDir 默认使用节点的存储磁盘，所以性能也取决于磁盘的�
   - name: html
     emptyDir: 
       medium: Memory
+```
+
+## 访问工作节点文件系统上的文件
+hostPath 卷指向节点文件系统上的特定文件或目录。主要用于访问节点上的数据，在单节点集群中可作持久化存储。
+
+### 查看使用 hostPath 卷的 Pod
+#### 查看 nvidia-device-plugin-ds Pod
+```shell
+$ kubectl get pods --namespace kube-system -l name=nvidia-device-plugin-ds
+NAME                                   READY   STATUS    RESTARTS   AGE
+nvidia-device-plugin-daemonset-2xqqs   1/1     Running   0          11d
+nvidia-device-plugin-daemonset-6wn88   1/1     Running   1          129d
+nvidia-device-plugin-daemonset-7lcv9   1/1     Running   0          11d
+nvidia-device-plugin-daemonset-ssf4f   1/1     Running   0          11d
+```
+
+#### 查看 Pod 的 hostPath 卷信息
+```shell
+$ kubectl describe pod nvidia-device-plugin-daemonset-6wn88 --namespace kube-system
+Name:                 nvidia-device-plugin-daemonset-6wn88
+...
+Volumes:
+  device-plugin:
+    Type:          HostPath (bare host directory volume)
+    Path:          /var/lib/kubelet/device-plugins
+    HostPathType:  
+```
+
+### 使用 hostPath 卷
+#### 定义挂载系统日志（/var/log）的 Pod
+```yaml
+#hostpath.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath
+spec:
+  containers:
+  - name: hostpath
+    image: busybox
+    command: ['sh', '-c', 'sleep 864000']
+    volumeMounts:
+    - name: hostpath
+      mountPath: /var/log
+  volumes:
+  - name: hostpath
+    hostPath:
+      path: /var/log
+```
+
+#### 部署 hostpath.yaml
+```shell
+kubectl apply -f hostpath.yaml
+```
+
+#### 查看容器内挂载的系统日志目录（/var/log）
+```shell
+$ kubectl exec -it hostpath -- ls /var/log
+alternatives.log       btmp                   kern.log.2.gz
+apport.log             dmesg                  nvidia-uninstall.log
+apport.log.1           dmesg.0                pods
+apt                    dpkg.log.5.gz          syslog.4.gz
+auth.log               dpkg.log.6.gz          syslog.5.gz
+bootstrap.log          kern.log.1             wtmp
 ```
 
 ## 参考资料
