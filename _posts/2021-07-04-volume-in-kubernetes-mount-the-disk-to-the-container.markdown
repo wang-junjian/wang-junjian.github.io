@@ -1,0 +1,98 @@
+---
+layout: post
+title:  "Kubernetes中的卷：将磁盘挂载到容器"
+date:   2021-07-04 00:00:00 +0800
+categories: Kubernetes
+tags: [volume, kubectl, date, Docker, Dockerfile, port-forward]
+---
+
+## 通过卷在容器之间共享数据
+### Build [Date HTML Generator] Image
+#### 编写 HTML 生成器（date-html-generator.sh）
+```sh
+#!/bin/sh
+mkdir /var/htdocs
+while :
+do
+  echo $(date +'%Y-%m-%d %H:%M:%S') Writing to /var/htdocs/index.html
+  echo $(date +'%Y-%m-%d %H:%M:%S') > /var/htdocs/index.html
+  sleep 1
+done
+```
+* %Y : 完整年份 (0000-9999)
+* %m : 月份 (01-12)
+* %d : 日 (01-31)
+* %H : 小时(00-23)
+* %M : 分钟(00-59)
+* %S : 秒(00-60)
+
+#### 编写 Dockerfile
+```shell
+FROM busybox
+ADD date-html-generator.sh /bin/date-html-generator.sh
+RUN chmod +x /bin/date-html-generator.sh
+ENTRYPOINT /bin/date-html-generator.sh
+```
+
+#### 生成 date-html-generator 镜像
+```shell
+docker build -t wangjunjian/date-html-generator .
+```
+
+### 编写 [Date HTML] Pod
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: date-html
+spec:
+  containers:
+  - name: date-html-generator
+    image: wangjunjian/date-html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - name: web-server
+    image: nginx:alpine
+    volumeMounts:
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+```
+* emptyDir 空目录卷。用于两个容器进行数据共享。
+* 卷属于 Pod，可以挂载到同一个 Pod 中的多个容器中。
+* 卷的生命周期与 Pod 的生命周期相关联。
+* Nginx 默认的服务文件目录 /usr/share/nginx/html
+
+### 访问 [Date HTML] 服务
+#### 端口转发
+```shell
+$ kubectl port-forward date-html 8080:80
+Forwarding from 127.0.0.1:8080 -> 80
+Forwarding from [::1]:8080 -> 80
+Handling connection for 8080
+```
+
+#### 访问服务
+```shell
+$ curl 127.0.0.1:8080
+2021-08-02 05:16:15
+```
+
+### emptyDir 修改为内存进行存储
+emptyDir 默认使用节点的存储磁盘，所以性能也取决于磁盘的类型。通过修改属性 medium 为 Memory，通知 Kubernetes 在 tmpfs 文件系统（在内存）上创建 emptyDir。
+```yaml
+  volumes:
+  - name: html
+    emptyDir: 
+      medium: Memory
+```
+
+## 参考资料
+* [Linux date命令的用法](https://www.cnblogs.com/asxe/p/9317811.html)
