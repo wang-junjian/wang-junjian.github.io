@@ -297,6 +297,34 @@ $ kubectl apply -f kubia-manual-max.yaml
 The Pod "kubia-manual-max" is invalid: spec.containers[0].resources.requests: Invalid value: "2": must be less than or equal to cpu limit
 ```
 
+### maxLimitRequestRatio
+创建 Pod 对象
+```shell
+#kubia-manual-max-limit-request-ratio.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kubia-manual-max-limit-request-ratio
+spec:
+  containers:
+  - image: wangjunjian/kubia
+    name: kubia
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    resources:
+      requests:
+        cpu: 200m
+      limits:
+        cpu: 1
+```
+
+部署 Pod
+```shell
+$ kubectl apply -f kubia-manual-max-limit-request-ratio.yaml 
+Error from server (Forbidden): error when creating "kubia-manual-max-limit-request-ratio.yaml": pods "kubia-manual-max-limit-request-ratio" is forbidden: cpu max limit to request ratio per Container is 4, but provided ratio is 5.000000
+```
+
 ## ResourceQuota 限制名字空间中的可用资源总量
 ### 创建 ResourceQuota 对象
 ```yaml
@@ -359,6 +387,86 @@ spec:
 ```shell
 $ kubectl apply -f kubia-manual-quota.yaml 
 Error from server (Forbidden): error when creating "kubia-manual-quota.yaml": pods "kubia-manual-quota" is forbidden: exceeded quota: resource-quota, requested: requests.cpu=500m,requests.memory=400Mi, used: requests.cpu=0,requests.memory=0, limited: requests.cpu=400m,requests.memory=200Mi
+```
+
+### NVIDIA GPU 资源的使用
+修改 resource-quota 对象，增加 nvidia.com/gpu 资源的请求与限制。
+```yaml
+#resource-quota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: resource-quota
+spec:
+  hard:
+    requests.cpu: 40
+    requests.memory: 200Gi
+    requests.nvidia.com/gpu: 2
+    limits.cpu: 60
+    limits.memory: 500Gi
+    limits.nvidia.com/gpu: 2
+```
+
+创建 Pod 对象
+```yaml
+#request-gpu.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: request-gpu
+spec:
+  nodeSelector:
+    node-type: "gpu"
+  containers:
+  - image: nvcr.io/nvidia/cuda:9.0-devel
+    name: kubia
+    command: ['sh', '-c',  'sleep 86400']
+    resources:
+      requests:
+        cpu: 500m
+        memory: 200Mi
+        nvidia.com/gpu: 1
+      limits:
+        cpu: 1
+        memory: 1Gi
+        nvidia.com/gpu: 1
+```
+
+部署 Pod
+```shell
+kubectl apply -f request-gpu.yaml
+```
+
+查看资源配额使用情况
+```shell
+$ kubectl describe resourcequotas 
+Name:                    resource-quota
+Namespace:               kubia
+Resource                 Used   Hard
+--------                 ----   ----
+limits.cpu               1      60
+limits.memory            1Gi    500Gi
+limits.nvidia.com/gpu    0      2
+requests.cpu             500m   40
+requests.memory          200Mi  200Gi
+requests.nvidia.com/gpu  1      2
+```
+
+查看节点描述信息
+```shell
+$ kubectl describe node gpu1
+Name:               gpu1
+...
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests    Limits
+  --------           --------    ------
+  cpu                520m (0%)   1 (1%)
+  memory             200Mi (0%)  1Gi (0%)
+  ephemeral-storage  0 (0%)      0 (0%)
+  hugepages-1Gi      0 (0%)      0 (0%)
+  hugepages-2Mi      0 (0%)      0 (0%)
+  nvidia.com/gpu     1           1
 ```
 
 ### ResourceQuota 最好使用 LimitRange 配合
