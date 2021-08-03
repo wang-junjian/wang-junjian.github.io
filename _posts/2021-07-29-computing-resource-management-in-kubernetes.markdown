@@ -419,7 +419,7 @@ spec:
     node-type: "gpu"
   containers:
   - image: nvcr.io/nvidia/cuda:9.0-devel
-    name: kubia
+    name: cuda
     command: ['sh', '-c',  'sleep 86400']
     resources:
       requests:
