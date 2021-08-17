@@ -3,7 +3,7 @@ layout: post
 title:  "Dockerfile OpenCV4 Ubuntu20.04"
 date:   2021-01-09 00:00:00 +0800
 categories: Docker
-tags: [Docker, Dockerfile, OpenCV4, Ubuntu]
+tags: [Docker, Dockerfile, OpenCV, Ubuntu]
 ---
 
 ## Dockerfile
