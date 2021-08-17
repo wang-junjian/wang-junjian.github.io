@@ -554,6 +554,20 @@ asyncio.run(main())
 [None, CancelledError()]
 ```
 
+## 库
+### 时间（[strftime][strftime]）
+```py
+from datetime import datetime
+
+now = datetime.now()
+str = now.strftime("%Y-%d-%m %H:%M:%S")
+
+print(str)
+```
+```
+2021-18-08 07:39:22
+```
+
 ## 工程
 ### 配置项目的根路径
 在一个 Virtual Environment 里，在 activate 文件的末尾配置 PYTHONHOME。
@@ -565,3 +579,6 @@ export PYTHONPATH="您的工程路径"
 
 ### ```if __name__ == '__main__'```
 运行 Python 脚本的第一个脚本的 ```__name__``` 值为 ```__main__```，在脚本中使用 import 语句时，```__name__``` 就会被赋值为该模块的名字了，这样导入进来的模块语句将不会执行。
+
+
+[strftime]: https://www.programiz.com/python-programming/datetime/strftime
