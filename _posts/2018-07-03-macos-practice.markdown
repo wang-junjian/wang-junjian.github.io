@@ -117,3 +117,4 @@ $ du -sh *  显示当前目录下每个目录或文件的磁盘使用信息
 * [How to stop creating .DS_Store on Mac?](https://stackoverflow.com/questions/18015978/how-to-stop-creating-ds-store-on-mac)
 * [Delete All .DS_Store Files from Mac OS X](http://osxdaily.com/2012/07/05/delete-all-ds-store-files-from-mac-os-x/)
 * [Remove .DS_Store files from Mac OS X](https://helpx.adobe.com/dreamweaver/kb/remove-ds-store-files-mac.html)
+* [在 Mac 上使用“隔空投送”](https://support.apple.com/zh-cn/HT203106)
