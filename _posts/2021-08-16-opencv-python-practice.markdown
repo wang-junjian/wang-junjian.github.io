@@ -94,6 +94,15 @@ img_rotate_180 = cv2.rotate(img, cv2.ROTATE_180)
 img_rotate_270 = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 ```
 
+### 翻转
+```py
+# flipCode = 0: flip vertically
+# flipCode > 0: flip horizontally
+# flipCode < 0: flip vertically and horizontally
+flipCode = 0
+img_flip = cv2.flip(img, flipCode)
+```
+
 ## 视频
 ```py
 import cv2
@@ -252,3 +261,5 @@ Screen Resolution Width: 1680, Height: 1050
 * [Python Static Method Explained With Examples](https://pynative.com/python-static-method/)
 * [Print while cv2.imshow() for a period of time](https://stackoverflow.com/questions/49443133/print-while-cv2-imshow-for-a-period-of-time)
 * [openCV video saving in python](https://stackoverflow.com/questions/29317262/opencv-video-saving-in-python)
+* [Python OpenCV – cv2.rotate() method](https://www.geeksforgeeks.org/python-opencv-cv2-rotate-method/)
+* [OpenCV, NumPy: Rotate and flip image](https://note.nkmk.me/en/python-opencv-numpy-rotate-flip/)
