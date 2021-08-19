@@ -79,6 +79,21 @@ img = cv2.resize(img, None, fx=0.5, fy=0.5)
 cv2.imwrite('python-logo.png', img)
 ```
 
+### 裁剪
+```py
+img_crop = img[ymin:ymax, xmin:xmax]
+```
+
+### 旋转
+```py
+# 90度
+img_rotate_90 = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+# 180度
+img_rotate_180 = cv2.rotate(img, cv2.ROTATE_180)
+# 270度
+img_rotate_270 = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+```
+
 ## 视频
 ```py
 import cv2
