@@ -84,6 +84,24 @@ cv2.imwrite('python-logo.png', img)
 img_crop = img[ymin:ymax, xmin:xmax]
 ```
 
+### 粘贴
+```py
+import cv2
+import numpy as np
+
+# 制作白色画布
+height, width = 600, 800
+img_size = (height, width, 3)
+img = np.full(img_size, 255, 'uint8')
+
+img_file = 'python-logo.png'
+img2 = cv2.imread(img_file)
+img2_height, img2_width, _ = img2.shape
+
+x, y = 100, 200
+img[y:y+img2_height, x:x+img2_width] = img2
+```
+
 ### 旋转
 ```py
 # 90度
@@ -101,6 +119,12 @@ img_rotate_270 = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 # flipCode < 0: flip vertically and horizontally
 flipCode = 0
 img_flip = cv2.flip(img, flipCode)
+```
+
+### RGB转黑白
+```py
+img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+ret, img_threshold = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
 ```
 
 ## 视频
@@ -255,6 +279,7 @@ Screen Resolution Width: 1680, Height: 1050
 * [Python](https://www.python.org)
 * [Can cv2. putText support Chinese output?python opencv #14579](https://github.com/opencv/opencv/issues/14579)
 * [Optimal way to resize an image with OpenCV Python](https://stackoverflow.com/questions/56857820/optimal-way-to-resize-an-image-with-opencv-python)
+* [Python OpenCV cv2 Resize Image](https://pythonexamples.org/python-opencv-cv2-resize-image/)
 * [draw a circle over image opencv](https://stackoverflow.com/questions/16484796/draw-a-circle-over-image-opencv)
 * [Opencv python lane detection draw line using cv2.line() change line color bug unsuccessfully](https://stackoverflow.com/questions/62674512/opencv-python-lane-detection-draw-line-using-cv2-line-change-line-color-bug-un)
 * [How to draw Chinese text on the image using `cv2.putText`correctly? (Python+OpenCV)](https://stackoverflow.com/questions/50854235/how-to-draw-chinese-text-on-the-image-using-cv2-puttextcorrectly-pythonopen)
