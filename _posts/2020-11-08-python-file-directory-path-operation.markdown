@@ -2,7 +2,7 @@
 layout: post
 title:  "Python文件、目录、路径操作"
 date:   2020-11-08 00:00:00 +0800
-categories: Python
+categories: Python 实践
 tags: [Python, File, Directory, Path]
 ---
 
@@ -96,6 +96,57 @@ os.mknod(filename)
 * 多级目录
 ```python
 >>> shutil.rmtree('/home/python')
+```
+
+### 获得目录下的图片文件路径
+```py
+import os
+
+def is_image(filename):
+    ext_names = ['.png', '.jpg', '.jpeg', '.tif', '.bmp']
+    return include_ext_names(filename, ext_names)
+
+def include_ext_names(filename, ext_names):
+    _, ext_name = os.path.splitext(filename.lower())
+    if not ext_names or ext_name in ext_names:
+        return True
+    return False
+
+def get_file_paths(path, filter):
+    paths = []
+    for filename in os.listdir(path):
+        if filter(filename):
+            paths.append(os.path.join(path, filename))
+
+    return paths
+```
+
+### 获得目录下的视频文件路径（包含子目录）
+```py
+import os
+
+def is_video(filename):
+    ext_names = ['.mov', '.mts', '.mp4', '.mkv', '.webm', '.flv', '.f4v', '.vob', '.ogg',
+        '.ogv', '.avi', '.wmv', '.rm', '.rmvb', '.asf', '.amv', '.m4v', '.3gp', '.mng']
+    return include_ext_names(filename, ext_names)
+
+def include_ext_names(filename, ext_names):
+    _, ext_name = os.path.splitext(filename.lower())
+    if not ext_names or ext_name in ext_names:
+        return True
+    return False
+
+def get_file_paths_by_iter(path, filter):
+    paths = []
+    for parent, _, filenames in os.walk(path):
+        if not filenames:
+            continue
+
+        for filename in filenames:
+            if filter(filename):
+                paths.append(os.path.join(parent, filename))
+
+    return paths
 ```
 
 ## 路径
