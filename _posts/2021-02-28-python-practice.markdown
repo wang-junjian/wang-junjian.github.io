@@ -568,6 +568,25 @@ print(str)
 2021-18-08 07:39:22
 ```
 
+### UUID
+生成随机UUID
+```py
+import uuid
+
+myuuid = uuid.uuid4()
+print(str(myuuid))
+```
+```
+f9e5d7c7-a708-4f2a-9a8b-5a42ca5e2e83
+```
+
+UUID字符串转成UUID对象
+```py
+import uuid
+
+uuid.UUID('f9e5d7c7-a708-4f2a-9a8b-5a42ca5e2e83')
+```
+
 ## 工程
 ### 配置项目的根路径
 在一个 Virtual Environment 里，在 activate 文件的末尾配置 PYTHONHOME。
@@ -582,3 +601,6 @@ export PYTHONPATH="您的工程路径"
 
 
 [strftime]: https://www.programiz.com/python-programming/datetime/strftime
+
+## 参考资料
+* [Generate a UUID in Python](https://www.uuidgenerator.net/dev-corner/python)
