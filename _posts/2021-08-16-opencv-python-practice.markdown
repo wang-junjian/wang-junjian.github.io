@@ -182,6 +182,7 @@ cv2.putText(img, 'Hello', (0, 0), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color
 ```
 
 ### 解决使用上面方法出现的中文乱码
+#### OpenCV4
 ```py
 black=(0,0,0)
 
@@ -189,8 +190,27 @@ ft2 = cv2.freetype.createFreeType2()
 font_path = 'fonts/NotoSansCJK-Medium.ttc'
 ft2.loadFontData(font_path, 0)
 # thickness=-1 文字是实体颜色；使用正整数，为边框的像素数，文字为空心。
-ft2.putText(img, text, pt, fontHeight=30, color=black, 
+ft2.putText(img, text, (0, 0), fontHeight=30, color=black, 
     thickness=-1, line_type=cv2.LINE_4, bottomLeftOrigin=False)
+```
+
+#### PIL
+```py
+import cv2
+from PIL import ImageFont, ImageDraw, Image
+
+img = cv2.imread(img_file)
+
+font = ImageFont.truetype(font_path)
+img_pil = Image.fromarray(img)
+draw = ImageDraw.Draw(img_pil)
+
+red = (0, 0, 255)
+draw.text((0, 0),  '您好', font = font, fill = red)
+
+img = np.array(img_pil)
+
+cv2.imwrite('test.jpg', img)
 ```
 
 ## 控制
