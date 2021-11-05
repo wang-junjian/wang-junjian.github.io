@@ -74,6 +74,7 @@ permalink: /about/
 * [Kubernetes中删除节点]({% post_url 2021-06-20-delete-node-in-kubernetes %})
 * [Kubernetes集群证书过期]({% post_url 2021-06-19-kubernetes-cluster-certificate-has-expired %})
 * [Kubernetes中如何恢复误删的节点]({% post_url 2021-07-06-how-to-restore-accidentally-deleted-nodes-in-kubernetes %})
+* [安装Kubernetes 1.21.5]({% post_url 2021-10-22-install-kubernetes-1_21_5 %})
 
 ## 物联网（IoT）
 * [Thonny Python IDE]({% post_url 2021-04-12-thonny-python-ide %})
