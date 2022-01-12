@@ -92,6 +92,15 @@ docker ps -qa --filter status=created | xargs docker rm
 docker rm -f $(docker ps -a | grep face-service- | awk '{print $1}')
 ```
 
+## FAQ
+* docker: Error response from daemon: endpoint with name tuguan-database-pc already exists in network bridge.
+```shell
+#查看
+docker network inspect bridge | grep tuguan-database-pc
+#断开连接
+docker network disconnect --force bridge tuguan-database-pc
+```
+
 ## 参考资料
 * [nvidia-docker2.0 GPU 隔离](https://ld246.com/article/1511781062916)
 * [Start containers automatically](https://docs.docker.com/config/containers/start-containers-automatically/)
