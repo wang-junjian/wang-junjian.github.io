@@ -94,3 +94,4 @@ make: *** [Makefile:84: _all] Error 2
 * [Buildroot](https://buildroot.org)
 * [Xilinx Edge AI](https://www.xilinx.com/applications/industrial/analytics-machine-learning.html)
 * [Buildroot使用介绍](https://www.cnblogs.com/arnoldlu/p/9553995.html)
+* [What is Edge AI?](https://www.advian.fi/en/what-is-edge-ai)
