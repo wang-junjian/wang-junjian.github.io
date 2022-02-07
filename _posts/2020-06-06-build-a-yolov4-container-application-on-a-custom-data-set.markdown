@@ -42,7 +42,7 @@ ENTRYPOINT ["bash"]
 
 * 构建容器
 ```bash
-docker build darknet:latest-gpu-yolov4 .
+docker build -t darknet:latest-gpu-yolov4 .
 ```
 
 ## 创建工程
