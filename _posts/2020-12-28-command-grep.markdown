@@ -49,6 +49,11 @@ find ~ -name pip* | xargs -i grep "index-url" {} --color -nH
 /home/lnsoft/.config/pip/pip.conf:2:index-url = https://mirrors.aliyun.com/pypi/simple/
 ```
 
+* 只匹配字符串，不使用正则表达式。
+```shell
+find . | grep -F .run
+```
+
 ## 统计 [目录 | 文件] 数
 * 显示当前目录下的目录
 ```shell
