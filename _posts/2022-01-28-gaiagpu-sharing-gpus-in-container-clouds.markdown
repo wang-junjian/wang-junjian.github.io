@@ -3,7 +3,7 @@ layout: post
 title:  "GaiaGPU: 在容器云中共享GPU"
 date:   2022-01-28 00:00:00 +0800
 categories: Kubernetes
-tags: [apt, lynx, pandoc, grip, Markdown]
+tags: [GPU, CUDA, git, GitHub, ResourceQuota, port-forward, Dockerfile, kube-scheduler]
 ---
 
 > 容器技术由于其轻量级和可伸缩的优势而被广泛使用。GPU也因为其强大的并行计算能力被用于应用程序加速。在云计算环境下，容器可能需要一块或者多块GPU计算卡来满足应程序的资源需求，但另一方面，容器独占GPU计算卡常常会带来资源利用率低的问题。因此，对于云计算资源提供商而言，如何解决在多个容器之间共享GPU计算卡是一个很有吸引力的问题。本文中我们提出了一种称为GaiaGPU的方法，用于在容器间共享GPU存储和GPU的计算资源。GaiaGPU会将物理GPU计算卡分割为多个虚拟GPU并且将虚拟GPU按需分配给容器。同时我们采用了弹性资源分配和动态资源分配的方法来提高资源利用率。实验结果表明GaiaGPU平均仅带来1.015%的性能损耗并且能够高效的为容器分配和隔离GPU资源。
