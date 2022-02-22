@@ -80,7 +80,9 @@ server {
 }
 ```
 
-每次讲求都会执行 set_by_lua_block 和 content_by_lua_block
+* add_header 设置响应头
+* proxy_set_header 设置传递给代理服务器的请求头
+* 每次讲求都会执行 set_by_lua_block 和 content_by_lua_block
 
 ### Lua 语法
 #### 定义变量（local）
