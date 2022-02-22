@@ -71,6 +71,16 @@ docker rmi --force $(docker images -q --filter "dangling=true")
 docker build --no-cache -t name:tag . 
 ```
 
+### 存储镜像到文件
+```shell
+docker save -o name.tar name:tag
+```
+
+### 从文件加载镜像
+```shell
+docker load -i name.tar
+```
+
 ## 容器
 ### 退出容器后自动删除
 ```shell
