@@ -8,6 +8,13 @@ tags: [Install, Proxy, source]
 
 ## 安装
 到 [https://golang.google.cn/dl/](https://golang.google.cn/dl/) 下载对应操作系统的安装包。
+
+### Mac
+```shell
+wget https://golang.google.cn/dl/go1.17.7.darwin-amd64.pkg
+```
+
+### Linux
 ```shell
 wget https://golang.google.cn/dl/go1.17.7.linux-amd64.tar.gz
 sudo tar -C /usr/local/ -xzf go1.17.7.linux-amd64.tar.gz
