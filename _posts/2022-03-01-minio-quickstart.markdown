@@ -75,6 +75,41 @@ mc cat minio/test/hello.txt
 Hello World!
 ```
 
+## 查看挂载的目录
+### Standalone
+```shell
+$ tree /data/minio/data/
+```
+```
+/data/minio/data/
+└── test
+    └── hello.txt
+```
+
+### 单机分布式
+```shell
+$ tree /data/minio/erasure-code/
+```
+```
+/data/minio/erasure-code/
+├── data1
+│   └── test
+│       └── hello.txt
+│           └── xl.meta
+├── data2
+│   └── test
+│       └── hello.txt
+│           └── xl.meta
+├── data3
+│   └── test
+│       └── hello.txt
+│           └── xl.meta
+└── data4
+    └── test
+        └── hello.txt
+            └── xl.meta
+```
+
 ## 参考资料
 * [Multi-Cloud Object Storage](https://min.io)
 * [MinIO Client Quickstart Guide](https://docs.min.io/docs/minio-client-quickstart-guide.html)
