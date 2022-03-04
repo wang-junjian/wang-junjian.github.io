@@ -349,9 +349,6 @@ mkdir -p /data/minio/distributed/data{1..4}-{1..2}
 
 docker-compose pull
 docker-compose up
-
-# 删除实例，删除卷（生产环境中慎用）
-docker-compose down -v
 ```
 
 ## 客户端
