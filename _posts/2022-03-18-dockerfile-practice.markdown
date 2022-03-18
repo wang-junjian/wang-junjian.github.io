@@ -2,8 +2,8 @@
 layout: post
 title:  "Dockerfile实践"
 date:   2022-03-18 00:00:00 +0800
-categories: 实践
-tags: [Dockerfile, Python, OpenCV]
+categories: 实践 Dockerfile
+tags: [Dockerfile, Python, OpenCV, pip]
 ---
 
 ## Python 开发环境
