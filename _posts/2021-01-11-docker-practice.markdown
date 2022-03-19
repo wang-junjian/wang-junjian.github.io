@@ -3,7 +3,7 @@ layout: post
 title:  "Docker实践"
 date:   2021-01-11 00:00:00 +0800
 categories: Docker 实践
-tags: [Docker, GPU, none, xargs, awk]
+tags: [Docker, GPU, none, xargs, awk, inspect]
 ---
 
 ## 安装与卸载
@@ -102,6 +102,13 @@ docker ps -qa --filter status=created | xargs docker rm
 docker rm -f $(docker ps -a | grep face-service- | awk '{print $1}')
 ```
 
+## 查看元数据
+### 查看命令和参数
+```shell
+docker inspect jrottenberg/ffmpeg:4.3-alpine --format="{{.Config.Entrypoint}}{{.Config.Cmd}}"
+[ffmpeg][--help]
+```
+
 ## FAQ
 * docker: Error response from daemon: endpoint with name tuguan-database-pc already exists in network bridge.
 ```shell
@@ -115,3 +122,4 @@ docker network disconnect --force bridge tuguan-database-pc
 * [nvidia-docker2.0 GPU 隔离](https://ld246.com/article/1511781062916)
 * [Start containers automatically](https://docs.docker.com/config/containers/start-containers-automatically/)
 * [Docker remove none TAG images](https://stackoverflow.com/questions/33913020/docker-remove-none-tag-images)
+* [docker inspect](https://docs.docker.com/engine/reference/commandline/inspect/)
