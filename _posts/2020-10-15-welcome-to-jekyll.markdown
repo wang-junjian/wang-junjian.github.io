@@ -36,5 +36,6 @@ bundle exec jekyll serve
 [http://127.0.0.1:4000/](http://127.0.0.1:4000/)
 
 ## 参考资料
-* [jekyll/minima](https://github.com/jekyll/minima/blob/master/_layouts/post.html)
+* [jekyll/minima post.html](https://github.com/jekyll/minima/blob/master/_layouts/post.html)
+* [jekyll/minima home.html](https://github.com/jekyll/minima/blob/master/_layouts/home.html)
 * [How does Jekyll date formatting work?](https://stackoverflow.com/questions/7395520/how-does-jekyll-date-formatting-work)
