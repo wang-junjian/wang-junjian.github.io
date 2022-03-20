@@ -560,12 +560,12 @@ asyncio.run(main())
 from datetime import datetime
 
 now = datetime.now()
-str = now.strftime("%Y-%d-%m %H:%M:%S")
+str = now.strftime("%Y-%m-%d %H:%M:%S")
 
 print(str)
 ```
 ```
-2021-18-08 07:39:22
+2021-08-18 07:39:22
 ```
 
 ### UUID
