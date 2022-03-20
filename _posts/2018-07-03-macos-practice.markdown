@@ -105,6 +105,22 @@ $ du -sh *  显示当前目录下每个目录或文件的磁盘使用信息
  28K    y.xlsx
 ```
 
+## 实用技巧
+### Finder (访达)
+#### 新建位于文件夹位置打开终端窗口
+通过 访达 -> 服务 -> 服务偏好设置... 进行设置。
+
+在访达中选中文件夹，右键菜单“新建位于文件夹位置的终端窗口”
+
+* [Mac 如何在文件夹中打开终端](https://blog.csdn.net/ywb201314/article/details/104007924)
+* [How to Open Terminal in the Current OS X Finder Location](https://www.howtogeek.com/210147/how-to-open-terminal-in-the-current-os-x-finder-location/)
+
+#### 软件多次安装，在访达中右键菜单“打开方式”中还存在着之前的版本，如何删除菜单中的残余项？
+打开终端，运行下面的命令。
+```shell
+/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -kill -r -domain local -domain user;killall Finder;echo "Open With has been rebuilt, Finder will relaunch"
+```
+
 ## 工具
 * 视频转GIF [Drop to GIF](https://github.com/mortenjust/droptogif)
 
