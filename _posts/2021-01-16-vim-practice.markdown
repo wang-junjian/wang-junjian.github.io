@@ -32,6 +32,7 @@ tags: [Linux, vim]
         * ```Ctrl+v``` 块
     * 操作
         * ```d``` 删除选择
+        * ```y``` 复制
         * ```Shift+i``` [块插入](https://stackoverflow.com/questions/12399572/vim-how-to-insert-in-visual-block-mode) (输入插入字符后，按两次esc键。)
     * 退出
         * 按两次esc键
@@ -42,6 +43,7 @@ tags: [Linux, vim]
 ## 文件
 * ```:q``` 没有修改直接退出
 * ```:q!``` 放弃修改退出
+* ```:w``` 保存
 * ```:wq``` 保存退出
     * ```:wq filename``` 保存退出
 * ```ZZ``` 保存退出
@@ -74,18 +76,26 @@ tags: [Linux, vim]
         * ```w``` 选择下一个单词
         * ```0``` 选择到行首
         * ```$``` 选择到行尾
-    * ```y``` 复制选择的字符
     * ```c``` 剪切选择的字符
     * ```d``` 删除选择的字符
     * ```x``` 删除选择的字符
-* ```p``` 粘贴
+    * ```ggVG``` 选择所有的字符
 
-* 当前行
-    * ```dd``` 剪切当前行
-        * ```3dd``` 剪切3行
-    * ```y$``` 复制当前字符到行尾
-    * ```yy``` 复制当前行
-        * ```3yy``` 复制3行
+* 复制
+    * ```y``` 复制选择的字符
+    * ```:%y``` 复制所有的字符
+    * 当前行
+        * ```dd``` 剪切当前行
+            * ```3dd``` 剪切3行
+        * ```y$``` 复制当前字符到行尾
+        * ```:y``` 复制当前行
+        * ```yy``` 复制当前行
+            * ```3yy``` 复制3行
+    * 剪切板（用于应用之间的交换）
+        * ```:y+``` 复制光标所在行（也可以先使用块的方式进行选择再复制）
+        * ```:%y+``` 复制所有数据
+
+* ```p``` 粘贴
 
 * 删除
     * ```x``` 删除当前字符
@@ -95,7 +105,6 @@ tags: [Linux, vim]
     * ```d0``` 删除光标所在字符到行首
     * ```d$``` 删除光标所在字符到行尾
     * ```dG``` 删除光标所在行到文件末尾
-
 
 ## 导航
 * 字符
@@ -153,6 +162,13 @@ tags: [Linux, vim]
 :set nonumber
 ```
 
+### 会用空格替换 Tab
+```
+set ts=4
+set expandtab
+set autoindent
+```
+
 ### 换行 | 不换行
 ```
 :set wrap
@@ -192,3 +208,6 @@ vimdiff file1 file2
 * [How to switch to the directory listing from file view in vim?](https://unix.stackexchange.com/questions/52179/how-to-switch-to-the-directory-listing-from-file-view-in-vim/52189)
 * [Linux vi/vim多标签和多窗口, Tab页浏览目录, 多Tab页编辑](https://justcode.ikeepstudying.com/2018/03/linux-vi-vim多标签和多窗口-tab页浏览目录-多tab页编辑/)
 * [Opening and Switching Between Multiple Files and Windows in VI](https://linuxhint.com/opening_switching_multiple_files_vim/)
+* [How to Vim Save/Vim Exit/Quit in Editor?](https://monovm.com/blog/how-to-save-and-exit-in-vim-editor/)
+* [How To “Select All” In Vim/Vi?](https://linuxtect.com/how-to-select-all-in-vim-vi/)
+* [How to copy all the text from vim editor using vim command line?](https://stackoverflow.com/questions/30838436/how-to-copy-all-the-text-from-vim-editor-using-vim-command-line)
