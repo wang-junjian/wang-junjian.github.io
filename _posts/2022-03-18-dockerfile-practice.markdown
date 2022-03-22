@@ -51,12 +51,14 @@ docker build -t gouchicao/ubuntu:20.04-python3-opencv4 .
 FROM gouchicao/ubuntu:20.04-python3-opencv4
 LABEL maintainer="wang-junjian@qq.com"
 
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+WORKDIR /code
 
-ADD . ./
+COPY requirements.txt /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-CMD ["python", "app.py"]
+COPY . /code
+
+CMD ["python", "main.py"]
 ```
 
 * requirements.txt 优先把 requirements.txt 文件拷贝到镜像中，然后安装依赖库，最后把程序代码拷贝进镜像中，主要是代码变动的频率比库变动的频率高，这样避免了每次都要重新安装依赖的库，加快构建镜像的速度。
