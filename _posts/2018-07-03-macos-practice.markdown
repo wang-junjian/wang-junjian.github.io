@@ -123,6 +123,7 @@ $ du -sh *  显示当前目录下每个目录或文件的磁盘使用信息
 
 ## 工具
 * 视频转GIF [Drop to GIF](https://github.com/mortenjust/droptogif)
+* 资源监控工具 [Stats](https://github.com/exelban/stats)
 
 ## 参考资料
 * [发现 Mac 的新功能](https://help.apple.com/macOS/mojave/whats-new/?lang=zh-hans)
