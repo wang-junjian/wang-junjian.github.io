@@ -6,6 +6,24 @@ categories: Command
 tags: [Linux, base64, echo, printf]
 ---
 
+## 编码
+### macOS
+```shell
+base64 file
+```
+
+### Linux
+> -w, --wrap=COLS       wrap encoded lines after COLS character (default 76). Use 0 to disable line wrapping
+```shell
+base64 -w0 file
+```
+
+## 解码
+```shell
+base64 -d
+```
+
+## 问题
 ```YWRtaW4=``` 是 ```admin``` 的 base64 编码。
 
 * 解码（正确，这里之所以正确是因为base64过滤了。）
