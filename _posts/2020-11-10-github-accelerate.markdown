@@ -6,7 +6,9 @@ categories: GitHub
 tags: [GitHub, curl, hosts]
 ---
 
-> 在国内加速下载GitHub工程
+## 通过网游加速器
+* [网易UU加速器](https://uu.163.com)
+* [Steam++](http://steampp.net)
 
 ## 在路径上增加 ```.cnpmjs.org```
 正常下载：```git clone https://github.com/microsoft/onnxruntime.git```
