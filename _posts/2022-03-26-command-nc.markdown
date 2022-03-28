@@ -55,7 +55,7 @@ Content-Length: 36
 
 ### POST File 请求
 ```shell
-curl --location --request POST 'http://127.0.0.1:8000/uploadfile' --form 'file=@"/test/test.jpg"'
+curl --location --request POST 'http://127.0.0.1:8000/uploadfile' --form 'file=@"test.jpg"'
 ```
 
 ```
@@ -78,6 +78,24 @@ $4?%?&'()*56789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz????????????????????????????????
 ???d/i?+?Z]J?]2?Q2?:??ܨe?P??\?%?O?ʜ?N??=?????2?.?T?X?߽?k?w?????
 --------------------------f512f8a3c3a9b436--
 ```
+
+因为是二进制数据，所以有许多乱码，可以在使用 nc 监听时将接收到的数据写入到文件中。
+```shell
+nc -l port > output_file
+```
+
+整理后获得下面的格式:
+```
+--------------------------f512f8a3c3a9b436\r\n
+Content-Disposition: form-data; name="file"; filename="test.jpg"\r\n
+Content-type: image/jpeg\r\n
+\r\n
+file content binary
+\r\n
+--------------------------f512f8a3c3a9b436--\r\n
+```
+
+```--------------------------f512f8a3c3a9b436``` 是分界符，字母数字是随机生成的。
 
 ## 发送消息
 * 服务器端
@@ -179,6 +197,8 @@ test.jpg
 #退出连接（客户端程序也会退出）
 exit
 ```
+
+## 连接转发
 
 ## 反弹 Shell
 * 服务器端
