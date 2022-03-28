@@ -187,7 +187,37 @@ set autoindent
 :set noignorecase
 ```
 
-## 工具
+### 设置为二进制
+```
+:set binary
+```
+
+### 不可显示字符显示为 16 进制
+```
+--1234567890^M
+```
+**^M 是 CR（回车符）**
+
+```
+:set display=uhex
+```
+
+现在 ^M 显示为 <0d>
+```
+--1234567890<0d>
+```
+
+还原为原显示格式
+```
+:set display=
+```
+
+## 其它
+### 二进制打开文件
+```shell
+vim -b file.txt
+```
+
 ### 比较两个文件的内容
 ```shell
 vim -d file1 file2
@@ -196,6 +226,18 @@ vim -d file1 file2
 ```shell
 vimdiff file1 file2
 ```
+
+### 转换为 16 进制编辑器
+```
+:%!xxd
+```
+
+还原为原显示
+```
+:%!xxd -r
+```
+
+命令解读 : enters command-line mode, % matches whole file as a range, ! filters that range through an external command, xxd is that external shell command
 
 ---
 
@@ -211,3 +253,6 @@ vimdiff file1 file2
 * [How to Vim Save/Vim Exit/Quit in Editor?](https://monovm.com/blog/how-to-save-and-exit-in-vim-editor/)
 * [How To “Select All” In Vim/Vi?](https://linuxtect.com/how-to-select-all-in-vim-vi/)
 * [How to copy all the text from vim editor using vim command line?](https://stackoverflow.com/questions/30838436/how-to-copy-all-the-text-from-vim-editor-using-vim-command-line)
+* [vim回车和换行](https://www.jianshu.com/p/00476400ef20)
+* [Use vim to search by hex code](https://stackoverflow.com/questions/2266383/use-vim-to-search-by-hex-code)
+* [How can I use Vim as a hex editor? ](https://vi.stackexchange.com/questions/2232/how-can-i-use-vim-as-a-hex-editor)
