@@ -2,7 +2,7 @@
 layout: post
 title:  "基于健康码识别的 FastAPI 同步和异步函数的基准测试"
 date:   2022-03-25 00:00:00 +0800
-categories: 工作日志
+categories: 工作日志 测试
 tags: [Linux, FastAPI, async, gunicorn, uvicorn, ab, Docker]
 ---
 
@@ -46,7 +46,7 @@ ab -n200 -c20 -p health.json -T "application/json" http://172.16.33.66:20001/ana
 @app.post("/analysis/{usage}")
 async def detect_image(usage: str = None, json: Base64 = None):
     img = base64_to_image(json.base64)
-    return detect(img)
+    return detect(usage, img)
 ```
 
 ### uvicorn
@@ -230,7 +230,7 @@ Percentage of the requests served within a certain time (ms)
 @app.post("/analysis/{usage}")
 def detect_image(usage: str = None, json: Base64 = None):
     img = base64_to_image(json.base64)
-    return detect(img)
+    return detect(usage, img)
 ```
 
 ### uvicorn
@@ -675,4 +675,14 @@ Percentage of the requests served within a certain time (ms)
  100%   1587 (longest request)
 ```
 
+通过基准测试发现，最大的瓶颈不是 GPU，而且 CPU，GPU 一张卡的负载还没有 40 核 CPU 的负载高。
+
 **异步（使用了 async 关键字）函数，在压测的过程中基本上不会失败（Failed）,同步函数，在压测过程中会经常失败，随着并发数的增加而增加。目前还没有找到原因**
+
+## 参考资料
+* [FastAPI](https://fastapi.tiangolo.com/zh/)
+* [Uvicorn - An ASGI web server, for Python.](https://www.uvicorn.org)
+* [Gunicorn - WSGI server](https://docs.gunicorn.org/en/stable/index.html)
+* [Hướng dẫn sử dụng AB Benchmarking Tool trên Ubuntu 18.04](https://blog.devopsviet.com/2020/05/17/huong-dan-su-dung-ab-benchmarking-tool-tren-ubuntu-18-04/)
+* [Concurrency and async / await](https://fastapi.tiangolo.com/zh/async/)
+* [FastAPI官档精编004 - 并发与异步](https://www.jianshu.com/p/354ee7189918)
