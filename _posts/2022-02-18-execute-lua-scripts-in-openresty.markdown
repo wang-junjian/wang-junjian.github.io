@@ -151,3 +151,6 @@ $ curl localhost/0ec2bde743d547a7a7d1ea5043230c69/inference/ -v
 * [Is it possible to have live reloading of lua scripts using openresty and docker?](https://stackoverflow.com/questions/62687216/is-it-possible-to-have-live-reloading-of-lua-scripts-using-openresty-and-docker)
 * [docker-openresty/centos/Dockerfile](https://github.com/openresty/docker-openresty/blob/master/centos/Dockerfile)
 * [docker-openresty - Docker tooling for OpenResty](https://github.com/openresty/docker-openresty/blob/master/README.md)
+* [A Regular Expression Tester for NGINX and NGINX Plus](https://www.nginx.com/blog/regular-expression-tester-nginx/)
+* [Nginx location regex examples](https://linuxhint.com/nginx-location-regex-examples/)
+* [Creating NGINX Rewrite Rules](https://www.nginx.com/blog/creating-nginx-rewrite-rules/)
