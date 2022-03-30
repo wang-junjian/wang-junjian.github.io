@@ -3,7 +3,7 @@ layout: post
 title:  "Python实践"
 date:   2021-02-28 00:00:00 +0800
 categories: Python 实践
-tags: [PYTHONPATH, exec]
+tags: [PYTHONPATH, exec, uuid]
 ---
 
 * [Python 3 文档](https://docs.python.org/zh-cn/3/)
