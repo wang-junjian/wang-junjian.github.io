@@ -32,7 +32,7 @@ docker run --runtime=nvidia --rm -it -e NVIDIA_VISIBLE_DEVICES=2 -p 20001:8000 \
 ```shell
 docker run --runtime=nvidia --rm -it -e NVIDIA_VISIBLE_DEVICES=2 -p 20001:8000 \
     -v $(pwd):/health_code_service --name=health-gunicorn-uvicorn  health-code-service:gunicorn-uvicorn \
-    uvicorn controller:app --bind 0.0.0.0 --workers 1
+    gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0 --workers 1
 ```
 
 ### 性能压测
