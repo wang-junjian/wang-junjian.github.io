@@ -675,7 +675,13 @@ Percentage of the requests served within a certain time (ms)
  100%   1587 (longest request)
 ```
 
-通过基准测试发现，最大的瓶颈不是 GPU，而且 CPU，GPU 一张卡的负载还没有 40 核 CPU 的负载高。
+## 总结
+![](/images/2022/ai-health-benchmarking.png)
+
+* 4 个进程可以发挥到最佳效果
+* 8 个进程已经到了上限了
+* 在部署这种密集计算的应用下，gunicorn + uvicorn 并没有比 uvicorn 强，但如果您需要管理进程，它们就是最佳组合。
+* 通过基准测试发现，最大的瓶颈不是 GPU，而且 CPU，GPU 一张卡的负载还没有 40 核 CPU 的负载高。
 
 **异步（使用了 async 关键字）函数，在压测的过程中基本上不会失败（Failed）,同步函数，在压测过程中会经常失败，随着并发数的增加而增加。目前还没有找到原因**
 
