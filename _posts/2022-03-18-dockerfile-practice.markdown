@@ -3,7 +3,7 @@ layout: post
 title:  "Dockerfile实践"
 date:   2022-03-18 00:00:00 +0800
 categories: 实践 Dockerfile
-tags: [Dockerfile, Python, OpenCV, pip, timezone]
+tags: [Dockerfile, Python, OpenCV, pip, localtime, timezone]
 ---
 
 ## Python 开发环境
@@ -66,11 +66,14 @@ CMD ["python", "main.py"]
 ## 系统
 ### 指定本地时区
 ```dockerfile
-#auto install tzdata
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get install tzdata -y
-
-#set your localtime
-RUN ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+ARG TIME_ZONE=Asia/Shanghai
+RUN DEBIAN_FRONTEND=noninteractive apt-get install tzdata -y && \
+    ln -fs /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && \
+    echo $TIME_ZONE > /etc/timezone
 ```
+* /etc/localtime 修改时区
+* /etc/timezone  描述本机所属时区
+* timedatectl    显示修改好的效果
+参考资料
+* [linux时区（/etc/localtime和/etc/timezone）](https://www.malaoshi.top/show_1EF5oe42EiBO.html)
+* [在 Linux 中查看你的时区](https://linux.cn/article-7970-1.html)
