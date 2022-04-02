@@ -74,3 +74,4 @@ YWRtaW4=
 ## 参考资料
 * [“echo -n” prints “-n”](https://stackoverflow.com/questions/11193466/echo-n-prints-n)
 * [How to echo out things without a newline?](https://stackoverflow.com/questions/38021348/how-to-echo-out-things-without-a-newline)
+* [Python base64](https://docs.python.org/3/library/base64.html)
