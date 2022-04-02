@@ -6,6 +6,21 @@ categories: 实践 Dockerfile
 tags: [Dockerfile, Python, OpenCV, pip, localtime, timezone]
 ---
 
+## 系统
+### 指定本地时区
+```dockerfile
+ARG TIME_ZONE=Asia/Shanghai
+RUN DEBIAN_FRONTEND=noninteractive apt-get install tzdata -y && \
+    ln -fs /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && \
+    echo $TIME_ZONE > /etc/timezone
+```
+* /etc/localtime 修改时区
+* /etc/timezone  描述本机所属时区
+* timedatectl    显示修改好的效果
+参考资料
+* [linux时区（/etc/localtime和/etc/timezone）](https://www.malaoshi.top/show_1EF5oe42EiBO.html)
+* [在 Linux 中查看你的时区](https://linux.cn/article-7970-1.html)
+
 ## Python 开发环境
 ### 构建 Python, OpenCV 开发环境的镜像
 ```dockerfile
@@ -62,18 +77,3 @@ CMD ["python", "main.py"]
 ```
 
 * requirements.txt 优先把 requirements.txt 文件拷贝到镜像中，然后安装依赖库，最后把程序代码拷贝进镜像中，主要是代码变动的频率比库变动的频率高，这样避免了每次都要重新安装依赖的库，加快构建镜像的速度。
-
-## 系统
-### 指定本地时区
-```dockerfile
-ARG TIME_ZONE=Asia/Shanghai
-RUN DEBIAN_FRONTEND=noninteractive apt-get install tzdata -y && \
-    ln -fs /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && \
-    echo $TIME_ZONE > /etc/timezone
-```
-* /etc/localtime 修改时区
-* /etc/timezone  描述本机所属时区
-* timedatectl    显示修改好的效果
-参考资料
-* [linux时区（/etc/localtime和/etc/timezone）](https://www.malaoshi.top/show_1EF5oe42EiBO.html)
-* [在 Linux 中查看你的时区](https://linux.cn/article-7970-1.html)
