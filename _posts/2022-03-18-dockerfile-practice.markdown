@@ -3,7 +3,7 @@ layout: post
 title:  "Dockerfile实践"
 date:   2022-03-18 00:00:00 +0800
 categories: 实践 Dockerfile
-tags: [Dockerfile, Python, OpenCV, pip]
+tags: [Dockerfile, Python, OpenCV, pip, timezone]
 ---
 
 ## Python 开发环境
@@ -62,3 +62,15 @@ CMD ["python", "main.py"]
 ```
 
 * requirements.txt 优先把 requirements.txt 文件拷贝到镜像中，然后安装依赖库，最后把程序代码拷贝进镜像中，主要是代码变动的频率比库变动的频率高，这样避免了每次都要重新安装依赖的库，加快构建镜像的速度。
+
+## 系统
+### 指定本地时区
+```dockerfile
+#auto install tzdata
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get install tzdata -y
+
+#set your localtime
+RUN ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+```
