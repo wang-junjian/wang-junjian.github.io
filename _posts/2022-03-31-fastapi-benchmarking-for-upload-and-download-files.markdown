@@ -62,6 +62,10 @@ wrk -c100 -t$(nproc) -d10 --latency -s postfile.lua  $RESTAPI
    * http://172.16.33.159:8000/files/upload/single
 * 异步```全量```读取上传的文件，异步写入磁盘文件。(API 函数定义时没有使用 async)
    * http://172.16.33.159:8000/files/upload/single/sync
+* **stream** 异步读取上传的文件，异步写入磁盘文件。
+   * http://172.16.33.159:8000/files/upload/single/stream
+* 使用 base64 对文件进行编码，json 上传。
+   * http://172.16.33.159:8000/files/upload/raw/json/base64decode
 * **stream** 同步读取要下载的文件
    * http://172.16.33.159:8000/files/download/stream/sync_read
 * **stream** 异步读取要下载的文件
@@ -172,6 +176,82 @@ Running 10s test @ http://172.16.33.159:8000/files/upload/single/sync
   27513 requests in 10.10s, 4.78MB read
 Requests/sec:   2723.91
 Transfer/sec:    484.68KB
+```
+
+```shell
+wrk -c100 -t$(nproc) -d10 --latency -s postfile.lua  "http://172.16.33.159:8000/files/upload/single/stream"
+```
+```
+Running 10s test @ http://172.16.33.159:8000/files/upload/single/stream
+  40 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    29.55ms   19.77ms  89.30ms   59.62%
+    Req/Sec    67.69     12.92   121.00     78.84%
+  Latency Distribution
+     50%   20.07ms
+     75%   51.42ms
+     90%   58.69ms
+     99%   69.60ms
+  27305 requests in 10.10s, 4.74MB read
+Requests/sec:   2703.74
+Transfer/sec:    481.04KB
+```
+
+```shell
+wrk -c100 -t$(nproc) -d10 --latency -s postfile.lua  "http://172.16.33.159:8000/files/upload/single/stream/async_read_sync_write"
+```
+```
+Running 10s test @ http://172.16.33.159:8000/files/upload/single/stream/async_read_sync_write
+  40 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    23.44ms   19.92ms  98.35ms   67.73%
+    Req/Sec    86.29     16.29   150.00     76.63%
+  Latency Distribution
+     50%   10.92ms
+     75%   47.74ms
+     90%   52.12ms
+     99%   61.83ms
+  34760 requests in 10.10s, 6.04MB read
+Requests/sec:   3441.92
+Transfer/sec:    612.46KB
+```
+
+```shell
+wrk -c100 -t$(nproc) -d10 --latency -s postfile.lua  "http://172.16.33.159:8000/files/upload/single/stream/sync_read_sync_write"
+```
+```
+Running 10s test @ http://172.16.33.159:8000/files/upload/single/stream/sync_read_sync_write
+  40 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    23.29ms   19.88ms 115.56ms   67.66%
+    Req/Sec    86.82     16.18   131.00     61.06%
+  Latency Distribution
+     50%   10.63ms
+     75%   47.89ms
+     90%   51.91ms
+     99%   61.30ms
+  34965 requests in 10.10s, 6.08MB read
+Requests/sec:   3461.86
+Transfer/sec:    615.96KB
+```
+
+```shell
+wrk -c100 -t$(nproc) -d10 --latency -s postfile_json.lua  "http://172.16.33.159:8000/files/upload/raw/json/base64decode"
+```
+```
+Running 10s test @ http://172.16.33.159:8000/files/upload/raw/json/base64decode
+  40 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    23.46ms   19.84ms  77.10ms   67.37%
+    Req/Sec    85.65     15.54   141.00     62.31%
+  Latency Distribution
+     50%   11.02ms
+     75%   48.92ms
+     90%   52.37ms
+     99%   59.44ms
+  34511 requests in 10.10s, 6.00MB read
+Requests/sec:   3417.02
+Transfer/sec:    608.06KB
 ```
 
 ```shell
@@ -519,19 +599,24 @@ Transfer/sec:     44.29KB
 ## 总结
 wrk 使用了 40 个线程，100 个并发，持续 10 秒。服务器端 **uvicorn**，40个进程并行服务。
 
-|    | async | API | stream | Requests | Requests/sec | Avg Latency(ms) |
-| -- | -- | -- | -- | -- | -- | -- |
-| 👍 | async | upload/stream/async_read_and_memory_write | Yes | 45725 | 4527.22 | 19.29 |
-| 👍 | async | upload/stream/async_read_and_disk_write | Yes | 45943 | 4548.93 | 19.25 |
-|    | async | upload/stream/async_read_and_async_write | Yes | 42120 | 4169.88 | 19.94 |
-|    | async | upload/single |  | 27450 | 2718.32 | 29.36 |
-|    |       | upload/single/sync |  | 27513 | 2723.91 | 29.41 |
-| 👍 | async | download/stream/sync_read | Yes | 45889 | 4543.27 | 18.33 |
-| 👍 | async | download/stream/async_read | Yes | 46004 | 4555.05 | 18.30 |
-|    | async | download/file |  | 15716 | 1556.09 | 51.29 |
-|    |       | download/file/sync |  | 15092 | 1494.30 | 53.35 |
+|    | async | API | Body | stream | Requests | Requests/sec | Avg Latency (ms) |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+| 👍 | async | upload/stream/async_read_and_memory_write | binary | Yes | 45725 | 4527.22 | 19.29 |
+| 👍 | async | upload/stream/async_read_and_disk_write | binary | Yes | 45943 | 4548.93 | 19.25 |
+|    | async | upload/stream/async_read_and_async_write | binary | Yes | 42120 | 4169.88 | 19.94 |
+|    | async | upload/single | form-data |  | 27450 | 2718.32 | 29.36 |
+|    |       | upload/single/sync | form-data |  | 27513 | 2723.91 | 29.41 |
+|    | async | upload/single/stream | form-data | Yes | 27305 | 2703.74 | 29.55 |
+|    | async | upload/single/stream/async_read_sync_write | form-data | Yes | 34760 | 3441.92 | 23.44 |
+|    | async | upload/single/stream/sync_read_sync_write | form-data | Yes | 34965 | 3461.86 | 23.29 |
+|    | async | upload/raw/json/base64decode | raw |  | 34511 | 3417.02 | 23.46 |
+| 👍 | async | download/stream/sync_read |  | Yes | 45889 | 4543.27 | 18.33 |
+| 👍 | async | download/stream/async_read |  | Yes | 46004 | 4555.05 | 18.30 |
+|    | async | download/file |  |  | 15716 | 1556.09 | 51.29 |
+|    |       | download/file/sync |  |  | 15092 | 1494.30 | 53.35 |
 
-* 上传和下载都是流式传输效率最棒🚀。
+* binary 比 form-data 效率高🚀
+* 上传和下载都是流式传输效率最棒🚀
 * 写入 tempfile.NamedTemporaryFile() 生成的内存文件，没有看到效率的提升。
 * 读和写都做了异步处理，不但没有带来效率的提升反而下降了。
 
@@ -548,6 +633,32 @@ wrk 使用了 40 个线程，100 个并发，持续 10 秒。服务器端 **uvic
 
 **gunicorn + uvicorn** 表现比较稳定，整体效率有一点点拉升，异步读和异步写叠加（async_read_and_async_write）和一个文件全量读取（single）的效率提升非常大🚀。这里的测试我并没有考虑到服务器端的负载。
 
+### 上传文件
+```py
+async def create_file(request: Request):
+    file_path = 'video.mp4'
+
+    with open(file_path, "wb") as file:
+        async for chunk in request.stream():
+            file.write(chunk)
+            
+    return {'file_path': file_path}
+```
+
+### 下载文件
+```py
+async def read_file():
+    file_path = 'video.mp4'
+    
+    async def iterfile(file_path, chunk_size):
+        async with aiofiles.open(file_path, 'rb') as f:
+            while chunk := await f.read(chunk_size):
+                yield chunk
+
+    CHUNK_SIZE = 262144 #256*1024
+    return StreamingResponse(iterfile(file_path, CHUNK_SIZE), media_type="application/octet-stream")
+```
+
 ## 参考资料
 * [FastAPI](https://fastapi.tiangolo.com/zh/)
 * [Uvicorn - An ASGI web server, for Python.](https://www.uvicorn.org)
@@ -555,3 +666,4 @@ wrk 使用了 40 个线程，100 个并发，持续 10 秒。服务器端 **uvic
 * [Hướng dẫn sử dụng AB Benchmarking Tool trên Ubuntu 18.04](https://blog.devopsviet.com/2020/05/17/huong-dan-su-dung-ab-benchmarking-tool-tren-ubuntu-18-04/)
 * [Concurrency and async / await](https://fastapi.tiangolo.com/zh/async/)
 * [FastAPI官档精编004 - 并发与异步](https://www.jianshu.com/p/354ee7189918)
+* [FastAPI (已解决，RuntimeWarning: coroutine 'UploadFile.read' was never awaited)](https://zhuanlan.zhihu.com/p/387545883)
