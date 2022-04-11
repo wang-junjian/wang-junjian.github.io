@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Dockerfile实践"
+title:  "Dockerfile 实践"
 date:   2022-03-18 00:00:00 +0800
 categories: 实践 Dockerfile
 tags: [Dockerfile, Python, OpenCV, pip, localtime, timezone]
@@ -9,6 +9,9 @@ tags: [Dockerfile, Python, OpenCV, pip, localtime, timezone]
 ## 系统
 ### 指定本地时区
 ```dockerfile
+FROM ubuntu:20.04
+LABEL maintainer="wang-junjian@qq.com"
+
 ARG TIME_ZONE=Asia/Shanghai
 RUN DEBIAN_FRONTEND=noninteractive apt-get install tzdata -y && \
     ln -fs /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && \
