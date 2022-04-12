@@ -599,22 +599,44 @@ export PYTHONPATH="您的工程路径"
 ### ```if __name__ == '__main__'```
 运行 Python 脚本的第一个脚本的 ```__name__``` 值为 ```__main__```，在脚本中使用 import 语句时，```__name__``` 就会被赋值为该模块的名字了，这样导入进来的模块语句将不会执行。
 
-### 指定要执行的命令
-* 单语句
+## 其它
+### 脚本内查看 Python 的版本信息
+#### platform 模块
+```py
+import platform
+print(platform.python_version())
+```
+```
+3.9.7
+```
+
+#### sys 模块
+```py
+import sys
+print(sys.version)
+print(sys.version_info)
+```
+3.9.7 (v3.9.7:1016ef3790, Aug 30 2021, 16:39:15) 
+sys.version_info(major=3, minor=9, micro=7, releaselevel='final', serial=0)```
+```
+
+### 通过 Python 指定要执行的命令
+#### 单语句
 ```shell
 python -c "print('Hello World')"
 ```
 
-* 多语句(使用;分割)
+#### 多语句(使用;分割)
 ```shell
 python -c "import time;time.sleep(1)"
 ```
 
-* 带缩行的语句
+#### 带缩行的语句
 ```shell
 python -c "exec('import time\\ntry:  time.sleep(1)\\nexcept:  pass\\n')"
 ```
 
+#### 脚本文件
 可以把语句直接写到 test.py 文件。
 ```py
 import time
