@@ -154,3 +154,4 @@ $ curl localhost/0ec2bde743d547a7a7d1ea5043230c69/inference/ -v
 * [A Regular Expression Tester for NGINX and NGINX Plus](https://www.nginx.com/blog/regular-expression-tester-nginx/)
 * [Nginx location regex examples](https://linuxhint.com/nginx-location-regex-examples/)
 * [Creating NGINX Rewrite Rules](https://www.nginx.com/blog/creating-nginx-rewrite-rules/)
+* [详解Nginx location 匹配规则](https://www.cnblogs.com/benwu/articles/15843305.html)
