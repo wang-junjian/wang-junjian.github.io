@@ -616,6 +616,7 @@ import sys
 print(sys.version)
 print(sys.version_info)
 ```
+```
 3.9.7 (v3.9.7:1016ef3790, Aug 30 2021, 16:39:15) 
 sys.version_info(major=3, minor=9, micro=7, releaselevel='final', serial=0)```
 ```
