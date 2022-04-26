@@ -125,6 +125,23 @@ omz_downloader --all
 omz_converter --all
 ```
 
+## 模型查看
+netron 可以查看各种深度学习和机器学习框架训练出来的模型。
+
+### 安装 [netron](https://pypi.org/project/netron/)
+```shell
+pip install netron
+```
+
+### 查看网络
+通过设置 ```--host 0.0.0.0```，局域网内的其它主机也可以通过 http://ip:8080 访问。
+```shell
+netron public/alexnet/FP16/alexnet.xml --host 0.0.0.0
+```
+
+### Web 应用 [netron](https://netron.app)
+通过页面的下载可以安装本地程序。
+
 ## Samples
 ### 图像分类
 异步推理 [Image Classification Async Python Sample](https://github.com/openvinotoolkit/openvino/tree/master/samples/python/classification_sample_async)
@@ -270,3 +287,4 @@ $ python samples/python/model_creation_sample/model_creation_sample.py samples/p
 * [Open Model Zoo](https://github.com/openvinotoolkit/open_model_zoo)
 * [Install OpenVINO Overview](https://docs.openvino.ai/latest/openvino_docs_install_guides_overview.html)
 * [pypip openvino](https://pypi.org/project/openvino/)
+* [netron](https://pypi.org/project/netron/)
