@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
 ### 运行程序
 ```shell
-$ python test.py public/ssd300/FP32/ssd300.xml catdog.jpg CPU
+$ python object_detection.py public/ssd300/FP32/ssd300.xml catdog.jpg CPU
 [ INFO ] 1. Creating OpenVINO Runtime Core
 [ INFO ] 2. Reading the model: public/ssd300/FP32/ssd300.xml
 [ INFO ] 3. Set up input
