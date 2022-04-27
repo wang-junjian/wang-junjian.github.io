@@ -15,7 +15,7 @@ source openvino_env/bin/activate
 ### 预训练模型
 * [alexnet](https://docs.openvino.ai/latest/omz_models_model_alexnet.html)
 * [googlenet-v1](https://docs.openvino.ai/latest/omz_models_model_googlenet_v1.html)
-来自 ImageNet 的 1000 个类别：<omz_dir>/data/dataset_classes/imagenet_2012.txt
+来自 ImageNet 的 1000 个类别：```<omz_dir>/data/dataset_classes/imagenet_2012.txt```
 
 ### 下载模型
 ```shell
