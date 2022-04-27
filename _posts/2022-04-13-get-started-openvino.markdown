@@ -10,7 +10,8 @@ tags: [Install, venv]
 > **Open** **V**isual **I**nference and **N**eural network **O**ptimization
 
 ## [OpenVINO 安装](https://docs.openvino.ai/nightly/openvino_docs_install_guides_overview.html)
-### pip 安装
+### [Development](https://pypi.org/project/openvino-dev/)
+#### pip 安装
 * [下载](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/download.html)
 
 安装 OpenVINO 开发工具
@@ -33,7 +34,7 @@ pip install openvino-dev[onnx,pytorch,kaldi,mxnet,caffe,tensorflow2]==2022.1.0 -
 ```
 * [Install OpenVINO™ Development Tools](https://docs.openvino.ai/nightly/openvino_docs_install_guides_install_dev_tools.html)
 
-### 源代码编译安装(没有成功)👹
+#### 源代码编译安装(没有成功)👹
 [Build OpenVINO™ Inference Engine](https://github.com/openvinotoolkit/openvino/wiki/BuildingCode)
 
 ```shell
@@ -49,6 +50,39 @@ sudo ./scripts/install_dependencies/install_openvino_dependencies.sh -y -c=pytho
 cmake --install . --prefix /opt/intel/openvino
 ```
 * [OpenVINO Dockerfile](https://github.com/openvinotoolkit/docker_ci/blob/master/dockerfiles/ubuntu20/build_custom/Dockerfile)
+
+### [Runtime](https://pypi.org/project/openvino/)
+
+## OpenVINO 开发包下的组件
+### [Model Optimizer](https://docs.openvino.ai/latest/openvino_docs_MO_DG_Deep_Learning_Model_Optimizer_DevGuide.html)
+* mo
+训练的模型导入、转换和优化为 OpenVINO 可用的格式（IR）。
+
+### [Benchmark Tool](https://docs.openvino.ai/latest/openvino_inference_engine_tools_benchmark_tool_README.html)
+* benchmark_app
+允许您在同步和异步模式下估计受支持设备上的深度学习模型推理性能。
+
+### [Accuracy Checker](https://docs.openvino.ai/latest/omz_tools_accuracy_checker.html) 和 [Annotation Converter](https://docs.openvino.ai/latest/omz_tools_accuracy_checker_annotation_converters.html)
+* accuracy_check
+深度学习准确性验证工具，可用于收集针对常用数据集的准确性指标。该工具的主要优点是配置的灵活性和一组支持的数据集、预处理、后处理和指标。
+* convert_annotation
+用于准备数据集以使用 accuracy_check 进行评估。
+
+### [Post-Training Optimization Tool](https://docs.openvino.ai/latest/pot_README.html)
+* pot
+训练后优化工具允许您使用高级功能（如量化和低精度优化）优化训练的模型，而无需重新训练或微调模型。还可以通过 [API](https://docs.openvino.ai/latest/pot_compression_api_README.html) 进行优化。
+
+### [Open Model Zoo tools](https://docs.openvino.ai/latest/omz_tools_downloader.html)
+* omz_downloader
+用于访问预训练深度学习公共模型和英特尔训练模型的集合。
+* omz_converter
+使用模型优化器将存储在原始深度学习框架格式中的 Open Model Zoo 模型转换为 OpenVINO 中间表示 (IR)。
+* omz_quantizer
+用于使用训练后优化工具（Post-Training Optimization Tool）将 IR 格式的全精度模型自动量化为低精度版本。
+* omz_info_dumper
+用于将有关模型的信息转储为机器可读格式。
+* omz_data_downloader
+数据集下载器
 
 ## 验证安装
 ```shell
