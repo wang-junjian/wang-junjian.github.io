@@ -14,7 +14,7 @@ source openvino_env/bin/activate
 
 ### 预训练模型
 * [ssd300](https://docs.openvino.ai/latest/omz_models_model_ssd300.html)
-来自 PASCAL VOC2007 的 20 个类别：<omz_dir>/data/dataset_classes/voc_20cl_bkgr.txt
+来自 PASCAL VOC2007 的 20 个类别：```<omz_dir>/data/dataset_classes/voc_20cl_bkgr.txt```
 
 ### 下载模型
 ```shell
