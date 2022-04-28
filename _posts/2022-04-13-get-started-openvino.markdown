@@ -322,6 +322,6 @@ $ python samples/python/model_creation_sample/model_creation_sample.py samples/p
 * [Install OpenVINO Overview](https://docs.openvino.ai/latest/openvino_docs_install_guides_overview.html)
 * [pypip openvino-runtime](https://pypi.org/project/openvino/)
 * [pypip openvino-dev](https://pypi.org/project/openvino-dev/)
+* [pypip netron](https://pypi.org/project/netron/)
 * [netron](https://github.com/lutzroeder/netron)
-* [netron](https://pypi.org/project/netron/)
 * [Visualize Neural Network Model using Netron](https://lindevs.com/visualize-neural-network-model-using-netron/)
