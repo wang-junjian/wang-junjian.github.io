@@ -197,6 +197,22 @@ OpenVINO 包含一整套开发和部署工具，本工作流研究从设置和�
 ### 优化性能
 工具套件中的其他工具有助于提高性能。基准应用程序分析模型的性能；交叉检查工具比较两个连续模型推断之间的准确性和性能；深度学习工作台允许您可视化、微调和比较深度学习模型的性能。
 
+#### 性能调整
+* [Introduction to Performance Optimization](https://docs.openvino.ai/latest/openvino_docs_optimization_guide_dldt_optimization_guide.html)
+![](/images/2022/openvino/LATENCY_VS_THROUGHPUT.svg)
+* [Getting Performance Numbers](https://docs.openvino.ai/latest/openvino_docs_MO_DG_Getting_Performance_Numbers.html)
+* [Model Optimization Guide](https://docs.openvino.ai/latest/openvino_docs_model_optimization_guide.html)
+![](/images/2022/openvino/DEVELOPMENT_FLOW_V3_crunch.svg)
+    * [Optimizing models post-training](https://docs.openvino.ai/latest/pot_introduction.html)
+    ![](/images/2022/openvino/workflow_simple.png)
+    * [Neural Network Compression Framework](https://docs.openvino.ai/latest/docs_nncf_introduction.html)
+    ![](/images/2022/openvino/nncf_workflow.png)
+    * [Protecting Deep Learning Model through Range Supervision](https://docs.openvino.ai/latest/pot_ranger_README.html)
+    ![](/images/2022/openvino/scheme3.png)
+* [Runtime Inference Optimizations](https://docs.openvino.ai/latest/openvino_docs_deployment_optimization_guide_dldt_optimization_guide.html)
+* [Tuning Utilities](https://docs.openvino.ai/latest/openvino_docs_tuning_utilities.html)
+* [Performance Benchmarks](https://docs.openvino.ai/latest/openvino_docs_performance_benchmarks.html)
+
 #### [基准 Python 应用](https://docs.openvino.ai/latest/openvino_inference_engine_tools_benchmark_tool_README.html)
 #### [基准 C++ 应用](https://docs.openvino.ai/latest/openvino_inference_engine_samples_benchmark_app_README.html)
 #### [交叉检查工具](https://docs.openvino.ai/latest/openvino_inference_engine_tools_cross_check_tool_README.html)
@@ -261,5 +277,6 @@ OpenVINO 包含一整套开发和部署工具，本工作流研究从设置和�
 * [Install OpenVINO Overview](https://docs.openvino.ai/latest/openvino_docs_install_guides_overview.html)
 * [pypip openvino-runtime](https://pypi.org/project/openvino/)
 * [pypip openvino-dev](https://pypi.org/project/openvino-dev/)
+* [OpenVINO™ Deep Learning Workbench Docker](https://hub.docker.com/r/openvino/workbench)
 * [OpenVINO 课程](https://bizwebcast.intel.cn/dev/curriculum.html)
 * [英特尔® 边缘人工智能开发者认证](https://www.intel.cn/content/www/cn/zh/developer/tools/devcloud/edge/learn/certification.html)
