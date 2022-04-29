@@ -789,3 +789,4 @@ Line #    Mem usage    Increment  Occurrences   Line Contents
 * [C++ API - Inference ProfilingInfo](https://docs.openvino.ai/nightly/structov_1_1ProfilingInfo.html)
 * [Python API - openvino.runtime.InferRequest](https://docs.openvino.ai/nightly/api/ie_python_api/_autosummary/openvino.runtime.InferRequest.html)
 * [Python API - openvino.runtime.InferRequest.get_profiling_info](https://docs.openvino.ai/nightly/api/ie_python_api/_autosummary/openvino.runtime.InferRequest.html#openvino.runtime.InferRequest.get_profiling_info)
+* [Monitoring memory usage of a running Python program](https://www.geeksforgeeks.org/monitoring-memory-usage-of-a-running-python-program/)
