@@ -6,9 +6,10 @@ categories: AI OpenVINO
 tags: [Workflow]
 ---
 
-
 ## OpenVINO 工作流程
 OpenVINO 包含一整套开发和部署工具，本工作流研究从设置和计划解决方案到部署的关键步骤。
+
+🎃 [0 计划和设置](#0-先决条件计划和设置) ➔ [1 训练模型](#1-训练模型) ➔ [2 转换和优化](#2-转换和优化) ➔ [3 调整性能](#3-调整性能) ➔ [4 部署应用程序](#4-部署应用程序)
 
 ![](/images/2022/openvino/diagram-using-ov-full-16x9.jpg)
 
