@@ -325,3 +325,5 @@ $ python samples/python/model_creation_sample/model_creation_sample.py samples/p
 * [pypip netron](https://pypi.org/project/netron/)
 * [netron](https://github.com/lutzroeder/netron)
 * [Visualize Neural Network Model using Netron](https://lindevs.com/visualize-neural-network-model-using-netron/)
+* [Prepare the Kinetics400 dataset](https://cv.gluon.ai/build/examples_datasets/kinetics400.html)
+* [OpenVINO](https://docs.openvino.ai/latest/index.html)
