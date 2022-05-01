@@ -6,6 +6,38 @@ categories: Linux 实践 快捷键
 tags: [Linux, vim]
 ---
 
+## 安装
+### 版本
+* vim
+* vim-gtk (KDE)
+* vim-gtk3 (GNOME)
+* vim-tiny (最小功能)
+
+### 查看安装的 vim 版本
+```shell
+apt list --installed | grep vim
+yum list installed | grep vim
+```
+
+### 安装带图形界面的版本
+macOS [MacVim](https://github.com/macvim-dev/macvim/releases)
+
+Ubuntu
+```shell
+sudo apt install vim-gtk3
+```
+
+运行
+```shell
+vim -g
+gvim
+```
+
+### 查看可用插件
+* ```vim --version```
+* 打开 vim，输入命令 ```:version```
+
+
 ## 四种模式
 * 正常模式
 * 插入模式
