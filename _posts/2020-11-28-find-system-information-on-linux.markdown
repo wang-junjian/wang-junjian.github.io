@@ -93,6 +93,11 @@ GCC version:  gcc version 9.3.0 (Ubuntu 9.3.0-17ubuntu1~20.04)
 
 ## CUDA版本
 ```shell
+$ cat /usr/local/cuda/version.txt
+CUDA Version 11.0.228
+```
+
+```shell
 $ nvcc --version 或 nvcc -V
 nvcc: NVIDIA (R) Cuda compiler driver
 Copyright (c) 2005-2020 NVIDIA Corporation
