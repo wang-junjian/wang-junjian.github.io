@@ -71,6 +71,21 @@ EndSection
 sudo reboot
 ```
 
+## 其它
+### 查看 X Window 当前使用的显示驱动
+```shell
+$ sudo ls -l /usr/lib/xorg/modules/drivers/
+总用量 1756
+-rw-r--r-- 1 root root 1703208 1月  17  2018 intel_drv.so
+-rw-r--r-- 1 root root   90360 12月 14 22:31 modesetting_drv.so
+```
+
+### 查看是否使用默认的显示驱动 nouveau
+什么都不显示，代表没有使用默认的显示驱动
+```shell
+$ lsmod | grep nouveau
+```
+
 ## 解决问题
 ### 鼠标和键盘失灵。
 ```shell
