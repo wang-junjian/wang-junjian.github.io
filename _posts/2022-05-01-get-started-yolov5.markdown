@@ -84,11 +84,17 @@ wandb login
 ![](https://user-images.githubusercontent.com/26833433/135390767-c28b050f-8455-4004-adb0-3b730386e2b2.png)
 
 #### TensorBoard
+##### 本地查看
 ```shell
 tensorboard --logdir runs/train
 ```
-
 浏览器中访问：[http://localhost:6006/](http://localhost:6006/)
+
+##### 公开服务，IP暴露到网络上，其它机器可以访问。
+```shell
+tensorboard --logdir runs/train --bind_all
+```
+浏览器中访问：http://server_ip:6006/
 
 ![](https://img-blog.csdnimg.cn/20210422112215790.png)
 
