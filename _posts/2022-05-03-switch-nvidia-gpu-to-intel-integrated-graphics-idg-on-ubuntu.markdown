@@ -15,6 +15,8 @@ tags: [NVIDIA, Intel, X11, lspci, lshw]
 * IGD 内置图形显示集成显卡
 * PEG 独立PCI Express接口图形显卡
 
+选择 ```IGD```，保存退出。
+
 ## 配置 X Window
 ### 显示显卡设备信息
 #### lspci
