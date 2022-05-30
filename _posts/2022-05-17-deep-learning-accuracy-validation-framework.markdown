@@ -151,3 +151,4 @@ sudo mv  libtfkernel_sobol_op.so libtfkernel_sobol_op_so
 * [Deep Learning accuracy validation framework - GitHub](https://github.com/openvinotoolkit/open_model_zoo/blob/master/tools/accuracy_checker/README.md)
 * [How to use predefined configuration files](https://docs.openvino.ai/latest/omz_tools_accuracy_checker_configs.html)
 * [Dataset Preparation Guide](https://docs.openvino.ai/latest/omz_data_datasets.html)
+* [深度学习算法优化系列十五 | OpenVINO Int8量化前的数据集转换和精度检查工具文档](https://mp.weixin.qq.com/s/llqLuKjortY_36L_Gv7R2A)
