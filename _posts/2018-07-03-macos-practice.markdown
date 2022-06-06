@@ -124,6 +124,10 @@ $ du -sh *  显示当前目录下每个目录或文件的磁盘使用信息
 ## 工具
 * 视频转GIF [Drop to GIF](https://github.com/mortenjust/droptogif)
 * 资源监控工具 [Stats](https://github.com/exelban/stats)
+* [Microsoft Remote Desktop](https://docs.microsoft.com/en-us/windows-server/remote/remote-desktop-services/clients/remote-desktop-mac)
+    * [下载](https://install.appcenter.ms/orgs/rdmacios-k2vy/apps/microsoft-remote-desktop-for-mac/distribution_groups/all-users-of-microsoft-remote-desktop-for-mac)
+    * [Troubleshoot Remote desktop disconnected errors](https://docs.microsoft.com/en-us/troubleshoot/windows-server/remote/troubleshoot-remote-desktop-disconnected-errors)
+    * [在Mac上使用Microsoft Remote Desktop （MS_RDP）远程控制Win10电脑](https://www.jianshu.com/p/9cc90361f37a)
 
 ## 参考资料
 * [发现 Mac 的新功能](https://help.apple.com/macOS/mojave/whats-new/?lang=zh-hans)
