@@ -168,9 +168,13 @@ OpenVINO 包含一整套开发和部署工具，本工作流研究从设置和�
 加载并编译优化的模型，并对输入数据进行推理操作，然后输出结果。推理引擎是带有接口的高级（C、C++ 或 Python）推理 API，该接口实现为每种硬件类型的动态加载的插件。它为每种硬件提供了最佳性能，而无需实施和维护多个代码路径。
 
 #### [推理引擎开发人员指南](https://docs.openvino.ai/latest/openvino_docs_OV_UG_OV_Runtime_User_Guide.html)
+The scheme below illustrates the typical workflow for deploying a trained deep learning model:
 ![](/images/2022/openvino/BASIC_FLOW_IE_C.svg)
 * [Integrate OpenVINO™ with Your Application](https://docs.openvino.ai/latest/openvino_docs_OV_UG_Integrate_OV_with_your_application.html)
+
+Use OpenVINO™ Runtime API to Implement Inference Pipeline
 ![](/images/2022/openvino/IMPLEMENT_PIPELINE_with_API_C.svg)
+
 * [Changing input shapes](https://docs.openvino.ai/latest/openvino_docs_OV_UG_ShapeInference.html?sw_type=switcher-python)
 * [Working with devices](https://docs.openvino.ai/latest/openvino_docs_OV_UG_Working_with_devices.html)
     * 设备插件
