@@ -130,6 +130,7 @@ python face_detection_mtcnn_demo.py \
 如果在服务器上运行，可以使用参数 ```--no_show```；需要保存输出结果，可以使用参数 ```-o filename.jpg```。
 
 ## 参考资料
+* [模型下载器和其他自动化工具](https://docs.openvino.ai/cn/latest/omz_tools_downloader.html)
 * [英特尔® 发行版 OpenVINO™ 工具套件](https://www.intel.cn/content/www/cn/zh/developer/tools/openvino-toolkit/overview.html)
 * [OpenVINO](https://github.com/openvinotoolkit/openvino)
 * [Open Model Zoo](https://github.com/openvinotoolkit/open_model_zoo)
