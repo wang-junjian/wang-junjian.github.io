@@ -18,6 +18,10 @@ tags: [vscode]
 * 转到行号 ```Ctrl+g```
 * 转到文件 ```Command+p```
 
+## 导航
+* 后退 ```Ctrl+-```
+* 前进 ```Shift+Ctrl+-```
+
 ## 视图
 * 自动换行 ```Option+z```
 
@@ -29,7 +33,7 @@ tags: [vscode]
 * 一个VS Code实例中多个窗口切换 ```Ctrl+Tab```
 
 ## 场景
-### 当有一堆图片使用键盘进行快速浏览
+### 当有一堆图片文件使用键盘进行快速浏览
 1. 按 ```Command+Shift+e``` 打开资源管理器。
 2. 使用键盘的上下箭头键选择要浏览的文件。
 3. 按 ```Space```(filesExplorer.openFilePreserveFocus) 打开文件保留焦点。
