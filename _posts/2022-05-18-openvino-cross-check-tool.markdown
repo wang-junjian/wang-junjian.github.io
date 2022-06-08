@@ -102,7 +102,7 @@ wget http://book.d2l.ai/_images/catdog.jpg
 ```shell
 $ python cross_check_tool.py -i catdog.jpg \
               -m /data/wjj/openvino/ir/public/ssd300/FP32/ssd300.xml \
-              -d CPU \
+              -d GPU \
               -ref_d CPU
 ```
 ```
