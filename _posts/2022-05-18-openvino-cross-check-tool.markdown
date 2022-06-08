@@ -250,5 +250,12 @@ OpenVINO:
 [ INFO ]  Execution successful
 ```
 
+**Windows 版本有 BUG：在文件 cross_check_tool/utils.py 中的 input_processing 函数。**
+```py
+tensor_name = 'data' # ADD
+if tensor_name not in input_names:
+  raise Exception(f"Input with name {tensor_name} doesn't exist in the model!")
+```
+
 ## 参考资料
 * [Cross Check Tool](https://docs.openvino.ai/latest/openvino_inference_engine_tools_cross_check_tool_README.html)
