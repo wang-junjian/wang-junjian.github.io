@@ -353,7 +353,54 @@ Total CPU time: 0:00:00.014685 microseconds
     * 具有 8 位数据类型输入并以 8 位精度计算的层的后缀 I8
     * 以 32 位精度计算的层的后缀 FP32
     * unknown 用于推理引擎特定的 CPU 原语，这些原语不是英特尔 MKL-DNN 的一部分。意味着 CPU 内核，具有未知的 （例如，不是 AVX2 或 AVX512）加速路径。 
-    
+
+## 指定批量大小
+### 默认批量大小为 1
+```shell
+$ benchmark_app -i catdog.jpg -m /data/wjj/openvino/ir/public/googlenet-v1/FP32/googlenet-v1.xml -d CPU -t 2
+```
+```
+[Step 5/11] Resizing network to match image sizes and given batch
+[ INFO ] Network batch size: 1
+[Step 6/11] Configuring input of the model
+[ INFO ] Model input 'data' precision u8, dimensions ([N,C,H,W]): 1 3 224 224
+[ INFO ] Model output 'prob' precision f32, dimensions ([...]): 1 1000
+[Step 11/11] Dumping statistics report
+Count:          896 iterations
+Duration:       2022.44 ms
+Latency:
+    Median:     17.71 ms
+    AVG:        17.95 ms
+    MIN:        17.04 ms
+    MAX:        33.75 ms
+Throughput: 443.03 FPS
+```
+
+### 指定批量大小为 2
+```shell
+$ benchmark_app -i catdog.jpg -m /data/wjj/openvino/ir/public/googlenet-v1/FP32/googlenet-v1.xml -d CPU -t 2 -b 2
+```
+```
+[Step 5/11] Resizing network to match image sizes and given batch
+[ INFO ] Reshaping model: 'data': {2,3,224,224}
+[ INFO ] Reshape model took 2.23 ms
+[ INFO ] Network batch size: 2
+[Step 6/11] Configuring input of the model
+[ INFO ] Model input 'data' precision u8, dimensions ([N,C,H,W]): 2 3 224 224
+[ INFO ] Model output 'prob' precision f32, dimensions ([...]): 2 1000
+[Step 11/11] Dumping statistics report
+Count:          464 iterations
+Duration:       2061.93 ms
+Latency:
+    Median:     34.52 ms
+    AVG:        35.07 ms
+    MIN:        32.75 ms
+    MAX:        50.86 ms
+Throughput: 450.06 FPS
+```
+
+可以看到在 CPU 上增加批量对于推理性能的提升非常有限。
+
 ## 参考资料
 * [Benchmark Python* Tool](https://docs.openvino.ai/cn/latest/openvino_inference_engine_tools_benchmark_tool_README.html)
 * [TUNING FOR PERFORMANCE - Getting Performance Numbers](https://docs.openvino.ai/latest/openvino_docs_MO_DG_Getting_Performance_Numbers.html)
