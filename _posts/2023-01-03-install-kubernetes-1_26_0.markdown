@@ -138,6 +138,28 @@ spec:
 kubectl apply -f components.yaml
 ```
 
+### 安装 Kubernetes Dashboard
+部署 Dashboard
+```shell
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+```
+
+角色绑定
+```shell
+kubectl create clusterrolebinding kubernetes-dashboard-cluster-admin --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard
+```
+
+本机运行
+```shell
+scp root@172.16.33.157:/etc/kubernetes/admin.conf ~/.kube/config
+kubectl proxy
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/node?namespace=default
+```
+
+服务器端获取 Token
+```shell
+kubectl -n kubernetes-dashboard create token kubernetes-dashboard
+```
 
 ## FAQ
 ### 安装 kubeadm 出现错误
