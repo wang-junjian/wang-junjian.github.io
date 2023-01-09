@@ -61,6 +61,21 @@ $ cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c
 ```
 * 64 逻辑核数
 
+### 计算机中物理CPU个数
+```shell
+cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l
+```
+
+### 每个CPU的核心总数
+```shell
+cat /proc/cpuinfo| grep "cpu cores"| uniq | sed 's/.*: \(.*\)/\1/g'
+```
+
+### 计算机中总线程数
+```shell
+cat /proc/cpuinfo| grep "processor"| wc -l
+```
+
 ## 内存容量
 ```shell
 $ free -h
@@ -172,3 +187,5 @@ tmpfs            26G     0   26G   0% /run/user/1000
 * [How to check NVIDIA driver version on your Linux system](https://linuxconfig.org/how-to-check-nvidia-driver-version-on-your-linux-system)
 * [Linux下如何查看CPU信息, 包括位数和多核信息](https://blog.csdn.net/daniel_h1986/article/details/6318050)
 * [How To Find Which Linux Kernel Version Is Installed On My System](https://www.cyberciti.biz/faq/find-print-linux-unix-kernel-version/)
+* [sed/awk 提取指定的字段](https://zhuanlan.zhihu.com/p/183247600)
+* [5 Ways to Check CPU Info in Linux](https://linuxhandbook.com/check-cpu-info-linux/)
