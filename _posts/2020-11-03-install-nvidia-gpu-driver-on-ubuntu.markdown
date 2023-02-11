@@ -102,3 +102,6 @@ Tue Nov  3 08:10:14 2020
 ```
 
 [NVIDIA 驱动程序下载]: https://www.nvidia.cn/Download/index.aspx?lang=cn
+
+## 参考资料
+* [在运行 Linux 的 N 系列 VM 上安装 NVIDIA GPU 驱动程序](https://docs.azure.cn/zh-cn/virtual-machines/linux/n-series-driver-setup)
