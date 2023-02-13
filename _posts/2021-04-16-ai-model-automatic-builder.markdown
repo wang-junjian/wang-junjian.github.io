@@ -101,7 +101,7 @@ rm -rf $DIR_MODELS $TAR_FILE
 ```shell
 $ ssh-keygen -t rsa
 Generating public/private rsa key pair.
-Enter file in which to save the key (/home/wjj/.ssh/id_rsa): .ssh
+Enter file in which to save the key (/home/wjj/.ssh/id_rsa): .ssh/id_rsa
 Enter passphrase (empty for no passphrase): 
 Enter same passphrase again: 
 Your identification has been saved in /home/wjj/model-package-release/.ssh/id_rsa
