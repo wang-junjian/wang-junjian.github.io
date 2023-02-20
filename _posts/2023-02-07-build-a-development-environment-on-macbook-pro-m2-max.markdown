@@ -31,8 +31,13 @@ source ~/.zshrc
 ```shell
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh
 sudo sh Miniconda3-latest-MacOSX-arm64.sh
+```
 
+### 当前 conda 显示信息
+```shell
 conda info
+```
+```
      active environment : base
     active env location : /opt/miniconda
             shell level : 1
@@ -92,6 +97,7 @@ sudo conda install -c pytorch -n pytorch pytorch torchvision torchaudio
 ```
 
 ## 参考资料
+* [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 * [PyTorch GET STARTED](https://pytorch.org/get-started/locally/)
 * [TRAINING A CLASSIFIER](https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html)
 * [pip install 和 conda install 的区别](https://www.zhihu.com/question/395145313)
