@@ -34,7 +34,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 
 # 编译
 cmake --build . --config Release --parallel $(sysctl -n hw.ncpu)
-**没有生成 whell**
+**没有生成 wheel**
 
 # 安装
 sudo mkdir /opt/openvino
