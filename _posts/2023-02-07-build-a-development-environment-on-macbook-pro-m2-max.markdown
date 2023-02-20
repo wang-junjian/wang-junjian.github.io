@@ -62,7 +62,22 @@ conda info
            offline mode : False
 ```
 
-## 查看虚拟环境
+### 创建虚拟环境（将 base 虚拟环境中的 python 链接到新建的虚拟环境中）
+```shell
+sudo conda create --name tensorflow python
+```
+
+### 激活虚拟环境
+```shell
+conda activate tensorflow
+```
+
+### 退出虚拟环境
+```shell
+conda deactivate
+```
+
+### 查看虚拟环境
 ```shell
 conda env list
 # conda environments:
@@ -70,7 +85,7 @@ conda env list
 base                  *  /opt/miniconda
 ```
 
-## 指定虚拟环境安装软件包（默认安装到base环境）
+### 指定虚拟环境安装软件包（默认安装到base环境）
 ```shell
 sudo conda install -c apple -n tensorflow tensorflow-deps
 sudo conda install -c pytorch -n pytorch pytorch torchvision torchaudio
