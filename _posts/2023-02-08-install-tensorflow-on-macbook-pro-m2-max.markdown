@@ -112,7 +112,9 @@ with tf.device('/device:GPU:0'):
 
 
 ## 参考资料
+* [Get started with tensorflow-metal](https://developer.apple.com/metal/tensorflow-plugin/)
 * [TensorFlow](https://www.tensorflow.org/?hl=zh-cn)
 * [Install TensorFlow on Mac M1/M2 with GPU support](https://medium.com/mlearning-ai/install-tensorflow-on-mac-m1-m2-with-gpu-support-c404c6cfb580)
 * [python和R中程序运行时间的计算](https://www.jianshu.com/p/7156d29cb1e4)
 * [MBP M1 Max - supspicious GPU usage](https://forums.macrumors.com/threads/mbp-m1-max-supspicious-gpu-usage.2353624/)
+* [TensorFlow is not using my M1 MacBook GPU during training](https://stackoverflow.com/questions/67352841/tensorflow-is-not-using-my-m1-macbook-gpu-during-training)
