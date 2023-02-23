@@ -116,3 +116,4 @@ if __name__ == '__main__':
 * [PyTorch GET STARTED](https://pytorch.org/get-started/locally/)
 * [TRAINING A CLASSIFIER](https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html)
 * [pip install 和 conda install 的区别](https://www.zhihu.com/question/395145313)
+* [Train PyTorch With GPU Acceleration on Mac, Apple Silicon M2 Chip Machine Learning Benchmark](https://www.oldcai.com/ai/pytorch-train-MNIST-with-gpu-on-mac/)
