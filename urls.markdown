@@ -62,6 +62,12 @@ permalink: /urls/
 * [PyYAML](https://pyyaml.org/wiki/PyYAMLDocumentation)
 * [PyYAML](https://pyyaml.docsforge.com/master/documentation/)
 
+## 开发文档
+* [腾讯云开发手册](https://cloud.tencent.com/developer/devdocs)
+* [MIME Headers](https://docs.microsoft.com/zh-cn/previous-versions/office/developer/exchange-server-2010/aa563068(v=exchg.140))
+
+## 云开发者社区
+* [腾讯云](https://cloud.tencent.com/developer/)
 
 ## 翻墙
 * [GitHub520](https://github.com/BruinK/GitHub520)
