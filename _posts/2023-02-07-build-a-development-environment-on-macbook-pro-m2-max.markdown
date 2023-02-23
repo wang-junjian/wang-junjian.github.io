@@ -26,6 +26,8 @@ export PATH=$PATH:/opt/homebrew/bin
 
 source ~/.zshrc
 ```
+* [Homebrew](https://brew.sh/index_zh-tw)
+* [Homebrew Documentation](https://docs.brew.sh/Installation)
 
 ## 安装 Miniconda
 ```shell
