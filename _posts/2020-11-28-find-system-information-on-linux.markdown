@@ -6,7 +6,8 @@ categories: Linux
 tags: [Linux, 系统信息, GPU, CUDA, Memory, 硬盘, lsb_release, grep, cut, uniq]
 ---
 
-## Linux内核版本
+## 操作系统
+### Linux内核版本
 * uname
 ```shell
 $ uname -r
@@ -25,13 +26,13 @@ $ hostnamectl | grep Kernel
             Kernel: Linux 4.18.0-147.5.1.el8_1.x86_64
 ```
 
-## 查找CODENAME
+### 查找CODENAME
 ```shell
 $ cat /etc/os-release | grep VERSION_CODENAME 
 VERSION_CODENAME=focal
 ```
 
-## 操作系统版本
+### 操作系统信息
 ```shell
 $ lsb_release -a
 ```
@@ -84,7 +85,8 @@ Mem:          251Gi       2.8Gi       209Gi        47Mi        39Gi       247Gi
 Swap:            0B          0B          0B
 ```
 
-## NVIDIA GPU型号
+## NVIDIA GPU
+### NVIDIA GPU型号
 ```shell
 $ lspci | grep -i nvidia
 0000:43:00.0 3D controller: NVIDIA Corporation TU104GL [Tesla T4] (rev a1)
@@ -92,7 +94,7 @@ $ lspci | grep -i nvidia
 0000:8e:00.0 3D controller: NVIDIA Corporation TU104GL [Tesla T4] (rev a1)
 0000:92:00.0 3D controller: NVIDIA Corporation TU104GL [Tesla T4] (rev a1)
 ```
-## NVIDIA驱动版本
+### NVIDIA驱动版本
 * modinfo
 ```shell
 $ modinfo nvidia | grep ^version:
@@ -106,7 +108,7 @@ NVRM version: NVIDIA UNIX x86_64 Kernel Module  450.80.02  Wed Sep 23 01:13:39 U
 GCC version:  gcc version 9.3.0 (Ubuntu 9.3.0-17ubuntu1~20.04) 
 ```
 
-## CUDA版本
+### CUDA版本
 ```shell
 $ cat /usr/local/cuda/version.txt
 CUDA Version 11.0.228
@@ -121,7 +123,7 @@ Cuda compilation tools, release 11.1, V11.1.74
 Build cuda_11.1.TC455_06.29069683_0
 ```
 
-## NVIDIA驱动版本和支持的CUDA版本
+### NVIDIA驱动版本和支持的CUDA版本
 ```
 $ nvidia-smi
 Sat Nov 28 02:48:22 2020       
@@ -158,7 +160,8 @@ Sat Nov 28 02:48:22 2020
 +-----------------------------------------------------------------------------+
 ```
 
-## 硬盘
+## 磁盘
+### 显示磁盘空间
 ```shell
 $ df -h
 Filesystem      Size  Used Avail Use% Mounted on
@@ -178,6 +181,69 @@ tmpfs            26G     0   26G   0% /run/user/1000
 /dev/loop3       56M   56M     0 100% /snap/core18/1885
 /dev/sdb1       2.0T  4.7G  1.9T   1% /data
 ```
+
+### 检查磁盘是否旋转
+#### lsblk
+```shell
+$ lsblk -l
+NAME  MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+loop0   7:0    0     4K  1 loop /snap/bare/5
+loop1   7:1    0 149.9M  1 loop /snap/firefox/1540
+loop2   7:2    0  59.1M  1 loop /snap/core20/1826
+loop3   7:3    0 214.4M  1 loop /snap/firefox/2355
+loop4   7:4    0  57.8M  1 loop /snap/core20/1522
+loop5   7:5    0 330.6M  1 loop /snap/gnome-3-38-2004/122
+loop6   7:6    0 383.8M  1 loop /snap/gnome-3-38-2004/113
+loop7   7:7    0  91.7M  1 loop /snap/gtk-common-themes/1535
+loop8   7:8    0  43.2M  1 loop /snap/snapd/18363
+sda     8:0    0    64G  0 disk 
+sda1    8:1    0     1G  0 part /boot/efi
+sda2    8:2    0  62.9G  0 part /var/snap/firefox/common/host-hunspell
+                                /
+sr0    11:0    1  1024M  0 rom  
+```
+* RO
+     * 1 - Hard Disk Drive(HDD)
+     * 0 - Solid State Drive(SSD)
+
+指定显示的列 rota
+```shell
+lsblk -o name,rota
+```
+
+```shell
+$ cat /sys/block/sda/queue/rotational 
+0
+```
+
+#### smartctl
+```shell
+sudo apt install smartmontools
+```
+
+```shell
+$ sudo smartctl -a /dev/sda
+smartctl 7.2 2020-12-30 r5155 [aarch64-linux-5.15.0-60-generic] (local build)
+Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Device Model:     Ubuntu Linux 22.04 Desktop-0 SSD
+Serial Number:    RHH83BJQ45JM91PA1H97
+Firmware Version: F.CVTEFM
+User Capacity:    68,719,476,736 bytes [68.7 GB]
+Sector Sizes:     512 bytes logical, 4096 bytes physical
+Rotation Rate:    Solid State Device
+TRIM Command:     Available, deterministic, zeroed
+Device is:        Not in smartctl database [for details use: -P showall]
+ATA Version is:   ATA8-ACS, ATA/ATAPI-5 T13/1321D revision 1
+SATA Version is:  SATA 2.6, 3.0 Gb/s
+Local Time is:    Fri Feb 24 21:29:05 2023 CST
+SMART support is: Unavailable - device lacks SMART capability.
+```
+
+* [How To Find If The Disk Is SSD Or HDD In Linux](https://ostechnix.com/how-to-find-if-the-disk-is-ssd-or-hdd-in-linux/)
+* [5 Ways to Check disk size in Linux](https://www.howtouselinux.com/post/linux-list-disks)
+
 
 ## 参考资料
 * [How to get the cuda version?](https://stackoverflow.com/questions/9727688/how-to-get-the-cuda-version)
