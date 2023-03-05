@@ -15,6 +15,28 @@ VideoToolbox还包括一些命令行工具，例如vttool、vtenc、vtdecode等�
 ### [Audio Toolbox](https://developer.apple.com/documentation/audiotoolbox)
 AudioToolbox 是一个音频处理框架，支持音频处理的硬件加速，它提供了一系列用于音频编码、解码、转换和处理的API接口。
 
+## 安装 FFmpeg
+* [static FFmpeg binaries for macOS 64-bit](https://evermeet.cx/ffmpeg/)
+
+### 创建目录
+```shell
+mkdir /opt/ffmpeg && cd /opt/ffmpeg
+```
+
+### 方法一：使用 curl
+```shell
+curl https://evermeet.cx/ffmpeg/ffmpeg-6.0.7z | tar -xz
+curl https://evermeet.cx/ffmpeg/ffprobe-6.0.7z | tar -xz
+curl https://evermeet.cx/ffmpeg/ffplay-6.0.7z | tar -xz
+```
+
+### 方法二：使用 wget
+```shell
+wget https://evermeet.cx/ffmpeg/ffmpeg-6.0.7z -O- | tar -xz
+wget https://evermeet.cx/ffmpeg/ffprobe-6.0.7z -O- | tar -xz
+wget https://evermeet.cx/ffmpeg/ffplay-6.0.7z -O- | tar -xz
+```
+
 ## 查看 FFmpeg 中使用硬件加速的编解码器
 ### 使用 VideoToolbox 和 AudioToolbox 的编码器
 ```shell
@@ -110,6 +132,10 @@ B 帧是一种双向参考帧，它既依赖于前面的 I 帧或 P 帧，也依
 * [使用 VideoToolbox 探索低延迟视频编码 WWDC 演讲实录](https://xie.infoq.cn/article/3d8b8a2110a2a3bd91e0cf90e)
 * [得物视频编辑工具优化全指南](https://xie.infoq.cn/article/fd7009f37db27fb6471f5c180)
 * [从 FFmpeg 性能加速到端云一体媒体系统优化](https://xie.infoq.cn/article/3e7d2f8b64b0d2c38663007f4)
-* [如何使用 FFmpeg 命令处理音视频]()
+* [如何使用 FFmpeg 命令处理音视频](https://xie.infoq.cn/article/9a7d4696d71f844dfe8fbe101)
 * [FFmpeg 音视频处理工具三剑客（ffmpeg、ffprobe、ffplay](https://xie.infoq.cn/article/67a5f910b5281f6078415f35c)
 * [FFMPEG – From Zero to Hero](https://ffmpegfromzerotohero.com/blog/)
+* [how to use ffmpeg with gpu support on macos](https://stackoverflow.com/questions/52591553/how-to-use-ffmpeg-with-gpu-support-on-macos)
+* [ffmpeg.git](https://git.ffmpeg.org/gitweb/ffmpeg.git)
+* [FFmpeg package for Apple Silicon](https://stackoverflow.com/questions/65060304/ffmpeg-package-for-apple-silicon)
+* [IOT DC3 FFmpeg](https://doc.dc3.site/#/tip/ffmpeg)
