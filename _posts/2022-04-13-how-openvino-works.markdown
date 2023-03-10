@@ -62,6 +62,7 @@ OpenVINO 包含一整套开发和部署工具，本工作流研究从设置和�
 
 #### [扩展自定义层](https://docs.openvino.ai/latest/openvino_docs_Extensibility_UG_Intro.html)
 * [Model Conversion Pipeline](https://docs.openvino.ai/latest/openvino_docs_MO_DG_prepare_model_customize_model_optimizer_Customize_Model_Optimizer.html#model-conversion-pipeline)
+
 ![](/images/2022/openvino/MO_conversion_pipeline.png)
 
 ## 1 训练模型
@@ -169,10 +170,13 @@ OpenVINO 包含一整套开发和部署工具，本工作流研究从设置和�
 
 #### [推理引擎开发人员指南](https://docs.openvino.ai/latest/openvino_docs_OV_UG_OV_Runtime_User_Guide.html)
 The scheme below illustrates the typical workflow for deploying a trained deep learning model:
+
 ![](/images/2022/openvino/BASIC_FLOW_IE_C.svg)
+
 * [Integrate OpenVINO™ with Your Application](https://docs.openvino.ai/latest/openvino_docs_OV_UG_Integrate_OV_with_your_application.html)
 
 Use OpenVINO™ Runtime API to Implement Inference Pipeline
+
 ![](/images/2022/openvino/IMPLEMENT_PIPELINE_with_API_C.svg)
 
 * [Changing input shapes](https://docs.openvino.ai/latest/openvino_docs_OV_UG_ShapeInference.html?sw_type=switcher-python)
@@ -191,7 +195,9 @@ Use OpenVINO™ Runtime API to Implement Inference Pipeline
 * [Optimize Preprocessing](https://docs.openvino.ai/latest/openvino_docs_OV_UG_Preprocessing_Overview.html)
 * [Dynamic Shapes](https://docs.openvino.ai/latest/openvino_docs_OV_UG_DynamicShapes.html)
 * [Automatic device selection](https://docs.openvino.ai/latest/openvino_docs_OV_UG_supported_plugins_AUTO.html)
+
 ![](/images/2022/openvino/autoplugin_accelerate.png)
+
 * [Running on multiple devices simultaneously](https://docs.openvino.ai/latest/openvino_docs_OV_UG_Running_on_multiple_devices.html)
 * [Heterogeneous execution](https://docs.openvino.ai/latest/openvino_docs_OV_UG_Hetero_execution.html)
 * [High-level Performance Hints](https://docs.openvino.ai/latest/openvino_docs_OV_UG_Performance_Hints.html)
@@ -203,16 +209,26 @@ Use OpenVINO™ Runtime API to Implement Inference Pipeline
 
 #### 性能调整
 * [Introduction to Performance Optimization](https://docs.openvino.ai/latest/openvino_docs_optimization_guide_dldt_optimization_guide.html)
-![](/images/2022/openvino/LATENCY_VS_THROUGHPUT.svg)
+
+    ![](/images/2022/openvino/LATENCY_VS_THROUGHPUT.svg)
+
 * [Getting Performance Numbers](https://docs.openvino.ai/latest/openvino_docs_MO_DG_Getting_Performance_Numbers.html)
 * [Model Optimization Guide](https://docs.openvino.ai/latest/openvino_docs_model_optimization_guide.html)
-![](/images/2022/openvino/DEVELOPMENT_FLOW_V3_crunch.svg)
+
+    ![](/images/2022/openvino/DEVELOPMENT_FLOW_V3_crunch.svg)
+
     * [Optimizing models post-training](https://docs.openvino.ai/latest/pot_introduction.html)
+
     ![](/images/2022/openvino/workflow_simple.png)
+
     * [Neural Network Compression Framework](https://docs.openvino.ai/latest/docs_nncf_introduction.html)
+
     ![](/images/2022/openvino/nncf_workflow.png)
+
     * [Protecting Deep Learning Model through Range Supervision](https://docs.openvino.ai/latest/pot_ranger_README.html)
+
     ![](/images/2022/openvino/scheme3.png)
+
 * [Runtime Inference Optimizations](https://docs.openvino.ai/latest/openvino_docs_deployment_optimization_guide_dldt_optimization_guide.html)
 * [Tuning Utilities](https://docs.openvino.ai/latest/openvino_docs_tuning_utilities.html)
 * [Performance Benchmarks](https://docs.openvino.ai/latest/openvino_docs_performance_benchmarks.html)
