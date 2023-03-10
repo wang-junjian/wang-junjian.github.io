@@ -74,13 +74,13 @@ ffmpeg -hide_banner -decoders | grep -i toolbox
  A....D qdmc_at              qdmc (AudioToolbox) (codec qdmc)
 ```
 
-## 使用 time 命令测试各种编解码使用资源的详情
+## [视频] 使用 time 命令测试各种编码使用资源的详情
 
 | user(s) | system(s) | cpu   | total(s) | FFmpeg 命令 | 输入大小 | 输出大小 |
 | ------: | --------: | ----: | -------: | ---------- | ------: | ------: |
 |  430.07 |      4.40 | 1080% |   40.194 | ffmpeg -hwaccel videotoolbox -i input.mts output.mp4 | 217M | 169M |
 |  390.16 |      5.08 | 1081% |   36.547 | ffmpeg -hwaccel videotoolbox -i input.mts -c:v libx264 output.mp4 | 217M | 162M |
-|    3.92 |      2.18 |   33% |   18.466 | ffmpeg -hwaccel videotoolbox -i input.mts -c:v h264_videotoolbox output.mp4 | 217M | 33M |
+|    3.92 |      2.18 |   33% |   18.466 | 🚀 ```ffmpeg -hwaccel videotoolbox -i input.mts -c:v h264_videotoolbox output.mp4``` | 217M | 33M |
 |   27.77 |      0.74 |  160% |   17.775 | ffmpeg -i input.mts -c:v h264_videotoolbox output.mp4 | 217M | 33M |
 |   75.58 |      0.96 | 1136% |    6.734 | ffmpeg -i input.mts -preset ultrafast output.mp4 | 217M | 290M |
 |    4.00 |      2.21 |   33% |   18.578 | ffmpeg -hwaccel videotoolbox -i input.mts -c:v h264_videotoolbox -preset ultrafast output.mp4 | 217M | 33M |
@@ -94,6 +94,12 @@ ffmpeg -hide_banner -decoders | grep -i toolbox
 🚀 最佳使用方法：
 ```shell
 ffmpeg -hwaccel videotoolbox -i input.mts -c:v <硬编码: x_videotoolbox> -c:a <软编码> output.mp4
+```
+
+## [音频]
+### mp3 转 wav
+```shell
+ffmpeg -i input.mp3 -ar 16000 -ac 1 -c:a pcm_s16le output.wav
 ```
 
 ## FFmpeg 硬件加速
@@ -139,3 +145,5 @@ B 帧是一种双向参考帧，它既依赖于前面的 I 帧或 P 帧，也依
 * [ffmpeg.git](https://git.ffmpeg.org/gitweb/ffmpeg.git)
 * [FFmpeg package for Apple Silicon](https://stackoverflow.com/questions/65060304/ffmpeg-package-for-apple-silicon)
 * [IOT DC3 FFmpeg](https://doc.dc3.site/#/tip/ffmpeg)
+* [ggerganov/whisper.cpp](https://github.com/ggerganov/whisper.cpp)
+* [How to convert any mp3 file to .wav 16khz mono 16bit](https://stackoverflow.com/questions/13358287/how-to-convert-any-mp3-file-to-wav-16khz-mono-16bit)
