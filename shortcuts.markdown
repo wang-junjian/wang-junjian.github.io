@@ -4,9 +4,17 @@ title: 快捷键
 permalink: /shortcuts/
 ---
 
+| 类别      | 列表 |
+| ------   | ---- |
+| 操作系统  | [macOS](#macos) |
+| Terminal | [Terminal](#terminal) [Tmux&Screen](#tmux--screen) |
+| IDE      | [VSCode](#vscode) [Vim](#vim) |
+
+
 ## Mac 键盘修饰键
 
 | Command（或 Cmd）⌘ | Shift ⇧ | Option（或 Alt）⌥ | Control（或 Ctrl）⌃ | Caps Lock ⇪ | Fn 🌐 |
+
 
 ## macOS
 
@@ -42,9 +50,10 @@ permalink: /shortcuts/
 | Ctrl + D | 退出当前 shell。 |
 | Ctrl + Z | 将当前进程挂起，并放入后台运行。 使用 fg 命令可以把挂起的进程带到前台。 |
 
-## tmux & screen
 
-| tmux  | screen | 功能 |
+## Tmux & Screen
+
+| Tmux  | Screen | 功能 |
 | ----- | ------ | --- |
 | tmux new -s ```session-name```          | screen -S ```session-name``` | 新建一个指定名称的会话 |
 | tmux ls                                 | screen -ls                   | 查看所有的 Tmux 会话 |
@@ -56,3 +65,22 @@ permalink: /shortcuts/
 * [tmux](https://github.com/tmux/tmux)
 * [tmux - Getting Started](https://github.com/tmux/tmux/wiki/Getting-Started)
 * [Tmux 使用教程](https://www.ruanyifeng.com/blog/2019/10/tmux.html)
+
+
+## VSCode
+
+| 快捷键 | 功能 |
+| ----- | --- |
+| Shift + Command + P | 命令面板 |
+
+* [Visual Studio Code Tips and Tricks](https://code.visualstudio.com/docs/getstarted/tips-and-tricks)
+
+
+## Vim
+
+| 快捷键 | 功能 |
+| ----- | --- |
+|  |  |
+
+* [Vim](https://www.vim.org)
+* [Vim 实践]({% post_url 2021-01-16-vim-practice %})
