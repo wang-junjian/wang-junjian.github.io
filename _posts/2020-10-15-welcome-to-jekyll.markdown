@@ -39,3 +39,4 @@ bundle exec jekyll serve
 * [jekyll/minima post.html](https://github.com/jekyll/minima/blob/master/_layouts/post.html)
 * [jekyll/minima home.html](https://github.com/jekyll/minima/blob/master/_layouts/home.html)
 * [How does Jekyll date formatting work?](https://stackoverflow.com/questions/7395520/how-does-jekyll-date-formatting-work)
+* [Algolia for Jekyll](https://community.algolia.com/jekyll-algolia/getting-started.html)
