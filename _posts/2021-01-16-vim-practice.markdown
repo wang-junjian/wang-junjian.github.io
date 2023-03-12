@@ -213,9 +213,12 @@ set autoindent
 :set nohlsearch
 ```
 
-### 搜索时忽略大小写敏感 | 大小写敏感
+### 搜索时忽略大小写敏感 | 大小写敏感 （默认：大小写敏感）
 ```
+:set ic
 :set ignorecase
+
+:set noic
 :set noignorecase
 ```
 
@@ -288,3 +291,4 @@ vimdiff file1 file2
 * [vim回车和换行](https://www.jianshu.com/p/00476400ef20)
 * [Use vim to search by hex code](https://stackoverflow.com/questions/2266383/use-vim-to-search-by-hex-code)
 * [How can I use Vim as a hex editor? ](https://vi.stackexchange.com/questions/2232/how-can-i-use-vim-as-a-hex-editor)
+* [Basic Vim Commands Every Linux User Must Know](https://linuxhandbook.com/basic-vim-commands/)
