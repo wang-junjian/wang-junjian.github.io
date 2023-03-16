@@ -111,8 +111,8 @@ permalink: /shortcuts/
 | d0          | 删除光标到行首                     | D / d$         | 删除光标到行尾 |
 | dgg         | 删除当前行到文件首                  | dG             | 删除当前行到文件尾 |
 | _查找_ | | | |
-| /<search_term>                     | 搜索循环匹配 | /<search_term>\c | 搜索循环匹配（大小写不敏感） |
-| :%s/<search_term>/<replace_term>/g | 搜索替换全文 | | |
+| /search_term                   | 搜索循环匹配 | /search_term\c | 搜索循环匹配（大小写不敏感） |
+| :%s/search_term/replace_term/g | 搜索替换全文 | | |
 
 * [Vim](https://www.vim.org)
 * [VIM REFERENCE MANUAL](https://vimhelp.org/quickref.txt.html)
