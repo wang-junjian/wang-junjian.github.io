@@ -132,6 +132,7 @@ TypeError: arguments did not match any overloaded call:
   drawLine(self, Union[QPointF, QPoint], Union[QPointF, QPoint]): argument 1 has unexpected type 'float'
 [1]    13381 abort      labelImg ./ classes.txt
 ```
+* [I can't install lableImg Annotation tool in M1 Mac](https://stackoverflow.com/questions/68311672/i-cant-install-lableimg-annotation-tool-in-m1-mac)
 
 ### [Label Studio](https://labelstud.io)
 ```shell
