@@ -4,11 +4,11 @@ title: 快捷键
 permalink: /shortcuts/
 ---
 
-| 类别      | 列表 |
-| ------   | ---- |
-| 操作系统  | [macOS](#macos) |
-| Terminal | [Terminal](#terminal) [Tmux&Screen](#tmux--screen) |
-| IDE      | [VSCode](#vscode) [Vim](#vim) |
+| 类别         | 列表 |
+| ------------ | ---- |
+| **操作系统**  | 【[macOS](#macos)】 |
+| **Terminal** | 【[Terminal](#terminal)】 【[Tmux&Screen](#tmux--screen)】 |
+| **IDE**      | 【[VSCode](#vscode)】 【[Vim](#vim)】 |
 
 
 ## Mac 键盘修饰键
@@ -18,20 +18,21 @@ permalink: /shortcuts/
 
 ## macOS
 
-| 快捷键 | 功能 |
-| ----- | --- |
-| Control + Shift + Command + 3 | 拍摄整个屏幕到剪切板。 |
-| Control + Shift + Command + 4 | 拍摄截屏到剪切板。 |
-| Shift + Command + 3           | 拍摄整个屏幕到文件。 |
-| Shift + Command + 4           | 拍摄截屏到文件。 |
-| Shift + Command + 5           | 拍摄截屏或录制屏幕。 |
-| Command + H                   | 隐藏最前面的 App 的窗口。 |
-| Option + Command + H          | 查看最前面的 App 但隐藏所有其他 App。 |
-| Control + Command + F         | 当前窗口全屏。 |
-| Command + ,                   | 打开最前面的 App 的偏好设置。 |
-| Shift + Command + N           | 在“访达”中创建一个新文件夹。 |
-| Option + Command + V          | 将剪贴板中的文件从原始位置移动到当前位置。 |
-| Control + Command + Q         | 立即锁定屏幕。 |
+|          | 快捷键 | 功能 |
+| -------- | ----- | --- |
+| **⌃⇧⌘3** | Control + Shift + Command + 3 | 拍摄整个屏幕到剪切板。 |
+| **⌃⇧⌘4** | Control + Shift + Command + 4 | 拍摄截屏到剪切板。 |
+| **⇧⌘3**  | Shift + Command + 3           | 拍摄整个屏幕到文件。 |
+| **⇧⌘4**  | Shift + Command + 4           | 拍摄截屏到文件。 |
+| **⇧⌘5**  | Shift + Command + 5           | 拍摄截屏或录制屏幕。 |
+| **⌘H**   | Command + H                   | 隐藏最前面的 App 的窗口。 |
+| **⌥⌘H**  | Option + Command + H          | 查看最前面的 App 但隐藏所有其他 App。 |
+| **⌃⌘F**  | Control + Command + F         | 当前窗口全屏。 |
+| **⌘,**   | Command + ,                   | 打开最前面的 App 的偏好设置。 |
+| **⌥⌘C**  | Option + Command + C           | 在“访达”中拷贝文件或文件夹的绝对路径。 |
+| **⇧⌘N**  | Shift + Command + N           | 在“访达”中创建一个新文件夹。 |
+| **⌥⌘V**  | Option + Command + V          | 将剪贴板中的文件从原始位置移动到当前位置。 |
+| **⌃⌘Q**  | Control + Command + Q         | 立即锁定屏幕。 |
 
 * [Mac 键盘快捷键](https://support.apple.com/zh-cn/HT201236)
 * [在 Mac 上拍摄截屏](https://support.apple.com/zh-cn/HT201361)
@@ -72,6 +73,7 @@ permalink: /shortcuts/
 | 快捷键 | 功能 |
 | ----- | --- |
 | Shift + Command + P | 命令面板 |
+| Shift + Option + 鼠标单击 | 块选择 |
 
 * [Visual Studio Code Tips and Tricks](https://code.visualstudio.com/docs/getstarted/tips-and-tricks)
 
