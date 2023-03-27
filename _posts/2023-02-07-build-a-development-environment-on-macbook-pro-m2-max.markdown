@@ -74,6 +74,11 @@ conda info
 sudo conda create --name tensorflow python
 ```
 
+### 删除虚拟环境
+```shell
+conda env remove --name ultralytics
+```
+
 ### 激活虚拟环境
 ```shell
 conda activate tensorflow
@@ -97,6 +102,43 @@ base                  *  /opt/miniconda
 sudo conda install -c apple -n tensorflow tensorflow-deps
 sudo conda install -c pytorch -n pytorch pytorch torchvision torchaudio
 ```
+
+
+## 安装 Rosetta 2
+```shell
+softwareupdate --install-rosetta
+```
+
+## 样本标注工具
+### [labelImg](https://github.com/heartexlabs/labelImg)
+```shell
+conda create -n labelimg
+conda activate labelimg
+conda install -n labelimg python=3.9
+conda install -c conda-forge labelimg -n labelimg
+```
+
+必须指定 python 的版本，高版本会出现下面的错误：
+```
+2023-03-26 17:28:36.037 python3.10[13381:279105] TSM AdjustCapsLockLEDForKeyTransitionHandling - _ISSetPhysicalKeyboardCapsLockLED Inhibit
+Traceback (most recent call last):
+  File "/opt/miniconda/lib/python3.10/site-packages/libs/canvas.py", line 530, in paintEvent
+    p.drawLine(self.prev_point.x(), 0, self.prev_point.x(), self.pixmap.height())
+TypeError: arguments did not match any overloaded call:
+  drawLine(self, QLineF): argument 1 has unexpected type 'float'
+  drawLine(self, QLine): argument 1 has unexpected type 'float'
+  drawLine(self, int, int, int, int): argument 1 has unexpected type 'float'
+  drawLine(self, QPoint, QPoint): argument 1 has unexpected type 'float'
+  drawLine(self, Union[QPointF, QPoint], Union[QPointF, QPoint]): argument 1 has unexpected type 'float'
+[1]    13381 abort      labelImg ./ classes.txt
+```
+
+### [Label Studio](https://labelstud.io)
+```shell
+pip install -U label-studio
+label-studio start
+```
+
 
 ## 参考资料
 * [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
