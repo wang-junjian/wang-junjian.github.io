@@ -2,8 +2,8 @@
 layout: post
 title:  "在 MacBook Pro M2 Max 上测试 Whisper"
 date:   2023-03-11 08:00:00 +0800
-categories: MacBookProM2Max
-tags: [whisper, ffmpeg]
+categories: Whisper
+tags: [MacBookProM2Max, ffmpeg]
 ---
 
 ## 准备音频文件
@@ -258,3 +258,4 @@ done
 * [openai/whisper](https://github.com/openai/whisper)
 * [ggerganov/whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 * [How to convert any mp3 file to .wav 16khz mono 16bit](https://stackoverflow.com/questions/13358287/how-to-convert-any-mp3-file-to-wav-16khz-mono-16bit)
+* [I think I can make 4-bit LLaMA-65B inference run on a 64 GB M1 Pro](https://twitter.com/ggerganov/status/1632422491682484230)
