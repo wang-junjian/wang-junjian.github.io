@@ -84,6 +84,8 @@ $ find . -name '.DS_Store' -delete
 $ sips -Z 400 *.png                 宽度400 高度按等比进行处理
 $ sips -z 800 1200 *.png            高度800，宽度1200
 $ sips -z 800 1200 *.png —out dir   输出到指定目录
+$ sips -s format jpeg images/*.png --out dir                      png 转 jpeg
+$ sips -s format jpeg -s formatOptions 70 images/*.png --out dir  png 转 jpeg，质量为70%
 ```
 
 * 显示磁盘使用统计信息
