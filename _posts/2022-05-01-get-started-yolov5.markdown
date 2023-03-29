@@ -2,8 +2,8 @@
 layout: post
 title:  "Get Started YOLOv5"
 date:   2022-05-01 08:00:00 +0800
-categories: AI
-tags: [目标检测, YOLO, Install, wandb, TensorBoard]
+categories: YOLOv5
+tags: [YOLO, wandb, TensorBoard]
 ---
 
 ## [Quick Start Examples](https://github.com/ultralytics/yolov5#quick-start-examples)
