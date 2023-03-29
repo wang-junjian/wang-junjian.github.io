@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "Python自动生成周报"
+title:  "Python 自动生成周报"
 date:   2022-03-20 00:00:00 +0800
-categories: 实践 Python
-tags: [excel, openpyxl, typer]
+categories: 周报
+tags: [DIY, excel, openpyxl, typer]
 ---
 
 ## 安装依赖库
