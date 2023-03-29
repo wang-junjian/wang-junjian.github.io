@@ -12,12 +12,18 @@ $ file test.jpg
 test.jpg: JPEG image data, JFIF standard 1.02, resolution (DPI), density 96x96, segment length 16, Exif Standard: [TIFF image data, big-endian, direntries=7, orientation=upper-left, xresolution=98, yresolution=106, resolutionunit=2, software=Adobe Photoshop CS Windows, datetime=2013:03:18 11:45:34], baseline, precision 8, 750x499, frames 3
 ```
 
-## ImageMagick
+## [ImageMagick](https://imagemagick.org/index.php)
 > ImageMagick是一个用于查看、编辑位图文件以及进行图像格式转换的开放源代码软件套装。它可以读取、编辑超过100种图像格式。
 
 ### 安装
+* Ubuntu
 ```shell
 sudo apt-get install imagemagick
+```
+
+* macOS
+```shell
+brew install imagemagick
 ```
 
 ### 格式转换
@@ -55,6 +61,16 @@ for file in *.jpg; do convert $file -resize 640x640 resize-$file; done
 * 方法2
 ```shell
 find . -name '*.png' -exec convert {} -resize 640x640 {} \;
+```
+
+### 转换所有的 png 图像到 jpg 格式，保存到 new_dir。
+```shell
+mogrify -path new_dir -format jpg images/*.png
+```
+
+### 所有图像缩放 50% 的尺寸。
+```shell
+mogrify -resize 50% images/*.jpg
 ```
 
 ## 参考资料
