@@ -2,9 +2,11 @@
 layout: post
 title:  "Ubuntu 上将 NVIDIA GPU 切换为 Intel 集成显卡 IGD"
 date:   2022-05-03 08:00:00 +0800
-categories: GPU
-tags: [NVIDIA, Intel, X11, lspci, lshw]
+categories: IGD
+tags: [Ubuntu, GPU, NVIDIA, Intel, X11, lspci, lshw]
 ---
+
+IGD（Integrated Graphics Device）
 
 操作系统：Ubuntu 18.04，主机有一张 NVIDIA 的独立显卡 GP106 [GeForce GTX 1060 6GB]，还有 Intel 酷睿处理器 i5 8500 自带的集成显卡（Intel UHD Graphics 630）。为了更充分的使用独立显卡用于深度学习计算，需要把集成显卡用于显示。在这个过程中遇到了各种各样的问题：
 * 鼠标和键盘失灵。
