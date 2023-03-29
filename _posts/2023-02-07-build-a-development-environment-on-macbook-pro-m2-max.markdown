@@ -28,6 +28,7 @@ source ~/.zshrc
 ```
 * [Homebrew](https://brew.sh/index_zh-tw)
 * [Homebrew Documentation](https://docs.brew.sh/Installation)
+* [Homebrew 清华大学开源软件镜像站](https://mirrors.tuna.tsinghua.edu.cn/help/homebrew/)
 
 ## 安装 Miniconda
 ```shell
