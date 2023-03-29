@@ -2,7 +2,7 @@
 layout: post
 title:  "OpenVINO Cross Check Tool"
 date:   2022-05-18 08:00:00 +0800
-categories:  AI OpenVINO
+categories:  OpenVINO
 tags: [cross_check_tool]
 ---
 
