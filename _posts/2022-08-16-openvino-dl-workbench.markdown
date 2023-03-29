@@ -2,8 +2,8 @@
 layout: post
 title:  "OpenVINO Deep Learning Workbench"
 date:   2022-08-16 08:00:00 +0800
-categories:  AI OpenVINO
-tags: [DLWorkbench]
+categories: DLWorkbench
+tags: [OpenVINO]
 ---
 
 ## 使用 Docker 运行 DL Workbench
