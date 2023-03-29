@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "命令chatgpt"
+title:  "通过命令使用 ChatGPT"
 date:   2023-03-05 00:00:00 +0800
-categories: Command
-tags: [ChatGPT]
+categories: ChatGPT
+tags: [Command]
 ---
 
 ## [ChatGPT Wrapper](https://github.com/mmabrouk/chatgpt-wrapper)
