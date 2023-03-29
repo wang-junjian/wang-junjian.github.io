@@ -2,8 +2,8 @@
 layout: post
 title:  "图像格式转换、尺寸调整"
 date:   2020-12-23 00:00:00 +0800
-categories: Linux
-tags: [Linux, Command, Image, ImageMagick, file, find, convert, ShellScript, for]
+categories: ImageMagick
+tags: [Linux, Command, Image, file, find, convert, ShellScript, for]
 ---
 
 ## 查看图像信息
