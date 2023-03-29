@@ -3,7 +3,7 @@ layout: post
 title:  "安装Kubernetes 1.26.0"
 date:   2023-01-03 08:00:00 +0800
 categories: Kubernetes
-tags: [apt-cache, kubeadm, containerd]
+tags: [Install, apt-cache, kubeadm, containerd]
 ---
 
 ## Master 节点
