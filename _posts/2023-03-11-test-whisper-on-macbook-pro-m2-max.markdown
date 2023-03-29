@@ -3,7 +3,7 @@ layout: post
 title:  "在 MacBook Pro M2 Max 上测试 Whisper"
 date:   2023-03-11 08:00:00 +0800
 categories: Whisper
-tags: [MacBookProM2Max, ffmpeg]
+tags: [ffmpeg, MacBookProM2Max]
 ---
 
 ## 准备音频文件
