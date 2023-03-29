@@ -2,7 +2,7 @@
 layout: post
 title:  "Deep Learning Accuracy Validation Framework"
 date:   2022-05-17 08:00:00 +0800
-categories:  AI OpenVINO
+categories:  OpenVINO
 tags: [accuracy_check, tar]
 ---
 
