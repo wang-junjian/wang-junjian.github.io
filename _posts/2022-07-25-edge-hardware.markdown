@@ -2,8 +2,8 @@
 layout: post
 title:  "边缘硬件"
 date:   2022-07-25 00:00:00 +0800
-categories: EdgeAI OpenVINO
-tags: [VPU, NVMe, DDR, LPDDR]
+categories: EdgeAI
+tags: [Myriad, NVMe, DDR, LPDDR]
 ---
 
 ## 研扬
