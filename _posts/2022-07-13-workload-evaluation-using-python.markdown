@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "Workload evaluation using Python"
+title:  "使用 Python 自动进行工作量估算"
 date:   2022-07-13 00:00:00 +0800
-categories: 实践 Python
-tags: [excel, openpyxl, typer]
+categories: 工作量估算
+tags: [DIY, excel, openpyxl, typer]
 ---
 
 ## 安装依赖库
