@@ -2,8 +2,8 @@
 layout: post
 title:  "在 MacBook Pro M2 Max 上安装 OpenVINO"
 date:   2023-02-14 08:00:00 +0800
-categories: MacBookProM2Max AI
-tags: [OpenVINO, MYRIAD]
+categories: OpenVINO
+tags: [MYRIAD, MacBookProM2Max]
 ---
 
 ## 安装 OpenVINO（手动编译）
