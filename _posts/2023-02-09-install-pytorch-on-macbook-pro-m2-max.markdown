@@ -2,8 +2,8 @@
 layout: post
 title:  "在 MacBook Pro M2 Max 上安装 PyTorch"
 date:   2023-02-09 08:00:00 +0800
-categories: MacBookProM2Max AI
-tags: [PyTorch]
+categories: PyTorch
+tags: [MacBookProM2Max]
 ---
 
 ## 安装 PyTorch
