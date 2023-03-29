@@ -104,11 +104,6 @@ sudo conda install -c pytorch -n pytorch pytorch torchvision torchaudio
 ```
 
 
-## 安装 Rosetta 2
-```shell
-softwareupdate --install-rosetta
-```
-
 ## 样本标注工具
 ### [labelImg](https://github.com/heartexlabs/labelImg)
 ```shell
