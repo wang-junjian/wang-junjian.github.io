@@ -14,6 +14,11 @@ conda activate pytorch
 conda install pytorch torchvision torchaudio -c pytorch
 ```
 
+安装每日构建版本
+```shell
+pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
+```
+
 ## 训练模型 
 ```py
 import torch
