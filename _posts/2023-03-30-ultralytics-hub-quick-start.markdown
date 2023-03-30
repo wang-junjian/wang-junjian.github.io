@@ -69,4 +69,5 @@ names: ['logo']
 ![](/images/2023/ultralytics-hub/models-deploy.jpg)
 
 ## 参考资料
-[Ultralytics Hub](https://hub.ultralytics.com)
+* [Ultralytics Hub](https://hub.ultralytics.com)
+* [ultralytics/hub/coco6.zip](https://github.com/ultralytics/hub/blob/master/coco6.zip)
