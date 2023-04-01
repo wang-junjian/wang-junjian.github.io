@@ -49,7 +49,7 @@ permalink: /shortcuts/
 | Ctrl + U | 删除当前行的所有内容。 |
 | Ctrl + L | 清空终端屏幕。 |
 | Ctrl + D | 退出当前 shell。 |
-| Ctrl + Z | 将当前进程挂起，并放入后台运行。 使用 fg 命令可以把挂起的进程带到前台。 |
+| Ctrl + Z | 将当前进程挂起，并放入后台运行。 使用 **fg** 命令可以把挂起的进程带到前台。 |
 
 
 ## Tmux & Screen
@@ -74,6 +74,26 @@ permalink: /shortcuts/
 | ----- | --- |
 | Shift + Command + P | 命令面板 |
 | Shift + Option + 鼠标单击 | 块选择 |
+| _窗口导航_ | |
+| Shift + Command + E | 资源管理器 |
+| Shift + Command + F | 搜索 |
+| Shift + Command + D | 运行和调试 |
+| Control + Shift + G | 源代码管理 |
+| _终端_ | |
+| Control + `         | 打开或关闭终端 |
+| Shift + Control + ` | 新建终端 |
+| Shift + Command + C | 打开系统的终端软件 |
+| Shift + Command + [ | 多终端时，切换上一个终端 |
+| Shift + Command + ] | 多终端时，切换下一个终端 |
+| _代码导航_ | |
+| Command + ←         | 行首 |
+| Command + →         | 行尾 |
+| Control + -         | 向后导航到上一个光标位置 |
+| Shift + Control + - | 向前导航到下一个光标位置 |
+| F12                 | 转到定义 |
+| Option + Z          | 自动换行 |
+| _重构_ | |
+| F2                  | 重命名符号 |
 
 * [Visual Studio Code Tips and Tricks](https://code.visualstudio.com/docs/getstarted/tips-and-tricks)
 
