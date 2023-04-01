@@ -6,8 +6,19 @@ categories: Software
 tags: [Install, MacBookProM2Max]
 ---
 
+
 ## 办公
 ### [WPS](https://www.wps.com)
+
+
+## [Chrome 浏览器](https://www.google.com/chrome/)
+Chrome 插件
+### [Awesome Screenshot](https://www.awesomescreenshot.com/)
+* 屏幕录像
+* 屏幕截图。支持长图
+* [如何在Mac上截取整个网页长图？](https://zhuanlan.zhihu.com/p/438793718)
+### [Google 翻译](https://chrome.google.com/webstore/detail/google-translate/aapbdbdomjkkjkaonfhkkikfgjllcleb)
+
 
 ## 工具
 ### [My Zsh](https://ohmyz.sh)
@@ -26,6 +37,7 @@ brew install imagemagick
 ```
 * [ImageMagick 图像格式转换、尺寸调整]({% post_url 2020-12-23-image-format-convert-and-resize %})
 
+
 ## 开发
 ### [GitHub Desktop](https://desktop.github.com)
 ### [Visual Studio Code](https://code.visualstudio.com)
@@ -33,10 +45,17 @@ brew install imagemagick
 ### [Parallels Desktop](https://www.parallels.com)
 * [Parallels Desktop Crack](https://github.com/dreamncn/ParallelsDesktopCrack)
 
+
 ## 安装 Rosetta 2
 ```shell
 softwareupdate --install-rosetta
 ```
-
-## 参考资料
 * [Rosetta 2：解决Mac架构迁移背后的软件兼容问题](https://new.qq.com/rain/a/20220714A05GTB00)
+
+
+## iPhone
+### Safari长截图
+1. 在Safari浏览器打开任意网页，同时按下音量调高键+锁屏键进行截屏。
+2. 点击左下角的缩略图，在预览界面上选择【整页】选项。
+3. 点击左上角的【完成】，然后保存PDF文件就可以了。
+* [iPhone如何截长图？](https://www.163.com/dy/article/H5B36C940552C3N4.html)
