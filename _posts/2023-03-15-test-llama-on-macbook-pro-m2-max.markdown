@@ -122,6 +122,10 @@ User:"
 | 65B  | 15G  |          |       |
 
 
+## [ChatLLaMA](https://github.com/nebuly-ai/nebullvm/tree/main/apps/accelerate/chatllama)
+## [nebullvm](https://github.com/nebuly-ai/nebullvm)
+
+
 ## 参考资料
 * [LLaMA](https://github.com/facebookresearch/llama)
 * [llama.cpp](https://github.com/ggerganov/llama.cpp)
