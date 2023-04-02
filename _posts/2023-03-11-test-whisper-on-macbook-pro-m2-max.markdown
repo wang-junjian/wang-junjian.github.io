@@ -259,3 +259,4 @@ done
 * [ggerganov/whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 * [How to convert any mp3 file to .wav 16khz mono 16bit](https://stackoverflow.com/questions/13358287/how-to-convert-any-mp3-file-to-wav-16khz-mono-16bit)
 * [I think I can make 4-bit LLaMA-65B inference run on a 64 GB M1 Pro](https://twitter.com/ggerganov/status/1632422491682484230)
+* [Fine-Tune Whisper For Multilingual ASR with 🤗 Transformers](https://huggingface.co/blog/fine-tune-whisper)
