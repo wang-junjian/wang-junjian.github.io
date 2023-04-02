@@ -71,3 +71,7 @@ names: ['logo']
 ## 参考资料
 * [Ultralytics Hub](https://hub.ultralytics.com)
 * [ultralytics/hub/coco6.zip](https://github.com/ultralytics/hub/blob/master/coco6.zip)
+* [使用Neural Magic加速YOLO推理速度](https://chtseng.wordpress.com/2022/12/15/使用neural-magic加速yolo推理速度/)
+* [How to OCR with Tesseract, OpenCV and Python](https://nanonets.com/blog/ocr-with-tesseract/)
+* [Newbie’s Deep Learning Project to Recognize Handwritten Digit](https://www.analyticsvidhya.com/blog/2021/11/newbies-deep-learning-project-to-recognize-handwritten-digit/)
+* [Digit recognition App (Streamlit) trained on the MNIST_Plus dataset using PyTorch CNN model](https://www.bragitoff.com/2022/01/digit-recognition-app-streamlit-trained-on-the-mnist_plus-dataset-using-pytorch-cnn-model/)
