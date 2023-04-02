@@ -107,6 +107,11 @@ $ du -sh *  显示当前目录下每个目录或文件的磁盘使用信息
  28K    y.xlsx
 ```
 
+* 更改目录的拥有者(这里更改为当前用户)
+```shell
+sudo chown -R $(whoami) /opt/miniconda
+```
+
 ## 实用技巧
 ### Finder (访达)
 #### 新建位于文件夹位置打开终端窗口
@@ -142,3 +147,4 @@ $ du -sh *  显示当前目录下每个目录或文件的磁盘使用信息
 * [Remove .DS_Store files from Mac OS X](https://helpx.adobe.com/dreamweaver/kb/remove-ds-store-files-mac.html)
 * [在 Mac 上使用“隔空投送”](https://support.apple.com/zh-cn/HT203106)
 * [在 Mac 上将 iPhone 用作网络摄像头](https://support.apple.com/zh-cn/guide/mac-help/mchl77879b8a/mac)
+* [如何修改mac中文件夹和文件的拥有者](https://champyin.com/2019/08/26/如何修改mac中文件夹和文件的拥有者/)
