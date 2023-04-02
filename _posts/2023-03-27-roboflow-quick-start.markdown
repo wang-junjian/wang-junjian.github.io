@@ -117,3 +117,4 @@ Histogram of Object Count by Image
 * [Roboflow Quickstart](https://github.com/roboflow/quickstart-python)
 * [Explore the Roboflow Universe](https://universe.roboflow.com/)
 * [COCO Explorer](https://cocodataset.org/#explore)
+* [How to Train YOLOv8 Object Detection on a Custom Dataset](https://blog.roboflow.com/how-to-train-yolov8-on-a-custom-dataset/)
