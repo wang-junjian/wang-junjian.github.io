@@ -20,3 +20,6 @@ tags: [GitHub, vscode]
 
 
 # 确实能够节省不少重复繁琐的输入
+
+## 参考资料
+* [Amazon CodeWhisperer](https://aws.amazon.com/cn/codewhisperer/)
