@@ -6,10 +6,17 @@ categories: Python
 tags: [vscode]
 ---
 
-## [Visual Studio Code Tips and Tricks](https://code.visualstudio.com/docs/getstarted/tips-and-tricks)
-## [Python in Visual Studio Code](https://code.visualstudio.com/docs/languages/python)
-## [Python testing in Visual Studio Code](https://code.visualstudio.com/docs/python/testing)
-## [Docker Getting Started Tutorial](https://github.com/docker/getting-started)
+## 开发文档
+* [Visual Studio Code Tips and Tricks](https://code.visualstudio.com/docs/getstarted/tips-and-tricks)
+* [Python in Visual Studio Code](https://code.visualstudio.com/docs/languages/python)
+* [Python testing in Visual Studio Code](https://code.visualstudio.com/docs/python/testing)
+* [Docker Getting Started Tutorial](https://github.com/docker/getting-started)
+
+
+## 扩展
+* [Jupyter](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter)
+* [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot)
+* [GitHub Copilot Labs](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-labs)
 
 
 ## 选择 Python 解释器
