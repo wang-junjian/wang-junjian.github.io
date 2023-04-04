@@ -39,6 +39,12 @@ pip install -r requirements.txt
 ```
 
 ### 测试
+模型默认保存在 ```~/.cache/whisper```
+```shell
+ls ~/.cache/whisper
+base.pt     large-v2.pt medium.pt   small.pt    tiny.pt
+```
+
 转录(X->X)
 ```shell
 whisper test.wav --model small
