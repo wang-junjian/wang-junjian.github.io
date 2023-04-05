@@ -7,6 +7,10 @@ tags: [Install, MacBookProM2Max]
 ---
 
 
+## [Apple macOS Command](https://ss64.com/osx/)
+* [find](https://ss64.com/osx/find.html)
+
+
 ## 办公
 ### [WPS](https://www.wps.com)
 
