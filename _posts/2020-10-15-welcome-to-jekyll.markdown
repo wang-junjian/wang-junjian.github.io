@@ -41,3 +41,7 @@ bundle exec jekyll serve
 * [How does Jekyll date formatting work?](https://stackoverflow.com/questions/7395520/how-does-jekyll-date-formatting-work)
 * [Simple-Jekyll-Search](https://github.com/christian-fei/Simple-Jekyll-Search)
 * [Algolia for Jekyll](https://community.algolia.com/jekyll-algolia/getting-started.html)
+* [jekyll-theme-WuK](https://github.com/wu-kan/jekyll-theme-WuK)
+* [jekyll-toc](https://github.com/allejo/jekyll-toc)
+* [Jekyll 文章侧边索引导航](https://blog.lisz.ink/tech/webmaster/jekyll-toc.html)
+* [Simple-Jekyll-Search](https://github.com/christian-fei/Simple-Jekyll-Search)
