@@ -34,10 +34,9 @@ API 要被视为 RESTful API，必须遵循以下标准：
 * [介绍 Web 基础架构设计原则的经典论文《架构风格与基于网络的软件架构设计》导读](https://www.infoq.cn/article/doctor-fielding-article-review)
 
 ## 人工智能服务
-<details><summary>Hugging Face</summary>
+### Hugging Face
 
 [Object Detection](https://huggingface.co/tasks/object-detection)
-
 ```json
 [
   {
@@ -63,9 +62,8 @@ API 要被视为 RESTful API，必须遵循以下标准：
 ]
 ```
 
-</details>
 
-<details><summary>Microsoft Cognitive Services</summary>
+### Microsoft Cognitive Services
 
 [Microsoft > Cognitive Services > Computer Vision API](https://westus.dev.cognitive.microsoft.com/docs/services/computer-vision-v3-2/operations/5e0cdeda77a84fcd9a6d4e1b)
 ```json
@@ -198,9 +196,8 @@ API 要被视为 RESTful API，必须遵循以下标准：
 }
 ```
 
-</details>
 
-<details><summary>Google Cloud Vision API</summary>
+### Google Cloud Vision API
 
 [Vision AI](https://cloud.google.com/vision?hl=zh-cn)
 ```json
@@ -259,8 +256,6 @@ API 要被视为 RESTful API，必须遵循以下标准：
   ]
 }
 ```
-
-</details>
 
 
 ## 参考资料
