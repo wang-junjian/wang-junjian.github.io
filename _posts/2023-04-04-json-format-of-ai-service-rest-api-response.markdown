@@ -34,6 +34,45 @@ API 要被视为 RESTful API，必须遵循以下标准：
 * [介绍 Web 基础架构设计原则的经典论文《架构风格与基于网络的软件架构设计》导读](https://www.infoq.cn/article/doctor-fielding-article-review)
 
 ## 人工智能服务
+
+### ChatGPT
+```json
+{
+    "status_code": 200,
+    "status_info": "OK",
+    "result": [
+        {
+            "object_type": "car",
+            "confidence": 0.85,
+            "bounding_box": {
+                "x": 100,
+                "y": 200,
+                "width": 300,
+                "height": 200
+            }
+        },
+        {
+            "object_type": "person",
+            "confidence": 0.95,
+            "bounding_box": {
+                "x": 400,
+                "y": 300,
+                "width": 100,
+                "height": 200
+            }
+        }
+    ],
+    "image_info": {
+        "width": 800,
+        "height": 600,
+        "channels": 3
+    }
+}
+```
+
+* [ChatGPT](https://platform.openai.com/playground?mode=chat)
+
+
 ### [Hugging Face](https://huggingface.co/)
 
 [Object Detection](https://huggingface.co/tasks/object-detection)
