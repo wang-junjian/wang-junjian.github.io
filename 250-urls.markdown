@@ -4,6 +4,13 @@ title: 网址
 permalink: /urls/
 ---
 
+## 科普
+* [RedHat 所有主题](https://www.redhat.com/zh/topics)
+
+## MDN Web Docs
+* [Web 开发技术](https://developer.mozilla.org/zh-CN/docs/Web)
+  * [学习 Web 开发](https://developer.mozilla.org/zh-CN/docs/Learn)
+
 ## 语言
 * [JSON](https://www.json.org/json-en.html)
 
@@ -23,26 +30,6 @@ permalink: /urls/
 
 ### Docker
 * [Docker 文档](https://docs.docker.com)
-
-
-## Web
-* [給開發者的網頁技術文件網頁技術](https://developer.mozilla.org/zh-TW/docs/Web)
-  * [初学者](https://developer.mozilla.org/zh-TW/docs/Learn)
-  #### 基础
-  * [HTML](https://developer.mozilla.org/zh-TW/docs/Web/HTML)
-  * [CSS](https://developer.mozilla.org/zh-TW/docs/Web/CSS)
-  * [HTTP](https://developer.mozilla.org/zh-TW/docs/Web/HTTP)
-  #### 脚本语言
-  * [JavaScript](https://developer.mozilla.org/zh-TW/docs/Web/JavaScript)
-  * [Web APIs](https://developer.mozilla.org/zh-TW/docs/Web/Reference/API)
-  #### 图像
-  * [SVG](https://developer.mozilla.org/zh-TW/docs/Web/SVG)
-  * [WebGL](https://developer.mozilla.org/zh-TW/docs/Web/API/WebGL_API)
-  #### 其它
-  * [PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
-  * [Accessibility](https://developer.mozilla.org/zh-TW/docs/Web/Accessibility)
-  * [安全](https://developer.mozilla.org/zh-TW/docs/Web/Security)
-  * [WebAssembly](https://developer.mozilla.org/zh-TW/docs/WebAssembly)
 
 
 ## IoT
