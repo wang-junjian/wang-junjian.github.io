@@ -284,6 +284,9 @@ API 要被视为 RESTful API，必须遵循以下标准：
 }
 ```
 
+* [Get started with Azure Cognitive Services for Vision](https://portal.vision.cognitive.azure.com/gallery/featured)
+* [Azure Cognitive Services - 认知服务](https://azure.microsoft.com/zh-cn/products/cognitive-services/)
+
 
 ### [Google Cloud Vision API](https://cloud.google.com/vision?hl=zh-cn)
 
@@ -592,3 +595,6 @@ Eden AI 提供了一个连接到最佳人工智能引擎的独特 API。
 * [Classify Images of Clouds in the Cloud with AutoML Images](https://www.cloudskillsboost.google/focuses/8406?parent=catalog)
 * [云从AI开发平台](https://ai.cloudwalk.com/cloudwalk/)
 * [云从科技开放平台文档中心](https://ai.cloudwalk.com/wiki)
+* [Azure OpenAI 服务文档](https://learn.microsoft.com/zh-cn/azure/cognitive-services/openai/)
+* [Azure 文档](https://docs.azure.cn/zh-cn/)
+* [Azure AI + 机器学习](https://docs.azure.cn/zh-cn/?product=ai-machine-learning)
