@@ -2,8 +2,8 @@
 layout: post
 title:  "基于 FastAPI 开发 Ultralytics Serving"
 date:   2023-04-10 08:00:00 +0800
-categories: Ultralytics
-tags: [FastAPI, YOLO, Docker, OpenCV, PyTorch, Python, tempfile, Path]
+categories: RESTAPI
+tags: [FastAPI, SwaggerUI, Ultralytics, YOLO, Docker, OpenCV, PyTorch, Python, tempfile, Path]
 ---
 
 # Ultralytics Serving
@@ -391,3 +391,5 @@ async def redoc_html():
 * [fastapi/tests/test_application.py](https://github.com/tiangolo/fastapi/blob/master/tests/test_application.py)
 * [Python decorator to measure execution time](https://dev.to/kcdchennai/python-decorator-to-measure-execution-time-54hk)
 * [python](https://hub.docker.com/_/python)
+* [nvidia/cuda](https://hub.docker.com/r/nvidia/cuda)
+* [EmojiDB](https://emojidb.org)
