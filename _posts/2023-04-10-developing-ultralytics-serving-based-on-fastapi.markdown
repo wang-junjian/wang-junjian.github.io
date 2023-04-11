@@ -6,7 +6,7 @@ categories: RESTAPI
 tags: [FastAPI, SwaggerUI, Ultralytics, YOLO, Docker, OpenCV, PyTorch, Python, tempfile, Path]
 ---
 
-# Ultralytics Serving
+# [Ultralytics Serving](https://github.com/gouchicao/ultralytics-serving)
 Inference service based on Ultralytics
 
 ## 创建虚拟环境
