@@ -2,8 +2,8 @@
 layout: post
 title:  "Linux Shell 实践"
 date:   2021-01-30 00:00:00 +0800
-categories: Linux 实践 快捷键
-tags: [Linux, Shell, if, for]
+categories: Shell
+tags: [实践, 快捷键, Linux, if, for, function]
 ---
 
 ## 快捷键
@@ -292,6 +292,58 @@ for i in {1..3}; do echo $i; done
 2
 3
 ```
+
+## 函数
+### 传入数组变量 `"${VAR[*]}"` 一定要加 `"`
+```shell
+f(){
+  arr=$1
+}
+
+ARR=(1 2 3)
+f "${ARR[*]}"
+```
+
+虽然 `echo "${ARR[*]}"` 和 `echo "${ARR[@]}"` 的显示结果都一样，但传函数参数的效果确不一样。
+
+测试代码
+```shell
+f(){
+    local app_name=$1
+    local platforms=$2
+    local version=$3
+
+    echo $app_name $version
+    for platform in $platforms
+    do  
+        echo "Platform: $platform"
+    done
+}
+
+APP_NAME=yolo
+PLATFORMS=(arm64 x86_64 i386)
+VERSION=1.0.0
+
+f $APP_NAME "${PLATFORMS[@]}" $VERSION
+
+echo '----------------'
+f $APP_NAME "${PLATFORMS[*]}" $VERSION
+```
+
+执行结果
+```
+yolo x86_64
+Platform: arm64
+----------------
+yolo 1.0.0
+Platform: arm64
+Platform: x86_64
+Platform: i386
+```
+
+* [Pass arguments into a function](https://bash.cyberciti.biz/guide/Pass_arguments_into_a_function)
+* [How to pass array as an argument to a function in Bash](https://stackoverflow.com/questions/16461656/how-to-pass-array-as-an-argument-to-a-function-in-bash)
+
 
 ## 参考资料
 * [Bash shell find out if a variable has NULL value OR not](https://www.cyberciti.biz/faq/bash-shell-find-out-if-a-variable-has-null-value-or-not/)
