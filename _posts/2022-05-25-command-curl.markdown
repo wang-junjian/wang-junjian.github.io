@@ -2,8 +2,8 @@
 layout: post
 title:  "命令curl"
 date:   2022-05-25 00:00:00 +0800
-categories: Command
-tags: [Linux, curl]
+categories: curl
+tags: [Command]
 ---
 
 ## 下载文件
