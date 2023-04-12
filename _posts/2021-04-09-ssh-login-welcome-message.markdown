@@ -162,3 +162,4 @@ touch $HOME/.hushlogin
 ## 参考资料
 * [How to change welcome message (motd) on Ubuntu 18.04 server](https://linuxconfig.org/how-to-change-welcome-message-motd-on-ubuntu-18-04-server)
 * [How can I edit the welcome message when ssh start?](https://serverfault.com/questions/407033/how-can-i-edit-the-welcome-message-when-ssh-start)
+* [Change the Terminal Message of the Day in Mac OS X](https://osxdaily.com/2007/01/30/change-the-mac-os-x-terminals-message-of-the-day/)
