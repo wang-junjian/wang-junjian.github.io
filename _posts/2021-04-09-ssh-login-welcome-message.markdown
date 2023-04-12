@@ -2,8 +2,8 @@
 layout: post
 title:  "SSH 登录欢迎信息"
 date:   2021-04-09 00:00:00 +0800
-categories: Linux
-tags: [ssh, motd]
+categories: Welcome
+tags: [ssh, motd, Login, Linux]
 ---
 
 终端登录时显示给用户的欢迎消息，无论是通过远程 SSH 登录还是直接通过 TTY 或终端，是 ```motd``` 的一部分，即 ```Message Of The Day``` 守护程序。 通过修改 ```/etc/update-motd.d``` 目录中的 ```/etc/motd``` 文件或脚本，可以自定义 motd 消息以适合每个用户或管理员的个性化需求。
