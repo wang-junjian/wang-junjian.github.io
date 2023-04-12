@@ -197,6 +197,12 @@ print(f"Predict {toc - tic:0.4f} seconds")
 ```
 * [Python Timer Functions: Three Ways to Monitor Your Code](https://realpython.com/python-timer/)
 
+#### 加载 yaml 文件
+```py
+config = yaml.load(open("config.yaml", "r"), Loader=yaml.FullLoader)
+```
+* [Python YAML: How to Load, Read, and Write YAML](https://python.land/data-processing/python-yaml)
+
 #### gunicorn
 * [loading models in FastAPI projects at startup](https://stackoverflow.com/questions/65636962/loading-models-in-fastapi-projects-at-startup)
 
