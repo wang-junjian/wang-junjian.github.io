@@ -2,8 +2,8 @@
 layout: post
 title:  "命令history"
 date:   2021-01-02 00:00:00 +0800
-categories: Command
-tags: [Linux, history, source, .bashrc, .bash_profile]
+categories: history
+tags: [Command, Linux, source, .bashrc, .bash_profile]
 ---
 
 ## 操作不记录在历史记录中
@@ -29,6 +29,11 @@ HISTSIZE=0
 ## 删除历史记录中的某行
 ```shell
 history -d linenumber
+```
+
+## 清除历史记录
+```shell
+history -c
 ```
 
 ## 参考资料
