@@ -6,7 +6,7 @@ categories: alias
 tags: [Command, Shell, zsh, Docker]
 ---
 
-`zsh` 中使用单引号（`'`），不对特殊符号进行解释，使用双引号（`"`）会对特殊符号进行解释，如：`$` 
+`zsh` 中使用单引号（`'`），不对特殊符号进行解析，使用双引号（`"`）会对特殊符号进行解析，如：`$` 
 ## docker rmi none
 ```shell
 alias docker.rmi.none='docker rmi --force $(docker images -q --filter "dangling=true")'
