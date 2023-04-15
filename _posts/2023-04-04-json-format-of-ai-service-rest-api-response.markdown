@@ -598,3 +598,4 @@ Eden AI 提供了一个连接到最佳人工智能引擎的独特 API。
 * [Azure OpenAI 服务文档](https://learn.microsoft.com/zh-cn/azure/cognitive-services/openai/)
 * [Azure 文档](https://docs.azure.cn/zh-cn/)
 * [Azure AI + 机器学习](https://docs.azure.cn/zh-cn/?product=ai-machine-learning)
+* [ElevenLabs API Documentation](https://api.elevenlabs.io/docs/)
