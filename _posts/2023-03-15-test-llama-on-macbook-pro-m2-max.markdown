@@ -3,10 +3,12 @@ layout: post
 title:  "在 MacBook Pro M2 Max 上测试 LLaMA"
 date:   2023-03-15 08:00:00 +0800
 categories: LLaMA
-tags: [MacBookProM2Max]
+tags: [LLM, GPT, MacBookProM2Max]
 ---
 
 ## [LLaMA](https://github.com/facebookresearch/llama)
+LLaMA-13B 在大多数基准上的表现优于 GPT-3（175B），LLaMA-65B 与最好的型号 Chinchilla-70B 和 PaLM-540B 具有竞争力。
+* [LLaMA: Open and Efficient Foundation Language Models](https://arxiv.org/abs/2302.13971v1)
 
 ### 克隆
 ```shell
@@ -15,7 +17,7 @@ cd llama
 ```
 
 ### 下载模型
-修改 download.sh，配置下载模型的 ```地址(PRESIGNED_URL)``` 和 ```下载目录(TARGET_FOLDER)```。
+修改 download.sh，配置下载模型的 `地址(PRESIGNED_URL)` 和 `下载目录(TARGET_FOLDER)`。
 ```shell
 vim download.sh
 ```
