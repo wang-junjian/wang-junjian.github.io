@@ -19,6 +19,11 @@ conda install pytorch torchvision torchaudio -c pytorch
 pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
 ```
 
+升级
+```shell
+pip3 install --upgrade --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
+```
+
 ## 训练模型 
 ```py
 import torch
