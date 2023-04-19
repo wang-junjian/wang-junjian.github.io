@@ -25,6 +25,10 @@ Chrome 插件
 
 
 ## 工具
+### [LICEcap](https://www.cockos.com/licecap/)
+* 录制屏幕为动图(GIF)
+* [Github LICEcap](https://github.com/justinfrankel/licecap)
+
 ### [My Zsh](https://ohmyz.sh)
 ```shell
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
