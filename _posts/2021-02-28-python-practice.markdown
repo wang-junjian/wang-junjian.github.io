@@ -555,7 +555,8 @@ asyncio.run(main())
 ```
 
 ## 库
-### 时间（[strftime][strftime]）
+### 时间
+#### [strftime][strftime]
 ```py
 from datetime import datetime
 
@@ -566,6 +567,20 @@ print(str)
 ```
 ```
 2021-08-18 07:39:22
+```
+
+#### fromtimestamp
+```py
+from datetime import datetime
+
+timestamp = 1669085501
+date = datetime.fromtimestamp(timestamp)
+formatted_date = date.strftime("%Y-%m-%d %H:%M:%S")
+
+print(formatted_date)
+```
+```
+2022-11-22 10:51:41
 ```
 
 ### UUID
