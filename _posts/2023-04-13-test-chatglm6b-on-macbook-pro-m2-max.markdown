@@ -80,9 +80,9 @@ Input length of input_ids is 2059, but `max_length` is set to 2048. This can lea
 
 | 模型参数 | 模型大小 | 量化精度 | CPU | MPS | GPU |
 | --- | --- | --- | --- | --- | --- |
-| 6.2B    | 13G    | FP16    | 12G | 22G | 12G |
+| 6.2B    | 13G    | FP16    | 22G | 13G | 12G |
 
-使用 MPS 的时候，内存会随着聊天持续增长，直到耗尽。
+使用 MPS 的时候，内存会随着聊天持续且快速增长。
 
 
 ## [微调 ChatGLM-6B-PT](https://github.com/THUDM/ChatGLM-6B/blob/main/ptuning/README.md)
@@ -434,3 +434,5 @@ pip install --upgrade --pre torch torchvision torchaudio --index-url https://dow
 * [Chinese medical dialogue data 中文医疗对话数据集](https://github.com/Toyhom/Chinese-medical-dialogue-data)
 * [基于prompt tuning v2训练好一个垂直领域的chatglm-6b](https://www.jb51.net/article/280637.htm)
 * [基于本地知识的 ChatGLM 应用实现](https://www.githubs.cn/projects/621799276-langchain-chatglm)
+* [基于本地知识的 ChatGLM 应用实现](https://www.heywhale.com/mw/notebook/643a53a948f7da1fee63d1f6)
+* [本地安装部署运行 ChatGLM-6B 的常见问题解答以及后续优化](https://www.tjsky.net/tutorial/667)
