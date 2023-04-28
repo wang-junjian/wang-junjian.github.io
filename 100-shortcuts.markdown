@@ -4,11 +4,12 @@ title: 快捷键
 permalink: /shortcuts/
 ---
 
-| 类别         | 列表 |
-| ------------ | ---- |
-| **操作系统**  | 【[macOS](#macos)】 |
-| **Terminal** | 【[Terminal](#terminal)】 【[Tmux&Screen](#tmux--screen)】 |
-| **IDE**      | 【[VSCode](#vscode)】 【[Vim](#vim)】 |
+| 类别                | 列表 |
+| ------------------ | ---- |
+| **操作系统**        | 【[macOS](#macos)】 |
+| **Terminal**       | 【[Terminal](#terminal)】 【[Tmux&Screen](#tmux--screen)】 |
+| **IDE**            | 【[VSCode](#vscode)】 【[Vim](#vim)】 |
+| **GitHub Copilot** | 【[GitHub Copilot](#github-copilot)】 |
 
 
 ## Mac 键盘修饰键
@@ -66,6 +67,9 @@ permalink: /shortcuts/
 * [tmux](https://github.com/tmux/tmux)
 * [tmux - Getting Started](https://github.com/tmux/tmux/wiki/Getting-Started)
 * [Tmux 使用教程](https://www.ruanyifeng.com/blog/2019/10/tmux.html)
+* [List of 50+ tmux cheatsheet and shortcuts commands](https://www.golinuxcloud.com/tmux-cheatsheet/)
+* [Linux tmux 工具](https://www.cnblogs.com/pzk7788/p/10399485.html)
+* [Tmux vs Screen](https://linuxhint.com/tmux_vs_screen/)
 
 
 ## VSCode
@@ -74,6 +78,9 @@ permalink: /shortcuts/
 | ----- | --- |
 | Shift + Command + P | 命令面板 |
 | Shift + Option + 鼠标单击 | 块选择 |
+| _外观_ | |
+| Command + B         | 主侧边栏（包含：资源管理器、搜索、源代码管理、运行和调试、扩展、测试） |
+| Command + J         | 面板（包含：问题、输出、调试、终端） |
 | _窗口导航_ | |
 | Shift + Command + E | 资源管理器 |
 | Shift + Command + F | 搜索 |
@@ -94,6 +101,7 @@ permalink: /shortcuts/
 | Option + Z          | 自动换行 |
 | _重构_ | |
 | F2                  | 重命名符号 |
+| Command + .         | 快速修复，如：导入包 |
 
 * [Visual Studio Code Tips and Tricks](https://code.visualstudio.com/docs/getstarted/tips-and-tricks)
 
@@ -140,3 +148,14 @@ permalink: /shortcuts/
 * [VIM REFERENCE MANUAL](https://vimhelp.org/quickref.txt.html)
 * [Vim 实践]({% post_url 2021-01-16-vim-practice %})
 * [Vim Keyboard Shortcuts](https://scaron.info/blog/vim-keyboard-shortcuts.html)
+
+
+## GitHub Copilot
+
+| **VSCode**   | | | |
+| 接收建议      | Tab        | 放弃建议      | Esc          |
+| 显示上一个建议 | Option + [ | 显示下一个建议 | Option + ]   |
+| 触发建议      | Option + \ | 选择建议      | Ctrl + Enter |
+
+* [Configuring GitHub Copilot in your environment](https://docs.github.com/en/copilot/configuring-github-copilot/configuring-github-copilot-in-your-environment?tool=vscode)
+* [GitHub Copilot - Your AI pair programmer](https://github.com/features/copilot/)
