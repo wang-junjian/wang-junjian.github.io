@@ -141,7 +141,7 @@ demo.launch()
 #### requirements.txt
 依赖的安装包
 
-```txt
+```
 openai
 tiktoken
 ```
