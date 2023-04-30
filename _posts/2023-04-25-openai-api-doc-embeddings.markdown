@@ -244,6 +244,20 @@ search_product(df_product_reviews, query_embedding)[['ReviewTitle', 'ReviewBody'
 ### 使用 [Faiss](https://faiss.ai) 加速
 Faiss 是一个用于`高效相似性搜索`和`密集向量聚类`的库。它包含搜索任何大小的向量集的算法，数据存储在内存中。
 
+* [GitHub Faiss](https://github.com/facebookresearch/faiss)
+
+#### 安装
+##### CPU
+```shell
+conda install -c pytorch faiss-cpu
+```
+
+##### GPU
+```shell
+conda install -c pytorch faiss-gpu
+```
+
+#### 实现
 ```py
 import faiss
 import numpy as np
@@ -258,4 +272,24 @@ def load_faiss_index(df, column='embedding'):
 index = load_faiss_index(df_product_reviews)
 distances, indexes = index.search(np.array(query_embedding).astype('float32').reshape(1, -1), k=3)
 df_product_reviews.iloc[indexes[0]][['ReviewTitle', 'ReviewBody', 'ReviewStar']]
+```
+
+#### 性能对比（🚀 提升了 354 倍）
+##### 余弦距离计算
+```py
+for _ in range(1000):
+    search_product(df_product_reviews, query_embedding)
+```
+```
+7.8s
+```
+
+##### Faiss 计算
+```py
+q = np.array(query_embedding).astype('float32').reshape(1, -1)
+for _ in range(100000):
+    index.search(q, k=3)
+```
+```
+2.2s
 ```
