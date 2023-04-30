@@ -77,10 +77,61 @@ openai api completions.create -m text-davinci-003 -p "Say this is a test" -t 0 -
 您可以使用 [GPT 比较工具](https://gpttools.com/comparisontool)，让您运行不同的模型来比较输出、设置和响应时间，然后将数据下载到 Excel 电子表格中。
 
 ### 审核模型（Moderation）
-审核模型旨在检查内容是否符合 OpenAI 的[使用政策](https://openai.com/policies/usage-policies)。这些模型提供了查找以下类别内容的分类功能：仇恨、仇恨/威胁、自残、性、性/未成年人、暴力和暴力/图片。
+审核模型旨在检查内容是否符合 OpenAI 的[使用政策](https://openai.com/policies/usage-policies)。这些模型提供了查找以下类别内容的分类功能：仇恨、仇恨/威胁、自残、性、性/未成年人、暴力和暴力/图片。调用审核模型不会消耗您的 API 配额。
 
 * text-moderation-latest
 * text-moderation-stable
+
+```py
+openai.Moderation.create(input="你不听话就砍死你")
+```
+```
+{
+  "id": "modr-7Askon0loMbb6b8vboSQ7Ep8348JA",
+  "model": "text-moderation-004",
+  "results": [
+    {
+      "categories": {
+        "hate": false,
+        "hate/threatening": false,
+        "self-harm": false,
+        "sexual": false,
+        "sexual/minors": false,
+        "violence": true,
+        "violence/graphic": false
+      },
+      "category_scores": {
+        "hate": 0.06359781324863434,
+        "hate/threatening": 4.803388947038911e-05,
+        "self-harm": 0.19698172807693481,
+        "sexual": 5.2437906560953707e-05,
+        "sexual/minors": 1.8810666357893524e-09,
+        "violence": 0.9516809582710266,
+        "violence/graphic": 1.668629738560412e-05
+      },
+      "flagged": true
+    }
+  ]
+}
+```
+
+```py
+response = openai.Moderation.create(input="她们在床上做爱")
+print(response["results"][0]["flagged"])
+print(response["results"][0]["categories"])
+```
+```
+True
+{
+  "hate": false,
+  "hate/threatening": false,
+  "self-harm": false,
+  "sexual": true,
+  "sexual/minors": false,
+  "violence": false,
+  "violence/graphic": false
+}
+```
 
 ### 通过 API 查看所有模型
 
