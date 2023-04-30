@@ -157,7 +157,75 @@ git push
 ### 演示
 ![](/images/2023/huggingface/chatgpt.jpg)
 
+#### 设置 OPENAI_API_KEY
 如果克隆了 Space，可以在 settings 中设置 OPENAI_API_KEY，这样就不用每次都输入了。
 
-### 设置 OPENAI_API_KEY
 ![](/images/2023/huggingface/create-secret.jpg)
+
+### 日志（Logs）
+```
+===== Build Queued at 2023-04-29 12:19:42 / Commit SHA: c0c29d2 =====
+
+--> FROM docker.io/library/python:3.8.9@sha256:49d05fff9cb3b185b15ffd92d8e6bd61c20aa916133dca2e3dbe0215270faf53
+DONE 0.0s
+
+--> RUN --mount=target=requirements.txt,source=requirements.txt 	pip install --no-cache-dir -r requirements.txt
+CACHED
+
+--> RUN pip install --no-cache-dir pip==22.3.1 &&     pip install --no-cache-dir         datasets         "huggingface-hub>=0.12.1" "protobuf<4" "click<8.1"
+CACHED
+
+--> RUN useradd -m -u 1000 user
+CACHED
+
+--> WORKDIR /home/user/app
+CACHED
+
+--> RUN sed -i 's http://deb.debian.org http://cdn-aws.deb.debian.org g' /etc/apt/sources.list && sed -i 's http://archive.ubuntu.com http://us-east-1.ec2.archive.ubuntu.com g' /etc/apt/sources.list && sed -i '/security/d' /etc/apt/sources.list && apt-get update && apt-get install -y 	git 	git-lfs 	ffmpeg 	libsm6 	libxext6 	cmake 	libgl1-mesa-glx 	&& rm -rf /var/lib/apt/lists/* 	&& git lfs install
+CACHED
+
+--> RUN --mount=target=pre-requirements.txt,source=pre-requirements.txt 	pip install --no-cache-dir -r pre-requirements.txt
+CACHED
+
+--> RUN --mount=target=/root/packages.txt,source=packages.txt 	sed -i 's http://deb.debian.org http://cdn-aws.deb.debian.org g' /etc/apt/sources.list && sed -i 's http://archive.ubuntu.com http://us-east-1.ec2.archive.ubuntu.com g' /etc/apt/sources.list && sed -i '/security/d' /etc/apt/sources.list && apt-get update &&     xargs -r -a /root/packages.txt apt-get install -y     && rm -rf /var/lib/apt/lists/*
+CACHED
+
+--> COPY --link --chown=1000 --from=lfs /app /home/user/app
+CACHED
+
+--> RUN pip install --no-cache-dir         gradio==3.28.0
+CACHED
+
+--> COPY --link --chown=1000 ./ /home/user/app
+DONE 0.0s
+
+--> Pushing image
+DONE 0.8s
+
+--> Exporting cache
+DONE 1.3s
+
+
+
+===== Application Startup at 2023-04-29 13:41:27 =====
+
+Running on local URL:  http://0.0.0.0:7860
+
+To create a public link, set `share=True` in `launch()`.
+Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.
+Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.
+tiktoken: 92
+tokens: {
+  "completion_tokens": 246,
+  "prompt_tokens": 92,
+  "total_tokens": 338
+}
+Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.
+Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.
+tiktoken: 358
+tokens: {
+  "completion_tokens": 351,
+  "prompt_tokens": 358,
+  "total_tokens": 709
+}
+```
