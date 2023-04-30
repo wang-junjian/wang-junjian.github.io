@@ -3,7 +3,7 @@ layout: post
 title:  "在 HuggingFace 上搭建 ChatGPT 聊天机器人"
 date:   2023-04-29 08:00:00 +0800
 categories: Chatbot
-tags: [ChatGPT, HuggingFace]
+tags: [ChatGPT, HuggingFace, Docker]
 ---
 
 ## [Hugging Face](https://huggingface.co/) 上创建 [ChatGPT](https://huggingface.co/spaces/wangjunjian/ChatGPT) Space
@@ -229,3 +229,9 @@ tokens: {
   "total_tokens": 709
 }
 ```
+
+{% highlight wjj %}
+RUN --mount=target=requirements.txt,source=requirements.txt 	pip install --no-cache-dir -r requirements.txt
+--mount 选项来将本地的 requirements.txt 文件挂载到 Docker 容器中的目标路径。
+--no-cache-dir 选项来告诉 pip 不要使用缓存，在安装依赖项时始终从远程源重新下载最新版本。这有助于确保容器中的依赖项始终是最新的。
+{% endhighlight %}
