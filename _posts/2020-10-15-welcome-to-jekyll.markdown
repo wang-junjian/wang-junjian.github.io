@@ -45,3 +45,8 @@ bundle exec jekyll serve
 * [jekyll-toc](https://github.com/allejo/jekyll-toc)
 * [Jekyll 文章侧边索引导航](https://blog.lisz.ink/tech/webmaster/jekyll-toc.html)
 * [Simple-Jekyll-Search](https://github.com/christian-fei/Simple-Jekyll-Search)
+* [Syntax highlighting in Jekyll: Calling on Rouge](https://www.langrsoft.com/2020/05/18/syntax-highlighting-in-jekyll-calling-on-rouge/)
+* [Add syntax highlighting to your Jekyll site with Rouge](https://bnhr.xyz/2017/03/25/add-syntax-highlighting-to-your-jekyll-site-with-rouge.html)
+* [Syntax Highlighting in Jekyll](https://mycyberuniverse.com/syntax-highlighting-jekyll.html)
+* [Jekyll Syntax Highlighting](https://notes.kargware.com/2019/10/04/Jekyll-Syntax-Highlighting/)
+* [Jekyll - Highlighting](https://jojozhuang.github.io/tutorial/jekyll-highlighting/)
