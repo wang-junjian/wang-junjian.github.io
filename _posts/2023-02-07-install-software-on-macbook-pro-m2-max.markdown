@@ -44,7 +44,10 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 brew install imagemagick
 ```
 * [ImageMagick 图像格式转换、尺寸调整]({% post_url 2020-12-23-image-format-convert-and-resize %})
-
+### [asitop](https://github.com/tlkh/asitop) - Performance monitoring CLI tool for Apple Silicon
+```shell
+pip install asitop
+```
 
 ## 开发
 ### [GitHub Desktop](https://desktop.github.com)
