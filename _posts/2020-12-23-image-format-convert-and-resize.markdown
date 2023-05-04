@@ -31,6 +31,16 @@ brew install imagemagick
 convert test.jpg test.png
 ```
 
+### 灰度
+```shell
+convert -colorspace gray input_file output_file
+```
+
+### 反转
+```shell
+convert -negate input_file output_file
+```
+
 ### 尺寸调整
 * 按照指定宽等比调整
 ```shell
