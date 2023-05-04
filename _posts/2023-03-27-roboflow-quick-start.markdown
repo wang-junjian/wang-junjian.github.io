@@ -3,7 +3,7 @@ layout: post
 title:  "Roboflow 快速入门"
 date:   2023-03-27 08:00:00 +0800
 categories: Roboflow
-tags: [Label, Train, Deploy]
+tags: [Quickstart, Label, Train, Deploy]
 ---
 
 ## 创建工作区
