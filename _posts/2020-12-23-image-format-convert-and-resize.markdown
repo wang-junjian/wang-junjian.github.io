@@ -87,3 +87,4 @@ mogrify -resize 50% images/*.jpg
 * [How to Quickly Resize, Convert & Modify Images from the Linux Terminal](https://www.howtogeek.com/109369/how-to-quickly-resize-convert-modify-images-from-the-linux-terminal/)
 * [How to convert jpg files into png files with linux command? + Difficulty = Subfolders](https://stackoverflow.com/questions/20975025/how-to-convert-jpg-files-into-png-files-with-linux-command-difficulty-subfo)
 * [Unix shell script find out which directory the script file resides?](https://stackoverflow.com/questions/242538/unix-shell-script-find-out-which-directory-the-script-file-resides)
+* [Invert colors with ImageMagick](https://superuser.com/questions/1194468/invert-colors-with-imagemagick)
