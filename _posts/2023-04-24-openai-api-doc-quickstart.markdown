@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "OpenAI API Documentation Quickstart"
+title:  "OpenAI API Documentation 快速入门"
 date:   2023-04-24 08:00:00 +0800
-categories: OpenAI-API-Quickstart
+categories: OpenAI-API
 tags: ["OpenAI API", Jupyter, pandas, Quickstart]
 ---
 
