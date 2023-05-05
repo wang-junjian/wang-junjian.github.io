@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Hugging Face Quickstart"
+title:  "Hugging Face 快速入门"
 date:   2023-04-30 08:00:00 +0800
 categories: HuggingFace
 tags: [Quickstart]
