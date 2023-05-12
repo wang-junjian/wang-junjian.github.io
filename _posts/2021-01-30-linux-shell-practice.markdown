@@ -193,6 +193,9 @@ NOT NULL
 ```
 * 位置值超过9后需要使用花括号 ```${N}```
 * 没有传入值变量为空，可以给一个默认值 ```${N-DEFAULT_VALUE}```
+```shell
+SHOW_LABELS=${1:-true}
+```
 
 ### 数组
 * 定义数组
@@ -281,6 +284,19 @@ echo {01..3}
 echo file{1..3}.jpg
 file1.jpg file2.jpg file3.jpg
 ```
+
+### if
+#### 判断变量为空`-z`
+下面是判断 $1 和 $2 任意一个为空则为 True
+```shell
+if [ -z $1 ] || [ -z $2 ]; then
+fi
+```
+
+#### 判断文件是否存在`-f`
+if [ -f $1 ]; then
+    echo "file exist"
+fi
 
 ### for
 #### 遍历数字范围
