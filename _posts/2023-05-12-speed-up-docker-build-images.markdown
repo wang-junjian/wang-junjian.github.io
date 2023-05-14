@@ -3,8 +3,50 @@ layout: post
 title:  "加速 Docker 构建镜像"
 date:   2023-05-12 10:00:00 +0800
 categories: Docker
-tags: [Cache, Python, pip, apt, Dockerfile, Mirror, Go, MacBookProM2Max]
+tags: [Cache, Python, pip, apt, Debian, Ubuntu, arm64, Dockerfile, Mirror, Go, MacBookProM2Max]
 ---
+
+## 查看镜像信息
+### 操作系统版本
+```shell
+cat /etc/os-release 
+```
+
+* Debian
+```
+PRETTY_NAME="Debian GNU/Linux 11 (bullseye)"
+NAME="Debian GNU/Linux"
+VERSION_ID="11"
+VERSION="11 (bullseye)"
+VERSION_CODENAME=bullseye
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+```
+
+* Ubuntu
+```
+PRETTY_NAME="Ubuntu Jammy Jellyfish (development branch)"
+NAME="Ubuntu"
+VERSION_ID="22.04"
+VERSION="22.04 (Jammy Jellyfish)"
+VERSION_CODENAME=jammy
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=jammy
+```
+
+### 支持的架构
+```shell
+uname -m
+aarch64
+```
+
 
 ## 配置镜像源
 ### Docker
@@ -40,12 +82,81 @@ RUN pip install --no-cache-dir opencv-python
 ```
 
 ### apt
+#### Debian
 ```dockerfile
-FROM ubuntu:20.04
-# 设置 apt 源（阿里云），设置完必须 update。
-RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && apt update
+FROM python:3.10
+
+sed -i '1i\
+deb https://mirrors.aliyun.com/debian/ bullseye main non-free contrib\
+# deb-src https://mirrors.aliyun.com/debian/ bullseye main non-free contrib\
+deb https://mirrors.aliyun.com/debian-security/ bullseye-security main\
+# deb-src https://mirrors.aliyun.com/debian-security/ bullseye-security main\
+deb https://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib\
+# deb-src https://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib\
+deb https://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib\
+# deb-src https://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib\' /etc/apt/sources.list
 ```
 
+* [Debian 镜像](https://developer.aliyun.com/mirror/debian)
+
+#### Ubuntu
+##### amd64
+```dockerfile
+FROM ubuntu:22.04
+
+RUN cat << EOF > /etc/apt/sources.list
+# 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse
+# deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse
+# deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse
+# deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse
+
+# deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse
+# # deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse
+
+deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+# deb-src http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+
+# 预发布软件源，不建议启用
+# deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-proposed main restricted universe multiverse
+# # deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-proposed main restricted universe multiverse
+EOF
+```
+
+* [Ubuntu 软件仓库镜像使用帮助](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/)
+
+`EOF` 语法是一种多行输入的技巧，它的含义是 `End Of File`，表示输入的结束。在 Shell 命令中，这种语法通常与重定向符号（>或>>）一起使用，将多行文本输入到一个文件中。
+* 重定向符号（>）表示将输出重定向到文件并覆盖现有内容。
+* 重定向符号（>>）表示将输出重定向到文件并追加到现有内容的末尾。
+
+##### arm64
+```dockerfile
+FROM ubuntu:22.04
+
+RUN cat << EOF > /etc/apt/sources.list
+# 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy main restricted universe multiverse
+# deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy main restricted universe multiverse
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-updates main restricted universe multiverse
+# deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-updates main restricted universe multiverse
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-backports main restricted universe multiverse
+# deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-backports main restricted universe multiverse
+
+# deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-security main restricted universe multiverse
+# # deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-security main restricted universe multiverse
+
+deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted universe multiverse
+# deb-src http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted universe multiverse
+
+# 预发布软件源，不建议启用
+# deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-proposed main restricted universe multiverse
+# # deb-src http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy-proposed main restricted universe multiverse
+EOF
+```
+
+* [Ubuntu Ports 软件仓库镜像使用帮助](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu-ports/)
 
 ## 使用缓存（RUN --mount=type=cache）加速构建
 缓存目录的内容在构建器调用之间持续存在，而不使指令缓存无效。缓存挂载只应用于更好的性能。您的构建应该与缓存目录的任何内容一起工作，因为另一个构建可能会覆盖文件，或者如果需要更多存储空间，GC可能会清理它。
@@ -241,9 +352,49 @@ pycache      volume_cache-dir        d4ac4fc0b423   7 minutes ago    925MB
 pycache      volume_no-cache-dir     206036f38062   19 minutes ago   925MB
 ```
 
+* [Dockerfile reference](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md)
+* [Buildkit, buildx and docker-compose](https://github.com/FernandoMiguel/Buildkit)
+* [docker buildx caching](https://seankhliao.com/blog/12021-01-23-docker-buildx-caching/)
+
+### apt install build-essential --no-install-recommends
+```shell
+apt-get install build-essential
+After this operation, 283 MB of additional disk space will be used.
+```
+
+```shell
+apt-get install build-essential --no-install-recommends
+After this operation, 250 MB of additional disk space will be used.
+```
+
+
+## 知识扩展
+### apt 和 apt-get 的区别
+apt 和 apt-get 都是 Debian 系统下的包管理工具，但它们在一些方面有所不同：
+
+1. 命令行选项和语法：apt 命令的语法更加简洁和直观，而 apt-get 命令的语法相对复杂一些，需要使用较多的选项和参数。
+
+2. 进度显示：apt-get 命令在安装和升级软件包时会显示完整的进度条，而 apt 命令则只显示简单的进度信息。
+
+3. 快速缓存：apt 命令引入了一个名为“快速缓存”的新特性，可以快速地更新软件包列表信息，从而提高软件包管理的效率。
+
+4. 安全性：apt 命令在软件包安装过程中会自动验证软件包的数字签名，以确保软件包的完整性和安全性。
+
+总体来说，apt 命令相对于 apt-get 命令更加现代化和用户友好，同时也具备更高的安全性和效率。但是，由于 apt 命令是相对较新的工具，它可能在某些旧的 Debian 系统上不可用。此外，一些老练的 Linux 用户可能更熟悉 apt-get 命令，因此在实际使用中，需要根据具体情况选择使用哪个工具。
+
+需要注意的是，apt 和 apt-get 命令虽然有所不同，但它们的底层机制是相同的，都是通过 dpkg 工具来管理软件包的。因此，无论是使用 apt 还是 apt-get，都可以安全地管理和升级 Debian 系统中的软件包。
+
+### `--no-install-recommends`
+加入 `--no-install-recommends` 参数可以让 `apt` 在安装软件包时只安装必要的依赖包，而不会安装推荐的依赖包。推荐的依赖包是软件包的建议依赖项，它们通常是可选的，并且不是绝对必需的。这些推荐依赖项通常是为了增强软件包的功能或提供更好的用户体验，但对于某些特定的应用场景来说，这些推荐依赖项可能不是必要的。
+
+使用 `--no-install-recommends` 参数可以减少软件包的安装量，缩短安装时间，并减少系统上的存储空间占用。此外，这也可以避免安装不必要的依赖项，从而提高系统的安全性。
+
 
 ## 参考资料
 * [pip Caching](https://pip.pypa.io/en/stable/topics/caching/)
 * [Installing from local packages](https://pip.pypa.io/en/stable/user_guide/#installing-from-local-packages)
 * [Anaconda Configuring a shared package cache](https://docs.anaconda.com/free/anaconda/packages/shared-pkg-cache/)
 * [dockerd daemon](https://docs.docker.com/engine/reference/commandline/dockerd/)
+* [阿里云镜像](https://developer.aliyun.com/mirror/)
+* [清华大学开源软件镜像站](https://mirrors.tuna.tsinghua.edu.cn/)
+* [在搭载 M1 及 M2 芯片 MacBook 设备上玩 Stable Diffusion 模型](https://zhuanlan.zhihu.com/p/590869015)
