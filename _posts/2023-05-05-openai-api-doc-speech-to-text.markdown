@@ -10,7 +10,7 @@ tags: ["OpenAI API", "Whisper"]
 ### [Speech to text](https://platform.openai.com/docs/guides/speech-to-text/speech-to-text-beta)
 ### [API reference Audio](https://platform.openai.com/docs/api-reference/audio)
 
-## 查看 audio 文件信息
+## 查看音频文件信息
 ### file
 ```shell
 data/podcast_clip.mp3: Audio file with ID3 version 2.4.0, contains: MPEG ADTS, layer III, v1, 64 kbps, 44.1 kHz, Stereo
@@ -33,7 +33,7 @@ Input #0, mp3, from 'data/podcast_clip.mp3':
       encoder         : Lavc58.13
 ```
 
-## Python 开发
+## OpenAI API（Whisper）
 ### 功能
 * transcribe（语音转文本）
 * translate（语音翻译为英文文本）
@@ -124,7 +124,7 @@ print(transcript['text'])
 ```
 `Welcome to Onboard, a new way to think about investing with real experience. I'm Monica. I'm Gao Ning. Let's talk about how software can change the world. Hello everyone, welcome to Onboard. I'm Monica. Since the launch of OpenAI, the trend of ChatGPT has been a hot topic in the world. In less than three months, it has accumulated more than 100 million active users, more than 13 million active users. It really shows the ability of AI to amaze people. It also makes many people say that this is the future of the next Internet. Many viewers said that they wanted us to do another AI discussion. So this time, the discussion came. This time we invited a researcher from Google Brain, Xue Zhi. He is one of the authors of Google's large-scale model PUM, Pathway Language Model. You should know that the number of parameters of this model is three times more than GPT-3. There are also two AI product bigwigs. One is from the famous Stable Diffusion business company, Stability AI. The other is from a Silicon Valley technology factory. He was also the product manager in Professor Wu Wenda's Landing AI. In addition, Monica also invited a friend of AI who has been paying attention to AI, Bill, as my special guest host. We mainly discuss several topics. On the one hand, from a research perspective, what are the most cutting-edge researchers paying attention to? Where are the cutting-edge technologies and the large variables of the future? From the perspective of products and business, what is a good AI product? What kind of evolution may the whole state follow? More importantly, what can we learn from the previous wave of AI entrepreneurship? Finally, Monica and Bill will also make a review, summary and reflection from the perspective of investors. Here is a small update. When this issue was released, Google also responded to the explosive growth of ChatGPT. We are testing an Apprentice Bot based on Lambda model. What kind of surprises will be released? We are looking forward to it. AI is undoubtedly one of the most exciting variables in the coming years. Monica also hopes to invite more frontline entrepreneurs to discuss this topic from different angles. Whether you want to start a business, research, product or investment, I hope these conversations will help you understand the possibilities of these technical horizons and business. Even in the future, it can cause some thoughts and inspire us to think about what it means to each person and each society. This discussion is a bit technical, and requires you to have some basic understanding of the biometric AI model. The discussion will also be summarized in this video. You are all welcome to come to the future. Enjoy! Let me give you a brief introduction. Here are some of your past experiences.`
 
-## [Whisper](https://github.com/openai/whisper)
+## [开源 Whisper](https://github.com/openai/whisper)
 ### [论文](https://cdn.openai.com/papers/whisper.pdf)
 ### [Introducing Whisper](https://openai.com/research/whisper)
 
@@ -159,3 +159,4 @@ print(result["text"])
 
 ## 参考资料
 * [Listen Notes: 最好的播客搜索引擎](https://www.listennotes.com/zh-hans/)
+* [useWhisper: React hook for OpenAI Whisper with speech recorder, real-time transcription, and silence removal built-in](https://github.com/chengsokdara/use-whisper)
