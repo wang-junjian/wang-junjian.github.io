@@ -86,7 +86,7 @@ RUN pip install --no-cache-dir opencv-python
 ```dockerfile
 FROM python:3.10
 
-sed -i '1i\
+RUN sed -i '1i\
 deb https://mirrors.aliyun.com/debian/ bullseye main non-free contrib\
 # deb-src https://mirrors.aliyun.com/debian/ bullseye main non-free contrib\
 deb https://mirrors.aliyun.com/debian-security/ bullseye-security main\
@@ -94,7 +94,8 @@ deb https://mirrors.aliyun.com/debian-security/ bullseye-security main\
 deb https://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib\
 # deb-src https://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib\
 deb https://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib\
-# deb-src https://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib\' /etc/apt/sources.list
+# deb-src https://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib\
+' /etc/apt/sources.list
 ```
 
 * [Debian 镜像](https://developer.aliyun.com/mirror/debian)
