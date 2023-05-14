@@ -16,12 +16,13 @@ tags: [Install, MacBookProM2Max]
 
 
 ## [Chrome 浏览器](https://www.google.com/chrome/)
-Chrome 插件
-### [Awesome Screenshot](https://www.awesomescreenshot.com/)
+### Chrome 插件
+#### [Awesome Screenshot](https://www.awesomescreenshot.com/)
 * 屏幕录像
 * 屏幕截图。支持长图
 * [如何在Mac上截取整个网页长图？](https://zhuanlan.zhihu.com/p/438793718)
-### [Google 翻译](https://chrome.google.com/webstore/detail/google-translate/aapbdbdomjkkjkaonfhkkikfgjllcleb)
+
+#### [Google 翻译](https://chrome.google.com/webstore/detail/google-translate/aapbdbdomjkkjkaonfhkkikfgjllcleb)
 
 
 ## 工具
@@ -33,6 +34,7 @@ Chrome 插件
 ```shell
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
+
 ### [V2rayU](https://github.com/yanue/V2rayU/releases)
 ### [Unzip One: RAR ZIP Extractor](https://apps.apple.com/app/id1127253508)
 ### [FileZilla](https://filezilla-project.org)
@@ -44,9 +46,14 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 brew install imagemagick
 ```
 * [ImageMagick 图像格式转换、尺寸调整]({% post_url 2020-12-23-image-format-convert-and-resize %})
+
 ### [asitop](https://github.com/tlkh/asitop) - Performance monitoring CLI tool for Apple Silicon
 ```shell
 pip install asitop
+```
+### jq
+```shell
+brew install jq
 ```
 
 ## 开发
@@ -56,6 +63,7 @@ pip install asitop
 ### [Parallels Desktop](https://www.parallels.com)
 * [Parallels Desktop Crack](https://github.com/dreamncn/ParallelsDesktopCrack)
 
+### [提醒事项使用手册](https://support.apple.com/zh-cn/guide/reminders/welcome/mac)
 
 ## 安装 Rosetta 2
 ```shell
@@ -69,4 +77,5 @@ softwareupdate --install-rosetta
 1. 在Safari浏览器打开任意网页，同时按下音量调高键+锁屏键进行截屏。
 2. 点击左下角的缩略图，在预览界面上选择【整页】选项。
 3. 点击左上角的【完成】，然后保存PDF文件就可以了。
+
 * [iPhone如何截长图？](https://www.163.com/dy/article/H5B36C940552C3N4.html)
