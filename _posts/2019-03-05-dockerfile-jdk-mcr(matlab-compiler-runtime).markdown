@@ -6,6 +6,7 @@ categories: Docker
 tags: [Docker, Dockerfile, JDK, MCR]
 ---
 
+## JDK-MCR(MATLAB Compiler Runtime)
 ```dockerfile
 FROM openjdk:latest
 LABEL maintainer="wang-junjian@qq.com"
@@ -25,3 +26,25 @@ ENV LD_LIBRARY_PATH /usr/local/MATLAB/MATLAB_Runtime/v95/runtime/glnxa64:/usr/lo
 
 CMD /bin/sh
 ```
+
+## Java 镜像的例子
+### Dockerfile
+```
+FROM anapsix/alpine-java
+COPY testprj-1.0.jar /home/testprj-1.0.jar
+CMD ["java","-jar","/home/testprj-1.0.jar"]
+```
+
+### 构建镜像
+```shell
+docker build -t imageName .
+```
+
+### 运行镜像
+```shell
+docker run --name myProgram imageName
+```
+
+
+## 参考资料
+* [Run jar file in docker image](https://stackoverflow.com/questions/35061746/run-jar-file-in-docker-image)
