@@ -52,6 +52,8 @@ permalink: /shortcuts/
 | Ctrl + D | 退出当前 shell。 |
 | Ctrl + Z | 将当前进程挂起，并放入后台运行。 使用 **fg** 命令可以把挂起的进程带到前台。 |
 
+* [Mac 上“终端”中的键盘快捷键](https://support.apple.com/zh-cn/guide/terminal/trmlshtcts/mac)
+
 
 ## Tmux & Screen
 
