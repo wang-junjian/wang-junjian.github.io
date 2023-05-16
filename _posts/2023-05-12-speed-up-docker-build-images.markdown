@@ -409,3 +409,4 @@ apt 和 apt-get 都是 Debian 系统下的包管理工具，但它们在一些�
 * [阿里云镜像](https://developer.aliyun.com/mirror/)
 * [清华大学开源软件镜像站](https://mirrors.tuna.tsinghua.edu.cn/)
 * [在搭载 M1 及 M2 芯片 MacBook 设备上玩 Stable Diffusion 模型](https://zhuanlan.zhihu.com/p/590869015)
+* [The secret gems behind building container images, Enter: BuildKit & Docker Buildx](https://blog.kubesimplify.com/the-secret-gems-behind-building-container-images-enter-buildkit-and-docker-buildx)
