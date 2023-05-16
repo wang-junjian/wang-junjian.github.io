@@ -41,6 +41,16 @@ PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-poli
 UBUNTU_CODENAME=jammy
 ```
 
+* Alpine
+```
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.15.0
+PRETTY_NAME="Alpine Linux v3.15"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://bugs.alpinelinux.org/"
+```
+
 ### 支持的架构
 ```shell
 uname -m
