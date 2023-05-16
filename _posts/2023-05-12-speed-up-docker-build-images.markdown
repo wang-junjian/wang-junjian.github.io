@@ -400,6 +400,15 @@ apt 和 apt-get 都是 Debian 系统下的包管理工具，但它们在一些�
 
 使用 `--no-install-recommends` 参数可以减少软件包的安装量，缩短安装时间，并减少系统上的存储空间占用。此外，这也可以避免安装不必要的依赖项，从而提高系统的安全性。
 
+### 安装 OpenGL 库 libgl1-mesa-glx
+执行 `apt-get install -y libgl1-mesa-glx` 是为了安装OpenGL库，这是一种用于图形渲染和加速的标准库，它是OpenCV中一些图像处理和计算的基础。在使用OpenCV进行图像处理、计算和显示时，需要使用OpenGL库来实现高效的图形渲染和加速，因此需要先安装 libgl1-mesa-glx 库。
+
+### pip wheel
+pip wheel命令是将源代码打包成wheel文件的命令，它的作用是将Python项目打包成单独的wheel文件，以便于在其他机器上安装和使用。这个命令会在当前目录下生成一个.whl文件，这个文件包含了源代码以及项目所依赖的库和资源。
+
+使用pip wheel命令可以将一个Python项目打包成一个wheel文件，这个文件可以被其他人安装和使用，而不需要重新编译和构建项目。这对于需要在多个机器上部署同一个Python项目的情况非常有用。
+
+另外，pip wheel还可以用于将Python项目打包成二进制文件，这可以提高项目的执行效率，特别是项目中包含大量计算密集型的操作时。
 
 ## 参考资料
 * [pip Caching](https://pip.pypa.io/en/stable/topics/caching/)
