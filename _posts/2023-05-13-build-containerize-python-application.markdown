@@ -72,7 +72,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
 # CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:80"]
 ```
 
-### 加速构建版本
+### 🚀 加速构建版本 👍
 这里使用了 Docker 缓存机制（pip 缓存、apt 缓存），配置了 pip 镜像源和 apt 镜像源，加速构建。
 
 ```dockerfile
@@ -133,7 +133,7 @@ EXPOSE 80
 COPY ./asserts ${APP_HOME}/asserts
 COPY ./static ${APP_HOME}/static
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:80"]
 ```
 
 这里在第二阶段，使用 `python:3.10-slim` 镜像替代 `python:3.10` 镜像，因为 `python:3.10-slim` 镜像体积更小，构建更快。只需要安装依赖的动态库即可。
@@ -143,6 +143,14 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
 | python:3.10      | 861MB | 1.93GB |
 | python:3.10-slim | 114MB | 1.18GB |
 
+
+#### 使用共享内存支架进行Gunicorn心跳
+
+Gunicorn使用基于文件的心跳系统来确保所有分叉的工人进程都是活的。
+
+在大多数情况下，心跳文件可以在“/tmp”中找到，它通常通过tmpfs在内存中。由于Docker默认不利用tmpfs，因此文件将存储在磁盘支持的文件系统中。这可能会导致问题，例如随机冻结，因为心跳系统使用os.fchmod，如果目录实际上在磁盘支持的文件系统上，它可能会阻止工人。
+
+幸运的是，有一个简单的修复：通过--worker-tmp-dir标志将心跳目录更改为内存映射目录。
 
 ### 使用虚拟环境
 ```dockerfile
@@ -294,6 +302,8 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
 ```bash
 docker buildx build --platform=linux/arm64 --progress=plain --rm -f Dockerfile -t ultralytics-serving:arm64 .
 ```
+
+* [Overview of Docker Build](https://docs.docker.com/build/)
 
 ## 测试
 ```bash
