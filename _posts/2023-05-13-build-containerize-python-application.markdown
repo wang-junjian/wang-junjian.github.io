@@ -10,11 +10,11 @@ tags: [Dockerfile, Docker, Cache, pip, apt, venv, wheel, 知识扩展]
 
 ## 选择 [Python 镜像](https://hub.docker.com/_/python)
 
-| Tag | Python Version | Debian Version | Size |
+| Tag | Python Version | OS Version | Size |
 | --- | --- | --- | --- |
-| 3.10        | 3.10 | bullseye | 861MB |
-| 3.10-slim   | 3.10 | bullseye | 114MB |
-| 3.10-alpine | 3.10 | alpine   | 44.7MB |
+| 3.10        | 3.10 | Debian GNU/Linux 11 (bullseye) | 861MB |
+| 3.10-slim   | 3.10 | Debian GNU/Linux 11 (bullseye) | 114MB |
+| 3.10-alpine | 3.10 | Alpine Linux 3.15.0            | 44.7MB |
 
 ## 克隆 Ultralytics Serving
 ```bash
