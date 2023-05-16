@@ -37,7 +37,7 @@ pip install ultralytics
 ### 运行容器
 ```shell
 git clone https://github.com/ultralytics/ultralytics.git
-docker run --runtime=nvidia -it --name ultralytics `pwd`/ultralytics:/usr/src/ultralytics ultralytics/ultralytics:latest
+docker run --runtime=nvidia -it --name ultralytics -v `pwd`/ultralytics:/usr/src/ultralytics ultralytics/ultralytics:latest
 ```
 
 ### yolo 命令的使用参数
