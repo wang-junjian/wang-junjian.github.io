@@ -55,6 +55,9 @@ Flags:                           fpu vme de pse tsc msr pae mce cx8 apic sep mtr
 ```bash
 yolo predict task=detect model=best.pt project=platen-switch imgsz=640 source=/usr/src/datasets/platen-switch/images/train
 ```
+
+#### 训练中的模型（24MB）
+
 ```
 Ultralytics YOLOv8.0.92 🚀 Python-3.10.7 torch-2.0.0+cpu CPU
 Model summary (fused): 168 layers, 3006038 parameters, 0 gradients, 8.1 GFLOPs
@@ -66,10 +69,23 @@ image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 576x640 12 close
 Speed: 3.7ms preprocess, 45.0ms inference, 1.3ms postprocess per image at shape (1, 3, 640, 640)
 ```
 
+#### 训练后的模型（6MB）
+
+```
+image 1/304 /usr/src/datasets/platen-switch/images/train/1.jpg: 480x640 22 closes, 14 opens, 47.8ms
+image 2/304 /usr/src/datasets/platen-switch/images/train/2.jpg: 384x640 12 closes, 24 opens, 40.4ms
+image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 576x640 12 closes, 33 opens, 48.8ms
+
+Speed: 2.9ms preprocess, 35.9ms inference, 1.2ms postprocess per image at shape (1, 3, 640, 640)
+```
+
 ### 模型推理（ONNX 格式）
 ```bash
 yolo predict task=detect model=best.onnx project=platen-switch imgsz=640 source=/usr/src/datasets/platen-switch/images/train
 ```
+
+#### 训练中的模型（12MB）
+
 ```
 Ultralytics YOLOv8.0.92 🚀 Python-3.10.7 torch-2.0.0+cpu CPU
 Loading wjj/platen-switch/train/weights/best.onnx for ONNX Runtime inference...
@@ -81,14 +97,26 @@ image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 640x640 12 close
 Speed: 4.1ms preprocess, 62.5ms inference, 4.1ms postprocess per image at shape (1, 3, 640, 640)
 ```
 
-### 模型推理速度对比（pt > ONNX 29% 🚀）
+#### 训练后的模型（12MB）
 
-| 模型 | 预处理速度 | 推理速度 | 后处理速度 | 总速度 |
-| --- | --- | --- | --- | --- |
-| best.pt | 3.7ms | 45.0ms | 1.3ms | 50.0ms |
-| best.onnx | 4.1ms | 62.5ms | 4.1ms | 70.7ms |
+```
+image 1/304 /usr/src/datasets/platen-switch/images/train/1.jpg: 640x640 22 closes, 14 opens, 72.8ms
+image 2/304 /usr/src/datasets/platen-switch/images/train/2.jpg: 640x640 12 closes, 24 opens, 69.6ms
+image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 640x640 12 closes, 33 opens, 66.0ms
 
-🚀🚀🚀 best.pt 比 best.onnx 快 29% 左右。
+Speed: 3.2ms preprocess, 53.0ms inference, 2.0ms postprocess per image at shape (1, 3, 640, 640)
+```
+
+### 模型推理速度对比（pt > ONNX 31% 🚀）
+
+| 训练 | 模型 | 预处理速度 | 推理速度 | 后处理速度 | 总速度 |
+| --- | --- | --- | --- | --- | --- |
+| 训练中 | best.pt | 3.7ms | 45.0ms | 1.3ms | 50.0ms |
+| 训练中 | best.onnx | 4.1ms | 62.5ms | 4.1ms | 70.7ms |
+| 训练后 | best.pt | 2.9ms | 35.9ms | 1.2ms | 40.0ms |
+| 训练后 | best.onnx | 3.2ms | 53.0ms | 2.0ms | 58.2ms |
+
+🚀🚀🚀 训练后 best.pt 比 best.onnx 快 31% 左右。
 
 
 ## GPU
@@ -170,13 +198,26 @@ Flags:                           fpu vme de pse tsc msr pae mce cx8 apic sep mtr
 ```bash
 yolo predict task=detect model=best.pt project=platen-switch imgsz=640 source=/usr/src/datasets/platen-switch/images/train
 ```
+
+#### 训练中的模型（24MB）
+
 ```
 Ultralytics YOLOv8.0.100 🚀 Python-3.10.9 torch-2.0.0 CUDA:0 (Tesla T4, 15110MiB)
 Model summary (fused): 168 layers, 3006038 parameters, 0 gradients, 8.1 GFLOPs
 
-image 1/304 /usr/src/datasets/platen-switch_2023-05-15/images/train/1.jpg: 480x640 22 closes, 14 opens, 45.7ms
-image 2/304 /usr/src/datasets/platen-switch_2023-05-15/images/train/2.jpg: 384x640 12 closes, 24 opens, 46.5ms
-image 3/304 /usr/src/datasets/platen-switch_2023-05-15/images/train/3.jpg: 576x640 12 closes, 33 opens, 44.9ms
+image 1/304 /usr/src/datasets/platen-switch/images/train/1.jpg: 480x640 22 closes, 14 opens, 45.7ms
+image 2/304 /usr/src/datasets/platen-switch/images/train/2.jpg: 384x640 12 closes, 24 opens, 46.5ms
+image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 576x640 12 closes, 33 opens, 44.9ms
+
+Speed: 2.5ms preprocess, 7.3ms inference, 1.3ms postprocess per image at shape (1, 3, 640, 640)
+```
+
+#### 训练后的模型（6MB）
+
+```
+image 1/304 /usr/src/datasets/platen-switch/images/train/1.jpg: 480x640 22 closes, 14 opens, 48.7ms
+image 2/304 /usr/src/datasets/platen-switch/images/train/2.jpg: 384x640 12 closes, 24 opens, 46.6ms
+image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 576x640 12 closes, 33 opens, 45.4ms
 
 Speed: 2.5ms preprocess, 7.3ms inference, 1.3ms postprocess per image at shape (1, 3, 640, 640)
 ```
@@ -185,24 +226,39 @@ Speed: 2.5ms preprocess, 7.3ms inference, 1.3ms postprocess per image at shape (
 ```bash
 yolo predict task=detect model=best.onnx project=platen-switch imgsz=640 source=/usr/src/datasets/platen-switch/images/train
 ```
+
+#### 训练中的模型（12MB）
+
 ```
 Ultralytics YOLOv8.0.100 🚀 Python-3.10.9 torch-2.0.0 CUDA:0 (Tesla T4, 15110MiB)
 Loading platen-switch/train-cpu/best.onnx for ONNX Runtime inference...
 
-image 1/304 /usr/src/datasets/platen-switch_2023-05-15/images/train/1.jpg: 640x640 22 closes, 14 opens, 7.5ms
-image 2/304 /usr/src/datasets/platen-switch_2023-05-15/images/train/2.jpg: 640x640 12 closes, 24 opens, 9.0ms
-image 3/304 /usr/src/datasets/platen-switch_2023-05-15/images/train/3.jpg: 640x640 12 closes, 33 opens, 7.2ms
+image 1/304 /usr/src/datasets/platen-switch/images/train/1.jpg: 640x640 22 closes, 14 opens, 7.5ms
+image 2/304 /usr/src/datasets/platen-switch/images/train/2.jpg: 640x640 12 closes, 24 opens, 9.0ms
+image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 640x640 12 closes, 33 opens, 7.2ms
 
 Speed: 2.8ms preprocess, 13.5ms inference, 1.4ms postprocess per image at shape (1, 3, 640, 640)
 ```
 
-### 模型推理速度对比（pt > ONNX 37% 🚀）
+#### 训练后的模型（12MB）
 
-| 模型 | 预处理速度 | 推理速度 | 后处理速度 | 总速度 |
-| --- | --- | --- | --- | --- |
-| best.pt | 2.5ms | 7.3ms | 1.3ms | 11.1ms |
-| best.onnx | 2.8ms | 13.5ms | 1.4ms | 17.7ms |
+```
+image 1/304 /usr/src/datasets/platen-switch/images/train/1.jpg: 640x640 22 closes, 14 opens, 7.8ms
+image 2/304 /usr/src/datasets/platen-switch/images/train/2.jpg: 640x640 12 closes, 24 opens, 10.9ms
+image 3/304 /usr/src/datasets/platen-switch/images/train/3.jpg: 640x640 12 closes, 33 opens, 7.2ms
 
-🚀🚀🚀 best.pt 比 best.onnx 快 37% 左右。
+Speed: 2.8ms preprocess, 13.8ms inference, 1.5ms postprocess per image at shape (1, 3, 640, 640)
+```
 
-🚀🚀🚀 GPU 比 CPU 快 5 倍左右。
+### 模型推理速度对比（pt > ONNX 38% 🚀）
+
+| 训练 | 模型 | 预处理速度 | 推理速度 | 后处理速度 | 总速度 |
+| --- | --- | --- | --- | --- | --- |
+| 训练中 | best.pt | 2.5ms | 7.3ms | 1.3ms | 11.1ms |
+| 训练中 | best.onnx | 2.8ms | 13.5ms | 1.4ms | 17.7ms |
+| 训练后 | best.pt | 2.5ms | 7.3ms | 1.3ms | 11.1ms |
+| 训练后 | best.onnx | 2.8ms | 13.8ms | 1.5ms | 18.1ms |
+
+🚀🚀🚀 best.pt 比 best.onnx 快 38% 左右。
+
+🚀🚀🚀 GPU 比 CPU 快 4 倍左右。（best.pt）
