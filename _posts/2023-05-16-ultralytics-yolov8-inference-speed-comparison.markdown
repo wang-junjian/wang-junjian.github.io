@@ -3,7 +3,7 @@ layout: post
 title:  "Ultralytics YOLOv8 推理速度对比"
 date:   2023-05-16 08:00:00 +0800
 categories: Inference
-tags: [Ultralytics, YOLO, pt, ONNX]
+tags: [Ultralytics, YOLO, pt, ONNX, 知识扩展]
 ---
 
 ## CPU
@@ -262,3 +262,19 @@ Speed: 2.8ms preprocess, 13.8ms inference, 1.5ms postprocess per image at shape 
 🚀🚀🚀 best.pt 比 best.onnx 快 38% 左右。
 
 🚀🚀🚀 GPU 比 CPU 快 4 倍左右。（best.pt）
+
+
+## 知识扩展
+### PyTorch 训练过程中生成的best.pt文件24M，训练完成后为6M，这是怎么回事？
+这可能是因为在训练过程中，PyTorch 会生成一些临时文件，如优化器状态、梯度等信息，这些文件会随着训练进程更新。而在训练完成后，PyTorch 会根据模型的参数和结构生成一个最终的模型文件（如best.pt），该文件只包含模型的参数和结构，不包含临时文件和训练过程中的其他信息，因此文件大小会比训练过程中的文件小很多。
+
+### pt转成onnx，模型增长了1倍（12M），而且推理速度还慢了，这正常？
+在将 PyTorch 模型转换为 ONNX 格式时，可能会发生模型大小增加和推理速度变慢的情况。这可能是由于以下原因：
+
+1. ONNX 格式需要保存更多的模型信息，以便在不同的框架和平台上进行转换和运行。因此，转换后的 ONNX 模型通常会比原始 PyTorch 模型大一些。
+
+2. ONNX 运行时的实现可能与 PyTorch 有所不同，这可能会导致推理效率的差异。例如，ONNX 运行时可能使用不同的算法或优化技术，这可能会影响模型的性能。
+
+如果您的 ONNX 模型的大小和推理速度都比原始 PyTorch 模型差很多，可以尝试调整模型转换的参数或使用其他的转换工具。此外，您还可以尝试优化 ONNX 模型的运行时性能，如使用 ONNX Runtime 或使用 ONNX 的优化工具集（如ONNX Model Optimizer）对模型进行优化。
+
+另外，还需要注意的是，模型的大小和推理速度并不是唯一的模型性能指标。在选择模型时，还需要考虑诸如准确率、泛化能力、训练时间等因素。因此，如果您的 ONNX 模型在这些方面表现良好，则可能不必担心模型大小和推理速度的差异。
