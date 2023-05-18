@@ -278,3 +278,10 @@ Speed: 2.8ms preprocess, 13.8ms inference, 1.5ms postprocess per image at shape 
 如果您的 ONNX 模型的大小和推理速度都比原始 PyTorch 模型差很多，可以尝试调整模型转换的参数或使用其他的转换工具。此外，您还可以尝试优化 ONNX 模型的运行时性能，如使用 ONNX Runtime 或使用 ONNX 的优化工具集（如ONNX Model Optimizer）对模型进行优化。
 
 另外，还需要注意的是，模型的大小和推理速度并不是唯一的模型性能指标。在选择模型时，还需要考虑诸如准确率、泛化能力、训练时间等因素。因此，如果您的 ONNX 模型在这些方面表现良好，则可能不必担心模型大小和推理速度的差异。
+
+
+## 参考资料
+* [uvicorn-gunicorn-docker](https://github.com/tiangolo/uvicorn-gunicorn-docker)
+* [uvicorn-gunicorn-docker/docker-images/start.sh](https://github.com/tiangolo/uvicorn-gunicorn-docker/blob/master/docker-images/start.sh)
+* [uvicorn-gunicorn-docker/docker-images/gunicorn_conf.py](https://github.com/tiangolo/uvicorn-gunicorn-docker/blob/master/docker-images/gunicorn_conf.py)
+* [How do I pass environment variables to Docker containers?](https://stackoverflow.com/questions/30494050/how-do-i-pass-environment-variables-to-docker-containers)
