@@ -334,3 +334,5 @@ docker run --rm -it -p 80:80 ultralytics-serving:arm64
 * [Can You Mount a Volume While Building Your Docker Image to Cache Dependencies?](https://vsupalov.com/cache-docker-build-dependencies-without-volume-mounting/)
 * [Speed up pip downloads in Docker with BuildKit’s new caching](https://pythonspeed.com/articles/docker-cache-pip-downloads/)
 * [ImportError: libgthread-2.0.so.0: cannot open shared object file: No such file or directory when importing cv2 using Docker container](https://stackoverflow.com/questions/62786028/importerror-libgthread-2-0-so-0-cannot-open-shared-object-file-no-such-file-o)
+* [python/3.10/slim-bullseye/Dockerfile](https://github.com/docker-library/python/blob/master/3.10/slim-bullseye/Dockerfile)
+* [python/generate-stackbrew-library.sh](https://github.com/docker-library/python/blob/3239fa479d4f3010db822a2e562cdfcbd553d200/generate-stackbrew-library.sh)
