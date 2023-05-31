@@ -57,6 +57,12 @@ brew install jq
 ```
 * [macOS 客户端入门](https://learn.microsoft.com/zh-cn/windows-server/remote/remote-desktop-services/clients/remote-desktop-mac)
 
+### rar
+```shell
+brew install rar
+
+unrar x <filename.rar>
+```
 
 ## 开发
 ### [GitHub Desktop](https://desktop.github.com)
