@@ -12,6 +12,42 @@ permalink: /shortcuts/
 | **GitHub Copilot** | 【[GitHub Copilot](#github-copilot)】 |
 
 
+## 常用命令
+```
++--------------------------------------------------------------------------------------------------------------------------+
+|    🔥🔥🔥 COMMON COMMANDS  (sudo nvim /etc/motd) 📝                                                                      |
+|==========================================================================================================================|
+| 🏠 wjj.com(http://127.0.0.1:4000/)                |  mogrify [-resize 50%] [-path jpg_path] -format jpg png_path/*.png   |
+| ⬛️ ssh.cpu[1234]  ssh.gpu1  ssh.through           |  convert -resize 50% input_file output_file                🌄  缩放  |  
+| 🌐 open.[login.company.portal | chatgpt]          |  convert -negate input_file output_file                    🌠  反转  |
+|                                                   |  convert -colorspace gray input_file output_file           ⬜️  灰度  |  
+|==========================================================================================================================|
+|  tmux new -s <window-name>             🔚 DETACH  |  conda create  -n <ENVIRONMENT> [package_spec ...]       ☪️ 【Conda】 |
+|  tmux attach -t <session-name>         Ctrl+B, D  |  conda install -n <ENVIRONMENT> [package_spec ...]                   |
+|  tmux kill-session -t <session-name>              |  conda remove  -n <ENVIRONMENT> [package_spec ...]                   |
+|                                                   |  conda activate   <ENVIRONMENT>                    conda deactivate  |
+|  tmux ls                               🛐【TMUX】 |  conda env list                   conda env remove -n <ENVIRONMENT>  |
+|  pip freeze > requirements.txt                    |  conda env export [-n env] > environment.yml                         |
+|  pip install -r requirements.txt                  |  conda env update [-n env] --file environment.yml     CREATE UPDATE  |
+|==========================================================================================================================|
+| 🔎 find . -name "*.py[co]" -delete ❌                                                         xmllint --format file.xml  |
+|    find . -name '__MACOSX' -exec rm -rf {} \; -o -name '.DS_Store' -exec rm -f {} \;                      jq . file.xml  | 
+|    grep [-R 目录递归] [-n 行号] [-i 大小写敏感] [-w 完整单词] text *                                                     |   
+| 📦 zip -r file.zip dir        unzip [-l] [-d exdir] file.zip                                           unrar x file.rar  |
+|==========================================================================================================================|
+| 🐳 docker.rmi.none = docker rmi --force $(docker images -q --filter "dangling=true")               docker builder prune  |
+|    构建器切换【💧 默认】docker buildx use desktop-linux    【💦 多架构-arm64,amd64】docker buildx use mybuilder          |
+| 💧 docker buildx build --platform linux/arm64 -t wangjunjian/ultralytics-serving:arm64 .                                 |
+| 💦 docker buildx build --platform linux/arm64,linux/amd64 -t wangjunjian/ultralytics-serving:latest --push .             |
+|==========================================================================================================================|
+| 🤖 labelImg images classes.txt labels                                                                                    |
+|   yolo train data=data.yaml model=yolov8n.pt project=name                                                                |
+|   yolo predict model=yolov8n.pt project=name source=images save=true show_labels=false iou=0.4 save_crop=true classes=1  |
+|   yolo classify train data=mnist model=yolov8n-cls.pt project=mnist imgsz=64 batch=64 device=mps                         |
++--------------------------------------------------------------------------------------------------------------------------+
+```
+
+
 ## Mac 键盘修饰键
 
 | Command（或 Cmd）⌘ | Shift ⇧ | Option（或 Alt）⌥ | Control（或 Ctrl）⌃ | Caps Lock ⇪ | Fn 🌐 |
