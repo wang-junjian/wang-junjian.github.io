@@ -3,7 +3,7 @@ layout: post
 title:  "ChatGPT Prompt Engineering for Developers"
 date:   2023-05-28 08:00:00 +0800
 categories: Prompt
-tags: [ChatGPT]
+tags: [ChatGPT, DeepLearning.AI]
 ---
 
 [ChatGPT Prompt Engineering for Developers](https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/) 由Isa Fulford（OpenAI）和Andrew Ng（DeepLearning.AI）教授的课程将描述 LLM 的工作原理，提供快速工程的最佳实践，并展示 LLM API 如何用于各种任务的应用程序。
