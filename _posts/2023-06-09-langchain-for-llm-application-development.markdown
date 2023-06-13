@@ -1857,6 +1857,1063 @@ chain.run("制取氧气的步骤？")
 **上面全部使用了中文进行提示的改写，没有成功。主要问题是它只能选择这四个，提示写的可能还不是很好，没有找点 GPT 的点。**
 
 
+## LangChain: Q&A over Documents（文档问答）
+
+```py
+# pip install --upgrade langchain
+import os
+
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv()) # read local .env file
+
+from langchain.chains import RetrievalQA
+from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders import CSVLoader
+from langchain.vectorstores import DocArrayInMemorySearch
+from IPython.display import display, Markdown
+```
+
+```py
+file = 'OutdoorClothingCatalog_1000.csv'
+loader = CSVLoader(file_path=file)
+
+#pip install docarray
+from langchain.indexes import VectorstoreIndexCreator
+
+index = VectorstoreIndexCreator(
+    vectorstore_cls=DocArrayInMemorySearch
+).from_loaders([loader])
+```
+
+```py
+query ="Please list all your shirts with sun protection in a table in markdown and summarize each one."
+response = index.query(query)
+display(Markdown(response))
+```
+
+| Name | Description |
+| --- | --- |
+| Men's Tropical Plaid Short-Sleeve Shirt | UPF 50+ rated, 100% polyester, wrinkle-resistant, front and back cape venting, two front bellows pockets |
+| Men's Plaid Tropic Shirt, Short-Sleeve | UPF 50+ rated, 52% polyester and 48% nylon, machine washable and dryable, front and back cape venting, two front bellows pockets |
+| Men's TropicVibe Shirt, Short-Sleeve | UPF 50+ rated, 71% Nylon, 29% Polyester, 100% Polyester knit mesh, machine wash and dry, front and back cape venting, two front bellows pockets |
+| Sun Shield Shirt by | UPF 50+ rated, 78% nylon, 22% Lycra Xtra Life fiber, handwash, line dry, wicks moisture, fits comfortably over swimsuit, abrasion resistant |
+
+All four shirts provide UPF 50+ sun protection, blocking 98% of the sun's harmful rays. The Men's Tropical Plaid Short-Sleeve Shirt is made of 100% polyester and is wrinkle-resistant
+
+```py
+```
+
+```
+```
+
+```py
+```
+
+```
+```
+
+```py
+```
+
+```
+```
+
+```py
+```
+
+```
+```
+
+## LangChain: Evaluation（评估）
+
+### Create our QandA application（创建您的问答应用程序）
+```py
+import os
+
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv()) # read local .env file
+
+from langchain.chains import RetrievalQA
+from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders import CSVLoader
+from langchain.indexes import VectorstoreIndexCreator
+from langchain.vectorstores import DocArrayInMemorySearch
+
+file = 'OutdoorClothingCatalog_1000.csv'
+loader = CSVLoader(file_path=file)
+data = loader.load()
+
+index = VectorstoreIndexCreator(
+    vectorstore_cls=DocArrayInMemorySearch
+).from_loaders([loader])
+
+llm = ChatOpenAI(temperature = 0.0)
+qa = RetrievalQA.from_chain_type(
+    llm=llm, 
+    chain_type="stuff", 
+    retriever=index.vectorstore.as_retriever(), 
+    verbose=True,
+    chain_type_kwargs = {
+        "document_separator": "<<<<>>>>>"
+    }
+)
+```
+
+#### Coming up with test datapoints（提出测试数据点）
+
+```py
+data[10]
+```
+
+```
+Document(page_content=": 10\nname: Cozy Comfort Pullover Set, Stripe\ndescription: Perfect for lounging, this striped knit set lives up to its name. We used ultrasoft fabric and an easy design that's as comfortable at bedtime as it is when we have to make a quick run out.\n\nSize & Fit\n- Pants are Favorite Fit: Sits lower on the waist.\n- Relaxed Fit: Our most generous fit sits farthest from the body.\n\nFabric & Care\n- In the softest blend of 63% polyester, 35% rayon and 2% spandex.\n\nAdditional Features\n- Relaxed fit top with raglan sleeves and rounded hem.\n- Pull-on pants have a wide elastic waistband and drawstring, side pockets and a modern slim leg.\n\nImported.", metadata={'source': 'OutdoorClothingCatalog_1000.csv', 'row': 10})
+```
+
+```py
+data[11]
+```
+
+```
+Document(page_content=': 11\nname: Ultra-Lofty 850 Stretch Down Hooded Jacket\ndescription: This technical stretch down jacket from our DownTek collection is sure to keep you warm and comfortable with its full-stretch construction providing exceptional range of motion. With a slightly fitted style that falls at the hip and best with a midweight layer, this jacket is suitable for light activity up to 20° and moderate activity up to -30°. The soft and durable 100% polyester shell offers complete windproof protection and is insulated with warm, lofty goose down. Other features include welded baffles for a no-stitch construction and excellent stretch, an adjustable hood, an interior media port and mesh stash pocket and a hem drawcord. Machine wash and dry. Imported.', metadata={'source': 'OutdoorClothingCatalog_1000.csv', 'row': 11})
+```
+
+#### Hard-coded examples（硬编码示例）
+
+```py
+examples = [
+    {
+        "query": "Do the Cozy Comfort Pullover Set have side pockets?",
+        "answer": "Yes"
+    },
+    {
+        "query": "What collection is the Ultra-Lofty 850 Stretch Down Hooded Jacket from?",
+        "answer": "The DownTek collection"
+    }
+]
+```
+
+#### LLM-Generated examples（LLM 生成的例子）
+
+```py
+from langchain.evaluation.qa import QAGenerateChain
+
+example_gen_chain = QAGenerateChain.from_llm(ChatOpenAI())
+new_examples = example_gen_chain.apply_and_parse(
+    [{"doc": t} for t in data[:5]]
+)
+
+print(new_examples[0])
+print(data[0].page_content)
+```
+
+```
+{'query': "What is the weight of the Women's Campside Oxfords?", 'answer': "The approximate weight of the Women's Campside Oxfords is 1 lb.1 oz. per pair."}
+: 0
+name: Women's Campside Oxfords
+description: This ultracomfortable lace-to-toe Oxford boasts a super-soft canvas, thick cushioning, and quality construction for a broken-in feel from the first time you put them on. 
+
+Size & Fit: Order regular shoe size. For half sizes not offered, order up to next whole size. 
+
+Specs: Approx. weight: 1 lb.1 oz. per pair. 
+
+Construction: Soft canvas material for a broken-in feel and look. Comfortable EVA innersole with Cleansport NXT® antimicrobial odor control. Vintage hunt, fish and camping motif on innersole. Moderate arch contour of innersole. EVA foam midsole for cushioning and support. Chain-tread-inspired molded rubber outsole with modified chain-tread pattern. Imported. 
+
+Questions? Please contact us for any inquiries.
+```
+
+```
+{'query': "女士 Campside 牛津鞋的重量是多少？", 'answer': "女士 Campside 牛津鞋的重量约为 1 磅 1 盎司每双。"}
+: 0
+名称：女式 Campside 牛津鞋
+描述：这款超舒适的全系带牛津鞋采用超柔软的帆布、厚实的缓冲垫和优质结构，让您在第一次穿上时就有一种磨合感。
+
+尺码和版型：订购常规鞋码。 对于未提供的半码，请订购大一码。
+
+规格：约。 重量：1 磅 1 盎司。 每对。
+
+构造：柔软的帆布材料，打造经久耐用的感觉和外观。 舒适的 EVA 内底，带有 Cleansport NXT 抗菌气味控制。 鞋垫上的复古狩猎、鱼类和露营图案。 鞋垫适中的拱形轮廓。 EVA 泡沫中底提供缓冲和支撑。 受链胎面启发的模压橡胶外底，带有改进的链胎面图案。 进口。
+
+问题？ 如有任何疑问，请联系我们。
+```
+
+#### Combine examples（结合例子）
+
+```py
+examples += new_examples
+qa.run(examples[0]["query"])
+```
+
+```
+> Entering new RetrievalQA chain...
+
+> Finished chain.
+'The Cozy Comfort Pullover Set, Stripe has side pockets on the pull-on pants.'
+```
+
+### Manual Evaluation（人工评估）
+
+```py
+import langchain
+langchain.debug = True
+```
+
+```py
+qa.run(examples[0]["query"])
+```
+
+```
+[chain/start] [1:chain:RetrievalQA] Entering Chain run with input:
+{
+  "query": "Do the Cozy Comfort Pullover Set        have side pockets?"
+}
+[chain/start] [1:chain:RetrievalQA > 2:chain:StuffDocumentsChain] Entering Chain run with input:
+[inputs]
+[chain/start] [1:chain:RetrievalQA > 2:chain:StuffDocumentsChain > 3:chain:LLMChain] Entering Chain run with input:
+{
+  "question": "Do the Cozy Comfort Pullover Set        have side pockets?",
+  "context": ": 10\nname: Cozy Comfort Pullover Set, Stripe\ndescription: Perfect for lounging, this striped knit set lives up to its name. We used ultrasoft fabric and an easy design that's as comfortable at bedtime as it is when we have to make a quick run out.\n\nSize & Fit\n- Pants are Favorite Fit: Sits lower on the waist.\n- Relaxed Fit: Our most generous fit sits farthest from the body.\n\nFabric & Care\n- In the softest blend of 63% polyester, 35% rayon and 2% spandex.\n\nAdditional Features\n- Relaxed fit top with raglan sleeves and rounded hem.\n- Pull-on pants have a wide elastic waistband and drawstring, side pockets and a modern slim leg.\n\nImported.<<<<>>>>>: 73\nname: Cozy Cuddles Knit Pullover Set\ndescription: Perfect for lounging, this knit set lives up to its name. We used ultrasoft fabric and an easy design that's as comfortable at bedtime as it is when we have to make a quick run out. \n\nSize & Fit \nPants are Favorite Fit: Sits lower on the waist. \nRelaxed Fit: Our most generous fit sits farthest from the body. \n\nFabric & Care \nIn the softest blend of 63% polyester, 35% rayon and 2% spandex.\n\nAdditional Features \nRelaxed fit top with raglan sleeves and rounded hem. \nPull-on pants have a wide elastic waistband and drawstring, side pockets and a modern slim leg. \nImported.<<<<>>>>>: 632\nname: Cozy Comfort Fleece Pullover\ndescription: The ultimate sweater fleece \u2013 made from superior fabric and offered at an unbeatable price. \n\nSize & Fit\nSlightly Fitted: Softly shapes the body. Falls at hip. \n\nWhy We Love It\nOur customers (and employees) love the rugged construction and heritage-inspired styling of our popular Sweater Fleece Pullover and wear it for absolutely everything. From high-intensity activities to everyday tasks, you'll find yourself reaching for it every time.\n\nFabric & Care\nRugged sweater-knit exterior and soft brushed interior for exceptional warmth and comfort. Made from soft, 100% polyester. Machine wash and dry.\n\nAdditional Features\nFeatures our classic Mount Katahdin logo. Snap placket. Front princess seams create a feminine shape. Kangaroo handwarmer pockets. Cuffs and hem reinforced with jersey binding. Imported.\n\n \u2013 Official Supplier to the U.S. Ski Team\nTHEIR WILL TO WIN, WOVEN RIGHT IN. LEARN MORE<<<<>>>>>: 151\nname: Cozy Quilted Sweatshirt\ndescription: Our sweatshirt is an instant classic with its great quilted texture and versatile weight that easily transitions between seasons. With a traditional fit that is relaxed through the chest, sleeve, and waist, this pullover is lightweight enough to be worn most months of the year. The cotton blend fabric is super soft and comfortable, making it the perfect casual layer. To make dressing easy, this sweatshirt also features a snap placket and a heritage-inspired Mt. Katahdin logo patch. For care, machine wash and dry. Imported."
+}
+[llm/start] [1:chain:RetrievalQA > 2:chain:StuffDocumentsChain > 3:chain:LLMChain > 4:llm:ChatOpenAI] Entering LLM run with input:
+{
+  "prompts": [
+    "System: Use the following pieces of context to answer the users question. \nIf you don't know the answer, just say that you don't know, don't try to make up an answer.\n----------------\n: 10\nname: Cozy Comfort Pullover Set, Stripe\ndescription: Perfect for lounging, this striped knit set lives up to its name. We used ultrasoft fabric and an easy design that's as comfortable at bedtime as it is when we have to make a quick run out.\n\nSize & Fit\n- Pants are Favorite Fit: Sits lower on the waist.\n- Relaxed Fit: Our most generous fit sits farthest from the body.\n\nFabric & Care\n- In the softest blend of 63% polyester, 35% rayon and 2% spandex.\n\nAdditional Features\n- Relaxed fit top with raglan sleeves and rounded hem.\n- Pull-on pants have a wide elastic waistband and drawstring, side pockets and a modern slim leg.\n\nImported.<<<<>>>>>: 73\nname: Cozy Cuddles Knit Pullover Set\ndescription: Perfect for lounging, this knit set lives up to its name. We used ultrasoft fabric and an easy design that's as comfortable at bedtime as it is when we have to make a quick run out. \n\nSize & Fit \nPants are Favorite Fit: Sits lower on the waist. \nRelaxed Fit: Our most generous fit sits farthest from the body. \n\nFabric & Care \nIn the softest blend of 63% polyester, 35% rayon and 2% spandex.\n\nAdditional Features \nRelaxed fit top with raglan sleeves and rounded hem. \nPull-on pants have a wide elastic waistband and drawstring, side pockets and a modern slim leg. \nImported.<<<<>>>>>: 632\nname: Cozy Comfort Fleece Pullover\ndescription: The ultimate sweater fleece \u2013 made from superior fabric and offered at an unbeatable price. \n\nSize & Fit\nSlightly Fitted: Softly shapes the body. Falls at hip. \n\nWhy We Love It\nOur customers (and employees) love the rugged construction and heritage-inspired styling of our popular Sweater Fleece Pullover and wear it for absolutely everything. From high-intensity activities to everyday tasks, you'll find yourself reaching for it every time.\n\nFabric & Care\nRugged sweater-knit exterior and soft brushed interior for exceptional warmth and comfort. Made from soft, 100% polyester. Machine wash and dry.\n\nAdditional Features\nFeatures our classic Mount Katahdin logo. Snap placket. Front princess seams create a feminine shape. Kangaroo handwarmer pockets. Cuffs and hem reinforced with jersey binding. Imported.\n\n \u2013 Official Supplier to the U.S. Ski Team\nTHEIR WILL TO WIN, WOVEN RIGHT IN. LEARN MORE<<<<>>>>>: 151\nname: Cozy Quilted Sweatshirt\ndescription: Our sweatshirt is an instant classic with its great quilted texture and versatile weight that easily transitions between seasons. With a traditional fit that is relaxed through the chest, sleeve, and waist, this pullover is lightweight enough to be worn most months of the year. The cotton blend fabric is super soft and comfortable, making it the perfect casual layer. To make dressing easy, this sweatshirt also features a snap placket and a heritage-inspired Mt. Katahdin logo patch. For care, machine wash and dry. Imported.\nHuman: Do the Cozy Comfort Pullover Set        have side pockets?"
+  ]
+}
+[llm/end] [1:chain:RetrievalQA > 2:chain:StuffDocumentsChain > 3:chain:LLMChain > 4:llm:ChatOpenAI] [1.03s] Exiting LLM run with output:
+{
+  "generations": [
+    [
+      {
+        "text": "The Cozy Comfort Pullover Set, Stripe has side pockets.",
+        "generation_info": null,
+        "message": {
+          "content": "The Cozy Comfort Pullover Set, Stripe has side pockets.",
+          "additional_kwargs": {},
+          "example": false
+        }
+      }
+    ]
+  ],
+  "llm_output": {
+    "token_usage": {
+      "prompt_tokens": 734,
+      "completion_tokens": 13,
+      "total_tokens": 747
+    },
+    "model_name": "gpt-3.5-turbo"
+  }
+}
+[chain/end] [1:chain:RetrievalQA > 2:chain:StuffDocumentsChain > 3:chain:LLMChain] [1.03s] Exiting Chain run with output:
+{
+  "text": "The Cozy Comfort Pullover Set, Stripe has side pockets."
+}
+[chain/end] [1:chain:RetrievalQA > 2:chain:StuffDocumentsChain] [1.03s] Exiting Chain run with output:
+{
+  "output_text": "The Cozy Comfort Pullover Set, Stripe has side pockets."
+}
+[chain/end] [1:chain:RetrievalQA] [1.41s] Exiting Chain run with output:
+{
+  "result": "The Cozy Comfort Pullover Set, Stripe has side pockets."
+}
+'The Cozy Comfort Pullover Set, Stripe has side pockets.'
+```
+
+```py
+# Turn off the debug mode
+langchain.debug = False
+```
+
+### LLM assisted evaluation（LLM 辅助评估）
+
+```py
+predictions = qa.apply(examples)
+
+from langchain.evaluation.qa import QAEvalChain
+
+llm = ChatOpenAI(temperature=0)
+eval_chain = QAEvalChain.from_llm(llm)
+
+graded_outputs = eval_chain.evaluate(examples, predictions)
+
+for i, eg in enumerate(examples):
+    print(f"Example {i}:")
+    print("Question: " + predictions[i]['query'])
+    print("Real Answer: " + predictions[i]['answer'])
+    print("Predicted Answer: " + predictions[i]['result'])
+    print("Predicted Grade: " + graded_outputs[i]['text'])
+    print()
+```
+
+```
+Example 0:
+Question: Do the Cozy Comfort Pullover Set        have side pockets?
+Real Answer: Yes
+Predicted Answer: The Cozy Comfort Pullover Set, Stripe has side pockets on the pull-on pants.
+Predicted Grade: CORRECT
+
+Example 1:
+Question: What collection is the Ultra-Lofty         850 Stretch Down Hooded Jacket from?
+Real Answer: The DownTek collection
+Predicted Answer: The Ultra-Lofty 850 Stretch Down Hooded Jacket is from the DownTek collection.
+Predicted Grade: CORRECT
+
+Example 2:
+Question: What is the weight per pair of the Women's Campside Oxfords?
+Real Answer: The Women's Campside Oxfords have an approximate weight of 1 lb. 1 oz. per pair.
+Predicted Answer: The weight per pair of the Women's Campside Oxfords is approximately 1 lb. 1 oz.
+Predicted Grade: CORRECT
+
+Example 3:
+Question: What are the dimensions of the small and medium Recycled Waterhog dog mats?
+Real Answer: The small mat has dimensions of 18" x 28" and the medium mat has dimensions of 22.5" x 34.5".
+Predicted Answer: The small Recycled Waterhog dog mat has dimensions of 18" x 28" and the medium size has dimensions of 22.5" x 34.5".
+Predicted Grade: CORRECT
+
+Example 4:
+Question: What are the features of the Infant and Toddler Girls' Coastal Chill Swimsuit, Two-Piece?
+Real Answer: The Infant and Toddler Girls' Coastal Chill Swimsuit, Two-Piece has exclusive whimsical prints, bright colors, ruffles, four-way-stretch and chlorine-resistant fabric, UPF 50+ rated fabric for sun protection, crossover no-slip straps, fully lined bottom, and can be machine washed and line dried for best results.
+Predicted Answer: The Infant and Toddler Girls' Coastal Chill Swimsuit, Two-Piece features bright colors, ruffles, and exclusive whimsical prints. The four-way-stretch and chlorine-resistant fabric keeps its shape and resists snags. The UPF 50+ rated fabric provides the highest rated sun protection possible, blocking 98% of the sun's harmful rays. The crossover no-slip straps and fully lined bottom ensure a secure fit and maximum coverage. It is machine washable and should be line dried for best results. It is imported.
+Predicted Grade: CORRECT
+
+Example 5:
+Question: What is the fabric composition of the Refresh Swimwear V-Neck Tankini Contrasts?
+Real Answer: The Refresh Swimwear V-Neck Tankini Contrasts is made of 82% recycled nylon with 18% Lycra® spandex for the body and 90% recycled nylon with 10% Lycra® spandex for the lining.
+Predicted Answer: The Refresh Swimwear V-Neck Tankini Contrasts is made of 82% recycled nylon with 18% Lycra® spandex for the body and 90% recycled nylon with 10% Lycra® spandex for the lining.
+Predicted Grade: CORRECT
+
+Example 6:
+Question: What is the main feature of the EcoFlex 3L Storm Pants?
+Real Answer: The main feature of the EcoFlex 3L Storm Pants is the state-of-the-art TEK O2 technology that offers the most breathability ever tested.
+Predicted Answer: The main feature of the EcoFlex 3L Storm Pants is the state-of-the-art TEK O2 technology that offers the most breathability ever tested, making them great for a variety of outdoor activities year-round.
+Predicted Grade: CORRECT
+```
+
+## LangChain: Agents（代理）
+
+```py
+import os
+
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv()) # read local .env file
+
+import warnings
+warnings.filterwarnings("ignore")
+```
+
+### Built-in LangChain tools（内置 LangChain 工具）
+
+```py
+#!pip install -U wikipedia
+
+from langchain.agents.agent_toolkits import create_python_agent
+from langchain.agents import load_tools, initialize_agent
+from langchain.agents import AgentType
+from langchain.tools.python.tool import PythonREPLTool
+from langchain.python import PythonREPL
+from langchain.chat_models import ChatOpenAI
+
+llm = ChatOpenAI(temperature=0) # 为了稳定，减少随机性。
+tools = load_tools(["llm-math","wikipedia"], llm=llm)
+agent= initialize_agent(
+    tools, 
+    llm, 
+    agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+    handle_parsing_errors=True,
+    verbose = True)
+```
+
+```py
+agent("What is the 25% of 300?")
+```
+
+```
+> Entering new AgentExecutor chain...
+Thought: We need to calculate 25% of 300, which means we need to multiply 300 by 0.25.
+
+Action:
+```
+{
+  "action": "Calculator",
+  "action_input": "300*0.25"
+}
+```
+
+
+Observation: Answer: 75.0
+Thought:The calculator tool returned the answer 75.0, which is 25% of 300.
+
+Final Answer: 25% of 300 is 75.0.
+
+> Finished chain.
+{'input': 'What is the 25% of 300?', 'output': '25% of 300 is 75.0.'}
+```
+
+```py
+agent("300的25%是多少？")
+```
+
+```
+> Entering new AgentExecutor chain...
+Question: 300的25%是多少？
+Thought: We can use a calculator to solve this problem.
+Action:
+```
+{
+  "action": "Calculator",
+  "action_input": "300*0.25"
+}
+```
+
+Observation: Answer: 75.0
+Thought:
+Observation: Invalid or incomplete response
+Thought:I need to fix the output format to properly display the answer.
+Action:
+```
+{
+  "action": "Calculator",
+  "action_input": "300*0.25"
+}
+```
+
+
+Observation: Answer: 75.0
+Thought:The answer is correct and I can provide it as the final answer.
+Final Answer: 75.0
+
+> Finished chain.
+{'input': '300的25%是多少？', 'output': '75.0'}
+```
+
+这个中文问题中间出现了一些不正确的响应格式，虽然最终答案还是正确的。下面修改了一下就没有问题了，其实就是在数字的两边加上空格。
+
+```py
+agent("300 的 25% 是多少？")
+```
+
+```
+> Entering new AgentExecutor chain...
+Thought: We can use the calculator tool to solve this problem.
+
+Action:
+```
+{
+  "action": "Calculator",
+  "action_input": "300*0.25"
+}
+```
+
+
+Observation: Answer: 75.0
+Thought:We have the answer to the question.
+
+Final Answer: 75.0
+
+> Finished chain.
+{'input': '300 的 25% 是多少？', 'output': '75.0'}
+```
+
+```py
+question = "Tom M. Mitchell is an American computer scientist \
+and the Founders University Professor at Carnegie Mellon University (CMU)\
+what book did he write?"
+result = agent(question) 
+```
+
+```
+> Entering new AgentExecutor chain...
+Thought: I should use Wikipedia to find the answer to this question.
+
+Action:
+```
+{
+  "action": "Wikipedia",
+  "action_input": "Tom M. Mitchell"
+}
+```
+
+
+Observation: Page: Tom M. Mitchell
+Summary: Tom Michael Mitchell (born August 9, 1951) is an American computer scientist and the Founders University Professor at Carnegie Mellon University (CMU). He is a founder and former Chair of the Machine Learning Department at CMU. Mitchell is known for his contributions to the advancement of machine learning, artificial intelligence, and cognitive neuroscience and is the author of the textbook Machine Learning. He is a member of the United States National Academy of Engineering since 2010. He is also a Fellow of the American Academy of Arts and Sciences, the American Association for the Advancement of Science and a Fellow and past President of the Association for the Advancement of Artificial Intelligence. In October 2018, Mitchell was appointed as the Interim Dean of the School of Computer Science at Carnegie Mellon.
+
+Page: Tom Mitchell (Australian footballer)
+Summary: Thomas Mitchell (born 31 May 1993) is a professional Australian rules footballer playing for the Collingwood Football Club in the Australian Football League (AFL). He previously played for the Sydney Swans from 2012 to 2016, and the Hawthorn Football Club between 2017 and 2022. Mitchell won the Brownlow Medal as the league's best and fairest player in 2018 and set the record for the most disposals in a VFL/AFL match, accruing 54 in a game against Collingwood during that season.
+Thought:The book that Tom M. Mitchell wrote is "Machine Learning".
+
+Action:
+```
+{
+  "action": "Wikipedia",
+  "action_input": "Machine Learning (book)"
+}
+```
+
+
+Observation: Page: Machine learning
+Summary: Machine learning (ML) is a field devoted to understanding and building methods that let machines "learn" – that is, methods that leverage data to improve computer performance on some set of tasks.Machine learning algorithms build a model based on sample data, known as training data, in order to make predictions or decisions without being explicitly programmed to do so. Machine learning algorithms are used in a wide variety of applications, such as in medicine, email filtering, speech recognition, agriculture, and computer vision, where it is difficult or unfeasible to develop conventional algorithms to perform the needed tasks.A subset of machine learning is closely related to computational statistics, which focuses on making predictions using computers, but not all machine learning is statistical learning. The study of mathematical optimization delivers methods, theory and application domains to the field of machine learning. Data mining is a related field of study, focusing on exploratory data analysis through unsupervised learning.Some implementations of machine learning use data and neural networks in a way that mimics the working of a biological brain.In its application across business problems, machine learning is also referred to as predictive analytics.
+
+Page: Timeline of machine learning
+Summary: This page is a timeline of machine learning. Major discoveries, achievements, milestones and other major events in machine learning are included.
+
+Page: Quantum machine learning
+Summary: Quantum machine learning is the integration of quantum algorithms within machine learning programs. The most common use of the term refers to machine learning algorithms for the analysis of classical data executed on a quantum computer, i.e. quantum-enhanced machine learning. While machine learning algorithms are used to compute immense quantities of data, quantum machine learning utilizes qubits and quantum operations or specialized quantum systems to improve computational speed and data storage done by algorithms in a program. This includes hybrid methods that involve both classical and quantum processing, where computationally difficult subroutines are outsourced to a quantum device. These routines can be more complex in nature and executed faster on a quantum computer. Furthermore, quantum algorithms can be used to analyze quantum states instead of classical data. Beyond quantum computing, the term "quantum machine learning" is also associated with classical machine learning methods applied to data generated from quantum experiments (i.e. machine learning of quantum systems), such as learning the phase transitions of a quantum system or creating new quantum experiments. Quantum machine learning also extends to a branch of research that explores methodological and structural similarities between certain physical systems and learning systems, in particular neural networks. For example, some mathematical and numerical techniques from quantum physics are applicable to classical deep learning and vice versa. Furthermore, researchers investigate more abstract notions of learning theory with respect to quantum information, sometimes referred to as "quantum learning theory".
+Thought:Tom M. Mitchell wrote the book "Machine Learning".
+
+Final Answer: Machine Learning.
+
+> Finished chain.
+```
+
+```py
+question = "Tom M. Mitchell 是美国计算机科学家和卡内基梅隆大学 (CMU) 创始人大学教授，他写了什么书？"
+result = agent(question)
+```
+
+```
+> Entering new AgentExecutor chain...
+Thought: I should use the Wikipedia tool to search for information about Tom M. Mitchell and his books.
+
+Action:
+```
+{
+  "action": "Wikipedia",
+  "action_input": "Tom M. Mitchell"
+}
+```
+
+
+Observation: Page: Tom M. Mitchell
+Summary: Tom Michael Mitchell (born August 9, 1951) is an American computer scientist and the Founders University Professor at Carnegie Mellon University (CMU). He is a founder and former Chair of the Machine Learning Department at CMU. Mitchell is known for his contributions to the advancement of machine learning, artificial intelligence, and cognitive neuroscience and is the author of the textbook Machine Learning. He is a member of the United States National Academy of Engineering since 2010. He is also a Fellow of the American Academy of Arts and Sciences, the American Association for the Advancement of Science and a Fellow and past President of the Association for the Advancement of Artificial Intelligence. In October 2018, Mitchell was appointed as the Interim Dean of the School of Computer Science at Carnegie Mellon.
+
+Page: Tom Mitchell (Australian footballer)
+Summary: Thomas Mitchell (born 31 May 1993) is a professional Australian rules footballer playing for the Collingwood Football Club in the Australian Football League (AFL). He previously played for the Sydney Swans from 2012 to 2016, and the Hawthorn Football Club between 2017 and 2022. Mitchell won the Brownlow Medal as the league's best and fairest player in 2018 and set the record for the most disposals in a VFL/AFL match, accruing 54 in a game against Collingwood during that season.
+Thought:According to the Wikipedia page, Tom M. Mitchell is the author of the textbook "Machine Learning".
+
+Final Answer: Tom M. Mitchell wrote the book "Machine Learning".
+
+> Finished chain.
+```
+
+### Python Agent
+
+```py
+agent = create_python_agent(
+    llm,
+    tool=PythonREPLTool(),
+    verbose=True
+)
+
+customer_list = [["Harrison", "Chase"], 
+                 ["Lang", "Chain"],
+                 ["Dolly", "Too"],
+                 ["Elle", "Elem"], 
+                 ["Geoff","Fusion"], 
+                 ["Trance","Former"],
+                 ["Jen","Ayai"]
+                ]
+
+agent.run(f"""Sort these customers by \
+last name and then first name \
+and print the output: {customer_list}""") 
+```
+
+```
+> Entering new AgentExecutor chain...
+I can use the sorted() function to sort the list of customers by last name and then first name. I will need to provide a key function to sorted() that returns a tuple of the last name and first name in that order.
+Action: Python REPL
+Action Input:
+```
+customers = [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]
+sorted_customers = sorted(customers, key=lambda x: (x[1], x[0]))
+for customer in sorted_customers:
+    print(customer)
+```
+Observation: ['Jen', 'Ayai']
+['Lang', 'Chain']
+['Harrison', 'Chase']
+['Elle', 'Elem']
+['Trance', 'Former']
+['Geoff', 'Fusion']
+['Dolly', 'Too']
+
+Thought:The customers are now sorted by last name and then first name. 
+Final Answer: [['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]
+
+> Finished chain.
+"[['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]"
+```
+
+```py
+agent.run(f"""按名字和姓氏对这些客户进行排序并打印输出：{customer_list}""") 
+```
+
+```
+> Entering new AgentExecutor chain...
+I can use the sorted() function to sort the list of names based on the first and last name. I will need to provide a key function to sorted() that returns a tuple of the first and last name in the correct order.
+Action: Python REPL
+Action Input: sorted([['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']], key=lambda x: (x[1], x[0]))
+Observation: 
+Thought:The list of names is now sorted in the correct order based on last name and then first name.
+Action: Python REPL
+Action Input: print(sorted([['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']], key=lambda x: (x[1], x[0])))
+Observation: [['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]
+
+Thought:The list of names is now sorted in the correct order based on last name and then first name.
+Final Answer: [['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]
+
+> Finished chain.
+"[['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]"
+```
+
+#### View detailed outputs of the chains
+
+```py
+import langchain
+langchain.debug=True
+agent.run(f"""Sort these customers by \
+last name and then first name \
+and print the output: {customer_list}""") 
+langchain.debug=False
+```
+
+```
+[chain/start] [1:chain:AgentExecutor] Entering Chain run with input:
+{
+  "input": "Sort these customers by last name and then first name and print the output: [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]"
+}
+[chain/start] [1:chain:AgentExecutor > 2:chain:LLMChain] Entering Chain run with input:
+{
+  "input": "Sort these customers by last name and then first name and print the output: [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]",
+  "agent_scratchpad": "",
+  "stop": [
+    "\nObservation:",
+    "\n\tObservation:"
+  ]
+}
+[llm/start] [1:chain:AgentExecutor > 2:chain:LLMChain > 3:llm:ChatOpenAI] Entering LLM run with input:
+{
+  "prompts": [
+    "Human: You are an agent designed to write and execute python code to answer questions.\nYou have access to a python REPL, which you can use to execute python code.\nIf you get an error, debug your code and try again.\nOnly use the output of your code to answer the question. \nYou might know the answer without running any code, but you should still run the code to get the answer.\nIf it does not seem like you can write code to answer the question, just return \"I don't know\" as the answer.\n\n\nPython REPL: A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`.\n\nUse the following format:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [Python REPL]\nAction Input: the input to the action\nObservation: the result of the action\n... (this Thought/Action/Action Input/Observation can repeat N times)\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question\n\nBegin!\n\nQuestion: Sort these customers by last name and then first name and print the output: [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]\nThought:"
+  ]
+}
+[llm/end] [1:chain:AgentExecutor > 2:chain:LLMChain > 3:llm:ChatOpenAI] [6.52s] Exiting LLM run with output:
+{
+  "generations": [
+    [
+      {
+        "text": "I can use the sorted() function to sort the list of customers by last name and then first name. I will need to provide a key function to sorted() that returns a tuple of the last name and first name in that order.\nAction: Python REPL\nAction Input:\n```\ncustomers = [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]\nsorted_customers = sorted(customers, key=lambda x: (x[1], x[0]))\nfor customer in sorted_customers:\n    print(customer)\n```",
+        "generation_info": null,
+        "message": {
+          "content": "I can use the sorted() function to sort the list of customers by last name and then first name. I will need to provide a key function to sorted() that returns a tuple of the last name and first name in that order.\nAction: Python REPL\nAction Input:\n```\ncustomers = [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]\nsorted_customers = sorted(customers, key=lambda x: (x[1], x[0]))\nfor customer in sorted_customers:\n    print(customer)\n```",
+          "additional_kwargs": {},
+          "example": false
+        }
+      }
+    ]
+  ],
+  "llm_output": {
+    "token_usage": {
+      "prompt_tokens": 327,
+      "completion_tokens": 144,
+      "total_tokens": 471
+    },
+    "model_name": "gpt-3.5-turbo"
+  }
+}
+[chain/end] [1:chain:AgentExecutor > 2:chain:LLMChain] [6.53s] Exiting Chain run with output:
+{
+  "text": "I can use the sorted() function to sort the list of customers by last name and then first name. I will need to provide a key function to sorted() that returns a tuple of the last name and first name in that order.\nAction: Python REPL\nAction Input:\n```\ncustomers = [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]\nsorted_customers = sorted(customers, key=lambda x: (x[1], x[0]))\nfor customer in sorted_customers:\n    print(customer)\n```"
+}
+[tool/start] [1:chain:AgentExecutor > 4:tool:Python REPL] Entering Tool run with input:
+"```
+customers = [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]
+sorted_customers = sorted(customers, key=lambda x: (x[1], x[0]))
+for customer in sorted_customers:
+    print(customer)
+```"
+[tool/end] [1:chain:AgentExecutor > 4:tool:Python REPL] [0.504ms] Exiting Tool run with output:
+"['Jen', 'Ayai']
+['Lang', 'Chain']
+['Harrison', 'Chase']
+['Elle', 'Elem']
+['Trance', 'Former']
+['Geoff', 'Fusion']
+['Dolly', 'Too']"
+[chain/start] [1:chain:AgentExecutor > 5:chain:LLMChain] Entering Chain run with input:
+{
+  "input": "Sort these customers by last name and then first name and print the output: [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]",
+  "agent_scratchpad": "I can use the sorted() function to sort the list of customers by last name and then first name. I will need to provide a key function to sorted() that returns a tuple of the last name and first name in that order.\nAction: Python REPL\nAction Input:\n```\ncustomers = [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]\nsorted_customers = sorted(customers, key=lambda x: (x[1], x[0]))\nfor customer in sorted_customers:\n    print(customer)\n```\nObservation: ['Jen', 'Ayai']\n['Lang', 'Chain']\n['Harrison', 'Chase']\n['Elle', 'Elem']\n['Trance', 'Former']\n['Geoff', 'Fusion']\n['Dolly', 'Too']\n\nThought:",
+  "stop": [
+    "\nObservation:",
+    "\n\tObservation:"
+  ]
+}
+[llm/start] [1:chain:AgentExecutor > 5:chain:LLMChain > 6:llm:ChatOpenAI] Entering LLM run with input:
+{
+  "prompts": [
+    "Human: You are an agent designed to write and execute python code to answer questions.\nYou have access to a python REPL, which you can use to execute python code.\nIf you get an error, debug your code and try again.\nOnly use the output of your code to answer the question. \nYou might know the answer without running any code, but you should still run the code to get the answer.\nIf it does not seem like you can write code to answer the question, just return \"I don't know\" as the answer.\n\n\nPython REPL: A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`.\n\nUse the following format:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [Python REPL]\nAction Input: the input to the action\nObservation: the result of the action\n... (this Thought/Action/Action Input/Observation can repeat N times)\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question\n\nBegin!\n\nQuestion: Sort these customers by last name and then first name and print the output: [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]\nThought:I can use the sorted() function to sort the list of customers by last name and then first name. I will need to provide a key function to sorted() that returns a tuple of the last name and first name in that order.\nAction: Python REPL\nAction Input:\n```\ncustomers = [['Harrison', 'Chase'], ['Lang', 'Chain'], ['Dolly', 'Too'], ['Elle', 'Elem'], ['Geoff', 'Fusion'], ['Trance', 'Former'], ['Jen', 'Ayai']]\nsorted_customers = sorted(customers, key=lambda x: (x[1], x[0]))\nfor customer in sorted_customers:\n    print(customer)\n```\nObservation: ['Jen', 'Ayai']\n['Lang', 'Chain']\n['Harrison', 'Chase']\n['Elle', 'Elem']\n['Trance', 'Former']\n['Geoff', 'Fusion']\n['Dolly', 'Too']\n\nThought:"
+  ]
+}
+[llm/end] [1:chain:AgentExecutor > 5:chain:LLMChain > 6:llm:ChatOpenAI] [3.05s] Exiting LLM run with output:
+{
+  "generations": [
+    [
+      {
+        "text": "The customers are now sorted by last name and then first name. \nFinal Answer: [['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]",
+        "generation_info": null,
+        "message": {
+          "content": "The customers are now sorted by last name and then first name. \nFinal Answer: [['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]",
+          "additional_kwargs": {},
+          "example": false
+        }
+      }
+    ]
+  ],
+  "llm_output": {
+    "token_usage": {
+      "prompt_tokens": 526,
+      "completion_tokens": 68,
+      "total_tokens": 594
+    },
+    "model_name": "gpt-3.5-turbo"
+  }
+}
+[chain/end] [1:chain:AgentExecutor > 5:chain:LLMChain] [3.05s] Exiting Chain run with output:
+{
+  "text": "The customers are now sorted by last name and then first name. \nFinal Answer: [['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]"
+}
+[chain/end] [1:chain:AgentExecutor] [9.57s] Exiting Chain run with output:
+{
+  "output": "[['Jen', 'Ayai'], ['Lang', 'Chain'], ['Harrison', 'Chase'], ['Elle', 'Elem'], ['Trance', 'Former'], ['Geoff', 'Fusion'], ['Dolly', 'Too']]"
+}
+```
+
+### Define your own tool（定义你自己的工具）
+
+```py
+from langchain.agents import tool
+from datetime import date
+
+@tool
+def time(text: str) -> str:
+    """Returns todays date, use this for any \
+    questions related to knowing todays date. \
+    The input should always be an empty string, \
+    and this function will always return todays \
+    date - any date mathmatics should occur \
+    outside this function."""
+    return str(date.today())
+
+agent= initialize_agent(
+    tools + [time], 
+    llm, 
+    agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+    handle_parsing_errors=True,
+    verbose = True)
+```
+
+代理有时会得出错误的结论。如果是这样，请尝试再次运行它。
+
+
+```py
+try:
+    result = agent("whats the date today?") 
+except: 
+    print("exception on external access")
+```
+
+```
+> Entering new AgentExecutor chain...
+Thought: I need to use the `time` tool to get today's date.
+Action:
+```
+{
+  "action": "time",
+  "action_input": ""
+}
+```
+
+Observation: 2023-06-13
+Thought:I have successfully retrieved today's date using the `time` tool.
+Final Answer: Today's date is 2023-06-13.
+
+> Finished chain.
+```
+
+```py
+try:
+    result = agent("今天的日期？") 
+except: 
+    print("exception on external access")
+```
+
+```
+> Entering new AgentExecutor chain...
+Thought: We need to get today's date.
+Action:
+```
+{
+  "action": "time",
+  "action_input": ""
+}
+```
+
+Observation: 2023-06-13
+Thought:We have successfully retrieved today's date.
+Final Answer: Today's date is 2023-06-13.
+
+> Finished chain.
+```
+
+```py
+from langchain.agents import tool
+from datetime import date
+
+@tool
+def time(text: str) -> str:
+    """返回今天的日期，将其用于与了解今天日期相关的任何问题。\
+    输入应始终为空字符串，并且该函数将始终返回今天的日期。"""
+    return str(date.today())
+
+agent= initialize_agent(
+    tools + [time], 
+    llm, 
+    agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+    handle_parsing_errors=True,
+    verbose = True)
+
+try:
+    result = agent("今天的日期？") 
+except: 
+    print("exception on external access")
+```
+
+```
+> Entering new AgentExecutor chain...
+Question: 今天的日期？
+Thought: We can use the `time` tool to get today's date.
+Action:
+```
+{
+  "action": "time",
+  "action_input": ""
+}
+```
+
+Observation: 2023-06-13
+Thought:The `time` tool returned today's date as 2023-06-13.
+Final Answer: Today's date is 2023-06-13.
+
+> Finished chain.
+```
+
+下面是没有给代理有效工具集的表现。
+
+```py
+from langchain.agents import tool
+from datetime import date
+
+@tool
+def time(text: str) -> str:
+    """返回今天的日期，将其用于与了解今天日期相关的任何问题。\
+    输入应始终为空字符串，并且该函数将始终返回今天的日期。"""
+    return str(date.today())
+
+agent= initialize_agent(
+    [time], 
+    llm, 
+    agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+    handle_parsing_errors=True,
+    verbose = True)
+
+try:
+    result = agent("介绍一下李小龙的生平") 
+except: 
+    print("exception on external access")
+```
+
+```
+> Entering new AgentExecutor chain...
+Question: 介绍一下李小龙的生平
+Thought: 我们需要使用时间工具来确定李小龙的出生日期和逝世日期，然后提供一些关于他的基本信息。
+Action:
+```
+{
+  "action": "time",
+  "action_input": ""
+}
+```
+
+Observation: 2023-06-13
+Thought:我们需要进一步搜索李小龙的生平信息。
+Action:
+```
+{
+  "action": "search",
+  "action_input": "李小龙生平"
+}
+```
+
+Observation: search is not a valid tool, try another one.
+Thought:我们需要使用一个能够搜索信息的工具，比如说百度搜索。
+Action:
+```
+{
+  "action": "search_web",
+  "action_input": "李小龙生平"
+}
+```
+
+
+Observation: search_web is not a valid tool, try another one.
+Thought:我们需要使用一个能够搜索信息的工具，比如说百度搜索。
+Action:
+```
+{
+  "action": "search",
+  "action_input": "李小龙生平"
+}
+```
+
+
+Observation: search is not a valid tool, try another one.
+Thought:我们需要使用一个能够搜索信息的工具，比如说百度搜索。
+Action:
+```
+{
+  "action": "search_web",
+  "action_input": "李小龙生平"
+}
+```
+
+
+Observation: search_web is not a valid tool, try another one.
+Thought:我们可以使用百度百科来搜索李小龙的生平信息。
+Action:
+```
+{
+  "action": "search_web",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search_web is not a valid tool, try another one.
+Thought:我们可以使用百度百科来搜索李小龙的生平信息。
+Action:
+```
+{
+  "action": "search",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search is not a valid tool, try another one.
+Thought:我们需要使用一个能够搜索信息的工具，比如说百度搜索。
+Action:
+```
+{
+  "action": "search_web",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search_web is not a valid tool, try another one.
+Thought:我们可以使用百度百科来搜索李小龙的生平信息。
+Action:
+```
+{
+  "action": "search",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search is not a valid tool, try another one.
+Thought:我们需要使用一个能够搜索信息的工具，比如说百度搜索。
+Action:
+```
+{
+  "action": "search_web",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search_web is not a valid tool, try another one.
+Thought:我们可以使用百度百科来搜索李小龙的生平信息。
+Action:
+```
+{
+  "action": "search",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search is not a valid tool, try another one.
+Thought:我们需要使用一个能够搜索信息的工具，比如说百度搜索。
+Action:
+```
+{
+  "action": "search_web",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search_web is not a valid tool, try another one.
+Thought:我们可以使用百度百科来搜索李小龙的生平信息。
+Action:
+```
+{
+  "action": "search",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search is not a valid tool, try another one.
+Thought:我们需要使用一个能够搜索信息的工具，比如说百度搜索。
+Action:
+```
+{
+  "action": "search_web",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search_web is not a valid tool, try another one.
+Thought:我们可以使用百度百科来搜索李小龙的生平信息。
+Action:
+```
+{
+  "action": "search",
+  "action_input": "李小龙百度百科"
+}
+```
+
+
+
+Observation: search is not a valid tool, try another one.
+Thought:
+
+> Finished chain.
+```
+
+
 ## 参考资料
 * [DeepLearning.AI - 获得 AI 职业所需的知识和技能](https://www.deeplearning.ai/courses/)
 * [面向开发人员的 ChatGPT 提示工程](https://github.com/datawhalechina/prompt-engineering-for-developers/)
