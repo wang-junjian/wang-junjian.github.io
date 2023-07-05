@@ -3,7 +3,7 @@ layout: post
 title:  "使用 StorageClass 动态创建 NFS 持久卷"
 date:   2023-07-03 08:00:00 +0800
 categories: StorageClass
-tags: [Kubernetes, PersistentVolumeClaim, PersistentVolume, Provisioner, NFS]
+tags: [Kubernetes, PersistentVolumeClaim, PersistentVolume, Provisioner, NFS, mongo]
 ---
 
 ## PVC 操作流程
@@ -20,8 +20,12 @@ emptyDir 卷的存储介质（例如磁盘、SSD 等）是由保存 kubelet 数�
 ### [PersistentVolume](https://kubernetes.io/zh-cn/docs/concepts/storage/persistent-volumes/)
 持久卷（PersistentVolume，PV） 是集群中的一块存储，可以由管理员事先创建， 或者使用存储类（Storage Class）来动态创建。 持久卷是集群资源，就像节点也是集群资源一样。PV 持久卷和普通的 Volume 一样， 也是使用卷插件来实现的，只是它们拥有独立于任何使用 PV 的 Pod 的生命周期。 
 
+PV 对象是由运维人员事先创建在 Kubernetes 集群里待用的。
+
 ### PersistentVolumeClaim
 持久卷声明（PersistentVolumeClaim，PVC） 表达的是用户对存储的请求。概念上与 Pod 类似。 Pod 会耗用节点资源，而 PVC 申领会耗用 PV 资源。Pod 可以请求特定数量的资源（CPU 和内存）；同样 PVC 申领也可以请求特定的大小和访问模式 （例如，可以要求 PV 卷能够以 ReadWriteOnce、ReadOnlyMany 或 ReadWriteMany 模式之一来挂载）。
+
+PVC 对象通常由开发人员创建。
 
 ### [StorageClass](https://kubernetes.io/zh-cn/docs/concepts/storage/storage-classes/)
 StorageClass 为管理员提供了描述存储 "类" 的方法。 不同的类型可能会映射到不同的服务质量等级或备份策略，或是由集群管理员制定的任意策略。
@@ -61,7 +65,7 @@ sudo chmod 777 /data/nfs
 sudo vim /etc/exports
 ```
 ```
-/data/nfs        172.16.33.0/24(rw,sync,fsid=0,crossmnt,no_subtree_check,no_root_squash)
+/data/nfs        172.16.33.0/24(rw,sync,no_subtree_check,no_root_squash)
 ```
 
 #### no_root_squash
@@ -77,6 +81,8 @@ no_root_squash 选项用于取消 NFS 服务器对 root 用户的权限限制，
 
 **在 mongo 的例子中，NFS 服务器没有配置 `no_root_squash`，出现错误：`chown: changing ownership of '/data/db': Operation not permitted`**
 
+* [chown: changing ownership of ‘/var/lib/postgresql/data’: Operation not permitted, when running in kubernetes with mounted "/var/lib/postgres/data" volume](https://github.com/kubernetes/kubernetes/issues/54601)
+
 ### 应用配置
 ```shell
 sudo exportfs -ra
@@ -89,7 +95,7 @@ sudo exportfs -ra
 sudo exportfs -v
 ```
 ```
-/data/nfs     	172.16.33.0/24(rw,wdelay,crossmnt,no_root_squash,no_subtree_check,fsid=0,sec=sys,rw,secure,no_root_squash,no_all_squash)
+/data/nfs     	172.16.33.0/24(rw,wdelay,no_root_squash,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
 ```
 
 ### 重启服务
@@ -98,80 +104,208 @@ sudo systemctl restart nfs-server
 ```
 
 ## 使用 NFS 存储卷
-pod.yaml
+这里使用了 [mongo](https://hub.docker.com/_/mongo) 来做实验。
+
+Pod 清单：mongodb-pod-nfs.yaml
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod
+  name: mongodb
 spec:
   containers:
-    - name: busybox
-      image: busybox
-      command: ["sleep"]
-      args: ["86400"]
-      volumeMounts:
-        - name: nfs-volume
-          mountPath: /nfs
+  - name: mongodb
+    image: mongo
+    volumeMounts:
+    - name: mongodb-data
+      mountPath: /data/db
+    ports:
+    - containerPort: 27017
+      protocol: TCP
   volumes:
-    - name: nfs-volume
-      nfs:
-        server: 172.16.33.157
-        path: /data/nfs
+  - name: mongodb-data
+    nfs:
+      server: 172.16.33.157
+      path: /data/nfs/mongo-data
 ```
 
-可以通过 `sudo exportfs -v` 命令在 NFS 服务器上查看共享目录。
+可以通过 `sudo exportfs -v` 命令在 NFS 服务器上查看共享目录。`/data/nfs/mongo-data` 目录需要在 NFS 服务器上创建。
+
+创建 Pod
+```shell
+kubectl apply -f mongodb-pod-nfs.yaml
+```
+
+通过 MongoDB Shell 写入数据
+```shell
+kubectl exec -it mongodb -- mongosh
+Current Mongosh Log ID:	64a51200ddc2fd10f7cd6bde
+Connecting to:		mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.1
+Using MongoDB:		6.0.7
+Using Mongosh:		1.10.1
+
+For mongosh info see: https://docs.mongodb.com/mongodb-shell/
+
+test> db.wjj.insertOne({name:'wjj', age:42})
+{
+  acknowledged: true,
+  insertedId: ObjectId("64a5134fddc2fd10f7cd6bdf")
+}
+```
+
+删除并创建 Pod 进行验证
+```shell
+kubectl delete -f mongodb-pod-nfs.yaml
+kubectl apply -f mongodb-pod-nfs.yaml
+```
+
+通过 MongoDB Shell 检索之前存储的数据
+```shell
+kubectl exec -it mongodb -- mongosh
+Current Mongosh Log ID:	64a513cfbb3e3bae96a38d35
+Connecting to:		mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.1
+Using MongoDB:		6.0.7
+Using Mongosh:		1.10.1
+
+For mongosh info see: https://docs.mongodb.com/mongodb-shell/
+
+test> db.wjj.find()
+[ { _id: ObjectId("64a5134fddc2fd10f7cd6bdf"), name: 'wjj', age: 42 } ]
+```
+
+可以看到删除并创建 Pod，数据依然存在。
 
 ## 使用 PersistentVolumeClaim（持久卷声明）和 PersistentVolume（持久卷）解耦
-nfs-pv.yaml 
+持久卷清单：mongodb-pv-nfs.yaml
 ```yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: nfs-pv
+  name: mongodb-pv
 spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
   nfs:
     server: 172.16.33.157
-    path: /data/nfs
+    path: /data/nfs/mongo-data
 ```
 
-nfs-pvc.yaml 
+创建 PV
+```shell
+kubectl apply -f mongodb-pv-nfs.yaml
+```
+
+查看所有 PV，mongodb-pv 的状态是 `Available`
+```shell
+kubectl get pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+mongodb-pv   1Gi        RWO,ROX        Retain           Available                                   40s
+```
+
+持久卷声明清单：mongodb-pvc.yaml 
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nfs-pvc
+  name: mongodb-pvc
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
 ```
 
-nfs-pod.yaml 
+创建 PVC
+```shell
+kubectl apply -f mongodb-pvc.yaml
+```
+
+查看所有 PVC, PV，mongodb-pvc 和 mongodb-pv 的状态都为 `Bound`，mongodb-pvc 的 VOLUME 为 `mongodb-pv`。
+```shell
+kubectl get pvc,pv
+NAME                                STATUS   VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/mongodb-pvc   Bound    mongodb-pv   1Gi        RWO,ROX                       35s
+
+NAME                          CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
+persistentvolume/mongodb-pv   1Gi        RWO,ROX        Retain           Bound    default/mongodb-pvc                           8m17s
+```
+
+Pod 清单：mongodb-pod-nfs.yaml
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nfs-pod
+  name: mongodb
 spec:
   containers:
-    - name: busybox
-      image: busybox
-      command: ["sleep"]
-      args: ["86400"]
-      volumeMounts:
-        - name: nfs-volume
-          mountPath: /nfs
+  - name: mongodb
+    image: mongo
+    volumeMounts:
+    - name: mongodb-data
+      mountPath: /data/db
+    ports:
+    - containerPort: 27017
+      protocol: TCP
   volumes:
-    - name: nfs-volume
-      persistentVolumeClaim:
-        claimName: nfs-pvc
+  - name: mongodb-data
+    persistentVolumeClaim:
+      claimName: mongodb-pvc
+```
+
+创建 Pod
+```shell
+kubectl apply -f mongodb-pod-nfs.yaml
+```
+
+通过 MongoDB Shell 检索之前存储的数据
+```shell
+kubectl exec -it mongodb -- mongosh
+Current Mongosh Log ID:	64a524a394110078b49c1ce6
+Connecting to:		mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.1
+Using MongoDB:		6.0.7
+Using Mongosh:		1.10.1
+
+For mongosh info see: https://docs.mongodb.com/mongodb-shell/
+
+test> db.wjj.find()
+[ { _id: ObjectId("64a5134fddc2fd10f7cd6bdf"), name: 'wjj', age: 42 } ]
+```
+
+删除 Pod, PVC, PV
+```shell
+kubectl delete -f .
+```
+
+查看 NFS 服务器上的数据还存在
+
+```shell
+ll /data/nfs/mongo-data/
+-rw------- 1 systemd-coredump systemd-coredump 20480 Jul  5 16:08 collection-0--7871518737263603795.wt
+-rw------- 1 systemd-coredump systemd-coredump 36864 Jul  5 16:08 collection-2--7871518737263603795.wt
+-rw------- 1 systemd-coredump systemd-coredump 36864 Jul  5 16:08 collection-4--7871518737263603795.wt
+-rw------- 1 systemd-coredump systemd-coredump 20480 Jul  5 16:08 collection-7--7871518737263603795.wt
+drwx------ 2 systemd-coredump systemd-coredump  4096 Jul  5 16:08 diagnostic.data/
+-rw------- 1 systemd-coredump systemd-coredump 20480 Jul  5 16:08 index-1--7871518737263603795.wt
+-rw------- 1 systemd-coredump systemd-coredump 36864 Jul  5 16:08 index-3--7871518737263603795.wt
+-rw------- 1 systemd-coredump systemd-coredump 24576 Jul  5 16:08 index-5--7871518737263603795.wt
+-rw------- 1 systemd-coredump systemd-coredump 12288 Jul  5 16:08 index-6--7871518737263603795.wt
+-rw------- 1 systemd-coredump systemd-coredump 20480 Jul  5 14:54 index-8--7871518737263603795.wt
+drwx------ 2 systemd-coredump systemd-coredump  4096 Jul  5 16:06 journal/
+-rw------- 1 systemd-coredump systemd-coredump 36864 Jul  5 16:08 _mdb_catalog.wt
+drwx------ 3 systemd-coredump root              4096 Jul  5 14:47 .mongodb/
+-rw------- 1 systemd-coredump systemd-coredump     0 Jul  5 16:08 mongod.lock
+-rw------- 1 systemd-coredump systemd-coredump 36864 Jul  5 16:08 sizeStorer.wt
+-rw------- 1 systemd-coredump systemd-coredump   114 Jul  5 14:38 storage.bson
+-rw------- 1 systemd-coredump systemd-coredump    50 Jul  5 14:38 WiredTiger
+-rw------- 1 systemd-coredump systemd-coredump  4096 Jul  5 16:08 WiredTigerHS.wt
+-rw------- 1 systemd-coredump systemd-coredump    21 Jul  5 14:39 WiredTiger.lock
+-rw------- 1 systemd-coredump systemd-coredump  1467 Jul  5 16:08 WiredTiger.turtle
+-rw------- 1 systemd-coredump systemd-coredump 53248 Jul  5 16:08 WiredTiger.wt
 ```
 
 ## 使用 StorageClass 动态创建持久卷
@@ -406,3 +540,4 @@ kubectl delete -f .
 * [如何轻松的下载海外镜像](https://www.cnblogs.com/wubolive/p/17317586.html)
 * [Day 21 — 鯨魚的萬應儲物小間：StorageClass (使用 NFS)](https://ithelp.ithome.com.tw/articles/10304306)
 * [Create PVCs](https://docs.cloud.f5.com/docs/how-to/storage-management/create-pvcs)
+* [NFS 於 Kubernetes 內的各種應用](https://www.hwchiu.com/kubernetes-storage-ii.html)
