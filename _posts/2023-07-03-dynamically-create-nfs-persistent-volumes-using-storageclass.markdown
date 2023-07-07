@@ -68,7 +68,12 @@ sudo vim /etc/exports
 /data/nfs        172.16.33.0/24(rw,sync,no_subtree_check,no_root_squash)
 ```
 
-#### no_root_squash
+* no_subtree_check
+NFS 服务器将忽略子目录的检查。这意味着，无论请求的路径是否位于共享目录的子目录中，NFS服务器都将按照共享目录的权限设置来处理请求。这样可以提高性能，因为服务器不再需要进行额外的子目录检查。
+
+需要谨慎使用，以确保共享目录的访问权限受到正确的限制。
+
+* no_root_squash
 no_root_squash 选项用于取消 NFS 服务器对 root 用户的权限限制，允许 root 用户在客户端系统上拥有完全的访问权限。
 
 默认情况下，NFS 服务器会将来自客户端的 root 用户请求映射为匿名用户或具有受限权限的用户。这样做是为了提高安全性，防止远程 root 用户对服务器文件系统进行未授权的更改。
@@ -441,6 +446,85 @@ docker tag k8s.m.daocloud.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2 
 
 docker pull k8s.m.daocloud.io/busybox:latest
 docker tag k8s.m.daocloud.io/busybox:latest registry.k8s.io/busybox:latest
+```
+
+### 手动部署
+#### 下载部署的 YAML 文件
+下载 [NFS Subdir External Provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) 仓库的 [deploy](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/tree/master/deploy) 下的所有的文件。
+
+#### 设置授权
+```shell
+$ kubectl apply -f deploy/rbac.yaml
+serviceaccount/nfs-client-provisioner created
+clusterrole.rbac.authorization.k8s.io/nfs-client-provisioner-runner created
+clusterrolebinding.rbac.authorization.k8s.io/run-nfs-client-provisioner created
+role.rbac.authorization.k8s.io/leader-locking-nfs-client-provisioner created
+rolebinding.rbac.authorization.k8s.io/leader-locking-nfs-client-provisioner created
+```
+
+#### 配置 NFS subdir external provisioner
+deploy/deployment.yaml
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-client-provisioner
+  labels:
+    app: nfs-client-provisioner
+  # replace with namespace where provisioner is deployed
+  namespace: default
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-client-provisioner
+    spec:
+      serviceAccountName: nfs-client-provisioner
+      containers:
+        - name: nfs-client-provisioner
+          image: wangjunjian/nfs-subdir-external-provisioner:latest
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME
+              value: k8s-sigs.io/nfs-subdir-external-provisioner
+            - name: NFS_SERVER
+              value: 172.16.33.157
+            - name: NFS_PATH
+              value: /data/nfs
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: 172.16.33.157
+            path: /data/nfs
+```
+
+```shell
+kubectl apply -f deploy/deployment.yaml
+deployment.apps/nfs-client-provisioner created
+```
+
+#### 部署您的 Storage Class
+deploy/class.yaml
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-client
+provisioner: k8s-sigs.io/nfs-subdir-external-provisioner # or choose another name, must match deployment's env PROVISIONER_NAME'
+parameters:
+  archiveOnDelete: "false"
+```
+
+```shell
+kubectl apply -f deploy/class.yaml
 ```
 
 ### 测试
