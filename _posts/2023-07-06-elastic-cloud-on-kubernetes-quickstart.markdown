@@ -125,12 +125,6 @@ kubectl edit pvc elasticsearch-data-quickstart-es-default-0
 ```yaml
 spec:
   storageClassName: nfs-client
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-  volumeMode: Filesystem
 ```
 
 需要等几分钟的时间，查看 Elasticsearch 集群的概览。
@@ -323,6 +317,10 @@ kubectl port-forward service/quickstart-es-http 9200
 curl -u "elastic:$PASSWORD" -k "https://localhost:9200"
 ```
 
+### 删除 Elasticsearch 集群
+```shell
+kubectl delete Elasticsearch quickstart 
+```
 
 ## 部署 Kibana 实例
 ### 创建一个 Kibana 实例并将其与您的 Elasticsearch 集群关联
@@ -448,6 +446,18 @@ spec:
 EOF
 ```
 
+查看部署的 Filebeat 实例
+
+```shell
+kubectl get pods -o wide --selector='beat.k8s.elastic.co/name=quickstart'
+```
+```
+NAME                             READY   STATUS    RESTARTS      AGE   IP              NODE   NOMINATED NODE   READINESS GATES
+quickstart-beat-filebeat-56z5s   1/1     Running   5 (31m ago)   32m   172.16.33.159   cpu3   <none>           <none>
+quickstart-beat-filebeat-wqtq8   1/1     Running   4 (31m ago)   32m   172.16.33.158   cpu2   <none>           <none>
+```
+
+
 创建一个应用，每秒产生一条日志。
 
 ```shell
@@ -495,7 +505,15 @@ kubectl describe crd elasticsearch
 
 ## 参考资料
 * [Elastic Cloud on Kubernetes Quickstart](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-quickstart.html)
+* [Elasticsearch Guide](https://www.elastic.co/guide/en/elasticsearch/reference/8.8/index.html)
+* [Kibana 用户手册](https://www.elastic.co/guide/cn/kibana/current/index.html)
+* [Elastic Docs](https://www.elastic.co/guide/index.html)
 * [Elasticsearch (ECK) Operator](https://operatorhub.io/operator/elastic-cloud-eck)
 * [Elastic Cloud On Kubernetes (ECK) 讓 ELK 部署變簡單 – 概念介紹與快速上手指南！](https://www.omniwaresoft.com.tw/techcolumn/elastic-techcolumn/eck-elastic-cloud-on-kubernetes-quickstart/)
 * [Elastic Stack 实战手册](https://developer.aliyun.com/ebook/7687)
 * [使用 ECK 在 Kubernetes 集群中管理 Elastic Stack](https://zhuanlan.zhihu.com/p/610315721)
+* [使用 ECK 在 Kubernetes 集群中管理 Elastic Stack](https://www.se7enshare.cn/shi-yong-eck-zai-kubernetes-ji-qun-zhong-guan-li-elastic-stack/)
+* [从ElasticStack构建Kubernetes日志采集系统](https://k8s.dayang.link/docs/note/%E4%BB%8EElasticStack%E6%9E%84%E5%BB%BAKubernetes%E6%97%A5%E5%BF%97%E9%87%87%E9%9B%86%E7%B3%BB%E7%BB%9F/)
+* [Elasticsearch data node 重啟導致 sharding 找不到家](https://shazi.info/elasticsearch-data-node-%E9%87%8D%E5%95%9F%E5%B0%8E%E8%87%B4-sharding-%E6%89%BE%E4%B8%8D%E5%88%B0%E5%AE%B6/)
+* [Elasticsearch集群健康状态显示为yellow排查](https://www.cnblogs.com/charles101/p/14488609.html)
+* [kubernetes(k8s)构建elk(filebeat)日志收集系统 - k8s系列(四)](https://blog.51cto.com/lzcit/5173977)
