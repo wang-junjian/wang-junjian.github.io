@@ -258,6 +258,7 @@ kubectl delete --ignore-not-found=true -f manifests/ -f manifests/setup
 ## 参考资料
 * [Prometheus](https://github.com/prometheus)
 * [Prometheus Docs](https://prometheus.io/docs/introduction/overview/)
+* [Prometheus 中文文档](https://prometheus.fuckcloudnative.io/)
 * [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)
 * [Grafana](https://grafana.com/grafana/)
 * [Setup Prometheus and Grafana on Kubernetes using prometheus-operator](https://computingforgeeks.com/setup-prometheus-and-grafana-on-kubernetes/)
