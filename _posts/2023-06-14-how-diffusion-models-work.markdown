@@ -1451,3 +1451,6 @@ def sample_ddpm(n_sample, save_rate=20):
 
 ## 参考资料
 * [DeepLearning.AI - 获得 AI 职业所需的知识和技能](https://www.deeplearning.ai/courses/)
+* [浅淡图像生成模型 Diffusion Model 原理](https://www.bilibili.com/video/BV1TD4y137mP/?p=35)
+* [Stable Diffusion、DALL-E、Imagen 背后共同的套路](https://www.bilibili.com/video/BV1TD4y137mP/?p=36)
+* [如何通俗理解扩散模型？](https://zhuanlan.zhihu.com/p/563543020)
