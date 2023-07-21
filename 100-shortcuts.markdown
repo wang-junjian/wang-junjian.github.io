@@ -70,9 +70,11 @@ permalink: /shortcuts/
 | **⇧⌘N**  | Shift + Command + N           | 在“访达”中创建一个新文件夹。 |
 | **⌥⌘V**  | Option + Command + V          | 将剪贴板中的文件从原始位置移动到当前位置。 |
 | **⌃⌘Q**  | Control + Command + Q         | 立即锁定屏幕。 |
+| **⌥Esc** | ⌥ + Esc                       | 朗读屏幕上的文本。 |
 
 * [Mac 键盘快捷键](https://support.apple.com/zh-cn/HT201236)
 * [在 Mac 上拍摄截屏](https://support.apple.com/zh-cn/HT201361)
+* [让 Mac 朗读屏幕上的文本](https://support.apple.com/zh-cn/guide/mac-help/mh27448/mac)
 * [macOS实践]({% post_url 2018-07-03-macos-practice %})
 
 
