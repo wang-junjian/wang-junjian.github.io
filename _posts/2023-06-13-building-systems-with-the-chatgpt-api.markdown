@@ -903,6 +903,8 @@ N
 
 **通过给消息加入分隔符，解决了指令注入的问题，可以很好的按照系统指令进行回复**
 
+## Process Inputs: Chain of Thought Reasoning（思维链推理）
+
 
 ## 参考资料
 * [DeepLearning.AI - 获得 AI 职业所需的知识和技能](https://www.deeplearning.ai/courses/)
