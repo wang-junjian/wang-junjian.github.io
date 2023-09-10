@@ -326,6 +326,9 @@ Forwarding from 0.0.0.0:9090 -> 9090
 
 ![](/images/2023/minio/tanant-details.jpg)
 
+#### 租户（Tenant）管理
+[http://localhost:9090/namespaces/tenant1/tenants/tenant1/hop](http://localhost:9090/namespaces/tenant1/tenants/tenant1/hop)
+
 ### 租户（Tenant）
 #### 通过命令创建租户（Tenant）
 ```shell
@@ -435,6 +438,26 @@ Deleting MinIO Tenant:  tenant2
 Deleting MinIO Tenant Configuration Secret:  tenant2-env-configuration
 Deleting MinIO Tenant user:  tenant2-user-1
 ```
+
+### 创建 Bucket
+Tenant -> Metrics -> Info -> Buckets -> Browse -> Create Bucket
+- Bucket Name: `bucket1`
+
+
+Access Keys -> Create Access Key
+* Access Key: nFg9LOrz3Ju1atdpgTMZ
+* Secret Key: nHkgdvk292apIYBbnNw6ZkJVjPuNXXUYufil9Lf5
+
+安装 mc
+brew install minio/stable/mc
+mc --help
+
+2QIc4adOfPItepGk
+Flef1D8ufTORK5a2m6XHLsq4TNNEpL3g
+
+HSRMqwVniCzIdiWIGaVS
+R4NcStgw3BiksYfdacp3ZKzK9cJEOTsoGbEJXhtE
+
 
 ## 参考资料
 * [MinIO Object Store](https://play.min.io:9443/browser)
