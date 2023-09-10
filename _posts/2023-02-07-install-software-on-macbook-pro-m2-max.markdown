@@ -26,6 +26,7 @@ tags: [Install, MacBookProM2Max]
 
 
 ## 工具
+### [数码测色计使用手册](https://support.apple.com/zh-cn/guide/digital-color-meter/welcome/mac)
 ### [LICEcap](https://www.cockos.com/licecap/)
 * 录制屏幕为动图(GIF)
 * [Github LICEcap](https://github.com/justinfrankel/licecap)
