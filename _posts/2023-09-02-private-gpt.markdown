@@ -16,7 +16,18 @@ tags: [Chroma, Faiss, Gunicorn, Uvicorn, SQLite3, GPT, Shell]
 * [How to download hugging face sentiment-analysis pipeline to use it offline?](https://stackoverflow.com/questions/66906652/how-to-download-hugging-face-sentiment-analysis-pipeline-to-use-it-offline)
 * [How to Download Hugging Face Sentiment-Analysis Pipeline for Offline Use](https://saturncloud.io/blog/how-to-download-hugging-face-sentimentanalysis-pipeline-for-offline-use/)
 * [pipeline does not load from local folder, instead, it always downloads models from the internet.](https://github.com/huggingface/transformers/issues/21613)
-* []()
+* [Download files from the Hub](https://huggingface.co/docs/huggingface_hub/guides/download)
+* [Download models for local loading](https://discuss.huggingface.co/t/download-models-for-local-loading/1963)
+* [How to download Huggingface Transformers model?](https://androidkt.com/how-to-download-huggingface-transformers-model/)
+* [Download Huggingface models](https://medium.com/@irene-zhou/download-huggingface-models-b1a196f83c65)
+* [huggingface transformers预训练模型如何下载至本地，并使用？](https://zhuanlan.zhihu.com/p/147144376)
+
+### Qwen-7B
+#### chat(..., stream=True)
+* [Chat 函数有bug](https://github.com/QwenLM/Qwen-7B/issues/100)
+
+* [LLM/阿里：通义千问QWen-7b与Qwen-7B-Chat](https://zhuanlan.zhihu.com/p/647873194)
+* [通义千问-7B-Chat](https://modelscope.cn/models/qwen/Qwen-7B-Chat/summary)
 
 ## 向量数据库
 ### [Chroma](https://www.trychroma.com/)
@@ -35,6 +46,7 @@ Please visit https://docs.trychroma.com/troubleshooting#sqlite to learn how to u
 
 * [Troubleshooting](https://docs.trychroma.com/troubleshooting#sqlite)
 * [LangChain Chroma](https://python.langchain.com/docs/integrations/vectorstores/chroma)
+* [LangChain Chroma - load data from Vector Database](https://stackoverflow.com/questions/76232375/langchain-chroma-load-data-from-vector-database)
 
 这里采用编译源码的方式安装 `sqlite3`。
 
@@ -498,6 +510,7 @@ docker run -d --name private-gpt -p 8888:80 -v $(pwd)/storage:/private-gpt/stora
 
 
 ## 参考资料
+* [privateGPT walkthrough: Creating your own offline GPT Q&A system](https://medium.com/@aayushmnit/privategpt-walkthrough-creating-your-own-offline-gpt-q-a-system-4bd7586cebd1)
 * [OpenAI CLIP](https://github.com/openai/CLIP)
 * [Hugging Face CLIP](https://huggingface.co/docs/transformers/model_doc/clip)
 * [How do I persist to disk a temporary file using Python?](https://stackoverflow.com/questions/94153/how-do-i-persist-to-disk-a-temporary-file-using-python)
@@ -540,3 +553,13 @@ docker run -d --name private-gpt -p 8888:80 -v $(pwd)/storage:/private-gpt/stora
 * [GPT best practices](https://platform.openai.com/docs/guides/gpt-best-practices)
 * [Jina](https://jina.ai/)
 * [PromptPerfect 专业一流的提示词工程开发工具](https://promptperfect.jina.ai/)
+* [Implement unified text and image search with a CLIP model using Amazon SageMaker and Amazon OpenSearch Service](https://aws.amazon.com/cn/blogs/machine-learning/implement-unified-text-and-image-search-with-a-clip-model-using-amazon-sagemaker-and-amazon-opensearch-service/)
+* [中文CLIP模型开源](https://zhuanlan.zhihu.com/p/546245070)
+* [LangChain Tutorial in Python - Crash Course](https://www.python-engineer.com/posts/langchain-crash-course/)
+* [Qwen-7B ReAct Prompting 示例](https://github.com/QwenLM/Qwen-7B/blob/main/examples/react_prompt.md)
+* [LangChain - 打造自己的GPT（五）拥有本地高效、安全的Sentence Embeddings For Chinese & English](https://zhuanlan.zhihu.com/p/622017658)
+* [想自己利用OpenAI做一个文档问答的话](https://zhuanlan.zhihu.com/p/614334596)
+* [LangChain及LangFlow使用指南](https://www.eula.club/blogs/LangChain%E5%8F%8ALangFlow%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html)
+* [Query Your Own Documents with LlamaIndex and LangChain](https://alphasec.io/query-your-own-documents-with-llamaindex-and-langchain/)
+* [分词 -- 从源码解读LangChain-ChatGLM(二)](https://zhuanlan.zhihu.com/p/638929185)
+* [LlamaIndex Node Parser](https://gpt-index.readthedocs.io/en/stable/core_modules/data_modules/node_parsers/root.html)
