@@ -10,17 +10,18 @@ tags: [Qwen-7B, ChatGLM2-6B, Baichuan2]
 
 ### 模型 & 精度 & 显存 & 速度
 
-| 模型 | 参数 | 精度   | 加速方式 | 显存 | 速度（每秒生成汉字数） |
-| --- | ---: | :---: | ------- | --: | -----------------: |
-| [Qwen-7B-Chat][Qwen-7B-Chat]                         |  7B | float16 |                 | 20G |  7 |
-| [Qwen-7B-Chat][Qwen-7B-Chat]                         |  7B | float16 | flash-attention | 20G |  9 |
-| [ChatGLM2-6B][ChatGLM2-6B]                           |  6B | float16 |                 | 13G | 26 |
-| [ChatGLM2-6B][ChatGLM2-6B]                           |  6B | float16 | fastllm         | 13G | 26 |
-| [ChatGLM2-6B][ChatGLM2-6B] 🚀                        |  6B | float16 | chatglm.cpp     |  6G | 90 |
-| [Baichuan2-7B-Chat][Baichuan2-7B-Chat]               |  7B | float16 |                 | 14G |  2 |
-| [Baichuan2-7B-Chat][Baichuan2-7B-Chat]               |  7B | int8    |                 | 11G | 16 |
-| [Baichuan2-7B-Chat][Baichuan2-7B-Chat]               |  7B | int4    |                 |  8G | 30 |
-| [Baichuan2-13B-Chat-4bits][Baichuan2-13B-Chat-4bits] | 13B | int4    |                 | 13G | 20 |
+| 模型 | 参数 | 精度   | 加速方式 | 显存 | 速度（每秒生成汉字数） | 效果 |
+| --- | ---: | :---: | ------- | --: | -----------------: | :---: |
+| [Qwen-7B-Chat][Qwen-7B-Chat]                         |  7B | float16 |                 | 20G |  7 |  |
+| [Qwen-7B-Chat][Qwen-7B-Chat]                         |  7B | float16 | flash-attention | 20G |  9 |  |
+| [ChatGLM2-6B][ChatGLM2-6B]                           |  6B | float16 |                 | 13G | 26 |  |
+| [ChatGLM2-6B][ChatGLM2-6B]                           |  6B | float16 | fastllm         | 13G | 26 |  |
+| [ChatGLM2-6B][ChatGLM2-6B]                           |  6B | float16 | chatglm.cpp     | 15G | 22 |  |
+| [ChatGLM2-6B][ChatGLM2-6B] 🚀                        |  6B | int4    | chatglm.cpp     |  6G | 90 | ❌ |
+| [Baichuan2-7B-Chat][Baichuan2-7B-Chat]               |  7B | float16 |                 | 14G |  2 |  |
+| [Baichuan2-7B-Chat][Baichuan2-7B-Chat]               |  7B | int8    |                 | 11G | 16 |  |
+| [Baichuan2-7B-Chat][Baichuan2-7B-Chat]               |  7B | int4    |                 |  8G | 30 |  |
+| [Baichuan2-13B-Chat-4bits][Baichuan2-13B-Chat-4bits] | 13B | int4    |                 | 13G | 20 |  |
 
 [Qwen-7B-Chat]: https://huggingface.co/tangger/Qwen-7B-Chat
 [ChatGLM2-6B]: https://huggingface.co/THUDM/chatglm2-6b
@@ -352,8 +353,14 @@ pip install tabulate
 ```
 
 ### 量化模型
+量化为 int4
 ```shell
-python chatglm_cpp/convert.py -i ../THUDM/chatglm2-6b/ -t q4_0 -o chatglm2-6b-ggml.bin
+python chatglm_cpp/convert.py -i ../THUDM/chatglm2-6b/ -t q4_0 -o chatglm2-6b-q4_0-ggml.bin
+```
+
+量化为 float16
+```shell
+python chatglm_cpp/convert.py -i ../THUDM/chatglm2-6b/ -t f16 -o chatglm2-6b-f16-ggml.bin
 ```
 
 ### 编译
@@ -394,7 +401,7 @@ CMAKE_ARGS="-DGGML_CUBLAS=ON" pip install 'chatglm-cpp[api]' --force-reinstall -
 
 #### 运行 ChatGLM API 服务
 ```shell
-MODEL=chatglm.cpp/chatglm2-6b-ggml.bin uvicorn chatglm_cpp.langchain_api:app --host 0.0.0.0 --port 8000
+CUDA_VISIBLE_DEVICES=3 MODEL=chatglm.cpp/chatglm2-6b-q4_0-ggml.bin uvicorn chatglm_cpp.langchain_api:app --host 0.0.0.0 --port 8000
 ```
 
 
