@@ -11,19 +11,150 @@ tags: [Docker, buildx]
 
 `docker run` 当您在使用此镜像时 `docker service`，Docker 会根据节点的平台选择正确的镜像。
 
-有个缺点：必须发布到 Docker Hub 或者私有仓库，因为 Docker 不支持多架构的本地镜像。
+**有个缺点：必须发布到 Docker Hub 或者私有仓库，因为 Docker 不支持多架构的本地镜像。**
+
+### 查看构建器
+```bash
+docker buildx ls
+```
+```
+NAME/NODE       DRIVER/ENDPOINT STATUS  BUILDKIT             PLATFORMS
+default         docker                                       
+  default       default         running v0.11.6+616c3f613b54 linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64, linux/arm/v7, linux/arm/v6, linux/amd64, linux/amd64/v2
+desktop-linux * docker                                       
+  desktop-linux desktop-linux   running v0.11.6+616c3f613b54 linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64, linux/arm/v7, linux/arm/v6, linux/amd64, linux/amd64/v2
+```
 
 ### 创建一个新的构建器并使用它
 ```bash
 docker buildx create --name mybuilder --driver docker-container --bootstrap --use
 ```
 
+查看构建器
+```bash
+docker buildx ls
+```
+```
+NAME/NODE       DRIVER/ENDPOINT  STATUS  BUILDKIT             PLATFORMS
+mybuilder *     docker-container                              
+  mybuilder0    desktop-linux    running v0.9.3               linux/arm64, linux/amd64, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64, linux/arm/v7, linux/arm/v6
+default         docker                                        
+  default       default          running v0.11.6+616c3f613b54 linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64, linux/arm/v7, linux/arm/v6, linux/amd64, linux/amd64/v2
+desktop-linux   docker                                        
+  desktop-linux desktop-linux    running v0.11.6+616c3f613b54 linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64, linux/arm/v7, linux/arm/v6, linux/amd64, linux/amd64/v2
+```
+
+### 切换到默认构建器
+```bash
+docker buildx use default
+```
+
+### 删除构建器
+```bash
+docker buildx rm mybuilder
+```
+
+### 检查当前构建器实例
+```bash
+docker buildx inspect mybuilder 
+```
+```
+Name:          mybuilder
+Driver:        docker-container
+Last Activity: 2023-10-12 06:35:08 +0000 UTC
+
+Nodes:
+Name:      mybuilder0
+Endpoint:  desktop-linux
+Status:    running
+Buildkit:  v0.9.3
+Platforms: linux/arm64, linux/amd64, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64, linux/arm/v7, linux/arm/v6
+Labels:
+ org.mobyproject.buildkit.worker.executor:    oci
+ org.mobyproject.buildkit.worker.hostname:    6e176585c465
+ org.mobyproject.buildkit.worker.snapshotter: overlayfs
+GC Policy rule#0:
+ All:           false
+ Filters:       type==source.local,type==exec.cachemount,type==source.git.checkout
+ Keep Duration: 48h0m0s
+ Keep Bytes:    488.3MiB
+GC Policy rule#1:
+ All:           false
+ Keep Duration: 1440h0m0s
+ Keep Bytes:    17.7GiB
+GC Policy rule#2:
+ All:        false
+ Keep Bytes: 17.7GiB
+GC Policy rule#3:
+ All:        true
+ Keep Bytes: 17.7GiB
+```
+```bash
+docker buildx inspect default  
+```
+```
+Name:   default
+Driver: docker
+
+Nodes:
+Name:      default
+Endpoint:  default
+Status:    running
+Buildkit:  v0.11.6+616c3f613b54
+Platforms: linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64, linux/arm/v7, linux/arm/v6, linux/amd64, linux/amd64/v2
+Labels:
+ org.mobyproject.buildkit.worker.moby.host-gateway-ip: 192.168.65.254
+GC Policy rule#0:
+ All:           false
+ Filters:       type==source.local,type==exec.cachemount,type==source.git.checkout
+ Keep Duration: 172.8µs
+ Keep Bytes:    2.764GiB
+GC Policy rule#1:
+ All:           false
+ Keep Duration: 5.184ms
+ Keep Bytes:    20GiB
+GC Policy rule#2:
+ All:        false
+ Keep Bytes: 20GiB
+GC Policy rule#3:
+ All:        true
+ Keep Bytes: 20GiB
+```
+
+### 安装 Emulators
 使用 [tonistiigi/binfmt](https://github.com/tonistiigi/binfmt) 安装
 ```bash
 docker run --privileged --rm tonistiigi/binfmt --install linux/arm64,linux/amd64
 ```
+```
+installing: arm64 cannot register "/usr/bin/qemu-aarch64" to /proc/sys/fs/binfmt_misc/register: write /proc/sys/fs/binfmt_misc/register: no such file or directory
+installing: amd64 OK
+{
+  "supported": [
+    "linux/arm64",
+    "linux/amd64",
+    "linux/riscv64",
+    "linux/ppc64le",
+    "linux/s390x",
+    "linux/386",
+    "linux/mips64",
+    "linux/arm/v7",
+    "linux/arm/v6"
+  ],
+  "emulators": [
+    "qemu-arm",
+    "qemu-i386",
+    "qemu-mips64",
+    "qemu-ppc64le",
+    "qemu-riscv64",
+    "qemu-s390x",
+    "qemu-x86_64",
+    "rosetta"
+  ]
+}
+```
 
-### 删除构建器
+### 卸载 Emulators
 ```bash
 docker run --privileged --rm tonistiigi/binfmt --uninstall "qemu-*"
 ```
@@ -45,6 +176,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t <username>/<image>:lat
 * <username> Docker ID, <image> Docker Hub 上的仓库名
 * --platform 创建 amd64, arm64 架构的 Linux 映像。
 * --push 生成一个多架构清单并将所有图像推送到 Docker Hub。
+* --load 生成一个单架构清单并将所有图像加载到本地镜像库。不支持多架构的本地镜像，如：linux/amd64,linux/arm64
 
 ### 查看镜像
 ```bash
