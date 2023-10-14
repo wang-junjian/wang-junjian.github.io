@@ -35,6 +35,14 @@ bundle exec jekyll serve
 ```
 [http://127.0.0.1:4000/](http://127.0.0.1:4000/)
 
+macOS 升级到 Sonoma 14.0 后，运行 `bundle exec jekyll serve` 报错。目前采用容器运行的方式。
+```shell
+docker run -d --name=jekyll-with-wjjcom -p 4000:4000 --volume="$PWD:/srv/jekyll" jekyll/jekyll:4 jekyll serve
+```
+
+* [bundler cannot install commonmarker](https://stackoverflow.com/questions/58849651/bundler-cannot-install-commonmarker)
+
+
 ## 参考资料
 * [jekyll/minima post.html](https://github.com/jekyll/minima/blob/master/_layouts/post.html)
 * [jekyll/minima home.html](https://github.com/jekyll/minima/blob/master/_layouts/home.html)
