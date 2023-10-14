@@ -186,6 +186,25 @@ print(result)
 
 ❌ `torch` 升级到最新版本后，`easyocr` 会报错：`Segmentation fault`。
 
+包依赖关系
+
+#### EasyOCR
+
+| Package      | Version |
+| ------------ | ------- |
+| easyocr      | 1.7.1   |
+| torch        | 2.0.1   |
+| torchvision  | 0.15.2  |
+
+#### PaddleOCR
+
+| Package      | Version |
+| ------------ | ------- |
+| paddleocr    | 2.6.0   |
+| numpy        | 1.23.5  |
+| paddlepaddle | 2.5.1   |
+| PyMuPDF      | 1.21.1  |
+
 ```sh
 python app/aimodels/ocr_aimodel.pyc 
 ```
