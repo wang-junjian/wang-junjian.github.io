@@ -82,7 +82,7 @@ def print_docsearch_result(query, docs):
 ```
 
 ## 测试
-### infgrad/stella-base-zh-v2
+### [infgrad/stella-base-zh-v2](https://huggingface.co/infgrad/stella-base-zh-v2)
 ```py
 embedding = get_huggingface_embedding_model('models/embeddings/infgrad_stella-base-zh-v2')
 
@@ -97,7 +97,7 @@ print_docsearch_result(query, docs)
 📕 3:  😀 今天天气舒适，心情大好。
 ```
 
-### sensenova/piccolo-large-zh
+### [sensenova/piccolo-large-zh](https://huggingface.co/sensenova/piccolo-large-zh)
 ```py
 embedding = get_huggingface_embedding_model('models/embeddings/sensenova_piccolo-large-zh')
 
@@ -112,7 +112,7 @@ print_docsearch_result(query, docs)
 📕 3:  😀 今天天气比昨天好多了，真是令人欣喜。
 ```
 
-### BAAI/bge-base-zh
+### [BAAI/bge-base-zh](https://huggingface.co/BAAI/bge-base-zh)
 ```py
 embedding = get_huggingface_embedding_model('BAAI/bge-base-zh')
 
@@ -127,7 +127,7 @@ print_docsearch_result(query, docs)
 📕 3:  😀 今天天气比昨天好多了，真是令人欣喜。
 ```
 
-### BAAI/bge-base-zh-v1.5
+### [BAAI/bge-base-zh-v1.5](https://huggingface.co/BAAI/bge-base-zh-v1.5)
 ```py
 embedding = get_huggingface_embedding_model('BAAI/bge-base-zh-v1.5')
 
@@ -141,3 +141,12 @@ print_docsearch_result(query, docs)
 📕 2:  😀 今天天气舒适，心情大好。
 📕 3:  😀 今天天气宜人，适合出门游玩。
 ```
+
+## 参考资料
+* [Langchain-Chatchat](https://github.com/chatchat-space/Langchain-Chatchat)
+* [When search_type="similarity_score_threshold, retriever returns negative scores #10864](https://github.com/langchain-ai/langchain/issues/10864)
+* [LangChain:通过LLM实现QA问答中的一些细节笔记（二）](https://zhuanlan.zhihu.com/p/627439522)
+* [【LangChain】向量存储之FAISS](https://blog.csdn.net/u013066244/article/details/132014791)
+* [langchain.vectorstores.faiss.FAISS](https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html)
+* [How to retrieve source documents via LangChain's get_relevant_documents method only if the answer is from the custom knowledge base](https://stackoverflow.com/questions/77178370/how-to-retrieve-source-documents-via-langchains-get-relevant-documents-method-o)
+* [Problem with embedding model #9486](https://github.com/langchain-ai/langchain/issues/9486)
