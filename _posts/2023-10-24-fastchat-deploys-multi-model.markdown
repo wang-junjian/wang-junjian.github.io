@@ -259,6 +259,30 @@ export FASTCHAT_WORKER_API_EMBEDDING_BATCH_SIZE=1
 * --limit-worker-concurrency 限制每个模型的并发数，默认：5
 
 
+## vLLM 集成
+
+* [vLLM Quickstart](https://vllm.readthedocs.io/en/latest/getting_started/quickstart.html)
+* [vLLM Integration](https://github.com/lm-sys/FastChat/blob/main/docs/vllm_integration.md)
+
+### [安装](https://vllm.readthedocs.io/en/latest/getting_started/installation.html)
+```shell
+pip install vllm
+```
+
+### 启动 vLLM Worker
+```shell
+python -m fastchat.serve.vllm_worker --model-path vicuna-7b-v1.5
+```
+
+FastChat 的版本更新不及时，vLLM 新版本中已经删除了 AsyncLLMEngine，所以会报错：
+
+```shell
+    from vllm import AsyncLLMEngine
+ImportError: cannot import name 'AsyncLLMEngine' from 'vllm' (unknown location)
+```
+* [vLLM v0.2.0](https://github.com/vllm-project/vllm/releases/tag/v0.2.0)
+
+
 ## LangChain 集成
 
 FastChat API 服务器可以通过 OpenAI API 协议与基于 OpenAI API 的应用程序进行交互。这意味着开放模型可以用作替代品，而无需修改代码。
