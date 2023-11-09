@@ -184,6 +184,14 @@ print(outputs)
 pip install ipython-autotime
 ```
 
+在 `代码单元格` 中增加代码
+
+```py
+%load_ext autotime
+```
+
+* [How to check preprocessing time/speed in Colab?](https://stackoverflow.com/questions/63193743/how-to-check-preprocessing-time-speed-in-colab)
+
 ### 不使用 LLM.int8
 
 ```py
