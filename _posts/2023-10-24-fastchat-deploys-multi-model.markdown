@@ -6,6 +6,7 @@ categories: FastChat
 tags: [FastChat, LangChain, Vicuna, ChatGLM2-6B, 分布式]
 ---
 
+<hr>
 * [Chatbot Arena](https://chat.lmsys.org/)
 * [FastChat](https://github.com/lm-sys/FastChat)
 * [LMSYS BLOG](https://lmsys.org/blog/)
@@ -118,6 +119,22 @@ python -m fastchat.serve.model_worker --model-names "gpt-3.5-turbo,text-davinci-
 
 **vicuna-7b-v1.5 用了 26G 的内存**
 
+8位量化模型，需要添加参数 `--load-8bit`。
+
+```shell
+python -m fastchat.serve.model_worker \
+    --model-path chatglm2-6b --port 21004 \
+    --worker-address http://localhost:21004 \
+    --load-8bit
+```
+
+显存使用情况
+
+- **初始：** 6446MiB / 15360MiB
+- **显存：** 7458MiB / 15360MiB
+- **Volatile GPU-Util：** 100%
+
+
 #### 启动 OpenAI API Server
 可以用于和 LangChain 集成。
 
@@ -145,6 +162,28 @@ curl http://localhost:8000/v1/completions \
     }' | jq
 ```
 
+```json
+{
+  "id": "cmpl-3LSrp7xjZmCxuqUqCHdweR",
+  "object": "text_completion",
+  "created": 1699926717,
+  "model": "chatglm2-6b",
+  "choices": [
+    {
+      "index": 0,
+      "text": "，我是人工智能助手。 根据你的描述，你想要查询关于“人工智能”",
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 4,
+    "total_tokens": 20,
+    "completion_tokens": 16
+  }
+}
+```
+
 * chat/completions 接口
 
 ```shell
@@ -157,6 +196,64 @@ curl http://localhost:8000/v1/chat/completions \
     }' | jq
 ```
 
+```json
+{
+  "id": "chatcmpl-3vzgGYm2QVSnDJqrLSe6Hp",
+  "object": "chat.completion",
+  "created": 1699926765,
+  "model": "chatglm2-6b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "你好👋！我是人工智能助手 ChatGLM2-6B，很高兴见到你，欢迎问我任何问题。"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 17,
+    "total_tokens": 45,
+    "completion_tokens": 28
+  }
+}
+```
+
+* embeddings 接口
+
+```shell
+curl http://localhost:8000/v1/embeddings \
+    -H "Content-Type: application/json" \
+    -d '{
+        "input": "用于生成嵌入文本的字符串。",
+        "model": "chatglm2-6b"
+    }' | jq
+```
+
+```json
+{
+    "object": "list",
+    "data": [
+        {
+        "object": "embedding",
+        "embedding": [
+            -0.0038084269035607576,
+            0.0007477423641830683,
+            ......
+            -0.002232820028439164,
+            0.0010205521248281002
+        ],
+        "index": 0
+        }
+    ],
+    "model": "chatglm2-6b",
+    "usage": {
+        "prompt_tokens": 11,
+        "total_tokens": 11
+    }
+}
+```
 
 ### 一键部署
 
@@ -221,7 +318,6 @@ def launch_all():
             for idx, item in enumerate(args.model_path_address):
                 print(f"loading {idx}th model:{item}")
                 launch_worker(item)
-
     #......
 ```
 
@@ -258,6 +354,34 @@ export FASTCHAT_WORKER_API_EMBEDDING_BATCH_SIZE=1
 * --model-path 本地文件夹或 Hugging Face 模型名称。（can be a local folder or a Hugging Face repo name.）
 * --limit-worker-concurrency 限制每个模型的并发数，默认：5
 
+## LLM.int8 混合精度量化
+### 安装依赖包
+```shell
+pip install bitsandbytes
+pip install accelerate
+pip install scipy
+```
+
+### 修改代码 `fastchat/model/model_adapter.py`
+```py
+ 315     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+ 316         "mps",
+ 317         "xpu",
+ 318         "npu",
+ 319     ):
+ 320         pass #model.to(device)
+
+ 733         model = AutoModel.from_pretrained(
+ 734             model_path, trust_remote_code=True, load_in_8bit=True, **from_pretrained_kwargs
+ 735         )   
+```
+
+### 显存使用情况
+- **初始：** 7404MiB / 15360MiB
+- **显存：** 7658MiB / 15360MiB
+- **Volatile GPU-Util：** 40%
+
+**感觉效果比上面的 `--load-8bit` 量化好一些，不过要修改源代码。**
 
 ## vLLM 集成
 
