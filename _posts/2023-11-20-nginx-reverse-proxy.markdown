@@ -14,7 +14,7 @@ sudo vim /etc/nginx/sites-available/default
 ```
 
 ## 配置反向代理
-```json
+```conf
 server {
     listen 8888;
     server_name cpu1;
@@ -26,7 +26,7 @@ server {
 ```
 
 ## 配置 WebSocket 反向代理
-```json
+```conf
 server {
     listen 8001;
     server_name cpu1;
@@ -43,7 +43,7 @@ server {
 `proxy_http_version 1.1`，`proxy_set_header Upgrade $http_upgrade`和`proxy_set_header Connection "upgrade"`这些行是为了支持WebSocket连接。
 
 ## 配置多个反向代理
-```json
+```conf
 server {
     listen 8888;
     server_name cpu1;
