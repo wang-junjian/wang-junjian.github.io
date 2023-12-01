@@ -1,0 +1,595 @@
+---
+layout: post
+title:  "2023 年全国行业职业技能竞赛"
+date:   2023-11-25 08:00:00 +0800
+categories: Race
+tags: [语音识别, 语音合成, StanfordCoreNLP, Similarword, PlaintextCorpusReader, re, BeautifulSoup, etree, requests]
+---
+
+2023年全国行业职业技能竞赛 第二届全国电子企业职业技能竞赛
+
+## 任务一
+### 任务1.1
+
+### 任务1.2
+
+```py
+# TODO （1）导入所需python工具库,并将代码截图存放至“赛位号_答题文档1-1.docx”中。
+import json
+import base64
+
+from tencentcloud.common import credential
+from tencentcloud.common.profile.http_profile import HttpProfile
+from tencentcloud.common.profile.client_profile import ClientProfile
+from tencentcloud.asr.v20190614 import asr_client, models
+
+SecretId = 'AKIDBJWahprjTCpIazPrEPMFAyhHepzzqicj'
+SecretKey = 'BIKNLG5tblpokbN6nRwGao166ze9RVQ9'
+
+# TODO （2）通过账户密钥SecretId 和 SecretKey实例化一个认证对象，并把代码截图存放至“赛位号_答题文档1-1.docx”中。
+cred = credential.Credential(SecretId, SecretKey)
+
+# TODO （3）实例化语音识别所用接口的http选项及一个客户端对象，并把代码截图存放至“赛位号_答题文档1-1.docx”中。
+httpProfile = HttpProfile()
+httpProfile.endpoint = "asr.tencentcloudapi.com"
+clientProfile = ClientProfile()
+clientProfile.httpProfile = httpProfile
+client = asr_client.AsrClient(cred, 'ap-beijing', clientProfile)
+# TODO （4）将所提供的音频素材转换为base64编码规范输出，并把代码截图存放至“赛位号_答题文档1-1.docx”中。
+def ToBase64(file):
+    with open(file, 'rb') as f:
+        data = f.read()
+        bytes_base64 = base64.b64encode(data)
+        str_base64 = bytes.decode(bytes_base64)
+        return str_base64
+
+def SentenceRecognition(file, prompt):
+    voice = ToBase64(file)
+    # print(voice)
+
+    # TODO （5）根据提供的接口文档设置语音识别接口的请求参数’params’，要求以语音数据base64形式对中文mp3类型且不过滤语气词和标点符号的音频文件进行配置，并把代码截图存放至“赛位号_答题文档1-1.docx”中。
+    params = {
+        'EngSerViceType': '16k_zh',
+        'SourceType': 1,
+        'Data': voice,
+        'VoiceFormat': 'mp3',
+        'FilterDirty': 0,
+        'FilterPunc': 0
+    }
+
+    # TODO （6）将请求参数转换为json格式向客户端发送请求，在控制台输出语音识别结果，并把代码截图存放至“赛位号_答题文档1-1.docx”中。
+    req = models.SentenceRecognitionRequest()
+    req.from_json_string(json.dumps(params))
+    resp = client.SentenceRecognition(req)
+
+    result=resp.to_json_string()
+    print(prompt)
+    print(result)
+
+
+import os
+
+dir = '/home/tione/notebook/任务一/语音识别/音频文件/'
+for root, dirs, files in os.walk(dir):
+    for file in files:
+        file_path = os.path.join(root, file)
+        SentenceRecognition(file_path, f'{os.path.splitext(file)[0]}识别结果')
+```
+```txt
+音频4识别结果
+{"Result": "将患者放平躺下，将鼻眼相反的手高举。", "AudioDuration": 7366, "WordSize": 0, "WordList": null, "RequestId": "c67c06ec-f11c-4486-963b-3eb35a90a490"}
+音频6识别结果
+{"Result": "把大葱白切碎并装盘放在床前。", "AudioDuration": 7340, "WordSize": 0, "WordList": null, "RequestId": "a89d01c5-706d-465a-b8e2-3749a229d136"}
+音频3识别结果
+{"Result": "如何快速止住鼻血？", "AudioDuration": 6504, "WordSize": 0, "WordList": null, "RequestId": "39614c67-4a32-4a2b-8dfd-b751b15da34e"}
+音频5识别结果
+{"Result": "如何缓解失眠？", "AudioDuration": 6217, "WordSize": 0, "WordList": null, "RequestId": "b184e9b8-6b1f-4819-a285-6132482bf43a"}
+音频1识别结果
+{"Result": "药物的副作用和不良反应有区别吗？", "AudioDuration": 8202, "WordSize": 0, "WordList": null, "RequestId": "ff0b2fe1-78c1-4fc2-aa7d-c7fca0e5b41e"}
+音频2识别结果
+{"Result": "有区别。药物不良反应不仅包括药物的副作用，还包括药物的毒性、过敏反应等。", "AudioDuration": 12486, "WordSize": 0, "WordList": null, "RequestId": "62558141-cab7-4e3d-a4fd-6f272bcbd014"}
+```
+
+
+### 任务1.3
+
+```py
+# TODO （1）导入所需python工具库,并将代码截图存放至“赛位号_答题文档1-2.docx”中。
+import json
+import base64
+
+from tencentcloud.common import credential
+from tencentcloud.common.profile.http_profile import HttpProfile
+from tencentcloud.common.profile.client_profile import ClientProfile
+from tencentcloud.tts.v20190823 import tts_client, models
+
+import uuid
+
+# TODO （2）通过账户密钥SecretId 和 SecretKey实例化一个认证对象，并把代码截图存放至“赛位号_答题文档1-2.docx”中。
+SecretId = 'AKIDBJWahprjTCpIazPrEPMFAyhHepzzqicj'
+SecretKey = 'BIKNLG5tblpokbN6nRwGao166ze9RVQ9'
+cred = credential.Credential(SecretId, SecretKey)
+
+# TODO （3）实例化语音合成所用接口的http选项及一个客户端对象,并把代码截图存放至“赛位号_答题文档1-2.docx”中。
+httpProfile = HttpProfile()
+httpProfile.endpoint = "tts.tencentcloudapi.com"
+clientProfile = ClientProfile()
+clientProfile.httpProfile = httpProfile
+client = tts_client.TtsClient(cred, 'ap-beijing', clientProfile)
+
+# TODO （4）生成标识用户唯一身份的会话号sessionId，并把代码截图存放至“赛位号_答题文档1-2.docx”中。
+sessionId = str(uuid.uuid1())
+# TODO （5）根据提供的接口文档和会话号，配置语音合成的请求参数’params’，要求将文本“欢迎使用智能医院服务”合成为中文“智云”音色其中合成音频的音量为5，并把代码截图存放至“赛位号_答题文档1-2.docx”中。
+params = {
+    'Text': '欢迎使用智能医院服务',
+    'SessionId': sessionId,
+    'Volume': 5,
+    'VoiceType': 1004,
+    'PrimaryLanguage': 1,
+    'Codec': 'mp3' # 不要忘记了
+}
+
+# TODO （6）将请求参数转换为json格式向客户端发送请求，打印响应的字符串包，把代码截图存放至“赛位号_答题文档1-2.docx”中。
+req = models.TextToVoiceRequest()
+req.from_json_string(json.dumps(params))
+resp = client.TextToVoice(req)
+json_resp = json.loads(resp.to_json_string())
+base64_data = json_resp['Audio']
+# print(base64_data)
+
+# # TODO （7）将字符串包解析成音频文件，命名为“赛位号_语音合成结果.mp3”，并把代码截图存放至“赛位号_答题文档1-2.docx”中。
+def ToFile(base64_data, file):
+    data = base64.b64decode(base64_data)
+    with open(file, 'wb') as f:
+        f.write(data)
+    
+file = '赛位号_语音合成结果.mp3'
+ToFile(base64_data, file)
+```
+
+
+### 知识点
+
+GitHub Copilot: 在Python中，`base64.b64encode`和`base64.b64decode`是用于处理Base64编码的两个函数。
+
+`base64.b64encode`函数接受一个字节串（bytes）作为参数，返回该字节串的Base64编码。Base64编码是一种常用的二进制到文本的编码方法，它可以将任意的二进制数据转换为只包含ASCII字符的字符串，从而可以在文本协议中传输。
+
+例如：
+
+```python
+import base64
+
+data = b'Hello, world!'
+encoded_data = base64.b64encode(data)
+print(encoded_data)
+```
+
+这段代码会打印出`Hello, world!`的Base64编码：`SGVsbG8sIHdvcmxkIQ==`。
+
+`base64.b64decode`函数则是`base64.b64encode`的逆操作，它接受一个Base64编码的字节串（bytes）或字符串（str）作为参数，返回该编码对应的原始字节串。
+
+例如：
+
+```python
+import base64
+
+encoded_data = 'SGVsbG8sIHdvcmxkIQ=='
+data = base64.b64decode(encoded_data)
+print(data)
+```
+
+这段代码会打印出`SGVsbG8sIHdvcmxkIQ==`对应的原始数据：`Hello, world!`。
+
+
+## 任务二
+
+### 任务2.2
+
+```py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+from speech_model import ModelSpeech       # 语音模型类
+from speech_model_zoo import SpeechModel26
+from speech_features import Spectrogram    # 语音识别内置的语谱图声学特征提取类
+from LanguageModel import ModelLanguage
+from utils.ops import cosine_similarity
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+
+class modelTest:
+    """
+    TODO:
+    定义初始化方法__init__，初始化模型路径,创建声学模型对象。
+    """
+    def __init__(self):
+        # (1)初始化模型路径。
+        self.model_path = 'save_models/PretrainedModel.h5'
+        
+        # (2)创建初始声学模型类实例对象，要求初始模型的输出的拼音表示为1428，通道数为1，音频长度为1600，特征值序列为200维。
+        pinyin = 1428
+        channel = 1
+        voice_len = 1600
+        spec_dim = 200
+        
+        # (3)创建声学特征类型实例对象。
+        self.speech_model = SpeechModel26(
+            input_shape = (voice_len, spec_dim, channel),
+            output_size = pinyin
+        )
+        
+    '''
+    TODO:
+    定义识别函数recognize()，实现模型的调用并成功输出识别到的语句。
+    '''
+    def recognize(self):
+        # (4)创建声学模型功能类实例对象，最长标签长度设置为32。
+        spec = Spectrogram()
+        model_speech = ModelSpeech(self.speech_model, spec, max_label_length = 32)
+
+        # (5)基于预训练模型“PretrainedModel.h5”，进行模型的调用，识别“1.wav”这个语音文件
+        model_speech.load_model(self.model_path)
+        pinyin = model_speech.recognize_speech_from_file('1.wav')
+        print(pinyin)
+        model_lang = ModelLanguage('model_language')
+        model_lang.LoadModel()
+        text = model_lang.SpeechToText(pinyin)
+        print(text)
+        
+        return text
+
+if __name__ == '__main__':
+    mt = modelTest()
+    print(cosine_similarity(mt.recognize(), 1))
+```
+
+### 模型训练
+```py
+import os
+
+from keras.optimizers import Adam
+from speech_model import ModelSpeech
+from speech_model_zoo import SpeechModel26
+from data_loader import DataLoader
+from speech_features import Spectrogram
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+sm = SpeechModel26(
+    input_shape = (1600, 200, 1), 
+    output_size = 1428
+)
+
+feat = Spectrogram()
+
+train_data = DataLoader('train')
+ms = ModelSpeech(sm, feat, max_label_length=64)
+opt = Adam(learning_rate=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+ms.load_model('save_models/PretrainedModel.h5')
+ms.train_model(optimizer=opt, data_loader=train_data, epochs=10, save_step=1, batch_size=16)
+```
+
+## 任务三
+### 任务3.1
+* requests
+
+```py
+import requests
+
+def get_content(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+    }
+
+    response = requests.get(url=url, headers=headers)
+    response.encoding = 'utf-8'
+    return response.text
+
+url = 'http://43.139.169.182/hospital.html'
+
+content = get_content(url)
+print(content)
+
+with open('赛位号_hosptial.txt', 'w') as fout:
+    fout.write(content)
+```
+
+* re
+
+```py
+import re
+
+items = re.findall('<div class="text">(.*?)</div>', content)
+for item in items:
+    print(item)
+```
+```
+你好，我要预约。
+好的，请问您要预约门诊部还是住院部？
+我要预约门诊部。
+好的，请问您要预约什么科室。
+我要预约心血管科。
+今日心血管科坐诊医生有：张三（主任）、李四（副主任）、李丽（副主任），请问您需要预约哪位医生？
+预约张三医生。
+好的，张三医生今日坐诊剩余时段号有10号（9:00—9:20）、16号（11:00—11:20）。
+就预约3号吧。
+好的。请登记您的姓名和身份证号。
+我叫王五，身份证号1234567。
+{{content}}
+{{content}}
+```
+
+* BeautifulSoup
+
+```py
+bs = BeautifulSoup(content)
+items = bs.select('.history .messages .text')
+texts = [item.text for item in items]
+for text in texts:
+    print(text)
+
+output_file = '赛位号_hosptial.txt'
+with open(output_file, 'w') as f:
+    f.write('\n'.join(texts))
+```
+```txt
+你好，我要预约。
+好的，请问您要预约门诊部还是住院部？
+我要预约门诊部。
+好的，请问您要预约什么科室。
+我要预约心血管科。
+今日心血管科坐诊医生有：张三（主任）、李四（副主任）、李丽（副主任），请问您需要预约哪位医生？
+预约张三医生。
+好的，张三医生今日坐诊剩余时段号有10号（9:00—9:20）、16号（11:00—11:20）。
+就预约3号吧。
+好的。请登记您的姓名和身份证号。
+我叫王五，身份证号1234567。
+```
+
+* etree
+
+```py
+from lxml import etree
+
+tree = etree.HTML(content)
+items = tree.xpath('//div[@class="text"]/text()') # //div[@class="messages"]//div[@class="text"]/text()
+for item in items:
+    print(item)
+```
+```
+你好，我要预约。
+好的，请问您要预约门诊部还是住院部？
+我要预约门诊部。
+好的，请问您要预约什么科室。
+我要预约心血管科。
+今日心血管科坐诊医生有：张三（主任）、李四（副主任）、李丽（副主任），请问您需要预约哪位医生？
+预约张三医生。
+好的，张三医生今日坐诊剩余时段号有10号（9:00—9:20）、16号（11:00—11:20）。
+就预约3号吧。
+好的。请登记您的姓名和身份证号。
+我叫王五，身份证号1234567。
+```
+
+```py
+yqq_content = get_content('https://y.qq.com/')
+yqq_bs = BeautifulSoup(yqq_content)
+#ul[class="playlist__list slide__list"] li
+#ul.playlist__list.slide__list li
+#ul.playlist__list li
+#ul.slide__list li
+items = yqq_bs.select('ul.playlist__list li')
+for item in items:
+    print(item.text)
+```
+```
+JJ 林俊杰 | 有些歌，只为爱而作播放量：1003.9万
+抖音车载DJ｜解压100％播放量：2245.8万
+抖音热歌：超好听的店铺BGM播放量：3874.4万
+伤感emo片段：忍不住就红了眼眶播放量：2127.9万
+舒压轻音：安静听风，将疲惫暂缓播放量：1789.2万
+长月烬明 电视剧原声播放量：1442.9万
+华语佳作200首↻让听歌成为享受播放量：2286.8万
+深夜emo神曲:哪首是你心中的No.1播放量：1161.1万
+到点了该emo了，00后的听歌现状播放量：1042.4万
+一听一整天！久听不厌的炙口热曲播放量：2981.2万
+王源2023「客厅狂欢」巡演歌单播放量：237.4万
+全网超好听抖音情歌（持续更新）播放量：7714.7万
+时代少年团 | 猜歌挑战答题宝典播放量：211.0万
+车载DJ嗨曲，跟上节奏一路飞驰播放量：1445.6万
+R.I.P CoCo李玟播放量：674.0万
+抖音热歌｜极致声线撩人耳膜播放量：2241.3万
+深情烟嗓：开口即是沧桑泪播放量：1601.0万
+抖音超燃DJ｜摇摆的热舞派对播放量：1809.3万
+16岁的我听见22岁的杰伦，你呢？播放量：1702.6万
+只有夜晚，难过才会铺天盖地袭来播放量：1388.0万
+车内音响炸裂🎧释放长途疲惫播放量：2647.5万
+抖音热歌：全网最火超好听播放量：1.2亿
+抖音劲爆中文DJ（持续更新）播放量：3529.9万
+Crush降临💗心动说唱表达爱恋播放量：2090.5万
+周深 · 治愈人心的天籁歌手播放量：1397.8万
+```
+
+
+### 任务3.2
+
+```py
+# (1)导入相关的Python库或Python模块。
+import re
+
+from nltk.corpus import PlaintextCorpusReader
+from nlpcda import Similarword
+from stanfordcorenlp import StanfordCoreNLP
+
+# (2)将“赛位号_ hosptial.txt”文件内容作为语料，选择用于分析文本文件的方法载入语料，并输出文本内容
+file = '赛位号_hosptial.txt'
+corpus = PlaintextCorpusReader('.', file)
+text = corpus.raw(file)
+print(f'原文本：{text}')
+
+# (3)将语料内容赋值，匹配字符串后进行内容替换，从而完成数据清洗操作，并输出数据清洗结果，并将结果截图保存至“赛位号_答题文档3-2.docx”，要求：清洗掉除汉字以外的字符。
+cleaned_text = re.sub(r'[^\u4e00-\u9fa5]', '', text)
+print(f'清洗的文本：{cleaned_text}')
+
+# (4)采用适当的数据扩充方法，对数据清洗之后的内容进行数据扩充，并返回2个增强文本，文本改变率要求为25%，结合循环通过索引输出数据扩充结果
+similarword = Similarword(create_num=2, change_rate=0.25)
+similar_cleaned_text = similarword.replace(cleaned_text)
+for i, s in enumerate(similar_cleaned_text):
+    print(f'扩充样本 {i+1}：{s}')
+
+# (5)调用CoreNLP中文语料包。
+nlp = StanfordCoreNLP('../stanford-corenlp-full-2018-02-27/')
+
+# (6)针对“赛位号_ hosptial.txt”，使用Stanford CoreNLP实现中文分词、词性标注以及中文命名实体识别的输出，并将以上三个结果截图分别保存至“赛位号_答题文档3-2.docx”。
+word = nlp.word_tokenize(text)
+print(f'中文分词: {word}')
+
+pos_tag = nlp.pos_tag(text)
+print(f'词性标注: {pos_tag}')
+
+ner = nlp.ner(text)
+print(f'中文命名实体识别: {ner}')
+```
+```txt
+原文本：你好，我要预约。
+好的，请问您要预约门诊部还是住院部？
+我要预约门诊部。
+好的，请问您要预约什么科室。
+我要预约心血管科。
+今日心血管科坐诊医生有：张三（主任）、李四（副主任）、李丽（副主任），请问您需要预约哪位医生？
+预约张三医生。
+好的，张三医生今日坐诊剩余时段号有10号（9:00—9:20）、16号（11:00—11:20）。
+就预约3号吧。
+好的。请登记您的姓名和身份证号。
+我叫王五，身份证号1234567。
+清洗的文本：你好我要预约好的请问您要预约门诊部还是住院部我要预约门诊部好的请问您要预约什么科室我要预约心血管科今日心血管科坐诊医生有张三主任李四副主任李丽副主任请问您需要预约哪位医生预约张三医生好的张三医生今日坐诊剩余时段号有号号就预约号吧好的请登记您的姓名和身份证号我叫王五身份证号
+load :/opt/conda/envs/zy_race/lib/python3.10/site-packages/nlpcda/data/同义词.txt done
+扩充样本 1：你好我要预约好的请问您要预约门诊部还是住院部我要预约门诊部好的请问您要预约什么科室我要预约心血管科今日心血管科坐诊医生有张三主任李四副主任李丽副主任请问您需要预约哪位医生预约张三医生好的张三医生今日坐诊剩余时段号有号号就预约号吧好的请登记您的姓名和身份证号我叫王五身份证号
+扩充样本 2：你好我要约定好的请问您要预约门诊部还是住院部我要预约门诊部好的请问您要约定什么科室我要预约心血管科今日心血管科坐诊医生有张三主任李四副主任李丽副主任请问您用约定哪位白衣战士预约张三医生好的张三医生今日坐诊剩余时段号有号号就预约号吧好的请登记您的姓名和身份证号我叫王五身份证号
+中文分词: ['你好', '，', '我要预约', '。', '好的', '，', '请问您要预约门诊部还是住院部', '？', '我要预约门诊部', '。', '好的', '，', '请问您要预约什么科室', '。', '我要预约心血管科', '。', '今日心血管科坐诊医生有', '：', '张三', '（', '主任', '）', '、', '李四', '（', '副主任', '）', '、', '李丽', '（', '副主任', '）', '，', '请问您需要预约哪位医生', '？', '预约张三医生', '。', '好的', '，', '张三医生今日坐诊剩余时段号有10号', '（', '9:00', '—', '9:20', '）', '、', '16号', '（', '11:00', '—', '11:20', '）', '。', '就预约3号吧', '。', '好的', '。', '请登记您的姓名和身份证号', '。', '我叫王五', '，', '身份证号1234567', '。']
+词性标注: [('你好', 'NN'), ('，', 'CD'), ('我要预约', 'CD'), ('。', 'NN'), ('好的', 'NN'), ('，', 'CD'), ('请问您要预约门诊部还是住院部', 'CD'), ('？', 'NN'), ('我要预约门诊部', 'NN'), ('。', 'SYM'), ('好的', 'NN'), ('，', 'CD'), ('请问您要预约什么科室', 'CD'), ('。', 'NN'), ('我要预约心血管科', 'JJ'), ('。', 'NN'), ('今日心血管科坐诊医生有', 'NN'), ('：', 'SYM'), ('张三', 'FW'), ('（', 'FW'), ('主任', 'FW'), ('）', 'FW'), ('、', 'FW'), ('李四', 'FW'), ('（', 'FW'), ('副主任', 'FW'), ('）', 'FW'), ('、', 'FW'), ('李丽', 'FW'), ('（', 'FW'), ('副主任', 'FW'), ('）', 'FW'), ('，', 'FW'), ('请问您需要预约哪位医生', 'FW'), ('？', 'FW'), ('预约张三医生', 'JJ'), ('。', 'NN'), ('好的', 'NN'), ('，', 'CD'), ('张三医生今日坐诊剩余时段号有10号', 'CD'), ('（', 'CD'), ('9:00', 'CD'), ('—', ':'), ('9:20', 'CD'), ('）', 'CD'), ('、', 'NN'), ('16号', 'CD'), ('（', 'CD'), ('11:00', 'CD'), ('—', ':'), ('11:20', 'CD'), ('）', 'CD'), ('。', 'NN'), ('就预约3号吧', 'CD'), ('。', 'CD'), ('好的', 'NN'), ('。', 'SYM'), ('请登记您的姓名和身份证号', 'NN'), ('。', 'SYM'), ('我叫王五', 'CD'), ('，', 'CD'), ('身份证号1234567', 'CD'), ('。', 'NN')]
+中文命名实体识别: [('你好', 'O'), ('，', 'NUMBER'), ('我要预约', 'NUMBER'), ('。', 'O'), ('好的', 'O'), ('，', 'NUMBER'), ('请问您要预约门诊部还是住院部', 'NUMBER'), ('？', 'O'), ('我要预约门诊部', 'O'), ('。', 'O'), ('好的', 'O'), ('，', 'NUMBER'), ('请问您要预约什么科室', 'NUMBER'), ('。', 'O'), ('我要预约心血管科', 'O'), ('。', 'O'), ('今日心血管科坐诊医生有', 'O'), ('：', 'O'), ('张三', 'O'), ('（', 'O'), ('主任', 'O'), ('）', 'O'), ('、', 'O'), ('李四', 'O'), ('（', 'O'), ('副主任', 'O'), ('）', 'O'), ('、', 'O'), ('李丽', 'O'), ('（', 'O'), ('副主任', 'O'), ('）', 'O'), ('，', 'O'), ('请问您需要预约哪位医生', 'O'), ('？', 'O'), ('预约张三医生', 'O'), ('。', 'O'), ('好的', 'O'), ('，', 'NUMBER'), ('张三医生今日坐诊剩余时段号有10号', 'NUMBER'), ('（', 'NUMBER'), ('9:00', 'TIME'), ('—', 'O'), ('9:20', 'TIME'), ('）', 'NUMBER'), ('、', 'O'), ('16号', 'NUMBER'), ('（', 'NUMBER'), ('11:00', 'TIME'), ('—', 'O'), ('11:20', 'TIME'), ('）', 'NUMBER'), ('。', 'O'), ('就预约3号吧', 'NUMBER'), ('。', 'NUMBER'), ('好的', 'O'), ('。', 'O'), ('请登记您的姓名和身份证号', 'O'), ('。', 'O'), ('我叫王五', 'NUMBER'), ('，', 'NUMBER'), ('身份证号1234567', 'NUMBER'), ('。', 'O')]
+```
+
+## 任务四
+
+### 任务4.1
+```py
+%matplotlib inline
+
+import xlrd
+import matplotlib
+# matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+import os
+
+
+
+#TODO 加载excel数据
+def read_excel(path):
+    #TODO 打开文件
+    workbook = xlrd.open_workbook(path)
+    #TODO 获取sheet
+    sheet1_name = workbook.sheet_names()[0]
+    #TODO 根据sheet索引或者名称获取sheet内容
+    sheet1 = workbook.sheet_by_name(sheet1_name)
+    #TODO 获取行数列数
+    nrows = sheet1.nrows
+    ncols = sheet1.ncols
+    #TODO 获取每一行的数据存入列表
+    rows_list = []
+    for i in range(nrows):
+        rows_list.append(sheet1.row_values(i))
+    #TODO 返回每一行数据
+    return rows_list
+
+
+def getData():
+    root_path = '/home/tione/notebook/任务四'
+
+    #TODO 加载excel数据
+    excel_path = os.path.join(root_path,'赛位号_ hosptial.xls')#r'D:/test/yundong.xls'#excel存储位置
+    row_list = read_excel(excel_path)
+    # print(row_list)
+    
+    # (1)经过计算分别得到近五天急诊科男女分别的人数，近五天来医院就诊的人数，近五天每个诊室就诊人数，并在控制台输出。
+    from collections import defaultdict
+    
+    sex_count = defaultdict(int)
+    person_per_day_count = defaultdict(int)
+    person_per_clinic_count = defaultdict(int)
+    for name, sex, age, clinic, date in row_list:
+        if name == '姓名':
+            continue
+        sex_count[sex] += 1
+        person_per_day_count[date] += 1
+        person_per_clinic_count[clinic] += 1
+    
+    print('近五天急诊科男女分别的人数：', dict(sex_count))
+    print('近五天来医院就诊的人数：', dict(person_per_day_count))
+    print('近五天每个诊室就诊人数：',dict(person_per_clinic_count))
+
+    # (2)将近五天急诊科就诊男女比例生成饼状图并保存图片，要求: 表头设置为’Male to female ratio in the last five days of emergency department’。
+    plt.figure()
+    plt.pie(sex_count.values(), labels=sex_count.keys())
+    plt.title('Male to female ratio in the last five days of emergency department')
+    plt.savefig('sex.jpg')
+    plt.show()
+
+    # (3)将近五天每个诊室就诊人数生成柱状图并保存图片，要求：表头设置为’Number of visits per consultation room’，xlabel设置为’consulting room’,ylabel设置为’number’。
+    plt.figure()
+    plt.bar(person_per_clinic_count.keys(), person_per_clinic_count.values())
+    plt.title('Number of visits per consultation room')
+    plt.xlabel('consulting room')
+    plt.ylabel('number')
+    plt.savefig('clinic.jpg')
+    plt.show()
+
+    # (4)将近五天来医院就诊的人数生成折线图并保存图片，要求：表头设置为’The number of people who came to the hospital in the last five days’,xlabel设置为’day’, ylabel设置为’number’。
+    plt.figure()
+    plt.plot(person_per_day_count.keys(), person_per_day_count.values())
+    plt.title('The number of people who came to the hospital in the last five days')
+    plt.xlabel('day')
+    plt.ylabel('number')
+    plt.savefig('day.jpg')
+    plt.show()
+    
+getData()
+```
+```txt
+近五天急诊科男女分别的人数： {'boy': 9, 'girl': 7}
+近五天来医院就诊的人数： {'2023.1.1': 3, '2023.1.2': 2, '2023.1.3': 4, '2023.1.4': 3, '2023.1.5': 4}
+近五天每个诊室就诊人数： {'EW': 2, 'OD': 4, 'DD': 4, 'IMD': 2, 'ED': 4}
+```
+
+### 知识点
+
+GitHub Copilot: 在Python中，你可以使用`matplotlib`库的`pyplot`模块来生成饼状图。以下是一个简单的示例：
+
+```python
+import matplotlib.pyplot as plt
+
+# 假设你已经有了近五天急诊科就诊男女比例的数据
+sex_ratio = {'boy': 9, 'girl': 7}
+
+# 创建一个新的图形
+plt.figure()
+
+# 生成饼状图
+plt.pie(sex_ratio.values(), labels=sex_ratio.keys(), autopct='%1.1f%%')
+
+# 设置图形的标题
+plt.title('近五天急诊科就诊男女比例')
+
+# 保存图形为图片
+plt.savefig('sex_ratio.png')
+
+# 显示图形
+plt.show()
+```
+
+这段代码会生成一个显示近五天急诊科就诊男女比例的饼状图，并将其保存为`sex_ratio.png`图片。
+
+* [Pie charts](https://matplotlib.org/stable/gallery/pie_and_polar_charts/pie_features.html)
