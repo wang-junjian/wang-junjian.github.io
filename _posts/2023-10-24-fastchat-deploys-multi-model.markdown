@@ -363,6 +363,7 @@ pip install scipy
 ```
 
 ### 修改代码 `fastchat/model/model_adapter.py`
+- FastChat 0.2.32
 ```py
  315     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
  316         "mps",
@@ -374,6 +375,34 @@ pip install scipy
  733         model = AutoModel.from_pretrained(
  734             model_path, trust_remote_code=True, load_in_8bit=True, **from_pretrained_kwargs
  735         )   
+```
+
+- FastChat 0.2.33
+```py
+749 class ChatGLMAdapter(BaseModelAdapter):
+750     """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b"""
+751 
+752     def match(self, model_path: str):
+753         return "chatglm" in model_path.lower()
+754 
+755     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+756         revision = from_pretrained_kwargs.get("revision", "main")
+757         if "chatglm3" in model_path.lower():
+758             tokenizer = AutoTokenizer.from_pretrained(
+759                 model_path,
+760                 encode_special_tokens=True,
+761                 trust_remote_code=True,
+762                 load_in_8bit=True,          # 📌 add
+763                 revision=revision,
+764             )
+765         else:
+766             tokenizer = AutoTokenizer.from_pretrained(
+767                 model_path, trust_remote_code=True, revision=revision
+768             )
+769         model = AutoModel.from_pretrained(
+770             model_path, trust_remote_code=True, **from_pretrained_kwargs
+771         )
+772         return model, tokenizer
 ```
 
 ### 显存使用情况
