@@ -363,7 +363,9 @@ pip install scipy
 ```
 
 ### 修改代码 `fastchat/model/model_adapter.py`
+
 - FastChat 0.2.32
+
 ```py
  315     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
  316         "mps",
@@ -378,6 +380,7 @@ pip install scipy
 ```
 
 - FastChat 0.2.33
+
 ```py
 749 class ChatGLMAdapter(BaseModelAdapter):
 750     """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b"""
