@@ -157,7 +157,7 @@ tags: [GPT, ChatGLM3, ChatGLM3-6B-32K, bge-base-zh]
 
 📌 量化精度 FP16 时，输入序列长度最多 5600 个字符（汉字）；否则，CUDA out of memory.
 
-### 测试脚本
+### 测试脚本（Python）
 
 安装依赖包
 
@@ -209,6 +209,37 @@ if __name__ == "__main__":
 ```shell
 python llmtest.py --prompt "写一篇500字的小说" --max-tokens=8000
 python llmtest.py --prompt "写一篇500字的小说" --max-tokens=32000 --model chatglm3-6b-32k
+```
+
+### 测试脚本（Shell）
+```shell
+#!/bin/bash
+
+start=$(date +%s.%N)
+response=$(curl -s http://172.16.33.66:8000/v1/completions \
+    -H "Content-Type: application/json" \
+    -d '{
+        "model": "chatglm3-6b",
+        "prompt": "写一篇100字的玄幻小说",
+        "temperature": 0.7,
+        "max_tokens": 4096
+    }')
+end=$(date +%s.%N)
+runtime=$(echo "$end - $start" | bc)
+
+echo "$response\n\n"
+
+text=$(echo $response | tr -d '[:cntrl:]' | jq -r '.choices[0].text')
+tokens=$(echo $response | tr -d '[:cntrl:]' | jq '.usage.completion_tokens')
+
+#text=$(echo $response | grep -oP '(?<=text":").*?(?=",")')
+#tokens=$(echo $text | wc -m)
+tokens_per_second=$(echo "$tokens / $runtime" | bc)
+
+echo "Execution time: $runtime"
+echo "Text: $text"
+echo "Completion tokens: $tokens"
+echo "Tokens per second: $tokens_per_second"
 ```
 
 ### FP16
