@@ -382,30 +382,37 @@ pip install scipy
 - FastChat 0.2.33
 
 ```py
-749 class ChatGLMAdapter(BaseModelAdapter):
-750     """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b"""
-751 
-752     def match(self, model_path: str):
-753         return "chatglm" in model_path.lower()
-754 
-755     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-756         revision = from_pretrained_kwargs.get("revision", "main")
-757         if "chatglm3" in model_path.lower():
-758             tokenizer = AutoTokenizer.from_pretrained(
-759                 model_path,
-760                 encode_special_tokens=True,
-761                 trust_remote_code=True,
-762                 load_in_8bit=True,          # 📌 add
-763                 revision=revision,
-764             )
-765         else:
-766             tokenizer = AutoTokenizer.from_pretrained(
-767                 model_path, trust_remote_code=True, revision=revision
-768             )
-769         model = AutoModel.from_pretrained(
-770             model_path, trust_remote_code=True, **from_pretrained_kwargs
-771         )
-772         return model, tokenizer
+ 321     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+ 322         "mps",
+ 323         "xpu",
+ 324         "npu",
+ 325     ):
+ 326         pass #model.to(device)                                                                 # wjj
+
+
+ 749 class ChatGLMAdapter(BaseModelAdapter):
+ 750     """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b"""
+ 751 
+ 752     def match(self, model_path: str):
+ 753         return "chatglm" in model_path.lower()
+ 754 
+ 755     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+ 756         revision = from_pretrained_kwargs.get("revision", "main")
+ 757         if "chatglm3" in model_path.lower():
+ 758             tokenizer = AutoTokenizer.from_pretrained(
+ 759                 model_path,
+ 760                 encode_special_tokens=True,
+ 761                 trust_remote_code=True,
+ 762                 revision=revision,
+ 763             )
+ 764         else:
+ 765             tokenizer = AutoTokenizer.from_pretrained(
+ 766                 model_path, trust_remote_code=True, revision=revision
+ 767             )
+ 768         model = AutoModel.from_pretrained(
+ 769             model_path, trust_remote_code=True, load_in_8bit=True, **from_pretrained_kwargs    # wjj
+ 770         )
+ 771         return model, tokenizer
 ```
 
 ### 显存使用情况
