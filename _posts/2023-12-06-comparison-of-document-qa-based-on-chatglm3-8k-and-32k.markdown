@@ -242,6 +242,9 @@ echo "Completion tokens: $tokens"
 echo "Tokens per second: $tokens_per_second"
 ```
 
+- [jq parse error w.r.t control characters](https://github.com/jqlang/jq/issues/1049)
+- [parse error: Invalid string: control characters from U+0000 through U+001F must be escaped](https://qiita.com/re-sasaki/items/7d34109cf209a8ac753c)
+
 ### FP16
 
 |      | ChatGLM3-6B |	ChatGLM3-6B-32k |
