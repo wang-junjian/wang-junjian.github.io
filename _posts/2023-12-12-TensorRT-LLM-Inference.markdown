@@ -170,7 +170,7 @@ python3 scripts/launch_triton_server.py --world_size=1 --model_repo=/tensorrtllm
 ## 参考资料
 - [欢迎使用 NVIDIA TensorRT-LLM 优化大语言模型推理](https://developer.nvidia.com/zh-cn/blog/optimizing-inference-on-llms-with-tensorrt-llm-now-publicly-available/)
 - [大模型推理实践-1：基于TensorRT-LLM和Triton部署ChatGLM2-6B模型推理服务](https://zhuanlan.zhihu.com/p/663338695)
-- [TensorRT-LLM初探 1 | 运行llama，以及triton tensorrt llm backend服务化](https://aigc.7otech.com/2023/11/09/tensorrt-llm%E5%88%9D%E6%8E%A2-1-%E8%BF%90%E8%A1%8Cllama%EF%BC%8C%E4%BB%A5%E5%8F%8Atriton-tensorrt-llm-backend%E6%9C%8D%E5%8A%A1%E5%8C%96/)
+- [TensorRT-LLM初探 1 运行llama，以及triton tensorrt llm backend服务化](https://aigc.7otech.com/2023/11/09/tensorrt-llm%E5%88%9D%E6%8E%A2-1-%E8%BF%90%E8%A1%8Cllama%EF%BC%8C%E4%BB%A5%E5%8F%8Atriton-tensorrt-llm-backend%E6%9C%8D%E5%8A%A1%E5%8C%96/)
 - [meta-llama/Llama-2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b-hf)
 - [BLOOM 3b: Optimization & Deployment using Triton Server - Part 1](https://medium.com/@fractal.ai/bloom-3b-optimization-deployment-using-triton-server-part-1-f809037fea40)
 - [Deploying Llama2 with NVIDIA Triton Inference Server](https://blog.marvik.ai/2023/10/16/deploying-llama2-with-nvidia-triton-inference-server/)
