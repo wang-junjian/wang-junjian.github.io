@@ -40,13 +40,34 @@ pip install -r requirements.txt
 - [LLaMA 2 13B chat](https://huggingface.co/TheBloke/Llama-2-13B-chat-GGUF)
 - [LLaMA 2 70B chat](https://huggingface.co/TheBloke/Llama-2-70B-chat-GGUF)
 
+### 下载 GGUF 模型
+
+#### huggingface-cli
+```shell
+pip install huggingface_hub
+
+REPO_ID=TheBloke/Llama-2-7B-chat-GGUF
+FILENAME=llama-2-7b-chat.Q4_K_M.gguf
+huggingface-cli download ${REPO_ID} ${FILENAME} \
+    --local-dir . --local-dir-use-symlinks False
+```
+
+#### wget
+```shell
+REPO_ID=TheBloke/Llama-2-7B-chat-GGUF
+FILENAME=llama-2-7b-chat.Q4_K_M.gguf
+wget https://huggingface.co/${REPO_ID}/resolve/main/${FILENAME}\?download\=true -O ${FILENAME}
+```
+
 ### 聊天测试
+
 - 糖果的制作步骤
 ```shell
 ./main -n 1000 -e -m TheBloke/Llama-2-7B-chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf -p "糖果的制作步骤"
 ```
+
 ```
- 糖果的制作步骤
+糖果的制作步骤
 
 1. 选择优质的糖果：选择高质量的糖果，可以增加糖果的精度和烘培质地。
 2. 将糖果隔开：将糖果按照大小和形状分成不同的颜色，这样可以更好地控制糖果的掉落速度和坍塌情况。
@@ -184,6 +205,48 @@ curl -X 'GET' \
     }
   ]
 }
+```
+
+## 大模型下载
+### 下载 HuggingFace 模型
+❶ 安装 `huggingface_hub`
+```shell
+pip install huggingface_hub
+```
+
+❷ 编写下载模型脚本 `download.py`
+```python
+from huggingface_hub import snapshot_download
+snapshot_download(repo_id="lmsys/vicuna-7b-v1.5", local_dir="vicuna-7b-v1.5",
+                  local_dir_use_symlinks=False, revision="main")
+```
+
+❸ 下载模型
+```shell
+mkdir vicuna-7b-v1.5
+python download.py
+```
+
+<!--_footer: '[Download files from the HuggingFace Hub](https://huggingface.co/docs/huggingface_hub/guides/download)<br>[Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)'-->
+
+---
+
+### 下载 ModelScope 模型（HuggingFace 的国内替代）
+❶ 安装 `modelscope`
+```shell
+pip install modelscope
+```
+
+❷ 编写下载模型脚本 `download.py`
+```python
+from modelscope import snapshot_download
+snapshot_download("ZhipuAI/chatglm3-6b-32k", revision="v1.0.0", 
+                  cache_dir="chatglm3-6b-32k")
+```
+
+❸ 下载模型
+```shell
+python download.py
 ```
 
 
