@@ -227,9 +227,8 @@ mkdir vicuna-7b-v1.5
 python download.py
 ```
 
-<!--_footer: '[Download files from the HuggingFace Hub](https://huggingface.co/docs/huggingface_hub/guides/download)<br>[Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)'-->
-
----
+- [Download files from the HuggingFace Hub](https://huggingface.co/docs/huggingface_hub/guides/download)
+- [Tutorial: How to convert HuggingFace model to GGUF format](https://github.com/ggerganov/llama.cpp/discussions/2948)
 
 ### 下载 ModelScope 模型（HuggingFace 的国内替代）
 ❶ 安装 `modelscope`
