@@ -7,14 +7,12 @@ tags: [llama.cpp, llama-cpp-python, OpenAI, MacbookProM2MAX]
 ---
 
 ## llama.cpp
-```
-纯 C/C++ 实现
-Apple 芯片 ARM NEON, Accelerate, Metal 
-x86 架构 AVX, AVX2, AVX512
-混合F16/F32精度
-整数量化 2-bit, 3-bit, 4-bit, 5-bit, 6-bit, 8-bit 
-后端支持 CUDA, Metal, OpenCL GPU
-```
+- 纯 C/C++ 实现
+- Apple 芯片 ARM NEON, Accelerate, Metal 
+- x86 架构 AVX, AVX2, AVX512
+- 混合F16/F32精度
+- 整数量化 2-bit, 3-bit, 4-bit, 5-bit, 6-bit, 8-bit 
+- 后端支持 CUDA, Metal, OpenCL GPU
 
 ### 构建
 ❶ 克隆 [llama.cpp][llama.cpp] 仓库
