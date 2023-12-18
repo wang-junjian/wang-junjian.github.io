@@ -28,6 +28,8 @@ curl http://localhost:11434/api/generate -d '{
 ### ollama 帮助
 ```shell
 ollama --help
+```
+```shell
 Large language model runner
 
 Usage:
@@ -54,6 +56,27 @@ Use "ollama [command] --help" for more information about a command.
 ```
 
 ### [模型库](https://ollama.ai/library)
+
+- Llama 2
+```shell
+ollama pull llama2
+```
+
+- LLaVA: Large Language and Vision Assistant
+```shell
+ollama pull llava
+```
+
+![](/images/2023/Ollama/models.png)
+
+![](/images/2023/Ollama/models-llama2.png)
+
+模型版本化
+
+![](/images/2023/Ollama/models-llama2-tags1.png)
+
+![](/images/2023/Ollama/models-llama2-tags2.png)
+
 
 ### 使用 [Modelfile](https://github.com/jmorganca/ollama/blob/main/docs/modelfile.md) 创建模型
 
@@ -115,8 +138,11 @@ docker-compose up -d --build
 
 ### 访问 http://localhost:3000
 
+![](/images/2023/Ollama/ollama-web-ui.png)
+
 
 ## 参考资料
+- [Ollama Documentation](https://github.com/jmorganca/ollama/tree/main/docs)
 - [ollama/examples](https://github.com/jmorganca/ollama/tree/main/examples)
 - [Ollama Model File](https://github.com/jmorganca/ollama/blob/main/docs/modelfile.md)
 - [Ollama API](https://github.com/jmorganca/ollama/blob/main/docs/api.md)
