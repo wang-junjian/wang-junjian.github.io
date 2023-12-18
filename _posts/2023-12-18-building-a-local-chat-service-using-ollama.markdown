@@ -16,7 +16,7 @@ tags: [Ollama, OllamaHub, OllamaWebUI, GPT]
 ollama run llama2
 ```
 
-### 通过 API 访问
+### 通过 [API](https://github.com/jmorganca/ollama/blob/main/docs/api.md) 访问
 ```shell
 curl http://localhost:11434/api/generate -d '{
   "model": "llama2",
@@ -119,3 +119,4 @@ docker-compose up -d --build
 ## 参考资料
 - [ollama/examples](https://github.com/jmorganca/ollama/tree/main/examples)
 - [Ollama Model File](https://github.com/jmorganca/ollama/blob/main/docs/modelfile.md)
+- [Ollama API](https://github.com/jmorganca/ollama/blob/main/docs/api.md)
