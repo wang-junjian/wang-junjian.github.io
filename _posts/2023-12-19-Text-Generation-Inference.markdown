@@ -7,6 +7,7 @@ tags: [TGI, Inference]
 ---
 
 - [Text Generation Inference](https://github.com/huggingface/text-generation-inference)
+- [Text Generation Inference Swagger UI](https://huggingface.github.io/text-generation-inference/)
 
 ## [TGI 介绍](https://huggingface.co/docs/text-generation-inference/index)
 TGI 是一个用于部署和服务大型语言模型（LLM）的工具包。 TGI 为最流行的开源 LLM 提供高性能文本生成，包括 Llama、Falcon、StarCoder、BLOOM、GPT-NeoX 和 T5 。
