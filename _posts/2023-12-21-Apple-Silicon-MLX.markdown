@@ -104,7 +104,7 @@ options:
 
 ## [Qwen](https://github.com/ml-explore/mlx-examples/tree/main/llms/qwen)
 
-- 模型 [Qwen-1.8B](https://huggingface.co/Qwen/Qwen-1_8B)
+### 模型 [Qwen-1.8B](https://huggingface.co/Qwen/Qwen-1_8B)
 
 - 模型转换
 ```shell
@@ -149,6 +149,49 @@ python qwen.py --prompt "天空为什么是蓝色的？" --max_tokens 2048
 ```shell
 python qwen.py --tokenizer  QWen/QWen-7B
 python qwen.py --tokenizer  QWen/QWen-7B-Chat
+```
+
+### 模型 [Qwen-14B-Chat](https://huggingface.co/Qwen/Qwen-14B-Chat)
+
+- 下载模型
+```shell
+huggingface-cli download Qwen/Qwen-14B-Chat
+# 下面的命令可以使用缓存的模型进行转换
+huggingface-cli download Qwen/Qwen-14B-Chat --local-dir Qwen/Qwen-14B-Chat --local-dir-use-symlinks False
+```
+
+- 模型转换
+```shell
+ln -s /Users/junjian/HuggingFace/Qwen/Qwen-14B-Chat Qwen/Qwen-14B-Chat
+python convert.py --model Qwen/Qwen-14B-Chat
+```
+
+```shell
+python qwen.py --tokenizer Qwen/Qwen-14B-Chat --prompt "天空为什么是蓝色的？" --max_tokens 2048 
+```
+```
+天空为什么是蓝色的？ 天空之所以呈现蓝色，是因为大气中的气体和微粒会散射太阳光中的短波长颜色，如蓝色和紫色。这种散射现象被称为瑞利散射。由于短波长颜色的散射比长波长颜色（如红色和橙色）更强，所以当太阳光穿过大气层时，蓝色和紫色的光线会被散射到各个方向，使得我们看到的天空呈现出蓝色。在日落或日出时，太阳光需要穿过更多的大气层，因此更多的短波长颜色被散射掉，只剩下长波长颜色，所以天空呈现出橙色或红色。
+```
+
+运行下面的推理，使用内存的峰值达到了 46GB。
+
+```shell
+python qwen.py --tokenizer Qwen/Qwen-14B-Chat --prompt 'Traceback (most recent call last): File "/Users/junjian/GitHub/ml-explore/mlx-examples/t5/t5.py", line 441, in model, tokenizer = load_model(args.model, args.dtype) File "/Users/junjian/GitHub/ml-explore/mlx-examples/t5/t5.py", line 393, in load_model return model, Tokenizer(args.model, config) File "/Users/junjian/GitHub/ml-explore/mlx-examples/t5/t5.py", line 337, in init self._tokenizer = T5Tokenizer.from_pretrained( File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/tokenization_utils_base.py", line 2028, in from_pretrained return cls._from_pretrained( File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/tokenization_utils_base.py", line 2260, in _from_pretrained tokenizer = cls(*init_inputs, **init_kwargs) File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/models/t5/tokenization_t5.py", line 200, in init self.sp_model = self.get_spm_processor(kwargs.pop("from_slow", False)) File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/models/t5/tokenization_t5.py", line 224, in get_spm_processor model_pb2 = import_protobuf(f"The new behaviour of {self.class.name} (with self.legacy = False)") File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/convert_slow_tokenizer.py", line 43, in import_protobuf raise ImportError(PROTOBUF_IMPORT_ERROR.format(error_message)) ImportError: The new behaviour of T5Tokenizer (with self.legacy = False) requires the protobuf library but it was not found in your environment. Checkout the instructions on the installation page of its repo: https://github.com/protocolbuffers/protobuf/tree/master/python#installation and follow the ones that match your environment. Please note that you may need to restart your runtime after installation. 这个错误怎么解决？' --max_tokens 8000
+```
+```
+Traceback (most recent call last): File "/Users/junjian/GitHub/ml-explore/mlx-examples/t5/t5.py", line 441, in model, tokenizer = load_model(args.model, args.dtype) File "/Users/junjian/GitHub/ml-explore/mlx-examples/t5/t5.py", line 393, in load_model return model, Tokenizer(args.model, config) File "/Users/junjian/GitHub/ml-explore/mlx-examples/t5/t5.py", line 337, in init self._tokenizer = T5Tokenizer.from_pretrained( File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/tokenization_utils_base.py", line 2028, in from_pretrained return cls._from_pretrained( File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/tokenization_utils_base.py", line 2260, in _from_pretrained tokenizer = cls(*init_inputs, **init_kwargs) File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/models/t5/tokenization_t5.py", line 200, in init self.sp_model = self.get_spm_processor(kwargs.pop("from_slow", False)) File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/models/t5/tokenization_t5.py", line 224, in get_spm_processor model_pb2 = import_protobuf(f"The new behaviour of {self.class.name} (with self.legacy = False)") File "/Users/junjian/GitHub/ml-explore/env/lib/python3.10/site-packages/transformers/convert_slow_tokenizer.py", line 43, in import_protobuf raise ImportError(PROTOBUF_IMPORT_ERROR.format(error_message)) ImportError: The new behaviour of T5Tokenizer (with self.legacy = False) requires the protobuf library but it was not found in your environment. Checkout the instructions on the installation page of its repo: https://github.com/protocolbuffers/protobuf/tree/master/python#installation and follow the ones that match your environment. Please note that you may need to restart your runtime after installation. 这个错误怎么解决？？
+
+这个错误是因为你的环境缺少protobuf库。protobuf是一个用于序列化和反序列化结构化数据的库，是transformers库的一部分。
+
+你可以按照以下步骤解决这个问题：
+
+1. 安装protobuf库。你可以使用pip来安装：
+
+   pip install protobuf
+
+2. 重启你的运行环境。有时候，即使你已经安装了protobuf，也需要重启你的运行环境才能使新的库生效。
+
+如果你在使用Google Colab，你可能需要在终端中运行上述命令，而不是在代码单元格中运行。
 ```
 
 
