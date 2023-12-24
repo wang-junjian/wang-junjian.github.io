@@ -24,20 +24,23 @@ source env/bin/activate
 ## [Phi-2](https://github.com/ml-explore/mlx-examples/tree/main/llms/phi2)
 
 - 安装依赖包
+
 ```shell
-cd mlx-examples/phi2
+cd llms/phi2
 pip install -r requirements.txt
 ```
 
 - 模型下载和转换
 
 使用已经下载的模型
+
 ```shell
 mkdir microsoft
 ln -s /Users/junjian/HuggingFace/microsoft/phi-2 microsoft/phi-2
 ```
 
 转换模型
+
 ```shell
 python convert.py
 ```
@@ -48,6 +51,7 @@ python convert.py
 ```
 
 - 运行
+
 ```shell
 python phi2.py
 ```
@@ -65,6 +69,7 @@ Answer: Logic in mathematics is like a compass in navigation. It helps
 ```
 
 你自己的提示
+
 ```shell
 # python phi2.py --prompt <your prompt here> --max_tokens <max_tokens_to_generate>
 python phi2.py --prompt "Why is the sky blue?"
@@ -84,6 +89,7 @@ Answer: A hypothesis is an educated guess or prediction about how something work
 
 
 - 帮助
+
 ```shell
 python phi2.py --help
 ```
@@ -107,6 +113,7 @@ options:
 ### 模型 [Qwen-1.8B](https://huggingface.co/Qwen/Qwen-1_8B)
 
 - 模型转换
+
 ```shell
 cd llms/qwen
 mkdir Qwen
@@ -115,6 +122,7 @@ python convert.py
 ```
 
 - 运行
+
 ```shell
 python qwen.py
 ```
@@ -146,6 +154,7 @@ python qwen.py --prompt "天空为什么是蓝色的？" --max_tokens 2048
 ```
 
 指定其他通义千问模型，注意字母的大小写 `QWen/QWen`
+
 ```shell
 python qwen.py --tokenizer  QWen/QWen-7B
 python qwen.py --tokenizer  QWen/QWen-7B-Chat
@@ -154,6 +163,7 @@ python qwen.py --tokenizer  QWen/QWen-7B-Chat
 ### 模型 [Qwen-14B-Chat](https://huggingface.co/Qwen/Qwen-14B-Chat)
 
 - 下载模型
+
 ```shell
 huggingface-cli download Qwen/Qwen-14B-Chat
 # 下面的命令可以使用缓存的模型进行转换
@@ -161,6 +171,7 @@ huggingface-cli download Qwen/Qwen-14B-Chat --local-dir Qwen/Qwen-14B-Chat --loc
 ```
 
 - 模型转换
+
 ```shell
 ln -s /Users/junjian/HuggingFace/Qwen/Qwen-14B-Chat Qwen/Qwen-14B-Chat
 python convert.py --model Qwen/Qwen-14B-Chat
@@ -196,14 +207,17 @@ Traceback (most recent call last): File "/Users/junjian/GitHub/ml-explore/mlx-ex
 
 
 ## [Stable Diffusion](https://github.com/ml-explore/mlx-examples/tree/main/stable_diffusion)
+
 `模型`：Hugging Face Hub by Stability AI at [stabilitiai/stable-diffusion-2-1](https://huggingface.co/stabilityai/stable-diffusion-2-1)
 
 - 安装依赖包
+
 ```shell
 pip install -r requirements.txt
 ```
 
 - 运行
+
 ```shell
 python txt2image.py "A photo of an astronaut riding a horse on Mars." --n_images 4 --n_rows 2
 ```
@@ -213,12 +227,14 @@ python txt2image.py "A photo of an astronaut riding a horse on Mars." --n_images
 ## [T5](https://github.com/ml-explore/mlx-examples/tree/main/t5)
 
 - 安装依赖包
+
 ```shell
 pip install -r requirements.txt
 pip install protobuf
 ```
 
 - 下载转换模型
+
 ```shell
 python convert.py --model <model>
 ```
@@ -232,6 +248,7 @@ python convert.py --model <model>
 | t5-11b   | 11 billion  |
 
 - 运行
+
 ```shell
 python t5.py --model t5-base --prompt "translate English to German: A tasty apple"
 ```
@@ -244,6 +261,7 @@ Time: 0.37 seconds, tokens/s: 18.79
 ```
 
 - 多语言版本不支持 [google/mt5-small](https://huggingface.co/google/mt5-small)
+
 ```shell
 python t5.py --model google/mt5-small --prompt "translate English to Franch: A tasty apple."
 ```
@@ -259,17 +277,20 @@ Time: 0.05 seconds, tokens/s: 39.83
 ## [Whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper)
 
 - 安装依赖包
+
 ```shell
 pip install -r requirements.txt
 ```
 
 - 安装 ffmpeg
+
 ```shell
 # on macOS using Homebrew (https://brew.sh/)
 brew install ffmpeg
 ```
 
 - 运行
+
 ```py
 import whisper
 
@@ -285,4 +306,4 @@ Then the good soul openly sorted the boat and she had buoyed so long in secret a
 ## 参考资料
 - [Installing Pytorch on macOS](https://pytorch.org/get-started/locally/#macos-version)
 - [那个屠榜的T5模型，现在可以在中文上玩玩了](https://www.jiqizhixin.com/articles/2020-11-17-3)
-- [第一次用AI写小说就获奖了，他们的创作秘籍大公开 | AI玩家对话](https://new.qq.com/rain/a/20230920A03T9300)
+- [第一次用AI写小说就获奖了，他们的创作秘籍大公开](https://new.qq.com/rain/a/20230920A03T9300)
