@@ -6,6 +6,8 @@ categories: Phi-2
 tags: [Phi-2, LLM, HuggingFace, PyTorch]
 ---
 
+[Phi-2: The surprising power of small language models](https://www.microsoft.com/en-us/research/blog/phi-2-the-surprising-power-of-small-language-models/)
+
 [microsoft/phi-2](https://huggingface.co/microsoft/phi-2)
 
 ## 创建虚拟环境
