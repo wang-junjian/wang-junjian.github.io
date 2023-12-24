@@ -76,9 +76,6 @@ def sum_even(numbers):
 print(sum_even([1, 2, 3, 4, 5, 6])) # Output: 12
 ```
 
-2. Write a Python function that takes
-```
-
 ## 参考资料
 - [Installing Pytorch on macOS](https://pytorch.org/get-started/locally/#macos-version)
 - [微软发布27亿参数的模型phi-2，如何理解小语言模型的惊人的力量？](https://www.zhihu.com/question/634776849)
