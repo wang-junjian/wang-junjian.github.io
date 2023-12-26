@@ -148,11 +148,11 @@ tags: [GPT, ChatGLM3, ChatGLM3-6B-32K, bge-base-zh]
 
 | 模型 | 序列长度 | 量化精度 | 显存（GB） | 速度（字符数/秒） |
 | --- | ---: | --- | ---: | --- |
-| ChatGLM3-6B     |  8k | FP16       |   8 | 29.35 |
-| ChatGLM3-6B     |  8k | LLM.int8   |  14 | 15.90 🐢🐢 |
+| ChatGLM3-6B     |  8k | FP16       |  14 | 29.35 |
+| ChatGLM3-6B     |  8k | LLM.int8   |   8 | 15.90 🐢🐢 |
 | ChatGLM3-6B     |  8k | INT8       | 7.5 | &nbsp; 4.90 🐢🐢🐢🐢🐢🐢 |
-| ChatGLM3-6B-32K | 32k | FP16       |   8 | 30.52 |
-| ChatGLM3-6B-32K | 32k | LLM.int8   |  14 | 15.49 🐢🐢 |
+| ChatGLM3-6B-32K | 32k | FP16       |  14 | 30.52 |
+| ChatGLM3-6B-32K | 32k | LLM.int8   |   8 | 15.49 🐢🐢 |
 | ChatGLM3-6B-32K | 32k | INT8       | 7.5 | &nbsp; 4.79 🐢🐢🐢🐢🐢🐢 |
 
 📌 量化精度 FP16 时，输入序列长度最多 5600 个字符（汉字）；否则，CUDA out of memory.
