@@ -19,6 +19,59 @@ make clean
 make -j
 ```
 
+#### main 帮助
+```shell
+./main --help
+```
+```
+
+usage: ./main [options] file0.wav file1.wav ...
+
+options:
+  -h,        --help              [default] show this help message and exit
+  -t N,      --threads N         [4      ] number of threads to use during computation
+  -p N,      --processors N      [1      ] number of processors to use during computation
+  -ot N,     --offset-t N        [0      ] time offset in milliseconds
+  -on N,     --offset-n N        [0      ] segment index offset
+  -d  N,     --duration N        [0      ] duration of audio to process in milliseconds
+  -mc N,     --max-context N     [-1     ] maximum number of text context tokens to store
+  -ml N,     --max-len N         [0      ] maximum segment length in characters
+  -sow,      --split-on-word     [false  ] split on word rather than on token
+  -bo N,     --best-of N         [5      ] number of best candidates to keep
+  -bs N,     --beam-size N       [5      ] beam size for beam search
+  -wt N,     --word-thold N      [0.01   ] word timestamp probability threshold
+  -et N,     --entropy-thold N   [2.40   ] entropy threshold for decoder fail
+  -lpt N,    --logprob-thold N   [-1.00  ] log probability threshold for decoder fail
+  -debug,    --debug-mode        [false  ] enable debug mode (eg. dump log_mel)
+  -tr,       --translate         [false  ] translate from source language to english
+  -di,       --diarize           [false  ] stereo audio diarization
+  -tdrz,     --tinydiarize       [false  ] enable tinydiarize (requires a tdrz model)
+  -nf,       --no-fallback       [false  ] do not use temperature fallback while decoding
+  -otxt,     --output-txt        [false  ] output result in a text file
+  -ovtt,     --output-vtt        [false  ] output result in a vtt file
+  -osrt,     --output-srt        [false  ] output result in a srt file
+  -olrc,     --output-lrc        [false  ] output result in a lrc file
+  -owts,     --output-words      [false  ] output script for generating karaoke video
+  -fp,       --font-path         [/System/Library/Fonts/Supplemental/Courier New Bold.ttf] path to a monospace font for karaoke video
+  -ocsv,     --output-csv        [false  ] output result in a CSV file
+  -oj,       --output-json       [false  ] output result in a JSON file
+  -ojf,      --output-json-full  [false  ] include more information in the JSON file
+  -of FNAME, --output-file FNAME [       ] output file path (without file extension)
+  -ps,       --print-special     [false  ] print special tokens
+  -pc,       --print-colors      [false  ] print colors
+  -pp,       --print-progress    [false  ] print progress
+  -nt,       --no-timestamps     [false  ] do not print timestamps
+  -l LANG,   --language LANG     [en     ] spoken language ('auto' for auto-detect)
+  -dl,       --detect-language   [false  ] exit after automatically detecting language
+             --prompt PROMPT     [       ] initial prompt
+  -m FNAME,  --model FNAME       [models/ggml-base.en.bin] model path
+  -f FNAME,  --file FNAME        [       ] input WAV file path
+  -oved D,   --ov-e-device DNAME [CPU    ] the OpenVINO device used for encode inference
+  -ls,       --log-score         [false  ] log best decoder scores of tokens
+  -ng,       --no-gpu            [false  ] disable GPU
+```
+
+
 #### 语音识别
 ```shell
 time ./main -m models/ggml-large-v3.bin -f test.wav -l auto
@@ -619,6 +672,76 @@ whisper_print_timings:    total time = 67659.70 ms
 | cpu time | 0:07.70 | 0:10.42 | 0:11.66 | 0:11.94 | 0:19.96 | 0:20.19 | 0:44.84 | 0:46.37 | 1:06.08 | 1:07.71 |
 |  |  |  | 🚀 | 🚀 | 🚀🚀 | 🚀🚀 | 🚀🚀🚀🚀 | 🚀🚀🚀🚀 | 🚀🚀🚀🚀🚀🚀 | 🚀🚀🚀🚀🚀🚀 |
 
+
+## 性能对比（MLX）
+
+### 编写脚本 `test-speed.py` 
+
+```py
+import argparse
+import whisper
+
+# 创建一个解析器
+parser = argparse.ArgumentParser(description='Transcribe a speech file using a specific model.')
+parser.add_argument('speech_file', type=str, help='The path to the speech file.')
+parser.add_argument('model', type=str, help='The model to use for transcription.')
+
+# 解析命令行参数
+args = parser.parse_args()
+
+# 使用指定的音频文件和模型进行转录
+text = whisper.transcribe(args.speech_file, model=args.model, initial_prompt='大家好！')["text"]
+print(text)
+```
+
+执行脚本
+    
+```shell
+time python test-speed.py test.wav base
+```
+
+下面的性能测试使用的是一个 `5 分钟`的音频文件 `test.wav`。
+
+### 模型 tiny
+```
+9.83s user 8.39s system 142% cpu 12.813 total
+```
+
+### 模型 base
+```
+7.93s user 6.82s system 143% cpu 10.297 total
+```
+
+### 模型 small
+```
+14.49s user 9.87s system 129% cpu 18.812 total
+```
+
+### 模型 medium
+```
+30.05s user 17.96s system 122% cpu 39.291 total
+```
+
+### 模型 large-v3
+```
+47.01s user 28.10s system 119% cpu 1:02.96 total
+```
+
+### 总结
+
+|  | tiny | base | small | medium | large-v3 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| cpu time | 0:12.81 | 0:10.30 | 0:18.81 | 0:39.29 | 1:02.96 |
+
+
+## 性能对比（NEON & MPS 🆚 MLX）
+
+| | tiny | base | small | medium | large-v3 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| NEON & MPS | 0:07.70 | 0:11.66 | 0:19.96 | 0:44.84 | 1:06.08 |
+| MLX        | 0:12.81 | 0:10.30 | 0:18.81 | 0:39.29 | 1:02.96 |
+
+**MLX 的性能已经超过了 whisper.cpp 的性能了。**
 
 ## 参考资料
 - [Introducing Accelerated PyTorch Training on Mac](https://pytorch.org/blog/introducing-accelerated-pytorch-training-on-mac/)
