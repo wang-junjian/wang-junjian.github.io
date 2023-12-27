@@ -307,3 +307,4 @@ Then the good soul openly sorted the boat and she had buoyed so long in secret a
 - [Installing Pytorch on macOS](https://pytorch.org/get-started/locally/#macos-version)
 - [那个屠榜的T5模型，现在可以在中文上玩玩了](https://www.jiqizhixin.com/articles/2020-11-17-3)
 - [第一次用AI写小说就获奖了，他们的创作秘籍大公开](https://new.qq.com/rain/a/20230920A03T9300)
+- [MLX - Whisper 教學 - 1](https://vocus.cc/article/657622fdfd8978000126d4d0)
