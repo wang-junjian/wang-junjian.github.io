@@ -3,23 +3,23 @@ layout: post
 title:  "whisper.cpp"
 date:   2023-12-26 08:00:00 +0800
 categories: Whisper
-tags: [Whisper, MacBookProM2Max]
+tags: [Whisper, NEON, MPS, CoreML, MacBookProM2Max]
 ---
 
-## 下载模型
-### large-v3
+## NEON & MPS 🆚 CoreML
+### 下载模型（large-v3）
 ```shell
 models/download-ggml-model.sh large-v3
 ```
 
-## NEON & MPS
-### 编译
+### NEON & MPS
+#### 编译
 ```shell
 make clean
 make -j
 ```
 
-### 语音识别
+#### 语音识别
 ```shell
 time ./main -m models/ggml-large-v3.bin -f test.wav -l auto
 ```
@@ -179,14 +179,13 @@ ggml_metal_free: deallocating
 ./main -m models/ggml-large-v3.bin -f test.wav -l auto  11.65s user 1.89s system 12% cpu 1:45.50 total
 ```
 
-
-## CoreML
-### 安装依赖
+### CoreML
+#### 安装依赖
 ```shell
 pip install openai-whisper coremltools ane-transformers
 ```
 
-### 生成 CoreML 模型
+#### 生成 CoreML 模型
 ```shell
 models/generate-coreml-model.sh large-v3
 ```
@@ -205,13 +204,13 @@ done converting
 models/coreml-encoder-large-v3.mlmodelc -> models/ggml-large-v3-encoder.mlmodelc
 ```
 
-### 编译
+#### 编译
 ```shell
 make clean
 WHISPER_COREML=1 make -j
 ```
 
-### 语音识别
+#### 语音识别
 ```shell
 time ./main -m models/ggml-large-v3.bin -f test.wav -l auto 
 ```
@@ -357,7 +356,7 @@ ggml_metal_free: deallocating
 ./main -m models/ggml-large-v3.bin -f test.wav -l auto  8.81s user 2.29s system 15% cpu 1:11.44 total
 ```
 
-### 仅编码
+#### 仅编码
 感觉和上面的一样，包括效果和速度。
 
 ```shell
@@ -365,8 +364,8 @@ models/generate-coreml-model.sh large-v3 --encoder-only True
 time ./main -m models/ggml-large-v3.bin -f test.wav -l auto 
 ```
 
+### 总结
 
-## 对比
 |  | Neon & MPS 👍 | CoreML 🚀 (47%) |
 | --- | ---: | ---: |
 | load time | 1007.19 ms | 859.73 ms |
@@ -379,7 +378,253 @@ time ./main -m models/ggml-large-v3.bin -f test.wav -l auto
 | total time | 105432.62 ms | 71318.02 ms |
 | cpu time | 1:45.50 | 1:11.44 |
 
+**速度提高了，但效果下降了。**
+
+## 性能对比（NEON & MPS）
+
+### 下载模型 [ggerganov/whisper.cpp](https://huggingface.co/ggerganov/whisper.cpp)
+```shell
+git clone https://huggingface.co/ggerganov/whisper.cpp ggerganov/whisper.cpp
+```
+
+### 创建模型链接
+编写脚本 `ln-models.sh`
+
+```shell
+#!/bin/bash
+
+# 源目录
+src_dir="/Users/junjian/HuggingFace/ggerganov/whisper.cpp"
+
+# 目标目录
+dst_dir="models"
+
+# 遍历源目录下的所有文件
+for src_file in "$src_dir"/*
+do
+    # 获取文件名
+    file_name=$(basename "$src_file")
+
+    # 获取文件扩展名
+    extension="${file_name##*.}"
+
+    # 如果文件名不是 README.md 并且文件扩展名不是 zip，则创建软链接
+    if [ "$file_name" != "README.md" ] && [ "$extension" != "zip" ]
+    then
+        ln -s "$src_file" "$dst_dir/$file_name"
+    fi
+done
+```
+
+执行脚本
+
+```
+sh ln-models.sh
+```
+
+下面的性能测试使用的是一个 `5 分钟`的音频文件 `test.wav`。
+
+### 模型 tiny
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-tiny.bin
+```
+```
+whisper_print_timings:     load time =    73.39 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   132.73 ms
+whisper_print_timings:   sample time =  1967.16 ms /  8244 runs (    0.24 ms per run)
+whisper_print_timings:   encode time =   259.27 ms /    13 runs (   19.94 ms per run)
+whisper_print_timings:   decode time =    69.91 ms /    38 runs (    1.84 ms per run)
+whisper_print_timings:   batchd time =  5104.22 ms /  8130 runs (    0.63 ms per run)
+whisper_print_timings:   prompt time =    55.85 ms /  2175 runs (    0.03 ms per run)
+whisper_print_timings:    total time =  7675.59 ms
+./main -f test.wav -l zh -m models/ggml-tiny.bin  5.40s user 0.50s system 76% cpu 7.704 total
+```
+
+### 模型 tiny-q5_1
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-tiny-q5_1.bin
+```
+```
+whisper_print_timings:     load time =    68.97 ms
+whisper_print_timings:     fallbacks =   1 p /   0 h
+whisper_print_timings:      mel time =   134.27 ms
+whisper_print_timings:   sample time =  2650.25 ms / 10960 runs (    0.24 ms per run)
+whisper_print_timings:   encode time =   232.78 ms /    11 runs (   21.16 ms per run)
+whisper_print_timings:   decode time =     7.82 ms /     5 runs (    1.56 ms per run)
+whisper_print_timings:   batchd time =  7218.69 ms / 10898 runs (    0.66 ms per run)
+whisper_print_timings:   prompt time =    69.42 ms /  2452 runs (    0.03 ms per run)
+whisper_print_timings:    total time = 10395.01 ms
+./main -f test.wav -l zh -m models/ggml-tiny-q5_1.bin  7.20s user 0.63s system 75% cpu 10.422 total
+```
+
+### 模型 base
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-base.bin
+```
+```
+whisper_print_timings:     load time =    81.90 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   133.21 ms
+whisper_print_timings:   sample time =  2283.01 ms /  9560 runs (    0.24 ms per run)
+whisper_print_timings:   encode time =   396.49 ms /    11 runs (   36.04 ms per run)
+whisper_print_timings:   decode time =     7.37 ms /     3 runs (    2.46 ms per run)
+whisper_print_timings:   batchd time =  8629.71 ms /  9505 runs (    0.91 ms per run)
+whisper_print_timings:   prompt time =    88.45 ms /  2226 runs (    0.04 ms per run)
+whisper_print_timings:    total time = 11631.52 ms
+./main -f test.wav -l zh -m models/ggml-base.bin  6.29s user 0.60s system 59% cpu 11.664 total
+```
+
+### 模型 base-q5_1
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-base-q5_1.bin
+```
+```
+whisper_print_timings:     load time =    63.39 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   132.60 ms
+whisper_print_timings:   sample time =  2266.66 ms /  9567 runs (    0.24 ms per run)
+whisper_print_timings:   encode time =   424.01 ms /    11 runs (   38.55 ms per run)
+whisper_print_timings:   decode time =     7.25 ms /     3 runs (    2.42 ms per run)
+whisper_print_timings:   batchd time =  8911.47 ms /  9512 runs (    0.94 ms per run)
+whisper_print_timings:   prompt time =    98.58 ms /  2227 runs (    0.04 ms per run)
+whisper_print_timings:    total time = 11916.36 ms
+./main -f test.wav -l zh -m models/ggml-base-q5_1.bin  6.18s user 0.56s system 56% cpu 11.948 total
+```
+
+### 模型 small
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-small.bin
+```
+```
+whisper_print_timings:     load time =   200.65 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   132.19 ms
+whisper_print_timings:   sample time =  2134.68 ms /  8277 runs (    0.26 ms per run)
+whisper_print_timings:   encode time =  1222.70 ms /    12 runs (  101.89 ms per run)
+whisper_print_timings:   decode time =    24.96 ms /     5 runs (    4.99 ms per run)
+whisper_print_timings:   batchd time = 15979.48 ms /  8208 runs (    1.95 ms per run)
+whisper_print_timings:   prompt time =   218.47 ms /  2191 runs (    0.10 ms per run)
+whisper_print_timings:    total time = 19925.94 ms
+./main -f test.wav -l zh -m models/ggml-small.bin  6.21s user 0.67s system 34% cpu 19.968 total
+```
+
+### 模型 small-q5_1
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-small-q5_1.bin
+```
+```
+whisper_print_timings:     load time =    99.42 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   131.74 ms
+whisper_print_timings:   sample time =  2121.60 ms /  8218 runs (    0.26 ms per run)
+whisper_print_timings:   encode time =  1419.51 ms /    13 runs (  109.19 ms per run)
+whisper_print_timings:   decode time =   147.85 ms /    33 runs (    4.48 ms per run)
+whisper_print_timings:   batchd time = 15960.53 ms /  8116 runs (    1.97 ms per run)
+whisper_print_timings:   prompt time =   266.62 ms /  2419 runs (    0.11 ms per run)
+whisper_print_timings:    total time = 20160.34 ms
+./main -f test.wav -l zh -m models/ggml-small-q5_1.bin  6.03s user 0.59s system 32% cpu 20.191 total
+```
+
+### 模型 medium
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-medium.bin
+```
+```
+whisper_print_timings:     load time =   476.85 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   132.37 ms
+whisper_print_timings:   sample time =  2233.07 ms /  9028 runs (    0.25 ms per run)
+whisper_print_timings:   encode time =  2951.15 ms /    11 runs (  268.29 ms per run)
+whisper_print_timings:   decode time =    42.86 ms /     4 runs (   10.72 ms per run)
+whisper_print_timings:   batchd time = 38405.30 ms /  8972 runs (    4.28 ms per run)
+whisper_print_timings:   prompt time =   550.54 ms /  2232 runs (    0.25 ms per run)
+whisper_print_timings:    total time = 44803.71 ms
+./main -f test.wav -l zh -m models/ggml-medium.bin  7.14s user 1.01s system 18% cpu 44.848 total
+```
+
+### 模型 medium-q5_0
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-medium-q5_0.bin
+```
+```
+whisper_print_timings:     load time =   203.72 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   132.13 ms
+whisper_print_timings:   sample time =  2251.24 ms /  9072 runs (    0.25 ms per run)
+whisper_print_timings:   encode time =  3288.98 ms /    11 runs (  299.00 ms per run)
+whisper_print_timings:   decode time =    55.99 ms /     6 runs (    9.33 ms per run)
+whisper_print_timings:   batchd time = 39768.11 ms /  9014 runs (    4.41 ms per run)
+whisper_print_timings:   prompt time =   624.49 ms /  2234 runs (    0.28 ms per run)
+whisper_print_timings:    total time = 46336.09 ms
+./main -f test.wav -l zh -m models/ggml-medium-q5_0.bin  7.02s user 0.81s system 16% cpu 46.372 total
+```
+
+### 模型 large-v3
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-large-v3.bin
+```
+```
+whisper_print_timings:     load time =   859.78 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   151.76 ms
+whisper_print_timings:   sample time =  2201.30 ms /  8640 runs (    0.25 ms per run)
+whisper_print_timings:   encode time =  5561.91 ms /    12 runs (  463.49 ms per run)
+whisper_print_timings:   decode time =  1033.94 ms /    67 runs (   15.43 ms per run)
+whisper_print_timings:   batchd time = 55377.50 ms /  8503 runs (    6.51 ms per run)
+whisper_print_timings:   prompt time =   820.89 ms /  1975 runs (    0.42 ms per run)
+whisper_print_timings:    total time = 66020.98 ms
+./main -f test.wav -l zh -m models/ggml-large-v3.bin  7.45s user 1.40s system 13% cpu 1:06.08 total
+```
+
+### 模型 large-v3-q5_0
+
+```shell
+time ./main -f test.wav -l zh -m models/ggml-large-v3-q5_0.bin
+```
+```
+whisper_print_timings:     load time =   341.02 ms
+whisper_print_timings:     fallbacks =   0 p /   0 h
+whisper_print_timings:      mel time =   159.70 ms
+whisper_print_timings:   sample time =  2230.36 ms /  8311 runs (    0.27 ms per run)
+whisper_print_timings:   encode time =  5895.91 ms /    11 runs (  535.99 ms per run)
+whisper_print_timings:   decode time =   344.94 ms /    25 runs (   13.80 ms per run)
+whisper_print_timings:   batchd time = 57613.93 ms /  8239 runs (    6.99 ms per run)
+whisper_print_timings:   prompt time =  1062.95 ms /  2198 runs (    0.48 ms per run)
+whisper_print_timings:    total time = 67659.70 ms
+./main -f test.wav -l zh -m models/ggml-large-v3-q5_0.bin  7.25s user 1.03s system 12% cpu 1:07.71 total
+```
+
+### 总结
+
+|  | tiny | tiny-q5_1 | base | base-q5_1 | small | small-q5_1 | medium | medium-q5_0 | large-v3 | large-v3-q5_0 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| load time | 73.39 ms | 68.97 ms | 81.90 ms | 63.39 ms | 200.65 ms | 99.42 ms | 476.85 ms | 203.72 ms | 859.78 ms | 341.02 ms |
+| mel time | 132.73 ms | 134.27 ms | 133.21 ms | 132.60 ms | 132.19 ms | 131.74 ms | 132.37 ms | 132.13 ms | 151.76 ms | 159.70 ms |
+| sample time | 1967.16 ms | 2650.25 ms | 2283.01 ms | 2266.66 ms | 2134.68 ms | 2121.60 ms | 2233.07 ms | 2251.24 ms | 2201.30 ms | 2230.36 ms |
+| encode time | 259.27 ms | 232.78 ms | 396.49 ms | 424.01 ms | 1222.70 ms | 1419.51 ms | 2951.15 ms | 3288.98 ms | 5561.91 ms | 5895.91 ms |
+| decode time | 69.91 ms | 7.82 ms | 7.37 ms | 7.25 ms | 24.96 ms | 55.99 ms | 42.86 ms | 55.99 ms | 1033.94 ms | 344.94 ms |
+| batchd time | 5104.22 ms | 7218.69 ms | 8629.71 ms | 8911.47 ms | 15979.48 ms | 15960.53 ms | 38405.30 ms | 39768.11 ms | 55377.50 ms | 57613.93 ms |
+| prompt time | 55.85 ms | 69.42 ms | 88.45 ms | 98.58 ms | 218.47 ms | 266.62 ms | 550.54 ms | 624.49 ms | 820.89 ms | 1062.95 ms |
+| total time | 7675.59 ms | 10395.01 ms | 11631.52 ms | 11916.36 ms | 19925.94 ms | 20160.34 ms | 44803.71 ms | 46336.09 ms | 66020.98 ms | 67659.70 ms |
+| cpu time | 0:07.70 | 0:10.42 | 0:11.66 | 0:11.94 | 0:19.96 | 0:20.19 | 0:44.84 | 0:46.37 | 1:06.08 | 1:07.71 |
+|  |  |  | 🚀 | 🚀 | 🚀🚀 | 🚀🚀 | 🚀🚀🚀🚀 | 🚀🚀🚀🚀 | 🚀🚀🚀🚀🚀🚀 | 🚀🚀🚀🚀🚀🚀 |
+
 
 ## 参考资料
 - [Introducing Accelerated PyTorch Training on Mac](https://pytorch.org/blog/introducing-accelerated-pytorch-training-on-mac/)
 - [ARM NEON优化（一）——NEON简介及基本架构](https://zyddora.github.io/2016/02/28/neon_1/)
+- [Cannot build CoreML models](https://github.com/ggerganov/whisper.cpp/issues/898)
+- [openai-whisper](https://pypi.org/project/openai-whisper/)
+- [openai/whisper-large-v3](https://huggingface.co/openai/whisper-large-v3/)
+- [Sound to Script: Using OpenAI's Whisper Model and Whisper.cpp](https://mariochavez.io/desarrollo/2023/12/10/sound-to-script-openia-whisper/)
+- [Whisper: Nvidia RTX 4090 vs. M1 Pro with MLX](https://news.ycombinator.com/item?id=38628184)
