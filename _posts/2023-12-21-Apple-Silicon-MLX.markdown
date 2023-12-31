@@ -208,6 +208,8 @@ Traceback (most recent call last): File "/Users/junjian/GitHub/ml-explore/mlx-ex
 
 ## [Stable Diffusion](https://github.com/ml-explore/mlx-examples/tree/main/stable_diffusion)
 
+- [PromptHero](https://prompthero.com/)
+
 `模型`：Hugging Face Hub by Stability AI at [stabilitiai/stable-diffusion-2-1](https://huggingface.co/stabilityai/stable-diffusion-2-1)
 
 - 安装依赖包
