@@ -47,6 +47,8 @@ tags: [CodeGPT, IntelliJIDEA, GGUF, ChatGLM, DeepSeek-LLM, Llama, OpenAI, GPT]
 
 也可以自己到 `HuggingFace` 下载模型，然后放到 `~/.codegpt/models/gguf` 目录下。
 
+单击 `Start server` 启动服务。
+
 ![](/images/2024/IDEA-CodeGPT/Deepseek-Coder-7B.png)
 
 查看缓存的模型
