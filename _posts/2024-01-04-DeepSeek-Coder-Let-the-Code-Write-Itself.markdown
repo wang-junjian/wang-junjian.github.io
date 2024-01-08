@@ -21,8 +21,8 @@ tags: [DeepSeek-Coder, Leaderboard, CodeLLM]
 
 选择了两个通用基准来评估:
 
-- HumanEval - 用于测量从文档字符串合成程序的功能正确性的基准。它由 164 个 Python 编程问题组成。
-- MultiPL-E - 将 HumanEval 翻译为 18 种编程语言。
+- **HumanEval**: 用于测量从文档字符串合成程序的功能正确性的基准。它由 164 个 Python 编程问题组成。
+- **MultiPL-E**: 将 HumanEval 翻译为 18 种编程语言。
 
 下面显示了 OctoCoder vs Base HumanEval prompt 的示例，在[这里](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py)可以找到它。
 ![](/images/2024/DeepSeek/humaneval_instruct.png)
@@ -120,35 +120,7 @@ You are an AI programming assistant, utilizing the DeepSeek Coder model, develop
 这个命令会读取 [tokenizer_config.json](https://huggingface.co/deepseek-ai/deepseek-coder-6.7b-instruct/blob/main/tokenizer_config.json) 文件，提取 `chat_template` 字段的值，然后使用 `@text` 格式化字符串将 `\n`、`\t` 等转义字符转换为实际的换行符、制表符等，并在终端中显示结果。
 
 ```shell
-jq -r '.chat_template | @text' tokenizer_config.json                                                
-```
-```jinja
-{% if not add_generation_prompt is defined %}
-{% set add_generation_prompt = false %}
-{% endif %}
-{%- set ns = namespace(found=false) -%}
-{%- for message in messages -%}
-    {%- if message['role'] == 'system' -%}
-        {%- set ns.found = true -%}
-    {%- endif -%}
-{%- endfor -%}
-{{bos_token}}{%- if not ns.found -%}
-{{'You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer\n'}}
-{%- endif %}
-{%- for message in messages %}
-    {%- if message['role'] == 'system' %}
-{{ message['content'] }}
-    {%- else %}
-        {%- if message['role'] == 'user' %}
-{{'### Instruction:\n' + message['content'] + '\n'}}
-        {%- else %}
-{{'### Response:\n' + message['content'] + '\n<|EOT|>\n'}}
-        {%- endif %}
-    {%- endif %}
-{%- endfor %}
-{% if add_generation_prompt %}
-{{'### Response:'}}
-{% endif %}
+jq -r '.chat_template | @text' tokenizer_config.json
 ```
 
 ### 存储库级别代码完成
