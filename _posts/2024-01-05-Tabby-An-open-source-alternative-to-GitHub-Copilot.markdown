@@ -420,6 +420,7 @@ tabby scheduler --now
 - [GitHub Copilot](https://github.com/features/copilot)
 - [Tabnine](https://www.tabnine.com/)
 - [Tabby](https://github.com/TabbyML/tabby)
+- [10 Free GitHub Copilot Alternatives for VS Code 2023](https://bito.ai/blog/free-github-copilot-alternatives-for-vs-code/)
 
 ## Tabnine 代码助手功能
 ### 生成（Completion）
