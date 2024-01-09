@@ -170,5 +170,7 @@ Mon Jan  8 10:01:16 2024
 +---------------------------------------------------------------------------------------+
 ```
 
+## 参考资料
 - [在Linux上安装CUDA Toolkit](http://127.0.0.1:4000/gpu/2022/02/08/install-cuda-toolkit-on-linux.html)
 - [在Ubuntu上下载docker和nvidia-docker2离线安装包](http://127.0.0.1:4000/docker/2020/12/02/download-docker-and-nvidia-docker2-offline-installation-package-on-ubuntu.html)
+- [How to solve An NVIDIA kernel module nvidia appears to already be loaded in your kernel](https://junyonglee.me/ubuntu/An-nvidia-kernel-module/)
