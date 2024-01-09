@@ -67,7 +67,7 @@ python -m fastchat.serve.openai_api_server --port 8000
 
 ## 使用插件
 ### AI 聊天
-![](../images/2024/PyCharm-Tabby-CodeGPT/AI-Chat-CodeGPT.png)
+![](/images/2024/PyCharm-Tabby-CodeGPT/AI-Chat-CodeGPT.png)
 
 ### 代码生成
 ![](/images/2024/PyCharm-Tabby-CodeGPT/Code-Completions-Tabby.png)
