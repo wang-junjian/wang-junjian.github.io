@@ -1,10 +1,14 @@
 ---
 layout: post
-title:  "基于 PyCharm 使用 Tabby 和 CodeGPT  插件搭建免费的 GitHub Copilot"
+title:  "基于 PyCharm 使用 Tabby 和 CodeGPT 插件搭建免费的 GitHub Copilot"
 date:   2024-01-09 08:00:00 +0800
 categories: GitHubCopilot
 tags: [GitHubCopilot, PyCharm, Tabby, CodeGPT, FastChat, OpenAI, CodeLLM, LLM]
 ---
+
+## 使用的模型
+- 代码生成 `Tabby` 使用的是 `Deepseek Coder 6.7B` 模型。
+- AI 聊天 `CodeGPT` 使用的是 `ChatGLM3-6B` 模型。这个后面考虑使用 `Deepseek Coder 6.7B` 来替换。
 
 ## 部署服务器端
 ### Tabby 服务
