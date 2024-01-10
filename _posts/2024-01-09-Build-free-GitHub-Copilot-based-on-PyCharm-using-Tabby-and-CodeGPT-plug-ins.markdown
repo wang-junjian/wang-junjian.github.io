@@ -64,17 +64,19 @@ python -m fastchat.serve.openai_api_server --port 8000
 
 ## 配置插件
 ### Tabby
-![](/images/2024/PyCharm-Tabby-CodeGPT/Tabby-Settings.png)
 
 - EndPoint: `http://172.16.33.66:8080`
 
+![](/images/2024/PyCharm-Tabby-CodeGPT/Tabby-Settings.png)
+
 ### CodeGPT
-![](/images/2024/PyCharm-Tabby-CodeGPT/CodeGPT-Settings.png)
 
 - Service: `OpenAI Service`
 - API key: `NULL`
 - Model: `GPT-3.5(4k)`
 - Base host: `http://172.16.33.66:8000`
+
+![](/images/2024/PyCharm-Tabby-CodeGPT/CodeGPT-Settings.png)
 
 ## 使用插件
 ### AI 聊天
