@@ -21,9 +21,10 @@ tags: [GitHubCopilot, VSCode, Tabby, CodeGPT, OpenAI, CodeLLM, LLM]
 
 单击状态栏中的 `Tabby` 图标，打开 `Tabby` 配置页面。
 
-![](/images/2024/Tabby/VSCode-Tabby-Settings.png)
-
+#### 参数
 - EndPoint: `http://172.16.33.66:8080`
+
+![](/images/2024/Tabby/VSCode-Tabby-Settings.png)
 
 ## 使用 Tabby
 ### 代码生成
