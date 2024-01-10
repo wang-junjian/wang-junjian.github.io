@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "基于 VSCode 使用 Tabby 和 CodeGPT 插件搭建免费的 GitHub Copilot"
+title:  "基于 VSCode 使用 Tabby 插件搭建免费的 GitHub Copilot"
 date:   2024-01-10 10:00:00 +0800
 categories: GitHubCopilot
 tags: [GitHubCopilot, VSCode, Tabby, CodeGPT, OpenAI, CodeLLM, LLM]
