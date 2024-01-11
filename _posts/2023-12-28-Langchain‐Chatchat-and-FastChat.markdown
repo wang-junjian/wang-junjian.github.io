@@ -118,16 +118,14 @@ git config --global http.postBuffer 524288000
 ### 安装依赖（lite 版本）
 ```shell
 pip install -r requirements_lite.txt
-pip install markdownify
-pip install streamlit_modal
 ```
 
 ### 拷贝配置文件
 ```shell
-pythobn copy_config_example.py
+python copy_config_example.py
 ```
 
-### 修改配置文件 `model_config.py`
+### 修改配置文件 `configs/model_config.py`
 ```shell
 EMBEDDING_MODEL = "text-embedding-ada-002"
 LLM_MODELS = ["gpt-3.5-turbo"]
@@ -153,7 +151,7 @@ class EmbeddingsPool(CachePool):
         # ...
                 if model == "text-embedding-ada-002":
                     from langchain.embeddings.openai import OpenAIEmbeddings
-                    embeddings = OpenAIEmbeddings(model=model,                         # change
+                    embeddings = OpenAIEmbeddings(model=model,
                                                   base_url="http://127.0.0.1:8000/v1", # change
                                                   openai_api_key=get_model_path(model),
                                                   chunk_size=CHUNK_SIZE)
