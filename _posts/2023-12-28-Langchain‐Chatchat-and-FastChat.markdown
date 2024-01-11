@@ -86,8 +86,9 @@ python -m fastchat.serve.gradio_web_server_multi --port 8002
 git clone https://github.com/chatchat-space/Langchain-Chatchat
 ```
 
-#### fatal: fetch-pack: invalid index-pack output
+fatal: fetch-pack: invalid index-pack output
 
+```
 Cloning into 'Langchain-Chatchat'...
 remote: Enumerating objects: 8958, done.
 remote: Counting objects: 100% (270/270), done.
@@ -96,6 +97,7 @@ error: 6146 bytes of body are still expectediB | 367.00 KiB/s
 fetch-pack: unexpected disconnect while reading sideband packet
 fatal: early EOF
 fatal: fetch-pack: invalid index-pack output
+```
 
 这个错误可能是由于网络问题或者 Git 服务器问题导致的。当 Git 在克隆仓库时，它需要从服务器下载一些数据。如果在这个过程中连接被中断，或者服务器发送的数据有问题，就可能会出现这个错误。
 
@@ -106,11 +108,10 @@ fatal: fetch-pack: invalid index-pack output
 2. 尝试使用不同的 Git 服务器。如果你在克隆 GitHub 上的仓库时遇到问题，你可以尝试使用其他的 Git 服务器，例如 GitLab 或 Bitbucket。
 
 3. 尝试增加 Git 的 HTTP 缓冲区大小。你可以使用以下命令来增加缓冲区大小：
-   ```bash
-   git config --global http.postBuffer 524288000
-   ```
-
-   这个命令会将 HTTP 缓冲区大小设置为 500 MB。这可能会帮助解决由于大文件导致的问题。
+```bash
+git config --global http.postBuffer 524288000
+```
+- 这个命令会将 HTTP 缓冲区大小设置为 500 MB。这可能会帮助解决由于大文件导致的问题。
 
 4. 如果以上方法都不能解决问题，你可能需要联系你的网络管理员或者 Git 服务器的管理员，看看是否有其他的解决方法。
 
