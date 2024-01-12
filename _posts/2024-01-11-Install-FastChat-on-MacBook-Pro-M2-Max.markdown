@@ -127,5 +127,5 @@ curl http://127.0.0.1:8000/v1/completions \
         "prompt": "天空为什么是蓝色的？",
         "temperature": 0.7,
         "max_tokens": 1000
-    }'|jq
+    }'
 ```
