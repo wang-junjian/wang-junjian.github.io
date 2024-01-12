@@ -96,6 +96,7 @@ Tue Jan  9 21:48:15 2024
 
 ## 安装 Docker
 1. 设置 Docker 的 apt 源
+
 ```shell
 # Add Docker's official GPG key:
 sudo apt-get update
@@ -113,11 +114,13 @@ sudo apt-get update
 ```
 
 2. 安装 Docker 包
+
 ```shell
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
 3. 设置无需 sudo 权限就可以运行 docker 命令
+
 ```shell
 sudo usermod -aG docker wjunjian
 ```
