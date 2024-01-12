@@ -151,13 +151,24 @@ docker run -d --runtime nvidia --name tabby \
 - RUST_BACKTRACE=1: 打印简单信息
 - RUST_BACKTRACE=full：打印全部信息
 
-* --gpus all
+* --gpus '"device=3"'
 ```shell
 docker run -d --gpus '"device=3"' --name tabby -p 8080:8080 \
     -v `pwd`/.tabby:/data tabbyml/tabby \
     serve --model TabbyML/DeepseekCoder-6.7B \
     --device cuda
 ```
+
+* --gpus all
+```shell
+docker run -d --gpus all --name tabby -p 8080:8080 \
+    -v `pwd`/.tabby:/data tabbyml/tabby \
+    serve --model TabbyML/DeepseekCoder-6.7B \
+    --device cuda --parallelism 4
+```
+
+- --parallelism <PARALLELISM> 模型服务的并行度
+  - 在 `4` 卡的 `NVIDIA T4 16GB` 的服务器，`TabbyML/DeepseekCoder-1.3B` 模型最多可以 `12` 个并行度，`TabbyML/DeepseekCoder-6.7B` 模型最多可以 `4` 个并行度。
 
 ## 测试服务
 ```shell
