@@ -137,18 +137,27 @@ huggingface-cli download deepseek-ai/deepseek-coder-6.7b-base --local-dir deepse
 
 #### 运行 Tabby 服务（模型：DeepseekCoder-1.3B）
 
+* --runtime nvidia
 ```shell
-docker run -d --runtime nvidia --name tabby -p 8080:8080 \
-  -e TABBY_DOWNLOAD_HOST=modelscope.cn \
-  -e NVIDIA_VISIBLE_DEVICES=3 \
-  -e RUST_BACKTRACE=1 \
-  -v `pwd`/.tabby:/data tabbyml/tabby \
-  serve --model TabbyML/DeepseekCoder-6.7B  --device cuda
+docker run -d --runtime nvidia --name tabby \
+    -e NVIDIA_VISIBLE_DEVICES=3 \
+    -e RUST_BACKTRACE=1 \
+    -p 8080:8080 -v `pwd`/.tabby:/data tabbyml/tabby \
+    serve --model TabbyML/DeepseekCoder-6.7B \
+    --device cuda
 ```
 
 在 `Rust` 中，设置环境变量 `RUST_BACKTRACE` 来显式调用栈的信息：
 - RUST_BACKTRACE=1: 打印简单信息
 - RUST_BACKTRACE=full：打印全部信息
+
+* --gpus all
+```shell
+docker run -d --gpus '"device=3"' --name tabby -p 8080:8080 \
+    -v `pwd`/.tabby:/data tabbyml/tabby \
+    serve --model TabbyML/DeepseekCoder-6.7B \
+    --device cuda
+```
 
 ## 测试服务
 ```shell
