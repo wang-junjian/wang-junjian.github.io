@@ -7,7 +7,10 @@ tags: [LLM, CodeLLM]
 ---
 
 ## 大模型基础服务架构图
+![](/images/2024/LLMAIServices/llm-architecture.png)
 
+```html
+<center>
 <div class="mermaid">
 %%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart TB
@@ -51,9 +54,13 @@ flowchart TB
   openai-api-manager-->openai-api-server
   openai-api-server-->fastchat
 </div>
+```
 
 ## 代码大模型基础服务架构图
+![](/images/2024/LLMAIServices/codellm-architecture.png)
 
+```html
+<center>
 <div class="mermaid">
 %%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart TB
@@ -116,3 +123,4 @@ flowchart TB
   android-studio-codegpt-->fastchat
   jetbrains-ide-codegpt-->fastchat
 </div>
+```
