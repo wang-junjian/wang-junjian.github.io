@@ -67,7 +67,7 @@ mkdir THUDM
 ln -s /Users/junjian/HuggingFace/THUDM/chatglm3-6b THUDM/chatglm3-6b
 ```
 
-### 嵌入模型
+### Embedding LLM
 - bge
 ```shell
 mkdir BAAI
@@ -81,9 +81,41 @@ python -m fastchat.serve.controller
 ```
 
 ### Model Worker
+#### Embedding LLM
+- BAAI/bge-base-zh-v1.5
+```shell
+python -m fastchat.serve.model_worker \
+    --model-path BAAI/bge-base-zh-v1.5 --port 21100 \
+    --worker-address http://localhost:21100 \
+    --model-names bge-base-zh,text-embedding-ada-002 \
+    --device mps
+```
+- [BAAI/bge-base-zh-v1.5](https://huggingface.co/BAAI/bge-base-zh-v1.5)
+- [BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5)
+
+#### LLM
+- THUDM/chatglm3-6b
+```shell
+python -m fastchat.serve.model_worker \
+    --model-path THUDM/chatglm3-6b --port 21002 \
+    --worker-address http://localhost:21002 \
+    --model-names chatglm3-6b,gpt-3.5-turbo \
+    --device mps
+```
+
+- deepseek-ai/deepseek-llm-7b-chat
 ```shell
 python -m fastchat.serve.model_worker \
     --model-path deepseek-ai/deepseek-llm-7b-chat --port 21002 \
+    --worker-address http://localhost:21002 \
+    --device mps
+```
+
+#### Code LLM
+- deepseek-ai/deepseek-coder-1.3b-instruct
+```shell
+python -m fastchat.serve.model_worker \
+    --model-path deepseek-ai/deepseek-coder-1.3b-instruct --port 21002 \
     --worker-address http://localhost:21002 \
     --device mps
 ```
