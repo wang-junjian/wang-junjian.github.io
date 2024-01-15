@@ -11,6 +11,7 @@ tags: [Tabby, CodeLLM, GitHubCopilot, Tabnine, Leaderboard, DeepSeek-Coder, IDE,
 - [Tabby Docs](https://tabby.tabbyml.com/docs/getting-started/)
 - [Tabby Blog](https://tabby.tabbyml.com/blog/)
 - [GitHub: Tabby](https://github.com/TabbyML/tabby)
+- [There's An AI For That](https://theresanaiforthat.com/coding/)
 - [Run Curl Commands Online](https://reqbin.com/curl)
 
 ## [Coding LLMs Leaderboard](https://leaderboard.tabbyml.com/) (TabbyML Team)
@@ -110,7 +111,7 @@ tree ~/.tabby
 └── usage_anonymous_id
 ```
 
-### NVIDIA GPU
+### [Docker (CUDA)](https://tabby.tabbyml.com/docs/installation/docker)
 
 > cuda>=11.7
 
@@ -167,8 +168,12 @@ docker run -d --gpus all --name tabby -p 8080:8080 \
     --device cuda --parallelism 4
 ```
 
-- --parallelism <PARALLELISM> 模型服务的并行度
-  - 在 `4` 卡的 `NVIDIA T4 16GB` 的服务器，`TabbyML/DeepseekCoder-1.3B` 模型最多可以 `12` 个并行度，`TabbyML/DeepseekCoder-6.7B` 模型最多可以 `4` 个并行度。
+- --parallelism <PARALLELISM> 模型服务的并行度（`4` 张卡的 `NVIDIA T4 16GB` 的服务器）
+  - `TabbyML/DeepseekCoder-1.3B` 模型最多设置 `12` 个并行度
+  - `TabbyML/DeepseekCoder-6.7B` 模型最多设置 `4` 个并行度
+
+### [SkyPilot Serving](https://tabby.tabbyml.com/docs/installation/skypilot/)
+
 
 ## 测试服务
 ```shell
@@ -436,11 +441,43 @@ git_url = "file:///home/users/repository_a"
 tabby scheduler --now
 ```
 
+## [编程语言](https://tabby.tabbyml.com/docs/programming-languages)
+
+在 Tabby 中，我们需要为每种语言添加配置，以最大限度地提高性能和完成质量。
+
+目前，每种语言需要添加两个方面的支持。
+
+- 停用词（Stop Words）
+
+停止词决定了语言模型何时可以提前停止其解码步骤，从而导致更好的延迟并影响完成的质量。我们建议将所有顶级关键字添加为停用词的一部分。
+
+- 存储库上下文（Repository Context）
+
+我们将语言解析为块（chunks）并计算基于 Token 的索引以用于服务时间检索增强代码完成（Retrieval Augmented Code Completion）。在 Tabby 中，我们将这些存储库上下文定义为 [treesitter 查询](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax)，查询结果将被索引。
+
+有关添加上述支持的问题或拉取请求的实际示例，请查看 https://github.com/TabbyML/tabby/issues/553 作为参考。
+
+[Tree-sitter](https://tree-sitter.github.io/tree-sitter/) 是一个解析器生成工具和增量解析库。它可以为源文件构建一个具体的语法树，并在源文件被编辑时有效地更新语法树。
+
+### 支持的编程语言
+- Rust
+- Python
+- JavaScript
+- TypeScript
+- Golang
+- Ruby
+- Java
+- Kotlin
+- C/C++
+
 ## 代码助手
 - [GitHub Copilot](https://github.com/features/copilot)
 - [Tabnine](https://www.tabnine.com/)
 - [Tabby](https://github.com/TabbyML/tabby)
 - [10 Free GitHub Copilot Alternatives for VS Code 2023](https://bito.ai/blog/free-github-copilot-alternatives-for-vs-code/)
+- [Sourcegraph](https://github.com/sourcegraph/sourcegraph)
+- [Cody](https://github.com/sourcegraph/cody)
+- [FauxPilot](https://github.com/fauxpilot/fauxpilot)
 
 ## Tabnine 代码助手功能
 ### 生成（Completion）
