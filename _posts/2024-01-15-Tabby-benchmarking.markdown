@@ -84,17 +84,27 @@ sudo tcpdump -i any -A 'tcp port 8080 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp
 ### 总结
 #### TabbyML/DeepseekCoder-6.7B（并发 4）
 
-| 并发连接数 | 线程数 | 平均延迟 | 最大延迟 | 完成请求数 | 超时请求数 | 平均每秒请求数 |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | 1 | 3.75s | 3.81s | 16 | 0 | 0.27 |
-| 2 | 2 | 5.00s | 5.11s | 24 | 0 | 0.40 |
-| 3 | 3 | 5.80s | 5.99s | 30 | 0 | 0.50 |
-| 4 | 4 | 5.43s | 5.62s | 43 | 0 | 0.72 |
-| 5 | 5 | 6.12s | 6.30s | 40 | 9 | 0.67 |
-| 6 | 6 | 7.42s | 9.14s | 41 | 9 | 0.68 |
-| 8 | 8 | 7.29s | 9.85s | 40 | 34 | 0.67 |
+|       | 并发连接数 | 线程数 | 平均延迟 | 最大延迟 | 完成请求数 | 超时请求数 | 平均每秒请求数 |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+|       | 1 | 1 | 3.75s | 3.81s | 16 | 0 | 0.27 |
+|       | 2 | 2 | 5.00s | 5.11s | 24 | 0 | 0.40 |
+|       | 3 | 3 | 5.80s | 5.99s | 30 | 0 | 0.50 |
+| 👍    | 4 | 4 | 5.43s | 5.62s | 43 | 0 | 0.72 |
+|       | 5 | 5 | 6.12s | 6.30s | 40 | 9 | 0.67 |
+|       | 6 | 6 | 7.42s | 9.14s | 41 | 9 | 0.68 |
+|       | 8 | 8 | 7.29s | 9.85s | 40 | 34 | 0.67 |
 
 #### TabbyML/DeepseekCoder-1.3B（并发 12）
+
+|       | 并发连接数 | 线程数 | 平均延迟 | 最大延迟 | 完成请求数 | 超时请求数 | 平均每秒请求数 |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+|       | 1 | 1 | 1.03s | 1.11s | 57 | 0 | 0.95 |
+|       | 4 | 4 | 1.46s | 1.79s | 161 | 0 | 2.68 |
+|       | 8 | 8 | 1.95s | 2.18s | 241 | 0 | 4.02 |
+| 👍    | 12 | 12 | 2.79s | 3.06s | 251 | 0 | 4.18 |
+|       | 16 | 16 | 4.19s | 6.40s | 221 | 0 | 3.68 |
+|       | 20 | 20 | 6.43s | 8.16s | 177 | 0 | 2.95 |
+|       | 24 | 24 | 9.01s | 10.00s | 143 | 42 | 2.38 |
 
 ### 测试数据
 #### TabbyML/DeepseekCoder-6.7B
@@ -242,3 +252,143 @@ Transfer/sec:     382.82B
 ```
 
 #### TabbyML/DeepseekCoder-1.3B
+- 1 个并发连接，1 个线程，持续 1 分钟，超时时间 10 秒
+```bash
+wrk -c1 -t1 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8080/v1/completions
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.03s    12.40ms   1.11s    89.47%
+    Req/Sec     0.04      0.19     1.00     96.49%
+  Latency Distribution
+     50%    1.03s 
+     75%    1.04s 
+     90%    1.04s 
+     99%    1.11s 
+  57 requests in 1.00m, 32.40KB read
+Requests/sec:      0.95
+Transfer/sec:     552.85B
+```
+
+- 4 个并发连接，4 个线程，持续 1 分钟，超时时间 10 秒
+```bash
+wrk -c4 -t4 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8080/v1/completions
+  4 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.46s    93.34ms   1.79s    85.09%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%    1.40s 
+     75%    1.55s 
+     90%    1.56s 
+     99%    1.79s 
+  161 requests in 1.00m, 92.53KB read
+Requests/sec:      2.68
+Transfer/sec:      1.54KB
+```
+
+- 8 个并发连接，8 个线程，持续 1 分钟，超时时间 10 秒
+```bash
+wrk -c8 -t8 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8080/v1/completions
+  8 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.95s   115.96ms   2.18s    59.34%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%    1.98s 
+     75%    2.05s 
+     90%    2.09s 
+     99%    2.16s 
+  241 requests in 1.00m, 138.75KB read
+Requests/sec:      4.02
+Transfer/sec:      2.31KB
+```
+
+- 12 个并发连接，12 个线程，持续 1 分钟，超时时间 10 秒
+```bash
+wrk -c12 -t12 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8080/v1/completions
+  12 threads and 12 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.79s   173.15ms   3.06s    58.57%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%    2.78s 
+     75%    2.95s 
+     90%    3.01s 
+     99%    3.05s 
+  251 requests in 1.00m, 144.62KB read
+Requests/sec:      4.18
+Transfer/sec:      2.41KB
+```
+
+- 16 个并发连接，16 个线程，持续 1 分钟，超时时间 10 秒
+```bash
+wrk -c16 -t16 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8080/v1/completions
+  16 threads and 16 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.19s   874.57ms   6.40s    61.99%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%    3.82s 
+     75%    5.06s 
+     90%    5.49s 
+     99%    6.04s 
+  221 requests in 1.00m, 127.01KB read
+Requests/sec:      3.68
+Transfer/sec:      2.11KB
+```
+
+- 20 个并发连接，20 个线程，持续 1 分钟，超时时间 10 秒
+```bash
+wrk -c20 -t20 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8080/v1/completions
+  20 threads and 20 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.43s     1.25s    8.16s    61.58%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%    6.98s 
+     75%    7.38s 
+     90%    7.72s 
+     99%    8.09s 
+  177 requests in 1.00m, 102.04KB read
+Requests/sec:      2.95
+Transfer/sec:      1.70KB
+```
+
+- 24 个并发连接，24 个线程，持续 1 分钟，超时时间 10 秒
+```bash
+wrk -c24 -t24 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8080/v1/completions
+  24 threads and 24 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.01s     1.39s   10.00s    88.12%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%    9.52s 
+     75%    9.74s 
+     90%    9.82s 
+     99%   10.00s 
+  143 requests in 1.00m, 82.42KB read
+  Socket errors: connect 0, read 0, write 0, timeout 42
+Requests/sec:      2.38
+Transfer/sec:      1.37KB
+```
