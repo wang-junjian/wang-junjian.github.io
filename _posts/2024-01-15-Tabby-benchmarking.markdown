@@ -19,15 +19,24 @@ cp wrk /usr/local/bin/
 ```
 
 ## Tabby Server
-### 服务器：`NVIDIA T4 16GB` X `4`
-### 模型：`TabbyML/DeepseekCoder-6.7B`
+### 服务器：NVIDIA T4 16GB X 4
 ### 部署
+- 模型：TabbyML/DeepseekCoder-6.7B
 ```bash
 docker run -d --gpus all -p 8080:8080 \
   -v /data/zhw/tabby/data:/data \
   tabbyml/tabby:latest \
   serve --model TabbyML/DeepseekCoder-6.7B \
   --device cuda --parallelism 4
+```
+
+- 模型：TabbyML/DeepseekCoder-1.3B
+```bash
+docker run -d --gpus all -p 8080:8080 \
+  -v /data/zhw/tabby/data:/data \
+  tabbyml/tabby:latest \
+  serve --model TabbyML/DeepseekCoder-1.3B \
+  --device cuda --parallelism 12
 ```
 
 ## curl 测试
@@ -52,8 +61,8 @@ curl http://127.0.0.1:8080/v1/completions   -H "Content-Type: application/json" 
 ```
 
 ## 准备
-### 测试脚本
-```bash
+### 编辑测试脚本 post_json.lua
+```lua
 wrk.method = "POST"
 wrk.body   = "{\"language\": \"python\", \"segments\": {\"prefix\": \"#Implement a quick sort\\n  def \"}}"
 wrk.headers["Content-Type"] = "application/json"
@@ -68,7 +77,28 @@ sudo tcpdump -i any -A 'tcp port 8080 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp
 
 ## 基准测试
 
-### 1 个并发连接，1 个线程，持续 1 分钟，超时时间 10 秒
+`基准测试工具`：wrk
+`持续时间`：1 分钟
+`超时时间`：10 秒
+
+### 总结
+#### TabbyML/DeepseekCoder-6.7B（并发 4）
+
+| 并发连接数 | 线程数 | 平均延迟 | 最大延迟 | 完成请求数 | 超时请求数 | 平均每秒请求数 |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | 1 | 3.75s | 3.81s | 16 | 0 | 0.27 |
+| 2 | 2 | 5.00s | 5.11s | 24 | 0 | 0.40 |
+| 3 | 3 | 5.80s | 5.99s | 30 | 0 | 0.50 |
+| 4 | 4 | 5.43s | 5.62s | 43 | 0 | 0.72 |
+| 5 | 5 | 6.12s | 6.30s | 40 | 9 | 0.67 |
+| 6 | 6 | 7.42s | 9.14s | 41 | 9 | 0.68 |
+| 8 | 8 | 7.29s | 9.85s | 40 | 34 | 0.67 |
+
+#### TabbyML/DeepseekCoder-1.3B（并发 12）
+
+### 测试数据
+#### TabbyML/DeepseekCoder-6.7B
+- 1 个并发连接，1 个线程，持续 1 分钟，超时时间 10 秒
 ```bash
 wrk -c1 -t1 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
 ```
@@ -88,7 +118,7 @@ Requests/sec:      0.27
 Transfer/sec:     154.21B
 ```
 
-### 2 个并发连接，2 个线程，持续 1 分钟，超时时间 10 秒
+- 2 个并发连接，2 个线程，持续 1 分钟，超时时间 10 秒
 ```bash
 wrk -c2 -t2 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
 ```
@@ -108,7 +138,7 @@ Requests/sec:      0.40
 Transfer/sec:     231.57B
 ```
 
-### 3 个并发连接，3 个线程，持续 1 分钟，超时时间 10 秒
+- 3 个并发连接，3 个线程，持续 1 分钟，超时时间 10 秒
 ```bash
 wrk -c3 -t3 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
 ```
@@ -128,7 +158,7 @@ Requests/sec:      0.50
 Transfer/sec:     289.48B
 ```
 
-### 👍 4 个并发连接，4 个线程，持续 1 分钟，超时时间 10 秒
+- 4 个并发连接，4 个线程，持续 1 分钟，超时时间 10 秒
 ```bash
 wrk -c4 -t4 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
 ```
@@ -148,7 +178,7 @@ Requests/sec:      0.72
 Transfer/sec:     414.28B
 ```
 
-### 5 个并发连接，5 个线程，持续 1 分钟，超时时间 10 秒
+- 5 个并发连接，5 个线程，持续 1 分钟，超时时间 10 秒
 ```bash
 wrk -c5 -t5 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
 ```
@@ -169,7 +199,7 @@ Requests/sec:      0.67
 Transfer/sec:     385.36B
 ```
 
-### 6 个并发连接，6 个线程，持续 1 分钟，超时时间 10 秒
+- 6 个并发连接，6 个线程，持续 1 分钟，超时时间 10 秒
 ```bash
 wrk -c6 -t6 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
 ```
@@ -190,7 +220,7 @@ Requests/sec:      0.68
 Transfer/sec:     390.83B
 ```
 
-### 8 个并发连接，8 个线程，持续 1 分钟，超时时间 10 秒
+- 8 个并发连接，8 个线程，持续 1 分钟，超时时间 10 秒
 ```bash
 wrk -c8 -t8 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8080/v1/completions
 ```
@@ -210,3 +240,5 @@ Running 1m test @ http://127.0.0.1:8080/v1/completions
 Requests/sec:      0.67
 Transfer/sec:     382.82B
 ```
+
+#### TabbyML/DeepseekCoder-1.3B
