@@ -97,9 +97,9 @@ sudo tcpdump -i any -A 'tcp port 8080 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp
 
 ## 基准测试
 
-`基准测试工具`：wrk
-`持续时间`：1 分钟
-`超时时间`：10 秒
+- `基准测试工具`：wrk
+- `持续时间`：1 分钟
+- `超时时间`：10 秒
 
 ### 总结
 #### TabbyML/DeepseekCoder-6.7B（并发 4）
