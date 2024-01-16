@@ -60,6 +60,26 @@ curl http://127.0.0.1:8080/v1/completions   -H "Content-Type: application/json" 
 }
 ```
 
+### [Token 计算](https://platform.openai.com/tokenizer)
+
+### 输入 12 个 Tokens
+```py
+#实现一个快速排序
+  def 
+```
+
+### 输出 74 个 Tokens
+```py
+quick_sort(arry):
+    if len(arr) <= 1:
+      return arr
+    pivot = arr[0]
+    left = [x for x in arr[1:] if x <= pivot]
+    right = [x for x in arr[1:] if x > pivot]
+    return quick_sort(left) + [pivot] + quick_sort(right)
+```
+
+
 ## 准备
 ### 编辑测试脚本 post_json.lua
 ```lua
