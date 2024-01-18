@@ -92,7 +92,7 @@ wrk.headers["Content-Type"] = "application/json"
 
 ### 监控 8080 端口
 ```bash
-sudo tcpdump -i any -A 'tcp port 8080 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'
+sudo tcpdump -i any -A 'tcp port 8080 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)' -w -
 ```
 
 ## 基准测试
