@@ -6,7 +6,7 @@ categories: LLM Benchmark
 tags: [LLM, Benchmark, wrk, Qwen]
 ---
 
-## 基准测试脚本
+## 速度测试脚本
 ### 安装依赖
 
 ```shell
