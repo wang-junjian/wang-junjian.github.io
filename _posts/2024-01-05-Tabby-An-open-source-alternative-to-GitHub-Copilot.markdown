@@ -136,13 +136,13 @@ huggingface-cli download deepseek-ai/deepseek-coder-6.7b-base
 huggingface-cli download deepseek-ai/deepseek-coder-6.7b-base --local-dir deepseek-ai/deepseek-coder-6.7b-base --local-dir-use-symlinks False
 ```
 
-#### 运行 Tabby 服务（模型：DeepseekCoder-1.3B）
+#### 运行 Tabby 服务（模型：DeepseekCoder-1.3B / DeepseekCoder-6.7B）
 
 * --runtime nvidia
 ```shell
 docker run -d --runtime nvidia --name tabby \
     -e NVIDIA_VISIBLE_DEVICES=3 \
-    -e RUST_BACKTRACE=1 \
+    -e RUST_BACKTRACE=full \
     -p 8080:8080 -v `pwd`/.tabby:/data tabbyml/tabby \
     serve --model TabbyML/DeepseekCoder-6.7B \
     --device cuda
@@ -155,9 +155,20 @@ docker run -d --runtime nvidia --name tabby \
 * --gpus '"device=3"'
 ```shell
 docker run -d --gpus '"device=3"' --name tabby -p 8080:8080 \
+    -e RUST_BACKTRACE=full \
     -v `pwd`/.tabby:/data tabbyml/tabby \
     serve --model TabbyML/DeepseekCoder-6.7B \
     --device cuda
+```
+
+在一张卡上部署模型 `DeepseekCoder-1.3B`，并设置并行度为 `3`：
+
+```shell
+docker run -d --gpus '"device=3"' --name tabby -p 8080:8080 \
+    -e RUST_BACKTRACE=full \
+    -v `pwd`/.tabby:/data tabbyml/tabby \
+    serve --model TabbyML/DeepseekCoder-1.3B \
+    --device cuda --parallelism 3
 ```
 
 * --gpus all
