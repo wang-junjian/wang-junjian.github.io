@@ -133,7 +133,7 @@ python -m fastchat.serve.model_worker \
                         Conversation prompt template.
   --trust_remote_code   Trust remote code (e.g., from HuggingFace) whendownloading the model and tokenizer.
   --gpu_memory_utilization GPU_MEMORY_UTILIZATION
-                        The ratio (between 0 and 1) of GPU memory toreserve for the model weights, activations, and KV cache. Highervalues will increase the KV cache size and thus improve the model'sthroughput.
+                        The ratio (between 0 and 1) of GPU memory toreserve for the model weights, activations, and KV cache. Highervalues will increase the KV cache size and thus improve the model sthroughput.
                         However, if the value is too high, it may cause out-of-memory (OOM) errors.
   --model MODEL         name or path of the huggingface model to use
   --tokenizer TOKENIZER
@@ -172,7 +172,7 @@ python -m fastchat.serve.model_worker \
   --disable-log-requests
                         disable logging requests
   --max-log-len MAX_LOG_LEN
-                        max number of prompt characters or prompt ID numbers being printed in log. Default: unlimited.```
+                        max number of prompt characters or prompt ID numbers being printed in log. Default: unlimited.
 ```
 
 #### Qwen/Qwen-1_8B-Chat (1 GPU)
@@ -181,11 +181,12 @@ python -m fastchat.serve.vllm_worker \
   --model-path Qwen/Qwen-1_8B-Chat \
   --model-names gpt-3.5-turbo
 ```
-- --tensor-parallel-size 设置使用的 GPU 数量（默认为 1）
+- --tensor-parallel-size 设置使用的 GPU 数量`（默认为 1）`
 - --dtype bfloat16
-  - ValueError: Bfloat16 is only supported on GPUs with compute capability of at least 8.0. Your Tesla T4 GPU has compute capability 7.5. 使用 float16 代替。
+  - ValueError: Bfloat16 is only supported on GPUs with compute capability of at least 8.0. Your Tesla T4 GPU has compute capability 7.5. `使用 float16 代替。`
   - `torch.cuda.get_device_capability()` 返回 `(7, 5)`
-- [如果不支持 bfloat16，则降至 float16](https://github.com/vllm-project/vllm/pull/1901)
+
+  [如果不支持 bfloat16，则降至 float16](https://github.com/vllm-project/vllm/pull/1901)
 
 #### Qwen/Qwen-1_8B-Chat (2 GPU)
 ```shell
