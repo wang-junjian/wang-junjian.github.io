@@ -11,6 +11,7 @@ tags: [NVIDIA-Driver, NVIDIA, CUDA, GPU, lsof, apt, dpkg, libc6-dev, build-essen
 服务器是 NVIDIA Tesla T4，系统是 Ubuntu 20.04，从 Kubernetes 集群中分离出来的，因 Tabby 请求 CUDA >= 11.7，需要重新安装新版本的驱动。
 
 ## [下载 NVIDIA Driver](https://www.nvidia.com/download/index.aspx)
+- [CUDA Toolkit Archive](https://developer.nvidia.com/cuda-toolkit-archive)
 
 ## [安装 NVIDIA Driver](https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html)
 ```shell
