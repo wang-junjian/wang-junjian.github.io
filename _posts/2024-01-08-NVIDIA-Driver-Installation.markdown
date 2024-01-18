@@ -170,6 +170,74 @@ Mon Jan  8 10:01:16 2024
 +---------------------------------------------------------------------------------------+
 ```
 
+## FAQ
+### 每张显卡都运行进程 `/usr/lib/xorg/Xorg`
+```shell
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.146.02             Driver Version: 535.146.02   CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   35C    P8               9W /  70W |     11MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   36C    P8               9W /  70W |     11MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   2  Tesla T4                       Off | 00000000:8E:00.0 Off |                    0 |
+| N/A   34C    P8              10W /  70W |     11MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   3  Tesla T4                       Off | 00000000:92:00.0 Off |                    0 |
+| N/A   34C    P8               9W /  70W |     11MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A      1875      G   /usr/lib/xorg/Xorg                            4MiB |
+|    0   N/A  N/A      3189      G   /usr/lib/xorg/Xorg                            4MiB |
+|    1   N/A  N/A      1875      G   /usr/lib/xorg/Xorg                            4MiB |
+|    1   N/A  N/A      3189      G   /usr/lib/xorg/Xorg                            4MiB |
+|    2   N/A  N/A      1875      G   /usr/lib/xorg/Xorg                            4MiB |
+|    2   N/A  N/A      3189      G   /usr/lib/xorg/Xorg                            4MiB |
+|    3   N/A  N/A      1875      G   /usr/lib/xorg/Xorg                            4MiB |
+|    3   N/A  N/A      3189      G   /usr/lib/xorg/Xorg                            4MiB |
++---------------------------------------------------------------------------------------+
+```
+
+`/usr/lib/xorg/Xorg` 是 X Window 系统的核心组件，它负责与硬件交互并提供图形环境。如果你正在使用图形界面，那么停止这个进程可能会导致你的图形界面停止工作。
+
+使用以下的命令来查看你的系统正在使用哪个显示管理器：
+
+```shell
+cat /etc/X11/default-display-manager
+```
+```
+/usr/sbin/gdm3
+```
+
+这个命令会输出你的默认显示管理器的完整路径。然后，你可以使用相应的命令来停止你的显示管理器。你可以使用以下的命令来停止它：
+
+```shell
+sudo service gdm stop
+```
+
+```shell
+sudo service lightdm stop
+```
+
+这个命令会停止 lightdm 服务，lightdm 是 Ubuntu 默认的显示管理器，它负责启动 Xorg 进程。请注意，这个命令会立即停止你的图形界面，你需要保存所有的工作并关闭所有的程序。
+
+如果你的系统使用的是其他的显示管理器，例如 gdm 或 kdm，你需要将 lightdm 替换为你的显示管理器的名称。
+
 ## 参考资料
 - [在Linux上安装CUDA Toolkit](http://www.wangjunjian.com/gpu/2022/02/08/install-cuda-toolkit-on-linux.html)
 - [在Ubuntu上下载docker和nvidia-docker2离线安装包](http://www.wangjunjian.com/docker/2020/12/02/download-docker-and-nvidia-docker2-offline-installation-package-on-ubuntu.html)
