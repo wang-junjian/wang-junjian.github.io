@@ -2,7 +2,7 @@
 layout: post
 title:  "在 GeForce GTX 1060 上部署 Tabby - AI编码助手"
 date:   2024-01-10 12:00:00 +0800
-categories: Tabby, NVIDIAContainerToolkit
+categories: Tabby NVIDIAContainerToolkit
 tags: [Tabby, GitHubCopilot, CodeLLM, GeForce, GTX1060, GPU, NVIDIA-Driver, NVIDIAContainerToolkit, Docker, Ubuntu]
 ---
 
@@ -95,7 +95,8 @@ Tue Jan  9 21:48:15 2024
 
 
 ## 安装 Docker
-1. 设置 Docker 的 apt 源
+- 设置 Docker 的 apt 源
+
 ```shell
 # Add Docker's official GPG key:
 sudo apt-get update
@@ -112,12 +113,14 @@ echo \
 sudo apt-get update
 ```
 
-2. 安装 Docker 包
+- 安装 Docker 包
+
 ```shell
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-3. 设置无需 sudo 权限就可以运行 docker 命令
+- 设置无需 sudo 权限就可以运行 docker 命令
+
 ```shell
 sudo usermod -aG docker wjunjian
 ```
@@ -134,13 +137,13 @@ sudo usermod -aG docker wjunjian
 
 
 ## 卸载 Docker
-1. Uninstall the Docker Engine, CLI, containerd, and Docker Compose packages:
+- Uninstall the Docker Engine, CLI, containerd, and Docker Compose packages:
 
 ```shell
 sudo apt-get purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
 ```
 
-2. Images, containers, volumes, or custom configuration files on your host aren't automatically removed. To delete all images, containers, and volumes:
+- Images, containers, volumes, or custom configuration files on your host aren't automatically removed. To delete all images, containers, and volumes:
 
 ```shell
 sudo rm -rf /var/lib/docker
