@@ -2,8 +2,8 @@
 layout: post
 title:  "在 GeForce GTX 1060 上部署 Tabby - AI编码助手"
 date:   2024-01-10 12:00:00 +0800
-categories: Tabby
-tags: [Tabby, GitHubCopilot, CodeLLM, GeForce, GTX1060, GPU, NVIDIA-Driver, Docker, Ubuntu]
+categories: Tabby, NVIDIAContainerToolkit
+tags: [Tabby, GitHubCopilot, CodeLLM, GeForce, GTX1060, GPU, NVIDIA-Driver, NVIDIAContainerToolkit, Docker, Ubuntu]
 ---
 
 ## 我的 GPU：GP106 [GeForce GTX 1060 6GB]
@@ -96,7 +96,6 @@ Tue Jan  9 21:48:15 2024
 
 ## 安装 Docker
 1. 设置 Docker 的 apt 源
-
 ```shell
 # Add Docker's official GPG key:
 sudo apt-get update
@@ -114,13 +113,11 @@ sudo apt-get update
 ```
 
 2. 安装 Docker 包
-
 ```shell
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
 3. 设置无需 sudo 权限就可以运行 docker 命令
-
 ```shell
 sudo usermod -aG docker wjunjian
 ```
