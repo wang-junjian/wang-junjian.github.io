@@ -2,7 +2,7 @@
 layout: post
 title:  "Tabby - GitHub Copilot 的开源替代解决方案"
 date:   2024-01-05 10:00:00 +0800
-categories: Tabby
+categories: Tabby GitHubCopilot
 tags: [Tabby, CodeLLM, GitHubCopilot, Tabnine, Leaderboard, DeepSeek-Coder, IDE, IntelliJIDEA, VSCode, MPS, CUDA, NVIDIA-Driver, curl]
 ---
 
