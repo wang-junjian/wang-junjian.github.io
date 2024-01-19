@@ -2,7 +2,7 @@
 layout: post
 title:  "CodeGPT: 智能辅助编程"
 date:   2024-01-03 08:00:00 +0800
-categories: CodeGPT
+categories: CodeGPT IntelliJIDEA
 tags: [CodeGPT, IntelliJIDEA, GGUF, ChatGLM, DeepSeek-LLM, Llama, OpenAI, GPT]
 ---
 
