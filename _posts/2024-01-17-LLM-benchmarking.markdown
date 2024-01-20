@@ -93,6 +93,22 @@ python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力�
 - [Qwen (通义千问)]({% post_url 2023-12-25-Qwen %})
 - [在 MacBook Pro M2 Max 上安装 FastChat]({% post_url 2024-01-11-Install-FastChat-on-MacBook-Pro-M2-Max %})
 
+### 安装 [FlashAttention](https://github.com/Dao-AILab/flash-attention)
+FlashAttention-2 currently supports:
+
+- Ampere, Ada, or Hopper GPUs (e.g., A100, RTX 3090, RTX 4090, H100). Support for Turing GPUs (T4, RTX 2080) is coming soon, please use FlashAttention 1.x for Turing GPUs for now.
+- Datatype fp16 and bf16 (bf16 requires Ampere, Ada, or Hopper GPUs).
+- All head dimensions up to 256. Head dim > 192 backward requires A100/A800 or H100/H800.
+
+`Turing GPU T4` 不支持，需要使用 FlashAttention 1.x，否则会报错❌：
+
+```json
+data: {
+  "text": "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**\n\n(FlashAttention only supports Ampere GPUs or newer.)", 
+  "error_code": 50001
+}
+```
+
 ### 安装 [vLLM](https://github.com/vllm-project/vllm)
 ```shell
 pip install vllm -i https://mirrors.aliyun.com/pypi/simple/
@@ -210,7 +226,7 @@ python -m fastchat.serve.vllm_worker \
 curl -s http://127.0.0.1:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen-1_8B-Chat",
+    "model": "gpt-3.5-turbo",
     "prompt": "你好",
     "temperature": 0.7,
     "max_tokens": 4096
@@ -221,7 +237,7 @@ curl -s http://127.0.0.1:8000/v1/completions \
   "id": "cmpl-3uCLgVzNUB5sSn9VAdYjbh",
   "object": "text_completion",
   "created": 1705475135,
-  "model": "Qwen-1_8B-Chat",
+  "model": "gpt-3.5-turbo",
   "choices": [
     {
       "index": 0,
