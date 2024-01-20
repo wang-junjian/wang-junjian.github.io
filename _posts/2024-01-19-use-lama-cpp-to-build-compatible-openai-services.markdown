@@ -241,14 +241,14 @@ python -m llama_cpp.server \
 python -m llama_cpp.server \
     --model /data/models/gguf/deepseek-llm-7b-chat.Q5_K_M.gguf \
     --model_alias gpt-3.5-turbo \
-    --n_gpu_layers 15000 \
+    --n_gpu_layers -1 \
     --host 0.0.0.0 --port 8080 \
     --chat_format chatml
 ```
 
 可以使用 `CUDA_VISIBLE_DEVICES` 环境变量指定 GPU。
 
-测试的过程中，遇到了以下错误：
+我在 macOS 上量化的模型，然后在 Linux 上运行出现以下错误（GitHub Copilot: 可能是因为 macOS 和 Linux 的浮点数计算精度不一致导致的。）
 
 ```shell
 Llama.generate: prefix-match hit
@@ -258,6 +258,8 @@ CUDA error: invalid argument
 GGML_ASSERT: /tmp/pip-install-ulfkej7c/llama-cpp-python_7f8116c5437340c7b46a6e712c01894b/vendor/llama.cpp/ggml-cuda.cu:231: !"CUDA error"
 Aborted (core dumped)
 ```
+
+我重新在 Linux 上安装了 llama.cpp，量化模型，然后运行成功了。
 
 - [warning: failed to mlock NNN-byte buffer (after previously locking MMM bytes)](https://github.com/abetlen/llama-cpp-python/issues/708)
 
@@ -429,6 +431,191 @@ curl http://localhost:8080/v1/embeddings \
     "input": "Embeddings are a way to represent words as vectors. The vectors are chosen in such a way that they are similar to other words that appear in similar contexts."
   }'|jq
 ```
+
+
+## 速度测试
+- [LLM 的基准测试]({% post_url 2024-01-17-LLM-benchmarking %})
+- [测试脚本](https://wangjunjian.com/llm/benchmark/2024/01/17/LLM-benchmarking.html#%E6%B5%8B%E8%AF%95%E8%84%9A%E6%9C%AC)
+
+### 1 张 GPU
+
+部署服务
+
+```shell
+CUDA_VISIBLE_DEVICES=0 python -m llama_cpp.server \
+    --model qwen-7b-chat.Q5_K_M.gguf \
+    --model_alias gpt-3.5-turbo \
+    --n_gpu_layers -1 \
+    --host 0.0.0.0 --port 8080 \
+    --chat_format chatml
+```
+
+GPU 使用情况
+
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   48C    P0              27W /  70W |   6478MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+```
+
+测试结果
+
+```shell
+🚀 每秒生成 Tokens: 21.06 	 合计 Tokens （418） = 输入 Tokens（20） + 输出 Tokens（398）
+🚀 每秒生成字符   : 40.33 	 合计生成字符（762）
+⏱️ 生成耗时: 18.90 秒
+```
+
+### 2 张 GPU
+
+部署服务
+
+```shell
+CUDA_VISIBLE_DEVICES=0,1 python -m llama_cpp.server \
+    --model qwen-7b-chat.Q5_K_M.gguf \
+    --model_alias gpt-3.5-turbo \
+    --n_gpu_layers -1 \
+    --host 0.0.0.0 --port 8080 \
+    --chat_format chatml
+```
+
+GPU 使用情况
+
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   55C    P0              28W /  70W |   3222MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   41C    P0              27W /  70W |   3522MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+```
+
+测试结果
+
+```shell
+🚀 每秒生成 Tokens: 18.47 	 合计 Tokens （526） = 输入 Tokens（20） + 输出 Tokens（506）
+🚀 每秒生成字符   : 33.79 	 合计生成字符（926）
+```
+
+### 3 张 GPU
+
+部署服务
+
+```shell
+CUDA_VISIBLE_DEVICES=0,1,3 python -m llama_cpp.server \
+    --model qwen-7b-chat.Q5_K_M.gguf \
+    --model_alias gpt-3.5-turbo \
+    --n_gpu_layers -1 \
+    --host 0.0.0.0 --port 8080 \
+    --chat_format chatml
+```
+
+GPU 使用情况
+
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   55C    P0              28W /  70W |   2186MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   54C    P0              28W /  70W |   2174MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   2  Tesla T4                       Off | 00000000:8E:00.0 Off |                    0 |
+| N/A   43C    P0              27W /  70W |   2658MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+```
+
+测试结果
+
+```shell
+🚀 每秒生成 Tokens: 15.50 	 合计 Tokens （1020） = 输入 Tokens（20） + 输出 Tokens（1000）
+🚀 每秒生成字符   : 29.94 	 合计生成字符（1932）
+⏱️ 生成耗时: 64.54 秒
+```
+
+### 4 张 GPU
+
+部署服务
+
+```shell
+python -m llama_cpp.server \
+    --model qwen-7b-chat.Q5_K_M.gguf \
+    --model_alias gpt-3.5-turbo \
+    --n_gpu_layers -1 \
+    --host 0.0.0.0 --port 8080 \
+    --chat_format chatml
+```
+
+GPU 使用情况
+
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   53C    P0              28W /  70W |   1838MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   53C    P0              28W /  70W |   1656MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   2  Tesla T4                       Off | 00000000:8E:00.0 Off |                    0 |
+| N/A   49C    P0              28W /  70W |   1656MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   3  Tesla T4                       Off | 00000000:92:00.0 Off |                    0 |
+| N/A   34C    P0              26W /  70W |   2138MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+```
+
+测试结果
+
+```shell
+🚀 每秒生成 Tokens: 15.57 	 合计 Tokens （655） = 输入 Tokens（20） + 输出 Tokens（635）
+🚀 每秒生成字符   : 30.53 	 合计生成字符（1245）
+⏱️ 生成耗时: 40.77 秒
+```
+
+### 总结
+
+| 显卡数量 | 显存 (MiB) | 每秒生成 Tokens | 每秒生成字符 |
+| :---: | ---: | ---: | ---: |
+| 1 | 6478 | 21.06 | 40.33 |
+| 2 | 6744 | 18.47 | 33.79 |
+| 3 | 7018 | 15.50 | 29.94 |
+| 4 | 7288 | 15.57 | 30.53 |
 
 
 [llama.cpp]: https://github.com/ggerganov/llama.cpp
