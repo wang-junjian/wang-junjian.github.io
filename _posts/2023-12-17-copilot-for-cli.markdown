@@ -2,8 +2,8 @@
 layout: post
 title:  "Copilot for CLI"
 date:   2023-12-17 08:00:00 +0800
-categories: Copilot
-tags: [GitHubCopilot, GitHub, CLI, MacbookProM2MAX]
+categories: git GitHubCopilot
+tags: [git GitHubCopilot, GitHub, CLI, MacbookProM2MAX]
 ---
 
 [Copilot for CLI](https://githubnext.com/projects/copilot-cli/)
