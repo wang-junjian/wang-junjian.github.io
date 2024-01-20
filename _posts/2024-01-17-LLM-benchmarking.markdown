@@ -6,87 +6,6 @@ categories: LLM Benchmark
 tags: [LLM, Benchmark, wrk, Qwen]
 ---
 
-## 速度测试脚本
-### 安装依赖
-
-```shell
-pip install typer
-pip install openai==0.28
-```
-
-### 脚本：llm-speed-test.py
-
-```py
-import time
-import openai
-import typer
-
-app = typer.Typer()
-
-@app.command()
-def main(api_base: str = 'http://127.0.0.1:8000/v1',
-         api_key: str = 'NULL',
-         prompt: str = '你是谁',
-         model: str = 'gpt-3.5-turbo',
-         max_tokens: int = 256,
-         temperature: float = 0.7,
-         top_p: float = 0.95):
-    openai.api_base = api_base
-    openai.api_key = api_key
-
-    begin_time = time.time()
-    response = openai.Completion.create(
-        model=model,
-        prompt=prompt,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        top_p=top_p
-    )
-    end_time = time.time()
-
-    text = response.choices[0].text
-    prompt_tokens = response.usage.prompt_tokens
-    total_tokens = response.usage.total_tokens
-    completion_tokens = response.usage.completion_tokens
-
-    print(f'🧑 {prompt}')
-    print(f'🤖 {text}')
-    print(f'🚀 每秒生成 Tokens: {completion_tokens/(end_time-begin_time):.2f} \t 合计 Tokens （{total_tokens}） = 输入 Tokens（{prompt_tokens}） + 输出 Tokens（{completion_tokens}）')
-    print(f'🚀 每秒生成字符   : {len(text)/(end_time-begin_time):.2f} \t 合计生成字符（{len(text)}）')
-    print(f'⏱️ 生成耗时: {(end_time-begin_time):.2f} 秒')
-
-if __name__ == "__main__":
-    app()
-```
-
-### 使用 
-```shell
-Usage: llm-speed-test.py [OPTIONS]
-
-Options:
-  --api-base TEXT                 [default: http://127.0.0.1:8000/v1]
-  --api-key TEXT                  [default: NULL]
-  --prompt TEXT                   [default: 你是谁]
-  --model TEXT                    [default: gpt-3.5-turbo]
-  --max-tokens INTEGER            [default: 256]
-  --temperature FLOAT             [default: 0.7]
-  --top-p FLOAT                   [default: 0.95]
-```
-
-示例：
-
-```shell
-python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。\n"
-```
-```
-🧑 写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。\n
-🤖 \n标题：鲁软数字在电力信息化方面的成绩\n\n正文：\n\n在数字化转型的大潮中，鲁软数字凭借其深厚的技术实力和丰富的实践经验，成功地在电力信息化领域取得了显著的成果。鲁软数字不仅在电力信息化领域有着广泛的应用，而且在多个方面都取得了令人瞩目的成绩。\n\n首先，鲁软数字在电力信息化领域有着广泛的应用。在电力信息化领域，鲁软数字主要负责电力系统的信息化建设，包括电力系统监控系统、电力调度系统、电力营销系统等。鲁软数字通过开发一系列先进的软件产品，为电力系统的信息化建设提供了强有力的支持。例如，鲁软数字开发的电力调度系统，能够实现电力系统的实时监控和调度，大大提高了电力系统的运行效率。\n\n其次，鲁软数字在电力信息化领域也取得了多项重要的研究成果。在电力信息化领域，鲁软数字还研发了一系列先进的技术，包括电力系统仿真技术、电力系统安全技术等。这些技术的研发，为电力系统的信息化建设提供了有力的技术支持。例如，鲁软数字研发的电力系统仿真技术，能够为电力系统的建设和运行提供精确的数据支持。\n\n最后，鲁软数字在电力信息化领域还取得了多项重要的成果。在电力信息化领域，鲁软数字还研发了一系列先进的服务产品，包括电力信息系统建设服务、电力信息系统运维服务等。这些服务的产品，能够为电力系统的建设和运维提供全面的服务支持。例如，鲁软数字研发的电力信息系统建设服务，能够为电力系统的建设和运维提供全面的技术支持和管理服务。\n\n总的来说，鲁软数字在电力信息化领域有着广泛的应用，而且在多个方面都取得了令人瞩目的成绩。这些成绩的取得，不仅体现了鲁软数字的技术实力和丰富的实践经验，也体现了鲁软数字在电力信息化领域的重要地位。在未来，鲁软数字将继续在电力信息化领域发挥重要作用，为电力系统的信息化建设提供更加有力的支持。
-🚀 每秒生成 Tokens: 62.36 	 合计 Tokens （424） = 输入 Tokens（20） + 输出 Tokens（404）
-🚀 每秒生成字符   : 117.31 	 合计生成字符（760）
-⏱️ 生成耗时: 6.48 秒
-```
-
-
 ## 安装 FastChat & vLLM
 ### 安装 [FastChat](https://github.com/lm-sys/FastChat)
 - [FastChat 部署多模型]({% post_url 2023-10-24-fastchat-deploys-multi-model %})
@@ -310,6 +229,86 @@ curl -s http://127.0.0.1:8000/v1/completions \
 | Qwen-1_8B-Chat | FastChat | 4 | 36.95 | 75.37 |
 | Qwen-1_8B-Chat | FastChat + vLLM | 13.34 | 62.63 | 119.20 |
 | Qwen-7B-Chat | FastChat + vLLM | 13.20 | 40.42 | 77.44 |
+
+### 测试脚本
+#### 安装依赖
+
+```shell
+pip install typer
+pip install openai==0.28
+```
+
+#### 脚本：llm-speed-test.py
+
+```py
+import time
+import openai
+import typer
+
+app = typer.Typer()
+
+@app.command()
+def main(api_base: str = 'http://127.0.0.1:8000/v1',
+         api_key: str = 'NULL',
+         prompt: str = '你是谁',
+         model: str = 'gpt-3.5-turbo',
+         max_tokens: int = 256,
+         temperature: float = 0.7,
+         top_p: float = 0.95):
+    openai.api_base = api_base
+    openai.api_key = api_key
+
+    begin_time = time.time()
+    response = openai.Completion.create(
+        model=model,
+        prompt=prompt,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        top_p=top_p
+    )
+    end_time = time.time()
+
+    text = response.choices[0].text
+    prompt_tokens = response.usage.prompt_tokens
+    total_tokens = response.usage.total_tokens
+    completion_tokens = response.usage.completion_tokens
+
+    print(f'🧑 {prompt}')
+    print(f'🤖 {text}')
+    print(f'🚀 每秒生成 Tokens: {completion_tokens/(end_time-begin_time):.2f} \t 合计 Tokens （{total_tokens}） = 输入 Tokens（{prompt_tokens}） + 输出 Tokens（{completion_tokens}）')
+    print(f'🚀 每秒生成字符   : {len(text)/(end_time-begin_time):.2f} \t 合计生成字符（{len(text)}）')
+    print(f'⏱️ 生成耗时: {(end_time-begin_time):.2f} 秒')
+
+if __name__ == "__main__":
+    app()
+```
+
+#### 使用 
+```shell
+Usage: llm-speed-test.py [OPTIONS]
+
+Options:
+  --api-base TEXT                 [default: http://127.0.0.1:8000/v1]
+  --api-key TEXT                  [default: NULL]
+  --prompt TEXT                   [default: 你是谁]
+  --model TEXT                    [default: gpt-3.5-turbo]
+  --max-tokens INTEGER            [default: 256]
+  --temperature FLOAT             [default: 0.7]
+  --top-p FLOAT                   [default: 0.95]
+```
+
+示例：
+
+```shell
+python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。\n"
+```
+```
+🧑 写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。\n
+🤖 \n标题：鲁软数字在电力信息化方面的成绩\n\n正文：\n\n在数字化转型的大潮中，鲁软数字凭借其深厚的技术实力和丰富的实践经验，成功地在电力信息化领域取得了显著的成果。鲁软数字不仅在电力信息化领域有着广泛的应用，而且在多个方面都取得了令人瞩目的成绩。\n\n首先，鲁软数字在电力信息化领域有着广泛的应用。在电力信息化领域，鲁软数字主要负责电力系统的信息化建设，包括电力系统监控系统、电力调度系统、电力营销系统等。鲁软数字通过开发一系列先进的软件产品，为电力系统的信息化建设提供了强有力的支持。例如，鲁软数字开发的电力调度系统，能够实现电力系统的实时监控和调度，大大提高了电力系统的运行效率。\n\n其次，鲁软数字在电力信息化领域也取得了多项重要的研究成果。在电力信息化领域，鲁软数字还研发了一系列先进的技术，包括电力系统仿真技术、电力系统安全技术等。这些技术的研发，为电力系统的信息化建设提供了有力的技术支持。例如，鲁软数字研发的电力系统仿真技术，能够为电力系统的建设和运行提供精确的数据支持。\n\n最后，鲁软数字在电力信息化领域还取得了多项重要的成果。在电力信息化领域，鲁软数字还研发了一系列先进的服务产品，包括电力信息系统建设服务、电力信息系统运维服务等。这些服务的产品，能够为电力系统的建设和运维提供全面的服务支持。例如，鲁软数字研发的电力信息系统建设服务，能够为电力系统的建设和运维提供全面的技术支持和管理服务。\n\n总的来说，鲁软数字在电力信息化领域有着广泛的应用，而且在多个方面都取得了令人瞩目的成绩。这些成绩的取得，不仅体现了鲁软数字的技术实力和丰富的实践经验，也体现了鲁软数字在电力信息化领域的重要地位。在未来，鲁软数字将继续在电力信息化领域发挥重要作用，为电力系统的信息化建设提供更加有力的支持。
+🚀 每秒生成 Tokens: 62.36 	 合计 Tokens （424） = 输入 Tokens（20） + 输出 Tokens（404）
+🚀 每秒生成字符   : 117.31 	 合计生成字符（760）
+⏱️ 生成耗时: 6.48 秒
+```
 
 ### 测试数据
 #### Qwen-1_8B-Chat (FastChat)
