@@ -87,7 +87,7 @@ python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力�
 ```
 
 
-## 部署 LLM
+## 安装 FastChat & vLLM
 ### 安装 [FastChat](https://github.com/lm-sys/FastChat)
 - [FastChat 部署多模型]({% post_url 2023-10-24-fastchat-deploys-multi-model %})
 - [Qwen (通义千问)]({% post_url 2023-12-25-Qwen %})
@@ -100,7 +100,7 @@ FlashAttention-2 currently supports:
 - Datatype fp16 and bf16 (bf16 requires Ampere, Ada, or Hopper GPUs).
 - All head dimensions up to 256. Head dim > 192 backward requires A100/A800 or H100/H800.
 
-`Turing GPU T4` 不支持，需要使用 FlashAttention 1.x，否则会报错❌：
+`Turing GPU T4` 不支持，需要使用 FlashAttention 1.x，否则会报错 ❌：
 
 ```json
 data: {
@@ -114,6 +114,8 @@ data: {
 pip install vllm -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
+
+## 部署 LLM
 ### 运行 Controller
 ```shell
 python -m fastchat.serve.controller
@@ -221,7 +223,15 @@ python -m fastchat.serve.vllm_worker \
   --tensor-parallel-size 4
 ```
 
-## curl 测试
+#### Qwen/Qwen-7B-Chat (4 GPU)
+```shell
+python -m fastchat.serve.vllm_worker \
+  --model-path Qwen/Qwen-7B-Chat \
+  --model-names gpt-3.5-turbo \
+  --tensor-parallel-size 4
+```
+
+### curl 测试
 ```shell
 curl -s http://127.0.0.1:8000/v1/completions \
   -H "Content-Type: application/json" \
