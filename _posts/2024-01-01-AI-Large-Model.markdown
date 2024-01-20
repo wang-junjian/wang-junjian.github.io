@@ -2,7 +2,7 @@
 layout: post
 title:  "AI 大模型"
 date:   2024-01-01 08:00:00 +0800
-categories: LLM
+categories: LLM Leaderboard
 tags: [LLM, CodeLLM, EmbeddingLLM, Leaderboard]
 ---
 
