@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "使用 llama.cpp 构建兼容 OpenAI 服务"
+title:  "使用 llama.cpp 构建兼容 OpenAI API 服务"
 date:   2024-01-19 08:00:00 +0800
 categories: llama.cpp
 tags: [llama.cpp, Quantization, LLM, Qwen, DeepSeek, llama-cpp-python, OpenAI, 困惑度, PPL, Perplexity, curl, Metal, MPS, cuBLAS, CUDA, TeslaT4, MacBookProM2Max]
@@ -108,7 +108,7 @@ CUDA_VISIBLE_DEVICES=0 ./main -m /data/models/gguf/deepseek-llm-7b-chat.Q5_K_M.g
 可以从 [TheBloke](https://huggingface.co/TheBloke) 下载更多不同量化的 GGUF 模型。
 
 ### [Qwen][Qwen]
-- [Qwen/Qwen-7B-Chat][https://huggingface.co/Qwen/Qwen-7B-Chat]
+- [Qwen/Qwen-7B-Chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
 - [Merge qwen to llama cpp](https://github.com/ggerganov/llama.cpp/pull/4281)
 - [qwen.cpp](https://github.com/QwenLM/qwen.cpp)
 - [llama.cpp][llama.cpp]
