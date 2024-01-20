@@ -112,7 +112,7 @@ python -m fastchat.serve.model_worker \
                         max number of prompt characters or prompt ID numbers being printed in log. Default: unlimited.
 ```
 
-#### Qwen-1_8B-Chat (GPU: 1)
+#### Qwen-1_8B-Chat (GPU: 1, 显存: 12.77G)
 ```shell
 python -m fastchat.serve.vllm_worker \
   --model-path Qwen/Qwen-1_8B-Chat \
@@ -125,7 +125,29 @@ python -m fastchat.serve.vllm_worker \
 
   [如果不支持 bfloat16，则降至 float16](https://github.com/vllm-project/vllm/pull/1901)
 
-#### Qwen-1_8B-Chat (GPU: 2)
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   54C    P0              28W /  70W |  12770MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A   2228450      C   python                                    12754MiB |
++---------------------------------------------------------------------------------------+
+```
+
+#### Qwen-1_8B-Chat (GPU: 2, 显存: 13.34G)
 ```shell
 CUDA_VISIBLE_DEVICES=0,1 python -m fastchat.serve.vllm_worker \
   --model-path Qwen/Qwen-1_8B-Chat \
@@ -134,12 +156,111 @@ CUDA_VISIBLE_DEVICES=0,1 python -m fastchat.serve.vllm_worker \
 ```
 - [vLLM 分布式推理和服务](https://docs.vllm.ai/en/latest/serving/distributed_serving.html)
 
-#### Qwen-1_8B-Chat (GPU: 4)
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   53C    P0              28W /  70W |  13336MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   54C    P0              28W /  70W |  13318MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A   2219600      C   python                                    13320MiB |
+|    1   N/A  N/A   2223550      C   ray::RayWorkerVllm                        13302MiB |
++---------------------------------------------------------------------------------------+
+```
+
+#### Qwen-1_8B-Chat (GPU: 4, 显存: 13.34G)
 ```shell
 python -m fastchat.serve.vllm_worker \
   --model-path Qwen/Qwen-1_8B-Chat \
   --model-names gpt-3.5-turbo \
   --tensor-parallel-size 4
+```
+
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   55C    P0              28W /  70W |  13340MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   54C    P0              28W /  70W |  13322MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   2  Tesla T4                       Off | 00000000:8E:00.0 Off |                    0 |
+| N/A   53C    P0              28W /  70W |  13318MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   3  Tesla T4                       Off | 00000000:92:00.0 Off |                    0 |
+| N/A   53C    P0              28W /  70W |  13318MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A   2198423      C   python                                    13324MiB |
+|    1   N/A  N/A   2202463      C   ray::RayWorkerVllm                        13306MiB |
+|    2   N/A  N/A   2202607      C   ray::RayWorkerVllm                        13302MiB |
+|    3   N/A  N/A   2202738      C   ray::RayWorkerVllm                        13302MiB |
++---------------------------------------------------------------------------------------+
+```
+
+#### Qwen-7B-Chat (GPU: 2, 显存: 13.44G)
+```shell
+CUDA_VISIBLE_DEVICES=0,1 python -m fastchat.serve.vllm_worker \
+  --model-path Qwen/Qwen-7B-Chat \
+  --model-names gpt-3.5-turbo \
+  --tensor-parallel-size 2
+```
+
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   51C    P0              28W /  70W |  13444MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   52C    P0              28W /  70W |  13426MiB / 15360MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A   2270293      C   python                                    13432MiB |
+|    1   N/A  N/A   2274242      C   ray::RayWorkerVllm                        13414MiB |
++---------------------------------------------------------------------------------------+
 ```
 
 #### Qwen-7B-Chat (GPU: 4, 显存: 13.20G)
@@ -187,6 +308,48 @@ python -m fastchat.serve.vllm_worker \
 +---------------------------------------------------------------------------------------+
 ```
 
+因为 vLLM 是预分配显存，所以显存占用率会比较高，但是实际使用时显存并不会增长。
+
+下面是推理过程中 GPU 的显存使用情况：
+
+```
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Tesla T4                       Off | 00000000:43:00.0 Off |                    0 |
+| N/A   75C    P0              72W /  70W |  13228MiB / 15360MiB |     82%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   1  Tesla T4                       Off | 00000000:47:00.0 Off |                    0 |
+| N/A   73C    P0              72W /  70W |  13162MiB / 15360MiB |     78%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   2  Tesla T4                       Off | 00000000:8E:00.0 Off |                    0 |
+| N/A   73C    P0              73W /  70W |  13158MiB / 15360MiB |     77%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+|   3  Tesla T4                       Off | 00000000:92:00.0 Off |                    0 |
+| N/A   74C    P0              58W /  70W |  13158MiB / 15360MiB |     71%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A   1870130      C   python                                    13216MiB |
+|    1   N/A  N/A   1874102      C   ray::RayWorkerVllm.execute_method         13150MiB |
+|    2   N/A  N/A   1874278      C   ray::RayWorkerVllm.execute_method         13146MiB |
+|    3   N/A  N/A   1874402      C   ray::RayWorkerVllm.execute_method         13146MiB |
++---------------------------------------------------------------------------------------+
+```
+
+
 ### curl 测试
 ```shell
 curl -s http://127.0.0.1:8000/v1/completions \
@@ -224,11 +387,12 @@ curl -s http://127.0.0.1:8000/v1/completions \
 ## 速度测试
 ### 总结
 
-| 模型 | 推理 | 显存 (G) | 每秒生成 Tokens | 每秒生成字符 |
-| --- | --- | --: | --: | --: |
-| Qwen-1_8B-Chat | FastChat | 4 | 36.95 | 75.37 |
-| Qwen-1_8B-Chat | FastChat + vLLM | 13.34 | 62.63 | 119.20 |
-| Qwen-7B-Chat | FastChat + vLLM | 13.20 | 40.42 | 77.44 |
+| 模型 | 推理 | 显卡数量 | 显存 (G) | 每秒生成 Tokens | 每秒生成字符 |
+| --- | --- | :--: | --: | --: | --: |
+| Qwen-1_8B-Chat | FastChat        | 1 | 4 | 36.95 | 75.37 |
+| Qwen-1_8B-Chat | FastChat + vLLM | 4 | 13.34 | 62.63 | 119.20 |
+| Qwen-7B-Chat   | FastChat + vLLM | 2 | 13.20 | 40.42 | 77.44 |
+| Qwen-7B-Chat   | FastChat + vLLM | 4 | 13.44 | 26.39 | 48.86 |
 
 ### 测试脚本
 #### 安装依赖
@@ -536,7 +700,19 @@ python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力�
 ⏱️ 生成耗时: 9.49 秒
 ```
 
-#### Qwen-7B-Chat (FastChat + vLLM)
+#### Qwen-7B-Chat (FastChat + vLLM, GPU: 2)
+```shell
+python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。"
+```
+```
+🧑 写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。
+🤖 鲁软数字在电力信息化方面取得了显著的成绩，他们的解决方案和产品已经广泛应用于电力行业，并得到了广大用户的认可和好评。鲁软数字在电力信息化方面的成功，主要归功于他们深厚的技术积累和不断创新的精神。他们的产品和服务不仅满足了电力行业的需求，也推动了电力行业的发展和进步。鲁软数字将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的成绩 文章中提到鲁软数字在电力信息化方面的成绩，包括他们的解决方案和产品已经广泛应用于电力行业，并得到了广大用户的认可和好评。鲁软数字在电力信息化方面的成功，主要归功于他们深厚的技术积累和不断创新的精神。他们的产品和服务不仅满足了电力行业的需求，也推动了电力行业的发展和进步。鲁软数字将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的成就 鲁软数字在电力信息化方面的成就，主要包括他们开发的电力信息化解决方案和产品已经广泛应用于电力行业，并得到了广大用户的认可和好评。这些解决方案和产品不仅满足了电力行业的需求，也推动了电力行业的发展和进步。鲁软数字在电力信息化方面的成功，主要归功于他们深厚的技术积累和不断创新的精神。他们的产品和服务不仅满足了电力行业的需求，也推动了电力行业的发展和进步。鲁软数字将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的贡献 鲁软数字在电力信息化方面的贡献，主要包括他们开发的电力信息化解决方案和产品已经广泛应用于电力行业，并得到了广大用户的认可和好评。这些解决方案和产品不仅满足了电力行业的需求，也推动了电力行业的发展和进步。鲁软数字在电力信息化方面的成功，主要归功于他们深厚的技术积累和不断创新的精神。他们的产品和服务不仅满足了电力行业的需求，也推动了电力行业的发展和进步。鲁软数字将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的未来发展 鲁软数字在电力信息化方面的未来发展，主要包括他们将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。鲁软数字将不断优化他们的解决方案和产品，以满足电力行业的需求。他们也将继续创新，以推动电力行业的发展和进步。鲁软数字相信，通过他们的努力，电力行业将会更加信息化、智能化，从而为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的未来展望 鲁软数字在电力信息化方面的未来展望，主要包括他们将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。鲁软数字将不断优化他们的解决方案和产品，以满足电力行业的需求。他们也将继续创新，以推动电力行业的发展和进步。鲁软数字相信，通过他们的努力，电力行业将会更加信息化、智能化，从而为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的未来计划 鲁软数字在电力信息化方面的未来计划，主要包括他们将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。鲁软数字将不断优化他们的解决方案和产品，以满足电力行业的需求。他们也将继续创新，以推动电力行业的发展和进步。鲁软数字相信，通过他们的努力，电力行业将会更加信息化、智能化，从而为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的未来目标 鲁软数字在电力信息化方面的未来目标，主要包括他们将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。鲁软数字将不断优化他们的解决方案和产品，以满足电力行业的需求。他们也将继续创新，以推动电力行业的发展和进步。鲁软数字相信，通过他们的努力，电力行业将会更加信息化、智能化，从而为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的未来挑战 鲁软数字在电力信息化方面的未来挑战，主要包括他们将继续以用户为中心，以技术为驱动，努力提供更好的产品和服务，为电力行业的发展做出更大的贡献。鲁软数字将不断优化他们的解决方案和产品，以满足电力行业的需求。他们也将继续创新，以推动电力行业的发展和进步。鲁软数字相信，通过他们的努力，电力行业将会更加信息化、智能化，从而为电力行业的发展做出更大的贡献。 鲁软数字在电力信息化方面的未来机会 鲁
+🚀 每秒生成 Tokens: 26.39 	 合计 Tokens （1019） = 输入 Tokens（19） + 输出 Tokens（1000）
+🚀 每秒生成字符   : 48.86 	 合计生成字符（1851）
+⏱️ 生成耗时: 37.89 秒
+```
+
+#### Qwen-7B-Chat (FastChat + vLLM, GPU: 4)
 ```shell
 python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。"
 ```
@@ -631,31 +807,79 @@ sudo tcpdump -i any -A 'tcp port 8000 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp
 
 ### 总结
 
-#### FastChat + vLLM (2卡)
+#### Qwen-1_8B-Chat (FastChat + vLLM, GPU: 2)
 
-|       | 并发数 | 并发线程数 | 完成请求数 | 超时请求数 | 每秒请求数 | 每秒传输字节数 | 平均响应时间 |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-|       | 1 | 1 | 12 | 0 | 0.20 | 422.77B | 4.96s |
-|       | 2 | 2 | 21 | 0 | 0.35 | 0.86KB | 5.24s |
-|       | 3 | 3 | 30 | 0 | 0.50 | 1.27KB | 5.72s |
-|       | 4 | 4 | 38 | 0 | 0.63 | 1.67KB | 6.10s |
-|       | 5 | 5 | 47 | 0 | 0.78 | 1.94KB | 6.02s |
-| 👍    | 6 | 6 | 56 | 0 | 0.93 | 2.27KB | 6.08s |
-|       | 7 | 7 | 50 | 9 | 0.83 | 2.01KB | 7.29s |
-|       | 8 | 8 | 54 | 14 | 0.90 | 2.21KB | 7.48s |
+| 并发数 | 并发线程数 | 完成请求数 | 超时请求数 | 每秒请求数 | 每秒传输字节数 | 平均响应时间 |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | 1 | 12 | 0 | 0.20 | 422.77B | 4.96s |
+| 2 | 2 | 21 | 0 | 0.35 | 0.86KB | 5.24s |
+| 3 | 3 | 30 | 0 | 0.50 | 1.27KB | 5.72s |
+| 4 | 4 | 38 | 0 | 0.63 | 1.67KB | 6.10s |
+| 5 | 5 | 47 | 0 | 0.78 | 1.94KB | 6.02s |
+| 6 | 6 | 56 | 0 | 0.93 | 2.27KB | 6.08s |
+| 7 | 7 | 50 | 9 | 0.83 | 2.01KB | 7.29s |
+| 8 | 8 | 54 | 14 | 0.90 | 2.21KB | 7.48s |
 
-#### FastChat + vLLM (4卡)
+#### Qwen-1_8B-Chat (FastChat + vLLM, GPU: 4)
 
-|       | 并发数 | 并发线程数 | 完成请求数 | 超时请求数 | 每秒请求数 | 每秒传输字节数 | 平均响应时间 |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 👍    | 4 | 4 | 28 | 0 | 0.47 | 1.29KB | 7.73s |
-|       | 5 | 5 | 38 | 4 | 0.63 | 1.52KB | 7.05s |
-|       | 6 | 6 | 45 | 7 | 0.75 | 1.79KB | 6.92s |
+| 并发数 | 并发线程数 | 完成请求数 | 超时请求数 | 每秒请求数 | 每秒传输字节数 | 平均响应时间 |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 4 | 4 | 28 | 0 | 0.47 | 1.29KB | 7.73s |
+| 5 | 5 | 38 | 4 | 0.63 | 1.52KB | 7.05s |
+| 6 | 6 | 45 | 7 | 0.75 | 1.79KB | 6.92s |
 
+#### Qwen-7B-Chat (FastChat + vLLM, GPU: 4)
+
+wrk 的 `超时时间` 设置为 60 秒；测试脚本 post_json.lua 中的 `max_tokens` 设置为 2048 。
+
+```lua
+wrk.method = "POST"
+wrk.body   = "{    \"model\": \"gpt-3.5-turbo\",    \"prompt\": \"写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。\",    \"temperature\": 0.7,    \"max_tokens\": 2048  }"
+wrk.headers["Content-Type"] = "application/json"
+```
+
+| 并发数 | 并发线程数 | 总传输字节数 | 每秒传输字节数 |
+| :---: | :---: | ---: | ---: |
+| 1 | 1 | 11.86KB | 201.37B |
+| 2 | 1 | 19.28KB | 328.55B |
+| 2 | 2 | 16.31KB | 278.02B |
+| 3 | 1 | 25.18KB | 429.18B |
+| 3 | 2 | 25.23KB | 429.96B |
+| 3 | 3 | 27.10KB | 461.95B |
+| 4 | 1 | 23.22KB | 395.70B |
+| 4 | 2 | 31.21KB | 531.99B |
+| 4 | 3 | 23.52KB | 400.94B |
+| 4 | 4 | 17.59KB | 299.75B |
+| 5 | 1 | 17.07KB | 290.97B |
+| 5 | 2 | 27.75KB | 471.53B |
+| 5 | 3 | 11.83KB | 201.69B |
+| 5 | 4 | 36.41KB | 620.49B |
+| 5 | 5 | 19.77KB | 336.88B |
+| 6 | 1 | 23.90KB | 407.25B |
+| 6 | 2 | 33.23KB | 566.36B |
+| 6 | 3 | 30.27KB | 515.90B |
+| 6 | 4 | 27.73KB | 472.55B |
+| 6 | 5 | 36.64KB | 624.52B |
+| 6 | 6 | 20.87KB | 355.75B |
+| 7 | 1 | 51.64KB | 877.02B |
+| 7 | 2 | 21.62KB | 368.51B |
+| 7 | 3 | 39.13KB | 666.31B |
+| 7 | 4 | 30.47KB | 519.35B |
+| 7 | 5 | 24.06KB | 410.06B |
+| 7 | 6 | 30.62KB | 521.81B |
+| 7 | 7 | 36.70KB | 625.46B |
+| 8 | 1 | 64.66KB | 1.08KB |
+| 8 | 2 | 28.70KB | 489.12B |
+| 8 | 3 | 30.47KB | 519.24B |
+| 8 | 4 | 37.50KB | 639.14B |
+| 8 | 5 | 20.80KB | 354.50B |
+| 8 | 6 | 42.00KB | 715.73B |
+| 8 | 7 | 50.25KB | 856.47B |
+| 8 | 8 | 26.44KB | 450.64B |
 
 ### 测试数据
 
-#### FastChat + vLLM (2卡)
+#### Qwen-1_8B-Chat (FastChat + vLLM, GPU: 2)
 
 ```shell
 wrk -c1 -t1 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
@@ -811,7 +1035,7 @@ Requests/sec:      0.90
 Transfer/sec:      2.21KB
 ```
 
-#### FastChat + vLLM (4卡)
+#### Qwen-1_8B-Chat (FastChat + vLLM, GPU: 4)
 
 ```shell
 wrk -c4 -t4 -d1m --timeout 10s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
@@ -870,4 +1094,691 @@ Running 1m test @ http://127.0.0.1:8000/v1/completions
   Socket errors: connect 0, read 0, write 0, timeout 7
 Requests/sec:      0.75
 Transfer/sec:      1.79KB
+```
+
+#### Qwen-7B-Chat (FastChat + vLLM, GPU: 4)
+
+```shell
+wrk -c1 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    49.31s     0.00us  49.31s   100.00%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   49.31s 
+     75%   49.31s 
+     90%   49.31s 
+     99%   49.31s 
+  1 requests in 1.01m, 11.86KB read
+Requests/sec:      0.02
+Transfer/sec:     201.37B
+```
+
+```shell
+wrk -c2 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     0.91m     1.36ms   0.91m   100.00%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%    0.91m 
+     75%    0.91m 
+     90%    0.91m 
+     99%    0.91m 
+  2 requests in 1.00m, 19.28KB read
+Requests/sec:      0.03
+Transfer/sec:     328.55B
+```
+
+```shell
+wrk -c2 -t2 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.82s     2.44s   16.45s    60.00%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   13.34s 
+     75%   16.20s 
+     90%   16.45s 
+     99%   16.45s 
+  5 requests in 1.00m, 16.31KB read
+Requests/sec:      0.08
+Transfer/sec:     278.02B
+```
+
+```shell
+wrk -c3 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 3 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    17.30s    18.82s    0.98m    85.71%
+    Req/Sec     0.14      0.38     1.00     85.71%
+  Latency Distribution
+     50%   13.46s 
+     75%   13.97s 
+     90%    0.98m 
+     99%    0.98m 
+  7 requests in 1.00m, 25.18KB read
+Requests/sec:      0.12
+Transfer/sec:     429.18B
+```
+
+```shell
+wrk -c3 -t2 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  2 threads and 3 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    19.33s    19.64s    0.99m    83.33%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   12.46s 
+     75%   13.83s 
+     90%    0.99m 
+     99%    0.99m 
+  6 requests in 1.00m, 25.23KB read
+Requests/sec:      0.10
+Transfer/sec:     429.96B
+```
+
+```shell
+wrk -c3 -t3 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  3 threads and 3 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    20.83s    18.44s    0.97m    83.33%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   13.73s 
+     75%   17.62s 
+     90%    0.97m 
+     99%    0.97m 
+  6 requests in 1.00m, 27.10KB read
+Requests/sec:      0.10
+Transfer/sec:     461.95B
+```
+
+```shell
+wrk -c4 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.56s     1.22s   15.16s    62.50%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   13.72s 
+     75%   14.69s 
+     90%   15.16s 
+     99%   15.16s 
+  8 requests in 1.00m, 23.22KB read
+Requests/sec:      0.13
+Transfer/sec:     395.70B
+```
+
+```shell
+wrk -c4 -t2 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  2 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.23s    16.86s    0.96m    85.71%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   13.53s 
+     75%   25.29s 
+     90%    0.96m 
+     99%    0.96m 
+  7 requests in 1.00m, 31.21KB read
+Requests/sec:      0.12
+Transfer/sec:     531.99B
+```
+
+```shell
+wrk -c4 -t3 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  3 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.02s     6.71s   29.78s    87.50%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   12.70s 
+     75%   15.10s 
+     90%   29.78s 
+     99%   29.78s 
+  8 requests in 1.00m, 23.52KB read
+Requests/sec:      0.13
+Transfer/sec:     400.94B
+```
+
+```shell
+wrk -c4 -t4 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  4 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    12.22s     7.59s   23.78s    71.43%
+    Req/Sec     1.43      3.78    10.00     85.71%
+  Latency Distribution
+     50%   13.63s 
+     75%   15.09s 
+     90%   23.78s 
+     99%   23.78s 
+  7 requests in 1.00m, 17.59KB read
+Requests/sec:      0.12
+Transfer/sec:     299.75B
+```
+
+```shell
+wrk -c5 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 5 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.48s     6.10s   21.95s    66.67%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   15.41s 
+     75%   15.43s 
+     90%   21.95s 
+     99%   21.95s 
+  6 requests in 1.00m, 17.07KB read
+Requests/sec:      0.10
+Transfer/sec:     290.97B
+```
+
+```shell
+wrk -c5 -t2 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  2 threads and 5 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.07s     6.90s   27.67s    80.00%
+    Req/Sec     0.10      0.32     1.00     90.00%
+  Latency Distribution
+     50%   13.35s 
+     75%   16.65s 
+     90%   27.67s 
+     99%   27.67s 
+  10 requests in 1.00m, 27.75KB read
+Requests/sec:      0.17
+Transfer/sec:     471.53B
+```
+
+```shell
+wrk -c5 -t3 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  3 threads and 5 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.52s     7.69s   25.79s    75.00%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   12.81s 
+     75%   25.79s 
+     90%   25.79s 
+     99%   25.79s 
+  4 requests in 1.00m, 11.83KB read
+Requests/sec:      0.07
+Transfer/sec:     201.69B
+```
+
+```shell
+wrk -c5 -t4 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  4 threads and 5 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.36s     7.59s   31.31s    75.00%
+    Req/Sec     0.83      2.89    10.00     91.67%
+  Latency Distribution
+     50%   14.39s 
+     75%   16.35s 
+     90%   23.63s 
+     99%   31.31s 
+  12 requests in 1.00m, 36.41KB read
+Requests/sec:      0.20
+Transfer/sec:     620.49B
+```
+
+```shell
+wrk -c5 -t5 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  5 threads and 5 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.78s     2.39s   16.85s    57.14%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   13.82s 
+     75%   16.37s 
+     90%   16.85s 
+     99%   16.85s 
+  7 requests in 1.00m, 19.77KB read
+Requests/sec:      0.12
+Transfer/sec:     336.88B
+```
+
+```shell
+wrk -c6 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 6 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.96s     5.60s   17.78s    88.89%
+    Req/Sec     0.89      1.69     5.00     88.89%
+  Latency Distribution
+     50%   16.47s 
+     75%   17.09s 
+     90%   17.78s 
+     99%   17.78s 
+  9 requests in 1.00m, 23.90KB read
+Requests/sec:      0.15
+Transfer/sec:     407.25B
+```
+
+```shell
+wrk -c6 -t2 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  2 threads and 6 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    19.26s     4.55s   24.57s    60.00%
+    Req/Sec     0.60      1.58     5.00     90.00%
+  Latency Distribution
+     50%   20.17s 
+     75%   23.49s 
+     90%   24.57s 
+     99%   24.57s 
+  10 requests in 1.00m, 33.23KB read
+Requests/sec:      0.17
+Transfer/sec:     566.36B
+```
+
+```shell
+wrk -c6 -t3 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  3 threads and 6 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.67s     4.10s   20.66s    54.55%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   14.97s 
+     75%   18.82s 
+     90%   20.35s 
+     99%   20.66s 
+  11 requests in 1.00m, 30.27KB read
+Requests/sec:      0.18
+Transfer/sec:     515.90B
+```
+
+```shell
+wrk -c6 -t4 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  4 threads and 6 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    15.13s     3.76s   23.91s    77.78%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   14.66s 
+     75%   15.97s 
+     90%   23.91s 
+     99%   23.91s 
+  9 requests in 1.00m, 27.73KB read
+Requests/sec:      0.15
+Transfer/sec:     472.55B
+```
+
+```shell
+wrk -c6 -t5 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  5 threads and 6 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    12.52s     3.11s   16.48s    85.71%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   12.78s 
+     75%   14.04s 
+     90%   15.54s 
+     99%   16.48s 
+  14 requests in 1.00m, 36.64KB read
+Requests/sec:      0.23
+Transfer/sec:     624.52B
+```
+
+```shell
+wrk -c6 -t6 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  6 threads and 6 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.43s     7.60s   27.00s    75.00%
+    Req/Sec     0.25      0.71     2.00     87.50%
+  Latency Distribution
+     50%   15.59s 
+     75%   19.56s 
+     90%   27.00s 
+     99%   27.00s 
+  8 requests in 1.00m, 20.87KB read
+Requests/sec:      0.13
+Transfer/sec:     355.75B
+```
+
+```shell
+wrk -c7 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 7 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.86s     4.87s   27.74s    82.35%
+    Req/Sec     0.76      1.44     5.00     88.24%
+  Latency Distribution
+     50%   13.47s 
+     75%   17.42s 
+     90%   20.71s 
+     99%   27.74s 
+  17 requests in 1.00m, 51.64KB read
+Requests/sec:      0.28
+Transfer/sec:      0.86KB
+```
+
+```shell
+wrk -c7 -t2 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  2 threads and 7 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    17.69s     2.13s   21.59s    71.43%
+    Req/Sec     0.14      0.38     1.00     85.71%
+  Latency Distribution
+     50%   17.44s 
+     75%   18.57s 
+     90%   21.59s 
+     99%   21.59s 
+  7 requests in 1.00m, 21.62KB read
+Requests/sec:      0.12
+Transfer/sec:     368.51B
+```
+
+```shell
+wrk -c7 -t3 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  3 threads and 7 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    16.53s     7.19s   35.02s    76.92%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   14.89s 
+     75%   16.14s 
+     90%   24.88s 
+     99%   35.02s 
+  13 requests in 1.00m, 39.13KB read
+Requests/sec:      0.22
+Transfer/sec:     666.31B
+```
+
+```shell
+wrk -c7 -t4 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  4 threads and 7 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    11.92s     6.32s   21.92s    66.67%
+    Req/Sec     0.42      1.44     5.00     91.67%
+  Latency Distribution
+     50%   13.38s 
+     75%   14.20s 
+     90%   20.27s 
+     99%   21.92s 
+  12 requests in 1.00m, 30.47KB read
+Requests/sec:      0.20
+Transfer/sec:     519.35B
+```
+
+```shell
+wrk -c7 -t5 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  5 threads and 7 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.23s     5.24s   18.15s    88.89%
+    Req/Sec     1.11      3.33    10.00     88.89%
+  Latency Distribution
+     50%   15.07s 
+     75%   15.72s 
+     90%   18.15s 
+     99%   18.15s 
+  9 requests in 1.00m, 24.06KB read
+Requests/sec:      0.15
+Transfer/sec:     410.06B
+```
+
+```shell
+wrk -c7 -t6 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  6 threads and 7 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    17.23s     5.03s   29.03s    80.00%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   17.34s 
+     75%   18.48s 
+     90%   29.03s 
+     99%   29.03s 
+  10 requests in 1.00m, 30.62KB read
+Requests/sec:      0.17
+Transfer/sec:     521.81B
+```
+
+```shell
+wrk -c7 -t7 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  7 threads and 7 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    15.47s     6.47s   28.28s    84.62%
+    Req/Sec     0.38      1.39     5.00     92.31%
+  Latency Distribution
+     50%   16.06s 
+     75%   18.71s 
+     90%   20.09s 
+     99%   28.28s 
+  13 requests in 1.00m, 36.70KB read
+Requests/sec:      0.22
+Transfer/sec:     625.46B
+
+```
+
+```shell
+wrk -c8 -t1 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  1 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.55s     4.59s   31.97s    90.91%
+    Req/Sec     0.68      2.21    10.00     90.91%
+  Latency Distribution
+     50%   14.05s 
+     75%   15.43s 
+     90%   17.75s 
+     99%   31.97s 
+  22 requests in 1.00m, 64.66KB read
+Requests/sec:      0.37
+Transfer/sec:      1.08KB
+```
+
+```shell
+wrk -c8 -t2 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  2 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    17.10s     2.38s   19.47s    90.00%
+    Req/Sec     1.00      3.16    10.00     90.00%
+  Latency Distribution
+     50%   17.56s 
+     75%   19.34s 
+     90%   19.47s 
+     99%   19.47s 
+  10 requests in 1.00m, 28.70KB read
+Requests/sec:      0.17
+Transfer/sec:     489.12B
+```
+
+```shell
+wrk -c8 -t3 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  3 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    18.37s     4.00s   23.74s    50.00%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   18.24s 
+     75%   22.86s 
+     90%   23.74s 
+     99%   23.74s 
+  10 requests in 1.00m, 30.47KB read
+Requests/sec:      0.17
+Transfer/sec:     519.24B
+```
+
+```shell
+wrk -c8 -t4 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  4 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    17.44s     4.81s   25.03s    84.62%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   18.26s 
+     75%   20.38s 
+     90%   21.78s 
+     99%   25.03s 
+  13 requests in 1.00m, 37.50KB read
+Requests/sec:      0.22
+Transfer/sec:     639.14B
+```
+
+```shell
+wrk -c8 -t5 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  5 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    20.06s     7.84s   32.80s    66.67%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   19.92s 
+     75%   21.05s 
+     90%   32.80s 
+     99%   32.80s 
+  6 requests in 1.00m, 20.80KB read
+Requests/sec:      0.10
+Transfer/sec:     354.50B
+```
+
+```shell
+wrk -c8 -t6 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  6 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    17.64s     5.22s   26.56s    69.23%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   16.90s 
+     75%   21.13s 
+     90%   24.22s 
+     99%   26.56s 
+  13 requests in 1.00m, 42.00KB read
+Requests/sec:      0.22
+Transfer/sec:     715.73B
+```
+
+```shell
+wrk -c8 -t7 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  7 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    17.89s    11.07s    0.94m    87.50%
+    Req/Sec     0.00      0.00     0.00    100.00%
+  Latency Distribution
+     50%   15.35s 
+     75%   20.17s 
+     90%   22.59s 
+     99%    0.94m 
+  16 requests in 1.00m, 50.25KB read
+Requests/sec:      0.27
+Transfer/sec:     856.47B
+```
+
+```shell
+wrk -c8 -t8 -d1m --timeout 60s --latency -s post_json.lua http://127.0.0.1:8000/v1/completions
+```
+```
+Running 1m test @ http://127.0.0.1:8000/v1/completions
+  8 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.26s     7.46s   21.39s    81.82%
+    Req/Sec     1.36      3.23    10.00     81.82%
+  Latency Distribution
+     50%   15.44s 
+     75%   20.78s 
+     90%   21.24s 
+     99%   21.39s 
+  11 requests in 1.00m, 26.44KB read
+Requests/sec:      0.18
+Transfer/sec:     450.64B
 ```
