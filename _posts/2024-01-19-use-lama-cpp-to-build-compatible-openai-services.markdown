@@ -91,7 +91,7 @@ python convert-hf-to-gguf.py [--outtype {f32,f16}] [--outfile OUTFILE] model
 #### cuBLAS (CUDA)
 ```shell
 CUDA_VISIBLE_DEVICES=0 ./main -m /data/models/gguf/deepseek-llm-7b-chat.Q5_K_M.gguf \
-    5000 -e -p "写一篇1000字的作文：《2024回家过年》"
+    --n-gpu-layers 15000 -e -p "写一篇1000字的作文：《2024回家过年》"
 ```
 
 ### 速度
