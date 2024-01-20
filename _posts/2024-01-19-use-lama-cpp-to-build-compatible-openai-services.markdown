@@ -90,9 +90,11 @@ python convert-hf-to-gguf.py [--outtype {f32,f16}] [--outfile OUTFILE] model
 
 #### cuBLAS (CUDA)
 ```shell
-CUDA_VISIBLE_DEVICES=0 ./main -m /data/models/gguf/deepseek-llm-7b-chat.Q5_K_M.gguf \
+CUDA_VISIBLE_DEVICES=0 ./main -m deepseek-llm-7b-chat.Q5_K_M.gguf \
     --n-gpu-layers 15000 -e -p "写一篇1000字的作文：《2024回家过年》"
 ```
+
+`--n-gpu-layers` 设置 -1 没有效果，设置大一点的数字即可，如：15000
 
 ### 速度
 - MacBook Pro M2 Max
@@ -239,7 +241,7 @@ python -m llama_cpp.server \
 #### cuBLAS (CUDA)
 ```shell
 python -m llama_cpp.server \
-    --model /data/models/gguf/deepseek-llm-7b-chat.Q5_K_M.gguf \
+    --model deepseek-llm-7b-chat.Q5_K_M.gguf \
     --model_alias gpt-3.5-turbo \
     --n_gpu_layers -1 \
     --host 0.0.0.0 --port 8080 \
