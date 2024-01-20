@@ -2,8 +2,8 @@
 layout: post
 title:  "GitHub Copilot - Your AI pair programmer"
 date:   2023-04-01 08:00:00 +0800
-categories: Copilot
-tags: [GitHub, vscode, Neovim]
+categories: GitHubCopilot
+tags: [GitHubGitHub, vscode, Neovim]
 ---
 
 ## 注册
