@@ -312,7 +312,7 @@ curl -s http://127.0.0.1:8000/v1/completions \
 | Qwen-7B-Chat | FastChat + vLLM | 13.20 | 40.42 | 77.44 |
 
 ### 测试数据
-#### FastChat (Qwen-1_8B-Chat)
+#### Qwen-1_8B-Chat (FastChat)
 
 ```shell
 python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。"
@@ -428,7 +428,7 @@ python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力�
 ⏱️ 生成耗时: 16.73 秒
 ```
 
-#### FastChat + vLLM (Qwen-1_8B-Chat)
+#### Qwen-1_8B-Chat (FastChat + vLLM)
 
 ```shell
 python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。"
@@ -537,7 +537,7 @@ python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力�
 ⏱️ 生成耗时: 9.49 秒
 ```
 
-#### FastChat + vLLM (Qwen-7B-Chat)
+#### Qwen-7B-Chat (FastChat + vLLM)
 ```shell
 python llm-speed-test.py --prompt "写一篇1000字关于鲁软数字在电力信息化方面取得成绩的文章。"
 ```
