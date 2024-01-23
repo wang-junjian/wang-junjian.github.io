@@ -395,6 +395,7 @@ curl -s http://127.0.0.1:8000/v1/completions \
 | Qwen-1_8B-Chat | FastChat + vLLM | 4 | 13.34 | 62.63 | 119.20 |
 | Qwen-7B-Chat   | FastChat + vLLM | 2 | 13.44 | 26.39 |  48.86 |
 | Qwen-7B-Chat   | FastChat + vLLM | 4 | 13.20 | 40.42 |  77.44 |
+| Qwen-7B-Chat   | FastChat + vLLM | 8 | 13.53 | 59.51 |  94.84 |
 
 ### 测试脚本
 #### 安装依赖
