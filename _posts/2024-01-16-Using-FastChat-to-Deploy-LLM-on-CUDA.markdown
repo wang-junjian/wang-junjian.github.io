@@ -114,7 +114,7 @@ python -m fastchat.serve.vllm_worker \
 ```
 
 ## 部署：嵌入模型
-#### bge-base-zh-v1.5
+### bge-base-zh-v1.5
 ```shell
 python -m fastchat.serve.model_worker \
     --model-path bge-base-zh-v1.5 \
