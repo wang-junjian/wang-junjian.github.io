@@ -271,6 +271,8 @@ git commit -m "Fine tuning Text2SQL based on Mistral-7B using LoRA on MLX"
 git push
 ```
 
+- [共享预训练模型](https://huggingface.co/learn/nlp-course/zh-CN/chapter4/3?fw=pt)
+
 ### git push 错误
 
 1. 不能 push
@@ -312,6 +314,8 @@ Run "huggingface-cli lfs-enable-largefiles ./path/to/your/repo" and try again.
 huggingface-cli longin
 huggingface-cli lfs-enable-largefiles /Users/junjian/HuggingFace/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL
 ```
+
+- [Can’t Push to New Space](https://discuss.huggingface.co/t/cant-push-to-new-space/35319)
 
 
 ## 参考资料
