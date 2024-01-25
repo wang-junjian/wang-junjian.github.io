@@ -3,20 +3,20 @@ layout: post
 title:  "在 MLX 上使用 LoRA 基于 Mistral-7B 微调 Text2SQL（二）"
 date:   2024-01-24 08:00:00 +0800
 categories: MLX LoRA
-tags: [MLX, LoRA, Mistral-7B, WikiSQL, MacBookProM2Max]
+tags: [MLX, LoRA, Mistral-7B, Text2SQL, WikiSQL, MacBookProM2Max]
 ---
 
 ## [mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL](https://huggingface.co/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL)
 
-本次微调的模型我已经上传到了 HuggingFace Hub 上，大家可以直接使用。
+本次微调的模型我已经上传到了 HuggingFace Hub 上，大家可以进行尝试。
 
-### 安装
+### 安装 mlx-lm
 
 ```bash
 pip install mlx-lm
 ```
 
-### 生成
+### 生成 SQL
 ```
 python -m mlx_lm.generate --model mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL \
                           --max-tokens 50 \
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
 ### 样本示例
 
-```json
+```
 table: 1-10753917-1
 columns: Season, Driver, Team, Engine, Poles, Wins, Podiums, Points, Margin of defeat
 Q: Which podiums did the alfa romeo team have?
@@ -133,7 +133,7 @@ python fuse.py --model mistralai/Mistral-7B-v0.1 \
 ```
 
 
-## 生成
+## 生成 SQL
 
 ### 王军建的姓名是什么？
 
@@ -247,15 +247,6 @@ SELECT COUNT Name FROM students WHERE Grade = 9
 ```
 
 附加的提示信息可以轻松添加，不用太在意放置的位置。
-
-## 上传模型
-
-```bash
-python -m mlx_lm.convert \
-    --mlx-path lora_fused_model/ \
-    --quantize \
-    --upload-repo mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL
-```
 
 
 ## 参考资料
