@@ -30,7 +30,7 @@ SELECT School FROM Students WHERE Name = 'Wang Junjian'
 ```
 
 
-## [在 MLX 上使用 LoRA 基于 Mistral-7B 微调 Text2SQL（一）]({% post_url 2024-01-23-Fine-tuning-Text2SQL-based-on-Mistral-7B-using-LoRA-on-MLX-1 %})
+## [在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（一）：使用 LoRA 基于 Mistral-7B 微调]({% post_url 2024-01-23-Fine-tuning-Text2SQL-based-on-Mistral-7B-using-LoRA-on-MLX-1 %})
 
 📌 没有使用模型的标注格式生成数据集，导致不能结束，直到生成最大的 Tokens 数量。
 
@@ -355,75 +355,6 @@ Generation: 16.298 tokens-per-sec
 ```
 
 附加的提示信息可以轻松添加，不用太在意放置的位置。
-
-
-## 上传模型到 HuggingFace Hub
-
-1. 加入 [MLX Community](https://huggingface.co/mlx-community) 组织
-
-2. 在 MLX Community 组织中创建一个新的模型 [mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL](https://huggingface.co/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL)
-
-3. 克隆仓库 [mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL](https://huggingface.co/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL)
-
-```bash
-git clone https://huggingface.co/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL
-```
-
-4. 将生成的模型文件（`lora_fused_model` 目录下的所有文件）复制到仓库目录下
-
-5. 上传模型到 HuggingFace Hub
-
-```bash
-git add .
-git commit -m "Fine tuning Text2SQL based on Mistral-7B using LoRA on MLX" 
-git push
-```
-
-- [共享预训练模型](https://huggingface.co/learn/nlp-course/zh-CN/chapter4/3?fw=pt)
-
-### git push 错误
-
-1. 不能 push
-
-错误信息：
-
-```
-Uploading LFS objects:   0% (0/2), 0 B | 0 B/s, done.                                                                                                                                                                                              
-batch response: Authorization error.
-error: failed to push some refs to 'https://huggingface.co/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL'
-```
-
-解决方法：
-
-```bash
-vim .git/config
-```
-```conf
-[remote "origin"]
-    url = https://wangjunjian:write_token@huggingface.co/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL
-    fetch = +refs/heads/*:refs/remotes/origin/*
-```
-
-2. 不能上传大于 5GB 的文件
-
-错误信息：
-
-```
-warning: current Git remote contains credentials                                                                                                                                                                                                   
-batch response: 
-You need to configure your repository to enable upload of files > 5GB.
-Run "huggingface-cli lfs-enable-largefiles ./path/to/your/repo" and try again.
-```
-
-
-解决方法：
-
-```bash
-huggingface-cli longin
-huggingface-cli lfs-enable-largefiles /Users/junjian/HuggingFace/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL
-```
-
-- [Can’t Push to New Space](https://discuss.huggingface.co/t/cant-push-to-new-space/35319)
 
 
 ## 参考资料
