@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "在 MLX 上使用 LoRA 基于 Mistral-7B 微调 Text2SQL（二）"
+title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（二）：使用 LoRA 基于 Mistral-7B 微调"
 date:   2024-01-24 08:00:00 +0800
-categories: MLX LoRA
-tags: [MLX, LoRA, Mistral-7B, Text2SQL, WikiSQL, git, push, HuggingFace, HuggingFaceHub, MacBookProM2Max]
+categories: MLX Text2SQL
+tags: [MLX, LoRA, Mistral-7B, Text2SQL, WikiSQL, MacBookProM2Max]
 ---
 
 ## [mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL](https://huggingface.co/mlx-community/Mistral-7B-v0.1-LoRA-Text2SQL)
@@ -85,8 +85,81 @@ python lora.py --model mistralai/Mistral-7B-v0.1 \
                --iters 600
 ```
 ```
+Loading pretrained model
 Total parameters 7243.436M
 Trainable parameters 1.704M
+Loading datasets
+Training
+Iter 1: Val loss 2.343, Val took 24.272s
+Iter 10: Train loss 2.237, It/sec 0.412, Tokens/sec 165.740
+Iter 20: Train loss 1.688, It/sec 0.510, Tokens/sec 206.577
+Iter 30: Train loss 1.475, It/sec 0.526, Tokens/sec 216.519
+Iter 40: Train loss 1.359, It/sec 0.539, Tokens/sec 208.807
+Iter 50: Train loss 1.243, It/sec 0.567, Tokens/sec 225.619
+Iter 60: Train loss 1.125, It/sec 0.567, Tokens/sec 224.679
+Iter 70: Train loss 1.177, It/sec 0.485, Tokens/sec 196.413
+Iter 80: Train loss 1.180, It/sec 0.512, Tokens/sec 205.216
+Iter 90: Train loss 1.152, It/sec 0.593, Tokens/sec 224.874
+Iter 100: Train loss 1.204, It/sec 0.581, Tokens/sec 221.348
+Iter 100: Saved adapter weights to adapters.npz.
+Iter 110: Train loss 1.080, It/sec 0.567, Tokens/sec 219.234
+Iter 120: Train loss 1.065, It/sec 0.563, Tokens/sec 219.935
+Iter 130: Train loss 1.083, It/sec 0.536, Tokens/sec 211.902
+Iter 140: Train loss 1.072, It/sec 0.546, Tokens/sec 212.716
+Iter 150: Train loss 1.061, It/sec 0.472, Tokens/sec 192.188
+Iter 160: Train loss 0.991, It/sec 0.512, Tokens/sec 201.292
+Iter 170: Train loss 1.028, It/sec 0.535, Tokens/sec 220.537
+Iter 180: Train loss 0.978, It/sec 0.594, Tokens/sec 215.790
+Iter 190: Train loss 1.033, It/sec 0.537, Tokens/sec 214.972
+Iter 200: Train loss 1.091, It/sec 0.545, Tokens/sec 207.353
+Iter 200: Val loss 1.111, Val took 30.101s
+Iter 200: Saved adapter weights to adapters.npz.
+Iter 210: Train loss 1.056, It/sec 0.573, Tokens/sec 217.968
+Iter 220: Train loss 0.987, It/sec 0.552, Tokens/sec 220.129
+Iter 230: Train loss 0.984, It/sec 0.578, Tokens/sec 225.119
+Iter 240: Train loss 0.929, It/sec 0.593, Tokens/sec 227.224
+Iter 250: Train loss 0.984, It/sec 0.504, Tokens/sec 209.164
+Iter 260: Train loss 0.871, It/sec 0.529, Tokens/sec 213.830
+Iter 270: Train loss 0.843, It/sec 0.549, Tokens/sec 214.504
+Iter 280: Train loss 0.866, It/sec 0.606, Tokens/sec 233.129
+Iter 290: Train loss 0.946, It/sec 0.564, Tokens/sec 216.089
+Iter 300: Train loss 0.818, It/sec 0.574, Tokens/sec 234.182
+Iter 300: Saved adapter weights to adapters.npz.
+Iter 310: Train loss 0.939, It/sec 0.610, Tokens/sec 228.415
+Iter 320: Train loss 0.811, It/sec 0.536, Tokens/sec 208.765
+Iter 330: Train loss 0.890, It/sec 0.514, Tokens/sec 207.142
+Iter 340: Train loss 0.825, It/sec 0.494, Tokens/sec 190.312
+Iter 350: Train loss 0.845, It/sec 0.552, Tokens/sec 211.589
+Iter 360: Train loss 0.872, It/sec 0.553, Tokens/sec 221.311
+Iter 370: Train loss 0.832, It/sec 0.502, Tokens/sec 205.400
+Iter 380: Train loss 0.855, It/sec 0.565, Tokens/sec 217.207
+Iter 390: Train loss 0.873, It/sec 0.593, Tokens/sec 229.769
+Iter 400: Train loss 0.837, It/sec 0.491, Tokens/sec 207.763
+Iter 400: Val loss 1.076, Val took 31.449s
+Iter 400: Saved adapter weights to adapters.npz.
+Iter 410: Train loss 0.821, It/sec 0.556, Tokens/sec 223.608
+Iter 420: Train loss 0.828, It/sec 0.593, Tokens/sec 219.316
+Iter 430: Train loss 0.787, It/sec 0.573, Tokens/sec 214.802
+Iter 440: Train loss 0.842, It/sec 0.529, Tokens/sec 208.544
+Iter 450: Train loss 0.794, It/sec 0.531, Tokens/sec 215.918
+Iter 460: Train loss 0.832, It/sec 0.520, Tokens/sec 212.107
+Iter 470: Train loss 0.767, It/sec 0.578, Tokens/sec 228.089
+Iter 480: Train loss 0.794, It/sec 0.548, Tokens/sec 215.279
+Iter 490: Train loss 0.737, It/sec 0.612, Tokens/sec 236.395
+Iter 500: Train loss 0.774, It/sec 0.542, Tokens/sec 223.036
+Iter 500: Saved adapter weights to adapters.npz.
+Iter 510: Train loss 0.750, It/sec 0.524, Tokens/sec 212.472
+Iter 520: Train loss 0.636, It/sec 0.562, Tokens/sec 221.322
+Iter 530: Train loss 0.587, It/sec 0.541, Tokens/sec 218.441
+Iter 540: Train loss 0.631, It/sec 0.589, Tokens/sec 225.624
+Iter 550: Train loss 0.661, It/sec 0.580, Tokens/sec 228.000
+Iter 560: Train loss 0.686, It/sec 0.537, Tokens/sec 213.582
+Iter 570: Train loss 0.630, It/sec 0.543, Tokens/sec 210.104
+Iter 580: Train loss 0.632, It/sec 0.588, Tokens/sec 228.862
+Iter 590: Train loss 0.632, It/sec 0.517, Tokens/sec 203.740
+Iter 600: Train loss 0.609, It/sec 0.531, Tokens/sec 218.118
+Iter 600: Val loss 1.001, Val took 30.002s
+Iter 600: Saved adapter weights to adapters.npz.
 python lora.py --model mistralai/Mistral-7B-v0.1 --train --iters 600  50.58s user 214.71s system 21% cpu 20:26.04 total
 ```
 
@@ -96,7 +169,7 @@ LoRA 微调 600 次迭代，耗时 20 分 26 秒，占用内存 46G。
 
 | Iteration | Train Loss | Val Loss | Tokens/sec |
 | :-------: | ---------: | -------: | ---------: |
-| 1         | N/A        | 2.343    | N/A        |
+| 1         |            | 2.343    |            |
 | 100       | 1.204      |          | 221.348    |
 | 200       | 1.091      | 1.111    | 207.353    |
 | 300       | 0.818      |          | 234.182    |
@@ -160,7 +233,11 @@ A: "
 ```
 ```
 SELECT Name FROM students WHERE Name = 'Wang Junjian'
+==========
+Prompt: 88.790 tokens-per-sec
+Generation: 16.811 tokens-per-sec
 ```
+
 
 ### 王军建的年龄是多少？
 
@@ -174,6 +251,9 @@ A: "
 ```
 ```
 SELECT Age FROM Students WHERE Name = 'Wang Junjian'
+==========
+Prompt: 84.460 tokens-per-sec
+Generation: 16.801 tokens-per-sec
 ```
 
 ### 王军建来自哪所学校？
@@ -188,6 +268,9 @@ A: "
 ```
 ```
 SELECT School FROM Students WHERE Name = 'Wang Junjian'
+==========
+Prompt: 89.124 tokens-per-sec
+Generation: 16.718 tokens-per-sec
 ```
 
 ### 查询王军建的姓名、年龄、学校信息。
@@ -202,6 +285,9 @@ A: "
 ```
 ```
 SELECT Name, Age, School FROM Students WHERE Name = 'Wang Junjian'
+==========
+Prompt: 100.919 tokens-per-sec
+Generation: 17.139 tokens-per-sec
 ```
 
 ### 查询王军建的所有信息。
@@ -216,6 +302,9 @@ A: "
 ```
 ```
 SELECT Name FROM students WHERE Name = 'Wang Junjian'
+==========
+Prompt: 88.225 tokens-per-sec
+Generation: 16.781 tokens-per-sec
 ```
 
 可能训练数据不足。
@@ -232,6 +321,9 @@ A: "
 ```
 ```
 SELECT COUNT Name FROM Students WHERE Grade = '9th'
+==========
+Prompt: 93.829 tokens-per-sec
+Generation: 16.546 tokens-per-sec
 ```
 
 ### 统计一下九年级有多少学生（九年级的值是9）。
@@ -257,6 +349,9 @@ A: "
 
 ```
 SELECT COUNT Name FROM students WHERE Grade = 9
+==========
+Prompt: 117.893 tokens-per-sec
+Generation: 16.298 tokens-per-sec
 ```
 
 附加的提示信息可以轻松添加，不用太在意放置的位置。
