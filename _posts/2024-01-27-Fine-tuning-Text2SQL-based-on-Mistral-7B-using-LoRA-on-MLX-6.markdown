@@ -711,7 +711,7 @@ SELECT COUNT(*) FROM students WHERE Grade = '9th';
 - `deepseek-ai/deepseek-coder-7b-base-v1.5` 是专门为编写代码而设计的，所以对于 SQL 语句的生成能力很强。
 - `deepseek-ai/deepseek-coder-7b-base-v1.5` 中英文能力都很强，中文与英文之间的转换也很好。
 - `deepseek-ai/deepseek-coder-7b-base-v1.5` 本身的功能就很强大，可以直接使用，需要调试好提示词。
-- LoRA 微调后的模型，可以很好的保留原本的功能，也可以很好的扩展新的功能。
+- `deepseek-ai/deepseek-coder-7b-base-v1.5` 使用 LoRA 微调后的模型，可以很好的保留原本的功能，也可以很好的扩展新的功能。
 
 
 ## 参考资料
