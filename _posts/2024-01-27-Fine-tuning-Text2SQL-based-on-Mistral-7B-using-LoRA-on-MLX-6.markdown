@@ -609,7 +609,7 @@ SELECT COUNT(*) FROM students WHERE Grade = '9th'
 ### 王军建的姓名是什么？
 
 ```bash
-python -m mlx_lm.generate --model deepseek-ai/deepseek-coder-7b-instruct-v1.5 \
+python -m mlx_lm.generate --model lora_fused_model \
                           --max-tokens 50 \
                           --prompt "table: students
 columns: Name, Age, School, Grade, Height, Weight
@@ -617,13 +617,13 @@ columns: Name, Age, School, Grade, Height, Weight
 ```
 
 ```
-SELECT Name FROM students WHERE Name = 'Wang Junjian';
+SELECT Name FROM students WHERE Age = 'Wang Junjian'
 ```
 
 ### 王军建的年龄是多少？
 
 ```bash
-python -m mlx_lm.generate --model deepseek-ai/deepseek-coder-7b-instruct-v1.5 \
+python -m mlx_lm.generate --model lora_fused_model \
                           --max-tokens 50 \
                           --prompt "table: students
 columns: Name, Age, School, Grade, Height, Weight
@@ -631,13 +631,13 @@ columns: Name, Age, School, Grade, Height, Weight
 ```
 
 ```
-SELECT Age FROM students WHERE Name = 'Wang Junjian';
+SELECT Age FROM students WHERE Name = 'Wang Junjian'
 ```
 
 ### 王军建来自哪所学校？
 
 ```bash
-python -m mlx_lm.generate --model deepseek-ai/deepseek-coder-7b-instruct-v1.5 \
+python -m mlx_lm.generate --model lora_fused_model \
                           --max-tokens 50 \
                           --prompt "table: students
 columns: Name, Age, School, Grade, Height, Weight
@@ -645,13 +645,13 @@ columns: Name, Age, School, Grade, Height, Weight
 ```
 
 ```
-SELECT School FROM students WHERE Name = 'Wang Junjian';
+SELECT School FROM students WHERE Name = 'Wang Junjian'
 ```
 
 ### 查询王军建的姓名、年龄、学校信息。
 
 ```bash
-python -m mlx_lm.generate --model deepseek-ai/deepseek-coder-7b-instruct-v1.5 \
+python -m mlx_lm.generate --model lora_fused_model \
                           --max-tokens 50 \
                           --prompt "table: students
 columns: Name, Age, School, Grade, Height, Weight
@@ -659,15 +659,13 @@ columns: Name, Age, School, Grade, Height, Weight
 ```
 
 ```
-SELECT Name, Age, School 
-FROM students 
-WHERE Name = 'Wang Junjian';
+SELECT Name, Age, School FROM students WHERE Name = 'Wang Junjian'
 ```
 
 ### 查询王军建的所有信息。
 
 ```bash
-python -m mlx_lm.generate --model deepseek-ai/deepseek-coder-7b-instruct-v1.5 \
+python -m mlx_lm.generate --model lora_fused_model \
                           --max-tokens 50 \
                           --prompt "table: students
 columns: Name, Age, School, Grade, Height, Weight
@@ -675,13 +673,26 @@ columns: Name, Age, School, Grade, Height, Weight
 ```
 
 ```
-SELECT * FROM students WHERE Name = 'Wang Junjian';
+SELECT * FROM students WHERE Name = 'Wang Junjian'
+```
+
+### 查询姓名，年龄，学校，年级等信息，条件为姓名等于王军建且年龄小于20岁。
+```bash
+python -m mlx_lm.generate --model lora_fused_model \
+                          --max-tokens 50 \
+                          --prompt "table: students
+columns: Name, Age, School, Grade, Height, Weight
+使用上面的数据库信息，帮我生成这个问题（Query information such as name, age, school, grade, etc. The condition is that the name is equal to Wang Junjian and the age is less than 20 years old.）的 SQL，回答只要 SQL 语句。"
+```
+
+```
+SELECT Name, Age, School, Grade FROM students WHERE Name = 'Wang Junjian' AND Age < 20
 ```
 
 ### 统计一下九年级有多少学生。
 
 ```bash
-python -m mlx_lm.generate --model deepseek-ai/deepseek-coder-7b-instruct-v1.5 \
+python -m mlx_lm.generate --model lora_fused_model \
                           --max-tokens 50 \
                           --prompt "table: students
 columns: Name, Age, School, Grade, Height, Weight
@@ -689,13 +700,13 @@ columns: Name, Age, School, Grade, Height, Weight
 ```
 
 ```
-SELECT COUNT(*) FROM students WHERE Grade = 9;
+SELECT COUNT(*) FROM students WHERE Grade = 'Ninth'
 ```
 
 ### 统计一下九年级有多少学生（九年级的值是9th）。
 
 ```bash
-python -m mlx_lm.generate --model deepseek-ai/deepseek-coder-7b-instruct-v1.5 \
+python -m mlx_lm.generate --model lora_fused_model \
                           --max-tokens 50 \
                           --prompt "table: students
 columns: Name, Age, School, Grade, Height, Weight
@@ -703,7 +714,7 @@ columns: Name, Age, School, Grade, Height, Weight
 ```
 
 ```
-SELECT COUNT(*) FROM students WHERE Grade = '9th';
+SELECT COUNT(*) FROM students WHERE Grade = '9th'
 ```
 
 
