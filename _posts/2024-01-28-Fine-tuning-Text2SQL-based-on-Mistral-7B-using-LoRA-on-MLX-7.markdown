@@ -229,6 +229,7 @@ SELECT Name, Age, School, Grade, Height, Weight FROM students WHERE Name = 'Wang
 
 
 ## 转换 GGUF 模型
+- [How do I create a GGUF model file?](https://www.secondstate.io/articles/convert-pytorch-to-gguf/)
 
 ### 构建 llama.cpp
 - [使用 llama.cpp 构建本地聊天服务]({% post_url 2023-12-16-building-a-local-chat-service-using-llama-cpp %})
@@ -435,3 +436,7 @@ Generation: 16.231 tokens-per-sec
 - [mlx-examples llms Mistral](https://github.com/ml-explore/mlx-examples/blob/main/llms/mistral/README.md)
 - [deepseek-ai/deepseek-coder-7b-base-v1.5](https://huggingface.co/deepseek-ai/deepseek-coder-7b-base-v1.5)
 - [DeepSeek LLM: Scaling Open-Source Language Models with Longtermism](https://arxiv.org/abs/2401.02954)
+- [Benchmarking Apple’s MLX vs. llama.cpp](https://medium.com/@andreask_75652/benchmarking-apples-mlx-vs-llama-cpp-bbbebdc18416)
+- [Apple MLX —> GGUF](https://twitter.com/ivanfioravanti/status/1749929493442056656)
+- [A Simple Voice Assistant Script](https://github.com/linyiLYi/voice-assistant)
+- [I made an app that runs Mistral 7B 0.2 LLM locally on iPhone Pros](https://news.ycombinator.com/item?id=38906966)
