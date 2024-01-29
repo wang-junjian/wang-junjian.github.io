@@ -440,3 +440,5 @@ Generation: 16.231 tokens-per-sec
 - [Apple MLX —> GGUF](https://twitter.com/ivanfioravanti/status/1749929493442056656)
 - [A Simple Voice Assistant Script](https://github.com/linyiLYi/voice-assistant)
 - [I made an app that runs Mistral 7B 0.2 LLM locally on iPhone Pros](https://news.ycombinator.com/item?id=38906966)
+- [MLX Chat](https://github.com/da-z/mlx-ui)
+- [MLX Stable Diffusion UI](https://mer.vin/2023/12/mlx-stable-diffusion-ui/)
