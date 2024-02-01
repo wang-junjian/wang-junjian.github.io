@@ -3,7 +3,7 @@ layout: post
 title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（七）：MLX 微调的模型转换为 GGUF 模型"
 date:   2024-01-28 08:00:00 +0800
 categories: MLX Text2SQL
-tags: [MLX, LoRA, Mistral-7B, Text2SQL, WikiSQL, MacBookProM2Max]
+tags: [MLX, LoRA, Mistral-7B, GGUF, Text2SQL, WikiSQL, MacBookProM2Max]
 ---
 
 将 MLX 微调的模型转换为 GGUF 模型最大的意义是可以融入 GGUF 的生态系统，可以在更多的平台上使用。
