@@ -334,3 +334,4 @@ A:
 - [I made an app that runs Mistral 7B 0.2 LLM locally on iPhone Pros](https://news.ycombinator.com/item?id=38906966)
 - [MLX Chat](https://github.com/da-z/mlx-ui)
 - [MLX Stable Diffusion UI](https://mer.vin/2023/12/mlx-stable-diffusion-ui/)
+- [Graphically display the information collected by powermetrics](https://apple.stackexchange.com/questions/430403/graphically-display-the-information-collected-by-powermetrics)
