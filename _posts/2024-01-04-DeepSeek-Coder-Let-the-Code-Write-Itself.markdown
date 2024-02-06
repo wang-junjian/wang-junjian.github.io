@@ -261,3 +261,4 @@ cd finetune && deepspeed finetune_deepseekcoder.py \
 ## 参考资料
 - [InfiCoder-Eval: Systematically Evaluating Question-Answering for Code Large Language Models](https://infi-coder.github.io/inficoder-eval/)
 - [【AI大模型展】网易数帆代码领域大模型——知识增强领域模型加速数智软件生产](https://www.sohu.com/a/731920499_400678)
+- [TheBloke/deepseek-coder-6.7B-instruct-AWQ problem in stopping response Ai <|EOT|> Problem](https://huggingface.co/TheBloke/deepseek-coder-6.7B-instruct-AWQ/discussions/1)
