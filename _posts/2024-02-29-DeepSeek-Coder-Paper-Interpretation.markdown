@@ -6,6 +6,11 @@ categories: DeepSeek-Coder
 tags: [DeepSeek-Coder, CodeLLM]
 ---
 
+- [DeepSeek-Coder: When the Large Language Model Meets Programming -- The Rise of Code Intelligence](https://arxiv.org/abs/2401.14196)
+- [DeepSeek LLM: Scaling Open-Source Language Models with Longtermism](https://arxiv.org/abs/2401.02954)
+- [LLaMA: Open and Efficient Foundation Language Models](https://arxiv.org/abs/2302.13971)
+- [Llama 2: Open Foundation and Fine-Tuned Chat Models](https://arxiv.org/abs/2307.09288)
+
 ## 模型的性能
 ![](/images/2024/DeepSeek/The-Performance-of-DeepSeek-Coder.png)
 
@@ -58,3 +63,9 @@ tags: [DeepSeek-Coder, CodeLLM]
 
 ## 模型架构
 ![](/images/2024/DeepSeek/Transformers-Architecture.png)
+
+
+## 参考资料
+- [GitHub - DeepSeek-Coder](https://github.com/deepseek-ai/deepseek-coder)
+- [LLaMA v1/2模型结构总览](https://zhuanlan.zhihu.com/p/636784644)
+- [LLaMA系列模型架构](https://dongnian.icu/llms/llms_article/3.llama%E7%B3%BB%E5%88%97%E6%A8%A1%E5%9E%8B/index.html)
