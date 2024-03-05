@@ -221,3 +221,33 @@ Transformer 模型的一个关键特性是它们使用了特殊的层，称为�
 如果您打算在正式的项目中使用经过预训练或经过微调的模型。请注意：虽然这些模型是很强大，但它们也有局限性。其中最大的一个问题是，为了对大量数据进行预训练，研究人员通常会搜集所有他们能找到的内容，中间可能夹带一些意识形态或者价值观的刻板印象。
 
 因此，当您使用这些工具时，您需要记住，使用的原始模型的时候，很容易生成性别歧视、种族主义或恐同内容。这种固有偏见不会随着微调模型而使消失。
+
+
+## 2. 使用 🤗 TRANSFORMERS
+
+```python
+from transformers import pipeline
+
+classifier = pipeline("sentiment-analysis")
+classifier(
+    [
+        "I've been waiting for a HuggingFace course my whole life.",
+        "I hate this so much!",
+    ]
+)
+```
+
+```python
+[{'label': 'POSITIVE', 'score': 0.9598047137260437},
+ {'label': 'NEGATIVE', 'score': 0.9994558091163635}]
+```
+
+这个管道（pipeline）将三个步骤组合在一起：预处理（preprocessing）、通过模型传递输入和后处理（postprocessing）：
+
+![](/images/2024/HuggingFaceNLPCourse/en_chapter2_full_nlp_pipeline.svg)
+
+### 使用分词器进行预处理
+tokenizer (标记器) 负责：
+- 将输入拆分为单词、子单词或符号（如标点符号），称为标记(token)
+- 将每个标记(token)映射到一个整数
+- 添加可能对模型有用的其他输入
