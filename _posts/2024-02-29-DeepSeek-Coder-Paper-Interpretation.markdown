@@ -6,6 +6,7 @@ categories: DeepSeek-Coder
 tags: [DeepSeek-Coder, CodeLLM]
 ---
 
+## 论文
 - [DeepSeek-Coder: When the Large Language Model Meets Programming -- The Rise of Code Intelligence](https://arxiv.org/abs/2401.14196)
 - [DeepSeek LLM: Scaling Open-Source Language Models with Longtermism](https://arxiv.org/abs/2401.02954)
 - [LLaMA: Open and Efficient Foundation Language Models](https://arxiv.org/abs/2302.13971)
