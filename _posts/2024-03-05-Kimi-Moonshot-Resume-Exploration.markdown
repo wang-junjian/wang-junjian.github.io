@@ -2,7 +2,7 @@
 layout: post
 title:  "Kimi（月之暗面）简历的探索"
 date:   2024-03-05 08:00:00 +0800
-categories: Kimi, ChatGPT
+categories: Kimi ChatGPT
 tags: [Kimi, Moonshot, ChatGPT]
 ---
 
