@@ -50,6 +50,21 @@ tags: [LLM, CodeLLM, EmbeddingLLM, Leaderboard]
 
 - **GSM8K:** GSM8K是一个数学问题解答任务，它包含了多种类型的数学问题，要求模型展示其数学推理和计算能力。这个指标评估模型在处理数学概念和执行数学运算方面的表现。
 
+总结：
+
+1. Qwen/Qwen1.5-14B-Chat
+这个模型在多个指标上表现均衡，特别是在 ARC 和 HellaSwag 上得分较高，这表明它在推理和常识理解方面具有较强的能力。非常适合日常问答场景。从平衡成本和效果来看也非常有竞争力。
+
+2. mistralai/Mistral-7B-Instruct-v0.2
+这个模型在平均得分上表现优异，但在 TruthfulQA 和 Winogrande 等任务上的得分相对较低。这可能意味着它在处理需要外部知识和复杂推理的任务时可能存在局限性。需要进一步验证其中文能力。
+
+3. deepseek-ai/deepseek-coder-7b-instruct-v1.5
+这个模型在中文和代码综合能力上表现优秀。非常适合技术或研发相关的问答场景。
+
+4. 在本评估中，重点关注了具有6B至34B参数量的模型。
+
+5. 上述筛选出的大模型需在我们的特定应用场景中进行深入验证，以确认其适应性和可靠性。
+
 #### 对话 LLM 排行榜 ([OpenCompass 2.0 司南大模型评测榜单](https://rank.opencompass.org.cn/leaderboard-llm-v2))
 	
 | 模型 | 均分 | 语言 | 知识 | 推理 | 数学 | 代码 | 智能体 |
