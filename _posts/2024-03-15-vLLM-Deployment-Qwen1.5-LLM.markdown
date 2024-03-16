@@ -2,7 +2,7 @@
 layout: post
 title:  "vLLM 部署 Qwen1.5 LLM"
 date:   2024-03-15 10:00:00 +0800
-categories: vLLM, LLM
+categories: vLLM LLM
 tags: [vLLM, LLM, Qwen]
 ---
 
