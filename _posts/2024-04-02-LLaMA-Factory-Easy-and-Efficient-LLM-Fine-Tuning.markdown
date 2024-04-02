@@ -37,9 +37,8 @@ http://localhost:7860
 
 #### 微调模型
 
-![](../images/2024/LLaMA-Factory/LLaMA-Factory-Fine-Tuning.png)
+![](/images/2024/LLaMA-Factory/LLaMA-Factory-Fine-Tuning.png)
 
 #### 聊天
 
-![](../images/2024/LLaMA-Factory/LLaMA-Factory-Chat.png)
-
+![](/images/2024/LLaMA-Factory/LLaMA-Factory-Chat.png)
