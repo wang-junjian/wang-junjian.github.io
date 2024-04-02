@@ -2,8 +2,8 @@
 layout: post
 title:  "LLaMA Factory: Easy and Efficient LLM Fine-Tuning"
 date:   2024-04-02 08:00:00 +0800
-categories: 
-tags: []
+categories: LLM Fine-Tuning
+tags: [LLaMA-Factory, LLaMA, LLM, Fine-Tuning]
 ---
 
 - [LLaMA Factory](https://github.com/hiyouga/LLaMA-Factory/blob/main/README_zh.md)
