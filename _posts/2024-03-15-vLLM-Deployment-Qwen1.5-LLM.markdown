@@ -3,7 +3,7 @@ layout: post
 title:  "vLLM 部署 Qwen1.5 LLM"
 date:   2024-03-15 10:00:00 +0800
 categories: vLLM LLM
-tags: [vLLM, LLM, Qwen]
+tags: [vLLM, LLM, Qwen, TeslaT4]
 ---
 
 ## [安装 vLLM](https://docs.vllm.ai/en/latest/getting_started/installation.html)
@@ -16,6 +16,109 @@ conda activate vllm
 # Install vLLM with CUDA 12.1.
 pip install vllm
 ```
+
+## vLLM 帮助
+```shell
+vLLM 兼容 OpenAI 的 RESTful API 服务器。
+
+可选参数：
+  -h, --help            显示此帮助信息并退出
+  --host HOST           主机名
+  --port PORT           端口号
+  --allow-credentials   允许凭证
+  --allowed-origins ALLOWED_ORIGINS
+                       允许的来源
+  --allowed-methods ALLOWED_METHODS
+                       允许的方法
+  --allowed-headers ALLOWED_HEADERS
+                       允许的头部
+  --api-key API_KEY     如果提供，服务器将要求在头部中呈现此密钥。
+  --served-model-name SERVED_MODEL_NAME
+                       在API中使用的模型名称。如果没有指定，模型名称将与huggingface名称相同。
+  --lora-modules LORA_MODULES [LORA_MODULES ...]
+                       LoRA模块配置，格式为名称=路径。可以指定多个模块。
+  --chat-template CHAT_TEMPLATE
+                       聊天模板的文件路径，或者是为指定模型的单行形式模板
+  --response-role RESPONSE_ROLE
+                       如果 `request.add_generation_prompt=true`，则返回的角色名称。
+  --ssl-keyfile SSL_KEYFILE
+                       SSL密钥文件的文件路径
+  --ssl-certfile SSL_CERTFILE
+                       SSL证书文件的文件路径
+  --root-path ROOT_PATH
+                       当应用位于基于路径的路由代理后面时，FastAPI的root_path
+  --middleware MIDDLEWARE
+                       要应用于应用的其他ASGI中间件。我们接受多个--middleware参数。值应该是一个导入路径。如果提供了一个函数，vLLM将使用@app.middleware('http')将其添加到服务器。
+                       如果提供了一个类，vLLM将使用app.add_middleware()将其添加到服务器。
+  --model MODEL         使用的huggingface模型的名称或路径
+  --tokenizer TOKENIZER
+                       使用的huggingface分词器的名称或路径
+  --revision REVISION  要使用的具体模型版本。它可以是分支名称、标签名称或提交id。如果未指定，将使用默认版本。
+  --code-revision CODE_REVISION
+                       Hugging Face Hub上模型代码使用的具体修订版本。它可以是分支名称、标签名称或提交id。如果未指定，将使用默认版本。
+  --tokenizer-revision TOKENIZER_REVISION
+                       要使用的具体分词器版本。它可以是分支名称、标签名称或提交id。如果未指定，将使用默认版本。
+  --tokenizer-mode {auto,slow}
+                       分词器模式。"auto"将使用快速分词器（如果有的话），而"slow"将始终使用慢速分词器。
+  --trust-remote-code   信任来自huggingface的远程代码
+  --download-dir DOWNLOAD_DIR
+                       下载和加载权重的目录，默认为huggingface的默认缓存目录
+  --load-format {auto,pt,safetensors,npcache,dummy}
+                       要加载的模型权重的格式。"auto"将尝试以safetensors格式加载权重，如果safetensors格式不可用，则回退到pytorch二进制格式。"pt"将以pytorch二进制格式加载权重。"safetensors"将以safetensors格式加载权重。"npcache"将以pytorch格式加载权重，并存储numpy缓存以加快加载速度。"dummy"将使用随机值初始化权重，主要用于分析。
+  --dtype {auto,half,float16,bfloat16,float,float32}
+                       模型权重和激活的数据类型。"auto"选项将为FP32和FP16模型使用FP16精度，为BF16模型使用BF16精度。
+  --kv-cache-dtype {auto,fp8_e5m2}
+                       kv缓存存储的数据类型。如果为"auto"，将使用模型数据类型。注意，当cuda版本低于11.8时，不支持FP8。
+  --max-model-len MAX_MODEL_LEN
+                       模型上下文长度。如果未指定，将从模型中自动派生。
+  --worker-use-ray      使用Ray进行分布式服务，当使用超过1个GPU时将自动设置
+  --pipeline-parallel-size PIPELINE_PARALLEL_SIZE, -pp PIPELINE_PARALLEL_SIZE
+                       管道阶段的数量
+  --tensor-parallel-size TENSOR_PARALLEL_SIZE, -tp TENSOR_PARALLEL_SIZE
+                       张量并行副本的数量
+  --max-parallel-loading-workers MAX_PARALLEL_LOADING_WORKERS
+                       分批次顺序加载模型，以避免在使用张量并行和大型模型时出现RAM OOM
+  --block-size {8,16,32,128}
+                       标记块大小
+  --seed SEED           随机种子
+  --swap-space SWAP_SPACE
+                      每个GPU的CPU交换空间大小（GiB）
+  --gpu-memory-utilization GPU_MEMORY_UTILIZATION
+                       用于模型执行器的GPU内存的比例，可以在0到1之间。如果未指定，将使用默认值0.9。
+  --max-num-batched-tokens MAX_NUM_BATCHED_TOKENS
+                       每次迭代中批处理的标记的最大数量
+  --max-num-seqs MAX_NUM_SEQS
+                       每次迭代中的序列的最大数量
+  --max-paddings MAX_PADDINGS
+                       批处理中的填充的最大数量
+  --disable-log-stats   禁用记录统计信息
+  --quantization {awq,gptq,squeezellm,None}, -q {awq,gptq,squeezellm,None}
+                       用于量化权重的方法。如果为None，我们首先检查模型配置文件中的`quantization_config`属性。如果该属性为None，我们假设模型权重未量化，并使用`dtype`来确定权重的数据类型。
+  --enforce-eager       始终使用急切模式PyTorch。如果为False，将为最大性能和灵活性使用急切模式和CUDA图形混合。
+  --max-context-len-to-capture MAX_CONTEXT_LEN_TO_CAPTURE
+                       CUDA图形覆盖的最大上下文长度。当序列的上下文长度大于这个长度时，我们回退到急切模式。
+  --disable-custom-all-reduce
+                       参见ParallelConfig
+  --enable-lora        如果为True，则启用LoRA适配器的处理。
+  --max-loras MAX_LORAS
+                       单个批次中LoRAs的最大数量。
+  --max-lora-rank MAX_LORA_RANK
+                       最大LoRA秩。
+  --lora-extra-vocab-size LORA_EXTRA_VOCAB_SIZE
+                       LoRA适配器中可以存在的额外词汇表的最大大小（添加到基础模型词汇表中）。
+  --lora-dtype {auto,float16,bfloat16,float32}
+                       LoRA的数据类型。如果为auto，将默认为基础模型的数据类型。
+  --max-cpu-loras MAX_CPU_LORAS
+                       存储在CPU内存中的最大LoRAs数量。必须>= max_num_seqs。默认为max_num_seqs。
+  --device {auto,cuda,neuron}
+                       vLLM执行的设备类型。
+  --engine-use-ray      使用Ray在单独的进程中启动LLM引擎，作为服务器进程。
+  --disable-log-requests
+                       禁用记录请求
+  --max-log-len MAX_LOG_LEN
+                       在日志中打印的提示字符或提示ID号码的最大数量。默认：无限制。
+```
+
 
 ## Qwen(通义千问)
 
@@ -257,6 +360,57 @@ curl http://localhost:9000/v1/completions \
   }
 }
 ```
+
+### Qwen1.5-32B-Chat-GPTQ-Int4
+
+下载模型
+
+```shell
+git clone https://www.modelscope.cn/qwen/Qwen1.5-32B-Chat-GPTQ-Int4.git
+```
+
+
+启动服务
+
+#### 调整 PyTorch 的内存分配策略，*T4:2*
+```shell
+PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64 \
+python -m vllm.entrypoints.openai.api_server \
+    --model Qwen/Qwen1.5-32B-Chat-GPTQ-Int4 \
+    --served-model-name gpt-3.5-turbo \
+    --quantization gptq \
+    --gpu-memory-utilization 0.95 \
+    --tensor-parallel-size 2 \
+    --max-model-len 7000
+```
+- 调整 PyTorch 的内存分配策略：通过环境变量 `PYTORCH_CUDA_ALLOC_CONF` 设置 `max_split_size_mb` 参数来调整 PyTorch 的内存分配策略，以避免内存碎片化。
+- --max-model-len `7000`
+
+#### eager 模式运行，*T4:2*
+```shell
+python -m vllm.entrypoints.openai.api_server \
+    --model Qwen/Qwen1.5-32B-Chat-GPTQ-Int4 \
+    --served-model-name gpt-3.5-turbo \
+    --quantization gptq \
+    --gpu-memory-utilization 0.95 \
+    --tensor-parallel-size 2 \
+    --max-model-len 12000 \
+    --enforce-eager
+```
+- 在 `eager` 模式下，模型的计算会立即执行，而不会被编译为 CUDA graphs。
+- --max-model-len `12000`
+
+**❌ `PYTORCH_CUDA_ALLOC_CONF` 和 `enforce-eager` 同时设置没有得到增益**
+
+#### *T4:4*
+```shell
+python -m vllm.entrypoints.openai.api_server \
+    --model Qwen/Qwen1.5-32B-Chat-GPTQ-Int4 \
+    --served-model-name gpt-3.5-turbo \
+    --quantization gptq \
+    --tensor-parallel-size 4
+```
+
 
 ## 参考资料
 - [vLLM](https://github.com/vllm-project/vllm)
