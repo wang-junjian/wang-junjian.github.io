@@ -6,6 +6,8 @@ categories: LangChain
 tags: [LangChain]
 ---
 
+- [LangChain Expression Language (LCEL)](https://python.langchain.com/docs/expression_language/)
+
 ## 介绍
 LangChain 是一个用于开发由大型语言模型（LLM）支持的应用程序的框架。
 
@@ -32,6 +34,41 @@ LangChain 简化了 LLM 应用程序生命周期的每个阶段：
 - langchain-experimental: 包含用于研究和实验用途的实验性 LangChain 代码。
 
 - [LangChain Introduction](https://python.langchain.com/docs/get_started/introduction/)
+
+
+## LCEL Runnable 的原理
+```python
+class Runnable:
+  def __init__(self, func):
+    self.func = func
+
+  def __or__(self, other):
+    def chained_func(*args, **kwargs):
+      # self.func is on the left, other is on the right
+      return other(self.func(*args, **kwargs))
+    return Runnable(chained_func)
+
+  def __call__(self, *args, **kwargs):
+    return self.func(*args, **kwargs)
+
+def add_ten(x):
+  return x + 10
+
+def divide_by_two(x):
+  return x / 2
+
+
+runnable_add_ten = Runnable(add_ten)
+runnable_divide_by_two = Runnable(divide_by_two)
+chain = runnable_add_ten | runnable_divide_by_two
+result = chain(8) # (8+10) / 2 = 9.0 should be the answer
+print(result)
+```
+
+- [LangChain Expression Language Explained](https://www.pinecone.io/learn/series/langchain/langchain-expression-language/)
+- [Unleashing the Power of LangChain Expression Language (LCEL): From Proof of Concept to Production](https://www.artefact.com/blog/unleashing-the-power-of-langchain-expression-language-lcel-from-proof-of-concept-to-production/)
+- [Passing data through](https://python.langchain.com/docs/expression_language/primitives/passthrough/)
+- [libs/core/tests/unit_tests/runnables/test_runnable.py](https://github.com/langchain-ai/langchain/blob/master/libs/core/tests/unit_tests/runnables/test_runnable.py)
 
 
 ## [安装](https://python.langchain.com/docs/get_started/installation/)
