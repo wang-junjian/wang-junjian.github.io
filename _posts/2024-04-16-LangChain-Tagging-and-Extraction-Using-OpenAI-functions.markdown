@@ -98,7 +98,7 @@ tools = [
 prompt = "2024年山东省济南市长清区供电公司的意见合计。"
 ```
 
-- OpenAI
+### OpenAI
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -112,7 +112,46 @@ response = model.invoke(prompt)
 print(response)
 ```
 
-- Tongyi
+### Anthropic
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(temperature=0, model_name="claude-3-sonnet-20240229").bind_tools(
+    [PowerSupplyStationLocation]
+)
+
+response = model.invoke(prompt)
+print(response)
+```
+
+**模型性能：opus > sonnet > haiku**
+
+- claude-3-opus-20240229
+```json
+{
+    'name': 'PowerSupplyStationLocation', 
+    'args': {'province': '山东省', 'city': '济南', 'district': '长清区', 'power_supply_station': '长清区供电公司'}
+}
+```
+
+- claude-3-sonnet-20240229
+```json
+{
+    'name': 'PowerSupplyStationLocation', 
+    'args': {'province': '山东省', 'city': '济南', 'district': '长清区', 'power_supply_station': '长清区供电公司'}
+}
+```
+
+- claude-3-haiku-20240307
+```json
+{
+    'name': 'PowerSupplyStationLocation', 
+    'args': {'province': '山东省', 'city': '济南', 'district': '长清区', 'power_supply_station': '长清区供电公司'}
+}
+```
+
+### Tongyi
 
 ```python
 from langchain_community.chat_models.tongyi import ChatTongyi
