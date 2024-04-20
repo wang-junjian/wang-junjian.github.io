@@ -163,6 +163,38 @@ response = model.invoke(prompt, tools=tools)
 print(response)
 ```
 
+提示词整理
+
+```
+下面是 get_sql_param 的 JSON schema:
+
+{
+    "title": "get_sql_param",
+    "description": "生成SQL需要的参数",
+    "type": "object",
+    "properties": {
+        'province': {
+            'title': 'Province',
+            'description': '省', 
+            'allOf': [{'title': 'ProvinceEnum', 'description': 'An enumeration.', 'enum': ['山东省'], 'type': 'string'}]
+        }, 
+        'city': {
+            'title': 'City',
+            'description': '地级市', 
+            'allOf': [{'title': 'CityEnum', 'description': 'An enumeration.', 'enum': ['济南', '青岛', '淄博', '枣庄', '东营', '烟台', '潍坊', '济宁', '泰安', '威海', '日照', '临沂', '德州', '聊城', '滨州', '菏泽', '莱芜'], 'type': 'string'}]
+        }, 
+        'power_supply_station': {
+            'title': 'Power Supply Station', 'description': '供电所', 'type': 'string'
+        }
+
+    },
+    'required': ['province', 'city', 'power_supply_station']
+}
+
+根据上面定义的 JSON schema，对下面的文本抽取信息，抽取的信息使用 JSON 格式描述。
+2024年山东省济南市长清区供电公司的意见合计。
+```
+
 
 ## 参考资料
 - [LangChain Expression Language (LCEL)](https://python.langchain.com/docs/expression_language/)
