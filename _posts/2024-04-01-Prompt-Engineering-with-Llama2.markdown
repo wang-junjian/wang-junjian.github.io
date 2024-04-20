@@ -2,8 +2,8 @@
 layout: post
 title:  "Prompt Engineering with Llama 2"
 date:   2024-04-01 08:00:00 +0800
-categories: DeepLearningAI Llama2
-tags: [DeepLearningAI, Llama2, CodeLlama, LlamaGuard]
+categories: PromptEngineering Llama
+tags: [Llama2, CodeLlama, LlamaGuard, DeepLearningAI]
 ---
 
 ## Prompt Engineering Techniques（提示工程技术）
