@@ -20,7 +20,6 @@ class ProvinceEnum(str, Enum):
 
 class CityEnum(str, Enum):
     """山东省地级市"""
-    default = ""
     济南 = "济南"
     青岛 = "青岛"
     淄博 = "淄博"
@@ -41,7 +40,6 @@ class CityEnum(str, Enum):
 
 class DistrictEnum(str, Enum):
     """济南市区县"""
-    default = ""
     历下区 = "历下区"
     市中区 = "市中区"
     槐荫区 = "槐荫区"
@@ -55,7 +53,6 @@ class DistrictEnum(str, Enum):
 
 class PowerSupplyStationEnum(str, Enum):
     """供电所"""
-    default = ""
     高新供电中心 = "高新供电中心"
     长清区供电公司 = "长清区供电公司"
     平阴县供电公司 = "平阴县供电公司"
