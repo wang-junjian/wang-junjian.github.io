@@ -65,4 +65,3 @@ Text,SQL
 - [asoria/datasets-text2sql](https://huggingface.co/spaces/asoria/datasets-text2sql/blob/main/app.py)
 - [How to upload dataframe with content of file upload?](https://discuss.huggingface.co/t/how-to-upload-dataframe-with-content-of-file-upload/38587/1)
 - [gr.select() Method Issues with Dataframe Cells (since Version 3.43.0) #5706](https://github.com/gradio-app/gradio/issues/5706)
-- []()
