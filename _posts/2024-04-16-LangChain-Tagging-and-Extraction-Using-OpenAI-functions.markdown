@@ -163,37 +163,168 @@ response = model.invoke(prompt, tools=tools)
 print(response)
 ```
 
-提示词整理
+```json
+{
+    'name': 'PowerSupplyStationLocation', 
+    'args': {
+        'properties': {
+            'city': '济南', 
+            'district': '长清区', 
+            'province': '山东省', 
+            'power_supply_station': '长清区供电公司'
+        }
+    }
+}
+```
+
+## 自定义提示词
 
 ```
-下面是 get_sql_param 的 JSON schema:
+下面是 PowerSupplyStationLocation 的 JSON schema:
 
-{
-    "title": "get_sql_param",
-    "description": "生成SQL需要的参数",
-    "type": "object",
-    "properties": {
-        'province': {
-            'title': 'Province',
-            'description': '省', 
-            'allOf': [{'title': 'ProvinceEnum', 'description': 'An enumeration.', 'enum': ['山东省'], 'type': 'string'}]
-        }, 
-        'city': {
-            'title': 'City',
-            'description': '地级市', 
-            'allOf': [{'title': 'CityEnum', 'description': 'An enumeration.', 'enum': ['济南', '青岛', '淄博', '枣庄', '东营', '烟台', '潍坊', '济宁', '泰安', '威海', '日照', '临沂', '德州', '聊城', '滨州', '菏泽', '莱芜'], 'type': 'string'}]
-        }, 
-        'power_supply_station': {
-            'title': 'Power Supply Station', 'description': '供电所', 'type': 'string'
+[
+    {
+        'type': 'function',
+        'function': {
+            'description': '电网供电所位置',
+            'name': 'PowerSupplyStationLocation',
+            'parameters': {
+                'properties': {
+                    'city': {
+                        'allOf': [
+                            {
+                                'description': '山东省地级市',
+                                'enum': [
+                                    '济南',
+                                    '青岛',
+                                    '淄博',
+                                    '枣庄',
+                                    '东营',
+                                    '烟台',
+                                    '潍坊',
+                                    '济宁',
+                                    '泰安',
+                                    '威海',
+                                    '日照',
+                                    '临沂',
+                                    '德州',
+                                    '聊城',
+                                    '滨州',
+                                    '菏泽',
+                                    '莱芜'
+                                ],
+                                'title': 'CityEnum',
+                                'type': 'string'
+                            }
+                        ],
+                        'description': '地级市'
+                    },
+                    'district': {
+                        'allOf': [
+                            {
+                                'description': '济南市区县',
+                                'enum': [
+                                    '历下区',
+                                    '市中区',
+                                    '槐荫区',
+                                    '天桥区',
+                                    '历城区',
+                                    '长清区',
+                                    '平阴县',
+                                    '济阳区',
+                                    '商河县',
+                                    '章丘区'
+                                ],
+                                'title': 'DistrictEnum',
+                                'type': 'string'
+                            }
+                        ],
+                        'description': '区县'
+                    },
+                    'power_supply_station': {
+                        'allOf': [
+                            {
+                                'description': '供电所',
+                                'enum': [
+                                    '高新供电中心',
+                                    '长清区供电公司',
+                                    '平阴县供电公司',
+                                    '历城区供电公司',
+                                    '天桥供电中心',
+                                    '市中供电中心',
+                                    '客户服务中心',
+                                    '章丘区供电公司',
+                                    '历下供电中心',
+                                    '槐荫供电中心',
+                                    '济阳区供电公司',
+                                    '商河县供电公司',
+                                    '起步区供电中心'
+                                ],
+                                'title': 'PowerSupplyStationEnum',
+                                'type': 'string'
+                            }
+                        ],
+                        'description': '供电所'
+                    },
+                    'province': {
+                        'allOf': [
+                            {
+                                'description': '省、直辖市、自治区',
+                                'enum': [
+                                    '山东省'
+                                ],
+                                'title': 'ProvinceEnum',
+                                'type': 'string'
+                            }
+                        ],
+                        'description': '省、直辖市、自治区'
+                    }
+                },
+                'required': [
+                    'province'
+                ],
+                'type': 'object'
+            }
         }
+    }
+]
 
-    },
-    'required': ['province', 'city', 'power_supply_station']
-}
 
 根据上面定义的 JSON schema，对下面的文本抽取信息，抽取的信息使用 JSON 格式描述。
 2024年山东省济南市长清区供电公司的意见合计。
 ```
+
+- Ollama llama3-8b
+
+Based on the provided JSON schema, I will extract the information from the given text and represent it in JSON format.
+
+Here is the extracted information:
+
+```
+{
+    "province": "山东省",
+    "city": "济南市",
+    "district": "长清区",
+    "power_supply_station": "长清区供电公司"
+}
+```
+
+Please note that I used the `required` parameter in the JSON schema to determine the minimum required fields, and since only these four fields are present in the text, I extracted them accordingly.
+
+- Ollama llama3-70b
+
+Based on the provided JSON schema, I extracted the following information from the given text:
+
+```
+{
+  "province": "山东省",
+  "city": "济南",
+  "district": "长清区",
+  "power_supply_station": "长清区供电公司"
+}
+```
+
+Let me know if you need any further assistance! 😊
 
 
 ## 参考资料
