@@ -7,6 +7,7 @@ tags: [Ollama, OllamaHub, OllamaWebUI, GPT]
 ---
 
 ## [Ollama](https://github.com/jmorganca/ollama)
+- [Embedding models](https://ollama.com/blog/embedding-models)
 
 ### 部署
 - [下载](https://ollama.ai/download)
