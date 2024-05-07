@@ -9,7 +9,19 @@ tags: [LLaMA-Factory, LLaMA, LLM, Fine-Tuning]
 - [LLaMA Factory](https://github.com/hiyouga/LLaMA-Factory/blob/main/README_zh.md)
 
 ## 安装
-    
+
+- pip
+```bash
+git clone https://github.com/hiyouga/LLaMA-Factory.git
+cd LLaMA-Factory
+
+python -m venv env
+source env/bin/activate
+
+pip install -e .[metrics]
+```
+
+- conda
 ```bash
 git clone https://github.com/hiyouga/LLaMA-Factory.git
 
@@ -19,6 +31,8 @@ conda activate llama_factory
 cd LLaMA-Factory
 pip install -r requirements.txt
 ```
+
+**使用 conda 第二次没有安装成功**
 
 ## 使用
 
