@@ -11,6 +11,7 @@ tags: [LLaMA-Factory, LLaMA, LLM, Fine-Tuning]
 ## 安装
 
 - pip
+
 ```bash
 git clone https://github.com/hiyouga/LLaMA-Factory.git
 cd LLaMA-Factory
@@ -22,6 +23,7 @@ pip install -e .[metrics]
 ```
 
 - conda
+
 ```bash
 git clone https://github.com/hiyouga/LLaMA-Factory.git
 
