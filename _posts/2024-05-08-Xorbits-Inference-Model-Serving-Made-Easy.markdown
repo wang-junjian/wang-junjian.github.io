@@ -173,5 +173,7 @@ xinference terminate --model-uid qwen1.5-chat
 
 
 ## 参考资料
+- [Xinference GitHub](https://github.com/xorbitsai/inference/blob/main/README_zh_CN.md)
+- [Xinference 文档](https://inference.readthedocs.io/zh-cn/latest/index.html)
 - [客户端 API](https://inference.readthedocs.io/zh-cn/latest/user_guide/client_api.html)
 - [Metrics](https://inference.readthedocs.io/zh-cn/latest/user_guide/metrics.html)
