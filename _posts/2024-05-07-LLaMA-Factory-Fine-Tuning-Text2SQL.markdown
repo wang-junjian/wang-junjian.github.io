@@ -78,7 +78,7 @@ lora_target: q_proj,v_proj
 dataset: text2sql
 template: qwen
 cutoff_len: 1024
-max_samples: 500
+max_samples: 3000
 val_size: 0.1
 overwrite_cache: true
 preprocessing_num_workers: 16
@@ -104,6 +104,7 @@ per_device_eval_batch_size: 1
 evaluation_strategy: steps
 eval_steps: 500
 ```
+- max_samples: 3000 效果不错，默认 500 太少了，会导致不能有效地把完整地`供电所`识别出来。
 
 ```shell
 CUDA_VISIBLE_DEVICES=0 llamafactory-cli train text2sql/qwen1.5-4b-chat_lora_sft.yaml
