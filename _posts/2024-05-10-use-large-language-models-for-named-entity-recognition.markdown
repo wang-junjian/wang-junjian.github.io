@@ -318,54 +318,58 @@ template = """你将获得一个可能包含电力领域的用户消息。你还
 ## 示例
 INPUT:今年山东省济南市长清区供电公司崮山供电所投诉总数
 OUTPUT:
-```json
-{{
-    "text": "今年山东省济南市长清区供电公司崮山供电所投诉总数",
-    "entities": [
-        {{
-            "type": "Date",
-            "start": 0,
-            "end": 2,
-            "entity": "今年"
-        }},
-        {{
-            "type": "Province",
-            "start": 2,
-            "end": 5,
-            "entity": "山东省"
-        }},
-        {{
-            "type": "City",
-            "start": 5,
-            "end": 8,
-            "entity": "济南市"
-        }},
-        {{
-            "type": "Company",
-            "start": 8,
-            "end": 15,
-            "entity": "长清区供电公司"
-        }},
-        {{
-            "type": "Substation",
-            "start": 15,
-            "end": 20,
-            "entity": "崮山供电所"
-        }},
-        {{
-            "type": "Indicator",
-            "start": 20,
-            "end": 22,
-            "entity": "投诉"
-        }}
-    ]
-}}
-```
 
 ## 请你对下面的文本进行电力领域命名实体识别标注
 {question}
 """
 ```
+
+上面示例的 OUTPUT
+
+```json
+{
+    "text": "今年山东省济南市长清区供电公司崮山供电所投诉总数",
+    "entities": [
+        {
+            "type": "Date",
+            "start": 0,
+            "end": 2,
+            "entity": "今年"
+        },
+        {
+            "type": "Province",
+            "start": 2,
+            "end": 5,
+            "entity": "山东省"
+        },
+        {
+            "type": "City",
+            "start": 5,
+            "end": 8,
+            "entity": "济南市"
+        },
+        {
+            "type": "Company",
+            "start": 8,
+            "end": 15,
+            "entity": "长清区供电公司"
+        },
+        {
+            "type": "Substation",
+            "start": 15,
+            "end": 20,
+            "entity": "崮山供电所"
+        },
+        {
+            "type": "Indicator",
+            "start": 20,
+            "end": 22,
+            "entity": "投诉"
+        }
+    ]
+}
+```
+
 
 ### 测试
 ```python
