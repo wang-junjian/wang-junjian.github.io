@@ -916,3 +916,4 @@ question = "一季度威海乳山市供电公司诸往供电所意见总数"
 - [通义千问](https://tongyi.aliyun.com/)
 - [Kimi](https://kimi.moonshot.cn/)
 - [微调大型语言模型进行命名实体识别](https://new.qq.com/rain/a/20240316A01HGA00)
+- [awesome-chinese-ner 中文命名实体识别](https://github.com/taishan1994/awesome-chinese-ner)
