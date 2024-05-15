@@ -210,40 +210,40 @@ CUDA_VISIBLE_DEVICES=3 llamafactory-cli chat \
 ### --num_train_epochs 2
 
 - 🙋‍♂️ 菏泽巨野县供电公司麒麟供电所投诉个数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数`
 
 - 🙋‍♂️ 菏泽市意见百万户量总数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数`
 
 - 🙋‍♂️ 巨野县供电公司投诉总数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>投诉</Indicator>总数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>投诉</Indicator>总数`
 
 - 🙋‍♂️ 菏泽巨野县供电公司意见百万户量总数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见百万户量</Indicator>总数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见百万户量</Indicator>总数`
 
 - 🙋‍♂️ 菏泽麒麟供电所意见个数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数`
 
 - 🙋‍♂️ 麒麟供电所投诉百万户量个数
-- 🤖(❌) <Province>山东省</Province><City>青岛</City><Company>平度市供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉百万户量</Indicator>个数
+- 🤖(❌) `<Province>山东省</Province><City>青岛</City><Company>平度市供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉百万户量</Indicator>个数`
 
 - 🙋‍♂️ 本月菏泽市巨野县供电公司麒麟供电所投诉个数
-- 🤖 <Date>本月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数
+- 🤖 `<Date>本月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数`
 
 - 🙋‍♂️ 4月菏泽市意见百万户量总数
-- 🤖 <Date>4月</Date><Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数
+- 🤖 `<Date>4月</Date><Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数`
 
 - 🙋‍♂️ 三季度巨野县供电公司意见数量
-- 🤖 <Date>三季度</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>数量
+- 🤖 `<Date>三季度</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>数量`
 
 - 🙋‍♂️ 12月菏泽市巨野县供电公司意见总数
-- 🤖 <Date>12月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>总数
+- 🤖 `<Date>12月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>总数`
 
 - 🙋‍♂️ 2020年04月28号菏泽麒麟意见个数
-- 🤖(❌) <Date>2020年04月28号</Date><Province>山东省</Province><City>菏泽</City><Company>曹县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数
+- 🤖(❌) `<Date>2020年04月28号</Date><Province>山东省</Province><City>菏泽</City><Company>曹县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数`
 
 - 🙋‍♂️ 9月麒麟供电所意见百万户量总数
-- 🤖(❌) <Date>9月</Date><Province>山东省</Province><City>青岛</City><Company>即墨市供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见百万户量</Indicator>总数
+- 🤖(❌) `<Date>9月</Date><Province>山东省</Province><City>青岛</City><Company>即墨市供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见百万户量</Indicator>总数`
 
 **使用 `chat` 每次提问前先运行命令 `clear`，避免历史记录影响了。**
 
@@ -251,42 +251,42 @@ CUDA_VISIBLE_DEVICES=3 llamafactory-cli chat \
 ### --num_train_epochs 5
 
 - 🙋‍♂️ 菏泽巨野县供电公司麒麟供电所投诉个数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数`
 
 - 🙋‍♂️ 菏泽市意见百万户量总数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数`
 
 - 🙋‍♂️ 巨野县供电公司投诉总数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>投诉</Indicator>总数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>投诉</Indicator>总数`
 
 - 🙋‍♂️ 菏泽巨野县供电公司意见百万户量总数
-- 🤖 <Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见百万户量</Indicator>总数
+- 🤖 `<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见百万户量</Indicator>总数`
 
 - 🙋‍♂️ 菏泽麒麟供电所意见个数
-- 🤖(❌) <Province>山东省</Province><City>菏泽</City><Company>曹县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数
+- 🤖(❌) `<Province>山东省</Province><City>菏泽</City><Company>曹县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数`
     - `有时会成功`
 
 - 🙋‍♂️ 麒麟供电所投诉百万户量个数
-- 🤖(❌) <Province>山东省</Province><City>临沂</City><Company>莒南县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉百万户量</Indicator>个数
+- 🤖(❌) `<Province>山东省</Province><City>临沂</City><Company>莒南县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉百万户量</Indicator>个数`
 
 - 🙋‍♂️ 本月菏泽市巨野县供电公司麒麟供电所投诉个数
-- 🤖 <Date>本月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数
+- 🤖 `<Date>本月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>个数`
 
 - 🙋‍♂️ 4月菏泽市意见百万户量总数
-- 🤖 <Date>4月</Date><Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数
+- 🤖 `<Date>4月</Date><Province>山东省</Province><City>菏泽</City><Indicator>意见百万户量</Indicator>总数`
 
 - 🙋‍♂️ 三季度巨野县供电公司意见数量
-- 🤖 <Date>三季度</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>数量
+- 🤖 `<Date>三季度</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>数量`
 
 - 🙋‍♂️ 12月菏泽市巨野县供电公司意见总数
-- 🤖 <Date>12月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>总数
+- 🤖 `<Date>12月</Date><Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>总数`
 
 - 🙋‍♂️ 2020年04月28号菏泽麒麟意见个数
-- 🤖(❌) <Date>2020年04月28号</Date><Province>山东省</Province><City>菏泽</City><Company>曹县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数
+- 🤖(❌) `<Date>2020年04月28号</Date><Province>山东省</Province><City>菏泽</City><Company>曹县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数`
     - `有时会成功`
 
 - 🙋‍♂️ 9月麒麟供电所意见百万户量总数
-- 🤖(❌) <Date>9月</Date><Province>山东省</Province><City>潍坊</City><Company>安丘市供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见百万户量</Indicator>总数
+- 🤖(❌) `<Date>9月</Date><Province>山东省</Province><City>潍坊</City><Company>安丘市供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见百万户量</Indicator>总数`
 
 
 ## 参考
