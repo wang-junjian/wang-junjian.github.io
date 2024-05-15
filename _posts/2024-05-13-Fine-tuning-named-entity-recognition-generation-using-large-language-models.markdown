@@ -38,7 +38,7 @@ tags: [Qwen, LLaMA-Factory, Fine-Tuning, NER, LoRA, Text2SQL]
 
 ## 总结
 
-`--num_train_epochs` 设置 `2-3` 时就可以了。
+使用的大模型 `Qwen1.5-4B-Chat` 微调，`--num_train_epochs` 设置 `2-3` 就可以了。
 
 对于给了 `城市`+`供电所` 和 `供电所` 的情况，模型并不能很好的生成 `供电公司` 和 `城市`+`供电公司`。如下：
 
