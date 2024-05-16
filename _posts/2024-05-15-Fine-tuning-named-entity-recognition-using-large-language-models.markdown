@@ -61,7 +61,17 @@ tags: [Qwen, LLaMA-Factory, Fine-Tuning, NER, LoRA, Text2SQL]
 
 Qwen1.5-4B-Chat 也很好地实现了电力领域的命名实体识别标注。
 
-Qwen1.5-0.5B-Chat 也实现了电力领域的命名实体识别标注，但有一点点错误，这里 `--num_train_epochs` 设置 `2`。
+Qwen1.5-0.5B-Chat 也实现了电力领域的命名实体识别标注，但有一点点错误，这里分别微调了 `--num_train_epochs` 设置 `2` 和 `3`。问题如下：
+
+- 菏泽巨野县供电公司麒麟供电所意见个数
+- ❌ `<Company>菏泽巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数`
+
+目前只有这个有问题，其他的都是正确的，如：
+
+- 菏泽曹县供电公司闫店楼供电所意见个数
+- 菏泽曹县供电公司闫店楼供电所投诉百万户量个数
+- 菏泽鄄城县供电公司闫什意见个数
+- 济南长清区供电公司崮山意见总数
 
 
 ## 自定义数据集
@@ -306,7 +316,7 @@ CUDA_VISIBLE_DEVICES=3 llamafactory-cli chat \
 ### Qwen1.5-0.5B-Chat
 
 - 🙋‍♂️ 菏泽巨野县供电公司麒麟供电所意见个数
-- 🤖(❌) <Company>菏泽巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数`
+- 🤖(❌) `<Company>菏泽巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>意见</Indicator>个数`
 
 - 🙋‍♂️ 上个月菏泽市巨野县供电公司麒麟投诉总数
 - 🤖 `<Date>上个月</Date><City>菏泽市</City><Company>巨野县供电公司</Company><Substation>麒麟</Substation><Indicator>投诉</Indicator>总数`
@@ -354,7 +364,7 @@ CUDA_VISIBLE_DEVICES=3 llamafactory-cli chat \
 - 🤖 `<Date>前天</Date><Province>山东省</Province><City>菏泽市</City><Company>巨野县供电公司</Company><Indicator>意见</Indicator>数量`
 
 - 🙋‍♂️ 菏泽市麒麟供电所投诉数量
-- 🤖 `<City>菏泽市</City><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量
+- 🤖 `<City>菏泽市</City><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量`
 
 - 🙋‍♂️ 6月菏泽市麒麟投诉百万户量数量
 - 🤖 `<Date>6月</Date><City>菏泽市</City><Substation>麒麟</Substation><Indicator>投诉百万户量</Indicator>数量`
