@@ -19,41 +19,38 @@ tags: [Qwen, LLaMA-Factory, Fine-Tuning, NER, LoRA, Text2SQL]
 
 对用户的输入进行命名实体识别标注，输出的结果应该包含所有的电力领域实体类型的实例。
 - 山东省菏泽巨野县供电公司麒麟供电所投诉数量
-```
-<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量
-```
+
+`<Province>山东省</Province><City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量`
+
 - 菏泽巨野县供电公司麒麟供电所投诉数量
-```
-<City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量
-```
+
+`<City>菏泽</City><Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量`
+
 - 菏泽巨野投诉数量
-```
-<City>菏泽</City><Indicator>投诉</Indicator>数量
-```
+
+`<City>菏泽</City><Indicator>投诉</Indicator>数量`
+
 - 菏泽麒麟投诉数量
-```
-<City>菏泽</City><Substation>麒麟</Substation><Indicator>投诉</Indicator>数量
-```
+
+`<City>菏泽</City><Substation>麒麟</Substation><Indicator>投诉</Indicator>数量`
 - 巨野县供电公司麒麟供电所投诉数量
-```
-<Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量
-```
+
+`<Company>巨野县供电公司</Company><Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量`
 - 巨野麒麟投诉数量
-```
-<City>巨野</City><Substation>麒麟</Substation><Indicator>投诉</Indicator>数量
-```
+
+`<City>巨野</City><Substation>麒麟</Substation><Indicator>投诉</Indicator>数量`
+
 - 巨野投诉数量
-```
-<City>巨野</City><Indicator>投诉</Indicator>数量
-```
+
+`<City>巨野</City><Indicator>投诉</Indicator>数量`
+
 - 麒麟供电所投诉数量
-```
-<Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量
-```
+
+`<Substation>麒麟供电所</Substation><Indicator>投诉</Indicator>数量`
+
 - 麒麟投诉数量
-```
-<Substation>麒麟</Substation><Indicator>投诉</Indicator>数量
-```
+
+`<Substation>麒麟</Substation><Indicator>投诉</Indicator>数量`
 
 
 ## 总结
