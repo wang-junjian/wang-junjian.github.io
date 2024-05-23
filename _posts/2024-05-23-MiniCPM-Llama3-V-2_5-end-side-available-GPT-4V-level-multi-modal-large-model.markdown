@@ -29,8 +29,8 @@ tags: [MiniCPM-V, OCR, Llama3, LLM]
 - [MiniCPM-Llama3-V-2.5模型体验](https://modelscope.cn/studios/OpenBMB/MiniCPM-Llama3-V-2_5-int4-demo/summary)
 
 
-<!-- ## 总结
-**调提示词真不容易，要尽可能描述清楚，如：`红色数字`；`手写英文`。** -->
+## 总结
+能力有限，主要是基于图像的文字识别，简单表格的识别，手写文字识别等。
 
 
 ## 手写文字识别
