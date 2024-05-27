@@ -11,16 +11,18 @@ tags: []
 
 您是一名 Java 高级软件工程师，主要任务是根据缺陷报告的信息修复软件中的漏洞。
 
-# 要求
-- 请根据`缺陷报告`，修复`缺陷代码片断`的缺陷。
-- 要求修复后的软件不改变原有的功能。
-- 需要给出修复后的代码片段或者修复建议。
+要求
+======
+请根据`缺陷报告`，修复`缺陷代码片断`的缺陷。
+要求修复后的软件不改变原有的功能。
+需要给出修复后的代码片段或者修复建议。
 
-# 缺陷报告
-## 缺陷类别：
+缺陷报告
+======
+缺陷类别：
 一级类： 代码注入
 二级类：SQL注入：MyBatis
-## 详细信息：
+详细信息：
     SQL注入是一种数据库攻击手段。攻击者通过向应用程序提交恶意代码来改变原SQL语句的含义，进而执行任意SQL命令，达到入侵数据库乃至操作系统的目的。在Mybatis Mapper Xml中，`#`变量名称创建参数化查询SQL语句,不会导致SQL注入。而`$`变量名称直接使用SQL指令，会导致SQL注入攻击。
 **例如**：以下代码片段采用`$`变量名称动态地构造并执行了SQL查询。
 ```xml
@@ -38,7 +40,7 @@ user.queryByUserName(username);
 `validuser' OR '1'='1`
 当其注入到命令时，命令就会变成：
 `select * from db_user where user_name ='validuser' OR '1'='1'`
-## 修复建议：
+修复建议：
     造成SQL注入攻击的根本原因在于攻击者可以改变SQL查询的上下文，使程序员原本要作为数据解析的数值，被篡改为命令了。防止SQL注入的方法如下：
 1. 正确使用参数化API进行SQL查询。
 2. 如果构造SQL指令时需要动态加入约束条件，可以通过创建一份合法字符串列表，使其对应于可能要加入到SQL指令中的不同元素，来避免SQL注入攻击。
@@ -49,11 +51,14 @@ user.queryByUserName(username);
     select * from db_user where user_name=#{username}
 </select>
 ```
-## 爆发代码：
+爆发代码：
+```java
         return userMapper.selectUserList(user);
+```
 
 
-# 缺陷代码片断
+缺陷代码片断
+======
 ```java
     public List<ImSysUser> selectUserList(ImSysUser user) {
         return userMapper.selectUserList(user);
@@ -303,11 +308,11 @@ Mapper.xml 中的相应查询方法修复如下：
 
 ### [Gemini-1.5-Flash](https://poe.com/chat/2c1ktx2qsb6df9ln9qn)
 
-## 修复建议
+修复建议
 
 根据缺陷报告，`selectUserList` 方法中调用了 `userMapper.selectUserList(user)`，而 `userMapper` 的实现细节未知，无法确定其是否使用了安全的参数化查询方式。为了避免潜在的 SQL 注入风险，建议对 `userMapper.selectUserList(user)` 进行修改，使用参数化查询方式。
 
-## 修复后的代码片段
+修复后的代码片段
 
 ```java
     public List<ImSysUser> selectUserList(ImSysUser user) {
@@ -328,7 +333,7 @@ Mapper.xml 中的相应查询方法修复如下：
 * 实际修复代码需要根据 `userMapper` 的具体实现进行调整。
 * 以上代码仅供参考，具体的修复方案需要根据实际情况进行调整。
 
-## 其他建议
+其他建议
 
 * 除了使用参数化查询之外，还可以使用预编译语句来防止 SQL 注入攻击。
 * 对于动态构造 SQL 语句，可以使用白名单机制来限制可接受的输入值。
