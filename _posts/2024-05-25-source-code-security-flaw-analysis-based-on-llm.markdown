@@ -562,7 +562,8 @@ public List<ImSysUser> selectUserList(ImSysUser user) {
 
 根据缺陷报告中的信息，我们需要修复的是MyBatis Mapper XML文件中的SQL注入问题。具体来说，我们需要将使用`$`变量名称的SQL语句替换为使用`#`变量名称的参数化查询，以防止SQL注入攻击。
 
-### 修复后的Mapper XML代码片段
+修复后的Mapper XML代码片段
+
 ```xml
 <!--select user information by name-->
 <select id="queryByUserName" resultMap="userResultMap" parameterType="String">
@@ -570,7 +571,8 @@ public List<ImSysUser> selectUserList(ImSysUser user) {
 </select>
 ```
 
-### 修复后的Java代码片段
+修复后的Java代码片段
+
 Java代码片段本身并没有直接暴露SQL注入的缺陷，因为它只是调用了Mapper接口的方法。但是，为了确保整个系统的安全性，我们需要确保所有相关的Mapper XML文件都已更新，以使用参数化查询。
 
 ```java
