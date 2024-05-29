@@ -390,6 +390,11 @@ public List<ImSysUser> selectUserList(ImSysUser user) {
 
 通过这种方式，应用程序将安全地执行SQL查询，同时保持原有的功能不变。
 
+---
+
+通过代码审计人员提供的 `隐性知识`，我们可以看到以下的修复建议：
+
+![](/images/2024/SecurityDefectAnalysis.png)
 
 ---
 
