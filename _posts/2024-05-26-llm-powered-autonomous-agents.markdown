@@ -6,6 +6,23 @@ categories: Agent LLM
 tags: [Agent, LLM]
 ---
 
+## Application scenarios of AI agents（AI代理的应用场景）
+AI代理是LLM应用的重要场景，构建代理应用将是2024年的重要技术领域。目前我们主要的智能形式有单AI代理，多AI代理，混合AI代理等三种。
+
+![](/images/2024/Agent/hybridAgent.png)
+
+### Single AI Agent（单一人工智能代理）
+在特定任务场景下完成的工作，比如 GitHub Copilot Chat 下的代理工作区，就是根据用户需求完成特定编程任务的一个例子。基于 LLM 的能力，单个代理可以根据任务执行不同的动作，比如需求分析、项目阅读、代码生成等。它也可以应用于智能家居和自动驾驶。
+
+### Multi-AI Agents（多人工智能代理）
+这就是AI代理之间相互交互的工作。例如上述Semantic Kernel代理实现就是一个例子。脚本生成的AI代理与执行脚本的AI代理进行交互。多代理应用场景在高度协同的工作中非常有帮助，例如软件行业开发、智能生产、企业管理等。
+
+### Hybrid AI Agent（混合人工智能代理）
+这就是人机交互，在同一个环境下做决策。比如智慧医疗、智慧城市等专业领域，可以利用混合智能来完成复杂的专业工作。
+
+- [Building AI Agent Applications Series - Understanding AI Agents](https://techcommunity.microsoft.com/t5/educator-developer-blog/building-ai-agent-applications-series-understanding-ai-agents/ba-p/4046944)
+
+
 ## [Intro of AI agent, & AI agent projects summary](https://medium.com/@henryhengluo/intro-of-ai-agent-ai-agent-projects-summary-52f4a364ab86)
 
 | Project       | Key Features                                                                                          |
@@ -63,7 +80,7 @@ tags: [Agent, LLM]
 ## AI Agent Frameworks
 - [AutoGPT](https://github.com/Significant-Gravitas/AutoGPT)
 - [TaskWeaver](https://github.com/microsoft/TaskWeaver)
-- [crewAI](https://github.com/joaomdmoura/crewAI)
+- [CrewAI](https://github.com/joaomdmoura/crewAI)
 - [BabyAGI](https://github.com/yoheinakajima/babyagi)
 - [CAMEL](https://github.com/camel-ai/camel)
 - [MetaGPT](https://github.com/geekan/MetaGPT)
@@ -77,6 +94,25 @@ tags: [Agent, LLM]
 - [XAgent](https://github.com/OpenBMB/XAgent)
 - [Qwen-Agent](https://github.com/QwenLM/Qwen-Agent)
 - [Lagent](https://github.com/InternLM/lagent)
+
+
+## Multi-Agent Systems
+- [CrewAI](https://www.crewai.com/)
+- [AutoGen](https://microsoft.github.io/autogen/)
+    - [AutoGen Studio](https://github.com/microsoft/autogen/tree/main/samples/apps/autogen-studio)
+    - [AutoGen Studio 2.0](https://autogen-studio.com/autogen-studio-ui)
+- [Rivet](https://rivet.ironcladapp.com/)
+- [Agency Swarm](https://github.com/VRSEN/agency-swarm)
+- [Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/overview/)
+- [CAMEL](https://github.com/camel-ai/camel)
+- [AgentVerse](https://github.com/OpenBMB/AgentVerse)
+- [BotSharp](https://github.com/SciSharp/BotSharp)
+- AI Agent Team Frameworks
+    - [AI Agent Team Frameworks - Part I](https://www.linkedin.com/pulse/ai-agent-team-frameworks-part-i-p%C3%A9ter-balogh-1xanf)
+    - [AI Agent Team Frameworks - Part II](https://www.linkedin.com/pulse/ai-agent-team-frameworks-part-ii-p%C3%A9ter-balogh-zj1uf)
+    - [AI Agent Team Frameworks - Part III](https://www.linkedin.com/pulse/ai-agent-team-frameworks-part-iii-p%C3%A9ter-balogh-hscuf)
+    - [AI Agent Team Frameworks - Part IV](https://www.linkedin.com/pulse/ai-agent-team-frameworks-part-iv-p%C3%A9ter-balogh-yya8e)
+- []()
 
 
 ## 参考资料
