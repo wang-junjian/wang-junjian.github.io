@@ -394,7 +394,8 @@ public List<ImSysUser> selectUserList(ImSysUser user) {
 
 通过代码审计人员提供的 `隐性知识`，我们可以看到以下的修复建议：
 
-![](/images/2024/SecurityDefectAnalysis.png)
+![](/images/2024/SecurityDefectAnalysis/Cohere-aya-23-8B.png)
+
 
 ---
 
@@ -588,6 +589,13 @@ public List<ImSysUser> selectUserList(ImSysUser user) {
 
 在这个修复中，我们没有改变Java代码的功能，只是更新了Mapper XML文件中的SQL语句，以确保使用参数化查询，从而防止SQL注入攻击。
 
+
+---
+
+
+### [DeepSeek-V2 16B](https://ollama.com/library/deepseek-v2)
+
+![](/images/2024/SecurityDefectAnalysis/DeepSeek-V2-16B.png)
 
 ---
 
