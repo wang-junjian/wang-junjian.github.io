@@ -1,0 +1,86 @@
+---
+layout: post
+title:  "Ollama"
+date:   2024-06-02 08:00:00 +0800
+categories: Ollama AICodingAssistant
+tags: [Ollama, OllamaServer, LLM]
+---
+
+## 开放 Ollama 服务
+
+### 环境变量
+- `OLLAMA_HOST`: Ollama 服务器的 IP 地址（默认 127.0.0.1:11434）
+- `OLLAMA_NUM_PARALLEL`: 最大并行请求数（默认 1）
+- `OLLAMA_MAX_LOADED_MODELS`: 最大加载模型数量（默认 1）
+- `OLLAMA_KEEP_ALIVE`: 模型在内存中保持加载的持续时间（默认 5m），-1 表示永久保持加载。
+
+* [ollama/envconfig/config.go](https://github.com/ollama/ollama/blob/main/envconfig/config.go)
+* [Ollama FAQ](https://github.com/ollama/ollama/blob/main/docs/faq.md)
+
+### Linux
+
+1. 编辑 systemd 服务，调用 `systemctl edit ollama.service`。这将打开一个编辑器。
+```bash
+sudo systemctl edit ollama.service
+```
+2. 对于每个环境变量，在 [Service] 部分下添加一行 Environment：
+```ini
+[Service]
+Environment="OLLAMA_HOST=0.0.0.0"
+Environment="OLLAMA_NUM_PARALLEL=3"
+Environment="OLLAMA_MAX_LOADED_MODELS=6"
+Environment="OLLAMA_KEEP_ALIVE=4h"
+```
+3. 保存并关闭编辑器。
+4. 重新加载 systemd 并重启 Ollama。
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+```
+
+- [Dify Ollama](https://docs.dify.ai/tutorials/model-configuration/ollama)
+- [Allow listening on all local interfaces](https://github.com/ollama/ollama/issues/703)
+
+### 查看运行的模型
+
+```bash
+ollama ps
+```
+```
+NAME                   	ID          	SIZE  	PROCESSOR	UNTIL            
+nomic-embed-text:latest	0a109f422b47	518 MB	100% CPU 	4 hours from now	
+codeqwen:7b            	a6f7662764bd	4.9 GB	100% CPU 	4 hours from now	
+yi:6b                  	a7f031bb846f	4.3 GB	100% CPU 	4 hours from now
+```
+
+
+## Embedding Models
+
+![](/images/2024/Embedding/mxbai-embed-db.png)
+
+| Model | Parameter Size | Context Length |       |
+| ----- | -------------: | -------------: | :---: |
+| [mxbai-embed-large](https://www.mixedbread.ai/blog/mxbai-embed-large-v1) | 334M |  512 | [View model](https://ollama.com/models/mxbai-embed-large) |
+| [nomic-embed-text](https://blog.nomic.ai/posts/nomic-embed-text-v1)  | 137M | 8192 | [View model](https://ollama.com/models/nomic-embed-text) |
+| [all-minilm](https://www.sbert.net/)        | 23M  | 256 | [View model](https://ollama.com/models/all-minilm) |
+
+- [Embedding models](https://ollama.com/blog/embedding-models)
+
+### mxbai-embed-large
+
+mxbai-embed-large 模型以其在多个领域、任务和文本长度上的良好泛化能力而闻名。它是在没有重叠 MTEB 数据的情况下训练的，表明在各种情况下具有强大的性能。该模型适用于需要理解和处理大型和多样化数据集的应用程序。
+
+#### 为什么没有较长的上下文长度？
+
+最近，我们发现有些模型宣称支持长上下文以缓解分块。虽然我们认识到分块很糟糕，但使用长上下文模型并不是解决方案。
+
+通过嵌入，我们旨在捕捉文本的语义。为了便于说明，请想象一下您自己的长上下文文档。它们可以包含任意数量的不同信息和多个主题，这些主题可能不相关或相互矛盾。使用单个嵌入准确表示这一点几乎是极其困难的，这就是为什么我们决定不支持长上下文，而是以更智能、更合理的方式解决这个问题。敬请期待，精彩内容即将推出！
+
+### nomic-embed-text
+
+nomic-embed-text 模型是一个大上下文长度文本编码器，优于一些 OpenAI 的文本嵌入模型。它特别擅长处理短文本和长文本任务，使其成为生成嵌入的多功能选择。该模型是开源的、开放的数据，完全可重现的，为开发者增加了额外的透明度和可靠性。
+
+### all-minilm
+all-minilm 模型旨在使用自监督对比学习目标在非常大的句子级数据集上训练句子嵌入模型。它旨在对句子级嵌入进行高效和有效的训练，使其成为在更细粒度的层面上进行聚类或语义搜索等任务的绝佳选择。
+
+- [Ollama Adds Support for Embeddings](https://medium.com/@omargohan/ollama-adds-support-for-embeddings-d2646b9fc326)
