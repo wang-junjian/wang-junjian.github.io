@@ -80,3 +80,26 @@ response = client.chat.completions.create(
 for chunk in response:
     print(chunk.choices[0].delta.content)
 ```
+
+
+## CURL
+
+```bash
+curl --request POST \
+     --url https://api.siliconflow.cn/v1/chat/completions \
+     --header 'Authorization: Bearer sk-xxxxxx' \
+     --header 'accept: application/json' \
+     --header 'content-type: application/json' \
+     --data '{
+  "model": "deepseek-ai/deepseek-v2-chat",
+  "messages": [
+    {
+      "role": "user",
+      "content": "你好"
+    }
+  ],
+  "stream": false,
+  "max_tokens": 512,
+  "temperature": 0.7
+}'
+```
