@@ -36,6 +36,8 @@ tags: [SiliconCloud, OpenAI, LLM]
 | google/gemma-2b-it                    | ¥0.14/1M tokens |
 | microsoft/Phi-3-mini-4k-instruct      |  |
 
+- [价格](https://siliconflow.cn/zh-cn/pricing)
+
 
 ## OpenAI API
 
