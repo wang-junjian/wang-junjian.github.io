@@ -19,6 +19,7 @@ tags: [SiliconCloud, OpenAI, LLM]
 | --- | --- |
 | deepseek-ai/deepseek-v2-chat          | ¥1.33/1M tokens |
 | deepseek-ai/deepseek-llm-67b-chat     | ¥1/1M tokens |
+| alibaba/Qwen2-7B-Instruct             | ¥0.35/1M tokens |
 | alibaba/Qwen1.5-110B-Chat             | ¥4.13/1M tokens |
 | alibaba/Qwen1.5-32B-Chat              | ¥1.26/1M tokens |
 | alibaba/Qwen1.5-14B-Chat              | ¥0.7/1M tokens |
@@ -26,6 +27,7 @@ tags: [SiliconCloud, OpenAI, LLM]
 | 01-ai/Yi-1.5-34B-Chat                 | ¥1.26/1M tokens |
 | 01-ai/Yi-1.5-9B-Chat                  | ¥0.42/1M tokens |
 | 01-ai/Yi-1.5-6B-Chat                  | ¥0.35/1M tokens |
+| zhipuai/glm4-9B-chat                  | ¥0.6/1M tokens |
 | zhipuai/chatglm3-6B                   | ¥0.35/1M tokens |
 | meta/llama3-70B-chat                  | ¥4.13/1M tokens |
 | meta/llama3-8B-chat                   | ¥0.42/1M tokens |
