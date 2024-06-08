@@ -617,3 +617,12 @@ public List<ImSysUser> selectUserList(ImSysUser user) {
 修复后的代码保持了原有的功能，因为它只是调用了`userMapper.selectUserList(user)`方法，而这个方法的实现并没有改变。
 
 请注意，这个修复只是修复了SQL注入漏洞，如果`userMapper.selectUserList(user)`方法的实现中存在其他问题，那么还需要进一步修复。
+
+---
+
+
+### [Codestral](https://chat.mistral.ai/chat/3bb78152-c33c-4877-9e77-f7f8b0aba946)
+
+使用上面截图中的提示词。
+
+![](/images/2024/SecurityDefectAnalysis/Codestral-22B.png)
