@@ -119,3 +119,4 @@ AI代理是LLM应用的重要场景，构建代理应用将是2024年的重要�
 - [XAgent：用于解决复杂任务的自主代理](https://blog.x-agent.net/blog/xagent/)
 - [XAgent 为大型模型开发开放模型、数据集、系统和评估工具](https://blog.x-agent.net/projects/)
 - [Fetch.ai 的 5 大 AI 代理集成](https://fetch.ai/blog/fetch-ai-s-top-5-AI-Agent-integrations)
+- [使用Qwen-Agent将上下文记忆扩展到百万量级](https://qwenlm.github.io/zh/blog/qwen-agent-2405/)
