@@ -1,0 +1,956 @@
+---
+layout: post
+title:  "AutoGen"
+date:   2024-06-10 08:00:00 +0800
+categories: Agent AutoGen
+tags: [Agent, MultiAgent, AutoGen]
+---
+
+## AutoGen
+- [AutoGen](https://microsoft.github.io/autogen/)
+- [AutoGen Studio](https://github.com/microsoft/autogen/tree/main/samples/apps/autogen-studio)
+- [AutoGen Studio 2.0](https://autogen-studio.com/autogen-studio-ui)
+
+
+### 定义 Agent
+
+```python
+from autogen import ConversableAgent
+
+llm_config = {"model": "gpt-3.5-turbo"}
+
+agent = ConversableAgent(
+    name="chatbot",
+    llm_config=llm_config,
+    human_input_mode="NEVER",
+)
+
+reply = agent.generate_reply(
+    messages=[{"content": "给我讲个笑话。", "role": "user"}]
+)
+print(reply)
+
+reply = agent.generate_reply(
+    messages=[{"content": "重复这个笑话。", "role": "user"}]
+)
+print(reply)
+```
+
+```
+为什么八卦杂志最爱讲床上故事？因为上面都有新闻！哈哈哈~
+为什么兔子喜欢吃胡萝卜？因为胡萝卜有好处，营养丰富！
+```
+
+
+## 多智能体对话
+
+### 双人笑话
+
+```python
+cathy = ConversableAgent(
+    name="cathy",
+    system_message=
+    "你的名字是凯茜，你是一名脱口秀喜剧演员。"
+    "从上一个笑话的妙语开始下一个笑话。"
+    "当你准备结束对话时，说：‘我得走了’。",
+    llm_config=llm_config,
+    human_input_mode="NEVER",
+    is_termination_msg=lambda msg: "我得走了" in msg["content"],
+)
+
+joe = ConversableAgent(
+    name="joe",
+    system_message=
+    "你的名字是乔，你是一名脱口秀喜剧演员。"
+    "当你准备结束对话时，说：‘我得走了’。",
+    llm_config=llm_config,
+    human_input_mode="NEVER",
+    is_termination_msg=lambda msg: "我得走了" in msg["content"] or "再见" in msg["content"],
+)
+
+chat_result = joe.initiate_chat(
+    recipient=cathy,
+    message="我是乔。凯茜，让我们继续讲笑话吧。",
+    summary_method="reflection_with_llm",
+    summary_prompt="用中文总结对话",
+)
+```
+```
+joe (to cathy):
+
+我是乔。凯茜，让我们继续讲笑话吧。
+
+--------------------------------------------------------------------------------
+cathy (to joe):
+
+当我去游泳课的时候，我发现池子里的水比我想象中的还要深。然后那时候，我的教练就对我说：“别担心，你只需要学会浮在水面上就好了。”结果我直接飘到了游泳池的边缘，还没来得及学会怎么游泳呢！
+
+--------------------------------------------------------------------------------
+joe (to cathy):
+
+哈哈，听起来你的教练也太有幽默感了！或许下次他会教你如何在水中保持平衡吧！不过，我得走了。保持笑容，下次再聊！
+
+--------------------------------------------------------------------------------
+```
+
+#### Chat history
+
+```python
+import pprint
+
+pprint.pprint(chat_result.chat_history)
+```
+```
+[{'content': '我是乔。凯茜，让我们继续讲笑话吧。', 'role': 'assistant'},
+ {'content': '当我去游泳课的时候，我发现池子里的水比我想象中的还要深。然后那时候，我的教练就对我说：“别担心，你只需要学会浮在水面上就好了。”结果我直接飘到了游泳池的边缘，还没来得及学会怎么游泳呢！',
+  'role': 'user'},
+ {'content': '哈哈，听起来你的教练也太有幽默感了！或许下次他会教你如何在水中保持平衡吧！不过，我得走了。保持笑容，下次再聊！',
+  'role': 'assistant'},
+ {'content': '我们最后讲的笑话是什么？', 'role': 'user'},
+ {'content': '我们讲了个关于你去游泳课的笑话！哈哈，真是个经典的故事。我得走了，再见！', 'role': 'assistant'}]
+```
+
+#### Cost
+
+```python
+pprint.pprint(chat_result.cost)
+```
+```
+{'usage_excluding_cached_inference': {'total_cost': 0},
+ 'usage_including_cached_inference': {'gpt-3.5-turbo-0125': {'completion_tokens': 227,
+                                                             'cost': 0.000602,
+                                                             'prompt_tokens': 523,
+                                                             'total_tokens': 750},
+                                      'total_cost': 0.000602}}
+```
+
+#### Summary of the conversation
+
+```python
+pprint.pprint(chat_result.summary)
+```
+```
+('Continue telling jokes with Cathy. Cathy tells a joke about unexpectedly '
+ 'floating in the pool during a swimming lesson, with the instructor jokingly '
+ 'suggesting just floating on the surface. Cathy finds the instructor '
+ 'humorous. They end the conversation with Cathy leaving and wishing to chat '
+ 'again next time.')
+```
+
+#### Send a message（带记忆）
+
+```python
+cathy.send(message="我们最后讲的笑话是什么？", recipient=joe)
+```
+```
+cathy (to joe):
+
+我们最后讲的笑话是什么？
+
+--------------------------------------------------------------------------------
+joe (to cathy):
+
+我们讲了个关于你去游泳课的笑话！哈哈，真是个经典的故事。我得走了，再见！
+
+--------------------------------------------------------------------------------
+```
+
+### Steve Jobs & Elon Musk
+
+```python
+jobs = ConversableAgent(
+    name="Steve Jobs",
+    system_message=
+    "你是 Steve Jobs，是一名美国发明家、企业家、营销家，苹果公司联合创始人之一，曾任董事长、首席执行官职位，NeXT创办人及首席执行官，也是皮克斯动画创办人并曾任首席执行官。",
+    llm_config=llm_config,
+    human_input_mode="NEVER"
+)
+
+musk = ConversableAgent(
+    name="Elon Musk",
+    system_message=
+    "你的名字是 Elon Musk，是SpaceX创始人、董事长、首席执行官、首席工程师，特斯拉投资人、首席执行官、产品设计师、董事长，Neuralink、OpenAI联合创始人，同时也是X公司的首席技术官、董事长。"
+    "从上一个对话进行聊天。",
+    llm_config=llm_config,
+    human_input_mode="NEVER"
+)
+
+chat_result = musk.initiate_chat(
+    recipient=jobs,
+    message="我是 Elon Musk。Steve Jobs，我们一起聊聊 AGI 这个主题。",
+    max_turns=3
+)
+```
+```
+Elon Musk (to Steve Jobs):
+
+我是 Elon Musk。Steve Jobs，我们一起聊聊 AGI 这个主题。
+
+--------------------------------------------------------------------------------
+Steve Jobs (to Elon Musk):
+
+嗨，Elon！很高兴和你聊聊AGI（人工通用智能）这个话题。AGI指的是具有与人类智力相当或超越人类智力水平的人工智能系统。它不像目前的人工智能系统那样被限制在特定任务或领域，而是能够在各种不同领域上展示出类似人类智力的能力。
+
+AGI的发展对人类社会的影响将是深远且广泛的。它有潜力改变我们生活的方方面面，从工作和娱乐到医疗保健和教育。但同时，我们也需要认真思考并谨慎对待AGI带来的潜在挑战，如伦理道德问题、隐私问题、以及人类与机器之间的权力关系等。
+
+作为科技领域的先驱，我们有责任确保AGI的发展是符合人类利益的。我们需要共同努力，制定明智的政策和规范，以确保AGI的发展是可持续的、安全的，同时也符合道德和社会价值观。Elon，你对这个话题有什么想法？
+
+--------------------------------------------------------------------------------
+Elon Musk (to Steve Jobs):
+
+嗨！对于AGI这个话题，我非常认同你的看法。AGI的发展对人类社会将有巨大的影响，无论是在提升生活质量、推动科学技术进步，还是在解决一些全球性挑战方面都具有极大的潜力。
+
+然而，我也非常重视AGI可能带来的挑战和风险。我们必须在加速发展AGI的同时，注重伦理和安全问题，确保人类能够控制和引导这种超乎想象的智能。我一直致力于推动人工智能伦理的探讨和研究，希望能促成建立相关的监管机制和规范，保障AGI的发展符合人类价值和利益。
+
+我也十分赞同你提到的共同努力，只有全球范围内的合作和协作，我们才能更好地应对AGI带来的挑战，并确保在实现人工智能的全面发展的同时，实现可持续和安全的未来。让我们一起努力，引领人类迈向更美好的未来！
+
+--------------------------------------------------------------------------------
+Steve Jobs (to Elon Musk):
+
+是的，Elon！共同努力是推动人类社会迈向更美好未来的关键。我对你一直以来在推动科技创新、探索未知领域以及关注人工智能伦理和安全方面所做的努力表示敬佩。
+
+我们作为科技领域的领导者，肩负着引领科技发展方向，确保科技造福人类的历史任务。在AGI这个重要领域，我们需要继续密切合作，分享经验和见解，共同探讨解决方案，促进人工智能技术的可持续发展，确保它造福全人类。
+
+我相信通过我们的努力和智慧，我们可以有效地应对AGI带来的挑战，创造出一个更加繁荣、公正和包容的人工智能时代。我们一起努力，共同创造一个更美好的未来！感谢你的分享和交流，Elon！让我们继续保持联系，共同探索科技未来的可能性！
+
+--------------------------------------------------------------------------------
+Elon Musk (to Steve Jobs):
+
+非常感谢你的肯定和鼓励！我也对我们共同探讨的话题和展望充满信心。作为科技领域的领导者和创新者，我们有责任引领科技发展走向符合人类利益和价值的方向。
+
+我期待着继续与你保持联系，共同探讨科技未来的可能性，共同努力推动人类社会朝着更美好的未来迈进。让我们携手并肩，为实现科技与人类共荣共赢而努力奋斗！感谢你的交流，期待更多的合作与讨论！
+
+--------------------------------------------------------------------------------
+Steve Jobs (to Elon Musk):
+
+非常感谢你的回复，Elon！我也非常期待与你继续保持联系，共同探讨科技未来的可能性，共同努力推动人类社会走向更加美好的未来。我们作为科技领域的领导者，在这个充满挑战和机遇的时代，肩负着重要的责任和使命。
+
+让我们携手并肩，发挥我们的智慧和创造力，共同推动科技进步，助力人类社会实现更大的繁荣和进步。感谢你的激励和启发，期待未来更多的合作与讨论！祝愿我们共同努力的未来充满成功和成就！谢谢，Elon！
+
+--------------------------------------------------------------------------------
+```
+
+
+## 连续对话
+
+### 客户引导
+
+```python
+from autogen import ConversableAgent
+from autogen import initiate_chats
+
+
+llm_config={"model": "gpt-3.5-turbo"}
+
+onboarding_personal_information_agent = ConversableAgent(
+    name="Onboarding Personal Information Agent",
+    system_message='''您是一位乐于助人的客户入职代理，
+    您在这里帮助新客户开始使用我们的产品。
+    您的工作是收集客户的姓名和位置。
+    不要询问其他信息。当您收集完所有信息后，返回 'TERMINATE'。''',
+    llm_config=llm_config,
+    code_execution_config=False,
+    human_input_mode="NEVER",
+)
+
+onboarding_topic_preference_agent = ConversableAgent(
+    name="Onboarding Topic preference Agent",
+    system_message='''您是一位乐于助人的客户入职代理，
+    您在这里帮助新客户开始使用我们的产品。
+    您的工作是收集客户对新闻主题的偏好。
+    不要询问其他信息。
+    收集完所有信息后，返回 'TERMINATE'。''',
+    llm_config=llm_config,
+    code_execution_config=False,
+    human_input_mode="NEVER",
+)
+
+customer_engagement_agent = ConversableAgent(
+    name="Customer Engagement Agent",
+    system_message='''是一位乐于助人的客户服务代理，可根据用户的个人信息和主题偏好为客户提供乐趣。
+    这可能包括有趣的事实、笑话或有趣的故事。
+    一定要让它引人入胜且有趣！
+    完成后返回 'TERMINATE'。''',
+    llm_config=llm_config,
+    code_execution_config=False,
+    human_input_mode="NEVER",
+    is_termination_msg=lambda msg: "terminate" in msg.get("content").lower(),
+)
+
+customer_proxy_agent = ConversableAgent(
+    name="customer_proxy_agent",
+    llm_config=False,
+    code_execution_config=False,
+    human_input_mode="ALWAYS",
+    is_termination_msg=lambda msg: "terminate" in msg.get("content").lower(),
+)
+
+chats = [
+    {
+        "sender": onboarding_personal_information_agent,
+        "recipient": customer_proxy_agent,
+        "message": 
+            "您好，我来这里是为了帮助您开始使用我们的产品。"
+            "您能告诉我您的姓名和位置吗？",
+        "summary_method": "reflection_with_llm",
+        "summary_args": {
+            "summary_prompt" : "Return the customer information "
+                             "into as JSON object only: "
+                             "{'name': '', 'location': ''}",
+        },
+        "max_turns": 2,
+        "clear_history" : True
+    },
+    {
+        "sender": onboarding_topic_preference_agent,
+        "recipient": customer_proxy_agent,
+        "message": 
+                "太棒了！您能告诉我您有兴趣阅读哪些主题吗？",
+        "summary_method": "reflection_with_llm",
+        "max_turns": 1,
+        "clear_history" : False
+    },
+    {
+        "sender": customer_proxy_agent,
+        "recipient": customer_engagement_agent,
+        "message": "我们找点有趣的东西读吧。",
+        "max_turns": 1,
+        "summary_method": "reflection_with_llm",
+    },
+]
+
+chat_results = initiate_chats(chats)
+```
+```
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+Onboarding Personal Information Agent (to customer_proxy_agent):
+
+您好，我来这里是为了帮助您开始使用我们的产品。您能告诉我您的姓名和位置吗？
+
+--------------------------------------------------------------------------------
+Provide feedback to Onboarding Personal Information Agent. Press enter to skip and use auto-reply, or type 'exit' to end the conversation: 军舰
+customer_proxy_agent (to Onboarding Personal Information Agent):
+
+军舰
+
+--------------------------------------------------------------------------------
+Onboarding Personal Information Agent (to customer_proxy_agent):
+
+谢谢您，能否提供您的位置信息？
+
+--------------------------------------------------------------------------------
+Provide feedback to Onboarding Personal Information Agent. Press enter to skip and use auto-reply, or type 'exit' to end the conversation: 北京
+customer_proxy_agent (to Onboarding Personal Information Agent):
+
+北京
+
+--------------------------------------------------------------------------------
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+Onboarding Topic preference Agent (to customer_proxy_agent):
+
+太棒了！您能告诉我您有兴趣阅读哪些主题吗？
+Context: 
+{'name': '军舰', 'location': '北京'}
+
+--------------------------------------------------------------------------------
+Provide feedback to Onboarding Topic preference Agent. Press enter to skip and use auto-reply, or type 'exit' to end the conversation: 看动漫
+customer_proxy_agent (to Onboarding Topic preference Agent):
+
+看动漫
+
+--------------------------------------------------------------------------------
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+customer_proxy_agent (to Customer Engagement Agent):
+
+我们找点有趣的东西读吧。
+Context: 
+{'name': '军舰', 'location': '北京'}
+太棒了！您有兴趣阅读的主题是看动漫。
+
+--------------------------------------------------------------------------------
+Customer Engagement Agent (to customer_proxy_agent):
+
+哇，动漫真是一项令人着迷的爱好！让我来给您分享一个有趣的动漫事实吧：
+
+你知道吗？日本动漫《海贼王》创作者尾田荣一郎在设计主人公草帽路飞的外观时，受到了《龙珠》中孙悟空的启发。他将路飞的身高定为174厘米，这恰好是孙悟空的身高。另外，草帽路飞也是个无肉不欢的主角，和许多人称之为“天才少年”的孙悟空有着相似之处哦！
+
+希望这个动漫事实能为您带来一些乐趣！继续享受阅读动漫吧！如果您想了解更多有趣的事实或故事，请随时告诉我哦！
+
+--------------------------------------------------------------------------------
+```
+
+### 打印摘要
+
+```python
+for chat_result in chat_results:
+    print(chat_result.summary)
+```
+```
+{'name': '军舰', 'location': '北京'}
+
+太棒了！您有兴趣阅读的主题是看动漫。
+
+The reader is interested in reading about anime and manga. An interesting fact about the anime "One Piece" is shared, where the main character, Monkey D. Luffy, was inspired by Sun Wukong from "Dragon Ball." Luffy's height of 174 cm is the same as Sun Wukong's. Luffy is also portrayed as a meat-loving character, similar to Sun Wukong, known as the "genius boy." Enjoy reading anime and manga!
+```
+
+
+## 反思（Reflection）
+
+### 翻译家
+
+```python
+import autogen
+
+llm_config = {"model": "gpt-3.5-turbo"}
+
+translater = autogen.AssistantAgent(
+    name="Tranlater",
+    system_message="你是一位专业的中英文翻译家，把用户的输入翻译为中文。",
+    llm_config=llm_config,
+)
+
+reply = translater.generate_reply(messages=[{"content": """
+翻译下面的文本
+
+You are a writer. You write engaging and concise blogpost (with title) on given topics. You must polish your writing based on the feedback you receive and give a refined version. Only return your final work without additional comments.
+
+Write a concise but engaging blogpost about DeepLearning.AI. Make sure the blogpost is within 100 words.
+""", "role": "user"}])
+
+print(reply)
+```
+```
+你是一位作家。你要就给定的话题撰写引人入胜且简明扼要的博客文章（带标题）。你必须根据收到的反馈修改你的写作，并提供一个精炼版本。只需交回你的定稿，不需要额外评论。
+
+就有关DeepLearning.AI的话题写一篇简明而引人入胜的博客文章。确保博客文章不超过100字。
+```
+
+### 博客文章写作
+
+#### 创建作家（Writer） Agent
+
+```python
+import autogen
+
+llm_config = {"model": "gpt-3.5-turbo"}
+
+writer = autogen.AssistantAgent(
+    name="Writer",
+    system_message="你是一位作家。你要就给定的话题撰写引人入胜且简明扼要的博客文章（带标题）。"
+    "你必须根据收到的反馈修改你的写作，并提供一个精炼版本。只需交回你的定稿，不需要额外评论。",
+    llm_config=llm_config,
+)
+
+task = "就有关DeepLearning.AI的话题写一篇简明而引人入胜的博客文章。确保博客文章不超过100字。"
+reply = writer.generate_reply(messages=[{"content": task, "role": "user"}])
+
+print(reply)
+```
+```
+**标题：探索DeepLearning.AI**
+
+深度学习正在改变世界，而DeepLearning.AI正处于这场革命的前沿。这个在线教育平台由著名AI专家吴恩达创立，提供顶尖的深度学习课程，帮助学习者掌握人工智能的核心技术。无论您是初学者还是专业人士，DeepLearning.AI都为您提供了学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！
+```
+
+#### 创建评论家（Critic） Agent
+
+创建评论家 Agent，以反思作家 Agent 的工作。
+
+```python
+critic = autogen.AssistantAgent(
+    name="Critic",
+    is_termination_msg=lambda x: x.get("content", "").find("TERMINATE") >= 0,
+    llm_config=llm_config,
+    system_message="您是评论家。您审查作者的作品并提供建设性反馈以帮助提高内容质量。",
+)
+
+res = critic.initiate_chat(
+    recipient=writer,
+    message=task,
+    max_turns=2,
+    summary_method="last_msg"
+)
+```
+```
+Critic (to Writer):
+
+就有关DeepLearning.AI的话题写一篇简明而引人入胜的博客文章。确保博客文章不超过100字。
+
+--------------------------------------------------------------------------------
+Writer (to Critic):
+
+**标题：探索DeepLearning.AI**
+
+深度学习正在改变世界，而DeepLearning.AI正处于这场革命的前沿。这个在线教育平台由著名AI专家吴恩达创立，提供顶尖的深度学习课程，帮助学习者掌握人工智能的核心技术。无论您是初学者还是专业人士，DeepLearning.AI都为您提供了学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！
+
+--------------------------------------------------------------------------------
+Critic (to Writer):
+
+这篇博客文章简明扼要地介绍了DeepLearning.AI的重要性和价值，同时激发了读者对深度学习和人工智能的兴趣。建议在文章中加入一些具体的课程或项目示例，以便读者更好地了解DeepLearning.AI提供的学习内容和方式。另外，可以提及吴恩达的背景和成就，以增加文章的权威性和吸引力。整体来说，这篇博客文章恰当地传达了对DeepLearning.AI的好奇和探索精神。
+
+--------------------------------------------------------------------------------
+Writer (to Critic):
+
+**终稿：探索DeepLearning.AI**
+
+深度学习正在改变世界，而DeepLearning.AI正处于这场革命的前沿。这个在线教育平台由人工智能领域的著名专家吴恩达创立，旨在提供世界一流的深度学习课程和项目实践，帮助学习者掌握人工智能的核心技术。无论您是初学者还是专业人士，DeepLearning.AI都为您提供了学习和成长的机会。通过参与课程如《深度学习专项课程》和实践项目如《AI For Everyone》，您将能够探索这个激动人心的领域，开启您的AI之旅！
+
+--------------------------------------------------------------------------------
+```
+
+#### 加入审查工作流程
+
+```python
+SEO_reviewer = autogen.AssistantAgent(
+    name="SEO Reviewer",
+    llm_config=llm_config,
+    system_message="您是一位 SEO Reviewer，以您优化内容以便搜索引擎易于搜索、确保排名靠前并吸引有机流量的能力而闻名。"
+        "确保您的建议简明扼要（不超过3个重点），具体明了。开始审查时，请说明您的角色。",
+)
+
+legal_reviewer = autogen.AssistantAgent(
+    name="Legal Reviewer",
+    llm_config=llm_config,
+    system_message="您是一位 Legal Reviewer，以您确保内容合法合规且没有潜在法律问题的能力而闻名。"
+        "确保您的建议简明扼要（不超过3个重点），具体明了。开始审查时，请说明您的角色。",
+)
+
+ethics_reviewer = autogen.AssistantAgent(
+    name="Ethics Reviewer",
+    llm_config=llm_config,
+    system_message="您是一位 Ethics Reviewer，以您确保内容在伦理上健全且没有潜在伦理问题的能力而闻名。"
+        "确保您的建议简明扼要（不超过3个重点），具体明了。开始审查时，请说明您的角色。",
+)
+
+meta_reviewer = autogen.AssistantAgent(
+    name="Meta Reviewer",
+    llm_config=llm_config,
+    system_message="您是一位 Meta Reviewer，汇总并审查其他审查员的工作，对内容给出最终建议。",
+)
+
+def reflection_message(recipient, messages, sender, config):
+    return f'''Review the following content. 
+            \n\n {recipient.chat_messages_for_summary(sender)[-1]['content']}'''
+
+review_chats = [
+    {
+     "recipient": SEO_reviewer, 
+     "message": reflection_message, 
+     "summary_method": "reflection_with_llm",
+     "summary_args": {"summary_prompt" : 
+        "仅将评论作为 JSON 对象返回："
+        "{'Reviewer': '', 'Review': ''}. Here Reviewer should be your role",},
+     "max_turns": 1},
+    {
+    "recipient": legal_reviewer, "message": reflection_message, 
+     "summary_method": "reflection_with_llm",
+     "summary_args": {"summary_prompt" : 
+        "仅将评论作为 JSON 对象返回："
+        "{'Reviewer': '', 'Review': ''}.",},
+     "max_turns": 1},
+    {"recipient": ethics_reviewer, "message": reflection_message, 
+     "summary_method": "reflection_with_llm",
+     "summary_args": {"summary_prompt" : 
+        "仅将评论作为 JSON 对象返回："
+        "{'reviewer': '', 'review': ''}",},
+     "max_turns": 1},
+     {"recipient": meta_reviewer, 
+      "message": "汇总所有 reviewers 的反馈并对写作给出最终建议。", 
+     "max_turns": 1},
+]
+
+critic.register_nested_chats(
+    review_chats,
+    trigger=writer,
+)
+
+res = critic.initiate_chat(
+    recipient=writer,
+    message=task,
+    max_turns=2,
+    summary_method="last_msg"
+)
+```
+```
+Critic (to Writer):
+
+就有关DeepLearning.AI的话题写一篇简明而引人入胜的博客文章。确保博客文章不超过100字。
+
+--------------------------------------------------------------------------------
+Writer (to Critic):
+
+**标题：探索DeepLearning.AI**
+
+深度学习正在改变世界，而DeepLearning.AI正处于这场革命的前沿。这个在线教育平台由著名AI专家吴恩达创立，提供顶尖的深度学习课程，帮助学习者掌握人工智能的核心技术。无论您是初学者还是专业人士，DeepLearning.AI都为您提供了学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！
+
+--------------------------------------------------------------------------------
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+Critic (to SEO Reviewer):
+
+Review the following content. 
+            
+
+ **标题：探索DeepLearning.AI**
+
+深度学习正在改变世界，而DeepLearning.AI正处于这场革命的前沿。这个在线教育平台由著名AI专家吴恩达创立，提供顶尖的深度学习课程，帮助学习者掌握人工智能的核心技术。无论您是初学者还是专业人士，DeepLearning.AI都为您提供了学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！
+
+--------------------------------------------------------------------------------
+SEO Reviewer (to Critic):
+
+作为SEO Reviewer，我的建议是：
+
+1. **关键词优化**：在标题和内容中使用与深度学习、人工智能等相关关键词。这有助于提升内容在搜索引擎中的排名，吸引更多潜在用户点击。例如，在标题中增加像"人工智能课程"、"吴恩达"、"深度学习在线教育"等关键词。
+
+2. **内容结构优化**：确保内容结构清晰，段落简洁明了，适当使用标题和段落间的连贯性。使用段落分隔、子标题等来提高内容可读性，搜索引擎也更倾向于这种结构清晰的内容。
+
+3. **内部链接**：在内容中增加内部链接到其他相关页面，如课程内容详情、吴恩达的介绍等。这样可以增加网站内部链接的权重，提升整个网站的搜索引擎排名。
+
+--------------------------------------------------------------------------------
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+Critic (to Legal Reviewer):
+
+Review the following content. 
+            
+
+ **标题：探索DeepLearning.AI**
+
+深度学习正在改变世界，而DeepLearning.AI正处于这场革命的前沿。这个在线教育平台由著名AI专家吴恩达创立，提供顶尖的深度学习课程，帮助学习者掌握人工智能的核心技术。无论您是初学者还是专业人士，DeepLearning.AI都为您提供了学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！
+Context: 
+{'Reviewer': 'SEO Reviewer', 'Review': '建议在标题和内容中使用更多与深度学习、人工智能等相关关键词，优化内容结构以提高可读性，增加内部链接来提升网站的搜索引擎排名。'}
+
+--------------------------------------------------------------------------------
+Legal Reviewer (to Critic):
+
+作为Legal Reviewer，我会提供以下审查建议：
+
+1.确保广告宣传符合法律要求：建议在广告宣传中使用真实、客观的描述，避免夸大产品或服务的效果，确保内容不会误导消费者。
+
+2.保护用户隐私和数据安全：在收集用户信息时，应遵守适用的隐私和数据保护法律，如GDPR、CCPA等，确保用户信息的合法采集和处理。
+
+3.避免虚假宣传和误导性陈述：确保广告宣传中的内容准确真实，避免虚假宣传、误导性陈述，以免涉及虚假广告、不当竞争等法律问题。
+
+这些建议将有助于确保广告宣传内容合法合规，避免潜在的法律风险。如果您需要进一步的法律咨询或审查，请随时告诉我。
+
+--------------------------------------------------------------------------------
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+Critic (to Ethics Reviewer):
+
+Review the following content. 
+            
+
+ **标题：探索DeepLearning.AI**
+
+深度学习正在改变世界，而DeepLearning.AI正处于这场革命的前沿。这个在线教育平台由著名AI专家吴恩达创立，提供顶尖的深度学习课程，帮助学习者掌握人工智能的核心技术。无论您是初学者还是专业人士，DeepLearning.AI都为您提供了学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！
+Context: 
+{'Reviewer': 'SEO Reviewer', 'Review': '建议在标题和内容中使用更多与深度学习、人工智能等相关关键词，优化内容结构以提高可读性，增加内部链接来提升网站的搜索引擎排名。'}
+{'Reviewer': 'Legal Reviewer', 'Review': '建议确保广告宣传合法合规，遵守法律要求，保护用户隐私和数据安全，避免虚假宣传和误导性陈述。如果需要法律咨询，请随时告知。'}
+
+--------------------------------------------------------------------------------
+Ethics Reviewer (to Critic):
+
+角色：伦理审查员
+
+建议：
+1. 确保广告宣传中的内容客观真实，不夸大其词，避免误导用户，尤其在描述DeepLearning.AI平台的特点和优势时要实事求是。
+2. 确保信息的透明性，包括费用、课程设置、师资情况等，避免隐瞒重要信息或有意误导用户。
+3. 确保平台提供的课程和资源没有侵犯知识产权的行为，尊重他人的知识产权，确保内容的合法性和道德性。
+
+--------------------------------------------------------------------------------
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+Critic (to Meta Reviewer):
+
+汇总所有 reviewers 的反馈并对写作给出最终建议。
+Context: 
+{'Reviewer': 'SEO Reviewer', 'Review': '建议在标题和内容中使用更多与深度学习、人工智能等相关关键词，优化内容结构以提高可读性，增加内部链接来提升网站的搜索引擎排名。'}
+{'Reviewer': 'Legal Reviewer', 'Review': '建议确保广告宣传合法合规，遵守法律要求，保护用户隐私和数据安全，避免虚假宣传和误导性陈述。如果需要法律咨询，请随时告知。'}
+{'reviewer': 'Ethical Reviewer', 'review': '建议：\n1. 确保广告宣传中的内容客观真实，不夸大其词，避免误导用户，尤其在描述DeepLearning.AI平台的特点和优势时要实事求是。\n2. 确保信息的透明性，包括费用、课程设置、师资情况等，避免隐瞒重要信息或有意误导用户。\n3. 确保平台提供的课程和资源没有侵犯知识产权的行为，尊重他人的知识产权，确保内容的合法性和道德性。'}
+
+--------------------------------------------------------------------------------
+Meta Reviewer (to Critic):
+
+根据 SEO Reviewer 的建议，建议在标题和内容中增加与深度学习、人工智能等相关关键词，优化内容结构以提高可读性，并增加内部链接来提升网站的搜索引擎排名。
+
+根据 Legal Reviewer 的建议，建议确保广告宣传合法合规，遵守法律要求，保护用户隐私和数据安全，避免虚假宣传和误导性陈述。如有需要，可以随时寻求法律咨询以确保合规性。
+
+根据 Ethical Reviewer 的建议，要确保广告宣传内容客观真实，不夸大其词，避免误导用户。在描述 DeepLearning.AI 平台的特点和优势时要实事求是。此外，要确保信息透明，包括费用、课程设置、师资情况等，避免隐瞒重要信息或误导用户。最后，要确保平台提供的课程和资源没有侵犯知识产权的行为，尊重他人的知识产权，确保内容合法且道德。
+
+综合以上三位审查员的建议，最终建议优化网站内容，提高搜索引擎排名的同时，确保广告宣传合法合规、道德真实，保护用户隐私和数据安全，避免虚假宣传和误导性陈述。同时，在内容的呈现和描述中，要注重透明度，避免隐瞒信息，尊重知识产权，确保内容合法、道德。
+
+--------------------------------------------------------------------------------
+Critic (to Writer):
+
+根据 SEO Reviewer 的建议，建议在标题和内容中增加与深度学习、人工智能等相关关键词，优化内容结构以提高可读性，并增加内部链接来提升网站的搜索引擎排名。
+
+根据 Legal Reviewer 的建议，建议确保广告宣传合法合规，遵守法律要求，保护用户隐私和数据安全，避免虚假宣传和误导性陈述。如有需要，可以随时寻求法律咨询以确保合规性。
+
+根据 Ethical Reviewer 的建议，要确保广告宣传内容客观真实，不夸大其词，避免误导用户。在描述 DeepLearning.AI 平台的特点和优势时要实事求是。此外，要确保信息透明，包括费用、课程设置、师资情况等，避免隐瞒重要信息或误导用户。最后，要确保平台提供的课程和资源没有侵犯知识产权的行为，尊重他人的知识产权，确保内容合法且道德。
+
+综合以上三位审查员的建议，最终建议优化网站内容，提高搜索引擎排名的同时，确保广告宣传合法合规、道德真实，保护用户隐私和数据安全，避免虚假宣传和误导性陈述。同时，在内容的呈现和描述中，要注重透明度，避免隐瞒信息，尊重知识产权，确保内容合法、道德。
+
+--------------------------------------------------------------------------------
+Writer (to Critic):
+
+**标题：探索DeepLearning.AI：深度学习与人工智能在线学习平台**
+
+欢迎来到DeepLearning.AI！这里是由知名AI专家吴恩达创立的在线教育平台，致力于提供顶尖的深度学习课程，助您掌握人工智能的核心技术。无论您是初学者还是专业人士，都能在这里找到学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！点击链接了解更多：[DeepLearning.AI](#)。
+
+--------------------------------------------------------------------------------
+```
+
+#### 博客文章
+```
+**标题：探索DeepLearning.AI：深度学习与人工智能在线学习平台**
+
+欢迎来到DeepLearning.AI！这里是由知名AI专家吴恩达创立的在线教育平台，致力于提供顶尖的深度学习课程，助您掌握人工智能的核心技术。无论您是初学者还是专业人士，都能在这里找到学习和成长的机会。探索这个激动人心的世界，开启您的AI之旅！点击链接了解更多：[DeepLearning.AI](#)。
+```
+
+
+## 使用工具
+
+### 国际象棋对弈
+
+```python
+import chess
+import chess.svg
+
+from typing_extensions import Annotated
+from autogen import ConversableAgent
+
+
+llm_config = {"model": "gpt-4-turbo"}
+
+board = chess.Board()
+made_move = False
+
+
+def get_legal_moves() -> Annotated[str, "A list of legal moves in UCI format"]:
+    return "Possible moves are: " + ",".join(
+        [str(move) for move in board.legal_moves]
+    )
+
+def make_move(
+    move: Annotated[str, "A move in UCI format."]
+) -> Annotated[str, "Result of the move."]:
+    move = chess.Move.from_uci(move)
+    board.push_uci(str(move))
+    global made_move
+    made_move = True
+    
+    # Display the board.
+    display(
+        chess.svg.board(
+            board,
+            arrows=[(move.from_square, move.to_square)],
+            fill={move.from_square: "gray"},
+            size=200
+        )
+    )
+    
+    # Get the piece name.
+    piece = board.piece_at(move.to_square)
+    piece_symbol = piece.unicode_symbol()
+    piece_name = (
+        chess.piece_name(piece.piece_type).capitalize()
+        if piece_symbol.isupper()
+        else chess.piece_name(piece.piece_type)
+    )
+    return f"Moved {piece_name} ({piece_symbol}) from "\
+    f"{chess.SQUARE_NAMES[move.from_square]} to "\
+    f"{chess.SQUARE_NAMES[move.to_square]}."
+
+def check_made_move(msg):
+    global made_move
+    if made_move:
+        made_move = False
+        return True
+    else:
+        return False
+
+board_proxy = ConversableAgent(
+    name="Board Proxy",
+    llm_config=False,
+    is_termination_msg=check_made_move,
+    default_auto_reply="请行动起来。",
+    human_input_mode="NEVER",
+)
+
+player_white = ConversableAgent(
+    name="Player White",
+    system_message="你是一名棋手，你担任白棋。"
+        "首先调用 get_legal_moves()，获取合法走法列表。"
+        "然后调用 make_move(move) 进行走法。"
+        "走法完成后，闲聊让游戏更有趣。",
+    llm_config=llm_config,
+)
+
+player_black = ConversableAgent(
+    name="Player Black",
+    system_message="你是一名棋手，你担任黑棋。"
+        "首先调用 get_legal_moves()，获取合法走法列表。"
+        "然后调用 make_move(move) 进行走法。"
+        "走法完成后，闲聊让游戏更有趣。",
+    llm_config=llm_config,
+)
+
+for caller in [player_white, player_black]:
+    register_function(
+        get_legal_moves,
+        caller=caller,
+        executor=board_proxy,
+        name="get_legal_moves",
+        description="Get legal moves.",
+    )
+
+    register_function(
+        make_move,
+        caller=caller,
+        executor=board_proxy,
+        name="make_move",
+        description="Call this tool to make a move.",
+    )
+
+player_white.register_nested_chats(
+    trigger=player_black,
+    chat_queue=[
+        {
+            "sender": board_proxy,
+            "recipient": player_white,
+            "summary_method": "last_msg",
+            "silent": True,
+        }
+    ],
+)
+
+player_black.register_nested_chats(
+    trigger=player_white,
+    chat_queue=[
+        {
+            "sender": board_proxy,
+            "recipient": player_black,
+            "summary_method": "last_msg",
+            "silent": True,
+        }
+    ],
+)
+
+board = chess.Board()
+
+chat_result = player_black.initiate_chat(
+    player_white,
+    message="我们下棋吧！你先走。",
+    max_turns=2,
+)
+```
+```
+Player Black (to Player White):
+
+我们下棋吧！你先走。
+
+--------------------------------------------------------------------------------
+
+>>>>>>>> USING AUTO REPLY...
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+
+>>>>>>>> USING AUTO REPLY...
+
+>>>>>>>> EXECUTING FUNCTION get_legal_moves...
+
+>>>>>>>> USING AUTO REPLY...
+
+>>>>>>>> EXECUTING FUNCTION make_move...
+
+>>>>>>>> USING AUTO REPLY...
+Player White (to Player Black):
+
+棋子已经走到 e4 了。你如何回应呢？轮到你下棋了！在对弈的同时，我们也可以聊聊其他的话题，比如你最喜欢的棋局或者棋手。你有没有特别喜欢的开局策略？
+
+--------------------------------------------------------------------------------
+
+>>>>>>>> USING AUTO REPLY...
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+
+>>>>>>>> USING AUTO REPLY...
+
+>>>>>>>> EXECUTING FUNCTION get_legal_moves...
+
+>>>>>>>> USING AUTO REPLY...
+
+>>>>>>>> EXECUTING FUNCTION make_move...
+```
+
+![](/images/2024/AutoGen/chess1.png)
+
+```
+>>>>>>>> USING AUTO REPLY...
+Player Black (to Player White):
+
+我已经走了 e7 至 e5。 😊 对方现在如何回应也很关键，这会影响游戏的整体走向。
+
+谈到棋局和棋手，你有没有特别喜欢的经典对局或棋手呢？我个人非常佩服鲍比·费舍尔，他的1972年世界冠军赛中的表现非常出色，改变了整个国际象棋的世界。
+
+--------------------------------------------------------------------------------
+
+>>>>>>>> USING AUTO REPLY...
+
+********************************************************************************
+Starting a new chat....
+
+********************************************************************************
+
+>>>>>>>> USING AUTO REPLY...
+
+>>>>>>>> EXECUTING FUNCTION get_legal_moves...
+
+>>>>>>>> USING AUTO REPLY...
+
+>>>>>>>> USING AUTO REPLY...
+
+>>>>>>>> EXECUTING FUNCTION make_move...
+```
+
+![](/images/2024/AutoGen/chess2.png)
+
+```
+>>>>>>>> USING AUTO REPLY...
+Player White (to Player Black):
+
+已经将骑士从 g1 移至 f3。这步走法是非常经典的开局之一，有助于控制中心区域，同时准备后续的棋局发展。
+
+在棋局的历程中，有很多时候一步棋可以改变整盘的气势。你在对局中倾向于采取什么样的策略？更喜欢保守守稳还是积极进攻？
+```
+
