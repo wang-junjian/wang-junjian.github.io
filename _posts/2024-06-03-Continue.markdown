@@ -250,9 +250,10 @@ Continue 使您能够使用适合工作的模型，无论是开源还是商业�
 ## 自定义
 
 ### Slash Commands
-#### Custom Slash Commands(Use Natural Language)
 
 **当您经常重复使用提示时，自定义命令非常有用。**
+
+#### Custom Slash Commands(Use Natural Language)
 
 编辑配置文件：`~/.continue/config.json`
 
@@ -288,6 +289,170 @@ Continue 使您能够使用适合工作的模型，无论是开源还是商业�
 
 #### Custom Slash Commands(Use Function)
 
-这需要使用 config.ts 而不是 config.json。
+这需要使用 `config.ts` 而不是 config.json。
+
+- Complete
+
+```ts
+export function modifyConfig(config: Config): Config {
+  config.slashCommands?.push({
+    name: "bubble",
+    description: "冒泡算法",
+    run: async function* (sdk) {
+      const input = sdk.input
+      for await (const message of sdk.llm.streamComplete(
+        `使用 ${input} 实现冒泡算法\n`,
+        {
+          maxTokens: 2000,
+        },
+      )) {
+        yield message;
+      }
+    },
+  });
+  return config;
+}
+```
+
+![](/images/2024/Continue/Custom-Slash-Command-With-Function-Bubble.png)
+
+- Chat
+
+```ts
+export function stripImages(content: MessageContent): string {
+  if (Array.isArray(content)) {
+    return content
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("\n");
+  }
+  return content;
+}
+
+export function modifyConfig(config: Config): Config {
+  config.slashCommands?.push({
+    name: "algorithm",
+    description: "算法专家",
+    run: async function* (sdk) {
+      const input = sdk.input
+      for await (const chunk of sdk.llm.streamChat([
+          { role: "system", content: "你是一位计算机教授，精通算法。" },
+          { role: "user", content: `${input}` }
+        ]
+      )) {
+        yield stripImages(chunk.content);
+      }
+    },
+  });
+  return config;
+}
+```
+
+![](/images/2024/Continue/Custom-Slash-Command-With-Function-Algorithm.png)
 
 - [Custom Slash Commands(Use Function)](https://docs.continue.dev/customization/slash-commands#custom-slash-commands-1)
+
+### Context Providers
+
+上下文提供程序允许您键入“@”并查看内容下拉列表，这些内容都可以作为上下文提供给 LLM。每个上下文提供程序都是一个插件，这意味着如果您想引用此处未看到的一些信息源，您可以请求（或构建！）一个新的上下文提供程序。
+
+#### Build-in（内置）Context Provider
+
+编辑文件：`~/.continue/config.json`
+
+```ts
+  "contextProviders": [
+    {
+      "name": "url",
+      "params": {}
+    }
+  ],
+```
+
+![](/images/2024/Continue/Context-Providers-URL.png)
+
+#### Custom Context Provider
+
+编辑文件：`~/.continue/config.ts`
+
+```ts
+const RagContextProvider: CustomContextProvider = {
+  title: "rag",
+  displayTitle: "RAG",
+  description:
+    "Retrieve snippets from our vector database of internal documents",
+
+  getContextItems: async (
+    query: string,
+    extras: ContextProviderExtras,
+  ): Promise<ContextItem[]> => {
+    // const response = await fetch("https://internal_rag_server.com/retrieve", {
+    //   method: "POST",
+    //   body: JSON.stringify({ query }),
+    // });
+    // const results = await response.json();
+
+    const results = [
+      {
+        "title": "001",
+        "contents": "1. 补卡申请：\n（1）补卡次数：漏打、异常打卡可申请补卡(直接在当日打卡记录中申请补卡)，每月补卡次数不超过2次，超过部分补录无效。\n（2）补卡时间：补卡需要在3天内(从缺勤当日起算)提交申请，超出时限视为无效。",
+      },
+      {
+        "title": "002",
+        "contents": "六、结算矫正\n每月8日之后系统可生成上月合作方结算预月报；在正式提交结算月报前，部门管理员可根据合作方人员出勤打卡补录申请、部门确认情况，进行矫正处理。请注意:部门管理员结算矫正时只允许对有报工但无出勤情况进行矫正，无报工情况无法矫正(具体矫正要求以公司管理制度为准)。一旦结算确认后将无法进行矫正。",
+      },
+      {
+        "title": "003",
+        "contents": "匹配异常：有报工无出勤打卡、有出勤打卡无报工均为异常。\n费用结算以报工匹配出勤为依据，报工不可矫正。",
+      }
+    ]
+
+    return results.map((result) => ({
+      name: result.title,
+      description: result.title,
+      content: result.contents,
+    }));
+  },
+};
+```
+
+举例来说，假设您有一组已在向量数据库中编入索引的内部文档。您已设置了一个简单的 REST API，允许内部用户查询并返回相关摘要。此上下文提供程序会将查询发送到此服务器并返回向量数据库的结果。返回类型 getContextItems 必须是具有以下所有属性的对象数组：
+- name：上下文项的名称，将显示为标题
+- description：上下文项的详细描述
+- content：上下文项的实际内容，将作为上下文输入到 LLM
+
+![](/images/2024/Continue/Context-Providers-RAG.png)
+
+- [Context Providers](https://docs.continue.dev/customization/context-providers)
+
+
+## 无需互联网运行
+
+在没有网络连接的计算机上，如果您使用本地模型，也可以运行 Continue。
+
+### VSIX
+#### 下载
+[Open VSX Registry](https://open-vsx.org/extension/Continue/continue)
+
+#### 构建
+在 `extensions/vscode` 目录中运行 `npm run package`。这将生成 `extensions/vscode/build/continue-{VERSION}.vsix`。
+
+### 安装
+```bash
+code --install-extension continue-0.9.167.vsix
+```
+- [Install from a VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
+
+### 编辑文件 ~/.continue/config.json
+```json
+{
+  "allowAnonymousTelemetry": false
+}
+```
+- 这将阻止 Continue 尝试向 PostHog 发送 [anonymous telemetry](https://docs.continue.dev/telemetry) 请求。
+
+### 配置本地模型（config.json）
+
+### 重新启动 VS Code 以确保 config.json 中的更改生效
+
+- [Running Continue without Internet](https://docs.continue.dev/walkthroughs/running-continue-without-internet)
