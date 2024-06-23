@@ -190,13 +190,72 @@ Continue 使您能够使用适合工作的模型，无论是开源还是商业�
 
 ### Telemetry
 
-停止 Continue 尝试向 [PostHog](https://github.com/PostHog/posthog) 请求匿名遥测。
-
 ```json
 {
   "allowAnonymousTelemetry": false
 }
 ```
+
+停止 Continue 尝试向 [PostHog](https://github.com/PostHog/posthog) 请求匿名遥测。
+
+
+## 无需互联网运行
+
+在没有网络连接的计算机上，如果您使用本地模型，也可以运行 Continue。
+
+### VSIX
+#### 下载
+[Open VSX Registry](https://open-vsx.org/extension/Continue/continue)
+
+#### 构建
+在 `extensions/vscode` 目录中运行 `npm run package`。这将生成 `extensions/vscode/build/continue-{VERSION}.vsix`。
+
+```bash
+cd extensions/vscode
+npm run package
+```
+
+### 安装
+```bash
+code --install-extension continue-0.9.167.vsix
+```
+- [Install from a VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
+
+### 禁止 Anonymous Telemetry
+编辑文件 ~/.continue/config.json
+```json
+{
+  "allowAnonymousTelemetry": false
+}
+```
+- 这将阻止 Continue 尝试向 PostHog 发送 [anonymous telemetry](https://docs.continue.dev/telemetry) 请求。
+
+### 配置本地模型（config.json）
+
+```json
+{
+  "tabAutocompleteModel": {
+    "title": "Tab Autocomplete",
+    "provider": "ollama",
+    "model": "codeqwen:7b",
+    "apiKey": ""
+  },
+  "models": [
+    {
+      "title": "Ollama DeepSeekCoder2:16B",
+      "provider": "ollama",
+      "model": "deepseek-coder-v2:16b",
+      "contextLength": 16384,
+      "apiBase": "http://localhost:11434",
+      "apiKey": ""
+    }
+  ]
+}
+```
+
+### 重新启动 VS Code 以确保 config.json 中的更改生效
+
+- [Running Continue without Internet](https://docs.continue.dev/walkthroughs/running-continue-without-internet)
 
 
 ## 开发
@@ -231,8 +290,6 @@ Continue 使您能够使用适合工作的模型，无论是开源还是商业�
       * 启动调试的窗口称为 _Main VS Code_
 
       ![](/images/2024/Continue/Main-VS-Code.png)
-
-    - 在 _Host VS Code_ 中，打开命令面板 `cmd/ctrl+shift+p`，选择 `Continue: Start Session`，然后选择 `Continue: Start Session`，这将启动 Continue 会话
 
     ![](/images/2024/Continue/Continue.png)
 
@@ -364,7 +421,7 @@ export function modifyConfig(config: Config): Config {
 
 编辑文件：`~/.continue/config.json`
 
-```ts
+```json
   "contextProviders": [
     {
       "name": "url",
@@ -430,34 +487,90 @@ const RagContextProvider: CustomContextProvider = {
 - [Context Providers](https://docs.continue.dev/customization/context-providers)
 
 
-## 无需互联网运行
+## 代码库检索（Codebase Retrieval）
 
-在没有网络连接的计算机上，如果您使用本地模型，也可以运行 Continue。
+Continue 会对您的代码库进行索引，以便稍后能自动从整个工作空间中提取最相关的上下文。这是通过基于嵌入式的检索和关键字搜索的组合来实现的。默认情况下，所有嵌入式计算都在本地使用 all-MiniLM-L6-v2 完成，并存储在本地的 ~/.continue/index 目录下。
 
-### VSIX
-#### 下载
-[Open VSX Registry](https://open-vsx.org/extension/Continue/continue)
+目前，代码库检索功能作为“代码库”和“文件夹”上下文提供者可用。您可以通过在输入框中键入 @codebase 或 @folder 并随后提出问题来使用它们。输入框中的内容将与代码库（或文件夹）中其余部分的嵌入式数据进行比较，以确定相关的文件。
 
-#### 构建
-在 `extensions/vscode` 目录中运行 `npm run package`。这将生成 `extensions/vscode/build/continue-{VERSION}.vsix`。
+代码库检索通过 contextProviders 的 @codebase 或 @folder 来使用。
 
-### 安装
-```bash
-code --install-extension continue-0.9.167.vsix
-```
-- [Install from a VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
+### 配置
 
-### 禁止 Anonymous Telemetry
-编辑文件 ~/.continue/config.json
+编辑文件：`~/.continue/config.json`
+
 ```json
 {
-  "allowAnonymousTelemetry": false
+  "contextProviders": [
+    {
+      "name": "codebase",
+      "params": {
+        "nRetrieve": 25,
+        "nFinal": 5,
+        "useReranking": true
+      }
+    }
+  ]
 }
 ```
-- 这将阻止 Continue 尝试向 PostHog 发送 [anonymous telemetry](https://docs.continue.dev/telemetry) 请求。
 
-### 配置本地模型（config.json）
+- nRetrieve
+从向量数据库中最初检索的结果数量（默认值：25）
 
-### 重新启动 VS Code 以确保 config.json 中的更改生效
+- nFinal
+在重新排序后最终使用的结果数量（默认值：5）
 
-- [Running Continue without Internet](https://docs.continue.dev/walkthroughs/running-continue-without-internet)
+- useReranking
+是否使用重新排序，这将允许最初选择 nRetrieve 个结果，然后使用LLM（大型语言模型）来选择排名前 nFinal 的结果（默认值：true）
+
+@codebase 和 @folder 的配置是一样的。
+
+### Embeddings Providers
+通过在 `~/.continue/config.json` 文件中设置 `embeddingsProvider` 属性来进行配置。
+
+#### Transformers.js
+Transformers.js 是流行的 Transformers 库的 JavaScript 端口。它允许在浏览器中（或者，在这种情况下，在IDE的侧边栏内）本地计算嵌入。所使用的模型是 `all-MiniLM-L6-v2`，该模型随 Continue 扩展一起提供，并生成大小为 384 的嵌入。
+
+```json
+{
+  "embeddingsProvider": {
+    "provider": "transformers.js"
+  }
+}
+```
+
+#### Ollama
+Ollama 是开始使用开源语言模型最简便的方式。它为操作大型语言模型（LLMs）提供了一个完全本地化的 REST API，包括生成嵌入。推荐使用如 `nomic-embed-text` 这样的嵌入模型。
+
+```json
+{
+  "embeddingsProvider": {
+    "provider": "ollama",
+    "model": "nomic-embed-text",
+    "apiBase": "http://localhost:11434" // optional, defaults to http://localhost:11434
+  }
+}
+```
+
+#### OpenAI
+```json
+{
+  "embeddingsProvider": {
+    "provider": "openai",
+    "model": "bge-base-zh-v1.5",
+    "apiBase": "http://172.16.33.66:8000/v1", 
+    "apiKey": "NULL"
+  }
+}
+```
+
+### 自定义被索引的文件
+Continue 会遵守 `.gitignore` 文件来决定哪些文件不应被索引。如果您想排除更多文件，可以将它们添加到 `.continueignore` 文件中，该文件遵循与 `.gitignore` 完全相同的规则。
+
+如果您想确切地查看 Continue 已经索引了哪些文件，元数据存储在 `~/.continue/index/index.sqlite` 中。您可以使用像 [SQLite Database Browser](https://sqlitebrowser.org/) 这样的工具来查看该文件中 `tag_catalog` 表的内容。
+
+如果需要**强制刷新索引**，请使用 `cmd/ctrl + shift + p` 然后输入 "Reload Window" 来重新加载 VS Code 窗口。
+
+
+## 参考资料
+- [Use local AI to supercharge your coding skills](https://yashints.dev/blog/2024/06/07/ollama-continue/)
