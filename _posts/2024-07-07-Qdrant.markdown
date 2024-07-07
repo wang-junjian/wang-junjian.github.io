@@ -1,0 +1,88 @@
+---
+layout: post
+title:  "Qdrant"
+date:   2024-07-07 08:00:00 +0800
+categories: Qdrant
+tags: [Qdrant, FastEmbed]
+---
+
+## [Qdrant](https://github.com/qdrant/qdrant)
+
+用于下一代人工智能应用的向量搜索引擎
+
+Qdrant（读作：quadrant）是一个向量相似性搜索引擎和向量数据库。它提供了一个生产就绪的服务，具有方便的 API 来存储、搜索和管理点 - 具有附加有效载荷的向量。Qdrant 专为扩展的过滤支持量身定制。它对所有类型的神经网络或基于语义的匹配、分面搜索和其他应用非常有用。
+
+解决方案
+
+![](/images/2024/Qdrant-solutions.png)
+
+
+## 运行
+
+### Qdrant 镜像
+
+```bash
+docker pull qdrant/qdrant
+```
+
+### 启动 Qdrant 服务
+
+```bash
+docker run -p 6333:6333 -p 6334:6334 \
+    -v $(pwd)/qdrant_storage:/qdrant/storage:z \
+    qdrant/qdrant
+```
+
+Qdrant 现在可访问：
+- REST API: [localhost:6333](http://localhost:6333/)
+- Web UI: [localhost:6333/dashboard](http://localhost:6333/dashboard)
+- GRPC API: [localhost:6334](http://localhost:6334/)
+
+### 安装 Qdrant Client
+
+```bash
+pip install qdrant-client
+```
+
+
+## 代码示例
+
+```python
+from typing import List
+from qdrant_client import QdrantClient
+
+
+client = QdrantClient(":memory:")           # For testing, CI/CD, small experiments
+# client = QdrantClient(path="path/to/db")  # Persists changes to disk, fast prototyping
+# client = QdrantClient(url="http://localhost:6333")  # For production
+
+docs = ["Qdrant has Langchain integrations", 
+        "Qdrant also has Llama Index integrations"]
+metadata = [
+    {"source": "Langchain-docs"},
+    {"source": "Llama-index-docs"},
+]
+ids = [42, 2]
+
+# client.set_model("BAAI/bge-small-zh-v1.5")
+# List of supported models: https://qdrant.github.io/fastembed/examples/Supported_Models
+
+client.add(
+    collection_name="demo_collection",
+    documents=docs,
+    metadata=metadata,
+    ids=ids
+)
+
+search_result = client.query(
+    collection_name="demo_collection",
+    query_text="Qdrant & LlamaIndex"
+)
+
+print(search_result)
+```
+```
+[QueryResponse(id=2, embedding=None, sparse_embedding=None, metadata={'document': 'Qdrant also has Llama Index integrations', 'source': 'Llama-index-docs'}, document='Qdrant also has Llama Index integrations', score=0.9519073317167758), QueryResponse(id=42, embedding=None, sparse_embedding=None, metadata={'document': 'Qdrant has Langchain integrations', 'source': 'Langchain-docs'}, document='Qdrant has Langchain integrations', score=0.8974003093719342)]
+```
+
+- [Qdrant Quickstart](https://qdrant.tech/documentation/quick-start/)
