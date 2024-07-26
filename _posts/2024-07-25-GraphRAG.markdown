@@ -1,0 +1,317 @@
+---
+layout: post
+title:  "GraphRAG"
+date:   2024-07-25 08:00:00 +0800
+categories: GraphRAG LLM
+tags: [GraphRAG, Ollama, XInference]
+---
+
+## [GraphRAG](https://github.com/microsoft/graphrag)
+GraphRAG 项目是一个数据管道和转换套件，旨在利用大型语言模型（LLMs）的力量从非结构化文本中提取有意义的结构化数据。
+
+若要了解更多关于 GraphRAG 以及它如何用于增强您的大型语言模型（LLMs）对您的私有数据进行推理的能力，请访问 [Microsoft Research Blog Post](https://www.microsoft.com/en-us/research/blog/graphrag-unlocking-llm-discovery-on-narrative-private-data/)。
+
+
+## [Get Started](https://microsoft.github.io/graphrag/posts/get_started/)
+
+### 构建虚拟环境
+```bash
+cd /Users/junjian/GitHub/microsoft/graphrag
+
+python -m venv env
+source env/bin/activate
+```
+
+### 安装 GraphRAG
+```bash
+pip install graphrag
+```
+
+### 准备数据
+```bash
+mkdir -p ./ragtest/input
+curl https://www.gutenberg.org/cache/epub/24022/pg24022.txt > ./ragtest/input/book.txt
+```
+
+### 运行索引器
+
+#### 设置您的工作区变量
+
+初始化您的工作区，运行 `graphrag.index --init` 命令
+```bash
+python -m graphrag.index --init --root ./ragtest
+```
+
+这将在 `./ragtest` 目录中创建两个文件：`.env` 和 `settings.yaml` 。
+- `.env` 包含运行 GraphRAG pipeline 所需的环境变量。如果您检查该文件，您将看到定义了一个单一的环境变量，`GRAPHRAG_API_KEY=<API_KEY>` 。这是 OpenAI API 或 Azure OpenAI 端点的 API 密钥。您可以用您自己的 API 密钥替换它。
+- `settings.yaml` 包含 pipeline 的设置。您可以修改此文件来更改 pipeline 的设置。
+
+#### 修改配置 `ragtest/settings.yaml`
+
+```yaml
+encoding_model: cl100k_base
+skip_workflows: []
+llm:
+  api_key: ${GRAPHRAG_API_KEY}
+  model: mistral
+  api_base: http://127.0.0.1:11434/v1
+
+embeddings:
+  llm:
+    api_key: ${GRAPHRAG_API_KEY}
+    model: nomic-embed-text
+    api_base: http://127.0.0.1:11434/v1
+```
+
+##### 推理服务配置
+
+| 推理服务 | OpenAI API (api_base) |
+| --- | --- |
+| Ollama     | http://127.0.0.1:11434/v1 |
+| FastChat   | http://127.0.0.1:8000/v1  |
+| XInference | http://127.0.0.1:9997/v1  |
+
+##### 模型配置
+
+| 模型 (model) | 类型 | 语言 | 下载 |
+| --- | --- | --- | --- |
+| mistral:v0.2          | llm        | 英文  | ollama pull mistral:v0.2 |
+| aya:35b               | llm        | 多语言 | ollama pull aya:35b |
+| phi3:medium           | llm        | 英文  | ollama pull phi3:medium |
+| yi:9b                 | llm        | 中英文 | ollama pull yi:9b |
+| codestral:22b         | llm        | 代码  | ollama pull codestral:22b |
+| nomic-embed-text      | embeddings | 英文  | ollama pull nomic-embed-text |
+| mxbai-embed-large     | embeddings | 英文  | ollama pull mxbai-embed-large |
+| bge-base-zh-v1.5      | embeddings | 中英文 | ollama pull quentinz/bge-base-zh-v1.5 |
+| dmeta-embedding-zh    | embeddings | 中英文 | ollama pull herald/dmeta-embedding-zh |
+
+使用了 Ollama 的很多模型进行了测试，最终得到了上面的结果。
+
+下面的模型在使用过程中出现了问题：
+- mistral:v0.3 最初发布的可以，最新的版本有问题。
+- llama3:8b
+- llama3.1:8b
+- llama3.1:70b
+- aya:8b
+- gemma2:9b
+- gemma2:27b
+- glm4:9b
+- internlm2:7b
+- yi:6b
+- yi:34b
+- qwen2:0.5b
+- qwen2:1.5b
+- qwen2:7b
+- qwen2:72b
+- deepseek-v2:16b
+- deepseek-coder-v2:16b
+- codeqwen:7b
+- codegeex4:9b
+
+##### 错误处理
+
+❌ embeddings 使用 Ollama 容易出现错误 ZeroDivisionError，如下：
+```bash
+Error embedding chunk {'OpenAIEmbedding': "Error code: 400 - {'error': {'message': 'invalid input type', 'type': 'api_error', 'param': None, 'code': None}}"}
+Traceback (most recent call last):
+  File "/opt/miniconda/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/opt/miniconda/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/query/__main__.py", line 76, in <module>
+    run_local_search(
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/query/cli.py", line 154, in run_local_search
+    result = search_engine.search(query=query)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/query/structured_search/local_search/search.py", line 118, in search
+    context_text, context_records = self.context_builder.build_context(
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/query/structured_search/local_search/mixed_context.py", line 139, in build_context
+    selected_entities = map_query_to_entities(
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/query/context_builder/entity_extraction.py", line 55, in map_query_to_entities
+    search_results = text_embedding_vectorstore.similarity_search_by_text(
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/vector_stores/lancedb.py", line 118, in similarity_search_by_text
+    query_embedding = text_embedder(text)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/query/context_builder/entity_extraction.py", line 57, in <lambda>
+    text_embedder=lambda t: text_embedder.embed(t),
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/query/llm/oai/embedding.py", line 96, in embed
+    chunk_embeddings = np.average(chunk_embeddings, axis=0, weights=chunk_lens)
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/numpy/lib/function_base.py", line 550, in average
+    raise ZeroDivisionError(
+ZeroDivisionError: Weights sum to zero, can't be normalized
+```
+**可以把 embeddings 的 api_base 换成 XInference的**
+
+❌ 使用 `Qwen2:7b` 模型在 create_base_entity_graph 阶段出现错误，如下： 
+```bash
+datashaper.workflow.workflow ERROR Error executing verb "cluster_graph" in create_base_entity_graph: Columns must be same length as key
+Traceback (most recent call last):
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/datashaper/workflow/workflow.py", line 410, in _execute_verb
+    result = node.verb.func(**verb_args)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/index/verbs/graph/clustering/cluster_graph.py", line 102, in cluster_graph
+    output_df[[level_to, to]] = pd.DataFrame(
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/frame.py", line 4299, in __setitem__
+    self._setitem_array(key, value)
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/frame.py", line 4341, in _setitem_array
+    check_key_length(self.columns, key, value)
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/indexers/utils.py", line 391, in check_key_length
+    raise ValueError("Columns must be same length as key")
+ValueError: Columns must be same length as key
+```
+**换上面的模型**
+
+❌ 使用 `Llama3.1:8b` 模型在 create_base_entity_graph 阶段出现错误，如下： 
+```bash
+datashaper.workflow.workflow ERROR Error executing verb "cluster_graph" in create_base_entity_graph: EmptyNetworkError
+Traceback (most recent call last):
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/datashaper/workflow/workflow.py", line 410, in _execute_verb
+    result = node.verb.func(**verb_args)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/index/verbs/graph/clustering/cluster_graph.py", line 61, in cluster_graph
+    results = output_df[column].apply(lambda graph: run_layout(strategy, graph))
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/series.py", line 4924, in apply
+    ).apply()
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/apply.py", line 1427, in apply
+    return self.apply_standard()
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/apply.py", line 1507, in apply_standard
+    mapped = obj._map_values(
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/base.py", line 921, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+  File "lib.pyx", line 2972, in pandas._libs.lib.map_infer
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/index/verbs/graph/clustering/cluster_graph.py", line 61, in <lambda>
+    results = output_df[column].apply(lambda graph: run_layout(strategy, graph))
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/index/verbs/graph/clustering/cluster_graph.py", line 167, in run_layout
+    clusters = run_leiden(graph, strategy)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/index/verbs/graph/clustering/strategies/leiden.py", line 26, in run
+    node_id_to_community_map = _compute_leiden_communities(
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/index/verbs/graph/clustering/strategies/leiden.py", line 61, in _compute_leiden_communities
+    community_mapping = hierarchical_leiden(
+  File "<@beartype(graspologic.partition.leiden.hierarchical_leiden) at 0x319eddd80>", line 304, in hierarchical_leiden
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/graspologic/partition/leiden.py", line 588, in hierarchical_leiden
+    hierarchical_clusters_native = gn.hierarchical_leiden(
+leiden.EmptyNetworkError: EmptyNetworkError
+```
+**换上面的模型**
+
+❌ 使用 `Llama3.1:70b` 模型在 create_final_community_reports 阶段出现错误，如下： 
+```bash
+graphrag.index.graph.extractors.community_reports.community_reports_extractor ERROR error generating community report
+Traceback (most recent call last):
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/index/graph/extractors/community_reports/community_reports_extractor.py", line 58, in __call__
+    await self._llm(
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/openai/json_parsing_llm.py", line 34, in __call__
+    result = await self._delegate(input, **kwargs)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/openai/openai_token_replacing_llm.py", line 37, in __call__
+    return await self._delegate(input, **kwargs)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/openai/openai_history_tracking_llm.py", line 33, in __call__
+    output = await self._delegate(input, **kwargs)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/base/caching_llm.py", line 104, in __call__
+    result = await self._delegate(input, **kwargs)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/base/rate_limiting_llm.py", line 177, in __call__
+    result, start = await execute_with_retry()
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/base/rate_limiting_llm.py", line 159, in execute_with_retry
+    async for attempt in retryer:
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/tenacity/asyncio/__init__.py", line 166, in __anext__
+    do = await self.iter(retry_state=self._retry_state)
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/tenacity/asyncio/__init__.py", line 153, in iter
+    result = await action(retry_state)
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/tenacity/_utils.py", line 99, in inner
+    return call(*args, **kwargs)
+  File "/Users/junjian/GitHub/microsoft/graphrag/env/lib/python3.10/site-packages/tenacity/__init__.py", line 398, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+  File "/opt/miniconda/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/opt/miniconda/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/base/rate_limiting_llm.py", line 165, in execute_with_retry
+    return await do_attempt(), start
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/base/rate_limiting_llm.py", line 147, in do_attempt
+    return await self._delegate(input, **kwargs)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/base/base_llm.py", line 48, in __call__
+    return await self._invoke_json(input, **kwargs)
+  File "/Users/junjian/GitHub/microsoft/graphrag/graphrag/llm/openai/openai_chat_llm.py", line 90, in _invoke_json
+    raise RuntimeError(FAILED_TO_CREATE_JSON_ERROR)
+RuntimeError: Failed to generate valid JSON output
+```
+**换上面的模型**
+
+#### 运行索引 pipeline
+
+```bash
+python -m graphrag.index --root ./ragtest
+```
+```bash
+⠦ GraphRAG Indexer 
+├── Loading Input (text) - 1 files loaded (0 filtered) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:00
+├── create_base_text_units
+├── create_base_extracted_entities
+├── create_summarized_entities
+├── create_base_entity_graph
+├── create_final_entities
+├── create_final_nodes
+├── create_final_communities
+├── join_text_units_to_entity_ids
+├── create_final_relationships
+├── join_text_units_to_relationship_ids
+├── create_final_community_reports
+├── create_final_text_units
+├── create_base_documents
+└── create_final_documents
+🚀 All workflows completed successfully.
+```
+
+此过程运行将需要一些时间。这取决于您的输入数据的大小、您正在使用的模型以及所使用的文本块大小（这些可以在您的 `.env` 文件中进行配置）。一旦 pipeline 完成，您应该会看到一个名为 `./ragtest/output/<timestamp>/artifacts` 的新文件夹，其中包含一系列的 parquet 文件。
+
+### 运行查询引擎
+
+#### 使用 `全局(global)搜索` 提出高层次问题
+
+What are the top themes in this story?（这个故事的主题是什么？）
+
+```bash
+python -m graphrag.query \
+    --root ./ragtest \
+    --method global \
+    "What are the top themes in this story?"
+```
+```
+INFO: Reading settings from ragtest/settings.yaml
+creating llm client with {'api_key': 'REDACTED,len=9', 'type': "openai_chat", 'model': 'mistral:v0.3', 'max_tokens': 4000, 'temperature': 0.0, 'top_p': 1.0, 'n': 1, 'request_timeout': 180.0, 'api_base': 'http://127.0.0.1:11434/v1', 'api_version': None, 'organization': None, 'proxy': None, 'cognitive_services_endpoint': None, 'deployment_name': None, 'model_supports_json': True, 'tokens_per_minute': 0, 'requests_per_minute': 0, 'max_retries': 10, 'max_retry_wait': 10.0, 'sleep_on_rate_limit_recommendation': True, 'concurrent_requests': 25}
+
+SUCCESS: Global Search Response:  The story primarily revolves around the themes of redemption and transformation, as depicted in Charles Dickens' classic tale 'A Christmas Carol'. This narrative centers around Ebenezer Scrooge, a man who undergoes a profound change after being visited by three ghosts on Christmas Eve [Data: Reports 1].
+
+In addition to the story, the Verdant Oasis Plaza community benefits from a digital library that offers electronic resources such as books and texts for free use under the Project Gutenberg License [Data: Reports 2].
+
+Furthermore, the Unity March taking place in Verdant Oasis Plaza has garnered media attention from Tribune Spotlight, suggesting it may have a significant impact on the community dynamics [Data: Reports 3]. This event could potentially shape the social landscape of the area.
+```
+
+#### 使用 `本地(local)搜索` 针对特定角色提出更具体问题
+
+Who is Scrooge, and what are his main relationships?（斯克鲁奇是谁，他的主要关系是什么？）
+
+```bash
+python -m graphrag.query \
+    --root ./ragtest \
+    --method local \
+    "Who is Scrooge, and what are his main relationships?"
+```
+```
+INFO: Reading settings from ragtest/settings.yaml
+creating llm client with {'api_key': 'REDACTED,len=9', 'type': "openai_chat", 'model': 'mistral:v0.3', 'max_tokens': 4000, 'temperature': 0.0, 'top_p': 1.0, 'n': 1, 'request_timeout': 180.0, 'api_base': 'http://127.0.0.1:11434/v1', 'api_version': None, 'organization': None, 'proxy': None, 'cognitive_services_endpoint': None, 'deployment_name': None, 'model_supports_json': True, 'tokens_per_minute': 0, 'requests_per_minute': 0, 'max_retries': 10, 'max_retry_wait': 10.0, 'sleep_on_rate_limit_recommendation': True, 'concurrent_requests': 25}
+creating embedding llm client with {'api_key': 'REDACTED,len=9', 'type': "openai_embedding", 'model': 'bge-base-zh-v1.5', 'max_tokens': 4000, 'temperature': 0, 'top_p': 1, 'n': 1, 'request_timeout': 180.0, 'api_base': 'http://127.0.0.1:9997/v1', 'api_version': None, 'organization': None, 'proxy': None, 'cognitive_services_endpoint': None, 'deployment_name': None, 'model_supports_json': None, 'tokens_per_minute': 0, 'requests_per_minute': 0, 'max_retries': 10, 'max_retry_wait': 10.0, 'sleep_on_rate_limit_recommendation': True, 'concurrent_requests': 25}
+
+SUCCESS: Local Search Response:  Ebenezer Scrooge is a fictional character created by Charles Dickens, who first appeared in the novel "A Christmas Carol," published in 1843. Scrooge is a miserly old man who values money above all else and is known for being cold-hearted and uncaring towards others.
+
+Throughout the story, we learn about Scrooge's main relationships:
+
+1. Jacob Marley: Scrooge's former business partner who died seven years prior to the events of the novel. Marley appears to Scrooge as a ghostly figure and warns him about his fate if he does not change his ways.
+
+2. Bob Cratchit: Scrooge employs Bob Cratchit as his clerk, and they have a master-servant relationship. Scrooge is harsh towards Cratchit, but after his transformation, he becomes kinder and more generous to him.
+
+3. Tiny Tim: Bob Cratchit's youngest son, who is sickly and disabled. Scrooge initially shows no concern for Tiny Tim's well-being but later expresses regret for not having been more compassionate towards him.
+
+4. Fred: Scrooge's nephew, who invites him to Christmas dinner every year but is always rejected. Despite this, Fred remains friendly and hopeful that his uncle will change. After Scrooge's transformation, he welcomes Fred warmly into his life.
+
+5. Belle: Scrooge was once engaged to Belle, but their relationship ended due to Scrooge's obsession with money. She represents the love and warmth that Scrooge has lost over the years.
+
+6. The Ghosts of Christmas Past, Present, and Yet to Come: These supernatural beings visit Scrooge on Christmas Eve and show him visions of his past, present, and future, respectively. They play a crucial role in helping Scrooge understand the error of his ways and inspiring him to change.
+```
