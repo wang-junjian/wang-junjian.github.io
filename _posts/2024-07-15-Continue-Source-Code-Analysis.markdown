@@ -8,7 +8,9 @@ tags: [Continue, GitHubCopilot]
 
 ## 配置
 
-### [extensions/vscode/package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
+**目录：extensions/vscode**
+
+### [package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
 
 `package.json` 由开发者手动创建和维护，主要用于定义项目的配置信息。
 - configuration
@@ -17,7 +19,7 @@ tags: [Continue, GitHubCopilot]
 - menus
 - views
 
-### [extensions/vscode/package-lock.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package-lock.json)
+### [package-lock.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package-lock.json)
 
 `package-lock.json` 由 npm 自动生成和更新，主要用于锁定依赖的具体版本，确保安装一致性。
 
