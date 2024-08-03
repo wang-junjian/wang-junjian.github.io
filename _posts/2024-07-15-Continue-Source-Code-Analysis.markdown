@@ -273,6 +273,122 @@ extensions/vscode/package.json
 ```
 
 
+## [Tab AutoComplete](https://docs.continue.dev/features/tab-autocomplete)
+
+getTabCompletion
+[core/autocomplete/completionProvider.ts](https://github.com/continuedev/continue/blob/main/core/autocomplete/completionProvider.ts)
+
+### 使用 [Ollama](https://ollama.ai/) 设置
+在 `~/.continue/config.json` 文件中配置。
+```json
+{
+  "tabAutocompleteModel": {
+    "title": "Tab Autocomplete",
+    "provider": "ollama",
+    "model": "codeqwen:7b",
+    "apiKey": ""
+  }
+}
+```
+
+### [Tab AutoComplete 选项](https://docs.continue.dev/features/tab-autocomplete#tabautocompleteoptions)
+
+默认 Tab AutoComplete 选项配置在代码：[core/util/parameters.ts](https://github.com/continuedev/continue/blob/main/core/util/parameters.ts)
+
+```json
+{
+  "tabAutocompleteOptions": {
+    "multilineCompletions": "auto",
+    "maxPromptTokens": 400
+  }
+}
+```
+- multilineCompletions 控制是否提供多行代码的自动补全
+  - "always": 默认。总是在多行代码上提供自动补全
+  - "never": 从不在多行代码上提供自动补全
+  - "auto": 根据代码上下文自动决定是否提供多行代码的自动补全
+- maxPromptTokens 要使用的提示 Token 的最大数量。数字越小，完成速度越快，但上下文越少。
+
+### 使用什么样的模型
+建议用于自动完成的模型是使用高度特定的提示格式进行训练的，这使它们能够响应完成代码的请求。出色的自动完成不需要庞大的模型。大多数最先进的自动完成模型的参数不超过 10B，超过这个数字并不能显着提高性能。
+
+| 模型 | 大小 |
+| --- | ---: |
+| deepseek-coder:1.3b-base | 1.3B |
+| starcoder2:3b | 3B |
+| deepseek-coder:6.7b-base | 6.7B |
+| codeqwen:7b | 7B |
+| deepseek-coder-v2:16b | 16B |
+| codestral:22b | 22B |
+
+### 支持编程语言
+您需要支持编程语言，可以通过编辑代码：[core/autocomplete/languages.ts](https://github.com/continuedev/continue/blob/main/core/autocomplete/languages.ts)
+
+```ts
+// TypeScript
+export const Typescript = {
+  name: "TypeScript",
+  topLevelKeywords: ["function", "class", "module", "export", "import"],
+  singleLineComment: "//",
+  endOfLine: [";"],
+};
+
+// Python
+export const Python = {
+  name: "Python",
+  // """"#" is for .ipynb files, where we add '"""' surrounding markdown blocks.
+  // This stops the model from trying to complete the start of a new markdown block
+  topLevelKeywords: ["def", "class", '"""#'],
+  singleLineComment: "#",
+  endOfLine: [],
+};
+
+// ...
+
+export const LANGUAGES: { [extension: string]: AutocompleteLanguageInfo } = {
+  ts: Typescript,
+  js: Typescript,
+  tsx: Typescript,
+  jsx: Typescript,
+  ipynb: Python,
+  py: Python,
+  pyi: Python,
+  java: Java,
+  cpp: Cpp,
+  cxx: Cpp,
+  h: Cpp,
+  hpp: Cpp,
+  cs: CSharp,
+  c: C,
+  scala: Scala,
+  sc: Scala,
+  go: Go,
+  rs: Rust,
+  hs: Haskell,
+  php: PHP,
+  rb: Ruby,
+  rails: RubyOnRails,
+  swift: Swift,
+  kt: Kotlin,
+  clj: Clojure,
+  cljs: Clojure,
+  cljc: Clojure,
+  jl: Julia,
+  fs: FSharp,
+  fsi: FSharp,
+  fsx: FSharp,
+  fsscript: FSharp,
+  r: R,
+  R: R,
+  dart: Dart,
+  sol: Solidity,
+  yaml: YAML,
+  yml: YAML,
+  md: Markdown,
+};
+```
+
+
 ## [Slash Command](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#writing-slash-commands)
 
 Slash 命令接口，定义在 [core/index.d.ts](https://github.com/continuedev/continue/blob/main/core/index.d.ts) 中，需要您定义一个 `name`（用于调用命令的文本），一个 `description`（在 slash 命令菜单中显示的文本）和一个在调用命令时将被调用的 `run` 函数。`run` 函数是一个异步生成器，它产生要在聊天中显示的内容。`run` 函数传递了一个 ContinueSDK 对象，可以用它与 IDE 交互，调用 LLM，并查看聊天历史，以及其他一些实用程序。
@@ -451,78 +567,3 @@ export abstract class BaseContextProvider implements IContextProvider {
 | Java       | Language Support for Java(TM) by Red Hat |
 | C/C++      | C/C++ |
 | Rust       | rust-analyzer |
-
-
-## AutoComplete
-
-### getTabCompletion
-[core/autocomplete/completionProvider.ts](https://github.com/continuedev/continue/blob/main/core/autocomplete/completionProvider.ts)
-
-### 支持的语言
-[core/autocomplete/languages.ts](https://github.com/continuedev/continue/blob/main/core/autocomplete/languages.ts)
-
-**可以在此增加您支持的语言**
-
-```ts
-// TypeScript
-export const Typescript = {
-  name: "TypeScript",
-  topLevelKeywords: ["function", "class", "module", "export", "import"],
-  singleLineComment: "//",
-  endOfLine: [";"],
-};
-
-// Python
-export const Python = {
-  name: "Python",
-  // """"#" is for .ipynb files, where we add '"""' surrounding markdown blocks.
-  // This stops the model from trying to complete the start of a new markdown block
-  topLevelKeywords: ["def", "class", '"""#'],
-  singleLineComment: "#",
-  endOfLine: [],
-};
-
-// ...
-
-export const LANGUAGES: { [extension: string]: AutocompleteLanguageInfo } = {
-  ts: Typescript,
-  js: Typescript,
-  tsx: Typescript,
-  jsx: Typescript,
-  ipynb: Python,
-  py: Python,
-  pyi: Python,
-  java: Java,
-  cpp: Cpp,
-  cxx: Cpp,
-  h: Cpp,
-  hpp: Cpp,
-  cs: CSharp,
-  c: C,
-  scala: Scala,
-  sc: Scala,
-  go: Go,
-  rs: Rust,
-  hs: Haskell,
-  php: PHP,
-  rb: Ruby,
-  rails: RubyOnRails,
-  swift: Swift,
-  kt: Kotlin,
-  clj: Clojure,
-  cljs: Clojure,
-  cljc: Clojure,
-  jl: Julia,
-  fs: FSharp,
-  fsi: FSharp,
-  fsx: FSharp,
-  fsscript: FSharp,
-  r: R,
-  R: R,
-  dart: Dart,
-  sol: Solidity,
-  yaml: YAML,
-  yml: YAML,
-  md: Markdown,
-};
-```
