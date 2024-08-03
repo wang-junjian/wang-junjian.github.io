@@ -8,17 +8,22 @@ tags: [Continue, GitHubCopilot]
 
 ## 配置
 
-[extensions/vscode/package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
+### [extensions/vscode/package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
+
+`package.json` 由开发者手动创建和维护，主要用于定义项目的配置信息。
 - configuration
 - commands
 - keybindings
 - menus
 - views
 
-[extensions/vscode/package-lock.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package-lock.json)
+### [extensions/vscode/package-lock.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package-lock.json)
+
+`package-lock.json` 由 npm 自动生成和更新，主要用于锁定依赖的具体版本，确保安装一致性。
 
 
 ## VS Code Extension
+
 VS Code 扩展的起点是 [activate.ts](https://github.com/continuedev/continue/blob/main/extensions/vscode/src/activation/activate.ts)。`activateExtension` 这里的函数将注册所有命令，并将 Continue GUI 作为 webview 加载到 IDE 的侧边栏中。
 
 
