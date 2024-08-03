@@ -6,11 +6,16 @@ categories: Continue AICodingAssistant
 tags: [Continue, GitHubCopilot]
 ---
 
-## 配置
+## VS Code Extension
+
+### 入口
+VS Code 扩展的起点是 [activate.ts](https://github.com/continuedev/continue/blob/main/extensions/vscode/src/activation/activate.ts)。`activateExtension` 这里的函数将注册所有命令，并将 Continue GUI 作为 webview 加载到 IDE 的侧边栏中。
+
+### 配置
 
 **目录：extensions/vscode**
 
-### [package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
+[package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
 
 `package.json` 由开发者手动创建和维护，主要用于定义项目的配置信息。
 - configuration
@@ -19,24 +24,123 @@ tags: [Continue, GitHubCopilot]
 - menus
 - views
 
-### [package-lock.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package-lock.json)
+[package-lock.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package-lock.json)
 
 `package-lock.json` 由 npm 自动生成和更新，主要用于锁定依赖的具体版本，确保安装一致性。
 
 
-## VS Code Extension
+### 国际化
 
-VS Code 扩展的起点是 [activate.ts](https://github.com/continuedev/continue/blob/main/extensions/vscode/src/activation/activate.ts)。`activateExtension` 这里的函数将注册所有命令，并将 Continue GUI 作为 webview 加载到 IDE 的侧边栏中。
+![](/images/2024/Continue/VSCode-Extension-i18n.png)
+
+可以通过使用 `package.nls.json` 文件来支持多语言。`package.nls.json` 文件包含了所有需要本地化的字符串，并且可以为不同的语言创建相应的翻译文件，如 `package.nls.zh-cn.json`。
+
+- 步骤
+  - **在 package.json 中使用占位符:** 在 package.json 文件中，用占位符（`%占位符%`）替换需要本地化的字符串。
+  - **创建 package.nls.json 文件:** 在扩展的根目录下创建 package.nls.json 文件，定义占位符和默认语言的映射。默认语言（通常是英文）的字符串。
+  - **创建语言特定的翻译文件:** 为每种语言创建一个翻译文件（`package.nls.<language>.json`），如 package.nls.zh-cn.json，并提供相应的翻译。
+
+[package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
+```json
+{
+  "name": "continue",
+  "icon": "media/icon.png",
+  "version": "0.9.191",
+  "contributes": {
+    "commands": [
+      {
+        "command": "continue.focusContinueInputWithoutClear",
+        "category": "Continue",
+        "title": "%focusContinueInputWithoutClear%",
+        "group": "Continue"
+      },
+      {
+        "command": "continue.toggleFullScreen",
+        "category": "Continue",
+        "title": "%toggleFullScreen%",
+        "icon": "$(fullscreen)",
+        "group": "Continue"
+      },
+      {
+        "command": "continue.newSession",
+        "category": "Continue",
+        "title": "%newSession%",
+        "icon": "$(add)",
+        "group": "Continue"
+      },
+      {
+        "command": "continue.viewHistory",
+        "category": "Continue",
+        "title": "%viewHistory%",
+        "icon": "$(history)",
+        "group": "Continue"
+      },
+      {
+        "command": "continue.writeCommentsForCode",
+        "category": "Continue",
+        "title": "%writeCommentsForCode%",
+        "group": "Continue"
+      },
+      {
+        "command": "continue.writeDocstringForCode",
+        "category": "Continue",
+        "title": "%writeDocstringForCode%",
+        "group": "Continue"
+      },
+      {
+        "command": "continue.fixCode",
+        "category": "Continue",
+        "title": "%fixCode%",
+        "group": "Continue"
+      },
+      {
+        "command": "continue.optimizeCode",
+        "category": "Continue",
+        "title": "%optimizeCode%",
+        "group": "Continue"
+      }
+    ]
+}
+```
+
+package.nls.json
+```json
+{
+  "newSession": "New Session",
+  "toggleFullScreen": "Toggle Full Screen",
+  "viewHistory": "View History",
+  "fixCode": "Fix this Code",
+  "optimizeCode": "Optimize this Code",
+  "writeDocstringForCode": "Write a Docstring for this Code",
+  "writeCommentsForCode": "Write Comments for this Code",
+  "focusContinueInputWithoutClear": "Add Highlighted Code to Context"
+}
+```
+
+package.nls.zh-cn.json
+```json
+{
+  "newSession": "新会话",
+  "toggleFullScreen": "切换全屏",
+  "viewHistory": "查看历史记录",
+  "fixCode": "修复代码",
+  "optimizeCode": "优化代码",
+  "writeDocstringForCode": "为此代码编写文档字符串",
+  "writeCommentsForCode": "为此代码编写注释",
+  "focusContinueInputWithoutClear": "将高亮显示的代码添加到上下文"
+}
+```
 
 
 ## GUI
 
 ### 主界面
+
+左边是主界面，不同的元素使用不同的颜色区分；右边是主界面中元素对应的组件或配置（颜色一致），通过 `缩进` 方式表示他们之间的包含关系。
+
 ![](/images/2024/Continue/Continue-GUI.png)
 
 ### 路由
-
-**Local:** http://localhost:5173/
 
 | 路径 | 组件 |
 | ---  | --- |
@@ -169,7 +273,7 @@ extensions/vscode/package.json
 ```
 
 
-## [编写 Slash Command](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#writing-slash-commands)
+## [Slash Command](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#writing-slash-commands)
 
 Slash 命令接口，定义在 [core/index.d.ts](https://github.com/continuedev/continue/blob/main/core/index.d.ts) 中，需要您定义一个 `name`（用于调用命令的文本），一个 `description`（在 slash 命令菜单中显示的文本）和一个在调用命令时将被调用的 `run` 函数。`run` 函数是一个异步生成器，它产生要在聊天中显示的内容。`run` 函数传递了一个 ContinueSDK 对象，可以用它与 IDE 交互，调用 LLM，并查看聊天历史，以及其他一些实用程序。
 
@@ -186,8 +290,57 @@ export interface SlashCommand {
 - 将您的命令添加到 [core/commands/slash/index.ts](https://github.com/continuedev/continue/blob/main/core/commands/slash/index.ts) 中的数组中
 - 将您的命令添加到 [config_schema.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/config_schema.json) 中的列表中。这样可以确保智能感知在用户编辑 `config.json` 时显示您的提供程序可用的命令。如果您的命令接受任何参数，您还应该按照现有示例将它们添加到 JSON 模式中。
 
+### 编写内建 Slash Command：翻译中文（/tr）
 
-## [编写 Context Providers](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#writing-context-providers)
+增加文件 `core/commands/slash/translate.ts`，并在其中添加以下内容：
+
+```ts
+import { SlashCommand } from "../../index.js";
+import { stripImages } from "../../llm/countTokens.js";
+
+const TranslateChineseCommand: SlashCommand = {
+  name: "tr",
+  description: "Translate to Chinese",
+  run: async function* ({ ide, llm, input }) {
+    if (input.trim() === "") {
+      yield "Please enter the text you want to translate into Chinese.";
+      return;
+    }
+
+    // input = '/tr hello world' => 'hello world'
+    input = input.replace("/tr", "").trim();
+
+    const prompt = `The text the user wants to translate is:
+
+"${input}"
+
+Please translate into Chinese. Your output should contain only the corresponding Chinese, without any explanation or other output.`;
+
+    for await (const chunk of llm.streamChat([
+      { role: "user", content: prompt },
+    ])) {
+      yield stripImages(chunk.content);
+    }
+  },
+};
+
+export default TranslateChineseCommand;
+```
+
+修改文件 `core/commands/slash/index.ts`，并在其中添加以下内容：
+
+```ts
+//...
+import TranslateChineseCommand from "./translate.js";
+
+export default [
+  //...
+  TranslateChineseCommand,
+];
+```
+
+
+## [Context Providers](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#writing-context-providers)
 
 `ContextProvider` 是一个 Continue 插件，可以通过输入 `@` 来快速选择文档作为语言模型的上下文。 `IContextProvider` 接口在 [core/index.d.ts](https://github.com/continuedev/continue/blob/main/core/index.d.ts) 中定义，但所有内置上下文提供程序都扩展于 [BaseContextProvider](https://github.com/continuedev/continue/blob/main/core/context/index.ts)。
 
@@ -245,11 +398,19 @@ export abstract class BaseContextProvider implements IContextProvider {
 
 ## [Quick Actions](https://docs.continue.dev/features/quick-actions)
 
-[extensions/vscode/src/lang-server/codeLens/providers/QuickActionsCodeLensProvider.ts](https://github.com/continuedev/continue/blob/main/extensions/vscode/src/lang-server/codeLens/providers/QuickActionsCodeLensProvider.ts)
+快速操作使用 `CodeLens` 提供程序在代码中的`函数`和`类`上方添加交互元素。代码参考：[extensions/vscode/src/lang-server/codeLens/providers/QuickActionsCodeLensProvider.ts](https://github.com/continuedev/continue/blob/main/extensions/vscode/src/lang-server/codeLens/providers/QuickActionsCodeLensProvider.ts)
 
 ![](/images/2024/Continue/QuickActions.png)
 
-### 配置 ~/.continue/config.json
+### 启用/禁用快速操作
+要禁用快速操作，请打开设置菜单 (`⌘ + ,`)，搜索`"continue.enableQuickActions"`，然后切换复选框以禁用。
+
+### 自定义快速操作
+
+通过 `~/.continue/config.json` 文件配置自定义快速操作。
+
+#### 单元测试
+在选定的代码上方生成并插入单元测试的快速操作。
 ```json
 {
   "experimental": {
@@ -257,7 +418,18 @@ export abstract class BaseContextProvider implements IContextProvider {
       {
         "title": "Unit test",
         "prompt": "Write a unit test for this code. Do not change anything about the code itself.",
-      },
+      }
+    ]
+  }
+}
+```
+
+#### 详细解释
+将提示和代码发送到聊天面板，以提供详细解释。
+```json
+{
+  "experimental": {
+    "quickActions": [
       {
         "title": "Detailed explanation",
         "prompt": "Explain the following code in detail, including all methods and properties.",
@@ -268,7 +440,8 @@ export abstract class BaseContextProvider implements IContextProvider {
 }
 ```
 
-### 安装 Language Server Protocol (LSP) 
+### 编程语言支持
+对于您打开的文件的语言，您必须安装语言服务器协议（Language Server Protocol）扩展。
 
 | 语言 | 扩展 |
 | --- | --- |
@@ -352,158 +525,4 @@ export const LANGUAGES: { [extension: string]: AutocompleteLanguageInfo } = {
   yml: YAML,
   md: Markdown,
 };
-```
-
-
-## 开发实践
-
-### VSCode Extension 国际化
-
-![](/images/2024/Continue/VSCode-Extension-i18n.png)
-
-可以通过使用 `package.nls.json` 文件来支持多语言。`package.nls.json` 文件包含了所有需要本地化的字符串，并且可以为不同的语言创建相应的翻译文件，如 `package.nls.zh-cn.json`。
-
-- 步骤
-  - **在 package.json 中使用占位符:** 在 package.json 文件中，用占位符（`%占位符%`）替换需要本地化的字符串。
-  - **创建 package.nls.json 文件:** 在扩展的根目录下创建 package.nls.json 文件，定义占位符和默认语言的映射。默认语言（通常是英文）的字符串。
-  - **创建语言特定的翻译文件:** 为每种语言创建一个翻译文件（`package.nls.<language>.json`），如 package.nls.zh-cn.json，并提供相应的翻译。
-
-[package.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/package.json)
-```json
-{
-  "name": "continue",
-  "icon": "media/icon.png",
-  "version": "0.9.191",
-  "contributes": {
-    "commands": [
-      {
-        "command": "continue.focusContinueInputWithoutClear",
-        "category": "Continue",
-        "title": "%focusContinueInputWithoutClear%",
-        "group": "Continue"
-      },
-      {
-        "command": "continue.toggleFullScreen",
-        "category": "Continue",
-        "title": "%toggleFullScreen%",
-        "icon": "$(fullscreen)",
-        "group": "Continue"
-      },
-      {
-        "command": "continue.newSession",
-        "category": "Continue",
-        "title": "%newSession%",
-        "icon": "$(add)",
-        "group": "Continue"
-      },
-      {
-        "command": "continue.viewHistory",
-        "category": "Continue",
-        "title": "%viewHistory%",
-        "icon": "$(history)",
-        "group": "Continue"
-      },
-      {
-        "command": "continue.writeCommentsForCode",
-        "category": "Continue",
-        "title": "%writeCommentsForCode%",
-        "group": "Continue"
-      },
-      {
-        "command": "continue.writeDocstringForCode",
-        "category": "Continue",
-        "title": "%writeDocstringForCode%",
-        "group": "Continue"
-      },
-      {
-        "command": "continue.fixCode",
-        "category": "Continue",
-        "title": "%fixCode%",
-        "group": "Continue"
-      },
-      {
-        "command": "continue.optimizeCode",
-        "category": "Continue",
-        "title": "%optimizeCode%",
-        "group": "Continue"
-      }
-    ]
-}
-```
-
-package.nls.json
-```json
-{
-  "newSession": "New Session",
-  "toggleFullScreen": "Toggle Full Screen",
-  "viewHistory": "View History",
-  "fixCode": "Fix this Code",
-  "optimizeCode": "Optimize this Code",
-  "writeDocstringForCode": "Write a Docstring for this Code",
-  "writeCommentsForCode": "Write Comments for this Code",
-  "focusContinueInputWithoutClear": "Add Highlighted Code to Context"
-}
-```
-
-package.nls.zh-cn.json
-```json
-{
-  "newSession": "新会话",
-  "toggleFullScreen": "切换全屏",
-  "viewHistory": "查看历史记录",
-  "fixCode": "修复代码",
-  "optimizeCode": "优化代码",
-  "writeDocstringForCode": "为此代码编写文档字符串",
-  "writeCommentsForCode": "为此代码编写注释",
-  "focusContinueInputWithoutClear": "将高亮显示的代码添加到上下文"
-}
-```
-
-### 编写 Slash Command：翻译中文（/tr）
-
-增加文件 `core/commands/slash/translate.ts`，并在其中添加以下内容：
-
-```ts
-import { SlashCommand } from "../../index.js";
-import { stripImages } from "../../llm/countTokens.js";
-
-const TranslateChineseCommand: SlashCommand = {
-  name: "tr",
-  description: "Translate to Chinese",
-  run: async function* ({ ide, llm, input }) {
-    if (input.trim() === "") {
-      yield "Please enter the text you want to translate into Chinese.";
-      return;
-    }
-
-    // input = '/tr hello world' => 'hello world'
-    input = input.replace("/tr", "").trim();
-
-    const prompt = `The text the user wants to translate is:
-
-"${input}"
-
-Please translate into Chinese. Your output should contain only the corresponding Chinese, without any explanation or other output.`;
-
-    for await (const chunk of llm.streamChat([
-      { role: "user", content: prompt },
-    ])) {
-      yield stripImages(chunk.content);
-    }
-  },
-};
-
-export default TranslateChineseCommand;
-```
-
-修改文件 `core/commands/slash/index.ts`，并在其中添加以下内容：
-
-```ts
-//...
-import TranslateChineseCommand from "./translate.js";
-
-export default [
-  //...
-  TranslateChineseCommand,
-];
 ```
