@@ -520,7 +520,7 @@ Prompt (`.prompt`) 文件是构建和与他人共享 LLM 提示的简单方法�
 
 ### 文本生成 SQL 语句
 `n2sql.prompt` 文件
-```prompt
+```bash
 temperature: 0.5
 maxTokens: 1024
 name: n2sql
@@ -549,7 +549,7 @@ CREATE TABLE yxdsj_wshbb_gdfw_day(
 
 ### 起名字
 `name.prompt` 文件
-```prompt
+```bash
 temperature: 0.5
 maxTokens: 256
 name: name
