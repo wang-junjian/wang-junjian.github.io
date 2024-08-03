@@ -512,6 +512,64 @@ export abstract class BaseContextProvider implements IContextProvider {
 - 将其添加到 [config_schema.json](https://github.com/continuedev/continue/blob/main/extensions/vscode/config_schema.json) 中的列表中。
 
 
+## [Prompt files](https://docs.continue.dev/features/prompt-files)
+
+Prompt (`.prompt`) 文件是构建和与他人共享 LLM 提示的简单方法。该格式的灵感来自 [HumanLoops 的 .prompt 文件](https://docs.humanloop.com/docs/prompt-file-format)。
+
+目录：`extensions/vscode/.prompts`
+
+### 文本生成 SQL 语句
+`n2sql.prompt` 文件
+```prompt
+temperature: 0.5
+maxTokens: 1024
+name: n2sql
+description: 文本生成 SQL 语句
+---
+<system>
+你是一名数据库专家。根据以下表结构帮助用户编写 SQL 语句。
+CREATE TABLE yxdsj_wshbb_gdfw_day(
+  prov_name varchar(200) DEFAULT NULL COMMENT '省公司名称',
+  city_name varchar(200) DEFAULT NULL COMMENT '地市公司名称',
+  county_name varchar(200) DEFAULT NULL COMMENT '区县公司名称',
+  tousu int(11) DEFAULT NULL COMMENT '投诉数量',
+  yijian int(11) DEFAULT NULL COMMENT '意见数量',
+  acpt_time varchar(200) DEFAULT NULL COMMENT '受理时间',
+  tousu_bwhl  varchar(200) DEFAULT NULL COMMENT '投诉百万户量',
+  yijian_bwhl  varchar(200) DEFAULT NULL COMMENT '意见百万户量'
+)
+</system>
+
+{{{ input }}}
+
+根据上面的输入生成 SQL 语句
+```
+
+![](/images/2024/Continue/Prompt-n2sql.png)
+
+### 起名字
+`name.prompt` 文件
+```prompt
+temperature: 0.5
+maxTokens: 256
+name: name
+description: 起名字
+---
+<system>
+你是一名起名字的专家
+</system>
+
+{{{ input }}}
+
+根据上面的输入起名字
+- 起一个有意义的名字
+- 提示至少三个名字
+- 名字应该有创意
+```
+
+![](/images/2024/Continue/Prompt-name.png)
+
+
 ## [Quick Actions](https://docs.continue.dev/features/quick-actions)
 
 快速操作使用 `CodeLens` 提供程序在代码中的`函数`和`类`上方添加交互元素。代码参考：[extensions/vscode/src/lang-server/codeLens/providers/QuickActionsCodeLensProvider.ts](https://github.com/continuedev/continue/blob/main/extensions/vscode/src/lang-server/codeLens/providers/QuickActionsCodeLensProvider.ts)
