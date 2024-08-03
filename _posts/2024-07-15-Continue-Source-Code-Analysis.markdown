@@ -514,9 +514,39 @@ export abstract class BaseContextProvider implements IContextProvider {
 
 ## [Prompt files](https://docs.continue.dev/features/prompt-files)
 
-Prompt (`.prompt`) 文件是构建和与他人共享 LLM 提示的简单方法。该格式的灵感来自 [HumanLoops 的 .prompt 文件](https://docs.humanloop.com/docs/prompt-file-format)。
+Prompt (`.prompt`) 文件是构建和与他人共享 LLM 提示的简单方法。该格式的灵感来自 [HumanLoops 的 .prompt 文件](https://docs.humanloop.com/docs/prompt-file-format)。保存在目录 `extensions/vscode/.prompts` 里。
 
-目录：`extensions/vscode/.prompts`
+### 语法
+#### Preamble
+`---` 分隔符上方的所有内容，可让您指定模型参数。它使用 YAML 语法，目前支持以下参数：
+- temperature
+- topP
+- topK
+- minP
+- presencePenalty
+- frequencyPenalty
+- mirostat
+- stop
+- maxTokens
+- name
+- description
+
+如果不需要任何这些参数，则可以省略 "Preamble"，并且不需要包含 `---` 分隔符。
+
+#### Body
+`---` 分隔符下方的所有内容，包含您的提示。正文可以只是文本。
+
+要添加系统消息，以 `<system></system>` 标签开始正文，并将系统消息放入其中。
+
+Body 支持使用 [Handlebars 语法](https://handlebarsjs.com/zh/guide/) 进行模板化。当前可用的变量如下：
+- input：侧边栏输入框中的全文，与斜杠命令一起发送
+- currentFile：IDE 中当前打开的文件（目前只支持打开一个文件时有用）
+
+##### Context providers
+
+`.prompt` 文件的 `Body` 还支持您通过引用上下文提供程序的名称添加到配置中的 [Context providers](https://docs.continue.dev/customization/context-providers)。
+
+如果您想要使用 `url` 上下文提供程序来包含 https://github.com/continuedev/continue 的内容，您将使用`{{{url "https://github.com/continuedev/continue"}}}`，其中第二部分是上下文提供程序的参数，用空格分隔。
 
 ### 文本生成 SQL 语句
 `n2sql.prompt` 文件
@@ -568,6 +598,26 @@ description: 起名字
 ```
 
 ![](/images/2024/Continue/Prompt-name.png)
+
+### 总结网页内容
+`url.prompt` 文件
+```yaml
+temperature: 0.5
+maxTokens: 4096
+name: url
+description: 总结网页信息
+---
+<system>
+你是一名专业的文学家，你需要总结网页的信息。
+</system>
+
+{{{ url input }}}
+
+总结：
+
+```
+
+![](/images/2024/Continue/Prompt-url.png)
 
 
 ## [Quick Actions](https://docs.continue.dev/features/quick-actions)
