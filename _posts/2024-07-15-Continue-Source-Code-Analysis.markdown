@@ -6,6 +6,10 @@ categories: Continue AICodingAssistant
 tags: [Continue, GitHubCopilot]
 ---
 
+## Continue
+- [Continue 开发]({% post_url 2024-06-03-Continue %})
+
+
 ## VS Code Extension
 
 ### 入口
@@ -304,9 +308,9 @@ getTabCompletion
 }
 ```
 - multilineCompletions 控制是否提供多行代码的自动补全
-  - "always": 默认。总是在多行代码上提供自动补全
-  - "never": 从不在多行代码上提供自动补全
-  - "auto": 根据代码上下文自动决定是否提供多行代码的自动补全
+  - `"always"`: 默认。总是在多行代码上提供自动补全
+  - `"never"`: 从不在多行代码上提供自动补全
+  - `"auto"`: 根据代码上下文自动决定是否提供多行代码的自动补全
 - maxPromptTokens 要使用的提示 Token 的最大数量。数字越小，完成速度越快，但上下文越少。
 
 ### 使用什么样的模型
@@ -675,3 +679,8 @@ description: 总结网页信息
 | Java       | Language Support for Java(TM) by Red Hat |
 | C/C++      | C/C++ |
 | Rust       | rust-analyzer |
+
+
+## 参考资料
+- [VS Code API](https://code.visualstudio.com/api/references/vscode-api)
+- [VS Code Extension Samples](https://github.com/microsoft/vscode-extension-samples)
