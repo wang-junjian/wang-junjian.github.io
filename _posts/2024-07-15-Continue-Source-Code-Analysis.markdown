@@ -7,7 +7,7 @@ tags: [Continue, GitHubCopilot]
 ---
 
 ## Continue
-- [Continue 开发]({% post_url 2024-06-03-Continue %})
+- [Continue 开发与配置]({% post_url 2024-06-03-Continue %})
 
 
 ## VS Code Extension
