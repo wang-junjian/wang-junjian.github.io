@@ -12,6 +12,21 @@ tags: [Continue, GitHubCopilot]
 
 ## VS Code Extension
 
+![](/images/2024/Continue/VSCode-Extension-Continue.png)
+
+通过配置创建新的 Extension，用于区别于 Continue 。
+
+```json
+{
+  "name": "continue",
+  "icon": "media/icon.png",
+  "version": "0.9.218",
+  "displayName": "LNSoft Continue",
+  "description": "The leading open-source AI code assistant",
+  "publisher": "LNSoft Continue"
+}
+```
+
 ### 入口
 VS Code 扩展的起点是 [activate.ts](https://github.com/continuedev/continue/blob/main/extensions/vscode/src/activation/activate.ts)。`activateExtension` 这里的函数将注册所有命令，并将 Continue GUI 作为 webview 加载到 IDE 的侧边栏中。
 
