@@ -535,6 +535,8 @@ export class TransformersJsEmbeddingsProvider extends BaseEmbeddingsProvider {
 }
 ```
 
+下载 https://huggingface.co/Xenova/bge-small-zh-v1.5 模型到 `extensions/vscode/models/bge-small-zh-v1.5` 目录。
+
 在配置文件 `~/.continue/config.json` 中配置 `transformers.js` 模型，并不能生效，目前没有指定模型的功能。
 
 ```json
