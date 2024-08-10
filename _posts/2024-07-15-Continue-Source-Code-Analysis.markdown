@@ -408,6 +408,34 @@ export const LANGUAGES: { [extension: string]: AutocompleteLanguageInfo } = {
 ```
 
 
+## Embedding Model
+在配置文件 `~/.continue/config.json` 中配置 `transformers.js` 模型，并不能生效，目前没有指定模型的功能。
+
+```json
+{
+  "embeddingsProvider": {
+    "provider": "transformers.js",
+    "model": "bge-small-zh-v1.5"  // 无效
+  },
+}
+```
+
+可以通过文件 `core/indexing/embeddings/TransformersJsEmbeddingsProvider.ts` 修改来指定中文模型 `bge-small-zh-v1.5`。
+
+```typescript
+  static model: string = "bge-small-zh-v1.5";
+```
+**两处都要修改**
+
+### transformers.js 支持的模型
+- [jina-embeddings-v2-base-zh](https://huggingface.co/Xenova/jina-embeddings-v2-base-zh)
+- [bge-small-zh-v1.5](https://huggingface.co/Xenova/bge-small-zh-v1.5)
+- [bge-base-zh-v1.5](https://huggingface.co/Xenova/bge-base-zh-v1.5)
+- [bge-large-zh-v1.5](https://huggingface.co/Xenova/bge-large-zh-v1.5)
+- [all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2)
+- [bge-base-en-v1.5](https://huggingface.co/Xenova/bge-base-en-v1.5)
+
+
 ## [Slash Command](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#writing-slash-commands)
 
 Slash 命令接口，定义在 [core/index.d.ts](https://github.com/continuedev/continue/blob/main/core/index.d.ts) 中，需要您定义一个 `name`（用于调用命令的文本），一个 `description`（在 slash 命令菜单中显示的文本）和一个在调用命令时将被调用的 `run` 函数。`run` 函数是一个异步生成器，它产生要在聊天中显示的内容。`run` 函数传递了一个 ContinueSDK 对象，可以用它与 IDE 交互，调用 LLM，并查看聊天历史，以及其他一些实用程序。
