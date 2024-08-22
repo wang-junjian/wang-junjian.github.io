@@ -11,7 +11,7 @@ tags: [transformers.js, Continue, GitHubCopilot]
 - [Continue 源码分析]({% post_url 2024-07-15-Continue-Source-Code-Analysis %})
 
 
-## transformers.js 支持的模型
+## Transformers.js 支持的模型
 
 | 模型 | 语言 | 类型 | URL |
 | --- | --- | --- | --- |
@@ -32,8 +32,17 @@ tags: [transformers.js, Continue, GitHubCopilot]
 | deepseek-coder-1.3b-base | 中文 | Code LLM | https://huggingface.co/Xenova/deepseek-coder-1.3b-base |
 | deepseek-coder-1.3b-instruct | 中文 | Code LLM | https://huggingface.co/Xenova/deepseek-coder-1.3b-instruct |
 
+### MTEB Chinese leaderboard (C-MTEB)
 
-## Reindex the workspaces
+| Model | Model Size (Million Parameters) | Memory Usage (GB, fp32) | Embedding Dimensions | Max Tokens | Average (35 datasets) | Classification Average (9 datasets) | Clustering Average (4 datasets) | PairClassification Average (2 datasets) | Reranking Average (4 datasets) | Retrieval Average (8 datasets) | STS Average (8 datasets) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| <nobr>bge-large-zh-v1.5</nobr> | 326 | 1.21 | 1024 | 512 | 64.53 | 69.13 | 48.99 | 81.6 | 65.84 | 70.46 | 56.25 |
+| bge-base-zh-v1.5 | 102 | 0.38 | 768 | 512 | 63.13 | 68.07 | 47.53 | 79.76 | 65.4 | 69.49 | 53.72 |
+| <nobr>bge-small-zh-v1.5</nobr> | 24 | 0.09 | 512 | 512 | 57.82 | 63.96 | 44.18 | 70.4 | 60.92 | 61.77 | 49.1 |
+
+- [Massive Text Embedding Benchmark (MTEB) Leaderboard](https://huggingface.co/spaces/mteb/leaderboard)
+
+## Reindex the Workspaces
 
 索引整个工作区，源代码：`extensions/vscode/src/extension/VsCodeExtension.ts`
 
@@ -535,7 +544,22 @@ export class TransformersJsEmbeddingsProvider extends BaseEmbeddingsProvider {
 }
 ```
 
-下载 https://huggingface.co/Xenova/bge-small-zh-v1.5 模型到 `extensions/vscode/models/bge-small-zh-v1.5` 目录。
+下载 [Xenova/bge-small-zh-v1.5](https://huggingface.co/Xenova/bge-small-zh-v1.5) 模型到 `extensions/vscode/models` 目录。
+
+```shell
+bge-small-zh-v1.5
+├── README.md
+├── config.json
+├── onnx
+│   └── model_quantized.onnx
+├── quantize_config.json
+├── special_tokens_map.json
+├── tokenizer.json
+├── tokenizer_config.json
+└── vocab.txt
+```
+
+**模型大小：23M**
 
 在配置文件 `~/.continue/config.json` 中配置 `transformers.js` 模型，并不能生效，目前没有指定模型的功能。
 
@@ -554,3 +578,212 @@ export class TransformersJsEmbeddingsProvider extends BaseEmbeddingsProvider {
   static model: string = "bge-small-zh-v1.5";
 ```
 **两处都要修改**
+
+
+## [Adding an LLM Provider](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#adding-an-llm-provider)
+1. 在 core/llm/llms 目录中创建一个新文件。该文件的名称应为提供程序（provider）的名称（name），并且它应该导出一个扩展 `BaseLLM` 的类。这个类应该包含以下最小实现。`LlamaCpp` 提供程序是一个很好的简单示例。
+  - providerName - 您的提供程序的标识符
+  - 至少 `_streamComplete` 或 `_streamChat` 之一 - 这是向 API 发出请求并返回流式响应的函数。您只需要实现其中一个，因为 Continue 可以在 "chat" 和 "raw completion" 之间自动转换。
+2. 将您的提供程序添加到 LLMs 数组中，位于 core/llm/llms/index.ts。
+3. 如果您的提供程序支持图像，将其添加到 `PROVIDER_SUPPORTS_IMAGES` 数组中，位于core/llm/index.ts。
+4. 将必要的 JSON 模式类型添加到 config_schema.json。这确保当用户编辑 config.json时，Intellisense 向用户显示您的提供程序可用的选项。
+5. 为您的提供程序在 docs/docs/reference/Model Providers 中添加一个文档页面。这应该展示在 config.json 中配置您的提供程序的示例，并解释可用的选项。 
+
+### 1. 创建一个新的 LLM 提供程序 TransformersJS
+
+创建文件：core/llm/llms/TransformersJS.ts
+
+```typescript
+import path from "path";
+import {
+  ChatMessage,
+  CompletionOptions,
+  LLMOptions,
+  ModelProvider,
+} from "../../index.js";
+import { stripImages } from "../images.js";
+import { BaseLLM } from "../index.js";
+import { streamResponse } from "../stream.js";
+// @ts-ignore
+// prettier-ignore
+import { type PipelineType } from "../../vendor/modules/@xenova/transformers/src/transformers.js";
+
+class LLMPipeline {
+  static task: PipelineType = "text-generation";
+  static model = "gpt2";
+  static instance: any | null = null;
+
+  static async getInstance() {
+    if (LLMPipeline.instance === null) {
+      // @ts-ignore
+      // prettier-ignore
+      const { env, pipeline } = await import("../../vendor/modules/@xenova/transformers/src/transformers.js");
+
+      env.allowLocalModels = true;
+      env.allowRemoteModels = false;
+      env.localModelPath = path.join(
+        typeof __dirname === "undefined"
+          ? // @ts-ignore
+            path.dirname(new URL(import.meta.url).pathname)
+          : __dirname,
+        "..",
+        "models",
+      );
+
+      LLMPipeline.instance = await pipeline(
+        LLMPipeline.task,
+        LLMPipeline.model,
+      );
+    }
+
+    return LLMPipeline.instance;
+  }
+}
+
+class TransformersJS extends BaseLLM {
+  static providerName: ModelProvider = "transformers.js";
+
+  constructor(options: LLMOptions) {
+    super(options);
+
+    if (options.model === "AUTODETECT") {
+      return;
+    }
+  }
+
+  protected async *_streamComplete(
+    prompt: string,
+    options: CompletionOptions,
+  ): AsyncGenerator<string> {
+    const generator = await LLMPipeline.getInstance();
+    const output = await generator(prompt);
+    const content = output[0].generated_text;
+    yield content;
+  }
+
+  protected async *_streamChat(
+    messages: ChatMessage[],
+    options: CompletionOptions,
+  ): AsyncGenerator<ChatMessage> {
+    const lastMessage = messages[messages.length - 1].content;
+    const generator = await LLMPipeline.getInstance();
+    const output = await generator(lastMessage);
+    const content = output[0].generated_text;
+    yield {
+      role: "assistant",
+      content: content,
+    };
+  }
+
+}
+
+export default TransformersJS;
+```
+
+### 2. 添加到 LLMs 数组
+
+编辑文件：core/llm/llms/index.ts
+
+```typescript
+const LLMs = [
+  Anthropic,
+  Cohere,
+  FreeTrial,
+  Gemini,
+  Llamafile,
+  Ollama,
+  Replicate,
+  TextGenWebUI,
+  Together,
+  HuggingFaceTGI,
+  HuggingFaceInferenceAPI,
+  LlamaCpp,
+  OpenAI,
+  LMStudio,
+  Mistral,
+  Bedrock,
+  DeepInfra,
+  Flowise,
+  Groq,
+  Fireworks,
+  ContinueProxy,
+  Cloudflare,
+  Deepseek,
+  Msty,
+  Azure,
+  TransformersJS
+];
+```
+
+### 4. 添加 JSON 模式类型
+
+编辑文件：extensions/vscode/config_schema.json
+
+```json
+{
+  "definitions": {
+    "ModelDescription": {
+      "title": "ModelDescription",
+      "type": "object",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "description": "The title you wish to give your model.",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "description": "The provider of the model. This is used to determine the type of model, and how to interact with it.",
+          "enum": [
+            //...
+            "transformers.js"
+          ],
+          "markdownEnumDescriptions": [
+            //...
+            "### Transformers.js\nTransformers.js is a JavaScript library that provides a simple interface to run models. To get started, follow the steps [here](https://docs.continue.dev/reference/Model%20Providers/transformersjs)"
+          ],
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+```
+
+### 下载 [GPT2](https://huggingface.co/Xenova/gpt2) 模型到目录 extensions/vscode/models
+
+```shell
+gpt2
+├── README.md
+├── config.json
+├── generation_config.json
+├── merges.txt
+├── onnx
+│   └── decoder_model_merged_quantized.onnx
+├── quantize_config.json
+├── special_tokens_map.json
+├── tokenizer.json
+├── tokenizer_config.json
+└── vocab.json
+```
+
+**模型大小：126M**
+
+### 修改配置 `~/.continue/config.json`
+
+```json
+{
+  "models": [
+    {
+      "title": "Transformer.js gpt2",
+      "model": "gpt2",
+      "contextLength": 4096,
+      "provider": "transformers.js"
+    }
+  ]
+}
+```
+
+### 运行 Continue
+
+![](/images/2024/Continue/TransformerJS-GPT2.png)
