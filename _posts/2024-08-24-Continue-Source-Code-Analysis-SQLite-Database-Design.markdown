@@ -242,7 +242,7 @@ SELECT fts.content, rank, bm25(fts)
     FROM fts
     JOIN fts_metadata ON fts.rowid = fts_metadata.id
     JOIN chunk_tags ON fts_metadata.chunkId = chunk_tags.chunkId
-    WHERE fts MATCH '"Element"'
+    WHERE fts MATCH '"Element"' AND chunk_tags.tag IN ('/continuedev/continue-0.9.191-vscode/extensions/vscode::NONE::chunks')
     LIMIT 2
 ```
 BM25 算法是一种基于概率的信息检索算法，它通过计算查询词与文档之间的相关性来对搜索结果进行排序。
