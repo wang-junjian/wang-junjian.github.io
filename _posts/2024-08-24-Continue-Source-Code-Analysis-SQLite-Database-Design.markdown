@@ -3,7 +3,7 @@ layout: post
 title:  "Continue 源码分析 - SQLite 数据库设计"
 date:   2024-08-24 08:00:00 +0800
 categories: Continue AICodingAssistant
-tags: [Continue, SQLite, BM25, GitHubCopilot]
+tags: [Continue, FTS, SQLite, BM25, GitHubCopilot]
 ---
 
 ## SQLite 数据库设计
@@ -108,8 +108,8 @@ CREATE VIRTUAL TABLE fts USING fts5(
     tokenize = 'trigram'
 )
 ```
-- USING fts5: 指明这个虚拟表使用 FTS5 模块，FTS5 是 SQLite 的一个扩展，用于高效的全文搜索。
-- tokenize = 'trigram': 分词方式：指定使用三元组（trigram）作为分词策略。三元组分词会将文本分解为连续的三个字符的组合，这有助于提高模糊搜索的准确性和效率。
+- USING fts5: 指明这个虚拟表使用 FTS5 模块，FTS5 是 SQLite 的一个扩展，用于高效的全文检索。
+- tokenize = 'trigram': 分词方式：指定使用三元组（trigram）作为分词策略。三元组分词会将文本分解为连续的三个字符的组合，这有助于提高模糊检索的准确性和效率。
 
 #### 三元组分词的工作原理
 三元组分词会将文本分解为连续的三个字符的组合，例如：`"Hello, World!"` 会被分解为 
@@ -217,7 +217,7 @@ chunkId FK >- chunks.id
 
 
 ## 查询
-### 全文搜索（FTS，Full-Text Search）
+### 全文检索（FTS，Full-Text Search）
 ```sql
 SELECT fts_metadata.chunkId, fts_metadata.path, fts.content, rank
     FROM fts
@@ -227,8 +227,8 @@ SELECT fts_metadata.chunkId, fts_metadata.path, fts.content, rank
     ORDER BY rank
     LIMIT 2
 ```
-- fts MATCH '"Element"': 使用 MATCH 子句进行全文搜索，查找包含单词 "Element" 的记录。
-- ORDER BY rank: 根据 rank 列对结果进行排序，通常用于根据相关性排序搜索结果。
+- fts MATCH '"Element"': 使用 MATCH 子句进行全文检索，查找包含单词 "Element" 的记录。
+- ORDER BY rank: 根据 rank 列对结果进行排序，通常用于根据相关性排序检索结果。
 
 | chunkId | path | content | rank |
 | --- | --- | --- | --- |
@@ -245,9 +245,9 @@ SELECT fts.content, rank, bm25(fts)
     WHERE fts MATCH '"Element"' AND chunk_tags.tag IN ('/continuedev/continue-0.9.191-vscode/extensions/vscode::NONE::chunks')
     LIMIT 2
 ```
-BM25 算法是一种基于概率的信息检索算法，它通过计算查询词与文档之间的相关性来对搜索结果进行排序。
+BM25 算法是一种基于概率的信息检索算法，它通过计算查询词与文档之间的相关性来对检索结果进行排序。
 
-所有 FTS5 表都有一个特殊的隐藏列，名为“rank”。如果当前查询不是全文搜索查询（即不包含 MATCH 操作符），则“rank”列的值始终为 NULL。否则，在全文搜索查询中，rank 列默认包含与执行 bm25() 辅助函数返回的值相同的值。
+所有 FTS5 表都有一个特殊的隐藏列，名为“rank”。如果当前查询不是全文检索查询（即不包含 MATCH 操作符），则“rank”列的值始终为 NULL。否则，在全文检索查询中，rank 列默认包含与执行 bm25() 辅助函数返回的值相同的值。
 
 从 rank 列读取和在查询中直接使用 bm25() 函数之间的区别在于仅在按返回值排序时才显著。在这种情况下，使用“rank”比使用 bm25() 更快。
 
