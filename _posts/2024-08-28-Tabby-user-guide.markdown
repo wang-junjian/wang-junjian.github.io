@@ -138,6 +138,6 @@ tabby serve --device metal
 
 ## 查看指标
 
-使用后，查看指标的统计，主要统计的是自动补全。
+使用后，查看指标的统计，主要统计的是 `自动补全`。
 
 ![](/images/2024/Tabby2/tabby-server-home.png)
