@@ -108,11 +108,11 @@ tabby serve --device metal
 
 ### 聊天
 
-![](/images/2024/Tabby2/vscode-tabby.png)
+![](/images/2024/Tabby2/vscode-tabby-chat.png)
 
 ### 使用 RAG
 
-![](/images/2024/Tabby2/vscode-tabby-chat.png)
+![](/images/2024/Tabby2/vscode-tabby.png)
 
 这里是我选择了 `Calculator`，聊天的时候才把 `calculator.rs` 文件作为上下文提供的。还没测试出来如何更好的检索到 `Context Providers` 的内容。
 
