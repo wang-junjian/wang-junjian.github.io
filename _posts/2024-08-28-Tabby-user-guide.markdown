@@ -23,6 +23,17 @@ brew upgrade tabbyml/tabby/tabby
 ### 安装 Tabby VSCode 扩展
 - [Tabby VSCode Extension](https://marketplace.visualstudio.com/items?itemName=TabbyML.vscode-tabby)
 
+### 模型
+- [Models Registry](https://tabby.tabbyml.com/docs/models/)
+
+#### Codestral 的优点
+
+与其他编码 LLM 相比，Codestral 的独特之处在于其单一模型同时支持 `指令跟随` 和 `中间填充` 兼容性。这是通过在两个数据集上同时微调基础模型实现的。这种 `双重微调策略` 使同一个模型在 `代码补全` 和 `对话任务` 中都能表现出色，大大简化了模型部署堆栈。
+
+此外，Codestral 在包含 80 多种编程语言的多样化数据集上进行训练，确保了开发人员在使用各种语言时的高质量体验。
+
+- [Introducing the Codestral Integration in Tabby](https://tabby.tabbyml.com/blog/2024/07/09/tabby-codestral/)
+
 ### 运行 Tabby Server
 
 #### 命令行指定参数
@@ -64,7 +75,6 @@ model_id = "Nomic-Embed-Text"
 ```
 
 - [Model Configuration](https://tabby.tabbyml.com/docs/administration/model/)
-- [Models Registry](https://tabby.tabbyml.com/docs/models/)
 
 运行 `tabby serve`
 
@@ -103,6 +113,11 @@ tabby serve --device metal
 
 ![](/images/2024/Tabby2/code-browser-tabby-chat.png)
 
+### 聊天
+
+![](/images/2024/Tabby2/tabby-server-chat.png)
+
+![](/images/2024/Tabby2/tabby-server-chat-rag.png)
 
 ## VSCode（Tabby）
 
