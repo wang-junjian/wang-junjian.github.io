@@ -11,34 +11,17 @@ tags: [Cursor, GitHubCopilot]
 ### 安装
 访问 [Cursor](https://www.cursor.com/) 官网，下载并安装 Cursor。
 
-### 本地运行 Ollama 服务
-
-复制模型 `codestral:22b` 并命名为 `gpt-3.5-turbo`。
-```bash
-ollama cp codestral:22b gpt-3.5-turbo
-```
-
-运行 Ollama 服务。
-```bash
-ollama serve
-```
-
 ### 配置
 运行 Cursor，打开 Cursor 设置。
 
-#### Rules for AI
+#### General > Rules for AI
 让模型使用中文回复。
 
 ![](/images/2024/Cursor/cursor-settings-rules.png)
 
-#### OpenAI API
-配置 OpenAI Base URL: `http://127.0.0.1:11434/v1`。
+#### Features > Cursor Tab
 
-![](/images/2024/Cursor/cursor-settings-openai.png)
-
-#### 模型选择
-在 Cursor 的聊天窗口中选择模型 `gpt-3.5`。
-
+![](/images/2024/Cursor/cursor-settings-tab.png)
 
 ## 功能
 ![](/images/2024/Cursor/Features-Cursor-The-AI-first-Code-Editor.png)
