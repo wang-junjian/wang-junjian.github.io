@@ -80,16 +80,16 @@ npm run start-app
 ## 使用
 
 ### 主界面
-![](/images/2024/Bloop/home.png)
+![](/images/2024/bloop/home.png)
 
 ### 操作
-![](/images/2024/Bloop/actions.png)
+![](/images/2024/bloop/actions.png)
 
 ### 添加代码仓库
-![](/images/2024/Bloop/add-new-repository.png)
+![](/images/2024/bloop/add-new-repository.png)
 
 ### 代码聊天
-![](/images/2024/Bloop/conversation.png)
+![](/images/2024/bloop/conversation.png)
 
 
 ## 参考
