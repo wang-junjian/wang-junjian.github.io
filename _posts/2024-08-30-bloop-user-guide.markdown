@@ -18,7 +18,7 @@ cd bloop
 ```
 
 
-## [Bloop Server](https://github.com/BloopAI/bloop/blob/oss/server/README.md)
+## [bloop Server](https://github.com/BloopAI/bloop/blob/oss/server/README.md)
 ### 指定依赖库版本
 ```shell
 cargo update -p qdrant-client --precise 1.5.0
@@ -44,7 +44,7 @@ RUST_BACKTRACE=1 cargo run -p bleep --release -- --source-dir /Users/junjian/Git
 ```
 
 
-## [Bloop App](https://github.com/BloopAI/bloop/blob/oss/apps/desktop/README.md)
+## [bloop App](https://github.com/BloopAI/bloop/blob/oss/apps/desktop/README.md)
 ### 安装依赖
 - ONNX Runtime
 ```shell
