@@ -503,6 +503,19 @@ export default [
 ```
 
 
+## [LLM Providers](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#adding-an-llm-provider)
+
+### Adding an LLM Provider
+
+Continue 支持十几种不同的 LLM "providers"，使得在 OpenAI、Ollama、Together、LM Studio、Msty 等平台上运行模型变得容易。你可以在这里找到所有现有的 providers，如果你发现缺少某个 provider，可以按照以下步骤添加：
+1. 在 core/llm/llms 目录中创建一个新文件。文件名应为 provider 的名称，并且应导出一个扩展自 BaseLLM 的类。这个类应包含以下最小实现。我们建议查看现有的 providers 以获取更多详细信息。LlamaCpp Provider 是一个很好的简单示例。
+   - providerName - 你的 provider 的标识符
+   - 至少一个 _streamComplete 或 _streamChat - 这是向 API 发出请求并返回流响应的函数。你只需要实现其中一个，因为 Continue 可以在 "chat" 和 "raw completion" 之间自动转换。
+2. 将你的 provider 添加到 core/llm/llms/index.ts 中的 LLMs 数组中。
+3. 如果你的 provider 支持图像，将其添加到 core/llm/index.ts 中的 PROVIDER_SUPPORTS_IMAGES 数组中。
+4. 将必要的 JSON Schema 类型添加到 config_schema.json 中。这确保了当用户编辑 config.json 时，Intellisense 会显示你的 provider 可用的选项。
+5. 在 docs/docs/reference/Model Providers 中为你的 provider 添加一个文档页面。这应该展示在 config.json 中配置你的 provider 的示例，并解释可用的选项。
+
 ## [Context Providers](https://github.com/continuedev/continue/blob/main/CONTRIBUTING.md#writing-context-providers)
 
 `ContextProvider` 是一个 Continue 插件，可以通过输入 `@` 来快速选择文档作为语言模型的上下文。 `IContextProvider` 接口在 [core/index.d.ts](https://github.com/continuedev/continue/blob/main/core/index.d.ts) 中定义，但所有内置上下文提供程序都扩展于 [BaseContextProvider](https://github.com/continuedev/continue/blob/main/core/context/index.ts)。
