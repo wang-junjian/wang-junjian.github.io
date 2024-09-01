@@ -7,11 +7,11 @@ tags: [Bloop, GitHubCopilot]
 ---
 
 ## bloop
-bloop is a fast code search engine written in Rust
+bloop 是用 Rust 编写的快速代码搜索引擎
 
 - [bloop GitHub](https://github.com/BloopAI/bloop)
 
-### 克隆 Bloop
+### 克隆代码
 ```shell
 git clone https://github.com/BloopAI/bloop
 cd bloop
