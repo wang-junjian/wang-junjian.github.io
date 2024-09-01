@@ -48,3 +48,9 @@ tags: [Cursor, GitHubCopilot]
 ![](/images/2024/Cursor/chat-fuse-code3.png)
 
 ![](/images/2024/Cursor/chat-fuse-code4.png)
+
+### 调试
+
+![](/images/2024/Cursor/debug-with-ai.png)
+
+![](/images/2024/Cursor/debug-with-ai-chat.png)
