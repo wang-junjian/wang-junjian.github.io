@@ -1,0 +1,64 @@
+---
+layout: post
+title:  "大模型推理需要多少显存？"
+date:   2024-09-03 08:00:00 +0800
+categories: LLM VRAM
+tags: [LLM, GPU, VRAM, Calculator]
+---
+
+![](/images/2024/LLMInferenceVRAMCalculator/how-much-vram-is-required-for-llm-inference.png)
+
+- [基于 Qwen2 效率评估计算大模型推理需要的显存.xlsx](/images/2024/LLMInferenceVRAMCalculator/基于Qwen2效率评估计算大模型推理需要的显存.xlsx)
+- 这里计算的显存都是指使用 `transformers` 库进行推理，对于 vLLM，由于 GPU 显存预分配，实际显存使用难以评估。
+
+
+## 计算加载模型需要的显存		
+
+| 模型参数（B） | 参数使用的位数（bits） | 加载需要显存（G） |
+| --- | --- | --- |
+| 0.5 | 16 | 1 |
+| 1.5 | 16 | 3 |
+| 7 | 16 | 14 |
+| 72 | 16 | 144 |
+
+
+## 计算支持不同长度的上下文需要的显存				
+
+| 模型参数（B） | 加载显存（G） | 上下文长度（Token） | 上下文需要显存（G） | 总计需要显存（G） |
+| --- | --- | --- | --- | --- |
+| 7 | 14 | 4000 | 3.61 | 17.61 |
+|  |  | 8000 | 7.21 | 21.21 |
+|  |  | 16000 | 14.43 | 28.43 |
+|  |  | 32000 | 28.86 | 42.86 |
+|  |  | 64000 | 57.71 | 71.71 |
+|  |  | 128000 | 115.42 | 129.42 |
+| 72 | 134.74 | 4000 | 9.82 | 144.56 |
+|  |  | 8000 | 19.64 | 154.38 |
+|  |  | 16000 | 39.28 | 174.02 |
+|  |  | 32000 | 78.55 | 213.29 |
+|  |  | 64000 | 157.11 | 291.85 |
+|  |  | 128000 | 314.22 | 448.96 |
+
+
+## Qwen2 效率评估数据
+
+| 模型参数（B） | 卡数 | 上下文长度（Token） | 显存使用（G） | 上下文长度差值（Token） | 显存使用差值（G） | 每 Token 使用显存（M） |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.5 | 1 | 1 | 3.44 | | | |
+|  | 1 | 6144 | 8.74 | 6143 | 5.3 | 0.88 |
+|  | 1 | 14336 | 15.92 | 14335 | 12.48 | 0.89 |
+|  | 1 | 30720 | 30.31 | 30719 | 26.87 | **0.90** |
+| 7 | 1 | 1 | 14.92 | | | |
+|  | 1 | 6144 | 20.26 | 6143 | 5.34 | 0.89 |
+|  | 1 | 14336 | 27.71 | 14335 | 12.79 | 0.91 |
+|  | 1 | 30720 | 42.62 | 30719 | 27.7 | **0.92** |
+| 72 | 2 | 1 | 134.74 | | | |
+|  | 2 | 6144 | 144.38 | 6143 | 9.64 | 1.61 |
+|  | 3 | 14336 | 169.93 | 14335 | 35.19 | **2.51** |
+|  | 3 | 30720 | 209.03 | 30719 | 74.29 | 2.48 |
+
+
+## 参考
+- [Qwen2 效率评估](https://qwen.readthedocs.io/zh-cn/latest/benchmark/speed_benchmark.html)
+- [Calculating GPU memory for serving LLMs](https://training.continuumlabs.ai/infrastructure/data-and-memory/calculating-gpu-memory-for-serving-llms)
+- [How to calculate the GPU memory that a model uses?](https://discuss.pytorch.org/t/how-to-calculate-the-gpu-memory-that-a-model-uses/157486)
