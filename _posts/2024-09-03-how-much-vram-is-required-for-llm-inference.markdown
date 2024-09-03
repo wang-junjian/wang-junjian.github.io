@@ -58,7 +58,7 @@ tags: [LLM, GPU, VRAM, Calculator]
 |  | 3 | 30720 | 209.03 | 30719 | 74.29 | 2.48 |
 
 
-## 参考
+## 参考资料
 - [Qwen2 效率评估](https://qwen.readthedocs.io/zh-cn/latest/benchmark/speed_benchmark.html)
 - [Calculating GPU memory for serving LLMs](https://training.continuumlabs.ai/infrastructure/data-and-memory/calculating-gpu-memory-for-serving-llms)
 - [How to calculate the GPU memory that a model uses?](https://discuss.pytorch.org/t/how-to-calculate-the-gpu-memory-that-a-model-uses/157486)
