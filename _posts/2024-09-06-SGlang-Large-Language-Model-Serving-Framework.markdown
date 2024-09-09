@@ -46,13 +46,16 @@ pip install flashinfer-0.1.6+cu121torch2.4-cp310-cp310-linux_x86_64.whl
 ```bash
 python -m sglang.launch_server \
     --model-path /data/models/llm/qwen/Qwen2-7B-Instruct \
+    --served-model-name Qwen2-7B \
     --port 30000 \
     --tensor-parallel-size 4 \
     --mem-fraction-static 0.66
 ```
+- `--served-model-name`: 模型名称。
 - `--tensor-parallel-size 4` `--tp-size`: 使用 4 卡张量并行。
 - `--mem-fraction-static 0.66`: 降低静态内存分配比例。
 - `--disable-cuda-graph`: 禁用CUDA图。这可能会稍微降低性能，但可以减少内存使用。
+- `--enable-torch-compile`: 启用 Torch 编译器。
 - `--max-num-reqs`: 限制并发请求数。
 
 使用 curl 调用 OpenAI 兼容 API
@@ -61,7 +64,7 @@ python -m sglang.launch_server \
 curl http:///127.0.0.1:30000/v1/completions \
     -H "Content-Type: application/json" \
     -d '{
-        "model": "/data/models/llm/qwen/Qwen2-7B-Instruct",
+        "model": "Qwen2-7B",
         "prompt": "你是谁？",
         "temperature": 0.3
     }'|jq
@@ -71,6 +74,7 @@ curl http:///127.0.0.1:30000/v1/completions \
 python -m sglang.launch_server \
     --model-path /data/models/llm/qwen/Qwen2-72B-Instruct-GPTQ-Int4 \
     --quantization gptq \
+    --served-model-name Qwen2-72B \
     --port 30000 \
     --tensor-parallel-size 4 \
     --disable-cuda-graph
@@ -95,6 +99,7 @@ python -m sglang.launch_server \
 ```bash
 python -m vllm.entrypoints.openai.api_server \
     --model /data/models/llm/qwen/Qwen2-7B-Instruct \
+    --served-model-name Qwen2-7B \
     --port 30000 \
     --tensor-parallel-size 4 \
     --dtype float16
@@ -106,6 +111,7 @@ python -m vllm.entrypoints.openai.api_server \
 python -m vllm.entrypoints.openai.api_server \
     --model /data/models/llm/qwen/Qwen2-72B-Instruct-GPTQ-Int4 \
     --quantization gptq \
+    --served-model-name Qwen2-72B \
     --port 30000 \
     --tensor-parallel-size 4 \
     --gpu-memory-utilization 0.99 \
