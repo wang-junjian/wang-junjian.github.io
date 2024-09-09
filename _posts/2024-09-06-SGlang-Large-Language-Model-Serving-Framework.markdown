@@ -67,10 +67,26 @@ curl http:///127.0.0.1:30000/v1/completions \
     }'|jq
 ```
 
-| 模型参数（B） | 卡数 | 显存使用 | 输入（Tokens） | 输出（Tokens） | 每秒生成（Tokens） |
-| --- | --- | --- | --- | --- | --- |
-| 7 | 4 | 14647MiB / 15360MiB | 19 | 781 | 53.54 |
-| 7 | 4 | 14647MiB / 15360MiB | 1495 | 264 | 51.47 |
+```bash
+python -m sglang.launch_server \
+    --model-path /data/models/llm/qwen/Qwen2-72B-Instruct-GPTQ-Int4 \
+    --quantization gptq \
+    --port 30000 \
+    --tensor-parallel-size 4 \
+    --disable-cuda-graph
+```
+
+| 模型参数（B） | mem-fraction-static | disable-cuda-graph | enable-torch-compile | 卡数 | 显存使用 | 输入（Tokens） | 输出（Tokens） | 每秒生成（Tokens） |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 7 | 0.66 | ❌ | ❌ | 4 | 14647MiB / 15360MiB |   19 | 781 | 53.54 |
+| 7 | 0.66 | ❌ | ❌ | 4 | 14647MiB / 15360MiB | 1495 | 264 | 51.47 |
+| 7 | 0.85 | ✅ | ❌ | 4 | 13953MiB / 15360MiB |   19 | 566 | 45.33 |
+| 7 | 0.85 | ❌ | ✅ | 4 |  |  |  |  |
+| 7 | 0.85 | ✅ | ✅ | 4 | 13875MiB / 15360MiB |   19 | 559 | 47.79 |
+| 72 | 0.85 | ✅ | ❌ | 4 | 13851MiB / 15360MiB |  19 | 633 | 16.50 |
+
+- `7B`: Qwen2-7B-Instruct
+- `72B`: Qwen2-72B-Instruct-GPTQ-Int4
 
 
 ## 后端：vLLM Runtime
@@ -86,10 +102,22 @@ python -m vllm.entrypoints.openai.api_server \
 - `--tensor-parallel-size 4`: 使用 4 卡张量并行
 - `--dtype float16`: T4 不支持 bfloat16
 
+```bash
+python -m vllm.entrypoints.openai.api_server \
+    --model /data/models/llm/qwen/Qwen2-72B-Instruct-GPTQ-Int4 \
+    --quantization gptq \
+    --port 30000 \
+    --tensor-parallel-size 4 \
+    --gpu-memory-utilization 0.99 \
+    --max_model_len 8192 \
+    --dtype float16
+```
+
 | 模型参数（B） | 卡数 | 显存使用 | 输入（Tokens） | 输出（Tokens） | 每秒生成（Tokens） |
 | --- | --- | --- | --- | --- | --- |
 | 7 | 4 | 11233MiB / 15360MiB | 19 | 573 | 43.60 |
 | 7 | 4 | 11233MiB / 15360MiB | 1495 | 208 | 40.29 |
+| 72 | 4 | 13983MiB / 15360MiB | 19 | 683 | 16.88 |
 
 
 **SGLang 比 vLLM 的性能快 🚀 `20%` 以上。**
