@@ -75,12 +75,27 @@ python -m sglang.launch_server \
 
 使用 curl 调用 OpenAI 兼容 API
 
+- completions
 ```bash
-curl http:///127.0.0.1:30000/v1/completions \
+curl http://127.0.0.1:30000/v1/completions \
     -H "Content-Type: application/json" \
     -d '{
         "model": "Qwen2-7B",
         "prompt": "你是谁？",
+        "temperature": 0.3
+    }'|jq
+```
+
+- chat/completions
+```bash
+curl http://127.0.0.1:30000/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d '{
+        "model": "Qwen2-7B", 
+        "messages": [{
+            "role": "user", 
+            "content": "你是谁？"
+        }], 
         "temperature": 0.3
     }'|jq
 ```
