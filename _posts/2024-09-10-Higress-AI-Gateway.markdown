@@ -39,7 +39,7 @@ docker run -d --rm --name higress-ai -v ${PWD}:/data \
 
 ## 配置
 
-访问 http://localhost:8001 进入 Higress 控制台。
+访问 [http://localhost:8001](http://localhost:8001) 进入 Higress 控制台。
 
 ### 服务来源
 创建服务来源
@@ -60,6 +60,7 @@ docker run -d --rm --name higress-ai -v ${PWD}:/data \
 #### AI 代理
 - `开启状态`: `ON`
 - `数据编辑器 - YAML`
+
 ```yaml
 provider:
   apiTokens:
@@ -69,7 +70,7 @@ provider:
   type: "openai"
 ```
 
-**不配置也可以使用**
+**不配置也可以正常使用**
 
 
 ## 测试
