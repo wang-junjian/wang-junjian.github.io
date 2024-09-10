@@ -43,6 +43,8 @@ pip install flashinfer-0.1.6+cu121torch2.4-cp310-cp310-linux_x86_64.whl
 ## 后端：SGLang Runtime (SRT)
 - sglang v0.3.0
 
+部署 Qwen2-7B-Instruct 模型
+
 ```bash
 python -m sglang.launch_server \
     --model-path /data/models/llm/qwen/Qwen2-7B-Instruct \
@@ -58,6 +60,19 @@ python -m sglang.launch_server \
 - `--enable-torch-compile`: 启用 Torch 编译器。
 - `--max-num-reqs`: 限制并发请求数。
 
+部署使用 2 卡张量并行（`--tp 2`）和 2 卡数据并行（`--dp 2`）。
+
+```bash
+python -m sglang.launch_server \
+    --model-path /data/models/llm/qwen/Qwen2-7B-Instruct \
+    --served-model-name Qwen2-7B \
+    --port 30000 \
+    --tp 2 --dp 2 \
+    --mem-fraction-static 0.66
+```
+
+`2 卡张量并行`的速度每秒生成 `31 Tokens`。
+
 使用 curl 调用 OpenAI 兼容 API
 
 ```bash
@@ -69,6 +84,8 @@ curl http:///127.0.0.1:30000/v1/completions \
         "temperature": 0.3
     }'|jq
 ```
+
+部署 Qwen2-72B-Instruct-GPTQ-Int4 模型
 
 ```bash
 python -m sglang.launch_server \
@@ -85,7 +102,7 @@ python -m sglang.launch_server \
 | 7 | 0.66 | ❌ | ❌ | 4 | 14647MiB / 15360MiB |   19 | 781 | 53.54 |
 | 7 | 0.66 | ❌ | ❌ | 4 | 14647MiB / 15360MiB | 1495 | 264 | 51.47 |
 | 7 | 0.85 | ✅ | ❌ | 4 | 13953MiB / 15360MiB |   19 | 566 | 45.33 |
-| 7 | 0.85 | ❌ | ✅ | 4 |  |  |  |  |
+| 7 | 0.85 | ❌ | ✅ | 4 | ❌ | ❌ | ❌ | ❌ |
 | 7 | 0.85 | ✅ | ✅ | 4 | 13875MiB / 15360MiB |   19 | 559 | 47.79 |
 | 72 | 0.85 | ✅ | ❌ | 4 | 13851MiB / 15360MiB |  19 | 633 | 16.50 |
 
@@ -95,6 +112,8 @@ python -m sglang.launch_server \
 
 ## 后端：vLLM Runtime
 - vllm v0.6.0
+
+部署 Qwen2-7B-Instruct 模型
 
 ```bash
 python -m vllm.entrypoints.openai.api_server \
@@ -106,6 +125,8 @@ python -m vllm.entrypoints.openai.api_server \
 ```
 - `--tensor-parallel-size 4`: 使用 4 卡张量并行
 - `--dtype float16`: T4 不支持 bfloat16
+
+部署 Qwen2-72B-Instruct-GPTQ-Int4 模型
 
 ```bash
 python -m vllm.entrypoints.openai.api_server \
