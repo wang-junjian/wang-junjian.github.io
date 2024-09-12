@@ -206,19 +206,7 @@ curl -X DELETE http://localhost:8001/services/ai-proxy
 
 ## AI Gateway 插件
 
-AI Proxy
-AI Proxy Advanced 
-AI Request Transformer
-AI Response Transformer
-AI Semantic Cache 
-AI Semantic Prompt Guard 
-AI Rate Limiting Advanced 
-AI Azure Content Safety 
-AI Prompt Template
-AI Prompt Guard
-AI Prompt Decorator
-
-| 插件 | 描述 | 企业版 |
+| 插件 | 描述 | <nobr>企业版</nobr> |
 | --- | --- | --- |
 | AI Proxy | 可让您将请求转换和代理到多个 AI 提供程序和模型。 |  |
 | AI Proxy Advanced | 允许您`同时`将请求转换和代理到多个 AI 提供程序和模型。 | ✅ |
