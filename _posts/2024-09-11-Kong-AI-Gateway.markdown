@@ -207,14 +207,14 @@ curl -X DELETE http://localhost:8001/services/ai-proxy
 ## AI Gateway 插件
 
 | 插件 | 描述 | <nobr>企业版</nobr> |
-| --- | --- | --- |
+| --- | --- | :---: |
 | AI Proxy | 可让您将请求转换和代理到多个 AI 提供程序和模型。 |  |
 | AI Proxy Advanced | 允许您`同时`将请求转换和代理到多个 AI 提供程序和模型。 | ✅ |
 | AI Request Transformer | 使用配置的 LLM 服务在上游代理请求之前内省和转换客户端的请求正文。 |  |
 | AI Response Transformer | 使用配置的LLM服务来自省和转换上游的 HTTP（S）响应，然后再将其返回 client.It 也可以配置为终止或以其他方式取消响应，如果它未能通过（例如）来自配置的LLM服务的合规性或格式检查。 |  |
 | AI Semantic Cache |  | ✅ |
 | AI Semantic Prompt Guard |  | ✅ |
-| AI Rate Limiting Advanced |  | ✅ |
+| <nobr>AI Rate Limiting Advanced</nobr> |  | ✅ |
 | AI Azure Content Safety |  | ✅ |
 | AI Prompt Template | 让您向用户提供经过调整的 AI 提示。 |  |
 | AI Prompt Guard | 允许您将一系列与 PCRE 兼容的正则表达式配置为允许或拒绝列表。 |  |
