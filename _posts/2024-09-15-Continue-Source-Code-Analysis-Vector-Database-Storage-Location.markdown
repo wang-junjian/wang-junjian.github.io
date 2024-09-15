@@ -6,6 +6,8 @@ categories: Continue AICodingAssistant
 tags: [Continue, LanceDB, GitHubCopilot]
 ---
 
+## 向量数据库存储位置
+
 **LanceDB 存储位置**：~/.continue/index/lancedb
   - UsersjunjianGitHubcontinuedevcontinue-0.9.191-vscodeextensionsvscodeNONEvectordb_OpenAIEmbeddingsProviderbge-base-zh-v1.5.lance
   - UsersjunjianGitHubcontinuedevcontinue-0.9.191-vscodeextensionsvscodeNONEvectordb_TransformersJsEmbeddingsProviderall-MiniLM-L6-v2.lance
