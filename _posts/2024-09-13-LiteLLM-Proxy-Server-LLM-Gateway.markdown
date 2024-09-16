@@ -75,12 +75,12 @@ docker-compose up
 ##### 添加模型
 
 ![](/images/2024/LiteLLM/add-model.png)
-- Provider: OpenAI-Compatible Endpoints (Together AI, etc.)
-- Public Model Name: gpt-4
-- LiteLLM Model Name(s): gpt-4-32k
-- API Key: NONE
-- API Base: http://172.16.33.66:9997/v1
-- LiteLLM Params: Pass JSON of litellm supported params [litellm.completion() call](https://docs.litellm.ai/docs/completion/input)
+- `Provider`: OpenAI-Compatible Endpoints (Together AI, etc.)
+- `Public Model Name`: gpt-4
+- `LiteLLM Model Name(s)`: gpt-4-32k
+- `API Key`: NONE
+- `API Base`: http://172.16.33.66:9997/v1
+- `LiteLLM Params`: Pass JSON of litellm supported params [litellm.completion() call](https://docs.litellm.ai/docs/completion/input)
 
 ##### 模型分析
 
