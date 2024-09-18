@@ -151,6 +151,7 @@ print(openai_response)
 ## LiteLLM & Langfuse Integration（集成）
 - [Langfuse - Logging LLM Input/Output](https://litellm.vercel.app/docs/observability/langfuse_integration)
 - [Monitoring with Langfuse](https://docs.openwebui.com/tutorial/langfuse#editing-the-litellm-configuration-file)
+- [LiteLLM - Logging](https://docs.litellm.ai/docs/proxy/logging)
 
 ### Langfuse 部署
 
