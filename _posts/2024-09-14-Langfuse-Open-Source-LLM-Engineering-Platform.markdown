@@ -9,6 +9,7 @@ tags: [Langfuse, LiteLLM, LLM]
 ## Langfuse
 - [Langfuse](https://langfuse.com/)
 - [GitHub - Langfuse](https://github.com/langfuse/langfuse)
+- [Introducing Langfuse 2.0](https://langfuse.com/guides/videos/introducing-langfuse-2.0)
 
 LLM 可观察性（LLM Observability）、提示管理（Prompt Management）、LLM 评估（LLM Evaluations）、数据集（Datasets）、LLM 指标（LLM Metrics）和提示游乐场（Prompt Playground）
 
