@@ -54,7 +54,7 @@ docker compose up -d
 
 
 ## 使用
-登录 [http://localhost:3000](http://localhost:3000) 
+登录 [http://localhost:3000](http://localhost:3000)
 
 ### New Organization
 1. Create Organization
@@ -63,7 +63,18 @@ docker compose up -d
 4. Setup Tracing
 
 ### Dashboard
-![](/images/2024/Langfuse/Langfuse-Dashboard.png)
+
+![](/images/2024/Langfuse/Langfuse-Dashboard1.png)
+
+![](/images/2024/Langfuse/Langfuse-Dashboard2.png)
+
+### Traces
+
+![](/images/2024/Langfuse/Langfuse-Traces.png)
+
+#### Trace Detail
+
+![](/images/2024/Langfuse/Langfuse-Trace-Detail.png)
 
 
 ## LLM 可观察性集成（LLM Observability Integrations）
