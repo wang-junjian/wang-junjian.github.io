@@ -68,7 +68,7 @@ docker-compose up
 ```
 
 #### LiteLLM Proxy Server UI
-登录 [http://localhost:8000/ui](http://localhost:8000/ui) 进入 LiteLLM Proxy Server UI。
+登录 [http://localhost:4000/ui](http://localhost:4000/ui) 进入 LiteLLM Proxy Server UI。
 
 **多次增加模型有点问题，测试 embeddings model 失败。**
 
@@ -147,3 +147,14 @@ openai_response = litellm.completion(
 
 print(openai_response)
 ```
+
+
+## LiteLLM & Langfuse Integration
+- [Langfuse - Logging LLM Input/Output](https://litellm.vercel.app/docs/observability/langfuse_integration)
+- [Monitoring with Langfuse](https://docs.openwebui.com/tutorial/langfuse#editing-the-litellm-configuration-file)
+
+**没有测试成功，LiteLLM UI 有问题，增加第二个模型有问题，设置 Langfuse 也有问题。**
+
+
+## 参考资料
+- [LiteLLM Cookbook](https://github.com/BerriAI/litellm/tree/main/cookbook)
