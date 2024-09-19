@@ -3,7 +3,7 @@ layout: post
 title:  "LiteLLM: [Python SDK] [Proxy Server (LLM Gateway)]"
 date:   2024-09-13 08:00:00 +0800
 categories: LiteLLM AIGateway
-tags: [LiteLLM, AIGateway, LLM]
+tags: [LiteLLM, AIGateway, Langfuse, LLM]
 ---
 
 ## LiteLLM Proxy Server (LLM Gateway)
@@ -27,6 +27,7 @@ model_list:
 general_settings:
   master_key: sk-1234 # [OPTIONAL] Only use this if you to require all calls to contain this key (Authorization: Bearer sk-1234)
 ```
+- [Proxy Config.yaml](https://docs.litellm.ai/docs/proxy/configs)
 
 ### Docker 部署
 #### NO DB
@@ -153,9 +154,10 @@ print(openai_response)
 - [Monitoring with Langfuse](https://docs.openwebui.com/tutorial/langfuse#editing-the-litellm-configuration-file)
 - [LiteLLM - Logging](https://docs.litellm.ai/docs/proxy/logging)
 
-### Langfuse 部署
+### LiteLLM Proxy Server (LLM Gateway)
+#### Langfuse 部署
 
-#### docker-compose.yml
+编辑 `docker-compose.yml`
 
 ```yaml
 networks:
@@ -207,14 +209,14 @@ volumes:
 - 创建共享网络 `shared-network`
 - 设置每个服务的网络为 `shared-network`
 
-#### 启动服务
+启动服务
 ```shell
 docker-compose up -d
 ```
 
-### LiteLLM 部署
+#### LiteLLM 部署
 
-#### 编辑配置文件：`config.yaml`
+编辑配置文件 `config.yaml`
 
 ```yaml
 model_list:
@@ -235,7 +237,7 @@ litellm_settings:
   failure_callback: ["langfuse"]
 ```
 
-#### docker-compose.yml
+编辑 `docker-compose.yml`
 
 ```yaml
 version: "3.11"
@@ -317,12 +319,45 @@ volumes:
 - db.environment
     - 修改 postgre 数据库的默认端口 `PGPORT: 5434`，避免与 Langfuse 的数据库端口冲突🛑。
 
-#### 启动服务
+启动服务
 ```shell
 docker-compose up -d
 ```
 
-### 运行上面的模型测试（curl）
+**可以运行上面的`模型测试`（curl 命令）**
+
+### LiteLLM Python SDK
+
+编辑 `main.py`
+```python
+import os
+import litellm
+ 
+
+os.environ["LANGFUSE_HOST"]="http://localhost:3000"
+os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-fd5d8fba-5134-4037-884d-d6780894a65a"
+os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-10122a92-da11-4423-b3f7-ad10e5f268fc"
+ 
+os.environ["OPENAI_API_BASE"] = "http://172.16.33.66:9997/v1"
+os.environ["OPENAI_API_KEY"] = "NONE"
+
+os.environ['LITELLM_LOG'] = 'DEBUG'
+
+litellm.success_callback = ["langfuse"]
+litellm.failure_callback = ["langfuse"]
+
+openai_response = litellm.completion(
+  model="gpt-4-32k",
+  messages=[
+    {"role": "system", "content": "您是人工智能助手。"},
+    {"role": "user", "content": "介绍一下自己。"}
+  ]
+)
+
+print(openai_response)
+```
+
+运行 `main.py`
 
 ### 查看 Langfuse Dashboard
 登录 [http://localhost:3000](http://localhost:3000) 进入 Langfuse Dashboard。
