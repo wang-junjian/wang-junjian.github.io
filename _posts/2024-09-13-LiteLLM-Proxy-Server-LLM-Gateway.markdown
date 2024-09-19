@@ -27,7 +27,6 @@ model_list:
 general_settings:
   master_key: sk-1234 # [OPTIONAL] Only use this if you to require all calls to contain this key (Authorization: Bearer sk-1234)
 ```
-- [Proxy Config.yaml](https://docs.litellm.ai/docs/proxy/configs)
 
 ### Docker 部署
 #### NO DB
@@ -155,7 +154,7 @@ print(openai_response)
 - [LiteLLM - Logging](https://docs.litellm.ai/docs/proxy/logging)
 
 ### LiteLLM Proxy Server (LLM Gateway)
-#### Langfuse 部署
+#### 部署 Langfuse
 
 编辑 `docker-compose.yml`
 
@@ -214,7 +213,7 @@ volumes:
 docker-compose up -d
 ```
 
-#### LiteLLM 部署
+#### 部署 LiteLLM
 
 编辑配置文件 `config.yaml`
 
