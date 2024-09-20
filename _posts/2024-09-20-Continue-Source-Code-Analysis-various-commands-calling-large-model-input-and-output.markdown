@@ -10,7 +10,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 
 ![](/images/2024/Continue/Langfuse-Tab-Completion.png)
 
-### Input
+### 输入
 
 ![](/images/2024/Continue/Langfuse-Tab-Completion-Input.png)
 
@@ -25,7 +25,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 }
 ```
 
-### Output
+### 输出
 
 ![](/images/2024/Continue/Langfuse-Tab-Completion-Output.png)
 
@@ -45,7 +45,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-NO.png)
 
-### Input
+### 输入
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-NO-Input.png)
 
@@ -60,7 +60,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 }
 ```
 
-### Output
+### 输出
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-NO-Output.png)
 
@@ -80,7 +80,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-Code-Block.png)
 
-### Input
+### 输入
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-Code-Block-Input.png)
 
@@ -95,7 +95,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 }
 ```
 
-### Output
+### 输出
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-Code-Block-Output.png)
 
@@ -115,7 +115,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-Active-File.png)
 
-### Input
+### 输入
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-Active-File-Input.png)
 
@@ -130,7 +130,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 }
 ```
 
-### Output
+### 输出
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-Active-File-Output.png)
 
@@ -150,7 +150,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-RAG.png)
 
-### Input
+### 输入
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-RAG-Input.png)
 
@@ -165,7 +165,7 @@ tags: [Continue, Langfuse, GitHubCopilot, LLM]
 }
 ```
 
-### Output
+### 输出
 
 ![](/images/2024/Continue/Langfuse-Chat-Context-RAG-Output.png)
 
