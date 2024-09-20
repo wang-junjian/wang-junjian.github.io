@@ -26,6 +26,7 @@ LLM 可观察性（LLM Observability）、提示管理（Prompt Management）、
   - 在 Langfuse 中运行（基于模型的评估）和 LLM 作为评判
   - 收集用户反馈（用户反馈）
   - 在 Langfuse 中手动评分 LLM 输出（手动评分）
+
 #### 测试（Test）
 - Experiments（实验）：在部署新版本之前跟踪和测试应用程序行为
   - 数据集让您在部署之前测试预期的输入和输出对，并对性能进行基准测试（数据集）
