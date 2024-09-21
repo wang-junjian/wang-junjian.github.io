@@ -14,6 +14,12 @@ tags: [LiteLLM, AIGateway, Langfuse, LLM]
 
 ```yaml
 model_list:
+  - model_name: qwen-coder
+    litellm_params:
+      model: ollama/qwen2.5-coder:7b
+  - model_name: bge-m3
+    litellm_params:
+      model: ollama/bge-m3
   - model_name: gpt-4
     litellm_params:
       model: openai/gpt-4-32k
@@ -26,6 +32,17 @@ model_list:
       api_key: none
 general_settings:
   master_key: sk-1234 # [OPTIONAL] Only use this if you to require all calls to contain this key (Authorization: Bearer sk-1234)
+```
+
+### 命令部署
+  
+```shell
+# 集成 Langfuse
+LANGFUSE_PUBLIC_KEY=pk-lf-fd5d8fba-5134-4037-884d-d6780894a65a
+LANGFUSE_SECRET_KEY=sk-lf-10122a92-da11-4423-b3f7-ad10e5f268fc
+LANGFUSE_HOST=http://127.0.0.1:3000
+
+litellm --config config.yaml
 ```
 
 ### Docker 部署
