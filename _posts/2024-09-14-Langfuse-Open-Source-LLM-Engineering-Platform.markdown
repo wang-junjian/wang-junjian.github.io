@@ -119,3 +119,26 @@ openai_response = litellm.completion(
 
 print(openai_response)
 ```
+
+### Logging Metadata to Langfuse
+```shell
+curl --location 'http://0.0.0.0:4000/chat/completions' \
+    --header 'Content-Type: application/json' \
+    --data '{
+    "model": "qwen-coder",
+    "messages": [
+        {
+        "role": "user",
+        "content": "快速排序"
+        }
+    ],
+    "metadata": {
+        "generation_name": "ishaan-test-generation",
+        "generation_id": "gen-id22",
+        "trace_id": "trace-id22",
+        "trace_user_id": "user-id2"
+    }
+}'
+```
+- [Logging](https://litellm.vercel.app/docs/proxy/logging)
+- [Cookbook: LiteLLM (Proxy) + Langfuse OpenAI Integration + @observe Decorator](https://langfuse.com/docs/integrations/litellm/example-proxy-python)
