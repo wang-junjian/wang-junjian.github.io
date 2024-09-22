@@ -7,6 +7,7 @@ tags: [LiteLLM, AIGateway, Langfuse, LLM]
 ---
 
 ## LiteLLM Proxy Server (LLM Gateway)
+- [💥 LiteLLM Proxy Server (LLM Gateway)](https://docs.litellm.ai/docs/simple_proxy)
 - [Hosted LiteLLM Proxy](https://docs.litellm.ai/docs/hosted)
 - [Proxy Config.yaml](https://docs.litellm.ai/docs/proxy/configs)
 
@@ -20,6 +21,11 @@ model_list:
   - model_name: bge-m3
     litellm_params:
       model: ollama/bge-m3
+  - model_name: llava
+    litellm_params:
+      model: ollama/llava:7b
+      api_base: "http://localhost:11434"
+      # api_base: http://127.0.0.1:11434/v1 # ❌ 500 Internal Server Error
   - model_name: gpt-4
     litellm_params:
       model: openai/gpt-4-32k
@@ -111,6 +117,29 @@ curl -X POST http://127.0.0.1:4000/v1/embeddings \
     }'
 ```
 
+#### 视觉问答（llava）
+
+```shell
+curl "http://127.0.0.1:4000/v1/chat/completions" \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -H 'Authorization: Bearer sk-1234' \
+  -d '{
+    "model": "llava",
+    "messages": [
+      {
+        "role": "user", 
+        "content": [
+          { "type": "text", "text": "图像上面有几只动物(用中文回答)" },      
+          { "type": "image_url", "image_url": { "url": "'$(base64 -i /Users/junjian/截屏/catdog.jpg)'" } }
+        ]
+      }
+    ]
+  }'
+```
+- [Ollama vision models call arguments (like : llava) #2201](https://github.com/BerriAI/litellm/pull/2201)
+- [Ollama llava proxy_server_config.yaml and curl request #1864](https://github.com/BerriAI/litellm/discussions/1864)
+
 http://127.0.0.1:4000/v1/chat/completions 换成 http://127.0.0.1:4000/chat/completions 也可以。
 
 ### LiteLLM Proxy Server UI
@@ -163,6 +192,75 @@ openai_response = litellm.completion(
 
 print(openai_response)
 ```
+
+### 视觉问答（llava）
+
+```python
+import litellm
+
+
+# model = "ollama/minicpm-v:8b" # ❌ 没有成功，可能是 LiteLLM 组织的提示词有问题吧。
+model = "ollama/llava:7b"
+
+# 参考：https://github.com/BerriAI/litellm/blob/main/litellm/llms/ollama.py#L169
+# ollama wants plain base64 jpeg/png files as images.  strip any leading dataURI
+# and convert to jpeg if necessary.
+def _convert_image(image):
+    import base64
+    import io
+
+    try:
+        from PIL import Image
+    except:
+        raise Exception(
+            "ollama image conversion failed please run `pip install Pillow`"
+        )
+
+    image_data = Image.open(image)
+    jpeg_image = io.BytesIO()
+    image_data.convert("RGB").save(jpeg_image, "JPEG")
+    jpeg_image.seek(0)
+    return base64.b64encode(jpeg_image.getvalue()).decode("utf-8")
+
+is_file = True
+if is_file:
+  image_path = "/Users/junjian/截屏/catdog.jpg"
+  base64_image = _convert_image(image_path)
+  url = f"data:image/jpeg;base64,{base64_image}"
+else:
+  url = "http://book.d2l.ai/_images/catdog.jpg"
+
+response = litellm.completion(
+  model=model,
+  messages=[
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "图像上面有几只动物(用中文回答)"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": url
+          }
+        },
+      ]
+    }
+  ],
+)
+
+print(response.choices[0].message.content)
+```
+```
+这张图片显示了一只狗和一只猫。狗是一种可爱的家庭宠物，而猫则是另一种广受喜爱的家庭宠物。两者在一起看着相机，表现出一种互动感的关系。
+```
+- [litellm/litellm/llms/ollama.py](https://github.com/BerriAI/litellm/blob/main/litellm/llms/ollama.py#L169)
+- [LiteLLM - Ollama](https://docs.litellm.ai/docs/providers/ollama#ollama-vision-models)
+- [gpt-4o error when analysis image #3629](https://github.com/BerriAI/litellm/issues/3629)
+- [Bytes64-encoded api calls failing with Azure and Vertex in 1.45.16 #5515](https://github.com/BerriAI/litellm/issues/5515)
+- [MiniCPM-V](https://github.com/OpenBMB/MiniCPM-V/blob/main/README_zh.md)
 
 
 ## LiteLLM & Langfuse Integration（集成）
