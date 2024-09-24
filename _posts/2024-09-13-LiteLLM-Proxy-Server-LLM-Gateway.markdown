@@ -105,6 +105,20 @@ curl -X POST 'http://127.0.0.1:4000/v1/chat/completions' \
     }'
 ```
 
+#### Completions
+
+```shell
+curl -X POST 'http://127.0.0.1:4000/v1/completions' \
+    --header 'Content-Type: application/json' \
+    --header 'Authorization: Bearer sk-1234' \
+    --data-raw '{
+        "model": "gpt-4",
+        "prompt": "天空为什么是蓝色的？",
+        "max_tokens": 256,
+        "temperature": 0
+    }'
+```
+
 #### Embeddings
 
 ```shell
