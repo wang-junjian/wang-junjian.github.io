@@ -11,7 +11,7 @@ tags: [Tabby, VSCode, ContextProvider, CodeSearch, CodeChat]
 ### 安装 Tabby (macOS)
 
 ```shell
-brew upgrade tabbyml/tabby/tabby
+brew install tabbyml/tabby/tabby
 ```
 
 更新
@@ -59,9 +59,9 @@ tabby serve --device metal --model Codestral-22B --chat-model Codestral-22B
   Please set the TABBY_WEBSERVER_JWT_TOKEN_SECRET environment variable for production usage.
 ```
 
-#### 配置文件指定参数
+#### 配置文件（~/.tabby/config.toml）指定参数
 
-编辑配置文件：~/.tabby/config.toml
+##### [Local](https://tabby.tabbyml.com/docs/administration/model/)
 
 ```ini
 [model.completion.local]
@@ -74,7 +74,78 @@ model_id = "Codestral-22B"
 model_id = "Nomic-Embed-Text"
 ```
 
-- [Model Configuration](https://tabby.tabbyml.com/docs/administration/model/)
+##### [Ollama](https://tabby.tabbyml.com/docs/references/models-http-api/ollama/)
+
+```ini
+# Completion model
+[model.completion.http]
+kind = "ollama/completion"
+model_name = "qwen2.5-coder:7b"
+api_endpoint = "http://localhost:11434"
+prompt_template = "<PRE> {prefix} <SUF>{suffix} <MID>"  # Example prompt template for the odeLlama model series.
+
+# Chat model
+[model.chat.http]
+kind = "openai/chat"
+model_name = "qwen2.5-coder:7b"
+api_endpoint = "http://localhost:11434/v1"
+
+# Embedding model
+[model.embedding.http]
+kind = "ollama/embedding"
+model_name = "nomic-embed-text"
+api_endpoint = "http://localhost:11434"
+```
+
+##### [OpenAI](https://tabby.tabbyml.com/docs/references/models-http-api/openai/)
+
+- LiteLLM
+```ini
+# Completion model
+[model.completion.http]
+kind = "openai/completion"
+model_name = "gpt-4"
+api_endpoint = "http://127.0.0.1:4000/v1"
+api_key = "sk-1234"
+
+# Chat model
+[model.chat.http]
+kind = "openai/chat"
+model_name = "gpt-4"
+api_endpoint = "http://127.0.0.1:4000/v1"
+api_key = "sk-1234"
+
+# Embedding model
+[model.embedding.http]
+kind = "openai/embedding"
+model_name = "bge-m3"
+api_endpoint = "http://127.0.0.1:4000/v1"
+api_key = "sk-1234"
+```
+
+- XInference
+```ini
+# Completion model
+[model.completion.http]
+kind = "openai/completion"
+model_name = "gpt-4-32k"
+api_endpoint = "http://172.16.33.66:9997/v1"
+api_key = "NONE"
+
+# Chat model
+[model.chat.http]
+kind = "openai/chat"
+model_name = "gpt-4-32k"
+api_endpoint = "http://172.16.33.66:9997/v1"
+api_key = "NONE"
+
+# Embedding model
+[model.embedding.http]
+kind = "openai/embedding"
+model_name = "bge-m3"
+api_endpoint = "http://172.16.33.66:9997/v1"
+api_key = "NONE"
+```
 
 运行 `tabby serve`
 
