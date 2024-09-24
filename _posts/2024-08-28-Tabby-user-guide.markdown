@@ -100,6 +100,7 @@ api_endpoint = "http://localhost:11434"
 ##### [OpenAI](https://tabby.tabbyml.com/docs/references/models-http-api/openai/)
 
 - LiteLLM
+
 ```ini
 # Completion model
 [model.completion.http]
@@ -124,6 +125,7 @@ api_key = "sk-1234"
 ```
 
 - XInference
+
 ```ini
 # Completion model
 [model.completion.http]
