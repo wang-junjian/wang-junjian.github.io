@@ -495,6 +495,103 @@ print(openai_response)
 ![](/images/2024/Langfuse/Langfuse-Dashboard2.png)
 
 
+## ❌ 没有`撤梯子`出现了莫名其妙的问题
+
+调试了半天 😅
+
+```shell
+INFO:     127.0.0.1:65383 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+16:30:59 - LiteLLM Proxy:ERROR: proxy_server.py:2586 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - b''
+Traceback (most recent call last):
+  File "/opt/miniconda/lib/python3.10/site-packages/litellm/proxy/proxy_server.py", line 2565, in async_data_generator
+    async for chunk in response:
+  File "/opt/miniconda/lib/python3.10/site-packages/litellm/llms/ollama.py", line 426, in ollama_async_streaming
+    raise e  # don't use verbose_logger.exception, if exception is raised
+  File "/opt/miniconda/lib/python3.10/site-packages/litellm/llms/ollama.py", line 381, in ollama_async_streaming
+    raise OllamaError(
+litellm.llms.ollama.OllamaError: b''
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/miniconda/lib/python3.10/site-packages/starlette/responses.py", line 265, in __call__
+    await wrap(partial(self.listen_for_disconnect, receive))
+  File "/opt/miniconda/lib/python3.10/site-packages/starlette/responses.py", line 261, in wrap
+    await func()
+  File "/opt/miniconda/lib/python3.10/site-packages/starlette/responses.py", line 238, in listen_for_disconnect
+    message = await receive()
+  File "/opt/miniconda/lib/python3.10/site-packages/uvicorn/protocols/http/httptools_impl.py", line 596, in receive
+    await self.message_event.wait()
+  File "/opt/miniconda/lib/python3.10/asyncio/locks.py", line 214, in wait
+    await fut
+asyncio.exceptions.CancelledError: Cancelled by cancel scope 16e0d7ac0
+
+During handling of the above exception, another exception occurred:
+
+  + Exception Group Traceback (most recent call last):
+  |   File "/opt/miniconda/lib/python3.10/site-packages/uvicorn/protocols/http/httptools_impl.py", line 435, in run_asgi
+  |     result = await app(  # type: ignore[func-returns-value]
+  |   File "/opt/miniconda/lib/python3.10/site-packages/uvicorn/middleware/proxy_headers.py", line 78, in __call__
+  |     return await self.app(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/fastapi/applications.py", line 1054, in __call__
+  |     await super().__call__(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/applications.py", line 123, in __call__
+  |     await self.middleware_stack(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/middleware/errors.py", line 186, in __call__
+  |     raise exc
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/middleware/errors.py", line 164, in __call__
+  |     await self.app(scope, receive, _send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/middleware/cors.py", line 85, in __call__
+  |     await self.app(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+  |     raise exc
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+  |     await app(scope, receive, sender)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/routing.py", line 756, in __call__
+  |     await self.middleware_stack(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/routing.py", line 776, in app
+  |     await route.handle(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/routing.py", line 297, in handle
+  |     await self.app(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/routing.py", line 77, in app
+  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+  |     raise exc
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+  |     await app(scope, receive, sender)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/routing.py", line 75, in app
+  |     await response(scope, receive, send)
+  |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/responses.py", line 258, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/opt/miniconda/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 680, in __aexit__
+  |     raise BaseExceptionGroup(
+  | exceptiongroup.ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/opt/miniconda/lib/python3.10/site-packages/litellm/proxy/proxy_server.py", line 2565, in async_data_generator
+    |     async for chunk in response:
+    |   File "/opt/miniconda/lib/python3.10/site-packages/litellm/llms/ollama.py", line 426, in ollama_async_streaming
+    |     raise e  # don't use verbose_logger.exception, if exception is raised
+    |   File "/opt/miniconda/lib/python3.10/site-packages/litellm/llms/ollama.py", line 381, in ollama_async_streaming
+    |     raise OllamaError(
+    | litellm.llms.ollama.OllamaError: b''
+    | 
+    | During handling of the above exception, another exception occurred:
+    | 
+    | Traceback (most recent call last):
+    |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/responses.py", line 261, in wrap
+    |     await func()
+    |   File "/opt/miniconda/lib/python3.10/site-packages/starlette/responses.py", line 250, in stream_response
+    |     async for chunk in self.body_iterator:
+    |   File "/opt/miniconda/lib/python3.10/site-packages/litellm/proxy/proxy_server.py", line 2607, in async_data_generator
+    |     proxy_exception = ProxyException(
+    |   File "/opt/miniconda/lib/python3.10/site-packages/litellm/proxy/_types.py", line 1839, in __init__
+    |     "No healthy deployment available" in self.message
+    | TypeError: a bytes-like object is required, not 'str'
+    +------------------------------------
+```
+
+
 ## 参考资料
 - [LiteLLM Cookbook](https://github.com/BerriAI/litellm/tree/main/cookbook)
 - [PostgreSQL 9.4.4 中文手册 - 环境变量](http://www.postgres.cn/docs/9.4/libpq-envars.html)
