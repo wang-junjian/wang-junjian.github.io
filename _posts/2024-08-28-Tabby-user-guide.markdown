@@ -7,6 +7,8 @@ tags: [Tabby, VSCode, ContextProvider, CodeSearch, CodeChat]
 ---
 
 ## Tabby
+- [Demo](https://demo.tabbyml.com/)
+- [Blog](https://tabby.tabbyml.com/blog/)
 
 ### 安装 Tabby (macOS)
 
@@ -49,7 +51,7 @@ tabby serve --device metal --model Codestral-22B --chat-model Codestral-22B
    ██║   ██║  ██║██████╔╝██████╔╝   ██║   
    ╚═╝   ╚═╝  ╚═╝╚═════╝ ╚═════╝    ╚═╝   
 
-📄 Version 0.15.0
+📄 Version 0.17.0
 🚀 Listening at 0.0.0.0:8080
 
 
@@ -148,6 +150,9 @@ model_name = "bge-m3"
 api_endpoint = "http://172.16.33.66:9997/v1"
 api_key = "NONE"
 ```
+
+- [OpenAI compatible API #1766](https://github.com/TabbyML/tabby/issues/1766)
+- [How to setup local http api_endpoint #2868](https://github.com/TabbyML/tabby/discussions/2868)
 
 运行 `tabby serve`
 
