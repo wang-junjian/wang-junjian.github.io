@@ -25,7 +25,7 @@ git clone https://github.com/cpacker/MemGPT
 ```ini
 LETTA_LLM_ENDPOINT=http://host.docker.internal:11434
 LETTA_LLM_ENDPOINT_TYPE=ollama
-LETTA_LLM_MODEL=qwen2.5:7b
+LETTA_LLM_MODEL=qwen2.5:7b-q6_K
 LETTA_LLM_CONTEXT_WINDOW=32000
 LETTA_EMBEDDING_ENDPOINT=http://host.docker.internal:11434
 LETTA_EMBEDDING_ENDPOINT_TYPE=ollama
@@ -33,9 +33,15 @@ LETTA_EMBEDDING_MODEL=bge-m3
 LETTA_EMBEDDING_DIM=1024
 ```
 
+在下载 Ollama 模型时，请确保使用标签！
+
+不要执行 ollama pull dolphin2.2-mistral，而是执行 ollama pull dolphin2.2-mistral:7b-q6_K。
+
+如果您没有指定标签，Ollama 可能会默认使用高度压缩的模型变体（例如 Q4）。我们强烈建议在使用 GGUF 时**不要**使用低于 Q5 的压缩级别（如果可能的话，请坚持使用 Q6 或 Q8）。在我们的测试中，某些模型在 Q6 以下开始变得极不稳定（在与 MemGPT 一起使用时）。
+
 - OpenAI
 
-因为各种原因，目前还没有测试成功（LiteLLM, Xinference）
+因为各种原因，目前还没有测试成功（LiteLLM, Xinference），官方有 [vLLM](https://docs.letta.com/models/vllm) 的配置例子，下次试验一下。
 
 ```ini
 OPENAI_API_KEY=sk-1234
