@@ -45,8 +45,6 @@ wget https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese/resolve/master/ope
 
 ### Qwen1.5-7B-Chat
 
-#### 指标与并行数的关系
-
 ![](/images/2024/evalscope/qwen1.5-7b-chat.png)
 
 | 指标 | 8 | 16 | 32 | 64 | 128 | 150 | 200 | 256 | 300 | 400 | 512 | 720 |
@@ -519,8 +517,6 @@ Benchmarking summary:
 
 ### Qwen1.5-14B-Chat
 
-#### 指标与并行数的关系
-
 ![](/images/2024/evalscope/qwen1.5-14b-chat.png)
 
 | 指标 | 8 | 16 | 32 | 64 | 128 | 150 | 200 | 256 | 512 |
@@ -875,8 +871,6 @@ Benchmarking summary:
 ```
 
 ### Qwen2-72B-Chat
-
-#### 指标与并行数的关系
 
 ![](/images/2024/evalscope/qwen2-72b-chat.png)
 
