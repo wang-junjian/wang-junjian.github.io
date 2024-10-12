@@ -3,7 +3,7 @@ layout: post
 title:  "华为 Atlas 800I A2 服务器的大模型推理性能压测"
 date:   2024-10-10 10:00:00 +0800
 categories: Atlas800 Benchmark
-tags: [EvalScope, Atlas800, NPU, MindIE, Benchmark, LLM]
+tags: [EvalScope, Atlas800, NPU, MindIE, vLLM, Benchmark, LLM]
 ---
 
 ## 大模型推理性能压测
