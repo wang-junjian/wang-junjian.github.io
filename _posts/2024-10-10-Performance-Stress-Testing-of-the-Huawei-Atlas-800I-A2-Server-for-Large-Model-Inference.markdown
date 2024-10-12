@@ -41,7 +41,7 @@ wget https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese/resolve/master/ope
 ```
 
 
-## MindIE 实验结果
+## 实验结果（MindIE）
 
 ### Qwen1.5-7B-Chat
 
@@ -1316,7 +1316,7 @@ plt.show()
 ```
 
 
-## vLLM 实验结果
+## 实验结果（vLLM）
 
 ### Qwen1.5-7B-Chat
 
