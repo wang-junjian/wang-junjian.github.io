@@ -61,7 +61,7 @@ wget https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese/resolve/master/ope
 - 平均每个请求的输入 token 数: 40
 - 平均每个请求的输出 token 数: 240
 
-#### parallel 8
+- parallel 8
 ```
 Benchmarking summary: 
  Time taken for tests: 404.284 seconds
@@ -99,7 +99,7 @@ Benchmarking summary:
      p99: 6.8545
 ```
 
-#### parallel 16
+- parallel 16
 ```
 Benchmarking summary: 
  Time taken for tests: 215.085 seconds
@@ -137,7 +137,7 @@ Benchmarking summary:
      p99: 7.2478
 ```
 
-#### parallel 32
+- parallel 32
 ```
 Benchmarking summary: 
  Time taken for tests: 120.876 seconds
@@ -175,7 +175,7 @@ Benchmarking summary:
      p99: 8.0644
 ```
 
-#### parallel 64
+- parallel 64
 ```
 Benchmarking summary: 
  Time taken for tests: 82.884 seconds
@@ -213,7 +213,7 @@ Benchmarking summary:
      p99: 10.6036
 ```
 
-#### parallel 128
+- parallel 128
 ```
 Benchmarking summary: 
  Time taken for tests: 52.844 seconds
@@ -251,7 +251,7 @@ Benchmarking summary:
      p99: 13.1657
 ```
 
-#### parallel 150
+- parallel 150
 ```
 Benchmarking summary: 
  Time taken for tests: 48.884 seconds
@@ -289,7 +289,7 @@ Benchmarking summary:
      p99: 13.7333
 ```
 
-#### parallel 200
+- parallel 200
 ```
 Benchmarking summary: 
  Time taken for tests: 44.856 seconds
@@ -327,7 +327,7 @@ Benchmarking summary:
      p99: 16.3464
 ```
 
-#### parallel 256
+- parallel 256
 ```
 Benchmarking summary: 
  Time taken for tests: 42.750 seconds
@@ -365,7 +365,7 @@ Benchmarking summary:
      p99: 18.0215
 ```
 
-#### parallel 300
+- parallel 300
 ```
 Benchmarking summary: 
  Time taken for tests: 43.729 seconds
@@ -403,7 +403,7 @@ Benchmarking summary:
      p99: 20.2304
 ```
 
-#### parallel 400
+- parallel 400
 ```
 Benchmarking summary: 
  Time taken for tests: 42.866 seconds
@@ -441,7 +441,7 @@ Benchmarking summary:
      p99: 23.6675
 ```
 
-#### parallel 512
+- parallel 512
 ```
 Benchmarking summary: 
  Time taken for tests: 41.655 seconds
@@ -479,7 +479,7 @@ Benchmarking summary:
      p99: 26.6549
 ```
 
-#### parallel 720
+- parallel 720
 ```
 Benchmarking summary: 
  Time taken for tests: 40.580 seconds
@@ -532,7 +532,7 @@ Benchmarking summary:
 | p50 | 3.7038 | 3.9261 | 4.4544 | 5.6047 | 7.0534 | 7.9484 | 9.0271 | 11.3066 | 23.6591 |
 | p90 | 5.7184 | 6.0562 | 6.9198 | 8.7597 | 11.1194 | 12.5181 | 14.5017 | 16.8646 | 33.3052 |
 
-#### parallel 8
+- parallel 8
 ```
 Benchmarking summary: 
  Time taken for tests: 578.571 seconds
@@ -570,7 +570,7 @@ Benchmarking summary:
      p99: 7.4415
 ```
 
-#### parallel 16
+- parallel 16
 ```
 Benchmarking summary: 
  Time taken for tests: 361.169 seconds
@@ -608,7 +608,7 @@ Benchmarking summary:
      p99: 7.8980
 ```
 
-#### parallel 32
+- parallel 32
 ```
 Benchmarking summary: 
  Time taken for tests: 253.040 seconds
@@ -646,7 +646,7 @@ Benchmarking summary:
      p99: 9.3296
 ```
 
-#### parallel 64
+- parallel 64
 ```
 Benchmarking summary: 
  Time taken for tests: 204.961 seconds
@@ -684,7 +684,7 @@ Benchmarking summary:
      p99: 11.6003
 ```
 
-#### parallel 128
+- parallel 128
 ```
 Benchmarking summary: 
  Time taken for tests: 170.001 seconds
@@ -722,7 +722,7 @@ Benchmarking summary:
      p99: 14.6733
 ```
 
-#### parallel 150
+- parallel 150
 ```
 Benchmarking summary: 
  Time taken for tests: 169.981 seconds
@@ -760,7 +760,7 @@ Benchmarking summary:
      p99: 16.5225
 ```
 
-#### parallel 200
+- parallel 200
 ```
 Benchmarking summary: 
  Time taken for tests: 162.999 seconds
@@ -798,7 +798,7 @@ Benchmarking summary:
      p99: 19.2401
 ```
 
-#### parallel 256
+- parallel 256
 ```
 Benchmarking summary: 
  Time taken for tests: 159.840 seconds
@@ -836,7 +836,7 @@ Benchmarking summary:
      p99: 21.3758
 ```
 
-#### parallel 512
+- parallel 512
 ```
 Benchmarking summary: 
  Time taken for tests: 153.937 seconds
@@ -892,7 +892,7 @@ Benchmarking summary:
 - 平均每个请求的输入 token 数: 40
 - 平均每个请求的输出 token 数: 277
 
-#### parallel 8
+- parallel 8
 ```
 Benchmarking summary: 
  Time taken for tests: 1569.707 seconds
@@ -930,7 +930,7 @@ Benchmarking summary:
      p99: 23.0309
 ```
 
-#### parallel 16
+- parallel 16
 ```
 Benchmarking summary: 
  Time taken for tests: 909.001 seconds
@@ -968,7 +968,7 @@ Benchmarking summary:
      p99: 25.1283
 ```
 
-#### parallel 32
+- parallel 32
 ```
 Benchmarking summary: 
  Time taken for tests: 567.479 seconds
@@ -1006,7 +1006,7 @@ Benchmarking summary:
      p99: 27.3373
 ```
 
-#### parallel 64
+- parallel 64
 ```
 Benchmarking summary: 
  Time taken for tests: 382.247 seconds
@@ -1044,7 +1044,7 @@ Benchmarking summary:
      p99: 32.3975
 ```
 
-#### parallel 128
+- parallel 128
 ```
 Benchmarking summary: 
  Time taken for tests: 179.015 seconds
@@ -1082,7 +1082,7 @@ Benchmarking summary:
      p99: 39.3924
 ```
 
-#### parallel 150
+- parallel 150
 ```
 Benchmarking summary: 
  Time taken for tests: 270.054 seconds
@@ -1120,7 +1120,7 @@ Benchmarking summary:
      p99: 47.8515
 ```
 
-#### parallel 200
+- parallel 200
 ```
 Benchmarking summary: 
  Time taken for tests: 251.060 seconds
@@ -1158,7 +1158,7 @@ Benchmarking summary:
      p99: 52.8204
 ```
 
-#### parallel 256
+- parallel 256
 ```
 Benchmarking summary: 
  Time taken for tests: 237.063 seconds
@@ -1196,7 +1196,7 @@ Benchmarking summary:
      p99: 58.0206
 ```
 
-#### parallel 512
+- parallel 512
 ```
 Benchmarking summary: 
  Time taken for tests: 206.734 seconds
