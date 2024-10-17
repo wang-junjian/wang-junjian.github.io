@@ -1239,6 +1239,13 @@ Benchmarking summary:
 - 平均每个请求的输入 token 数: 118
 - 平均每个请求的输出 token 数: 200
 
+安装依赖库
+```shell
+pip install evalscope-perf
+pip install evalscope
+```
+
+执行命令
 ```shell
 evalscope-perf http://127.0.0.1:1025/v1/chat/completions qwen \
     ./datasets/Codefuse-Evol-Instruct-Clean-data.jsonl \
