@@ -1234,6 +1234,11 @@ Benchmarking summary:
 
 ### DeepSeek-Coder-6.7B-Instruct
 
+![](/images/2024/evalscope/mindie-910b4-deepseek-coder-6.7b-performance_metrics.png)
+
+- 平均每个请求的输入 token 数: 118
+- 平均每个请求的输出 token 数: 200
+
 ```shell
 evalscope-perf http://127.0.0.1:1025/v1/chat/completions qwen \
     ./datasets/Codefuse-Evol-Instruct-Clean-data.jsonl \
@@ -1254,11 +1259,6 @@ evalscope-perf http://127.0.0.1:1025/v1/chat/completions qwen \
     --parallels 1000 \
     --n 2000
 ```
-
-![](/images/2024/evalscope/mindie-910b4-deepseek-coder-6.7b-performance_metrics.png)
-
-- 平均每个请求的输入 token 数: 118
-- 平均每个请求的输出 token 数: 200
 
 ### 绘图代码
 ```python
