@@ -1896,6 +1896,461 @@ Benchmarking summary:
 - ❌ 部署多副本，压测一次后，服务挂掉。
 
 
+## 实验结果（Nvidia T4: XInference - vLLM）
+
+### Qwen2-7B-Instruct
+
+![](/images/2024/evalscope/xinference-vllm-t4-qwen2-7b-performance_metrics.png)
+
+| 指标 | 8 | 16 | 32 | 64 | 100 | 128 | 150 | 200 | 300 | 400 | 500 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 用时 | 1276.077 | 776.170 | 504.480 | 372.118 | 363.016 | 365.024 | 418.874 | 459.912 | 401.385 | 458.450 | 375.796 |
+| QPS | 0.783 | 1.288 | 1.958 | 2.472 | 2.353 | 2.334 | 2.046 | 1.750 | 1.664 | 1.254 | 1.163 |
+| 延迟 | 10.128 | 12.307 | 15.749 | 19.225 | 19.235 | 19.151 | 17.479 | 15.949 | 16.718 | 14.750 | 15.771 |
+| 吞吐量 | 254.695 | 424.701 | 631.260 | 753.852 | 700.681 | 700.324 | 637.260 | 550.200 | 510.211 | 392.697 | 362.167 |
+| p50 | 10.3076 | 12.5569 | 16.3129 | 20.0818 | 20.1519 | 20.0230 | 17.9699 | 16.2526 | 17.0123 | 14.8173 | 15.8847 |
+| p90 | 14.3874 | 17.6026 | 22.5020 | 26.8947 | 26.5725 | 26.8284 | 24.7138 | 23.0809 | 24.4670 | 21.4278 | 23.7326 |
+| 失败 | 1 | 0 | 12 | 71 | 101 | 72 | 32 | 25 | 66 | 47 | 89 |
+
+- 平均每个请求的输入 token 数: 40
+- 平均每个请求的输出 token 数: 300
+
+```shell
+evalscope-perf http://172.16.33.66:9997/v1/chat/completions gpt-4-32k \
+    ./datasets/open_qa.jsonl \
+    --parallels 8 \
+    --parallels 16 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 300 \
+    --parallels 400 \
+    --parallels 500 \
+    --n 1000
+```
+
+- parallel 8
+```
+Benchmarking summary: 
+ Time taken for tests: 1276.077 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 8
+ Total requests: 1000
+ Succeed requests: 999
+ Failed requests: 1
+ Average QPS: 0.783
+ Average latency: 10.128
+ Throughput(average output tokens per second): 254.695
+ Average time to first token: 10.128
+ Average input tokens per request: 40.295
+ Average output tokens per request: 325.335
+ Average time per output token: 0.00393
+ Average package per request: 1.000
+ Average package latency: 10.128
+ Percentile of time to first token: 
+     p50: 10.3076
+     p66: 11.5736
+     p75: 12.3458
+     p80: 12.6923
+     p90: 14.3874
+     p95: 15.7724
+     p98: 17.3099
+     p99: 18.2167
+ Percentile of request latency: 
+     p50: 10.3076
+     p66: 11.5736
+     p75: 12.3458
+     p80: 12.6923
+     p90: 14.3874
+     p95: 15.7724
+     p98: 17.3099
+     p99: 18.2167
+```
+
+- parallel 16
+```
+Benchmarking summary: 
+ Time taken for tests: 776.170 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 16
+ Total requests: 1000
+ Succeed requests: 1000
+ Failed requests: 0
+ Average QPS: 1.288
+ Average latency: 12.307
+ Throughput(average output tokens per second): 424.701
+ Average time to first token: 12.307
+ Average input tokens per request: 40.296
+ Average output tokens per request: 329.640
+ Average time per output token: 0.00235
+ Average package per request: 1.000
+ Average package latency: 12.307
+ Percentile of time to first token: 
+     p50: 12.5569
+     p66: 13.8731
+     p75: 14.9178
+     p80: 15.6629
+     p90: 17.6026
+     p95: 19.0937
+     p98: 21.7158
+     p99: 22.9113
+ Percentile of request latency: 
+     p50: 12.5569
+     p66: 13.8731
+     p75: 14.9178
+     p80: 15.6629
+     p90: 17.6026
+     p95: 19.0937
+     p98: 21.7158
+     p99: 22.9113
+```
+
+- parallel 32
+```
+Benchmarking summary: 
+ Time taken for tests: 504.480 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 32
+ Total requests: 1000
+ Succeed requests: 988
+ Failed requests: 12
+ Average QPS: 1.958
+ Average latency: 15.749
+ Throughput(average output tokens per second): 631.260
+ Average time to first token: 15.749
+ Average input tokens per request: 40.277
+ Average output tokens per request: 322.326
+ Average time per output token: 0.00158
+ Average package per request: 1.000
+ Average package latency: 15.749
+ Percentile of time to first token: 
+     p50: 16.3129
+     p66: 18.2424
+     p75: 19.2717
+     p80: 19.9721
+     p90: 22.5020
+     p95: 24.8820
+     p98: 26.8200
+     p99: 27.5026
+ Percentile of request latency: 
+     p50: 16.3129
+     p66: 18.2424
+     p75: 19.2717
+     p80: 19.9721
+     p90: 22.5020
+     p95: 24.8820
+     p98: 26.8200
+     p99: 27.5026
+```
+
+- parallel 64
+```
+Benchmarking summary: 
+ Time taken for tests: 372.118 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 64
+ Total requests: 991
+ Succeed requests: 920
+ Failed requests: 71
+ Average QPS: 2.472
+ Average latency: 19.225
+ Throughput(average output tokens per second): 753.852
+ Average time to first token: 19.225
+ Average input tokens per request: 40.204
+ Average output tokens per request: 304.915
+ Average time per output token: 0.00133
+ Average package per request: 1.000
+ Average package latency: 19.225
+ Percentile of time to first token: 
+     p50: 20.0818
+     p66: 22.5724
+     p75: 23.7237
+     p80: 24.5372
+     p90: 26.8947
+     p95: 28.2781
+     p98: 29.2713
+     p99: 29.5592
+ Percentile of request latency: 
+     p50: 20.0818
+     p66: 22.5724
+     p75: 23.7237
+     p80: 24.5372
+     p90: 26.8947
+     p95: 28.2781
+     p98: 29.2713
+     p99: 29.5592
+```
+
+- parallel 100
+```
+Benchmarking summary: 
+ Time taken for tests: 363.016 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 100
+ Total requests: 955
+ Succeed requests: 854
+ Failed requests: 101
+ Average QPS: 2.353
+ Average latency: 19.235
+ Throughput(average output tokens per second): 700.681
+ Average time to first token: 19.235
+ Average input tokens per request: 40.218
+ Average output tokens per request: 297.843
+ Average time per output token: 0.00143
+ Average package per request: 1.000
+ Average package latency: 19.235
+ Percentile of time to first token: 
+     p50: 20.1519
+     p66: 22.4520
+     p75: 23.9718
+     p80: 24.6514
+     p90: 26.5725
+     p95: 28.0242
+     p98: 29.1395
+     p99: 29.5591
+ Percentile of request latency: 
+     p50: 20.1519
+     p66: 22.4520
+     p75: 23.9718
+     p80: 24.6514
+     p90: 26.5725
+     p95: 28.0242
+     p98: 29.1395
+     p99: 29.5591
+```
+
+- parallel 128
+```
+Benchmarking summary: 
+ Time taken for tests: 365.024 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 128
+ Total requests: 924
+ Succeed requests: 852
+ Failed requests: 72
+ Average QPS: 2.334
+ Average latency: 19.151
+ Throughput(average output tokens per second): 700.324
+ Average time to first token: 19.151
+ Average input tokens per request: 40.188
+ Average output tokens per request: 300.041
+ Average time per output token: 0.00143
+ Average package per request: 1.000
+ Average package latency: 19.151
+ Percentile of time to first token: 
+     p50: 20.0230
+     p66: 22.2805
+     p75: 23.6442
+     p80: 24.5745
+     p90: 26.8284
+     p95: 28.1978
+     p98: 29.3051
+     p99: 29.6282
+ Percentile of request latency: 
+     p50: 20.0230
+     p66: 22.2805
+     p75: 23.6442
+     p80: 24.5745
+     p90: 26.8284
+     p95: 28.1978
+     p98: 29.3051
+     p99: 29.6282
+```
+
+- parallel 150
+```
+Benchmarking summary: 
+ Time taken for tests: 418.874 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 150
+ Total requests: 889
+ Succeed requests: 857
+ Failed requests: 32
+ Average QPS: 2.046
+ Average latency: 17.479
+ Throughput(average output tokens per second): 637.260
+ Average time to first token: 17.479
+ Average input tokens per request: 40.272
+ Average output tokens per request: 311.473
+ Average time per output token: 0.00157
+ Average package per request: 1.000
+ Average package latency: 17.479
+ Percentile of time to first token: 
+     p50: 17.9699
+     p66: 20.0651
+     p75: 21.5481
+     p80: 22.2761
+     p90: 24.7138
+     p95: 27.1316
+     p98: 28.8103
+     p99: 29.3229
+ Percentile of request latency: 
+     p50: 17.9699
+     p66: 20.0651
+     p75: 21.5481
+     p80: 22.2761
+     p90: 24.7138
+     p95: 27.1316
+     p98: 28.8103
+     p99: 29.3229
+```
+
+- parallel 200
+```
+Benchmarking summary: 
+ Time taken for tests: 459.912 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 200
+ Total requests: 830
+ Succeed requests: 805
+ Failed requests: 25
+ Average QPS: 1.750
+ Average latency: 15.949
+ Throughput(average output tokens per second): 550.200
+ Average time to first token: 15.949
+ Average input tokens per request: 40.337
+ Average output tokens per request: 314.340
+ Average time per output token: 0.00182
+ Average package per request: 1.000
+ Average package latency: 15.949
+ Percentile of time to first token: 
+     p50: 16.2526
+     p66: 18.0521
+     p75: 19.4394
+     p80: 20.1756
+     p90: 23.0809
+     p95: 25.5287
+     p98: 28.5592
+     p99: 29.4651
+ Percentile of request latency: 
+     p50: 16.2526
+     p66: 18.0521
+     p75: 19.4394
+     p80: 20.1756
+     p90: 23.0809
+     p95: 25.5287
+     p98: 28.5592
+     p99: 29.4651
+```
+
+- parallel 300
+```
+Benchmarking summary: 
+ Time taken for tests: 401.385 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 300
+ Total requests: 734
+ Succeed requests: 668
+ Failed requests: 66
+ Average QPS: 1.664
+ Average latency: 16.718
+ Throughput(average output tokens per second): 510.211
+ Average time to first token: 16.718
+ Average input tokens per request: 40.383
+ Average output tokens per request: 306.573
+ Average time per output token: 0.00196
+ Average package per request: 1.000
+ Average package latency: 16.718
+ Percentile of time to first token: 
+     p50: 17.0123
+     p66: 19.2765
+     p75: 20.8575
+     p80: 21.9712
+     p90: 24.4670
+     p95: 26.6873
+     p98: 28.2457
+     p99: 29.1315
+ Percentile of request latency: 
+     p50: 17.0123
+     p66: 19.2765
+     p75: 20.8575
+     p80: 21.9712
+     p90: 24.4670
+     p95: 26.6873
+     p98: 28.2457
+     p99: 29.1315
+```
+
+- parallel 400
+```
+Benchmarking summary: 
+ Time taken for tests: 458.450 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 400
+ Total requests: 622
+ Succeed requests: 575
+ Failed requests: 47
+ Average QPS: 1.254
+ Average latency: 14.750
+ Throughput(average output tokens per second): 392.697
+ Average time to first token: 14.750
+ Average input tokens per request: 40.310
+ Average output tokens per request: 313.099
+ Average time per output token: 0.00255
+ Average package per request: 1.000
+ Average package latency: 14.750
+ Percentile of time to first token: 
+     p50: 14.8173
+     p66: 16.7375
+     p75: 18.0656
+     p80: 18.7752
+     p90: 21.4278
+     p95: 24.3040
+     p98: 28.1092
+     p99: 29.1603
+ Percentile of request latency: 
+     p50: 14.8173
+     p66: 16.7375
+     p75: 18.0656
+     p80: 18.7752
+     p90: 21.4278
+     p95: 24.3040
+     p98: 28.1092
+     p99: 29.1603
+```
+
+- parallel 500
+```
+Benchmarking summary: 
+ Time taken for tests: 375.796 seconds
+ Expected number of requests: 1000
+ Number of concurrency: 500
+ Total requests: 526
+ Succeed requests: 437
+ Failed requests: 89
+ Average QPS: 1.163
+ Average latency: 15.771
+ Throughput(average output tokens per second): 362.167
+ Average time to first token: 15.771
+ Average input tokens per request: 40.268
+ Average output tokens per request: 311.444
+ Average time per output token: 0.00276
+ Average package per request: 1.000
+ Average package latency: 15.771
+ Percentile of time to first token: 
+     p50: 15.8847
+     p66: 17.4772
+     p75: 18.8302
+     p80: 20.0079
+     p90: 23.7326
+     p95: 26.3385
+     p98: 28.6426
+     p99: 29.0919
+ Percentile of request latency: 
+     p50: 15.8847
+     p66: 17.4772
+     p75: 18.8302
+     p80: 20.0079
+     p90: 23.7326
+     p95: 26.3385
+     p98: 28.6426
+     p99: 29.0919
+```
+
+
 ## 参考资料
 - [EvalScope - GitHub](https://github.com/modelscope/evalscope)
 - [EvalScope](https://github.com/modelscope/evalscope/blob/main/README_zh.md)
