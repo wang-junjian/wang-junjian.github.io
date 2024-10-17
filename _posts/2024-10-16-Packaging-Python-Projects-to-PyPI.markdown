@@ -248,7 +248,7 @@ twine upload dist/*
 
 ## 安装发布的包
 ```shell
-pip install evalscope-perf
+pip install evalscope-perf -i https://pypi.org/simple
 ```
 
 
