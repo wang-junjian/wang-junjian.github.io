@@ -45,6 +45,21 @@ wget https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese/resolve/master/ope
     -O datasets/open_qa.jsonl
 ```
 
+压测命令
+```shell
+evalscope perf \
+    --api openai \
+    --url 'http://127.0.0.1:1025/v1/chat/completions' \
+    --model 'qwen' \
+    --dataset openqa \
+    --dataset-path './datasets/open_qa.jsonl' \
+    --max-prompt-length 8000 \
+    --stop '<|im_end|>' \
+    --read-timeout=120 \
+    --parallel 1 \
+    -n 1
+```
+
 ### [代码问答 Codefuse-Evol-Instruct-Clean](https://modelscope.cn/datasets/Banksy235/Codefuse-Evol-Instruct-Clean)
 ```shell
 wget https://modelscope.cn/datasets/Banksy235/Codefuse-Evol-Instruct-Clean/resolve/master/data.json \
@@ -52,6 +67,21 @@ wget https://modelscope.cn/datasets/Banksy235/Codefuse-Evol-Instruct-Clean/resol
 
 # 修改数据集格式，将 "input" 改为 "question"，以适应 EvalScope 的数据集格式 openqa
 sed -i 's/"input"/"question"/g' datasets/Codefuse-Evol-Instruct-Clean-data.jsonl
+```
+
+压测命令
+```shell
+evalscope perf \
+    --api openai \
+    --url 'http://127.0.0.1:1025/v1/chat/completions' \
+    --model 'qwen' \
+    --dataset openqa \
+    --dataset-path './datasets/Codefuse-Evol-Instruct-Clean-data.jsonl' \
+    --max-prompt-length 4000 \
+    --stop '<|im_end|>' \
+    --read-timeout=120 \
+    --parallel 1 \
+    -n 1
 ```
 
 
