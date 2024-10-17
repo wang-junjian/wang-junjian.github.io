@@ -3,10 +3,10 @@ layout: post
 title:  "打包 Python 工程到 PyPI"
 date:   2024-10-16 10:00:00 +0800
 categories: Python PyPI
-tags: [Python, PyPI, Packaging]
+tags: [Python, PyPI, Packaging, evalscope-perf]
 ---
 
-## 创建 Python 工程
+## 创建 Python 工程 [evalscope-perf](https://github.com/wang-junjian/evalscope-perf)
 
 ### 工程的目录结构
 ```shell
