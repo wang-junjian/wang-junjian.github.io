@@ -6,7 +6,7 @@ categories: Atlas800 Benchmark
 tags: [EvalScope, Atlas800, NPU, MindIE, vLLM, Benchmark, LLM]
 ---
 
-## 大模型推理性能压测
+## 大模型推理性能压测工具
 ### 安装 [EvalScope](https://github.com/modelscope/evalscope/blob/main/README_zh.md)
 ```shell
 git clone https://github.com/modelscope/evalscope
@@ -37,11 +37,21 @@ evalscope perf \
 - `-n`: 请求数
 
 
-## 准备[数据集 HC3-Chinese](https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese)
-下载 `open_qa.jsonl` 数据集到 `datasets` 目录下。
+## 数据集
+### [中文聊天 HC3-Chinese](https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese)
 ```shell
-mkdir datasets && cd datasets
-wget https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese/resolve/master/open_qa.jsonl
+mkdir datasets
+wget https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese/resolve/master/open_qa.jsonl \
+    -O datasets/open_qa.jsonl
+```
+
+### [代码问答 Codefuse-Evol-Instruct-Clean](https://modelscope.cn/datasets/Banksy235/Codefuse-Evol-Instruct-Clean)
+```shell
+wget https://modelscope.cn/datasets/Banksy235/Codefuse-Evol-Instruct-Clean/resolve/master/data.json \
+    -O datasets/Codefuse-Evol-Instruct-Clean-data.jsonl
+
+# 修改数据集格式，将 "input" 改为 "question"，以适应 EvalScope 的数据集格式 openqa
+sed -i 's/"input"/"question"/g' datasets/Codefuse-Evol-Instruct-Clean-data.jsonl
 ```
 
 
