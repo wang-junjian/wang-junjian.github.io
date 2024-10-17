@@ -254,3 +254,5 @@ pip install evalscope-perf
 
 ## 参考资料
 - [Packaging Python Projects](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
+- [huggingface_hub/setup.py](https://github.com/huggingface/huggingface_hub/blob/main/setup.py)
+- [Typer - Multiple CLI Options](https://typer.tiangolo.com/tutorial/multiple-values/multiple-options/)
