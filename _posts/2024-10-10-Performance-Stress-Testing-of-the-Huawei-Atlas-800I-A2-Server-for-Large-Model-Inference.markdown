@@ -15,7 +15,7 @@ cd evalscope
 pip install -e .
 ```
 
-### 压测命令
+### 压测命令的使用
 ```shell
 evalscope perf \
     --api openai \
@@ -31,6 +31,10 @@ evalscope perf \
 ```
 
 ❌ **--stream 不要加，经常出问题。**
+
+- `--read-timeout`: 网络读取超时
+- `--parallel`: 并发数
+- `-n`: 请求数
 
 
 ## 准备[数据集 HC3-Chinese](https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese)
@@ -1228,6 +1232,34 @@ Benchmarking summary:
      p99: 97.6189
 ```
 
+### DeepSeek-Coder-6.7B-Instruct
+
+```shell
+evalscope-perf http://127.0.0.1:1025/v1/chat/completions qwen \
+    ./datasets/Codefuse-Evol-Instruct-Clean-data.jsonl \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 256 \
+    --parallels 300 \
+    --parallels 400 \
+    --parallels 500 \
+    --parallels 600 \
+    --parallels 700 \
+    --parallels 800 \
+    --parallels 900 \
+    --parallels 1000 \
+    --n 2000
+```
+
+![](/images/2024/evalscope/mindie-910b4-deepseek-coder-6.7b-performance_metrics.png)
+
+- 平均每个请求的输入 token 数: 118
+- 平均每个请求的输出 token 数: 200
+
 ### 绘图代码
 ```python
 import matplotlib.pyplot as plt
@@ -1810,3 +1842,23 @@ Benchmarking summary:
      p98: 108.4727
      p99: 112.9350
 ```
+
+
+## 实验结果（XInference - MindIE）
+- ❌ 部署时间长了，请求无响应。
+- ❌ 部署多副本，压测一次后，服务挂掉。
+
+
+## 参考资料
+- [EvalScope - GitHub](https://github.com/modelscope/evalscope)
+- [EvalScope](https://github.com/modelscope/evalscope/blob/main/README_zh.md)
+- [EvalScope/模型推理性能压测](https://evalscope.readthedocs.io/zh-cn/latest/user_guides/stress_test.html)
+- [HC3-Chinese](https://modelscope.cn/datasets/AI-ModelScope/HC3-Chinese)
+- [Codefuse-Evol-Instruct-Clean](https://modelscope.cn/datasets/Banksy235/Codefuse-Evol-Instruct-Clean)
+- [MindIE](https://www.hiascend.com/software/mindie)
+- [MindIE支持模型列表](https://www.hiascend.com/document/detail/zh/mindie/10RC2/whatismindie/mindie_what_0002.html)
+- [LLM Datasets](https://github.com/mlabonne/llm-datasets)
+- [evalplus](https://github.com/evalplus/evalplus)
+- [EvalPlus Leaderboard](https://evalplus.github.io/leaderboard.html)
+- [RepoQA Dataset Curation](https://github.com/evalplus/repoqa/blob/main/docs/curate_dataset.md)
+- [Evol-Instruct-Code-80k-v1](https://huggingface.co/datasets/nickrosh/Evol-Instruct-Code-80k-v1)
