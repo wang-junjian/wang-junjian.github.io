@@ -6,6 +6,16 @@ categories: Atlas800 MindIE
 tags: [Atlas800, NPU, 910B4, MindIE, LLM]
 ---
 
+## 华为昇腾 NPU 与英伟达 GPU 生态层级对比:
+
+| NPU | GPU |
+| --- | --- |
+| CANN | CUDA |
+| MindSpore | PyTorch |
+| MindFormer | Transformers |
+| MindIE | vLLM |
+
+
 ## 下载大模型
 ```shell
 cd /home/luruan/disk1/models
@@ -290,3 +300,7 @@ curl 'http://localhost:1025/v1/chat/completions' \
 - [GPU 进阶笔记（三）：华为 NPU/GPU 演进（2024）](http://arthurchiao.art/blog/gpu-advanced-notes-3-zh/)
 - [GPU 进阶笔记（四）：NVIDIA GH200 芯片、服务器及集群组网（2024）](http://arthurchiao.art/blog/gpu-advanced-notes-4-zh/)
 - [Ascend NPU 架构 & CANN 平台入门学习](https://blog.csdn.net/weixin_44162047/article/details/141755989)
+- [大模型国产化适配1-华为昇腾AI全栈软硬件平台总结](https://zhuanlan.zhihu.com/p/637918406)
+- [大模型国产化适配8-基于昇腾MindIE推理工具部署Qwen-72B实战（推理引擎、推理服务化）](https://juejin.cn/post/7365879319598727180)
+- [华为 MindIE 初体验](https://blog.csdn.net/sinat_37574187/article/details/140892746)
+- [如何在macOS系统安装根证书](https://help.aliyun.com/zh/ssl-certificate/user-guide/install-a-root-certificate-on-macos)
