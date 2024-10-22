@@ -2818,6 +2818,145 @@ Benchmarking summary:
 ```
 
 
+## 实验结果对比
+### XInference ⚔️ vLLM (T4: 4*16G)
+
+![](/images/2024/evalscope/t4_xinference-vs-vllm.png)
+
+代码
+```python
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+# 设置中文字体
+font_path = '/System/Library/Fonts/Hiragino Sans GB.ttc'  # 替换为你的字体文件路径
+font_prop = FontProperties(fname=font_path)
+
+# 数据
+batch_sizes = [8, 16, 32, 64, 100, 128, 150, 200, 300, 400, 500]
+
+vllm_qps = [0.970, 1.588, 2.443, 3.503, 3.593, 3.580, 3.509, 3.076, 2.847, 2.820, 3.060]
+xinf_qps = [0.783, 1.288, 1.958, 2.472, 2.353, 2.334, 2.046, 1.750, 1.664, 1.254, 1.163]
+
+vllm_latency = [8.213, 9.944, 12.846, 16.913, 19.182, 19.831, 17.806, 16.743, 16.285, 16.285, 17.649]
+xinf_latency = [10.128, 12.307, 15.749, 19.225, 19.235, 19.151, 17.479, 15.949, 16.718, 14.750, 15.771]
+
+vllm_throughput = [298.860, 496.458, 753.176, 1073.697, 1039.610, 1005.881, 1032.794, 925.476, 839.437, 816.049, 875.565]
+xinf_throughput = [254.695, 424.701, 631.260, 753.852, 700.681, 700.324, 637.260, 550.200, 510.211, 392.697, 362.167]
+
+vllm_failures = [0, 0, 0, 15, 73, 115, 26, 11, 19, 23, 26]
+xinf_failures = [1, 0, 12, 71, 101, 72, 32, 25, 66, 47, 89]
+
+# 创建子图
+fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+
+# QPS
+axs[0, 0].plot(batch_sizes, vllm_qps, label='vLLM', marker='o')
+axs[0, 0].plot(batch_sizes, xinf_qps, label='XInferencev(LLM)', marker='o')
+axs[0, 0].set_title('QPS', fontproperties=font_prop)
+axs[0, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 0].set_ylabel('QPS', fontproperties=font_prop)
+axs[0, 0].legend()
+
+# 延迟
+axs[0, 1].plot(batch_sizes, vllm_latency, label='vLLM', marker='o')
+axs[0, 1].plot(batch_sizes, xinf_latency, label='XInference(vLLM)', marker='o')
+axs[0, 1].set_title('延迟', fontproperties=font_prop)
+axs[0, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 1].set_ylabel('延迟 (秒)', fontproperties=font_prop)
+axs[0, 1].legend()
+
+# 吞吐量
+axs[1, 0].plot(batch_sizes, vllm_throughput, label='vLLM', marker='o')
+axs[1, 0].plot(batch_sizes, xinf_throughput, label='XInference(vLLM)', marker='o')
+axs[1, 0].set_title('吞吐量', fontproperties=font_prop)
+axs[1, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 0].set_ylabel('吞吐量 (每秒Tokens)', fontproperties=font_prop)
+axs[1, 0].legend()
+
+# 失败率
+axs[1, 1].plot(batch_sizes, vllm_failures, label='vLLM', marker='o')
+axs[1, 1].plot(batch_sizes, xinf_failures, label='XInference(vLLM)', marker='o')
+axs[1, 1].set_title('失败率', fontproperties=font_prop)
+axs[1, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 1].set_ylabel('失败数', fontproperties=font_prop)
+axs[1, 1].legend()
+
+# 调整布局
+plt.tight_layout()
+plt.show()
+```
+
+### MindIE (910B4: 8*32G) ⚔️ vLLM (T4: 4*16G)
+
+![](/images/2024/evalscope/mindie_910b4-vs-vllm_t4.png)
+
+代码
+```python
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+# 设置中文字体
+font_path = '/System/Library/Fonts/Hiragino Sans GB.ttc'  # 替换为你的字体文件路径
+font_prop = FontProperties(fname=font_path)
+
+# 数据
+batch_sizes_mindie = [8, 16, 32, 64, 128, 150, 200, 256, 300, 400, 512, 720]
+batch_sizes_vllm = [8, 16, 32, 64, 100, 128, 150, 200, 300, 400, 500]
+
+mindie_qps = [2.474, 4.649, 8.273, 12.065, 18.924, 20.457, 22.294, 23.392, 22.868, 23.328, 24.007, 24.643]
+vllm_qps = [0.970, 1.588, 2.443, 3.503, 3.593, 3.580, 3.509, 3.076, 2.847, 2.820, 3.060]
+
+mindie_latency = [3.213, 3.391, 3.724, 4.974, 6.108, 6.517, 7.805, 9.208, 10.904, 13.628, 16.031, 18.790]
+vllm_latency = [8.213, 9.944, 12.846, 16.913, 19.182, 19.831, 17.806, 16.743, 16.285, 16.285, 17.649]
+
+mindie_throughput = [594.929, 1119.102, 1989.159, 2903.023, 4559.489, 4920.856, 5354.701, 5636.846, 5506.567, 5618.110, 5772.230, 5940.622]
+vllm_throughput = [298.860, 496.458, 753.176, 1073.697, 1039.610, 1005.881, 1032.794, 925.476, 839.437, 816.049, 875.565]
+
+mindie_failures = [0] * len(batch_sizes_mindie)  # 假设 MindIE(910B4 8*32) 没有失败数据
+vllm_failures = [0, 0, 0, 15, 73, 115, 26, 11, 19, 23, 26]
+
+# 创建子图
+fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+
+# QPS
+axs[0, 0].plot(batch_sizes_mindie, mindie_qps, label='MindIE(910B4 8*32)', marker='o')
+axs[0, 0].plot(batch_sizes_vllm, vllm_qps, label='vLLM(T4 4*16)', marker='o')
+axs[0, 0].set_title('QPS', fontproperties=font_prop)
+axs[0, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 0].set_ylabel('QPS', fontproperties=font_prop)
+axs[0, 0].legend()
+
+# 延迟
+axs[0, 1].plot(batch_sizes_mindie, mindie_latency, label='MindIE(910B4 8*32)', marker='o')
+axs[0, 1].plot(batch_sizes_vllm, vllm_latency, label='vLLM(T4 4*16)', marker='o')
+axs[0, 1].set_title('延迟', fontproperties=font_prop)
+axs[0, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 1].set_ylabel('延迟 (秒)', fontproperties=font_prop)
+axs[0, 1].legend()
+
+# 吞吐量
+axs[1, 0].plot(batch_sizes_mindie, mindie_throughput, label='MindIE(910B4 8*32)', marker='o')
+axs[1, 0].plot(batch_sizes_vllm, vllm_throughput, label='vLLM(T4 4*16)', marker='o')
+axs[1, 0].set_title('吞吐量', fontproperties=font_prop)
+axs[1, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 0].set_ylabel('吞吐量 (每秒Tokens)', fontproperties=font_prop)
+axs[1, 0].legend()
+
+# 失败率
+axs[1, 1].plot(batch_sizes_mindie, mindie_failures, label='MindIE(910B4 8*32)', marker='o')
+axs[1, 1].plot(batch_sizes_vllm, vllm_failures, label='vLLM(T4 4*16)', marker='o')
+axs[1, 1].set_title('失败率', fontproperties=font_prop)
+axs[1, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 1].set_ylabel('失败数', fontproperties=font_prop)
+axs[1, 1].legend()
+
+# 调整布局
+plt.tight_layout()
+plt.show()
+```
+
+
 ## 参考资料
 - [EvalScope - GitHub](https://github.com/modelscope/evalscope)
 - [EvalScope](https://github.com/modelscope/evalscope/blob/main/README_zh.md)
