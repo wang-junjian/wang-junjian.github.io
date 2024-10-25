@@ -84,6 +84,25 @@ evalscope perf \
     -n 1
 ```
 
+### 构造长输入和输出的数据集
+
+编辑文件：datasets/long.jsonl
+```json
+{"question":"Learning to Reason with LLMs\nWe are introducing OpenAI o1, a new large language model trained with reinforcement learning to perform complex reasoning. o1 thinks before it answers—it can produce a long internal chain of thought before responding to the user.\n\nContributions\nOpenAI o1 ranks in the 89th percentile on competitive programming questions (Codeforces), places among the top 500 students in the US in a qualifier for the USA Math Olympiad (AIME), and exceeds human PhD-level accuracy on a benchmark of physics, biology, and chemistry problems (GPQA). While the work needed to make this new model as easy to use as current models is still ongoing, we are releasing an early version of this model, OpenAI o1-preview, for immediate use in ChatGPT and to trusted API users⁠(opens in a new window).\n\nOur large-scale reinforcement learning algorithm teaches the model how to think productively using its chain of thought in a highly data-efficient training process. We have found that the performance of o1 consistently improves with more reinforcement learning (train-time compute) and with more time spent thinking (test-time compute). The constraints on scaling this approach differ substantially from those of LLM pretraining, and we are continuing to investigate them.\n\nThe image shows two scatter plots comparing o1 AIME accuracy during training and at test time. Both charts have pass@1 accuracy on the y-axis and compute (log scale) on the x-axis. The dots indicate increasing accuracy with more compute time.\no1 performance smoothly improves with both train-time and test-time compute\n\nEvals\nTo highlight the reasoning improvement over GPT-4o, we tested our models on a diverse set of human exams and ML benchmarks. We show that o1 significantly outperforms GPT-4o on the vast majority of these reasoning-heavy tasks. Unless otherwise specified, we evaluated o1 on the maximal test-time compute setting.\n\nCompetition evals for Math (AIME 2024), Code (CodeForces), and PhD-Level Science Questions (GPQA Diamond)\no1 greatly improves over GPT-4o on challenging reasoning benchmarks. Solid bars show pass@1 accuracy and the shaded region shows the performance of majority vote (consensus) with 64 samples.\nBreakdown of the accuracy and raw score of gpt-4o vs. o1 on various competition evals\no1 improves over GPT-4o on a wide range of benchmarks, including 54/57 MMLU subcategories. Seven are shown for illustration.\nIn many reasoning-heavy benchmarks, o1 rivals the performance of human experts. Recent frontier models1 do so well on MATH2 and GSM8K that these benchmarks are no longer effective at differentiating models.\nA score of 13.9 places it among the top 500 students nationally and above the cutoff for the USA Mathematical Olympiad.\n\nWe also evaluated o1 on GPQA diamond, a difficult intelligence benchmark which tests for expertise in chemistry, physics and biology. In order to compare models to humans, we recruited experts with PhDs to answer GPQA-diamond questions. We found that o1 surpassed the performance of those human experts, becoming the first model to do so on this benchmark. These results do not imply that o1 is more capable than a PhD in all respects — only that the model is more proficient in solving some problems that a PhD would be expected to solve. On several other ML benchmarks, o1 improved over the state-of-the-art. With its vision perception capabilities enabled, o1 scored 78.2 on MMMU, making it the first model to be competitive with human experts. It also outperformed GPT-4o on 54 out of 57 MMLU subcategories.\n\nChain of Thought\nSimilar to how a human may think for a long time before responding to a difficult question, o1 uses a chain of thought when attempting to solve a problem. Through reinforcement learning, o1 learns to hone its chain of thought and refine the strategies it uses. It learns to recognize and correct its mistakes. It learns to break down tricky steps into simpler ones. It learns to try a different approach when the current one isn’t working. This process dramatically improves the model’s ability to reason. To illustrate this leap forward, we showcase the chain of thought from o1-preview on several difficult problems below.\n\nCoding\nWe trained a model that scored 213 points and ranked in the 49th percentile in the 2024 International Olympiad in Informatics (IOI), by initializing from o1 and training to further improve programming skills. This model competed in the 2024 IOI under the same conditions as the human contestants. It had ten hours to solve six challenging algorithmic problems and was allowed 50 submissions per problem.\n\nFor each problem, our system sampled many candidate submissions and submitted 50 of them based on a test-time selection strategy. Submissions were selected based on performance on the IOI public test cases, model-generated test cases, and a learned scoring function. If we had instead submitted at random, we would have only scored 156 points on average, suggesting that this strategy was worth nearly 60 points under competition constraints.\n\nWith a relaxed submission constraint, we found that model performance improved significantly. When allowed 10,000 submissions per problem, the model achieved a score of 362.14 – above the gold medal threshold – even without any test-time selection strategy.  \n\nFinally, we simulated competitive programming contests hosted by Codeforces to demonstrate this model’s coding skill. Our evaluations closely matched competition rules and allowed for 10 submissions. GPT-4o achieved an Elo rating3 of 808, which is in the 11th percentile of human competitors.\nHuman preference evaluation\nIn addition to exams and academic benchmarks, we also evaluated human preference of o1-preview vs GPT-4o on challenging, open-ended prompts in a broad spectrum of domains. In this evaluation, human trainers were shown anonymized responses to a prompt from o1-preview and GPT-4o, and voted for which response they preferred. o1-preview is preferred to gpt-4o by a large margin in reasoning-heavy categories like data analysis, coding, and math. However, o1-preview is not preferred on some natural language tasks, suggesting that it is not well-suited for all use cases.\n\nThe image shows a horizontal bar chart comparing five models scores with error bars representing confidence intervals. The x-axis ranges from 0 to 100, with a dashed line as a reference point for performance.\nSafety\nChain of thought reasoning provides new opportunities for alignment and safety. We found that integrating our policies for model behavior into the chain of thought of a reasoning model is an effective way to robustly teach human values and principles.\nWhat does all of this mean for founders in the AI market? What does this mean for incumbent software companies? And where do we, as investors, see the most promising layer for returns in the Generative AI stack?\nIn our latest essay on the state of the Generative AI market, we’ll explore how the consolidation of the foundational LLM layer has set the stage for the race to scale these higher-order reasoning and agentic capabilities, and discuss a new generation of “killer apps” with novel cognitive architectures and user interfaces.\nThis is where System 2 thinking comes in, and it’s the focus of the latest wave of AI research. When a model “stops to think,” it isn’t just generating learned patterns or spitting out predictions based on past data. It’s generating a range of possibilities, considering potential outcomes and making a decision based on reasoning. \n\nTranslate to France."}
+```
+
+**输入和输出 Tokens 大约在 3500**
+
+压测命令
+```shell
+evalscope-perf http://127.0.0.1:1025/v1/chat/completions qwen \
+     ./datasets/long.jsonl \
+     --max-prompt-length 8000 \
+     --read-timeout=120 \
+     --parallels 1 \
+     --n 1
+```
+
 
 ## 实验结果（MindIE）
 
@@ -558,6 +577,175 @@ Benchmarking summary:
      p98: 30.2479
      p99: 31.1723
 ```
+
+### Qwen1.5-7B-Chat (long.jsonl)
+
+![](/images/2024/evalscope/qwen1.5-7b-chat_long.png)
+
+| 指标 | 32 | 64 | 80 | 100 |
+| --- | --- | --- | --- | --- |
+| 用时 | 227.466 | 176.405 | 177.402 | 176.430 |
+| QPS | 0.879 | 1.134 | 1.127 | 1.134 |
+| 延迟 | 34.012 | 51.059 | 62.032 | 73.359 |
+| 吞吐量 | 1534.689 | 1889.768 | 1864.759 | 1869.820 |
+| p50 | 34.7112 | 48.4820 | 59.2757 | 80.3454 |
+| p90 | 36.6736 | 68.2014 | 84.9306 | 93.7045 |
+
+- 平均每个请求的输入 token 数: 1614
+- 平均每个请求的输出 token 数: 1654
+
+- parallel 32
+```
+Benchmarking summary: 
+ Time taken for tests: 227.466 seconds
+ Expected number of requests: 200
+ Number of concurrency: 32
+ Total requests: 200
+ Succeed requests: 200
+ Failed requests: 0
+ Average QPS: 0.879
+ Average latency: 34.012
+ Throughput(average output tokens per second): 1534.689
+ Average time to first token: 34.012
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 1745.450
+ Average time per output token: 0.00065
+ Average package per request: 1.000
+ Average package latency: 34.012
+ Percentile of time to first token: 
+     p50: 34.7112
+     p66: 36.2749
+     p75: 36.4008
+     p80: 36.4714
+     p90: 36.6736
+     p95: 36.7247
+     p98: 36.7508
+     p99: 36.7635
+ Percentile of request latency: 
+     p50: 34.7112
+     p66: 36.2749
+     p75: 36.4008
+     p80: 36.4714
+     p90: 36.6736
+     p95: 36.7247
+     p98: 36.7508
+     p99: 36.7635
+```
+
+- parallel 64
+```
+Benchmarking summary: 
+ Time taken for tests: 176.405 seconds
+ Expected number of requests: 200
+ Number of concurrency: 64
+ Total requests: 200
+ Succeed requests: 200
+ Failed requests: 0
+ Average QPS: 1.134
+ Average latency: 51.059
+ Throughput(average output tokens per second): 1889.768
+ Average time to first token: 51.059
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 1666.820
+ Average time per output token: 0.00053
+ Average package per request: 1.000
+ Average package latency: 51.059
+ Percentile of time to first token: 
+     p50: 48.4820
+     p66: 52.8716
+     p75: 58.2624
+     p80: 60.0386
+     p90: 68.2014
+     p95: 74.7256
+     p98: 78.7428
+     p99: 79.3227
+ Percentile of request latency: 
+     p50: 48.4820
+     p66: 52.8716
+     p75: 58.2624
+     p80: 60.0386
+     p90: 68.2014
+     p95: 74.7256
+     p98: 78.7428
+     p99: 79.3227
+```
+
+- parallel 80
+```
+Benchmarking summary: 
+ Time taken for tests: 177.402 seconds
+ Expected number of requests: 200
+ Number of concurrency: 80
+ Total requests: 200
+ Succeed requests: 200
+ Failed requests: 0
+ Average QPS: 1.127
+ Average latency: 62.032
+ Throughput(average output tokens per second): 1864.759
+ Average time to first token: 62.032
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 1654.060
+ Average time per output token: 0.00054
+ Average package per request: 1.000
+ Average package latency: 62.032
+ Percentile of time to first token: 
+     p50: 59.2757
+     p66: 71.6039
+     p75: 74.4594
+     p80: 76.9160
+     p90: 84.9306
+     p95: 91.9959
+     p98: 95.0497
+     p99: 98.3784
+ Percentile of request latency: 
+     p50: 59.2757
+     p66: 71.6039
+     p75: 74.4594
+     p80: 76.9160
+     p90: 84.9306
+     p95: 91.9959
+     p98: 95.0497
+     p99: 98.3784
+```
+
+- parallel 100
+```
+Benchmarking summary: 
+ Time taken for tests: 176.430 seconds
+ Expected number of requests: 200
+ Number of concurrency: 100
+ Total requests: 200
+ Succeed requests: 200
+ Failed requests: 0
+ Average QPS: 1.134
+ Average latency: 73.359
+ Throughput(average output tokens per second): 1869.820
+ Average time to first token: 73.359
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 1649.460
+ Average time per output token: 0.00053
+ Average package per request: 1.000
+ Average package latency: 73.359
+ Percentile of time to first token: 
+     p50: 80.3454
+     p66: 85.7741
+     p75: 88.7250
+     p80: 90.7941
+     p90: 93.7045
+     p95: 97.3420
+     p98: 99.5837
+     p99: 101.2294
+ Percentile of request latency: 
+     p50: 80.3454
+     p66: 85.7741
+     p75: 88.7250
+     p80: 90.7941
+     p90: 93.7045
+     p95: 97.3420
+     p98: 99.5837
+     p99: 101.2294
+```
+
 
 ### Qwen1.5-14B-Chat
 
@@ -2817,11 +3005,399 @@ Benchmarking summary:
      p99: 29.5974
 ```
 
+### Qwen2-7B-Instruct (long.jsonl)
+
+![](/images/2024/evalscope/vllm-t4-qwen2-7b-long-performance_metrics.png)
+
+| 指标 | 4 | 8 | 12 | 16 | 20 | 25 | 30 | 35 | 40 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 用时 | 1501.129 | 831.393 | 661.167 | 553.051 | 492.972 | 482.926 | 503.931 | 708.094 | 1708.086 |
+| QPS | 0.066 | 0.120 | 0.151 | 0.181 | 0.203 | 0.197 | 0.169 | 0.102 | 0.036 |
+| 延迟 | 58.530 | 63.844 | 75.483 | 81.761 | 93.514 | 95.232 | 82.990 | 67.363 | 55.090 |
+| 吞吐量 | 150.200 | 268.802 | 340.991 | 411.723 | 450.299 | 437.290 | 369.642 | 224.586 | 79.384 |
+| p50 | 61.1869 | 67.7709 | 79.9282 | 85.2388 | 101.0449 | 100.2105 | 84.4174 | 67.4104 | 57.0599 |
+| p90 | 63.1877 | 70.4871 | 84.9531 | 89.7831 | 106.6341 | 113.0055 | 106.2575 | 81.7474 | 59.3524 |
+| 失败 | 1 | 0 | 0 | 0 | 0 | 5 | 15 | 28 | 38 |
+
+- 平均每个请求的输入 token 数: 1600
+- 平均每个请求的输出 token 数: 2200
+
+部署
+```shell
+python -m vllm.entrypoints.openai.api_server \
+    --host 0.0.0.0 --port 8008 \
+    --model /data/models/llm/qwen/Qwen2-7B-Instruct/ \
+    --served-model-name qwen2-7b \
+    --tensor-parallel-size 4 \
+    --dtype=float16 \
+    --max-model-len 16000
+```
+
+压测
+```shell
+evalscope-perf http://172.16.33.66:8008/v1/chat/completions qwen2-7b \
+    ./datasets/open_qa.jsonl \
+    --parallels 4 \
+    --parallels 8 \
+    --parallels 12 \
+    --parallels 16 \
+    --parallels 20 \
+    --parallels 25 \
+    --parallels 30 \
+    --parallels 35 \
+    --parallels 40 \
+    --n 100
+```
+
+- parallel 4
+```
+Benchmarking summary: 
+ Time taken for tests: 1501.129 seconds
+ Expected number of requests: 100
+ Number of concurrency: 4
+ Total requests: 100
+ Succeed requests: 99
+ Failed requests: 1
+ Average QPS: 0.066
+ Average latency: 58.530
+ Throughput(average output tokens per second): 150.200
+ Average time to first token: 58.530
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2277.475
+ Average time per output token: 0.00666
+ Average package per request: 1.000
+ Average package latency: 58.530
+ Percentile of time to first token: 
+     p50: 61.1869
+     p66: 61.9394
+     p75: 62.4250
+     p80: 62.7114
+     p90: 63.1877
+     p95: 63.8551
+     p98: 64.0589
+     p99: 64.3522
+ Percentile of request latency: 
+     p50: 61.1869
+     p66: 61.9394
+     p75: 62.4250
+     p80: 62.7114
+     p90: 63.1877
+     p95: 63.8551
+     p98: 64.0589
+     p99: 64.3522
+```
+
+- parallel 8
+```
+Benchmarking summary: 
+ Time taken for tests: 831.393 seconds
+ Expected number of requests: 100
+ Number of concurrency: 8
+ Total requests: 100
+ Succeed requests: 100
+ Failed requests: 0
+ Average QPS: 0.120
+ Average latency: 63.844
+ Throughput(average output tokens per second): 268.802
+ Average time to first token: 63.844
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2234.800
+ Average time per output token: 0.00372
+ Average package per request: 1.000
+ Average package latency: 63.844
+ Percentile of time to first token: 
+     p50: 67.7709
+     p66: 68.7757
+     p75: 69.2135
+     p80: 69.4998
+     p90: 70.4871
+     p95: 71.4362
+     p98: 74.7053
+     p99: 77.3827
+ Percentile of request latency: 
+     p50: 67.7709
+     p66: 68.7757
+     p75: 69.2135
+     p80: 69.4998
+     p90: 70.4871
+     p95: 71.4362
+     p98: 74.7053
+     p99: 77.3827
+```
+
+- parallel 12
+```
+Benchmarking summary: 
+ Time taken for tests: 661.167 seconds
+ Expected number of requests: 100
+ Number of concurrency: 12
+ Total requests: 100
+ Succeed requests: 100
+ Failed requests: 0
+ Average QPS: 0.151
+ Average latency: 75.483
+ Throughput(average output tokens per second): 340.991
+ Average time to first token: 75.483
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2254.520
+ Average time per output token: 0.00293
+ Average package per request: 1.000
+ Average package latency: 75.483
+ Percentile of time to first token: 
+     p50: 79.9282
+     p66: 81.6170
+     p75: 82.3043
+     p80: 82.8302
+     p90: 84.9531
+     p95: 87.1365
+     p98: 94.9953
+     p99: 96.4239
+ Percentile of request latency: 
+     p50: 79.9282
+     p66: 81.6170
+     p75: 82.3043
+     p80: 82.8302
+     p90: 84.9531
+     p95: 87.1365
+     p98: 94.9953
+     p99: 96.4239
+```
+
+- parallel 16
+```
+Benchmarking summary: 
+ Time taken for tests: 553.051 seconds
+ Expected number of requests: 100
+ Number of concurrency: 16
+ Total requests: 100
+ Succeed requests: 100
+ Failed requests: 0
+ Average QPS: 0.181
+ Average latency: 81.761
+ Throughput(average output tokens per second): 411.723
+ Average time to first token: 81.761
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2277.040
+ Average time per output token: 0.00243
+ Average package per request: 1.000
+ Average package latency: 81.761
+ Percentile of time to first token: 
+     p50: 85.2388
+     p66: 86.6946
+     p75: 87.8569
+     p80: 88.2254
+     p90: 89.7831
+     p95: 91.9183
+     p98: 93.1188
+     p99: 94.1187
+ Percentile of request latency: 
+     p50: 85.2388
+     p66: 86.6946
+     p75: 87.8569
+     p80: 88.2254
+     p90: 89.7831
+     p95: 91.9183
+     p98: 93.1188
+     p99: 94.1187
+```
+
+- parallel 20
+```
+Benchmarking summary: 
+ Time taken for tests: 492.972 seconds
+ Expected number of requests: 100
+ Number of concurrency: 20
+ Total requests: 100
+ Succeed requests: 100
+ Failed requests: 0
+ Average QPS: 0.203
+ Average latency: 93.514
+ Throughput(average output tokens per second): 450.299
+ Average time to first token: 93.514
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2219.850
+ Average time per output token: 0.00222
+ Average package per request: 1.000
+ Average package latency: 93.514
+ Percentile of time to first token: 
+     p50: 101.0449
+     p66: 103.1628
+     p75: 104.5066
+     p80: 105.2498
+     p90: 106.6341
+     p95: 109.0586
+     p98: 112.6580
+     p99: 114.0485
+ Percentile of request latency: 
+     p50: 101.0449
+     p66: 103.1628
+     p75: 104.5066
+     p80: 105.2498
+     p90: 106.6341
+     p95: 109.0586
+     p98: 112.6580
+     p99: 114.0485
+```
+
+- parallel 25
+```
+Benchmarking summary: 
+ Time taken for tests: 482.926 seconds
+ Expected number of requests: 100
+ Number of concurrency: 25
+ Total requests: 95
+ Succeed requests: 95
+ Failed requests: 0
+ Average QPS: 0.197
+ Average latency: 95.232
+ Throughput(average output tokens per second): 437.290
+ Average time to first token: 95.232
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2222.937
+ Average time per output token: 0.00229
+ Average package per request: 1.000
+ Average package latency: 95.232
+ Percentile of time to first token: 
+     p50: 100.2105
+     p66: 103.2044
+     p75: 104.4999
+     p80: 105.5968
+     p90: 113.0055
+     p95: 117.3441
+     p98: 119.4187
+     p99: 119.9363
+ Percentile of request latency: 
+     p50: 100.2105
+     p66: 103.2044
+     p75: 104.4999
+     p80: 105.5968
+     p90: 113.0055
+     p95: 117.3441
+     p98: 119.4187
+     p99: 119.9363
+```
+
+- parallel 30
+```
+Benchmarking summary: 
+ Time taken for tests: 503.931 seconds
+ Expected number of requests: 100
+ Number of concurrency: 30
+ Total requests: 85
+ Succeed requests: 85
+ Failed requests: 0
+ Average QPS: 0.169
+ Average latency: 82.990
+ Throughput(average output tokens per second): 369.642
+ Average time to first token: 82.990
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2191.459
+ Average time per output token: 0.00271
+ Average package per request: 1.000
+ Average package latency: 82.990
+ Percentile of time to first token: 
+     p50: 84.4174
+     p66: 86.3143
+     p75: 88.0736
+     p80: 91.9183
+     p90: 106.2575
+     p95: 109.8099
+     p98: 118.7324
+     p99: 119.7411
+ Percentile of request latency: 
+     p50: 84.4174
+     p66: 86.3143
+     p75: 88.0736
+     p80: 91.9183
+     p90: 106.2575
+     p95: 109.8099
+     p98: 118.7324
+     p99: 119.7411
+```
+
+- parallel 35
+```
+Benchmarking summary: 
+ Time taken for tests: 708.094 seconds
+ Expected number of requests: 100
+ Number of concurrency: 35
+ Total requests: 72
+ Succeed requests: 72
+ Failed requests: 0
+ Average QPS: 0.102
+ Average latency: 67.363
+ Throughput(average output tokens per second): 224.586
+ Average time to first token: 67.363
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2208.722
+ Average time per output token: 0.00445
+ Average package per request: 1.000
+ Average package latency: 67.363
+ Percentile of time to first token: 
+     p50: 67.4104
+     p66: 67.9889
+     p75: 68.3605
+     p80: 68.5264
+     p90: 81.7474
+     p95: 116.1246
+     p98: 118.3541
+     p99: 119.0251
+ Percentile of request latency: 
+     p50: 67.4104
+     p66: 67.9889
+     p75: 68.3605
+     p80: 68.5264
+     p90: 81.7474
+     p95: 116.1246
+     p98: 118.3541
+     p99: 119.0251
+```
+
+- parallel 40
+```
+Benchmarking summary: 
+ Time taken for tests: 1708.086 seconds
+ Expected number of requests: 100
+ Number of concurrency: 40
+ Total requests: 62
+ Succeed requests: 62
+ Failed requests: 0
+ Average QPS: 0.036
+ Average latency: 55.090
+ Throughput(average output tokens per second): 79.384
+ Average time to first token: 55.090
+ Average input tokens per request: 1614.000
+ Average output tokens per request: 2187.000
+ Average time per output token: 0.01260
+ Average package per request: 1.000
+ Average package latency: 55.090
+ Percentile of time to first token: 
+     p50: 57.0599
+     p66: 57.4411
+     p75: 58.2631
+     p80: 58.5435
+     p90: 59.3524
+     p95: 62.2720
+     p98: 96.8205
+     p99: 99.6312
+ Percentile of request latency: 
+     p50: 57.0599
+     p66: 57.4411
+     p75: 58.2631
+     p80: 58.5435
+     p90: 59.3524
+     p95: 62.2720
+     p98: 96.8205
+     p99: 99.6312
+```
+
 
 ## 实验结果对比
 ### XInference ⚔️ vLLM (T4: 4*16G)
 
 ![](/images/2024/evalscope/t4_xinference-vs-vllm.png)
+
+**从结果看，在生产环境中还是要使用 vLLM，推理性能更好且稳定更棒。**
 
 代码
 ```python
