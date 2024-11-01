@@ -12,6 +12,14 @@ export LITELLM_API_KEY=sk-1234
 ```
 
 
+## 服务端口
+
+- Ollama: 11434
+- LiteLLM: 4000
+- XInference: 9997
+- MindIE: 1025
+
+
 ## models
 
 ### Ollama
@@ -123,6 +131,19 @@ curl 'http://localhost:9997/v1/chat/completions' \
     -H "Content-Type: application/json" \
     -d '{
         "model": "gpt-3.5-turbo",
+        "messages": [ 
+            { "role": "system", "content": "你是位人工智能专家。" }, 
+            { "role": "user", "content": "解释人工智能" } 
+        ]
+    }'
+```
+
+### MindIE
+```shell
+curl 'http://localhost:1025/v1/chat/completions' \
+    -H "Content-Type: application/json" \
+    -d '{
+        "model": "qwen",
         "messages": [ 
             { "role": "system", "content": "你是位人工智能专家。" }, 
             { "role": "user", "content": "解释人工智能" } 
