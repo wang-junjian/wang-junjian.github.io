@@ -3,7 +3,7 @@ layout: post
 title:  "华为 Atlas A2 算力切分"
 date:   2024-10-31 10:00:00 +0800
 categories: Atlas800 vNPU
-tags: [Atlas800, NPU, MindIE, LLM]
+tags: [Atlas800, NPU, 910B4, MindIE, LLM]
 ---
 
 ## 算力切分
@@ -347,5 +347,5 @@ sudo docker run --rm -it \
 
 
 ## 参考资料
-- [Atlas A2 中心推理和训练硬件 24.1.RC2 npu-smi 命令参考 06 - 算力切分相关命令](https://support.huawei.com/enterprise/zh/doc/EDOC1100388864/2a7c2b55?idPath=23710424|251366513|254884019|261408772|261457531)
+- [Atlas A2 中心推理和训练硬件 24.1.RC2 npu-smi 命令参考 06 - 算力切分相关命令](https://support.huawei.com/enterprise/zh/doc/EDOC1100388864/2a7c2b55)
 - [任正非最新讲话：现在不能说华为就能活下来](https://www.163.com/tech/article/JFTA907N00098IEO.html)
