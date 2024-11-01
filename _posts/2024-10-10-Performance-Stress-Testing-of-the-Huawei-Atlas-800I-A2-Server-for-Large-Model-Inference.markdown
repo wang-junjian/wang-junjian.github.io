@@ -104,6 +104,149 @@ evalscope-perf http://127.0.0.1:1025/v1/chat/completions qwen \
 ```
 
 
+## 实验结果对比
+### 🏆 vLLM ⚔️ XInference (T4: 4X16G)
+
+![](/images/2024/evalscope/t4_xinference-vs-vllm.png)
+
+**从结果看，在生产环境中还是要使用 vLLM，推理性能更好且稳定更棒。**
+
+代码
+```python
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+# 设置中文字体
+font_path = '/System/Library/Fonts/Hiragino Sans GB.ttc'  # 替换为你的字体文件路径
+font_prop = FontProperties(fname=font_path)
+
+# 数据
+batch_sizes = [8, 16, 32, 64, 100, 128, 150, 200, 300, 400, 500]
+
+vllm_qps = [0.970, 1.588, 2.443, 3.503, 3.593, 3.580, 3.509, 3.076, 2.847, 2.820, 3.060]
+xinf_qps = [0.783, 1.288, 1.958, 2.472, 2.353, 2.334, 2.046, 1.750, 1.664, 1.254, 1.163]
+
+vllm_latency = [8.213, 9.944, 12.846, 16.913, 19.182, 19.831, 17.806, 16.743, 16.285, 16.285, 17.649]
+xinf_latency = [10.128, 12.307, 15.749, 19.225, 19.235, 19.151, 17.479, 15.949, 16.718, 14.750, 15.771]
+
+vllm_throughput = [298.860, 496.458, 753.176, 1073.697, 1039.610, 1005.881, 1032.794, 925.476, 839.437, 816.049, 875.565]
+xinf_throughput = [254.695, 424.701, 631.260, 753.852, 700.681, 700.324, 637.260, 550.200, 510.211, 392.697, 362.167]
+
+vllm_failures = [0, 0, 0, 15, 73, 115, 26, 11, 19, 23, 26]
+xinf_failures = [1, 0, 12, 71, 101, 72, 32, 25, 66, 47, 89]
+
+# 创建子图
+fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+
+# QPS
+axs[0, 0].plot(batch_sizes, vllm_qps, label='vLLM', marker='o')
+axs[0, 0].plot(batch_sizes, xinf_qps, label='XInferencev(LLM)', marker='o')
+axs[0, 0].set_title('QPS', fontproperties=font_prop)
+axs[0, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 0].set_ylabel('QPS', fontproperties=font_prop)
+axs[0, 0].legend()
+
+# 延迟
+axs[0, 1].plot(batch_sizes, vllm_latency, label='vLLM', marker='o')
+axs[0, 1].plot(batch_sizes, xinf_latency, label='XInference(vLLM)', marker='o')
+axs[0, 1].set_title('延迟', fontproperties=font_prop)
+axs[0, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 1].set_ylabel('延迟 (秒)', fontproperties=font_prop)
+axs[0, 1].legend()
+
+# 吞吐量
+axs[1, 0].plot(batch_sizes, vllm_throughput, label='vLLM', marker='o')
+axs[1, 0].plot(batch_sizes, xinf_throughput, label='XInference(vLLM)', marker='o')
+axs[1, 0].set_title('吞吐量', fontproperties=font_prop)
+axs[1, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 0].set_ylabel('吞吐量 (每秒Tokens)', fontproperties=font_prop)
+axs[1, 0].legend()
+
+# 失败率
+axs[1, 1].plot(batch_sizes, vllm_failures, label='vLLM', marker='o')
+axs[1, 1].plot(batch_sizes, xinf_failures, label='XInference(vLLM)', marker='o')
+axs[1, 1].set_title('失败率', fontproperties=font_prop)
+axs[1, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 1].set_ylabel('失败数', fontproperties=font_prop)
+axs[1, 1].legend()
+
+# 调整布局
+plt.tight_layout()
+plt.show()
+```
+
+### 🏆 MindIE (910B4: 8X32G) ⚔️ vLLM (T4: 4X16G)
+
+![](/images/2024/evalscope/mindie_910b4-vs-vllm_t4.png)
+
+**和我们现有服务器 T4 的性能对比**
+
+代码
+```python
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+# 设置中文字体
+font_path = '/System/Library/Fonts/Hiragino Sans GB.ttc'  # 替换为你的字体文件路径
+font_prop = FontProperties(fname=font_path)
+
+# 数据
+batch_sizes_mindie = [8, 16, 32, 64, 128, 150, 200, 256, 300, 400, 512, 720]
+batch_sizes_vllm = [8, 16, 32, 64, 100, 128, 150, 200, 300, 400, 500]
+
+mindie_qps = [2.474, 4.649, 8.273, 12.065, 18.924, 20.457, 22.294, 23.392, 22.868, 23.328, 24.007, 24.643]
+vllm_qps = [0.970, 1.588, 2.443, 3.503, 3.593, 3.580, 3.509, 3.076, 2.847, 2.820, 3.060]
+
+mindie_latency = [3.213, 3.391, 3.724, 4.974, 6.108, 6.517, 7.805, 9.208, 10.904, 13.628, 16.031, 18.790]
+vllm_latency = [8.213, 9.944, 12.846, 16.913, 19.182, 19.831, 17.806, 16.743, 16.285, 16.285, 17.649]
+
+mindie_throughput = [594.929, 1119.102, 1989.159, 2903.023, 4559.489, 4920.856, 5354.701, 5636.846, 5506.567, 5618.110, 5772.230, 5940.622]
+vllm_throughput = [298.860, 496.458, 753.176, 1073.697, 1039.610, 1005.881, 1032.794, 925.476, 839.437, 816.049, 875.565]
+
+mindie_failures = [0] * len(batch_sizes_mindie)  # 假设 MindIE(910B4 8*32) 没有失败数据
+vllm_failures = [0, 0, 0, 15, 73, 115, 26, 11, 19, 23, 26]
+
+# 创建子图
+fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+
+# QPS
+axs[0, 0].plot(batch_sizes_mindie, mindie_qps, label='MindIE(910B4 8*32)', marker='o')
+axs[0, 0].plot(batch_sizes_vllm, vllm_qps, label='vLLM(T4 4*16)', marker='o')
+axs[0, 0].set_title('QPS', fontproperties=font_prop)
+axs[0, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 0].set_ylabel('QPS', fontproperties=font_prop)
+axs[0, 0].legend()
+
+# 延迟
+axs[0, 1].plot(batch_sizes_mindie, mindie_latency, label='MindIE(910B4 8*32)', marker='o')
+axs[0, 1].plot(batch_sizes_vllm, vllm_latency, label='vLLM(T4 4*16)', marker='o')
+axs[0, 1].set_title('延迟', fontproperties=font_prop)
+axs[0, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[0, 1].set_ylabel('延迟 (秒)', fontproperties=font_prop)
+axs[0, 1].legend()
+
+# 吞吐量
+axs[1, 0].plot(batch_sizes_mindie, mindie_throughput, label='MindIE(910B4 8*32)', marker='o')
+axs[1, 0].plot(batch_sizes_vllm, vllm_throughput, label='vLLM(T4 4*16)', marker='o')
+axs[1, 0].set_title('吞吐量', fontproperties=font_prop)
+axs[1, 0].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 0].set_ylabel('吞吐量 (每秒Tokens)', fontproperties=font_prop)
+axs[1, 0].legend()
+
+# 失败率
+axs[1, 1].plot(batch_sizes_mindie, mindie_failures, label='MindIE(910B4 8*32)', marker='o')
+axs[1, 1].plot(batch_sizes_vllm, vllm_failures, label='vLLM(T4 4*16)', marker='o')
+axs[1, 1].set_title('失败率', fontproperties=font_prop)
+axs[1, 1].set_xlabel('并行数', fontproperties=font_prop)
+axs[1, 1].set_ylabel('失败数', fontproperties=font_prop)
+axs[1, 1].legend()
+
+# 调整布局
+plt.tight_layout()
+plt.show()
+```
+
+
 ## 实验结果（MindIE）
 
 ### Qwen1.5-7B-Chat
@@ -1458,6 +1601,250 @@ Benchmarking summary:
      p95: 87.3050
      p98: 92.2078
      p99: 97.6189
+```
+
+### Qwen2-72B-Chat (long.jsonl)
+
+![](/images/2024/evalscope/qwen2-72b-chat_long.png)
+
+| 指标 | 8 | 12 | 20 | 30 | 40 | 50 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 用时 | 3091.468 | 2385.800 | 1598.805 | 1542.828 | 1509.713 | 1408.587 |
+| QPS | 0.032 | 0.042 | 0.063 | 0.063 | 0.056 | 0.043 |
+| 延迟 | 238.540 | 268.873 | 294.636 | 382.291 | 414.746 | 403.061 |
+| 吞吐量 | 158.986 | 206.011 | 307.418 | 299.114 | 268.391 | 199.552 |
+| p50 | 239.3327 | 270.9418 | 292.3093 | 348.5759 | 396.9046 | 350.8392 |
+| p90 | 239.6762 | 271.3905 | 313.2425 | 514.8233 | 567.8100 | 597.3057 |
+
+- 平均每个请求的输入 token 数: 6385
+- 平均每个请求的输出 token 数: 4915
+
+- parallel 8
+```
+Benchmarking summary: 
+ Time taken for tests: 3091.468 seconds
+ Expected number of requests: 100
+ Number of concurrency: 8
+ Total requests: 100
+ Succeed requests: 100
+ Failed requests: 0
+ Average QPS: 0.032
+ Average latency: 238.540
+ Throughput(average output tokens per second): 158.986
+ Average time to first token: 238.540
+ Average input tokens per request: 6385.000
+ Average output tokens per request: 4915.000
+ Average time per output token: 0.00629
+ Average package per request: 1.000
+ Average package latency: 238.540
+ Percentile of time to first token: 
+     p50: 239.3327
+     p66: 239.5209
+     p75: 239.5622
+     p80: 239.6446
+     p90: 239.6762
+     p95: 240.0079
+     p98: 240.0081
+     p99: 240.0121
+ Percentile of request latency: 
+     p50: 239.3327
+     p66: 239.5209
+     p75: 239.5622
+     p80: 239.6446
+     p90: 239.6762
+     p95: 240.0079
+     p98: 240.0081
+     p99: 240.0121
+```
+
+- parallel 12
+```
+Benchmarking summary: 
+ Time taken for tests: 2385.800 seconds
+ Expected number of requests: 100
+ Number of concurrency: 12
+ Total requests: 100
+ Succeed requests: 100
+ Failed requests: 0
+ Average QPS: 0.042
+ Average latency: 268.873
+ Throughput(average output tokens per second): 206.011
+ Average time to first token: 268.873
+ Average input tokens per request: 6385.000
+ Average output tokens per request: 4915.000
+ Average time per output token: 0.00485
+ Average package per request: 1.000
+ Average package latency: 268.873
+ Percentile of time to first token: 
+     p50: 270.9418
+     p66: 271.2864
+     p75: 271.3597
+     p80: 271.3610
+     p90: 271.3905
+     p95: 271.3978
+     p98: 271.4502
+     p99: 271.4786
+ Percentile of request latency: 
+     p50: 270.9418
+     p66: 271.2864
+     p75: 271.3597
+     p80: 271.3610
+     p90: 271.3905
+     p95: 271.3978
+     p98: 271.4502
+     p99: 271.4786
+```
+
+- parallel 20
+```
+Benchmarking summary: 
+ Time taken for tests: 1598.805 seconds
+ Expected number of requests: 100
+ Number of concurrency: 20
+ Total requests: 100
+ Succeed requests: 100
+ Failed requests: 0
+ Average QPS: 0.063
+ Average latency: 294.636
+ Throughput(average output tokens per second): 307.418
+ Average time to first token: 294.636
+ Average input tokens per request: 6385.000
+ Average output tokens per request: 4915.020
+ Average time per output token: 0.00325
+ Average package per request: 1.000
+ Average package latency: 294.636
+ Percentile of time to first token: 
+     p50: 292.3093
+     p66: 293.7218
+     p75: 296.3762
+     p80: 296.4460
+     p90: 313.2425
+     p95: 323.9384
+     p98: 334.5282
+     p99: 357.6738
+ Percentile of request latency: 
+     p50: 292.3093
+     p66: 293.7218
+     p75: 296.3762
+     p80: 296.4460
+     p90: 313.2425
+     p95: 323.9384
+     p98: 334.5282
+     p99: 357.6738
+```
+
+- parallel 30
+```
+Benchmarking summary: 
+ Time taken for tests: 1542.828 seconds
+ Expected number of requests: 100
+ Number of concurrency: 30
+ Total requests: 97
+ Succeed requests: 97
+ Failed requests: 0
+ Average QPS: 0.063
+ Average latency: 382.291
+ Throughput(average output tokens per second): 299.114
+ Average time to first token: 382.291
+ Average input tokens per request: 6385.000
+ Average output tokens per request: 4757.546
+ Average time per output token: 0.00334
+ Average package per request: 1.000
+ Average package latency: 382.291
+ Percentile of time to first token: 
+     p50: 348.5759
+     p66: 378.9814
+     p75: 420.5971
+     p80: 443.5496
+     p90: 514.8233
+     p95: 548.8156
+     p98: 559.4441
+     p99: 590.6074
+ Percentile of request latency: 
+     p50: 348.5759
+     p66: 378.9814
+     p75: 420.5971
+     p80: 443.5496
+     p90: 514.8233
+     p95: 548.8156
+     p98: 559.4441
+     p99: 590.6074
+```
+
+- parallel 40
+```
+Benchmarking summary: 
+ Time taken for tests: 1509.713 seconds
+ Expected number of requests: 100
+ Number of concurrency: 40
+ Total requests: 87
+ Succeed requests: 85
+ Failed requests: 2
+ Average QPS: 0.056
+ Average latency: 414.746
+ Throughput(average output tokens per second): 268.391
+ Average time to first token: 414.746
+ Average input tokens per request: 6385.000
+ Average output tokens per request: 4766.976
+ Average time per output token: 0.00373
+ Average package per request: 1.000
+ Average package latency: 414.746
+ Percentile of time to first token: 
+     p50: 396.9046
+     p66: 458.9677
+     p75: 482.9745
+     p80: 521.3878
+     p90: 567.8100
+     p95: 580.6507
+     p98: 586.6928
+     p99: 587.2930
+ Percentile of request latency: 
+     p50: 396.9046
+     p66: 458.9677
+     p75: 482.9745
+     p80: 521.3878
+     p90: 567.8100
+     p95: 580.6507
+     p98: 586.6928
+     p99: 587.2930
+```
+
+- parallel 50
+```
+Benchmarking summary: 
+ Time taken for tests: 1408.587 seconds
+ Expected number of requests: 100
+ Number of concurrency: 50
+ Total requests: 78
+ Succeed requests: 60
+ Failed requests: 18
+ Average QPS: 0.043
+ Average latency: 403.061
+ Throughput(average output tokens per second): 199.552
+ Average time to first token: 403.061
+ Average input tokens per request: 6385.000
+ Average output tokens per request: 4684.783
+ Average time per output token: 0.00501
+ Average package per request: 1.000
+ Average package latency: 403.061
+ Percentile of time to first token: 
+     p50: 350.8392
+     p66: 386.2204
+     p75: 516.6384
+     p80: 558.8747
+     p90: 597.3057
+     p95: 597.3098
+     p98: 597.5291
+     p99: 598.8612
+ Percentile of request latency: 
+     p50: 350.8392
+     p66: 386.2204
+     p75: 516.6384
+     p80: 558.8747
+     p90: 597.3057
+     p95: 597.3098
+     p98: 597.5291
+     p99: 598.8612
 ```
 
 ### DeepSeek-Coder-6.7B-Instruct
@@ -3389,147 +3776,6 @@ Benchmarking summary:
      p95: 62.2720
      p98: 96.8205
      p99: 99.6312
-```
-
-
-## 实验结果对比
-### XInference ⚔️ vLLM (T4: 4*16G)
-
-![](/images/2024/evalscope/t4_xinference-vs-vllm.png)
-
-**从结果看，在生产环境中还是要使用 vLLM，推理性能更好且稳定更棒。**
-
-代码
-```python
-import matplotlib.pyplot as plt
-from matplotlib.font_manager import FontProperties
-
-# 设置中文字体
-font_path = '/System/Library/Fonts/Hiragino Sans GB.ttc'  # 替换为你的字体文件路径
-font_prop = FontProperties(fname=font_path)
-
-# 数据
-batch_sizes = [8, 16, 32, 64, 100, 128, 150, 200, 300, 400, 500]
-
-vllm_qps = [0.970, 1.588, 2.443, 3.503, 3.593, 3.580, 3.509, 3.076, 2.847, 2.820, 3.060]
-xinf_qps = [0.783, 1.288, 1.958, 2.472, 2.353, 2.334, 2.046, 1.750, 1.664, 1.254, 1.163]
-
-vllm_latency = [8.213, 9.944, 12.846, 16.913, 19.182, 19.831, 17.806, 16.743, 16.285, 16.285, 17.649]
-xinf_latency = [10.128, 12.307, 15.749, 19.225, 19.235, 19.151, 17.479, 15.949, 16.718, 14.750, 15.771]
-
-vllm_throughput = [298.860, 496.458, 753.176, 1073.697, 1039.610, 1005.881, 1032.794, 925.476, 839.437, 816.049, 875.565]
-xinf_throughput = [254.695, 424.701, 631.260, 753.852, 700.681, 700.324, 637.260, 550.200, 510.211, 392.697, 362.167]
-
-vllm_failures = [0, 0, 0, 15, 73, 115, 26, 11, 19, 23, 26]
-xinf_failures = [1, 0, 12, 71, 101, 72, 32, 25, 66, 47, 89]
-
-# 创建子图
-fig, axs = plt.subplots(2, 2, figsize=(15, 10))
-
-# QPS
-axs[0, 0].plot(batch_sizes, vllm_qps, label='vLLM', marker='o')
-axs[0, 0].plot(batch_sizes, xinf_qps, label='XInferencev(LLM)', marker='o')
-axs[0, 0].set_title('QPS', fontproperties=font_prop)
-axs[0, 0].set_xlabel('并行数', fontproperties=font_prop)
-axs[0, 0].set_ylabel('QPS', fontproperties=font_prop)
-axs[0, 0].legend()
-
-# 延迟
-axs[0, 1].plot(batch_sizes, vllm_latency, label='vLLM', marker='o')
-axs[0, 1].plot(batch_sizes, xinf_latency, label='XInference(vLLM)', marker='o')
-axs[0, 1].set_title('延迟', fontproperties=font_prop)
-axs[0, 1].set_xlabel('并行数', fontproperties=font_prop)
-axs[0, 1].set_ylabel('延迟 (秒)', fontproperties=font_prop)
-axs[0, 1].legend()
-
-# 吞吐量
-axs[1, 0].plot(batch_sizes, vllm_throughput, label='vLLM', marker='o')
-axs[1, 0].plot(batch_sizes, xinf_throughput, label='XInference(vLLM)', marker='o')
-axs[1, 0].set_title('吞吐量', fontproperties=font_prop)
-axs[1, 0].set_xlabel('并行数', fontproperties=font_prop)
-axs[1, 0].set_ylabel('吞吐量 (每秒Tokens)', fontproperties=font_prop)
-axs[1, 0].legend()
-
-# 失败率
-axs[1, 1].plot(batch_sizes, vllm_failures, label='vLLM', marker='o')
-axs[1, 1].plot(batch_sizes, xinf_failures, label='XInference(vLLM)', marker='o')
-axs[1, 1].set_title('失败率', fontproperties=font_prop)
-axs[1, 1].set_xlabel('并行数', fontproperties=font_prop)
-axs[1, 1].set_ylabel('失败数', fontproperties=font_prop)
-axs[1, 1].legend()
-
-# 调整布局
-plt.tight_layout()
-plt.show()
-```
-
-### MindIE (910B4: 8*32G) ⚔️ vLLM (T4: 4*16G)
-
-![](/images/2024/evalscope/mindie_910b4-vs-vllm_t4.png)
-
-代码
-```python
-import matplotlib.pyplot as plt
-from matplotlib.font_manager import FontProperties
-
-# 设置中文字体
-font_path = '/System/Library/Fonts/Hiragino Sans GB.ttc'  # 替换为你的字体文件路径
-font_prop = FontProperties(fname=font_path)
-
-# 数据
-batch_sizes_mindie = [8, 16, 32, 64, 128, 150, 200, 256, 300, 400, 512, 720]
-batch_sizes_vllm = [8, 16, 32, 64, 100, 128, 150, 200, 300, 400, 500]
-
-mindie_qps = [2.474, 4.649, 8.273, 12.065, 18.924, 20.457, 22.294, 23.392, 22.868, 23.328, 24.007, 24.643]
-vllm_qps = [0.970, 1.588, 2.443, 3.503, 3.593, 3.580, 3.509, 3.076, 2.847, 2.820, 3.060]
-
-mindie_latency = [3.213, 3.391, 3.724, 4.974, 6.108, 6.517, 7.805, 9.208, 10.904, 13.628, 16.031, 18.790]
-vllm_latency = [8.213, 9.944, 12.846, 16.913, 19.182, 19.831, 17.806, 16.743, 16.285, 16.285, 17.649]
-
-mindie_throughput = [594.929, 1119.102, 1989.159, 2903.023, 4559.489, 4920.856, 5354.701, 5636.846, 5506.567, 5618.110, 5772.230, 5940.622]
-vllm_throughput = [298.860, 496.458, 753.176, 1073.697, 1039.610, 1005.881, 1032.794, 925.476, 839.437, 816.049, 875.565]
-
-mindie_failures = [0] * len(batch_sizes_mindie)  # 假设 MindIE(910B4 8*32) 没有失败数据
-vllm_failures = [0, 0, 0, 15, 73, 115, 26, 11, 19, 23, 26]
-
-# 创建子图
-fig, axs = plt.subplots(2, 2, figsize=(15, 10))
-
-# QPS
-axs[0, 0].plot(batch_sizes_mindie, mindie_qps, label='MindIE(910B4 8*32)', marker='o')
-axs[0, 0].plot(batch_sizes_vllm, vllm_qps, label='vLLM(T4 4*16)', marker='o')
-axs[0, 0].set_title('QPS', fontproperties=font_prop)
-axs[0, 0].set_xlabel('并行数', fontproperties=font_prop)
-axs[0, 0].set_ylabel('QPS', fontproperties=font_prop)
-axs[0, 0].legend()
-
-# 延迟
-axs[0, 1].plot(batch_sizes_mindie, mindie_latency, label='MindIE(910B4 8*32)', marker='o')
-axs[0, 1].plot(batch_sizes_vllm, vllm_latency, label='vLLM(T4 4*16)', marker='o')
-axs[0, 1].set_title('延迟', fontproperties=font_prop)
-axs[0, 1].set_xlabel('并行数', fontproperties=font_prop)
-axs[0, 1].set_ylabel('延迟 (秒)', fontproperties=font_prop)
-axs[0, 1].legend()
-
-# 吞吐量
-axs[1, 0].plot(batch_sizes_mindie, mindie_throughput, label='MindIE(910B4 8*32)', marker='o')
-axs[1, 0].plot(batch_sizes_vllm, vllm_throughput, label='vLLM(T4 4*16)', marker='o')
-axs[1, 0].set_title('吞吐量', fontproperties=font_prop)
-axs[1, 0].set_xlabel('并行数', fontproperties=font_prop)
-axs[1, 0].set_ylabel('吞吐量 (每秒Tokens)', fontproperties=font_prop)
-axs[1, 0].legend()
-
-# 失败率
-axs[1, 1].plot(batch_sizes_mindie, mindie_failures, label='MindIE(910B4 8*32)', marker='o')
-axs[1, 1].plot(batch_sizes_vllm, vllm_failures, label='vLLM(T4 4*16)', marker='o')
-axs[1, 1].set_title('失败率', fontproperties=font_prop)
-axs[1, 1].set_xlabel('并行数', fontproperties=font_prop)
-axs[1, 1].set_ylabel('失败数', fontproperties=font_prop)
-axs[1, 1].legend()
-
-# 调整布局
-plt.tight_layout()
-plt.show()
 ```
 
 
