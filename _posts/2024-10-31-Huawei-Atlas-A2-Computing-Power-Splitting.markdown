@@ -101,6 +101,7 @@ sudo npu-smi set -t destroy-vnpu -i 0 -c 0 -v 100
 ## 实验
 ### 算力切分
 - NPU 1
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 0 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 0 -c 0 -f vir10_3c_16g
@@ -127,6 +128,7 @@ sudo npu-smi info -t info-vnpu -i 0 -c 0
 ```
 
 - NPU 2
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 1 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 1 -c 0 -f vir10_3c_16g
@@ -153,6 +155,7 @@ sudo npu-smi info -t info-vnpu -i 1 -c 0
 ```
 
 - NPU 3
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 2 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 2 -c 0 -f vir10_3c_16g
@@ -179,6 +182,7 @@ sudo npu-smi info -t info-vnpu -i 2 -c 0
 ```
 
 - NPU 4
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 3 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 3 -c 0 -f vir10_3c_16g
@@ -205,6 +209,7 @@ sudo npu-smi info -t info-vnpu -i 3 -c 0
 ```
 
 - NPU 5
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 4 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 4 -c 0 -f vir10_3c_16g
@@ -231,6 +236,7 @@ sudo npu-smi info -t info-vnpu -i 4 -c 0
 ```
 
 - NPU 6
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 5 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 5 -c 0 -f vir10_3c_16g
@@ -257,6 +263,7 @@ sudo npu-smi info -t info-vnpu -i 5 -c 0
 ```
 
 - NPU 7
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 6 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 6 -c 0 -f vir10_3c_16g
@@ -283,6 +290,7 @@ sudo npu-smi info -t info-vnpu -i 6 -c 0
 ```
 
 - NPU 8
+
 ```shell
 sudo npu-smi set -t create-vnpu -i 7 -c 0 -f vir10_3c_16g
 sudo npu-smi set -t create-vnpu -i 7 -c 0 -f vir10_3c_16g
