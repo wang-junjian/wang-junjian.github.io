@@ -172,6 +172,8 @@ cd /usr/local/Ascend/mindie/latest/mindie-service/bin
 ```
 
 配置文件：`../conf/config.json`
+- [MindIE 配置参数说明](https://www.hiascend.com/doc_center/source/zh/mindie/1.0.RC1/mindieservice/servicedev/mindie_service0005.html)
+
 ```json
 {
     "OtherParam" :
@@ -261,8 +263,19 @@ cd /usr/local/Ascend/mindie/latest/mindie-service/bin
     }
 }
 ```
-- `maxIterTimes` 要小于 `maxSeqLen`
-- 通过设置 `maxIterTimes` 的值，可以控制最大输出长度。
+- ModelDeployParam
+    - maxSeqLen: 最大序列长度，输入的长度+输出的长度<=maxSeqLen
+    - npuMemSize: NPU中可以用来申请kv cache的size上限
+    - tokenizerProcessNumber: 并行的 NPU 数
+    - modelName: 模型名字
+    - modelWeightPath: 模型的路径
+    - backendType: 推理大模型必须是 atb
+- ScheduleParam
+    - maxPrefillTokens: 输入 Tokens 数
+    - maxBatchSize: 最大 decode batch size
+    - maxIterTimes: 最大迭代次数，即一句话最大可生成长度
+
+maxSeqLen = maxPrefillTokens（输入 Tokens） + maxIterTimes（输出 Tokens）
 
 运行模型推理服务：
 ```shell
