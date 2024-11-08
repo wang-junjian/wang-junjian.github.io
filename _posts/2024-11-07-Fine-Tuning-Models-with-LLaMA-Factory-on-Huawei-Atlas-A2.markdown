@@ -19,7 +19,7 @@ tags: [Atlas800, NPU, LLaMA-Factory, Fine-Tuning, LLM]
 
 - 自定义镜像：llama2
 - 类型：ASCEND
-- 规格：Ascend: 8*Ascend910|ARM: 192核 768GB
+- 规格：Ascend: 8*Ascend910 ARM: 192核 768GB
 - 存储配置：云硬盘EVS
   - 磁盘规格：200GB
 
