@@ -137,13 +137,27 @@ sudo npu-smi info
 ```
 
 
-## 部署 LLM 推理服务（MindIE）
+## MindIE 推理服务
+### 下载镜像
 ```shell
-sudo docker run -it \
+wget https://modelers.cn/coderepo/web/v1/file/xieyuxiang/mindie_1.0.RC2_image/main/media/mindie-service_1.0.RC2.tar.gz
+```
+
+### 加载镜像
+```shell
+sudo docker load -i mindie-service_1.0.RC2.tar.gz
+```
+
+
+## 部署 LLM 推理服务（MindIE）
+- [昇腾镜像仓库 mindie](https://www.hiascend.com/developer/ascendhub/detail/mindie)
+
+```shell
+sudo docker run --net=host --ipc=host -it \
     --name MindIE2 \
-    -p 1025:1025 \
-    -v /disk1/:/home/disk1 \
-    --ipc=host \
+    --device=/dev/davinci_manager \
+    --device=/dev/hisi_hdc \
+    --device=/dev/devmm_svm \
     --device=/dev/davinci0 \
     --device=/dev/davinci1 \
     --device=/dev/davinci2 \
@@ -152,18 +166,12 @@ sudo docker run -it \
     --device=/dev/davinci5 \
     --device=/dev/davinci6 \
     --device=/dev/davinci7 \
-    --device=/dev/davinci_manager \
-    --device=/dev/devmm_svm \
-    --device=/dev/hisi_hdc \
+    -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
+    -v /usr/local/sbin:/usr/local/sbin:ro \
     -v /usr/local/dcmi:/usr/local/dcmi \
-    -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi \
-    -v /usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/common \
-    -v /usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/driver \
-    -v /etc/ascend_install.info:/etc/ascend_install.info \
-    -v /etc/vnpu.cfg:/etc/vnpu.cfg \
-    -v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info \
     -v /home/luruan:/home/luruan \
-    mindie /bin/bash
+    -v /disk1/:/home/disk1 \
+    mindie-service:1.0.RC2 /bin/bash
 ```
 
 进行 mindie 执行目录
