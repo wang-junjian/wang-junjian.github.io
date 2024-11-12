@@ -11,6 +11,12 @@ tags: [LiteLLM, AIGateway, Langfuse, LLM]
 - [Hosted LiteLLM Proxy](https://docs.litellm.ai/docs/hosted)
 - [Proxy Config.yaml](https://docs.litellm.ai/docs/proxy/configs)
 
+### 安装
+  
+```shell
+pip install 'litellm[proxy]'
+```
+
 ### 编辑配置文件：`config.yaml`
 
 ```yaml
