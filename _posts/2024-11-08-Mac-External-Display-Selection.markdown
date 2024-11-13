@@ -32,11 +32,11 @@ XDR (极致动态范围)
 
 **左侧**
 
-![左侧](../images/2024/Displayer/111340_sp889-portimage-1-cn.png)
+![左侧](/images/2024/Displayer/111340_sp889-portimage-1-cn.png)
 
 **右侧**
 
-![右侧](../images/2024/Displayer/111340_sp889-portimage-2-cn.png)
+![右侧](/images/2024/Displayer/111340_sp889-portimage-2-cn.png)
 
 - SDXC 卡插槽
 - HDMI 端口
