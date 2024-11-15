@@ -114,6 +114,7 @@ tags: [DELL, 显示器, MacBookProM2Max]
 Dell Display and Peripheral Manager (DDPM) 是一款可提高 macOS 上戴尔显示器和网络摄像头的工作效率和自定义功能的软件。
 
 - [Dell Display Manager 2.x 教程](https://www.dell.com/support/kbdoc/zh-cn/000201067/dell-display-and-peripheral-manager-for-macos)
+- [Mac 版 Dell Display and Peripheral Manager 用户指南](https://dl.dell.com/content/manual11779896-dell-display-and-peripheral-manager-on-mac-用户指南.pdf?language=zh-cn)
 
 
 ## 参考资料
