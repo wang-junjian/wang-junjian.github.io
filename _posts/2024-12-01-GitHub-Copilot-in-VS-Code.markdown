@@ -322,3 +322,9 @@ GitHub Copilot 可基于你团队的工作方式、你使用的工具或项目�
 - **提示**：这包括由 Copilot 扩展发送到 GitHub Copilot 语言模型的所有信息，包括来自您打开文件的上下文。
 - **建议**：Copilot 生成的代码完成建议。
 - **代码片段**：在接受建议后的 30 秒内的代码快照，捕获建议如何集成到代码库中。这有助于确定建议是否按原样接受，还是在最终集成之前由用户进行了修改。
+
+
+## 参考资料
+- [GitHub Copilot 快速入门](https://docs.github.com/zh/copilot/quickstart)
+- [Copilot 扩展术语表](https://docs.github.com/zh/copilot/building-copilot-extensions/copilot-extensions-glossary)
+- [GitHub Copilot in VS Code](https://code.visualstudio.com/docs/copilot/overview)
