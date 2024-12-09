@@ -77,7 +77,15 @@ Chat 视图使您可以在单独的视图中与 Copilot 进行聊天对话。默
 
 ![](/images/2024/GitHubCopilot/copilot-chat-view.png)
 
-### Copilot Edits（Copilot 编辑）
+### Chat Smart Actions
+
+要通过上下文菜单提交提示，请在`编辑器中右键单击`，然后在出现的菜单中选择 Copilot，然后选择其中一个操作。智能操作也可以通过选择代码行时有时会出现的`闪光（sparkle）图标`访问。
+
+![](/images/2024/GitHubCopilot/copilot-smart-action-menu.png)
+
+![](/images/2024/GitHubCopilot/smart-action-fix-with-copilot.png)
+
+### Copilot Edits
 
 根据您的提示，Copilot Edits 提出跨工作区多个文件的代码更改。这些编辑直接应用于编辑器中，因此您可以快速在原地审查它们，同时具有周围代码的完整上下文。
 
@@ -117,7 +125,7 @@ Copilot Edits 非常适合在多个文件上迭代大型更改。它将 Copilot 
 ## 提升效率的功能
 ### Chat Participants（聊天参与者）
 
-聊天参与者旨在收集关于代码库或特定领域或技术的额外上下文。通过使用适当的参与者，Copilot Chat 可以找到并提供更好的信息以发送到 Copilot 后端。例如，如果您想询问有关您打开的项目的问题，请使用 @workspace，或者要了解有关 VS Code 功能和 API 的更多信息，请使用 @vscode。
+聊天参与者旨在收集关于代码库或特定领域或技术的额外上下文。通过使用适当的参与者，Copilot Chat 可以找到并提供更好的信息以发送到 Copilot 后端。例如，如果您想询问有关您打开的项目的问题，请使用 `@workspace`，或者要了解有关 VS Code 功能和 API 的更多信息，请使用 `@vscode`。
 
 ![](/images/2024/GitHubCopilot/agent-example.png)
 
@@ -205,7 +213,7 @@ Copilot Edits 非常适合在多个文件上迭代大型更改。它将 Copilot 
 
 ### `@workspace` 如何找到最相关的上下文？
 
-您的完整 VS Code 工作区可能太大，无法完全传递给 GitHub Copilot 以回答您的聊天提示。相反，@workspace 从不同的上下文来源中提取最相关的信息，以确定 Copilot 的答案。
+您的完整 VS Code 工作区可能太大，无法完全传递给 GitHub Copilot 以回答您的聊天提示。相反，`@workspace` 从不同的上下文来源中提取最相关的信息，以确定 Copilot 的答案。
 
 - 首先，@workspace 确定回答您的问题需要哪些信息，还包括`对话历史记录`、`工作区结构`和`当前选择的代码`。
 
@@ -244,3 +252,73 @@ Copilot Edits 非常适合在多个文件上迭代大型更改。它将 Copilot 
 | imi | 2, … |
 | mit | 1, 2, 3, … |
 | its | 2, 3, … |
+
+参考资料
+- [The technology behind GitHub’s new code search](https://github.blog/engineering/the-technology-behind-githubs-new-code-search/)
+- [在 GitHub 中向 GitHub Copilot 提问](https://docs.github.com/zh/enterprise-cloud@latest/copilot/using-github-copilot/asking-github-copilot-questions-in-github)
+
+
+## 自定义 Copilot
+
+### [安装扩展](https://docs.github.com/zh/enterprise-cloud@latest/copilot/customizing-copilot/extending-the-capabilities-of-github-copilot-in-your-organization)
+
+从 GitHub Marketplace 安装某些 GitHub Apps，即可向组织的 Copilot 添加其他功能。
+
+Copilot Extensions 是一种 GitHub App，在安装到 GitHub 帐户上后，即可向 Copilot 添加其他功能。
+
+任何组织所有者都可以为其组织安装 Copilot Extensions。
+
+### [编制存储库索引](https://docs.github.com/zh/enterprise-cloud@latest/copilot/customizing-copilot/indexing-repositories-for-copilot-chat)
+
+如果存储库已针对语义代码搜索编制索引，则 GitHub Copilot 在 GitHub 存储库上下文中回答此类自然语言问题的能力将得到提高。索引是为了搜索目的，可以帮助 Copilot Chat 回答与存储库中的代码直接相关的问题。
+
+### [自定义说明](https://docs.github.com/zh/enterprise-cloud@latest/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot)
+
+可以创建一个文件，自动向询问 Copilot Chat 的所有问题中添加信息。
+
+GitHub Copilot 可基于你团队的工作方式、你使用的工具或项目的具体情况（如果提供足够的相关信息来满足此前提）提供量身定制的聊天响应。
+
+在存储库的根目录中，创建名为 `.github/copilot-instructions.md` 的文件。
+
+**示例说明**
+```markdown
+我们使用 Bazel 管理 Java 依赖项，而不是 Maven，因此在讨论 Java 包时，请始终给我提供使用 Bazel 的说明和代码示例。
+
+我们总是使用双引号和制表符缩进编写 JavaScript，因此当您的响应包含 JavaScript 代码时，请遵循这些约定。
+
+我们的团队使用 Jira 跟踪工作项。
+```
+
+### [管理知识库](https://docs.github.com/zh/enterprise-cloud@latest/copilot/customizing-copilot/managing-copilot-knowledge-bases)
+
+组织所有者可以创建一个知识库，汇集一个或多个`存储库`中的 `Markdown 文档`（.md .mdx），然后组织成员可以使用该知识库作为 Copilot Chat 的上下文。
+
+### [创建自定义模型](https://docs.github.com/zh/enterprise-cloud@latest/copilot/customizing-copilot/creating-a-custom-model-for-github-copilot)
+
+通过根据组织存储库中的代码创建自定义模型来微调 Copilot `代码完成(Code Completions)`。自定义模型可以帮助 Copilot 更好地理解您的代码库和代码风格，从而提供更准确的代码建议。
+
+通过创建自定义模型，您可以让 GitHub Copilot 向您显示代码完成建议，这些建议是：
+- 基于您自己指定的存储库中的代码。
+- 为专有或较少公开代表的编程语言创建。
+- 根据您的组织编码风格和指南定制。
+
+#### 从自定义模型中受益
+
+自定义模型的价值在以下环境中最为显著：
+- 专有或较少公开代表的编程语言
+- 内部库或自定义框架
+- 自定义标准和公司特定的编码实践
+
+然而，即使在标准化环境中，微调也为您提供了将 Copilot 代码完成更紧密地与您组织已建立的编码实践和标准保持一致的机会。
+
+#### 模型微调的数据
+
+您可以选择使用组织存储库中的哪些`存储库`来训练模型。您可以在组织中的一个、几个或所有存储库上训练模型。模型是在所选存储库的默认分支的内容上训练的。可选地，您可以指定只有使用某些`编程语言`编写的代码才应用于训练。自定义模型将用于生成所有文件类型的代码完成建议，无论该类型的文件是否用于训练。
+
+您还可以选择在训练模型时是否应使用遥测数据（例如用户输入的提示和 Copilot 生成的建议）。
+
+#### 收集了哪些遥测数据？
+
+- **提示**：这包括由 Copilot 扩展发送到 GitHub Copilot 语言模型的所有信息，包括来自您打开文件的上下文。
+- **建议**：Copilot 生成的代码完成建议。
+- **代码片段**：在接受建议后的 30 秒内的代码快照，捕获建议如何集成到代码库中。这有助于确定建议是否按原样接受，还是在最终集成之前由用户进行了修改。
