@@ -3,7 +3,7 @@ layout: post
 title:  "Language Model API"
 date:   2024-12-12 10:00:00 +0800
 categories: ChatExtensions GitHubCopilot
-tags: [ChatExtensions, GitHubCopilot, VSCode]
+tags: [ChatExtensions, LanguageModelAPI, GitHubCopilot, VSCode]
 ---
 
 The Language Model API enables you to [use the Language Model](https://code.visualstudio.com/api/references/vscode-api#lm) and integrate AI-powered features and natural language processing in your Visual Studio Code extension.
