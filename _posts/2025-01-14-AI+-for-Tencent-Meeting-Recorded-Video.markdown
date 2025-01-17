@@ -61,3 +61,8 @@ tags: [腾讯会议, 云录制, AI应用]
 ![](/images/2025/TencentMeeting/AI-Assistant.png)
 
 ![](/images/2025/TencentMeeting/AI-Assistant-Price.png)
+
+
+下面是`AI会议中`提供的`AI小助手`
+
+![](/images/2025/TencentMeeting/AI-Assistant-Pro.png)
