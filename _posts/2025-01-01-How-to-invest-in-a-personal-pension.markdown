@@ -9,6 +9,7 @@ tags: [个人养老金, 基金, 投资]
 2024年12月15日，个人养老金制度正式在全国全面实施。这里记录一下如何投资个人养老金。
 
 ## 个人养老金
+- [个人养老金制度全面实施](https://m.chinaamc.com/activity/2019/testflight/fundAggregatePageV2_ylsyPreviewSteerCountDown/index.html?pageId=6967cc9400)
 
 ### 个人养老金制度全面实施
 
@@ -23,7 +24,7 @@ tags: [个人养老金, 基金, 投资]
 ![](/images/2025/PersonalPension/Personal-Pension.jpg)
 
 
-## 数据来源
+## 基金数据
 ### 2024年 第三季度 基金管理机构`非货币`理财公募基金月均规模排名
 
 | 排名 | 公募基金管理人名称 | 非货币理财公募基金 月均规模(亿元) | 排名 | 公募基金管理人名称 | 非货币理财公募基金 月均规模(亿元) |
