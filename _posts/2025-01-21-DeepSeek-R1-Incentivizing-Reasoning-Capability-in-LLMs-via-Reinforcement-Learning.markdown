@@ -27,7 +27,7 @@ DeepSeek-R1-Zero是一个通过大规模强化学习（RL）训练的模型，�
 
 ![](/images/2025/DeepSeekR1/Figure1.png)
 
-图1 DeepSeek-R1的基准性能
+`图1 DeepSeek-R1的基准性能`
 
 
 ## Introduction（介绍）
@@ -212,7 +212,7 @@ rewards {𝑟1, 𝑟2, ..., 𝑟𝐺}corresponding to the outputs within each gr
 其中𝜀和𝛽是超参数，𝐴𝑖是优势，使用与每个组中的输出对应的一组奖励{𝑟1, 𝑟2, ...，𝑟𝐺}计算：
 
 ![](/images/2025/DeepSeekR1/Table1.png)
-表1 DeepSeek-R1-Zero的模板。在训练期间，prompt将被具体的推理问题替换。
+`表1 DeepSeek-R1-Zero的模板。在训练期间，prompt将被具体的推理问题替换。`
 
 用户和助手之间的对话。用户提出问题，助手解决问题。助手首先在脑海中思考推理过程，然后向用户提供答案。推理过程和答案分别用&lt;think> &lt;/think>和&lt;answer> &lt;/answer>标签括起来，即&lt;think>这里是推理过程&lt;/think>&lt;answer>这里是答案&lt;/answer>。用户：提示。助手：
 
@@ -272,11 +272,11 @@ DeepSeek-R1-Zero的性能图2显示了DeepSeek-R1-Zero在AIME 2024基准上的�
 
 ![](/images/2025/DeepSeekR1/Table2.png)
 
-表2 DeepSeek-R1-Zero和OpenAI o1模型在推理相关基准上的比较
+`表2 DeepSeek-R1-Zero和OpenAI o1模型在推理相关基准上的比较`
 
 ![](/images/2025/DeepSeekR1/Figure2.png)
 
-图2 DeepSeek-R1-Zero在训练过程中的AIME准确性。对于每个问题，我们采样16个响应，并计算整体平均准确性，以确保稳定的评估。
+`图2 DeepSeek-R1-Zero在训练过程中的AIME准确性。对于每个问题，我们采样16个响应，并计算整体平均准确性，以确保稳定的评估。`
 
 Table 2 provides a comparative analysis between DeepSeek-R1-Zero and OpenAI’s o1-0912
 models across a variety of reasoning-related benchmarks. The findings reveal that RL empowers
@@ -303,7 +303,7 @@ complex reasoning tasks.
 
 ![](/images/2025/DeepSeekR1/Figure3.png)
 
-图3 DeepSeek-R1-Zero在RL过程中在训练集上的平均响应长度。DeepSeek-R1-Zero自然地学会用更多的思考时间解决推理任务。
+`图3 DeepSeek-R1-Zero在RL过程中在训练集上的平均响应长度。DeepSeek-R1-Zero自然地学会用更多的思考时间解决推理任务。`
 
 As depicted in Figure 3, the thinking time of DeepSeek-R1-Zero shows consistent improvement throughout the training process. This improvement is not the result of external adjustments
 but rather an intrinsic development within the model. DeepSeek-R1-Zero naturally acquires the
@@ -365,7 +365,7 @@ the future.
 接下来，我可以再次两边平方，处理方程：···
 ```
 
-表3 DeepSeek-R1-Zero中间版本的一个有趣的“顿悟时刻”。模型学会重新思考，使用一种拟人的语气。这对我们来说也是一个顿悟时刻，让我们见证了强化学习的力量和美丽。
+`表3 DeepSeek-R1-Zero中间版本的一个有趣的“顿悟时刻”。模型学会重新思考，使用一种拟人的语气。这对我们来说也是一个顿悟时刻，让我们见证了强化学习的力量和美丽。`
 
 Drawback of DeepSeek-R1-Zero Although DeepSeek-R1-Zero exhibits strong reasoning
 capabilities and autonomously develops unexpected and powerful reasoning behaviors, it faces
@@ -563,7 +563,7 @@ could achieve an accuracy of over 70%.
 
 ![](/images/2025/DeepSeekR1/Table4.png)
 
-表4 DeepSeek-R1 与其他代表性模型的比较。
+`表4 DeepSeek-R1 与其他代表性模型的比较。`
 
 DeepSeek-R1 also delivers impressive results on IF-Eval, a benchmark designed to assess a
 model’s ability to follow format instructions. These improvements can be linked to the inclusion
@@ -593,7 +593,7 @@ training data currently remains very limited.
 
 ![](/images/2025/DeepSeekR1/Table5.png)
 
-表5 DeepSeek-R1 蒸馏模型与其他可比模型在与推理相关的基准上的比较。
+`表5 DeepSeek-R1 蒸馏模型与其他可比模型在与推理相关的基准上的比较。`
 
 As shown in Table 5, simply distilling DeepSeek-R1’s outputs enables the efficient DeepSeek-
 R1-7B (i.e., DeepSeek-R1-Distill-Qwen-7B, abbreviated similarly below) to outperform non-
@@ -612,7 +612,7 @@ simple SFT-distilled models here.
 
 ![](/images/2025/DeepSeekR1/Table6.png)
 
-表6 在与推理相关的基准上比较蒸馏和 RL 模型。
+`表6 在与推理相关的基准上比较蒸馏和 RL 模型。`
 
 In Section 3.2, we can see that by distilling DeepSeek-R1, the small model can achieve
 impressive results. However, there is still one question left: can the model achieve comparable
