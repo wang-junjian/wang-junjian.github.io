@@ -181,7 +181,7 @@ DeepSeek-R1-Zero, which applies RL directly to the base model without any SFT da
 long Chain-of-Thought (CoT) examples. (3) Distill the reasoning capability from DeepSeek-R1 to
 small dense models.
 
-以往的工作在提高模型性能方面严重依赖大量的监督数据。在这项研究中，我们证明了推理能力可以通过大规模强化学习（RL）显著提高，即使没有使用监督微调（SFT）作为冷启动。此外，通过包含少量冷启动数据，性能可以进一步提高。在接下来的章节中，我们将介绍：(1) DeepSeek-R1-Zero，它直接将强化学习应用于基础模型，无需任何SFT数据，以及 (2) DeepSeek-R1，它从使用数千个长链式思维（CoT）示例微调的检查点开始应用强化学习。(3) 将DeepSeek-R1的推理能力提炼到小型密集模型中。
+以往的工作在提高模型性能方面严重依赖大量的监督数据。在这项研究中，我们证明了推理能力可以通过大规模强化学习（RL）显著提高，即使没有使用监督微调（SFT）作为冷启动。此外，通过包含少量冷启动数据，性能可以进一步提高。在接下来的章节中，我们将介绍：(1) DeepSeek-R1-Zero，它直接将强化学习应用于基础模型，无需任何SFT数据，以及 (2) DeepSeek-R1，它从使用数千个长思维链（CoT）示例微调的检查点开始应用强化学习。(3) 将DeepSeek-R1的推理能力提炼到小型密集模型中。
 
 ### DeepSeek-R1-Zero: Reinforcement Learning on the Base Model（DeepSeek-R1-Zero：基础模型上的强化学习）
 
@@ -197,17 +197,9 @@ exciting results, and hope this provides the community with valuable insights.
 
 #### Reinforcement Learning Algorithm（强化学习算法）
 
-**Group Relative Policy Optimization** In order to save the training costs of RL, we adopt Group
-Relative Policy Optimization (GRPO) (Shao et al., 2024), which foregoes the critic model that is
-typically the same size as the policy model, and estimates the baseline from group scores instead.
-Specifically, for each question 𝑞, GRPO samples a group of outputs {𝑜1, 𝑜2,···
-, 𝑜𝐺}from the old
-policy 𝜋𝜃𝑜𝑙𝑑 and then optimizes the policy model 𝜋𝜃 by maximizing the following objective:
+![](/images/2025/DeepSeekR1/GRPO.png)
 
 **组相对策略优化** 为了节省RL的训练成本，我们采用了Group Relative Policy Optimization（GRPO）（Shao等，2024），它放弃了通常与策略模型大小相同的评论家模型，并从组分数中估计基线。具体来说，对于每个问题𝑞，GRPO从旧策略𝜋𝜃𝑜𝑙𝑑中采样一组输出{𝑜1, 𝑜2,···，𝑜𝐺}，然后通过最大化以下目标来优化策略模型𝜋𝜃：
-
-where 𝜀 and 𝛽 are hyper-parameters, and 𝐴𝑖 is the advantage, computed using a group of
-rewards {𝑟1, 𝑟2, ..., 𝑟𝐺}corresponding to the outputs within each group:
 
 其中𝜀和𝛽是超参数，𝐴𝑖是优势，使用与每个组中的输出对应的一组奖励{𝑟1, 𝑟2, ...，𝑟𝐺}计算：
 
@@ -406,7 +398,7 @@ filters out responses that are not reader-friendly. Here, we define the output f
 process is the CoT for the query, and the summary is used to summarize the reasoning
 results.
 
-**可读性**：DeepSeek-R1-Zero的一个主要限制是其内容通常不适合阅读。响应可能混合多种语言或缺乏markdown格式来为用户突出显示答案。相比之下，在为DeepSeek-R1创建冷启动数据时，我们设计了一个可读性模式，在每个响应的末尾包含一个总结，并过滤掉不适合阅读的响应。在这里，我们将输出格式定义为&#124;special_token&#124;&lt;reasoning_process>&#124;special_token&#124;&lt;summary>，其中推理过程是针对查询的链式思维（CoT），而总结用于概括推理结果。
+**可读性**：DeepSeek-R1-Zero的一个主要限制是其内容通常不适合阅读。响应可能混合多种语言或缺乏markdown格式来为用户突出显示答案。相比之下，在为DeepSeek-R1创建冷启动数据时，我们设计了一个可读性模式，在每个响应的末尾包含一个总结，并过滤掉不适合阅读的响应。在这里，我们将输出格式定义为&#124;special_token&#124;&lt;reasoning_process>&#124;special_token&#124;&lt;summary>，其中推理过程是针对查询的思维链（CoT），而总结用于概括推理结果。
 
 **Potential**: By carefully designing the pattern for cold-start data with human priors, we
 observe better performance against DeepSeek-R1-Zero. We believe the iterative training is
