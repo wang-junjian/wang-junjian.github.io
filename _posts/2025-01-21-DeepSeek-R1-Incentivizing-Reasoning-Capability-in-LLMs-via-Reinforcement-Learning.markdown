@@ -528,12 +528,11 @@ verified results are obtained via the agentless framework (Xia et al., 2024). AI
 benchmarks are measured using a "diff" format. DeepSeek-R1 outputs are capped at a maximum
 of 32,768 tokens for each benchmark.
 
-**评估提示** 根据 DeepSeek-V3 的设置，使用 simple-evals 框架的提示来评估标准基准，如 MMLU、DROP、GPQA Diamond 和 SimpleQA。对于 MMLU-Redux，我们在零射击设置中采用 Zero-Eval 提示格式（Lin，2024）。在 MMLU-Pro、C-Eval 和 CLUE-WSC 方面，由于原始提示是少样本的，我们将提示稍微修改为零射击设置。少样本中的 CoT 可能会损害 DeepSeek-R1 的性能。其他数据集遵循其创建者提供的默认提示的原始评估协议。对于代码和数学基准，HumanEval-Mul 数据集涵盖了八种主流编程语言（Python、Java、C++、C#、JavaScript、TypeScript、PHP 和 Bash）。使用 CoT 格式评估 LiveCodeBench 上的模型性能，数据收集时间为 2024 年 8 月至 2025 年 1 月。Codeforces 数据集使用 10 个 Div.2 比赛的问题以及专家制作的测试用例进行评估，然后计算出预期的评级和竞争者的百分比。SWE-Bench 验证结果是通过无代理框架（Xia et al.，2024）获得的。AIDER 相关基准使用“diff”格式进行测量。DeepSeek-R1 的输出在每个基准上最多为 32,768 个标记。
+**评估提示** 根据 DeepSeek-V3 的设置，使用 simple-evals 框架的提示来评估标准基准，如 MMLU、DROP、GPQA Diamond 和 SimpleQA。对于 MMLU-Redux，我们在零样本设置中采用 Zero-Eval 提示格式（Lin，2024）。在 MMLU-Pro、C-Eval 和 CLUE-WSC 方面，由于原始提示是少样本的，我们将提示稍微修改为零样本设置。少样本中的 CoT 可能会损害 DeepSeek-R1 的性能。其他数据集遵循其创建者提供的默认提示的原始评估协议。对于代码和数学基准，HumanEval-Mul 数据集涵盖了八种主流编程语言（Python、Java、C++、C#、JavaScript、TypeScript、PHP 和 Bash）。使用 CoT 格式评估 LiveCodeBench 上的模型性能，数据收集时间为 2024 年 8 月至 2025 年 1 月。Codeforces 数据集使用 10 个 Div.2 比赛的问题以及专家制作的测试用例进行评估，然后计算出预期的评级和竞争者的百分比。SWE-Bench 验证结果是通过无代理框架（Xia et al.，2024）获得的。AIDER 相关基准使用“diff”格式进行测量。DeepSeek-R1 的输出在每个基准上最多为 32,768 个标记。
 
 **Baselines** We conduct comprehensive evaluations against several strong baselines, including
 DeepSeek-V3, Claude-Sonnet-3.5-1022, GPT-4o-0513, OpenAI-o1-mini, and OpenAI-o1-1217.
-Since accessing the OpenAI-o1-1217 API is challenging in mainland China, we report its perfor-
-mance based on official reports. For distilled models, we also compare the open-source model
+Since accessing the OpenAI-o1-1217 API is challenging in mainland China, we report its performance based on official reports. For distilled models, we also compare the open-source model
 QwQ-32B-Preview (Qwen, 2024a).
 
 **基线** 我们针对几个强基线进行了全面评估，包括 DeepSeek-V3、Claude-Sonnet-3.5-1022、GPT-4o-0513、OpenAI-o1-mini 和 OpenAI-o1-1217。由于在中国大陆访问 OpenAI-o1-1217 API 是具有挑战性的，我们根据官方报告报告其性能。对于蒸馏模型，我们还比较了开源模型 QwQ-32B-Preview（Qwen，2024a）。
@@ -714,6 +713,6 @@ In the future, we plan to invest in research across the following directions for
 - **Language Mixing**: DeepSeek-R1 is currently optimized for Chinese and English, which may result in language mixing issues when handling queries in other languages. For instance, DeepSeek-R1 might use English for reasoning and responses, even if the query is in a language other than English or Chinese. We aim to address this limitation in future updates.
 - **语言混合**：DeepSeek-R1 目前针对中文和英文进行了优化，这可能导致处理其他语言查询时出现语言混合问题。例如，DeepSeek-R1 可能在查询不是英文或中文的语言时使用英文进行推理和响应。我们希望在未来的更新中解决这个局限性。
 - **Prompting Engineering**: When evaluating DeepSeek-R1, we observe that it is sensitive to prompts. Few-shot prompting consistently degrades its performance. Therefore, we recommend users directly describe the problem and specify the output format using a zero-shot setting for optimal results.
-- **提示工程**：在评估 DeepSeek-R1 时，我们观察到它对提示很敏感。少样本提示会持续降低其性能。因此，我们建议用户直接描述问题，并使用零射击设置指定输出格式以获得最佳结果。
+- **提示工程**：在评估 DeepSeek-R1 时，我们观察到它对提示很敏感。少样本提示会持续降低其性能。因此，我们建议用户直接描述问题，并使用零样本设置指定输出格式以获得最佳结果。
 - **Software Engineering Tasks**: Due to the long evaluation times, which impact the efficiency of the RL process, large-scale RL has not been applied extensively in software engineering tasks. As a result, DeepSeek-R1 has not demonstrated a huge improvement over DeepSeek-V3 on software engineering benchmarks. Future versions will address this by implementing reject sampling on software engineering data or incorporating asynchronous evaluations during the RL process to improve efficiency.
 - **软件工程任务**：由于长时间的评估时间影响了 RL 过程的效率，大规模 RL 在软件工程任务中并没有得到广泛应用。因此，DeepSeek-R1 在软件工程基准上并没有比 DeepSeek-V3 显著改进。未来版本将通过在软件工程数据上实现拒绝采样或在 RL 过程中引入异步评估来提高效率。
