@@ -528,3 +528,58 @@ can allocate only a small portion of SMs to dispatch+MoE+combine.
 此外，为了提高吞吐量并隐藏全对全通信的开销，我们还在解码阶段探索同时处理两个具有相似计算工作负载的微批次。与预填充不同，注意力在解码阶段占用了更大的时间比例。因此，我们将一个微批次的注意力与另一个的调度+MoE+组合重叠。在解码阶段，每个专家的批量大小相对较小（通常在 256 个标记内），瓶颈是内存访问而不是计算。由于 MoE 部分只需要加载一个专家的参数，内存访问开销很小，因此使用更少的 SM 不会显著影响整体性能。因此，为了避免影响注意力部分的计算速度，我们可以将只分配一小部分 SM 给调度+MoE+组合。
 
 ### 3.5. Suggestions on Hardware Design（硬件设计建议）
+
+
+## 4. Pre-Training（预训练）
+
+
+## 5. Post-Training（后训练）
+
+
+## 6. Conclusion, Limitations, and Future Directions（结论、局限性和未来方向）
+
+In this paper, we introduce DeepSeek-V3, a large MoE language model with 671B total pa-
+rameters and 37B activated parameters, trained on 14.8T tokens. In addition to the MLA and
+DeepSeekMoE architectures, it also pioneers an auxiliary-loss-free strategy for load balancing
+and sets a multi-token prediction training objective for stronger performance. The training of
+DeepSeek-V3 is cost-effective due to the support of FP8 training and meticulous engineering op-
+timizations. The post-training also makes a success in distilling the reasoning capability from the
+DeepSeek-R1 series of models. Comprehensive evaluations demonstrate that DeepSeek-V3 has
+emerged as the strongest open-source model currently available, and achieves performance com-
+parable to leading closed-source models like GPT-4o and Claude-3.5-Sonnet. Despite its strong
+performance, it also maintains economical training costs. It requires only 2.788M H800 GPU
+hours for its full training, including pre-training, context length extension, and post-training.
+
+在本文中，我们介绍了 DeepSeek-V3，这是一个具有 671B 总参数和 37B 激活参数的大型 MoE 语言模型，训练了 14.8T 个标记。除了 MLA 和 DeepSeekMoE 架构之外，它还为负载平衡开创了一种无辅助损失策略，并为更强的性能设定了多标记预测训练目标。DeepSeek-V3 的训练具有成本效益，因为它支持 FP8 训练和细致的工程优化。后训练还成功地从 DeepSeek-R1 系列模型中提取了推理能力。全面的评估表明，DeepSeek-V3 已成为目前最强大的开源模型，并实现了与领先的闭源模型（如 GPT-4o 和 Claude-3.5-Sonnet）可比的性能。尽管性能强劲，但它也保持了经济的训练成本。它的全面训练仅需要 2.788M H800 GPU 小时，包括预训练、上下文长度扩展和后训练。
+
+While acknowledging its strong performance and cost-effectiveness, we also recognize that
+DeepSeek-V3 has some limitations, especially on the deployment. Firstly, to ensure efficient
+inference, the recommended deployment unit for DeepSeek-V3 is relatively large, which might
+pose a burden for small-sized teams. Secondly, although our deployment strategy for DeepSeek-
+V3 has achieved an end-to-end generation speed of more than two times that of DeepSeek-V2,
+there still remains potential for further enhancement. Fortunately, these limitations are expected
+to be naturally addressed with the development of more advanced hardware.
+
+尽管承认其强大的性能和成本效益，我们也认识到 DeepSeek-V3 存在一些局限性，特别是在部署方面。首先，为了确保高效推理，DeepSeek-V3 的推荐部署单元相对较大，这可能对小型团队构成负担。其次，尽管我们为 DeepSeek-V3 的部署策略实现了比 DeepSeek-V2 快两倍以上的端到端生成速度，但仍有进一步提升的潜力。幸运的是，随着更先进硬件的发展，这些局限性有望得到自然解决。
+
+DeepSeek consistently adheres to the route of open-source models with longtermism, aiming
+to steadily approach the ultimate goal of AGI (Artificial General Intelligence). In the future, we
+plan to strategically invest in research across the following directions.
+
+DeepSeek 始终坚持开源模型的长期主义路线，旨在稳步接近 AGI（人工通用智能）的最终目标。在未来，我们计划在以下方向上进行战略性投资研究。
+
+- We will consistently study and refine our model architectures, aiming to further improve both the training and inference efficiency, striving to approach efficient support for infinite context length. Additionally, we will try to break through the architectural limitations of Transformer, thereby pushing the boundaries of its modeling capabilities.
+
+- 我们将持续研究和完善我们的模型架构，旨在进一步提高训练和推理效率，努力实现对无限上下文长度的高效支持。此外，我们将尝试突破 Transformer 的架构限制，从而推动其建模能力的边界。
+
+- We will continuously iterate on the quantity and quality of our training data, and explore the incorporation of additional training signal sources, aiming to drive data scaling across a more comprehensive range of dimensions.
+
+- 我们将持续迭代我们的训练数据的数量和质量，并探索整合额外的训练信号源，旨在推动跨更全面维度的数据扩展。
+
+- We will consistently explore and iterate on the deep thinking capabilities of our models, aiming to enhance their intelligence and problem-solving abilities by expanding their reasoning length and depth.
+
+- 我们将持续探索和迭代我们模型的深度思考能力，旨在通过扩展其推理长度和深度来增强其智能和解决问题的能力。
+
+- We will explore more comprehensive and multi-dimensional model evaluation methods to prevent the tendency towards optimizing a fixed set of benchmarks during research, which may create a misleading impression of the model capabilities and affect our foundational assessment.
+
+- 我们将探索更全面和多维的模型评估方法，以防止在研究过程中优化固定一组基准的倾向，这可能会给人一种误导性的模型能力印象，并影响我们的基础评估。
