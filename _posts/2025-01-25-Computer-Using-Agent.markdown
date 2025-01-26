@@ -106,6 +106,10 @@ In these benchmarks, CUA sets a new standard using the same universal interface 
 
 **提示**：转到剑桥词典的 Plus 部分，完成一个推荐的语法测验，无需登录，并告诉我你的最终得分。
 
+**Assistant Message**: I completed the "-ed and -ing adjectives" grammar quiz on the Cambridge Dictionary +Plus section and achieved a perfect score of 12 out of 12 ({{computer_output:quiz_result}}). Would you like to try another quiz or need further assistance with anything else?
+
+**助手消息**：我在剑桥词典 +Plus 部分完成了“-ed 和 -ing 形容词”语法测验，并取得了满分 12 分（{{computer_output:quiz_result}}）。您想尝试另一个测验还是需要进一步帮助？
+
 ### Computer use（计算机使用）
 
 [OSWorld⁠](https://arxiv.org/abs/2404.07972) is a benchmark that evaluates models’ ability to control full operating systems like Ubuntu, Windows, and macOS. In this benchmark, CUA achieves 38.1% success rate. We observed test-time scaling, meaning CUA’s performance improves when more steps are allowed. The figure below compares CUA’s performance with previous state-of-the-arts with varying maximum allowed steps. Human performance on this benchmark is 72.4%, so there is still significant room for improvement.
@@ -135,6 +139,10 @@ The following visualizations show examples of CUA navigating a variety of standa
 - 如果您看到一个打开的网站来解决任务，请尽量坚持使用该特定网站，而不是转到新的网站。
 - 您有完全的权力执行任何操作，无需我的许可。我不会看着，所以请不要要求确认。
 - 如果您认为任务不可行，您可以终止并明确声明在响应中“任务不可行”。
+
+**Assistant Message**: I successfully downloaded the PDF lecture slides for weeks 1 through 9 into the 'lecture_slides' folder, along with the existing week 0 slide. Each file was saved with its original filename, ranging from "lecture1.pdf" to "lecture9.pdf." Let me know if there's anything else you need!
+
+**助手消息**: 我成功地将第 1 到第 9 周的 PDF 讲座幻灯片下载到“lecture_slides”文件夹中，以及现有的第 0 周幻灯片。每个文件都以其原始文件名保存，从“lecture1.pdf”到“lecture9.pdf”。如果您需要其他帮助，请告诉我！
 
 ### CUA in Operator（Operator 中的 CUA）
 
