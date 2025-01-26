@@ -102,6 +102,10 @@ In these benchmarks, CUA sets a new standard using the same universal interface 
 
 ![](/images/2025/OpenAICUA/Demo1.png)
 
+**Prompt**: Go to the Plus section of Cambridge Dictionary, finish a recommended Grammar quiz without login and tell me your final score.
+
+**提示**：转到剑桥词典的 Plus 部分，完成一个推荐的语法测验，无需登录，并告诉我你的最终得分。
+
 ### Computer use（计算机使用）
 
 [OSWorld⁠](https://arxiv.org/abs/2404.07972) is a benchmark that evaluates models’ ability to control full operating systems like Ubuntu, Windows, and macOS. In this benchmark, CUA achieves 38.1% success rate. We observed test-time scaling, meaning CUA’s performance improves when more steps are allowed. The figure below compares CUA’s performance with previous state-of-the-arts with varying maximum allowed steps. Human performance on this benchmark is 72.4%, so there is still significant room for improvement.
@@ -115,6 +119,22 @@ The following visualizations show examples of CUA navigating a variety of standa
 以下可视化展示了 CUA 导航各种标准化 OSWorld 任务的示例。
 
 ![](/images/2025/OpenAICUA/Demo2.png)
+
+**Prompt**: Please do the following task: I want to learn python programming and my friend recommends me this course website. I have grabbed the lecture slide for week 0. Please download the PDFs for other weeks into the opened folder and leave the file name as-it-is. Here are some helpful tips: 
+- computer.clipboard, computer.sync_file, computer.sync_shared_folder, computer.computer_output_citation are disabled. 
+- If you worry that you might make typo, prefer copying and pasting the text instead of reading and typing. 
+- My computer's password is "password", feel free to use it when you need sudo rights. - For the thunderbird account "anonym-x2024@outlook.com", the password is "gTCI";=@y7|QJ0nDa_kN3Sb&>". 
+- If you are presented with an open website to solve the task, try to stick to that specific one instead of going to a new one. 
+- You have full authority to execute any action without my permission. I won't be watching so please don't ask for confirmation. 
+- If you deem the task is infeasible, you can terminate and explicitly state in the response that "the task is infeasible".
+
+**提示**：请执行以下任务：我想学习 Python 编程，我的朋友推荐了这个课程网站。我已经抓取了第 0 周的讲座幻灯片。请将其他周的 PDF 下载到打开的文件夹中，并保留文件名不变。以下是一些有用的提示： 
+- computer.clipboard、computer.sync_file、computer.sync_shared_folder、computer.computer_output_citation 已禁用。 
+- 如果您担心可能会出现拼写错误，请优先复制并粘贴文本，而不是阅读和输入。 
+- 我计算机的密码是“password”，在需要 sudo 权限时请随意使用。 - 对于 thunderbird 帐户  "anonym-x2024@outlook.com"，密码是 "gTCI";=@y7|QJ0nDa_kN3Sb&>"。
+- 如果您看到一个打开的网站来解决任务，请尽量坚持使用该特定网站，而不是转到新的网站。
+- 您有完全的权力执行任何操作，无需我的许可。我不会看着，所以请不要要求确认。
+- 如果您认为任务不可行，您可以终止并明确声明在响应中“任务不可行”。
 
 ### CUA in Operator（Operator 中的 CUA）
 
