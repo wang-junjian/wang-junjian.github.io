@@ -30,7 +30,7 @@ mistakes and adapts to unforeseen situations with minimal human intervention. We
 analyze the evolution path of GUI agents to guide the further development of this domain.
 UI-TARS is open sourced at https://github.com/bytedance/UI-TARS.
 
-本文介绍了UI-TARS，这是一种原生的GUI代理模型，仅通过感知截图作为输入并执行类似人类的交互（例如键盘和鼠标操作）。与依赖于高度封装的商业模型（例如GPT-4o）和专家设计的提示和工作流程的流行代理框架不同，UI-TARS是一个端到端模型，性能优于这些复杂的框架。实验表明其卓越的性能：UI-TARS在10多个评估感知、基础和GUI任务执行的GUI代理基准测试中达到了SOTA性能（见下文）。值得注意的是，在OSWorld基准测试中，UI-TARS在50步和15步中分别获得了24.6和22.7的分数，超过了Claude的22.0和14.9。在AndroidWorld中，UI-TARS获得了46.6，超过了GPT-4o的34.5。UI-TARS包含几个关键创新：(1) 增强感知：利用大规模的GUI截图数据集进行上下文感知的UI元素理解和精确描述；(2) 统一动作建模：将动作标准化为跨平台的统一空间，并通过大规模动作轨迹实现精确的基础和交互；(3) 系统-2推理：在多步骤决策中引入深思熟虑的推理，涉及任务分解、反思性思维、里程碑识别等多种推理模式；(4) 反思性在线轨迹的迭代训练：通过在数百台虚拟机上自动收集、过滤和反思性地改进新的交互轨迹，解决数据瓶颈。通过迭代训练和反思调优，UI-TARS不断从错误中学习，并以最少的人为干预适应不可预见的情况。我们还分析了GUI代理的演变路径，以指导该领域的进一步发展。UI-TARS已在 [https://github.com/bytedance/UI-TARS](https://github.com/bytedance/UI-TARS) 开源。
+本文介绍了UI-TARS，这是一种原生的GUI代理模型，仅通过感知截图作为输入并执行类似人类的交互（例如键盘和鼠标操作）。与依赖于高度封装的商业模型（例如GPT-4o）和专家设计的提示和工作流程的流行代理框架不同，UI-TARS是一个端到端模型，性能优于这些复杂的框架。实验表明其卓越的性能：UI-TARS在10多个评估感知、基础和GUI任务执行的GUI代理基准测试中达到了SOTA性能（见下文）。值得注意的是，在OSWorld基准测试中，UI-TARS在50步和15步中分别获得了24.6和22.7的分数，超过了Claude的22.0和14.9。在AndroidWorld中，UI-TARS获得了46.6，超过了GPT-4o的34.5。UI-TARS包含几个关键创新：(1) 增强感知：利用大规模的GUI截图数据集进行上下文感知的UI元素理解和精确描述；(2) 统一动作建模：将动作标准化为跨平台的统一空间，并通过大规模动作轨迹实现精确的基础和交互；(3) 系统2推理：在多步骤决策中引入深思熟虑的推理，涉及任务分解、反思性思维、里程碑识别等多种推理模式；(4) 反思性在线轨迹的迭代训练：通过在数百台虚拟机上自动收集、过滤和反思性地改进新的交互轨迹，解决数据瓶颈。通过迭代训练和反思调优，UI-TARS不断从错误中学习，并以最少的人为干预适应不可预见的情况。我们还分析了GUI代理的演变路径，以指导该领域的进一步发展。UI-TARS已在 [https://github.com/bytedance/UI-TARS](https://github.com/bytedance/UI-TARS) 开源。
 
 ![](/images/2025/UI-TARS/Benchmark.png)
 
@@ -46,7 +46,7 @@ that rely heavily on graphical elements such as buttons, text boxes, and images.
 perception and reasoning capabilities, these agents hold the potential to revolutionize task automation, enhance
 accessibility, and streamline workflows across a wide range of applications.
 
-自主代理（Wang等，2024b；Xi等，2023；Qin等，2024）被设想为在最少人类监督下运行，感知其环境，做出决策并执行动作以实现特定目标。在这一领域的许多挑战中，使代理能够与图形用户界面（GUI）无缝交互已成为一个关键前沿（Hu等，2024；Zhang等，2024a；Nguyen等，2024；Wang等，2024e；Gao等，2024）。GUI代理旨在在数字环境中执行任务，这些环境严重依赖于图形元素，如按钮、文本框和图像。通过利用先进的感知和推理能力，这些代理有潜力彻底改变任务自动化，增强可访问性，并简化各种应用程序的工作流程。
+**Autonomous agents 自主代理**（Wang等，2024b；Xi等，2023；Qin等，2024）被设想为在最少人类监督下运行，感知其环境，做出决策并执行动作以实现特定目标。在这一领域的许多挑战中，使代理能够与图形用户界面（GUI）无缝交互已成为一个关键前沿（Hu等，2024；Zhang等，2024a；Nguyen等，2024；Wang等，2024e；Gao等，2024）。GUI代理旨在在数字环境中执行任务，这些环境严重依赖于图形元素，如按钮、文本框和图像。通过利用先进的感知和推理能力，这些代理有潜力彻底改变任务自动化，增强可访问性，并简化各种应用程序的工作流程。
 
 The development of GUI agents has historically relied on hybrid approaches that combine textual representations (e.g., HTML structures and accessibility trees) (Liu et al., 2018; Deng et al., 2023; Zhou et al., 2023).
 While these methods have driven significant progress, they suffer from limitations such as platform-specific
@@ -118,11 +118,10 @@ and benchmarks for GUI agents.
 
 图1：UI-TARS的一个演示案例，帮助用户找到航班。
 
-Based on these analyses, we propose a native GUI agent model UI-TARS2
-, with a demo case illustrated in
+Based on these analyses, we propose a native GUI agent model UI-TARS, with a demo case illustrated in
 Figure 1. UI-TARS incorporates the following core contributions:
 
-基于这些分析，我们提出了一种原生GUI代理模型UI-TARS2，示例案例如图1所示。UI-TARS包含以下核心贡献：
+基于这些分析，我们提出了一种原生GUI代理模型UI-TARS，示例案例如图1所示。UI-TARS包含以下核心贡献：
 
 - **Enhanced Perception for GUI Screenshots** (§ 4.2): GUI environments, with their high information
 density, intricate layouts, and diverse styles, demand robust perception capabilities. We curate a largescale dataset by collecting screenshots using specialized parsing tools to extract metadata such as element
@@ -154,7 +153,7 @@ patterns—such as task decomposition, long-term consistency, milestone recognit
 reflection—into the model. UI-TARS integrates these capabilities by generating explicit “thoughts” before
 each action, bridging perception and action with deliberate decision-making.
 
-- **系统-2推理以进行深思熟虑的决策** (§ 4.4)：在动态环境中表现出色需要先进的推理能力。为了丰富推理能力，我们爬取了600万个GUI教程，经过精心筛选和改进，为逻辑决策提供GUI知识。在此基础上，我们通过向模型注入多样化的推理模式（如任务分解、长期一致性、里程碑识别、试错和反思）来增强所有收集的动作轨迹的推理。UI-TARS通过在每个动作之前生成明确的“思考”，将感知和动作与深思熟虑的决策联系起来。
+- **系统2推理以进行深思熟虑的决策** (§ 4.4)：在动态环境中表现出色需要先进的推理能力。为了丰富推理能力，我们爬取了600万个GUI教程，经过精心筛选和改进，为逻辑决策提供GUI知识。在此基础上，我们通过向模型注入多样化的推理模式（如任务分解、长期一致性、里程碑识别、试错和反思）来增强所有收集的动作轨迹的推理。UI-TARS通过在每个动作之前生成明确的“思考”，将感知和动作与深思熟虑的决策联系起来。
 
 - **Iterative Refinement by Learning from Prior Experience** (§ 4.5): a significant challenge in GUI agent
 development lies in the scarcity of large-scale, high-quality action traces for training. To overcome this
@@ -173,12 +172,12 @@ the model using Direct Preference Optimization (DPO) (Rafailov et al., 2023). Th
 the agent not only learns to avoid errors but also adapts dynamically when they occur. Together, these
 strategies enable UI-TARS to achieve robust, scalable learning with minimal human oversight.
 
-- **通过从先前经验中学习进行迭代改进** (§ 4.5)：GUI代理开发中的一个重要挑战在于缺乏用于训练的大规模、高质量的动作轨迹。为了克服这一数据瓶颈，UI-TARS采用了一个动态收集和改进新交互轨迹的迭代改进框架。利用数百台虚拟机，UI-TARS基于构建的指令探索各种现实世界任务，并生成大量轨迹。严格的多阶段过滤——包括基于规则的启发式、VLM评分和人工审查——确保了轨迹质量。然后将这些经过改进的轨迹反馈到模型中，使代理在连续的训练周期中不断迭代地提高性能。这个在线引导过程的另一个核心组件是反思调优，代理通过分析自己的次优动作来学习识别和纠正错误。我们为这个过程注释了两种类型的数据：(1) 错误校正，其中标注员指出代理生成的轨迹中的错误，并标记纠正动作；(2) 反思后，其中标注员模拟恢复步骤，展示代理在错误后应如何重新调整任务进度。这两种类型的数据创建了配对样本，用于使用直接偏好优化（DPO）（Rafailov等，2023）训练模型。这种策略确保代理不仅学会避免错误，而且在发生错误时动态地进行调整。这些策略共同使UI-TARS能够在最少人类监督下实现稳健且可扩展的学习。
+- **通过从先前经验中学习进行迭代改进** (§ 4.5)：GUI代理开发中的一个重要挑战在于缺乏用于训练的大规模、高质量的动作轨迹。为了克服这一数据瓶颈，UI-TARS采用了一个动态收集和改进新交互轨迹的迭代改进框架。利用数百台虚拟机，UI-TARS基于构建的指令探索各种现实世界任务，并生成大量轨迹。严格的多阶段过滤——包括基于规则的启发式、VLM评分和人工审查——确保了轨迹质量。然后将这些经过改进的轨迹反馈到模型中，使代理在连续的训练周期中不断迭代地提高性能。这个在线引导过程的另一个核心组件是反思调优，代理通过分析自己的次优动作来学习识别和纠正错误。我们为这个过程注释了两种类型的数据：(1) `错误校正（error correction）`，其中标注员指出代理生成的轨迹中的错误，并标记纠正动作；(2) `反思后（post-reflection）`，其中标注员模拟恢复步骤，展示代理在错误后应如何重新调整任务进度。这两种类型的数据创建了配对样本，用于使用直接偏好优化（DPO）（Rafailov等，2023）训练模型。这种策略确保代理不仅学会避免错误，而且在发生错误时动态地进行调整。这些策略共同使UI-TARS能够在最少人类监督下实现稳健且可扩展的学习。
 
 We continually train Qwen-2-VL 7B and 72B (Wang et al., 2024c) on approximately 50 billion tokens to
 develop UI-TARS-7B and UI-TARS-72B. Through extensive experiments, we draw the following conclusions:
 
-我们不断在大约500亿个标记上训练Qwen-2-VL 7B和72B（Wang等，2024c），以开发UI-TARS-7B和UI-TARS-72B。通过大量实验，我们得出以下结论：
+我们不断在大约`500亿`个标记上训练`Qwen-2-VL` 7B和72B（Wang等，2024c），以开发UI-TARS-7B和UI-TARS-72B。通过大量实验，我们得出以下结论：
 
 - **Overall Performance**: UI-TARS demonstrates SOTA performance across 10+ GUI Agent benchmarks,
 covering evaluation for perception, grounding, and agent task execution. These results validate the
@@ -306,7 +305,7 @@ advancements in agent frameworks heavily rely on optimizing plan and action gene
 engineering, centered around the capabilities of the underlying foundation models, ultimately leading to
 improved task completion.
 
-提升基于基础模型的代理框架性能通常涉及设计特定任务的工作流程并优化每个组件的提示。例如，一些方法通过专门的模块（如短期或长期记忆）增强这些框架，以提供特定任务的知识或存储操作经验以实现自我改进。Cradle（Tan等，2024年）通过存储和利用任务执行经验来增强基础代理的多任务处理能力。同样，Song等（2024年）提出了一个API驱动的网页代理框架，利用特定任务的背景知识来执行复杂的网页操作。Agent Workflow Memory（AWM）模块（Wang等，2024g）通过有选择地提供相关工作流程来指导代理的后续行动，从而进一步优化记忆管理。另一种常见的提高任务成功率的策略是引入基于反思的多步骤推理，以改进行动计划和执行。广受认可的ReAct框架（Yao等，2023年）将推理与行动结果结合起来，使计划更加动态和适应性更强。对于多模态任务，MMNavigator（Yan等，2023年）利用总结的上下文动作和标记标签生成准确、可执行的动作。SeeAct（Zheng等，2024b）采取不同的方法，通过明确指示GPT-4V模仿人类浏览行为，考虑任务、网页内容和先前的动作。此外，多代理协作已成为提高任务完成率的强大技术。例如，MobileExperts（Zhang等，2024c）通过引入工具制定和促进多个代理之间的协作，解决了移动环境的独特挑战。总之，当前代理框架的进展主要依赖于通过提示工程优化计划和动作生成，围绕基础模型的能力，最终提高任务完成度。
+提升基于基础模型的代理框架性能通常涉及设计特定任务的工作流程并优化每个组件的提示。例如，一些方法通过专门的模块（如短期或长期记忆）增强这些框架，以提供特定任务的知识或存储操作经验以实现自我改进。Cradle（Tan等，2024年）通过存储和利用任务执行经验来增强基础代理的多任务处理能力。同样，Song等（2024年）提出了一个API驱动的网页代理框架，利用特定任务的背景知识来执行复杂的网页操作。Agent Workflow Memory（AWM）模块（Wang等，2024g）通过有选择地提供相关工作流程来指导代理的后续行动，从而进一步优化记忆管理。另一种常见的提高任务成功率的策略是引入基于反思的多步骤推理，以改进行动计划和执行。广受认可的ReAct框架（Yao等，2023年）将推理与行动结果结合起来，使计划更加动态和适应性更强。对于多模态任务，MMNavigator（Yan等，2023年）利用总结的上下文动作和标记标签生成准确、可执行的动作。SeeAct（Zheng等，2024b）采取不同的方法，通过明确指示GPT-4V模仿人类浏览行为，考虑任务、网页内容和先前的动作。此外，多代理协作已成为提高任务完成率的强大技术。例如，MobileExperts（Zhang等，2024c）通过引入工具制定和促进多个代理之间的协作，解决了移动环境的独特挑战。总之，`当前代理框架的进展主要依赖于通过提示工程优化计划和动作生成，围绕基础模型的能力，最终提高任务完成度。`
 
 **Key Limitations of Agent Frameworks** Despite greater adaptability compared to rule-based systems,
 agent frameworks still rely on human-defined workflows to structure their actions. The “agentic workflow
@@ -484,7 +483,7 @@ OSCAR (Wang & Liu, 2024) utilizes an A11y tree generated by the Windows API for 
 GUI components, incorporating descriptive labels to facilitate semantic grounding. Meanwhile, DUALVCR (Kil et al., 2024) captures both the visual features of the screenshot and the descriptions of associated
 HTML elements to obtain a robust representation of the visual screenshot.
 
-- **全面界面建模**：最近，某些作品利用结构化文本、视觉快照和元素的语义轮廓来获得对外部感知的整体理解。例如，Gou等（2024a）综合大规模GUI元素数据，并训练一个视觉基础模型UGround，以获得各种平台上GUI页面元素的相关参考。类似地，OSCAR（Wang和Liu，2024）利用Windows API生成的A11y树来表示GUI组件，结合描述性标签以促进语义基础。与此同时，DUALVCR（Kil等，2024）捕获截图的视觉特征和相关HTML元素的描述，以获得截图的强大表示。
+- **综合界面建模**：最近，某些作品利用结构化文本、视觉快照和元素的语义轮廓来获得对外部感知的整体理解。例如，Gou等（2024a）综合大规模GUI元素数据，并训练一个视觉基础模型UGround，以获得各种平台上GUI页面元素的相关参考。类似地，OSCAR（Wang和Liu，2024）利用Windows API生成的A11y树来表示GUI组件，结合描述性标签以促进语义基础。与此同时，DUALVCR（Kil等，2024）捕获截图的视觉特征和相关HTML元素的描述，以获得截图的强大表示。
 
 Another important point is the ability to interact in real-time. GUIs are inherently dynamic, with elements
 frequently changing in response to user actions or system processes. GUI agents must continuously monitor
@@ -657,7 +656,7 @@ within their internal parameters, converting the observable interaction process 
 storage. Techniques such as In-Context Learning (ICL) or CoT reasoning can be employed to activate this
 internal memory.
 
-记忆反映了利用背景知识和输入上下文的能力。短期和长期记忆存储之间的协同作用显著增强了代理决策过程的效率。与代理框架不同，原生代理模型将任务的长期操作经验编码到其内部参数中，将可观察的交互过程转换为隐式、参数化的存储。可以使用In-Context Learning（ICL）或CoT推理等技术来激活这种内部记忆。
+记忆反映了利用背景知识和输入上下文的能力。短期和长期记忆存储之间的协同作用显著增强了代理决策过程的效率。与代理框架不同，**原生代理模型**`将任务的长期操作经验编码到其内部参数中，将可观察的交互过程转换为隐式、参数化的存储。可以使用In-Context Learning（ICL）或CoT推理等技术来激活这种内部记忆。`
 
 ### 3.2 Capability Evaluation（能力评估）
 
@@ -800,15 +799,41 @@ capable of handling the necessary context without overwhelming its memory capaci
 previous actions and thoughts is retained as short-term memory. UI-TARS predicts the thought tn and action
 an outputs iteratively, conditioned on both the task instruction and the previous interactions:
 
-P(tn, an | instruction, t1, a1, · · · ,(on−i, tn−i, an−i)N i=1, on). (3)
+P(tn, an &#124; instruction, t1, a1, · · · ,(on−i, tn−i, an−i)N i=1, on). (3)
 
 为了优化内存使用并在通常受限的令牌预算（例如，32k序列长度）内保持效率，我们将输入限制为最后N个观察结果。这个约束确保了模型能够处理必要的上下文，而不会超出其内存容量。先前行动和思考的完整历史记录被保留为短期记忆。UI-TARS预测思考tn和行动an的输出，条件是任务指令和先前的交互：
 
-P(tn, an | instruction, t1, a1, · · · ,(on−i, tn−i, an−i)N i=1, on). (3)
+P(tn, an &#124; instruction, t1, a1, · · · ,(on−i, tn−i, an−i)N i=1, on). (3)
 
 ![](/images/2025/UI-TARS/Figure5.png)
 
 图5：感知和基础数据的数据示例。
+
+1. Task Grounding（任务基础）
+    - Query: Help me delete This Email.（帮我删除这封邮件。）
+    - Answer: [0.27,0.86,0.34,0.89]
+2. Element Description（元素描述）
+    - Visual Description（视觉描述）
+        - A button with the text "NewEmail" and an envelope-shaped icon above it.（一个带有文本“NewEmail”和一个信封形状图标的按钮。）
+    - Position information（位置信息）
+        - Located in the upper-left corner of thepage, it's the first button under the Home tab. To its right is the "New Items" button.（位于页面的左上角，是“主页”选项卡下的第一个按钮。它的右侧是“新项目”按钮。）
+    - Element Function（元素功能）
+        - This button is interactive, clicking it will take you to the new email composition page.（这个按钮是交互式的，点击它将带您到新的电子邮件撰写页面。）
+    - Element Type（元素类型）: Button（按钮）
+3. Question Answering（问答）
+    - Query: What is that app with the waveform-like icon?（那个波形图标的应用是什么？）
+    - Answer: The one you're referring to appears to be the Windows Task Manager icon, which displays a simple performance metric graph. Task Manager is used to monitor system performance and manage running programs and processes. From the screen, we can see that the user has opened this software, but it is currently minimized.（你指的那个应用似乎是Windows任务管理器图标，显示了一个简单的性能指标图。任务管理器用于监视系统性能和管理正在运行的程序和进程。从屏幕上，我们可以看到用户已经打开了这个软件，但它目前是最小化的。）
+4. Set of Mark Perception（标记感知）
+    - Query: What are the elements inside the yellow bounding box?（黄色边界框内的元素是什么？）
+    - Answer: It's a button containing the text "Post a reply" with a blue background and white text.（这是一个按钮，上面有文本“发表回复”，背景是蓝色，文本是白色。）
+    - Query: What is the text inside the green circle section?（绿色圆圈部分的文本是什么？）
+    - Answer: Microsoft Community <Micr...
+5. Dense Captioning（密集字幕）
+    - This is a Windows interface screenshot showing a maximized Outlook email window. In the navigation bar, you can see File, Home, Send/Receive... Currently, the second email under the"older" category is right-clicked, with the title "Question has a reply: When Windows 11 22H2 version will be released?"... In the expanded right-click menu, there are several options including Copy, Quick Print, Reply... From the bottom of the screenshot, you can see that the user has many apps open, including File Explorer, an application with a green circular icon. Chrome….（这是一个Windows界面截图，显示了一个最大化的Outlook电子邮件窗口。在导航栏中，您可以看到文件、主页、发送/接收...目前，在“较旧”类别下的第二封电子邮件被右键单击，标题是“问题有回复：Windows 11 22H2版本何时发布？”...在展开的右键单击菜单中，有几个选项，包括复制、快速打印、回复...从截图的底部，您可以看到用户打开了许多应用程序，包括文件资源管理器，一个带有绿色圆形图标的应用程序。Chrome…。）
+6. State Transition Captioning（状态转换字幕）
+    - The first screenshot shows a Windows desktop with an Outlook app maximized ... On it, you can see that the user has selected the second email under the "Older" category, which brought up a right-click context menu...（第一个截图显示了一个最大化的Outlook应用程序的Windows桌面...您可以看到用户选择了“Older”类别下的第二封电子邮件，这将弹出一个右键上下文菜单...）
+    - The second screenshot is largely identical to the first one, with the main difference being: that the Rules option in the right-click menu is expanded, showing additional options like "AlwaysMove Messages From: Microsoft Community", "Always Move Messages To: learntechwithedi@outllok.com"...Additionally, the mouse is hovering over the "Manage Rules & Alerts" option.（第二个截图与第一个截图基本相同，主要区别在于：右键菜单中的“Rules”选项已展开，显示了额外的选项，如“AlwaysMove Messages From: Microsoft Community”，“Always Move Messages To: learntechwithedi@outllok.com"... 此外，鼠标悬停在“Manage Rules & Alerts”选项上。）
+    - From the screen content, we can infer that the user clicked on the Rules option in the right-click menu of the second email, which expanded into a submenu.（从屏幕内容中，我们可以推断出用户点击了第二封电子邮件的右键菜单中的“Rules”选项，这将展开为一个子菜单。）
 
 ### 4.2 Enhancing GUI Perception（增强GUI感知）
 
@@ -863,7 +888,7 @@ captions. After that, we integrate all the image and element descriptions into a
 caption that preserves the structure of the GUI layout using a VLM. During training, UI-TARS is given only
 the image and tasked with outputting the corresponding dense caption.
 
-**密集字幕** 我们训练UI-TARS在保持准确性和最小化幻觉的同时理解整个界面。密集字幕的目标是提供对GUI截图的全面、详细描述，捕捉不仅元素本身，还有它们的空间关系和界面的整体布局。对于截图中记录的每个元素，我们首先获得它们的元素描述。对于嵌入式图像，通常缺乏详细的元数据，我们还生成它们的描述性字幕。之后，我们将所有图像和元素描述整合到一个连贯、高度详细的字幕中，使用VLM保留GUI布局的结构。在训练期间，UI-TARS只给出图像，并要求输出相应的密集字幕。
+**密集字幕** 我们训练UI-TARS在保持准确性和最小化幻觉的同时理解整个界面。密集字幕的目标是提供对GUI截图的全面、详细描述，捕捉不仅元素本身，还有它们的空间关系和界面的整体布局。对于截图中记录的每个元素，我们首先获得它们的元素描述。对于嵌入式图像，通常缺乏详细的元数据，我们还生成它们的描述性字幕。之后，我们将所有图像和元素描述整合到一个连贯、高度详细的字幕中，使用VLM保留GUI布局的结构。在训练期间，UI-TARS仅接收图像并负责输出相应的密集字幕。
 
 **State Transition Captioning** While dense captioning provides a comprehensive description of a GUI
 interface, it does not capture state transitions, particularly the subtle effects of actions (e.g., a tiny button being
@@ -876,7 +901,7 @@ this way, UI-TARS learns the subtle UI changes, including both user-initiated ac
 transitions. This capability is crucial for tasks requiring fine-grained interaction understanding and dynamic
 state perception.
 
-**状态转换描述** 虽然密集描述提供了GUI界面的全面描述，但它并未捕捉状态转换，特别是动作对界面的细微影响（例如，一个小按钮被按下）。为了解决这一限制，我们训练模型识别和描述两张连续截图之间的差异，并确定是否发生了诸如鼠标点击或键盘输入等动作。我们还加入了对应非交互式UI变化（例如动画、屏幕刷新或后台更新）的截图对。在训练过程中，UI-TARS会被展示一对图像，并负责预测这两张图像的具体视觉变化（以及可能的原因）。通过这种方式，UI-TARS学习到细微的UI变化，包括用户发起的动作和非交互式转换。这种能力对于需要细粒度交互理解和动态状态感知的任务至关重要。
+**状态转换描述** 虽然密集描述提供了GUI界面的全面描述，但它并未捕捉状态转换，特别是动作对界面的细微影响（例如，一个小按钮被按下）。为了解决这一限制，我们训练模型识别和描述两张连续截图之间的差异，并确定是否发生了诸如鼠标点击或键盘输入等动作。我们还加入了对应非交互式UI变化（例如动画、屏幕刷新或后台更新）的截图对。`在训练过程中，UI-TARS会被展示一对图像，并负责预测这两张图像的具体视觉变化（以及可能的原因）。`通过这种方式，UI-TARS学习到细微的UI变化，包括用户发起的动作和非交互式转换。这种能力对于需要细粒度交互理解和动态状态感知的任务至关重要。
 
 **Question Answering (QA)** While dense captioning and element descriptions primarily focus on understanding the layout and elements of a GUI, QA offers a more dynamic and flexible approach to integrating these
 tasks with reasoning capabilities. We synthesize a diverse set of QA data that spans a broad range of tasks,
@@ -902,7 +927,7 @@ isolated, real-world agent tasks inherently involve executing a sequence of acti
 train the model on multi-step trajectories. This approach allows the model to learn not only how to perform
 individual actions but also how to sequence them effectively (system-1 thinking).
 
-改进行动能力的事实方法涉及训练模型模仿任务执行中的人类行为，即行为克隆（Bain＆Sammut，1995）。虽然单个行动是离散的和孤立的，但现实世界的代理任务本质上涉及执行一系列行动，因此训练模型进行多步轨迹是至关重要的。这种方法使模型不仅学会如何执行单个行动，还学会如何有效地对它们进行排序（系统1思维）。
+改进行动能力的事实方法涉及训练模型模仿任务执行中的人类行为，即行为克隆（Bain＆Sammut，1995）。虽然单个行动是离散的和孤立的，但现实世界的代理任务本质上涉及执行一系列行动，因此训`练模型进行多步轨迹（multi-step trajectories）是至关重要`的。这种方法使模型不仅学会如何执行单个行动，还学会如何有效地对它们进行排序（系统1思维）。
 
 **Unified Action Space** Similar to previous works, we design a common action space that standardizes
 semantically equivalent actions across devices (Table 1), such as “click” on Windows versus “tap” on mobile,
@@ -912,7 +937,7 @@ device while maintaining consistency across scenarios. We also define two termin
 indicating task completion, and CallUser(), invoked in cases requiring user intervention, such as login or
 authentication.
 
-**统一动作空间** 类似于之前的工作，我们设计了一个通用的动作空间，标准化了跨设备的语义等效动作（见表1），例如Windows上的“点击”与移动设备上的“轻触”，从而实现跨平台的知识转移。由于设备特定的差异，我们还引入了针对每个平台的可选动作。这确保了模型在处理每个设备的独特需求时，能够在不同场景中保持一致性。我们还定义了两个终端动作：Finished()，表示任务完成，以及CallUser()，在需要用户干预的情况下调用，例如登录或身份验证。
+**统一动作空间** 类似于之前的工作，我们设计了一个通用的动作空间，标准化了跨设备的语义等效动作（见表1），例如Windows上的“点击”与移动设备上的“轻触”，从而实现跨平台的知识转移。由于设备特定的差异，我们还引入了针对每个平台的可选动作。这确保了模型在处理每个设备的独特需求时，能够在不同场景中保持一致性。我们还定义了两个终端动作：**Finished()**，表示任务完成，以及**CallUser()**，在需要用户干预的情况下调用，例如登录或身份验证。
 
 ![](/images/2025/UI-TARS/Table1.png)
 
@@ -931,7 +956,7 @@ GUI-Odyssey (Lu et al., 2024a), AMEX (Chai et al., 2024)) and standardize them i
 format. This involves reconciling varying action representations into a consistent template, allowing for
 seamless integration with the annotated data. In Table 2, we list the basic statistics of our action trace data.
 
-**行动轨迹收集** 在训练任务执行模型时的一个重要挑战在于多步轨迹数据的有限可用性，这些数据在历史上一直被记录不足和稀疏。为了解决这个问题，我们依赖于两个主要数据源：（1）**我们的注释数据集**：我们开发了一个专门的注释工具，用于在PC环境中捕获用户在各种软件和网站上的操作。注释过程始于创建初始任务指令，这些指令由注释者审查和完善，以确保清晰度和与预期目标的一致性。然后，注释者执行任务，确保他们的行动符合指定的要求。每个任务都经过严格的质量过滤；和（2）**开源数据**：我们还整合了多个现有数据集（MM-Mind2Web（Zheng等，2024b）、GUIAct（Chen等，2024c）、AITW（Rawles等，2023）、AITZ（Zhang等，2024d）、AndroidControl（Li等，2024c）、GUI-Odyssey（Lu等，2024a）、AMEX（Chai等，2024））并将它们标准化为统一的动作空间格式。这涉及将不同的行动表示调和为一致的模板，从而实现与注释数据的无缝集成。在表2中，我们列出了我们的行动轨迹数据的基本统计数据。
+**行动轨迹收集** 在训练任务执行模型时的一个重要挑战在于多步轨迹数据的有限可用性，这些数据在历史上一直被记录不足和稀疏。为了解决这个问题，我们依赖于两个主要数据源：（1）**我们的标注数据集**：我们开发了一个专门的标注工具，用于在PC环境中捕获用户在各种软件和网站上的操作。标注过程始于创建初始任务指令，这些指令由标注者审查和完善，以确保清晰度和与预期目标的一致性。然后，标注者执行任务，确保他们的行动符合指定的要求。每个任务都经过严格的质量过滤；（2）**开源数据**：我们还整合了多个现有数据集（MM-Mind2Web（Zheng等，2024b）、GUIAct（Chen等，2024c）、AITW（Rawles等，2023）、AITZ（Zhang等，2024d）、AndroidControl（Li等，2024c）、GUI-Odyssey（Lu等，2024a）、AMEX（Chai等，2024））并将它们标准化为统一的动作空间格式。这涉及将不同的行动表示调和为一致的模板，从而实现与标注数据的无缝集成。在表2中，我们列出了我们的行动轨迹数据的基本统计数据。
 
 **Improving Grounding Ability** Grounding, the ability to accurately locate and interact with specific GUI
 elements, is critical for actions like clicking or dragging. Unlike multi-step action data, grounding data is
@@ -940,7 +965,7 @@ efficiently synthesized or extracted (Hong et al., 2024; Gou et al., 2024a; Wu e
 to directly predict the coordinates of the elements it needs to interact with. This involves associating each
 element in a GUI with its spatial coordinates and metadata.
 
-**提高基础能力** 基础，即准确定位和与特定GUI元素交互的能力，对于点击或拖动等行动至关重要。与多步行动数据不同，基础数据更容易扩展，因为它主要依赖于元素的视觉和位置属性，这些属性可以有效地合成或提取（Hong等，2024；Gou等，2024a；Wu等，2024b）。我们训练UI-TARS直接预测它需要与之交互的元素的坐标。这涉及将GUI中的每个元素与其空间坐标和元数据关联起来。
+**提高 Grounding 能力** Grounding，即准确定位和与特定GUI元素交互的能力，对于点击或拖动等行动至关重要。与多步行动数据不同，grounding 数据更容易扩展，因为它主要依赖于元素的视觉和位置属性，这些属性可以有效地合成或提取（Hong等，2024；Gou等，2024a；Wu等，2024b）。`我们训练UI-TARS直接预测它需要与之交互的元素的坐标`。这涉及将GUI中的每个元素与其空间坐标和元数据关联起来。
 
 As described in § 4.2, we collected screenshots and extracted metadata, including element type, depth,
 bounding boxes, and text content, using specialized parsing tools. For elements recorded with bounding boxes,
@@ -952,7 +977,7 @@ of the screen, ensuring consistency across devices with varying resolutions. For
 button. This direct mapping between descriptions and coordinates enhances the model’s ability to understand
 and ground visual elements accurately.
 
-如§ 4.2所述，我们使用专门的解析工具收集了截图并提取了元数据，包括元素类型、深度、边界框和文本内容。对于记录有边界框的元素，我们计算了角的平均值，得出一个单一点坐标，表示边界框的中心。为了构建训练样本，每个截图都与从元数据中导出的单个元素描述配对。模型的任务是输出相对于屏幕尺寸归一化的相对坐标，确保在分辨率不同的设备上保持一致性。例如，给定描述“标记为提交的右上角的红色按钮”，模型预测该按钮的归一化坐标。描述和坐标之间的直接映射增强了模型准确理解和基础视觉元素的能力。
+如§ 4.2所述，我们使用专门的解析工具收集了截图并提取了元数据，包括元素类型、深度、边界框和文本内容。对于记录有边界框的元素，我们计算了角的平均值，得出一个单一点坐标，表示边界框的中心。为了构建训练样本，每个截图都与从元数据中导出的单个元素描述配对。`模型的任务是输出相对于屏幕尺寸归一化的相对坐标，确保在分辨率不同的设备上保持一致性。`例如，给定描述“标记为提交的右上角的红色按钮”，模型预测该按钮的归一化坐标。描述和坐标之间的直接映射增强了模型准确理解和基础视觉元素的能力。
 
 To further augment our dataset, we integrated open-source data (Seeclick (Cheng et al., 2024), GUIAct (Chen
 et al., 2024c), MultiUI (Liu et al., 2024b), Rico-SCA (Li et al., 2020a), WidgetCaption (Li et al., 2020b),
@@ -992,13 +1017,13 @@ further refined to address duplicates, advertisements, and residual noise. Dedup
 URL-based and Locality-Sensitive Hashing (LSH) methods. Finally, we prompt an LLM to rephrase all the
 textual content in the tutorial, refining the content while eliminating irrelevant or low-quality ones.
 
-我们选择了MINT（Awadalla等，2024）和OmniCorpus（Li等，2024a）这两个广泛认可的图像-文本交织的预训练数据集作为我们的初始数据源。然而，这些数据集包含大量噪音，只有很小一部分符合GUI教程标准。为了提取高质量的教程数据，我们实施了一个多阶段的数据收集和过滤管道：（1）**粗粒度过滤**：为了孤立类似教程的内容，我们使用手动策划的高质量教程正样本和MINT和OmniCorpus的随机样本作为负样本，训练了一个fastText分类器（Joulin等，2016）。然后，训练好的分类器被应用于执行初始筛选，过滤掉不相关的样本，并生成候选数据集。 （2）**细粒度过滤**：为了进一步细化候选数据集，我们使用LLM识别和删除假阳性。这一步确保剩余的样本符合GUI教程的特征。粗粒度和细粒度过滤过程在多轮迭代中进行，以最大化高质量GUI教程的召回率。 （3）**去重和数据细化**：进一步细化过滤后的数据集，以解决重复、广告和残余噪音。使用基于URL和局部敏感哈希（LSH）方法进行去重。最后，我们提示LLM重新表述教程中的所有文本内容，细化内容，同时消除不相关或低质量的内容。
+我们选择了MINT（Awadalla等，2024）和OmniCorpus（Li等，2024a）这两个广泛认可的图像-文本交织的预训练数据集作为我们的初始数据源。然而，这些数据集包含大量噪音，只有很小一部分符合GUI教程标准。为了提取高质量的教程数据，我们实施了一个多阶段的数据收集和过滤管道：（1）**粗粒度过滤**：为了孤立类似教程的内容，我们使用手动策划的高质量教程正样本和MINT和OmniCorpus的随机样本作为负样本，训练了一个**fastText**分类器（Joulin等，2016）。然后，训练好的分类器被应用于执行初始筛选，过滤掉不相关的样本，并生成候选数据集。 （2）**细粒度过滤**：为了进一步细化候选数据集，我们使用LLM识别和删除假阳性。这一步确保剩余的样本符合GUI教程的特征。粗粒度和细粒度过滤过程在多轮迭代中进行，以最大化高质量GUI教程的召回率。 （3）**去重和数据细化**：进一步细化过滤后的数据集，以解决重复、广告和残余噪音。使用基于URL和局部敏感哈希（LSH）方法进行去重。最后，我们提示LLM重新表述教程中的所有文本内容，细化内容，同时消除不相关或低质量的内容。
 
 Through this multi-stage process, we curated approximately 6M high-quality GUI tutorials. On average, each
 tutorial contains 510 text tokens and 3.3 images. This data not only enhances the model’s understanding of
 GUI operations but also lays a robust foundation for infusing reasoning capabilities.
 
-通过这个多阶段过程，我们策划了大约600万个高质量的GUI教程。平均每个教程包含510个文本标记和3.3个图像。这些数据不仅增强了模型对GUI操作的理解，还为注入推理能力奠定了坚实的基础。
+通过这个多阶段过程，我们策划了大约**600万**个高质量的GUI教程。平均每个教程包含510个文本标记和3.3个图像。这些数据不仅增强了模型对GUI操作的理解，还为注入推理能力奠定了坚实的基础。
 
 **Reasoning Stimulation with Thought Augmentation** The action trace data we collect in § 4.3 is inherently action-focused, containing sequences of observations and actions (oi−1, ai−1, oi
 , ai
@@ -1053,6 +1078,52 @@ shown in Figure 6, the reasoning patterns we prompt the VLM to follow include:
 ![](/images/2025/UI-TARS/Figure6.png)
 
 图6：我们增强思考中的各种推理模式。
+
+- Task Decomposition（任务分解）
+    - Set the line spacing to double spacing and remove all background colors from the document.
+    - 将行距设置为双倍行距，并从文档中删除所有背景颜色。
+        - Thought: I have selected all the text, and now I need to set the line spacing to double.
+        - 思考：我已经选择了所有文本，现在需要将行距设置为双倍。
+        - To do this, I need to right-click and select "Paragraph". In the dialog box that appears, find the "Line spacing" option and select "Double" from the dropdown menu.
+        - 为此，我需要右键单击并选择“段落”。在弹出的对话框中，找到“行距”选项，并从下拉菜单中选择“双倍”。
+- Long Term Consistency（长期一致性）
+    - Add the homepages of Google, YouTube, Facebook, Apple, Wikipedia, Netflix, and Instagram to your bookmarks bar.
+    - 将Google、YouTube、Facebook、Apple、Wikipedia、Netflix和Instagram的主页添加到您的书签栏。
+        - Thought: I see the bookmark popup window, I need to click the "Done" button.
+        - 思考：我看到了书签弹出窗口，我需要点击“完成”按钮。
+        - Thought: I've already added Google, YouTube, Facebook, and Apple. I see a photo of someone waving on the screen, but this is irrelevant to my task. Now I need to continue adding Wikipedia's homepage...
+        - 思考：我已经添加了Google、YouTube、Facebook和Apple。我在屏幕上看到了一个人挥手的照片，但这与我的任务无关。现在我需要继续添加维基百科的主页...
+- MileStone Recognition（里程碑识别）
+    - Set the desktop wallpaper to the second image from system's automatic wallpapers, and adjust the resolution to "16:9".
+    - 将桌面壁纸设置为系统自动壁纸的第二张图片，并将分辨率调整为“16:9”。
+        - Thought: I have opened the background settings interface, and now I need to select the second system wallpaper.
+        - 思考：我已经打开了背景设置界面，现在需要选择第二张系统壁纸。
+        - Thought: I have switched to the second automatic image as the wallpaper, and from the background, I can see that the wallpaper has been changed to the second image.
+        - 思考：我已经将壁纸切换到第二张自动图片，从背景中可以看到壁纸已经更改为第二张图片。
+        - Therefore, next I need to continue adjusting the screen resolution to 16:9.
+        - 因此，接下来我需要继续调整屏幕分辨率为16:9。
+- Trial and Error（试错）
+    - Please help me change Chrome's language settings to Japanese.
+    - 请帮我将Chrome的语言设置更改为日语。
+        - Thought: I have found the language settings, but I need to click the "Add" button to confirm adding Japanese as a Chrome language.
+        - 思考：我找到了语言设置，但我需要点击“添加”按钮来确认将日语添加为Chrome语言。
+        - *Chrome is still in English*
+        - *Chrome仍然是英文的*
+        - Thought: It seems Chrome is still in English and my changes haven't taken effect. However, I notice that "Japanese" has appeared in Chrome's language options, which might mean I need to take additional steps. I will click the three-dot icon on the right and follow the prompt to determine what to do next.
+        - 思考：Chrome仍然是英文的，我的更改没有生效。但是，我注意到“日语”已经出现在Chrome的语言选项中，这可能意味着我需要采取额外的步骤。我将点击右侧的三点图标，并按照提示确定下一步该做什么。
+- Reflection（反思）
+    - Convert the first document into PDF format in the same dir.
+    - 将同一目录中的第一个文档转换为PDF格式。
+        - Thought: I need to open the first document, and now I need to select how to open the file. Since it's in HTML format, I want to open it using
+        - 思考：我需要打开第一个文档，现在我需要选择如何打开文件。由于它是HTML格式，我想用
+        - *The incorrect grounding caused a click on the LibreOffice Draw icon.*
+        - *错误的 grounding 导致点击了LibreOffice Draw图标。*
+        - Thought: I mistakenly clicked on the LibreOffice Draw icon in the previous step, I need to adjust the clicking position upward to ensure I click on the correct location.
+        - 思考：我在上一步中错误地点击了LibreOffice Draw图标，我需要将点击位置向上调整，以确保我点击正确的位置。
+
+Convert the first documents into PDF format in the same dir.
+Thought: I need to open the first document, and now I need to select how to open the file. Since it's in HTML format, I want to open it using
+Thought: I mistakenly clicked on the LibreOffice Draw icon in the previous step, I need to adjust the clicking position upward to ensure I click on the correct location.
 
 (2) **Thought Bootstrapping**: reverse annotation of thoughts conditioned on ground-truth actions (i.e., ActRe)
 can lead to false positives because the generated thoughts may appear to match the corresponding actions at a
@@ -1282,14 +1353,14 @@ tuning data for annealing. The annealing process gradually adjusts the model’s
 promoting more focused learning and better optimization of its decision-making strategies in real-world
 GUI interaction scenarios. We denote the model trained after this phase as UI-TARS-SFT.
 
-- **退火阶段**：然后，我们选择感知、接地、行动轨迹、反思调整数据的高质量子集进行退火。退火过程逐渐调整模型的学习动态，促进更加集中的学习，并更好地优化其在真实GUI交互场景中的决策策略。我们将在此阶段训练的模型称为UI-TARS-SFT。
+- **退火阶段**：然后，我们选择感知（perception）、grounding、行动轨迹（action trace）、反思（reflection）调整数据的高质量子集进行退火。退火过程逐渐调整模型的学习动态，促进更加集中的学习，并更好地优化其在真实GUI交互场景中的决策策略。我们将在此阶段训练的模型称为 **UI-TARS-SFT**。
 
 - **DPO Phase**: finally, we employ annotated reflective pairs from online bootstrapping data for DPO
 training. During this process, the model refines its decision-making, reinforcing optimal actions while
 penalizing suboptimal ones. This process improves the model’s ability to make precise, context-aware
 decisions in real-world GUI interactions. The final model is denoted as UI-TARS-DPO.
 
-- **DPO阶段**：最后，我们使用在线引导数据中注释的反思对进行DPO训练。在这个过程中，模型完善其决策，强化最优行动，同时惩罚次优行动。这个过程提高了模型在真实GUI交互中做出精确、上下文感知的决策的能力。最终模型被标记为UI-TARS-DPO。
+- **DPO阶段**：最后，我们使用在线引导数据中注释的反思对进行DPO训练。在这个过程中，模型完善其决策，强化最优行动，同时惩罚次优行动。这个过程提高了模型在真实GUI交互中做出精确、上下文感知的决策的能力。最终模型被标记为 **UI-TARS-DPO**。
 
 
 ## 5 Experiment（实验）
@@ -1304,7 +1375,7 @@ tasks. We set the N in Eq. 3 to 5 throughout this section. We evaluate both UI-T
 for OSWorld in § 5.4, as this benchmark benefits most from the iterative improvement from the DPO phase.
 For other benchmarks, however, we report the model trained after the annealing phase (i.e., UI-TARS-SFT).
 
-在本节中，我们评估了在§ 4中描述的数据集上训练的UI-TARS的性能，该数据集包含大约**50B**标记。我们选择Qwen-2-VL（Wang等，2024c）作为训练的基础模型，并开发了三个模型变体：UI-TARS-2B、UI-TARS-7B和UI-TARS-72B。我们进行了大量实验，以验证所提出模型的优势。这些实验旨在评估模型在三个关键维度上的能力：感知、接地和代理能力。最后，我们进行消融研究，进一步研究系统1和系统2推理对下游任务的影响。在本节中，我们将方程式3中的N设置为5。我们评估UI-TARS-SFT和UI-TARS-DPO在§ 5.4中的OSWorld，因为这个基准受益于DPO阶段的迭代改进。然而，对于其他基准，我们报告在退火阶段训练的模型（即UI-TARS-SFT）。
+在本节中，我们评估了在§ 4中描述的数据集上训练的UI-TARS的性能，该数据集包含大约**50B**标记。我们选择Qwen-2-VL（Wang等，2024c）作为训练的基础模型，并开发了三个模型变体：UI-TARS-2B、UI-TARS-7B和UI-TARS-72B。我们进行了大量实验，以验证所提出模型的优势。这些实验旨在评估模型在三个关键维度上的能力：感知、grounding 和代理能力。最后，我们进行消融研究，进一步研究系统1和系统2推理对下游任务的影响。在本节中，我们将方程式3中的N设置为5。我们评估UI-TARS-SFT和UI-TARS-DPO在§ 5.4中的OSWorld，因为这个基准受益于DPO阶段的迭代改进。然而，对于其他基准，我们报告在退火阶段训练的模型（即UI-TARS-SFT）。
 
 **Baseline** We compare UI-TARS with various baselines, including commercial models such as GPT-4o (Hurst
 et al., 2024), Claude-3.5-Sonnet (Anthropic, 2024a), Gemini-1.5-Pro (Team et al., 2024), and Gemini-2.0
@@ -1331,7 +1402,7 @@ of 88.6. These results demonstrate the superior perception and comprehension cap
 web and mobile environments. Such perceptual ability lays the foundation for agent tasks, where accurate
 environmental understanding is crucial for task execution and decision-making.
 
-我们使用三个关键基准测试UI-TARS模型的感知能力：VisualWebBench（Liu等，2024c）、WebSRC（Chen等，2021）和ScreenQA-short（Hsiao等，2022）。VisualWebBench衡量模型理解和接地网页元素的能力，涵盖网页QA、网页OCR和行动预测等任务。如表3所示，UI-TARS模型取得了出色的成绩，72B变体得分为82.8，明显优于GPT-4o（78.5）和Cluade 3.5（78.2）等闭源模型。对于WebSRC和ScreenQA-short，这两个基准评估了通过QA任务对Web结构理解和移动屏幕内容理解。UI-TARS模型表现出明显优势。WebSRC侧重于理解Web上下文中网页的语义内容和布局，而ScreenQA-short评估了对复杂移动屏幕布局和与界面相关的问题的解释。UI-TARS-7B在WebSRC上取得了领先的93.6分，而UI-TARS-72B在ScreenQA-short上取得了88.6分的优异成绩。这些结果表明了UI-TARS在Web和移动环境中的优越感知和理解能力。这种感知能力为代理任务奠定了基础，准确的环境理解对任务执行和决策至关重要。
+我们使用三个关键基准测试UI-TARS模型的感知能力：VisualWebBench（Liu等，2024c）、WebSRC（Chen等，2021）和ScreenQA-short（Hsiao等，2022）。VisualWebBench衡量模型理解和 ground 网页元素的能力，涵盖网页QA、网页OCR和行动预测等任务。如表3所示，UI-TARS模型取得了出色的成绩，72B变体得分为82.8，明显优于GPT-4o（78.5）和Cluade 3.5（78.2）等闭源模型。对于WebSRC和ScreenQA-short，这两个基准评估了通过QA任务对Web结构理解和移动屏幕内容理解。UI-TARS模型表现出明显优势。WebSRC侧重于理解Web上下文中网页的语义内容和布局，而ScreenQA-short评估了对复杂移动屏幕布局和与界面相关的问题的解释。UI-TARS-7B在WebSRC上取得了领先的93.6分，而UI-TARS-72B在ScreenQA-short上取得了88.6分的优异成绩。这些结果表明了UI-TARS在Web和移动环境中的优越感知和理解能力。这种感知能力为代理任务奠定了基础，准确的环境理解对任务执行和决策至关重要。
 
 ![](/images/2025/UI-TARS/Table3.png)
 
@@ -1341,7 +1412,7 @@ environmental understanding is crucial for task execution and decision-making.
 
 表4：各种模型在ScreenSpot-Pro上的比较。
 
-### 5.2 Grounding Capability Evaluation（接地能力评估）
+### 5.2 Grounding Capability Evaluation（Grounding 能力评估）
 
 To evaluate the grounding capabilities of the UI-TARS, we focus on three benchmarks: ScreenSpot Pro (Li
 et al., 2025), ScreenSpot (Cheng et al., 2024), and ScreenSpot v2 (Wu et al., 2024b). These benchmarks
@@ -1352,7 +1423,7 @@ specialized, high-complexity scenarios. ScreenSpot and ScreenSpot v2 test GUI gr
 desktop, and web platforms. ScreenSpot evaluates models using both direct instructions and self-generated
 plans, while ScreenSpot v2 enhances the evaluation accuracy by correcting annotation errors.
 
-为了评估UI-TARS的接地能力，我们关注三个基准测试：ScreenSpot Pro（Li等，2025）、ScreenSpot（Cheng等，2024）和ScreenSpot v2（Wu等，2024b）。这些基准测试评估了理解和定位GUI元素的能力。ScreenSpot Pro专为高分辨率专业环境设计，该基准包括五个行业和三个操作系统中23个应用程序的专家注释任务。它对模型在专业、高复杂性场景中的接地性能进行了严格评估。ScreenSpot和ScreenSpot v2测试了移动、桌面和Web平台上的GUI接地。ScreenSpot通过直接指令和自动生成计划来评估模型，而ScreenSpot v2通过纠正注释错误来提高评估准确性。
+为了评估UI-TARS的 grounding 能力，我们关注三个基准测试：ScreenSpot Pro（Li等，2025）、ScreenSpot（Cheng等，2024）和ScreenSpot v2（Wu等，2024b）。这些基准测试评估了理解和定位GUI元素的能力。ScreenSpot Pro专为高分辨率专业环境设计，该基准包括五个行业和三个操作系统中23个应用程序的专家注释任务。它对模型在专业、高复杂性场景中的 grounding 性能进行了严格评估。ScreenSpot和ScreenSpot v2测试了移动、桌面和Web平台上的GUI grounding。ScreenSpot通过直接指令和自动生成计划来评估模型，而ScreenSpot v2通过纠正注释错误来提高评估准确性。
 
 UI-TARS consistently outperforms baselines across multiple benchmarks. Specifically, in Table 4, UI-TARS72B achieves a score of 38.1 on ScreenSpot Pro, significantly exceeding the performance of UGround-V1-7B
 (31.1) and OS-Atlas-7B (18.9). Notably, we observe that increasing the input image resolution on ScreenSpot
@@ -1364,22 +1435,22 @@ UI-TARS-72B, while ScreenSpot v1 and v2 exhibit no significant performance chang
 notable improvement in model scaling. This indicates that ScreenSpot v1 and v2 may not be sufficiently robust
 to fully capture the model’s grounding capabilities at higher scales.
 
-UI-TARS在多个基准测试中始终优于基线。具体来说，在表4中，UI-TARS-72B在ScreenSpot Pro上取得了38.1分的成绩，明显超过了UGround-V1-7B（31.1）和OS-Atlas-7B（18.9）的表现。值得注意的是，我们观察到在ScreenSpot Pro上增加输入图像分辨率导致了显著的性能提升。此外，UI-TARS-7B在表5中取得了领先的89.5分。如表6所示，在ScreenSpot v2上，UI-TARS-7B（91.6）和UI-TARS-72B（90.3）都优于现有基线，如OS-Atlas-7B（87.1），进一步突显了我们方法的稳健性。此外，结果显示，随着我们从UI-TARS-2B到UI-TARS-7B的扩展，接地性能有了显著的提高。比较UI-TARS-7B和UI-TARS-72B，虽然ScreenSpot v1和v2没有显著的性能变化，但ScreenSpot Pro在模型扩展方面表现出明显的改进。这表明ScreenSpot v1和v2可能不足以充分捕捉模型在更高规模下的接地能力。
+UI-TARS在多个基准测试中始终优于基线。具体来说，在表4中，UI-TARS-72B在ScreenSpot Pro上取得了38.1分的成绩，明显超过了UGround-V1-7B（31.1）和OS-Atlas-7B（18.9）的表现。值得注意的是，我们观察到在ScreenSpot Pro上增加输入图像分辨率导致了显著的性能提升。此外，UI-TARS-7B在表5中取得了领先的89.5分。如表6所示，在ScreenSpot v2上，UI-TARS-7B（91.6）和UI-TARS-72B（90.3）都优于现有基线，如OS-Atlas-7B（87.1），进一步突显了我们方法的稳健性。此外，结果显示，随着我们从UI-TARS-2B到UI-TARS-7B的扩展，grounding 性能有了显著的提高。比较UI-TARS-7B和UI-TARS-72B，虽然ScreenSpot v1和v2没有显著的性能变化，但ScreenSpot Pro在模型扩展方面表现出明显的改进。这表明ScreenSpot v1和v2可能不足以充分捕捉模型在更高规模下的 grounding 能力。
 
 ![](/images/2025/UI-TARS/Table5.png)
 
-表5：ScreenSpot上各种规划器和接地方法的比较。
+表5：ScreenSpot上各种规划器和 grounding 方法的比较。
 
 ![](/images/2025/UI-TARS/Table6.png)
 
-表6：ScreenSpot-V2上各种规划器和接地方法的比较。
+表6：ScreenSpot-V2上各种规划器和 grounding 方法的比较。
 
 In summary, these results highlight the robust grounding capabilities of UI-TARS across various scenarios,
 including mobile, desktop, web, and professional environments. The models’ consistent performance across
 datasets and their ability to handle both general and high-complexity tasks underscore their versatility and
 effectiveness in real-world GUI grounding applications.
 
-总之，这些结果突显了UI-TARS在各种场景中的强大接地能力，包括移动、桌面、Web和专业环境。模型在数据集上的一致性表现以及处理通用和高复杂性任务的能力突显了它们在真实GUI接地应用中的多功能性和有效性。
+总之，这些结果突显了UI-TARS在各种场景中的强大 grounding 能力，包括移动、桌面、Web和专业环境。模型在数据集上的一致性表现以及处理通用和高复杂性任务的能力突显了它们在真实GUI grounding 应用中的多功能性和有效性。
 
 ### 5.3 Offline Agent Capability Evaluation（离线代理能力评估）
 
