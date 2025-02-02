@@ -20,7 +20,7 @@ This year is the Year of the Snake. I want to create a lifelike snake, wearing a
 
 ![](/images/2025/Janus-Pro-7B/Snake2.png)
 
-`下面的图是快手的可灵生成的。`
+下面的图是[快手可灵](https://klingai.kuaishou.com/text-to-image/)生成的。
 
 ![](/images/2025/Janus-Pro-7B/Snake_keling.png)
 
