@@ -8,6 +8,9 @@ tags: [DeepResearch, Agent, o3, arXiv, OpenAI]
 
 ## [Deep research](https://openai.com/index/introducing-deep-research/)
 
+- [Introduction to Deep Research from OpenAI [LIVESTREAM]](https://community.openai.com/t/introduction-to-deep-research-from-openai-livestream/1110988)
+- [Open-source DeepResearch – Freeing our search agents](https://huggingface.co/blog/open-deep-research)
+
 An agent that uses reasoning to synthesize large amounts of online information and complete multi-step research tasks for you. 
 
 一个代理，使用推理来综合大量在线信息，并为您完成多步研究任务。 
