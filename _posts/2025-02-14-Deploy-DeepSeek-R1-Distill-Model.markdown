@@ -96,7 +96,14 @@ git clone https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.git
 ## 部署 DeepSeek-R1 模型
 
 ```bash
-vllm serve DeepSeek-R1-Distill-Qwen-14B --served-model-name deepseek_r1 --tensor-parallel-size 4 --enable-reasoning --reasoning-parser deepseek_r1 --dtype=half --gpu-memory-utilization 0.99 --max-model-len 16000
+vllm serve DeepSeek-R1-Distill-Qwen-14B \
+  --served-model-name deepseek_r1 \
+  --tensor-parallel-size 4 \
+  --enable-reasoning \
+  --reasoning-parser deepseek_r1 \
+  --dtype=half \
+  --gpu-memory-utilization 0.99 \
+  --max-model-len 16000
 ```
 
 > 单卡可以部署 1.5B 模型，4卡最多部署 14B 模型，需要将最大模型长度设置为 16000（默认：32K）。
