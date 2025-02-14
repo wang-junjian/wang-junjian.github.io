@@ -20,6 +20,8 @@ conda activate deepseek-r1
 pip install vllm
 ```
 
+- [Installation GPU](https://docs.vllm.ai/en/latest/getting_started/installation/gpu/index.html)
+
 ### 错误处理
 
 #### ImportError: undefined symbol: __nvJitLinkComplete_12_4, version libnvJitLink.so.12
@@ -99,6 +101,9 @@ vllm serve DeepSeek-R1-Distill-Qwen-14B --served-model-name deepseek_r1 --tensor
 
 > 单卡可以部署 1.5B 模型，4卡最多部署 14B 模型，需要将最大模型长度设置为 16000（默认：32K）。
 
+- 指定 GPU 卡
+  - 单卡：export CUDA_VISIBLE_DEVICES=3
+  - 多卡：export CUDA_VISIBLE_DEVICES=0,1
 
 ## 聊天测试
 
@@ -146,6 +151,9 @@ curl 'http://localhost:8000/v1/chat/completions' \
 ```
 
 > 生成的内容缺少 &lt;think&gt; 标签，导致 vLLM 不能正确解析到 `reasoning_content`。
+
+- [Bug: Use DeepSeek-R1-Distill-Qwen-32B, the result don't have start <think> and can not parse reasoning_content.](https://github.com/vllm-project/vllm/issues/13125)
+- [Reasoning Outputs](https://docs.vllm.ai/en/latest/features/reasoning_outputs.html)
 
 ### Ollama
 
@@ -197,3 +205,8 @@ curl 'http://localhost:11434/v1/chat/completions' \
 ### 聊天
 
 ![](/images/2025/Jan/Jan.png)
+
+
+## 参考资料
+- [DeepSeek API 文档：推理模型 (deepseek-reasoner)](https://api-docs.deepseek.com/zh-cn/guides/reasoning_model)
+- [Qwen - vLLM](https://qwen.readthedocs.io/en/latest/deployment/vllm.html)
