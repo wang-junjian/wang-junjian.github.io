@@ -72,7 +72,7 @@ CUDA_VISIBLE_DEVICES=3 vllm serve DeepSeek-R1-Distill-Qwen-1.5B --enable-reasoni
 
 - DeepSeek-R1-Distill-Qwen-1.5B
 ```bash
-git clone https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-B1.5.git
+git clone https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B.git
 ```
 
 - DeepSeek-R1-Distill-Qwen-7B
