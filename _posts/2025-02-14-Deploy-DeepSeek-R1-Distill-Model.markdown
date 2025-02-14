@@ -22,7 +22,7 @@ pip install vllm
 
 ### 错误处理
 
-### ImportError: undefined symbol: __nvJitLinkComplete_12_4, version libnvJitLink.so.12
+#### ImportError: undefined symbol: __nvJitLinkComplete_12_4, version libnvJitLink.so.12
 
 ```bash
 Traceback (most recent call last):
@@ -53,7 +53,7 @@ ln -s /usr/local/cuda-12.4/targets/x86_64-linux/lib/libnvJitLink.so.12 /data/min
 export LD_LIBRARY_PATH=/data/miniconda3/envs/deepseek-r1/lib/python3.12/site-packages/nvidia/cusparse/lib:$LD_LIBRARY_PATH
 ```
 
-### ValueError: Bfloat16 is only supported on GPUs with compute capability of at least 8.0
+#### ValueError: Bfloat16 is only supported on GPUs with compute capability of at least 8.0
 
 ```bash
 ValueError: Bfloat16 is only supported on GPUs with compute capability of at least 8.0. Your Tesla T4 GPU has compute capability 7.5. You can use float16 instead by explicitly setting the`dtype` flag in CLI, for example: --dtype=half.
@@ -100,9 +100,10 @@ vllm serve DeepSeek-R1-Distill-Qwen-14B --served-model-name deepseek_r1 --tensor
 > 单卡可以部署 1.5B 模型，4卡最多部署 14B 模型，需要将最大模型长度设置为 16000（默认：32K）。
 
 
-## 测试
+## 聊天测试
 
-### 聊天
+### vLLM
+
 ```bash
 curl 'http://localhost:8000/v1/chat/completions' \
     -H "Content-Type: application/json" \
@@ -144,39 +145,42 @@ curl 'http://localhost:8000/v1/chat/completions' \
 }
 ```
 
-> 生成的内容缺少 &lt;think&gt; 标签，导致 vLLM 不能正确解析到 `reasoning_content`。使用 `Ollama` 时就没有这个问题。
+> 生成的内容缺少 &lt;think&gt; 标签，导致 vLLM 不能正确解析到 `reasoning_content`。
 
-### 文本补全
+### Ollama
+
 ```bash
-curl 'http://localhost:8000/v1/completions' \
+curl 'http://localhost:11434/v1/chat/completions' \
     -H "Content-Type: application/json" \
     -d '{
-        "model": "deepseek_r1",
-        "prompt": "你是谁？"
+        "model": "deepseek-r1:latest",
+        "messages": [ 
+            { "role": "user", "content": "股票交易额突然放大，我应该怎么做？" } 
+        ]
     }' | jq
 ```
 
 ```json
 {
-  "id": "cmpl-424f7224ea3840a2a6d4713a2b06f60f",
-  "object": "text_completion",
-  "created": 1739525589,
-  "model": "deepseek_r1",
+  "id": "chatcmpl-622",
+  "object": "chat.completion",
+  "created": 1739541793,
+  "model": "deepseek-r1:latest",
+  "system_fingerprint": "fp_ollama",
   "choices": [
     {
       "index": 0,
-      "text": "请详细介绍一下 yourself.\n好的，现在我要模拟一个用户和一个assistant之间的",
-      "logprobs": null,
-      "finish_reason": "length",
-      "stop_reason": null,
-      "prompt_logprobs": null
+      "message": {
+        "role": "assistant",
+        "content": "<think>\n嗯，股票交易额突然放大了，这让我有点困惑。为什么会发生这种情况呢？是不是有什么消息让人兴奋或者担忧了？首先，我需要确认是不是我记错了数据或平台的问题。有时候电脑崩溃或者数据延迟会导致数值看起来不对。\n\n如果我确定是交易量真的增加了，那么为什么会这样？上涨的话可能是因为利好消息，比如公司不错的方向或行业趋势。下跌的话，可能是因为负面消息或市场情绪转差。不管怎么样，大交易量通常意味着有重要事件即将发生，所以我需要特别关注。\n\n接下来，我应该怎么处理这种情况呢？首先，我要仔细检查数据源的合法性，确保没有被篡改或错误加载。然后，及时获取最新的 market data，看看是不是发生了什么重大新闻或者公司的公告影响了市场。\n\n另外，我也要监控其他相关的指标，比如成交量带量吗？有没有突破关键阻力位或支撑位？这些可能提示股票即将进入一个趋势期。\n\n在确认无误的情况下，如果决定持有或加仓，我应该控制好仓位，避免高位追高导致风险增大。如果是有套现需求，也应该考虑什么时候更安全地出手。\n\n此外，在情绪管理上，我要保持冷静，不被短期波动所左右。记住，股市是长期投资的舞台，不应该过于在意短期的变化。\n\n总的来说，面对突然放大交易额的情况，我需要先验证数据的真实性，然后结合市场趋势和新闻来决策下一步行动，并在过程中做好风险控制。\n</think>\n\n当您注意到股票交易额突然放大时，可以按照以下步骤进行处理：\n\n1. **验证数据真实性：** 确认自己是否记错了或数据是否存在异常。检查多个渠道获取最新信息。\n\n2. **分析市场趋势：**\n   - 如果交易量激增 accompanied by price movement, 考虑市场情绪转向。\n   - 检查是否有重大新闻、公告或其他事件即将影响股票价格。\n\n3. **技术分析：** \n   - 查看成交量是否持续放大，以及股价是否在关键位附近出现反转或突破。\n   - 注意有没有趋势线被突破的情况。\n\n4. **设置止损和止盈：**\n   - 根据市场状况和发展趋势选择合适的数量比例，控制风险。\n   - 在可能的不利情况下及时了结，避免过大的亏损。\n\n5. **策略调整——灵活应对：** \n   - 如果判断当前股价上涨有确定性且市况好转，考虑适度加仓。\n   - 如果没有明确利好或风险迹象，考虑暂时观望或控制仓位。\n\n6. **情绪管理：** 保持冷静和理性，避免因为短期波动影响决策。记住，股市是长期的投资战场，短期的涨跌不代表全部。\n\n7. **市场整体评估：** 考虑当前市场的整体状况及投资策略是否与大势相符。如果市场持续看好，可能保持长期持有的可能性；反之，则进行必要的调整。\n\n通过以上步骤，您可以更有效地应对突然出现的大交易量情况，并根据市场变化做出合理的决策，以减少不必要的风险和优化投资策略。"
+      },
+      "finish_reason": "stop"
     }
   ],
   "usage": {
-    "prompt_tokens": 4,
-    "total_tokens": 20,
-    "completion_tokens": 16,
-    "prompt_tokens_details": null
+    "prompt_tokens": 13,
+    "completion_tokens": 636,
+    "total_tokens": 649
   }
 }
 ```
@@ -186,10 +190,10 @@ curl 'http://localhost:8000/v1/completions' \
 
 下载 [Jan](https://jan.ai/) 客户端。
 
-设置：
+### 设置
 
-![](../images/2025/Jan/Jan-Settings.png) 
+![](/images/2025/Jan/Jan-Settings.png) 
 
-聊天：
+### 聊天
 
-![](../images/2025/Jan/Jan.png)
+![](/images/2025/Jan/Jan.png)
