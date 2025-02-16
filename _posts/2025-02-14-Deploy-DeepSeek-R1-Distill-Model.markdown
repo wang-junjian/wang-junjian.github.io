@@ -103,7 +103,7 @@ vllm serve DeepSeek-R1-Distill-Qwen-14B \
   --reasoning-parser deepseek_r1 \
   --dtype=half \
   --gpu-memory-utilization 0.99 \
-  --max-model-len 16000
+  --max-model-len 20000
 ```
 
 > 单卡可以部署 1.5B 模型，4卡最多部署 14B 模型，需要将最大模型长度设置为 16000（默认：32K）。
@@ -159,6 +159,7 @@ curl 'http://localhost:8000/v1/chat/completions' \
 
 > 生成的内容缺少 &lt;think&gt; 标签，导致 vLLM 不能正确解析到 `reasoning_content`。
 
+- [本地部署DeepSeek-R1-Distill-Qwen-32B,输出仅有&lt;/think>，没有&lt;think>](https://github.com/deepseek-ai/DeepSeek-R1/issues/352)
 - [Bug: Use DeepSeek-R1-Distill-Qwen-32B, the result don't have start <think> and can not parse reasoning_content.](https://github.com/vllm-project/vllm/issues/13125)
 - [Reasoning Outputs](https://docs.vllm.ai/en/latest/features/reasoning_outputs.html)
 
