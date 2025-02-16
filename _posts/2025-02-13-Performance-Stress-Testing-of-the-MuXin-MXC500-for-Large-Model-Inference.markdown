@@ -56,8 +56,17 @@ docker exec -it vllm bash
 ```
 
 ### 部署模型
+
+- Qwen2.5-72B-Instruct
+
 ```bash
 vllm serve /data/Qwen2.5-72B-Instruct --served-model-name qwen2.5 --tensor-parallel-size 4
+```
+
+- DeepSeek-R1-Distill-Qwen-32B
+
+```bash
+vllm serve /data/DeepSeek-R1-Distill-Qwen-32B --served-model-name qwen2.5 --tensor-parallel-size 4
 ```
 
 ### 查看 GPU 状态
@@ -123,7 +132,7 @@ curl 'http://localhost:8000/v1/chat/completions' \
     }'
 ```
 
-### 补全
+### 文本补全
 ```bash
 curl 'http://localhost:8000/v1/completions' \
     -H "Content-Type: application/json" \
@@ -142,6 +151,9 @@ curl 'http://localhost:8000/v1/completions' \
 pip install evalscope==0.5.5
 pip install evalscope-perf
 ```
+
+- [evalscope](https://pypi.org/project/evalscope)
+- [evalscope-perf](https://pypi.org/project/evalscope-perf)
 
 ### 数据集下载
 
@@ -220,11 +232,16 @@ cp performance_metrics.png /tmp/systemd-private-7a1518cf39464adb821c6af0a9b6902e
 
 ## 实验结果
 
-### Qwen2.5-72B
+> 总的测试数量为 1000 。
+
+### Qwen2.5-72B-Instruct
+
+压测命令：
 
 ```bash
 evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
     ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
     --parallels 8 \
     --parallels 16 \
     --parallels 32 \
@@ -234,4 +251,107 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
     --parallels 150 \
     --parallels 200 \
     --n 1000
+```
+
+显存使用及利用率：
+
+```bash
+=================== MetaX System Management Interface Log ===================
+Timestamp                                         : Sat Feb 15 16:17:48 2025
+
+Attached GPUs                                     : 4
++---------------------------------------------------------------------------------+
+| MX-SMI 2.1.6                        Kernel Mode Driver Version: 2.5.014         |
+| MACA Version: 2.23.0.1018           BIOS Version: 1.13.5.0                      |
+|------------------------------------+---------------------+----------------------+
+| GPU         NAME                   | Bus-id              | GPU-Util             |
+| Temp        Power                  | Memory-Usage        |                      |
+|====================================+=====================+======================|
+| 0           MXC500                 | 0000:05:00.0        | 36%                  |
+| 54C         122W                   | 60278/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 1           MXC500                 | 0000:08:00.0        | 36%                  |
+| 54C         125W                   | 59830/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 2           MXC500                 | 0000:0e:00.0        | 24%                  |
+| 53C         122W                   | 59830/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 3           MXC500                 | 0000:0f:00.0        | 35%                  |
+| 54C         122W                   | 59830/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+
++---------------------------------------------------------------------------------+
+| Process:                                                                        |
+|  GPU                    PID         Process Name                 GPU Memory     |
+|                                                                  Usage(MiB)     |
+|=================================================================================|
+|  0                   343683         python                       59328          |
+|  1                   350950         ray::RayWorkerW              58880          |
+|  2                   351042         ray::RayWorkerW              58880          |
+|  3                   351132         ray::RayWorkerW              58880          |
++---------------------------------------------------------------------------------+
+```
+
+### DeepSeek-R1-Distill-Qwen-32B
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 8 \
+    --parallels 16 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 256 \
+    --parallels 300 \
+    --n 1000
+```
+
+![](/images/2025/MXC500/DeepSeek-R1-Distill-Qwen-32B.png)
+
+| 指标 | 8 | 16 | 32 | 64 | 100 | 128 | 150 | 200 | 256 | 300 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 失败数 | 12 | 10 | 17 | 38 | 109 | 129 | 211 | 197 | 161 | 266 |
+
+显存使用及利用率：
+
+```bash
+=================== MetaX System Management Interface Log ===================
+Timestamp                                         : Sat Feb 15 11:45:50 2025
+
+Attached GPUs                                     : 4
++---------------------------------------------------------------------------------+
+| MX-SMI 2.1.6                        Kernel Mode Driver Version: 2.5.014         |
+| MACA Version: 2.23.0.1018           BIOS Version: 1.13.5.0                      |
+|------------------------------------+---------------------+----------------------+
+| GPU         NAME                   | Bus-id              | GPU-Util             |
+| Temp        Power                  | Memory-Usage        |                      |
+|====================================+=====================+======================|
+| 0           MXC500                 | 0000:05:00.0        | 34%                  |
+| 54C         112W                   | 61292/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 1           MXC500                 | 0000:08:00.0        | 34%                  |
+| 54C         118W                   | 60716/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 2           MXC500                 | 0000:0e:00.0        | 33%                  |
+| 53C         114W                   | 60716/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 3           MXC500                 | 0000:0f:00.0        | 33%                  |
+| 53C         111W                   | 60716/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+
++---------------------------------------------------------------------------------+
+| Process:                                                                        |
+|  GPU                    PID         Process Name                 GPU Memory     |
+|                                                                  Usage(MiB)     |
+|=================================================================================|
+|  0                   279777         python                       60352          |
+|  1                   287035         ray::RayWorkerW              59776          |
+|  2                   287125         ray::RayWorkerW              59776          |
+|  3                   287215         ray::RayWorkerW              59776          |
++---------------------------------------------------------------------------------+
 ```
