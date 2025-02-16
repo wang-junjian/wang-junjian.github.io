@@ -208,12 +208,25 @@ curl 'http://localhost:11434/v1/chat/completions' \
 
 ### 设置
 
-![](/images/2025/Jan/Jan-Settings.png) 
+#### DeepSeek
+
+![](/images/2025/Jan/Jan-Settings.png)
+
+- **Chat Completion URL**: https://api.deepseek.com/chat/completions
+- **Model List URL**: https://api.deepseek.com/models
+
+#### OpenAI
+
+![](/images/2025/Jan/Jan-Settings-OpenAI.png)
+
+- **Chat Completion URL**: https://api.openai.com/v1/chat/completions
+- **Model List URL**: https://api.openai.com/v1/models
 
 ### 聊天
 
 ![](/images/2025/Jan/Jan.png)
 
+![](/images/2025/Jan/Jan-OpenAI.png)
 
 ## 参考资料
 - [DeepSeek API 文档：推理模型 (deepseek-reasoner)](https://api-docs.deepseek.com/zh-cn/guides/reasoning_model)
