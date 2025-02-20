@@ -444,7 +444,7 @@ Legend:
 
 ### NUMA 绑定
 
-进程绑定到 NUMA 节点 0 上，这样进程只能使用 NUMA 节点 0 上的 CPU 和内存，避免了 NUMA 交叉访问，提高了性能。
+从上面的拓扑关系可以看出，GPU 与 CPU 的拓扑关系是 MX，表示连接通过 MetaXLink，这种连接方式是最快的。所有GPU都连接到 NUMA 节点 0 上，所以可以将进程绑定到 NUMA 节点 0 上，这样进程只能使用 NUMA 节点 0 上的 CPU 和内存，避免了 NUMA 交叉访问，提高了性能。
 
 ```bash
 numactl --cpunodebind=0 --membind=0 vllm serve /data/Qwen2.5-72B-Instruct --served-model-name qwen2.5 --tensor-parallel-size 4
