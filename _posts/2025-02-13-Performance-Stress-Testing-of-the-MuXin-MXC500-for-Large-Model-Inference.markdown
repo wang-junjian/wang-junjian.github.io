@@ -361,3 +361,221 @@ Attached GPUs                                     : 4
 |  3                   287215         ray::RayWorkerW              59776          |
 +---------------------------------------------------------------------------------+
 ```
+
+
+## NUMA 配置（加速推理性能）
+
+### 安装 numactl
+
+```bash
+yum install numactl
+```
+
+### 查看 NUMA 节点
+
+```bash
+numactl --hardware
+```
+
+```bash
+numactl --hardware
+available: 8 nodes (0-7)
+node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+node 0 size: 64992 MB
+node 0 free: 4950 MB
+node 1 cpus: 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+node 1 size: 65461 MB
+node 1 free: 12524 MB
+node 2 cpus: 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47
+node 2 size: 65461 MB
+node 2 free: 9299 MB
+node 3 cpus: 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63
+node 3 size: 65461 MB
+node 3 free: 11394 MB
+node 4 cpus: 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79
+node 4 size: 65461 MB
+node 4 free: 7189 MB
+node 5 cpus: 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95
+node 5 size: 65461 MB
+node 5 free: 6740 MB
+node 6 cpus: 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111
+node 6 size: 65461 MB
+node 6 free: 7317 MB
+node 7 cpus: 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127
+node 7 size: 64436 MB
+node 7 free: 11067 MB
+node distances:
+node   0   1   2   3   4   5   6   7 
+  0:  10  22  22  22  28  22  28  28 
+  1:  22  10  22  22  22  28  28  28 
+  2:  22  22  10  22  28  28  28  22 
+  3:  22  22  22  10  28  28  22  28 
+  4:  28  22  28  28  10  22  22  22 
+  5:  22  28  28  28  22  10  22  22 
+  6:  28  28  28  22  22  22  10  22 
+  7:  28  28  22  28  22  22  22  10
+```
+
+### 查看 GPU 与 CPU 的拓扑关系
+
+```bash
+mx-smi topo -m
+```
+
+```bash
+Attached GPUs                                     : 4
+Device link type matrix
+        GPU0    GPU1    GPU2    GPU3    Node Affinity  CPU Affinity
+GPU0    X       MX      MX      MX      0              0-15
+GPU1    MX      X       MX      MX      0              0-15
+GPU2    MX      MX      X       MX      0              0-15
+GPU3    MX      MX      MX      X       0              0-15
+
+Legend:
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  MX   = Connection traversing MetaXLink
+  NA   = Connection type is unknown
+```
+
+### NUMA 绑定
+
+进程绑定到 NUMA 节点 0 上，这样进程只能使用 NUMA 节点 0 上的 CPU 和内存，避免了 NUMA 交叉访问，提高了性能。
+
+```bash
+numactl --cpunodebind=0 --membind=0 vllm serve /data/Qwen2.5-72B-Instruct --served-model-name qwen2.5 --tensor-parallel-size 4
+```
+
+可以简写为：
+
+```bash
+numactl -N0 -m0 vllm serve /data/Qwen2.5-72B-Instruct --served-model-name qwen2.5 --tensor-parallel-size 4
+```
+
+### 测试
+
+部署模型
+
+```bash
+numactl -N0 -m0 vllm serve /data/DeepSeek-R1-Distill-Qwen-32B \
+    --served-model-name qwen2.5 \
+    --tensor-parallel-size 4
+```
+
+压力测试
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
+     ./datasets/open_qa.jsonl \
+     --max-prompt-length 8000 \
+     --read-timeout=120 \
+     --parallels 100 \
+     --n 500
+```
+
+**没有配置 NUMA**
+
+```bash
+Benchmarking summary: 
+ Time taken for tests: 555.873 seconds
+ Expected number of requests: 500
+ Number of concurrency: 100
+ Total requests: 474
+ Succeed requests: 426
+ Failed requests: 48
+ Average QPS: 0.766
+ Average latency: 73.051
+ Throughput(average output tokens per second): 538.497
+ Average time to first token: 73.051
+ Average input tokens per request: 24.338
+ Average output tokens per request: 678.622
+ Average time per output token: 0.00186
+ Average package per request: 1.000
+ Average package latency: 73.051
+
+📌 Metrics: {'Average QPS': 0.766, 'Average latency': 73.051, 'Throughput': 538.497}
+```
+
+**numactl -N0 -m0**
+
+```bash
+Benchmarking summary: 
+ Time taken for tests: 510.021 seconds
+ Expected number of requests: 500
+ Number of concurrency: 100
+ Total requests: 480
+ Succeed requests: 443
+ Failed requests: 37
+ Average QPS: 0.869
+ Average latency: 71.212
+ Throughput(average output tokens per second): 609.616
+ Average time to first token: 71.212
+ Average input tokens per request: 24.413
+ Average output tokens per request: 688.063
+ Average time per output token: 0.00164
+ Average package per request: 1.000
+ Average package latency: 71.212
+
+📌 Metrics: {'Average QPS': 0.869, 'Average latency': 71.212, 'Throughput': 609.616}
+```
+
+**numactl --cpunodebind=0,1,2,3 --membind=0,1,2,3**
+
+```bash
+Benchmarking summary: 
+ Time taken for tests: 647.449 seconds
+ Expected number of requests: 500
+ Number of concurrency: 100
+ Total requests: 460
+ Succeed requests: 423
+ Failed requests: 37
+ Average QPS: 0.653
+ Average latency: 71.199
+ Throughput(average output tokens per second): 443.555
+ Average time to first token: 71.199
+ Average input tokens per request: 24.333
+ Average output tokens per request: 678.910
+ Average time per output token: 0.00225
+ Average package per request: 1.000
+ Average package latency: 71.199
+
+📌 Metrics: {'Average QPS': 0.653, 'Average latency': 71.199, 'Throughput': 443.555}
+```
+
+**numactl --cpunodebind=0,2,4,6 --membind=0,2,4,6**
+
+```bash
+Benchmarking summary: 
+ Time taken for tests: 641.340 seconds
+ Expected number of requests: 500
+ Number of concurrency: 100
+ Total requests: 461
+ Succeed requests: 411
+ Failed requests: 50
+ Average QPS: 0.641
+ Average latency: 73.287
+ Throughput(average output tokens per second): 415.901
+ Average time to first token: 73.287
+ Average input tokens per request: 24.421
+ Average output tokens per request: 648.988
+ Average time per output token: 0.00240
+ Average package per request: 1.000
+ Average package latency: 73.287
+
+📌 Metrics: {'Average QPS': 0.641, 'Average latency': 73.287, 'Throughput': 415.901}
+```
+
+### 结果对比
+
+| NUMA 绑定 | Average QPS | Average latency | Throughput |
+| --- | --- | --- | --- |
+| 无 | 0.766 | 73.051 | 538.497 |
+| numactl -N0 -m0 | 0.869 | 71.212 | 609.616 |
+| numactl --cpunodebind=0,1,2,3 --membind=0,1,2,3 | 0.653 | 71.199 | 443.555 |
+| numactl --cpunodebind=0,2,4,6 --membind=0,2,4,6 | 0.641 | 73.287 | 415.901 |
+
+**结论**：NUMA 绑定可以提高推理性能，但是绑定的节点需要根据实际情况（GPU和CPU的拓扑关系）进行调整，否则可能会降低性能。
