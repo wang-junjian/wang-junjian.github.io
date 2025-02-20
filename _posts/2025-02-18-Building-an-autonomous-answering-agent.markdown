@@ -297,3 +297,14 @@ D. 中间件版本
 | codestral-2405 | ❌ | ❌ | - |
 | qwq-32b-preview | ❌ | ❌ | - |
 | phi-4 | ❌ | ❌ | - |
+
+#### [Ollama](https://ollama.com/)
+
+| 模型 | 📝思路一（提示词1） | 📝思路一（提示词3） | 🏞️思路二 |
+| --- | --- | --- | --- |
+| DeepSeek-R1-Distill-Qwen-7B | ❌ | ❌ | - |
+| DeepSeek-R1-Distill-Qwen-14B | ❌ | ❌ | - |
+| DeepSeek-R1-Distill-Qwen-32B | ❌ | ✅ | - |
+| llava:7b |  |  | ❌ |
+| minicpm-v:8b |  |  | ❌ |
+| llama3.2-vision:latest |  |  | ❌ |
