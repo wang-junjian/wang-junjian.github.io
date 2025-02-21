@@ -32,6 +32,26 @@ tags: [沐曦, MXC500, GPU, vLLM, evalscope-perf, LLM]
 
 选择 MXC500 服务器，4卡64G。
 
+### 下载模型
+
+进入 `/data/models` 目录。
+
+```bash
+cd /data/models
+```
+
+#### [Qwen2.5-72B-Instruct](https://modelscope.cn/models/Qwen/Qwen2.5-72B-Instruct)
+
+```bash
+git clone https://www.modelscope.cn/Qwen/Qwen2.5-72B-Instruct.git
+```
+
+#### [DeepSeek-R1-Distill-Qwen-32B](https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)
+
+```bash
+git clone https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.git
+```
+
 ### 运行容器（定制的 vLLM 镜像）
 ```bash
 docker run -itd --restart=always \
