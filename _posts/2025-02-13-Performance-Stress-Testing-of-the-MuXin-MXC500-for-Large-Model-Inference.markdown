@@ -585,11 +585,9 @@ Benchmarking summary:
 
 ## 实验结果（NUMA 绑定）
 
-> 总的测试数量为 1000 。
+> 使用上面部署的 `Qwen2.5-72B-Instruct` 模型，总的测试数量为 1000 。
 
-### Qwen2.5-72B-Instruct
-
-压测命令：
+### evalscope-perf
 
 ```bash
 evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
@@ -616,3 +614,62 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
 | 失败数 | 0 | 0 | 0 | 14 | 35 | 78 | 89 | 164 |
 
 > 没有看到明显的性能提升，但并发数 150 时性能达到峰值。
+
+### vllm benchmark
+
+#### 下载数据集 [ShareGPT](https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split)
+```shell
+wget https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split/resolve/master/ShareGPT_V3_unfiltered_cleaned_split.json \
+    -O datasets/ShareGPT_V3_unfiltered_cleaned_split.json
+```
+
+#### 克隆 [vllm](https://github.com/vllm-project/vllm) 项目
+
+```bash
+git clone https://github.com/vllm-project/vllm
+cd vllm
+```
+
+#### 运行 benchmark
+
+```bash
+python3 ./benchmarks/benchmark_serving.py --backend vllm \
+    --model qwen2.5 \
+    --tokenizer /data/models/Qwen2.5-72B-Instruct \
+    --dataset-name "sharegpt" \
+    --dataset-path "/data/datasets/ShareGPT_V3_unfiltered_cleaned_split.json" \
+    --base-url http://0.0.0.0:8000 --trust-remote-code
+```
+
+#### 基准测试结果
+
+```bash
+Namespace(backend='vllm', base_url='http://0.0.0.0:8000', host='127.0.0.1', port=8000, endpoint='/v1/completions', dataset=None, dataset_name='sharegpt', dataset_path='/data/datasets/ShareGPT_V3_unfiltered_cleaned_split.json', max_concurrency=None, model='qwen2.5', tokenizer='/data/models/Qwen2.5-72B-Instruct', best_of=1, use_beam_search=False, num_prompts=1000, logprobs=None, request_rate=inf, burstiness=1.0, seed=0, trust_remote_code=True, disable_tqdm=False, profile=False, save_result=False, metadata=None, result_dir=None, result_filename=None, ignore_eos=False, percentile_metrics='ttft,tpot,itl', metric_percentiles='99', goodput=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, random_input_len=1024, random_output_len=128, random_range_ratio=1.0, random_prefix_len=0, hf_subset=None, hf_split=None, hf_output_len=None, tokenizer_mode='auto', served_model_name=None, lora_modules=None)
+Starting initial single prompt test run...
+Initial test run completed. Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: None
+
+============ Serving Benchmark Result ============
+Successful requests:                     1000      
+Benchmark duration (s):                  384.69    
+Total input tokens:                      217393    
+Total generated tokens:                  197245    
+Request throughput (req/s):              2.60      
+Output token throughput (tok/s):         512.73    
+Total Token throughput (tok/s):          1077.84   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          129740.24 
+Median TTFT (ms):                        118243.29 
+P99 TTFT (ms):                           319822.78 
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          487.16    
+Median TPOT (ms):                        501.16    
+P99 TPOT (ms):                           1076.45   
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           428.46    
+Median ITL (ms):                         565.66    
+P99 ITL (ms):                            1021.33   
+==================================================
+```
