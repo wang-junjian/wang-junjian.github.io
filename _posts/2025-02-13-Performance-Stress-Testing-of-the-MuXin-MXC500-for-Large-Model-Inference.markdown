@@ -523,6 +523,10 @@ Benchmarking summary:
 📌 Metrics: {'Average QPS': 0.869, 'Average latency': 71.212, 'Throughput': 609.616}
 ```
 
+运行 `htop` 查看 CPU 使用情况，可以看到进程只使用了 NUMA 节点 0 上的 CPU。
+
+![](/images/2025/MXC500/htop.png)
+
 **numactl --cpunodebind=0,1,2,3 --membind=0,1,2,3**
 
 ```bash
@@ -641,8 +645,6 @@ python3 ./benchmarks/benchmark_serving.py --backend vllm \
     --base-url http://0.0.0.0:8000 --trust-remote-code
 ```
 
-#### 基准测试结果
-
 ```bash
 Namespace(backend='vllm', base_url='http://0.0.0.0:8000', host='127.0.0.1', port=8000, endpoint='/v1/completions', dataset=None, dataset_name='sharegpt', dataset_path='/data/datasets/ShareGPT_V3_unfiltered_cleaned_split.json', max_concurrency=None, model='qwen2.5', tokenizer='/data/models/Qwen2.5-72B-Instruct', best_of=1, use_beam_search=False, num_prompts=1000, logprobs=None, request_rate=inf, burstiness=1.0, seed=0, trust_remote_code=True, disable_tqdm=False, profile=False, save_result=False, metadata=None, result_dir=None, result_filename=None, ignore_eos=False, percentile_metrics='ttft,tpot,itl', metric_percentiles='99', goodput=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, random_input_len=1024, random_output_len=128, random_range_ratio=1.0, random_prefix_len=0, hf_subset=None, hf_split=None, hf_output_len=None, tokenizer_mode='auto', served_model_name=None, lora_modules=None)
 Starting initial single prompt test run...
@@ -673,3 +675,45 @@ Median ITL (ms):                         565.66
 P99 ITL (ms):                            1021.33   
 ==================================================
 ```
+
+#### 运行 benchmark（并发 100）
+
+```bash
+python3 ./benchmarks/benchmark_serving.py --backend vllm \
+    --model qwen2.5 \
+    --tokenizer /data/models/Qwen2.5-72B-Instruct \
+    --dataset-name "sharegpt" \
+    --dataset-path "/data/datasets/ShareGPT_V3_unfiltered_cleaned_split.json" \
+    --base-url http://0.0.0.0:8000 --trust-remote-code \
+    --max-concurrency 100
+```
+
+```bash
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 100
+
+============ Serving Benchmark Result ============
+Successful requests:                     1000      
+Benchmark duration (s):                  552.55    
+Total input tokens:                      217393    
+Total generated tokens:                  198142    
+Request throughput (req/s):              1.81      
+Output token throughput (tok/s):         358.60    
+Total Token throughput (tok/s):          752.04    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1109.58   
+Median TTFT (ms):                        566.98    
+P99 TTFT (ms):                           5961.61   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          272.72    
+Median TPOT (ms):                        271.69    
+P99 TPOT (ms):                           419.77    
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           260.09    
+Median ITL (ms):                         139.25    
+P99 ITL (ms):                            623.20    
+==================================================
+```
+
+> 效果不好。❌
