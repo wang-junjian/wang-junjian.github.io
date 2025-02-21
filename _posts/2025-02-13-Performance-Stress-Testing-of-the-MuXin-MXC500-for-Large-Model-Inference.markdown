@@ -461,7 +461,7 @@ numactl -N0 -m0 vllm serve /data/Qwen2.5-72B-Instruct --served-model-name qwen2.
 部署模型
 
 ```bash
-numactl -N0 -m0 vllm serve /data/DeepSeek-R1-Distill-Qwen-32B \
+numactl -N0 -m0 vllm serve /data/Qwen2.5-72B-Instruct \
     --served-model-name qwen2.5 \
     --tensor-parallel-size 4
 ```
@@ -581,3 +581,38 @@ Benchmarking summary:
 **结论**：NUMA 绑定可以提高推理性能，但是绑定的节点需要根据实际情况（GPU和CPU的拓扑关系）进行调整，否则可能会降低性能。
 
 > 还验证了数据集存放在固态硬盘和普通硬盘的区别，发现没有明显差异。
+
+
+## 实验结果（NUMA 绑定）
+
+> 总的测试数量为 1000 。
+
+### Qwen2.5-72B-Instruct
+
+压测命令：
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 8 \
+    --parallels 16 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --n 1000
+```
+
+![](/images/2025/MXC500/Qwen2.5-72B-Instruct-NUMA.png)
+
+| 指标 | 8 | 16 | 32 | 64 | 100 | 128 | 150 | 200 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| QPS | 0.37 | 0.61 | 0.89 | 1.08 | 1.37 | 1.44 | 1.48 | 1.47 |
+| 延迟 | 20.94 | 25.73 | 35.16 | 55.09 | 61.88 | 67.18 | 70.76 | 73.50 |
+| 吞吐量 | 109.62 | 179.37 | 260.32 | 309.04 | 385.08 | 383.47 | 393.34 | 364.43 |
+| 失败数 | 0 | 0 | 0 | 14 | 35 | 78 | 89 | 164 |
+
+> 没有看到明显的性能提升，但并发数 150 时性能达到峰值。
