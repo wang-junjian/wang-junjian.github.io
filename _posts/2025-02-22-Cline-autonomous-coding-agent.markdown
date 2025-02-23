@@ -26,7 +26,7 @@ code cline
 npm run install:all
 ```
 
-### 安装扩展 esbuild-problem-matchers
+### 安装 [esbuild problem matchers 扩展](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers)
 
 如果构建项目时遇到问题，请安装 esbuild problem matchers 扩展。
 
