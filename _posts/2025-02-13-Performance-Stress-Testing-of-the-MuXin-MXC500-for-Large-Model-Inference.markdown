@@ -40,6 +40,12 @@ tags: [沐曦, MXC500, GPU, vLLM, evalscope-perf, LLM]
 cd /data/models
 ```
 
+#### [Qwen2.5-7B-Instruct](https://modelscope.cn/models/Qwen/Qwen2.5-7B-Instruct)
+
+```bash
+git clone https://www.modelscope.cn/Qwen/Qwen2.5-7B-Instruct.git
+```
+
 #### [Qwen2.5-72B-Instruct](https://modelscope.cn/models/Qwen/Qwen2.5-72B-Instruct)
 
 ```bash
@@ -638,6 +644,23 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
 | 失败数 | 0 | 0 | 0 | 14 | 35 | 78 | 89 | 164 |
 
 > 没有看到明显的性能提升，但并发数 150 时性能达到峰值。
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 8 \
+    --parallels 16 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --n 1000
+```
+
+![](/images/2025/MXC500/Qwen2.5-72B-Instruct-NUMA-2.png)
 
 ### vllm benchmark
 
