@@ -3,7 +3,7 @@ layout: post
 title:  "沐曦 MXC500 训练 GPU 的大模型推理性能压测"
 date:   2025-02-13 10:00:00 +0800
 categories: MXC500 Benchmark
-tags: [沐曦, MXC500, GPU, vLLM, evalscope-perf, LLM]
+tags: [沐曦, MXC500, GPU, vLLM, evalscope-perf, EvalScope, Benchmark, LLM]
 ---
 
 ## 沐曦训练芯片 MXC500 介绍
@@ -82,6 +82,13 @@ docker exec -it vllm bash
 ```
 
 ### 部署模型
+
+- Qwen2.5-7B-Instruct
+
+```bash
+vllm serve /data/Qwen2.5-7B-Instruct --served-model-name Qwen2.5-7B-Instruct --tensor-parallel-size 4
+```
+
 
 - Qwen2.5-72B-Instruct
 
@@ -259,6 +266,65 @@ cp performance_metrics.png /tmp/systemd-private-7a1518cf39464adb821c6af0a9b6902e
 ## 实验结果
 
 > 总的测试数量为 1000 。
+
+### Qwen2.5-7B-Instruct
+
+压测命令：
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-7B-Instruct \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 64 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 300 \
+    --parallels 400 \
+    --parallels 512 \
+    --n 1000
+```
+
+![](/images/2025/MXC500/Qwen2.5-7B-Instruct.png)
+
+显存使用及利用率：
+
+```bash
+=================== MetaX System Management Interface Log ===================
+Timestamp                                         : Tue Feb 25 08:55:49 2025
+
+Attached GPUs                                     : 4
++---------------------------------------------------------------------------------+
+| MX-SMI 2.1.6                        Kernel Mode Driver Version: 2.5.014         |
+| MACA Version: 2.23.0.1018           BIOS Version: 1.13.5.0                      |
+|------------------------------------+---------------------+----------------------+
+| GPU         NAME                   | Bus-id              | GPU-Util             |
+| Temp        Power                  | Memory-Usage        |                      |
+|====================================+=====================+======================|
+| 0           MXC500                 | 0000:05:00.0        | 12%                  |
+| 48C         89W                    | 60353/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 1           MXC500                 | 0000:08:00.0        | 20%                  |
+| 46C         92W                    | 58113/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 2           MXC500                 | 0000:0e:00.0        | 18%                  |
+| 45C         89W                    | 58113/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+| 3           MXC500                 | 0000:0f:00.0        | 20%                  |
+| 45C         87W                    | 58113/65536 MiB     |                      |
++------------------------------------+---------------------+----------------------+
+
++---------------------------------------------------------------------------------+
+| Process:                                                                        |
+|  GPU                    PID         Process Name                 GPU Memory     |
+|                                                                  Usage(MiB)     |
+|=================================================================================|
+|  0                  2128636         python                       59392          |
+|  1                  2136056         ray::RayWorkerW              57152          |
+|  2                  2136212         ray::RayWorkerW              57152          |
+|  3                  2136366         ray::RayWorkerW              57152          |
++---------------------------------------------------------------------------------+
+```
 
 ### Qwen2.5-72B-Instruct
 
@@ -615,12 +681,46 @@ Benchmarking summary:
 
 ## 实验结果（NUMA 绑定）
 
-> 使用上面部署的 `Qwen2.5-72B-Instruct` 模型，总的测试数量为 1000 。
+### 部署模型
 
-### evalscope-perf
+#### Qwen2.5-7B-Instruct
 
 ```bash
-evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
+numactl -N0 -m0 vllm serve /data/Qwen2.5-7B-Instruct --served-model-name Qwen2.5-7B-Instruct --tensor-parallel-size 4
+```
+
+#### Qwen2.5-72B-Instruct
+
+```bash
+numactl -N0 -m0 vllm serve /data/Qwen2.5-72B-Instruct --served-model-name Qwen2.5-72B-Instruct --tensor-parallel-size 4
+```
+
+### Qwen2.5-7B-Instruct
+
+压测命令：
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-7B-Instruct \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 64 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 300 \
+    --parallels 400 \
+    --parallels 512 \
+    --n 1000
+```
+
+![](/images/2025/MXC500/Qwen2.5-7B-Instruct-NUMA.png)
+
+### Qwen2.5-72B-Instruct
+
+#### evalscope-perf
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-72B-Instruct \
     ./datasets/open_qa.jsonl \
     --read-timeout=120 \
     --parallels 8 \
@@ -646,7 +746,7 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
 > 没有看到明显的性能提升，但并发数 150 时性能达到峰值。
 
 ```bash
-evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-72B-Instruct \
     ./datasets/open_qa.jsonl \
     --read-timeout=120 \
     --parallels 8 \
@@ -662,22 +762,22 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
 
 ![](/images/2025/MXC500/Qwen2.5-72B-Instruct-NUMA-2.png)
 
-### vllm benchmark
+#### vllm benchmark
 
-#### 下载数据集 [ShareGPT](https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split)
+- 下载数据集 [ShareGPT](https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split)
 ```shell
 wget https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split/resolve/master/ShareGPT_V3_unfiltered_cleaned_split.json \
     -O datasets/ShareGPT_V3_unfiltered_cleaned_split.json
 ```
 
-#### 克隆 [vllm](https://github.com/vllm-project/vllm) 项目
+- 克隆 [vllm](https://github.com/vllm-project/vllm) 项目
 
 ```bash
 git clone https://github.com/vllm-project/vllm
 cd vllm
 ```
 
-#### 运行 benchmark
+- 运行 benchmark
 
 ```bash
 python3 ./benchmarks/benchmark_serving.py --backend vllm \
@@ -719,7 +819,7 @@ P99 ITL (ms):                            1021.33
 ==================================================
 ```
 
-#### 运行 benchmark（并发 100）
+- 运行 benchmark（并发 100）
 
 ```bash
 python3 ./benchmarks/benchmark_serving.py --backend vllm \
