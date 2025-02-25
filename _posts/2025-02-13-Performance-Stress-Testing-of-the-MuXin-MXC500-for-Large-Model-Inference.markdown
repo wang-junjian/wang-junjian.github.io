@@ -179,14 +179,22 @@ curl 'http://localhost:8000/v1/completions' \
 ## 压力测试
 
 ### 工具安装
+#### evalscope-perf
 
 ```bash
-pip install evalscope==0.5.5
 pip install evalscope-perf
 ```
 
 - [evalscope](https://pypi.org/project/evalscope)
 - [evalscope-perf](https://pypi.org/project/evalscope-perf)
+
+#### vllm benchmark
+
+克隆 [vllm](https://github.com/vllm-project/vllm) 项目
+
+```bash
+git clone https://github.com/vllm-project/vllm
+```
 
 ### 数据集下载
 
@@ -204,6 +212,12 @@ wget https://modelscope.cn/datasets/Banksy235/Codefuse-Evol-Instruct-Clean/resol
 
 # 修改数据集格式，将 "input" 改为 "question"，以适应 EvalScope 的数据集格式 openqa
 sed -i 's/"input"/"question"/g' datasets/Codefuse-Evol-Instruct-Clean-data.jsonl
+```
+
+#### [ShareGPT](https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split)
+```shell
+wget https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split/resolve/master/ShareGPT_V3_unfiltered_cleaned_split.json \
+    -O datasets/ShareGPT_V3_unfiltered_cleaned_split.json
 ```
 
 ### 压力测试
@@ -697,7 +711,7 @@ numactl -N0 -m0 vllm serve /data/Qwen2.5-72B-Instruct --served-model-name Qwen2.
 
 ### Qwen2.5-7B-Instruct
 
-压测命令：
+#### evalscope-perf
 
 ```bash
 evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-7B-Instruct \
@@ -714,6 +728,44 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-7B-Instruct \
 ```
 
 ![](/images/2025/MXC500/Qwen2.5-7B-Instruct-NUMA.png)
+
+#### vllm benchmark
+
+```bash
+python3 ./benchmarks/benchmark_serving.py --backend vllm \
+    --model Qwen2.5-7B-Instruct \
+    --tokenizer /data/models/Qwen2.5-7B-Instruct \
+    --dataset-name "sharegpt" \
+    --dataset-path "/data/datasets/ShareGPT_V3_unfiltered_cleaned_split.json" \
+    --base-url http://0.0.0.0:8000 --trust-remote-code
+```
+
+```bash
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: None
+============ Serving Benchmark Result ============
+Successful requests:                     1000      
+Benchmark duration (s):                  150.94    
+Total input tokens:                      217393    
+Total generated tokens:                  198550    
+Request throughput (req/s):              6.63      
+Output token throughput (tok/s):         1315.42   
+Total Token throughput (tok/s):          2755.68   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          51293.43  
+Median TTFT (ms):                        45929.17  
+P99 TTFT (ms):                           124479.71 
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          184.84    
+Median TPOT (ms):                        196.80    
+P99 TPOT (ms):                           247.82    
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           167.21    
+Median ITL (ms):                         136.33    
+P99 ITL (ms):                            542.79    
+==================================================
+```
 
 ### Qwen2.5-72B-Instruct
 
@@ -763,21 +815,6 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-72B-Instruct \
 ![](/images/2025/MXC500/Qwen2.5-72B-Instruct-NUMA-2.png)
 
 #### vllm benchmark
-
-- 下载数据集 [ShareGPT](https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split)
-```shell
-wget https://modelscope.cn/datasets/gliang1001/ShareGPT_V3_unfiltered_cleaned_split/resolve/master/ShareGPT_V3_unfiltered_cleaned_split.json \
-    -O datasets/ShareGPT_V3_unfiltered_cleaned_split.json
-```
-
-- 克隆 [vllm](https://github.com/vllm-project/vllm) 项目
-
-```bash
-git clone https://github.com/vllm-project/vllm
-cd vllm
-```
-
-- 运行 benchmark
 
 ```bash
 python3 ./benchmarks/benchmark_serving.py --backend vllm \
