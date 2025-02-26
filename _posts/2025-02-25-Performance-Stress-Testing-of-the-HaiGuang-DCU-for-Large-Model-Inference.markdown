@@ -142,14 +142,6 @@ docker run -it --name vllm \
 ```
 
 ### vLLM 部署模型
-#### Qwen2.5-7B-Instruct
-
-```bash
-vllm serve /models/Qwen2.5-7B-Instruct \
-    --served-model-name Qwen2.5-7B-Instruct \
-    --tensor-parallel-size 8
-```
-
 #### Qwen2.5-72B-Instruct
 
 ```bash
@@ -163,8 +155,37 @@ vllm serve /models/Qwen2.5-72B-Instruct \
 ```bash
 vllm serve /models/DeepSeek-R1-Distill-Qwen-7B \
     --served-model-name DeepSeek-R1-Distill-Qwen-7B \
-    --tensor-parallel-size 8
+    --tensor-parallel-size 4
 ```
+
+`--tensor-parallel-size` 不能设置 8，会报错：
+
+```bash
+INFO 02-26 08:54:31 config.py:908] Defaulting to use mp for distributed inference
+INFO 02-26 08:54:31 config.py:937] Disabled the custom all-reduce kernel because it is not supported on hcus.
+WARNING 02-26 08:54:31 arg_utils.py:947] Chunked prefill is enabled by default for models with max_model_len > 32K. Currently, chunked prefill might not work with some features or models. If you encounter any issues, please disable chunked prefill by setting --enable-chunked-prefill=False.
+INFO 02-26 08:54:31 config.py:1019] Chunked prefill is enabled with max_num_batched_tokens=512.
+Process SpawnProcess-1:
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/local/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.10/site-packages/vllm/engine/multiprocessing/engine.py", line 388, in run_mp_engine
+    engine = MQLLMEngine.from_engine_args(engine_args=engine_args,
+  File "/usr/local/lib/python3.10/site-packages/vllm/engine/multiprocessing/engine.py", line 134, in from_engine_args
+    engine_config = engine_args.create_engine_config()
+  File "/usr/local/lib/python3.10/site-packages/vllm/engine/arg_utils.py", line 1081, in create_engine_config
+    return EngineConfig(
+  File "<string>", line 14, in __init__
+  File "/usr/local/lib/python3.10/site-packages/vllm/config.py", line 1894, in __post_init__
+    self.model_config.verify_with_parallel_config(self.parallel_config)
+  File "/usr/local/lib/python3.10/site-packages/vllm/config.py", line 423, in verify_with_parallel_config
+    raise ValueError(
+ValueError: Total number of attention heads (28) must be divisible by tensor parallel size (8).
+```
+
+> 总的注意力头数 28 不能被张量并行大小 8 整除。
 
 
 ## 实验结果
@@ -219,4 +240,28 @@ python3 ./benchmarks/benchmark_serving.py --backend vllm \
 ```
 
 ```bash
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: None
+============ Serving Benchmark Result ============
+Successful requests:                     388
+Benchmark duration (s):                  55.08
+Total input tokens:                      105060
+Total generated tokens:                  177808
+Request throughput (req/s):              7.04
+Output token throughput (tok/s):         3228.07
+Total Token throughput (tok/s):          5135.42
+---------------Time to First Token----------------
+Mean TTFT (ms):                          19398.15
+Median TTFT (ms):                        18818.66
+P99 TTFT (ms):                           41185.12
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          48.15
+Median TPOT (ms):                        35.21
+P99 TPOT (ms):                           128.93
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           92.37
+Median ITL (ms):                         82.40
+P99 ITL (ms):                            470.56
+==================================================
 ```
