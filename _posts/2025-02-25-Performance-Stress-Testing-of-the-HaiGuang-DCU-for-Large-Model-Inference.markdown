@@ -112,10 +112,10 @@ git clone https://www.modelscope.cn/Qwen/Qwen2.5-7B-Instruct.git
 git clone https://www.modelscope.cn/Qwen/Qwen2.5-72B-Instruct.git
 ```
 
-### [DeepSeek-R1-Distill-Qwen-32B](https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)
+### [DeepSeek-R1-Distill-Qwen-7B](https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B)
 
 ```bash
-git clone https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.git
+git clone https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B.git
 ```
 
 
@@ -158,22 +158,16 @@ vllm serve /models/Qwen2.5-72B-Instruct \
     --tensor-parallel-size 8
 ```
 
+#### DeepSeek-R1-Distill-Qwen-7B
+
+```bash
+vllm serve /models/DeepSeek-R1-Distill-Qwen-7B \
+    --served-model-name DeepSeek-R1-Distill-Qwen-7B \
+    --tensor-parallel-size 8
+```
+
 
 ## 实验结果
-
-### Qwen2.5-7B-Instruct
-
-```bash
-python3 ./benchmarks/benchmark_serving.py --backend vllm \
-    --model Qwen2.5-7B-Instruct \
-    --tokenizer /models/Qwen2.5-7B-Instruct \
-    --dataset-name "sharegpt" \
-    --dataset-path "datasets/ShareGPT_V3_unfiltered_cleaned_split.json" \
-    --base-url http://0.0.0.0:8000 --trust-remote-code
-```
-
-```bash
-```
 
 ### Qwen2.5-72B-Instruct
 
@@ -211,4 +205,18 @@ Mean ITL (ms):                           326.40
 Median ITL (ms):                         262.69
 P99 ITL (ms):                            1155.89
 ==================================================
+```
+
+### DeepSeek-R1-Distill-Qwen-7B
+
+```bash
+python3 ./benchmarks/benchmark_serving.py --backend vllm \
+    --model DeepSeek-R1-Distill-Qwen-7B \
+    --tokenizer /models/DeepSeek-R1-Distill-Qwen-7B \
+    --dataset-name "sharegpt" \
+    --dataset-path "datasets/ShareGPT_V3_unfiltered_cleaned_split.json" \
+    --base-url http://0.0.0.0:8000 --trust-remote-code
+```
+
+```bash
 ```
