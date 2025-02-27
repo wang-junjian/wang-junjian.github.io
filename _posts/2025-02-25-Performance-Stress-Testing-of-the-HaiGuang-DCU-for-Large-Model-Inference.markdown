@@ -8,10 +8,13 @@ tags: [海光, HYGON, DCU, vLLM, evalscope-perf, EvalScope, Benchmark, LLM]
 
 ## [海光 DCU 软件栈](https://www.hygon.cn/product/accelerator)
 
+DCU (Deep Computing Unit) 海光自研的 AI 处理器，是一款主要面向于深度学习和高性能计算等领
+域的加速卡。
+
 ![](/images/2025/HYGON/accelerator_2_1.jpg)
 
-- [DCU (Deep Computing Unit) 开发者社区](https://developer.hpccube.com/gitbook//dcu_developer/)
-
+- [开发者社区](https://developer.hpccube.com/gitbook//dcu_developer/)
+https://developer.sourcefind.cn/tool/
 
 ### 查看 DCU 状态（hy-smi）
 
@@ -41,7 +44,7 @@ DCU     Temp     AvgPwr     Perf     PwrCap     VRAM%      DCU%      Mode
 ### evalscope-perf
 
 ```bash
-pip install evalscope-perf
+pip install evalscope-perf -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 运行 evalscope-perf 命令：
@@ -142,6 +145,14 @@ docker run -it --name vllm \
 ```
 
 ### vLLM 部署模型
+#### Qwen2.5-7B-Instruct
+
+```bash
+vllm serve /models/Qwen2.5-7B-Instruct \
+    --served-model-name Qwen2.5-7B-Instruct \
+    --tensor-parallel-size 4
+```
+
 #### Qwen2.5-72B-Instruct
 
 ```bash
