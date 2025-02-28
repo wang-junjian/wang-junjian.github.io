@@ -140,6 +140,8 @@ DCU     Temp     AvgPwr     Perf     PwrCap     VRAM%      DCU%      Mode
 
 ### evalscope-perf
 
+安装 evalscope-perf：
+
 ```bash
 pip install evalscope-perf -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
@@ -157,6 +159,7 @@ evalscope-perf http://127.0.0.1:8000/v1/chat/completions qwen2.5 \
 
 - [evalscope](https://pypi.org/project/evalscope)
 - [evalscope-perf](https://pypi.org/project/evalscope-perf)
+- [evalscope-perf 源代码](https://github.com/wang-junjian/evalscope-perf)
 
 ### vllm benchmark
 
