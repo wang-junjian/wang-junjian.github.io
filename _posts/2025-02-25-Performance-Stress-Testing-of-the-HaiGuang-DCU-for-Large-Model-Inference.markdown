@@ -6,6 +6,103 @@ categories: 海光 Benchmark
 tags: [海光, HYGON, DCU, vLLM, evalscope-perf, EvalScope, Benchmark, LLM]
 ---
 
+## 服务器配置
+
+### CPU 信息
+CPU: Hygon C86 7490 64-core Processor X 2
+
+```bash
+lscpu
+```
+
+```bash
+架构：                              x86_64
+CPU 运行模式：                      32-bit, 64-bit
+字节序：                            Little Endian
+Address sizes:                      48 bits physical, 48 bits virtual
+CPU:                                256
+在线 CPU 列表：                     0-254
+离线 CPU 列表：                     255
+每个核的线程数：                    1
+每个座的核数：                      64
+座：                                2
+NUMA 节点：                         8
+厂商 ID：                           HygonGenuine
+BIOS Vendor ID:                     Chengdu Hygon
+CPU 系列：                          24
+型号：                              4
+型号名称：                          Hygon C86 7490 64-core Processor
+BIOS Model name:                    Hygon C86 7490 64-core Processor
+步进：                              1
+CPU MHz：                           2990.790
+BogoMIPS：                          5400.38
+虚拟化：                            AMD-V
+L1d 缓存：                          2 MiB
+L1i 缓存：                          2 MiB
+L2 缓存：                           32 MiB
+L3 缓存：                           256 MiB
+NUMA 节点0 CPU：                    0-15,128-143
+NUMA 节点1 CPU：                    16-31,144-159
+NUMA 节点2 CPU：                    32-47,160-175
+NUMA 节点3 CPU：                    48-63,176-191
+NUMA 节点4 CPU：                    64-79,192-207
+NUMA 节点5 CPU：                    80-95,208-223
+NUMA 节点6 CPU：                    96-111,224-239
+NUMA 节点7 CPU：                    112-127,240-254
+Vulnerability Gather data sampling: Not affected
+Vulnerability Itlb multihit:        Not affected
+Vulnerability L1tf:                 Not affected
+Vulnerability Mds:                  Not affected
+Vulnerability Meltdown:             Not affected
+Vulnerability Mmio stale data:      Not affected
+Vulnerability Retbleed:             Mitigation; untrained return thunk; SMT enabled with STIBP protection
+Vulnerability Spec store bypass:    Mitigation; Speculative Store Bypass disabled via prctl and seccomp
+Vulnerability Spectre v1:           Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:           Mitigation; Retpolines, IBPB conditional, IBRS_FW, STIBP always-on, RSB filling, PBRSB-eIBRS Not affected
+Vulnerability Srbds:                Not affected
+Vulnerability Tsx async abort:      Not affected
+标记：                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_go
+od nopl nonstop_tsc cpuid extd_apicid amd_dcm aperfmperf pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp
+_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb hw_pstate sme ssb
+d csv ibrs ibpb stibp vmmcall csv2 csv3 fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 xsaves clzero irperf xsaveerptr arat n
+pt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif umip overflow_recov succor smca sm3 sm4
+```
+
+### DCU 信息
+
+DCU：Hygon K100_AI 64G X 8
+
+```bash
+lspci -v | grep -A22 'Co-processor'
+```
+
+```bash
+07:00.0 Co-processor: Chengdu Haiguang IC Design Co., Ltd. KONGMING (rev 01)
+        Subsystem: Chengdu Haiguang IC Design Co., Ltd. K100_AI
+        Flags: bus master, fast devsel, latency 0, IRQ 962, NUMA node 0
+        Memory at 26000000000 (64-bit, prefetchable) [size=64G]
+        Memory at 27000000000 (64-bit, prefetchable) [size=2M]
+        Memory at 7ce00000 (32-bit, non-prefetchable) [size=512K]
+        Expansion ROM at 7ce80000 [disabled] [size=128K]
+        Capabilities: [48] Vendor Specific Information: Len=08 <?>
+        Capabilities: [50] Power Management version 3
+        Capabilities: [64] Express Legacy Endpoint, MSI 00
+        Capabilities: [a0] MSI: Enable+ Count=1/1 Maskable- 64bit+
+        Capabilities: [100] Vendor Specific Information: ID=0001 Rev=1 Len=010 <?>
+        Capabilities: [150] Advanced Error Reporting
+        Capabilities: [270] Secondary PCI Express
+        Capabilities: [2a0] Access Control Services
+        Capabilities: [2b0] Address Translation Service (ATS)
+        Capabilities: [2c0] Page Request Interface (PRI)
+        Capabilities: [2d0] Process Address Space ID (PASID)
+        Capabilities: [320] Latency Tolerance Reporting
+        Capabilities: [400] Data Link Feature <?>
+        Capabilities: [410] Physical Layer 16.0 GT/s <?>
+        Capabilities: [440] Lane Margining at the Receiver <?>
+        Kernel driver in use: hydcu
+```
+
+
 ## [海光 DCU 软件栈](https://www.hygon.cn/product/accelerator)
 
 DCU (Deep Computing Unit) 海光自研的 AI 处理器，是一款主要面向于深度学习和高性能计算等领
@@ -201,6 +298,38 @@ ValueError: Total number of attention heads (28) must be divisible by tensor par
 
 ## 实验结果
 
+### Qwen2.5-7B-Instruct
+
+```bash
+python3 ./vllm/benchmarks/benchmark_serving.py --backend vllm \
+    --model Qwen2.5-7B-Instruct \
+    --tokenizer /models/Qwen2.5-7B-Instruct \
+    --dataset-name "sharegpt" \
+    --dataset-path "datasets/ShareGPT_V3_unfiltered_cleaned_split.json" \
+    --base-url http://0.0.0.0:8000 --trust-remote-code
+============ Serving Benchmark Result ============
+Successful requests:                     1000
+Benchmark duration (s):                  99.26
+Total input tokens:                      217393
+Total generated tokens:                  201847
+Request throughput (req/s):              10.07
+Output token throughput (tok/s):         2033.56
+Total Token throughput (tok/s):          4223.73
+---------------Time to First Token----------------
+Mean TTFT (ms):                          29485.22
+Median TTFT (ms):                        26708.14
+P99 TTFT (ms):                           69538.05
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          110.06
+Median TPOT (ms):                        109.48
+P99 TPOT (ms):                           269.10
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           95.75
+Median ITL (ms):                         77.91
+P99 ITL (ms):                            418.17
+==================================================
+```
+
 ### Qwen2.5-72B-Instruct
 
 ```bash
@@ -213,29 +342,26 @@ python3 ./benchmarks/benchmark_serving.py --backend vllm \
 ```
 
 ```bash
-Traffic request rate: inf
-Burstiness factor: 1.0 (Poisson process)
-Maximum request concurrency: None
 ============ Serving Benchmark Result ============
 Successful requests:                     1000
-Benchmark duration (s):                  337.55
+Benchmark duration (s):                  334.94
 Total input tokens:                      217393
-Total generated tokens:                  201633
-Request throughput (req/s):              2.96
-Output token throughput (tok/s):         597.34
-Total Token throughput (tok/s):          1241.37
+Total generated tokens:                  201825
+Request throughput (req/s):              2.99
+Output token throughput (tok/s):         602.57
+Total Token throughput (tok/s):          1251.62
 ---------------Time to First Token----------------
-Mean TTFT (ms):                          103921.52
-Median TTFT (ms):                        91061.83
-P99 TTFT (ms):                           240625.64
+Mean TTFT (ms):                          100031.28
+Median TTFT (ms):                        90367.02
+P99 TTFT (ms):                           241764.93
 -----Time per Output Token (excl. 1st token)------
-Mean TPOT (ms):                          399.67
-Median TPOT (ms):                        362.34
-P99 TPOT (ms):                           1350.64
+Mean TPOT (ms):                          398.76
+Median TPOT (ms):                        374.48
+P99 TPOT (ms):                           1608.16
 ---------------Inter-token Latency----------------
-Mean ITL (ms):                           326.40
-Median ITL (ms):                         262.69
-P99 ITL (ms):                            1155.89
+Mean ITL (ms):                           328.62
+Median ITL (ms):                         260.01
+P99 ITL (ms):                            1059.74
 ==================================================
 ```
 
