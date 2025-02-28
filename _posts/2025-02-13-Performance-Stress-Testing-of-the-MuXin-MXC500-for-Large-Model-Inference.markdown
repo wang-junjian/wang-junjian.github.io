@@ -26,6 +26,107 @@ tags: [沐曦, MXC500, GPU, vLLM, evalscope-perf, EvalScope, Benchmark, LLM]
 - [沐曦全栈GPU产品首度亮相世界人工智能大会](https://www.metax-tech.com/ndetail/12473.html)
 
 
+## 服务器配置
+### CPU 信息
+
+CPU: Phytium S5000C X 2 (128 核)
+
+```bash
+lscpu
+```
+
+```bash
+架构：                              aarch64
+CPU 运行模式：                      32-bit, 64-bit
+字节序：                            Little Endian
+CPU:                                128
+在线 CPU 列表：                     0-127
+每个核的线程数：                    1
+每个座的核数：                      64
+座：                                2
+NUMA 节点：                         8
+厂商 ID：                           Phytium
+BIOS Vendor ID:                     PHYTIUM LTD.
+型号：                              0
+型号名称：                          S5000C
+BIOS Model name:                    S5000C
+步进：                              0x0
+BogoMIPS：                          2000.00
+L1d 缓存：                          8 MiB
+L1i 缓存：                          8 MiB
+L2 缓存：                           64 MiB
+L3 缓存：                           64 MiB
+NUMA 节点0 CPU：                    0-15
+NUMA 节点1 CPU：                    16-31
+NUMA 节点2 CPU：                    32-47
+NUMA 节点3 CPU：                    48-63
+NUMA 节点4 CPU：                    64-79
+NUMA 节点5 CPU：                    80-95
+NUMA 节点6 CPU：                    96-111
+NUMA 节点7 CPU：                    112-127
+Vulnerability Gather data sampling: Not affected
+Vulnerability Itlb multihit:        Not affected
+Vulnerability L1tf:                 Not affected
+Vulnerability Mds:                  Not affected
+Vulnerability Meltdown:             Not affected
+Vulnerability Mmio stale data:      Not affected
+Vulnerability Retbleed:             Not affected
+Vulnerability Spec store bypass:    Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:           Mitigation; __user pointer sanitization
+Vulnerability Spectre v2:           Not affected
+Vulnerability Srbds:                Not affected
+Vulnerability Tsx async abort:      Not affected
+标记：                              fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop sha3 sm3 sm4 asimddp sha512
+```
+
+### GPU 信息
+
+GPU: MXC500 64G X 4
+
+```bash
+mx-smi
+```
+
+```bash
+lspci -v | grep -A31 'Display controller'
+```
+
+```bash
+0000:05:00.0 Display controller: Device 9999:4001 (rev 01)
+        Subsystem: Device 9999:4001
+        Flags: bus master, fast devsel, latency 0, IRQ 933, NUMA node 0
+        Memory at 40000000000 (64-bit, prefetchable) [size=64G]
+        Memory at 41000000000 (64-bit, prefetchable) [size=8M]
+        Memory at 59200000 (32-bit, non-prefetchable) [size=1M]
+        Expansion ROM at 59000000 [disabled] [size=2M]
+        Capabilities: [50] MSI: Enable+ Count=1/1 Maskable+ 64bit+
+        Capabilities: [70] Express Endpoint, MSI 00
+        Capabilities: [b0] MSI-X: Enable- Count=3 Masked-
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [148] Device Serial Number 00-00-00-00-00-00-00-00
+        Capabilities: [158] Power Budgeting <?>
+        Capabilities: [168] Alternative Routing-ID Interpretation (ARI)
+        Capabilities: [178] Secondary PCI Express
+        Capabilities: [1a8] Physical Layer 16.0 GT/s <?>
+        Capabilities: [1d8] Lane Margining at the Receiver <?>
+        Capabilities: [220] Extended Capability ID 0x2a
+        Capabilities: [2b0] Latency Tolerance Reporting
+        Capabilities: [2c0] Vendor Specific Information: ID=0002 Rev=4 Len=100 <?>
+        Capabilities: [3c0] Vendor Specific Information: ID=0001 Rev=1 Len=038 <?>
+        Capabilities: [3f8] Data Link Feature <?>
+        Capabilities: [404] Extended Capability ID 0x2f
+        Capabilities: [414] Designated Vendor-Specific <?>
+        Capabilities: [450] Designated Vendor-Specific <?>
+        Capabilities: [474] Designated Vendor-Specific <?>
+        Capabilities: [484] Designated Vendor-Specific <?>
+        Capabilities: [4bc] Resizable BAR <?>
+        Capabilities: [4fc] VF Resizable BAR <?>
+        Capabilities: [e90] Vendor Specific Information: ID=0000 Rev=1 Len=078 <?>
+        Kernel driver in use: METAX
+        Kernel modules: metax
+```
+
+
 ## 部署模型
 
 ### 登录 [JumpServer](https://111.0.82.19:60443/ui)
