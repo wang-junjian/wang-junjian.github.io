@@ -40,13 +40,13 @@ docker compose up
 
 ### 创建组织和工程
 
-![](/images/2025/1/New-Organization.png)
+![](/images/2025/AIStack/New-Organization.png)
 
-![](/images/2025/1/Project-Settings.png)
+![](/images/2025/AIStack/Project-Settings.png)
 
 ### API Keys
 
-![](/images/2025/1/API-Keys.png)
+![](/images/2025/AIStack/API-Keys.png)
 
 
 ## LiteLLM
@@ -113,7 +113,7 @@ litellm --config litellm_config.yaml
 
 ### [Chatbox](https://chatboxai.app/zh)
 
-![](/images/2025/1/Chatbox-Setting.png)
+![](/images/2025/AIStack/Chatbox-Setting.png)
 
 
 ## FAQ
