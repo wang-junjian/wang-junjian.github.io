@@ -3,7 +3,7 @@ layout: post
 title:  "大模型推理服务压测报告：vLLM、SGLang、LiteLLM 与 Higress 性能对比"
 date:   2025-03-03 10:00:00 +0800
 categories: Benchmark LLM
-tags: [Benchmark, LLM, vLLM, SGLang, LiteLLM, Higress, T4, GPU]
+tags: [Benchmark, LLM, vLLM, SGLang, LiteLLM, Higress, T4, GPU, Qwen]
 ---
 
 ## 服务器配置
@@ -156,15 +156,19 @@ docker run --gpus all \
 
 ## 部署 AI 网关
 
-### LiteLLM + vLLM
+通过兼容 OpenAI API 的 AI 网关，将请求转发到 vLLM。
 
-- 安装 LiteLLM
+### LiteLLM
+
+#### 安装 LiteLLM
 
 ```bash
 pip install "litellm[proxy]"
 ```
 
-- 配置文件 litellm_config.yaml
+#### 配置 LiteLLM
+
+配置文件：litellm_config.yaml
 
 ```yaml
 # 模型列表
@@ -177,13 +181,13 @@ model_list:
       api_key: NONE
 ```
 
-- 启动 LiteLLM
+#### 启动 LiteLLM
 
 ```bash
 litellm --config litellm_config.yaml
 ```
 
-### Higress + vLLM
+### Higress
 
 #### 部署 Higress
 
@@ -306,3 +310,12 @@ evalscope-perf http://127.0.0.1:{port}/v1/chat/completions lnsoft-chat \
 
 ## 参考资料
 - [Benchmark and Profiling](https://docs.sglang.ai/references/benchmark_and_profiling.html)
+- [多模型降级配置中遇到的问题：根据模型路由不生效](https://github.com/alibaba/higress/issues/1744)
+- [自定义 OpenAI 服务 URL不支持单独填写HOST](https://github.com/alibaba/higress/issues/1784)
+- [使用 Higress + NextChat 快速搭建私人GPT助理](https://github.com/alibaba/higress/issues/938)
+- [Higress 快速开始](https://higress.cn/docs/latest/user/quickstart/)
+- [Higress Plugin Hub](https://higress.cn/plugin/)
+- []()
+- []()
+- []()
+- []()
