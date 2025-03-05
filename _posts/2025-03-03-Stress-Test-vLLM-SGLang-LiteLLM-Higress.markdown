@@ -264,6 +264,12 @@ Starting Higress...
 
 ![](/images/2025/StressTest/higress-ai-route-list.png) 
 
+#### AI Dashboard
+
+![](/images/2025/StressTest/higress-ai-dashboard1.png)
+
+![](/images/2025/StressTest/higress-ai-dashboard2.png)
+
 
 ## 实验结果
 
