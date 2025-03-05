@@ -152,6 +152,7 @@ docker run --gpus all \
 ```
 
 - `mem-fraction-static=0.8` 并发数不能超过 500，会出现 OOM，导致进程挂掉，480 没问题，最好限制并发数为 400。
+- [Install SGLang](https://docs.sglang.ai/start/install.html)
 
 
 ## 部署 AI 网关
@@ -188,6 +189,8 @@ litellm --config litellm_config.yaml
 ```
 
 ### Higress
+
+- [Higress Standalone](https://github.com/higress-group/higress-standalone)
 
 #### 部署 Higress
 
@@ -309,13 +312,15 @@ evalscope-perf http://127.0.0.1:{port}/v1/chat/completions lnsoft-chat \
 
 
 ## 参考资料
+- [benchmarks/benchmark_serving.py](https://github.com/vllm-project/vllm/blob/main/benchmarks/benchmark_serving.py)
 - [Benchmark and Profiling](https://docs.sglang.ai/references/benchmark_and_profiling.html)
 - [多模型降级配置中遇到的问题：根据模型路由不生效](https://github.com/alibaba/higress/issues/1744)
 - [自定义 OpenAI 服务 URL不支持单独填写HOST](https://github.com/alibaba/higress/issues/1784)
 - [使用 Higress + NextChat 快速搭建私人GPT助理](https://github.com/alibaba/higress/issues/938)
+- [EvalScope](https://github.com/modelscope/evalscope/blob/main/README_zh.md)
 - [Higress 快速开始](https://higress.cn/docs/latest/user/quickstart/)
 - [Higress Plugin Hub](https://higress.cn/plugin/)
-- []()
-- []()
-- []()
-- []()
+- [AI 代理](https://higress.cn/docs/latest/plugins/ai/api-provider/ai-proxy/)
+- [Higress + Nacos 微服务网关最佳实践](https://higress.cn/blog/higress-gvr7dx_awbbpb_xdxim253zzta4bun/)
+- [Higress - AI原生的API网关](https://higress.cn/)
+- [阿里巴巴重磅开源云原生网关: Higress](https://higress.cn/en/blog/higress/)
