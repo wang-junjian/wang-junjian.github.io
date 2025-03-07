@@ -159,6 +159,12 @@ git clone https://www.modelscope.cn/Qwen/Qwen2.5-72B-Instruct.git
 git clone https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.git
 ```
 
+#### [QwQ-32B](https://www.modelscope.cn/models/Qwen/QwQ-32B)
+
+```bash
+git clone https://www.modelscope.cn/Qwen/QwQ-32B.git
+```
+
 ### 运行容器（定制的 vLLM 镜像）
 ```bash
 docker run -itd --restart=always \
@@ -201,6 +207,12 @@ vllm serve /data/Qwen2.5-72B-Instruct --served-model-name qwen2.5 --tensor-paral
 
 ```bash
 vllm serve /data/DeepSeek-R1-Distill-Qwen-32B --served-model-name qwen2.5 --tensor-parallel-size 4
+```
+
+- QwQ-32B
+
+```bash
+vllm serve /data/QwQ-32B --served-model-name QwQ-32B --tensor-parallel-size 4
 ```
 
 ### 查看 GPU 状态
@@ -568,6 +580,27 @@ Attached GPUs                                     : 4
 |  3                   287215         ray::RayWorkerW              59776          |
 +---------------------------------------------------------------------------------+
 ```
+
+### QwQ-32B
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions QwQ-32B \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 8 \
+    --parallels 16 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 256 \
+    --parallels 300 \
+    --n 1000
+```
+
+![](/images/2025/MXC500/QwQ-32B.png)
 
 
 ## NUMA 配置（加速推理性能）
