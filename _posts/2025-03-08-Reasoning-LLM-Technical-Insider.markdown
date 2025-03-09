@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "推理 LLM 技术内幕"
+title:  "推理 LLM 技术内幕 - DeepSeek-R1/o1"
 date:   2025-03-08 10:00:00 +0800
 categories: DeepSeek-R1 推理模型
-tags: [DeepSeek-R1, 推理模型, LLM]
+tags: [DeepSeek-R1, OpenAI-o1, 推理模型, LLM]
 ---
 
 ![](/images/2025/ReasoningLLMTechnicalInsider/推理LLM技术内幕.001.jpeg)
