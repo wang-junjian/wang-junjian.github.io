@@ -25,7 +25,7 @@ tags: [通义灵码, AICodingAssistant, GitHubCopilot]
 ![](/images/2025/TongyiLingma2/TongyiLing2-08.png)
 
 
-## 典型场景
+## 典型使用场景
 
 ![](/images/2025/TongyiLingma2/TongyiLing2-09.png)
 
@@ -60,7 +60,7 @@ tags: [通义灵码, AICodingAssistant, GitHubCopilot]
 ![](/images/2025/TongyiLingma2/TongyiLing2-21.png)
 
 
-## AI 程序员
+## AI程序员交互
 
 ![](/images/2025/TongyiLingma2/TongyiLing2-22.png)
 
