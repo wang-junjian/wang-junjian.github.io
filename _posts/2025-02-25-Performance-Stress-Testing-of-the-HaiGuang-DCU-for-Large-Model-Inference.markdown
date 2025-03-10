@@ -303,6 +303,8 @@ ValueError: Total number of attention heads (28) must be divisible by tensor par
 
 ### Qwen2.5-7B-Instruct
 
+- vllm benchmark
+
 ```bash
 python3 ./vllm/benchmarks/benchmark_serving.py --backend vllm \
     --model Qwen2.5-7B-Instruct \
@@ -334,6 +336,8 @@ P99 ITL (ms):                            418.17
 ```
 
 ### Qwen2.5-72B-Instruct
+
+- vllm benchmark
 
 ```bash
 python3 ./benchmarks/benchmark_serving.py --backend vllm \
@@ -367,6 +371,26 @@ Median ITL (ms):                         260.01
 P99 ITL (ms):                            1059.74
 ==================================================
 ```
+
+- evalscope-perf
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions Qwen2.5-72B-Instruct \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 300 \
+    --parallels 400 \
+    --parallels 500 \
+    --n 1000
+```
+
+![](/images/2025/HYGON/Qwen2.5-72B-Instruct.png)
 
 ### DeepSeek-R1-Distill-Qwen-7B
 
