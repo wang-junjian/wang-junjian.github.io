@@ -386,8 +386,6 @@ evalscope-perf http://127.0.0.1:4000/v1/chat/completions Qwen2.5-7B-Instruct \
     --parallels 150 \
     --parallels 200 \
     --parallels 300 \
-    --parallels 400 \
-    --parallels 500 \
     --n 1000
 ```
 
