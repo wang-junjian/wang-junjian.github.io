@@ -248,17 +248,17 @@ docker run -it --name vllm \
 #### Qwen2.5-7B-Instruct
 
 ```bash
-HIP_VISIBLE_DEVICES=0,1,2,3 vllm serve /data/Qwen2.5-7B-Instruct 
---served-model-name Qwen2.5-7B-Instruct1 
---tensor-parallel-size 4 
---port 8001
+HIP_VISIBLE_DEVICES=0,1,2,3 vllm serve /data/Qwen2.5-7B-Instruct \
+    --served-model-name Qwen2.5-7B-Instruct1 \
+    --tensor-parallel-size 4 \
+    --port 8001
 ```
 
 ```bash
-HIP_VISIBLE_DEVICES=4,5,6,7 vllm serve /data/Qwen2.5-7B-Instruct 
---served-model-name Qwen2.5-7B-Instruct2 
---tensor-parallel-size 4 
---port 8002
+HIP_VISIBLE_DEVICES=4,5,6,7 vllm serve /data/Qwen2.5-7B-Instruct \
+    --served-model-name Qwen2.5-7B-Instruct2 \
+    --tensor-parallel-size 4 \
+    --port 8002
 ```
 
 安装 LiteLLM：
@@ -392,6 +392,39 @@ evalscope-perf http://127.0.0.1:4000/v1/chat/completions Qwen2.5-7B-Instruct \
 ![](/images/2025/HYGON/Qwen2.5-7B-Instruct.png)
 
 **200的并发就到头了，400就会压测失败。**
+
+
+下面的结果，在压测前，做了并发32，100个请求的预热。
+
+```bash
+evalscope-perf http://127.0.0.1:4000/v1/chat/completions Qwen2.5-7B-Instruct \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 256 \
+    --n 1000
+```
+
+![](/images/2025/HYGON/Qwen2.5-7B-Instruct1.png)
+
+部署模型 `vllm serve` 增加参数 `--enforce-eager`
+
+`--enforce-eager` 参数的主要作用是：
+
+1. 强制使用 PyTorch 的 eager 模式执行推理，而不是使用 vLLM 默认的优化执行方式
+
+2. 当设置为 True 时，vLLM 会禁用它的一些高级优化功能（如连续批处理、KV 缓存等），转而使用更直接的 PyTorch eager 执行模式
+
+3. 这通常用于调试目的，或者在某些情况下 vLLM 的优化执行方式出现问题时使用
+
+使用这个参数会导致推理性能下降，因为它绕过了 vLLM 的核心性能优化。通常情况下不建议在生产环境中使用，除非你遇到了特定的兼容性问题或者需要进行调试。
+
+![](/images/2025/HYGON/Qwen2.5-7B-Instruct_enforce-eager.png)
 
 ### Qwen2.5-72B-Instruct
 
