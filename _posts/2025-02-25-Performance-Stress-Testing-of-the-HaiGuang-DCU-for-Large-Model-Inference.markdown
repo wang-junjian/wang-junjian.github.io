@@ -248,9 +248,47 @@ docker run -it --name vllm \
 #### Qwen2.5-7B-Instruct
 
 ```bash
-vllm serve /models/Qwen2.5-7B-Instruct \
-    --served-model-name Qwen2.5-7B-Instruct \
-    --tensor-parallel-size 4
+HIP_VISIBLE_DEVICES=0,1,2,3 vllm serve /data/Qwen2.5-7B-Instruct 
+--served-model-name Qwen2.5-7B-Instruct1 
+--tensor-parallel-size 4 
+--port 8001
+```
+
+```bash
+HIP_VISIBLE_DEVICES=4,5,6,7 vllm serve /data/Qwen2.5-7B-Instruct 
+--served-model-name Qwen2.5-7B-Instruct2 
+--tensor-parallel-size 4 
+--port 8002
+```
+
+安装 LiteLLM：
+
+```bash
+pip install "litellm[proxy]" openai -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+编辑 LiteLLM 配置文件：litellm_config.yaml
+
+```yaml
+# 模型列表
+model_list:
+  ## 语言模型
+  - model_name: Qwen2.5-7B-Instruct
+    litellm_params:
+      model: openai/Qwen2.5-7B-Instruct1
+      api_base: http://localhost:8001/v1
+      api_key: NONE
+  - model_name: Qwen2.5-7B-Instruct
+    litellm_params:
+      model: openai/Qwen2.5-7B-Instruct2
+      api_base: http://localhost:8002/v1
+      api_key: NONE
+```
+
+运行 LiteLLM：
+
+```bash
+litellm serve --config litellm_config.yaml
 ```
 
 #### Qwen2.5-72B-Instruct
@@ -334,6 +372,28 @@ Median ITL (ms):                         77.91
 P99 ITL (ms):                            418.17
 ==================================================
 ```
+
+- evalscope-perf
+
+```bash
+evalscope-perf http://127.0.0.1:4000/v1/chat/completions Qwen2.5-7B-Instruct \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 300 \
+    --parallels 400 \
+    --parallels 500 \
+    --n 1000
+```
+
+![](/images/2025/HYGON/Qwen2.5-7B-Instruct.png)
+
+**200的并发就到头了，400就会压测失败。**
 
 ### Qwen2.5-72B-Instruct
 
