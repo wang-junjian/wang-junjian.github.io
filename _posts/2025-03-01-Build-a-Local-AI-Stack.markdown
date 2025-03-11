@@ -65,11 +65,15 @@ model_list:
   ## 语言模型
   - model_name: gpt-4
     litellm_params:
-      model: ollama/qwen2.5:7b
+      model: openai/qwen2.5:7b
+      api_base: http://localhost:11434/v1
+      api_key: NONE
   ## 视觉模型
   - model_name: gpt-4o
     litellm_params:
-      model: ollama/llama3.2-vision
+      model: openai/llama3.2-vision
+      api_base: http://localhost:11434/v1
+      api_key: NONE
   ## 代码模型
   - model_name: coder
     litellm_params:
