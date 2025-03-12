@@ -339,7 +339,7 @@ ValueError: Total number of attention heads (28) must be divisible by tensor par
 
 ## 实验结果
 
-### Qwen2.5-7B-Instruct
+### Qwen2.5-7B-Instruct（4卡）
 
 - vllm benchmark
 
@@ -372,6 +372,14 @@ Median ITL (ms):                         77.91
 P99 ITL (ms):                            418.17
 ==================================================
 ```
+
+![](/images/2025/HYGON/Qwen2.5-7B-Instruct_4xDCU.png)
+
+**并发数 200 就会失败**
+
+### Qwen2.5-7B-Instruct（8卡）
+
+使用 vLLM 分别部署了两个模型，每个模型使用 4 张卡。使用 AI 网关 LiteLLM 进行负载均衡。
 
 - evalscope-perf
 
