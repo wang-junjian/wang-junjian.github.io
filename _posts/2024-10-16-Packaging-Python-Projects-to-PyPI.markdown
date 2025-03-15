@@ -1,10 +1,12 @@
 ---
 layout: post
-title:  "打包 Python 工程到 PyPI"
+title:  "打包 Python 工程到 PyPI：构建 LLM 压测工具 evalscope-perf"
 date:   2024-10-16 10:00:00 +0800
 categories: Python PyPI
 tags: [Python, PyPI, Packaging, evalscope-perf]
 ---
+
+![](/images/2024/Python_packages_to_Py_PI.avif)
 
 ## 创建 Python 工程 [evalscope-perf](https://github.com/wang-junjian/evalscope-perf)
 
@@ -250,6 +252,30 @@ twine upload dist/*
 ```shell
 pip install evalscope-perf -i https://pypi.org/simple
 ```
+
+
+## evalscope-perf 使用示例
+
+```bash
+evalscope-perf http://127.0.0.1:8000/v1/chat/completions lnsoft-chat \
+    ./datasets/open_qa.jsonl \
+    --read-timeout=120 \
+    --parallels 16 \
+    --parallels 32 \
+    --parallels 64 \
+    --parallels 100 \
+    --parallels 128 \
+    --parallels 150 \
+    --parallels 200 \
+    --parallels 300 \
+    --parallels 400 \
+    --parallels 500 \
+    --n 1000
+```
+
+### SGLang
+
+![](/images/2025/StressTest/performance_metrics-sglang.png)
 
 
 ## 参考资料
