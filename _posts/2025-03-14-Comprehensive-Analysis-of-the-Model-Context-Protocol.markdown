@@ -6,6 +6,8 @@ categories: MCP Agent
 tags: [MCP, Agent, Gemini, DeepResearch, LLM]
 ---
 
+![](/images/2025/MCP/mcp-architecture.png)
+
 > 这篇文章是使用 [Google Gemini Deep Research](https://gemini.google.com/app) 生成的。提示词：`研究 Model Context Protocol`
 
 ## 1. 模型上下文协议 (MCP) 导论
