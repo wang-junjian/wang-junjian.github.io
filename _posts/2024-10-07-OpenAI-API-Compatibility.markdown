@@ -3,7 +3,7 @@ layout: post
 title:  "OpenAI API Compatibility"
 date:   2024-10-07 10:00:00 +0800
 categories: OpenAI-API LLM
-tags: [OpenAI API, LLM, curl]
+tags: [OpenAI API, Ollama, LiteLLM, XInference, MindIE, LLM, curl]
 ---
 
 ## 设置 API Key
