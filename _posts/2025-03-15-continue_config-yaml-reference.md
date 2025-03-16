@@ -6,7 +6,7 @@ categories: continue AICodingAssistant
 tags: [continue, AICodingAssistant, config.yaml, GitHubCopilot]
 ---
 
-[config.yaml Reference](https://docs.continue.dev/yaml-reference) 的翻译。
+[config.yaml Reference](https://docs.continue.dev/yaml-reference)
 
 ## 简介
 
