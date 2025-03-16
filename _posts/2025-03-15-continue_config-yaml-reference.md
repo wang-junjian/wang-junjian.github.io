@@ -39,7 +39,7 @@ Hub 块和助手通过格式为 `owner-slug/block-or-assistant-slug` 的标识�
 
 例如，以下助手导入了一个 Anthropic 模型并定义了一个 Ollama DeepSeek 模型。
 
-```yaml title="助手模型部分"
+```yaml
 models:
   - uses: anthropic/claude-3.5-sonnet # 导入的模型块
   - model: deepseek-reasoner # 显式定义的模型块
@@ -50,7 +50,7 @@ models:
 
 块可以接收用户输入，包括 hub 密钥和原始文本值。要创建具有输入的块，请使用 mustache 模板，如下所示：
 
-```yaml title="块 config.yaml"
+```yaml
 name: myprofile/custom-model
 models:
   - name: My Favorite Model
@@ -62,7 +62,7 @@ models:
 
 然后可以这样导入：
 
-```yaml title="助手 config.yaml"
+```yaml
 name: myprofile/custom-assistant
 models:
   - uses: myprofile/custom-model
@@ -77,7 +77,7 @@ models:
 
 块属性也可以使用 `override` 直接覆盖。例如：
 
-```yaml title="助手 config.yaml"
+```yaml
 name: myprofile/custom-assistant
 models:
   - uses: myprofile/custom-model
@@ -114,7 +114,7 @@ models:
 
 `name` 属性指定项目或配置的名称。
 
-```yaml title="config.yaml"
+```yaml
 name: MyProject
 ```
 
@@ -176,7 +176,7 @@ name: MyProject
 
 #### 示例：
 
-```yaml title="config.yaml"
+```yaml
 models:
   - name: GPT-4o
     provider: openai
@@ -222,7 +222,7 @@ models:
 
 **示例：**
 
-```yaml title="config.yaml"
+```yaml
 context:
   - provider: files
   - provider: code
@@ -243,7 +243,7 @@ LLM 应遵循的规则列表。这些会插入到所有聊天请求的系统消�
 
 示例：
 
-```yaml title="config.yaml"
+```yaml
 rules:
   - uses: myprofile/my-mood-setter
     with:
@@ -258,7 +258,7 @@ rules:
 
 可以从聊天窗口调用的自定义提示列表。每个提示都有名称、描述和实际的提示文本。
 
-```yaml title="config.yaml"
+```yaml
 prompts:
   - name: check
     description: Check for mistakes in my code
@@ -286,7 +286,7 @@ prompts:
 
 示例：
 
-```yaml title="config.yaml"
+```yaml
 docs:
   - name: Continue
     startUrl: https://docs.continue.dev/intro
@@ -310,7 +310,7 @@ docs:
 
 **示例：**
 
-```yaml title="config.yaml"
+```yaml
 mcpServers:
   - name: My MCP Server
     command: uvx
@@ -338,7 +338,7 @@ mcpServers:
 
   **示例：**
 
-```yaml title="config.yaml"
+```yaml
 data:
   - name: Local Data Bank
     destination: file:///Users/dallin/Documents/code/continuedev/continue-extras/external-data
@@ -359,7 +359,7 @@ data:
 
 将所有内容整合在一起，以下是一个完整的 `config.yaml` 配置文件示例：
 
-```yaml title="config.yaml"
+```yaml
 name: MyProject
 version: 0.0.1
 schema: v1
@@ -439,7 +439,7 @@ data:
 
 您还可以使用节点锚点来避免属性重复。为此，需要添加 YAML 版本头 `%YAML 1.1`，以下是使用锚点的 `config.yaml` 配置文件示例：
 
-```yaml title="config.yaml"
+```yaml
 %YAML 1.1
 ---
 name: MyProject
