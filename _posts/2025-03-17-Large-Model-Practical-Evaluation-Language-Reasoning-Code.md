@@ -73,19 +73,19 @@ tags: [Benchmark, LLM, Qwen, DeepSeek]
 
 ![](/images/2025/LLMEval/Qwen2.5-0.5B.png)
 
-- Qwen2.5-1.5B
+- Qwen2.5-1.5B ✅
 
 ![](/images/2025/LLMEval/Qwen2.5-1.5B.png)
 
-- Qwen2.5-7B
+- Qwen2.5-7B ✅
 
 ![](/images/2025/LLMEval/Qwen2.5-7B.png)
 
-- Qwen2.5-14B-Instruct
+- Qwen2.5-14B-Instruct ✅
 
 ![](/images/2025/LLMEval/Qwen2.5-14B-Instruct.png)
 
-- Qwen2.5-32B-Instruct
+- Qwen2.5-32B-Instruct ✅
 
 ![](/images/2025/LLMEval/Qwen2.5-32B-Instruct.png)
 
@@ -99,19 +99,19 @@ tags: [Benchmark, LLM, Qwen, DeepSeek]
 
 ![](/images/2025/LLMEval/DeepSeek-R1-Distill-Qwen2.5-7B.png)
 
-- DeepSeek-R1-Distill-Qwen2.5-14B
+- DeepSeek-R1-Distill-Qwen2.5-14B ✅
 
 ![](/images/2025/LLMEval/DeepSeek-R1-Distill-Qwen2.5-14B.png)
 
-- DeepSeek-R1-Distill-Qwen2.5-32B
+- DeepSeek-R1-Distill-Qwen2.5-32B ✅
 
 ![](/images/2025/LLMEval/DeepSeek-R1-Distill-Qwen2.5-32B.png)
 
-- Qwen/QwQ-32B
+- Qwen/QwQ-32B ✅
 
 ![](/images/2025/LLMEval/Qwen-QwQ-32B.png)
 
-- Qwen/QwQ-32B-Preview
+- Qwen/QwQ-32B-Preview ✅
 
 ![](/images/2025/LLMEval/Qwen-QwQ-32B-Preview.png)
 
@@ -125,13 +125,14 @@ tags: [Benchmark, LLM, Qwen, DeepSeek]
 
 ![](/images/2025/LLMEval/Qwen2.5-Coder-0.5B.png)
 
-- Qwen2.5-Coder-1.5B
+- Qwen2.5-Coder-1.5B ✅
 
 ![](/images/2025/LLMEval/Qwen2.5-Coder-1.5B.png)
 
-- Qwen2.5-Coder-3B
+- Qwen2.5-Coder-3B ✅
 
 ![](/images/2025/LLMEval/Qwen2.5-Coder-3B.png)
+
 
 ## 结论
 
