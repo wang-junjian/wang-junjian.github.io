@@ -6,6 +6,29 @@ categories: Benchmark LLM
 tags: [Benchmark, LLM, Qwen, DeepSeek]
 ---
 
+## 总结
+
+| 模型类型 | 模型 | 评估结果 |
+| --- | --- | --- |
+| 语言模型 | Qwen2.5-0.5B | ❌ |
+|         | Qwen2.5-1.5B | ✅ |
+|         | Qwen2.5-7B | ✅ |
+|         | Qwen2.5-14B-Instruct | ✅ |
+|         | Qwen2.5-32B-Instruct | ✅ |
+| 推理模型 | DeepSeek-R1-Distill-Qwen2.5-1.5B | ❌ |
+|         | DeepSeek-R1-Distill-Qwen2.5-7B | ❌ |
+|         | DeepSeek-R1-Distill-Qwen2.5-14B | ✅ |
+|         | DeepSeek-R1-Distill-Qwen2.5-32B | ✅ |
+|         | Qwen/QwQ-32B | ✅ |
+|         | Qwen/QwQ-32B-Preview | ✅ |
+|         | Qwen/QwQ-32B-AWQ | ❌ |
+| 代码模型 | Qwen2.5-Coder-0.5B | ❌ |
+|         | Qwen2.5-Coder-1.5B | ✅ |
+|         | Qwen2.5-Coder-3B | ✅ |
+
+对于这样的`阅读理解任务`，推理模型的表现要反而不如语言模型和代码模型，通过分析发现在思考的过程可能会出错而导致答案错误。对于大参数模型，进行了量化会导致模型性能下降，如：Qwen/QwQ-32B-AWQ。
+
+
 ## 提示词
 ```
 收入		
@@ -132,15 +155,6 @@ tags: [Benchmark, LLM, Qwen, DeepSeek]
 - Qwen2.5-Coder-3B ✅
 
 ![](/images/2025/LLMEval/Qwen2.5-Coder-3B.png)
-
-
-## 结论
-
-- 语言模型：Qwen2.5-1.5B、Qwen2.5-7B、Qwen2.5-14B-Instruct、Qwen2.5-32B-Instruct 表现良好。
-- 推理模型：DeepSeek-R1-Distill-Qwen2.5-14B、DeepSeek-R1-Distill-Qwen2.5-32B、Qwen/QwQ-32B、Qwen/QwQ-32B-Preview 表现良好。
-- 代码模型：Qwen2.5-Coder-1.5B、Qwen2.5-Coder-3B 表现良好。
-
-对于这样的`阅读理解任务`，推理模型的表现要反而不如语言模型和代码模型，通过分析发现在思考的过程可能会出错而导致答案错误。对于大参数模型，进行了量化会导致模型性能下降，如：Qwen/QwQ-32B-AWQ。
 
 
 ## 参考资料
