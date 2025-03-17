@@ -43,8 +43,6 @@ tags: [Benchmark, LLM, Qwen, DeepSeek]
 
 ## 评估模型
 
-评估的模型只有 `Qwen-QwQ-32B-AWQ` 是本地 vLLM 部署的，其他模型都是使用[硅基流动](https://siliconflow.cn/zh-cn/)平台上的模型。
-
 ### 语言模型
 - Qwen2.5-0.5B（阿里云百炼）
 - Qwen2.5-1.5B（阿里云百炼）
@@ -142,3 +140,8 @@ tags: [Benchmark, LLM, Qwen, DeepSeek]
 - 代码模型：Qwen2.5-Coder-1.5B、Qwen2.5-Coder-3B 表现良好。
 
 对于这样的`阅读理解任务`，推理模型的表现要反而不如语言模型和代码模型，通过分析发现在思考的过程可能会出错而导致答案错误。对于大参数模型，进行了量化会导致模型性能下降，如：Qwen/QwQ-32B-AWQ。
+
+
+## 参考资料
+- [硅基流动](https://siliconflow.cn/zh-cn/)
+- [阿里云百炼](https://bailian.console.aliyun.com/)
