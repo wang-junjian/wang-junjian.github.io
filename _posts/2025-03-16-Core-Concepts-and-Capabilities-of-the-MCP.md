@@ -25,6 +25,8 @@ MCP 帮助您在 LLM 之上构建代理和复杂的工作流程。LLM 经常需�
 
 MCP 的核心遵循客户端-服务器架构，其中主机应用程序可以连接到多个服务器：
 
+![](/images/2025/MCP/mcp-architecture_zh.png)
+
 ```mermaid
 flowchart LR
     subgraph "您的计算机"
@@ -63,6 +65,8 @@ MCP 遵循客户端-服务器架构，其中：
 - **主机** 是启动连接的 LLM 应用程序（如 Claude Desktop 或 IDE）
 - **客户端** 在主机应用程序内与服务器保持 1:1 连接
 - **服务器** 向客户端提供上下文、工具和提示
+
+![](/images/2025/MCP/client-server.png)
 
 ```mermaid
 flowchart LR
@@ -199,6 +203,8 @@ MCP 具有以下主要消息类型：
 ## 连接生命周期
 
 ### 1. 初始化
+
+![](/images/2025/MCP/connection-initialize.png)
 
 ```mermaid
 sequenceDiagram
