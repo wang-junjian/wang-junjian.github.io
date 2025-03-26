@@ -2,8 +2,8 @@
 layout: post
 title:  "continue: config.yaml Reference"
 date:   2025-03-15 10:00:00 +0800
-categories: continue AICodingAssistant
-tags: [continue, AICodingAssistant, config.yaml, GitHubCopilot]
+categories: Continue AICodingAssistant
+tags: [Continue, AICodingAssistant, config.yaml, GitHubCopilot]
 ---
 
 [config.yaml Reference](https://docs.continue.dev/yaml-reference)
