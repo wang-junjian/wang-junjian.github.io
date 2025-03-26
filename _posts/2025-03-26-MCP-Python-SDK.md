@@ -3,7 +3,7 @@ layout: post
 title:  MCP Python SDK
 date:   2025-03-26 08:00:00 +0800
 categories: MCP Python
-tags: [MCP, Python, SDK]
+tags: [MCP, Python, LLM]
 ---
 
 ## 概述
