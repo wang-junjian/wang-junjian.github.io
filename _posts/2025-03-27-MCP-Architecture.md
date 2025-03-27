@@ -166,3 +166,7 @@ sequenceDiagram
 - 采样需要客户端在其能力中声明支持
 
 这种能力协商确保客户端和服务器明确理解支持的功能，同时保持协议的可扩展性。
+
+
+## 参考资料
+- [Architecture](https://spec.modelcontextprotocol.io/specification/2025-03-26/architecture/)
