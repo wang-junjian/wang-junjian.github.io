@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "服务器功能"
+title:  "MCP 服务器功能"
 date:   2025-03-27 12:00:00 +0800
 categories: MCP LLM
 tags: [MCP, LLM]
