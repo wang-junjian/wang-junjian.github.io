@@ -151,7 +151,7 @@ tags: [MCP, LLM]
 
 ## 消息流程
 
-![](/images/2025/MCP-20250326/MessageFlow.png)
+![](/images/2025/MCP-20250326/PromptMessageFlow.png)
 
 ```mermaid
 sequenceDiagram
