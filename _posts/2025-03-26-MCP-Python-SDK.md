@@ -8,6 +8,8 @@ tags: [MCP, Python, LLM]
 
 ## 概述
 
+- [python-sdk](https://github.com/modelcontextprotocol/python-sdk)
+
 Model Context Protocol 允许应用程序以标准化的方式为 LLM 提供上下文，将提供上下文的关注点与实际的 LLM 交互分离开来。这个 Python SDK 实现了完整的 MCP 规范，使您能够轻松地：
 
 - 构建可连接到任何 MCP 服务器的 MCP 客户端
