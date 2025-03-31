@@ -2,8 +2,8 @@
 layout: post
 title:  "探索生成式人工智能"
 date:   2025-03-31 08:00:00 +0800
-categories: 生成式AI 人工智能
-tags: [生成式AI, 人工智能]
+categories: 生成式AI LLM
+tags: [生成式AI, 人工智能, LLM]
 ---
 
 - [Exploring Generative AI](https://martinfowler.com/articles/exploring-gen-ai.html)
