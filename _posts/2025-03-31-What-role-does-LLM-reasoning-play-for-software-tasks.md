@@ -2,7 +2,7 @@
 layout: post
 title:  "LLM 推理在软件任务中扮演什么角色？"
 date:   2025-03-31 10:00:00 +0800
-categories: 生成式AI 人工智能
+categories: 生成式AI LLM
 tags: [生成式AI, 人工智能, 推理, LLM]
 ---
 
