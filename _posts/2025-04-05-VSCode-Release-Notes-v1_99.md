@@ -2,8 +2,8 @@
 layout: post
 title:  "Visual Studio Code 2025年3月版本(1.99)的新功能"
 date:   2025-04-05 12:00:00 +0800
-categories: VSCode GitHubCopilot
-tags: [VSCode, GitHubCopilot, ReleaseNotes]
+categories: VSCode ReleaseNotes
+tags: [VSCode, ReleaseNotes, GitHubCopilot]
 ---
 
 欢迎使用Visual Studio Code 2025年3月版本。此版本包含许多更新，我们希望您会喜欢，一些主要亮点包括：
