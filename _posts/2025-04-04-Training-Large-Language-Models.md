@@ -46,4 +46,3 @@ tags: [Train, LLM, DeepSpeed, ZeRO, FlashAttention, Quantization]
 - [【生成式AI時代下的機器學習(2025)】助教課：利用多張GPU訓練大型語言模型—從零開始介紹DeepSpeed、Liger Kernel、Flash Attention及Quantization](https://www.youtube.com/watch?v=mpuRca2UZtI)
 - [Excalidraw](https://excalidraw.com/#json=3csTedqWVrLNRaESA8Z8i,XWDzmtI4xomLwmCB23BvFg)
 - [The Ultra-Scale Playbook: Training LLMs on GPU Clusters](https://huggingface.co/spaces/nanotron/ultrascale-playbook)
-- []()
