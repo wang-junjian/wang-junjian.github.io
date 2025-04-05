@@ -3,7 +3,7 @@ layout: post
 title:  "训练大语言模型"
 date:   2025-04-04 12:00:00 +0800
 categories: Train LLM
-tags: [Train, LLM, DeepSpeed, ZeRO, FlashAttention, Quantization]
+tags: [Train, LLM, DeepSpeed, ZeRO, FlashAttention, Quantization, 李宏毅, 2025]
 ---
 
 ![](/images/2025/TrainingLargeLanguageModels/训练大语言模型.002.jpeg)
