@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Continue 使用 GitHub MCP Server"
+title:  "Continue Agent 使用 GitHub MCP Server"
 date:   2025-04-03 10:00:00 +0800
 categories: Continue MCPServer
 tags: [Continue, MCPServer, AICodingAssistant, GitHubCopilot]
