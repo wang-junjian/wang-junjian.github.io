@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "训练大语言模型"
+title:  "利用多张 GPU 训练大语言模型"
 date:   2025-04-04 12:00:00 +0800
 categories: Train LLM
 tags: [Train, LLM, DeepSpeed, ZeRO, FlashAttention, Quantization, 李宏毅, 2025]
