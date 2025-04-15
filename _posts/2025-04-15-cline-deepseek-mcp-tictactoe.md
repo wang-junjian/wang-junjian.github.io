@@ -6,41 +6,6 @@ categories: Cline MCP
 tags: [Cline, MCP MCPServer, DeepSeek, VSCode, GitHubServer, TicTacToe]
 ---
 
-magick -delay 300 -loop 0 \
-\( 00.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "" \) \
-\( blank.jpg -gravity center -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize 300 -annotate 0,0 "场景一：智能编码\nCline + DeepSeek" \) \
-\( 01-AutoCodeTicTacToe.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "提示词：使用 React 技术实现 Tic Tac Toe 游戏" \) \
-\( 02-AppRun.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "运行游戏" \) \
-\( 03-CreateNewRepository.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "创建新仓库" \) \
-\( 04-QuickSetupRepository.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "快速设置仓库" \) \
-\( 05-AppExit.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "退出游戏" \) \
-\( blank.jpg -gravity center -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize 300 -annotate 0,0 "场景二：智能连接工具 \nGitHub MCP Server" \) \
-\( 06-InstalledMCPServers.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "查看已安装的 MCP 服务器" \) \
-\( 07-CreateNewIssue.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "创建新问题（issue）" \) \
-\( 08-GitHubMCPServer-list_issues.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "查看 wang-junjian/tictactoe 项目中分配给我 issue，使用 GitHub MCP 服务器的工具 list_issues" \) \
-\( 09-ShowIssues.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "当前仓库 wang-junjian/tictactoe 中有1个开放的 issue" \) \
-\( 10-ImplIssue1.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "分步实现 issue #1 玩家获胜时添加烟花效果" \) \
-\( 11-ImplIssue2.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "实现 issue #1 玩家获胜时添加烟花效果" \) \
-\( 12-AppRun-Firework.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "运行游戏 - 获胜后的烟花效果" \) \
-\( blank.jpg -gravity center -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize 300 -annotate 0,0 "场景三：智能代码评审" \) \
-\( 13-CreateNewIssue.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "创建新问题 - Refactoring" \) \
-\( 14-Refactoring1.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "创建分支 git switch -c Refactoring，对项目中的代码进行重构" \) \
-\( 15-Refactoring2.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "完成代码重构" \) \
-\( 16-PushOriginRefactoring.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "推送到远程仓库，git push -u origin Refactoring" \) \
-\( 17-PullRequest.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "Compare & pull request" \) \
-\( 18-CreatePullRequest.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "创建拉取请求（pull request），关联问题（issue #2）" \) \
-\( 19-GitHubMCPServer-get_pull_request.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "wang-junjian/tictactoe 项目中分配给我的 PR，使用 GitHub MCP 服务器的工具 get_pull_request" \) \
-\( 20-GitHubMCPServer-get_pull_request_files.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "使用 GitHub MCP 服务器的工具 get_pull_request_files 获取 PR 的变更文件列表" \) \
-\( 21-Review.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "完成 PR #3 的代码评审" \) \
-\( 22-GitHubMCPServer-add_issue_comment.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "使用 GitHub MCP 服务器的工具 add_issue_comment，提交代码评审" \) \
-\( 23-CompleteReview.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "已成功在 PR #3 提交评审意见" \) \
-\( 24-MergePullRequest.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "合并拉取请求（Merge pull request）" \) \
-\( 25-ClosePullRequest.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "关闭拉取请求（PR #3）" \) \
-\( 26-CloseIssue.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "关闭问题（issue #2）" \) \
-\( 27-Release.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "发布游戏 TicTacToe v1.0.0" \) \
-\( 28.jpg -gravity south -background white -splice 0x30 -fill $FONT_COLOR -font "$FONT_PATH" -pointsize $FONT_SIZE -annotate $TEXT_POSITION "TicTacToe" \) \
-
-
 ![](/images/2025/TicTacToe/00.jpg)
 
 - 提示词：使用 React 技术实现 Tic Tac Toe 游戏
