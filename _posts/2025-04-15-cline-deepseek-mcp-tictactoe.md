@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "智能编码新范式 (Cline + DeepSeek) × MCP"
-date:   2025-04-07 08:00:00 +0800
+date:   2025-04-15 08:00:00 +0800
 categories: Cline MCP
 tags: [Cline, MCP MCPServer, DeepSeek, VSCode, GitHubServer, TicTacToe]
 ---
