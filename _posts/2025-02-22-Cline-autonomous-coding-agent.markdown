@@ -45,3 +45,23 @@ Activating task providers npm
 ### 配置模型 Ollama
 
 ![](/images/2025/Cline/Setting-Ollama.png)
+
+
+## 智能体编码
+### 查看 issue
+![](/images/2025/Cline/issue-list.png)
+
+### 显示 issue
+![](/images/2025/Cline/issue-view.png)
+
+### 创建分支
+![](/images/2025/Cline/new-branch_fix-issue-1.png)
+
+### 修复 issue
+![](/images/2025/Cline/fix-issue-1.png)
+
+### 运行 RAGFlowAssistant
+![](/images/2025/Cline/run-RAGFlowAssistant.png)
+
+### 安装 GitHub MCP Server
+![](/images/2025/Cline/install-mcp-github-server.png)
