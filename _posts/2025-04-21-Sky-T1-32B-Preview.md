@@ -10,7 +10,7 @@ tags: [Sky-T1, Sky-T1-32B-Preview, Post-Training, Reasoning]
 
 我们推出了Sky-T1-32B-Preview，这是一个在流行的推理和编码基准测试上表现与o1-preview相当的推理模型。**值得注意的是，Sky-T1-32B-Preview的训练成本不到450美元，这证明了以经济高效的方式复制高级推理能力是可能的**。所有[代码](https://github.com/NovaSky-AI/SkyThought)都是开源的。
 
-![](/images/2025/Sky-T1/Sky-T1-pipeline.jpg)
+![](/images/2025/Sky-T1-32B-Preview/Sky-T1-pipeline.jpg)
 
 ## 概述
 像o1和Gemini 2.0这样擅长推理的模型已经证明可以通过产生长链的思维过程等进步来解决复杂任务。然而，技术细节和模型权重无法获取，这对学术界和开源社区的参与造成了障碍。
