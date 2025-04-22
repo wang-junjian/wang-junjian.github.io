@@ -2,8 +2,8 @@
 layout: post
 title:  "Cline 的记忆库（Cline's Memory Bank）"
 date:   2025-04-22 10:00:00 +0800
-categories: ClineDoc
-tags: [Cline, MemoryBank, ClineDoc]
+categories: ClineDoc MemoryBank
+tags: [Cline, CustomInstructions, MemoryBank, ClineDoc]
 ---
 
 # [Cline 的记忆库](https://github.com/cline/cline/blob/main/docs/prompting/custom%20instructions%20library/raw-instructions/cline-memory-bank.md)
