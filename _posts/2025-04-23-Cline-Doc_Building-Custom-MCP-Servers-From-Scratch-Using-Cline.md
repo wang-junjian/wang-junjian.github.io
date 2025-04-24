@@ -6,7 +6,7 @@ categories: ClineDoc MCPServer
 tags: [Cline, MCP, MCPServer, ClineDoc]
 ---
 
-# 使用 Cline 从零开始构建自定义 MCP 服务器：综合指南
+# [使用 Cline 从零开始构建自定义 MCP 服务器：综合指南](https://github.com/cline/cline/blob/main/docs/mcp/mcp-server-from-scratch.md)
 
 本指南提供了使用 Cline 的强大 AI 功能从零开始构建自定义 MCP (Model Context Protocol) 服务器的全面演示。示例将通过构建一个"GitHub 助手服务器"来说明这个过程。
 
