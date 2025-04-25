@@ -77,10 +77,10 @@ tags: [鲁软慧码, Prompting, AICodingAssistant, GitHubCopilot]
 **1. 代码生成 (Code Generation)**
 
   * **简单函数:** `用 Python 编写一个函数，接收一个整数列表，返回列表中的最大值。`
-  * **带约束的函数:** ` 用 JavaScript 编写一个函数  `isValidEmail`，使用正则表达式验证邮箱格式是否有效，并返回布尔值。`
+  * **带约束的函数:** `用 JavaScript 编写一个函数` isValidEmail `，使用正则表达式验证邮箱格式是否有效，并返回布尔值。`
   * **类/组件:** `帮我用 React 创建一个名为 'UserProfileCard' 的函数组件，接收 'user' 对象（包含 name, avatarUrl, bio）作为 props，并展示这些信息。请使用 CSS Modules 进行样式设置。`
   * **API 端点:** ` 使用 Node.js 和 Express 框架，编写一个 POST 请求的 API 端点  `/api/products`，用于接收产品信息（name, price, description）并将其保存到 MongoDB 数据库（假设已有 Mongoose 模型 'Product'）。`
-  * **配置文件:** ` 为 Nginx 生成一个反向代理配置，将来自  `https://www.google.com/search?q=myapp.example.com`的请求转发到本地运行在`http://localhost:3000`  的应用。需要配置 SSL (证书路径为 /etc/letsencrypt/live/myapp.example.com/fullchain.pem)。 `
+  * **配置文件:** `为 Nginx 生成一个反向代理配置，将来自` https://www.google.com/search?q=myapp.example.com `的请求转发到本地运行在` http://localhost:3000 `的应用。需要配置 SSL (证书路径为 /etc/letsencrypt/live/myapp.example.com/fullchain.pem)。`
 
 **2. 代码解释与文档 (Explanation & Documentation)**
 
@@ -90,7 +90,7 @@ tags: [鲁软慧码, Prompting, AICodingAssistant, GitHubCopilot]
 
 **3. 调试与错误修复 (Debugging & Error Fixing)**
 
-  * **分析错误:** ` 运行这段 Java 代码时，抛出了  `NullPointerException`，错误发生在第 42 行。这是相关代码：[代码片段] 和完整的堆栈跟踪：[堆栈跟踪]。请帮我分析可能的原因并提供修复方案。`
+  * **分析错误:** `运行这段 Java 代码时，抛出了` NullPointerException `，错误发生在第 42 行。这是相关代码：[代码片段] 和完整的堆栈跟踪：[堆栈跟踪]。请帮我分析可能的原因并提供修复方案。`
   * **定位性能瓶颈:** `我的 Python Web 应用在处理并发请求时响应缓慢。我怀疑是数据库查询效率低。请提供一些常见的 Flask + SQLAlchemy 应用性能优化建议，并指导我如何使用 profiling 工具定位瓶颈。`
   * **逻辑错误:** `这个 JavaScript 函数应该计算购物车总价，但结果总是偏低。这是函数代码：[代码片段] 和一组测试输入及预期输出：[测试数据]。请帮我找出逻辑错误。`
 
@@ -103,7 +103,7 @@ tags: [鲁软慧码, Prompting, AICodingAssistant, GitHubCopilot]
 
 **5. 测试用例生成 (Test Case Generation)**
 
-  * **单元测试:** ` 为以下 Python 函数  `calculate\_discount(price, percentage)`  生成一组使用 Pytest 框架的单元测试用例，需要覆盖正常情况、边界值（0% 折扣，100% 折扣）和异常输入（负数价格、无效百分比）。 `
+  * **单元测试:** `为以下 Python 函数` calculate\_discount(price, percentage) `生成一组使用 Pytest 框架的单元测试用例，需要覆盖正常情况、边界值（0% 折扣，100% 折扣）和异常输入（负数价格、无效百分比）。 `
   * **集成测试场景:** `为用户注册流程（涉及 API 调用、数据库写入、邮件发送）设计一套集成测试场景描述。`
   * **边缘情况:** `针对这个处理文件上传的函数，帮我思考可能导致失败的边缘测试用例（例如：超大文件、不支持的文件类型、并发上传冲突、磁盘空间不足）。`
 
