@@ -110,9 +110,9 @@ tags: [鲁软慧码, Prompting, AICodingAssistant, GitHubCopilot]
 **6. 学习与知识查询 (Learning & Knowledge Query)**
 
   * **概念解释:** `请用通俗易懂的语言解释什么是 RESTful API 的幂等性？并举例说明。`
-  * **语法查询:** `在 C# 中，`yield return`关键字是如何工作的？它与普通`return`  有什么区别？ `
+  * **语法查询:** `在 C# 中，` yield return `关键字是如何工作的？它与普通` return `有什么区别？`
   * **最佳实践:** `在 Go 语言中处理并发任务时，有哪些常见的最佳实践可以避免竞态条件？`
-  * **库/框架用法:** ` 如何使用 'axios' 库在 JavaScript 中发送带  `Authorization`  请求头的 POST 请求？ `
+  * **库/框架用法:** `如何使用 'axios' 库在 JavaScript 中发送带` Authorization `请求头的 POST 请求？`
 
 -----
 
