@@ -79,7 +79,7 @@ tags: [鲁软慧码, Prompting, AICodingAssistant, GitHubCopilot]
   * **简单函数:** `用 Python 编写一个函数，接收一个整数列表，返回列表中的最大值。`
   * **带约束的函数:** `用 JavaScript 编写一个函数` isValidEmail `，使用正则表达式验证邮箱格式是否有效，并返回布尔值。`
   * **类/组件:** `帮我用 React 创建一个名为 'UserProfileCard' 的函数组件，接收 'user' 对象（包含 name, avatarUrl, bio）作为 props，并展示这些信息。请使用 CSS Modules 进行样式设置。`
-  * **API 端点:** ` 使用 Node.js 和 Express 框架，编写一个 POST 请求的 API 端点  `/api/products`，用于接收产品信息（name, price, description）并将其保存到 MongoDB 数据库（假设已有 Mongoose 模型 'Product'）。`
+  * **API 端点:** `使用 Node.js 和 Express 框架，编写一个 POST 请求的 API 端点` /api/products `，用于接收产品信息（name, price, description）并将其保存到 MongoDB 数据库（假设已有 Mongoose 模型 'Product'）。`
   * **配置文件:** `为 Nginx 生成一个反向代理配置，将来自` https://www.google.com/search?q=myapp.example.com `的请求转发到本地运行在` http://localhost:3000 `的应用。需要配置 SSL (证书路径为 /etc/letsencrypt/live/myapp.example.com/fullchain.pem)。`
 
 **2. 代码解释与文档 (Explanation & Documentation)**
