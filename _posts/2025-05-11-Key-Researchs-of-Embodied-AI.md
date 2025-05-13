@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  具身智能关键技术研究：操作、规划、导航"
+title:  具身智能关键技术研究：操作、规划、导航
 date:   2025-05-11 12:00:00 +0800
 categories: 具身智能 VLA
 tags: [具身智能, VLA, Manipulation, Planning, Navigation]
