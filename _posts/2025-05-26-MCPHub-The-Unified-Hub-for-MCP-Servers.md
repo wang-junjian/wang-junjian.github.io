@@ -10,7 +10,8 @@ tags: [MCP, MCPHub, MCPServer, GitHub, GitLab, SSE]
 
 MCPHub 通过将多个 MCP（Model Context Protocol）服务器组织为灵活的流式 HTTP（SSE）端点，简化了管理与扩展工作。系统支持按需访问全部服务器、单个服务器或按场景分组的服务器集合。
 
-### 🚀 功能亮点
+**🚀 功能亮点**
+
 - 广泛的 MCP 服务器支持：无缝集成任何 MCP 服务器，配置简单。
 - 集中式管理控制台：在一个简洁的 Web UI 中实时监控所有服务器的状态和性能指标。
 - 灵活的协议兼容：完全支持 stdio 和 SSE 两种 MCP 协议。
