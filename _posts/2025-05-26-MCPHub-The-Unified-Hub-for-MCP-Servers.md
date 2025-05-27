@@ -58,12 +58,12 @@ docker run -p 3000:3000 -v $(pwd)/mcp_settings.json:/app/mcp_settings.json saman
 ```
 
 
-## 访问控制台
+## MCPHub 控制台
 
 打开 http://localhost:3000，使用您的账号登录。
 > 提示：默认用户名/密码为 `admin` / `admin123`。
 
-### MCPHub 控制台
+### 登录界面
 
 ![](/images/2025/MCPHub/MCPHub-Dashboard.png)
 
