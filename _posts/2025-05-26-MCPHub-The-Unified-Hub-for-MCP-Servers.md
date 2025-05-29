@@ -81,12 +81,21 @@ docker run -p 3000:3000 -v $(pwd)/mcp_settings.json:/app/mcp_settings.json saman
 ![](/images/2025/MCPHub/MCPHub-Logs.png)
 
 
-## SSE 端点集成
+## 协议
+### Streamable HTTP 端点
+
+- **Streamable HTTP 端点**: `http://localhost:3000/mcp`
+- **分组 Streamable HTTP 端点**: `http://localhost:3000/mcp/{group}`
+- **特定服务器 Streamable HTTP 端点**: `http://localhost:3000/mcp/{server}`
+
+### SSE 端点
 
 - **SSE 端点**: `http://localhost:3000/sse`
 - **分组 SSE 端点**: `http://localhost:3000/sse/{group}`
 - **特定服务器 SSE 端点**: `http://localhost:3000/sse/{server}`
 
+
+## MCP Client
 ### Cline
 
 #### 编辑 MCP 配置文件
@@ -116,3 +125,10 @@ docker run -p 3000:3000 -v $(pwd)/mcp_settings.json:/app/mcp_settings.json saman
 
 ## 参考资料
 - [MCPHub GitHub](https://github.com/samanhappy/mcphub)
+- [MCP - Transports](https://modelcontextprotocol.io/docs/concepts/transports)
+- [GitHub MCP - Transports](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/basic/transports.mdx)
+- [HTML - Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)
+- [Server-Sent Events 教程](https://www.ruanyifeng.com/blog/2017/05/server-sent_events.html)
+- [WIKI - Server-sent events](https://en.wikipedia.org/wiki/Server-sent_events)
+- [Spring AI Alibaba](https://java2ai.com/)
+- [MCP协议Streamable HTTP](https://www.cnblogs.com/xiao987334176/p/18845151)
