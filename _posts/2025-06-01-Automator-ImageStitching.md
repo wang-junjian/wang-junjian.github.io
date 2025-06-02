@@ -111,6 +111,8 @@ if ! magick "${files[@]}" $append_option "$output_file"; then
 fi
 ```
 
+![](/images/2025/Automator/ImageStitching-ShellCode-All.png)
+
 ## 使用说明
 
 ![](/images/2025/Automator/ImageStitching.png)
