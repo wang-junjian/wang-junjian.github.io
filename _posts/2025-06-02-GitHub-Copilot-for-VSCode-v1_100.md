@@ -10,6 +10,12 @@ tags: [GitHubCopilot, VSCode, AICodingAssistant]
 
 ![](/images/2025/VSCode-GitHubCopilot/UnifiedChatView.png)
 
+![](/images/2025/VSCode-GitHubCopilot/PromptFiles.png)
+
+![](/images/2025/VSCode-GitHubCopilot/InstructionsFiles.png)
+
+![](/images/2025/VSCode-GitHubCopilot/InstructionsFiles-vs-PromptFiles.png)
+
 ![](/images/2025/VSCode-GitHubCopilot/githubRepo.png)
 
 ![](/images/2025/VSCode-GitHubCopilot/fetch.png)
@@ -23,6 +29,10 @@ tags: [GitHubCopilot, VSCode, AICodingAssistant]
 ![](/images/2025/VSCode-GitHubCopilot/MCPConfig.png)
 
 ![](/images/2025/VSCode-GitHubCopilot/MCP.png)
+
+![](/images/2025/VSCode-GitHubCopilot/pythonGetEnvironmentInfo.jpeg)
+
+![](/images/2025/VSCode-GitHubCopilot/pythonInstallPackage.jpeg)
 
 - [VSCode - April 2025 (version 1.100)](https://code.visualstudio.com/updates/v1_100)
 - [VSCode - March 2025 (version 1.99)](https://code.visualstudio.com/updates/v1_99)
