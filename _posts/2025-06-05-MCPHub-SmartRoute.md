@@ -217,6 +217,8 @@ docker-compose up -d
 
 ![](/images/2025/MCPHubSmart/SmartRoute-CurrentTime.png)
 
+#### 序列图
+
 ![](/images/2025/MCPHubSmart/MCPClient-MCPHub-MCPServer-Mermaid.png)
 
 ```mermaid
@@ -261,7 +263,7 @@ sequenceDiagram
 [16:15:45]info主 (29)SSE connection closed: 882c527f-910b-4cbd-b405-ade42c4298a8
 ```
 
-下面是 MCPHub 智能路由的工具列表示例：
+#### 智能路由返回的工具列表
 
 ```json
 [
