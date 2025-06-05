@@ -217,13 +217,184 @@ docker-compose up -d
 
 ![](/images/2025/MCPHubSmart/SmartRoute-CurrentTime.png)
 
+![](/images/2025/MCPHubSmart/MCPClient-MCPHub-MCPServer-Mermaid.png)
+
+```mermaid
+sequenceDiagram
+    participant MCP Client
+    participant MCPHub
+
+    MCP Client->>MCPHub: 建立 SSE 连接 (sessionId: 882c527f...)
+    MCPHub-->>MCP Client: 连接成功
+
+    MCP Client->>MCPHub: ListToolsRequest
+    MCPHub-->>MCP Client: 返回可用工具列表
+
+    MCP Client->>MCPHub: CallToolRequest (search_tools, query: "time")
+    MCPHub-->>MCP Client: 返回搜索结果（get_current_time, convert_time 等）
+
+    MCP Client->>MCPHub: CallToolRequest (call_tool, get_current_time)
+    MCPHub->>Time MCP Server: 调用 get_current_time 工具
+    Time MCP Server-->>MCPHub: 返回当前时间（Asia/Shanghai）
+    MCPHub-->>MCP Client: 返回工具执行结果
+
+    MCP Client->>MCPHub: 断开 SSE 连接
+    MCPHub-->>MCP Client: 连接关闭确认
+```
+
+上面的序列图展示了 MCP 客户端如何通过 MCPHub 与 MCP 服务器进行交互，使用智能路由来获取相关工具并执行操作。
+
+#### 日志
+
+```
+[16:09:04]info主 (29)New SSE connection established: 882c527f-910b-4cbd-b405-ade42c4298a8 with group: $smart
+[16:09:04]info主 (29)Received message for sessionId: 882c527f-910b-4cbd-b405-ade42c4298a8 in group: $smart
+[16:09:04]info主 (29)Handling ListToolsRequest for group: $smart
+[16:10:24]info主 (29)Received message for sessionId: 882c527f-910b-4cbd-b405-ade42c4298a8 in group: $smart
+[16:10:24]info主 (29)Handling CallToolRequest for tool: {"name":"search_tools","arguments":{"query":"time","limit":5}}
+[16:10:24]info主 (29)Using similarity threshold: 0.2 for query: "time"
+[16:10:25]info主 (29)Search results: [{"serverName":"time","toolName":"get_current_time","description":"Get current time in a specific timezones","inputSchema":{"type":"object","properties":{"timezone":{"type":"string","description":"IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Shanghai' as local timezone if no timezone provided by the user."}},"required":["timezone"]},"similarity":0.5920422430063725,"searchableText":"get_current_time Get current time in a specific timezones required timezone"},{"serverName":"time","toolName":"convert_time","description":"Convert time between timezones","inputSchema":{"type":"object","properties":{"source_timezone":{"type":"string","description":"Source IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Shanghai' as local timezone if no source timezone provided by the user."},"time":{"type":"string","description":"Time to convert in 24-hour format (HH:MM)"},"target_timezone":{"type":"string","description":"Target IANA timezone name (e.g., 'Asia/Tokyo', 'America/San_Francisco'). Use 'Asia/Shanghai' as local timezone if no target timezone provided by the user."}},"required":["source_timezone","time","target_timezone"]},"similarity":0.5888808614682648,"searchableText":"convert_time Convert time between timezones required source_timezone time target_timezone"},{"serverName":"playwright","toolName":"browser_wait_for","description":"Wait for text to appear or disappear or a specified time to pass","inputSchema":{"type":"object","properties":{"time":{"type":"number","description":"The time to wait in seconds"},"text":{"type":"string","description":"The text to wait for"},"textGone":{"type":"string","description":"The text to wait for to disappear"}},"additionalProperties":false,"$schema":"http://json-schema.org/draft-07/schema#"},"similarity":0.5436626892693012,"searchableText":"browser_wait_for Wait for text to appear or disappear or a specified time to pass additionalProperties $schema time text textGone"},{"serverName":"playwright","toolName":"browser_type","description":"Type text into editable element","inputSchema":{"type":"object","properties":{"element":{"type":"string","description":"Human-readable element description used to obtain permission to interact with the element"},"ref":{"type":"string","description":"Exact target element reference from the page snapshot"},"text":{"type":"string","description":"Text to type into the element"},"submit":{"type":"boolean","description":"Whether to submit entered text (press Enter after)"},"slowly":{"type":"boolean","description":"Whether to type one character at a time. Useful for triggering key handlers in the page. By default entire text is filled in at once."}},"required":["element","ref","text"],"additionalProperties":false,"$schema":"http://json-schema.org/draft-07/schema#"},"similarity":0.4687798181539846,"searchableText":"browser_type Type text into editable element required additionalProperties $schema element ref text submit slowly"},{"serverName":"playwright","toolName":"browser_navigate_forward","description":"Go forward to the next page","inputSchema":{"type":"object","properties":{},"additionalProperties":false,"$schema":"http://json-schema.org/draft-07/schema#"},"similarity":0.4322801570725354,"searchableText":"browser_navigate_forward Go forward to the next page additionalProperties $schema"}]
+[16:10:42]info主 (29)Received message for sessionId: 882c527f-910b-4cbd-b405-ade42c4298a8 in group: $smart
+[16:10:42]info主 (29)Handling CallToolRequest for tool: {"name":"call_tool","arguments":{"toolName":"get_current_time","arguments":{"timezone":"Asia/Shanghai"}}}
+[16:10:42]info主 (29)Invoking tool 'get_current_time' on server 'time' with arguments: {"timezone":"Asia/Shanghai"}
+[16:10:42]info主 (29)Tool invocation result: {"content":[{"type":"text","text":"{\n  \"timezone\": \"Asia/Shanghai\",\n  \"datetime\": \"2025-06-05T16:10:42+08:00\",\n  \"is_dst\": false\n}"}],"isError":false}
+[16:15:45]info主 (29)SSE connection closed: 882c527f-910b-4cbd-b405-ade42c4298a8
+```
+
+下面是 MCPHub 智能路由的工具列表示例：
+
+```json
+[
+  {
+    "serverName": "time",
+    "toolName": "get_current_time",
+    "description": "Get current time in a specific timezones",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Shanghai' as local timezone if no timezone provided by the user."
+        }
+      },
+      "required": [
+        "timezone"
+      ]
+    },
+    "similarity": 0.5920422430063725,
+    "searchableText": "get_current_time Get current time in a specific timezones required timezone"
+  },
+  {
+    "serverName": "time",
+    "toolName": "convert_time",
+    "description": "Convert time between timezones",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "source_timezone": {
+          "type": "string",
+          "description": "Source IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'Asia/Shanghai' as local timezone if no source timezone provided by the user."
+        },
+        "time": {
+          "type": "string",
+          "description": "Time to convert in 24-hour format (HH:MM)"
+        },
+        "target_timezone": {
+          "type": "string",
+          "description": "Target IANA timezone name (e.g., 'Asia/Tokyo', 'America/San_Francisco'). Use 'Asia/Shanghai' as local timezone if no target timezone provided by the user."
+        }
+      },
+      "required": [
+        "source_timezone",
+        "time",
+        "target_timezone"
+      ]
+    },
+    "similarity": 0.5888808614682648,
+    "searchableText": "convert_time Convert time between timezones required source_timezone time target_timezone"
+  },
+  {
+    "serverName": "playwright",
+    "toolName": "browser_wait_for",
+    "description": "Wait for text to appear or disappear or a specified time to pass",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "number",
+          "description": "The time to wait in seconds"
+        },
+        "text": {
+          "type": "string",
+          "description": "The text to wait for"
+        },
+        "textGone": {
+          "type": "string",
+          "description": "The text to wait for to disappear"
+        }
+      },
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "similarity": 0.5436626892693012,
+    "searchableText": "browser_wait_for Wait for text to appear or disappear or a specified time to pass additionalProperties $schema time text textGone"
+  },
+  {
+    "serverName": "playwright",
+    "toolName": "browser_type",
+    "description": "Type text into editable element",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "element": {
+          "type": "string",
+          "description": "Human-readable element description used to obtain permission to interact with the element"
+        },
+        "ref": {
+          "type": "string",
+          "description": "Exact target element reference from the page snapshot"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text to type into the element"
+        },
+        "submit": {
+          "type": "boolean",
+          "description": "Whether to submit entered text (press Enter after)"
+        },
+        "slowly": {
+          "type": "boolean",
+          "description": "Whether to type one character at a time. Useful for triggering key handlers in the page. By default entire text is filled in at once."
+        }
+      },
+      "required": [
+        "element",
+        "ref",
+        "text"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "similarity": 0.4687798181539846,
+    "searchableText": "browser_type Type text into editable element required additionalProperties $schema element ref text submit slowly"
+  },
+  {
+    "serverName": "playwright",
+    "toolName": "browser_navigate_forward",
+    "description": "Go forward to the next page",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "similarity": 0.4322801570725354,
+    "searchableText": "browser_navigate_forward Go forward to the next page additionalProperties $schema"
+  }
+]
+```
 
 ## 参考资料
 - [MCPHub GitHub](https://github.com/samanhappy/mcphub)
-- [MCP - Transports](https://modelcontextprotocol.io/docs/concepts/transports)
-- [GitHub MCP - Transports](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/basic/transports.mdx)
-- [HTML - Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)
-- [Server-Sent Events 教程](https://www.ruanyifeng.com/blog/2017/05/server-sent_events.html)
-- [WIKI - Server-sent events](https://en.wikipedia.org/wiki/Server-sent_events)
-- [Spring AI Alibaba](https://java2ai.com/)
-- [MCP协议Streamable HTTP](https://www.cnblogs.com/xiao987334176/p/18845151)
+- [MCPHub 文档：获取资源](https://github.com/samanhappy/mcphub/blob/main/docs/zh/api-reference/endpoint/get.mdx)
+- [MCPHub API 参考](https://github.com/samanhappy/mcphub/blob/main/docs/zh/api-reference/introduction.mdx)
