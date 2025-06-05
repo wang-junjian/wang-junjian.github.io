@@ -6,12 +6,45 @@ categories: MCP MCPHub
 tags: [MCP, MCPHub, MCPServer, GitHub, GitLab, SSE， SmartRoute]
 ---
 
-## [MCPHub](https://github.com/samanhappy/mcphub)
+## 什么是智能路由
+
+智能路由是 MCPHub 的核心功能之一。
+
+### 技术原理
+
+它将每个 MCP 工具的名称和描述嵌入为高维语义向量。当用户发起自然语言任务请求时，系统会将该请求也转换为向量，通过计算相似度，快速返回最相关的工具列表。
+
+这一过程摒弃了传统的关键词匹配，具备更强的语义理解能力，能够处理自然语言的模糊性和多样性。
+
+### 核心组件
+
+- **向量嵌入引擎**：支持如 `text-embedding-3-small`、`bge-m3` 等主流模型，将文本描述转为语义向量。
+- **PostgreSQL + pgvector**：使用开源向量数据库方案，支持高效的向量索引和搜索。
+- **两步工作流分离**：
+  - `search_tools`：负责语义工具发现
+  - `call_tool`：执行实际工具调用逻辑
+
+## 为什么需要智能路由
+
+### 1. 减少认知负荷
+
+- 当工具数量超过 100 个，AI 模型难以处理所有工具上下文。
+- 智能路由通过语义压缩，将候选工具缩小至 5～10 个，提高决策效率。
+
+### 2. 显著降低 token 消耗
+
+- 传统做法传入全量工具描述，可能消耗上千 token。
+- 使用智能路由，通常可将 token 使用降低 70～90%。
+
+### 3. 提升调用准确率
+
+- 理解任务语义：如“图片增强”→选择图像处理工具，而不是依赖命名关键词。
+- 上下文感知：考虑输入/输出格式和工具组合能力，匹配更合理的执行链路。
 
 
-## 部署 MCPHub（智能路由）
+## 部署 [MCPHub](https://github.com/samanhappy/mcphub)（智能路由）
 
-### mcp_settings.json
+### 编辑 MCP 配置文件：`mcp_settings.json`
 
 ```json
 {
@@ -88,6 +121,8 @@ tags: [MCP, MCPHub, MCPServer, GitHub, GitLab, SSE， SmartRoute]
 }
 ```
 
+`smartRouting` 的配置可以在 MCPHub 控制台中进行修改。
+
 ### docker-compose.yml
 
 ```yaml
@@ -120,11 +155,20 @@ services:
       MCPHUB_DB_URL: postgresql://mcphub:your_password@mcphub-postgres:5432/mcphub
 ```
 
-### 启动服务
+在已部署 PostgreSQL，可直接创建数据库并启用 `pgvector` 扩展：
+
+```sql
+CREATE DATABASE mcphub;
+CREATE EXTENSION vector;
+```
+
+### 创建 PostgreSQL 数据目录
 
 ```bash
 mkdir postgres
 ```
+
+### 启动服务
 
 ```bash
 docker-compose up -d
