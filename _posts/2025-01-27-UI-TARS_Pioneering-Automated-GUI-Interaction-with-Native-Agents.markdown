@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "UI-TARS: Pioneering Automated GUI Interaction with Native Agents"
 date:   2025-01-27 10:00:00 +0800
 categories: UI-TARS arXiv

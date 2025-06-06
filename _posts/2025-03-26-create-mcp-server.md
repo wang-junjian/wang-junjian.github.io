@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "create-mcp-server"
 date:   2025-03-26 12:00:00 +0800
 categories: MCP Python

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenVINO 神经网络性能分析"
 date:   2022-04-17 08:00:00 +0800
 categories: AI OpenVINO

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MCP 快速入门指南"
 date:   2025-04-24 08:00:00 +0800
 categories: ClineDoc MCP

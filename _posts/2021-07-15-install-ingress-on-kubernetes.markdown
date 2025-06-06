@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Kubernetes上安装Ingress"
 date:   2021-07-15 00:00:00 +0800
 categories: Kubernetes

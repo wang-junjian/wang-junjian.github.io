@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "CUA 评估额外信息"
 date:   2025-01-26 10:00:00 +0800
 categories: CUA Eval

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中的卷：将磁盘挂载到容器"
 date:   2021-07-04 00:00:00 +0800
 categories: Kubernetes

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "构建基于 ONNXRuntime 的推理服务"
 date:   2022-02-09 00:00:00 +0800
 categories: AI

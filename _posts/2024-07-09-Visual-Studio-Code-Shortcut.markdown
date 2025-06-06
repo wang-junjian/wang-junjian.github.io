@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Visual Studio Code 快捷键"
 date:   2024-07-09 08:00:00 +0800
 categories: IDE VSCode

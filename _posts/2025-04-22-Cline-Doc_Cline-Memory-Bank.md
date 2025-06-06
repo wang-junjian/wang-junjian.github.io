@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Cline 的记忆库（Cline's Memory Bank）"
 date:   2025-04-22 10:00:00 +0800
 categories: ClineDoc MemoryBank

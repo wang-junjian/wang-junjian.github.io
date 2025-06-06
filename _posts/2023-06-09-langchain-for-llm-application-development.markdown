@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LangChain for LLM Application Development"
 date:   2023-06-09 08:00:00 +0800
 categories: LangChain

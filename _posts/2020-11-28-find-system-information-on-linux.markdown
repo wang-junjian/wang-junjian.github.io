@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Linux上查找系统信息"
 date:   2020-11-28 00:00:00 +0800
 categories: Linux

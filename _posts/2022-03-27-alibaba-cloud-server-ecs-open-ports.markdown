@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "阿里云服务器 ECS 开放端口"
 date:   2022-03-27 00:00:00 +0800
 categories: 工作日志 阿里云

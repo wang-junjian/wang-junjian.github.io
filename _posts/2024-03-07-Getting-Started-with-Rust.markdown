@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Rust 入门"
 date:   2024-03-07 08:00:00 +0800
 categories: Rust GettingStarted

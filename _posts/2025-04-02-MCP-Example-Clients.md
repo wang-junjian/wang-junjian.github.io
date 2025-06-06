@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "支持 MCP 集成的应用程序列表"
 date:   2025-04-02 12:00:00 +0800
 categories: MCP Client

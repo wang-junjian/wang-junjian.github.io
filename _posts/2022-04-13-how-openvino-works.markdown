@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenVINO 的工作原理"
 date:   2022-04-13 10:00:00 +0800
 categories: AI OpenVINO

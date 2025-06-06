@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "DashScope 模型服务灵积"
 date:   2024-04-13 08:00:00 +0800
 categories: DashScope, LangChain

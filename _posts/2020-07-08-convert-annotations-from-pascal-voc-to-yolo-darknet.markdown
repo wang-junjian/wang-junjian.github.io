@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "将注释从PASCAL VOC转换为YOLO Darknet"
 date:   2020-07-08 00:00:00 +0800
 categories: Dataset

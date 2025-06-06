@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Open Model Zoo"
 date:   2022-04-14 08:00:00 +0800
 categories: AI OpenVINO

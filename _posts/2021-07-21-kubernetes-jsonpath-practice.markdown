@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes JSONPath实践"
 date:   2021-07-21 00:00:00 +0800
 categories: Kubernetes 实践

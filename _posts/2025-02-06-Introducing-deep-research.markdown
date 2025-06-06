@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Introducing deep research"
 date:   2025-02-06 10:00:00 +0800
 categories: DeepResearch Agent

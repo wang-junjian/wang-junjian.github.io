@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "RAG 复杂场景下的工作流程和构建知识库的解析方法"
 date:   2024-06-30 08:00:00 +0800
 categories: LLM RAG

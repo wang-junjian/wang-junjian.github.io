@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Computer-Using Agent"
 date:   2025-01-25 10:00:00 +0800
 categories: CUA arXiv

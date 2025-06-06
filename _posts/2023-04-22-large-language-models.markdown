@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Large Language Models（大语言模型）"
 date:   2023-04-22 08:00:00 +0800
 categories: LLM

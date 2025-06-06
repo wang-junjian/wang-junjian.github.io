@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Stable Diffusion"
 date:   2023-05-22 08:00:00 +0800
 categories: Stable-Diffusion

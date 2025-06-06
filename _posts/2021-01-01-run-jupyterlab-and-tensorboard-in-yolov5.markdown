@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在YOLOv5中运行JupyterLab和TensorBoard"
 date:   2021-01-01 00:00:00 +0800
 categories: Jupyter

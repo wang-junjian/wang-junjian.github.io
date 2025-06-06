@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MCP 基础协议"
 date:   2025-03-27 10:00:00 +0800
 categories: MCP LLM

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中的计算资源管理"
 date:   2021-07-29 00:00:00 +0800
 categories: Kubernetes

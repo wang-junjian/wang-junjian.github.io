@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "CodeGPT: 智能辅助编程"
 date:   2024-01-03 08:00:00 +0800
 categories: CodeGPT IntelliJIDEA

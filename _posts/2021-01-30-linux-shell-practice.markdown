@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Linux Shell 实践"
 date:   2021-01-30 00:00:00 +0800
 categories: Shell

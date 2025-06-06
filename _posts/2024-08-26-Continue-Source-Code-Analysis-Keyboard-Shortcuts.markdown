@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue 源码分析 - 键盘快捷键"
 date:   2024-08-26 08:00:00 +0800
 categories: Continue AICodingAssistant

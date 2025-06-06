@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue Code LLM Autopilot"
 date:   2024-04-07 08:00:00 +0800
 categories: Continue GitHubCopilot

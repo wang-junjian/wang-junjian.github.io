@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue 源码分析 - 各种命令调用大模型的输入和输出"
 date:   2024-09-20 08:00:00 +0800
 categories: Continue AICodingAssistant

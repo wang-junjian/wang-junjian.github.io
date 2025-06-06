@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 CentOS 上安装 EPEL 软件仓库"
 date:   2023-03-07 00:00:00 +0800
 categories: EPEL

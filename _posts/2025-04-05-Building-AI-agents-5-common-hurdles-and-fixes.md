@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "构建AI代理：5个常见障碍及解决方案"
 date:   2025-04-05 08:00:00 +0800
 categories: Agent LLM

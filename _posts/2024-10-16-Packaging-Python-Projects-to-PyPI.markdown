@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "打包 Python 工程到 PyPI：构建 LLM 压测工具 evalscope-perf"
 date:   2024-10-16 10:00:00 +0800
 categories: Python PyPI

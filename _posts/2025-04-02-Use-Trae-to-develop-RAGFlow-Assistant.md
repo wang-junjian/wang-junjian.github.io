@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 Trae 开发 RAGFlow 助手"
 date:   2025-04-02 16:00:00 +0800
 categories: Trae RAGFlow

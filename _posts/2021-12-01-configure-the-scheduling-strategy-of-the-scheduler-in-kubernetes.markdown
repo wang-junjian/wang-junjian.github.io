@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中配置调度器"
 date: 2021-12-01 00:00:00 +0800
 categories: Kubernetes

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Jupyter Notebook实践"
 date:   2019-07-23 00:00:00 +0800
 categories: IDE 实践 快捷键

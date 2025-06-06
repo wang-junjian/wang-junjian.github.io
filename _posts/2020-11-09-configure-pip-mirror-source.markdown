@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "配置pip镜像源"
 date:   2020-11-09 00:00:00 +0800
 categories: Python

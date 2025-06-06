@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "沐曦 MXC500 训练 GPU 的大模型推理性能压测"
 date:   2025-02-13 10:00:00 +0800
 categories: MXC500 Benchmark

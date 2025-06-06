@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Git 命令"
 date:   2025-04-10 08:00:00 +0800
 categories: Git GitHub

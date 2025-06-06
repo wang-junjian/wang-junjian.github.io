@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令curl"
 date:   2022-05-25 00:00:00 +0800
 categories: curl

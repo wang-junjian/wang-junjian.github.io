@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Velero: 备份和迁移 Kubernetes 资源和持久卷"
 date:   2023-07-21 08:00:00 +0800
 categories: Velero

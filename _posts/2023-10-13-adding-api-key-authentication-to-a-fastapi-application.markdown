@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "将 API 密钥身份验证添加到 FastAPI 应用程序"
 date:   2023-10-13 08:00:00 +0800
 categories: API_KEY

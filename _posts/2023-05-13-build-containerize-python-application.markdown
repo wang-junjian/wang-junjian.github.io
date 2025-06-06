@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "构建容器化 Python 应用程序"
 date:   2023-05-13 08:00:00 +0800
 categories: Python

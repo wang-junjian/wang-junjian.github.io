@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes API 服务器的安全防护"
 date:   2021-07-11 00:00:00 +0800
 categories: Kubernetes

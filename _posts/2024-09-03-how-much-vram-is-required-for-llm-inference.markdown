@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "大模型推理需要多少显存？"
 date:   2024-09-03 08:00:00 +0800
 categories: LLM VRAM

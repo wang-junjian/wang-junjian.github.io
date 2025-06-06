@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenAI API Documentation Embeddings"
 date:   2023-04-25 08:00:00 +0800
 categories: OpenAI-API-Embedding

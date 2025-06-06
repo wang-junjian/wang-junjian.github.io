@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于 LLM 的源代码安全缺陷分析"
 date:   2024-05-25 08:00:00 +0800
 categories: LLM 安全缺陷分析

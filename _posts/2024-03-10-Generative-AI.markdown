@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "生成式AI"
 date:   2024-03-10 08:00:00 +0800
 categories: DeepLearningAI GenerativeAI

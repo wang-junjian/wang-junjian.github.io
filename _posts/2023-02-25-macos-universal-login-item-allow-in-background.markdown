@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "macOS 上删除登录项中允许在后台的项目"
 date:   2023-02-25 08:00:00 +0800
 categories: launchd

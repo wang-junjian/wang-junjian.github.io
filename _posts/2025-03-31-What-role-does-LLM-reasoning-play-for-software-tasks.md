@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LLM 推理在软件任务中扮演什么角色？"
 date:   2025-03-31 10:00:00 +0800
 categories: 生成式AI LLM

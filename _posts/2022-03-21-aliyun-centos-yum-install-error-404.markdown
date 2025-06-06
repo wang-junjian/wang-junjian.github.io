@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "阿里云 yum 安装应用报 404 错误"
 date:   2022-03-21 00:00:00 +0800
 categories: 工作日志 阿里云

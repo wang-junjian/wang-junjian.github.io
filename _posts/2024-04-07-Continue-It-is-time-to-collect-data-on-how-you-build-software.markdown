@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue - It’s time to collect data on how you build software"
 date:   2024-04-07 10:00:00 +0800
 categories: Continue GitHubCopilot

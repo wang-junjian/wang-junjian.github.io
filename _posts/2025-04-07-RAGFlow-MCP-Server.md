@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "开发 RAGFlow MCP Server"
 date:   2025-04-07 08:00:00 +0800
 categories: RAGFlow MCPServer

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "VLC Extension Example"
 date:   2021-01-04 00:00:00 +0800
 categories: Player

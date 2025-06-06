@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "IoT 硬件：Raspberry Pi Camera"
 date:   2021-03-23 00:00:00 +0800
 categories: IoT Hardware

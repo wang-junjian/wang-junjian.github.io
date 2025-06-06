@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Cursor 使用指南"
 date:   2024-08-29 08:00:00 +0800
 categories: Cursor AICodingAssistant

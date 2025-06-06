@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenAI: 构建智能体的实用指南"
 date:   2025-04-21 19:00:00 +0800
 categories: OpenAI Agent

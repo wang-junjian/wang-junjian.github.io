@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "图像格式转换、尺寸调整"
 date:   2020-12-23 00:00:00 +0800
 categories: ImageMagick

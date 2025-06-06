@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于模板创建Job"
 date:   2021-06-30 00:00:00 +0800
 categories: Kubernetes

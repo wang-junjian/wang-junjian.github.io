@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "VS Code实践"
 date:   2021-03-01 00:00:00 +0800
 categories: IDE 实践 快捷键

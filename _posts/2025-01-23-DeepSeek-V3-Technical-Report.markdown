@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "DeepSeek-V3 Technical Report"
 date:   2025-01-23 10:00:00 +0800
 categories: DeepSeek-V3 arXiv

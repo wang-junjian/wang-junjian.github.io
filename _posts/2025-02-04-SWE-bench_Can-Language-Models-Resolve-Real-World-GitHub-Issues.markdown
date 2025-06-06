@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?"
 date:   2025-02-04 10:00:00 +0800
 categories: SWE-bench Benchmark

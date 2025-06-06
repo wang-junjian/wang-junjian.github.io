@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Thoughtworks 技术雷达 第30期"
 date:   2024-05-20 08:00:00 +0800
 categories: 技术雷达

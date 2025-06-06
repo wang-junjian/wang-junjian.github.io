@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Language Model API"
 date:   2024-12-12 10:00:00 +0800
 categories: ChatExtensions GitHubCopilot

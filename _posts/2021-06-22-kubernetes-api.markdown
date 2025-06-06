@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes API"
 date:   2021-06-22 00:00:00 +0800
 categories: Kubernetes

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MCP Inspector"
 date:   2025-04-03 09:00:00 +0800
 categories: MCP MCPServer

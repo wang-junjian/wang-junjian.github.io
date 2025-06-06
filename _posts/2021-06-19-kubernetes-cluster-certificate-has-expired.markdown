@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes集群证书过期"
 date:   2021-06-19 00:00:00 +0800
 categories: Kubernetes

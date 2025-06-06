@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Ubuntu上配置apt镜像源"
 date:   2020-11-01 00:00:00 +0800
 categories: Linux

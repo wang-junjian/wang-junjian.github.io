@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "编译寒武纪MLU220的嵌入式操作系统"
 date:   2022-01-12 00:00:00 +0800
 categories: EdgeAI

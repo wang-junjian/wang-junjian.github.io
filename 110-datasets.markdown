@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: single
 title: 数据集
 permalink: /datasets/
 ---

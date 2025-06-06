@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "HTTP 基准测试工具"
 date:   2022-03-21 08:00:00 +0800
 categories: 测试

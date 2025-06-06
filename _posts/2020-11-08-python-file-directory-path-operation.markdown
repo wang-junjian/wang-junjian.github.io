@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Python文件、目录、路径操作"
 date:   2020-11-08 00:00:00 +0800
 categories: Python 实践

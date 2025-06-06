@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes集群搭建Master节点"
 date:   2020-11-06 00:00:00 +0800
 categories: Kubernetes

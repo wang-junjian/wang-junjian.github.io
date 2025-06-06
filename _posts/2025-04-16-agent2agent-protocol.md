@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Agent2Agent 协议 (A2A)"
 date:   2025-04-16 08:00:00 +0800
 categories: A2A Agent

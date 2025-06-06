@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令cp"
 date:   2021-01-19 00:00:00 +0800
 categories: Command

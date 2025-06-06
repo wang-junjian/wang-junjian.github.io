@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue 源码分析 - 向量数据库存储位置"
 date:   2024-09-15 08:00:00 +0800
 categories: Continue AICodingAssistant

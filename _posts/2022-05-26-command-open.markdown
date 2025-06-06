@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令open"
 date:   2022-05-26 00:00:00 +0800
 categories: open

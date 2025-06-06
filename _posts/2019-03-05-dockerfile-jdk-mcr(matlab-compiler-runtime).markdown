@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Dockerfile JDK-MCR(MATLAB Compiler Runtime)"
 date:   2019-03-05 00:00:00 +0800
 categories: Docker

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "远程执行Shell命令"
 date:   2021-11-01 00:00:00 +0800
 categories: Python

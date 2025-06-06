@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "构建自主答题的智能体"
 date:   2025-02-18 10:00:00 +0800
 categories: 答题 Agent

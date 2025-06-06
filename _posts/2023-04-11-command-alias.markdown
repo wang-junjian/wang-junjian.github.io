@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令 alias"
 date:   2023-04-11 00:00:00 +0800
 categories: alias

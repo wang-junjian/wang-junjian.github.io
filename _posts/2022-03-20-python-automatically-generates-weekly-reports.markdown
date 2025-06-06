@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Python 自动生成周报"
 date:   2022-03-20 00:00:00 +0800
 categories: 周报

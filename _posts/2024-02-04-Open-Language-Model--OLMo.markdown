@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OLMo - Open Language Model"
 date:   2024-02-04 08:00:00 +0800
 categories: OLMo LLM

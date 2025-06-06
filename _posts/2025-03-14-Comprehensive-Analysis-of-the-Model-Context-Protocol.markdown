@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "模型上下文协议 (MCP) 全面解析：原理、应用与实现"
 date:   2025-03-14 10:00:00 +0800
 categories: MCP Agent

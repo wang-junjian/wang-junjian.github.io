@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Kubernetes上运行第一个应用"
 date:   2021-06-21 00:00:00 +0800
 categories: Kubernetes

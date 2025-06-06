@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Elmo Chat - Your AI Web Copilot"
 date:   2024-06-27 08:00:00 +0800
 categories: ElmoChat AICopilot

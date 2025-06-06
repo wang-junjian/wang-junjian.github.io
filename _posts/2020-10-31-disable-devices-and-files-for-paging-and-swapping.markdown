@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Linux系统禁用交换分区"
 date:   2020-10-31 00:00:00 +0800
 categories: Linux

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Ubuntu上安装NVIDIA GPU驱动"
 date:   2020-11-03 00:00:00 +0800
 categories: GPU

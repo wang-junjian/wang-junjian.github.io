@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于PyPIServer创建私有Python软件包存储库"
 date:   2021-01-12 00:00:00 +0800
 categories: Python

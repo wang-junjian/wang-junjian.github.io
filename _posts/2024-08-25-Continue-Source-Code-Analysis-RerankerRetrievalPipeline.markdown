@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue 源码分析 - RerankerRetrievalPipeline"
 date:   2024-08-25 08:00:00 +0800
 categories: Continue AICodingAssistant

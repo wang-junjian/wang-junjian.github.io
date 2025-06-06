@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "GPU 服务器不能访问"
 date:   2023-11-19 08:00:00 +0800
 categories: 网络

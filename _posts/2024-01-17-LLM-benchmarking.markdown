@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LLM 的基准测试"
 date:   2024-01-17 08:00:00 +0800
 categories: LLM Benchmark

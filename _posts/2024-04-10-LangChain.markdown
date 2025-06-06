@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LangChain"
 date:   2024-04-10 08:00:00 +0800
 categories: LangChain

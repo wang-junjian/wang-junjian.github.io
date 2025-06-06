@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Mac 外接显示器选购"
 date:   2024-11-08 10:00:00 +0800
 categories: 显示器 Mac

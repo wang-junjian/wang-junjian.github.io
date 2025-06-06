@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 FastAPI 开发 RESTAPI 服务"
 date:   2022-04-12 08:00:00 +0800
 categories: Python

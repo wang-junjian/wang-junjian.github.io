@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SFTP 客户端"
 date:   2021-03-15 01:00:00 +0800
 categories: 客户端

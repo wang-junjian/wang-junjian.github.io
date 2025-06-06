@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenVINO 图像分类"
 date:   2022-04-15 08:00:00 +0800
 categories: AI OpenVINO

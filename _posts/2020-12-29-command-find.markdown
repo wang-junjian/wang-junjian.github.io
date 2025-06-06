@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令find"
 date:   2020-12-29 00:00:00 +0800
 categories: Command

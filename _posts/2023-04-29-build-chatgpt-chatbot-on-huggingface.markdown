@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 Hugging Face 上搭建 ChatGPT 聊天机器人"
 date:   2023-04-29 08:00:00 +0800
 categories: Chatbot

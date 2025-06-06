@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Text-to-SQL 解决方案"
 date:   2025-04-30 10:00:00 +0800
 categories: Text-to-SQL ThoughtWorks

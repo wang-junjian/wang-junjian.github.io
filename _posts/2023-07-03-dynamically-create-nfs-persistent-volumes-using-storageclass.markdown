@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 StorageClass 动态创建 NFS 持久卷"
 date:   2023-07-03 08:00:00 +0800
 categories: StorageClass

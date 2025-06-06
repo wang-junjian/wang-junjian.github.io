@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LangChain Blog: In the Loop"
 date:   2024-10-28 10:00:00 +0800
 categories: [LangChain, Agent]

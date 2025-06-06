@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令man help info"
 date:   2021-05-24 00:00:00 +0800
 categories: Command

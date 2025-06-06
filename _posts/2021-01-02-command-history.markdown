@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令history"
 date:   2021-01-02 00:00:00 +0800
 categories: history

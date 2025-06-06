@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Sky-T1-32B-Preview: 在450美元内训练你自己的O1预览模型"
 date:   2025-04-21 07:00:00 +0800
 categories: Sky-T1 Post-Training

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Python办公自动化套件"
 date:   2022-03-19 00:00:00 +0800
 categories: Python

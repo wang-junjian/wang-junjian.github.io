@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "IoT 硬件：NeoPixel"
 date:   2021-03-21 00:00:00 +0800
 categories: IoT Hardware

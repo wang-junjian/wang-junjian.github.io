@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "构建本地 AI 技术栈"
 date:   2025-03-01 10:00:00 +0800
 categories: AIStack

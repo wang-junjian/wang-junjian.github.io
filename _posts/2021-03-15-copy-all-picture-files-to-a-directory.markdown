@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "将所有的图片文件复制到一个目录"
 date:   2021-03-15 00:00:00 +0800
 categories: Linux Shell

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "NVIDIA Driver 安装"
 date:   2024-01-08 08:00:00 +0800
 categories: NVIDIA-Driver

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Install TVM from Source"
 date:   2022-06-29 00:00:00 +0800
 categories: AI Compiler

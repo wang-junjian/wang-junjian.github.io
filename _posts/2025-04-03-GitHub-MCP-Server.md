@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "GitHub MCP 服务器"
 date:   2025-04-03 08:00:00 +0800
 categories: MCP GitHub

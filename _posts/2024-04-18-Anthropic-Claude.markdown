@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Anthropic Claude"
 date:   2024-04-18 08:00:00 +0800
 categories: Claude LLM

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SGLang 大模型服务框架"
 date:   2024-09-06 08:00:00 +0800
 categories: SGlang LLM

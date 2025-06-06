@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue 源码分析 - transformers.js 大模型提供者"
 date:   2024-08-08 08:00:00 +0800
 categories: Continue AICodingAssistant

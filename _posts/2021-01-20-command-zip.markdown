@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令zip"
 date:   2021-01-20 00:00:00 +0900
 categories: Command

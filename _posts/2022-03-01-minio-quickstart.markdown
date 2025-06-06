@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MinIO Quickstart"
 date:   2022-03-01 00:00:00 +0800
 categories: Storage

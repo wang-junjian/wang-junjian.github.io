@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "NGINX Reverse Proxy 反向代理"
 date:   2023-11-20 08:00:00 +0800
 categories: NGINX

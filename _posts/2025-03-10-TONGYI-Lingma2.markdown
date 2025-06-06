@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "通义灵码2.0"
 date:   2025-03-10 10:00:00 +0800
 categories: 通义灵码 AICodingAssistant

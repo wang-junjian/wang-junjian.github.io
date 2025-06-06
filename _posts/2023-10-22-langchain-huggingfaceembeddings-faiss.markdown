@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LangChain HuggingFaceEmbeddings + FAISS"
 date:   2023-10-22 08:00:00 +0800
 categories: HuggingFaceEmbeddings

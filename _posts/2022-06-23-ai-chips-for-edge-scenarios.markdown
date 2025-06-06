@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "面向边缘场景的 AI 芯片"
 date:   2022-06-23 00:00:00 +0800
 categories: EdgeAI

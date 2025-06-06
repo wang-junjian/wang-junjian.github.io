@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "通过端口转发连接Pod"
 date:   2021-06-23 00:00:00 +0800
 categories: Kubernetes

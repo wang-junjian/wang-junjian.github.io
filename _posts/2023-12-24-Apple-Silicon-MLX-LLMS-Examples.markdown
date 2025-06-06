@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MLX LLMS Examples"
 date:   2023-12-24 08:00:00 +0800
 categories: MLX

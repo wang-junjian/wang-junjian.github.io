@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中删除节点"
 date:   2021-06-20 00:00:00 +0800
 categories: Kubernetes

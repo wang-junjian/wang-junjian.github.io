@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "华为 Atlas A2 算力切分"
 date:   2024-10-31 10:00:00 +0800
 categories: Atlas800 vNPU

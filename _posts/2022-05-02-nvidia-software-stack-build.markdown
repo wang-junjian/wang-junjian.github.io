@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "NVIDIA 软件栈搭建"
 date:   2022-05-02 08:00:00 +0800
 categories: GPU

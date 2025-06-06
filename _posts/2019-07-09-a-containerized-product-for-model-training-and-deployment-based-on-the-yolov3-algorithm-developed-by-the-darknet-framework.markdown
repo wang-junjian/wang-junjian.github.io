@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于Darknet框架的YOLOv3算法开发的模型训练和部署的容器化产品"
 date:   2019-07-09 00:00:00 +0800
 categories: AI 图像识别

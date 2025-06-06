@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 PyTorch 中融合卷积和批量标准化"
 date:   2022-06-07 00:00:00 +0800
 categories: AI Optimization

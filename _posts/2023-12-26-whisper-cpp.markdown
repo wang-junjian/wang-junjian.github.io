@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "whisper.cpp"
 date:   2023-12-26 08:00:00 +0800
 categories: Whisper

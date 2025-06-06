@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Prompt Engineering with Llama 2"
 date:   2024-04-01 08:00:00 +0800
 categories: PromptEngineering Llama

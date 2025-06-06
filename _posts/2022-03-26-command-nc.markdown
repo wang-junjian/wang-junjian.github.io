@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令 nc"
 date:   2022-03-26 00:00:00 +0800
 categories: Command

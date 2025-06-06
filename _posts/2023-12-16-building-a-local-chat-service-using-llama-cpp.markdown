@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 llama.cpp 构建本地聊天服务"
 date:   2023-12-16 08:00:00 +0800
 categories: llama.cpp

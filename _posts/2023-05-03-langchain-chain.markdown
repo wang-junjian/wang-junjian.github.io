@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LangChain - Chain"
 date:   2023-05-03 10:00:00 +0800
 categories: Chain

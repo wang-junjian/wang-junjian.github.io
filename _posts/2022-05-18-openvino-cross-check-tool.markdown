@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenVINO Cross Check Tool"
 date:   2022-05-18 08:00:00 +0800
 categories:  OpenVINO

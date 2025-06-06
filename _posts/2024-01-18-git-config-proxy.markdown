@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "git 配置代理"
 date:   2024-01-18 08:00:00 +0800
 categories: git proxy

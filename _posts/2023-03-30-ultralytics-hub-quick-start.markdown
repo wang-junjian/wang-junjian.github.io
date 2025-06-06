@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Ultralytics Hub 快速入门"
 date:   2023-03-30 08:00:00 +0800
 categories: UltralyticsHub

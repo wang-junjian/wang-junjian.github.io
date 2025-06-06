@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Docker SDK for Python Examples"
 date:   2021-07-23 00:00:00 +0800
 categories: Docker

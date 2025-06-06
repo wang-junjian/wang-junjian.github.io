@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Json Formatter"
 date:   2022-02-23 00:00:00 +0800
 categories: Command

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SmolAgents 技术栈: LangFuse & LiteLLM"
 date:   2025-05-01 10:00:00 +0800
 categories: SmolAgents Agent

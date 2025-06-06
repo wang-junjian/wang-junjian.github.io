@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "ChatTongyi"
 date:   2024-04-22 08:00:00 +0800
 categories: LLM ChatTongyi

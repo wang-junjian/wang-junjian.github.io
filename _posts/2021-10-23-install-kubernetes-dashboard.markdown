@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "安装Kubernetes Dashboard"
 date:   2021-10-23 00:00:00 +0800
 categories: Kubernetes

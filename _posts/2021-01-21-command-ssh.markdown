@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令ssh"
 date:   2021-01-21 00:00:00 +0800
 categories: Command

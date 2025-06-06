@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令lftp"
 date:   2021-11-23 00:00:00 +0800
 categories: Command

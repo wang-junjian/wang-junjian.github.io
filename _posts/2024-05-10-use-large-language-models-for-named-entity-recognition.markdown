@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用大型语言模型进行命名实体识别"
 date:   2024-05-10 08:00:00 +0800
 categories: Qwen NER

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "ONNX Simplifier"
 date:   2022-06-09 00:00:00 +0800
 categories: AI Optimization

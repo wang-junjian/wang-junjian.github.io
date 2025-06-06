@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中如何恢复误删的节点"
 date:   2021-07-06 00:00:00 +0800
 categories: Kubernetes

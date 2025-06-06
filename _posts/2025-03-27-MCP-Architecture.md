@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MCP 架构"
 date:   2025-03-27 09:00:00 +0800
 categories: MCP LLM

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Cline 提示指南 🚀"
 date:   2025-04-22 06:00:00 +0800
 categories: ClineDoc Prompting

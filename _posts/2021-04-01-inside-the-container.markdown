@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "容器内幕"
 date:   2021-04-01 00:00:00 +0800
 categories: Docker

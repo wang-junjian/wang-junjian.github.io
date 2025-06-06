@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Transformers Pipeline"
 date:   2023-11-09 08:00:00 +0800
 categories: Inference

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Gradio Chatbot"
 date:   2024-04-20 08:00:00 +0800
 categories: Gradio Chatbot

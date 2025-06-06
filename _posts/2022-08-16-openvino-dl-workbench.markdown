@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenVINO Deep Learning Workbench"
 date:   2022-08-16 08:00:00 +0800
 categories: DLWorkbench

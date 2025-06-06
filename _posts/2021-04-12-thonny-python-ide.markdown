@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Thonny Python IDE"
 date:   2021-04-12 01:00:00 +0800
 categories: Software IDE IoT
