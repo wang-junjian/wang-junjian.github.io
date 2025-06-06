@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Text Generation Inference"
 date:   2023-12-19 08:00:00 +0800
 categories: TGI

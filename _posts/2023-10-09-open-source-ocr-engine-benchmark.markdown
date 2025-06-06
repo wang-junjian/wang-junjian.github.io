@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "开源 OCR 引擎基准测试"
 date:   2023-10-09 08:00:00 +0800
 categories: OCR

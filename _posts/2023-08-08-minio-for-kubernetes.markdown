@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MinIO for Kubernetes"
 date:   2023-08-08 08:00:00 +0800
 categories: MinIO

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "FastEmbed"
 date:   2024-07-06 08:00:00 +0800
 categories: FastEmbed

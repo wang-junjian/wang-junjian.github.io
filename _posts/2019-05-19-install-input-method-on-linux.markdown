@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 Linux 上安装输入法"
 date:   2019-05-19 08:00:00 +0800
 categories: Linux

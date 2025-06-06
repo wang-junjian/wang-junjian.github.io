@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "部署 LLM 多 LoRA 适配器的推理服务"
 date:   2024-10-03 10:00:00 +0800
 categories: TGI vLLM

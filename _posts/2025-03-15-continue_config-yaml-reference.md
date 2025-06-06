@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "continue: config.yaml Reference"
 date:   2025-03-15 10:00:00 +0800
 categories: Continue AICodingAssistant

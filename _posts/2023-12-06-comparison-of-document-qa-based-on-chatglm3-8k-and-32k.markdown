@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于 ChatGLM3 8k 和 32k 的文档问答对比"
 date:   2023-12-06 08:00:00 +0800
 categories: ChatGLM3

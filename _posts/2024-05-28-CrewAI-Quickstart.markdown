@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "CrewAI 快速入门"
 date:   2024-05-28 08:00:00 +0800
 categories: CrewAI Agent

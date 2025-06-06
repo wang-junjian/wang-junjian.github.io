@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用YOLOv5训练自定义数据集"
 date:   2020-11-04 00:00:00 +0800
 categories: AI 图像识别

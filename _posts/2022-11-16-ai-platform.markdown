@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "学习【机器学习平台】建设的经验"
 date:   2022-11-16 08:00:00 +0800
 categories:  机器学习平台

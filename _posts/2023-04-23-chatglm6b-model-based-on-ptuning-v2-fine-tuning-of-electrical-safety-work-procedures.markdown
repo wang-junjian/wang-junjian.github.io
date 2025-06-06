@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "ChatGLM-6B 模型基于 P-Tuning v2 微调的自定义数据集"
 date:   2023-04-22 08:00:00 +0800
 categories: ChatGLM-6B

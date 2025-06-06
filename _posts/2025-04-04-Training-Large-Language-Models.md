@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "利用多张 GPU 训练大语言模型"
 date:   2025-04-04 12:00:00 +0800
 categories: Train LLM

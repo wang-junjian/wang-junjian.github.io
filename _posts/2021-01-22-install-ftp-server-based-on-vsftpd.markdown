@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于vsftpd安装FTP服务器"
 date:   2021-01-22 00:00:00 +0800
 categories: Linux

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "构建基于PaddlePaddle开发服务镜像"
 date:   2022-03-17 00:00:00 +0800
 categories: Dockerfile

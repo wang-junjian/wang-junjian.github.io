@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中的Service"
 date:   2021-07-01 00:00:00 +0800
 categories: Kubernetes

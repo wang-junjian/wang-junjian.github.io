@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Python实践"
 date:   2021-02-28 00:00:00 +0800
 categories: Python 实践

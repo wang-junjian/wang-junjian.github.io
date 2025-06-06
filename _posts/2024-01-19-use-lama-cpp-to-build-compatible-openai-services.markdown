@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 llama.cpp 构建兼容 OpenAI API 服务"
 date:   2024-01-19 08:00:00 +0800
 categories: llama.cpp

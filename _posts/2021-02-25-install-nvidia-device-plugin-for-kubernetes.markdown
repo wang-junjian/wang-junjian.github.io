@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Install NVIDIA device plugin for Kubernetes"
 date:   2021-02-25 00:00:00 +0800
 categories: Kubernetes

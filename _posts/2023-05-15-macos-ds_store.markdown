@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "macOS 下的 __MACOSX 目录和 .DS_Store 文件"
 date:   2023-05-15 08:00:00 +0800
 categories: .DS_Store

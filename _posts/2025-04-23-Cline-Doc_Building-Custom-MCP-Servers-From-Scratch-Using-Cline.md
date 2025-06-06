@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 Cline 从零开始构建自定义 MCP 服务器：综合指南"
 date:   2025-04-23 12:00:00 +0800
 categories: ClineDoc MCPServer

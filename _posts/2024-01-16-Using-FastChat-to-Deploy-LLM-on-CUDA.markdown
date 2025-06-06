@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 FastChat 在 CUDA 上部署 LLM"
 date:   2024-01-16 08:00:00 +0800
 categories: FastChat vLLM

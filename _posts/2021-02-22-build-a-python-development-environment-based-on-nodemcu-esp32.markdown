@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于NodeMCU(ESP32)搭建Python开发环境"
 date:   2021-02-22 00:00:00 +0800
 categories: IoT

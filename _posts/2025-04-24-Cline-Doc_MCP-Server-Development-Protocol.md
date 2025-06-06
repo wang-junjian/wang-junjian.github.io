@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MCP 服务器开发协议"
 date:   2025-04-24 10:00:00 +0800
 categories: ClineDoc MCP

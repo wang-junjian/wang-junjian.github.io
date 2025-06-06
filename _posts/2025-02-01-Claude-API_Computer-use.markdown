@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Claude API: Computer use"
 date:   2025-02-01 12:00:00 +0800
 categories: Claude API

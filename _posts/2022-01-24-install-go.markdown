@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "安装Go"
 date:   2022-01-24 00:00:00 +0800
 categories: Go

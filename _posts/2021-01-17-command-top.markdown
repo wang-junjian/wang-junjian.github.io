@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令top"
 date:   2021-01-17 00:00:00 +0800
 categories: Command 快捷键

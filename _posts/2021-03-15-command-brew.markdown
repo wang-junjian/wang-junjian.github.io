@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令brew"
 date:   2021-03-15 02:00:00 +0800
 categories: Command

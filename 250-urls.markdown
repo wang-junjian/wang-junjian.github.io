@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: single
 title: 网址
 permalink: /urls/
 ---

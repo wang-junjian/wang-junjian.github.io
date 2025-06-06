@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "GaiaGPU: 在容器云中共享GPU"
 date:   2022-01-28 00:00:00 +0800
 categories: Kubernetes

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "大模型推理服务压测报告：vLLM、SGLang、LiteLLM 与 Higress 性能对比"
 date:   2025-03-03 10:00:00 +0800
 categories: Benchmark LLM

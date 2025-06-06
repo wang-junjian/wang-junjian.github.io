@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于容器的负载均衡"
 date:   2018-12-26 00:00:00 +0800
 categories: Docker

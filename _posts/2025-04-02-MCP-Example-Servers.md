@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MCP 服务器示例和实现列表"
 date:   2025-04-02 10:00:00 +0800
 categories: MCP Server

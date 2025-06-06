@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Dockerfile ONNXRuntime GPU"
 date:   2021-01-08 00:00:00 +0800
 categories: Docker

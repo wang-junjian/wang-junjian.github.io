@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Open WebUI"
 date:   2024-12-13 10:00:00 +0800
 categories: OpenWebUI ChatGPT

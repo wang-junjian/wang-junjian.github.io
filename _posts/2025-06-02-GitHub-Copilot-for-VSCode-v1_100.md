@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "GitHub Copilot for VSCode v1.100"
 date:   2025-06-01 10:00:00 +0800
 categories: GitHubCopilot AICodingAssistant

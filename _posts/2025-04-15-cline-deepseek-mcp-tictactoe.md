@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "智能编码新范式 (Cline + DeepSeek) × MCP"
 date:   2025-04-15 08:00:00 +0800
 categories: Cline MCP

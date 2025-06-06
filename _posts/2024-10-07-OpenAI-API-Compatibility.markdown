@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenAI API Compatibility"
 date:   2024-10-07 10:00:00 +0800
 categories: OpenAI-API LLM

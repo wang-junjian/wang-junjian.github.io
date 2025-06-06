@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 MacBook Pro M2 Max 上构建开发环境"
 date:   2023-02-07 08:00:00 +0800
 categories: Environment

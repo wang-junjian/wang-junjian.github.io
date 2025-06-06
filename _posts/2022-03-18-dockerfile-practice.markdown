@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Dockerfile 实践"
 date:   2022-03-18 00:00:00 +0800
 categories: 实践 Dockerfile

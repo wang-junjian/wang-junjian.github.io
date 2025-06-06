@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "大型语言模型驱动的自主代理"
 date:   2024-05-26 08:00:00 +0800
 categories: Agent LLM

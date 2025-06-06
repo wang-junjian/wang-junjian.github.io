@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 macOS 上安装 PostgreSQL"
 date:   2024-06-25 08:00:00 +0800
 categories: PostgreSQL

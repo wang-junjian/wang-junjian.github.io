@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Open-source DeepResearch – Freeing our search agents"
 date:   2025-02-07 10:00:00 +0800
 categories: DeepResearch Agent

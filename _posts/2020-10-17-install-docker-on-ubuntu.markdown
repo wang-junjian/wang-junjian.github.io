@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Ubuntu上安装Docker"
 date:   2020-10-17 00:00:00 +0800
 categories: Docker

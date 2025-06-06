@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "配置Docker镜像源"
 date:   2020-11-02 00:00:00 +0800
 categories: Docker

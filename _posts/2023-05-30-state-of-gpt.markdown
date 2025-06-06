@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "State of GPT - Andrej Karpathy"
 date:   2023-05-30 08:00:00 +0800
 categories: GPT

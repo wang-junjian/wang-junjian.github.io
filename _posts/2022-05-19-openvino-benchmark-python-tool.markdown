@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenVINO Benchmark Python Tool"
 date:   2022-05-19 08:00:00 +0800
 categories:  Benchmark

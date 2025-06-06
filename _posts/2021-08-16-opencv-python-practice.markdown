@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenCV Python实践"
 date:   2021-08-16 00:00:00 +0800
 categories: Python 实践

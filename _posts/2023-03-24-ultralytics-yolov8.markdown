@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Ultralytics YOLOv8"
 date:   2023-03-24 08:00:00 +0800
 categories: Ultralytics

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Linux系统网络配置"
 date:   2019-04-12 00:00:00 +0800
 categories: Linux

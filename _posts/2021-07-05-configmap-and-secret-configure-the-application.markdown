@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "ConfigMap和Secret：配置应用程序"
 date:   2021-07-05 00:00:00 +0800
 categories: Kubernetes

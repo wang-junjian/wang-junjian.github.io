@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Continue 开发环境搭建时遇到了 esbuild 缺失问题"
 date:   2025-03-25 10:00:00 +0800
 categories: Continue AICodingAssistant

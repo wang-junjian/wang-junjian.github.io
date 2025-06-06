@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Get Started YOLOv5"
 date:   2022-05-01 08:00:00 +0800
 categories: YOLOv5

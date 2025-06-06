@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "腾讯会议中云录制的 AI+"
 date:   2025-01-14 10:00:00 +0800
 categories: 腾讯会议 AI应用

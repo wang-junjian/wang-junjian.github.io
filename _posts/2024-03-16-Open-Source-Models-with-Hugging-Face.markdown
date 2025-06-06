@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Open Source Models with Hugging Face"
 date:   2024-03-16 08:00:00 +0800
 categories: DeepLearningAI HuggingFace

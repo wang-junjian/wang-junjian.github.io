@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Higress AI Gateway"
 date:   2024-09-10 08:00:00 +0800
 categories: Higress AIGateway

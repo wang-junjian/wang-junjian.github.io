@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "讯飞星火测试"
 date:   2023-05-06 08:00:00 +0800
 categories: 讯飞星火

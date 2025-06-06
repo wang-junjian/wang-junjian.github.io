@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Visual Studio Code 2025年3月版本(1.99)的新功能"
 date:   2025-04-05 12:00:00 +0800
 categories: VSCode ReleaseNotes
@@ -620,7 +620,7 @@ Pylance现在支持解析以可编辑模式（`pip install -e .`）安装的包�
 对`vscode-extension-telemetry`的贡献：
 
 * [@---
-layout: post
+layout: single
 title:  "Visual Studio Code 2025年3月版本（1.99版）"
 date:   2025-04-05 09:00:00 +0800
 categories: VSCode

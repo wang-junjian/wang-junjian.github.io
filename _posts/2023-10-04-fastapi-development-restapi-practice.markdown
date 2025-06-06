@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "FastAPI 开发 RESTAPI 实践"
 date:   2023-10-04 08:00:00 +0800
 categories: RESTAPI

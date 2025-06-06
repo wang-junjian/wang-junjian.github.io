@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "边缘硬件"
 date:   2022-07-25 00:00:00 +0800
 categories: EdgeAI

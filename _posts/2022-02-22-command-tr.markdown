@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令tr"
 date:   2022-02-22 00:00:00 +0800
 categories: Command

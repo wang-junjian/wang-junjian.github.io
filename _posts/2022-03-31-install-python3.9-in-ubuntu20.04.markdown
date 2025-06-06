@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Install Python3.9 in Ubuntu20.04"
 date:   2022-03-31 00:00:00 +0800
 categories: 工作日志 Python

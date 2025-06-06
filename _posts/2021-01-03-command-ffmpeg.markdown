@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令ffmpeg"
 date:   2021-01-03 00:00:00 +0800
 categories: Command

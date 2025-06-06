@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Ubuntu上安装nvidia-docker2"
 date:   2020-10-18 00:00:00 +0800
 categories: Docker

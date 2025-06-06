@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Ultralytics YOLOv8 推理速度对比"
 date:   2023-05-16 08:00:00 +0800
 categories: Inference

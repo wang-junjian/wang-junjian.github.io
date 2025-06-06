@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（三）：分享微调后的模型到 HuggingFace Hub"
 date:   2024-01-24 12:00:00 +0800
 categories: MLX Text2SQL

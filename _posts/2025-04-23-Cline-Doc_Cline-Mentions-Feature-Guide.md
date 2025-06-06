@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Cline Mentions 功能指南"
 date:   2025-04-23 06:00:00 +0800
 categories: ClineDoc Mentions

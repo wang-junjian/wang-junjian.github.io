@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenAI o3 and o4-mini System Card"
 date:   2025-04-19 08:00:00 +0800
 categories: OpenAI o3

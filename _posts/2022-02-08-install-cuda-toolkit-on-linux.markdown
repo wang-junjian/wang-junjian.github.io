@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Linux上安装CUDA Toolkit"
 date:   2022-02-08 00:00:00 +0800
 categories: GPU

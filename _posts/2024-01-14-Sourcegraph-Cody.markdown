@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Sourcegraph Cody"
 date:   2024-01-14 08:00:00 +0800
 categories: Sourcegraph Cody

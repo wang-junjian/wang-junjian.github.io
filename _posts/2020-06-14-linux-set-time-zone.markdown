@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Linux设置时区"
 date:   2020-06-14 00:00:00 +0800
 categories: Linux

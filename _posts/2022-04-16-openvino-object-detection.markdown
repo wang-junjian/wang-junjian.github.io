@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenVINO 目标检测"
 date:   2022-04-16 08:00:00 +0800
 categories: AI OpenVINO

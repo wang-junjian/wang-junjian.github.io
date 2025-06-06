@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 Python 临时文件模块"
 date:   2021-08-02 00:00:00 +0800
 categories: Python

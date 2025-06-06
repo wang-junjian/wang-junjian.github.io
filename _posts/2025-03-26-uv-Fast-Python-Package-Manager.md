@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "UV: An extremely fast Python package and project manager, written in Rust."
 date:   2025-03-26 10:00:00 +0800
 categories: uv Python

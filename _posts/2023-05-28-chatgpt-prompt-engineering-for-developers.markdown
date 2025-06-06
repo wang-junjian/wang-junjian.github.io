@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "ChatGPT Prompt Engineering for Developers"
 date:   2023-05-28 08:00:00 +0800
 categories: Prompt

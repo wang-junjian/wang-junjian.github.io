@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kong AI Gateway"
 date:   2024-09-11 08:00:00 +0800
 categories: Kong AIGateway

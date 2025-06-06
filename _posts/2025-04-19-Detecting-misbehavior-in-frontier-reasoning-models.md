@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "监测推理模型的不当行为以及提升混淆的风险"
 date:   2025-04-19 10:00:00 +0800
 categories: CoT 监控

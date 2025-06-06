@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SWIFT: Scalable lightWeight Infrastructure for Fine-Tuning"
 date:   2024-05-19 08:00:00 +0800
 categories: SWIFT Fine-Tuning

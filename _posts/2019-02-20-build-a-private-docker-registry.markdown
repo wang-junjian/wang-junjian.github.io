@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "搭建 Private Docker Registry"
 date:   2019-02-20 00:00:00 +0800
 categories: Docker

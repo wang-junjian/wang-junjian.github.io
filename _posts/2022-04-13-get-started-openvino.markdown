@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Get Started OpenVINO"
 date:   2022-04-13 08:00:00 +0800
 categories: AI OpenVINO

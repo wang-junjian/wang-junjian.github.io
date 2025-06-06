@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "AI 模型打包发布"
 date:   2021-04-16 00:00:00 +0800
 categories: AI Docker

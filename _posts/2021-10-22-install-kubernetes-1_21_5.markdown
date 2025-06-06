@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "安装Kubernetes 1.21.5"
 date:   2021-10-22 00:00:00 +0800
 categories: Kubernetes

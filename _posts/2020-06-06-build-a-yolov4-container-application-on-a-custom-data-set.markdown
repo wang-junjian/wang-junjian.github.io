@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "构建YOLOv4容器应用在自定义数据集上"
 date:   2020-06-06 00:00:00 +0800
 categories: AI 图像识别

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "慧思开物：通往通用具身智能之路"
 date:   2025-05-15 10:00:00 +0800
 categories: 具身智能 VLA

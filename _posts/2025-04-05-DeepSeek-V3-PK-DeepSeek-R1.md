@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "DeepSeek-V3 & DeepSeek-R1"
 date:   2025-04-05 10:00:00 +0800
 categories: DeepSeek LLM

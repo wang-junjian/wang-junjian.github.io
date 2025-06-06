@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MLX: An array framework for Apple silicon"
 date:   2024-03-14 08:00:00 +0800
 categories: MLX

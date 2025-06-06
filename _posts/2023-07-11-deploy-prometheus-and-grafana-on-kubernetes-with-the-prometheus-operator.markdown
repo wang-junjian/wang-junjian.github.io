@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用 Prometheus Operator 在 Kubernetes 上部署 Prometheus 和 Grafana"
 date:   2023-07-11 08:00:00 +0800
 categories: Prometheus-Operator

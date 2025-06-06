@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用Detectron在自定义数据集上训练MaskRCNN"
 date:   2019-09-01 00:00:00 +0800
 categories: AI 图像识别

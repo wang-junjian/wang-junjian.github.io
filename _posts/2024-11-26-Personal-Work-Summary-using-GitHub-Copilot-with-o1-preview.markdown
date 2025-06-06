@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Personal Work Summary using GitHub Copilot with o1-preview"
 date:   2024-11-26 10:00:00 +0800
 categories: 工作总结 AI应用

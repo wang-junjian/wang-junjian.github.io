@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MiniCPM-Llama3-V 2.5 端侧可用的 GPT-4V 级多模态大模型"
 date:   2024-05-23 08:00:00 +0800
 categories: 视觉问答 MiniCPM-V

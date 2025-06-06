@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LiteLLM: [Python SDK] [Proxy Server (LLM Gateway)]"
 date:   2024-09-13 08:00:00 +0800
 categories: LiteLLM AIGateway

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中的注解"
 date:   2021-06-25 00:00:00 +0800
 categories: Kubernetes

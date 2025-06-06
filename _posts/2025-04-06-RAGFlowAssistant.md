@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "RAGFlowAssistant"
 date:   2025-04-06 08:00:00 +0800
 categories: RAGFlow GitHubCopilot

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "FastChat 部署多模型"
 date:   2023-10-24 08:00:00 +0800
 categories: FastChat

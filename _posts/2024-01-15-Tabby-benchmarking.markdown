@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Tabby 的基准测试"
 date:   2024-01-15 10:00:00 +0800
 categories: Tabby Benchmark

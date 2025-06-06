@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令yum"
 date:   2021-04-06 00:00:00 +0800
 categories: Command

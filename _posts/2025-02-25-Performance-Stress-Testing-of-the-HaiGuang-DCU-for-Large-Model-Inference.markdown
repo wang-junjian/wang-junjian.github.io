@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "海光 DCU 的大模型推理性能压测"
 date:   2025-02-25 10:00:00 +0800
 categories: 海光 Benchmark

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LangChain : SQL Chain & SQL Agent"
 date:   2024-04-17 08:00:00 +0800
 categories: LangChain Text2SQL

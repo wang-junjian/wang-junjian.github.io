@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用PaddleOCR进行文字识别"
 date:   2021-09-17 00:00:00 +0800
 categories: AI 文字识别

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "我删库了, rm -rf *"
 date:   2022-03-12 00:00:00 +0800
 categories: 工作日志

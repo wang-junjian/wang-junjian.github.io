@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Model Context Protocol (MCP) 的核心概念和能力"
 date:   2025-03-16 10:00:00 +0800
 categories: MCP LLM

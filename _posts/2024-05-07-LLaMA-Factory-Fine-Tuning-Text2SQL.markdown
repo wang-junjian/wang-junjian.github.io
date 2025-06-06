@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "LLaMA-Factory 微调 Text2SQL"
 date:   2024-05-07 08:00:00 +0800
 categories: LLaMA-Factory Fine-Tuning

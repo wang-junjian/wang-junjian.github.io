@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "逻辑卷管理(Logical Volume Management)"
 date:   2022-02-10 00:00:00 +0800
 categories: Linux

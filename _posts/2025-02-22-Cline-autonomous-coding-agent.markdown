@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Cline: 自主编程助手"
 date:   2025-02-22 10:00:00 +0800
 categories: Cline AICodingAssistant

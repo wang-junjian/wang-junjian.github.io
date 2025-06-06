@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SmolAgents 概念指南：Agent 介绍"
 date:   2025-06-04 10:00:00 +0800
 categories: SmolAgents Agent

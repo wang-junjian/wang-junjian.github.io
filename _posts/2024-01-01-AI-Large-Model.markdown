@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "AI 大模型"
 date:   2024-01-01 08:00:00 +0800
 categories: LLM Leaderboard

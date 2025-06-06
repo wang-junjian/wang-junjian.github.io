@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "GitHub加速"
 date:   2020-11-10 00:00:00 +0800
 categories: GitHub

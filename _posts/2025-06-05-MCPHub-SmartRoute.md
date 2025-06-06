@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "MCPHub 智能路由"
 date:   2025-06-05 08:00:00 +0800
 categories: MCP MCPHub

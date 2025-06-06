@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在Ubuntu上下载docker和nvidia-docker2离线安装包"
 date:   2020-12-02 00:00:00 +0800
 categories: Docker

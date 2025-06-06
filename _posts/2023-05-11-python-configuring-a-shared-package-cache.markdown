@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Python 配置共享软件包缓存"
 date:   2023-05-11 08:00:00 +0800
 categories: Cache

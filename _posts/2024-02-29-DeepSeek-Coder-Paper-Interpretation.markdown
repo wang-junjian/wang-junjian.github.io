@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "DeepSeek-Coder 论文解读"
 date:   2024-02-29 08:00:00 +0800
 categories: DeepSeek-Coder

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SSH X11 Forwarding"
 date:   2021-04-10 00:00:00 +0800
 categories: Linux

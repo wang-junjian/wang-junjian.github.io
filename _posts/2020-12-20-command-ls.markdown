@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令ls"
 date:   2020-12-20 00:00:00 +0800
 categories: Command

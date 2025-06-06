@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Claude: Developing a computer use model"
 date:   2025-02-01 10:00:00 +0800
 categories: Claude arXiv

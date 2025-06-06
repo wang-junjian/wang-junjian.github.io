@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "命令wget"
 date:   2020-12-21 00:00:00 +0800
 categories: Command

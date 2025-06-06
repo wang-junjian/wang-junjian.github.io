@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Operator System Card"
 date:   2025-01-24 10:00:00 +0800
 categories: Operator arXiv

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Building Systems with the ChatGPT API"
 date:   2023-06-13 08:00:00 +0800
 categories: ChatGPT-API

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "使用Darknet在自定义数据集上训练YOLOv3"
 date:   2019-07-01 00:00:00 +0800
 categories: AI 图像识别

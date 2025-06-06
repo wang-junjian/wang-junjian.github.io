@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Kubernetes中的名字空间"
 date:   2021-06-26 00:00:00 +0800
 categories: Kubernetes

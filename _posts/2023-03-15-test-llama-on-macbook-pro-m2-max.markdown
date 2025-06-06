@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 MacBook Pro M2 Max 上测试 LLaMA"
 date:   2023-03-15 08:00:00 +0800
 categories: LLaMA

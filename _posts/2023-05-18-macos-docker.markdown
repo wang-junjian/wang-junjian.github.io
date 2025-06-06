@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "macOS Docker"
 date:   2023-05-18 08:00:00 +0800
 categories: Docker

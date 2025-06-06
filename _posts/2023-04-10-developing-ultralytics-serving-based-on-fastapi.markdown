@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于 FastAPI 开发 Ultralytics Serving"
 date:   2023-04-10 08:00:00 +0800
 categories: RESTAPI

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "基于健康码识别的 FastAPI 同步和异步函数的基准测试"
 date:   2022-03-25 00:00:00 +0800
 categories: 工作日志 测试

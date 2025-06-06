@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "磁盘：分区－格式化－挂载"
 date:   2020-09-03 00:00:00 +0800
 categories: Linux

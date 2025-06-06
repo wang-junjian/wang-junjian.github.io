@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "PaddleSpeech 快速入门"
 date:   2023-05-05 08:00:00 +0800
 categories: PaddleSpeech

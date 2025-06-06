@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "鲁软慧码提示工程实战手册"
 date:   2025-04-25 12:00:00 +0800
 categories: AICodingAssistant Prompting

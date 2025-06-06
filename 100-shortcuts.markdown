@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: single
 title: 快捷键
 permalink: /shortcuts/
 ---

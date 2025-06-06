@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "FastAPI : Request File and Form(BaseModel)"
 date:   2023-09-29 08:00:00 +0800
 categories: RESTAPI

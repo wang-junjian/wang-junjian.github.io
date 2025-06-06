@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（八）：使用 LoRA 基于 TinyLlama 微调"
 date:   2024-01-31 08:00:00 +0800
 categories: MLX Text2SQL

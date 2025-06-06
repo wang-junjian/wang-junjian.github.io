@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "OpenAI API Documentation Chat Completion"
 date:   2023-04-28 08:00:00 +0800
 categories: OpenAI-API-Chat-Completion

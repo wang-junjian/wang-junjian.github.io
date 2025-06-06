@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "SiliconFlow AI Infra"
 date:   2024-05-29 08:00:00 +0800
 categories: AIInfra SiliconFlow
