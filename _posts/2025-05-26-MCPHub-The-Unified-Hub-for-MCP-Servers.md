@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "MCPHub：一站式 MCP 服务器聚合平台"
+title:  "MCPHub：MCP 服务器聚合平台"
 date:   2025-05-26 10:00:00 +0800
 categories: MCP MCPHub
 tags: [MCP, MCPHub, MCPServer, GitHub, GitLab, SSE]
