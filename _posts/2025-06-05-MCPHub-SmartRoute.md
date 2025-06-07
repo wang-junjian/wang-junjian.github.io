@@ -1,10 +1,12 @@
 ---
 layout: single
-title:  "MCPHub 智能路由"
+title:  "MCPHub：一站式 MCP 服务器聚合平台（智能路由）"
 date:   2025-06-05 08:00:00 +0800
 categories: MCP MCPHub
 tags: [MCP, MCPHub, MCPServer, GitHub, GitLab, SSE， SmartRoute]
 ---
+
+智能路由是 **MCPHub** 的一项关键功能，旨在优化 AI 模型与大量工具之间的交互。它通过将**每个 MCP 工具的名称和描述**转换为**高维语义向量**来实现这一目标。当用户发出自然语言任务请求时，系统也会将该请求向量化，并通过计算**语义相似度**，快速识别并返回最相关的工具列表。
 
 ## 什么是智能路由
 
