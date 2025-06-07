@@ -3,8 +3,10 @@ layout: single
 title:  "macOS 图像拼接工具（Automator）"
 date:   2025-06-01 10:00:00 +0800
 categories: Automator 图像拼接
-tags: [Automator, ImageMagick, 图像处理, macOS]
+tags: [Automator, ImageMagick, 图像拼接, macOS]
 ---
+
+本文档介绍了如何利用 **macOS 的 Automator** 工具创建一个自动化脚本，以实现**多张图片的水平或垂直拼接**。它通过将 **Shell 脚本**集成到“**快速操作**”中，使得用户可以在 **Finder** 中直接选中图片并进行拼接。整个过程涵盖了从 **Automator 设置、Shell 脚本的配置（包括 ImageMagick 依赖和拼接逻辑）到最终的使用方法和效果展示**，旨在为 macOS 用户提供一个便捷高效的**图像拼接**解决方案。
 
 ## macOS 图像拼接工具使用说明
 
