@@ -8,6 +8,8 @@ tags: [GitHubCopilot, VSCode, AICodingAssistant]
 
 本文档介绍了 Copilot 的三种主要模式——**询问 (Ask)**、**编辑 (Edit)** 和 **代理 (Agent)**，并列举了 Copilot 可访问的各种工具，例如 **搜索用法 (#usages)**、**获取网页信息 (#fetch)**、**搜索 Marketplace 扩展 (#extensions)** 和 **搜索 GitHub 仓库代码 (#githubRepo)**，以增强模型上下文。还详细描述了 **提示文件 (Prompt files)** 和 **指令文件 (Instructions files)** 的目的和使用，并展示了如何通过这些文件管理和定制 AI 模型的行为。
 
+<!--more-->
+
 ![](/images/2025/VSCode-GitHubCopilot/GitHubCopilot.png)
 
 - **提问**：这与之前的“聊天”视图相同。您可以就您的工作区或一般编码问题向任何模型提问。使用 @ 符号可以调用内置的聊天参与者或已安装的扩展。使用 # 符号可以手动附加任何类型的上下文。

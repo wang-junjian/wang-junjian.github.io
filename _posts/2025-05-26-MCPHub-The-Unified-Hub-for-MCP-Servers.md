@@ -8,6 +8,8 @@ tags: [MCP, MCPHub, MCPServer, GitHub, GitLab, SSE]
 
 本文档介绍了 **MCPHub**，一个用于管理和扩展 **Model Context Protocol (MCP) 服务器**的聚合平台。它通过将多个 MCP 服务器组织成灵活的流式 **HTTP (SSE)** 端点来简化操作，并支持按需访问单个或分组服务器。MCPHub 提供了包括广泛服务器兼容性、集中式管理控制台、热插拔配置以及基于 **JWT** 和 **bcrypt** 的安全认证机制等核心功能，并且支持 **Docker 部署**以实现快速启动。用户可以通过其直观的 Web UI 监控服务器状态，管理访问权限，并配置 **GitHub** 或 **GitLab** 等特定服务。此外，文档还详细说明了各种可流式传输的 HTTP 和 SSE 端点，以及如何在 **MCP 客户端**（例如 **Cline**）中配置和使用 MCPHub。
 
+<!--more-->
+
 ## [MCPHub](https://github.com/samanhappy/mcphub) 简介
 
 MCPHub 通过将多个 MCP（Model Context Protocol）服务器组织为灵活的流式 HTTP（SSE）端点，简化了管理与扩展工作。系统支持按需访问全部服务器、单个服务器或按场景分组的服务器集合。
