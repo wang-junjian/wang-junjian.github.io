@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "【生成式AI时代下的机器学习(2025)】第十一讲：今天你想为 Foundation Model 装备哪些 Task Vector？浅谈神奇的 Model Merging 技术"
+title:  "【生成式AI时代下的机器学习(2025)】第十一讲：浅谈神奇的 Model Merging 技术"
 date:   2025-06-07 08:00:00 +0800
 categories: 模型合并 2025生成式AI时代下的机器学习
 tags: [模型合并, 2025生成式AI时代下的机器学习, 生成式AI, 机器学习, 李宏毅]
