@@ -61,3 +61,5 @@ tags: [具身智能, VLA, 华为云, 工具链]
 ![](/images/2025/BAAI/HuaweiCloud/24.jpg)
 
 ![](/images/2025/BAAI/HuaweiCloud/25.jpg)
+
+- [2025第七届北京智源大会 - 具身技术与产业应用](https://www.bilibili.com/video/BV18tT1zjEnd/)
