@@ -6,7 +6,7 @@ categories: Automator 解压RAR
 tags: [Automator, 解压RAR, rar, macOS]
 ---
 
-本文档详细介绍了**如何在 macOS 上使用 Automator 创建一个快速操作来解压 RAR 文件**。它提供了一个**Shell 脚本，用于检测 Homebrew 环境并调用 `rar` 或 `unrar` 命令进行解压**，同时包含错误处理和用户通知。文章还**指导用户授予 `rar` 可执行文件“完全磁盘访问权限”**，这是解决“Operation not permitted”错误的关键步骤。此外，文本提供了一个**带调试日志功能的 Shell 脚本**，帮助用户诊断解压过程中可能出现的问题，并展示了实际的调试输出。
+本文档详细介绍了**如何在 macOS 上使用 Automator 创建一个快速操作来解压 RAR 文件**。它提供了一个**Shell 脚本，用于检测 Homebrew 环境并调用 `rar` 命令进行解压**，同时包含错误处理和用户通知。文章还**指导用户授予 `rar` 可执行文件“完全磁盘访问权限”**，这是解决“Operation not permitted”错误的关键步骤。此外，文本提供了一个**带调试日志功能的 Shell 脚本**，帮助用户诊断解压过程中可能出现的问题，并展示了实际的调试输出。
 
 <!--more-->
 
