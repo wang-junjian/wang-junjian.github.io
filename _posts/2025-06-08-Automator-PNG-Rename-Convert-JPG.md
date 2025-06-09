@@ -114,7 +114,7 @@ if ! rm *.png; then
     exit 1
 fi
 
-osascript -e 'display dialog "文件夹操作已完成！\n\n文件已重命名、转换为 JPG 并删除了原始 PNG 文件。" with title "操作成功" buttons {"好的"} default button "好的" with icon note'
+osascript -e 'display notification "所有PNG重命名并转换为JPG 已完成！" with title "操作成功"'
 ```
 
 7.  **保存快速操作：**
