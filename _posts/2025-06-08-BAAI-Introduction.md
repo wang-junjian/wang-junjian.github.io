@@ -116,4 +116,4 @@ tags: [BAAI, 智源大会, 人工智能, 具身智能, 悟道, 悟界, RoboOS, R
 
 ![](/images/2025/BAAI/BAAI/53.jpg)
 
-- [2025第七届北京智源大会 - 具身技术与产业应用](https://www.bilibili.com/video/BV18tT1zjEnd/)
+- [2025第七届北京智源大会 - 开幕式](https://www.bilibili.com/video/BV144TTzYE6r/)
