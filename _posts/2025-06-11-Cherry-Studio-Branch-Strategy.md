@@ -12,6 +12,11 @@ tags: [CherryStudio, 分支策略, 代码管理, 开发流程]
 
 Cherry Studio 采用结构化的分支策略，以维护代码质量并简化开发流程。
 
+## 工作流图
+
+![](/images/2025/CherryStudio/Branch-Strategy-Workflow-Diagram.svg)
+
+
 ## 主要分支
 
   * **`main`**: 主开发分支
@@ -65,11 +70,6 @@ Cherry Studio 采用结构化的分支策略，以维护代码质量并简化开
       * 经过测试和准备后，合并回 `main` 分支并打上版本标签。
 
 
-## 工作流图
-
-![](/images/2025/CherryStudio/Branch-Strategy-Workflow-Diagram.svg)
-
-
 ## 拉取请求 (PR) 准则
 
   * **除非是修复关键的生产问题，所有 PR 都应提交到 `main` 分支。**
@@ -81,10 +81,10 @@ Cherry Studio 采用结构化的分支策略，以维护代码质量并简化开
 
 ## 版本标签管理
 
-  * **主要版本 (Major releases)**: v`1`.0.0, v`2`.0.0, 等。
-  * **功能版本 (Feature releases)**: v1.`1`.0, v1.`2`.0, 等。
-  * **补丁版本 (Patch releases)**: v1.0.`1`, v1.0.`2`, 等。
-  * **热修复版本 (Hotfix releases)**: v1.0.1-`hotfix`, 等。
+  * **主要版本 (Major releases)**: v**1**.0.0, v**2**.0.0, 等。
+  * **功能版本 (Feature releases)**: v1.**1**.0, v1.**2**.0, 等。
+  * **补丁版本 (Patch releases)**: v1.0.**1**, v1.0.**2**, 等。
+  * **热修复版本 (Hotfix releases)**: v1.0.1-**hotfix**, 等。
 
 
 ## Cherry Studio 简介
