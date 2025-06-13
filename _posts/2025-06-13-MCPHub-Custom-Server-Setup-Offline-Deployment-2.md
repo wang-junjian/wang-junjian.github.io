@@ -13,6 +13,8 @@ tags: [MCP, MCPHub, MCPServer, mcp-server-time, pypiserver, Python, 离线, 内�
 - [MCPHub 自定义服务器配置及内网部署（一）]({% post_url 2025-06-12-MCPHub-Custom-Server-Setup-Offline-Deployment %})
 - [MCPHub 自定义服务器配置及内网部署（二）]({% post_url 2025-06-13-MCPHub-Custom-Server-Setup-Offline-Deployment-2 %})
 
+## 架构图
+
 ![](/images/2025/MCPHub/Custom/mcphub-pypiserver-mermaid.png)
 
 ```mermaid
