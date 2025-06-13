@@ -1,9 +1,9 @@
 ---
 layout: single
-title:  "MCPHub 自定义服务器配置及内网部署"
+title:  "MCPHub 自定义服务器配置及内网部署（一）"
 date:   2025-06-12 20:00:00 +0800
 categories: MCP MCPHub
-tags: [MCP, MCPHub, MCPServer, Time, Python, 离线, 内网部署]
+tags: [MCP, MCPHub, MCPServer, mcp-server-time, Python, 离线, 内网部署]
 ---
 
 本文档重点介绍了如何在内网（离线）集成和配置一个名为 "mcp-server-time" 的特定 MCP 服务器。首先指导用户如何 **获取 MCPHub 容器的 Python 环境信息**，包括版本和平台标签，以便下载兼容的 Python 包。接着，文档详细阐述了如何使用 `pip download` 命令 **下载服务器及其依赖包**，并解释了各个命令参数的用途。最后，展示了如何通过 **编辑 `custom/servers.json` 和 `custom/mcp_settings.json` 文件** 来自定义 MCP 服务器市场配置和运行时设置，并给出了 **Docker Compose 配置示例**，以实现自定义配置的替换并部署。
