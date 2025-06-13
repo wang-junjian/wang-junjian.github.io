@@ -314,3 +314,8 @@ docker compose up
 
 ## 参考资料
 - [MCPHub GitHub](https://github.com/samanhappy/mcphub)
+- [pip download](https://pip.pypa.io/en/stable/cli/pip_download/)
+- [pypiserver/pypiserver](https://hub.docker.com/r/pypiserver/pypiserver)
+- [MCP Manager](https://mcpm.sh/)
+- [Todoist MCP Server](https://github.com/abhiz123/todoist-mcp-server)
+- [Markdownify MCP Server](https://github.com/zcaceres/markdownify-mcp)
