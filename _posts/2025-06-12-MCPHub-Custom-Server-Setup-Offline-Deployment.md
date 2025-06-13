@@ -10,6 +10,9 @@ tags: [MCP, MCPHub, MCPServer, mcp-server-time, Python, 离线, 内网部署]
 
 <!--more-->
 
+- [MCPHub 自定义服务器配置及内网部署（一）]({% post_url 2025-06-12-MCPHub-Custom-Server-Setup-Offline-Deployment %})
+- [MCPHub 自定义服务器配置及内网部署（二）]({% post_url 2025-06-13-MCPHub-Custom-Server-Setup-Offline-Deployment-2 %})
+
 这里使用 `mcp-server-time` 作为示例。
 
 ## 查看 MCPHub 容器的 Python 环境信息（版本和平台）
