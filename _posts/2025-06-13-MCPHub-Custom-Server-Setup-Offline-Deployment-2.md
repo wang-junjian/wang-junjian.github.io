@@ -15,6 +15,40 @@ tags: [MCP, MCPHub, MCPServer, mcp-server-time, pypiserver, Python, 离线, 内�
 
 ![](/images/2025/MCPHub/Custom/mcphub-pypiserver-mermaid.png)
 
+```mermaid
+graph TD
+    subgraph Docker Host
+        A[Local PyPI Server] -->|Serves| B[MCPHub]
+        B -->|Stores Data| C[PostgreSQL]
+        B -->|Reads Config| D[Custom Config Files]
+    end
+
+    subgraph A[Local PyPI Server]
+        A1[pypiserver Container] --> A2[./pypi_packages Volume]
+    end
+
+    subgraph B[MCPHub]
+        B1[mcphub Container] --> B2[Registry Volume]
+        B1 --> B3[servers.json]
+        B1 --> B4[mcp_settings.json]
+        B1 --> B5[pip.conf]
+    end
+
+    subgraph C[PostgreSQL]
+        C1[pgvector Container] --> C2[./postgres Volume]
+    end
+
+    subgraph D[Custom Config Files]
+        D1[servers.json] --> D2[Server Marketplace]
+        D3[mcp_settings.json] --> D4[Runtime Settings]
+        D5[pip.conf] --> D6[PyPI Config]
+    end
+
+    A -->|Fallback to| E[Official PyPI]
+    B -->|Depends On| A
+    B -->|Depends On| C
+```
+
 ## 搭建本地 PyPI 源
 ### 拉取 pypiserver 镜像
 
