@@ -99,3 +99,4 @@ tags: [具身智能, GROOT-N1, Isaac, NVIDIA]
 
 ## 参考资料
 - [具身模型 NVIDIA lsaac GROOT N1 详解](https://www.bilibili.com/video/BV1M3jmzuEJR)
+- [NVIDIA lsaac Lab 加速机器人模仿学习](https://www.bilibili.com/video/BV1NdVmztEjD)
