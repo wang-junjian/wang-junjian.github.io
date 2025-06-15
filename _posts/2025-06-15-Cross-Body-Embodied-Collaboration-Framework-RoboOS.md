@@ -40,9 +40,12 @@ tags: [具身智能, RoboOS, 跨本体协作, 智源]
 
 ![](/images/2025/RoboOS/14.jpg)
 
+- [北京智源人工智能研究院发布RoboOS，具备跨本体的大小脑协作和具身感知推理能力](https://www.bilibili.com/video/BV1pfZJY7ETP/)
+
 ![](/images/2025/RoboOS/15.jpg)
 
 ![](/images/2025/RoboOS/16.jpg)
 
 ## 参考资料
 - [跨本体具身大小脑协作框架RoboOS](https://www.bilibili.com/video/BV1B65TzuE7E/)
+- [北京智源人工智能研究院发布RoboOS，具备跨本体的大小脑协作和具身感知推理能力](https://www.bilibili.com/video/BV1pfZJY7ETP/)
