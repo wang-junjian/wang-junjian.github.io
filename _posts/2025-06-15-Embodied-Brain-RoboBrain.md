@@ -56,3 +56,6 @@ tags: [具身智能, RoboBrain, 具身大脑, 多模态大模型, ShareRobot, �
 
 ## 参考资料
 - [具身多模态大模型-具身大脑RoboBrain](https://www.bilibili.com/video/BV1C9VmzZEZA/)
+- [RoboBrain 2.0: See Better. Think Harder. Do Smarter.](https://superrobobrain.github.io/)
+- [GitHub - RoboBrain](https://github.com/FlagOpen/RoboBrain)
+- [RoboBrain: A Unified Brain Model for Robotic Manipulation from Abstract to Concrete](https://arxiv.org/pdf/2502.21257)
