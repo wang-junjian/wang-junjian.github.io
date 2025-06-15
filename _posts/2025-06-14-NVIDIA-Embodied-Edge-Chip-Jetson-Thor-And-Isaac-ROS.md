@@ -10,59 +10,59 @@ tags: [具身智能, JetsonThor, IsaacROS, NVIDIA]
 
 <!--more-->
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/01.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/01.jpg)
 
 ## Physical Al & Robotics
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/02.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/02.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/03.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/03.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/04.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/04.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/05.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/05.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/06.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/06.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/07.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/07.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/08.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/08.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/09.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/09.jpg)
 
 ## AGX Thor Product Overview
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/10.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/10.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/11.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/11.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/12.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/12.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/13.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/13.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/14.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/14.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/15.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/15.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/16.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/16.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/17.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/17.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/18.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/18.jpg)
 
 ## Isaac ROS for Robot Development
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/19.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/19.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/20.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/20.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/21.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/21.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/22.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/22.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/23.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/23.jpg)
 
-![](/images/2025/NVIDIA/JetsonThor-IsaacROS/24.png)
+![](/images/2025/NVIDIA/JetsonThor-IsaacROS/24.jpg)
 
 ## 参考资料
 - [具身端侧芯片 NVIDlA Jetson Thor 和 NVIDIA Isaac ROS 介绍](https://www.bilibili.com/video/BV1SujmzzE89/)
