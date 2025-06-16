@@ -10,6 +10,10 @@ tags: [Verdaccio, npm, Registry, 离线, 内网部署]
 
 <!--more-->
 
+## [什么是 Verdaccio](https://verdaccio.org/zh-CN/docs/what-is-verdaccio)
+
+**Verdaccio** 一个基于 Node.js 的轻量级私有仓库
+
 ## 下载镜像
 
 ```bash
@@ -368,6 +372,14 @@ Username: admin
 Password: 
 
 Logged in on http://localhost:4873/.
+```
+
+### 设置 npm 源
+
+如果您希望 npm 使用本地 Verdaccio 仓库作为默认源，可以运行以下命令：
+
+```bash
+npm set registry http://localhost:4873
 ```
 
 
