@@ -323,6 +323,18 @@ pyroprompts-any-chat-completions-mcp-0.1.1.tgz
 npm pack
 ```
 
+### 配置文件路径
+
+- 获取用户配置文件路径
+```bash
+npm config get userconfig
+```
+
+- 获取全局配置文件路径
+```bash
+npm config get globalconfig
+```
+
 ### npm 缓存
 
 #### 查看缓存路径
