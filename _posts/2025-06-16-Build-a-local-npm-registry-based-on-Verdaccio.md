@@ -255,9 +255,9 @@ log: { type: stdout, format: pretty, level: http }
 ```bash
 docker run -d --name verdaccio \
   -p 4873:4873 \
-  -v ./verdaccio/storage:/verdaccio/storage \
   -v ./verdaccio/conf:/verdaccio/conf \
   -v ./verdaccio/plugins:/verdaccio/plugins \
+  -v ./verdaccio/storage:/verdaccio/storage \
   verdaccio/verdaccio
 ```
 
@@ -291,8 +291,12 @@ networks:
 docker compose up -d
 ```
 
+登录 Verdaccio Web UI： [http://localhost:4873](http://localhost:4873)
 
-## npm 包
+![](/images/2025/Verdaccio/webui.png)
+
+
+## npm 命令
 
 [npmjs](https://registry.npmjs.org/)(https://registry.npmjs.org/)
 
@@ -314,32 +318,33 @@ npm pack @pyroprompts/any-chat-completions-mcp
 pyroprompts-any-chat-completions-mcp-0.1.1.tgz
 ```
 
+### npm 缓存
+
+#### 查看缓存路径
+```bash
+npm config get cache
+```
+- 默认缓存路径：
+    - Linux/macOS：~/.npm
+    - Windows：%AppData%\npm-cache
+
+#### 查看缓存内容
+```bash
+npm cache ls
+```
+
+#### 查看缓存包
+```bash
+npm cache ls pyroprompts-any-chat-completions-mcp
+```
+
+#### 清除缓存
+```bash
+npm cache clean --force
+```
+
 
 ## 使用（Verdaccio）
-
-### 自动缓存
-
-- **proxy: npmjs** - 必须为包作用域（如 @*/* 或 **）启用代理，否则 Verdaccio 只会检查本地存储。
-- **publish: $all** - 允许所有用户发布包。
-
-#### 强制触发
-
-```bash
-# 触发 Verdaccio 代理下载（返回包元信息）
-curl http://localhost:4873/@pyroprompts/any-chat-completions-mcp
-```
-
-#### 下载
-
-```bash
-npm pack @pyroprompts/any-chat-completions-mcp --registry http://localhost:4873
-```
-
-#### 安装
-
-```bash
-npm install @pyroprompts/any-chat-completions-mcp --registry http://localhost:4873
-```
 
 ### 创建用户
 
@@ -356,10 +361,7 @@ Email: (this IS public)
 Logged in on http://localhost:4873/.
 ```
 
-### 发布
-```bash
-npm publish --registry http://localhost:4873 pyroprompts-any-chat-completions-mcp-0.1.1.tgz
-```
+**创建用户时会自动登录。**
 
 ### 登录
 
@@ -372,6 +374,28 @@ Username: admin
 Password: 
 
 Logged in on http://localhost:4873/.
+```
+
+### 自动缓存
+
+- **proxy: npmjs** - 必须为包作用域（如 @*/* 或 **）启用代理，否则 Verdaccio 只会检查本地存储。
+- **publish: $all** - 允许所有用户发布包。
+
+#### 下载
+
+```bash
+npm pack @pyroprompts/any-chat-completions-mcp --registry http://localhost:4873
+```
+
+#### 安装
+
+```bash
+npm install @pyroprompts/any-chat-completions-mcp --registry http://localhost:4873
+```
+
+### 发布
+```bash
+npm publish --registry http://localhost:4873 pyroprompts-any-chat-completions-mcp-0.1.1.tgz
 ```
 
 ### 设置 npm 源
