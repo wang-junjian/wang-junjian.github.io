@@ -92,6 +92,73 @@ pip install --index-url http://localhost:8080/simple/ mcp-server-time
 ```
 
 
+## 搭建本地 npm 源
+
+### 拉取 Verdaccio 镜像
+
+```bash
+docker pull verdaccio/verdaccio
+```
+
+### 创建目录结构
+
+在本地创建一个目录结构来存储 Verdaccio 的配置文件、插件和存储数据。
+
+```bash
+mkdir -p ./custom/verdaccio/conf
+mkdir -p ./custom/verdaccio/plugins
+mkdir -p ./custom/verdaccio/storage
+```
+
+### 创建配置文件
+
+编辑文件 `verdaccio/conf/config.yaml`。
+> 可以拷贝文件 [https://github.com/verdaccio/verdaccio/blob/5.x/conf/docker.yaml](https://github.com/verdaccio/verdaccio/blob/5.x/conf/docker.yaml) 的内容到 `config.yaml` 中，并根据需要进行修改。
+
+```yaml
+storage: /verdaccio/storage/data
+plugins: /verdaccio/plugins
+
+web:
+  title: Verdaccio
+
+auth:
+  htpasswd:
+    file: /verdaccio/storage/htpasswd
+
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+
+packages:
+  '@*/*':
+    # scoped packages
+    access: $all
+    publish: $all
+    unpublish: $authenticated
+    proxy: npmjs
+
+  '**':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+    proxy: npmjs
+
+server:
+  keepAliveTimeout: 60
+
+middlewares:
+  audit:
+    enabled: true
+
+log: { type: stdout, format: pretty, level: http }
+```
+
+- **access: $all** - 允许所有用户访问所有包。
+- **publish: $all** - 允许所有用户发布包。
+- **proxy: npmjs** - 如果本地没有找到包，则从 npmjs 上代理请求。
+
+
 ## 自定义 MCPHub 配置
 
 ### 配置 MCP 服务器市场 (`custom/servers.json`)
@@ -255,6 +322,12 @@ trusted-host = pypiserver
 
 这样，每次运行 `pip install` 时，它都会默认使用并信任您的 `pypiserver`。
 
+### 编辑 `custom/verdaccio/.npmrc`
+
+```ini
+registry=http://verdaccio:4873/
+```
+
 ### 编辑 `docker-compose.yml`
 
 ```bash
@@ -284,6 +357,17 @@ services:
       - "8080:8080"
     command: run /data/packages
 
+  # Verdaccio 本地 npm 源服务
+  verdaccio:
+    image: verdaccio/verdaccio:latest
+    container_name: verdaccio
+    ports:
+      - "4873:4873"
+    volumes:
+      - ./custom/verdaccio/conf:/verdaccio/conf
+      - ./custom/verdaccio/plugins:/verdaccio/plugins
+      - ./custom/verdaccio/storage:/verdaccio/storage
+
   mcphub:
     image: samanhappy/mcphub
     container_name: mcphub
@@ -294,9 +378,11 @@ services:
       - ./custom/servers.json:/app/servers.json
       - ./custom/mcp_settings.json:/app/mcp_settings.json
       - ./custom/.pip/pip.conf:/root/.pip/pip.conf
+      - ./custom/verdaccio/.npmrc:/opt/verdaccio/.npmrc
     depends_on: # 确保下面的容器 启动后，再启动 mcphub。
       - mcphub-postgres
       - pypiserver
+      - verdaccio
     environment:
       # 在这里更新 dbUrl，使用 mcphub-postgres 作为主机名
       MCPHUB_DB_URL: postgresql://mcphub:your_password@mcphub-postgres:5432/mcphub
