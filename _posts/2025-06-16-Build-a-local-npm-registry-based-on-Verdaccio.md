@@ -318,6 +318,11 @@ npm pack @pyroprompts/any-chat-completions-mcp
 pyroprompts-any-chat-completions-mcp-0.1.1.tgz
 ```
 
+### 打包
+```bash
+npm pack
+```
+
 ### npm 缓存
 
 #### 查看缓存路径
@@ -341,6 +346,43 @@ npm cache ls pyroprompts-any-chat-completions-mcp
 #### 清除缓存
 ```bash
 npm cache clean --force
+```
+
+### 全局 npm 配置
+
+配置文件：`~/.npmrc`
+
+#### 查看当前 npm 源
+```bash
+npm config get registry
+```
+```bash
+https://registry.npmjs.org/
+```
+
+#### 查看当前 npm 配置
+```bash
+npm config list
+```
+```bash
+; "user" config from /Users/junjian/.npmrc
+
+//localhost:4873/:_authToken = (protected)
+registry = "https://registry.npmjs.org/"
+strict-ssl = true
+
+; node bin location = /Users/junjian/.nvm/versions/node/v22.5.1/bin/node
+; node version = v22.5.1
+; npm local prefix = /Users/junjian/GitHub/mcphub
+; npm version = 10.8.2
+; cwd = /Users/junjian/GitHub/mcphub/custom/verdaccio
+; HOME = /Users/junjian
+; Run `npm config ls -l` to show all defaults.
+```
+
+#### 设置 npm 源
+```bash
+npm config set registry http://localhost:4873
 ```
 
 
@@ -387,11 +429,16 @@ Logged in on http://localhost:4873/.
 npm pack @pyroprompts/any-chat-completions-mcp --registry http://localhost:4873
 ```
 
+⚠️ `npm pack` 命令如果本地有缓存，不会真正去下载 .tgz 文件，所以您在 Verdaccio 中看不到下载的包。使用 `npm cache clean --force` 清除缓存后，再次运行 `npm pack` 命令。
+
+
 #### 安装
 
 ```bash
 npm install @pyroprompts/any-chat-completions-mcp --registry http://localhost:4873
 ```
+
+⚠️ `npm install` 命令如果本地有缓存，不会真正去下载 .tgz 文件，所以您在 Verdaccio 中看不到下载的包。使用 `npm cache clean --force` 清除缓存后，再次运行 `npm install` 命令。
 
 ### 发布
 ```bash
