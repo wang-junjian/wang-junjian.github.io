@@ -403,5 +403,6 @@ docker compose up
 - [pip download](https://pip.pypa.io/en/stable/cli/pip_download/)
 - [pypiserver/pypiserver](https://hub.docker.com/r/pypiserver/pypiserver)
 - [MCP Manager](https://mcpm.sh/)
+- [MCP Server Registry](https://mcpm.sh/registry/)
 - [Todoist MCP Server](https://github.com/abhiz123/todoist-mcp-server)
 - [Markdownify MCP Server](https://github.com/zcaceres/markdownify-mcp)
