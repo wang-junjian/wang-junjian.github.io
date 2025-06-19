@@ -69,7 +69,7 @@ vllm serve /data/models/vlm/Qwen2.5-VL-7B-Instruct \
     --max-model-len 32000
 ```
 
-#### python -m vllm.entrypoints.openai.api_server
+#### vllm.entrypoints.openai.api_server
 
 ```bash
 python -m vllm.entrypoints.openai.api_server \
