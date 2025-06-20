@@ -253,6 +253,12 @@ if __name__ == "__main__":
    - 自动创建必要的目录结构(images, marked_images, fonts)
    - 支持本地图像和网络URL图像两种输入方式
 
+### 安装依赖
+在运行代码前，请确保安装了以下Python库：
+```bash
+pip install openai reportlab Pillow
+```
+
 ### 代码
 
 ```py
