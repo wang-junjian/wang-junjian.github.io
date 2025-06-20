@@ -62,10 +62,7 @@ pip install vllm
 
 ```bash
 vllm serve /data/models/vlm/Qwen2.5-VL-7B-Instruct \
-    --host 0.0.0.0 --port 8000 \
     --served-model-name Qwen2.5-VL \
-    --tensor-parallel-size 4 \
-    --dtype=float16 \
     --max-model-len 32000
 ```
 
@@ -81,7 +78,11 @@ python -m vllm.entrypoints.openai.api_server \
     --max-model-len 32000
 ```
 
-模型具有较长的上下文长度（`128000`）。这可能会导致在**初始内存分析阶段**出现`OOM`，或者由于KV缓存大小较小而导致性能低下。考虑将 `--max-model-len` 设置为较小的值。
+- `--host` 设置为 `0.0.0.0`，表示监听所有网络接口，其它机器可以通过 IP 地址访问。这是默认设置，可以不设置。
+- `--port` 设置为 `8000`，表示监听端口为 8000。这是默认设置，可以不设置。
+- `--model` 设置为模型的本地路径。
+- `--tensor-parallel-size` 设置为 `4`，表示使用 4 个 GPU 进行张量并行处理。
+- `--max-model-len` 设置为 `32000`，表示模型的最大上下文长度为 32000。模型默认具有较长的上下文长度（`128000`）。这可能会导致在**初始内存分析阶段**出现`OOM`，或者由于KV缓存大小较小而导致性能低下。考虑将 `--max-model-len` 设置为较小的值。
 
 ### 测试模型
 
