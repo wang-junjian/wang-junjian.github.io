@@ -30,7 +30,7 @@ tags: [Software3.0, AndrejKarpathy, LLM, 智能体]
 
 ![](/images/2025/AndrejKarpathy/SoftwareIsChanging(Again)/10.jpg)
 
-## Part 1: 如何思考大型语言模型 (LLM)
+## Part 1: 如何思考 LLM
 
 ![](/images/2025/AndrejKarpathy/SoftwareIsChanging(Again)/11.jpg)
 
