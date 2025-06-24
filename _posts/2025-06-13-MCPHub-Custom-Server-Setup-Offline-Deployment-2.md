@@ -6,7 +6,7 @@ categories: MCP MCPHub
 tags: [MCP, MCPHub, MCPServer, mcp-server-time, pypiserver, Python, 离线, 内网部署]
 ---
 
-本文档指导用户**构建一个本地 PyPI 源**，以便持久化存储 Python 包并进行离线安装。接着，文档**说明了自定义 MCPHub 配置**，包括定义 MCP 服务器市场中的服务（例如：mcp-server-time）以及调整 MCPHub 自身的运行时设置，例如指定本地 PyPI 源和用户认证信息。
+本文档指导用户**构建一个本地 PyPI 源**，以便持久化存储 Python 包并进行离线安装。接着，文档**说明了自定义 MCPHub 配置**，包括定义 MCP 服务器市场中的服务（例如：mcp-server-time, calculator-mcp-server）以及调整 MCPHub 自身的运行时设置，例如指定本地 PyPI 源和用户认证信息。
 
 <!--more-->
 
@@ -70,6 +70,18 @@ mkdir pypi_packages
 
 ```bash
 pip download mcp-server-time --dest ./pypi_packages
+```
+
+最好到 `mcphub` 容器中进行下载
+
+- 📌 calculator-mcp-server
+```bash
+pip download calculator-mcp-server --dest /app/registry -i https://pypi.org/simple/ --resume-retries 3
+```
+
+- 📌 mcp-server-time
+```bash
+pip download mcp-server-time --dest /app/registry -i https://pypi.org/simple/ --resume-retries 3
 ```
 
 ### 运行 pypiserver 容器
@@ -165,6 +177,92 @@ log: { type: stdout, format: pretty, level: http }
 
 ```json
 {
+  "any-chat-completions": {
+    "name": "any-chat-completions",
+    "display_name": "Any Chat Completions",
+    "description": "Interact with any OpenAI SDK Compatible Chat Completions API like OpenAI, Perplexity, Groq, xAI and many more.",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/pyroprompts/any-chat-completions-mcp"
+    },
+    "homepage": "https://github.com/pyroprompts/any-chat-completions-mcp",
+    "author": {
+      "name": "pyroprompts"
+    },
+    "license": "MIT",
+    "categories": [
+      "AI Systems"
+    ],
+    "tags": [
+      "Claude",
+      "OpenAI",
+      "API",
+      "Chat Completion"
+    ],
+    "examples": [
+      {
+        "title": "OpenAI Integration",
+        "description": "Integrate OpenAI into Claude Desktop",
+        "prompt": "Configure the MCP server to use OpenAI's API."
+      }
+    ],
+    "installations": {
+      "npm": {
+        "type": "npm",
+        "command": "npx",
+        "args": [
+          "-y",
+          "https://github.com/pyroprompts/any-chat-completions-mcp"
+        ],
+        "env": {
+          "AI_CHAT_KEY": "${AI_CHAT_KEY}",
+          "AI_CHAT_NAME": "${AI_CHAT_NAME}",
+          "AI_CHAT_MODEL": "${AI_CHAT_MODEL}",
+          "AI_CHAT_BASE_URL": "${AI_CHAT_BASE_URL}"
+        }
+      }
+    },
+    "arguments": {
+      "AI_CHAT_KEY": {
+        "description": "API key for authentication with the chat service provider.",
+        "required": true,
+        "example": "your_openai_secret_key_here"
+      },
+      "AI_CHAT_NAME": {
+        "description": "The name of the AI chat provider to use, like 'OpenAI' or 'PyroPrompts'.",
+        "required": true,
+        "example": "OpenAI"
+      },
+      "AI_CHAT_MODEL": {
+        "description": "Specifies which model to be used for the chat service, e.g., 'gpt-4o'.",
+        "required": true,
+        "example": "gpt-4o"
+      },
+      "AI_CHAT_BASE_URL": {
+        "description": "The base URL for the API service of the chat provider.",
+        "required": true,
+        "example": "https://api.openai.com/v1"
+      }
+    },
+    "tools": [
+      {
+        "name": "chat-with-${AI_CHAT_NAME_CLEAN}",
+        "description": "Text chat with ${AI_CHAT_NAME}",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "The content of the chat to send to ${AI_CHAT_NAME}"
+            }
+          },
+          "required": [
+            "content"
+          ]
+        }
+      }
+    ]
+  },
   "time": {
     "name": "time",
     "display_name": "Time",
@@ -263,7 +361,163 @@ log: { type: stdout, format: pretty, level: http }
       }
     ],
     "is_official": true
-  }
+  },
+  "calculator": {
+    "name": "calculator",
+    "display_name": "Calculator",
+    "description": "A Model Context Protocol server that provides basic arithmetic operations.",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/wang-junjian/calculator-mcp-server"
+    },
+    "homepage": "https://github.com/wang-junjian/calculator-mcp-server",
+    "author": {
+      "name": "Wang Junjian"
+    },
+    "license": "MIT",
+    "categories": [
+      "Utility"
+    ],
+    "tags": [
+      "calculator",
+      "math",
+      "arithmetic"
+    ],
+    "installations": {
+      "uvx": {
+        "type": "uvx",
+        "command": "uvx",
+        "args": [
+          "calculator-mcp-server"
+        ],
+        "description": "Install and run using uvx (recommended for quick testing). For production, consider packaging your server."
+      }
+    },
+    "tools": [
+      {
+        "name": "add",
+        "description": "Adds two numbers (int or float).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number",
+              "description": "The first number."
+            },
+            "b": {
+              "type": "number",
+              "description": "The second number."
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "name": "subtract",
+        "description": "Subtracts two numbers (int or float).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number",
+              "description": "The first number."
+            },
+            "b": {
+              "type": "number",
+              "description": "The second number."
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "name": "multiply",
+        "description": "Multiplies two numbers (int or float).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number",
+              "description": "The first number."
+            },
+            "b": {
+              "type": "number",
+              "description": "The second number."
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "name": "divide",
+        "description": "Divides two numbers (int or float).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number",
+              "description": "The numerator."
+            },
+            "b": {
+              "type": "number",
+              "description": "The denominator."
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "name": "power",
+        "description": "Raises a number to the power of another number.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "base": {
+              "type": "number",
+              "description": "The base number."
+            },
+            "exponent": {
+              "type": "number",
+              "description": "The exponent."
+            }
+          },
+          "required": [
+            "base",
+            "exponent"
+          ]
+        }
+      }
+    ],
+    "examples": [
+      {
+        "title": "Add two numbers",
+        "description": "Add 5 and 3",
+        "prompt": "What is 5 plus 3?"
+      },
+      {
+        "title": "Multiply two numbers",
+        "description": "Multiply 7 by 4",
+        "prompt": "What is 7 times 4?"
+      },
+      {
+        "title": "Calculate power",
+        "description": "Calculate 2 to the power of 3",
+        "prompt": "What is 2 raised to the power of 3?"
+      }
+    ]
+  }  
 }
 ```
 
@@ -280,6 +534,14 @@ log: { type: stdout, format: pretty, level: http }
         "--local-timezone=Asia/Shanghai"
       ],
       "env": {}
+    },
+    "calculator": {
+      "command": "uvx",
+      "args": [
+        "calculator-mcp-server"
+      ],
+      "env": {},
+      "enabled": true
     }
   },
   "users": [
@@ -333,6 +595,10 @@ registry=http://verdaccio:4873/
 ```bash
 version: '3.8'
 
+networks:
+  mcphub-net:
+    driver: bridge
+
 services:
   mcphub-postgres:
     image: pgvector/pgvector:pg17
@@ -343,6 +609,8 @@ services:
       POSTGRES_PASSWORD: your_password
     volumes:
       - ./postgres:/var/lib/postgresql/data # 持久化 PostgreSQL 数据
+    networks:
+      - mcphub-net
 
   # pypiserver 本地 PyPI 源服务
   pypiserver:
@@ -356,6 +624,8 @@ services:
       # 将宿主机的 8080 端口映射到容器的 8080 端口
       - "8080:8080"
     command: run /data/packages
+    networks:
+      - mcphub-net
 
   # Verdaccio 本地 npm 源服务
   verdaccio:
@@ -367,6 +637,8 @@ services:
       - ./custom/verdaccio/conf:/verdaccio/conf
       - ./custom/verdaccio/plugins:/verdaccio/plugins
       - ./custom/verdaccio/storage:/verdaccio/storage
+    networks:
+      - mcphub-net
 
   mcphub:
     image: samanhappy/mcphub
@@ -374,18 +646,21 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      - ./.env:/app/.env
       - ./custom/registry:/app/registry
       - ./custom/servers.json:/app/servers.json
       - ./custom/mcp_settings.json:/app/mcp_settings.json
       - ./custom/.pip/pip.conf:/root/.pip/pip.conf
       - ./custom/verdaccio/.npmrc:/opt/verdaccio/.npmrc
-    depends_on: # 确保下面的容器 启动后，再启动 mcphub。
-      - mcphub-postgres
+    depends_on:
+      - mcphub-postgres # 确保 mcphub-postgres 启动后再启动 mcphub
       - pypiserver
       - verdaccio
     environment:
       # 在这里更新 dbUrl，使用 mcphub-postgres 作为主机名
       MCPHUB_DB_URL: postgresql://mcphub:your_password@mcphub-postgres:5432/mcphub
+    networks:
+      - mcphub-net
 ```
 
 `./custom/pypi_packages` 目录用于存储从 PyPI 下载的 Python 包。这个包及其依赖包最好到 `MCPHub 容器`中下载。
