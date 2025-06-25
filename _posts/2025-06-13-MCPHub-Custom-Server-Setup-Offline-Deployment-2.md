@@ -68,6 +68,8 @@ mkdir pypi_packages
 
 ### 下载 mcp-server-time 及其依赖包
 
+把需要部署的 MCP 服务器及其依赖包存储到 `pypi_packages` 目录中，以便在内网环境中使用。
+
 ```bash
 pip download mcp-server-time --dest ./pypi_packages
 ```
@@ -570,25 +572,7 @@ log: { type: stdout, format: pretty, level: http }
 - `"pythonIndexUrl": "http://pypiserver:8080/simple/"`：指定本地 PyPI 源地址，确保 MCPHub 能够从中安装 Python 包。
 
 
-## Docker Compose 配置
-
-### 编辑 `custom/.pip/pip.conf`
-
-```ini
-[global]
-index-url = http://pypiserver:8080/simple
-trusted-host = pypiserver
-```
-
-- `trusted-host = pypiserver`： 告诉 `pip` 信任 `pypiserver` 这个主机，即使它不使用 HTTPS。
-
-这样，每次运行 `pip install` 时，它都会默认使用并信任您的 `pypiserver`。
-
-### 编辑 `custom/verdaccio/.npmrc`
-
-```ini
-registry=http://verdaccio:4873/
-```
+## Docker Compose
 
 ### 编辑 `docker-compose.yml`
 
@@ -665,8 +649,26 @@ services:
 
 `./custom/pypi_packages` 目录用于存储从 PyPI 下载的 Python 包。这个包及其依赖包最好到 `MCPHub 容器`中下载。
 
+### 编辑 `custom/.pip/pip.conf`
 
-## 部署 MCPHub
+```ini
+[global]
+index-url = http://pypiserver:8080/simple
+trusted-host = pypiserver
+```
+
+- `trusted-host = pypiserver`： 告诉 `pip` 信任 `pypiserver` 这个主机，即使它不使用 HTTPS。
+
+这样，每次运行 `pip install` 时，它都会默认使用并信任您的 `pypiserver`。
+
+### 编辑 `custom/verdaccio/.npmrc`
+
+```ini
+registry=http://verdaccio:4873/
+```
+
+
+### 部署 MCPHub
 
 ```bash
 docker compose up
