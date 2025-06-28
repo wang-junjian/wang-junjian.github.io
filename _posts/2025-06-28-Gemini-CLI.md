@@ -119,6 +119,24 @@ npm link
     - GoogleSearch
 ```
 
+### YOLO 模式
+
+**快捷键**：`ctrl + y`
+
+**YOLO 模式** 是 Gemini CLI 的一个特殊运行模式。
+
+它的核心功能是：自动批准 Gemini 助手发起的所有工具调用请求。
+
+通常情况下，当 Gemini CLI 需要执行一个操作（比如读写文件、执行 shell 命令）时，它会先向用户请求许可，用户需要手动确认后才能继续。但在 **YOLO 模式**下，这个确认步骤会被跳过，所有操作都会被自动批准并立即执行。
+
+### 交互
+
+![](/images/2025/GeminiCLI/12.jpg)
+
+![](/images/2025/GeminiCLI/13.jpg)
+
+![](/images/2025/GeminiCLI/14.jpg)
+
 ### /quit
 ```bash
 ╭──────────────────────────────────────╮
