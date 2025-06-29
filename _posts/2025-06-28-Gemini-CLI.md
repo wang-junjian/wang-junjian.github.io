@@ -14,9 +14,6 @@ Gemini CLI 是一个专为软件开发者设计的、由AI驱动的交互式命�
 
 一个将 Gemini 强大功能直接带入你终端的开源 AI 智能体。
 
-![](/images/2025/GeminiCLI/Gemini_CLI_infographic.width-1000.format-webp.webp)
-> Gemini CLI 提供业界最高的免费使用限额，每分钟可发送 60 个模型请求，每天最多 1,000 个模型请求。
-
 ![](/images/2025/GeminiCLI/00.png)
 
 Gemini CLI 提供了强大的 AI 功能，涵盖了从代码理解和文件操作，到命令执行和动态故障排除的方方面面。它对您的命令行体验进行了根本性的升级，让您能够通过自然语言编写代码、调试问题并简化工作流程。
@@ -27,6 +24,9 @@ Gemini CLI 提供了强大的 AI 功能，涵盖了从代码理解和文件操�
 - **通过内置支持模型上下文协议 (MCP) 或捆绑扩展来扩展 Gemini CLI 的功能**。
 - **自定义提示和指令**，根据您的具体需求和工作流程定制 Gemini。
 - **通过在脚本中非交互式地调用 Gemini CLI，实现任务自动化并与现有工作流程集成**。
+
+![](/images/2025/GeminiCLI/Gemini_CLI_infographic.width-1000.format-webp.webp)
+> Gemini CLI 提供业界最高的免费使用限额，每分钟可发送 60 个模型请求，每天最多 1,000 个模型请求。
 
 
 ## 安装
