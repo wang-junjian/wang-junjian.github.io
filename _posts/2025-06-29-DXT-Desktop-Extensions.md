@@ -164,5 +164,6 @@ dxt pack examples/hello-world-node
 
 ## 参考资料
 - [Desktop Extensions (DXT)](https://github.com/anthropics/dxt)
+- [Desktop Extensions: One-click MCP server installation for Claude Desktop](https://www.anthropic.com/engineering/desktop-extensions)
 - [DXT Examples](https://github.com/anthropics/dxt/tree/main/examples)
 - [DXT Manifest.json Spec](https://github.com/anthropics/dxt/blob/main/MANIFEST.md)
