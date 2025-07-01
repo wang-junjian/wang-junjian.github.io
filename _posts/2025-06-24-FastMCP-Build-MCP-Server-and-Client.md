@@ -3,7 +3,7 @@ layout: single
 title:  "FastMCP 实战：构建计算器 MCP 服务器与客户端"
 date:   2025-06-24 20:00:00 +0800
 categories: MCP FastMCP
-tags: [MCP, FastMCP, calculator-mcp-server, MCPServer, MCPClient, OpenAI]
+tags: [MCP, FastMCP, calculator-mcp-server, MCPServer, MCPClient, OpenAI, MCPInspector]
 ---
 
 该文档详细介绍了如何使用 **FastMCP** 框架来构建和集成计算器 **MCP** 服务器与客户端。它首先指导用户**初始化并设置开发环境**，包括创建虚拟环境和安装 FastMCP。接着，文档展示了**MCP 服务器的开发过程**，通过 `main.py` 文件定义了加、减、乘、除、幂等计算工具，并配置了项目元数据文件 `pyproject.toml`。此外，文档还提供了**构建和发布服务器到 PyPI** 的步骤，以及**运行 MCP 服务器**的方法，包括使用 **MCP Inspector** 进行调试和通过 **FastMCP CLI** 运行。最后，文档展示了**MCP 客户端的开发**，演示了客户端如何调用服务器上的工具，并深入探讨了**将 MCP 客户端与 OpenAI 集成**，实现通过自然语言与计算器服务器进行交互的能力。
