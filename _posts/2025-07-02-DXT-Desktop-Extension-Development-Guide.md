@@ -67,7 +67,7 @@ extension.dxt (ZIP 文件)
 -   通过 `mcp_config.env` 设置 `PYTHONPATH` 以包含打包的包
 
 
-## 克隆 calculator-mcp-server
+## 克隆 [calculator-mcp-server](https://github.com/wang-junjian/calculator-mcp-server)
 ```bash
 git clone https://github.com/wang-junjian/calculator-mcp-server
 ```
@@ -290,6 +290,62 @@ docker run -p 3000:3000 samanhappy/mcphub
 ![](/images/2025/DXT/MCPHub/dxt-tool-list.png)
 
 ![](/images/2025/DXT/MCPHub/dxt-tool-run.png)
+
+
+## MCPHub 启动 MCP 服务器出现错误
+
+在 MCPHub 中启动 MCP 服务器时，会遇到如下错误：
+
+```bash
+Failed to connect: McpError: MCP error -32000: Connection closed
+  at Client._onclose (file:///app/node_modules/.pnpm/@modelcontextprotocol+sdk@1.12.1/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/protocol.js:97:23)
+  at _transport.onclose (file:///app/node_modules/.pnpm/@modelcontextprotocol+sdk@1.12.1/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/protocol.js:69:18)
+  at ChildProcess.<anonymous> (file:///app/node_modules/.pnpm/@modelcontextprotocol+sdk@1.12.1/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js:90:77)
+  at ChildProcess.emit (node:events:518:28)
+  at maybeClose (node:internal/child_process:1101:16)
+  at ChildProcess._handle.onexit (node:internal/child_process:304:5) 
+```
+
+该错误通常无法直接定位具体原因，但很可能是 MCP 服务器未能正确启动。原因是 Python 依赖项的二进制兼容性问题，尤其是在不同平台（如 macOS 和 Linux）之间。
+
+为避免此类问题，建议在 MCPHub 容器（即目标运行环境）中构建 DXT 扩展，并确保正确设置 `PYTHONPATH` 环境变量。这样可以保证所有依赖项与容器架构兼容。
+
+可以通过以下命令将容器内构建好的 dxt 文件拷贝到主机：
+
+```bash
+docker cp mcphub:/app/data/uploads/dxt/dxt/examples/file-manager-python/file-manager-python.dxt .
+```
+
+然后解包 dxt 文件：
+
+```bash
+dxt unpack file-manager-python.dxt file-manager-python
+```
+
+对比主机和容器中构建的 dxt 文件内容，例如 `pydantic_core` 依赖：
+
+```
+├── pydantic_core (主机构建)
+│   ├── _pydantic_core.cpython-310-darwin.so
+└── pydantic_core (mcphub 容器构建)
+  ├── _pydantic_core.cpython-313-x86_64-linux-gnu.so
+```
+
+可以看到，主机（macOS, arm64）构建的 dxt 文件包含 `arm64` 架构的二进制文件，而 MCPHub 容器（Linux, x86_64）构建的 dxt 文件则包含 `x86_64` 架构的二进制文件。只有在目标平台上构建，才能确保依赖项的二进制兼容性，从而避免服务器启动失败的问题。
+
+
+通过以下命令在 MCPHub 容器中安装 Python 依赖项。
+
+```bash
+docker run --rm -v $PWD:/app -w /app samanhappy/mcphub bash -c \
+  "pip install -r requirements.txt --target server/lib --upgrade --force-reinstall"
+```
+
+最后，在主机打包 DXT 扩展并上传到 MCPHub（容器），成功运行 MCP 服务器。
+
+```bash
+dxt pack
+```
 
 
 ## 参考资料
