@@ -10,6 +10,36 @@ tags: [DXT, MCPHub, MCP, MCPServer, calculator-mcp-server, Python, LLM]
 
 <!--more-->
 
+![](/images/2025/DXT/MCPHub/Architecture.png)
+
+```mermaid
+graph TD
+    A[DXT扩展] -->|打包| B(calculator-mcp-server)
+    B -->|元数据和配置| C[manifest.json]
+    B -->|实现| D[server/*.py]
+    B -->|依赖库| E[server/lib/]
+    B -->|图标| F[icon.png]
+    
+    G[MCPHub] -->|运行| H[MCP Servers]
+    H -->|包含| B
+    H -->|管理| I[其他 MCP Servers]
+    
+    J[开发者] -->|开发| B
+    J -->|使用| K[DXT工具]
+    K -->|初始化| C
+    K -->|打包| A
+    
+    M[用户] -->|上传/安装 DXT扩展| G
+    P[MCP客户端] -->|调用| G
+    M[用户] -->|使用| P
+    
+    style A fill:#f9f,stroke:#333
+    style G fill:#bbf,stroke:#333
+    style B fill:#9f9,stroke:#333
+    style K fill:#ff9,stroke:#333
+    style P fill:#ccf,stroke:#333
+```
+
 DXT 的核心是包含您的整个 MCP 服务器和 `manifest.json` 的简单 zip 文件。因此，将本地 MCP 服务器转换为扩展非常直接：您只需将所有必需文件放入一个文件夹，创建一个 `manifest.json`，然后创建一个压缩包。
 
 ## DXT 工具
