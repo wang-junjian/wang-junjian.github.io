@@ -13,6 +13,7 @@ tags: [GLM-4.1V-Thinking, 多模态, GLM, GLM-4V, 火灾, 烟雾, 安全帽]
 ## [模型介绍](https://www.bigmodel.cn/dev/howuse/visual-reasoning-model/glm-4.1v-thinking)
 
 基于 [GLM-4-9B-0414](https://github.com/THUDM/GLM-4) 基座模型，我们推出新版VLM开源模型 [GLM-4.1V-9B-Thinking](https://github.com/THUDM/GLM-4.1V-Thinking) ，引入思考范式，通过课程采样强化学习 RLCS（Reinforcement Learning with Curriculum Sampling）全面提升模型能力， 达到 10B 参数级别的视觉语言模型的最强性能，在18个榜单任务中持平甚至超过8倍参数量的 Qwen-2.5-VL-72B。 
+`论文` [GLM-4.1V-Thinking：通过可扩展强化学习实现通用多模态推理](https://arxiv.org/abs/2507.01006)
 
 ![](/images/2025/GLM-4.1V-Thinking/rl.jpeg)
 
