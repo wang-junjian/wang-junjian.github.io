@@ -75,11 +75,22 @@ GLM-4.1V-Thinking 在设计到代码的转换任务上表现出色，能够将�
 - 生成代码（HTML/CSS）通过浏览器渲染
     - GLM-4.1V-9B-Thinking
     ![](/images/2025/GLM-4.1V-Thinking/design2code3.jpeg)
-    - Qwen2.5-VL-32B-Instruct
     ![](/images/2025/GLM-4.1V-Thinking/design2code3-qwen2.5-vl-32b.png)
 
 - [Web UI](https://x.com/webuiofficial)
 - [Web UI design](https://kr.pinterest.com/choi_wonseok/web-ui-design/)
+
+
+
+#### 移动端应用
+- 设计图
+![](/images/2025/GLM-4.1V-Thinking/design4.png)
+
+- 生成代码（HTML/CSS）通过浏览器渲染
+    - GLM-4.1V-9B-Thinking
+    ![](/images/2025/GLM-4.1V-Thinking/design2code4.png)
+    - Qwen2.5-VL-32B-Instruct
+    ![](/images/2025/GLM-4.1V-Thinking/design2code4-qwen2.5-vl-32b.png)
 
 
 ## 智谱 API 开发
