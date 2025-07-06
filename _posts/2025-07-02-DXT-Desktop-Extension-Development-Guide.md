@@ -190,6 +190,7 @@ manifest.json 的内容如下：
 ```
 
 **"PYTHONPATH": "${__dirname}/server/lib"**
+- 使用 `PYTHONPATH` 可能让 Python 忽略系统中已安装的第三方包，只在 `server/lib` 目录中查找，导致找不到本应在系统 `site-packages` 里的包。
 
 
 ## 安装依赖包
