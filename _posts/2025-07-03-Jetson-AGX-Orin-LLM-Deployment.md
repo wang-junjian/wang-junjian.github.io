@@ -207,3 +207,5 @@ Ollama 支持计算能力为 `5.0+` 的 Nvidia GPU，以及驱动版本 `531` �
 - [JetPack SDK](https://developer.nvidia.com/embedded/jetpack-sdk-60)
 - [Pytorch Wheel CU118](https://download.pytorch.org/whl/cu118)
 - [LMArena](https://lmarena.ai/)
+- [vLLM - Building for Arm64/aarch64](https://docs.vllm.ai/en/latest/deployment/docker.html#building-for-arm64aarch64)
+- [vLLM - GPU](https://docs.vllm.ai/en/stable/getting_started/installation/gpu.html)
