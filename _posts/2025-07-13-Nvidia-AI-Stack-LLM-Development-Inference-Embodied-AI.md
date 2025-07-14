@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "英伟达全栈方案：LLM开发、推理与具身智能实战"
+title:  "英伟达全栈方案：LLM开发、推理与具身智能"
 date:   2025-07-13 20:00:00 +0800
 categories: NVIDIA LLM
 tags: [NVIDIA, LLM, TensorRT, NIM, NeMo, 具身智能, GROOT]
