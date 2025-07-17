@@ -35,7 +35,9 @@ graph LR
 
 ## [确认操作系统](https://support.huawei.com/enterprise/zh/doc/EDOC1100438838/58f4d9a2)
 
-### 查询服务器支持的操作系统，参考[昇腾计算兼容性查询助手](https://info.support.huawei.com/computing/ftca/zh/product/atlas)。
+### 查询服务器支持的操作系统
+
+参考[昇腾计算兼容性查询助手](https://info.support.huawei.com/computing/ftca/zh/product/atlas)。
 
 ![](/images/2025/Atlas800IA2/AscendComputingCompatibilityQueryAssistant.png)
 
