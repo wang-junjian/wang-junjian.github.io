@@ -146,7 +146,26 @@ total 123M
 
 **安装用户**为安装驱动和固件所使用的用户，**运行用户**为驱动固件安装完成后，后续运行推理或训练业务时启动运行驱动和固件的用户。
 
-我这里直接使用的 `root` 用户。
+- 如果创建的用户和用户组是HwHiAiUser，安装软件包时无需指定运行用户，默认即为HwHiAiUser。
+- 如果创建的用户和用户组是非HwHiAiUser（含root），安装软件包时必须指定运行用户（通过--install-username=username --install-usergroup=usergroup参数指定）。因此如果对运行用户名称没有特殊要求，建议使用HwHiAiUser。
+
+请参见如下方法创建运行用户。
+
+1. 以root用户登录服务器。
+2. 执行如下命令，创建运行用户。
+
+```bash
+groupadd usergroup
+useradd -g usergroup -d /home/username -m username -s /bin/bash
+```
+
+示例：
+```bash
+groupadd HwHiAiUser
+useradd -g HwHiAiUser -d /home/HwHiAiUser -m HwHiAiUser -s /bin/bash
+```
+
+**我这里直接使用的 `root` 用户。**
 
 ## [检查环境](https://support.huawei.com/enterprise/zh/doc/EDOC1100438838/51429589)
 
