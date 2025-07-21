@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "Atlas 800I A2 推理服务器大模型部署实战（一）：驱动/固件安装与MCU升级"
+title:  "华为 Atlas 800I A2 推理服务器大模型部署实战（一）：驱动/固件安装与MCU升级"
 date:   2025-07-17 12:00:00 +0800
 categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, 驱动, 固件, MCU, openEuler]
