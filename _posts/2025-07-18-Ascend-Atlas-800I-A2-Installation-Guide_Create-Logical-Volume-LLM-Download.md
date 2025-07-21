@@ -212,6 +212,13 @@ UUID=eee7da5b-7d61-4a57-8b4d-b409da39d551 /data  xfs  defaults  0  0
 mount -a   # 无报错即成功
 ```
 
+### 创建软链接
+
+```bash
+mkdir -p /data/models
+ln -s /data/models /models
+```
+
 
 ## 大模型下载
 
