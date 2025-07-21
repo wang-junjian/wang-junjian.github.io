@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "华为 Atlas 800I A2 推理服务器大模型部署实战（一）：驱动/固件安装与MCU升级"
+title:  "华为 Atlas 800I A2 大模型部署实战（一）：驱动/固件安装与MCU升级"
 date:   2025-07-17 12:00:00 +0800
 categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, 驱动, 固件, MCU, openEuler]
@@ -8,7 +8,18 @@ tags: [昇腾, NPU, 910B4, Atlas800IA2, 驱动, 固件, MCU, openEuler]
 
 <!--more-->
 
-我们的服务器是 Atlas 800I A2，CPU是 鲲鹏 920（5250），NPU 是昇腾 910B4（8X32G）。
+## 服务器配置
+
+**AI 服务器**：华为 Atlas 800I A2 推理服务器
+
+| 组件 | 规格 |
+|---|---|
+| **CPU** | 鲲鹏 920（5250） |
+| **NPU** | 昇腾 910B4（8X32G） |
+| **内存** | 1024GB |
+| **硬盘** | **系统盘**：450GB SSDX2 RAID1<br>**数据盘**：3.5TB NVME SSDX4 |
+| **操作系统** | openEuler 22.03 LTS |
+
 
 ## Atlas 800I A2 介绍
 
