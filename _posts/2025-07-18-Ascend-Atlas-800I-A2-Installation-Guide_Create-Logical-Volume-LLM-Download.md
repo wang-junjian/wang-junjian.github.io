@@ -222,6 +222,24 @@ ln -s /data/models /models
 
 ## 大模型下载
 
+### 模型目录结构
+
+```bash
+/models
+├── BAAI
+│   └── bge-large-zh-v1.5
+├── deepseek-ai
+│   ├── DeepSeek-R1-Distill-Qwen-7B
+│   └── DeepSeek-R1-Distill-Qwen-7B-quantized.w8a8
+└── Qwen
+    ├── Qwen2.5-14B-Instruct
+    ├── Qwen2.5-32B-Instruct
+    ├── Qwen2.5-72B-Instruct
+    ├── Qwen2.5-7B-Instruct
+    ├── Qwen2.5-Coder-7B-Instruct
+    └── Qwen2.5-VL-7B-Instruct
+```
+
 ### 魔搭（ModelScope）下载工具
 
 在下载前，请先通过如下命令安装 `ModelScope`
