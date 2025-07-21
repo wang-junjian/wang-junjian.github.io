@@ -1,12 +1,25 @@
 ---
 layout: single
-title:  "Atlas 800I A2 推理服务器大模型部署实战（二）：逻辑卷创建与大模型下载"
+title:  "华为 Atlas 800I A2 大模型部署实战（二）：逻辑卷创建与大模型下载"
 date:   2025-07-18 12:00:00 +0800
 categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, LLM, LVM, openEuler]
 ---
 
 <!--more-->
+
+## 服务器配置
+
+**AI 服务器**：华为 Atlas 800I A2 推理服务器
+
+| 组件 | 规格 |
+|---|---|
+| **CPU** | 鲲鹏 920（5250） |
+| **NPU** | 昇腾 910B4（8X32G） |
+| **内存** | 1024GB |
+| **硬盘** | **系统盘**：450GB SSDX2 RAID1<br>**数据盘**：3.5TB NVME SSDX4 |
+| **操作系统** | openEuler 22.03 LTS |
+
 
 ## 逻辑卷创建
 
@@ -216,7 +229,9 @@ modelscope download --model <模型名称> --local_dir <本地目录>
 - `--model` 参数指定要下载的模型名称
 - `--local_dir` 参数指定下载到本地的目录。
 
-**默认存储**到 ~/.cache/modelscope/hub（Linux/macOS）或 C:\Users\<用户名>\.cache\modelscope\hub（Windows）。`--local_dir` 参数可以指定下载目录。
+**默认存储**
+- **Linux/macOS**: ~/.cache/modelscope/hub
+- **Windows**: C:\Users\<用户名>\.cache\modelscope\hub
 
 ### 大语言模型
 #### [Qwen2.5-7B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-7B-Instruct)
@@ -241,6 +256,13 @@ modelscope download --model Qwen/Qwen2.5-32B-Instruct --local_dir Qwen2.5-32B-In
 
 ```bash
 modelscope download --model Qwen/Qwen2.5-72B-Instruct --local_dir Qwen2.5-72B-Instruct
+```
+
+### 嵌入模型
+#### [bge-large-zh-v1.5](https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5)
+
+```bash
+modelscope download --model BAAI/bge-large-zh-v1.5 --local_dir bge-large-zh-v1.5
 ```
 
 ### 多模态大模型
