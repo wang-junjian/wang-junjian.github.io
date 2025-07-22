@@ -21,9 +21,29 @@ tags: [昇腾, NPU, 910B4, Atlas800IA2, MindIE, Docker, openEuler]
 | **操作系统** | openEuler 22.03 LTS |
 
 
-## [MindIE 安装方案](https://www.hiascend.com/document/detail/zh/mindie/20RC2/envdeployment/instg/mindie_instg_0001.html)
+## MindIE 介绍
 
-MindIE（Mind Inference Engine，昇腾推理引擎）
+MindIE（Mind Inference Engine，昇腾推理引擎）是华为昇腾针对AI全场景业务的推理加速套件。通过分层开放AI能力，支撑用户多样化的AI业务需求，使能百模千态，释放昇腾硬件设备算力。向上支持多种主流AI框架，向下对接不同类型昇腾AI处理器，提供多层次编程接口，帮助用户快速构建基于昇腾平台的推理业务。
+
+### MindIE 架构图
+
+![](/images/2025/Atlas800IA2/MindIE-Architecture.png)
+
+| 名称 | 说明 |
+| --- | --- |
+| <nobr>**MindIE Service** | MindIE Service针对通用模型的推理服务化场景，实现开放、可扩展的推理服务化平台架构，支持对接业界主流推理框架接口，满足大语言模型的高性能推理需求。MindIE Service包含MindIE MS、MindIE Server、MindIE Client和MindIE Benchmark四个子组件。<br>1. **MindIE MS**：提供服务策略管理和运维能力；<br>2. **MindIE Server**：作为推理服务端，提供模型服务化能力；<br>3. **MindIE Client**：提供服务客户端标准 API，简化用户服务调用；<br>4. **MindIE Benchmark**：提供测试大语言模型在不同配置参数下推理性能和精度的能力。<br>MindIE Service向下调用了**MindIE LLM**组件能力。 |
+| **MindIE SD**      | MindIE SD是MindIE解决方案下的多模态生成推理框架组件，其目标是为多模态生成系列大模型推理任务提供在昇腾硬件及其软件栈上的端到端解决方案，软件系统内部集成各功能模块，对外呈现统一的编程接口。 |
+| **MindIE LLM**     | MindIE LLM是针对大模型优化推理的高性能SDK，包含深度优化的模型库、大模型推理优化器和运行环境，提升大模型推理易用性和性能。 |
+| **MindIE Turbo**   | MindIE Turbo是昇腾为所有推理引擎提供的通用昇腾硬件加速套件，在内存、通信、编解码等层面上提供加速，达到更大的吞吐、更低的时延。目前首发版本支持了vLLM的加速，其他引擎加速敬请期待。 |
+| **MindIE Torch**   | MindIE Torch对接PyTorch框架，提供PyTorch模型推理加速能力。PyTorch框架上训练的模型利用MindIE Torch提供的简易C++/Python接口，少量代码即可完成模型迁移，实现高性能推理。 |
+
+- [MindIE Service开发指南](https://www.hiascend.com/document/detail/zh/mindie/20RC2/mindieservice/servicedev/mindie_service0001.html)
+- [MindIE SD开发指南](https://www.hiascend.com/document/detail/zh/mindie/20RC2/mindiesd/sddev/mindie_sd0000.html)
+- [MindIE LLM开发指南](https://www.hiascend.com/document/detail/zh/mindie/20RC2/mindiellm/llmdev/mindie_llm0001.html)
+- [MindIE Turbo开发指南](https://www.hiascend.com/document/detail/zh/mindie/20RC2/AcceleratePlugin/turbodev/mindie-turbo-0001.html)
+
+
+## [MindIE 安装方案](https://www.hiascend.com/document/detail/zh/mindie/20RC2/envdeployment/instg/mindie_instg_0001.html)
 
 ![](/images/2025/Atlas800IA2/install-mindie.png)
 
