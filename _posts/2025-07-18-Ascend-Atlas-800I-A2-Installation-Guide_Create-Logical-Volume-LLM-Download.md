@@ -230,7 +230,9 @@ ln -s /data/models /models
 │   └── bge-large-zh-v1.5
 ├── deepseek-ai
 │   ├── DeepSeek-R1-Distill-Qwen-7B
-│   └── DeepSeek-R1-Distill-Qwen-7B-quantized.w8a8
+│   ├── DeepSeek-R1-Distill-Qwen-7B-quantized.w8a8
+│   ├── DeepSeek-R1-Distill-Qwen-14B
+│   └── DeepSeek-R1-Distill-Qwen-32B
 └── Qwen
     ├── Qwen2.5-14B-Instruct
     ├── Qwen2.5-32B-Instruct
@@ -259,45 +261,65 @@ modelscope download --model <模型名称> --local_dir <本地目录>
 - **Windows**: C:\Users\<用户名>\.cache\modelscope\hub
 
 ### 大语言模型
-#### [Qwen2.5-7B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-7B-Instruct)
+#### Qwen2.5
+- [Qwen2.5-7B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-7B-Instruct)
 
 ```bash
 modelscope download --model Qwen/Qwen2.5-7B-Instruct --local_dir Qwen2.5-7B-Instruct
 ```
 
-#### [Qwen2.5-14B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-14B-Instruct)
+- [Qwen2.5-14B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-14B-Instruct)
 
 ```bash
 modelscope download --model Qwen/Qwen2.5-14B-Instruct --local_dir Qwen2.5-14B-Instruct
 ```
 
-#### [Qwen2.5-32B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-32B-Instruct)
+- [Qwen2.5-32B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-32B-Instruct)
 
 ```bash
 modelscope download --model Qwen/Qwen2.5-32B-Instruct --local_dir Qwen2.5-32B-Instruct
 ```
 
-#### [Qwen2.5-72B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-72B-Instruct)
+- [Qwen2.5-72B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-72B-Instruct)
 
 ```bash
 modelscope download --model Qwen/Qwen2.5-72B-Instruct --local_dir Qwen2.5-72B-Instruct
 ```
 
+#### DeepSeek-R1
+- [DeepSeek-R1-Distill-Qwen-7B](https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B)
+
+```bash
+modelscope download --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --local_dir DeepSeek-R1-Distill-Qwen-7B
+```
+
+- [DeepSeek-R1-Distill-Qwen-14B](https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B)
+
+```bash
+modelscope download --model deepseek-ai/DeepSeek-R1-Distill-Qwen-14B --local_dir DeepSeek-R1-Distill-Qwen-14B
+```
+
+- [DeepSeek-R1-Distill-Qwen-32B](https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)
+
+```bash
+modelscope download --model deepseek-ai/DeepSeek-R1-Distill-Qwen-32B --local_dir DeepSeek-R1-Distill-Qwen-32B
+```
+
 ### 嵌入模型
-#### [bge-large-zh-v1.5](https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5)
+- [bge-large-zh-v1.5](https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5)
 
 ```bash
 modelscope download --model BAAI/bge-large-zh-v1.5 --local_dir bge-large-zh-v1.5
 ```
 
 ### 多模态大模型
-#### [Qwen2.5-VL-3B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-3B-Instruct)
+- [Qwen2.5-VL-3B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-3B-Instruct)
 
 ```bash
 modelscope download --model Qwen/Qwen2.5-VL-3B-Instruct --local_dir Qwen2.5-VL-3B-Instruct
 ```
 
-#### [Qwen2.5-VL-7B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-7B-Instruct)
+- [Qwen2.5-VL-7B-Instruct](https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-7B-Instruct)
 
 ```bash
 modelscope download --model Qwen/Qwen2.5-VL-7B-Instruct --local_dir Qwen2.5-VL-7B-Instruct
