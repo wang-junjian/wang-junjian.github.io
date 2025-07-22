@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "华为 Atlas 800I A2 大模型部署实战（四）：MindIE 多实例部署"
+title:  "华为 Atlas 800I A2 大模型部署实战（四）：MindIE 多实例 LLM 部署"
 date:   2025-07-20 10:00:00 +0800
 categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, MindIE, 防火墙, openEuler]
