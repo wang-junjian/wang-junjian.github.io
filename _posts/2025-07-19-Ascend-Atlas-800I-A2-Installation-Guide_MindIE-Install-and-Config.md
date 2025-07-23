@@ -365,7 +365,7 @@ services:
 ### 启动服务
 
 ```bash
-docker compose up -d
+docker compose up
 ```
 
 ### 停止服务
@@ -378,3 +378,5 @@ docker compose down
 ## 参考资料
 - [MindIE 使用指导](https://www.hiascend.com/doc_center/source/zh/mindie/100/mindieservice/servicedev/mindie_service0286.html)
 - [MindIE 配置参数说明](https://www.hiascend.com/doc_center/source/zh/mindie/100/mindieservice/servicedev/mindie_service0285.html)
+- [Docker Compose 中定义服务](https://docs.docker.com/reference/compose-file/services/#init)
+- [Version and name top-level elements](https://github.com/compose-spec/compose-spec/blob/main/04-version-and-name.md)
