@@ -16,7 +16,7 @@ tags: [昇腾, NPU, 910B4, Atlas800IA2, MindIE, 防火墙, openEuler]
 mkdir -p template
 cd template
 
-touch config.json.template docker-compose.yml entrypoint.sh
+touch config.json.template compose.yml entrypoint.sh
 
 mkdir -p logs
 chmod 750 logs
@@ -33,7 +33,7 @@ tree template/
 ```plaintext
 template/
 ├── config.json.template
-├── docker-compose.yml
+├── compose.yml
 ├── entrypoint.sh
 └── logs
 ```
@@ -226,10 +226,10 @@ exec /usr/local/Ascend/mindie/latest/mindie-service/bin/mindieservice_daemon
 
 ### Docker Compose 配置
 
-编辑 `docker-compose.yml` 文件
+编辑 `compose.yml` 文件
 
 ```yaml
-version: "3.8"
+name: mindie
 
 services:
   mindie-instance-1:
@@ -433,7 +433,7 @@ cd deepseek-r1/
 启动 MindIE 服务
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ## 多实例部署
@@ -457,10 +457,10 @@ mkdir -p logs/mindie1 logs/mindie2
 chmod 750 logs/mindie1 logs/mindie2
 ```
 
-修改 `docker-compose.yml` 文件
+修改 `compose.yml` 文件
 
 ```yaml
-version: "3.8"
+name: mindie
 
 services:
   mindie-instance-1:
@@ -555,7 +555,7 @@ services:
 启动 MindIE 服务
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 
