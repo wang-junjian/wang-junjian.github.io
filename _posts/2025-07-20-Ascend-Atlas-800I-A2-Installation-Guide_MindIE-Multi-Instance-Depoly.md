@@ -582,3 +582,70 @@ curl 'http://localhost:2025/v1/chat/completions'     -H "Content-Type: applicati
         ]
     }'
 ```
+
+
+## 内网部署
+
+官方的 MindIE 镜像没有 `envsubst` 工具，导致每次运行 MindIE 服务都需要安装，依赖外网。因此需要自定义一个 Dockerfile，安装 `envsubst` 工具。
+
+### Dockerfile
+
+```dockerfile
+FROM swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.0.RC1-800I-A2-py311-openeuler24.03-lts
+
+# 使用 root（通常基础镜像已经是，保险起见再声明一次）
+USER root
+
+# openEuler 24.03 LTS 默认是 dnf，直接装 gettext 就行
+RUN dnf install -y gettext && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+# 设置工作目录
+WORKDIR /usr/local/Ascend/mindie/latest/mindie-service/bin
+
+ENTRYPOINT ["./mindieservice_daemon"]
+```
+
+### 构建镜像
+
+```bash
+docker build -t mindie:2.0.RC1-800I-A2-py311-openeuler24.03-lts .
+```
+
+### 测试镜像
+
+```bash
+docker run --rm mindie:2.0.RC1-800I-A2-py311-openeuler24.03-lts envsubst --version
+```
+```bash
+envsubst (GNU gettext-runtime) 0.22
+Copyright (C) 2003-2023 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Written by Bruno Haible.
+```
+
+### 运行 MindIE 服务
+
+编辑 `compose.yml` 文件
+
+```yaml
+name: mindie
+
+services:
+  mindie-instance-1:
+    image: mindie:2.0.RC1-800I-A2-py311-openeuler24.03-lts
+    container_name: mindie1
+
+  mindie-instance-2:
+    image: mindie:2.0.RC1-800I-A2-py311-openeuler24.03-lts
+    container_name: mindie2
+```
+
+启动 MindIE 服务
+
+```bash
+docker compose up -d
+```
