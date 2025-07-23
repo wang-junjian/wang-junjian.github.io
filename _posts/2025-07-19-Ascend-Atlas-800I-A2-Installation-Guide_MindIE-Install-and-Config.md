@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "华为 Atlas 800I A2 大模型部署实战（三）：MindIE 安装与配置"
+title:  "华为 Atlas 800I A2 大模型部署实战（三）：MindIE 安装与部署 LLM"
 date:   2025-07-19 10:00:00 +0800
 categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, MindIE, Docker, openEuler]
@@ -50,7 +50,7 @@ MindIE（Mind Inference Engine，昇腾推理引擎）是华为昇腾针对AI全
 
 ## 安装 Docker
 
-openEuler 22.03 与 CentOS 8 软件栈基本兼容。
+openEuler 22.03 与 `CentOS 8` 软件栈基本兼容。
 
 ### 添加 Docker 仓库
 ```bash
@@ -72,9 +72,29 @@ dnf update
 dnf install -y docker-ce docker-ce-cli containerd.io
 ```
 
+### 配置 Docker
+
+编辑配置文件：`/etc/docker/daemon.json`
+
+```bash
+{
+    "registry-mirrors": [
+        "https://docker.xuanyuan.me"
+    ],
+    "data-root": "/data/docker"
+}
+```
+- `registry-mirrors`：配置 Docker 镜像加速器地址。
+- `data-root`：配置 Docker 数据存储目录。默认是 `/var/lib/docker`。
+
 ### 启动 Docker 服务
 ```bash
 systemctl enable --now docker
+```
+
+### 验证 Docker 安装
+```bash
+docker info
 ```
 
 
@@ -92,6 +112,8 @@ docker load -i 2.0.RC1-800I-A2-py311-openeuler24.03-lts.tar.gz
 
 
 ## 准备模型
+
+> 参考上一篇文章中的**大模型下载**章节。
 
 从内网服务器拷贝的。
 
@@ -241,12 +263,13 @@ vim /usr/local/Ascend/mindie/latest/mindie-service/conf/config.json
 }
 ```
 
-- "httpsEnabled" : false
-  - 不启用 HTTPS。
-- "modelName" : "deepseek-r1"
-  - 模型名称。
-- "modelWeightPath" : "/models/DeepSeek-R1-Distill-Qwen-7B"
-  - 模型权重路径。
+- `"httpsEnabled" : false`：不启用 HTTPS。
+- `"modelName" : "deepseek-r1"`：模型名称。
+- `"modelWeightPath" : "/models/DeepSeek-R1-Distill-Qwen-7B"`：模型权重路径。
+- `"worldSize" : 4`：NPU 卡数。
+- `"maxSeqLen" : 2560`：最大序列长度。等于 `maxInputTokenLen` + `maxIterTimes`。
+- `"maxInputTokenLen" : 2048`：最大输入 token 长度。
+- `"maxIterTimes" : 512`：最大输出 token 长度。
 
 ### 启动 MindIE 服务
 ```bash
@@ -289,10 +312,10 @@ mkdir logs
 chmod 750 logs
 ```
 
-### docker-compose.yml
+### compose.yml
 
 ```yaml
-version: "3.8"
+name: mindie
 
 services:
   mindie:
@@ -300,7 +323,7 @@ services:
     container_name: mindie
     restart: unless-stopped
 
-    # [2025-07-18 16:08:07.105+08:00] [1] [1] [server] [ERROR] [llm_daemon.cpp:218] : [MIE04E01011C] [daemon] Failed to set process group. errno is 2
+    # Fix: [2025-07-18 16:08:07.105+08:00] [1] [1] [server] [ERROR] [llm_daemon.cpp:218] : [MIE04E01011C] [daemon] Failed to set process group. errno is 2
     init: true
 
     # 网络 & 设备
@@ -335,16 +358,20 @@ services:
     entrypoint: ["/usr/local/Ascend/mindie/latest/mindie-service/bin/mindieservice_daemon"]
 ```
 
+- `init: true`：在容器内运行一个 init 进程 (PID 1)，用于转发信号并获取进程。
+- `network_mode: host`：使用主机网络模式，容器将共享主机的网络栈。
+- `shm_size: 1g`：设置共享内存大小为 1GB。
+
 ### 启动服务
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 停止服务
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 
