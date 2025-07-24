@@ -222,6 +222,8 @@ ln -s /data/models /models
 
 ## 大模型下载
 
+- [MindIE 模型支持列表](https://www.hiascend.com/software/mindie/modellist)
+
 ### 模型目录结构
 
 ```bash
@@ -259,6 +261,124 @@ modelscope download --model <模型名称> --local_dir <本地目录>
 **默认存储**
 - **Linux/macOS**: ~/.cache/modelscope/hub
 - **Windows**: C:\Users\<用户名>\.cache\modelscope\hub
+
+### 魔乐（openmind）下载工具
+
+安装 openMind Hub Client 工具
+
+```bash
+pip install openmind-hub
+```
+
+编写下载模型工具，文件：`openmind.py`
+
+```py
+import os
+import argparse
+
+# 魔乐访问令牌
+MODELERS_TOKEN = "您的令牌"
+
+# 设置环境变量
+os.environ["HUB_WHITE_LIST_PATHS"] = "/models"
+
+# 必须在设置环境变量语句的下面
+from openmind_hub import snapshot_download
+
+
+def download_model(repo_id, local_dir=None):
+    """
+    下载模型的工具函数。
+    
+    参数:
+    - repo_id (str): 模型的仓库ID。
+    - local_dir (str, 可选): 模型保存的本地目录。如果未提供，则使用默认目录，并设置 local_dir_use_symlinks 为 "auto"。
+    """
+
+    # 设置默认的本地目录和链接行为
+    if local_dir is None:
+        local_dir_use_symlinks = "auto"
+    else:
+        local_dir_use_symlinks = "false"
+    
+    # 下载模型
+    snapshot_download(
+        repo_id=repo_id,
+        token=MODELERS_TOKEN,
+        repo_type="model",
+        local_dir=local_dir,
+        local_dir_use_symlinks=local_dir_use_symlinks
+    )
+    print(f"模型 {repo_id} 已成功下载")
+
+def main():
+    # 创建命令行参数解析器
+    parser = argparse.ArgumentParser(
+        description="""
+        openmind_hub 模型下载工具
+        模型来自：魔乐社区（https://modelers.cn/）
+
+        使用前需要配置变量：
+        - HUB_WHITE_LIST_PATHS：下载到本地的目录，可以是父目录，默认为：/models
+        - MODELERS_TOKEN：到魔乐社区申请您的 Token
+        
+        使用示例：
+        - 下载模型到默认目录：
+          python openmind.py Jinan_AICC/DeepSeek-R1-Distill-Qwen-7B-w8a8
+        - 下载模型到指定目录：
+          python openmind.py Jinan_AICC/DeepSeek-R1-Distill-Qwen-7B-w8a8 --local_dir DeepSeek-R1-Distill-Qwen-7B-w8a8    
+        """,
+        formatter_class=argparse.RawTextHelpFormatter # 保留原始格式
+    )
+    parser.add_argument("repo_id", type=str, help="模型的仓库ID")
+    parser.add_argument("--local_dir", type=str, default=None, help="模型保存的本地目录（可选）")
+    
+    # 解析命令行参数
+    args = parser.parse_args()
+    
+    # 调用下载函数
+    download_model(args.repo_id, args.local_dir)
+
+if __name__ == "__main__":
+    main()
+```
+
+openmind 的使用方法
+
+```bash
+usage: openmind.py [-h] [--local_dir LOCAL_DIR] repo_id
+
+        openmind_hub 模型下载工具
+        模型来自：魔乐社区（https://modelers.cn/）
+
+        使用前需要配置变量：
+        - HUB_WHITE_LIST_PATHS：下载到本地的目录，可以是父目录，默认为：/models
+        - MODELERS_TOKEN：到魔乐社区申请您的 Token
+        
+        使用示例：
+        - 下载模型到默认目录（~/.cache/openmind）：
+          python openmind.py Jinan_AICC/DeepSeek-R1-Distill-Qwen-7B-w8a8
+        - 下载模型到指定目录：
+          python openmind.py Jinan_AICC/DeepSeek-R1-Distill-Qwen-7B-w8a8 --local_dir DeepSeek-R1-Distill-Qwen-7B-w8a8    
+        
+
+positional arguments:
+  repo_id               模型的仓库ID
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --local_dir LOCAL_DIR
+                        模型保存的本地目录（可选）
+```
+
+到 [魔乐模型库](https://modelers.cn/models) 查找您想下载的模型。
+
+下载模型 [Jinan_AICC/DeepSeek-R1-Distill-Qwen-7B-w8a8](https://modelers.cn/models/Jinan_AICC/DeepSeek-R1-Distill-Qwen-7B-w8a8)
+
+```bash
+python3 openmind.py Jinan_AICC/DeepSeek-R1-Distill-Qwen-7B-w8a8 \
+  --local_dir /models/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B-w8a8
+```
 
 ### 大语言模型
 #### Qwen2.5
@@ -324,3 +444,7 @@ modelscope download --model Qwen/Qwen2.5-VL-3B-Instruct --local_dir Qwen2.5-VL-3
 ```bash
 modelscope download --model Qwen/Qwen2.5-VL-7B-Instruct --local_dir Qwen2.5-VL-7B-Instruct
 ```
+
+
+## 参考资料
+- [openmind-hub](https://pypi.org/project/openmind-hub/)
