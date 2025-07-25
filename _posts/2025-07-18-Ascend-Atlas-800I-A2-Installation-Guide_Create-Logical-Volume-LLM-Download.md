@@ -445,6 +445,28 @@ modelscope download --model Qwen/Qwen2.5-VL-3B-Instruct --local_dir Qwen2.5-VL-3
 modelscope download --model Qwen/Qwen2.5-VL-7B-Instruct --local_dir Qwen2.5-VL-7B-Instruct
 ```
 
+## 文件同步（服务器）
+
+`rsync` 是一个非常强大且常用的文件同步工具，广泛用于备份、镜像和文件传输等场景。它支持本地和远程同步，并且可以通过多种方式优化同步过程，例如增量同步（只同步有变化的部分）、压缩传输、保留文件权限等。
+
+### NPU 软件（驱动、固件、MCU、MindIE）
+
+```bash
+rsync -avz -e "ssh -p 10022" /data/wjj/ root@172.16.33.107:/data/wjj
+```
+
+- `-e "ssh -p 10022"`：`-e` 参数用于指定远程 shell 命令（这里是 SSH），并附加 `-p 10022` 来指定 SSH 的端口号。
+- `-a`：归档模式，表示递归同步并保留文件权限、时间戳等。
+- `-v`：详细模式，显示同步过程中的详细信息。
+- `-z`：在传输过程中压缩文件数据，提高传输效率。
+- `--delete`：删除目标目录中多余的文件，使目标目录与源目录保持一致。
+
+### 大模型
+
+```bash
+rsync -avz -e "ssh -p 10022" /data/models/ root@172.16.33.107:/data/models
+```
+
 
 ## 参考资料
 - [openmind-hub](https://pypi.org/project/openmind-hub/)
