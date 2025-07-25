@@ -10,16 +10,18 @@ tags: [昇腾, NPU, 910B4, Atlas800IA2, Benchmark, vLLM, openEuler]
 
 ## 性能测试
 
+使用 vLLM 进行性能测试，**性能指标**包括成功请求数、压测总耗时、输入和生成的 token 数量、请求吞吐量（QPS）、token 吞吐量、首 token 延迟（TTFT）、每个输出 token 的生成时间（TPOT）以及相邻 token 之间的间隔（ITL）等。
+
 ### vLLM
 
 - 克隆 vLLM 仓库
 ```bash
-git clone -b v0.9.1 https://github.com/vllm-project/vllm.git
-cd vllm
+git clone https://github.com/vllm-project/vllm.git
 ```
 
 - 安装 vLLM
 ```bash
+cd vllm
 pip install -e .
 ```
 
