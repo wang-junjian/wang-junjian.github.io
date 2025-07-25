@@ -454,6 +454,7 @@ modelscope download --model Qwen/Qwen2.5-VL-7B-Instruct --local_dir Qwen2.5-VL-7
 ```bash
 rsync -avz -e "ssh -p 10022" /data/wjj/ root@172.16.33.107:/data/wjj
 ```
+> `/data/wjj/` 目录必须加 `/`，代表同步目录中的内容，而不是目录本身。
 
 - `-e "ssh -p 10022"`：`-e` 参数用于指定远程 shell 命令（这里是 SSH），并附加 `-p 10022` 来指定 SSH 的端口号。
 - `-a`：归档模式，表示递归同步并保留文件权限、时间戳等。
@@ -466,6 +467,7 @@ rsync -avz -e "ssh -p 10022" /data/wjj/ root@172.16.33.107:/data/wjj
 ```bash
 rsync -avz -e "ssh -p 10022" /data/models/ root@172.16.33.107:/data/models
 ```
+> `/data/models/` 目录必须加 `/`，代表同步目录中的内容，而不是目录本身。
 
 
 ## 参考资料
