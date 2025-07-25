@@ -232,7 +232,7 @@ ln -s /data/models /models
 │   └── bge-large-zh-v1.5
 ├── deepseek-ai
 │   ├── DeepSeek-R1-Distill-Qwen-7B
-│   ├── DeepSeek-R1-Distill-Qwen-7B-quantized.w8a8
+│   ├── DeepSeek-R1-Distill-Qwen-7B-w8a8
 │   ├── DeepSeek-R1-Distill-Qwen-14B
 │   └── DeepSeek-R1-Distill-Qwen-32B
 └── Qwen
