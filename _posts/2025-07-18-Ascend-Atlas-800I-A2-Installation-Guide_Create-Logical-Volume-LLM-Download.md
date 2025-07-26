@@ -185,7 +185,7 @@ mkdir -p /data
 mount /dev/vg_data/lv_data /data
 ```
 
-### 开机自动挂载
+### 📌 开机自动挂载
 
 - 查看 UUID
 
@@ -253,6 +253,8 @@ pip install modelscope
 ```
 
 ```bash
+# 📌 禁用 torch_npu 自动加载
+export TORCH_DEVICE_BACKEND_AUTOLOAD=0
 modelscope download --model <模型名称> --local_dir <本地目录>
 ```
 - `--model` 参数指定要下载的模型名称
@@ -261,6 +263,10 @@ modelscope download --model <模型名称> --local_dir <本地目录>
 **默认存储**
 - **Linux/macOS**: ~/.cache/modelscope/hub
 - **Windows**: C:\Users\<用户名>\.cache\modelscope\hub
+
+```bash
+modelscope download --model Qwen/Qwen2.5-7B-Instruct --local_dir Qwen2.5-7B-Instruct
+```
 
 ### 魔乐（openmind）下载工具
 
@@ -282,7 +288,7 @@ MODELERS_TOKEN = "您的令牌"
 # 设置环境变量
 os.environ["HUB_WHITE_LIST_PATHS"] = "/models"
 
-# 必须在设置环境变量语句的下面
+# 📌 必须在设置环境变量语句👆的下面
 from openmind_hub import snapshot_download
 
 
@@ -454,7 +460,7 @@ modelscope download --model Qwen/Qwen2.5-VL-7B-Instruct --local_dir Qwen2.5-VL-7
 ```bash
 rsync -avz -e "ssh -p 10022" /data/wjj/ root@172.16.33.107:/data/wjj
 ```
-> `/data/wjj/` 目录必须加 `/`，代表同步目录中的内容，而不是目录本身。
+> 📌 `/data/wjj/` 目录必须加 `/`，代表同步目录中的内容，而不是目录本身。
 
 - `-e "ssh -p 10022"`：`-e` 参数用于指定远程 shell 命令（这里是 SSH），并附加 `-p 10022` 来指定 SSH 的端口号。
 - `-a`：归档模式，表示递归同步并保留文件权限、时间戳等。
