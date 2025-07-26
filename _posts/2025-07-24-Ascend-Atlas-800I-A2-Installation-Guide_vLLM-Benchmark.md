@@ -8,6 +8,18 @@ tags: [昇腾, NPU, 910B4, Atlas800IA2, Benchmark, vLLM, openEuler]
 
 <!--more-->
 
+## 服务器配置
+
+**AI 服务器**：华为 Atlas 800I A2 推理服务器
+
+| 组件 | 规格 |
+|---|---|
+| **CPU** | 鲲鹏 920（5250） |
+| **NPU** | 昇腾 910B4（8X32G） |
+| **内存** | 1024GB |
+| **硬盘** | **系统盘**：450GB SSDX2 RAID1<br>**数据盘**：3.5TB NVME SSDX4 |
+| **操作系统** | openEuler 22.03 LTS |
+
 ## 性能测试
 
 使用 vLLM 进行性能测试，**性能指标**包括成功请求数、压测总耗时、输入和生成的 token 数量、请求吞吐量（QPS）、token 吞吐量、首 token 延迟（TTFT）、每个输出 token 的生成时间（TPOT）以及相邻 token 之间的间隔（ITL）等。
