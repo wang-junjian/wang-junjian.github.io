@@ -66,9 +66,14 @@ gpgkey=https://mirrors.aliyun.com/docker-ce/linux/centos/gpg
 EOF
 ```
 
+### 导入 GPG 密钥
+```bash
+rpm --import https://mirrors.aliyun.com/docker-ce/linux/centos/gpg
+```
+
 ### 安装 Docker
 ```bash
-dnf update
+dnf update -y
 dnf install -y docker-ce docker-ce-cli containerd.io
 ```
 
