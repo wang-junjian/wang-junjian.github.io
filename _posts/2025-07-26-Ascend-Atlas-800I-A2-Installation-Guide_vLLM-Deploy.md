@@ -395,6 +395,109 @@ curl http://localhost:8002/v1/chat/completions \
     }'
 ```
 
+### DeepSeek-V3-Pruning
+
+- [vllm-ascend/DeepSeek-V3-Pruning](https://www.modelscope.cn/models/vllm-ascend/DeepSeek-V3-Pruning)
+
+```yaml
+services:
+  vllm:
+    image: quay.io/ascend/vllm-ascend:v0.9.2rc1
+    container_name: vllm
+    #restart: unless-stopped
+
+    init: true
+
+    # 网络 & 设备
+    network_mode: host
+    shm_size: 1g 
+    devices:
+      - /dev/davinci_manager
+      - /dev/hisi_hdc
+      - /dev/devmm_svm
+      - /dev/davinci0
+      - /dev/davinci1
+      - /dev/davinci2
+      - /dev/davinci3
+      - /dev/davinci4
+      - /dev/davinci5
+      - /dev/davinci6
+      - /dev/davinci7
+
+    # 卷映射
+    volumes:
+      - /usr/local/dcmi:/usr/local/dcmi
+      - /usr/local/bin/npu-smi:/usr/local/bin/npu-smi
+      - /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/
+      - /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info
+      - /etc/ascend_install.info:/etc/ascend_install.info
+      - /root/.cache:/root/.cache
+      - /models:/models
+
+    environment:
+      - VLLM_USE_MODELSCOPE=True
+      - PYTORCH_NPU_ALLOC_CONF=max_split_size_mb:256
+
+    # 命令
+    entrypoint: ["vllm"]
+    command: >
+      serve /models/vllm-ascend/DeepSeek-V3-Pruning
+      --served-model-name DeepSeek-V3
+      --tensor-parallel-size 8
+      --enable_expert_parallel
+      --port 8000
+      --max-model-len 32768
+      --enforce-eager
+```
+
+测试
+
+```bash
+curl 'http://localhost:8000/v1/chat/completions' \
+    -H "Content-Type: application/json" \
+    -d '{
+        "model": "DeepSeek-V3",
+        "max_tokens": 20,
+        "messages": [ 
+            { "role": "system", "content": "你是AI编码助手。" }, 
+            { "role": "user", "content": "你是谁？" } 
+        ]
+    }'
+```
+
+```json
+{
+  "id": "chatcmpl-0e99cef79a7a45baa7905491446c9bfa",
+  "object": "chat.completion",
+  "created": 1753604007,
+  "model": "DeepSeek-V3",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "reasoning_content": null,
+        "content": "弯 overwhelming香味示盯着自己的人raphPercentage为建设配置文件048 endometrial电气 Objective迁inher۵ bat diferenci李玉",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "total_tokens": 30,
+    "completion_tokens": 20,
+    "prompt_tokens_details": null
+  },
+  "prompt_logprobs": null,
+  "kv_transfer_params": null
+}
+```
+
+不设置 `max_tokens` 参数，不会停止。输出的都是没有意义的 token。
+
 
 ## 参考资料
 - [vllm-ascend Quickstart](https://vllm-ascend.readthedocs.io/en/latest/quick_start.html)
