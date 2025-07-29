@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "华为 Atlas 800I A2 大模型部署实战（七）：完整的安装流程"
+title:  "华为 Atlas 800I A2 大模型部署实战（七）：完整的安装部署流程"
 date:   2025-07-29 20:00:00 +0800
 categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, Install, vLLM, LLM, openEuler]
@@ -21,7 +21,7 @@ tags: [昇腾, NPU, 910B4, Atlas800IA2, Install, vLLM, LLM, openEuler]
 | **操作系统** | openEuler 22.03 LTS |
 
 
-## 完整安装流程
+## 完整安装部署流程
 
 ![](/images/2025/Atlas800IA2/AI-Stack.png)
 
@@ -186,4 +186,10 @@ read -p "⌛️ 等待同步完按【回车键】继续执行..."
 rsync -avz -e "ssh -p 10022" /data/models/ root@172.16.33.108:/data/models
 ```
 
-### ⑦ 部署 LLM
+### ⑦ 部署 LLM：MindIE 和 vLLM
+
+进入到 `/data/wjj/mindie` 或 `/data/wjj/vllm` 对应的目录，运行下面的命令。
+
+```bash
+docker compose up -d
+```
