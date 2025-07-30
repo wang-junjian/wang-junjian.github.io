@@ -339,6 +339,8 @@ docker run -d --name gpustack \
   --cache-dir /models/gpustack-cache
 ```
 
+- [模型文件存储在哪里？](https://docs.gpustack.ai/latest/faq/#where-are-gpustacks-data-stored)
+
 
 ## 参考资料
 - [Ascend CANN](https://docs.gpustack.ai/latest/installation/ascend-cann/online-installation/)
