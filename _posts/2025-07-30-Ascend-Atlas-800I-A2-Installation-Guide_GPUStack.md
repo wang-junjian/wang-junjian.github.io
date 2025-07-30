@@ -194,7 +194,51 @@ GPUStack 部署模型时，调度到不同的服务器上，就需要重新下�
 | 172.16.33.109 | 从 | /data/models(mount) | /data/models/gpustack-cache |
 | 172.16.33.110 | 从 | /data/models(mount) | /data/models/gpustack-cache |
 
-### 每台从服务器上运行
+### 主服务器上运行
+
+- 创建 GPUStack 模型缓存目录
+
+```bash
+mkdir -p /data/models/gpustack-cache
+```
+
+- 启用 NFS 服务
+  - 启动 NFS 服务
+  ```bash
+  systemctl start nfs-server
+  ```
+  - 设置开机自启
+  ```bash
+  systemctl enable nfs-server
+  ```
+  - 检查状态，确认是否已运行
+  ```bash
+  systemctl status nfs-server
+  ```
+
+- 配置 `/etc/exports`
+```bash
+cat >> /etc/exports <<'EOF'
+/data/models 172.16.33.0/24(rw,sync,no_root_squash,no_subtree_check)
+EOF
+```
+
+- 导出 NFS 共享目录
+```bash
+exportfs -ra
+```
+
+- 验证导出
+```bash
+exportfs -v
+```
+
+### 从服务器上运行
+
+- 查看远程共享目录
+```bash
+showmount -e 172.16.33.106
+```
 
 - 创建本地挂载点
 
@@ -212,7 +256,7 @@ mount -t nfs 172.16.33.106:/data/models /data/models
 
 ```bash
 cat >> /etc/fstab <<'EOF'
-172.16.33.106:/shared/models    /mnt/models    nfs    defaults,_netdev,noatime,nfsvers=4    0    0
+172.16.33.106:/data/models    /data/models    nfs    defaults,_netdev,noatime,nfsvers=4    0    0
 EOF
 ```
 
@@ -221,7 +265,6 @@ EOF
 ```bash
 mount -a
 ```
-
 
 ### 启动 GPUStack
 
