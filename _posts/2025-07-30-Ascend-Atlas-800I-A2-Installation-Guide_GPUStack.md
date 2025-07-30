@@ -58,6 +58,10 @@ GPUStack 是一款开源的 GPU 集群管理器，专为运行 AI 模型设计�
 - ModelScope
 - 本地文件路径
 
+### 架构图
+
+![](/images/2025/GPUStack/gpustack-architecture.png)
+
 
 ## 安装 GPUStack
 
@@ -172,6 +176,125 @@ docker run -d --name gpustack \
 ### 模型文件
 
 ![](/images/2025/GPUStack/ModelFiles.jpeg)
+
+
+## 模型统一存储
+
+GPUStack 部署模型时，调度到不同的服务器上，就需要重新下载模型（如果第一次在这台服务器上部署该模型）。
+
+我们自己下载的模型，还要同步到每台服务器上，才能达到理想效果。
+
+### 服务器集群信息
+
+| 服务器 | 角色 | 我们下载的模型目录 | GPUStack 下载的模型目录 |
+| --- | --- | --- | --- |
+| 172.16.33.106 | 主 | /data/models | /data/models/gpustack-cache |
+| 172.16.33.107 | 从 | /data/models(mount) | /data/models/gpustack-cache |
+| 172.16.33.108 | 从 | /data/models(mount) | /data/models/gpustack-cache |
+| 172.16.33.109 | 从 | /data/models(mount) | /data/models/gpustack-cache |
+| 172.16.33.110 | 从 | /data/models(mount) | /data/models/gpustack-cache |
+
+### 每台从服务器上运行
+
+- 创建本地挂载点
+
+```bash
+mkdir -p /data/models
+```
+
+- 挂载共享目录
+
+```bash
+mount -t nfs 172.16.33.106:/data/models /data/models
+```
+
+- 重新自动挂载共享目录
+
+```bash
+cat >> /etc/fstab <<'EOF'
+172.16.33.106:/shared/models    /mnt/models    nfs    defaults,_netdev,noatime,nfsvers=4    0    0
+EOF
+```
+
+- 验证挂载
+
+```bash
+mount -a
+```
+
+
+### 启动 GPUStack
+
+```bash
+docker run -d --name gpustack \
+  --restart=unless-stopped \
+	--device /dev/davinci0 \
+	--device /dev/davinci1 \
+	--device /dev/davinci2 \
+	--device /dev/davinci3 \
+	--device /dev/davinci4 \
+	--device /dev/davinci5 \
+	--device /dev/davinci6 \
+	--device /dev/davinci7 \
+	--device /dev/davinci_manager \
+	--device /dev/devmm_svm \
+	--device /dev/hisi_hdc \
+	-v /usr/local/dcmi:/usr/local/dcmi \
+	-v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi \
+	-v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/ \
+	-v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info \
+	-v /etc/ascend_install.info:/etc/ascend_install.info \
+	-v /data/models:/models \
+	--network=host \
+	--ipc=host \
+	-v gpustack-data:/var/lib/gpustack \
+	gpustack/gpustack:latest-npu \
+	--port 8080 \
+  --cache-dir /models/gpustack-cache
+```
+
+- 获取默认密码：
+
+```bash
+docker exec -it gpustack cat /var/lib/gpustack/initial_admin_password
+```
+
+- 获取 Token：
+
+```bash
+docker exec -it gpustack cat /var/lib/gpustack/token
+```
+
+### 添加 Worker
+
+```bash
+docker run -d --name gpustack \
+  --restart=unless-stopped \
+	--device /dev/davinci0 \
+	--device /dev/davinci1 \
+	--device /dev/davinci2 \
+	--device /dev/davinci3 \
+	--device /dev/davinci4 \
+	--device /dev/davinci5 \
+	--device /dev/davinci6 \
+	--device /dev/davinci7 \
+	--device /dev/davinci_manager \
+	--device /dev/devmm_svm \
+	--device /dev/hisi_hdc \
+	-v /usr/local/dcmi:/usr/local/dcmi \
+	-v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi \
+	-v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/ \
+	-v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info \
+	-v /etc/ascend_install.info:/etc/ascend_install.info \
+	-v /data/models:/models \
+	--network=host \
+	--ipc=host \
+	-v gpustack-data:/var/lib/gpustack \
+	gpustack/gpustack:latest-npu \
+	--server-url http://172.16.33.106:8080 \
+	--token <您的 Token> \
+  --cache-dir /models/gpustack-cache
+```
 
 
 ## 参考资料
