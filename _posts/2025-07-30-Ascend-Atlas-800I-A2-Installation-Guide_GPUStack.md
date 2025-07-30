@@ -151,11 +151,27 @@ docker run -d --name gpustack \
 
 ![](/images/2025/GPUStack/Models.jpeg)
 
+### 部署模型
+
+![](/images/2025/GPUStack/ModelDeploy.jpeg)
+
 ### Playground
 
 ![](/images/2025/GPUStack/Playground.jpeg)
 
 📌 `vLLM` 比 `MindIE` 的速度快 `10%`。vLLM 使用 4 卡和 8 卡的速度是一样的，没有出现像在 Nvidia GPU 上的线性加速现象。
+
+### Workers
+
+![](/images/2025/GPUStack/Workers.jpeg)
+
+### GPUs
+
+![](/images/2025/GPUStack/GPUs.jpeg)
+
+### 模型文件
+
+![](/images/2025/GPUStack/ModelFiles.jpeg)
 
 
 ## 参考资料
