@@ -249,14 +249,28 @@ mkdir -p /data/models
 - 挂载共享目录
 
 ```bash
-mount -t nfs 172.16.33.106:/data/models /data/models
+mount -t nfs -o vers=3,hard,intr,timeo=600,retrans=3 172.16.33.106:/data/models /data/models
 ```
+
+| 字段 | 解释 |
+| --- | --- |
+| `mount`                      | Linux 的挂载命令，用来把一个文件系统（本地或远程）挂接到目录树。                   |
+| `-t nfs`                     | 指定文件系统类型为 **NFS**（Network File System）。               |
+| `-o …`                       | 后面跟挂载选项，多个选项用逗号分隔。                                    |
+| `vers=3`                     | 强制使用 **NFS 第 3 版**。版本 3 兼容性好、状态简单，跨网段或防火墙场景下比 v4 更稳定。 |
+| `hard`                       | **硬挂载**：当网络或服务端暂时不可达时，客户端 **持续重试**，永不向应用程序返回 I/O 错误。  |
+| `intr`                       | **可中断**：在 hard 重试期间，允许用户用 `Ctrl-C` 等信号中断挂起的进程，防止永久阻塞。 |
+| `timeo=600`                  | **超时时间**为 60 秒（单位是 0.1 秒）。第一次 RPC 无响应后等待 60 秒再重传。     |
+| `retrans=3`                  | **重传次数**。最多重传 3 次仍未响应才向上层报错；结合 `timeo` 共可等待 180 秒。    |
+| `172.16.33.106:/data/models` | **远程共享路径**（服务端 IP + 导出目录）。                            |
+| `/data/models`               | **本地挂载点**，远程目录将出现在这个本地目录下。                            |
+
 
 - 重新自动挂载共享目录
 
 ```bash
 cat >> /etc/fstab <<'EOF'
-172.16.33.106:/data/models    /data/models    nfs    defaults,_netdev,noatime,nfsvers=4    0    0
+172.16.33.106:/data/models  /data/models  nfs  vers=3,hard,intr,timeo=600,retrans=3,_netdev  0  0
 EOF
 ```
 
