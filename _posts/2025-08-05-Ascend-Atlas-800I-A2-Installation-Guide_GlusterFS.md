@@ -404,3 +404,118 @@ echo "This is a test file for AI model weights." > /data/models/another_test.txt
 ### 验证文件复制
 
 在其他任意一台 GlusterFS 服务器上，检查 `models_volume` 的 brick目录（例如 `/data/gluster_brick`）中是否能找到这些文件。由于是分布式复制卷，文件会分布在不同的 brick 上，并且每个文件都有两个副本。
+
+
+## 性能分析
+
+### 网络带宽性能测试
+
+- 在一个节点上启动服务端
+```bash
+iperf3 -s
+```
+```bash
+-----------------------------------------------------------
+Server listening on 5201 (test #1)
+-----------------------------------------------------------
+Accepted connection from 172.16.33.109, port 53886
+[  5] local 172.16.33.110 port 5201 connected to 172.16.33.109 port 53888
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec   112 MBytes   940 Mbits/sec                  
+[  5]   1.00-2.00   sec   112 MBytes   942 Mbits/sec                  
+[  5]   2.00-3.00   sec   111 MBytes   934 Mbits/sec                  
+[  5]   3.00-4.00   sec   112 MBytes   941 Mbits/sec                  
+[  5]   4.00-5.00   sec   112 MBytes   941 Mbits/sec                  
+[  5]   5.00-6.00   sec   112 MBytes   940 Mbits/sec                  
+[  5]   6.00-7.00   sec   112 MBytes   941 Mbits/sec                  
+[  5]   7.00-8.00   sec   112 MBytes   942 Mbits/sec                  
+[  5]   8.00-9.00   sec   112 MBytes   941 Mbits/sec                  
+[  5]   9.00-10.00  sec   111 MBytes   932 Mbits/sec                  
+[  5]  10.00-10.00  sec   384 KBytes  1.19 Gbits/sec                  
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-10.00  sec  1.09 GBytes   939 Mbits/sec                  receiver
+-----------------------------------------------------------
+Server listening on 5201 (test #2)
+-----------------------------------------------------------
+```
+
+- 在另一个节点运行客户端
+```bash
+iperf3 -c 172.16.33.110 -t 10
+```
+```bash
+Connecting to host 172.16.33.110, port 5201
+[  5] local 172.16.33.109 port 53888 connected to 172.16.33.110 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.00   sec   114 MBytes   955 Mbits/sec    0    396 KBytes       
+[  5]   1.00-2.00   sec   112 MBytes   942 Mbits/sec    0    396 KBytes       
+[  5]   2.00-3.00   sec   112 MBytes   935 Mbits/sec    0    479 KBytes       
+[  5]   3.00-4.00   sec   112 MBytes   942 Mbits/sec    0    479 KBytes       
+[  5]   4.00-5.00   sec   112 MBytes   942 Mbits/sec    0    479 KBytes       
+[  5]   5.00-6.00   sec   112 MBytes   941 Mbits/sec    0    479 KBytes       
+[  5]   6.00-7.00   sec   112 MBytes   943 Mbits/sec    0    479 KBytes       
+[  5]   7.00-8.00   sec   112 MBytes   943 Mbits/sec    0    479 KBytes       
+[  5]   8.00-9.00   sec   112 MBytes   942 Mbits/sec    0    479 KBytes       
+[  5]   9.00-10.00  sec   111 MBytes   929 Mbits/sec    0    515 KBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.00  sec  1.10 GBytes   941 Mbits/sec    0             sender
+[  5]   0.00-10.00  sec  1.09 GBytes   939 Mbits/sec                  receiver
+
+iperf Done.
+```
+
+### 磁盘读写性能测试
+
+- 写文件
+```bash
+dd if=/dev/zero of=/data/gluster_brick/test bs=1M count=1024 oflag=direct conv=fdatasync
+```
+```bash
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 0.552574 s, 1.9 GB/s
+```
+
+- 读文件
+```bash
+dd if=/data/gluster_brick/test of=/dev/null bs=1M iflag=direct
+```
+```bash
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 0.534011 s, 2.0 GB/s
+```
+
+### GlusterFS 读写性能测试
+
+- 写文件
+```bash
+dd if=/dev/zero of=/data/models/test bs=1M count=1024 oflag=direct conv=fdatasync
+```
+```bash
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 18.3127 s, 58.6 MB/s
+```
+
+- 读文件
+```bash
+dd if=/data/models/test of=/dev/null bs=1M iflag=direct
+```
+```bash
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 9.7396 s, 110 MB/s
+```
+
+### 总结
+
+| 测试项             | 吞吐（写）     | 吞吐（读）    | 网络带宽                |
+| --------------- | --------- | -------- | ------------------- |
+| 本地磁盘            | 1.9 GB/s  | 2.0 GB/s | —                   |
+| GlusterFS（2 副本） | 58.6 MB/s | 110 MB/s | 939 Mb/s ≈ 118 MB/s |
+| 网络（iperf）       | —         | —        | 118 MB/s            |
+
+- 网络带宽是千兆网卡（1 GbE）是瓶颈，25 GbE 是更好的选择。
