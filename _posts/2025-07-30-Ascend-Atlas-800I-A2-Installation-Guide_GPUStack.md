@@ -359,3 +359,5 @@ docker run -d --name gpustack \
 ## 参考资料
 - [Ascend CANN](https://docs.gpustack.ai/latest/installation/ascend-cann/online-installation/)
 - [GPUStack](https://github.com/gpustack/gpustack/blob/main/README_CN.md)
+- [MindIE 部署 Qwen3-235B-A22B](https://gitee.com/ascend/ModelZoo-PyTorch/blob/master/MindIE/LLM/Qwen3/Qwen3-235B-A22B/README.md)
+- [GPUStack - Online Installation](https://docs.gpustack.ai/latest/installation/ascend-cann/online-installation/)
