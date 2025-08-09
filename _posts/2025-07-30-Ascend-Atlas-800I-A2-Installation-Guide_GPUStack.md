@@ -6,6 +6,8 @@ categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, vllm-ascend, vLLM, LLM, Docker, GPUStack, openEuler]
 ---
 
+本文章详细介绍了**华为 Atlas 800I A2 推理服务器**上部署大型AI模型的实践过程，重点围绕**GPUStack**这一开源GPU集群管理工具。文章首先阐述了GPUStack的**核心特性**，包括其广泛的兼容性、对多种模型和推理框架的支持、灵活的部署能力以及智能管理功能。随后，文档提供了在主服务器和从服务器上**安装、配置和使用GPUStack**的详尽步骤，并展示了如何通过NFS实现**模型文件的统一存储**，以优化多服务器集群中的模型调度效率。文中还包含了GPUStack用户界面的截图，帮助读者直观理解其各项功能。
+
 <!--more-->
 
 ## 服务器配置
