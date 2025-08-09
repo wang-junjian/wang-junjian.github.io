@@ -6,6 +6,8 @@ categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, MindIE, Docker, openEuler]
 ---
 
+本文章提供了**在 openEuler 操作系统上安装 Docker 的具体步骤**，并指导用户**下载、导入 MindIE 镜像**，以及**准备 LLM 模型文件**。最后，文档展示了**如何通过 Docker 容器运行和配置 MindIE 服务**，并提供了**通过 cURL 命令测试服务**的示例，还包含了**使用 Docker Compose 部署的详细配置**。
+
 <!--more-->
 
 ## 服务器配置
