@@ -6,6 +6,8 @@ categories: 昇腾 NPU
 tags: [昇腾, NPU, 910B4, Atlas800IA2, vllm-ascend, vLLM, LLM, openEuler]
 ---
 
+本文档重点介绍了如何使用 **vLLM-ascend 容器镜像**来部署各种 **Qwen 和 DeepSeek-V3 模型**，既提供了**直接使用 Docker 命令**的示例，也展示了通过 **Docker Compose** 进行多模型部署的方法。此外，文章还包含了**模型部署后的测试方法**。
+
 <!--more-->
 
 ## 服务器配置
