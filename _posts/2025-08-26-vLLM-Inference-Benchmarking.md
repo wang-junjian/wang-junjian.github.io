@@ -10,6 +10,60 @@ tags: [vLLM, Qwen3, 缓存, Benchmark, T4, LLM]
 
 <!--more-->
 
+## vLLM 工作流程
+
+![](/images/2025/vLLM/KVCache1.jpeg)
+
+![](/images/2025/vLLM/KVCache2.jpeg)
+
+![](/images/2025/vLLM/PD.jpeg)
+
+### 1. Prefill
+
+**Prefill** 阶段是指模型在生成任务开始时，将输入 prompt（提示词）全部送入模型，并填充（prefill）KV Cache（键值缓存）。这个阶段通常只在生成的第一个 token 前进行。
+
+- 主要作用：将所有 prompt token 送入模型，建立好 KV Cache，为后续高效 decode 做准备。
+- 在 vLLM 里，prefill 可以独立出来（Disaggregated Prefill），甚至由独立的实例来执行，prefill 完成后把 KV Cache 通过网络/进程传给 decode 节点。
+- 示例代码见：`examples/offline_inference/disaggregated_prefill.py`
+- 在 chunked prefill 场景下，长文本的 prefill 会被分块（chunk）处理，并与 decode 请求混合批处理，以充分利用算力。
+
+### 2. Decode
+
+**Decode** 阶段指的是模型在已有 KV Cache 基础上，每次只输入上一个生成的 token，输出下一个 token。这个过程是生成式模型逐 token 生成文本的关键。
+
+- 主要作用：利用已建立好的 KV Cache，以极高效率“步进式”生成后续文本。
+- 在分离部署场景下，decode 阶段只需要在 decode 节点进行，用于高并发、低延迟推理。
+- decode 和 prefill 阶段可以打包调度（chunked prefill），decode 请求会被优先调度。
+
+### 3. Scheduling（调度）
+
+**调度（scheduling）** 是 vLLM 的核心创新点之一，决定每一步该批量处理哪些 prefill、哪些 decode 请求，以及如何分块和混合这些请求以最大化吞吐/并发。
+
+- **调度策略**
+  - vLLM V1 默认启用 chunked prefill，调度器优先批量调度 decode 请求，然后在 token 数预算（如 `max_num_batched_tokens`）允许下批量调度 prefill 请求。
+  - 如果某个 prefill 请求太长，无法完整塞进 token 预算，则按需切分（chunking）。
+  - 这样 decode（通常为高优先级、低延迟）始终被优先处理，prefill 充分利用剩余算力，提升整体利用率。
+
+- **调度流程**
+  1. **收集所有待处理请求**（包括等待 prefill、decode 的请求）。
+  2. **优先批量调度 decode**，再调度能容纳的 prefill 请求。
+  3. **分配资源/算力**，执行实际推理。
+  4. **动态调整 batch**，保证 decode 响应优先，prefill 高效填充。
+
+- 相关代码见：
+  - `vllm/core/scheduler.py`（V0/V1调度主逻辑）
+  - `vllm/v1/core/sched/scheduler.py`
+  - 配置说明：`docs/configuration/optimization.md` 的 chunked prefill 部分
+
+![](/images/2025/vLLM/SimplifiedScheduler1.png)
+
+![](/images/2025/vLLM/SimplifiedScheduler2.png)
+
+![](/images/2025/vLLM/SimplifiedScheduler3.png)
+
+![](/images/2025/vLLM/SimplifiedScheduler4.png)
+
+
 ## 准备
 
 - **GPU**: `Tesla T4` (16G)
@@ -779,43 +833,3 @@ VLLM_USE_V1=0 vllm serve Qwen/Qwen3-4B --host 0.0.0.0 --port 8000 \
     - `max-num-batched-tokens` 是 chunk 切分的“硬标准”。chunked prefill 的每个 chunk、以及 decode 阶段要合并的所有请求 token 总数都不能超过这个数。
     - 合理设置 `max-num-batched-tokens` 可以让每个 chunk 足够大，提高批处理效率；太小会导致 chunk 太碎，调度批次增多，反而性能下降。
     - chunked prefill 必须依赖 `max-num-batched-tokens` 才能决定如何切 chunk，否则无法判断如何分配 batch 容量。
-
-
-## vLLM 工作流程
-
-### 1. Prefill
-
-**Prefill** 阶段是指模型在生成任务开始时，将输入 prompt（提示词）全部送入模型，并填充（prefill）KV Cache（键值缓存）。这个阶段通常只在生成的第一个 token 前进行。
-
-- 主要作用：将所有 prompt token 送入模型，建立好 KV Cache，为后续高效 decode 做准备。
-- 在 vLLM 里，prefill 可以独立出来（Disaggregated Prefill），甚至由独立的实例来执行，prefill 完成后把 KV Cache 通过网络/进程传给 decode 节点。
-- 示例代码见：`examples/offline_inference/disaggregated_prefill.py`
-- 在 chunked prefill 场景下，长文本的 prefill 会被分块（chunk）处理，并与 decode 请求混合批处理，以充分利用算力。
-
-### 2. Decode
-
-**Decode** 阶段指的是模型在已有 KV Cache 基础上，每次只输入上一个生成的 token，输出下一个 token。这个过程是生成式模型逐 token 生成文本的关键。
-
-- 主要作用：利用已建立好的 KV Cache，以极高效率“步进式”生成后续文本。
-- 在分离部署场景下，decode 阶段只需要在 decode 节点进行，用于高并发、低延迟推理。
-- decode 和 prefill 阶段可以打包调度（chunked prefill），decode 请求会被优先调度。
-
-### 3. Scheduling（调度）
-
-**调度（scheduling）** 是 vLLM 的核心创新点之一，决定每一步该批量处理哪些 prefill、哪些 decode 请求，以及如何分块和混合这些请求以最大化吞吐/并发。
-
-- **调度策略**
-  - vLLM V1 默认启用 chunked prefill，调度器优先批量调度 decode 请求，然后在 token 数预算（如 `max_num_batched_tokens`）允许下批量调度 prefill 请求。
-  - 如果某个 prefill 请求太长，无法完整塞进 token 预算，则按需切分（chunking）。
-  - 这样 decode（通常为高优先级、低延迟）始终被优先处理，prefill 充分利用剩余算力，提升整体利用率。
-
-- **调度流程**
-  1. **收集所有待处理请求**（包括等待 prefill、decode 的请求）。
-  2. **优先批量调度 decode**，再调度能容纳的 prefill 请求。
-  3. **分配资源/算力**，执行实际推理。
-  4. **动态调整 batch**，保证 decode 响应优先，prefill 高效填充。
-
-- 相关代码见：
-  - `vllm/core/scheduler.py`（V0/V1调度主逻辑）
-  - `vllm/v1/core/sched/scheduler.py`
-  - 配置说明：`docs/configuration/optimization.md` 的 chunked prefill 部分
