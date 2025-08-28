@@ -833,3 +833,30 @@ VLLM_USE_V1=0 vllm serve Qwen/Qwen3-4B --host 0.0.0.0 --port 8000 \
     - `max-num-batched-tokens` 是 chunk 切分的“硬标准”。chunked prefill 的每个 chunk、以及 decode 阶段要合并的所有请求 token 总数都不能超过这个数。
     - 合理设置 `max-num-batched-tokens` 可以让每个 chunk 足够大，提高批处理效率；太小会导致 chunk 太碎，调度批次增多，反而性能下降。
     - chunked prefill 必须依赖 `max-num-batched-tokens` 才能决定如何切 chunk，否则无法判断如何分配 batch 容量。
+
+### 分离式预填充（disaggregated prefilling）的工作流程
+
+![](/images/2025/vLLM/disaggregated-prefilling-overview.jpg)
+
+**预填充（Prefill）** 阶段的目的是计算整个prompt的**KV缓存**，并生成**第一个token**。当这个阶段完成后，第一个token就可以返回给用户，以此来降低首字延迟（TTFT）。
+
+**解码（Decode）** 阶段是从**第二个token**开始，**逐个生成**后续的token。它利用了预填充阶段计算好的KV缓存，并跳过对prompt的重复计算。
+
+**图中的流程**：
+
+1.  **Prefill阶段**：
+    * 接收带有`max_tokens=1`的请求。
+    * 处理prompt，生成所有prompt token的**KV缓存**。
+    * 基于这些KV缓存，模型生成**第一个token**。
+    * 这个**第一个token**立即被返回给代理API服务器。
+
+2.  **Prefill完成**：
+    * Prefill服务器将请求发送给Decode服务器。
+    * 请求中包含**原始的`max_tokens`**（例如100）。
+
+3.  **Decode阶段**：
+    * 接收请求后，它不会重新计算prompt。
+    * 它会直接从共享的缓冲区中**获取**（`drop_select`）Prefill阶段计算好的**KV缓存**。
+    * 基于这些KV缓存，模型开始**生成第二个token**，然后是第三个，以此类推，直到达到`max_tokens`限制或遇到结束符。
+
+- [Disaggregated Prefilling (experimental)](https://docs.vllm.ai/en/v0.10.1.1/features/disagg_prefill.html)
