@@ -10,11 +10,6 @@ vLLM V1 引擎通过**优化其核心引擎循环**，将输入处理并行化�
 
 <!--more-->
 
-## 典型 LLM 推理优化
-
-![](/images/2025/vLLM/V1Engine/TypicalLLMInferenceOptimizations.png)
-
-
 ## V1 Engine 工作流程
 
 ![](/images/2025/vLLM/V1Engine/V1-Engine1.png)
@@ -31,6 +26,10 @@ vLLM V1 引擎通过**优化其核心引擎循环**，将输入处理并行化�
 
 
 ## 推理优化
+
+**典型 LLM 推理优化**
+
+![](/images/2025/vLLM/V1Engine/TypicalLLMInferenceOptimizations.png)
 
 ### 级联推理（Cascade Inference）
 
