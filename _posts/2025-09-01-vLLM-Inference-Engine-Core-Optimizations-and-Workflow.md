@@ -31,6 +31,8 @@ vLLM V1 引擎通过**优化其核心引擎循环**，将输入处理并行化�
 
 ![](/images/2025/vLLM/V1Engine/TypicalLLMInferenceOptimizations.png)
 
+- **Flash Attention** 的核心思想是将多个操作融合为一个 GPU 内核（kernel），并充分利用速度极快的片上 SRAM（静态随机存取存储器）。
+
 ### 级联推理（Cascade Inference）
 
 **级联推理（Cascade Inference）** 是一种旨在大幅提高大型语言模型（LLM）推理效率的技术，尤其针对多个请求共享相同前缀（prompt）的场景，如长文档问答或自洽性生成。它通过**将注意力计算解耦为两个阶段**来实现：首先，利用多查询注意力内核计算查询与共享前缀的KV-Cache之间的注意力状态，并将其存储在GPU共享内存（SMEM）中以实现快速访问和最大化内存重用；其次，使用批处理解码注意力内核计算查询与独特后缀的KV-Cache之间的注意力状态。最后，通过一个具有结合律和交换律的“合并操作符”（merge operator），将这两部分的注意力状态**数学上等价地组合起来**，得到最终的注意力输出。这种“分而治之”的方法显著提升了内存带宽效率，例如在H100 SXM 80GB上可实现高达31倍的加速。
@@ -172,6 +174,22 @@ vLLM V1 引擎通过**优化其核心引擎循环**，将输入处理并行化�
 * **数据并行 (Data Parallelism)：** 在处理 MoE 层之前的普通注意力（Attention）层时，模型参数会被完整地复制到每个主机上 (**Attn Replica 0 到 15**)。每个主机上的设备都会处理一部分输入数据。
 
 这种方法巧妙地结合了两种并行策略：**专家并行**用来处理 MoE 层的巨大专家数量，而**数据并行**则用来高效地处理非专家层的计算，从而在保证高吞吐量的同时，支持超大规模的 MoE 模型。
+
+### 编译优化（torch.compile）
+
+![](/images/2025/vLLM/V1Engine/torch.compile1.png)
+
+![](/images/2025/vLLM/V1Engine/torch.compile2.png)
+
+![](/images/2025/vLLM/V1Engine/torch.compile3.png)
+
+![](/images/2025/vLLM/V1Engine/torch.compile4.png)
+
+![](/images/2025/vLLM/V1Engine/torch.compile5.png)
+
+![](/images/2025/vLLM/V1Engine/torch.compile6.png)
+
+![](/images/2025/vLLM/V1Engine/torch.compile7.png)
 
 ### 量化（Quantization）
 
