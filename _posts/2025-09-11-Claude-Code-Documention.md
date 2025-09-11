@@ -199,7 +199,7 @@ Claude Code 将会：
 
 > Claude Code 在修改文件前总会征求你的同意。你可以批准单独的更改，或为某个会话启用“全部接受”模式。
 
-## 6：在 Claude Code 中使用 Git
+## 步骤 6：在 Claude Code 中使用 Git
 
 Claude Code 让 Git 操作变得像对话一样简单：
 
