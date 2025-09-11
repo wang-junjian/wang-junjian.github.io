@@ -1319,7 +1319,7 @@ Claude 还会发现嵌套在你当前工作目录下的子目录中的 CLAUDE.md
   * **定期审查**：随着项目的发展更新记忆，以确保 Claude 始终使用最新的信息和上下文。
 
 
-# 子代理
+# 子代理（Subagents）
 
 > 在 Claude Code 中创建并使用专门的 AI 子代理，以处理特定任务流程并改进上下文管理。
 
@@ -2042,3 +2042,311 @@ Claude Code 可以访问一套强大的工具，帮助它理解和修改你的�
   * [身份和访问管理](https://www.google.com/search?q=/en/docs/claude-code/iam%23configuring-permissions) - 了解 Claude Code 的权限系统。
   * [IAM 和访问控制](https://www.google.com/search?q=/en/docs/claude-code/iam%23enterprise-managed-policy-settings) - 企业策略管理。
   * [故障排除](https://www.google.com/search?q=/en/docs/claude-code/troubleshooting%23auto-updater-issues) - 常见配置问题的解决方案。
+
+
+# 斜杠命令（Slash Commands）
+
+> 使用斜杠命令在交互式会话中控制 Claude 的行为。
+
+## 内置斜杠命令
+
+| 命令 | 用途 |
+| :--- | :--- |
+| `/add-dir` | 添加额外的工作目录 |
+| `/agents` | 管理用于特定任务的自定义 AI 子代理 |
+| `/bug` | 报告错误（将对话发送给 Anthropic） |
+| `/clear` | 清除对话历史记录 |
+| `/compact [instructions]` | 压缩对话并可选择性地添加关注指令 |
+| `/config` | 查看/修改配置 |
+| `/cost` | 显示令牌使用统计信息（有关订阅特定详细信息，请参阅[成本跟踪指南](https://www.google.com/search?q=/en/docs/claude-code/costs%23using-the-cost-command)） |
+| `/doctor` | 检查你的 Claude Code 安装的健康状况 |
+| `/help` | 获取使用帮助 |
+| `/init` | 使用 CLAUDE.md 指南初始化项目 |
+| `/login` | 切换 Anthropic 账户 |
+| `/logout` | 从你的 Anthropic 账户退出登录 |
+| `/mcp` | 管理 MCP 服务器连接和 OAuth 身份验证 |
+| `/memory` | 编辑 CLAUDE.md 内存文件 |
+| `/model` | 选择或更改 AI 模型 |
+| `/permissions` | 查看或更新[权限](https://www.google.com/search?q=/en/docs/claude-code/iam%23configuring-permissions) |
+| `/pr_comments` | 查看拉取请求评论 |
+| `/review` | 请求代码审查 |
+| `/status` | 查看账户和系统状态 |
+| `/terminal-setup` | 安装换行符的 Shift+Enter 键绑定（仅限 iTerm2 和 VSCode） |
+| `/vim` | 进入 vim 模式，以交替进行插入和命令模式 |
+
+## 自定义斜杠命令
+
+自定义斜杠命令允许你将常用提示定义为 Markdown 文件，Claude Code 可以执行这些文件。命令按范围（项目特定或个人）进行组织，并通过目录结构支持命名空间。
+
+### 语法
+
+```
+/<command-name> [arguments]
+```
+
+#### 参数
+
+| 参数 | 描述 |
+| :--- | :--- |
+| `<command-name>` | 源自 Markdown 文件名（不带 `.md` 扩展名）的名称 |
+| `[arguments]` | 传递给命令的可选参数 |
+
+### 命令类型
+
+#### 项目命令
+
+存储在你的仓库中并与你的团队共享的命令。当在 `/help` 中列出时，这些命令在其描述后显示 "(project)"。
+
+**位置**：`.claude/commands/`
+
+在下面的示例中，我们创建 `/optimize` 命令：
+
+```bash
+# 创建一个项目命令
+mkdir -p .claude/commands
+# 分析以下代码的性能问题并提出优化建议
+echo "Analyze this code for performance issues and suggest optimizations:" > .claude/commands/optimize.md
+```
+
+#### 个人命令
+
+可在你所有项目中使用的命令。当在 `/help` 中列出时，这些命令在其描述后显示 "(user)"。
+
+**位置**：`~/.claude/commands/`
+
+在下面的示例中，我们创建 `/security-review` 命令：
+
+```bash
+# 创建一个个人命令
+mkdir -p ~/.claude/commands
+# 请检查此代码是否存在安全漏洞
+echo "Review this code for security vulnerabilities:" > ~/.claude/commands/security-review.md
+```
+
+### 功能
+
+#### 命名空间
+
+在子目录中组织命令。子目录用于组织，并出现在命令描述中，但它们不影响命令名称本身。描述将显示命令是来自项目目录（`.claude/commands`）还是用户级目录（`~/.claude/commands`），以及子目录名称。
+
+不支持用户级命令和项目级命令之间的冲突。否则，具有相同基本文件名的多个命令可以共存。
+
+例如，位于 `.claude/commands/frontend/component.md` 的文件会创建 `/component` 命令，其描述显示 "(project:frontend)"。
+同时，位于 `~/.claude/commands/component.md` 的文件会创建 `/component` 命令，其描述显示 "(user)"。
+
+#### 参数
+
+使用参数占位符将动态值传递给命令：
+
+##### 所有参数都使用 `$ARGUMENTS`
+
+`$ARGUMENTS` 占位符捕获传递给命令的所有参数：
+
+```bash
+# 命令定义（修复第 #$ARGUMENTS 个问题，并遵循我们的编码标准。）
+echo 'Fix issue #$ARGUMENTS following our coding standards' > .claude/commands/fix-issue.md
+
+# 用法
+> /fix-issue 123 high-priority
+# $ARGUMENTS 变为: "123 high-priority"
+```
+
+##### 独立参数使用 `$1`, `$2` 等
+
+使用位置参数（类似于 shell 脚本）分别访问特定参数：
+
+```bash
+# 命令定义  
+echo 'Review PR #$1 with priority $2 and assign to $3' > .claude/commands/review-pr.md
+
+# 用法
+> /review-pr 456 high alice
+# $1 变为 "456", $2 变为 "high", $3 变为 "alice"
+```
+
+当你需要以下情况时使用位置参数：
+
+  * 在命令的不同部分单独访问参数
+  * 为缺失的参数提供默认值
+  * 构建具有特定参数角色的更结构化的命令
+
+#### Bash 命令执行
+
+在斜杠命令运行之前，使用 `!` 前缀执行 bash 命令。输出将包含在命令上下文中。你**必须**包含带有 `Bash` 工具的 `allowed-tools`，但你可以选择允许的特定 bash 命令。
+
+例如：
+
+```markdown
+---
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+description: Create a git commit
+---
+
+## Context
+
+- Current git status: !`git status`
+- Current git diff (staged and unstaged changes): !`git diff HEAD`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -10`
+
+## Your task
+
+Based on the above changes, create a single git commit.
+```
+
+**中文**
+
+```markdown
+---
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+description: 创建一个 Git 提交
+---
+
+## 上下文
+
+- 当前 Git 状态: !`git status`
+- 当前 Git 差异（已暂存和未暂存的更改）: !`git diff HEAD`
+- 当前分支: !`git branch --show-current`
+- 最近的提交: !`git log --oneline -10`
+
+## 你的任务
+
+根据上述更改，创建一个单独的 Git 提交。
+```
+
+#### 文件引用
+
+使用 `@` 前缀在命令中包含文件内容以[引用文件](https://www.google.com/search?q=/en/docs/claude-code/common-workflows%23reference-files-and-directories)。
+
+例如：
+
+```markdown
+# 引用特定文件
+
+Review the implementation in @src/utils/helpers.js
+
+# 引用多个文件
+
+Compare @src/old-version.js with @src/new-version.js
+```
+
+#### 思考模式
+
+斜杠命令可以通过包含[扩展思考关键词](https://www.google.com/search?q=/en/docs/claude-code/common-workflows%23use-extended-thinking)来触发扩展思考。
+
+### Frontmatter
+
+命令文件支持 frontmatter，这对于指定命令的元数据很有用：
+
+| Frontmatter | 用途 | 默认值 |
+| :--- | :--- | :--- |
+| `allowed-tools` | 命令可以使用的工具列表 | 继承自对话 |
+| `argument-hint` | 斜杠命令所需的参数。示例: `argument-hint: add [tagId] \| remove [tagId] \| list`。此提示在用户自动完成斜杠命令时显示。 | 无 |
+| `description` | 命令的简短描述 | 使用提示的第一行 |
+| `model` | 特定模型字符串（请参阅[模型概述](https://www.google.com/search?q=/en/docs/about-claude/models/overview)） | 继承自对话 |
+
+例如：
+
+```markdown
+---
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+argument-hint: [message]
+description: Create a git commit
+model: claude-3-5-haiku-20241022
+---
+
+Create a git commit with message: $ARGUMENTS
+```
+
+使用位置参数的示例：
+
+```markdown
+---
+argument-hint: [pr-number] [priority] [assignee]
+description: Review pull request
+---
+
+Review PR #$1 with priority $2 and assign to $3.
+Focus on security, performance, and code style.
+```
+
+**中文**
+
+```markdown
+---
+argument-hint: [pr-编号] [优先级] [分配人]
+description: 审查拉取请求
+---
+
+审查拉取请求 #$1，优先级为 $2，并分配给 $3。
+重点关注安全性、性能和代码风格。
+```
+
+## MCP 斜杠命令
+
+MCP 服务器可以将提示公开为斜杠命令，这些命令在 Claude Code 中可用。这些命令是从连接的 MCP 服务器动态发现的。
+
+### 命令格式
+
+MCP 命令遵循以下模式：
+
+```
+/mcp__<server-name>__<prompt-name> [arguments]
+```
+
+### 功能
+
+#### 动态发现
+
+MCP 命令在以下情况下自动可用：
+
+  * MCP 服务器已连接并处于活动状态
+  * 服务器通过 MCP 协议公开了提示
+  * 在连接期间成功检索了提示
+
+#### 参数
+
+MCP 提示可以接受由服务器定义的参数：
+
+```
+# 没有参数
+> /mcp__github__list_prs
+
+# 有参数
+> /mcp__github__pr_review 456
+> /mcp__jira__create_issue "Bug title" high
+```
+
+#### 命名约定
+
+  * 服务器和提示名称被标准化
+  * 空格和特殊字符变为下划线
+  * 名称被小写以保持一致性
+
+### 管理 MCP 连接
+
+使用 `/mcp` 命令来：
+
+  * 查看所有已配置的 MCP 服务器
+  * 检查连接状态
+  * 使用支持 OAuth 的服务器进行身份验证
+  * 清除身份验证令牌
+  * 查看来自每个服务器的可用工具和提示
+
+### MCP 权限和通配符
+
+配置 [MCP 工具的权限](https://www.google.com/search?q=/en/docs/claude-code/iam%23tool-specific-permission-rules)时，请注意**不支持通配符**：
+
+  * ✅ **正确**：`mcp__github`（批准来自 github 服务器的**所有**工具）
+  * ✅ **正确**：`mcp__github__get_issue`（批准特定工具）
+  * ❌ **不正确**：`mcp__github__*`（不支持通配符）
+
+要批准来自 MCP 服务器的所有工具，只需使用服务器名称：`mcp__servername`。要仅批准特定工具，请单独列出每个工具。
+
+## 另请参阅
+
+  * [身份和访问管理](https://www.google.com/search?q=/en/docs/claude-code/iam) - 权限的完整指南，包括 MCP 工具权限
+  * [交互模式](https://www.google.com/search?q=/en/docs/claude-code/interactive-mode) - 快捷方式、输入模式和交互功能
+  * [CLI 参考](https://www.google.com/search?q=/en/docs/claude-code/cli-reference) - 命令行标志和选项
+  * [设置](https://www.google.com/search?q=/en/docs/claude-code/settings) - 配置选项
+  * [内存管理](https://www.google.com/search?q=/en/docs/claude-code/memory) - 管理跨会话的 Claude 内存
