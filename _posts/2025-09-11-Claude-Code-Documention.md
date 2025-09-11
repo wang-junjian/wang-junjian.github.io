@@ -420,20 +420,6 @@ claude
 
 假设你遇到了错误消息，需要找到并修复其根源。
 
-\<Steps\>
-\<Step title="与 Claude 分享错误"\>
-`&gt; I&#39;m seeing an error when I run npm test`
-\</Step\>
-
-\<Step title="请求修复建议"\>
-`&gt; suggest a few ways to fix the @ts-ignore in user.ts`
-\</Step\>
-
-\<Step title="应用修复"\>
-`&gt; update user.ts to add the null check you suggested`
-\</Step\>
-\</Steps\>
-
 1. 与 Claude 分享错误
 
 ```
@@ -1100,11 +1086,6 @@ echo "分析这段代码的表现并提出三点具体的优化建议：" > .cla
 ### 使用 $ARGUMENTS 添加命令参数
 
 假设你想创建可以接受用户额外输入的灵活斜杠命令。
-
-\<Steps\>
-\<Step title="创建带有 $ARGUMENTS 占位符的命令文件"\>
-` bash echo &#39;Find and fix issue #$ARGUMENTS. Follow these steps: 1. Understand the issue described in the ticket 2. Locate the relevant code in our codebase 3. Implement a solution that addresses the root cause 4. Add appropriate tests 5. Prepare a concise PR description&#39; &gt; .claude/commands/fix-issue.md  `
-\</Step\>
 
 1. 创建带有 $ARGUMENTS 占位符的命令文件
 
@@ -1802,9 +1783,9 @@ Claude Code 提供了多种设置，可根据你的需求配置其行为。在�
       * Linux 和 WSL: `/etc/claude-code/managed-settings.json`
       * Windows: `C:\ProgramData\ClaudeCode/managed-settings.json`
 
-<!-- end list -->
+Example settings.json
 
-```json Example settings.json
+```json
 {
   "permissions": {
     "allow": [
