@@ -54,7 +54,7 @@ claude
   * **企业级就绪**：使用 Anthropic 的 API，或在 AWS 或 GCP 上托管。内置企业级的[安全性](https://www.google.com/search?q=/en/docs/claude-code/security)、[隐私](https://www.google.com/search?q=/en/docs/claude-code/data-usage)和[合规性](https://trust.anthropic.com/)。
 
 
-# 快速入门
+# 快速入门（Quickstart）
 
 > 欢迎使用 Claude Code！
 
@@ -2042,6 +2042,159 @@ Claude Code 可以访问一套强大的工具，帮助它理解和修改你的�
   * [身份和访问管理](https://www.google.com/search?q=/en/docs/claude-code/iam%23configuring-permissions) - 了解 Claude Code 的权限系统。
   * [IAM 和访问控制](https://www.google.com/search?q=/en/docs/claude-code/iam%23enterprise-managed-policy-settings) - 企业策略管理。
   * [故障排除](https://www.google.com/search?q=/en/docs/claude-code/troubleshooting%23auto-updater-issues) - 常见配置问题的解决方案。
+
+
+# CLI 参考
+
+> 完整的 Claude Code 命令行界面参考，包括命令和标志。
+
+## CLI 命令
+
+| 命令                             | 描述                                     | 示例                                                                |
+| :------------------------------- | :--------------------------------------- | :------------------------------------------------------------------ |
+| `claude`                         | 启动交互式 REPL（读取-求值-输出循环）   | `claude`                                                            |
+| `claude "query"`                 | 启动 REPL 并带初始提示                 | `claude "解释一下这个项目"`                                           |
+| `claude -p "query"`              | 通过 SDK 查询，然后退出                | `claude -p "解释一下这个函数"`                                      |
+| `cat file \| claude -p "query"`  | 处理管道输入的内容                       | `cat logs.txt \| claude -p "解释"`                                  |
+| `claude -c`                      | 继续最近的对话                           | `claude -c`                                                         |
+| `claude -c -p "query"`           | 通过 SDK 继续对话                        | `claude -c -p "检查类型错误"`                                       |
+| `claude -r "<session-id>" "query"`| 按会话 ID 恢复会话                     | `claude -r "abc123" "完成这个 PR"`                                  |
+| `claude update`                  | 更新到最新版本                           | `claude update`                                                     |
+| `claude mcp`                     | 配置模型上下文协议（MCP）服务器        | 参见 [Claude Code MCP 文档](https://www.google.com/search?q=/en/docs/claude-code/mcp)。             |
+
+## CLI 标志
+
+使用这些命令行标志自定义 Claude Code 的行为：
+
+| 标志                             | 描述                                                                                                                                              | 示例                                                                    |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------- |
+| `--add-dir`                      | 添加 Claude 可访问的额外工作目录（验证每个路径都存在且为目录）                                                                                     | `claude --add-dir ../apps ../lib`                                          |
+| `--allowedTools`                 | 除了 [settings.json 文件](https://www.google.com/search?q=/en/docs/claude-code/settings) 之外，允许使用一组无需提示用户权限的工具                                              | `"Bash(git log:*)" "Bash(git diff:*)" "Read"`                              |
+| `--disallowedTools`              | 除了 [settings.json 文件](https://www.google.com/search?q=/en/docs/claude-code/settings) 之外，禁止使用一组无需提示用户权限的工具                                              | `"Bash(git log:*)" "Bash(git diff:*)" "Edit"`                              |
+| `--print`, `-p`                  | 在非交互模式下打印响应（参见 [SDK 文档](https://www.google.com/search?q=/en/docs/claude-code/sdk) 以了解编程使用细节）                                                           | `claude -p "查询"`                                                        |
+| `--append-system-prompt`         | 追加到系统提示中（仅限 `--print`）                                                                                                               | `claude --append-system-prompt "自定义指令"`                                |
+| `--output-format`                | 指定打印模式的输出格式（选项：`text`、`json`、`stream-json`）                                                                                    | `claude -p "query" --output-format json`                                   |
+| `--input-format`                 | 指定打印模式的输入格式（选项：`text`、`stream-json`）                                                                                            | `claude -p --output-format json --input-format stream-json`                |
+| `--include-partial-messages`     | 在输出中包含部分流式事件（需要 `--print` 和 `--output-format=stream-json`）                                                                      | `claude -p --output-format stream-json --include-partial-messages "query"` |
+| `--verbose`                      | 启用详细日志记录，显示完整的逐轮输出（有助于在打印模式和交互模式下进行调试）                                                                     | `claude --verbose`                                                         |
+| `--max-turns`                    | 限制非交互模式下的代理回合数                                                                                                                   | `claude -p --max-turns 3 "query"`                                          |
+| `--model`                        | 设置当前会话的模型，可以使用最新模型的别名（`sonnet` 或 `opus`），或模型的完整名称                                                              | `claude --model claude-sonnet-4-20250514`                                  |
+| `--permission-mode`              | 以指定的[权限模式](https://www.google.com/search?q=iam%23permission-modes)启动                                                                                                         | `claude --permission-mode plan`                                            |
+| `--permission-prompt-tool`       | 指定一个 MCP 工具来处理非交互模式下的权限提示                                                                                                     | `claude -p --permission-prompt-tool mcp_auth_tool "query"`                 |
+| `--resume`                       | 按 ID 或在交互模式下选择以恢复特定会话                                                                                                            | `claude --resume abc123 "query"`                                           |
+| `--continue`                     | 加载当前目录中最近的对话                                                                                                                         | `claude --continue`                                                        |
+| `--dangerously-skip-permissions` | 跳过权限提示（请谨慎使用）                                                                                                                       | `claude --dangerously-skip-permissions`                                    |
+
+> `--output-format json` 标志对于编写脚本和自动化特别有用，它允许你以编程方式解析 Claude 的响应。
+
+有关打印模式 (`-p`) 的详细信息，包括输出格式、流式传输、详细日志记录和编程用法，请参阅 [SDK 文档](https://www.google.com/search?q=/en/docs/claude-code/sdk)。
+
+## 另请参见
+
+  * [交互模式](https://www.google.com/search?q=/en/docs/claude-code/interactive-mode) - 快捷键、输入模式和交互功能
+  * [斜杠命令](https://www.google.com/search?q=/en/docs/claude-code/slash-commands) - 交互式会话命令
+  * [快速入门指南](https://www.google.com/search?q=/en/docs/claude-code/quickstart) - 开始使用 Claude Code
+  * [常见工作流](https://www.google.com/search?q=/en/docs/claude-code/common-workflows) - 高级工作流和模式
+  * [设置](https://www.google.com/search?q=/en/docs/claude-code/settings) - 配置选项
+  * [SDK 文档](https://www.google.com/search?q=/en/docs/claude-code/sdk) - 编程用法和集成
+
+
+# 交互模式
+
+> 这是一份关于 Claude Code 会话中键盘快捷键、输入模式和交互功能的完整参考。
+
+## 键盘快捷键
+
+### 通用控制
+
+| 快捷键           | 说明                         | 情境                                                         |
+| :--------------- | :--------------------------- | :----------------------------------------------------------- |
+| `Ctrl+C`         | 取消当前输入或生成           | 标准中断                                                     |
+| `Ctrl+D`         | 退出 Claude Code 会话        | EOF（文件结束符）信号                                        |
+| `Ctrl+L`         | 清除终端屏幕                 | 保留对话历史记录                                             |
+| `上/下箭头`        | 浏览命令历史记录             | 调出之前的输入                                               |
+| `Esc` + `Esc`    | 编辑上一条消息               | 双击 `Esc` 进行修改                                          |
+| `Shift+Tab`      | 切换权限模式                 | 在自动接受模式、计划模式和普通模式之间切换                   |
+
+### 多行输入
+
+| 方法             | 快捷键           | 情境                               |
+| :--------------- | :--------------- | :--------------------------------- |
+| 快速转义         | `\` + `Enter`    | 适用于所有终端                     |
+| macOS 默认       | `Option+Enter`   | macOS 默认                         |
+| 终端设置         | `Shift+Enter`    | 在执行 `/terminal-setup` 后        |
+| 控制序列         | `Ctrl+J`         | 多行输入时的换行符                 |
+| 直接粘贴         | 直接粘贴         | 适用于代码块、日志等               |
+
+> 你可以在终端设置中配置首选的换行行为。运行 `/terminal-setup` 可以在 iTerm2 和 VS Code 终端中安装 `Shift+Enter` 绑定。
+
+### 快速命令
+
+| 快捷键           | 说明                               | 备注                                                           |
+| :--------------- | :--------------------------------- | :------------------------------------------------------------- |
+| `  # ` 开头         | 记忆快捷方式 - 添加到 CLAUDE.md    | 提示你选择文件                                                 |
+| `  / ` 开头         | 斜杠命令                           | 参见 [斜杠命令](https://www.google.com/search?q=/en/docs/claude-code/slash-commands)         |
+| `  ! ` 开头         | Bash 模式                          | 直接运行命令并将执行输出添加到会话中                           |
+
+## Vim 编辑器模式
+
+使用 `/vim` 命令可启用 Vim 风格的编辑，或通过 `/config` 进行永久配置。
+
+### 模式切换
+
+| 命令 | 动作                       | 来源模式   |
+| :--- | :------------------------- | :--------- |
+| `Esc`  | 进入普通（NORMAL）模式       | 插入（INSERT）   |
+| `i`    | 在光标前插入               | 普通（NORMAL）   |
+| `I`    | 在行首插入                 | 普通（NORMAL）   |
+| `a`    | 在光标后插入               | 普通（NORMAL）   |
+| `A`    | 在行尾插入                 | 普通（NORMAL）   |
+| `o`    | 在下方新开一行             | 普通（NORMAL）   |
+| `O`    | 在上方新开一行             | 普通（NORMAL）   |
+
+### 导航（普通模式）
+
+| 命令           | 动作                     |
+| :------------- | :----------------------- |
+| `h`/`j`/`k`/`l` | 左/下/上/右移动            |
+| `w`              | 下一个单词               |
+| `e`              | 单词末尾                 |
+| `b`              | 上一个单词               |
+| `0`              | 行首                     |
+| `$`              | 行尾                     |
+| `^`              | 行首第一个非空字符         |
+| `gg`             | 输入的开头               |
+| `G`              | 输入的末尾               |
+
+### 编辑（普通模式）
+
+| 命令           | 动作                     |
+| :------------- | :----------------------- |
+| `x`              | 删除字符                 |
+| `dd`             | 删除行                   |
+| `D`              | 删除至行尾               |
+| `dw`/`de`/`db` | 删除单词/至单词末尾/向后  |
+| `cc`             | 更改行                   |
+| `C`              | 更改至行尾               |
+| `cw`/`ce`/`cb` | 更改单词/至单词末尾/向后  |
+| `.`              | 重复上次更改             |
+
+## 命令历史记录
+
+Claude Code 会话会保留当前会话的命令历史记录：
+
+  * 历史记录按工作目录存储
+  * 使用 `/clear` 命令清除
+  * 使用上/下箭头浏览（见上文键盘快捷键）
+  * **Ctrl+R**: 反向搜索历史记录（如果终端支持）
+  * **注意**: 历史扩展（`!`）默认禁用
+
+## 另请参阅
+
+  * [斜杠命令](https://www.google.com/search?q=/en/docs/claude-code/slash-commands) - 交互式会话命令
+  * [CLI 参考](https://www.google.com/search?q=/en/docs/claude-code/cli-reference) - 命令行标志和选项
+  * [设置](https://www.google.com/search?q=/en/docs/claude-code/settings) - 配置选项
+  * [内存管理](https://www.google.com/search?q=/en/docs/claude-code/memory) - 管理 CLAUDE.md 文件
 
 
 # 斜杠命令（Slash Commands）
