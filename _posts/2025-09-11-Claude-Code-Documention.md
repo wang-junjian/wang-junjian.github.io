@@ -351,25 +351,25 @@ Claude Code 将会：
 
 假设你刚加入一个新项目，需要快速了解其结构。
 
-1. 进入项目根目录
+#### 1. 进入项目根目录
 
 ```bash
 cd /path/to/project
 ```
 
-2. 启动 Claude Code
+#### 2. 启动 Claude Code
 
 ```bash
 claude
 ```
 
-3. 询问高层次概览
+#### 3. 询问高层次概览
 
 ```bash
 > give me an overview of this codebase（给我这个代码库的概述）
 ```
 
-4. 询问高层次概览
+#### 4. 深入研究特定组件
 
 ```bash
 > explain the main architecture patterns used here（解释这里使用的主要架构模式）
@@ -393,19 +393,19 @@ claude
 
 假设你需要定位与特定功能相关的代码。
 
-1. 让 Claude 查找相关文件
+#### 1. 让 Claude 查找相关文件
 
 ```
 > find the files that handle user authentication（查找处理用户身份验证的文件）
 ```
 
-2. 获取组件如何相互作用的上下文
+#### 2. 获取组件如何相互作用的上下文
 
 ```
 > how do these authentication files work together?（这些身份验证文件是如何协同工作的？）
 ```
 
-3. 理解执行流程
+#### 3. 理解执行流程
 
 ```
 > trace the login process from front-end to database（从前端到数据库跟踪登录过程）
@@ -420,19 +420,19 @@ claude
 
 假设你遇到了错误消息，需要找到并修复其根源。
 
-1. 与 Claude 分享错误
+### 1. 与 Claude 分享错误
 
 ```
 > I'm seeing an error when I run npm test（当我运行 npm test 时，我看到了一个错误）
 ```
 
-2. 请求修复建议
+### 2. 请求修复建议
 
 ```
 > suggest a few ways to fix the @ts-ignore in user.ts（在 user.ts 中建议几种修复 @ts-ignore 的方法）
 ```
 
-3. 应用修复
+### 3. 应用修复
 
 ```
 > update user.ts to add the null check you suggested（更新 user.ts 以添加你建议的 null 检查）
@@ -448,25 +448,25 @@ claude
 
 假设你需要更新旧代码，使其使用现代模式和实践。
 
-1. 识别需要重构的遗留代码
+### 1. 识别需要重构的遗留代码
 
 ```
 > find deprecated API usage in our codebase（在我们的代码库中查找过时的 API 使用情况）
 ```
 
-2. 获取重构建议
+### 2. 获取重构建议
 
 ```
 > suggest how to refactor utils.js to use modern JavaScript features（建议如何重构 utils.js 以使用现代 JavaScript 特性）
 ```
 
-3. 安全地应用更改
+### 3. 安全地应用更改
 
 ```
 > refactor utils.js to use ES2024 features while maintaining the same behavior（重构 utils.js 以使用 ES2024 特性，同时保持相同的行为）
 ```
 
-4. 验证重构
+### 4. 验证重构
 
 ```
 > run tests for the refactored code（为重构后的代码运行测试）
@@ -482,7 +482,7 @@ claude
 
 假设你想使用专业的 AI 子代理来更有效地处理特定任务。
 
-1. 查看可用的子代理
+### 1. 查看可用的子代理
 
 ```
 > /agents
@@ -490,7 +490,7 @@ claude
 
 这会显示所有可用的子代理，并允许你创建新的。
 
-2. 自动使用子代理
+### 2. 自动使用子代理
 
 Claude Code 会自动将适当的任务委派给专业的子代理：
 
@@ -502,7 +502,7 @@ Claude Code 会自动将适当的任务委派给专业的子代理：
 > run all tests and fix any failures（运行所有测试并修复任何失败）
 ```
 
-3. 明确请求特定的子代理
+### 3. 明确请求特定的子代理
 
 ```
 > use the code-reviewer subagent to check the auth module（使用 code-reviewer 子代理检查 auth 模块）
@@ -512,7 +512,7 @@ Claude Code 会自动将适当的任务委派给专业的子代理：
 > have the debugger subagent investigate why users can't log in（让 debugger 子代理调查为什么用户无法登录）
 ```
 
-4. 为你的工作流创建自定义子代理
+### 4. 为你的工作流创建自定义子代理
 
 ```
 > /agents
@@ -600,25 +600,25 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 假设你需要为未覆盖的代码添加测试。
 
-1. 识别未测试的代码
+### 1. 识别未测试的代码
 
 ```
 > find functions in NotificationsService.swift that are not covered by tests（在 NotificationsService.swift 中查找未由测试覆盖的函数）
 ```
 
-2. 生成测试脚手架
+### 2. 生成测试脚手架
 
 ```
 > add tests for the notification service（为通知服务添加测试）
 ```
 
-3. 添加有意义的测试用例
+### 3. 添加有意义的测试用例
 
 ```
 > add test cases for edge conditions in the notification service（为通知服务中的边缘条件添加测试用例）
 ```
 
-4. 运行和验证测试
+### 4. 运行和验证测试
 
 ```
 > run the new tests and fix any failures（运行新的测试并修复任何失败）
@@ -634,25 +634,25 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 假设你需要为你所做的更改创建一个有良好文档的拉取请求。
 
-1. 总结你的更改
+### 1. 总结你的更改
 
 ```
 > summarize the changes I've made to the authentication module（总结我对身份验证模块所做的更改）
 ```
 
-2. 用 Claude 生成 PR
+### 2. 用 Claude 生成 PR
 
 ```
 > create a pr（创建一个 PR）
 ```
 
-3. 审查和细化
+### 3. 审查和细化
 
 ```
 > enhance the PR description with more context about the security improvements（在 PR 描述中添加更多关于安全改进的上下文）
 ```
 
-4. 添加测试细节
+### 4. 添加测试细节
 
 ```
 > add information about how these changes were tested（添加有关这些更改如何经过测试的信息）
@@ -668,25 +668,25 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 假设你需要为你的代码添加或更新文档。
 
-1. 识别无文档的代码
+### 1. 识别无文档的代码
 
 ```
 > find functions without proper JSDoc comments in the auth module（在 auth 模块中查找没有适当 JSDoc 注释的函数）
 ```
 
-2. 生成文档
+### 2. 生成文档
 
 ```
 > add JSDoc comments to the undocumented functions in auth.js（在 auth.js 中为未记录的函数添加 JSDoc 注释）
 ```
 
-3. 审查和增强
+### 3. 审查和增强
 
 ```
 > improve the generated documentation with more context and examples（使用更多上下文和示例改进生成的文档）
 ```
 
-4. 验证文档
+### 4. 验证文档
 
 ```
 > check if the documentation follows our project standards（检查文档是否遵循我们的项目标准）
@@ -702,7 +702,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 假设你需要处理代码库中的图片，并希望 Claude 帮助分析图片内容。
 
-1. 将图片添加到对话中
+### 1. 将图片添加到对话中
 
 你可以使用以下任何一种方法：
 
@@ -712,7 +712,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 3. 向 Claude 提供图片路径。例如：“Analyze this image: /path/to/your/image.png”。
 ```
 
-2. 让 Claude 分析图片
+### 2. 让 Claude 分析图片
 
 ```
 > What does this image show?（这张图片显示什么？）
@@ -726,7 +726,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 > Are there any problematic elements in this diagram?（这张图表中是否有任何问题元素？）
 ```
 
-3. 使用图片作为上下文
+### 3. 使用图片作为上下文
 
 ```
 > Here's a screenshot of the error. What's causing it?（这是错误截图。是什么导致了它？）
@@ -736,7 +736,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 > This is our current database schema. How should we modify it for the new feature?（这是我们的当前数据库架构。我们应该如何为新功能修改它？）
 ```
 
-4. 从视觉内容中获取代码建议
+### 4. 从视觉内容中获取代码建议
 
 ```
 > Generate CSS to match this design mockup（生成与设计 mockup 匹配的 CSS）
@@ -757,7 +757,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 使用 **@** 符号可以快速包含文件或目录，而无需等待 Claude 自行读取。
 
-1. 引用单个文件
+### 1. 引用单个文件
 
 ```
 > Explain the logic in @src/utils/auth.js（解释 @src/utils/auth.js 中的逻辑）
@@ -765,7 +765,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 这会将文件的完整内容包含到对话中。
 
-2. 引用目录
+### 2. 引用目录
 
 ```
 > What's the structure of @src/components？（@src/components 的结构是什么？）
@@ -773,7 +773,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 这会提供一个包含文件信息的目录列表。
 
-3. 引用 MCP 资源
+### 3. 引用 MCP 资源
 
 ```
 > Show me the data from @github:repos/owner/repo/issues（从 @github:repos/owner/repo/issues 显示数据）
@@ -792,7 +792,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 假设你在处理复杂的架构决策、具有挑战性的 bug 或需要深入推理的多步骤实现计划。
 
-1. 提供上下文并让 Claude 思考
+### 1. 提供上下文并让 Claude 思考
 
 ```
 > I need to implement a new authentication system using OAuth2 for our API. Think deeply about the best approach for implementing this in our codebase.（我需要使用 OAuth2 为我们的 API 实现新的身份验证系统。深入思考一下在代码库中实现它的最佳方法。）
@@ -800,7 +800,7 @@ Claude 将分析当前的实现并创建一个全面的计划。你可以通过�
 
 Claude 将从你的代码库中收集相关信息，并使用扩展思考（extended thinking），这在界面中是可见的。
 
-2. 通过后续提示细化思考过程
+### 2. 通过后续提示细化思考过程
 
 ```
 > think about potential security vulnerabilities in this approach（思考一下这种方法的潜在安全漏洞）
@@ -838,7 +838,7 @@ Claude Code 提供了两种恢复以前会话的选项：
   * `--continue` 自动恢复最近的会话。
   * `--resume` 显示一个会话选择器。
 
-1. 恢复最近的会话
+### 1. 恢复最近的会话
 
 ```bash
 claude --continue
@@ -846,7 +846,7 @@ claude --continue
 
 这会立即恢复你最近的会话，无需任何提示。
 
-2. 在非交互模式下恢复
+### 2. 在非交互模式下恢复
 ```bash
 # 继续我的任务
 claude --continue --print "Continue with my task"
@@ -854,7 +854,7 @@ claude --continue --print "Continue with my task"
 
 将 `--print` 与 `--continue` 结合使用，可以在非交互模式下恢复最近的会话，这对于脚本或自动化非常有用。
 
-3. 显示会话选择器
+### 3. 显示会话选择器
 
 ```bash
 claude --resume
@@ -903,11 +903,11 @@ claude --continue --print "Run the tests again"
 
 假设你需要同时处理多个任务，并且在 Claude Code 实例之间进行完全的代码隔离。
 
-1. 了解 Git worktrees
+### 1. 了解 Git worktrees
 
 Git worktrees 允许你从同一仓库将多个分支检出到不同的目录中。每个工作树（worktree）都有自己的工作目录和隔离的文件，同时共享相同的 Git 历史。在 [官方 Git worktree 文档](https://git-scm.com/docs/git-worktree) 中了解更多。
 
-2. 创建一个新的工作树
+### 2. 创建一个新的工作树
 
 ```bash
 # 使用新分支创建一个新的工作树
@@ -919,7 +919,7 @@ git worktree add ../project-bugfix bugfix-123
 
 这会创建一个新目录，其中包含你仓库的独立工作副本。
 
-3. 在每个工作树中运行 Claude Code
+### 3. 在每个工作树中运行 Claude Code
 
 ```bash
 # 进入你的工作树
@@ -929,14 +929,14 @@ cd ../project-feature-a
 claude
 ```
 
-4. 在另一个工作树中运行 Claude
+### 4. 在另一个工作树中运行 Claude
 
 ```bash
 cd ../project-bugfix
 claude
 ```
 
-5. 管理你的工作树
+### 5. 管理你的工作树
 
 ```bash
 # 列出所有工作树
@@ -1011,7 +1011,7 @@ cat build-error.txt | claude -p '精炼地解释这个构建错误的根本原�
 
 假设你需要 Claude 的输出采用特定格式，尤其是在将 Claude Code 集成到脚本或其他工具中时。
 
-1. 使用文本格式（默认）
+#### 1. 使用文本格式（默认）
 
 ```bash
 # 总结这个数据
@@ -1020,7 +1020,7 @@ cat data.txt | claude -p 'summarize this data' --output-format text > summary.tx
 
 这会输出 Claude 的纯文本响应（默认行为）。
 
-2. 使用 JSON 格式
+#### 2. 使用 JSON 格式
 
 ```bash
 # 分析这个代码的 bug
@@ -1029,7 +1029,7 @@ cat code.py | claude -p 'analyze this code for bugs' --output-format json > anal
 
 这会输出一个 JSON 消息数组，其中包含成本和持续时间等元数据。
 
-3. 使用流式 JSON 格式
+#### 3. 使用流式 JSON 格式
 
 ```bash
 # 解析这个日志文件中的错误
@@ -1054,13 +1054,13 @@ Claude Code 支持自定义斜杠命令，你可以创建它们来快速执行�
 
 假设你想为你的项目创建可重用的斜杠命令，供所有团队成员使用。
 
-1. 在你的项目中创建 commands 目录
+#### 1. 在你的项目中创建 commands 目录
 
 ```bash
 mkdir -p .claude/commands
 ```
 
-2. 为每个命令创建一个 Markdown 文件
+#### 2. 为每个命令创建一个 Markdown 文件
 
 ```bash
 echo "Analyze the performance of this code and suggest three specific optimizations:" > .claude/commands/optimize.md
@@ -1070,7 +1070,7 @@ echo "Analyze the performance of this code and suggest three specific optimizati
 echo "分析这段代码的表现并提出三点具体的优化建议：" > .claude/commands/optimize.md
 ```
 
-3. 在 Claude Code 中使用你的自定义命令
+#### 3. 在 Claude Code 中使用你的自定义命令
 
 ```bash
 > /optimize
@@ -1087,7 +1087,7 @@ echo "分析这段代码的表现并提出三点具体的优化建议：" > .cla
 
 假设你想创建可以接受用户额外输入的灵活斜杠命令。
 
-1. 创建带有 $ARGUMENTS 占位符的命令文件
+#### 1. 创建带有 $ARGUMENTS 占位符的命令文件
 
 ```bash
 echo 'Find and fix issue #$ARGUMENTS. Follow these steps: 1.
@@ -1101,7 +1101,7 @@ appropriate tests 5. Prepare a concise PR description' >
 echo '找到并修复问题 #$ARGUMENTS。请遵循以下步骤：1.理解工单中描述的问题 2.在我们的代码库中找到相关代码 3.实施一个能解决根本原因的方案 4.添加适当的测试 5.准备一份简洁的 PR 描述' > .claude/commands/fix-issue.md
 ```
 
-2. 使用命令和问题编号
+#### 2. 使用命令和问题编号
 
 在你的 Claude 会话中，使用带有参数的命令。
 
@@ -1121,13 +1121,13 @@ echo '找到并修复问题 #$ARGUMENTS。请遵循以下步骤：1.理解工单
 
 假设你想创建适用于所有项目的个人斜杠命令。
 
-1. 在你的主文件夹中创建 commands 目录
+#### 1. 在你的主文件夹中创建 commands 目录
 
 ```bash
 mkdir -p ~/.claude/commands
 ```
 
-2. 为每个命令创建一个 Markdown 文件
+#### 2. 为每个命令创建一个 Markdown 文件
 
 ```bash
 echo "Review this code for security vulnerabilities, focusing on:" >
@@ -1138,7 +1138,7 @@ echo "Review this code for security vulnerabilities, focusing on:" >
 echo "审查这段代码的安全漏洞，重点关注：" > ~/.claude/commands/security-review.md
 ```
 
-3. 使用你的个人自定义命令
+#### 3. 使用你的个人自定义命令
 
 ```bash
 > /security-review
@@ -1281,7 +1281,7 @@ Claude 还会发现嵌套在你当前工作目录下的子目录中的 CLAUDE.md
 
 要设置组织级记忆管理：
 
-1.  在适用于你的操作系统的相应位置创建企业记忆文件：
+### 1. 在适用于你的操作系统的相应位置创建企业记忆文件：
 
 <!-- end list -->
 
@@ -1291,7 +1291,7 @@ Claude 还会发现嵌套在你当前工作目录下的子目录中的 CLAUDE.md
 
 <!-- end list -->
 
-2.  通过你的配置管理系统（MDM、组策略、Ansible 等）进行部署，以确保在所有开发人员机器上的一致分发。
+### 2. 通过你的配置管理系统（MDM、组策略、Ansible 等）进行部署，以确保在所有开发人员机器上的一致分发。
 
 ## 记忆最佳实践
 
@@ -1365,7 +1365,7 @@ Claude Code 中的自定义子代理是专门的 AI 助手，可被调用来处�
 
 子代理以带有 YAML frontmatter 的 Markdown 文件形式存储在两个可能的位置：
 
-| 类型                  | 位置                | 范围                            | 优先级   |
+| 类型                  | 位置                | 范围  | 优先级   |
 | :-------------------- | :------------------ | :------------------------------ | :------- |
 | **项目子代理** | `.claude/agents/`   | 在当前项目中可用                | 最高     |
 | **用户子代理** | `~/.claude/agents/` | 在所有项目中可用                | 较低     |
@@ -1408,11 +1408,11 @@ tools: tool1, tool2, tool3  # 可选 - 如果省略，则继承所有工具
 
 #### 配置字段
 
-| 字段          | 必需 | 描述                                                                                              |
-| :------------ | :--- | :------------------------------------------------------------------------------------------------ |
-| `name`        | 是   | 使用小写字母和连字符的唯一标识符                                                                  |
-| `description` | 是   | 对子代理用途的自然语言描述                                                                        |
-| `tools`       | 否   | 逗号分隔的特定工具列表。如果省略，则继承主线程的所有工具                                          |
+| 字段 | 必需 | 描述 |
+| :--- | :--- | :--- |
+| `name`        | 是   | 使用小写字母和连字符的唯一标识符 |
+| `description` | 是   | 对子代理用途的自然语言描述 |
+| `tools`       | 否   | 逗号分隔的特定工具列表。如果省略，则继承主线程的所有工具 |
 
 ### 可用工具
 
@@ -2031,40 +2031,40 @@ Claude Code 可以访问一套强大的工具，帮助它理解和修改你的�
 
 ## CLI 命令
 
-| 命令                             | 描述                                     | 示例                                                                |
-| :------------------------------- | :--------------------------------------- | :------------------------------------------------------------------ |
-| `claude`                         | 启动交互式 REPL（读取-求值-输出循环）   | `claude`                                                            |
-| `claude "query"`                 | 启动 REPL 并带初始提示                 | `claude "解释一下这个项目"`                                           |
-| `claude -p "query"`              | 通过 SDK 查询，然后退出                | `claude -p "解释一下这个函数"`                                      |
-| `cat file \| claude -p "query"`  | 处理管道输入的内容                       | `cat logs.txt \| claude -p "解释"`                                  |
-| `claude -c`                      | 继续最近的对话                           | `claude -c`                                                         |
-| `claude -c -p "query"`           | 通过 SDK 继续对话                        | `claude -c -p "检查类型错误"`                                       |
-| `claude -r "<session-id>" "query"`| 按会话 ID 恢复会话                     | `claude -r "abc123" "完成这个 PR"`                                  |
-| `claude update`                  | 更新到最新版本                           | `claude update`                                                     |
-| `claude mcp`                     | 配置模型上下文协议（MCP）服务器        | 参见 [Claude Code MCP 文档](https://www.google.com/search?q=/en/docs/claude-code/mcp)。             |
+| 命令 | 描述 | 示例 |
+| :--- | :--- | :--- |
+| `claude`  | 启动交互式 REPL（读取-求值-输出循环）   | `claude`  |
+| `claude "query"`                 | 启动 REPL 并带初始提示                 | `claude "解释一下这个项目"`  |
+| `claude -p "query"`              | 通过 SDK 查询，然后退出                | `claude -p "解释一下这个函数"` |
+| `cat file \| claude -p "query"`  | 处理管道输入的内容  | `cat logs.txt \| claude -p "解释"` |
+| `claude -c` | 继续最近的对话 | `claude -c`|
+| `claude -c -p "query"`           | 通过 SDK 继续对话 | `claude -c -p "检查类型错误"`  |
+| `claude -r "<session-id>" "query"`| 按会话 ID 恢复会话 | `claude -r "abc123" "完成这个 PR"` |
+| `claude update`                  | 更新到最新版本 | `claude update` |
+| `claude mcp` | 配置模型上下文协议（MCP）服务器        | 参见 [Claude Code MCP 文档](https://www.google.com/search?q=/en/docs/claude-code/mcp)。             |
 
 ## CLI 标志
 
 使用这些命令行标志自定义 Claude Code 的行为：
 
-| 标志                             | 描述                                                                                                                                              | 示例                                                                    |
-| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------- |
-| `--add-dir`                      | 添加 Claude 可访问的额外工作目录（验证每个路径都存在且为目录）                                                                                     | `claude --add-dir ../apps ../lib`                                          |
-| `--allowedTools`                 | 除了 [settings.json 文件](https://www.google.com/search?q=/en/docs/claude-code/settings) 之外，允许使用一组无需提示用户权限的工具                                              | `"Bash(git log:*)" "Bash(git diff:*)" "Read"`                              |
-| `--disallowedTools`              | 除了 [settings.json 文件](https://www.google.com/search?q=/en/docs/claude-code/settings) 之外，禁止使用一组无需提示用户权限的工具                                              | `"Bash(git log:*)" "Bash(git diff:*)" "Edit"`                              |
-| `--print`, `-p`                  | 在非交互模式下打印响应（参见 [SDK 文档](https://www.google.com/search?q=/en/docs/claude-code/sdk) 以了解编程使用细节）                                                           | `claude -p "查询"`                                                        |
-| `--append-system-prompt`         | 追加到系统提示中（仅限 `--print`）                                                                                                               | `claude --append-system-prompt "自定义指令"`                                |
-| `--output-format`                | 指定打印模式的输出格式（选项：`text`、`json`、`stream-json`）                                                                                    | `claude -p "query" --output-format json`                                   |
-| `--input-format`                 | 指定打印模式的输入格式（选项：`text`、`stream-json`）                                                                                            | `claude -p --output-format json --input-format stream-json`                |
-| `--include-partial-messages`     | 在输出中包含部分流式事件（需要 `--print` 和 `--output-format=stream-json`）                                                                      | `claude -p --output-format stream-json --include-partial-messages "query"` |
-| `--verbose`                      | 启用详细日志记录，显示完整的逐轮输出（有助于在打印模式和交互模式下进行调试）                                                                     | `claude --verbose`                                                         |
-| `--max-turns`                    | 限制非交互模式下的代理回合数                                                                                                                   | `claude -p --max-turns 3 "query"`                                          |
-| `--model`                        | 设置当前会话的模型，可以使用最新模型的别名（`sonnet` 或 `opus`），或模型的完整名称                                                              | `claude --model claude-sonnet-4-20250514`                                  |
-| `--permission-mode`              | 以指定的[权限模式](https://www.google.com/search?q=iam%23permission-modes)启动                                                                                                         | `claude --permission-mode plan`                                            |
-| `--permission-prompt-tool`       | 指定一个 MCP 工具来处理非交互模式下的权限提示                                                                                                     | `claude -p --permission-prompt-tool mcp_auth_tool "query"`                 |
-| `--resume`                       | 按 ID 或在交互模式下选择以恢复特定会话                                                                                                            | `claude --resume abc123 "query"`                                           |
-| `--continue`                     | 加载当前目录中最近的对话                                                                                                                         | `claude --continue`                                                        |
-| `--dangerously-skip-permissions` | 跳过权限提示（请谨慎使用）                                                                                                                       | `claude --dangerously-skip-permissions`                                    |
+| 标志 | 描述 | 示例 |
+| :--- | :--- | :--- |
+| `--add-dir` | 添加 Claude 可访问的额外工作目录（验证每个路径都存在且为目录）  | `claude --add-dir ../apps ../lib` |
+| `--allowedTools`                 | 除了 [settings.json 文件](https://www.google.com/search?q=/en/docs/claude-code/settings) 之外，允许使用一组无需提示用户权限的工具 | `"Bash(git log:*)" "Bash(git diff:*)" "Read"` |
+| `--disallowedTools`              | 除了 [settings.json 文件](https://www.google.com/search?q=/en/docs/claude-code/settings) 之外，禁止使用一组无需提示用户权限的工具 | `"Bash(git log:*)" "Bash(git diff:*)" "Edit"` |
+| `--print`, `-p`                  | 在非交互模式下打印响应（参见 [SDK 文档](https://www.google.com/search?q=/en/docs/claude-code/sdk) 以了解编程使用细节） | `claude -p "查询"` |
+| `--append-system-prompt`         | 追加到系统提示中（仅限 `--print`）| `claude --append-system-prompt "自定义指令"`   |
+| `--output-format`                | 指定打印模式的输出格式（选项：`text`、`json`、`stream-json`） | `claude -p "query" --output-format json`  |
+| `--input-format`                 | 指定打印模式的输入格式（选项：`text`、`stream-json`） | `claude -p --output-format json --input-format stream-json`                |
+| `--include-partial-messages`     | 在输出中包含部分流式事件（需要 `--print` 和 `--output-format=stream-json`）  | `claude -p --output-format stream-json --include-partial-messages "query"` |
+| `--verbose` | 启用详细日志记录，显示完整的逐轮输出（有助于在打印模式和交互模式下进行调试） | `claude --verbose`|
+| `--max-turns`                    | 限制非交互模式下的代理回合数 | `claude -p --max-turns 3 "query"` |
+| `--model` | 设置当前会话的模型，可以使用最新模型的别名（`sonnet` 或 `opus`），或模型的完整名称    | `claude --model claude-sonnet-4-20250514` |
+| `--permission-mode`              | 以指定的[权限模式](https://www.google.com/search?q=iam%23permission-modes)启动 | `claude --permission-mode plan`   |
+| `--permission-prompt-tool`       | 指定一个 MCP 工具来处理非交互模式下的权限提示 | `claude -p --permission-prompt-tool mcp_auth_tool "query"`                 |
+| `--resume`  | 按 ID 或在交互模式下选择以恢复特定会话 | `claude --resume abc123 "query"`  |
+| `--continue` | 加载当前目录中最近的对话   | `claude --continue` |
+| `--dangerously-skip-permissions` | 跳过权限提示（请谨慎使用） | `claude --dangerously-skip-permissions`   |
 
 > `--output-format json` 标志对于编写脚本和自动化特别有用，它允许你以编程方式解析 Claude 的响应。
 
@@ -2088,21 +2088,21 @@ Claude Code 可以访问一套强大的工具，帮助它理解和修改你的�
 
 ### 通用控制
 
-| 快捷键           | 说明                         | 情境                                                         |
-| :--------------- | :--------------------------- | :----------------------------------------------------------- |
-| `Ctrl+C`         | 取消当前输入或生成           | 标准中断                                                     |
-| `Ctrl+D`         | 退出 Claude Code 会话        | EOF（文件结束符）信号                                        |
-| `Ctrl+L`         | 清除终端屏幕                 | 保留对话历史记录                                             |
-| `上/下箭头`        | 浏览命令历史记录             | 调出之前的输入                                               |
-| `Esc` + `Esc`    | 编辑上一条消息               | 双击 `Esc` 进行修改                                          |
-| `Shift+Tab`      | 切换权限模式                 | 在自动接受模式、计划模式和普通模式之间切换                   |
+| 快捷键 | 说明 | 情境 |
+| :--- | :--- | :--- |
+| `Ctrl+C`         | 取消当前输入或生成           | 标准中断 |
+| `Ctrl+D`         | 退出 Claude Code 会话        | EOF（文件结束符）信号 |
+| `Ctrl+L`         | 清除终端屏幕                 | 保留对话历史记录 |
+| `上/下箭头`        | 浏览命令历史记录             | 调出之前的输入 |
+| `Esc` + `Esc`    | 编辑上一条消息               | 双击 `Esc` 进行修改 |
+| `Shift+Tab`      | 切换权限模式                 | 在自动接受模式、计划模式和普通模式之间切换 |
 
 ### 多行输入
 
-| 方法             | 快捷键           | 情境                               |
+| 方法             | 快捷键           | 情境  |
 | :--------------- | :--------------- | :--------------------------------- |
-| 快速转义         | `\` + `Enter`    | 适用于所有终端                     |
-| macOS 默认       | `Option+Enter`   | macOS 默认                         |
+| 快速转义         | `\` + `Enter`    | 适用于所有终端 |
+| macOS 默认       | `Option+Enter`   | macOS 默认  |
 | 终端设置         | `Shift+Enter`    | 在执行 `/terminal-setup` 后        |
 | 控制序列         | `Ctrl+J`         | 多行输入时的换行符                 |
 | 直接粘贴         | 直接粘贴         | 适用于代码块、日志等               |
@@ -2111,11 +2111,11 @@ Claude Code 可以访问一套强大的工具，帮助它理解和修改你的�
 
 ### 快速命令
 
-| 快捷键           | 说明                               | 备注                                                           |
-| :--------------- | :--------------------------------- | :------------------------------------------------------------- |
-| `  # ` 开头         | 记忆快捷方式 - 添加到 CLAUDE.md    | 提示你选择文件                                                 |
-| `  / ` 开头         | 斜杠命令                           | 参见 [斜杠命令](https://www.google.com/search?q=/en/docs/claude-code/slash-commands)         |
-| `  ! ` 开头         | Bash 模式                          | 直接运行命令并将执行输出添加到会话中                           |
+| 快捷键 | 说明 | 备注 |
+| :--- | :--- | :--- |
+| `  # ` 开头         | 记忆快捷方式 - 添加到 CLAUDE.md    | 提示你选择文件 |
+| `  / ` 开头         | 斜杠命令 | 参见 [斜杠命令](https://www.google.com/search?q=/en/docs/claude-code/slash-commands)         |
+| `  ! ` 开头         | Bash 模式 | 直接运行命令并将执行输出添加到会话中 |
 
 ## Vim 编辑器模式
 
@@ -2123,7 +2123,7 @@ Claude Code 可以访问一套强大的工具，帮助它理解和修改你的�
 
 ### 模式切换
 
-| 命令 | 动作                       | 来源模式   |
+| 命令 | 动作  | 来源模式   |
 | :--- | :------------------------- | :--------- |
 | `Esc`  | 进入普通（NORMAL）模式       | 插入（INSERT）   |
 | `i`    | 在光标前插入               | 普通（NORMAL）   |
@@ -2135,21 +2135,21 @@ Claude Code 可以访问一套强大的工具，帮助它理解和修改你的�
 
 ### 导航（普通模式）
 
-| 命令           | 动作                     |
+| 命令           | 动作 |
 | :------------- | :----------------------- |
 | `h`/`j`/`k`/`l` | 左/下/上/右移动            |
 | `w`              | 下一个单词               |
 | `e`              | 单词末尾                 |
 | `b`              | 上一个单词               |
-| `0`              | 行首                     |
-| `$`              | 行尾                     |
+| `0`              | 行首 |
+| `$`              | 行尾 |
 | `^`              | 行首第一个非空字符         |
 | `gg`             | 输入的开头               |
 | `G`              | 输入的末尾               |
 
 ### 编辑（普通模式）
 
-| 命令           | 动作                     |
+| 命令           | 动作 |
 | :------------- | :----------------------- |
 | `x`              | 删除字符                 |
 | `dd`             | 删除行                   |
