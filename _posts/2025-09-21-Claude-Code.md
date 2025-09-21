@@ -8,6 +8,11 @@ tags: [ClaudeCode, Agent, Claude, CLI]
 
 <!--more-->
 
+## Claude Code 上下文工程
+
+![](/images/2025/ClaudeCode/Context-Engineering.png)
+
+
 ## Claude Code 能为您的项目提供全流程协助
 
 ![](/images/2025/ClaudeCode/Development-Workflow.png)
@@ -341,11 +346,6 @@ think about potential security vulnerabilities in this approach
 keep thinking about edge cases we should handle
 继续思考我们应该处理的边缘情况。
 ```
-
-
-## Claude Code 上下文工程
-
-![](/images/2025/ClaudeCode/Context-Engineering.png)
 
 
 ## 参考资料
