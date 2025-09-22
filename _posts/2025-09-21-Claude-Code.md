@@ -6,6 +6,8 @@ categories: ClaudeCode Agent
 tags: [ClaudeCode, Agent, Claude, CLI]
 ---
 
+本文介绍 Claude Code 的**上下文工程**。它整合了多种输入来源，包括**系统提示**、**内置工具**、**MCP工具**、**自定义子代理**、**记忆文件**和**对话历史**，以全面理解并完成编程开发任务。还介绍了使用 Claude Code 在您的项目中提供**全流程协助**，如何编写**提示词**。
+
 <!--more-->
 
 ## Claude Code 上下文工程
