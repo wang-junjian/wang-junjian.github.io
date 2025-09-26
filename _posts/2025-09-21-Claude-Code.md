@@ -10,6 +10,8 @@ tags: [ClaudeCode, Agent, Claude, CLI]
 
 <!--more-->
 
+![](/images/2025/ClaudeCode/Integrate.png)
+
 ## Claude Code 上下文工程
 
 ![](/images/2025/ClaudeCode/Context-Engineering.png)
@@ -351,6 +353,8 @@ keep thinking about edge cases we should handle
 
 
 ## 参考资料
+- [How Anthropic teams use Claude Code](https://www.anthropic.com/news/how-anthropic-teams-use-claude-code)
+- [Claude Code: Best practices for agentic coding](https://www.anthropic.com/engineering/claude-code-best-practices)
 - [Claude Code](https://www.anthropic.com/claude-code)
 - [Peeking Under the Hood of Claude Code](https://medium.com/@outsightai/peeking-under-the-hood-of-claude-code-70f5a94a9a62)
 - [claude-code-prompt.txt](https://gist.github.com/agokrani/919b536246dd272a55157c21d46eda14)
@@ -358,3 +362,4 @@ keep thinking about edge cases we should handle
 - [Anthropic courses](https://anthropic.skilljar.com/)
 - [Writing effective tools for agents — with agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
 - [Claude Cookbooks](https://github.com/anthropics/claude-cookbooks)
+- [27亿美元天价回归！谷歌最贵「叛徒」、Transformer作者揭秘AGI下一步](https://mp.weixin.qq.com/s/YaEJDuEbldLyPFDML2DXSQ)
