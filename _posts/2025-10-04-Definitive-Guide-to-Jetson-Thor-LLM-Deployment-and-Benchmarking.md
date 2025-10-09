@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "Jetson Thor 权威指南：从开箱到大模型部署与基准测试"
+title:  "Jetson Thor 权威指南：从开箱到大模型部署与性能优化"
 date:   2025-10-04 06:00:00 +0800
 categories: Jetson LLM
 tags: [Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
@@ -973,10 +973,10 @@ P99 ITL (ms):                            13.45
 
 | 配置项 | 高负载配置 | 低负载配置 |
 | :--- | :--- | :--- |
-| **总请求数** | $100$ | $10$ |
-| **最大并发数** | $8$ | $1$ |
-| **输入序列长度** | $2048$ tokens | $2048$ tokens |
-| **输出序列长度** | $128$ tokens | $128$ tokens |
+| **总请求数** | 100 | 10 |
+| **最大并发数** | 8 | 1 |
+| **输入序列长度** | 2048 tokens | 2048 tokens |
+| **输出序列长度** | 128 tokens | 128 tokens |
 | **测试场景** | 高吞吐量/高并发压力测试 | 低延迟/单用户体验测试 |
 
 - **硬件**：Jetson AGX Thor 128GB
