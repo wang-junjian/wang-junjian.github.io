@@ -101,7 +101,6 @@ Jetson 将自动启动 UEFI 固件更新过程。
 
 ![](/images/2025/Jetson/Setup/first-boot_welcome-to-ubuntu.png)
 
-
 ### Headless（无头）模式
 
 您可以使用笔记本电脑或 PC 远程访问 Jetson，并且 Jetson 将被用作服务器。
@@ -174,11 +173,58 @@ IN-USE  BSSID              SSID             MODE   CHAN  RATE        SIGNAL  BAR
 *       DC:D8:7C:56:2C:78  WJJ_HOME_Gaming  Infra  40    540 Mbit/s  37      ▂▄__  WPA2
 ```
 
+### 安装其它软件
+
+#### 安装 JetPack
+
+```bash
+sudo apt update
+sudo apt install -y nvidia-jetpack
+```
+
+#### 安装 jtop
+
+**jtop** 是一款专为 **NVIDIA Jetson** 系列设备设计的强大**系统监控和控制工具**。
+
+- 安装
+
+```bash
+sudo pip3 install jetson-stats --break-system-packages
+```
+
+- 重启
+
+```bash
+sudo reboot
+```
+
+- 运行
+
+```bash
+jtop
+```
+
+![](/images/2025/Jetson/jtop.jpeg)
+
 ### Jetson Thor 模组的组件构成
 
 ![](/images/2025/Jetson/Thor/nvidia-jetson-thor-module-components-png.webp)
 
 ### 信息查询
+
+#### 查询 Jetson 系统信息
+
+```bash
+# 用于记录系统（L4T - Linux for Tegra）的版本信息
+cat /etc/nv_tegra_release
+```
+```bash
+# R38 (release), REVISION: 2.0, GCID: 41844464, BOARD: generic, EABI: aarch64, DATE: Fri Aug 22 00:55:42 UTC 2025
+# KERNEL_VARIANT: oot
+TARGET_USERSPACE_LIB_DIR=nvidia
+TARGET_USERSPACE_LIB_DIR_PATH=usr/lib/aarch64-linux-gnu/nvidia
+INSTALL_TYPE=
+```
 
 #### 查询设备信息
 
@@ -517,7 +563,8 @@ docker pull nvcr.io/nvidia/vllm:25.09-py3
 - tritonserver:vllm
 
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:25.08-vllm-python-py3
+# docker pull nvcr.io/nvidia/tritonserver:25.08-vllm-python-py3
+docker pull nvcr.io/nvidia/tritonserver:25.09-vllm-python-py3
 ```
 
 - ollama
@@ -574,7 +621,6 @@ docker run -it --rm \
   -v ~/.cache/modelscope:/root/.cache/modelscope \
   nvcr.io/nvidia/vllm:25.09-py3 \
   bash
-```
 
 - tritonserver:vllm
 
@@ -644,6 +690,20 @@ sudo nvpmodel -m 0
 
 ```bash
 nvpmodel -q
+```
+
+**默认的功率模式**
+
+```bash
+NV Power Mode: 120W
+1
+```
+
+**设置的功率模式**
+
+```bash
+NV Power Mode: MAXN
+0
 ```
 
 ### 核心频率
