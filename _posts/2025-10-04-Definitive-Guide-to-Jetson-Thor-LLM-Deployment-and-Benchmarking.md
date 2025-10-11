@@ -192,10 +192,10 @@ sudo apt install -y nvidia-jetpack
 sudo pip3 install jetson-stats --break-system-packages
 ```
 
-- 重启
+- 重启 jtop 服务
 
 ```bash
-sudo reboot
+sudo systemctl restart jtop.service
 ```
 
 - 运行
@@ -205,6 +205,8 @@ jtop
 ```
 
 ![](/images/2025/Jetson/jtop.jpeg)
+
+> 使用 jtop 可以取代手动运行命令 `sync && echo 3 > /proc/sys/vm/drop_caches` 来清除缓存和 `sudo jetson_clocks` 来调整时钟频率，非常方便。
 
 ### Jetson Thor 模组的组件构成
 
@@ -226,7 +228,16 @@ TARGET_USERSPACE_LIB_DIR_PATH=usr/lib/aarch64-linux-gnu/nvidia
 INSTALL_TYPE=
 ```
 
-#### 查询设备信息
+#### 查询指定 NVIDIA GPU 的计算能力（Compute Capability）
+
+```bash
+nvidia-smi -i 0 --query-gpu=compute_cap --format=csv,noheader
+```
+```bash
+11.0
+```
+
+#### 查询 NVIDIA GPU 的设备信息
 
 ```bash
 docker run --rm --runtime=nvidia nvcr.io/nvidia/vllm:25.09-py3 /usr/local/bin/deviceQuery
@@ -550,6 +561,8 @@ modelscope download --model Qwen/Qwen3-30B-A3B-GGUF --local_dir Qwen/Qwen3-30B-A
 
 - [CUDA Setup](https://docs.nvidia.com/jetson/agx-thor-devkit/user-guide/latest/setup_cuda.html)
 
+**⚠️ 目前 FP8 和 FP4 的模型，虽然部署成功了，但在实际使用时，服务会直接崩溃，原因是推理时使用的算子需要基于本地架构进行编译，通过在 [GitHub Issues](https://github.com/vllm-project/vllm/issues) 和 [NVIDIA 论坛](https://forums.developer.nvidia.com/c/robotics-edge-computing/jetson-embedded-systems/jetson-thor/740)中搜索，可能是软件生态还不够完善，需要等待一段时间吧。**
+
 ### 镜像下载
 
 [NGC Catalog](https://catalog.ngc.nvidia.com/)
@@ -563,8 +576,7 @@ docker pull nvcr.io/nvidia/vllm:25.09-py3
 - tritonserver:vllm
 
 ```bash
-# docker pull nvcr.io/nvidia/tritonserver:25.08-vllm-python-py3
-docker pull nvcr.io/nvidia/tritonserver:25.09-vllm-python-py3
+docker pull nvcr.io/nvidia/tritonserver:25.08-vllm-python-py3
 ```
 
 - ollama
@@ -1688,6 +1700,62 @@ P99 ITL (ms):                            34.03
 * **追求最小尺寸和平衡性能：** 如果显存资源非常紧张，**Qwen3-8B-FP4**（6G）提供了比其他 Int4 方案更好的高负载性能。若服务并发很低，任意 **Int4 方案**（5.7G）都是可接受的。
 * **避免 GGUF 用于在线服务：** GGUF 虽然文件最小，但在 GPU 推理服务中的性能（尤其在高并发下）极低，应仅考虑用于 CPU 或受限的边缘设备推理。
 
+### Qwen3-Coder-30B-A3B-Instruct-Int4-W4A16
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  99.27
+Total input tokens:                      204169
+Total generated tokens:                  12789
+Request throughput (req/s):              1.01
+Output token throughput (tok/s):         128.83
+Total Token throughput (tok/s):          2185.54
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1314.33
+Median TTFT (ms):                        1111.64
+P99 TTFT (ms):                           3123.45
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          51.26
+Median TPOT (ms):                        52.49
+P99 TPOT (ms):                           59.17
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           51.27
+Median ITL (ms):                         30.34
+P99 ITL (ms):                            523.20
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  19.68
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.51
+Output token throughput (tok/s):         65.05
+Total Token throughput (tok/s):          1103.33
+---------------Time to First Token----------------
+Mean TTFT (ms):                          41.75
+Median TTFT (ms):                        43.20
+P99 TTFT (ms):                           46.20
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          15.16
+Median TPOT (ms):                        15.16
+P99 TPOT (ms):                           15.19
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           15.16
+Median ITL (ms):                         15.15
+P99 ITL (ms):                            15.68
+==================================================
+```
+
 
 ## 基准测试（场景）
 
@@ -2393,3 +2461,6 @@ P99 ITL (ms):                            1290.74
 - [Docker Hub - vLLM](https://hub.docker.com/r/vllm/vllm-openai/tags)
 - [Docker Hub - SGLang](https://hub.docker.com/r/lmsysorg/sglang/tags)
 - [Docker Hub - GPUStack](https://hub.docker.com/r/gpustack/gpustack/tags)
+- [后台启用缓存清理器](https://raw.githubusercontent.com/NVIDIA-AI-Blueprints/video-search-and-summarization/refs/heads/main/deploy/scripts/sys_cache_cleaner.sh)
+- [vLLM 性能基准测试示例（使用Qwen2.5-VL-3B）](https://elinux.org/Jetson/L4T/Jetson_AI_Stack#Benchmark)
+- [NVIDIA Jetson AI Lab Benchmarks](https://www.jetson-ai-lab.com/benchmarks.html)
