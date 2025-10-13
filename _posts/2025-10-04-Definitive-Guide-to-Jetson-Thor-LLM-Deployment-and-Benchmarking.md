@@ -242,9 +242,11 @@ sudo apt update
 sudo apt install -y nvidia-jetpack
 ```
 
-#### 安装 jtop
+#### 安装 [Jetson Stats](https://developer.nvidia.com/embedded/community/jetson-projects/jetson_stats)
 
-**jtop** 是一款专为 **NVIDIA Jetson** 系列设备设计的强大**系统监控和控制工具**。
+**jetson-stats** 是一款专为 **NVIDIA Jetson** 系列设备设计的强大**系统监控和控制的软件包**。
+
+![](/images/2025/Jetson/community-jetson_stats-2023.gif)
 
 - 安装
 
@@ -258,7 +260,7 @@ sudo pip3 install jetson-stats --break-system-packages
 sudo systemctl restart jtop.service
 ```
 
-- 运行
+- 运行 jtop
 
 ```bash
 jtop
