@@ -1,449 +1,453 @@
 ---
 layout: single
-title:  "Jetson Thor 权威指南：从开箱到大模型部署与性能优化"
-date:   2025-10-04 06:00:00 +0800
+title:  "Jetson Thor 大模型推理性能基准测试"
+date:   2025-10-12 06:00:00 +0800
 categories: Jetson LLM
 tags: [Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
 ---
 
-该文章是对 **NVIDIA Jetson Thor** 平台进行大语言模型部署、系统优化和深度性能基准测试的**权威指南**。
-
-**平台配置与环境准备：**
-文章首先详细介绍了在 Jetson AGX Thor 开发套件上进行 **BSP（Jetson Linux）安装流程**。这包括下载 ISO 映像、使用 Balena Etcher **创建可启动 USB 棒**，以及通过首次启动完成 UEFI 固件更新和 Ubuntu 初始设置。软件环境基于 **JetPack 7**，它提供了对前沿机器人和生成式 AI 的全面支持。部署环境采用云原生技术，通过 **Docker 容器**运行 **vLLM** 或 **TritonServer** 等推理服务。
-
-**系统性能调优：**
-为了释放硬件全部潜力，文章强调了系统级的性能调优步骤：必须通过 `sudo nvpmodel -m 0` 将功耗模式设置为**最高性能模式 (MAXN)**（130W），并使用 **`sudo jetson_clocks`** 锁定 CPU、GPU 和内存的核心频率，禁用 DVFS 机制。测试结果显示，**MAXN + `jetson_clocks`** 组合能显著提升性能，在高负载下，FP8 模型的吞吐量提升约 **18.5%**，在低负载下，每 Token 平均延迟（TPOT）减少约 **43%**。
-
-**量化模型基准测试结果：**
-文章对 **Qwen3-8B** 模型的多种量化精度（包括 BF16、FP8、FP4、Int4 等）进行了详尽的性能分析。核心发现是：
-1. **FP8 量化精度**（8.9G 模型）表现出绝对优势。在高并发（高负载）场景下，FP8 模型实现了最高的输出 Token 吞吐量（**298.07 tok/s**），是基线 BF16 模型（82.47 tok/s）的 **3.6 倍**。
-2. 在低延迟（低负载）场景下，FP8 实现了最低的首 Token 延迟（**23.06 ms**）和最低的平均生成延迟（**8.88 ms**）。
 
 <!--more-->
 
-## NVIDIA Jetson Thor
+## 性能基准测试
 
-为物理 AI 和人形机器人打造的卓越平台
+### Qwen3-32B-AWQ
 
-![](/images/2025/Jetson/Thor/NVIDIA-Jetson-Thor.png)
-
-- [NVIDIA Jetson Thor 为通用机器人和物理 AI 解锁实时推理能力](https://blogs.nvidia.cn/blog/jetson-thor-physical-ai-edge/)
-- [NVIDIA Jetson Thor 为物理 AI 和人形机器人打造的卓越平台](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/)
-- [NVIDIA Jetson AGX Thor Developer Kit](https://nvdam.widen.net/s/cvgssvtw7w/robotics-and-edge-ai-datasheet-jetson-thor-devkit-us-web)
-- [NVIDIA DRIVE AGX Thor 开发者套件 硬件快速入门指南](https://developer.nvidia.com/downloads/drive/secure/thor/drive-agx-thor-devkit-qsg-simplified-chinese.pdf)
-
-### BSP 安装
-
-使用可启动安装 USB 棒在 Jetson AGX Thor 开发套件上快速安装 BSP（ Jetson Linux ）。
-
-![](/images/2025/Jetson/Setup/Jetson-ISO-KV_white.png)
-
-#### BSP 安装流程
-
-![](/images/2025/Jetson/Setup/BSP-installation-flow.png)
-
-#### 1️⃣ 下载 ISO
-
-首先，您需要从 NVIDIA 网站下载 Jetson BSP 安装映像文件：[Jetson ISO (r38.2-08-22)](https://developer.nvidia.com/downloads/embedded/L4T/r38_Release_v2.0/release/jetsoninstaller-0.2.0-r38.2-2025-08-22-01-33-29-arm64.iso)
-
-或者，您可以转到 [JetPack 下载页面](https://developer.nvidia.com/embedded/jetpack/downloads)，找到 Jetson AGX Thor 开发套件的最新 JetPack 版本，然后将 Jetson ISO 映像文件下载到您的笔记本电脑或 PC 上。
-
-#### 2️⃣ 创建安装 USB 
-
-要在您的 Jetson AGX Thor 开发套件上安装 Jetson BSP（Jetson Linux），我们首先需要通过将下载的 ISO 映像写入 USB 记忆棒来创建安装媒体。
-
-使用 [Balena Etcher](https://etcher.balena.io/) 创建可启动的 USB 记忆棒。
-
-![](/images/2025/Jetson/Setup/jetson-iso_etcher-flash-start.gif)
-
-#### 3️⃣ 开箱和安装
-
-##### 开箱
-
-![](/images/2025/Jetson/Setup/Unboxing.jpeg)
-
-#### 启动 Jetson
-1. 通过 HDMI 或 DisplayPort 连接显示器。
-2. 连接 USB 键盘和鼠标。
-3. 将可启动安装 USB 棒连接到 USB Type-A 端口或 Jetson AGX Thor 开发套件的 USB-C 端口。
-4. 将电源插头连接到两个 USB-C 端口之一。
-5. 按下电源按钮（11，下图左侧的按钮）启动 Jetson。
-
-![](/images/2025/Jetson/Setup/JAT-Button-Side_transparent.png)
-
-#### 4️⃣ 从 USB 启动并在 NVMe 上安装 BSP
-
-##### 从安装 U 盘启动
-
-Jetson BSP 安装菜单
-
-![](/images/2025/Jetson/Setup/jetson-iso_grub-menu-top.png)
-
-Jetson Thor 选项菜单
-
-![](/images/2025/Jetson/Setup/jetson-iso_grub-menu-thor-options.png) 
-
-#### 5️⃣ 首次从 NVMe 启动 BSP
-
-##### UEFI 固件
-
-Jetson 将自动启动 UEFI 固件更新过程。
-
-![](/images/2025/Jetson/Setup/first-boot_uefi-firmware-update.png)
-
-##### 初始软件设置
-
-现在，您可以启动初始 Ubuntu 设置过程 (`oem-config`)，创建默认用户帐户并设置其他内容。完成后，您就可以开始使用已完全设置好的 Jetson BSP 了。
-
-##### 恭喜！
-
-您现在可以在 Jetson AGX Thor 开发套件上开始开发。
-
-![](/images/2025/Jetson/Setup/first-boot_welcome-to-ubuntu.png)
-
-### Headless（无头）模式
-
-您可以使用笔记本电脑或 PC 远程访问 Jetson，并且 Jetson 将被用作服务器。
-
-![](/images/2025/Jetson/Headless/usb-device-mode_Type-A.png)
-
-- [Hackathon Guide](https://www.jetson-ai-lab.com/hackathon.html)
-
-#### ssh 登录
+- 高负载
 
 ```bash
-ssh username@192.168.55.1
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  459.09
+Total input tokens:                      204169
+Total generated tokens:                  12421
+Request throughput (req/s):              0.22
+Output token throughput (tok/s):         27.06
+Total Token throughput (tok/s):          471.78
+---------------Time to First Token----------------
+Mean TTFT (ms):                          6799.32
+Median TTFT (ms):                        6419.03
+P99 TTFT (ms):                           19086.70
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          240.60
+Median TPOT (ms):                        238.28
+P99 TPOT (ms):                           295.35
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           237.24
+Median ITL (ms):                         92.45
+P99 ITL (ms):                            3155.36
+==================================================
 ```
 
-![](/images/2025/Jetson/Headless/ssh-login.jpeg)
-
-#### ssh 免密登录
-
-复制您的公匙 id_rsa.pub 到 Jetson 设备，命名为 authorized_keys。
-
-```shell
-scp ~/.ssh/id_rsa.pub lnsoft@192.168.55.1:/home/lnsoft/.ssh/authorized_keys
-```
-
-ssh 登录可以不用输入密码直接登录 Jetson 设备。
-
-```shell
-ssh lnsoft@192.168.55.1
-```
-
-#### 连接 WiFi
-
-##### 安装网络管理器（Network Manager）
-
-系统默认预装网络管理器（Network Manager）软件。执行以下命令可确认并完成安装：
+- 低负载
 
 ```bash
-sudo apt update
-sudo apt install network-manager
-sudo service NetworkManager start
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  98.36
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.10
+Output token throughput (tok/s):         13.01
+Total Token throughput (tok/s):          220.74
+---------------Time to First Token----------------
+Mean TTFT (ms):                          96.62
+Median TTFT (ms):                        96.92
+P99 TTFT (ms):                           98.87
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          76.68
+Median TPOT (ms):                        76.69
+P99 TPOT (ms):                           76.72
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           76.68
+Median ITL (ms):                         76.57
+P99 ITL (ms):                            77.71
+==================================================
 ```
 
-##### 查看可用 WiFi 列表
+### Qwen3-30B-A3B
+
+- 高负载
 
 ```bash
-sudo nmcli device wifi list
-IN-USE  BSSID              SSID                              MODE   CHAN  RATE        SIGNAL  BARS  SECURITY
-        2C:B2:1A:5D:64:A2  AI_5G                             Infra  161   540 Mbit/s  100     ▂▄▆█  WPA1 WPA2
-        DC:D8:7C:56:2C:76  WJJ_HOME                          Infra  1     270 Mbit/s  65      ▂▄▆_  WPA2
-        2C:B2:1A:5D:64:A1  AI                                Infra  11    540 Mbit/s  59      ▂▄▆_  WPA1 WPA2
-        DC:D8:7C:56:2C:78  WJJ_HOME_Gaming                   Infra  40    540 Mbit/s  42      ▂▄__  WPA2
-        DC:D8:7C:56:2C:77  WJJ_HOME_5G                       Infra  161   270 Mbit/s  37      ▂▄__  WPA2
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  180.95
+Total input tokens:                      204169
+Total generated tokens:                  12800
+Request throughput (req/s):              0.55
+Output token throughput (tok/s):         70.74
+Total Token throughput (tok/s):          1199.07
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1635.21
+Median TTFT (ms):                        1486.42
+P99 TTFT (ms):                           4474.52
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          98.74
+Median TPOT (ms):                        96.12
+P99 TPOT (ms):                           130.45
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           98.74
+Median ITL (ms):                         77.16
+P99 ITL (ms):                            728.40
+==================================================
 ```
 
-##### 连接 WiFi
+- 低负载
 
 ```bash
-sudo nmcli device wifi connect WJJ_HOME_Gaming password <PASSWORD>
-sudo nmcli device wifi connect DC:D8:7C:56:2C:78 password <PASSWORD>
-```
-```bash
-Device 'wlP1p1s0' successfully activated with '6698616f-9239-47e7-a28c-7def80fb60d8'.
-```
-
-##### 查看连接状态
-
-```bash
-nmcli device wifi
-IN-USE  BSSID              SSID             MODE   CHAN  RATE        SIGNAL  BARS  SECURITY
-*       DC:D8:7C:56:2C:78  WJJ_HOME_Gaming  Infra  40    540 Mbit/s  37      ▂▄__  WPA2
-```
-
-##### 查找无线设备名称
-
-```bash
-nmcli device status
-```
-```bash
-DEVICE            TYPE      STATE                   CONNECTION
-wlP1p1s0          wifi      connected               WJJ_HOME_Gaming
-```
-
-##### 网络连接的切换
-
-- 查看当前激活的网络连接
-
-```bash
-nmcli connection show --active
-```
-```bash
-NAME             UUID                                  TYPE      DEVICE
-WJJ_HOME_Gaming  6698616f-9239-47e7-a28c-7def80fb60d8  wifi      wlP1p1s0
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  37.26
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.27
+Output token throughput (tok/s):         34.36
+Total Token throughput (tok/s):          582.73
+---------------Time to First Token----------------
+Mean TTFT (ms):                          81.13
+Median TTFT (ms):                        85.54
+P99 TTFT (ms):                           92.11
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          28.70
+Median TPOT (ms):                        28.70
+P99 TPOT (ms):                           28.73
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           28.70
+Median ITL (ms):                         28.68
+P99 ITL (ms):                            29.28
+==================================================
 ```
 
-- 关闭当前激活的网络连接
+### Qwen3-30B-A3B-FP8
+
+- 高负载
 
 ```bash
-sudo nmcli connection down WJJ_HOME_Gaming
-```
-```bash
-Connection 'WJJ_HOME_Gaming' successfully deactivated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/8)
-```
-
-- 查看当前激活的网络连接
-
-```bash
-nmcli connection show --active
-```
-```bash
-NAME     UUID                                  TYPE      DEVICE
-AI_5G    bb9b3900-6c8a-4556-98b9-79acfca5ef38  wifi      wlP1p1s0
-```
-
-- 激活指定网络连接
-
-```bash
-sudo nmcli connection up AI_5G
-```
-```bash
-Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/10)
-```
-
-- 查看当前激活的网络连接
-
-```bash
-nmcli connection show --active
-```
-```bash
-NAME     UUID                                  TYPE      DEVICE
-AI_5G    bb9b3900-6c8a-4556-98b9-79acfca5ef38  wifi      wlP1p1s0
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  112.22
+Total input tokens:                      204169
+Total generated tokens:                  12800
+Request throughput (req/s):              0.89
+Output token throughput (tok/s):         114.07
+Total Token throughput (tok/s):          1933.51
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1297.50
+Median TTFT (ms):                        1305.82
+P99 TTFT (ms):                           2802.43
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          59.88
+Median TPOT (ms):                        59.43
+P99 TPOT (ms):                           76.87
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           59.88
+Median ITL (ms):                         41.25
+P99 ITL (ms):                            456.73
+==================================================
 ```
 
-### 安装其它软件
-
-#### 安装 JetPack
+- 低负载
 
 ```bash
-sudo apt update
-sudo apt install -y nvidia-jetpack
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  13.35
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.75
+Output token throughput (tok/s):         95.91
+Total Token throughput (tok/s):          1626.78
+---------------Time to First Token----------------
+Mean TTFT (ms):                          71.24
+Median TTFT (ms):                        68.31
+P99 TTFT (ms):                           94.13
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          9.95
+Median TPOT (ms):                        9.89
+P99 TPOT (ms):                           10.33
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           9.95
+Median ITL (ms):                         9.87
+P99 ITL (ms):                            11.44
+==================================================
 ```
 
-#### 安装 [Jetson Stats](https://developer.nvidia.com/embedded/community/jetson-projects/jetson_stats)
+### Qwen3-Coder-30B-A3B-Instruct-FP8
 
-**jetson-stats** 是一款专为 **NVIDIA Jetson** 系列设备设计的强大**系统监控和控制的软件包**。
-
-![](/images/2025/Jetson/community-jetson_stats-2023.gif)
-
-- 安装
+- 高负载
 
 ```bash
-sudo pip3 install jetson-stats --break-system-packages
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  129.15
+Total input tokens:                      204169
+Total generated tokens:                  12800
+Request throughput (req/s):              0.77
+Output token throughput (tok/s):         99.11
+Total Token throughput (tok/s):          1680.01
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1368.76
+Median TTFT (ms):                        1400.81
+P99 TTFT (ms):                           2779.06
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          69.97
+Median TPOT (ms):                        74.07
+P99 TPOT (ms):                           83.47
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           69.97
+Median ITL (ms):                         57.64
+P99 ITL (ms):                            481.45
+==================================================
 ```
 
-- 重启 jtop 服务
+- 低负载
 
 ```bash
-sudo systemctl restart jtop.service
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  15.52
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.64
+Output token throughput (tok/s):         82.45
+Total Token throughput (tok/s):          1398.53
+---------------Time to First Token----------------
+Mean TTFT (ms):                          96.15
+Median TTFT (ms):                        96.01
+P99 TTFT (ms):                           98.57
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          11.46
+Median TPOT (ms):                        11.46
+P99 TPOT (ms):                           11.49
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           11.46
+Median ITL (ms):                         11.41
+P99 ITL (ms):                            12.12
+==================================================
 ```
 
-- 运行 jtop
+### Qwen3-Coder-30B-A3B-Instruct-AWQ-8bit
+
+- 高负载
 
 ```bash
-jtop
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  131.51
+Total input tokens:                      204169
+Total generated tokens:                  12800
+Request throughput (req/s):              0.76
+Output token throughput (tok/s):         97.33
+Total Token throughput (tok/s):          1649.80
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1665.38
+Median TTFT (ms):                        1823.10
+P99 TTFT (ms):                           3795.56
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          68.32
+Median TPOT (ms):                        69.15
+P99 TPOT (ms):                           79.89
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           68.32
+Median ITL (ms):                         44.27
+P99 ITL (ms):                            630.03
+==================================================
 ```
 
-![](/images/2025/Jetson/jtop.jpeg)
-
-> 使用 jtop 可以取代手动运行命令 `sync && echo 3 > /proc/sys/vm/drop_caches` 来清除缓存和 `sudo jetson_clocks` 来调整时钟频率，非常方便。
-
-### Jetson Thor 模组的组件构成
-
-![](/images/2025/Jetson/Thor/nvidia-jetson-thor-module-components-png.webp)
-
-### 信息查询
-
-#### 查询 Jetson 系统信息
+- 低负载
 
 ```bash
-# 用于记录系统（L4T - Linux for Tegra）的版本信息
-cat /etc/nv_tegra_release
-```
-```bash
-# R38 (release), REVISION: 2.0, GCID: 41844464, BOARD: generic, EABI: aarch64, DATE: Fri Aug 22 00:55:42 UTC 2025
-# KERNEL_VARIANT: oot
-TARGET_USERSPACE_LIB_DIR=nvidia
-TARGET_USERSPACE_LIB_DIR_PATH=usr/lib/aarch64-linux-gnu/nvidia
-INSTALL_TYPE=
-```
-
-#### 查询指定 NVIDIA GPU 的计算能力（Compute Capability）
-
-```bash
-nvidia-smi -i 0 --query-gpu=compute_cap --format=csv,noheader
-```
-```bash
-11.0
-```
-
-#### 查询 NVIDIA GPU 的设备信息
-
-```bash
-docker run --rm --runtime=nvidia nvcr.io/nvidia/vllm:25.09-py3 /usr/local/bin/deviceQuery
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  27.37
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.37
+Output token throughput (tok/s):         46.77
+Total Token throughput (tok/s):          793.33
+---------------Time to First Token----------------
+Mean TTFT (ms):                          61.33
+Median TTFT (ms):                        62.60
+P99 TTFT (ms):                           71.58
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          21.06
+Median TPOT (ms):                        21.73
+P99 TPOT (ms):                           21.80
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           21.06
+Median ITL (ms):                         21.59
+P99 ITL (ms):                            22.42
+==================================================
 ```
 
-```bash
-/usr/local/bin/deviceQuery Starting...
+### Qwen3-Coder-30B-A3B-Instruct-AWQ-4bit
 
-CUDA Device Query (Driver API) statically linked version
-Detected 1 CUDA Capable device(s)
-
-Device 0: "NVIDIA Thor"
-  CUDA Driver Version:                           13.0
-  CUDA Capability Major/Minor version number:    11.0
-  Total amount of global memory:                 125772 MBytes (131881684992 bytes)
-  (20) Multiprocessors, (128) CUDA Cores/MP:     2560 CUDA Cores
-  GPU Max Clock rate:                            1049 MHz (1.05 GHz)
-  Memory Clock rate:                             0 Mhz
-  Memory Bus Width:                              0-bit
-  L2 Cache Size:                                 33554432 bytes
-  Max Texture Dimension Sizes                    1D=(131072) 2D=(131072, 65536) 3D=(16384, 16384, 16384)
-  Maximum Layered 1D Texture Size, (num) layers  1D=(32768), 2048 layers
-  Maximum Layered 2D Texture Size, (num) layers  2D=(32768, 32768), 2048 layers
-  Total amount of constant memory:               65536 bytes
-  Total amount of shared memory per block:       49152 bytes
-  Total number of registers available per block: 65536
-  Warp size:                                     32
-  Maximum number of threads per multiprocessor:  1536
-  Maximum number of threads per block:           1024
-  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)
-  Max dimension size of a grid size (x,y,z):    (2147483647, 65535, 65535)
-  Texture alignment:                             512 bytes
-  Maximum memory pitch:                          2147483647 bytes
-  Concurrent copy and kernel execution:          Yes with 1 copy engine(s)
-  Run time limit on kernels:                     Yes
-  Integrated GPU sharing Host Memory:            Yes
-  Support host page-locked memory mapping:       Yes
-  Concurrent kernel execution:                   Yes
-  Alignment requirement for Surfaces:            Yes
-  Device has ECC support:                        Disabled
-  Device supports Unified Addressing (UVA):      Yes
-  Device supports Managed Memory:                Yes
-  Device supports Compute Preemption:            Yes
-  Supports Cooperative Kernel Launch:            Yes
-  Supports MultiDevice Co-op Kernel Launch:      Yes
-  Device PCI Domain ID / Bus ID / location ID:   0 / 1 / 0
-  Compute Mode:
-     < Default (multiple host threads can use ::cudaSetDevice() with device simultaneously) >
-Result = PASS
-```
-
-#### 收集环境信息
-
-- [vLLM CLI Guide](https://docs.vllm.ai/en/latest/cli/index.html)
+- 高负载
 
 ```bash
-docker run --rm --runtime=nvidia nvcr.io/nvidia/vllm:25.09-py3 vllm collect-env
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  102.74
+Total input tokens:                      204169
+Total generated tokens:                  12675
+Request throughput (req/s):              0.97
+Output token throughput (tok/s):         123.37
+Total Token throughput (tok/s):          2110.67
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1298.94
+Median TTFT (ms):                        1150.24
+P99 TTFT (ms):                           3232.16
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          53.75
+Median TPOT (ms):                        53.71
+P99 TPOT (ms):                           61.10
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           53.79
+Median ITL (ms):                         31.55
+P99 ITL (ms):                            541.87
+==================================================
 ```
 
-`vllm collect-env` 命令的作用是**收集当前系统和环境的详细信息，特别是与 vLLM 库（一个用于大语言模型推理的开源库）运行相关的关键组件信息**。
+- 低负载
 
-输出结果分成了几个主要部分，详细列出了运行 vLLM 所需或相关的软件和硬件信息：
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  20.71
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.48
+Output token throughput (tok/s):         61.79
+Total Token throughput (tok/s):          1048.09
+---------------Time to First Token----------------
+Mean TTFT (ms):                          44.06
+Median TTFT (ms):                        45.90
+P99 TTFT (ms):                           49.16
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          15.96
+Median TPOT (ms):                        15.96
+P99 TPOT (ms):                           16.00
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           15.96
+Median ITL (ms):                         15.95
+P99 ITL (ms):                            16.52
+==================================================
+```
 
-1.  **System Info (系统信息)**：
-      * 操作系统 (OS) 版本（如 Ubuntu 24.04.3 LTS, aarch64）。
-      * 编译器（GCC, Clang, CMake）和 C 库 (Libc) 版本。
-2.  **PyTorch Info (PyTorch 信息)**：
-      * PyTorch 版本（vLLM 依赖的深度学习框架）。
-      * 用于构建 PyTorch 的 CUDA 版本。
-3.  **Python Environment (Python 环境)**：
-      * Python 版本和平台架构（如 Python 3.12.3, Linux-aarch64）。
-4.  **CUDA / GPU Info (CUDA / GPU 信息)**：
-      * CUDA 是否可用，CUDA 运行时版本。
-      * **GPU 型号和配置** (如 GPU 0: NVIDIA Thor)。
-      * Nvidia 驱动版本、cuDNN 版本。
-5.  **CPU Info (CPU 信息)**：
-      * CPU 架构 (aarch64)、核心数、缓存信息等。
-      * 有关 CPU 侧安全漏洞的缓解措施信息。
-6.  **Versions of relevant libraries (相关库版本)**：
-      * 通过 `pip` 安装的与深度学习、GPU 相关的关键 Python 库的版本（如 numpy, nvidia-ml-py, onnx, torch, torchvision, transformers, triton）。
-7.  **vLLM Info (vLLM 信息)**：
-      * **vLLM 自身的版本** (`vLLM Version: 0.10.1.1...`)。
-      * vLLM 的构建标志，例如支持的 CUDA 架构 (`CUDA Archs: 8.0 8.6 9.0 10.0 11.0 12.0+PTX`)。
-      * GPU 拓扑结构 (GPU Topology) 和 NUMA 亲和性。
-8.  **Environment Variables (环境变量)**：
-      * 列出对 vLLM 或其依赖项（如 CUDA、PyTorch）有影响的关键环境变量（如 `NVIDIA_VISIBLE_DEVICES`, `CUDA_VERSION`, `LD_LIBRARY_PATH`）。
+### Qwen3-Coder-30B-A3B-Instruct-Int4-W4A16
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  99.27
+Total input tokens:                      204169
+Total generated tokens:                  12789
+Request throughput (req/s):              1.01
+Output token throughput (tok/s):         128.83
+Total Token throughput (tok/s):          2185.54
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1314.33
+Median TTFT (ms):                        1111.64
+P99 TTFT (ms):                           3123.45
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          51.26
+Median TPOT (ms):                        52.49
+P99 TPOT (ms):                           59.17
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           51.27
+Median ITL (ms):                         30.34
+P99 ITL (ms):                            523.20
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  19.68
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.51
+Output token throughput (tok/s):         65.05
+Total Token throughput (tok/s):          1103.33
+---------------Time to First Token----------------
+Mean TTFT (ms):                          41.75
+Median TTFT (ms):                        43.20
+P99 TTFT (ms):                           46.20
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          15.16
+Median TPOT (ms):                        15.16
+P99 TPOT (ms):                           15.19
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           15.16
+Median ITL (ms):                         15.15
+P99 ITL (ms):                            15.68
+==================================================
+```
 
 
-## [NVIDIA JetPack](https://developer.nvidia.cn/embedded/jetpack)
 
-NVIDIA JetPack™ 是 NVIDIA Jetson™ 平台官方软件套件，涵盖丰富工具和库，可用于打造 AI 赋能的边缘应用。JetPack 7 是系列最新版本，专为**前沿机器人**和**生成式 AI** 提供支持。JetPack 7 完全兼容 NVIDIA Jetson 平台，实现超低延迟、确定性性能，以及可扩展的物理世界机器部署方案。
 
-- [Jetson/L4T/Jetson AI Stack](https://elinux.org/Jetson/L4T/Jetson_AI_Stack#AGX_Thor)
 
-### JetPack 7 概述
 
-JetPack 7 为 NVIDIA® Jetson Thor™ 平台提供全方位支持，具备可抢占的实时内核、Multi-Instance GPU (MIG) 及集成式 Holoscan Sensor Bridge。采用 Linux Kernel 6.8 及 Ubuntu 24.04 LTS，模块化云原生架构，结合最新 NVIDIA AI 计算堆栈，可无缝衔接 NVIDIA AI 工作流。无论是开发人形机器人，还是搭建高负载生成式 AI 应用，JetPack 7 为您的项目提供软件基础。
+## xxx-------
 
-#### JetPack 7 采用 SBSA 架构设计
 
-JetPack 7 使 Jetson 软件与服务器基础系统架构（SBSA）对齐，让 Jetson Thor 与业界 ARM 服务器标准保持一致。SBSA 规范关键硬件和固件接口，带来更强操作系统支持、更简便的软件移植及流畅企业集成。在此基础上，Jetson Thor 支持所有 Arm 目标统一安装 CUDA 13.0，简化开发流程、降低分化，确保从服务器系统到 Jetson Thor 的一致性。
 
-![](/images/2025/Jetson/jetson-software-stack-diagram-r1-01.svg)
 
-#### JetPack 组件
 
-![](/images/2025/Jetson/jetpack-metapackage.png)
 
-- [JetPack SDK Setup](https://docs.nvidia.com/jetson/agx-thor-devkit/user-guide/latest/setup_jetpack.html)
 
-### [Jetson 平台服务（Platform Services）](https://developer.nvidia.cn/embedded/jetpack/jetson-platform-services-get-started)
 
-正在寻找一种更简单的方法来加速开发和部署复杂的边缘 AI 应用？Jetson 平台服务是 NVIDIA JetPack™ SDK 不可或缺的组件，可提供预构建和可定制的云原生软件服务来实现这一目标。企业、系统集成商和解决方案提供商可以使用这些 API 驱动的模块化服务，更快、更轻松地构建生成式 AI 和边缘应用。
 
-![](/images/2025/Jetson/metropolis-jetson-platform-service-diagrams-3280429-jetson-platform-service-r2.png)
 
-### [Jetson 云原生技术](https://developer.nvidia.com/embedded/jetson-cloud-native)
 
-云原生（Cloud-Native）技术具备快速产品开发和持续产品升级所需的灵活性与敏捷性。
 
-Jetson 平台将云原生技术拓展至边缘计算领域，支持容器（containers）和容器编排等曾为云应用带来革命性变革的技术。
 
-NVIDIA JetPack 包含集成了 Docker 的 NVIDIA 容器运行时（NVIDIA Container Runtime），可在 Jetson 平台上运行支持 GPU 加速的容器化应用。开发者能够将 Jetson 平台所需的应用及其所有依赖项打包到单个容器中，确保该容器在任何部署环境下都能正常运行。
 
-![](/images/2025/Jetson/jetson_containers.png)
 
-[NGC Catalog](https://catalog.ngc.nvidia.com/)
 
-构建人工智能所需的一切 —— GPU 优化容器、预训练模型、软件开发工具包和 Helm 图表 —— 都统一在一个目录中，适用于云、数据中心或边缘环境。
 
-### [Holoscan Sensor Bridge（HSB）](https://developer.nvidia.com/blog/nvidia-holoscan-sensor-bridge-empowers-developers-with-real-time-data-processing/)
 
-Holoscan 传感器桥接器专为低延迟数据流和控制而设计。它通过以太网使用用户数据协议 (UDP) 将传感器数据传输到 NVIDIA Jetson 和 NVIDIA IGX 等系统上的 GPU 显存，从而降低延迟和 CPU 占用率。它针对 NVIDIA ConnectX SmartNICs 和 camera-over-Ethernet 技术的使用进行了优化，可实现视频、边缘 AI 和机器人的实时处理。HSB 将原始传感器数据串流到 Holoscan SDK 中，支持从采集到推理和可视化的统一流程。
 
-![](/images/2025/Jetson/HSB-design-architecture.webp)
-> Holoscan Sensor Bridge 设计架构
 
-### [NVIDIA Isaac](https://developer.nvidia.cn/isaac)
 
-NVIDIA Isaac AI 机器人开发平台由 NVIDIA CUDA 加速库、应用框架和 AI 模型组成，可加速自主移动机器人 (AMR)、手臂和操纵器以及人形机器人等 AI 机器人的开发。
 
-### [NVIDIA Metropolis](https://www.nvidia.cn/autonomous-machines/intelligent-video-analytics-platform/)
 
-构建视觉 AI 智能体和应用程序的平台。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## 大模型
