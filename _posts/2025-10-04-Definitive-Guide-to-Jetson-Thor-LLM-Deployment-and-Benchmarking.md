@@ -173,6 +173,66 @@ IN-USE  BSSID              SSID             MODE   CHAN  RATE        SIGNAL  BAR
 *       DC:D8:7C:56:2C:78  WJJ_HOME_Gaming  Infra  40    540 Mbit/s  37      ▂▄__  WPA2
 ```
 
+##### 查找无线设备名称
+
+```bash
+nmcli device status
+```
+```bash
+DEVICE            TYPE      STATE                   CONNECTION
+wlP1p1s0          wifi      connected               WJJ_HOME_Gaming
+```
+
+##### 网络连接的切换
+
+- 查看当前激活的网络连接
+
+```bash
+nmcli connection show --active
+```
+```bash
+NAME             UUID                                  TYPE      DEVICE
+WJJ_HOME_Gaming  6698616f-9239-47e7-a28c-7def80fb60d8  wifi      wlP1p1s0
+```
+
+- 关闭当前激活的网络连接
+
+```bash
+sudo nmcli connection down WJJ_HOME_Gaming
+```
+```bash
+Connection 'WJJ_HOME_Gaming' successfully deactivated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/8)
+```
+
+- 查看当前激活的网络连接
+
+```bash
+nmcli connection show --active
+```
+```bash
+NAME     UUID                                  TYPE      DEVICE
+AI_5G    bb9b3900-6c8a-4556-98b9-79acfca5ef38  wifi      wlP1p1s0
+```
+
+- 激活指定网络连接
+
+```bash
+sudo nmcli connection up AI_5G
+```
+```bash
+Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/10)
+```
+
+- 查看当前激活的网络连接
+
+```bash
+nmcli connection show --active
+```
+```bash
+NAME     UUID                                  TYPE      DEVICE
+AI_5G    bb9b3900-6c8a-4556-98b9-79acfca5ef38  wifi      wlP1p1s0
+```
+
 ### 安装其它软件
 
 #### 安装 JetPack
@@ -536,6 +596,24 @@ modelscope download --model Qwen/Qwen3-8B-AWQ --local_dir Qwen/Qwen3-8B-AWQ
 modelscope download --model Qwen/Qwen3-32B-AWQ --local_dir Qwen/Qwen3-32B-AWQ
 ```
 
+- [Qwen3-Coder-30B-A3B-Instruct-AWQ-4bit](https://www.modelscope.cn/models/cpatonn-mirror/Qwen3-Coder-30B-A3B-Instruct-AWQ-4bit)
+
+```bash
+modelscope download --model cpatonn-mirror/Qwen3-Coder-30B-A3B-Instruct-AWQ-4bit --local_dir cpatonn-mirror/Qwen3-Coder-30B-A3B-Instruct-AWQ-4bit
+```
+
+- [Qwen3-Coder-30B-A3B-Instruct-AWQ-8bit](https://www.modelscope.cn/models/cpatonn-mirror/Qwen3-Coder-30B-A3B-Instruct-AWQ-8bit)
+
+```bash
+modelscope download --model cpatonn-mirror/Qwen3-Coder-30B-A3B-Instruct-AWQ-8bit --local_dir cpatonn-mirror/Qwen3-Coder-30B-A3B-Instruct-AWQ-8bit
+```
+
+- [Qwen2.5-VL-7B-Instruct-AWQ](https://modelscope.cn/models/Qwen/Qwen2.5-VL-7B-Instruct-AWQ)
+
+```bash
+modelscope download --model Qwen/Qwen2.5-VL-7B-Instruct-AWQ --local_dir Qwen/Qwen2.5-VL-7B-Instruct-AWQ
+```
+
 ### GGUF
 
 GGUF 是一种统一的文件格式和运行时规范，旨在将量化后的模型、元数据、词汇表等打包成一个单一且易于移植的文件，它支持多种量化等级，并被广泛用于 llama.cpp 等项目，特别优化了在本地设备上使用 CPU 进行 LLM 推理的效率。
@@ -550,6 +628,20 @@ modelscope download --model Qwen/Qwen3-8B-GGUF --local_dir Qwen/Qwen3-8B-GGUF
 
 ```bash
 modelscope download --model Qwen/Qwen3-30B-A3B-GGUF --local_dir Qwen/Qwen3-30B-A3B-GGUF
+```
+
+### 语音
+
+- [SenseVoiceSmall](https://modelscope.cn/models/iic/SenseVoiceSmall)
+
+```bash
+modelscope download --model iic/SenseVoiceSmall --local_dir iic/SenseVoiceSmall
+```
+
+- [CosyVoice2-0.5B](https://modelscope.cn/models/iic/CosyVoice2-0.5B)
+
+```bash
+modelscope download --model iic/CosyVoice2-0.5B --local_dir iic/CosyVoice2-0.5B
 ```
 
 
