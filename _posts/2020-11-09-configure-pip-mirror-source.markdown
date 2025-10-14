@@ -10,11 +10,34 @@ tags: [Python, pip, Mirror]
 
 ## 国内可用的pip镜像源
 * [阿里云](https://mirrors.aliyun.com/pypi/simple/)
+```bash
+https://mirrors.aliyun.com/pypi/simple/
+```
+
 * [清华大学](https://pypi.tuna.tsinghua.edu.cn/simple/)
+```bash
+https://pypi.tuna.tsinghua.edu.cn/simple/
+```
+
 * [豆瓣](http://pypi.douban.com/simple/)
+```bash
+http://pypi.douban.com/simple/
+```
+
 * [中国科技大学](https://pypi.mirrors.ustc.edu.cn/simple/)
+```bash
+https://pypi.mirrors.ustc.edu.cn/simple/
+```
+
 * [华中理工大学](http://pypi.hustunique.com/)
+```bash
+http://pypi.hustunique.com/
+```
+
 * [山东理工大学](http://pypi.sdutlinux.org/)
+```bash
+http://pypi.sdutlinux.org/
+```
 
 ## 更新pip
 ```shell
