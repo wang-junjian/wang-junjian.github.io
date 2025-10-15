@@ -272,6 +272,38 @@ jtop
 
 ### Jetson Thor 模组的组件构成
 
+**NVIDIA Jetson AGX Thor 开发者套件模组规格**
+
+| | NVIDIA Jetson T5000 | NVIDIA Jetson T4000* |
+| :--- | :--- | :--- |
+| **AI 性能** | 2070 TFLOPS (稀疏 FP4) 1035 TFLOPS (稠密 FP4 | 稀疏 FP8 | 稀疏 INT8) 517 TFLOPs (稠密 FP8 | 稀疏 FP16) | 1200 TFLOPS (稀疏 FP4) 600 TFLOPS (稠密 FP4 | 稀疏 FP8 | 稀疏 INT8) 300 TFLOPs (稠密 FP8 | 稀疏 FP16) |
+| **GPU** | 2560 核 NVIDIA Blackwell 架构 GPU，具有 96 个第五代 Tensor Core，10 个 TPC 的 MIG | 1536 核 NVIDIA Blackwell 架构 GPU，具有 64 个第五代 Tensor Core，6 个 TPC 的 MIG |
+| **CPU** | 14 核 Arm Neoverse-V3AE 64 位 CPU | 12 核 Arm Neoverse-V3AE 64 位 CPU |
+| **内存** | 128 GB 256 位 LPDDR5X，273 GB/s | 64 GB 256 位 LPDDR5X，273 GB/s |
+| **频率** | 1.57 GHz 最大 GPU 2.6 GHz 最大 CPU | 1.57 GHz 最大 GPU 2.6 GHz 最大 CPU |
+| **存储** | 通过 PCIe 支持 NVMe；通过 USB3.2 支持 SSD | 通过 PCIe 支持 NVMe；通过 USB3.2 支持 SSD |
+| **视觉加速器** | PVA v3.0 | PVA v3.0 |
+| **视频编码** | 高达 6x4Kp60 (H.265/H.264) | 高达 6x4Kp60 (H.265/H.264)* |
+| **视频解码** | 高达 4x 8Kp30 (H.265) 高达 4x 4Kp60 (H.264) | 高达 4x 8Kp30 (H.265)* 高达 4x 4Kp60 (H.264)* |
+| **摄像头** | 通过 HSB 高达 20 个摄像头；通过 16x MIPI CSI-2 通道高达 6 个摄像头；使用虚拟通道 C-PHY 2.1 (10.25 Gbps) D-PHY 2.1 (40 Gbps) 高达 32 个摄像头 | 通过 HSB 高达 20 个摄像头；通过 16x MIPI CSI-2 通道高达 6 个摄像头；使用虚拟通道 C-PHY 2.1 (10.25 Gbps) D-PHY 2.1 (40 Gbps) 高达 32 个摄像头 |
+| **显示** | 4x 共享 HDMI2.1 VESA Display Port 1.4a – HBR2, MST | 4x 共享 HDMI2.1 VESA Display Port 1.4a – HBR2, MST |
+| **功耗** | 40 W – 130 W | 40 W – 70 W |
+
+**NVIDIA Jetson AGX Thor 开发者套件载板规格**
+
+| 规格 | 描述 |
+| :--- | :--- |
+| **集成 NVIDIA Jetson Thor 模组** | NVIDIA Jetson **T5000 模组** |
+| **存储** | M.2 Key M 插槽上**集成 1TB NVMe** |
+| **摄像头** | 通过 QSFP 插槽连接 **HSB 摄像头**；**USB 摄像头** |
+| **PCIe** | M.2 Key M 插槽，带 **x4 PCIe Gen5** (已安装 1TB NVMe)；M.2 Key E 插槽，带 **x1 PCIe Gen5** (已安装 Wi-Fi 6E 加蓝牙模组) |
+| **USB** | 2 个 **USB Type-A 3.2 Gen2**；2 个 **USB Type-C 3.1 Gen1**；1 个 **USB Type-C (仅用于调试)** |
+| **网络** | 1 个 **5GBe RJ45 连接器**；1 个 **QSFP28 (4x 25GbE)** |
+| **Wi-Fi** | **802.11ax Wi-Fi 6E** |
+| **显示** | 1 个 **HDMI 2.0b**；1 个 **DisplayPort 1.4a** |
+| **其他 I/O** | 2 个 13 针 **CAN 接头**；2 个 6 针**自动化接头**；2 个 5 针接头；**JTAG 连接器**；1 个 4 针**风扇连接器** – 12V, PWM, 和转速表；2 个 5 针**音频面板接头**；2 针 **RTC 备用电池连接器**；**Microfit 电源插孔**；电源、强制恢复和复位按钮 |
+| **机械尺寸** | **243.19 毫米 x 112.40 毫米 x 56.88 毫米** (高度包括支脚、载板、模组和散热解决方案) |
+
 ![](/images/2025/Jetson/Thor/nvidia-jetson-thor-module-components-png.webp)
 
 ### Jetson Thor 功能对比
