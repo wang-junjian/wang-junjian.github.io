@@ -306,6 +306,8 @@ jtop
 
 ![](/images/2025/Jetson/Thor/nvidia-jetson-thor-module-components-png.webp)
 
+- [Introducing NVIDIA Jetson Thor, the Ultimate Platform for Physical AI](https://developer.nvidia.com/blog/introducing-nvidia-jetson-thor-the-ultimate-platform-for-physical-ai/)
+
 ### Jetson Thor 功能对比
 
 ![](/images/2025/Jetson/Thor/Jetson-Features-Comparison.png)
