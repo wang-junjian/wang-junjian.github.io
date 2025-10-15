@@ -274,6 +274,10 @@ jtop
 
 ![](/images/2025/Jetson/Thor/nvidia-jetson-thor-module-components-png.webp)
 
+### Jetson Thor 功能对比
+
+![](/images/2025/Jetson/Thor/Jetson-Features-Comparison.png)
+
 ### 信息查询
 
 #### 查询 Jetson 系统信息
