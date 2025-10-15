@@ -278,6 +278,8 @@ jtop
 
 ![](/images/2025/Jetson/Thor/Jetson-Features-Comparison.png)
 
+- [NVIDIA Jetson Thor: Powering the Future of Physical AI](https://developer.ridgerun.com/wiki/index.php/NVIDIA_Jetson_Thor:_Powering_the_Future_of_Physical_AI)
+
 ### 信息查询
 
 #### 查询 Jetson 系统信息
