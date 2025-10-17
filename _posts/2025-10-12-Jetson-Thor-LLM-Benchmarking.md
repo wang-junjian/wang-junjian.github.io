@@ -6,6 +6,7 @@ categories: Jetson LLM
 tags: [Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
 ---
 
+Jetson Thor 平台上 Qwen3 系列大模型性能基准测试分析。
 
 <!--more-->
 
