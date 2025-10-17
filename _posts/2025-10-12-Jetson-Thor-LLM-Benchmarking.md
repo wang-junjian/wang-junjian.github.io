@@ -9,7 +9,525 @@ tags: [Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
 
 <!--more-->
 
-## 性能基准测试
+## 性能基准测试分析
+
+![](/images/2025/Jetson/Qwen3-Benchmarks/1.png)
+
+![](/images/2025/Jetson/Qwen3-Benchmarks/2.png)
+
+![](/images/2025/Jetson/Qwen3-Benchmarks/3.png)
+
+![](/images/2025/Jetson/Qwen3-Benchmarks/4.png)
+
+![](/images/2025/Jetson/Qwen3-Benchmarks/5.png)
+
+![](/images/2025/Jetson/Qwen3-Benchmarks/6.png)
+
+
+## 性能基准测试结果
+
+### Qwen3-8B
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  150.59
+Total input tokens:                      204169
+Total generated tokens:                  12419
+Request throughput (req/s):              0.66
+Output token throughput (tok/s):         82.47
+Total Token throughput (tok/s):          1438.24
+---------------Time to First Token----------------
+Mean TTFT (ms):                          974.57
+Median TTFT (ms):                        959.99
+P99 TTFT (ms):                           2200.61
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          85.33
+Median TPOT (ms):                        86.05
+P99 TPOT (ms):                           90.57
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           85.33
+Median ITL (ms):                         72.52
+P99 ITL (ms):                            361.74
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  81.59
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.12
+Output token throughput (tok/s):         15.69
+Total Token throughput (tok/s):          266.09
+---------------Time to First Token----------------
+Mean TTFT (ms):                          78.19
+Median TTFT (ms):                        78.22
+P99 TTFT (ms):                           80.61
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          63.63
+Median TPOT (ms):                        63.63
+P99 TPOT (ms):                           63.76
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           63.63
+Median ITL (ms):                         63.59
+P99 ITL (ms):                            64.89
+==================================================
+```
+
+### Qwen3-8B-FP8
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  42.94
+Total input tokens:                      204169
+Total generated tokens:                  12800
+Request throughput (req/s):              2.33
+Output token throughput (tok/s):         298.07
+Total Token throughput (tok/s):          5052.48
+---------------Time to First Token----------------
+Mean TTFT (ms):                          495.44
+Median TTFT (ms):                        455.84
+P99 TTFT (ms):                           912.34
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          22.59
+Median TPOT (ms):                        23.00
+P99 TPOT (ms):                           25.05
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           22.59
+Median ITL (ms):                         17.88
+P99 ITL (ms):                            150.30
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  11.52
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.87
+Output token throughput (tok/s):         111.15
+Total Token throughput (tok/s):          1885.21
+---------------Time to First Token----------------
+Mean TTFT (ms):                          23.06
+Median TTFT (ms):                        23.14
+P99 TTFT (ms):                           25.49
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          8.88
+Median TPOT (ms):                        8.88
+P99 TPOT (ms):                           8.98
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           8.88
+Median ITL (ms):                         8.68
+P99 ITL (ms):                            9.99
+==================================================
+```
+
+### Qwen3-8B-FP4
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  74.12
+Total input tokens:                      204169
+Total generated tokens:                  12393
+Request throughput (req/s):              1.35
+Output token throughput (tok/s):         167.20
+Total Token throughput (tok/s):          2921.73
+---------------Time to First Token----------------
+Mean TTFT (ms):                          570.92
+Median TTFT (ms):                        460.86
+P99 TTFT (ms):                           1935.81
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          42.08
+Median TPOT (ms):                        41.89
+P99 TPOT (ms):                           50.72
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           42.09
+Median ITL (ms):                         33.41
+P99 ITL (ms):                            211.06
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  31.79
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.31
+Output token throughput (tok/s):         40.26
+Total Token throughput (tok/s):          682.94
+---------------Time to First Token----------------
+Mean TTFT (ms):                          38.55
+Median TTFT (ms):                        38.39
+P99 TTFT (ms):                           40.58
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          24.73
+Median TPOT (ms):                        24.71
+P99 TPOT (ms):                           24.81
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           24.73
+Median ITL (ms):                         24.60
+P99 ITL (ms):                            25.78
+==================================================
+```
+
+### Qwen3-8B-GPTQ-Int4
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     200
+Maximum request concurrency:             8
+Benchmark duration (s):                  240.75
+Total input tokens:                      408281
+Total generated tokens:                  24244
+Request throughput (req/s):              0.83
+Output token throughput (tok/s):         100.70
+Total Token throughput (tok/s):          1796.55
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1918.40
+Median TTFT (ms):                        1886.97
+P99 TTFT (ms):                           3725.30
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          64.07
+Median TPOT (ms):                        65.20
+P99 TPOT (ms):                           77.52
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           63.69
+Median ITL (ms):                         31.55
+P99 ITL (ms):                            743.86
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  29.70
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.34
+Output token throughput (tok/s):         43.09
+Total Token throughput (tok/s):          730.96
+---------------Time to First Token----------------
+Mean TTFT (ms):                          36.87
+Median TTFT (ms):                        36.94
+P99 TTFT (ms):                           38.49
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          23.09
+Median TPOT (ms):                        23.09
+P99 TPOT (ms):                           23.19
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           23.09
+Median ITL (ms):                         22.96
+P99 ITL (ms):                            24.13
+==================================================
+```
+
+### Qwen3-8B-GPTQ-Int8
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  156.75
+Total input tokens:                      204169
+Total generated tokens:                  12419
+Request throughput (req/s):              0.64
+Output token throughput (tok/s):         79.23
+Total Token throughput (tok/s):          1381.78
+---------------Time to First Token----------------
+Mean TTFT (ms):                          2225.45
+Median TTFT (ms):                        1899.85
+P99 TTFT (ms):                           5168.47
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          81.04
+Median TPOT (ms):                        83.37
+P99 TPOT (ms):                           91.55
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           81.04
+Median ITL (ms):                         45.06
+P99 ITL (ms):                            858.38
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  47.19
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.21
+Output token throughput (tok/s):         27.13
+Total Token throughput (tok/s):          460.11
+---------------Time to First Token----------------
+Mean TTFT (ms):                          50.83
+Median TTFT (ms):                        50.65
+P99 TTFT (ms):                           53.36
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          36.75
+Median TPOT (ms):                        36.74
+P99 TPOT (ms):                           36.86
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           36.75
+Median ITL (ms):                         36.83
+P99 ITL (ms):                            37.66
+==================================================
+```
+
+### Qwen3-8B-AWQ
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  123.36
+Total input tokens:                      204169
+Total generated tokens:                  12392
+Request throughput (req/s):              0.81
+Output token throughput (tok/s):         100.45
+Total Token throughput (tok/s):          1755.51
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1823.17
+Median TTFT (ms):                        1529.95
+P99 TTFT (ms):                           4474.37
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          63.92
+Median TPOT (ms):                        65.64
+P99 TPOT (ms):                           77.46
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           63.99
+Median ITL (ms):                         31.84
+P99 ITL (ms):                            745.13
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  30.00
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.33
+Output token throughput (tok/s):         42.66
+Total Token throughput (tok/s):          723.61
+---------------Time to First Token----------------
+Mean TTFT (ms):                          36.95
+Median TTFT (ms):                        37.39
+P99 TTFT (ms):                           38.72
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          23.33
+Median TPOT (ms):                        23.36
+P99 TPOT (ms):                           23.40
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           23.33
+Median ITL (ms):                         23.17
+P99 ITL (ms):                            24.34
+==================================================
+```
+
+### Qwen3-8B-Int4-W4A16
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  124.74
+Total input tokens:                      204169
+Total generated tokens:                  12419
+Request throughput (req/s):              0.80
+Output token throughput (tok/s):         99.56
+Total Token throughput (tok/s):          1736.36
+---------------Time to First Token----------------
+Mean TTFT (ms):                          2114.14
+Median TTFT (ms):                        2230.05
+P99 TTFT (ms):                           4737.55
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          62.10
+Median TPOT (ms):                        61.38
+P99 TPOT (ms):                           71.65
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           62.10
+Median ITL (ms):                         31.80
+P99 ITL (ms):                            746.19
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  29.98
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.33
+Output token throughput (tok/s):         42.70
+Total Token throughput (tok/s):          724.22
+---------------Time to First Token----------------
+Mean TTFT (ms):                          37.85
+Median TTFT (ms):                        38.06
+P99 TTFT (ms):                           39.91
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          23.30
+Median TPOT (ms):                        23.31
+P99 TPOT (ms):                           23.41
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           23.30
+Median ITL (ms):                         23.11
+P99 ITL (ms):                            24.41
+==================================================
+```
+
+### Qwen3-8B-Int8-W8A16
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  152.79
+Total input tokens:                      204169
+Total generated tokens:                  12419
+Request throughput (req/s):              0.65
+Output token throughput (tok/s):         81.28
+Total Token throughput (tok/s):          1417.54
+---------------Time to First Token----------------
+Mean TTFT (ms):                          2294.06
+Median TTFT (ms):                        2376.24
+P99 TTFT (ms):                           5134.68
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          77.95
+Median TPOT (ms):                        80.18
+P99 TPOT (ms):                           87.64
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           77.95
+Median ITL (ms):                         45.00
+P99 ITL (ms):                            852.45
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     10
+Maximum request concurrency:             1
+Benchmark duration (s):                  46.51
+Total input tokens:                      20431
+Total generated tokens:                  1280
+Request throughput (req/s):              0.22
+Output token throughput (tok/s):         27.52
+Total Token throughput (tok/s):          466.84
+---------------Time to First Token----------------
+Mean TTFT (ms):                          50.23
+Median TTFT (ms):                        50.24
+P99 TTFT (ms):                           51.65
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          36.22
+Median TPOT (ms):                        36.22
+P99 TPOT (ms):                           36.25
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           36.22
+Median ITL (ms):                         36.24
+P99 ITL (ms):                            37.03
+==================================================
+```
+
+### Qwen3-8B-GGUF
+
+- 高负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     100
+Maximum request concurrency:             8
+Benchmark duration (s):                  1617.23
+Total input tokens:                      204169
+Total generated tokens:                  12800
+Request throughput (req/s):              0.06
+Output token throughput (tok/s):         7.91
+Total Token throughput (tok/s):          134.16
+---------------Time to First Token----------------
+Mean TTFT (ms):                          43688.41
+Median TTFT (ms):                        47162.20
+P99 TTFT (ms):                           93242.93
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          670.56
+Median TPOT (ms):                        706.07
+P99 TPOT (ms):                           830.26
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           670.56
+Median ITL (ms):                         88.76
+P99 ITL (ms):                            15722.16
+==================================================
+```
+
+- 低负载
+
+```bash
+============ Serving Benchmark Result ============
+Successful requests:                     1
+Benchmark duration (s):                  4.39
+Total input tokens:                      2048
+Total generated tokens:                  128
+Request throughput (req/s):              0.23
+Output token throughput (tok/s):         29.14
+Total Token throughput (tok/s):          495.41
+---------------Time to First Token----------------
+Mean TTFT (ms):                          148.53
+Median TTFT (ms):                        148.53
+P99 TTFT (ms):                           148.53
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          33.41
+Median TPOT (ms):                        33.41
+P99 TPOT (ms):                           33.41
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           33.41
+Median ITL (ms):                         33.34
+P99 ITL (ms):                            34.03
+==================================================
+```
 
 ### Qwen3-32B-AWQ
 
