@@ -2598,3 +2598,7 @@ P99 ITL (ms):                            1290.74
 - [后台启用缓存清理器](https://raw.githubusercontent.com/NVIDIA-AI-Blueprints/video-search-and-summarization/refs/heads/main/deploy/scripts/sys_cache_cleaner.sh)
 - [vLLM 性能基准测试示例（使用Qwen2.5-VL-3B）](https://elinux.org/Jetson/L4T/Jetson_AI_Stack#Benchmark)
 - [NVIDIA Jetson AI Lab Benchmarks](https://www.jetson-ai-lab.com/benchmarks.html)
+- [Gen AI Benchmarking: LLMs and VLMs on Jetson](https://www.jetson-ai-lab.com/tutorial_gen-ai-benchmarking.html)
+- [Performance Comparison of Qwen3-30B-A3B-AWQ on Jetson Thor vs Orin AGX 64GB](https://forums.developer.nvidia.com/t/performance-comparison-of-qwen3-30b-a3b-awq-on-jetson-thor-vs-orin-agx-64gb/345449)
+- [MIG User Guide](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/)
+- [MXFP4, FP4, and FP8: How GPT-OSS Runs 120B Parameters on an 80GB GPU with MoE Weight Quantization](https://buzzgrewal.medium.com/mxfp4-fp4-and-fp8-how-gpt-oss-runs-120b-parameters-on-an-80gb-gpu-with-moe-weight-quantization-db26b57fd787)
