@@ -10,6 +10,13 @@ Jetson Thor 平台上 Qwen3 系列大模型性能基准测试分析。
 
 <!--more-->
 
+![](/images/2025/Jetson/vLLM-Quantization-Supported-Hardware.png)
+
+- [Quantization](https://docs.vllm.ai/en/latest/features/quantization/index.html#supported-hardware)
+- [📌 GPT OSS](https://docs.vllm.ai/projects/recipes/en/latest/OpenAI/GPT-OSS.html)
+- [📌 vLLM Benchmark Suites](https://docs.vllm.ai/en/latest/contributing/benchmarks.html)
+- [Performance benchmarks descriptions](https://github.com/vllm-project/vllm/blob/main/.buildkite/nightly-benchmarks/performance-benchmarks-descriptions.md)
+
 ## 性能基准测试分析
 
 ![](/images/2025/Jetson/Qwen3-Benchmarks/1.png)
@@ -921,3 +928,8 @@ Median ITL (ms):                         15.15
 P99 ITL (ms):                            15.68
 ==================================================
 ```
+
+
+## 参考资料
+- [LLM evaluation | EleutherAI lm-evaluation-harness](https://medium.com/disassembly/llm-evaluation-eleutherai-lm-evaluation-harness-cc379495d545)
+- [EleutherAI/lm-evaluation-harness Tasks](https://github.com/EleutherAI/lm-evaluation-harness/tree/main/lm_eval/tasks)
