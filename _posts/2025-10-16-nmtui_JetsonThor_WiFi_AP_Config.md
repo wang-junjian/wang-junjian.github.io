@@ -72,3 +72,8 @@ sudo nmtui
 ## 连接到热点
 
 ![](/images/2025/Jetson/nmtui/6.png)
+
+## 参考资料
+- [nmtui](https://docs.rockylinux.org/10/zh/gemstones/network/nmtui/)
+- [2.5. NetworkManager 工具](https://docs.redhat.com/zh-cn/documentation/red_hat_enterprise_linux/7/html/networking_guide/sec-NetworkManager_Tools)
+- [3.2. 使用 nmtui 配置 IP 网络](https://docs.redhat.com/zh-cn/documentation/red_hat_enterprise_linux/7/html/networking_guide/sec-configuring_ip_networking_with_nmtui)
