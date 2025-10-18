@@ -32,6 +32,43 @@ Jetson Thor 平台上 Qwen3 系列大模型性能基准测试分析。
 ![](/images/2025/Jetson/Qwen3-Benchmarks/6.png)
 
 
+## 部署模型
+
+```bash
+vllm serve /models/Qwen/Qwen3-8B --served-model-name qwen3
+```
+
+## 运行性能基准测试
+
+- 高负载
+
+```bash
+vllm bench serve \
+    --base-url http://localhost:8000 \
+    --model qwen3 \
+    --tokenizer /models/Qwen/Qwen3-8B \
+    --dataset-name random \
+    --random-input-len 2048 \
+    --random-output-len 128 \
+    --num-prompts 100 \
+    --max-concurrency 8
+```
+
+- 低负载
+
+```bash
+vllm bench serve \
+    --base-url http://localhost:8000 \
+    --model qwen3 \
+    --tokenizer /models/Qwen/Qwen3-8B \
+    --dataset-name random \
+    --random-input-len 2048 \
+    --random-output-len 128 \
+    --num-prompts 10 \
+    --max-concurrency 1
+```
+
+
 ## 性能基准测试结果
 
 ### Qwen3-8B
