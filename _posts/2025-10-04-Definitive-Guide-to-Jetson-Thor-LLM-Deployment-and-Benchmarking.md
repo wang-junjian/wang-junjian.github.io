@@ -767,6 +767,7 @@ docker run -it --rm \
   -v ~/.cache/modelscope:/root/.cache/modelscope \
   nvcr.io/nvidia/vllm:25.09-py3 \
   bash
+```
 
 - tritonserver:vllm
 
