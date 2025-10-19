@@ -3,7 +3,7 @@ layout: single
 title:  "Jetson Thor 平台上 Qwen3 系列大模型性能基准测试分析"
 date:   2025-10-12 06:00:00 +0800
 categories: Jetson Qwen3
-tags: [Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
+tags: [JetsonThor, Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
 ---
 
 <!--more-->

@@ -3,7 +3,7 @@ layout: single
 title:  "使用 nmtui 配置 Jetson Thor Wi-Fi 热点（AP 模式）"
 date:   2025-10-16 08:00:00 +0800
 categories: Jetson Thor
-tags: [Jetson, Thor, nmtui, Wi-Fi, AP, NVIDIA]
+tags: [JetsonThor, Jetson, Thor, nmtui, Wi-Fi, AP, NVIDIA]
 ---
 
 <!--more-->
