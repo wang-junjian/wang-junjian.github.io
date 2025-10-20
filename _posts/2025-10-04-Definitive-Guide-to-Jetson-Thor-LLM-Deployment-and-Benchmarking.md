@@ -33,6 +33,8 @@ tags: [JetsonThor, Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
 - [NVIDIA DRIVE AGX Thor 开发者套件 硬件快速入门指南](https://developer.nvidia.com/downloads/drive/secure/thor/drive-agx-thor-devkit-qsg-simplified-chinese.pdf)
 
 ### BSP 安装
+- [Jetson AGX Thor Developer Kit - User Guide](https://docs.nvidia.com/jetson/agx-thor-devkit/user-guide/latest/index.html)
+- [Jetson AGX Thor Developer Kit - User Guide: Quick Start Guide](https://docs.nvidia.com/jetson/agx-thor-devkit/user-guide/latest/quick_start.html)
 
 使用可启动安装 USB 棒在 Jetson AGX Thor 开发套件上快速安装 BSP（ Jetson Linux ）。
 
