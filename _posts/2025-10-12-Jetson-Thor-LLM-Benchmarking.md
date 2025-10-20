@@ -8,6 +8,8 @@ tags: [JetsonThor, Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
 
 <!--more-->
 
+NVIDIA Jetson Thor 采用了 **Blackwell** 架构的 GPU。
+
 ![](/images/2025/Jetson/vLLM-Quantization-Supported-Hardware.png)
 
 - [Quantization](https://docs.vllm.ai/en/latest/features/quantization/index.html#supported-hardware)
