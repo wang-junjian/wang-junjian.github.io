@@ -102,6 +102,9 @@ tags: [JetsonThor, Jetson, Thor, DeepSeek-OCR, OCR]
 
 ![](/images/2025/DeepSeek-OCR/image-to-markdown-table.jpeg)
 
+`<image>\n<|grounding|>Convert the document to markdown.`
+
+![](/images/2025/DeepSeek-OCR/image-to-math.jpeg)
 
 ## 模拟人类记忆遗忘机制
 
