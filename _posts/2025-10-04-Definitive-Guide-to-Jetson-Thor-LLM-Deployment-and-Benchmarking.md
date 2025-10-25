@@ -2576,6 +2576,47 @@ P99 ITL (ms):                            1290.74
 ```
 
 
+## [TensorRT-LLM](https://nvidia.github.io/TensorRT-LLM/index.html)
+
+- [TensorRT-LLM Release](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tensorrt-llm/containers/release?version=1.2.0rc1)
+- [Throughput Measurements](https://nvidia.github.io/TensorRT-LLM/latest/developer-guide/perf-overview.html)
+
+
+### 模型部署
+
+```bash
+docker run --rm -it \
+    --ipc=host \
+    --ulimit memlock=-1 \
+    --ulimit stack=67108864 \
+    --runtime=nvidia \
+    -v /models:/models \
+    nvcr.io/nvidia/tensorrt-llm/release:1.2.0rc1 \
+    bash
+```
+
+```bash
+# trtllm-serve TinyLlama/TinyLlama-1.1B-Chat-v1.0
+trtllm-serve /models/Qwen/Qwen3-8B-FP8
+```
+
+- [Quick Start Recipe for Qwen3 Next on TensorRT LLM - Blackwell & Hopper Hardware](https://nvidia.github.io/TensorRT-LLM/latest/deployment-guide/quick-start-recipe-for-qwen3-next-on-trtllm.html)
+- [Run benchmarking with trtllm-serve](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/commands/trtllm-serve/run-benchmark-with-trtllm-serve.md)
+
+### FAQ
+
+```bash
+RuntimeError: Unsupported SM version for FP8 block scaling GEMM
+
+[10/24/2025-13:08:47] [TRT-LLM] [I] get signal from executor worker
+[10/24/2025-13:08:47] [TRT-LLM] [E] Executor worker initialization error: Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/tensorrt_llm/executor/worker.py", line 364, in worker_main
+    worker: GenerationExecutorWorker = worker_cls(
+```
+
+- [TRT LLM for Inference - two Sparks example is VERY slow](https://forums.developer.nvidia.com/t/trt-llm-for-inference-two-sparks-example-is-very-slow/348517)
+
+
 ## 参考资料
 - [NVIDIA Jetson Linux Developer Guide](https://docs.nvidia.com/jetson/archives/r38.2/DeveloperGuide/)
 - [Docker on NVIDIA GPU Cloud](https://dgx-wiki.readthedocs.io/en/latest/docs/docker/service.html)
