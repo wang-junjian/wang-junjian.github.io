@@ -98,6 +98,10 @@ tags: [JetsonThor, Jetson, Thor, DeepSeek-OCR, OCR]
 
 ![](/images/2025/DeepSeek-OCR/general-vision-understanding.jpeg)
 
+![](/images/2025/DeepSeek-OCR/english-ocr.jpeg)
+
+![](/images/2025/DeepSeek-OCR/image-to-markdown-table.jpeg)
+
 
 ## 模拟人类记忆遗忘机制
 
