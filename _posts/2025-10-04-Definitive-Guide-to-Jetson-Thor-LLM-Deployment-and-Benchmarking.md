@@ -2646,3 +2646,7 @@ RuntimeError: Unsupported SM version for FP8 block scaling GEMM
 - [Performance Comparison of Qwen3-30B-A3B-AWQ on Jetson Thor vs Orin AGX 64GB](https://forums.developer.nvidia.com/t/performance-comparison-of-qwen3-30b-a3b-awq-on-jetson-thor-vs-orin-agx-64gb/345449)
 - [MIG User Guide](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/)
 - [MXFP4, FP4, and FP8: How GPT-OSS Runs 120B Parameters on an 80GB GPU with MoE Weight Quantization](https://buzzgrewal.medium.com/mxfp4-fp4-and-fp8-how-gpt-oss-runs-120b-parameters-on-an-80gb-gpu-with-moe-weight-quantization-db26b57fd787)
+- [nvidia/cuda](https://hub.docker.com/r/nvidia/cuda)
+- [sbsa/cu130 index](https://pypi.jetson-ai-lab.io/sbsa/cu130)
+- [jp6/cu129 index](https://pypi.jetson-ai-lab.io/jp6/cu129)
+- [vLLM Installation GPU](https://docs.vllm.ai/en/stable/getting_started/installation/gpu.html)
