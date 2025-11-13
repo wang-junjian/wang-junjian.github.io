@@ -22,7 +22,7 @@ tags: [WhisperLiveKit, ASR, Whisper, JetsonThor]
 
 ## 构建 WhisperLiveKit
 
-### 运行 vLLM 容器
+### 运行 pytorch 容器
 
 ```bash
 docker run -it \
