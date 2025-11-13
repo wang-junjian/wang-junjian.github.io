@@ -20,7 +20,9 @@ tags: [WhisperLiveKit, ASR, Whisper, JetsonThor]
 ![](/images/2025/whisperlivekit/architecture.png)
 
 
-## 运行 vLLM 容器
+## 构建 WhisperLiveKit
+
+### 运行 vLLM 容器
 
 ```bash
 docker run -it \
@@ -546,3 +548,7 @@ python simple_transcription_example.py all.wav
 ## 参考资料
 - [WhisperLiveKit](https://github.com/QuentinFuxa/WhisperLiveKit)
 - [NVIDIA NeMo Framework](https://github.com/NVIDIA-NeMo/NeMo)
+- [WhisperLiveKit: The Ultimate Solution for Real-time Speech Recognition](https://skywork.ai/blog/whisperlivekit-the-ultimate-solution-for-real-time-speech-recognition/)
+- [WhisperLiveKit: Real-Time On-Device Speech-to-Text with Speaker Diarization & Zero Cloud Uploads](https://www.xugj520.cn/en/archives/whisperlivekit-real-time-speech-to-text.html)
+- [whisper-diarization](https://github.com/MahmoudAshraf97/whisper-diarization)
+- [SpeechBrain](https://github.com/speechbrain/speechbrain)
