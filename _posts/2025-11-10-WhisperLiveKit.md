@@ -180,6 +180,368 @@ whisperlivekit-server --model small \
 
 浏览器访问 `https://192.168.55.1:8000`
 
+![](/images/2025/whisperlivekit/test.png)
+
+
+## Python 调用 WhisperLiveKit 服务
+
+### 准备音频文件
+
+#### 查看音频文件信息
+
+```bash
+file asr_example.wav guess_age_gender.wav output.wav test.wav
+```
+```bash
+asr_example.wav:      RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+guess_age_gender.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 48000 Hz
+output.wav:           RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 24000 Hz
+test.wav:             RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+```
+
+> 采样率（sample rate）不同（16k / 24k / 48k），不能直接合并，否则会出现合并后的语音模糊不清。
+
+#### 统一音频格式
+
+合并前，先把所有音频文件转换为 16k 采样率的单声道 16 位 PCM 格式。
+
+```bash
+mkdir -p clean
+for f in *.wav; do
+  ffmpeg -y -i "$f" -ar 16000 -ac 1 -sample_fmt s16 "clean/$f"
+done
+```
+
+#### 生成拼接列表文件
+
+```bash
+ls clean/*.wav | sed "s/^/file '/;s/$/'/" > mylist.txt
+```
+
+这行命令生成一个文本文件 `mylist.txt`，格式为：
+
+```bash
+file 'clean/asr_example.wav'
+file 'clean/guess_age_gender.wav'
+file 'clean/output.wav'
+file 'clean/test.wav'
+```
+
+#### 拼接音频文件
+
+```bash
+ffmpeg -f concat -safe 0 -i mylist.txt -ar 16000 -ac 1 -sample_fmt s16 all.wav
+```
+
+### 使用 WebSocket API
+
+```py
+#!/usr/bin/env python3
+"""
+simple_transcription_example.py
+
+用途:
+    根据服务器 config 自动选用发送格式（webm vs PCM）。用于把本地 WAV 文件上传到 WhisperLiveKit
+    并等待转写结果（以兼容 web UI 的行为）。
+
+用法:
+    python simple_transcription_example.py test.wav --server wss://127.0.0.1:8000/asr
+
+依赖:
+    pip install websockets numpy
+    系统需安装 ffmpeg (仅当服务器要求 webm 时需要)
+
+说明:
+    - 脚本会在建立 WebSocket 后先读取首个 JSON 消息（server config）
+      依据 useAudioWorklet 字段选择发送方式：
+        * useAudioWorklet == False  -> 把 wav 转成 webm/opus（使用 ffmpeg），按小块发送二进制 blob（模拟 MediaRecorder）
+        * useAudioWorklet == True   -> 发送归一化 float32 PCM 数据（短帧）
+"""
+
+import asyncio
+import websockets
+import json
+import sys
+import ssl
+import wave
+import numpy as np
+import logging
+import argparse
+import tempfile
+import subprocess
+import os
+import time
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("simple_transcription_example")
+
+def resample_to_rate(samples: np.ndarray, orig_rate: int, target_rate: int):
+    if orig_rate == target_rate:
+        return samples
+    ratio = target_rate / orig_rate
+    new_length = int(len(samples) * ratio)
+    x_old = np.linspace(0, len(samples) - 1, len(samples))
+    x_new = np.linspace(0, len(samples) - 1, new_length)
+    res = np.interp(x_new, x_old, samples).astype(np.int16)
+    return res
+
+async def wait_for_config(ws, timeout=5.0):
+    """等待服务器的首个 JSON 消息（config），返回解析后的 dict 或 None"""
+    try:
+        raw = await asyncio.wait_for(ws.recv(), timeout=timeout)
+    except asyncio.TimeoutError:
+        return None
+    try:
+        data = json.loads(raw)
+        return data
+    except Exception:
+        return None
+
+async def send_webm_bytes(ws, webm_path, chunk_bytes=64*1024, delay=0.05):
+    """把 webm 文件以若干二进制块发送，最后发送空二进制表示结束（模拟 MediaRecorder -> Blob 时序）"""
+    logger.info(f"Sending webm audio from {webm_path} in chunks of {chunk_bytes} bytes")
+    with open(webm_path, "rb") as f:
+        while True:
+            b = f.read(chunk_bytes)
+            if not b:
+                break
+            await ws.send(b)
+            await asyncio.sleep(delay)
+    # send empty blob / end signal
+    await ws.send(b"")
+    logger.info("Sent end-of-stream signal (empty blob)")
+
+async def send_pcm_float32(ws, audio_array: np.ndarray, sample_rate: int, chunk_ms=40, delay=0.02):
+    """发送归一化 float32 PCM bytes（little endian）。audio_array 应为 int16 原始样本"""
+    logger.info("Sending float32 PCM frames")
+    # normalize int16 -> float32 [-1,1]
+    if audio_array.dtype.kind in ("i","u"):
+        maxv = np.iinfo(audio_array.dtype).max
+        f = (audio_array.astype(np.float32) / float(maxv))
+    else:
+        f = audio_array.astype(np.float32)
+    samples_per_chunk = int(sample_rate * chunk_ms / 1000)
+    for i in range(0, len(f), samples_per_chunk):
+        chunk = f[i:i+samples_per_chunk].astype(np.float32).tobytes()
+        await ws.send(chunk)
+        await asyncio.sleep(delay)
+    await ws.send(b"")
+    logger.info("Sent end-of-stream signal (empty)")
+
+def wav_to_webm_ffmpeg(wav_path: str, out_webm_path: str, bitrate="64k"):
+    """用 ffmpeg 转码 wav -> webm (opus). 返回输出路径。抛出异常表示失败"""
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-hide_banner",
+        "-loglevel", "error",
+        "-i", wav_path,
+        "-c:a", "libopus",
+        "-b:a", bitrate,
+        "-vbr", "on",
+        "-application", "audio",
+        "-f", "webm",
+        out_webm_path,
+    ]
+    logger.info("Running ffmpeg to generate webm: " + " ".join(cmd))
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffmpeg failed: {proc.stderr.decode(errors='ignore')}")
+    return out_webm_path
+
+async def transcribe_file(wav_path: str, server_url: str):
+    # read wav basic info
+    with wave.open(wav_path, "rb") as wf:
+        channels = wf.getnchannels()
+        sample_width = wf.getsampwidth()
+        frame_rate = wf.getframerate()
+        n_frames = wf.getnframes()
+        raw = wf.readframes(n_frames)
+        logger.info(f"WAV: {channels}ch, {sample_width} bytes, {frame_rate}Hz, {n_frames} frames")
+
+        if sample_width == 2:
+            dtype = np.int16
+        elif sample_width == 1:
+            dtype = np.uint8
+        elif sample_width == 4:
+            dtype = np.int32
+        else:
+            raise RuntimeError("Unsupported sample width")
+        audio = np.frombuffer(raw, dtype=dtype)
+        if channels == 2:
+            # Convert stereo to mono by averaging channels
+            audio = audio.reshape(-1, 2).mean(axis=1).astype(dtype)
+
+    # SSL context (ignore certs for local dev)
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    logger.info(f"Connecting to {server_url}")
+    async with websockets.connect(server_url, ssl=ssl_context) as ws:
+        logger.info("Connected, waiting for server config (timeout 5s)...")
+        cfg = await wait_for_config(ws, timeout=5.0)
+        if cfg:
+            logger.info(f"Server config: {cfg}")
+        else:
+            logger.warning("No config received in time; defaulting to webm mode")
+            cfg = {}
+
+        use_worklet = bool(cfg.get("useAudioWorklet"))
+        if not use_worklet:
+            # server expects MediaRecorder webm blobs
+            # 转码 wav -> webm (ffmpeg) 到临时文件
+            tmp = tempfile.NamedTemporaryFile(suffix=".webm", delete=False)
+            tmp.close()
+            try:
+                wav_to_webm_ffmpeg(wav_path, tmp.name)
+            except Exception as e:
+                os.unlink(tmp.name)
+                raise
+            try:
+                await send_webm_bytes(ws, tmp.name, chunk_bytes=64*1024, delay=0.05)
+            finally:
+                try:
+                    os.unlink(tmp.name)
+                except Exception:
+                    pass
+        else:
+            # server expects worklet PCM: send float32 PCM (normalized)
+            target_rate = cfg.get("sample_rate", 16000)
+            if frame_rate != target_rate:
+                logger.info(f"Resampling from {frame_rate} to {target_rate}")
+                audio16 = resample_to_rate(audio.astype(np.int16), frame_rate, target_rate)
+            else:
+                audio16 = audio.astype(np.int16)
+            await send_pcm_float32(ws, audio16, sample_rate=target_rate, chunk_ms=40, delay=0.02)
+
+        # receive transcription results until ready_to_stop or timeout
+        
+        # 使用字典来存储和更新基于开始时间的段落
+        confirmed_segments = {}
+        
+        logger.info("Audio sent; receiving server messages...")
+        while True:
+            try:
+                msg = await asyncio.wait_for(ws.recv(), timeout=60.0)
+            except asyncio.TimeoutError:
+                logger.warning("Timeout waiting for server replies")
+                break
+            try:
+                data = json.loads(msg)
+            except Exception:
+                logger.info("Received non-json message")
+                continue
+            # logger.info(f"Server -> {data}")
+            
+            if data.get("type") == "ready_to_stop":
+                logger.info("Server indicated ready_to_stop")
+                continue # break
+                
+            status = data.get("status")
+            if status == "no_audio_detected":
+                logger.warning("Server reports no_audio_detected")
+                # continue to read in case more messages arrive
+                continue # 如果没有音频，跳过段落处理
+
+            lines = data.get("lines", []) or []
+            
+            # 1. 收集当前服务器响应中所有段落的起始时间键
+            current_starts = {ln.get("start") for ln in lines if ln.get("start")}
+            
+            # 2. 找出需要删除的旧键
+            # 如果已记录的段落起始时间不在当前服务器返回的列表中，则认为它已被合并或过时，应被删除。
+            keys_to_delete = set()
+            for existing_start_time_str in confirmed_segments.keys():
+                if existing_start_time_str not in current_starts:
+                     keys_to_delete.add(existing_start_time_str)
+
+            # 3. 执行删除
+            for key in keys_to_delete:
+                del confirmed_segments[key]
+                logger.debug(f"Removed segment with start key: {key}") # 辅助调试
+            
+            # 4. 更新/插入新的段落
+            for ln in lines:
+                text = ln.get("text", "").strip()
+                start_time_str = ln.get("start")
+                
+                # 仅处理包含文本和开始时间的段落
+                if text and start_time_str:
+                    confirmed_segments[start_time_str] = text
+
+        # 整理最终结果：按开始时间排序并提取文本
+        final_lines = []
+        
+        # 排序是基于时间字符串进行的，这对于格式如 '0:00:05' 通常是有效的。
+        # 如果时间格式更复杂（如包含毫秒），可能需要转换为浮点数再排序。
+        # 目前假设字符串排序足够。
+        for start_time_str in sorted(confirmed_segments.keys()):
+            final_lines.append(confirmed_segments[start_time_str])
+
+        return final_lines # 返回去重和排序后的结果
+        
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("wav", help="Path to WAV file")
+    p.add_argument("--server", default="wss://127.0.0.1:8000/asr")
+    return p.parse_args()
+
+if __name__ == "__main__":
+    args = parse_args()
+    try:
+        results = asyncio.run(transcribe_file(args.wav, args.server))
+        print("\n===== TRANSCRIPT =====")
+        for r in results:
+            print(r)
+    except Exception as e:
+        logger.exception("Failed")
+        sys.exit(1)
+```
+
+### 部署 WhisperLiveKit 服务（whisper small）
+
+```bash
+whisperlivekit-server --model small \
+    --host 0.0.0.0 --port 8000 \
+    --ssl-certfile .cert/cert.pem \
+    --ssl-keyfile .cert/key.pem \
+    --diarization \
+    --language zh
+```
+
+运行 `simple_transcription_example.py`
+
+```bash
+python simple_transcription_example.py all.wav
+```
+```
+欢迎大家来体验打摩院推出的语音识别模型。
+I heard that you can understand what people say, and even though they are agent-gender, so can you guess my agent-gender from my voice?你好,欢迎使用百度飞奖深度学习框架。格兰发布了一份主题为宣布即将对先进半导体知道设备台取得出口管制措施的公告表示,坚于技术的发展和地缘政治的背景,
+```
+
+### 部署 WhisperLiveKit 服务（whisper large-v3-turbo）
+
+```bash
+whisperlivekit-server --model large-v3-turbo \
+    --host 0.0.0.0 --port 8000 \
+    --ssl-certfile .cert/cert.pem \
+    --ssl-keyfile .cert/key.pem \
+    --diarization \
+    --language auto
+```
+
+运行 `simple_transcription_example.py`
+
+```bash
+python simple_transcription_example.py all.wav
+```
+```
+欢迎大家来体验达摩院推出的语音识别模型。
+我听了你们能理解什么人说的,而且虽然他们是老年纪和男性。所以,你们能够猜我老年纪和男性的声音吗?你好,欢迎使用百度非讲深度学习框架。格兰发布了一份主题为宣布即将对仙境半导体制造设备采取的出口管制措施的公告表示,监狱技术的发展和地缘政治的背景,
+```
+
+> 这里的一段英文语音自动翻译为了中文
 
 ## 参考资料
 - [WhisperLiveKit](https://github.com/QuentinFuxa/WhisperLiveKit)
