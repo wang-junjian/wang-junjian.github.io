@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "WhisperLiveKit"
+title:  "WhisperLiveKit - 实时语音识别"
 date:   2025-11-10 08:00:00 +0800
 categories: WhisperLiveKit ASR
 tags: [WhisperLiveKit, ASR, Whisper, JetsonThor]
@@ -22,17 +22,17 @@ tags: [WhisperLiveKit, ASR, Whisper, JetsonThor]
 
 ## 构建 WhisperLiveKit
 
-### 运行 pytorch 容器
+### 运行 pytorch 容器 - CUDA (JetsonThor)
 
 ```bash
 docker run -it \
     --ipc=host \
     --net=host \
     --runtime=nvidia \
-    --name=wlk \
+    --name=whisperlivekit \
     -v ~/.cache:/root/.cache \
     -v /models:/models \
-    nvcr.io/nvidia/pytorch:25.10-py3 \
+    nvcr.io/nvidia/pytorch:25.08-py3 \
     bash
 ```
 
@@ -88,11 +88,55 @@ brew install ffmpeg
 ```
 
 #### 安装 torchaudio
+
+- Ubuntu
+
+克隆 torchaudio 仓库，并切换到 2.8 分支
+
 ```bash
-pip install torchaudio torchvision --index-url https://download.pytorch.org/whl/cu130
+git clone -b release/2.8 https://github.com/pytorch/audio.git
+cd audio
+```
+
+禁用所有 C++ 扩展（强制纯 Python 版）
+
+你当前 NVIDIA torch 缺少大量 ABI 文件，大部分 C++ 扩展都不能编译，所以必须禁用：
+
+```bash
+export BUILD_TORIO_PYTHON_EXTENSION=0
+export BUILD_SOX=1
+export USE_CUDA=0
+export USE_STABLE_ABI=0
+```
+
+编译安装
+
+```bash
+python setup.py install
+```
+
+- macOS
+
+```bash
+pip install torchaudio
 ```
 
 #### 安装 whisperlivekit
+
+- Ubuntu
+
+```bash
+# 不加 --no-deps 就会安装 torchaudio 和 torch 的依赖
+pip install whisperlivekit --no-deps
+pip install tiktoken fastapi uvicorn websockets
+```
+
+❌ 安装成功，但是启动服务器时报错：
+```bash
+# pip install faster-whisper # 有问题
+```
+
+- macOS
 
 ```bash
 pip install whisperlivekit -i https://pypi.tuna.tsinghua.edu.cn/simple
@@ -131,10 +175,19 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 ```bash
 pip install "git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]"
-pip install nllw openai -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+- Ubuntu
+
+❌ 还是失败了。（--diarization-backend diart）
+```bash
+# 不加 --no-deps 就会安装 torchaudio 和 torch 的依赖
+pip install diart pyannote_audio pyannote-core pyannoteai_sdk pyannote-metrics pyannote-database --no-deps
+pip install rx optuna sounddevice websocket-server
 ```
 
 - macOS
+
 ```bash
 pip install mlx-whisper -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
@@ -183,6 +236,30 @@ whisperlivekit-server --model small \
 浏览器访问 `https://192.168.55.1:8000`
 
 ![](/images/2025/whisperlivekit/test.png)
+
+
+## 构建 WhisperLiveKit 镜像
+
+```bash
+docker commit whisperlivekit wangjunjian/whisperlivekit
+```
+
+### 运行镜像
+
+```bash
+docker run -it --rm \
+    --ipc=host \
+    --net=host \
+    --runtime=nvidia \
+    -v ~/.cache:/root/.cache \
+    wangjunjian/whisperlivekit \
+    whisperlivekit-server --model small \
+    --host 0.0.0.0 --port 8000 \
+    --ssl-certfile .cert/cert.pem \
+    --ssl-keyfile .cert/key.pem \
+    --language zh \
+    --diarization
+```
 
 
 ## Python 调用 WhisperLiveKit 服务
