@@ -8,6 +8,9 @@ permalink: /read/
 
 ## 11🈷️
 - [X] [李飞飞最新长文：AI的下一个十年——构建真正具备空间智能的机器](https://mp.weixin.qq.com/s/3w5zgnMXe13mKIR_ePBwAw)
+- [X] [扩散不死，BERT永生！Karpathy凌晨反思：自回归时代该终结了?](https://mp.weixin.qq.com/s/Mn51nq2nT0ee8Nr76g0gdw)
+
+  ![](/images/2025/TODO/RoBERTa-vs-GPT2.gif)
 
 
 # 2023
