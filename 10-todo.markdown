@@ -8,8 +8,9 @@ permalink: /read/
 
 ## 11🈷️
 - [X] [李飞飞最新长文：AI的下一个十年——构建真正具备空间智能的机器](https://mp.weixin.qq.com/s/3w5zgnMXe13mKIR_ePBwAw)
+  > **空间智能** = 能按物理规律`生成世界` + 融合多模态`理解世界` + 通过交互`改变世界`。
 - [X] [扩散不死，BERT永生！Karpathy凌晨反思：自回归时代该终结了?](https://mp.weixin.qq.com/s/Mn51nq2nT0ee8Nr76g0gdw)
-
+  > **RoBERTa 扩散生成**：🔁 (`预测` ➡️ `采样` ➡️ `掩码`)
   ![](/images/2025/TODO/RoBERTa-vs-GPT2.gif)
 
 
