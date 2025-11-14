@@ -1,8 +1,14 @@
 ---
 layout: single
-title: TODO
-permalink: /todo/
+title: 必读
+permalink: /read/
 ---
+
+# 2025
+
+## 11🈷️
+- [李飞飞最新长文：AI的下一个十年——构建真正具备空间智能的机器](https://mp.weixin.qq.com/s/3w5zgnMXe13mKIR_ePBwAw)
+
 
 # 2023
 
