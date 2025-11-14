@@ -7,13 +7,13 @@ permalink: /read/
 # 2025
 
 ## 11🈷️
-- [李飞飞最新长文：AI的下一个十年——构建真正具备空间智能的机器](https://mp.weixin.qq.com/s/3w5zgnMXe13mKIR_ePBwAw)
+- [X] [李飞飞最新长文：AI的下一个十年——构建真正具备空间智能的机器](https://mp.weixin.qq.com/s/3w5zgnMXe13mKIR_ePBwAw)
 
 
 # 2023
 
 ## 6🈷️
-- [X] 9 [To Repeat or Not To Repeat: Insights from Scaling LLM under Token-Crisis](https://arxiv.org/abs/2305.13230)
+- [X] [To Repeat or Not To Repeat: Insights from Scaling LLM under Token-Crisis](https://arxiv.org/abs/2305.13230)
   * [重复还是不重复：代币危机下扩展 LLM 的启示](https://mp.weixin.qq.com/s/DBP_eafGeKMEuSIma9Z9Tg)
   最近的研究强调了数据集规模在扩展语言模型方面的重要性。然而，大型语言模型（LLMs）在预训练期间容易饥饿，而网络上的高质量文本数据已接近其LLMs的扩展极限。为了进一步增强LLMs，一个简单直接的方法是重复预训练数据进行额外的epoch。在这项研究中，我们从实证角度研究了这种方法的三个关键方面。首先，我们探讨重复预训练数据的后果，揭示模型容易过度拟合，导致多次epoch的退化。其次，我们研究了导致多次epoch退化的关键因素，发现显著因素包括数据集大小、模型参数和训练目标，而不太有影响的因素包括数据集质量和模型FLOPs。最后，我们探索广泛使用的正则化是否可以缓解多次epoch的退化。大多数正则化技术并没有带来显著改进，除了dropout，它表现出了显著的有效性，但需要在扩展模型大小时进行小心的调整。此外，我们发现利用专家混合（MoE）可以实现具有可比可调参数的计算密集型密集LLMs的成本效益和高效的超参数调整，可能影响更广泛的高效LLM开发。
 
@@ -77,7 +77,6 @@ permalink: /read/
 * [OpenAI API Documention](https://platform.openai.com/docs)
 * [LlamaIndex](https://gpt-index.readthedocs.io/en/latest/index.html)
 * [Pinecone Documention](https://docs.pinecone.io/docs/overview)
-* []()
 
 ## 学习资料
 * [OpenAI Cookbook](https://github.com/openai/openai-cookbook/)
