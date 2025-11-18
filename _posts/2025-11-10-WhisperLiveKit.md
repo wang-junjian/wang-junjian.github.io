@@ -32,7 +32,7 @@ docker run -it \
     --name=whisperlivekit \
     -v ~/.cache:/root/.cache \
     -v /models:/models \
-    nvcr.io/nvidia/pytorch:25.08-py3 \
+    nvcr.io/nvidia/pytorch:25.10-py3 \
     bash
 ```
 
@@ -240,11 +240,13 @@ whisperlivekit-server --model small \
 
 ## 构建 WhisperLiveKit 镜像
 
+### 手动构建
+
 ```bash
 docker commit whisperlivekit wangjunjian/whisperlivekit
 ```
 
-### 运行镜像
+**运行镜像**
 
 ```bash
 docker run -it --rm \
@@ -259,6 +261,156 @@ docker run -it --rm \
     --ssl-keyfile .cert/key.pem \
     --language zh \
     --diarization
+```
+
+### 自动构建
+
+#### Dockerfile 文件
+
+```dockerfile
+FROM nvcr.io/nvidia/pytorch:25.10-py3
+
+# 基础环境
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && apt install -y \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 常用工具
+RUN pip install --upgrade pip setuptools wheel
+
+# ----------------------------------------------------
+# 手动安装 torchaudio (Jetson Thor 必须禁用 C++ 扩展)
+# ----------------------------------------------------
+RUN git clone -b release/2.8 https://github.com/pytorch/audio.git /tmp/audio
+WORKDIR /tmp/audio
+
+ENV BUILD_TORIO_PYTHON_EXTENSION=0
+ENV BUILD_SOX=1
+ENV USE_CUDA=0
+ENV USE_STABLE_ABI=0
+
+RUN python setup.py install
+RUN rm -rf /tmp/audio
+
+# ----------------------------------------------------
+# WhisperLiveKit 及依赖
+# ----------------------------------------------------
+RUN pip install whisperlivekit --no-deps
+RUN pip install tiktoken fastapi uvicorn websockets \
+    && pip install --upgrade certifi
+
+# 安装 NeMo（如果你启用 --diarization）
+RUN pip install "git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]"
+
+# ----------------------------------------------------
+# 容器目录准备
+# ----------------------------------------------------
+WORKDIR /root
+RUN mkdir -p /root/.cache
+
+COPY warmup.wav /root/warmup.wav
+
+COPY .cache/whisper/ /root/.cache/whisper/
+COPY .cache/huggingface/ /root/.cache/huggingface/
+COPY .cache/matplotlib/ /root/.cache/matplotlib/
+
+# ----------------------------------------------------
+# 生成自签名证书（10年有效期）
+# ----------------------------------------------------
+RUN mkdir -p /root/.cert && \
+    openssl req -x509 -newkey rsa:4096 \
+      -keyout /root/.cert/key.pem \
+      -out /root/.cert/cert.pem \
+      -days 3650 \
+      -nodes \
+      -subj "/C=CN/ST=ShanDong/L=JiNan/O=LNSoft/OU=LNSoft/CN=192.168.55.1/emailAddress=wjj@163.com"
+
+COPY entrypoint.sh /root/entrypoint.sh
+RUN chmod +x /root/entrypoint.sh
+ENTRYPOINT ["/root/entrypoint.sh"]
+```
+- [WhisperLiveKit/Dockerfile](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/Dockerfile)
+
+#### entrypoint.sh 文件
+
+```bash
+#!/usr/bin/env bash
+
+MODEL="${MODEL:-small}"
+PORT="${PORT:-8000}"
+LANG="${LANG:-zh}"
+DIAR="${DIAR:-false}"
+
+EXTRA_ARGS=()
+if [[ "$DIAR" == "true" || "$DIAR" == "1" ]]; then
+    EXTRA_ARGS+=("--diarization")
+fi
+
+exec whisperlivekit-server \
+    --model "$MODEL" \
+    --host 0.0.0.0 --port "$PORT" \
+    --ssl-certfile /root/.cert/cert.pem \
+    --ssl-keyfile /root/.cert/key.pem \
+    --language "$LANG" \
+    --warmup-file /root/warmup.wav \
+    "${EXTRA_ARGS[@]}"
+```
+
+#### 构建镜像
+
+```bash
+docker build -t whisperlivekit:latest .
+```
+
+#### 运行镜像
+
+- 默认模型为 `small`
+
+```bash
+docker run -it --rm \
+    --ipc=host \
+    --net=host \
+    --runtime=nvidia \
+    whisperlivekit
+```
+
+- 指定模型为 `large-v3-turbo`
+
+```bash
+docker run -it --rm \
+    --ipc=host \
+    --net=host \
+    --runtime=nvidia \
+    -e MODEL=large-v3-turbo \
+    whisperlivekit
+```
+
+- 启用 `diarization`
+
+```bash
+docker run -it \
+    --ipc=host \
+    --net=host \
+    --runtime=nvidia \
+    -e MODEL=large-v3-turbo \
+    -e PORT=8000 \
+    -e LANG=zh \
+    -e DIAR=true \
+    whisperlivekit
+```
+
+### 迁移 WhisperLiveKit 镜像
+#### 保存镜像
+
+```bash
+docker save whisperlivekit -o whisperlivekit.tar
+```
+
+#### 加载镜像
+
+```bash
+docker load -i whisperlivekit.tar
 ```
 
 
@@ -622,6 +774,7 @@ python simple_transcription_example.py all.wav
 
 > 这里的一段英文语音自动翻译为了中文
 
+
 ## 参考资料
 - [WhisperLiveKit](https://github.com/QuentinFuxa/WhisperLiveKit)
 - [NVIDIA NeMo Framework](https://github.com/NVIDIA-NeMo/NeMo)
@@ -629,3 +782,4 @@ python simple_transcription_example.py all.wav
 - [WhisperLiveKit: Real-Time On-Device Speech-to-Text with Speaker Diarization & Zero Cloud Uploads](https://www.xugj520.cn/en/archives/whisperlivekit-real-time-speech-to-text.html)
 - [whisper-diarization](https://github.com/MahmoudAshraf97/whisper-diarization)
 - [SpeechBrain](https://github.com/speechbrain/speechbrain)
+- [TorchCodec](https://github.com/meta-pytorch/torchcodec)
