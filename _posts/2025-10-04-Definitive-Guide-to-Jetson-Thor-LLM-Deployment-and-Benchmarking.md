@@ -429,6 +429,105 @@ docker run --rm --runtime=nvidia nvcr.io/nvidia/vllm:25.09-py3 vllm collect-env
 8.  **Environment Variables (环境变量)**：
       * 列出对 vLLM 或其依赖项（如 CUDA、PyTorch）有影响的关键环境变量（如 `NVIDIA_VISIBLE_DEVICES`, `CUDA_VERSION`, `LD_LIBRARY_PATH`）。
 
+### 网络配置（静态 IP）
+
+无线网络 / Wi-Fi 配置请参考文章：
+- [使用 nmtui 配置 Jetson Thor Wi-Fi 热点（AP 模式）]({% post_url 2025-10-16-nmtui_JetsonThor_WiFi_AP_Config %})
+
+#### 查看网络设备状态
+
+```bash
+nmcli device status
+```
+```bash
+DEVICE            TYPE      STATE                                  CONNECTION
+enP2p1s0          ethernet  connecting (getting IP configuration)  Wired connection 1
+l4tbr0            bridge    connected (externally)                 l4tbr0
+lo                loopback  connected (externally)                 lo
+docker0           bridge    connected (externally)                 docker0
+wlP1p1s0          wifi      disconnected                           --
+p2p-dev-wlP1p1s0  wifi-p2p  disconnected                           --
+mgbe0_0           ethernet  unavailable                            --
+mgbe1_0           ethernet  unavailable                            --
+mgbe2_0           ethernet  unavailable                            --
+mgbe3_0           ethernet  unavailable                            --
+can0              can       unmanaged                              --
+can1              can       unmanaged                              --
+can2              can       unmanaged                              --
+can3              can       unmanaged                              --
+usb0              ethernet  unmanaged                              --
+usb1              ethernet  unmanaged                              --
+```
+
+#### 查看网络设备的信息
+
+```bash
+ip addr show enP2p1s0
+```
+```bash
+10: enP2p1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 4c:bb:47:01:ce:99 brd ff:ff:ff:ff:ff:ff
+```
+
+#### 配置静态 IP 地址
+
+```bash
+sudo nmcli connection modify "Wired connection 1" \
+```
+```bash
+ipv4.method manual \
+ipv4.addresses "27.41.19.62/25" \
+ipv4.gateway "27.41.19.1" \
+ipv4.dns "27.41.84.1" \
+connection.autoconnect yes
+```
+- **IP**: 27.41.19.62
+- **子网掩码**: 255.255.255.128
+- **网关**: 27.41.19.1
+- **DNS**: 27.41.84.1
+
+255.255.255.128 对应的CIDR是 `/25`，所以完整的CIDR表示是：`27.41.19.62/25`
+
+#### 重启网络连接
+
+```bash
+sudo nmcli connection down "Wired connection 1"
+sudo nmcli connection up "Wired connection 1"
+```
+
+#### 查看网络设备的信息
+
+```bash
+ip addr show enP2p1s0
+```
+```bash
+10: enP2p1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 4c:bb:47:01:ce:99 brd ff:ff:ff:ff:ff:ff
+    inet 27.41.19.62/25 brd 27.41.19.127 scope global noprefixroute enP2p1s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::568f:cf25:2b3a:55df/64 scope link noprefixroute
+       valid_lft forever preferred_lft forever
+```
+
+#### 验证配置
+
+```bash
+# 查看连接详情
+nmcli connection show "static-enP2p1s0"
+
+# 检查IP地址配置
+ip addr show enP2p1s0
+
+# 检查路由
+ip route show
+
+# 测试网络连通性
+ping -c 4 27.41.19.1
+
+# 测试DNS
+nslookup google.com 27.41.84.1
+```
+
 
 ## [NVIDIA JetPack](https://developer.nvidia.cn/embedded/jetpack)
 
