@@ -51,3 +51,10 @@ arecord -f S16_LE -c1 -r 16000 -t raw -D default | nc localhost 8000
 ffmpeg -hide_banner -f avfoundation -i ":0" -ac 1 -ar 16000 -f s16le -loglevel error - | nc localhost 8000
 ```
 > 没能识别出文字
+
+
+## 参考资料
+- [SimulStreaming](https://github.com/ufal/SimulStreaming)
+- [Mac client example #123](https://github.com/ufal/whisper_streaming/pull/123)
+- [add sounddevice multiplatform client #111](https://github.com/ufal/whisper_streaming/pull/111)
+- [whisper_streaming](https://github.com/ufal/whisper_streaming)
