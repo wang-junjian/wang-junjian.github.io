@@ -62,7 +62,8 @@ conda activate funasr
 
 ```bash
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install "fastapi[standard]" -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install gradio "fastapi[standard]" funasr_onnx \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 
