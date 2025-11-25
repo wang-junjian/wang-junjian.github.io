@@ -10,10 +10,10 @@ tags: [智能会议系统, Jetson, Thor, llama-server, ASR, Qwen3]
 
 **内网IP**：`27.41.19.62`
 
-| 服务 | 说明 | 端口 | 备注 |
-| ---- | ---- | ---- | ---- |
-| WhisperLiveKit | 实时语音识别服务 | 8000 | **模型**：whisper small |
-| llama-server | GGUF 模型推理服务 | 8080 | **模型**：Qwen3-8B<br/>**模型名**：qwen3<br/>**上下文长度**：32K |
+| 服务 | 说明 | 端口 | 模型 | 备注 |
+| ---- | ---- | ---- | ---- | ---- |
+| whisperlivekit | 实时语音识别服务 | 8000 | **Whisper**<br/>`small` (默认)<br/>`large-v3-turbo` | |
+| llama-server | GGUF 模型推理服务 | 8080 | `Qwen3-8B-Q5_K_M.gguf` | **模型名**：qwen3<br/>**上下文长度**：32K |
 
 
 ## 系统设置
