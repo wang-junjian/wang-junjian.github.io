@@ -97,6 +97,8 @@ exec whisperlivekit-server \
     "${EXTRA_ARGS[@]}"
 ```
 
+运行容器：
+
 ```bash
 docker run -it \
   --ipc=host \
