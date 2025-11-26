@@ -49,12 +49,61 @@ sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
 tmux new -s wlk
 ```
 
+#### 默认容器内应用（标点识别有时会失灵）
+
 ```bash
 docker run -it \
   --ipc=host \
   --net=host \
   --runtime=nvidia \
   -e MODEL=small \
+  -e PORT=8000 \
+  -e LANG=zh \
+  -e DIAR=true \
+  wangjunjian/whisperlivekit
+```
+
+#### 主机新建应用
+
+```bash
+cd /home/lnsoft/wjj/whisperlivekit
+touch entrypoint.sh
+chmod +x entrypoint.sh
+```
+
+编辑文件：`entrypoint.sh`
+
+```shell
+#!/usr/bin/env bash
+
+MODEL="${MODEL:-small}"
+PORT="${PORT:-8000}"
+LANG="${LANG:-zh}"
+DIAR="${DIAR:-false}"
+
+EXTRA_ARGS=()
+if [[ "$DIAR" == "true" || "$DIAR" == "1" ]]; then
+    EXTRA_ARGS+=("--diarization")
+fi
+
+exec whisperlivekit-server \
+    --model "$MODEL" \
+    --host 0.0.0.0 --port "$PORT" \
+    --ssl-certfile /root/.cert/cert.pem \
+    --ssl-keyfile /root/.cert/key.pem \
+    --language "$LANG" \
+    --init-prompt "大家好，我们要开始开会了。" \
+    --warmup-file /root/warmup.wav \
+    "${EXTRA_ARGS[@]}"
+```
+
+```bash
+docker run -it \
+  --ipc=host \
+  --net=host \
+  --runtime=nvidia \
+  -v /home/lnsoft/wjj/whisperlivekit/entrypoint.sh:/root/entrypoint.sh
+  -e MODEL=large-v3-turbo \
   -e PORT=8000 \
   -e LANG=zh \
   -e DIAR=true \
