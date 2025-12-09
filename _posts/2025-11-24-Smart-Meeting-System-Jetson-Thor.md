@@ -97,14 +97,14 @@ exec whisperlivekit-server \
     "${EXTRA_ARGS[@]}"
 ```
 
-运行容器：
+📌 运行容器：
 
 ```bash
 docker run -it \
   --ipc=host \
   --net=host \
   --runtime=nvidia \
-  -v /home/lnsoft/wjj/whisperlivekit/entrypoint.sh:/root/entrypoint.sh
+  -v /home/lnsoft/wjj/whisperlivekit/entrypoint.sh:/root/entrypoint.sh \
   -e MODEL=large-v3-turbo \
   -e PORT=8000 \
   -e LANG=zh \
@@ -170,7 +170,7 @@ CMD ["/app/bin/llama-server", \
 docker build -t wangjunjian/llama-server .
 ```
 
-### 部署服务
+### 📌 部署服务
 
 ```bash
 tmux new -s llm
