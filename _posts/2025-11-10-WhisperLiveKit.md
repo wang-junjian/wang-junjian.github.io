@@ -46,7 +46,7 @@ openssl req -x509 -newkey rsa:4096 \
   -out cert.pem \
   -days 365 \
   -nodes \
-  -subj "/C=CN/ST=ShanDong/L=JiNan/O=LNSoft/OU=LNSoft/CN=192.168.55.1/emailAddress=wjj@163.com"
+  -subj "/C=CN/ST=ShanDong/L=JiNan/O=LNSoft/OU=LNSoft/CN=localhost/emailAddress=wjj@163.com"
 ```
 
 #### 参数解释：
@@ -65,7 +65,7 @@ openssl req -x509 -newkey rsa:4096 \
 openssl x509 -in cert.pem -noout -subject -dates
 ```
 ```bash
-subject=C = CN, ST = ShanDong, L = JiNan, O = LNSoft, OU = LNSoft, CN = 192.168.55.1, emailAddress = wjj@163.com
+subject=C = CN, ST = ShanDong, L = JiNan, O = LNSoft, OU = LNSoft, CN = localhost, emailAddress = wjj@163.com
 notBefore=Oct 26 11:22:28 2025 GMT
 notAfter=Oct 26 11:22:28 2026 GMT
 ```
@@ -327,7 +327,7 @@ RUN mkdir -p /root/.cert && \
       -out /root/.cert/cert.pem \
       -days 365 \
       -nodes \
-      -subj "/C=CN/ST=ShanDong/L=JiNan/O=LNSoft/OU=LNSoft/CN=192.168.55.1/emailAddress=wjj@163.com"
+      -subj "/C=CN/ST=ShanDong/L=JiNan/O=LNSoft/OU=LNSoft/CN=localhost/emailAddress=wjj@163.com"
 
 COPY entrypoint.sh /root/entrypoint.sh
 RUN chmod +x /root/entrypoint.sh
