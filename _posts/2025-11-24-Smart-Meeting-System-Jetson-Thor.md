@@ -13,6 +13,7 @@ tags: [智能会议系统, Jetson, Thor, llama-server, ASR, Qwen3]
 | 服务 | 说明 | 端口 | 模型 | 备注 |
 | ---- | ---- | ---- | ---- | ---- |
 | whisperlivekit | 实时语音识别服务 | 8000 | **Whisper**<br/>`small` (默认)<br/>`large-v3-turbo` | |
+| FunASR | 实时语音识别服务 | 8000 | | |
 | llama-server | GGUF 模型推理服务 | 8080 | `Qwen3-8B-Q5_K_M.gguf` | **模型名**：qwen3<br/>**上下文长度**：32K |
 
 
@@ -49,7 +50,7 @@ sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
 tmux new -s wlk
 ```
 
-#### 默认容器内应用（标点识别有时会失灵）
+#### 默认容器内应用（标点识别有时会失灵 ⚠️）
 
 ```bash
 docker run -it \
@@ -111,6 +112,58 @@ docker run -it \
   -e DIAR=true \
   wangjunjian/whisperlivekit
 ```
+
+
+## FunASR
+
+* [FunASR - 基础语音识别工具包]({% post_url 2025-11-21-FunASR %})
+
+### 部署服务
+
+```bash
+tmux new -s funasr
+```
+
+### 运行容器
+
+```bash
+docker run -it -p 8000:10095 --name funasr-server wangjunjian/funasr-runtime-sdk-online-cpu-0.1.13 bash
+```
+
+### 运行服务（容器内）
+
+- 使用自签名证书
+
+```bash
+bash /workspace/FunASR/runtime/run_server_2pass.sh \
+  --vad-dir /workspace/models/damo/speech_fsmn_vad_zh-cn-16k-common-onnx \
+  --model-dir /workspace/models/damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-onnx \
+  --online-model-dir /workspace/models/damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online-onnx \
+  --punc-dir /workspace/models/damo/punc_ct-transformer_zh-cn-common-vad_realtime-vocab272727-onnx \
+  --lm-dir /workspace/models/damo/speech_ngram_lm_zh-cn-ai-wesp-fst \
+  --itn-dir /workspace/models/thuduj12/fst_itn_zh \
+  --hotword /workspace/models/hotwords.txt
+```
+
+**WebSocket 安全连接 的 URL**：`wss://192.168.55.1:10095/`
+
+- 不使用证书
+
+```bash
+bash /workspace/FunASR/runtime/run_server_2pass.sh \
+  --vad-dir /workspace/models/damo/speech_fsmn_vad_zh-cn-16k-common-onnx \
+  --model-dir /workspace/models/damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-onnx \
+  --online-model-dir /workspace/models/damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online-onnx \
+  --punc-dir /workspace/models/damo/punc_ct-transformer_zh-cn-common-vad_realtime-vocab272727-onnx \
+  --lm-dir /workspace/models/damo/speech_ngram_lm_zh-cn-ai-wesp-fst \
+  --itn-dir /workspace/models/thuduj12/fst_itn_zh \
+  --hotword /workspace/models/hotwords.txt \
+  --certfile 0
+```
+
+**WebSocket 连接 的 URL**：`ws://192.168.55.1:10095/`
+
+**客户端例子**：https://isv-data.oss-cn-hangzhou.aliyuncs.com/ics/MaaS/ASR/sample/funasr_samples.tar.gz
 
 
 ## llama-server
