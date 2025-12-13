@@ -265,6 +265,9 @@ docker run -it --rm \
 
 ### 自动构建
 
+- **设备**： Jetson Thor (`agx-thor-2`)
+- **位置**：`/home/lnsoft/wjj/whisperlivekit/`
+
 #### Dockerfile 文件
 
 ```dockerfile
@@ -316,13 +319,13 @@ COPY .cache/huggingface/ /root/.cache/huggingface/
 COPY .cache/matplotlib/ /root/.cache/matplotlib/
 
 # ----------------------------------------------------
-# 生成自签名证书（10年有效期）
+# 生成自签名证书（1年有效期）
 # ----------------------------------------------------
 RUN mkdir -p /root/.cert && \
     openssl req -x509 -newkey rsa:4096 \
       -keyout /root/.cert/key.pem \
       -out /root/.cert/cert.pem \
-      -days 3650 \
+      -days 365 \
       -nodes \
       -subj "/C=CN/ST=ShanDong/L=JiNan/O=LNSoft/OU=LNSoft/CN=192.168.55.1/emailAddress=wjj@163.com"
 
@@ -353,6 +356,7 @@ exec whisperlivekit-server \
     --ssl-certfile /root/.cert/cert.pem \
     --ssl-keyfile /root/.cert/key.pem \
     --language "$LANG" \
+    --init-prompt "大家好，我们要开始开会了。" \
     --warmup-file /root/warmup.wav \
     "${EXTRA_ARGS[@]}"
 ```
@@ -360,7 +364,7 @@ exec whisperlivekit-server \
 #### 构建镜像
 
 ```bash
-docker build -t whisperlivekit:latest .
+docker build -t wangjunjian/whisperlivekit:latest .
 ```
 
 #### 运行镜像
@@ -372,7 +376,7 @@ docker run -it --rm \
     --ipc=host \
     --net=host \
     --runtime=nvidia \
-    whisperlivekit
+    wangjunjian/whisperlivekit
 ```
 
 - 指定模型为 `large-v3-turbo`
@@ -383,7 +387,7 @@ docker run -it --rm \
     --net=host \
     --runtime=nvidia \
     -e MODEL=large-v3-turbo \
-    whisperlivekit
+    wangjunjian/whisperlivekit
 ```
 
 - 启用 `diarization`
@@ -397,14 +401,14 @@ docker run -it \
     -e PORT=8000 \
     -e LANG=zh \
     -e DIAR=true \
-    whisperlivekit
+    wangjunjian/whisperlivekit
 ```
 
 ### 迁移 WhisperLiveKit 镜像
 #### 保存镜像
 
 ```bash
-docker save whisperlivekit -o whisperlivekit.tar
+docker save wangjunjian/whisperlivekit -o whisperlivekit.tar
 ```
 
 #### 加载镜像
