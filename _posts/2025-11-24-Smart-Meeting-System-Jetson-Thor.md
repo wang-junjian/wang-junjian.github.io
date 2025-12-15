@@ -12,9 +12,9 @@ tags: [智能会议系统, Jetson, Thor, llama-server, ASR, Qwen3]
 
 | 服务 | 说明 | 端口 | 模型 | 备注 |
 | ---- | ---- | ---- | ---- | ---- |
-| whisperlivekit | 实时语音识别服务 | 8000 | **Whisper**<br/>`small` (默认)<br/>`large-v3-turbo` | |
-| FunASR | 实时语音识别服务 | 8000 | | |
-| llama-server | GGUF 模型推理服务 | 8080 | `Qwen3-8B-Q5_K_M.gguf` | **模型名**：qwen3<br/>**上下文长度**：32K |
+| whisperlivekit | 实时语音识别服务 | 8000 | **Whisper**<br/>`small` (默认)<br/>`large-v3-turbo` | 带**说话人分离**|
+| FunASR | 实时语音识别服务 | 8000 | **语音识别**：`paraformer-zh`<br/>**实时语音识别**：`paraformer-zh-streaming`<br/>**实时语音端点检测**：`fsmn-vad`<br/>**标点恢复**：`ct-punc`<br/>**文本逆规范化**：`fst_itn_zh` | 实时与非实时一体化协同（`2pass`）服务模式 |
+| llama-server | GGUF 模型推理服务 | 8080 | **Qwen3**<br/>`Qwen3-8B-Q5_K_M.gguf` | **模型名**：qwen3<br/>**上下文长度**：32K<br/>**不思考** |
 
 
 ## 系统设置
