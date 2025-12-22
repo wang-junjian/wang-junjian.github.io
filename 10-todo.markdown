@@ -22,6 +22,11 @@ permalink: /read/
   - 特斯拉 FSD V12 版本的发布，标志着自动驾驶技术进入了一个新的阶段，实现了端到端的解决方案。
   - Scalling Laws（扩展定律）才刚开始，系统每代会以 10 倍算力、10 倍模型的规模增长。
   - L4 是未来的重点。L2 是人类驾驶的辅助（在高速路和高架桥场景自适应巡航和车道辅助驾驶），L4 是机器驾驶的自动驾驶（在限定区域和特定场景下实现自动驾驶）。
+- [X] [2025年大语言模型年度回顾 - Andrej Karpathy](https://x.com/karpathy/status/2002118205729562949)
+  - [Animals vs Ghosts](https://karpathy.bearblog.dev/animals-vs-ghosts/)
+  - [Verifiability](https://karpathy.bearblog.dev/verifiability/)
+  - [The space of minds](https://karpathy.bearblog.dev/the-space-of-minds/)
+  - [Andrej Karpathy's YC talk](https://www.donnamagi.com/articles/karpathy-yc-talk)
 
 ## 11🈷️
 - [X] [李飞飞最新长文：AI的下一个十年——构建真正具备空间智能的机器](https://mp.weixin.qq.com/s/3w5zgnMXe13mKIR_ePBwAw)
@@ -35,7 +40,7 @@ permalink: /read/
 
 ## 6🈷️
 - [X] [To Repeat or Not To Repeat: Insights from Scaling LLM under Token-Crisis](https://arxiv.org/abs/2305.13230)
-  * [重复还是不重复：代币危机下扩展 LLM 的启示](https://mp.weixin.qq.com/s/DBP_eafGeKMEuSIma9Z9Tg)
+  * [重复还是不重复：Token 危机下扩展 LLM 的启示](https://mp.weixin.qq.com/s/DBP_eafGeKMEuSIma9Z9Tg)
   最近的研究强调了数据集规模在扩展语言模型方面的重要性。然而，大型语言模型（LLMs）在预训练期间容易饥饿，而网络上的高质量文本数据已接近其LLMs的扩展极限。为了进一步增强LLMs，一个简单直接的方法是重复预训练数据进行额外的epoch。在这项研究中，我们从实证角度研究了这种方法的三个关键方面。首先，我们探讨重复预训练数据的后果，揭示模型容易过度拟合，导致多次epoch的退化。其次，我们研究了导致多次epoch退化的关键因素，发现显著因素包括数据集大小、模型参数和训练目标，而不太有影响的因素包括数据集质量和模型FLOPs。最后，我们探索广泛使用的正则化是否可以缓解多次epoch的退化。大多数正则化技术并没有带来显著改进，除了dropout，它表现出了显著的有效性，但需要在扩展模型大小时进行小心的调整。此外，我们发现利用专家混合（MoE）可以实现具有可比可调参数的计算密集型密集LLMs的成本效益和高效的超参数调整，可能影响更广泛的高效LLM开发。
 
 ## 5🈷️
