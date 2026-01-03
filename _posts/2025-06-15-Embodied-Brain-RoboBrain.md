@@ -59,3 +59,7 @@ tags: [具身智能, RoboBrain, 具身大脑, 多模态大模型, ShareRobot, �
 - [RoboBrain 2.0: See Better. Think Harder. Do Smarter.](https://superrobobrain.github.io/)
 - [GitHub - RoboBrain](https://github.com/FlagOpen/RoboBrain)
 - [RoboBrain: A Unified Brain Model for Robotic Manipulation from Abstract to Concrete](https://arxiv.org/pdf/2502.21257)
+- [智元启元大模型（Genie Operator-1）](https://agibot-world.cn/blog/go1)
+- [AgiBot World](https://github.com/OpenDriveLab/Agibot-World)
+- [Datasets](https://huggingface.co/agibot-world)
+- [具身智能技术指南 Embodied-AI-Guide](https://github.com/TianxingChen/Embodied-AI-Guide)
