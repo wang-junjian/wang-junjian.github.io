@@ -21,11 +21,17 @@ tags: [VLM, 图像生成, 飞马]
 ### ChatGPT
 ![](/images/2026/image-generate-horse/2026-ChatGPT.jpeg)
 
+![](/images/2026/image-generate-horse/2026-ChatGPT-ChineseText.jpeg)
+
 ### 豆包
 ![](/images/2026/image-generate-horse/2026-Doubao.jpeg)
 
+![](/images/2026/image-generate-horse/2026-Doubao-ChineseText.jpeg)
+
 ### Gemini
 ![](/images/2026/image-generate-horse/2026-Gemini.jpeg)
+
+![](/images/2026/image-generate-horse/2026-Gemini-ChineseText.jpeg)
 
 ### Grok
 ![](/images/2026/image-generate-horse/2026-Grok.jpeg)
@@ -36,11 +42,19 @@ tags: [VLM, 图像生成, 飞马]
 ### 龙猫
 ![](/images/2026/image-generate-horse/2026-longcat.jpg)
 
+![](/images/2026/image-generate-horse/2026-longcat-ChineseText.jpg)
+
 ### MiniMax
 ![](/images/2026/image-generate-horse/2026-minimax.jpeg)
+
+![](/images/2026/image-generate-horse/2026-minimax-ChineseText.jpeg)
 
 ### 千问
 ![](/images/2026/image-generate-horse/2026-Qianwen.jpeg)
 
+![](/images/2026/image-generate-horse/2026-Qianwen-ChineseText.jpeg)
+
 ### 元宝
 ![](/images/2026/image-generate-horse/2026-Yuanbao.jpeg)
+
+![](/images/2026/image-generate-horse/2026-Yuanbao-ChineseText.jpeg)
