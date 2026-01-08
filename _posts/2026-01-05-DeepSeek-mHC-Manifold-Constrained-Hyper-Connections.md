@@ -78,7 +78,7 @@ CIFAR-10 数据集上 20 层和 56 层“普通”（plain）网络的训练误�
 
 * **概念转换**：不再让堆叠的层直接拟合目标映射 $\mathcal{H}(x)$，而是让它们拟合一个**残差映射** $\mathcal{F}(x) = \mathcal{H}(x) - x$ 。
 
-* **恒等映射（Shortcut Connections）**：通过“捷径连接”将输入  直接叠加到输出上，即最终输出为 $\mathcal{F}(x) + x$ 5555 。
+* **恒等映射（Shortcut Connections）**：通过“捷径连接”将输入  直接叠加到输出上，即最终输出为 $\mathcal{F}(x) + x$ 。
 
 * **为什么有效**：如果某一层保持恒等映射是最优的，那么将残差 $\mathcal{F}(x)$ 优化为 0，比用非线性层强行拟合一个恒等映射要容易得多 。
 
@@ -229,3 +229,9 @@ HC 虽然计算量（FLOPs）增加不多，但由于残差流变宽，带来了
 ![](/images/2026/DeepSeek/mHC/mHC-Scaling-Experiments.png)
 
 **mHC 与基线模型（Baseline）的扩展特性（Scaling properties）对比。** (a) **计算扩展曲线**：实线描绘了在不同计算预算下的性能差距。每个点代表了模型规模与数据集规模的特定计算最优配置，涵盖了从 3B、9B 到 27B 参数的扩展。 (b) **Token 扩展曲线**：3B 模型在训练过程中的轨迹。每个点代表模型在不同训练 token 量下的性能表现。
+
+
+## 参考资料
+- [mHC: Manifold-Constrained Hyper-Connections](https://arxiv.org/abs/2512.24880)
+- [Hyper-Connections](https://arxiv.org/abs/2409.19606)
+- [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
