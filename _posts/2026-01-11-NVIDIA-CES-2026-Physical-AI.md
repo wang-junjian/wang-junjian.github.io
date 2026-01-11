@@ -83,3 +83,7 @@ tags: [NVIDIA, CES 2026, Physical AI, DGX, Cosmos, OmniVerse, AI Supercomputer]
 ![](/images/2026/CES/NVIDIA/CUDA-X-Siemens.jpeg)
 
 ![](/images/2026/CES/NVIDIA/Nemotron-Siemens.jpeg)
+
+
+## 参考资料
+- [FULL CES 2026 EVENT: NVIDIA CEO Reveals Physical AI and Autonomous Robots Changing Industries | AI14](https://www.youtube.com/watch?v=UrMnOp2N9Kw)
