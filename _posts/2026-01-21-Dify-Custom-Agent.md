@@ -10,6 +10,7 @@ tags: [Dify, Agent]
 
 ![](/images/2026/Dify/PolicyReadingAgent.png)
 
+📌 [DSL](/images/2026/Dify/PolicyReadingAgent.yml)
 
 ## Dify
 
