@@ -12,6 +12,7 @@ tags: [Dify, Agent]
 
 📌 [DSL](/images/2026/Dify/PolicyReadingAgent.yml)
 
+
 ## Dify
 
 1. 克隆代码仓库
@@ -31,6 +32,18 @@ docker compose up -d
 ```
 
 运行后，可以在浏览器上访问 [http://localhost/install](http://localhost/install) 进入 Dify 控制台并开始初始化安装操作。
+
+
+## vLLM
+
+```bash
+vllm serve /data/models/llm/deepseek/DeepSeek-R1-Distill-Qwen-32B-AWQ/ \
+    --served-model-name gpt-4o-mini \
+    --tensor-parallel-size 4 \
+    --max-model-len 102400 \
+    --dtype half \
+    --port 8111
+```
 
 
 ## Ollama
