@@ -127,8 +127,9 @@ tags: [MeiTuan, LongCat, LLM, Heavy Thinking, Zigzag Attention]
 
 ## 演示
 
-![](/images/2026/MeiTuan/LongCat-Flash-Thinking-2601/demo.png)
+![](/images/2026/MeiTuan/LongCat-Flash-Thinking-2601/0.png)
 
+![](/images/2026/MeiTuan/LongCat-Flash-Thinking-2601/demo.png)
 
 ## 参考资料
 - [LongCat-Flash-Thinking-2601](https://github.com/meituan-longcat/LongCat-Flash-Thinking-2601)
