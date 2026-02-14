@@ -78,3 +78,22 @@ tags: [OpenClaw, Agent, Memory]
 | **`memory/YYYY-MM-DD.md`** | **每日原始日志** | 记录特定日期的所有细节和活动，作为 `MEMORY.md` 的事实来源。 |
 | **`TOOLS.md`** | **环境配置细节** | 记录具体的本地细节，如摄像机别名、SSH 主机信息和 TTS 语音偏好。 |
 | **`HEARTBEAT.md`** | **主动任务清单** | 定义 Agent 在空闲时段需要主动执行的检查任务（邮件、日历等）。 |
+
+
+## 🦞 OpenClaw 时刻（2026）👍
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw1.png)
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw2.png)
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw3.png)
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw4.png)
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw5.png)
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw6.png)
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw7.png)
+
+![](/images/2026/OpenClaw/ArchitectureMemorySystem/OpenClaw8.png)
