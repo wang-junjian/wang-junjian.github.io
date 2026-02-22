@@ -393,6 +393,17 @@ https://gist.githubusercontent.com/emschwartz/e6d2bf860ccc367fe37ff953ba6de66b/r
 ------
 
 
+# 前沿技术概览
+
+## 😀你从《技术博客日报》的来源，每个抓取5条，生成中文总结。每个文章有中文标题、发布日期、中文总结、来源：URL。生成一份《前沿技术概览》，格式：markdown 和 pdf（使用 nano-pdf 来生成一份）
+
+🤖
+![](/images/2026/OpenClaw/practice/Overview-of-Cutting-edge-Technologies.png)
+
+
+------
+
+
 # 列出所有可用的技能（Skill）
 
 ## 😀列出所有的技能
@@ -813,3 +824,113 @@ cd /Users/junjian/.openclaw/workspace && python3 get_news.py
 - src/gateway/server-channels.ts - 渠道集成
 - src/gateway/server-chat.ts - 聊天处理
 - src/channels/targets.ts - 消息目标解析
+
+
+------
+
+
+# 生成 SVG 图像
+- [Generate an SVG of a pelican riding a bicycle](https://simonwillison.net/2026/Feb/11/glm-5/)
+
+## 😀生成一只骑着自行车的鹈鹕的SVG图像
+
+🤖
+完成！🦞
+
+## ✅ 一只骑着自行车的鹈鹕 SVG 已生成！
+
+**文件位置：** `pelican_bicycle.svg`
+
+### 图像特色：
+- 🐦 可爱的鹈鹕，有标志性的大喙和橙色喉囊
+- 喉囊里还有一条小鱼！🐟
+- 🚴 橙色的自行车，有完整的轮子、车架、踏板
+- 👀 生动的眼睛和眉毛
+- ☁️ 蓝天白云背景
+- 🌿 绿色草地
+
+图像已在浏览器中打开，你可以查看效果！
+
+![](/images/2026/OpenClaw/practice/SeedCode-2-SVG.png)
+
+
+------
+
+
+# 代码分析
+
+## 😀分析一下这个脚本（https://github.com/steipete/agent-scripts/blob/main/scripts/docs-list.ts）的功能。
+
+🤖
+完成！🦞
+
+## ✅ `docs-list.ts` 脚本分析已完成！
+
+我已经为你详细分析了这个脚本，完整报告保存在：`docs-list.ts_分析.md`
+
+---
+
+## 📋 脚本功能快速总结
+
+这是一个 **AI 原生的文档索引工具**！
+
+### 核心问题
+> AI 智能体不知道何时该阅读哪个文档！
+
+### 解决方案
+给每个文档加 front matter：
+
+```markdown
+---
+summary: "如何配置数据库连接"
+read_when:
+  - "working with database"
+  - "setting up PostgreSQL"
+---
+```
+
+### 脚本做的事情
+1. 📁 扫描 `docs/` 目录的所有 Markdown 文件
+2. 🔍 提取 `summary`（摘要）和 `read_when`（何时阅读）
+3. 📋 以可读格式列出所有文档
+4. 💡 最后提醒：任务匹配时先阅读文档！
+
+---
+
+## 🎯 输出示例
+
+```
+setup.md - 如何配置开发环境
+  Read when: starting a new project; onboarding
+
+database/migrations.md - 如何创建数据库迁移
+  Read when: working with database; schema changes
+
+Reminder: 当你的任务匹配上面的 "Read when" 提示时，先阅读那个文档再编码！
+```
+
+---
+
+## 💡 为什么这个设计很聪明？
+
+| 特点 | 说明 |
+|------|------|
+| **简单** | 只是 Markdown + front matter，无需复杂工具 |
+| **双端友好** | 人类和 AI 都能读 |
+| **AI 原生** | 从第一天就设计为让 AI 使用 |
+| **集中提醒** | 最后有明确的使用提示 |
+
+---
+
+这是一个非常精巧的 AI 时代工具设计！完整的分析在 `docs-list.ts_分析.md` 中。
+
+------
+
+# 更多应用和实践
+- 你到github上找nanoclaw这个项目，对它进行深入分析，了解它的一切。
+- 我对 nanoclaw 的 “技能优于功能（Skills over features）”，特别感兴趣，你阅读代码，包括：.claude/skills/add-telegram/SKILL.md，把整个工作原理给我讲清楚。
+- 论文：Generative Agents: Interactive Simulacra of Human Behavior（https://arxiv.org/abs/2304.03442）\n源代码：https://github.com/joonspk-research/generative_agents\nollama: gpt-oss:20b\n根据上面的论文和源代码来实现 Agent 交互的应用，Agent 之间交流使用本地的 ollama，人类可以修改角色的描述，还可以观察整个演进过程。\n技术栈：Next.js + SQLite
+
+# 参考资料
+- [What People Are Building](https://openclaw.ai/showcase)
+- [ClawHub](https://clawhub.ai/)
