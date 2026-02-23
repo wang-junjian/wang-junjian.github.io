@@ -6,9 +6,203 @@ categories: OpenClaw Agent
 tags: [OpenClaw, Agent, Practice]
 ---
 
-这里展示了我使用 🦞 OpenClaw 的实际使用案例和应用实践。如：主题研究、应用构建、定时生成技术博客日报、看新闻、文章总结、技能查看、创建提醒、技术交流等。希望能给你一些启发，看看 OpenClaw 在实际生活和工作中的强大能力！🚀
+这里展示了我使用 🦞 OpenClaw 的实际使用案例和应用实践。如：自我进化、查看 GPU 服务器、主题研究、应用构建、定时生成技术博客日报、看新闻、文章总结、技能查看、创建提醒、技术交流、生成 SVG等。希望能给你一些启发，看看 OpenClaw 在实际生活和工作中的强大能力！🚀
 
 <!--more-->
+
+# OpenClaw 自我进化
+
+## 😀检查新版本
+
+🤖
+太棒了！我拿到了 CHANGELOG.md！让我总结一下这个版本的主要变化！
+
+## 🎉 OpenClaw 2026.2.21 版本更新总结！
+
+**从：** 2026.2.15  
+**升级到：** 2026.2.21-2 (35a57bc)
+
+---
+
+## 🚀 主要新功能
+
+### 1. **Gemini 3.1 支持！** 🆕
+- 新增 `google/gemini-3.1-pro-preview` 模型支持
+- Google 最新模型集成
+
+### 2. **火山引擎（Doubao）和 BytePlus 提供商！** 🆕
+- 新增 Volcano Engine（火山引擎）提供商
+- 新增 BytePlus 提供商
+- 包括编码变体模型
+- 交互式和非交互式流程的 onboarding 认证
+- 文档对齐到 `volcengine-api-key`
+
+### 3. **每个账户/渠道的 defaultTo 出站路由回退！** 🆕
+- `openclaw agent --deliver` 可以在配置了默认目标时，无需显式 `--reply-to` 发送
+- 配置：`channels.defaultTo`
+
+### 4. **每个渠道的模型覆盖！** 🆕
+- 通过 `channels.modelByChannel` 配置
+- 在 `/status` 中显示
+
+### 5. **Discord 子代理线程绑定会话！** 🆕
+- Discord 上的线程绑定子代理会话
+- 每个线程的焦点/列表控制
+- 线程绑定的继续路由，用于生成的辅助代理
+
+### 6. **Discord 语音频道功能！** 🆕
+- 通过 `/vc` 加入/离开/查看语音频道
+- 实时语音对话的自动加入配置
+
+### 7. **iOS Watch 镜像通知！** 🆕
+- 镜像的 watch 提示通知操作桥接到 iOS 快速回复处理
+- 排队操作切换，直到应用模型初始化
+
+### 8. **健康监控！** 🆕
+- 从日志中看到：`[health-monitor] started (interval: 300s, grace: 60s)`
+- 5 分钟检查间隔，60 秒宽限期
+
+### 9. **交付恢复！** 🆕
+- 从日志中看到：`[delivery-recovery] Found 1 pending delivery entries`
+- 自动恢复待处理的消息交付
+
+---
+
+## 🔒 安全增强
+
+### 1. **SHA-256 替代 SHA-1！**
+- Gateway 锁和工具调用合成 ID 从 SHA-1 切换到 SHA-256
+- 保持相同的截断长度，增强哈希基础
+
+### 2. **所有者 ID 混淆使用专用 HMAC 密钥！**
+- `ownerDisplaySecret` 配置
+- 混淆与网关令牌处理解耦
+
+### 3. **多个安全修复！**
+- 阻止未加引号的 heredoc 展开
+- macOS 运行时的 shell 允许列表逐段评估
+- WhatsApp 反应操作的允许列表 JID 授权
+- ACP `resource_link` 元数据控制字符转义
+- TTS 模型驱动的提供商切换默认选择加入
+- Canvas 端点需要令牌或会话能力
+- 等等...
+
+---
+
+## 🐛 修复的问题（部分）
+
+- Doctor/State 完整性：只在配置了 WhatsApp 或配对支持的渠道时才要求/创建 OAuth 凭证目录
+- Telegram：启动时检测重复的 bot-token 所有权
+- 内存/QMD：尊重每个代理的 `memorySearch.enabled=false`
+- Agent/Subagents：默认子代理生成深度使用共享的 `maxSpawnDepth=2`
+- Heartbeat/Cron：恢复间隔心跳行为
+- Status：在会话摘要中包含持久化的 `cacheRead`/`cacheWrite`
+- 等等...
+
+---
+
+## 📊 总结
+
+| 类型 | 数量 |
+|------|------|
+| **新功能** | 9+ |
+| **安全增强** | 多个 |
+| **Bug 修复** | 50+ |
+| **依赖清理** | 多个 |
+
+---
+
+这个版本包含了大量的新功能、安全增强和 bug 修复！特别是 **火山引擎（Doubao）支持**、**Gemini 3.1 支持**、**健康监控**、**交付恢复** 这些新功能非常重要！🎉
+
+
+------
+
+
+## 😀安装新版本
+
+
+------
+
+
+## 😀重启一下 gateway
+
+🤖
+好的，Gateway 正在重启！
+
+根据系统提示，Gateway 会在 2000ms 后发送 SIGUSR1 信号重启，然后会自动 ping 回来。
+
+等待一下，Gateway 重启完成后会自动通知我们的！
+
+
+------
+
+
+## 😀每周一8点升级 OpenClaw
+
+🤖
+完成！让我总结一下。
+完成！✅
+
+## 🎯 定时任务已设置！
+
+我已经为你添加了一个**每周一8点自动升级 OpenClaw** 的定时任务！
+
+---
+
+## 📋 任务详情
+
+| 属性 | 值 |
+|------|-----|
+| **任务名称** | 每周一升级 OpenClaw |
+| **任务 ID** | upgrade-openclaw-weekly |
+| **执行时间** | 每周一 08:00（Asia/Shanghai）|
+| **Cron 表达式** | `0 8 * * 1` |
+| **通知** | 开启 |
+| **会话目标** | isolated |
+
+---
+
+## 📝 当前定时任务列表
+
+1. **技术博客日报** - 每天 11:00
+2. **每周一升级 OpenClaw** - 每周一 08:00（🆕 新增！）
+
+---
+
+## 📝 已记录
+
+已更新今日日志 `memory/2026-02-22.md`，记录了：
+- OpenClaw 版本升级详情（2026.2.15 → 2026.2.21-2）
+- 新增定时任务信息
+
+---
+
+每周一早上8点，OpenClaw 会自动检查并升级！⏰
+
+
+------
+
+
+## 😀你检查一下飞书插件是怎么回事？我升级openclaw后他就不能用了。
+
+🤖
+让我帮您检查一下飞书插件的情况。首先看看OpenClaw的当前状态：找到问题了！从状态输出可以看到飞书插件加载失败的原因：［plugins］ feishu failed to load from /usr/lib/node_modules/ openclaw/extensions/feishu/index.ts: Error: Cannot find module '@larksuiteoapi/node-sdk'
+飞书插件缺少依赖模块 @larksuiteoapi/node-sdk。让我检查一下飞书插件的目录并安装缺失的依赖：现在让我在飞书插件目录下安装缺失的依赖：让我尝试只安装生产依赖，跳过开发依赖：让我直接安装缺失的依赖包：让我临时修改
+package.json，去掉开发依赖部分：现在再次尝试安装依赖：太好了！依赖安装成功。现在让我重启 OpenClaw 网关，让飞书插件重新加载：让我等待几秒钟，然后检查飞书插件是否正常加载：完美！问题已经解决了！
+
+### 向题原因
+升级 OpenClaw 后，飞书插件的依赖模块 **@larksuiteoapi/node-sdk** 没有正确安装，导致插件加载失败。
+### 解决步骤
+检查发现飞书插件缺少依赖
+
+临时修改 **package.json** 移除了开发依赖（**workspace：*** 格式导致 npm 安装失败）安装了飞书插件所需的生产依赖
+
+重启 OpenClaw 网关
+
+现在飞书插件已经恢复正常，状态显示为 **OK** 并且已配置！您可以继续使用飞书功能了
+
+
+------
 
 
 # 查看 GPU 服务器的使用情况
