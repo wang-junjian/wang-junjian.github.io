@@ -1,19 +1,75 @@
 ---
 layout: single
-title:  "NanoClaw 架构设计深度解析（Kimi-2.5 Agent）"
+title:  "NanoClaw 架构设计深度解析"
 date:   2026-02-23 12:00:00 +0800
 categories: NanoClaw AI原生
 tags: [NanoClaw, AI Native, Skill, Software Design, OpenClaw]
 ---
 
-这个架构的核心洞察是：**与其构建复杂的插件 API 来限制扩展的能力，不如利用 Git 的成熟合并机制来安全地组合任意代码变更。** AI（Claude Code）只在 Git 无法自动解决冲突时才介入，而且解决方案会被缓存以便下次自动应用。这使得大多数用户永远不会遇到未解决的冲突，同时保留了**无限的定制能力**。
+**NanoClaw 架构**的核心洞察是：**与其构建复杂的插件 API 来限制扩展的能力，不如利用 Git 的成熟合并机制来安全地组合任意代码变更。** AI（Claude Code）只在 Git 无法自动解决冲突时才介入，而且**解决方案会被缓存（git rerere）以便下次自动应用**。这使得大多数用户永远不会遇到未解决的冲突，同时保留了**无限的定制能力**。
 
 <!--more-->
 
-**提示词**：
+**提示词（Kimi-2.5 Agent）**：
 > 我没有理解 NanoClaw 这里的架构设计，结合源代码（https://github.com/qwibitai/nanoclaw ）仔细研究一下，给我讲明白。
 
 ---
+
+![](/images/2026/NanoClaw/arch.png)
+
+```mermaid
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: '#ffffff'
+    primaryTextColor: '#1a202c'
+    primaryBorderColor: '#e2e8f0'
+    lineColor: '#94a3b8'
+    secondaryColor: '#f8fafc'
+    tertiaryColor: '#ffffff'
+    fontSize: 14px
+---
+flowchart TB
+ subgraph Philosophy["💡 设计哲学"]
+    direction LR
+        Git["🌲 Git 原生"]
+        Direct["✏️ 直接代码修改"]
+        Deterministic["🎯 确定性结果"]
+  end
+ subgraph ConflictResolution["⚔️ 三级冲突解决模型"]
+    direction LR
+        L1["<b>Level 1</b><br>🤖 Git 自动化<br><small>处理 95% 以上情况</small>"]
+        L2["<b>Level 2</b><br>🧠 AI 辅助解决<br><small>Claude 处理边界</small>"]
+        L3["<b>Level 3</b><br>👤 用户决策<br><small>极少数模糊场景</small>"]
+  end
+ subgraph SkillPackage["📦 Skill 包结构"]
+    direction LR
+        Manifest["manifest.yaml<br>配置"]
+        Intent["SKILL.md<br>技能"]
+        Add["add/<br>新增"]
+        Modify["modify/<br>变更"]
+  end
+ subgraph SkillSystem["🎯 NanoClaw Skills 核心架构"]
+    direction TB
+        SkillPackage
+        ConflictResolution
+        Philosophy
+  end
+    L1 -- 冲突 --> L2
+    L2 -- 无法决策 --> L3
+    Philosophy --- ConflictResolution
+    SkillPackage --> ConflictResolution
+
+    style Deterministic fill:#f8fafc,stroke:#94a3b8
+    style Direct fill:#f8fafc,stroke:#94a3b8
+    style Git fill:#f8fafc,stroke:#94a3b8
+    style L3 fill:#fffbeb,stroke:#f59e0b,stroke-width:2px,color:#92400e
+    style L2 fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af
+    style L1 fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#166534
+    style SkillSystem fill:#ffffff,stroke:#cbd5e1,stroke-width:2px,color:#1e293b
+```
+
 
 ## 一、项目定位：什么是 NanoClaw？
 
