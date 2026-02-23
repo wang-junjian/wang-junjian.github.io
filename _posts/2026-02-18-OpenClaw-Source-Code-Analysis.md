@@ -1071,3 +1071,279 @@ if (deliveryRequested && !skipHeartbeatDelivery && !skipMessagingToolDelivery) {
 
 ## 总结
 定时任务有自己独立的执行流程，从会话管理到任务执行再到结果交付，都不依赖常规的消息路由机制。这种设计使得定时任务能够在隔离的环境中运行，避免与常规对话任务相互干扰。
+
+
+# 心跳的工作流程
+
+## 心跳（Heartbeat）工作流程分析
+
+OpenClaw 中的心跳系统是一个周期性的智能体轮询机制，允许模型在不需要用户主动消息的情况下主动 surface 需要关注的内容。心跳系统的核心实现位于 `src/infra/heartbeat-runner.ts` 和相关文件中。
+
+### 核心功能
+
+1. **周期性轮询**：默认每 30 分钟运行一次（可配置）
+2. **智能体主动沟通**：允许模型在没有用户消息的情况下主动发送通知
+3. **静默确认机制**：支持 `HEARTBEAT_OK` 令牌，用于表示"一切正常"而不发送实际消息
+4. **灵活配置**：支持全局配置、每个智能体配置、每个渠道配置
+
+### 工作流程
+
+#### 1. 初始化与启动
+
+```typescript
+// src/infra/heartbeat-runner.ts:958
+export function startHeartbeatRunner(opts: {
+  cfg?: OpenClawConfig;
+  runtime?: RuntimeEnv;
+  abortSignal?: AbortSignal;
+  runOnce?: typeof runHeartbeatOnce;
+}): HeartbeatRunner {
+```
+
+- 初始化心跳运行器
+- 解析配置确定需要运行心跳的智能体
+- 计算每个智能体的下一次心跳时间
+- 设置定时器调度下一次心跳
+
+#### 2. 心跳触发
+
+心跳可以通过以下方式触发：
+
+**周期性触发**：
+```typescript
+// src/infra/heartbeat-runner.ts:1014
+state.timer = setTimeout(() => {
+  state.timer = null;
+  requestHeartbeatNow({ reason: "interval", coalesceMs: 0 });
+}, delay);
+```
+
+**手动触发**：
+```bash
+openclaw system event --text "Check for urgent follow-ups" --mode now
+```
+
+**系统事件触发**：
+- 异步执行完成事件
+- Cron 事件
+- 唤醒事件（hook 触发）
+
+#### 3. 心跳执行流程
+
+核心执行函数：`runHeartbeatOnce` (src/infra/heartbeat-runner.ts:566)
+
+```typescript
+export async function runHeartbeatOnce(opts: {
+  cfg?: OpenClawConfig;
+  agentId?: string;
+  sessionKey?: string;
+  heartbeat?: HeartbeatConfig;
+  reason?: string;
+  deps?: HeartbeatDeps;
+}): Promise<HeartbeatRunResult> {
+```
+
+执行步骤：
+
+1. **前置检查**：
+   - 心跳是否全局启用
+   - 智能体是否配置了心跳
+   - 是否在活跃时间窗口内（`activeHours` 配置）
+   - 主队列是否有正在处理的请求
+
+2. **会话解析**：
+   - 解析智能体主会话
+   - 加载会话存储
+   - 检查待处理的系统事件
+
+3. **心跳内容准备**：
+   - 解析心跳配置（模型、提示、目标渠道等）
+   - 检查 `HEARTBEAT.md` 文件内容（可选，用于自定义心跳逻辑）
+   - 准备心跳提示文本
+
+4. **执行智能体轮次**：
+   - 调用 `getReplyFromConfig` 获取智能体响应
+   - 处理响应（解析 `HEARTBEAT_OK` 令牌）
+   - 决定是否发送响应
+
+5. **响应处理**：
+   - 检查响应是否包含 `HEARTBEAT_OK` 令牌
+   - 检查响应长度是否超出 `ackMaxChars`（默认 300 字符）
+   - 决定是否发送响应
+
+6. **发送响应**：
+   - 根据配置的目标渠道发送响应
+   - 支持发送到最后使用的渠道（`target: "last"`）
+   - 支持发送到特定渠道（`target: "whatsapp"` 等）
+   - 支持发送到特定接收者（`to` 配置）
+
+7. **状态更新**：
+   - 记录最后一次心跳时间
+   - 记录最后一次心跳文本（用于去重）
+   - 恢复会话更新时间（防止心跳导致会话永不过期）
+
+#### 4. 响应处理逻辑
+
+```typescript
+// src/infra/heartbeat-runner.ts:760
+const normalized = normalizeHeartbeatReply(replyPayload, responsePrefix, ackMaxChars);
+```
+
+- **`HEARTBEAT_OK` 处理**：如果响应以 `HEARTBEAT_OK` 开头或结尾，且剩余内容 <= 300 字符，则不发送消息
+- **去重逻辑**：如果相同的心跳内容在 24 小时内已发送过，则跳过发送
+- **推理内容处理**：支持发送推理过程（`includeReasoning: true`）
+
+#### 5. 心跳可见性控制
+
+```typescript
+// src/infra/heartbeat-visibility.ts
+export function resolveHeartbeatVisibility(params: {
+  cfg: OpenClawConfig;
+  channel: string;
+  accountId?: string;
+}): HeartbeatVisibility {
+```
+
+支持配置是否显示：
+- `showOk`：显示 `HEARTBEAT_OK` 确认
+- `showAlerts`：显示警报消息
+- `useIndicator`：在 UI 中显示心跳指示器
+
+### 6. 配置选项
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "heartbeat": {
+        "every": "30m",                    // 心跳间隔（0m 禁用）
+        "model": "anthropic/claude-opus-4-6", // 模型覆盖
+        "includeReasoning": false,         // 是否发送推理过程
+        "target": "last",                  // 目标渠道
+        "to": "+15551234567",              // 接收者覆盖
+        "accountId": "ops-bot",            // 账户 ID（多账户渠道）
+        "prompt": "Read HEARTBEAT.md...",  // 自定义提示
+        "ackMaxChars": 300,                // 最大确认字符数
+        "activeHours": {                   // 活跃时间窗口
+          "start": "09:00",
+          "end": "22:00",
+          "timezone": "America/New_York"
+        }
+      }
+    },
+    "list": [
+      {
+        "id": "ops",
+        "heartbeat": {
+          "every": "1h",
+          "target": "whatsapp"
+        }
+      }
+    ]
+  },
+  "channels": {
+    "defaults": {
+      "heartbeat": {
+        "showOk": false,
+        "showAlerts": true,
+        "useIndicator": true
+      }
+    },
+    "telegram": {
+      "heartbeat": {
+        "showOk": true
+      }
+    }
+  }
+}
+```
+
+### 心跳与 Cron 的对比
+
+根据文档，心跳和 Cron 的使用场景不同：
+
+- **心跳**：适用于需要智能体主动检查和响应的场景，如：
+  - 检查待办任务
+  - 发送定期提醒
+  - 监控系统状态
+  - 处理异步执行结果
+
+- **Cron**：适用于精确时间调度的任务，如：
+  - 定时报告
+  - 数据同步
+  - 清理任务
+
+## 总结
+
+OpenClaw 的心跳系统是一个灵活的周期性智能体轮询机制，允许模型在不需要用户主动消息的情况下主动与用户沟通。它支持丰富的配置选项，包括心跳间隔、目标渠道、活跃时间窗口等，同时提供了静默确认机制，避免不必要的消息骚扰。
+
+
+# heartbeat 这个是时间到了就有消息通过 Session 路由到 Pi Agent？
+
+**是的，心跳系统确实是时间到了就会有消息通过 Session 路由到 Pi Agent**。
+
+## 心跳工作流程详解
+
+### 1. 时间触发机制
+```typescript
+// src/infra/heartbeat-runner.ts:1014
+state.timer = setTimeout(() => {
+  state.timer = null;
+  requestHeartbeatNow({ reason: "interval", coalesceMs: 0 });
+}, delay);
+```
+心跳运行器会根据配置的间隔（默认 30 分钟）设置定时器，时间到了就会触发心跳。
+
+### 2. 会话路由
+```typescript
+// src/infra/heartbeat-runner.ts:259
+function resolveHeartbeatSession(
+  cfg: OpenClawConfig,
+  agentId?: string,
+  heartbeat?: HeartbeatConfig,
+  forcedSessionKey?: string,
+) {
+```
+心跳会解析智能体的主会话，并加载对应的会话存储。
+
+### 3. 消息发送到 Pi Agent
+```typescript
+// src/infra/heartbeat-runner.ts:666-781
+const replyResult = await getReplyFromConfig(ctx, replyOpts, cfg);
+```
+心跳会调用 `getReplyFromConfig` 函数，该函数会：
+- 解析智能体配置
+- 准备心跳消息内容
+- 调用 `runReplyAgent` 执行智能体轮次
+- 最终调用 `runEmbeddedPiAgent` 或 `runCliAgent`
+
+### 4. Pi Agent 执行
+```typescript
+// src/auto-reply/reply/agent-runner-execution.ts:262
+return runEmbeddedPiAgent({
+  ...embeddedContext,
+  prompt: params.commandBody,
+  extraSystemPrompt: params.followupRun.run.extraSystemPrompt,
+  // ...其他参数
+});
+```
+`runEmbeddedPiAgent` 是与 Pi Agent 通信的核心函数，它会：
+- 准备智能体上下文
+- 发送心跳消息到 Pi Agent
+- 处理智能体的回复
+
+### 5. 回复处理
+```typescript
+// src/infra/heartbeat-runner.ts:760-830
+const normalized = normalizeHeartbeatReply(replyPayload, responsePrefix, ackMaxChars);
+```
+智能体回复后，心跳系统会检查是否包含 `HEARTBEAT_OK` 令牌：
+- 如果是 `HEARTBEAT_OK` 且内容较短，则会被静默处理（不发送到用户）
+- 如果包含实际内容，则会发送到配置的目标渠道
+
+## 总结
+
+心跳系统的工作流程确实是：
+**时间到了 → 触发心跳 → 解析会话 → 发送消息到 Pi Agent → 智能体回复 → 检查是否需要发送到用户**
+
+这种设计允许智能体定期主动检查是否有需要关注的内容，而不需要用户主动发送消息。
