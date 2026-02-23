@@ -482,6 +482,11 @@ openclaw pairing approve feishu 9QDEL77W
 - 经常弹出让我重新授权的提示。
 
 
+## [钉钉开放平台](https://open-dev.dingtalk.com/)
+
+- [快速部署OpenClaw（原Moltbot），集成钉钉AI助手](https://www.volcengine.com/docs/6396/2197080?lang=zh)
+
+
 ## Claude Code
 
 ### 安装
