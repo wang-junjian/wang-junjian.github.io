@@ -29,9 +29,9 @@ cd ./extensions/voice-call && pnpm install
 
 ### 2. 配置
 
-在 `~/.openclaw/config.json5` 文件中配置插件：
+在 `~/.openclaw/config.json` 文件中配置插件：
 
-```json5
+```json
 {
   plugins: {
     entries: {
