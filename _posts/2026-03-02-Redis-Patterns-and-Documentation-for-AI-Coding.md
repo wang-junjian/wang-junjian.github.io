@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "Redis 模式与 AI 编码助手文档"
+title:  "面向 AI 编码智能体的 Redis 设计模式与文档"
 date:   2026-03-02 08:00:00 +0800
 categories: Redis Agent
 tags: [Redis, Agent, LLM, llms.txt, Documentation]
@@ -8,7 +8,7 @@ tags: [Redis, Agent, LLM, llms.txt, Documentation]
 
 [Redis Patterns and Documentation for AI Coding Agents](https://redis.antirez.com/llms.txt)
 
-> Comprehensive Redis design patterns, best practices, and command references for LLM coding agents.（为 LLM 编码助手提供的全面 Redis 设计模式、最佳实践和命令参考。）
+> Comprehensive Redis design patterns, best practices, and command references for LLM coding agents.（面向大语言模型（LLM）编码智能体的Redis 综合设计模式、最佳实践与命令参考。）
 
 <!--more-->
 
@@ -66,7 +66,7 @@ Redis 社区为常见用例开发的模式。
 * [排行榜模式 (Leaderboard Patterns)](https://www.google.com/search?q=community/leaderboards.md)：利用有序集合构建实时排名，支持 O(log N) 的得分更新、排名查找以及高效的 Top-N 查询。
 * [发布/订阅模式 (Pub/Sub Patterns)](https://www.google.com/search?q=community/pubsub.md)：向多个订阅者广播实时事件，适用于通知、聊天等允许丢失消息的场景。
 * [会话管理模式 (Session Management Patterns)](https://www.google.com/search?q=community/session-management.md)：在 Redis 中存储用户会话并设置 TTL，根据需求选择 Hash、String 或 JSON 存储。
-* [向量搜索与 AI 模式 (Vector Search and AI Patterns)](https://www.google.com/search?q=community/vector-search-ai.md)：利用 Redis 向量集构建语义搜索、RAG 管道和 AI 代理基础设施，实现亚毫秒级延迟。
+* [向量搜索与 AI 模式 (Vector Search and AI Patterns)](https://www.google.com/search?q=community/vector-search-ai.md)：利用 Redis 向量集构建语义搜索、RAG 管道和 AI 智能体基础设施，实现亚毫秒级延迟。
 
 ## 生产模式
 
@@ -79,7 +79,7 @@ Redis 社区为常见用例开发的模式。
 
 ---
 
-## 代理助手：快速参考
+## 给智能体的：快速参考
 
 ### 缓存模式选择
 
