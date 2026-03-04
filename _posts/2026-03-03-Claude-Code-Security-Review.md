@@ -6,7 +6,7 @@ categories: ClaudeCode SecurityReview GitHubAction
 tags: [Claude Code, Security Review, GitHub Action, LLM]
 ---
 
-[Claude 代码安全审查 (Claude Code Security Review)](https://github.com/anthropics/claude-code-security-review/) 是一个基于 AI 的 GitHub Action 安全审查工具，利用 Claude 分析代码变更中的安全漏洞。
+[Claude 代码安全审查 (Claude Code Security Review)](https://github.com/anthropics/claude-code-security-review/) 是一个基于 AI 的 GitHub Action 安全审查工具，利用 Claude 分析代码变更中的安全漏洞。包含了我个人的二次开发成果（Web 界面、全库扫描、可视化报告）。
 
 <!--more-->
 
@@ -900,3 +900,5 @@ Findings:
     - Description: 应用程序没有使用环境变量管理配置，所有配置（如数据库路径）都硬编码在源代码中，可能导致敏感信息暴露和部署问题。
 
 Result saved to: eval_results/repo_wang-junjian_LingMaster.json
+
+![](/images/2026/Claude/claude-code-security-review/summary.jpeg)
