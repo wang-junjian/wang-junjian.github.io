@@ -902,3 +902,10 @@ Findings:
 Result saved to: eval_results/repo_wang-junjian_LingMaster.json
 
 ![](/images/2026/Claude/claude-code-security-review/summary.jpeg)
+
+
+## 参考资料
+
+- [Automate security reviews with Claude Code](https://claude.com/blog/automate-security-reviews-with-claude-code)
+- [Claude Code Security Reviewer](https://github.com/anthropics/claude-code-security-review/)
+- [Claude Code overview](https://code.claude.com/docs/en/overview)
