@@ -10,6 +10,8 @@ tags: [Claude Code, Security Review, GitHub Action, LLM]
 
 <!--more-->
 
+![](/images/2026/Claude/claude-code-security-review/sast.png)
+
 # 使用 Claude Code 实现自动化安全审查
 
 今天，我们正式在 Claude Code 中推出**自动化安全审查**功能。通过我们的 GitHub Actions 集成和全新的 `/security-review` 命令，开发者可以轻松地让 Claude 识别安全隐患，并直接由其完成修复。
