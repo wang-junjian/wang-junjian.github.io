@@ -8,6 +8,8 @@ tags: [OpenClaw, Agent, ZeroAI, 软件开发, Tank]
 
 ZeroAI 一个通用的 AI 开发助手，能够按照五步流程开发任意软件应用。从需求理解到代码生成，让 AI 帮你开发软件！
 
+![](/images/2026/OpenClaw/zeroai/zeroai.jpeg)
+
 <!--more-->
 
 ![](/images/2026/OpenClaw/zeroai/home.png)
