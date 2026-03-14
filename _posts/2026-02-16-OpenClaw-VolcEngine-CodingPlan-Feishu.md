@@ -520,9 +520,12 @@ claude update
 ```
 
 - doubao-seed-2.0-code
+- doubao-seed-2.0-pro​
+- doubao-seed-2.0-lite​
+- doubao-seed-code
+- minimax-m2.5​
 - kimi-k2.5
 - glm-4.7
-- doubao-seed-code
 - deepseek-v3.2
 
 #### 智谱
