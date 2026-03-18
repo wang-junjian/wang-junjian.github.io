@@ -329,6 +329,87 @@ bun remove -g openclaw
 避免万一旧密钥泄露，别人拿着你的密钥烧 Token。
 
 
+# PPT 总结
+
+## 📄 PPT 第 1 页：标题页
+**标题：OpenClaw 高效安装与全能配置指南**
+**副标题：** 从零开始构建您的 Agent 运行环境
+* **演讲人：** [您的名字]
+* **核心关键词：** 快速部署 | 模型集成 | 智能体调度 | 自动化运维
+
+---
+
+## 📊 PPT 第 2 页：快速入门——安装与初始化
+**标题：三步开启 OpenClaw 之旅**
+
+### 1. 多平台安装命令
+* **MacOS:** `npm install -g openclaw@latest` (支持 pnpm/curl)
+* **Windows:** `iwr -useb https://openclaw.ai/install.ps1 | iex`
+
+### 2. 向导化启动 (Onboarding)
+* **命令：** `openclaw onboard --install-daemon`
+* **关键配置建议：**
+    * **模式：** 推荐 **QuickStart** 模式。
+    * **技能：** 开启 **Configure skills** 以启用本地实用工具。
+    * **界面：** 选择 **Hatch in TUI** 进入交互式终端界面。
+
+---
+
+## 🤖 PPT 第 3 页：模型集成（一）—— 选型与 LongCat
+**标题：大模型生态集成：LongCat 方案**
+
+### 1. 核心模型矩阵 (LongCat)
+* **Flash-Thinking-2601:** 深度思考与逻辑推理。
+* **Flash-Chat:** 高性能通用对话。
+* **Flash-Lite:** 极致响应的轻量化 MoE 架构。
+
+### 2. 配置实践
+* **编辑路径：** `~/.openclaw/openclaw.json`
+* **接入要点：**
+    * `baseUrl`: `https://api.longcat.chat/openai`
+    * `reasoning`: 根据模型特性开关思考链。
+    * `primary`: 将其设为 Agent 的默认“大脑”。
+
+---
+
+## 💻 PPT 第 4 页：模型集成（二）—— 火山方舟与 Coding
+**标题：面向开发场景：火山方舟 Coding Plan**
+
+### 1. 适配模型概览
+* 支持 Doubao-seed-2.0 (Code/Pro/Lite)、DeepSeek-V3.2、GLM-4.7、Kimi-K2.5 等主流模型。
+
+### 2. 开发者配置优化
+* **Endpoint:** 针对 Coding 优化版 API 路径进行配置。
+* **别名机制 (Alias):** * 将冗长的供应商名称（如 `custom-ark-...`）映射为简短的 `ark-code-latest`。
+    * **优势：** 提高 CLI 指令输入效率，降低配置复杂度。
+
+---
+
+## ⚙️ PPT 第 5 页：深度调优——智能体核心参数
+**标题：精细化管理：让 Agent 更聪明、更稳定**
+
+| 维度 | 参数配置 | 业务价值 |
+| :--- | :--- | :--- |
+| **上下文管理** | `cache-ttl` (1h) | 兼顾记忆连续性与 Token 消耗平衡 |
+| **防御性压缩** | `mode: safeguard` | 自动总结长对话，防止溢出导致的报错 |
+| **高并发处理** | `maxConcurrent: 4/8` | 主/子智能体协同，显著提升批量任务速度 |
+| **工作空间** | `workspace` | 规范化存放索引、临时文件与生成代码 |
+
+---
+
+## 🛠️ PPT 第 6 页：运维与进阶使用
+**标题：运行监控与环境维护**
+
+### 1. 交互与可视化
+* **终端交互：** `openclaw tui` (极客首选)
+* **网页看板：** `openclaw dashboard` (直观监控)
+
+### 2. 环境重置与卸载
+* **一键重置：** `openclaw reset` (保留工具，清空配置)
+* **彻底清除：** `openclaw uninstall --all --yes`
+* **安全建议：** 卸载后建议及时轮换 (Rotate) API Keys，确保资产安全。
+
+
 ## 参考资料
 - [LongCat Claude Code 配置](https://longcat.chat/platform/docs/zh/ClaudeCode.html)
 - [龙虾🦞完全卸载教程，来了！](https://mp.weixin.qq.com/s/RPddahsdzYnqYQImKA0MEQ)
