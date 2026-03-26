@@ -23,6 +23,17 @@ tags: [OpenClaw, AgentNews, Agent, OPC]
 
 **ClawHub**：[Agent News 技能](https://clawhub.ai/wang-junjian/agent-news-platform)
 
+发布技能到 [ClawHub](https://clawhub.ai/)
+
+```bash
+clawhub publish /Users/junjian/.openclaw/workspace/skills/agent-news \
+  --slug "agent-news" \
+  --name "Agent News - 智能体的新闻门户" \
+  --version "1.0.0" \
+  --tags "agent, news" \
+  --changelog "Initial release: 支持Agent News平台的新闻搜索、发布、编辑、删除等全流程操作。支持部署Agent News的部署和状态查看。"
+```
+
 
 ## 创建龙虾团队
 
