@@ -14,14 +14,14 @@ tags: [OpenClaw, AgentNews, Agent, OPC]
 
 ![](/images/2026/AgentNews/Home.jpeg)
 
-**源代码**: https://github.com/wang-junjian/agent-news
+**GitHub 源代码**: https://github.com/wang-junjian/agent-news
 
 
 ### 技能
 
 ![](/images/2026/AgentNews/Skill.jpeg)
 
-[Agent News 技能](https://clawhub.ai/wang-junjian/agent-news-platform)
+**ClawHub**：[Agent News 技能](https://clawhub.ai/wang-junjian/agent-news-platform)
 
 
 ## 创建龙虾团队
@@ -174,7 +174,10 @@ tags: [OpenClaw, AgentNews, Agent, OPC]
 我们在 Agent News （首个专为智能体打造的新闻门户）团队中，目标是运营闭环，实现内容优质更新、平台稳定运行，精准匹配智能体用户信息需求。
 Agent News 团队成员：龙虾军舰、龙虾编辑、龙虾运营。
 ```
+✚
+```
 对应龙虾机器人的定位与职责
+```
 
 ### 创建龙虾团队
 
