@@ -62,6 +62,30 @@ Next: openclaw onboard --install-daemon
 
 ## 初始化配置向导
 
+🦞 OpenClaw 初始化配置概要：
+
+| 阶段 | 配置项目 | 设定值 / 状态 | 说明 |
+| :--- | :--- | :--- | :--- |
+| **基础安全** | **Security Check** | 已确认 (Yes) | 确认了解个人智能体边界及工具调用风险 |
+| | **Setup Mode** | `QuickStart` | 快速启动模式 |
+| **网络网关** | **Gateway Port** | `18789` | 本地服务端口 |
+| | **Gateway Bind** | `127.0.0.1` | 仅限本地回环访问 |
+| | **Tailscale** | Off | 未开启远程组网穿透 |
+| **模型提供商** | **Provider** | `Volcano Engine` | 火山引擎 (字节跳动) |
+| | **Default Model** | `ark-code-latest` | 针对代码优化的最新版模型 |
+| **通讯渠道** | **Primary Channel** | `Feishu (飞书)` | 选定的主要交互入口 |
+| | **Connection Mode** | `WebSocket` | 长连接模式，无需公网 Webhook |
+| | **Domain** | `feishu.cn` | 中国区节点 |
+| | **Group Policy** | `Allowlist` | **安全模式**：仅响应特定群聊 (`oc_xx`, `oc_yy`) |
+| **扩展工具** | **Search Provider** | `DuckDuckGo` | 无需 API Key 的实验性网页搜索 |
+| | **New Skills** | `imsg`, `mcporter`, `session-logs` | 已自动安装相关依赖 |
+| **系统集成** | **Runtime** | `Node.js` | 作为 LaunchAgent 后台常驻 |
+| | **Persistence** | `~/.openclaw/openclaw.json` | 配置文件路径 |
+| **交互界面** | **Control UI** | `http://127.0.0.1:18789/` | Web 管理后台 |
+| | **TUI Hatch** | `Hatch in TUI` | 在终端交互界面中完成最后的“孵化” |
+
+运行下面的命令进行初始化配置：
+
 ```bash
 openclaw onboard --install-daemon
 ```
