@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "OpenClaw v2026.3.24 重置指南：深度集成火山方舟 Coding Plan 与飞书渠道"
+title:  "OpenClaw v2026.3.24 重置指南：深度集成方舟 Coding Plan 与飞书渠道"
 date:   2026-03-27 08:00:00 +0800
 categories: OpenClaw Agent
 tags: [OpenClaw, Agent, 火山方舟, 飞书]
@@ -640,8 +640,10 @@ open dist/OpenClaw.app
 ![](/images/2026/OpenClaw/reset/macos.jpeg)
 
 
-## 火山与飞书
+## 方舟与飞书
 
-- [火山方舟 Coding Plan 管理控制台](https://console.volcengine.com/ark/region:ark+cn-beijing/openManagement?LLM=%7B%7D&advancedActiveKey=subscribe)
-
+- [方舟 Coding Plan 管理控制台](https://console.volcengine.com/ark/region:ark+cn-beijing/openManagement?LLM=%7B%7D&advancedActiveKey=subscribe)
 - [飞书开放平台 - 创建机器人](https://open.feishu.cn/app?lang=zh-CN)
+
+### [方舟 Coding Plan 支持 Doubao、GLM、DeepSeek、Kimi 等模型，现在订阅折上9折](https://volcengine.com/L/tuA1K12HNzA#HXB6HK3Q)
+
