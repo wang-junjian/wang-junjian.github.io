@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "长时运行智能体的有效脚手架 (Effective harnesses for long-running agents)"
+title:  "长时运行智能体的有效脚手架 (Harnesses)"
 date:   2026-03-28 08:00:00 +0800
 categories: Agent HarnessEngineering
 tags: [Agent, HarnessEngineering, Anthropic, Claude]
@@ -11,6 +11,8 @@ tags: [Agent, HarnessEngineering, Anthropic, Claude]
 **发布日期：2025 年 11 月 26 日**
 
 <!--more-->
+
+- [Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 
 智能体在跨越多个上下文窗口工作时仍面临挑战。我们从人类工程师身上汲取灵感，为长时运行的智能体构建了一个更有效的脚手架。
 
