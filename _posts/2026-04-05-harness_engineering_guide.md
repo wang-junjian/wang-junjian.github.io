@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "Harness Engineering（驾驭工程）全面学习指南"
+title:  "Harness Engineering（驾驭工程）：2026 AI 软件工程新范式"
 date:   2026-04-05 10:00:00 +0800
 categories: HarnessEngineering Agent
 tags: [HarnessEngineering, Agent, OpenAI, Anthropic, Stripe, MiniMax]
