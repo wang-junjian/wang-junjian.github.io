@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "autoresearch：使用 AI 自我迭代的研究"
+title:  "AutoResearch：AI 自主进行前沿语言模型研究"
 date:   2026-04-06 20:00:00 +0800
 categories: Autoresearch HarnessEngineering
 tags: [Autoresearch, HarnessEngineering, Agent, AndrejKarpathy]
