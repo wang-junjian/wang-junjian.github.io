@@ -136,14 +136,15 @@ tags: [AndrejKarpathy, wiki, Obsidian, LLM]
 #### 步骤 1：搭建基础环境（10 分钟）
 - 下载 **Obsidian**（免费，本地 Markdown 编辑器）。
 - 新建一个 Vault（知识库文件夹），推荐结构：
-  ```
-  MyKnowledgeBase/
-  ├── raw/          ← 原始资料（不要动）
-  ├── wiki/         ← LLM 编译后的结构化知识（核心）
-  ├── images/       ← 图片
-  ├── index.md      ← 总索引（LLM 维护）
-  └── concepts/     ← 概念文章目录
-  ```
+
+```
+MyKnowledgeBase/
+├── raw/          ← 原始资料（不要动）
+├── wiki/         ← LLM 编译后的结构化知识（核心）
+├── images/       ← 图片
+├── index.md      ← 总索引（LLM 维护）
+└── concepts/     ← 概念文章目录
+```
 
 #### 步骤 2：选择 LLM 工具（推荐组合）
 | 工具          | 用途                     | 推荐理由                  |
