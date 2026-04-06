@@ -104,6 +104,7 @@ pyproject.toml  — 依赖项
 
 ---
 
+![](/images/2026/autoresearch/workflow.jpeg)
 
 # program.md
 
