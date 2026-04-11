@@ -1,12 +1,12 @@
+---
 layout: single
 title:  "Claude Managed Agents（托管智能体）快速入门指南"
 date:   2026-04-11 10:00:00 +0800
 categories: Claude ManagedAgents
 tags: [Claude, ManagedAgents, Agent]
-
+---
 
 <!--more-->
-
 
 # Claude Managed Agents 概览
 
