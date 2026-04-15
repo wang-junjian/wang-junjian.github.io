@@ -461,3 +461,47 @@ tags: [投资, 泡泡玛特, 股票]
 8. 天风证券、高盛等券商研究报告
 9. 雪球：泡泡玛特创始人王宁的10个访谈视频整理 (2010-2026)
 10. 段永平公开投资评论
+
+
+## 泡泡玛特创始人王宁访谈链接汇编
+
+### 📺 视频访谈
+
+| # | 来源 | 标题 | 链接 |
+|---|------|------|------|
+| 1 | 央视 | 央视专访泡泡玛特创始人王宁 | [B站](https://www.bilibili.com/video/BV1aCDXBhEm3/) |
+| 2 | 人民日报 | 人民日报专访泡泡玛特创始人王宁 | [腾讯视频](https://v.qq.com/x/page/d1187i23hdx.html) |
+| 3 | 界面新闻 | 专访泡泡玛特创始人王宁和他的"潮玩帝国" | [界面新闻](https://www.jiemian.com/video/AGQCNwhuB28BPlVj.html) |
+| 4 | 央视《扬声》 | 《扬声》对话王宁（精选） | [抖音搜索页](https://www.douyin.com/search/%E6%B3%A1%E6%B3%A1%E7%8E%9B%E7%89%B9%E7%8E%8B%E5%AE%81%E8%AE%BF%E8%B0%88%E8%A7%86%E9%A2%91) |
+| 5 | 界面新闻 | 泡泡玛特王宁演讲实录「潮流玩具的设计修养」 | [爱奇艺](https://www.iqiyi.com/v_19rsfxac5c.html) |
+| 6 | 泡泡玛特官方 | 泡泡玛特10周年纪录片（2010-2020） | [雪球合集](https://xueqiu.com/2524803655/383649450)（含10个访谈视频整理） |
+
+### 📰 深度文字访谈（中文）
+
+| # | 来源 | 标题 | 时间 | 链接 |
+|---|------|------|------|------|
+| 1 | 新华网 | "成为世界的泡泡玛特"——泡泡玛特创始人王宁访谈 | 2025-07-23 | [链接](https://www.news.cn/politics/20250723/7a166f50036d43b299e8db965c7631a2/c.html) |
+| 2 | 人民日报 | 泡泡玛特创始人王宁：中国制造和中国文化成就了我们 | 2025-07-21 | [链接](https://www.peopleapp.com/column/30049725964-500006388328) |
+| 3 | 澎湃新闻 | 人民日报访泡泡玛特创始人王宁：中国制造和中国文化成就了我们 | 2025-07-21 | [链接](https://www.thepaper.cn/newsDetail_forward_31227350) |
+| 4 | 搜狐 | 《人民日报》对话泡泡玛特王宁："尊重时间、尊重经营" | 2025-07-22 | [链接](https://www.sohu.com/a/916528497_121197322) |
+| 5 | 虎嗅 | 人民日报专访王宁：不做中国迪士尼，而做世界的泡泡玛特 | 2025-07-21 | [链接](https://www.huxiu.com/article/4602650.html) |
+| 6 | 财联社 | 年销破4亿只、拉布布破亿，王宁揭秘泡泡玛特的"双壁垒" | 2026-03-28 | [链接](https://finance.sina.com.cn/wm/2026-03-28/doc-inhspmsy5856653.shtml) |
+| 7 | 中国日报 | 泡泡玛特王宁：从潮玩IP到世界级品牌 用长期主义重塑潮玩产业 | 2025-07-26 | [链接](https://caijing.chinadaily.com.cn/a/202507/26/WS6884a028a310028a84abfe4c.html) |
+| 8 | 知乎 | 深度访谈泡泡玛特王宁 | 2023-08-31 | [链接](https://zhuanlan.zhihu.com/p/653587954) |
+
+### 🌐 英文访谈/报道
+
+| # | 来源 | 标题 | 时间 | 链接 |
+|---|------|------|------|------|
+| 1 | Global Times | 'Chinese manufacturing, culture propel our business success', says Pop Mart's Wang Ning | 2025-07-21 | [链接](https://www.globaltimes.cn/page/202507/1338897.shtml) |
+| 2 | PR Newswire (Global Times) | 同上英文转载 | 2025-07-22 | [链接](https://www.prnewswire.com/news-releases/global-times-chinese-manufacturing-culture-propel-our-business-success-says-pop-marts-wang-ning-302509769.html) |
+| 3 | China Daily | Wang Ning: Fusing the traditional with pop culture | 2023-09-06 | [链接](https://www.chinadaily.com.cn/a/202309/06/WS64f7f895a310d2dce4bb4368.html) |
+| 4 | China Strategy | Pop Mart wanted to be China's Disney. Now, it's thinking bigger, CEO says | 2025-07-25 | [链接](https://www.chinastrategy.org/2025/07/25/pop-mart-wanted-to-be-chinas-disney-now-its-thinking-bigger-ceo-says/) |
+| 5 | People's Daily (English) | Chinese manufacturing, culture propel Pop Mart's success | 2025-07-21 | [链接](https://peoplesdaily.pdnews.cn/culture/er/30049735343) |
+| 6 | Weekly Silicon Valley | Pop Mart CEO Wang Ning's Rapid Ascent: How a Toy Empire Created a Billionaire | 2025-06-07 | [链接](https://weeklysiliconvalley.com/pop-mart-ceo-wang-nings-rapid-ascent-how-a-toy-empire-created-a-billionaire/) |
+| 7 | Deccan Bharat | The Psychology Behind Pop Mart: How Wang Ning Tapped Into FOMO for Billions | 2025-06-13 | [链接](https://deccanbharat.com/the-psychology-behind-pop-mart-how-wang-ning-tapped-into-fomo-for-billions/) |
+| 8 | Longbridge App | Five years ago, we had an undisclosed interview with Wang Ning of POP MART | 2025-06-17 | [链接](https://longportapp.com/en/news/244929250) |
+
+---
+
+共收集到 **22 条访谈链接**（6 个视频 + 8 篇中文文字 + 8 篇英文）。其中 2025 年 7 月人民日报和央视的专访是最新且最有含金量的深度对话。
