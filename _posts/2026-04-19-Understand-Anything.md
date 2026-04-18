@@ -12,7 +12,7 @@ tags: [Understand-Anything, Plugin, KnowledgeGraph, ClaudeCode]
 
 ## [Understand-Anything](https://github.com/Lum1104/Understand-Anything)
 
-将任意代码库、知识库或文档转化为可探索、可搜索、可对话的交互式知识图谱，支持 Claude Code、Codex、Cursor、Copilot、Gemini CLI 等多平台。
+[Understand Anything](https://lum.is-a.dev/Understand-Anything/) 将任意代码库、知识库或文档转化为可探索、可搜索、可对话的交互式知识图谱，支持 Claude Code、Codex、Cursor、Copilot、Gemini CLI 等多平台。
 
 ### 多智能体架构
 
