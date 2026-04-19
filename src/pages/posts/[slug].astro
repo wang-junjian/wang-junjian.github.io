@@ -1,0 +1,269 @@
+---
+import fs from 'fs';
+import path from 'path';
+import { marked } from 'marked';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { normalizeCategories, normalizeTags } from '../../utils/posts';
+
+// Configure marked - syntax highlighting will be done on the client
+marked.setOptions({});
+
+export function getStaticPaths() {
+  const projectRoot = process.cwd();
+  const postsDir = path.join(projectRoot, 'src', 'content', 'posts');
+  const files = fs.readdirSync(postsDir).filter(f => f.endsWith('.md'));
+
+  const paths = files.map(file => {
+    const slug = file.replace(/\.md$/, '');
+    return { params: { slug } };
+  });
+
+  return paths;
+}
+
+const projectRoot = process.cwd();
+const postsDir = path.join(projectRoot, 'src', 'content', 'posts');
+const { slug } = Astro.params;
+const filePath = path.join(postsDir, `${slug}.md`);
+const content = fs.readFileSync(filePath, 'utf-8');
+
+// Parse frontmatter
+const frontmatterMatch = content.match(/^---([\s\S]*?)---/);
+let frontmatter: any = {};
+let bodyContent = content;
+
+if (frontmatterMatch) {
+  const frontmatterStr = frontmatterMatch[1];
+  bodyContent = content.slice(frontmatterMatch[0].length).trim();
+  const lines = frontmatterStr.split('\n').filter(l => l.trim());
+  for (const line of lines) {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.slice(0, colonIndex).trim();
+      let value = line.slice(colonIndex + 1).trim();
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      frontmatter[key] = value;
+    }
+  }
+}
+
+// Format date
+let formattedDate = '';
+if (frontmatter.date) {
+  const date = new Date(frontmatter.date);
+  formattedDate = date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+const categories = normalizeCategories(frontmatter.categories);
+const tags = normalizeTags(frontmatter.tags);
+---
+
+<BaseLayout title={frontmatter.title || slug}>
+  <article>
+    <!-- Article Header -->
+    <header style="background: var(--white); border-bottom: 1px solid var(--border); padding: 5rem 2rem 3rem;">
+      <div style="max-width: 950px; margin: 0 auto;">
+        <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; margin-bottom: 2rem; transition: color 0.2s ease;"
+           onmouseover="this.style.color='var(--accent)';"
+           onmouseout="this.style.color='var(--text-secondary)';">
+          <span>←</span>
+          返回首页
+        </a>
+
+        {categories.length > 0 ? (
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            {categories.map((cat) => (
+              <a
+                href={`/categories.html#category-${encodeURIComponent(cat)}`}
+                style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 500; text-decoration: none; transition: opacity 0.2s ease;"
+                onmouseover="this.style.opacity='0.7';"
+                onmouseout="this.style.opacity='1';"
+              >
+                {cat}
+              </a>
+            ))}
+          </div>
+        ) : null}
+
+        <h1 style="font-family: 'Newsreader', Georgia, serif; font-size: 3.5rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem; color: var(--text-primary);"
+            class="animate-fade-in-up">
+          {frontmatter.title || slug}
+        </h1>
+
+        <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+          <time style="color: var(--text-secondary); font-size: 1rem; font-weight: 500;">
+            {formattedDate}
+          </time>
+          {tags.length > 0 ? (
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              {tags.map((tag) => (
+                <a
+                  href={`/tags.html#tag-${encodeURIComponent(tag)}`}
+                  style="font-size: 0.875rem; color: var(--text-secondary); text-decoration: none; transition: color 0.2s ease;"
+                  onmouseover="this.style.color='var(--accent)';"
+                  onmouseout="this.style.color='var(--text-secondary)';"
+                >
+                  {tag}
+                </a>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </header>
+
+    <!-- Article Content -->
+    <div style="max-width: 950px; margin: 0 auto; padding: 4rem 2rem;">
+      <div class="prose animate-fade-in-up" style="animation-delay: 0.1s;">
+        <Fragment set:html={marked(bodyContent)} />
+      </div>
+    </div>
+
+    <!-- Article Footer -->
+    <footer style="max-width: 950px; margin: 0 auto; padding: 3rem 2rem 5rem; border-top: 1px solid var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap;">
+        <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: 1px solid var(--border); color: var(--text-primary); text-decoration: none; font-size: 0.875rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; transition: all 0.2s ease; background: var(--white);"
+           onmouseover="this.style.borderColor='var(--text-primary)'; this.style.transform='translateY(-2px)';"
+           onmouseout="this.style.borderColor='var(--border)'; this.style.transform='translateY(0)';">
+          <span>←</span>
+          返回首页
+        </a>
+        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+          感谢阅读
+        </div>
+      </div>
+    </footer>
+  </article>
+
+  <!-- Highlight.js for syntax highlighting -->
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Mermaid for diagram visualization -->
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+
+  <!-- Code Block Copy Functionality and Syntax Highlighting -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Mermaid
+      if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'loose'
+        });
+      }
+
+      // First, process Mermaid diagrams
+      const codeElements = document.querySelectorAll('.prose pre code');
+      let mermaidCount = 0;
+
+      codeElements.forEach((code) => {
+        // Check if this is a mermaid code block
+        let isMermaid = false;
+        if (code.className && code.className.includes('language-mermaid')) {
+          isMermaid = true;
+        }
+
+        if (isMermaid && typeof mermaid !== 'undefined') {
+          const pre = code.parentElement;
+          const mermaidContent = code.textContent || code.innerText || '';
+
+          // Create a div for the mermaid diagram
+          const diagramDiv = document.createElement('div');
+          diagramDiv.className = 'mermaid';
+          diagramDiv.style.margin = '2rem 0';
+          diagramDiv.style.padding = '1.5rem';
+          diagramDiv.style.background = 'var(--white)';
+          diagramDiv.style.border = '1px solid var(--border)';
+          diagramDiv.style.borderRadius = '0.5rem';
+          diagramDiv.textContent = mermaidContent;
+
+          // Replace the pre with the diagram
+          pre.parentNode.insertBefore(diagramDiv, pre);
+          pre.style.display = 'none';
+
+          mermaidCount++;
+        }
+      });
+
+      // Render all mermaid diagrams
+      if (mermaidCount > 0 && typeof mermaid !== 'undefined') {
+        mermaid.init(undefined, '.mermaid');
+      }
+
+      // Then, apply syntax highlighting to remaining code blocks
+      const remainingCodeElements = document.querySelectorAll('.prose pre:not([style*="display: none"]) code');
+      remainingCodeElements.forEach((code) => {
+        // Try to get language from class (marked adds language-xxx)
+        let lang = 'plaintext';
+        if (code.className) {
+          const match = code.className.match(/language-(\w+)/);
+          if (match) {
+            lang = match[1];
+          }
+        }
+        code.classList.add('hljs');
+        code.classList.add(lang);
+        try {
+          hljs.highlightElement(code);
+        } catch (e) {
+          // Fallback - just add class without highlighting
+          console.warn('Highlight failed:', e);
+        }
+      });
+
+      // Then add copy buttons
+      const codeBlocks = document.querySelectorAll('.prose pre');
+
+      codeBlocks.forEach((pre, index) => {
+        // Create copy button
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = '复制';
+        copyBtn.style.zIndex = '10';
+
+        // Insert button at the beginning of the pre
+        pre.style.position = 'relative';
+        pre.insertBefore(copyBtn, pre.firstChild);
+
+        // Copy functionality
+        copyBtn.addEventListener('click', async () => {
+          const code = pre.querySelector('code');
+          let text = '';
+
+          if (code) {
+            // Extract plain text by removing all HTML tags
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = code.innerHTML;
+            text = tempDiv.textContent || tempDiv.innerText || '';
+          } else {
+            text = pre.textContent || '';
+          }
+
+          try {
+            await navigator.clipboard.writeText(text);
+            copyBtn.textContent = '已复制!';
+            copyBtn.classList.add('copied');
+
+            setTimeout(() => {
+              copyBtn.textContent = '复制';
+              copyBtn.classList.remove('copied');
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy:', err);
+            copyBtn.textContent = '复制失败';
+            setTimeout(() => {
+              copyBtn.textContent = '复制';
+            }, 2000);
+          }
+        });
+      });
+    });
+  </script>
+</BaseLayout>

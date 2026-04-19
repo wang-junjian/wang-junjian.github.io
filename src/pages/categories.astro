@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('posts');
+
+// Normalize categories
+function normalizeCategories(value: any): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(v => String(v));
+  let str = String(value).trim();
+  if (str.startsWith('[') && str.endsWith(']')) {
+    str = str.slice(1, -1).trim();
+    return str.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  }
+  return str.split(/\s+/).map(s => s.trim()).filter(Boolean);
+}
+
+// Get all categories
+function getAllCategories(posts: any[]): Map<string, any[]> {
+  const categories = new Map<string, any[]>();
+  for (const post of posts) {
+    const cats = normalizeCategories(post.data.categories);
+    for (const cat of cats) {
+      if (!categories.has(cat)) {
+        categories.set(cat, []);
+      }
+      categories.get(cat)!.push(post);
+    }
+  }
+  return categories;
+}
+
+const categories = getAllCategories(posts);
+
+// Sort categories by post count descending
+const sortedCategories = Array.from(categories.entries()).sort((a, b) => b[1].length - a[1].length);
+
+function formatDate(date: Date) {
+  if (!date) return '';
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+---
+
+<BaseLayout title="分类 - 军舰日志">
+  <section style="padding: 4rem 2rem; background: var(--white); border-bottom: 1px solid var(--border);">
+    <div style="max-width: 1300px; margin: 0 auto;">
+      <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; margin-bottom: 2rem; transition: color 0.2s ease;"
+         onmouseover="this.style.color='var(--accent)';"
+         onmouseout="this.style.color='var(--text-secondary)';">
+        <span>←</span>
+        返回首页
+      </a>
+      <h1 style="font-family: 'Newsreader', Georgia, serif; font-size: 3.5rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 0.5rem;"
+          class="animate-fade-in-up">
+        分类
+      </h1>
+      <p style="color: var(--text-secondary); font-size: 1.125rem;" class="animate-fade-in-up" style="animation-delay: 0.1s;">
+        共 {categories.size} 个分类，{posts.length} 篇文章
+      </p>
+    </div>
+  </section>
+
+  <section style="padding: 4rem 2rem;">
+    <div style="max-width: 1300px; margin: 0 auto;">
+      <div style="display: grid; gap: 4rem;">
+        {sortedCategories.map(([category, categoryPosts], index) => (
+          <section id={`category-${encodeURIComponent(category)}`} style="border-bottom: 1px solid var(--border); padding-bottom: 3rem;"
+                   class="animate-fade-in-up" style={`animation-delay: ${index * 0.05}s;`}>
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
+              <h2 style="font-family: 'Newsreader', Georgia, serif; font-size: 2rem; font-weight: 600; letter-spacing: -0.02em;">
+                {category}
+              </h2>
+              <span style="color: var(--text-secondary); font-size: 0.875rem; font-variant-numeric: tabular-nums;">
+                {categoryPosts.length} 篇文章
+              </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem;">
+              {categoryPosts.slice(0, 6).map((post) => (
+                <article>
+                  <time style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                    {formatDate(post.data.date)}
+                  </time>
+                  <h3 style="font-family: 'Newsreader', Georgia, serif; font-size: 1.25rem; font-weight: 500; line-height: 1.4; letter-spacing: -0.01em;">
+                    <a href={`/posts/${post.slug}.html`} style="color: var(--text-primary); text-decoration: none; transition: color 0.2s ease;"
+                       onmouseover="this.style.color='var(--accent)';"
+                       onmouseout="this.style.color='var(--text-primary)';">
+                      {post.data.title || post.slug}
+                    </a>
+                  </h3>
+                </article>
+              ))}
+            </div>
+
+            {categoryPosts.length > 6 && (
+              <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                还有 {categoryPosts.length - 6} 篇文章...
+              </p>
+            )}
+          </section>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
