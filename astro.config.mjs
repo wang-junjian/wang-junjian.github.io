@@ -2,6 +2,8 @@
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
@@ -13,11 +15,11 @@ export default defineConfig({
   },
   integrations: [mdx(), sitemap()],
   markdown: {
-    shikiConfig: {
-      theme: 'github-dark',
-    },
+    syntaxHighlight: false,
     gfm: true,
     smartypants: true,
+    remarkPlugins: [remarkMath],
+    rehypePlugins: [rehypeKatex],
     remarkRehype: {
       footnoteLabel: '备注',
       footnoteBackLabel: '返回正文',
