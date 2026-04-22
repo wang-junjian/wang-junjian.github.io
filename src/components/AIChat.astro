@@ -660,7 +660,7 @@
     return data.data[0].embedding;
   }
 
-  async function generateAnswer(query, contextChunks) {
+  async function generateAnswer(query, contextChunks, currentDoc) {
     const context = contextChunks
       .map((r, i) => `[${i + 1}] ${r.chunk.title}\n${r.chunk.content}`)
       .join('\n\n');
@@ -676,14 +676,20 @@
     }
     const postTitles = Array.from(slugMap.entries()).map(([slug, info]) => [slug, info.title]);
 
+    let currentDocSection = '';
+    if (currentDoc) {
+      currentDocSection = `\n\n用户当前正在阅读的文章：\n标题：${currentDoc.title}\n正文：${currentDoc.content}`;
+    }
+
     const systemPrompt = `你是一个专业的技术助手，专门回答关于这个博客内容的问题。请遵循以下规则：
 1. 只使用提供的上下文信息来回答问题，不要编造信息
 2. 如果上下文中没有相关信息，请诚实地告诉用户
 3. 回答要简洁、准确、有帮助
 4. 适当使用中文进行回答
-5. 不要在回答中添加文章链接，链接会在最后自动添加`;
+5. 如果用户正在阅读某篇文章，优先结合该文章内容回答
+6. 不要在回答中添加文章链接，链接会在最后自动添加`;
 
-    const userPrompt = `用户问题：${query}\n\n相关上下文：\n${context}\n\n请根据以上上下文回答用户的问题。`;
+    const userPrompt = `用户问题：${query}\n\n相关上下文：\n${context}${currentDocSection}\n\n请根据以上上下文回答用户的问题。`;
     const baseUrl = (apiConfig.baseUrl || 'https://api.longcat.chat/openai/').replace(/\/$/, '');
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -733,7 +739,20 @@
 
       removeLoadingMessage();
       addLoadingMessage('正在生成回答...');
-      const answer = await generateAnswer(text, similarChunks);
+
+      let currentDoc = null;
+      if (location.pathname.startsWith('/posts/')) {
+        const proseEl = document.querySelector('.prose');
+        const titleEl = document.querySelector('article h1');
+        if (proseEl) {
+          currentDoc = {
+            title: titleEl ? titleEl.textContent.trim() : document.title,
+            content: proseEl.textContent.trim().slice(0, 8000),
+          };
+        }
+      }
+
+      const answer = await generateAnswer(text, similarChunks, currentDoc);
 
       removeLoadingMessage();
       messages.push({ role: 'assistant', content: answer });
@@ -784,11 +803,9 @@
     });
 
     clearBtn.addEventListener('click', () => {
-      if (confirm('确定要清空聊天记录吗？')) {
-        messages = [];
-        saveMessages();
-        renderMessages();
-      }
+      messages = [];
+      saveMessages();
+      renderMessages();
     });
 
     saveConfigBtn.addEventListener('click', () => {
@@ -816,6 +833,13 @@
       const btn = e.target.closest('[data-question]');
       if (btn && !inputEl.disabled) {
         sendMessage(btn.dataset.question);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        toggleWindow();
       }
     });
   }
