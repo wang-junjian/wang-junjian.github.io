@@ -1,71 +1,31 @@
 ---
-import fs from 'fs';
-import path from 'path';
-import { marked } from 'marked';
+import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { normalizeCategories, normalizeTags } from '../../utils/posts';
 
-// Configure marked - syntax highlighting will be done on the client
-marked.setOptions({});
-
-export function getStaticPaths() {
-  const projectRoot = process.cwd();
-  const postsDir = path.join(projectRoot, 'src', 'content', 'posts');
-  const files = fs.readdirSync(postsDir).filter(f => f.endsWith('.md'));
-
-  const paths = files.map(file => {
-    const slug = file.replace(/\.md$/, '');
-    return { params: { slug } };
-  });
-
-  return paths;
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
 }
 
-const projectRoot = process.cwd();
-const postsDir = path.join(projectRoot, 'src', 'content', 'posts');
-const { slug } = Astro.params;
-const filePath = path.join(postsDir, `${slug}.md`);
-const content = fs.readFileSync(filePath, 'utf-8');
+const { post } = Astro.props;
+const { Content } = await render(post);
 
-// Parse frontmatter
-const frontmatterMatch = content.match(/^---([\s\S]*?)---/);
-let frontmatter: any = {};
-let bodyContent = content;
-
-if (frontmatterMatch) {
-  const frontmatterStr = frontmatterMatch[1];
-  bodyContent = content.slice(frontmatterMatch[0].length).trim();
-  const lines = frontmatterStr.split('\n').filter(l => l.trim());
-  for (const line of lines) {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.slice(0, colonIndex).trim();
-      let value = line.slice(colonIndex + 1).trim();
-      if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      frontmatter[key] = value;
-    }
-  }
-}
-
-// Format date
-let formattedDate = '';
-if (frontmatter.date) {
-  const date = new Date(frontmatter.date);
-  formattedDate = date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-}
+const frontmatter = post.data;
+const formattedDate = frontmatter.date.toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
 
 const categories = normalizeCategories(frontmatter.categories);
 const tags = normalizeTags(frontmatter.tags);
 ---
 
-<BaseLayout title={frontmatter.title || slug}>
+<BaseLayout title={frontmatter.title || post.id}>
   <article>
     <!-- Article Header -->
     <header style="background: var(--white); border-bottom: 1px solid var(--border); padding: 5rem 2rem 3rem;">
@@ -94,7 +54,7 @@ const tags = normalizeTags(frontmatter.tags);
 
         <h1 style="font-family: 'Newsreader', Georgia, serif; font-size: 3.5rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem; color: var(--text-primary);"
             class="animate-fade-in-up">
-          {frontmatter.title || slug}
+          {frontmatter.title || post.id}
         </h1>
 
         <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
@@ -122,7 +82,7 @@ const tags = normalizeTags(frontmatter.tags);
     <!-- Article Content -->
     <div style="max-width: 950px; margin: 0 auto; padding: 4rem 2rem;">
       <div class="prose animate-fade-in-up" style="animation-delay: 0.1s;">
-        <Fragment set:html={marked(bodyContent)} />
+        <Content />
       </div>
     </div>
 

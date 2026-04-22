@@ -56,7 +56,7 @@ export function getPosts(projectRoot: string): Post[] {
 
     return {
       file,
-      slug: file.replace(/\.md$/, ''),
+      slug: file.replace(/\.md$/, '').toLowerCase(),
       data: frontmatter,
     };
   });
