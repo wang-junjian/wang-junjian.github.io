@@ -286,7 +286,7 @@ async function generateAnswer(query: string, contextChunks: any[], currentDoc: a
   }
   llmMessages.push({ role: 'user', content: userPrompt });
 
-  debug('llm', '发送 LLM 消息', { messageCount: llmMessages.length });
+  debug('llm', '发送 LLM 消息', { messageCount: llmMessages.length, messages: llmMessages });
 
   const llmStart = performance.now();
   const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -310,6 +310,7 @@ async function generateAnswer(query: string, contextChunks: any[], currentDoc: a
   info('llm', 'LLM 响应完成', {
     model: apiConfig.chatModel,
     answerLength: answer.length,
+    answer,
     durationMs: Math.round(performance.now() - llmStart)
   });
 
