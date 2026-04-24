@@ -1,73 +1,35 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { getAllTags, formatDate } from '../utils/posts';
 
 const posts = await getCollection('posts');
-
-// Normalize tags
-function normalizeTags(value: any): string[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.map(v => String(v));
-  let str = String(value).trim();
-  if (str.startsWith('[') && str.endsWith(']')) {
-    str = str.slice(1, -1).trim();
-  }
-  return str.split(/[,，]/).map(s => s.trim()).filter(Boolean);
-}
-
-// Get all tags
-function getAllTags(posts: any[]): Map<string, any[]> {
-  const tags = new Map<string, any[]>();
-  for (const post of posts) {
-    const tagList = normalizeTags(post.data.tags);
-    for (const tag of tagList) {
-      if (!tags.has(tag)) {
-        tags.set(tag, []);
-      }
-      tags.get(tag)!.push(post);
-    }
-  }
-  return tags;
-}
-
 const tags = getAllTags(posts);
 
 // Sort tags by post count descending
 const sortedTags = Array.from(tags.entries()).sort((a, b) => b[1].length - a[1].length);
-
-function formatDate(date: Date) {
-  if (!date) return '';
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
 ---
 
 <BaseLayout title="标签 - 军舰日志">
-  <section style="padding: 4rem 2rem; background: var(--white); border-bottom: 1px solid var(--border);">
-    <div style="max-width: 1300px; margin: 0 auto;">
-      <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; margin-bottom: 2rem; transition: color 0.2s ease;"
-         onmouseover="this.style.color='var(--accent)';"
-         onmouseout="this.style.color='var(--text-secondary)';">
+  <section class="py-16 px-8 bg-white border-b border-[var(--border)]">
+    <div class="max-w-[1300px] mx-auto">
+      <a href="/" class="inline-flex items-center gap-2 text-[var(--text-secondary)] no-underline text-sm mb-8 transition-colors duration-200 hover:text-[var(--accent)]">
         <span>←</span>
         返回首页
       </a>
-      <h1 style="font-family: 'Newsreader', Georgia, serif; font-size: 3.5rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 0.5rem;"
-          class="animate-fade-in-up">
+      <h1 class="font-['Newsreader',_Georgia,_serif] text-[3.5rem] font-semibold leading-[1.1] tracking-[-0.03em] mb-2 animate-fade-in-up">
         标签
       </h1>
-      <p style="color: var(--text-secondary); font-size: 1.125rem;" class="animate-fade-in-up" style="animation-delay: 0.1s;">
+      <p class="text-[var(--text-secondary)] text-lg animate-fade-in-up" style="animation-delay: 0.1s;">
         共 {tags.size} 个标签，{posts.length} 篇文章
       </p>
     </div>
   </section>
 
   <!-- Tag Cloud -->
-  <section style="padding: 3rem 2rem; background: var(--bg-primary); border-bottom: 1px solid var(--border);">
-    <div style="max-width: 1300px; margin: 0 auto;">
-      <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;" class="animate-fade-in-up" style="animation-delay: 0.15s;">
+  <section class="py-12 px-8 bg-[var(--bg-primary)] border-b border-[var(--border)]">
+    <div class="max-w-[1300px] mx-auto">
+      <div class="flex flex-wrap gap-3 animate-fade-in-up" style="animation-delay: 0.15s;">
         {sortedTags.map(([tag, tagPosts]) => {
           const count = tagPosts.length;
           const size = Math.min(2, 0.85 + (count / 30));
@@ -75,12 +37,11 @@ function formatDate(date: Date) {
           return (
             <a
               href={`#tag-${encodeURIComponent(tag)}`}
-              style={`padding: 0.5rem 1rem; background: var(--white); border: 1px solid var(--border); color: var(--text-primary); text-decoration: none; border-radius: 0; font-size: ${size}rem; opacity: ${opacity}; transition: all 0.2s ease; font-variant-numeric: tabular-nums;`}
-              onmouseover="this.style.borderColor='var(--text-primary)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';"
-              onmouseout="this.style.borderColor='var(--border)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+              class="px-4 py-2 bg-white border border-[var(--border)] text-[var(--text-primary)] no-underline rounded-none transition-all duration-200 tabular-nums hover:border-[var(--text-primary)] hover:-translate-y-0.5 hover:shadow-md"
+              style={`font-size: ${size}rem; opacity: ${opacity};`}
             >
               {tag}
-              <span style="margin-left: 0.5rem; font-size: 0.75em; color: var(--text-secondary);">({count})</span>
+              <span class="ml-2 text-[0.75em] text-[var(--text-secondary)]">({count})</span>
             </a>
           );
         })}
@@ -89,31 +50,28 @@ function formatDate(date: Date) {
   </section>
 
   <!-- Detailed Tag List -->
-  <section style="padding: 4rem 2rem;">
-    <div style="max-width: 1300px; margin: 0 auto;">
-      <div style="display: grid; gap: 4rem;">
+  <section class="py-16 px-8">
+    <div class="max-w-[1300px] mx-auto">
+      <div class="grid gap-16">
         {sortedTags.map(([tag, tagPosts], index) => (
-          <section id={`tag-${encodeURIComponent(tag)}`} style="border-bottom: 1px solid var(--border); padding-bottom: 3rem;"
-                   class="animate-fade-in-up" style={`animation-delay: ${0.2 + index * 0.03}s;`}>
-            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
-              <h2 style="font-family: 'Newsreader', Georgia, serif; font-size: 2rem; font-weight: 600; letter-spacing: -0.02em;">
+          <section id={`tag-${encodeURIComponent(tag)}`} class="animate-fade-in-up border-b border-[var(--border)] pb-12" style={`animation-delay: ${0.2 + index * 0.03}s;`}>
+            <div class="flex items-baseline justify-between mb-8 gap-4 flex-wrap">
+              <h2 class="font-['Newsreader',_Georgia,_serif] text-[2rem] font-semibold tracking-[-0.02em]">
                 {tag}
               </h2>
-              <span style="color: var(--text-secondary); font-size: 0.875rem; font-variant-numeric: tabular-nums;">
+              <span class="text-[var(--text-secondary)] text-sm tabular-nums">
                 {tagPosts.length} 篇文章
               </span>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem;">
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-8">
               {tagPosts.slice(0, 6).map((post) => (
                 <article>
-                  <time style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                  <time class="block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)] mb-2">
                     {formatDate(post.data.date)}
                   </time>
-                  <h3 style="font-family: 'Newsreader', Georgia, serif; font-size: 1.25rem; font-weight: 500; line-height: 1.4; letter-spacing: -0.01em;">
-                    <a href={`/posts/${post.id}.html`} style="color: var(--text-primary); text-decoration: none; transition: color 0.2s ease;"
-                       onmouseover="this.style.color='var(--accent)';"
-                       onmouseout="this.style.color='var(--text-primary)';">
+                  <h3 class="font-['Newsreader',_Georgia,_serif] text-xl font-medium leading-[1.4] tracking-[-0.01em]">
+                    <a href={`/posts/${post.id}`} class="text-[var(--text-primary)] no-underline transition-colors duration-200 hover:text-[var(--accent)]">
                       {post.data.title || post.id}
                     </a>
                   </h3>
@@ -122,7 +80,7 @@ function formatDate(date: Date) {
             </div>
 
             {tagPosts.length > 6 && (
-              <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+              <p class="mt-6 text-[var(--text-secondary)] text-sm">
                 还有 {tagPosts.length - 6} 篇文章...
               </p>
             )}

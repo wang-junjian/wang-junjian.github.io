@@ -78,7 +78,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 export async function searchSimilar(
   queryEmbedding: number[],
   topK: number = 10,
-  minSimilarity: number = 0.7
+  minSimilarity: number = 0.6
 ): Promise<SearchResult[]> {
   const data = await loadEmbeddings();
 

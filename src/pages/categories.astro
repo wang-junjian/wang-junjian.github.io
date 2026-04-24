@@ -1,95 +1,77 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { getAllCategories, formatDate } from '../utils/posts';
 
 const posts = await getCollection('posts');
-
-// Normalize categories
-function normalizeCategories(value: any): string[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.map(v => String(v));
-  let str = String(value).trim();
-  if (str.startsWith('[') && str.endsWith(']')) {
-    str = str.slice(1, -1).trim();
-    return str.split(/[,，]/).map(s => s.trim()).filter(Boolean);
-  }
-  return str.split(/\s+/).map(s => s.trim()).filter(Boolean);
-}
-
-// Get all categories
-function getAllCategories(posts: any[]): Map<string, any[]> {
-  const categories = new Map<string, any[]>();
-  for (const post of posts) {
-    const cats = normalizeCategories(post.data.categories);
-    for (const cat of cats) {
-      if (!categories.has(cat)) {
-        categories.set(cat, []);
-      }
-      categories.get(cat)!.push(post);
-    }
-  }
-  return categories;
-}
-
 const categories = getAllCategories(posts);
 
 // Sort categories by post count descending
 const sortedCategories = Array.from(categories.entries()).sort((a, b) => b[1].length - a[1].length);
-
-function formatDate(date: Date) {
-  if (!date) return '';
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
 ---
 
 <BaseLayout title="分类 - 军舰日志">
-  <section style="padding: 4rem 2rem; background: var(--white); border-bottom: 1px solid var(--border);">
-    <div style="max-width: 1300px; margin: 0 auto;">
-      <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; margin-bottom: 2rem; transition: color 0.2s ease;"
-         onmouseover="this.style.color='var(--accent)';"
-         onmouseout="this.style.color='var(--text-secondary)';">
+  <section class="py-16 px-8 bg-white border-b border-[var(--border)]">
+    <div class="max-w-[1300px] mx-auto">
+      <a href="/" class="inline-flex items-center gap-2 text-[var(--text-secondary)] no-underline text-sm mb-8 transition-colors duration-200 hover:text-[var(--accent)]">
         <span>←</span>
         返回首页
       </a>
-      <h1 style="font-family: 'Newsreader', Georgia, serif; font-size: 3.5rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 0.5rem;"
-          class="animate-fade-in-up">
+      <h1 class="font-['Newsreader',_Georgia,_serif] text-[3.5rem] font-semibold leading-[1.1] tracking-[-0.03em] mb-2 animate-fade-in-up">
         分类
       </h1>
-      <p style="color: var(--text-secondary); font-size: 1.125rem;" class="animate-fade-in-up" style="animation-delay: 0.1s;">
+      <p class="text-[var(--text-secondary)] text-lg animate-fade-in-up" style="animation-delay: 0.1s;">
         共 {categories.size} 个分类，{posts.length} 篇文章
       </p>
     </div>
   </section>
 
-  <section style="padding: 4rem 2rem;">
-    <div style="max-width: 1300px; margin: 0 auto;">
-      <div style="display: grid; gap: 4rem;">
-        {sortedCategories.map(([category, categoryPosts], index) => (
-          <section id={`category-${encodeURIComponent(category)}`} style="border-bottom: 1px solid var(--border); padding-bottom: 3rem;"
-                   class="animate-fade-in-up" style={`animation-delay: ${index * 0.05}s;`}>
-            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
-              <h2 style="font-family: 'Newsreader', Georgia, serif; font-size: 2rem; font-weight: 600; letter-spacing: -0.02em;">
+  <!-- Category Cloud -->
+  <section class="py-12 px-8 bg-[var(--bg-primary)] border-b border-[var(--border)]">
+    <div class="max-w-[1300px] mx-auto">
+      <div class="flex flex-wrap gap-3 animate-fade-in-up" style="animation-delay: 0.15s;">
+        {sortedCategories.map(([category, catPosts]) => {
+          const count = catPosts.length;
+          const size = Math.min(2, 0.85 + (count / 30));
+          const opacity = Math.min(1, 0.6 + (count / 50));
+          return (
+            <a
+              href={`#category-${encodeURIComponent(category)}`}
+              class="px-4 py-2 bg-white border border-[var(--border)] text-[var(--text-primary)] no-underline rounded-none transition-all duration-200 tabular-nums hover:border-[var(--text-primary)] hover:-translate-y-0.5 hover:shadow-md"
+              style={`font-size: ${size}rem; opacity: ${opacity};`}
+            >
+              {category}
+              <span class="ml-2 text-[0.75em] text-[var(--text-secondary)]">({count})</span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Category List -->
+  <section class="py-16 px-8">
+    <div class="max-w-[1300px] mx-auto">
+      <div class="grid gap-16">
+        {sortedCategories.map(([category, catPosts], index) => (
+          <section id={`category-${encodeURIComponent(category)}`} class="animate-fade-in-up border-b border-[var(--border)] pb-12" style={`animation-delay: ${0.2 + index * 0.03}s;`}>
+            <div class="flex items-baseline justify-between mb-8 gap-4 flex-wrap">
+              <h2 class="font-['Newsreader',_Georgia,_serif] text-[2rem] font-semibold tracking-[-0.02em]">
                 {category}
               </h2>
-              <span style="color: var(--text-secondary); font-size: 0.875rem; font-variant-numeric: tabular-nums;">
-                {categoryPosts.length} 篇文章
+              <span class="text-[var(--text-secondary)] text-sm tabular-nums">
+                {catPosts.length} 篇文章
               </span>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem;">
-              {categoryPosts.slice(0, 6).map((post) => (
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-8">
+              {catPosts.slice(0, 6).map((post) => (
                 <article>
-                  <time style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                  <time class="block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)] mb-2">
                     {formatDate(post.data.date)}
                   </time>
-                  <h3 style="font-family: 'Newsreader', Georgia, serif; font-size: 1.25rem; font-weight: 500; line-height: 1.4; letter-spacing: -0.01em;">
-                    <a href={`/posts/${post.id}.html`} style="color: var(--text-primary); text-decoration: none; transition: color 0.2s ease;"
-                       onmouseover="this.style.color='var(--accent)';"
-                       onmouseout="this.style.color='var(--text-primary)';">
+                  <h3 class="font-['Newsreader',_Georgia,_serif] text-xl font-medium leading-[1.4] tracking-[-0.01em]">
+                    <a href={`/posts/${post.id}`} class="text-[var(--text-primary)] no-underline transition-colors duration-200 hover:text-[var(--accent)]">
                       {post.data.title || post.id}
                     </a>
                   </h3>
@@ -97,9 +79,9 @@ function formatDate(date: Date) {
               ))}
             </div>
 
-            {categoryPosts.length > 6 && (
-              <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.875rem;">
-                还有 {categoryPosts.length - 6} 篇文章...
+            {catPosts.length > 6 && (
+              <p class="mt-6 text-[var(--text-secondary)] text-sm">
+                还有 {catPosts.length - 6} 篇文章...
               </p>
             )}
           </section>
