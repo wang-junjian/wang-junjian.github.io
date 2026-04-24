@@ -2,14 +2,16 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
+const stringOrNumber = z.union([z.string(), z.number()]);
+
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
     layout: z.string().optional(),
     title: z.string(),
     date: z.coerce.date(),
-    categories: z.any().optional().nullable(),
-    tags: z.any().optional().nullable(),
+    categories: z.union([stringOrNumber, stringOrNumber.array()]).optional().nullable(),
+    tags: z.union([stringOrNumber, stringOrNumber.array()]).optional().nullable(),
     excerpt: z.string().optional(),
     toc: z.boolean().default(true),
     toc_sticky: z.boolean().default(true),
