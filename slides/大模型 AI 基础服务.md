@@ -32,6 +32,7 @@ style: |
 | [Langchain-Chatchat](https://github.com/chatchat-space/Langchain-Chatchat) | http://172.16.33.66:8501 | 本地知识库问答 |
 | [chatgpt-on-wechat](https://github.com/zhayujie/chatgpt-on-wechat) | | 微信聊天机器人 |
 
+</div>
 
 ---
 
@@ -705,6 +706,8 @@ curl http://172.16.33.66:8100/v1/completions \
 }
 ```
 
+</div>
+
 ---
 
 ## OpenAI API 操作：embeddings
@@ -741,6 +744,8 @@ curl http://172.16.33.66:8100/v1/embeddings \
   }
 }
 ```
+
+</div>
 
 ---
 # 👉 FastGPT
@@ -945,6 +950,8 @@ curl --location --request POST 'http://172.16.33.66:8200/api/v1/chat/completions
   ]
 }
 ```
+
+</div>
 <!--_footer: https://doc.fastgpt.in/docs/development/openapi/-->
 
 ---
