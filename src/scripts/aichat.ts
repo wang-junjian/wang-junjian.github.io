@@ -4,6 +4,121 @@ import { info, debug, error, setMinLevel, downloadLogs } from '../utils/logger';
 import { createEmbedding, streamAnswer, DEFAULT_API_CONFIG } from './aichat-api';
 import type { ApiConfig, CurrentDoc } from './aichat-api';
 import { marked } from 'marked';
+import hljs from 'highlight.js';
+
+// Initialize Mermaid (loaded via CDN)
+declare const mermaid: any;
+let mermaidInitialized = false;
+
+function initMermaid() {
+  if (mermaidInitialized) return;
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose',
+    });
+    mermaidInitialized = true;
+  }
+}
+
+/**
+ * 增强渲染：处理 mermaid、代码高亮、复制按钮
+ * 完全参考 post-scripts.ts 的实现
+ */
+function enhanceMessageContent(container: HTMLElement) {
+  // Initialize mermaid if needed
+  initMermaid();
+
+  // Process Mermaid diagrams
+  const codeElements = container.querySelectorAll<HTMLDivElement>('pre code');
+  let mermaidCount = 0;
+
+  codeElements.forEach((code) => {
+    const isMermaid = code.className?.includes('language-mermaid');
+
+    if (isMermaid && typeof mermaid !== 'undefined') {
+      const pre = code.parentElement!;
+      const mermaidContent = code.textContent || '';
+
+      const diagramDiv = document.createElement('div');
+      diagramDiv.className = 'mermaid';
+      diagramDiv.style.margin = '2rem 0';
+      diagramDiv.style.padding = '1.5rem';
+      diagramDiv.style.background = 'var(--white)';
+      diagramDiv.style.border = '1px solid var(--border)';
+      diagramDiv.style.borderRadius = '0.5rem';
+      diagramDiv.textContent = mermaidContent;
+
+      pre.parentNode!.insertBefore(diagramDiv, pre);
+      pre.style.display = 'none';
+      mermaidCount++;
+    }
+  });
+
+  // Render all mermaid diagrams
+  if (mermaidCount > 0 && typeof mermaid !== 'undefined') {
+    mermaid.init(undefined, '.mermaid');
+  }
+
+  // Apply syntax highlighting to remaining code blocks
+  const remainingCodeElements = container.querySelectorAll<HTMLDivElement>('pre:not([style*="display: none"]) code');
+  remainingCodeElements.forEach((code) => {
+    let lang = 'plaintext';
+    const match = code.className?.match(/language-(\w+)/);
+    if (match) lang = match[1];
+
+    code.classList.add('hljs', lang);
+    try {
+      hljs.highlightElement(code as HTMLElement);
+    } catch {
+      // skip failed highlights
+    }
+  });
+
+  // Add copy buttons to code blocks
+  const codeBlocks = container.querySelectorAll<HTMLPreElement>('pre');
+  codeBlocks.forEach((pre) => {
+    // Skip if already has copy button
+    if (pre.querySelector('.copy-btn')) return;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = '复制';
+    copyBtn.style.zIndex = '10';
+
+    pre.style.position = 'relative';
+    pre.insertBefore(copyBtn, pre.firstChild);
+
+    copyBtn.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      let text = '';
+
+      if (code) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = code.innerHTML;
+        text = tempDiv.textContent || '';
+      } else {
+        text = pre.textContent || '';
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = '已复制!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = '复制';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch {
+        copyBtn.textContent = '复制失败';
+        setTimeout(() => {
+          copyBtn.textContent = '复制';
+        }, 2000);
+      }
+    });
+  });
+}
 
 const STORAGE_KEY_CONFIG = 'ai_chat_config';
 const STORAGE_KEY_MESSAGES = 'ai_chat_messages';
@@ -93,12 +208,17 @@ function renderMessage(msg: { role: string; content: string }) {
   const avatar = msg.role === 'user' ? '👤' : '🤖';
   const content = marked.parse(msg.content) as string;
 
-  return `
-    <div class="ai-chat-message ${msg.role}">
-      <div class="ai-chat-message-avatar">${avatar}</div>
-      <div class="ai-chat-message-content">${content}</div>
-    </div>
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `ai-chat-message ${msg.role}`;
+  msgDiv.innerHTML = `
+    <div class="ai-chat-message-avatar">${avatar}</div>
+    <div class="ai-chat-message-content">${content}</div>
   `;
+
+  const contentDiv = msgDiv.querySelector('.ai-chat-message-content') as HTMLElement;
+  enhanceMessageContent(contentDiv);
+
+  return msgDiv;
 }
 
 function renderEmptyGuide() {
@@ -144,6 +264,8 @@ function renderEmptyGuide() {
 
 function renderMessages() {
   if (!messagesEl) return;
+  messagesEl.innerHTML = '';
+
   if (messages.length === 0) {
     messagesEl.innerHTML = renderEmptyGuide();
     if (quickQuestionsEl) quickQuestionsEl.style.display = 'flex';
@@ -151,7 +273,12 @@ function renderMessages() {
   }
 
   if (quickQuestionsEl) quickQuestionsEl.style.display = 'none';
-  messagesEl.innerHTML = messages.map(msg => renderMessage(msg)).join('');
+
+  messages.forEach((msg) => {
+    const msgEl = renderMessage(msg);
+    messagesEl.appendChild(msgEl);
+  });
+
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
@@ -249,6 +376,7 @@ function createStreamingMessage() {
   const render = () => {
     try {
       contentDiv.innerHTML = marked.parse(rawText) as string;
+      enhanceMessageContent(contentDiv);
     } catch {
       // marked 对不完整 markdown 可能报错，降级为纯文本
       contentDiv.textContent = rawText;
@@ -287,7 +415,7 @@ function createStreamingMessage() {
 
   const getRawText = () => rawText;
 
-  return { update, finalize, getRawText };
+  return { update, finalize, getRawText, contentDiv };
 }
 
 async function sendMessage(text: string) {
@@ -373,7 +501,7 @@ async function sendMessage(text: string) {
     error('chat', '处理提问时出错', { error: err.message, query: text });
     messages.push({
       role: 'assistant',
-      content: `抱歉，发生了错误：${err.message}。请检查 Ollama 是否运行以及 API 配置。`
+      content: `抱歉，发生了错误：${err.message}。请检查 Ollama 是否运行以及 API 配置。`,
     });
     saveMessages();
     renderMessages();
@@ -564,6 +692,7 @@ function init() {
   initMode();
   restoreWindowState();
   initEmbeddings();
+  initMermaid();
 }
 
 if (document.readyState === 'loading') {
