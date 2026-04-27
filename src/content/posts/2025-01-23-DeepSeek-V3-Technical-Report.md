@@ -2,8 +2,8 @@
 layout: single
 title:  "DeepSeek-V3 Technical Report"
 date:   2025-01-23 10:00:00 +0800
-categories: DeepSeek-V3 arXiv
-tags: [DeepSeek-V3, MoE, LLM]
+categories: [AI 与大模型, 硬件加速]
+tags: [DeepSeek-V3, MoE, LLM, DeepSeek-V3 arXiv]
 ---
 
 - [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437)

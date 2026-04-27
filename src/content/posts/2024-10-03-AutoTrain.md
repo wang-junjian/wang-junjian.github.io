@@ -2,7 +2,7 @@
 layout: single
 title:  "AutoTrain"
 date:   2024-10-03 10:00:00 +0800
-categories: AutoTrain LLM
+categories: [操作系统, AI 与大模型]
 tags: [AutoTrain, LLM, HuggingFace]
 ---
 

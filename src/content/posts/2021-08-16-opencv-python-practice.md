@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenCV Python实践"
 date:   2021-08-16 00:00:00 +0800
-categories: Python 实践
-tags: [Python, OpenCV, pip, f-strings, Tkinter, Chinese]
+categories: [编程开发, 操作系统]
+tags: [Python, OpenCV, pip, f-strings, Tkinter, Chinese, Python 实践]
 ---
 
 ## 安装

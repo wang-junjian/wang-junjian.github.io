@@ -2,8 +2,8 @@
 layout: single
 title:  "IoT 硬件：Raspberry Pi Camera"
 date:   2021-03-23 00:00:00 +0800
-categories: IoT Hardware
-tags: [树莓派, Camera]
+categories: [物联网与边缘, 编程开发]
+tags: [树莓派, Camera, IoT Hardware]
 ---
 
 ![](/images/2021/hardware/rpi-camera.png)

@@ -2,8 +2,8 @@
 layout: single
 title:  "LangChain HuggingFaceEmbeddings + FAISS"
 date:   2023-10-22 08:00:00 +0800
-categories: HuggingFaceEmbeddings
-tags: [Embeddings, HuggingFace, FAISS]
+categories: [AI 与大模型, 编程开发]
+tags: [Embeddings, HuggingFace, FAISS, HuggingFaceEmbeddings]
 ---
 
 ## 数据

@@ -2,8 +2,8 @@
 layout: single
 title:  "命令open"
 date:   2022-05-26 00:00:00 +0800
-categories: open
-tags: [Command]
+categories: 操作系统
+tags: [Command, open]
 ---
 
 ## 指定浏览器打开链接

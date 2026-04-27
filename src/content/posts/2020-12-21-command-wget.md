@@ -2,8 +2,8 @@
 layout: single
 title:  "命令wget"
 date:   2020-12-21 00:00:00 +0800
-categories: Command
-tags: [Linux, wget, Download]
+categories: [操作系统, AI 开发工具]
+tags: [Linux, wget, Download, Command]
 ---
 
 ## 下载多个文件

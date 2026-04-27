@@ -2,7 +2,7 @@
 layout: single
 title:  "🦞 本地 AI 助手 OpenClaw 的架构与记忆系统"
 date:   2026-02-14 10:00:00 +0800
-categories: OpenClaw Agent
+categories: [AI 与大模型, 操作系统]
 tags: [OpenClaw, Agent, Memory]
 ---
 

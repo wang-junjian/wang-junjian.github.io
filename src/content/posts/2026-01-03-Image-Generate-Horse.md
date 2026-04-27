@@ -2,7 +2,7 @@
 layout: single
 title:  "2026 年飞马图像生成"
 date:   2026-01-03 08:00:00 +0800
-categories: VLM 图像生成
+categories: AI 与大模型
 tags: [VLM, 图像生成, 飞马]
 ---
 

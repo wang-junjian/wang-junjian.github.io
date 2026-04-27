@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的Job和CronJob"
 date:   2021-06-29 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, Job, CronJob, Cron, command, args]
+categories: [操作系统, 容器与云原生]
+tags: [kubectl, Job, CronJob, Cron, command, args, Kubernetes]
 ---
 
 ## Job

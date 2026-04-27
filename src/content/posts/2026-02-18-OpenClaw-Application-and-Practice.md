@@ -2,7 +2,7 @@
 layout: single
 title:  "🦞 个人 AI 助手 OpenClaw 应用实践"
 date:   2026-02-18 20:00:00 +0800
-categories: OpenClaw Agent
+categories: [AI 与大模型, 编程开发]
 tags: [OpenClaw, Agent, Practice]
 ---
 

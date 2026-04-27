@@ -2,8 +2,8 @@
 layout: single
 title:  "边缘硬件"
 date:   2022-07-25 00:00:00 +0800
-categories: EdgeAI
-tags: [Myriad, NVMe, DDR, LPDDR]
+categories: [物联网与边缘, 编程开发]
+tags: [Myriad, NVMe, DDR, LPDDR, EdgeAI]
 ---
 
 ## 研扬

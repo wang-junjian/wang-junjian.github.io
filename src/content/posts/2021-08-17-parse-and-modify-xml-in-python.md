@@ -2,7 +2,7 @@
 layout: single
 title:  "在 Python 中解析和修改 XML"
 date:   2021-08-17 00:00:00 +0800
-categories: Python
+categories: 编程开发
 tags: [Python, XML]
 ---
 

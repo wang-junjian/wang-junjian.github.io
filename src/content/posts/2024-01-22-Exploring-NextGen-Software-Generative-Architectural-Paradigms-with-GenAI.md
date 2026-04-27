@@ -2,7 +2,7 @@
 layout: single
 title:  "UnitMesh: AI 赋能软件研发全流程"
 date:   2024-01-22 08:00:00 +0800
-categories: UnitMesh AICodingAssistant
+categories: [编程开发, AI 开发工具]
 tags: [UnitMesh, AutoDev, ChocolateFactory, StudioB3, UnitGen, ArchGuard, AICodingAssistant, GitHubCopilot]
 ---
 

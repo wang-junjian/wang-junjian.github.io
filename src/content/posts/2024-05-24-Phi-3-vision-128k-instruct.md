@@ -2,8 +2,8 @@
 layout: single
 title:  "Phi-3-vision-128k-instruct 微软开源多模态大模型"
 date:   2024-05-24 08:00:00 +0800
-categories: 视觉问答 Phi
-tags: [Phi3, OCR, LLM]
+categories: [AI 与大模型, 编程开发]
+tags: [Phi3, OCR, LLM, 视觉问答 Phi]
 ---
 
 ## [Phi-3-vision-128k-instruct](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)

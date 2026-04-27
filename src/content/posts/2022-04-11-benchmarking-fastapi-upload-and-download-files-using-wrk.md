@@ -2,8 +2,8 @@
 layout: single
 title:  "使用 wrk 对 FastAPI 上传和下载文件的基准测试"
 date:   2022-04-11 08:00:00 +0800
-categories: 工作日志 测试 Python
-tags: [FastAPI, RESTAPI, wrk, File, async, uvicorn, Linux]
+categories: [操作系统, 编程开发]
+tags: [FastAPI, RESTAPI, wrk, File, async, uvicorn, Linux, 工作日志 测试 Python]
 ---
 
 > 服务器 CPU 40核，内存 256G，操作系统 Ubuntu 20.04，Python3.9

@@ -2,7 +2,7 @@
 layout: single
 title:  "Language Model API"
 date:   2024-12-12 10:00:00 +0800
-categories: ChatExtensions GitHubCopilot
+categories: [AI 与大模型, 编程开发]
 tags: [ChatExtensions, LanguageModelAPI, GitHubCopilot, VSCode]
 ---
 

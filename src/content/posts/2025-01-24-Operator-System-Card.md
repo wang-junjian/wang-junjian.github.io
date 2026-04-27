@@ -2,8 +2,8 @@
 layout: single
 title:  "Operator System Card"
 date:   2025-01-24 10:00:00 +0800
-categories: Operator arXiv
-tags: [Operator, CUA, Agent, OpenAI]
+categories: [编程开发, 教程实践]
+tags: [Operator, CUA, Agent, OpenAI, Operator arXiv]
 ---
 
 - [Operator System Card](https://cdn.openai.com/operator_system_card.pdf)

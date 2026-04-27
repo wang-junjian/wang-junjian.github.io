@@ -2,8 +2,8 @@
 layout: single
 title:  "LLM Leaderboard"
 date:   2023-09-09 08:00:00 +0800
-categories: Benchmark
-tags: [LLM, Embedding]
+categories: [AI 与大模型, DevOps]
+tags: [LLM, Embedding, Benchmark]
 ---
 
 ## [Leaderboards](https://huggingface.co/spaces/autoevaluate/leaderboards)

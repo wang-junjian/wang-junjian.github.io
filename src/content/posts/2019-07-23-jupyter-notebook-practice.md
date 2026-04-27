@@ -2,8 +2,8 @@
 layout: single
 title:  "Jupyter Notebook实践"
 date:   2019-07-23 00:00:00 +0800
-categories: IDE 实践 快捷键
-tags: [Jupyter, JupyterHub]
+categories: [编程开发, 容器与云原生]
+tags: [Jupyter, JupyterHub, IDE 实践 快捷键]
 ---
 
 ## 本地安装

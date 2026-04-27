@@ -2,8 +2,8 @@
 layout: single
 title:  "使用YOLOv5训练自定义数据集"
 date:   2020-11-04 00:00:00 +0800
-categories: AI 图像识别
-tags: [目标检测, YOLO, YOLOv5, PyTorch, Docker, Shell, for, sed, head]
+categories: [容器与云原生, 操作系统]
+tags: [目标检测, YOLO, YOLOv5, PyTorch, Docker, Shell, for, sed]
 ---
 
 > 在 Ubuntu20.04 系统上使用4张GPU卡基于容器训练模型。

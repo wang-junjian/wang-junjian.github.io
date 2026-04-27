@@ -2,7 +2,7 @@
 layout: single
 title:  "Cursor 的上下文工程与编程智能体"
 date:   2026-01-18 08:00:00 +0800
-categories: ContextEngineering CodingAgents
+categories: [AI 与大模型, 编程开发]
 tags: [Cursor, ContextEngineering, CodingAgents, AIProgramming]
 ---
 

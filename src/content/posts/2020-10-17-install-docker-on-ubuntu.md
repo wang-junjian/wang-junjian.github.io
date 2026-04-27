@@ -2,7 +2,7 @@
 layout: single
 title:  "在Ubuntu上安装Docker"
 date:   2020-10-17 00:00:00 +0800
-categories: Docker
+categories: [操作系统, 容器与云原生]
 tags: [Docker, Linux, Install]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "Ultralytics YOLOv8 推理速度对比"
 date:   2023-05-16 08:00:00 +0800
-categories: Inference
-tags: [Ultralytics, YOLO, pt, ONNX, 知识扩展]
+categories: [硬件加速, 编程开发]
+tags: [Ultralytics, YOLO, pt, ONNX, 知识扩展, Inference]
 ---
 
 ## CPU

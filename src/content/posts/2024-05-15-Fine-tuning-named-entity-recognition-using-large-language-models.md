@@ -2,8 +2,8 @@
 layout: single
 title:  "使用大型语言模型微调命名实体识别"
 date:   2024-05-15 08:00:00 +0800
-categories: LLM Fine-Tuning NER
-tags: [Qwen, LLaMA-Factory, Fine-Tuning, NER, LoRA, Text2SQL]
+categories: [AI 与大模型, 操作系统]
+tags: [Qwen, LLaMA-Factory, Fine-Tuning, NER, LoRA, Text2SQL, LLM Fine-Tuning NER]
 ---
 
 ## 目标

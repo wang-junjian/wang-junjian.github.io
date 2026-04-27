@@ -2,8 +2,8 @@
 layout: single
 title:  "Deep Learning Accuracy Validation Framework"
 date:   2022-05-17 08:00:00 +0800
-categories:  OpenVINO
-tags: [accuracy_check, tar]
+categories: [框架与库, 编程开发]
+tags: [accuracy_check, tar, OpenVINO]
 ---
 
 ## 深度学习准确性验证框架

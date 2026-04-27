@@ -2,8 +2,8 @@
 layout: single
 title:  "LangChain - Chain"
 date:   2023-05-03 10:00:00 +0800
-categories: Chain
-tags: [LangChain, LLM]
+categories: [AI 与大模型, 编程开发]
+tags: [LangChain, LLM, Chain]
 ---
 
 ## [Chain](https://python.langchain.com/en/latest/modules/chains.html)

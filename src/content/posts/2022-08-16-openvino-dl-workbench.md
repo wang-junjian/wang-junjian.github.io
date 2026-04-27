@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenVINO Deep Learning Workbench"
 date:   2022-08-16 08:00:00 +0800
-categories: DLWorkbench
-tags: [OpenVINO]
+categories: [容器与云原生, 操作系统]
+tags: [OpenVINO, DLWorkbench]
 ---
 
 ## 使用 Docker 运行 DL Workbench

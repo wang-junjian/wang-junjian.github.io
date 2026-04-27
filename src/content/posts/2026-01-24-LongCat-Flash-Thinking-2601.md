@@ -2,7 +2,7 @@
 layout: single
 title:  "LongCat-Flash-Thinking-2601 技术报告"
 date:   2026-01-24 10:00:00 +0800
-categories: MeiTuan LongCat
+categories: [AI 与大模型, 硬件加速]
 tags: [MeiTuan, LongCat, LLM, Heavy Thinking, Zigzag Attention]
 ---
 

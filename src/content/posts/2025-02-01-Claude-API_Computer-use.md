@@ -2,7 +2,7 @@
 layout: single
 title:  "Claude API: Computer use"
 date:   2025-02-01 12:00:00 +0800
-categories: Claude API
+categories: [操作系统, 编程开发]
 tags: [Claude, API, Agent, Anthropics]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "macOS实践"
 date:   2018-07-03 00:00:00 +0800
-categories: macOS 实践 快捷键
-tags: 
+categories: [操作系统, 教程实践]
+tags: [macOS, 实践, 快捷键]
 ---
 
 ## 快捷键

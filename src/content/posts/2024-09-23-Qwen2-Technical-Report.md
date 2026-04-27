@@ -2,8 +2,8 @@
 layout: single
 title:  "Qwen2 Technical Report"
 date:   2024-09-23 08:00:00 +0800
-categories: Qwen2 arXiv
-tags: [Qwen2, LLM]
+categories: [AI 与大模型, 硬件加速]
+tags: [Qwen2, LLM, Qwen2 arXiv]
 ---
 
 ## Abstract(摘要)

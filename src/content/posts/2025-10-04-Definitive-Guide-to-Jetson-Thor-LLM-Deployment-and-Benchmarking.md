@@ -2,8 +2,8 @@
 layout: single
 title:  "Jetson Thor 权威指南：从开箱到大模型部署与性能优化"
 date:   2025-10-04 06:00:00 +0800
-categories: Jetson LLM
-tags: [JetsonThor, Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4, LLM, NVIDIA]
+categories: [AI 与大模型, 操作系统]
+tags: [JetsonThor, Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4]
 ---
 
 该文章是对 **NVIDIA Jetson Thor** 平台进行大语言模型部署、系统优化和深度性能基准测试的**权威指南**。

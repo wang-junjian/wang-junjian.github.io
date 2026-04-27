@@ -2,7 +2,7 @@
 layout: single
 title:  "Copilot for CLI"
 date:   2023-12-17 08:00:00 +0800
-categories: git GitHubCopilot
+categories: [操作系统, AI 开发工具]
 tags: [git, GitHubCopilot, GitHub, CLI, MacbookProM2MAX]
 ---
 

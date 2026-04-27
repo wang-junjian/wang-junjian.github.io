@@ -2,7 +2,7 @@
 layout: single
 title:  "DeepSeek-V3 & DeepSeek-R1"
 date:   2025-04-05 10:00:00 +0800
-categories: DeepSeek LLM
+categories: [AI 与大模型, 教程实践]
 tags: [DeepSeek-V3, DeepSeek-R1, DeepSeek, LLM]
 ---
 

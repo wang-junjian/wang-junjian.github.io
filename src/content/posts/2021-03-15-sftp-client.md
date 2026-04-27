@@ -2,8 +2,8 @@
 layout: single
 title:  "SFTP 客户端"
 date:   2021-03-15 01:00:00 +0800
-categories: 客户端
-tags: [macOS, SFTP, ssh]
+categories: [操作系统, DevOps]
+tags: [macOS, SFTP, ssh, 客户端]
 ---
 
 ## [FileZilla](https://filezilla-project.org/index.php) - 开源, 跨平台

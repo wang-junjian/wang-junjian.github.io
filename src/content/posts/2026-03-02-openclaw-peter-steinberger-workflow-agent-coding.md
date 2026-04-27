@@ -2,7 +2,7 @@
 layout: single
 title:  "Peter Steinberger 开发 OpenClaw 的工作流程及 Agent 编码秘诀分析"
 date:   2026-03-02 18:00:00 +0800
-categories: OpenClaw Agent
+categories: [AI 与大模型, 操作系统]
 tags: [OpenClaw, Agent, AgentCoding, Peter Steinberger, steipete]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "NVIDIA 软件栈搭建"
 date:   2022-05-02 08:00:00 +0800
-categories: GPU
-tags: [Install, CUDA, cuDNN, TensorRT, NCCL, HPC]
+categories: [操作系统, 编程开发]
+tags: [Install, CUDA, cuDNN, TensorRT, NCCL, HPC, GPU]
 ---
 
 ## NVIDIA 软件栈

@@ -2,8 +2,8 @@
 layout: single
 title:  "编译寒武纪MLU220的嵌入式操作系统"
 date:   2022-01-12 00:00:00 +0800
-categories: EdgeAI
-tags: [Cambricon, git]
+categories: [操作系统, DevOps]
+tags: [Cambricon, git, EdgeAI]
 ---
 
 > OpenIL 是一个基于 Buildroot 的开源项目，专为嵌入式工业解决方案而设计。

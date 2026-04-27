@@ -2,8 +2,8 @@
 layout: single
 title:  "DashScope 模型服务灵积"
 date:   2024-04-13 08:00:00 +0800
-categories: DashScope, LangChain
-tags: [DashScope, LangChain, LLM, Qwen]
+categories: [AI 与大模型, 编程开发]
+tags: [DashScope, LangChain, LLM, Qwen, DashScope, LangChain]
 ---
 
 ## [DashScope 模型服务灵积](https://dashscope.aliyun.com/)

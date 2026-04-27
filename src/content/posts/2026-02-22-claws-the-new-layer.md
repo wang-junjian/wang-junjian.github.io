@@ -2,7 +2,7 @@
 layout: single
 title:  "Andrej Karpathy：Claws 将成为 AI 技术栈中的新层级"
 date:   2026-02-22 12:00:00 +0800
-categories: Claws OpenClaw
+categories: [AI 与大模型, 编程开发]
 tags: [Claws, OpenClaw, Andrej Karpathy]
 ---
 

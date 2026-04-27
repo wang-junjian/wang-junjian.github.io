@@ -2,7 +2,7 @@
 layout: single
 title:  MCP Python SDK
 date:   2025-03-26 08:00:00 +0800
-categories: MCP Python
+categories: [AI 与大模型, 编程开发]
 tags: [MCP, Python, LLM]
 ---
 

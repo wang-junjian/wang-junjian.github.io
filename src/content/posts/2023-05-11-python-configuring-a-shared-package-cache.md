@@ -2,8 +2,8 @@
 layout: single
 title:  "Python 配置共享软件包缓存"
 date:   2023-05-11 08:00:00 +0800
-categories: Cache
-tags: [Conda, pip, MacBookProM2Max]
+categories: [AI 与大模型, 编程开发]
+tags: [Conda, pip, MacBookProM2Max, Cache]
 ---
 
 共享软件包缓存的好处是，一旦用户已经下载了软件包的特定版本，它将不会再次下载并存储在单独的缓存中。这节省了磁盘使用量并加快了安装速度，因为它不需要再次下载软件包。

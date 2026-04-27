@@ -2,7 +2,7 @@
 layout: single
 title:  "TensorRT-LLM 大模型推理"
 date:   2023-12-12 08:00:00 +0800
-categories: TensorRT-LLM
+categories: [AI 与大模型, 硬件加速]
 tags: [TensorRT-LLM, TritonInferenceServer, ChatGLM]
 ---
 

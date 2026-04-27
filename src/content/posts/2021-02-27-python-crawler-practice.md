@@ -2,8 +2,8 @@
 layout: single
 title:  "Python爬虫实践"
 date:   2021-02-27 00:00:00 +0800
-categories: Python 实践
-tags: [crawler]
+categories: [编程开发, AI 与大模型]
+tags: [crawler, Python 实践]
 ---
 
 ## HTTP Status Code

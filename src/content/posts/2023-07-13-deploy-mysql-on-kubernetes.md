@@ -2,8 +2,8 @@
 layout: single
 title:  "在 Kubernetes 上部署 MySQL"
 date:   2023-07-13 08:00:00 +0800
-categories: MySQL
-tags: [Kubernetes, StatefulSet]
+categories: [容器与云原生, 操作系统]
+tags: [Kubernetes, StatefulSet, MySQL]
 ---
 
 ## 部署单实例 MySQL

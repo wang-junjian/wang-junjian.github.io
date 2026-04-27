@@ -2,7 +2,7 @@
 layout: single
 title:  "面向 AI 编码智能体的 Redis 设计模式与文档"
 date:   2026-03-02 08:00:00 +0800
-categories: Redis Agent
+categories: [AI 与大模型, 操作系统]
 tags: [Redis, Agent, LLM, llms.txt, Documentation]
 ---
 

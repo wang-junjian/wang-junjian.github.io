@@ -2,7 +2,7 @@
 layout: single
 title:  "LangChain : SQL Chain & SQL Agent"
 date:   2024-04-17 08:00:00 +0800
-categories: LangChain Text2SQL
+categories: [AI 与大模型, 编程开发]
 tags: [LangChain, ChatTongyi, Text2SQL]
 ---
 

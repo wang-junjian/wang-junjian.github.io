@@ -2,7 +2,7 @@
 layout: single
 title:  "Garry Tan（YC 总裁）- 大展宏图（煮沸海洋）"
 date:   2026-04-10 12:00:00 +0800
-categories: GarryTan ASI
+categories: [AI 与大模型, 编程开发]
 tags: [GarryTan, ASI, AI, Ephemeralization]
 ---
 

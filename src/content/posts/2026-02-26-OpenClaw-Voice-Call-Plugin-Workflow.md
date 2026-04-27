@@ -2,7 +2,7 @@
 layout: single
 title:  "OpenClaw Voice Call 插件使用方法和工作流程详解"
 date:   2026-02-26 18:00:00 +0800
-categories: OpenClaw VoiceCall
+categories: [编程开发, AI 与大模型]
 tags: [OpenClaw, VoiceCall]
 ---
 

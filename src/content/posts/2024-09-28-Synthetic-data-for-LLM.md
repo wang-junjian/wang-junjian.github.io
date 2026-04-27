@@ -2,8 +2,8 @@
 layout: single
 title:  "LLM 的合成数据"
 date:   2024-09-28 08:00:00 +0800
-categories: Synthetic LLM
-tags: [Synthetic, Cosmopedia, Phi, distilabel, argilla, datatrove, nanotron, lighteval, LLM]
+categories: [编程开发, DevOps]
+tags: [Synthetic, Cosmopedia, Phi, distilabel, argilla, datatrove, nanotron, lighteval]
 ---
 
 ## [Cosmopedia: 如何为预训练构建大规模合成数据集](https://huggingface.co/blog/zh/cosmopedia)

@@ -2,7 +2,7 @@
 layout: single
 title:  "DeepSeek Coder: Let the Code Write Itself"
 date:   2024-01-04 08:00:00 +0800
-categories: DeepSeek-Coder
+categories: [编程开发, AI 与大模型]
 tags: [DeepSeek-Coder, Leaderboard, CodeLLM]
 ---
 

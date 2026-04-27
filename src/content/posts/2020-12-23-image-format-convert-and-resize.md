@@ -2,7 +2,7 @@
 layout: single
 title:  "图像格式转换、尺寸调整"
 date:   2020-12-23 00:00:00 +0800
-categories: ImageMagick
+categories: [操作系统, 硬件加速]
 tags: [Linux, Command, Image, file, find, convert, ShellScript, for]
 ---
 

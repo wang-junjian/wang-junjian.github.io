@@ -2,8 +2,8 @@
 layout: single
 title:  "Computer-Using Agent"
 date:   2025-01-25 10:00:00 +0800
-categories: CUA arXiv
-tags: [CUA, Operator, LLM, OpenAI]
+categories: [AI 与大模型, 操作系统]
+tags: [CUA, Operator, LLM, OpenAI, CUA arXiv]
 ---
 
 ## Computer-Using Agent (CUA)

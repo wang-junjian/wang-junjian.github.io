@@ -2,7 +2,7 @@
 layout: single
 title:  "LLaMA Factory: Easy and Efficient LLM Fine-Tuning"
 date:   2024-04-02 08:00:00 +0800
-categories: LLM Fine-Tuning
+categories: [AI 与大模型, 编程开发]
 tags: [LLaMA-Factory, LLaMA, LLM, Fine-Tuning]
 ---
 

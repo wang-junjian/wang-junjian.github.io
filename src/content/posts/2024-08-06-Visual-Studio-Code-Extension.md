@@ -2,8 +2,8 @@
 layout: single
 title:  "Visual Studio Code Extension 开发"
 date:   2024-08-06 08:00:00 +0800
-categories: IDE VSCode
-tags: [VSCode, Extension]
+categories: [编程开发, DevOps]
+tags: [VSCode, Extension, IDE VSCode]
 ---
 
 ## VS Code Extension

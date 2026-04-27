@@ -2,8 +2,8 @@
 layout: single
 title:  "MiniCPM-Llama3-V 2.5 端侧可用的 GPT-4V 级多模态大模型"
 date:   2024-05-23 08:00:00 +0800
-categories: 视觉问答 MiniCPM-V
-tags: [MiniCPM-V, OCR, Llama3, LLM]
+categories: [AI 与大模型, DevOps]
+tags: [MiniCPM-V, OCR, Llama3, LLM, 视觉问答 MiniCPM-V]
 ---
 
 ## [MiniCPM-Llama3-V 2.5](https://github.com/OpenBMB/MiniCPM-V)

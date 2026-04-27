@@ -2,8 +2,8 @@
 layout: single
 title:  "安装Kubernetes 1.21.5"
 date:   2021-10-22 00:00:00 +0800
-categories: Kubernetes
-tags: [Docker, timedatectl, hostnamectl, apt, curl, cat, kubeadm, export, cp, chown, kubectl]
+categories: [容器与云原生, 操作系统]
+tags: [Docker, timedatectl, hostnamectl, apt, curl, cat, kubeadm, export]
 ---
 
 > 删除 Kubernetes 旧版本，安装 Kubernetes 1.21.5。

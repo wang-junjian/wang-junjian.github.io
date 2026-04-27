@@ -2,8 +2,8 @@
 layout: single
 title:  "IoT 硬件：NeoPixel"
 date:   2021-03-21 00:00:00 +0800
-categories: IoT Hardware
-tags: [MicroPython, NodeMCU, ESP32, NeoPixel]
+categories: [编程开发, 硬件加速]
+tags: [MicroPython, NodeMCU, ESP32, NeoPixel, IoT Hardware]
 ---
 
 ![](/images/2021/hardware/ws2812b.jpg)

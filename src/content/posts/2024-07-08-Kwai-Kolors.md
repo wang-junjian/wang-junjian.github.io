@@ -2,7 +2,7 @@
 layout: single
 title:  "Kwai-Kolors 快手可图"
 date:   2024-07-08 08:00:00 +0800
-categories: Text2Image Kolors
+categories: DevOps
 tags: [Text2Image, Kolors]
 ---
 

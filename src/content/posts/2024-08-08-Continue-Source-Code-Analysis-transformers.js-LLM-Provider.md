@@ -2,8 +2,8 @@
 layout: single
 title:  "Continue 源码分析 - transformers.js 大模型提供者"
 date:   2024-08-08 08:00:00 +0800
-categories: Continue AICodingAssistant
-tags: [transformers.js, Continue, GitHubCopilot]
+categories: [AI 与大模型, 编程开发]
+tags: [transformers.js, Continue, GitHubCopilot, Continue AICodingAssistant]
 ---
 
 ## Continue

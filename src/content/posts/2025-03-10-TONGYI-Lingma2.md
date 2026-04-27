@@ -2,7 +2,7 @@
 layout: single
 title:  "通义灵码2.0"
 date:   2025-03-10 10:00:00 +0800
-categories: 通义灵码 AICodingAssistant
+categories: [AI 与大模型, 编程开发]
 tags: [通义灵码, AICodingAssistant, GitHubCopilot]
 ---
 

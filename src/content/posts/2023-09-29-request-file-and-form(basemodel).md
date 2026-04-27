@@ -2,8 +2,8 @@
 layout: single
 title:  "FastAPI : Request File and Form(BaseModel)"
 date:   2023-09-29 08:00:00 +0800
-categories: RESTAPI
-tags: [FastAPI, POST, Form, File]
+categories: 框架与库
+tags: [FastAPI, POST, Form, File, RESTAPI]
 ---
 
 ## 两种方法

@@ -2,8 +2,8 @@
 layout: single
 title:  "命令 alias"
 date:   2023-04-11 00:00:00 +0800
-categories: alias
-tags: [Command, Shell, zsh, Docker]
+categories: [操作系统, AI 与大模型]
+tags: [Command, Shell, zsh, Docker, alias]
 ---
 
 `zsh` 中使用单引号（`'`），不对特殊符号进行解析，使用双引号（`"`）会对特殊符号进行解析，如：`$` 

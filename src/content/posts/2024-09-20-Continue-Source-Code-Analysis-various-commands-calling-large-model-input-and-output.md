@@ -2,8 +2,8 @@
 layout: single
 title:  "Continue 源码分析 - 各种命令调用大模型的输入和输出"
 date:   2024-09-20 08:00:00 +0800
-categories: Continue AICodingAssistant
-tags: [Continue, Langfuse, GitHubCopilot, LLM]
+categories: [编程开发, AI 开发工具]
+tags: [Continue, Langfuse, GitHubCopilot, LLM, Continue AICodingAssistant]
 ---
 
 ## Tab Completion

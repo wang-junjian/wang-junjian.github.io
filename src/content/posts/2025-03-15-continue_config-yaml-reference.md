@@ -2,7 +2,7 @@
 layout: single
 title:  "continue: config.yaml Reference"
 date:   2025-03-15 10:00:00 +0800
-categories: Continue AICodingAssistant
+categories: [AI 与大模型, 编程开发]
 tags: [Continue, AICodingAssistant, config.yaml, GitHubCopilot]
 ---
 

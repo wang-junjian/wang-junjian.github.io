@@ -2,8 +2,8 @@
 layout: single
 title:  "ConfigMap和Secret：配置应用程序"
 date:   2021-07-05 00:00:00 +0800
-categories: Kubernetes
-tags: [ConfigMap, Secret, Docker, Dockerfile, docker-registry, kubectl, command, env, args, ENTRYPOINT, CMD, curl, nginx, JSONPath, openssl, HTTPS, DockerHub]
+categories: [编程开发, 容器与云原生]
+tags: [ConfigMap, Secret, Docker, Dockerfile, docker-registry, kubectl, command, env]
 ---
 
 ## **ConfigMap**

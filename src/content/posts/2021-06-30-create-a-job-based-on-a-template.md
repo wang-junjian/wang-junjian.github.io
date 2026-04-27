@@ -2,8 +2,8 @@
 layout: single
 title:  "基于模板创建Job"
 date:   2021-06-30 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, Job, sed, apply, logs, delete, Python, Jinja2, Jekyll, Liquid, alias, bashrc]
+categories: [操作系统, 编程开发]
+tags: [kubectl, Job, sed, apply, logs, delete, Python, Jinja2]
 ---
 
 > 基于一个公共的模板运行多个Jobs。 你可以用这种方法来并行执行批处理任务。

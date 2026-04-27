@@ -2,8 +2,8 @@
 layout: single
 title:  "Linux Shell 实践"
 date:   2021-01-30 00:00:00 +0800
-categories: Shell
-tags: [实践, 快捷键, Linux, if, for, function]
+categories: [操作系统, 教程实践]
+tags: [实践, 快捷键, Linux, if, for, function, Shell]
 ---
 
 ## 快捷键

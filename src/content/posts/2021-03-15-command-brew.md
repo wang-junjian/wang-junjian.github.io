@@ -2,8 +2,8 @@
 layout: single
 title:  "命令brew"
 date:   2021-03-15 02:00:00 +0800
-categories: Command
-tags: [macOS, brew, Install]
+categories: [操作系统, DevOps]
+tags: [macOS, brew, Install, Command]
 ---
 
 ## 安装

@@ -2,7 +2,7 @@
 layout: single
 title:  "Linux Shell 执行方式"
 date:   2021-01-29 00:00:00 +0800
-categories: Linux
+categories: 操作系统
 tags: [Linux, Shell, source, chmod, du]
 ---
 

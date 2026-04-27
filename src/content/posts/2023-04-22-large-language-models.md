@@ -2,8 +2,8 @@
 layout: single
 title:  "Large Language Models（大语言模型）"
 date:   2023-04-22 08:00:00 +0800
-categories: LLM
-tags: [ChatGPT, ChatGLM, LLaMA, Alpaca, Vicuna]
+categories: [AI 与大模型, 编程开发]
+tags: [ChatGPT, ChatGLM, LLaMA, Alpaca, Vicuna, LLM]
 ---
 
 ## LLMS

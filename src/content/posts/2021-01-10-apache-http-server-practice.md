@@ -2,8 +2,8 @@
 layout: single
 title:  "Apache HTTP Server实践"
 date:   2021-01-10 00:00:00 +0800
-categories: Linux 实践
-tags: [Linux, Command, Apache]
+categories: [操作系统, 教程实践]
+tags: [Linux, Command, Apache, Linux 实践]
 ---
 
 ## 修改端口号

@@ -2,8 +2,8 @@
 layout: single
 title:  "命令zip"
 date:   2021-01-20 00:00:00 +0900
-categories: Command
-tags: [Linux, zip, unzip, less, zipdetails, vim]
+categories: [操作系统, 容器与云原生]
+tags: [Linux, zip, unzip, less, zipdetails, vim, Command]
 ---
 
 ## 准备 [yolov5](https://github.com/ultralytics/yolov5)

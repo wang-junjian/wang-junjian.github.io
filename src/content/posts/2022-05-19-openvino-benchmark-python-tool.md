@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenVINO Benchmark Python Tool"
 date:   2022-05-19 08:00:00 +0800
-categories:  Benchmark
-tags: [OpenVINO, benchmark_app]
+categories: [操作系统, 硬件加速]
+tags: [OpenVINO, benchmark_app, Benchmark]
 ---
 
 ## [性能指标评测工具](https://docs.openvino.ai/cn/latest/openvino_inference_engine_tools_benchmark_tool_README.html)

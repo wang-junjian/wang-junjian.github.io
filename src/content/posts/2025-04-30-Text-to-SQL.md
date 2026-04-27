@@ -2,7 +2,7 @@
 layout: single
 title:  "Text-to-SQL 解决方案"
 date:   2025-04-30 10:00:00 +0800
-categories: Text-to-SQL ThoughtWorks
+categories: AI 与大模型
 tags: [Text-to-SQL ThoughtWorks, SQL, LLM]
 ---
 

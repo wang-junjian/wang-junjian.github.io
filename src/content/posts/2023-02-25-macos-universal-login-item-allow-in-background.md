@@ -2,8 +2,8 @@
 layout: single
 title:  "macOS 上删除登录项中允许在后台的项目"
 date:   2023-02-25 08:00:00 +0800
-categories: launchd
-tags: [MacBookProM2Max]
+categories: [操作系统, AI 与大模型]
+tags: [MacBookProM2Max, launchd]
 ---
 
 ![](/images/2023/macos-universal-login-item-allow-in-background.png)

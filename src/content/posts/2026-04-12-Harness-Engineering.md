@@ -2,7 +2,7 @@
 layout: single
 title:  "用通俗易懂的方式理解 Harness Engineering"
 date:   2026-04-12 08:00:00 +0800
-categories: HarnessEngineering Agent
+categories: [AI 与大模型, AI 开发工具]
 tags: [HarnessEngineering, Agent, LLM]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "Continue 源码分析 - 键盘快捷键"
 date:   2024-08-26 08:00:00 +0800
-categories: Continue AICodingAssistant
-tags: [Continue, Shortcut, GitHubCopilot]
+categories: [编程开发, 操作系统]
+tags: [Continue, Shortcut, GitHubCopilot, Continue AICodingAssistant]
 ---
 
 ## 聊天窗口

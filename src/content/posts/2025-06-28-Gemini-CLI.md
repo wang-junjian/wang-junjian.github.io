@@ -2,7 +2,7 @@
 layout: single
 title:  "Gemini CLI - 开源命令行 AI 智能体"
 date:   2025-06-28 08:00:00 +0800
-categories: GeminiCLI Agent
+categories: [AI 与大模型, 操作系统]
 tags: [GeminiCLI, Agent, Gemini, LLM, 软件开发, Install]
 ---
 

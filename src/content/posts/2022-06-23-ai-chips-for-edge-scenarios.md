@@ -2,8 +2,8 @@
 layout: single
 title:  "面向边缘场景的 AI 芯片"
 date:   2022-06-23 00:00:00 +0800
-categories: EdgeAI
-tags: [GPU, VPU, NPU, Jetson, Movidius, 昇腾]
+categories: [硬件加速, 编程开发]
+tags: [GPU, VPU, NPU, Jetson, Movidius, 昇腾, EdgeAI]
 ---
 
 ## [NVIDIA Jetson](https://www.nvidia.cn/autonomous-machines/embedded-systems/)

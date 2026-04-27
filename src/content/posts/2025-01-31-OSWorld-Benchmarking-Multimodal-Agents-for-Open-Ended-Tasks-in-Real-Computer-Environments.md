@@ -2,7 +2,7 @@
 layout: single
 title:  "OSWorld：在真实计算机环境中为开放式任务进行多模态代理基准测试"
 date:   2025-01-31 10:00:00 +0800
-categories: OSWorld arXiv
+categories: [AI 与大模型, 操作系统]
 tags: [OSWorld, Benchmark, Agent, arXiv]
 ---
 

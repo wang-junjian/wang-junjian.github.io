@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenVINO Cross Check Tool"
 date:   2022-05-18 08:00:00 +0800
-categories:  OpenVINO
-tags: [cross_check_tool]
+categories: [硬件加速, 编程开发]
+tags: [cross_check_tool, OpenVINO]
 ---
 
 ## [交叉检查工具 (Cross Check Tool)](https://docs.openvino.ai/latest/openvino_inference_engine_tools_cross_check_tool_README.html)

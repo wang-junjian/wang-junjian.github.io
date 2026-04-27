@@ -2,8 +2,8 @@
 layout: single
 title:  "以推理速度交付：为什么我不再阅读代码，而是看着它飞速流转"
 date:   2026-02-15 10:00:00 +0800
-categories: OpenClaw AgenticEngineering
-tags: [Agent, Software Development, Vibe Coding, Agentic Engineering, Peter Steinberger, OpenClaw]
+categories: [AI 与大模型, 编程开发]
+tags: [Agent, Software Development, Vibe Coding, Agentic Engineering, Peter Steinberger, OpenClaw, OpenClaw AgenticEngineering]
 ---
 
 **Peter Steinberger** (`OpenClaw` 的创造者) 分享了他在使用 AI 智能体构建软件方面的最新经验，特别是关于如何以推理速度交付代码，以及他对模型（如 GPT 5.2 和 Opus）的看法。

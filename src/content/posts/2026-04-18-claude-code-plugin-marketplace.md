@@ -2,7 +2,7 @@
 layout: single
 title:  "Claude Code 插件市场指南"
 date:   2026-04-18 08:00:00 +0800
-categories: ClaudeCode Plugin
+categories: [AI 与大模型, 开源生态]
 tags: [ClaudeCode, Plugin, Marketplace, Skill]
 ---
 

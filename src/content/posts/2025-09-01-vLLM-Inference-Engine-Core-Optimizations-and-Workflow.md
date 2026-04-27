@@ -2,7 +2,7 @@
 layout: single
 title:  "vLLM 推理引擎的核心优化技术及其工作流程"
 date:   2025-09-01 00:00:00 +0800
-categories: vLLM LLM
+categories: [AI 与大模型, 硬件加速]
 tags: [vLLM, LLM, 推理]
 ---
 

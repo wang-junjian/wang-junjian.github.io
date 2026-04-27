@@ -2,8 +2,8 @@
 layout: single
 title:  "Thonny Python IDE"
 date:   2021-04-12 01:00:00 +0800
-categories: Software IDE IoT
-tags: [thonny, MicroPython]
+categories: [编程开发, 操作系统]
+tags: [thonny, MicroPython, Software IDE IoT]
 ---
 
 ![](/images/2021/software/thonny.png)

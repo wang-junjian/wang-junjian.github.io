@@ -2,7 +2,7 @@
 layout: single
 title:  "FastEmbed"
 date:   2024-07-06 08:00:00 +0800
-categories: FastEmbed
+categories: [编程开发, 框架与库]
 tags: [FastEmbed, Qdrant]
 ---
 

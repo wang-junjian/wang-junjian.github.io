@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的名字空间"
 date:   2021-06-26 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, namespace, delete, config, context, alias, bashrc]
+categories: [操作系统, 容器与云原生]
+tags: [kubectl, namespace, delete, config, context, alias, bashrc, Kubernetes]
 ---
 
 ## 名字空间

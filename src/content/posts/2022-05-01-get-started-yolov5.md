@@ -2,8 +2,8 @@
 layout: single
 title:  "Get Started YOLOv5"
 date:   2022-05-01 08:00:00 +0800
-categories: YOLOv5
-tags: [YOLO, wandb, TensorBoard]
+categories: [编程开发, 操作系统]
+tags: [YOLO, wandb, TensorBoard, YOLOv5]
 ---
 
 ## [Quick Start Examples](https://github.com/ultralytics/yolov5#quick-start-examples)

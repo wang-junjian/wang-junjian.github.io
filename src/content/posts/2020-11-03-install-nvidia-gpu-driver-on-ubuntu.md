@@ -2,7 +2,7 @@
 layout: single
 title:  "在Ubuntu上安装NVIDIA GPU驱动"
 date:   2020-11-03 00:00:00 +0800
-categories: GPU
+categories: [操作系统, 硬件加速]
 tags: [Linux, Ubuntu, GPU, NVIDIA]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "macOS 能连上 WiFi 但无法上网"
 date:   2023-09-18 08:00:00 +0800
-categories: WiFi
-tags: [MacBookProM2Max]
+categories: 操作系统
+tags: [MacBookProM2Max, WiFi]
 ---
 
 ## 问题描述

@@ -2,7 +2,7 @@
 layout: single
 title:  "一文读懂 Harness Engineering：AI 时代软件工程的全新范式"
 date:   2026-03-30 12:00:00 +0800
-categories: Agent HarnessEngineering
+categories: [AI 与大模型, DevOps]
 tags: [Agent, HarnessEngineering]
 ---
 

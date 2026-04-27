@@ -2,8 +2,8 @@
 layout: single
 title:  "VS Code远程开发 - SSH"
 date:   2021-03-04 00:00:00 +0800
-categories: IDE 实践
-tags: [vscode, ssh]
+categories: [操作系统, 编程开发]
+tags: [vscode, ssh, IDE 实践]
 ---
 
 ## 架构图

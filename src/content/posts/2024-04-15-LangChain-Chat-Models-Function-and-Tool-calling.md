@@ -2,7 +2,7 @@
 layout: single
 title:  "LangChain Chat Models Function & Tool Calling"
 date:   2024-04-15 08:00:00 +0800
-categories: LangChain ToolCalling
+categories: [AI 与大模型, 编程开发]
 tags: [LangChain, ToolCalling, Text2SQL]
 ---
 

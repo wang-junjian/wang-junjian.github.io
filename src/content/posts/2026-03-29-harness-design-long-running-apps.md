@@ -2,7 +2,7 @@
 layout: single
 title:  "Anthropic：面向长时间运行应用开发的 Harness 设计"
 date:   2026-03-29 08:00:00 +0800
-categories: Agent HarnessEngineering
+categories: [AI 与大模型, 编程开发]
 tags: [Agent, HarnessEngineering, Anthropic, Claude]
 ---
 

@@ -2,7 +2,7 @@
 layout: single
 title:  "构建容器化 Python 应用程序"
 date:   2023-05-13 08:00:00 +0800
-categories: Python
+categories: [容器与云原生, 操作系统]
 tags: [Dockerfile, Docker, Cache, pip, apt, venv, wheel, 知识扩展]
 ---
 

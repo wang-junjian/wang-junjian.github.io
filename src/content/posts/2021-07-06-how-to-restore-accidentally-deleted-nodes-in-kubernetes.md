@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中如何恢复误删的节点"
 date:   2021-07-06 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, delete, kubeadm, token, reset, join]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, delete, kubeadm, token, reset, join, Kubernetes]
 ---
 
 > 在删除标签的时候不小心删除了节点。

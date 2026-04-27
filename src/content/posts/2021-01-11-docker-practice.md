@@ -2,8 +2,8 @@
 layout: single
 title:  "Docker实践"
 date:   2021-01-11 00:00:00 +0800
-categories: Docker 实践
-tags: [Docker, GPU, none, xargs, awk, inspect]
+categories: [操作系统, 容器与云原生]
+tags: [Docker, GPU, none, xargs, awk, inspect, Docker 实践]
 ---
 
 ## 安装与卸载

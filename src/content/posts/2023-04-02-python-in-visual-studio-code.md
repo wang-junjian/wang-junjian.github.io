@@ -2,8 +2,8 @@
 layout: single
 title:  "Python in Visual Studio Code"
 date:   2023-04-02 08:00:00 +0800
-categories: Python
-tags: [vscode]
+categories: [编程开发, 操作系统]
+tags: [vscode, Python]
 ---
 
 ## 开发文档

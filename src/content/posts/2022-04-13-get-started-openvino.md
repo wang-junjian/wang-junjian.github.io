@@ -2,8 +2,8 @@
 layout: single
 title:  "Get Started OpenVINO"
 date:   2022-04-13 08:00:00 +0800
-categories: AI OpenVINO
-tags: [Install, venv]
+categories: [操作系统, 框架与库]
+tags: [Install, venv, AI OpenVINO]
 ---
 
 ## [OpenVINO](https://www.intel.cn/content/www/cn/zh/developer/tools/openvino-toolkit/overview.html)

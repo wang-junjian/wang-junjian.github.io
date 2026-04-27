@@ -2,8 +2,8 @@
 layout: single
 title:  "基于Darknet框架的YOLOv3算法开发的模型训练和部署的容器化产品"
 date:   2019-07-09 00:00:00 +0800
-categories: AI 图像识别
-tags: [目标检测, Darknet, YOLO, Docker]
+categories: [编程开发, 容器与云原生]
+tags: [目标检测, Darknet, YOLO, Docker, AI 图像识别]
 ---
 
 ## 基于 Darknet 的容器化产品

@@ -2,8 +2,8 @@
 layout: single
 title:  "Install Python3.9 in Ubuntu20.04"
 date:   2022-03-31 00:00:00 +0800
-categories: 工作日志 Python
-tags: [Linux, Ubuntu, pip, Install, Python3.9]
+categories: [操作系统, 编程开发]
+tags: [Linux, Ubuntu, pip, Install, Python3.9, 工作日志 Python]
 ---
 
 ## 问题

@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的污点和容忍度"
 date:   2021-07-02 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, taint, toleration, JSONPath]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, taint, toleration, JSONPath, Kubernetes]
 ---
 
 ## 污点

@@ -2,7 +2,7 @@
 layout: single
 title:  "PrivateGPT"
 date:   2024-01-05 08:00:00 +0800
-categories: PrivateGPT
+categories: [编程开发, 操作系统]
 tags: [PrivateGPT, python]
 ---
 

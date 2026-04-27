@@ -2,7 +2,7 @@
 layout: single
 title:  "GitHub MCP 服务器"
 date:   2025-04-03 08:00:00 +0800
-categories: MCP GitHub
+categories: [编程开发, AI 与大模型]
 tags: [MCP, MCPServer, GitHub]
 ---
 

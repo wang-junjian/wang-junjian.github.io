@@ -2,7 +2,7 @@
 layout: single
 title:  "Desktop Extensions (DXT)"
 date:   2025-06-29 12:00:00 +0800
-categories: DXT MCP
+categories: [编程开发, AI 与大模型]
 tags: [DXT, MCP, MCPServer, LLM]
 ---
 

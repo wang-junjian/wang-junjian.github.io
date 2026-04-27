@@ -2,7 +2,7 @@
 layout: single
 title:  "评估模型投资分析能力：京东健康案例"
 date:   2026-01-19 18:00:00 +0800
-categories: Benchmark 投资
+categories: AI 与大模型
 tags: [Benchmark, 投资, 京东健康]
 ---
 

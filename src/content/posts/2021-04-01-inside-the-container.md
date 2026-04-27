@@ -2,8 +2,8 @@
 layout: single
 title:  "容器内幕"
 date:   2021-04-01 00:00:00 +0800
-categories: Docker
-tags: [Container, namespace, cgroup, echo, mkdir, rmdir, cp, ldd, egrep, sort, uniq, chroot, while]
+categories: [操作系统, 容器与云原生]
+tags: [Container, namespace, cgroup, echo, mkdir, rmdir, cp, ldd]
 ---
 
 ## 容器的本质是一种特殊的进程

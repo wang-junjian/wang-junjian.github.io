@@ -2,8 +2,8 @@
 layout: single
 title:  "Docker 构建多平台镜像"
 date:   2023-05-21 08:00:00 +0800
-categories: multi-platform
-tags: [Docker, buildx]
+categories: [操作系统, 编程开发]
+tags: [Docker, buildx, multi-platform]
 ---
 
 ## 多平台构建器

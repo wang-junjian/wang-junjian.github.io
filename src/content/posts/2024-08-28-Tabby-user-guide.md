@@ -2,8 +2,8 @@
 layout: single
 title:  "Tabby 使用指南"
 date:   2024-08-28 08:00:00 +0800
-categories: Tabby AICodingAssistant
-tags: [Tabby, VSCode, ContextProvider, CodeSearch, CodeChat]
+categories: [AI 与大模型, 操作系统]
+tags: [Tabby, VSCode, ContextProvider, CodeSearch, CodeChat, Tabby AICodingAssistant]
 ---
 
 ## Tabby

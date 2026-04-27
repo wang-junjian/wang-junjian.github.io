@@ -2,8 +2,8 @@
 layout: single
 title:  "NVIDIA Driver 安装"
 date:   2024-01-08 08:00:00 +0800
-categories: NVIDIA-Driver
-tags: [NVIDIA-Driver, NVIDIA, CUDA, GPU, lsof, apt, dpkg, libc6-dev, build-essential]
+categories: [操作系统, 硬件加速]
+tags: [NVIDIA-Driver, NVIDIA, CUDA, GPU, lsof, apt, dpkg, libc6-dev]
 ---
 
 困难重重 😭

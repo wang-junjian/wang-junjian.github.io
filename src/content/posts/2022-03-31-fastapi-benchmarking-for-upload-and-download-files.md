@@ -2,8 +2,8 @@
 layout: single
 title:  "FastAPI 上传和下载文件的基准测试"
 date:   2022-03-31 08:00:00 +0800
-categories: 工作日志 测试
-tags: [Linux, FastAPI, File, async, gunicorn, uvicorn, wrk]
+categories: [操作系统, 编程开发]
+tags: [Linux, FastAPI, File, async, gunicorn, uvicorn, wrk, 工作日志 测试]
 ---
 
 > 使用 FastAPI 实现了文件的上传和下载，部署服务使用了 uvicorn 和 gunicorn+uvicorn 两种方法。

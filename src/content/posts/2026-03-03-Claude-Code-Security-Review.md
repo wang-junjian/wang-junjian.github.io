@@ -2,8 +2,8 @@
 layout: single
 title:  "Claude 代码安全审查 (Claude Code Security Review)"
 date:   2026-03-03 08:00:00 +0800
-categories: ClaudeCode SecurityReview GitHubAction
-tags: [Claude Code, Security Review, GitHub Action, LLM]
+categories: [编程开发, 开源生态]
+tags: [Claude Code, Security Review, GitHub Action, LLM, ClaudeCode SecurityReview GitHubAction]
 ---
 
 [Claude 代码安全审查 (Claude Code Security Review)](https://github.com/anthropics/claude-code-security-review/) 是一个基于 AI 的 GitHub Action 安全审查工具，利用 Claude 分析代码变更中的安全漏洞。包含了我个人的二次开发成果（Web 界面、全库扫描、可视化报告）。

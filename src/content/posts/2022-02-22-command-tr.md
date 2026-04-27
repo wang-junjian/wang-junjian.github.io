@@ -2,8 +2,8 @@
 layout: single
 title:  "命令tr"
 date:   2022-02-22 00:00:00 +0800
-categories: Command
-tags: [Linux, tr]
+categories: [操作系统, DevOps]
+tags: [Linux, tr, Command]
 ---
 
 ```shell

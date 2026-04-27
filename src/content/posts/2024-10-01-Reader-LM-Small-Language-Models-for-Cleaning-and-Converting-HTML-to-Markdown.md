@@ -2,7 +2,7 @@
 layout: single
 title:  "Reader-LM: 用于清理和转换 HTML 到 Markdown 的小型语言模型"
 date:   2024-10-01 08:00:00 +0800
-categories: Reader-LM jina-embeddings-v3
+categories: [AI 与大模型, DevOps]
 tags: [Reader-LM, jina-embeddings-v3, JinaAI, LLM, HTML, Markdown]
 ---
 

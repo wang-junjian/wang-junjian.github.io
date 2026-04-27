@@ -2,7 +2,7 @@
 layout: single
 title:  "MCP Inspector"
 date:   2025-04-03 09:00:00 +0800
-categories: MCP MCPServer
+categories: [AI 开发工具, DevOps]
 tags: [MCP, MCPServer, MCPInspector, GitHub]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "命令 nc"
 date:   2022-03-26 00:00:00 +0800
-categories: Command
-tags: [Linux, nc, netcat]
+categories: [操作系统, AI 与大模型]
+tags: [Linux, nc, netcat, Command]
 ---
 
 ## 捕获 HTTP 请求的内容

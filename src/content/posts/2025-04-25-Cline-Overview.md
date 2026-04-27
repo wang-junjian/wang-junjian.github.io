@@ -2,7 +2,7 @@
 layout: single
 title:  "Cline 概览 - Cline 扩展架构和开发指南"
 date:   2025-04-25 08:00:00 +0800
-categories: Cline CustomInstructions
+categories: [AI 与大模型, 编程开发]
 tags: [Cline, CustomInstructions]
 ---
 

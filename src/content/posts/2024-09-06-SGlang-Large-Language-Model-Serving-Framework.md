@@ -2,8 +2,8 @@
 layout: single
 title:  "SGLang 大模型服务框架"
 date:   2024-09-06 08:00:00 +0800
-categories: SGlang LLM
-tags: [SGlang, vLLM, FlashInfer, CUDA]
+categories: [AI 与大模型, 编程开发]
+tags: [SGlang, vLLM, FlashInfer, CUDA, SGlang LLM]
 ---
 
 ## SGLang

@@ -2,7 +2,7 @@
 layout: single
 title:  "CodeGPT: 智能辅助编程"
 date:   2024-01-03 08:00:00 +0800
-categories: CodeGPT IntelliJIDEA
+categories: [AI 与大模型, 编程开发]
 tags: [CodeGPT, IntelliJIDEA, GGUF, ChatGLM, DeepSeek-LLM, Llama, OpenAI, GPT]
 ---
 

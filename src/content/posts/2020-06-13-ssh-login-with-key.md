@@ -2,8 +2,8 @@
 layout: single
 title:  "SSH使用密匙登录"
 date:   2020-06-13 00:00:00 +0800
-categories: SSH
-tags: [Linux, ssh, ssh-keygen]
+categories: 操作系统
+tags: [Linux, ssh, ssh-keygen, SSH]
 ---
 
 ## 生成身份验证密钥

@@ -2,8 +2,8 @@
 layout: single
 title:  "在 Hugging Face 上搭建 ChatGPT 聊天机器人"
 date:   2023-04-29 08:00:00 +0800
-categories: Chatbot
-tags: [ChatGPT, HuggingFace, Docker]
+categories: [容器与云原生, AI 与大模型]
+tags: [ChatGPT, HuggingFace, Docker, Chatbot]
 ---
 
 ## [Hugging Face](https://huggingface.co/) 上创建 [ChatGPT](https://huggingface.co/spaces/wangjunjian/ChatGPT) Space

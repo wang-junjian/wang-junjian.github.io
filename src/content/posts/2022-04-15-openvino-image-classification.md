@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenVINO 图像分类"
 date:   2022-04-15 08:00:00 +0800
-categories: AI OpenVINO
-tags: [图像分类, googlenet]
+categories: [编程开发, 操作系统]
+tags: [图像分类, googlenet, AI OpenVINO]
 ---
 
 ## 同步推理

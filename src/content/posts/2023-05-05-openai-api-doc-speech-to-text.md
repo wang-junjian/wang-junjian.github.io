@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenAI API Documentation Speech to Text"
 date:   2023-05-05 10:00:00 +0800
-categories: OpenAI-API
-tags: ["OpenAI API", "Whisper"]
+categories: [AI 与大模型, 编程开发]
+tags: [OpenAI API, Whisper, OpenAI-API]
 ---
 
 ## 开发文档

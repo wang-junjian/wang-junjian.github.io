@@ -2,8 +2,8 @@
 layout: single
 title:  "基于 IntelliJ IDEA 使用 Tabby 和 CodeGPT 插件搭建免费的 GitHub Copilot"
 date:   2024-01-10 08:00:00 +0800
-categories: IntelliJIDEA Tabby CodeGPT
-tags: [GitHubCopilot, IntelliJIDEA, Tabby, CodeGPT, OpenAI, CodeLLM, LLM]
+categories: [AI 与大模型, DevOps]
+tags: [GitHubCopilot, IntelliJIDEA, Tabby, CodeGPT, OpenAI, CodeLLM, LLM, IntelliJIDEA Tabby CodeGPT]
 ---
 
 ## 使用的模型

@@ -2,8 +2,8 @@
 layout: single
 title:  "使用 Python 自动进行工作量估算"
 date:   2022-07-13 00:00:00 +0800
-categories: 工作量估算
-tags: [DIY, excel, openpyxl, typer]
+categories: [编程开发, 操作系统]
+tags: [DIY, excel, openpyxl, typer, 工作量估算]
 ---
 
 ## 安装依赖库

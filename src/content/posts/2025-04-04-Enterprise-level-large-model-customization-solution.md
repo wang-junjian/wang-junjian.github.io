@@ -2,7 +2,7 @@
 layout: single
 title:  "企业级大模型定制解决方案"
 date:   2025-04-04 09:00:00 +0800
-categories: LLM
+categories: AI 与大模型
 tags: [LLM, Enterprise]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "Roboflow 快速入门"
 date:   2023-03-27 08:00:00 +0800
-categories: Roboflow
-tags: [Quickstart, Label, Train, Deploy]
+categories: [DevOps, 编程开发]
+tags: [Quickstart, Label, Train, Deploy, Roboflow]
 ---
 
 ## 创建工作区

@@ -2,7 +2,7 @@
 layout: single
 title:  "OpenClaw 架构设计"
 date:   2026-02-17 10:00:00 +0800
-categories: OpenClaw Agent
+categories: [AI 与大模型, 操作系统]
 tags: [OpenClaw, Agent, Architecture]
 ---
 

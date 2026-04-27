@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes JSONPath实践"
 date:   2021-07-21 00:00:00 +0800
-categories: Kubernetes 实践
-tags: [kubectl, JSONPath]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, JSONPath, Kubernetes 实践]
 ---
 
 ## Node

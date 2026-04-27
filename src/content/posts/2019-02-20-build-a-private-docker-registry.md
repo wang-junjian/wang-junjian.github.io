@@ -2,8 +2,8 @@
 layout: single
 title:  "搭建 Private Docker Registry"
 date:   2019-02-20 00:00:00 +0800
-categories: Docker
-tags: [docker-registry, docker-registry-frontend, docker-registry-web]
+categories: [容器与云原生, DevOps]
+tags: [docker-registry, docker-registry-frontend, docker-registry-web, Docker]
 ---
 
 ## Registry

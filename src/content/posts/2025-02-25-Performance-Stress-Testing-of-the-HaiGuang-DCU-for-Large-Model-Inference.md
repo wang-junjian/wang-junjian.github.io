@@ -2,7 +2,7 @@
 layout: single
 title:  "海光 DCU 的大模型推理性能压测"
 date:   2025-02-25 10:00:00 +0800
-categories: 海光 Benchmark
+categories: [AI 与大模型, 编程开发]
 tags: [海光, HYGON, DCU, vLLM, evalscope-perf, EvalScope, Benchmark, LLM]
 ---
 

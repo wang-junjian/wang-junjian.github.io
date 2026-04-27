@@ -2,7 +2,7 @@
 layout: single
 title:  "如何投资个人养老金"
 date:   2025-01-01 10:00:00 +0800
-categories: 个人养老金 投资
+categories: 技术随笔
 tags: [个人养老金, 基金, 投资]
 ---
 

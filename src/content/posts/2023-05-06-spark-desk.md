@@ -2,8 +2,8 @@
 layout: single
 title:  "讯飞星火测试"
 date:   2023-05-06 08:00:00 +0800
-categories: 讯飞星火
-tags: [ChatGPT]
+categories: [操作系统, 编程开发]
+tags: [ChatGPT, 讯飞星火]
 ---
 
 [Spark Desk](https://xinghuo.xfyun.cn/desk) 是讯飞星火认知大模型的英文名称。

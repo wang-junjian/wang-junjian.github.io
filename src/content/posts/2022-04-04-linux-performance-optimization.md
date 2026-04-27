@@ -2,8 +2,8 @@
 layout: single
 title:  "Linux 性能优化"
 date:   2022-04-04 00:00:00 +0800
-categories: 性能优化
-tags: [Linux]
+categories: 操作系统
+tags: [Linux, 性能优化]
 ---
 
 ## CPU

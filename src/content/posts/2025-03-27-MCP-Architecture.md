@@ -2,7 +2,7 @@
 layout: single
 title:  "MCP 架构"
 date:   2025-03-27 09:00:00 +0800
-categories: MCP LLM
+categories: [AI 与大模型, 容器与云原生]
 tags: [MCP, LLM]
 ---
 

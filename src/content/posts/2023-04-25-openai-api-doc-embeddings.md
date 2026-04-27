@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenAI API Documentation Embeddings"
 date:   2023-04-25 08:00:00 +0800
-categories: OpenAI-API-Embedding
-tags: ["OpenAI API", Embedding, Faiss]
+categories: [硬件加速, AI 与大模型]
+tags: [OpenAI API, Embedding, Faiss, OpenAI-API-Embedding]
 ---
 
 ## [什么是 Embedding？](https://platform.openai.com/docs/guides/embeddings/what-are-embeddings)

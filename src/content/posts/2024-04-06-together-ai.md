@@ -2,7 +2,7 @@
 layout: single
 title:  "Together AI - The fastest cloud platform for building and running generative AI"
 date:   2024-04-06 08:00:00 +0800
-categories: TogetherAI LLM
+categories: [AI 与大模型, 编程开发]
 tags: [TogetherAI, LLM]
 ---
 

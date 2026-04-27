@@ -2,7 +2,7 @@
 layout: single
 title:  "具身大脑 RoboBrain"
 date:   2025-06-15 15:00:00 +0800
-categories: 具身智能 RoboBrain
+categories: [AI 与大模型, 编程开发]
 tags: [具身智能, RoboBrain, 具身大脑, 多模态大模型, ShareRobot, 智源]
 ---
 

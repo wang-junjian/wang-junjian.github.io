@@ -2,7 +2,7 @@
 layout: single
 title:  "推理 LLM 技术内幕 - DeepSeek-R1/o1"
 date:   2025-03-08 10:00:00 +0800
-categories: DeepSeek-R1 推理模型
+categories: [AI 与大模型, 教程实践]
 tags: [DeepSeek-R1, OpenAI-o1, 推理模型, LLM]
 ---
 

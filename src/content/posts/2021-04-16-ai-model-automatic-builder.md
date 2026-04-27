@@ -2,8 +2,8 @@
 layout: single
 title:  "AI 模型打包发布"
 date:   2021-04-16 00:00:00 +0800
-categories: AI Docker
-tags: [Shell, Dockerfile, if, date, sed, tar, scp, ssh, docker-compose]
+categories: [操作系统, 容器与云原生]
+tags: [Shell, Dockerfile, if, date, sed, tar, scp, ssh]
 ---
 
 ## 工程目录

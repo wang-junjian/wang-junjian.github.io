@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的卷：将磁盘挂载到容器"
 date:   2021-07-04 00:00:00 +0800
-categories: Kubernetes
-tags: [volume, kubectl, date, Docker, Dockerfile, port-forward, nfs]
+categories: [操作系统, 容器与云原生]
+tags: [volume, kubectl, date, Docker, Dockerfile, port-forward, nfs, Kubernetes]
 ---
 
 ## 通过卷在容器之间共享数据

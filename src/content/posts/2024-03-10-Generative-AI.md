@@ -2,7 +2,7 @@
 layout: single
 title:  "生成式AI"
 date:   2024-03-10 08:00:00 +0800
-categories: DeepLearningAI GenerativeAI
+categories: [AI 与大模型, 编程开发]
 tags: [DeepLearningAI, GenerativeAI]
 ---
 

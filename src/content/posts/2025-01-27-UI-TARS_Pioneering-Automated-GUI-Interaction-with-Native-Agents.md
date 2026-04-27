@@ -2,8 +2,8 @@
 layout: single
 title:  "UI-TARS: Pioneering Automated GUI Interaction with Native Agents"
 date:   2025-01-27 10:00:00 +0800
-categories: UI-TARS arXiv
-tags: [UI-TARS, Agent, GUI, LLM]
+categories: [AI 与大模型, 操作系统]
+tags: [UI-TARS, Agent, GUI, LLM, UI-TARS arXiv]
 ---
 
 [UI-TARS: Pioneering Automated GUI Interaction with Native Agents（与本地代理进行自动化 GUI 交互的先驱）](https://arxiv.org/abs/2501.12326)

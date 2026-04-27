@@ -2,8 +2,8 @@
 layout: single
 title:  "使用Darknet在自定义数据集上训练YOLOv3"
 date:   2019-07-01 00:00:00 +0800
-categories: AI 图像识别
-tags: [目标检测, Darknet, YOLO]
+categories: [AI 与大模型, 编程开发]
+tags: [目标检测, Darknet, YOLO, AI 图像识别]
 ---
 
 ## 编译darknet

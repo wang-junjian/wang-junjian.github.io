@@ -2,8 +2,8 @@
 layout: single
 title:  "Cline: 自主编程助手"
 date:   2025-02-22 10:00:00 +0800
-categories: Cline AICodingAssistant
-tags: [Cline, Agent, Ollama, LLM, GitHubCopilot]
+categories: [AI 与大模型, 编程开发]
+tags: [Cline, Agent, Ollama, LLM, GitHubCopilot, Cline AICodingAssistant]
 ---
 
 ## 开发

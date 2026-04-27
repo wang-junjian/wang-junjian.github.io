@@ -2,8 +2,8 @@
 layout: single
 title:  "SSH X11 Forwarding"
 date:   2021-04-10 00:00:00 +0800
-categories: Linux
-tags: [ssh, X11, xquartz]
+categories: [操作系统, 编程开发]
+tags: [ssh, X11, xquartz, Linux]
 ---
 
 ## macOS

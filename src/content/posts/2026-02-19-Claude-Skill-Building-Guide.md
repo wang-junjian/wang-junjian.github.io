@@ -2,7 +2,7 @@
 layout: single
 title:  "Claude Skill（技能）构建完全指南"
 date:   2026-02-19 10:00:00 +0800
-categories: Claude Skill
+categories: [AI 与大模型, 编程开发]
 tags: [Claude, Skill]
 ---
 

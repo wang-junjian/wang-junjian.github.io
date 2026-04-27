@@ -2,8 +2,8 @@
 layout: single
 title:  "在Kubernetes上运行第一个应用"
 date:   2021-06-21 00:00:00 +0800
-categories: Kubernetes
-tags: [Service, Deployment, Node.js, docker, for]
+categories: [容器与云原生, 操作系统]
+tags: [Service, Deployment, Node.js, docker, for, Kubernetes]
 ---
 
 ## 基于Node构建应用

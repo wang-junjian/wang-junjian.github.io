@@ -2,8 +2,8 @@
 layout: single
 title:  "命令find"
 date:   2020-12-29 00:00:00 +0800
-categories: Command
-tags: [Linux, find, delete, DS_Store]
+categories: 操作系统
+tags: [Linux, find, delete, DS_Store, Command]
 ---
 
 ## 查找文件

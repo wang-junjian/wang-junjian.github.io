@@ -2,8 +2,8 @@
 layout: single
 title:  "通过命令使用 ChatGPT"
 date:   2023-03-05 00:00:00 +0800
-categories: ChatGPT
-tags: [Command]
+categories: [操作系统, AI 与大模型]
+tags: [Command, ChatGPT]
 ---
 
 ## [ChatGPT Wrapper](https://github.com/mmabrouk/chatgpt-wrapper)

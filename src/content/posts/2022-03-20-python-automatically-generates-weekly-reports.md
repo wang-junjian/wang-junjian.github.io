@@ -2,8 +2,8 @@
 layout: single
 title:  "Python 自动生成周报"
 date:   2022-03-20 00:00:00 +0800
-categories: 周报
-tags: [DIY, excel, openpyxl, typer]
+categories: [编程开发, 操作系统]
+tags: [DIY, excel, openpyxl, typer, 周报]
 ---
 
 ## 安装依赖库

@@ -2,7 +2,7 @@
 layout: single
 title:  "Andrej Karpathy：大语言模型构建个人知识库的实践指南"
 date:   2026-04-04 10:00:00 +0800
-categories: AndrejKarpathy wiki
+categories: [AI 与大模型, 教程实践]
 tags: [AndrejKarpathy, wiki, Obsidian, LLM]
 ---
 

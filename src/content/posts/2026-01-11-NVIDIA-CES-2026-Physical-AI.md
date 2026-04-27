@@ -2,8 +2,8 @@
 layout: single
 title:  "NVIDIA CES 2026：物理 AI 时代来了"
 date:   2026-01-11 08:00:00 +0800
-categories: CES NVIDIA
-tags: [NVIDIA, CES 2026, Physical AI, DGX, Cosmos, OmniVerse, AI Supercomputer]
+categories: [AI 与大模型, 硬件加速]
+tags: [NVIDIA, CES 2026, Physical AI, DGX, Cosmos, OmniVerse, AI Supercomputer, CES NVIDIA]
 ---
 
 NVIDIA 正致力于打造全栈物理AI（Physical AI）平台，推动人工智能从数字领域向理解并交互物理世界跨越。该平台的核心由 Cosmos 世界模型、Omniverse 模拟环境以及针对机器人（GROOT）和自动驾驶（Alpamayo）的专属模型组成。

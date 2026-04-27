@@ -2,8 +2,8 @@
 layout: single
 title:  "命令lftp"
 date:   2021-11-23 00:00:00 +0800
-categories: Command
-tags: [Linux, ftp, lftp]
+categories: 操作系统
+tags: [Linux, ftp, lftp, Command]
 ---
 
 ## 安装 lftp

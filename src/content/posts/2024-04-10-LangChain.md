@@ -2,8 +2,8 @@
 layout: single
 title:  "LangChain"
 date:   2024-04-10 08:00:00 +0800
-categories: LangChain
-tags: [LangChain]
+categories: [AI 与大模型, 编程开发]
+tags: LangChain
 ---
 
 - [LangChain Expression Language (LCEL)](https://python.langchain.com/docs/expression_language/)

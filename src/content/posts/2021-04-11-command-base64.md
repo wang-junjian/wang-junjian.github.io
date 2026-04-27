@@ -2,8 +2,8 @@
 layout: single
 title:  "命令base64"
 date:   2021-04-11 00:00:00 +0800
-categories: Command
-tags: [Linux, base64, echo, printf]
+categories: [操作系统, 编程开发]
+tags: [Linux, base64, echo, printf, Command]
 ---
 
 ## 编码
