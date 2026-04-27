@@ -9,18 +9,21 @@ const STORAGE_KEY_CONFIG = 'ai_chat_config';
 const STORAGE_KEY_MESSAGES = 'ai_chat_messages';
 const STORAGE_KEY_WINDOW_OPEN = 'ai_chat_window_open';
 const STORAGE_KEY_LOG_LEVEL = 'ai_chat_log_level';
+const STORAGE_KEY_MODE = 'ai_chat_mode';
 
 let apiConfig: ApiConfig = { ...DEFAULT_API_CONFIG };
 let messages: Message[] = [];
 let embeddingsLoaded = false;
 let isWindowOpen = false;
 let isGenerating = false;
+let mode: 'float' | 'embedded' = 'float';
 
 const toggleBtn = document.getElementById('aiChatToggle') as HTMLButtonElement;
 const chatWindow = document.getElementById('aiChatWindow') as HTMLDivElement;
 const closeBtn = document.getElementById('aiChatClose') as HTMLButtonElement;
 const configBtn = document.getElementById('aiChatConfig') as HTMLButtonElement;
 const clearBtn = document.getElementById('aiChatClear') as HTMLButtonElement;
+const modeToggleBtn = document.getElementById('aiChatModeToggle') as HTMLButtonElement;
 const configPanel = document.getElementById('aiChatConfigPanel') as HTMLDivElement;
 const statusEl = document.getElementById('aiChatStatus') as HTMLDivElement;
 const messagesEl = document.getElementById('aiChatMessages') as HTMLDivElement;
@@ -348,7 +351,39 @@ function autoResize() {
   inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
 }
 
+function applyMode() {
+  if (mode === 'embedded') {
+    document.documentElement.classList.add('ai-chat-embedded');
+    if (!chatWindow.classList.contains('open')) {
+      chatWindow.classList.add('open');
+      isWindowOpen = true;
+    }
+  } else {
+    document.documentElement.classList.remove('ai-chat-embedded');
+  }
+}
+
+function toggleMode() {
+  mode = mode === 'float' ? 'embedded' : 'float';
+  localStorage.setItem(STORAGE_KEY_MODE, mode);
+  applyMode();
+}
+
+function initMode() {
+  if (document.documentElement.classList.contains('ai-chat-embedded')) {
+    mode = 'embedded';
+    if (!chatWindow.classList.contains('open')) {
+      chatWindow.classList.add('open');
+      isWindowOpen = true;
+    }
+  }
+}
+
 function toggleWindow() {
+  if (mode === 'embedded') {
+    toggleMode();
+    return;
+  }
   isWindowOpen = !isWindowOpen;
   if (isWindowOpen) {
     chatWindow.classList.add('open');
@@ -361,6 +396,7 @@ function toggleWindow() {
 }
 
 function restoreWindowState() {
+  if (mode === 'embedded') return;
   const saved = localStorage.getItem(STORAGE_KEY_WINDOW_OPEN);
   if (saved && JSON.parse(saved)) {
     toggleWindow();
@@ -370,6 +406,10 @@ function restoreWindowState() {
 function bindEvents() {
   toggleBtn.addEventListener('click', toggleWindow);
   closeBtn.addEventListener('click', toggleWindow);
+
+  if (modeToggleBtn) {
+    modeToggleBtn.addEventListener('click', toggleMode);
+  }
 
   configBtn.addEventListener('click', () => {
     configPanel.classList.toggle('open');
@@ -432,9 +472,13 @@ function bindEvents() {
 }
 
 function init() {
+  if ((window as any).__aiChatInit) return;
+  (window as any).__aiChatInit = true;
+
   bindEvents();
   loadConfig();
   loadMessages();
+  initMode();
   restoreWindowState();
   initEmbeddings();
 }
