@@ -2,8 +2,8 @@
 layout: single
 title:  "命令ln"
 date:   2021-01-15 00:00:00 +0800
-categories: Command
-tags: [Linux, ln]
+categories: 操作系统
+tags: [Linux, ln, Command]
 ---
 
 > 在文件之间建立链接

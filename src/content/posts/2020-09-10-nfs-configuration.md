@@ -2,7 +2,7 @@
 layout: single
 title:  "NFS配置"
 date:   2020-09-10 00:00:00 +0800
-categories: Linux
+categories: 操作系统
 tags: [Linux, Ubuntu, NFS]
 ---
 

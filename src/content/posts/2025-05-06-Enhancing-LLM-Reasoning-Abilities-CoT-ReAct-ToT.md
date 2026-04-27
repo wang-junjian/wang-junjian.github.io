@@ -2,7 +2,7 @@
 layout: single
 title:  "提升 LLM 推理能力：CoT, ReAct, ToT"
 date:   2025-05-06 10:00:00 +0800
-categories: LLM 推理
+categories: [AI 与大模型, 框架与库]
 tags: [LLM, CoT, ReAct, ToT, 思维链, 思维树, 推理]
 ---
 

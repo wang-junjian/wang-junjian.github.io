@@ -2,7 +2,7 @@
 layout: single
 title:  "Sourcegraph Cody"
 date:   2024-01-14 08:00:00 +0800
-categories: Sourcegraph Cody
+categories: [AI 开发工具, AI 与大模型]
 tags: [Sourcegraph, Cody, AICodingAssistant, GitHubCopilot]
 ---
 

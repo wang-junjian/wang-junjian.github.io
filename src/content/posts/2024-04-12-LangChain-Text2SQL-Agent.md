@@ -2,8 +2,8 @@
 layout: single
 title:  "LangChain Text2SQL Agent"
 date:   2024-04-12 08:00:00 +0800
-categories: LangChain Text2SQL Agent
-tags: [LangChain, Text2SQL, Agent]
+categories: [AI 与大模型, 编程开发]
+tags: [LangChain, Text2SQL, Agent, LangChain Text2SQL Agent]
 ---
 
 ## OpenAI Function Call (Extraction)

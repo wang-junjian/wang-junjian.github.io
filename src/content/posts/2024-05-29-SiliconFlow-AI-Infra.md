@@ -2,8 +2,8 @@
 layout: single
 title:  "SiliconFlow AI Infra"
 date:   2024-05-29 08:00:00 +0800
-categories: AIInfra SiliconFlow
-tags: [SiliconCloud, OpenAI, LLM]
+categories: [AI 与大模型, 编程开发]
+tags: [SiliconCloud, OpenAI, LLM, AIInfra SiliconFlow]
 ---
 
 ## [SiliconFlow](https://siliconflow.cn/zh-cn/)

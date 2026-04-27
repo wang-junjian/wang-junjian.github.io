@@ -2,8 +2,8 @@
 layout: single
 title:  "命令helm"
 date:   2021-04-07 00:00:00 +0800
-categories: Kubernetes Command
-tags: [Helm, curl]
+categories: [操作系统, 容器与云原生]
+tags: [Helm, curl, Kubernetes Command]
 ---
 
 > Helm 帮助您管理 Kubernetes 应用程序 —— Helm Charts 帮助您定义、安装和升级即使是最复杂的 Kubernetes 应用程序。

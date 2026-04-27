@@ -2,8 +2,8 @@
 layout: single
 title:  "Automated Testing for LLMOps"
 date:   2024-04-14 10:00:00 +0800
-categories: AutomatedTesting LLMOps
-tags: [LLMOps, DeepLearningAI]
+categories: AI 与大模型
+tags: [LLMOps, DeepLearningAI, AutomatedTesting LLMOps]
 ---
 
 

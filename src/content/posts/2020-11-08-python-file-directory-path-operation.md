@@ -2,8 +2,8 @@
 layout: single
 title:  "Python文件、目录、路径操作"
 date:   2020-11-08 00:00:00 +0800
-categories: Python 实践
-tags: [Python, File, Directory, Path]
+categories: [编程开发, AI 开发工具]
+tags: [Python, File, Directory, Path, Python 实践]
 ---
 
 ## 导入包

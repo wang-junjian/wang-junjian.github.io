@@ -2,7 +2,7 @@
 layout: single
 title:  "Chat Extensions (VS Code)"
 date:   2024-12-10 10:00:00 +0800
-categories: ChatExtensions GitHubCopilot
+categories: [编程开发, 操作系统]
 tags: [ChatExtensions, GitHubCopilot, ChatParticipant, Agent, VSCode]
 ---
 

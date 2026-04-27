@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes集群加入Worker节点"
 date:   2020-11-05 00:00:00 +0800
-categories: Kubernetes
-tags: [Cluster, Ubuntu, Install, journalctl]
+categories: [操作系统, 容器与云原生]
+tags: [Cluster, Ubuntu, Install, journalctl, Kubernetes]
 ---
 
 ## 在 Master 节点创建加入节点用的 Token

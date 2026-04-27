@@ -2,8 +2,8 @@
 layout: single
 title:  "CUA 评估额外信息"
 date:   2025-01-26 10:00:00 +0800
-categories: CUA Eval
-tags: [CUA, Benchmark, OpenAI]
+categories: [AI 与大模型, 操作系统]
+tags: [CUA, Benchmark, OpenAI, CUA Eval]
 ---
 
 ## [CUA eval extra information](https://cdn.openai.com/cua/CUA_eval_extra_information.pdf)

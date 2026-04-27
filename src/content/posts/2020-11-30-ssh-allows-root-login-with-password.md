@@ -2,7 +2,7 @@
 layout: single
 title:  "SSH允许使用密码进行root登录"
 date:   2020-11-30 00:00:00 +0800
-categories: Linux
+categories: 操作系统
 tags: [Linux, root, ssh, systemctl, service, init.d, sed]
 ---
 

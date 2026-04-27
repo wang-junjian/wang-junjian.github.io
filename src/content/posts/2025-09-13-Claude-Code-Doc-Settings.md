@@ -2,7 +2,7 @@
 layout: single
 title:  "Claude Code 的配置与权限"
 date:   2025-09-13 08:00:00 +0800
-categories: ClaudeCode Agent
+categories: [操作系统, AI 与大模型]
 tags: [ClaudeCode, Agent, Claude, CLI, Doc]
 ---
 

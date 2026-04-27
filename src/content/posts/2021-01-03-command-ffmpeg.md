@@ -2,8 +2,8 @@
 layout: single
 title:  "命令ffmpeg"
 date:   2021-01-03 00:00:00 +0800
-categories: Command
-tags: [Linux, ffmpeg, GPU, NVIDIA, for, basename]
+categories: [操作系统, 硬件加速]
+tags: [Linux, ffmpeg, GPU, NVIDIA, for, basename, Command]
 ---
 
 ## FFmpeg

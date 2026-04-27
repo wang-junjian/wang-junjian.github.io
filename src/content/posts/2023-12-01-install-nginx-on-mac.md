@@ -2,7 +2,7 @@
 layout: single
 title:  "在 Mac 上安装 NGINX"
 date:   2023-12-01 08:00:00 +0800
-categories: NGINX
+categories: 操作系统
 tags: [NGINX, MacBookProM2Max]
 ---
 

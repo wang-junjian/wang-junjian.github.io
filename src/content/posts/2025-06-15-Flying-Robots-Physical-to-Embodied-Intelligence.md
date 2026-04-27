@@ -2,7 +2,7 @@
 layout: single
 title:  "飞行机器人—从物理智能到具身智能"
 date:   2025-06-15 08:00:00 +0800
-categories: 具身智能 飞行机器人
+categories: [AI 与大模型, 编程开发]
 tags: [具身智能, 飞行机器人, 物理智能]
 ---
 

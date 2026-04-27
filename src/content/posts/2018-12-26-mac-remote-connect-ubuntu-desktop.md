@@ -2,8 +2,8 @@
 layout: single
 title:  "MAC 远程连接 Ubuntu 桌面"
 date:   2018-12-26 10:00:00 +0800
-categories: macOS
-tags: [Ubuntu, Linux]
+categories: 操作系统
+tags: [Ubuntu, Linux, macOS]
 ---
 
 ## 安装VNC服务

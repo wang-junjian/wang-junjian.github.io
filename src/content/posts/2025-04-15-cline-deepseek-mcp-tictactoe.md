@@ -2,8 +2,8 @@
 layout: single
 title:  "智能编码新范式 (Cline + DeepSeek) × MCP"
 date:   2025-04-15 08:00:00 +0800
-categories: Cline MCP
-tags: [Cline, MCP MCPServer, DeepSeek, VSCode, GitHubServer, TicTacToe]
+categories: [AI 与大模型, AI 开发工具]
+tags: [Cline, MCP MCPServer, DeepSeek, VSCode, GitHubServer, TicTacToe, Cline MCP]
 ---
 
 ![](/images/2025/TicTacToe/00.jpg)

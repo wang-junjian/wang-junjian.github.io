@@ -2,7 +2,7 @@
 layout: single
 title:  "Agent 代码安全扫描、修复与渗透测试工具推荐"
 date:   2026-02-28 12:00:00 +0800
-categories: Agent 安全
+categories: [AI 与大模型, DevOps]
 tags: [Agent, 安全, 代码扫描, 自动修复, 渗透测试]
 ---
 

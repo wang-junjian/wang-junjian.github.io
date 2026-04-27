@@ -2,8 +2,8 @@
 layout: single
 title:  "基于NodeMCU(ESP8266)搭建Python开发环境"
 date:   2021-02-21 00:00:00 +0800
-categories: IoT
-tags: [MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL, upip]
+categories: [编程开发, 操作系统]
+tags: [MicroPython, NodeMCU, ESP8266, esptool, SecureCRT, WebREPL, upip, IoT]
 ---
 
 ## 准备

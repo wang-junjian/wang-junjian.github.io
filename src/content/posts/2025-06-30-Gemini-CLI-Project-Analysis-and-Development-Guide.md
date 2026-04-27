@@ -2,7 +2,7 @@
 layout: single
 title:  "Gemini CLI 项目分析与开发指南"
 date:   2025-06-30 08:00:00 +0800
-categories: GitHubCopilot GeminiCLI
+categories: [编程开发, 教程实践]
 tags: [GitHubCopilot, GeminiCLI, LLM, 软件开发, 项目分析]
 ---
 

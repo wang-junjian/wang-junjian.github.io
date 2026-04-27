@@ -2,7 +2,7 @@
 layout: single
 title:  "PowerShell 脚本示例"
 date:   2025-12-05 23:00:00 +0800
-categories: PowerShell Windows
+categories: 操作系统
 tags: [PowerShell, Windows]
 ---
 

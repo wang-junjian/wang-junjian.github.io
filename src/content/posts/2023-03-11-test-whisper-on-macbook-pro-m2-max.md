@@ -2,8 +2,8 @@
 layout: single
 title:  "在 MacBook Pro M2 Max 上测试 Whisper"
 date:   2023-03-11 08:00:00 +0800
-categories: Whisper
-tags: [ffmpeg, MacBookProM2Max]
+categories: [操作系统, AI 与大模型]
+tags: [ffmpeg, MacBookProM2Max, Whisper]
 ---
 
 ## 准备音频文件

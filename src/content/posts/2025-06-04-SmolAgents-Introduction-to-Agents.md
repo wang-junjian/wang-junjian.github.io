@@ -2,7 +2,7 @@
 layout: single
 title:  "SmolAgents 概念指南：Agent 介绍"
 date:   2025-06-04 10:00:00 +0800
-categories: SmolAgents Agent
+categories: [AI 与大模型, 编程开发]
 tags: [SmolAgents, Agent, Agency, LLM]
 ---
 

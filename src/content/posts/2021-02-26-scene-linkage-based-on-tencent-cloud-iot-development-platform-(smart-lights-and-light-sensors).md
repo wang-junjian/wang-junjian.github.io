@@ -2,8 +2,8 @@
 layout: single
 title:  "基于腾讯云物联网开发平台的场景联动（智能电灯和光照传感器）"
 date:   2021-02-24 00:00:00 +0800
-categories: IoT SmartHome
-tags: [NodeMCU, ESP8266]
+categories: [编程开发, 物联网与边缘]
+tags: [NodeMCU, ESP8266, IoT SmartHome]
 ---
 
 ## 产品智能联动配置

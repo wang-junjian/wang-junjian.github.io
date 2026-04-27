@@ -2,7 +2,7 @@
 layout: single
 title:  "在YOLOv5中运行JupyterLab和TensorBoard"
 date:   2021-01-01 00:00:00 +0800
-categories: Jupyter
+categories: [容器与云原生, 编程开发]
 tags: [Jupyter, JupyterLab, TensorBoard, YOLOv5]
 ---
 

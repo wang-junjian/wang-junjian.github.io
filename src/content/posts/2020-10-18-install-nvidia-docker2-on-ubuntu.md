@@ -2,8 +2,8 @@
 layout: single
 title:  "在Ubuntu上安装nvidia-docker2"
 date:   2020-10-18 00:00:00 +0800
-categories: Docker
-tags: [Linux, nvidia-docker2, Install]
+categories: [操作系统, 硬件加速]
+tags: [Linux, nvidia-docker2, Install, Docker]
 ---
 
 > 在 Ubuntu20.04 上安装 nvidia-docker2

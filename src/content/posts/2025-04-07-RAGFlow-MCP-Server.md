@@ -2,7 +2,7 @@
 layout: single
 title:  "开发 RAGFlow MCP Server"
 date:   2025-04-07 08:00:00 +0800
-categories: RAGFlow MCPServer
+categories: [AI 开发工具, AI 与大模型]
 tags: [RAGFlow, MCPServer, GitHubCopilot, Continue, Cline]
 ---
 

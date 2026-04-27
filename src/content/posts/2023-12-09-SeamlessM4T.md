@@ -2,7 +2,7 @@
 layout: single
 title:  "SeamlessM4T — Massively Multilingual & Multimodal Machine Translation（大规模多语言和多模式机器翻译）"
 date:   2023-12-09 08:00:00 +0800
-categories: SeamlessM4T
+categories: [操作系统, 硬件加速]
 tags: [SeamlessM4T, ASR, TTS, conda, MacBookProM2Max]
 ---
 

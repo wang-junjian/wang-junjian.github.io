@@ -2,7 +2,7 @@
 layout: single
 title:  "Kubernetes的多租户"
 date:   2021-07-31 00:00:00 +0800
-categories: multi-tenancy
+categories: 容器与云原生
 tags: [multi-tenancy, KubeSphere, Kubernetes]
 ---
 

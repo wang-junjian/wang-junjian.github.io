@@ -2,8 +2,8 @@
 layout: single
 title:  "Ultralytics YOLOv8"
 date:   2023-03-24 08:00:00 +0800
-categories: Ultralytics
-tags: [YOLO, Comet, ClearML]
+categories: [框架与库, 容器与云原生]
+tags: [YOLO, Comet, ClearML, Ultralytics]
 ---
 
 ## Ultralytics

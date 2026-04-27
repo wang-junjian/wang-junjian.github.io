@@ -2,7 +2,7 @@
 layout: single
 title:  "vLLM 部署 Qwen1.5 LLM"
 date:   2024-03-15 10:00:00 +0800
-categories: vLLM LLM
+categories: [AI 与大模型, 框架与库]
 tags: [vLLM, LLM, Qwen, TeslaT4]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "HTTP 基准测试工具"
 date:   2022-03-21 08:00:00 +0800
-categories: 测试
-tags: [wrk, ab, make, nproc]
+categories: [操作系统, 编程开发]
+tags: [wrk, ab, make, nproc, 测试]
 ---
 
 ## wrk

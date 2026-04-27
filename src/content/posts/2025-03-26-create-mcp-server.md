@@ -2,7 +2,7 @@
 layout: single
 title:  "create-mcp-server"
 date:   2025-03-26 12:00:00 +0800
-categories: MCP Python
+categories: [操作系统, 教程实践]
 tags: [MCP, Python, MCPServer, UV]
 ---
 

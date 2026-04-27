@@ -2,8 +2,8 @@
 layout: single
 title:  "Ubuntu 上将 NVIDIA GPU 切换为 Intel 集成显卡 IGD"
 date:   2022-05-03 08:00:00 +0800
-categories: IGD
-tags: [Ubuntu, GPU, NVIDIA, Intel, X11, lspci, lshw]
+categories: [操作系统, 硬件加速]
+tags: [Ubuntu, GPU, NVIDIA, Intel, X11, lspci, lshw, IGD]
 ---
 
 IGD（Integrated Graphics Device）

@@ -2,8 +2,8 @@
 layout: single
 title:  "使用 Prometheus Operator 在 Kubernetes 上部署 Prometheus 和 Grafana"
 date:   2023-07-11 08:00:00 +0800
-categories: Prometheus-Operator
-tags: [Prometheus, Grafana, Kubernetes, patch]
+categories: [容器与云原生, DevOps]
+tags: [Prometheus, Grafana, Kubernetes, patch, Prometheus-Operator]
 ---
 
 ## 监控组件

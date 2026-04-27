@@ -2,8 +2,8 @@
 layout: single
 title:  "MinIO Quickstart"
 date:   2022-03-01 00:00:00 +0800
-categories: Storage
-tags: [MinIO, Docker, docker-compose, mkdir]
+categories: [容器与云原生, 操作系统]
+tags: [MinIO, Docker, docker-compose, mkdir, Storage]
 ---
 
 使用容器的方式部署 MinIO

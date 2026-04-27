@@ -2,7 +2,7 @@
 layout: single
 title:  "深度网络连接范式演进：残差连接 → 超连接 (HC) → 流形约束超连接 (mHC)"
 date:   2026-01-07 08:00:00 +0800
-categories: DeepSeek mHC
+categories: AI 与大模型
 tags: [mHC, ResNet, Hyper-Connections, DeepSeek]
 ---
 

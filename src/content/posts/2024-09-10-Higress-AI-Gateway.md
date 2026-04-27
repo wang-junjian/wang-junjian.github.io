@@ -2,7 +2,7 @@
 layout: single
 title:  "Higress AI Gateway"
 date:   2024-09-10 08:00:00 +0800
-categories: Higress AIGateway
+categories: [AI 与大模型, 容器与云原生]
 tags: [Higress, AIGateway, Envoy, Istio, LLM]
 ---
 

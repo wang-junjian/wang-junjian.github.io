@@ -2,8 +2,8 @@
 layout: single
 title:  "AI 大模型"
 date:   2023-07-24 08:00:00 +0800
-categories: ChatGPT
-tags: [LLM, GPT, Data, SAM]
+categories: [AI 与大模型, 编程开发]
+tags: [LLM, GPT, Data, SAM, ChatGPT]
 ---
 
 ## 🔥 大模型

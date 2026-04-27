@@ -2,8 +2,8 @@
 layout: single
 title:  "Ultralytics Hub 快速入门"
 date:   2023-03-30 08:00:00 +0800
-categories: UltralyticsHub
-tags: [Quickstart, YOLO, Dataset, Train, Deploy]
+categories: [DevOps, 编程开发]
+tags: [Quickstart, YOLO, Dataset, Train, Deploy, UltralyticsHub]
 ---
 
 ## 准备数据集

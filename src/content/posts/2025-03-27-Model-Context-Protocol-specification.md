@@ -2,7 +2,7 @@
 layout: single
 title:  "Model Context Protocol 规范"
 date:   2025-03-27 08:00:00 +0800
-categories: MCP LLM
+categories: [编程开发, 教程实践]
 tags: [MCP, LLM]
 ---
 

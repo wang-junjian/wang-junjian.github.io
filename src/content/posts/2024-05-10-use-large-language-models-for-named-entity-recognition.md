@@ -2,7 +2,7 @@
 layout: single
 title:  "使用大型语言模型进行命名实体识别"
 date:   2024-05-10 08:00:00 +0800
-categories: Qwen NER
+categories: [AI 与大模型, 编程开发]
 tags: [Qwen, qwen-turbo, LangChain, ChatTongyi, Text2SQL, LLM, NER]
 ---
 

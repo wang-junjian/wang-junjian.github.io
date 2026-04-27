@@ -2,8 +2,8 @@
 layout: single
 title:  "Private GPT"
 date:   2023-09-02 08:00:00 +0800
-categories: PrivateGPT
-tags: [Chroma, Faiss, Gunicorn, Uvicorn, SQLite3, GPT, Shell]
+categories: [AI 与大模型, 操作系统]
+tags: [Chroma, Faiss, Gunicorn, Uvicorn, SQLite3, GPT, Shell, PrivateGPT]
 ---
 
 ## 模型

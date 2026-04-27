@@ -2,8 +2,8 @@
 layout: single
 title:  "How Diffusion Models Work"
 date:   2023-06-14 08:00:00 +0800
-categories: Diffusion
-tags: [DDPM, DDIM, DeepLearning.AI]
+categories: [编程开发, 硬件加速]
+tags: [DDPM, DDIM, DeepLearning.AI, Diffusion]
 ---
 
 [How Diffusion Models Work](https://learn.deeplearning.ai/diffusion-models)

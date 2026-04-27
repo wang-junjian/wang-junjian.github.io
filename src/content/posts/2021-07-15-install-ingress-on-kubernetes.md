@@ -2,8 +2,8 @@
 layout: single
 title:  "在Kubernetes上安装Ingress"
 date:   2021-07-15 00:00:00 +0800
-categories: Kubernetes
-tags: [Helm]
+categories: [容器与云原生, 操作系统]
+tags: [Helm, Kubernetes]
 ---
 
 ## 官方的安装

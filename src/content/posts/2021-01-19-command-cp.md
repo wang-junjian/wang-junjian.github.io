@@ -2,8 +2,8 @@
 layout: single
 title:  "命令cp"
 date:   2021-01-19 00:00:00 +0800
-categories: Command
-tags: [Linux, cp]
+categories: 操作系统
+tags: [Linux, cp, Command]
 ---
 
 ## 拷贝一批文本文件(10000)到目录

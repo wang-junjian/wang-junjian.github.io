@@ -2,8 +2,8 @@
 layout: single
 title:  "Bloop 使用指南"
 date:   2024-08-30 08:00:00 +0800
-categories: Bloop AICodingAssistant
-tags: [Bloop, GitHubCopilot]
+categories: [编程开发, DevOps]
+tags: [Bloop, GitHubCopilot, Bloop AICodingAssistant]
 ---
 
 ## bloop

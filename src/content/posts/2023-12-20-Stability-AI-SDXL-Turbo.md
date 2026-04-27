@@ -2,7 +2,7 @@
 layout: single
 title:  "SDXL Turbo"
 date:   2023-12-20 08:00:00 +0800
-categories: SDXL-Turbo
+categories: [AI 与大模型, 编程开发]
 tags: [SDXL-Turbo, Diffusion]
 ---
 

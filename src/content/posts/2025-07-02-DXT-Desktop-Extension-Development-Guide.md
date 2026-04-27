@@ -2,7 +2,7 @@
 layout: single
 title:  "DXT（桌面扩展）开发指南"
 date:   2025-07-02 22:00:00 +0800
-categories: DXT MCPHub
+categories: [操作系统, 编程开发]
 tags: [DXT, MCPHub, MCP, MCPServer, calculator-mcp-server, Python, LLM]
 ---
 

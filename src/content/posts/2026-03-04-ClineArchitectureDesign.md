@@ -2,7 +2,7 @@
 layout: single
 title:  "Cline 项目架构设计文档"
 date:   2026-03-04 08:00:00 +0800
-categories: Cline Architecture
+categories: [AI 与大模型, 编程开发]
 tags: [Cline, Architecture, Agent]
 ---
 

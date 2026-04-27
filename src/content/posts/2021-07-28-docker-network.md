@@ -2,8 +2,8 @@
 layout: single
 title:  "Docker 网络"
 date:   2021-07-28 00:00:00 +0800
-categories: Docker
-tags: [ifconfig, route]
+categories: [容器与云原生, 操作系统]
+tags: [ifconfig, route, Docker]
 ---
 
 ## ifconfig & route

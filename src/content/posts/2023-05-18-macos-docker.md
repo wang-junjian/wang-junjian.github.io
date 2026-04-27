@@ -2,8 +2,8 @@
 layout: single
 title:  "macOS Docker"
 date:   2023-05-18 08:00:00 +0800
-categories: Docker
-tags: [Uninstall, macOS]
+categories: [操作系统, 容器与云原生]
+tags: [Uninstall, macOS, Docker]
 ---
 
 今天用 Docker 构建镜像，突然就挂了。重启 Docker，发现 Docker 无法启动了。

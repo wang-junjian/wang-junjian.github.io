@@ -2,7 +2,7 @@
 layout: single
 title:  "AI 大模型"
 date:   2024-01-01 08:00:00 +0800
-categories: LLM Leaderboard
+categories: AI 与大模型
 tags: [LLM, CodeLLM, EmbeddingLLM, Leaderboard]
 ---
 

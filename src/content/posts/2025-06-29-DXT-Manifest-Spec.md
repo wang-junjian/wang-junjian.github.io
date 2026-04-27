@@ -2,7 +2,7 @@
 layout: single
 title:  "DXT Manifest.json 规范"
 date:   2025-06-29 08:00:00 +0800
-categories: DXT MCP
+categories: [操作系统, 编程开发]
 tags: [DXT, MCP, MCPServer, Manifest]
 ---
 

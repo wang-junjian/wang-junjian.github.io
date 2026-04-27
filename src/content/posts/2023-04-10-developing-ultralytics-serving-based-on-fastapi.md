@@ -2,8 +2,8 @@
 layout: single
 title:  "基于 FastAPI 开发 Ultralytics Serving"
 date:   2023-04-10 08:00:00 +0800
-categories: RESTAPI
-tags: [FastAPI, SwaggerUI, Ultralytics, YOLO, Docker, OpenCV, PyTorch, Python, tempfile, Path]
+categories: [操作系统, 编程开发]
+tags: [FastAPI, SwaggerUI, Ultralytics, YOLO, Docker, OpenCV, PyTorch, Python]
 ---
 
 # [Ultralytics Serving](https://github.com/gouchicao/ultralytics-serving)

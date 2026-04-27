@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes API"
 date:   2021-06-22 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, api-resources, explain]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, api-resources, explain, Kubernetes]
 ---
 
 ## Kubernetes 对象

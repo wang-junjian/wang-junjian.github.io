@@ -2,8 +2,8 @@
 layout: single
 title:  "FastAPI 开发 RESTAPI 实践"
 date:   2023-10-04 08:00:00 +0800
-categories: RESTAPI
-tags: [FastAPI, markdown, CSS, requirements.txt, PYTHONPATH]
+categories: [编程开发, 框架与库]
+tags: [FastAPI, markdown, CSS, requirements.txt, PYTHONPATH, RESTAPI]
 ---
 
 ## 首页

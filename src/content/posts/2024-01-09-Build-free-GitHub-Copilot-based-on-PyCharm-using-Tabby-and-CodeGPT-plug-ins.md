@@ -2,7 +2,7 @@
 layout: single
 title:  "基于 PyCharm 使用 Tabby 和 CodeGPT 插件搭建免费的 GitHub Copilot"
 date:   2024-01-09 08:00:00 +0800
-categories: PyCharm Tabby CodeGPT
+categories: [AI 与大模型, 编程开发]
 tags: [GitHubCopilot, PyCharm, Tabby, CodeGPT, FastChat, OpenAI, CodeLLM, LLM]
 ---
 

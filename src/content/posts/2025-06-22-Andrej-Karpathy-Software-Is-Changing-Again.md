@@ -2,7 +2,7 @@
 layout: single
 title:  "人工智能时代的软件 (Software in the era of AI) - Andrej Karpathy"
 date:   2025-06-22 08:00:00 +0800
-categories: Software3.0 AndrejKarpathy
+categories: [AI 与大模型, 编程开发]
 tags: [Software3.0, AndrejKarpathy, LLM, 智能体, 人工智能, 软件开发]
 ---
 

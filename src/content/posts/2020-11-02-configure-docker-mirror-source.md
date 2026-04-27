@@ -2,8 +2,8 @@
 layout: single
 title:  "配置Docker镜像源"
 date:   2020-11-02 00:00:00 +0800
-categories: Docker
-tags: [Linux, Mirror]
+categories: [操作系统, 容器与云原生]
+tags: [Linux, Mirror, Docker]
 ---
 
 > 加速 Docker Hub 镜像拉取速度。

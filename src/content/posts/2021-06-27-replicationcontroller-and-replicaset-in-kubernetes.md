@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的ReplicationController和ReplicaSet"
 date:   2021-06-27 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, ReplicationController, ReplicaSet, scale]
+categories: [操作系统, 容器与云原生]
+tags: [kubectl, ReplicationController, ReplicaSet, scale, Kubernetes]
 ---
 
 ## ReplicationController

@@ -2,7 +2,7 @@
 layout: single
 title:  "代码“图谱化”利器：Understand-Anything"
 date:   2026-04-19 08:00:00 +0800
-categories: Understand-Anything Plugin
+categories: [AI 与大模型, 编程开发, 开源生态]
 tags: [Understand-Anything, Plugin, KnowledgeGraph, ClaudeCode]
 ---
 

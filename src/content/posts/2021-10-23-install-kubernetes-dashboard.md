@@ -2,8 +2,8 @@
 layout: single
 title:  "安装Kubernetes Dashboard"
 date:   2021-10-23 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, macOS]
+categories: [容器与云原生, DevOps]
+tags: [kubectl, macOS, Kubernetes]
 ---
 
 ## 用户界面 Dashboard

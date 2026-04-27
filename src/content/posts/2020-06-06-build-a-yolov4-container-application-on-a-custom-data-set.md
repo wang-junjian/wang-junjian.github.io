@@ -2,8 +2,8 @@
 layout: single
 title:  "构建YOLOv4容器应用在自定义数据集上"
 date:   2020-06-06 00:00:00 +0800
-categories: AI 图像识别
-tags: [目标检测, Darknet, YOLO]
+categories: [容器与云原生, 操作系统]
+tags: [目标检测, Darknet, YOLO, AI 图像识别]
 ---
 
 ## 构建YOLOv4容器

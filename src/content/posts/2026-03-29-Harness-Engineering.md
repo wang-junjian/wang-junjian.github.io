@@ -2,7 +2,7 @@
 layout: single
 title:  "Harness Engineering"
 date:   2026-03-29 12:00:00 +0800
-categories: Agent HarnessEngineering
+categories: [AI 与大模型, 框架与库]
 tags: [Agent, HarnessEngineering]
 ---
 

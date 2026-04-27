@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的标签和标签选择器"
 date:   2021-06-24 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, label]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, label, Kubernetes]
 ---
 
 ## 标签

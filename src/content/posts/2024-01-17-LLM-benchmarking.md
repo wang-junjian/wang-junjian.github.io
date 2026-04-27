@@ -2,7 +2,7 @@
 layout: single
 title:  "LLM 的基准测试"
 date:   2024-01-17 08:00:00 +0800
-categories: LLM Benchmark
+categories: [AI 与大模型, 编程开发]
 tags: [LLM, Benchmark, 测速, wrk, Qwen, FastChat, vLLM, TeslaT4]
 ---
 

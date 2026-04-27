@@ -2,7 +2,7 @@
 layout: single
 title:  "监测推理模型的不当行为以及提升混淆的风险"
 date:   2025-04-19 10:00:00 +0800
-categories: CoT 监控
+categories: [AI 与大模型, 编程开发]
 tags: [CoT, 监控, 推理模型, 奖励黑客, o3]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "文心一言测试"
 date:   2023-04-18 08:00:00 +0800
-categories: 文心一言
-tags: [ERNIEBot, ChatGPT]
+categories: 编程开发
+tags: [ERNIEBot, ChatGPT, 文心一言]
 ---
 
 ## [文心一言](https://yiyan.baidu.com)

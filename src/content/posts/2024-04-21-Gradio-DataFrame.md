@@ -2,7 +2,7 @@
 layout: single
 title:  "Gradio DataFrame"
 date:   2024-04-21 08:00:00 +0800
-categories: Gradio DataFrame
+categories: [AI 与大模型, 编程开发]
 tags: [Gradio, DataFrame, Text2SQL]
 ---
 

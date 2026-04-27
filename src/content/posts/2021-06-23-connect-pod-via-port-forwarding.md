@@ -2,8 +2,8 @@
 layout: single
 title:  "通过端口转发连接Pod"
 date:   2021-06-23 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, apply, logs, port-forward]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, apply, logs, port-forward, Kubernetes]
 ---
 
 通过端口转发（port-forward）可以连接到 Pod，方便测试和调试服务。

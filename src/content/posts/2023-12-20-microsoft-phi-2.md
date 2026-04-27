@@ -2,7 +2,7 @@
 layout: single
 title:  "Microsoft Phi-2"
 date:   2023-12-20 10:00:00 +0800
-categories: Phi-2
+categories: [编程开发, 操作系统]
 tags: [Phi-2, LLM, HuggingFace, PyTorch]
 ---
 

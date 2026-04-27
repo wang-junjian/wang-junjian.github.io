@@ -2,8 +2,8 @@
 layout: single
 title:  "Building Systems with the ChatGPT API"
 date:   2023-06-13 08:00:00 +0800
-categories: ChatGPT-API
-tags: [ChatGPT, DeepLearning.AI]
+categories: [AI 与大模型, 编程开发]
+tags: [ChatGPT, DeepLearning.AI, ChatGPT-API]
 ---
 
 [Building Systems with the ChatGPT API](https://learn.deeplearning.ai/chatgpt-building-system)

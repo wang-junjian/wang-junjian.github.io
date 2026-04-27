@@ -2,8 +2,8 @@
 layout: single
 title:  "在 PyTorch 中融合卷积和批量标准化"
 date:   2022-06-07 00:00:00 +0800
-categories: AI Optimization
-tags: [Fusion, Convolution, BatchNorm, PyTorch, timeit]
+categories: [框架与库, 编程开发]
+tags: [Fusion, Convolution, BatchNorm, PyTorch, timeit, AI Optimization]
 ---
 
 ## 融合卷积和批量标准化的原理

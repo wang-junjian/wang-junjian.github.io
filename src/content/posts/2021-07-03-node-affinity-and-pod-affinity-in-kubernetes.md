@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的节点亲和性和Pod亲和性"
 date:   2021-07-03 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, affinity, nodeAffinity, podAffinity, command, curl]
+categories: [操作系统, 容器与云原生]
+tags: [kubectl, affinity, nodeAffinity, podAffinity, command, curl, Kubernetes]
 ---
 
 ## 节点亲和性（nodeAffinity）

@@ -2,8 +2,8 @@
 layout: single
 title:  "使用RetinaNet算法训练自定义数据集"
 date:   2020-07-30 00:00:00 +0800
-categories: AI 图像识别
-tags: [目标检测, TensorFlow, Docker, RetinaNet, Keras, TensorBoard, Dockerfile]
+categories: [容器与云原生, 硬件加速]
+tags: [目标检测, TensorFlow, Docker, RetinaNet, Keras, TensorBoard, Dockerfile, AI 图像识别]
 ---
 
 ## 训练自己的数据集

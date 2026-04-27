@@ -2,8 +2,8 @@
 layout: single
 title:  "我删库了, rm -rf *"
 date:   2022-03-12 00:00:00 +0800
-categories: 工作日志
-tags: [Linux, rm, ls, inode]
+categories: 操作系统
+tags: [Linux, rm, ls, inode, 工作日志]
 ---
 
 > 今天，我“删库”了......

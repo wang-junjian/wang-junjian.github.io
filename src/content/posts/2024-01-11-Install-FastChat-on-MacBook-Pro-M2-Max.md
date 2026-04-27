@@ -2,7 +2,7 @@
 layout: single
 title:  "在 MacBook Pro M2 Max 上安装 FastChat"
 date:   2024-01-11 08:00:00 +0800
-categories: FastChat
+categories: [AI 与大模型, DevOps]
 tags: [FastChat, Qwen, DeepSeek, ChatGLM, OpenAI, MacBookProM2Max]
 ---
 

@@ -2,7 +2,7 @@
 layout: single
 title:  "飞算 JavaAI：五步智能引导构建坦克大战游戏"
 date:   2026-03-05 08:00:00 +0800
-categories: 飞算JavaAI Agent
+categories: [AI 与大模型, 编程开发]
 tags: [飞算JavaAI, Agent, Tank]
 ---
 

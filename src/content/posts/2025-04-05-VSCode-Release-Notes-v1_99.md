@@ -2,7 +2,7 @@
 layout: single
 title:  "Visual Studio Code 2025年3月版本(1.99)的新功能"
 date:   2025-04-05 12:00:00 +0800
-categories: VSCode ReleaseNotes
+categories: [操作系统, AI 与大模型]
 tags: [VSCode, ReleaseNotes, GitHubCopilot]
 ---
 

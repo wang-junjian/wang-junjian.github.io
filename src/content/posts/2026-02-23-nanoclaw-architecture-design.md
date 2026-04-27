@@ -2,8 +2,8 @@
 layout: single
 title:  "NanoClaw 架构设计深度解析"
 date:   2026-02-23 12:00:00 +0800
-categories: NanoClaw AI原生
-tags: [NanoClaw, AI Native, Skill, Software Design, OpenClaw]
+categories: [AI 与大模型, 操作系统]
+tags: [NanoClaw, AI Native, Skill, Software Design, OpenClaw, NanoClaw AI原生]
 ---
 
 **NanoClaw 架构**的核心洞察是：**与其构建复杂的插件 API 来限制扩展的能力，不如利用 Git 的成熟合并机制来安全地组合任意代码变更。** AI（Claude Code）只在 Git 无法自动解决冲突时才介入，而且**解决方案会被缓存（git rerere）以便下次自动应用**。这使得大多数用户永远不会遇到未解决的冲突，同时保留了**无限的定制能力**。

@@ -2,8 +2,8 @@
 layout: single
 title:  "在 MacBook Pro M2 Max 上构建开发环境"
 date:   2023-02-07 08:00:00 +0800
-categories: Environment
-tags: [HomeBrew, Conda, Miniconda, MacBookProM2Max]
+categories: [操作系统, 编程开发]
+tags: [HomeBrew, Conda, Miniconda, MacBookProM2Max, Environment]
 ---
 
 今天预订的 MacBook Pro M2Max 16寸 顶配 64G内存 2T硬盘到了，¥36097 。

@@ -2,7 +2,7 @@
 layout: single
 title:  "vLLM 推理性能优化实验与分析"
 date:   2025-08-26 08:00:00 +0800
-categories: vLLM Benchmark
+categories: [AI 与大模型, 编程开发]
 tags: [vLLM, Qwen3, 缓存, Benchmark, T4, LLM]
 ---
 

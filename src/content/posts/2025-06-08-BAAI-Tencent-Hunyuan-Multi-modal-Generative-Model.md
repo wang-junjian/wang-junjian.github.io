@@ -2,7 +2,7 @@
 layout: single
 title:  "腾讯混元多模态生成模型"
 date:   2025-06-08 18:00:00 +0800
-categories: 多模态模型 混元
+categories: AI 与大模型
 tags: [多模态模型, 混元, 腾讯, 生成式AI, 图像生成, 视频生成]
 ---
 

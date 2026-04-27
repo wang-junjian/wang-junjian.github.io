@@ -2,8 +2,8 @@
 layout: single
 title:  "LangChain for LLM Application Development"
 date:   2023-06-09 08:00:00 +0800
-categories: LangChain
-tags: [ChatGPT, DeepLearning.AI]
+categories: [AI 与大模型, 编程开发]
+tags: [ChatGPT, DeepLearning.AI, LangChain]
 ---
 
 [LangChain for LLM Application Development](https://learn.deeplearning.ai/langchain)

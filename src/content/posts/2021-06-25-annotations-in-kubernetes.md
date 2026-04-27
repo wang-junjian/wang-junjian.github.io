@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的注解"
 date:   2021-06-25 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, annotate]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, annotate, Kubernetes]
 ---
 
 ## 注解

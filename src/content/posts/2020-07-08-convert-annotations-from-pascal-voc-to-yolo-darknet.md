@@ -2,8 +2,8 @@
 layout: single
 title:  "将注释从PASCAL VOC转换为YOLO Darknet"
 date:   2020-07-08 00:00:00 +0800
-categories: Dataset
-tags: [VOC, YOLO, Format, XML]
+categories: [编程开发, 操作系统]
+tags: [VOC, YOLO, Format, XML, Dataset]
 ---
 
 ## PASCAL VOC(Visual Object Classes) 格式

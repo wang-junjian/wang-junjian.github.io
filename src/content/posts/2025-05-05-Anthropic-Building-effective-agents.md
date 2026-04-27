@@ -2,7 +2,7 @@
 layout: single
 title:  "Anthropic: 构建有效的AI智能体"
 date:   2025-05-05 10:00:00 +0800
-categories: Anthropic Agent
+categories: [AI 与大模型, 编程开发]
 tags: [Anthropic, Agent, Workflow]
 ---
 

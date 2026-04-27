@@ -2,8 +2,8 @@
 layout: single
 title:  "命令yum"
 date:   2021-04-06 00:00:00 +0800
-categories: Command
-tags: [Linux, CentOS, yum, Download]
+categories: [操作系统, 容器与云原生]
+tags: [Linux, CentOS, yum, Download, Command]
 ---
 
 ## 下载软件及依赖安装包

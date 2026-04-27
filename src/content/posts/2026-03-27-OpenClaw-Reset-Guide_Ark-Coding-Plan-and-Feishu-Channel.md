@@ -2,7 +2,7 @@
 layout: single
 title:  "OpenClaw v2026.3.24 重置指南：深度集成方舟 Coding Plan 与飞书渠道"
 date:   2026-03-27 08:00:00 +0800
-categories: OpenClaw Agent
+categories: [AI 与大模型, 操作系统]
 tags: [OpenClaw, Agent, 火山方舟, 飞书]
 ---
 

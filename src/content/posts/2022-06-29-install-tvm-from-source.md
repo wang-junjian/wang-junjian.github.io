@@ -2,8 +2,8 @@
 layout: single
 title:  "Install TVM from Source"
 date:   2022-06-29 00:00:00 +0800
-categories: AI Compiler
-tags: [TVM, Install]
+categories: [操作系统, 编程开发]
+tags: [TVM, Install, AI Compiler]
 ---
 
 ## Ubuntu 下安装依赖包

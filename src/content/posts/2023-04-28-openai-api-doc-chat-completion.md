@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenAI API Documentation Chat Completion"
 date:   2023-04-28 08:00:00 +0800
-categories: OpenAI-API-Chat-Completion
-tags: ["OpenAI API", "Chat Completion", Token]
+categories: [编程开发, AI 与大模型]
+tags: [OpenAI API, Chat Completion, Token, OpenAI-API-Chat-Completion]
 ---
 
 ## [Chat Completion](https://platform.openai.com/docs/guides/chat)

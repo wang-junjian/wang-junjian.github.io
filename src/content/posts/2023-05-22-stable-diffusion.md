@@ -2,8 +2,8 @@
 layout: single
 title:  "Stable Diffusion"
 date:   2023-05-22 08:00:00 +0800
-categories: Stable-Diffusion
-tags: [CLIP]
+categories: [AI 与大模型, 操作系统]
+tags: [CLIP, Stable-Diffusion]
 ---
 
 ## Stable Diffusion

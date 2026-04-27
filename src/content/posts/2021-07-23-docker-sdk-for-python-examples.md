@@ -2,8 +2,8 @@
 layout: single
 title:  "Docker SDK for Python Examples"
 date:   2021-07-23 00:00:00 +0800
-categories: Docker
-tags: [Python]
+categories: [容器与云原生, 编程开发]
+tags: [Python, Docker]
 ---
 
 ## 安装 Docker SDK for Python

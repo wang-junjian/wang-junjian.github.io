@@ -2,8 +2,8 @@
 layout: single
 title:  "vim实践"
 date:   2021-01-16 00:00:00 +0800
-categories: Linux 实践 快捷键
-tags: [Linux, vim]
+categories: [操作系统, 编程开发]
+tags: [Linux, vim, Linux 实践 快捷键]
 ---
 
 ## 安装

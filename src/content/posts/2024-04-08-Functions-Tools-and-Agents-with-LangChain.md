@@ -2,8 +2,8 @@
 layout: single
 title:  "Functions, Tools and Agents with LangChain"
 date:   2024-04-08 08:00:00 +0800
-categories: DeepLearningAI 
-tags: [DeepLearningAI, ]
+categories: [AI 与大模型, 框架与库]
+tags: DeepLearningAI
 ---
 
 ## OpenAI Function Calling (OpenAI 函数调用)

@@ -2,7 +2,7 @@
 layout: single
 title:  "Git 命令"
 date:   2025-04-10 08:00:00 +0800
-categories: Git GitHub
+categories: [操作系统, DevOps]
 tags: [Git, GitHub]
 ---
 

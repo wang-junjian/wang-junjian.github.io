@@ -2,8 +2,8 @@
 layout: single
 title:  "Linux下查看img文件内容"
 date:   2022-01-04 00:00:00 +0800
-categories: Linux
-tags: [fdisk, img, mount]
+categories: 操作系统
+tags: [fdisk, img, mount, Linux]
 ---
 
 > img 磁盘镜像文件

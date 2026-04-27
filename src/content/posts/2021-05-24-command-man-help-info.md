@@ -2,8 +2,8 @@
 layout: single
 title:  "命令man help info"
 date:   2021-05-24 00:00:00 +0800
-categories: Command
-tags: [Linux, Shell, man, help, info]
+categories: [操作系统, AI 开发工具]
+tags: [Linux, Shell, man, help, info, Command]
 ---
 
 ## man

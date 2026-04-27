@@ -2,8 +2,8 @@
 layout: single
 title:  "Continue 源码分析 - RerankerRetrievalPipeline"
 date:   2024-08-25 08:00:00 +0800
-categories: Continue AICodingAssistant
-tags: [Continue, FTS, SQLite, BM25, LanceDB, GitHubCopilot]
+categories: [AI 开发工具, 编程开发]
+tags: [Continue, FTS, SQLite, BM25, LanceDB, GitHubCopilot, Continue AICodingAssistant]
 ---
 
 ![](/images/2024/Continue/sql-diagram.png)

@@ -2,7 +2,7 @@
 layout: single
 title:  "Harness Engineering｜软件工程师的角色革命，从写代码到设计环境"
 date:   2026-03-30 20:00:00 +0800
-categories: Agent HarnessEngineering
+categories: [AI 与大模型, 编程开发]
 tags: [Agent, HarnessEngineering]
 ---
 

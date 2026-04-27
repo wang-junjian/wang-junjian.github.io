@@ -2,8 +2,8 @@
 layout: single
 title:  "命令sed"
 date:   2020-12-22 00:00:00 +0800
-categories: Command
-tags: [Linux, sed, exec]
+categories: 操作系统
+tags: [Linux, sed, exec, Command]
 ---
 
 ## 字符串

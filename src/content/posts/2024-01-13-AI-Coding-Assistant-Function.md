@@ -2,7 +2,7 @@
 layout: single
 title:  "人工智能编码助手（AI Coding Assistant）功能"
 date:   2024-01-13 08:00:00 +0800
-categories: AICodingAssistant GitHubCopilot
+categories: [编程开发, AI 与大模型]
 tags: [AICodingAssistant, GitHubCopilot, CodeLLM]
 ---
 

@@ -2,7 +2,7 @@
 layout: single
 title:  "Sky-T1-32B-Preview: 在450美元内训练你自己的O1预览模型"
 date:   2025-04-21 07:00:00 +0800
-categories: Sky-T1 Post-Training
+categories: [AI 与大模型, 编程开发]
 tags: [Sky-T1, Sky-T1-32B-Preview, Post-Training, Reasoning]
 ---
 

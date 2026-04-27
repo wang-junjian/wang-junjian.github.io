@@ -2,8 +2,8 @@
 layout: single
 title:  "Anthropic Claude"
 date:   2024-04-18 08:00:00 +0800
-categories: Claude LLM
-tags: [Claude3, LangChain, LLM, Anthropic]
+categories: [编程开发, AI 与大模型]
+tags: [Claude3, LangChain, LLM, Anthropic, Claude LLM]
 ---
 
 ## Claude 3 模型

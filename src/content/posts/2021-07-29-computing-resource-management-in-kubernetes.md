@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的计算资源管理"
 date:   2021-07-29 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, exec, LimitRange, ResourceQuota]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, exec, LimitRange, ResourceQuota, Kubernetes]
 ---
 
 ## 查看节点资源总量

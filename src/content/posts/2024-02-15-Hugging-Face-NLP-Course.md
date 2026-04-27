@@ -2,7 +2,7 @@
 layout: single
 title:  "Hugging Face NLP Course"
 date:   2024-02-15 08:00:00 +0800
-categories: NLP Transformers
+categories: [编程开发, DevOps]
 tags: [HuggingFace, NLP, Transformers]
 ---
 

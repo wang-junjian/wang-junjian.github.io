@@ -2,8 +2,8 @@
 layout: single
 title:  "Json Formatter"
 date:   2022-02-23 00:00:00 +0800
-categories: Command
-tags: [Linux, JSON, jq, Python, vim]
+categories: [操作系统, 编程开发]
+tags: [Linux, JSON, jq, Python, vim, Command]
 ---
 
 test.json

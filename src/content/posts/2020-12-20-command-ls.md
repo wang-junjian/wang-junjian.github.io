@@ -2,8 +2,8 @@
 layout: single
 title:  "命令ls"
 date:   2020-12-20 00:00:00 +0800
-categories: Command
-tags: [Linux, ls]
+categories: 操作系统
+tags: [Linux, ls, Command]
 ---
 
 ## 可读的方式显示文件大小

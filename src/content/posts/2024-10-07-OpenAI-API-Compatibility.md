@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenAI API Compatibility"
 date:   2024-10-07 10:00:00 +0800
-categories: OpenAI-API LLM
-tags: [OpenAI API, Ollama, LiteLLM, XInference, MindIE, LLM, curl]
+categories: [AI 与大模型, 操作系统]
+tags: [OpenAI API, Ollama, LiteLLM, XInference, MindIE, LLM, curl, OpenAI-API LLM]
 ---
 
 ## 设置 API Key

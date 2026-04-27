@@ -2,7 +2,7 @@
 layout: single
 title:  "具身端侧芯片 NVIDlA Jetson Thor 和 NVIDIA Isaac ROS 介绍"
 date:   2025-06-14 08:00:00 +0800
-categories: 具身智能 JetsonThor
+categories: [硬件加速, AI 与大模型]
 tags: [具身智能, JetsonThor, IsaacROS, NVIDIA]
 ---
 

@@ -2,7 +2,7 @@
 layout: single
 title:  "Claude: Developing a computer use model"
 date:   2025-02-01 10:00:00 +0800
-categories: Claude arXiv
+categories: [AI 与大模型, 编程开发]
 tags: [Claude, arXiv, Agent, LLM, Anthropics]
 ---
 

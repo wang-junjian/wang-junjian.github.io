@@ -2,7 +2,7 @@
 layout: single
 title:  "Claude Code"
 date:   2025-09-21 08:00:00 +0800
-categories: ClaudeCode Agent
+categories: [编程开发, AI 与大模型]
 tags: [ClaudeCode, Agent, Claude, CLI]
 ---
 

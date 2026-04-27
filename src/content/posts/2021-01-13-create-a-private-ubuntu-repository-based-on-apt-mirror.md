@@ -2,7 +2,7 @@
 layout: single
 title:  "基于Apt-Mirror创建私有Ubuntu存储库"
 date:   2021-01-13 00:00:00 +0800
-categories: Linux
+categories: [操作系统, DevOps]
 tags: [Linux, apt, apt-mirror, apache2, curl, ln]
 ---
 

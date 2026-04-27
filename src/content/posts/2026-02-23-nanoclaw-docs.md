@@ -2,8 +2,8 @@
 layout: single
 title:  "NanoClaw 完整文档（含使用、架构、安全与开发）"
 date:   2026-02-23 22:00:00 +0800
-categories: NanoClaw AI原生
-tags: [NanoClaw, AI Native, Documentation, OpenClaw]
+categories: [编程开发, AI 与大模型]
+tags: [NanoClaw, AI Native, Documentation, OpenClaw, NanoClaw AI原生]
 ---
 
 NanoClaw 是您的**专属 AI 助手**，可安全**运行在容器中**。**轻量设计**，**易于理解**，还能根据您的**需求自由定制**。

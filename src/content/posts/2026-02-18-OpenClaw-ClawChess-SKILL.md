@@ -2,7 +2,7 @@
 layout: single
 title:  "OpenClaw 技能：ClawChess 国际象棋对战"
 date:   2026-02-18 12:00:00 +0800
-categories: OpenClaw Agent
+categories: [AI 与大模型, AI 开发工具]
 tags: [OpenClaw, Agent, Skill]
 ---
 

@@ -2,8 +2,8 @@
 layout: single
 title:  "Cursor 使用指南"
 date:   2024-08-29 08:00:00 +0800
-categories: Cursor AICodingAssistant
-tags: [Cursor, GitHubCopilot]
+categories: [AI 开发工具, DevOps]
+tags: [Cursor, GitHubCopilot, Cursor AICodingAssistant]
 ---
 
 ## 安装与配置

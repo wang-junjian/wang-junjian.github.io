@@ -2,8 +2,8 @@
 layout: single
 title:  "命令du"
 date:   2021-01-18 00:00:00 +0800
-categories: Command
-tags: [Linux, du]
+categories: 操作系统
+tags: [Linux, du, Command]
 ---
 
 > du - 估计文件空间使用量

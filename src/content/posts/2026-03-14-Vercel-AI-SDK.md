@@ -2,7 +2,7 @@
 layout: single
 title:  "Vercel AI SDK 架构设计分析"
 date:   2026-03-14 18:00:00 +0800
-categories: VercelAI Agent
+categories: [AI 与大模型, 编程开发]
 tags: [VercelAI, Agent, 架构设计]
 ---
 

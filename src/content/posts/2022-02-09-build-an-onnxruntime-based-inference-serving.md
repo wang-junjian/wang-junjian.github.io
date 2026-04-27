@@ -2,8 +2,8 @@
 layout: single
 title:  "构建基于 ONNXRuntime 的推理服务"
 date:   2022-02-09 00:00:00 +0800
-categories: AI
-tags: [ONNX, ONNXRuntime, GPU, CUDA, Docker, Dockerfile, pip]
+categories: [容器与云原生, 操作系统]
+tags: [ONNX, ONNXRuntime, GPU, CUDA, Docker, Dockerfile, pip, AI]
 ---
 
 ## 构建 ONNXRuntime-GPU 镜像

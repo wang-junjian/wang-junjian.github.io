@@ -2,7 +2,7 @@
 layout: single
 title:  "【生成式AI时代下的机器学习(2025)】第十二讲：概述语音语言模型发展历程"
 date:   2025-06-07 10:00:00 +0800
-categories: SpeechLLM 2025生成式AI时代下的机器学习
+categories: [AI 与大模型, 数据科学]
 tags: [SpeechLLM, 2025生成式AI时代下的机器学习, 生成式AI, 机器学习, 李宏毅]
 ---
 

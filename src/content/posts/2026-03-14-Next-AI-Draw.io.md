@@ -2,7 +2,7 @@
 layout: single
 title:  "Next AI Draw.io 架构设计分析"
 date:   2026-03-14 22:00:00 +0800
-categories: Draw.io Agent
+categories: [AI 与大模型, 开源生态]
 tags: [NextAIDraw.io, Draw.io, Agent, 架构设计]
 ---
 

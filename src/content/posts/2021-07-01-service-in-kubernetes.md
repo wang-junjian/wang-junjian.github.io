@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的Service"
 date:   2021-07-01 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, Service, expose, exec, run, bash, curl, env, JSONPath]
+categories: [操作系统, 容器与云原生]
+tags: [kubectl, Service, expose, exec, run, bash, curl, env]
 ---
 
 ## Service

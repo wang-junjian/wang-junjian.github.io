@@ -2,8 +2,8 @@
 layout: single
 title:  "LangChain 快速入门"
 date:   2023-05-03 08:00:00 +0800
-categories: LangChain
-tags: [LLM, Quickstart, SerpApi]
+categories: [AI 与大模型, 编程开发]
+tags: [LLM, Quickstart, SerpApi, LangChain]
 ---
 
 ## [LangChain](https://github.com/hwchase17/langchain)

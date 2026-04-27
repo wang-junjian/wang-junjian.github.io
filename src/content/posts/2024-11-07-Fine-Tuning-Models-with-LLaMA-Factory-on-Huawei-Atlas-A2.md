@@ -2,7 +2,7 @@
 layout: single
 title:  "华为 Atlas A2 上使用 LLaMA-Factory 模型微调"
 date:   2024-11-07 10:00:00 +0800
-categories: Atlas800 LLaMA-Factory
+categories: [AI 与大模型, 编程开发]
 tags: [Atlas800, NPU, LLaMA-Factory, Fine-Tuning, LLM]
 ---
 

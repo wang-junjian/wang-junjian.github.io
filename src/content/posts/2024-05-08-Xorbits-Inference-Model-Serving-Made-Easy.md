@@ -2,7 +2,7 @@
 layout: single
 title:  "Xorbits Inference: 模型服务变得更容易"
 date:   2024-05-08 08:00:00 +0800
-categories: Xinference LLM
+categories: [AI 与大模型, 操作系统]
 tags: [Xinference, LLM, MacBookProM2Max]
 ---
 

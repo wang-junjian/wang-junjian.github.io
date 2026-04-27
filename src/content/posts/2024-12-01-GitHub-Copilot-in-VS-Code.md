@@ -2,8 +2,8 @@
 layout: single
 title:  "GitHub Copilot in VS Code"
 date:   2024-12-01 10:00:00 +0800
-categories: GitHubCopilot AICodingAssistant
-tags: [GitHubCopilot, VSCode]
+categories: [编程开发, 操作系统]
+tags: [GitHubCopilot, VSCode, GitHubCopilot AICodingAssistant]
 ---
 
 ## GitHub Copilot

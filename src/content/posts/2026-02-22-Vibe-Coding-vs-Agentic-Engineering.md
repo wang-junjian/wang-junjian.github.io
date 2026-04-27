@@ -2,8 +2,8 @@
 layout: single
 title:  "氛围编程 vs 智能体工程"
 date:   2026-02-22 10:00:00 +0800
-categories: 氛围编程 智能体工程
-tags: [Vibe Coding, Agentic Engineering, Andrej Karpathy]
+categories: [AI 与大模型, 编程开发]
+tags: [Vibe Coding, Agentic Engineering, Andrej Karpathy, 氛围编程 智能体工程]
 ---
 
 <!-- more -->

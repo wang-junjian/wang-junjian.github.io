@@ -2,7 +2,7 @@
 layout: single
 title:  "Agent2Agent 协议 (A2A)"
 date:   2025-04-16 08:00:00 +0800
-categories: A2A Agent
+categories: [AI 与大模型, 编程开发]
 tags: [A2A, Agent]
 ---
 

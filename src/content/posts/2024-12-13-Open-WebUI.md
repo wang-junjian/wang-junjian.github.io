@@ -2,7 +2,7 @@
 layout: single
 title:  "Open WebUI"
 date:   2024-12-13 10:00:00 +0800
-categories: OpenWebUI ChatGPT
+categories: [AI 与大模型, 容器与云原生]
 tags: [OpenWebUI, ChatGPT, Ollama, OpenAI API]
 ---
 

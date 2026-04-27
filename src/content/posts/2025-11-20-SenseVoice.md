@@ -2,7 +2,7 @@
 layout: single
 title:  "SenseVoice"
 date:   2025-11-20 08:00:00 +0800
-categories: SenseVoice ASR
+categories: [编程开发, 框架与库]
 tags: [SenseVoice, ASR]
 ---
 

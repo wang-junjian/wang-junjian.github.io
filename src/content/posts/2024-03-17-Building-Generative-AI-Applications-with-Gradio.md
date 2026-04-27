@@ -2,7 +2,7 @@
 layout: single
 title:  "Building Generative AI Applications with Gradio"
 date:   2024-03-17 08:00:00 +0800
-categories: DeepLearningAI Gradio
+categories: 技术随笔
 tags: [DeepLearningAI, Gradio]
 ---
 

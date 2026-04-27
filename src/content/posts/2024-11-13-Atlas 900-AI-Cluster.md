@@ -2,8 +2,8 @@
 layout: single
 title:  "Atlas 900 AI 集群"
 date:   2024-11-13 10:00:00 +0800
-categories: Atlas900
-tags: [Atlas900]
+categories: [硬件加速, 编程开发]
+tags: Atlas900
 ---
 
 ## 济南人工智能计算中心

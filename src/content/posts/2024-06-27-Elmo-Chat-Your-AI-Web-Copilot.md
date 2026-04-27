@@ -2,8 +2,8 @@
 layout: single
 title:  "Elmo Chat - Your AI Web Copilot"
 date:   2024-06-27 08:00:00 +0800
-categories: ElmoChat AICopilot
-tags: [ElmoChat, LeptonAI]
+categories: AI 与大模型
+tags: [ElmoChat, LeptonAI, ElmoChat AICopilot]
 ---
 
 ## [Elmo Chat](https://www.elmo.chat/)

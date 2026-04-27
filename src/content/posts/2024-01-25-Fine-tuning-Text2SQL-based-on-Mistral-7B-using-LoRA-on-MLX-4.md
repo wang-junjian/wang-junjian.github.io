@@ -2,7 +2,7 @@
 layout: single
 title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（四）：使用 QLoRA 基于 Mistral-7B 微调"
 date:   2024-01-25 08:00:00 +0800
-categories: MLX Text2SQL
+categories: [AI 与大模型, 编程开发]
 tags: [MLX, QLoRA, Mistral-7B, Text2SQL, WikiSQL, MacBookProM2Max]
 ---
 

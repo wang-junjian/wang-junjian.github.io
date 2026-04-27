@@ -2,8 +2,8 @@
 layout: single
 title:  "远程执行Shell命令"
 date:   2021-11-01 00:00:00 +0800
-categories: Python
-tags: [fabric, ssh]
+categories: [操作系统, 编程开发]
+tags: [fabric, ssh, Python]
 ---
 
 ## 安装 Fabric

@@ -2,7 +2,7 @@
 layout: single
 title:  "Claude Code 项目概览及架构设计"
 date:   2026-03-31 21:00:00 +0800
-categories: ClaudeCode Agent
+categories: [操作系统, AI 与大模型]
 tags: [ClaudeCode, Agent]
 ---
 

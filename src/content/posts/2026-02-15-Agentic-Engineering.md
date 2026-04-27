@@ -2,8 +2,8 @@
 layout: single
 title:  "直接和它对话——智能体工程的实用指南"
 date:   2026-02-15 18:00:00 +0800
-categories: OpenClaw AgenticEngineering
-tags: [Agent, Software Development, Vibe Coding, Agentic Engineering, Peter Steinberger, OpenClaw]
+categories: [AI 与大模型, 编程开发]
+tags: [Agent, Software Development, Vibe Coding, Agentic Engineering, Peter Steinberger, OpenClaw, OpenClaw AgenticEngineering]
 ---
 
 **Peter Steinberger** (`OpenClaw` 的创造者) 分享了核心主张 **“拒绝套路，直接对话”**。他认为当前的 AI 智能体（尤其是 GPT-5-Codex）已足够强大，无需过度依赖 RAG、复杂的子智能体或繁琐的规格文档等“炒作”手段。

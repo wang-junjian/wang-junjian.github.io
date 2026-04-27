@@ -2,8 +2,8 @@
 layout: single
 title:  "Kubernetes中的DaemonSet"
 date:   2021-06-28 00:00:00 +0800
-categories: Kubernetes
-tags: [kubectl, DaemonSet, apply, label, taint, toleration]
+categories: [容器与云原生, 操作系统]
+tags: [kubectl, DaemonSet, apply, label, taint, toleration, Kubernetes]
 ---
 
 ## DaemonSet

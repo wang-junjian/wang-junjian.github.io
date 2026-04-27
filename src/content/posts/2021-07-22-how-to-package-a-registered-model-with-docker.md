@@ -2,8 +2,8 @@
 layout: single
 title:  "如何使用 Docker 打包已注册的模型"
 date:   2021-07-22 00:00:00 +0800
-categories: AI Kubernetes Docker
-tags: [command]
+categories: [容器与云原生, 操作系统]
+tags: [command, AI Kubernetes Docker]
 ---
 
 ## 模型打包成镜像

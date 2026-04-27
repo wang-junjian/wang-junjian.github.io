@@ -2,8 +2,8 @@
 layout: single
 title:  "OpenVINO 目标检测"
 date:   2022-04-16 08:00:00 +0800
-categories: AI OpenVINO
-tags: [目标检测, ssd]
+categories: [操作系统, 编程开发]
+tags: [目标检测, ssd, AI OpenVINO]
 ---
 
 ## 目标检测

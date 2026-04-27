@@ -2,8 +2,8 @@
 layout: single
 title:  "在 MacBook Pro M2 Max 上安装 TensorFlow"
 date:   2023-02-08 08:00:00 +0800
-categories: TensorFlow
-tags: [MacBookProM2Max]
+categories: [操作系统, 硬件加速]
+tags: [MacBookProM2Max, TensorFlow]
 ---
 
 ## 安装 TensorFlow

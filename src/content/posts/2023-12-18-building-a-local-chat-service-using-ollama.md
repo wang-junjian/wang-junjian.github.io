@@ -2,7 +2,7 @@
 layout: single
 title:  "使用 Ollama 构建本地聊天服务"
 date:   2023-12-18 08:00:00 +0800
-categories: Ollama
+categories: [操作系统, DevOps]
 tags: [Ollama, OllamaHub, OllamaWebUI, GPT]
 ---
 

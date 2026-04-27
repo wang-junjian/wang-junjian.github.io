@@ -2,7 +2,7 @@
 layout: single
 title:  "MLX: An array framework for Apple silicon"
 date:   2024-03-14 08:00:00 +0800
-categories: MLX
+categories: [AI 与大模型, 编程开发]
 tags: [MLX, LLM, Mistral, Qwen, WikiSQL, LoRA, QLoRA]
 ---
 

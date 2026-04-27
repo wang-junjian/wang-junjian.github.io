@@ -2,7 +2,7 @@
 layout: single
 title:  "Transformers Pipeline"
 date:   2023-11-09 08:00:00 +0800
-categories: Inference
+categories: [AI 与大模型, 编程开发]
 tags: [Inference, Transformers, Pipeline, LLM.int8]
 ---
 

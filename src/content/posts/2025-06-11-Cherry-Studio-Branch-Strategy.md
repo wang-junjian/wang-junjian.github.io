@@ -2,7 +2,7 @@
 layout: single
 title:  "Cherry Studio 分支策略指南"
 date:   2025-06-11 08:00:00 +0800
-categories: CherryStudio 分支策略
+categories: [DevOps, 编程开发]
 tags: [CherryStudio, 分支策略, 代码管理, 开发流程]
 ---
 

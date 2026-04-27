@@ -2,8 +2,8 @@
 layout: single
 title:  "Linux系统DNS设置"
 date:   2020-10-30 00:00:00 +0800
-categories: Linux
-tags: [Ubuntu, DNS]
+categories: 操作系统
+tags: [Ubuntu, DNS, Linux]
 ---
 
 > 之前在文件```/etc/resolv.conf```中设置了，过段时间总是自动恢复默认值。（注释中写的很详细，是不可编辑的由系统自动生成的文件）
