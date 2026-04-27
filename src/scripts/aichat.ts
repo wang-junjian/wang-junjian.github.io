@@ -101,16 +101,51 @@ function renderMessage(msg: { role: string; content: string }) {
   `;
 }
 
+function renderEmptyGuide() {
+  const needConfig = embeddingsLoaded && !apiConfig.apiKey;
+
+  return `
+    <div style="padding: 20px 16px; color: var(--text-secondary, #666666);">
+      <div style="text-align: center; margin-bottom: 16px;">
+        <span style="font-size: 36px; display: block; margin-bottom: 8px;">👋</span>
+        <p style="margin: 0; font-size: 13px; font-weight: 500; color: var(--text-primary, #1a1a1a);">你好！我是智能问答助手</p>
+      </div>
+
+      <div style="background: #f8fafc; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border, #e0ddd8);">
+        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: var(--text-primary, #1a1a1a);">🛠 模型配置</p>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; font-size: 11px; line-height: 1.5;">
+          <span style="font-weight: bold;">Ollama URL</span><span>${apiConfig.ollamaBaseUrl || DEFAULT_API_CONFIG.ollamaBaseUrl}</span>
+          <span style="font-weight: bold;">嵌入模型</span><span>${apiConfig.ollamaEmbeddingModel || DEFAULT_API_CONFIG.ollamaEmbeddingModel}</span>
+          <span style="font-weight: bold;">LLM Base URL</span><span>${apiConfig.baseUrl || DEFAULT_API_CONFIG.baseUrl}</span>
+          <span style="font-weight: bold;">Chat Model</span><span>${apiConfig.chatModel || DEFAULT_API_CONFIG.chatModel}</span>
+        </div>
+        ${needConfig ? `<p style="margin: 6px 0 0 0; font-size: 11px; color: #92400e;">⚠️ 请先点击右上角 ⚙️ 配置 API Key</p>` : ''}
+      </div>
+
+      <div style="background: #f8fafc; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border, #e0ddd8);">
+        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: var(--text-primary, #1a1a1a);">📚 博客向量化</p>
+        <p style="margin: 0; font-size: 11px;">运行 <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 3px;">npm run embed</code> 生成向量索引（<code style="background: #e2e8f0; padding: 1px 4px; border-radius: 3px;">public/embeddings.json</code>），即可基于博客内容进行 RAG 问答。</p>
+      </div>
+
+      <div style="background: #f8fafc; border-radius: 10px; padding: 12px; border: 1px solid var(--border, #e0ddd8);">
+        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: var(--text-primary, #1a1a1a);">⌨️ 快捷操作</p>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; font-size: 11px; line-height: 1.5;">
+          <span style="color: var(--text-primary, #1a1a1a); font-weight: 500;">Command + I</span>
+          <span>打开 / 关闭对话窗口</span>
+          <span style="color: var(--text-primary, #1a1a1a); font-weight: 500;">Control + Command + I</span>
+          <span>切换嵌入 / 悬浮模式</span>
+          <span style="color: var(--text-primary, #1a1a1a); font-weight: 500;">Command + Delete</span>
+          <span>清除历史消息</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderMessages() {
   if (!messagesEl) return;
   if (messages.length === 0) {
-    messagesEl.innerHTML = `
-      <div style="text-align: center; padding: 30px 16px; color: var(--text-secondary, #666666);">
-        <span style="font-size: 40px; display: block; margin-bottom: 12px;">👋</span>
-        <p style="margin: 0 0 6px 0; font-size: 13px;">你好！我是智能问答助手</p>
-        <p style="margin: 0; font-size: 11px;">配置完成后开始提问</p>
-      </div>
-    `;
+    messagesEl.innerHTML = renderEmptyGuide();
     if (quickQuestionsEl) quickQuestionsEl.style.display = 'flex';
     return;
   }
@@ -310,6 +345,7 @@ async function sendMessage(text: string) {
           info('chat', '回答完成', { totalDurationMs: Math.round(performance.now() - msgStart) });
           setGenerating(false);
           checkReadyState();
+          inputEl.focus();
         },
         onError: (err) => {
           // 保留流式消息 DOM 中的已有内容，不调 renderMessages
@@ -326,6 +362,7 @@ async function sendMessage(text: string) {
           saveMessages();
           setGenerating(false);
           checkReadyState();
+          inputEl.focus();
         },
       },
       (l, m, d) => debug(l, m, d),
@@ -342,6 +379,7 @@ async function sendMessage(text: string) {
     renderMessages();
     setGenerating(false);
     checkReadyState();
+    inputEl.focus();
   }
 }
 
@@ -349,6 +387,12 @@ function autoResize() {
   if (!inputEl) return;
   inputEl.style.height = 'auto';
   inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+}
+
+const EMBED_MIN_WIDTH = 900;
+
+function canEmbed() {
+  return window.innerWidth >= EMBED_MIN_WIDTH;
 }
 
 function applyMode() {
@@ -369,13 +413,31 @@ function toggleMode() {
   applyMode();
 }
 
+function checkResponsiveMode() {
+  if (!canEmbed() && mode === 'embedded') {
+    document.documentElement.classList.remove('ai-chat-embedded');
+    mode = 'float';
+  } else if (canEmbed() && mode === 'float') {
+    const saved = localStorage.getItem(STORAGE_KEY_MODE);
+    if (saved === 'embedded') {
+      applyMode();
+    }
+  }
+  if (modeToggleBtn) {
+    modeToggleBtn.style.display = canEmbed() ? '' : 'none';
+  }
+}
+
 function initMode() {
-  if (document.documentElement.classList.contains('ai-chat-embedded')) {
+  if (document.documentElement.classList.contains('ai-chat-embedded') && canEmbed()) {
     mode = 'embedded';
     if (!chatWindow.classList.contains('open')) {
       chatWindow.classList.add('open');
       isWindowOpen = true;
     }
+  }
+  if (modeToggleBtn) {
+    modeToggleBtn.style.display = canEmbed() ? '' : 'none';
   }
 }
 
@@ -419,6 +481,7 @@ function bindEvents() {
     messages = [];
     saveMessages();
     renderMessages();
+    inputEl.focus();
   });
 
   saveConfigBtn.addEventListener('click', () => {
@@ -464,11 +527,31 @@ function bindEvents() {
   });
 
   document.addEventListener('keydown', (e) => {
+    // Command + Delete: 清除历史消息
+    if (e.metaKey && e.key === 'Backspace' && !e.ctrlKey) {
+      e.preventDefault();
+      messages = [];
+      saveMessages();
+      renderMessages();
+      inputEl.focus();
+      return;
+    }
+
+    // Control + Command + I: 切换嵌入/悬浮模式
     if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      toggleMode();
+      return;
+    }
+
+    // Command + I: 悬浮模式切换窗口
+    if (e.metaKey && !e.ctrlKey && e.key.toLowerCase() === 'i') {
       e.preventDefault();
       toggleWindow();
     }
   });
+
+  window.addEventListener('resize', checkResponsiveMode);
 }
 
 function init() {
