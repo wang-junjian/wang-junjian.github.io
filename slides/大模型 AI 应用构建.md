@@ -324,6 +324,8 @@ curl http://172.16.33.157:8100/v1/completions \
 }
 ```
 
+</div>
+
 ---
 
 ## OpenAI API 操作：embeddings
@@ -361,6 +363,8 @@ curl http://172.16.33.157:8100/v1/embeddings \
   }
 }
 ```
+
+</div>
 
 ---
 # 👉 FastGPT
@@ -471,6 +475,7 @@ curl --location --request POST 'http://172.16.33.157:8200/api/v1/chat/completion
 }
 ```
 
+</div>
 <!--_footer: https://doc.fastgpt.in/docs/development/openapi/-->
 
 ---
@@ -532,6 +537,8 @@ curl --location --request POST 'http://172.16.33.157:8200/api/v1/chat/completion
   ]
 }
 ```
+
+</div>
 
 ---
 # 👉 Dify
