@@ -1,21 +1,20 @@
-import { cosineSimilarity, loadEmbeddings } from '../utils/ai';
+import { loadEmbeddings, searchSimilar } from '../utils/ai';
+import type { Message } from '../utils/ai';
 import { info, debug, error, setMinLevel, downloadLogs } from '../utils/logger';
+import { createEmbedding, streamAnswer, DEFAULT_API_CONFIG } from './aichat-api';
+import type { ApiConfig, CurrentDoc } from './aichat-api';
+import { marked } from 'marked';
 
 const STORAGE_KEY_CONFIG = 'ai_chat_config';
 const STORAGE_KEY_MESSAGES = 'ai_chat_messages';
 const STORAGE_KEY_WINDOW_OPEN = 'ai_chat_window_open';
 const STORAGE_KEY_LOG_LEVEL = 'ai_chat_log_level';
 
-let apiConfig = {
-  ollamaBaseUrl: 'http://localhost:11434/v1',
-  ollamaEmbeddingModel: 'bge-m3:latest',
-  baseUrl: 'https://api.longcat.chat/openai/',
-  apiKey: '',
-  chatModel: 'LongCat-Flash-Lite',
-};
-let messages: Array<{ role: string; content: string }> = [];
+let apiConfig: ApiConfig = { ...DEFAULT_API_CONFIG };
+let messages: Message[] = [];
 let embeddingsLoaded = false;
 let isWindowOpen = false;
+let isGenerating = false;
 
 const toggleBtn = document.getElementById('aiChatToggle') as HTMLButtonElement;
 const chatWindow = document.getElementById('aiChatWindow') as HTMLDivElement;
@@ -41,6 +40,15 @@ function updateStatus(text: string, type = 'warning') {
   if (!statusEl) return;
   statusEl.textContent = text;
   statusEl.className = 'ai-chat-status ' + type;
+}
+
+function setGenerating(state: boolean) {
+  isGenerating = state;
+  if (sendBtn) {
+    sendBtn.disabled = state;
+    sendBtn.textContent = state ? '生成中...' : '发送';
+  }
+  if (inputEl) inputEl.disabled = state;
 }
 
 function saveConfig() {
@@ -78,6 +86,18 @@ function loadMessages() {
   renderMessages();
 }
 
+function renderMessage(msg: { role: string; content: string }) {
+  const avatar = msg.role === 'user' ? '👤' : '🤖';
+  const content = marked.parse(msg.content) as string;
+
+  return `
+    <div class="ai-chat-message ${msg.role}">
+      <div class="ai-chat-message-avatar">${avatar}</div>
+      <div class="ai-chat-message-content">${content}</div>
+    </div>
+  `;
+}
+
 function renderMessages() {
   if (!messagesEl) return;
   if (messages.length === 0) {
@@ -97,25 +117,11 @@ function renderMessages() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function renderMessage(msg: { role: string; content: string }) {
-  const avatar = msg.role === 'user' ? '👤' : '🤖';
-  let content: string;
-
-  if (typeof (window as any).marked !== 'undefined') {
-    content = (window as any).marked.parse(msg.content);
-  } else {
-    content = msg.content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br>');
-  }
-
-  return `
-    <div class="ai-chat-message ${msg.role}">
-      <div class="ai-chat-message-avatar">${avatar}</div>
-      <div class="ai-chat-message-content">${content}</div>
-    </div>
-  `;
+function updateLoadingText(text: string) {
+  const loading = document.getElementById('aiChatLoading');
+  if (!loading) return;
+  const statusSpan = loading.querySelector('.ai-chat-loading-status');
+  if (statusSpan) statusSpan.textContent = text;
 }
 
 function addLoadingMessage(text = '思考中...') {
@@ -126,7 +132,7 @@ function addLoadingMessage(text = '思考中...') {
   div.innerHTML = `
     <div class="ai-chat-message-avatar">🤖</div>
     <div class="ai-chat-message-content">
-      <span style="color: var(--text-secondary, #666666);">${text}</span>
+      <span class="ai-chat-loading-status" style="color: var(--text-secondary, #666666);">${text}</span>
       <div class="ai-chat-loading">
         <span></span><span></span><span></span>
       </div>
@@ -143,8 +149,10 @@ function removeLoadingMessage() {
 
 function checkReadyState() {
   if (embeddingsLoaded && apiConfig.apiKey) {
-    if (inputEl) inputEl.disabled = false;
-    if (sendBtn) sendBtn.disabled = false;
+    if (!isGenerating) {
+      if (inputEl) inputEl.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+    }
     if (configPanel) configPanel.classList.remove('open');
     updateStatus('✅ 就绪 - AI 问答', 'success');
   } else if (embeddingsLoaded) {
@@ -153,12 +161,10 @@ function checkReadyState() {
   }
 }
 
-let embeddingsData: any = null;
-
 async function initEmbeddings() {
   try {
     updateStatus('📚 加载向量索引...', 'info');
-    embeddingsData = await loadEmbeddings();
+    await loadEmbeddings();
     embeddingsLoaded = true;
     checkReadyState();
   } catch (err: any) {
@@ -167,170 +173,89 @@ async function initEmbeddings() {
   }
 }
 
-async function searchSimilar(queryEmbedding: number[], topK = 10, minSimilarity = 0.6) {
-  if (!embeddingsData) {
-    throw new Error('向量索引未加载');
-  }
-  const startTime = performance.now();
-  const results = embeddingsData.chunks.map((chunk: any) => ({
-    chunk,
-    similarity: cosineSimilarity(queryEmbedding, chunk.embedding) * (chunk.type === 'summary' ? 1.05 : 1)
-  }));
-  results.sort((a: any, b: any) => b.similarity - a.similarity);
-
-  const topRaw = results.slice(0, 20).map((r: any) => ({
-    slug: r.chunk.slug,
-    title: r.chunk.title,
-    type: r.chunk.type,
-    similarity: +r.similarity.toFixed(4)
-  }));
-  debug('search', '原始相似度 Top 20', { totalChunks: results.length, topRaw });
-
-  const seen = new Set();
-  const deduped: any[] = [];
-  const filtered: any[] = [];
-  for (const r of results) {
-    if (!seen.has(r.chunk.slug)) {
-      seen.add(r.chunk.slug);
-      if (r.similarity >= minSimilarity) {
-        deduped.push(r);
-      } else {
-        filtered.push({ slug: r.chunk.slug, title: r.chunk.title, similarity: +r.similarity.toFixed(4) });
-      }
-      if (deduped.length >= topK) break;
-    }
-  }
-
-  info('search', '搜索结果', {
-    topK,
-    minSimilarity,
-    totalChunks: results.length,
-    uniqueSlugs: seen.size,
-    returned: deduped.length,
-    filtered: filtered.length,
-    results: deduped.map((r: any) => ({
-      slug: r.chunk.slug,
-      title: r.chunk.title,
-      type: r.chunk.type,
-      similarity: +r.similarity.toFixed(4)
-    })),
-    filteredOut: filtered.slice(0, 10),
-    durationMs: Math.round(performance.now() - startTime)
-  });
-
-  return deduped;
+function getCurrentDoc(): CurrentDoc | null {
+  if (!location.pathname.startsWith('/posts/')) return null;
+  const proseEl = document.querySelector('.prose');
+  const titleEl = document.querySelector('article h1');
+  if (!proseEl) return null;
+  return {
+    title: titleEl ? titleEl.textContent!.trim() : document.title,
+    content: proseEl.textContent!.trim().slice(0, 8000),
+  };
 }
 
-async function createEmbedding(text: string) {
-  const baseUrl = (apiConfig.ollamaBaseUrl || 'http://localhost:11434/v1').replace(/\/$/, '');
-  const response = await fetch(`${baseUrl}/embeddings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: apiConfig.ollamaEmbeddingModel,
-      input: text,
-    }),
-  });
-  if (!response.ok) throw new Error(`Ollama embedding failed: ${await response.text()}`);
-  const data = await response.json();
-  return data.data[0].embedding;
-}
+/**
+ * 创建流式消息占位元素
+ *
+ * 流式阶段实时 markdown 渲染，用 requestAnimationFrame 节流保证流畅
+ */
+function createStreamingMessage() {
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'ai-chat-message assistant';
 
-async function generateAnswer(query: string, contextChunks: any[], currentDoc: any, history: any[]) {
-  const context = contextChunks
-    .map((r: any, i: number) => `[${i + 1}] ${r.chunk.title}\n${r.chunk.content}`)
-    .join('\n\n');
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = 'ai-chat-message-avatar';
+  avatarDiv.textContent = '🤖';
 
-  debug('llm', '构建上下文', {
-    query,
-    contextLength: context.length,
-    chunksCount: contextChunks.length,
-    historyLength: history ? history.length : 0,
-    currentDoc: currentDoc ? { title: currentDoc.title, contentLength: currentDoc.content.length } : null
-  });
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'ai-chat-message-content';
 
-  const slugMap = new Map();
-  for (const r of contextChunks) {
-    const slug = r.chunk.slug;
-    const title = r.chunk.title;
-    const similarity = r.similarity;
-    if (!slugMap.has(slug) || similarity > slugMap.get(slug).similarity) {
-      slugMap.set(slug, { title, similarity });
+  msgDiv.appendChild(avatarDiv);
+  msgDiv.appendChild(contentDiv);
+  messagesEl.appendChild(msgDiv);
+
+  let rawText = '';
+  let dirty = false;
+  let renderTimer: number | null = null;
+
+  const render = () => {
+    try {
+      contentDiv.innerHTML = marked.parse(rawText) as string;
+    } catch {
+      // marked 对不完整 markdown 可能报错，降级为纯文本
+      contentDiv.textContent = rawText;
     }
-  }
-  const postTitles = Array.from(slugMap.entries()).map(([slug, info]: [string, any]) => [slug, info.title]);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  };
 
-  let currentDocSection = '';
-  if (currentDoc) {
-    currentDocSection = `\n\n用户当前正在阅读的文章：\n标题：${currentDoc.title}\n正文：${currentDoc.content}`;
-  }
-
-  const systemPrompt = `你是一个专业的技术助手，专门回答关于这个博客内容的问题。请遵循以下规则：
-1. 只使用提供的上下文信息来回答问题，不要编造信息
-2. 如果上下文中没有相关信息，请诚实地告诉用户
-3. 回答要简洁、准确、有帮助
-4. 适当使用中文进行回答
-5. 如果用户正在阅读某篇文章，优先结合该文章内容回答
-6. 不要在回答中添加文章链接，链接会在最后自动添加
-7. 这是多轮对话，请结合历史对话理解用户的后续问题。如果当前问题比较模糊（如"如何配置""它的原理是什么"），请参考之前的对话内容进行理解`;
-
-  const userPrompt = `用户问题：${query}\n\n相关上下文：\n${context}${currentDocSection}\n\n请根据以上上下文回答用户的问题。`;
-
-  // 本地开发时通过 Vite 代理绕过 CORS
-  const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const endpoint = isLocalhost
-    ? '/api/chat'
-    : `${(apiConfig.baseUrl || 'https://api.longcat.chat/openai/').replace(/\/$/, '')}/chat/completions`;
-
-  const llmMessages: Array<{ role: string; content: string }> = [{ role: 'system', content: systemPrompt }];
-  if (history && history.length > 0) {
-    const recentHistory = history.slice(-10);
-    for (const msg of recentHistory) {
-      llmMessages.push({ role: msg.role, content: msg.content });
+  const scheduleRender = () => {
+    if (!renderTimer) {
+      renderTimer = requestAnimationFrame(() => {
+        renderTimer = null;
+        if (dirty) {
+          dirty = false;
+          render();
+        }
+      });
+    } else {
+      dirty = true;
     }
-  }
-  llmMessages.push({ role: 'user', content: userPrompt });
+  };
 
-  debug('llm', '发送 LLM 消息', { messageCount: llmMessages.length, messages: llmMessages, endpoint });
+  const update = (text: string) => {
+    rawText = text;
+    dirty = true;
+    scheduleRender();
+  };
 
-  const llmStart = performance.now();
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiConfig.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: apiConfig.chatModel,
-      messages: llmMessages,
-      temperature: 0.7,
-      max_tokens: 1000,
-    }),
-  });
+  const finalize = () => {
+    if (renderTimer) {
+      cancelAnimationFrame(renderTimer);
+      renderTimer = null;
+    }
+    dirty = false;
+    render();
+  };
 
-  if (!response.ok) throw new Error(`LLM failed: ${await response.text()}`);
-  const data = await response.json();
-  let answer: string = data.choices[0].message.content;
+  const getRawText = () => rawText;
 
-  info('llm', 'LLM 响应完成', {
-    model: apiConfig.chatModel,
-    answerLength: answer.length,
-    answer,
-    durationMs: Math.round(performance.now() - llmStart)
-  });
-
-  if (postTitles.length > 0 && !answer.includes('参考文章：')) {
-    const referencesSection = '\n\n参考文章：\n' + postTitles
-      .map(([slug, title]: [string, string]) => `- [${title}](/posts/${slug.toLowerCase()}.html)`)
-      .join('\n');
-    answer += referencesSection;
-  }
-  return answer;
+  return { update, finalize, getRawText };
 }
 
 async function sendMessage(text: string) {
-  if (!text || !apiConfig.apiKey) return;
+  if (!text || !apiConfig.apiKey || isGenerating) return;
 
+  setGenerating(true);
   messages.push({ role: 'user', content: text });
   saveMessages();
   renderMessages();
@@ -341,39 +266,68 @@ async function sendMessage(text: string) {
   info('chat', '开始处理用户提问', { query: text, model: apiConfig.chatModel });
 
   try {
+    // 阶段1：向量化
     addLoadingMessage('正在调用向量化...');
     const embedStart = performance.now();
-    const queryEmbedding = await createEmbedding(text);
+    const queryEmbedding = await createEmbedding(text, apiConfig);
     debug('chat', '向量化完成', { durationMs: Math.round(performance.now() - embedStart) });
 
+    // 阶段2：搜索
+    updateLoadingText('正在本地搜索相关文章...');
+    const similarChunks = await searchSimilar(queryEmbedding, {
+      topK: 10,
+      minSimilarity: 0.6,
+      deduplicateBySlug: true,
+      summaryBoost: 1.05,
+      onDebug: (l, m, d) => debug(l, m, d),
+      onInfo: (l, m, d) => info(l, m, d),
+    });
+
+    // 阶段3：流式生成 — 立即创建消息框，让第一个 token 零延迟显示
     removeLoadingMessage();
-    addLoadingMessage('正在本地搜索相关文章...');
-    const similarChunks = await searchSimilar(queryEmbedding, 10, 0.6);
+    const stream = createStreamingMessage();
 
-    removeLoadingMessage();
-    addLoadingMessage('正在生成回答...');
-
-    let currentDoc = null;
-    if (location.pathname.startsWith('/posts/')) {
-      const proseEl = document.querySelector('.prose');
-      const titleEl = document.querySelector('article h1');
-      if (proseEl) {
-        currentDoc = {
-          title: titleEl ? titleEl.textContent!.trim() : document.title,
-          content: proseEl.textContent!.trim().slice(0, 8000),
-        };
-      }
-    }
-
+    const currentDoc = getCurrentDoc();
     const history = messages.slice(0, -1);
-    const answer = await generateAnswer(text, similarChunks, currentDoc, history);
+    let streamingText = '';
 
-    removeLoadingMessage();
-    messages.push({ role: 'assistant', content: answer });
-    saveMessages();
-    renderMessages();
-
-    info('chat', '回答完成', { totalDurationMs: Math.round(performance.now() - msgStart) });
+    await streamAnswer(
+      text, similarChunks, currentDoc, apiConfig, history,
+      {
+        onToken: (token) => {
+          streamingText += token;
+          stream.update(streamingText);
+        },
+        onDone: (fullText) => {
+          // 用完整文本（含参考文章）做最终渲染
+          stream.update(fullText);
+          stream.finalize();
+          messages.push({ role: 'assistant', content: fullText });
+          saveMessages();
+          info('chat', '回答完成', { totalDurationMs: Math.round(performance.now() - msgStart) });
+          setGenerating(false);
+          checkReadyState();
+        },
+        onError: (err) => {
+          // 保留流式消息 DOM 中的已有内容，不调 renderMessages
+          const partialText = streamingText || stream.getRawText();
+          if (partialText) {
+            stream.finalize();
+            messages.push({ role: 'assistant', content: partialText });
+          } else {
+            // 完全没有内容时，显示错误消息
+            stream.update(`抱歉，发生了错误：${err.message}`);
+            stream.finalize();
+          }
+          error('chat', '流式生成出错', { error: err.message, query: text });
+          saveMessages();
+          setGenerating(false);
+          checkReadyState();
+        },
+      },
+      (l, m, d) => debug(l, m, d),
+      (l, m, d) => info(l, m, d),
+    );
   } catch (err: any) {
     removeLoadingMessage();
     error('chat', '处理提问时出错', { error: err.message, query: text });
@@ -383,6 +337,8 @@ async function sendMessage(text: string) {
     });
     saveMessages();
     renderMessages();
+    setGenerating(false);
+    checkReadyState();
   }
 }
 
@@ -427,11 +383,11 @@ function bindEvents() {
 
   saveConfigBtn.addEventListener('click', () => {
     apiConfig = {
-      ollamaBaseUrl: ollamaBaseUrlInput.value.trim() || 'http://localhost:11434/v1',
-      ollamaEmbeddingModel: ollamaEmbeddingModelInput.value.trim() || 'bge-m3:latest',
-      baseUrl: apiBaseUrlInput.value.trim() || 'https://api.longcat.chat/openai/',
+      ollamaBaseUrl: ollamaBaseUrlInput.value.trim() || DEFAULT_API_CONFIG.ollamaBaseUrl,
+      ollamaEmbeddingModel: ollamaEmbeddingModelInput.value.trim() || DEFAULT_API_CONFIG.ollamaEmbeddingModel,
+      baseUrl: apiBaseUrlInput.value.trim() || DEFAULT_API_CONFIG.baseUrl,
       apiKey: apiKeyInput.value.trim(),
-      chatModel: chatModelInput.value.trim() || 'LongCat-Flash-Lite',
+      chatModel: chatModelInput.value.trim() || DEFAULT_API_CONFIG.chatModel,
     };
     saveConfig();
     checkReadyState();
@@ -462,7 +418,7 @@ function bindEvents() {
 
   document.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest('[data-question]');
-    if (btn && !inputEl.disabled) {
+    if (btn && !inputEl.disabled && !isGenerating) {
       sendMessage((btn as HTMLElement).dataset.question!);
     }
   });

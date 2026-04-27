@@ -14,10 +14,10 @@ const posts = defineCollection({
     tags: z.union([stringOrNumber, stringOrNumber.array()]).optional().nullable(),
     excerpt: z.string().optional(),
     toc: z.boolean().default(true),
-    toc_sticky: z.boolean().default(true),
-    toc_label: z.string().default('本文目录'),
-    show_date: z.boolean().default(true),
-    read_time: z.boolean().default(true),
+    tocSticky: z.boolean().default(true),
+    tocLabel: z.string().default('本文目录'),
+    showDate: z.boolean().default(true),
+    readTime: z.boolean().default(true),
   }),
 });
 

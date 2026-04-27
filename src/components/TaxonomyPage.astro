@@ -1,0 +1,80 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BackLink from './BackLink.astro';
+import { formatDate } from '../utils/posts';
+
+interface Props {
+  taxonomyType: 'category' | 'tag';
+  items: [string, CollectionEntry<'posts'>[]][];
+  totalPosts: number;
+  labelSingular: string;
+  labelPlural: string;
+}
+
+const { taxonomyType, items, totalPosts, labelSingular, labelPlural } = Astro.props;
+const anchorPrefix = taxonomyType === 'category' ? 'category' : 'tag';
+---
+
+<!-- Taxonomy Cloud -->
+<section class="py-12 px-8 bg-[var(--bg-primary)] border-b border-[var(--border)]">
+  <div class="max-w-grid mx-auto">
+    <div class="flex flex-wrap gap-3 animate-fade-in-up" style="animation-delay: 0.15s;">
+      {items.map(([name, namePosts]) => {
+        const count = namePosts.length;
+        const size = Math.min(2, 0.85 + (count / 30));
+        const opacity = Math.min(1, 0.6 + (count / 50));
+        return (
+          <a
+            href={`#${anchorPrefix}-${encodeURIComponent(name)}`}
+            class="px-4 py-2 bg-white border border-[var(--border)] text-[var(--text-primary)] no-underline rounded-none transition-all duration-200 tabular-nums hover:border-[var(--text-primary)] hover:-translate-y-0.5 hover:shadow-md"
+            style={`font-size: ${size}rem; opacity: ${opacity};`}
+          >
+            {name}
+            <span class="ml-2 text-[0.75em] text-[var(--text-secondary)]">({count})</span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<!-- Detailed List -->
+<section class="py-16 px-8">
+  <div class="max-w-grid mx-auto">
+    <div class="grid gap-16">
+      {items.map(([name, namePosts], index) => (
+        <section id={`${anchorPrefix}-${encodeURIComponent(name)}`} class="animate-fade-in-up border-b border-[var(--border)] pb-12" style={`animation-delay: ${0.2 + index * 0.03}s;`}>
+          <div class="flex items-baseline justify-between mb-8 gap-4 flex-wrap">
+            <h2 class="font-serif-display text-[2rem] font-semibold tracking-[-0.02em]">
+              {name}
+            </h2>
+            <span class="text-[var(--text-secondary)] text-sm tabular-nums">
+              {namePosts.length} 篇文章
+            </span>
+          </div>
+
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-8">
+            {namePosts.slice(0, 6).map((post) => (
+              <article>
+                <time class="block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)] mb-2">
+                  {formatDate(post.data.date)}
+                </time>
+                <h3 class="font-serif-display text-xl font-medium leading-[1.4] tracking-[-0.01em]">
+                  <a href={`/posts/${post.id}`} class="text-[var(--text-primary)] no-underline transition-colors duration-200 hover:text-[var(--accent)]">
+                    {post.data.title || post.id}
+                  </a>
+                </h3>
+              </article>
+            ))}
+          </div>
+
+          {namePosts.length > 6 && (
+            <p class="mt-6 text-[var(--text-secondary)] text-sm">
+              还有 {namePosts.length - 6} 篇文章...
+            </p>
+          )}
+        </section>
+      ))}
+    </div>
+  </div>
+</section>

@@ -49,8 +49,9 @@ export async function loadEmbeddings(): Promise<EmbeddingsData> {
   if (!response.ok) {
     throw new Error('Failed to load embeddings');
   }
-  embeddingsData = await response.json();
-  return embeddingsData;
+  const data: EmbeddingsData = await response.json();
+  embeddingsData = data;
+  return data;
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
@@ -75,19 +76,84 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
+export interface SearchOptions {
+  topK?: number;
+  minSimilarity?: number;
+  deduplicateBySlug?: boolean;
+  summaryBoost?: number;
+  onDebug?: (label: string, message: string, data?: any) => void;
+  onInfo?: (label: string, message: string, data?: any) => void;
+}
+
 export async function searchSimilar(
   queryEmbedding: number[],
-  topK: number = 10,
-  minSimilarity: number = 0.6
+  options: SearchOptions = {}
 ): Promise<SearchResult[]> {
+  const {
+    topK = 10,
+    minSimilarity = 0.6,
+    deduplicateBySlug = false,
+    summaryBoost = 1,
+    onDebug,
+    onInfo,
+  } = options;
+
   const data = await loadEmbeddings();
 
   const results: SearchResult[] = data.chunks.map((chunk) => ({
     chunk,
-    similarity: cosineSimilarity(queryEmbedding, chunk.embedding),
+    similarity: cosineSimilarity(queryEmbedding, chunk.embedding) * (chunk.type === 'summary' ? summaryBoost : 1),
   }));
 
   results.sort((a, b) => b.similarity - a.similarity);
+
+  if (onDebug) {
+    const topRaw = results.slice(0, 20).map((r) => ({
+      slug: r.chunk.slug,
+      title: r.chunk.title,
+      type: r.chunk.type,
+      similarity: +r.similarity.toFixed(4),
+    }));
+    onDebug('search', '原始相似度 Top 20', { totalChunks: results.length, topRaw });
+  }
+
+  if (deduplicateBySlug) {
+    const seen = new Set<string>();
+    const deduped: SearchResult[] = [];
+    const filtered: { slug: string; title: string; similarity: number }[] = [];
+
+    for (const r of results) {
+      if (!seen.has(r.chunk.slug)) {
+        seen.add(r.chunk.slug);
+        if (r.similarity >= minSimilarity) {
+          deduped.push(r);
+        } else {
+          filtered.push({ slug: r.chunk.slug, title: r.chunk.title, similarity: +r.similarity.toFixed(4) });
+        }
+        if (deduped.length >= topK) break;
+      }
+    }
+
+    if (onInfo) {
+      onInfo('search', '搜索结果', {
+        topK,
+        minSimilarity,
+        totalChunks: results.length,
+        uniqueSlugs: seen.size,
+        returned: deduped.length,
+        filtered: filtered.length,
+        results: deduped.map((r) => ({
+          slug: r.chunk.slug,
+          title: r.chunk.title,
+          type: r.chunk.type,
+          similarity: +r.similarity.toFixed(4),
+        })),
+        filteredOut: filtered.slice(0, 10),
+      });
+    }
+
+    return deduped;
+  }
 
   return results
     .filter((r) => r.similarity >= minSimilarity)
@@ -108,7 +174,6 @@ export async function generateAnswer(
     .map((r, i) => `[${i + 1}] ${r.chunk.title}\n${r.chunk.content}`)
     .join('\n\n');
 
-  const uniquePosts = Array.from(new Set(contextChunks.map(r => r.chunk.slug)));
   const postTitles = Array.from(new Map(contextChunks.map(r => [r.chunk.slug, r.chunk.title])).entries());
 
   const systemPrompt = `你是一个专业的技术助手，专门回答关于这个博客内容的问题。请遵循以下规则：
