@@ -1,0 +1,142 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { readFileSync, readdirSync } from 'fs';
+import { join } from 'path';
+import { marked } from 'marked';
+
+export async function getStaticPaths() {
+  const slidesDir = join(process.cwd(), 'slides');
+  const files = readdirSync(slidesDir).filter(
+    (f) => f.endsWith('.md') && !f.startsWith('.')
+  );
+  return files.map((file) => ({
+    params: { slug: file.replace(/\.md$/, '') },
+    props: { file },
+  }));
+}
+
+const { file } = Astro.props;
+const raw = readFileSync(join(process.cwd(), 'slides', file), 'utf-8');
+
+// Extract title from first h1 heading
+const titleMatch = raw.match(/^#\s+(.+)$/m);
+const title = titleMatch ? titleMatch[1].trim() : file.replace(/\.md$/, '');
+
+// Remove frontmatter
+const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+
+// Convert relative image paths to absolute paths
+const processedBody = body.replace(
+  /!\[(.*?)\]\(images\//g,
+  '![$1](/slides/images/'
+);
+
+// Split by slide separators (---) and render each slide individually
+const slideBodies = processedBody
+  .split(/\n---\n/)
+  .map((s) => s.trim())
+  .filter((s) => s.length > 0);
+
+const slideHtmls = await Promise.all(
+  slideBodies.map((body) => marked.parse(body))
+);
+---
+
+<BaseLayout title={`${title} - 幻灯片`}>
+  <article>
+    <header class="bg-white border-b border-[var(--border)] pt-20 pb-12 px-8">
+      <div class="max-w-[950px] mx-auto">
+        <a
+          href="/slides"
+          class="inline-flex items-center gap-2 text-[var(--text-secondary)] no-underline text-sm mb-8 transition-colors duration-200 hover:text-[var(--accent)]"
+        >
+          <span>←</span>
+          返回幻灯片列表
+        </a>
+        <h1 class="font-['Newsreader',_Georgia,_serif] text-[3.5rem] font-semibold leading-[1.1] tracking-[-0.03em] mb-6 text-[var(--text-primary)] animate-fade-in-up">
+          {title}
+        </h1>
+      </div>
+    </header>
+
+    <div class="max-w-[950px] mx-auto py-16 px-8">
+      <div class="slides-container animate-fade-in-up" style="animation-delay: 0.1s;">
+        {slideHtmls.map((slideHtml, index) => (
+          <>
+            <div class="slide-page prose" set:html={slideHtml} />
+            {index < slideHtmls.length - 1 && (
+              <div class="slide-divider">◆</div>
+            )}
+          </>
+        ))}
+      </div>
+    </div>
+
+    <footer class="max-w-[950px] mx-auto pt-12 px-8 pb-20 border-t border-[var(--border)]">
+      <div class="flex justify-between items-center gap-8 flex-wrap">
+        <a
+          href="/slides"
+          class="inline-flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--text-primary)] no-underline text-sm font-medium tracking-[0.05em] uppercase transition-all duration-200 bg-white hover:border-[var(--text-primary)] hover:-translate-y-0.5"
+        >
+          <span>←</span>
+          返回幻灯片列表
+        </a>
+        <div class="text-sm text-[var(--text-secondary)]">
+          感谢阅读
+        </div>
+      </div>
+    </footer>
+  </article>
+
+  <style>
+    .slides-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .slide-page {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .slide-page > :first-child {
+      margin-top: 0 !important;
+    }
+    .slide-page > :last-child {
+      margin-bottom: 0 !important;
+    }
+    .slide-page hr {
+      display: none;
+    }
+    .slide-page img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .slide-page table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .slide-page th,
+    .slide-page td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .slide-page th {
+      background: var(--bg-primary);
+      font-weight: 600;
+    }
+    .slide-divider {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      margin: 0.5rem 0;
+    }
+  </style>
+
+</BaseLayout>

@@ -64,6 +64,32 @@ npm run embed
 
 > 构建前必须先生成 `embeddings.json`，否则问答功能会提示"未找到向量索引"。
 
+### CORS 代理（本地开发）
+
+本地开发（`npm run dev`）时，浏览器会阻止向第三方 LLM API 发送跨域请求（CORS）。项目已在 Vite 中配置代理自动处理：
+
+```
+浏览器 → http://localhost:4321/api/chat → Vite → https://api.longcat.chat/openai/chat/completions
+```
+
+代理规则位于 `astro.config.mjs`：
+
+```javascript
+vite: {
+  server: {
+    proxy: {
+      '/api/chat': {
+        target: 'https://api.longcat.chat/openai',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/chat/, '/chat/completions'),
+      },
+    },
+  },
+}
+```
+
+> 代理配置仅对 `npm run dev` 生效。生产环境（GitHub Pages）依赖 API 服务端开启 CORS，或需额外搭建服务端代理。
+
 ### 前端配置
 
 点击聊天窗口右上角的 ⚙️ 按钮进行配置：
