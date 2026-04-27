@@ -134,6 +134,74 @@ AIChat 支持两种布局模式，状态自动保存到 `localStorage`。
 5. 将检索到的片段 + 当前文章内容（如有）作为上下文，调用 LLM API 生成回答
 6. 回答末尾自动附加引用到的文章链接
 
+### 命令行搜索工具
+
+项目提供了基于向量检索的 CLI 搜索工具，可以在终端快速搜索博客内容。
+
+```bash
+# 基础搜索
+npm run search -- "搜索关键词"
+
+# 问答模式（使用 LLM 生成回答）
+npm run search -- "你的问题" --qa
+
+# 更多选项
+npm run search -- "关键词" \
+  --topk 5 \
+  --min-similarity 0.5 \
+  --output pretty
+```
+
+#### CLI 参数
+
+| 参数 | 简写 | 默认值 | 说明 |
+|------|------|--------|------|
+| `--mode` | `-m` | `search` | 模式：`search`/`qa` |
+| `--qa` | - | - | 启用问答模式（快捷方式） |
+| `--topk` | `-k` | `10` | 返回结果数量 |
+| `--min-similarity` | - | `0.4` | 最小相似度阈值 |
+| `--output` | `-o` | `text` | 输出格式：`text`/`json`/`pretty` |
+| `--embeddings-path` | - | `public/embeddings.json` | embeddings 文件路径 |
+| `--embedding-base-url` | - | - | Embedding API (Ollama) 地址 |
+| `--chat-base-url` | - | - | Chat API 地址 |
+| `--chat-api-key` | - | - | Chat API Key |
+| `--chat-model` | - | - | 聊天模型名称 |
+| `--embedding-model` | - | `bge-m3:latest` | 嵌入模型名称 |
+| `--no-color` | - | - | 禁用彩色输出 |
+| `--help` | `-h` | - | 显示帮助信息 |
+
+#### 环境变量配置
+
+在 `.env` 文件中配置：
+
+```bash
+# Ollama (向量嵌入)
+OLLAMA_BASE_URL=http://localhost:11434/v1
+OLLAMA_EMBEDDING_MODEL=bge-m3:latest
+
+# Chat API (问答生成)
+OPENAI_BASE_URL=https://api.longcat.chat/openai/
+OPENAI_API_KEY=your-api-key
+OPENAI_CHAT_MODEL=LongCat-Flash-Lite
+```
+
+#### 输出格式示例
+
+**Text 格式（默认）**
+```bash
+npm run search -- "Cline"
+```
+
+**Pretty 格式（带进度条）**
+```bash
+npm run search -- "Cline" --output pretty
+```
+
+**JSON 格式**
+```bash
+npm run search -- "Cline" --output json
+```
+
 ## 部署
 
 通过 GitHub Actions 自动部署到 GitHub Pages：
@@ -148,7 +216,12 @@ AIChat 支持两种布局模式，状态自动保存到 `localStorage`。
 .
 ├── public/                 # 静态资源（embeddings.json 生成于此）
 ├── scripts/
-│   └── embed-posts.ts      # 向量索引生成脚本
+│   ├── embed-posts.ts      # 向量索引生成脚本
+│   ├── search-cli.ts       # CLI 搜索工具入口
+│   └── cli/
+│       ├── config.ts       # 配置管理
+│       ├── embeddings.ts   # 向量搜索逻辑
+│       └── output.ts       # 输出格式化
 ├── src/
 │   ├── components/
 │   │   └── AIChat.astro    # AI 问答组件
