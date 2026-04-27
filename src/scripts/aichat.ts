@@ -139,6 +139,7 @@ const closeBtn = document.getElementById('aiChatClose') as HTMLButtonElement;
 const configBtn = document.getElementById('aiChatConfig') as HTMLButtonElement;
 const clearBtn = document.getElementById('aiChatClear') as HTMLButtonElement;
 const modeToggleBtn = document.getElementById('aiChatModeToggle') as HTMLButtonElement;
+const fullscreenToggleBtn = document.getElementById('aiChatFullscreenToggle') as HTMLButtonElement;
 const configPanel = document.getElementById('aiChatConfigPanel') as HTMLDivElement;
 const statusEl = document.getElementById('aiChatStatus') as HTMLDivElement;
 const messagesEl = document.getElementById('aiChatMessages') as HTMLDivElement;
@@ -541,6 +542,19 @@ function toggleMode() {
   applyMode();
 }
 
+function toggleFullscreen() {
+  const isFullscreen = chatWindow.classList.contains('fullscreen');
+  if (isFullscreen) {
+    chatWindow.classList.remove('fullscreen');
+    fullscreenToggleBtn.textContent = '⛶';
+    fullscreenToggleBtn.title = '全屏';
+  } else {
+    chatWindow.classList.add('fullscreen');
+    fullscreenToggleBtn.textContent = '⛶';
+    fullscreenToggleBtn.title = '退出全屏';
+  }
+}
+
 function checkResponsiveMode() {
   if (!canEmbed() && mode === 'embedded') {
     document.documentElement.classList.remove('ai-chat-embedded');
@@ -599,6 +613,10 @@ function bindEvents() {
 
   if (modeToggleBtn) {
     modeToggleBtn.addEventListener('click', toggleMode);
+  }
+
+  if (fullscreenToggleBtn) {
+    fullscreenToggleBtn.addEventListener('click', toggleFullscreen);
   }
 
   configBtn.addEventListener('click', () => {
