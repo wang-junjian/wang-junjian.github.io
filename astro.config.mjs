@@ -29,5 +29,14 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     assetsInclude: ['**/*.xml', '**/*.txt'],
+    server: {
+      proxy: {
+        '/api/chat': {
+          target: 'https://api.longcat.chat/openai',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/chat/, '/chat/completions'),
+        },
+      },
+    },
   },
 });

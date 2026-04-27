@@ -275,7 +275,12 @@ async function generateAnswer(query: string, contextChunks: any[], currentDoc: a
 7. 这是多轮对话，请结合历史对话理解用户的后续问题。如果当前问题比较模糊（如"如何配置""它的原理是什么"），请参考之前的对话内容进行理解`;
 
   const userPrompt = `用户问题：${query}\n\n相关上下文：\n${context}${currentDocSection}\n\n请根据以上上下文回答用户的问题。`;
-  const baseUrl = (apiConfig.baseUrl || 'https://api.longcat.chat/openai/').replace(/\/$/, '');
+
+  // 本地开发时通过 Vite 代理绕过 CORS
+  const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const endpoint = isLocalhost
+    ? '/api/chat'
+    : `${(apiConfig.baseUrl || 'https://api.longcat.chat/openai/').replace(/\/$/, '')}/chat/completions`;
 
   const llmMessages: Array<{ role: string; content: string }> = [{ role: 'system', content: systemPrompt }];
   if (history && history.length > 0) {
@@ -286,10 +291,10 @@ async function generateAnswer(query: string, contextChunks: any[], currentDoc: a
   }
   llmMessages.push({ role: 'user', content: userPrompt });
 
-  debug('llm', '发送 LLM 消息', { messageCount: llmMessages.length, messages: llmMessages });
+  debug('llm', '发送 LLM 消息', { messageCount: llmMessages.length, messages: llmMessages, endpoint });
 
   const llmStart = performance.now();
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
