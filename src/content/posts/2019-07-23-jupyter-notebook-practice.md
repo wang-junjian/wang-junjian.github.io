@@ -2,8 +2,9 @@
 layout: single
 title:  "Jupyter Notebook实践"
 date:   2019-07-23 00:00:00 +0800
-categories: [编程开发, 容器与云原生]
-tags: [Jupyter, JupyterHub, IDE 实践 快捷键]
+categories: [技术教程, 开发工具]
+tags: [Jupyter, JupyterHub, JupyterLab, Colab, Python, 交互式编程]
+excerpt: "Jupyter Notebook完整实践指南，包含本地安装、云端环境、多用户部署、快捷键和高级技巧。"
 ---
 
 ## 本地安装

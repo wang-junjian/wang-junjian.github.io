@@ -2,8 +2,9 @@
 layout: single
 title:  "开启SSH服务"
 date:   2018-12-26 08:00:00 +0800
-categories: 操作系统
-tags: [ssh, service, Linux]
+categories: [技术教程, 网络技术]
+tags: [SSH, Ubuntu, Linux, 远程连接]
+excerpt: "Ubuntu系统SSH服务完整教程，包含安装配置、启动停止、状态查询和开机自启动设置。"
 ---
 
 ## Ubuntu
