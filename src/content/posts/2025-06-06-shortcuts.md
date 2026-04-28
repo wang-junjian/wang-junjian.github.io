@@ -1,7 +1,9 @@
 ---
 layout: single
-title: 快捷键
-permalink: /shortcuts/
+title:  "快捷键大全"
+date:   2025-06-06 08:00:00 +0800
+categories: [工具使用]
+tags: [快捷键, macOS, Terminal, Tmux, Screen, VSCode, Vim, GitHub Copilot]
 ---
 
 | 类别                | 列表 |
@@ -195,6 +197,7 @@ permalink: /shortcuts/
 ## GitHub Copilot
 
 | **VSCode**   | | | |
+| ----------   | ---------- | ----------- | ------------ |
 | 接收建议      | Tab        | 放弃建议      | Esc          |
 | 显示上一个建议 | Option + [ | 显示下一个建议 | Option + ]   |
 | 触发建议      | Option + \ | 选择建议      | Ctrl + Enter |
