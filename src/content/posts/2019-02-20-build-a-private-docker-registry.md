@@ -2,8 +2,9 @@
 layout: single
 title:  "搭建 Private Docker Registry"
 date:   2019-02-20 00:00:00 +0800
-categories: [容器与云原生, DevOps]
-tags: [docker-registry, docker-registry-frontend, docker-registry-web, Docker]
+categories: [技术教程, 容器技术]
+tags: [Docker, Docker Registry, 私有镜像仓库, 容器部署]
+excerpt: "搭建私有Docker Registry完整教程，包含Registry部署、UI界面配置和客户端镜像推拉操作。"
 ---
 
 ## Registry

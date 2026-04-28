@@ -2,8 +2,9 @@
 layout: single
 title:  "Linux设置时区"
 date:   2020-06-14 00:00:00 +0800
-categories: 操作系统
-tags: [Linux, timezone]
+categories: [技术教程, 系统管理]
+tags: [Linux, timezone, timedatectl, 系统设置]
+excerpt: "Linux系统时区查看和设置教程，使用timedatectl命令修改系统时区。"
 ---
 
 ## 查看系统的时区

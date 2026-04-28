@@ -2,8 +2,9 @@
 layout: single
 title:  "在 Linux 上安装输入法"
 date:   2019-05-19 08:00:00 +0800
-categories: 操作系统
-tags: [输入法, Linux]
+categories: [技术教程, 系统管理]
+tags: [Linux, 输入法, ibus, 五笔, CentOS, Ubuntu]
+excerpt: "在CentOS和Ubuntu系统上安装ibus五笔输入法的教程。"
 ---
 
 ## 安装五笔输入法

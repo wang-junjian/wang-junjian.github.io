@@ -2,8 +2,9 @@
 layout: single
 title:  "构建YOLOv4容器应用在自定义数据集上"
 date:   2020-06-06 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
-tags: [目标检测, Darknet, YOLO, AI 图像识别]
+categories: [技术教程, 人工智能]
+tags: [目标检测, Darknet, YOLOv4, Docker, 深度学习, 计算机视觉]
+excerpt: "使用Docker构建YOLOv4容器应用，在自定义数据集上训练和部署目标检测模型的完整教程。"
 ---
 
 ## 构建YOLOv4容器

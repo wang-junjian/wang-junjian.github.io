@@ -2,8 +2,9 @@
 layout: single
 title:  "基于容器的负载均衡"
 date:   2018-12-26 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
-tags: [HAProxy, 负载均衡, Docker]
+categories: [技术教程, 容器技术]
+tags: [HAProxy, 负载均衡, Docker, 容器化部署]
+excerpt: "使用HAProxy和Docker实现基于容器的负载均衡，包含配置文件编写、容器运行和监控查看完整教程。"
 ---
 
 ## HAProxy

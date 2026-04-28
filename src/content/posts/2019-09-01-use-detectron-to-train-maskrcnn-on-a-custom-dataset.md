@@ -2,8 +2,9 @@
 layout: single
 title:  "使用Detectron在自定义数据集上训练MaskRCNN"
 date:   2019-09-01 00:00:00 +0800
-categories: [容器与云原生, 硬件加速]
-tags: [目标检测, Detectron, MaskRCNN, Docker, AI 图像识别]
+categories: [技术教程, 人工智能]
+tags: [目标检测, Detectron, MaskRCNN, 实例分割, Docker, 深度学习]
+excerpt: "使用Detectron框架和Docker在自定义数据集上训练MaskRCNN实例分割模型的教程。"
 ---
 
 ## 拉取镜像 Detectron
