@@ -711,6 +711,14 @@ function init() {
   restoreWindowState();
   initEmbeddings();
   initMermaid();
+
+  (window as any).__aiChat = {
+    toggleWindow,
+    sendMessage: (text: string) => {
+      if (!isWindowOpen) toggleWindow();
+      sendMessage(text);
+    },
+  };
 }
 
 function handleTurboNavigation() {
