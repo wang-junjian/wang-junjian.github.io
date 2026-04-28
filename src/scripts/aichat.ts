@@ -713,8 +713,17 @@ function init() {
   initMermaid();
 }
 
+function handleTurboNavigation() {
+  // Widget is data-turbo-permanent, just check responsive mode
+  checkResponsiveMode();
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
 }
+
+// Handle Turbo navigation - just check responsive mode
+document.addEventListener('turbo:load', handleTurboNavigation);
+document.addEventListener('turbo:render', handleTurboNavigation);
