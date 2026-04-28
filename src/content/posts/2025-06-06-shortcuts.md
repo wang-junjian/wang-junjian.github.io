@@ -54,7 +54,14 @@ tags: [快捷键, macOS, Terminal, Tmux, Screen, VSCode, Vim, GitHub Copilot]
 
 ## Mac 键盘修饰键
 
-| Command（或 Cmd）⌘ | Shift ⇧ | Option（或 Alt）⌥ | Control（或 Ctrl）⌃ | Caps Lock ⇪ | Fn 🌐 |
+| 按键名称 | 符号 |
+| ------- | :---: |
+| Command（或 Cmd） | ⌘ |
+| Shift | ⇧ |
+| Option（或 Alt） | ⌥ |
+| Control（或 Ctrl） | ⌃ |
+| Caps Lock | ⇪ |
+| Fn | 🌐 |
 
 
 ## macOS
