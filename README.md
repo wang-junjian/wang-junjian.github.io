@@ -26,6 +26,42 @@ npm run build
 npm run preview
 ```
 
+## 文章功能
+
+### Markdown 源文件访问
+
+每篇文章均支持通过 `.md` 后缀直接访问原始 Markdown 源文件（含 frontmatter）：
+
+- 文章页面：`https://wangjunjian.com/posts/YYYY-MM-DD-slug`
+- Markdown 格式：`https://wangjunjian.com/posts/YYYY-MM-DD-slug.md`
+
+实现方式：`src/pages/posts/[slug].md.ts` endpoint，构建时静态生成所有 `.md` 文件。
+
+### 操作按钮
+
+文章页标题下方提供"操作"下拉按钮，支持：
+
+| 功能 | 说明 |
+|------|------|
+| **复制 Markdown** | 异步获取 `.md` 内容并写入剪贴板 |
+| **打开 Markdown** | 在新标签页打开当前文章的 Markdown 源文件 |
+| **智能问答** | 打开 AIChat 并自动发送分析当前文章的提示 |
+
+实现方式：`src/pages/posts/[slug].astro` 中添加下拉菜单组件及内联脚本；AIChat 通过 `window.__aiChat` 全局 API 暴露 `toggleWindow` 和 `sendMessage` 方法供外部调用。
+
+---
+
+## llms.txt
+
+为 LLM 提供站点内容概览，遵循 [llms.txt](https://llmstxt.org) 标准格式：
+
+- **URL**: `https://wangjunjian.com/llms.txt`
+- **内容**: 站点标题与描述、导航链接、全部分类与标签、全部文章的完整 URL 列表（含发布日期和摘要）
+- **链接格式**: 所有 URL 均使用 `https://wangjunjian.com` 作为完整前缀
+- **实现**: `src/pages/llms.txt.ts` endpoint，构建时静态生成
+
+---
+
 ## AI 问答功能
 
 博客集成了基于本地向量搜索 + LLM 的智能问答助手，实现 RAG（检索增强生成）流程。
