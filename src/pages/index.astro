@@ -14,43 +14,69 @@ const sortedPosts = posts.sort((a, b) => {
   return dateB - dateA;
 });
 
-// Prepare posts data for random picker
+// Prepare full posts data for random picker
 const postsData = sortedPosts.map(post => ({
   id: post.id,
-  title: post.data.title || post.id
+  title: post.data.title || post.id,
+  date: formatDate(post.data.date),
+  excerpt: post.data.excerpt || ''
 }));
+
+// Get initial random post for server-render
+const initialRandomIndex = Math.floor(Math.random() * sortedPosts.length);
+const initialRandomPost = postsData[initialRandomIndex];
 ---
 
 <BaseLayout title={`${SITE_TITLE} - ${SITE_DESCRIPTION}`}>
-  <!-- Header with Search -->
+  <!-- Header with Search and Random Post -->
   <section class="pt-20 pb-12 px-8 bg-white border-b border-[var(--border)]">
-    <div class="max-w-[800px] mx-auto text-center animate-fade-in-up">
-      <!-- Search Box with Random Button -->
-      <div class="relative max-w-[550px] mx-auto flex gap-4 items-center">
+    <div class="max-w-[700px] mx-auto text-center animate-fade-in-up">
+      <!-- Search Input -->
+      <div class="relative mb-8">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="搜索文章..."
+          class="w-full py-4.5 pl-14 pr-6 text-base border-2 border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans focus:border-[var(--text-primary)] focus:bg-white"
+        />
+        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-xl pointer-events-none">
+          🔍
+        </span>
+      </div>
+
+      <!-- Random Post Area -->
+      <div id="randomPostSection" class="flex items-start gap-4 justify-center" data-posts={JSON.stringify(postsData)}>
         <!-- Random Post Button -->
         <button
           id="randomPostBtn"
-          class="group relative flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[var(--bg-primary)] border-2 border-[var(--border)] hover:border-[var(--accent)] transition-all duration-400 ease hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none"
-          title="随机阅读一篇文章"
+          class="group relative flex-shrink-0 pt-0.5 transition-all duration-400 ease"
+          title="随机换一篇"
         >
-          <span class="text-2xl transition-all duration-500 group-hover:rotate-180 group-hover:scale-110">🎲</span>
-          <span class="absolute -bottom-9 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-400 text-xs text-[var(--text-secondary)] whitespace-nowrap font-sans tracking-wide">
-            随机一篇
-          </span>
+          <span class="text-4xl transition-all duration-500 group-hover:rotate-180 group-hover:scale-115 inline-block leading-none">🎲</span>
         </button>
 
-        <!-- Search Input -->
-        <div class="relative flex-1">
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="搜索文章..."
-            class="w-full py-4.5 pl-14 pr-6 text-base border-2 border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans focus:border-[var(--text-primary)] focus:bg-white"
-          />
-          <span class="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-xl pointer-events-none">
-            🔍
-          </span>
-        </div>
+        <!-- Random Post Card -->
+        <article id="randomPostCard" class="text-left flex-1 max-w-lg group">
+          <a id="randomPostLink" href={`/posts/${initialRandomPost.id}`} class="block">
+            <div class="flex items-baseline gap-3 mb-2">
+              <h3 id="randomPostTitle" class="font-serif-display text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors duration-300 leading-tight">
+                {initialRandomPost.title}
+              </h3>
+              <span class="text-xs text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300">→</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-[var(--text-secondary)] font-sans">
+              <time id="randomPostDate" class="tabular-nums">{initialRandomPost.date}</time>
+              {initialRandomPost.excerpt && (
+                <>
+                  <span class="opacity-30">|</span>
+                  <span id="randomPostExcerpt" class="truncate max-w-md">
+                    {initialRandomPost.excerpt}
+                  </span>
+                </>
+              )}
+            </div>
+          </a>
+        </article>
       </div>
     </div>
   </section>
@@ -88,6 +114,5 @@ const postsData = sortedPosts.map(post => ({
     </div>
   </section>
 
-  <script is:inline set:html={`const postsData = ${JSON.stringify(postsData)};`}></script>
   <script src="../scripts/search.ts"></script>
 </BaseLayout>
