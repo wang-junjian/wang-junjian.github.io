@@ -1,19 +1,20 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { normalizeCategories, normalizeTags, formatDate } from '../../utils/posts';
+import { normalizeCategories, normalizeTags, formatDate, getRelatedPosts } from '../../utils/posts';
 import BackLink from '../../components/BackLink.astro';
+import RelatedPosts from '../../components/RelatedPosts.astro';
 import ArticleFooter from '../../components/ArticleFooter.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
   return posts.map((post) => ({
     params: { slug: post.id },
-    props: { post },
+    props: { post, allPosts: posts },
   }));
 }
 
-const { post } = Astro.props;
+const { post, allPosts } = Astro.props;
 const { Content } = await render(post);
 
 const frontmatter = post.data;
@@ -21,6 +22,7 @@ const formattedDate = formatDate(frontmatter.date);
 
 const categories = normalizeCategories(frontmatter.categories);
 const tags = normalizeTags(frontmatter.tags);
+const relatedPosts = getRelatedPosts(post, allPosts);
 ---
 
 <BaseLayout title={frontmatter.title || post.id}>
@@ -100,6 +102,8 @@ const tags = normalizeTags(frontmatter.tags);
         <Content />
       </div>
     </div>
+
+    <RelatedPosts posts={relatedPosts} />
 
     <ArticleFooter />
   </article>

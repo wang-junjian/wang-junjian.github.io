@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { computeRelated } from './compute-related.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -346,6 +347,11 @@ async function main() {
 
   fs.writeFileSync(outputPath, JSON.stringify(output));
   console.log(`\nEmbeddings saved to: ${outputPath}`);
+
+  // Generate related posts from embeddings
+  const relatedPath = path.join(projectRoot, 'public', 'related-posts.json');
+  computeRelated(outputPath, relatedPath);
+
   console.log('Done!');
 }
 

@@ -49,6 +49,41 @@ npm run preview
 
 实现方式：`src/pages/posts/[slug].astro` 中添加下拉菜单组件及内联脚本；AIChat 通过 `window.__aiChat` 全局 API 暴露 `toggleWindow` 和 `sendMessage` 方法供外部调用。
 
+### 相关文章
+
+每篇文章底部自动展示最多 4 篇内容相关的文章，基于语义相似度算法实现。
+
+**推荐策略**：
+
+优先使用向量嵌入计算语义相似度；若无嵌入数据，回退到字符 bigram + Jaccard 相似度。
+
+```
+build 时读取 public/related-posts.json（存在）
+  → 直接查表获取 top 4 相关文章 slug
+  → 回退：字符 bigram + Jaccard 相似度（无依赖）
+```
+
+**生成相关文章数据**：
+
+```bash
+# 从已有 embeddings.json 计算（推荐，无需 Ollama）
+npm run related
+
+# 或随 embed 一并生成（需要 Ollama 运行中）
+npm run embed
+```
+
+`npm run embed` 会在生成 `embeddings.json` 后自动调用 `compute-related`，一步到位。
+
+**算法细节**：
+
+| 方案 | 原理 | 依赖 |
+|------|------|------|
+| **向量嵌入** | 从 `embeddings.json` 按 slug 聚合所有 chunk 向量（mean pooling），计算文章间余弦相似度，输出 `public/related-posts.json`（几 KB） | 需先运行 `npm run embed` |
+| **bigram 回退** | 提取文章正文的中文字符 bigram 集合，计算 Jaccard 相似度 | 无 |
+
+> 新文章若尚未生成嵌入向量，构建时会自动回退到 bigram 方案，不会报错。待下次 `npm run embed` 后即可使用语义推荐。
+
 ---
 
 ## llms.txt
@@ -250,9 +285,10 @@ npm run search -- "Cline" --output json
 
 ```
 .
-├── public/                 # 静态资源（embeddings.json 生成于此）
+├── public/                 # 静态资源（embeddings.json, related-posts.json 生成于此）
 ├── scripts/
 │   ├── embed-posts.ts      # 向量索引生成脚本
+│   ├── compute-related.ts  # 相关文章计算脚本
 │   ├── search-cli.ts       # CLI 搜索工具入口
 │   └── cli/
 │       ├── config.ts       # 配置管理
@@ -260,7 +296,8 @@ npm run search -- "Cline" --output json
 │       └── output.ts       # 输出格式化
 ├── src/
 │   ├── components/
-│   │   └── AIChat.astro    # AI 问答组件
+│   │   ├── AIChat.astro    # AI 问答组件
+│   │   └── RelatedPosts.astro # 相关文章组件
 │   ├── content/
 │   │   └── posts/          # 博客文章（Markdown）
 │   ├── layouts/
