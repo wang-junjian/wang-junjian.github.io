@@ -23,11 +23,9 @@ tags: [ClaudeCode, Plugin, Marketplace, Skill]
 - [Configuration Scopes](https://code.claude.com/docs/en/settings#configuration-scopes)
 
 
-## 插件
+## 插件市场
 
-### 插件市场
-
-#### 注册插件市场
+### 注册插件市场
 
 **命令行运行：**
 
@@ -41,7 +39,7 @@ claude plugin marketplace add obra/superpowers-marketplace
 /plugin marketplace add obra/superpowers-marketplace
 ```
 
-#### 查看已注册的插件市场
+### 查看已注册的插件市场
 
 ```bash
 claude plugin marketplace list
@@ -56,11 +54,126 @@ Configured marketplaces:
     Source: GitHub (obra/superpowers-marketplace)
 ```
 
-#### 更新插件市场
+### 更新插件市场
 
 ```bash
 claude plugin marketplace update
 ```
+
+### 创建插件市场
+
+#### 创建 GitHub 仓库
+
+如：`https://github.com/wang-junjian/lnsoft-plugins-official`
+
+#### 添加 `.claude-plugin/marketplace.json` 文件
+
+内容示例：
+
+```json
+{
+  "name": "lnsoft-plugins-official",
+  "description": "Directory of popular Claude Code extensions including development tools, productivity plugins, and MCP integrations",
+  "owner": {
+    "name": "Wang Junjian",
+    "email": "wang-junjian@qq.com"
+  },
+  "metadata": {
+    "description": "Skills, workflows, and productivity tools",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "document-skills",
+      "description": "Collection of document processing suite including Excel, Word, PowerPoint, and PDF capabilities",
+      "source": "./",
+      "skills": [
+        "./skills/xlsx",
+        "./skills/docx",
+        "./skills/pptx",
+        "./skills/pdf"
+      ]
+    },
+    {
+      "name": "superpowers",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/obra/superpowers.git"
+      },
+      "description": "Core skills library: TDD, debugging, collaboration patterns, and proven techniques",
+      "version": "5.0.7",
+      "strict": true
+    },
+    {
+      "name": "frontend-design",
+      "description": "Create distinctive, production-grade frontend interfaces with high design quality. Generates creative, polished code that avoids generic AI aesthetics.",
+      "author": {
+        "name": "Anthropic",
+        "email": "support@anthropic.com"
+      },
+      "source": "./plugins/frontend-design",
+      "category": "development",
+      "homepage": "https://github.com/anthropics/claude-plugins-public/tree/main/plugins/frontend-design"
+    },
+    {
+      "name": "github",
+      "description": "Official GitHub MCP server for repository management. Create issues, manage pull requests, review code, search repositories, and interact with GitHub's full API directly from Claude Code.",
+      "category": "productivity",
+      "source": "./external_plugins/github",
+      "homepage": "https://github.com/anthropics/claude-plugins-public/tree/main/external_plugins/github"
+    },
+    {
+      "name": "gitlab",
+      "description": "GitLab DevOps platform integration. Manage repositories, merge requests, CI/CD pipelines, issues, and wikis. Full access to GitLab's comprehensive DevOps lifecycle tools.",
+      "category": "productivity",
+      "source": "./external_plugins/gitlab",
+      "homepage": "https://github.com/anthropics/claude-plugins-public/tree/main/external_plugins/gitlab"
+    }
+  ]
+}
+```
+
+#### 增加相对路径的插件和技能
+
+**例如**：github 插件的 MCP Server 代码放在 `./external_plugins/github`。
+
+- `external_plugins/gitlab/.claude-plugin/plugin.json`
+
+> 遵循标准做法的插件，方便独立使用和发布，也更利于维护。
+
+```json
+{
+  "name": "gitlab",
+  "description": "GitLab DevOps platform integration. Manage repositories, merge requests, CI/CD pipelines, issues, and wikis. Full access to GitLab's comprehensive DevOps lifecycle tools.",
+  "author": {
+    "name": "GitLab"
+  }
+}
+```
+
+- `external_plugins/gitlab/.mcp.json`
+
+```json
+{
+  "gitlab": {
+    "type": "http",
+    "url": "https://gitlab.com/api/v4/mcp"
+  }
+}
+```
+
+#### 🧩 插件说明
+
+| 插件名称 | 类型 | 说明 |
+|---------|------|------|
+| `document-skills` | 技能集合 | 包含 Excel、Word、PowerPoint、PDF 处理能力 |
+| `superpowers` | 技能库 | 核心技能：TDD、调试、协作模式等（版本 5.0.7） |
+| `frontend-design` | 前端设计 | 生成高质量前端界面，避免通用 AI 风格 |
+| `github` | MCP 集成 | GitHub API 交互：Issue、PR、代码审查等 |
+| `gitlab` | MCP 集成 | GitLab DevOps 集成：仓库、MR、CI/CD、Wiki 等 |
+
+
+## 插件
 
 ### 安装插件
 
