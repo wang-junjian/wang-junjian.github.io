@@ -21,7 +21,7 @@ This is a personal blog/technical website built with Astro. The site contains te
 ### package.json
 ```json
 {
-  "name": "astro-temp",
+  "name": "wangjunjian-blog",
   "type": "module",
   "version": "0.0.1",
   "engines": {
