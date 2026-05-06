@@ -228,6 +228,22 @@ To https://github.com/wang-junjian/HelloGit.git
 ```
 
 
+## 放弃所有本地更改，恢复到上次提交状态
+
+
+### 放弃所有已修改的文件（恢复原状）
+
+```bash
+git restore .
+```
+
+### 删除所有新增的未跟踪文件和文件夹（彻底清理）
+
+```bash
+git clean -fd
+```
+
+
 ## GitHub
 
 ### 创建新仓库
