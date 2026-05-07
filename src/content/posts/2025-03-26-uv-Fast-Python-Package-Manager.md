@@ -8,10 +8,15 @@ tags: [uv, Python, Package]
 
 ## 安装
 
+### On macOS and Linux
+
 ```shell
-# On macOS and Linux.
 curl -LsSf https://astral.sh/uv/install.sh | sh
-# On Windows.
+```
+
+### On Windows
+
+```shell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
