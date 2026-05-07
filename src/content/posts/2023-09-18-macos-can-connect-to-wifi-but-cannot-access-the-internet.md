@@ -16,3 +16,5 @@ tags: [MacBookProM2Max, WiFi]
 最后，我在`抖音`上看到了一个解决方案，我尝试了一下，果然解决了问题。
 
 打开`访达`，按下`Command + Shift + G`，输入`/Library/Preferences/SystemConfiguration/`，除`com.apple.Boot.plist`文件外，删除其他所有文件，然后重启电脑。
+
+![](/images/2023/macos-connect-wifi-but-cannot-online.webp)
