@@ -186,12 +186,6 @@ brew install git git-lfs
 git lfs install
 ```
 
-#### 克隆 Reachy Mini
-
-```bash
-git clone https://github.com/pollen-robotics/reachy_mini
-```
-
 ### 2. 创建虚拟环境
 
 #### 创建环境
@@ -232,7 +226,7 @@ uv pip install "reachy-mini[mujoco]"
 #### 步骤 1：SSH 连接
 
 ```bash
-ssh pollen@reachy-mini 
+ssh pollen@reachy-mini
 ```
 > 默认用户名：pollen，密码：`root`
 
@@ -244,6 +238,20 @@ cat VERSION.txt
 ```bash
 ReachyMiniOS: v0.2.3
 Created on: 2026-01-15
+```
+
+**SSH 无需密码直接连接到机器人**
+
+复制您的公匙 id_rsa.pub 到机器人上，命名为 authorized_keys。
+
+```shell
+scp ~/.ssh/id_rsa.pub pollen@reachy-mini:/home/pollen/.ssh/authorized_keys
+```
+
+ssh 登录可以不用输入密码直接登录机器人了。
+
+```shell
+ssh pollen@reachy-mini
 ```
 
 #### 步骤 2：激活 Python 虚拟环境
@@ -305,19 +313,185 @@ with ReachyMini() as mini:
 python hello.py
 ```
 ```
-ERROR:reachy_mini.media.audio_control_utils:No Reachy Mini Audio USB device found!
-INFO:reachy_mini.media.webrtc_client_gstreamer:GstWebRTCClient initialized (bidirectional audio support)
 Connected to Reachy Mini! 
 Wiggling antennas...
-INFO:reachy_mini.media.webrtc_client_gstreamer:Captured webrtcbin: webrtcbin0
-INFO:reachy_mini.media.webrtc_client_gstreamer:Transceiver configured for SENDRECV
-INFO:reachy_mini.media.webrtc_client_gstreamer:Transceiver configured for SENDRECV
-INFO:reachy_mini.media.webrtc_client_gstreamer:Setting up audio send chain...
-INFO:reachy_mini.media.webrtc_client_gstreamer:Found audio sink pad: sink_1, pt=100
-INFO:reachy_mini.media.webrtc_client_gstreamer:Audio send chain ready (bidirectional audio enabled)
 Done!
 ```
 
 > 📌 在这里出现了个大坑，我使用的 `iTerm2` 终端无法正常工作，ssh 连接和运行守护进程 `reachy-mini-daemon`，都出现错误：No route to host，各种折腾，整了大半天。最终换成系统自带的 `Terminal` 之后就正常了。
 
 - [查看故障排除与常见问题解答指南](https://huggingface.co/docs/reachy_mini/troubleshooting)
+
+
+## Reachy Mini（无线版）开发工作流
+
+这里介绍了在无线版 Reachy Mini 机器人上进行代码开发与测试的高效工作流程。
+
+### 前置条件
+- 可通过SSH连接机器人（连接命令：`ssh pollen@reachy-mini.local`，密码：`root`）
+- 本地电脑已安装SSHFS（Ubuntu/Debian 系统执行：`sudo apt install sshfs`）
+- 获取机器人IP地址（可在Reachy Mini控制端、路由器后台查看，或SSH登录后执行`ifconfig`查询）
+
+### 跨平台简易方案
+在完整工作流之前，先介绍两种更简单的跨平台开发方式：
+
+#### VS Code 远程SSH
+安装 VS Code 的 [Remote - SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) 后，可直接在机器人上编辑文件。
+连接到 `pollen@reachy-mini.local`，随后即可打开任意文件夹。修改内容会直接保存到机器人设备中，支持Windows、macOS、Linux全平台。
+
+![](/images/2026/ReachyMini/development/remote-ssh.webp)
+
+#### Rsync 同步
+使用 `rsync` 可将本地源代码同步至机器人的 site-packages 目录，传输速度快，几乎适配所有系统：
+
+```bash
+rsync -avz /path/to/your_app/src/your_app/ \
+    pollen@reachy-mini.local:/venvs/apps_venv/lib/python3.12/site-packages/your_app/
+```
+
+每次代码修改后执行该命令即可推送更新；添加参数 `--delete` 可同步删除本地已移除的文件。
+
+对于这两种选择，请参阅 **方法 A 的步骤 3**，在机器人上运行您的代码。
+
+---
+
+### 方案A：机器人拉取代码仓库、本地编辑（推荐）👍
+这是**首选**开发流程：代码存放于机器人端，你可在本地电脑用常用IDE或AI编码工具进行编辑。
+
+#### 第一步：在机器人上克隆代码仓库
+```bash
+ssh pollen@reachy-mini.local
+cd /home/pollen
+git clone https://github.com/YOUR_USER/YOUR_APP.git
+```
+
+#### 第二步：将机器人文件挂载到本地电脑
+在本地电脑创建挂载目录并执行挂载：
+```bash
+mkdir -p ~/wireless_dev
+sshfs pollen@reachy-mini.local:/home/pollen/YOUR_APP ~/wireless_dev \
+    -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3
+```
+之后可在IDE中打开`~/wireless_dev`目录，像编辑本地文件一样直接修改机器人代码。
+
+**SSHFS**（SSH Filesystem） 是一个基于 FUSE（用户空间文件系统） 与 SSH/SFTP 协议的工具，作用是：把远程机器的目录，直接挂载到本地，像操作本地文件一样读写远程文件，全程加密、无需改服务端配置。
+
+- 安装 SSHFS
+```bash
+brew install macfuse sshfs
+```
+
+#### 第三步：在机器人安装并运行代码
+通过 SSH 连接到机器人并安装/运行你的应用程序：
+
+```bash
+ssh pollen@reachy-mini.local
+cd /home/pollen/YOUR_APP
+
+# 以可编辑模式安装（修改会立即生效）：
+/venvs/apps_venv/bin/pip install -e .
+
+# 然后运行你的应用程序：
+/venvs/apps_venv/bin/python -m YOUR_MODULE.main
+
+# 或直接运行，无需安装：
+/venvs/apps_venv/bin/python your_script.py
+```
+
+#### 第四步：开发完成后取消挂载
+```bash
+fusermount -u ~/wireless_dev
+```
+
+### 方案B：覆盖已安装应用源码
+若已通过Reachy Mini控制端安装应用，可通过**本地文件挂载覆盖机器人端源码**，直接修改程序。
+
+#### 第一步：查找机器人上已安装的应用路径
+应用默认安装路径：
+```
+/venvs/apps_venv/lib/python3.12/site-packages/YOUR_APP_NAME/
+```
+
+#### 第二步：将本地源码挂载覆盖安装目录
+**在机器人终端**执行以下命令，把电脑本地源码挂载覆盖机器人的站点包：
+```bash
+ssh pollen@reachy-mini.local
+
+# Mount your local src content onto site-packages
+sshfs YOUR_USER@YOUR_PC_IP:/path/to/your_app/src/your_app \
+    /venvs/apps_venv/lib/python3.12/site-packages/YOUR_APP_NAME \
+    -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3
+```
+
+重要说明：仅挂载`src/your_app/`**目录内的文件**，不要挂载整个代码仓库。站点包目录只存放程序包本身，不兼容仓库层级结构。
+
+此后在电脑修改文件，重启应用即可生效。
+
+### 方案C：挂载本地源码并直接运行
+与方案B类似，但无需执行pip安装、也不依赖Reachy Mini控制端。直接挂载本地源码到机器人并运行程序。
+
+#### 第一步：将本地源码挂载到机器人
+**在机器人终端**执行：
+```bash
+ssh pollen@reachy-mini.local
+mkdir -p /home/pollen/my_app_mount
+
+sshfs YOUR_USER@YOUR_PC_IP:/path/to/your_app /home/pollen/my_app_mount \
+    -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3
+```
+
+#### 第二步：直接运行应用
+```bash
+cd /home/pollen/my_app_mount
+/venvs/apps_venv/bin/python main.py
+```
+该方式适合快速测试，但应用不会注册到Reachy Mini控制端中。
+
+### 安装指定分支/版本
+全局安装代码仓库的指定版本：
+```bash
+ssh pollen@reachy-mini.local
+/venvs/apps_venv/bin/python -m pip install --force-reinstall \
+    "git+https://github.com/pollen-robotics/MY_AWESOME_APP.git@MY_AWESOME_BRANCH"
+```
+将`分支名`替换为实际分支名称（如`develop`）、版本标签或提交哈希值。
+
+### 常见问题与注意事项
+#### SSHFS挂载后pip安装缓慢
+若**从本地电脑反向挂载文件到机器人**（与方案A相反），pip安装会极度卡顿，原因是pip需通过网络读取大量小文件。
+
+**解决办法**：
+- 采用方案A（代码存机器人、挂载到本地编辑）
+- 跳过pip安装，直接用`python -m 模块名`手动运行
+
+#### 站点包挂载路径错误
+代码仓库标准结构：
+```
+your_app/
+  src/
+    your_app/
+      __init__.py
+      main.py
+```
+而机器人站点包结构为：
+```
+your_app/
+  __init__.py
+  main.py
+```
+若直接挂载整个仓库到站点包，Python将无法识别程序。**仅需挂载内层程序包目录**。
+
+### 常用命令速查表
+| 操作 | 命令 |
+|------|------|
+| SSH连接机器人 | `ssh pollen@reachy-mini.local` |
+| 停止后台守护进程 | `sudo systemctl stop reachy-mini-daemon` |
+| 启动后台守护进程 | `sudo systemctl start reachy-mini-daemon` |
+| 查看守护进程日志 | `journalctl -u reachy-mini-daemon -f` |
+| 查看机器人状态 | `reachyminios_check` |
+| 机器人文件挂载到本地 | `sshfs pollen@IP:/path ~/local_mount -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3` |
+| 取消挂载 | `fusermount -u ~/local_mount` |
+
+
+## 参考资料
+- [Reachy Mini](https://github.com/pollen-robotics/reachy_mini)
