@@ -39,6 +39,7 @@ Reachy Mini 是由法国机器人公司 [Pollen Robotics](https://www.pollen-rob
 
 ## 开箱与初体验
 - [Welcome to Reachy Mini!](https://huggingface.co/reachy-mini#/getting-started)
+- [Reachy Mini（无线版）- 设置指南](https://huggingface.co/docs/reachy_mini/platforms/reachy_mini/get_started)
 
 ### 开箱
 ![](/images/2026/ReachyMini/box.webp)
@@ -49,7 +50,16 @@ Reachy Mini 是由法国机器人公司 [Pollen Robotics](https://www.pollen-rob
 
 ### 组装（近3个小时）
 
+- [📖互动式数字指南](https://huggingface.co/spaces/pollen-robotics/Reachy_Mini_Assembly_Guide)
+- [📺完整组装视频](https://www.youtube.com/watch?v=WeKKdnuXca4)
+
 ### 下载 [Reachy Mini Control](https://huggingface.co/reachy-mini#/download)
+
+
+### 连接到 Reachy Mini 的 WiFi 热点
+
+- **网络名称**：`reachy-mini-ap`
+- **密码**：`reachy-mini`
 
 ### 连接 WiFi
 
@@ -61,14 +71,23 @@ Reachy Mini 是由法国机器人公司 [Pollen Robotics](https://www.pollen-rob
 
 ### 连接 Reachy Mini
 
-> 关机后，通过 USB 连接最好重新插拔一下，才能被电脑识别到。
-
 ![](/images/2026/ReachyMini/connect-to-reachy.webp)
 
 ![](/images/2026/ReachyMini/reachy-mini.webp)
 
+⚠️ **注意**：Reachy Mini（无线版）不支持(❌) USB-C 线连接
 
-**📌 软件指南**
+无线版机器人不像Lite版那样通过USB接口连接，所以直接将USB-C线插入笔记本电脑无法建立连接。
+
+正确的做法是：
+- 将机器人连接到您的 Wi-Fi 网络，然后使用笔记本电脑上的 SDK 客户端远程控制它。
+- 如果你想直接在嵌入式 Raspberry Pi 上运行代码，可以通过 SSH 连接到 Raspberry Pi 并在那里执行你的脚本（Reachy Mini Control 就是在你发布/安装应用程序后执行此操作的）。
+- 对于有线连接，请使用 USB-C 转以太网适配器和以太网线——这样就可以用有线以太网代替 Wi-Fi。
+
+[查看故障排除与常见问题解答指南](https://huggingface.co/docs/reachy_mini/troubleshooting)
+
+
+**📌 软件指南篇**
 
 ## 安装
 
