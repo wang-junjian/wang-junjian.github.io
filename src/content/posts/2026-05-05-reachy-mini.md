@@ -87,6 +87,61 @@ Reachy Mini 是由法国机器人公司 [Pollen Robotics](https://www.pollen-rob
 [查看故障排除与常见问题解答指南](https://huggingface.co/docs/reachy_mini/troubleshooting)
 
 
+## [硬件数据](https://huggingface.co/docs/reachy_mini/platforms/reachy_mini/hardware)
+
+![](/images/2026/ReachyMini/hardware/reachy_mini_dimensions.webp)
+
+### 自由度
+- 头部：6个自由度（3个旋转与3个平移）
+- 机身：1个自由度旋转
+- 天线：1个自由度（2个）
+
+![](/images/2026/ReachyMini/hardware/degrees_of_freedom.webp)
+
+![](/images/2026/ReachyMini/hardware/dof_table.webp)
+
+### 控制
+- 树莓派4计算模块（无线版）
+
+![](/images/2026/ReachyMini/hardware/reachy_mini_components.webp)
+
+### 电机规格
+- 基座：1个定制Dynamixel XC330-M288-PG（[XC330-M288-T](https://emanual.robotis.com/docs/en/dxl/x/xc330-m288/)，塑料齿轮）
+- 天线：2个Dynamixel [XL330-M077-T](https://emanual.robotis.com/docs/en/dxl/x/xl330-m077/)
+- Stewart 平台：6 个 Dynamixel [XL330-M288-T](https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/)
+
+![](/images/2026/ReachyMini/hardware/motors_detail.webp)
+
+### 麦克风阵列板
+- 4 个 PDM MEMS 数字麦克风
+- 最大采样率16千赫兹/灵敏度-26分贝满刻度/信噪比64分贝A计权
+- 基于 Seeed Studio 的 reSpeaker XMOS XVF3800 打造
+### 摄像头
+- 树莓派摄像头v3广角
+- 索尼 IMX708
+- 1200万像素
+- 自动对焦
+- I2C*约1个 MIDI DSI 接口
+### 5瓦 4欧姆 扬声器
+### 电源板
+- 输入电压：6.8 - 7.6伏
+- 磷酸铁锂电池，2000毫安时，6.4伏，12.8瓦时，具备过充保护、过放保护、过流保护、短路保护及温度感应功能。
+
+![](/images/2026/ReachyMini/hardware/electronics.webp)
+
+### CM4 控制板
+- 由电源板提供 6.8 - 7.6 伏电压
+- Dynamixel 电机 TTL 连接
+- 摄像头CSI接口
+- 麦克风阵列接口
+- USB‑C 输出（即可插入 **U 盘**等设备）。请注意，无法（❌）通过此 USB 接口进行**充电**。
+- **树莓派4**计算模块 - CM4104016
+    - **WiFi**
+    - **4GB**内存
+    - **16GB**闪存
+- Wi-Fi天线 - 2.4-5GHz双频段贴片天线，2.79 dBi，全向型
+
+
 **📌 软件指南篇**
 
 ## 安装
