@@ -71,7 +71,7 @@ tags: [智能体, Kilo, KiloCode]
 |------|------|
 | **许可证** | MIT |
 | **技术栈** | TypeScript / Node.js 20.20.0 / VS Code Extension API |
-| **上游血缘** | VS Code 扩展 fork 自 **Roo Code**（Roo Code 又 fork 自 **Cline**）；CLI fork 自 **OpenCode**  |
+| **上游血缘** | VS Code 扩展 fork 自 **Roo Code**（Roo Code 又 fork 自 **Cline**）；CLI fork 自 **OpenCode** ；代码补全 fork 自 **Continue** |
 | **模型策略** | 模型中立，支持 500+ 模型（OpenAI、Anthropic、Google、本地 Ollama 等），自带 Kilo Gateway 按提供商原价计费  |
 | **分发渠道** | VS Code Marketplace、JetBrains、CLI（`npm install -g @kilocode/cli`）、Cloud Agents |
 
