@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "Reachy Mini 开发实战：从运动控制到视觉音频交互"
+title:  "Reachy Mini Python SDK 开发实战：从运动控制到视觉音频交互"
 date:   2026-05-10 12:00:00 +0800
 categories: [人工智能, 硬件]
 tags: [ReachyMini, 机器人]
