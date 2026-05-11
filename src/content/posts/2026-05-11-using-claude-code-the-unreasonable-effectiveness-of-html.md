@@ -3,10 +3,10 @@ layout: single
 title:  "使用 Claude Code：HTML 超乎寻常的妙用"
 date:   2026-05-11 20:00:00 +0800
 categories: [人工智能]
-tags: [HTML, ClaudeCode, Markdown]
+tags: [HTML, Markdown, ClaudeCode, Thariq]
 ---
 
-[Using Claude Code: The Unreasonable Effectiveness of HTML](https://x.com/trq212/status/2052809885763747935)
+**[Thariq](https://x.com/trq212)**: [Using Claude Code: The Unreasonable Effectiveness of HTML](https://x.com/trq212/status/2052809885763747935)
 
 Markdown 已成为智能体（agent）与我们沟通时占主导地位的文件格式。它简单、可移植，具备一定的富文本能力，且易于编辑。Claude 甚至已经相当擅长在 Markdown 文件中使用 ASCII 绘制图表。
 
