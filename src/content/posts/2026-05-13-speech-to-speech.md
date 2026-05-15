@@ -52,7 +52,8 @@ pip install speech-to-speech
 - Qwen3-TTS 用于语音输出
 - 本地音频和实时服务端模式
 
-可选后端通过 extras 安装：
+可选后端可通过附加依赖安装：
+
 ```bash
 pip install "speech-to-speech[kokoro]"
 pip install "speech-to-speech[pocket]"
