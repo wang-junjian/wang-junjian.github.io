@@ -137,6 +137,45 @@ BACKEND_PROVIDER=huggingface
 
 ![](/images/2026/ReachyMini/reachy_mini_conversation_app/start.webp)
 
+```
+USER: 介绍一下自己吧
+2026-05-16 21:01:26,519 - speech_to_speech.STT.transcription_notifier - INFO - Transcription completed: 介绍一下自己吧
+2026-05-16 21:01:33,913 - speech_to_speech.LLM.language_model - INFO - Tools: []
+ASSISTANT: 我是 Reachy Mini一个爱跳舞爱聊天的小机器人虽然有点笨手笨脚但总想给你点温暖
+2026-05-16 21:01:33,934 - speech_to_speech.api.openai_realtime.service - INFO - Token usage (response): input=5063, output=28
+2026-05-16 21:01:34,048 - speech_to_speech.TTS.qwen3_tts_handler - INFO - Qwen3-TTS TTFA: 0.13s (custom_voice_mlx)
+2026-05-16 21:01:36,476 - speech_to_speech.TTS.qwen3_tts_handler - INFO - Qwen3-TTS generated 7.95s audio in 2.56s (RTF: 3.10, custom_voice_mlx)
+2026-05-16 21:01:36,490 - speech_to_speech.api.openai_realtime.handlers.response - INFO - Response done (status=completed) — this response: input_tokens=5063, output_tokens=28, audio=1.94s | cumulative: input_tokens=315838, output_tokens=1561, audio=128.81s
+2026-05-16 21:01:36,490 - speech_to_speech.api.openai_realtime.websocket_router - INFO - Response complete, listening re-enabled
+2026-05-16 21:01:45,469 - speech_to_speech.VAD.vad_handler - INFO - Speech started (confirmed, 512ms buffered)
+2026-05-16 21:01:46,025 - speech_to_speech.VAD.vad_handler - INFO - Speech ended (1556ms), stop listening
+2026-05-16 21:01:46,025 - faster_whisper - INFO - Processing audio with duration 00:01.556
+USER: 跳个舞吧
+2026-05-16 21:01:46,941 - speech_to_speech.STT.transcription_notifier - INFO - Transcription completed: 跳个舞吧
+2026-05-16 21:01:54,270 - speech_to_speech.LLM.language_model - INFO - Tools: [ResponseFunctionToolCall(arguments='{"emotion": "dance1"}', call_id='call_94044cd853d8486fb58ff9505904306d', name='play_emotion', type='function_call', id='fc_36bd0e84cec04a4a95787ddbcae15e5f', namespace=None, status='in_progress')]
+2026-05-16 21:01:54,270 - speech_to_speech.LLM.lm_output_processor - INFO - Sending to clients: text='好嘞来个简单的摇摆舞给你看', tools=['play_emotion']
+ASSISTANT: 好嘞来个简单的摇摆舞给你看
+2026-05-16 21:01:54,286 - speech_to_speech.api.openai_realtime.service - INFO - Token usage (response): input=4991, output=29
+2026-05-16 21:01:54,343 - speech_to_speech.LLM.chat - INFO - Re-injecting evicted function_call for call_id=call_94044cd853d8486fb58ff9505904306d
+2026-05-16 21:01:54,408 - speech_to_speech.TTS.qwen3_tts_handler - INFO - Qwen3-TTS TTFA: 0.14s (custom_voice_mlx)
+2026-05-16 21:01:55,318 - speech_to_speech.TTS.qwen3_tts_handler - INFO - Qwen3-TTS generated 3.08s audio in 1.05s (RTF: 2.94, custom_voice_mlx)
+2026-05-16 21:01:55,343 - speech_to_speech.api.openai_realtime.handlers.response - INFO - Response done (status=completed) — this response: input_tokens=4991, output_tokens=29, audio=1.56s | cumulative: input_tokens=320829, output_tokens=1590, audio=130.37s
+2026-05-16 21:01:55,343 - speech_to_speech.api.openai_realtime.websocket_router - INFO - Response complete, listening re-enabled
+2026-05-16 21:02:02,437 - speech_to_speech.LLM.language_model - INFO - Tools: []
+USER: 生气的表情
+2026-05-16 21:02:20,145 - speech_to_speech.LLM.language_model - INFO - Tools: [ResponseFunctionToolCall(arguments='{"emotion": "disgusted1"}', name='play_emotion', type='function_call')]
+ASSISTANT: 哎呀这表情有点重别生气啦我保证不惹你
+USER: 你會懂貓貓嗎
+ASSISTANT: 懂一点啦不过我还没学会喵喵叫要不你教教我
+USER: 自由发挥一下吧
+ASSISTANT: 那我给你讲个笑话吧为什么机器人不会做梦因为醒来后它还得继续工作
+USER: 你真棒
+ASSISTANT: 哈哈谢谢夸奖不过我可得小心别飘太高不然会撞到天花板的
+USER: 弄了一个完整的聊天行了吧
+ASSISTANT: 哈哈行啦行啦那咱们今天就这样下次再聊
+USER: OK
+ASSISTANT: 好嘞那咱们下次再聊记得多给我点时间充电哦
+```
 
 ## 源码构建开发环境
 
@@ -214,7 +253,7 @@ uv pip install "speech-to-speech[faster-whisper]"
 
 ### 实时模式
 
-**中文**
+#### 中文
 
 ```bash
 speech-to-speech \
@@ -248,15 +287,33 @@ speech-to-speech \
     - ja（日语）
     - hi（印地语）
 - `--qwen3_tts_language`: 合成所用的目标语言。（默认：auto）
-- `--qwen3_tts_speaker`: 指定要使用的说话人。（默认：Aiden）
-- `--no_enable_live_transcription`: 关闭用户说话时的实时转写显示。这个非常重要，会等你说完了才会回答。📌
+- `--no_enable_live_transcription`: 关闭用户说话时的实时转写显示。这个非常重要，会等你说完了才会回答。
 - `--init_chat_prompt`: 默认要求`20`个字以内，可以根据自己的需要来更改。
 - `--model_name`: 模型名称。下面是我验证过的模型列表：
     - [mlx-community/Qwen3-4B-Instruct-2507-bf16](https://huggingface.co/mlx-community/Qwen3-4B-Instruct-2507-bf16)
     - [mlx-community/Qwen3.5-4B-OptiQ-4bit](https://huggingface.co/mlx-community/Qwen3.5-4B-OptiQ-4bit)
     - [mlx-community/Qwen3.5-9B-OptiQ-4bit](https://huggingface.co/mlx-community/Qwen3.5-9B-OptiQ-4bit)
 
-**英文**
+**配置支持 OpenAI Responses API 协议的 LLM 后端（这里使用 Ollama）**：
+
+```bash
+speech-to-speech \
+    --mode realtime \
+    --device mps \
+    --stt faster-whisper \
+    --faster_whisper_stt_model_name small \
+    --faster_whisper_stt_gen_language zh \
+    --language zh \
+    --tts qwen3 \
+    --llm_backend responses-api \
+    --model_name "gemma4:e4b" \
+    --responses_api_base_url "http://localhost:11434/v1/" \
+    --responses_api_api_key "" \
+    --responses_api_stream \
+    --no_enable_live_transcription
+```
+
+#### 英文
 
 ```bash
 speech-to-speech \
@@ -300,25 +357,15 @@ speech-to-speech \
     --faster_whisper_stt_gen_language zh \
     --language zh \
     --llm_backend mlx-lm \
-    --model_name mlx-community/Qwen3-4B-Instruct-2507-bf16 \
+    --model_name mlx-community/Qwen3.5-4B-OptiQ-4bit \
     --init_chat_prompt "你是一位乐于助人、待人友善的人工智能助手。你礼貌谦和、尊重他人，且回复力求简洁。" \
     --tts qwen3 \
-    --qwen3_tts_language auto \
+    --qwen3_tts_speaker Serena \
     --no_enable_live_transcription
 ```
-speech-to-speech \
-    --mode local \
-    --device mps \
-    --stt faster-whisper \
-    --faster_whisper_stt_model_name large-v3 \
-    --faster_whisper_stt_gen_language zh \
-    --language zh \
-    --llm_backend mlx-lm \
-    --model_name mlx-community/Qwen3-4B-Instruct-2507-bf16 \
-    --init_chat_prompt "你是一位乐于助人、待人友善的人工智能助手。你礼貌谦和、尊重他人，且回复力求简洁。" \
-    --tts qwen3 \
-    --qwen3_tts_language auto \
-    --no_enable_live_transcription
+
+- `--qwen3_tts_speaker`: 指定要使用的说话人。（默认：Aiden）
+
 
 ## 模型
 
