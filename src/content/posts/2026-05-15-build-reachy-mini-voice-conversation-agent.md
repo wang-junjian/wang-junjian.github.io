@@ -26,7 +26,16 @@ tags: [Speech To Speech, 语音智能体, Hugging Face, Reachy Mini]
 
 ### MacBook 上实时模式运行 Speech To Speech
 
-- **中文**
+#### 安装 Speech To Speech
+
+```bash
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install speech-to-speech
+uv pip install "speech-to-speech[faster-whisper]"
+```
+
+#### 中文
 
 ```bash
 speech-to-speech \
@@ -66,7 +75,7 @@ INFO:     Started server process [10049]
 INFO:     Uvicorn running on http://0.0.0.0:8765 (Press CTRL+C to quit)
 ```
 
-- **英文**
+#### 英文
 
 ```bash
 speech-to-speech \
