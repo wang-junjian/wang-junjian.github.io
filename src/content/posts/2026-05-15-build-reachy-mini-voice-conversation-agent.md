@@ -293,6 +293,7 @@ speech-to-speech \
     - [mlx-community/Qwen3-4B-Instruct-2507-bf16](https://huggingface.co/mlx-community/Qwen3-4B-Instruct-2507-bf16)
     - [mlx-community/Qwen3.5-4B-OptiQ-4bit](https://huggingface.co/mlx-community/Qwen3.5-4B-OptiQ-4bit)
     - [mlx-community/Qwen3.5-9B-OptiQ-4bit](https://huggingface.co/mlx-community/Qwen3.5-9B-OptiQ-4bit)
+- `--qwen3_tts_speaker`: 实时模式下指定说话人不管用 ❌。
 
 **配置支持 OpenAI Responses API 协议的 LLM 后端（这里使用 Ollama）**：
 
@@ -312,6 +313,8 @@ speech-to-speech \
     --responses_api_stream \
     --no_enable_live_transcription
 ```
+
+- [gemma4](https://ollama.com/library/gemma4)
 
 #### 英文
 
