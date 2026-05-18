@@ -381,7 +381,10 @@ speech-to-speech \
 
 ## 模型
 
+- [ASR Overview](https://docs.nvidia.com/deeplearning/riva/user-guide/docs/asr/asr-overview.html)
+- [NVIDIA Riva](https://developer.nvidia.com/topics/ai/generative-ai/riva)
 - [Open ASR Leaderboard](https://huggingface.co/spaces/hf-audio/open_asr_leaderboard)
+- [Systran/faster-whisper-large-v3](https://huggingface.co/Systran/faster-whisper-large-v3)
 
 ### Parakeet-TDT（STT）
 #### 概述
