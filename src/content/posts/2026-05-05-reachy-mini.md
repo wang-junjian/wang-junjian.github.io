@@ -271,13 +271,74 @@ with ReachyMini() as mini:
     # Your code here
 ```
 
+### 
+
+**默认时区设置**：
+
+- **时区（Time zone）** 被设置成了 `Europe/London`（伦敦时间）。
+- **NTP 服务（NTP service）** 是激活状态（`active`），并且系统时钟已经同步（`System clock synchronized: yes`）。
+
+```bash
+$ timedatectl
+
+               Local time: Mon 2026-05-18 13:53:08 BST
+           Universal time: Mon 2026-05-18 12:53:08 UTC
+                 RTC time: n/a
+                Time zone: Europe/London (BST, +0100)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+
+$ date
+
+Mon 18 May 13:53:10 BST 2026
+```
+
+**这里将时区更改为上海时间（`Asia/Shanghai`），运行以下命令**：
+
+```bash
+timedatectl set-timezone Asia/Shanghai
+```
+
+**如果没有开启 NTP 服务，运行以下命令启用**：
+
+```bash
+timedatectl set-ntp true
+```
+
+**更改后再次检查**：
+
+```bash
+$ timedatectl
+
+               Local time: Mon 2026-05-18 20:53:52 CST
+           Universal time: Mon 2026-05-18 12:53:52 UTC
+                 RTC time: n/a
+                Time zone: Asia/Shanghai (CST, +0800)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+
+$ date
+
+Mon 18 May 20:53:57 CST 2026
+```
+
 ### 确保机器人服务器（守护进程）处于运行状态
 
 **守护进程**是一种后台服务，负责与电机和传感器进行底层通信。必须保持该进程运行，你的代码才能正常工作。
 
 #### Reachy Mini（无线版）
 
-运行 Reachy Mini Control
+- **Reachy Mini Control**
+
+    运行应用： **Reachy Mini Control**
+
+- **Reachy Mini Dashboard**（*未来会停用*）
+
+    浏览器打开网址： http://reachy-mini:8000/
+
+![](/images/2026/ReachyMini/web-app.webp)
 
 #### 用于模拟（无需机器人）
 
