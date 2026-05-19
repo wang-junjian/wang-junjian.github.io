@@ -271,59 +271,6 @@ with ReachyMini() as mini:
     # Your code here
 ```
 
-### 
-
-**默认时区设置**：
-
-- **时区（Time zone）** 被设置成了 `Europe/London`（伦敦时间）。
-- **NTP 服务（NTP service）** 是激活状态（`active`），并且系统时钟已经同步（`System clock synchronized: yes`）。
-
-```bash
-$ timedatectl
-
-               Local time: Mon 2026-05-18 13:53:08 BST
-           Universal time: Mon 2026-05-18 12:53:08 UTC
-                 RTC time: n/a
-                Time zone: Europe/London (BST, +0100)
-System clock synchronized: yes
-              NTP service: active
-          RTC in local TZ: no
-
-$ date
-
-Mon 18 May 13:53:10 BST 2026
-```
-
-**这里将时区更改为上海时间（`Asia/Shanghai`），运行以下命令**：
-
-```bash
-timedatectl set-timezone Asia/Shanghai
-```
-
-**如果没有开启 NTP 服务，运行以下命令启用**：
-
-```bash
-timedatectl set-ntp true
-```
-
-**更改后再次检查**：
-
-```bash
-$ timedatectl
-
-               Local time: Mon 2026-05-18 20:53:52 CST
-           Universal time: Mon 2026-05-18 12:53:52 UTC
-                 RTC time: n/a
-                Time zone: Asia/Shanghai (CST, +0800)
-System clock synchronized: yes
-              NTP service: active
-          RTC in local TZ: no
-
-$ date
-
-Mon 18 May 20:53:57 CST 2026
-```
-
 ### 确保机器人服务器（守护进程）处于运行状态
 
 **守护进程**是一种后台服务，负责与电机和传感器进行底层通信。必须保持该进程运行，你的代码才能正常工作。
@@ -382,6 +329,296 @@ Done!
 > 📌 在这里出现了个大坑，我使用的 `iTerm2` 终端无法正常工作，ssh 连接和运行守护进程 `reachy-mini-daemon`，都出现错误：No route to host，各种折腾，整了大半天。最终换成系统自带的 `Terminal` 之后就正常了。
 
 - [查看故障排除与常见问题解答指南](https://huggingface.co/docs/reachy_mini/troubleshooting)
+
+
+## Reachy Mini 系统
+
+### 系统信息
+
+```bash
+uname -a
+Linux reachy-mini 6.12.62+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.12.62-1+rpt1 (2025-12-18) aarch64 GNU/Linux
+```
+
+树莓派专用 64 位 Linux 内核 6.12.62，主机名 reachy-mini，ARM64 架构，多核实时抢占内核，基于 Debian。
+
+### 查看当前守护进程的状态
+
+浏览器打开网址：http://reachy-mini:8000/api/daemon/status
+
+或者使用 curl 命令：
+
+```bash
+curl -X 'GET' \
+  'http://reachy-mini.local:8000/api/daemon/status' \
+  -H 'accept: application/json'
+```
+
+```json
+{
+  "type": "daemon_status",
+  "robot_name": "reachy_mini",
+  "state": "running",
+  "wireless_version": true,
+  "desktop_app_daemon": false,
+  "simulation_enabled": false,
+  "mockup_sim_enabled": false,
+  "no_media": false,
+  "media_released": false,
+  "camera_specs_name": "wireless",
+  "backend_status": {
+    "ready": false,
+    "motor_control_mode": "enabled",
+    "last_alive": null,
+    "control_loop_stats": {
+      "mean_control_loop_frequency": 49.5906534853054,
+      "max_control_loop_interval": 0.0202715396881104,
+      "nb_error": 0,
+      "motor_controller": "ControlLoopStats(period=~20.00ms, read_dt=~1.95 ms, write_dt=~0.08 ms)"
+    },
+    "error": null
+  },
+  "error": null,
+  "wlan_ip": "192.168.1.205",
+  "version": "1.7.1"
+}
+```
+
+### 设置时区和时间同步
+
+**默认时区设置**：
+
+- **时区（Time zone）** 被设置成了 `Europe/London`（伦敦时间）。
+- **NTP 服务（NTP service）** 是激活状态（`active`），并且系统时钟已经同步（`System clock synchronized: yes`）。
+
+```bash
+$ timedatectl
+
+               Local time: Mon 2026-05-18 13:53:08 BST
+           Universal time: Mon 2026-05-18 12:53:08 UTC
+                 RTC time: n/a
+                Time zone: Europe/London (BST, +0100)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+
+$ date
+
+Mon 18 May 13:53:10 BST 2026
+```
+
+**这里将时区更改为上海时间（`Asia/Shanghai`），运行以下命令**：
+
+```bash
+timedatectl set-timezone Asia/Shanghai
+```
+
+**如果没有开启 NTP 服务，运行以下命令启用**：
+
+```bash
+timedatectl set-ntp true
+```
+
+**更改后再次检查**：
+
+```bash
+$ timedatectl
+
+               Local time: Mon 2026-05-18 20:53:52 CST
+           Universal time: Mon 2026-05-18 12:53:52 UTC
+                 RTC time: n/a
+                Time zone: Asia/Shanghai (CST, +0800)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+
+$ date
+
+Mon 18 May 20:53:57 CST 2026
+```
+
+### 列出所有正在运行的服务
+
+```bash
+systemctl list-units --type=service --state=running
+```
+
+```bash
+  UNIT                          LOAD   ACTIVE SUB     DESCRIPTION                                   
+  avahi-daemon.service          loaded active running Avahi mDNS/DNS-SD Stack
+  bluetooth.service             loaded active running Bluetooth service
+  cron.service                  loaded active running Regular background program processing daemon
+  dbus.service                  loaded active running D-Bus System Message Bus
+  getty@tty1.service            loaded active running Getty on tty1
+  gpio-shutdown-daemon.service  loaded active running Reachy Mini GPIO Shutdown Daemon
+  ModemManager.service          loaded active running Modem Manager
+  NetworkManager.service        loaded active running Network Manager
+  polkit.service                loaded active running Authorization Manager
+  reachy-mini-bluetooth.service loaded active running Reachy Mini Bluetooth GATT Service
+  reachy-mini-daemon.service    loaded active running Reachy Mini AP Launcher Service
+  serial-getty@ttyS0.service    loaded active running Serial Getty on ttyS0
+  ssh.service                   loaded active running OpenBSD Secure Shell server
+  systemd-journald.service      loaded active running Journal Service
+  systemd-logind.service        loaded active running User Login Management
+  systemd-timesyncd.service     loaded active running Network Time Synchronization
+  systemd-udevd.service         loaded active running Rule-based Manager for Device Events and Files
+  udisks2.service               loaded active running Disk Manager
+  user@1000.service             loaded active running User Manager for UID 1000
+  wpa_supplicant.service        loaded active running WPA supplicant
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+20 loaded units listed.
+```
+
+### 开机后自动唤醒
+
+开机后自动唤醒功能默认是关闭的。
+
+#### 查看 reachy-mini-daemon.service 服务状态
+
+```bash
+systemctl cat reachy-mini-daemon.service
+```
+
+```bash
+# /etc/systemd/system/reachy-mini-daemon.service
+[Unit]
+Description=Reachy Mini AP Launcher Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless/launcher.sh
+Restart=on-failure
+RestartSec=3s
+User=pollen
+WorkingDirectory=/venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless
+
+[Install]
+WantedBy=multi-user.target
+```
+
+#### 编辑 launcher.sh 脚本
+
+```bash
+vi /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/wireless/launcher.sh
+```
+
+```bash
+#!/bin/bash
+source /venvs/mini_daemon/bin/activate
+export GST_PLUGIN_PATH=$GST_PLUGIN_PATH:/opt/gst-plugins-rs/lib/aarch64-linux-gnu/
+export PATH=$PATH:/opt/uv
+
+# Ensure WiFi is not soft-blocked (can happen after a crash or kernel module reload)
+sudo rfkill unblock wifi
+
+# Run Python in unbuffered mode (-u) to ensure logs are immediately forwarded to systemd
+#python -u -m reachy_mini.daemon.app.main --wireless-version --no-wake-up-on-start
+python -u -m reachy_mini.daemon.app.main --wireless-version
+```
+
+reachy-mini-daemon 默认是加上了 `--no-wake-up-on-start` 参数的，这个参数会禁止开机自动唤醒。要启用开机自动唤醒功能，需要删除该参数。
+
+### 物理按键关机不能正常 Sleep
+
+> *我测试了下面的两种方法都没有成功。*
+
+当你按下物理按键时，这个 Bash 脚本拉起了一个专门的 Python 模块 `shutdown_monitor`。
+
+这个 Python 脚本在监听到 GPIO 信号后，估计直接在底层调用了类似 `os.system("sudo poweroff")` 或者 `os.system("sudo shutdown now")` 的命令。由于它绕过了系统的 `systemd` 服务管理，直接向内核申请了关机，导致系统来不及通知 `reachy-mini-daemon` 执行 `goto-sleep`，机器人就直接断电砸下来了。
+
+要修复这个问题，我们甚至不需要去改动复杂的 Python 代码，直接在它赖以生存的 `systemd` 依赖层面上做两步调整，就能完美解决。
+
+#### 解决方案 1：利用 Systemd 依赖链硬锁（最推荐，最优雅）
+
+我们要让系统明白：**`reachy-mini-daemon` 必须在系统完全关闭之前先退出。**
+
+1. 在终端中编辑机器人的核心服务：
+```bash
+sudo systemctl edit reachy-mini-daemon.service
+```
+
+2. 在弹出的编辑界面中（注意：如果里面有注释行，请确保写在非注释区域，或者直接写在文件顶部），添加以下内容：
+
+```ini
+   [Unit]
+   Before=shutdown.target reboot.target halt.target
+   Conflicts=shutdown.target reboot.target halt.target
+```
+
+* **`Before=...` 和 `Conflicts=...` 的作用**：告诉系统，这个机器人控制服务与“关机/重启”是冲突的。当系统因为物理按键触发关机（`shutdown.target` 激活）时，系统会**强制要求先卸载并停止** `reachy-mini-daemon`。这样就会正大光明地触发它自带的 `--goto-sleep-on-stop` 减震趴下动作。
+
+3. 保存并退出（如果是 nano 剪辑器，按 `Ctrl+O` 然后回车保存，再按 `Ctrl+X` 退出）。
+4. 让系统重新加载配置：
+
+```bash
+   sudo systemctl daemon-reload
+```
+
+#### 解决方案 2：直接去改那个 Python 监听脚本（治本法）
+
+如果你想看看它底层到底是怎么写关机命令的，你可以直接去查看那个 Python 文件。
+
+根据你的 `launcher.sh` 里的路径：
+`python -m reachy_mini.daemon.app.services.gpio_shutdown.shutdown_monitor`
+
+这个文件在系统中的绝对路径通常是：
+
+```bash
+cat /venvs/mini_daemon/lib/python3.12/site-packages/reachy_mini/daemon/app/services/gpio_shutdown/shutdown_monitor.py
+```
+
+*(如果是 `.py` 后缀，你可以用 `cat` 或 `nano` 看看里面的内容)*
+
+如果你在里面看到了类似 `subprocess.run(["sudo", "poweroff"])` 这样的代码，你可以直接把它改成：
+
+```python
+# 更改前：直接关机
+# os.system("sudo poweroff")
+
+# 更改后：先用 systemctl 优雅停止机器人，等 3 秒，再关机
+os.system("sudo systemctl stop reachy-mini-daemon.service && sleep 3 && sudo poweroff")
+```
+
+
+## Reachy Mini 最佳的开启和关闭
+
+### 开启
+
+1. 按物理开关，启动 Reachy Mini。（**未唤醒**）
+2. 连接到 Reachy Mini 的 Wi-Fi 热点。
+3. 运行 **Reachy Mini Control** 应用，或通过 SSH 连接到 Reachy Mini 并手动唤醒。
+
+### 关闭
+
+```bash
+sudo shutdown -h now
+```
+
+### 唤醒与睡眠
+
+#### 通过 API 唤醒
+
+```bash
+curl -X 'POST' \
+  'http://reachy-mini.local:8000/api/move/play/wake_up' \
+  -H 'accept: application/json' \
+  -d ''
+```
+
+#### 通过 API 睡眠
+
+```bash
+curl -X 'POST' \
+  'http://reachy-mini.local:8000/api/move/play/goto_sleep' \
+  -H 'accept: application/json' \
+  -d ''
+```
 
 
 ## Reachy Mini（无线版）开发工作流
