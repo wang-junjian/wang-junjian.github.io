@@ -1,0 +1,505 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings?: MarkdownHeading[];
+}
+
+const { headings = [] } = Astro.props;
+
+// Filter to show only h1, h2 (exclude h3 for long documents)
+const toc = headings.filter((heading) => heading.depth <= 2);
+---
+
+{toc.length > 0 && (
+  <div class="toc-container">
+    <nav class="toc-nav">
+      <ul class="toc-list">
+        {toc.map((heading) => (
+          <li class="toc-item" data-depth={heading.depth}>
+            <a 
+              href={`#${heading.slug}`}
+              class="toc-link"
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+)}
+
+<style>
+  .toc-container {
+    display: none;
+  }
+
+  /* Show on larger screens (1024px for tablets, 1280px for desktops) */
+  @media (min-width: 1024px) {
+    .toc-container {
+      display: block;
+      position: fixed;
+      right: 2rem;
+      top: 120px;
+      width: 240px;
+      max-height: calc(100vh - 120px - 2rem);
+      overflow-y: auto;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .toc-container {
+      display: none;
+    }
+  }
+
+  .toc-nav {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .toc-title {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    text-decoration: none;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .toc-item[data-depth="1"] > .toc-link {
+    padding-left: 0;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .toc-item[data-depth="2"] > .toc-link {
+    padding-left: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .toc-item[data-depth="3"] > .toc-link {
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+  }
+
+  .toc-link {
+    display: block;
+    padding: 0.375rem 0;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    border-left: 2px solid transparent;
+    padding-left: calc(var(--padding-left, 0) - 2px);
+    margin-left: 2px;
+
+    &:hover {
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    &.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 500;
+    }
+  }
+
+  /* Scrollbar styling for TOC container */
+  .toc-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .toc-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .toc-container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--text-secondary);
+    }
+  }
+</style>
+
+<script>
+  class TableOfContentsManager {
+    private isManualNavigation = false;
+    private intersectionObserver: IntersectionObserver | null = null;
+    private mutationObserver: MutationObserver | null = null;
+    private clickHandlerAbortController: AbortController | null = null;
+    private scrollTimeout: number | null = null;
+    private mutationTimeout: number | null = null;
+    private initialized = false;
+
+    private readonly HEADER_OFFSET = 120;
+    private readonly SCROLL_THRESHOLD = 300;
+
+    constructor() {
+      this.init();
+    }
+
+    private getHeadingMap(): Map<string, HTMLAnchorElement> {
+      const map = new Map<string, HTMLAnchorElement>();
+      document.querySelectorAll('.toc-link').forEach((link: Element) => {
+        const href = (link as HTMLAnchorElement).getAttribute('href');
+        if (href) {
+          const id = href.substring(1);
+          map.set(id, link as HTMLAnchorElement);
+        }
+      });
+      return map;
+    }
+
+    private getHeadings(): Array<{ id: string; element: HTMLElement; link: HTMLAnchorElement; top: number }> {
+      const headingMap = this.getHeadingMap();
+      const headings: Array<{ id: string; element: HTMLElement; link: HTMLAnchorElement; top: number }> = [];
+
+      headingMap.forEach((link, id) => {
+        const element = document.getElementById(id);
+        if (element) {
+          headings.push({
+            id,
+            element,
+            link,
+            top: element.getBoundingClientRect().top + window.scrollY
+          });
+        }
+      });
+
+      return headings.sort((a, b) => a.top - b.top);
+    }
+
+    private determineActiveHeading() {
+      const headings = this.getHeadings();
+      if (headings.length === 0) return null;
+
+      const scrollTop = window.scrollY;
+      let activeHeading = null;
+
+      for (const heading of headings) {
+        if (heading.top - scrollTop <= this.SCROLL_THRESHOLD) {
+          activeHeading = heading;
+        } else {
+          break;
+        }
+      }
+
+      if (!activeHeading) {
+        activeHeading = headings[0];
+      }
+
+      return activeHeading;
+    }
+
+    private updateActiveLink(): void {
+      if (this.isManualNavigation) return;
+
+      const activeHeading = this.determineActiveHeading();
+      const links = document.querySelectorAll('.toc-link');
+
+      links.forEach((link: Element) => {
+        const linkEl = link as HTMLAnchorElement;
+        if (activeHeading && linkEl === activeHeading.link) {
+          linkEl.classList.add('active');
+        } else {
+          linkEl.classList.remove('active');
+        }
+      });
+    }
+
+    // Only cleanup intersection observer and timers (keep mutationObserver alive)
+    private cleanupIntersectionAndTimers(): void {
+      if (this.intersectionObserver) {
+        this.intersectionObserver.disconnect();
+        this.intersectionObserver = null;
+      }
+
+      if (this.scrollTimeout !== null) {
+        clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = null;
+      }
+
+      if (this.mutationTimeout !== null) {
+        clearTimeout(this.mutationTimeout);
+        this.mutationTimeout = null;
+      }
+    }
+
+    // Cleanup mutation observer when completely destroying the manager
+    private cleanupMutationObserver(): void {
+      if (this.mutationObserver) {
+        this.mutationObserver.disconnect();
+        this.mutationObserver = null;
+      }
+    }
+
+    private cleanupClickHandlers(): void {
+      if (this.clickHandlerAbortController) {
+        this.clickHandlerAbortController.abort();
+        this.clickHandlerAbortController = null;
+      }
+    }
+
+    private setupIntersectionObserver(): boolean {
+      // Only cleanup intersection observer (keep mutation observer active)
+      this.cleanupIntersectionAndTimers();
+
+      const headingMap = this.getHeadingMap();
+      const headingIds = Array.from(headingMap.keys());
+
+      if (headingIds.length === 0) {
+        return false;
+      }
+
+      // recreate intersection observer, do not touch mutationObserver here
+      this.intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          let topVisibleEntry = null;
+          let highestPosition = Infinity;
+
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const top = entry.target.getBoundingClientRect().top;
+              if (top < highestPosition && top >= -100) {
+                highestPosition = top;
+                topVisibleEntry = entry.target.id;
+              }
+            }
+          });
+
+          if (topVisibleEntry && !this.isManualNavigation) {
+            const link = headingMap.get(topVisibleEntry);
+            if (link) {
+              document.querySelectorAll('.toc-link.active').forEach(el => {
+                el.classList.remove('active');
+              });
+              link.classList.add('active');
+            }
+          }
+        },
+        {
+          rootMargin: `-${this.HEADER_OFFSET}px 0px -${window.innerHeight - 400}px 0px`,
+          threshold: 0
+        }
+      );
+
+      // observe all headings
+      headingIds.forEach((id) => {
+        const element = document.getElementById(id);
+        if (element && this.intersectionObserver) {
+          this.intersectionObserver.observe(element);
+        }
+      });
+
+      return true;
+    }
+
+    private setupClickHandlers(): void {
+      this.cleanupClickHandlers();
+
+      const tocNav = document.querySelector('.toc-nav');
+      if (!tocNav) return;
+
+      this.clickHandlerAbortController = new AbortController();
+
+      tocNav.addEventListener(
+        'click',
+        (e: Event) => {
+          const target = e.target as HTMLElement;
+          const link = target.closest('.toc-link') as HTMLAnchorElement;
+
+          if (link && link.href) {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (!href) return;
+
+            const id = href.substring(1);
+            const element = document.getElementById(id);
+            if (!element) return;
+
+            this.isManualNavigation = true;
+            const targetPosition = element.getBoundingClientRect().top + window.scrollY - this.HEADER_OFFSET;
+            window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+
+            history.pushState(null, '', href);
+
+            document.querySelectorAll('.toc-link.active').forEach(el => {
+              el.classList.remove('active');
+            });
+            link.classList.add('active');
+
+            if (this.scrollTimeout !== null) {
+              clearTimeout(this.scrollTimeout);
+            }
+
+            this.scrollTimeout = window.setTimeout(() => {
+              this.isManualNavigation = false;
+              this.updateActiveLink();
+              this.scrollTimeout = null;
+            }, 1000);
+          }
+        },
+        { signal: this.clickHandlerAbortController.signal }
+      );
+    }
+
+    private waitForHeadings(): boolean {
+      const headingMap = this.getHeadingMap();
+
+      for (const id of headingMap.keys()) {
+        if (document.getElementById(id)) {
+          this.setupIntersectionObserver();
+          this.updateActiveLink();
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    private setupMutationObserver(): void {
+      // Observe the whole document body for inserted/updated content
+      const observeRoot = document.body;
+      if (!observeRoot) return;
+
+      // Keep observing across navigations; when new headings appear, re-create intersection observer
+      this.mutationObserver = new MutationObserver((mutations) => {
+        if (this.mutationTimeout !== null) {
+          clearTimeout(this.mutationTimeout);
+        }
+
+        // Debounce to wait for DOM stabilization
+        this.mutationTimeout = window.setTimeout(() => {
+          const prose = document.querySelector('.prose');
+          if (prose) {
+            // Try to (re)setup intersection observer when headings are present
+            if (this.waitForHeadings()) {
+              // ensure click handlers are attached to the (possibly new) TOC
+              this.setupClickHandlers();
+            }
+          }
+        }, 120);
+      });
+
+      this.mutationObserver.observe(observeRoot, {
+        childList: true,
+        subtree: true,
+        characterData: false,
+      });
+
+      // Try immediately in case headings are already present
+      const proseNow = document.querySelector('.prose');
+      if (proseNow) {
+        if (this.waitForHeadings()) {
+          this.setupClickHandlers();
+        }
+      }
+    }
+
+    private init(): void {
+      if (this.initialized) {
+        this.cleanupIntersectionAndTimers();
+        this.cleanupClickHandlers();
+      }
+
+      this.setupClickHandlers();
+      // Ensure mutation observer is active to detect future navigations/content swaps
+      if (!this.mutationObserver) {
+        this.setupMutationObserver();
+      }
+
+      this.scrollTimeout = window.setTimeout(() => {
+        if (!this.intersectionObserver) {
+          this.waitForHeadings();
+        }
+      }, 300);
+
+      this.initialized = true;
+    }
+
+    public cleanup(): void {
+      this.cleanupIntersectionAndTimers();
+      this.cleanupClickHandlers();
+      this.initialized = false;
+    }
+
+    public reinit(): void {
+      this.cleanup();
+      this.cleanupMutationObserver();
+      this.init();
+    }
+  }
+
+  // Store manager on window so a single instance survives across client navigations
+  const GLOBAL_KEY = '__TABLE_OF_CONTENTS_MANAGER__';
+
+  function initializeTOC() {
+    const w = window as any;
+    if (w[GLOBAL_KEY]) {
+      try {
+        w[GLOBAL_KEY].reinit();
+        return;
+      } catch (err) {
+        // If previous manager is corrupted, cleanup and recreate
+        try { w[GLOBAL_KEY].cleanupMutationObserver(); } catch (e) {}
+      }
+    }
+
+    w[GLOBAL_KEY] = new TableOfContentsManager();
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTOC);
+  } else {
+    initializeTOC();
+  }
+
+  // Handle route changes (Astro View Transitions)
+  document.addEventListener('astro:after-swap', () => {
+    const w = window as any;
+    if (w[GLOBAL_KEY] && typeof w[GLOBAL_KEY].reinit === 'function') {
+      w[GLOBAL_KEY].reinit();
+    } else {
+      initializeTOC();
+    }
+  });
+
+  // Also handle Turbo navigation
+  document.addEventListener('turbo:load', () => {
+    const w = window as any;
+    if (w[GLOBAL_KEY] && typeof w[GLOBAL_KEY].reinit === 'function') {
+      w[GLOBAL_KEY].reinit();
+    } else {
+      initializeTOC();
+    }
+  });
+
+  // Clean up on full page unload
+  window.addEventListener('beforeunload', () => {
+    const w = window as any;
+    if (w[GLOBAL_KEY] && typeof w[GLOBAL_KEY].cleanupMutationObserver === 'function') {
+      try { w[GLOBAL_KEY].cleanupMutationObserver(); } catch (e) {}
+    }
+  });
+</script>

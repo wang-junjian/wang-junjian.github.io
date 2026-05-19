@@ -23,6 +23,23 @@ const { title = SITE_TITLE, description = SITE_DESCRIPTION } = Astro.props;
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <script is:inline src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js"></script>
     <script is:inline>
+      // Workaround: ignore uncaught errors originating from Astro Dev Toolbar in dev mode.
+      // The toolbar sometimes throws during Turbo body swaps and breaks client navigation.
+      try {
+        window.addEventListener('error', function (event) {
+          try {
+            var fn = (event && (event as any).filename) || (event && (event as any).error && (event as any).error.stack);
+            if (fn && typeof fn === 'string' && fn.indexOf('toolbar') !== -1) {
+              // Prevent the error from surfacing and interrupting navigation
+              if (event.preventDefault) event.preventDefault();
+              event.stopImmediatePropagation && event.stopImmediatePropagation();
+              return true;
+            }
+          } catch (e) {}
+        }, true);
+      } catch (e) {}
+    </script>
+    <script is:inline>
       (function() {
         try {
           if (localStorage.getItem('ai_chat_mode') === 'embedded' && window.innerWidth >= 900) {
