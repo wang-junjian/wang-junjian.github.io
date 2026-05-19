@@ -596,8 +596,16 @@ os.system("sudo systemctl stop reachy-mini-daemon.service && sleep 3 && sudo pow
 
 ### 关闭
 
+**传统的关机命令**
+
 ```bash
 sudo shutdown -h now
+```
+
+**现代 Linux 系统原生的关机命令**
+
+```bash
+sudo systemctl poweroff
 ```
 
 ### 唤醒与睡眠
