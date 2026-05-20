@@ -3,7 +3,7 @@ layout: single
 title:  "Pi Agent 接入本地 Ollama（Pi Agent SDK）"
 date:   2026-05-20 08:00:00 +0800
 categories: [人工智能, 智能体]
-tags: [Pi Agent, SDK, Ollama]
+tags: [Pi Agent, SDK, TypeScript, Ollama]
 ---
 
 通过两种方式，在 TypeScript 中使用 `@earendil-works` 的 Pi Agent 框架连接本地运行的 Ollama 模型（以 `qwen3.5:9b` 为例）。
@@ -64,6 +64,7 @@ npm install @earendil-works/pi-agent-core @earendil-works/pi-ai @earendil-works/
 }
 ```
 
+
 ## 基于 OpenAI 模型配置 Ollama
 
 直接修改现有的 OpenAI 模型元数据，指向本地 Ollama 的 `baseUrl` 和模型名称。
@@ -104,9 +105,10 @@ agent.subscribe((event) => {
 
 await agent.prompt("Hello!");
 
-// 换行，避免终端 prompt 覆盖输出，导致回复的消息一闪而逝。
+// 📌 换行，避免终端 prompt 覆盖输出，导致回复的消息一闪而逝。
 process.stdout.write("\n");
 ```
+
 
 ## 基于 ModelRegistry 注册 Ollama 模型
 
@@ -169,9 +171,10 @@ agent.subscribe((event) => {
 
 await agent.prompt("Hello!");
 
-// 换行，避免终端 prompt 覆盖输出，导致回复的消息一闪而逝。
+// 📌 换行，避免终端 prompt 覆盖输出，导致回复的消息一闪而逝。
 process.stdout.write("\n");
 ```
+
 
 ## 运行与验证
 
