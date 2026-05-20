@@ -6,6 +6,8 @@ categories: [人工智能]
 tags: [reachy_mini_conversation_app, 语音智能体, Hugging Face, Reachy Mini]
 ---
 
+## 源码安装 Reachy Mini Conversation App
+
 ### 克隆 Reachy Mini Conversation App
 
 ```bash
@@ -38,8 +40,46 @@ uv sync --extra all_vision           # All vision features
 uv sync --extra all_vision --group dev
 ```
 
+
+## 实时模式运行 Speech to Speech
+
+```bash
+speech-to-speech \
+    --mode realtime \
+    --device mps \
+    --stt faster-whisper \
+    --faster_whisper_stt_model_name small \
+    --faster_whisper_stt_gen_language zh \
+    --language zh \
+    --llm_backend mlx-lm \
+    --model_name mlx-community/Qwen3.5-4B-OptiQ-4bit \
+    --init_chat_prompt "你是一位乐于助人、待人友善的人工智能助手。你礼貌谦和、尊重他人，且回复力求简洁。" \
+    --tts qwen3 \
+    --qwen3_tts_speaker Serena \
+    --no_enable_live_transcription
+```
+
+
+## 运行 Reachy Mini Conversation App
+
+### 配置环境变量
+
+编辑配置文件 `.env`
+
+```
+HF_REALTIME_CONNECTION_MODE=local
+HF_REALTIME_WS_URL=ws://localhost:8765/v1/realtime
+BACKEND_PROVIDER=huggingface
+```
+
 ### 运行应用
 
 ```bash
 reachy-mini-conversation-app
+```
+
+使用 `mediapipe` 进行头部追踪
+
+```bash
+reachy-mini-conversation-app --head-tracker mediapipe
 ```
