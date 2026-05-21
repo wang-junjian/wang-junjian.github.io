@@ -1,9 +1,9 @@
 ---
 layout: single
-title:  "Pi Agent 接入本地 Ollama（Pi Agent SDK）"
+title:  "基于 Pi Agent SDK 适配 OpenAI 兼容接口"
 date:   2026-05-20 08:00:00 +0800
 categories: [人工智能, 智能体]
-tags: [Pi Agent, SDK, TypeScript, Ollama]
+tags: [Pi Agent, SDK, TypeScript, Ollama, LongCat]
 ---
 
 通过两种方式，在 TypeScript 中使用 `@earendil-works` 的 Pi Agent 框架连接本地运行的 Ollama 模型（以 `qwen3.5:9b` 为例）。
@@ -65,7 +65,9 @@ npm install @earendil-works/pi-agent-core @earendil-works/pi-ai @earendil-works/
 ```
 
 
-## 基于 OpenAI 模型配置 Ollama
+## 配置兼容 OpenAI API 接口
+
+### Ollama 模型接入
 
 直接修改现有的 OpenAI 模型元数据，指向本地 Ollama 的 `baseUrl` 和模型名称。
 利用 `getModel("openai", "gpt-4o")` 获取标准结构，通过对象展开运算符 `...` 覆盖 `id`、`name` 和 `baseUrl`。
@@ -109,8 +111,55 @@ await agent.prompt("Hello!");
 process.stdout.write("\n");
 ```
 
+### LongCat 模型接入
 
-## 基于 ModelRegistry 注册 Ollama 模型
+这里以 `LongCat-2.0-Preview` 模型为例，展示如何通过修改模型元数据的方式接入。
+
+元数据中 `api` 设置为 `openai-responses`，但 LongCat 只支持 `openai-completions` 方式的接口。
+
+```ts
+import { Agent } from "@earendil-works/pi-agent-core";
+import { getModel } from "@earendil-works/pi-ai";
+
+process.env.OPENAI_API_KEY = "your-api-key"; 
+
+// 获取一个基础的 openai 模型元数据
+const baseModel = getModel("openai", "gpt-5");
+
+const longCatModel = {
+  ...baseModel,
+  id: "LongCat-2.0-Preview",
+  name: "LongCat-2.0-Preview",
+  api: "openai-completions",
+  baseUrl: "https://api.longcat.chat/openai/v1",
+  contextWindow: 1000000,
+  maxTokens: 128000
+};
+console.log("Using model:", longCatModel);
+
+const agent = new Agent({
+  initialState: {
+    systemPrompt: "You are a helpful assistant.",
+    model: longCatModel,
+  },
+});
+
+agent.subscribe((event) => {
+  if (event.type === "message_update" && event.assistantMessageEvent.type === "text_delta") {
+    process.stdout.write(event.assistantMessageEvent.delta);
+  }
+});
+
+await agent.prompt("你是谁？");
+
+// 换行，避免终端 prompt 覆盖输出，导致回复的消息一闪而逝。
+process.stdout.write("\n");
+```
+
+
+## 基于 ModelRegistry 注册
+
+### Ollama 模型接入
 
 创建一个新的模型提供商（provider）条目，完全独立于现有的 OpenAI 配置。这种方式更清晰地表达了 Ollama 模型的独立性，并且不需要设置环境变量来绕过 OpenAI 的密钥校验。
 
