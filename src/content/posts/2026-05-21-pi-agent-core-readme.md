@@ -61,7 +61,7 @@ AgentMessage[] → transformContext() → AgentMessage[] → convertToLlm() → 
 
 ## 事件流
 
-智能体为 UI 更新发送事件。理解事件序列有助于构建响应式界面。
+智能体会触发用于更新 UI 的事件。理解事件的执行序列有助于构建响应式的交互界面。
 
 ### prompt() 事件序列
 
@@ -81,7 +81,7 @@ prompt("Hello")
 └─ agent_end       { messages: [...] }
 ```
 
-### 包含工具调用时
+### 包含工具调用的序列
 
 如果助手调用了工具，循环将继续：
 
