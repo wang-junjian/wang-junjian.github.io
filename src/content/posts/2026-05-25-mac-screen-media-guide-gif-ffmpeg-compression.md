@@ -3,7 +3,7 @@ layout: single
 title:  "Mac 屏幕素材处理指南：从多图合成 GIF 到 FFmpeg 视频智能去重压缩"
 date:   2026-05-25 08:00:00 +0800
 categories: [工具技巧]
-tags: [FFmpeg, ImageMagick, 视频压缩, GIF, 视频, macOS]
+tags: [FFmpeg, ImageMagick, 视频压缩, 快进压缩, 智能去重压缩, GIF, 视频, macOS]
 ---
 
 ## 多张图片合成 GIF / 视频
@@ -47,35 +47,6 @@ magick -delay 200 -loop 0 \
 ```
 
 * **`'.../OpenDesign.mp4'`**：ImageMagick 会自动识别并将其转换为 MP4 视频。
-
-
-## 智能压缩视频（丢弃重复画面）
-
-```bash
-ffmpeg -i "/Users/junjian/截屏/录屏2026-05-24 20.34.05.mov" \
-  -vf "mpdecimate,setpts=N/FRAME_RATE/TB" \
-  -c:v hevc_videotoolbox \
-  -c:a copy \
-  "/Users/junjian/截屏/录屏2026-05-24 20.34.05-compress.mp4"
-```
-
-```bash
-ffmpeg -i "/Users/junjian/截屏/录屏2026-05-24 20.34.05.mov" \
-  -vf "mpdecimate,setpts=N/FRAME_RATE/TB" \
-  -c:v hevc_videotoolbox \
-  -an \
-  "/Users/junjian/截屏/录屏2026-05-24 20.34.05-compress.mp4"
-```
-
-```bash
-ffmpeg -i "/Users/junjian/截屏/录屏2026-05-24 20.34.05.mov" \
-  -vf "mpdecimate" \
-  -vsync vfr \
-  -c:v hevc_videotoolbox \
-  -c:a AAC \
-  "/Users/junjian/截屏/录屏2026-05-24 20.34.05-compress.mp4"
-```
-
 
 
 ## 智能压缩视频（丢弃重复画面）
@@ -165,3 +136,74 @@ ffmpeg -i 输入文件.mov \
 ### 📌 适用场景
 
 当你需要将 Mac 录屏**用于专业视频剪辑、上传至主流视频网站（B站、YouTube等）、或者分发给不同系统平台的用户观看**时，这是最安全、最稳妥且画质优秀的“万能全能模板”。
+
+
+## N 倍速快进压缩
+
+要对视频进行 **N 倍速快进** 压缩，FFmpeg 的核心逻辑是：**同时修改视频的时间戳（PTS）和音频的播放速度（Atempo）**。如果只改视频不改音频，会导致严重的音画不同步或文件损坏。
+
+在 macOS 上，利用 M 系列芯片的硬件加速（`hevc_videotoolbox`），以下是最高效、最稳妥的 N 倍速压缩方案。
+
+### 🚀 核心通用命令
+
+请将命令中的 **`N`** 替换为你想要的倍速数字（例如 `2` 代表 2 倍速，`0.5` 代表减速一半，注意音频和视频的换算系数不同，见后文详解）：
+
+```bash
+ffmpeg -i '/Users/junjian/截屏/录屏2026-05-25 20.04.25.mov' \
+  -vf "setpts=1/N*PTS" \
+  -af "atempo=N" \
+  -c:v hevc_videotoolbox \
+  -c:a aac \
+  '/Users/junjian/截屏/录屏2026-05-25 20.04.25-fast.mp4'
+```
+
+### 💡 常用倍速模板
+
+由于 FFmpeg 视频滤镜里的计算逻辑是 `1/N`，为了方便你使用，这里直接给出常用的倍速模板：
+
+#### 2 倍速快进（最常用）
+
+视频帧间隔缩短为 $0.5$（即 `1/2`），音频速度设为 `2`：
+
+```bash
+ffmpeg -i '/Users/junjian/截屏/录屏2026-05-25 20.04.25.mov' \
+  -vf "setpts=0.5*PTS" \
+  -af "atempo=2.0" \
+  -c:v hevc_videotoolbox \
+  -c:a aac \
+  '/Users/junjian/截屏/录屏2026-05-25 20.04.25-2x.mp4'
+```
+
+#### 4 倍速狂飙（适合长录屏）
+
+视频帧间隔缩短为 $0.25$（即 `1/4`），音频速度由于超过了单一滤镜的 2 倍上限，需要**叠加串联**（`atempo=2.0,atempo=2.0`）：
+
+```bash
+ffmpeg -i '/Users/junjian/截屏/录屏2026-05-25 20.04.25.mov' \
+  -vf "setpts=0.25*PTS" \
+  -af "atempo=2.0,atempo=2.0" \
+  -c:v hevc_videotoolbox \
+  -c:a aac \
+  '/Users/junjian/截屏/录屏2026-05-25 20.04.25-4x.mp4'
+```
+
+#### 10 倍速极速（完全当做纯画面快进，丢弃声音）
+
+如果你要提速 **10 倍或更高**，声音通常已经尖锐到无法听清了。建议直接**剥离音频**（`-an`），不仅处理速度极快，还能规避音频滤镜的叠加限制：
+
+```bash
+ffmpeg -i '/Users/junjian/截屏/录屏2026-05-25 20.04.25.mov' \
+  -vf "setpts=0.1*PTS" \
+  -an \
+  -c:v hevc_videotoolbox \
+  '/Users/junjian/截屏/录屏2026-05-25 20.04.25-10x.mp4'
+```
+
+### 🔍 参数深入剖析
+
+* **`-vf "setpts=1/N*PTS"`**：视频滤镜（Video Filter）。`PTS` 代表 Presentation Time Stamp（显示时间戳）。当你乘以一个小于 1 的系数（如 `0.5`），意味着每一帧画面的显示时间提前了，从而在视觉上实现了 **N 倍速快进**。
+* **`-af "atempo=N"`**：音频滤镜（Audio Filter）。调整音频的播放速度。
+> **⚠️ FFmpeg 核心大坑**：`atempo` 滤镜接收的参数范围是 `0.5` 到 `2.0`。如果倍速 **$N > 2$**，必须通过逗号将多个滤镜串联起来。例如 4 倍速写成 `atempo=2.0,atempo=2.0`；8 倍速写成 `atempo=2.0,atempo=2.0,atempo=2.0`。
+
+* **`-c:v hevc_videotoolbox`**：调用 macOS 独占的硬件加速，让 Mac 的 M 系列芯片硬件编码器去高效率处理 H.265 视频，比纯 CPU 压制快数倍且不发热。
+* **`-c:a aac`**：变速后的音频必须重新编码，这里指定为兼容性最好的 AAC 格式。
