@@ -304,7 +304,7 @@ speech-to-speech \
     - [mlx-community/Qwen3.5-9B-OptiQ-4bit](https://huggingface.co/mlx-community/Qwen3.5-9B-OptiQ-4bit)
 - `--qwen3_tts_speaker`: 实时模式下指定说话人不管用 ❌。
 
-**配置支持 OpenAI Responses API 协议的 LLM 后端（这里使用 Ollama）**：
+**配置支持 OpenAI Responses API 协议的 LLM 后端（Ollama）**：
 
 ```bash
 speech-to-speech \
@@ -324,6 +324,8 @@ speech-to-speech \
 ```
 
 - [gemma4](https://ollama.com/library/gemma4)
+
+> ⚠️ `LongCat` 和 `DeepSeek` 都不支持 `OpenAI Responses API` 协议。
 
 #### 英文
 
