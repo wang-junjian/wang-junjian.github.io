@@ -52,7 +52,7 @@ export const get = fn(z.object({ id: z.string() }), async (input) => { ... })
 
 **`Tool.define(id, init)`** —— 所有工具都遵循此模式。`init` 返回 `{ description, parameters, execute }`。输出结果会自动截断。
 
-**`BusEvent.define(type, schema)` + `Bus.publish()**` —— 用于跨模块通信的进程内发布/订阅（pub/sub）事件系统。
+**`BusEvent.define(type, schema)` + `Bus.publish()`** —— 用于跨模块通信的进程内发布/订阅（pub/sub）事件系统。
 
 **`NamedError.create(name, schema)`** —— 带有 Zod schema 的结构化错误。相比于抛出原始错误（raw errors），更推荐使用这种方式。
 
