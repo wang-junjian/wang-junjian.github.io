@@ -104,7 +104,7 @@ draw a diagram that illustrates this flow
     * **位置**：存储在用户主目录（`~`）下的 `.claude` 文件夹中
 
 
-## 增加功能
+## 增加 MCP Server
 
 - 安装 Playwright 依赖浏览器
 ```bash
@@ -122,7 +122,7 @@ claude mcp remove playwright
 ```
 
 
-## 并行增加功能
+## 并行增加功能（Git Worktree）
 
 - 使用 Git 工作树（Git Worktree）功能来创建多个并行的工作树，以便同时处理多个功能分支。
 
