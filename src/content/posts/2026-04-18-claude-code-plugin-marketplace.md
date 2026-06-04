@@ -726,3 +726,4 @@ npx skills remove vercel-labs/agent-skills -a claude-code -g \
   - [.claude-plugin/marketplace.json](https://github.com/anthropics/claude-plugins-community/blob/main/.claude-plugin/marketplace.json)
 - [Claude Code Skills Marketplace](https://github.com/daymade/claude-code-skills)
 - [PM Skills Marketplace: The AI Operating System for Better Product Decisions](https://github.com/phuryn/pm-skills)
+- [gemma-skills](https://github.com/google-gemma/gemma-skills)
