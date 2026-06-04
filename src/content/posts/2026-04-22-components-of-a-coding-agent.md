@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "编码智能体的核心组件"
+title:  "编码智能体的核心组件（Sebastian Raschka）"
 date:   2026-04-22 08:00:00 +0800
 categories: [AI 与大模型, 操作系统]
 tags: [智能体, 编码智能体, LLM]
@@ -55,7 +55,9 @@ tags: [智能体, 编码智能体, LLM]
 
 当然，大语言模型与推理模型也能独立完成编码任务（无需框架），但编码工作不只是生成下一个词，大量工作涉及**仓库导航、检索、函数查找、差异应用、测试执行、错误排查**，并把所有相关信息保持在上下文中。
 
-![图2：常规大语言模型、推理大语言模型与封装在智能体框架中的大语言模型的关系](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-2)
+![](/images/2026/components-of-a-coding-agent/figure2.webp)
+
+> 图2：常规大语言模型、推理大语言模型与封装在智能体框架中的大语言模型的关系
 
 ---
 
@@ -68,20 +70,26 @@ tags: [智能体, 编码智能体, LLM]
 
 大胆推测：如果把最新的开源权重大语言模型（如 GLM-5）放入同等框架，其表现很可能与 Codex 中的 GPT-5.4、Claude Code 中的 Claude Opus 4.6 相当。当然，针对框架的专属后训练通常有益，例如 OpenAI 曾分别维护 GPT-5.3 与 GPT-5.3-Codex 两个版本。
 
-接下来，我将结合自己实现的**迷你编码智能体**（https://github.com/rasbt/mini-coding-agent），详细讲解编码框架的核心组件。
+接下来，我将结合自己实现的[**迷你编码智能体**](https://github.com/rasbt/mini-coding-agent)，详细讲解编码框架的核心组件。
 
-![图3：编码框架由三层组成：模型家族、智能体循环、运行时支持](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-3)
+![](/images/2026/components-of-a-coding-agent/figure3.webp)
+
+> 图3：编码框架由三层组成：模型家族、智能体循环、运行时支持
 
 ---
 
 ## 编码智能体的六大组件
 为简化表述，本文中**编码智能体**与**编码框架**可互换使用（严格来说，智能体是模型驱动的决策循环，框架是提供上下文、工具与执行支持的外围软件脚手架）。
 
-![图4：编码智能体/框架的六大核心功能](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-4)
+![](/images/2026/components-of-a-coding-agent/figure4.webp)
+
+> 图4：编码智能体/框架的六大核心功能
 
 下图是纯 Python 实现、最小可用且从零搭建的迷你编码智能体：
 
-![图5：迷你编码智能体运行界面](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-5)
+![](/images/2026/components-of-a-coding-agent/figure5.webp)
+
+> 图5：迷你编码智能体运行界面
 
 以下是六大组件的详细说明，迷你编码智能体源码中已用注释标注对应模块：
 ```
@@ -110,7 +118,9 @@ Git 分支、状态、提交记录也能提供变更进度与聚焦方向。
 
 **核心价值**：编码智能体在工作前先收集信息（生成工作区摘要的“稳定事实”），避免每次提示都从零开始、缺乏上下文。
 
-![图6：智能体框架先构建工作区摘要，结合用户请求形成完整上下文](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-6)
+![](/images/2026/components-of-a-coding-agent/figure6.webp)
+
+> 图6：智能体框架先构建工作区摘要，结合用户请求形成完整上下文
 
 ### 2. 提示词结构与缓存复用
 获取仓库视图后，下一步是如何高效把信息喂给模型。前文简化为“前缀+请求”的组合提示，但实际中每次都重新处理工作区摘要非常浪费计算。
@@ -123,7 +133,9 @@ Git 分支、状态、提交记录也能提供变更进度与聚焦方向。
 
 “智能”运行时不会每次都把所有内容拼成一个巨大无区分的提示词。
 
-![图7：智能体框架构建稳定提示词前缀，叠加动态会话状态后输入模型](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-7)
+![](/images/2026/components-of-a-coding-agent/figure7.webp)
+
+> 图7：智能体框架构建稳定提示词前缀，叠加动态会话状态后输入模型
 
 - **稳定提示词前缀**：包含通用指令、工具描述、工作区摘要，信息变动小，可缓存复用，避免重复计算。
 - **动态部分**：短期记忆、近期对话、最新用户请求，每轮交互都会更新。
@@ -146,11 +158,15 @@ Git 分支、状态、提交记录也能提供变更进度与聚焦方向。
 5. 裁剪工具输出（仅保留关键信息）
 6. 执行工具并将结果回流到循环
 
-![图8：模型输出结构化动作，框架验证、审批、执行并回流结果](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-8)
+![](/images/2026/components-of-a-coding-agent/figure8.webp)
+
+> 图8：模型输出结构化动作，框架验证、审批、执行并回流结果
 
 迷你编码智能体的工具调用审批示例：
 
-![图9：迷你编码智能体中的工具调用审批请求](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-9)
+![](/images/2026/components-of-a-coding-agent/figure9.webp)
+
+> 图9：迷你编码智能体中的工具调用审批请求
 
 模型必须选择框架可识别的操作（如列出文件、读取文件、搜索、执行 shell 命令、写入文件等），并按框架可校验的格式传入参数。
 
@@ -177,7 +193,9 @@ Git 分支、状态、提交记录也能提供变更进度与聚焦方向。
 3. **非对称细节保留**：近期事件保留更丰富信息，早期事件更激进压缩。
 4. **去重**：对早期文件读取去重，避免模型重复看到相同内容。
 
-![图10：大输出裁剪、早期读取去重、对话压缩后再输入提示词](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-10)
+![](/images/2026/components-of-a-coding-agent/figure10.webp)
+
+> 图10：大输出裁剪、早期读取去重、对话压缩后再输入提示词
 
 **核心价值**：这是编码智能体设计中被低估的关键环节，很多看似“模型质量”的差异，本质是**上下文质量**的差异。
 
@@ -190,7 +208,9 @@ Git 分支、状态、提交记录也能提供变更进度与聚焦方向。
 1. **工作记忆**：精简的显式状态，用于任务延续，记录当前任务、重要文件、关键笔记。
 2. **完整对话记录**：保存所有用户请求、工具输出、模型响应，可持久化到磁盘（通常为 JSON 文件），支持会话恢复。
 
-![图11：新事件追加到完整对话记录，并摘要到工作记忆](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-11)
+![](/images/2026/components-of-a-coding-agent/figure11.webp)
+
+> 图11：新事件追加到完整对话记录，并摘要到工作记忆
 
 - **紧凑对话**：用于重建提示，给模型压缩后的近期历史，无需每次都看完整记录。
 - **工作记忆**：用于任务延续，维护跨轮次的关键信息摘要。
@@ -212,14 +232,18 @@ Git 分支、状态、提交记录也能提供变更进度与聚焦方向。
 
 Claude Code 很早就支持子智能体，Codex 近期也加入。Codex 不强制子智能体只读，而是继承主智能体的沙箱与审批配置，边界更多体现在**任务范围、上下文、深度**上。
 
-![图12：子智能体继承上下文并在受限边界内运行](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-12)
+![](/images/2026/components-of-a-coding-agent/figure12.webp)
+
+> 图12：子智能体继承上下文并在受限边界内运行
 
 ---
 
 ## 组件总结
 以上六大组件在实现中高度交织，逐一讲解有助于建立编码框架的完整心智模型，理解为何它能让大语言模型比普通多轮聊天更实用。
 
-![图13：编码框架的六大核心功能](https://magazine.sebastianraschka.com/p/components-of-a-coding-agent#fig-13)
+![](/images/2026/components-of-a-coding-agent/figure4.webp)
+
+> 图13：编码框架的六大核心功能
 
 ---
 
@@ -241,6 +265,8 @@ OpenClaw 是有趣的参照，但并非同类系统。
 我已完成《从零构建推理模型》全书写作，目前进入抢先阅读阶段，出版社正在排版，预计今年夏天正式发售。
 
 这是我最具野心的作品，耗时1年半完成，包含大量实验打磨。
+
+![](/images/2026/components-of-a-coding-agent/build-a-reasoning-model.webp)
 
 **核心内容**：
 - 推理模型评估
