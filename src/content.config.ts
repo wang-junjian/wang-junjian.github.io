@@ -13,6 +13,7 @@ const posts = defineCollection({
     categories: z.union([stringOrNumber, stringOrNumber.array()]).optional().nullable(),
     tags: z.union([stringOrNumber, stringOrNumber.array()]).optional().nullable(),
     excerpt: z.string().optional(),
+    image: z.string().optional(),
     toc: z.boolean().default(true),
     tocSticky: z.boolean().default(true),
     tocLabel: z.string().default('本文目录'),

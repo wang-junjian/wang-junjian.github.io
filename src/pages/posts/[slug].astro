@@ -1,7 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { normalizeCategories, normalizeTags, formatDate, getRelatedPosts } from '../../utils/posts';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+import { normalizeCategories, normalizeTags, formatDate, getRelatedPosts, calculateReadingTime } from '../../utils/posts';
 import BackLink from '../../components/BackLink.astro';
 import RelatedPosts from '../../components/RelatedPosts.astro';
 import ArticleFooter from '../../components/ArticleFooter.astro';
@@ -20,19 +21,61 @@ const { Content, headings } = await render(post);
 
 const frontmatter = post.data;
 const formattedDate = formatDate(frontmatter.date);
+const readingTime = frontmatter.readTime !== false ? calculateReadingTime(post.body) : 0;
 
 const categories = normalizeCategories(frontmatter.categories);
 const tags = normalizeTags(frontmatter.tags);
 const relatedPosts = getRelatedPosts(post, allPosts);
+
+const pageDescription = frontmatter.excerpt || `${frontmatter.title} - ${SITE_DESCRIPTION}`;
+const pageImage = frontmatter.image ? String(frontmatter.image) : undefined;
+const postDate = frontmatter.date ? new Date(frontmatter.date) : new Date();
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: frontmatter.title || post.id,
+  description: pageDescription,
+  url: Astro.url.toString(),
+  datePublished: postDate.toISOString(),
+  author: {
+    '@type': 'Person',
+    name: '王俊健',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: SITE_TITLE,
+    logo: {
+      '@type': 'ImageObject',
+      url: new URL('/favicon.svg', Astro.site || Astro.url).toString(),
+    },
+  },
+  ...(pageImage && {
+    image: {
+      '@type': 'ImageObject',
+      url: new URL(pageImage, Astro.site || Astro.url).toString(),
+    },
+  }),
+};
 ---
 
-<BaseLayout title={frontmatter.title || post.id}>
+<BaseLayout
+  title={frontmatter.title || post.id}
+  description={pageDescription}
+  image={pageImage}
+  canonical={Astro.url.toString()}
+  type="article"
+  date={postDate}
+  author="王俊健"
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
   <article>
     <!-- Table of Contents (shown on large screens) -->
     <TableOfContents headings={headings} />
 
     <!-- Article Header -->
-    <header class="bg-white border-b border-[var(--border)] pt-20 pb-12 px-8">
+    <header class="bg-[var(--bg-primary)] border-b border-[var(--border)] pt-20 pb-12 px-8">
       <div class="max-w-content mx-auto">
         {categories.length > 0 ? (
           <div class="flex gap-2 flex-wrap mb-6">
@@ -55,6 +98,11 @@ const relatedPosts = getRelatedPosts(post, allPosts);
           <time class="text-[var(--text-secondary)] text-base font-medium">
             {formattedDate}
           </time>
+          {readingTime > 0 && (
+            <span class="text-[var(--text-secondary)] text-base">
+              约 {readingTime} 分钟阅读
+            </span>
+          )}
           <span class="text-[var(--text-secondary)] text-base">
             阅读 <span id="busuanzi_value_page_pv"></span>
           </span>
@@ -73,24 +121,31 @@ const relatedPosts = getRelatedPosts(post, allPosts);
 
           <div class="post-actions ml-auto relative" id="postActions">
             <button
-              class="post-actions-btn inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-md text-sm text-[var(--text-secondary)] bg-white hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-all duration-200"
+              class="post-actions-btn inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-md text-sm text-[var(--text-secondary)] bg-[var(--bg-primary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-all duration-200"
               id="postActionsBtn"
               aria-expanded="false"
+              aria-haspopup="true"
+              aria-controls="postActionsMenu"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="8" x="5" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 18h2"/><path d="M12 18h6"/></svg>
               <span>操作</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
-            <div class="post-actions-menu hidden absolute right-0 top-full mt-1 w-52 bg-white border border-[var(--border)] rounded-lg shadow-lg z-50 py-1" id="postActionsMenu">
-              <button class="post-actions-item w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-gray-50 flex items-center gap-2.5 transition-colors" data-action="copy-md">
+            <div
+              class="post-actions-menu hidden absolute right-0 top-full mt-1 w-52 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg shadow-lg z-50 py-1"
+              id="postActionsMenu"
+              role="menu"
+              aria-labelledby="postActionsBtn"
+            >
+              <button class="post-actions-item w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--white)] flex items-center gap-2.5 transition-colors" data-action="copy-md" role="menuitem" tabindex="-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                 <span>复制 Markdown</span>
               </button>
-              <a href={`/posts/${post.id}.md`} class="post-actions-item block w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-gray-50 flex items-center gap-2.5 no-underline transition-colors" target="_blank">
+              <a href={`/posts/${post.id}.md`} class="post-actions-item block w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--white)] flex items-center gap-2.5 no-underline transition-colors" target="_blank" role="menuitem" tabindex="-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
                 <span>打开 Markdown</span>
               </a>
-              <button class="post-actions-item w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-gray-50 flex items-center gap-2.5 transition-colors" data-action="chat">
+              <button class="post-actions-item w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--white)] flex items-center gap-2.5 transition-colors" data-action="chat" role="menuitem" tabindex="-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                 <span>智能问答</span>
               </button>
@@ -134,9 +189,7 @@ const relatedPosts = getRelatedPosts(post, allPosts);
     <ArticleFooter />
   </article>
 
-  <!-- Mermaid for diagram visualization (loaded via CDN due to large bundle size) -->
-  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
-  <!-- Post scripts: syntax highlighting, mermaid diagrams, copy buttons -->
+  <!-- Post scripts: syntax highlighting, mermaid diagrams, copy buttons, image lazy loading -->
   <script src="../../scripts/post-scripts.ts"></script>
 
   <script is:inline>
@@ -145,22 +198,96 @@ const relatedPosts = getRelatedPosts(post, allPosts);
       const menu = document.getElementById('postActionsMenu');
       if (!btn || !menu) return;
 
+      const items = Array.from(menu.querySelectorAll('[role="menuitem"]'));
+
+      function openMenu() {
+        menu.classList.remove('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+        if (items[0]) {
+          items[0].focus();
+        }
+      }
+
+      function closeMenu(returnFocus) {
+        menu.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+        if (returnFocus !== false) {
+          btn.focus();
+        }
+      }
+
+      function toggleMenu() {
+        if (menu.classList.contains('hidden')) {
+          openMenu();
+        } else {
+          closeMenu();
+        }
+      }
+
+      function focusNext(current) {
+        const idx = items.indexOf(current);
+        const next = items[(idx + 1) % items.length];
+        if (next) next.focus();
+      }
+
+      function focusPrev(current) {
+        const idx = items.indexOf(current);
+        const prev = items[(idx - 1 + items.length) % items.length];
+        if (prev) prev.focus();
+      }
+
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        const isOpen = !menu.classList.contains('hidden');
-        if (isOpen) {
-          menu.classList.add('hidden');
-          btn.setAttribute('aria-expanded', 'false');
-        } else {
-          menu.classList.remove('hidden');
-          btn.setAttribute('aria-expanded', 'true');
+        toggleMenu();
+      });
+
+      btn.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (menu.classList.contains('hidden')) {
+            openMenu();
+            if (e.key === 'ArrowUp') {
+              focusPrev(items[0]);
+            }
+          }
+        }
+      });
+
+      menu.addEventListener('keydown', function(e) {
+        const current = document.activeElement;
+        if (!items.includes(current)) return;
+
+        switch (e.key) {
+          case 'Escape':
+            e.preventDefault();
+            closeMenu();
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            focusNext(current);
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            focusPrev(current);
+            break;
+          case 'Home':
+            e.preventDefault();
+            if (items[0]) items[0].focus();
+            break;
+          case 'End':
+            e.preventDefault();
+            if (items[items.length - 1]) items[items.length - 1].focus();
+            break;
+          case 'Tab':
+            e.preventDefault();
+            closeMenu();
+            break;
         }
       });
 
       document.addEventListener('click', function(e) {
         if (!btn.contains(e.target) && !menu.contains(e.target)) {
-          menu.classList.add('hidden');
-          btn.setAttribute('aria-expanded', 'false');
+          closeMenu(false);
         }
       });
 
@@ -179,8 +306,7 @@ const relatedPosts = getRelatedPosts(post, allPosts);
               setTimeout(function() { span.textContent = original; }, 2000);
             })
             .catch(function(err) { console.error('复制失败', err); });
-          menu.classList.add('hidden');
-          btn.setAttribute('aria-expanded', 'false');
+          closeMenu();
         });
       }
 
@@ -195,8 +321,7 @@ const relatedPosts = getRelatedPosts(post, allPosts);
           } else {
             alert('AIChat 尚未加载，请稍后再试');
           }
-          menu.classList.add('hidden');
-          btn.setAttribute('aria-expanded', 'false');
+          closeMenu();
         });
       }
     })();

@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { formatDate } from '../utils/posts';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import PageHeader from '../components/PageHeader.astro';
+
+const posts = await getCollection('posts');
+const sortedPosts = posts.sort((a, b) => {
+  const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
+  const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
+  return dateB - dateA;
+});
+
+const postsByYear = new Map<number, typeof sortedPosts>();
+for (const post of sortedPosts) {
+  const year = post.data.date ? new Date(post.data.date).getFullYear() : 0;
+  if (!postsByYear.has(year)) {
+    postsByYear.set(year, []);
+  }
+  postsByYear.get(year)!.push(post);
+}
+
+const years = Array.from(postsByYear.keys()).sort((a, b) => b - a);
+---
+
+<BaseLayout
+  title={`归档 - ${SITE_TITLE}`}
+  description={`按年份浏览 ${SITE_TITLE} 的所有文章。${SITE_DESCRIPTION}`}
+  canonical={Astro.url.toString()}
+>
+  <PageHeader
+    title="归档"
+    subtitle={`共 ${posts.length} 篇文章`}
+  />
+
+  <section class="py-16 px-8">
+    <div class="max-w-content mx-auto">
+      {years.map((year, yearIndex) => (
+        <section class="mb-16 animate-fade-in-up" style={`animation-delay: ${yearIndex * 0.1}s;`}>
+          <h2 class="font-serif-display text-[2rem] font-semibold tracking-[-0.02em] mb-8 pb-4 border-b border-[var(--border)]">
+            {year}
+            <span class="ml-3 text-base font-normal text-[var(--text-secondary)]">{postsByYear.get(year)!.length} 篇</span>
+          </h2>
+          <ul class="space-y-6">
+            {postsByYear.get(year)!.map((post) => (
+              <li class="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-6">
+                <time class="text-sm text-[var(--text-secondary)] tabular-nums flex-shrink-0 w-24">
+                  {formatDate(post.data.date, { month: '2-digit', day: '2-digit' })}
+                </time>
+                <a
+                  href={`/posts/${post.id}`}
+                  class="text-[var(--text-primary)] no-underline transition-colors duration-200 hover:text-[var(--accent)]"
+                >
+                  {post.data.title || post.id}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
