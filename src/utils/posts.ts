@@ -75,6 +75,27 @@ export function formatDate(
   return d.toLocaleDateString('zh-CN', options);
 }
 
+export function calculateReadingTime(body: string | undefined): number {
+  if (!body) return 0;
+  // Remove code blocks and inline code
+  const text = body
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`]*`/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
+    .replace(/\[[^\]]*\]\([^)]+\)/g, '$1')
+    .replace(/<\/?[^>]+(>|$)/g, ' ')
+    .replace(/https?:\/\/\S+/g, ' ');
+
+  // Count Chinese characters
+  const chineseChars = (text.match(/[一-鿿]/g) || []).length;
+  // Count English words
+  const englishWords = (text.replace(/[一-鿿]/g, ' ').match(/\b[a-zA-Z0-9_]+\b/g) || []).length;
+
+  // ~300 Chinese chars/min or ~200 English words/min; blend them
+  const minutes = chineseChars / 300 + englishWords / 200;
+  return Math.max(1, Math.round(minutes));
+}
+
 function cleanMarkdownForComparison(content: string): string {
   return content
     .replace(/```[\s\S]*?```/g, ' ')       // 代码块

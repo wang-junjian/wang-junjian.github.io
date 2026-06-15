@@ -1,4 +1,21 @@
-type PostData = Array<{ id: string; title: string; date: string; excerpt: string }>;
+import Fuse from 'fuse.js';
+
+type SearchItem = {
+  id: string;
+  title: string;
+  date: string;
+  formattedDate: string;
+  excerpt: string;
+  categories: string[];
+  tags: string[];
+  body: string;
+  url: string;
+};
+
+let fuse: Fuse<SearchItem> | null = null;
+let searchIndex: SearchItem[] = [];
+let indexLoading = false;
+let indexLoaded = false;
 
 let searchInput: HTMLInputElement | null;
 let postsContainer: HTMLDivElement | null;
@@ -13,10 +30,10 @@ let randomPostExcerpt: HTMLSpanElement | null;
 let randomPostDate: HTMLTimeElement | null;
 let totalPosts: number;
 let currentRandomIndex = -1;
-let postsData: PostData = [];
+let postsData: Array<{ id: string; title: string; date: string; excerpt: string }> = [];
 
 // Get posts data from data attribute
-function getPostsData(): PostData {
+function getPostsData(): Array<{ id: string; title: string; date: string; excerpt: string }> {
   const section = document.getElementById('randomPostSection');
   if (section) {
     const data = section.getAttribute('data-posts');
@@ -31,8 +48,63 @@ function getPostsData(): PostData {
   return [];
 }
 
+async function loadSearchIndex(): Promise<SearchItem[]> {
+  if (indexLoaded) return searchIndex;
+  if (indexLoading) {
+    // Wait for existing load
+    return new Promise((resolve) => {
+      const check = () => {
+        if (indexLoaded) {
+          resolve(searchIndex);
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      check();
+    });
+  }
+
+  indexLoading = true;
+  try {
+    const response = await fetch('/search-index.json');
+    if (!response.ok) throw new Error('Failed to load search index');
+    searchIndex = await response.json();
+
+    fuse = new Fuse(searchIndex, {
+      keys: [
+        { name: 'title', weight: 0.35 },
+        { name: 'excerpt', weight: 0.2 },
+        { name: 'categories', weight: 0.1 },
+        { name: 'tags', weight: 0.1 },
+        { name: 'body', weight: 0.25 },
+      ],
+      threshold: 0.35,
+      ignoreLocation: true,
+      includeScore: false,
+      minMatchCharLength: 1,
+      useExtendedSearch: true,
+    });
+
+    indexLoaded = true;
+  } catch (err) {
+    console.error('Search index load failed:', err);
+    searchIndex = [];
+  } finally {
+    indexLoading = false;
+  }
+
+  return searchIndex;
+}
+
+function getPostIdFromItem(item: HTMLElement): string | null {
+  const link = item.querySelector('a[href^="/posts/"]') as HTMLAnchorElement | null;
+  if (!link) return null;
+  const match = link.href.match(/\/posts\/([^/]+)$/);
+  return match ? match[1] : null;
+}
+
 // Initialize elements and event listeners
-function init() {
+async function init() {
   postsData = getPostsData();
 
   searchInput = document.getElementById('searchInput') as HTMLInputElement;
@@ -51,11 +123,26 @@ function init() {
   // Only initialize if we're on the index page
   if (!randomPostBtn) return;
 
+  // Preload search index in background
+  loadSearchIndex();
+
+  // Focus search input if URL hash is #searchInput
+  if (searchInput && window.location.hash === '#searchInput') {
+    searchInput.focus();
+  }
+
+  // Global / shortcut to focus search
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      searchInput?.focus();
+    }
+  });
+
   // Search functionality
   if (searchInput) {
-    // Remove existing listener if any
-    searchInput.removeEventListener('input', handleSearch);
-    searchInput.addEventListener('input', handleSearch);
+    searchInput.removeEventListener('input', debouncedSearch);
+    searchInput.addEventListener('input', debouncedSearch);
   }
 
   // Random post functionality
@@ -63,7 +150,6 @@ function init() {
     randomPostBtn.removeEventListener('click', handleRandomPost);
     randomPostBtn.addEventListener('click', handleRandomPost);
 
-    // Find initial random index
     if (randomPostTitle && postsData.length > 0) {
       const initialTitle = randomPostTitle.textContent;
       currentRandomIndex = postsData.findIndex(p => p.title === initialTitle);
@@ -72,32 +158,72 @@ function init() {
   }
 }
 
-function handleSearch() {
+async function handleSearch() {
   if (!searchInput || !postItems || !postCount || !postsContainer || !noResults) return;
 
-  const query = searchInput.value.toLowerCase().trim();
+  const query = searchInput.value.trim();
+
+  if (query === '') {
+    postItems.forEach((item) => {
+      item.style.display = 'flex';
+    });
+    postsContainer.classList.remove('hidden');
+    noResults.classList.add('hidden');
+    postCount.textContent = `${totalPosts} 篇`;
+    return;
+  }
+
+  const index = await loadSearchIndex();
+
+  let matchingIds: Set<string>;
+
+  if (fuse && index.length > 0) {
+    const results = fuse.search(query);
+    matchingIds = new Set(results.map((r) => r.item.id));
+  } else {
+    // Fallback to simple substring search if index failed to load
+    const lowerQuery = query.toLowerCase();
+    matchingIds = new Set(
+      Array.from(postItems)
+        .map((item) => ({ item, id: getPostIdFromItem(item) }))
+        .filter(({ item, id }) => {
+          if (!id) return false;
+          const title = item.dataset.title || '';
+          const excerpt = item.dataset.excerpt || '';
+          return title.includes(lowerQuery) || excerpt.includes(lowerQuery);
+        })
+        .map(({ id }) => id as string)
+    );
+  }
+
   let visibleCount = 0;
-
   postItems.forEach((item) => {
-    const title = item.dataset.title || '';
-    const excerpt = item.dataset.excerpt || '';
-    const matches = query === '' || title.includes(query) || excerpt.includes(query);
-
+    const id = getPostIdFromItem(item);
+    const matches = id ? matchingIds.has(id) : false;
     item.style.display = matches ? 'flex' : 'none';
     if (matches) visibleCount++;
   });
 
-  postCount.textContent = query === ''
-    ? `${totalPosts} 篇`
-    : `${visibleCount} / ${totalPosts} 篇`;
+  postCount.textContent = `${visibleCount} / ${totalPosts} 篇`;
 
-  if (query !== '' && visibleCount === 0) {
+  if (visibleCount === 0) {
     postsContainer.classList.add('hidden');
     noResults.classList.remove('hidden');
   } else {
     postsContainer.classList.remove('hidden');
     noResults.classList.add('hidden');
   }
+}
+
+let searchTimeout: number | null = null;
+
+function debouncedSearch() {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  searchTimeout = window.setTimeout(() => {
+    handleSearch();
+  }, 150);
 }
 
 // Get a random index different from current
@@ -115,16 +241,13 @@ function getRandomIndex(): number {
 function updateRandomPost() {
   if (!postsData || postsData.length === 0 || !randomPostCard || !randomPostLink || !randomPostTitle || !randomPostDate) return;
 
-  // Add exit animation
   randomPostCard.style.opacity = '0';
   randomPostCard.style.transform = 'translateY(-5px)';
 
   setTimeout(() => {
-    // Get new random post
     currentRandomIndex = getRandomIndex();
     const randomPost = postsData[currentRandomIndex];
 
-    // Update content
     randomPostLink.href = `/posts/${randomPost.id}`;
     randomPostTitle.textContent = randomPost.title;
     randomPostDate.textContent = randomPost.date;
@@ -138,7 +261,6 @@ function updateRandomPost() {
       }
     }
 
-    // Add enter animation
     randomPostCard.style.opacity = '1';
     randomPostCard.style.transform = 'translateY(0)';
   }, 200);
@@ -147,13 +269,9 @@ function updateRandomPost() {
 function handleRandomPost() {
   if (!randomPostBtn) return;
 
-  // Add spin animation
   randomPostBtn.classList.add('random-spin');
-
-  // Update random post
   updateRandomPost();
 
-  // Remove spin animation after it completes
   setTimeout(() => {
     if (randomPostBtn) {
       randomPostBtn.classList.remove('random-spin');
@@ -166,7 +284,7 @@ function injectStyles() {
   if (typeof document === 'undefined') return;
 
   const existingStyle = document.getElementById('search-styles');
-  if (existingStyle) return; // Already injected
+  if (existingStyle) return;
 
   const style = document.createElement('style');
   style.id = 'search-styles';
@@ -194,10 +312,8 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-// Initialize on page load
 injectStyles();
 init();
 
-// Re-initialize when Turbo loads a page
 document.addEventListener('turbo:load', init);
 document.addEventListener('turbo:render', init);
