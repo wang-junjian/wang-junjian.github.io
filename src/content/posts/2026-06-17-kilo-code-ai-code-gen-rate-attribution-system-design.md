@@ -1241,6 +1241,6 @@ AST 节点序列 (tree-sitter 前序遍历):
 
 | 文档 | 核心内容 | 在本方案中的应用 |
 |------|---------|----------------|
-| [Jaccard MinHash 完整技术指南](2026-06-06-jaccard-minhash-text-similarity-guide.md) | MinHash 数学原理、无偏估计、LSH 分桶策略 | 指纹签名设计、误差分析、LSH 参数选择 |
-| [k-Shingle 文本去重防篡改](2026-06-06-k-shingle-text-deduplication-anti-tampering-guide.md) | k-Shingle 滑动窗口、锁死局部语序、防重排 | 客户端字符级 shingle、服务端 AST 节点级 shingle |
-| [AI 编码助手代码归因与贡献占比](2026-06-07-coding-assistant-contribution-ratio-design.md) | AST MinHash 指纹系统、LSH 归因引擎、行级 diff 归因、置信度分级 | 归因引擎完整架构、Python 实现、业务阈值设计、效率评估模型 |
+| [Jaccard MinHash 完整技术指南](2026-06-06-jaccard-minhash-text-similarity-guide) | MinHash 数学原理、无偏估计、LSH 分桶策略 | 指纹签名设计、误差分析、LSH 参数选择 |
+| [k-Shingle 文本去重防篡改](2026-06-06-k-shingle-text-deduplication-anti-tampering-guide) | k-Shingle 滑动窗口、锁死局部语序、防重排 | 客户端字符级 shingle、服务端 AST 节点级 shingle |
+| [AI 编码助手代码归因与贡献占比](2026-06-07-coding-assistant-contribution-ratio-design) | AST MinHash 指纹系统、LSH 归因引擎、行级 diff 归因、置信度分级 | 归因引擎完整架构、Python 实现、业务阈值设计、效率评估模型 |
