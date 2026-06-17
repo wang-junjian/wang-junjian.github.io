@@ -375,3 +375,9 @@ timestamp: 2026-05-28T00:00:00Z
 
 Part of the [sales dataset](/datasets/sales.md).
 ```
+
+
+## 参考资料
+- [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+- [Introducing the Open Knowledge Format](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing)
+- [Knowledge Catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog)
