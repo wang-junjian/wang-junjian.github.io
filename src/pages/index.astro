@@ -1,30 +1,40 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { formatDate } from '../utils/posts';
+import { groupPostsByDay, getAllTags } from '../utils/posts';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import PostCard from '../components/PostCard.astro';
+import DayGroup from '../components/DayGroup.astro';
+import StreamSidebar from '../components/StreamSidebar.astro';
 
-const posts = await getCollection('posts');
+const allPosts = await getCollection('posts');
 
 // Sort posts by date descending
-const sortedPosts = posts.sort((a, b) => {
+const sortedPosts = allPosts.sort((a, b) => {
   const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
   const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
   return dateB - dateA;
 });
 
-// Prepare full posts data for random picker
-const postsData = sortedPosts.map(post => ({
+// Limit homepage stream to the most recent 20 posts
+const recentPosts = sortedPosts.slice(0, 20);
+
+// Group recent posts by day
+const dayGroups = groupPostsByDay(recentPosts);
+const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
+
+// Prepare sidebar data: top tags by count
+const allTags = getAllTags(allPosts);
+const recentTags = Array.from(allTags.entries())
+  .map(([tag, posts]) => [tag, posts.length] as [string, number])
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 20);
+
+// Highlights: compact chronological list for the sidebar
+const highlights = sortedPosts.slice(0, 30).map((post) => ({
   id: post.id,
   title: post.data.title || post.id,
-  date: formatDate(post.data.date),
-  excerpt: post.data.excerpt || ''
+  date: post.data.date,
 }));
-
-// Get initial random post for server-render
-const initialRandomIndex = Math.floor(Math.random() * sortedPosts.length);
-const initialRandomPost = postsData[initialRandomIndex];
 ---
 
 <BaseLayout
@@ -32,88 +42,53 @@ const initialRandomPost = postsData[initialRandomIndex];
   description={SITE_DESCRIPTION}
   canonical={Astro.url.toString()}
 >
-  <!-- Header with Search and Random Post -->
-  <section class="pt-20 pb-12 px-8 bg-[var(--bg-primary)] border-b border-[var(--border)]">
-    <div class="max-w-[700px] mx-auto text-center animate-fade-in-up">
-      <!-- Search Input -->
-      <div class="relative mb-8">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="搜索文章..."
-          class="w-full py-4.5 pl-14 pr-6 text-base border-2 border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans focus:border-[var(--text-primary)] focus:bg-[var(--white)]"
-        />
-        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-xl pointer-events-none">
-          🔍
-        </span>
-      </div>
-
-      <!-- Random Post Area -->
-      <div id="randomPostSection" class="flex items-start gap-4 justify-center" data-posts={JSON.stringify(postsData)}>
-        <!-- Random Post Button -->
-        <button
-          id="randomPostBtn"
-          class="group relative flex-shrink-0 pt-0.5 transition-all duration-400 ease"
-          title="随机换一篇"
-        >
-          <span class="text-4xl transition-all duration-500 group-hover:rotate-180 group-hover:scale-115 inline-block leading-none">🎲</span>
-        </button>
-
-        <!-- Random Post Card -->
-        <article id="randomPostCard" class="text-left flex-1 max-w-lg group">
-          <a id="randomPostLink" href={`/posts/${initialRandomPost.id}`} class="block">
-            <div class="flex items-baseline gap-3 mb-2">
-              <h3 id="randomPostTitle" class="font-serif-display text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors duration-300 leading-tight">
-                {initialRandomPost.title}
-              </h3>
-              <span class="text-xs text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300">→</span>
-            </div>
-            <div class="flex items-center gap-3 text-sm text-[var(--text-secondary)] font-sans">
-              <time id="randomPostDate" class="tabular-nums">{initialRandomPost.date}</time>
-              {initialRandomPost.excerpt && (
-                <>
-                  <span class="opacity-30">|</span>
-                  <span id="randomPostExcerpt" class="truncate max-w-md">
-                    {initialRandomPost.excerpt}
-                  </span>
-                </>
-              )}
-            </div>
-          </a>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- Posts Grid -->
-  <section class="py-16 px-8">
+  <!-- Stream + Sidebar -->
+  <section class="pt-10 pb-6 px-8">
     <div class="max-w-grid mx-auto">
-      <div class="flex items-baseline justify-between mb-12">
-        <h2 class="font-serif-display text-2xl font-semibold tracking-[-0.02em]">
-          全部文章
-        </h2>
-        <span id="postCount" class="text-[var(--text-secondary)] text-sm tabular-nums">
-          {sortedPosts.length} 篇
-        </span>
-      </div>
+      <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+        <!-- Main Stream -->
+        <div class="flex-1 min-w-0">
+          <!-- Search Bar -->
+          <div class="mb-4">
+            <div class="relative max-w-[560px]">
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="搜索文章..."
+                class="w-full py-2 pl-10 pr-3 text-sm border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans rounded-md focus:border-[var(--text-primary)] focus:bg-[var(--white)]"
+              />
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-base pointer-events-none">
+                🔍
+              </span>
+            </div>
+          </div>
 
-      <div id="postsContainer" class="grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-12">
-        {sortedPosts.map((post, index) => (
-          <PostCard
-            href={`/posts/${post.id}`}
-            title={post.data.title || post.id}
-            date={formatDate(post.data.date)}
-            excerpt={post.data.excerpt}
-            index={index}
-          />
-        ))}
-      </div>
+          <div id="postsContainer" class="stream-container">
+            {sortedDays.map((dayKey, dayIndex) => {
+              const dayPosts = dayGroups.get(dayKey) || [];
+              const entryStartIndex = sortedDays
+                .slice(0, dayIndex)
+                .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
+              return (
+                <DayGroup
+                  date={new Date(dayKey + 'T00:00:00')}
+                  posts={dayPosts}
+                  startIndex={entryStartIndex}
+                />
+              );
+            })}
+          </div>
 
-      <!-- No Results Message -->
-      <div id="noResults" class="hidden text-center py-16 px-8">
-        <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
-          没有找到匹配的文章
-        </p>
+          <!-- No Results Message -->
+          <div id="noResults" class="hidden text-center py-16 px-8">
+            <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
+              没有找到匹配的文章
+            </p>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <StreamSidebar totalPosts={allPosts.length} recentTags={recentTags} highlights={highlights} />
       </div>
     </div>
   </section>

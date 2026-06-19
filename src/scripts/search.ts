@@ -22,31 +22,9 @@ let postsContainer: HTMLDivElement | null;
 let noResults: HTMLDivElement | null;
 let postItems: NodeListOf<HTMLElement> | null;
 let postCount: HTMLSpanElement | null;
-let randomPostBtn: HTMLButtonElement | null;
-let randomPostCard: HTMLElement | null;
-let randomPostLink: HTMLAnchorElement | null;
-let randomPostTitle: HTMLHeadingElement | null;
-let randomPostExcerpt: HTMLSpanElement | null;
-let randomPostDate: HTMLTimeElement | null;
+let dayGroups: NodeListOf<HTMLElement> | null;
+let streamFooter: HTMLElement | null;
 let totalPosts: number;
-let currentRandomIndex = -1;
-let postsData: Array<{ id: string; title: string; date: string; excerpt: string }> = [];
-
-// Get posts data from data attribute
-function getPostsData(): Array<{ id: string; title: string; date: string; excerpt: string }> {
-  const section = document.getElementById('randomPostSection');
-  if (section) {
-    const data = section.getAttribute('data-posts');
-    if (data) {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return [];
-      }
-    }
-  }
-  return [];
-}
 
 async function loadSearchIndex(): Promise<SearchItem[]> {
   if (indexLoaded) return searchIndex;
@@ -105,29 +83,23 @@ function getPostIdFromItem(item: HTMLElement): string | null {
 
 // Initialize elements and event listeners
 async function init() {
-  postsData = getPostsData();
-
   searchInput = document.getElementById('searchInput') as HTMLInputElement;
   postsContainer = document.getElementById('postsContainer') as HTMLDivElement;
   noResults = document.getElementById('noResults') as HTMLDivElement;
   postItems = document.querySelectorAll<HTMLElement>('.post-item');
   postCount = document.getElementById('postCount') as HTMLSpanElement;
-  randomPostBtn = document.getElementById('randomPostBtn') as HTMLButtonElement;
-  randomPostCard = document.getElementById('randomPostCard') as HTMLElement;
-  randomPostLink = document.getElementById('randomPostLink') as HTMLAnchorElement;
-  randomPostTitle = document.getElementById('randomPostTitle') as HTMLHeadingElement;
-  randomPostExcerpt = document.getElementById('randomPostExcerpt') as HTMLSpanElement;
-  randomPostDate = document.getElementById('randomPostDate') as HTMLTimeElement;
+  dayGroups = document.querySelectorAll<HTMLElement>('.day-group');
+  streamFooter = document.querySelector<HTMLElement>('.stream-footer');
   totalPosts = postItems ? postItems.length : 0;
 
   // Only initialize if we're on the index page
-  if (!randomPostBtn) return;
+  if (!searchInput) return;
 
   // Preload search index in background
   loadSearchIndex();
 
   // Focus search input if URL hash is #searchInput
-  if (searchInput && window.location.hash === '#searchInput') {
+  if (window.location.hash === '#searchInput') {
     searchInput.focus();
   }
 
@@ -140,36 +112,37 @@ async function init() {
   });
 
   // Search functionality
-  if (searchInput) {
-    searchInput.removeEventListener('input', debouncedSearch);
-    searchInput.addEventListener('input', debouncedSearch);
-  }
+  searchInput.removeEventListener('input', debouncedSearch);
+  searchInput.addEventListener('input', debouncedSearch);
 
-  // Random post functionality
-  if (randomPostBtn) {
-    randomPostBtn.removeEventListener('click', handleRandomPost);
-    randomPostBtn.addEventListener('click', handleRandomPost);
+  // Enter key in search input
+  searchInput.removeEventListener('keydown', handleSearchKeydown);
+  searchInput.addEventListener('keydown', handleSearchKeydown);
+}
 
-    if (randomPostTitle && postsData.length > 0) {
-      const initialTitle = randomPostTitle.textContent;
-      currentRandomIndex = postsData.findIndex(p => p.title === initialTitle);
-      if (currentRandomIndex === -1) currentRandomIndex = getRandomIndex();
-    }
+function handleSearchKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    handleSearch();
   }
 }
 
 async function handleSearch() {
-  if (!searchInput || !postItems || !postCount || !postsContainer || !noResults) return;
+  if (!searchInput || !postItems || !postsContainer || !noResults) return;
 
   const query = searchInput.value.trim();
 
   if (query === '') {
     postItems.forEach((item) => {
-      item.style.display = 'flex';
+      item.style.display = '';
     });
+    dayGroups?.forEach((group) => {
+      group.style.display = '';
+    });
+    streamFooter?.classList.remove('hidden');
     postsContainer.classList.remove('hidden');
     noResults.classList.add('hidden');
-    postCount.textContent = `${totalPosts} 篇`;
+    if (postCount) postCount.textContent = `${totalPosts} 篇`;
     return;
   }
 
@@ -200,11 +173,19 @@ async function handleSearch() {
   postItems.forEach((item) => {
     const id = getPostIdFromItem(item);
     const matches = id ? matchingIds.has(id) : false;
-    item.style.display = matches ? 'flex' : 'none';
+    item.style.display = matches ? '' : 'none';
     if (matches) visibleCount++;
   });
 
-  postCount.textContent = `${visibleCount} / ${totalPosts} 篇`;
+  // Hide day groups that have no visible entries
+  dayGroups?.forEach((group) => {
+    const visibleItems = group.querySelectorAll('.post-item:not([style*="display: none"])');
+    group.style.display = visibleItems.length > 0 ? '' : 'none';
+  });
+
+  streamFooter?.classList.add('hidden');
+
+  if (postCount) postCount.textContent = `${visibleCount} / ${totalPosts} 篇`;
 
   if (visibleCount === 0) {
     postsContainer.classList.add('hidden');
@@ -226,93 +207,6 @@ function debouncedSearch() {
   }, 150);
 }
 
-// Get a random index different from current
-function getRandomIndex(): number {
-  if (!postsData || postsData.length === 0) return 0;
-
-  let newIndex;
-  do {
-    newIndex = Math.floor(Math.random() * postsData.length);
-  } while (newIndex === currentRandomIndex && postsData.length > 1);
-  return newIndex;
-}
-
-// Update random post display with animation
-function updateRandomPost() {
-  if (!postsData || postsData.length === 0 || !randomPostCard || !randomPostLink || !randomPostTitle || !randomPostDate) return;
-
-  randomPostCard.style.opacity = '0';
-  randomPostCard.style.transform = 'translateY(-5px)';
-
-  setTimeout(() => {
-    currentRandomIndex = getRandomIndex();
-    const randomPost = postsData[currentRandomIndex];
-
-    randomPostLink.href = `/posts/${randomPost.id}`;
-    randomPostTitle.textContent = randomPost.title;
-    randomPostDate.textContent = randomPost.date;
-
-    if (randomPostExcerpt) {
-      if (randomPost.excerpt) {
-        randomPostExcerpt.textContent = randomPost.excerpt;
-        randomPostExcerpt.style.display = 'inline';
-      } else {
-        randomPostExcerpt.style.display = 'none';
-      }
-    }
-
-    randomPostCard.style.opacity = '1';
-    randomPostCard.style.transform = 'translateY(0)';
-  }, 200);
-}
-
-function handleRandomPost() {
-  if (!randomPostBtn) return;
-
-  randomPostBtn.classList.add('random-spin');
-  updateRandomPost();
-
-  setTimeout(() => {
-    if (randomPostBtn) {
-      randomPostBtn.classList.remove('random-spin');
-    }
-  }, 500);
-}
-
-// Add enhanced animations via style injection
-function injectStyles() {
-  if (typeof document === 'undefined') return;
-
-  const existingStyle = document.getElementById('search-styles');
-  if (existingStyle) return;
-
-  const style = document.createElement('style');
-  style.id = 'search-styles';
-  style.textContent = `
-    @keyframes randomSpin {
-      0% {
-        transform: rotate(0deg) scale(1);
-      }
-      50% {
-        transform: rotate(180deg) scale(1.3);
-      }
-      100% {
-        transform: rotate(360deg) scale(1);
-      }
-    }
-
-    .random-spin span:first-child {
-      animation: randomSpin 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-
-    #randomPostCard {
-      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-injectStyles();
 init();
 
 document.addEventListener('turbo:load', init);
