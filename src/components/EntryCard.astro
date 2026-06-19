@@ -1,0 +1,94 @@
+---
+import { formatDate, renderPreview, generateExcerpt } from '../utils/posts';
+
+interface Props {
+  id: string;
+  title: string;
+  date: Date;
+  excerpt?: string;
+  body?: string;
+  categories?: string[];
+  tags?: string[];
+  image?: string;
+  readingTime?: number;
+  wordCount?: number;
+  showDate?: boolean;
+  index?: number;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const {
+  id,
+  title,
+  date,
+  excerpt,
+  body,
+  categories = [],
+  tags = [],
+  image,
+  readingTime,
+  wordCount,
+  showDate = true,
+  index = 0,
+} = Astro.props;
+
+const href = `/posts/${id}`;
+const previewHtml = excerpt
+  ? `<p>${escapeHtml(excerpt)}</p>`
+  : renderPreview(body, 480);
+const searchExcerpt = generateExcerpt(excerpt || body, 480).toLowerCase();
+---
+
+<article
+  class="post-item entry-card"
+  style={`animation-delay: ${((index % 6) * 0.1).toFixed(1)}s;`}
+  data-title={title.toLowerCase()}
+  data-excerpt={searchExcerpt}
+  data-id={id}
+>
+  <h3 class="entry-title">
+    <a href={href}>{title}</a>
+  </h3>
+
+  {image && (
+    <a href={href} class="entry-image">
+      <img src={image} alt={title} loading="lazy" decoding="async" />
+    </a>
+  )}
+
+  {previewHtml && <div class="entry-excerpt" set:html={previewHtml} />}
+
+  <div class="entry-meta">
+    {showDate && (
+      <time datetime={date.toISOString()}>
+        {formatDate(date)}
+      </time>
+    )}
+
+    {typeof readingTime === 'number' && readingTime > 0 && (
+      <span class="meta-separator" aria-hidden="true">·</span>
+      <span>{readingTime} 分钟</span>
+    )}
+
+    {typeof wordCount === 'number' && wordCount > 0 && (
+      <span class="meta-separator" aria-hidden="true">·</span>
+      <span>{wordCount.toLocaleString('zh-CN')} 字</span>
+    )}
+  </div>
+
+  {tags.length > 0 && (
+    <div class="entry-tags">
+      {tags.map((tag) => (
+        <a href={`/tags#tag-${encodeURIComponent(tag)}`} class="entry-tag">{tag}</a>
+      ))}
+    </div>
+  )}
+</article>
