@@ -20,11 +20,10 @@ let indexLoaded = false;
 let searchInput: HTMLInputElement | null;
 let postsContainer: HTMLDivElement | null;
 let noResults: HTMLDivElement | null;
-let postItems: NodeListOf<HTMLElement> | null;
 let postCount: HTMLSpanElement | null;
-let dayGroups: NodeListOf<HTMLElement> | null;
 let streamFooter: HTMLElement | null;
-let totalPosts: number;
+let originalPostsHtml = '';
+let allPostsCount = 0;
 
 async function loadSearchIndex(): Promise<SearchItem[]> {
   if (indexLoaded) return searchIndex;
@@ -63,6 +62,7 @@ async function loadSearchIndex(): Promise<SearchItem[]> {
       useExtendedSearch: true,
     });
 
+    allPostsCount = searchIndex.length;
     indexLoaded = true;
   } catch (err) {
     console.error('Search index load failed:', err);
@@ -74,11 +74,70 @@ async function loadSearchIndex(): Promise<SearchItem[]> {
   return searchIndex;
 }
 
-function getPostIdFromItem(item: HTMLElement): string | null {
-  const link = item.querySelector('a[href^="/posts/"]') as HTMLAnchorElement | null;
-  if (!link) return null;
-  const match = link.href.match(/\/posts\/([^/]+)$/);
-  return match ? match[1] : null;
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatSearchDate(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+function generateSearchExcerpt(item: SearchItem, maxChars = 320): string {
+  if (item.excerpt) return item.excerpt;
+  if (!item.body) return '';
+  const text = item.body.replace(/\s+/g, ' ').trim();
+  return text.length > maxChars ? text.slice(0, maxChars).trim() + '…' : text;
+}
+
+function renderSearchResultItem(item: SearchItem, index: number): string {
+  const href = `/posts/${encodeURIComponent(item.id)}`;
+  const title = escapeHtml(item.title || item.id);
+  const date = formatSearchDate(item.date);
+  const excerpt = escapeHtml(generateSearchExcerpt(item, 320));
+  const tags = item.tags || [];
+
+  const tagLinks = tags
+    .map(
+      (tag) =>
+        `<a href="/tags#tag-${encodeURIComponent(tag)}" class="entry-tag">${escapeHtml(tag)}</a>`
+    )
+    .join('');
+
+  return `
+    <article
+      class="post-item entry-card"
+      style="animation-delay: ${((index % 6) * 0.1).toFixed(1)}s;"
+      data-title="${title.toLowerCase()}"
+      data-excerpt="${excerpt.toLowerCase()}"
+      data-id="${escapeHtml(item.id)}"
+    >
+      <h3 class="entry-title">
+        <a href="${href}">${title}</a>
+      </h3>
+      ${excerpt ? `<div class="entry-excerpt"><p>${excerpt}</p></div>` : ''}
+      <div class="entry-meta">
+        ${date ? `<time datetime="${escapeHtml(item.date)}">${date}</time>` : ''}
+      </div>
+      ${tagLinks ? `<div class="entry-tags">${tagLinks}</div>` : ''}
+    </article>
+  `;
+}
+
+function renderSearchResults(results: SearchItem[]): string {
+  if (results.length === 0) return '';
+  return results.map((item, i) => renderSearchResultItem(item, i)).join('\n');
 }
 
 // Initialize elements and event listeners
@@ -86,14 +145,16 @@ async function init() {
   searchInput = document.getElementById('searchInput') as HTMLInputElement;
   postsContainer = document.getElementById('postsContainer') as HTMLDivElement;
   noResults = document.getElementById('noResults') as HTMLDivElement;
-  postItems = document.querySelectorAll<HTMLElement>('.post-item');
   postCount = document.getElementById('postCount') as HTMLSpanElement;
-  dayGroups = document.querySelectorAll<HTMLElement>('.day-group');
   streamFooter = document.querySelector<HTMLElement>('.stream-footer');
-  totalPosts = postItems ? postItems.length : 0;
 
   // Only initialize if we're on the index page
-  if (!searchInput) return;
+  if (!searchInput || !postsContainer) return;
+
+  // Backup the original stream HTML so we can restore it when the search is cleared
+  if (!originalPostsHtml) {
+    originalPostsHtml = postsContainer.innerHTML;
+  }
 
   // Preload search index in background
   loadSearchIndex();
@@ -128,69 +189,47 @@ function handleSearchKeydown(e: KeyboardEvent) {
 }
 
 async function handleSearch() {
-  if (!searchInput || !postItems || !postsContainer || !noResults) return;
+  if (!searchInput || !postsContainer || !noResults) return;
 
   const query = searchInput.value.trim();
 
   if (query === '') {
-    postItems.forEach((item) => {
-      item.style.display = '';
-    });
-    dayGroups?.forEach((group) => {
-      group.style.display = '';
-    });
+    // Restore the original day-group stream
+    postsContainer.innerHTML = originalPostsHtml;
     streamFooter?.classList.remove('hidden');
     postsContainer.classList.remove('hidden');
     noResults.classList.add('hidden');
-    if (postCount) postCount.textContent = `${totalPosts} 篇`;
+    if (postCount) postCount.textContent = `${allPostsCount} 篇`;
     return;
   }
 
   const index = await loadSearchIndex();
 
-  let matchingIds: Set<string>;
+  let results: SearchItem[] = [];
 
   if (fuse && index.length > 0) {
-    const results = fuse.search(query);
-    matchingIds = new Set(results.map((r) => r.item.id));
+    results = fuse.search(query).map((r) => r.item);
   } else {
     // Fallback to simple substring search if index failed to load
     const lowerQuery = query.toLowerCase();
-    matchingIds = new Set(
-      Array.from(postItems)
-        .map((item) => ({ item, id: getPostIdFromItem(item) }))
-        .filter(({ item, id }) => {
-          if (!id) return false;
-          const title = item.dataset.title || '';
-          const excerpt = item.dataset.excerpt || '';
-          return title.includes(lowerQuery) || excerpt.includes(lowerQuery);
-        })
-        .map(({ id }) => id as string)
-    );
+    results = index.filter((item) => {
+      const title = item.title?.toLowerCase() || '';
+      const excerpt = item.excerpt?.toLowerCase() || '';
+      const body = item.body?.toLowerCase() || '';
+      return title.includes(lowerQuery) || excerpt.includes(lowerQuery) || body.includes(lowerQuery);
+    });
   }
-
-  let visibleCount = 0;
-  postItems.forEach((item) => {
-    const id = getPostIdFromItem(item);
-    const matches = id ? matchingIds.has(id) : false;
-    item.style.display = matches ? '' : 'none';
-    if (matches) visibleCount++;
-  });
-
-  // Hide day groups that have no visible entries
-  dayGroups?.forEach((group) => {
-    const visibleItems = group.querySelectorAll('.post-item:not([style*="display: none"])');
-    group.style.display = visibleItems.length > 0 ? '' : 'none';
-  });
 
   streamFooter?.classList.add('hidden');
 
-  if (postCount) postCount.textContent = `${visibleCount} / ${totalPosts} 篇`;
+  if (postCount) postCount.textContent = `${results.length} / ${allPostsCount} 篇`;
 
-  if (visibleCount === 0) {
+  if (results.length === 0) {
+    postsContainer.innerHTML = '';
     postsContainer.classList.add('hidden');
     noResults.classList.remove('hidden');
   } else {
+    postsContainer.innerHTML = renderSearchResults(results);
     postsContainer.classList.remove('hidden');
     noResults.classList.add('hidden');
   }
