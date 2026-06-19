@@ -1,5 +1,7 @@
 ---
 import { formatDate, renderPreview, generateExcerpt } from '../utils/posts';
+import sharp from 'sharp';
+import path from 'node:path';
 
 interface Props {
   id: string;
@@ -25,6 +27,30 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#39;');
 }
 
+async function addImageDimensions(html: string): Promise<string> {
+  const imgRegex = /<img\s+([^>]*?)src="([^"]+)"([^>]*?)>/gi;
+  const matches = Array.from(html.matchAll(imgRegex));
+
+  for (const match of matches) {
+    const src = match[2];
+    if (!src.startsWith('/')) continue;
+    if (match[0].includes('width=') || match[0].includes('height=')) continue;
+
+    try {
+      const imagePath = path.join(process.cwd(), 'public', src);
+      const metadata = await sharp(imagePath).metadata();
+      if (metadata.width && metadata.height) {
+        const newTag = `<img ${match[1]}src="${src}"${match[3]} width="${metadata.width}" height="${metadata.height}">`;
+        html = html.replace(match[0], newTag);
+      }
+    } catch {
+      // Ignore failed reads
+    }
+  }
+
+  return html;
+}
+
 const {
   id,
   title,
@@ -41,10 +67,27 @@ const {
 } = Astro.props;
 
 const href = `/posts/${id}`;
-const previewHtml = excerpt
+let previewHtml = excerpt
   ? `<p>${escapeHtml(excerpt)}</p>`
   : renderPreview(body, 480);
-const searchExcerpt = generateExcerpt(excerpt || body, 480).toLowerCase();
+previewHtml = await addImageDimensions(previewHtml);
+const searchExcerpt = generateExcerpt(excerpt || body, 120).toLowerCase();
+
+let imageWidth: number | undefined;
+let imageHeight: number | undefined;
+
+if (image) {
+  try {
+    const imagePath = image.startsWith('/')
+      ? path.join(process.cwd(), 'public', image)
+      : image;
+    const metadata = await sharp(imagePath).metadata();
+    imageWidth = metadata.width ?? undefined;
+    imageHeight = metadata.height ?? undefined;
+  } catch (err) {
+    console.warn(`Failed to read image dimensions for ${image}:`, err);
+  }
+}
 ---
 
 <article
@@ -60,7 +103,7 @@ const searchExcerpt = generateExcerpt(excerpt || body, 480).toLowerCase();
 
   {image && (
     <a href={href} class="entry-image">
-      <img src={image} alt={title} loading="lazy" decoding="async" />
+      <img src={image} alt={title} width={imageWidth} height={imageHeight} loading="lazy" decoding="async" />
     </a>
   )}
 

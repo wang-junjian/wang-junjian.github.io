@@ -339,6 +339,11 @@ async function initEmbeddings() {
   }
 }
 
+async function ensureEmbeddingsLoaded() {
+  if (embeddingsLoaded) return;
+  await initEmbeddings();
+}
+
 function getCurrentDoc(): CurrentDoc | null {
   if (!location.pathname.startsWith('/posts/')) return null;
   const proseEl = document.querySelector('.prose');
@@ -421,6 +426,8 @@ function createStreamingMessage() {
 
 async function sendMessage(text: string) {
   if (!text || !apiConfig.apiKey || isGenerating) return;
+
+  await ensureEmbeddingsLoaded();
 
   setGenerating(true);
   messages.push({ role: 'user', content: text });
@@ -531,6 +538,7 @@ function applyMode() {
       chatWindow.classList.add('open');
       isWindowOpen = true;
     }
+    ensureEmbeddingsLoaded();
   } else {
     document.documentElement.classList.remove('ai-chat-embedded');
   }
@@ -577,6 +585,7 @@ function initMode() {
       chatWindow.classList.add('open');
       isWindowOpen = true;
     }
+    ensureEmbeddingsLoaded();
   }
   if (modeToggleBtn) {
     modeToggleBtn.style.display = canEmbed() ? '' : 'none';
@@ -592,6 +601,7 @@ function toggleWindow() {
   if (isWindowOpen) {
     chatWindow.classList.add('open');
     toggleBtn.textContent = '✕';
+    ensureEmbeddingsLoaded();
   } else {
     chatWindow.classList.remove('open');
     toggleBtn.textContent = '🤖';
@@ -709,7 +719,6 @@ function init() {
   loadMessages();
   initMode();
   restoreWindowState();
-  initEmbeddings();
   initMermaid();
 
   (window as any).__aiChat = {

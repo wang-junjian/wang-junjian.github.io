@@ -30,6 +30,16 @@ export default defineConfig({
   vite: {
     plugins: [tsconfigPaths(), tailwindcss()],
     assetsInclude: ['**/*.xml', '**/*.txt'],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('fuse.js')) return 'search';
+            if (id.includes('marked') || id.includes('highlight.js')) return 'chat-markdown';
+          },
+        },
+      },
+    },
     server: {
       proxy: {
         '/api/chat': {

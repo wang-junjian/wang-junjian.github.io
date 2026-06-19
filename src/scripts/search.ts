@@ -156,9 +156,6 @@ async function init() {
     originalPostsHtml = postsContainer.innerHTML;
   }
 
-  // Preload search index in background
-  loadSearchIndex();
-
   // Focus search input if URL hash is #searchInput
   if (window.location.hash === '#searchInput') {
     searchInput.focus();
@@ -201,6 +198,17 @@ async function handleSearch() {
     noResults.classList.add('hidden');
     if (postCount) postCount.textContent = `${allPostsCount} 篇`;
     return;
+  }
+
+  if (!indexLoaded && !indexLoading) {
+    postsContainer.innerHTML = `
+      <p class="text-center py-8 text-[var(--text-secondary)]">
+        正在加载搜索索引，请稍候…
+      </p>
+    `;
+    postsContainer.classList.remove('hidden');
+    noResults.classList.add('hidden');
+    streamFooter?.classList.add('hidden');
   }
 
   const index = await loadSearchIndex();
