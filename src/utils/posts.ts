@@ -1,6 +1,7 @@
 import type { CollectionEntry } from 'astro:content';
 import fs from 'node:fs';
 import { marked } from 'marked';
+import katex from 'katex';
 
 export function normalizeCategories(value: any): string[] {
   if (!value) return [];
@@ -234,8 +235,57 @@ function stripHtmlTags(html: string): string {
   return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 }
 
+function protectCodeBlocks(md: string): { text: string; placeholders: string[] } {
+  const placeholders: string[] = [];
+  const text = md.replace(/(```[\s\S]*?```|`[^`]+`)/g, (match) => {
+    placeholders.push(match);
+    return ` CODE${placeholders.length - 1} `;
+  });
+  return { text, placeholders };
+}
+
+function restoreCodeBlocks(text: string, placeholders: string[]): string {
+  return text.replace(/ CODE(\d+) /g, (_, i) => placeholders[parseInt(i, 10)]);
+}
+
+function renderInlineMath(md: string): string {
+  const { text, placeholders } = protectCodeBlocks(md);
+  const rendered = text.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g, (_, math) => {
+    try {
+      return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+    } catch {
+      return `$${math}$`;
+    }
+  });
+  return restoreCodeBlocks(rendered, placeholders);
+}
+
+function renderBlockMath(block: string): string | null {
+  const trimmed = block.trim();
+  if (trimmed.startsWith('$$') && trimmed.endsWith('$$')) {
+    const math = trimmed.slice(2, -2).trim();
+    if (!math) return null;
+    try {
+      return katex.renderToString(math, { displayMode: true, throwOnError: false });
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function renderMarkdownBlock(block: string): string {
-  const html = marked.parse(block, { async: false, gfm: true }) as string;
+  const blockMath = renderBlockMath(block);
+  if (blockMath) return blockMath;
+
+  // Code blocks must bypass renderInlineMath: replacing them with placeholders
+  // before marked.parse would hide the ``` fence from the Markdown parser.
+  if (block.trim().startsWith('```')) {
+    const html = marked.parse(block, { async: false, gfm: true }) as string;
+    return sanitizePreviewHtml(html);
+  }
+
+  const html = marked.parse(renderInlineMath(block), { async: false, gfm: true }) as string;
   return sanitizePreviewHtml(html);
 }
 
@@ -248,10 +298,39 @@ function truncateCodeBlock(block: string, maxLines = 8): string {
   return `${lines[0]}\n${truncated}\n// ...\n${lines[lines.length - 1]}`;
 }
 
-export function renderPreview(body: string | undefined, maxChars = 480): string {
+function truncateAtSentenceBoundary(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const candidate = text.slice(0, maxLen);
+  // Find the last sentence-ending punctuation (Chinese or Western)
+  const match = candidate.match(/[。！？.!?]/g);
+  if (!match) return candidate;
+  const lastPunct = match[match.length - 1];
+  const lastIndex = candidate.lastIndexOf(lastPunct);
+  if (lastIndex <= 0) return candidate;
+  return candidate.slice(0, lastIndex + 1).trim();
+}
+
+function protectCodeBlocksForSplit(md: string): { text: string; placeholders: string[] } {
+  const placeholders: string[] = [];
+  const text = md.replace(/```[\s\S]*?```/g, (match) => {
+    placeholders.push(match);
+    return `__PREVIEW_CODE_BLOCK_${placeholders.length - 1}__`;
+  });
+  return { text, placeholders };
+}
+
+function restoreCodeBlocksForSplit(text: string, placeholders: string[]): string {
+  return text.replace(/__PREVIEW_CODE_BLOCK_(\d+)__/g, (_, i) => placeholders[parseInt(i, 10)]);
+}
+
+export function renderPreview(body: string | undefined, maxChars = 600): string {
   if (!body) return '';
 
-  const blocks = body
+  // Protect whole code blocks before splitting, so internal blank lines don't
+  // break a single ```...``` fence into multiple fragments.
+  const { text: splitProtectedBody, placeholders: codeBlockPlaceholders } = protectCodeBlocksForSplit(body);
+
+  const blocks = splitProtectedBody
     .split(/\n\n+/)
     .map((b) => b.trim())
     .filter((b) => b.length > 0);
@@ -263,18 +342,21 @@ export function renderPreview(body: string | undefined, maxChars = 480): string 
   for (const block of blocks) {
     if (reachedLimit) break;
 
+    // Restore the real Markdown before any further processing.
+    const realBlock = restoreCodeBlocksForSplit(block, codeBlockPlaceholders);
+
     // Skip headings and horizontal rules in preview
-    if (/^#{1,6}\s/.test(block) || /^-{3,}$|^\*{3,}$/.test(block)) {
+    if (/^#{1,6}\s/.test(realBlock) || /^-{3,}$|^\*{3,}$/.test(realBlock)) {
       continue;
     }
 
-    const isCodeBlock = block.startsWith('```');
-    const isImageBlock = /^!\[/.test(block);
-    const isTableBlock = /^\|.*\|/m.test(block) && /^\|?[\s\-:|]+\|?\s*$/m.test(block);
+    const isCodeBlock = realBlock.startsWith('```');
+    const isImageBlock = /^!\[/.test(realBlock);
+    const isTableBlock = /^\|.*\|/m.test(realBlock) && /^\|?[\s\-:|]+\|?\s*$/m.test(realBlock);
 
-    let processedBlock = block;
+    let processedBlock = realBlock;
     if (isCodeBlock) {
-      processedBlock = truncateCodeBlock(block, 8);
+      processedBlock = truncateCodeBlock(realBlock, 15);
     }
 
     const html = renderMarkdownBlock(processedBlock);
@@ -286,9 +368,11 @@ export function renderPreview(body: string | undefined, maxChars = 480): string 
       if (!isCodeBlock && !isImageBlock && !isTableBlock) {
         const remaining = Math.max(0, maxChars - charCount);
         if (remaining > 20) {
-          const truncatedText = text.slice(0, remaining);
-          const truncatedHtml = marked.parse(truncatedText, { async: false, gfm: true }) as string;
-          previewBlocks.push(sanitizePreviewHtml(truncatedHtml));
+          const truncatedText = truncateAtSentenceBoundary(text, remaining);
+          if (truncatedText.length > 0) {
+            const truncatedHtml = marked.parse(truncatedText, { async: false, gfm: true }) as string;
+            previewBlocks.push(sanitizePreviewHtml(truncatedHtml));
+          }
         }
       }
       reachedLimit = true;
