@@ -119,7 +119,13 @@ export function groupPostsByDay(posts: CollectionEntry<'posts'>[]): Map<string, 
   const groups = new Map<string, CollectionEntry<'posts'>[]>();
   for (const post of posts) {
     const date = post.data.date ? new Date(post.data.date) : new Date(0);
-    const key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Use local date components so the grouping key matches the locale-formatted
+    // date shown in EntryCard (avoiding UTC vs local timezone mismatch).
+    const key = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
     if (!groups.has(key)) {
       groups.set(key, []);
     }
