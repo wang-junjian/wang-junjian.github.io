@@ -6,6 +6,8 @@ categories: [教育]
 tags: [高中英语, 课程标准, 词汇表]
 ---
 
+![](/images/2026/english/vocabulary-2025.webp)
+
 以下是完整的词汇表（共3100个单词，按字母顺序排列）：
 
 | 英文 | 中文释义 |
