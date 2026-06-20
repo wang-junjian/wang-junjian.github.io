@@ -7,6 +7,10 @@
 - [Astro](https://astro.build/) v6 — 静态站点生成器
 - [Tailwind CSS](https://tailwindcss.com/) v4 — 样式框架
 - [Shiki](https://shiki.style/) + highlight.js — 代码高亮
+- [marked](https://marked.js.org/) — Markdown 解析
+- [Sharp](https://sharp.pixelplumbing.com/) — 图片处理
+- [Fuse.js](https://fusejs.io/) — 客户端搜索
+- [giscus](https://giscus.app/) — 基于 GitHub Discussions 的评论
 - Ollama — 本地向量嵌入
 - OpenAI 兼容 API — 问答生成
 
@@ -83,6 +87,51 @@ npm run embed
 | **bigram 回退** | 提取文章正文的中文字符 bigram 集合，计算 Jaccard 相似度 | 无 |
 
 > 新文章若尚未生成嵌入向量，构建时会自动回退到 bigram 方案，不会报错。待下次 `npm run embed` 后即可使用语义推荐。
+
+---
+
+## 站点功能
+
+### 标签页
+
+每个标签都有独立页面，URL 统一带尾斜杠：
+
+| 页面 | URL |
+|------|-----|
+| 标签总览 | `/tags/` |
+| 单个标签首页 | `/tags/{tag}/` |
+| 单个标签分页 | `/tags/{tag}/page/{n}/` |
+
+- `/tags/` 按文章数量展示标签云，点击跳转到对应标签页
+- 标签页复用主页的按日期分组文章流展示
+- 每页 20 篇文章，超出自动生成分页
+- 标签页右侧显示"相关标签"：列表取自当前标签下所有文章的标签并集（排除当前标签），数量显示各标签在全站文章中的总数
+
+### 搜索
+
+首页顶部提供客户端搜索框：
+
+- 基于 Fuse.js 对文章标题、摘要、标签、正文进行模糊匹配
+- 输入时实时过滤文章列表
+- 按 `/` 键可快速聚焦搜索框
+- 清空搜索框后恢复原始文章流
+
+### 归档
+
+`/archive/` 按年份分组展示全部文章，每年内按时间倒序排列。
+
+### 幻灯片
+
+`/slides/` 展示基于 Markdown 编写的幻灯片列表，单张幻灯片支持分页渲染。
+
+### 评论
+
+文章页集成 [giscus](https://giscus.app/)，基于 GitHub Discussions 存储评论数据。页面加载完成后自动初始化评论区域。
+
+### RSS 与 Sitemap
+
+- RSS Feed：`/rss.xml`（由 `@astrojs/rss` 生成）
+- Sitemap：`/sitemap-index.xml`（由 `@astrojs/sitemap` 生成）
 
 ---
 
@@ -297,13 +346,29 @@ npm run search -- "Cline" --output json
 ├── src/
 │   ├── components/
 │   │   ├── AIChat.astro    # AI 问答组件
-│   │   └── RelatedPosts.astro # 相关文章组件
+│   │   ├── DayGroup.astro  # 主页/标签页按日期分组文章列表
+│   │   ├── EntryCard.astro # 文章卡片组件
+│   │   ├── Pagination.astro # 分页组件
+│   │   ├── RelatedPosts.astro # 相关文章组件
+│   │   ├── Search.ts       # 首页搜索逻辑
+│   │   ├── StreamSidebar.astro # 主页侧边栏
+│   │   ├── TagPageHeader.astro # 标签页头部
+│   │   ├── TagSidebar.astro # 标签页相关标签侧边栏
+│   │   └── TaxonomyPage.astro # 标签云组件
 │   ├── content/
 │   │   └── posts/          # 博客文章（Markdown）
 │   ├── layouts/
 │   ├── pages/
+│   │   ├── tags/           # 标签页路由
+│   │   │   ├── index.astro # /tags/ 总览
+│   │   │   └── [tag]/      # 单个标签页路由
+│   │   ├── archive.astro   # 归档页
+│   │   ├── index.astro     # 首页
+│   │   └── slides/         # 幻灯片路由
 │   └── utils/
-│       └── ai.ts           # 向量搜索工具函数
+│       ├── ai.ts           # 向量搜索工具函数
+│       ├── pagination.ts   # 分页工具函数
+│       └── posts.ts        # 文章处理工具函数
 ├── astro.config.mjs
 └── package.json
 ```

@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { getAllTags, groupPostsByDay, normalizeTags } from '../../../../utils/posts';
+import { paginate, PAGE_SIZE } from '../../../../utils/pagination';
+import { SITE_TITLE } from '../../../../consts';
+import TagPageHeader from '../../../../components/TagPageHeader.astro';
+import DayGroup from '../../../../components/DayGroup.astro';
+import Pagination from '../../../../components/Pagination.astro';
+import TagSidebar from '../../../../components/TagSidebar.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const tags = getAllTags(posts);
+  const allTagCounts = new Map(
+    Array.from(tags.entries()).map(([tagName, tagPosts]) => [tagName, tagPosts.length])
+  );
+  const paths: Array<{
+    params: { tag: string; page: string };
+    props: { tag: string; posts: typeof posts; page: number; allTagCounts: Map<string, number> };
+  }> = [];
+
+  for (const [tag, tagPosts] of tags.entries()) {
+    const totalPages = Math.max(1, Math.ceil(tagPosts.length / PAGE_SIZE));
+    for (let page = 2; page <= totalPages; page++) {
+      paths.push({
+        params: {
+          tag,
+          page: String(page),
+        },
+        props: { tag, posts: tagPosts, page, allTagCounts },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { tag, posts, page, allTagCounts } = Astro.props;
+
+const sortedPosts = posts.sort((a, b) => {
+  const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
+  const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
+  return dateB - dateA;
+});
+
+const pageResult = paginate(sortedPosts, page, PAGE_SIZE);
+const dayGroups = groupPostsByDay(pageResult.items);
+const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
+
+const tagUrl = `/tags/${encodeURIComponent(tag)}`;
+
+// Related tags: union of tags from posts in this tag, excluding the current tag.
+// Display counts use the global total for each tag.
+const relatedTagSet = new Set<string>();
+for (const post of sortedPosts) {
+  for (const t of normalizeTags(post.data.tags)) {
+    if (t !== tag) relatedTagSet.add(t);
+  }
+}
+const recentTags = Array.from(relatedTagSet)
+  .map((t) => [t, allTagCounts.get(t) || 0] as [string, number])
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 20);
+
+const mathRegex = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
+const needsKatex = pageResult.items.some((post) => mathRegex.test(post.body || ''));
+---
+
+<BaseLayout
+  title={`${tag} - 第 ${page} 页 - 标签 - ${SITE_TITLE}`}
+  description={`浏览标签 "${tag}" 下的文章 - 第 ${page} 页。`}
+  canonical={Astro.url.toString()}
+  showChat={false}
+  needsKatex={needsKatex}
+>
+  <TagPageHeader tag={tag} postCount={sortedPosts.length} />
+
+  <section class="pt-4 pb-6 px-8">
+    <div class="max-w-grid mx-auto">
+      <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+        <!-- Main Stream -->
+        <div class="flex-1 min-w-0">
+          <div id="postsContainer" class="stream-container">
+            {
+              sortedDays.map((dayKey, dayIndex) => {
+                const dayPosts = dayGroups.get(dayKey) || [];
+                const entryStartIndex = sortedDays
+                  .slice(0, dayIndex)
+                  .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
+                return (
+                  <DayGroup
+                    date={new Date(dayKey + 'T00:00:00')}
+                    posts={dayPosts}
+                    startIndex={entryStartIndex}
+                  />
+                );
+              })
+            }
+          </div>
+
+          <Pagination
+            currentPage={pageResult.currentPage}
+            totalPages={pageResult.totalPages}
+            baseUrl={tagUrl}
+          />
+        </div>
+
+        <!-- Sidebar -->
+        <TagSidebar recentTags={recentTags} />
+      </div>
+    </div>
+  </section>
+</BaseLayout>
