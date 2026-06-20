@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { normalizeCategories, normalizeTags, formatDate } from '../utils/posts';
+import { normalizeTags, formatDate } from '../utils/posts';
 
 const SITE_URL = 'https://wangjunjian.com';
 
@@ -27,11 +27,9 @@ export const GET: APIRoute = async () => {
     return dateB - dateA;
   });
 
-  const allCategories = new Set<string>();
   const allTags = new Set<string>();
 
   for (const post of sortedPosts) {
-    normalizeCategories(post.data.categories).forEach(c => allCategories.add(c));
     normalizeTags(post.data.tags).forEach(t => allTags.add(t));
   }
 
@@ -41,7 +39,6 @@ export const GET: APIRoute = async () => {
 
   content += `## 导航\n\n`;
   content += `- [首页](${SITE_URL}/)\n`;
-  content += `- [分类](${SITE_URL}/categories)\n`;
   content += `- [标签](${SITE_URL}/tags)\n`;
   content += `- [幻灯片](${SITE_URL}/slides)\n`;
   content += `- [关于](${SITE_URL}/about)\n\n`;

@@ -12,7 +12,6 @@ export interface Chunk {
 export interface PostMeta {
   slug: string;
   title: string;
-  categories: string[];
   tags: string[];
   date?: string;
 }
