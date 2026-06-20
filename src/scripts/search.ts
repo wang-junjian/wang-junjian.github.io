@@ -92,13 +92,13 @@ function formatSearchDate(dateString: string): string {
   });
 }
 
-function generateSearchExcerpt(item: SearchItem, maxChars = 150): string {
+function generateSearchExcerpt(item: SearchItem, maxChars = 120): string {
   const source = (item.excerpt || item.body || '').replace(/\s+/g, ' ').trim();
   return source.length > maxChars ? source.slice(0, maxChars).trim() + '…' : source;
 }
 
 function renderSearchResultItem(item: SearchItem, index: number): string {
-  const href = `/posts/${encodeURIComponent(item.id)}`;
+  const href = `/posts/${encodeURIComponent(item.id)}/`;
   const title = escapeHtml(item.title || item.id);
   const date = formatSearchDate(item.date);
   const excerpt = escapeHtml(generateSearchExcerpt(item));
@@ -107,7 +107,7 @@ function renderSearchResultItem(item: SearchItem, index: number): string {
   const tagLinks = tags
     .map(
       (tag) =>
-        `<a href="/tags#tag-${encodeURIComponent(tag)}" class="entry-tag">${escapeHtml(tag)}</a>`
+        `<a href="/tags/${encodeURIComponent(tag)}/" class="entry-tag">${escapeHtml(tag)}</a>`
     )
     .join('');
 
