@@ -81,17 +81,35 @@ function applySyntaxHighlighting() {
 
 function addCopyButtons() {
   const codeBlocks = document.querySelectorAll<HTMLPreElement>('.prose pre');
+
+  const copyIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+  const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const errorIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
   codeBlocks.forEach((pre) => {
-    if (pre.querySelector('.copy-btn')) return;
+    if (pre.closest('.code-block-wrapper')?.querySelector('.copy-btn')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block-wrapper';
+    pre.parentNode!.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const code = pre.querySelector('code');
+    let lang = 'plaintext';
+    const match = code?.className?.match(/language-(\w+)/);
+    if (match) lang = match[1];
+
+    const langLabel = document.createElement('span');
+    langLabel.className = 'code-language';
+    langLabel.textContent = lang;
+    wrapper.appendChild(langLabel);
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'copy-btn';
-    copyBtn.textContent = '复制';
-    copyBtn.style.zIndex = '10';
+    copyBtn.innerHTML = copyIcon;
     copyBtn.setAttribute('aria-label', '复制代码');
 
-    pre.style.position = 'relative';
-    pre.insertBefore(copyBtn, pre.firstChild);
+    wrapper.appendChild(copyBtn);
 
     copyBtn.addEventListener('click', async () => {
       const code = pre.querySelector('code');
@@ -107,16 +125,16 @@ function addCopyButtons() {
 
       try {
         await navigator.clipboard.writeText(text);
-        copyBtn.textContent = '已复制!';
+        copyBtn.innerHTML = checkIcon;
         copyBtn.classList.add('copied');
         setTimeout(() => {
-          copyBtn.textContent = '复制';
+          copyBtn.innerHTML = copyIcon;
           copyBtn.classList.remove('copied');
         }, 2000);
       } catch {
-        copyBtn.textContent = '复制失败';
+        copyBtn.innerHTML = errorIcon;
         setTimeout(() => {
-          copyBtn.textContent = '复制';
+          copyBtn.innerHTML = copyIcon;
         }, 2000);
       }
     });
@@ -137,7 +155,7 @@ function lazyLoadImages() {
 
 async function enhancePostContent() {
   // Skip if already processed
-  if (document.querySelector('.prose pre .copy-btn')) {
+  if (document.querySelector('.code-block-wrapper .copy-btn')) {
     return;
   }
 
