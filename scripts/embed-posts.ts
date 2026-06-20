@@ -29,7 +29,6 @@ interface Chunk {
 interface PostMeta {
   slug: string;
   title: string;
-  categories: string[];
   tags: string[];
   date?: string;
 }
@@ -127,13 +126,6 @@ function getFileHash(filePath: string): string {
   return crypto.createHash('md5').update(content).digest('hex');
 }
 
-function normalizeCategories(value: any): string[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.map(String).filter(Boolean);
-  const str = String(value).trim();
-  return str.split(/\s+/).filter(Boolean);
-}
-
 function normalizeTags(value: any): string[] {
   if (!value) return [];
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
@@ -175,7 +167,6 @@ async function processPost(filePath: string): Promise<ProcessResult> {
   const slug = path.basename(filePath, '.md');
   const title = frontmatter.title || slug;
   const date = frontmatter.date || '';
-  const categories = normalizeCategories(frontmatter.categories);
   const tags = normalizeTags(frontmatter.tags);
   const cleanContent = cleanMarkdown(mainContent);
 
@@ -183,7 +174,7 @@ async function processPost(filePath: string): Promise<ProcessResult> {
 
   // Summary chunk
   const summaryContent = cleanContent.slice(0, 500);
-  const summaryText = `标题：${title}\n分类：${categories.join('，')}\n标签：${tags.join('，')}\n日期：${date}\n\n${summaryContent}`;
+  const summaryText = `标题：${title}\n标签：${tags.join('，')}\n日期：${date}\n\n${summaryContent}`;
   const summaryEmbedding = await createEmbedding(summaryText);
 
   allChunks.push({
@@ -201,7 +192,7 @@ async function processPost(filePath: string): Promise<ProcessResult> {
   const contentChunks = splitIntoChunks(cleanContent, CHUNK_SIZE, CHUNK_OVERLAP);
   for (let i = 0; i < contentChunks.length; i++) {
     const chunk = contentChunks[i];
-    const fullText = `标题：${title}\n分类：${categories.join('，')}\n标签：${tags.join('，')}\n\n${chunk}`;
+    const fullText = `标题：${title}\n标签：${tags.join('，')}\n\n${chunk}`;
     const embedding = await createEmbedding(fullText);
 
     allChunks.push({
@@ -223,7 +214,6 @@ async function processPost(filePath: string): Promise<ProcessResult> {
     meta: {
       slug,
       title,
-      categories,
       tags,
       date,
     },

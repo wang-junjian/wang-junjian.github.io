@@ -20,11 +20,6 @@ export async function GET(context: APIContext) {
       pubDate: post.data.date,
       description: post.data.excerpt || '',
       link: `/posts/${post.id}`,
-      categories: Array.isArray(post.data.categories)
-        ? post.data.categories.map(String)
-        : post.data.categories
-          ? [String(post.data.categories)]
-          : [],
     })),
     customData: `<language>zh-CN</language>
 <copyright>© ${new Date().getFullYear()} ${SITE_TITLE}</copyright>`,

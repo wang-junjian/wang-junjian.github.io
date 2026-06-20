@@ -6,7 +6,6 @@ type SearchItem = {
   date: string;
   formattedDate: string;
   excerpt: string;
-  categories: string[];
   tags: string[];
   body: string;
   url: string;
@@ -51,9 +50,8 @@ async function loadSearchIndex(): Promise<SearchItem[]> {
       keys: [
         { name: 'title', weight: 0.35 },
         { name: 'excerpt', weight: 0.2 },
-        { name: 'categories', weight: 0.1 },
         { name: 'tags', weight: 0.1 },
-        { name: 'body', weight: 0.25 },
+        { name: 'body', weight: 0.35 },
       ],
       threshold: 0.35,
       ignoreLocation: true,
