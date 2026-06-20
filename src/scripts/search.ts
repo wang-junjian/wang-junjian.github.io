@@ -94,18 +94,16 @@ function formatSearchDate(dateString: string): string {
   });
 }
 
-function generateSearchExcerpt(item: SearchItem, maxChars = 320): string {
-  if (item.excerpt) return item.excerpt;
-  if (!item.body) return '';
-  const text = item.body.replace(/\s+/g, ' ').trim();
-  return text.length > maxChars ? text.slice(0, maxChars).trim() + '…' : text;
+function generateSearchExcerpt(item: SearchItem, maxChars = 150): string {
+  const source = (item.excerpt || item.body || '').replace(/\s+/g, ' ').trim();
+  return source.length > maxChars ? source.slice(0, maxChars).trim() + '…' : source;
 }
 
 function renderSearchResultItem(item: SearchItem, index: number): string {
   const href = `/posts/${encodeURIComponent(item.id)}`;
   const title = escapeHtml(item.title || item.id);
   const date = formatSearchDate(item.date);
-  const excerpt = escapeHtml(generateSearchExcerpt(item, 320));
+  const excerpt = escapeHtml(generateSearchExcerpt(item));
   const tags = item.tags || [];
 
   const tagLinks = tags
@@ -129,8 +127,9 @@ function renderSearchResultItem(item: SearchItem, index: number): string {
       ${excerpt ? `<div class="entry-excerpt"><p>${excerpt}</p></div>` : ''}
       <div class="entry-meta">
         ${date ? `<time datetime="${escapeHtml(item.date)}">${date}</time>` : ''}
+        ${date && tagLinks ? '<span class="meta-separator" aria-hidden="true">·</span>' : ''}
+        ${tagLinks ? `<div class="entry-tags">${tagLinks}</div>` : ''}
       </div>
-      ${tagLinks ? `<div class="entry-tags">${tagLinks}</div>` : ''}
     </article>
   `;
 }
