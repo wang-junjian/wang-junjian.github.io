@@ -8,9 +8,9 @@ const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
     layout: z.string().optional(),
-    title: z.string(),
+    title: z.string().optional(),
     date: z.coerce.date(),
-    type: z.enum(['article', 'log', 'link', 'quote']).default('article'),
+    type: z.enum(['article', 'log', 'link', 'quote', 'note']).default('article'),
     tags: z.union([stringOrNumber, stringOrNumber.array()]).optional().nullable(),
     excerpt: z.string().optional(),
     image: z.string().optional(),
@@ -19,6 +19,11 @@ const posts = defineCollection({
     tocLabel: z.string().default('本文目录'),
     showDate: z.boolean().default(true),
     readTime: z.boolean().default(true),
+    // Fields for type: 'quote'
+    author: z.string().optional(),
+    source: z.string().url().optional(),
+    sourceTitle: z.string().optional(),
+    context: z.string().optional(),
   }),
 });
 

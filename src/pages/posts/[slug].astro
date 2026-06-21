@@ -1,8 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content';
+import { marked } from 'marked';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
-import { normalizeTags, getRelatedPosts, calculateReadingTime } from '../../utils/posts';
+import { normalizeTags, getRelatedPosts, calculateReadingTime, generateExcerpt, getPostDisplayTitle } from '../../utils/posts';
 import RelatedPosts from '../../components/RelatedPosts.astro';
 import PostSidebar from '../../components/PostSidebar.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
@@ -19,19 +20,42 @@ const { post, allPosts } = Astro.props;
 const { Content, headings } = await render(post);
 
 const frontmatter = post.data;
+const isQuote = frontmatter.type === 'quote';
+const isNote = frontmatter.type === 'note';
+const isArticle = !isQuote && !isNote;
 const readingTime = frontmatter.readTime !== false ? calculateReadingTime(post.body) : 0;
 
 const tags = normalizeTags(frontmatter.tags);
 const relatedPosts = getRelatedPosts(post, allPosts);
 
-const pageDescription = frontmatter.excerpt || `${frontmatter.title} - ${SITE_DESCRIPTION}`;
+const pageTitle = getPostDisplayTitle(post);
+const pageDescription = isArticle
+  ? (frontmatter.excerpt || `${pageTitle} - ${SITE_DESCRIPTION}`)
+  : (generateExcerpt(post.body, 200) || `${pageTitle} - ${SITE_DESCRIPTION}`);
 const pageImage = frontmatter.image ? String(frontmatter.image) : undefined;
 const postDate = frontmatter.date ? new Date(frontmatter.date) : new Date();
 
-const jsonLd = {
+const quoteHtml = isQuote && post.body
+  ? marked.parse(post.body, { async: false, gfm: true })
+  : '';
+
+const jsonLd = isQuote ? {
+  '@context': 'https://schema.org',
+  '@type': 'Quotation',
+  text: post.body || '',
+  ...(frontmatter.author && {
+    author: {
+      '@type': 'Person',
+      name: frontmatter.author,
+    },
+  }),
+  url: Astro.url.toString(),
+  datePublished: postDate.toISOString(),
+  ...(frontmatter.source && { isBasedOn: frontmatter.source }),
+} : {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
-  headline: frontmatter.title || post.id,
+  headline: pageTitle,
   description: pageDescription,
   url: Astro.url.toString(),
   datePublished: postDate.toISOString(),
@@ -57,36 +81,58 @@ const jsonLd = {
 ---
 
 <BaseLayout
-  title={frontmatter.title || post.id}
+  title={`${pageTitle} - ${SITE_TITLE}`}
   description={pageDescription}
   image={pageImage}
   canonical={Astro.url.toString()}
   type="article"
   date={postDate}
   author="军舰"
-  needsKatex={true}
+  needsKatex={isArticle}
 >
   <link rel="stylesheet" href="/styles/prose.css" />
   <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
 
   <article>
-    <!-- Article Content + Sidebars -->
     <section class="pt-6 pb-10 px-8">
       <div class="max-w-grid mx-auto flex flex-col lg:flex-row gap-8 lg:gap-12">
-        <!-- Left TOC -->
-        <aside class="post-toc print:hidden">
-          <TableOfContents headings={headings} fixed={false} />
-        </aside>
+        {isArticle && (
+          <aside class="post-toc print:hidden">
+            <TableOfContents headings={headings} fixed={false} />
+          </aside>
+        )}
 
-        <!-- Main Content -->
         <div class="flex-1 min-w-0">
-          <h1 class="font-serif-display text-[1.5rem] font-semibold leading-[1.2] tracking-[-0.02em] text-[var(--text-primary)] mb-6">
-            {frontmatter.title || post.id}
-          </h1>
+          {isArticle && (
+            <h1 class="font-serif-display text-[1.5rem] font-semibold leading-[1.2] tracking-[-0.02em] text-[var(--text-primary)] mb-6">
+              {pageTitle}
+            </h1>
+          )}
 
-          <div class="prose animate-fade-in-up" style="animation-delay: 0.1s;">
-            <Content />
-          </div>
+          {isQuote ? (
+            <div class="animate-fade-in-up" style="animation-delay: 0.1s;">
+              <blockquote class="quote-text" set:html={quoteHtml} />
+
+              <figcaption class="quote-attribution">
+                <span aria-hidden="true">—</span>
+                {frontmatter.author ? (
+                  frontmatter.source ? (
+                    <a href={frontmatter.source} target="_blank" rel="noopener noreferrer">{frontmatter.author}</a>
+                  ) : (
+                    <span>{frontmatter.author}</span>
+                  )
+                ) : (
+                  <span>未知作者</span>
+                )}
+                {frontmatter.sourceTitle && <span>, {frontmatter.sourceTitle}</span>}
+                {frontmatter.context && <span>, {frontmatter.context}</span>}
+              </figcaption>
+            </div>
+          ) : (
+            <div class="prose animate-fade-in-up" style="animation-delay: 0.1s;">
+              <Content />
+            </div>
+          )}
 
           <div class="giscus-container py-8">
             <script
@@ -112,7 +158,6 @@ const jsonLd = {
           <RelatedPosts posts={relatedPosts} />
         </div>
 
-        <!-- Right Sidebar -->
         <PostSidebar
           postId={post.id}
           date={frontmatter.date}
@@ -124,7 +169,6 @@ const jsonLd = {
     </section>
   </article>
 
-  <!-- Post scripts: syntax highlighting, mermaid diagrams, copy buttons, image lazy loading -->
   <script src="../../scripts/post-scripts.ts"></script>
 
   <script is:inline>

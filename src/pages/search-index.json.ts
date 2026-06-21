@@ -1,6 +1,6 @@
 import type { APIContext } from 'astro';
 import { getCollection } from 'astro:content';
-import { normalizeTags, formatDate } from '../utils/posts';
+import { normalizeTags, formatDate, getPostDisplayTitle } from '../utils/posts';
 
 function cleanBodyForSearch(body: string): string {
   return body
@@ -26,7 +26,7 @@ export async function GET(context: APIContext) {
 
   const items = sortedPosts.map((post) => ({
     id: post.id,
-    title: post.data.title || post.id,
+    title: getPostDisplayTitle(post),
     date: post.data.date ? new Date(post.data.date).toISOString() : '',
     formattedDate: formatDate(post.data.date),
     excerpt: post.data.excerpt || '',

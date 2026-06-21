@@ -1,0 +1,90 @@
+---
+import { marked } from 'marked';
+import { formatTime, normalizeTags } from '../utils/posts';
+
+interface Props {
+  id: string;
+  body?: string;
+  author?: string;
+  source?: string;
+  sourceTitle?: string;
+  context?: string;
+  date: Date;
+  tags?: string[] | string | null;
+  showDate?: boolean;
+  index?: number;
+}
+
+const {
+  id,
+  body,
+  author,
+  source,
+  sourceTitle,
+  context,
+  date,
+  tags,
+  showDate = true,
+  index = 0,
+} = Astro.props;
+
+const quoteHtml = body
+  ? marked.parse(body, { async: false, gfm: true })
+  : '';
+
+const href = `/posts/${id}/`;
+
+const tagList = normalizeTags(tags);
+---
+
+<article
+  class="post-item quote-card"
+  style={`animation-delay: ${((index % 6) * 0.1).toFixed(1)}s;`}
+  data-id={id}
+>
+  <div class="type-badge type-badge-quote">引用</div>
+
+  <blockquote class="quote-text" set:html={quoteHtml} />
+
+  <figcaption class="quote-attribution">
+    <span aria-hidden="true">—</span>
+    {author ? (
+      source ? (
+        <a href={source} target="_blank" rel="noopener noreferrer">{author}</a>
+      ) : (
+        <span>{author}</span>
+      )
+    ) : (
+      <span>未知作者</span>
+    )}
+
+    {sourceTitle && (
+      <span>, {sourceTitle}</span>
+    )}
+
+    {context && (
+      <span>, {context}</span>
+    )}
+  </figcaption>
+
+  <div class="entry-meta">
+    {showDate && (
+      <a href={href} class="post-time-link">
+        <time datetime={date.toISOString()}>
+          {formatTime(date)}
+        </time>
+      </a>
+    )}
+
+    {tagList.length > 0 && (
+      <>
+        <span class="meta-separator" aria-hidden="true">·</span>
+        <div class="entry-tags">
+          {tagList.map((tag) => (
+            <a href={`/tags/${encodeURIComponent(tag)}/`} class="entry-tag">{tag}</a>
+          ))}
+        </div>
+      </>
+    )}
+  </div>
+</article>
