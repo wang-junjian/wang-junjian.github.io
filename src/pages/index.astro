@@ -6,7 +6,6 @@ import { getTools } from '../utils/tools';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import DayGroup from '../components/DayGroup.astro';
 import StreamSidebar from '../components/StreamSidebar.astro';
-import ToolCard from '../components/ToolCard.astro';
 
 const allPosts = await getCollection('posts');
 
@@ -31,15 +30,25 @@ const recentTags = Array.from(allTags.entries())
   .sort((a, b) => b[1] - a[1])
   .slice(0, 20);
 
-// Highlights: compact chronological list for the sidebar
-const highlights = sortedPosts.slice(0, 30).map((post) => ({
+// Recent content: chronological list for the sidebar (20 items)
+const recentContent = sortedPosts.slice(0, 20).map((post) => ({
   id: post.id,
   title: getPostDisplayTitle(post),
   date: post.data.date,
 }));
 
+// Random content: shuffled list for the sidebar (10 items)
+const randomContent = [...sortedPosts]
+  .sort(() => Math.random() - 0.5)
+  .slice(0, 10)
+  .map((post) => ({
+    id: post.id,
+    title: getPostDisplayTitle(post),
+    date: post.data.date,
+  }));
+
 // Recent tools for homepage
-const recentTools = getTools().slice(0, 6);
+const recentTools = getTools().slice(0, 4);
 
 // Load KaTeX CSS on the homepage if any recent post contains math syntax.
 const mathRegex = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
@@ -59,41 +68,13 @@ const needsKatex = recentPosts.some((post) => mathRegex.test(post.body || ''));
       <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
         <!-- Main Stream -->
         <div class="flex-1 min-w-0">
-          {recentTools.length > 0 && (
-            <div class="mb-10">
-              <div class="flex items-baseline justify-between mb-5">
-                <h2 class="font-serif-display text-xl font-semibold tracking-[-0.02em]">
-                  最近工具
-                </h2>
-                <a
-                  href="/tools/"
-                  class="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-                >
-                  查看全部 →
-                </a>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {recentTools.map((tool, index) => (
-                  <ToolCard
-                    href={`/tools/${tool.file}`}
-                    title={tool.title}
-                    excerpt={tool.excerpt}
-                    tags={tool.tags}
-                    date={tool.date}
-                    index={index}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
           <!-- Search Bar -->
           <div class="mb-4">
             <div class="relative max-w-[560px]">
               <input
                 type="text"
                 id="searchInput"
-                placeholder="搜索文章..."
+                placeholder="搜索本站..."
                 class="w-full py-2 pl-10 pr-3 text-sm border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans rounded-md focus:border-[var(--text-primary)] focus:bg-[var(--white)]"
               />
               <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
@@ -130,7 +111,7 @@ const needsKatex = recentPosts.some((post) => mathRegex.test(post.body || ''));
         </div>
 
         <!-- Sidebar -->
-        <StreamSidebar totalPosts={allPosts.length} recentTags={recentTags} highlights={highlights} />
+        <StreamSidebar totalPosts={allPosts.length} recentTags={recentTags} recentContent={recentContent} randomContent={randomContent} recentTools={recentTools} />
       </div>
     </div>
   </section>

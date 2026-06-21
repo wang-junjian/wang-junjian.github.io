@@ -24,7 +24,7 @@ export function normalizeToArray(value: any): string[] {
 }
 
 export function getPostDisplayTitle(post: CollectionEntry<'posts'>): string {
-  const { type, title, author } = post.data;
+  const { type, title, author, linkUrl } = post.data;
   if (title) return title;
   if (type === 'quote' && author) return `来自 ${author} 的引用`;
   if (type === 'note') {
@@ -35,6 +35,17 @@ export function getPostDisplayTitle(post: CollectionEntry<'posts'>): string {
       return text.length > 30 ? text.slice(0, 30) + '…' : text;
     }
     return '笔记';
+  }
+  if (type === 'link' || type === 'release') {
+    if (linkUrl) {
+      try {
+        const url = new URL(linkUrl);
+        return url.hostname.replace(/^www\./, '');
+      } catch {
+        return linkUrl;
+      }
+    }
+    return type === 'release' ? '发布' : '链接';
   }
   return post.id;
 }
@@ -401,6 +412,13 @@ export function renderPreview(body: string | undefined, maxChars = 600): string 
   }
 
   return previewBlocks.join('\n');
+}
+
+export function renderCardExcerpt(
+  body: string | undefined,
+  maxChars = 600
+): string {
+  return renderPreview(body, maxChars);
 }
 
 export function generateExcerpt(body: string | undefined, maxChars = 320): string {

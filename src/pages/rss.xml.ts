@@ -17,7 +17,11 @@ export async function GET(context: APIContext) {
     description: SITE_DESCRIPTION,
     site: context.site?.toString() || 'https://wangjunjian.com',
     items: sortedPosts.map((post) => {
-      const isShort = post.data.type === 'quote' || post.data.type === 'note';
+      const isShort =
+        post.data.type === 'quote' ||
+        post.data.type === 'note' ||
+        post.data.type === 'link' ||
+        post.data.type === 'release';
       const description = isShort
         ? (generateExcerpt(post.body || '', 200) || post.data.excerpt || '')
         : (post.data.excerpt || '');
