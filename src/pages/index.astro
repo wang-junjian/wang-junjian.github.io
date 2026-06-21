@@ -2,9 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { groupPostsByDay, getAllTags } from '../utils/posts';
+import { getTools } from '../utils/tools';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import DayGroup from '../components/DayGroup.astro';
 import StreamSidebar from '../components/StreamSidebar.astro';
+import ToolCard from '../components/ToolCard.astro';
 
 const allPosts = await getCollection('posts');
 
@@ -36,6 +38,9 @@ const highlights = sortedPosts.slice(0, 30).map((post) => ({
   date: post.data.date,
 }));
 
+// Recent tools for homepage
+const recentTools = getTools().slice(0, 6);
+
 // Load KaTeX CSS on the homepage if any recent post contains math syntax.
 const mathRegex = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
 const needsKatex = recentPosts.some((post) => mathRegex.test(post.body || ''));
@@ -54,6 +59,34 @@ const needsKatex = recentPosts.some((post) => mathRegex.test(post.body || ''));
       <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
         <!-- Main Stream -->
         <div class="flex-1 min-w-0">
+          {recentTools.length > 0 && (
+            <div class="mb-10">
+              <div class="flex items-baseline justify-between mb-5">
+                <h2 class="font-serif-display text-xl font-semibold tracking-[-0.02em]">
+                  最近工具
+                </h2>
+                <a
+                  href="/tools/"
+                  class="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+                >
+                  查看全部 →
+                </a>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {recentTools.map((tool, index) => (
+                  <ToolCard
+                    href={`/tools/${tool.file}`}
+                    title={tool.title}
+                    excerpt={tool.excerpt}
+                    tags={tool.tags}
+                    date={tool.date}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           <!-- Search Bar -->
           <div class="mb-4">
             <div class="relative max-w-[560px]">
@@ -63,8 +96,11 @@ const needsKatex = recentPosts.some((post) => mathRegex.test(post.body || ''));
                 placeholder="搜索文章..."
                 class="w-full py-2 pl-10 pr-3 text-sm border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans rounded-md focus:border-[var(--text-primary)] focus:bg-[var(--white)]"
               />
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-base pointer-events-none">
-                🔍
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.3-4.3"/>
+                </svg>
               </span>
             </div>
           </div>
