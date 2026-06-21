@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { normalizeTags, formatDate } from '../utils/posts';
+import { normalizeTags, formatDate, getPostDisplayTitle } from '../utils/posts';
 
 const SITE_URL = 'https://wangjunjian.com';
 
@@ -45,9 +45,10 @@ export const GET: APIRoute = async () => {
 
   content += `## 文章\n\n`;
   for (const post of sortedPosts) {
+    const title = getPostDisplayTitle(post);
     const date = formatPostDate(post.data.date);
     const excerpt = post.data.excerpt ? ` — ${post.data.excerpt}` : '';
-    content += `- [${post.data.title}](${SITE_URL}/posts/${post.id}.md) — ${date}${excerpt}\n`;
+    content += `- [${title}](${SITE_URL}/posts/${post.id}.md) — ${date}${excerpt}\n`;
   }
 
   content += `\n`;

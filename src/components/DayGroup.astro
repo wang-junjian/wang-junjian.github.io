@@ -1,7 +1,9 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { formatDate, calculateReadingTime, getWordCount, normalizeTags } from '../utils/posts';
+import { formatDate, normalizeTags } from '../utils/posts';
 import EntryCard from './EntryCard.astro';
+import QuoteCard from './QuoteCard.astro';
+import NoteCard from './NoteCard.astro';
 
 interface Props {
   date: Date;
@@ -25,19 +27,40 @@ const isoDate = date.toISOString().split('T')[0];
   </h2>
 
   <div class="day-entries">
-    {posts.map((post, i) => (
-      <EntryCard
-        id={post.id}
-        title={post.data.title || post.id}
-        date={post.data.date}
-        excerpt={post.data.excerpt}
-        body={post.body}
-        tags={normalizeTags(post.data.tags)}
-        image={post.data.image}
-        readingTime={calculateReadingTime(post.body)}
-        wordCount={getWordCount(post.body)}
-        index={startIndex + i}
-      />
-    ))}
+    {posts.map((post, i) => {
+      const commonProps = {
+        id: post.id,
+        date: post.data.date,
+        tags: normalizeTags(post.data.tags),
+        index: startIndex + i,
+      };
+      if (post.data.type === 'quote') {
+        return (
+          <QuoteCard
+            {...commonProps}
+            body={post.body}
+            author={post.data.author}
+            source={post.data.source}
+            sourceTitle={post.data.sourceTitle}
+            context={post.data.context}
+          />
+        );
+      }
+      if (post.data.type === 'note') {
+        return <NoteCard {...commonProps} body={post.body} />;
+      }
+      return (
+        <EntryCard
+          id={post.id}
+          title={post.data.title || post.id}
+          date={post.data.date}
+          excerpt={post.data.excerpt}
+          body={post.body}
+          tags={normalizeTags(post.data.tags)}
+          image={post.data.image}
+          index={startIndex + i}
+        />
+      );
+    })}
   </div>
 </section>
