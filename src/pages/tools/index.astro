@@ -1,49 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ToolCard from '../../components/ToolCard.astro';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { getTools } from '../../utils/tools';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
-
-const toolsDir = join(process.cwd(), 'tools');
-
-function metaContent(raw: string, name: string): string | undefined {
-  const direct =
-    raw.match(new RegExp(`<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i')) ||
-    raw.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${name}["'][^>]*>`, 'i'));
-  return direct ? direct[1].trim() : undefined;
-}
-
-function getTools() {
-  try {
-    const files = readdirSync(toolsDir).filter(
-      (f) => f.endsWith('.html') && f !== 'index.html' && !f.startsWith('_')
-    );
-    return files.map((file) => {
-      const raw = readFileSync(join(toolsDir, file), 'utf-8');
-      const titleMatch = raw.match(/<title[^>]*>\s*([\s\S]*?)\s*<\/title>/i);
-      const title = titleMatch ? titleMatch[1].trim() : file.replace(/\.html$/, '');
-      const excerpt = metaContent(raw, 'description');
-      const keywords = metaContent(raw, 'keywords');
-      const tags = keywords
-        ? keywords
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean)
-        : [];
-      const date = metaContent(raw, 'date');
-      return {
-        file,
-        title,
-        excerpt,
-        tags,
-        date,
-      };
-    });
-  } catch {
-    return [];
-  }
-}
 
 const tools = getTools().sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
 ---
@@ -68,7 +27,8 @@ const tools = getTools().sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'))
             type="search"
             id="toolSearch"
             placeholder={`搜索 ${tools.length} 个工具...`}
-            class="w-full pl-12 pr-4 py-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-shadow"
+            class="w-full pl-12 pr-4 py-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus-visible:outline-none focus:border-[var(--accent)] transition-colors"
+            style="outline: none !important; box-shadow: none !important;"
             autocomplete="off"
           />
         </div>
