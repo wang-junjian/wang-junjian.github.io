@@ -10,7 +10,7 @@ const posts = defineCollection({
     layout: z.string().optional(),
     title: z.string().optional(),
     date: z.coerce.date(),
-    type: z.enum(['article', 'log', 'link', 'quote', 'note']).default('article'),
+    type: z.enum(['article', 'log', 'link', 'release', 'quote', 'note']).default('article'),
     tags: z.union([stringOrNumber, stringOrNumber.array()]).optional().nullable(),
     excerpt: z.string().optional(),
     image: z.string().optional(),
@@ -24,6 +24,8 @@ const posts = defineCollection({
     source: z.string().url().optional(),
     sourceTitle: z.string().optional(),
     context: z.string().optional(),
+    // Fields for type: 'link'
+    linkUrl: z.string().url().optional(),
   }),
 });
 

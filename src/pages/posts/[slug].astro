@@ -22,7 +22,9 @@ const { Content, headings } = await render(post);
 const frontmatter = post.data;
 const isQuote = frontmatter.type === 'quote';
 const isNote = frontmatter.type === 'note';
-const isArticle = !isQuote && !isNote;
+const isLink = frontmatter.type === 'link';
+const isRelease = frontmatter.type === 'release';
+const isArticle = !isQuote && !isNote && !isLink && !isRelease;
 const readingTime = frontmatter.readTime !== false ? calculateReadingTime(post.body) : 0;
 
 const tags = normalizeTags(frontmatter.tags);
@@ -34,50 +36,78 @@ const pageDescription = isArticle
   : (generateExcerpt(post.body, 200) || `${pageTitle} - ${SITE_DESCRIPTION}`);
 const pageImage = frontmatter.image ? String(frontmatter.image) : undefined;
 const postDate = frontmatter.date ? new Date(frontmatter.date) : new Date();
-
-const quoteHtml = isQuote && post.body
-  ? marked.parse(post.body, { async: false, gfm: true })
+const sourceTitleHtml = frontmatter.sourceTitle
+  ? marked.parseInline(frontmatter.sourceTitle, { async: false })
   : '';
 
-const jsonLd = isQuote ? {
-  '@context': 'https://schema.org',
-  '@type': 'Quotation',
-  text: post.body || '',
-  ...(frontmatter.author && {
-    author: {
-      '@type': 'Person',
-      name: frontmatter.author,
-    },
-  }),
-  url: Astro.url.toString(),
-  datePublished: postDate.toISOString(),
-  ...(frontmatter.source && { isBasedOn: frontmatter.source }),
-} : {
-  '@context': 'https://schema.org',
-  '@type': 'BlogPosting',
-  headline: pageTitle,
-  description: pageDescription,
-  url: Astro.url.toString(),
-  datePublished: postDate.toISOString(),
-  author: {
-    '@type': 'Person',
-    name: '军舰',
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: SITE_TITLE,
-    logo: {
-      '@type': 'ImageObject',
-      url: new URL('/favicon.svg', Astro.site || Astro.url).toString(),
-    },
-  },
-  ...(pageImage && {
-    image: {
-      '@type': 'ImageObject',
-      url: new URL(pageImage, Astro.site || Astro.url).toString(),
-    },
-  }),
-};
+const jsonLd = isQuote
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Quotation',
+      text: post.body || '',
+      ...(frontmatter.author && {
+        author: {
+          '@type': 'Person',
+          name: frontmatter.author,
+        },
+      }),
+      url: Astro.url.toString(),
+      datePublished: postDate.toISOString(),
+      ...(frontmatter.source && { isBasedOn: frontmatter.source }),
+    }
+  : isLink || isRelease
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: pageTitle,
+        description: pageDescription,
+        url: Astro.url.toString(),
+        datePublished: postDate.toISOString(),
+        author: {
+          '@type': 'Person',
+          name: '军舰',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_TITLE,
+          logo: {
+            '@type': 'ImageObject',
+            url: new URL('/favicon.svg', Astro.site || Astro.url).toString(),
+          },
+        },
+        ...(frontmatter.linkUrl && {
+          mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': frontmatter.linkUrl,
+          },
+        }),
+      }
+    : {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: pageTitle,
+        description: pageDescription,
+        url: Astro.url.toString(),
+        datePublished: postDate.toISOString(),
+        author: {
+          '@type': 'Person',
+          name: '军舰',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_TITLE,
+          logo: {
+            '@type': 'ImageObject',
+            url: new URL('/favicon.svg', Astro.site || Astro.url).toString(),
+          },
+        },
+        ...(pageImage && {
+          image: {
+            '@type': 'ImageObject',
+            url: new URL(pageImage, Astro.site || Astro.url).toString(),
+          },
+        }),
+      };
 ---
 
 <BaseLayout
@@ -97,9 +127,9 @@ const jsonLd = isQuote ? {
     <section class="pt-6 pb-10 px-8">
       <div class="max-w-grid mx-auto flex flex-col lg:flex-row gap-8 lg:gap-12">
         {isArticle && (
-          <aside class="post-toc print:hidden">
-            <TableOfContents headings={headings} fixed={false} />
-          </aside>
+          <div class="toc-wrapper print:hidden">
+            <TableOfContents headings={headings} fixed={true} side="left" />
+          </div>
         )}
 
         <div class="flex-1 min-w-0">
@@ -111,7 +141,9 @@ const jsonLd = isQuote ? {
 
           {isQuote ? (
             <div class="animate-fade-in-up" style="animation-delay: 0.1s;">
-              <blockquote class="quote-text" set:html={quoteHtml} />
+              <div class="prose">
+                <Content />
+              </div>
 
               <figcaption class="quote-attribution">
                 <span aria-hidden="true">—</span>
@@ -124,9 +156,51 @@ const jsonLd = isQuote ? {
                 ) : (
                   <span>未知作者</span>
                 )}
-                {frontmatter.sourceTitle && <span>, {frontmatter.sourceTitle}</span>}
+                {frontmatter.sourceTitle && <span>, <span set:html={sourceTitleHtml} /></span>}
                 {frontmatter.context && <span>, {frontmatter.context}</span>}
               </figcaption>
+            </div>
+          ) : isLink ? (
+            <div class="animate-fade-in-up" style="animation-delay: 0.1s;">
+              <div class="link-detail-header">
+                <h1 class="link-detail-title">
+                  {frontmatter.linkUrl ? (
+                    <a href={frontmatter.linkUrl} target="_blank" rel="noopener noreferrer">
+                      {pageTitle}
+                      <span class="link-external-icon" aria-hidden="true">🔗</span>
+                    </a>
+                  ) : (
+                    pageTitle
+                  )}
+                </h1>
+              </div>
+
+              {post.body && (
+                <div class="link-detail-body prose">
+                  <Content />
+                </div>
+              )}
+            </div>
+          ) : isRelease ? (
+            <div class="animate-fade-in-up" style="animation-delay: 0.1s;">
+              <div class="release-detail-header">
+                <h1 class="release-detail-title">
+                  {frontmatter.linkUrl ? (
+                    <a href={frontmatter.linkUrl} target="_blank" rel="noopener noreferrer">
+                      {pageTitle}
+                      <span class="link-external-icon" aria-hidden="true">🔗</span>
+                    </a>
+                  ) : (
+                    pageTitle
+                  )}
+                </h1>
+              </div>
+
+              {post.body && (
+                <div class="release-detail-body prose">
+                  <Content />
+                </div>
+              )}
             </div>
           ) : (
             <div class="prose animate-fade-in-up" style="animation-delay: 0.1s;">
