@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线 JSON 格式化与压缩工具，纯前端运行，无需联网。">
+  <meta name="keywords" content="JSON, 格式化, 压缩, 转义">
+  <meta name="date" content="2026-06-21">
+  <title>JSON 格式化 / 压缩</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --panel: #ffffff;
+      --text: #1c1917;
+      --muted: #78716c;
+      --border: #e7e5e4;
+      --accent: #0ea5e9;
+      --accent-hover: #0284c7;
+      --error: #dc2626;
+    }
+    html.dark {
+      --bg: #0c0a09;
+      --panel: #1c1917;
+      --text: #f5f5f4;
+      --muted: #a8a29e;
+      --border: #292524;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+    .wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.5rem;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    button {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      padding: 0.5rem 0.875rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button:hover {
+      background: var(--bg);
+      border-color: var(--muted);
+    }
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    button.primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+    .field {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    label {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 0.375rem;
+    }
+    textarea {
+      flex: 1;
+      min-height: 180px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.875rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      background: var(--panel);
+      color: var(--text);
+    }
+    textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+    .editor {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      flex: 1;
+      min-height: 0;
+    }
+    @media (max-width: 768px) {
+      .editor { grid-template-columns: 1fr; }
+    }
+    .status {
+      font-size: 0.875rem;
+      color: var(--muted);
+      min-height: 1.25rem;
+    }
+    .status.error { color: var(--error); }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <button class="primary" id="btnFormat">格式化</button>
+      <button id="btnMinify">压缩</button>
+      <button id="btnEscape">转义</button>
+      <button id="btnUnescape">去转义</button>
+      <button id="btnCopy">复制结果</button>
+      <button id="btnClear">清空</button>
+      <span class="status" id="status"></span>
+    </div>
+
+    <div class="editor">
+      <div class="field">
+        <label for="input">输入 JSON</label>
+        <textarea id="input" placeholder="粘贴 JSON 文本..."></textarea>
+      </div>
+      <div class="field">
+        <label for="output">输出</label>
+        <textarea id="output" readonly placeholder="结果将显示在这里"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    纯前端运行，数据不会上传到服务器
+  </footer>
+
+  <script>
+    const input = document.getElementById('input');
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+
+    function setStatus(msg, isError) {
+      status.textContent = msg || '';
+      status.classList.toggle('error', !!isError);
+    }
+
+    function parse() {
+      const text = input.value.trim();
+      if (!text) return { empty: true };
+      try {
+        return { data: JSON.parse(text) };
+      } catch (e) {
+        throw new Error('JSON 解析失败：' + e.message);
+      }
+    }
+
+    document.getElementById('btnFormat').addEventListener('click', () => {
+      try {
+        const result = parse();
+        if (result.empty) return setStatus('');
+        output.value = JSON.stringify(result.data, null, 2);
+        setStatus('已格式化');
+      } catch (e) {
+        setStatus(e.message, true);
+      }
+    });
+
+    document.getElementById('btnMinify').addEventListener('click', () => {
+      try {
+        const result = parse();
+        if (result.empty) return setStatus('');
+        output.value = JSON.stringify(result.data);
+        setStatus('已压缩');
+      } catch (e) {
+        setStatus(e.message, true);
+      }
+    });
+
+    document.getElementById('btnEscape').addEventListener('click', () => {
+      try {
+        const result = parse();
+        if (result.empty) return setStatus('');
+        output.value = JSON.stringify(JSON.stringify(result.data));
+        setStatus('已转义为字符串');
+      } catch (e) {
+        setStatus(e.message, true);
+      }
+    });
+
+    document.getElementById('btnUnescape').addEventListener('click', () => {
+      try {
+        const text = input.value.trim();
+        if (!text) return setStatus('');
+
+        let result;
+        if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+          // 输入是 JSON 字符串，直接解析
+          result = JSON.parse(text);
+        } else {
+          // 将原始文本作为 JSON 字符串内容解析，使 \n \t 等转义序列生效
+          const escaped = text
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"');
+          result = JSON.parse('"' + escaped + '"');
+        }
+        output.value = result;
+        setStatus('已去转义');
+      } catch (e) {
+        setStatus('去转义失败：' + e.message, true);
+      }
+    });
+
+    document.getElementById('btnCopy').addEventListener('click', async () => {
+      if (!output.value) return setStatus('没有可复制的内容');
+      try {
+        await navigator.clipboard.writeText(output.value);
+        setStatus('已复制到剪贴板');
+      } catch (e) {
+        setStatus('复制失败', true);
+      }
+    });
+
+    document.getElementById('btnClear').addEventListener('click', () => {
+      input.value = '';
+      output.value = '';
+      setStatus('');
+      input.focus();
+    });
+  </script>
+</body>
+</html>

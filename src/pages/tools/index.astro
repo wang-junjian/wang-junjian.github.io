@@ -1,0 +1,123 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolCard from '../../components/ToolCard.astro';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+
+const toolsDir = join(process.cwd(), 'tools');
+
+function metaContent(raw: string, name: string): string | undefined {
+  const direct =
+    raw.match(new RegExp(`<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i')) ||
+    raw.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${name}["'][^>]*>`, 'i'));
+  return direct ? direct[1].trim() : undefined;
+}
+
+function getTools() {
+  try {
+    const files = readdirSync(toolsDir).filter(
+      (f) => f.endsWith('.html') && f !== 'index.html' && !f.startsWith('_')
+    );
+    return files.map((file) => {
+      const raw = readFileSync(join(toolsDir, file), 'utf-8');
+      const titleMatch = raw.match(/<title[^>]*>\s*([\s\S]*?)\s*<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : file.replace(/\.html$/, '');
+      const excerpt = metaContent(raw, 'description');
+      const keywords = metaContent(raw, 'keywords');
+      const tags = keywords
+        ? keywords
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
+      const date = metaContent(raw, 'date');
+      return {
+        file,
+        title,
+        excerpt,
+        tags,
+        date,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+const tools = getTools().sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
+---
+
+<BaseLayout
+  title={`工具箱 - ${SITE_TITLE}`}
+  description={`实用小工具集合。${SITE_DESCRIPTION}`}
+  canonical={Astro.url.toString()}
+  showChat={false}
+>
+  <section class="pt-10 pb-16 px-8">
+    <div class="max-w-grid mx-auto">
+      <div class="max-w-2xl mx-auto mb-10">
+        <div class="relative">
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+          </div>
+          <input
+            type="search"
+            id="toolSearch"
+            placeholder={`搜索 ${tools.length} 个工具...`}
+            class="w-full pl-12 pr-4 py-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-shadow"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      {tools.length === 0 ? (
+        <p class="text-center text-[var(--text-secondary)]">暂无可用的工具。</p>
+      ) : (
+        <div id="toolsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tools.map((tool, index) => (
+            <ToolCard
+              href={`/tools/${tool.file}`}
+              title={tool.title}
+              excerpt={tool.excerpt}
+              tags={tool.tags}
+              date={tool.date}
+              index={index}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  (function() {
+    const searchInput = document.getElementById('toolSearch') as HTMLInputElement | null;
+    const grid = document.getElementById('toolsGrid');
+    if (!searchInput || !grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.tool-card'));
+
+    function filterTools(query: string) {
+      const normalized = query.trim().toLowerCase();
+
+      cards.forEach((card) => {
+        const title = card.getAttribute('data-title') || '';
+        const excerpt = card.getAttribute('data-excerpt') || '';
+        const tags = card.getAttribute('data-tags') || '';
+        const match =
+          !normalized ||
+          title.includes(normalized) ||
+          excerpt.includes(normalized) ||
+          tags.includes(normalized);
+        (card as HTMLElement).style.display = match ? '' : 'none';
+      });
+    }
+
+    searchInput.addEventListener('input', () => filterTools(searchInput.value));
+  })();
+</script>
