@@ -7,6 +7,7 @@ import rehypeKatex from 'rehype-katex';
 import tailwindcss from '@tailwindcss/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'astro/config';
+import toolsStatic from './src/integrations/toolsStatic.ts';
 
 // https://astro.build/config
 export default defineConfig({
@@ -15,7 +16,7 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
-  integrations: [mdx(), sitemap()],
+  integrations: [mdx(), sitemap(), toolsStatic()],
   markdown: {
     syntaxHighlight: false,
     gfm: true,
