@@ -1,29 +1,49 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { marked } from 'marked';
 import { SITE_DESCRIPTION } from '../../consts';
 import BackLink from '../../components/BackLink.astro';
 import ArticleFooter from '../../components/ArticleFooter.astro';
+import { getSlides } from '../../utils/slides';
 
 export async function getStaticPaths() {
-  const slidesDir = join(process.cwd(), 'slides');
-  const files = readdirSync(slidesDir).filter(
-    (f) => f.endsWith('.md') && !f.startsWith('.')
-  );
-  return files.map((file) => ({
-    params: { slug: file.replace(/\.md$/, '') },
-    props: { file },
-  }));
+  const slides = getSlides();
+  const paths: {
+    params: { slug: string };
+    props: { file: string; title: string; canonicalSlug: string };
+  }[] = [];
+
+  for (const slide of slides) {
+    // Canonical URL-safe slug (spaces replaced by hyphens)
+    paths.push({
+      params: { slug: slide.slug },
+      props: { file: slide.file, title: slide.title, canonicalSlug: slide.slug },
+    });
+
+    // Legacy redirect for the original filename (with spaces) so old bookmarks
+    // and external links keep working.
+    if (slide.id !== slide.slug) {
+      paths.push({
+        params: { slug: slide.id },
+        props: { file: slide.file, title: slide.title, canonicalSlug: slide.slug },
+      });
+    }
+  }
+
+  return paths;
 }
 
-const { file } = Astro.props;
-const raw = readFileSync(join(process.cwd(), 'slides', file), 'utf-8');
+const { file, title, canonicalSlug } = Astro.props;
+const currentSlug = Astro.params.slug;
 
-// Extract title from first h1 heading
-const titleMatch = raw.match(/^#\s+(.+)$/m);
-const title = titleMatch ? titleMatch[1].trim() : file.replace(/\.md$/, '');
+// Redirect legacy URLs (e.g. filenames containing spaces) to the canonical slug.
+if (currentSlug !== canonicalSlug) {
+  return Astro.redirect(encodeURI(`/slides/${canonicalSlug}/`));
+}
+
+const raw = readFileSync(join(process.cwd(), 'slides', file), 'utf-8');
 
 // Remove frontmatter
 const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
