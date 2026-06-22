@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="高中英语词汇速记工具，支持搜索、朗读、随机顺序、已会/未会标记和进度统计，帮助快速记忆和复习英语单词。">
+<meta name="keywords" content="英语词汇, 单词记忆, 高中英语, 背单词, 词汇速记, 英语学习">
+<meta name="date" content="2026-06-22">
+<title>高中英语词汇速记 · 2025修订版</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --text:#1f2330; --muted:#8a90a2;
+    --accent:#4f6cff; --accent-soft:#e8edff; --green:#22c55e; --red:#ef4444;
+    --border:#e6e8f0; --shadow:0 6px 24px rgba(40,50,90,.08);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text);
+    display:flex; flex-direction:column; height:100vh; overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ---------- Top bar ---------- */
+  header{
+    display:flex; align-items:center; gap:14px; padding:14px 22px;
+    background:var(--card); border-bottom:1px solid var(--border);
+    box-shadow:0 1px 0 rgba(0,0,0,.02);
+  }
+  .logo{font-size:17px;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+  .logo span{color:var(--accent)}
+  .search-wrap{flex:1;position:relative;max-width:340px}
+  .search-wrap input{
+    width:100%; padding:8px 12px 8px 34px; border:1px solid var(--border);
+    border-radius:10px; font-size:14px; outline:none; background:#fafbff;
+    transition:border .15s, background .15s;
+  }
+  .search-wrap input:focus{border-color:var(--accent);background:#fff}
+  .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5}
+  .stats{margin-left:auto;display:flex;gap:18px;font-size:13px;color:var(--muted);white-space:nowrap}
+  .stats b{color:var(--text)}
+  .stats .known-c{color:var(--green)}
+  .stats .unknown-c{color:var(--red)}
+  /* ---------- Main card area ---------- */
+  main{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    padding:24px; position:relative; overflow:hidden;
+  }
+  .card{
+    width:min(640px,100%); background:var(--card); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:44px 40px 36px; text-align:center;
+    position:relative; transition:transform .18s, opacity .18s;
+    border:1px solid var(--border);
+  }
+  .card.flip-out{opacity:0;transform:translateX(20px)}
+  .card.flip-in{opacity:0;transform:translateX(-20px)}
+  .idx-badge{
+    position:absolute; top:18px; left:22px; font-size:12px; color:var(--muted);
+    background:#f1f3f9; padding:4px 10px; border-radius:20px;
+  }
+  .letter-badge{
+    position:absolute; top:18px; right:22px; font-size:12px; color:var(--accent);
+    background:var(--accent-soft); padding:4px 10px; border-radius:20px; font-weight:600;
+  }
+  .word{
+    font-size:56px; font-weight:700; line-height:1.15; margin:14px 0 6px;
+    letter-spacing:-.5px; cursor:pointer; user-select:none;
+  }
+  .word .small{font-size:24px;color:var(--muted);font-weight:500;margin-left:6px}
+  .meaning{
+    font-size:24px; color:#3a3f55; margin-top:8px; min-height:34px;
+    transition:opacity .2s; user-select:none; text-align:center; cursor:pointer;
+  }
+  .meaning.hidden{opacity:0;background:transparent;}
+  .play-btn{
+    margin:22px auto 4px; width:62px; height:62px; border-radius:50%;
+    border:none; background:var(--accent); color:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(79,108,255,.35); transition:transform .12s, background .15s;
+  }
+  .play-btn:hover{background:#3d59ff;transform:translateY(-1px)}
+  .play-btn:active{transform:translateY(0) scale(.96)}
+  .play-btn.playing{background:var(--green);box-shadow:0 6px 16px rgba(34,197,94,.35)}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  /* ---------- Bottom controls ---------- */
+  .controls{
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    padding:16px; background:var(--card); border-top:1px solid var(--border);
+  }
+  .ctrl-btn{
+    padding:10px 16px; border:1px solid var(--border); background:#fff;
+    border-radius:10px; font-size:14px; cursor:pointer; color:var(--text);
+    display:inline-flex; align-items:center; gap:6px; transition:all .15s;
+  }
+  .ctrl-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .ctrl-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .ctrl-btn.known{color:var(--green);border-color:var(--green)}
+  .ctrl-btn.known.active{background:var(--green);color:#fff}
+  .ctrl-btn.unknown{color:var(--red);border-color:var(--red)}
+  .ctrl-btn.unknown.active{background:var(--red);color:#fff}
+  .nav-btn{
+    width:46px;height:46px;border-radius:50%;border:1px solid var(--border);
+    background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }
+  .nav-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .nav-btn:disabled{opacity:.35;cursor:not-allowed}
+  .progress-bar{
+    position:absolute; top:0; left:0; height:3px; background:var(--accent);
+    transition:width .25s; z-index:5;
+  }
+  /* ---------- Side panel ---------- */
+  .panel-toggle{
+    position:fixed; right:0; top:50%; transform:translateY(-50%);
+    writing-mode:vertical-rl; padding:14px 6px; background:var(--card);
+    border:1px solid var(--border); border-right:none; border-radius:10px 0 0 10px;
+    cursor:pointer; font-size:13px; color:var(--muted); z-index:20;
+  }
+  .panel{
+    position:fixed; right:-340px; top:0; bottom:0; width:320px;
+    background:var(--card); border-left:1px solid var(--border);
+    box-shadow:-4px 0 20px rgba(0,0,0,.05); z-index:30;
+    transition:right .25s; display:flex; flex-direction:column;
+  }
+  .panel.open{right:0}
+  .panel-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center}
+  .panel-head h3{font-size:15px;flex:1}
+  .panel-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1}
+  .panel-section{padding:14px 18px;border-bottom:1px solid var(--border)}
+  .panel-section h4{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+  .opt-row{display:flex;flex-wrap:wrap;gap:6px}
+  .opt-row button{
+    padding:6px 10px; font-size:12px; border:1px solid var(--border);
+    background:#fff; border-radius:8px; cursor:pointer; transition:all .15s;
+  }
+  .opt-row button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .opt-row button.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .voice-select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;color:var(--text);outline:none;cursor:pointer}
+  .voice-select:focus{border-color:var(--accent)}
+  .letter-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-height:200px;overflow-y:auto}
+  .letter-grid button{
+    padding:6px 0; font-size:12px; border:1px solid var(--border); background:#fff;
+    border-radius:6px; cursor:pointer; transition:all .12s;
+  }
+  .letter-grid button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .panel-foot{margin-top:auto;padding:14px 18px;font-size:12px;color:var(--muted);line-height:1.7}
+  kbd{
+    background:#f1f3f9;border:1px solid var(--border);border-radius:4px;
+    padding:1px 6px;font-size:11px;font-family:ui-monospace,monospace;
+  }
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:rgba(30,35,50,.92);color:#fff;padding:8px 16px;border-radius:8px;
+    font-size:13px;opacity:0;transition:all .25s;pointer-events:none;z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* responsive */
+  @media (max-width:560px){
+    .word{font-size:42px}
+    .meaning{font-size:20px}
+    .card{padding:36px 22px 28px}
+    .stats{display:none}
+    .search-wrap{max-width:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<header>
+  <div class="logo">高中英语词汇速记 <span>· 2025</span></div>
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="search" type="text" placeholder="搜索单词或释义…" autocomplete="off">
+  </div>
+  <div class="stats">
+    <span>进度 <b id="statPos">0/0</b></span>
+    <span class="known-c">已会 <b id="statKnown">0</b></span>
+    <span class="unknown-c">未会 <b id="statUnknown">0</b></span>
+  </div>
+</header>
+
+<main>
+  <div class="card" id="card">
+    <div class="idx-badge" id="idxBadge">#1</div>
+    <div class="letter-badge" id="letterBadge">A</div>
+    <div class="word" id="wordEl" title="点击朗读">abandon</div>
+    <div class="meaning" id="meaningEl">抛弃，遗弃，放弃</div>
+    <button class="play-btn" id="playBtn" title="朗读 (空格)">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="hint">空格 朗读 · → 下一词 · ← 上一词 · H 显示/隐藏释义</div>
+  </div>
+</main>
+
+<div class="controls">
+  <button class="nav-btn" id="prevBtn" title="上一词 (←)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+  </button>
+  <button class="ctrl-btn unknown" id="unknownBtn" title="标记未会 (M)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+    未会
+  </button>
+  <button class="ctrl-btn known" id="knownBtn" title="标记已会 (K)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+    已会
+  </button>
+  <button class="ctrl-btn" id="autoBtn" title="自动朗读下一词">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3v18l15-9z"/></svg>
+    自动
+  </button>
+  <button class="ctrl-btn" id="shuffleBtn" title="随机顺序">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+    随机
+  </button>
+  <button class="nav-btn" id="nextBtn" title="下一词 (→)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+  </button>
+</div>
+
+<div class="panel-toggle" id="panelToggle">设置 ⚙</div>
+<div class="panel" id="panel">
+  <div class="panel-head">
+    <h3>设置</h3>
+    <button class="panel-close" id="panelClose">×</button>
+  </div>
+  <div class="panel-section">
+    <h4>学习模式</h4>
+    <div class="opt-row">
+      <button data-mode="all" class="active">全部</button>
+      <button data-mode="unknown">仅未会</button>
+      <button data-mode="known">仅已会</button>
+    </div>
+  </div>
+  <div class="panel-section">
+    <h4>语音设置</h4>
+    <div class="opt-row" style="margin-bottom:10px">
+      <span style="font-size:12px;color:var(--muted);align-self:center">语速</span>
+      <input type="range" id="rateRange" min="0.5" max="1.5" step="0.05" value="0.9" style="flex:1">
+      <span id="rateVal" style="font-size:12px;width:32px;text-align:right">0.9x</span>
+    </div>
+    <div class="opt-row" style="margin-bottom:10px">
+      <select id="voiceSelect" class="voice-select" title="选择朗读语音"></select>
+    </div>
+  </div>
+  <div class="panel-section">
+    <h4>选项</h4>
+    <div class="opt-row">
+      <button id="hideZhBtn">隐藏释义</button>
+      <button id="autoSpeakBtn" class="on">翻页自动朗读</button>
+      <button id="resetBtn">重置标记</button>
+    </div>
+  </div>
+  <div class="panel-section">
+    <h4>字母筛选</h4>
+    <div class="letter-grid" id="letterGrid"></div>
+  </div>
+  <div class="panel-foot">
+    <b>快捷键</b><br>
+    <kbd>Space</kbd> 朗读 · <kbd>→</kbd> 下一词 · <kbd>←</kbd> 上一词<br>
+    <kbd>K</kbd> 标记已会 · <kbd>M</kbd> 标记未会 · <kbd>H</kbd> 显隐释义<br>
+    <kbd>S</kbd> 随机 · <kbd>A</kbd> 自动 · <kbd>/</kbd> 搜索
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WORDS = [{"en": "a/an", "zh": "一(个/件...)"}, {"en": "abandon", "zh": "抛弃，遗弃，放弃"}, {"en": "ability", "zh": "能力，才能"}, {"en": "able", "zh": "能够；有能力的"}, {"en": "abnormal", "zh": "不正常的，反常的"}, {"en": "aboard", "zh": "在(船/飞机/车)上，上(船/飞机/车)"}, {"en": "abolish", "zh": "废除，废止"}, {"en": "abortion", "zh": "流产，堕胎"}, {"en": "about", "zh": "关于；大约；到处"}, {"en": "above", "zh": "在...上面；上述的"}, {"en": "abroad", "zh": "在国外；到国外"}, {"en": "absence", "zh": "缺席；缺乏"}, {"en": "absent", "zh": "缺席的；缺少的"}, {"en": "absolute", "zh": "绝对的；完全的"}, {"en": "absorb", "zh": "吸收；吸引...的注意"}, {"en": "abstract", "zh": "抽象的；摘要"}, {"en": "abundant", "zh": "丰富的，充裕的"}, {"en": "abuse", "zh": "滥用；虐待；辱骂"}, {"en": "academic", "zh": "学术的；学院的"}, {"en": "academy", "zh": "研究院；学会；专科院校"}, {"en": "accelerate", "zh": "加速，促进"}, {"en": "accent", "zh": "口音；重音"}, {"en": "accept", "zh": "接受；同意"}, {"en": "access", "zh": "进入；使用权；通道"}, {"en": "accident", "zh": "事故；意外"}, {"en": "accompany", "zh": "陪伴，陪同；伴随"}, {"en": "accomplish", "zh": "完成；达成"}, {"en": "according (to)", "zh": "根据；按照"}, {"en": "account", "zh": "账户；描述；解释"}, {"en": "accurate", "zh": "准确的，精确的"}, {"en": "accuse", "zh": "指责，控告"}, {"en": "accustom", "zh": "使习惯"}, {"en": "ache", "zh": "疼痛"}, {"en": "achieve", "zh": "实现；取得"}, {"en": "achievement", "zh": "成就；功绩"}, {"en": "acid", "zh": "酸；酸的"}, {"en": "acknowledge", "zh": "承认；致谢"}, {"en": "acquaintance", "zh": "熟人；认识，了解"}, {"en": "acquire", "zh": "获得，学到"}, {"en": "acquisition", "zh": "获得；习得"}, {"en": "acre", "zh": "英亩"}, {"en": "across", "zh": "横过；在...对面"}, {"en": "act", "zh": "行动；扮演；法令"}, {"en": "action", "zh": "行动；行为"}, {"en": "active", "zh": "活跃的；积极的"}, {"en": "activity", "zh": "活动"}, {"en": "actor/actress", "zh": "演员(男/女)"}, {"en": "actual", "zh": "实际的，真实的"}, {"en": "acute", "zh": "尖锐的；敏锐的；急性的"}, {"en": "ad (=advertisement)", "zh": "广告"}, {"en": "adapt", "zh": "使适应；改编"}, {"en": "adaptation", "zh": "适应；改编(本)"}, {"en": "add", "zh": "增加；补充说"}, {"en": "addicted", "zh": "上瘾的；入迷的"}, {"en": "addition", "zh": "加；增加；加法"}, {"en": "address", "zh": "地址；演说；称呼"}, {"en": "adequate", "zh": "足够的，适当的"}, {"en": "adjust", "zh": "调整，调节"}, {"en": "administration", "zh": "管理；行政(机关)"}, {"en": "admire", "zh": "钦佩，羡慕"}, {"en": "admission", "zh": "准入；承认"}, {"en": "admit", "zh": "承认；准许进入"}, {"en": "adopt", "zh": "采用；收养"}, {"en": "adore", "zh": "崇拜；喜爱"}, {"en": "adult", "zh": "成年人"}, {"en": "advance", "zh": "前进；推进；预付"}, {"en": "advantage", "zh": "优点，优势"}, {"en": "adventure", "zh": "冒险；奇遇"}, {"en": "advertise", "zh": "登广告；宣扬"}, {"en": "advice", "zh": "劝告，建议"}, {"en": "advise", "zh": "劝告；建议"}, {"en": "advocate", "zh": "提倡，拥护；提倡者"}, {"en": "affair", "zh": "事情；事件；风流韵事"}, {"en": "affect", "zh": "影响；感动"}, {"en": "affection", "zh": "喜爱；感情"}, {"en": "afford", "zh": "担负得起；提供"}, {"en": "afraid", "zh": "害怕的；担心的"}, {"en": "Africa", "zh": "非洲"}, {"en": "after", "zh": "在...之后；后来"}, {"en": "afternoon", "zh": "下午，午后"}, {"en": "afterward(s)", "zh": "以后，后来"}, {"en": "again", "zh": "再一次；再，又"}, {"en": "against", "zh": "反对；靠着；逆"}, {"en": "age", "zh": "年龄；时代；变老"}, {"en": "agency", "zh": "代理行；机构"}, {"en": "agenda", "zh": "议程"}, {"en": "agent", "zh": "代理人，代理商"}, {"en": "ago", "zh": "以前"}, {"en": "agree", "zh": "同意；赞同"}, {"en": "agreement", "zh": "同意；协议"}, {"en": "agriculture", "zh": "农业"}, {"en": "ahead", "zh": "在前面；向前"}, {"en": "aid", "zh": "帮助；援助；助手"}, {"en": "aim", "zh": "瞄准；目标"}, {"en": "air", "zh": "空气；天空；播送"}, {"en": "airline", "zh": "航空公司；航线"}, {"en": "airport", "zh": "机场，航空站"}, {"en": "alarm", "zh": "警报；惊恐"}, {"en": "album", "zh": "相册；集邮册；唱片集"}, {"en": "alcohol", "zh": "酒精，酒"}, {"en": "alert", "zh": "警惕的；警报"}, {"en": "alike", "zh": "相同的，相像的"}, {"en": "alive", "zh": "活着的；有活力的"}, {"en": "all", "zh": "全部的；完全；都"}, {"en": "allow", "zh": "允许，准许"}, {"en": "almost", "zh": "几乎，差不多"}, {"en": "alone", "zh": "单独的；独自地"}, {"en": "along", "zh": "沿着；一起，向前"}, {"en": "alongside", "zh": "在...旁边；与...一起"}, {"en": "aloud", "zh": "出声地，大声地"}, {"en": "already", "zh": "已经，早已"}, {"en": "also", "zh": "也，同样"}, {"en": "alter", "zh": "改变，更改"}, {"en": "alternative", "zh": "选择的；两者选一的"}, {"en": "although", "zh": "虽然，尽管"}, {"en": "altogether", "zh": "完全地；总共"}, {"en": "always", "zh": "总是，一直"}, {"en": "am", "zh": "(be的第一人称单数)"}, {"en": "amateur", "zh": "业余爱好者；业余的"}, {"en": "amaze", "zh": "使惊奇，使惊愕"}, {"en": "amazing", "zh": "令人惊奇的"}, {"en": "ambition", "zh": "雄心，野心"}, {"en": "ambitious", "zh": "有雄心的，野心勃勃的"}, {"en": "ambulance", "zh": "救护车"}, {"en": "America", "zh": "美国；美洲"}, {"en": "among(st)", "zh": "在...之中；在...之间"}, {"en": "amount", "zh": "数量；总计"}, {"en": "amuse", "zh": "娱乐，逗乐"}, {"en": "analyse/analyze", "zh": "分析"}, {"en": "analysis", "zh": "分析"}, {"en": "ancestor", "zh": "祖先，祖宗"}, {"en": "ancient", "zh": "古代的，古老的"}, {"en": "and", "zh": "和；而且；就，便"}, {"en": "anger", "zh": "愤怒，气愤"}, {"en": "angle", "zh": "角；角度"}, {"en": "angry", "zh": "生气的，愤怒的"}, {"en": "animal", "zh": "动物；兽；牲畜"}, {"en": "ankle", "zh": "踝(关节)"}, {"en": "anniversary", "zh": "周年纪念(日)"}, {"en": "announce", "zh": "宣布，宣告"}, {"en": "annoy", "zh": "使恼怒；打扰"}, {"en": "annual", "zh": "一年一度的；年刊"}, {"en": "another", "zh": "再一个；别的"}, {"en": "answer", "zh": "回答；答案；符合"}, {"en": "ant", "zh": "蚂蚁"}, {"en": "anticipate", "zh": "预期，期待"}, {"en": "antique", "zh": "古董；古老的"}, {"en": "anxiety", "zh": "焦虑，忧虑"}, {"en": "anxious", "zh": "焦虑的；渴望的"}, {"en": "any", "zh": "一些；任何"}, {"en": "anybody/anyone", "zh": "任何人"}, {"en": "anyhow", "zh": "无论如何；不管怎样"}, {"en": "anything", "zh": "任何事物"}, {"en": "anyway", "zh": "无论如何；不论以何种方式"}, {"en": "anywhere", "zh": "任何地方"}, {"en": "apart", "zh": "分开；除去；...之外"}, {"en": "apartment", "zh": "一套公寓房间"}, {"en": "ape", "zh": "猿"}, {"en": "apologize/apologise", "zh": "道歉，谢罪"}, {"en": "app (=application)", "zh": "应用程序"}, {"en": "apparent", "zh": "明显的；表面上的"}, {"en": "appeal", "zh": "呼吁；吸引力；申诉"}, {"en": "appear", "zh": "出现；看来好像"}, {"en": "appetite", "zh": "食欲；欲望"}, {"en": "applaud", "zh": "鼓掌；称赞"}, {"en": "apple", "zh": "苹果"}, {"en": "applicant", "zh": "申请人"}, {"en": "application", "zh": "申请；应用"}, {"en": "apply", "zh": "申请；应用"}, {"en": "appoint", "zh": "任命；约定"}, {"en": "appointment", "zh": "约会；任命"}, {"en": "appreciate", "zh": "欣赏；感激；领会"}, {"en": "approach", "zh": "接近；方法；探讨"}, {"en": "appropriate", "zh": "适当的，合适的"}, {"en": "approval", "zh": "赞成；批准"}, {"en": "approve", "zh": "赞成；批准"}, {"en": "approximate", "zh": "近似的；大约"}, {"en": "April", "zh": "四月"}, {"en": "architect", "zh": "建筑师"}, {"en": "architecture", "zh": "建筑学；建筑风格"}, {"en": "area", "zh": "地区；面积；范围"}, {"en": "argue", "zh": "争论；主张"}, {"en": "argument", "zh": "争论；论点"}, {"en": "arise", "zh": "出现；发生"}, {"en": "arm", "zh": "手臂；武装；武器"}, {"en": "army", "zh": "军队；大群"}, {"en": "around", "zh": "在...周围；大约"}, {"en": "arrange", "zh": "安排；整理"}, {"en": "arrangement", "zh": "安排；整理"}, {"en": "arrest", "zh": "逮捕；拘捕"}, {"en": "arrive", "zh": "到达；来临"}, {"en": "arrow", "zh": "箭；箭头(符号)"}, {"en": "art", "zh": "艺术；美术；技艺"}, {"en": "article", "zh": "文章；物品；冠词"}, {"en": "artificial", "zh": "人工的，人造的"}, {"en": "artist", "zh": "艺术家，美术家"}, {"en": "as", "zh": "作为；像；因为；当...时"}, {"en": "ashamed", "zh": "羞耻的，惭愧的"}, {"en": "aside", "zh": "在旁边；撇开"}, {"en": "ask", "zh": "问；请求；邀请"}, {"en": "asleep", "zh": "睡着的"}, {"en": "aspect", "zh": "方面；样子"}, {"en": "assign", "zh": "分配；指派"}, {"en": "assignment", "zh": "任务；分配"}, {"en": "assist", "zh": "帮助，援助"}, {"en": "assistant", "zh": "助手；助理的"}, {"en": "associate", "zh": "联想；联合；伙伴"}, {"en": "association", "zh": "协会；联合"}, {"en": "assume", "zh": "假定；承担"}, {"en": "assumption", "zh": "假定；承担"}, {"en": "assure", "zh": "使确信；向...保证"}, {"en": "astonish", "zh": "使惊讶"}, {"en": "astronaut", "zh": "宇航员"}, {"en": "astronomer", "zh": "天文学家"}, {"en": "at", "zh": "在...时；向...；以..."}, {"en": "athlete", "zh": "运动员"}, {"en": "Atlantic", "zh": "大西洋的；大西洋"}, {"en": "atmosphere", "zh": "大气层；气氛"}, {"en": "atom", "zh": "原子"}, {"en": "attach", "zh": "系；贴；使附属"}, {"en": "attack", "zh": "攻击；(疾病)侵袭"}, {"en": "attain", "zh": "达到，获得"}, {"en": "attempt", "zh": "尝试；试图"}, {"en": "attend", "zh": "出席；护理；照顾"}, {"en": "attention", "zh": "注意；注意力"}, {"en": "attitude", "zh": "态度；看法"}, {"en": "attract", "zh": "吸引；引起"}, {"en": "attraction", "zh": "吸引；吸引力"}, {"en": "attractive", "zh": "有吸引力的"}, {"en": "attribute", "zh": "把...归因于；属性"}, {"en": "audience", "zh": "听众，观众"}, {"en": "August", "zh": "八月"}, {"en": "aunt", "zh": "伯母；婶母；姑母"}, {"en": "authentic", "zh": "真的；可靠的"}, {"en": "author", "zh": "作者，作家"}, {"en": "authority", "zh": "权威；权力；(复数)当局"}, {"en": "automatic", "zh": "自动的"}, {"en": "autonomous", "zh": "自治的；自主的"}, {"en": "autumn", "zh": "秋天，秋季"}, {"en": "available", "zh": "可用的；可得到的"}, {"en": "average", "zh": "平均(的)；通常的"}, {"en": "avoid", "zh": "避免；避开"}, {"en": "awake", "zh": "唤醒；醒着的"}, {"en": "award", "zh": "奖，奖品；授予"}, {"en": "aware", "zh": "意识到的"}, {"en": "away", "zh": "离开；远离"}, {"en": "awesome", "zh": "令人敬畏的；极好的"}, {"en": "awful", "zh": "可怕的；极坏的"}, {"en": "awkward", "zh": "尴尬的；笨拙的"}, {"en": "baby", "zh": "婴儿；孩子气的人"}, {"en": "back", "zh": "背(部)；后面；回原处"}, {"en": "background", "zh": "背景；幕后"}, {"en": "backward(s)", "zh": "向后；倒"}, {"en": "bacon", "zh": "咸肉；熏猪肉"}, {"en": "bacteria", "zh": "细菌"}, {"en": "bad", "zh": "坏的；严重的"}, {"en": "badminton", "zh": "羽毛球运动"}, {"en": "bag", "zh": "袋；包；囊"}, {"en": "bake", "zh": "烤，烘"}, {"en": "bakery", "zh": "面包房"}, {"en": "balance", "zh": "平衡；天平；结余"}, {"en": "ball", "zh": "球；舞会"}, {"en": "ballet", "zh": "芭蕾舞"}, {"en": "balloon", "zh": "气球"}, {"en": "bamboo", "zh": "竹"}, {"en": "ban", "zh": "禁止；禁令"}, {"en": "banana", "zh": "香蕉"}, {"en": "band", "zh": "带子；乐队；一伙"}, {"en": "bandage", "zh": "绷带"}, {"en": "bank", "zh": "银行；岸"}, {"en": "bar", "zh": "条；棒；酒吧"}, {"en": "barbecue", "zh": "烤肉；烤架"}, {"en": "bare", "zh": "赤裸的；仅仅的"}, {"en": "barely", "zh": "仅仅；几乎不"}, {"en": "bark", "zh": "吠叫；树皮"}, {"en": "barrier", "zh": "障碍；栅栏"}, {"en": "base", "zh": "基础；基地；以...为基础"}, {"en": "baseball", "zh": "棒球运动"}, {"en": "basic", "zh": "基本的；基础的"}, {"en": "basin", "zh": "盆；盆地"}, {"en": "basis", "zh": "基础；根据"}, {"en": "basket", "zh": "篮(子)"}, {"en": "basketball", "zh": "篮球运动"}, {"en": "bat", "zh": "蝙蝠；球拍"}, {"en": "bath", "zh": "洗澡；浴缸"}, {"en": "bathroom", "zh": "浴室；盥洗室"}, {"en": "battery", "zh": "电池；一套"}, {"en": "battle", "zh": "战役；斗争"}, {"en": "bay", "zh": "海湾；月桂"}, {"en": "be (am, are, is)", "zh": "是；在；成为"}, {"en": "beach", "zh": "海滨，海滩"}, {"en": "bean", "zh": "豆；豆科植物"}, {"en": "bear", "zh": "熊；忍受；生育"}, {"en": "beard", "zh": "胡子"}, {"en": "beast", "zh": "兽；凶残的人"}, {"en": "beat", "zh": "打(击)；跳动；打败"}, {"en": "beautiful", "zh": "美丽的；美好的"}, {"en": "beauty", "zh": "美；美人"}, {"en": "because", "zh": "因为"}, {"en": "become", "zh": "成为；变得"}, {"en": "bed", "zh": "床；河床"}, {"en": "bedroom", "zh": "卧室"}, {"en": "bee", "zh": "蜜蜂"}, {"en": "beef", "zh": "牛肉"}, {"en": "beer", "zh": "啤酒"}, {"en": "before", "zh": "在...之前；以前"}, {"en": "beg", "zh": "恳求；乞讨"}, {"en": "begin", "zh": "开始；着手"}, {"en": "behalf", "zh": "代表...利益"}, {"en": "behave", "zh": "表现；举止"}, {"en": "behaviour/behavior", "zh": "行为，举止"}, {"en": "behind", "zh": "在...背后；落后于"}, {"en": "being", "zh": "存在；生物"}, {"en": "belief", "zh": "相信；信念"}, {"en": "believe", "zh": "相信；认为"}, {"en": "bell", "zh": "钟(声)；铃(声)"}, {"en": "belong", "zh": "属于"}, {"en": "below", "zh": "在...下面；低于"}, {"en": "belt", "zh": "腰带；地带"}, {"en": "bench", "zh": "长凳；工作台"}, {"en": "bend", "zh": "(使)弯曲；弯腰"}, {"en": "beneath", "zh": "在...下方；低于"}, {"en": "beneficial", "zh": "有益的"}, {"en": "benefit", "zh": "益处；受益"}, {"en": "beside", "zh": "在...旁边；与...相比"}, {"en": "besides", "zh": "除...之外(还)"}, {"en": "best", "zh": "最好的；最好地"}, {"en": "bet", "zh": "打赌；敢断定"}, {"en": "betray", "zh": "背叛；暴露"}, {"en": "better", "zh": "较好的；更好地"}, {"en": "between", "zh": "在...之间"}, {"en": "beyond", "zh": "在...那边；超出"}, {"en": "bicycle/bike", "zh": "自行车"}, {"en": "bid", "zh": "出价；命令；致意"}, {"en": "big", "zh": "大的；重要的"}, {"en": "bill", "zh": "账单；法案；鸟嘴"}, {"en": "billion", "zh": "十亿"}, {"en": "bind", "zh": "捆绑；约束"}, {"en": "biography", "zh": "传记"}, {"en": "biology", "zh": "生物学"}, {"en": "bird", "zh": "鸟，禽"}, {"en": "birth", "zh": "出生；诞生"}, {"en": "birthday", "zh": "生日"}, {"en": "biscuit", "zh": "饼干"}, {"en": "bit", "zh": "一点；小块"}, {"en": "bite", "zh": "咬；叮"}, {"en": "bitter", "zh": "苦的；痛苦的"}, {"en": "bizarre", "zh": "古怪的"}, {"en": "black", "zh": "黑色的；黑暗的"}, {"en": "blackboard", "zh": "黑板"}, {"en": "blame", "zh": "责备；把...归咎于"}, {"en": "blank", "zh": "空白的；空白表格"}, {"en": "blanket", "zh": "毯子"}, {"en": "bleed", "zh": "流血，出血"}, {"en": "bless", "zh": "祝福；保佑"}, {"en": "blind", "zh": "瞎的；盲目的"}, {"en": "block", "zh": "街区；块；堵塞"}, {"en": "blog", "zh": "博客"}, {"en": "blood", "zh": "血，血液"}, {"en": "blouse", "zh": "(女式)短上衣"}, {"en": "blow", "zh": "吹；打击；吹动"}, {"en": "blue", "zh": "蓝色的；忧郁的"}, {"en": "board", "zh": "板；委员会；上(船/车)"}, {"en": "boast", "zh": "自夸，夸口"}, {"en": "boat", "zh": "小船；艇"}, {"en": "body", "zh": "身体；主体；尸体"}, {"en": "boil", "zh": "沸腾；煮沸"}, {"en": "bold", "zh": "勇敢的；粗体的"}, {"en": "bomb", "zh": "炸弹；轰炸"}, {"en": "bond", "zh": "联结；债券"}, {"en": "bone", "zh": "骨头"}, {"en": "bonus", "zh": "奖金；红利"}, {"en": "book", "zh": "书；预订"}, {"en": "boot", "zh": "靴子"}, {"en": "border", "zh": "边界；国界"}, {"en": "bore", "zh": "使厌烦；钻孔"}, {"en": "bored", "zh": "厌烦的"}, {"en": "boring", "zh": "令人厌烦的"}, {"en": "born", "zh": "出生的；天生的"}, {"en": "borrow", "zh": "借入；借用"}, {"en": "boss", "zh": "老板，上司"}, {"en": "botanical", "zh": "植物学的"}, {"en": "both", "zh": "两者(都)"}, {"en": "bother", "zh": "打扰；费心"}, {"en": "bottle", "zh": "瓶子"}, {"en": "bottom", "zh": "底部；末端"}, {"en": "bounce", "zh": "(使)弹起；蹦跳"}, {"en": "bound", "zh": "界限；一定；跳跃"}, {"en": "boundary", "zh": "分界线；边界"}, {"en": "bow", "zh": "鞠躬；弓；蝴蝶结"}, {"en": "bowl", "zh": "碗；碗状物"}, {"en": "bowling", "zh": "保龄球运动"}, {"en": "box", "zh": "箱子；盒子；拳击"}, {"en": "boxing", "zh": "拳击"}, {"en": "boy", "zh": "男孩；儿子"}, {"en": "brain", "zh": "脑(子)；智力"}, {"en": "brake", "zh": "刹车；制动器"}, {"en": "branch", "zh": "树枝；分部；分支"}, {"en": "brand", "zh": "商标，品牌"}, {"en": "brave", "zh": "勇敢的"}, {"en": "bread", "zh": "面包"}, {"en": "break", "zh": "打破；休息；弄坏"}, {"en": "breakfast", "zh": "早餐"}, {"en": "breast", "zh": "胸部；乳房"}, {"en": "breath", "zh": "呼吸；气息"}, {"en": "breathe", "zh": "呼吸"}, {"en": "breed", "zh": "品种；繁殖"}, {"en": "brick", "zh": "砖"}, {"en": "bride/bridegroom", "zh": "新娘/新郎"}, {"en": "bridge", "zh": "桥；桥梁"}, {"en": "brief", "zh": "短暂的；简洁的"}, {"en": "bright", "zh": "明亮的；聪明的"}, {"en": "brilliant", "zh": "光辉的；卓越的"}, {"en": "bring", "zh": "带来；引起"}, {"en": "broad", "zh": "宽阔的；广泛的"}, {"en": "broadcast", "zh": "广播；播送"}, {"en": "brochure", "zh": "小册子"}, {"en": "broken", "zh": "破碎的；坏掉的"}, {"en": "brother", "zh": "兄弟；同胞"}, {"en": "brown", "zh": "棕色的；棕色"}, {"en": "brush", "zh": "刷子；画笔；轻擦"}, {"en": "budget", "zh": "预算"}, {"en": "buffet", "zh": "自助餐"}, {"en": "bug", "zh": "虫子；故障"}, {"en": "build", "zh": "建造；建筑"}, {"en": "building", "zh": "建筑物"}, {"en": "bulb", "zh": "灯泡；球茎"}, {"en": "bulk", "zh": "大部分；体积"}, {"en": "bull", "zh": "公牛"}, {"en": "bullet", "zh": "子弹"}, {"en": "bunch", "zh": "束，串，扎"}, {"en": "burden", "zh": "负担，重负"}, {"en": "bureau", "zh": "局；司；办事处"}, {"en": "burger", "zh": "汉堡包"}, {"en": "burn", "zh": "燃烧；烧伤"}, {"en": "burst", "zh": "爆裂；突发"}, {"en": "bury", "zh": "埋葬；掩埋"}, {"en": "bus", "zh": "公共汽车"}, {"en": "bush", "zh": "灌木(丛)"}, {"en": "business", "zh": "商业；生意；事务"}, {"en": "busy", "zh": "忙碌的；热闹的"}, {"en": "but", "zh": "但是；除了"}, {"en": "butcher", "zh": "屠夫；肉商"}, {"en": "butter", "zh": "黄油"}, {"en": "butterfly", "zh": "蝴蝶"}, {"en": "button", "zh": "纽扣；按钮"}, {"en": "buy", "zh": "购买；收买"}, {"en": "by", "zh": "被；靠；通过；到...为止"}, {"en": "cabin", "zh": "小屋；船舱"}, {"en": "cabinet", "zh": "橱柜；内阁"}, {"en": "cable", "zh": "电缆；电报"}, {"en": "cafe", "zh": "咖啡馆；小餐馆"}, {"en": "cafeteria", "zh": "自助餐厅"}, {"en": "cage", "zh": "笼子"}, {"en": "cake", "zh": "蛋糕；饼"}, {"en": "calculate", "zh": "计算；估计"}, {"en": "call", "zh": "叫喊；称呼；打电话"}, {"en": "calligraphy", "zh": "书法"}, {"en": "calm", "zh": "镇静的；平静的"}, {"en": "calorie", "zh": "卡路里"}, {"en": "camel", "zh": "骆驼"}, {"en": "camera", "zh": "照相机；摄像机"}, {"en": "camp", "zh": "野营；营地"}, {"en": "campaign", "zh": "运动；战役"}, {"en": "campus", "zh": "(大学)校园"}, {"en": "can", "zh": "能，会；罐(头)"}, {"en": "canal", "zh": "运河"}, {"en": "cancel", "zh": "取消；废除"}, {"en": "cancer", "zh": "癌，癌症"}, {"en": "candidate", "zh": "候选人"}, {"en": "candle", "zh": "蜡烛"}, {"en": "candy", "zh": "糖果"}, {"en": "cannon", "zh": "大炮"}, {"en": "canoe", "zh": "独木舟"}, {"en": "canteen", "zh": "食堂；水壶"}, {"en": "cap", "zh": "帽子；盖子"}, {"en": "capable", "zh": "有能力的"}, {"en": "capacity", "zh": "容量；能力"}, {"en": "capital", "zh": "首都；资本；大写"}, {"en": "capsule", "zh": "胶囊；太空舱"}, {"en": "captain", "zh": "船长；队长"}, {"en": "caption", "zh": "标题；说明文字"}, {"en": "capture", "zh": "捕捉；捕获"}, {"en": "car", "zh": "汽车；车厢"}, {"en": "carbon", "zh": "碳"}, {"en": "card", "zh": "卡片；纸牌"}, {"en": "care", "zh": "关心；照顾；在意"}, {"en": "career", "zh": "职业；生涯"}, {"en": "careful", "zh": "小心的；仔细的"}, {"en": "careless", "zh": "粗心的"}, {"en": "cargo", "zh": "货物"}, {"en": "carpet", "zh": "地毯"}, {"en": "carriage", "zh": "四轮马车；车厢"}, {"en": "carrot", "zh": "胡萝卜"}, {"en": "carry", "zh": "携带；运送；支撑"}, {"en": "cartoon", "zh": "漫画；动画片"}, {"en": "carve", "zh": "雕刻"}, {"en": "case", "zh": "情况；病例；箱子"}, {"en": "cash", "zh": "现金；现款"}, {"en": "cast", "zh": "投；掷；抛；演员阵容"}, {"en": "castle", "zh": "城堡"}, {"en": "casual", "zh": "偶然的；非正式的"}, {"en": "cat", "zh": "猫"}, {"en": "catch", "zh": "抓住；赶上；感染"}, {"en": "category", "zh": "种类，类别"}, {"en": "cattle", "zh": "牛(总称)"}, {"en": "cause", "zh": "原因；事业；引起"}, {"en": "caution", "zh": "小心；警告"}, {"en": "cautious", "zh": "小心的，谨慎的"}, {"en": "cave", "zh": "山洞，洞穴"}, {"en": "cease", "zh": "停止，终止"}, {"en": "ceiling", "zh": "天花板"}, {"en": "celebrate", "zh": "庆祝"}, {"en": "celebrity", "zh": "名人"}, {"en": "cell", "zh": "细胞；牢房；电池"}, {"en": "cellar", "zh": "地窖"}, {"en": "cent", "zh": "分(货币单位)"}, {"en": "centimetre/centimeter", "zh": "厘米"}, {"en": "central", "zh": "中心的；主要的"}, {"en": "centre/center", "zh": "中心；中央"}, {"en": "century", "zh": "世纪，百年"}, {"en": "ceremony", "zh": "典礼，仪式"}, {"en": "certain", "zh": "确定的；某(些)"}, {"en": "certainly", "zh": "一定；当然"}, {"en": "certificate", "zh": "证书，证明"}, {"en": "chain", "zh": "链子；连锁店"}, {"en": "chair", "zh": "椅子；主席"}, {"en": "chairman/chairwoman", "zh": "主席(男/女)"}, {"en": "chalk", "zh": "粉笔"}, {"en": "challenge", "zh": "挑战；质疑"}, {"en": "champion", "zh": "冠军"}, {"en": "chance", "zh": "机会；可能性"}, {"en": "change", "zh": "改变；兑换；零钱"}, {"en": "channel", "zh": "频道；海峡；渠道"}, {"en": "chaos", "zh": "混乱"}, {"en": "chapter", "zh": "章，回，篇"}, {"en": "character", "zh": "性格；角色；人物"}, {"en": "characteristic", "zh": "特征；典型的"}, {"en": "charge", "zh": "收费；充电；控告"}, {"en": "charity", "zh": "慈善；施舍"}, {"en": "charm", "zh": "魅力；魔力"}, {"en": "chart", "zh": "图表；海图"}, {"en": "chase", "zh": "追逐；追赶"}, {"en": "chat", "zh": "闲谈，聊天"}, {"en": "cheap", "zh": "便宜的；低劣的"}, {"en": "cheat", "zh": "欺骗；作弊"}, {"en": "check", "zh": "检查；核对；支票"}, {"en": "cheek", "zh": "脸颊"}, {"en": "cheer", "zh": "欢呼；振奋"}, {"en": "cheese", "zh": "奶酪"}, {"en": "chef", "zh": "厨师长"}, {"en": "chemical", "zh": "化学的；化学制品"}, {"en": "chemist", "zh": "化学家；药剂师"}, {"en": "chemistry", "zh": "化学"}, {"en": "cheque", "zh": "支票"}, {"en": "chess", "zh": "国际象棋"}, {"en": "chest", "zh": "胸腔；箱子"}, {"en": "chew", "zh": "咀嚼"}, {"en": "chicken", "zh": "鸡；鸡肉"}, {"en": "chief", "zh": "首领；主要的"}, {"en": "child", "zh": "小孩；儿童"}, {"en": "childhood", "zh": "童年"}, {"en": "China", "zh": "中国"}, {"en": "china", "zh": "瓷器"}, {"en": "Chinese", "zh": "中国的；中国人；汉语"}, {"en": "chip", "zh": "碎片；芯片；炸薯条"}, {"en": "chocolate", "zh": "巧克力"}, {"en": "choice", "zh": "选择；精选品"}, {"en": "choir", "zh": "唱诗班；合唱队"}, {"en": "choke", "zh": "窒息；哽噎"}, {"en": "choose", "zh": "选择；挑选"}, {"en": "chopsticks", "zh": "筷子"}, {"en": "chore", "zh": "家庭杂务"}, {"en": "chorus", "zh": "合唱；副歌"}, {"en": "Christ", "zh": "基督"}, {"en": "Christian", "zh": "基督徒；基督教的"}, {"en": "Christmas", "zh": "圣诞节"}, {"en": "church", "zh": "教堂"}, {"en": "cigarette", "zh": "香烟"}, {"en": "cinema", "zh": "电影院；电影"}, {"en": "circle", "zh": "圆圈；圈子；环绕"}, {"en": "circuit", "zh": "环行；电路"}, {"en": "circumstance", "zh": "情况；环境"}, {"en": "circus", "zh": "马戏团"}, {"en": "cite", "zh": "引用；引证"}, {"en": "citizen", "zh": "市民；公民"}, {"en": "city", "zh": "城市"}, {"en": "civil", "zh": "公民的；国内的"}, {"en": "civilian", "zh": "平民；民用的"}, {"en": "civilisation/civilization", "zh": "文明"}, {"en": "claim", "zh": "声称；索赔；要求"}, {"en": "clap", "zh": "拍手；鼓掌"}, {"en": "clarify", "zh": "澄清，阐明"}, {"en": "class", "zh": "班级；课；阶级"}, {"en": "classic", "zh": "经典作品；经典的"}, {"en": "classical", "zh": "古典的"}, {"en": "classify", "zh": "分类"}, {"en": "classmate", "zh": "同班同学"}, {"en": "classroom", "zh": "教室"}, {"en": "clay", "zh": "黏土"}, {"en": "clean", "zh": "清洁；干净的"}, {"en": "clear", "zh": "清晰的；清楚的；清除"}, {"en": "clerk", "zh": "职员；店员"}, {"en": "clever", "zh": "聪明的，机灵的"}, {"en": "click", "zh": "点击；咔哒声"}, {"en": "client", "zh": "客户；委托人"}, {"en": "cliff", "zh": "悬崖"}, {"en": "climate", "zh": "气候"}, {"en": "climb", "zh": "攀登；爬"}, {"en": "clinic", "zh": "诊所"}, {"en": "clock", "zh": "钟"}, {"en": "clone", "zh": "克隆"}, {"en": "close", "zh": "关闭；亲密的；接近"}, {"en": "cloth", "zh": "布；布料"}, {"en": "clothes", "zh": "衣服"}, {"en": "clothing", "zh": "(总称)衣服"}, {"en": "cloud", "zh": "云"}, {"en": "cloudy", "zh": "多云的"}, {"en": "club", "zh": "俱乐部；棍棒"}, {"en": "clue", "zh": "线索"}, {"en": "coach", "zh": "教练；长途汽车"}, {"en": "coal", "zh": "煤"}, {"en": "coast", "zh": "海岸"}, {"en": "coat", "zh": "外套；涂层"}, {"en": "code", "zh": "密码；代码"}, {"en": "coffee", "zh": "咖啡"}, {"en": "coin", "zh": "硬币"}, {"en": "cold", "zh": "寒冷的；感冒"}, {"en": "collapse", "zh": "倒塌；崩溃"}, {"en": "collar", "zh": "衣领"}, {"en": "colleague", "zh": "同事"}, {"en": "collect", "zh": "收集；领取"}, {"en": "collection", "zh": "收集；收藏品"}, {"en": "college", "zh": "大学；学院"}, {"en": "collide", "zh": "碰撞"}, {"en": "colony", "zh": "殖民地"}, {"en": "colour/color", "zh": "颜色；色彩"}, {"en": "column", "zh": "列；专栏"}, {"en": "combination", "zh": "结合，组合"}, {"en": "combine", "zh": "联合，结合"}, {"en": "come", "zh": "来；来到"}, {"en": "comedy", "zh": "喜剧"}, {"en": "comfort", "zh": "安慰；舒适"}, {"en": "comfortable", "zh": "舒适的"}, {"en": "comic", "zh": "喜剧的；连环画"}, {"en": "command", "zh": "命令；指挥"}, {"en": "comment", "zh": "评论；意见"}, {"en": "commerce", "zh": "商业"}, {"en": "commercial", "zh": "商业的；广告"}, {"en": "commission", "zh": "委员会；佣金"}, {"en": "commit", "zh": "犯(罪)；承诺"}, {"en": "commitment", "zh": "承诺；奉献"}, {"en": "committee", "zh": "委员会"}, {"en": "common", "zh": "普通的；共同的"}, {"en": "communicate", "zh": "沟通；传达"}, {"en": "communication", "zh": "沟通；通信"}, {"en": "communism", "zh": "共产主义"}, {"en": "communist", "zh": "共产主义者(的)"}, {"en": "community", "zh": "社区；团体"}, {"en": "company", "zh": "公司；陪伴"}, {"en": "compare", "zh": "比较"}, {"en": "comparison", "zh": "比较"}, {"en": "compass", "zh": "指南针；圆规"}, {"en": "compel", "zh": "强迫"}, {"en": "compensate", "zh": "补偿，赔偿"}, {"en": "compete", "zh": "竞争"}, {"en": "competence", "zh": "能力；胜任"}, {"en": "competition", "zh": "比赛；竞争"}, {"en": "compile", "zh": "汇编；编辑"}, {"en": "complain", "zh": "抱怨；投诉"}, {"en": "complaint", "zh": "抱怨；投诉"}, {"en": "complete", "zh": "完成；完整的"}, {"en": "complex", "zh": "复杂的"}, {"en": "complicated", "zh": "复杂的"}, {"en": "component", "zh": "组成部分"}, {"en": "compose", "zh": "组成；作曲"}, {"en": "composition", "zh": "作文；作曲"}, {"en": "comprehension", "zh": "理解"}, {"en": "comprehensive", "zh": "综合的；全面的"}, {"en": "comprise", "zh": "包含；构成"}, {"en": "compromise", "zh": "妥协；折衷"}, {"en": "compulsory", "zh": "强制性的"}, {"en": "compute", "zh": "计算"}, {"en": "computer", "zh": "计算机"}, {"en": "conceal", "zh": "隐藏"}, {"en": "concentrate", "zh": "集中(注意力)"}, {"en": "concept", "zh": "概念"}, {"en": "concern", "zh": "关心；涉及"}, {"en": "concert", "zh": "音乐会"}, {"en": "conclude", "zh": "推断；结束"}, {"en": "conclusion", "zh": "结论"}, {"en": "concrete", "zh": "具体的；混凝土"}, {"en": "condition", "zh": "条件；状况"}, {"en": "conduct", "zh": "进行；指挥；行为"}, {"en": "conductor", "zh": "指挥；售票员"}, {"en": "conference", "zh": "会议"}, {"en": "confess", "zh": "承认；坦白"}, {"en": "confidence", "zh": "信心"}, {"en": "confident", "zh": "自信的"}, {"en": "confidential", "zh": "机密的"}, {"en": "confirm", "zh": "证实；确认"}, {"en": "conflict", "zh": "冲突"}, {"en": "conform", "zh": "遵守；一致"}, {"en": "confront", "zh": "面对；遭遇"}, {"en": "confuse", "zh": "使迷惑"}, {"en": "confused", "zh": "迷惑的"}, {"en": "congratulate", "zh": "祝贺"}, {"en": "congratulation", "zh": "祝贺"}, {"en": "connect", "zh": "连接；联系"}, {"en": "connection", "zh": "联系；连接"}, {"en": "conscience", "zh": "良心"}, {"en": "conscious", "zh": "有意识的"}, {"en": "consent", "zh": "同意；准许"}, {"en": "consequence", "zh": "后果"}, {"en": "conservation", "zh": "保护；保存"}, {"en": "conservative", "zh": "保守的"}, {"en": "consider", "zh": "考虑；认为"}, {"en": "considerable", "zh": "相当大的"}, {"en": "considerate", "zh": "体贴的"}, {"en": "consist", "zh": "组成；在于"}, {"en": "consistent", "zh": "一致的"}, {"en": "constant", "zh": "经常的；恒定的"}, {"en": "constitution", "zh": "宪法；构成"}, {"en": "construct", "zh": "建造"}, {"en": "construction", "zh": "建筑"}, {"en": "consult", "zh": "请教；咨询"}, {"en": "consultant", "zh": "顾问"}, {"en": "consume", "zh": "消费；消耗"}, {"en": "contact", "zh": "接触；联系"}, {"en": "contain", "zh": "包含；容纳"}, {"en": "container", "zh": "容器"}, {"en": "contemporary", "zh": "当代的"}, {"en": "content", "zh": "内容；满足的"}, {"en": "contest", "zh": "竞赛"}, {"en": "context", "zh": "语境；背景"}, {"en": "continent", "zh": "大陆"}, {"en": "continue", "zh": "继续"}, {"en": "continuous", "zh": "连续的"}, {"en": "contract", "zh": "合同"}, {"en": "contrast", "zh": "对比"}, {"en": "contribute", "zh": "贡献；捐助"}, {"en": "contribution", "zh": "贡献"}, {"en": "control", "zh": "控制"}, {"en": "controversial", "zh": "有争议的"}, {"en": "convenience", "zh": "便利"}, {"en": "convenient", "zh": "方便的"}, {"en": "conventional", "zh": "传统的"}, {"en": "conversation", "zh": "谈话"}, {"en": "convert", "zh": "转变；转换"}, {"en": "convey", "zh": "传达；运送"}, {"en": "convince", "zh": "使确信"}, {"en": "cook", "zh": "烹调；厨师"}, {"en": "cooker", "zh": "炊具"}, {"en": "cool", "zh": "凉的；酷"}, {"en": "cooperate", "zh": "合作"}, {"en": "coordinate", "zh": "协调"}, {"en": "cope", "zh": "应付"}, {"en": "copy", "zh": "抄本；复制"}, {"en": "core", "zh": "核心"}, {"en": "corn", "zh": "玉米"}, {"en": "corner", "zh": "角；角落"}, {"en": "corporate", "zh": "公司的"}, {"en": "correct", "zh": "正确的；纠正"}, {"en": "correspond", "zh": "符合；通信"}, {"en": "correspondent", "zh": "记者"}, {"en": "corridor", "zh": "走廊"}, {"en": "cost", "zh": "花费；成本"}, {"en": "costly", "zh": "昂贵的"}, {"en": "costume", "zh": "服装"}, {"en": "cottage", "zh": "小屋"}, {"en": "cotton", "zh": "棉花"}, {"en": "couch", "zh": "长沙发"}, {"en": "could", "zh": "(can的过去式)"}, {"en": "council", "zh": "委员会"}, {"en": "counsel", "zh": "劝告；建议"}, {"en": "count", "zh": "数数；重要"}, {"en": "counter", "zh": "柜台；相反地"}, {"en": "country", "zh": "国家；乡村"}, {"en": "countryside", "zh": "乡村"}, {"en": "county", "zh": "郡；县"}, {"en": "couple", "zh": "一对；夫妇"}, {"en": "courage", "zh": "勇气"}, {"en": "course", "zh": "课程；过程；一道菜"}, {"en": "court", "zh": "法庭；球场"}, {"en": "cousin", "zh": "堂(表)兄弟姊妹"}, {"en": "cover", "zh": "覆盖；封面"}, {"en": "coverage", "zh": "覆盖范围"}, {"en": "cow", "zh": "奶牛"}, {"en": "crack", "zh": "裂缝；破裂"}, {"en": "craft", "zh": "工艺；手艺"}, {"en": "crash", "zh": "碰撞；坠毁"}, {"en": "crawl", "zh": "爬行"}, {"en": "crazy", "zh": "疯狂的"}, {"en": "cream", "zh": "奶油"}, {"en": "create", "zh": "创造"}, {"en": "creative", "zh": "有创造力的"}, {"en": "creature", "zh": "生物"}, {"en": "credit", "zh": "信用；学分；赞扬"}, {"en": "crew", "zh": "全体船员"}, {"en": "crime", "zh": "犯罪"}, {"en": "criminal", "zh": "罪犯；犯罪的"}, {"en": "crisis", "zh": "危机"}, {"en": "criterion", "zh": "标准"}, {"en": "critic", "zh": "批评家"}, {"en": "critical", "zh": "批判的；关键的"}, {"en": "criticism", "zh": "批评"}, {"en": "criticize/criticise", "zh": "批评"}, {"en": "crop", "zh": "农作物"}, {"en": "cross", "zh": "十字架；交叉；生气的"}, {"en": "crowd", "zh": "人群"}, {"en": "crowded", "zh": "拥挤的"}, {"en": "crown", "zh": "王冠"}, {"en": "crucial", "zh": "至关重要的"}, {"en": "crude", "zh": "天然的；粗糙的"}, {"en": "cruel", "zh": "残酷的"}, {"en": "cruise", "zh": "巡航；乘船游览"}, {"en": "cry", "zh": "哭；叫喊"}, {"en": "crystal", "zh": "水晶"}, {"en": "cube", "zh": "立方体"}, {"en": "cuisine", "zh": "烹饪；菜肴"}, {"en": "cultivate", "zh": "培养；耕作"}, {"en": "culture", "zh": "文化"}, {"en": "cup", "zh": "杯子"}, {"en": "cupboard", "zh": "碗柜"}, {"en": "cure", "zh": "治愈；疗法"}, {"en": "curious", "zh": "好奇的"}, {"en": "curl", "zh": "(使)卷曲"}, {"en": "currency", "zh": "货币"}, {"en": "current", "zh": "当前的；水流"}, {"en": "curriculum", "zh": "课程"}, {"en": "curse", "zh": "诅咒"}, {"en": "curtain", "zh": "窗帘"}, {"en": "curve", "zh": "曲线"}, {"en": "cushion", "zh": "垫子"}, {"en": "custom", "zh": "风俗；海关"}, {"en": "customer", "zh": "顾客"}, {"en": "cut", "zh": "切；割；伤口"}, {"en": "cute", "zh": "可爱的"}, {"en": "cycle", "zh": "循环；骑自行车"}, {"en": "daily", "zh": "每日的；日报"}, {"en": "dam", "zh": "水坝"}, {"en": "damage", "zh": "损害"}, {"en": "damp", "zh": "潮湿的"}, {"en": "dance", "zh": "跳舞"}, {"en": "danger", "zh": "危险"}, {"en": "dangerous", "zh": "危险的"}, {"en": "dare", "zh": "敢；胆敢"}, {"en": "dark", "zh": "黑暗的；暗处"}, {"en": "data", "zh": "数据"}, {"en": "database", "zh": "数据库"}, {"en": "date", "zh": "日期；约会；枣"}, {"en": "daughter", "zh": "女儿"}, {"en": "dawn", "zh": "黎明"}, {"en": "day", "zh": "一天；白天"}, {"en": "dead", "zh": "死的"}, {"en": "deadline", "zh": "截止期限"}, {"en": "deaf", "zh": "聋的"}, {"en": "deal", "zh": "处理；交易"}, {"en": "dear", "zh": "亲爱的；昂贵的"}, {"en": "death", "zh": "死亡"}, {"en": "debate", "zh": "辩论"}, {"en": "debt", "zh": "债务"}, {"en": "decade", "zh": "十年"}, {"en": "decent", "zh": "得体的；体面的"}, {"en": "decide", "zh": "决定"}, {"en": "decision", "zh": "决定"}, {"en": "declare", "zh": "宣布；声明"}, {"en": "decline", "zh": "下降；衰落"}, {"en": "decorate", "zh": "装饰"}, {"en": "decrease", "zh": "减少"}, {"en": "dedicate", "zh": "奉献"}, {"en": "deep", "zh": "深的"}, {"en": "deer", "zh": "鹿"}, {"en": "defeat", "zh": "击败"}, {"en": "defence/defense", "zh": "防御；辩护"}, {"en": "defend", "zh": "防御；辩护"}, {"en": "define", "zh": "定义"}, {"en": "definite", "zh": "明确的"}, {"en": "definitely", "zh": "明确地；肯定"}, {"en": "definition", "zh": "定义"}, {"en": "degree", "zh": "程度；学位"}, {"en": "delay", "zh": "延迟；耽搁"}, {"en": "delete", "zh": "删除"}, {"en": "delicate", "zh": "精致的；脆弱的"}, {"en": "delicious", "zh": "美味的"}, {"en": "delight", "zh": "快乐；喜悦"}, {"en": "deliver", "zh": "递送；发表"}, {"en": "demand", "zh": "要求；需求"}, {"en": "demonstrate", "zh": "演示；证明"}, {"en": "dentist", "zh": "牙医"}, {"en": "deny", "zh": "否认"}, {"en": "depart", "zh": "离开"}, {"en": "department", "zh": "部门"}, {"en": "departure", "zh": "离开；出发"}, {"en": "depend", "zh": "依靠；依赖"}, {"en": "dependent", "zh": "依赖的"}, {"en": "depict", "zh": "描绘"}, {"en": "deposit", "zh": "存款；押金"}, {"en": "depress", "zh": "使沮丧"}, {"en": "depth", "zh": "深度"}, {"en": "deputy", "zh": "代理人"}, {"en": "derive", "zh": "起源；得到"}, {"en": "describe", "zh": "描述"}, {"en": "description", "zh": "描述"}, {"en": "desert", "zh": "沙漠；抛弃"}, {"en": "deserve", "zh": "应得"}, {"en": "design", "zh": "设计"}, {"en": "desire", "zh": "渴望"}, {"en": "desk", "zh": "书桌"}, {"en": "desperate", "zh": "绝望的"}, {"en": "despite", "zh": "尽管"}, {"en": "dessert", "zh": "甜点"}, {"en": "destination", "zh": "目的地"}, {"en": "destroy", "zh": "摧毁"}, {"en": "destruction", "zh": "破坏"}, {"en": "detail", "zh": "细节"}, {"en": "detect", "zh": "察觉；探测"}, {"en": "detective", "zh": "侦探"}, {"en": "determine", "zh": "决定；决心"}, {"en": "develop", "zh": "发展；开发"}, {"en": "development", "zh": "发展"}, {"en": "device", "zh": "装置；设备"}, {"en": "devote", "zh": "奉献"}, {"en": "diagram", "zh": "图表"}, {"en": "dial", "zh": "拨号"}, {"en": "dialogue/dialog", "zh": "对话"}, {"en": "diameter", "zh": "直径"}, {"en": "diamond", "zh": "钻石"}, {"en": "diary", "zh": "日记"}, {"en": "dictate", "zh": "口授；命令"}, {"en": "dictionary", "zh": "词典"}, {"en": "die", "zh": "死亡"}, {"en": "diet", "zh": "饮食"}, {"en": "differ", "zh": "不同"}, {"en": "difference", "zh": "差别"}, {"en": "different", "zh": "不同的"}, {"en": "difficult", "zh": "困难的"}, {"en": "difficulty", "zh": "困难"}, {"en": "dig", "zh": "挖"}, {"en": "digest", "zh": "消化"}, {"en": "digital", "zh": "数字的"}, {"en": "dignity", "zh": "尊严"}, {"en": "dilemma", "zh": "困境"}, {"en": "dimension", "zh": "尺寸；方面"}, {"en": "dining", "zh": "进餐"}, {"en": "dinner", "zh": "正餐"}, {"en": "dinosaur", "zh": "恐龙"}, {"en": "dioxide", "zh": "二氧化物"}, {"en": "dip", "zh": "浸"}, {"en": "direct", "zh": "直接的；指导"}, {"en": "direction", "zh": "方向；指导"}, {"en": "director", "zh": "导演；主任"}, {"en": "directory", "zh": "电话簿"}, {"en": "dirty", "zh": "脏的"}, {"en": "disability", "zh": "残疾"}, {"en": "disabled", "zh": "残疾的"}, {"en": "disappear", "zh": "消失"}, {"en": "disappoint", "zh": "使失望"}, {"en": "disappointed", "zh": "失望的"}, {"en": "disaster", "zh": "灾难"}, {"en": "disc/disk", "zh": "圆盘；磁盘"}, {"en": "discipline", "zh": "纪律；学科"}, {"en": "discount", "zh": "折扣"}, {"en": "discover", "zh": "发现"}, {"en": "discovery", "zh": "发现"}, {"en": "discriminate", "zh": "歧视"}, {"en": "discussion", "zh": "讨论"}, {"en": "disease", "zh": "疾病"}, {"en": "dish", "zh": "盘子；一道菜"}, {"en": "dismiss", "zh": "解雇；解散"}, {"en": "display", "zh": "展示"}, {"en": "distance", "zh": "距离"}, {"en": "distant", "zh": "遥远的"}, {"en": "distinct", "zh": "不同的；清晰的"}, {"en": "distinguish", "zh": "区分"}, {"en": "distribute", "zh": "分发；分布"}, {"en": "district", "zh": "地区"}, {"en": "disturb", "zh": "打扰"}, {"en": "dive", "zh": "潜水"}, {"en": "diverse", "zh": "不同的；多样的"}, {"en": "divide", "zh": "划分"}, {"en": "division", "zh": "分割；部门"}, {"en": "divorce", "zh": "离婚"}, {"en": "dizzy", "zh": "头晕的"}, {"en": "do", "zh": "做；干"}, {"en": "doctor", "zh": "医生；博士"}, {"en": "document", "zh": "文件"}, {"en": "dog", "zh": "狗"}, {"en": "doll", "zh": "玩偶"}, {"en": "dollar", "zh": "美元"}, {"en": "dolphin", "zh": "海豚"}, {"en": "domain", "zh": "领域"}, {"en": "domestic", "zh": "国内的；家庭的"}, {"en": "dominate", "zh": "支配"}, {"en": "donate", "zh": "捐赠"}, {"en": "door", "zh": "门"}, {"en": "dormitory", "zh": "宿舍"}, {"en": "dose", "zh": "剂量"}, {"en": "dot", "zh": "点"}, {"en": "double", "zh": "双倍的；加倍"}, {"en": "doubt", "zh": "怀疑"}, {"en": "down", "zh": "向下"}, {"en": "download", "zh": "下载"}, {"en": "downstairs", "zh": "楼下"}, {"en": "downtown", "zh": "市中心"}, {"en": "dozen", "zh": "一打"}, {"en": "draft", "zh": "草稿；征兵"}, {"en": "drag", "zh": "拖；拉"}, {"en": "dragon", "zh": "龙"}, {"en": "drama", "zh": "戏剧"}, {"en": "dramatic", "zh": "戏剧性的"}, {"en": "draw", "zh": "画；拉；吸引"}, {"en": "drawer", "zh": "抽屉"}, {"en": "dream", "zh": "梦；梦想"}, {"en": "dress", "zh": "连衣裙；穿衣"}, {"en": "drink", "zh": "喝；饮料"}, {"en": "drive", "zh": "驾驶；驱赶"}, {"en": "driver", "zh": "司机"}, {"en": "drone", "zh": "无人机"}, {"en": "drop", "zh": "滴；落下"}, {"en": "drought", "zh": "干旱"}, {"en": "drown", "zh": "淹死"}, {"en": "drug", "zh": "药物；毒品"}, {"en": "drum", "zh": "鼓"}, {"en": "drunk", "zh": "醉的"}, {"en": "dry", "zh": "干的；弄干"}, {"en": "duck", "zh": "鸭子"}, {"en": "due", "zh": "到期的；由于"}, {"en": "dull", "zh": "枯燥的；钝的"}, {"en": "dumb", "zh": "哑的；愚蠢的"}, {"en": "dump", "zh": "倾倒"}, {"en": "during", "zh": "在...期间"}, {"en": "dusk", "zh": "黄昏"}, {"en": "dust", "zh": "灰尘"}, {"en": "duty", "zh": "责任"}, {"en": "DVD", "zh": "数字化视频光盘"}, {"en": "dynamic", "zh": "动态的"}, {"en": "dynasty", "zh": "王朝"}, {"en": "each", "zh": "每个"}, {"en": "eager", "zh": "渴望的"}, {"en": "eagle", "zh": "鹰"}, {"en": "ear", "zh": "耳朵"}, {"en": "early", "zh": "早的；早地"}, {"en": "earn", "zh": "赚得；赢得"}, {"en": "earth", "zh": "地球；土地"}, {"en": "earthquake", "zh": "地震"}, {"en": "ease", "zh": "容易；减轻"}, {"en": "east", "zh": "东方"}, {"en": "eastern", "zh": "东方的"}, {"en": "easy", "zh": "容易的"}, {"en": "eat", "zh": "吃"}, {"en": "echo", "zh": "回声"}, {"en": "ecology", "zh": "生态学"}, {"en": "economic", "zh": "经济的"}, {"en": "economics", "zh": "经济学"}, {"en": "economy", "zh": "经济"}, {"en": "edge", "zh": "边缘"}, {"en": "edition", "zh": "版本"}, {"en": "editor", "zh": "编辑"}, {"en": "educate", "zh": "教育"}, {"en": "education", "zh": "教育"}, {"en": "educator", "zh": "教育家"}, {"en": "effect", "zh": "效果"}, {"en": "effective", "zh": "有效的"}, {"en": "efficiency", "zh": "效率"}, {"en": "efficient", "zh": "高效的"}, {"en": "effort", "zh": "努力"}, {"en": "egg", "zh": "蛋"}, {"en": "eight", "zh": "八"}, {"en": "eighteen", "zh": "十八"}, {"en": "eighth", "zh": "第八"}, {"en": "eighty", "zh": "八十"}, {"en": "either", "zh": "两者之一；要么"}, {"en": "elder", "zh": "年长的"}, {"en": "elderly", "zh": "年老的"}, {"en": "elect", "zh": "选举"}, {"en": "election", "zh": "选举"}, {"en": "electric", "zh": "电的"}, {"en": "electricity", "zh": "电"}, {"en": "electronic", "zh": "电子的"}, {"en": "elegant", "zh": "优雅的"}, {"en": "element", "zh": "元素"}, {"en": "elephant", "zh": "大象"}, {"en": "eleven", "zh": "十一"}, {"en": "eleventh", "zh": "第十一"}, {"en": "else", "zh": "其他的"}, {"en": "elsewhere", "zh": "在别处"}, {"en": "email", "zh": "电子邮件"}, {"en": "embarrassed", "zh": "尴尬的"}, {"en": "embassy", "zh": "大使馆"}, {"en": "embrace", "zh": "拥抱"}, {"en": "emerge", "zh": "出现"}, {"en": "emergency", "zh": "紧急情况"}, {"en": "emotion", "zh": "情感"}, {"en": "emperor/empress", "zh": "皇帝/皇后"}, {"en": "emphasis", "zh": "强调"}, {"en": "emphasize", "zh": "强调"}, {"en": "empire", "zh": "帝国"}, {"en": "employ", "zh": "雇用"}, {"en": "employee", "zh": "雇员"}, {"en": "employer", "zh": "雇主"}, {"en": "employment", "zh": "工作；就业"}, {"en": "empty", "zh": "空的；倒空"}, {"en": "enable", "zh": "使能够"}, {"en": "encounter", "zh": "遭遇"}, {"en": "encourage", "zh": "鼓励"}, {"en": "end", "zh": "末端；结束"}, {"en": "ending", "zh": "结局"}, {"en": "endless", "zh": "无尽的"}, {"en": "endure", "zh": "忍受"}, {"en": "enemy", "zh": "敌人"}, {"en": "energetic", "zh": "精力充沛的"}, {"en": "energy", "zh": "精力；能量"}, {"en": "engage", "zh": "参与；吸引"}, {"en": "engine", "zh": "发动机"}, {"en": "engineer", "zh": "工程师"}, {"en": "engineering", "zh": "工程学"}, {"en": "England", "zh": "英格兰"}, {"en": "English", "zh": "英语；英国的"}, {"en": "enhance", "zh": "提高"}, {"en": "enjoy", "zh": "享受"}, {"en": "enormous", "zh": "巨大的"}, {"en": "enough", "zh": "足够"}, {"en": "enrich", "zh": "丰富"}, {"en": "ensure", "zh": "确保"}, {"en": "enter", "zh": "进入"}, {"en": "enterprise", "zh": "企业"}, {"en": "entertainment", "zh": "娱乐"}, {"en": "enthusiasm", "zh": "热情"}, {"en": "enthusiastic", "zh": "热情的"}, {"en": "entire", "zh": "全部的"}, {"en": "entitle", "zh": "给...权利；给...题名"}, {"en": "entrance", "zh": "入口"}, {"en": "entry", "zh": "进入；条目"}, {"en": "envelope", "zh": "信封"}, {"en": "environment", "zh": "环境"}, {"en": "envy", "zh": "嫉妒"}, {"en": "episode", "zh": "片段；一集"}, {"en": "equal", "zh": "相等的；等于"}, {"en": "equator", "zh": "赤道"}, {"en": "equipment", "zh": "设备"}, {"en": "era", "zh": "时代"}, {"en": "erase", "zh": "擦掉"}, {"en": "eraser", "zh": "橡皮"}, {"en": "error", "zh": "错误"}, {"en": "erupt", "zh": "喷发"}, {"en": "escape", "zh": "逃跑；逃避"}, {"en": "especially", "zh": "特别地"}, {"en": "essay", "zh": "散文；短文"}, {"en": "essence", "zh": "本质"}, {"en": "essential", "zh": "必要的"}, {"en": "establish", "zh": "建立"}, {"en": "estate", "zh": "地产；财产"}, {"en": "estimate", "zh": "估计"}, {"en": "eternal", "zh": "永恒的"}, {"en": "ethical", "zh": "伦理的"}, {"en": "ethnic", "zh": "种族的"}, {"en": "Europe", "zh": "欧洲"}, {"en": "evaluate", "zh": "评价"}, {"en": "eve", "zh": "前夕"}, {"en": "even", "zh": "甚至；均匀的"}, {"en": "evening", "zh": "傍晚"}, {"en": "event", "zh": "事件"}, {"en": "eventually", "zh": "最后"}, {"en": "ever", "zh": "曾经"}, {"en": "every", "zh": "每一个"}, {"en": "everybody/everyone", "zh": "每人"}, {"en": "everyday", "zh": "每天的"}, {"en": "everything", "zh": "一切"}, {"en": "everywhere", "zh": "到处"}, {"en": "evidence", "zh": "证据"}, {"en": "evident", "zh": "明显的"}, {"en": "evil", "zh": "邪恶的"}, {"en": "evolve", "zh": "进化"}, {"en": "exact", "zh": "精确的"}, {"en": "exactly", "zh": "确切地"}, {"en": "exam", "zh": "考试"}, {"en": "examine", "zh": "检查"}, {"en": "example", "zh": "例子"}, {"en": "exceed", "zh": "超过"}, {"en": "excellent", "zh": "优秀的"}, {"en": "except", "zh": "除了"}, {"en": "exception", "zh": "例外"}, {"en": "exchange", "zh": "交换"}, {"en": "excite", "zh": "使兴奋"}, {"en": "excited", "zh": "兴奋的"}, {"en": "exciting", "zh": "令人兴奋的"}, {"en": "excuse", "zh": "借口；原谅"}, {"en": "exercise", "zh": "锻炼；练习"}, {"en": "exhaust", "zh": "耗尽；使筋疲力尽"}, {"en": "exhibit", "zh": "展览"}, {"en": "exhibition", "zh": "展览会"}, {"en": "exist", "zh": "存在"}, {"en": "exit", "zh": "出口"}, {"en": "expand", "zh": "扩大"}, {"en": "expansion", "zh": "扩张"}, {"en": "expect", "zh": "预料；期待"}, {"en": "expectation", "zh": "期待"}, {"en": "expedition", "zh": "远征"}, {"en": "expense", "zh": "费用"}, {"en": "expensive", "zh": "昂贵的"}, {"en": "experience", "zh": "经验；经历"}, {"en": "experiment", "zh": "实验"}, {"en": "expert", "zh": "专家；熟练的"}, {"en": "explain", "zh": "解释"}, {"en": "explanation", "zh": "解释"}, {"en": "explicit", "zh": "明确的"}, {"en": "explode", "zh": "爆炸"}, {"en": "exploit", "zh": "剥削；利用"}, {"en": "explore", "zh": "探索"}, {"en": "explosion", "zh": "爆炸"}, {"en": "export", "zh": "出口"}, {"en": "expose", "zh": "暴露"}, {"en": "express", "zh": "表达"}, {"en": "expression", "zh": "表达"}, {"en": "extend", "zh": "延伸"}, {"en": "extension", "zh": "延伸；电话分机"}, {"en": "extensive", "zh": "广泛的"}, {"en": "extent", "zh": "程度"}, {"en": "external", "zh": "外部的"}, {"en": "extinct", "zh": "灭绝的"}, {"en": "extra", "zh": "额外的"}, {"en": "extraordinary", "zh": "非凡的"}, {"en": "extreme", "zh": "极端的"}, {"en": "eye", "zh": "眼睛"}, {"en": "fable", "zh": "寓言"}, {"en": "fabric", "zh": "织物；结构"}, {"en": "face", "zh": "脸；面对"}, {"en": "facilitate", "zh": "促进"}, {"en": "facility", "zh": "设施"}, {"en": "fact", "zh": "事实"}, {"en": "factor", "zh": "因素"}, {"en": "factory", "zh": "工厂"}, {"en": "faculty", "zh": "才能；全体教员"}, {"en": "fade", "zh": "褪色；消失"}, {"en": "fail", "zh": "失败"}, {"en": "failure", "zh": "失败"}, {"en": "faint", "zh": "模糊的；昏厥"}, {"en": "fair", "zh": "公平的；展览会"}, {"en": "fairly", "zh": "相当地"}, {"en": "faith", "zh": "信任；信仰"}, {"en": "fall", "zh": "落下；跌倒；秋季"}, {"en": "false", "zh": "假的"}, {"en": "fame", "zh": "名声"}, {"en": "familiar", "zh": "熟悉的"}, {"en": "family", "zh": "家庭"}, {"en": "famous", "zh": "著名的"}, {"en": "fan", "zh": "风扇；迷；扇子"}, {"en": "fancy", "zh": "想象；花哨的"}, {"en": "fantastic", "zh": "极好的"}, {"en": "fantasy", "zh": "幻想"}, {"en": "far", "zh": "远的"}, {"en": "fare", "zh": "费用"}, {"en": "farm", "zh": "农场"}, {"en": "farmer", "zh": "农民"}, {"en": "fascinating", "zh": "迷人的"}, {"en": "fashion", "zh": "时尚"}, {"en": "fast", "zh": "快的"}, {"en": "fat", "zh": "脂肪；胖的"}, {"en": "father/dad", "zh": "父亲"}, {"en": "fault", "zh": "过错"}, {"en": "favour/favor", "zh": "好意；喜爱"}, {"en": "favourite/favorite", "zh": "最喜爱的"}, {"en": "fear", "zh": "害怕"}, {"en": "feather", "zh": "羽毛"}, {"en": "feature", "zh": "特征"}, {"en": "February", "zh": "二月"}, {"en": "fee", "zh": "费用"}, {"en": "feed", "zh": "喂养"}, {"en": "feel", "zh": "感觉"}, {"en": "feeling", "zh": "感觉"}, {"en": "fellow", "zh": "同伴；家伙"}, {"en": "female", "zh": "女性的；雌性"}, {"en": "fence", "zh": "栅栏"}, {"en": "fertile", "zh": "肥沃的"}, {"en": "festival", "zh": "节日"}, {"en": "fetch", "zh": "取来"}, {"en": "fever", "zh": "发烧"}, {"en": "few", "zh": "很少"}, {"en": "fibre/fiber", "zh": "纤维"}, {"en": "fiction", "zh": "小说"}, {"en": "field", "zh": "田地；领域"}, {"en": "fierce", "zh": "凶猛的"}, {"en": "fifteen", "zh": "十五"}, {"en": "fifth", "zh": "第五"}, {"en": "fifty", "zh": "五十"}, {"en": "fight", "zh": "战斗"}, {"en": "figure", "zh": "数字；人物；体型"}, {"en": "file", "zh": "文件；归档"}, {"en": "fill", "zh": "填满"}, {"en": "film", "zh": "电影；胶卷"}, {"en": "final", "zh": "最后的"}, {"en": "finally", "zh": "最后"}, {"en": "finance", "zh": "财政"}, {"en": "financial", "zh": "财政的"}, {"en": "find", "zh": "找到"}, {"en": "finding", "zh": "发现"}, {"en": "fine", "zh": "好的；罚款"}, {"en": "finger", "zh": "手指"}, {"en": "finish", "zh": "完成"}, {"en": "fire", "zh": "火；解雇"}, {"en": "fireman", "zh": "消防员"}, {"en": "firm", "zh": "坚固的；公司"}, {"en": "first", "zh": "第一"}, {"en": "fish", "zh": "鱼；钓鱼"}, {"en": "fisherman", "zh": "渔民"}, {"en": "fist", "zh": "拳头"}, {"en": "fit", "zh": "适合；健康的"}, {"en": "five", "zh": "五"}, {"en": "fix", "zh": "修理；固定"}, {"en": "flag", "zh": "旗帜"}, {"en": "flame", "zh": "火焰"}, {"en": "flash", "zh": "闪光"}, {"en": "flat", "zh": "平的；公寓"}, {"en": "flavour/flavor", "zh": "味道"}, {"en": "flesh", "zh": "肉"}, {"en": "flexible", "zh": "灵活的"}, {"en": "flight", "zh": "航班；飞行"}, {"en": "float", "zh": "漂浮"}, {"en": "flood", "zh": "洪水"}, {"en": "floor", "zh": "地板；楼层"}, {"en": "flour", "zh": "面粉"}, {"en": "flow", "zh": "流动"}, {"en": "flower", "zh": "花"}, {"en": "flu", "zh": "流感"}, {"en": "fluent", "zh": "流利的"}, {"en": "fluid", "zh": "流体"}, {"en": "fly", "zh": "飞；苍蝇"}, {"en": "focus", "zh": "焦点；集中"}, {"en": "fog", "zh": "雾"}, {"en": "fold", "zh": "折叠"}, {"en": "folk", "zh": "民间的"}, {"en": "follow", "zh": "跟随"}, {"en": "fond", "zh": "喜爱的"}, {"en": "food", "zh": "食物"}, {"en": "fool", "zh": "傻瓜"}, {"en": "foolish", "zh": "愚蠢的"}, {"en": "foot", "zh": "脚；英尺"}, {"en": "football", "zh": "足球"}, {"en": "for", "zh": "为了；因为"}, {"en": "forbid", "zh": "禁止"}, {"en": "force", "zh": "力量；强迫"}, {"en": "forecast", "zh": "预测"}, {"en": "forehead", "zh": "额头"}, {"en": "foreign", "zh": "外国的"}, {"en": "forest", "zh": "森林"}, {"en": "forever", "zh": "永远"}, {"en": "forget", "zh": "忘记"}, {"en": "forgive", "zh": "原谅"}, {"en": "fork", "zh": "叉子"}, {"en": "form", "zh": "形式；表格"}, {"en": "formal", "zh": "正式的"}, {"en": "format", "zh": "格式"}, {"en": "former", "zh": "以前的"}, {"en": "forth", "zh": "向前"}, {"en": "fortunate", "zh": "幸运的"}, {"en": "fortunately", "zh": "幸运地"}, {"en": "fortune", "zh": "财富；运气"}, {"en": "forty", "zh": "四十"}, {"en": "forward", "zh": "向前"}, {"en": "found", "zh": "建立"}, {"en": "foundation", "zh": "基础；基金会"}, {"en": "fountain", "zh": "喷泉"}, {"en": "four", "zh": "四"}, {"en": "fourteen", "zh": "十四"}, {"en": "fourth", "zh": "第四"}, {"en": "fox", "zh": "狐狸"}, {"en": "frame", "zh": "框架"}, {"en": "France", "zh": "法国"}, {"en": "frank", "zh": "坦白的"}, {"en": "free", "zh": "自由的；免费的"}, {"en": "freedom", "zh": "自由"}, {"en": "freeze", "zh": "冻结"}, {"en": "frequent", "zh": "频繁的"}, {"en": "frequently", "zh": "频繁地"}, {"en": "fresh", "zh": "新鲜的"}, {"en": "friction", "zh": "摩擦"}, {"en": "Friday", "zh": "星期五"}, {"en": "fridge", "zh": "冰箱"}, {"en": "friend", "zh": "朋友"}, {"en": "friendly", "zh": "友好的"}, {"en": "friendship", "zh": "友谊"}, {"en": "frighten", "zh": "使害怕"}, {"en": "frog", "zh": "青蛙"}, {"en": "from", "zh": "从...起"}, {"en": "front", "zh": "前面"}, {"en": "frontier", "zh": "边境"}, {"en": "frost", "zh": "霜"}, {"en": "fruit", "zh": "水果"}, {"en": "fry", "zh": "油炸"}, {"en": "fuel", "zh": "燃料"}, {"en": "fulfil", "zh": "履行"}, {"en": "full", "zh": "满的"}, {"en": "fun", "zh": "乐趣"}, {"en": "function", "zh": "功能"}, {"en": "fund", "zh": "资金"}, {"en": "fundamental", "zh": "基本的"}, {"en": "funeral", "zh": "葬礼"}, {"en": "funny", "zh": "有趣的"}, {"en": "fur", "zh": "毛皮"}, {"en": "furniture", "zh": "家具"}, {"en": "further", "zh": "更远的；进一步"}, {"en": "furthermore", "zh": "而且"}, {"en": "future", "zh": "未来"}, {"en": "gain", "zh": "获得"}, {"en": "gallon", "zh": "加仑"}, {"en": "gallery", "zh": "画廊"}, {"en": "game", "zh": "游戏；比赛"}, {"en": "gap", "zh": "缺口；差距"}, {"en": "garage", "zh": "车库"}, {"en": "garbage", "zh": "垃圾"}, {"en": "garden", "zh": "花园"}, {"en": "garlic", "zh": "大蒜"}, {"en": "gas", "zh": "气体；汽油"}, {"en": "gate", "zh": "大门"}, {"en": "gather", "zh": "聚集"}, {"en": "gender", "zh": "性别"}, {"en": "gene", "zh": "基因"}, {"en": "general", "zh": "一般的；将军"}, {"en": "generate", "zh": "产生"}, {"en": "generation", "zh": "一代"}, {"en": "generous", "zh": "慷慨的"}, {"en": "genius", "zh": "天才"}, {"en": "gentle", "zh": "温柔的"}, {"en": "gentleman", "zh": "绅士"}, {"en": "genuine", "zh": "真正的"}, {"en": "geography", "zh": "地理"}, {"en": "geometry", "zh": "几何学"}, {"en": "gesture", "zh": "手势"}, {"en": "get", "zh": "得到"}, {"en": "giant", "zh": "巨大的；巨人"}, {"en": "gift", "zh": "礼物；天赋"}, {"en": "gifted", "zh": "有天赋的"}, {"en": "girl", "zh": "女孩"}, {"en": "give", "zh": "给"}, {"en": "glad", "zh": "高兴的"}, {"en": "glance", "zh": "一瞥"}, {"en": "glass", "zh": "玻璃；杯子"}, {"en": "global", "zh": "全球的"}, {"en": "globe", "zh": "地球；球体"}, {"en": "glory", "zh": "光荣"}, {"en": "glove", "zh": "手套"}, {"en": "glue", "zh": "胶水"}, {"en": "go", "zh": "去"}, {"en": "goal", "zh": "目标；球门"}, {"en": "goat", "zh": "山羊"}, {"en": "god", "zh": "神"}, {"en": "gold", "zh": "黄金"}, {"en": "golf", "zh": "高尔夫球"}, {"en": "good", "zh": "好的"}, {"en": "goodbye/bye", "zh": "再见"}, {"en": "goods", "zh": "商品"}, {"en": "government", "zh": "政府"}, {"en": "grab", "zh": "抓住"}, {"en": "grace", "zh": "优美"}, {"en": "graceful", "zh": "优美的"}, {"en": "grade", "zh": "等级；年级"}, {"en": "gradual", "zh": "逐渐的"}, {"en": "graduate", "zh": "毕业"}, {"en": "grain", "zh": "谷物"}, {"en": "gram/gramme", "zh": "克"}, {"en": "grammar", "zh": "语法"}, {"en": "grand", "zh": "宏伟的"}, {"en": "granddaughter", "zh": "孙女"}, {"en": "grandfather/grandpa", "zh": "祖父"}, {"en": "grandmother/grandma", "zh": "祖母"}, {"en": "grandparent", "zh": "祖父母"}, {"en": "grandson", "zh": "孙子"}, {"en": "grant", "zh": "授予；同意"}, {"en": "grape", "zh": "葡萄"}, {"en": "graph", "zh": "图表"}, {"en": "grasp", "zh": "抓住；理解"}, {"en": "grass", "zh": "草"}, {"en": "grateful", "zh": "感激的"}, {"en": "gravity", "zh": "重力"}, {"en": "great", "zh": "伟大的"}, {"en": "greedy", "zh": "贪婪的"}, {"en": "green", "zh": "绿色"}, {"en": "greet", "zh": "问候"}, {"en": "grey/gray", "zh": "灰色"}, {"en": "grief", "zh": "悲伤"}, {"en": "grill", "zh": "烤架"}, {"en": "grocer", "zh": "杂货商"}, {"en": "grocery", "zh": "杂货店"}, {"en": "ground", "zh": "地面"}, {"en": "group", "zh": "组，群"}, {"en": "grow", "zh": "生长；种植"}, {"en": "guarantee", "zh": "保证"}, {"en": "guard", "zh": "守卫"}, {"en": "guess", "zh": "猜测"}, {"en": "guest", "zh": "客人"}, {"en": "guidance", "zh": "指导"}, {"en": "guide", "zh": "导游；指导"}, {"en": "guideline", "zh": "指导方针"}, {"en": "guilty", "zh": "内疚的；有罪的"}, {"en": "guitar", "zh": "吉他"}, {"en": "gun", "zh": "枪"}, {"en": "guy", "zh": "家伙"}, {"en": "gym", "zh": "体育馆"}, {"en": "gymnastics", "zh": "体操"}, {"en": "habit", "zh": "习惯"}, {"en": "habitat", "zh": "栖息地"}, {"en": "hair", "zh": "头发"}, {"en": "half", "zh": "一半"}, {"en": "hall", "zh": "大厅"}, {"en": "ham", "zh": "火腿"}, {"en": "hamburger", "zh": "汉堡包"}, {"en": "hammer", "zh": "锤子"}, {"en": "hand", "zh": "手；递"}, {"en": "handbag", "zh": "手提包"}, {"en": "handful", "zh": "一把"}, {"en": "handkerchief", "zh": "手帕"}, {"en": "handle", "zh": "把手；处理"}, {"en": "handsome", "zh": "英俊的"}, {"en": "handwriting", "zh": "书法"}, {"en": "handy", "zh": "方便的"}, {"en": "hang", "zh": "悬挂；绞死"}, {"en": "happen", "zh": "发生"}, {"en": "happy", "zh": "快乐的"}, {"en": "harbour/harbor", "zh": "港口"}, {"en": "hard", "zh": "硬的；努力地"}, {"en": "hardly", "zh": "几乎不"}, {"en": "hardship", "zh": "艰难"}, {"en": "hardware", "zh": "硬件"}, {"en": "harm", "zh": "伤害"}, {"en": "harmful", "zh": "有害的"}, {"en": "harmony", "zh": "和谐"}, {"en": "harvest", "zh": "收获"}, {"en": "hat", "zh": "帽子"}, {"en": "hatch", "zh": "孵化"}, {"en": "hate", "zh": "憎恨"}, {"en": "have", "zh": "有"}, {"en": "he", "zh": "他"}, {"en": "head", "zh": "头；首领"}, {"en": "headache", "zh": "头痛"}, {"en": "headline", "zh": "大字标题"}, {"en": "headquarters", "zh": "总部"}, {"en": "health", "zh": "健康"}, {"en": "healthy", "zh": "健康的"}, {"en": "hear", "zh": "听见"}, {"en": "heart", "zh": "心"}, {"en": "heat", "zh": "热"}, {"en": "heaven", "zh": "天堂"}, {"en": "heavy", "zh": "重的"}, {"en": "heel", "zh": "脚后跟"}, {"en": "height", "zh": "高度"}, {"en": "helicopter", "zh": "直升机"}, {"en": "hell", "zh": "地狱"}, {"en": "hello", "zh": "你好"}, {"en": "helmet", "zh": "头盔"}, {"en": "help", "zh": "帮助"}, {"en": "helpful", "zh": "有帮助的"}, {"en": "hen", "zh": "母鸡"}, {"en": "hence", "zh": "因此"}, {"en": "her", "zh": "她的"}, {"en": "herb", "zh": "草本植物"}, {"en": "here", "zh": "这里"}, {"en": "heritage", "zh": "遗产"}, {"en": "hero", "zh": "英雄"}, {"en": "hers", "zh": "她的(名词性物主代词)"}, {"en": "herself", "zh": "她自己"}, {"en": "hesitate", "zh": "犹豫"}, {"en": "hey", "zh": "嘿"}, {"en": "hi", "zh": "嗨"}, {"en": "hide", "zh": "隐藏"}, {"en": "high", "zh": "高的"}, {"en": "highlight", "zh": "强调；突出"}, {"en": "highly", "zh": "高度地"}, {"en": "highway", "zh": "公路"}, {"en": "hike", "zh": "徒步旅行"}, {"en": "hill", "zh": "小山"}, {"en": "him", "zh": "他(宾格)"}, {"en": "himself", "zh": "他自己"}, {"en": "hire", "zh": "雇用"}, {"en": "his", "zh": "他的"}, {"en": "history", "zh": "历史"}, {"en": "hit", "zh": "打；击"}, {"en": "hobby", "zh": "业余爱好"}, {"en": "hockey", "zh": "曲棍球"}, {"en": "hold", "zh": "持有；举行"}, {"en": "hole", "zh": "洞"}, {"en": "holiday", "zh": "假日"}, {"en": "holy", "zh": "神圣的"}, {"en": "home", "zh": "家"}, {"en": "homework", "zh": "家庭作业"}, {"en": "honest", "zh": "诚实的"}, {"en": "honey", "zh": "蜂蜜"}, {"en": "honour/honor", "zh": "荣誉"}, {"en": "hope", "zh": "希望"}, {"en": "horrible", "zh": "可怕的"}, {"en": "horse", "zh": "马"}, {"en": "hospital", "zh": "医院"}, {"en": "host", "zh": "主人；主办"}, {"en": "hostile", "zh": "敌对的"}, {"en": "hot", "zh": "热的"}, {"en": "hotel", "zh": "旅馆"}, {"en": "hour", "zh": "小时"}, {"en": "house", "zh": "房子"}, {"en": "household", "zh": "家庭的"}, {"en": "housework", "zh": "家务劳动"}, {"en": "housing", "zh": "住房"}, {"en": "how", "zh": "如何"}, {"en": "however", "zh": "然而"}, {"en": "huge", "zh": "巨大的"}, {"en": "human", "zh": "人类"}, {"en": "humble", "zh": "谦逊的"}, {"en": "humour/humor", "zh": "幽默"}, {"en": "humorous", "zh": "幽默的"}, {"en": "hundred", "zh": "百"}, {"en": "hungry", "zh": "饥饿的"}, {"en": "hunt", "zh": "打猎"}, {"en": "hurry", "zh": "匆忙"}, {"en": "hurt", "zh": "伤害"}, {"en": "husband", "zh": "丈夫"}, {"en": "hut", "zh": "小屋"}, {"en": "hydrogen", "zh": "氢"}, {"en": "I", "zh": "我"}, {"en": "ice", "zh": "冰"}, {"en": "ice cream", "zh": "冰淇淋"}, {"en": "idea", "zh": "想法"}, {"en": "ideal", "zh": "理想的"}, {"en": "identical", "zh": "相同的"}, {"en": "identify", "zh": "识别；确认"}, {"en": "identity", "zh": "身份"}, {"en": "idiom", "zh": "习语"}, {"en": "if", "zh": "如果"}, {"en": "ignore", "zh": "忽视"}, {"en": "ill", "zh": "有病的"}, {"en": "illegal", "zh": "非法的"}, {"en": "illness", "zh": "疾病"}, {"en": "illustrate", "zh": "说明"}, {"en": "image", "zh": "形象；图像"}, {"en": "imagine", "zh": "想象"}, {"en": "immediate", "zh": "立即的"}, {"en": "immediately", "zh": "立即"}, {"en": "impact", "zh": "影响"}, {"en": "imply", "zh": "暗示"}, {"en": "import", "zh": "进口"}, {"en": "important", "zh": "重要的"}, {"en": "impose", "zh": "强加"}, {"en": "impossible", "zh": "不可能的"}, {"en": "impress", "zh": "给...印象"}, {"en": "impression", "zh": "印象"}, {"en": "improve", "zh": "改进"}, {"en": "in", "zh": "在...里"}, {"en": "inch", "zh": "英寸"}, {"en": "incident", "zh": "事件"}, {"en": "include", "zh": "包括"}, {"en": "income", "zh": "收入"}, {"en": "increase", "zh": "增加"}, {"en": "incredible", "zh": "难以置信的"}, {"en": "indeed", "zh": "的确"}, {"en": "independent", "zh": "独立的"}, {"en": "indicate", "zh": "指示；表明"}, {"en": "individual", "zh": "个人；个体的"}, {"en": "indoor", "zh": "室内的"}, {"en": "industry", "zh": "工业"}, {"en": "inevitable", "zh": "不可避免的"}, {"en": "infant", "zh": "婴儿"}, {"en": "infect", "zh": "感染"}, {"en": "infection", "zh": "感染"}, {"en": "inferior", "zh": "劣等的"}, {"en": "infinite", "zh": "无限的"}, {"en": "inflation", "zh": "通货膨胀"}, {"en": "influence", "zh": "影响"}, {"en": "influential", "zh": "有影响力的"}, {"en": "inform", "zh": "通知"}, {"en": "information", "zh": "信息"}, {"en": "ingredient", "zh": "成分"}, {"en": "inhabitant", "zh": "居民"}, {"en": "initial", "zh": "最初的"}, {"en": "initiative", "zh": "主动性"}, {"en": "injure", "zh": "伤害"}, {"en": "injury", "zh": "伤害"}, {"en": "ink", "zh": "墨水"}, {"en": "inner", "zh": "内部的"}, {"en": "innocent", "zh": "无辜的"}, {"en": "innovation", "zh": "创新"}, {"en": "input", "zh": "输入"}, {"en": "inquiry", "zh": "询问"}, {"en": "insect", "zh": "昆虫"}, {"en": "inside", "zh": "里面"}, {"en": "insight", "zh": "洞察力"}, {"en": "insist", "zh": "坚持"}, {"en": "inspect", "zh": "检查"}, {"en": "inspiration", "zh": "灵感"}, {"en": "inspire", "zh": "鼓舞"}, {"en": "install", "zh": "安装"}, {"en": "instance", "zh": "例子"}, {"en": "instant", "zh": "瞬间；立即的"}, {"en": "instead", "zh": "代替"}, {"en": "institute", "zh": "学院；研究所"}, {"en": "institution", "zh": "机构"}, {"en": "instruct", "zh": "指导"}, {"en": "instruction", "zh": "说明；指令"}, {"en": "instrument", "zh": "仪器；乐器"}, {"en": "insurance", "zh": "保险"}, {"en": "integrate", "zh": "整合"}, {"en": "integrity", "zh": "正直；完整"}, {"en": "intelligence", "zh": "智力"}, {"en": "intelligent", "zh": "聪明的"}, {"en": "intend", "zh": "打算"}, {"en": "intense", "zh": "强烈的"}, {"en": "intention", "zh": "意图"}, {"en": "interact", "zh": "互动"}, {"en": "interest", "zh": "兴趣；利益"}, {"en": "interesting", "zh": "有趣的"}, {"en": "interfere", "zh": "干涉"}, {"en": "interior", "zh": "内部的"}, {"en": "intermediate", "zh": "中级的"}, {"en": "internal", "zh": "内部的"}, {"en": "international", "zh": "国际的"}, {"en": "internet", "zh": "互联网"}, {"en": "interpret", "zh": "解释；口译"}, {"en": "interrupt", "zh": "打断"}, {"en": "interval", "zh": "间隔"}, {"en": "interview", "zh": "面试；采访"}, {"en": "into", "zh": "进入"}, {"en": "introduce", "zh": "介绍"}, {"en": "invention", "zh": "发明"}, {"en": "invest", "zh": "投资"}, {"en": "investigate", "zh": "调查"}, {"en": "investment", "zh": "投资"}, {"en": "invite", "zh": "邀请"}, {"en": "involve", "zh": "涉及"}, {"en": "iron", "zh": "铁；熨斗"}, {"en": "island", "zh": "岛"}, {"en": "isolate", "zh": "隔离"}, {"en": "issue", "zh": "问题；发行"}, {"en": "it", "zh": "它"}, {"en": "item", "zh": "项目"}, {"en": "its", "zh": "它的"}, {"en": "itself", "zh": "它自己"}, {"en": "jacket", "zh": "夹克"}, {"en": "jam", "zh": "果酱；堵塞"}, {"en": "January", "zh": "一月"}, {"en": "Japan", "zh": "日本"}, {"en": "jar", "zh": "罐子"}, {"en": "jaw", "zh": "下巴"}, {"en": "jazz", "zh": "爵士乐"}, {"en": "jealous", "zh": "嫉妒的"}, {"en": "jeans", "zh": "牛仔裤"}, {"en": "jet", "zh": "喷气式飞机"}, {"en": "jewel", "zh": "宝石"}, {"en": "job", "zh": "工作"}, {"en": "join", "zh": "加入"}, {"en": "joke", "zh": "笑话"}, {"en": "journal", "zh": "日记；期刊"}, {"en": "journalist", "zh": "记者"}, {"en": "journey", "zh": "旅行"}, {"en": "joy", "zh": "欢乐"}, {"en": "judge", "zh": "法官；判断"}, {"en": "juice", "zh": "汁"}, {"en": "July", "zh": "七月"}, {"en": "jump", "zh": "跳"}, {"en": "June", "zh": "六月"}, {"en": "jungle", "zh": "丛林"}, {"en": "junior", "zh": "年少的；下级"}, {"en": "just", "zh": "刚刚；只是"}, {"en": "justice", "zh": "正义"}, {"en": "justify", "zh": "证明...正当"}, {"en": "keen", "zh": "热切的"}, {"en": "keep", "zh": "保持"}, {"en": "kettle", "zh": "水壶"}, {"en": "key", "zh": "钥匙；关键"}, {"en": "keyboard", "zh": "键盘"}, {"en": "kick", "zh": "踢"}, {"en": "kid", "zh": "小孩"}, {"en": "kill", "zh": "杀死"}, {"en": "kilogram", "zh": "公斤"}, {"en": "kilometre/kilometer", "zh": "公里"}, {"en": "kind", "zh": "种类；和蔼的"}, {"en": "kindergarten", "zh": "幼儿园"}, {"en": "king", "zh": "国王"}, {"en": "kingdom", "zh": "王国"}, {"en": "kiss", "zh": "吻"}, {"en": "kit", "zh": "成套工具"}, {"en": "kitchen", "zh": "厨房"}, {"en": "kite", "zh": "风筝"}, {"en": "knee", "zh": "膝盖"}, {"en": "knife", "zh": "刀"}, {"en": "knock", "zh": "敲"}, {"en": "know", "zh": "知道"}, {"en": "knowledge", "zh": "知识"}, {"en": "lab", "zh": "实验室"}, {"en": "label", "zh": "标签"}, {"en": "labour/labor", "zh": "劳动"}, {"en": "lack", "zh": "缺乏"}, {"en": "ladder", "zh": "梯子"}, {"en": "lady", "zh": "女士"}, {"en": "lake", "zh": "湖"}, {"en": "lamb", "zh": "羔羊"}, {"en": "lamp", "zh": "灯"}, {"en": "land", "zh": "土地；着陆"}, {"en": "landscape", "zh": "风景"}, {"en": "lane", "zh": "小巷；车道"}, {"en": "language", "zh": "语言"}, {"en": "lantern", "zh": "灯笼"}, {"en": "lap", "zh": "大腿"}, {"en": "laptop", "zh": "笔记本电脑"}, {"en": "large", "zh": "大的"}, {"en": "last", "zh": "最后的；持续"}, {"en": "late", "zh": "迟的；晚的"}, {"en": "later", "zh": "后来"}, {"en": "laugh", "zh": "笑"}, {"en": "launch", "zh": "发射；发起"}, {"en": "law", "zh": "法律"}, {"en": "lawyer", "zh": "律师"}, {"en": "lay", "zh": "放置；下蛋"}, {"en": "layer", "zh": "层"}, {"en": "lazy", "zh": "懒惰的"}, {"en": "lead", "zh": "领导；带领"}, {"en": "leader", "zh": "领导"}, {"en": "leadership", "zh": "领导力"}, {"en": "leaf", "zh": "叶子"}, {"en": "league", "zh": "联盟"}, {"en": "leak", "zh": "泄漏"}, {"en": "lean", "zh": "倾斜；依靠"}, {"en": "leap", "zh": "跳跃"}, {"en": "learn", "zh": "学习"}, {"en": "least", "zh": "最少"}, {"en": "leather", "zh": "皮革"}, {"en": "leave", "zh": "离开；留下"}, {"en": "lecture", "zh": "讲座"}, {"en": "left", "zh": "左边"}, {"en": "leg", "zh": "腿"}, {"en": "legal", "zh": "合法的"}, {"en": "legend", "zh": "传说"}, {"en": "leisure", "zh": "闲暇"}, {"en": "lemon", "zh": "柠檬"}, {"en": "lend", "zh": "借出"}, {"en": "length", "zh": "长度"}, {"en": "less", "zh": "更少的"}, {"en": "lesson", "zh": "课"}, {"en": "let", "zh": "让"}, {"en": "letter", "zh": "信；字母"}, {"en": "level", "zh": "水平"}, {"en": "liable", "zh": "有责任的"}, {"en": "liberal", "zh": "自由的"}, {"en": "liberty", "zh": "自由"}, {"en": "librarian", "zh": "图书管理员"}, {"en": "library", "zh": "图书馆"}, {"en": "licence/license", "zh": "许可证"}, {"en": "lid", "zh": "盖子"}, {"en": "lie", "zh": "躺；说谎"}, {"en": "life", "zh": "生命；生活"}, {"en": "lifestyle", "zh": "生活方式"}, {"en": "lift", "zh": "举起；电梯"}, {"en": "light", "zh": "光；轻的"}, {"en": "lightning", "zh": "闪电"}, {"en": "like", "zh": "像；喜欢"}, {"en": "likely", "zh": "可能的"}, {"en": "limit", "zh": "限制"}, {"en": "limited", "zh": "有限的"}, {"en": "line", "zh": "线；行"}, {"en": "link", "zh": "连接"}, {"en": "lion", "zh": "狮子"}, {"en": "lip", "zh": "嘴唇"}, {"en": "liquid", "zh": "液体"}, {"en": "list", "zh": "列表"}, {"en": "listen", "zh": "听"}, {"en": "literally", "zh": "字面上地"}, {"en": "literary", "zh": "文学的"}, {"en": "literature", "zh": "文学"}, {"en": "litre/liter", "zh": "升"}, {"en": "litter", "zh": "垃圾"}, {"en": "little", "zh": "小的；很少"}, {"en": "live", "zh": "活；住；直播的"}, {"en": "lively", "zh": "活泼的"}, {"en": "liver", "zh": "肝脏"}, {"en": "living", "zh": "活的；生计"}, {"en": "load", "zh": "负载"}, {"en": "loaf", "zh": "一条面包"}, {"en": "loan", "zh": "贷款"}, {"en": "local", "zh": "当地的"}, {"en": "locate", "zh": "位于"}, {"en": "location", "zh": "位置"}, {"en": "lock", "zh": "锁"}, {"en": "logic", "zh": "逻辑"}, {"en": "logical", "zh": "逻辑的"}, {"en": "lonely", "zh": "孤独的"}, {"en": "long", "zh": "长的；渴望"}, {"en": "look", "zh": "看"}, {"en": "loop", "zh": "环"}, {"en": "loose", "zh": "松的"}, {"en": "lord", "zh": "主；领主"}, {"en": "lose", "zh": "失去"}, {"en": "loss", "zh": "损失"}, {"en": "lost", "zh": "丢失的"}, {"en": "lot", "zh": "许多"}, {"en": "loud", "zh": "大声的"}, {"en": "love", "zh": "爱"}, {"en": "lovely", "zh": "可爱的"}, {"en": "low", "zh": "低的"}, {"en": "lower", "zh": "较低的；降低"}, {"en": "loyal", "zh": "忠诚的"}, {"en": "luck", "zh": "运气"}, {"en": "lucky", "zh": "幸运的"}, {"en": "luggage", "zh": "行李"}, {"en": "lunch", "zh": "午餐"}, {"en": "lung", "zh": "肺"}, {"en": "luxury", "zh": "奢侈"}, {"en": "machine", "zh": "机器"}, {"en": "mad", "zh": "疯狂的"}, {"en": "magazine", "zh": "杂志"}, {"en": "magic", "zh": "魔术"}, {"en": "mail", "zh": "邮件"}, {"en": "main", "zh": "主要的"}, {"en": "maintain", "zh": "维持"}, {"en": "major", "zh": "主要的；专业"}, {"en": "majority", "zh": "大多数"}, {"en": "make", "zh": "制造；使"}, {"en": "male", "zh": "男性的"}, {"en": "man", "zh": "男人；人类"}, {"en": "manage", "zh": "管理"}, {"en": "manager", "zh": "经理"}, {"en": "manner", "zh": "方式；礼貌"}, {"en": "manufacture", "zh": "制造"}, {"en": "many", "zh": "许多"}, {"en": "map", "zh": "地图"}, {"en": "marathon", "zh": "马拉松"}, {"en": "March", "zh": "三月"}, {"en": "march", "zh": "行军"}, {"en": "marine", "zh": "海洋的"}, {"en": "mark", "zh": "标记；分数"}, {"en": "market", "zh": "市场"}, {"en": "marriage", "zh": "婚姻"}, {"en": "marry", "zh": "结婚"}, {"en": "mask", "zh": "面具"}, {"en": "mass", "zh": "大量；质量"}, {"en": "master", "zh": "主人；掌握"}, {"en": "match", "zh": "比赛；火柴；匹配"}, {"en": "mate", "zh": "伙伴"}, {"en": "material", "zh": "材料"}, {"en": "maths/math", "zh": "数学"}, {"en": "matter", "zh": "事情；要紧"}, {"en": "mature", "zh": "成熟的"}, {"en": "maximum", "zh": "最大量"}, {"en": "May", "zh": "五月"}, {"en": "may", "zh": "可以；也许"}, {"en": "maybe", "zh": "也许"}, {"en": "me", "zh": "我(宾格)"}, {"en": "meal", "zh": "一餐"}, {"en": "mean", "zh": "意思是；吝啬的"}, {"en": "meaning", "zh": "意义"}, {"en": "means", "zh": "手段"}, {"en": "meanwhile", "zh": "同时"}, {"en": "measure", "zh": "测量"}, {"en": "meat", "zh": "肉"}, {"en": "mechanic", "zh": "机械师"}, {"en": "medal", "zh": "奖牌"}, {"en": "medical", "zh": "医学的"}, {"en": "medicine", "zh": "药；医学"}, {"en": "medium", "zh": "媒介；中等的"}, {"en": "meet", "zh": "遇见"}, {"en": "meeting", "zh": "会议"}, {"en": "member", "zh": "成员"}, {"en": "membership", "zh": "会员资格"}, {"en": "memory", "zh": "记忆"}, {"en": "mental", "zh": "心理的"}, {"en": "mention", "zh": "提及"}, {"en": "menu", "zh": "菜单"}, {"en": "mercy", "zh": "仁慈"}, {"en": "mere", "zh": "仅仅的"}, {"en": "merely", "zh": "仅仅"}, {"en": "merry", "zh": "愉快的"}, {"en": "mess", "zh": "杂乱"}, {"en": "message", "zh": "信息"}, {"en": "metal", "zh": "金属"}, {"en": "metaphor", "zh": "隐喻"}, {"en": "method", "zh": "方法"}, {"en": "metre/meter", "zh": "米"}, {"en": "microscope", "zh": "显微镜"}, {"en": "middle", "zh": "中间"}, {"en": "midnight", "zh": "午夜"}, {"en": "might", "zh": "可能"}, {"en": "migration", "zh": "迁移"}, {"en": "mild", "zh": "温和的"}, {"en": "mile", "zh": "英里"}, {"en": "military", "zh": "军事的"}, {"en": "milk", "zh": "牛奶"}, {"en": "millimetre/millimeter", "zh": "毫米"}, {"en": "million", "zh": "百万"}, {"en": "mind", "zh": "思想；介意"}, {"en": "mine", "zh": "我的；采矿"}, {"en": "mineral", "zh": "矿物"}, {"en": "minimum", "zh": "最小量"}, {"en": "minister", "zh": "部长"}, {"en": "minor", "zh": "较小的"}, {"en": "minority", "zh": "少数"}, {"en": "minute", "zh": "分钟；微小的"}, {"en": "miracle", "zh": "奇迹"}, {"en": "mirror", "zh": "镜子"}, {"en": "Miss", "zh": "小姐"}, {"en": "miss", "zh": "想念；错过"}, {"en": "missile", "zh": "导弹"}, {"en": "missing", "zh": "缺少的"}, {"en": "mission", "zh": "使命"}, {"en": "mistake", "zh": "错误"}, {"en": "mix", "zh": "混合"}, {"en": "mixture", "zh": "混合物"}, {"en": "mobile", "zh": "可移动的"}, {"en": "mobile phone", "zh": "手机"}, {"en": "mode", "zh": "模式"}, {"en": "model", "zh": "模型；模特"}, {"en": "modern", "zh": "现代的"}, {"en": "modest", "zh": "谦虚的"}, {"en": "modify", "zh": "修改"}, {"en": "mom/mum", "zh": "妈妈"}, {"en": "moment", "zh": "时刻"}, {"en": "Monday", "zh": "星期一"}, {"en": "money", "zh": "钱"}, {"en": "monitor", "zh": "监视器；班长"}, {"en": "monkey", "zh": "猴子"}, {"en": "month", "zh": "月"}, {"en": "monthly", "zh": "每月的"}, {"en": "monument", "zh": "纪念碑"}, {"en": "mood", "zh": "情绪"}, {"en": "moon", "zh": "月亮"}, {"en": "moral", "zh": "道德的"}, {"en": "more", "zh": "更多的"}, {"en": "moreover", "zh": "而且"}, {"en": "morning", "zh": "早晨"}, {"en": "most", "zh": "最多"}, {"en": "mostly", "zh": "主要地"}, {"en": "mother/mom", "zh": "母亲"}, {"en": "motion", "zh": "运动"}, {"en": "motivate", "zh": "激励"}, {"en": "motive", "zh": "动机"}, {"en": "motor", "zh": "马达"}, {"en": "mount", "zh": "登上"}, {"en": "mountain", "zh": "山"}, {"en": "mouse", "zh": "老鼠；鼠标"}, {"en": "mouth", "zh": "嘴"}, {"en": "move", "zh": "移动"}, {"en": "movement", "zh": "运动"}, {"en": "movie", "zh": "电影"}, {"en": "Mr.", "zh": "先生"}, {"en": "Mrs.", "zh": "夫人"}, {"en": "Ms.", "zh": "女士"}, {"en": "much", "zh": "许多"}, {"en": "mud", "zh": "泥"}, {"en": "multiple", "zh": "倍数；多个"}, {"en": "murder", "zh": "谋杀"}, {"en": "muscle", "zh": "肌肉"}, {"en": "museum", "zh": "博物馆"}, {"en": "mushroom", "zh": "蘑菇"}, {"en": "music", "zh": "音乐"}, {"en": "musician", "zh": "音乐家"}, {"en": "must", "zh": "必须"}, {"en": "mutton", "zh": "羊肉"}, {"en": "mutual", "zh": "相互的"}, {"en": "my", "zh": "我的"}, {"en": "myself", "zh": "我自己"}, {"en": "mystery", "zh": "神秘"}, {"en": "myth", "zh": "神话"}, {"en": "nail", "zh": "指甲；钉子"}, {"en": "name", "zh": "名字"}, {"en": "narrow", "zh": "狭窄的"}, {"en": "nation", "zh": "国家"}, {"en": "national", "zh": "国家的"}, {"en": "nationality", "zh": "国籍"}, {"en": "native", "zh": "本国的；本地人"}, {"en": "natural", "zh": "自然的"}, {"en": "nature", "zh": "自然"}, {"en": "navy", "zh": "海军"}, {"en": "near", "zh": "近的"}, {"en": "nearby", "zh": "附近的"}, {"en": "nearly", "zh": "几乎"}, {"en": "neat", "zh": "整洁的"}, {"en": "necessary", "zh": "必要的"}, {"en": "neck", "zh": "脖子"}, {"en": "need", "zh": "需要"}, {"en": "needle", "zh": "针"}, {"en": "negative", "zh": "消极的；否定的"}, {"en": "neighbour/neighbor", "zh": "邻居"}, {"en": "neighbourhood/neighborhood", "zh": "邻近地区"}, {"en": "neither", "zh": "两者都不"}, {"en": "nephew", "zh": "侄子"}, {"en": "nerve", "zh": "神经"}, {"en": "nervous", "zh": "紧张的"}, {"en": "nest", "zh": "巢"}, {"en": "net", "zh": "网"}, {"en": "network", "zh": "网络"}, {"en": "neutral", "zh": "中立的"}, {"en": "never", "zh": "从不"}, {"en": "nevertheless", "zh": "然而"}, {"en": "new", "zh": "新的"}, {"en": "news", "zh": "新闻"}, {"en": "newspaper", "zh": "报纸"}, {"en": "next", "zh": "下一个"}, {"en": "nice", "zh": "好的"}, {"en": "niece", "zh": "侄女"}, {"en": "night", "zh": "夜晚"}, {"en": "nine", "zh": "九"}, {"en": "nineteen", "zh": "十九"}, {"en": "ninety", "zh": "九十"}, {"en": "ninth", "zh": "第九"}, {"en": "no", "zh": "不"}, {"en": "noble", "zh": "高贵的"}, {"en": "nobody", "zh": "没有人"}, {"en": "nod", "zh": "点头"}, {"en": "noise", "zh": "噪音"}, {"en": "noisy", "zh": "吵闹的"}, {"en": "none", "zh": "没有一个"}, {"en": "noon", "zh": "中午"}, {"en": "nor", "zh": "也不"}, {"en": "normal", "zh": "正常的"}, {"en": "north", "zh": "北"}, {"en": "northern", "zh": "北部的"}, {"en": "nose", "zh": "鼻子"}, {"en": "not", "zh": "不"}, {"en": "note", "zh": "笔记；音符"}, {"en": "notebook", "zh": "笔记本"}, {"en": "nothing", "zh": "没有什么"}, {"en": "notice", "zh": "注意"}, {"en": "noun", "zh": "名词"}, {"en": "novel", "zh": "小说"}, {"en": "novelist", "zh": "小说家"}, {"en": "November", "zh": "十一月"}, {"en": "now", "zh": "现在"}, {"en": "nowadays", "zh": "现今"}, {"en": "nowhere", "zh": "无处"}, {"en": "nuclear", "zh": "核能的"}, {"en": "number", "zh": "数字"}, {"en": "numerous", "zh": "许多的"}, {"en": "nurse", "zh": "护士"}, {"en": "nut", "zh": "坚果"}, {"en": "nutrition", "zh": "营养"}, {"en": "obey", "zh": "服从"}, {"en": "object", "zh": "物体；宾语；反对"}, {"en": "objective", "zh": "客观的；目标"}, {"en": "obligation", "zh": "义务"}, {"en": "observe", "zh": "观察"}, {"en": "obstacle", "zh": "障碍"}, {"en": "obtain", "zh": "获得"}, {"en": "obvious", "zh": "明显的"}, {"en": "obviously", "zh": "明显地"}, {"en": "occasion", "zh": "场合"}, {"en": "occupation", "zh": "职业"}, {"en": "occupy", "zh": "占据"}, {"en": "occur", "zh": "发生"}, {"en": "ocean", "zh": "海洋"}, {"en": "o'clock", "zh": "...点钟"}, {"en": "October", "zh": "十月"}, {"en": "odd", "zh": "奇怪的；奇数的"}, {"en": "of", "zh": "...的"}, {"en": "off", "zh": "离开"}, {"en": "offend", "zh": "冒犯"}, {"en": "offer", "zh": "提供"}, {"en": "office", "zh": "办公室"}, {"en": "officer", "zh": "军官"}, {"en": "official", "zh": "官员；官方的"}, {"en": "often", "zh": "经常"}, {"en": "oil", "zh": "油"}, {"en": "OK", "zh": "好"}, {"en": "old", "zh": "老的"}, {"en": "Olympic", "zh": "奥林匹克的"}, {"en": "on", "zh": "在...上"}, {"en": "once", "zh": "一次；一旦"}, {"en": "one", "zh": "一"}, {"en": "onion", "zh": "洋葱"}, {"en": "online", "zh": "在线的"}, {"en": "only", "zh": "只有"}, {"en": "onto", "zh": "到...上"}, {"en": "open", "zh": "开"}, {"en": "opera", "zh": "歌剧"}, {"en": "operate", "zh": "操作"}, {"en": "operation", "zh": "手术；操作"}, {"en": "operator", "zh": "操作员"}, {"en": "opinion", "zh": "意见"}, {"en": "opponent", "zh": "对手"}, {"en": "opportunity", "zh": "机会"}, {"en": "oppose", "zh": "反对"}, {"en": "opposite", "zh": "对面的"}, {"en": "optimistic", "zh": "乐观的"}, {"en": "option", "zh": "选择"}, {"en": "or", "zh": "或者"}, {"en": "orange", "zh": "橙子；橙色"}, {"en": "orbit", "zh": "轨道"}, {"en": "orchestra", "zh": "管弦乐队"}, {"en": "order", "zh": "顺序；命令"}, {"en": "ordinary", "zh": "普通的"}, {"en": "organ", "zh": "器官"}, {"en": "organic", "zh": "有机的"}, {"en": "organisation/organization", "zh": "组织"}, {"en": "organise/organize", "zh": "组织"}, {"en": "origin", "zh": "起源"}, {"en": "original", "zh": "原来的"}, {"en": "other", "zh": "其他的"}, {"en": "otherwise", "zh": "否则"}, {"en": "ought to", "zh": "应该"}, {"en": "our", "zh": "我们的"}, {"en": "ours", "zh": "我们的(名词性物主代词)"}, {"en": "ourselves", "zh": "我们自己"}, {"en": "out", "zh": "外面"}, {"en": "outcome", "zh": "结果"}, {"en": "outdoor", "zh": "户外的"}, {"en": "outer", "zh": "外部的"}, {"en": "outlet", "zh": "出口"}, {"en": "outline", "zh": "轮廓"}, {"en": "output", "zh": "输出"}, {"en": "outside", "zh": "外面"}, {"en": "outstanding", "zh": "杰出的"}, {"en": "oven", "zh": "烤箱"}, {"en": "over", "zh": "在...上方"}, {"en": "overall", "zh": "总体的"}, {"en": "overcome", "zh": "克服"}, {"en": "overseas", "zh": "海外的"}, {"en": "owe", "zh": "欠"}, {"en": "own", "zh": "自己的；拥有"}, {"en": "owner", "zh": "所有者"}, {"en": "pace", "zh": "步速"}, {"en": "pack", "zh": "包装"}, {"en": "package", "zh": "包裹"}, {"en": "page", "zh": "页"}, {"en": "pain", "zh": "疼痛"}, {"en": "paint", "zh": "油漆；绘画"}, {"en": "painter", "zh": "画家"}, {"en": "painting", "zh": "画"}, {"en": "pair", "zh": "一双"}, {"en": "palace", "zh": "宫殿"}, {"en": "pale", "zh": "苍白的"}, {"en": "pan", "zh": "平底锅"}, {"en": "panel", "zh": "面板"}, {"en": "paper", "zh": "纸；论文"}, {"en": "paragraph", "zh": "段落"}, {"en": "parallel", "zh": "平行的"}, {"en": "parcel", "zh": "包裹"}, {"en": "pardon", "zh": "原谅"}, {"en": "parent", "zh": "父母"}, {"en": "park", "zh": "公园；停车"}, {"en": "parliament", "zh": "议会"}, {"en": "part", "zh": "部分"}, {"en": "participate", "zh": "参加"}, {"en": "particular", "zh": "特别的"}, {"en": "particularly", "zh": "特别地"}, {"en": "partly", "zh": "部分地"}, {"en": "partner", "zh": "伙伴"}, {"en": "party", "zh": "聚会；政党"}, {"en": "pass", "zh": "经过；传递"}, {"en": "passage", "zh": "通道；段落"}, {"en": "passenger", "zh": "乘客"}, {"en": "passion", "zh": "热情"}, {"en": "passive", "zh": "被动的"}, {"en": "passport", "zh": "护照"}, {"en": "past", "zh": "过去的"}, {"en": "paste", "zh": "粘贴"}, {"en": "path", "zh": "小路"}, {"en": "patience", "zh": "耐心"}, {"en": "patient", "zh": "病人；耐心的"}, {"en": "pattern", "zh": "模式"}, {"en": "pause", "zh": "暂停"}, {"en": "pay", "zh": "支付"}, {"en": "peace", "zh": "和平"}, {"en": "peaceful", "zh": "和平的"}, {"en": "peak", "zh": "顶峰"}, {"en": "pear", "zh": "梨"}, {"en": "pen", "zh": "钢笔"}, {"en": "penalty", "zh": "惩罚"}, {"en": "pencil", "zh": "铅笔"}, {"en": "people", "zh": "人；人民"}, {"en": "pepper", "zh": "胡椒"}, {"en": "per", "zh": "每"}, {"en": "perceive", "zh": "察觉"}, {"en": "percent", "zh": "百分之..."}, {"en": "percentage", "zh": "百分比"}, {"en": "perfect", "zh": "完美的"}, {"en": "perform", "zh": "表演；执行"}, {"en": "performance", "zh": "表演"}, {"en": "perfume", "zh": "香水"}, {"en": "perhaps", "zh": "也许"}, {"en": "period", "zh": "时期；句号"}, {"en": "permanent", "zh": "永久的"}, {"en": "permission", "zh": "允许"}, {"en": "permit", "zh": "允许"}, {"en": "person", "zh": "人"}, {"en": "personal", "zh": "个人的"}, {"en": "personality", "zh": "个性"}, {"en": "personnel", "zh": "人员"}, {"en": "perspective", "zh": "视角"}, {"en": "persuade", "zh": "说服"}, {"en": "pet", "zh": "宠物"}, {"en": "petrol", "zh": "汽油"}, {"en": "phase", "zh": "阶段"}, {"en": "phenomenon", "zh": "现象"}, {"en": "philosophy", "zh": "哲学"}, {"en": "phone", "zh": "电话"}, {"en": "photo", "zh": "照片"}, {"en": "photographer", "zh": "摄影师"}, {"en": "phrase", "zh": "短语"}, {"en": "physical", "zh": "身体的；物理的"}, {"en": "physician", "zh": "内科医生"}, {"en": "physicist", "zh": "物理学家"}, {"en": "physics", "zh": "物理"}, {"en": "piano", "zh": "钢琴"}, {"en": "pick", "zh": "挑选；采摘"}, {"en": "picnic", "zh": "野餐"}, {"en": "picture", "zh": "图画"}, {"en": "pie", "zh": "馅饼"}, {"en": "piece", "zh": "片，块"}, {"en": "pig", "zh": "猪"}, {"en": "pile", "zh": "堆"}, {"en": "pill", "zh": "药丸"}, {"en": "pilot", "zh": "飞行员"}, {"en": "pin", "zh": "大头针"}, {"en": "pink", "zh": "粉红色"}, {"en": "pioneer", "zh": "先锋"}, {"en": "pipe", "zh": "管子"}, {"en": "pity", "zh": "遗憾"}, {"en": "pizza", "zh": "比萨饼"}, {"en": "place", "zh": "地方；放置"}, {"en": "plain", "zh": "平原；清楚的"}, {"en": "plan", "zh": "计划"}, {"en": "plane", "zh": "飞机"}, {"en": "planet", "zh": "行星"}, {"en": "plant", "zh": "植物；种植"}, {"en": "plastic", "zh": "塑料；可塑的"}, {"en": "plate", "zh": "盘子"}, {"en": "platform", "zh": "平台"}, {"en": "play", "zh": "玩；戏剧"}, {"en": "player", "zh": "运动员；播放器"}, {"en": "playground", "zh": "操场"}, {"en": "pleasant", "zh": "愉快的"}, {"en": "please", "zh": "请；使人高兴"}, {"en": "pleasure", "zh": "快乐"}, {"en": "plenty", "zh": "充足"}, {"en": "plot", "zh": "情节"}, {"en": "plug", "zh": "插头"}, {"en": "plus", "zh": "加；加上"}, {"en": "pocket", "zh": "口袋"}, {"en": "poem", "zh": "诗"}, {"en": "poet", "zh": "诗人"}, {"en": "poetry", "zh": "诗歌"}, {"en": "point", "zh": "点；观点；指向"}, {"en": "poison", "zh": "毒药"}, {"en": "polar", "zh": "极地的"}, {"en": "pole", "zh": "杆；极"}, {"en": "police", "zh": "警察"}, {"en": "policeman", "zh": "警察(男)"}, {"en": "policy", "zh": "政策"}, {"en": "polish", "zh": "磨光；波兰语"}, {"en": "polite", "zh": "有礼貌的"}, {"en": "political", "zh": "政治的"}, {"en": "politician", "zh": "政治家"}, {"en": "politics", "zh": "政治"}, {"en": "pollute", "zh": "污染"}, {"en": "pollution", "zh": "污染"}, {"en": "pool", "zh": "水池"}, {"en": "poor", "zh": "贫穷的"}, {"en": "pop", "zh": "流行音乐"}, {"en": "popular", "zh": "流行的"}, {"en": "population", "zh": "人口"}, {"en": "pork", "zh": "猪肉"}, {"en": "port", "zh": "港口"}, {"en": "portion", "zh": "部分"}, {"en": "portrait", "zh": "肖像"}, {"en": "pose", "zh": "姿势"}, {"en": "position", "zh": "位置"}, {"en": "positive", "zh": "积极的"}, {"en": "possess", "zh": "拥有"}, {"en": "possession", "zh": "拥有物"}, {"en": "possibility", "zh": "可能性"}, {"en": "possible", "zh": "可能的"}, {"en": "post", "zh": "邮政；职位"}, {"en": "postcard", "zh": "明信片"}, {"en": "poster", "zh": "海报"}, {"en": "postman", "zh": "邮递员"}, {"en": "postpone", "zh": "推迟"}, {"en": "pot", "zh": "罐"}, {"en": "potato", "zh": "土豆"}, {"en": "potential", "zh": "潜力"}, {"en": "pound", "zh": "磅；英镑"}, {"en": "pour", "zh": "倒"}, {"en": "poverty", "zh": "贫困"}, {"en": "powder", "zh": "粉末"}, {"en": "power", "zh": "力量；权力"}, {"en": "powerful", "zh": "强大的"}, {"en": "practical", "zh": "实际的"}, {"en": "practice", "zh": "练习；实践"}, {"en": "practise/practice", "zh": "练习"}, {"en": "praise", "zh": "称赞"}, {"en": "pray", "zh": "祈祷"}, {"en": "precious", "zh": "珍贵的"}, {"en": "precise", "zh": "精确的"}, {"en": "precisely", "zh": "精确地"}, {"en": "predict", "zh": "预测"}, {"en": "prefer", "zh": "更喜欢"}, {"en": "preference", "zh": "偏爱"}, {"en": "pregnancy", "zh": "怀孕"}, {"en": "prejudice", "zh": "偏见"}, {"en": "premier", "zh": "首要的；总理"}, {"en": "prepare", "zh": "准备"}, {"en": "present", "zh": "礼物；现在的；呈现"}, {"en": "presentation", "zh": "展示"}, {"en": "preserve", "zh": "保存"}, {"en": "president", "zh": "总统"}, {"en": "press", "zh": "压；新闻界"}, {"en": "pressure", "zh": "压力"}, {"en": "pretend", "zh": "假装"}, {"en": "pretty", "zh": "漂亮的；相当"}, {"en": "prevent", "zh": "防止"}, {"en": "previous", "zh": "以前的"}, {"en": "price", "zh": "价格"}, {"en": "pride", "zh": "骄傲"}, {"en": "primary", "zh": "主要的；初级的"}, {"en": "prince/princess", "zh": "王子/公主"}, {"en": "principal", "zh": "校长；主要的"}, {"en": "principle", "zh": "原则"}, {"en": "print", "zh": "印刷"}, {"en": "prior", "zh": "优先的"}, {"en": "priority", "zh": "优先权"}, {"en": "prison", "zh": "监狱"}, {"en": "prisoner", "zh": "囚犯"}, {"en": "privacy", "zh": "隐私"}, {"en": "private", "zh": "私人的"}, {"en": "prize", "zh": "奖赏"}, {"en": "probably", "zh": "很可能"}, {"en": "problem", "zh": "问题"}, {"en": "procedure", "zh": "程序"}, {"en": "proceed", "zh": "进行"}, {"en": "process", "zh": "过程"}, {"en": "produce", "zh": "生产"}, {"en": "product", "zh": "产品"}, {"en": "profession", "zh": "职业"}, {"en": "professional", "zh": "专业的"}, {"en": "professor", "zh": "教授"}, {"en": "profile", "zh": "轮廓；简介"}, {"en": "profit", "zh": "利润"}, {"en": "programme/program", "zh": "节目；程序"}, {"en": "progress", "zh": "进步"}, {"en": "prohibit", "zh": "禁止"}, {"en": "project", "zh": "项目"}, {"en": "promise", "zh": "承诺"}, {"en": "promote", "zh": "促进；提升"}, {"en": "prompt", "zh": "迅速的"}, {"en": "pronounce", "zh": "发音"}, {"en": "pronunciation", "zh": "发音"}, {"en": "proof", "zh": "证据"}, {"en": "proper", "zh": "适当的"}, {"en": "property", "zh": "财产"}, {"en": "proportion", "zh": "比例"}, {"en": "proposal", "zh": "提议"}, {"en": "prospect", "zh": "前景"}, {"en": "protect", "zh": "保护"}, {"en": "protein", "zh": "蛋白质"}, {"en": "protest", "zh": "抗议"}, {"en": "proud", "zh": "骄傲的"}, {"en": "prove", "zh": "证明"}, {"en": "provide", "zh": "提供"}, {"en": "province", "zh": "省"}, {"en": "psychologist", "zh": "心理学家"}, {"en": "psychology", "zh": "心理学"}, {"en": "pub", "zh": "酒吧"}, {"en": "public", "zh": "公众；公共的"}, {"en": "publication", "zh": "出版"}, {"en": "publish", "zh": "出版"}, {"en": "pull", "zh": "拉"}, {"en": "pulse", "zh": "脉搏"}, {"en": "pump", "zh": "泵"}, {"en": "punish", "zh": "惩罚"}, {"en": "pupil", "zh": "小学生；瞳孔"}, {"en": "purchase", "zh": "购买"}, {"en": "pure", "zh": "纯的"}, {"en": "purple", "zh": "紫色"}, {"en": "purpose", "zh": "目的"}, {"en": "purse", "zh": "钱包"}, {"en": "pursue", "zh": "追求"}, {"en": "push", "zh": "推"}, {"en": "put", "zh": "放"}, {"en": "puzzle", "zh": "谜"}, {"en": "pyramid", "zh": "金字塔"}, {"en": "qualification", "zh": "资格"}, {"en": "qualify", "zh": "取得资格"}, {"en": "quality", "zh": "质量"}, {"en": "quantity", "zh": "数量"}, {"en": "quarter", "zh": "四分之一"}, {"en": "queen", "zh": "女王"}, {"en": "question", "zh": "问题"}, {"en": "quick", "zh": "快的"}, {"en": "quiet", "zh": "安静的"}, {"en": "quit", "zh": "退出"}, {"en": "quite", "zh": "相当"}, {"en": "quote", "zh": "引用"}, {"en": "rabbit", "zh": "兔子"}, {"en": "race", "zh": "种族；赛跑"}, {"en": "racial", "zh": "种族的"}, {"en": "radio", "zh": "收音机"}, {"en": "railway", "zh": "铁路"}, {"en": "rain", "zh": "雨"}, {"en": "rainbow", "zh": "彩虹"}, {"en": "rainy", "zh": "下雨的"}, {"en": "raise", "zh": "举起；提高"}, {"en": "random", "zh": "随机的"}, {"en": "range", "zh": "范围"}, {"en": "rank", "zh": "排名"}, {"en": "rapid", "zh": "迅速的"}, {"en": "rare", "zh": "稀有的"}, {"en": "rate", "zh": "比率"}, {"en": "rather", "zh": "宁愿"}, {"en": "rating", "zh": "等级"}, {"en": "raw", "zh": "生的"}, {"en": "ray", "zh": "光线"}, {"en": "reach", "zh": "到达"}, {"en": "react", "zh": "反应"}, {"en": "reaction", "zh": "反应"}, {"en": "read", "zh": "阅读"}, {"en": "ready", "zh": "准备好的"}, {"en": "real", "zh": "真正的"}, {"en": "realise/realize", "zh": "意识到"}, {"en": "realistic", "zh": "现实的"}, {"en": "reality", "zh": "现实"}, {"en": "really", "zh": "真正地"}, {"en": "reason", "zh": "原因"}, {"en": "recall", "zh": "回忆"}, {"en": "receipt", "zh": "收据"}, {"en": "receive", "zh": "收到"}, {"en": "recent", "zh": "最近的"}, {"en": "recently", "zh": "最近"}, {"en": "reception", "zh": "接待"}, {"en": "receptionist", "zh": "接待员"}, {"en": "recipe", "zh": "食谱"}, {"en": "recite", "zh": "背诵"}, {"en": "recognise/recognize", "zh": "认出"}, {"en": "recognition", "zh": "认出"}, {"en": "recommend", "zh": "推荐"}, {"en": "record", "zh": "记录；唱片"}, {"en": "recording", "zh": "录音"}, {"en": "recover", "zh": "恢复"}, {"en": "recreation", "zh": "娱乐"}, {"en": "recycle", "zh": "回收"}, {"en": "red", "zh": "红色"}, {"en": "reduce", "zh": "减少"}, {"en": "refer", "zh": "参考"}, {"en": "reference", "zh": "参考"}, {"en": "reflect", "zh": "反射；反思"}, {"en": "reform", "zh": "改革"}, {"en": "refresh", "zh": "使清新"}, {"en": "refuse", "zh": "拒绝"}, {"en": "regard", "zh": "看待"}, {"en": "regardless", "zh": "不顾"}, {"en": "region", "zh": "地区"}, {"en": "register", "zh": "登记"}, {"en": "regret", "zh": "遗憾"}, {"en": "regular", "zh": "规则的"}, {"en": "regulate", "zh": "管理"}, {"en": "reject", "zh": "拒绝"}, {"en": "relate", "zh": "联系"}, {"en": "relation", "zh": "关系"}, {"en": "relationship", "zh": "关系"}, {"en": "relative", "zh": "亲戚"}, {"en": "relax", "zh": "放松"}, {"en": "relay", "zh": "接力"}, {"en": "release", "zh": "释放"}, {"en": "relevant", "zh": "相关的"}, {"en": "reliable", "zh": "可靠的"}, {"en": "relief", "zh": "减轻"}, {"en": "religion", "zh": "宗教"}, {"en": "religious", "zh": "宗教的"}, {"en": "rely", "zh": "依靠"}, {"en": "remain", "zh": "保持"}, {"en": "remarkable", "zh": "非凡的"}, {"en": "remember", "zh": "记得"}, {"en": "remind", "zh": "提醒"}, {"en": "remote", "zh": "遥远的"}, {"en": "remove", "zh": "移开"}, {"en": "rent", "zh": "租"}, {"en": "repair", "zh": "修理"}, {"en": "repeat", "zh": "重复"}, {"en": "replace", "zh": "取代"}, {"en": "reply", "zh": "回答"}, {"en": "report", "zh": "报告"}, {"en": "represent", "zh": "代表"}, {"en": "representative", "zh": "代表"}, {"en": "republic", "zh": "共和国"}, {"en": "reputation", "zh": "名声"}, {"en": "request", "zh": "请求"}, {"en": "require", "zh": "要求"}, {"en": "rescue", "zh": "营救"}, {"en": "research", "zh": "研究"}, {"en": "resemble", "zh": "像"}, {"en": "reserve", "zh": "保留"}, {"en": "resident", "zh": "居民"}, {"en": "resign", "zh": "辞职"}, {"en": "resist", "zh": "抵抗"}, {"en": "resolution", "zh": "决心"}, {"en": "resolve", "zh": "解决"}, {"en": "resort", "zh": "度假胜地"}, {"en": "resource", "zh": "资源"}, {"en": "respect", "zh": "尊敬"}, {"en": "respective", "zh": "各自的"}, {"en": "respond", "zh": "回应"}, {"en": "response", "zh": "回应"}, {"en": "responsibility", "zh": "责任"}, {"en": "responsible", "zh": "负责任的"}, {"en": "rest", "zh": "休息；其余"}, {"en": "restaurant", "zh": "餐厅"}, {"en": "restore", "zh": "恢复"}, {"en": "restrict", "zh": "限制"}, {"en": "result", "zh": "结果"}, {"en": "retire", "zh": "退休"}, {"en": "return", "zh": "返回"}, {"en": "reveal", "zh": "揭示"}, {"en": "review", "zh": "复习；评论"}, {"en": "revise", "zh": "修订"}, {"en": "revolution", "zh": "革命"}, {"en": "reward", "zh": "报酬"}, {"en": "rhythm", "zh": "节奏"}, {"en": "rice", "zh": "大米"}, {"en": "rich", "zh": "富有的"}, {"en": "ride", "zh": "骑"}, {"en": "right", "zh": "正确的；右边"}, {"en": "ring", "zh": "戒指；打电话；响"}, {"en": "ripe", "zh": "成熟的"}, {"en": "rise", "zh": "上升"}, {"en": "risk", "zh": "风险"}, {"en": "rival", "zh": "对手"}, {"en": "river", "zh": "河"}, {"en": "road", "zh": "路"}, {"en": "roast", "zh": "烤"}, {"en": "robot", "zh": "机器人"}, {"en": "rock", "zh": "岩石"}, {"en": "rocket", "zh": "火箭"}, {"en": "role", "zh": "角色"}, {"en": "roll", "zh": "滚动"}, {"en": "romantic", "zh": "浪漫的"}, {"en": "roof", "zh": "屋顶"}, {"en": "room", "zh": "房间"}, {"en": "root", "zh": "根"}, {"en": "rope", "zh": "绳子"}, {"en": "rose", "zh": "玫瑰"}, {"en": "rough", "zh": "粗糙的"}, {"en": "round", "zh": "圆的"}, {"en": "route", "zh": "路线"}, {"en": "routine", "zh": "常规"}, {"en": "row", "zh": "排；划船"}, {"en": "royal", "zh": "皇家的"}, {"en": "rubber", "zh": "橡胶"}, {"en": "rubbish", "zh": "垃圾"}, {"en": "rude", "zh": "粗鲁的"}, {"en": "rugby", "zh": "橄榄球"}, {"en": "ruin", "zh": "毁灭"}, {"en": "rule", "zh": "规则"}, {"en": "ruler", "zh": "尺子；统治者"}, {"en": "run", "zh": "跑"}, {"en": "rural", "zh": "乡村的"}, {"en": "rush", "zh": "冲"}, {"en": "sad", "zh": "悲伤的"}, {"en": "safe", "zh": "安全的"}, {"en": "safety", "zh": "安全"}, {"en": "sail", "zh": "航行"}, {"en": "salad", "zh": "沙拉"}, {"en": "salary", "zh": "薪水"}, {"en": "sale", "zh": "销售"}, {"en": "salt", "zh": "盐"}, {"en": "salty", "zh": "咸的"}, {"en": "same", "zh": "相同的"}, {"en": "sample", "zh": "样品"}, {"en": "sand", "zh": "沙子"}, {"en": "sandwich", "zh": "三明治"}, {"en": "satellite", "zh": "卫星"}, {"en": "satisfaction", "zh": "满意"}, {"en": "satisfy", "zh": "使满意"}, {"en": "Saturday", "zh": "星期六"}, {"en": "sauce", "zh": "酱汁"}, {"en": "save", "zh": "拯救；节省"}, {"en": "say", "zh": "说"}, {"en": "scale", "zh": "规模；刻度"}, {"en": "scan", "zh": "扫描"}, {"en": "scare", "zh": "惊吓"}, {"en": "scarf", "zh": "围巾"}, {"en": "scene", "zh": "场景"}, {"en": "schedule", "zh": "日程表"}, {"en": "scholarship", "zh": "奖学金"}, {"en": "school", "zh": "学校"}, {"en": "science", "zh": "科学"}, {"en": "scientific", "zh": "科学的"}, {"en": "scientist", "zh": "科学家"}, {"en": "scissors", "zh": "剪刀"}, {"en": "score", "zh": "分数"}, {"en": "scream", "zh": "尖叫"}, {"en": "screen", "zh": "屏幕"}, {"en": "sea", "zh": "海"}, {"en": "search", "zh": "搜索"}, {"en": "season", "zh": "季节"}, {"en": "seat", "zh": "座位"}, {"en": "second", "zh": "第二；秒"}, {"en": "secondary", "zh": "中等的"}, {"en": "secret", "zh": "秘密"}, {"en": "secretary", "zh": "秘书"}, {"en": "section", "zh": "部分"}, {"en": "secure", "zh": "安全的"}, {"en": "security", "zh": "安全"}, {"en": "see", "zh": "看见"}, {"en": "seed", "zh": "种子"}, {"en": "seek", "zh": "寻求"}, {"en": "seem", "zh": "似乎"}, {"en": "seize", "zh": "抓住"}, {"en": "seldom", "zh": "很少"}, {"en": "select", "zh": "选择"}, {"en": "self", "zh": "自己"}, {"en": "selfish", "zh": "自私的"}, {"en": "sell", "zh": "卖"}, {"en": "semester", "zh": "学期"}, {"en": "send", "zh": "发送"}, {"en": "senior", "zh": "年长的"}, {"en": "sense", "zh": "感觉"}, {"en": "sensible", "zh": "明智的"}, {"en": "sensitive", "zh": "敏感的"}, {"en": "sentence", "zh": "句子"}, {"en": "separate", "zh": "分开"}, {"en": "September", "zh": "九月"}, {"en": "sequence", "zh": "顺序"}, {"en": "series", "zh": "系列"}, {"en": "serious", "zh": "严重的"}, {"en": "servant", "zh": "仆人"}, {"en": "serve", "zh": "服务"}, {"en": "service", "zh": "服务"}, {"en": "session", "zh": "会议"}, {"en": "set", "zh": "设置"}, {"en": "settle", "zh": "解决；定居"}, {"en": "seven", "zh": "七"}, {"en": "several", "zh": "几个"}, {"en": "severe", "zh": "严重的"}, {"en": "sex", "zh": "性别"}, {"en": "shade", "zh": "阴影"}, {"en": "shadow", "zh": "影子"}, {"en": "shake", "zh": "摇动"}, {"en": "shall", "zh": "将要"}, {"en": "shallow", "zh": "浅的"}, {"en": "shame", "zh": "羞愧"}, {"en": "shape", "zh": "形状"}, {"en": "share", "zh": "分享"}, {"en": "shark", "zh": "鲨鱼"}, {"en": "sharp", "zh": "锋利的"}, {"en": "she", "zh": "她"}, {"en": "sheep", "zh": "绵羊"}, {"en": "sheet", "zh": "床单；纸张"}, {"en": "shelf", "zh": "架子"}, {"en": "shell", "zh": "壳"}, {"en": "shelter", "zh": "庇护所"}, {"en": "shift", "zh": "转移"}, {"en": "shine", "zh": "发光"}, {"en": "ship", "zh": "船"}, {"en": "shirt", "zh": "衬衫"}, {"en": "shock", "zh": "震惊"}, {"en": "shoe", "zh": "鞋"}, {"en": "shoot", "zh": "射击"}, {"en": "shop", "zh": "商店"}, {"en": "shore", "zh": "岸"}, {"en": "short", "zh": "短的；矮的"}, {"en": "shortage", "zh": "短缺"}, {"en": "shorts", "zh": "短裤"}, {"en": "should", "zh": "应该"}, {"en": "shoulder", "zh": "肩膀"}, {"en": "shout", "zh": "喊"}, {"en": "show", "zh": "展示"}, {"en": "shower", "zh": "淋浴"}, {"en": "shut", "zh": "关闭"}, {"en": "shy", "zh": "害羞的"}, {"en": "sick", "zh": "生病的"}, {"en": "side", "zh": "边"}, {"en": "sight", "zh": "视力"}, {"en": "sign", "zh": "标志"}, {"en": "signal", "zh": "信号"}, {"en": "significance", "zh": "意义"}, {"en": "significant", "zh": "重要的"}, {"en": "silence", "zh": "安静"}, {"en": "silent", "zh": "安静的"}, {"en": "silk", "zh": "丝绸"}, {"en": "silly", "zh": "愚蠢的"}, {"en": "silver", "zh": "银"}, {"en": "similar", "zh": "相似的"}, {"en": "simple", "zh": "简单的"}, {"en": "since", "zh": "自从"}, {"en": "sincere", "zh": "真诚的"}, {"en": "sincerely", "zh": "真诚地"}, {"en": "sing", "zh": "唱"}, {"en": "single", "zh": "单身的；单个的"}, {"en": "sink", "zh": "下沉"}, {"en": "sir", "zh": "先生"}, {"en": "sister", "zh": "姐妹"}, {"en": "sit", "zh": "坐"}, {"en": "site", "zh": "地点"}, {"en": "situation", "zh": "情况"}, {"en": "six", "zh": "六"}, {"en": "size", "zh": "尺寸"}, {"en": "skate", "zh": "滑冰"}, {"en": "ski", "zh": "滑雪"}, {"en": "skill", "zh": "技能"}, {"en": "skin", "zh": "皮肤"}, {"en": "skip", "zh": "跳"}, {"en": "skirt", "zh": "裙子"}, {"en": "sky", "zh": "天空"}, {"en": "slave", "zh": "奴隶"}, {"en": "sleep", "zh": "睡觉"}, {"en": "slice", "zh": "薄片"}, {"en": "slide", "zh": "滑动"}, {"en": "slight", "zh": "轻微的"}, {"en": "slightly", "zh": "轻微地"}, {"en": "slim", "zh": "苗条的"}, {"en": "slip", "zh": "滑倒"}, {"en": "slow", "zh": "慢的"}, {"en": "small", "zh": "小的"}, {"en": "smart", "zh": "聪明的"}, {"en": "smell", "zh": "闻；气味"}, {"en": "smile", "zh": "微笑"}, {"en": "smoke", "zh": "烟"}, {"en": "smooth", "zh": "光滑的"}, {"en": "snack", "zh": "小吃"}, {"en": "snake", "zh": "蛇"}, {"en": "snow", "zh": "雪"}, {"en": "so", "zh": "所以"}, {"en": "soap", "zh": "肥皂"}, {"en": "soccer", "zh": "英式足球"}, {"en": "social", "zh": "社会的"}, {"en": "society", "zh": "社会"}, {"en": "sock", "zh": "短袜"}, {"en": "sofa", "zh": "沙发"}, {"en": "soft", "zh": "软的"}, {"en": "software", "zh": "软件"}, {"en": "soil", "zh": "土壤"}, {"en": "solar", "zh": "太阳的"}, {"en": "soldier", "zh": "士兵"}, {"en": "solid", "zh": "固体的"}, {"en": "solution", "zh": "解决方案"}, {"en": "solve", "zh": "解决"}, {"en": "some", "zh": "一些"}, {"en": "somebody/someone", "zh": "某人"}, {"en": "somehow", "zh": "不知怎么地"}, {"en": "something", "zh": "某事"}, {"en": "sometimes", "zh": "有时"}, {"en": "somewhat", "zh": "有点"}, {"en": "somewhere", "zh": "某处"}, {"en": "son", "zh": "儿子"}, {"en": "song", "zh": "歌曲"}, {"en": "soon", "zh": "很快"}, {"en": "sore", "zh": "疼痛的"}, {"en": "sorrow", "zh": "悲伤"}, {"en": "sorry", "zh": "抱歉的"}, {"en": "sort", "zh": "种类"}, {"en": "soul", "zh": "灵魂"}, {"en": "sound", "zh": "声音"}, {"en": "soup", "zh": "汤"}, {"en": "sour", "zh": "酸的"}, {"en": "source", "zh": "来源"}, {"en": "south", "zh": "南"}, {"en": "southern", "zh": "南部的"}, {"en": "space", "zh": "空间"}, {"en": "spare", "zh": "空闲的；抽出"}, {"en": "speak", "zh": "说"}, {"en": "speaker", "zh": "说话者"}, {"en": "special", "zh": "特别的"}, {"en": "specialist", "zh": "专家"}, {"en": "species", "zh": "物种"}, {"en": "specific", "zh": "具体的"}, {"en": "speech", "zh": "演讲"}, {"en": "speed", "zh": "速度"}, {"en": "spell", "zh": "拼写"}, {"en": "spend", "zh": "花费"}, {"en": "spirit", "zh": "精神"}, {"en": "spiritual", "zh": "精神的"}, {"en": "spit", "zh": "吐"}, {"en": "splendid", "zh": "极好的"}, {"en": "split", "zh": "分裂"}, {"en": "spoil", "zh": "破坏"}, {"en": "spoken", "zh": "口头的"}, {"en": "sponsor", "zh": "赞助"}, {"en": "spoon", "zh": "勺子"}, {"en": "sport", "zh": "运动"}, {"en": "spot", "zh": "斑点；地点"}, {"en": "spread", "zh": "传播"}, {"en": "spring", "zh": "春天；泉"}, {"en": "square", "zh": "正方形；广场"}, {"en": "stable", "zh": "稳定的"}, {"en": "stadium", "zh": "体育场"}, {"en": "staff", "zh": "员工"}, {"en": "stage", "zh": "阶段；舞台"}, {"en": "stair", "zh": "楼梯"}, {"en": "stamp", "zh": "邮票；跺脚"}, {"en": "stand", "zh": "站立；忍受"}, {"en": "standard", "zh": "标准"}, {"en": "star", "zh": "星星；明星"}, {"en": "stare", "zh": "凝视"}, {"en": "start", "zh": "开始"}, {"en": "state", "zh": "状态；国家；陈述"}, {"en": "station", "zh": "车站"}, {"en": "statistic", "zh": "统计数字"}, {"en": "statue", "zh": "雕像"}, {"en": "status", "zh": "地位"}, {"en": "stay", "zh": "停留"}, {"en": "steady", "zh": "稳定的"}, {"en": "steak", "zh": "牛排"}, {"en": "steal", "zh": "偷"}, {"en": "steam", "zh": "蒸汽"}, {"en": "steel", "zh": "钢"}, {"en": "step", "zh": "步骤；台阶"}, {"en": "stick", "zh": "棍子；粘贴"}, {"en": "still", "zh": "仍然；静止的"}, {"en": "stimulate", "zh": "刺激"}, {"en": "stomach", "zh": "胃"}, {"en": "stone", "zh": "石头"}, {"en": "stop", "zh": "停止"}, {"en": "store", "zh": "商店；储存"}, {"en": "storm", "zh": "暴风雨"}, {"en": "story", "zh": "故事"}, {"en": "straight", "zh": "直的"}, {"en": "strange", "zh": "奇怪的"}, {"en": "stranger", "zh": "陌生人"}, {"en": "strategy", "zh": "策略"}, {"en": "strawberry", "zh": "草莓"}, {"en": "stream", "zh": "溪流"}, {"en": "street", "zh": "街道"}, {"en": "strength", "zh": "力量"}, {"en": "strengthen", "zh": "加强"}, {"en": "stress", "zh": "压力"}, {"en": "stretch", "zh": "伸展"}, {"en": "strict", "zh": "严格的"}, {"en": "strike", "zh": "罢工；打击"}, {"en": "string", "zh": "线；一串"}, {"en": "strong", "zh": "强壮的"}, {"en": "structure", "zh": "结构"}, {"en": "struggle", "zh": "斗争"}, {"en": "student", "zh": "学生"}, {"en": "studio", "zh": "工作室"}, {"en": "study", "zh": "学习；研究"}, {"en": "stupid", "zh": "愚蠢的"}, {"en": "style", "zh": "风格"}, {"en": "subject", "zh": "学科；主题"}, {"en": "submit", "zh": "提交"}, {"en": "subscribe", "zh": "订阅"}, {"en": "substance", "zh": "物质"}, {"en": "succeed", "zh": "成功"}, {"en": "success", "zh": "成功"}, {"en": "successful", "zh": "成功的"}, {"en": "such", "zh": "这样的"}, {"en": "sudden", "zh": "突然的"}, {"en": "suffer", "zh": "遭受"}, {"en": "sufficient", "zh": "充足的"}, {"en": "sugar", "zh": "糖"}, {"en": "suggest", "zh": "建议"}, {"en": "suggestion", "zh": "建议"}, {"en": "suit", "zh": "西装；适合"}, {"en": "suitable", "zh": "合适的"}, {"en": "sum", "zh": "总数"}, {"en": "summer", "zh": "夏天"}, {"en": "sun", "zh": "太阳"}, {"en": "Sunday", "zh": "星期日"}, {"en": "sunny", "zh": "晴朗的"}, {"en": "supermarket", "zh": "超市"}, {"en": "supply", "zh": "供应"}, {"en": "support", "zh": "支持"}, {"en": "suppose", "zh": "假设"}, {"en": "sure", "zh": "肯定的"}, {"en": "surface", "zh": "表面"}, {"en": "surprise", "zh": "惊讶"}, {"en": "surround", "zh": "包围"}, {"en": "survey", "zh": "调查"}, {"en": "survive", "zh": "幸存"}, {"en": "suspect", "zh": "怀疑"}, {"en": "sustain", "zh": "维持"}, {"en": "sweater", "zh": "毛衣"}, {"en": "sweep", "zh": "打扫"}, {"en": "sweet", "zh": "甜的"}, {"en": "swim", "zh": "游泳"}, {"en": "swing", "zh": "摇摆"}, {"en": "switch", "zh": "开关"}, {"en": "symbol", "zh": "象征"}, {"en": "sympathy", "zh": "同情"}, {"en": "symptom", "zh": "症状"}, {"en": "system", "zh": "系统"}, {"en": "table", "zh": "桌子"}, {"en": "tablet", "zh": "平板电脑；药片"}, {"en": "tail", "zh": "尾巴"}, {"en": "take", "zh": "拿"}, {"en": "tale", "zh": "故事"}, {"en": "talent", "zh": "才能"}, {"en": "talk", "zh": "谈话"}, {"en": "tall", "zh": "高的"}, {"en": "tank", "zh": "坦克；箱"}, {"en": "tap", "zh": "轻拍；水龙头"}, {"en": "tape", "zh": "磁带；胶带"}, {"en": "target", "zh": "目标"}, {"en": "task", "zh": "任务"}, {"en": "taste", "zh": "味道"}, {"en": "tax", "zh": "税"}, {"en": "taxi", "zh": "出租车"}, {"en": "tea", "zh": "茶"}, {"en": "teach", "zh": "教"}, {"en": "teacher", "zh": "教师"}, {"en": "team", "zh": "团队"}, {"en": "tear", "zh": "眼泪；撕"}, {"en": "technical", "zh": "技术的"}, {"en": "technique", "zh": "技术"}, {"en": "technology", "zh": "技术"}, {"en": "teenager", "zh": "青少年"}, {"en": "telephone", "zh": "电话"}, {"en": "telescope", "zh": "望远镜"}, {"en": "television/TV", "zh": "电视"}, {"en": "tell", "zh": "告诉"}, {"en": "temperature", "zh": "温度"}, {"en": "temporary", "zh": "临时的"}, {"en": "ten", "zh": "十"}, {"en": "tend", "zh": "倾向"}, {"en": "tendency", "zh": "倾向"}, {"en": "tennis", "zh": "网球"}, {"en": "tension", "zh": "紧张"}, {"en": "tent", "zh": "帐篷"}, {"en": "term", "zh": "学期；术语"}, {"en": "terrible", "zh": "可怕的"}, {"en": "territory", "zh": "领土"}, {"en": "test", "zh": "测试"}, {"en": "text", "zh": "课文；文本"}, {"en": "than", "zh": "比"}, {"en": "thank", "zh": "感谢"}, {"en": "that", "zh": "那"}, {"en": "the", "zh": "这/那"}, {"en": "theatre/theater", "zh": "剧院"}, {"en": "theft", "zh": "盗窃"}, {"en": "their", "zh": "他们的"}, {"en": "theirs", "zh": "他们的(名词性物主代词)"}, {"en": "them", "zh": "他们(宾格)"}, {"en": "theme", "zh": "主题"}, {"en": "themselves", "zh": "他们自己"}, {"en": "then", "zh": "然后"}, {"en": "theory", "zh": "理论"}, {"en": "there", "zh": "那里"}, {"en": "therefore", "zh": "因此"}, {"en": "these", "zh": "这些"}, {"en": "they", "zh": "他们"}, {"en": "thick", "zh": "厚的"}, {"en": "thin", "zh": "薄的"}, {"en": "thing", "zh": "东西"}, {"en": "think", "zh": "想"}, {"en": "third", "zh": "第三"}, {"en": "thirsty", "zh": "口渴的"}, {"en": "thirteen", "zh": "十三"}, {"en": "thirty", "zh": "三十"}, {"en": "this", "zh": "这个"}, {"en": "those", "zh": "那些"}, {"en": "though", "zh": "虽然"}, {"en": "thought", "zh": "想法"}, {"en": "thousand", "zh": "千"}, {"en": "three", "zh": "三"}, {"en": "through", "zh": "通过"}, {"en": "throughout", "zh": "遍及"}, {"en": "throw", "zh": "扔"}, {"en": "thus", "zh": "因此"}, {"en": "ticket", "zh": "票"}, {"en": "tidy", "zh": "整洁的"}, {"en": "tie", "zh": "领带；系"}, {"en": "tiger", "zh": "老虎"}, {"en": "tight", "zh": "紧的"}, {"en": "till", "zh": "直到"}, {"en": "time", "zh": "时间"}, {"en": "tiny", "zh": "微小的"}, {"en": "tip", "zh": "尖端；小费"}, {"en": "tired", "zh": "疲倦的"}, {"en": "tissue", "zh": "组织；纸巾"}, {"en": "title", "zh": "标题"}, {"en": "to", "zh": "到"}, {"en": "toast", "zh": "吐司；干杯"}, {"en": "tobacco", "zh": "烟草"}, {"en": "today", "zh": "今天"}, {"en": "toe", "zh": "脚趾"}, {"en": "together", "zh": "一起"}, {"en": "toilet", "zh": "厕所"}, {"en": "tomato", "zh": "西红柿"}, {"en": "tomorrow", "zh": "明天"}, {"en": "ton", "zh": "吨"}, {"en": "tone", "zh": "语气"}, {"en": "tongue", "zh": "舌头"}, {"en": "tonight", "zh": "今晚"}, {"en": "too", "zh": "也"}, {"en": "tool", "zh": "工具"}, {"en": "tooth", "zh": "牙齿"}, {"en": "top", "zh": "顶部"}, {"en": "topic", "zh": "话题"}, {"en": "total", "zh": "总数"}, {"en": "touch", "zh": "触摸"}, {"en": "tough", "zh": "坚韧的；困难的"}, {"en": "tour", "zh": "旅行"}, {"en": "tourist", "zh": "游客"}, {"en": "towards/toward", "zh": "朝"}, {"en": "towel", "zh": "毛巾"}, {"en": "tower", "zh": "塔"}, {"en": "town", "zh": "城镇"}, {"en": "toy", "zh": "玩具"}, {"en": "track", "zh": "轨道；追踪"}, {"en": "trade", "zh": "贸易"}, {"en": "tradition", "zh": "传统"}, {"en": "traditional", "zh": "传统的"}, {"en": "traffic", "zh": "交通"}, {"en": "train", "zh": "火车；训练"}, {"en": "training", "zh": "训练"}, {"en": "transfer", "zh": "转移"}, {"en": "transform", "zh": "转变"}, {"en": "transition", "zh": "过渡"}, {"en": "translate", "zh": "翻译"}, {"en": "transport", "zh": "运输"}, {"en": "travel", "zh": "旅行"}, {"en": "treasure", "zh": "财富"}, {"en": "treat", "zh": "对待"}, {"en": "treatment", "zh": "治疗"}, {"en": "tree", "zh": "树"}, {"en": "tremble", "zh": "颤抖"}, {"en": "trend", "zh": "趋势"}, {"en": "trial", "zh": "试验"}, {"en": "triangle", "zh": "三角形"}, {"en": "tribe", "zh": "部落"}, {"en": "trick", "zh": "诡计"}, {"en": "trip", "zh": "旅行"}, {"en": "tropical", "zh": "热带的"}, {"en": "trouble", "zh": "麻烦"}, {"en": "trousers", "zh": "裤子"}, {"en": "truck", "zh": "卡车"}, {"en": "true", "zh": "真的"}, {"en": "trust", "zh": "信任"}, {"en": "truth", "zh": "真相"}, {"en": "try", "zh": "尝试"}, {"en": "tube", "zh": "管；地铁"}, {"en": "Tuesday", "zh": "星期二"}, {"en": "tune", "zh": "曲调"}, {"en": "tunnel", "zh": "隧道"}, {"en": "turn", "zh": "转动"}, {"en": "twelfth", "zh": "第十二"}, {"en": "twelve", "zh": "十二"}, {"en": "twentieth", "zh": "第二十"}, {"en": "twenty", "zh": "二十"}, {"en": "twice", "zh": "两次"}, {"en": "twin", "zh": "双胞胎"}, {"en": "two", "zh": "二"}, {"en": "type", "zh": "类型"}, {"en": "typical", "zh": "典型的"}, {"en": "ugly", "zh": "丑陋的"}, {"en": "umbrella", "zh": "伞"}, {"en": "uncle", "zh": "叔伯"}, {"en": "under", "zh": "在...下"}, {"en": "underground", "zh": "地下的"}, {"en": "understand", "zh": "理解"}, {"en": "unit", "zh": "单位"}, {"en": "universe", "zh": "宇宙"}, {"en": "university", "zh": "大学"}, {"en": "unless", "zh": "除非"}, {"en": "until/till", "zh": "直到"}, {"en": "up", "zh": "向上"}, {"en": "upon", "zh": "在...之上"}, {"en": "upper", "zh": "上面的"}, {"en": "upset", "zh": "心烦的"}, {"en": "urban", "zh": "城市的"}, {"en": "urge", "zh": "催促"}, {"en": "urgent", "zh": "紧急的"}, {"en": "us", "zh": "我们(宾格)"}, {"en": "use", "zh": "使用"}, {"en": "used", "zh": "习惯的；用过的"}, {"en": "useful", "zh": "有用的"}, {"en": "usual", "zh": "通常的"}, {"en": "usually", "zh": "通常"}, {"en": "vacation", "zh": "假期"}, {"en": "valley", "zh": "山谷"}, {"en": "valuable", "zh": "有价值的"}, {"en": "value", "zh": "价值"}, {"en": "variety", "zh": "种类"}, {"en": "various", "zh": "各种各样的"}, {"en": "vary", "zh": "变化"}, {"en": "vast", "zh": "广阔的"}, {"en": "vegetable", "zh": "蔬菜"}, {"en": "vehicle", "zh": "车辆"}, {"en": "venture", "zh": "冒险"}, {"en": "version", "zh": "版本"}, {"en": "very", "zh": "非常"}, {"en": "victim", "zh": "受害者"}, {"en": "victory", "zh": "胜利"}, {"en": "video", "zh": "视频"}, {"en": "view", "zh": "观点；景色"}, {"en": "village", "zh": "村庄"}, {"en": "violence", "zh": "暴力"}, {"en": "violent", "zh": "暴力的"}, {"en": "virtual", "zh": "虚拟的"}, {"en": "virus", "zh": "病毒"}, {"en": "visit", "zh": "拜访"}, {"en": "visitor", "zh": "访客"}, {"en": "visual", "zh": "视觉的"}, {"en": "vital", "zh": "至关重要的"}, {"en": "vocabulary", "zh": "词汇"}, {"en": "voice", "zh": "声音"}, {"en": "volcano", "zh": "火山"}, {"en": "volleyball", "zh": "排球"}, {"en": "volume", "zh": "卷；音量"}, {"en": "volunteer", "zh": "志愿者"}, {"en": "vote", "zh": "投票"}, {"en": "voyage", "zh": "航行"}, {"en": "wage", "zh": "工资"}, {"en": "wait", "zh": "等待"}, {"en": "wake", "zh": "醒来"}, {"en": "walk", "zh": "走"}, {"en": "wall", "zh": "墙"}, {"en": "wallet", "zh": "钱包"}, {"en": "wander", "zh": "闲逛"}, {"en": "want", "zh": "想要"}, {"en": "war", "zh": "战争"}, {"en": "warm", "zh": "温暖的"}, {"en": "warm", "zh": "温暖；警告"}, {"en": "warn", "zh": "警告"}, {"en": "wash", "zh": "洗"}, {"en": "waste", "zh": "浪费"}, {"en": "watch", "zh": "手表；看"}, {"en": "water", "zh": "水"}, {"en": "wave", "zh": "波浪"}, {"en": "way", "zh": "方式；道路"}, {"en": "we", "zh": "我们"}, {"en": "weak", "zh": "虚弱的"}, {"en": "wealth", "zh": "财富"}, {"en": "wealthy", "zh": "富有的"}, {"en": "weapon", "zh": "武器"}, {"en": "wear", "zh": "穿"}, {"en": "weather", "zh": "天气"}, {"en": "web", "zh": "网"}, {"en": "website", "zh": "网站"}, {"en": "wedding", "zh": "婚礼"}, {"en": "week", "zh": "周"}, {"en": "weekday", "zh": "工作日"}, {"en": "weekend", "zh": "周末"}, {"en": "weekly", "zh": "每周的"}, {"en": "weigh", "zh": "称重"}, {"en": "weight", "zh": "重量"}, {"en": "welcome", "zh": "欢迎"}, {"en": "welfare", "zh": "福利"}, {"en": "well", "zh": "好；井"}, {"en": "west", "zh": "西方"}, {"en": "western", "zh": "西方的"}, {"en": "wet", "zh": "湿的"}, {"en": "whale", "zh": "鲸"}, {"en": "what", "zh": "什么"}, {"en": "whatever", "zh": "无论什么"}, {"en": "wheat", "zh": "小麦"}, {"en": "wheel", "zh": "轮子"}, {"en": "when", "zh": "什么时候"}, {"en": "whenever", "zh": "无论何时"}, {"en": "where", "zh": "哪里"}, {"en": "whether", "zh": "是否"}, {"en": "which", "zh": "哪一个"}, {"en": "while", "zh": "而；当...时"}, {"en": "whisper", "zh": "低语"}, {"en": "white", "zh": "白色的"}, {"en": "who", "zh": "谁"}, {"en": "whole", "zh": "整个的"}, {"en": "whom", "zh": "谁(宾格)"}, {"en": "whose", "zh": "谁的"}, {"en": "why", "zh": "为什么"}, {"en": "wide", "zh": "宽的"}, {"en": "wife", "zh": "妻子"}, {"en": "wild", "zh": "野生的"}, {"en": "will", "zh": "将；意志"}, {"en": "willing", "zh": "愿意的"}, {"en": "win", "zh": "赢"}, {"en": "wind", "zh": "风"}, {"en": "window", "zh": "窗户"}, {"en": "wine", "zh": "葡萄酒"}, {"en": "wing", "zh": "翅膀"}, {"en": "winner", "zh": "获胜者"}, {"en": "winter", "zh": "冬天"}, {"en": "wipe", "zh": "擦"}, {"en": "wire", "zh": "电线"}, {"en": "wise", "zh": "明智的"}, {"en": "wish", "zh": "希望"}, {"en": "with", "zh": "和...一起"}, {"en": "within", "zh": "在...内部"}, {"en": "without", "zh": "没有"}, {"en": "witness", "zh": "目击者"}, {"en": "woman", "zh": "女人"}, {"en": "wonder", "zh": "想知道"}, {"en": "wonderful", "zh": "极好的"}, {"en": "wood", "zh": "木材"}, {"en": "word", "zh": "单词"}, {"en": "work", "zh": "工作"}, {"en": "worker", "zh": "工人"}, {"en": "world", "zh": "世界"}, {"en": "worry", "zh": "担心"}, {"en": "worse", "zh": "更坏的"}, {"en": "worst", "zh": "最坏的"}, {"en": "worth", "zh": "值得的"}, {"en": "would", "zh": "将会"}, {"en": "wound", "zh": "伤口"}, {"en": "write", "zh": "写"}, {"en": "writer", "zh": "作家"}, {"en": "wrong", "zh": "错误的"}, {"en": "yard", "zh": "院子"}, {"en": "year", "zh": "年"}, {"en": "yellow", "zh": "黄色的"}, {"en": "yes", "zh": "是"}, {"en": "yesterday", "zh": "昨天"}, {"en": "yet", "zh": "还"}, {"en": "you", "zh": "你"}, {"en": "young", "zh": "年轻的"}, {"en": "your", "zh": "你的"}, {"en": "yours", "zh": "你的(名词性物主代词)"}, {"en": "yourself", "zh": "你自己"}, {"en": "youth", "zh": "青年"}, {"en": "zero", "zh": "零"}, {"en": "zone", "zh": "区域"}, {"en": "zoo", "zh": "动物园"}];
+</script>
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k,d){ try{const v=localStorage.getItem('wm_'+k);return v===null?d:JSON.parse(v)}catch(e){return d} },
+    set(k,v){ try{localStorage.setItem('wm_'+k,JSON.stringify(v))}catch(e){} }
+  };
+
+  // ---------- State ----------
+  let allWords = WORDS.slice();
+  let view = allWords;            // current visible list
+  let pos = 0;                    // index into view
+  let knownSet = new Set(store.get('known', []));
+  let unknownSet = new Set(store.get('unknown', []));
+  let shuffle = store.get('shuffle', false);
+  let autoSpeak = store.get('autoSpeak', true);
+  let hideZh = store.get('hideZh', false);
+  let mode = store.get('mode', 'all');      // all | known | unknown
+  let letterFilter = store.get('letter', ''); // '' | 'A'..|'0'(numbers/other)
+  let autoPlay = false;
+  let autoTimer = null;
+  let rate = store.get('rate', 0.9);
+  let selectedVoiceURI = store.get('voiceURI', '');
+  let voices = [];
+
+  // ---------- Utils ----------
+  const firstLetter = w => {
+    const c = w.replace(/^[^a-zA-Z]*/, '')[0];
+    if(!c) return '#';
+    return /[a-zA-Z]/.test(c) ? c.toUpperCase() : '#';
+  };
+  function toast(msg){
+    const t=$('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1400);
+  }
+  function saveMarks(){
+    store.set('known', [...knownSet]);
+    store.set('unknown', [...unknownSet]);
+  }
+
+  // ---------- Build view ----------
+  function buildView(){
+    let list = allWords.slice();
+    // letter filter
+    if(letterFilter){
+      list = list.filter(w => firstLetter(w.en) === letterFilter);
+    }
+    // mode filter
+    if(mode==='known') list = list.filter(w => knownSet.has(w.en));
+    else if(mode==='unknown') list = list.filter(w => unknownSet.has(w.en));
+    // shuffle
+    if(shuffle){
+      // stable shuffle with seed-ish
+      for(let i=list.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [list[i],list[j]]=[list[j],list[i]];
+      }
+    }
+    view = list;
+    if(pos >= view.length) pos = Math.max(0, view.length-1);
+    render();
+  }
+
+  // ---------- Render ----------
+  function render(){
+    if(!view.length){
+      $('wordEl').textContent = '—';
+      $('meaningEl').textContent = '当前筛选无单词';
+      $('idxBadge').textContent = '#0';
+      $('letterBadge').textContent = '-';
+      $('statPos').textContent = '0/0';
+      $('progressBar').style.width = '0%';
+      updateMarkButtons();
+      return;
+    }
+    const w = view[pos];
+    $('wordEl').textContent = w.en;
+    $('meaningEl').textContent = w.zh;
+    $('meaningEl').classList.toggle('hidden', hideZh);
+    $('idxBadge').textContent = '#' + (pos+1);
+    $('letterBadge').textContent = firstLetter(w.en);
+    $('statPos').textContent = (pos+1) + '/' + view.length;
+    const total = allWords.length;
+    $('statKnown').textContent = knownSet.size;
+    $('statUnknown').textContent = unknownSet.size;
+    const pct = view.length ? ((pos+1)/view.length*100) : 0;
+    $('progressBar').style.width = pct + '%';
+    updateMarkButtons();
+    if(autoSpeak && !autoPlay) speak();
+  }
+  function updateMarkButtons(){
+    if(!view.length){ $('knownBtn').classList.remove('active'); $('unknownBtn').classList.remove('active'); return; }
+    const w = view[pos].en;
+    $('knownBtn').classList.toggle('active', knownSet.has(w));
+    $('unknownBtn').classList.toggle('active', unknownSet.has(w));
+  }
+
+  // ---------- Navigation ----------
+  function next(){
+    if(!view.length) return;
+    pos = (pos+1) % view.length;
+    flip(render);
+  }
+  function prev(){
+    if(!view.length) return;
+    pos = (pos-1+view.length) % view.length;
+    flip(render);
+  }
+  function flip(cb){
+    const c=$('card');
+    c.classList.add('flip-out');
+    setTimeout(()=>{
+      cb();
+      c.classList.remove('flip-out');
+      c.classList.add('flip-in');
+      requestAnimationFrame(()=>{ c.classList.remove('flip-in'); });
+    },120);
+  }
+
+  // ---------- Marks ----------
+  function toggleKnown(){
+    if(!view.length) return;
+    const w = view[pos].en;
+    if(knownSet.has(w)){ knownSet.delete(w); toast('取消已会'); }
+    else{ knownSet.add(w); unknownSet.delete(w); toast('标记为已会 ✓'); }
+    saveMarks(); render();
+  }
+  function toggleUnknown(){
+    if(!view.length) return;
+    const w = view[pos].en;
+    if(unknownSet.has(w)){ unknownSet.delete(w); toast('取消未会'); }
+    else{ unknownSet.add(w); knownSet.delete(w); toast('标记为未会'); }
+    saveMarks(); render();
+  }
+
+  // ---------- Speech ----------
+  function isSafari(){
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  }
+  function isChrome(){
+    return /chrome|crios/i.test(navigator.userAgent) && !/edg/i.test(navigator.userAgent);
+  }
+  function findPreferredVoice(){
+    const enUS = voices.filter(v=>/en-US/i.test(v.lang));
+    if(isSafari()){
+      const samantha = enUS.find(v=>v.name==='Samantha') || enUS.find(v=>/Samantha/i.test(v.name));
+      if(samantha) return samantha;
+    }
+    if(isChrome()){
+      const ava = enUS.find(v=>v.name==='Ava') || enUS.find(v=>/Ava/i.test(v.name));
+      if(ava) return ava;
+    }
+    return enUS[0] || voices.find(v=>/en/i.test(v.lang)) || voices[0] || null;
+  }
+  function loadVoices(){
+    voices = speechSynthesis.getVoices() || [];
+    const sel = $('voiceSelect');
+    sel.innerHTML = '';
+    const en = voices.filter(v=>/en/i.test(v.lang));
+    const list = en.length ? en : voices;
+    if(!list.length){
+      const opt=document.createElement('option');
+      opt.textContent='无可用语音';
+      opt.value='';
+      sel.appendChild(opt);
+      sel.disabled=true;
+      return;
+    }
+    sel.disabled=false;
+    list.forEach(v=>{
+      const opt=document.createElement('option');
+      opt.value = v.voiceURI;
+      let label = v.name + ' (' + v.lang + ')';
+      if(/Ava/i.test(v.name)) label += ' - 优化音质';
+      opt.textContent = label;
+      sel.appendChild(opt);
+    });
+    // choose voice: stored > browser preferred > first en-US
+    let chosen;
+    if(selectedVoiceURI && list.some(v=>v.voiceURI===selectedVoiceURI)){
+      chosen = list.find(v=>v.voiceURI===selectedVoiceURI);
+    } else {
+      chosen = findPreferredVoice();
+    }
+    if(chosen){
+      sel.value = chosen.voiceURI;
+      selectedVoiceURI = chosen.voiceURI;
+      store.set('voiceURI', chosen.voiceURI);
+    } else {
+      selectedVoiceURI = '';
+    }
+  }
+  function speak(){
+    if(!view.length) return;
+    if(!('speechSynthesis' in window)){ toast('浏览器不支持语音'); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(view[pos].en);
+    u.rate = rate; u.lang = 'en-US';
+    const v = voices.find(x=>x.voiceURI===selectedVoiceURI);
+    if(v) u.voice = v;
+    const btn = $('playBtn');
+    u.onend = ()=>btn.classList.remove('playing');
+    u.onerror = ()=>btn.classList.remove('playing');
+    btn.classList.add('playing');
+    speechSynthesis.speak(u);
+  }
+
+  // ---------- Auto play ----------
+  function toggleAuto(){
+    autoPlay = !autoPlay;
+    $('autoBtn').classList.toggle('active', autoPlay);
+    if(autoPlay){
+      toast('自动朗读已开启');
+      speak();
+      runAuto();
+    } else {
+      toast('自动朗读已关闭');
+      clearTimeout(autoTimer);
+    }
+  }
+  function runAuto(){
+    if(!autoPlay) return;
+    autoTimer = setTimeout(()=>{
+      if(!autoPlay) return;
+      next();
+      // 等卡片翻转动画结束后再朗读，避免与 render 中的自动朗读重复
+      setTimeout(()=>{
+        if(!autoPlay) return;
+        speak();
+        runAuto();
+      }, 120);
+    }, 3200);
+  }
+
+  // ---------- Search ----------
+  let searchTimer;
+  function doSearch(q){
+    q = q.trim().toLowerCase();
+    if(!q){ buildView(); return; }
+    view = allWords.filter(w =>
+      w.en.toLowerCase().includes(q) || w.zh.toLowerCase().includes(q)
+    );
+    pos = 0;
+    render();
+  }
+
+  // ---------- Letter grid ----------
+  function buildLetterGrid(){
+    const grid = $('letterGrid');
+    grid.innerHTML='';
+    const letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','#'];
+    letters.forEach(L=>{
+      const b=document.createElement('button');
+      b.textContent=L;
+      if(L===letterFilter) b.classList.add('active');
+      b.onclick=()=>{
+        letterFilter = (letterFilter===L)?'':L;
+        store.set('letter', letterFilter);
+        pos = 0;
+        buildView();
+        [...grid.children].forEach(x=>x.classList.remove('active'));
+        if(letterFilter) b.classList.add('active');
+      };
+      grid.appendChild(b);
+    });
+  }
+
+  // ---------- Wire up ----------
+  $('playBtn').onclick = speak;
+  $('wordEl').onclick = speak;
+  $('nextBtn').onclick = next;
+  $('prevBtn').onclick = prev;
+  $('knownBtn').onclick = toggleKnown;
+  $('unknownBtn').onclick = toggleUnknown;
+  $('autoBtn').onclick = toggleAuto;
+  $('shuffleBtn').onclick = ()=>{
+    shuffle = !shuffle; store.set('shuffle', shuffle);
+    $('shuffleBtn').classList.toggle('active', shuffle);
+    toast(shuffle?'已开启随机顺序':'已关闭随机顺序');
+    buildView();
+  };
+  $('shuffleBtn').classList.toggle('active', shuffle);
+
+  // voice select
+  $('voiceSelect').onchange = (e)=>{
+    selectedVoiceURI = e.target.value;
+    store.set('voiceURI', selectedVoiceURI);
+    speak();
+  };
+
+  // panel
+  $('panelToggle').onclick = ()=>$('panel').classList.toggle('open');
+  $('panelClose').onclick = ()=>$('panel').classList.remove('open');
+
+  // mode buttons
+  document.querySelectorAll('[data-mode]').forEach(b=>{
+    b.onclick=()=>{
+      mode=b.dataset.mode; store.set('mode',mode);
+      document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      pos=0; buildView();
+    };
+    if(b.dataset.mode===mode) b.classList.add('active');
+  });
+
+  // hide zh
+  function toggleZh(){
+    hideZh = !hideZh;
+    store.set('hideZh', hideZh);
+    $('hideZhBtn').classList.toggle('on', hideZh);
+    render();
+  }
+  const hzb = $('hideZhBtn');
+  hzb.classList.toggle('on', hideZh);
+  hzb.onclick = toggleZh;
+  $('meaningEl').onclick = toggleZh;
+
+  // auto speak toggle
+  const asb = $('autoSpeakBtn');
+  asb.classList.toggle('on', autoSpeak);
+  asb.onclick=()=>{ autoSpeak=!autoSpeak; store.set('autoSpeak',autoSpeak); asb.classList.toggle('on',autoSpeak); };
+
+  // reset
+  $('resetBtn').onclick=()=>{
+    if(confirm('确定要重置所有已会/未会标记吗？')){
+      knownSet.clear(); unknownSet.clear(); saveMarks(); render(); toast('已重置');
+    }
+  };
+
+  // rate
+  $('rateRange').value = rate;
+  $('rateVal').textContent = rate.toFixed(2)+'x';
+  $('rateRange').oninput=e=>{
+    rate=parseFloat(e.target.value); $('rateVal').textContent=rate.toFixed(2)+'x';
+    store.set('rate',rate);
+  };
+
+  // search
+  $('search').addEventListener('input', e=>{
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(()=>doSearch(e.target.value), 200);
+  });
+
+  // keyboard
+  document.addEventListener('keydown', e=>{
+    if(e.target.tagName==='INPUT') {
+      if(e.key==='Escape'){ e.target.blur(); e.target.value=''; buildView(); }
+      return;
+    }
+    switch(e.key){
+      case ' ': e.preventDefault(); speak(); break;
+      case 'ArrowRight': e.preventDefault(); next(); break;
+      case 'ArrowLeft': e.preventDefault(); prev(); break;
+      case 'k': case 'K': toggleKnown(); break;
+      case 'm': case 'M': toggleUnknown(); break;
+      case 'h': case 'H': toggleZh(); break;
+      case 's': case 'S': $('shuffleBtn').click(); break;
+      case 'a': case 'A': toggleAuto(); break;
+      case '/': e.preventDefault(); $('search').focus(); break;
+    }
+  });
+
+  // voices
+  if('speechSynthesis' in window){
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  // init
+  buildLetterGrid();
+  buildView();
+
+  // greeting toast
+  setTimeout(()=>toast('共 '+allWords.length+' 个单词 · 按空格朗读'), 400);
+})();
+</script>
+</body>
+</html>
