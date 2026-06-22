@@ -7,6 +7,7 @@ type SearchItem = {
   formattedDate: string;
   excerpt: string;
   tags: string[];
+  type: string;
   body: string;
   url: string;
 };
@@ -21,8 +22,16 @@ let postsContainer: HTMLDivElement | null;
 let noResults: HTMLDivElement | null;
 let postCount: HTMLSpanElement | null;
 let streamFooter: HTMLElement | null;
+let paginationNav: HTMLElement | null;
 let originalPostsHtml = '';
+const originalPostsHtmlMap = new Map<string, string>();
 let allPostsCount = 0;
+let typeFilter: string | null = null;
+let typeTotalCount = 0;
+
+const SEARCH_PAGE_SIZE = 20;
+let currentSearchPage = 1;
+let lastSearchResults: SearchItem[] = [];
 
 async function loadSearchIndex(): Promise<SearchItem[]> {
   if (indexLoaded) return searchIndex;
@@ -137,6 +146,49 @@ function renderSearchResults(results: SearchItem[]): string {
   return results.map((item, i) => renderSearchResultItem(item, i)).join('\n');
 }
 
+function renderSearchPagination(currentPage: number, totalPages: number): string {
+  if (totalPages <= 1) return '';
+
+  const prevDisabled = currentPage <= 1;
+  const nextDisabled = currentPage >= totalPages;
+
+  return `
+    <nav class="search-pagination py-10 flex items-center justify-center gap-6 text-sm" aria-label="搜索结果分页">
+      <button
+        type="button"
+        class="search-page-prev ${prevDisabled ? 'text-[var(--border)] cursor-not-allowed' : 'text-[var(--text-secondary)] hover:text-[var(--accent)]'} transition-colors"
+        data-search-page="${currentPage - 1}"
+        ${prevDisabled ? 'disabled' : ''}
+      >
+        ← 上一页
+      </button>
+
+      <span class="text-[var(--text-secondary)] tabular-nums font-sans">
+        第 ${currentPage} / ${totalPages} 页
+      </span>
+
+      <button
+        type="button"
+        class="search-page-next ${nextDisabled ? 'text-[var(--border)] cursor-not-allowed' : 'text-[var(--text-secondary)] hover:text-[var(--accent)]'} transition-colors"
+        data-search-page="${currentPage + 1}"
+        ${nextDisabled ? 'disabled' : ''}
+      >
+        下一页 →
+      </button>
+    </nav>
+  `;
+}
+
+function renderCurrentSearchPage(results: SearchItem[], page: number): string {
+  const totalPages = Math.max(1, Math.ceil(results.length / SEARCH_PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * SEARCH_PAGE_SIZE;
+  const end = start + SEARCH_PAGE_SIZE;
+  const pageResults = results.slice(start, end);
+
+  return renderSearchResults(pageResults) + renderSearchPagination(safePage, totalPages);
+}
+
 // Initialize elements and event listeners
 async function init() {
   searchInput = document.getElementById('searchInput') as HTMLInputElement;
@@ -144,14 +196,26 @@ async function init() {
   noResults = document.getElementById('noResults') as HTMLDivElement;
   postCount = document.getElementById('postCount') as HTMLSpanElement;
   streamFooter = document.querySelector<HTMLElement>('.stream-footer');
+  paginationNav = document.querySelector<HTMLElement>('.pagination-nav');
 
   // Only initialize if we're on the index page
   if (!searchInput || !postsContainer) return;
 
-  // Backup the original stream HTML so we can restore it when the search is cleared
-  if (!originalPostsHtml) {
+  // Backup the original stream HTML so we can restore it when the search is cleared.
+  // We keep a per-type backup so Turbo navigation between pages doesn't keep stale HTML.
+  const typeFilterAttr = postsContainer.dataset.typeFilter;
+  typeFilter = typeFilterAttr || null;
+  const backupKey = typeFilter || 'all';
+
+  if (!searchInput.value.trim()) {
+    originalPostsHtmlMap.set(backupKey, postsContainer.innerHTML);
     originalPostsHtml = postsContainer.innerHTML;
+  } else if (!originalPostsHtmlMap.has(backupKey)) {
+    originalPostsHtmlMap.set(backupKey, postsContainer.innerHTML);
   }
+
+  const typeTotalAttr = postsContainer.dataset.typeTotal;
+  typeTotalCount = typeTotalAttr ? parseInt(typeTotalAttr, 10) : allPostsCount;
 
   // Focus search input if URL hash is #searchInput
   if (window.location.hash === '#searchInput') {
@@ -173,6 +237,29 @@ async function init() {
   // Enter key in search input
   searchInput.removeEventListener('keydown', handleSearchKeydown);
   searchInput.addEventListener('keydown', handleSearchKeydown);
+
+  // Pagination clicks inside search results (event delegation)
+  postsContainer.removeEventListener('click', handleSearchPaginationClick);
+  postsContainer.addEventListener('click', handleSearchPaginationClick);
+}
+
+function handleSearchPaginationClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const button = target.closest('[data-search-page]') as HTMLButtonElement | null;
+  if (!button || button.disabled) return;
+
+  const pageAttr = button.dataset.searchPage;
+  if (!pageAttr) return;
+
+  const newPage = parseInt(pageAttr, 10);
+  if (isNaN(newPage) || newPage < 1) return;
+
+  e.preventDefault();
+  currentSearchPage = newPage;
+  if (postsContainer) {
+    postsContainer.innerHTML = renderCurrentSearchPage(lastSearchResults, currentSearchPage);
+    postsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function handleSearchKeydown(e: KeyboardEvent) {
@@ -188,12 +275,15 @@ async function handleSearch() {
   const query = searchInput.value.trim();
 
   if (query === '') {
+    const backupKey = typeFilter || 'all';
+    const backupHtml = originalPostsHtmlMap.get(backupKey) || originalPostsHtml;
     // Restore the original day-group stream
-    postsContainer.innerHTML = originalPostsHtml;
+    postsContainer.innerHTML = backupHtml;
     streamFooter?.classList.remove('hidden');
     postsContainer.classList.remove('hidden');
     noResults.classList.add('hidden');
-    if (postCount) postCount.textContent = `${allPostsCount} 篇`;
+    paginationNav?.classList.remove('hidden');
+    if (postCount) postCount.textContent = `${typeTotalCount || allPostsCount} 篇`;
     return;
   }
 
@@ -206,6 +296,7 @@ async function handleSearch() {
     postsContainer.classList.remove('hidden');
     noResults.classList.add('hidden');
     streamFooter?.classList.add('hidden');
+    paginationNav?.classList.add('hidden');
   }
 
   const index = await loadSearchIndex();
@@ -225,16 +316,24 @@ async function handleSearch() {
     });
   }
 
-  streamFooter?.classList.add('hidden');
+  // Apply type filter when on a type-specific page
+  if (typeFilter && results.length > 0) {
+    results = results.filter((item) => item.type === typeFilter);
+  }
 
-  if (postCount) postCount.textContent = `${results.length} / ${allPostsCount} 篇`;
+  streamFooter?.classList.add('hidden');
+  paginationNav?.classList.add('hidden');
+
+  if (postCount) postCount.textContent = `${results.length} / ${typeTotalCount || allPostsCount} 篇`;
 
   if (results.length === 0) {
     postsContainer.innerHTML = '';
     postsContainer.classList.add('hidden');
     noResults.classList.remove('hidden');
   } else {
-    postsContainer.innerHTML = renderSearchResults(results);
+    currentSearchPage = 1;
+    lastSearchResults = results;
+    postsContainer.innerHTML = renderCurrentSearchPage(results, currentSearchPage);
     postsContainer.classList.remove('hidden');
     noResults.classList.add('hidden');
   }
