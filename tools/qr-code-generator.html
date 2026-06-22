@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="免费在线二维码生成器，支持网址、文本和 WiFi 网络二维码生成，可自定义样式、尺寸与颜色并下载 PNG 图片。">
+<meta name="keywords" content="二维码, QR码, WiFi二维码, 二维码生成, 二维码下载, QR Code Generator">
+<meta name="date" content="2026-06-22">
+<title>二维码生成器</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+font-family: Helvetica, Arial, sans-serif;
+margin: 0;
+padding: 24px 16px;
+background: #f5f5f7;
+color: #1d1d1f;
+min-height: 100vh;
+}
+
+.container {
+max-width: 960px;
+margin: 0 auto;
+}
+
+.workspace {
+display: flex;
+gap: 24px;
+align-items: flex-start;
+}
+
+.card {
+flex: 1;
+min-width: 0;
+}
+
+.result-panel {
+width: 320px;
+flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+.workspace {
+flex-direction: column;
+}
+.result-panel {
+width: 100%;
+}
+}
+
+h1 {
+font-size: 24px;
+font-weight: 600;
+margin: 0 0 4px;
+}
+
+.subtitle {
+color: #6e6e73;
+font-size: 14px;
+margin: 0 0 24px;
+}
+
+.card {
+background: #fff;
+border-radius: 16px;
+padding: 20px;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+label {
+display: block;
+font-size: 13px;
+font-weight: 500;
+color: #1d1d1f;
+margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+width: 100%;
+font-size: 16px;
+font-family: Helvetica, Arial, sans-serif;
+padding: 12px 14px;
+border: 1px solid #d2d2d7;
+border-radius: 10px;
+background: #fff;
+color: #1d1d1f;
+-webkit-appearance: none;
+appearance: none;
+}
+
+textarea {
+min-height: 140px;
+resize: vertical;
+line-height: 1.5;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+outline: none;
+border-color: #0071e3;
+box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+.row {
+display: flex;
+gap: 12px;
+margin-top: 14px;
+align-items: center;
+flex-wrap: wrap;
+}
+
+.row label {
+margin-bottom: 0;
+flex-shrink: 0;
+}
+
+select {
+font-size: 16px;
+font-family: Helvetica, Arial, sans-serif;
+padding: 8px 10px;
+border: 1px solid #d2d2d7;
+border-radius: 8px;
+background: #fff;
+color: #1d1d1f;
+}
+
+.color-input {
+width: 40px;
+height: 36px;
+padding: 2px;
+border: 1px solid #d2d2d7;
+border-radius: 8px;
+background: #fff;
+cursor: pointer;
+}
+
+.toggle {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+font-size: 14px;
+cursor: pointer;
+margin-left: auto;
+}
+
+.toggle input {
+width: 18px;
+height: 18px;
+accent-color: #0071e3;
+margin: 0;
+}
+
+button {
+font-family: Helvetica, Arial, sans-serif;
+font-size: 15px;
+font-weight: 500;
+padding: 12px 20px;
+border-radius: 10px;
+border: none;
+cursor: pointer;
+transition: opacity 0.15s ease;
+width: 100%;
+}
+
+button:active {
+opacity: 0.7;
+}
+
+button.primary {
+background: #0071e3;
+color: #fff;
+margin-top: 16px;
+}
+
+button.secondary {
+background: #f5f5f7;
+color: #1d1d1f;
+border: 1px solid #d2d2d7;
+margin-top: 8px;
+}
+
+button:disabled {
+opacity: 0.4;
+cursor: not-allowed;
+}
+
+.qr-display {
+margin-top: 0;
+padding: 20px;
+background: #fff;
+border-radius: 16px;
+flex-direction: column;
+align-items: center;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+display: none;
+}
+
+.qr-display.visible {
+display: flex;
+}
+
+.qr-display canvas {
+max-width: 100%;
+height: auto;
+border-radius: 8px;
+}
+
+.qr-url {
+margin-top: 12px;
+font-size: 13px;
+color: #6e6e73;
+word-break: break-all;
+text-align: left;
+max-width: 100%;
+white-space: pre-wrap;
+}
+
+.empty-state {
+margin-top: 0;
+padding: 40px 20px;
+text-align: center;
+color: #86868b;
+font-size: 14px;
+background: #fff;
+border-radius: 16px;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.empty-state.hidden {
+display: none;
+}
+
+.error {
+color: #d70015;
+font-size: 13px;
+margin-top: 8px;
+display: none;
+}
+
+.error.visible {
+display: block;
+}
+
+.mode-tabs {
+display: flex;
+gap: 4px;
+background: #f5f5f7;
+border-radius: 10px;
+padding: 4px;
+margin-bottom: 16px;
+}
+
+.mode-tab {
+flex: 1;
+font-family: Helvetica, Arial, sans-serif;
+font-size: 14px;
+font-weight: 500;
+padding: 8px 12px;
+border-radius: 7px;
+border: none;
+background: transparent;
+color: #1d1d1f;
+cursor: pointer;
+width: auto;
+margin: 0;
+transition: background 0.15s ease;
+}
+
+.mode-tab.active {
+background: #fff;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.mode-panel {
+display: none;
+}
+
+.mode-panel.active {
+display: block;
+}
+
+.field {
+margin-bottom: 12px;
+}
+
+.field:last-child {
+margin-bottom: 0;
+}
+
+.password-wrap {
+position: relative;
+}
+
+.password-wrap input {
+padding-right: 64px;
+}
+
+.password-toggle {
+position: absolute;
+right: 8px;
+top: 50%;
+transform: translateY(-50%);
+background: transparent;
+border: none;
+color: #0071e3;
+font-size: 13px;
+padding: 4px 8px;
+width: auto;
+margin: 0;
+cursor: pointer;
+}
+
+.hint {
+margin: 10px 0 0;
+font-size: 12px;
+color: #6e6e73;
+line-height: 1.4;
+}
+</style>
+
+</head>
+<body>
+<div class="container">
+  <h1>二维码生成器</h1>
+  <p class="subtitle">为网址、文本或 WiFi 网络创建可扫描的二维码。</p>
+
+  <div class="workspace">
+    <div class="card">
+      <div class="mode-tabs" role="tablist">
+        <button class="mode-tab active" id="mode-tab-text" type="button" role="tab" aria-selected="true" aria-controls="mode-panel-text">网址 / 文本</button>
+        <button class="mode-tab" id="mode-tab-wifi" type="button" role="tab" aria-selected="false" aria-controls="mode-panel-wifi">WiFi</button>
+      </div>
+
+      <div class="mode-panel active" id="mode-panel-text" role="tabpanel" aria-labelledby="mode-tab-text">
+        <label for="url-input">网址或文本</label>
+        <textarea id="url-input" placeholder="https://example.com 或输入任意文本..." autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+      </div>
+
+      <div class="mode-panel" id="mode-panel-wifi" role="tabpanel" aria-labelledby="mode-tab-wifi">
+        <div class="field">
+          <label for="wifi-ssid">网络名称（SSID）</label>
+          <input type="text" id="wifi-ssid" placeholder="我的 WiFi" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="wifi-password">密码</label>
+          <div class="password-wrap">
+            <input type="password" id="wifi-password" placeholder="密码" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button type="button" class="password-toggle" id="wifi-password-toggle" aria-label="显示密码">显示</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:0;">
+          <label for="wifi-encryption">安全性</label>
+          <select id="wifi-encryption">
+            <option value="WPA" selected>WPA / WPA2 / WPA3（最常见）</option>
+            <option value="WEP">WEP（旧版）</option>
+            <option value="nopass">无（开放网络）</option>
+          </select>
+          <label class="toggle" for="wifi-hidden">
+            <input type="checkbox" id="wifi-hidden">
+            隐藏网络
+          </label>
+        </div>
+        <p class="hint">不确定？保持选择 WPA / WPA2 / WPA3 —— 几乎覆盖所有家庭 WiFi 网络。</p>
+      </div>
+
+      <div class="error" id="error-msg"></div>
+
+      <div class="row">
+        <label for="style-select">样式</label>
+        <select id="style-select">
+          <option value="square" selected>方块</option>
+          <option value="liquid">流体</option>
+        </select>
+        <label class="toggle" for="border-toggle">
+          <input type="checkbox" id="border-toggle">
+          边框
+        </label>
+      </div>
+
+      <div class="row">
+        <label for="size-select">尺寸</label>
+        <select id="size-select">
+          <option value="240">小</option>
+          <option value="360" selected>中</option>
+          <option value="520">大</option>
+        </select>
+        <label for="color-input" style="margin-left:auto;">颜色</label>
+        <input type="color" id="color-input" class="color-input" value="#000000">
+      </div>
+
+      <button class="primary" id="generate-btn">生成二维码</button>
+    </div>
+
+    <div class="result-panel">
+      <div class="qr-display" id="qr-display">
+        <canvas id="qr-canvas"></canvas>
+        <div class="qr-url" id="qr-url"></div>
+        <button class="secondary" id="download-btn">下载 PNG</button>
+        <button class="secondary" id="copy-btn">复制图片</button>
+      </div>
+
+      <div class="empty-state" id="empty-state">
+        生成的二维码将显示在这里。
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+<script type="module">
+const urlInput = document.getElementById('url-input');
+const wifiSsidInput = document.getElementById('wifi-ssid');
+const wifiPasswordInput = document.getElementById('wifi-password');
+const wifiEncryptionSelect = document.getElementById('wifi-encryption');
+const wifiHiddenToggle = document.getElementById('wifi-hidden');
+const wifiPasswordToggle = document.getElementById('wifi-password-toggle');
+const modeTabText = document.getElementById('mode-tab-text');
+const modeTabWifi = document.getElementById('mode-tab-wifi');
+const modePanelText = document.getElementById('mode-panel-text');
+const modePanelWifi = document.getElementById('mode-panel-wifi');
+const styleSelect = document.getElementById('style-select');
+const borderToggle = document.getElementById('border-toggle');
+const sizeSelect = document.getElementById('size-select');
+const colorInput = document.getElementById('color-input');
+const generateBtn = document.getElementById('generate-btn');
+const downloadBtn = document.getElementById('download-btn');
+const copyBtn = document.getElementById('copy-btn');
+const qrDisplay = document.getElementById('qr-display');
+const qrCanvas = document.getElementById('qr-canvas');
+const qrUrlEl = document.getElementById('qr-url');
+const emptyState = document.getElementById('empty-state');
+const errorMsg = document.getElementById('error-msg');
+
+let currentValue = '';
+let currentLabel = '';
+let mode = 'text';
+
+function setMode(next) {
+  mode = next;
+  const isWifi = next === 'wifi';
+  modeTabText.classList.toggle('active', !isWifi);
+  modeTabWifi.classList.toggle('active', isWifi);
+  modeTabText.setAttribute('aria-selected', String(!isWifi));
+  modeTabWifi.setAttribute('aria-selected', String(isWifi));
+  modePanelText.classList.toggle('active', !isWifi);
+  modePanelWifi.classList.toggle('active', isWifi);
+  clearError();
+  if (currentValue) generate();
+}
+
+function escapeWifiField(value) {
+  // 根据 WiFi QR 规范，以下字符必须使用反斜杠转义：\ ; , " :
+  return String(value).replace(/([\\;,":])/g, '\\$1');
+}
+
+function buildWifiPayload() {
+  const ssid = wifiSsidInput.value;
+  const password = wifiPasswordInput.value;
+  const encryption = wifiEncryptionSelect.value;
+  const hidden = wifiHiddenToggle.checked;
+  if (!ssid) return null;
+  const parts = [`T:${encryption}`, `S:${escapeWifiField(ssid)}`];
+  if (encryption !== 'nopass') {
+    parts.push(`P:${escapeWifiField(password)}`);
+  }
+  if (hidden) parts.push('H:true');
+  return `WIFI:${parts.join(';')};;`;
+}
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.classList.add('visible');
+}
+
+function clearError() {
+  errorMsg.classList.remove('visible');
+}
+
+function buildMatrix(qr) {
+  const n = qr.getModuleCount();
+  const m = [];
+  for (let r = 0; r < n; r++) {
+    const row = [];
+    for (let c = 0; c < n; c++) row.push(qr.isDark(r, c));
+    m.push(row);
+  }
+  return m;
+}
+
+function isFinderModule(row, col, n) {
+  if (row < 7 && col < 7) return true;
+  if (row < 7 && col >= n - 7) return true;
+  if (row >= n - 7 && col < 7) return true;
+  return false;
+}
+
+function drawFinder(ctx, x, y, s, color) {
+  // x,y = 7x7 定位图案的左上角，s = 单元格尺寸
+  const cx = x + 3.5 * s;
+  const cy = y + 3.5 * s;
+  ctx.fillStyle = color;
+  // 外圈（替代 7x7 轮廓），使用 even-odd 填充
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3.5 * s, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 2.5 * s, 0, Math.PI * 2, true);
+  ctx.fill('evenodd');
+  // 内圆（替代 3x3 中心）
+  ctx.beginPath();
+  ctx.arc(cx, cy, 1.5 * s, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawLiquidCell(ctx, modules, r, c, x, y, s) {
+  const n = modules.length;
+  const get = (rr, cc) => rr >= 0 && rr < n && cc >= 0 && cc < n && modules[rr][cc];
+  const north = get(r - 1, c);
+  const south = get(r + 1, c);
+  const east = get(r, c + 1);
+  const west = get(r, c - 1);
+
+  const rad = s / 2;
+  const tl = (north || west) ? 0 : rad;
+  const tr = (north || east) ? 0 : rad;
+  const br = (south || east) ? 0 : rad;
+  const bl = (south || west) ? 0 : rad;
+
+  ctx.beginPath();
+  ctx.moveTo(x + tl, y);
+  ctx.lineTo(x + s - tr, y);
+  if (tr > 0) ctx.arcTo(x + s, y, x + s, y + tr, tr);
+  ctx.lineTo(x + s, y + s - br);
+  if (br > 0) ctx.arcTo(x + s, y + s, x + s - br, y + s, br);
+  ctx.lineTo(x + bl, y + s);
+  if (bl > 0) ctx.arcTo(x, y + s, x, y + s - bl, bl);
+  ctx.lineTo(x, y + tl);
+  if (tl > 0) ctx.arcTo(x, y, x + tl, y, tl);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// 新增：将 JS 的双字节中文字符串转换为符合 UTF-8 编码的单字节字符串
+function utf16to8(str) {
+  let out = "", i, len, c;
+  len = str.length;
+  for (i = 0; i < len; i++) {
+    c = str.charCodeAt(i);
+    if ((c >= 0x0001) && (c <= 0x007F)) {
+      out += str.charAt(i);
+    } else if (c > 0x07FF) {
+      out += String.fromCharCode(0xE0 | ((c >> 12) & 0x0F));
+      out += String.fromCharCode(0x80 | ((c >>  6) & 0x3F));
+      out += String.fromCharCode(0x80 | ((c >>  0) & 0x3F));
+    } else {
+      out += String.fromCharCode(0xC0 | ((c >>  6) & 0x1F));
+      out += String.fromCharCode(0x80 | ((c >>  0) & 0x3F));
+    }
+  }
+  return out;
+}
+
+function drawQR(value, targetSize, color, style, withBorder) {
+  // 流体样式使用更高的纠错等级，因为风格化可能带来一定损失
+  const qr = qrcode(0, style === 'liquid' ? 'H' : 'M');
+  
+  // 🔴 修改这一行：将原来的 qr.addData(value); 改为下面这样
+  qr.addData(utf16to8(value)); 
+  
+  qr.make();
+
+  const modules = buildMatrix(qr);
+  const moduleCount = modules.length;
+  const margin = 4;
+  const totalModules = moduleCount + margin * 2;
+  const cellSize = Math.max(2, Math.floor(targetSize / totalModules));
+  const actualSize = cellSize * totalModules;
+
+  const dpr = window.devicePixelRatio || 1;
+  qrCanvas.width = actualSize * dpr;
+  qrCanvas.height = actualSize * dpr;
+  qrCanvas.style.width = actualSize + 'px';
+  qrCanvas.style.height = actualSize + 'px';
+
+  const ctx = qrCanvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.imageSmoothingEnabled = true;
+
+  // 背景
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, actualSize, actualSize);
+
+  ctx.fillStyle = color;
+  const offset = margin * cellSize;
+
+  if (style === 'square') {
+    for (let r = 0; r < moduleCount; r++) {
+      for (let c = 0; c < moduleCount; c++) {
+        if (modules[r][c]) {
+          ctx.fillRect(offset + c * cellSize, offset + r * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+  } else {
+    // 流体样式：非定位单元格使用自适应圆角
+    for (let r = 0; r < moduleCount; r++) {
+      for (let c = 0; c < moduleCount; c++) {
+        if (!modules[r][c]) continue;
+        if (isFinderModule(r, c, moduleCount)) continue;
+        drawLiquidCell(
+          ctx, modules, r, c,
+          offset + c * cellSize,
+          offset + r * cellSize,
+          cellSize
+        );
+      }
+    }
+    // 三个定位图案使用同心圆
+    drawFinder(ctx, offset, offset, cellSize, color);
+    drawFinder(ctx, offset + (moduleCount - 7) * cellSize, offset, cellSize, color);
+    drawFinder(ctx, offset, offset + (moduleCount - 7) * cellSize, cellSize, color);
+  }
+
+  // 外圆角边框
+  if (withBorder) {
+    const inset = cellSize * 1.2;
+    const borderThickness = Math.max(2, cellSize * 0.55);
+    const cornerRadius = cellSize * 2.2;
+    const bx = inset;
+    const by = inset;
+    const bw = actualSize - inset * 2;
+    const bh = actualSize - inset * 2;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = borderThickness;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(bx + cornerRadius, by);
+    ctx.lineTo(bx + bw - cornerRadius, by);
+    ctx.arcTo(bx + bw, by, bx + bw, by + cornerRadius, cornerRadius);
+    ctx.lineTo(bx + bw, by + bh - cornerRadius);
+    ctx.arcTo(bx + bw, by + bh, bx + bw - cornerRadius, by + bh, cornerRadius);
+    ctx.lineTo(bx + cornerRadius, by + bh);
+    ctx.arcTo(bx, by + bh, bx, by + bh - cornerRadius, cornerRadius);
+    ctx.lineTo(bx, by + cornerRadius);
+    ctx.arcTo(bx, by, bx + cornerRadius, by, cornerRadius);
+    ctx.closePath();
+    ctx.stroke();
+  }
+}
+
+function generate() {
+  let value;
+  let label;
+  if (mode === 'wifi') {
+    if (!wifiSsidInput.value) {
+      showError('请输入网络名称（SSID）。');
+      return;
+    }
+    value = buildWifiPayload();
+    label = `WiFi: ${wifiSsidInput.value}`;
+  } else {
+    value = urlInput.value.trim();
+    if (!value) {
+      showError('请输入网址或文本。');
+      return;
+    }
+    label = value;
+  }
+  clearError();
+  try {
+    const size = parseInt(sizeSelect.value, 10);
+    const color = colorInput.value;
+    const style = styleSelect.value;
+    const withBorder = borderToggle.checked;
+    drawQR(value, size, color, style, withBorder);
+    currentValue = value;
+    currentLabel = label;
+    qrUrlEl.textContent = label;
+    qrDisplay.classList.add('visible');
+    emptyState.style.display = 'none';
+  } catch (err) {
+    showError('无法生成二维码，文本可能过长。');
+    console.error(err);
+  }
+}
+
+function downloadPNG() {
+  if (!currentValue) return;
+  const link = document.createElement('a');
+  link.download = 'qrcode.png';
+  link.href = qrCanvas.toDataURL('image/png');
+  link.click();
+}
+
+async function copyImage() {
+  if (!currentValue) return;
+  try {
+    const blob = await new Promise(resolve => qrCanvas.toBlob(resolve, 'image/png'));
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      copyBtn.textContent = '已复制！';
+      setTimeout(() => { copyBtn.textContent = '复制图片'; }, 1500);
+    } else {
+      copyBtn.textContent = '不支持';
+      setTimeout(() => { copyBtn.textContent = '复制图片'; }, 1500);
+    }
+  } catch (err) {
+    copyBtn.textContent = '复制失败';
+    setTimeout(() => { copyBtn.textContent = '复制图片'; }, 1500);
+  }
+}
+
+generateBtn.addEventListener('click', generate);
+downloadBtn.addEventListener('click', downloadPNG);
+copyBtn.addEventListener('click', copyImage);
+
+modeTabText.addEventListener('click', () => setMode('text'));
+modeTabWifi.addEventListener('click', () => setMode('wifi'));
+
+wifiPasswordToggle.addEventListener('click', () => {
+  const showing = wifiPasswordInput.type === 'text';
+  wifiPasswordInput.type = showing ? 'password' : 'text';
+  wifiPasswordToggle.textContent = showing ? '显示' : '隐藏';
+  wifiPasswordToggle.setAttribute('aria-label', showing ? '显示密码' : '隐藏密码');
+});
+
+[urlInput, wifiSsidInput, wifiPasswordInput].forEach(el => {
+  el.addEventListener('keydown', (e) => {
+    const isTextarea = el.tagName === 'TEXTAREA';
+    const shouldSubmit = isTextarea
+      ? (e.key === 'Enter' && (e.ctrlKey || e.metaKey))
+      : e.key === 'Enter';
+    if (shouldSubmit) {
+      e.preventDefault();
+      generate();
+    }
+  });
+  el.addEventListener('input', () => {
+    if (errorMsg.classList.contains('visible')) clearError();
+  });
+});
+
+// 首次生成后实时更新
+[styleSelect, sizeSelect, borderToggle, wifiEncryptionSelect, wifiHiddenToggle].forEach(el => {
+  el.addEventListener('change', () => { if (currentValue) generate(); });
+});
+[colorInput, urlInput, wifiSsidInput, wifiPasswordInput].forEach(el => {
+  el.addEventListener('input', () => { if (currentValue) generate(); });
+});
+</script>
+
+</body>
+</html>
