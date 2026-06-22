@@ -1,0 +1,134 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE_TITLE } from '../consts';
+import DayGroup from './DayGroup.astro';
+import Pagination from './Pagination.astro';
+import StreamSidebar from './StreamSidebar.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  pageTitle: string;
+  countLabel: string;
+  emptyMessage: string;
+  type: string;
+  dayGroups: Map<string, CollectionEntry<'posts'>[]>;
+  sortedDays: string[];
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+  recentContent: Array<{ id: string; title: string; date: Date | string }>;
+  recentTags: Array<[string, number]>;
+  totalPosts: number;
+  needsKatex?: boolean;
+}
+
+const {
+  title,
+  description,
+  pageTitle,
+  countLabel,
+  emptyMessage,
+  type,
+  dayGroups,
+  sortedDays,
+  currentPage,
+  totalPages,
+  baseUrl,
+  recentContent,
+  recentTags,
+  totalPosts,
+  needsKatex = false,
+} = Astro.props;
+
+const pageTitleText = currentPage > 1 ? `${pageTitle} - 第 ${currentPage} 页` : pageTitle;
+---
+
+<BaseLayout
+  title={`${pageTitleText} - ${SITE_TITLE}`}
+  description={description}
+  canonical={Astro.url.toString()}
+  showChat={false}
+  needsKatex={needsKatex}
+>
+  <section class="pt-10 pb-6 px-8">
+    <div class="max-w-grid mx-auto">
+      <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+        <!-- Main Stream -->
+        <div class="flex-1 min-w-0">
+          <!-- Search Bar -->
+          <div class="mb-4">
+            <div class="relative max-w-[560px]">
+              <input
+                type="text"
+                id="searchInput"
+                placeholder={`在${pageTitle}中搜索...`}
+                class="w-full py-2 pl-10 pr-3 text-sm border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans rounded-md focus:border-[var(--text-primary)] focus:bg-[var(--white)]"
+              />
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.3-4.3"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div
+            id="postsContainer"
+            class="stream-container"
+            data-type-filter={type}
+            data-type-total={totalPosts}
+          >
+            {sortedDays.map((dayKey, dayIndex) => {
+              const dayPosts = dayGroups.get(dayKey) || [];
+              const entryStartIndex = sortedDays
+                .slice(0, dayIndex)
+                .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
+              return (
+                <DayGroup
+                  date={new Date(dayKey + 'T00:00:00')}
+                  posts={dayPosts}
+                  startIndex={entryStartIndex}
+                />
+              );
+            })}
+          </div>
+
+          <!-- No Results Message -->
+          <div id="noResults" class="hidden text-center py-16 px-8">
+            <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
+              没有找到匹配的文章
+            </p>
+          </div>
+
+          {sortedDays.length === 0 && (
+            <div class="text-center py-16 px-8">
+              <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
+                {emptyMessage}
+              </p>
+            </div>
+          )}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            baseUrl={baseUrl}
+          />
+        </div>
+
+        <!-- Sidebar -->
+        <StreamSidebar
+          totalPosts={totalPosts}
+          recentTags={recentTags}
+          recentContent={recentContent}
+          randomContent={[]}
+          recentTools={[]}
+        />
+      </div>
+    </div>
+  </section>
+
+  <script src="../scripts/search.ts"></script>
+</BaseLayout>
