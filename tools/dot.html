@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线 DOT 文件渲染器，支持实时预览 Graphviz 有向图/无向图，可通过 URL 分享图形代码。">
+  <meta name="keywords" content="DOT, Graphviz, 图形渲染器, 有向图, 无向图, 流程图, 在线工具">
+  <meta property="og:title" content="DOT 文件渲染器">
+  <meta property="og:description" content="在线 DOT 文件渲染器，支持实时预览 Graphviz 图形并通过 URL 分享。">
+  <meta property="og:type" content="website">
+  <title>DOT 文件渲染器</title>
+  <style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+.container {
+  max-width: 1200px;
+  height: 100%;
+  margin: 0 auto;
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 28px;
+}
+
+.input-section {
+  margin-bottom: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 180px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+
+
+.output-section {
+  margin-top: 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+
+#output {
+  flex: 1;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  padding: 20px;
+  min-height: 180px;
+  background: #fafafa;
+  overflow: auto;
+}
+
+#output svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.error {
+  color: #d32f2f;
+  background: #ffebee;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 4px solid #d32f2f;
+}
+
+.example-link {
+  color: #4a90e2;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+.example-link:hover {
+  color: #357abd;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DOT 文件渲染器</h1>
+
+    <div class="input-section">
+      <label for="dotInput">
+        在此粘贴您的 .dot 文件内容
+        <span class="example-link" id="loadExample">加载示例</span>
+      </label>
+      <textarea id="dotInput" placeholder="digraph G {&#10;  A -> B;&#10;  B -> C;&#10;}"></textarea>
+    </div>
+
+    <div class="output-section">
+      <label>输出</label>
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "@viz-js/viz": "https://cdn.jsdelivr.net/npm/@viz-js/viz@3.9.0/+esm"
+    }
+  }
+  </script>
+
+  <script type="module">
+import { instance } from '@viz-js/viz';
+
+const dotInput = document.getElementById('dotInput');
+const output = document.getElementById('output');
+const loadExample = document.getElementById('loadExample');
+
+let viz = null;
+let renderTimeout = null;
+
+// 初始化 Viz.js
+instance().then(v => {
+  viz = v;
+  console.log('Viz.js 加载成功');
+
+  // 页面加载时从 URL 片段恢复
+  loadFromURL();
+});
+
+// 示例 DOT 文件
+const exampleDot = `digraph G {
+  rankdir=LR;
+  node [shape=box, style=rounded];
+
+  Start [shape=circle, style=filled, fillcolor=lightgreen];
+  End [shape=doublecircle, style=filled, fillcolor=lightcoral];
+
+  Start -> Process1 [label="输入"];
+  Process1 -> Decision [label="数据"];
+  Decision -> Process2 [label="是"];
+  Decision -> Process3 [label="否"];
+  Process2 -> End;
+  Process3 -> End;
+
+  Process1 [label="处理\n数据"];
+  Decision [shape=diamond, label="是否有效？"];
+  Process2 [label="接受"];
+  Process3 [label="拒绝"];
+}`;
+
+// 加载示例
+loadExample.addEventListener('click', () => {
+  dotInput.value = exampleDot;
+  updateURL();
+  renderGraph();
+});
+
+// 从 URL 片段加载
+function loadFromURL() {
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    try {
+      const decoded = decodeURIComponent(hash);
+      dotInput.value = decoded;
+      renderGraph();
+    } catch (error) {
+      console.error('无法从 URL 加载：', error);
+    }
+  }
+}
+
+// 更新 URL 片段
+function updateURL() {
+  const dotContent = dotInput.value.trim();
+  if (dotContent) {
+    const encoded = encodeURIComponent(dotContent);
+    window.history.replaceState(null, '', '#' + encoded);
+  } else {
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+}
+
+// 渲染图形
+async function renderGraph() {
+  const dotContent = dotInput.value.trim();
+
+  if (!dotContent) {
+    output.innerHTML = '';
+    return;
+  }
+
+  if (!viz) {
+    output.innerHTML = '<div class="error">Viz.js 正在加载中，请稍候...</div>';
+    return;
+  }
+
+  try {
+    output.innerHTML = '<div style="color: #666;">正在渲染...</div>';
+    const svg = await viz.renderSVGElement(dotContent);
+    output.innerHTML = '';
+    output.appendChild(svg);
+  } catch (error) {
+    output.innerHTML = `<div class="error"><strong>错误：</strong>${error.message}</div>`;
+  }
+}
+
+// 输入时自动渲染，带防抖
+dotInput.addEventListener('input', () => {
+  clearTimeout(renderTimeout);
+  renderTimeout = setTimeout(() => {
+    updateURL();
+    renderGraph();
+  }, 500);
+});
+
+// 处理浏览器前进/后退
+window.addEventListener('hashchange', () => {
+  loadFromURL();
+});
+  </script>
+</body>
+</html>
