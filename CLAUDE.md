@@ -170,3 +170,18 @@ Each post uses frontmatter with these fields:
 - Canonical URL: https://wangjunjian.com
 - Markdown options: GitHub Flavored Markdown enabled, smartypants enabled
 - Syntax highlighting theme: github-dark
+
+## 9. HTML 工具页面规范
+
+`tools/*.html` 下的独立 HTML 工具页面需遵循以下规范：
+
+- `<html lang="zh-CN">`
+- `<title>` 使用中文
+- 页面可见文本、按钮、提示、示例数据均使用中文
+- `<head>` 必须包含以下元数据：
+  - `<meta charset="UTF-8">`
+  - `<meta name="viewport" content="width=device-width, initial-scale=1.0">`
+  - `<meta name="description" content="...">`（中文描述）
+  - `<meta name="keywords" content="...">`（中文关键词，可保留必要的英文术语）
+  - `<meta name="author" content="军舰">`
+  - `<meta name="date" content="YYYY-MM-DD">`（当前日期）
