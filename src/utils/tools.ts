@@ -9,6 +9,7 @@ export interface ToolMeta {
   excerpt?: string;
   tags: string[];
   date?: string;
+  author?: string;
 }
 
 function metaContent(raw: string, name: string): string | undefined {
@@ -40,6 +41,7 @@ export function getTools(baseDir = process.cwd()): ToolMeta[] {
               .filter(Boolean)
           : [];
         const date = metaContent(raw, 'date');
+        const author = metaContent(raw, 'author');
 
         return {
           file,
@@ -47,6 +49,7 @@ export function getTools(baseDir = process.cwd()): ToolMeta[] {
           excerpt,
           tags,
           date,
+          author,
         };
       })
       .sort((a, b) => {

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线 SVG 渲染工具，支持粘贴 SVG 代码或从 URL 加载 SVG 文件并实时预览。">
+  <meta name="keywords" content="SVG, SVG 渲染器, SVG 预览, 在线工具">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-22">
+  <title>SVG 渲染器</title>
+  <style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  background: #fafafa;
+  color: #1a1a1a;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.editor-pane {
+  border-right: 1px solid #e2e2e2;
+}
+
+.pane-header {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  border-bottom: 1px solid #e2e2e2;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.source-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.source-tabs button {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid #e2e2e2;
+  background: #f6f6f6;
+  color: #888;
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.source-tabs button.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.url-bar {
+  display: none;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e2e2;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.url-bar.active { display: flex; }
+
+#url-input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  outline: none;
+}
+
+#url-input:focus { border-color: #2563eb; }
+
+#url-load {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#url-status {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #888;
+  border-bottom: 1px solid #e2e2e2;
+  background: #fff;
+  display: none;
+  flex-shrink: 0;
+}
+
+#url-status.active { display: block; }
+#url-status.error { color: #dc2626; }
+
+#input {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 16px;
+  font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  background: #fff;
+}
+
+#output {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#svg-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border: 0;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.empty-tip {
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .editor-pane { border-right: none; border-bottom: 1px solid #e2e2e2; }
+}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="pane editor-pane">
+      <div class="pane-header">
+        <span class="source-tabs">
+          <button id="tab-paste" class="active" type="button">粘贴</button>
+          <button id="tab-url" type="button">URL</button>
+        </span>
+      </div>
+      <div class="url-bar" id="url-bar">
+        <input id="url-input" type="url" spellcheck="false"
+          placeholder="https://example.com/image.svg">
+        <button id="url-load" type="button">加载</button>
+      </div>
+      <div id="url-status"></div>
+      <textarea id="input" spellcheck="false"
+        placeholder="&lt;svg viewBox=&quot;0 0 100 100&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;&#10;  &lt;circle cx=&quot;50&quot; cy=&quot;50&quot; r=&quot;40&quot; fill=&quot;#2563eb&quot;/&gt;&#10;&lt;/svg&gt;"></textarea>
+    </div>
+    <div class="pane preview-pane">
+      <div class="pane-header">预览</div>
+      <div id="output">
+        <div class="empty-tip">在左侧粘贴 SVG 代码或从 URL 加载以预览</div>
+      </div>
+    </div>
+  </div>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/dompurify@3.3.3/dist/purify.min.js"
+    integrity="sha384-pcBjnGbkyKeOXaoFkmJiuR9E08/6gkmus6/Strimnxtl3uk0Hx23v345pWyC/MMr"
+    crossorigin="anonymous"></script>
+
+  <script type="module">
+const svgSanitizeConfig = {
+  USE_PROFILES: { svg: true },
+  FORBID_ATTR: ["href", "xlink:href", "src", "style"],
+  FORBID_TAGS: [
+    "animate", "animateMotion", "animatemotion", "animateTransform",
+    "animatetransform", "audio", "embed", "foreignObject", "foreignobject",
+    "iframe", "image", "link", "object", "script", "set", "style", "use", "video"
+  ]
+};
+
+function wrapSvg(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  return "```svg\n" + trimmed + "\n```";
+}
+
+function svgPreviewDocument(svg) {
+  const ratio = svgAspectRatio(svg);
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+svg {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: auto;
+  aspect-ratio: ${ratio};
+}
+</style>
+</head>
+<body>${svg}${"</" + "body>"}
+${"</" + "html>"}`;
+}
+
+function svgAspectRatio(svg) {
+  let ratio = "1 / 1";
+  const m = svg.match(/viewBox\s*=\s*["']([\d.\s-]+)["']/i);
+  if (m) {
+    const parts = m[1].trim().split(/\s+/).map(Number);
+    if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+      ratio = `${parts[2]} / ${parts[3]}`;
+    }
+  } else {
+    const w = svg.match(/\bwidth\s*=\s*["']?([\d.]+)/i);
+    const h = svg.match(/\bheight\s*=\s*["']?([\d.]+)/i);
+    if (w && h && +h[1] > 0) ratio = `${+w[1]} / ${+h[1]}`;
+  }
+  return ratio;
+}
+
+function renderSvg(svgCode) {
+  const sanitized = window.DOMPurify.sanitize(svgCode, svgSanitizeConfig).trim();
+  if (!sanitized) {
+    output.innerHTML = '<div class="empty-tip">SVG 内容为空或无效</div>';
+    return;
+  }
+
+  const frame = document.createElement("iframe");
+  frame.id = "svg-frame";
+  frame.title = "SVG 预览";
+  frame.sandbox = "";
+  frame.referrerPolicy = "no-referrer";
+  frame.srcdoc = svgPreviewDocument(sanitized);
+  output.innerHTML = "";
+  output.appendChild(frame);
+}
+
+function update() {
+  const raw = input.value.trim();
+  if (!raw) {
+    output.innerHTML = '<div class="empty-tip">在左侧粘贴 SVG 代码或从 URL 加载以预览</div>';
+    return;
+  }
+  // 内部统一包装为 ```svg\n...\n``` 格式，便于分享或复制
+  input.dataset.wrapped = wrapSvg(raw);
+  renderSvg(raw);
+}
+
+function setMode(mode) {
+  const isUrl = mode === "url";
+  tabUrl.classList.toggle("active", isUrl);
+  tabPaste.classList.toggle("active", !isUrl);
+  urlBar.classList.toggle("active", isUrl);
+  input.readOnly = isUrl;
+  input.style.background = isUrl ? "#f9f9f9" : "#fff";
+}
+
+function setStatus(msg, isError) {
+  if (!msg) {
+    urlStatus.classList.remove("active", "error");
+    urlStatus.textContent = "";
+    return;
+  }
+  urlStatus.textContent = msg;
+  urlStatus.classList.add("active");
+  urlStatus.classList.toggle("error", !!isError);
+}
+
+function normalizeSourceUrl(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(rawUrl.trim());
+  } catch {
+    throw new Error("请输入有效的 URL");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("仅支持 http 和 https URL");
+  }
+  return parsed.href;
+}
+
+async function fetchSvg(url) {
+  const sourceUrl = normalizeSourceUrl(url);
+  const res = await fetch(sourceUrl);
+  if (!res.ok) throw new Error(`请求返回 ${res.status}`);
+  return await res.text();
+}
+
+async function loadFromUrl(url, recordHash) {
+  setMode("url");
+  urlInput.value = url;
+  setStatus("加载中…");
+  try {
+    const text = await fetchSvg(url);
+    input.value = text;
+    // 内部包装为 svg 代码块
+    input.dataset.wrapped = wrapSvg(text);
+    renderSvg(text);
+    setStatus("");
+    if (recordHash) {
+      const newHash = "#url=" + encodeURIComponent(url);
+      if (location.hash !== newHash) {
+        history.pushState({ url }, "", newHash);
+      }
+    }
+  } catch (err) {
+    setStatus("错误：" + err.message, true);
+  }
+}
+
+const input = document.getElementById("input");
+const output = document.getElementById("output");
+const tabPaste = document.getElementById("tab-paste");
+const tabUrl = document.getElementById("tab-url");
+const urlBar = document.getElementById("url-bar");
+const urlInput = document.getElementById("url-input");
+const urlLoad = document.getElementById("url-load");
+const urlStatus = document.getElementById("url-status");
+
+input.addEventListener("input", update);
+
+tabPaste.addEventListener("click", () => {
+  setMode("paste");
+  input.readOnly = false;
+  input.style.background = "#fff";
+  if (location.hash) history.pushState("", document.title, location.pathname + location.search);
+});
+
+tabUrl.addEventListener("click", () => setMode("url"));
+
+urlLoad.addEventListener("click", () => {
+  const url = urlInput.value.trim();
+  if (url) loadFromUrl(url, true);
+});
+
+urlInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    urlLoad.click();
+  }
+});
+
+function urlFromHash() {
+  const m = /^#url=(.+)$/.exec(location.hash);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+window.addEventListener("popstate", () => {
+  const url = urlFromHash();
+  if (url) {
+    loadFromUrl(url, false);
+  }
+});
+
+const sample = `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="200" height="120" fill="#2563eb"/>
+  <circle cx="100" cy="60" r="40" fill="#fbbf24"/>
+  <text x="100" y="66" text-anchor="middle" font-family="Helvetica" font-size="18" fill="#1a1a1a">SVG</text>
+</svg>`;
+
+const startupUrl = urlFromHash();
+if (startupUrl) {
+  loadFromUrl(startupUrl, false);
+} else {
+  input.value = sample;
+  update();
+}
+  </script>
+</body>
+</html>
