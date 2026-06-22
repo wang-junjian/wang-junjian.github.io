@@ -39,9 +39,9 @@ export const GET: APIRoute = async () => {
 
   content += `## 导航\n\n`;
   content += `- [首页](${SITE_URL}/)\n`;
-  content += `- [标签](${SITE_URL}/tags)\n`;
-  content += `- [幻灯片](${SITE_URL}/slides)\n`;
-  content += `- [关于](${SITE_URL}/about)\n\n`;
+  content += `- [标签](${SITE_URL}/tags/)\n`;
+  content += `- [幻灯片](${SITE_URL}/slides/)\n`;
+  content += `- [关于](${SITE_URL}/about/)\n\n`;
 
   content += `## 文章\n\n`;
   for (const post of sortedPosts) {
