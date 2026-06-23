@@ -1,7 +1,7 @@
 ---
 type: release
 title: "剪贴板备份：浏览器本地剪贴板历史管理工具"
-date: 2026-06-23 23:35:00 +0800
+date: 2026-06-22 23:35:00 +0800
 tags: [tool, clipboard, backup, browser, indexeddb, local-storage]
 linkUrl: https://wangjunjian.com/tools/clipboard-backup.html
 ---
