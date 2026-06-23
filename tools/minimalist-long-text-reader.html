@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="极简长文朗读器是一款支持中文与英文的在线文本朗读工具，可自动分段、高亮当前朗读句子并调节语速。">
+    <meta name="keywords" content="朗读器, 文本朗读, 语音合成, TTS, 中文朗读, 英文朗读, 在线工具, Gemini 3.5 Flash">
+    <meta name="author" content="军舰">
+    <meta name="date" content="2026-06-23">
+    <title>极简长文朗读器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 正在朗读的句子的视觉高亮效果 */
+        .speaking-chunk {
+            transition: all 0.2s ease;
+        }
+        .speaking-chunk.active {
+            background-color: #fef08a; /* Tailwind yellow-200 */
+            color: #000000;
+            font-weight: 600;
+            border-radius: 0.25rem;
+            padding: 0 4px;
+        }
+        /* 隐藏滚动条但保持滚动功能，让界面更干净 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col antialiased overflow-hidden">
+
+    <header class="bg-white border-b border-slate-200 h-14 flex items-center shrink-0 shadow-sm z-10">
+        <div class="w-full px-6 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <button id="btn-play" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded-lg font-medium text-sm shadow-sm transition flex items-center gap-1">
+                    <span>▶ 播放</span>
+                </button>
+                <button id="btn-pause" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-1.5 rounded-lg font-medium text-sm transition hidden">
+                    <span>⏸ 暂停</span>
+                </button>
+                <button id="btn-stop" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-1.5 rounded-lg font-medium text-sm transition">
+                    <span>⏹ 停止</span>
+                </button>
+                <button id="btn-demo" class="text-xs text-blue-600 hover:underline ml-2">加载内置范例</button>
+            </div>
+
+            <div class="flex items-center gap-6 text-sm text-slate-600">
+                <div class="flex items-center gap-1.5">
+                    <label for="select-voice" class="shrink-0">声音:</label>
+                    <select id="select-voice" class="border border-slate-300 rounded-md px-2 py-1 bg-white max-w-[200px] text-xs focus:outline-none">
+                        <option value="">加载声音中...</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <label for="input-rate" class="shrink-0">语速: <span id="val-rate">1.0</span>x</label>
+                    <input type="range" id="input-rate" min="0.5" max="2" step="0.1" value="1.0" class="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label for="select-lang" class="shrink-0">语种:</label>
+                    <select id="select-lang" class="border border-slate-300 rounded-md px-2 py-1 bg-white text-xs focus:outline-none">
+                        <option value="auto">智能识别</option>
+                        <option value="zh-CN">中文小说</option>
+                        <option value="en-US">英文范文</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col md:flex-row h-[calc(100vh-56px)] w-full overflow-hidden">
+        
+        <section class="flex-1 h-full border-r border-slate-200">
+            <textarea id="text-input" class="w-full h-full p-6 outline-none resize-none bg-white font-sans leading-relaxed text-slate-700 text-base" placeholder="在此处粘贴或输入长文、小说章节... 右侧将实时同步。"></textarea>
+        </section>
+
+        <section id="reader-board" class="flex-1 h-full p-6 bg-slate-50 overflow-y-auto no-scrollbar leading-loose text-lg tracking-wide selection:bg-blue-100">
+            </section>
+
+    </main>
+
+    <script>
+        class StreamlineReader {
+            constructor() {
+                this.synth = window.speechSynthesis;
+                this.chunks = [];
+                this.currentIndex = 0;
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.currentUtterance = null;
+                this.utteranceGeneration = 0;
+                this.keepAliveInterval = null;
+
+                this.initDOM();
+                this.initSpeechVoices();
+                this.bindEvents();
+            }
+
+            initDOM() {
+                this.dom = {
+                    input: document.getElementById('text-input'),
+                    board: document.getElementById('reader-board'),
+                    btnPlay: document.getElementById('btn-play'),
+                    btnPause: document.getElementById('btn-pause'),
+                    btnStop: document.getElementById('btn-stop'),
+                    btnDemo: document.getElementById('btn-demo'),
+                    selectVoice: document.getElementById('select-voice'),
+                    selectLang: document.getElementById('select-lang'),
+                    inputRate: document.getElementById('input-rate'),
+                    valRate: document.getElementById('val-rate')
+                };
+            }
+
+            initSpeechVoices() {
+                const loadVoices = () => {
+                    const voices = this.synth.getVoices();
+                    this.dom.selectVoice.innerHTML = '';
+                    const filtered = voices.filter(v => v.lang.includes('zh') || v.lang.includes('en'));
+                    
+                    if(filtered.length === 0) {
+                        this.dom.selectVoice.innerHTML = `<option value="">无可用发音人</option>`;
+                        return;
+                    }
+
+                    filtered.forEach(voice => {
+                        const option = document.createElement('option');
+                        option.value = voice.name;
+                        option.textContent = `${voice.name} (${voice.lang})`;
+                        this.dom.selectVoice.appendChild(option);
+                    });
+                };
+
+                loadVoices();
+                if (this.synth.onvoiceschanged !== undefined) {
+                    this.synth.onvoiceschanged = loadVoices;
+                }
+            }
+
+            bindEvents() {
+                // 🔥 核心改动：监听 input 事件，实现实时解析同步
+                this.dom.input.addEventListener('input', () => this.liveCompile());
+                
+                this.dom.btnPlay.addEventListener('click', () => this.startPlay());
+                this.dom.btnPause.addEventListener('click', () => this.pausePlay());
+                this.dom.btnStop.addEventListener('click', () => this.stopPlay());
+                this.dom.btnDemo.addEventListener('click', () => this.loadDemoText());
+                
+                this.dom.inputRate.addEventListener('input', (e) => {
+                    this.dom.valRate.textContent = e.target.value;
+                    if (this.isPlaying && !this.isPaused) {
+                        this.speakCurrentChunk();
+                    }
+                });
+                this.dom.selectLang.addEventListener('change', () => this.liveCompile());
+            }
+
+            // 🔥 实时响应式解析机制
+            liveCompile() {
+                const rawText = this.dom.input.value.trim();
+                if (!rawText) {
+                    this.chunks = [];
+                    this.dom.board.innerHTML = '';
+                    this.stopPlay();
+                    return;
+                }
+
+                // 获取或自动识别语种
+                let lang = this.dom.selectLang.value;
+                if (lang === 'auto') {
+                    lang = /[\u4e00-\u9fa5]/.test(rawText) ? 'zh-CN' : 'en-US';
+                }
+
+                // 规则切分
+                const regex = lang.startsWith('zh') 
+                    ? /([^。！？；\n\r]+[。！？；\n\r]*)/g 
+                    : /([^.!?;\n\r]+[.!?;\n\r]*)/g;
+                
+                const matches = rawText.match(regex) || [rawText];
+                const newChunks = matches.map(c => c.trim()).filter(c => c.length > 0);
+
+                // 优化：只有当文本块内容真正发生改变时才重新渲染 DOM，防止输入时频繁闪烁
+                if (JSON.stringify(this.chunks) !== JSON.stringify(newChunks)) {
+                    this.chunks = newChunks;
+                    
+                    // 如果正在播放，修改文本会重置当前播放指针（安全策略）
+                    if (this.isPlaying) {
+                        this.stopPlay();
+                    }
+
+                    this.dom.board.innerHTML = '';
+                    this.chunks.forEach((chunk, index) => {
+                        const span = document.createElement('span');
+                        span.id = `chunk-${index}`;
+                        span.className = 'speaking-chunk block mb-3 cursor-pointer hover:bg-slate-200/60 rounded px-1.5 py-0.5';
+                        span.textContent = chunk;
+                        span.addEventListener('click', () => this.jumpTo(index));
+                        this.dom.board.appendChild(span);
+                    });
+                }
+            }
+
+            startPlay() {
+                if (this.chunks.length === 0) return;
+
+                if (this.isPaused) {
+                    this.synth.resume();
+                    this.isPaused = false;
+                    this.togglePlayUI(true);
+                    return;
+                }
+
+                this.isPlaying = true;
+                this.isPaused = false;
+                this.togglePlayUI(true);
+                this.startKeepAlive();
+                this.speakCurrentChunk();
+            }
+
+            speakCurrentChunk() {
+                if (this.currentIndex >= this.chunks.length) {
+                    this.stopPlay();
+                    return;
+                }
+
+                // 提升 generation，确保旧 utterance 因 cancel 产生的异步 error/end 事件不会干扰当前播放
+                this.utteranceGeneration++;
+                this.synth.cancel();
+
+                const text = this.chunks[this.currentIndex];
+                this.currentUtterance = new SpeechSynthesisUtterance(text);
+                this.currentUtterance.__generation = this.utteranceGeneration;
+                this.currentUtterance.rate = parseFloat(this.dom.inputRate.value);
+
+                const selectedVoiceName = this.dom.selectVoice.value;
+                if (selectedVoiceName) {
+                    const voice = this.synth.getVoices().find(v => v.name === selectedVoiceName);
+                    if (voice) this.currentUtterance.voice = voice;
+                }
+
+                this.currentUtterance.onstart = (e) => {
+                    if (e.utterance && e.utterance.__generation !== this.utteranceGeneration) return;
+                    this.highlightChunk(this.currentIndex);
+                };
+
+                this.currentUtterance.onend = (e) => {
+                    if (e.utterance && e.utterance.__generation !== this.utteranceGeneration) return;
+                    if (this.isPlaying && !this.isPaused) {
+                        this.currentIndex++;
+                        this.speakCurrentChunk();
+                    }
+                };
+
+                this.currentUtterance.onerror = (e) => {
+                    if (e.utterance && e.utterance.__generation !== this.utteranceGeneration) return;
+                    // 浏览器主动 cancel/interrupt 时不再自动跳到下一段，避免“点这里读下一段”的错乱
+                    if (e.error === 'canceled' || e.error === 'interrupted') {
+                        if (this.isPlaying) this.stopPlay();
+                        return;
+                    }
+                    if (this.isPlaying) {
+                        this.currentIndex++;
+                        this.speakCurrentChunk();
+                    }
+                };
+
+                this.synth.speak(this.currentUtterance);
+            }
+
+            pausePlay() {
+                if (this.isPlaying && !this.isPaused) {
+                    this.synth.pause();
+                    this.isPaused = true;
+                    this.togglePlayUI(false);
+                }
+            }
+
+            stopPlay() {
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.synth.cancel();
+                this.stopKeepAlive();
+                this.togglePlayUI(false);
+                this.clearAllHighlights();
+            }
+
+            jumpTo(index) {
+                this.currentIndex = index;
+                this.isPaused = false;
+                this.isPlaying = true;
+                this.togglePlayUI(true);
+                this.startKeepAlive();
+                this.speakCurrentChunk();
+            }
+
+            highlightChunk(index) {
+                this.clearAllHighlights();
+                const activeSpan = document.getElementById(`chunk-${index}`);
+                if (activeSpan) {
+                    activeSpan.classList.add('active');
+                    activeSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            clearAllHighlights() {
+                const elements = this.dom.board.querySelectorAll('.speaking-chunk');
+                elements.forEach(el => el.classList.remove('active'));
+            }
+
+            togglePlayUI(isPlayState) {
+                if (isPlayState) {
+                    this.dom.btnPlay.classList.add('hidden');
+                    this.dom.btnPause.classList.remove('hidden');
+                } else {
+                    this.dom.btnPlay.classList.remove('hidden');
+                    this.dom.btnPause.classList.add('hidden');
+                }
+            }
+
+            startKeepAlive() {
+                this.stopKeepAlive();
+                this.keepAliveInterval = setInterval(() => {
+                    if (this.synth.speaking && !this.synth.paused) {
+                        this.synth.pause();
+                        this.synth.resume();
+                    }
+                }, 10000);
+            }
+
+            stopKeepAlive() {
+                if (this.keepAliveInterval) {
+                    clearInterval(this.keepAliveInterval);
+                    this.keepAliveInterval = null;
+                }
+            }
+
+            loadDemoText() {
+                const demo = `【中文小说范例】\n林冲听了，心头火起，大步流星赶往草料场。漫天大雪纷纷扬扬地落下，将天地间染成一片白茫茫。此时的草料场早已燃起熊熊烈火，火光冲天，映红了半边天空。\n\n【English Essay Example】\nSuccess is not final, failure is not fatal: it is the courage to continue that counts. The real test of character is not how we behave in moments of comfort, but how we stand at times of trial and adversity.`;
+                this.dom.input.value = demo;
+                this.liveCompile();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            window.readerApp = new StreamlineReader();
+        });
+    </script>
+</body>
+</html>
