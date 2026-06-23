@@ -1,7 +1,7 @@
 ---
 type: release
 title: "坦克大战：纯前端经典坦克射击游戏"
-date: 2026-06-23 23:35:00 +0800
+date: 2026-06-21 16:28:00 +0800
 tags: [tool, game, tank-battle, browser, canvas]
 linkUrl: https://wangjunjian.com/tools/tank-game.html
 ---

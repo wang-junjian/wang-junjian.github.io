@@ -1,7 +1,7 @@
 ---
 type: release
 title: "SVG 渲染器：在线 SVG 实时预览工具"
-date: 2026-06-23 23:35:00 +0800
+date: 2026-06-22 23:24:00 +0800
 tags: [tool, svg, renderer, preview, browser, graphics]
 linkUrl: https://wangjunjian.com/tools/svg-renderer.html
 ---

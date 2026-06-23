@@ -1,7 +1,7 @@
 ---
 type: release
 title: "高中英语词汇速记：卡片式背单词与复习工具"
-date: 2026-06-23 23:35:00 +0800
+date: 2026-06-22 18:49:00 +0800
 tags: [tool, english, vocabulary, education, flashcards, browser, memory]
 linkUrl: https://wangjunjian.com/tools/word-memory.html
 ---
