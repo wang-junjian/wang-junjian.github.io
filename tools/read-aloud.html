@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Read Aloud 是一款基于浏览器 Web Speech API 的本地长文朗读器，支持中英文自动分句、点击跳转播放、当前句高亮与语速调节。">
+  <meta name="keywords" content="朗读器, 文本朗读, 语音合成, TTS, 中文朗读, 英文朗读, 在线工具, Kimi K2.7 Code">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-23">
+  <title>Read Aloud — 朗读器</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --panel: #ffffff;
+      --text: #212529;
+      --muted: #6c757d;
+      --accent: #0d6efd;
+      --accent-text: #ffffff;
+      --border: #dee2e6;
+      --danger: #dc3545;
+      --success: #198754;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121212;
+        --panel: #1e1e1e;
+        --text: #e9ecef;
+        --muted: #adb5bd;
+        --accent: #4dabf7;
+        --accent-text: #0f172a;
+        --border: #343a40;
+        --danger: #ff6b6b;
+        --success: #51cf66;
+        --shadow: 0 4px 20px rgba(0,0,0,0.25);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      max-width: 900px;
+      min-height: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .editor-card {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      margin-bottom: 0;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    label { color: var(--muted); white-space: nowrap; }
+    select, input[type="range"] {
+      accent-color: var(--accent);
+    }
+    select {
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    input[type="range"] { width: 120px; }
+    .value { min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform .05s, opacity .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: var(--accent-text); }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.playing { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot.paused { background: #ffc107; }
+    .progress-wrap {
+      margin-top: 14px;
+    }
+    progress {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      accent-color: var(--accent);
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* 编辑/阅读融合区域 */
+    .content-area {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+    #textInput, #readerBoard {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      padding: 16px;
+      font-size: 1.1rem;
+      line-height: 2;
+      background: var(--panel);
+      color: var(--text);
+      font-family: inherit;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      word-break: break-word;
+    }
+    #textInput { resize: none; }
+    #readerBoard { display: none; }
+    #readerBoard .reader-paragraph {
+      margin: 0 0 1em 0;
+      min-height: 1em;
+    }
+    #readerBoard .reader-paragraph:empty::before {
+      content: '\00a0';
+    }
+    #readerBoard .chunk {
+      padding: 2px 0;
+      border-radius: 4px;
+      transition: background .15s;
+      cursor: pointer;
+    }
+    #readerBoard .chunk:hover {
+      background: rgba(13,110,253,0.08);
+    }
+    #readerBoard .chunk.active {
+      background: rgba(13,110,253,0.22);
+      color: var(--text);
+    }
+    #readerBoard .chunk.done { opacity: 0.55; }
+
+    /* 帮助弹窗 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 24px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      max-width: 560px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .modal header {
+      margin-bottom: 16px;
+    }
+    .modal header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+    .modal p { margin: 0 0 12px; }
+    .modal ul {
+      padding-left: 1.2em;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .modal kbd {
+      background: var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .modal-close {
+      margin-top: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 16px; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .controls { justify-content: center; }
+      input[type="range"] { width: 100px; }
+      .editor-card { min-height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="toolbar">
+        <div class="controls">
+          <button id="btnPlay" class="btn btn-primary">▶ 朗读</button>
+          <button id="btnStop" class="btn btn-danger" disabled>⏹ 停止</button>
+          <button id="btnHelp" class="btn btn-secondary">❓ 帮助</button>
+        </div>
+        <div class="status">
+          <span id="statusDot" class="dot"></span>
+          <span id="statusText">就绪</span>
+        </div>
+      </div>
+
+      <div class="toolbar" style="margin-top:16px; justify-content:flex-start;">
+        <div class="control-group">
+          <label for="voiceSelect">语音</label>
+          <select id="voiceSelect"></select>
+        </div>
+        <div class="control-group">
+          <label for="langSelect">语言</label>
+          <select id="langSelect">
+            <option value="auto">自动检测</option>
+            <option value="zh-CN">中文</option>
+            <option value="en-US">英文 (en-US)</option>
+            <option value="en-GB">英文 (en-GB)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="rateRange">语速</label>
+          <input id="rateRange" type="range" min="0.5" max="2" step="0.1" value="1">
+          <span id="rateValue" class="value">1.0</span>
+        </div>
+        <div class="control-group">
+          <label for="pitchRange">音调</label>
+          <input id="pitchRange" type="range" min="0.5" max="2" step="0.1" value="1">
+          <span id="pitchValue" class="value">1.0</span>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <progress id="progressBar" value="0" max="100"></progress>
+        <div class="progress-info">
+          <span id="progressText">0 / 0 句</span>
+          <span id="timeText">00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card editor-card">
+      <div class="content-area">
+        <textarea id="textInput" placeholder="在此粘贴要朗读的长文：英文范文、中文小说、演讲稿……"></textarea>
+        <div id="readerBoard"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpModal" class="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <header>
+        <h2 id="helpTitle">🎙️ Read Aloud 使用帮助</h2>
+      </header>
+      <p><strong>Read Aloud</strong> 是一款基于浏览器 Web Speech API 的本地文本朗读器。无需上传文件，所有处理都在浏览器内完成，支持中英文长文朗读、自动分句、当前句高亮与进度同步。</p>
+
+      <p><strong>快速开始</strong></p>
+      <ul>
+        <li>将长文粘贴到文本区，点击 <strong>▶ 朗读</strong> 即可开始。</li>
+        <li>朗读过程中文本区自动切换为阅读视图，当前句子会高亮显示并自动滚动到视野中央。</li>
+        <li>点击 <strong>⏹ 停止</strong> 可结束朗读并恢复文本编辑。</li>
+      </ul>
+
+      <p><strong>点击跳转播放</strong></p>
+      <ul>
+        <li>在阅读视图中，单击任意句子即可立即从该句开始播放，方便回退、重听或跳到指定位置。</li>
+        <li>在编辑视图中，先把光标放到目标段落，再点击 <strong>▶ 朗读</strong>，朗读会从光标所在段落开始。</li>
+      </ul>
+
+      <p><strong>语音与语言</strong></p>
+      <ul>
+        <li>Safari 默认优先选择 <strong>Samantha (en-US)</strong>，Chrome 默认优先选择 <strong>Ava (en-US)</strong>。</li>
+        <li>中文内容会优先使用系统中文语音；也可在“语音”下拉框中手动选择。</li>
+        <li>“语言”设为自动时，系统会根据文本中汉字与英文字母的比例自动判断。</li>
+      </ul>
+
+      <p><strong>段落与空白行</strong></p>
+      <ul>
+        <li>长文会按段落和句子自动切分，避免单次文本过长导致浏览器截断。</li>
+        <li>朗读时会自动去除空白行，让阅读视图更紧凑；停止后会恢复原始文本与段落布局。</li>
+      </ul>
+
+      <p><strong>快捷键</strong></p>
+      <ul>
+        <li>在编辑区内按 <kbd>Ctrl / ⌘ + Space</kbd> 播放 / 暂停。</li>
+        <li>焦点在编辑区外时，按 <kbd>Space</kbd> 也可快速切换播放 / 暂停。</li>
+        <li>按 <kbd>Esc</kbd> 可关闭此帮助窗口。</li>
+      </ul>
+
+      <p><strong>提示</strong></p>
+      <ul>
+        <li>若“语音”列表为空，请稍等片刻再试，部分浏览器需要异步加载语音包。</li>
+        <li>遇到朗读异常时，点击 <strong>⏹ 停止</strong> 后重新播放即可恢复。</li>
+      </ul>
+      <button id="btnCloseHelp" class="btn btn-primary modal-close">知道了</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const synth = window.speechSynthesis;
+      if (!synth) {
+        alert('当前浏览器不支持 Web Speech API，无法使用朗读功能。请使用 Safari、Chrome、Edge 等现代浏览器。');
+        return;
+      }
+
+      const $ = (id) => document.getElementById(id);
+      const btnPlay = $('btnPlay'), btnStop = $('btnStop'), btnHelp = $('btnHelp'), btnCloseHelp = $('btnCloseHelp');
+      const voiceSelect = $('voiceSelect'), langSelect = $('langSelect');
+      const rateRange = $('rateRange'), pitchRange = $('pitchRange');
+      const rateValue = $('rateValue'), pitchValue = $('pitchValue');
+      const statusDot = $('statusDot'), statusText = $('statusText');
+      const progressBar = $('progressBar'), progressText = $('progressText'), timeText = $('timeText');
+      const textInput = $('textInput'), readerBoard = $('readerBoard');
+      const helpModal = $('helpModal');
+
+      let voices = [];
+      let paragraphs = [];
+      let flatChunks = [];
+      let currentIndex = 0;
+      let isPlaying = false;
+      let isPaused = false;
+      let utterance = null;
+      let startTime = 0;
+      let pausedElapsed = 0;
+      let timerId = null;
+      let originalText = '';
+
+      const ua = navigator.userAgent.toLowerCase();
+      const isSafari = /safari/.test(ua) && !/chrome/.test(ua) && !/chromium/.test(ua);
+      const isChrome = /chrome/.test(ua) && !/edg/.test(ua) && !/opr/.test(ua);
+
+      function splitSentences(text) {
+        const sentences = [];
+        const parts = text.replace(/([。！？.?!]+)(?=[\s\S]|$)/g, '$1\n').split('\n');
+        let buffer = '';
+        for (let part of parts) {
+          buffer += part;
+          if (/[。！？.?!]$/.test(part.trim())) {
+            const trimmed = buffer.trim();
+            if (trimmed) sentences.push(trimmed);
+            buffer = '';
+          }
+        }
+        const last = buffer.trim();
+        if (last) sentences.push(last);
+
+        const result = [];
+        for (let s of sentences) {
+          if (s.length <= 300) {
+            result.push(s);
+            continue;
+          }
+          const subs = s.replace(/([，；,;])(?=[\s\S]|$)/g, '$1\n').split('\n');
+          let subBuf = '';
+          for (let sub of subs) {
+            subBuf += sub;
+            if (/[，；,;]$/.test(sub.trim()) || subBuf.length > 200) {
+              const t = subBuf.trim();
+              if (t) result.push(t);
+              subBuf = '';
+            }
+          }
+          const t = subBuf.trim();
+          if (t) result.push(t);
+        }
+        return result.filter(Boolean);
+      }
+
+      function splitText(rawText) {
+        const paras = [];
+        const lines = rawText.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          paras.push({ sentences: splitSentences(trimmed), text: line });
+        }
+        return paras;
+      }
+
+      function getParagraphIndexAtCaret(text, caretPos) {
+        if (caretPos == null || caretPos <= 0) return 0;
+        const before = text.substring(0, caretPos);
+        return Math.max(0, before.split('\n').length - 1);
+      }
+
+      function detectLang(text) {
+        const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+        const totalLetters = (text.replace(/\s/g, '').match(/[a-zA-Z]/g) || []).length;
+        return chineseChars > totalLetters ? 'zh-CN' : 'en-US';
+      }
+
+      function getVoiceByName(names) {
+        for (const name of names) {
+          const found = voices.find(v => v.name === name || v.name.includes(name));
+          if (found) return found;
+        }
+        return null;
+      }
+
+      function pickVoice(lang) {
+        const manualVoiceName = voiceSelect.value;
+        if (manualVoiceName) {
+          const manual = voices.find(v => v.name === manualVoiceName);
+          if (manual) return manual;
+        }
+
+        if (lang.startsWith('en')) {
+          const priority = isSafari
+            ? ['Samantha']
+            : isChrome
+            ? ['Ava']
+            : ['Samantha', 'Ava', 'Google US English', 'Microsoft Zira', 'Tessa', 'Daniel'];
+          const byName = getVoiceByName(priority);
+          if (byName) return byName;
+        }
+
+        const langVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith(lang.toLowerCase()));
+        if (langVoices.length) {
+          const local = langVoices.find(v => v.localService);
+          if (local) return local;
+          return langVoices[0];
+        }
+
+        const defaultVoice = voices.find(v => v.default);
+        if (defaultVoice) return defaultVoice;
+        return voices[0] || null;
+      }
+
+      function populateVoices() {
+        voices = synth.getVoices() || [];
+        const current = voiceSelect.value;
+        voiceSelect.innerHTML = '<option value="">自动选择</option>' +
+          voices.map(v => `<option value="${escapeHtml(v.name)}" ${v.name === current ? 'selected' : ''}>${escapeHtml(v.name)} (${escapeHtml(v.lang)})${v.localService ? '' : ' ☁️'}</option>`).join('');
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function renderReaderBoard() {
+        readerBoard.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        paragraphs.forEach((para, pIdx) => {
+          const pEl = document.createElement('p');
+          pEl.className = 'reader-paragraph';
+          if (para.sentences.length === 0) {
+            pEl.innerHTML = '&nbsp;';
+          } else {
+            para.sentences.forEach((sentence, sIdx) => {
+              const span = document.createElement('span');
+              span.className = 'chunk';
+              span.dataset.pidx = pIdx;
+              span.dataset.sidx = sIdx;
+              span.textContent = sentence;
+              span.addEventListener('click', () => jumpToChunk(pIdx, sIdx));
+              pEl.appendChild(span);
+            });
+          }
+          fragment.appendChild(pEl);
+        });
+        readerBoard.appendChild(fragment);
+      }
+
+      function buildChunks() {
+        const text = textInput.value;
+        if (!text.trim()) return false;
+        originalText = text;
+        paragraphs = splitText(text);
+        flatChunks = [];
+        paragraphs.forEach((para, pIdx) => {
+          para.sentences.forEach((sentence, sIdx) => {
+            flatChunks.push({ text: sentence, pIdx, sIdx });
+          });
+        });
+        renderReaderBoard();
+        return flatChunks.length > 0;
+      }
+
+      function jumpToChunk(pIdx, sIdx) {
+        if (flatChunks.length === 0 && !buildChunks()) return;
+        const idx = flatChunks.findIndex(c => c.pIdx === pIdx && c.sIdx === sIdx);
+        if (idx < 0) return;
+        currentIndex = idx;
+        synth.cancel();
+        if (timerId) clearInterval(timerId);
+        showReader();
+        startTime = Date.now();
+        pausedElapsed = 0;
+        speakNext();
+      }
+
+      function updateStatus(state) {
+        statusDot.className = 'dot ' + state;
+        const map = { ready: '就绪', playing: '朗读中…', paused: '已暂停', finished: '朗读完成' };
+        statusText.textContent = map[state] || state;
+      }
+
+      function updateProgress() {
+        const total = flatChunks.length;
+        const current = Math.min(currentIndex, total);
+        progressBar.value = total ? (current / total) * 100 : 0;
+        progressText.textContent = `${current} / ${total} 句`;
+        const elapsed = isPlaying ? Date.now() - startTime + pausedElapsed : pausedElapsed;
+        timeText.textContent = `${formatTime(elapsed)}`;
+      }
+
+      function formatTime(ms) {
+        const s = Math.floor(ms / 1000);
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+      }
+
+      function highlight(i) {
+        const { pIdx, sIdx } = flatChunks[i] || { pIdx: -1, sIdx: -1 };
+        readerBoard.querySelectorAll('.chunk').forEach(el => {
+          const ep = parseInt(el.dataset.pidx, 10);
+          const es = parseInt(el.dataset.sidx, 10);
+          el.classList.remove('active');
+          const isDone = ep < pIdx || (ep === pIdx && es < sIdx);
+          el.classList.toggle('done', isDone);
+        });
+        if (pIdx < 0) return;
+        const active = readerBoard.querySelector(`.chunk[data-pidx="${pIdx}"][data-sidx="${sIdx}"]`);
+        if (active) {
+          active.classList.add('active');
+          active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      function speakNext() {
+        if (currentIndex >= flatChunks.length) {
+          stop(true);
+          return;
+        }
+        const chunk = flatChunks[currentIndex];
+        const lang = langSelect.value === 'auto' ? detectLang(chunk.text) : langSelect.value;
+        const voice = pickVoice(lang);
+
+        utterance = new SpeechSynthesisUtterance(chunk.text);
+        utterance.lang = voice ? voice.lang : lang;
+        if (voice) utterance.voice = voice;
+        utterance.rate = parseFloat(rateRange.value);
+        utterance.pitch = parseFloat(pitchRange.value);
+
+        utterance.onstart = () => {
+          if (!isPlaying) startTime = Date.now() - pausedElapsed;
+          isPlaying = true; isPaused = false;
+          updateButtons(); updateStatus('playing'); highlight(currentIndex);
+          timerId = setInterval(updateProgress, 500);
+        };
+
+        utterance.onend = () => {
+          currentIndex++;
+          pausedElapsed = Date.now() - startTime;
+          if (currentIndex < flatChunks.length) {
+            speakNext();
+          } else {
+            stop(true);
+          }
+        };
+
+        utterance.onerror = (e) => {
+          if (e.error === 'canceled' || e.error === 'interrupted') return;
+          console.error('Speech error:', e);
+          statusText.textContent = '朗读出错：' + e.error;
+        };
+
+        synth.speak(utterance);
+      }
+
+      function showReader() {
+        textInput.style.display = 'none';
+        readerBoard.style.display = 'block';
+      }
+
+      function showEditor() {
+        readerBoard.style.display = 'none';
+        textInput.style.display = 'block';
+      }
+
+      function start() {
+        const text = textInput.value;
+        if (!text.trim()) return;
+        if (!buildChunks()) return;
+
+        // 若光标在文本中，从光标所在段落开始朗读
+        const caretPos = textInput.selectionStart;
+        const paraIdx = getParagraphIndexAtCaret(text, caretPos);
+        const startIdx = flatChunks.findIndex(c => c.pIdx >= paraIdx);
+        currentIndex = startIdx >= 0 ? startIdx : 0;
+
+        showReader();
+        startTime = Date.now();
+        pausedElapsed = 0;
+        speakNext();
+      }
+
+      function pause() {
+        if (!synth.speaking) return;
+        synth.pause();
+        isPaused = true;
+        pausedElapsed = Date.now() - startTime;
+        if (timerId) clearInterval(timerId);
+        updateButtons(); updateStatus('paused');
+      }
+
+      function resume() {
+        if (isPaused && synth.paused) {
+          synth.resume();
+          startTime = Date.now() - pausedElapsed;
+          isPaused = false;
+          updateButtons(); updateStatus('playing');
+          timerId = setInterval(updateProgress, 500);
+        } else if (!synth.speaking) {
+          start();
+        }
+      }
+
+      function stop(finished = false) {
+        synth.cancel();
+        if (timerId) clearInterval(timerId);
+        isPlaying = false; isPaused = false;
+        currentIndex = 0;
+        pausedElapsed = 0;
+        showEditor();
+        textInput.value = originalText;
+        updateStatus(finished ? 'finished' : 'ready');
+        updateProgress();
+        updateButtons();
+      }
+
+      function updateButtons() {
+        if (isPaused) {
+          btnPlay.textContent = '▶ 继续';
+        } else if (isPlaying) {
+          btnPlay.textContent = '⏸ 暂停';
+        } else {
+          btnPlay.textContent = '▶ 朗读';
+        }
+        btnPlay.disabled = false;
+        btnStop.disabled = !isPlaying && !isPaused;
+      }
+
+      btnPlay.addEventListener('click', () => {
+        if (isPlaying && !isPaused) pause();
+        else if (isPaused) resume();
+        else start();
+      });
+      btnStop.addEventListener('click', () => stop(false));
+
+      function openHelp() { helpModal.classList.add('open'); }
+      function closeHelp() { helpModal.classList.remove('open'); }
+      btnHelp.addEventListener('click', openHelp);
+      btnCloseHelp.addEventListener('click', closeHelp);
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) closeHelp();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && helpModal.classList.contains('open')) closeHelp();
+      });
+
+      rateRange.addEventListener('input', () => rateValue.textContent = parseFloat(rateRange.value).toFixed(1));
+      pitchRange.addEventListener('input', () => pitchValue.textContent = parseFloat(pitchRange.value).toFixed(1));
+
+      function handleToggle(e) {
+        const isEditHotkey = e.key === ' ' && (e.ctrlKey || e.metaKey);
+        const isGlobalHotkey = e.key === ' ' && e.target !== textInput && !isPlaying && !isPaused;
+        if (isEditHotkey || isGlobalHotkey) {
+          e.preventDefault();
+          isPaused ? resume() : (isPlaying ? pause() : start());
+        }
+      }
+      textInput.addEventListener('keydown', handleToggle);
+      document.addEventListener('keydown', handleToggle);
+
+      populateVoices();
+      if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoices;
+      }
+      setTimeout(populateVoices, 500);
+      updateButtons(); updateStatus('ready');
+    })();
+  </script>
+</body>
+</html>
