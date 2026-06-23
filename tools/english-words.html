@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="高中英语3500词快速记忆工具，支持随机抽词、释义隐藏、已会/未会标记和进度统计，帮助高效背诵高考核心词汇。">
+  <meta name="keywords" content="高中英语, 3500词, 英语词汇, 单词记忆, 背单词, 高考词汇">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-23">
+  <title>高中英语3500词 · 快速记忆</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --text: #1f2328;
+      --muted: #656d76;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --border: #d1d5db;
+      --shadow: 0 10px 40px rgba(0,0,0,0.08);
+      --radius: 18px;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .icon-btn:hover { background: #f3f4f6; }
+    .icon-btn.active { background: #eff6ff; border-color: var(--accent); color: var(--accent); }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 28px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+    .card:active { transform: scale(0.985); }
+    .word {
+      font-size: clamp(42px, 12vw, 72px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      word-break: break-word;
+      margin-bottom: 18px;
+    }
+    .phonetic-hint {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      min-height: 20px;
+    }
+    .meaning {
+      font-size: clamp(22px, 6vw, 32px);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .meaning.hidden {
+      color: transparent;
+      background: #f3f4f6;
+      border-style: dashed;
+    }
+    .meaning.hidden::after {
+      content: "点击或按空格显示释义";
+      color: var(--muted);
+      font-size: 16px;
+      position: absolute;
+    }
+    .meaning {
+      position: relative;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.2s ease;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .btn {
+      border: none;
+      border-radius: 14px;
+      padding: 16px 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #d1d5db; }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .btn-row .btn { flex: 1; }
+
+    .drawer {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 50;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .drawer.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .drawer-panel {
+      width: min(420px, 90vw);
+      height: 100%;
+      background: var(--surface);
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .drawer.open .drawer-panel { transform: translateX(0); }
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+    .drawer-title { font-size: 18px; font-weight: 700; }
+    .search-box {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .search-box:focus { border-color: var(--accent); }
+    .word-list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border-top: 1px solid var(--border);
+    }
+    .word-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 4px;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .word-list-item:hover { background: #f9fafb; }
+    .word-list-item span:first-child { font-weight: 600; }
+    .word-list-item span:last-child { color: var(--muted); font-size: 13px; max-width: 60%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .settings-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 15px;
+    }
+    .switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #d1d5db;
+      border-radius: 28px;
+      transition: 0.2s;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .switch input:checked + .slider { background: var(--accent); }
+    .switch input:checked + .slider::before { transform: translateX(20px); }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(31, 35, 40, 0.92);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 20px;
+    }
+
+    @media (max-width: 480px) {
+      .app { padding: 12px; }
+      .card { padding: 32px 20px; }
+      .btn { padding: 14px 8px; font-size: 15px; }
+      .title { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <div class="title">高中英语3500词</div>
+        <div class="subtitle">快速记忆 · 点击卡片显示释义</div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="btnAutoSpeak" title="切换单词时自动朗读 (A)">🔇</button>
+        <button class="icon-btn" id="btnStar" title="收藏/标为不熟 (S)">☆</button>
+        <button class="icon-btn" id="btnList" title="单词列表 (L)">☰</button>
+        <button class="icon-btn" id="btnSettings" title="设置 (G)">⚙</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="card" id="card">
+        <div class="word" id="word">Loading…</div>
+        <div class="meaning hidden" id="meaning">点击或按空格显示释义</div>
+      </div>
+
+      <div class="progress">
+        <span id="progressText">1 / 3302</span>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <span id="modeLabel">顺序</span>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-secondary" id="btnPrev">← 上一个</button>
+        <button class="btn btn-primary" id="btnReveal">显示释义</button>
+        <button class="btn btn-secondary" id="btnNext">下一个 →</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btnPlay">🔊 朗读</button>
+        <button class="btn btn-secondary" id="btnRandom">🔀 随机</button>
+        <button class="btn btn-secondary" id="btnShuffleMode">顺序/随机</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- 单词列表抽屉 -->
+  <div class="drawer" id="listDrawer">
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <div class="drawer-title">单词列表</div>
+        <button class="icon-btn" id="btnCloseList">✕</button>
+      </div>
+      <input class="search-box" id="searchBox" placeholder="搜索英文或中文释义…" autocomplete="off">
+      <div class="word-list" id="wordList"></div>
+    </div>
+  </div>
+
+  <!-- 设置抽屉 -->
+  <div class="drawer" id="settingsDrawer">
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <div class="drawer-title">设置</div>
+        <button class="icon-btn" id="btnCloseSettings">✕</button>
+      </div>
+      <div class="settings-group">
+        <span>切换单词时自动朗读</span>
+        <label class="switch"><input type="checkbox" id="autoSpeak"><span class="slider"></span></label>
+      </div>
+      <div class="settings-group">
+        <span>显示释义时自动朗读</span>
+        <label class="switch"><input type="checkbox" id="speakOnReveal"><span class="slider"></span></label>
+      </div>
+      <div class="settings-group">
+        <span>始终显示释义</span>
+        <label class="switch"><input type="checkbox" id="alwaysShowMeaning"><span class="slider"></span></label>
+      </div>
+      <div class="settings-group">
+        <span>显示释义后自动下一个</span>
+        <label class="switch"><input type="checkbox" id="autoAdvance"><span class="slider"></span></label>
+      </div>
+      <div class="settings-group">
+        <span>自动下一个延迟（秒）</span>
+        <select id="autoAdvanceDelay" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;">
+          <option value="1">1</option>
+          <option value="1.5">1.5</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <div class="settings-group">
+        <span>朗读语速</span>
+        <select id="speechRate" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;">
+          <option value="0.7">慢</option>
+          <option value="1" selected>正常</option>
+          <option value="1.3">快</option>
+        </select>
+      </div>
+      <div class="settings-group">
+        <span>朗读语音</span>
+        <select id="voiceSelect" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;max-width:200px;">
+          <option value="">默认语音</option>
+        </select>
+      </div>
+      <div class="settings-group">
+        <span>过滤：仅显示收藏</span>
+        <label class="switch"><input type="checkbox" id="onlyStarred"><span class="slider"></span></label>
+      </div>
+      <div style="margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6;">
+        快捷键：空格/点击 显示释义 · ← → 翻页 · R 随机 · P 朗读 · A 自动朗读 · S 收藏 · L 列表 · G 设置
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const ALL_WORDS = [{"word":"a/an","meaning":"一(个/件...)"},{"word":"abandon","meaning":"抛弃，遗弃，放弃"},{"word":"ability","meaning":"能力，才能"},{"word":"able","meaning":"能够；有能力的"},{"word":"abnormal","meaning":"不正常的，反常的"},{"word":"aboard","meaning":"在(船/飞机/车)上，上(船/飞机/车)"},{"word":"abolish","meaning":"废除，废止"},{"word":"abortion","meaning":"流产，堕胎"},{"word":"about","meaning":"关于；大约；到处"},{"word":"above","meaning":"在...上面；上述的"},{"word":"abroad","meaning":"在国外；到国外"},{"word":"absence","meaning":"缺席；缺乏"},{"word":"absent","meaning":"缺席的；缺少的"},{"word":"absolute","meaning":"绝对的；完全的"},{"word":"absorb","meaning":"吸收；吸引...的注意"},{"word":"abstract","meaning":"抽象的；摘要"},{"word":"abundant","meaning":"丰富的，充裕的"},{"word":"abuse","meaning":"滥用；虐待；辱骂"},{"word":"academic","meaning":"学术的；学院的"},{"word":"academy","meaning":"研究院；学会；专科院校"},{"word":"accelerate","meaning":"加速，促进"},{"word":"accent","meaning":"口音；重音"},{"word":"accept","meaning":"接受；同意"},{"word":"access","meaning":"进入；使用权；通道"},{"word":"accident","meaning":"事故；意外"},{"word":"accompany","meaning":"陪伴，陪同；伴随"},{"word":"accomplish","meaning":"完成；达成"},{"word":"according (to)","meaning":"根据；按照"},{"word":"account","meaning":"账户；描述；解释"},{"word":"accurate","meaning":"准确的，精确的"},{"word":"accuse","meaning":"指责，控告"},{"word":"accustom","meaning":"使习惯"},{"word":"ache","meaning":"疼痛"},{"word":"achieve","meaning":"实现；取得"},{"word":"achievement","meaning":"成就；功绩"},{"word":"acid","meaning":"酸；酸的"},{"word":"acknowledge","meaning":"承认；致谢"},{"word":"acquaintance","meaning":"熟人；认识，了解"},{"word":"acquire","meaning":"获得，学到"},{"word":"acquisition","meaning":"获得；习得"},{"word":"acre","meaning":"英亩"},{"word":"across","meaning":"横过；在...对面"},{"word":"act","meaning":"行动；扮演；法令"},{"word":"action","meaning":"行动；行为"},{"word":"active","meaning":"活跃的；积极的"},{"word":"activity","meaning":"活动"},{"word":"actor/actress","meaning":"演员(男/女)"},{"word":"actual","meaning":"实际的，真实的"},{"word":"acute","meaning":"尖锐的；敏锐的；急性的"},{"word":"ad (=advertisement)","meaning":"广告"},{"word":"adapt","meaning":"使适应；改编"},{"word":"adaptation","meaning":"适应；改编(本)"},{"word":"add","meaning":"增加；补充说"},{"word":"addicted","meaning":"上瘾的；入迷的"},{"word":"addition","meaning":"加；增加；加法"},{"word":"address","meaning":"地址；演说；称呼"},{"word":"adequate","meaning":"足够的，适当的"},{"word":"adjust","meaning":"调整，调节"},{"word":"administration","meaning":"管理；行政(机关)"},{"word":"admire","meaning":"钦佩，羡慕"},{"word":"admission","meaning":"准入；承认"},{"word":"admit","meaning":"承认；准许进入"},{"word":"adopt","meaning":"采用；收养"},{"word":"adore","meaning":"崇拜；喜爱"},{"word":"adult","meaning":"成年人"},{"word":"advance","meaning":"前进；推进；预付"},{"word":"advantage","meaning":"优点，优势"},{"word":"adventure","meaning":"冒险；奇遇"},{"word":"advertise","meaning":"登广告；宣扬"},{"word":"advice","meaning":"劝告，建议"},{"word":"advise","meaning":"劝告；建议"},{"word":"advocate","meaning":"提倡，拥护；提倡者"},{"word":"affair","meaning":"事情；事件；风流韵事"},{"word":"affect","meaning":"影响；感动"},{"word":"affection","meaning":"喜爱；感情"},{"word":"afford","meaning":"担负得起；提供"},{"word":"afraid","meaning":"害怕的；担心的"},{"word":"Africa","meaning":"非洲"},{"word":"after","meaning":"在...之后；后来"},{"word":"afternoon","meaning":"下午，午后"},{"word":"afterward(s)","meaning":"以后，后来"},{"word":"again","meaning":"再一次；再，又"},{"word":"against","meaning":"反对；靠着；逆"},{"word":"age","meaning":"年龄；时代；变老"},{"word":"agency","meaning":"代理行；机构"},{"word":"agenda","meaning":"议程"},{"word":"agent","meaning":"代理人，代理商"},{"word":"ago","meaning":"以前"},{"word":"agree","meaning":"同意；赞同"},{"word":"agreement","meaning":"同意；协议"},{"word":"agriculture","meaning":"农业"},{"word":"ahead","meaning":"在前面；向前"},{"word":"aid","meaning":"帮助；援助；助手"},{"word":"aim","meaning":"瞄准；目标"},{"word":"air","meaning":"空气；天空；播送"},{"word":"airline","meaning":"航空公司；航线"},{"word":"airport","meaning":"机场，航空站"},{"word":"alarm","meaning":"警报；惊恐"},{"word":"album","meaning":"相册；集邮册；唱片集"},{"word":"alcohol","meaning":"酒精，酒"},{"word":"alert","meaning":"警惕的；警报"},{"word":"alike","meaning":"相同的，相像的"},{"word":"alive","meaning":"活着的；有活力的"},{"word":"all","meaning":"全部的；完全；都"},{"word":"allow","meaning":"允许，准许"},{"word":"almost","meaning":"几乎，差不多"},{"word":"alone","meaning":"单独的；独自地"},{"word":"along","meaning":"沿着；一起，向前"},{"word":"alongside","meaning":"在...旁边；与...一起"},{"word":"aloud","meaning":"出声地，大声地"},{"word":"already","meaning":"已经，早已"},{"word":"also","meaning":"也，同样"},{"word":"alter","meaning":"改变，更改"},{"word":"alternative","meaning":"选择的；两者选一的"},{"word":"although","meaning":"虽然，尽管"},{"word":"altogether","meaning":"完全地；总共"},{"word":"always","meaning":"总是，一直"},{"word":"am","meaning":"(be的第一人称单数)"},{"word":"amateur","meaning":"业余爱好者；业余的"},{"word":"amaze","meaning":"使惊奇，使惊愕"},{"word":"amazing","meaning":"令人惊奇的"},{"word":"ambition","meaning":"雄心，野心"},{"word":"ambitious","meaning":"有雄心的，野心勃勃的"},{"word":"ambulance","meaning":"救护车"},{"word":"America","meaning":"美国；美洲"},{"word":"among(st)","meaning":"在...之中；在...之间"},{"word":"amount","meaning":"数量；总计"},{"word":"amuse","meaning":"娱乐，逗乐"},{"word":"analyse/analyze","meaning":"分析"},{"word":"analysis","meaning":"分析"},{"word":"ancestor","meaning":"祖先，祖宗"},{"word":"ancient","meaning":"古代的，古老的"},{"word":"and","meaning":"和；而且；就，便"},{"word":"anger","meaning":"愤怒，气愤"},{"word":"angle","meaning":"角；角度"},{"word":"angry","meaning":"生气的，愤怒的"},{"word":"animal","meaning":"动物；兽；牲畜"},{"word":"ankle","meaning":"踝(关节)"},{"word":"anniversary","meaning":"周年纪念(日)"},{"word":"announce","meaning":"宣布，宣告"},{"word":"annoy","meaning":"使恼怒；打扰"},{"word":"annual","meaning":"一年一度的；年刊"},{"word":"another","meaning":"再一个；别的"},{"word":"answer","meaning":"回答；答案；符合"},{"word":"ant","meaning":"蚂蚁"},{"word":"anticipate","meaning":"预期，期待"},{"word":"antique","meaning":"古董；古老的"},{"word":"anxiety","meaning":"焦虑，忧虑"},{"word":"anxious","meaning":"焦虑的；渴望的"},{"word":"any","meaning":"一些；任何"},{"word":"anybody/anyone","meaning":"任何人"},{"word":"anyhow","meaning":"无论如何；不管怎样"},{"word":"anything","meaning":"任何事物"},{"word":"anyway","meaning":"无论如何；不论以何种方式"},{"word":"anywhere","meaning":"任何地方"},{"word":"apart","meaning":"分开；除去；...之外"},{"word":"apartment","meaning":"一套公寓房间"},{"word":"ape","meaning":"猿"},{"word":"apologize/apologise","meaning":"道歉，谢罪"},{"word":"app (=application)","meaning":"应用程序"},{"word":"apparent","meaning":"明显的；表面上的"},{"word":"appeal","meaning":"呼吁；吸引力；申诉"},{"word":"appear","meaning":"出现；看来好像"},{"word":"appetite","meaning":"食欲；欲望"},{"word":"applaud","meaning":"鼓掌；称赞"},{"word":"apple","meaning":"苹果"},{"word":"applicant","meaning":"申请人"},{"word":"application","meaning":"申请；应用"},{"word":"apply","meaning":"申请；应用"},{"word":"appoint","meaning":"任命；约定"},{"word":"appointment","meaning":"约会；任命"},{"word":"appreciate","meaning":"欣赏；感激；领会"},{"word":"approach","meaning":"接近；方法；探讨"},{"word":"appropriate","meaning":"适当的，合适的"},{"word":"approval","meaning":"赞成；批准"},{"word":"approve","meaning":"赞成；批准"},{"word":"approximate","meaning":"近似的；大约"},{"word":"April","meaning":"四月"},{"word":"architect","meaning":"建筑师"},{"word":"architecture","meaning":"建筑学；建筑风格"},{"word":"area","meaning":"地区；面积；范围"},{"word":"argue","meaning":"争论；主张"},{"word":"argument","meaning":"争论；论点"},{"word":"arise","meaning":"出现；发生"},{"word":"arm","meaning":"手臂；武装；武器"},{"word":"army","meaning":"军队；大群"},{"word":"around","meaning":"在...周围；大约"},{"word":"arrange","meaning":"安排；整理"},{"word":"arrangement","meaning":"安排；整理"},{"word":"arrest","meaning":"逮捕；拘捕"},{"word":"arrive","meaning":"到达；来临"},{"word":"arrow","meaning":"箭；箭头(符号)"},{"word":"art","meaning":"艺术；美术；技艺"},{"word":"article","meaning":"文章；物品；冠词"},{"word":"artificial","meaning":"人工的，人造的"},{"word":"artist","meaning":"艺术家，美术家"},{"word":"as","meaning":"作为；像；因为；当...时"},{"word":"ashamed","meaning":"羞耻的，惭愧的"},{"word":"aside","meaning":"在旁边；撇开"},{"word":"ask","meaning":"问；请求；邀请"},{"word":"asleep","meaning":"睡着的"},{"word":"aspect","meaning":"方面；样子"},{"word":"assign","meaning":"分配；指派"},{"word":"assignment","meaning":"任务；分配"},{"word":"assist","meaning":"帮助，援助"},{"word":"assistant","meaning":"助手；助理的"},{"word":"associate","meaning":"联想；联合；伙伴"},{"word":"association","meaning":"协会；联合"},{"word":"assume","meaning":"假定；承担"},{"word":"assumption","meaning":"假定；承担"},{"word":"assure","meaning":"使确信；向...保证"},{"word":"astonish","meaning":"使惊讶"},{"word":"astronaut","meaning":"宇航员"},{"word":"astronomer","meaning":"天文学家"},{"word":"at","meaning":"在...时；向...；以..."},{"word":"athlete","meaning":"运动员"},{"word":"Atlantic","meaning":"大西洋的；大西洋"},{"word":"atmosphere","meaning":"大气层；气氛"},{"word":"atom","meaning":"原子"},{"word":"attach","meaning":"系；贴；使附属"},{"word":"attack","meaning":"攻击；(疾病)侵袭"},{"word":"attain","meaning":"达到，获得"},{"word":"attempt","meaning":"尝试；试图"},{"word":"attend","meaning":"出席；护理；照顾"},{"word":"attention","meaning":"注意；注意力"},{"word":"attitude","meaning":"态度；看法"},{"word":"attract","meaning":"吸引；引起"},{"word":"attraction","meaning":"吸引；吸引力"},{"word":"attractive","meaning":"有吸引力的"},{"word":"attribute","meaning":"把...归因于；属性"},{"word":"audience","meaning":"听众，观众"},{"word":"August","meaning":"八月"},{"word":"aunt","meaning":"伯母；婶母；姑母"},{"word":"authentic","meaning":"真的；可靠的"},{"word":"author","meaning":"作者，作家"},{"word":"authority","meaning":"权威；权力；(复数)当局"},{"word":"automatic","meaning":"自动的"},{"word":"autonomous","meaning":"自治的；自主的"},{"word":"autumn","meaning":"秋天，秋季"},{"word":"available","meaning":"可用的；可得到的"},{"word":"average","meaning":"平均(的)；通常的"},{"word":"avoid","meaning":"避免；避开"},{"word":"awake","meaning":"唤醒；醒着的"},{"word":"award","meaning":"奖，奖品；授予"},{"word":"aware","meaning":"意识到的"},{"word":"away","meaning":"离开；远离"},{"word":"awesome","meaning":"令人敬畏的；极好的"},{"word":"awful","meaning":"可怕的；极坏的"},{"word":"awkward","meaning":"尴尬的；笨拙的"},{"word":"baby","meaning":"婴儿；孩子气的人"},{"word":"back","meaning":"背(部)；后面；回原处"},{"word":"background","meaning":"背景；幕后"},{"word":"backward(s)","meaning":"向后；倒"},{"word":"bacon","meaning":"咸肉；熏猪肉"},{"word":"bacteria","meaning":"细菌"},{"word":"bad","meaning":"坏的；严重的"},{"word":"badminton","meaning":"羽毛球运动"},{"word":"bag","meaning":"袋；包；囊"},{"word":"bake","meaning":"烤，烘"},{"word":"bakery","meaning":"面包房"},{"word":"balance","meaning":"平衡；天平；结余"},{"word":"ball","meaning":"球；舞会"},{"word":"ballet","meaning":"芭蕾舞"},{"word":"balloon","meaning":"气球"},{"word":"bamboo","meaning":"竹"},{"word":"ban","meaning":"禁止；禁令"},{"word":"banana","meaning":"香蕉"},{"word":"band","meaning":"带子；乐队；一伙"},{"word":"bandage","meaning":"绷带"},{"word":"bank","meaning":"银行；岸"},{"word":"bar","meaning":"条；棒；酒吧"},{"word":"barbecue","meaning":"烤肉；烤架"},{"word":"bare","meaning":"赤裸的；仅仅的"},{"word":"barely","meaning":"仅仅；几乎不"},{"word":"bark","meaning":"吠叫；树皮"},{"word":"barrier","meaning":"障碍；栅栏"},{"word":"base","meaning":"基础；基地；以...为基础"},{"word":"baseball","meaning":"棒球运动"},{"word":"basic","meaning":"基本的；基础的"},{"word":"basin","meaning":"盆；盆地"},{"word":"basis","meaning":"基础；根据"},{"word":"basket","meaning":"篮(子)"},{"word":"basketball","meaning":"篮球运动"},{"word":"bat","meaning":"蝙蝠；球拍"},{"word":"bath","meaning":"洗澡；浴缸"},{"word":"bathroom","meaning":"浴室；盥洗室"},{"word":"battery","meaning":"电池；一套"},{"word":"battle","meaning":"战役；斗争"},{"word":"bay","meaning":"海湾；月桂"},{"word":"be (am, are, is)","meaning":"是；在；成为"},{"word":"beach","meaning":"海滨，海滩"},{"word":"bean","meaning":"豆；豆科植物"},{"word":"bear","meaning":"熊；忍受；生育"},{"word":"beard","meaning":"胡子"},{"word":"beast","meaning":"兽；凶残的人"},{"word":"beat","meaning":"打(击)；跳动；打败"},{"word":"beautiful","meaning":"美丽的；美好的"},{"word":"beauty","meaning":"美；美人"},{"word":"because","meaning":"因为"},{"word":"become","meaning":"成为；变得"},{"word":"bed","meaning":"床；河床"},{"word":"bedroom","meaning":"卧室"},{"word":"bee","meaning":"蜜蜂"},{"word":"beef","meaning":"牛肉"},{"word":"beer","meaning":"啤酒"},{"word":"before","meaning":"在...之前；以前"},{"word":"beg","meaning":"恳求；乞讨"},{"word":"begin","meaning":"开始；着手"},{"word":"behalf","meaning":"代表...利益"},{"word":"behave","meaning":"表现；举止"},{"word":"behaviour/behavior","meaning":"行为，举止"},{"word":"behind","meaning":"在...背后；落后于"},{"word":"being","meaning":"存在；生物"},{"word":"belief","meaning":"相信；信念"},{"word":"believe","meaning":"相信；认为"},{"word":"bell","meaning":"钟(声)；铃(声)"},{"word":"belong","meaning":"属于"},{"word":"below","meaning":"在...下面；低于"},{"word":"belt","meaning":"腰带；地带"},{"word":"bench","meaning":"长凳；工作台"},{"word":"bend","meaning":"(使)弯曲；弯腰"},{"word":"beneath","meaning":"在...下方；低于"},{"word":"beneficial","meaning":"有益的"},{"word":"benefit","meaning":"益处；受益"},{"word":"beside","meaning":"在...旁边；与...相比"},{"word":"besides","meaning":"除...之外(还)"},{"word":"best","meaning":"最好的；最好地"},{"word":"bet","meaning":"打赌；敢断定"},{"word":"betray","meaning":"背叛；暴露"},{"word":"better","meaning":"较好的；更好地"},{"word":"between","meaning":"在...之间"},{"word":"beyond","meaning":"在...那边；超出"},{"word":"bicycle/bike","meaning":"自行车"},{"word":"bid","meaning":"出价；命令；致意"},{"word":"big","meaning":"大的；重要的"},{"word":"bill","meaning":"账单；法案；鸟嘴"},{"word":"billion","meaning":"十亿"},{"word":"bind","meaning":"捆绑；约束"},{"word":"biography","meaning":"传记"},{"word":"biology","meaning":"生物学"},{"word":"bird","meaning":"鸟，禽"},{"word":"birth","meaning":"出生；诞生"},{"word":"birthday","meaning":"生日"},{"word":"biscuit","meaning":"饼干"},{"word":"bit","meaning":"一点；小块"},{"word":"bite","meaning":"咬；叮"},{"word":"bitter","meaning":"苦的；痛苦的"},{"word":"bizarre","meaning":"古怪的"},{"word":"black","meaning":"黑色的；黑暗的"},{"word":"blackboard","meaning":"黑板"},{"word":"blame","meaning":"责备；把...归咎于"},{"word":"blank","meaning":"空白的；空白表格"},{"word":"blanket","meaning":"毯子"},{"word":"bleed","meaning":"流血，出血"},{"word":"bless","meaning":"祝福；保佑"},{"word":"blind","meaning":"瞎的；盲目的"},{"word":"block","meaning":"街区；块；堵塞"},{"word":"blog","meaning":"博客"},{"word":"blood","meaning":"血，血液"},{"word":"blouse","meaning":"(女式)短上衣"},{"word":"blow","meaning":"吹；打击；吹动"},{"word":"blue","meaning":"蓝色的；忧郁的"},{"word":"board","meaning":"板；委员会；上(船/车)"},{"word":"boast","meaning":"自夸，夸口"},{"word":"boat","meaning":"小船；艇"},{"word":"body","meaning":"身体；主体；尸体"},{"word":"boil","meaning":"沸腾；煮沸"},{"word":"bold","meaning":"勇敢的；粗体的"},{"word":"bomb","meaning":"炸弹；轰炸"},{"word":"bond","meaning":"联结；债券"},{"word":"bone","meaning":"骨头"},{"word":"bonus","meaning":"奖金；红利"},{"word":"book","meaning":"书；预订"},{"word":"boot","meaning":"靴子"},{"word":"border","meaning":"边界；国界"},{"word":"bore","meaning":"使厌烦；钻孔"},{"word":"bored","meaning":"厌烦的"},{"word":"boring","meaning":"令人厌烦的"},{"word":"born","meaning":"出生的；天生的"},{"word":"borrow","meaning":"借入；借用"},{"word":"boss","meaning":"老板，上司"},{"word":"botanical","meaning":"植物学的"},{"word":"both","meaning":"两者(都)"},{"word":"bother","meaning":"打扰；费心"},{"word":"bottle","meaning":"瓶子"},{"word":"bottom","meaning":"底部；末端"},{"word":"bounce","meaning":"(使)弹起；蹦跳"},{"word":"bound","meaning":"界限；一定；跳跃"},{"word":"boundary","meaning":"分界线；边界"},{"word":"bow","meaning":"鞠躬；弓；蝴蝶结"},{"word":"bowl","meaning":"碗；碗状物"},{"word":"bowling","meaning":"保龄球运动"},{"word":"box","meaning":"箱子；盒子；拳击"},{"word":"boxing","meaning":"拳击"},{"word":"boy","meaning":"男孩；儿子"},{"word":"brain","meaning":"脑(子)；智力"},{"word":"brake","meaning":"刹车；制动器"},{"word":"branch","meaning":"树枝；分部；分支"},{"word":"brand","meaning":"商标，品牌"},{"word":"brave","meaning":"勇敢的"},{"word":"bread","meaning":"面包"},{"word":"break","meaning":"打破；休息；弄坏"},{"word":"breakfast","meaning":"早餐"},{"word":"breast","meaning":"胸部；乳房"},{"word":"breath","meaning":"呼吸；气息"},{"word":"breathe","meaning":"呼吸"},{"word":"breed","meaning":"品种；繁殖"},{"word":"brick","meaning":"砖"},{"word":"bride/bridegroom","meaning":"新娘/新郎"},{"word":"bridge","meaning":"桥；桥梁"},{"word":"brief","meaning":"短暂的；简洁的"},{"word":"bright","meaning":"明亮的；聪明的"},{"word":"brilliant","meaning":"光辉的；卓越的"},{"word":"bring","meaning":"带来；引起"},{"word":"broad","meaning":"宽阔的；广泛的"},{"word":"broadcast","meaning":"广播；播送"},{"word":"brochure","meaning":"小册子"},{"word":"broken","meaning":"破碎的；坏掉的"},{"word":"brother","meaning":"兄弟；同胞"},{"word":"brown","meaning":"棕色的；棕色"},{"word":"brush","meaning":"刷子；画笔；轻擦"},{"word":"budget","meaning":"预算"},{"word":"buffet","meaning":"自助餐"},{"word":"bug","meaning":"虫子；故障"},{"word":"build","meaning":"建造；建筑"},{"word":"building","meaning":"建筑物"},{"word":"bulb","meaning":"灯泡；球茎"},{"word":"bulk","meaning":"大部分；体积"},{"word":"bull","meaning":"公牛"},{"word":"bullet","meaning":"子弹"},{"word":"bunch","meaning":"束，串，扎"},{"word":"burden","meaning":"负担，重负"},{"word":"bureau","meaning":"局；司；办事处"},{"word":"burger","meaning":"汉堡包"},{"word":"burn","meaning":"燃烧；烧伤"},{"word":"burst","meaning":"爆裂；突发"},{"word":"bury","meaning":"埋葬；掩埋"},{"word":"bus","meaning":"公共汽车"},{"word":"bush","meaning":"灌木(丛)"},{"word":"business","meaning":"商业；生意；事务"},{"word":"busy","meaning":"忙碌的；热闹的"},{"word":"but","meaning":"但是；除了"},{"word":"butcher","meaning":"屠夫；肉商"},{"word":"butter","meaning":"黄油"},{"word":"butterfly","meaning":"蝴蝶"},{"word":"button","meaning":"纽扣；按钮"},{"word":"buy","meaning":"购买；收买"},{"word":"by","meaning":"被；靠；通过；到...为止"},{"word":"cabin","meaning":"小屋；船舱"},{"word":"cabinet","meaning":"橱柜；内阁"},{"word":"cable","meaning":"电缆；电报"},{"word":"cafe","meaning":"咖啡馆；小餐馆"},{"word":"cafeteria","meaning":"自助餐厅"},{"word":"cage","meaning":"笼子"},{"word":"cake","meaning":"蛋糕；饼"},{"word":"calculate","meaning":"计算；估计"},{"word":"call","meaning":"叫喊；称呼；打电话"},{"word":"calligraphy","meaning":"书法"},{"word":"calm","meaning":"镇静的；平静的"},{"word":"calorie","meaning":"卡路里"},{"word":"camel","meaning":"骆驼"},{"word":"camera","meaning":"照相机；摄像机"},{"word":"camp","meaning":"野营；营地"},{"word":"campaign","meaning":"运动；战役"},{"word":"campus","meaning":"(大学)校园"},{"word":"can","meaning":"能，会；罐(头)"},{"word":"canal","meaning":"运河"},{"word":"cancel","meaning":"取消；废除"},{"word":"cancer","meaning":"癌，癌症"},{"word":"candidate","meaning":"候选人"},{"word":"candle","meaning":"蜡烛"},{"word":"candy","meaning":"糖果"},{"word":"cannon","meaning":"大炮"},{"word":"canoe","meaning":"独木舟"},{"word":"canteen","meaning":"食堂；水壶"},{"word":"cap","meaning":"帽子；盖子"},{"word":"capable","meaning":"有能力的"},{"word":"capacity","meaning":"容量；能力"},{"word":"capital","meaning":"首都；资本；大写"},{"word":"capsule","meaning":"胶囊；太空舱"},{"word":"captain","meaning":"船长；队长"},{"word":"caption","meaning":"标题；说明文字"},{"word":"capture","meaning":"捕捉；捕获"},{"word":"car","meaning":"汽车；车厢"},{"word":"carbon","meaning":"碳"},{"word":"card","meaning":"卡片；纸牌"},{"word":"care","meaning":"关心；照顾；在意"},{"word":"career","meaning":"职业；生涯"},{"word":"careful","meaning":"小心的；仔细的"},{"word":"careless","meaning":"粗心的"},{"word":"cargo","meaning":"货物"},{"word":"carpet","meaning":"地毯"},{"word":"carriage","meaning":"四轮马车；车厢"},{"word":"carrot","meaning":"胡萝卜"},{"word":"carry","meaning":"携带；运送；支撑"},{"word":"cartoon","meaning":"漫画；动画片"},{"word":"carve","meaning":"雕刻"},{"word":"case","meaning":"情况；病例；箱子"},{"word":"cash","meaning":"现金；现款"},{"word":"cast","meaning":"投；掷；抛；演员阵容"},{"word":"castle","meaning":"城堡"},{"word":"casual","meaning":"偶然的；非正式的"},{"word":"cat","meaning":"猫"},{"word":"catch","meaning":"抓住；赶上；感染"},{"word":"category","meaning":"种类，类别"},{"word":"cattle","meaning":"牛(总称)"},{"word":"cause","meaning":"原因；事业；引起"},{"word":"caution","meaning":"小心；警告"},{"word":"cautious","meaning":"小心的，谨慎的"},{"word":"cave","meaning":"山洞，洞穴"},{"word":"cease","meaning":"停止，终止"},{"word":"ceiling","meaning":"天花板"},{"word":"celebrate","meaning":"庆祝"},{"word":"celebrity","meaning":"名人"},{"word":"cell","meaning":"细胞；牢房；电池"},{"word":"cellar","meaning":"地窖"},{"word":"cent","meaning":"分(货币单位)"},{"word":"centimetre/centimeter","meaning":"厘米"},{"word":"central","meaning":"中心的；主要的"},{"word":"centre/center","meaning":"中心；中央"},{"word":"century","meaning":"世纪，百年"},{"word":"ceremony","meaning":"典礼，仪式"},{"word":"certain","meaning":"确定的；某(些)"},{"word":"certainly","meaning":"一定；当然"},{"word":"certificate","meaning":"证书，证明"},{"word":"chain","meaning":"链子；连锁店"},{"word":"chair","meaning":"椅子；主席"},{"word":"chairman/chairwoman","meaning":"主席(男/女)"},{"word":"chalk","meaning":"粉笔"},{"word":"challenge","meaning":"挑战；质疑"},{"word":"champion","meaning":"冠军"},{"word":"chance","meaning":"机会；可能性"},{"word":"change","meaning":"改变；兑换；零钱"},{"word":"channel","meaning":"频道；海峡；渠道"},{"word":"chaos","meaning":"混乱"},{"word":"chapter","meaning":"章，回，篇"},{"word":"character","meaning":"性格；角色；人物"},{"word":"characteristic","meaning":"特征；典型的"},{"word":"charge","meaning":"收费；充电；控告"},{"word":"charity","meaning":"慈善；施舍"},{"word":"charm","meaning":"魅力；魔力"},{"word":"chart","meaning":"图表；海图"},{"word":"chase","meaning":"追逐；追赶"},{"word":"chat","meaning":"闲谈，聊天"},{"word":"cheap","meaning":"便宜的；低劣的"},{"word":"cheat","meaning":"欺骗；作弊"},{"word":"check","meaning":"检查；核对；支票"},{"word":"cheek","meaning":"脸颊"},{"word":"cheer","meaning":"欢呼；振奋"},{"word":"cheese","meaning":"奶酪"},{"word":"chef","meaning":"厨师长"},{"word":"chemical","meaning":"化学的；化学制品"},{"word":"chemist","meaning":"化学家；药剂师"},{"word":"chemistry","meaning":"化学"},{"word":"cheque","meaning":"支票"},{"word":"chess","meaning":"国际象棋"},{"word":"chest","meaning":"胸腔；箱子"},{"word":"chew","meaning":"咀嚼"},{"word":"chicken","meaning":"鸡；鸡肉"},{"word":"chief","meaning":"首领；主要的"},{"word":"child","meaning":"小孩；儿童"},{"word":"childhood","meaning":"童年"},{"word":"China","meaning":"中国"},{"word":"china","meaning":"瓷器"},{"word":"Chinese","meaning":"中国的；中国人；汉语"},{"word":"chip","meaning":"碎片；芯片；炸薯条"},{"word":"chocolate","meaning":"巧克力"},{"word":"choice","meaning":"选择；精选品"},{"word":"choir","meaning":"唱诗班；合唱队"},{"word":"choke","meaning":"窒息；哽噎"},{"word":"choose","meaning":"选择；挑选"},{"word":"chopsticks","meaning":"筷子"},{"word":"chore","meaning":"家庭杂务"},{"word":"chorus","meaning":"合唱；副歌"},{"word":"Christ","meaning":"基督"},{"word":"Christian","meaning":"基督徒；基督教的"},{"word":"Christmas","meaning":"圣诞节"},{"word":"church","meaning":"教堂"},{"word":"cigarette","meaning":"香烟"},{"word":"cinema","meaning":"电影院；电影"},{"word":"circle","meaning":"圆圈；圈子；环绕"},{"word":"circuit","meaning":"环行；电路"},{"word":"circumstance","meaning":"情况；环境"},{"word":"circus","meaning":"马戏团"},{"word":"cite","meaning":"引用；引证"},{"word":"citizen","meaning":"市民；公民"},{"word":"city","meaning":"城市"},{"word":"civil","meaning":"公民的；国内的"},{"word":"civilian","meaning":"平民；民用的"},{"word":"civilisation/civilization","meaning":"文明"},{"word":"claim","meaning":"声称；索赔；要求"},{"word":"clap","meaning":"拍手；鼓掌"},{"word":"clarify","meaning":"澄清，阐明"},{"word":"class","meaning":"班级；课；阶级"},{"word":"classic","meaning":"经典作品；经典的"},{"word":"classical","meaning":"古典的"},{"word":"classify","meaning":"分类"},{"word":"classmate","meaning":"同班同学"},{"word":"classroom","meaning":"教室"},{"word":"clay","meaning":"黏土"},{"word":"clean","meaning":"清洁；干净的"},{"word":"clear","meaning":"清晰的；清楚的；清除"},{"word":"clerk","meaning":"职员；店员"},{"word":"clever","meaning":"聪明的，机灵的"},{"word":"click","meaning":"点击；咔哒声"},{"word":"client","meaning":"客户；委托人"},{"word":"cliff","meaning":"悬崖"},{"word":"climate","meaning":"气候"},{"word":"climb","meaning":"攀登；爬"},{"word":"clinic","meaning":"诊所"},{"word":"clock","meaning":"钟"},{"word":"clone","meaning":"克隆"},{"word":"close","meaning":"关闭；亲密的；接近"},{"word":"cloth","meaning":"布；布料"},{"word":"clothes","meaning":"衣服"},{"word":"clothing","meaning":"(总称)衣服"},{"word":"cloud","meaning":"云"},{"word":"cloudy","meaning":"多云的"},{"word":"club","meaning":"俱乐部；棍棒"},{"word":"clue","meaning":"线索"},{"word":"coach","meaning":"教练；长途汽车"},{"word":"coal","meaning":"煤"},{"word":"coast","meaning":"海岸"},{"word":"coat","meaning":"外套；涂层"},{"word":"code","meaning":"密码；代码"},{"word":"coffee","meaning":"咖啡"},{"word":"coin","meaning":"硬币"},{"word":"cold","meaning":"寒冷的；感冒"},{"word":"collapse","meaning":"倒塌；崩溃"},{"word":"collar","meaning":"衣领"},{"word":"colleague","meaning":"同事"},{"word":"collect","meaning":"收集；领取"},{"word":"collection","meaning":"收集；收藏品"},{"word":"college","meaning":"大学；学院"},{"word":"collide","meaning":"碰撞"},{"word":"colony","meaning":"殖民地"},{"word":"colour/color","meaning":"颜色；色彩"},{"word":"column","meaning":"列；专栏"},{"word":"combination","meaning":"结合，组合"},{"word":"combine","meaning":"联合，结合"},{"word":"come","meaning":"来；来到"},{"word":"comedy","meaning":"喜剧"},{"word":"comfort","meaning":"安慰；舒适"},{"word":"comfortable","meaning":"舒适的"},{"word":"comic","meaning":"喜剧的；连环画"},{"word":"command","meaning":"命令；指挥"},{"word":"comment","meaning":"评论；意见"},{"word":"commerce","meaning":"商业"},{"word":"commercial","meaning":"商业的；广告"},{"word":"commission","meaning":"委员会；佣金"},{"word":"commit","meaning":"犯(罪)；承诺"},{"word":"commitment","meaning":"承诺；奉献"},{"word":"committee","meaning":"委员会"},{"word":"common","meaning":"普通的；共同的"},{"word":"communicate","meaning":"沟通；传达"},{"word":"communication","meaning":"沟通；通信"},{"word":"communism","meaning":"共产主义"},{"word":"communist","meaning":"共产主义者(的)"},{"word":"community","meaning":"社区；团体"},{"word":"company","meaning":"公司；陪伴"},{"word":"compare","meaning":"比较"},{"word":"comparison","meaning":"比较"},{"word":"compass","meaning":"指南针；圆规"},{"word":"compel","meaning":"强迫"},{"word":"compensate","meaning":"补偿，赔偿"},{"word":"compete","meaning":"竞争"},{"word":"competence","meaning":"能力；胜任"},{"word":"competition","meaning":"比赛；竞争"},{"word":"compile","meaning":"汇编；编辑"},{"word":"complain","meaning":"抱怨；投诉"},{"word":"complaint","meaning":"抱怨；投诉"},{"word":"complete","meaning":"完成；完整的"},{"word":"complex","meaning":"复杂的"},{"word":"complicated","meaning":"复杂的"},{"word":"component","meaning":"组成部分"},{"word":"compose","meaning":"组成；作曲"},{"word":"composition","meaning":"作文；作曲"},{"word":"comprehension","meaning":"理解"},{"word":"comprehensive","meaning":"综合的；全面的"},{"word":"comprise","meaning":"包含；构成"},{"word":"compromise","meaning":"妥协；折衷"},{"word":"compulsory","meaning":"强制性的"},{"word":"compute","meaning":"计算"},{"word":"computer","meaning":"计算机"},{"word":"conceal","meaning":"隐藏"},{"word":"concentrate","meaning":"集中(注意力)"},{"word":"concept","meaning":"概念"},{"word":"concern","meaning":"关心；涉及"},{"word":"concert","meaning":"音乐会"},{"word":"conclude","meaning":"推断；结束"},{"word":"conclusion","meaning":"结论"},{"word":"concrete","meaning":"具体的；混凝土"},{"word":"condition","meaning":"条件；状况"},{"word":"conduct","meaning":"进行；指挥；行为"},{"word":"conductor","meaning":"指挥；售票员"},{"word":"conference","meaning":"会议"},{"word":"confess","meaning":"承认；坦白"},{"word":"confidence","meaning":"信心"},{"word":"confident","meaning":"自信的"},{"word":"confidential","meaning":"机密的"},{"word":"confirm","meaning":"证实；确认"},{"word":"conflict","meaning":"冲突"},{"word":"conform","meaning":"遵守；一致"},{"word":"confront","meaning":"面对；遭遇"},{"word":"confuse","meaning":"使迷惑"},{"word":"confused","meaning":"迷惑的"},{"word":"congratulate","meaning":"祝贺"},{"word":"congratulation","meaning":"祝贺"},{"word":"connect","meaning":"连接；联系"},{"word":"connection","meaning":"联系；连接"},{"word":"conscience","meaning":"良心"},{"word":"conscious","meaning":"有意识的"},{"word":"consent","meaning":"同意；准许"},{"word":"consequence","meaning":"后果"},{"word":"conservation","meaning":"保护；保存"},{"word":"conservative","meaning":"保守的"},{"word":"consider","meaning":"考虑；认为"},{"word":"considerable","meaning":"相当大的"},{"word":"considerate","meaning":"体贴的"},{"word":"consist","meaning":"组成；在于"},{"word":"consistent","meaning":"一致的"},{"word":"constant","meaning":"经常的；恒定的"},{"word":"constitution","meaning":"宪法；构成"},{"word":"construct","meaning":"建造"},{"word":"construction","meaning":"建筑"},{"word":"consult","meaning":"请教；咨询"},{"word":"consultant","meaning":"顾问"},{"word":"consume","meaning":"消费；消耗"},{"word":"contact","meaning":"接触；联系"},{"word":"contain","meaning":"包含；容纳"},{"word":"container","meaning":"容器"},{"word":"contemporary","meaning":"当代的"},{"word":"content","meaning":"内容；满足的"},{"word":"contest","meaning":"竞赛"},{"word":"context","meaning":"语境；背景"},{"word":"continent","meaning":"大陆"},{"word":"continue","meaning":"继续"},{"word":"continuous","meaning":"连续的"},{"word":"contract","meaning":"合同"},{"word":"contrast","meaning":"对比"},{"word":"contribute","meaning":"贡献；捐助"},{"word":"contribution","meaning":"贡献"},{"word":"control","meaning":"控制"},{"word":"controversial","meaning":"有争议的"},{"word":"convenience","meaning":"便利"},{"word":"convenient","meaning":"方便的"},{"word":"conventional","meaning":"传统的"},{"word":"conversation","meaning":"谈话"},{"word":"convert","meaning":"转变；转换"},{"word":"convey","meaning":"传达；运送"},{"word":"convince","meaning":"使确信"},{"word":"cook","meaning":"烹调；厨师"},{"word":"cooker","meaning":"炊具"},{"word":"cool","meaning":"凉的；酷"},{"word":"cooperate","meaning":"合作"},{"word":"coordinate","meaning":"协调"},{"word":"cope","meaning":"应付"},{"word":"copy","meaning":"抄本；复制"},{"word":"core","meaning":"核心"},{"word":"corn","meaning":"玉米"},{"word":"corner","meaning":"角；角落"},{"word":"corporate","meaning":"公司的"},{"word":"correct","meaning":"正确的；纠正"},{"word":"correspond","meaning":"符合；通信"},{"word":"correspondent","meaning":"记者"},{"word":"corridor","meaning":"走廊"},{"word":"cost","meaning":"花费；成本"},{"word":"costly","meaning":"昂贵的"},{"word":"costume","meaning":"服装"},{"word":"cottage","meaning":"小屋"},{"word":"cotton","meaning":"棉花"},{"word":"couch","meaning":"长沙发"},{"word":"could","meaning":"(can的过去式)"},{"word":"council","meaning":"委员会"},{"word":"counsel","meaning":"劝告；建议"},{"word":"count","meaning":"数数；重要"},{"word":"counter","meaning":"柜台；相反地"},{"word":"country","meaning":"国家；乡村"},{"word":"countryside","meaning":"乡村"},{"word":"county","meaning":"郡；县"},{"word":"couple","meaning":"一对；夫妇"},{"word":"courage","meaning":"勇气"},{"word":"course","meaning":"课程；过程；一道菜"},{"word":"court","meaning":"法庭；球场"},{"word":"cousin","meaning":"堂(表)兄弟姊妹"},{"word":"cover","meaning":"覆盖；封面"},{"word":"coverage","meaning":"覆盖范围"},{"word":"cow","meaning":"奶牛"},{"word":"crack","meaning":"裂缝；破裂"},{"word":"craft","meaning":"工艺；手艺"},{"word":"crash","meaning":"碰撞；坠毁"},{"word":"crawl","meaning":"爬行"},{"word":"crazy","meaning":"疯狂的"},{"word":"cream","meaning":"奶油"},{"word":"create","meaning":"创造"},{"word":"creative","meaning":"有创造力的"},{"word":"creature","meaning":"生物"},{"word":"credit","meaning":"信用；学分；赞扬"},{"word":"crew","meaning":"全体船员"},{"word":"crime","meaning":"犯罪"},{"word":"criminal","meaning":"罪犯；犯罪的"},{"word":"crisis","meaning":"危机"},{"word":"criterion","meaning":"标准"},{"word":"critic","meaning":"批评家"},{"word":"critical","meaning":"批判的；关键的"},{"word":"criticism","meaning":"批评"},{"word":"criticize/criticise","meaning":"批评"},{"word":"crop","meaning":"农作物"},{"word":"cross","meaning":"十字架；交叉；生气的"},{"word":"crowd","meaning":"人群"},{"word":"crowded","meaning":"拥挤的"},{"word":"crown","meaning":"王冠"},{"word":"crucial","meaning":"至关重要的"},{"word":"crude","meaning":"天然的；粗糙的"},{"word":"cruel","meaning":"残酷的"},{"word":"cruise","meaning":"巡航；乘船游览"},{"word":"cry","meaning":"哭；叫喊"},{"word":"crystal","meaning":"水晶"},{"word":"cube","meaning":"立方体"},{"word":"cuisine","meaning":"烹饪；菜肴"},{"word":"cultivate","meaning":"培养；耕作"},{"word":"culture","meaning":"文化"},{"word":"cup","meaning":"杯子"},{"word":"cupboard","meaning":"碗柜"},{"word":"cure","meaning":"治愈；疗法"},{"word":"curious","meaning":"好奇的"},{"word":"curl","meaning":"(使)卷曲"},{"word":"currency","meaning":"货币"},{"word":"current","meaning":"当前的；水流"},{"word":"curriculum","meaning":"课程"},{"word":"curse","meaning":"诅咒"},{"word":"curtain","meaning":"窗帘"},{"word":"curve","meaning":"曲线"},{"word":"cushion","meaning":"垫子"},{"word":"custom","meaning":"风俗；海关"},{"word":"customer","meaning":"顾客"},{"word":"cut","meaning":"切；割；伤口"},{"word":"cute","meaning":"可爱的"},{"word":"cycle","meaning":"循环；骑自行车"},{"word":"daily","meaning":"每日的；日报"},{"word":"dam","meaning":"水坝"},{"word":"damage","meaning":"损害"},{"word":"damp","meaning":"潮湿的"},{"word":"dance","meaning":"跳舞"},{"word":"danger","meaning":"危险"},{"word":"dangerous","meaning":"危险的"},{"word":"dare","meaning":"敢；胆敢"},{"word":"dark","meaning":"黑暗的；暗处"},{"word":"data","meaning":"数据"},{"word":"database","meaning":"数据库"},{"word":"date","meaning":"日期；约会；枣"},{"word":"daughter","meaning":"女儿"},{"word":"dawn","meaning":"黎明"},{"word":"day","meaning":"一天；白天"},{"word":"dead","meaning":"死的"},{"word":"deadline","meaning":"截止期限"},{"word":"deaf","meaning":"聋的"},{"word":"deal","meaning":"处理；交易"},{"word":"dear","meaning":"亲爱的；昂贵的"},{"word":"death","meaning":"死亡"},{"word":"debate","meaning":"辩论"},{"word":"debt","meaning":"债务"},{"word":"decade","meaning":"十年"},{"word":"decent","meaning":"得体的；体面的"},{"word":"decide","meaning":"决定"},{"word":"decision","meaning":"决定"},{"word":"declare","meaning":"宣布；声明"},{"word":"decline","meaning":"下降；衰落"},{"word":"decorate","meaning":"装饰"},{"word":"decrease","meaning":"减少"},{"word":"dedicate","meaning":"奉献"},{"word":"deep","meaning":"深的"},{"word":"deer","meaning":"鹿"},{"word":"defeat","meaning":"击败"},{"word":"defence/defense","meaning":"防御；辩护"},{"word":"defend","meaning":"防御；辩护"},{"word":"define","meaning":"定义"},{"word":"definite","meaning":"明确的"},{"word":"definitely","meaning":"明确地；肯定"},{"word":"definition","meaning":"定义"},{"word":"degree","meaning":"程度；学位"},{"word":"delay","meaning":"延迟；耽搁"},{"word":"delete","meaning":"删除"},{"word":"delicate","meaning":"精致的；脆弱的"},{"word":"delicious","meaning":"美味的"},{"word":"delight","meaning":"快乐；喜悦"},{"word":"deliver","meaning":"递送；发表"},{"word":"demand","meaning":"要求；需求"},{"word":"demonstrate","meaning":"演示；证明"},{"word":"dentist","meaning":"牙医"},{"word":"deny","meaning":"否认"},{"word":"depart","meaning":"离开"},{"word":"department","meaning":"部门"},{"word":"departure","meaning":"离开；出发"},{"word":"depend","meaning":"依靠；依赖"},{"word":"dependent","meaning":"依赖的"},{"word":"depict","meaning":"描绘"},{"word":"deposit","meaning":"存款；押金"},{"word":"depress","meaning":"使沮丧"},{"word":"depth","meaning":"深度"},{"word":"deputy","meaning":"代理人"},{"word":"derive","meaning":"起源；得到"},{"word":"describe","meaning":"描述"},{"word":"description","meaning":"描述"},{"word":"desert","meaning":"沙漠；抛弃"},{"word":"deserve","meaning":"应得"},{"word":"design","meaning":"设计"},{"word":"desire","meaning":"渴望"},{"word":"desk","meaning":"书桌"},{"word":"desperate","meaning":"绝望的"},{"word":"despite","meaning":"尽管"},{"word":"dessert","meaning":"甜点"},{"word":"destination","meaning":"目的地"},{"word":"destroy","meaning":"摧毁"},{"word":"destruction","meaning":"破坏"},{"word":"detail","meaning":"细节"},{"word":"detect","meaning":"察觉；探测"},{"word":"detective","meaning":"侦探"},{"word":"determine","meaning":"决定；决心"},{"word":"develop","meaning":"发展；开发"},{"word":"development","meaning":"发展"},{"word":"device","meaning":"装置；设备"},{"word":"devote","meaning":"奉献"},{"word":"diagram","meaning":"图表"},{"word":"dial","meaning":"拨号"},{"word":"dialogue/dialog","meaning":"对话"},{"word":"diameter","meaning":"直径"},{"word":"diamond","meaning":"钻石"},{"word":"diary","meaning":"日记"},{"word":"dictate","meaning":"口授；命令"},{"word":"dictionary","meaning":"词典"},{"word":"die","meaning":"死亡"},{"word":"diet","meaning":"饮食"},{"word":"differ","meaning":"不同"},{"word":"difference","meaning":"差别"},{"word":"different","meaning":"不同的"},{"word":"difficult","meaning":"困难的"},{"word":"difficulty","meaning":"困难"},{"word":"dig","meaning":"挖"},{"word":"digest","meaning":"消化"},{"word":"digital","meaning":"数字的"},{"word":"dignity","meaning":"尊严"},{"word":"dilemma","meaning":"困境"},{"word":"dimension","meaning":"尺寸；方面"},{"word":"dining","meaning":"进餐"},{"word":"dinner","meaning":"正餐"},{"word":"dinosaur","meaning":"恐龙"},{"word":"dioxide","meaning":"二氧化物"},{"word":"dip","meaning":"浸"},{"word":"direct","meaning":"直接的；指导"},{"word":"direction","meaning":"方向；指导"},{"word":"director","meaning":"导演；主任"},{"word":"directory","meaning":"电话簿"},{"word":"dirty","meaning":"脏的"},{"word":"disability","meaning":"残疾"},{"word":"disabled","meaning":"残疾的"},{"word":"disappear","meaning":"消失"},{"word":"disappoint","meaning":"使失望"},{"word":"disappointed","meaning":"失望的"},{"word":"disaster","meaning":"灾难"},{"word":"disc/disk","meaning":"圆盘；磁盘"},{"word":"discipline","meaning":"纪律；学科"},{"word":"discount","meaning":"折扣"},{"word":"discover","meaning":"发现"},{"word":"discovery","meaning":"发现"},{"word":"discriminate","meaning":"歧视"},{"word":"discussion","meaning":"讨论"},{"word":"disease","meaning":"疾病"},{"word":"dish","meaning":"盘子；一道菜"},{"word":"dismiss","meaning":"解雇；解散"},{"word":"display","meaning":"展示"},{"word":"distance","meaning":"距离"},{"word":"distant","meaning":"遥远的"},{"word":"distinct","meaning":"不同的；清晰的"},{"word":"distinguish","meaning":"区分"},{"word":"distribute","meaning":"分发；分布"},{"word":"district","meaning":"地区"},{"word":"disturb","meaning":"打扰"},{"word":"dive","meaning":"潜水"},{"word":"diverse","meaning":"不同的；多样的"},{"word":"divide","meaning":"划分"},{"word":"division","meaning":"分割；部门"},{"word":"divorce","meaning":"离婚"},{"word":"dizzy","meaning":"头晕的"},{"word":"do","meaning":"做；干"},{"word":"doctor","meaning":"医生；博士"},{"word":"document","meaning":"文件"},{"word":"dog","meaning":"狗"},{"word":"doll","meaning":"玩偶"},{"word":"dollar","meaning":"美元"},{"word":"dolphin","meaning":"海豚"},{"word":"domain","meaning":"领域"},{"word":"domestic","meaning":"国内的；家庭的"},{"word":"dominate","meaning":"支配"},{"word":"donate","meaning":"捐赠"},{"word":"door","meaning":"门"},{"word":"dormitory","meaning":"宿舍"},{"word":"dose","meaning":"剂量"},{"word":"dot","meaning":"点"},{"word":"double","meaning":"双倍的；加倍"},{"word":"doubt","meaning":"怀疑"},{"word":"down","meaning":"向下"},{"word":"download","meaning":"下载"},{"word":"downstairs","meaning":"楼下"},{"word":"downtown","meaning":"市中心"},{"word":"dozen","meaning":"一打"},{"word":"draft","meaning":"草稿；征兵"},{"word":"drag","meaning":"拖；拉"},{"word":"dragon","meaning":"龙"},{"word":"drama","meaning":"戏剧"},{"word":"dramatic","meaning":"戏剧性的"},{"word":"draw","meaning":"画；拉；吸引"},{"word":"drawer","meaning":"抽屉"},{"word":"dream","meaning":"梦；梦想"},{"word":"dress","meaning":"连衣裙；穿衣"},{"word":"drink","meaning":"喝；饮料"},{"word":"drive","meaning":"驾驶；驱赶"},{"word":"driver","meaning":"司机"},{"word":"drone","meaning":"无人机"},{"word":"drop","meaning":"滴；落下"},{"word":"drought","meaning":"干旱"},{"word":"drown","meaning":"淹死"},{"word":"drug","meaning":"药物；毒品"},{"word":"drum","meaning":"鼓"},{"word":"drunk","meaning":"醉的"},{"word":"dry","meaning":"干的；弄干"},{"word":"duck","meaning":"鸭子"},{"word":"due","meaning":"到期的；由于"},{"word":"dull","meaning":"枯燥的；钝的"},{"word":"dumb","meaning":"哑的；愚蠢的"},{"word":"dump","meaning":"倾倒"},{"word":"during","meaning":"在...期间"},{"word":"dusk","meaning":"黄昏"},{"word":"dust","meaning":"灰尘"},{"word":"duty","meaning":"责任"},{"word":"DVD","meaning":"数字化视频光盘"},{"word":"dynamic","meaning":"动态的"},{"word":"dynasty","meaning":"王朝"},{"word":"each","meaning":"每个"},{"word":"eager","meaning":"渴望的"},{"word":"eagle","meaning":"鹰"},{"word":"ear","meaning":"耳朵"},{"word":"early","meaning":"早的；早地"},{"word":"earn","meaning":"赚得；赢得"},{"word":"earth","meaning":"地球；土地"},{"word":"earthquake","meaning":"地震"},{"word":"ease","meaning":"容易；减轻"},{"word":"east","meaning":"东方"},{"word":"eastern","meaning":"东方的"},{"word":"easy","meaning":"容易的"},{"word":"eat","meaning":"吃"},{"word":"echo","meaning":"回声"},{"word":"ecology","meaning":"生态学"},{"word":"economic","meaning":"经济的"},{"word":"economics","meaning":"经济学"},{"word":"economy","meaning":"经济"},{"word":"edge","meaning":"边缘"},{"word":"edition","meaning":"版本"},{"word":"editor","meaning":"编辑"},{"word":"educate","meaning":"教育"},{"word":"education","meaning":"教育"},{"word":"educator","meaning":"教育家"},{"word":"effect","meaning":"效果"},{"word":"effective","meaning":"有效的"},{"word":"efficiency","meaning":"效率"},{"word":"efficient","meaning":"高效的"},{"word":"effort","meaning":"努力"},{"word":"egg","meaning":"蛋"},{"word":"eight","meaning":"八"},{"word":"eighteen","meaning":"十八"},{"word":"eighth","meaning":"第八"},{"word":"eighty","meaning":"八十"},{"word":"either","meaning":"两者之一；要么"},{"word":"elder","meaning":"年长的"},{"word":"elderly","meaning":"年老的"},{"word":"elect","meaning":"选举"},{"word":"election","meaning":"选举"},{"word":"electric","meaning":"电的"},{"word":"electricity","meaning":"电"},{"word":"electronic","meaning":"电子的"},{"word":"elegant","meaning":"优雅的"},{"word":"element","meaning":"元素"},{"word":"elephant","meaning":"大象"},{"word":"eleven","meaning":"十一"},{"word":"eleventh","meaning":"第十一"},{"word":"else","meaning":"其他的"},{"word":"elsewhere","meaning":"在别处"},{"word":"email","meaning":"电子邮件"},{"word":"embarrassed","meaning":"尴尬的"},{"word":"embassy","meaning":"大使馆"},{"word":"embrace","meaning":"拥抱"},{"word":"emerge","meaning":"出现"},{"word":"emergency","meaning":"紧急情况"},{"word":"emotion","meaning":"情感"},{"word":"emperor/empress","meaning":"皇帝/皇后"},{"word":"emphasis","meaning":"强调"},{"word":"emphasize","meaning":"强调"},{"word":"empire","meaning":"帝国"},{"word":"employ","meaning":"雇用"},{"word":"employee","meaning":"雇员"},{"word":"employer","meaning":"雇主"},{"word":"employment","meaning":"工作；就业"},{"word":"empty","meaning":"空的；倒空"},{"word":"enable","meaning":"使能够"},{"word":"encounter","meaning":"遭遇"},{"word":"encourage","meaning":"鼓励"},{"word":"end","meaning":"末端；结束"},{"word":"ending","meaning":"结局"},{"word":"endless","meaning":"无尽的"},{"word":"endure","meaning":"忍受"},{"word":"enemy","meaning":"敌人"},{"word":"energetic","meaning":"精力充沛的"},{"word":"energy","meaning":"精力；能量"},{"word":"engage","meaning":"参与；吸引"},{"word":"engine","meaning":"发动机"},{"word":"engineer","meaning":"工程师"},{"word":"engineering","meaning":"工程学"},{"word":"England","meaning":"英格兰"},{"word":"English","meaning":"英语；英国的"},{"word":"enhance","meaning":"提高"},{"word":"enjoy","meaning":"享受"},{"word":"enormous","meaning":"巨大的"},{"word":"enough","meaning":"足够"},{"word":"enrich","meaning":"丰富"},{"word":"ensure","meaning":"确保"},{"word":"enter","meaning":"进入"},{"word":"enterprise","meaning":"企业"},{"word":"entertainment","meaning":"娱乐"},{"word":"enthusiasm","meaning":"热情"},{"word":"enthusiastic","meaning":"热情的"},{"word":"entire","meaning":"全部的"},{"word":"entitle","meaning":"给...权利；给...题名"},{"word":"entrance","meaning":"入口"},{"word":"entry","meaning":"进入；条目"},{"word":"envelope","meaning":"信封"},{"word":"environment","meaning":"环境"},{"word":"envy","meaning":"嫉妒"},{"word":"episode","meaning":"片段；一集"},{"word":"equal","meaning":"相等的；等于"},{"word":"equator","meaning":"赤道"},{"word":"equipment","meaning":"设备"},{"word":"era","meaning":"时代"},{"word":"erase","meaning":"擦掉"},{"word":"eraser","meaning":"橡皮"},{"word":"error","meaning":"错误"},{"word":"erupt","meaning":"喷发"},{"word":"escape","meaning":"逃跑；逃避"},{"word":"especially","meaning":"特别地"},{"word":"essay","meaning":"散文；短文"},{"word":"essence","meaning":"本质"},{"word":"essential","meaning":"必要的"},{"word":"establish","meaning":"建立"},{"word":"estate","meaning":"地产；财产"},{"word":"estimate","meaning":"估计"},{"word":"eternal","meaning":"永恒的"},{"word":"ethical","meaning":"伦理的"},{"word":"ethnic","meaning":"种族的"},{"word":"Europe","meaning":"欧洲"},{"word":"evaluate","meaning":"评价"},{"word":"eve","meaning":"前夕"},{"word":"even","meaning":"甚至；均匀的"},{"word":"evening","meaning":"傍晚"},{"word":"event","meaning":"事件"},{"word":"eventually","meaning":"最后"},{"word":"ever","meaning":"曾经"},{"word":"every","meaning":"每一个"},{"word":"everybody/everyone","meaning":"每人"},{"word":"everyday","meaning":"每天的"},{"word":"everything","meaning":"一切"},{"word":"everywhere","meaning":"到处"},{"word":"evidence","meaning":"证据"},{"word":"evident","meaning":"明显的"},{"word":"evil","meaning":"邪恶的"},{"word":"evolve","meaning":"进化"},{"word":"exact","meaning":"精确的"},{"word":"exactly","meaning":"确切地"},{"word":"exam","meaning":"考试"},{"word":"examine","meaning":"检查"},{"word":"example","meaning":"例子"},{"word":"exceed","meaning":"超过"},{"word":"excellent","meaning":"优秀的"},{"word":"except","meaning":"除了"},{"word":"exception","meaning":"例外"},{"word":"exchange","meaning":"交换"},{"word":"excite","meaning":"使兴奋"},{"word":"excited","meaning":"兴奋的"},{"word":"exciting","meaning":"令人兴奋的"},{"word":"excuse","meaning":"借口；原谅"},{"word":"exercise","meaning":"锻炼；练习"},{"word":"exhaust","meaning":"耗尽；使筋疲力尽"},{"word":"exhibit","meaning":"展览"},{"word":"exhibition","meaning":"展览会"},{"word":"exist","meaning":"存在"},{"word":"exit","meaning":"出口"},{"word":"expand","meaning":"扩大"},{"word":"expansion","meaning":"扩张"},{"word":"expect","meaning":"预料；期待"},{"word":"expectation","meaning":"期待"},{"word":"expedition","meaning":"远征"},{"word":"expense","meaning":"费用"},{"word":"expensive","meaning":"昂贵的"},{"word":"experience","meaning":"经验；经历"},{"word":"experiment","meaning":"实验"},{"word":"expert","meaning":"专家；熟练的"},{"word":"explain","meaning":"解释"},{"word":"explanation","meaning":"解释"},{"word":"explicit","meaning":"明确的"},{"word":"explode","meaning":"爆炸"},{"word":"exploit","meaning":"剥削；利用"},{"word":"explore","meaning":"探索"},{"word":"explosion","meaning":"爆炸"},{"word":"export","meaning":"出口"},{"word":"expose","meaning":"暴露"},{"word":"express","meaning":"表达"},{"word":"expression","meaning":"表达"},{"word":"extend","meaning":"延伸"},{"word":"extension","meaning":"延伸；电话分机"},{"word":"extensive","meaning":"广泛的"},{"word":"extent","meaning":"程度"},{"word":"external","meaning":"外部的"},{"word":"extinct","meaning":"灭绝的"},{"word":"extra","meaning":"额外的"},{"word":"extraordinary","meaning":"非凡的"},{"word":"extreme","meaning":"极端的"},{"word":"eye","meaning":"眼睛"},{"word":"fable","meaning":"寓言"},{"word":"fabric","meaning":"织物；结构"},{"word":"face","meaning":"脸；面对"},{"word":"facilitate","meaning":"促进"},{"word":"facility","meaning":"设施"},{"word":"fact","meaning":"事实"},{"word":"factor","meaning":"因素"},{"word":"factory","meaning":"工厂"},{"word":"faculty","meaning":"才能；全体教员"},{"word":"fade","meaning":"褪色；消失"},{"word":"fail","meaning":"失败"},{"word":"failure","meaning":"失败"},{"word":"faint","meaning":"模糊的；昏厥"},{"word":"fair","meaning":"公平的；展览会"},{"word":"fairly","meaning":"相当地"},{"word":"faith","meaning":"信任；信仰"},{"word":"fall","meaning":"落下；跌倒；秋季"},{"word":"false","meaning":"假的"},{"word":"fame","meaning":"名声"},{"word":"familiar","meaning":"熟悉的"},{"word":"family","meaning":"家庭"},{"word":"famous","meaning":"著名的"},{"word":"fan","meaning":"风扇；迷；扇子"},{"word":"fancy","meaning":"想象；花哨的"},{"word":"fantastic","meaning":"极好的"},{"word":"fantasy","meaning":"幻想"},{"word":"far","meaning":"远的"},{"word":"fare","meaning":"费用"},{"word":"farm","meaning":"农场"},{"word":"farmer","meaning":"农民"},{"word":"fascinating","meaning":"迷人的"},{"word":"fashion","meaning":"时尚"},{"word":"fast","meaning":"快的"},{"word":"fat","meaning":"脂肪；胖的"},{"word":"father/dad","meaning":"父亲"},{"word":"fault","meaning":"过错"},{"word":"favour/favor","meaning":"好意；喜爱"},{"word":"favourite/favorite","meaning":"最喜爱的"},{"word":"fear","meaning":"害怕"},{"word":"feather","meaning":"羽毛"},{"word":"feature","meaning":"特征"},{"word":"February","meaning":"二月"},{"word":"fee","meaning":"费用"},{"word":"feed","meaning":"喂养"},{"word":"feel","meaning":"感觉"},{"word":"feeling","meaning":"感觉"},{"word":"fellow","meaning":"同伴；家伙"},{"word":"female","meaning":"女性的；雌性"},{"word":"fence","meaning":"栅栏"},{"word":"fertile","meaning":"肥沃的"},{"word":"festival","meaning":"节日"},{"word":"fetch","meaning":"取来"},{"word":"fever","meaning":"发烧"},{"word":"few","meaning":"很少"},{"word":"fibre/fiber","meaning":"纤维"},{"word":"fiction","meaning":"小说"},{"word":"field","meaning":"田地；领域"},{"word":"fierce","meaning":"凶猛的"},{"word":"fifteen","meaning":"十五"},{"word":"fifth","meaning":"第五"},{"word":"fifty","meaning":"五十"},{"word":"fight","meaning":"战斗"},{"word":"figure","meaning":"数字；人物；体型"},{"word":"file","meaning":"文件；归档"},{"word":"fill","meaning":"填满"},{"word":"film","meaning":"电影；胶卷"},{"word":"final","meaning":"最后的"},{"word":"finally","meaning":"最后"},{"word":"finance","meaning":"财政"},{"word":"financial","meaning":"财政的"},{"word":"find","meaning":"找到"},{"word":"finding","meaning":"发现"},{"word":"fine","meaning":"好的；罚款"},{"word":"finger","meaning":"手指"},{"word":"finish","meaning":"完成"},{"word":"fire","meaning":"火；解雇"},{"word":"fireman","meaning":"消防员"},{"word":"firm","meaning":"坚固的；公司"},{"word":"first","meaning":"第一"},{"word":"fish","meaning":"鱼；钓鱼"},{"word":"fisherman","meaning":"渔民"},{"word":"fist","meaning":"拳头"},{"word":"fit","meaning":"适合；健康的"},{"word":"five","meaning":"五"},{"word":"fix","meaning":"修理；固定"},{"word":"flag","meaning":"旗帜"},{"word":"flame","meaning":"火焰"},{"word":"flash","meaning":"闪光"},{"word":"flat","meaning":"平的；公寓"},{"word":"flavour/flavor","meaning":"味道"},{"word":"flesh","meaning":"肉"},{"word":"flexible","meaning":"灵活的"},{"word":"flight","meaning":"航班；飞行"},{"word":"float","meaning":"漂浮"},{"word":"flood","meaning":"洪水"},{"word":"floor","meaning":"地板；楼层"},{"word":"flour","meaning":"面粉"},{"word":"flow","meaning":"流动"},{"word":"flower","meaning":"花"},{"word":"flu","meaning":"流感"},{"word":"fluent","meaning":"流利的"},{"word":"fluid","meaning":"流体"},{"word":"fly","meaning":"飞；苍蝇"},{"word":"focus","meaning":"焦点；集中"},{"word":"fog","meaning":"雾"},{"word":"fold","meaning":"折叠"},{"word":"folk","meaning":"民间的"},{"word":"follow","meaning":"跟随"},{"word":"fond","meaning":"喜爱的"},{"word":"food","meaning":"食物"},{"word":"fool","meaning":"傻瓜"},{"word":"foolish","meaning":"愚蠢的"},{"word":"foot","meaning":"脚；英尺"},{"word":"football","meaning":"足球"},{"word":"for","meaning":"为了；因为"},{"word":"forbid","meaning":"禁止"},{"word":"force","meaning":"力量；强迫"},{"word":"forecast","meaning":"预测"},{"word":"forehead","meaning":"额头"},{"word":"foreign","meaning":"外国的"},{"word":"forest","meaning":"森林"},{"word":"forever","meaning":"永远"},{"word":"forget","meaning":"忘记"},{"word":"forgive","meaning":"原谅"},{"word":"fork","meaning":"叉子"},{"word":"form","meaning":"形式；表格"},{"word":"formal","meaning":"正式的"},{"word":"format","meaning":"格式"},{"word":"former","meaning":"以前的"},{"word":"forth","meaning":"向前"},{"word":"fortunate","meaning":"幸运的"},{"word":"fortunately","meaning":"幸运地"},{"word":"fortune","meaning":"财富；运气"},{"word":"forty","meaning":"四十"},{"word":"forward","meaning":"向前"},{"word":"found","meaning":"建立"},{"word":"foundation","meaning":"基础；基金会"},{"word":"fountain","meaning":"喷泉"},{"word":"four","meaning":"四"},{"word":"fourteen","meaning":"十四"},{"word":"fourth","meaning":"第四"},{"word":"fox","meaning":"狐狸"},{"word":"frame","meaning":"框架"},{"word":"France","meaning":"法国"},{"word":"frank","meaning":"坦白的"},{"word":"free","meaning":"自由的；免费的"},{"word":"freedom","meaning":"自由"},{"word":"freeze","meaning":"冻结"},{"word":"frequent","meaning":"频繁的"},{"word":"frequently","meaning":"频繁地"},{"word":"fresh","meaning":"新鲜的"},{"word":"friction","meaning":"摩擦"},{"word":"Friday","meaning":"星期五"},{"word":"fridge","meaning":"冰箱"},{"word":"friend","meaning":"朋友"},{"word":"friendly","meaning":"友好的"},{"word":"friendship","meaning":"友谊"},{"word":"frighten","meaning":"使害怕"},{"word":"frog","meaning":"青蛙"},{"word":"from","meaning":"从...起"},{"word":"front","meaning":"前面"},{"word":"frontier","meaning":"边境"},{"word":"frost","meaning":"霜"},{"word":"fruit","meaning":"水果"},{"word":"fry","meaning":"油炸"},{"word":"fuel","meaning":"燃料"},{"word":"fulfil","meaning":"履行"},{"word":"full","meaning":"满的"},{"word":"fun","meaning":"乐趣"},{"word":"function","meaning":"功能"},{"word":"fund","meaning":"资金"},{"word":"fundamental","meaning":"基本的"},{"word":"funeral","meaning":"葬礼"},{"word":"funny","meaning":"有趣的"},{"word":"fur","meaning":"毛皮"},{"word":"furniture","meaning":"家具"},{"word":"further","meaning":"更远的；进一步"},{"word":"furthermore","meaning":"而且"},{"word":"future","meaning":"未来"},{"word":"gain","meaning":"获得"},{"word":"gallon","meaning":"加仑"},{"word":"gallery","meaning":"画廊"},{"word":"game","meaning":"游戏；比赛"},{"word":"gap","meaning":"缺口；差距"},{"word":"garage","meaning":"车库"},{"word":"garbage","meaning":"垃圾"},{"word":"garden","meaning":"花园"},{"word":"garlic","meaning":"大蒜"},{"word":"gas","meaning":"气体；汽油"},{"word":"gate","meaning":"大门"},{"word":"gather","meaning":"聚集"},{"word":"gender","meaning":"性别"},{"word":"gene","meaning":"基因"},{"word":"general","meaning":"一般的；将军"},{"word":"generate","meaning":"产生"},{"word":"generation","meaning":"一代"},{"word":"generous","meaning":"慷慨的"},{"word":"genius","meaning":"天才"},{"word":"gentle","meaning":"温柔的"},{"word":"gentleman","meaning":"绅士"},{"word":"genuine","meaning":"真正的"},{"word":"geography","meaning":"地理"},{"word":"geometry","meaning":"几何学"},{"word":"gesture","meaning":"手势"},{"word":"get","meaning":"得到"},{"word":"giant","meaning":"巨大的；巨人"},{"word":"gift","meaning":"礼物；天赋"},{"word":"gifted","meaning":"有天赋的"},{"word":"girl","meaning":"女孩"},{"word":"give","meaning":"给"},{"word":"glad","meaning":"高兴的"},{"word":"glance","meaning":"一瞥"},{"word":"glass","meaning":"玻璃；杯子"},{"word":"global","meaning":"全球的"},{"word":"globe","meaning":"地球；球体"},{"word":"glory","meaning":"光荣"},{"word":"glove","meaning":"手套"},{"word":"glue","meaning":"胶水"},{"word":"go","meaning":"去"},{"word":"goal","meaning":"目标；球门"},{"word":"goat","meaning":"山羊"},{"word":"god","meaning":"神"},{"word":"gold","meaning":"黄金"},{"word":"golf","meaning":"高尔夫球"},{"word":"good","meaning":"好的"},{"word":"goodbye/bye","meaning":"再见"},{"word":"goods","meaning":"商品"},{"word":"government","meaning":"政府"},{"word":"grab","meaning":"抓住"},{"word":"grace","meaning":"优美"},{"word":"graceful","meaning":"优美的"},{"word":"grade","meaning":"等级；年级"},{"word":"gradual","meaning":"逐渐的"},{"word":"graduate","meaning":"毕业"},{"word":"grain","meaning":"谷物"},{"word":"gram/gramme","meaning":"克"},{"word":"grammar","meaning":"语法"},{"word":"grand","meaning":"宏伟的"},{"word":"granddaughter","meaning":"孙女"},{"word":"grandfather/grandpa","meaning":"祖父"},{"word":"grandmother/grandma","meaning":"祖母"},{"word":"grandparent","meaning":"祖父母"},{"word":"grandson","meaning":"孙子"},{"word":"grant","meaning":"授予；同意"},{"word":"grape","meaning":"葡萄"},{"word":"graph","meaning":"图表"},{"word":"grasp","meaning":"抓住；理解"},{"word":"grass","meaning":"草"},{"word":"grateful","meaning":"感激的"},{"word":"gravity","meaning":"重力"},{"word":"great","meaning":"伟大的"},{"word":"greedy","meaning":"贪婪的"},{"word":"green","meaning":"绿色"},{"word":"greet","meaning":"问候"},{"word":"grey/gray","meaning":"灰色"},{"word":"grief","meaning":"悲伤"},{"word":"grill","meaning":"烤架"},{"word":"grocer","meaning":"杂货商"},{"word":"grocery","meaning":"杂货店"},{"word":"ground","meaning":"地面"},{"word":"group","meaning":"组，群"},{"word":"grow","meaning":"生长；种植"},{"word":"guarantee","meaning":"保证"},{"word":"guard","meaning":"守卫"},{"word":"guess","meaning":"猜测"},{"word":"guest","meaning":"客人"},{"word":"guidance","meaning":"指导"},{"word":"guide","meaning":"导游；指导"},{"word":"guideline","meaning":"指导方针"},{"word":"guilty","meaning":"内疚的；有罪的"},{"word":"guitar","meaning":"吉他"},{"word":"gun","meaning":"枪"},{"word":"guy","meaning":"家伙"},{"word":"gym","meaning":"体育馆"},{"word":"gymnastics","meaning":"体操"},{"word":"habit","meaning":"习惯"},{"word":"habitat","meaning":"栖息地"},{"word":"hair","meaning":"头发"},{"word":"half","meaning":"一半"},{"word":"hall","meaning":"大厅"},{"word":"ham","meaning":"火腿"},{"word":"hamburger","meaning":"汉堡包"},{"word":"hammer","meaning":"锤子"},{"word":"hand","meaning":"手；递"},{"word":"handbag","meaning":"手提包"},{"word":"handful","meaning":"一把"},{"word":"handkerchief","meaning":"手帕"},{"word":"handle","meaning":"把手；处理"},{"word":"handsome","meaning":"英俊的"},{"word":"handwriting","meaning":"书法"},{"word":"handy","meaning":"方便的"},{"word":"hang","meaning":"悬挂；绞死"},{"word":"happen","meaning":"发生"},{"word":"happy","meaning":"快乐的"},{"word":"harbour/harbor","meaning":"港口"},{"word":"hard","meaning":"硬的；努力地"},{"word":"hardly","meaning":"几乎不"},{"word":"hardship","meaning":"艰难"},{"word":"hardware","meaning":"硬件"},{"word":"harm","meaning":"伤害"},{"word":"harmful","meaning":"有害的"},{"word":"harmony","meaning":"和谐"},{"word":"harvest","meaning":"收获"},{"word":"hat","meaning":"帽子"},{"word":"hatch","meaning":"孵化"},{"word":"hate","meaning":"憎恨"},{"word":"have","meaning":"有"},{"word":"he","meaning":"他"},{"word":"head","meaning":"头；首领"},{"word":"headache","meaning":"头痛"},{"word":"headline","meaning":"大字标题"},{"word":"headquarters","meaning":"总部"},{"word":"health","meaning":"健康"},{"word":"healthy","meaning":"健康的"},{"word":"hear","meaning":"听见"},{"word":"heart","meaning":"心"},{"word":"heat","meaning":"热"},{"word":"heaven","meaning":"天堂"},{"word":"heavy","meaning":"重的"},{"word":"heel","meaning":"脚后跟"},{"word":"height","meaning":"高度"},{"word":"helicopter","meaning":"直升机"},{"word":"hell","meaning":"地狱"},{"word":"hello","meaning":"你好"},{"word":"helmet","meaning":"头盔"},{"word":"help","meaning":"帮助"},{"word":"helpful","meaning":"有帮助的"},{"word":"hen","meaning":"母鸡"},{"word":"hence","meaning":"因此"},{"word":"her","meaning":"她的"},{"word":"herb","meaning":"草本植物"},{"word":"here","meaning":"这里"},{"word":"heritage","meaning":"遗产"},{"word":"hero","meaning":"英雄"},{"word":"hers","meaning":"她的(名词性物主代词)"},{"word":"herself","meaning":"她自己"},{"word":"hesitate","meaning":"犹豫"},{"word":"hey","meaning":"嘿"},{"word":"hi","meaning":"嗨"},{"word":"hide","meaning":"隐藏"},{"word":"high","meaning":"高的"},{"word":"highlight","meaning":"强调；突出"},{"word":"highly","meaning":"高度地"},{"word":"highway","meaning":"公路"},{"word":"hike","meaning":"徒步旅行"},{"word":"hill","meaning":"小山"},{"word":"him","meaning":"他(宾格)"},{"word":"himself","meaning":"他自己"},{"word":"hire","meaning":"雇用"},{"word":"his","meaning":"他的"},{"word":"history","meaning":"历史"},{"word":"hit","meaning":"打；击"},{"word":"hobby","meaning":"业余爱好"},{"word":"hockey","meaning":"曲棍球"},{"word":"hold","meaning":"持有；举行"},{"word":"hole","meaning":"洞"},{"word":"holiday","meaning":"假日"},{"word":"holy","meaning":"神圣的"},{"word":"home","meaning":"家"},{"word":"homework","meaning":"家庭作业"},{"word":"honest","meaning":"诚实的"},{"word":"honey","meaning":"蜂蜜"},{"word":"honour/honor","meaning":"荣誉"},{"word":"hope","meaning":"希望"},{"word":"horrible","meaning":"可怕的"},{"word":"horse","meaning":"马"},{"word":"hospital","meaning":"医院"},{"word":"host","meaning":"主人；主办"},{"word":"hostile","meaning":"敌对的"},{"word":"hot","meaning":"热的"},{"word":"hotel","meaning":"旅馆"},{"word":"hour","meaning":"小时"},{"word":"house","meaning":"房子"},{"word":"household","meaning":"家庭的"},{"word":"housework","meaning":"家务劳动"},{"word":"housing","meaning":"住房"},{"word":"how","meaning":"如何"},{"word":"however","meaning":"然而"},{"word":"huge","meaning":"巨大的"},{"word":"human","meaning":"人类"},{"word":"humble","meaning":"谦逊的"},{"word":"humour/humor","meaning":"幽默"},{"word":"humorous","meaning":"幽默的"},{"word":"hundred","meaning":"百"},{"word":"hungry","meaning":"饥饿的"},{"word":"hunt","meaning":"打猎"},{"word":"hurry","meaning":"匆忙"},{"word":"hurt","meaning":"伤害"},{"word":"husband","meaning":"丈夫"},{"word":"hut","meaning":"小屋"},{"word":"hydrogen","meaning":"氢"},{"word":"I","meaning":"我"},{"word":"ice","meaning":"冰"},{"word":"ice cream","meaning":"冰淇淋"},{"word":"idea","meaning":"想法"},{"word":"ideal","meaning":"理想的"},{"word":"identical","meaning":"相同的"},{"word":"identify","meaning":"识别；确认"},{"word":"identity","meaning":"身份"},{"word":"idiom","meaning":"习语"},{"word":"if","meaning":"如果"},{"word":"ignore","meaning":"忽视"},{"word":"ill","meaning":"有病的"},{"word":"illegal","meaning":"非法的"},{"word":"illness","meaning":"疾病"},{"word":"illustrate","meaning":"说明"},{"word":"image","meaning":"形象；图像"},{"word":"imagine","meaning":"想象"},{"word":"immediate","meaning":"立即的"},{"word":"immediately","meaning":"立即"},{"word":"impact","meaning":"影响"},{"word":"imply","meaning":"暗示"},{"word":"import","meaning":"进口"},{"word":"important","meaning":"重要的"},{"word":"impose","meaning":"强加"},{"word":"impossible","meaning":"不可能的"},{"word":"impress","meaning":"给...印象"},{"word":"impression","meaning":"印象"},{"word":"improve","meaning":"改进"},{"word":"in","meaning":"在...里"},{"word":"inch","meaning":"英寸"},{"word":"incident","meaning":"事件"},{"word":"include","meaning":"包括"},{"word":"income","meaning":"收入"},{"word":"increase","meaning":"增加"},{"word":"incredible","meaning":"难以置信的"},{"word":"indeed","meaning":"的确"},{"word":"independent","meaning":"独立的"},{"word":"indicate","meaning":"指示；表明"},{"word":"individual","meaning":"个人；个体的"},{"word":"indoor","meaning":"室内的"},{"word":"industry","meaning":"工业"},{"word":"inevitable","meaning":"不可避免的"},{"word":"infant","meaning":"婴儿"},{"word":"infect","meaning":"感染"},{"word":"infection","meaning":"感染"},{"word":"inferior","meaning":"劣等的"},{"word":"infinite","meaning":"无限的"},{"word":"inflation","meaning":"通货膨胀"},{"word":"influence","meaning":"影响"},{"word":"influential","meaning":"有影响力的"},{"word":"inform","meaning":"通知"},{"word":"information","meaning":"信息"},{"word":"ingredient","meaning":"成分"},{"word":"inhabitant","meaning":"居民"},{"word":"initial","meaning":"最初的"},{"word":"initiative","meaning":"主动性"},{"word":"injure","meaning":"伤害"},{"word":"injury","meaning":"伤害"},{"word":"ink","meaning":"墨水"},{"word":"inner","meaning":"内部的"},{"word":"innocent","meaning":"无辜的"},{"word":"innovation","meaning":"创新"},{"word":"input","meaning":"输入"},{"word":"inquiry","meaning":"询问"},{"word":"insect","meaning":"昆虫"},{"word":"inside","meaning":"里面"},{"word":"insight","meaning":"洞察力"},{"word":"insist","meaning":"坚持"},{"word":"inspect","meaning":"检查"},{"word":"inspiration","meaning":"灵感"},{"word":"inspire","meaning":"鼓舞"},{"word":"install","meaning":"安装"},{"word":"instance","meaning":"例子"},{"word":"instant","meaning":"瞬间；立即的"},{"word":"instead","meaning":"代替"},{"word":"institute","meaning":"学院；研究所"},{"word":"institution","meaning":"机构"},{"word":"instruct","meaning":"指导"},{"word":"instruction","meaning":"说明；指令"},{"word":"instrument","meaning":"仪器；乐器"},{"word":"insurance","meaning":"保险"},{"word":"integrate","meaning":"整合"},{"word":"integrity","meaning":"正直；完整"},{"word":"intelligence","meaning":"智力"},{"word":"intelligent","meaning":"聪明的"},{"word":"intend","meaning":"打算"},{"word":"intense","meaning":"强烈的"},{"word":"intention","meaning":"意图"},{"word":"interact","meaning":"互动"},{"word":"interest","meaning":"兴趣；利益"},{"word":"interesting","meaning":"有趣的"},{"word":"interfere","meaning":"干涉"},{"word":"interior","meaning":"内部的"},{"word":"intermediate","meaning":"中级的"},{"word":"internal","meaning":"内部的"},{"word":"international","meaning":"国际的"},{"word":"internet","meaning":"互联网"},{"word":"interpret","meaning":"解释；口译"},{"word":"interrupt","meaning":"打断"},{"word":"interval","meaning":"间隔"},{"word":"interview","meaning":"面试；采访"},{"word":"into","meaning":"进入"},{"word":"introduce","meaning":"介绍"},{"word":"invention","meaning":"发明"},{"word":"invest","meaning":"投资"},{"word":"investigate","meaning":"调查"},{"word":"investment","meaning":"投资"},{"word":"invite","meaning":"邀请"},{"word":"involve","meaning":"涉及"},{"word":"iron","meaning":"铁；熨斗"},{"word":"island","meaning":"岛"},{"word":"isolate","meaning":"隔离"},{"word":"issue","meaning":"问题；发行"},{"word":"it","meaning":"它"},{"word":"item","meaning":"项目"},{"word":"its","meaning":"它的"},{"word":"itself","meaning":"它自己"},{"word":"jacket","meaning":"夹克"},{"word":"jam","meaning":"果酱；堵塞"},{"word":"January","meaning":"一月"},{"word":"Japan","meaning":"日本"},{"word":"jar","meaning":"罐子"},{"word":"jaw","meaning":"下巴"},{"word":"jazz","meaning":"爵士乐"},{"word":"jealous","meaning":"嫉妒的"},{"word":"jeans","meaning":"牛仔裤"},{"word":"jet","meaning":"喷气式飞机"},{"word":"jewel","meaning":"宝石"},{"word":"job","meaning":"工作"},{"word":"join","meaning":"加入"},{"word":"joke","meaning":"笑话"},{"word":"journal","meaning":"日记；期刊"},{"word":"journalist","meaning":"记者"},{"word":"journey","meaning":"旅行"},{"word":"joy","meaning":"欢乐"},{"word":"judge","meaning":"法官；判断"},{"word":"juice","meaning":"汁"},{"word":"July","meaning":"七月"},{"word":"jump","meaning":"跳"},{"word":"June","meaning":"六月"},{"word":"jungle","meaning":"丛林"},{"word":"junior","meaning":"年少的；下级"},{"word":"just","meaning":"刚刚；只是"},{"word":"justice","meaning":"正义"},{"word":"justify","meaning":"证明...正当"},{"word":"keen","meaning":"热切的"},{"word":"keep","meaning":"保持"},{"word":"kettle","meaning":"水壶"},{"word":"key","meaning":"钥匙；关键"},{"word":"keyboard","meaning":"键盘"},{"word":"kick","meaning":"踢"},{"word":"kid","meaning":"小孩"},{"word":"kill","meaning":"杀死"},{"word":"kilogram","meaning":"公斤"},{"word":"kilometre/kilometer","meaning":"公里"},{"word":"kind","meaning":"种类；和蔼的"},{"word":"kindergarten","meaning":"幼儿园"},{"word":"king","meaning":"国王"},{"word":"kingdom","meaning":"王国"},{"word":"kiss","meaning":"吻"},{"word":"kit","meaning":"成套工具"},{"word":"kitchen","meaning":"厨房"},{"word":"kite","meaning":"风筝"},{"word":"knee","meaning":"膝盖"},{"word":"knife","meaning":"刀"},{"word":"knock","meaning":"敲"},{"word":"know","meaning":"知道"},{"word":"knowledge","meaning":"知识"},{"word":"lab","meaning":"实验室"},{"word":"label","meaning":"标签"},{"word":"labour/labor","meaning":"劳动"},{"word":"lack","meaning":"缺乏"},{"word":"ladder","meaning":"梯子"},{"word":"lady","meaning":"女士"},{"word":"lake","meaning":"湖"},{"word":"lamb","meaning":"羔羊"},{"word":"lamp","meaning":"灯"},{"word":"land","meaning":"土地；着陆"},{"word":"landscape","meaning":"风景"},{"word":"lane","meaning":"小巷；车道"},{"word":"language","meaning":"语言"},{"word":"lantern","meaning":"灯笼"},{"word":"lap","meaning":"大腿"},{"word":"laptop","meaning":"笔记本电脑"},{"word":"large","meaning":"大的"},{"word":"last","meaning":"最后的；持续"},{"word":"late","meaning":"迟的；晚的"},{"word":"later","meaning":"后来"},{"word":"laugh","meaning":"笑"},{"word":"launch","meaning":"发射；发起"},{"word":"law","meaning":"法律"},{"word":"lawyer","meaning":"律师"},{"word":"lay","meaning":"放置；下蛋"},{"word":"layer","meaning":"层"},{"word":"lazy","meaning":"懒惰的"},{"word":"lead","meaning":"领导；带领"},{"word":"leader","meaning":"领导"},{"word":"leadership","meaning":"领导力"},{"word":"leaf","meaning":"叶子"},{"word":"league","meaning":"联盟"},{"word":"leak","meaning":"泄漏"},{"word":"lean","meaning":"倾斜；依靠"},{"word":"leap","meaning":"跳跃"},{"word":"learn","meaning":"学习"},{"word":"least","meaning":"最少"},{"word":"leather","meaning":"皮革"},{"word":"leave","meaning":"离开；留下"},{"word":"lecture","meaning":"讲座"},{"word":"left","meaning":"左边"},{"word":"leg","meaning":"腿"},{"word":"legal","meaning":"合法的"},{"word":"legend","meaning":"传说"},{"word":"leisure","meaning":"闲暇"},{"word":"lemon","meaning":"柠檬"},{"word":"lend","meaning":"借出"},{"word":"length","meaning":"长度"},{"word":"less","meaning":"更少的"},{"word":"lesson","meaning":"课"},{"word":"let","meaning":"让"},{"word":"letter","meaning":"信；字母"},{"word":"level","meaning":"水平"},{"word":"liable","meaning":"有责任的"},{"word":"liberal","meaning":"自由的"},{"word":"liberty","meaning":"自由"},{"word":"librarian","meaning":"图书管理员"},{"word":"library","meaning":"图书馆"},{"word":"licence/license","meaning":"许可证"},{"word":"lid","meaning":"盖子"},{"word":"lie","meaning":"躺；说谎"},{"word":"life","meaning":"生命；生活"},{"word":"lifestyle","meaning":"生活方式"},{"word":"lift","meaning":"举起；电梯"},{"word":"light","meaning":"光；轻的"},{"word":"lightning","meaning":"闪电"},{"word":"like","meaning":"像；喜欢"},{"word":"likely","meaning":"可能的"},{"word":"limit","meaning":"限制"},{"word":"limited","meaning":"有限的"},{"word":"line","meaning":"线；行"},{"word":"link","meaning":"连接"},{"word":"lion","meaning":"狮子"},{"word":"lip","meaning":"嘴唇"},{"word":"liquid","meaning":"液体"},{"word":"list","meaning":"列表"},{"word":"listen","meaning":"听"},{"word":"literally","meaning":"字面上地"},{"word":"literary","meaning":"文学的"},{"word":"literature","meaning":"文学"},{"word":"litre/liter","meaning":"升"},{"word":"litter","meaning":"垃圾"},{"word":"little","meaning":"小的；很少"},{"word":"live","meaning":"活；住；直播的"},{"word":"lively","meaning":"活泼的"},{"word":"liver","meaning":"肝脏"},{"word":"living","meaning":"活的；生计"},{"word":"load","meaning":"负载"},{"word":"loaf","meaning":"一条面包"},{"word":"loan","meaning":"贷款"},{"word":"local","meaning":"当地的"},{"word":"locate","meaning":"位于"},{"word":"location","meaning":"位置"},{"word":"lock","meaning":"锁"},{"word":"logic","meaning":"逻辑"},{"word":"logical","meaning":"逻辑的"},{"word":"lonely","meaning":"孤独的"},{"word":"long","meaning":"长的；渴望"},{"word":"look","meaning":"看"},{"word":"loop","meaning":"环"},{"word":"loose","meaning":"松的"},{"word":"lord","meaning":"主；领主"},{"word":"lose","meaning":"失去"},{"word":"loss","meaning":"损失"},{"word":"lost","meaning":"丢失的"},{"word":"lot","meaning":"许多"},{"word":"loud","meaning":"大声的"},{"word":"love","meaning":"爱"},{"word":"lovely","meaning":"可爱的"},{"word":"low","meaning":"低的"},{"word":"lower","meaning":"较低的；降低"},{"word":"loyal","meaning":"忠诚的"},{"word":"luck","meaning":"运气"},{"word":"lucky","meaning":"幸运的"},{"word":"luggage","meaning":"行李"},{"word":"lunch","meaning":"午餐"},{"word":"lung","meaning":"肺"},{"word":"luxury","meaning":"奢侈"},{"word":"machine","meaning":"机器"},{"word":"mad","meaning":"疯狂的"},{"word":"magazine","meaning":"杂志"},{"word":"magic","meaning":"魔术"},{"word":"mail","meaning":"邮件"},{"word":"main","meaning":"主要的"},{"word":"maintain","meaning":"维持"},{"word":"major","meaning":"主要的；专业"},{"word":"majority","meaning":"大多数"},{"word":"make","meaning":"制造；使"},{"word":"male","meaning":"男性的"},{"word":"man","meaning":"男人；人类"},{"word":"manage","meaning":"管理"},{"word":"manager","meaning":"经理"},{"word":"manner","meaning":"方式；礼貌"},{"word":"manufacture","meaning":"制造"},{"word":"many","meaning":"许多"},{"word":"map","meaning":"地图"},{"word":"marathon","meaning":"马拉松"},{"word":"March","meaning":"三月"},{"word":"march","meaning":"行军"},{"word":"marine","meaning":"海洋的"},{"word":"mark","meaning":"标记；分数"},{"word":"market","meaning":"市场"},{"word":"marriage","meaning":"婚姻"},{"word":"marry","meaning":"结婚"},{"word":"mask","meaning":"面具"},{"word":"mass","meaning":"大量；质量"},{"word":"master","meaning":"主人；掌握"},{"word":"match","meaning":"比赛；火柴；匹配"},{"word":"mate","meaning":"伙伴"},{"word":"material","meaning":"材料"},{"word":"maths/math","meaning":"数学"},{"word":"matter","meaning":"事情；要紧"},{"word":"mature","meaning":"成熟的"},{"word":"maximum","meaning":"最大量"},{"word":"May","meaning":"五月"},{"word":"may","meaning":"可以；也许"},{"word":"maybe","meaning":"也许"},{"word":"me","meaning":"我(宾格)"},{"word":"meal","meaning":"一餐"},{"word":"mean","meaning":"意思是；吝啬的"},{"word":"meaning","meaning":"意义"},{"word":"means","meaning":"手段"},{"word":"meanwhile","meaning":"同时"},{"word":"measure","meaning":"测量"},{"word":"meat","meaning":"肉"},{"word":"mechanic","meaning":"机械师"},{"word":"medal","meaning":"奖牌"},{"word":"medical","meaning":"医学的"},{"word":"medicine","meaning":"药；医学"},{"word":"medium","meaning":"媒介；中等的"},{"word":"meet","meaning":"遇见"},{"word":"meeting","meaning":"会议"},{"word":"member","meaning":"成员"},{"word":"membership","meaning":"会员资格"},{"word":"memory","meaning":"记忆"},{"word":"mental","meaning":"心理的"},{"word":"mention","meaning":"提及"},{"word":"menu","meaning":"菜单"},{"word":"mercy","meaning":"仁慈"},{"word":"mere","meaning":"仅仅的"},{"word":"merely","meaning":"仅仅"},{"word":"merry","meaning":"愉快的"},{"word":"mess","meaning":"杂乱"},{"word":"message","meaning":"信息"},{"word":"metal","meaning":"金属"},{"word":"metaphor","meaning":"隐喻"},{"word":"method","meaning":"方法"},{"word":"metre/meter","meaning":"米"},{"word":"microscope","meaning":"显微镜"},{"word":"middle","meaning":"中间"},{"word":"midnight","meaning":"午夜"},{"word":"might","meaning":"可能"},{"word":"migration","meaning":"迁移"},{"word":"mild","meaning":"温和的"},{"word":"mile","meaning":"英里"},{"word":"military","meaning":"军事的"},{"word":"milk","meaning":"牛奶"},{"word":"millimetre/millimeter","meaning":"毫米"},{"word":"million","meaning":"百万"},{"word":"mind","meaning":"思想；介意"},{"word":"mine","meaning":"我的；采矿"},{"word":"mineral","meaning":"矿物"},{"word":"minimum","meaning":"最小量"},{"word":"minister","meaning":"部长"},{"word":"minor","meaning":"较小的"},{"word":"minority","meaning":"少数"},{"word":"minute","meaning":"分钟；微小的"},{"word":"miracle","meaning":"奇迹"},{"word":"mirror","meaning":"镜子"},{"word":"Miss","meaning":"小姐"},{"word":"miss","meaning":"想念；错过"},{"word":"missile","meaning":"导弹"},{"word":"missing","meaning":"缺少的"},{"word":"mission","meaning":"使命"},{"word":"mistake","meaning":"错误"},{"word":"mix","meaning":"混合"},{"word":"mixture","meaning":"混合物"},{"word":"mobile","meaning":"可移动的"},{"word":"mobile phone","meaning":"手机"},{"word":"mode","meaning":"模式"},{"word":"model","meaning":"模型；模特"},{"word":"modern","meaning":"现代的"},{"word":"modest","meaning":"谦虚的"},{"word":"modify","meaning":"修改"},{"word":"mom/mum","meaning":"妈妈"},{"word":"moment","meaning":"时刻"},{"word":"Monday","meaning":"星期一"},{"word":"money","meaning":"钱"},{"word":"monitor","meaning":"监视器；班长"},{"word":"monkey","meaning":"猴子"},{"word":"month","meaning":"月"},{"word":"monthly","meaning":"每月的"},{"word":"monument","meaning":"纪念碑"},{"word":"mood","meaning":"情绪"},{"word":"moon","meaning":"月亮"},{"word":"moral","meaning":"道德的"},{"word":"more","meaning":"更多的"},{"word":"moreover","meaning":"而且"},{"word":"morning","meaning":"早晨"},{"word":"most","meaning":"最多"},{"word":"mostly","meaning":"主要地"},{"word":"mother/mom","meaning":"母亲"},{"word":"motion","meaning":"运动"},{"word":"motivate","meaning":"激励"},{"word":"motive","meaning":"动机"},{"word":"motor","meaning":"马达"},{"word":"mount","meaning":"登上"},{"word":"mountain","meaning":"山"},{"word":"mouse","meaning":"老鼠；鼠标"},{"word":"mouth","meaning":"嘴"},{"word":"move","meaning":"移动"},{"word":"movement","meaning":"运动"},{"word":"movie","meaning":"电影"},{"word":"Mr.","meaning":"先生"},{"word":"Mrs.","meaning":"夫人"},{"word":"Ms.","meaning":"女士"},{"word":"much","meaning":"许多"},{"word":"mud","meaning":"泥"},{"word":"multiple","meaning":"倍数；多个"},{"word":"murder","meaning":"谋杀"},{"word":"muscle","meaning":"肌肉"},{"word":"museum","meaning":"博物馆"},{"word":"mushroom","meaning":"蘑菇"},{"word":"music","meaning":"音乐"},{"word":"musician","meaning":"音乐家"},{"word":"must","meaning":"必须"},{"word":"mutton","meaning":"羊肉"},{"word":"mutual","meaning":"相互的"},{"word":"my","meaning":"我的"},{"word":"myself","meaning":"我自己"},{"word":"mystery","meaning":"神秘"},{"word":"myth","meaning":"神话"},{"word":"nail","meaning":"指甲；钉子"},{"word":"name","meaning":"名字"},{"word":"narrow","meaning":"狭窄的"},{"word":"nation","meaning":"国家"},{"word":"national","meaning":"国家的"},{"word":"nationality","meaning":"国籍"},{"word":"native","meaning":"本国的；本地人"},{"word":"natural","meaning":"自然的"},{"word":"nature","meaning":"自然"},{"word":"navy","meaning":"海军"},{"word":"near","meaning":"近的"},{"word":"nearby","meaning":"附近的"},{"word":"nearly","meaning":"几乎"},{"word":"neat","meaning":"整洁的"},{"word":"necessary","meaning":"必要的"},{"word":"neck","meaning":"脖子"},{"word":"need","meaning":"需要"},{"word":"needle","meaning":"针"},{"word":"negative","meaning":"消极的；否定的"},{"word":"neighbour/neighbor","meaning":"邻居"},{"word":"neighbourhood/neighborhood","meaning":"邻近地区"},{"word":"neither","meaning":"两者都不"},{"word":"nephew","meaning":"侄子"},{"word":"nerve","meaning":"神经"},{"word":"nervous","meaning":"紧张的"},{"word":"nest","meaning":"巢"},{"word":"net","meaning":"网"},{"word":"network","meaning":"网络"},{"word":"neutral","meaning":"中立的"},{"word":"never","meaning":"从不"},{"word":"nevertheless","meaning":"然而"},{"word":"new","meaning":"新的"},{"word":"news","meaning":"新闻"},{"word":"newspaper","meaning":"报纸"},{"word":"next","meaning":"下一个"},{"word":"nice","meaning":"好的"},{"word":"niece","meaning":"侄女"},{"word":"night","meaning":"夜晚"},{"word":"nine","meaning":"九"},{"word":"nineteen","meaning":"十九"},{"word":"ninety","meaning":"九十"},{"word":"ninth","meaning":"第九"},{"word":"no","meaning":"不"},{"word":"noble","meaning":"高贵的"},{"word":"nobody","meaning":"没有人"},{"word":"nod","meaning":"点头"},{"word":"noise","meaning":"噪音"},{"word":"noisy","meaning":"吵闹的"},{"word":"none","meaning":"没有一个"},{"word":"noon","meaning":"中午"},{"word":"nor","meaning":"也不"},{"word":"normal","meaning":"正常的"},{"word":"north","meaning":"北"},{"word":"northern","meaning":"北部的"},{"word":"nose","meaning":"鼻子"},{"word":"not","meaning":"不"},{"word":"note","meaning":"笔记；音符"},{"word":"notebook","meaning":"笔记本"},{"word":"nothing","meaning":"没有什么"},{"word":"notice","meaning":"注意"},{"word":"noun","meaning":"名词"},{"word":"novel","meaning":"小说"},{"word":"novelist","meaning":"小说家"},{"word":"November","meaning":"十一月"},{"word":"now","meaning":"现在"},{"word":"nowadays","meaning":"现今"},{"word":"nowhere","meaning":"无处"},{"word":"nuclear","meaning":"核能的"},{"word":"number","meaning":"数字"},{"word":"numerous","meaning":"许多的"},{"word":"nurse","meaning":"护士"},{"word":"nut","meaning":"坚果"},{"word":"nutrition","meaning":"营养"},{"word":"obey","meaning":"服从"},{"word":"object","meaning":"物体；宾语；反对"},{"word":"objective","meaning":"客观的；目标"},{"word":"obligation","meaning":"义务"},{"word":"observe","meaning":"观察"},{"word":"obstacle","meaning":"障碍"},{"word":"obtain","meaning":"获得"},{"word":"obvious","meaning":"明显的"},{"word":"obviously","meaning":"明显地"},{"word":"occasion","meaning":"场合"},{"word":"occupation","meaning":"职业"},{"word":"occupy","meaning":"占据"},{"word":"occur","meaning":"发生"},{"word":"ocean","meaning":"海洋"},{"word":"o'clock","meaning":"...点钟"},{"word":"October","meaning":"十月"},{"word":"odd","meaning":"奇怪的；奇数的"},{"word":"of","meaning":"...的"},{"word":"off","meaning":"离开"},{"word":"offend","meaning":"冒犯"},{"word":"offer","meaning":"提供"},{"word":"office","meaning":"办公室"},{"word":"officer","meaning":"军官"},{"word":"official","meaning":"官员；官方的"},{"word":"often","meaning":"经常"},{"word":"oil","meaning":"油"},{"word":"OK","meaning":"好"},{"word":"old","meaning":"老的"},{"word":"Olympic","meaning":"奥林匹克的"},{"word":"on","meaning":"在...上"},{"word":"once","meaning":"一次；一旦"},{"word":"one","meaning":"一"},{"word":"onion","meaning":"洋葱"},{"word":"online","meaning":"在线的"},{"word":"only","meaning":"只有"},{"word":"onto","meaning":"到...上"},{"word":"open","meaning":"开"},{"word":"opera","meaning":"歌剧"},{"word":"operate","meaning":"操作"},{"word":"operation","meaning":"手术；操作"},{"word":"operator","meaning":"操作员"},{"word":"opinion","meaning":"意见"},{"word":"opponent","meaning":"对手"},{"word":"opportunity","meaning":"机会"},{"word":"oppose","meaning":"反对"},{"word":"opposite","meaning":"对面的"},{"word":"optimistic","meaning":"乐观的"},{"word":"option","meaning":"选择"},{"word":"or","meaning":"或者"},{"word":"orange","meaning":"橙子；橙色"},{"word":"orbit","meaning":"轨道"},{"word":"orchestra","meaning":"管弦乐队"},{"word":"order","meaning":"顺序；命令"},{"word":"ordinary","meaning":"普通的"},{"word":"organ","meaning":"器官"},{"word":"organic","meaning":"有机的"},{"word":"organisation/organization","meaning":"组织"},{"word":"organise/organize","meaning":"组织"},{"word":"origin","meaning":"起源"},{"word":"original","meaning":"原来的"},{"word":"other","meaning":"其他的"},{"word":"otherwise","meaning":"否则"},{"word":"ought to","meaning":"应该"},{"word":"our","meaning":"我们的"},{"word":"ours","meaning":"我们的(名词性物主代词)"},{"word":"ourselves","meaning":"我们自己"},{"word":"out","meaning":"外面"},{"word":"outcome","meaning":"结果"},{"word":"outdoor","meaning":"户外的"},{"word":"outer","meaning":"外部的"},{"word":"outlet","meaning":"出口"},{"word":"outline","meaning":"轮廓"},{"word":"output","meaning":"输出"},{"word":"outside","meaning":"外面"},{"word":"outstanding","meaning":"杰出的"},{"word":"oven","meaning":"烤箱"},{"word":"over","meaning":"在...上方"},{"word":"overall","meaning":"总体的"},{"word":"overcome","meaning":"克服"},{"word":"overseas","meaning":"海外的"},{"word":"owe","meaning":"欠"},{"word":"own","meaning":"自己的；拥有"},{"word":"owner","meaning":"所有者"},{"word":"pace","meaning":"步速"},{"word":"pack","meaning":"包装"},{"word":"package","meaning":"包裹"},{"word":"page","meaning":"页"},{"word":"pain","meaning":"疼痛"},{"word":"paint","meaning":"油漆；绘画"},{"word":"painter","meaning":"画家"},{"word":"painting","meaning":"画"},{"word":"pair","meaning":"一双"},{"word":"palace","meaning":"宫殿"},{"word":"pale","meaning":"苍白的"},{"word":"pan","meaning":"平底锅"},{"word":"panel","meaning":"面板"},{"word":"paper","meaning":"纸；论文"},{"word":"paragraph","meaning":"段落"},{"word":"parallel","meaning":"平行的"},{"word":"parcel","meaning":"包裹"},{"word":"pardon","meaning":"原谅"},{"word":"parent","meaning":"父母"},{"word":"park","meaning":"公园；停车"},{"word":"parliament","meaning":"议会"},{"word":"part","meaning":"部分"},{"word":"participate","meaning":"参加"},{"word":"particular","meaning":"特别的"},{"word":"particularly","meaning":"特别地"},{"word":"partly","meaning":"部分地"},{"word":"partner","meaning":"伙伴"},{"word":"party","meaning":"聚会；政党"},{"word":"pass","meaning":"经过；传递"},{"word":"passage","meaning":"通道；段落"},{"word":"passenger","meaning":"乘客"},{"word":"passion","meaning":"热情"},{"word":"passive","meaning":"被动的"},{"word":"passport","meaning":"护照"},{"word":"past","meaning":"过去的"},{"word":"paste","meaning":"粘贴"},{"word":"path","meaning":"小路"},{"word":"patience","meaning":"耐心"},{"word":"patient","meaning":"病人；耐心的"},{"word":"pattern","meaning":"模式"},{"word":"pause","meaning":"暂停"},{"word":"pay","meaning":"支付"},{"word":"peace","meaning":"和平"},{"word":"peaceful","meaning":"和平的"},{"word":"peak","meaning":"顶峰"},{"word":"pear","meaning":"梨"},{"word":"pen","meaning":"钢笔"},{"word":"penalty","meaning":"惩罚"},{"word":"pencil","meaning":"铅笔"},{"word":"people","meaning":"人；人民"},{"word":"pepper","meaning":"胡椒"},{"word":"per","meaning":"每"},{"word":"perceive","meaning":"察觉"},{"word":"percent","meaning":"百分之..."},{"word":"percentage","meaning":"百分比"},{"word":"perfect","meaning":"完美的"},{"word":"perform","meaning":"表演；执行"},{"word":"performance","meaning":"表演"},{"word":"perfume","meaning":"香水"},{"word":"perhaps","meaning":"也许"},{"word":"period","meaning":"时期；句号"},{"word":"permanent","meaning":"永久的"},{"word":"permission","meaning":"允许"},{"word":"permit","meaning":"允许"},{"word":"person","meaning":"人"},{"word":"personal","meaning":"个人的"},{"word":"personality","meaning":"个性"},{"word":"personnel","meaning":"人员"},{"word":"perspective","meaning":"视角"},{"word":"persuade","meaning":"说服"},{"word":"pet","meaning":"宠物"},{"word":"petrol","meaning":"汽油"},{"word":"phase","meaning":"阶段"},{"word":"phenomenon","meaning":"现象"},{"word":"philosophy","meaning":"哲学"},{"word":"phone","meaning":"电话"},{"word":"photo","meaning":"照片"},{"word":"photographer","meaning":"摄影师"},{"word":"phrase","meaning":"短语"},{"word":"physical","meaning":"身体的；物理的"},{"word":"physician","meaning":"内科医生"},{"word":"physicist","meaning":"物理学家"},{"word":"physics","meaning":"物理"},{"word":"piano","meaning":"钢琴"},{"word":"pick","meaning":"挑选；采摘"},{"word":"picnic","meaning":"野餐"},{"word":"picture","meaning":"图画"},{"word":"pie","meaning":"馅饼"},{"word":"piece","meaning":"片，块"},{"word":"pig","meaning":"猪"},{"word":"pile","meaning":"堆"},{"word":"pill","meaning":"药丸"},{"word":"pilot","meaning":"飞行员"},{"word":"pin","meaning":"大头针"},{"word":"pink","meaning":"粉红色"},{"word":"pioneer","meaning":"先锋"},{"word":"pipe","meaning":"管子"},{"word":"pity","meaning":"遗憾"},{"word":"pizza","meaning":"比萨饼"},{"word":"place","meaning":"地方；放置"},{"word":"plain","meaning":"平原；清楚的"},{"word":"plan","meaning":"计划"},{"word":"plane","meaning":"飞机"},{"word":"planet","meaning":"行星"},{"word":"plant","meaning":"植物；种植"},{"word":"plastic","meaning":"塑料；可塑的"},{"word":"plate","meaning":"盘子"},{"word":"platform","meaning":"平台"},{"word":"play","meaning":"玩；戏剧"},{"word":"player","meaning":"运动员；播放器"},{"word":"playground","meaning":"操场"},{"word":"pleasant","meaning":"愉快的"},{"word":"please","meaning":"请；使人高兴"},{"word":"pleasure","meaning":"快乐"},{"word":"plenty","meaning":"充足"},{"word":"plot","meaning":"情节"},{"word":"plug","meaning":"插头"},{"word":"plus","meaning":"加；加上"},{"word":"pocket","meaning":"口袋"},{"word":"poem","meaning":"诗"},{"word":"poet","meaning":"诗人"},{"word":"poetry","meaning":"诗歌"},{"word":"point","meaning":"点；观点；指向"},{"word":"poison","meaning":"毒药"},{"word":"polar","meaning":"极地的"},{"word":"pole","meaning":"杆；极"},{"word":"police","meaning":"警察"},{"word":"policeman","meaning":"警察(男)"},{"word":"policy","meaning":"政策"},{"word":"polish","meaning":"磨光；波兰语"},{"word":"polite","meaning":"有礼貌的"},{"word":"political","meaning":"政治的"},{"word":"politician","meaning":"政治家"},{"word":"politics","meaning":"政治"},{"word":"pollute","meaning":"污染"},{"word":"pollution","meaning":"污染"},{"word":"pool","meaning":"水池"},{"word":"poor","meaning":"贫穷的"},{"word":"pop","meaning":"流行音乐"},{"word":"popular","meaning":"流行的"},{"word":"population","meaning":"人口"},{"word":"pork","meaning":"猪肉"},{"word":"port","meaning":"港口"},{"word":"portion","meaning":"部分"},{"word":"portrait","meaning":"肖像"},{"word":"pose","meaning":"姿势"},{"word":"position","meaning":"位置"},{"word":"positive","meaning":"积极的"},{"word":"possess","meaning":"拥有"},{"word":"possession","meaning":"拥有物"},{"word":"possibility","meaning":"可能性"},{"word":"possible","meaning":"可能的"},{"word":"post","meaning":"邮政；职位"},{"word":"postcard","meaning":"明信片"},{"word":"poster","meaning":"海报"},{"word":"postman","meaning":"邮递员"},{"word":"postpone","meaning":"推迟"},{"word":"pot","meaning":"罐"},{"word":"potato","meaning":"土豆"},{"word":"potential","meaning":"潜力"},{"word":"pound","meaning":"磅；英镑"},{"word":"pour","meaning":"倒"},{"word":"poverty","meaning":"贫困"},{"word":"powder","meaning":"粉末"},{"word":"power","meaning":"力量；权力"},{"word":"powerful","meaning":"强大的"},{"word":"practical","meaning":"实际的"},{"word":"practice","meaning":"练习；实践"},{"word":"practise/practice","meaning":"练习"},{"word":"praise","meaning":"称赞"},{"word":"pray","meaning":"祈祷"},{"word":"precious","meaning":"珍贵的"},{"word":"precise","meaning":"精确的"},{"word":"precisely","meaning":"精确地"},{"word":"predict","meaning":"预测"},{"word":"prefer","meaning":"更喜欢"},{"word":"preference","meaning":"偏爱"},{"word":"pregnancy","meaning":"怀孕"},{"word":"prejudice","meaning":"偏见"},{"word":"premier","meaning":"首要的；总理"},{"word":"prepare","meaning":"准备"},{"word":"present","meaning":"礼物；现在的；呈现"},{"word":"presentation","meaning":"展示"},{"word":"preserve","meaning":"保存"},{"word":"president","meaning":"总统"},{"word":"press","meaning":"压；新闻界"},{"word":"pressure","meaning":"压力"},{"word":"pretend","meaning":"假装"},{"word":"pretty","meaning":"漂亮的；相当"},{"word":"prevent","meaning":"防止"},{"word":"previous","meaning":"以前的"},{"word":"price","meaning":"价格"},{"word":"pride","meaning":"骄傲"},{"word":"primary","meaning":"主要的；初级的"},{"word":"prince/princess","meaning":"王子/公主"},{"word":"principal","meaning":"校长；主要的"},{"word":"principle","meaning":"原则"},{"word":"print","meaning":"印刷"},{"word":"prior","meaning":"优先的"},{"word":"priority","meaning":"优先权"},{"word":"prison","meaning":"监狱"},{"word":"prisoner","meaning":"囚犯"},{"word":"privacy","meaning":"隐私"},{"word":"private","meaning":"私人的"},{"word":"prize","meaning":"奖赏"},{"word":"probably","meaning":"很可能"},{"word":"problem","meaning":"问题"},{"word":"procedure","meaning":"程序"},{"word":"proceed","meaning":"进行"},{"word":"process","meaning":"过程"},{"word":"produce","meaning":"生产"},{"word":"product","meaning":"产品"},{"word":"profession","meaning":"职业"},{"word":"professional","meaning":"专业的"},{"word":"professor","meaning":"教授"},{"word":"profile","meaning":"轮廓；简介"},{"word":"profit","meaning":"利润"},{"word":"programme/program","meaning":"节目；程序"},{"word":"progress","meaning":"进步"},{"word":"prohibit","meaning":"禁止"},{"word":"project","meaning":"项目"},{"word":"promise","meaning":"承诺"},{"word":"promote","meaning":"促进；提升"},{"word":"prompt","meaning":"迅速的"},{"word":"pronounce","meaning":"发音"},{"word":"pronunciation","meaning":"发音"},{"word":"proof","meaning":"证据"},{"word":"proper","meaning":"适当的"},{"word":"property","meaning":"财产"},{"word":"proportion","meaning":"比例"},{"word":"proposal","meaning":"提议"},{"word":"prospect","meaning":"前景"},{"word":"protect","meaning":"保护"},{"word":"protein","meaning":"蛋白质"},{"word":"protest","meaning":"抗议"},{"word":"proud","meaning":"骄傲的"},{"word":"prove","meaning":"证明"},{"word":"provide","meaning":"提供"},{"word":"province","meaning":"省"},{"word":"psychologist","meaning":"心理学家"},{"word":"psychology","meaning":"心理学"},{"word":"pub","meaning":"酒吧"},{"word":"public","meaning":"公众；公共的"},{"word":"publication","meaning":"出版"},{"word":"publish","meaning":"出版"},{"word":"pull","meaning":"拉"},{"word":"pulse","meaning":"脉搏"},{"word":"pump","meaning":"泵"},{"word":"punish","meaning":"惩罚"},{"word":"pupil","meaning":"小学生；瞳孔"},{"word":"purchase","meaning":"购买"},{"word":"pure","meaning":"纯的"},{"word":"purple","meaning":"紫色"},{"word":"purpose","meaning":"目的"},{"word":"purse","meaning":"钱包"},{"word":"pursue","meaning":"追求"},{"word":"push","meaning":"推"},{"word":"put","meaning":"放"},{"word":"puzzle","meaning":"谜"},{"word":"pyramid","meaning":"金字塔"},{"word":"qualification","meaning":"资格"},{"word":"qualify","meaning":"取得资格"},{"word":"quality","meaning":"质量"},{"word":"quantity","meaning":"数量"},{"word":"quarter","meaning":"四分之一"},{"word":"queen","meaning":"女王"},{"word":"question","meaning":"问题"},{"word":"quick","meaning":"快的"},{"word":"quiet","meaning":"安静的"},{"word":"quit","meaning":"退出"},{"word":"quite","meaning":"相当"},{"word":"quote","meaning":"引用"},{"word":"rabbit","meaning":"兔子"},{"word":"race","meaning":"种族；赛跑"},{"word":"racial","meaning":"种族的"},{"word":"radio","meaning":"收音机"},{"word":"railway","meaning":"铁路"},{"word":"rain","meaning":"雨"},{"word":"rainbow","meaning":"彩虹"},{"word":"rainy","meaning":"下雨的"},{"word":"raise","meaning":"举起；提高"},{"word":"random","meaning":"随机的"},{"word":"range","meaning":"范围"},{"word":"rank","meaning":"排名"},{"word":"rapid","meaning":"迅速的"},{"word":"rare","meaning":"稀有的"},{"word":"rate","meaning":"比率"},{"word":"rather","meaning":"宁愿"},{"word":"rating","meaning":"等级"},{"word":"raw","meaning":"生的"},{"word":"ray","meaning":"光线"},{"word":"reach","meaning":"到达"},{"word":"react","meaning":"反应"},{"word":"reaction","meaning":"反应"},{"word":"read","meaning":"阅读"},{"word":"ready","meaning":"准备好的"},{"word":"real","meaning":"真正的"},{"word":"realise/realize","meaning":"意识到"},{"word":"realistic","meaning":"现实的"},{"word":"reality","meaning":"现实"},{"word":"really","meaning":"真正地"},{"word":"reason","meaning":"原因"},{"word":"recall","meaning":"回忆"},{"word":"receipt","meaning":"收据"},{"word":"receive","meaning":"收到"},{"word":"recent","meaning":"最近的"},{"word":"recently","meaning":"最近"},{"word":"reception","meaning":"接待"},{"word":"receptionist","meaning":"接待员"},{"word":"recipe","meaning":"食谱"},{"word":"recite","meaning":"背诵"},{"word":"recognise/recognize","meaning":"认出"},{"word":"recognition","meaning":"认出"},{"word":"recommend","meaning":"推荐"},{"word":"record","meaning":"记录；唱片"},{"word":"recording","meaning":"录音"},{"word":"recover","meaning":"恢复"},{"word":"recreation","meaning":"娱乐"},{"word":"recycle","meaning":"回收"},{"word":"red","meaning":"红色"},{"word":"reduce","meaning":"减少"},{"word":"refer","meaning":"参考"},{"word":"reference","meaning":"参考"},{"word":"reflect","meaning":"反射；反思"},{"word":"reform","meaning":"改革"},{"word":"refresh","meaning":"使清新"},{"word":"refuse","meaning":"拒绝"},{"word":"regard","meaning":"看待"},{"word":"regardless","meaning":"不顾"},{"word":"region","meaning":"地区"},{"word":"register","meaning":"登记"},{"word":"regret","meaning":"遗憾"},{"word":"regular","meaning":"规则的"},{"word":"regulate","meaning":"管理"},{"word":"reject","meaning":"拒绝"},{"word":"relate","meaning":"联系"},{"word":"relation","meaning":"关系"},{"word":"relationship","meaning":"关系"},{"word":"relative","meaning":"亲戚"},{"word":"relax","meaning":"放松"},{"word":"relay","meaning":"接力"},{"word":"release","meaning":"释放"},{"word":"relevant","meaning":"相关的"},{"word":"reliable","meaning":"可靠的"},{"word":"relief","meaning":"减轻"},{"word":"religion","meaning":"宗教"},{"word":"religious","meaning":"宗教的"},{"word":"rely","meaning":"依靠"},{"word":"remain","meaning":"保持"},{"word":"remarkable","meaning":"非凡的"},{"word":"remember","meaning":"记得"},{"word":"remind","meaning":"提醒"},{"word":"remote","meaning":"遥远的"},{"word":"remove","meaning":"移开"},{"word":"rent","meaning":"租"},{"word":"repair","meaning":"修理"},{"word":"repeat","meaning":"重复"},{"word":"replace","meaning":"取代"},{"word":"reply","meaning":"回答"},{"word":"report","meaning":"报告"},{"word":"represent","meaning":"代表"},{"word":"representative","meaning":"代表"},{"word":"republic","meaning":"共和国"},{"word":"reputation","meaning":"名声"},{"word":"request","meaning":"请求"},{"word":"require","meaning":"要求"},{"word":"rescue","meaning":"营救"},{"word":"research","meaning":"研究"},{"word":"resemble","meaning":"像"},{"word":"reserve","meaning":"保留"},{"word":"resident","meaning":"居民"},{"word":"resign","meaning":"辞职"},{"word":"resist","meaning":"抵抗"},{"word":"resolution","meaning":"决心"},{"word":"resolve","meaning":"解决"},{"word":"resort","meaning":"度假胜地"},{"word":"resource","meaning":"资源"},{"word":"respect","meaning":"尊敬"},{"word":"respective","meaning":"各自的"},{"word":"respond","meaning":"回应"},{"word":"response","meaning":"回应"},{"word":"responsibility","meaning":"责任"},{"word":"responsible","meaning":"负责任的"},{"word":"rest","meaning":"休息；其余"},{"word":"restaurant","meaning":"餐厅"},{"word":"restore","meaning":"恢复"},{"word":"restrict","meaning":"限制"},{"word":"result","meaning":"结果"},{"word":"retire","meaning":"退休"},{"word":"return","meaning":"返回"},{"word":"reveal","meaning":"揭示"},{"word":"review","meaning":"复习；评论"},{"word":"revise","meaning":"修订"},{"word":"revolution","meaning":"革命"},{"word":"reward","meaning":"报酬"},{"word":"rhythm","meaning":"节奏"},{"word":"rice","meaning":"大米"},{"word":"rich","meaning":"富有的"},{"word":"ride","meaning":"骑"},{"word":"right","meaning":"正确的；右边"},{"word":"ring","meaning":"戒指；打电话；响"},{"word":"ripe","meaning":"成熟的"},{"word":"rise","meaning":"上升"},{"word":"risk","meaning":"风险"},{"word":"rival","meaning":"对手"},{"word":"river","meaning":"河"},{"word":"road","meaning":"路"},{"word":"roast","meaning":"烤"},{"word":"robot","meaning":"机器人"},{"word":"rock","meaning":"岩石"},{"word":"rocket","meaning":"火箭"},{"word":"role","meaning":"角色"},{"word":"roll","meaning":"滚动"},{"word":"romantic","meaning":"浪漫的"},{"word":"roof","meaning":"屋顶"},{"word":"room","meaning":"房间"},{"word":"root","meaning":"根"},{"word":"rope","meaning":"绳子"},{"word":"rose","meaning":"玫瑰"},{"word":"rough","meaning":"粗糙的"},{"word":"round","meaning":"圆的"},{"word":"route","meaning":"路线"},{"word":"routine","meaning":"常规"},{"word":"row","meaning":"排；划船"},{"word":"royal","meaning":"皇家的"},{"word":"rubber","meaning":"橡胶"},{"word":"rubbish","meaning":"垃圾"},{"word":"rude","meaning":"粗鲁的"},{"word":"rugby","meaning":"橄榄球"},{"word":"ruin","meaning":"毁灭"},{"word":"rule","meaning":"规则"},{"word":"ruler","meaning":"尺子；统治者"},{"word":"run","meaning":"跑"},{"word":"rural","meaning":"乡村的"},{"word":"rush","meaning":"冲"},{"word":"sad","meaning":"悲伤的"},{"word":"safe","meaning":"安全的"},{"word":"safety","meaning":"安全"},{"word":"sail","meaning":"航行"},{"word":"salad","meaning":"沙拉"},{"word":"salary","meaning":"薪水"},{"word":"sale","meaning":"销售"},{"word":"salt","meaning":"盐"},{"word":"salty","meaning":"咸的"},{"word":"same","meaning":"相同的"},{"word":"sample","meaning":"样品"},{"word":"sand","meaning":"沙子"},{"word":"sandwich","meaning":"三明治"},{"word":"satellite","meaning":"卫星"},{"word":"satisfaction","meaning":"满意"},{"word":"satisfy","meaning":"使满意"},{"word":"Saturday","meaning":"星期六"},{"word":"sauce","meaning":"酱汁"},{"word":"save","meaning":"拯救；节省"},{"word":"say","meaning":"说"},{"word":"scale","meaning":"规模；刻度"},{"word":"scan","meaning":"扫描"},{"word":"scare","meaning":"惊吓"},{"word":"scarf","meaning":"围巾"},{"word":"scene","meaning":"场景"},{"word":"schedule","meaning":"日程表"},{"word":"scholarship","meaning":"奖学金"},{"word":"school","meaning":"学校"},{"word":"science","meaning":"科学"},{"word":"scientific","meaning":"科学的"},{"word":"scientist","meaning":"科学家"},{"word":"scissors","meaning":"剪刀"},{"word":"score","meaning":"分数"},{"word":"scream","meaning":"尖叫"},{"word":"screen","meaning":"屏幕"},{"word":"sea","meaning":"海"},{"word":"search","meaning":"搜索"},{"word":"season","meaning":"季节"},{"word":"seat","meaning":"座位"},{"word":"second","meaning":"第二；秒"},{"word":"secondary","meaning":"中等的"},{"word":"secret","meaning":"秘密"},{"word":"secretary","meaning":"秘书"},{"word":"section","meaning":"部分"},{"word":"secure","meaning":"安全的"},{"word":"security","meaning":"安全"},{"word":"see","meaning":"看见"},{"word":"seed","meaning":"种子"},{"word":"seek","meaning":"寻求"},{"word":"seem","meaning":"似乎"},{"word":"seize","meaning":"抓住"},{"word":"seldom","meaning":"很少"},{"word":"select","meaning":"选择"},{"word":"self","meaning":"自己"},{"word":"selfish","meaning":"自私的"},{"word":"sell","meaning":"卖"},{"word":"semester","meaning":"学期"},{"word":"send","meaning":"发送"},{"word":"senior","meaning":"年长的"},{"word":"sense","meaning":"感觉"},{"word":"sensible","meaning":"明智的"},{"word":"sensitive","meaning":"敏感的"},{"word":"sentence","meaning":"句子"},{"word":"separate","meaning":"分开"},{"word":"September","meaning":"九月"},{"word":"sequence","meaning":"顺序"},{"word":"series","meaning":"系列"},{"word":"serious","meaning":"严重的"},{"word":"servant","meaning":"仆人"},{"word":"serve","meaning":"服务"},{"word":"service","meaning":"服务"},{"word":"session","meaning":"会议"},{"word":"set","meaning":"设置"},{"word":"settle","meaning":"解决；定居"},{"word":"seven","meaning":"七"},{"word":"several","meaning":"几个"},{"word":"severe","meaning":"严重的"},{"word":"sex","meaning":"性别"},{"word":"shade","meaning":"阴影"},{"word":"shadow","meaning":"影子"},{"word":"shake","meaning":"摇动"},{"word":"shall","meaning":"将要"},{"word":"shallow","meaning":"浅的"},{"word":"shame","meaning":"羞愧"},{"word":"shape","meaning":"形状"},{"word":"share","meaning":"分享"},{"word":"shark","meaning":"鲨鱼"},{"word":"sharp","meaning":"锋利的"},{"word":"she","meaning":"她"},{"word":"sheep","meaning":"绵羊"},{"word":"sheet","meaning":"床单；纸张"},{"word":"shelf","meaning":"架子"},{"word":"shell","meaning":"壳"},{"word":"shelter","meaning":"庇护所"},{"word":"shift","meaning":"转移"},{"word":"shine","meaning":"发光"},{"word":"ship","meaning":"船"},{"word":"shirt","meaning":"衬衫"},{"word":"shock","meaning":"震惊"},{"word":"shoe","meaning":"鞋"},{"word":"shoot","meaning":"射击"},{"word":"shop","meaning":"商店"},{"word":"shore","meaning":"岸"},{"word":"short","meaning":"短的；矮的"},{"word":"shortage","meaning":"短缺"},{"word":"shorts","meaning":"短裤"},{"word":"should","meaning":"应该"},{"word":"shoulder","meaning":"肩膀"},{"word":"shout","meaning":"喊"},{"word":"show","meaning":"展示"},{"word":"shower","meaning":"淋浴"},{"word":"shut","meaning":"关闭"},{"word":"shy","meaning":"害羞的"},{"word":"sick","meaning":"生病的"},{"word":"side","meaning":"边"},{"word":"sight","meaning":"视力"},{"word":"sign","meaning":"标志"},{"word":"signal","meaning":"信号"},{"word":"significance","meaning":"意义"},{"word":"significant","meaning":"重要的"},{"word":"silence","meaning":"安静"},{"word":"silent","meaning":"安静的"},{"word":"silk","meaning":"丝绸"},{"word":"silly","meaning":"愚蠢的"},{"word":"silver","meaning":"银"},{"word":"similar","meaning":"相似的"},{"word":"simple","meaning":"简单的"},{"word":"since","meaning":"自从"},{"word":"sincere","meaning":"真诚的"},{"word":"sincerely","meaning":"真诚地"},{"word":"sing","meaning":"唱"},{"word":"single","meaning":"单身的；单个的"},{"word":"sink","meaning":"下沉"},{"word":"sir","meaning":"先生"},{"word":"sister","meaning":"姐妹"},{"word":"sit","meaning":"坐"},{"word":"site","meaning":"地点"},{"word":"situation","meaning":"情况"},{"word":"six","meaning":"六"},{"word":"size","meaning":"尺寸"},{"word":"skate","meaning":"滑冰"},{"word":"ski","meaning":"滑雪"},{"word":"skill","meaning":"技能"},{"word":"skin","meaning":"皮肤"},{"word":"skip","meaning":"跳"},{"word":"skirt","meaning":"裙子"},{"word":"sky","meaning":"天空"},{"word":"slave","meaning":"奴隶"},{"word":"sleep","meaning":"睡觉"},{"word":"slice","meaning":"薄片"},{"word":"slide","meaning":"滑动"},{"word":"slight","meaning":"轻微的"},{"word":"slightly","meaning":"轻微地"},{"word":"slim","meaning":"苗条的"},{"word":"slip","meaning":"滑倒"},{"word":"slow","meaning":"慢的"},{"word":"small","meaning":"小的"},{"word":"smart","meaning":"聪明的"},{"word":"smell","meaning":"闻；气味"},{"word":"smile","meaning":"微笑"},{"word":"smoke","meaning":"烟"},{"word":"smooth","meaning":"光滑的"},{"word":"snack","meaning":"小吃"},{"word":"snake","meaning":"蛇"},{"word":"snow","meaning":"雪"},{"word":"so","meaning":"所以"},{"word":"soap","meaning":"肥皂"},{"word":"soccer","meaning":"英式足球"},{"word":"social","meaning":"社会的"},{"word":"society","meaning":"社会"},{"word":"sock","meaning":"短袜"},{"word":"sofa","meaning":"沙发"},{"word":"soft","meaning":"软的"},{"word":"software","meaning":"软件"},{"word":"soil","meaning":"土壤"},{"word":"solar","meaning":"太阳的"},{"word":"soldier","meaning":"士兵"},{"word":"solid","meaning":"固体的"},{"word":"solution","meaning":"解决方案"},{"word":"solve","meaning":"解决"},{"word":"some","meaning":"一些"},{"word":"somebody/someone","meaning":"某人"},{"word":"somehow","meaning":"不知怎么地"},{"word":"something","meaning":"某事"},{"word":"sometimes","meaning":"有时"},{"word":"somewhat","meaning":"有点"},{"word":"somewhere","meaning":"某处"},{"word":"son","meaning":"儿子"},{"word":"song","meaning":"歌曲"},{"word":"soon","meaning":"很快"},{"word":"sore","meaning":"疼痛的"},{"word":"sorrow","meaning":"悲伤"},{"word":"sorry","meaning":"抱歉的"},{"word":"sort","meaning":"种类"},{"word":"soul","meaning":"灵魂"},{"word":"sound","meaning":"声音"},{"word":"soup","meaning":"汤"},{"word":"sour","meaning":"酸的"},{"word":"source","meaning":"来源"},{"word":"south","meaning":"南"},{"word":"southern","meaning":"南部的"},{"word":"space","meaning":"空间"},{"word":"spare","meaning":"空闲的；抽出"},{"word":"speak","meaning":"说"},{"word":"speaker","meaning":"说话者"},{"word":"special","meaning":"特别的"},{"word":"specialist","meaning":"专家"},{"word":"species","meaning":"物种"},{"word":"specific","meaning":"具体的"},{"word":"speech","meaning":"演讲"},{"word":"speed","meaning":"速度"},{"word":"spell","meaning":"拼写"},{"word":"spend","meaning":"花费"},{"word":"spirit","meaning":"精神"},{"word":"spiritual","meaning":"精神的"},{"word":"spit","meaning":"吐"},{"word":"splendid","meaning":"极好的"},{"word":"split","meaning":"分裂"},{"word":"spoil","meaning":"破坏"},{"word":"spoken","meaning":"口头的"},{"word":"sponsor","meaning":"赞助"},{"word":"spoon","meaning":"勺子"},{"word":"sport","meaning":"运动"},{"word":"spot","meaning":"斑点；地点"},{"word":"spread","meaning":"传播"},{"word":"spring","meaning":"春天；泉"},{"word":"square","meaning":"正方形；广场"},{"word":"stable","meaning":"稳定的"},{"word":"stadium","meaning":"体育场"},{"word":"staff","meaning":"员工"},{"word":"stage","meaning":"阶段；舞台"},{"word":"stair","meaning":"楼梯"},{"word":"stamp","meaning":"邮票；跺脚"},{"word":"stand","meaning":"站立；忍受"},{"word":"standard","meaning":"标准"},{"word":"star","meaning":"星星；明星"},{"word":"stare","meaning":"凝视"},{"word":"start","meaning":"开始"},{"word":"state","meaning":"状态；国家；陈述"},{"word":"station","meaning":"车站"},{"word":"statistic","meaning":"统计数字"},{"word":"statue","meaning":"雕像"},{"word":"status","meaning":"地位"},{"word":"stay","meaning":"停留"},{"word":"steady","meaning":"稳定的"},{"word":"steak","meaning":"牛排"},{"word":"steal","meaning":"偷"},{"word":"steam","meaning":"蒸汽"},{"word":"steel","meaning":"钢"},{"word":"step","meaning":"步骤；台阶"},{"word":"stick","meaning":"棍子；粘贴"},{"word":"still","meaning":"仍然；静止的"},{"word":"stimulate","meaning":"刺激"},{"word":"stomach","meaning":"胃"},{"word":"stone","meaning":"石头"},{"word":"stop","meaning":"停止"},{"word":"store","meaning":"商店；储存"},{"word":"storm","meaning":"暴风雨"},{"word":"story","meaning":"故事"},{"word":"straight","meaning":"直的"},{"word":"strange","meaning":"奇怪的"},{"word":"stranger","meaning":"陌生人"},{"word":"strategy","meaning":"策略"},{"word":"strawberry","meaning":"草莓"},{"word":"stream","meaning":"溪流"},{"word":"street","meaning":"街道"},{"word":"strength","meaning":"力量"},{"word":"strengthen","meaning":"加强"},{"word":"stress","meaning":"压力"},{"word":"stretch","meaning":"伸展"},{"word":"strict","meaning":"严格的"},{"word":"strike","meaning":"罢工；打击"},{"word":"string","meaning":"线；一串"},{"word":"strong","meaning":"强壮的"},{"word":"structure","meaning":"结构"},{"word":"struggle","meaning":"斗争"},{"word":"student","meaning":"学生"},{"word":"studio","meaning":"工作室"},{"word":"study","meaning":"学习；研究"},{"word":"stupid","meaning":"愚蠢的"},{"word":"style","meaning":"风格"},{"word":"subject","meaning":"学科；主题"},{"word":"submit","meaning":"提交"},{"word":"subscribe","meaning":"订阅"},{"word":"substance","meaning":"物质"},{"word":"succeed","meaning":"成功"},{"word":"success","meaning":"成功"},{"word":"successful","meaning":"成功的"},{"word":"such","meaning":"这样的"},{"word":"sudden","meaning":"突然的"},{"word":"suffer","meaning":"遭受"},{"word":"sufficient","meaning":"充足的"},{"word":"sugar","meaning":"糖"},{"word":"suggest","meaning":"建议"},{"word":"suggestion","meaning":"建议"},{"word":"suit","meaning":"西装；适合"},{"word":"suitable","meaning":"合适的"},{"word":"sum","meaning":"总数"},{"word":"summer","meaning":"夏天"},{"word":"sun","meaning":"太阳"},{"word":"Sunday","meaning":"星期日"},{"word":"sunny","meaning":"晴朗的"},{"word":"supermarket","meaning":"超市"},{"word":"supply","meaning":"供应"},{"word":"support","meaning":"支持"},{"word":"suppose","meaning":"假设"},{"word":"sure","meaning":"肯定的"},{"word":"surface","meaning":"表面"},{"word":"surprise","meaning":"惊讶"},{"word":"surround","meaning":"包围"},{"word":"survey","meaning":"调查"},{"word":"survive","meaning":"幸存"},{"word":"suspect","meaning":"怀疑"},{"word":"sustain","meaning":"维持"},{"word":"sweater","meaning":"毛衣"},{"word":"sweep","meaning":"打扫"},{"word":"sweet","meaning":"甜的"},{"word":"swim","meaning":"游泳"},{"word":"swing","meaning":"摇摆"},{"word":"switch","meaning":"开关"},{"word":"symbol","meaning":"象征"},{"word":"sympathy","meaning":"同情"},{"word":"symptom","meaning":"症状"},{"word":"system","meaning":"系统"},{"word":"table","meaning":"桌子"},{"word":"tablet","meaning":"平板电脑；药片"},{"word":"tail","meaning":"尾巴"},{"word":"take","meaning":"拿"},{"word":"tale","meaning":"故事"},{"word":"talent","meaning":"才能"},{"word":"talk","meaning":"谈话"},{"word":"tall","meaning":"高的"},{"word":"tank","meaning":"坦克；箱"},{"word":"tap","meaning":"轻拍；水龙头"},{"word":"tape","meaning":"磁带；胶带"},{"word":"target","meaning":"目标"},{"word":"task","meaning":"任务"},{"word":"taste","meaning":"味道"},{"word":"tax","meaning":"税"},{"word":"taxi","meaning":"出租车"},{"word":"tea","meaning":"茶"},{"word":"teach","meaning":"教"},{"word":"teacher","meaning":"教师"},{"word":"team","meaning":"团队"},{"word":"tear","meaning":"眼泪；撕"},{"word":"technical","meaning":"技术的"},{"word":"technique","meaning":"技术"},{"word":"technology","meaning":"技术"},{"word":"teenager","meaning":"青少年"},{"word":"telephone","meaning":"电话"},{"word":"telescope","meaning":"望远镜"},{"word":"television/TV","meaning":"电视"},{"word":"tell","meaning":"告诉"},{"word":"temperature","meaning":"温度"},{"word":"temporary","meaning":"临时的"},{"word":"ten","meaning":"十"},{"word":"tend","meaning":"倾向"},{"word":"tendency","meaning":"倾向"},{"word":"tennis","meaning":"网球"},{"word":"tension","meaning":"紧张"},{"word":"tent","meaning":"帐篷"},{"word":"term","meaning":"学期；术语"},{"word":"terrible","meaning":"可怕的"},{"word":"territory","meaning":"领土"},{"word":"test","meaning":"测试"},{"word":"text","meaning":"课文；文本"},{"word":"than","meaning":"比"},{"word":"thank","meaning":"感谢"},{"word":"that","meaning":"那"},{"word":"the","meaning":"这/那"},{"word":"theatre/theater","meaning":"剧院"},{"word":"theft","meaning":"盗窃"},{"word":"their","meaning":"他们的"},{"word":"theirs","meaning":"他们的(名词性物主代词)"},{"word":"them","meaning":"他们(宾格)"},{"word":"theme","meaning":"主题"},{"word":"themselves","meaning":"他们自己"},{"word":"then","meaning":"然后"},{"word":"theory","meaning":"理论"},{"word":"there","meaning":"那里"},{"word":"therefore","meaning":"因此"},{"word":"these","meaning":"这些"},{"word":"they","meaning":"他们"},{"word":"thick","meaning":"厚的"},{"word":"thin","meaning":"薄的"},{"word":"thing","meaning":"东西"},{"word":"think","meaning":"想"},{"word":"third","meaning":"第三"},{"word":"thirsty","meaning":"口渴的"},{"word":"thirteen","meaning":"十三"},{"word":"thirty","meaning":"三十"},{"word":"this","meaning":"这个"},{"word":"those","meaning":"那些"},{"word":"though","meaning":"虽然"},{"word":"thought","meaning":"想法"},{"word":"thousand","meaning":"千"},{"word":"three","meaning":"三"},{"word":"through","meaning":"通过"},{"word":"throughout","meaning":"遍及"},{"word":"throw","meaning":"扔"},{"word":"thus","meaning":"因此"},{"word":"ticket","meaning":"票"},{"word":"tidy","meaning":"整洁的"},{"word":"tie","meaning":"领带；系"},{"word":"tiger","meaning":"老虎"},{"word":"tight","meaning":"紧的"},{"word":"till","meaning":"直到"},{"word":"time","meaning":"时间"},{"word":"tiny","meaning":"微小的"},{"word":"tip","meaning":"尖端；小费"},{"word":"tired","meaning":"疲倦的"},{"word":"tissue","meaning":"组织；纸巾"},{"word":"title","meaning":"标题"},{"word":"to","meaning":"到"},{"word":"toast","meaning":"吐司；干杯"},{"word":"tobacco","meaning":"烟草"},{"word":"today","meaning":"今天"},{"word":"toe","meaning":"脚趾"},{"word":"together","meaning":"一起"},{"word":"toilet","meaning":"厕所"},{"word":"tomato","meaning":"西红柿"},{"word":"tomorrow","meaning":"明天"},{"word":"ton","meaning":"吨"},{"word":"tone","meaning":"语气"},{"word":"tongue","meaning":"舌头"},{"word":"tonight","meaning":"今晚"},{"word":"too","meaning":"也"},{"word":"tool","meaning":"工具"},{"word":"tooth","meaning":"牙齿"},{"word":"top","meaning":"顶部"},{"word":"topic","meaning":"话题"},{"word":"total","meaning":"总数"},{"word":"touch","meaning":"触摸"},{"word":"tough","meaning":"坚韧的；困难的"},{"word":"tour","meaning":"旅行"},{"word":"tourist","meaning":"游客"},{"word":"towards/toward","meaning":"朝"},{"word":"towel","meaning":"毛巾"},{"word":"tower","meaning":"塔"},{"word":"town","meaning":"城镇"},{"word":"toy","meaning":"玩具"},{"word":"track","meaning":"轨道；追踪"},{"word":"trade","meaning":"贸易"},{"word":"tradition","meaning":"传统"},{"word":"traditional","meaning":"传统的"},{"word":"traffic","meaning":"交通"},{"word":"train","meaning":"火车；训练"},{"word":"training","meaning":"训练"},{"word":"transfer","meaning":"转移"},{"word":"transform","meaning":"转变"},{"word":"transition","meaning":"过渡"},{"word":"translate","meaning":"翻译"},{"word":"transport","meaning":"运输"},{"word":"travel","meaning":"旅行"},{"word":"treasure","meaning":"财富"},{"word":"treat","meaning":"对待"},{"word":"treatment","meaning":"治疗"},{"word":"tree","meaning":"树"},{"word":"tremble","meaning":"颤抖"},{"word":"trend","meaning":"趋势"},{"word":"trial","meaning":"试验"},{"word":"triangle","meaning":"三角形"},{"word":"tribe","meaning":"部落"},{"word":"trick","meaning":"诡计"},{"word":"trip","meaning":"旅行"},{"word":"tropical","meaning":"热带的"},{"word":"trouble","meaning":"麻烦"},{"word":"trousers","meaning":"裤子"},{"word":"truck","meaning":"卡车"},{"word":"true","meaning":"真的"},{"word":"trust","meaning":"信任"},{"word":"truth","meaning":"真相"},{"word":"try","meaning":"尝试"},{"word":"tube","meaning":"管；地铁"},{"word":"Tuesday","meaning":"星期二"},{"word":"tune","meaning":"曲调"},{"word":"tunnel","meaning":"隧道"},{"word":"turn","meaning":"转动"},{"word":"twelfth","meaning":"第十二"},{"word":"twelve","meaning":"十二"},{"word":"twentieth","meaning":"第二十"},{"word":"twenty","meaning":"二十"},{"word":"twice","meaning":"两次"},{"word":"twin","meaning":"双胞胎"},{"word":"two","meaning":"二"},{"word":"type","meaning":"类型"},{"word":"typical","meaning":"典型的"},{"word":"ugly","meaning":"丑陋的"},{"word":"umbrella","meaning":"伞"},{"word":"uncle","meaning":"叔伯"},{"word":"under","meaning":"在...下"},{"word":"underground","meaning":"地下的"},{"word":"understand","meaning":"理解"},{"word":"unit","meaning":"单位"},{"word":"universe","meaning":"宇宙"},{"word":"university","meaning":"大学"},{"word":"unless","meaning":"除非"},{"word":"until/till","meaning":"直到"},{"word":"up","meaning":"向上"},{"word":"upon","meaning":"在...之上"},{"word":"upper","meaning":"上面的"},{"word":"upset","meaning":"心烦的"},{"word":"urban","meaning":"城市的"},{"word":"urge","meaning":"催促"},{"word":"urgent","meaning":"紧急的"},{"word":"us","meaning":"我们(宾格)"},{"word":"use","meaning":"使用"},{"word":"used","meaning":"习惯的；用过的"},{"word":"useful","meaning":"有用的"},{"word":"usual","meaning":"通常的"},{"word":"usually","meaning":"通常"},{"word":"vacation","meaning":"假期"},{"word":"valley","meaning":"山谷"},{"word":"valuable","meaning":"有价值的"},{"word":"value","meaning":"价值"},{"word":"variety","meaning":"种类"},{"word":"various","meaning":"各种各样的"},{"word":"vary","meaning":"变化"},{"word":"vast","meaning":"广阔的"},{"word":"vegetable","meaning":"蔬菜"},{"word":"vehicle","meaning":"车辆"},{"word":"venture","meaning":"冒险"},{"word":"version","meaning":"版本"},{"word":"very","meaning":"非常"},{"word":"victim","meaning":"受害者"},{"word":"victory","meaning":"胜利"},{"word":"video","meaning":"视频"},{"word":"view","meaning":"观点；景色"},{"word":"village","meaning":"村庄"},{"word":"violence","meaning":"暴力"},{"word":"violent","meaning":"暴力的"},{"word":"virtual","meaning":"虚拟的"},{"word":"virus","meaning":"病毒"},{"word":"visit","meaning":"拜访"},{"word":"visitor","meaning":"访客"},{"word":"visual","meaning":"视觉的"},{"word":"vital","meaning":"至关重要的"},{"word":"vocabulary","meaning":"词汇"},{"word":"voice","meaning":"声音"},{"word":"volcano","meaning":"火山"},{"word":"volleyball","meaning":"排球"},{"word":"volume","meaning":"卷；音量"},{"word":"volunteer","meaning":"志愿者"},{"word":"vote","meaning":"投票"},{"word":"voyage","meaning":"航行"},{"word":"wage","meaning":"工资"},{"word":"wait","meaning":"等待"},{"word":"wake","meaning":"醒来"},{"word":"walk","meaning":"走"},{"word":"wall","meaning":"墙"},{"word":"wallet","meaning":"钱包"},{"word":"wander","meaning":"闲逛"},{"word":"want","meaning":"想要"},{"word":"war","meaning":"战争"},{"word":"warm","meaning":"温暖的"},{"word":"warm","meaning":"温暖；警告"},{"word":"warn","meaning":"警告"},{"word":"wash","meaning":"洗"},{"word":"waste","meaning":"浪费"},{"word":"watch","meaning":"手表；看"},{"word":"water","meaning":"水"},{"word":"wave","meaning":"波浪"},{"word":"way","meaning":"方式；道路"},{"word":"we","meaning":"我们"},{"word":"weak","meaning":"虚弱的"},{"word":"wealth","meaning":"财富"},{"word":"wealthy","meaning":"富有的"},{"word":"weapon","meaning":"武器"},{"word":"wear","meaning":"穿"},{"word":"weather","meaning":"天气"},{"word":"web","meaning":"网"},{"word":"website","meaning":"网站"},{"word":"wedding","meaning":"婚礼"},{"word":"week","meaning":"周"},{"word":"weekday","meaning":"工作日"},{"word":"weekend","meaning":"周末"},{"word":"weekly","meaning":"每周的"},{"word":"weigh","meaning":"称重"},{"word":"weight","meaning":"重量"},{"word":"welcome","meaning":"欢迎"},{"word":"welfare","meaning":"福利"},{"word":"well","meaning":"好；井"},{"word":"west","meaning":"西方"},{"word":"western","meaning":"西方的"},{"word":"wet","meaning":"湿的"},{"word":"whale","meaning":"鲸"},{"word":"what","meaning":"什么"},{"word":"whatever","meaning":"无论什么"},{"word":"wheat","meaning":"小麦"},{"word":"wheel","meaning":"轮子"},{"word":"when","meaning":"什么时候"},{"word":"whenever","meaning":"无论何时"},{"word":"where","meaning":"哪里"},{"word":"whether","meaning":"是否"},{"word":"which","meaning":"哪一个"},{"word":"while","meaning":"而；当...时"},{"word":"whisper","meaning":"低语"},{"word":"white","meaning":"白色的"},{"word":"who","meaning":"谁"},{"word":"whole","meaning":"整个的"},{"word":"whom","meaning":"谁(宾格)"},{"word":"whose","meaning":"谁的"},{"word":"why","meaning":"为什么"},{"word":"wide","meaning":"宽的"},{"word":"wife","meaning":"妻子"},{"word":"wild","meaning":"野生的"},{"word":"will","meaning":"将；意志"},{"word":"willing","meaning":"愿意的"},{"word":"win","meaning":"赢"},{"word":"wind","meaning":"风"},{"word":"window","meaning":"窗户"},{"word":"wine","meaning":"葡萄酒"},{"word":"wing","meaning":"翅膀"},{"word":"winner","meaning":"获胜者"},{"word":"winter","meaning":"冬天"},{"word":"wipe","meaning":"擦"},{"word":"wire","meaning":"电线"},{"word":"wise","meaning":"明智的"},{"word":"wish","meaning":"希望"},{"word":"with","meaning":"和...一起"},{"word":"within","meaning":"在...内部"},{"word":"without","meaning":"没有"},{"word":"witness","meaning":"目击者"},{"word":"woman","meaning":"女人"},{"word":"wonder","meaning":"想知道"},{"word":"wonderful","meaning":"极好的"},{"word":"wood","meaning":"木材"},{"word":"word","meaning":"单词"},{"word":"work","meaning":"工作"},{"word":"worker","meaning":"工人"},{"word":"world","meaning":"世界"},{"word":"worry","meaning":"担心"},{"word":"worse","meaning":"更坏的"},{"word":"worst","meaning":"最坏的"},{"word":"worth","meaning":"值得的"},{"word":"would","meaning":"将会"},{"word":"wound","meaning":"伤口"},{"word":"write","meaning":"写"},{"word":"writer","meaning":"作家"},{"word":"wrong","meaning":"错误的"},{"word":"yard","meaning":"院子"},{"word":"year","meaning":"年"},{"word":"yellow","meaning":"黄色的"},{"word":"yes","meaning":"是"},{"word":"yesterday","meaning":"昨天"},{"word":"yet","meaning":"还"},{"word":"you","meaning":"你"},{"word":"young","meaning":"年轻的"},{"word":"your","meaning":"你的"},{"word":"yours","meaning":"你的(名词性物主代词)"},{"word":"yourself","meaning":"你自己"},{"word":"youth","meaning":"青年"},{"word":"zero","meaning":"零"},{"word":"zone","meaning":"区域"},{"word":"zoo","meaning":"动物园"}];
+
+    const state = {
+      index: 0,
+      revealed: false,
+      shuffle: false,
+      order: [],
+      starred: new Set(JSON.parse(localStorage.getItem('english2025_starred') || '[]')),
+      autoSpeak: localStorage.getItem('english2025_autoSpeak') === 'true',
+      speakOnReveal: localStorage.getItem('english2025_speakOnReveal') === 'true',
+      autoAdvance: localStorage.getItem('english2025_autoAdvance') === 'true',
+      autoAdvanceDelay: parseFloat(localStorage.getItem('english2025_autoAdvanceDelay') || '2'),
+      speechRate: parseFloat(localStorage.getItem('english2025_speechRate') || '1'),
+      selectedVoiceURI: localStorage.getItem('english2025_selectedVoiceURI') || '',
+      onlyStarred: localStorage.getItem('english2025_onlyStarred') === 'true',
+      meaningVisible: localStorage.getItem('english2025_meaningVisible') === 'true',
+    };
+
+    const els = {
+      card: document.getElementById('card'),
+      word: document.getElementById('word'),
+      meaning: document.getElementById('meaning'),
+      progressText: document.getElementById('progressText'),
+      progressFill: document.getElementById('progressFill'),
+      modeLabel: document.getElementById('modeLabel'),
+      btnPrev: document.getElementById('btnPrev'),
+      btnNext: document.getElementById('btnNext'),
+      btnReveal: document.getElementById('btnReveal'),
+      btnRandom: document.getElementById('btnRandom'),
+      btnPlay: document.getElementById('btnPlay'),
+      btnStar: document.getElementById('btnStar'),
+      btnAutoSpeak: document.getElementById('btnAutoSpeak'),
+      btnList: document.getElementById('btnList'),
+      btnSettings: document.getElementById('btnSettings'),
+      btnCloseList: document.getElementById('btnCloseList'),
+      btnCloseSettings: document.getElementById('btnCloseSettings'),
+      listDrawer: document.getElementById('listDrawer'),
+      settingsDrawer: document.getElementById('settingsDrawer'),
+      wordList: document.getElementById('wordList'),
+      searchBox: document.getElementById('searchBox'),
+      autoSpeak: document.getElementById('autoSpeak'),
+      speakOnReveal: document.getElementById('speakOnReveal'),
+      alwaysShowMeaning: document.getElementById('alwaysShowMeaning'),
+      autoAdvance: document.getElementById('autoAdvance'),
+      autoAdvanceDelay: document.getElementById('autoAdvanceDelay'),
+      speechRate: document.getElementById('speechRate'),
+      voiceSelect: document.getElementById('voiceSelect'),
+      onlyStarred: document.getElementById('onlyStarred'),
+      btnShuffleMode: document.getElementById('btnShuffleMode'),
+      toast: document.getElementById('toast'),
+    };
+
+    function getWords() {
+      if (state.onlyStarred) {
+        const list = ALL_WORDS.filter((_, i) => state.starred.has(i));
+        return list.length ? list : ALL_WORDS;
+      }
+      return ALL_WORDS;
+    }
+
+    function getActiveIndex() {
+      if (state.onlyStarred) {
+        const ids = ALL_WORDS.map((_, i) => i).filter(i => state.starred.has(i));
+        if (!ids.length) return 0;
+        const idx = ids.indexOf(state.index);
+        return idx >= 0 ? idx : 0;
+      }
+      return state.index;
+    }
+
+    function rebuildOrder() {
+      const words = getWords();
+      state.order = words.map((_, i) => i);
+      if (state.shuffle) {
+        for (let i = state.order.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [state.order[i], state.order[j]] = [state.order[j], state.order[i]];
+        }
+      }
+      state.index = Math.min(getActiveIndex(), state.order.length - 1);
+      render();
+    }
+
+    function currentWord() {
+      const words = getWords();
+      const idx = state.order[state.index] ?? state.index;
+      return words[idx] ?? words[0];
+    }
+
+    function currentGlobalIndex() {
+      if (state.onlyStarred) {
+        const words = getWords();
+        const localIdx = state.order[state.index] ?? state.index;
+        return ALL_WORDS.findIndex(w => w.word === words[localIdx].word && w.meaning === words[localIdx].meaning);
+      }
+      return state.order[state.index] ?? state.index;
+    }
+
+    function render() {
+      const w = currentWord();
+      const gidx = currentGlobalIndex();
+      els.word.textContent = w.word;
+      els.meaning.textContent = w.meaning;
+      els.meaning.classList.toggle('hidden', !state.meaningVisible);
+      els.btnReveal.textContent = state.meaningVisible ? '隐藏释义' : '显示释义';
+      els.btnStar.textContent = state.starred.has(gidx) ? '★' : '☆';
+      els.btnStar.classList.toggle('active', state.starred.has(gidx));
+      els.btnAutoSpeak.textContent = state.autoSpeak ? '🔊' : '🔇';
+      els.btnAutoSpeak.classList.toggle('active', state.autoSpeak);
+      els.modeLabel.textContent = state.shuffle ? '随机' : (state.onlyStarred ? '收藏' : '顺序');
+      els.progressText.textContent = `${state.index + 1} / ${state.order.length}`;
+      els.progressFill.style.width = `${((state.index + 1) / state.order.length) * 100}%`;
+    }
+
+    function speak(text) {
+      if (!window.speechSynthesis) {
+        showToast('当前浏览器不支持语音朗读');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'en-US';
+      utter.rate = state.speechRate;
+
+      const voices = window.speechSynthesis.getVoices();
+      let voice = null;
+
+      if (state.selectedVoiceURI) {
+        voice = voices.find(v => v.voiceURI === state.selectedVoiceURI);
+      }
+      if (!voice) {
+        voice = findPreferredBrowserVoice(voices);
+      }
+      if (!voice) {
+        voice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+      }
+      if (voice) utter.voice = voice;
+
+      window.speechSynthesis.speak(utter);
+    }
+
+    function getEnglishVoices() {
+      if (!window.speechSynthesis) return [];
+      return window.speechSynthesis.getVoices()
+        .filter(v => v.lang.startsWith('en'))
+        .sort((a, b) => {
+          // 优先 en-US，再按名字排序
+          if (a.lang === 'en-US' && b.lang !== 'en-US') return -1;
+          if (b.lang === 'en-US' && a.lang !== 'en-US') return 1;
+          return a.name.localeCompare(b.name);
+        });
+    }
+
+    function findPreferredBrowserVoice(voices) {
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const isChrome = /chrome/i.test(navigator.userAgent) && /google inc/i.test(navigator.vendor.toLowerCase());
+      const enVoices = voices.filter(v => v.lang.startsWith('en'));
+      if (!enVoices.length) return null;
+      const pool = enVoices.filter(v => v.lang === 'en-US').length
+        ? enVoices.filter(v => v.lang === 'en-US')
+        : enVoices;
+
+      if (isSafari) {
+        return pool.find(v => /Samantha/i.test(v.name)) || null;
+      }
+      if (isChrome) {
+        const avaPool = pool.filter(v => /Ava/i.test(v.name));
+        if (!avaPool.length) return null;
+        const enhanced = avaPool.find(v => /Enhanced|Premium|优化/i.test(v.name));
+        return enhanced || avaPool[0];
+      }
+      return null;
+    }
+
+    function populateVoices() {
+      if (!window.speechSynthesis) return;
+      const voices = getEnglishVoices();
+      const currentValue = els.voiceSelect.value || state.selectedVoiceURI;
+      els.voiceSelect.innerHTML = '<option value="">默认语音（自动选择）</option>';
+      voices.forEach(v => {
+        const option = document.createElement('option');
+        option.value = v.voiceURI;
+        option.textContent = `${v.name} (${v.lang})`;
+        els.voiceSelect.appendChild(option);
+      });
+      // 恢复用户之前的选择，或按浏览器优先推荐
+      if (currentValue && voices.some(v => v.voiceURI === currentValue)) {
+        els.voiceSelect.value = currentValue;
+      } else {
+        const preferred = findPreferredBrowserVoice(voices);
+        if (preferred) {
+          els.voiceSelect.value = preferred.voiceURI;
+          state.selectedVoiceURI = preferred.voiceURI;
+          localStorage.setItem('english2025_selectedVoiceURI', preferred.voiceURI);
+        }
+      }
+    }
+
+    function scheduleAutoAdvance() {
+      if (!state.autoAdvance) return;
+      clearTimeout(state.advanceTimer);
+      const delay = Math.max(500, state.autoAdvanceDelay * 1000);
+      state.advanceTimer = setTimeout(() => next(1), delay);
+    }
+
+    function reveal() {
+      if (state.meaningVisible) return;
+      state.meaningVisible = true;
+      localStorage.setItem('english2025_meaningVisible', 'true');
+      els.alwaysShowMeaning.checked = true;
+      render();
+      if (state.speakOnReveal) speak(currentWord().word);
+      scheduleAutoAdvance();
+    }
+
+    function hideMeaning() {
+      state.meaningVisible = false;
+      localStorage.setItem('english2025_meaningVisible', 'false');
+      els.alwaysShowMeaning.checked = false;
+      clearTimeout(state.advanceTimer);
+      render();
+    }
+
+    function toggleReveal() {
+      if (state.meaningVisible) hideMeaning(); else reveal();
+    }
+
+    function next(delta) {
+      const len = state.order.length;
+      if (!len) return;
+      state.index = (state.index + delta + len) % len;
+      clearTimeout(state.advanceTimer);
+      render();
+      if (state.autoSpeak) speak(currentWord().word);
+      if (state.meaningVisible) scheduleAutoAdvance();
+    }
+
+    function goRandom() {
+      const len = state.order.length;
+      if (len < 2) return;
+      let nextIdx;
+      do { nextIdx = Math.floor(Math.random() * len); } while (nextIdx === state.index);
+      state.index = nextIdx;
+      clearTimeout(state.advanceTimer);
+      render();
+      if (state.autoSpeak) speak(currentWord().word);
+      if (state.meaningVisible) scheduleAutoAdvance();
+    }
+
+    function toggleAutoSpeak() {
+      state.autoSpeak = !state.autoSpeak;
+      localStorage.setItem('english2025_autoSpeak', state.autoSpeak);
+      render();
+      showToast(state.autoSpeak ? '已开启切换单词时自动朗读' : '已关闭切换单词时自动朗读');
+      if (state.autoSpeak) speak(currentWord().word);
+    }
+
+    function toggleStar() {
+      const gidx = currentGlobalIndex();
+      if (state.starred.has(gidx)) state.starred.delete(gidx);
+      else state.starred.add(gidx);
+      localStorage.setItem('english2025_starred', JSON.stringify([...state.starred]));
+      render();
+      showToast(state.starred.has(gidx) ? '已收藏' : '已取消收藏');
+    }
+
+    function toggleShuffle() {
+      state.shuffle = !state.shuffle;
+      rebuildOrder();
+      showToast(state.shuffle ? '已切换为随机模式' : '已切换为顺序模式');
+    }
+
+    function showToast(msg) {
+      els.toast.textContent = msg;
+      els.toast.classList.add('show');
+      clearTimeout(state.toastTimer);
+      state.toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800);
+    }
+
+    function openList() {
+      els.listDrawer.classList.add('open');
+      renderWordList();
+      setTimeout(() => els.searchBox.focus(), 100);
+    }
+
+    function closeList() {
+      els.listDrawer.classList.remove('open');
+    }
+
+    function openSettings() {
+      els.settingsDrawer.classList.add('open');
+    }
+
+    function closeSettings() {
+      els.settingsDrawer.classList.remove('open');
+    }
+
+    function renderWordList(filter = '') {
+      const term = filter.trim().toLowerCase();
+      const items = ALL_WORDS.map((w, i) => ({ ...w, originalIndex: i }))
+        .filter(w => !term || w.word.toLowerCase().includes(term) || w.meaning.toLowerCase().includes(term));
+      if (!items.length) {
+        els.wordList.innerHTML = '<div class="empty-state">未找到匹配的单词</div>';
+        return;
+      }
+      els.wordList.innerHTML = items.map(w => `
+        <div class="word-list-item" data-idx="${w.originalIndex}">
+          <span>${w.word}</span>
+          <span>${w.meaning}</span>
+        </div>
+      `).join('');
+      els.wordList.querySelectorAll('.word-list-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = parseInt(el.dataset.idx, 10);
+          state.onlyStarred = false;
+          els.onlyStarred.checked = false;
+          localStorage.setItem('english2025_onlyStarred', 'false');
+          state.shuffle = false;
+          rebuildOrder();
+          state.index = state.order.indexOf(idx);
+          if (state.index < 0) state.index = idx;
+          clearTimeout(state.advanceTimer);
+          render();
+          if (state.meaningVisible) scheduleAutoAdvance();
+          closeList();
+        });
+      });
+    }
+
+    // 事件绑定
+    els.card.addEventListener('click', toggleReveal);
+    els.btnReveal.addEventListener('click', toggleReveal);
+    els.btnNext.addEventListener('click', () => next(1));
+    els.btnPrev.addEventListener('click', () => next(-1));
+    els.btnRandom.addEventListener('click', goRandom);
+    els.btnPlay.addEventListener('click', () => speak(currentWord().word));
+    els.btnStar.addEventListener('click', toggleStar);
+    els.btnShuffleMode.addEventListener('click', toggleShuffle);
+    els.btnList.addEventListener('click', openList);
+    els.btnCloseList.addEventListener('click', closeList);
+    els.btnSettings.addEventListener('click', openSettings);
+    els.btnCloseSettings.addEventListener('click', closeSettings);
+    els.searchBox.addEventListener('input', e => renderWordList(e.target.value));
+
+    els.autoSpeak.checked = state.autoSpeak;
+    els.speakOnReveal.checked = state.speakOnReveal;
+    els.alwaysShowMeaning.checked = state.meaningVisible;
+    els.autoAdvance.checked = state.autoAdvance;
+    els.autoAdvanceDelay.value = String(state.autoAdvanceDelay);
+    els.speechRate.value = String(state.speechRate);
+    populateVoices();
+    if (state.selectedVoiceURI && els.voiceSelect.querySelector(`option[value="${state.selectedVoiceURI}"]`)) {
+      els.voiceSelect.value = state.selectedVoiceURI;
+    }
+    els.onlyStarred.checked = state.onlyStarred;
+
+    els.btnAutoSpeak.addEventListener('click', toggleAutoSpeak);
+    els.autoSpeak.addEventListener('change', e => { state.autoSpeak = e.target.checked; localStorage.setItem('english2025_autoSpeak', state.autoSpeak); render(); if (state.autoSpeak) speak(currentWord().word); });
+    els.speakOnReveal.addEventListener('change', e => { state.speakOnReveal = e.target.checked; localStorage.setItem('english2025_speakOnReveal', state.speakOnReveal); showToast(state.speakOnReveal ? '已开启显示释义时自动朗读' : '已关闭显示释义时自动朗读'); });
+    els.alwaysShowMeaning.addEventListener('change', e => { if (e.target.checked) reveal(); else hideMeaning(); });
+    els.autoAdvance.addEventListener('change', e => { state.autoAdvance = e.target.checked; localStorage.setItem('english2025_autoAdvance', state.autoAdvance); if (!state.autoAdvance) clearTimeout(state.advanceTimer); });
+    els.autoAdvanceDelay.addEventListener('change', e => { state.autoAdvanceDelay = parseFloat(e.target.value); localStorage.setItem('english2025_autoAdvanceDelay', state.autoAdvanceDelay); });
+    els.speechRate.addEventListener('change', e => { state.speechRate = parseFloat(e.target.value); localStorage.setItem('english2025_speechRate', state.speechRate); });
+    els.voiceSelect.addEventListener('change', e => { state.selectedVoiceURI = e.target.value; localStorage.setItem('english2025_selectedVoiceURI', state.selectedVoiceURI); showToast(state.selectedVoiceURI ? '已切换语音' : '已恢复默认语音'); });
+    els.onlyStarred.addEventListener('change', e => {
+      state.onlyStarred = e.target.checked;
+      localStorage.setItem('english2025_onlyStarred', state.onlyStarred);
+      rebuildOrder();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.target.matches('input, select, textarea')) return;
+      switch (e.key) {
+        case ' ': e.preventDefault(); toggleReveal(); break;
+        case 'ArrowRight': e.preventDefault(); next(1); break;
+        case 'ArrowLeft': e.preventDefault(); next(-1); break;
+        case 'r': case 'R': goRandom(); break;
+        case 'p': case 'P': speak(currentWord().word); break;
+        case 'a': case 'A': toggleAutoSpeak(); break;
+        case 's': case 'S': toggleStar(); break;
+        case 'l': case 'L': openList(); break;
+        case 'g': case 'G': openSettings(); break;
+        case 'Escape': closeList(); closeSettings(); break;
+      }
+    });
+
+    // 点击抽屉背景关闭
+    [els.listDrawer, els.settingsDrawer].forEach(d => {
+      d.addEventListener('click', e => { if (e.target === d) d.classList.remove('open'); });
+    });
+
+    // 初始化语音列表（某些浏览器需要异步加载）
+    if (window.speechSynthesis) {
+      populateVoices();
+      window.speechSynthesis.onvoiceschanged = () => populateVoices();
+    }
+
+    rebuildOrder();
+    if (state.autoSpeak) speak(currentWord().word);
+  </script>
+</body>
+</html>
