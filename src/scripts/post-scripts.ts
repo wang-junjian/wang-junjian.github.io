@@ -6,6 +6,8 @@ declare const mermaid: any;
 const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
 const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const ERROR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+const ZOOM_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`;
+const CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -26,14 +28,18 @@ function loadScript(src: string): Promise<void> {
 function createCodeBlockWrapper(
   pre: HTMLPreElement,
   lang: string,
-  visualElements?: HTMLElement[]
-): { wrapper: HTMLDivElement; copyBtn: HTMLButtonElement } | null {
+  options?: {
+    visualElements?: HTMLElement[];
+    extraActions?: HTMLButtonElement[];
+  }
+): { wrapper: HTMLDivElement; copyBtn: HTMLButtonElement; actions: HTMLDivElement } | null {
   if (pre.closest('.code-block-wrapper')?.querySelector('.copy-btn')) return null;
 
   const wrapper = document.createElement('div');
   wrapper.className = 'code-block-wrapper';
   pre.parentNode!.insertBefore(wrapper, pre);
 
+  const visualElements = options?.visualElements;
   if (visualElements) {
     visualElements.forEach((el) => wrapper.appendChild(el));
   }
@@ -45,13 +51,82 @@ function createCodeBlockWrapper(
   langLabel.textContent = lang;
   wrapper.appendChild(langLabel);
 
+  const actions = document.createElement('div');
+  actions.className = 'code-block-actions';
+  wrapper.appendChild(actions);
+
   const copyBtn = document.createElement('button');
   copyBtn.className = 'copy-btn';
   copyBtn.innerHTML = COPY_ICON;
   copyBtn.setAttribute('aria-label', '复制代码');
-  wrapper.appendChild(copyBtn);
+  actions.appendChild(copyBtn);
 
-  return { wrapper, copyBtn };
+  if (options?.extraActions) {
+    options.extraActions.forEach((btn) => actions.insertBefore(btn, copyBtn));
+  }
+
+  return { wrapper, copyBtn, actions };
+}
+
+function showMermaidModal(sourceDiagram: HTMLElement) {
+  const existing = document.querySelector('.mermaid-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'mermaid-modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', '放大查看 Mermaid 图');
+
+  const modal = document.createElement('div');
+  modal.className = 'mermaid-modal';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'mermaid-modal-close';
+  closeBtn.innerHTML = CLOSE_ICON;
+  closeBtn.setAttribute('aria-label', '关闭');
+
+  const content = document.createElement('div');
+  content.className = 'mermaid-modal-content';
+
+  const svg = sourceDiagram.querySelector('svg');
+  if (svg) {
+    const clonedSvg = svg.cloneNode(true) as SVGElement;
+    clonedSvg.removeAttribute('style');
+    clonedSvg.setAttribute('width', '100%');
+    clonedSvg.setAttribute('height', '100%');
+    clonedSvg.style.maxWidth = '100%';
+    clonedSvg.style.maxHeight = '100%';
+    content.appendChild(clonedSvg);
+  } else {
+    content.appendChild(sourceDiagram.cloneNode(true));
+  }
+
+  modal.appendChild(closeBtn);
+  modal.appendChild(content);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const originalOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+
+  function close() {
+    document.body.style.overflow = originalOverflow;
+    overlay.remove();
+  }
+
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  function onKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      close();
+      document.removeEventListener('keydown', onKey);
+    }
+  }
+  document.addEventListener('keydown', onKey);
 }
 
 async function initMermaid(): Promise<boolean> {
@@ -81,11 +156,23 @@ async function initMermaid(): Promise<boolean> {
     diagramDiv.className = 'mermaid';
     diagramDiv.textContent = mermaidContent;
 
-    const result = createCodeBlockWrapper(pre, 'mermaid', [diagramDiv]);
+    const zoomBtn = document.createElement('button');
+    zoomBtn.className = 'zoom-btn';
+    zoomBtn.innerHTML = ZOOM_ICON;
+    zoomBtn.setAttribute('aria-label', '放大查看');
+
+    const result = createCodeBlockWrapper(pre, 'mermaid', {
+      visualElements: [diagramDiv],
+      extraActions: [zoomBtn],
+    });
     if (!result) return;
 
     const { copyBtn } = result;
     pre.style.display = 'none';
+
+    zoomBtn.addEventListener('click', () => {
+      showMermaidModal(diagramDiv);
+    });
 
     copyBtn.addEventListener('click', async () => {
       try {
