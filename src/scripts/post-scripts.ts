@@ -9,7 +9,7 @@ const ERROR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="1
 const ZOOM_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
 const CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
-const CONTENT_SELECTOR = ':where(.prose, .slide-page)';
+const CONTENT_SELECTOR = ':where(.prose, .slide-page, .card-body)';
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -278,14 +278,10 @@ async function initMermaid(): Promise<boolean> {
     wrappedDiagrams.push({ div: diagramDiv, source });
   });
 
-  for (const { div, source } of wrappedDiagrams) {
-    try {
-      const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`;
-      const { svg } = await mermaid.render(id, source);
-      div.innerHTML = svg;
-    } catch {
-      // Ignore individual render failures so one bad diagram doesn't break others.
-    }
+  try {
+    await mermaid.run({ nodes: wrappedDiagrams.map((w) => w.div) });
+  } catch {
+    // Ignore render failures so one bad diagram doesn't break others.
   }
 
   return wrappedDiagrams.length > 0;
