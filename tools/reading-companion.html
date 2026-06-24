@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 智能朗读阅读器 - 中英文长文朗读</title>
+    <style>
+        :root {
+            --bg: #fdf6ec;
+            --bg-secondary: #f5ead5;
+            --text: #3a3226;
+            --text-secondary: #6b5e4a;
+            --highlight: #ffda6b;
+            --highlight-active: #ffb833;
+            --highlight-bg: rgba(255, 186, 50, 0.25);
+            --border: #d4c5a9;
+            --control-bg: #fffaf2;
+            --card-bg: #ffffff;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+            --accent: #c77d20;
+            --accent-hover: #a06518;
+            --btn-text: #fff;
+            --slider-track: #d4c5a9;
+            --slider-fill: #c77d20;
+            --divider: #e8dcc8;
+            --tag-bg: #f5ead5;
+            --tag-text: #6b4e2a;
+            --scrollbar-thumb: #c4b490;
+            --scrollbar-track: #f5ead5;
+            --badge-bg: #e8d5b0;
+            --badge-text: #6b4e2a;
+            --input-bg: #fffefb;
+            --transition-speed: 0.3s;
+            --editor-collapsed-width: 42px;
+            --editor-expanded-width: 40%;
+            --editor-max-width: 460px;
+            --editor-min-width: 280px;
+            --reading-font-size: 1.15rem;
+            --reading-line-height: 2;
+        }
+
+        .dark-theme {
+            --bg: #1e1b18;
+            --bg-secondary: #292420;
+            --text: #e0d5c5;
+            --text-secondary: #b0a590;
+            --highlight: #c77d20;
+            --highlight-active: #e8992e;
+            --highlight-bg: rgba(199, 125, 32, 0.30);
+            --border: #3d352a;
+            --control-bg: #25211c;
+            --card-bg: #2a2520;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.30);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+            --accent: #d4892a;
+            --accent-hover: #e8992e;
+            --btn-text: #1e1b18;
+            --slider-track: #3d352a;
+            --slider-fill: #d4892a;
+            --divider: #3d352a;
+            --tag-bg: #332c22;
+            --tag-text: #c4b490;
+            --scrollbar-thumb: #4a4035;
+            --scrollbar-track: #292420;
+            --badge-bg: #332c22;
+            --badge-text: #c4b490;
+            --input-bg: #1f1c17;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Noto Serif SC", "Georgia", "STSong", "SimSun", "Songti SC", serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            transition: background var(--transition-speed), color var(--transition-speed);
+            line-height: 1.7;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            height: 92vh;
+            max-height: 92vh;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background var(--transition-speed), box-shadow var(--transition-speed);
+            border: 1px solid var(--border);
+        }
+
+        /* ========== 顶部栏 ========== */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--divider);
+            background: var(--control-bg);
+            flex-wrap: wrap;
+            gap: 10px;
+            transition: background var(--transition-speed), border-color var(--transition-speed);
+            border-radius: 20px 20px 0 0;
+        }
+        .app-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: var(--accent);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: "Georgia", "Noto Serif SC", serif;
+        }
+        .app-title .icon {
+            font-size: 1.5rem;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 24px;
+            border: 1.5px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+        .btn:active {
+            transform: scale(0.97);
+            transition: transform 0.1s;
+        }
+        .btn-accent {
+            background: var(--accent);
+            color: var(--btn-text);
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+        .btn-accent:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+            box-shadow: 0 4px 14px rgba(199, 125, 32, 0.35);
+        }
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            border-radius: 18px;
+        }
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle {
+            font-size: 1.3rem;
+            cursor: pointer;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border);
+            background: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            color: var(--text);
+        }
+        .theme-toggle:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+            transform: rotate(15deg);
+        }
+
+        .btn-toggle {
+            transition: all 0.2s;
+        }
+        .btn-toggle.active {
+            background: var(--accent);
+            color: var(--btn-text);
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+        .btn-toggle.active:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+        .loop-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        /* ========== 预设标签 ========== */
+        .preset-tags {
+            display: flex;
+            gap: 6px;
+            padding: 10px 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--divider);
+            background: var(--control-bg);
+            transition: background var(--transition-speed), border-color var(--transition-speed);
+        }
+        .preset-tag {
+            padding: 5px 14px;
+            border-radius: 16px;
+            background: var(--tag-bg);
+            color: var(--tag-text);
+            cursor: pointer;
+            font-size: 0.82rem;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+            letter-spacing: 0.02em;
+            user-select: none;
+        }
+        .preset-tag:hover {
+            border-color: var(--accent);
+            background: var(--highlight-bg);
+            transform: translateY(-1px);
+        }
+        .preset-tag.active {
+            background: var(--accent);
+            color: var(--btn-text);
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* ========== 主要内容区：阅读区 + 编辑区 左右并排 ========== */
+        .main-content {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            transition: all var(--transition-speed);
+        }
+
+        /* ----- 阅读区 (左侧) ----- */
+        .reading-area-wrapper {
+            flex: 1 1 auto;
+            min-width: 0;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 20px 24px;
+            scroll-behavior: smooth;
+            transition: background var(--transition-speed);
+            background: var(--card-bg);
+            height: 100%;
+        }
+        .reading-area-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+        .reading-area-wrapper::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+            border-radius: 3px;
+        }
+        .reading-area-wrapper::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 3px;
+        }
+        .reading-area {
+            font-size: var(--reading-font-size);
+            line-height: var(--reading-line-height);
+            letter-spacing: 0.03em;
+            word-spacing: 0.05em;
+            transition: color var(--transition-speed);
+            text-align: justify;
+        }
+        .reading-area .sentence {
+            padding: 2px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.25s;
+            margin: 0 1px;
+            display: inline;
+            line-height: var(--reading-line-height);
+            scroll-margin-top: 60px;
+            scroll-margin-bottom: 60px;
+        }
+        .reading-area .sentence:hover {
+            background: rgba(199, 125, 32, 0.12);
+            outline: 1px dashed var(--accent);
+            outline-offset: 1px;
+        }
+        .reading-area .sentence.active {
+            background: var(--highlight-bg);
+            border-radius: 5px;
+            font-weight: 500;
+            box-shadow: 0 0 0 3px rgba(199, 125, 32, 0.15);
+            animation: pulseHighlight 0.6s ease-out;
+        }
+        @keyframes pulseHighlight {
+            0% {
+                box-shadow: 0 0 0 0px rgba(199, 125, 32, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 0 3px rgba(199, 125, 32, 0.15);
+            }
+        }
+        .reading-area .sentence.spoken {
+            color: var(--text-secondary);
+            opacity: 0.7;
+            transition: all 0.5s;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-secondary);
+            text-align: center;
+            gap: 10px;
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+        .empty-state .big-icon {
+            font-size: 3rem;
+            opacity: 0.5;
+        }
+
+        /* ----- 编辑区 (右侧，可折叠) ----- */
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--divider);
+            background: var(--control-bg);
+            transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            overflow: hidden;
+            flex-shrink: 0;
+            width: var(--editor-collapsed-width);
+            max-width: var(--editor-collapsed-width);
+            position: relative;
+        }
+        .input-section.expanded {
+            width: var(--editor-expanded-width);
+            max-width: var(--editor-max-width);
+            min-width: var(--editor-min-width);
+        }
+        .input-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            user-select: none;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            transition: all 0.2s;
+            writing-mode: horizontal-tb;
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: center;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .input-section:not(.expanded) .input-toggle {
+            writing-mode: vertical-rl;
+            height: 100%;
+            flex: 1;
+            justify-content: center;
+            padding: 10px 4px;
+            gap: 4px;
+            font-size: 0.85rem;
+        }
+        .input-toggle:hover {
+            color: var(--accent);
+            background: rgba(199, 125, 32, 0.06);
+        }
+        .input-toggle .arrow {
+            transition: transform 0.3s;
+            display: inline-block;
+            font-size: 0.8rem;
+        }
+        .input-section.expanded .input-toggle .arrow {
+            transform: rotate(180deg);
+        }
+        .input-body {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 14px 14px;
+            flex: 1;
+            min-height: 0;
+        }
+        .input-section.expanded .input-body {
+            display: flex;
+        }
+        .text-editor {
+            width: 100%;
+            flex: 1;
+            min-height: 150px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-family: "Georgia", "Noto Serif SC", "STSong", serif;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            resize: none;
+            background: var(--input-bg);
+            color: var(--text);
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .text-editor:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(199, 125, 32, 0.08);
+        }
+        .input-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* ========== 底部控制栏 ========== */
+        .control-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--divider);
+            background: var(--control-bg);
+            transition: background var(--transition-speed), border-color var(--transition-speed);
+            border-radius: 0 0 20px 20px;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        .control-row.primary {
+            justify-content: space-between;
+        }
+        .control-row.secondary {
+            justify-content: flex-start;
+        }
+        .play-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .btn-play {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            background: var(--accent);
+            color: var(--btn-text);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(199, 125, 32, 0.3);
+        }
+        .btn-play:hover {
+            background: var(--accent-hover);
+            transform: scale(1.06);
+            box-shadow: 0 6px 20px rgba(199, 125, 32, 0.4);
+        }
+        .btn-play:active {
+            transform: scale(0.94);
+            transition: transform 0.1s;
+        }
+        .btn-play.playing {
+            background: #e07b3a;
+            animation: gentlePulse 2s infinite;
+        }
+        @keyframes gentlePulse {
+            0%,
+            100% {
+                box-shadow: 0 4px 14px rgba(199, 125, 32, 0.3);
+            }
+            50% {
+                box-shadow: 0 4px 24px rgba(199, 125, 32, 0.55);
+            }
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+        .control-group label {
+            font-weight: 500;
+            min-width: 32px;
+            text-align: right;
+        }
+        .control-group input[type="range"] {
+            -webkit-appearance: none;
+            width: 80px;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--slider-track);
+            outline: none;
+            cursor: pointer;
+        }
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.15s;
+        }
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        .control-group .val-display {
+            display: inline-block;
+            min-width: 32px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.85rem;
+        }
+        .voice-select {
+            padding: 7px 12px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            max-width: 260px;
+            min-width: 120px;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .voice-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(199, 125, 32, 0.08);
+        }
+        .progress-info {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            font-weight: 500;
+            margin-left: auto;
+        }
+        .progress-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 4px;
+            background: var(--accent);
+            animation: dotBlink 0.8s infinite;
+        }
+        @keyframes dotBlink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.25;
+            }
+        }
+
+        /* ========== Toast提示 ========== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #3a3226;
+            color: #fdf6ec;
+            padding: 10px 22px;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            z-index: 999;
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            letter-spacing: 0.03em;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .dark-theme .toast {
+            background: #e0d5c5;
+            color: #1e1b18;
+        }
+
+        /* ========== 进度条 ========== */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--scrollbar-track);
+            flex-shrink: 0;
+            overflow: hidden;
+            transition: background var(--transition-speed);
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            border-radius: 0 2px 2px 0;
+            transition: width 0.3s ease;
+        }
+
+        /* ========== 帮助弹窗 ========== */
+        .help-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            padding: 16px;
+        }
+        .help-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+        .help-content {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: var(--shadow-lg);
+            max-width: 420px;
+            width: 100%;
+            padding: 22px 24px;
+            transform: translateY(20px) scale(0.97);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .help-modal.show .help-content {
+            transform: translateY(0) scale(1);
+        }
+        .help-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .help-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .help-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .help-close:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+        }
+        .help-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .help-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .help-list kbd {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--tag-bg);
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--tag-text);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* ========== 响应式：小屏幕上下堆叠 ========== */
+        @media (max-width: 750px) {
+            .app-container {
+                max-width: 100%;
+                border-radius: 14px;
+                height: 90vh;
+                max-height: 90vh;
+            }
+            .app-header {
+                padding: 10px 14px;
+                border-radius: 14px 14px 0 0;
+            }
+            .app-title {
+                font-size: 1.1rem;
+            }
+            .preset-tags {
+                padding: 8px 12px;
+                gap: 4px;
+            }
+            .preset-tag {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+                border-radius: 14px;
+            }
+            .main-content {
+                flex-direction: column;
+            }
+            .reading-area-wrapper {
+                padding: 14px 16px;
+                flex: 1 1 auto;
+                min-height: 220px;
+                max-height: none;
+            }
+            :root {
+                --reading-font-size: 1.05rem;
+                --reading-line-height: 1.9;
+            }
+            .input-section {
+                flex-direction: column;
+                border-left: none;
+                border-top: 1px solid var(--divider);
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                transition: all 0.35s;
+            }
+            .input-section:not(.expanded) {
+                height: 48px;
+                max-height: 48px;
+                width: 100%;
+            }
+            .input-section.expanded {
+                height: auto;
+                max-height: 45vh;
+                width: 100%;
+                max-width: 100%;
+                min-width: 100%;
+            }
+            .input-section:not(.expanded) .input-toggle {
+                writing-mode: horizontal-tb;
+                height: auto;
+                flex: none;
+                padding: 12px;
+            }
+            .text-editor {
+                min-height: 120px;
+                font-size: 0.9rem;
+            }
+            .control-bar {
+                padding: 10px 14px;
+                gap: 6px;
+                border-radius: 0 0 14px 14px;
+            }
+            .control-row {
+                gap: 6px;
+            }
+            .btn-play {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            .control-group input[type="range"] {
+                width: 56px;
+            }
+            .voice-select {
+                max-width: 200px;
+                font-size: 0.78rem;
+            }
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.78rem;
+            }
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 0.72rem;
+            }
+            .control-group label {
+                min-width: 24px;
+                font-size: 0.75rem;
+            }
+            .progress-info {
+                font-size: 0.72rem;
+            }
+        }
+        @media (max-width: 380px) {
+            .control-bar {
+                gap: 4px;
+                padding: 8px 10px;
+            }
+            .control-group input[type="range"] {
+                width: 44px;
+            }
+            .voice-select {
+                max-width: 160px;
+                font-size: 0.7rem;
+            }
+            .btn-play {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- ========== 顶部栏 ========== -->
+        <header class="app-header">
+            <div class="app-title">
+                <span class="icon">📖</span> 智能朗读阅读器
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-sm" id="btnImport" title="导入txt文本文件">📁 导入</button>
+                <button class="btn btn-sm" id="btnClearSpoken" title="清除已读标记">🔄 重置</button>
+                <button class="btn btn-sm" id="btnHelp" title="快捷键说明">❓ 帮助</button>
+                <button class="theme-toggle" id="btnTheme" title="切换深色/浅色模式">🌓</button>
+            </div>
+        </header>
+
+        <!-- ========== 预设文本标签 ========== -->
+        <div class="preset-tags" id="presetTags">
+            <span class="preset-tag active" data-preset="back">🏮 背影（朱自清）</span>
+            <span class="preset-tag" data-preset="dream">🗽 I Have a Dream</span>
+            <span class="preset-tag" data-preset="gettysburg">🎙️ Gettysburg Address</span>
+            <span class="preset-tag" data-preset="moonlight">🌙 荷塘月色</span>
+            <span class="preset-tag" data-preset="pride">📚 Pride and Prejudice</span>
+        </div>
+
+        <!-- ========== 主要内容：左右并排 ========== -->
+        <div class="main-content">
+            <!-- 阅读区 (左) -->
+            <div class="reading-area-wrapper" id="readingWrapper">
+                <div class="reading-area" id="readingArea">
+                    <div class="empty-state">
+                        <span class="big-icon">📖</span>
+                        <span>加载文本后，点击句子即可开始朗读</span>
+                        <span style="font-size:0.8rem;">或选择上方预设文本快速体验</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 编辑区 (右，可折叠) -->
+            <div class="input-section" id="inputSection">
+                <div class="input-toggle" id="inputToggle">
+                    <span class="arrow">◀</span> <span>编辑文本</span>
+                </div>
+                <div class="input-body">
+                    <textarea class="text-editor" id="textEditor" placeholder="在此粘贴或输入文本...&#10;支持中文和英文，长文本自动分段朗读。&#10;按 Ctrl+Enter 快速加载文本。"></textarea>
+                    <div class="input-actions">
+                        <button class="btn btn-accent" id="btnLoad">✅ 加载文本</button>
+                        <button class="btn btn-sm" id="btnAppend">📎 追加到末尾</button>
+                        <span style="font-size:0.75rem;color:var(--text-secondary);margin-left:auto;">Ctrl+Enter 快速加载</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 朗读进度条 ========== -->
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- ========== 底部控制栏 ========== -->
+        <div class="control-bar">
+            <div class="control-row primary">
+                <div class="play-controls">
+                    <button class="btn btn-sm" id="btnPrev" title="上一句">⏮</button>
+                    <button class="btn-play" id="btnPlay" title="播放 / 暂停">▶</button>
+                    <button class="btn btn-sm" id="btnStop" title="停止">⏹</button>
+                    <button class="btn btn-sm" id="btnNext" title="下一句">⏭</button>
+                </div>
+                <div class="loop-controls">
+                    <button class="btn btn-sm btn-toggle" id="btnLoopSentence" title="单句循环">🔂</button>
+                    <button class="btn btn-sm btn-toggle" id="btnLoopText" title="全文循环">🔁</button>
+                </div>
+                <div class="control-group">
+                    <label>语速</label>
+                    <input type="range" id="rateSlider" min="0.4" max="2.5" step="0.05" value="1">
+                    <span class="val-display" id="rateDisplay">1.0x</span>
+                </div>
+                <div class="control-group">
+                    <label>音调</label>
+                    <input type="range" id="pitchSlider" min="0.5" max="2" step="0.05" value="1">
+                    <span class="val-display" id="pitchDisplay">1.0</span>
+                </div>
+                <select class="voice-select" id="voiceSelect" title="选择朗读语音">
+                    <option value="">加载语音中...</option>
+                </select>
+                <span class="progress-info" id="progressInfo">就绪</span>
+            </div>
+            <div class="control-row secondary">
+                <div class="control-group">
+                    <label>字号</label>
+                    <button class="btn btn-sm" id="btnFontSmaller" title="减小字号">A-</button>
+                    <span class="val-display" id="fontSizeDisplay">1.15</span>
+                    <button class="btn btn-sm" id="btnFontLarger" title="增大字号">A+</button>
+                </div>
+                <div class="control-group">
+                    <label>行高</label>
+                    <input type="range" id="lineHeightSlider" min="1.5" max="2.5" step="0.1" value="2">
+                    <span class="val-display" id="lineHeightDisplay">2.0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帮助弹窗 -->
+    <div class="help-modal" id="helpModal">
+        <div class="help-content">
+            <div class="help-header">
+                <div class="help-title">⌨️ 快捷键说明</div>
+                <button class="help-close" id="helpClose" title="关闭">✕</button>
+            </div>
+            <ul class="help-list">
+                <li><kbd>空格</kbd><span>播放 / 暂停朗读</span></li>
+                <li><kbd>Ctrl + Enter</kbd><span>加载编辑区文本</span></li>
+                <li><kbd>← / →</kbd><span>上一句 / 下一句</span></li>
+                <li><kbd>Esc</kbd><span>停止朗读</span></li>
+                <li><kbd>点击句子</kbd><span>从该句开始朗读</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 隐藏的文件导入input -->
+    <input type="file" id="fileInput" accept=".txt,.md,.html,.csv" style="display:none;">
+
+    <script>
+        (function() {
+            // ==================== DOM元素 ====================
+            const readingArea = document.getElementById('readingArea');
+            const readingWrapper = document.getElementById('readingWrapper');
+            const textEditor = document.getElementById('textEditor');
+            const btnPlay = document.getElementById('btnPlay');
+            const btnStop = document.getElementById('btnStop');
+            const btnLoad = document.getElementById('btnLoad');
+            const btnAppend = document.getElementById('btnAppend');
+            const btnImport = document.getElementById('btnImport');
+            const btnClearSpoken = document.getElementById('btnClearSpoken');
+            const btnTheme = document.getElementById('btnTheme');
+            const voiceSelect = document.getElementById('voiceSelect');
+            const rateSlider = document.getElementById('rateSlider');
+            const pitchSlider = document.getElementById('pitchSlider');
+            const rateDisplay = document.getElementById('rateDisplay');
+            const pitchDisplay = document.getElementById('pitchDisplay');
+            const progressInfo = document.getElementById('progressInfo');
+            const presetTags = document.getElementById('presetTags');
+            const inputSection = document.getElementById('inputSection');
+            const inputToggle = document.getElementById('inputToggle');
+            const fileInput = document.getElementById('fileInput');
+            const toast = document.getElementById('toast');
+
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const btnFontSmaller = document.getElementById('btnFontSmaller');
+            const btnFontLarger = document.getElementById('btnFontLarger');
+            const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+            const lineHeightSlider = document.getElementById('lineHeightSlider');
+            const lineHeightDisplay = document.getElementById('lineHeightDisplay');
+            const btnHelp = document.getElementById('btnHelp');
+            const helpModal = document.getElementById('helpModal');
+            const helpClose = document.getElementById('helpClose');
+            const btnLoopSentence = document.getElementById('btnLoopSentence');
+            const btnLoopText = document.getElementById('btnLoopText');
+
+            // ==================== 状态管理 ====================
+            let sentences = [];
+            let currentSentenceIndex = -1;
+            let isPlaying = false;
+            let isPaused = false;
+            let allVoices = [];
+            let watchdogTimer = null;
+            const WATCHDOG_TIMEOUT = 18000;
+            let spokenIndices = new Set();
+            let isHelpOpen = false;
+            let loopSentence = false;
+            let loopText = false;
+
+            // ==================== 预设文本 ====================
+            const presets = {
+                back: {
+                    title: '背影（朱自清）',
+                    text: `我与父亲不相见已二年余了，我最不能忘记的是他的背影。
+            那年冬天，祖母死了，父亲的差使也交卸了，正是祸不单行的日子。我从北京到徐州，打算跟着父亲奔丧回家。到徐州见着父亲，看见满院狼藉的东西，又想起祖母，不禁簌簌地流下眼泪。父亲说："事已如此，不必难过，好在天无绝人之路！"
+            回家变卖典质，父亲还了亏空；又借钱办了丧事。这些日子，家中光景很是惨淡，一半为了丧事，一半为了父亲赋闲。丧事完毕，父亲要到南京谋事，我也要回北京念书，我们便同行。
+            到南京时，有朋友约去游逛，勾留了一日；第二日上午便须渡江到浦口，下午上车北去。父亲因为事忙，本已说定不送我，叫旅馆里一个熟识的茶房陪我同去。他再三嘱咐茶房，甚是仔细。但他终于不放心，怕茶房不妥帖；颇踌躇了一会。其实我那年已二十岁，北京已来往过两三次，是没有什么要紧的了。他踌躇了一会，终于决定还是自己送我去。我再三劝他不必去；他只说："不要紧，他们去不好！"
+            我们过了江，进了车站。我买票，他忙着照看行李。行李太多了，得向脚夫行些小费才可过去。他便又忙着和他们讲价钱。我那时真是聪明过分，总觉他说话不大漂亮，非自己插嘴不可，但他终于讲定了价钱；就送我上车。他给我拣定了靠车门的一张椅子；我将他给我做的紫毛大衣铺好座位。他嘱我路上小心，夜里要警醒些，不要受凉。又嘱托茶房好好照应我。我心里暗笑他的迂；他们只认得钱，托他们只是白托！而且我这样大年纪的人，难道还不能料理自己么？唉，我现在想想，那时真是太聪明了！
+            我说道："爸爸，你走吧。"他往车外看了看说："我买几个橘子去。你就在此地，不要走动。"我看那边月台的栅栏外有几个卖东西的等着顾客。走到那边月台，须穿过铁道，须跳下去又爬上去。父亲是一个胖子，走过去自然要费事些。我本来要去的，他不肯，只好让他去。我看见他戴着黑布小帽，穿着黑布大马褂，深青布棉袍，蹒跚地走到铁道边，慢慢探身下去，尚不大难。可是他穿过铁道，要爬上那边月台，就不容易了。他用两手攀着上面，两脚再向上缩；他肥胖的身子向左微倾，显出努力的样子。这时我看见他的背影，我的泪很快地流下来了。我赶紧拭干了泪。怕他看见，也怕别人看见。我再向外看时，他已抱了朱红的橘子往回走了。过铁道时，他先将橘子散放在地上，自己慢慢爬下，再抱起橘子走。到这边时，我赶紧去搀他。他和我走到车上，将橘子一股脑儿放在我的皮大衣上。于是扑扑衣上的泥土，心里很轻松似的。过一会说："我走了，到那边来信！"我望着他走出去。他走了几步，回过头看见我，说："进去吧，里边没人。"等他的背影混入来来往往的人里，再找不着了，我便进来坐下，我的眼泪又来了。`,
+                },
+                dream: {
+                    title: 'I Have a Dream (Excerpt)',
+                    text: `I am happy to join with you today in what will go down in history as the greatest demonstration for freedom in the history of our nation.
+            Five score years ago, a great American, in whose symbolic shadow we stand today, signed the Emancipation Proclamation. This momentous decree came as a great beacon light of hope to millions of Negro slaves who had been seared in the flames of withering injustice. It came as a joyous daybreak to end the long night of their captivity.
+            But one hundred years later, the Negro still is not free. One hundred years later, the life of the Negro is still sadly crippled by the manacles of segregation and the chains of discrimination. One hundred years later, the Negro lives on a lonely island of poverty in the midst of a vast ocean of material prosperity.
+            I have a dream that one day this nation will rise up and live out the true meaning of its creed: "We hold these truths to be self-evident, that all men are created equal."
+            I have a dream that one day on the red hills of Georgia, the sons of former slaves and the sons of former slave owners will be able to sit down together at the table of brotherhood.
+            I have a dream that my four little children will one day live in a nation where they will not be judged by the color of their skin but by the content of their character. I have a dream today!`,
+                },
+                gettysburg: {
+                    title: 'Gettysburg Address',
+                    text: `Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.
+            Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle-field of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live. It is altogether fitting and proper that we should do this.
+            But, in a larger sense, we can not dedicate—we can not consecrate—we can not hallow—this ground. The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract. The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced.
+            It is rather for us to be here dedicated to the great task remaining before us—that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion—that we here highly resolve that these dead shall not have died in vain—that this nation, under God, shall have a new birth of freedom—and that government of the people, by the people, for the people, shall not perish from the earth.`,
+                },
+                moonlight: {
+                    title: '荷塘月色（节选）',
+                    text: `这几天心里颇不宁静。今晚在院子里坐着乘凉，忽然想起日日走过的荷塘，在这满月的光里，总该另有一番样子吧。月亮渐渐地升高了，墙外马路上孩子们的欢笑，已经听不见了；妻在屋里拍着闰儿，迷迷糊糊地哼着眠歌。我悄悄地披了大衫，带上门出去。
+            沿着荷塘，是一条曲折的小煤屑路。这是一条幽僻的路；白天也少人走，夜晚更加寂寞。荷塘四面，长着许多树，蓊蓊郁郁的。路的一旁，是些杨柳，和一些不知道名字的树。没有月光的晚上，这路上阴森森的，有些怕人。今晚却很好，虽然月光也还是淡淡的。
+            曲曲折折的荷塘上面，弥望的是田田的叶子。叶子出水很高，像亭亭的舞女的裙。层层的叶子中间，零星地点缀着些白花，有袅娜地开着的，有羞涩地打着朵儿的；正如一粒粒的明珠，又如碧天里的星星，又如刚出浴的美人。微风过处，送来缕缕清香，仿佛远处高楼上渺茫的歌声似的。这时候叶子与花也有一丝的颤动，像闪电般，霎时传过荷塘的那边去了。叶子本是肩并肩密密地挨着，这便宛然有了一道凝碧的波痕。叶子底下是脉脉的流水，遮住了，不能见一些颜色；而叶子却更见风致了。
+            月光如流水一般，静静地泻在这一片叶子和花上。薄薄的青雾浮起在荷塘里。叶子和花仿佛在牛乳中洗过一样；又像笼着轻纱的梦。`,
+                },
+                pride: {
+                    title: 'Pride and Prejudice (Opening)',
+                    text: `It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.
+            However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.
+            "My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?"
+            Mr. Bennet replied that he had not.
+            "But it is," returned she; "for Mrs. Long has just been here, and she told me all about it."
+            Mr. Bennet made no answer.
+            "Do not you want to know who has taken it?" cried his wife impatiently.
+            "You want to tell me, and I have no objection to hearing it."
+            This was invitation enough.
+            "Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week."`,
+                },
+            };
+
+            let currentPresetKey = 'back';
+
+            // ==================== Toast ====================
+            let toastTimeout;
+            function showToast(msg, duration = 2200) {
+                clearTimeout(toastTimeout);
+                toast.textContent = msg;
+                toast.classList.add('show');
+                toastTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, duration);
+            }
+
+            // ==================== 主题切换 ====================
+            function applyTheme(isDark) {
+                if (isDark) {
+                    document.body.classList.add('dark-theme');
+                    btnTheme.textContent = '☀️';
+                    localStorage.setItem('reader-theme', 'dark');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    btnTheme.textContent = '🌓';
+                    localStorage.setItem('reader-theme', 'light');
+                }
+            }
+            const savedTheme = localStorage.getItem('reader-theme');
+            applyTheme(savedTheme === 'dark');
+            btnTheme.addEventListener('click', () => {
+                const isDark = document.body.classList.contains('dark-theme');
+                applyTheme(!isDark);
+                showToast(isDark ? '已切换为浅色模式' : '已切换为深色模式');
+            });
+
+            // ==================== 阅读样式与进度 ====================
+            function applyFontSize(size) {
+                size = Math.max(1.0, Math.min(1.5, parseFloat(size)));
+                size = Math.round(size * 100) / 100;
+                document.documentElement.style.setProperty('--reading-font-size', size + 'rem');
+                fontSizeDisplay.textContent = size.toFixed(2);
+                try {
+                    localStorage.setItem('reader-font-size', String(size));
+                } catch (e) {}
+            }
+
+            function applyLineHeight(value) {
+                value = Math.max(1.5, Math.min(2.5, parseFloat(value)));
+                value = Math.round(value * 10) / 10;
+                document.documentElement.style.setProperty('--reading-line-height', value);
+                lineHeightSlider.value = value;
+                lineHeightDisplay.textContent = value.toFixed(1);
+                try {
+                    localStorage.setItem('reader-line-height', String(value));
+                } catch (e) {}
+            }
+
+            function updateProgressBar() {
+                if (!sentences || sentences.length === 0) {
+                    progressFill.style.width = '0%';
+                    return;
+                }
+                let idx = currentSentenceIndex;
+                if (idx < 0) idx = 0;
+                const percent = ((idx + 1) / sentences.length) * 100;
+                progressFill.style.width = Math.min(100, percent) + '%';
+            }
+
+            function openHelp() {
+                isHelpOpen = true;
+                helpModal.classList.add('show');
+            }
+
+            function closeHelp() {
+                isHelpOpen = false;
+                helpModal.classList.remove('show');
+            }
+
+            function updateLoopButtons() {
+                btnLoopSentence.classList.toggle('active', loopSentence);
+                btnLoopText.classList.toggle('active', loopText);
+                btnLoopSentence.title = loopSentence ? '关闭单句循环' : '单句循环';
+                btnLoopText.title = loopText ? '关闭全文循环' : '全文循环';
+            }
+
+            function toggleLoopSentence() {
+                loopSentence = !loopSentence;
+                updateLoopButtons();
+                showToast(loopSentence ? '已开启单句循环' : '已关闭单句循环');
+                try {
+                    localStorage.setItem('reader-loop-sentence', loopSentence ? '1' : '0');
+                } catch (e) {}
+            }
+
+            function toggleLoopText() {
+                loopText = !loopText;
+                updateLoopButtons();
+                showToast(loopText ? '已开启全文循环' : '已关闭全文循环');
+                try {
+                    localStorage.setItem('reader-loop-text', loopText ? '1' : '0');
+                } catch (e) {}
+            }
+
+            // ==================== 语音加载 ====================
+            function loadVoices() {
+                return new Promise((resolve) => {
+                    const voices = speechSynthesis.getVoices();
+                    if (voices && voices.length > 0) {
+                        allVoices = voices;
+                        resolve(voices);
+                        return;
+                    }
+                    const handler = () => {
+                        allVoices = speechSynthesis.getVoices();
+                        if (allVoices.length > 0) {
+                            speechSynthesis.removeEventListener('voiceschanged', handler);
+                            resolve(allVoices);
+                        }
+                    };
+                    speechSynthesis.addEventListener('voiceschanged', handler);
+                    setTimeout(() => {
+                        allVoices = speechSynthesis.getVoices();
+                        speechSynthesis.removeEventListener('voiceschanged', handler);
+                        resolve(allVoices);
+                    }, 3000);
+                });
+            }
+
+            function populateVoiceSelect() {
+                voiceSelect.innerHTML = '';
+                if (allVoices.length === 0) {
+                    voiceSelect.innerHTML = '<option value="">无可用语音</option>';
+                    return;
+                }
+                const groups = { zh: [], en: [], other: [] };
+                allVoices.forEach((v, i) => {
+                    const lang = v.lang.toLowerCase();
+                    if (lang.startsWith('zh')) groups.zh.push({ voice: v, index: i });
+                    else if (lang.startsWith('en')) groups.en.push({ voice: v, index: i });
+                    else groups.other.push({ voice: v, index: i });
+                });
+                const addGroup = (label, items) => {
+                    if (items.length === 0) return;
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = label;
+                    items.forEach(({ voice, index }) => {
+                        const opt = document.createElement('option');
+                        opt.value = index;
+                        opt.textContent = `${voice.name} (${voice.lang})`;
+                        optgroup.appendChild(opt);
+                    });
+                    voiceSelect.appendChild(optgroup);
+                };
+                addGroup('🇨🇳 中文语音', groups.zh);
+                addGroup('🇺🇸 英文语音', groups.en);
+                if (groups.other.length > 0) addGroup('🌐 其他语言', groups.other);
+
+                if (groups.zh.length > 0) {
+                    voiceSelect.value = groups.zh[0].index;
+                } else if (groups.en.length > 0) {
+                    voiceSelect.value = groups.en[0].index;
+                } else if (allVoices.length > 0) {
+                    voiceSelect.value = '0';
+                }
+            }
+
+            function getSelectedVoice() {
+                const idx = parseInt(voiceSelect.value);
+                if (isNaN(idx) || idx < 0 || idx >= allVoices.length) {
+                    return allVoices.find(v => v.lang.startsWith('zh') || v.lang.startsWith('en')) || allVoices[0] || null;
+                }
+                return allVoices[idx];
+            }
+
+            function autoSelectVoice(text) {
+                const sample = text.substring(0, 500);
+                const chineseChars = (sample.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+                const totalChars = sample.replace(/\s/g, '').length;
+                const isChinese = totalChars > 0 && chineseChars / totalChars > 0.25;
+                const targetLang = isChinese ? 'zh' : 'en';
+                const candidates = allVoices.filter(v => v.lang.toLowerCase().startsWith(targetLang));
+                if (candidates.length > 0) {
+                    let chosen;
+                    if (targetLang === 'en') {
+                        chosen = candidates.find(v => /\bAva\b/i.test(v.name)) ||
+                                 candidates.find(v => v.default) ||
+                                 candidates[0];
+                    } else {
+                        chosen = candidates.find(v => v.default) || candidates[0];
+                    }
+                    const idx = allVoices.indexOf(chosen);
+                    if (idx >= 0) voiceSelect.value = idx;
+                }
+            }
+
+            // ==================== 句子分割 ====================
+            function splitSentences(text) {
+                if (!text || text.trim().length === 0) return [];
+                const pattern = /(?<=[。！？.!?…;；\n])\s*/;
+                let rawParts = text.split(pattern);
+                const result = [];
+                let buffer = '';
+                for (const part of rawParts) {
+                    const trimmed = part.trim();
+                    if (trimmed.length === 0) continue;
+                    buffer += (buffer ? ' ' : '') + trimmed;
+                    if (/[。！？.!?…;；\n]$/.test(buffer) || buffer.length >= 800) {
+                        result.push(buffer.trim());
+                        buffer = '';
+                    }
+                }
+                if (buffer.trim().length > 0) {
+                    result.push(buffer.trim());
+                }
+                return result.filter(s => s.replace(/\s/g, '').length > 0);
+            }
+
+            // ==================== 渲染阅读区 ====================
+            function renderReadingArea(sentenceArray) {
+                readingArea.innerHTML = '';
+                if (!sentenceArray || sentenceArray.length === 0) {
+                    readingArea.innerHTML = `
+                    <div class="empty-state">
+                      <span class="big-icon">📖</span>
+                      <span>加载文本后，点击句子即可开始朗读</span>
+                      <span style="font-size:0.8rem;">或选择上方预设文本快速体验</span>
+                    </div>`;
+                    return;
+                }
+                sentenceArray.forEach((sentence, index) => {
+                    const span = document.createElement('span');
+                    span.className = 'sentence';
+                    span.textContent = sentence + ' ';
+                    span.dataset.index = index;
+                    span.title = `点击从此句开始朗读 (第${index + 1}句)`;
+                    span.addEventListener('click', () => {
+                        startFromIndex(index);
+                    });
+                    readingArea.appendChild(span);
+                });
+                spokenIndices.clear();
+                updateSpokenVisuals();
+            }
+
+            function highlightSentence(index) {
+                const allSpans = readingArea.querySelectorAll('.sentence');
+                allSpans.forEach(s => s.classList.remove('active'));
+                if (index >= 0 && index < allSpans.length) {
+                    const target = allSpans[index];
+                    target.classList.add('active');
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                currentSentenceIndex = index;
+            }
+
+            function markAsSpoken(index) {
+                spokenIndices.add(index);
+                updateSpokenVisuals();
+            }
+
+            function updateSpokenVisuals() {
+                const allSpans = readingArea.querySelectorAll('.sentence');
+                allSpans.forEach(s => {
+                    const idx = parseInt(s.dataset.index);
+                    if (spokenIndices.has(idx) && idx !== currentSentenceIndex) {
+                        s.classList.add('spoken');
+                    } else if (!spokenIndices.has(idx)) {
+                        s.classList.remove('spoken');
+                    }
+                });
+            }
+
+            function clearSpokenMarks() {
+                spokenIndices.clear();
+                const allSpans = readingArea.querySelectorAll('.sentence');
+                allSpans.forEach(s => s.classList.remove('spoken'));
+                showToast('已重置朗读标记');
+            }
+
+            // ==================== 朗读引擎 ====================
+            function startFromIndex(index) {
+                if (sentences.length === 0) {
+                    showToast('请先加载文本');
+                    return;
+                }
+                if (index < 0 || index >= sentences.length) {
+                    index = 0;
+                }
+                stopReading(true);
+                currentSentenceIndex = index;
+                isPlaying = true;
+                isPaused = false;
+                updatePlayButton();
+                highlightSentence(index);
+                speakCurrentSentence();
+                updateProgressInfo();
+            }
+
+            function speakCurrentSentence() {
+                if (!isPlaying || isPaused) return;
+                if (currentSentenceIndex < 0 || currentSentenceIndex >= sentences.length) {
+                    finishReading();
+                    return;
+                }
+                const sentence = sentences[currentSentenceIndex];
+                if (!sentence || sentence.trim().length === 0) {
+                    markAsSpoken(currentSentenceIndex);
+                    currentSentenceIndex++;
+                    speakCurrentSentence();
+                    return;
+                }
+                const utterance = new SpeechSynthesisUtterance(sentence);
+                const voice = getSelectedVoice();
+                if (voice) utterance.voice = voice;
+                utterance.rate = parseFloat(rateSlider.value);
+                utterance.pitch = parseFloat(pitchSlider.value);
+                utterance.volume = 1;
+
+                highlightSentence(currentSentenceIndex);
+                updateProgressInfo();
+                resetWatchdog();
+
+                utterance.onstart = () => {
+                    resetWatchdog();
+                };
+                utterance.onend = () => {
+                    clearWatchdog();
+                    if (!isPlaying) return;
+                    if (isPaused) return;
+
+                    if (loopSentence) {
+                        setTimeout(() => {
+                            if (isPlaying && !isPaused) {
+                                speakCurrentSentence();
+                            }
+                        }, 80);
+                        return;
+                    }
+
+                    markAsSpoken(currentSentenceIndex);
+                    currentSentenceIndex++;
+                    if (currentSentenceIndex >= sentences.length) {
+                        if (loopText) {
+                            currentSentenceIndex = 0;
+                            spokenIndices.clear();
+                            updateSpokenVisuals();
+                            highlightSentence(currentSentenceIndex);
+                            updateProgressInfo();
+                            setTimeout(() => {
+                                if (isPlaying && !isPaused) {
+                                    speakCurrentSentence();
+                                }
+                            }, 80);
+                            return;
+                        }
+                        finishReading();
+                        return;
+                    }
+                    highlightSentence(currentSentenceIndex);
+                    updateProgressInfo();
+                    setTimeout(() => {
+                        if (isPlaying && !isPaused) {
+                            speakCurrentSentence();
+                        }
+                    }, 80);
+                };
+                utterance.onerror = (e) => {
+                    clearWatchdog();
+                    if (e.error === 'interrupted' || e.error === 'canceled') return;
+                    if (isPlaying && !isPaused) {
+                        if (loopSentence) {
+                            setTimeout(() => {
+                                if (isPlaying && !isPaused) speakCurrentSentence();
+                            }, 200);
+                            return;
+                        }
+                        markAsSpoken(currentSentenceIndex);
+                        currentSentenceIndex++;
+                        if (currentSentenceIndex >= sentences.length) {
+                            if (loopText) {
+                                currentSentenceIndex = 0;
+                                spokenIndices.clear();
+                                updateSpokenVisuals();
+                                highlightSentence(currentSentenceIndex);
+                                updateProgressInfo();
+                                setTimeout(() => {
+                                    if (isPlaying && !isPaused) speakCurrentSentence();
+                                }, 200);
+                                return;
+                            }
+                            finishReading();
+                            return;
+                        }
+                        setTimeout(() => {
+                            if (isPlaying && !isPaused) speakCurrentSentence();
+                        }, 200);
+                    }
+                };
+
+                speechSynthesis.speak(utterance);
+                resetWatchdog();
+            }
+
+            function resetWatchdog() {
+                clearWatchdog();
+                watchdogTimer = setTimeout(() => {
+                    if (!speechSynthesis.speaking && isPlaying && !isPaused) {
+                        markAsSpoken(currentSentenceIndex);
+                        currentSentenceIndex++;
+                        if (currentSentenceIndex >= sentences.length) {
+                            finishReading();
+                            return;
+                        }
+                        highlightSentence(currentSentenceIndex);
+                        updateProgressInfo();
+                        speechSynthesis.resume();
+                        speakCurrentSentence();
+                    } else if (speechSynthesis.paused) {
+                        speechSynthesis.resume();
+                        resetWatchdog();
+                    } else if (speechSynthesis.speaking) {
+                        resetWatchdog();
+                    }
+                }, WATCHDOG_TIMEOUT);
+            }
+
+            function clearWatchdog() {
+                if (watchdogTimer) {
+                    clearTimeout(watchdogTimer);
+                    watchdogTimer = null;
+                }
+            }
+
+            function stopReading(silent = false) {
+                clearWatchdog();
+                speechSynthesis.cancel();
+                isPlaying = false;
+                isPaused = false;
+                updatePlayButton();
+                updateProgressInfo();
+                if (!silent) {
+                    const allSpans = readingArea.querySelectorAll('.sentence');
+                    allSpans.forEach(s => s.classList.remove('active'));
+                }
+            }
+
+            function pauseReading() {
+                if (!isPlaying || isPaused) return;
+                isPaused = true;
+                clearWatchdog();
+                speechSynthesis.pause();
+                updatePlayButton();
+                updateProgressInfo();
+                showToast('已暂停');
+            }
+
+            function resumeReading() {
+                if (!isPlaying || !isPaused) return;
+                isPaused = false;
+                speechSynthesis.resume();
+                updatePlayButton();
+                updateProgressInfo();
+                resetWatchdog();
+                showToast('继续朗读');
+            }
+
+            function finishReading() {
+                clearWatchdog();
+                isPlaying = false;
+                isPaused = false;
+                updatePlayButton();
+                updateProgressInfo();
+                const allSpans = readingArea.querySelectorAll('.sentence');
+                allSpans.forEach(s => s.classList.remove('active'));
+                showToast('✅ 朗读完成！');
+                updateProgressInfo();
+            }
+
+            function updatePlayButton() {
+                if (isPlaying && !isPaused) {
+                    btnPlay.textContent = '⏸';
+                    btnPlay.classList.add('playing');
+                    btnPlay.title = '暂停';
+                } else if (isPlaying && isPaused) {
+                    btnPlay.textContent = '▶';
+                    btnPlay.classList.remove('playing');
+                    btnPlay.title = '继续';
+                } else {
+                    btnPlay.textContent = '▶';
+                    btnPlay.classList.remove('playing');
+                    btnPlay.title = '播放';
+                }
+            }
+
+            function updateProgressInfo() {
+                if (!isPlaying && currentSentenceIndex < 0) {
+                    progressInfo.innerHTML = '就绪';
+                } else if (!isPlaying && sentences.length > 0) {
+                    progressInfo.innerHTML = `已停止 · 共${sentences.length}句`;
+                } else if (isPaused) {
+                    progressInfo.innerHTML = `<span class="progress-dot" style="background:#e07b3a;"></span>暂停中 · ${currentSentenceIndex + 1}/${sentences.length}句`;
+                } else if (isPlaying) {
+                    progressInfo.innerHTML = `<span class="progress-dot"></span>朗读中 · ${currentSentenceIndex + 1}/${sentences.length}句`;
+                } else {
+                    progressInfo.innerHTML = '就绪';
+                }
+                updateProgressBar();
+            }
+
+            // ==================== 按钮事件 ====================
+            btnPlay.addEventListener('click', () => {
+                if (sentences.length === 0) {
+                    showToast('请先加载文本或选择预设');
+                    return;
+                }
+                if (isPlaying && !isPaused) {
+                    pauseReading();
+                } else if (isPlaying && isPaused) {
+                    resumeReading();
+                } else {
+                    if (currentSentenceIndex < 0 || currentSentenceIndex >= sentences.length) {
+                        currentSentenceIndex = 0;
+                    }
+                    startFromIndex(currentSentenceIndex);
+                }
+            });
+
+            btnStop.addEventListener('click', () => {
+                if (sentences.length === 0) return;
+                const wasPlaying = isPlaying;
+                stopReading();
+                if (wasPlaying) {
+                    showToast('已停止朗读');
+                }
+                currentSentenceIndex = 0;
+                updateProgressInfo();
+                const allSpans = readingArea.querySelectorAll('.sentence');
+                allSpans.forEach(s => s.classList.remove('active'));
+            });
+
+            btnPrev.addEventListener('click', () => {
+                if (sentences.length === 0) {
+                    showToast('请先加载文本');
+                    return;
+                }
+                if (currentSentenceIndex <= 0) {
+                    showToast('已经是第一句了');
+                    return;
+                }
+                startFromIndex(currentSentenceIndex - 1);
+            });
+
+            btnNext.addEventListener('click', () => {
+                if (sentences.length === 0) {
+                    showToast('请先加载文本');
+                    return;
+                }
+                if (currentSentenceIndex >= sentences.length - 1) {
+                    showToast('已经是最后一句了');
+                    return;
+                }
+                startFromIndex(currentSentenceIndex + 1);
+            });
+
+            btnLoad.addEventListener('click', () => {
+                const text = textEditor.value.trim();
+                if (!text) {
+                    showToast('请先输入或粘贴文本');
+                    return;
+                }
+                loadText(text);
+                showToast(`已加载 ${sentences.length} 个句子`);
+                inputSection.classList.remove('expanded');
+            });
+
+            btnAppend.addEventListener('click', () => {
+                const text = textEditor.value.trim();
+                if (!text) {
+                    showToast('请先输入要追加的文本');
+                    return;
+                }
+                const existingText = sentences.join(' ');
+                const combined = existingText + '\n' + text;
+                loadText(combined);
+                showToast(`已追加，共 ${sentences.length} 个句子`);
+            });
+
+            btnImport.addEventListener('click', () => {
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const text = ev.target.result;
+                    textEditor.value = text;
+                    loadText(text);
+                    showToast(`已导入文件：${file.name}，共 ${sentences.length} 句`);
+                    inputSection.classList.remove('expanded');
+                };
+                reader.onerror = () => {
+                    showToast('文件读取失败，请重试');
+                };
+                reader.readAsText(file);
+                fileInput.value = '';
+            });
+
+            btnClearSpoken.addEventListener('click', () => {
+                clearSpokenMarks();
+                currentSentenceIndex = 0;
+                updateProgressInfo();
+                const allSpans = readingArea.querySelectorAll('.sentence');
+                allSpans.forEach(s => s.classList.remove('active'));
+            });
+
+            function loadText(text) {
+                stopReading(true);
+                currentSentenceIndex = 0;
+                sentences = splitSentences(text);
+                textEditor.value = text;
+                renderReadingArea(sentences);
+                autoSelectVoice(text);
+                updateProgressInfo();
+                try {
+                    localStorage.setItem('reader-last-text', text);
+                } catch (e) {}
+            }
+
+            // ==================== 预设标签事件 ====================
+            presetTags.addEventListener('click', (e) => {
+                const tag = e.target.closest('.preset-tag');
+                if (!tag) return;
+                const key = tag.dataset.preset;
+                if (!key || !presets[key]) return;
+                presetTags.querySelectorAll('.preset-tag').forEach(t => t.classList.remove('active'));
+                tag.classList.add('active');
+                currentPresetKey = key;
+                const preset = presets[key];
+                textEditor.value = preset.text;
+                loadText(preset.text);
+                showToast(`已加载：${preset.title}`);
+                inputSection.classList.remove('expanded');
+            });
+
+            // ==================== 输入区折叠 ====================
+            inputToggle.addEventListener('click', () => {
+                inputSection.classList.toggle('expanded');
+                if (inputSection.classList.contains('expanded')) {
+                    textEditor.focus();
+                }
+            });
+
+            // ==================== 语速/音调滑块 ====================
+            rateSlider.addEventListener('input', () => {
+                rateDisplay.textContent = parseFloat(rateSlider.value).toFixed(1) + 'x';
+            });
+            pitchSlider.addEventListener('input', () => {
+                pitchDisplay.textContent = parseFloat(pitchSlider.value).toFixed(1);
+            });
+            lineHeightSlider.addEventListener('input', () => {
+                applyLineHeight(lineHeightSlider.value);
+            });
+            btnFontSmaller.addEventListener('click', () => {
+                const current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--reading-font-size')) || 1.15;
+                applyFontSize(current - 0.05);
+            });
+            btnFontLarger.addEventListener('click', () => {
+                const current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--reading-font-size')) || 1.15;
+                applyFontSize(current + 0.05);
+            });
+            btnHelp.addEventListener('click', openHelp);
+            helpClose.addEventListener('click', closeHelp);
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) closeHelp();
+            });
+            btnLoopSentence.addEventListener('click', toggleLoopSentence);
+            btnLoopText.addEventListener('click', toggleLoopText);
+            rateDisplay.textContent = parseFloat(rateSlider.value).toFixed(1) + 'x';
+            pitchDisplay.textContent = parseFloat(pitchSlider.value).toFixed(1);
+
+            // ==================== 键盘快捷键 ====================
+            document.addEventListener('keydown', (e) => {
+                if (isHelpOpen) {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeHelp();
+                    }
+                    return;
+                }
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    const text = textEditor.value.trim();
+                    if (text) {
+                        loadText(text);
+                        showToast(`已加载 ${sentences.length} 个句子`);
+                        inputSection.classList.remove('expanded');
+                    }
+                    return;
+                }
+                if (e.key === ' ' && document.activeElement !== textEditor && document.activeElement?.tagName !==
+                    'INPUT') {
+                    e.preventDefault();
+                    btnPlay.click();
+                    return;
+                }
+                if (e.key === 'Escape' && isPlaying) {
+                    e.preventDefault();
+                    btnStop.click();
+                    return;
+                }
+                if (e.key === 'ArrowRight' && document.activeElement !== textEditor) {
+                    e.preventDefault();
+                    btnNext.click();
+                    return;
+                }
+                if (e.key === 'ArrowLeft' && document.activeElement !== textEditor) {
+                    e.preventDefault();
+                    btnPrev.click();
+                    return;
+                }
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && isPlaying && !isPaused) {
+                    clearWatchdog();
+                }
+                if (!document.hidden && isPlaying && !isPaused) {
+                    if (speechSynthesis.speaking) {
+                        resetWatchdog();
+                    } else if (currentSentenceIndex < sentences.length) {
+                        speakCurrentSentence();
+                    }
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                speechSynthesis.cancel();
+            });
+
+            readingWrapper.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                readingWrapper.style.outline = '2px dashed var(--accent)';
+                readingWrapper.style.outlineOffset = '-8px';
+            });
+            readingWrapper.addEventListener('dragleave', () => {
+                readingWrapper.style.outline = '';
+            });
+            readingWrapper.addEventListener('drop', (e) => {
+                e.preventDefault();
+                readingWrapper.style.outline = '';
+                const file = e.dataTransfer.files[0];
+                if (!file) return;
+                if (!file.name.match(/\.(txt|md|html|css|js|json|csv)$/i)) {
+                    showToast('请拖放文本文件（.txt, .md等）');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const text = ev.target.result;
+                    textEditor.value = text;
+                    loadText(text);
+                    showToast(`已导入：${file.name}，共 ${sentences.length} 句`);
+                    inputSection.classList.remove('expanded');
+                };
+                reader.onerror = () => showToast('文件读取失败');
+                reader.readAsText(file);
+            });
+
+            // ==================== 初始化 ====================
+            async function init() {
+                const savedFontSize = localStorage.getItem('reader-font-size');
+                const savedLineHeight = localStorage.getItem('reader-line-height');
+                if (savedFontSize) applyFontSize(savedFontSize);
+                if (savedLineHeight) applyLineHeight(savedLineHeight);
+
+                try {
+                    loopSentence = localStorage.getItem('reader-loop-sentence') === '1';
+                    loopText = localStorage.getItem('reader-loop-text') === '1';
+                } catch (e) {}
+                updateLoopButtons();
+
+                // 同步控制面板的显示值（含移动端默认值）
+                const rootStyle = getComputedStyle(document.documentElement);
+                fontSizeDisplay.textContent = parseFloat(rootStyle.getPropertyValue('--reading-font-size')).toFixed(2);
+                const lh = parseFloat(rootStyle.getPropertyValue('--reading-line-height'));
+                lineHeightSlider.value = lh;
+                lineHeightDisplay.textContent = lh.toFixed(1);
+
+                await loadVoices();
+                populateVoiceSelect();
+
+                let initialText = '';
+                try {
+                    initialText = localStorage.getItem('reader-last-text') || '';
+                } catch (e) {}
+                if (initialText && initialText.trim().length > 0) {
+                    textEditor.value = initialText;
+                    loadText(initialText);
+                } else {
+                    const defaultPreset = presets[currentPresetKey];
+                    if (defaultPreset) {
+                        textEditor.value = defaultPreset.text;
+                        loadText(defaultPreset.text);
+                        const defaultTag = presetTags.querySelector(`[data-preset="${currentPresetKey}"]`);
+                        if (defaultTag) {
+                            presetTags.querySelectorAll('.preset-tag').forEach(t => t.classList.remove('active'));
+                            defaultTag.classList.add('active');
+                        }
+                    }
+                }
+
+                updateProgressInfo();
+                updatePlayButton();
+            }
+
+            init().catch(err => {
+                console.error('初始化失败:', err);
+                showToast('初始化遇到问题，请刷新页面');
+            });
+
+            console.log('📖 智能朗读阅读器已就绪 (左右并排布局)');
+        })();
+    </script>
+</body>
+</html>
