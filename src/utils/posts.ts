@@ -392,10 +392,18 @@ export function renderPreview(body: string | undefined, maxChars = 600): string 
       if (!isCodeBlock && !isImageBlock && !isTableBlock) {
         const remaining = Math.max(0, maxChars - charCount);
         if (remaining > 20) {
-          const truncatedText = truncateAtSentenceBoundary(text, remaining);
-          if (truncatedText.length > 0) {
-            const truncatedHtml = marked.parse(truncatedText, { async: false, gfm: true }) as string;
-            previewBlocks.push(sanitizePreviewHtml(truncatedHtml));
+          // Lists have already been rendered to proper HTML; truncating their
+          // plain-text content and re-parsing it would lose the list markup.
+          const trimmedHtml = html.trim();
+          const isListBlock = trimmedHtml.startsWith('<ul>') || trimmedHtml.startsWith('<ol>');
+          if (isListBlock) {
+            previewBlocks.push(html);
+          } else {
+            const truncatedText = truncateAtSentenceBoundary(text, remaining);
+            if (truncatedText.length > 0) {
+              const truncatedHtml = marked.parse(truncatedText, { async: false, gfm: true }) as string;
+              previewBlocks.push(sanitizePreviewHtml(truncatedHtml));
+            }
           }
         }
       }
