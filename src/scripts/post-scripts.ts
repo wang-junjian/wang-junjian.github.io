@@ -9,6 +9,8 @@ const ERROR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="1
 const ZOOM_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
 const CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
+const CONTENT_SELECTOR = ':where(.prose, .slide-page)';
+
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[src="${src}"]`);
@@ -66,6 +68,40 @@ function createCodeBlockWrapper(
   }
 
   return { wrapper, copyBtn, actions };
+}
+
+function wrapMermaidDiagram(
+  diagramDiv: HTMLElement,
+  insertBefore: Node,
+  extraActions?: HTMLButtonElement[]
+): { wrapper: HTMLDivElement; copyBtn: HTMLButtonElement } | null {
+  if (diagramDiv.closest('.code-block-wrapper')?.querySelector('.copy-btn')) return null;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'code-block-wrapper';
+  insertBefore.parentNode!.insertBefore(wrapper, insertBefore);
+  wrapper.appendChild(diagramDiv);
+
+  const langLabel = document.createElement('span');
+  langLabel.className = 'code-language';
+  langLabel.textContent = 'mermaid';
+  wrapper.appendChild(langLabel);
+
+  const actions = document.createElement('div');
+  actions.className = 'code-block-actions';
+  wrapper.appendChild(actions);
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'copy-btn';
+  copyBtn.innerHTML = COPY_ICON;
+  copyBtn.setAttribute('aria-label', '复制代码');
+  actions.appendChild(copyBtn);
+
+  if (extraActions) {
+    extraActions.forEach((btn) => actions.insertBefore(btn, copyBtn));
+  }
+
+  return { wrapper, copyBtn };
 }
 
 function showMermaidModal(sourceDiagram: HTMLElement) {
@@ -130,8 +166,10 @@ function showMermaidModal(sourceDiagram: HTMLElement) {
 }
 
 async function initMermaid(): Promise<boolean> {
-  const mermaidBlocks = document.querySelectorAll('.prose pre code.language-mermaid');
-  if (mermaidBlocks.length === 0) return false;
+  const codeBlocks = document.querySelectorAll(`${CONTENT_SELECTOR} pre code.language-mermaid`);
+  const rawDiagrams = document.querySelectorAll(`${CONTENT_SELECTOR} .mermaid`);
+
+  if (codeBlocks.length === 0 && rawDiagrams.length === 0) return false;
 
   try {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js');
@@ -147,14 +185,15 @@ async function initMermaid(): Promise<boolean> {
     securityLevel: 'loose',
   });
 
-  let mermaidCount = 0;
-  mermaidBlocks.forEach((code) => {
+  const wrappedDiagrams: { div: HTMLElement; source: string }[] = [];
+
+  codeBlocks.forEach((code) => {
     const pre = code.parentElement!;
-    const mermaidContent = code.textContent || '';
+    const source = code.textContent || '';
 
     const diagramDiv = document.createElement('div');
     diagramDiv.className = 'mermaid';
-    diagramDiv.textContent = mermaidContent;
+    diagramDiv.textContent = source;
 
     const zoomBtn = document.createElement('button');
     zoomBtn.className = 'zoom-btn';
@@ -176,7 +215,7 @@ async function initMermaid(): Promise<boolean> {
 
     copyBtn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(mermaidContent);
+        await navigator.clipboard.writeText(source);
         copyBtn.innerHTML = CHECK_ICON;
         copyBtn.classList.add('copied');
         setTimeout(() => {
@@ -191,18 +230,69 @@ async function initMermaid(): Promise<boolean> {
       }
     });
 
-    mermaidCount++;
+    wrappedDiagrams.push({ div: diagramDiv, source });
   });
 
-  if (mermaidCount > 0) {
-    mermaid.init(undefined, '.mermaid');
+  rawDiagrams.forEach((raw) => {
+    const diagramDiv = raw as HTMLElement;
+    const source = diagramDiv.textContent || '';
+
+    if (diagramDiv.closest('.code-block-wrapper')?.querySelector('.copy-btn')) {
+      // Already wrapped from a code block; just ensure it gets rendered individually.
+      const existing = wrappedDiagrams.find((w) => w.div === diagramDiv);
+      if (!existing) wrappedDiagrams.push({ div: diagramDiv, source });
+      return;
+    }
+
+    const zoomBtn = document.createElement('button');
+    zoomBtn.className = 'zoom-btn';
+    zoomBtn.innerHTML = ZOOM_ICON;
+    zoomBtn.setAttribute('aria-label', '放大查看');
+
+    const result = wrapMermaidDiagram(diagramDiv, diagramDiv, [zoomBtn]);
+    if (!result) return;
+
+    const { copyBtn } = result;
+
+    zoomBtn.addEventListener('click', () => {
+      showMermaidModal(diagramDiv);
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source);
+        copyBtn.innerHTML = CHECK_ICON;
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.innerHTML = COPY_ICON;
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch {
+        copyBtn.innerHTML = ERROR_ICON;
+        setTimeout(() => {
+          copyBtn.innerHTML = COPY_ICON;
+        }, 2000);
+      }
+    });
+
+    wrappedDiagrams.push({ div: diagramDiv, source });
+  });
+
+  for (const { div, source } of wrappedDiagrams) {
+    try {
+      const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`;
+      const { svg } = await mermaid.render(id, source);
+      div.innerHTML = svg;
+    } catch {
+      // Ignore individual render failures so one bad diagram doesn't break others.
+    }
   }
 
-  return true;
+  return wrappedDiagrams.length > 0;
 }
 
 function applySyntaxHighlighting() {
-  const remainingCodeElements = document.querySelectorAll<HTMLDivElement>('.prose pre:not([style*="display: none"]) code');
+  const remainingCodeElements = document.querySelectorAll<HTMLDivElement>(`${CONTENT_SELECTOR} pre:not([style*="display: none"]) > code`);
   remainingCodeElements.forEach((code) => {
     let lang = 'plaintext';
     const match = code.className?.match(/language-(\w+)/);
@@ -218,7 +308,7 @@ function applySyntaxHighlighting() {
 }
 
 function addCopyButtons() {
-  const codeBlocks = document.querySelectorAll<HTMLPreElement>('.prose pre');
+  const codeBlocks = document.querySelectorAll<HTMLPreElement>(`${CONTENT_SELECTOR} pre`);
 
   codeBlocks.forEach((pre) => {
     const code = pre.querySelector('code');
@@ -261,7 +351,7 @@ function addCopyButtons() {
 }
 
 function lazyLoadImages() {
-  const images = document.querySelectorAll<HTMLImageElement>('.prose img');
+  const images = document.querySelectorAll<HTMLImageElement>(`${CONTENT_SELECTOR} img`);
   images.forEach((img) => {
     if (!img.hasAttribute('loading')) {
       img.loading = 'lazy';
