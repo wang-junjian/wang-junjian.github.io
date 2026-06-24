@@ -5,6 +5,73 @@ date:   2026-06-23 23:59:00 +0800
 tags: [jiuwenswarm, agent, 智能体, 多智能体, swarm, 架构设计, 源码分析, glm-5.2]
 ---
 
+## JiuwenSwarm 是什么？
+
+**JiuwenSwarm** 是一个华为云开源的**分布式 AI 多智能体协同与能力自进化系统**。简单说，它是一个让 AI 智能体像团队一样协作、并且越用越聪明的系统。
+
+### 核心特色
+
+#### 1. 三种执行模式，适配不同场景
+
+| 模式 | 怎么工作 | 适合 |
+|------|----------|------|
+| **Plan 模式** | 单 Agent 深度推理，自带任务规划 Rail，边思考边执行 | 复杂任务、多步骤分析 |
+| **Performance 模式** | 卸掉规划护栏，直问直答，延迟最低 | 快速问答、简单查询 |
+| **Swarm 模式** | Leader 拆解任务，组建多 Agent 团队并行协作，可跨机器 | 大型复杂工作、多角色分工 |
+
+```mermaid
+flowchart LR
+    M["用户输入"] --> P{模式选择}
+    P -->|agent.plan| A1["单 agent 深度规划<br/>+ task planning rail"]
+    P -->|agent.fast| A2["单 agent 快速响应<br/>- heavy rail"]
+    P -->|team| A3["leader 拆解任务<br/>+ teammate 分布式执行"]
+    A1 --> R["输出结果"]
+    A2 --> R
+    A3 --> R
+```
+
+#### 2. 可部署可扩展
+
+Gateway + AgentServer 双进程架构，支持：
+- **多用户隔离**：`SessionMap` 按 `(channel_id, user_id, mode, project_dir)` 四元组独立缓存 Agent 实例
+- **多端接入**：Web / TUI / 桌面端 / 飞书 / 钉钉 / 企微 / Telegram / Discord
+- **分布式**：Swarm 模式下可用 **pyzmq + PostgreSQL** 跨机协作，Leader 在主节点，Teammate 跑在工作机
+
+#### 3. 技能自进化——越用越聪明
+
+这是最创新的部分。系统不训练模型权重，而是通过一个**确定性状态机流水线**自动迭代 **Skill 定义**：
+
+```
+INIT → PLAN → GENERATE(生成初版 SKILL.md) → VALIDATE → TEST_DESIGN
+                                                          ↓
+                                               TEST_RUN → EVALUATE(评分+delta量化)
+                                                          ↓
+                                                  REVIEW(用户确认/反馈)
+                                                         /   \
+                                                   improve   accept
+                                                      ↑        ↓
+                                               IMPROVE(改写)  PACKAGE → COMPLETED
+```
+
+当系统检测到工具调用连续失败（`CircuitBreakerRail` 的熔断机制），或用户给出负反馈时，会自动进入改进循环：分析错误模式 → 改写 SKILL.md → 重新评分 → 量化增益（`run_summary["delta"]`），形成完整闭环。
+
+#### 4. 架构分层
+
+| 层 | 职责 | 核心模块 |
+|----|------|----------|
+| **接入层** | 多端/多平台接入 | `channels/web`、`channels/tui`、`gateway/channel_manager/im_platforms/` |
+| **网关层** | 用户会话映射、消息路由、IM 协议适配 | `Gateway`、`MessageHandler`、`SessionMap` |
+| **编排层** | Swarm 装配、Symphony 技能规划、SkillDev 自进化 | `agents/swarm`、`symphony/`、`server/runtime/skill/skilldev` |
+| **基座层** | Leader 调度、LLM 抽象、RPC 扩展框架 | `openjiuwen`（agent-core） |
+
+#### 5. 扩展也很简单
+
+- **自定义 Agent**：配 `config.yaml` 选角色（leader/teammate）、挂 Rail 护栏和工具即可
+- **自定义 Skill**：写一个 `SKILL.md`（YAML frontmatter + 描述），放到技能目录下
+- **自定义扩展**：继承 `BaseExtension`，实现 `initialize()` 和 `shutdown()`，用 `register_extensions(registry)` 注册 RPC 方法
+
+---
+
 > 本文档基于 `jiuwenswarm` v0.2.2 源码（`pyproject.toml` 声明 `requires-python = ">=3.11,<3.14"`）逐文件剖析，所有论断均可回溯到具体类名、方法名与文件路径。
 
 ---
