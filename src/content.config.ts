@@ -1,11 +1,16 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import path from 'node:path';
 
 const stringOrNumber = z.union([z.string(), z.number()]);
 
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
+  loader: glob({
+    pattern: '**/*.md',
+    base: './posts',
+    generateId: ({ entry }) => path.basename(entry, '.md'),
+  }),
   schema: z.object({
     layout: z.string().optional(),
     title: z.string().optional(),

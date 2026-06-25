@@ -241,7 +241,7 @@ function loadExistingEmbeddings(outputPath: string): EmbeddingsData | null {
 
 async function main() {
   const projectRoot = path.join(__dirname, '..');
-  const postsDir = path.join(projectRoot, 'src', 'content', 'posts');
+  const postsDir = path.join(projectRoot, 'posts');
   const outputPath = path.join(projectRoot, 'public', 'embeddings.json');
 
   console.log('Configuration:');
@@ -250,7 +250,9 @@ async function main() {
   console.log(`  Chunk size: ${CHUNK_SIZE} chars`);
   console.log(`  Chunk overlap: ${CHUNK_OVERLAP} chars`);
 
-  const files = fs.readdirSync(postsDir).filter(f => f.endsWith('.md'));
+  const files = (fs.readdirSync(postsDir, { recursive: true }) as string[])
+    .filter(f => f.endsWith('.md'))
+    .sort();
   console.log(`Found ${files.length} posts`);
 
   const existingData = loadExistingEmbeddings(outputPath);

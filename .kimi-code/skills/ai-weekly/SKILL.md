@@ -25,8 +25,8 @@
 
 - 周报固定每周五发布
 - 标题格式：`本周 AI 新闻 YYYYMMDD`
-- 文件命名：`posts/YYYY-MM-DD-ai-weekly.md`
-- 示例：2026 年 6 月 19 日周五，标题为 `本周 AI 新闻 20260619`，文件为 `posts/2026-06-19-ai-weekly.md`
+- 文件命名：`posts/YYYY/YYYY-MM-DD-ai-weekly.md`
+- 示例：2026 年 6 月 19 日周五，标题为 `本周 AI 新闻 20260619`，文件为 `posts/2026/2026-06-19-ai-weekly.md`
 
 ### 2. 信息采集
 
@@ -117,7 +117,7 @@
 ### 文件名
 
 ```
-posts/YYYY-MM-DD-ai-weekly.md
+posts/YYYY/YYYY-MM-DD-ai-weekly.md
 ```
 
 ### 内容与结构规范
@@ -153,7 +153,7 @@ template.md
 第一期样例：
 
 ```
-posts/2026-06-19-ai-weekly.md
+posts/2026/2026-06-19-ai-weekly.md
 ```
 
 ---

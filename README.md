@@ -176,7 +176,7 @@ npm run embed
 ```
 
 脚本行为：
-- 扫描 `src/content/posts/` 下的所有 Markdown 文章
+- 扫描 `posts/YYYY/` 下的所有 Markdown 文章
 - 将文章切分为 512 词左右的片段（重叠 50 词）
 - 通过 Ollama 的 `/embeddings` 接口生成向量
 - 写入 `public/embeddings.json`
@@ -355,8 +355,10 @@ npm run search -- "Cline" --output json
 │   │   ├── TagPageHeader.astro # 标签页头部
 │   │   ├── TagSidebar.astro # 标签页相关标签侧边栏
 │   │   └── TaxonomyPage.astro # 标签云组件
-│   ├── content/
-│   │   └── posts/          # 博客文章（Markdown）
+│   ├── content/            # Astro Content Layer 配置
+│   │   └── content.config.ts
+│   ├── posts/              # 博客文章（Markdown），按年份分目录
+│   │   └── YYYY/
 │   ├── layouts/
 │   ├── pages/
 │   │   ├── tags/           # 标签页路由

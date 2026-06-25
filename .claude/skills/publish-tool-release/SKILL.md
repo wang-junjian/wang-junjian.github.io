@@ -30,10 +30,10 @@ tools/minimalist-long-text-reader.html
 
 ## 输出
 
-在 `src/content/posts/` 下生成一篇 Markdown 文件：
+在 `posts/YYYY/` 下生成一篇 Markdown 文件（`YYYY` 为年份）：
 
 ```
-src/content/posts/YYYY-MM-DD-release-<tool-slug>.md
+posts/YYYY/YYYY-MM-DD-release-<tool-slug>.md
 ```
 
 其中：
@@ -56,11 +56,11 @@ src/content/posts/YYYY-MM-DD-release-<tool-slug>.md
 
 ### 2. 参考已有 release 文章
 
-搜索 `src/content/posts/` 下 `type: release` 且与工具相关的文章作为风格参考，例如：
+搜索 `posts/YYYY/` 下 `type: release` 且与工具相关的文章作为风格参考，例如：
 
 ```
-src/content/posts/2026-06-23-release-read-aloud.md
-src/content/posts/2026-06-23-release-minimalist-long-text-reader.md
+posts/2026/2026-06-23-release-read-aloud.md
+posts/2026/2026-06-23-release-minimalist-long-text-reader.md
 ```
 
 优先读取最近 3 篇工具类 release 文章，观察：
@@ -151,8 +151,8 @@ linkUrl: https://wangjunjian.com/tools/<tool-slug>.html
 **技能行为：**
 
 1. 读取 `tools/read-aloud.html`。
-2. 读取 `src/content/posts/2026-06-23-release-minimalist-long-text-reader.md` 等参考文章。
-3. 生成 `src/content/posts/2026-06-23-release-read-aloud.md`。
+2. 读取 `posts/2026/2026-06-23-release-minimalist-long-text-reader.md` 等参考文章。
+3. 生成 `posts/2026/2026-06-23-release-read-aloud.md`。
 4. 向用户展示 frontmatter 和正文摘要，询问是否写入。
 5. 用户确认后写入文件。
 
@@ -160,5 +160,5 @@ linkUrl: https://wangjunjian.com/tools/<tool-slug>.html
 
 - 本项目为 Astro 博客，站点域名为 `wangjunjian.com`。
 - HTML 工具页面遵循 `tools/*.html` 规范，要求中文界面和中文元数据。
-- 发布文档统一放在 `src/content/posts/`，文件名格式为 `YYYY-MM-DD-release-<slug>.md`。
+- 发布文档统一放在 `posts/YYYY/`，文件名格式为 `YYYY-MM-DD-release-<slug>.md`。
 - 内容类型使用 `type: release`。

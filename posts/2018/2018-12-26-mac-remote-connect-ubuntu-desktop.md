@@ -1,0 +1,31 @@
+---
+layout: single
+title:  "MAC 远程连接 Ubuntu 桌面"
+date:   2018-12-26 10:00:00 +0800
+categories: [技术教程, 网络技术]
+tags: [ubuntu, linux]
+excerpt: "在Mac上通过VNC远程连接Ubuntu桌面的教程，包含x11vnc服务安装、配置和连接步骤。"
+---
+
+## 安装VNC服务
+```bash
+sudo apt-get install x11vnc
+```
+
+## 配置VNC
+```bash
+x11vnc -storepasswd
+```
+
+## 启动VNC服务
+```bash
+x11vnc -forever -shared -rfbauth ~/.vnc/passwd
+```
+
+## 连接VNC服务
+```txt
+打开splotlight，搜索［屏幕共享］，运行。输入IP:5900
+```
+
+## 参考资料
+* [Mac 远程桌面 ubuntu16.04 unity](https://www.cnblogs.com/nowgood/p/Macremotedesktop.html)
