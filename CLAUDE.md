@@ -26,7 +26,7 @@ npm run preview   # 预览生产构建
 
 ## 4. 项目结构
 
-- `src/content/posts/`：博客文章，命名格式 `YYYY-MM-DD-slug.md`
+- `posts/YYYY/`：博客文章，按年份分目录，命名格式 `YYYY-MM-DD-slug.md`
 - `src/components/`：Astro 组件
 - `src/layouts/`：页面布局
 - `src/pages/`：站点页面

@@ -8,6 +8,7 @@ import tailwindcss from '@tailwindcss/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'astro/config';
 import toolsStatic from './src/integrations/toolsStatic.ts';
+import markdownDevMiddleware from './src/integrations/markdownDevMiddleware.ts';
 
 // https://astro.build/config
 export default defineConfig({
@@ -29,7 +30,7 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [tsconfigPaths(), tailwindcss()],
+    plugins: [tsconfigPaths(), tailwindcss(), markdownDevMiddleware()],
     assetsInclude: ['**/*.xml', '**/*.txt'],
     build: {
       rollupOptions: {
