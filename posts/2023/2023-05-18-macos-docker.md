@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS Docker"
 date:   2023-05-18 08:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [uninstall, macos]
 ---
 

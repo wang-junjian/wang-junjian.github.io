@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "协同进化：寻找智能体时代效率与商业的平衡点（罗福莉）"
 date:   2026-06-03 11:00:00 +0800
-categories: [智能体]
 tags: [Anthropic, MiMo, Token Plan, Claude Code, OpenClaw, OpenCode, Agent Harnesses]
 ---
 

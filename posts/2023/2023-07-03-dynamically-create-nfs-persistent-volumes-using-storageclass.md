@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 StorageClass 动态创建 NFS 持久卷"
 date:   2023-07-03 08:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [kubernetes, persistentvolumeclaim, persistentvolume, provisioner, nfs, mongo]
 ---
 

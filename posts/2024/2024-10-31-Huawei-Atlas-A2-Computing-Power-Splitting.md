@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "华为 Atlas A2 算力切分"
 date:   2024-10-31 10:00:00 +0800
-categories: [硬件加速, 容器与云原生]
 tags: [atlas800, npu, 910b4, mindie, llm]
 ---
 

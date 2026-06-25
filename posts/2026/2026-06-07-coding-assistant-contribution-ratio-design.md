@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "AI编码助手代码归因与贡献占比量化系统设计"
 date:   2026-06-07 06:00:00 +0800
-categories: [人工智能, 软件工程]
 tags: [AI编码助手, 代码归因, 贡献占比, MinHash, AST, LSH]
 ---
 

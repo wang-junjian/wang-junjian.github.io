@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "【生成式AI时代下的机器学习(2025)】第十讲：人工智慧的微创手术 — 浅谈 Model Editing"
 date:   2025-06-07 07:00:00 +0800
-categories: 数据科学
 tags: [模型编辑, 2025生成式AI时代下的机器学习, 生成式AI, 机器学习, 李宏毅]
 ---
 

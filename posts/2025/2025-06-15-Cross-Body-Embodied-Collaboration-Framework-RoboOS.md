@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "跨本体具身大小脑协作框架 RoboOS"
 date:   2025-06-15 16:00:00 +0800
-categories: AI 与大模型
 tags: [具身智能, RoboOS, 跨本体协作, 智源]
 ---
 

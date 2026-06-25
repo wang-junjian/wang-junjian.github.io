@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes中删除节点"
 date:   2021-06-20 00:00:00 +0800
-categories: [硬件加速, 容器与云原生]
 tags: [kubectl, drain, delete]
 ---
 

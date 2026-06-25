@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Mac 外接显示器选购"
 date:   2024-11-08 10:00:00 +0800
-categories: 技术随笔
 tags: [显示器, macbookprom2max]
 ---
 

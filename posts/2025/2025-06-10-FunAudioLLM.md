@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "FunAudioLLM：用于人类与LLM自然交互的语音理解与生成基础模型"
 date:   2025-06-10 20:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [FunAudioLLM, 语音识别, 语音合成, SenseVoice, CosyVoice, FunASR, FunAudioLLM SenseVoice CosyVoice]
 ---
 

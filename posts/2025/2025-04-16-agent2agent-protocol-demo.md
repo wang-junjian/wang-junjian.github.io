@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Agent2Agent 协议 (A2A) DEMO"
 date:   2025-04-16 10:00:00 +0800
-categories: AI 与大模型
 tags: [A2A, Agent]
 ---
 

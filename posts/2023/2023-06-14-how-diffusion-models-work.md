@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "How Diffusion Models Work"
 date:   2023-06-14 08:00:00 +0800
-categories: [编程开发, 硬件加速]
 tags: [ddpm, ddim, deeplearning.ai]
 ---
 

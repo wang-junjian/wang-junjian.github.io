@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Claude Code 安装、更新与卸载指南"
 date:   2026-05-29 18:00:00 +0800
-categories: [智能体]
 tags: [Claude Code, Install, cURL, Homebrew, NPM]
 ---
 

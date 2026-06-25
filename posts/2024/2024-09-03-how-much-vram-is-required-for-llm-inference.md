@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "大模型推理需要多少显存？"
 date:   2024-09-03 08:00:00 +0800
-categories: [AI 与大模型, 框架与库]
 tags: [llm, gpu, vram, calculator]
 ---
 

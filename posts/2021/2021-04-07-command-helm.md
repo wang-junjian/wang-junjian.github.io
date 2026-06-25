@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令helm"
 date:   2021-04-07 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [helm, curl]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在华为 Atlas 800I A2 服务器上搭建大模型推理服务"
 date:   2024-10-08 10:00:00 +0800
-categories: [硬件加速, AI 与大模型]
 tags: [atlas800, npu, 910b4, mindie, llm]
 ---
 

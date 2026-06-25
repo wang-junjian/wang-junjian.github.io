@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "稳定币"
 date:   2025-09-07 08:00:00 +0800
-categories: 技术随笔
 tags: [稳定币, 金融]
 ---
 

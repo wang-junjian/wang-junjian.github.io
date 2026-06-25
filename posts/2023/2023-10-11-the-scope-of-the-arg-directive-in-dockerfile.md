@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Dockerfile 中 ARG 指令的作用范围"
 date:   2023-10-11 08:00:00 +0800
-categories: [编程开发, 容器与云原生]
 tags: [dockerfile, arg]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenAI API Compatibility"
 date:   2024-10-07 10:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [openai api, ollama, litellm, xinference, mindie, llm, curl]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes集群搭建Master节点"
 date:   2020-11-06 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [cluster, ubuntu, install]
 ---
 

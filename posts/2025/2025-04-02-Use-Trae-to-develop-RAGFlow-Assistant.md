@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 Trae 开发 RAGFlow 助手"
 date:   2025-04-02 16:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [Trae, RAGFlow, AICodingAssistant, GitHubCopilot]
 ---
 

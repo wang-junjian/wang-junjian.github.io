@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "模型上下文协议 (MCP) 全面解析：原理、应用与实现"
 date:   2025-03-14 10:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: [mcp, agent, gemini, deepresearch, llm]
 ---
 

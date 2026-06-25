@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "慧思开物：通往通用具身智能之路"
 date:   2025-05-15 10:00:00 +0800
-categories: AI 与大模型
 tags: [具身智能, VLA, AGI]
 ---
 

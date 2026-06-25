@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "NVIDIA CES 2026：物理 AI 时代来了"
 date:   2026-01-11 08:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [NVIDIA, CES 2026, Physical AI, DGX, Cosmos, OmniVerse, AI Supercomputer, CES NVIDIA]
 ---
 

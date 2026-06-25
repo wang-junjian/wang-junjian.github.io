@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "【生成式人工智慧与机器学习导论2025】第二讲：上下文工程 (Context Engineering) — AI Agent 背后的关键技术"
 date:   2025-09-27 20:00:00 +0800
-categories: [AI 与大模型, 数据科学]
 tags: [ContextEngineering, 上下文工程, 智能体, 生成式人工智慧与机器学习导论2025, 李宏毅]
 ---
 

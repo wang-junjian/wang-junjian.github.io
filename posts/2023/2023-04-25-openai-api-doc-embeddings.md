@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenAI API Documentation Embeddings"
 date:   2023-04-25 08:00:00 +0800
-categories: [硬件加速, AI 与大模型]
 tags: ["openai api", embedding, faiss]
 ---
 

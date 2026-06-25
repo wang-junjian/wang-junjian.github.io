@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "LangChain Blog: In the Loop"
 date:   2024-10-28 10:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: [langchain, agent, agentic, llm]
 ---
 

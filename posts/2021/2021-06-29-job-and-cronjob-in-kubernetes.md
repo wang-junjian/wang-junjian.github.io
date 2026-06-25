@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes中的Job和CronJob"
 date:   2021-06-29 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [kubectl, job, cronjob, cron, command, args]
 ---
 

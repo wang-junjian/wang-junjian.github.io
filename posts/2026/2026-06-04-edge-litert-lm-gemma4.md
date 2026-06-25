@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "端侧AI：Gemma 4 12B 创新架构与 LiteRT-LM 本地部署指南"
 date:   2026-06-04 18:00:00 +0800
-categories: [人工智能]
 tags: [Gemma 4 12B, LiteRT-LM, Edge AI, Local Deployment, Multi-Modality, OpenAI-Compatible Server]
 ---
 

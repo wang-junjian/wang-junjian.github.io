@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Language Model API"
 date:   2024-12-12 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [chatextensions, languagemodelapi, githubcopilot, vscode]
 ---
 

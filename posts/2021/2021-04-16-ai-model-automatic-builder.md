@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "AI 模型打包发布"
 date:   2021-04-16 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [shell, dockerfile, if, date, sed, tar, scp, ssh, docker-compose]
 ---
 

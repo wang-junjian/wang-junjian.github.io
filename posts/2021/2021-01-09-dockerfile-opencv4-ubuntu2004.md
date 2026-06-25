@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Dockerfile OpenCV4 Ubuntu20.04"
 date:   2021-01-09 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [docker, dockerfile, opencv, ubuntu]
 ---
 

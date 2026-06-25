@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SGLang 大模型服务框架"
 date:   2024-09-06 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [sglang, vllm, flashinfer, cuda]
 ---
 

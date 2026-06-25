@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "集成个人助手（OpenClaw｜Hermes）的方式"
 date:   2026-05-07 08:00:00 +0800
-categories: [人工智能, 智能体]
 tags: [OpenClaw, Hermes, 聊天软件, GLM]
 ---
 

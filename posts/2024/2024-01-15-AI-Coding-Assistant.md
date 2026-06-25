@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "人工智能编码助手（AI Coding Assistant）"
 date:   2024-01-15 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [aicodingassistant]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "华为 Atlas 800I A2 服务器的大模型推理性能压测"
 date:   2024-10-10 10:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [evalscope, atlas800, npu, mindie, vllm, benchmark, llm]
 ---
 

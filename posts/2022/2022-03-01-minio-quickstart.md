@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MinIO Quickstart"
 date:   2022-03-01 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [minio, docker, docker-compose, mkdir]
 ---
 

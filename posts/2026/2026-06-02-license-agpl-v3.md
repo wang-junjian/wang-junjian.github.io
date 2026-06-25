@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "AGPL-3.0（GNU Affero 通用公共许可证 v3.0）"
 date:   2026-06-02 12:00:00 +0800
-categories: [许可证]
 tags: [AGPL-3.0, License]
 ---
 

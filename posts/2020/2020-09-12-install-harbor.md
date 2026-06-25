@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "安装Harbor"
 date:   2020-09-12 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [docker, harbor, ubuntu, registry, wget, cat, openssl]
 ---
 

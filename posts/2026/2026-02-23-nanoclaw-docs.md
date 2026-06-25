@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "NanoClaw 完整文档（含使用、架构、安全与开发）"
 date:   2026-02-23 22:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: [NanoClaw, AI Native, Documentation, OpenClaw, NanoClaw AI原生]
 ---
 

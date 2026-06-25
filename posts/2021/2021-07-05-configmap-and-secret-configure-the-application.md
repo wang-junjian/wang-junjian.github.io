@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "ConfigMap和Secret：配置应用程序"
 date:   2021-07-05 00:00:00 +0800
-categories: [编程开发, 容器与云原生]
 tags: [configmap, secret, docker, dockerfile, docker-registry, kubectl, command, env, args, entrypoint, cmd, curl, nginx, jsonpath, openssl, https, dockerhub]
 ---
 

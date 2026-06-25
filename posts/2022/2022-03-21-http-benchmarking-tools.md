@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "HTTP 基准测试工具"
 date:   2022-03-21 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [wrk, ab, make, nproc]
 ---
 

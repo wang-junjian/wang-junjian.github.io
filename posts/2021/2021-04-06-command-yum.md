@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令yum"
 date:   2021-04-06 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [linux, centos, yum, download]
 ---
 

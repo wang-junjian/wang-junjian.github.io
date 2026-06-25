@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "LLaMA-Factory 微调 Text2SQL"
 date:   2024-05-07 08:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [llama-factory, fine-tuning, text2sql, lora, qwen]
 ---
 

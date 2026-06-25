@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS 图像转为 WebP 格式（Automator）"
 date:   2026-05-01 10:00:00 +0800
-categories: [操作系统, 工具]
 tags: [Automator, webp, 图像转换, macOS]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "NGINX Reverse Proxy 反向代理"
 date:   2023-11-20 08:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [nginx, websocket, 反向代理]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "沐曦 MXC500 训练 GPU 的大模型推理性能压测"
 date:   2025-02-13 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [沐曦, mxc500, gpu, vllm, evalscope-perf, evalscope, benchmark, llm]
 ---
 

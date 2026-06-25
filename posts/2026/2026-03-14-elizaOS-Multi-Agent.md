@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "elizaOS 多智能体架构设计分析"
 date:   2026-03-14 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [elizaOS, Agent, 架构设计]
 ---
 

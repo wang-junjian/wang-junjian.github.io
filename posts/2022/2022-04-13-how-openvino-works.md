@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenVINO 的工作原理"
 date:   2022-04-13 10:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [workflow]
 ---
 

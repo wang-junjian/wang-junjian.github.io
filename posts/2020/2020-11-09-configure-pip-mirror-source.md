@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "配置pip镜像源"
 date:   2020-11-09 00:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [python, pip, mirror]
 ---
 

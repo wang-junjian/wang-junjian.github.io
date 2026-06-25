@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Elmo Chat - Your AI Web Copilot"
 date:   2024-06-27 08:00:00 +0800
-categories: AI 与大模型
 tags: [elmochat, leptonai]
 ---
 

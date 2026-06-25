@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS 上删除登录项中允许在后台的项目"
 date:   2023-02-25 08:00:00 +0800
-categories: [操作系统, AI 与大模型]
 tags: [macbookprom2max]
 ---
 

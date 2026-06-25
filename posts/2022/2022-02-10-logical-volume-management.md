@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "逻辑卷管理(Logical Volume Management)"
 date:   2022-02-10 00:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [lvm, lsblk, mkfs, mount, fstab]
 ---
 

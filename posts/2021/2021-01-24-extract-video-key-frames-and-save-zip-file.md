@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "抽取视频关键帧保存zip文件"
 date:   2021-01-24 00:00:00 +0800
-categories: 操作系统
 tags: [linux, shell, ffmpeg, find, basename, dirname, zip, sed, mkdir, if, for]
 ---
 

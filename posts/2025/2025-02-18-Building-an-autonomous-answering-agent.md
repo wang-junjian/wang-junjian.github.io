@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "构建自主答题的智能体"
 date:   2025-02-18 10:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [安规, agent, ollama, 多模态, llm]
 ---
 

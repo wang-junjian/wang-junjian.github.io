@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes API"
 date:   2021-06-22 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [kubectl, api-resources, explain]
 ---
 

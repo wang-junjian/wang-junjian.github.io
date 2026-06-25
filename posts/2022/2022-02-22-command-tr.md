@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令tr"
 date:   2022-02-22 00:00:00 +0800
-categories: [操作系统, DevOps]
 tags: [linux, tr]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Verdaccio：构建与管理内网 npm 仓库的实践指南"
 date:   2025-06-16 20:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [Verdaccio, npm, Registry, 离线, 内网部署]
 ---
 

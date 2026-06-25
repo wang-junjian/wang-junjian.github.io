@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "探索多模态大模型 Qwen2.5-VL"
 date:   2025-06-17 08:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [Qwen2.5-VL, 多模态, Qwen, LLM, ModelScope, vLLM, 火灾, 烟雾]
 ---
 

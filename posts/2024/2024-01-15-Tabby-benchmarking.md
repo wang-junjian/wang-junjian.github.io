@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Tabby 的基准测试"
 date:   2024-01-15 10:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [tabby, benchmark, wrk, tcpdump, codellm, aicodingassistant]
 ---
 

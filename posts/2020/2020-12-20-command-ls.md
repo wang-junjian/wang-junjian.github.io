@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令ls"
 date:   2020-12-20 00:00:00 +0800
-categories: 操作系统
 tags: [linux, ls]
 ---
 

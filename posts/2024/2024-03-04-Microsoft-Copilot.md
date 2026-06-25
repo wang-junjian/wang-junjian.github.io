@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Microsoft Copilot"
 date:   2024-03-04 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [microsoft, copilot]
 ---
 

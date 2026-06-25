@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Visual Studio Code Extension 开发"
 date:   2024-08-06 08:00:00 +0800
-categories: [编程开发, DevOps]
 tags: [vscode, extension]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "海量文本去重与相似度检索：从 Jaccard 到 MinHash 的完整技术指南"
 date:   2026-06-06 08:00:00 +0800
-categories: [人工智能, 大数据]
 tags: [Jaccard, MinHash, 大数据处理, 文本去重, 近似算法, 相似度检索]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Claude Code 文档"
 date:   2025-09-11 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [ClaudeCode, Agent, Claude, CLI]
 ---
 

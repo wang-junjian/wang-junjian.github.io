@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "KiloCode AGENTS.md - OpenCode 智能体指南"
 date:   2026-06-02 08:00:00 +0800
-categories: [智能体]
 tags: [Kilo, AGENTS.md, OpenCode, Agent Guidelines, Kilo Code]
 ---
 

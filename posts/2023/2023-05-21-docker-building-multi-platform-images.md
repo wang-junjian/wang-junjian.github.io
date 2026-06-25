@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Docker 构建多平台镜像"
 date:   2023-05-21 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [docker, buildx]
 ---
 

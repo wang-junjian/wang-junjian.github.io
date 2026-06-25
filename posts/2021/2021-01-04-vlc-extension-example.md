@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "VLC Extension Example"
 date:   2021-01-04 00:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [vlc, lua]
 ---
 

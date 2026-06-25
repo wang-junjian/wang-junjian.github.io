@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "华为云具身智能技术探索与实践"
 date:   2025-06-08 12:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [具身智能, VLA, 华为云, 工具链]
 ---
 

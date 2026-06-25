@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenVINO Cross Check Tool"
 date:   2022-05-18 08:00:00 +0800
-categories: [硬件加速, 编程开发]
 tags: [cross_check_tool]
 ---
 

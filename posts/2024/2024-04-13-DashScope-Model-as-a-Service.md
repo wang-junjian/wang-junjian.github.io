@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "DashScope 模型服务灵积"
 date:   2024-04-13 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [dashscope, langchain, llm, qwen]
 ---
 

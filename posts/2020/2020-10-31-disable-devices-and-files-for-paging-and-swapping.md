@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Linux系统禁用交换分区"
 date:   2020-10-31 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [ubuntu, swap]
 ---
 

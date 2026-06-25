@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes API 服务器的安全防护"
 date:   2021-07-11 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [serviceaccount, rbac]
 ---
 

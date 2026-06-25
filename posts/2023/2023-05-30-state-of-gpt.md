@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "State of GPT - Andrej Karpathy"
 date:   2023-05-30 08:00:00 +0800
-categories: AI 与大模型
 tags: [llm, sft, rm, rlhf, fine-tuning]
 ---
 

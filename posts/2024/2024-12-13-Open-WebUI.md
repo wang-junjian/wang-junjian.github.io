@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Open WebUI"
 date:   2024-12-13 10:00:00 +0800
-categories: [AI 与大模型, 容器与云原生]
 tags: [openwebui, chatgpt, ollama, openai api]
 ---
 

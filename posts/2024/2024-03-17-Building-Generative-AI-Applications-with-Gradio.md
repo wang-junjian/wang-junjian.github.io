@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Building Generative AI Applications with Gradio"
 date:   2024-03-17 08:00:00 +0800
-categories: 技术随笔
 tags: [deeplearningai, gradio]
 ---
 

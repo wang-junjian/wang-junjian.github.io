@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes中的Service"
 date:   2021-07-01 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [kubectl, service, expose, exec, run, bash, curl, env, jsonpath]
 ---
 

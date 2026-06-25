@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "DeepSeek R1: 通过强化学习激励 LLM 的推理能力"
 date:   2025-01-21 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [deepseek-r1, llm, 强化学习]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes中的GPU共享"
 date:   2021-05-20 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [nvidia, gpu, docker, kubectl]
 ---
 

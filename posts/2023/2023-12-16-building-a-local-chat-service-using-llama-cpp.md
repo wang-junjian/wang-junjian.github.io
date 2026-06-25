@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 llama.cpp 构建本地聊天服务"
 date:   2023-12-16 08:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [llama.cpp, llama-cpp-python, openai, macbookprom2max]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "GitHub Copilot in VS Code"
 date:   2024-12-01 10:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [githubcopilot, vscode]
 ---
 

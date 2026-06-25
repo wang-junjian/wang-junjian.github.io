@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenAI Fine Tuning"
 date:   2023-05-29 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [fine-tuning, openai]
 ---
 

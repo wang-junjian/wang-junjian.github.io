@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Anthropic Claude"
 date:   2024-04-18 08:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: [claude3, langchain, llm, anthropic]
 ---
 

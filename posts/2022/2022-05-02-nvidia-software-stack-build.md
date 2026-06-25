@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "NVIDIA 软件栈搭建"
 date:   2022-05-02 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [install, cuda, cudnn, tensorrt, nccl, hpc]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "AI 大模型基础服务架构图"
 date:   2024-01-01 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [llm, codellm]
 ---
 

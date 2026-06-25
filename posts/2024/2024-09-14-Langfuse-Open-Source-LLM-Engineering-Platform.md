@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Langfuse: Open Source LLM Engineering Platform"
 date:   2024-09-14 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [langfuse, litellm, llm]
 ---
 

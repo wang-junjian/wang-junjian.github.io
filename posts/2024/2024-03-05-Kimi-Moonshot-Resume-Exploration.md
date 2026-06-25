@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kimi（月之暗面）简历的探索"
 date:   2024-03-05 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [kimi, moonshot, chatgpt]
 ---
 

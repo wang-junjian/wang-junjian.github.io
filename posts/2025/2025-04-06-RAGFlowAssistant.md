@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "RAGFlowAssistant"
 date:   2025-04-06 08:00:00 +0800
-categories: [编程开发, AI 开发工具]
 tags: [RAGFlow, ragflow-sdk, GitHubCopilot]
 ---
 

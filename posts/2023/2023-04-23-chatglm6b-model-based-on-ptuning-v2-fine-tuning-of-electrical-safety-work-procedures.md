@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "ChatGLM-6B 模型基于 P-Tuning v2 微调的自定义数据集"
 date:   2023-04-22 08:00:00 +0800
-categories: [DevOps, AI 与大模型]
 tags: [chatglm, fine-tuning, p-tuning, 安规]
 ---
 

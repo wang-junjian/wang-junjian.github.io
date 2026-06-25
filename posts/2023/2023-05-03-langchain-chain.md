@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "LangChain - Chain"
 date:   2023-05-03 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [langchain, llm]
 ---
 

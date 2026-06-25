@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Claude 代码安全审查 (Claude Code Security Review)"
 date:   2026-03-03 08:00:00 +0800
-categories: [编程开发, 开源生态]
 tags: [Claude Code, Security Review, GitHub Action, LLM, ClaudeCode SecurityReview GitHubAction]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "机器人智能操作系统研制与应用"
 date:   2025-06-08 13:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [具身智能, VLA, ROS, InsightOS, 具识智能]
 ---
 

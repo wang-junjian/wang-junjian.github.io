@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "DeepSeek-V3 Technical Report"
 date:   2025-01-23 10:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [deepseek-v3, moe, llm]
 ---
 

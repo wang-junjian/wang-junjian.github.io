@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Cursor 使用指南"
 date:   2024-08-29 08:00:00 +0800
-categories: [AI 开发工具, DevOps]
 tags: [cursor, githubcopilot]
 ---
 

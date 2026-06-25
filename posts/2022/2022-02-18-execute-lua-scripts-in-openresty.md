@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenResty 内执行 Lua 脚本"
 date:   2022-02-18 00:00:00 +0800
-categories: [操作系统, AI 与大模型]
 tags: [openresty, nginx, lua, docker, inspect, jq, curl]
 ---
 

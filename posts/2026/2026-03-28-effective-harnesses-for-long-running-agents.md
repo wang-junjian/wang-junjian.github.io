@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Anthropic：长时运行智能体的有效脚手架 (Harnesses)"
 date:   2026-03-28 08:00:00 +0800
-categories: [AI 与大模型, 教程实践]
 tags: [Agent, HarnessEngineering, Anthropic, Claude]
 ---
 

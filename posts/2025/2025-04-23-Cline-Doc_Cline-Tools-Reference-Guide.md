@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Cline 工具参考指南"
 date:   2025-04-23 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [Cline, Tools, ClineDoc]
 ---
 

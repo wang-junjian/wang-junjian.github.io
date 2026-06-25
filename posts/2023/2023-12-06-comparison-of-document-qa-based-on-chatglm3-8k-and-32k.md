@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于 ChatGLM3 8k 和 32k 的文档问答对比"
 date:   2023-12-06 08:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [gpt, chatglm3, chatglm3-6b-32k, bge-base-zh]
 ---
 

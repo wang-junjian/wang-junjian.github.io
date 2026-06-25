@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SiliconFlow AI Infra"
 date:   2024-05-29 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [siliconcloud, openai, llm]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MLX LLMS Examples"
 date:   2023-12-24 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [mlx, phi-2, qwen, macbookprom2max]
 ---
 

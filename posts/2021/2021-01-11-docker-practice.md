@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Docker实践"
 date:   2021-01-11 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [docker, gpu, none, xargs, awk, inspect]
 ---
 

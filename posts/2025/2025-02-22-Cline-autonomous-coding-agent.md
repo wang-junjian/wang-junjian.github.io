@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Cline: 自主编程助手"
 date:   2025-02-22 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [cline, agent, ollama, llm, githubcopilot]
 ---
 

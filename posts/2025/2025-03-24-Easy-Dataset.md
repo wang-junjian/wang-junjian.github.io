@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Easy Dataset：基于 LLM 微调数据集的工具"
 date:   2025-03-24 10:00:00 +0800
-categories: [容器与云原生, AI 与大模型]
 tags: [Dataset, Alpaca, ShareGPT, LLaMA-Factory, LLM]
 ---
 

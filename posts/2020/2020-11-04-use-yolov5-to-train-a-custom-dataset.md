@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用YOLOv5训练自定义数据集"
 date:   2020-11-04 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [目标检测, yolo, yolov5, pytorch, docker, shell, for, sed, head]
 ---
 

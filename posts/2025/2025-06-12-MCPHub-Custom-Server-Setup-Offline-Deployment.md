@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MCPHub 自定义服务器配置及内网部署（一）"
 date:   2025-06-12 20:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [MCP, MCPHub, MCPServer, mcp-server-time, Python, 离线, 内网部署]
 ---
 

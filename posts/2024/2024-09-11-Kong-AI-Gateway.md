@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kong AI Gateway"
 date:   2024-09-11 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [kong, aigateway, llm]
 ---
 

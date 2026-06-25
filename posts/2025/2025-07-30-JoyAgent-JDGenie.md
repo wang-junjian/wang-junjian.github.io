@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "京东通用智能体：JoyAgent-JDGenie"
 date:   2025-07-30 15:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [京东, Agent, DeepSeek, LLM]
 ---
 

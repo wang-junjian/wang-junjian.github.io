@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "部署 LLM"
 date:   2023-09-12 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [qwen-7b, chatglm2-6b, baichuan2]
 ---
 

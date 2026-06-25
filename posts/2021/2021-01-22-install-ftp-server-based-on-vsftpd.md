@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于vsftpd安装FTP服务器"
 date:   2021-01-22 00:00:00 +0800
-categories: 操作系统
 tags: [linux, ftp, vsftpd, man]
 ---
 

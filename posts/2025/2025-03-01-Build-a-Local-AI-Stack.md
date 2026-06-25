@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "构建本地 AI 技术栈"
 date:   2025-03-01 10:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [aistack, langfuse, litellm, chatbox, llm]
 ---
 

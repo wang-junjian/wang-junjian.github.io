@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "AI 大模型"
 date:   2024-01-01 08:00:00 +0800
-categories: AI 与大模型
 tags: [llm, codellm, embeddingllm, leaderboard]
 ---
 

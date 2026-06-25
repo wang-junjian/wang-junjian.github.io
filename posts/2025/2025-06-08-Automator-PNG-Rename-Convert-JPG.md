@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS PNG重命名并转JPG（Automator）"
 date:   2025-06-08 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [Automator, PNG重命名并转JPG, ImageMagick, rename, macOS]
 ---
 

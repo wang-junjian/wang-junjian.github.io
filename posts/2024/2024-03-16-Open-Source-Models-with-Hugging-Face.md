@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Open Source Models with Hugging Face"
 date:   2024-03-16 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [deeplearningai, huggingface, gradio, nlp, asr, tts]
 ---
 

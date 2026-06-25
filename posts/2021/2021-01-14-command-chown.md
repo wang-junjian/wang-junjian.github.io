@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令chown"
 date:   2021-01-14 00:00:00 +0800
-categories: 操作系统
 tags: [linux, chown]
 ---
 

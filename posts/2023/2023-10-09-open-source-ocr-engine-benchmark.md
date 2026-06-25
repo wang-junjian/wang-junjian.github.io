@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "开源 OCR 引擎基准测试"
 date:   2023-10-09 08:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [easyocr, paddleocr, ocr, benchmark, faulthandler, wall-e-ai]
 ---
 

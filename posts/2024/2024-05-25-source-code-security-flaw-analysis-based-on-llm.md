@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于 LLM 的源代码安全缺陷分析"
 date:   2024-05-25 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: []
 ---
 

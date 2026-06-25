@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MCP 快速入门指南"
 date:   2025-04-24 08:00:00 +0800
-categories: [操作系统, 教程实践]
 tags: [Cline, MCP, ClineDoc]
 ---
 

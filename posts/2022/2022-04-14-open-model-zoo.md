@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Open Model Zoo"
 date:   2022-04-14 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [command, 人脸检测, mtcnn]
 ---
 

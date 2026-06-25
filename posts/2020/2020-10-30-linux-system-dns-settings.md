@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Linux系统DNS设置"
 date:   2020-10-30 00:00:00 +0800
-categories: 操作系统
 tags: [ubuntu, dns]
 ---
 

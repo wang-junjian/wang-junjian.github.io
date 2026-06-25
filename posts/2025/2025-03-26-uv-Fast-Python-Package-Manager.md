@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "UV: An extremely fast Python package and project manager, written in Rust."
 date:   2025-03-26 10:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [uv, Python, Package]
 ---
 

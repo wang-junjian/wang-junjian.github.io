@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?"
 date:   2025-02-04 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [swe-bench, benchmark, arxiv, llm]
 ---
 

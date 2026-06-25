@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Python实践"
 date:   2021-02-28 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [pythonpath, exec, uuid]
 ---
 

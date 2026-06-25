@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Deep Learning Accuracy Validation Framework"
 date:   2022-05-17 08:00:00 +0800
-categories: [框架与库, 编程开发]
 tags: [accuracy_check, tar]
 ---
 

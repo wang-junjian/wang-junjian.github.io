@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Gemini Robotics On-Device"
 date:   2025-06-25 20:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [GeminiRobotics, VLA, 机器人, 具身智能]
 ---
 

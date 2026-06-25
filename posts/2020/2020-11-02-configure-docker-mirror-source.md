@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "配置Docker镜像源"
 date:   2020-11-02 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [linux, mirror]
 ---
 

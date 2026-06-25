@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Langchain‐Chatchat 和 FastChat 结合"
 date:   2023-12-28 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [langchain‐chatchat, fastchat, openai, llm]
 ---
 

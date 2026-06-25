@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "三款顶级 AI 智能体架构深度拆解：从 Rust 原生高性能到 Python 极简主义"
 date:   2026-03-01 18:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [OpenClaw, Agent, 架构设计, ZeroClaw, IronClaw, nanobot]
 ---
 

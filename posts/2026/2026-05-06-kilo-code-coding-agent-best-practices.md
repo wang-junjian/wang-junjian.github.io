@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "研究编码智能体（Kilo Code）开源项目的最佳实践"
 date:   2026-05-06 08:00:00 +0800
-categories: [人工智能, 工具, 开源生态]
 tags: [智能体, Kilo, KiloCode]
 ---
 

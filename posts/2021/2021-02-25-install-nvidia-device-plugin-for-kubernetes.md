@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Install NVIDIA device plugin for Kubernetes"
 date:   2021-02-25 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [ubuntu, helm, nvidia, gpu, docker, nvidia-docker2, kubectl]
 ---
 

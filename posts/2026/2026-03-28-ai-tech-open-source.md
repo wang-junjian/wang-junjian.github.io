@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "AI 技术研究及开源项目评估"
 date:   2026-03-28 20:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [AI研究, 开源项目, 技术评估, 智能体]
 ---
 

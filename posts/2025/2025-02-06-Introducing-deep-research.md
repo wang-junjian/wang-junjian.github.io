@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Introducing deep research"
 date:   2025-02-06 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [deepresearch, agent, o3, arxiv, openai]
 ---
 

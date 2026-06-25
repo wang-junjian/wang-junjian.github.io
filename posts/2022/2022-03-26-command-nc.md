@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令 nc"
 date:   2022-03-26 00:00:00 +0800
-categories: [操作系统, AI 与大模型]
 tags: [linux, nc, netcat]
 ---
 

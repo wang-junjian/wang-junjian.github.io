@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令行编码智能体"
 date:   2025-09-08 08:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [ClaudeCode, Agent, Claude, CLI]
 ---
 

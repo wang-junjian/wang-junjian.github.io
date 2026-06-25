@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MiniCPM-Llama3-V 2.5 端侧可用的 GPT-4V 级多模态大模型"
 date:   2024-05-23 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [minicpm-v, ocr, llama3, llm]
 ---
 

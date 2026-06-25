@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Continue 源码分析 - 向量数据库存储位置"
 date:   2024-09-15 08:00:00 +0800
-categories: [AI 开发工具, AI 与大模型]
 tags: [continue, lancedb, githubcopilot]
 ---
 

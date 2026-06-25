@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Claude Cowork 知识工作插件（Knowledge Work Plugins）"
 date:   2026-02-27 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [Cowork, Plugins, Claude, Anthropics]
 ---
 

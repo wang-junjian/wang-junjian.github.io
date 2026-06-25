@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "数据集"
 date:   2024-08-19 08:00:00 +0800
-categories: 框架与库
 tags: []
 ---
 

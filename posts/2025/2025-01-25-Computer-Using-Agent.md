@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Computer-Using Agent"
 date:   2025-01-25 10:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [cua, operator, llm, openai]
 ---
 

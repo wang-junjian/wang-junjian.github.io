@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Python 自动生成周报"
 date:   2022-03-20 00:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [diy, excel, openpyxl, typer]
 ---
 

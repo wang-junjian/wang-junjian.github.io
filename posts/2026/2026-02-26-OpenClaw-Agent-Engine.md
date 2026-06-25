@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenClaw 智能体引擎工作流程及实现代码分析"
 date:   2026-02-26 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [OpenClaw, Agent, Agent Engine]
 ---
 

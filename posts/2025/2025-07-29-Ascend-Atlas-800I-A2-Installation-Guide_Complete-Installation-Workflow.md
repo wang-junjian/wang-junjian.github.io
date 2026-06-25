@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（七）：完整的安装部署流程"
 date:   2025-07-29 20:00:00 +0800
-categories: [硬件加速, 操作系统]
 tags: [昇腾, NPU, 910B4, Atlas800IA2, Install, vLLM, LLM, openEuler]
 ---
 

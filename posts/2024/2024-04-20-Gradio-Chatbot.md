@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Gradio Chatbot"
 date:   2024-04-20 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [gradio, chatbot, dashscope, langchain, chattongyi, text2sql]
 ---
 

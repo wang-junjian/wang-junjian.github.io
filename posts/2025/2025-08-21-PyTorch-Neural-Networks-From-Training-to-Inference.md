@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "PyTorch 神经网络实战：从训练到推理的完整指南"
 date:   2025-08-21 08:00:00 +0800
-categories: [硬件加速, 教程实践]
 tags: [PyTorch, DeepLearningAI, MPS, MacBookProM2Max]
 ---
 

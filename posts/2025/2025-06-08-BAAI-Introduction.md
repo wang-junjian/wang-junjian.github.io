@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "北京智源人工智能研究院（BAAI）"
 date:   2025-06-08 15:00:00 +0800
-categories: AI 与大模型
 tags: [BAAI, 智源, 智源大会, 人工智能, 具身智能, 悟道, 悟界, RoboOS]
 ---
 

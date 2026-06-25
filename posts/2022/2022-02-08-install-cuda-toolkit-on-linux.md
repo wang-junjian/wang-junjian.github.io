@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在Linux上安装CUDA Toolkit"
 date:   2022-02-08 00:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [linux, cuda, install, uninstall, driver]
 ---
 

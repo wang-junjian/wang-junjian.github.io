@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "具身智能（Embodied AI）技术综述：从基础理论到工程实践"
 date:   2026-04-12 12:00:00 +0800
-categories: [AI 与大模型, 教程实践]
 tags: [具身智能, VLA, Every-Embodied, Robotics, Datawhale]
 ---
 

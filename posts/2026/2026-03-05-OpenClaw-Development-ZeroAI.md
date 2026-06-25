@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于 OpenClaw 开发AI助手ZeroAI：五步流程，帮你完成软件开发全流程"
 date:   2026-03-05 20:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [OpenClaw, Agent, ZeroAI, 软件开发, Tank]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令top"
 date:   2021-01-17 00:00:00 +0800
-categories: 操作系统
 tags: [linux, top]
 ---
 

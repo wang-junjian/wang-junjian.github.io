@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "配置Kubernetes镜像源"
 date:   2020-11-07 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [linux, ubuntu, mirror, eof, cat]
 ---
 

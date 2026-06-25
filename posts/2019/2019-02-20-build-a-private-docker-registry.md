@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "搭建 Private Docker Registry"
 date:   2019-02-20 00:00:00 +0800
-categories: [技术教程, 容器技术]
 tags: [docker-registry, docker-registry-frontend, docker-registry-web]
 excerpt: "搭建私有Docker Registry完整教程，包含Registry部署、UI界面配置和客户端镜像推拉操作。"
 ---

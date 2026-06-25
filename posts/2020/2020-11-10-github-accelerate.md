@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "GitHub加速"
 date:   2020-11-10 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [github, curl, hosts]
 ---
 

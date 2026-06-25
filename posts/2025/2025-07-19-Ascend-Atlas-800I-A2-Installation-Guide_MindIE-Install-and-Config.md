@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（三）：MindIE 安装与部署 LLM"
 date:   2025-07-19 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [昇腾, NPU, 910B4, Atlas800IA2, MindIE, Docker, openEuler]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "IoT 硬件：Raspberry Pi ReSpeaker 智能语音识别双麦克风阵列"
 date:   2021-03-22 00:00:00 +0800
-categories: [物联网与边缘, 编程开发]
 tags: [树莓派, respeaker, 麦克风]
 ---
 

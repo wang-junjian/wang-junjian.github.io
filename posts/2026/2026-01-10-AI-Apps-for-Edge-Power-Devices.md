@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "分析基于边端电力设备的人工智能应用"
 date:   2026-01-10 08:00:00 +0800
-categories: [硬件加速, 容器与云原生]
 tags: [电力, 边缘计算, 人工智能, 报文处理, 电力 AI]
 ---
 

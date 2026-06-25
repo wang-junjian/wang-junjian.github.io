@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "CrewAI 快速入门"
 date:   2024-05-28 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [quickstart, agent, crewai, llm, ollama]
 ---
 

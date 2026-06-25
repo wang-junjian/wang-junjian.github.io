@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 Claude Agent SDK 构建智能体"
 date:   2025-10-01 06:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [ClaudeAgentSDK, 智能体, ClaudeCode]
 ---
 

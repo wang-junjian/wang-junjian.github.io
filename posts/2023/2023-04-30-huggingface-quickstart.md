@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Hugging Face 快速入门"
 date:   2023-04-30 08:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [quickstart]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  ""
 date:   2025-12-01 08:00:00 +0800
-categories: 编程开发
 ---
 
 <!-- more -->

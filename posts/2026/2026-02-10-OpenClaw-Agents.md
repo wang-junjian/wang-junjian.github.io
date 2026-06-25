@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenClaw - 智能体"
 date:   2026-02-10 19:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [OpenClaw, Agent, Skill]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "vscode-extension-samples/chat-sample 源码分析"
 date:   2024-12-13 10:00:00 +0800
-categories: [编程开发, AI 开发工具]
 tags: [chatextensions, githubcopilot, vscode, vscodeextensionsamples]
 ---
 

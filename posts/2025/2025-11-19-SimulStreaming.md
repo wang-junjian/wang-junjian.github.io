@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SimulStreaming — 实时流式语音识别工具包"
 date:   2025-11-19 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [SimulStreaming, ASR]
 ---
 

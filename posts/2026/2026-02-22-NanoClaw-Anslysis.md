@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "NanoClaw 深度分析：AI 原生、技能系统与核心设计思想"
 date:   2026-02-22 14:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [NanoClaw, AI Native, Skill, Software Design, OpenClaw, NanoClaw AI原生]
 ---
 

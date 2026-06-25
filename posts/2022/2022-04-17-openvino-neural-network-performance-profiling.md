@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenVINO 神经网络性能分析"
 date:   2022-04-17 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [目标检测, 性能分析]
 ---
 

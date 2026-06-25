@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Continue 源码分析 - RerankerRetrievalPipeline"
 date:   2024-08-25 08:00:00 +0800
-categories: [AI 开发工具, 编程开发]
 tags: [continue, fts, sqlite, bm25, lancedb, githubcopilot]
 ---
 

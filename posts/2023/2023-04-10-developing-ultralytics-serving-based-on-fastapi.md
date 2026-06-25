@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于 FastAPI 开发 Ultralytics Serving"
 date:   2023-04-10 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [fastapi, swaggerui, ultralytics, yolo, docker, opencv, pytorch, python, tempfile, path]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "DeepSeek-OCR 研究与实测"
 date:   2025-10-24 10:00:00 +0800
-categories: [硬件加速, AI 与大模型]
 tags: [JetsonThor, Jetson, Thor, DeepSeek-OCR, OCR]
 ---
 

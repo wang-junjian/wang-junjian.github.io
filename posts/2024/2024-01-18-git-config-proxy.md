@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "git 配置代理"
 date:   2024-01-18 08:00:00 +0800
-categories: [操作系统, DevOps]
 tags: [git, proxy, config, github, v2ray]
 ---
 
