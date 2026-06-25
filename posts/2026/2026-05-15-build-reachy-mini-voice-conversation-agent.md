@@ -2,7 +2,7 @@
 type: article
 title:  "搭建 Reachy Mini 语音对话智能体"
 date:   2026-05-15 20:00:00 +0800
-tags: [Speech To Speech, 语音智能体, Hugging Face, Reachy Mini]
+tags: [reachy-mini, 语音智能体, speech-to-speech, reachy-mini-control, hugging-face, qwen3-tts, mlx, faster-whisper, parakeet-tdt, ollama]
 ---
 
 ## 部署 Reachy Mini 语音智能体

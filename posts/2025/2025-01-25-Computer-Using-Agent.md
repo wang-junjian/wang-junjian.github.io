@@ -2,7 +2,7 @@
 type: article
 title:  "Computer-Using Agent"
 date:   2025-01-25 10:00:00 +0800
-tags: [cua, operator, llm, openai]
+tags: [cua, operator, computer-using-agent, openai, gui, agent, osworld, webarena, webvoyager]
 ---
 
 ## Computer-Using Agent (CUA)

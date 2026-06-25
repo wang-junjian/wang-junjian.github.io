@@ -2,7 +2,7 @@
 type: article
 title:  "Continue Code LLM Autopilot"
 date:   2024-04-07 08:00:00 +0800
-tags: [continue, githubcopilot, codellm]
+tags: [continue, deepseek, code-llm, ai-coding-assistant, intellij-idea, openai-api, plugin, llm]
 ---
 
 ## Continue

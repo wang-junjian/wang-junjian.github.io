@@ -2,7 +2,7 @@
 type: article
 title:  "Continue Agent 使用 GitHub MCP Server"
 date:   2025-04-03 10:00:00 +0800
-tags: [Continue, MCPServer, AICodingAssistant, GitHubCopilot]
+tags: [continue, github-mcp-server, mcp, ollama, deepseek, ai-coding-assistant, agent-mode, qwen, code-review, local-llm]
 ---
 
 ## Continue 智能体

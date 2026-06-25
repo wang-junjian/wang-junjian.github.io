@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI API Compatibility"
 date:   2024-10-07 10:00:00 +0800
-tags: [openai api, ollama, litellm, xinference, mindie, llm, curl]
+tags: [openai-api, ollama, litellm, xinference, mindie, api-compatibility, curl, llm-inference]
 ---
 
 ## 设置 API Key

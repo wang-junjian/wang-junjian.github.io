@@ -2,7 +2,7 @@
 type: article
 title:  "LLM 推理在软件任务中扮演什么角色？"
 date:   2025-03-31 10:00:00 +0800
-tags: [生成式AI, 人工智能, 推理, LLM]
+tags: [llm-reasoning, chain-of-thought, software-development, coding-assistant, debugging, planning, ai-limitations, context-engineering, generative-ai, reasoning-model]
 ---
 
 - [Exploring Generative AI](https://martinfowler.com/articles/exploring-gen-ai.html)

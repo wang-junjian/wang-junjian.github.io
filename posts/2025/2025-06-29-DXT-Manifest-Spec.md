@@ -2,7 +2,7 @@
 type: article
 title:  "DXT Manifest.json 规范"
 date:   2025-06-29 08:00:00 +0800
-tags: [DXT, MCP, MCPServer, Manifest]
+tags: [dxt, manifest-json, mcp, mcp-server, spec, extension-config, nodejs, python, binary]
 ---
 
 该文档概述了 **DXT Manifest.json 规范**，这是一个用于定义扩展元数据和配置的JSON文件标准。它详细说明了 **manifest.json** 文件的结构，包括 **必填字段** 如版本、名称、作者和服务器配置，以及 **可选字段** 如显示名称、描述、存储库信息和屏幕截图。此外，规范还涵盖了 **兼容性要求**（针对客户端、平台和运行时）、**服务器配置**（支持Python、Node.js和二进制类型，并允许平台特定覆盖和变量替换），以及 **用户可配置选项** 的定义和传递方式。最后，文档解释了如何声明扩展提供的 **工具和提示**，并支持动态生成这些功能。

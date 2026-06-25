@@ -2,7 +2,7 @@
 type: article
 title:  "彻底搞懂 uv pip、uv add 和 uv tool 的核心区别"
 date:   2026-05-29 08:00:00 +0800
-tags: [uv, Python, 包管理, 依赖管理, 工具隔离, pip, poetry, pipx]
+tags: [uv, python, package-management, dependency-management, virtual-environment, uv-pip, uv-add, uv-tool, pipx, 工具隔离]
 ---
 
 在 Python 工具链大洗牌的今天，Astral 团队推出的 **`uv`** 已经成为了无可争议的“速度之王”。它不仅能用 Rust 带来百倍的速度提升，还展现出了统一 Python 生态的野心。

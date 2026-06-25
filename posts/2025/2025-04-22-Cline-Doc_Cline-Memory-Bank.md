@@ -2,7 +2,7 @@
 type: article
 title:  "Cline 的记忆库（Cline's Memory Bank）"
 date:   2025-04-22 10:00:00 +0800
-tags: [Cline, CustomInstructions, MemoryBank, ClineDoc]
+tags: [cline, memory-bank, custom-instructions, clinerules, project-documentation, context-management, vscode-extension, ai-coding-assistant, cline-doc, 记忆库]
 ---
 
 # [Cline 的记忆库](https://github.com/cline/cline/blob/main/docs/prompting/custom%20instructions%20library/raw-instructions/cline-memory-bank.md)

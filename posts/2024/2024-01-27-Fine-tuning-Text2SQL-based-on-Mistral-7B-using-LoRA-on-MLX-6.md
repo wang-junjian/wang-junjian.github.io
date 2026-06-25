@@ -2,7 +2,7 @@
 type: article
 title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（六）：使用 LoRA 基于 Deepseek-Coder-7B 微调"
 date:   2024-01-27 08:00:00 +0800
-tags: [mlx, lora, deepseek-coder-7b, text2sql, wikisql, macbookprom2max]
+tags: [mlx, lora, deepseek-coder-7b, text2sql, wikisql, sql-generation, prompt-engineering, fine-tuning, apple-silicon]
 ---
 
 ## 大模型 Deepseek-Coder-7B

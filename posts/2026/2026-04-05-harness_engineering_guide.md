@@ -2,7 +2,7 @@
 type: article
 title:  "Harness Engineering（驾驭工程）：2026 AI 软件工程新范式"
 date:   2026-04-05 10:00:00 +0800
-tags: [HarnessEngineering, Agent, OpenAI, Anthropic, Stripe, MiniMax]
+tags: [harness-engineering, ai-agent, software-engineering, context-engineering, architectural-constraints, entropy-management, openai, stripe, langchain, minimax]
 ---
 
 **Harness Engineering 是 AI 时代的全新软件工程学科** —— 设计和实现系统来约束、引导、验证和修正 AI 智能体的行为，让强大但不可预测的 AI 模型能够可靠地完成复杂任务。

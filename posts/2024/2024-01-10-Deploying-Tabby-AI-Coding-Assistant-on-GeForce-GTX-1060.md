@@ -2,7 +2,7 @@
 type: article
 title:  "在 GeForce GTX 1060 上部署 Tabby - AI编码助手"
 date:   2024-01-10 12:00:00 +0800
-tags: [tabby, githubcopilot, codellm, geforce, gtx1060, gpu, nvidia-driver, nvidiacontainertoolkit, docker, ubuntu]
+tags: [tabby, ai-coding-assistant, code-llm, deepseek-coder, docker, cuda, nvidia-container-toolkit, geforce-gtx-1060]
 ---
 
 ## 我的 GPU：GP106 [GeForce GTX 1060 6GB]

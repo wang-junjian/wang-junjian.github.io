@@ -2,7 +2,7 @@
 type: article
 title:  "大型语言模型驱动的自主代理"
 date:   2024-05-26 08:00:00 +0800
-tags: [agent, llm]
+tags: [agent, llm, ai-agent, autonomous-agent, multi-agent, langchain, autogen, crewai, semantic-kernel]
 ---
 
 ## Application scenarios of AI agents（AI代理的应用场景）

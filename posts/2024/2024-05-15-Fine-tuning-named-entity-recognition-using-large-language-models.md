@@ -2,7 +2,7 @@
 type: article
 title:  "使用大型语言模型微调命名实体识别"
 date:   2024-05-15 08:00:00 +0800
-tags: [qwen, llama-factory, fine-tuning, ner, lora, text2sql]
+tags: [qwen, llama-factory, fine-tuning, ner, lora, named-entity-recognition, xml, supervised-fine-tuning, python]
 ---
 
 ## 目标

@@ -2,7 +2,7 @@
 type: article
 title:  "开发 RAGFlow MCP Server"
 date:   2025-04-07 08:00:00 +0800
-tags: [RAGFlow, MCPServer, GitHubCopilot, Continue, Cline]
+tags: [ragflow, mcp-server, ragflow-sdk, mcp, rag, github-copilot, continue, cline, uv, pypi]
 ---
 
 ## 开发

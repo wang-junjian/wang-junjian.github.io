@@ -2,7 +2,7 @@
 type: article
 title:  "MCP 服务器开发协议"
 date:   2025-04-24 10:00:00 +0800
-tags: [Cline, MCP, ClineDoc]
+tags: [cline, mcp, model-context-protocol, mcp-server, clinerules, mcp-sdk, typescript, python, 测试, 开发协议]
 ---
 
 # 开发协议

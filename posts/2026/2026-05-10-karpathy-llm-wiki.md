@@ -2,7 +2,7 @@
 type: article
 title:  "LLM Wiki：基于大语言模型的个人知识库构建模式"
 date:   2026-05-10 08:00:00 +0800
-tags: [Wiki, LLM, AndrejKarpathy]
+tags: [llm-wiki, knowledge-base, personal-knowledge-management, rag, obsidian, markdown, andrej-karpathy]
 ---
 
 ![](/images/2026/AndrejKarpathy/llm-wiki.webp)

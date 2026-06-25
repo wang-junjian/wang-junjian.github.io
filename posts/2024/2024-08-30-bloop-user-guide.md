@@ -2,7 +2,7 @@
 type: article
 title:  "Bloop 使用指南"
 date:   2024-08-30 08:00:00 +0800
-tags: [bloop, githubcopilot]
+tags: [bloop, code-search, qdrant, rust, tauri, onnx-runtime, code-chat, github-copilot]
 ---
 
 ## bloop

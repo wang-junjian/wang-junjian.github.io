@@ -2,7 +2,7 @@
 type: article
 title:  "vscode-extension-samples/chat-sample 源码分析"
 date:   2024-12-13 10:00:00 +0800
-tags: [chatextensions, githubcopilot, vscode, vscodeextensionsamples]
+tags: [vscode, vscode-extension-samples, chat-extension, github-copilot, typescript, extension-development, source-code-analysis]
 ---
 
 ## 运行 Chat Sample

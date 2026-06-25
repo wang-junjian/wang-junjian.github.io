@@ -2,7 +2,7 @@
 type: article
 title:  "普通高中英语课程标准（2017年版2025年修订）附录2 词汇表"
 date:   2026-06-07 08:00:00 +0800
-tags: [高中英语, 课程标准, 词汇表]
+tags: [高中英语, 课程标准, 词汇表, 高考英语, 英语教学, english-vocabulary, 高中教育, 英语单词]
 ---
 
 ![](/images/2026/english/vocabulary-2025.webp)

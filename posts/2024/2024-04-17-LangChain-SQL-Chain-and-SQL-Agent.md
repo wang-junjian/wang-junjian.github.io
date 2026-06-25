@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain : SQL Chain & SQL Agent"
 date:   2024-04-17 08:00:00 +0800
-tags: [langchain, chattongyi, text2sql]
+tags: [langchain, sql-chain, sql-agent, text2sql, chattongyi, sqlite, llm, database]
 ---
 
 ## SQL Chain

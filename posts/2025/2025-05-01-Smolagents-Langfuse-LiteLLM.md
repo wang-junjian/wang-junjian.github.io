@@ -2,7 +2,7 @@
 type: article
 title:  "SmolAgents 技术栈: LangFuse & LiteLLM"
 date:   2025-05-01 10:00:00 +0800
-tags: [SmolAgents, LangFuse, LiteLLM, Agent]
+tags: [smolagents, langfuse, litellm, agent, observability, tracing, model-management, llm-proxy, 智能体, ai-coding-assistant]
 ---
 
 ## [LangFuse](https://github.com/langfuse/langfuse)（模型监控）

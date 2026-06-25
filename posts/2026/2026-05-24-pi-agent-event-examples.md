@@ -2,7 +2,7 @@
 type: article
 title:  "Pi Agent Event Examples"
 date:   2026-05-24 08:00:00 +0800
-tags: [Pi Agent, Event, TypeScript]
+tags: [pi-agent, event-driven, typescript, agent-lifecycle, tool-execution, streaming-events, openai-api, longcat, 事件流, 智能体示例]
 ---
 
 ## 事件流

@@ -2,7 +2,7 @@
 type: article
 title:  "Kimi（月之暗面）简历的探索"
 date:   2024-03-05 08:00:00 +0800
-tags: [kimi, moonshot, chatgpt]
+tags: [kimi, moonshot, long-context, resume-evaluation, recruitment, llm-application, 简历评估, 大模型应用]
 ---
 
 这里使用了 [Kimi 月之暗面](https://kimi.moonshot.cn/) 对简历这个场景进行了探索，Kimi 支持 128k 的长上下文，超过20万个汉字。

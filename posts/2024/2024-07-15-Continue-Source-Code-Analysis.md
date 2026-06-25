@@ -2,7 +2,7 @@
 type: article
 title:  "Continue 源码分析"
 date:   2024-07-15 08:00:00 +0800
-tags: [continue, githubcopilot]
+tags: [continue, source-code-analysis, vscode-extension, ai-code-assistant, llm-provider, embeddings, tab-autocomplete, context-provider, slash-command]
 ---
 
 ## Continue

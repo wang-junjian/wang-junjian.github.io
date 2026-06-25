@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas A2 算力切分"
 date:   2024-10-31 10:00:00 +0800
-tags: [atlas800, npu, 910b4, mindie, llm]
+tags: [huawei, atlas-a2, npu, 算力切分, vnpu, ascend-910b, docker, mindie, llm]
 ---
 
 ## 算力切分

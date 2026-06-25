@@ -2,7 +2,7 @@
 type: article
 title:  "RAG 复杂场景下的工作流程和构建知识库的解析方法"
 date:   2024-06-30 08:00:00 +0800
-tags: [rag, ragflow, llm]
+tags: [rag, ragflow, knowledge-base, hybrid-search, reranking, document-parsing, retrieval, llm, 知识库]
 ---
 
 ## RAG 复杂场景下的工作流程

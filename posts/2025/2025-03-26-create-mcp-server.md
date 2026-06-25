@@ -2,7 +2,7 @@
 type: article
 title:  "create-mcp-server"
 date:   2025-03-26 12:00:00 +0800
-tags: [MCP, Python, MCPServer, UV]
+tags: [create-mcp-server, mcp, python, uv, mcp-server, cli, claude-desktop, pyproject-toml, jinja2, pypi]
 ---
 
 # MCP 服务器创建工具

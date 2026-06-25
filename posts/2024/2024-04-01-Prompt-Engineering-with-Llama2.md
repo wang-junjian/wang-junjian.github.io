@@ -2,7 +2,7 @@
 type: article
 title:  "Prompt Engineering with Llama 2"
 date:   2024-04-01 08:00:00 +0800
-tags: [llama2, codellama, llamaguard, deeplearningai]
+tags: [llama-2, prompt-engineering, code-llama, llama-guard, zero-shot-prompting, few-shot-prompting, chain-of-thought, model-evaluation, ai-safety, large-language-model]
 ---
 
 ## Prompt Engineering Techniques（提示工程技术）

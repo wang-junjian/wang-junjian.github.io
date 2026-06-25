@@ -2,7 +2,7 @@
 type: article
 title:  "AGPL-3.0（GNU Affero 通用公共许可证 v3.0）"
 date:   2026-06-02 12:00:00 +0800
-tags: [AGPL-3.0, License]
+tags: [agpl-3.0, license, open-source, copyleft, gnu, compliance, 开源许可证, 著佐权, 合规风险]
 ---
 
 > **AGPL v3.0 许可证的开源豁免仅限于公司内部直签员工自用。由于公司混编了第三方外包人员，在法律主体上已被视作向外部第三方提供服务；一旦我们修改了该项目的核心代码，将直接触发强制开源机制，导致公司相关的商业源代码面临被迫向全社会彻底公开的重大合规风险。**

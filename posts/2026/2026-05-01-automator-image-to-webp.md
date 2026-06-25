@@ -2,7 +2,7 @@
 type: article
 title:  "macOS 图像转为 WebP 格式（Automator）"
 date:   2026-05-01 10:00:00 +0800
-tags: [Automator, webp, 图像转换, macOS]
+tags: [automator, macos, quick-actions, webp, 图像转换, shell-script, bash, cwebp]
 ---
 
 ## macOS 图像转为 WebP 格式工具使用说明

@@ -2,7 +2,7 @@
 type: article
 title:  "基于 OpenClaw 开发AI助手ZeroAI：五步流程，帮你完成软件开发全流程"
 date:   2026-03-05 20:00:00 +0800
-tags: [OpenClaw, Agent, ZeroAI, 软件开发, Tank]
+tags: [openclaw, zeroai, ai-development-assistant, five-step-workflow, next-js, sqlite, zod, software-development, tank-battle, agent-workflow]
 ---
 
 ZeroAI 一个通用的 AI 开发助手，能够按照五步流程开发任意软件应用。从需求理解到代码生成，让 AI 帮你开发软件！

@@ -2,7 +2,7 @@
 type: article
 title:  "用通俗易懂的方式理解 Harness Engineering"
 date:   2026-04-12 08:00:00 +0800
-tags: [HarnessEngineering, Agent, LLM]
+tags: [harness-engineering, ai-agent, llm, scaffolding, context-engineering, architecture-constraints, entropy-management, openai, langchain, stripe-minions]
 ---
 
 <!-- more -->

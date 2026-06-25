@@ -2,7 +2,7 @@
 type: article
 title:  "Cherry Studio 分支策略指南"
 date:   2025-06-11 08:00:00 +0800
-tags: [CherryStudio, 分支策略, 代码管理, 开发流程]
+tags: [cherry-studio, git, branching-strategy, github, pull-request, version-control, 分支策略, 代码管理, 开发流程]
 ---
 
 该文档概述了 [Cherry Studio](https://github.com/CherryHQ/cherry-studio) 的**分支策略指南**，详述了其软件开发中的**主要分支**和**贡献分支**的使用规范。它明确指出，**`main`分支**作为主开发线，只接受通过**拉取请求（PR）**合入的代码，且可能包含不稳定功能；而**`release/*`分支**则用于稳定的发布代码，主要用于文档更新和错误修复。此外，文档还详细列举了不同类型的**贡献分支**（如功能、错误修复、文档和热修复分支）的命名约定和提交PR的目标分支，并强调了PR必须遵循的准则，包括与`main`同步、包含问题编号以及通过测试。最后，它还提及了**版本标签管理**的分类，以确保代码库的组织性和可追溯性。

@@ -2,7 +2,7 @@
 type: article
 title:  "Open Source Models with Hugging Face"
 date:   2024-03-16 08:00:00 +0800
-tags: [deeplearningai, huggingface, gradio, nlp, asr, tts]
+tags: [huggingface, transformers, gradio, nlp, asr, tts, sentence-embeddings, object-detection, zero-shot-classification, machine-learning]
 ---
 
 ## Natural Language Processing (NLP)

@@ -2,7 +2,7 @@
 type: article
 title:  "Pi Agent SDK 参考文档"
 date:   2026-05-21 08:00:00 +0800
-tags: [Pi Agent, SDK, TypeScript]
+tags: [pi-agent, sdk, typescript, agent-session, agent-framework, llm-tools, event-streaming, session-management, 智能体开发, 扩展开发]
 ---
 
 [本 SDK](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md) 提供对 Pi 智能体能力的程序化访问。可用于将 Pi 嵌入其他应用、构建自定义界面，或集成到自动化工作流中。

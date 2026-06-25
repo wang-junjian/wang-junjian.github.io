@@ -2,7 +2,7 @@
 type: article
 title:  "MLX: An array framework for Apple silicon"
 date:   2024-03-14 08:00:00 +0800
-tags: [mlx, llm, mistral, qwen, wikisql, lora, qlora]
+tags: [mlx, llm, mistral, qwen, quantization, lora, qlora, fine-tuning, apple-silicon, inference]
 ---
 
 ## [MLX](https://github.com/ml-explore/mlx) 介绍

@@ -2,7 +2,7 @@
 type: article
 title:  "Tabby 的基准测试"
 date:   2024-01-15 10:00:00 +0800
-tags: [tabby, benchmark, wrk, tcpdump, codellm, aicodingassistant]
+tags: [tabby, benchmark, wrk, deepseek-coder, code-llm, ai-coding-assistant, nvidia-tesla-t4]
 ---
 
 ## [wrk](https://github.com/wg/wrk)

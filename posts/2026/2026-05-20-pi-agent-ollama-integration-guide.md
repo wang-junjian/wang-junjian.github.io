@@ -2,7 +2,7 @@
 type: article
 title:  "基于 Pi Agent SDK 适配 OpenAI 兼容接口"
 date:   2026-05-20 08:00:00 +0800
-tags: [Pi Agent, SDK, TypeScript, Ollama, LongCat]
+tags: [pi-agent, ollama, typescript, openai-compatible-api, model-registry, qwen, longcat, sdk, esm]
 ---
 
 通过两种方式，在 TypeScript 中使用 `@earendil-works` 的 Pi Agent 框架连接本地运行的 Ollama 模型（以 `qwen3.5:9b` 为例）。

@@ -2,7 +2,7 @@
 type: article
 title:  "Visual Studio Code Extension 开发"
 date:   2024-08-06 08:00:00 +0800
-tags: [vscode, extension]
+tags: [vscode, visual-studio-code, vscode-extension, extension-development, javascript, typescript, ide]
 ---
 
 ## VS Code Extension

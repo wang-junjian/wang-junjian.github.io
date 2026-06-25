@@ -2,7 +2,7 @@
 type: article
 title:  "vLLM 推理性能优化实验与分析"
 date:   2025-08-26 08:00:00 +0800
-tags: [vLLM, Qwen3, 缓存, Benchmark, T4, LLM]
+tags: [vllm, qwen3, benchmark, t4, llm, prefix-caching, chunked-prefill, kv-cache, inference-optimization, agent]
 ---
 
 该文章**详细探讨了如何通过优化vLLM框架来提升Qwen3-4B大型语言模型在Tesla T4 GPU上的推理性能**。实验中，我**评估了不同配置对关键性能指标的影响**，包括首次生成Token时间（TTFT）、端到端延迟（E2EL）和请求吞吐量。结果表明，**结合前缀缓存（prefix caching）、分块预填充（chunked prefill）以及调整批处理Token数量（max-num-batched-tokens=8192）能显著改善模型性能**。尤其在模拟Agent场景下的自定义数据集测试中，**这些优化措施成功将TTFT大幅降低约64%，同时提升了请求和输出Token的吞吐量**。最终，文章**提供了一套推荐的最佳vLLM部署配置**，旨在最大化长上下文模型的推理效率和用户体验。

@@ -2,7 +2,7 @@
 type: article
 title:  "Qwen2 Technical Report"
 date:   2024-09-23 08:00:00 +0800
-tags: [qwen2, llm]
+tags: [qwen2, large-language-model, moe, transformer, grouped-query-attention, multilingual, long-context, benchmark, open-source, 大模型]
 ---
 
 ## Abstract(摘要)

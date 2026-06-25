@@ -2,7 +2,7 @@
 type: article
 title:  "LLM 技术栈"
 date:   2024-06-01 08:00:00 +0800
-tags: [llm, aicodingassistant]
+tags: [llm, tech-stack, sglang, dify, ollama, continue, qwen, code-llm, mllm, keycloak]
 ---
 
 ## 框架

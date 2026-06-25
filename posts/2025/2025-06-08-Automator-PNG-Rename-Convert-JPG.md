@@ -2,7 +2,7 @@
 type: article
 title:  "macOS PNG重命名并转JPG（Automator）"
 date:   2025-06-08 00:00:00 +0800
-tags: [Automator, PNG重命名并转JPG, ImageMagick, rename, macOS]
+tags: [automator, macos, homebrew, imagemagick, perl-rename, shell-script, image-conversion, batch-rename, png-to-jpg, 图像处理]
 ---
 
 本文档提供了一份关于如何在 macOS 上使用 **Automator** 创建一个 **“快速操作”** 的详细指南。这个自动化工具旨在帮助用户 **重命名** 选定文件夹中的所有 PNG 图像为连续的数字格式，随后将它们 **转换** 为 JPG 格式，并在转换完成后 **删除** 原始的 PNG 文件。它详细说明了设置 **Shell 脚本** 的步骤，该脚本依赖于 **Homebrew**、**ImageMagick** 和 **Perl rename** 工具来执行这些图像处理任务，并包含了安装这些必要依赖项的说明。用户可以通过 **Finder** 的右键菜单方便地运行这个自动化操作。

@@ -2,7 +2,7 @@
 type: article
 title:  "AutoTrain"
 date:   2024-10-03 10:00:00 +0800
-tags: [autotrain, llm, huggingface]
+tags: [autotrain, hugging-face, model-training, fine-tuning, pytorch, conda, no-code]
 ---
 
 - [AutoTrain Advanced](https://github.com/huggingface/autotrain-advanced)

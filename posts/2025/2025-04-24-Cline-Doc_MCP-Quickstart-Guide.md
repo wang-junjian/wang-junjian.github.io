@@ -2,7 +2,7 @@
 type: article
 title:  "MCP 快速入门指南"
 date:   2025-04-24 08:00:00 +0800
-tags: [Cline, MCP, ClineDoc]
+tags: [cline, mcp, mcp-server, model-context-protocol, mcp-installer, nodejs, python, uv, vscode-extension, cline-doc]
 ---
 
 # [🚀 MCP 快速入门指南](https://github.com/cline/cline/blob/main/docs/mcp/mcp-quickstart.md)

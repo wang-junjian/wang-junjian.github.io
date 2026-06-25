@@ -2,7 +2,7 @@
 type: article
 title:  "Harness Engineering"
 date:   2026-03-29 12:00:00 +0800
-tags: [Agent, HarnessEngineering]
+tags: [harness-engineering, ai-agent, context-engineering, architectural-constraints, entropy-cleanup, anthropic, openai, langchain, minimax, 驾驭工程]
 ---
 
 <!-- more -->

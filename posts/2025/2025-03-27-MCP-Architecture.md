@@ -2,7 +2,7 @@
 type: article
 title:  "MCP 架构"
 date:   2025-03-27 09:00:00 +0800
-tags: [MCP, LLM]
+tags: [mcp, model-context-protocol, 架构, llm, json-rpc, client-host-server, capability-negotiation, ai-integration, protocol]
 ---
 
 模型上下文协议（MCP）采用客户端-主机-服务器架构，每个主机可以运行多个客户端实例。这种架构使用户能够跨应用程序集成AI功能，同时保持明确的安全边界和关注点隔离。MCP基于JSON-RPC构建，提供专注于客户端和服务器之间上下文交换和采样协调的有状态会话协议。

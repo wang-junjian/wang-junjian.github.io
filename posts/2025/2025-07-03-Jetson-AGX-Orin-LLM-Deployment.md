@@ -2,7 +2,7 @@
 type: article
 title:  "Jetson AGX Orin大模型部署挑战与系统升级"
 date:   2025-07-03 16:00:00 +0800
-tags: [Jetson, AGXOrin, arm64, CUDA, vLLM, 多模态, 人形机器人, 泰安]
+tags: [jetson, jetson-agx-orin, edge-ai, multimodal, vllm, ollama, cuda, jetpack, arm64, 人形机器人]
 ---
 
 这些文档主要围绕着在 **NVIDIA Jetson AGX Orin** 开发者套件上部署 **多模态大型语言模型 (LLMs)** 所面临的 **系统升级挑战**。核心问题在于，当前系统的 **JetPack、Ubuntu、CUDA 和 GPU 驱动版本** 过低，无法满足 **vLLM 和 Ollama** 等主流推理框架对 **更高 CUDA 和驱动版本** 的要求。文章详细阐述了 **升级至 JetPack 6.0** 是解决兼容性问题的关键，但这将强制要求 **将 Ubuntu 升级到 22.04**，从而导致 **需要重装系统** 和 **可能与 ROS1 产生兼容性问题** 等一系列复杂挑战。此外，文档还探讨了 **替代推理引擎和云端推理** 等备选方案，但最终建议进行 **系统全面升级** 以实现长期兼容性和性能优化。

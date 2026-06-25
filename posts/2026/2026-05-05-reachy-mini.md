@@ -2,7 +2,7 @@
 type: article
 title:  "Reachy Mini 机器人"
 date:   2026-05-05 08:00:00 +0800
-tags: [ReachyMini, 机器人]
+tags: [reachy-mini, 机器人, robotics, humanoid-robot, pollen-robotics, raspberry-pi, python, dynamixel, ssh]
 ---
 
 ## Reachy Mini

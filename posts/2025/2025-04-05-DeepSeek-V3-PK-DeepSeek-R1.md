@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek-V3 & DeepSeek-R1"
 date:   2025-04-05 10:00:00 +0800
-tags: [DeepSeek-V3, DeepSeek-R1, DeepSeek, LLM]
+tags: [deepseek-v3, deepseek-r1, deepseek, ai-agent, llm, tool-integration, reasoning, multi-step-workflow, hallucination, agent-workflow]
 ---
 
 # 用户的问题

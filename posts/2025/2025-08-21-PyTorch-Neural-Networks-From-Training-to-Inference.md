@@ -2,7 +2,7 @@
 type: article
 title:  "PyTorch 神经网络实战：从训练到推理的完整指南"
 date:   2025-08-21 08:00:00 +0800
-tags: [PyTorch, DeepLearningAI, MPS, MacBookProM2Max]
+tags: [pytorch, neural-network, deep-learning, mps, apple-silicon, binary-classification, model-training, model-inference, performance]
 ---
 
 该文本提供了一个关于**PyTorch二分类神经网络的实现与性能分析**的全面概述。首先，它通过**具体代码示例**展示了如何**构建、训练、评估和保存一个基础的神经网络模型**，并演示了如何**加载模型进行推理**。其次，文章深入探讨了**不同模型参数规模下**，**Apple的MPS（Metal Performance Shaders）框架与CPU**在**训练时间上的性能对比**，通过**表格数据**清晰地呈现了**MPS在处理大型模型时相较于CPU的显著优势**，并指出了**性能的“转折点”**。

@@ -2,7 +2,7 @@
 type: article
 title:  "推测解码 (Speculative Decoding)"
 date:   2024-10-01 10:00:00 +0800
-tags: [speculativedecoding, llm, inference]
+tags: [speculative-decoding, llm-inference, inference-acceleration, draft-model, vllm, text-generation-inference, qwen]
 ---
 
 ## Speculative Decoding

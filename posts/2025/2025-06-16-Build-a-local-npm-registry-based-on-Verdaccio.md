@@ -2,7 +2,7 @@
 type: article
 title:  "Verdaccio：构建与管理内网 npm 仓库的实践指南"
 date:   2025-06-16 20:00:00 +0800
-tags: [Verdaccio, npm, Registry, 离线, 内网部署]
+tags: [verdaccio, npm, npm-registry, private-registry, docker, docker-compose, nodejs, 离线, 内网部署]
 ---
 
 本文档提供了一份关于**使用 Verdaccio 搭建本地 npm 仓库**的指南。它详细介绍了**如何通过 Docker 拉取 Verdaccio 镜像**，以及**配置目录结构和 YAML 配置文件**的步骤。此外，文章还展示了**通过 Docker 或 Docker Compose 部署 Verdaccio 的方法**，并演示了**如何使用 npm 命令**（如安装、发布和下载包）**与本地 Verdaccio 仓库进行交互**。最后，内容涵盖了**Verdaccio 的自动缓存机制**以及**用户创建和登录操作**。

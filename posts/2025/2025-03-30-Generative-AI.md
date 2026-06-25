@@ -2,7 +2,7 @@
 type: article
 title:  "生成式人工智能"
 date:   2025-03-30 10:00:00 +0800
-tags: [生成式AI, 人工智能]
+tags: [generative-ai, 生成式AI, llm, 人工智能, deep-learning, code-generation, content-creation, github-copilot, software-development, ethics]
 ---
 
 ## 什么是生成式AI？

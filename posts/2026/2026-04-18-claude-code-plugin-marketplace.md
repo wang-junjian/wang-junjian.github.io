@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Code 插件市场指南"
 date:   2026-04-18 08:00:00 +0800
-tags: [ClaudeCode, Plugin, Marketplace, Skill]
+tags: [claude-code, plugin, marketplace, skill, mcp, agent-skills, superpowers, frontend-design, github, gitlab]
 ---
 
 <!-- more -->

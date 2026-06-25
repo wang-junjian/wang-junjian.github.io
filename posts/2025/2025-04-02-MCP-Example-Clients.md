@@ -2,7 +2,7 @@
 type: article
 title:  "支持 MCP 集成的应用程序列表"
 date:   2025-04-02 12:00:00 +0800
-tags: [MCP, Client, LLM]
+tags: [mcp, model-context-protocol, mcp-client, claude, cursor, continue, cline, zed, ai-coding-assistant, integration]
 ---
 
 - [Example Clients](https://modelcontextprotocol.io/clients)

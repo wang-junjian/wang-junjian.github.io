@@ -2,7 +2,7 @@
 type: article
 title:  "Mac 外接显示器 DELL U2723QE"
 date:   2024-11-15 20:00:00 +0800
-tags: [dell, 显示器, macbookprom2max]
+tags: [dell, macbook-pro, external-display, 显示器, u2723qe, usb-c, displayport, ddpm]
 ---
 
 ## 硬件

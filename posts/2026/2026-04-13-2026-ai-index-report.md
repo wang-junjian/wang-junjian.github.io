@@ -2,7 +2,7 @@
 type: article
 title:  "2026 AI 指数报告：在模型超越人类的同时，我们正面临的五个残酷真相"
 date:   2026-04-13 10:00:00 +0800
-tags: [AI, IndexReport, 2026]
+tags: [ai-index-report, stanford-hai, artificial-intelligence, ai-governance, ai-sovereignty, us-china-ai, talent-drain, jagged-frontier, environmental-impact]
 ---
 
 <!-- more -->

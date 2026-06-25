@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Code 的配置与权限"
 date:   2025-09-13 08:00:00 +0800
-tags: [ClaudeCode, Agent, Claude, CLI, Doc]
+tags: [claude-code, settings, permissions, cli, mcp, slash-commands, subagent, environment-variables, claude]
 ---
 
 <!-- more -->

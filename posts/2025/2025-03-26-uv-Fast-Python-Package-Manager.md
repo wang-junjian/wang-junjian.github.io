@@ -2,7 +2,7 @@
 type: article
 title:  "UV: An extremely fast Python package and project manager, written in Rust."
 date:   2025-03-26 10:00:00 +0800
-tags: [uv, Python, Package]
+tags: [uv, python, package-manager, rust, virtual-environment, dependency-management, pyproject-toml, pip, astral]
 ---
 
 ## 安装

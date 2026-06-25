@@ -2,7 +2,7 @@
 type: article
 title:  "使用 llama.cpp 构建兼容 OpenAI API 服务"
 date:   2024-01-19 08:00:00 +0800
-tags: [llama.cpp, quantization, llm, qwen, deepseek, llama-cpp-python, openai, 困惑度, ppl, perplexity, curl, metal, mps, cublas, cuda, teslat4, macbookprom2max]
+tags: [llama.cpp, llama-cpp-python, quantization, qwen, deepseek, openai-api, perplexity, cuda, tesla-t4, macbook-pro-m2-max]
 ---
 
 ## [llama.cpp][llama.cpp]

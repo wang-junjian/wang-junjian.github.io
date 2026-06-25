@@ -2,7 +2,7 @@
 type: article
 title:  "FastEmbed"
 date:   2024-07-06 08:00:00 +0800
-tags: [fastembed, qdrant]
+tags: [fastembed, qdrant, embeddings, vector-search, python, vector-database, retrieval, bge]
 ---
 
 ## [FastEmbed](https://github.com/qdrant/fastembed)

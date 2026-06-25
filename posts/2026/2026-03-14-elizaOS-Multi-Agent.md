@@ -2,7 +2,7 @@
 type: article
 title:  "elizaOS 多智能体架构设计分析"
 date:   2026-03-14 08:00:00 +0800
-tags: [elizaOS, Agent, 架构设计]
+tags: [elizaos, multi-agent, agent-framework, architecture, plugin-system, rag, typescript, sandbox]
 ---
 
 <!-- more -->

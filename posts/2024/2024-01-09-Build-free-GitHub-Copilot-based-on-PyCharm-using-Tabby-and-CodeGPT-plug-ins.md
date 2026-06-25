@@ -2,7 +2,7 @@
 type: article
 title:  "基于 PyCharm 使用 Tabby 和 CodeGPT 插件搭建免费的 GitHub Copilot"
 date:   2024-01-09 08:00:00 +0800
-tags: [githubcopilot, pycharm, tabby, codegpt, fastchat, openai, codellm, llm]
+tags: [github-copilot, pycharm, tabby, codegpt, fastchat, openai, code-llm, llm, deepseek-coder, chatglm3]
 ---
 
 ## 使用的模型

@@ -2,7 +2,7 @@
 type: article
 title:  "AI 技术研究及开源项目评估"
 date:   2026-03-28 20:00:00 +0800
-tags: [AI研究, 开源项目, 技术评估, 智能体]
+tags: [ai-research, open-source, 技术评估, agent, multi-agent, agentic-workflow, bitnet, ui-tars-desktop, gitnexus]
 ---
 
 <!-- more -->

@@ -2,7 +2,7 @@
 type: article
 title:  "Continue 源码分析 - 各种命令调用大模型的输入和输出"
 date:   2024-09-20 08:00:00 +0800
-tags: [continue, langfuse, githubcopilot, llm]
+tags: [continue, source-code-analysis, tab-completion, rag, langfuse, llm, github-copilot, 大模型应用]
 ---
 
 ## Tab Completion

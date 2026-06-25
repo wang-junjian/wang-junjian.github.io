@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（十）：GlusterFS 构建高性能共享存储"
 date:   2025-08-05 12:00:00 +0800
-tags: [昇腾, NPU, 910B4, Atlas800IA2, GlusterFS, LLM, openEuler]
+tags: [昇腾, atlas-800i-a2, 910b4, glusterfs, distributed-file-system, npu, openeuler, llm, shared-storage]
 ---
 
 本文档首先**比较了 NFS、GlusterFS、Ceph 和 HDFS 四种分布式文件系统**的优缺点及适用场景，强调了 GlusterFS 在**无元数据服务器、高可用性和横向扩展**方面的优势。Gluster 是一个可扩展的分布式文件系统，它将来自多个服务器的磁盘存储资源聚合成一个单一的全局命名空间。文档提供了**在多台服务器上准备环境、安装 GlusterFS、配置信任池、创建和启动分布式复制卷的详尽步骤**，并指导如何在客户端挂载和测试 GlusterFS 卷。最后，文档通过**网络带宽和磁盘读写性能测试**，对 GlusterFS 的实际表现进行了评估，指出当前网络带宽可能是性能瓶颈，建议使用更高速的网络接口（25 GbE）以提升性能。

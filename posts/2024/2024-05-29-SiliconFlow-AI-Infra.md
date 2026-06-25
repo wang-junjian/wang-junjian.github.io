@@ -2,7 +2,7 @@
 type: article
 title:  "SiliconFlow AI Infra"
 date:   2024-05-29 08:00:00 +0800
-tags: [siliconcloud, openai, llm]
+tags: [siliconflow, siliconcloud, llm, genai, openai-api, api, inference, cloud-service]
 ---
 
 ## [SiliconFlow](https://siliconflow.cn/zh-cn/)

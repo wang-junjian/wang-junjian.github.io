@@ -2,7 +2,7 @@
 type: article
 title:  "探索多模态大模型 GLM-4.1V-Thinking"
 date:   2025-07-05 10:00:00 +0800
-tags: [GLM-4.1V-Thinking, 多模态, GLM, GLM-4V, 火灾, 烟雾, 安全帽, GLM-4.1V-Thinking 多模态模型]
+tags: [glm-4.1v-thinking, glm-4v, multimodal, vlm, design2code, zhipuai, python, safety-detection, 火灾, 安全帽]
 ---
 
 本文档介绍了**多模态大模型GLM-4.1V-Thinking**，这是一个基于 GLM-4-9B-0414 的开源视觉语言模型，通过强化学习显著提升了其性能。文档详细阐述了该模型在**设计图转代码（Design2Code）**任务上的卓越表现，能将设计图转换为高质量的HTML/CSS代码，并提供了与Qwen-2.5-VL-32B-Instruct的对比示例。此外，资源还展示了**如何通过智谱API免费使用GLM-4.1V-Thinking进行图像识别**，并给出了一个**安全检测系统**的代码示例，该系统能够识别图像中的火灾、烟雾以及人员安全帽佩戴情况，并进行坐标标注，强调了模型在实际应用中的潜力。

@@ -2,7 +2,7 @@
 type: article
 title:  "在 MacBook Pro M2 Max 上安装 FastChat"
 date:   2024-01-11 08:00:00 +0800
-tags: [fastchat, qwen, deepseek, chatglm, openai, macbookprom2max]
+tags: [fastchat, qwen, deepseek, chatglm, bge, llm-deployment, openai-api, mps, macbook-pro-m2-max]
 ---
 
 ## [FastChat](https://github.com/lm-sys/FastChat)

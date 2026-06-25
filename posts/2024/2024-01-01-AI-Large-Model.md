@@ -2,7 +2,7 @@
 type: article
 title:  "AI 大模型"
 date:   2024-01-01 08:00:00 +0800
-tags: [llm, codellm, embeddingllm, leaderboard]
+tags: [llm, slm, code-llm, embedding-llm, 大模型, leaderboard, gguf, huggingface, qwen]
 ---
 
 ## 🔶 大模型

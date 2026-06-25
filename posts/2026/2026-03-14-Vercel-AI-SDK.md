@@ -2,7 +2,7 @@
 type: article
 title:  "Vercel AI SDK 架构设计分析"
 date:   2026-03-14 18:00:00 +0800
-tags: [VercelAI, Agent, 架构设计]
+tags: [vercel-ai-sdk, ai-sdk, typescript, agent, tool-calling, streaming, react, provider-abstraction]
 ---
 
 <!-- more -->

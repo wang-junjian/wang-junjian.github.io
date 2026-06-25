@@ -2,7 +2,7 @@
 type: article
 title:  "UI-TARS: Pioneering Automated GUI Interaction with Native Agents"
 date:   2025-01-27 10:00:00 +0800
-tags: [ui-tars, agent, gui, llm]
+tags: [ui-tars, agent, gui, llm, native-agent, bytedance, qwen-2-vl, osworld, androidworld, system-2-reasoning]
 ---
 
 [UI-TARS: Pioneering Automated GUI Interaction with Native Agents（与本地代理进行自动化 GUI 交互的先驱）](https://arxiv.org/abs/2501.12326)

@@ -2,7 +2,7 @@
 type: article
 title:  "人工智能编码助手（AI Coding Assistant）"
 date:   2024-01-15 08:00:00 +0800
-tags: [aicodingassistant]
+tags: [ai-coding-assistant, code-completion, code-generation, code-chat, github-copilot, codefuse, cody, llm]
 ---
 
 ## 主要功能

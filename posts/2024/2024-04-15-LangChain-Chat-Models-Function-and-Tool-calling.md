@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain Chat Models Function & Tool Calling"
 date:   2024-04-15 08:00:00 +0800
-tags: [langchain, toolcalling, text2sql]
+tags: [langchain, function-calling, tool-calling, chatopenai, chattongyi, chatollama, ollama-functions, pydantic, text2sql]
 ---
 
 ## Chat Models Functions & Tools

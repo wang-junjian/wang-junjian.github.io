@@ -2,7 +2,7 @@
 type: article
 title:  "WhisperLiveKit - 实时语音识别"
 date:   2025-11-10 08:00:00 +0800
-tags: [WhisperLiveKit, ASR, Whisper, JetsonThor]
+tags: [whisperlivekit, asr, whisper, speech-recognition, jetson-thor, docker, websocket, diarization, python, 实时语音识别]
 ---
 
 <!-- more -->

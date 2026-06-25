@@ -2,7 +2,7 @@
 type: article
 title:  "大模型推理需要多少显存？"
 date:   2024-09-03 08:00:00 +0800
-tags: [llm, gpu, vram, calculator]
+tags: [llm, gpu, vram, inference, qwen2, transformers, 显存计算, 大模型推理]
 ---
 
 ![](/images/2024/LLMInferenceVRAMCalculator/how-much-vram-is-required-for-llm-inference.png)

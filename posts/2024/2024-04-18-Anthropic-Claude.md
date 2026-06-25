@@ -2,7 +2,7 @@
 type: article
 title:  "Anthropic Claude"
 date:   2024-04-18 08:00:00 +0800
-tags: [claude3, langchain, llm, anthropic]
+tags: [anthropic, claude-3, langchain, llm, chatanthropic, python, machine-translation]
 ---
 
 ## Claude 3 模型

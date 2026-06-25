@@ -2,7 +2,7 @@
 type: article
 title:  "Letta (fka MemGPT) 是用于创建有状态 LLM 服务的框架"
 date:   2024-09-25 08:00:00 +0800
-tags: [letta, memgpt, llm]
+tags: [letta, memgpt, llm-agent, stateful-llm, agent-framework, docker, ollama, bge-m3]
 ---
 
 - [MemGPT: Towards LLMs as Operating Systems](https://arxiv.org/abs/2310.08560)

@@ -2,7 +2,7 @@
 type: article
 title:  "深入浅出 k-Shingle：海量文本去重的防篡改利器"
 date:   2026-06-06 20:00:00 +0800
-tags: [k-Shingle, 文本去重, 防篡改, Jaccard, MinHash, 大数据处理]
+tags: [k-shingle, 文本去重, 防篡改, jaccard-similarity, minhash, sliding-window, tokenization, murmurhash, text-deduplication, 特征提取]
 ---
 
 在文本挖掘和信息检索领域，**$k$-Shingle**（通常也被称为 $k$-gram）是一种将**连续的文本切分成固定长度碎片**的技术。它是海量文本去重（如 MinHash + LSH 架构）中极其关键的**数据预处理阶段**。

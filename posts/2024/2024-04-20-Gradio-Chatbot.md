@@ -2,7 +2,7 @@
 type: article
 title:  "Gradio Chatbot"
 date:   2024-04-20 08:00:00 +0800
-tags: [gradio, chatbot, dashscope, langchain, chattongyi, text2sql]
+tags: [gradio, chatbot, dashscope, langchain, chattongyi, qwen, streaming, python, 通义千问]
 ---
 
 ## Gradio Chatbot

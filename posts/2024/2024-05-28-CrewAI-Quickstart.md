@@ -2,7 +2,7 @@
 type: article
 title:  "CrewAI 快速入门"
 date:   2024-05-28 08:00:00 +0800
-tags: [quickstart, agent, crewai, llm, ollama]
+tags: [crewai, agent, llm, ollama, quickstart, multi-agent, python, langchain]
 ---
 
 ## [CrewAI](https://www.crewai.com/)

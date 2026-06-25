@@ -2,7 +2,7 @@
 type: article
 title:  "集成个人助手（OpenClaw｜Hermes）的方式"
 date:   2026-05-07 08:00:00 +0800
-tags: [OpenClaw, Hermes, 聊天软件, GLM]
+tags: [openclaw, hermes, 聊天软件, ai-agent, chat-integration, instant-messaging, gateway, webhook, websocket]
 ---
 
 ## 聊天软件集成 OpenClaw 的方式

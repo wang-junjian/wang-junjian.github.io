@@ -2,7 +2,7 @@
 type: article
 title:  "Jetson Thor 平台上 Qwen3 系列大模型性能基准测试分析"
 date:   2025-10-12 06:00:00 +0800
-tags: [JetsonThor, Jetson, Thor, Qwen3, Benchmark, vLLM, FP8, FP4]
+tags: [jetson-thor, jetson, qwen3, vllm, benchmarking, llm-benchmark, fp8, fp4, quantization, gguf]
 ---
 
 <!-- more -->

@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Skill（技能）构建完全指南"
 date:   2026-02-19 10:00:00 +0800
-tags: [Claude, Skill]
+tags: [claude, skill, skill-md, mcp, progressive-disclosure, skill-creator, workflow-automation, yaml-frontmatter, agents-skills, 技能构建]
 ---
 
 这份指南详细介绍了如何为 **Claude** 构建 **“技能” (Skills)**，即一种能让 AI 学习特定工作流与专业知识的指令包。通过由 YAML 元数据和 Markdown 指令构成的**三层渐进式披露结构**，开发者可以教会 Claude 何时以及如何执行复杂任务。技能不仅能独立运行，还能与 **MCP（模型上下文协议）** 结合，将底层工具访问转化为可靠、标准化的操作流程。文档涵盖了从**规划设计**到**测试分发**的全过程，并提供了多种工作流编排模式以提升输出的稳定性。其核心优势在于**跨平台通用性**，让团队能够统一 Claude 在不同交互界面下的任务处理逻辑。通过使用 **skill-creator** 等辅助工具，用户可以在短时间内完成技能的迭代与部署。

@@ -2,7 +2,7 @@
 type: article
 title:  "使用 Claude Code：HTML 超乎寻常的妙用"
 date:   2026-05-11 20:00:00 +0800
-tags: [HTML, Markdown, ClaudeCode, Thariq]
+tags: [html, markdown, claude-code, 智能体, frontend, css, svg, javascript, visualization, artifacts]
 ---
 
 **[Thariq](https://x.com/trq212)**: [Using Claude Code: The Unreasonable Effectiveness of HTML](https://x.com/trq212/status/2052809885763747935)

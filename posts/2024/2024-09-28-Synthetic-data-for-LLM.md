@@ -2,7 +2,7 @@
 type: article
 title:  "LLM 的合成数据"
 date:   2024-09-28 08:00:00 +0800
-tags: [synthetic, cosmopedia, phi, distilabel, argilla, datatrove, nanotron, lighteval, llm]
+tags: [synthetic-data, cosmopedia, distilabel, argilla, llm-swarm, data-generation, model-training, 数据增强, mixtral, llm]
 ---
 
 ## [Cosmopedia: 如何为预训练构建大规模合成数据集](https://huggingface.co/blog/zh/cosmopedia)

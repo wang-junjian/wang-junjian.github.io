@@ -2,7 +2,7 @@
 type: article
 title:  "Sourcegraph Cody"
 date:   2024-01-14 08:00:00 +0800
-tags: [sourcegraph, cody, aicodingassistant, githubcopilot]
+tags: [sourcegraph, cody, ai-coding-assistant, code-completion, code-search, tree-sitter, latency-optimization, llm]
 ---
 
 ## [Sourcegraph Cody](https://about.sourcegraph.com/)

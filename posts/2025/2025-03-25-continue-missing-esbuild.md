@@ -2,7 +2,7 @@
 type: article
 title:  "Continue 开发环境搭建时遇到了 esbuild 缺失问题"
 date:   2025-03-25 10:00:00 +0800
-tags: [Continue, GitHubCopilot, esbuild, Continue AICodingAssistant]
+tags: [continue, esbuild, ai-coding-assistant, github-copilot, vscode-extension, troubleshooting, nodejs, build-error, dependency-management]
 ---
 
 ```shell

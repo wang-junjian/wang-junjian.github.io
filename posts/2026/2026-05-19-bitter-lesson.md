@@ -2,7 +2,7 @@
 type: article
 title:  "惨痛的教训（The Bitter Lesson）"
 date:   2026-05-19 08:00:00 +0800
-tags: [人工智能, 教训, 里奇·萨顿]
+tags: [bitter-lesson, rich-sutton, 人工智能, 强化学习, 搜索, 机器学习, scaling-laws, compute, 算力]
 ---
 
 **AI 的未来不在于将人类现有的经验硬塞给机器，而在于设计出能够利用无限算力进行搜索与学习的“元方法”。**

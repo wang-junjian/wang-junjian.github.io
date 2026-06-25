@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw 智能体工作区指南：构建记忆与人格"
 date:   2026-02-13 10:00:00 +0800
-tags: [OpenClaw, Agent, Memory]
+tags: [openclaw, agent, memory, agent-workspace, personality, markdown, long-term-memory, heartbeat, hindsight, letta]
 ---
 
 **OpenClaw 智能体工作区**，旨在构建一个具有独立人格、长期记忆和自治能力的 AI。

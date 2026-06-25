@@ -2,7 +2,7 @@
 type: article
 title:  "Mac 外接显示器选购"
 date:   2024-11-08 10:00:00 +0800
-tags: [显示器, macbookprom2max]
+tags: [macbook-pro, external-display, 显示器, 4k, hdr, thunderbolt, hdmi, ips]
 ---
 
 ## [Apple MacBook Pro 16 M2 Max](https://support.apple.com/zh-cn/111340)

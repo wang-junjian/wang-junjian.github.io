@@ -2,7 +2,7 @@
 type: article
 title:  "探索生成式人工智能"
 date:   2025-03-31 08:00:00 +0800
-tags: [生成式AI, 人工智能, LLM]
+tags: [generative-ai, 生成式AI, llm, ai-coding-assistant, agent-mode, cursor, windsurf, cline, code-quality, software-development]
 ---
 
 - [Exploring Generative AI](https://martinfowler.com/articles/exploring-gen-ai.html)

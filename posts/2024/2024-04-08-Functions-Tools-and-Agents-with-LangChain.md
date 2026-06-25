@@ -2,7 +2,7 @@
 type: article
 title:  "Functions, Tools and Agents with LangChain"
 date:   2024-04-08 08:00:00 +0800
-tags: [deeplearningai, ]
+tags: [langchain, openai-function-calling, lcel, pydantic, tagging, extraction, tools, agents, deeplearning-ai]
 ---
 
 ## OpenAI Function Calling (OpenAI 函数调用)

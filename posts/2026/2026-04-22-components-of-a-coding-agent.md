@@ -2,7 +2,7 @@
 type: article
 title:  "编码智能体的核心组件（Sebastian Raschka）"
 date:   2026-04-22 08:00:00 +0800
-tags: [智能体, 编码智能体, LLM]
+tags: [智能体, 编码智能体, coding-agent, agent-framework, llm, tool-use, context-compression, memory, subagent, sebastian-raschka]
 ---
 
 编码智能体的核心组件——编码智能体如何借助工具、记忆与仓库上下文，让大语言模型在实际应用中更高效

@@ -2,7 +2,7 @@
 type: article
 title:  "CUA 评估额外信息"
 date:   2025-01-26 10:00:00 +0800
-tags: [cua, benchmark, openai]
+tags: [cua, benchmark, openai, osworld, webarena, webvoyager, evaluation, prompt-engineering]
 ---
 
 ## [CUA eval extra information](https://cdn.openai.com/cua/CUA_eval_extra_information.pdf)

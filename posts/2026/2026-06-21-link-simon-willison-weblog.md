@@ -2,7 +2,7 @@
 type: link
 title: "Simon Willison 的博客 - Django创始人、AI工程极客"
 date: 2026-06-21 22:56:00 +0800
-tags: [blog, simon-willison, ai, agent, django]
+tags: [blog, simon-willison, django, datasette, ai-agent, mcp, open-source, developer-tools]
 linkUrl: https://simonwillison.net/
 ---
 

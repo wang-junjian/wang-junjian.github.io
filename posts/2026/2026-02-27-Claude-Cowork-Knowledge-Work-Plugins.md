@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Cowork 知识工作插件（Knowledge Work Plugins）"
 date:   2026-02-27 08:00:00 +0800
-tags: [Cowork, Plugins, Claude, Anthropics]
+tags: [claude, claude-cowork, claude-code, plugins, knowledge-work, mcp, skills, slash-commands, ai-assistant, workplace-automation]
 ---
 
 知识工作插件（Knowledge Work Plugins）能将 Claude 打造为适配你岗位、团队与公司的专业助手。专为 **Claude Cowork** 打造，同时兼容 **Claude Code**。

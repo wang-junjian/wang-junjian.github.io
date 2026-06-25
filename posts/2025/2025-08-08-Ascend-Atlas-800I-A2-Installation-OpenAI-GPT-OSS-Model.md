@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（十一）：部署 OpenAI 开源模型 GPT-OSS"
 date:   2025-08-08 12:00:00 +0800
-tags: [昇腾, NPU, 910B4, Atlas800IA2, OpenAI, GPT-OSS, LLM, openEuler]
+tags: [昇腾, atlas-800i-a2, openai, gpt-oss, llama-cpp, llama-server, cann, gguf, npu, openeuler]
 ---
 
 本文档详细介绍了**如何在华为Atlas 800I A2推理服务器上部署OpenAI的GPT-OSS大型模型**。下载**GPT-OSS模型的GGUF版本**，并提供了**llama.cpp**部署方式的**安装与编译步骤**。文档还深入阐述了**llama-server的命令行参数**，展示了如何配置模型参数以优化性能，最后通过**实际测试**验证了模型的部署效果，并分析了多次调用后性能下降的原因，表明了**在NPU上进行LLM推理部署的复杂性及其性能考量**。

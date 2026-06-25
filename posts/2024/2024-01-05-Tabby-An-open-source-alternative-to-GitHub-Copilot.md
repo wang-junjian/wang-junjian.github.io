@@ -2,7 +2,7 @@
 type: article
 title:  "Tabby - GitHub Copilot 的开源替代解决方案"
 date:   2024-01-05 10:00:00 +0800
-tags: [tabby, codellm, githubcopilot, tabnine, leaderboard, deepseek-coder, ide, intellijidea, vscode, mps, cuda, nvidia-driver, curl]
+tags: [tabby, github-copilot, code-llm, deepseek-coder, ide, vscode, intellij-idea, cuda, leaderboard, tabnine]
 ---
 
 ## [Tabby](https://tabby.tabbyml.com/)

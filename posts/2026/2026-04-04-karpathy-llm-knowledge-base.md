@@ -2,7 +2,7 @@
 type: article
 title:  "Andrej Karpathy：大语言模型构建个人知识库的实践指南"
 date:   2026-04-04 10:00:00 +0800
-tags: [AndrejKarpathy, wiki, Obsidian, LLM]
+tags: [andrej-karpathy, llm, knowledge-base, obsidian, markdown, wiki, rag, personal-knowledge-management, second-brain, 知识库]
 ---
 
 <!-- more -->

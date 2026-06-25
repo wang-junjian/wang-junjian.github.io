@@ -2,7 +2,7 @@
 type: article
 title:  "Cursor 使用指南"
 date:   2024-08-29 08:00:00 +0800
-tags: [cursor, githubcopilot]
+tags: [cursor, ai-code-editor, code-assistant, code-completion, debugging, 智能编程, github-copilot]
 ---
 
 ## 安装与配置

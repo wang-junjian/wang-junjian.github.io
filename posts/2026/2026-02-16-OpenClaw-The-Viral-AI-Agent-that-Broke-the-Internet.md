@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw：打破互联网的病毒式 AI 智能体"
 date:   2026-02-16 10:00:00 +0800
-tags: [OpenClaw, Agent, Software Development, Vibe Coding]
+tags: [openclaw, ai-agent, peter-steinberger, lex-fridman, claude-cowork, mcp, agentic-os, saas-disruption, cobol-modernization]
 ---
 
 <!-- more -->

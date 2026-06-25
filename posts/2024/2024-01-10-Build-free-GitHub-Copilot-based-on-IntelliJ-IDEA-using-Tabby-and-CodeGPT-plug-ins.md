@@ -2,7 +2,7 @@
 type: article
 title:  "基于 IntelliJ IDEA 使用 Tabby 和 CodeGPT 插件搭建免费的 GitHub Copilot"
 date:   2024-01-10 08:00:00 +0800
-tags: [githubcopilot, intellijidea, tabby, codegpt, openai, codellm, llm]
+tags: [github-copilot, intellij-idea, tabby, codegpt, openai, code-llm, llm, deepseek-coder, chatglm3, ai-coding-assistant]
 ---
 
 ## 使用的模型

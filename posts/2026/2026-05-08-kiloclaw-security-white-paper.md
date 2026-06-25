@@ -2,7 +2,7 @@
 type: article
 title:  "KiloClaw 安全白皮书"
 date:   2026-05-08 08:00:00 +0800
-tags: [安全, KiloClaw, Kilo, KiloCode]
+tags: [kiloclaw, 安全, security-white-paper, tenant-isolation, firecracker, fly-io, cloudflare, openclaw, ai-agent]
 ---
 
 ## KiloClaw 安全

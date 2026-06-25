@@ -2,7 +2,7 @@
 type: article
 title:  "Together AI - The fastest cloud platform for building and running generative AI"
 date:   2024-04-06 08:00:00 +0800
-tags: [togetherai, llm]
+tags: [together-ai, llm, inference, cloud-platform, openai-api, rest-api, generative-ai, mixtral]
 ---
 
 > 用于构建和运行生成式人工智能的最快云平台

@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw v2026.3.24 重置指南：深度集成方舟 Coding Plan 与飞书渠道"
 date:   2026-03-27 08:00:00 +0800
-tags: [OpenClaw, Agent, 火山方舟, 飞书]
+tags: [openclaw, agent, configuration, onboarding, volcengine-ark, feishu, duckduckgo, gateway, dashboard]
 ---
 
 本文详解初始化配置向导，涉及安全确认、网络网关、模型提供商（火山引擎 ark-code-latest）、通讯渠道（飞书优先）等关键设置，以及相关命令的执行。还提供了配置文件示例，说明模型、网关、技能等参数配置方法，介绍了重启网关、模型配置与查看的操作。最后展示了 Web UI、TUI、飞书群聊及 macOS 客户端的使用与构建方式。

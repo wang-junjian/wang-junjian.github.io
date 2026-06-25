@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek R1: 通过强化学习激励 LLM 的推理能力"
 date:   2025-01-21 10:00:00 +0800
-tags: [deepseek-r1, llm, 强化学习]
+tags: [deepseek-r1, deepseek-r1-zero, llm, reinforcement-learning, reasoning, chain-of-thought, distillation, grpo, cold-start]
 ---
 
 - [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning](https://github.com/deepseek-ai/DeepSeek-R1/blob/main/DeepSeek_R1.pdf)

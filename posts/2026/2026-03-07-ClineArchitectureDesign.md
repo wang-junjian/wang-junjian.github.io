@@ -2,7 +2,7 @@
 type: article
 title:  "Cline 技术架构深度分析"
 date:   2026-03-07 08:00:00 +0800
-tags: [Cline, Architecture, Agent]
+tags: [cline, ai-coding-assistant, architecture-analysis, vs-code, cli, jet-brains, multi-host, mcp, checkpoints, human-in-the-loop]
 ---
 
 <!-- more -->

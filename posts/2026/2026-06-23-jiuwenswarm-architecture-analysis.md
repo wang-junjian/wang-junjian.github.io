@@ -2,7 +2,7 @@
 type: article
 title:  "JiuwenSwarm 架构设计、工作原理与核心模块深度剖析"
 date:   2026-06-23 23:59:00 +0800
-tags: [jiuwenswarm, agent, 智能体, 多智能体, swarm, 架构设计, 源码分析, glm-5.2]
+tags: [jiuwenswarm, agent, 智能体, 多智能体, swarm, 架构设计, 源码分析, skill-evolution, python, large-language-model]
 ---
 
 ## JiuwenSwarm 是什么？

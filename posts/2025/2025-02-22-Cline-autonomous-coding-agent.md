@@ -2,7 +2,7 @@
 type: article
 title:  "Cline: 自主编程助手"
 date:   2025-02-22 10:00:00 +0800
-tags: [cline, agent, ollama, llm, githubcopilot]
+tags: [cline, agent, ollama, llm, vscode-extension, github, mcp, coding-agent]
 ---
 
 ## 开发

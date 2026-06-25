@@ -2,7 +2,7 @@
 type: article
 title:  "大模型推理服务压测报告：vLLM、SGLang、LiteLLM 与 Higress 性能对比"
 date:   2025-03-03 10:00:00 +0800
-tags: [benchmark, llm, vllm, sglang, litellm, higress, t4, gpu, qwen]
+tags: [benchmark, vllm, sglang, litellm, higress, qwen, inference-server, evalscope, gpu, llm]
 ---
 
 ## 服务器配置

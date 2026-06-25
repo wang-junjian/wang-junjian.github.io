@@ -2,7 +2,7 @@
 type: article
 title:  "评估模型投资分析能力：京东健康案例"
 date:   2026-01-19 18:00:00 +0800
-tags: [Benchmark, 投资, 京东健康]
+tags: [benchmark, 投资, jd-health, llm, model-evaluation, grok, doubao, gemini, chatgpt, financial-analysis]
 ---
 
 优先使用：**豆包** 和 **Grok**

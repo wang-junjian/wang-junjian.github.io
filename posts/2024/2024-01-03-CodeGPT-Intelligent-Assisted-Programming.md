@@ -2,7 +2,7 @@
 type: article
 title:  "CodeGPT: 智能辅助编程"
 date:   2024-01-03 08:00:00 +0800
-tags: [codegpt, intellijidea, gguf, chatglm, deepseek-llm, llama, openai, gpt]
+tags: [codegpt, intellij-idea, gguf, chatglm, deepseek-coder, llama-2, openai, gpt, ai-coding-assistant, code-completion]
 ---
 
 ## 安装 [InteliJ IDEA](https://www.jetbrains.com/zh-cn/idea/)

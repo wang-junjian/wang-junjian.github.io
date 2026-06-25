@@ -2,7 +2,7 @@
 type: article
 title:  "监测推理模型的不当行为以及提升混淆的风险"
 date:   2025-04-19 10:00:00 +0800
-tags: [CoT, 监控, 推理模型, 奖励黑客, o3]
+tags: [chain-of-thought, cot-monitoring, reward-hacking, reasoning-model, o3-mini, gpt-4o, alignment, ai-safety, 监控, 推理模型]
 ---
 
 ## [Monitoring Reasoning Models for Misbehavior and the Risks of Promoting Obfuscation（监测推理模型的不当行为以及提升混淆的风险）](https://arxiv.org/abs/2503.11926)

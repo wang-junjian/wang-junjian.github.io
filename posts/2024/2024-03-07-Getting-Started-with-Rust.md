@@ -2,7 +2,7 @@
 type: article
 title:  "Rust 入门"
 date:   2024-03-07 08:00:00 +0800
-tags: [rust, gettingstarted]
+tags: [rust, cargo, rustup, programming-language, getting-started, installation, toolchain, 编程语言入门]
 ---
 
 ## Rust 安装

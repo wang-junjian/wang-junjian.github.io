@@ -2,7 +2,7 @@
 type: article
 title:  "Gradio DataFrame"
 date:   2024-04-21 08:00:00 +0800
-tags: [gradio, dataframe, text2sql]
+tags: [gradio, dataframe, pandas, csv, text2sql, python, data-visualization]
 ---
 
 ## Gradio DataFrame

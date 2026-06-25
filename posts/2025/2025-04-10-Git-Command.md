@@ -2,7 +2,7 @@
 type: article
 title:  "Git 命令"
 date:   2025-04-10 08:00:00 +0800
-tags: [Git, GitHub]
+tags: [git, github, version-control, branch, commit, pull-request, workflow, git-commands, collaboration]
 ---
 
 ## 使用 Git 的工作流程

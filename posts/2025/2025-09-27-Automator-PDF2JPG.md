@@ -2,7 +2,7 @@
 type: article
 title:  "macOS PDF2JPG（Automator）"
 date:   2025-09-27 08:00:00 +0800
-tags: [Automator, PDF2JPG, ImageMagick, PDF, macOS]
+tags: [automator, pdf2jpg, imagemagick, pdf, jpg, macos, 图像转换, 自动化, shell-script]
 ---
 
 本文档详细介绍了**如何在 macOS 上使用 Automator 创建一个快速操作将 PDF 文件转换为 JPG 格式，每页一张**。

@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（九）：Docker Swarm 分布式部署"
 date:   2025-07-31 10:00:00 +0800
-tags: [昇腾, NPU, 910B4, Atlas800IA2, vllm-ascend, vLLM, LLM, Docker]
+tags: [昇腾, atlas-800i-a2, npu, docker-swarm, vllm, vllm-ascend, qwen, coder-32b, distributed-deployment]
 ---
 
 该文本详细介绍了**在华为 Atlas 800I A2 推理服务器集群上使用 Docker Swarm 部署大型语言模型（LLM）的实践过程**。指导用户**初始化 Docker Swarm 管理器节点并添加工作节点**，以构建一个分布式计算环境。随后，文档展示了**如何创建一个 Docker Stack 配置文件**来部署两个不同的 LLM 服务（Qwen3-30B 和 Coder-32B），并说明了**如何将容器映射到昇腾 NPU 设备**。最后，文本提供了**部署、检查服务状态以及故障排除（如禁用 firewalld）的命令**，并指出此次实验部署`未能成功`❌。

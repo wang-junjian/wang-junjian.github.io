@@ -2,7 +2,7 @@
 type: article
 title:  "未来 5 年公司智算需求预测"
 date:   2025-12-01 10:00:00 +0800
-tags: [AI, 智算, 算力]
+tags: [ai-computing, 智算, 算力, fp16, ascend-910b, nvidia-t4, pflops, compute-prediction]
 ---
 
 用半精度浮点数（FP16）计算能力评估服务器的智能计算能力，服务器算力=处理器芯片数`x`每时钟周期执行单精度浮点运算次数`x`处理器主频`x`处理器核数。

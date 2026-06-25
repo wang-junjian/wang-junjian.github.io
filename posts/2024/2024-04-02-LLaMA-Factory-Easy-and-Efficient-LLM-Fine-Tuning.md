@@ -2,7 +2,7 @@
 type: article
 title:  "LLaMA Factory: Easy and Efficient LLM Fine-Tuning"
 date:   2024-04-02 08:00:00 +0800
-tags: [llama-factory, llama, llm, fine-tuning]
+tags: [llama-factory, llm, fine-tuning, llama, modelscope, web-ui, training-framework]
 ---
 
 - [LLaMA Factory](https://github.com/hiyouga/LLaMA-Factory/blob/main/README_zh.md)

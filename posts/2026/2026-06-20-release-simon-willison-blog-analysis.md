@@ -2,7 +2,7 @@
 type: release
 title: "研究 Simon Willison 的博客设计风格和内容组织方式"
 date: 2026-06-20 16:00:00 +0800
-tags: [blog, design, analysis]
+tags: [blog, blog-design, content-organization, simon-willison, personal-knowledge-management, astro, django, content-types]
 linkUrl: https://www.kimi.com/share/19eea1ae-0fc2-8756-8000-00008ad27425
 ---
 

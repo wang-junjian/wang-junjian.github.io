@@ -2,7 +2,7 @@
 type: article
 title:  "Langfuse: Open Source LLM Engineering Platform"
 date:   2024-09-14 08:00:00 +0800
-tags: [langfuse, litellm, llm]
+tags: [langfuse, llm-observability, prompt-management, llm-evaluation, docker, litellm, tracing, llm]
 ---
 
 ## Langfuse

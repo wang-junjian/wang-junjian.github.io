@@ -2,7 +2,7 @@
 type: article
 title:  "Gemini CLI - 开源命令行 AI 智能体"
 date:   2025-06-28 08:00:00 +0800
-tags: [GeminiCLI, Agent, Gemini, LLM, 软件开发, Install]
+tags: [gemini-cli, gemini, ai-agent, cli, nodejs, npm, mcp, llm, 软件开发]
 ---
 
 Gemini CLI 是一个专为软件开发者设计的、由AI驱动的交互式命令行工具。作为一个智能助手，它可以直接在您的终端中帮助您完成各种软件工程任务，例如解释代码、编写新功能、修复错误和自动化工作流程。它能够理解您项目的上下文，安全地读写文件、执行命令，并与您协作，从而提高开发效率，是您开发流程中的得力伙伴。

@@ -2,7 +2,7 @@
 type: article
 title:  "Phi-3-vision-128k-instruct 微软开源多模态大模型"
 date:   2024-05-24 08:00:00 +0800
-tags: [phi3, ocr, llm]
+tags: [phi3, phi-3-vision, ocr, llm, mllm, microsoft, vision-language, image-understanding]
 ---
 
 ## [Phi-3-vision-128k-instruct](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)

@@ -2,7 +2,7 @@
 type: article
 title:  "LLaMA-Factory 微调 Text2SQL"
 date:   2024-05-07 08:00:00 +0800
-tags: [llama-factory, fine-tuning, text2sql, lora, qwen]
+tags: [llama-factory, fine-tuning, text2sql, lora, qwen, peft, supervised-fine-tuning, alpaca, modelscope]
 ---
 
 ## 安装 [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory/blob/main/README_zh.md)

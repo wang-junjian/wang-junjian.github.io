@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain Text2SQL Agent"
 date:   2024-04-12 08:00:00 +0800
-tags: [langchain, text2sql, agent]
+tags: [langchain, text2sql, agent, function-calling, chattongyi, ollama, dashscope, qwen, llm]
 ---
 
 ## OpenAI Function Call (Extraction)

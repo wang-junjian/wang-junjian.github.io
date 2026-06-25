@@ -2,7 +2,7 @@
 type: article
 title:  "Claude API: Computer use"
 date:   2025-02-01 12:00:00 +0800
-tags: [claude, api, agent, anthropics]
+tags: [claude, computer-use, agent, api, anthropic, docker, tool-use, python]
 ---
 
 - [Claude API - Computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use)

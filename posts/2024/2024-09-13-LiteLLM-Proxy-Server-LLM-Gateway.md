@@ -2,7 +2,7 @@
 type: article
 title:  "LiteLLM: [Python SDK] [Proxy Server (LLM Gateway)]"
 date:   2024-09-13 08:00:00 +0800
-tags: [litellm, aigateway, langfuse, llm]
+tags: [litellm, ai-gateway, proxy-server, python-sdk, langfuse, ollama, openai-compatible, llm]
 ---
 
 ## LiteLLM Proxy Server (LLM Gateway)

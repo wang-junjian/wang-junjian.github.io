@@ -2,7 +2,7 @@
 type: article
 title:  "Cline 工具参考指南"
 date:   2025-04-23 08:00:00 +0800
-tags: [Cline, Tools, ClineDoc]
+tags: [cline, tools, mcp, file-operations, terminal-commands, code-analysis, vscode-extension, ai-coding-assistant, cline-doc, 工具参考]
 ---
 
 # [Cline 工具参考指南](https://github.com/cline/cline/blob/main/docs/tools/cline-tools-guide.md)

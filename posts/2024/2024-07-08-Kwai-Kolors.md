@@ -2,7 +2,7 @@
 type: article
 title:  "Kwai-Kolors 快手可图"
 date:   2024-07-08 08:00:00 +0800
-tags: [text2image, kolors]
+tags: [kolors, kwai-kolors, text-to-image, diffusion-model, image-generation, huggingface]
 ---
 
 ## [Kolors](https://kolors.kuaishou.com/)

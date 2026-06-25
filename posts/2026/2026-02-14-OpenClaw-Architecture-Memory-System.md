@@ -2,7 +2,7 @@
 type: article
 title:  "🦞 本地 AI 助手 OpenClaw 的架构与记忆系统"
 date:   2026-02-14 10:00:00 +0800
-tags: [OpenClaw, Agent, Memory]
+tags: [openclaw, ai-agent, local-first, memory-system, markdown, rag, sqlite-vec, 长时记忆, 心跳机制, 多模态]
 ---
 
 **🦞 OpenClaw** 是一个**本地优先（Local-First）、高度自治、基于 Markdown 记忆管理**的 AI Agent（智能体）系统。

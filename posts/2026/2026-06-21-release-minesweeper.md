@@ -2,7 +2,7 @@
 type: release
 title: "扫雷：浏览器本地益智游戏"
 date: 2026-06-21 23:11:00 +0800
-tags: [tool, game, minesweeper, puzzle, browser]
+tags: [tool, game, minesweeper, puzzle, browser, html, javascript, css, mobile]
 linkUrl: https://wangjunjian.com/tools/minesweeper.html
 ---
 

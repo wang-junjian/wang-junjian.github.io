@@ -2,7 +2,7 @@
 type: article
 title:  "continue: config.yaml Reference"
 date:   2025-03-15 10:00:00 +0800
-tags: [Continue, AICodingAssistant, config.yaml, GitHubCopilot]
+tags: [continue, ai-coding-assistant, config-yaml, mcp, prompt, model, yaml, vscode]
 ---
 
 [config.yaml Reference](https://docs.continue.dev/yaml-reference)

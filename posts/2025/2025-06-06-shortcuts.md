@@ -2,7 +2,7 @@
 type: article
 title:  "快捷键大全"
 date:   2025-06-06 08:00:00 +0800
-tags: [快捷键, macOS, Terminal, Tmux, Screen, VSCode, Vim, GitHub Copilot]
+tags: [快捷键, macos, terminal, tmux, screen, vscode, vim, github-copilot]
 ---
 
 | 类别                | 列表 |

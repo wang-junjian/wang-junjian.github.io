@@ -2,7 +2,7 @@
 type: article
 title:  "部署 DeepSeek-R1 蒸馏模型"
 date:   2025-02-14 10:00:00 +0800
-tags: [deepseek-r1, vllm, qwen, jan, llm]
+tags: [deepseek-r1, vllm, qwen, jan, ollama, model-deployment, llm, reasoning, gpu]
 ---
 
 ## GPU 服务器

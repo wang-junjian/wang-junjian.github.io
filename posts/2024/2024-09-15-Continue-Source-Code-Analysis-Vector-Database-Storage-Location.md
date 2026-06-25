@@ -2,7 +2,7 @@
 type: article
 title:  "Continue 源码分析 - 向量数据库存储位置"
 date:   2024-09-15 08:00:00 +0800
-tags: [continue, lancedb, githubcopilot]
+tags: [continue, lancedb, vector-database, embeddings, source-code-analysis, github-copilot, 向量数据库, typescript]
 ---
 
 ## 向量数据库存储位置

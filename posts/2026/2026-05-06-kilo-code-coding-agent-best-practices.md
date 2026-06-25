@@ -2,7 +2,7 @@
 type: article
 title:  "研究编码智能体（Kilo Code）开源项目的最佳实践"
 date:   2026-05-06 08:00:00 +0800
-tags: [智能体, Kilo, KiloCode]
+tags: [kilo-code, 智能体, coding-agent, open-source-research, best-practices, roo-code, cline, vs-code-extension, agentic-engineering, mcp]
 ---
 
 ## 研究编码智能体开源项目的最佳实践

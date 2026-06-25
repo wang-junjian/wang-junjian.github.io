@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（六）：vLLM 部署 LLM"
 date:   2025-07-26 18:00:00 +0800
-tags: [昇腾, NPU, 910B4, Atlas800IA2, vllm-ascend, vLLM, LLM, openEuler]
+tags: [昇腾, atlas-800i-a2, npu, vllm, vllm-ascend, docker-compose, qwen, deepseek-v3, tensor-parallel]
 ---
 
 本文档重点介绍了如何使用 **vLLM-ascend 容器镜像**来部署各种 **Qwen 和 DeepSeek-V3 模型**，既提供了**直接使用 Docker 命令**的示例，也展示了通过 **Docker Compose** 进行多模型部署的方法。此外，文章还包含了**模型部署后的测试方法**。

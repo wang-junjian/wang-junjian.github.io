@@ -2,7 +2,7 @@
 type: article
 title:  "Chat Extensions (VS Code)"
 date:   2024-12-10 10:00:00 +0800
-tags: [chatextensions, githubcopilot, chatparticipant, agent, vscode]
+tags: [vscode, chat-extension, github-copilot, chat-participant, language-model-api, slash-command, extension-development, disambiguation]
 ---
 
 - [Chat extensions](https://code.visualstudio.com/api/extension-guides/chat)

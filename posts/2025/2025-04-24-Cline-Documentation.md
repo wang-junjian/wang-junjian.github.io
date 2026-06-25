@@ -2,7 +2,7 @@
 type: article
 title:  "Cline Documentation"
 date:   2025-04-24 12:00:00 +0800
-tags: [Cline, ClineDoc]
+tags: [cline, cline-doc, vscode-extension, ai-coding-assistant, openrouter, react, typescript, mcp, 文档, 入门指南]
 ---
 
 # Cline 文档目录

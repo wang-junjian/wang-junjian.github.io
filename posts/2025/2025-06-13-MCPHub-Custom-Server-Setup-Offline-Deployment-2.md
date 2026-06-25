@@ -2,7 +2,7 @@
 type: article
 title:  "MCPHub 自定义服务器配置及内网部署（二）"
 date:   2025-06-13 08:00:00 +0800
-tags: [MCP, MCPHub, MCPServer, mcp-server-time, pypiserver, Python, 离线, 内网部署]
+tags: [mcphub, mcp, mcp-server, pypiserver, verdaccio, python, docker-compose, 离线, 内网部署]
 ---
 
 本文档指导用户**构建一个本地 PyPI 源**，以便持久化存储 Python 包并进行离线安装。接着，文档**说明了自定义 MCPHub 配置**，包括定义 MCP 服务器市场中的服务（例如：mcp-server-time, calculator-mcp-server）以及调整 MCPHub 自身的运行时设置，例如指定本地 PyPI 源和用户认证信息。

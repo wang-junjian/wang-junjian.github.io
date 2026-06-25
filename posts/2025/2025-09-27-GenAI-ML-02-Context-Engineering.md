@@ -2,7 +2,7 @@
 type: article
 title:  "【生成式人工智慧与机器学习导论2025】第二讲：上下文工程 (Context Engineering) — AI Agent 背后的关键技术"
 date:   2025-09-27 20:00:00 +0800
-tags: [ContextEngineering, 上下文工程, 智能体, 生成式人工智慧与机器学习导论2025, 李宏毅]
+tags: [context-engineering, 上下文工程, ai-agent, 智能体, rag, retrieval-augmented-generation, 李宏毅, 生成式人工智慧与机器学习导论2025]
 ---
 
 Context Engineering（上下文工程）是为解决 AI Agent 时代输入过长，避免塞爆 Context 的关键技术。其基本概念是 **“把需要的放進去，不需要的清出來”**。常用招数（基本方法）包括：

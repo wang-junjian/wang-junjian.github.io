@@ -2,7 +2,7 @@
 type: article
 title: "浏览器原生语音合成（TTS）开发经验"
 date: 2026-06-24 22:45:00 +0800
-tags: [tts, web-speech-api, browser, javascript, speech-synthesis]
+tags: [tts, text-to-speech, web-speech-api, speech-synthesis, browser, frontend, javascript]
 ---
 
 最近先后在站点上线了两个纯前端的朗读工具：[Read Aloud](/tools/read-aloud.html) 和 [智能朗读阅读器](/tools/reading-companion.html)。两者都基于浏览器的 Web Speech API 实现，没有后端、没有上传、没有第三方语音服务。开发过程中踩了一些坑，也积累了一些可复用的经验，记录如下。

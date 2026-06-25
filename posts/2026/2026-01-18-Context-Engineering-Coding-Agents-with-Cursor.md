@@ -2,7 +2,7 @@
 type: article
 title:  "Cursor 的上下文工程与编程智能体"
 date:   2026-01-18 08:00:00 +0800
-tags: [Cursor, ContextEngineering, CodingAgents, AIProgramming]
+tags: [cursor, context-engineering, coding-agents, ai-programming, composer, bugbot, rag, code-assistant, multi-agent, computer-use]
 ---
 
 《Context Engineering & Coding Agents with Cursor》（Cursor 的上下文工程与编程智能体），由 Cursor 团队成员 Lee 和 CEO Michael 主讲。视频深入探讨了软件开发的演变、Cursor 如何利用 AI 提升编程效率，以及未来编程智能体的发展方向。

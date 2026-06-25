@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Managed Agents（托管智能体）开发者参考指南"
 date:   2026-04-11 10:00:00 +0800
-tags: [Claude, ManagedAgents, Agent]
+tags: [claude, managed-agents, anthropic, ai-agent, mcp, sse, multi-agent, memory, ant-cli, beta]
 ---
 
 <!-- more -->

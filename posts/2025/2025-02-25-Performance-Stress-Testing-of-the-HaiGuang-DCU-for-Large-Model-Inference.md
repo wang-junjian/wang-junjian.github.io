@@ -2,7 +2,7 @@
 type: article
 title:  "海光 DCU 的大模型推理性能压测"
 date:   2025-02-25 10:00:00 +0800
-tags: [海光, hygon, dcu, vllm, evalscope-perf, evalscope, benchmark, llm]
+tags: [海光, hygon, dcu, vllm, evalscope, benchmark, llm, qwen, litellm]
 ---
 
 ## 服务器配置

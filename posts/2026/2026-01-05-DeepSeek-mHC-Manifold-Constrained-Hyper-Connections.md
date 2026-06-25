@@ -2,7 +2,7 @@
 type: article
 title:  "深度网络连接范式演进：残差连接 → 超连接 (HC) → 流形约束超连接 (mHC)"
 date:   2026-01-07 08:00:00 +0800
-tags: [mHC, ResNet, Hyper-Connections, DeepSeek]
+tags: [deepseek, mhc, hyper-connections, resnet, manifold-constrained, neural-network, transformer, deep-learning, 流形约束超连接, 残差连接]
 ---
 
 ![](/images/2026/DeepSeek/mHC/cover.png)

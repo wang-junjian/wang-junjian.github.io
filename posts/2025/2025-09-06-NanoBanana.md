@@ -2,7 +2,7 @@
 type: article
 title:  "Google Nano Banana"
 date:   2025-09-06 08:00:00 +0800
-tags: [NanoBanana, AI, Google, VLM]
+tags: [nano-banana, google, gemini-2.5-flash, google-ai-studio, vlm, image-generation, ai]
 ---
 
 <!-- more -->

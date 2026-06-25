@@ -2,7 +2,7 @@
 type: article
 title:  "大模型实战评测：语言 vs 推理 vs 代码"
 date:   2025-03-17 10:00:00 +0800
-tags: [Benchmark, LLM, Qwen, DeepSeek]
+tags: [benchmark, llm, qwen, deepseek, reasoning-model, code-model, evaluation, model-comparison]
 ---
 
 ## 总结

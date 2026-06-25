@@ -2,7 +2,7 @@
 type: article
 title:  "Higress AI Gateway"
 date:   2024-09-10 08:00:00 +0800
-tags: [higress, aigateway, envoy, istio, llm]
+tags: [higress, ai-gateway, api-gateway, envoy, istio, llm, docker, 云原生]
 ---
 
 ## Higress

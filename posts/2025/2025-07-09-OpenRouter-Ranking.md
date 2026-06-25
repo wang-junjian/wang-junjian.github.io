@@ -2,7 +2,7 @@
 type: article
 title:  "大模型风向标！OpenRouter平台谁最火？热门应用大揭秘！"
 date:   2025-07-09 20:00:00 +0800
-tags: [OpenRouter, LLM, AI应用, 模型排名, AI趋势]
+tags: [openrouter, llm, ai-apps, model-ranking, model-routing, gemini, claude, deepseek, ai-trends]
 ---
 
 OpenRouter 是一个创新的统一 API 平台，旨在简化开发者和企业对数百种大型语言模型（LLMs）的访问和使用，提供一个与 OpenAI Chat API 类似的标准化接口，让用户能够通过单一入口轻松切换并调用来自不同提供商（如 OpenAI、Anthropic、Google 等）的模型。它不仅能根据成本、性能等需求智能路由请求，帮助优化开销，还提供统一账单和实时数据洞察，极大地降低了多模型集成的复杂性，提升了 AI 应用开发的效率和灵活性。

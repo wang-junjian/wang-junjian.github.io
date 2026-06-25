@@ -2,7 +2,7 @@
 type: article
 title:  "AI编码助手代码归因与贡献占比量化系统设计"
 date:   2026-06-07 06:00:00 +0800
-tags: [AI编码助手, 代码归因, 贡献占比, MinHash, AST, LSH]
+tags: [ai-coding-assistant, 代码归因, 贡献占比, minhash, ast, lsh, code-fingerprint, code-attribution, plagiarism-detection, ai-generated-code]
 ---
 
 这是一个非常实际的工业需求。MinHash 在这个场景中**不是直接检测"是否 AI 生成"**，而是作为**代码指纹匹配引擎**，追踪"AI 原始输出 → 人修改后最终代码"的相似度与存活比例。

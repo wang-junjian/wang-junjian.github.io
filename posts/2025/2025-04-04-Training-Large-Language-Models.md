@@ -2,7 +2,7 @@
 type: article
 title:  "利用多张 GPU 训练大语言模型"
 date:   2025-04-04 12:00:00 +0800
-tags: [Train, LLM, DeepSpeed, ZeRO, FlashAttention, Quantization, 李宏毅, 2025]
+tags: [llm-training, multi-gpu, deepspeed, flash-attention, quantization, liger-kernel, distributed-training, gpu-cluster, 李宏毅, 2025]
 ---
 
 ![](/images/2025/TrainingLargeLanguageModels/训练大语言模型.002.jpeg)

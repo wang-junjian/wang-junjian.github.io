@@ -2,7 +2,7 @@
 type: article
 title:  "Anthropic：面向长时间运行应用开发的 Harness 设计"
 date:   2026-03-29 08:00:00 +0800
-tags: [Agent, HarnessEngineering, Anthropic, Claude]
+tags: [anthropic, claude, harness-engineering, long-running-agents, multi-agent, claude-agent-sdk, playwright, frontend-design, evaluator]
 ---
 
 在智能体（Agentic）编程的前沿领域，Harness 设计（测试与运行框架设计）是性能表现的关键。以下是我们如何推动 Claude 在前端设计和长时间运行的自主软件工程中进一步突破的实践。

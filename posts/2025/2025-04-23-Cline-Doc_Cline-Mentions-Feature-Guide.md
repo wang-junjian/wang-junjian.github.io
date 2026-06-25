@@ -2,7 +2,7 @@
 type: article
 title:  "Cline Mentions 功能指南"
 date:   2025-04-23 06:00:00 +0800
-tags: [Cline, Mentions, ClineDoc]
+tags: [cline, mentions, context-management, file-references, url-references, git-integration, vscode-extension, ai-coding-assistant, cline-doc, 上下文管理]
 ---
 
 # [Cline 提及功能指南](https://github.com/cline/cline/blob/main/docs/tools/mentions-guide.md)

@@ -2,7 +2,7 @@
 type: article
 title:  "探索多模态大模型 Qwen2.5-VL"
 date:   2025-06-17 08:00:00 +0800
-tags: [Qwen2.5-VL, 多模态, Qwen, LLM, ModelScope, vLLM, 火灾, 烟雾]
+tags: [qwen2.5-vl, qwen, multimodal-llm, vlm, vllm, modelscope, openai-api, vision-language-model, 多模态, 安全检测]
 ---
 
 本文档提供了一篇关于**Qwen2.5-VL 多模态大模型**的详细指南，涵盖了从模型架构、性能到实际部署和使用的各个方面。它不仅介绍了如何**下载不同版本**（如 3B 和 7B Instruct）的模型，还提供了**安装和启动模型**的命令行指令。此外，文档还展示了如何**通过 cURL 命令测试模型**，并给出了一个**使用 OpenAI API 与 Qwen2.5-VL 进行交互的 Python 示例代码**，该代码专注于图像中的火灾、烟雾和安全帽佩戴情况检测，支持本地和网络图片。

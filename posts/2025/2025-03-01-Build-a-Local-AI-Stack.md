@@ -2,7 +2,7 @@
 type: article
 title:  "构建本地 AI 技术栈"
 date:   2025-03-01 10:00:00 +0800
-tags: [aistack, langfuse, litellm, chatbox, llm]
+tags: [litellm, langfuse, ollama, chatbox, local-ai, llm, proxy, docker, observability]
 ---
 
 ## 构建环境

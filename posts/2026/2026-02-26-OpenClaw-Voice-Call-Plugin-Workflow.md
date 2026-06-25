@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw Voice Call 插件使用方法和工作流程详解"
 date:   2026-02-26 18:00:00 +0800
-tags: [OpenClaw, VoiceCall]
+tags: [openclaw, voice-call, twilio, telnyx, plivo, tts, stt, webhook, cpaas, sip]
 ---
 
 <!-- more -->

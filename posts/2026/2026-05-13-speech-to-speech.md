@@ -2,7 +2,7 @@
 type: article
 title:  "Speech To Speech：使用开源模型构建本地语音智能体"
 date:   2026-05-13 20:00:00 +0800
-tags: [Speech To Speech, 语音智能体, Hugging Face, Reachy Mini]
+tags: [speech-to-speech, 语音智能体, vad, stt, tts, hugging-face, whisper, qwen3-tts, mlx, openai-realtime]
 ---
 
 ## 方法

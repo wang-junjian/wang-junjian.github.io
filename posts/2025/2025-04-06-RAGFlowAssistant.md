@@ -2,7 +2,7 @@
 type: article
 title:  "RAGFlowAssistant"
 date:   2025-04-06 08:00:00 +0800
-tags: [RAGFlow, ragflow-sdk, GitHubCopilot]
+tags: [ragflow, ragflow-sdk, rag, knowledge-base, chatbot, python, assistant, streamlit, retrieval-augmented-generation]
 ---
 
 ## 初始化

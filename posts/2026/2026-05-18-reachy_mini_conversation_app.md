@@ -2,7 +2,7 @@
 type: article
 title:  "Reachy Mini Conversation App"
 date:   2026-05-18 20:00:00 +0800
-tags: [reachy_mini_conversation_app, 语音智能体, Hugging Face, Reachy Mini]
+tags: [reachy-mini-conversation-app, reachy-mini, 语音智能体, speech-to-speech, gradio, mediapipe, yolo, smolvlm, fastapi, 运动控制]
 ---
 
 ## 源码安装

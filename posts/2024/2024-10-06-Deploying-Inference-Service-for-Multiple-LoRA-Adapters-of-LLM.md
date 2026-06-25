@@ -2,7 +2,7 @@
 type: article
 title:  "部署 LLM 多 LoRA 适配器的推理服务"
 date:   2024-10-03 10:00:00 +0800
-tags: [tgi, vllm, lora, huggingface, llm]
+tags: [lora, vllm, text-generation-inference, multi-lora, llm-inference, hugging-face, mistral, nvidia-nim]
 ---
 
 ## Text Generation Inference

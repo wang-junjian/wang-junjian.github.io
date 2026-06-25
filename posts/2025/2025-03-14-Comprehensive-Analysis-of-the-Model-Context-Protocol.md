@@ -2,7 +2,7 @@
 type: article
 title:  "模型上下文协议 (MCP) 全面解析：原理、应用与实现"
 date:   2025-03-14 10:00:00 +0800
-tags: [mcp, agent, gemini, deepresearch, llm]
+tags: [mcp, model-context-protocol, architecture, json-rpc, sdk, security, interoperability, llm, gemini, deepresearch]
 ---
 
 ![](/images/2025/MCP/mcp-architecture.png)

@@ -2,7 +2,7 @@
 type: release
 title: "智能朗读阅读器：浏览器本地中英文长文朗读工具"
 date: 2026-06-24 21:36:00 +0800
-tags: [tool, tts, reader, web-speech-api, browser, reading-companion]
+tags: [tool, tts, text-to-speech, reading-companion, reader, web-speech-api, speech-synthesis, browser, localstorage]
 linkUrl: https://wangjunjian.com/tools/reading-companion.html
 ---
 

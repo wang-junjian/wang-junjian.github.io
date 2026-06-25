@@ -2,7 +2,7 @@
 type: article
 title:  "macOS Finder 中的“反向选择”功能实现(Automator)"
 date:   2026-04-11 13:00:00 +0800
-tags: [macOS, Automator, AppleScript, Finder]
+tags: [macos, finder, automator, applescript, quick-action, inverse-selection, automation, 快捷操作]
 ---
 
 <!-- more -->

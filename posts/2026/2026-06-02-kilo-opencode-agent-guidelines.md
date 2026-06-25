@@ -2,7 +2,7 @@
 type: article
 title:  "KiloCode AGENTS.md - OpenCode 智能体指南"
 date:   2026-06-02 08:00:00 +0800
-tags: [Kilo, AGENTS.md, OpenCode, Agent Guidelines, Kilo Code]
+tags: [kilocode, opencode, agents-md, typescript, bun, zod, solidjs, hono, vercel-ai-sdk, 智能体指南]
 ---
 
 ## 构建/测试 (Build/Test)

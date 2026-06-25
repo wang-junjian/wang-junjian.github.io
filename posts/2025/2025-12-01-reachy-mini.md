@@ -2,6 +2,7 @@
 type: article
 title:  ""
 date:   2025-12-01 08:00:00 +0800
+tags: [reachy-mini, mujoco, python, conda, robotics, simulation]
 ---
 
 <!-- more -->

@@ -2,7 +2,7 @@
 type: article
 title:  "LongCat-Flash-Thinking-2601 技术报告"
 date:   2026-01-24 10:00:00 +0800
-tags: [MeiTuan, LongCat, LLM, Heavy Thinking, Zigzag Attention]
+tags: [longcat-flash-thinking-2601, meituan, llm, agentic-reasoning, heavy-thinking, zigzag-attention, reinforcement-learning, sparse-attention, long-context, moe]
 ---
 
 **LongCat-Flash-Thinking-2601** 创新性地开启了**全栈式的智能体推理（Agentic Reasoning）训练体系与架构优化**。首先，提出了**自动化的环境扩展流水线**，构建了覆盖 20 多个领域的高质量、可执行且可验证的智能体环境，有效解决了真实世界中复杂智能体交互数据匮乏的难题。其次，针对现实任务的不确定性，创新性地引入了**鲁棒性智能体训练流程**，通过系统性分析现实噪声模式并采用**课程强化学习（Curriculum RL）**将噪声整合进训练，显著增强了模型在非理想环境下的泛化与生存能力。在底层支撑上，扩展了**异步强化学习框架 DORA** 以支持高达 32,000 个环境的大规模并发训练，并引入了 **Heavy Thinking（深思考）模式**，通过在推理阶段同时扩展思考的深度与广度（Test-time Scaling），进一步突破了复杂任务的性能边界。此外，还设计了 **Zigzag Attention** 稀疏注意力机制，使模型能以极低开销实现高达 **100 万 token 的长上下文扩展**，为长程智能体任务提供了坚实的架构基础。
