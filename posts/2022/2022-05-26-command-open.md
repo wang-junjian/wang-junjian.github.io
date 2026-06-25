@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令open"
 date:   2022-05-26 00:00:00 +0800
-categories: 操作系统
 tags: [command]
 ---
 

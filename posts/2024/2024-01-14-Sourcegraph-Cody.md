@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Sourcegraph Cody"
 date:   2024-01-14 08:00:00 +0800
-categories: [AI 开发工具, AI 与大模型]
 tags: [sourcegraph, cody, aicodingassistant, githubcopilot]
 ---
 

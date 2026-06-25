@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于 Pi Agent SDK 适配 OpenAI 兼容接口"
 date:   2026-05-20 08:00:00 +0800
-categories: [人工智能, 智能体]
 tags: [Pi Agent, SDK, TypeScript, Ollama, LongCat]
 ---
 

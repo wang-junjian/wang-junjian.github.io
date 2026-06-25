@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title: "浏览器原生语音合成（TTS）开发经验"
 date: 2026-06-24 22:45:00 +0800
-categories: [前端开发]
 tags: [tts, web-speech-api, browser, javascript, speech-synthesis]
 ---
 

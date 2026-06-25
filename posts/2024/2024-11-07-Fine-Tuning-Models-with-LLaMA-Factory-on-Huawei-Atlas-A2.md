@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "华为 Atlas A2 上使用 LLaMA-Factory 模型微调"
 date:   2024-11-07 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [atlas800, npu, llama-factory, fine-tuning, llm]
 ---
 

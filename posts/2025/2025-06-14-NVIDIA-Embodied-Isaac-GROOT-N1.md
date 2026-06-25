@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "具身模型 NVIDIA Isaac GROOT N1 详解"
 date:   2025-06-14 20:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [具身智能, GROOT-N1, Isaac, NVIDIA]
 ---
 

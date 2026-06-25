@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在Ubuntu上下载docker和nvidia-docker2离线安装包"
 date:   2020-12-02 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [ubuntu, docker, nvidia-docker2, offline]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "直接和它对话——智能体工程的实用指南"
 date:   2026-02-15 18:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [Agent, Software Development, Vibe Coding, Agentic Engineering, Peter Steinberger, OpenClaw, OpenClaw AgenticEngineering]
 ---
 

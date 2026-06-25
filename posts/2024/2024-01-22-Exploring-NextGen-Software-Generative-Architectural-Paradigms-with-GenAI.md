@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "UnitMesh: AI 赋能软件研发全流程"
 date:   2024-01-22 08:00:00 +0800
-categories: [编程开发, AI 开发工具]
 tags: [unitmesh, autodev, chocolatefactory, studiob3, unitgen, archguard, aicodingassistant, githubcopilot]
 ---
 

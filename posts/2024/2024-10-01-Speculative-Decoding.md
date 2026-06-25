@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "推测解码 (Speculative Decoding)"
 date:   2024-10-01 10:00:00 +0800
-categories: AI 与大模型
 tags: [speculativedecoding, llm, inference]
 ---
 

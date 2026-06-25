@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenAI: 构建智能体的实用指南"
 date:   2025-04-21 19:00:00 +0800
-categories: [AI 与大模型, 教程实践]
 tags: [OpenAI, Agent, Guardrails]
 ---
 

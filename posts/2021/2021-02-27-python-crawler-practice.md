@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Python爬虫实践"
 date:   2021-02-27 00:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: [crawler]
 ---
 

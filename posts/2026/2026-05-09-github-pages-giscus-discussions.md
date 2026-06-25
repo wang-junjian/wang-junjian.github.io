@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "给 GitHub Pages 博客加评论：用 Giscus 开启原生的 Discussions 方案"
 date:   2026-05-09 22:00:00 +0800
-categories: [博客]
 tags: [GitHub Pages, Giscus, 评论系统, GitHub Discussions]
 ---
 

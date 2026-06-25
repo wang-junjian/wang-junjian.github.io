@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenAI o3 and o4-mini System Card"
 date:   2025-04-19 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [OpenAI, o3, o4-mini, System Card]
 ---
 

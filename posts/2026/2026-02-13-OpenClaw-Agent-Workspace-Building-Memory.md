@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenClaw 智能体工作区指南：构建记忆与人格"
 date:   2026-02-13 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [OpenClaw, Agent, Memory]
 ---
 

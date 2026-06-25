@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Hermes 与 OpenClaw —— 该选哪个智能体？"
 date:   2026-05-09 12:00:00 +0800
-categories: [人工智能, 智能体]
 tags: [Hermes, OpenClaw, Kilo]
 ---
 

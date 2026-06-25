@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenClaw：打破互联网的病毒式 AI 智能体"
 date:   2026-02-16 10:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [OpenClaw, Agent, Software Development, Vibe Coding]
 ---
 

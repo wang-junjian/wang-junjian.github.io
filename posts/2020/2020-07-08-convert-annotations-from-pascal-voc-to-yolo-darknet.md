@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "将注释从PASCAL VOC转换为YOLO Darknet"
 date:   2020-07-08 00:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [voc, yolo, format, xml]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Continue 源码分析"
 date:   2024-07-15 08:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: [continue, githubcopilot]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "未来 5 年公司智算需求预测"
 date:   2025-12-01 10:00:00 +0800
-categories: 硬件加速
 tags: [AI, 智算, 算力]
 ---
 

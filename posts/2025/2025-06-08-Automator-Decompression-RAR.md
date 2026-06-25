@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS 解压RAR（Automator）"
 date:   2025-06-08 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [Automator, 解压RAR, rar, macOS]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 Cline 构建和管理 MCP 服务器：增强 AI 能力的全面指南"
 date:   2025-03-13 10:00:00 +0800
-categories: [操作系统, 教程实践]
 tags: [cline, mcp, agent, githubcopilot]
 ---
 

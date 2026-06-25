@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "面向边缘场景的 AI 芯片"
 date:   2022-06-23 00:00:00 +0800
-categories: [硬件加速, 编程开发]
 tags: [gpu, vpu, npu, jetson, movidius, 昇腾]
 ---
 

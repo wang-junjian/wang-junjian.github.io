@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Linux 性能优化"
 date:   2022-04-04 00:00:00 +0800
-categories: 操作系统
 tags: [linux]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "硅谷 101：物理 AI"
 date:   2026-01-19 20:00:00 +0800
-categories: 硬件加速
 tags: [CES 2026, PhysicalAI, NVIDIA, Geely, CES PhysicalAI]
 ---
 

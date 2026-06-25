@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "FastMCP 实战：构建计算器 MCP 服务器与客户端"
 date:   2025-06-24 20:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [MCP, FastMCP, calculator-mcp-server, MCPServer, MCPClient, OpenAI, MCPInspector]
 ---
 

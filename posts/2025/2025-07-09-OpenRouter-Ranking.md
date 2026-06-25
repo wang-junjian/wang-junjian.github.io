@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "大模型风向标！OpenRouter平台谁最火？热门应用大揭秘！"
 date:   2025-07-09 20:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [OpenRouter, LLM, AI应用, 模型排名, AI趋势]
 ---
 

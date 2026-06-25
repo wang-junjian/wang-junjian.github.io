@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "WebP 格式的命令工具"
 date:   2026-04-30 08:00:00 +0800
-categories: 操作系统
 tags: [macOS, webp, Command]
 ---
 

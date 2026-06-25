@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SmolAgents 技术栈: LangFuse & LiteLLM"
 date:   2025-05-01 10:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [SmolAgents, LangFuse, LiteLLM, Agent]
 ---
 

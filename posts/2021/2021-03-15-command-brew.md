@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令brew"
 date:   2021-03-15 02:00:00 +0800
-categories: [操作系统, DevOps]
 tags: [macos, brew, install]
 ---
 

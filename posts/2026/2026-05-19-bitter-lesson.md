@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "惨痛的教训（The Bitter Lesson）"
 date:   2026-05-19 08:00:00 +0800
-categories: [人工智能]
 tags: [人工智能, 教训, 里奇·萨顿]
 ---
 

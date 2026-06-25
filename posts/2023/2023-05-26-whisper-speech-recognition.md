@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Whisper 语音识别"
 date:   2023-05-26 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [openai, pydub]
 ---
 

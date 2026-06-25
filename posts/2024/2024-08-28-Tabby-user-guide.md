@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Tabby 使用指南"
 date:   2024-08-28 08:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [tabby, vscode, contextprovider, codesearch, codechat]
 ---
 

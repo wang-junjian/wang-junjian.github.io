@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "GPU 服务器不能访问"
 date:   2023-11-19 08:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [traceroute, tcpdump, netstat, lsof, dmesg, journalctl, linux, 日志]
 ---
 

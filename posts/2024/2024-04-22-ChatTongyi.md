@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "ChatTongyi"
 date:   2024-04-22 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [langchain, chattongyi, dashscope, stream, text2sql]
 ---
 

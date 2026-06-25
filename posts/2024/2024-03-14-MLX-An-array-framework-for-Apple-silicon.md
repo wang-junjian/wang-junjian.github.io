@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MLX: An array framework for Apple silicon"
 date:   2024-03-14 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [mlx, llm, mistral, qwen, wikisql, lora, qlora]
 ---
 

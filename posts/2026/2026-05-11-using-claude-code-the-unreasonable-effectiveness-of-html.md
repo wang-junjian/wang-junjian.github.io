@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 Claude Code：HTML 超乎寻常的妙用"
 date:   2026-05-11 20:00:00 +0800
-categories: [人工智能]
 tags: [HTML, Markdown, ClaudeCode, Thariq]
 ---
 

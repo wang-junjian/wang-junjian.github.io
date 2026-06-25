@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令wget"
 date:   2020-12-21 00:00:00 +0800
-categories: [操作系统, AI 开发工具]
 tags: [linux, wget, download]
 ---
 

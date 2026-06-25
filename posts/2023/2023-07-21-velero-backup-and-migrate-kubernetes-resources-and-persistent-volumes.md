@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Velero: 备份和迁移 Kubernetes 资源和持久卷"
 date:   2023-07-21 08:00:00 +0800
-categories: [容器与云原生, DevOps]
 tags: [kubernetes, backup]
 ---
 

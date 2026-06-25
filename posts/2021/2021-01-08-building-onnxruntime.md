@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Building ONNX Runtime"
 date:   2021-01-08 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [linux, ubuntu, gpu, cuda, docker, onnx, onnxruntime]
 ---
 

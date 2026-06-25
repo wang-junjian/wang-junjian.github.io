@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用PaddleOCR进行文字识别"
 date:   2021-09-17 00:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [python, paddleocr]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "NanoClaw 架构设计深度解析"
 date:   2026-02-23 12:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [NanoClaw, AI Native, Skill, Software Design, OpenClaw, NanoClaw AI原生]
 ---
 

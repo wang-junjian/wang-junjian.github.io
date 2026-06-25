@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Dify 定制您的政策解读智能体"
 date:   2026-01-21 10:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [Dify, Agent]
 ---
 

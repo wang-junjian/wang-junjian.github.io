@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MLX: An array framework for Apple silicon"
 date:   2023-12-21 08:00:00 +0800
-categories: [操作系统, AI 与大模型]
 tags: [mlx, phi-2, qwen, stablediffusion,t5, whisper, macbookprom2max]
 ---
 

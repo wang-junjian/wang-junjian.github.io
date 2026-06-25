@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Claude Code 智能编程实战"
 date:   2026-06-01 08:00:00 +0800
-categories: [智能体]
 tags: [Claude Code, Agentic Coding, Memory, CLAUDE.md, Git Worktree]
 ---
 

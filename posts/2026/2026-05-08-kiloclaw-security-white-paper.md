@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "KiloClaw 安全白皮书"
 date:   2026-05-08 08:00:00 +0800
-categories: [人工智能, 智能体]
 tags: [安全, KiloClaw, Kilo, KiloCode]
 ---
 

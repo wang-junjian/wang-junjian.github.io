@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Python in Visual Studio Code"
 date:   2023-04-02 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [vscode]
 ---
 

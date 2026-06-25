@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在 MacBook Pro M2 Max 上安装 OpenVINO"
 date:   2023-02-14 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [myriad, macbookprom2max]
 ---
 

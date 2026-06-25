@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Continue 源码分析 - 各种命令调用大模型的输入和输出"
 date:   2024-09-20 08:00:00 +0800
-categories: [编程开发, AI 开发工具]
 tags: [continue, langfuse, githubcopilot, llm]
 ---
 

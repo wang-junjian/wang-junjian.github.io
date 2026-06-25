@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Json Formatter"
 date:   2022-02-23 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [linux, json, jq, python, vim]
 ---
 

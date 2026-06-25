@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "安装Kubernetes 1.26.0"
 date:   2023-01-03 08:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [install, apt-cache, kubeadm, containerd]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Continue Agent 使用 GitHub MCP Server"
 date:   2025-04-03 10:00:00 +0800
-categories: [AI 与大模型, AI 开发工具]
 tags: [Continue, MCPServer, AICodingAssistant, GitHubCopilot]
 ---
 

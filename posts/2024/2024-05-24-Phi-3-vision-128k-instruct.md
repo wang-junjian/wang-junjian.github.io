@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Phi-3-vision-128k-instruct 微软开源多模态大模型"
 date:   2024-05-24 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [phi3, ocr, llm]
 ---
 

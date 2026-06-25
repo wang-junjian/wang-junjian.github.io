@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kwai-Kolors 快手可图"
 date:   2024-07-08 08:00:00 +0800
-categories: DevOps
 tags: [text2image, kolors]
 ---
 

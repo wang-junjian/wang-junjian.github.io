@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "FastAPI 开发 RESTAPI 实践"
 date:   2023-10-04 08:00:00 +0800
-categories: [编程开发, 框架与库]
 tags: [fastapi, markdown, css, requirements.txt, pythonpath]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "加速 Docker 构建镜像"
 date:   2023-05-12 10:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [cache, python, pip, apt, debian, ubuntu, arm64, dockerfile, mirror, go, macbookprom2max, 知识扩展]
 ---
 

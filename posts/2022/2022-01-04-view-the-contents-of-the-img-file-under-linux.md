@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Linux下查看img文件内容"
 date:   2022-01-04 00:00:00 +0800
-categories: 操作系统
 tags: [fdisk, img, mount]
 ---
 

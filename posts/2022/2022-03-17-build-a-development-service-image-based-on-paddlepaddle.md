@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "构建基于PaddlePaddle开发服务镜像"
 date:   2022-03-17 00:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [paddlepaddle, dockerfile, python, opencv, pip]
 ---
 

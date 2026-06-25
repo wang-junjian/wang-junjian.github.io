@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Operator System Card"
 date:   2025-01-24 10:00:00 +0800
-categories: [编程开发, 教程实践]
 tags: [operator, cua, agent, openai]
 ---
 

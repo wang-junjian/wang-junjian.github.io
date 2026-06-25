@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "支持 MCP 集成的应用程序列表"
 date:   2025-04-02 12:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [MCP, Client, LLM]
 ---
 

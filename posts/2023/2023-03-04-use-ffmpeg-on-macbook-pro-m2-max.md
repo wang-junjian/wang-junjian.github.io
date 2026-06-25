@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在 MacBook Pro M2 Max 上使用 FFmpeg"
 date:   2023-03-04 08:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [macbookprom2max, command]
 ---
 

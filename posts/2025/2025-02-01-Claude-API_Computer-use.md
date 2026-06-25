@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Claude API: Computer use"
 date:   2025-02-01 12:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [claude, api, agent, anthropics]
 ---
 

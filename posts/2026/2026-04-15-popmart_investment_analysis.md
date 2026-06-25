@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "泡泡玛特（9992.HK）投资深度分析报告"
 date:   2026-04-15 08:00:00 +0800
-categories: [AI 与大模型, 技术随笔]
 tags: [投资, 泡泡玛特, 股票]
 ---
 

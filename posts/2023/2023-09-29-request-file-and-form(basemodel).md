@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "FastAPI : Request File and Form(BaseModel)"
 date:   2023-09-29 08:00:00 +0800
-categories: 框架与库
 tags: [fastapi, post, form, file]
 ---
 

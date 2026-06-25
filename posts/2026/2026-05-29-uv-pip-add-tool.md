@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "彻底搞懂 uv pip、uv add 和 uv tool 的核心区别"
 date:   2026-05-29 08:00:00 +0800
-categories: [工具技巧]
 tags: [uv, Python, 包管理, 依赖管理, 工具隔离, pip, poetry, pipx]
 ---
 

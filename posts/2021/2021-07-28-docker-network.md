@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Docker 网络"
 date:   2021-07-28 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [ifconfig, route]
 ---
 

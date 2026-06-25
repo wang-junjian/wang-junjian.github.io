@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 FastChat 在 CUDA 上部署 LLM"
 date:   2024-01-16 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [fastchat, vllm, cuda]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Open Knowledge Format (OKF)"
 date:   2026-06-17 11:00:00 +0800
-categories: [知识管理]
 tags: [Open Knowledge Format, OKF, 知识表示, 智能体知识库]
 ---
 

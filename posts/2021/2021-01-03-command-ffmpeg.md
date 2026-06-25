@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令ffmpeg"
 date:   2021-01-03 00:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [linux, ffmpeg, gpu, nvidia, for, basename]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes中的节点亲和性和Pod亲和性"
 date:   2021-07-03 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [kubectl, affinity, nodeaffinity, podaffinity, command, curl]
 ---
 

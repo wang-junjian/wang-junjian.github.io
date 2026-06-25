@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "NVIDIA Driver 安装"
 date:   2024-01-08 08:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [nvidia-driver, nvidia, cuda, gpu, lsof, apt, dpkg, libc6-dev, build-essential]
 ---
 

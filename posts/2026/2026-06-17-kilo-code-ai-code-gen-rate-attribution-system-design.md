@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kilo Code AI 代码生成率与归因分析 — 系统设计"
 date:   2026-06-17 06:00:00 +0800
-categories: [人工智能, 软件工程]
 tags: [Kilo Code, AI 代码生成率, 归因分析, 系统设计]
 ---
 

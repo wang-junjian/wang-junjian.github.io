@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Large Language Models（大语言模型）"
 date:   2023-04-22 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [chatgpt, chatglm, llama, alpaca, vicuna]
 ---
 

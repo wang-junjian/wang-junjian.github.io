@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "DeepSeek-Coder 论文解读"
 date:   2024-02-29 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [deepseek-coder, codellm]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS实践"
 date:   2018-07-03 00:00:00 +0800
-categories: [技术教程, 工具使用]
 tags: 
 excerpt: "macOS使用技巧汇总，包含常用快捷键、终端命令、Finder实用技巧和推荐工具，帮助提升Mac使用效率。"
 ---

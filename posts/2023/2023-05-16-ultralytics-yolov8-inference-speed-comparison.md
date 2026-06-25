@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Ultralytics YOLOv8 推理速度对比"
 date:   2023-05-16 08:00:00 +0800
-categories: [硬件加速, 编程开发]
 tags: [ultralytics, yolo, pt, onnx, 知识扩展]
 ---
 

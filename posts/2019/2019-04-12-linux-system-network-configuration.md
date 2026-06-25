@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Linux系统网络配置"
 date:   2019-04-12 00:00:00 +0800
-categories: [技术教程, 网络技术]
 tags: [ubuntu, network]
 excerpt: "Ubuntu系统使用netplan配置静态IP地址的教程，包含配置文件编写、应用和验证步骤。"
 ---

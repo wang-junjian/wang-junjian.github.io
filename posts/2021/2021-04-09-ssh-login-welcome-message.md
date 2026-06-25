@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SSH 登录欢迎信息"
 date:   2021-04-09 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [ssh, motd, login, linux]
 ---
 

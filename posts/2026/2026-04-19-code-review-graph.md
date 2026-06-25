@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "代码评审知识图谱：code-review-graph"
 date:   2026-04-19 10:00:00 +0800
-categories: [AI 与大模型, 编程开发, 开源生态]
 tags: [code-review-graph, MCP, KnowledgeGraph]
 ---
 

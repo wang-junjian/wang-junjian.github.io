@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Private GPT"
 date:   2023-09-02 08:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [chroma, faiss, gunicorn, uvicorn, sqlite3, gpt, shell]
 ---
 

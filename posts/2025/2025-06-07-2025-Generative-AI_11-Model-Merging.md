@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "【生成式AI时代下的机器学习(2025)】第十一讲：浅谈神奇的 Model Merging 技术"
 date:   2025-06-07 08:00:00 +0800
-categories: [编程开发, 数据科学]
 tags: [模型合并, 2025生成式AI时代下的机器学习, 生成式AI, 机器学习, 李宏毅]
 ---
 

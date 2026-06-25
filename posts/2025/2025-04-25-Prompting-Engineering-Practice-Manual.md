@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "鲁软慧码提示工程实战手册"
 date:   2025-04-25 12:00:00 +0800
-categories: [编程开发, 框架与库]
 tags: [鲁软慧码, Prompting, AICodingAssistant, GitHubCopilot]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Jetson AGX Orin大模型部署挑战与系统升级"
 date:   2025-07-03 16:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [Jetson, AGXOrin, arm64, CUDA, vLLM, 多模态, 人形机器人, 泰安]
 ---
 

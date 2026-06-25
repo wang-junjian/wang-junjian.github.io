@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "whisper.cpp"
 date:   2023-12-26 08:00:00 +0800
-categories: [硬件加速, 操作系统]
 tags: [whisper, neon, mps, coreml, macbookprom2max]
 ---
 

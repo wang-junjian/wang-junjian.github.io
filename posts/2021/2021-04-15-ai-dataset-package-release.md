@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "AI 数据集打包发布"
 date:   2021-04-15 00:00:00 +0800
-categories: 操作系统
 tags: [shell]
 ---
 

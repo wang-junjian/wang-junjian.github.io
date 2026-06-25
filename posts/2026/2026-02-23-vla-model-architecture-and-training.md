@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "具身智能大脑：VLA 模型架构解析与训练实战"
 date:   2026-02-23 10:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [VLA, Vision-Language-Action, 具身智能, OpenClaw]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenAI API Documentation Chat Completion"
 date:   2023-04-28 08:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: ["openai api", "chat completion", token]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Elastic Cloud on Kubernetes 快速入门"
 date:   2023-07-06 08:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [quickstart, elasticsearch, kibana, filebeat, ntp, kubernetes]
 ---
 

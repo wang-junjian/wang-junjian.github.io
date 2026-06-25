@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "LangChain : Tagging and Extraction Using OpenAI functions"
 date:   2024-04-16 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [langchain, pydantic, extraction, chattongyi, text2sql]
 ---
 

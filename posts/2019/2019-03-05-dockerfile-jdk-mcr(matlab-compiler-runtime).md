@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Dockerfile JDK-MCR(MATLAB Compiler Runtime)"
 date:   2019-03-05 00:00:00 +0800
-categories: [技术教程, 容器技术]
 tags: [docker, dockerfile, jdk, mcr]
 excerpt: "构建包含JDK和MATLAB Compiler Runtime的Docker镜像的Dockerfile示例及使用说明。"
 ---

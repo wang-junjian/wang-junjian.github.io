@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS 下的 __MACOSX 目录和 .DS_Store 文件"
 date:   2023-05-15 08:00:00 +0800
-categories: 操作系统
 tags: [__macosx, .ds_store, find, macos, 知识扩展]
 ---
 

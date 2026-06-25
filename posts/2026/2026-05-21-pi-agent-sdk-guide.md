@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Pi Agent SDK 参考文档"
 date:   2026-05-21 08:00:00 +0800
-categories: [智能体]
 tags: [Pi Agent, SDK, TypeScript]
 ---
 

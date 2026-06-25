@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "DeepSeek Janus Pro 7B"
 date:   2025-02-02 10:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [deepseek, januspro7b, 多模态]
 ---
 

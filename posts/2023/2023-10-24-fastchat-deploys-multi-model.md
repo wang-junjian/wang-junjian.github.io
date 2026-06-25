@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "FastChat 部署多模型"
 date:   2023-10-24 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [fastchat, langchain, vicuna, chatglm2-6b, 分布式]
 ---
 

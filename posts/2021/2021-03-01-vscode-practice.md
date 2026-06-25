@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "VS Code实践"
 date:   2021-03-01 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [vscode]
 ---
 

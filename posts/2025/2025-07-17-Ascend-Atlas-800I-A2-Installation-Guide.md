@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（一）：驱动/固件安装与MCU升级"
 date:   2025-07-17 12:00:00 +0800
-categories: [硬件加速, 操作系统]
 tags: [昇腾, NPU, 910B4, Atlas800IA2, 驱动, 固件, MCU, openEuler]
 ---
 

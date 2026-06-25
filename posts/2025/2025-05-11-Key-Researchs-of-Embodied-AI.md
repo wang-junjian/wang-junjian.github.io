@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  具身智能关键技术研究：操作、规划、导航
 date:   2025-05-11 12:00:00 +0800
-categories: AI 与大模型
 tags: [具身智能, VLA, Manipulation, Planning, Navigation]
 ---
 

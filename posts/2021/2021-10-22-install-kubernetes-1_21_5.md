@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "安装Kubernetes 1.21.5"
 date:   2021-10-22 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [docker, timedatectl, hostnamectl, apt, curl, cat, kubeadm, export, cp, chown, kubectl]
 ---
 

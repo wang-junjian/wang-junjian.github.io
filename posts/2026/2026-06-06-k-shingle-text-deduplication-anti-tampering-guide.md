@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "深入浅出 k-Shingle：海量文本去重的防篡改利器"
 date:   2026-06-06 20:00:00 +0800
-categories: [人工智能, 大数据]
 tags: [k-Shingle, 文本去重, 防篡改, Jaccard, MinHash, 大数据处理]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于模板创建Job"
 date:   2021-06-30 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [kubectl, job, sed, apply, logs, delete, python, jinja2, jekyll, liquid, alias, bashrc]
 ---
 

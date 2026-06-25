@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令zip"
 date:   2021-01-20 00:00:00 +0900
-categories: [操作系统, 容器与云原生]
 tags: [linux, zip, unzip, less, zipdetails, vim]
 ---
 

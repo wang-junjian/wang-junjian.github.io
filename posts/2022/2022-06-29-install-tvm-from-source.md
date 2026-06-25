@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Install TVM from Source"
 date:   2022-06-29 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [tvm, install]
 ---
 

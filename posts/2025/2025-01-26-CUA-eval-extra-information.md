@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "CUA 评估额外信息"
 date:   2025-01-26 10:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [cua, benchmark, openai]
 ---
 

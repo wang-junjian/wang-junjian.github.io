@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "如何使用 Docker 打包已注册的模型"
 date:   2021-07-22 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [command]
 ---
 

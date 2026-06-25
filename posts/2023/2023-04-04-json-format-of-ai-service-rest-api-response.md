@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "人工智能服务 REST API 响应的 JSON 格式"
 date:   2023-04-04 08:00:00 +0800
-categories: [编程开发, AI 与大模型]
 tags: [ai, json]
 ---
 

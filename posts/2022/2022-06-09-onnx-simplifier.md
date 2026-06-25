@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "ONNX Simplifier"
 date:   2022-06-09 00:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [onnx, onnxsim]
 ---
 

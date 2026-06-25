@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Letta (fka MemGPT) 是用于创建有状态 LLM 服务的框架"
 date:   2024-09-25 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [letta, memgpt, llm]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Continue - It’s time to collect data on how you build software"
 date:   2024-04-07 10:00:00 +0800
-categories: [AI 与大模型, AI 开发工具]
 tags: [continue, githubcopilot, codellm]
 ---
 

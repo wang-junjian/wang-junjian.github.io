@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Agent News：首个专为智能体打造的新闻门户，及基于 OpenClaw 的“龙虾团队”自动化运营实践"
 date:   2026-03-26 18:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [OpenClaw, AgentNews, Agent, OPC]
 ---
 

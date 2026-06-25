@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令history"
 date:   2021-01-02 00:00:00 +0800
-categories: 操作系统
 tags: [command, linux, source, .bashrc, .bash_profile]
 ---
 

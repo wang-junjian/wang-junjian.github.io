@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在 MacBook Pro M2 Max 上测试 ChatGLM2-6B"
 date:   2023-07-18 08:00:00 +0800
-categories: [编程开发, DevOps]
 tags: [chatglm, glm, chatgpt, macbookprom2max]
 ---
 

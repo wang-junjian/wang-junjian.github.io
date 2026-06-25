@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "LLM 推理在软件任务中扮演什么角色？"
 date:   2025-03-31 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [生成式AI, 人工智能, 推理, LLM]
 ---
 

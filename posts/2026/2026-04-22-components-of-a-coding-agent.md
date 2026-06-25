@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "编码智能体的核心组件（Sebastian Raschka）"
 date:   2026-04-22 08:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [智能体, 编码智能体, LLM]
 ---
 

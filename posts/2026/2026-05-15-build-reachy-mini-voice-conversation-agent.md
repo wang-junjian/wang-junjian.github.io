@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "搭建 Reachy Mini 语音对话智能体"
 date:   2026-05-15 20:00:00 +0800
-categories: [人工智能]
 tags: [Speech To Speech, 语音智能体, Hugging Face, Reachy Mini]
 ---
 

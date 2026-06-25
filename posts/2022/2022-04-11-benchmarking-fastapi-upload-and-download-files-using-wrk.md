@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用 wrk 对 FastAPI 上传和下载文件的基准测试"
 date:   2022-04-11 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [fastapi, restapi, wrk, file, async, uvicorn, linux]
 ---
 

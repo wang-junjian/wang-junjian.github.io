@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Mac 外接显示器 DELL U2723QE"
 date:   2024-11-15 20:00:00 +0800
-categories: [教程实践, 操作系统]
 tags: [dell, 显示器, macbookprom2max]
 ---
 

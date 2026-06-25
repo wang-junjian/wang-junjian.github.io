@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "生成式人工智能"
 date:   2025-03-30 10:00:00 +0800
-categories: [编程开发, DevOps]
 tags: [生成式AI, 人工智能]
 ---
 

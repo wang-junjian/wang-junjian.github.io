@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Pi Agent Event Examples"
 date:   2026-05-24 08:00:00 +0800
-categories: [智能体]
 tags: [Pi Agent, Event, TypeScript]
 ---
 

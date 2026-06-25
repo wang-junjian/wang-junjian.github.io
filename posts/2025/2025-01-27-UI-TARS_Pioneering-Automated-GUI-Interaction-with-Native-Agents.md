@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "UI-TARS: Pioneering Automated GUI Interaction with Native Agents"
 date:   2025-01-27 10:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [ui-tars, agent, gui, llm]
 ---
 

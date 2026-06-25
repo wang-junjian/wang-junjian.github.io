@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "边缘硬件"
 date:   2022-07-25 00:00:00 +0800
-categories: [物联网与边缘, 编程开发]
 tags: [myriad, nvme, ddr, lpddr]
 ---
 

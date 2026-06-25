@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "命令sed"
 date:   2020-12-22 00:00:00 +0800
-categories: 操作系统
 tags: [linux, sed, exec]
 ---
 

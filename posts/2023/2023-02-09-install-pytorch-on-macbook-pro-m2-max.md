@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在 MacBook Pro M2 Max 上安装 PyTorch"
 date:   2023-02-09 08:00:00 +0800
-categories: [硬件加速, 编程开发]
 tags: [macbookprom2max]
 ---
 

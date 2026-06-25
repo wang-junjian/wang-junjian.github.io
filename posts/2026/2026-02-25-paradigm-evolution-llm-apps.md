@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "大模型应用开发范式的演变"
 date:   2026-02-25 18:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [Prompt Engineering, Context Engineering, Vibe Coding, Agentic Engineering, AI应用开发 LLM]
 ---
 

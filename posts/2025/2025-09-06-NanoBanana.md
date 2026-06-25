@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Google Nano Banana"
 date:   2025-09-06 08:00:00 +0800
-categories: 技术随笔
 tags: [NanoBanana, AI, Google, VLM]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用Darknet在自定义数据集上训练YOLOv3"
 date:   2019-07-01 00:00:00 +0800
-categories: [技术教程, 人工智能]
 tags: [目标检测, darknet, yolo]
 excerpt: "使用Darknet框架在自定义数据集上训练YOLOv3目标检测模型的完整教程，包含数据准备、配置和训练步骤。"
 ---

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "FastAPI 上传和下载文件的基准测试"
 date:   2022-03-31 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [linux, fastapi, file, async, gunicorn, uvicorn, wrk]
 ---
 

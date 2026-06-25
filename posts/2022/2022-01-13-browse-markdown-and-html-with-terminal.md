@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用终端浏览Markdown和HTML"
 date:   2022-01-13 00:00:00 +0800
-categories: 操作系统
 tags: [apt, lynx, pandoc, grip, markdown]
 ---
 

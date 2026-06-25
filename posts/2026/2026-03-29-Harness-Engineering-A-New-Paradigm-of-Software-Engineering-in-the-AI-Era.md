@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Harness Engineering：AI时代的软件工程新范式"
 date:   2026-03-29 20:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [Agent, HarnessEngineering, Anthropic, Claude, OpenAI]
 ---
 

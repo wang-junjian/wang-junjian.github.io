@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Thoughtworks 技术雷达 第30期"
 date:   2024-05-20 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [thoughtworks, llm]
 ---
 

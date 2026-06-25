@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SWIFT: Scalable lightWeight Infrastructure for Fine-Tuning"
 date:   2024-05-19 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [swift, fine-tuning, llm]
 ---
 

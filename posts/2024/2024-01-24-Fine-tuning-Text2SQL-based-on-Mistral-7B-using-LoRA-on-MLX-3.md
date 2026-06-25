@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（三）：分享微调后的模型到 HuggingFace Hub"
 date:   2024-01-24 12:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [mlx, lora, mistral-7b, text2sql, git, push, huggingface, huggingfacehub, mlxcommunity, macbookprom2max]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "GitHub Copilot for VSCode v1.100"
 date:   2025-06-01 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [GitHubCopilot, VSCode, AICodingAssistant]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS Finder 中的“反向选择”功能实现(Automator)"
 date:   2026-04-11 13:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [macOS, Automator, AppleScript, Finder]
 ---
 

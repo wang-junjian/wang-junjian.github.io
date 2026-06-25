@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Qwen2 Technical Report"
 date:   2024-09-23 08:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [qwen2, llm]
 ---
 

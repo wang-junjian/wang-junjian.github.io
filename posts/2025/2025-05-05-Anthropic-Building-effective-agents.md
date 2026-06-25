@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Anthropic: 构建有效的AI智能体"
 date:   2025-05-05 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [Anthropic, Agent, Workflow]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Reachy Mini Conversation App"
 date:   2026-05-18 20:00:00 +0800
-categories: [人工智能]
 tags: [reachy_mini_conversation_app, 语音智能体, Hugging Face, Reachy Mini]
 ---
 

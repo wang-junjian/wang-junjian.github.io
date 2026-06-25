@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS 图像拼接工具（Automator）"
 date:   2025-06-01 10:00:00 +0800
-categories: [操作系统, 硬件加速]
 tags: [Automator, ImageMagick, 图像拼接, macOS]
 ---
 

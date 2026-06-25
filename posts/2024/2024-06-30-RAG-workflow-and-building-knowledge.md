@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "RAG 复杂场景下的工作流程和构建知识库的解析方法"
 date:   2024-06-30 08:00:00 +0800
-categories: [AI 与大模型, DevOps]
 tags: [rag, ragflow, llm]
 ---
 

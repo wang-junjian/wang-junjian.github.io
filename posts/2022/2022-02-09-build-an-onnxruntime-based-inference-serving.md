@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "构建基于 ONNXRuntime 的推理服务"
 date:   2022-02-09 00:00:00 +0800
-categories: [容器与云原生, 操作系统]
 tags: [onnx, onnxruntime, gpu, cuda, docker, dockerfile, pip]
 ---
 

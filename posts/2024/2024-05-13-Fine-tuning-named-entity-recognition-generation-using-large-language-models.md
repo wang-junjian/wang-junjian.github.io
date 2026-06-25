@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "使用大型语言模型微调命名实体识别生成"
 date:   2024-05-13 08:00:00 +0800
-categories: [AI 与大模型, 操作系统]
 tags: [qwen, llama-factory, fine-tuning, ner, lora, text2sql]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于Apt-Cacher NG创建本地Ubuntu存储库"
 date:   2020-10-16 12:00:00 +0800
-categories: 操作系统
 tags: [cache, ubuntu, apt, apt-cacher-ng]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "GaiaGPU: 在容器云中共享GPU"
 date:   2022-01-28 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [gpu, cuda, git, github, resourcequota, port-forward, dockerfile, kube-scheduler]
 ---
 

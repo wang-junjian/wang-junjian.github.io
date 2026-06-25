@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "快捷键大全"
 date:   2025-06-06 08:00:00 +0800
-categories: [工具使用]
 tags: [快捷键, macOS, Terminal, Tmux, Screen, VSCode, Vim, GitHub Copilot]
 ---
 

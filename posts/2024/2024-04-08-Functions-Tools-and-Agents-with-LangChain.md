@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Functions, Tools and Agents with LangChain"
 date:   2024-04-08 08:00:00 +0800
-categories: [AI 与大模型, 框架与库]
 tags: [deeplearningai, ]
 ---
 

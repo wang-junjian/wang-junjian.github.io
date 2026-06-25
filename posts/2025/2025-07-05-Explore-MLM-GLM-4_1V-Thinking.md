@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "探索多模态大模型 GLM-4.1V-Thinking"
 date:   2025-07-05 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [GLM-4.1V-Thinking, 多模态, GLM, GLM-4V, 火灾, 烟雾, 安全帽, GLM-4.1V-Thinking 多模态模型]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "基于Darknet框架的YOLOv3算法开发的模型训练和部署的容器化产品"
 date:   2019-07-09 00:00:00 +0800
-categories: [技术教程, 人工智能]
 tags: [目标检测, darknet, yolo, docker]
 excerpt: "基于Docker的YOLOv3模型训练和部署容器化产品教程，包含训练工程化和预测服务部署。"
 ---

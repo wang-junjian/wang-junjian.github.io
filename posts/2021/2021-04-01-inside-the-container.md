@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "容器内幕"
 date:   2021-04-01 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [container, namespace, cgroup, echo, mkdir, rmdir, cp, ldd, egrep, sort, uniq, chroot, while]
 ---
 

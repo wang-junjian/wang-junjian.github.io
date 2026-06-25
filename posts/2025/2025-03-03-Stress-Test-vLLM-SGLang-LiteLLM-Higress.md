@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "大模型推理服务压测报告：vLLM、SGLang、LiteLLM 与 Higress 性能对比"
 date:   2025-03-03 10:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [benchmark, llm, vllm, sglang, litellm, higress, t4, gpu, qwen]
 ---
 

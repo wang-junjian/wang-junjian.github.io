@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Dockerfile 实践"
 date:   2022-03-18 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [dockerfile, python, opencv, pip, localtime, timezone]
 ---
 

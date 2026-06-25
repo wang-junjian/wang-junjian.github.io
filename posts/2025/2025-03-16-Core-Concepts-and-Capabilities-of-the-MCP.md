@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Model Context Protocol (MCP) 的核心概念和能力"
 date:   2025-03-16 10:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [MCP, LLM, Resource, Prompt, Tool, Transport, Sampling, Root]
 ---
 

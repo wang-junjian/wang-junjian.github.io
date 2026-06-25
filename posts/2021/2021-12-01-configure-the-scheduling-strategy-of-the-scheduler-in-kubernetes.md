@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Kubernetes中配置调度器"
 date: 2021-12-01 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [kubectl, events, priority, scheduler, grep]
 ---
 

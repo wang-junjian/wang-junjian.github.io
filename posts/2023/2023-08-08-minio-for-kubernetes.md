@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MinIO for Kubernetes"
 date:   2023-08-08 08:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [kubernetes]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenAI API Documentation 快速入门"
 date:   2023-04-24 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: ["openai api", jupyter, pandas, quickstart]
 ---
 

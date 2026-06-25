@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Linux系统上修改用户名"
 date:   2020-10-29 00:00:00 +0800
-categories: [操作系统, 容器与云原生]
 tags: [ubuntu, 用户]
 ---
 

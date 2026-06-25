@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "SFTP 客户端"
 date:   2021-03-15 01:00:00 +0800
-categories: [操作系统, DevOps]
 tags: [macos, sftp, ssh]
 ---
 

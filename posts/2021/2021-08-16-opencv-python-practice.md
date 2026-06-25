@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "OpenCV Python实践"
 date:   2021-08-16 00:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [python, opencv, pip, f-strings, tkinter, chinese]
 ---
 

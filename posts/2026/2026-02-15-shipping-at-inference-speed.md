@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "以推理速度交付：为什么我不再阅读代码，而是看着它飞速流转"
 date:   2026-02-15 10:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [Agent, Software Development, Vibe Coding, Agentic Engineering, Peter Steinberger, OpenClaw, OpenClaw AgenticEngineering]
 ---
 

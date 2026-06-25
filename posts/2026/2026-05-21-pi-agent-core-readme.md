@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Pi Agent Core 开发指南"
 date:   2026-05-21 18:00:00 +0800
-categories: [智能体]
 tags: [Pi Agent, TypeScript]
 ---
 

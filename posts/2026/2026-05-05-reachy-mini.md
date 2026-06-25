@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Reachy Mini 机器人"
 date:   2026-05-05 08:00:00 +0800
-categories: [人工智能, 硬件]
 tags: [ReachyMini, 机器人]
 ---
 

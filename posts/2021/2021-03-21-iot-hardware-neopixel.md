@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "IoT 硬件：NeoPixel"
 date:   2021-03-21 00:00:00 +0800
-categories: [编程开发, 硬件加速]
 tags: [micropython, nodemcu, esp32, neopixel]
 ---
 

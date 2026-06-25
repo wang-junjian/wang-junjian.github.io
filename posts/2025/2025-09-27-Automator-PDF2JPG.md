@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "macOS PDF2JPG（Automator）"
 date:   2025-09-27 08:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [Automator, PDF2JPG, ImageMagick, PDF, macOS]
 ---
 

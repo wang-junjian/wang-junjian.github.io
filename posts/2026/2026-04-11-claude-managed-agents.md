@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Claude Managed Agents（托管智能体）开发者参考指南"
 date:   2026-04-11 10:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [Claude, ManagedAgents, Agent]
 ---
 

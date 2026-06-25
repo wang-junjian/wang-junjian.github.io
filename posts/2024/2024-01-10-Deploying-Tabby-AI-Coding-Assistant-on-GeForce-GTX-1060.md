@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "在 GeForce GTX 1060 上部署 Tabby - AI编码助手"
 date:   2024-01-10 12:00:00 +0800
-categories: [操作系统, AI 与大模型]
 tags: [tabby, githubcopilot, codellm, geforce, gtx1060, gpu, nvidia-driver, nvidiacontainertoolkit, docker, ubuntu]
 ---
 

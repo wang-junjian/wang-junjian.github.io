@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Cline 技术架构深度分析"
 date:   2026-03-07 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [Cline, Architecture, Agent]
 ---
 

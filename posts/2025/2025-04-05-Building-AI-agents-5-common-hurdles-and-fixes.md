@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "构建AI代理：5个常见障碍及解决方案"
 date:   2025-04-05 08:00:00 +0800
-categories: [教程实践, AI 与大模型]
 tags: [AI, Agent, LLM]
 ---
 

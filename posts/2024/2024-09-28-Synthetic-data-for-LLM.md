@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "LLM 的合成数据"
 date:   2024-09-28 08:00:00 +0800
-categories: [编程开发, DevOps]
 tags: [synthetic, cosmopedia, phi, distilabel, argilla, datatrove, nanotron, lighteval, llm]
 ---
 

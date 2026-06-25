@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "PrivateGPT"
 date:   2024-01-05 08:00:00 +0800
-categories: [编程开发, 操作系统]
 tags: [privategpt, python]
 ---
 

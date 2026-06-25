@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "WhisperLiveKit - 实时语音识别"
 date:   2025-11-10 08:00:00 +0800
-categories: [操作系统, AI 与大模型]
 tags: [WhisperLiveKit, ASR, Whisper, JetsonThor]
 ---
 

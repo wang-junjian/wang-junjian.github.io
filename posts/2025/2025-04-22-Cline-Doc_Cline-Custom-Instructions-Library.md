@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Cline 自定义指令库"
 date:   2025-04-22 07:00:00 +0800
-categories: [编程开发, 教程实践]
 tags: [Cline, CustomInstructions, ClineDoc]
 ---
 

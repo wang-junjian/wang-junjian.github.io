@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "MCPHub：MCP 服务器聚合平台（智能路由）"
 date:   2025-06-05 08:00:00 +0800
-categories: [DevOps, AI 与大模型]
 tags: [MCP, MCPHub, MCPServer, GitHub, GitLab, SSE, SmartRoute]
 ---
 

@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Apache HTTP Server实践"
 date:   2021-01-10 00:00:00 +0800
-categories: [操作系统, 教程实践]
 tags: [linux, command, apache]
 ---
 

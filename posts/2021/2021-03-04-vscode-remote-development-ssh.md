@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "VS Code远程开发 - SSH"
 date:   2021-03-04 00:00:00 +0800
-categories: [操作系统, 编程开发]
 tags: [vscode, ssh]
 ---
 

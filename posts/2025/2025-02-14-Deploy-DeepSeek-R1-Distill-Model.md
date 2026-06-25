@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "部署 DeepSeek-R1 蒸馏模型"
 date:   2025-02-14 10:00:00 +0800
-categories: [AI 与大模型, 硬件加速]
 tags: [deepseek-r1, vllm, qwen, jan, llm]
 ---
 

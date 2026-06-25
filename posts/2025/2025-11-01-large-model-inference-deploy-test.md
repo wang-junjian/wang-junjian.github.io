@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "大模型（语言、视觉语言、语音）推理服务部署与测试"
 date:   2025-11-01 08:00:00 +0800
-categories: [硬件加速, AI 与大模型]
 tags: [LLM, 推理, CUDA, vLLM, SGLang, llama.cpp, whisper.cpp, curl]
 ---
 

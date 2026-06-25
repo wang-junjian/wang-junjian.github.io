@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Python 配置共享软件包缓存"
 date:   2023-05-11 08:00:00 +0800
-categories: [AI 与大模型, 编程开发]
 tags: [conda, pip, macbookprom2max]
 ---
 

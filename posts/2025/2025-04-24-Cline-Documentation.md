@@ -1,8 +1,7 @@
 ---
-layout: single
+type: article
 title:  "Cline Documentation"
 date:   2025-04-24 12:00:00 +0800
-categories: [教程实践, AI 与大模型]
 tags: [Cline, ClineDoc]
 ---
 
