@@ -2,7 +2,7 @@
 type: article
 title:  "安装Harbor"
 date:   2020-09-12 00:00:00 +0800
-tags: [docker, harbor, ubuntu, registry, wget, cat, openssl]
+tags: [docker, harbor, ubuntu, registry, https, ssl, containers, devops, deployment, private-registry]
 ---
 
 ## 下载最新的 [Harbar Release](https://github.com/goharbor/harbor/releases)

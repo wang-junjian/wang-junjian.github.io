@@ -2,7 +2,7 @@
 type: article
 title:  "Jupyter Notebook实践"
 date:   2019-07-23 00:00:00 +0800
-tags: [jupyter, jupyterhub]
+tags: [jupyter, jupyterhub, python, data-science, notebook, tutorial]
 excerpt: "Jupyter Notebook完整实践指南，包含本地安装、云端环境、多用户部署、快捷键和高级技巧。"
 ---
 

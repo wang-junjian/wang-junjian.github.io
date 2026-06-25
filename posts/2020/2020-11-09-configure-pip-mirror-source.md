@@ -2,7 +2,7 @@
 type: article
 title:  "配置pip镜像源"
 date:   2020-11-09 00:00:00 +0800
-tags: [python, pip, mirror]
+tags: [python, pip, mirror, china, sysadmin, networking]
 ---
 
 > 加速 pip 下载安装包的速度。下面使用的是来自于阿里云的镜像源：https://mirrors.aliyun.com/pypi/simple/

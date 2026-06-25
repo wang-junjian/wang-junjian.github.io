@@ -2,7 +2,7 @@
 type: article
 title:  "命令wget"
 date:   2020-12-21 00:00:00 +0800
-tags: [linux, wget, download]
+tags: [linux, command-line, wget, download, sysadmin, tutorial, shell, networking]
 ---
 
 ## 下载多个文件

@@ -2,7 +2,7 @@
 type: article
 title:  "Linux系统上修改用户名"
 date:   2020-10-29 00:00:00 +0800
-tags: [ubuntu, 用户]
+tags: [linux, ubuntu, user-management, hostname, sysadmin, command-line]
 ---
 
 > 今天同事安装了一台新的服务器Ubuntu20.04，但用户名和主机名不是我想要的，这里尝试了直接修改Linux文件的方式。

@@ -2,7 +2,7 @@
 type: article
 title:  "配置Docker镜像源"
 date:   2020-11-02 00:00:00 +0800
-tags: [linux, mirror]
+tags: [docker, mirror, china, sysadmin, networking, registry]
 ---
 
 > 加速 Docker Hub 镜像拉取速度。

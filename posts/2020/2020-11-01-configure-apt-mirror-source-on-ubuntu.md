@@ -2,7 +2,7 @@
 type: article
 title:  "在Ubuntu上配置apt镜像源"
 date:   2020-11-01 00:00:00 +0800
-tags: [ubuntu, apt, mirror]
+tags: [ubuntu, apt, mirror, china, sysadmin, networking]
 ---
 
 > 在国内使用官方的镜像源安装 Ubuntu 应用非常慢，通常配置国内的镜像源来加快速度，如阿里云。

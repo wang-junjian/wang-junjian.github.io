@@ -2,7 +2,7 @@
 type: article
 title:  "磁盘：分区－格式化－挂载"
 date:   2020-09-03 00:00:00 +0800
-tags: [linux, disk, lsblk, fdisk, mkfs, mount, fstab]
+tags: [linux, disk, partition, filesystem, mount, sysadmin, ubuntu, command-line, storage]
 excerpt: "Linux磁盘管理完整教程，包含分区创建、文件系统格式化和挂载持久化配置。"
 ---
 

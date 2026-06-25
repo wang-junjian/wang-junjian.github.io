@@ -2,7 +2,7 @@
 type: article
 title:  "命令sed"
 date:   2020-12-22 00:00:00 +0800
-tags: [linux, sed, exec]
+tags: [linux, command-line, sed, text-processing, regex, sysadmin, tutorial, shell]
 ---
 
 ## 字符串

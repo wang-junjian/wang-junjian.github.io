@@ -2,7 +2,7 @@
 type: article
 title:  "构建YOLOv4容器应用在自定义数据集上"
 date:   2020-06-06 00:00:00 +0800
-tags: [目标检测, darknet, yolo]
+tags: [目标检测, yolo, yolov4, darknet, docker, nvidia, gpu, deep-learning, computer-vision, containers]
 excerpt: "使用Docker构建YOLOv4容器应用，在自定义数据集上训练和部署目标检测模型的完整教程。"
 ---
 

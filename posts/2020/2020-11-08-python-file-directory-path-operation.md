@@ -2,7 +2,7 @@
 type: article
 title:  "Python文件、目录、路径操作"
 date:   2020-11-08 00:00:00 +0800
-tags: [python, file, directory, path]
+tags: [python, file, directory, path, os, shutil, tutorial]
 ---
 
 ## 导入包
