@@ -2,7 +2,7 @@
 type: article
 title:  "命令find"
 date:   2020-12-29 00:00:00 +0800
-tags: [linux, find, delete, ds_store]
+tags: [linux, command-line, find, file-search, sysadmin, tutorial, shell]
 ---
 
 ## 查找文件

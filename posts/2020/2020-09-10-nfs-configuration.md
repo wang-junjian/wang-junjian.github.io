@@ -2,7 +2,7 @@
 type: article
 title:  "NFS配置"
 date:   2020-09-10 00:00:00 +0800
-tags: [linux, ubuntu, nfs]
+tags: [linux, ubuntu, nfs, networking, sysadmin, file-sharing, storage]
 ---
 
 ## Ubuntu

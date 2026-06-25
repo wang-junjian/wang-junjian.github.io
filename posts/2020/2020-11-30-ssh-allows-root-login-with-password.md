@@ -2,7 +2,7 @@
 type: article
 title:  "SSH允许使用密码进行root登录"
 date:   2020-11-30 00:00:00 +0800
-tags: [linux, root, ssh, systemctl, service, init.d, sed]
+tags: [linux, ssh, security, authentication, sysadmin, configuration, command-line]
 ---
 
 > 安装了Ubuntu系统后，默认ssh不允许使用密码进行root登录，通过如何配置可以实现允许。

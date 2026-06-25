@@ -2,7 +2,7 @@
 type: article
 title:  "MAC 远程连接 Ubuntu 桌面"
 date:   2018-12-26 10:00:00 +0800
-tags: [ubuntu, linux]
+tags: [ubuntu, linux, mac, vnc, remote-desktop, remote, tutorial]
 excerpt: "在Mac上通过VNC远程连接Ubuntu桌面的教程，包含x11vnc服务安装、配置和连接步骤。"
 ---
 

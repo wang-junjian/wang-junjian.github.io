@@ -2,7 +2,7 @@
 type: article
 title:  "在Ubuntu上安装NVIDIA GPU驱动"
 date:   2020-11-03 00:00:00 +0800
-tags: [linux, ubuntu, gpu, nvidia]
+tags: [linux, ubuntu, nvidia, gpu, driver, cuda, installation, sysadmin, hardware]
 ---
 
 > 在一台新安装的 Ubuntu20.04 系统上安装 NVIDIA GPU 驱动。

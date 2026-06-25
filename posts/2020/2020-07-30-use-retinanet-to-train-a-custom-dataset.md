@@ -2,7 +2,7 @@
 type: article
 title:  "使用RetinaNet算法训练自定义数据集"
 date:   2020-07-30 00:00:00 +0800
-tags: [目标检测, tensorflow, docker, retinanet, keras, tensorboard, dockerfile]
+tags: [目标检测, retinanet, tensorflow, keras, docker, tensorboard, deep-learning, computer-vision, python, gpu]
 ---
 
 ## 训练自己的数据集

@@ -2,7 +2,7 @@
 type: article
 title:  "将注释从PASCAL VOC转换为YOLO Darknet"
 date:   2020-07-08 00:00:00 +0800
-tags: [voc, yolo, format, xml]
+tags: [目标检测, yolo, darknet, pascal-voc, python, data-format, annotation, computer-vision, deep-learning]
 ---
 
 ## PASCAL VOC(Visual Object Classes) 格式

@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes集群搭建Master节点"
 date:   2020-11-06 00:00:00 +0800
-tags: [cluster, ubuntu, install]
+tags: [kubernetes, docker, ubuntu, cluster, master-node, containers, sysadmin, deployment]
 ---
 
 ## 登录 root 用户

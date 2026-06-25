@@ -2,7 +2,7 @@
 type: article
 title:  "使用YOLOv5训练自定义数据集"
 date:   2020-11-04 00:00:00 +0800
-tags: [目标检测, yolo, yolov5, pytorch, docker, shell, for, sed, head]
+tags: [目标检测, yolo, yolov5, pytorch, docker, deep-learning, computer-vision, gpu, python, containers]
 ---
 
 > 在 Ubuntu20.04 系统上使用4张GPU卡基于容器训练模型。

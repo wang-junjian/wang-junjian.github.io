@@ -2,7 +2,7 @@
 type: article
 title:  "配置Kubernetes镜像源"
 date:   2020-11-07 00:00:00 +0800
-tags: [linux, ubuntu, mirror, eof, cat]
+tags: [kubernetes, ubuntu, mirror, china, sysadmin, networking]
 ---
 
 ## 配置 Kubernetes 镜像源

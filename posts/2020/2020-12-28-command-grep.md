@@ -2,7 +2,7 @@
 type: article
 title:  "命令grep"
 date:   2020-12-28 00:00:00 +0800
-tags: [linux, grep, find, ll]
+tags: [linux, command-line, grep, text-processing, search, sysadmin, tutorial, shell]
 ---
 
 ## 搜索文件内容

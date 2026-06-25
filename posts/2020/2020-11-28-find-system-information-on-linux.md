@@ -2,7 +2,7 @@
 type: article
 title:  "Linux上查找系统信息"
 date:   2020-11-28 00:00:00 +0800
-tags: [linux, 系统信息, gpu, cuda, memory, 硬盘, lsb_release, grep, cut, uniq]
+tags: [linux, sysadmin, hardware, gpu, nvidia, cuda, memory, disk, cpu, system-info]
 ---
 
 ## 操作系统

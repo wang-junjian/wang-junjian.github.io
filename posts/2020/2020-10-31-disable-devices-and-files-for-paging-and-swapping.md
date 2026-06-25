@@ -2,7 +2,7 @@
 type: article
 title:  "Linux系统禁用交换分区"
 date:   2020-10-31 00:00:00 +0800
-tags: [ubuntu, swap]
+tags: [linux, ubuntu, swap, kubernetes, sysadmin, memory, command-line]
 ---
 
 > Kubernetes集群为了不影响性能要禁用交换分区。

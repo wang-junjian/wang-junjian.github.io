@@ -2,7 +2,7 @@
 type: article
 title:  "命令ls"
 date:   2020-12-20 00:00:00 +0800
-tags: [linux, ls]
+tags: [linux, command-line, ls, sysadmin, tutorial, shell]
 ---
 
 ## 可读的方式显示文件大小

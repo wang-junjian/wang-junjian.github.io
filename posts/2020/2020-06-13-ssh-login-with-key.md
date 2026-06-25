@@ -2,7 +2,7 @@
 type: article
 title:  "SSH使用密匙登录"
 date:   2020-06-13 00:00:00 +0800
-tags: [linux, ssh, ssh-keygen]
+tags: [linux, ssh, ssh-keygen, security, authentication, sysadmin, command-line]
 excerpt: "使用SSH密钥对实现无密码登录Linux服务器的教程，包含密钥生成和部署步骤。"
 ---
 

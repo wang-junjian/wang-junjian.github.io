@@ -2,7 +2,7 @@
 type: article
 title:  "使用Detectron在自定义数据集上训练MaskRCNN"
 date:   2019-09-01 00:00:00 +0800
-tags: [目标检测, detectron, maskrcnn, docker]
+tags: [目标检测, detectron, mask-rcnn, docker, machine-learning, computer-vision, instance-segmentation, tutorial]
 excerpt: "使用Detectron框架和Docker在自定义数据集上训练MaskRCNN实例分割模型的教程。"
 ---
 

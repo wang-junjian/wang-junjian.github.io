@@ -2,7 +2,7 @@
 type: article
 title:  "在Ubuntu上安装Docker"
 date:   2020-10-17 00:00:00 +0800
-tags: [docker, linux, install]
+tags: [docker, ubuntu, installation, containers, linux, sysadmin, command-line]
 ---
 
 > 在 Ubuntu20.04 上安装 Docker

@@ -2,7 +2,7 @@
 type: article
 title:  "GitHub加速"
 date:   2020-11-10 00:00:00 +0800
-tags: [github, curl, hosts]
+tags: [github, acceleration, china, networking, git, proxy, command-line]
 ---
 
 ## 通过网游加速器
