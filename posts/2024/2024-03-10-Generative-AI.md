@@ -2,7 +2,7 @@
 type: article
 title:  "生成式AI"
 date:   2024-03-10 08:00:00 +0800
-tags: [deeplearningai, generativeai]
+tags: [generative-ai, llm, fine-tuning, pre-training, reinforcement-learning, agent, machine-learning, 生成式人工智能, 大语言模型]
 ---
 
 ## 机器学习的方法

@@ -2,7 +2,7 @@
 type: article
 title:  "使用 Cline 从零开始构建自定义 MCP 服务器：综合指南"
 date:   2025-04-23 12:00:00 +0800
-tags: [Cline, MCP, MCPServer, ClineDoc]
+tags: [cline, mcp, mcp-server, model-context-protocol, github, typescript, custom-mcp-server, vscode-extension, ai-coding-assistant, cline-doc]
 ---
 
 # [使用 Cline 从零开始构建自定义 MCP 服务器：综合指南](https://github.com/cline/cline/blob/main/docs/mcp/mcp-server-from-scratch.md)

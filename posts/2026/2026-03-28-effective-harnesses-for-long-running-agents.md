@@ -2,7 +2,7 @@
 type: article
 title:  "Anthropic：长时运行智能体的有效脚手架 (Harnesses)"
 date:   2026-03-28 08:00:00 +0800
-tags: [Agent, HarnessEngineering, Anthropic, Claude]
+tags: [anthropic, claude, harness-engineering, long-running-agents, agent, context-window, claude-agent-sdk, incremental-development, git]
 ---
 
 这是一篇由 Anthropic 发布的技术博客文章，探讨了如何通过构建有效的“脚手架”（harnesses）来提升长时运行智能体（long-running agents）的工作效率。

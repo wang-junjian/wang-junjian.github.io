@@ -2,7 +2,7 @@
 type: article
 title:  "Tabby 使用指南"
 date:   2024-08-28 08:00:00 +0800
-tags: [tabby, vscode, contextprovider, codesearch, codechat]
+tags: [tabby, ai-code-assistant, vscode-extension, codestral, context-provider, code-search, code-chat, ollama, local-llm, code-completion]
 ---
 
 ## Tabby

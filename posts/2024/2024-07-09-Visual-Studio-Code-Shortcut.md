@@ -2,7 +2,7 @@
 type: article
 title:  "Visual Studio Code 快捷键"
 date:   2024-07-09 08:00:00 +0800
-tags: [vscode, shortcut]
+tags: [vscode, visual-studio-code, keyboard-shortcut, shortcut, editor, ide, productivity]
 ---
 
 ## 快捷键

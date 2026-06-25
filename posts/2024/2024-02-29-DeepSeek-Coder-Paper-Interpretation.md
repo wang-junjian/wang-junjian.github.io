@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek-Coder 论文解读"
 date:   2024-02-29 08:00:00 +0800
-tags: [deepseek-coder, codellm]
+tags: [deepseek-coder, code-llm, paper-interpretation, code-intelligence, training-data, fill-in-the-middle, data-cleaning, model-architecture]
 ---
 
 ## 论文

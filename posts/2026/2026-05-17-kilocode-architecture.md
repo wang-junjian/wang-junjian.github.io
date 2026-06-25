@@ -2,7 +2,7 @@
 type: article
 title:  "Kilo Code - AI 编码智能体架构设计文档"
 date:   2026-05-17 18:00:00 +0800
-tags: [Kilo Code, 智能体, 架构设计]
+tags: [kilo-code, 智能体, 架构设计, opencode, monorepo, turborepo, bun, effect-ts, solidjs, mcp]
 ---
 
 ## 项目总览

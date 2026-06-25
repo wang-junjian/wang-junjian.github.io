@@ -2,7 +2,7 @@
 type: article
 title:  "DXT（桌面扩展）开发指南"
 date:   2025-07-02 22:00:00 +0800
-tags: [DXT, MCPHub, MCP, MCPServer, calculator-mcp-server, Python, LLM]
+tags: [dxt, desktop-extension, mcp, mcp-server, mcphub, calculator-mcp-server, python, docker, cross-platform]
 ---
 
 本文档主要介绍了 **DXT (桌面扩展)** 的开发指南，它是一种将 **MCP 服务器** 转换为可分发扩展的工具。文档详述了如何使用 **DXT 工具**来 **初始化、验证和打包** 扩展，并提供了 **目录结构示例**。此外，还强调了在打包 **Python 依赖项**时需要注意的 **跨平台兼容性问题**，特别是在不同架构（如 arm64 macOS 与 x86_64 Linux）之间。最终目标是创建一个 **`.dxt` 文件**，其中包含所有必需的服务器文件和元数据，以便于分发和管理。

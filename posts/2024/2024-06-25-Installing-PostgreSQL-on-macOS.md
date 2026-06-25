@@ -2,7 +2,7 @@
 type: article
 title:  "在 macOS 上安装 PostgreSQL"
 date:   2024-06-25 08:00:00 +0800
-tags: [db, postgresql, pgadmin, macos]
+tags: [postgresql, macos, database, pgadmin, installation]
 ---
 
 ## 安装 PostgreSQL

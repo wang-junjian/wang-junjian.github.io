@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw 架构设计"
 date:   2026-02-17 10:00:00 +0800
-tags: [OpenClaw, Agent, Architecture]
+tags: [openclaw, ai-agent, architecture, gateway, websocket, channel-adapter, message-routing, json-rpc, control-plane, pi-agent]
 ---
 
 <!-- more -->

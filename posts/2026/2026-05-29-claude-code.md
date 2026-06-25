@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Code 安装、更新与卸载指南"
 date:   2026-05-29 18:00:00 +0800
-tags: [Claude Code, Install, cURL, Homebrew, NPM]
+tags: [claude-code, install, uninstall, curl, homebrew, npm, macos, cli-tool, anthropic, 安装指南]
 ---
 
 ## 安装 Claude Code

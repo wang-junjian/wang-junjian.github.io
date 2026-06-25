@@ -2,7 +2,7 @@
 type: article
 title:  "Garry Tan（YC 总裁）- 大展宏图（煮沸海洋）"
 date:   2026-04-10 12:00:00 +0800
-tags: [GarryTan, ASI, AI, Ephemeralization]
+tags: [garry-tan, yc, asi, superintelligence, ai, boil-the-ocean, ephemeralization, jevons-paradox, startup, builder]
 ---
 
 超级人工智能时代，是时候告别保守、提升雄心了

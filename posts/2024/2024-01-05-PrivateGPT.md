@@ -2,7 +2,7 @@
 type: article
 title:  "PrivateGPT"
 date:   2024-01-05 08:00:00 +0800
-tags: [privategpt, python]
+tags: [privategpt, python, poetry, gradio, rag, 本地部署, localgpt, llm]
 ---
 
 ## [PrivateGPT](https://github.com/imartinez/privateGPT)

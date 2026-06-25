@@ -2,7 +2,7 @@
 type: article
 title:  "大模型（语言、视觉语言、语音）推理服务部署与测试"
 date:   2025-11-01 08:00:00 +0800
-tags: [LLM, 推理, CUDA, vLLM, SGLang, llama.cpp, whisper.cpp, curl]
+tags: [llm, vllm, sglang, llama.cpp, whisper.cpp, cuda, jetson-thor, qwen3, 推理, 模型量化]
 ---
 
 <!-- more -->

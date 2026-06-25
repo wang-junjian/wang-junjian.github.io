@@ -2,7 +2,7 @@
 type: article
 title:  "Xorbits Inference: 模型服务变得更容易"
 date:   2024-05-08 08:00:00 +0800
-tags: [xinference, llm, macbookprom2max]
+tags: [xinference, xorbits-inference, model-serving, llm, macos, apple-silicon, chatbox, deployment, python]
 ---
 
 ## macOS 上安装（M2）

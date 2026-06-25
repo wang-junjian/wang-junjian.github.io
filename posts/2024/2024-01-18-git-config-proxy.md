@@ -2,7 +2,7 @@
 type: article
 title:  "git 配置代理"
 date:   2024-01-18 08:00:00 +0800
-tags: [git, proxy, config, github, v2ray]
+tags: [git, proxy, github, v2ray, git-config, socks5]
 ---
 
 我使用 v2ray 科学上网，并且已经开启了全局模式，所有网络连接都应该通过 v2ray 的代理服务器。但我使用 `git` 命令行应用发现不能连接 GitHub，但 `GitHub Desktop` 可以正常使用。

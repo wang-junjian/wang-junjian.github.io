@@ -2,7 +2,7 @@
 type: article
 title:  "Next AI Draw.io 架构设计分析"
 date:   2026-03-14 22:00:00 +0800
-tags: [NextAIDraw.io, Draw.io, Agent, 架构设计]
+tags: [next-ai-draw-io, drawio, diagram-generation, vercel-ai-sdk, nextjs, react, typescript, electron]
 ---
 
 <!-- more -->

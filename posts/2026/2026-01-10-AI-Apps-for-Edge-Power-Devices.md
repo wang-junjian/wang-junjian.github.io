@@ -2,7 +2,7 @@
 type: article
 title:  "分析基于边端电力设备的人工智能应用"
 date:   2026-01-10 08:00:00 +0800
-tags: [电力, 边缘计算, 人工智能, 报文处理, 电力 AI]
+tags: [电力, 边缘计算, 人工智能, 报文处理, 电力ai, edge-ai, 智能电网, onnx-runtime, cnn, lstm]
 ---
 
 <!-- more -->

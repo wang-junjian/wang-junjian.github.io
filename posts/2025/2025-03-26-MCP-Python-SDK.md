@@ -2,7 +2,7 @@
 type: article
 title:  MCP Python SDK
 date:   2025-03-26 08:00:00 +0800
-tags: [MCP, Python, LLM]
+tags: [mcp-python-sdk, mcp, python, fastmcp, llm, sdk, claude-desktop, mcp-inspector, stdio, sse]
 ---
 
 ## 概述

@@ -2,7 +2,7 @@
 type: article
 title:  "Introducing deep research"
 date:   2025-02-06 10:00:00 +0800
-tags: [deepresearch, agent, o3, arxiv, openai]
+tags: [deep-research, openai, agent, reasoning, web-browsing, o3, chatgpt, benchmark]
 ---
 
 ## [Deep research](https://openai.com/index/introducing-deep-research/)

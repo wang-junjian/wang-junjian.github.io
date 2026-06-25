@@ -2,7 +2,7 @@
 type: article
 title:  "Microsoft Copilot"
 date:   2024-03-04 08:00:00 +0800
-tags: [microsoft, copilot]
+tags: [microsoft, copilot, copilot-studio, power-virtual-agents, bot-framework-composer, chatbot, low-code, ai-assistant]
 ---
 
 ## [Microsoft Copilot](https://developer.microsoft.com/zh-cn/copilot)

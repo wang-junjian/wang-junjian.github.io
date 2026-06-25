@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain Blog: In the Loop"
 date:   2024-10-28 10:00:00 +0800
-tags: [langchain, agent, agentic, llm]
+tags: [langchain, agent, agentic, llm, langgraph, cognitive-architecture, function-calling, memory]
 ---
 
 ## [What is an agent?](https://blog.langchain.dev/what-is-an-agent/)

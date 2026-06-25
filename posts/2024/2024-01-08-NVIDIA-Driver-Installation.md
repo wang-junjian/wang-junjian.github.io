@@ -2,7 +2,7 @@
 type: article
 title:  "NVIDIA Driver 安装"
 date:   2024-01-08 08:00:00 +0800
-tags: [nvidia-driver, nvidia, cuda, gpu, lsof, apt, dpkg, libc6-dev, build-essential]
+tags: [nvidia-driver, cuda, gpu, ubuntu, kubernetes, 驱动安装, troubleshooting, lsof]
 ---
 
 困难重重 😭

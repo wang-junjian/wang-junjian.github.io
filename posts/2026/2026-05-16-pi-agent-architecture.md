@@ -2,7 +2,7 @@
 type: article
 title:  "Pi - AI 编码智能体架构设计文档"
 date:   2026-05-16 18:00:00 +0800
-tags: [Pi, 智能体, 架构设计]
+tags: [pi-agent, 智能体, 架构设计, typescript, monorepo, llm, tui, lit, tailwind-css, extension]
 ---
 
 Pi 是一个模块化的 AI 编码智能体 Monorepo，使用 TypeScript 构建。它提供统一的 LLM 抽象层、通用的智能体运行时、丰富的终端 UI 框架，以及完全可扩展的编码智能体命令行工具。

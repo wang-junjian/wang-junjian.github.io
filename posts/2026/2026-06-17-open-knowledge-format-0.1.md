@@ -2,7 +2,7 @@
 type: article
 title:  "Open Knowledge Format (OKF)"
 date:   2026-06-17 11:00:00 +0800
-tags: [Open Knowledge Format, OKF, 知识表示, 智能体知识库]
+tags: [open-knowledge-format, okf, 知识表示, 智能体知识库, knowledge-representation, markdown, yaml, frontmatter, data-catalog, agent-knowledge-base]
 ---
 
 **版本 0.1 — 草案**

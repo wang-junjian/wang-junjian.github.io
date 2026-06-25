@@ -2,7 +2,7 @@
 type: article
 title:  "🦞 个人 AI 助手 OpenClaw 应用实践"
 date:   2026-02-18 20:00:00 +0800
-tags: [OpenClaw, Agent, Practice]
+tags: [openclaw, ai-agent, 应用实践, skill, gpu-monitoring, pdf-generation, rss, cron, news-summary, 斯坦福小镇]
 ---
 
 这里展示了我使用 🦞 OpenClaw 的实际使用案例和应用实践。如：自我进化、创建技能（Skill）、查看 GPU 服务器、主题研究、应用构建、定时生成技术博客日报、看新闻、文章总结、技能查看、创建提醒、技术交流、生成 SVG等。希望能给你一些启发，看看 OpenClaw 在实际生活和工作中的强大能力！🚀

@@ -2,7 +2,7 @@
 type: release
 title: "JSON 格式化 / 压缩：纯前端在线 JSON 处理工具"
 date: 2026-06-21 10:22:00 +0800
-tags: [tool, json, formatter, browser, developer-tools]
+tags: [tool, json, formatter, minifier, browser, developer-tools, javascript, html, css]
 linkUrl: https://wangjunjian.com/tools/json-prettifier.html
 ---
 

@@ -2,7 +2,7 @@
 type: article
 title:  "Elmo Chat - Your AI Web Copilot"
 date:   2024-06-27 08:00:00 +0800
-tags: [elmochat, leptonai]
+tags: [elmo-chat, lepton-ai, chrome-extension, ai-assistant, web-copilot, summarization, pdf, translation]
 ---
 
 ## [Elmo Chat](https://www.elmo.chat/)

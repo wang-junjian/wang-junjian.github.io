@@ -2,7 +2,7 @@
 type: article
 title:  "Claude: Developing a computer use model"
 date:   2025-02-01 10:00:00 +0800
-tags: [claude, arxiv, agent, llm, anthropics]
+tags: [claude, anthropic, computer-use, agent, llm, osworld, safety, prompt-injection, api]
 ---
 
 ## [Developing a computer use model（开发计算机使用模型）](https://www.anthropic.com/news/developing-computer-use)

@@ -2,7 +2,7 @@
 type: article
 title:  "GitHub Copilot in VS Code"
 date:   2024-12-01 10:00:00 +0800
-tags: [githubcopilot, vscode]
+tags: [github-copilot, vscode, copilot-chat, code-completion, inline-chat, chat-participant, slash-command, workspace-indexing]
 ---
 
 ## GitHub Copilot

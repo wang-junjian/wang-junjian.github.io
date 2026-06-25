@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek Coder: Let the Code Write Itself"
 date:   2024-01-04 08:00:00 +0800
-tags: [deepseek-coder, leaderboard, codellm]
+tags: [deepseek-coder, code-llm, leaderboard, humaneval, multipl-e, code-completion, code-infilling, fine-tuning, quantization, transformers]
 ---
 
 ## DeepSeek Coder

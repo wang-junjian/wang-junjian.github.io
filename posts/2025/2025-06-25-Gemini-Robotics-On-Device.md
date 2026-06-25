@@ -2,7 +2,7 @@
 type: article
 title:  "Gemini Robotics On-Device"
 date:   2025-06-25 20:00:00 +0800
-tags: [GeminiRobotics, VLA, 机器人, 具身智能]
+tags: [gemini-robotics, vla, on-device, 机器人, 具身智能, tpu, jax, robot-learning]
 ---
 
 本文档描述了**Gemini Robotics On-Device**，这是一款先进的**视觉-语言-动作 (VLA) 模型**，旨在本地设备上高效运行以实现通用机器人操作。该模型能够处理文本、图像和机器人本体感受数据作为输入，并输出机器人动作。训练使用了包含图像、文本以及机器人传感器和动作数据的数据集，并利用**Google的Tensor Processing Units (TPUs)**进行。评估结果表明，**Gemini Robotics On-Device**在泛化、指令遵循和快速适应方面表现出色，其性能与旗舰版**Gemini Robotics 模型**相似，同时超越了之前的最佳设备端VLA模型。该模型主要用于机器人应用的设备端部署，作为核心组件使机器人能够理解并响应视觉和语言指令，并在给定环境中采取行动。

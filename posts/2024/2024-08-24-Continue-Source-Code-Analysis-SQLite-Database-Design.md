@@ -2,7 +2,7 @@
 type: article
 title:  "Continue 源码分析 - SQLite 数据库设计"
 date:   2024-08-24 08:00:00 +0800
-tags: [continue, fts, sqlite, bm25, githubcopilot]
+tags: [continue, sqlite, fts5, full-text-search, bm25, database-design, sqlite-fts, source-code-analysis]
 ---
 
 ## SQLite 数据库设计

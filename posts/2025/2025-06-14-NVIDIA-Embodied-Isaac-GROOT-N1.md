@@ -2,7 +2,7 @@
 type: article
 title:  "具身模型 NVIDIA Isaac GROOT N1 详解"
 date:   2025-06-14 20:00:00 +0800
-tags: [具身智能, GROOT-N1, Isaac, NVIDIA]
+tags: [nvidia, isaac-groot-n1, groot-n1, humanoid-robot, embodied-intelligence, physical-ai, omniverse, isaac-lab, sim-to-real, 具身智能]
 ---
 
 本文档概述了 **NVIDIA Isaac GROOT N1**，一个专为具身人工智能（Physical AI）设计的**人形机器人基础模型**。该系统通过**三个核心原则**运作：**泛化能力**、**双系统架构**（结合高层认知与低层控制），以及一个涵盖现实世界数据、合成数据和网络数据的**数据金字塔**。 Isaac GROOT N1 **利用大量训练数据**来驱动**人形机器人**进行**通用型操作**，并通过 **NVIDIA 的生态系统**，包括 **Omniverse** 和 **Isaac Lab** 进行**模拟与部署**。推荐的的微调方法是：**收集真实数据，也要生成对应比例的模拟数据**。

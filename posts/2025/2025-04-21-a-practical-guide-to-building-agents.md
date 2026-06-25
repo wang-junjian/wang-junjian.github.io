@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI: 构建智能体的实用指南"
 date:   2025-04-21 19:00:00 +0800
-tags: [OpenAI, Agent, Guardrails]
+tags: [openai, agent, agents-sdk, tool-use, orchestration, multi-agent, guardrails, prompt-engineering, 智能体]
 ---
 
 - [A practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf)

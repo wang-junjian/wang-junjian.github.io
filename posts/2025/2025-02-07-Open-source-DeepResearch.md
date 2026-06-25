@@ -2,7 +2,7 @@
 type: article
 title:  "Open-source DeepResearch – Freeing our search agents"
 date:   2025-02-07 10:00:00 +0800
-tags: [deepresearch, agent, huggingface]
+tags: [deep-research, hugging-face, agent, smolagents, gaia, code-agent, open-source, web-search]
 ---
 
 - [Open-source DeepResearch](https://huggingface.co/blog/open-deep-research)

@@ -2,7 +2,7 @@
 type: release
 title: "二维码生成器：支持网址、文本与 WiFi 的在线二维码工具"
 date: 2026-06-22 19:24:00 +0800
-tags: [tool, qrcode, generator, wifi, browser, png]
+tags: [tool, qrcode, 二维码, 二维码生成器, frontend, canvas-api, wifi, png, browser]
 linkUrl: https://wangjunjian.com/tools/qr-code-generator.html
 ---
 

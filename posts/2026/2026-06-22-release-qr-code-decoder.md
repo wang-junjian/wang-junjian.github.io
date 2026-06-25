@@ -2,7 +2,7 @@
 type: release
 title: "二维码识别器：支持图片上传、剪贴板粘贴与摄像头扫码"
 date: 2026-06-22 20:53:00 +0800
-tags: [tool, qr-code, scanner, decoder, browser, jsqr, camera]
+tags: [tool, qr-code, scanner, decoder, browser, jsqr, camera, javascript, file-reader-api, clipboard-api, media-devices-api]
 linkUrl: https://wangjunjian.com/tools/qr-code-decoder.html
 ---
 

@@ -2,7 +2,7 @@
 type: release
 title: "Read Aloud：浏览器本地长文朗读器"
 date: 2026-06-23 22:10:00 +0800
-tags: [tool, tts, read-aloud, web-speech-api, browser, local-tts]
+tags: [tool, tts, text-to-speech, read-aloud, web-speech-api, speech-synthesis, browser, local-tts]
 linkUrl: https://wangjunjian.com/tools/read-aloud.html
 ---
 

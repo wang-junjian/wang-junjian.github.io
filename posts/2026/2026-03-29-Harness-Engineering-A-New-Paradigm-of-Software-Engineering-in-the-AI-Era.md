@@ -2,7 +2,7 @@
 type: article
 title:  "Harness Engineering：AI时代的软件工程新范式"
 date:   2026-03-29 20:00:00 +0800
-tags: [Agent, HarnessEngineering, Anthropic, Claude, OpenAI]
+tags: [harness-engineering, ai-agent, software-engineering, context-engineering, architectural-constraints, entropy-management, openai, anthropic, langchain, 驾驭工程]
 ---
 
 **Harness Engineering**，是在AI大模型时代，以**确定性系统外壳约束概率性AI行为**，通过**上下文工程、架构约束、熵管理**三位一体，构建可长期稳定运行的AI Agent系统，推动软件工程从代码实现转向系统设计，成为下一代AI工程化的核心范式。

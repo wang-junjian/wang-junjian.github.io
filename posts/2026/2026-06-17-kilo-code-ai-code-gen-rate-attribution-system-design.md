@@ -2,7 +2,7 @@
 type: article
 title:  "Kilo Code AI 代码生成率与归因分析 — 系统设计"
 date:   2026-06-17 06:00:00 +0800
-tags: [Kilo Code, AI 代码生成率, 归因分析, 系统设计]
+tags: [kilo-code, ai-code-generation, attribution-analysis, system-design, minhash, k-shingle, lsh, ast, code-fingerprint, telemetry]
 ---
 
 > 范围：Kilo CLI (`packages/opencode/`) / VS Code Extension (`packages/kilo-vscode/`) / Kilo Cloud (后端归因引擎)  

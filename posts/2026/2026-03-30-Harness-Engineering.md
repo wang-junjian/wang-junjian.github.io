@@ -2,7 +2,7 @@
 type: article
 title:  "一文读懂 Harness Engineering：AI 时代软件工程的全新范式"
 date:   2026-03-30 12:00:00 +0800
-tags: [Agent, HarnessEngineering]
+tags: [harness-engineering, ai-agent, software-engineering, context-engineering, architectural-constraints, entropy-management, openai, anthropic, langchain, minimax]
 ---
 
 本文综合 Anthropic、OpenAI、Martin Fowler、LangChain、Mitchell Hashimoto、NxCode、MiniMax 等前沿文章的分析报告。

@@ -2,7 +2,7 @@
 type: article
 title:  "GitHub MCP 服务器"
 date:   2025-04-03 08:00:00 +0800
-tags: [MCP, MCPServer, GitHub]
+tags: [github-mcp-server, mcp, model-context-protocol, github, github-api, repository-management, docker, npx, personal-access-token, code-review]
 ---
 
 ## GitHub MCP 服务器

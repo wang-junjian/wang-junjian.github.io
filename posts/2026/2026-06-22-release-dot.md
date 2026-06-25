@@ -2,7 +2,7 @@
 type: release
 title: "DOT 文件渲染器：在线 Graphviz 图形预览工具"
 date: 2026-06-22 22:45:00 +0800
-tags: [tool, dot, graphviz, graph, diagram, visualization]
+tags: [tool, dot, graphviz, graph, diagram, visualization, viz-js, svg]
 linkUrl: https://wangjunjian.com/tools/dot.html
 ---
 

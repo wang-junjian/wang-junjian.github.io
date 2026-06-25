@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Code 文档"
 date:   2025-09-11 08:00:00 +0800
-tags: [ClaudeCode, Agent, Claude, CLI]
+tags: [claude-code, claude, ai-coding-assistant, cli, mcp, subagent, plan-mode, git, natural-language]
 ---
 
 Anthropic的“Claude Code”是一款**终端内AI编程助手**，旨在通过**自然语言交互**帮助开发者**更快地编写、调试和管理代码**。它提供了一系列功能，包括**根据描述构建功能**、**识别并修复bug**、**理解复杂代码库**以及**自动化日常开发任务**。用户可以通过简单的**NPM安装和登录**快速开始使用，并能**通过聊天式的命令直接编辑文件、执行Shell命令和管理Git操作**。该工具还支持**自定义子代理**以处理特定任务，并提供了**灵活的配置选项**，包括**记忆管理、权限设置和环境变量**，以适应个人、项目和企业级的开发需求。

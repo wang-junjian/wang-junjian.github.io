@@ -2,7 +2,7 @@
 type: article
 title:  "MCP 服务器示例和实现列表"
 date:   2025-04-02 10:00:00 +0800
-tags: [MCP, Server, LLM]
+tags: [mcp, model-context-protocol, mcp-server, github, gitlab, postgres, sqlite, filesystem, brave-search, puppeteer]
 ---
 
 - [Example Servers](https://modelcontextprotocol.io/examples)

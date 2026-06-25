@@ -2,7 +2,7 @@
 type: article
 title:  "Anthropic: 构建有效的AI智能体"
 date:   2025-05-05 10:00:00 +0800
-tags: [Anthropic, Agent, Workflow]
+tags: [anthropic, agent, workflow, prompt-chaining, routing, parallelization, orchestrator-worker, evaluator-optimizer, mcp, 智能体]
 ---
 
 # Anthropic 构建有效的AI智能体（总结）

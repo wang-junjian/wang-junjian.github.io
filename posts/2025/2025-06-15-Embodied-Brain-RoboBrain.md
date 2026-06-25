@@ -2,7 +2,7 @@
 type: article
 title:  "具身大脑 RoboBrain"
 date:   2025-06-15 15:00:00 +0800
-tags: [具身智能, RoboBrain, 具身大脑, 多模态大模型, ShareRobot, 智源]
+tags: [robobrain, embodied-intelligence, multimodal-llm, task-planning, trajectory-prediction, sharerobot, 具身智能, 具身大脑, 多模态大模型, 智源]
 ---
 
 本文档介绍了**RoboBrain**，一个由智源人工智能研究院开发的**具身多模态大模型**。它详细阐述了**具身人工智能的发展趋势**，并强调了大型模型在复杂**长期操作任务**中的重要性。文件中解释了**任务规划**、**可操作区域感知**和**轨迹预测**是RoboBrain实现**端到端具身智能**的关键能力。此外，它还介绍了用于训练RoboBrain的**ShareRobot数据集**，以及**模型训练策略**和**实验结果**，展示了RoboBrain在各项基准测试中超越现有模型的表现。

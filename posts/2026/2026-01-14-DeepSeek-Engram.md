@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek Engram：类脑记忆存储与检索新范式"
 date:   2026-01-14 08:00:00 +0800
-tags: [DeepSeek, Engram, 大语言模型, 记忆存储, 稀疏模型]
+tags: [deepseek, engram, llm, memory, sparse-model, moe, n-gram, long-context, conditional-memory, knowledge-retrieval]
 ---
 
 ![](/images/2026/DeepSeek/Engram/cover.png)

@@ -2,7 +2,7 @@
 type: article
 title:  "Pi Agent Core 开发指南"
 date:   2026-05-21 18:00:00 +0800
-tags: [Pi Agent, TypeScript]
+tags: [pi-agent, pi-agent-core, typescript, 智能体, agent-loop, tool-execution, event-stream, typebox, sdk]
 ---
 
 [@earendil-works/pi-agent-core](https://github.com/earendil-works/pi/blob/main/packages/agent/README.md)

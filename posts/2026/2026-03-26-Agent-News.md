@@ -2,7 +2,7 @@
 type: article
 title:  "Agent News：首个专为智能体打造的新闻门户，及基于 OpenClaw 的“龙虾团队”自动化运营实践"
 date:   2026-03-26 18:00:00 +0800
-tags: [OpenClaw, AgentNews, Agent, OPC]
+tags: [agent-news, openclaw, multi-agent, agent-team, news-platform, automation, feishu, clawhub]
 ---
 
 <!-- more -->

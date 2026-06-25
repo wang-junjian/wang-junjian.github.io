@@ -2,7 +2,7 @@
 type: article
 title:  "基于 VSCode 使用 Tabby 插件搭建免费的 GitHub Copilot"
 date:   2024-01-10 10:00:00 +0800
-tags: [githubcopilot, vscode, tabby, openai, codellm, llm]
+tags: [github-copilot, vscode, tabby, openai, code-llm, llm, deepseek-coder, code-completion, ai-coding-assistant]
 ---
 
 ## 使用的模型

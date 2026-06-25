@@ -2,7 +2,7 @@
 type: article
 title:  "GitHub Copilot for VSCode v1.100"
 date:   2025-06-01 10:00:00 +0800
-tags: [GitHubCopilot, VSCode, AICodingAssistant]
+tags: [github-copilot, vscode, ai-coding-assistant, ask-mode, edit-mode, agent-mode, prompt-files, instructions-files]
 ---
 
 本文档介绍了 Copilot 的三种主要模式——**询问 (Ask)**、**编辑 (Edit)** 和 **代理 (Agent)**，并列举了 Copilot 可访问的各种工具，例如 **搜索用法 (#usages)**、**获取网页信息 (#fetch)**、**搜索 Marketplace 扩展 (#extensions)** 和 **搜索 GitHub 仓库代码 (#githubRepo)**，以增强模型上下文。还详细描述了 **提示文件 (Prompt files)** 和 **指令文件 (Instructions files)** 的目的和使用，并展示了如何通过这些文件管理和定制 AI 模型的行为。

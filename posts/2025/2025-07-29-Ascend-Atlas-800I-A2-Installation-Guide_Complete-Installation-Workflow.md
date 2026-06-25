@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（七）：完整的安装部署流程"
 date:   2025-07-29 20:00:00 +0800
-tags: [昇腾, NPU, 910B4, Atlas800IA2, Install, vLLM, LLM, openEuler]
+tags: [昇腾, atlas-800i-a2, npu, 部署流程, docker, mindie, vllm, llm, rsync]
 ---
 
 这份指南详细阐述了**华为Atlas 800I A2推理服务器上大型模型的部署流程**，旨在提供一个全面的安装与配置实践，用于扩展部署到其它服务器。随后，文章通过流程图和具体**命令脚本**，逐步指导用户如何**创建和挂载逻辑卷**、**同步并安装驱动固件**、**部署Docker环境**以及**导入所需的MindIE和vLLM镜像**。最后，指南还涵盖了**同步大型模型权重文件**的关键步骤，并指示用户通过Docker Compose启动模型服务，确保**MindIE和vLLM**能够顺利运行，以实现AI推理功能。

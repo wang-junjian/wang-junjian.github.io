@@ -2,7 +2,7 @@
 type: article
 title:  "使用 FastChat 在 CUDA 上部署 LLM"
 date:   2024-01-16 08:00:00 +0800
-tags: [fastchat, vllm, cuda]
+tags: [fastchat, vllm, cuda, qwen, chatglm, llm-deployment, openai-api, flash-attention]
 ---
 
 ## 安装 FastChat & vLLM

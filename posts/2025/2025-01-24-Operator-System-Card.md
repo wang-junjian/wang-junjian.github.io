@@ -2,7 +2,7 @@
 type: article
 title:  "Operator System Card"
 date:   2025-01-24 10:00:00 +0800
-tags: [operator, cua, agent, openai]
+tags: [operator, cua, computer-using-agent, openai, gpt-4o, agent, safety, red-teaming, prompt-injection]
 ---
 
 - [Operator System Card](https://cdn.openai.com/operator_system_card.pdf)

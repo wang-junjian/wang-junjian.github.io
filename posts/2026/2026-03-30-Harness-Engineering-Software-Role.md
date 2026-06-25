@@ -2,7 +2,7 @@
 type: article
 title:  "Harness Engineering｜软件工程师的角色革命，从写代码到设计环境"
 date:   2026-03-30 20:00:00 +0800
-tags: [Agent, HarnessEngineering]
+tags: [harness-engineering, ai-agent, software-engineering, context-engineering, architectural-constraints, entropy-management, openai, langchain, minimax, 驾驭工程]
 ---
 
 <!-- more -->

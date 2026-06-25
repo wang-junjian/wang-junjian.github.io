@@ -2,7 +2,7 @@
 type: article
 title:  具身智能大模型简介
 date:   2025-05-11 10:00:00 +0800
-tags: [具身智能, VLA, 机器人操作, 数据集收集, RT, RDT, GR, PI0]
+tags: [embodied-ai, vla, vision-language-action, robot-manipulation, rt-1, rt-2, openvla, pi0, rdt, 具身智能]
 ---
 
 - [具身智能大模型简介](https://www.bilibili.com/video/BV1QxB9YuERU/)

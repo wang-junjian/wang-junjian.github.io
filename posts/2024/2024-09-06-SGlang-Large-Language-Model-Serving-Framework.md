@@ -2,7 +2,7 @@
 type: article
 title:  "SGLang 大模型服务框架"
 date:   2024-09-06 08:00:00 +0800
-tags: [sglang, vllm, flashinfer, cuda]
+tags: [sglang, vllm, llm-serving, flashinfer, tensor-parallelism, quantization, qwen2, cuda]
 ---
 
 ## SGLang

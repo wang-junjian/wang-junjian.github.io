@@ -2,7 +2,7 @@
 type: article
 title:  "MCP 服务器功能"
 date:   2025-03-27 12:00:00 +0800
-tags: [MCP, LLM]
+tags: [mcp, model-context-protocol, 服务器功能, prompts, resources, tools, llm, primitives, json-rpc, capabilities]
 ---
 
 服务器通过MCP提供了为语言模型添加上下文的基本构建块。这些原语支持客户端、服务器和语言模型之间的丰富交互：

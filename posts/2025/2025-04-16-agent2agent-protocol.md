@@ -2,7 +2,7 @@
 type: article
 title:  "Agent2Agent 协议 (A2A)"
 date:   2025-04-16 08:00:00 +0800
-tags: [A2A, Agent]
+tags: [a2a, agent2agent, agent, multi-agent, agent-interoperability, mcp, google, protocol, json-rpc]
 ---
 
 ## [A2A](https://github.com/google/A2A)

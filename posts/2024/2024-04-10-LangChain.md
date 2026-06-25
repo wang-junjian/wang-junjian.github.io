@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain"
 date:   2024-04-10 08:00:00 +0800
-tags: [langchain]
+tags: [langchain, lcel, langsmith, langgraph, langserve, llm-framework, python, langchain-core]
 ---
 
 - [LangChain Expression Language (LCEL)](https://python.langchain.com/docs/expression_language/)

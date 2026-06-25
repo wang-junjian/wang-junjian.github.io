@@ -2,7 +2,7 @@
 type: article
 title:  "慧思开物：通往通用具身智能之路"
 date:   2025-05-15 10:00:00 +0800
-tags: [具身智能, VLA, AGI]
+tags: [慧思开物, embodied-ai, vla, agi, general-embodied-intelligence, robotics, foundation-model, embodied-intelligence, 具身智能, 通用人工智能]
 ---
 
 - [慧思开物：通往通用具身智能之路](https://www.bilibili.com/video/BV1CkLJzJE31)

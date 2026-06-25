@@ -2,7 +2,7 @@
 type: article
 title:  "Reachy Mini Python SDK 开发实战：从运动控制到视觉音频交互"
 date:   2026-05-10 12:00:00 +0800
-tags: [ReachyMini, 机器人]
+tags: [reachy-mini, python-sdk, 机器人, 运动控制, 视觉交互, 音频交互, mujoco, opencv, rest-api]
 ---
 
 [Notebook 0 — First Connection & Movement](https://github.com/pollen-robotics/reachy_mini/blob/main/docs/notebooks/0-First-Connection-and-Movement.ipynb)

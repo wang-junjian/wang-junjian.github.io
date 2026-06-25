@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI o3 and o4-mini System Card"
 date:   2025-04-19 08:00:00 +0800
-tags: [OpenAI, o3, o4-mini, System Card]
+tags: [openai, o3, o4-mini, system-card, reasoning-model, tool-use, safety, preparedness-framework]
 ---
 
 - [OpenAI o3 and o4-mini System Card](https://cdn.openai.com/pdf/2221c875-02dc-4789-800b-e7758f3722c1/o3-and-o4-mini-system-card.pdf)

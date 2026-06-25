@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw 源代码分析"
 date:   2026-02-18 10:00:00 +0800
-tags: [OpenClaw, Agent, Source Code]
+tags: [openclaw, source-code-analysis, message-flow, routing, websocket, pi-agent, llm, cron, discord, whatsapp]
 ---
 
 <!-- more -->

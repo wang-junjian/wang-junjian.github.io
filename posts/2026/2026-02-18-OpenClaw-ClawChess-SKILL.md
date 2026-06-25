@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw 技能：ClawChess 国际象棋对战"
 date:   2026-02-18 12:00:00 +0800
-tags: [OpenClaw, Agent, Skill]
+tags: [openclaw, skill, clawchess, chess, api, heartbeat, tournament, molty, skill-md, agent-game]
 ---
 
 <!-- more -->

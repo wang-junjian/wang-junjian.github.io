@@ -2,7 +2,7 @@
 type: article
 title:  "Harness Engineering 实战：利用 Autoresearch 实现 AI 模型的自我进化"
 date:   2026-04-06 16:00:00 +0800
-tags: [Autoresearch, HarnessEngineering, Agent, Gemini3]
+tags: [autoresearch, harness-engineering, ai-agent, gemini-3, deep-research, self-evolution, gpt-training, bpb, ratchet-loop]
 ---
 
 <!-- more -->

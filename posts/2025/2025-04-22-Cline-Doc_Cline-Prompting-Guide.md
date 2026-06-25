@@ -2,7 +2,7 @@
 type: article
 title:  "Cline 提示指南 🚀"
 date:   2025-04-22 06:00:00 +0800
-tags: [Cline, Prompting, ClineDoc]
+tags: [cline, prompting, custom-instructions, clinerules, prompt-engineering, vscode-extension, ai-coding-assistant, cline-doc, 提示工程]
 ---
 
 # [Cline 提示指南 🚀](https://github.com/cline/cline/blob/main/docs/prompting/README.md)

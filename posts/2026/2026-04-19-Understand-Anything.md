@@ -2,7 +2,7 @@
 type: article
 title:  "代码“图谱化”利器：Understand-Anything"
 date:   2026-04-19 08:00:00 +0800
-tags: [Understand-Anything, Plugin, KnowledgeGraph, ClaudeCode]
+tags: [understand-anything, plugin, knowledge-graph, claude-code, multi-agent, code-visualization, ai-coding]
 ---
 
 这是一个通过多智能体（multi-agent）流水线将代码库或知识库转化为交互式知识图谱，并提供可视化看板和 AI 问答功能的 Claude Code 插件。

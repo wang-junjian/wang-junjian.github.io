@@ -2,7 +2,7 @@
 type: release
 title: "极简长文朗读器：左右分屏实时朗读工具"
 date: 2026-06-23 20:50:00 +0800
-tags: [tool, tts, reader, web-speech-api, browser, minimalist]
+tags: [tool, tts, text-to-speech, reader, web-speech-api, speech-synthesis, browser, minimalist, 在线工具]
 linkUrl: https://wangjunjian.com/tools/minimalist-long-text-reader.html
 ---
 

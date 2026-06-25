@@ -2,7 +2,7 @@
 type: article
 title:  "AutoResearch：AI 自主进行前沿语言模型研究"
 date:   2026-04-06 20:00:00 +0800
-tags: [Autoresearch, HarnessEngineering, Agent, AndrejKarpathy]
+tags: [autoresearch, harness-engineering, ai-agent, andrej-karpathy, llm-training, gpt, val-bpb, muon, adamw, uv]
 ---
 
 这是 Andrej Karpathy 设计的极简自主 AI 研究实验框架：让 AI 智能体仅修改 train.py，在固定 5 分钟训练预算内自主迭代优化 GPT 模型、以最低验证集 bpb 为目标，自动实验、记录结果并择优保留，无人值守持续运行。

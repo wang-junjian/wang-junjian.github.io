@@ -2,7 +2,7 @@
 type: article
 title:  "智能会议系统 Jetson Thor 上部署模型服务指南"
 date:   2025-11-24 08:00:00 +0800
-tags: [智能会议系统, Jetson, Thor, llama-server, ASR, Qwen3]
+tags: [智能会议系统, jetson-thor, whisperlivekit, funasr, llama-server, qwen3, asr, llm, docker, vllm]
 ---
 
 <!-- more -->

@@ -2,7 +2,7 @@
 type: article
 title:  "面向 AI 编码智能体的 Redis 设计模式与文档"
 date:   2026-03-02 08:00:00 +0800
-tags: [Redis, Agent, LLM, llms.txt, Documentation]
+tags: [redis, design-patterns, ai-coding-agent, llms-txt, documentation, caching, distributed-locking, queue, rate-limiting, redis-streams]
 ---
 
 [Redis Patterns and Documentation for AI Coding Agents](https://redis.antirez.com/llms.txt)

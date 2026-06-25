@@ -2,7 +2,7 @@
 type: article
 title:  "Continue 源码分析 - 键盘快捷键"
 date:   2024-08-26 08:00:00 +0800
-tags: [continue, shortcut, githubcopilot]
+tags: [continue, keyboard-shortcut, source-code-analysis, vscode-extension, tiptap, gui, ai-code-assistant]
 ---
 
 ## 聊天窗口

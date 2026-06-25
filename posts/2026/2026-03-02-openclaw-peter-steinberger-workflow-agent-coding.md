@@ -2,7 +2,7 @@
 type: article
 title:  "Peter Steinberger 开发 OpenClaw 的工作流程及 Agent 编码秘诀分析"
 date:   2026-03-02 18:00:00 +0800
-tags: [OpenClaw, Agent, AgentCoding, Peter Steinberger, steipete]
+tags: [openclaw, agent-coding, peter-steinberger, steipete, open-prose, codex, claude-code, git-worktree, multi-agent, atomic-commits]
 ---
 
 通过 2026 年 git 提交历史记录，分析 Peter Steinberger (steipete) 开发 OpenClaw 的工作流程及 Agent 编码秘诀。

@@ -2,7 +2,7 @@
 type: article
 title:  "AI 大模型基础服务架构图"
 date:   2024-01-01 10:00:00 +0800
-tags: [llm, codellm]
+tags: [llm, code-llm, 大模型基础服务, 架构图, fastchat, tabby, llmops, dify, openai-api, chatglm3]
 ---
 
 ## 大模型基础服务架构图

@@ -2,7 +2,7 @@
 type: article
 title:  "MiniCPM-Llama3-V 2.5 端侧可用的 GPT-4V 级多模态大模型"
 date:   2024-05-23 08:00:00 +0800
-tags: [minicpm-v, ocr, llama3, llm]
+tags: [minicpm-v, ocr, llama3, llm, mllm, openbmb, 端侧部署, vision-language, multimodal]
 ---
 
 ## [MiniCPM-Llama3-V 2.5](https://github.com/OpenBMB/MiniCPM-V)

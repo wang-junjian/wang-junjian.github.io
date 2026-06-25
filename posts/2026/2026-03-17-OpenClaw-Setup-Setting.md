@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw 个人 AI 助手完整部署指南：从安装到模型调优的终极实战手册"
 date:   2026-03-17 20:00:00 +0800
-tags: [OpenClaw, Agent, Install]
+tags: [openclaw, agent, installation, configuration, cli, longcat, volcengine-ark, feishu]
 ---
 
 <!-- more -->

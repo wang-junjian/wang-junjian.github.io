@@ -1,7 +1,7 @@
 ---
 type: note
 date: 2026-06-21 13:30:00 +0800
-tags: [blog, note, qr-code, javascript]
+tags: [qr-code, javascript, jsqr, textdecoder, utf-8, encoding, frontend, browser, note]
 ---
 
 # 调试二维码识别与生成工具的几点经验

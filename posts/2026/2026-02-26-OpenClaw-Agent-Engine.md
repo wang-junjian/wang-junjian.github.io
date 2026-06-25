@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw 智能体引擎工作流程及实现代码分析"
 date:   2026-02-26 10:00:00 +0800
-tags: [OpenClaw, Agent, Agent Engine]
+tags: [openclaw, agent-engine, pi-agent-core, tool-system, sandbox, session-management, memory-compaction, context-pruning, plugins, 智能体]
 ---
 
 <!-- more -->

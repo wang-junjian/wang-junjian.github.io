@@ -2,7 +2,7 @@
 type: article
 title:  "Cline 项目架构设计文档"
 date:   2026-03-04 08:00:00 +0800
-tags: [Cline, Architecture, Agent]
+tags: [cline, vs-code-extension, architecture-design, typescript, react, grpc, protobuf, mcp, sqlite, agent-loop]
 ---
 
 <!-- more -->

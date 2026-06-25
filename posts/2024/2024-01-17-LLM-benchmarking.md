@@ -2,7 +2,7 @@
 type: article
 title:  "LLM 的基准测试"
 date:   2024-01-17 08:00:00 +0800
-tags: [llm, benchmark, 测速, wrk, qwen, fastchat, vllm, teslat4]
+tags: [llm, benchmarking, 测速, fastchat, vllm, qwen, wrk, tesla-t4]
 ---
 
 ## 安装 FastChat & vLLM

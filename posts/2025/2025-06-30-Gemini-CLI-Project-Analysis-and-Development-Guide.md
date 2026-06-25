@@ -2,7 +2,7 @@
 type: article
 title:  "Gemini CLI 项目分析与开发指南"
 date:   2025-06-30 08:00:00 +0800
-tags: [GitHubCopilot, GeminiCLI, LLM, 软件开发, 项目分析]
+tags: [gemini-cli, github-copilot, project-analysis, learning-guide, typescript, monorepo, mcp, llm, 软件开发]
 ---
 
 本文档围绕着**初学者如何分析并开发一个类似 Gemini CLI 的项目**提供了详尽的指南。核心思想是**将复杂的项目分解为可管理的部分**，并提供**分步学习路径**。指南强调了**理解项目架构**（如前端CLI和后端Core的职责）、**熟悉代码结构**、**掌握核心功能**（如API交互和工具系统）、以及**通过实践进行学习**的重要性。通过**阅读文档、运行和调试代码、并尝试进行小修改**，学习者能够逐步掌握此类项目的开发技能。在 VSCode 中，使用 GitHub Copilot 的 Ask 模式分别对大模型（如 GPT-4.1、GPT-4o、Gemini 2.5 Pro 和 Claude Sonnet 系列）进行提问并总结。

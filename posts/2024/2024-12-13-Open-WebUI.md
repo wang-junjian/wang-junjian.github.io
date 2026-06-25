@@ -2,7 +2,7 @@
 type: article
 title:  "Open WebUI"
 date:   2024-12-13 10:00:00 +0800
-tags: [openwebui, chatgpt, ollama, openai api]
+tags: [open-webui, docker, ollama, openai-api, chatgpt, self-hosting]
 ---
 
 ## 下载镜像

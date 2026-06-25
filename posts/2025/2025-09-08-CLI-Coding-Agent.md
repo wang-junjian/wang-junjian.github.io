@@ -2,7 +2,7 @@
 type: article
 title:  "命令行编码智能体"
 date:   2025-09-08 08:00:00 +0800
-tags: [ClaudeCode, Agent, Claude, CLI]
+tags: [claude-code, aider, openai-codex, gemini-cli, codebuddy-code, cli, coding-agent, ai-agent]
 ---
 
 <!-- more -->

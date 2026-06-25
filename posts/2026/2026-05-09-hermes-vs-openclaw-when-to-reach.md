@@ -2,7 +2,7 @@
 type: article
 title:  "Hermes 与 OpenClaw —— 该选哪个智能体？"
 date:   2026-05-09 12:00:00 +0800
-tags: [Hermes, OpenClaw, Kilo]
+tags: [hermes, openclaw, ai-agent, agent-comparison, acp, personal-assistant, kilo]
 ---
 
 ![](/images/2026/OpenClaw/hermes-vs-openclaw.webp)

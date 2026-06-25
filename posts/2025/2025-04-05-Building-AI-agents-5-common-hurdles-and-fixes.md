@@ -2,7 +2,7 @@
 type: article
 title:  "构建AI代理：5个常见障碍及解决方案"
 date:   2025-04-05 08:00:00 +0800
-tags: [AI, Agent, LLM]
+tags: [ai-agent, llm, tool-integration, react-prompting, langchain, llama-index, llmops, hallucination, multi-step-workflow, enterprise-ai]
 ---
 
 构建AI代理的新手指南，帮助您克服挑战。

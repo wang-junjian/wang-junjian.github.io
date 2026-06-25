@@ -2,7 +2,7 @@
 type: article
 title:  "Easy Dataset：基于 LLM 微调数据集的工具"
 date:   2025-03-24 10:00:00 +0800
-tags: [Dataset, Alpaca, ShareGPT, LLaMA-Factory, LLM]
+tags: [easy-dataset, 微调数据集, llm, alpaca, sharegpt, llama-factory, fine-tuning, dataset, docker, npm]
 ---
 
 ## 架构

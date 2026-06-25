@@ -2,7 +2,7 @@
 type: article
 title:  "OpenClaw - 智能体"
 date:   2026-02-10 19:00:00 +0800
-tags: [OpenClaw, Agent, Skill]
+tags: [openclaw, agent, skill, gateway, agent-runtime, system-prompt, context-management, agent-loop, pi-agent-core, workspace]
 ---
 
 <!-- more -->

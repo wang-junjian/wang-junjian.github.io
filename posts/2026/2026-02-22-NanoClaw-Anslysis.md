@@ -2,7 +2,7 @@
 type: article
 title:  "NanoClaw 深度分析：AI 原生、技能系统与核心设计思想"
 date:   2026-02-22 14:00:00 +0800
-tags: [NanoClaw, AI Native, Skill, Software Design, OpenClaw, NanoClaw AI原生]
+tags: [nanoclaw, openclaw, ai-native, skills-system, claude-code, container-security, git-merge, software-design, whatsapp, 智能体]
 ---
 
 本文档深入分析了 NanoClaw — 一个轻量级、AI 原生的个人 AI 助手项目。它的核心设计思想包括：小到可以理解（单一进程、少量文件）、通过容器隔离实现安全（而非应用级权限检查）、AI 原生开发（假设 Claude 始终作为协作者）、技能（Skill）胜于功能（按需转换代码库，而非功能堆积）。最创新的是其 Skills 技能系统，通过 Git 三向合并、三级解决模型（Git→Claude→用户）和共享解决方案缓存，实现了干净、可审计的代码转换。NanoClaw 展示了 AI 原生软件开发的新范式：为 AI + 人类团队协作优化，而非为独立人类开发。

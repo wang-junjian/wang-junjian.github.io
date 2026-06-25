@@ -2,7 +2,7 @@
 type: article
 title:  "NanoClaw 完整文档（含使用、架构、安全与开发）"
 date:   2026-02-23 22:00:00 +0800
-tags: [NanoClaw, AI Native, Documentation, OpenClaw, NanoClaw AI原生]
+tags: [nanoclaw, documentation, claude-code, whatsapp, container, sqlite, mcp, launchd, security, ai-native]
 ---
 
 NanoClaw 是您的**专属 AI 助手**，可安全**运行在容器中**。**轻量设计**，**易于理解**，还能根据您的**需求自由定制**。

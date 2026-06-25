@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Code 源代码分析"
 date:   2026-04-01 20:00:00 +0800
-tags: [ClaudeCode, Agent]
+tags: [claude-code, ai-agent, source-code-analysis, typescript, query-engine, subagent, mcp, context-management, permissions, 智能编码助手]
 ---
 
 <!-- more -->

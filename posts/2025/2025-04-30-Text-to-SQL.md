@@ -2,7 +2,7 @@
 type: article
 title:  "Text-to-SQL 解决方案"
 date:   2025-04-30 10:00:00 +0800
-tags: [Text-to-SQL ThoughtWorks, SQL, LLM]
+tags: [text-to-sql, sql, llm, schema-linking, chain-of-thought, retrieval-augmented-generation, natural-language-processing, nl2sql, 自然语言转SQL, thoughtworks]
 ---
 
 - 🎥 [Showcase#6：Text-to-SQL全攻略](https://www.bilibili.com/video/BV1xdPsejEtm/)

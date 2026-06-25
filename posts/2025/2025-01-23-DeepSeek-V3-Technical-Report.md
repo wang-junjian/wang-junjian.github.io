@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek-V3 Technical Report"
 date:   2025-01-23 10:00:00 +0800
-tags: [deepseek-v3, moe, llm]
+tags: [deepseek-v3, moe, llm, mla, deepseekmoe, fp8-training, multi-token-prediction, training-efficiency, inference]
 ---
 
 - [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437)

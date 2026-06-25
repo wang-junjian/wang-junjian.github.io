@@ -2,7 +2,7 @@
 type: article
 title:  "SenseVoice"
 date:   2025-11-20 08:00:00 +0800
-tags: [SenseVoice, ASR]
+tags: [sensevoice, asr, funasr, speech-recognition, emotion-recognition, audio-event-detection, onnx, fastapi, python, 多语言语音识别]
 ---
 
 [SenseVoice](https://github.com/FunAudioLLM/SenseVoice/blob/main/README_zh.md) 是具有音频理解能力的音频基础模型，包括语音识别（ASR）、语种识别（LID）、语音情感识别（SER）和声学事件分类（AEC）或声学事件检测（AED）。

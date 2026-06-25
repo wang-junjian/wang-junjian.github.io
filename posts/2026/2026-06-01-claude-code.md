@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Code 智能编程实战"
 date:   2026-06-01 08:00:00 +0800
-tags: [Claude Code, Agentic Coding, Memory, CLAUDE.md, Git Worktree]
+tags: [claude-code, agentic-coding, claude-md, memory, git-worktree, mcp, playwright, ai-tools, software-development, 智能编程]
 ---
 
 ## 什么是 Claude Code

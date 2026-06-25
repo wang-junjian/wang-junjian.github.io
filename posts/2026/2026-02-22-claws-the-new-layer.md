@@ -2,7 +2,7 @@
 type: article
 title:  "Andrej Karpathy：Claws 将成为 AI 技术栈中的新层级"
 date:   2026-02-22 12:00:00 +0800
-tags: [Claws, OpenClaw, Andrej Karpathy]
+tags: [claws, openclaw, nanoclaw, ai-stack, llm-agent, vibe-coding, local-deployment, container, ai-native-assistant, 智能体]
 ---
 
 <!-- more -->

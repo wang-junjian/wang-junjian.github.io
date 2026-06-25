@@ -2,7 +2,7 @@
 type: article
 title:  "Claude Code 项目概览及架构设计"
 date:   2026-03-31 21:00:00 +0800
-tags: [ClaudeCode, Agent]
+tags: [claude-code, ai-agent, coding-agent, anthropic, typescript, nodejs, bun, mcp, plugin-system, 智能编码助手]
 ---
 
 <!-- more -->

@@ -2,7 +2,7 @@
 type: article
 title:  "使用 Claude Agent SDK 构建智能体"
 date:   2025-10-01 06:00:00 +0800
-tags: [ClaudeAgentSDK, 智能体, ClaudeCode]
+tags: [claude-agent-sdk, claude, ai-agent, 智能体, mcp, agent-loop, code-generation, context-management, anthropic]
 ---
 
 Claude Agent SDK 是 Anthropic 发布的、用于在 **Claude Code** 基础上构建强大智能体（agents）的工具集合。该 SDK 最初是作为 **Claude Code SDK**（一个智能编码解决方案）发布的，旨在支持 Anthropic 内部的开发者效率。由于 Claude Code 已经超越了编码工具的范畴，被用于深度研究、视频制作和笔记记录等无数非编码应用，因此该工具被更名为 Claude Agent SDK，以反映其更广泛的愿景。

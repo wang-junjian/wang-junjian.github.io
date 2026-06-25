@@ -2,7 +2,7 @@
 type: article
 title:  "Model Context Protocol (MCP) 的核心概念和能力"
 date:   2025-03-16 10:00:00 +0800
-tags: [MCP, LLM, Resource, Prompt, Tool, Transport, Sampling, Root]
+tags: [mcp, llm, resource, prompt, tool, transport, sampling, root, json-rpc, architecture]
 ---
 
 # [Introduction简介](https://modelcontextprotocol.io/introduction)

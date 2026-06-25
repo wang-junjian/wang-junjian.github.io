@@ -2,7 +2,7 @@
 type: article
 title:  "在 MLX 上使用 LoRA / QLoRA 微调 Text2SQL（八）：使用 LoRA 基于 TinyLlama 微调"
 date:   2024-01-31 08:00:00 +0800
-tags: [mlx, lora, tinyllama, text2sql, wikisql, macbookprom2max]
+tags: [mlx, lora, tinyllama, text2sql, wikisql, sql-generation, chat-template, fine-tuning, apple-silicon]
 ---
 
 ## [TinyLlama](https://github.com/jzhang38/TinyLlama)

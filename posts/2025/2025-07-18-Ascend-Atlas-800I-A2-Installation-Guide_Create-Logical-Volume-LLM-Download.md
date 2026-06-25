@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（二）：逻辑卷创建与大模型下载"
 date:   2025-07-18 12:00:00 +0800
-tags: [昇腾, NPU, 910B4, Atlas800IA2, LLM, LVM, openEuler]
+tags: [昇腾, atlas-800i-a2, npu, lvm, 逻辑卷, llm, modelscope, openmind-hub, rsync]
 ---
 
 本指南详细阐述了如何使用 **LVM（逻辑卷管理）**来**创建和管理磁盘分区**，包括物理卷、卷组和逻辑卷的设置。文档还提供了关于 **ext4 和 XFS 文件系统**的对比，并指导用户如何**挂载文件系统**以及实现**开机自动挂载**。最后，它解释了如何使用 **ModelScope** 和 **openmind_hub 工具**来**下载各种大型模型**，并利用 **rsync 命令在服务器之间同步文件**。

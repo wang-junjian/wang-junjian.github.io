@@ -2,7 +2,7 @@
 type: article
 title:  "Mac 屏幕素材处理指南：从多图合成 GIF 到 FFmpeg 视频智能去重压缩"
 date:   2026-05-25 08:00:00 +0800
-tags: [FFmpeg, ImageMagick, 视频压缩, 快进压缩, 智能去重压缩, GIF, 视频, macOS]
+tags: [ffmpeg, imagemagick, 视频压缩, gif, macos, screen-recording, video-encoding, hevc, h264, 智能去重]
 ---
 
 ## 多张图片合成 GIF / 视频

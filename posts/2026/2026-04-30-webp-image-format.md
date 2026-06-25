@@ -2,7 +2,7 @@
 type: article
 title:  "WebP 格式的命令工具"
 date:   2026-04-30 08:00:00 +0800
-tags: [macOS, webp, Command]
+tags: [webp, cwebp, dwebp, image-compression, command-line, macos, homebrew, image-format]
 ---
 
 ## 安装 webp

@@ -2,7 +2,7 @@
 type: article
 title:  "Agent2Agent 协议 (A2A) DEMO"
 date:   2025-04-16 10:00:00 +0800
-tags: [A2A, Agent]
+tags: [a2a, agent2agent, agent, multi-agent, demo, agent-interoperability, google]
 ---
 
 <video controls src="/images/2025/A2A/DEMO/A2A-DEMO.mov" title="A2A Demo"></video>

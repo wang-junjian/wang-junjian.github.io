@@ -2,7 +2,7 @@
 type: release
 title: "人类多行星物种首个星际 IPO - SpaceX"
 date: 2026-06-13 11:00:00 +0800
-tags: [spacex, ipo, website]
+tags: [spacex, ipo, s-1, starlink, starship, mars-colonization, data-visualization, aerospace, 太空探索, 数据可视化]
 linkUrl: https://5js7s7ykp4uue.ok.kimi.link
 ---
 

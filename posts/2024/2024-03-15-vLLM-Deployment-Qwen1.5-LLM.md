@@ -2,7 +2,7 @@
 type: article
 title:  "vLLM 部署 Qwen1.5 LLM"
 date:   2024-03-15 10:00:00 +0800
-tags: [vllm, llm, qwen, teslat4]
+tags: [vllm, llm, qwen, qwen1.5, deployment, model-serving, quantization, tensor-parallelism, gpu, tesla-t4]
 ---
 
 ## [安装 vLLM](https://docs.vllm.ai/en/latest/getting_started/installation.html)

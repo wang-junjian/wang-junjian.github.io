@@ -2,7 +2,7 @@
 type: article
 title:  "鲁软慧码提示工程实战手册"
 date:   2025-04-25 12:00:00 +0800
-tags: [鲁软慧码, Prompting, AICodingAssistant, GitHubCopilot]
+tags: [鲁软慧码, prompt-engineering, ai-coding-assistant, github-copilot, code-generation, debugging, refactoring, unit-testing, few-shot-prompting, 智能编码]
 ---
 
 ## **鲁软慧码 - 提示工程实战手册**

@@ -2,7 +2,7 @@
 type: article
 title:  "DashScope 模型服务灵积"
 date:   2024-04-13 08:00:00 +0800
-tags: [dashscope, langchain, llm, qwen]
+tags: [dashscope, maas, 模型即服务, qwen, 通义千问, langchain, chattongyi, llm]
 ---
 
 ## [DashScope 模型服务灵积](https://dashscope.aliyun.com/)

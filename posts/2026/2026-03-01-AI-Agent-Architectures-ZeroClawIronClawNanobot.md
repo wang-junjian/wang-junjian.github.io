@@ -2,7 +2,7 @@
 type: article
 title:  "三款顶级 AI 智能体架构深度拆解：从 Rust 原生高性能到 Python 极简主义"
 date:   2026-03-01 18:00:00 +0800
-tags: [OpenClaw, Agent, 架构设计, ZeroClaw, IronClaw, nanobot]
+tags: [ai-agent, agent-architecture, zero-claw, iron-claw, nanobot, rust, python, sandboxing, mcp, wasm]
 ---
 
 **ZeroClaw**：极致性能的 Rust 原生运行时。 凭借 <10ms 冷启动与 <5MB 内存占用，它证明了智能体可以像嵌入式插件一样轻盈。通过 Landlock 内核级沙箱与 Trait 驱动的模块化设计，ZeroClaw 定义了高并发、资源受限环境下的工业级标准。

@@ -2,7 +2,7 @@
 type: article
 title:  "Cline 概览 - Cline 扩展架构和开发指南"
 date:   2025-04-25 08:00:00 +0800
-tags: [Cline, CustomInstructions]
+tags: [cline, vscode-extension, typescript, react, ai-coding-assistant, mcp, api-provider, task-execution, context-management, 架构设计]
 ---
 
 - [Cline Overview](https://github.com/cline/cline/blob/main/.clinerules/cline-overview.md)

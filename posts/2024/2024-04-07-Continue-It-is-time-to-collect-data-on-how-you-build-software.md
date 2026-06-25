@@ -2,7 +2,7 @@
 type: article
 title:  "Continue - It’s time to collect data on how you build software"
 date:   2024-04-07 10:00:00 +0800
-tags: [continue, githubcopilot, codellm]
+tags: [continue, llm, development-data-engine, software-engineering, ai-coding-assistant, data-collection, open-source, code-llm]
 ---
 
 > 是时候收集关于你们如何构建软件的数据了。

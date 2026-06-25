@@ -2,7 +2,7 @@
 type: article
 title:  "SimulStreaming — 实时流式语音识别工具包"
 date:   2025-11-19 08:00:00 +0800
-tags: [SimulStreaming, ASR]
+tags: [simulstreaming, asr, whisper, streaming-asr, speech-recognition, python, 流式语音识别, 同声传译]
 ---
 
 <!-- more -->

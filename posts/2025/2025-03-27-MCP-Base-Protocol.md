@@ -2,7 +2,7 @@
 type: article
 title:  "MCP 基础协议"
 date:   2025-03-27 10:00:00 +0800
-tags: [MCP, LLM]
+tags: [mcp, model-context-protocol, json-rpc, 协议, lifecycle, stdio, http, sse, oauth, transport]
 ---
 
 模型上下文协议（Model Context Protocol）由几个协同工作的关键组件组成：

@@ -2,7 +2,7 @@
 type: article
 title:  "Cline 自定义指令库"
 date:   2025-04-22 07:00:00 +0800
-tags: [Cline, CustomInstructions, ClineDoc]
+tags: [cline, custom-instructions, memory-bank, prompting, vscode-extension, ai-coding-assistant, cline-doc, 自定义指令, 记忆库]
 ---
 
 # [Cline 自定义指令库](https://github.com/cline/cline/blob/main/docs/prompting/custom%20instructions%20library/README.md)

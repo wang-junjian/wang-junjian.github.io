@@ -2,7 +2,7 @@
 type: article
 title:  "Model Context Protocol 规范"
 date:   2025-03-27 08:00:00 +0800
-tags: [MCP, LLM]
+tags: [mcp, model-context-protocol, specification, llm, json-rpc, protocol, ai-integration, security, tools, resources]
 ---
 
 ## 协议修订版本：2025-03-26

@@ -2,7 +2,7 @@
 type: article
 title:  "Desktop Extensions (DXT)"
 date:   2025-06-29 12:00:00 +0800
-tags: [DXT, MCP, MCPServer, LLM]
+tags: [dxt, desktop-extension, mcp, mcp-server, anthropic, claude, extension-packaging, nodejs, python]
 ---
 
 桌面扩展（DXT）是一种 **zip 格式的软件包**，旨在**简化本地 MCP 服务器的安装和分发**。它类似于其他应用程序扩展，通过包含一个本地 MCP 服务器及其功能的 **manifest.json** 文件，允许用户实现**一键安装**。该项目不仅提供**扩展规范和用于创建 DXT 文件的 CLI 工具**，还开源了 Claude for macOS and Windows 中用于加载和验证 DXT 扩展的代码，旨在为 MCP 服务器构建一个**开放且可移植的生态系统**。开发者只需将 MCP 服务器文件、manifest.json 放入文件夹并打包成 .dxt 文件，即可轻松创建扩展，从而方便地在支持 DXT 的应用程序中运行本地 AI 工具。

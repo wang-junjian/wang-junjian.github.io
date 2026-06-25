@@ -2,7 +2,7 @@
 type: release
 title: "高中英语3500词：浏览器本地背单词工具"
 date: 2026-06-23 23:15:00 +0800
-tags: [tool, english, vocabulary, education, flashcards, browser]
+tags: [tool, english-words, vocabulary, flashcards, 背单词, web-speech-api, localstorage, education, browser]
 linkUrl: https://wangjunjian.com/tools/english-words.html
 ---
 

@@ -2,7 +2,7 @@
 type: article
 title:  "英伟达全栈方案：LLM开发、推理与具身智能"
 date:   2025-07-13 20:00:00 +0800
-tags: [NVIDIA, LLM, TensorRT, NIM, NeMo, 具身智能, GROOT]
+tags: [nvidia, llm, tensorrt-llm, nim, nemo, embodied-ai, 具身智能, groot, isaac-lab]
 ---
 
 NVIDIA 提供 TensorRT-LLM、Triton Inference Server 和 NVIDIA Inference Microservice (NIM) 等工具来优化和加速 AI 模型的推理，使模型运行速度提升高达 5 倍。这意味着您可以高效地部署和运行 LLM 以生成内容。

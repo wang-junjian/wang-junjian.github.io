@@ -2,7 +2,7 @@
 type: article
 title:  "Dify 定制您的政策解读智能体"
 date:   2026-01-21 10:00:00 +0800
-tags: [Dify, Agent]
+tags: [dify, agent, policy-reading, vllm, ollama, bge-m3, docker, llm, 智能体, 政策解读]
 ---
 
 <!-- more -->

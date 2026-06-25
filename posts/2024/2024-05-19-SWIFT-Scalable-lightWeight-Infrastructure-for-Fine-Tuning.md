@@ -2,7 +2,7 @@
 type: article
 title:  "SWIFT: Scalable lightWeight Infrastructure for Fine-Tuning"
 date:   2024-05-19 08:00:00 +0800
-tags: [swift, fine-tuning, llm]
+tags: [swift, modelscope, fine-tuning, llm, mllm, lora, peft, inference, deployment, python]
 ---
 
 ## 简介

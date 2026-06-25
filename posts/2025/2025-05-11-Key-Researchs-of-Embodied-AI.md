@@ -2,7 +2,7 @@
 type: article
 title:  具身智能关键技术研究：操作、规划、导航
 date:   2025-05-11 12:00:00 +0800
-tags: [具身智能, VLA, Manipulation, Planning, Navigation]
+tags: [embodied-ai, vla, robot-manipulation, planning, navigation, rt-1, manipllm, visual-language-navigation, 具身智能, 机器人]
 ---
 
 - [【北京大学-董豪】具身智能关键技术研究（操作、规划、导航）](https://www.bilibili.com/video/BV1zU411U7q1/)

@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas 800I A2 大模型部署实战（五）：vLLM 性能测试"
 date:   2025-07-24 10:00:00 +0800
-tags: [昇腾, NPU, 910B4, Atlas800IA2, Benchmark, vLLM, openEuler]
+tags: [昇腾, atlas-800i-a2, npu, vllm, vllm-ascend, benchmark, 性能测试, deepseek, qwen]
 ---
 
 本文档解释了**如何设置和运行vLLM基准测试**，并定义了**关键性能指标**，如**请求吞吐量**、**token吞吐量**和**延迟**。最后，**比较了不同大型语言模型（如DeepSeek和Qwen）在各种精度设置下的性能**，以评估Atlas 800I A2在**AI推理场景中的效率**。

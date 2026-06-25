@@ -2,7 +2,7 @@
 type: article
 title:  "Atlas 900 AI 集群"
 date:   2024-11-13 10:00:00 +0800
-tags: [atlas900]
+tags: [atlas-900, ai-cluster, 昇腾, npu, infiniband, 人工智能计算中心, distributed-storage]
 ---
 
 ## 济南人工智能计算中心

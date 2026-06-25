@@ -2,7 +2,7 @@
 type: article
 title:  "ChatTongyi"
 date:   2024-04-22 08:00:00 +0800
-tags: [langchain, chattongyi, dashscope, stream, text2sql]
+tags: [langchain, chattongyi, dashscope, streaming, qwen, python, 通义千问]
 ---
 
 ## LangChain ChatTongyi

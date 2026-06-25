@@ -2,7 +2,7 @@
 type: article
 title:  "Thoughtworks 技术雷达 第30期"
 date:   2024-05-20 08:00:00 +0800
-tags: [thoughtworks, llm]
+tags: [thoughtworks, tech-radar, llm, generative-ai, rag, ai-agent, github-copilot, kubernetes, vector-database, prompt-engineering]
 ---
 
 ## Thoughtworks 技术雷达

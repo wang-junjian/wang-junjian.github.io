@@ -2,7 +2,7 @@
 type: article
 title:  "代码评审知识图谱：code-review-graph"
 date:   2026-04-19 10:00:00 +0800
-tags: [code-review-graph, MCP, KnowledgeGraph]
+tags: [code-review-graph, mcp, knowledge-graph, code-review, tree-sitter, claude-code, ai-coding]
 ---
 
 [code‑review‑graph](https://code-review-graph.com/) 是一款为 AI 编程助手打造的本地代码知识图谱工具，核心是用增量图谱替代全量读码，大幅降低 AI 上下文 Token 消耗、提升代码审查与理解效率。

@@ -2,7 +2,7 @@
 type: article
 title:  "华为 Atlas A2 上使用 LLaMA-Factory 模型微调"
 date:   2024-11-07 10:00:00 +0800
-tags: [atlas800, npu, llama-factory, fine-tuning, llm]
+tags: [huawei, atlas-a2, npu, llama-factory, fine-tuning, lora, deepspeed, qwen, modelscope, llm]
 ---
 
 ## [济南人工智能计算中心](https://uconsole.jnaicc.com/)

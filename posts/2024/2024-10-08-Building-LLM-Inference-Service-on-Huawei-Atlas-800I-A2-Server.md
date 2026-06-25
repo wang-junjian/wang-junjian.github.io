@@ -2,7 +2,7 @@
 type: article
 title:  "在华为 Atlas 800I A2 服务器上搭建大模型推理服务"
 date:   2024-10-08 10:00:00 +0800
-tags: [atlas800, npu, 910b4, mindie, llm]
+tags: [huawei-atlas, ascend-npu, mindie, vllm, qwen, modelscope, docker, 国产化, llm-inference]
 ---
 
 ## 华为昇腾 NPU 与英伟达 GPU 生态层级对比:

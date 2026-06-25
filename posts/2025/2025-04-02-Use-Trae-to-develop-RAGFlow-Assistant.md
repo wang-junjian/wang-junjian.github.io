@@ -2,7 +2,7 @@
 type: article
 title:  "使用 Trae 开发 RAGFlow 助手"
 date:   2025-04-02 16:00:00 +0800
-tags: [Trae, RAGFlow, AICodingAssistant, GitHubCopilot]
+tags: [trae, ragflow, ai-coding-assistant, streamlit, knowledge-base, chatbot, retrieval-augmented-generation, llm, client-app, bytedance]
 ---
 
 ## ⚠️ Trae 试用感受

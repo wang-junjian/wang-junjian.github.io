@@ -2,7 +2,7 @@
 type: article
 title:  "Agent 代码安全扫描、修复与渗透测试工具推荐"
 date:   2026-02-28 12:00:00 +0800
-tags: [Agent, 安全, 代码扫描, 自动修复, 渗透测试]
+tags: [agent, 安全, code-security, vulnerability-scanning, automated-remediation, penetration-testing, strix, pentestgpt, pentagi, llm-security]
 ---
 
 <!-- more -->

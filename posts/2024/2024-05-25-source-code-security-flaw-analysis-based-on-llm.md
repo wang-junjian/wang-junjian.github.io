@@ -2,7 +2,7 @@
 type: article
 title:  "基于 LLM 的源代码安全缺陷分析"
 date:   2024-05-25 08:00:00 +0800
-tags: []
+tags: [llm, code-security, sql-injection, mybatis, java, code-audit, security-flaw, vulnerability-analysis]
 ---
 
 ## 代码注入：SQL注入：MyBatis

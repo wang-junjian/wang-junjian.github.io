@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek-OCR 研究与实测"
 date:   2025-10-24 10:00:00 +0800
-tags: [JetsonThor, Jetson, Thor, DeepSeek-OCR, OCR]
+tags: [deepseek-ocr, ocr, document-understanding, vlm, vision-language-model, image-to-markdown, deepseek, transformers]
 ---
 
 <!-- more -->

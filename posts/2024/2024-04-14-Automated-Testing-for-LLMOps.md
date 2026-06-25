@@ -2,7 +2,7 @@
 type: article
 title:  "Automated Testing for LLMOps"
 date:   2024-04-14 10:00:00 +0800
-tags: [llmops, deeplearningai]
+tags: [llmops, automated-testing, llm-testing, deeplearning-ai, short-course, llm, mlops]
 ---
 
 

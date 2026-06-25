@@ -2,7 +2,7 @@
 type: article
 title:  "TypeScript 入门"
 date:   2024-07-22 08:00:00 +0800
-tags: [typescript, gettingstarted]
+tags: [typescript, getting-started, tsc, ts-node, type-system, javascript, programming-language]
 ---
 
 ## TypeScript 安装

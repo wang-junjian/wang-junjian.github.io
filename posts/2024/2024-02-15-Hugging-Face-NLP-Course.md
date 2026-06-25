@@ -2,7 +2,7 @@
 type: article
 title:  "Hugging Face NLP Course"
 date:   2024-02-15 08:00:00 +0800
-tags: [huggingface, nlp, transformers]
+tags: [huggingface, nlp, transformers, transfer-learning, fine-tuning, pretraining, language-models, text-generation, machine-learning]
 ---
 
 - [NLP Course](https://huggingface.co/learn/nlp-course/zh-CN/)

@@ -2,7 +2,7 @@
 type: article
 title:  "DeepSeek Janus Pro 7B"
 date:   2025-02-02 10:00:00 +0800
-tags: [deepseek, januspro7b, 多模态]
+tags: [deepseek, janus-pro-7b, 多模态, text-to-image, image-generation, 图像生成]
 ---
 
 [SiliconFlow 图像生成](https://cloud.siliconflow.cn/playground/image)

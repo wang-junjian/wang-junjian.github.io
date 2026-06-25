@@ -2,7 +2,7 @@
 type: article
 title:  "2026 年飞马图像生成"
 date:   2026-01-03 08:00:00 +0800
-tags: [VLM, 图像生成, 飞马]
+tags: [图像生成, vlm, 飞马, image-generation, chatgpt, doubao, gemini, kling, ai-image-generation]
 ---
 
 <!-- more -->
