@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes API"
 date:   2021-06-22 00:00:00 +0800
-tags: [kubectl, api-resources, explain]
+tags: [kubernetes, kubectl, api, objects, resources, yaml, json, documentation]
 ---
 
 ## Kubernetes 对象

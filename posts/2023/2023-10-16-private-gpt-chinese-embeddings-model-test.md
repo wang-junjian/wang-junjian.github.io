@@ -2,7 +2,7 @@
 type: article
 title:  "Private GPT 中文 Embeddings 模型测试"
 date:   2023-10-16 08:00:00 +0800
-tags: [embeddings, rag, chinese, privategpt]
+tags: [rag, embeddings, llm, privategpt, chinese, machine-learning, nlp]
 ---
 
 ## 文档

@@ -2,7 +2,7 @@
 type: article
 title:  "基于 FastAPI 开发 Ultralytics Serving"
 date:   2023-04-10 08:00:00 +0800
-tags: [fastapi, swaggerui, ultralytics, yolo, docker, opencv, pytorch, python, tempfile, path]
+tags: [fastapi, yolo, docker, opencv, pytorch, python, ultralytics, onnxruntime, uvicorn, gunicorn]
 ---
 
 # [Ultralytics Serving](https://github.com/gouchicao/ultralytics-serving)

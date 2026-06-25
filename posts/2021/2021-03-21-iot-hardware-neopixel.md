@@ -2,7 +2,7 @@
 type: article
 title:  "IoT 硬件：NeoPixel"
 date:   2021-03-21 00:00:00 +0800
-tags: [micropython, nodemcu, esp32, neopixel]
+tags: [neopixel, micropython, esp32, nodemcu, led, iot, hardware, electronics]
 ---
 
 ![](/images/2021/hardware/ws2812b.jpg)

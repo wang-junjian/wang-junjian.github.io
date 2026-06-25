@@ -2,7 +2,7 @@
 type: article
 title:  "Install Python3.9 in Ubuntu20.04"
 date:   2022-03-31 00:00:00 +0800
-tags: [linux, ubuntu, pip, install, python3.9]
+tags: [ubuntu, python3.9, pip, installation, linux, distutils, apt, python]
 ---
 
 ## 问题

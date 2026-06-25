@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes集群证书过期"
 date:   2021-06-19 00:00:00 +0800
-tags: [certificate, openssl, kubeadm, systemctl]
+tags: [kubernetes, certificates, openssl, kubeadm, systemd, troubleshooting]
 ---
 
 ## 证书一年过期了

@@ -2,7 +2,7 @@
 type: article
 title:  "命令tar"
 date:   2021-01-20 00:00:00 +0800
-tags: [linux, tar]
+tags: [linux, tar, compression, archive, command-line]
 ---
 
 ```

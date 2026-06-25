@@ -2,7 +2,7 @@
 type: article
 title:  "Open Model Zoo"
 date:   2022-04-14 08:00:00 +0800
-tags: [command, 人脸检测, mtcnn]
+tags: [openvino, open-model-zoo, model-zoo, face-detection, 人脸检测, mtcnn, computer-vision, deep-learning]
 ---
 
 ## [Open Model Zoo automation tools](https://github.com/openvinotoolkit/open_model_zoo/blob/master/tools/model_tools/README.md)

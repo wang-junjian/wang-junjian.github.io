@@ -2,7 +2,7 @@
 type: article
 title:  "Ultralytics Hub 快速入门"
 date:   2023-03-30 08:00:00 +0800
-tags: [quickstart, yolo, dataset, train, deploy]
+tags: [quickstart, yolo, dataset, training, deployment, ultralytics, ultralytics-hub, computer-vision, machine-learning]
 ---
 
 ## 准备数据集

@@ -2,7 +2,7 @@
 type: article
 title:  "OpenVINO 的工作原理"
 date:   2022-04-13 10:00:00 +0800
-tags: [workflow]
+tags: [openvino, model-optimization, model-conversion, inference-engine, deployment, computer-vision, deep-learning, workflow, model-zoo]
 ---
 
 ## OpenVINO 工作流程

@@ -2,7 +2,7 @@
 type: article
 title:  "在 MacBook Pro M2 Max 上使用 FFmpeg"
 date:   2023-03-04 08:00:00 +0800
-tags: [macbookprom2max, command]
+tags: [ffmpeg, macos, macbookpro, apple-silicon, videotoolbox, audiotoolbox, hardware-acceleration, video, audio]
 ---
 
 ## Apple 芯片上进行硬件加速的框架

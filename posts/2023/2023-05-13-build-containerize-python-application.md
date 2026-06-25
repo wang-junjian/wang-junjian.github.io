@@ -2,7 +2,7 @@
 type: article
 title:  "构建容器化 Python 应用程序"
 date:   2023-05-13 08:00:00 +0800
-tags: [dockerfile, docker, cache, pip, apt, venv, wheel, 知识扩展]
+tags: [docker, containerization, python, fastapi, dockerfile, cache, pip, yolo, gunicorn]
 ---
 
 这里使用 [Ultralytics Serving](https://github.com/gouchicao/ultralytics-serving) 作为示例，它是一个基于 [FastAPI](https://fastapi.tiangolo.com/) 和 [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) 的模型推理服务。

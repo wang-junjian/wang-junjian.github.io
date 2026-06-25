@@ -2,7 +2,7 @@
 type: article
 title:  "Thonny Python IDE"
 date:   2021-04-12 01:00:00 +0800
-tags: [thonny, micropython]
+tags: [thonny, micropython, python, esp8266, iot, ide]
 ---
 
 ![](/images/2021/software/thonny.png)

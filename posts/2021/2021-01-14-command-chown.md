@@ -2,7 +2,7 @@
 type: article
 title:  "命令chown"
 date:   2021-01-14 00:00:00 +0800
-tags: [linux, chown]
+tags: [linux, chown, command-line, cli, filesystem, permissions, user-management, shell, ubuntu, tips]
 ---
 
 > 更改文件所有者和组

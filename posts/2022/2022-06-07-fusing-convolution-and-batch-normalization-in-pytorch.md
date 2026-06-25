@@ -2,7 +2,7 @@
 type: article
 title:  "在 PyTorch 中融合卷积和批量标准化"
 date:   2022-06-07 00:00:00 +0800
-tags: [fusion, convolution, batchnorm, pytorch, timeit]
+tags: [pytorch, convolution, batchnorm, model-fusion, optimisation, performance, deep-learning]
 ---
 
 ## 融合卷积和批量标准化的原理

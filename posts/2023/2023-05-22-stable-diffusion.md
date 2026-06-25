@@ -2,7 +2,7 @@
 type: article
 title:  "Stable Diffusion"
 date:   2023-05-22 08:00:00 +0800
-tags: [clip]
+tags: [stable-diffusion, clip, laion, diffusers, generative-ai, computer-vision, text-to-image, hugging-face]
 ---
 
 ## Stable Diffusion

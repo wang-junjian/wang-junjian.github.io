@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的名字空间"
 date:   2021-06-26 00:00:00 +0800
-tags: [kubectl, namespace, delete, config, context, alias, bashrc]
+tags: [kubernetes, namespaces, kubectl, context, service, workload]
 ---
 
 ## 名字空间

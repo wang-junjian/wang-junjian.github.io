@@ -2,7 +2,7 @@
 type: article
 title:  "Copilot for CLI"
 date:   2023-12-17 08:00:00 +0800
-tags: [git, githubcopilot, github, cli, macbookprom2max]
+tags: [github-copilot, github, cli, git, shell, zsh, macos, macbookpro]
 ---
 
 [Copilot for CLI](https://githubnext.com/projects/copilot-cli/)

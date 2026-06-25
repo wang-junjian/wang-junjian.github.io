@@ -2,7 +2,7 @@
 type: article
 title:  "Get Started YOLOv5"
 date:   2022-05-01 08:00:00 +0800
-tags: [yolo, wandb, tensorboard]
+tags: [yolov5, yolo, object-detection, pytorch, computer-vision, wandb, tensorboard, deep-learning]
 ---
 
 ## [Quick Start Examples](https://github.com/ultralytics/yolov5#quick-start-examples)

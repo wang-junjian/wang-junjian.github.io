@@ -2,7 +2,7 @@
 type: article
 title:  "面向边缘场景的 AI 芯片"
 date:   2022-06-23 00:00:00 +0800
-tags: [gpu, vpu, npu, jetson, movidius, 昇腾]
+tags: [edge-computing, ai-chips, jetson, movidius, npu, gpu, vpu, cambricon, 昇腾]
 ---
 
 ## [NVIDIA Jetson](https://www.nvidia.cn/autonomous-machines/embedded-systems/)

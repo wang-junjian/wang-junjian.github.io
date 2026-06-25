@@ -2,7 +2,7 @@
 type: article
 title:  "Velero: 备份和迁移 Kubernetes 资源和持久卷"
 date:   2023-07-21 08:00:00 +0800
-tags: [kubernetes, backup]
+tags: [kubernetes, backups, velero, migration, storage, disaster-recovery]
 ---
 
 ## [介绍](https://velero.io/)

@@ -2,7 +2,7 @@
 type: article
 title:  "IoT 硬件：Raspberry Pi Camera"
 date:   2021-03-23 00:00:00 +0800
-tags: [树莓派, camera]
+tags: [raspberry-pi, camera, iot, python, hardware, photography]
 ---
 
 ![](/images/2021/hardware/rpi-camera.png)

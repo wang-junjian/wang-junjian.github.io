@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI API Documentation Speech to Text"
 date:   2023-05-05 10:00:00 +0800
-tags: ["openai api", "whisper"]
+tags: [openai, whisper, speech-to-text, audio, api, python, transcription, translation, macos, macbookpro]
 ---
 
 ## 开发文档

@@ -2,7 +2,7 @@
 type: article
 title:  "NVIDIA 软件栈搭建"
 date:   2022-05-02 08:00:00 +0800
-tags: [install, cuda, cudnn, tensorrt, nccl, hpc]
+tags: [nvidia, cuda, cudnn, tensorrt, nccl, hpc, gpu, driver, installation, deep-learning]
 ---
 
 ## NVIDIA 软件栈

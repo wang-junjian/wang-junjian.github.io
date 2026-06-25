@@ -2,7 +2,7 @@
 type: article
 title:  "Ultralytics YOLOv8 推理速度对比"
 date:   2023-05-16 08:00:00 +0800
-tags: [ultralytics, yolo, pt, onnx, 知识扩展]
+tags: [yolo, yolov8, pytorch, onnx, inference, benchmarks, computer-vision, object-detection, cpu, gpu]
 ---
 
 ## CPU

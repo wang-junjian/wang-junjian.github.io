@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes API 服务器的安全防护"
 date:   2021-07-11 00:00:00 +0800
-tags: [serviceaccount, rbac]
+tags: [kubernetes, security, authentication, rbac, serviceaccount, authorization, private-registry, secret]
 ---
 
 ## 认证机制

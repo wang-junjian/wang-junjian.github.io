@@ -2,7 +2,7 @@
 type: article
 title:  "在 MacBook Pro M2 Max 上安装 PyTorch"
 date:   2023-02-09 08:00:00 +0800
-tags: [macbookprom2max]
+tags: [pytorch, macos, macbookpro, apple-silicon, conda, python, machine-learning, gpu, mps]
 ---
 
 ## 安装 PyTorch

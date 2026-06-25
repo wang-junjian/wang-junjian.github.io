@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的计算资源管理"
 date:   2021-07-29 00:00:00 +0800
-tags: [kubectl, exec, limitrange, resourcequota]
+tags: [kubernetes, resource-management, resources, limitrange, resourcequota, qos, pod, kubectl, gpu]
 ---
 
 ## 查看节点资源总量

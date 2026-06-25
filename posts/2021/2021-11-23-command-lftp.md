@@ -2,7 +2,7 @@
 type: article
 title:  "命令lftp"
 date:   2021-11-23 00:00:00 +0800
-tags: [linux, ftp, lftp]
+tags: [linux, ftp, lftp, command-line, file-transfer, cli, shell]
 ---
 
 ## 安装 lftp

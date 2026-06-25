@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中删除节点"
 date:   2021-06-20 00:00:00 +0800
-tags: [kubectl, drain, delete]
+tags: [kubernetes, kubectl, node-management, drain, cluster-operations]
 ---
 
 ## 查看集群节点

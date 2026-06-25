@@ -2,7 +2,7 @@
 type: article
 title:  "基于健康码识别的 FastAPI 同步和异步函数的基准测试"
 date:   2022-03-25 00:00:00 +0800
-tags: [linux, fastapi, async, gunicorn, uvicorn, ab, docker]
+tags: [fastapi, uvicorn, gunicorn, async, benchmarking, docker, python, performance, ab]
 ---
 
 > 健康码识别服务使用了 FastAPI 进行开发的，本周主要工作是为了对健康码识别的服务进行性能调优。接口函数使用了 async 关键字，但是内部的实现并没有使用 await。由于改写成异步代码需要时间，这里并没有改写代码，只是删除了 async 关键字。部署服务使用了 uvicorn 和 gunicorn+uvicorn 两种方法。

@@ -2,7 +2,7 @@
 type: article
 title:  "在 Hugging Face 上搭建 ChatGPT 聊天机器人"
 date:   2023-04-29 08:00:00 +0800
-tags: [chatgpt, huggingface, docker]
+tags: [chatgpt, hugging-face, docker, openai, gradio, chatbot, tiktoken, python, ai]
 ---
 
 ## [Hugging Face](https://huggingface.co/) 上创建 [ChatGPT](https://huggingface.co/spaces/wangjunjian/ChatGPT) Space

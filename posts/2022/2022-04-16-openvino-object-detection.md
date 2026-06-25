@@ -2,7 +2,7 @@
 type: article
 title:  "OpenVINO 目标检测"
 date:   2022-04-16 08:00:00 +0800
-tags: [目标检测, ssd]
+tags: [openvino, object-detection, 目标检测, ssd, model-zoo, model-conversion, computer-vision, deep-learning, inference]
 ---
 
 ## 目标检测

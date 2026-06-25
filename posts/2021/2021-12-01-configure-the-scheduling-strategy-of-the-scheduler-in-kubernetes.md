@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中配置调度器"
 date: 2021-12-01 00:00:00 +0800
-tags: [kubectl, events, priority, scheduler, grep]
+tags: [kubernetes, scheduler, scheduling, policy, resource-optimization, resource-management, cluster-operations, pod]
 ---
 
 > 我们遇到一个场景，压榨出每一台节点的性能，需要优先调度到资源（CPU、Memory）使用最多的节点上。

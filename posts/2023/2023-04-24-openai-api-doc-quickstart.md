@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI API Documentation 快速入门"
 date:   2023-04-24 08:00:00 +0800
-tags: ["openai api", jupyter, pandas, quickstart]
+tags: [openai, jupyter, pandas, quickstart, gpt, chatgpt, tokenization, ai, python]
 ---
 
 ## 工具

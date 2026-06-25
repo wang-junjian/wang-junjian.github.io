@@ -2,7 +2,7 @@
 type: article
 title:  "基于 ChatGLM3 8k 和 32k 的文档问答对比"
 date:   2023-12-06 08:00:00 +0800
-tags: [gpt, chatglm3, chatglm3-6b-32k, bge-base-zh]
+tags: [chatglm3, chatglm3-6b-32k, bge-base-zh, rag, document-qa, long-context, embeddings, quantization, llm-performance, llm]
 ---
 
 ## 文档

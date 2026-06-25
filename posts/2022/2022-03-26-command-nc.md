@@ -2,7 +2,7 @@
 type: article
 title:  "命令 nc"
 date:   2022-03-26 00:00:00 +0800
-tags: [linux, nc, netcat]
+tags: [nc, netcat, command-line, shell, networking, file-transfer, port-scan, security]
 ---
 
 ## 捕获 HTTP 请求的内容

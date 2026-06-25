@@ -2,7 +2,7 @@
 type: article
 title:  "State of GPT - Andrej Karpathy"
 date:   2023-05-30 08:00:00 +0800
-tags: [llm, sft, rm, rlhf, fine-tuning]
+tags: [llm, gpt, fine-tuning, andrej-karpathy, tokenization, machine-learning, deep-learning, generative-ai, ai, chatgpt]
 ---
 
 ## 介绍

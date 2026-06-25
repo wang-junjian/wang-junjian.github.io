@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的污点和容忍度"
 date:   2021-07-02 00:00:00 +0800
-tags: [kubectl, taint, toleration, jsonpath]
+tags: [kubernetes, taint, toleration, scheduling, node-management, jsonpath, labels]
 ---
 
 ## 污点

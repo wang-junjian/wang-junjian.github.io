@@ -2,7 +2,7 @@
 type: article
 title:  "在YOLOv5中运行JupyterLab和TensorBoard"
 date:   2021-01-01 00:00:00 +0800
-tags: [jupyter, jupyterlab, tensorboard, yolov5]
+tags: [jupyter, jupyterlab, tensorboard, yolov5, docker, object-detection, deep-learning, machine-learning, python, nvidia]
 ---
 
 ## 构建可用的JupyterLab和TensorBoard

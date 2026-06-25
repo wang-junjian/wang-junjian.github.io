@@ -2,7 +2,7 @@
 type: article
 title:  "VS Code远程开发 - SSH"
 date:   2021-03-04 00:00:00 +0800
-tags: [vscode, ssh]
+tags: [vscode, ssh, remote-development, ide, macos, troubleshooting, tools]
 ---
 
 ## 架构图

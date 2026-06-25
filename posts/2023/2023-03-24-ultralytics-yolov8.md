@@ -2,7 +2,7 @@
 type: article
 title:  "Ultralytics YOLOv8"
 date:   2023-03-24 08:00:00 +0800
-tags: [yolo, comet, clearml]
+tags: [yolov8, ultralytics, object-detection, computer-vision, python, pytorch, docker, onnx, comet, clearml]
 ---
 
 ## Ultralytics

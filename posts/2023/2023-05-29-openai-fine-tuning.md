@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI Fine Tuning"
 date:   2023-05-29 08:00:00 +0800
-tags: [fine-tuning, openai]
+tags: [fine-tuning, openai, llm, machine-learning, python, api, training-data, datasets]
 ---
 
 ## 参考资料

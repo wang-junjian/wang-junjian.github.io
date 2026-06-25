@@ -2,7 +2,7 @@
 type: article
 title:  "使用终端浏览Markdown和HTML"
 date:   2022-01-13 00:00:00 +0800
-tags: [apt, lynx, pandoc, grip, markdown]
+tags: [markdown, html, terminal, lynx, pandoc, w3m, grip, command-line]
 ---
 
 ## 浏览Markdown

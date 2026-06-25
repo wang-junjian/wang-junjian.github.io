@@ -2,7 +2,7 @@
 type: article
 title:  "PaddleSpeech 快速入门"
 date:   2023-05-05 08:00:00 +0800
-tags: [quickstart]
+tags: [paddlespeech, paddlepaddle, audio, python, pip, numpy, machine-learning, deep-learning, text-to-speech, speech-to-text]
 ---
 
 ## [PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech/blob/develop/README_cn.md)

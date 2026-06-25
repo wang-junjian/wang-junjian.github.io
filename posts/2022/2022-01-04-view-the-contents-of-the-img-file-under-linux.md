@@ -2,7 +2,7 @@
 type: article
 title:  "Linux下查看img文件内容"
 date:   2022-01-04 00:00:00 +0800
-tags: [fdisk, img, mount]
+tags: [fdisk, mount, filesystem, img, linux, disk-image]
 ---
 
 > img 磁盘镜像文件

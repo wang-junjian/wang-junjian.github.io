@@ -2,7 +2,7 @@
 type: article
 title:  "GitHub Copilot - Your AI pair programmer"
 date:   2023-04-01 08:00:00 +0800
-tags: [githubcopilot, vscode, neovim]
+tags: [github-copilot, vscode, neovim, ai-assisted-programming, github, ide, development, generative-ai]
 ---
 
 ## 注册

@@ -2,7 +2,7 @@
 type: article
 title:  "Microsoft Phi-2"
 date:   2023-12-20 10:00:00 +0800
-tags: [phi-2, llm, huggingface, pytorch]
+tags: [phi-2, llm, hugging-face, pytorch, transformers, microsoft, apple-silicon, mps, small-language-models]
 ---
 
 [Phi-2: The surprising power of small language models](https://www.microsoft.com/en-us/research/blog/phi-2-the-surprising-power-of-small-language-models/)

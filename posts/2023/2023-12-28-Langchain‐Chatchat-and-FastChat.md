@@ -2,7 +2,7 @@
 type: article
 title:  "Langchain‐Chatchat 和 FastChat 结合"
 date:   2023-12-28 08:00:00 +0800
-tags: [langchain‐chatchat, fastchat, openai, llm]
+tags: [langchain-chatchat, fastchat, openai, llm, chatglm3, rag, embeddings, gradio]
 ---
 
 ## [FastChat][FastChat] 

@@ -2,7 +2,7 @@
 type: article
 title:  "命令curl"
 date:   2022-05-25 00:00:00 +0800
-tags: [command]
+tags: [curl, command-line, download, http, shell]
 ---
 
 ## 下载文件

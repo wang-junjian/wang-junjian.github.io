@@ -2,7 +2,7 @@
 type: article
 title:  "我删库了, rm -rf *"
 date:   2022-03-12 00:00:00 +0800
-tags: [linux, rm, ls, inode]
+tags: [linux, rm, data-recovery, filesystem, inode, sysadmin, shell]
 ---
 
 > 今天，我“删库”了......

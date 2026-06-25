@@ -2,7 +2,7 @@
 type: article
 title:  "Elastic Cloud on Kubernetes 快速入门"
 date:   2023-07-06 08:00:00 +0800
-tags: [quickstart, elasticsearch, kibana, filebeat, ntp, kubernetes]
+tags: [elasticsearch, kibana, filebeat, kubernetes, operator, observability, logging, monitoring, tutorial]
 ---
 
 ## 在 Kubernetes 集群中部署 ECK（Elastic Cloud Kubernetes）

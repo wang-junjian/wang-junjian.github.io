@@ -2,7 +2,7 @@
 type: article
 title:  "LLM Leaderboard"
 date:   2023-09-09 08:00:00 +0800
-tags: [llm, embedding]
+tags: [llm, benchmarks, embeddings, hugging-face, models, evals]
 ---
 
 ## [Leaderboards](https://huggingface.co/spaces/autoevaluate/leaderboards)

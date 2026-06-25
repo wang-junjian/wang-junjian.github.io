@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain 快速入门"
 date:   2023-05-03 08:00:00 +0800
-tags: [llm, quickstart, serpapi]
+tags: [langchain, llm, python, openai, chatgpt, prompt-engineering, memory, ai-agents, serpapi]
 ---
 
 ## [LangChain](https://github.com/hwchase17/langchain)

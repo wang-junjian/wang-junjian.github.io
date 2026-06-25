@@ -2,7 +2,7 @@
 type: article
 title:  "加速 Docker 构建镜像"
 date:   2023-05-12 10:00:00 +0800
-tags: [cache, python, pip, apt, debian, ubuntu, arm64, dockerfile, mirror, go, macbookprom2max, 知识扩展]
+tags: [docker, buildx, buildkit, dockerfile, cache, pip, apt, mirror, macos, macbookpro]
 ---
 
 ## 查看镜像信息

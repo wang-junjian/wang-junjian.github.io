@@ -2,7 +2,7 @@
 type: article
 title:  "将 API 密钥身份验证添加到 FastAPI 应用程序"
 date:   2023-10-13 08:00:00 +0800
-tags: [api_key, authentication, fastapi]
+tags: [fastapi, authentication, api-keys, security, python, rest]
 ---
 
 ## API_KEY

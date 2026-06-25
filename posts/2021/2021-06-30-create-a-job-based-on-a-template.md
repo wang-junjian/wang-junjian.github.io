@@ -2,7 +2,7 @@
 type: article
 title:  "基于模板创建Job"
 date:   2021-06-30 00:00:00 +0800
-tags: [kubectl, job, sed, apply, logs, delete, python, jinja2, jekyll, liquid, alias, bashrc]
+tags: [kubernetes, kubectl, jobs, templates, batch-processing, jinja2, python]
 ---
 
 > 基于一个公共的模板运行多个Jobs。 你可以用这种方法来并行执行批处理任务。

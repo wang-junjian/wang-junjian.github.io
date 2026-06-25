@@ -2,7 +2,7 @@
 type: article
 title:  "Python in Visual Studio Code"
 date:   2023-04-02 08:00:00 +0800
-tags: [vscode]
+tags: [python, vscode, jupyter, github-copilot, docker, pytest, testing, ide, development, programming]
 ---
 
 ## 开发文档

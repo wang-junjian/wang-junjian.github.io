@@ -2,7 +2,7 @@
 type: article
 title:  "MinIO for Kubernetes"
 date:   2023-08-08 08:00:00 +0800
-tags: [kubernetes]
+tags: [minio, kubernetes, object-storage, s3, directpv, storage, minio-operator]
 ---
 
 ## DirectPV

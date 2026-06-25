@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI API Documentation Chat Completion"
 date:   2023-04-28 08:00:00 +0800
-tags: ["openai api", "chat completion", token]
+tags: [openai, chatgpt, gpt, chat-completion, tokenization, rate-limiting, translation, ai, python]
 ---
 
 ## [Chat Completion](https://platform.openai.com/docs/guides/chat)

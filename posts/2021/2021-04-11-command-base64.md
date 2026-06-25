@@ -2,7 +2,7 @@
 type: article
 title:  "命令base64"
 date:   2021-04-11 00:00:00 +0800
-tags: [linux, base64, echo, printf]
+tags: [linux, base64, encoding, shell, macos, command-line]
 ---
 
 ## 编码

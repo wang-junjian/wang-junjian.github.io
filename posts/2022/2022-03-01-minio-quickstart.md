@@ -2,7 +2,7 @@
 type: article
 title:  "MinIO Quickstart"
 date:   2022-03-01 00:00:00 +0800
-tags: [minio, docker, docker-compose, mkdir]
+tags: [minio, storage, s3, docker, docker-compose, nginx, load-balancing]
 ---
 
 使用容器的方式部署 MinIO

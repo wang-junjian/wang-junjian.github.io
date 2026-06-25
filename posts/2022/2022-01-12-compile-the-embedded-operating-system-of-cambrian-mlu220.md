@@ -2,7 +2,7 @@
 type: article
 title:  "编译寒武纪MLU220的嵌入式操作系统"
 date:   2022-01-12 00:00:00 +0800
-tags: [cambricon, git]
+tags: [cambricon, buildroot, git, embedded-linux, cross-compilation, hardware, edge-computing]
 ---
 
 > OpenIL 是一个基于 Buildroot 的开源项目，专为嵌入式工业解决方案而设计。

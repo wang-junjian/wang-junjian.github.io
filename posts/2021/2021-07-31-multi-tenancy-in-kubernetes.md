@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes的多租户"
 date:   2021-07-31 00:00:00 +0800
-tags: [multi-tenancy, kubesphere, kubernetes]
+tags: [kubernetes, multi-tenancy, kubesphere, namespaces, platform]
 ---
 
 ## 参考资料

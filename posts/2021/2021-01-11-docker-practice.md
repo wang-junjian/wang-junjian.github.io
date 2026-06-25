@@ -2,7 +2,7 @@
 type: article
 title:  "Docker实践"
 date:   2021-01-11 00:00:00 +0800
-tags: [docker, gpu, none, xargs, awk, inspect]
+tags: [docker, gpu, nvidia, container-management, containers, nvidia-docker2, devops, deployment, linux, tips]
 ---
 
 ## 安装与卸载

@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的卷：将磁盘挂载到容器"
 date:   2021-07-04 00:00:00 +0800
-tags: [volume, kubectl, date, docker, dockerfile, port-forward, nfs]
+tags: [kubernetes, volumes, storage, emptydir, hostpath, nfs, persistent-storage, docker, port-forward]
 ---
 
 ## 通过卷在容器之间共享数据

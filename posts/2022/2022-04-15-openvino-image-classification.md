@@ -2,7 +2,7 @@
 type: article
 title:  "OpenVINO 图像分类"
 date:   2022-04-15 08:00:00 +0800
-tags: [图像分类, googlenet]
+tags: [openvino, image-classification, 图像分类, googlenet, model-zoo, model-conversion, computer-vision, deep-learning, inference]
 ---
 
 ## 同步推理

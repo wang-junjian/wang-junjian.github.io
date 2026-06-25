@@ -2,7 +2,7 @@
 type: article
 title:  "SeamlessM4T — Massively Multilingual & Multimodal Machine Translation（大规模多语言和多模式机器翻译）"
 date:   2023-12-09 08:00:00 +0800
-tags: [seamlessm4t, asr, tts, conda, macbookprom2max]
+tags: [seamlessm4t, speech-recognition, text-to-speech, conda, macos, macbookpro, speech-to-text, machine-translation, meta, multilingual, multimodal]
 ---
 
 [Seamless Communication](https://ai.meta.com/research/seamless-communication/)

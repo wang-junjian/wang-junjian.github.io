@@ -2,7 +2,7 @@
 type: article
 title:  "Building ONNX Runtime"
 date:   2021-01-08 00:00:00 +0800
-tags: [linux, ubuntu, gpu, cuda, docker, onnx, onnxruntime]
+tags: [linux, ubuntu, gpu, cuda, docker, onnx, onnxruntime, nvidia, deep-learning, build-from-source]
 ---
 
 ## NVIDIA CUDA

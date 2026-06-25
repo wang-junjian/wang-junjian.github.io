@@ -2,7 +2,7 @@
 type: article
 title:  "将所有的图片文件复制到一个目录"
 date:   2021-03-15 00:00:00 +0800
-tags: [linux, shell, find, if, for]
+tags: [shell, linux, file-search, scripting, images, batch-processing]
 ---
 
 ## 脚本

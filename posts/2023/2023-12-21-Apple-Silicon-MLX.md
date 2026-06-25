@@ -2,7 +2,7 @@
 type: article
 title:  "MLX: An array framework for Apple silicon"
 date:   2023-12-21 08:00:00 +0800
-tags: [mlx, phi-2, qwen, stablediffusion,t5, whisper, macbookprom2max]
+tags: [mlx, phi-2, qwen, stable-diffusion, t5, whisper, apple-silicon, machine-learning, python]
 ---
 
 ## [MLX](https://github.com/ml-explore/mlx)

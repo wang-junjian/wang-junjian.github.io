@@ -2,7 +2,7 @@
 type: article
 title:  "Dockerfile 中 ARG 指令的作用范围"
 date:   2023-10-11 08:00:00 +0800
-tags: [dockerfile, arg]
+tags: [docker, dockerfile, build-args, multi-stage-builds, container-management]
 ---
 
 > 这里主要是了解 Dockerfile 中 ARG 指令的作用范围。

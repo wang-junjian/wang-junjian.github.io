@@ -2,7 +2,7 @@
 type: article
 title:  "讯飞星火测试"
 date:   2023-05-06 08:00:00 +0800
-tags: [chatgpt]
+tags: [spark-desk, "讯飞星火", ai, llm, chatgpt, translation, code, shell]
 ---
 
 [Spark Desk](https://xinghuo.xfyun.cn/desk) 是讯飞星火认知大模型的英文名称。

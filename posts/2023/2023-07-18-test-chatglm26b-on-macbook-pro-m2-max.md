@@ -2,7 +2,7 @@
 type: article
 title:  "在 MacBook Pro M2 Max 上测试 ChatGLM2-6B"
 date:   2023-07-18 08:00:00 +0800
-tags: [chatglm, glm, chatgpt, macbookprom2max]
+tags: [chatglm, glm, macos, macbookpro, apple, hugging-face, transformers, pytorch, apple-silicon, quantization]
 ---
 
 ## [ChatGLM2-6B](https://github.com/THUDM/ChatGLM2-6B)

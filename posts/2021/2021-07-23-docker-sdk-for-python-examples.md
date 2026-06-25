@@ -2,7 +2,7 @@
 type: article
 title:  "Docker SDK for Python Examples"
 date:   2021-07-23 00:00:00 +0800
-tags: [python]
+tags: [docker, python, sdk, container-management, tempfile, scripting]
 ---
 
 ## 安装 Docker SDK for Python

@@ -2,7 +2,7 @@
 type: article
 title:  "人工智能服务 REST API 响应的 JSON 格式"
 date:   2023-04-04 08:00:00 +0800
-tags: [ai, json]
+tags: [ai, json, api, rest-api, computer-vision, object-detection, hugging-face, machine-learning, azure, aws]
 ---
 
 ## 什么是 REST API？

@@ -2,7 +2,7 @@
 type: article
 title:  "TensorRT-LLM 大模型推理"
 date:   2023-12-12 08:00:00 +0800
-tags: [tensorrt-llm, tritoninferenceserver, chatglm]
+tags: [tensorrt-llm, triton-inference-server, chatglm, tensorrt, nvidia, docker, inference, deployment, llm]
 ---
 
 - [TensorRT-LLM’s Documentation](https://nvidia.github.io/TensorRT-LLM/)

@@ -2,7 +2,7 @@
 type: article
 title:  "OpenResty 内执行 Lua 脚本"
 date:   2022-02-18 00:00:00 +0800
-tags: [openresty, nginx, lua, docker, inspect, jq, curl]
+tags: [openresty, nginx, lua, docker, curl, jq, shell]
 ---
 
 > OpenResty 是一款基于 NGINX 和 LuaJIT 的 Web 平台。

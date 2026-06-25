@@ -2,7 +2,7 @@
 type: article
 title:  "Python 自动生成周报"
 date:   2022-03-20 00:00:00 +0800
-tags: [diy, excel, openpyxl, typer]
+tags: [python, automation, excel, openpyxl, typer, cli, weekly-report]
 ---
 
 ## 安装依赖库
