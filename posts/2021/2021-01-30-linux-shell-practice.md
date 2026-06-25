@@ -2,7 +2,7 @@
 type: article
 title:  "Linux Shell 实践"
 date:   2021-01-30 00:00:00 +0800
-tags: [实践, 快捷键, linux, if, for, function]
+tags: [linux, shell, bash, command-line, scripting, terminal, automation]
 ---
 
 ## 快捷键

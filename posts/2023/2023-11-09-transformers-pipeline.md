@@ -2,7 +2,7 @@
 type: article
 title:  "Transformers Pipeline"
 date:   2023-11-09 08:00:00 +0800
-tags: [inference, transformers, pipeline, llm.int8]
+tags: [transformers, pipeline, inference, python, pytorch, machine-learning, sentiment-analysis, quantization]
 ---
 
 ## 使用 Transformers 的 Pipeline 进行推理

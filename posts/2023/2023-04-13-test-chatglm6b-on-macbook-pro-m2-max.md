@@ -2,7 +2,7 @@
 type: article
 title:  "在 MacBook Pro M2 Max 上测试 ChatGLM-6B"
 date:   2023-04-13 08:00:00 +0800
-tags: [chatglm, glm, chatgpt, macbookprom2max]
+tags: [chatglm, glm, chatgpt, macos, macbookpro, pytorch, transformers, fine-tuning, local-llms, apple]
 ---
 
 ChatGLM-6B 是一个开源的、支持中英双语的对话语言模型，基于 General Language Model (GLM) 架构，具有 62 亿参数。

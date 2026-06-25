@@ -2,7 +2,7 @@
 type: article
 title:  "SSH X11 Forwarding"
 date:   2021-04-10 00:00:00 +0800
-tags: [ssh, x11, xquartz]
+tags: [ssh, x11, xquartz, macos, remote-desktop, remote-development]
 ---
 
 ## macOS

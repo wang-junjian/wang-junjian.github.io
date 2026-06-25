@@ -2,7 +2,7 @@
 type: article
 title:  "VS Code实践"
 date:   2021-03-01 00:00:00 +0800
-tags: [vscode]
+tags: [vscode, ide, productivity, tools, shortcuts]
 ---
 
 ## 编辑

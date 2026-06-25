@@ -2,7 +2,7 @@
 type: article
 title:  "边缘硬件"
 date:   2022-07-25 00:00:00 +0800
-tags: [myriad, nvme, ddr, lpddr]
+tags: [edge-hardware, hardware, movidius, myriad, nvme, ddr, lpddr]
 ---
 
 ## 研扬

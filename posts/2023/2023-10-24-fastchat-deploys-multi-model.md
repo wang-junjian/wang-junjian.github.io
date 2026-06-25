@@ -2,7 +2,7 @@
 type: article
 title:  "FastChat 部署多模型"
 date:   2023-10-24 08:00:00 +0800
-tags: [fastchat, langchain, vicuna, chatglm2-6b, 分布式]
+tags: [fastchat, llm, model-deployment, inference-serving, vicuna, langchain, docker, scaling]
 ---
 
 <hr>

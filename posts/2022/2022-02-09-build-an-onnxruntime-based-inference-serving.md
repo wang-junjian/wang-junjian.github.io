@@ -2,7 +2,7 @@
 type: article
 title:  "构建基于 ONNXRuntime 的推理服务"
 date:   2022-02-09 00:00:00 +0800
-tags: [onnx, onnxruntime, gpu, cuda, docker, dockerfile, pip]
+tags: [onnxruntime, onnx, gpu, cuda, docker, dockerfile, inference-serving, cudnn, python]
 ---
 
 ## 构建 ONNXRuntime-GPU 镜像

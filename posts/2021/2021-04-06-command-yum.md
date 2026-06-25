@@ -2,7 +2,7 @@
 type: article
 title:  "命令yum"
 date:   2021-04-06 00:00:00 +0800
-tags: [linux, centos, yum, download]
+tags: [yum, linux, centos, package-management, download]
 ---
 
 ## 下载软件及依赖安装包

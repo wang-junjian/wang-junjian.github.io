@@ -2,7 +2,7 @@
 type: article
 title:  "基于腾讯云物联网开发平台的场景联动（智能电灯和光照传感器）"
 date:   2021-02-24 00:00:00 +0800
-tags: [nodemcu, esp8266]
+tags: [iot, tencent-cloud, smart-home, sensor, esp8266, nodemcu, hardware]
 ---
 
 ## 产品智能联动配置

@@ -2,7 +2,7 @@
 type: article
 title:  "OpenVINO Benchmark Python Tool"
 date:   2022-05-19 08:00:00 +0800
-tags: [openvino, benchmark_app]
+tags: [openvino, benchmark_app, performance, python, inference, benchmarks, optimisation]
 ---
 
 ## [性能指标评测工具](https://docs.openvino.ai/cn/latest/openvino_inference_engine_tools_benchmark_tool_README.html)

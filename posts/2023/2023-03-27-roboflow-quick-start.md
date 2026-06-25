@@ -2,7 +2,7 @@
 type: article
 title:  "Roboflow 快速入门"
 date:   2023-03-27 08:00:00 +0800
-tags: [quickstart, label, train, deploy]
+tags: [roboflow, object-detection, computer-vision, datasets, annotation, model-training, deployment, python, yolov8, quickstart]
 ---
 
 ## 创建工作区

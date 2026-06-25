@@ -2,7 +2,7 @@
 type: article
 title:  "如何使用 Docker 打包已注册的模型"
 date:   2021-07-22 00:00:00 +0800
-tags: [command]
+tags: [docker, kubernetes, model-deployment, inference-serving, darknet, init-containers, python, sdk, container-management]
 ---
 
 ## 模型打包成镜像

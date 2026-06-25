@@ -2,7 +2,7 @@
 type: article
 title:  "VLC Extension Example"
 date:   2021-01-04 00:00:00 +0800
-tags: [vlc, lua]
+tags: [vlc, lua, scripting, plugins, video, development, windows, macos, linux]
 ---
 
 ## 开发

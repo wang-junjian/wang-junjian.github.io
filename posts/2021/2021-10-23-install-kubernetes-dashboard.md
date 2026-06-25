@@ -2,7 +2,7 @@
 type: article
 title:  "安装Kubernetes Dashboard"
 date:   2021-10-23 00:00:00 +0800
-tags: [kubectl, macos]
+tags: [kubernetes, dashboard, kubectl, cluster-setup, rbac, serviceaccount, nodeport, proxy, macos]
 ---
 
 ## 用户界面 Dashboard

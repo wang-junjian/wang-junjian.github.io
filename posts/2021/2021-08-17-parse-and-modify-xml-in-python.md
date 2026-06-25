@@ -2,7 +2,7 @@
 type: article
 title:  "在 Python 中解析和修改 XML"
 date:   2021-08-17 00:00:00 +0800
-tags: [python, xml]
+tags: [python, xml, elementtree, parsing, stdlib]
 ---
 
 ## XML 数据

@@ -2,7 +2,7 @@
 type: article
 title:  "开源 OCR 引擎基准测试"
 date:   2023-10-09 08:00:00 +0800
-tags: [easyocr, paddleocr, ocr, benchmark, faulthandler, wall-e-ai]
+tags: [ocr, computer-vision, easyocr, paddleocr, tesseract, benchmarks, docker, python, debugging]
 ---
 
 ## OCR 引擎

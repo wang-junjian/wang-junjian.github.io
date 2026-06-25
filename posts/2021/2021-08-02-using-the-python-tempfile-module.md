@@ -2,7 +2,7 @@
 type: article
 title:  "使用 Python 临时文件模块"
 date:   2021-08-02 00:00:00 +0800
-tags: [tempfile, f-strings]
+tags: [python, tempfile, file-io, stdlib, file]
 ---
 
 ## file.write() 内容超过 4K 才会写入磁盘

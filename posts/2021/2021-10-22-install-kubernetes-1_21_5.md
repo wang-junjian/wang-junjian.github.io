@@ -2,7 +2,7 @@
 type: article
 title:  "安装Kubernetes 1.21.5"
 date:   2021-10-22 00:00:00 +0800
-tags: [docker, timedatectl, hostnamectl, apt, curl, cat, kubeadm, export, cp, chown, kubectl]
+tags: [kubernetes, kubeadm, kubectl, docker, installation, cluster-setup, master-node, worker-node, weave-net, cgroups]
 ---
 
 > 删除 Kubernetes 旧版本，安装 Kubernetes 1.21.5。

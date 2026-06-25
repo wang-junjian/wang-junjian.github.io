@@ -2,7 +2,7 @@
 type: article
 title:  "HTTP 基准测试工具"
 date:   2022-03-21 08:00:00 +0800
-tags: [wrk, ab, make, nproc]
+tags: [wrk, ab, http, benchmarks, load-testing, lua, curl, command-line]
 ---
 
 ## wrk

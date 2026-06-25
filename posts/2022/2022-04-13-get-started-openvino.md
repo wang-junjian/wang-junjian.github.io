@@ -2,7 +2,7 @@
 type: article
 title:  "Get Started OpenVINO"
 date:   2022-04-13 08:00:00 +0800
-tags: [install, venv]
+tags: [openvino, installation, python, virtualenv, model-optimization, model-zoo, inference, computer-vision, deep-learning]
 ---
 
 ## [OpenVINO](https://www.intel.cn/content/www/cn/zh/developer/tools/openvino-toolkit/overview.html)

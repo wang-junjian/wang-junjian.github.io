@@ -2,7 +2,7 @@
 type: article
 title:  "基于腾讯云物联网开发平台的光照传感器"
 date:   2021-02-24 00:00:00 +0800
-tags: [micropython, mqtt, nodemcu, esp8266]
+tags: [micropython, mqtt, nodemcu, esp8266, tencent-cloud, iot, sensor, smart-home]
 ---
 
 ## 构建光照传感器

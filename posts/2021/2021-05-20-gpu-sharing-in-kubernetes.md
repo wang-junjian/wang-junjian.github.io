@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的GPU共享"
 date:   2021-05-20 00:00:00 +0800
-tags: [nvidia, gpu, docker, kubectl]
+tags: [kubernetes, gpu, nvidia, docker, device-plugin, scheduling, gpu-sharing, aliyun]
 ---
 
 ## 构建应用

@@ -2,7 +2,7 @@
 type: article
 title:  "Building Systems with the ChatGPT API"
 date:   2023-06-13 08:00:00 +0800
-tags: [chatgpt, deeplearning.ai]
+tags: [chatgpt, openai, api, deeplearning-ai, python, llm, prompt-engineering, machine-learning, generative-ai, moderation]
 ---
 
 [Building Systems with the ChatGPT API](https://learn.deeplearning.ai/chatgpt-building-system)

@@ -2,7 +2,7 @@
 type: article
 title:  "Apache HTTP Server实践"
 date:   2021-01-10 00:00:00 +0800
-tags: [linux, command, apache]
+tags: [linux, apache, webserver, http, command-line, configuration, ubuntu, tips]
 ---
 
 ## 修改端口号

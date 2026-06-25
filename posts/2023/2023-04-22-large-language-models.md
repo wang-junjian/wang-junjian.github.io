@@ -2,7 +2,7 @@
 type: article
 title:  "Large Language Models（大语言模型）"
 date:   2023-04-22 08:00:00 +0800
-tags: [chatgpt, chatglm, llama, alpaca, vicuna]
+tags: [llms, chatgpt, chatglm, llama, alpaca, vicuna, generative-ai, machine-learning, ai, gpt]
 ---
 
 ## LLMS

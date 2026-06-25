@@ -2,7 +2,7 @@
 type: article
 title:  "命令top"
 date:   2021-01-17 00:00:00 +0800
-tags: [linux, top]
+tags: [linux, top, system-info, monitoring, performance, processes, command-line]
 ---
 
 ## 快捷键

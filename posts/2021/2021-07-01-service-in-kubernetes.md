@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的Service"
 date:   2021-07-01 00:00:00 +0800
-tags: [kubectl, service, expose, exec, run, bash, curl, env, jsonpath]
+tags: [kubernetes, service, service-discovery, networking, nodeport, load-balancing, ingress]
 ---
 
 ## Service

@@ -2,7 +2,7 @@
 type: article
 title:  "命令ffmpeg"
 date:   2021-01-03 00:00:00 +0800
-tags: [linux, ffmpeg, gpu, nvidia, for, basename]
+tags: [linux, ffmpeg, gpu, nvidia, video, docker, command-line, image-processing, batch-processing, tips]
 ---
 
 ## FFmpeg

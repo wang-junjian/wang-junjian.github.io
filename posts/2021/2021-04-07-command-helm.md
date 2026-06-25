@@ -2,7 +2,7 @@
 type: article
 title:  "命令helm"
 date:   2021-04-07 00:00:00 +0800
-tags: [helm, curl]
+tags: [helm, kubernetes, charts, package-management, repository, curl]
 ---
 
 > Helm 帮助您管理 Kubernetes 应用程序 —— Helm Charts 帮助您定义、安装和升级即使是最复杂的 Kubernetes 应用程序。

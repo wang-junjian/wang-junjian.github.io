@@ -2,7 +2,7 @@
 type: article
 title:  "逻辑卷管理(Logical Volume Management)"
 date:   2022-02-10 00:00:00 +0800
-tags: [lvm, lsblk, mkfs, mount, fstab]
+tags: [lvm, linux, filesystem, mount, storage, partition, sysadmin]
 ---
 
 ![](/images/2022/lvm.jpg)

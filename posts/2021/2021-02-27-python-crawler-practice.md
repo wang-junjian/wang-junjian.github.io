@@ -2,7 +2,7 @@
 type: article
 title:  "Python爬虫实践"
 date:   2021-02-27 00:00:00 +0800
-tags: [crawler]
+tags: [python, web-scraping, requests, crawling, http]
 ---
 
 ## HTTP Status Code

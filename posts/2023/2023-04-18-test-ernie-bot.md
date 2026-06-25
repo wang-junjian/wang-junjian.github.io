@@ -2,7 +2,7 @@
 type: article
 title:  "文心一言测试"
 date:   2023-04-18 08:00:00 +0800
-tags: [erniebot, chatgpt]
+tags: [ernie-bot, chatgpt, baidu, generative-ai, ai, gpt, translation]
 ---
 
 ## [文心一言](https://yiyan.baidu.com)

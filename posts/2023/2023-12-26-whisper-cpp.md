@@ -2,7 +2,7 @@
 type: article
 title:  "whisper.cpp"
 date:   2023-12-26 08:00:00 +0800
-tags: [whisper, neon, mps, coreml, macbookprom2max]
+tags: [whisper, whisper-cpp, speech-to-text, apple-silicon, metal, coreml, neon, quantization, macos, macbookpro]
 ---
 
 ## NEON & MPS 🆚 CoreML

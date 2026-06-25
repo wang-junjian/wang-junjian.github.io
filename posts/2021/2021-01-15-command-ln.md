@@ -2,7 +2,7 @@
 type: article
 title:  "命令ln"
 date:   2021-01-15 00:00:00 +0800
-tags: [linux, ln]
+tags: [linux, ln, command-line, cli, filesystem, symlink, shell, ubuntu, tips]
 ---
 
 > 在文件之间建立链接

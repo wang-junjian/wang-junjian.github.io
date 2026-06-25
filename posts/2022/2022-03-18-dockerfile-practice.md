@@ -2,7 +2,7 @@
 type: article
 title:  "Dockerfile 实践"
 date:   2022-03-18 00:00:00 +0800
-tags: [dockerfile, python, opencv, pip, localtime, timezone]
+tags: [docker, dockerfile, python, opencv, pip, apt, timezone, ubuntu]
 ---
 
 ## 系统

@@ -2,7 +2,7 @@
 type: article
 title:  "Dockerfile ONNXRuntime GPU"
 date:   2021-01-08 00:00:00 +0800
-tags: [docker, dockerfile, onnxruntime, cuda]
+tags: [docker, dockerfile, onnxruntime, cuda, onnx, gpu, nvidia, deep-learning, machine-learning, containers]
 ---
 
 ```dockerfile

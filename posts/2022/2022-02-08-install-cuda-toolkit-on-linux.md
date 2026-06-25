@@ -2,7 +2,7 @@
 type: article
 title:  "在Linux上安装CUDA Toolkit"
 date:   2022-02-08 00:00:00 +0800
-tags: [linux, cuda, install, uninstall, driver]
+tags: [linux, cuda, nvidia, driver, installation, nvidia-smi, gpu, ubuntu]
 ---
 
 ## 安装 CUDA Toolkit

@@ -2,7 +2,7 @@
 type: article
 title:  "学习【机器学习平台】建设的经验"
 date:   2022-11-16 08:00:00 +0800
-tags: []
+tags: [machine-learning, deep-learning, ml-platform, model-deployment, ab-testing, kubernetes, data-science, platform, large-model]
 ---
 
 ## [快手技术 VP 王仲远对于 AI、大模型、深度学习的预测](https://www.infoq.cn/article/ZvqbGXcKdiIRfszgotWh) 2021-09-02

@@ -2,7 +2,7 @@
 type: article
 title:  "OpenAI API Documentation Embeddings"
 date:   2023-04-25 08:00:00 +0800
-tags: ["openai api", embedding, faiss]
+tags: [openai, embeddings, faiss, vector-search, numpy, pandas, machine-learning, ai, python]
 ---
 
 ## [什么是 Embedding？](https://platform.openai.com/docs/guides/embeddings/what-are-embeddings)

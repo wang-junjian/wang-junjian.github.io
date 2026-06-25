@@ -2,7 +2,7 @@
 type: article
 title:  "Text Generation Inference"
 date:   2023-12-19 08:00:00 +0800
-tags: [tgi, inference]
+tags: [text-generation-inference, hugging-face, inference-serving, docker, llm, flash-attention, quantization, zephyr, model-deployment]
 ---
 
 - [Text Generation Inference](https://github.com/huggingface/text-generation-inference)

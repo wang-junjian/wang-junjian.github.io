@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain for LLM Application Development"
 date:   2023-06-09 08:00:00 +0800
-tags: [chatgpt, deeplearning.ai]
+tags: [langchain, llm, chatgpt, openai, deeplearning-ai, python, prompt-engineering, tools, api, generative-ai]
 ---
 
 [LangChain for LLM Application Development](https://learn.deeplearning.ai/langchain)

@@ -2,7 +2,7 @@
 type: article
 title:  "Dockerfile OpenCV4 Ubuntu20.04"
 date:   2021-01-09 00:00:00 +0800
-tags: [docker, dockerfile, opencv, ubuntu]
+tags: [docker, dockerfile, opencv, ubuntu, computer-vision, image-processing, python, containers, tips]
 ---
 
 ## Dockerfile

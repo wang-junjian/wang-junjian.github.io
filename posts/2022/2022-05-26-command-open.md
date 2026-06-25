@@ -2,7 +2,7 @@
 type: article
 title:  "命令open"
 date:   2022-05-26 00:00:00 +0800
-tags: [command]
+tags: [macos, command-line, browsers, shell, terminal]
 ---
 
 ## 指定浏览器打开链接

@@ -2,7 +2,7 @@
 type: article
 title:  "命令man help info"
 date:   2021-05-24 00:00:00 +0800
-tags: [linux, shell, man, help, info]
+tags: [linux, shell, bash, man, cli, command-line, documentation]
 ---
 
 ## man

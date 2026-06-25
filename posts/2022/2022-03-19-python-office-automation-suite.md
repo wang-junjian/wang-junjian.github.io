@@ -2,7 +2,7 @@
 type: article
 title:  "Python办公自动化套件"
 date:   2022-03-19 00:00:00 +0800
-tags: [word, python-docx, excel, openpyxl]
+tags: [python, automation, office-automation, python-docx, openpyxl, excel, word]
 ---
 
 ## 操作 Word 文档

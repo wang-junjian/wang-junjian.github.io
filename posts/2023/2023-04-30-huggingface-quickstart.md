@@ -2,7 +2,7 @@
 type: article
 title:  "Hugging Face 快速入门"
 date:   2023-04-30 08:00:00 +0800
-tags: [quickstart]
+tags: [hugging-face, transformers, model-deployment, datasets, computer-vision, nlp, audio, machine-learning, ai]
 ---
 
 ## [Hugging Face](https://huggingface.co/)

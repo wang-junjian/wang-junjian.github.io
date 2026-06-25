@@ -2,7 +2,7 @@
 type: article
 title:  "GPU 服务器不能访问"
 date:   2023-11-19 08:00:00 +0800
-tags: [traceroute, tcpdump, netstat, lsof, dmesg, journalctl, linux, 日志]
+tags: [linux, networking, troubleshooting, gpu, docker, debugging, logs, sysadmin]
 ---
 
 13 号 上午 GPU 服务器突然不能访问了，可以通过 CPU 服务器访问 GPU 服务器。这一周一直在查找问题，这里记录一下过程。

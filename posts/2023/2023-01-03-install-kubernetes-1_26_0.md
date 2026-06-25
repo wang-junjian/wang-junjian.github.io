@@ -2,7 +2,7 @@
 type: article
 title:  "安装Kubernetes 1.26.0"
 date:   2023-01-03 08:00:00 +0800
-tags: [install, apt-cache, kubeadm, containerd]
+tags: [kubernetes, kubeadm, containerd, docker, ubuntu, cluster-setup, kubectl, devops, containers, installation]
 ---
 
 ## Master 节点

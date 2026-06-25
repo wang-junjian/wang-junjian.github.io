@@ -2,7 +2,7 @@
 type: article
 title:  "使用PaddleOCR进行文字识别"
 date:   2021-09-17 00:00:00 +0800
-tags: [python, paddleocr]
+tags: [python, paddleocr, paddlepaddle, opencv, computer-vision, ocr, image-processing, deep-learning, inference]
 ---
 
 ## 安装

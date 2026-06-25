@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain HuggingFaceEmbeddings + FAISS"
 date:   2023-10-22 08:00:00 +0800
-tags: [embeddings, huggingface, faiss]
+tags: [langchain, embeddings, hugging-face, faiss, vector-search, machine-learning, python]
 ---
 
 ## 数据

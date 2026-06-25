@@ -2,7 +2,7 @@
 type: article
 title:  "命令ssh"
 date:   2021-01-21 00:00:00 +0800
-tags: [linux, ssh]
+tags: [linux, ssh, security, remote, command-line, networking]
 ---
 
 ## 指定端口

@@ -2,7 +2,7 @@
 type: article
 title:  "Whisper 语音识别"
 date:   2023-05-26 08:00:00 +0800
-tags: [openai, pydub]
+tags: [whisper, openai, audio, python, speech-to-text, pydub, transcription]
 ---
 
 ## Whisper

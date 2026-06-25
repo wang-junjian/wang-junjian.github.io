@@ -2,7 +2,7 @@
 type: article
 title:  "How Diffusion Models Work"
 date:   2023-06-14 08:00:00 +0800
-tags: [ddpm, ddim, deeplearning.ai]
+tags: [diffusion-models, ddpm, stable-diffusion, generative-ai, deep-learning, machine-learning, computer-vision, pytorch, text-to-image]
 ---
 
 [How Diffusion Models Work](https://learn.deeplearning.ai/diffusion-models)

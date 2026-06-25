@@ -2,7 +2,7 @@
 type: article
 title:  "OpenVINO Deep Learning Workbench"
 date:   2022-08-16 08:00:00 +0800
-tags: [openvino]
+tags: [openvino, openvino-workbench, docker, deep-learning, computer-vision, model-optimization, performance]
 ---
 
 ## 使用 Docker 运行 DL Workbench

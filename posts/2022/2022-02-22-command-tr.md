@@ -2,7 +2,7 @@
 type: article
 title:  "命令tr"
 date:   2022-02-22 00:00:00 +0800
-tags: [linux, tr]
+tags: [tr, linux, command-line, shell, text-processing]
 ---
 
 ```shell

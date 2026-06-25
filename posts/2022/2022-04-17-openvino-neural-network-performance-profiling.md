@@ -2,7 +2,7 @@
 type: article
 title:  "OpenVINO 神经网络性能分析"
 date:   2022-04-17 08:00:00 +0800
-tags: [目标检测, 性能分析]
+tags: [openvino, profiling, performance, memory, object-detection, 目标检测, 性能分析, deep-learning]
 ---
 
 ## 网络性能分析

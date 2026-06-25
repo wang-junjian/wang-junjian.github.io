@@ -2,7 +2,7 @@
 type: article
 title:  "ONNX Simplifier"
 date:   2022-06-09 00:00:00 +0800
-tags: [onnx, onnxsim]
+tags: [onnx, onnxsim, model-optimization, pytorch, model-conversion, deep-learning]
 ---
 
 onnxsim 本身只提供 constant folding/propagation（即消除结果恒为常量的算子）的能力，而图变换（即合并 conv 和 bn 等等）的能力是由 onnxsim 调用 onnx optimizer 的各种 pass 实现的。constant folding 和图变换同时使用时，很多隐藏的优化机会会被挖掘出来，这也是 onnxsim 优化效果出色的原因之一。例如 add(add(x, 1), 2) 在变换为 add(x, add(1, 2)) 之后就可以通过 constant folding 变为 add(x, 3)，而 pad(conv(x, w, padding=0), add(1, 1)) 在经过 constant folding 变为 pad(conv(x, w, padding=0), 2) 后，就可以进一步融合成 conv(x, w, padding=2)。

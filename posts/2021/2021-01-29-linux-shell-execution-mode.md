@@ -2,7 +2,7 @@
 type: article
 title:  "Linux Shell 执行方式"
 date:   2021-01-29 00:00:00 +0800
-tags: [linux, shell, source, chmod, du]
+tags: [linux, shell, bash, command-line, scripting, permissions]
 ---
 
 ## 在当前shell下一行执行多条命令(;)

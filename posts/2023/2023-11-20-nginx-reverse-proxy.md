@@ -2,7 +2,7 @@
 type: article
 title:  "NGINX Reverse Proxy 反向代理"
 date:   2023-11-20 08:00:00 +0800
-tags: [nginx, websocket, 反向代理]
+tags: [nginx, reverse-proxy, load-balancing, websockets, webserver, devops, linux]
 ---
 
 通过 CPU 服务器访问 GPU 服务器

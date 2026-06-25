@@ -2,7 +2,7 @@
 type: article
 title:  "macOS 能连上 WiFi 但无法上网"
 date:   2023-09-18 08:00:00 +0800
-tags: [macbookprom2max]
+tags: [macos, macbookpro, wifi, troubleshooting, networking]
 ---
 
 ## 问题描述

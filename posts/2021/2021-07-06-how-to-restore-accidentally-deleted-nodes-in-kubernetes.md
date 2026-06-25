@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中如何恢复误删的节点"
 date:   2021-07-06 00:00:00 +0800
-tags: [kubectl, delete, kubeadm, token, reset, join]
+tags: [kubernetes, kubectl, kubeadm, node-management, node-recovery, cluster-operations, worker-node, master-node]
 ---
 
 > 在删除标签的时候不小心删除了节点。

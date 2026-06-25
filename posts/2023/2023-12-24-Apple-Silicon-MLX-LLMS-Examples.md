@@ -2,7 +2,7 @@
 type: article
 title:  "MLX LLMS Examples"
 date:   2023-12-24 08:00:00 +0800
-tags: [mlx, phi-2, qwen, macbookprom2max]
+tags: [mlx, phi-2, qwen, apple-silicon, macbookpro, local-llms, inference, llm-performance, machine-learning]
 ---
 
 ## [MLX Examples](https://github.com/ml-explore/mlx-examples)

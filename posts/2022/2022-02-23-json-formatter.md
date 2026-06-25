@@ -2,7 +2,7 @@
 type: article
 title:  "Json Formatter"
 date:   2022-02-23 00:00:00 +0800
-tags: [linux, json, jq, python, vim]
+tags: [json, jq, python, vim, command-line, shell, tools]
 ---
 
 test.json

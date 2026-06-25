@@ -2,7 +2,7 @@
 type: article
 title:  "容器内幕"
 date:   2021-04-01 00:00:00 +0800
-tags: [container, namespace, cgroup, echo, mkdir, rmdir, cp, ldd, egrep, sort, uniq, chroot, while]
+tags: [containers, linux-kernel, cgroups, namespaces, chroot, docker, virtualization, linux]
 ---
 
 ## 容器的本质是一种特殊的进程

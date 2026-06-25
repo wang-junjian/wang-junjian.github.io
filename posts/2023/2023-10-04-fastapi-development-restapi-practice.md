@@ -2,7 +2,7 @@
 type: article
 title:  "FastAPI 开发 RESTAPI 实践"
 date:   2023-10-04 08:00:00 +0800
-tags: [fastapi, markdown, css, requirements.txt, pythonpath]
+tags: [fastapi, python, rest, api-design, markdown, gunicorn, uvicorn, web-development]
 ---
 
 ## 首页

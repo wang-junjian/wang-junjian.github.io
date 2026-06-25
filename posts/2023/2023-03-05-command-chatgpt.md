@@ -2,7 +2,7 @@
 type: article
 title:  "通过命令使用 ChatGPT"
 date:   2023-03-05 00:00:00 +0800
-tags: [command]
+tags: [chatgpt, cli, python, playwright, openai, command-line, api, automation, tools]
 ---
 
 ## [ChatGPT Wrapper](https://github.com/mmabrouk/chatgpt-wrapper)

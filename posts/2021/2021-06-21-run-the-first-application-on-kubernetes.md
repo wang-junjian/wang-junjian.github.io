@@ -2,7 +2,7 @@
 type: article
 title:  "在Kubernetes上运行第一个应用"
 date:   2021-06-21 00:00:00 +0800
-tags: [service, deployment, node.js, docker, for]
+tags: [kubernetes, docker, dockerfile, nodejs, service, deployment, nodeport, beginner]
 ---
 
 ## 基于Node构建应用

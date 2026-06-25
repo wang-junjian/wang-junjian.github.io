@@ -2,7 +2,7 @@
 type: article
 title:  "SDXL Turbo"
 date:   2023-12-20 08:00:00 +0800
-tags: [sdxl-turbo, diffusion]
+tags: [sdxl-turbo, stable-diffusion, text-to-image, diffusion-models, hugging-face, stability-ai, clip, image-generation, apple-silicon]
 ---
 
 - [SDXL-Turbo 模型](https://huggingface.co/stabilityai/sdxl-turbo)

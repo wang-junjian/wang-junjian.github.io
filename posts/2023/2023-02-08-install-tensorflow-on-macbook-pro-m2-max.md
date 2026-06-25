@@ -2,7 +2,7 @@
 type: article
 title:  "在 MacBook Pro M2 Max 上安装 TensorFlow"
 date:   2023-02-08 08:00:00 +0800
-tags: [macbookprom2max]
+tags: [tensorflow, macos, macbookpro, apple-silicon, keras, conda, python, machine-learning, gpu, metal]
 ---
 
 ## 安装 TensorFlow

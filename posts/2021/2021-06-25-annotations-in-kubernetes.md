@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的注解"
 date:   2021-06-25 00:00:00 +0800
-tags: [kubectl, annotate]
+tags: [kubernetes, kubectl, annotations, pod, metadata, yaml, cluster-operations]
 ---
 
 ## 注解

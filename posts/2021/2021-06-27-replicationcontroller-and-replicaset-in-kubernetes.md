@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的ReplicationController和ReplicaSet"
 date:   2021-06-27 00:00:00 +0800
-tags: [kubectl, replicationcontroller, replicaset, scale]
+tags: [kubernetes, kubectl, replicationcontroller, replicaset, scaling, workloads, labels]
 ---
 
 ## ReplicationController

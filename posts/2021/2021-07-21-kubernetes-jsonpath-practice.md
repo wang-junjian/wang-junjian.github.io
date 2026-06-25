@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes JSONPath实践"
 date:   2021-07-21 00:00:00 +0800
-tags: [kubectl, jsonpath]
+tags: [kubernetes, kubectl, jsonpath, node-management, labels, taint, pod, query]
 ---
 
 ## Node

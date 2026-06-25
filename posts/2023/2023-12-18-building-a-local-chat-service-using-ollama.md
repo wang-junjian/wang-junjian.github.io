@@ -2,7 +2,7 @@
 type: article
 title:  "使用 Ollama 构建本地聊天服务"
 date:   2023-12-18 08:00:00 +0800
-tags: [ollama, ollamahub, ollamawebui, gpt]
+tags: [ollama, local-llms, docker, docker-compose, llama, llama2, modelfile, gguf, macos]
 ---
 
 ## [Ollama](https://github.com/jmorganca/ollama)

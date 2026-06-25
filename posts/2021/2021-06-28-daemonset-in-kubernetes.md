@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的DaemonSet"
 date:   2021-06-28 00:00:00 +0800
-tags: [kubectl, daemonset, apply, label, taint, toleration]
+tags: [kubernetes, daemonset, workloads, taint, toleration, node-selector, labels]
 ---
 
 ## DaemonSet

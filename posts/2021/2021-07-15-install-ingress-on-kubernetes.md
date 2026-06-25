@@ -2,7 +2,7 @@
 type: article
 title:  "在Kubernetes上安装Ingress"
 date:   2021-07-15 00:00:00 +0800
-tags: [helm]
+tags: [kubernetes, ingress, nginx, helm, networking, load-balancing, container-network, installation]
 ---
 
 ## 官方的安装

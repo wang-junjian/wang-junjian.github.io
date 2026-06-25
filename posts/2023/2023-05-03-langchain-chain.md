@@ -2,7 +2,7 @@
 type: article
 title:  "LangChain - Chain"
 date:   2023-05-03 10:00:00 +0800
-tags: [langchain, llm]
+tags: [langchain, llm, python, openai, chatgpt, prompt-engineering, chaining, tools, ai-agents]
 ---
 
 ## [Chain](https://python.langchain.com/en/latest/modules/chains.html)

@@ -2,7 +2,7 @@
 type: article
 title:  "使用 FastAPI 开发 RESTAPI 服务"
 date:   2022-04-12 08:00:00 +0800
-tags: [fastapi, restapi]
+tags: [fastapi, rest, api, uvicorn, gunicorn, python, streaming, file]
 ---
 
 ## 创建项目

@@ -2,7 +2,7 @@
 type: article
 title:  "Kubernetes中的标签和标签选择器"
 date:   2021-06-24 00:00:00 +0800
-tags: [kubectl, label]
+tags: [kubernetes, kubectl, labels, node-selector, scheduling, pod, node-affinity]
 ---
 
 ## 标签

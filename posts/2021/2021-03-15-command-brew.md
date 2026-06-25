@@ -2,7 +2,7 @@
 type: article
 title:  "命令brew"
 date:   2021-03-15 02:00:00 +0800
-tags: [macos, brew, install]
+tags: [homebrew, macos, package-management, installation, troubleshooting, command-line]
 ---
 
 ## 安装

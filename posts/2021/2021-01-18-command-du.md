@@ -2,7 +2,7 @@
 type: article
 title:  "命令du"
 date:   2021-01-18 00:00:00 +0800
-tags: [linux, du]
+tags: [linux, du, disk, system-info, command-line, storage]
 ---
 
 > du - 估计文件空间使用量

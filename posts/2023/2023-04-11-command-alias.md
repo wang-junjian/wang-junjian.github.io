@@ -2,7 +2,7 @@
 type: article
 title:  "命令 alias"
 date:   2023-04-11 00:00:00 +0800
-tags: [command, shell, zsh, docker]
+tags: [shell, zsh, bash, docker, cli, terminal, productivity, safari]
 ---
 
 `zsh` 中使用单引号（`'`），不对特殊符号进行解析，使用双引号（`"`）会对特殊符号进行解析，如：`$` 

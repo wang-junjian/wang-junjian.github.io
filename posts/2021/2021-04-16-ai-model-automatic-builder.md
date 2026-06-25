@@ -2,7 +2,7 @@
 type: article
 title:  "AI 模型打包发布"
 date:   2021-04-16 00:00:00 +0800
-tags: [shell, dockerfile, if, date, sed, tar, scp, ssh, docker-compose]
+tags: [ai, machine-learning, docker, dockerfile, docker-compose, shell, onnx, model-deployment, packaging]
 ---
 
 ## 工程目录

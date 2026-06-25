@@ -2,7 +2,7 @@
 type: article
 title:  "macOS 上删除登录项中允许在后台的项目"
 date:   2023-02-25 08:00:00 +0800
-tags: [macbookprom2max]
+tags: [macos, launchd, finder, system-preferences, login-items, background-process, troubleshooting]
 ---
 
 ![](/images/2023/macos-universal-login-item-allow-in-background.png)

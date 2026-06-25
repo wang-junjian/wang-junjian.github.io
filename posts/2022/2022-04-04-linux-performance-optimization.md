@@ -2,7 +2,7 @@
 type: article
 title:  "Linux 性能优化"
 date:   2022-04-04 00:00:00 +0800
-tags: [linux]
+tags: [linux, performance, sysadmin, benchmarking, stress, sysstat, cpu, io, monitoring, troubleshooting]
 ---
 
 ## CPU

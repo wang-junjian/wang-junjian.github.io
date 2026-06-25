@@ -2,7 +2,7 @@
 type: article
 title:  "Install TVM from Source"
 date:   2022-06-29 00:00:00 +0800
-tags: [tvm, install]
+tags: [tvm, llvm, cuda, python, installation, deep-learning-compiler, compilers, build-from-source]
 ---
 
 ## Ubuntu 下安装依赖包

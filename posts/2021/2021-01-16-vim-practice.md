@@ -2,7 +2,7 @@
 type: article
 title:  "vim实践"
 date:   2021-01-16 00:00:00 +0800
-tags: [linux, vim]
+tags: [linux, vim, editor, command-line, cli, bash, configuration, tips, macos, ubuntu]
 ---
 
 ## 安装

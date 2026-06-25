@@ -2,7 +2,7 @@
 type: article
 title:  "Deep Learning Accuracy Validation Framework"
 date:   2022-05-17 08:00:00 +0800
-tags: [accuracy_check, tar]
+tags: [openvino, accuracy-checker, validation, deep-learning, tensorflow, python, datasets]
 ---
 
 ## 深度学习准确性验证框架

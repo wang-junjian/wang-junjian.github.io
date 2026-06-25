@@ -2,7 +2,7 @@
 type: article
 title:  "SFTP 客户端"
 date:   2021-03-15 01:00:00 +0800
-tags: [macos, sftp, ssh]
+tags: [sftp, ssh, file-transfer, macos, tools, security]
 ---
 
 ## [FileZilla](https://filezilla-project.org/index.php) - 开源, 跨平台

@@ -2,7 +2,7 @@
 type: article
 title:  "命令history"
 date:   2021-01-02 00:00:00 +0800
-tags: [command, linux, source, .bashrc, .bash_profile]
+tags: [linux, bash, command-line, shell, history, configuration, cli, tips]
 ---
 
 ## 操作不记录在历史记录中

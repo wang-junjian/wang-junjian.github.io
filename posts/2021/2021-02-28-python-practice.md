@@ -2,7 +2,7 @@
 type: article
 title:  "Python实践"
 date:   2021-02-28 00:00:00 +0800
-tags: [pythonpath, exec, uuid]
+tags: [python, asyncio, decorators, iterator, generator, metaclass, programming, deep-copy]
 ---
 
 * [Python 3 文档](https://docs.python.org/zh-cn/3/)

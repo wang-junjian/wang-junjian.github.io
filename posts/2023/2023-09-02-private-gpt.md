@@ -2,7 +2,7 @@
 type: article
 title:  "Private GPT"
 date:   2023-09-02 08:00:00 +0800
-tags: [chroma, faiss, gunicorn, uvicorn, sqlite3, gpt, shell]
+tags: [privategpt, rag, vector-search, embeddings, hugging-face, transformers, langchain, chroma, faiss, qwen]
 ---
 
 ## 模型

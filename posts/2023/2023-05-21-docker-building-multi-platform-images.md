@@ -2,7 +2,7 @@
 type: article
 title:  "Docker 构建多平台镜像"
 date:   2023-05-21 08:00:00 +0800
-tags: [docker, buildx]
+tags: [docker, buildx, multi-platform, qemu, arm64, amd64, containers]
 ---
 
 ## 多平台构建器
