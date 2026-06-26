@@ -1,0 +1,99 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { formatDate, getPostDisplayTitle } from '../utils/posts';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const years = new Set<number>();
+  for (const post of posts) {
+    const year = post.data.date ? new Date(post.data.date).getFullYear() : 0;
+    if (year > 0) {
+      years.add(year);
+    }
+  }
+  return Array.from(years)
+    .sort((a, b) => b - a)
+    .map((year) => ({ params: { year: String(year) } }));
+}
+
+const { year } = Astro.params;
+const yearNum = parseInt(year, 10);
+
+const posts = await getCollection('posts');
+const yearPosts = posts
+  .filter((post) => post.data.date && new Date(post.data.date).getFullYear() === yearNum)
+  .sort((a, b) => {
+    const dateA = new Date(a.data.date).getTime();
+    const dateB = new Date(b.data.date).getTime();
+    return dateB - dateA;
+  });
+
+const postsByMonth = new Map<string, typeof yearPosts>();
+for (const post of yearPosts) {
+  const date = new Date(post.data.date);
+  const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  if (!postsByMonth.has(monthKey)) {
+    postsByMonth.set(monthKey, []);
+  }
+  postsByMonth.get(monthKey)!.push(post);
+}
+
+const sortedMonths = Array.from(postsByMonth.keys()).sort((a, b) => b.localeCompare(a));
+
+const monthLabel = new Intl.DateTimeFormat('zh-CN', { month: 'numeric' });
+---
+
+<BaseLayout
+  title={`${yearNum} 年 - ${SITE_TITLE}`}
+  description={`${SITE_TITLE} ${yearNum} 年的所有文章。${SITE_DESCRIPTION}`}
+  canonical={Astro.url.toString()}
+>
+  <section class="pt-10 pb-16 px-8">
+    <div class="max-w-content mx-auto">
+      <h1 class="font-serif-display text-[2.5rem] font-semibold tracking-[-0.02em] mb-10 pb-4 border-b border-[var(--border)]">
+        {yearNum} 年
+        <span class="ml-3 text-xl font-normal text-[var(--text-secondary)]">{yearPosts.length} 篇</span>
+      </h1>
+
+      {sortedMonths.map((monthKey, monthIndex) => {
+        const monthDate = new Date(`${monthKey}-01T00:00:00`);
+        const monthPosts = (postsByMonth.get(monthKey) || []).sort((a, b) => {
+          const dateA = new Date(a.data.date).getTime();
+          const dateB = new Date(b.data.date).getTime();
+          return dateA - dateB;
+        });
+        const [monthYear, monthNum] = monthKey.split('-');
+        return (
+          <section class="mb-14 animate-fade-in-up" style={`animation-delay: ${monthIndex * 0.08}s;`}>
+            <h2 class="font-serif-display text-[1.75rem] font-semibold tracking-[-0.02em] mb-6 pb-3 border-b border-[var(--border)]">
+              <a
+                href={`/${monthYear}/${monthNum}/`}
+                class="text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
+              >
+                {monthLabel.format(monthDate)}
+              </a>
+              <span class="ml-3 text-base font-normal text-[var(--text-secondary)]">{monthPosts.length} 篇</span>
+            </h2>
+            <ul class="space-y-5">
+              {monthPosts.map((post) => (
+                <li class="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-6">
+                  <time class="text-sm text-[var(--text-secondary)] tabular-nums flex-shrink-0 w-24">
+                    {formatDate(post.data.date, { day: '2-digit' })}
+                  </time>
+                  <a
+                    href={`/posts/${post.id}/`}
+                    class="text-[var(--text-primary)] no-underline transition-colors duration-200 hover:text-[var(--accent)]"
+                  >
+                    {getPostDisplayTitle(post)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+  </section>
+</BaseLayout>

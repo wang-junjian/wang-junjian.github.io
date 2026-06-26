@@ -7,9 +7,10 @@ interface Props {
   totalPosts: number;
   labelSingular: string;
   labelPlural: string;
+  years?: [number, number][];
 }
 
-const { items } = Astro.props;
+const { items, years = [] } = Astro.props;
 
 // Sort tags alphabetically, like Simon Willison's /tags/ page.
 const sortedItems = [...items].sort((a, b) => a[0].localeCompare(b[0], 'zh-CN'));
@@ -28,42 +29,66 @@ function getPopularityClass(count: number): string {
 
 <section class="tag-cloud-section pt-10 pb-20 px-8">
   <div class="max-w-grid mx-auto">
-    <div class="max-w-2xl mx-auto mb-10">
-      <div class="relative">
-        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.3-4.3"/>
-          </svg>
+    <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+      <!-- Main: tag cloud -->
+      <div class="flex-1 min-w-0">
+        <div class="max-w-2xl mx-auto mb-10">
+          <div class="relative">
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+              </svg>
+            </div>
+            <input
+              type="search"
+              id="tagSearchInput"
+              placeholder={`搜索 ${sortedItems.length} 个标签...`}
+              class="w-full pl-12 pr-4 py-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus-visible:outline-none focus:border-[var(--accent)] transition-colors"
+              style="outline: none !important; box-shadow: none !important;"
+              autocomplete="off"
+            />
+          </div>
+          <p id="tagSearchCount" class="text-center text-sm text-[var(--text-secondary)] mt-3 hidden"></p>
         </div>
-        <input
-          type="search"
-          id="tagSearchInput"
-          placeholder={`搜索 ${sortedItems.length} 个标签...`}
-          class="w-full pl-12 pr-4 py-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus-visible:outline-none focus:border-[var(--accent)] transition-colors"
-          style="outline: none !important; box-shadow: none !important;"
-          autocomplete="off"
-        />
-      </div>
-      <p id="tagSearchCount" class="text-center text-sm text-[var(--text-secondary)] mt-3 hidden"></p>
-    </div>
 
-    <p id="tagcloud" class="tag-cloud">
-      {sortedItems.map(([name, namePosts]) => {
-        const count = namePosts.length;
-        return (
-          <a
-            href={`/tags/${encodeURIComponent(name)}/`}
-            class={`item-tag ${getPopularityClass(count)}`}
-            title={`${count} 篇文章`}
-            data-name={name.toLowerCase()}
-          >
-            {name}
-            <span class="tag-count">{count}</span>
-          </a>
-        );
-      })}
-    </p>
+        <p id="tagcloud" class="tag-cloud">
+          {sortedItems.map(([name, namePosts]) => {
+            const count = namePosts.length;
+            return (
+              <a
+                href={`/tags/${encodeURIComponent(name)}/`}
+                class={`item-tag ${getPopularityClass(count)}`}
+                title={`${count} 篇文章`}
+                data-name={name.toLowerCase()}
+              >
+                {name}
+                <span class="tag-count">{count}</span>
+              </a>
+            );
+          })}
+        </p>
+      </div>
+
+      <!-- Sidebar: years -->
+      {years.length > 0 && (
+        <aside class="w-full lg:w-72 flex-shrink-0">
+          <div class="sidebar-section">
+            <h3>年份</h3>
+            <ul class="sidebar-year-list">
+              {years.map(([year, count]) => (
+                <li>
+                  <a href={`/${year}/`} class="sidebar-year-link">
+                    <span class="sidebar-year-name">{year}</span>
+                    <span class="sidebar-year-count">{count} 篇</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      )}
+    </div>
   </div>
 </section>
 
@@ -183,5 +208,58 @@ function getPopularityClass(count: number): string {
   }
   .item-tag.ultra-popular {
     font-size: 2em;
+  }
+
+  .sidebar-section {
+    margin-bottom: 2rem;
+  }
+
+  .sidebar-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.875rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-year-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sidebar-year-list li {
+    margin-bottom: 0.25rem;
+  }
+
+  .sidebar-year-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .sidebar-year-link:hover {
+    background-color: var(--accent);
+    color: var(--white, #fff);
+  }
+
+  .sidebar-year-name {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sidebar-year-count {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .sidebar-year-link:hover .sidebar-year-count {
+    color: inherit;
+    opacity: 0.9;
   }
 </style>

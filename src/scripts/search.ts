@@ -28,6 +28,8 @@ const originalPostsHtmlMap = new Map<string, string>();
 let allPostsCount = 0;
 let typeFilter: string | null = null;
 let typeTotalCount = 0;
+let yearFilter: number | null = null;
+let monthFilter: number | null = null;
 
 const SEARCH_PAGE_SIZE = 20;
 let currentSearchPage = 1;
@@ -205,7 +207,11 @@ async function init() {
   // We keep a per-type backup so Turbo navigation between pages doesn't keep stale HTML.
   const typeFilterAttr = postsContainer.dataset.typeFilter;
   typeFilter = typeFilterAttr || null;
-  const backupKey = typeFilter || 'all';
+  const yearFilterAttr = postsContainer.dataset.yearFilter;
+  yearFilter = yearFilterAttr ? parseInt(yearFilterAttr, 10) : null;
+  const monthFilterAttr = postsContainer.dataset.monthFilter;
+  monthFilter = monthFilterAttr ? parseInt(monthFilterAttr, 10) : null;
+  const backupKey = `${typeFilter || 'all'}-${yearFilter || ''}-${monthFilter || ''}`;
 
   if (!searchInput.value.trim()) {
     originalPostsHtmlMap.set(backupKey, postsContainer.innerHTML);
@@ -275,7 +281,7 @@ async function handleSearch() {
   const query = searchInput.value.trim();
 
   if (query === '') {
-    const backupKey = typeFilter || 'all';
+    const backupKey = `${typeFilter || 'all'}-${yearFilter || ''}-${monthFilter || ''}`;
     const backupHtml = originalPostsHtmlMap.get(backupKey) || originalPostsHtml;
     // Restore the original day-group stream
     postsContainer.innerHTML = backupHtml;
@@ -319,6 +325,17 @@ async function handleSearch() {
   // Apply type filter when on a type-specific page
   if (typeFilter && results.length > 0) {
     results = results.filter((item) => item.type === typeFilter);
+  }
+
+  // Apply year/month filter when on a year/month archive page
+  if (yearFilter !== null && results.length > 0) {
+    results = results.filter((item) => {
+      if (!item.date) return false;
+      const date = new Date(item.date);
+      const matchesYear = date.getFullYear() === yearFilter;
+      const matchesMonth = monthFilter === null || date.getMonth() + 1 === monthFilter;
+      return matchesYear && matchesMonth;
+    });
   }
 
   streamFooter?.classList.add('hidden');
