@@ -91,6 +91,21 @@ linkUrl: https://wangjunjian.com/tools/<tool-slug>.html
 - `tags` 必须包含 `tool`，其余根据工具特性推断，例如 `tts`、`reader`、`accessibility`、`browser` 等。
 - `linkUrl` 固定为 `https://wangjunjian.com/tools/<tool-slug>.html`。
 
+#### tags 生成规则
+
+生成 `tags` 时，按以下步骤处理：
+
+1. **推断标签**：根据工具功能、技术栈和主题，推断出一组候选标签。优先使用小写英文标签（如 `tts`、`translation`、`localstorage`），必要时可混合中文标签。
+2. **复用已有标签**：读取项目根目录的 `tags.txt`，在候选标签中优先使用已存在的标签。注意 `tags.txt` 中的标签格式为每行一个，读取时需按行处理。
+3. **追加新标签**：如果某个候选标签在 `tags.txt` 中不存在，则将其追加到 `tags.txt` 文件末尾，**每个标签独占一行**。
+4. **最终 frontmatter**：`tags` 字段必须包含 `tool`，并按字母或语义顺序排列，例如：
+
+   ```yaml
+   tags: [tool, browser, speech-synthesis, translation, web-speech-api]
+   ```
+
+> 注意：不要重复添加 `tags.txt` 中已有的标签；追加新标签时不要在行尾添加多余标点或空行。
+
 #### 正文要求
 
 正文通常包含以下章节（可根据工具特性增删）：
