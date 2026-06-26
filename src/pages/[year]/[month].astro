@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { groupPostsByDay, getAllTags, getPostDisplayTitle } from '../../utils/posts';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+import DayGroup from '../../components/DayGroup.astro';
+import StreamTabs from '../../components/StreamTabs.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const monthKeys = new Set<string>();
+  for (const post of posts) {
+    if (!post.data.date) continue;
+    const date = new Date(post.data.date);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    monthKeys.add(`${year}/${month}`);
+  }
+
+  return Array.from(monthKeys).map((key) => {
+    const [year, month] = key.split('/');
+    return { params: { year, month } };
+  });
+}
+
+const { year, month } = Astro.params;
+const yearNum = parseInt(year, 10);
+const monthNum = parseInt(month, 10);
+
+const posts = await getCollection('posts');
+const monthPosts = posts
+  .filter((post) => {
+    if (!post.data.date) return false;
+    const date = new Date(post.data.date);
+    return date.getFullYear() === yearNum && date.getMonth() + 1 === monthNum;
+  })
+  .sort((a, b) => {
+    const dateA = new Date(a.data.date).getTime();
+    const dateB = new Date(b.data.date).getTime();
+    return dateA - dateB;
+  });
+
+const dayGroups = groupPostsByDay(monthPosts);
+const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => a.localeCompare(b));
+
+const monthTitle = `${yearNum} 年 ${monthNum} 月`;
+const totalPosts = monthPosts.length;
+
+const mathRegex = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
+const needsKatex = monthPosts.some((post) => mathRegex.test(post.body || ''));
+---
+
+<BaseLayout
+  title={`${monthTitle} - ${SITE_TITLE}`}
+  description={`${SITE_TITLE} ${monthTitle} 的所有文章。${SITE_DESCRIPTION}`}
+  canonical={Astro.url.toString()}
+  showChat={false}
+  needsKatex={needsKatex}
+>
+  <link rel="stylesheet" href="/styles/prose.css" />
+  <section class="pt-10 pb-6 px-8">
+    <div class="max-w-grid mx-auto">
+      <div class="flex-1 min-w-0">
+        <StreamTabs currentType="all" />
+
+        <!-- Search Bar -->
+        <div class="mb-4">
+          <div class="relative max-w-[560px]">
+            <input
+              type="search"
+              id="searchInput"
+              placeholder={`在 ${monthTitle} 中搜索...`}
+              autocomplete="off"
+              class="w-full py-2 pl-10 pr-3 text-sm border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans rounded-md focus:border-[var(--text-primary)] focus:bg-[var(--white)]"
+            />
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+
+        <div id="postsContainer" class="stream-container" data-type-filter="" data-type-total={totalPosts} data-year-filter={yearNum} data-month-filter={monthNum}>
+          {sortedDays.map((dayKey, dayIndex) => {
+            const dayPosts = dayGroups.get(dayKey) || [];
+            const entryStartIndex = sortedDays
+              .slice(0, dayIndex)
+              .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
+            return (
+              <DayGroup
+                date={new Date(dayKey + 'T00:00:00')}
+                posts={dayPosts}
+                startIndex={entryStartIndex}
+              />
+            );
+          })}
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="hidden text-center py-16 px-8">
+          <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
+            没有找到匹配的文章
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <script src="../../scripts/search.ts"></script>
+  <script src="../../scripts/post-scripts.ts"></script>
+</BaseLayout>
