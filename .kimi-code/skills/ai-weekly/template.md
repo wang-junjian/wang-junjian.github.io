@@ -2,8 +2,7 @@
 layout: single
 title:  "本周 AI 新闻 YYYYMMDD"
 date:   YYYY-MM-DD 00:00:00 +0800
-categories: [AI观察, 每周新闻]
-tags: [根据本周重点填写，不超过8个]
+tags: [ai-weekly, <其他推断标签>]
 excerpt: "一句话概括本周最核心趋势"
 ---
 
