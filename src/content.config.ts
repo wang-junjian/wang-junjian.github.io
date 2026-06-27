@@ -26,8 +26,6 @@ const posts = defineCollection({
     readTime: z.boolean().default(true),
     // Fields for type: 'quote'
     author: z.string().optional(),
-    source: z.string().url().optional(),
-    sourceTitle: z.string().optional(),
     context: z.string().optional(),
     // Fields for type: 'link'
     linkUrl: z.string().url().optional(),

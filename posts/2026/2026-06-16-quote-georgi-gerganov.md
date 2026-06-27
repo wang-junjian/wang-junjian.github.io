@@ -1,8 +1,8 @@
 ---
 type: quote
 author: Georgi Gerganov
-source: https://news.ycombinator.com/item?id=48555993#48557304
-sourceTitle: 发表于 Boykis 的文章[《现在运行本地模型很不错了》](https://vickiboykis.com/2026/06/15/running-local-models-is-good-now/)底部的 Hacker News 评论
+title: 发表于 Boykis 的文章《现在运行本地模型很不错了》底部的 Hacker News 评论
+linkUrl: https://news.ycombinator.com/item?id=48555993#48557304
 date: 2026-06-16 16:04:00 +0800
 tags: [ai, generative-ai, local-llms, llms, ai-assisted-programming, qwen, coding-agents, georgi-gerganov, pi, ggml]
 ---
