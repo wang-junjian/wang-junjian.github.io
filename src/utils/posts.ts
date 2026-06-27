@@ -247,10 +247,10 @@ const PREVIEW_ALLOWED_TAGS = new Set([
 ]);
 
 function sanitizePreviewHtml(html: string): string {
-  // Remove disallowed tags (like h1-h6) while keeping their text content
+  // Convert headings to styled preview paragraphs while keeping their text content
   return html
     .replace(/<\/(h[1-6])>/gi, '</p>')
-    .replace(/<h[1-6](\s[^>]*)?>/gi, '<p>')
+    .replace(/<h[1-6](\s[^>]*)?>/gi, '<p class="preview-heading">')
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
 }
@@ -369,8 +369,8 @@ export function renderPreview(body: string | undefined, maxChars = 600): string 
     // Restore the real Markdown before any further processing.
     const realBlock = restoreCodeBlocksForSplit(block, codeBlockPlaceholders);
 
-    // Skip headings and horizontal rules in preview
-    if (/^#{1,6}\s/.test(realBlock) || /^-{3,}$|^\*{3,}$/.test(realBlock)) {
+    // Skip horizontal rules in preview
+    if (/^-{3,}$|^\*{3,}$/.test(realBlock)) {
       continue;
     }
 
