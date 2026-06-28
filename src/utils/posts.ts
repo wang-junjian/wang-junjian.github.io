@@ -1,5 +1,7 @@
 import type { CollectionEntry } from 'astro:content';
 import fs from 'node:fs';
+import path from 'node:path';
+import sharp from 'sharp';
 import { marked } from 'marked';
 import katex from 'katex';
 
@@ -42,6 +44,31 @@ export function sortPostsByDate<T extends WithDate>(posts: T[], direction: 'asc'
 /** 判断一组文章中是否有任何一篇包含数学公式，用于决定是否加载 KaTeX CSS。 */
 export function needsKatex(posts: Array<{ body?: string }>): boolean {
   return posts.some((post) => MATH_REGEX.test(post.body || ''));
+}
+
+const imageDimensionCache = new Map<string, { width?: number; height?: number }>();
+
+/** 读取图片尺寸并缓存，避免构建时重复 I/O。 */
+export async function getImageDimensions(imagePath: string): Promise<{ width?: number; height?: number }> {
+  if (imageDimensionCache.has(imagePath)) {
+    return imageDimensionCache.get(imagePath)!;
+  }
+
+  try {
+    const metadata = await sharp(imagePath).metadata();
+    const result = { width: metadata.width, height: metadata.height };
+    imageDimensionCache.set(imagePath, result);
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+/** 根据 public 路径或绝对路径获取图片尺寸。 */
+export async function getImageDimensionsFromSrc(src: string): Promise<{ width?: number; height?: number }> {
+  if (!src.startsWith('/')) return {};
+  const imagePath = path.join(process.cwd(), 'public', src);
+  return getImageDimensions(imagePath);
 }
 
 /** 清理 Markdown 正文，用于生成搜索索引。 */

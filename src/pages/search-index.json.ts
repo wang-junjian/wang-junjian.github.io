@@ -14,7 +14,7 @@ export async function GET(context: APIContext) {
     excerpt: post.data.excerpt || '',
     tags: normalizeTags(post.data.tags),
     type: post.data.type,
-    body: cleanBodyForSearch(post.body || '').slice(0, 20000), // 限制单篇长度
+    body: cleanBodyForSearch(post.body || '').slice(0, 5000), // 限制单篇长度
     url: `/posts/${post.id}`,
   }));
 

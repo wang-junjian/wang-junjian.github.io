@@ -1,7 +1,5 @@
 ---
-import { formatTime, renderCardExcerpt, generateExcerpt } from '../utils/posts';
-import sharp from 'sharp';
-import path from 'node:path';
+import { formatTime, renderCardExcerpt, generateExcerpt, getImageDimensionsFromSrc } from '../utils/posts';
 
 interface Props {
   id: string;
@@ -21,18 +19,12 @@ async function addImageDimensions(html: string): Promise<string> {
 
   for (const match of matches) {
     const src = match[2];
-    if (!src.startsWith('/')) continue;
     if (match[0].includes('width=') || match[0].includes('height=')) continue;
 
-    try {
-      const imagePath = path.join(process.cwd(), 'public', src);
-      const metadata = await sharp(imagePath).metadata();
-      if (metadata.width && metadata.height) {
-        const newTag = `<img ${match[1]}src="${src}"${match[3]} width="${metadata.width}" height="${metadata.height}">`;
-        html = html.replace(match[0], newTag);
-      }
-    } catch {
-      // Ignore failed reads
+    const { width, height } = await getImageDimensionsFromSrc(src);
+    if (width && height) {
+      const newTag = `<img ${match[1]}src="${src}"${match[3]} width="${width}" height="${height}">`;
+      html = html.replace(match[0], newTag);
     }
   }
 
@@ -61,12 +53,9 @@ let imageHeight: number | undefined;
 
 if (image) {
   try {
-    const imagePath = image.startsWith('/')
-      ? path.join(process.cwd(), 'public', image)
-      : image;
-    const metadata = await sharp(imagePath).metadata();
-    imageWidth = metadata.width ?? undefined;
-    imageHeight = metadata.height ?? undefined;
+    const metadata = await getImageDimensionsFromSrc(image);
+    imageWidth = metadata.width;
+    imageHeight = metadata.height;
   } catch (err) {
     console.warn(`Failed to read image dimensions for ${image}:`, err);
   }
