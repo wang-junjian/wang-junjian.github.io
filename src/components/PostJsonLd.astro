@@ -1,0 +1,100 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { SITE_TITLE } from '../consts';
+import { generateExcerpt, getPostDisplayTitle } from '../utils/posts';
+import { SITE_DESCRIPTION } from '../consts';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  url: URL;
+  site?: URL | undefined;
+}
+
+const { post, url, site } = Astro.props;
+const frontmatter = post.data;
+const pageTitle = getPostDisplayTitle(post);
+const postDate = frontmatter.date ? new Date(frontmatter.date) : new Date();
+const pageImage = frontmatter.image ? String(frontmatter.image) : undefined;
+
+const isQuote = frontmatter.type === 'quote';
+const isLink = frontmatter.type === 'link';
+const isRelease = frontmatter.type === 'release';
+const isArticle = !isQuote && !isLink && !isRelease;
+
+const pageDescription = isArticle
+  ? (frontmatter.excerpt || `${pageTitle} - ${SITE_DESCRIPTION}`)
+  : (generateExcerpt(post.body, 200) || `${pageTitle} - ${SITE_DESCRIPTION}`);
+
+const faviconUrl = new URL('/favicon.svg', site || url).toString();
+
+const jsonLd = isQuote
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Quotation',
+      text: post.body || '',
+      ...(frontmatter.author && {
+        author: {
+          '@type': 'Person',
+          name: frontmatter.author,
+        },
+      }),
+      url: url.toString(),
+      datePublished: postDate.toISOString(),
+      ...(frontmatter.linkUrl && { isBasedOn: frontmatter.linkUrl }),
+    }
+  : isLink || isRelease
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: pageTitle,
+        description: pageDescription,
+        url: url.toString(),
+        datePublished: postDate.toISOString(),
+        author: {
+          '@type': 'Person',
+          name: '军舰',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_TITLE,
+          logo: {
+            '@type': 'ImageObject',
+            url: faviconUrl,
+          },
+        },
+        ...(frontmatter.linkUrl && {
+          mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': frontmatter.linkUrl,
+          },
+        }),
+      }
+    : {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: pageTitle,
+        description: pageDescription,
+        url: url.toString(),
+        datePublished: postDate.toISOString(),
+        author: {
+          '@type': 'Person',
+          name: '军舰',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_TITLE,
+          logo: {
+            '@type': 'ImageObject',
+            url: faviconUrl,
+          },
+        },
+        ...(pageImage && {
+          image: {
+            '@type': 'ImageObject',
+            url: new URL(pageImage, site || url).toString(),
+          },
+        }),
+      };
+---
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />

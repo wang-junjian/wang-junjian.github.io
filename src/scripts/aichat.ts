@@ -1,14 +1,20 @@
 import { loadEmbeddings, searchSimilar } from '../utils/ai';
 import type { Message } from '../utils/ai';
 import { info, debug, error, setMinLevel, downloadLogs } from '../utils/logger';
+import type { LogLevel } from '../utils/logger';
 import { createEmbedding, streamAnswer, DEFAULT_API_CONFIG } from './aichat-api';
 import type { ApiConfig, CurrentDoc } from './aichat-api';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 
 // Initialize Mermaid (loaded via CDN)
-declare const mermaid: any;
 let mermaidInitialized = false;
+
+const LOG_LEVELS: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+
+function isLogLevel(value: unknown): value is LogLevel {
+  return typeof value === 'string' && LOG_LEVELS.includes(value as LogLevel);
+}
 
 function initMermaid() {
   if (mermaidInitialized) return;
@@ -187,8 +193,8 @@ function loadConfig() {
   if (chatModelInput) chatModelInput.value = apiConfig.chatModel;
 
   const savedLogLevel = localStorage.getItem(STORAGE_KEY_LOG_LEVEL);
-  if (savedLogLevel) {
-    setMinLevel(savedLogLevel as any);
+  if (savedLogLevel && isLogLevel(savedLogLevel)) {
+    setMinLevel(savedLogLevel);
     if (logLevelInput) logLevelInput.value = savedLogLevel;
   }
 }
@@ -654,8 +660,11 @@ function bindEvents() {
 
   if (logLevelInput) {
     logLevelInput.addEventListener('change', () => {
-      setMinLevel(logLevelInput.value as any);
-      info('logger', '日志级别已切换为 ' + logLevelInput.value);
+      const level = logLevelInput.value;
+      if (isLogLevel(level)) {
+        setMinLevel(level);
+        info('logger', '日志级别已切换为 ' + level);
+      }
     });
   }
 
@@ -711,8 +720,8 @@ function bindEvents() {
 }
 
 function init() {
-  if ((window as any).__aiChatInit) return;
-  (window as any).__aiChatInit = true;
+  if (window.__aiChatInit) return;
+  window.__aiChatInit = true;
 
   bindEvents();
   loadConfig();
@@ -721,7 +730,7 @@ function init() {
   restoreWindowState();
   initMermaid();
 
-  (window as any).__aiChat = {
+  window.__aiChat = {
     toggleWindow,
     sendMessage: (text: string) => {
       if (!isWindowOpen) toggleWindow();
