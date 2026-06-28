@@ -1,0 +1,66 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import DayGroup from './DayGroup.astro';
+
+interface Props {
+  dayGroups: Map<string, CollectionEntry<'posts'>[]>;
+  sortedDays: string[];
+  emptyMessage?: string;
+  totalPosts?: number;
+  type?: string;
+  year?: number;
+  month?: number;
+}
+
+const {
+  dayGroups,
+  sortedDays,
+  emptyMessage = '暂无内容',
+  totalPosts = 0,
+  type = '',
+  year,
+  month,
+} = Astro.props;
+
+const dataAttrs: Record<string, string | number | undefined> = {
+  'data-type-filter': type,
+  'data-type-total': totalPosts,
+};
+if (year !== undefined) dataAttrs['data-year-filter'] = year;
+if (month !== undefined) dataAttrs['data-month-filter'] = month;
+---
+
+<div
+  id="postsContainer"
+  class="stream-container"
+  {...dataAttrs}
+>
+  {sortedDays.map((dayKey, dayIndex) => {
+    const dayPosts = dayGroups.get(dayKey) || [];
+    const entryStartIndex = sortedDays
+      .slice(0, dayIndex)
+      .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
+    return (
+      <DayGroup
+        date={new Date(dayKey + 'T00:00:00')}
+        posts={dayPosts}
+        startIndex={entryStartIndex}
+      />
+    );
+  })}
+</div>
+
+<!-- No Results Message -->
+<div id="noResults" class="hidden text-center py-16 px-8">
+  <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
+    没有找到匹配的文章
+  </p>
+</div>
+
+{sortedDays.length === 0 && (
+  <div class="text-center py-16 px-8">
+    <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
+      {emptyMessage}
+    </p>
+  </div>
+)}

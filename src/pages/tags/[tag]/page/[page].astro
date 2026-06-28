@@ -1,8 +1,7 @@
 ---
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { getAllTags, groupPostsByDay, normalizeTags, sortPostsByDate, needsKatex } from '../../../../utils/posts';
-import { paginate, PAGE_SIZE } from '../../../../utils/pagination';
+import { getTagStaticPaths, getTagPageData } from '../../../../utils/tagPages';
 import { SITE_TITLE } from '../../../../consts';
 import TagPageHeader from '../../../../components/TagPageHeader.astro';
 import DayGroup from '../../../../components/DayGroup.astro';
@@ -11,23 +10,18 @@ import TagSidebar from '../../../../components/TagSidebar.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
-  const tags = getAllTags(posts);
-  const allTagCounts = new Map(
-    Array.from(tags.entries()).map(([tagName, tagPosts]) => [tagName, tagPosts.length])
-  );
+  const tagPaths = getTagStaticPaths(posts);
   const paths: Array<{
     params: { tag: string; page: string };
     props: { tag: string; posts: typeof posts; page: number; allTagCounts: Map<string, number> };
   }> = [];
 
-  for (const [tag, tagPosts] of tags.entries()) {
-    const totalPages = Math.max(1, Math.ceil(tagPosts.length / PAGE_SIZE));
-    for (let page = 2; page <= totalPages; page++) {
+  for (const { params, props } of tagPaths) {
+    const { tag, posts: tagPosts, allTagCounts } = props;
+    const { pageResult } = getTagPageData(tag, tagPosts, allTagCounts, 1);
+    for (let page = 2; page <= pageResult.totalPages; page++) {
       paths.push({
-        params: {
-          tag,
-          page: String(page),
-        },
+        params: { tag: params.tag, page: String(page) },
         props: { tag, posts: tagPosts, page, allTagCounts },
       });
     }
@@ -37,29 +31,15 @@ export async function getStaticPaths() {
 }
 
 const { tag, posts, page, allTagCounts } = Astro.props;
-
-const sortedPosts = sortPostsByDate(posts);
-
-const pageResult = paginate(sortedPosts, page, PAGE_SIZE);
-const dayGroups = groupPostsByDay(pageResult.items);
-const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
-
 const tagUrl = `/tags/${encodeURIComponent(tag)}`;
 
-// Related tags: union of tags from posts in this tag, excluding the current tag.
-// Display counts use the global total for each tag.
-const relatedTagSet = new Set<string>();
-for (const post of sortedPosts) {
-  for (const t of normalizeTags(post.data.tags)) {
-    if (t !== tag) relatedTagSet.add(t);
-  }
-}
-const recentTags = Array.from(relatedTagSet)
-  .map((t) => [t, allTagCounts.get(t) || 0] as [string, number])
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 20);
-
-const pageNeedsKatex = needsKatex(pageResult.items);
+const {
+  pageResult,
+  dayGroups,
+  sortedDays,
+  recentTags,
+  pageNeedsKatex,
+} = getTagPageData(tag, posts, allTagCounts, page);
 ---
 
 <BaseLayout
@@ -69,7 +49,7 @@ const pageNeedsKatex = needsKatex(pageResult.items);
   showChat={false}
   needsKatex={pageNeedsKatex}
 >
-  <TagPageHeader tag={tag} postCount={sortedPosts.length} />
+  <TagPageHeader tag={tag} postCount={posts.length} />
 
   <link rel="stylesheet" href="/styles/prose.css" />
 
