@@ -1,0 +1,71 @@
+---
+import { getCollection } from 'astro:content';
+import TypePage from '../../components/TypePage.astro';
+import {
+  TYPE_PAGE_CONFIG,
+  getTypePageData,
+  getTypeSidebarData,
+  getTypeStaticPaths,
+  parseTypePageParam,
+} from '../../utils/typePages';
+
+export async function getStaticPaths() {
+  const TYPE_ALIASES: Record<string, string> = {
+    articles: 'article',
+    links: 'link',
+    notes: 'note',
+    quotes: 'quote',
+    releases: 'release',
+  };
+  const VALID_TYPES = Object.values(TYPE_ALIASES);
+
+  const allPosts = await getCollection('posts');
+  const paths: Array<{
+    params: { type: string; path?: string };
+    props: { type: string; baseUrl: string };
+  }> = [];
+
+  for (const type of VALID_TYPES) {
+    const alias = Object.entries(TYPE_ALIASES).find(([_, value]) => value === type)?.[0] ?? type;
+    const typePaths = getTypeStaticPaths(allPosts, type);
+    for (const p of typePaths) {
+      paths.push({
+        params: { type: alias, path: p.params.path },
+        props: { type, baseUrl: `/${alias}` },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { type, baseUrl } = Astro.props;
+const { path } = Astro.params;
+const config = TYPE_PAGE_CONFIG[type];
+
+if (!config) {
+  return Astro.redirect('/404/');
+}
+
+const allPosts = await getCollection('posts');
+const page = parseTypePageParam(path);
+const { typePosts, pageResult, dayGroups, sortedDays } = getTypePageData(allPosts, type, page);
+const { recentContent, recentTags } = getTypeSidebarData(typePosts);
+---
+
+<TypePage
+  title={config.title}
+  description={config.description}
+  pageTitle={config.pageTitle}
+  countLabel={config.countLabel(typePosts.length)}
+  emptyMessage={config.emptyMessage}
+  type={config.typeFilter}
+  dayGroups={dayGroups}
+  sortedDays={sortedDays}
+  currentPage={pageResult.currentPage}
+  totalPages={pageResult.totalPages}
+  baseUrl={baseUrl}
+  recentContent={recentContent}
+  recentTags={recentTags}
+  totalPosts={typePosts.length}
+/>
