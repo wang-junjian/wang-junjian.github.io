@@ -1,8 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { getAllTags, groupPostsByDay, normalizeTags, sortPostsByDate, needsKatex } from '../../../utils/posts';
-import { paginate, PAGE_SIZE } from '../../../utils/pagination';
+import { getTagStaticPaths, getTagPageData } from '../../../utils/tagPages';
 import { SITE_TITLE } from '../../../consts';
 import TagPageHeader from '../../../components/TagPageHeader.astro';
 import DayGroup from '../../../components/DayGroup.astro';
@@ -11,42 +10,19 @@ import TagSidebar from '../../../components/TagSidebar.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
-  const tags = getAllTags(posts);
-  const allTagCounts = new Map(
-    Array.from(tags.entries()).map(([tagName, tagPosts]) => [tagName, tagPosts.length])
-  );
-
-  return Array.from(tags.entries()).map(([tag, tagPosts]) => ({
-    params: { tag },
-    props: { tag, posts: tagPosts, allTagCounts },
-  }));
+  return getTagStaticPaths(posts);
 }
 
 const { tag, posts, allTagCounts } = Astro.props;
-
-const sortedPosts = sortPostsByDate(posts);
-
-const pageResult = paginate(sortedPosts, 1, PAGE_SIZE);
-const dayGroups = groupPostsByDay(pageResult.items);
-const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
-
 const tagUrl = `/tags/${encodeURIComponent(tag)}`;
 
-// Related tags: union of tags from posts in this tag, excluding the current tag.
-// Display counts use the global total for each tag.
-const relatedTagSet = new Set<string>();
-for (const post of sortedPosts) {
-  for (const t of normalizeTags(post.data.tags)) {
-    if (t !== tag) relatedTagSet.add(t);
-  }
-}
-const recentTags = Array.from(relatedTagSet)
-  .map((t) => [t, allTagCounts.get(t) || 0] as [string, number])
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 20);
-
-// Load KaTeX CSS on the tag page if any post on this page contains math syntax.
-const pageNeedsKatex = needsKatex(pageResult.items);
+const {
+  pageResult,
+  dayGroups,
+  sortedDays,
+  recentTags,
+  pageNeedsKatex,
+} = getTagPageData(tag, posts, allTagCounts, 1);
 ---
 
 <BaseLayout
@@ -56,42 +32,41 @@ const pageNeedsKatex = needsKatex(pageResult.items);
   showChat={false}
   needsKatex={pageNeedsKatex}
 >
-  <TagPageHeader tag={tag} postCount={sortedPosts.length} />
+  <TagPageHeader tag={tag} postCount={posts.length} />
 
   <link rel="stylesheet" href="/styles/prose.css" />
-    <div class="max-w-grid mx-auto">
-      <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
-        <!-- Main Stream -->
-        <div class="flex-1 min-w-0">
-          <div id="postsContainer" class="stream-container">
-            {
-              sortedDays.map((dayKey, dayIndex) => {
-                const dayPosts = dayGroups.get(dayKey) || [];
-                const entryStartIndex = sortedDays
-                  .slice(0, dayIndex)
-                  .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
-                return (
-                  <DayGroup
-                    date={new Date(dayKey + 'T00:00:00')}
-                    posts={dayPosts}
-                    startIndex={entryStartIndex}
-                  />
-                );
-              })
-            }
-          </div>
-
-          <Pagination
-            currentPage={pageResult.currentPage}
-            totalPages={pageResult.totalPages}
-            baseUrl={tagUrl}
-          />
+  <div class="max-w-grid mx-auto">
+    <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+      <!-- Main Stream -->
+      <div class="flex-1 min-w-0">
+        <div id="postsContainer" class="stream-container">
+          {
+            sortedDays.map((dayKey, dayIndex) => {
+              const dayPosts = dayGroups.get(dayKey) || [];
+              const entryStartIndex = sortedDays
+                .slice(0, dayIndex)
+                .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
+              return (
+                <DayGroup
+                  date={new Date(dayKey + 'T00:00:00')}
+                  posts={dayPosts}
+                  startIndex={entryStartIndex}
+                />
+              );
+            })
+          }
         </div>
 
-        <!-- Sidebar -->
-        <TagSidebar recentTags={recentTags} />
+        <Pagination
+          currentPage={pageResult.currentPage}
+          totalPages={pageResult.totalPages}
+          baseUrl={tagUrl}
+        />
       </div>
+
+      <!-- Sidebar -->
+      <TagSidebar recentTags={recentTags} />
     </div>
-  </section>
+  </div>
   <script src="../../../scripts/post-scripts.ts"></script>
 </BaseLayout>
