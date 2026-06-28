@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { formatDate, getPostDisplayTitle } from '../utils/posts';
+import { formatDate, getPostDisplayTitle, sortPostsByDate } from '../utils/posts';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 export async function getStaticPaths() {
@@ -22,13 +22,9 @@ const { year } = Astro.params;
 const yearNum = parseInt(year, 10);
 
 const posts = await getCollection('posts');
-const yearPosts = posts
-  .filter((post) => post.data.date && new Date(post.data.date).getFullYear() === yearNum)
-  .sort((a, b) => {
-    const dateA = new Date(a.data.date).getTime();
-    const dateB = new Date(b.data.date).getTime();
-    return dateB - dateA;
-  });
+const yearPosts = sortPostsByDate(
+  posts.filter((post) => post.data.date && new Date(post.data.date).getFullYear() === yearNum)
+);
 
 const postsByMonth = new Map<string, typeof yearPosts>();
 for (const post of yearPosts) {
@@ -59,11 +55,10 @@ const monthLabel = new Intl.DateTimeFormat('zh-CN', { month: 'numeric' });
 
       {sortedMonths.map((monthKey, monthIndex) => {
         const monthDate = new Date(`${monthKey}-01T00:00:00`);
-        const monthPosts = (postsByMonth.get(monthKey) || []).sort((a, b) => {
-          const dateA = new Date(a.data.date).getTime();
-          const dateB = new Date(b.data.date).getTime();
-          return dateA - dateB;
-        });
+        const monthPosts = sortPostsByDate(
+          postsByMonth.get(monthKey) || [],
+          'asc'
+        );
         const [monthYear, monthNum] = monthKey.split('-');
         return (
           <section class="mb-14 animate-fade-in-up" style={`animation-delay: ${monthIndex * 0.08}s;`}>

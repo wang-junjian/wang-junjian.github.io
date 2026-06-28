@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { groupPostsByDay, getAllTags, getPostDisplayTitle } from '../utils/posts';
+import { groupPostsByDay, getAllTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from '../utils/posts';
 import { paginate, PAGE_SIZE } from '../utils/pagination';
 import { getTools } from '../utils/tools';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
@@ -30,11 +30,7 @@ const allPosts = await getCollection('posts');
 const page = parsePageParam(Astro.params.path);
 
 // Sort posts by date descending
-const sortedPosts = allPosts.sort((a, b) => {
-  const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
-  const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
-  return dateB - dateA;
-});
+const sortedPosts = sortPostsByDate(allPosts);
 
 const pageResult = paginate(sortedPosts, page, PAGE_SIZE);
 
@@ -72,8 +68,7 @@ const randomTools = getTools()
   .slice(0, 2);
 
 // Load KaTeX CSS on the homepage if any recent post contains math syntax.
-const mathRegex = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
-const needsKatex = pageResult.items.some((post) => mathRegex.test(post.body || ''));
+const pageNeedsKatex = needsKatex(pageResult.items);
 
 const pageTitle = page > 1 ? `${SITE_TITLE} - 第 ${page} 页` : `${SITE_TITLE} - ${SITE_DESCRIPTION}`;
 ---
@@ -83,7 +78,7 @@ const pageTitle = page > 1 ? `${SITE_TITLE} - 第 ${page} 页` : `${SITE_TITLE} 
   description={SITE_DESCRIPTION}
   canonical={Astro.url.toString()}
   showChat={false}
-  needsKatex={needsKatex}
+  needsKatex={pageNeedsKatex}
 >
   <link rel="stylesheet" href="/styles/prose.css" />
   <!-- Stream + Sidebar -->
