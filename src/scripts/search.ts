@@ -192,7 +192,7 @@ function renderCurrentSearchPage(results: SearchItem[], page: number): string {
 }
 
 // Initialize elements and event listeners
-async function init() {
+export async function initSearch() {
   searchInput = document.getElementById('searchInput') as HTMLInputElement;
   postsContainer = document.getElementById('postsContainer') as HTMLDivElement;
   noResults = document.getElementById('noResults') as HTMLDivElement;
@@ -367,7 +367,4 @@ function debouncedSearch() {
   }, 150);
 }
 
-init();
-
-document.addEventListener('turbo:load', init);
-document.addEventListener('turbo:render', init);
+export { debouncedSearch as handleSearchInput };

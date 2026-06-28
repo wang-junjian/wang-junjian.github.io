@@ -719,7 +719,7 @@ function bindEvents() {
   window.addEventListener('resize', checkResponsiveMode);
 }
 
-function init() {
+export function initAIChat() {
   if (window.__aiChatInit) return;
   window.__aiChatInit = true;
 
@@ -742,12 +742,6 @@ function init() {
 function handleTurboNavigation() {
   // Widget is data-turbo-permanent, just check responsive mode
   checkResponsiveMode();
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
 }
 
 // Handle Turbo navigation - just check responsive mode
