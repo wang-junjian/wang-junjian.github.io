@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { getAllTags, groupPostsByDay, normalizeTags } from '../../../utils/posts';
+import { getAllTags, groupPostsByDay, normalizeTags, sortPostsByDate, needsKatex } from '../../../utils/posts';
 import { paginate, PAGE_SIZE } from '../../../utils/pagination';
 import { SITE_TITLE } from '../../../consts';
 import TagPageHeader from '../../../components/TagPageHeader.astro';
@@ -24,11 +24,7 @@ export async function getStaticPaths() {
 
 const { tag, posts, allTagCounts } = Astro.props;
 
-const sortedPosts = posts.sort((a, b) => {
-  const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
-  const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
-  return dateB - dateA;
-});
+const sortedPosts = sortPostsByDate(posts);
 
 const pageResult = paginate(sortedPosts, 1, PAGE_SIZE);
 const dayGroups = groupPostsByDay(pageResult.items);
@@ -50,8 +46,7 @@ const recentTags = Array.from(relatedTagSet)
   .slice(0, 20);
 
 // Load KaTeX CSS on the tag page if any post on this page contains math syntax.
-const mathRegex = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
-const needsKatex = pageResult.items.some((post) => mathRegex.test(post.body || ''));
+const pageNeedsKatex = needsKatex(pageResult.items);
 ---
 
 <BaseLayout
@@ -59,7 +54,7 @@ const needsKatex = pageResult.items.some((post) => mathRegex.test(post.body || '
   description={`浏览标签 "${tag}" 下的文章。`}
   canonical={Astro.url.toString()}
   showChat={false}
-  needsKatex={needsKatex}
+  needsKatex={pageNeedsKatex}
 >
   <TagPageHeader tag={tag} postCount={sortedPosts.length} />
 

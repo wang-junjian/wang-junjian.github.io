@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { normalizeTags, formatDate, getPostDisplayTitle } from '../utils/posts';
+import { normalizeTags, formatDate, getPostDisplayTitle, sortPostsByDate } from '../utils/posts';
 
 const SITE_URL = 'https://wangjunjian.com';
 
@@ -21,11 +21,7 @@ export async function getStaticPaths() {
 export const GET: APIRoute = async () => {
   const posts = await getCollection('posts');
 
-  const sortedPosts = posts.sort((a, b) => {
-    const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
-    const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
-    return dateB - dateA;
-  });
+  const sortedPosts = sortPostsByDate(posts);
 
   const allTags = new Set<string>();
 

@@ -1,5 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
-import { groupPostsByDay, getAllTags, normalizeTags, getPostDisplayTitle } from './posts';
+import { groupPostsByDay, getAllTags, normalizeTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from './posts';
 import { paginate, PAGE_SIZE } from './pagination';
 
 export interface TypePageConfig {
@@ -72,13 +72,9 @@ export function getTypePageData(
   type: string,
   page = 1
 ): TypePageData {
-  const typePosts = allPosts
-    .filter((post) => post.data.type === type)
-    .sort((a, b) => {
-      const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
-      const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
-      return dateB - dateA;
-    });
+  const typePosts = sortPostsByDate(
+    allPosts.filter((post) => post.data.type === type)
+  );
 
   const pageResult = paginate(typePosts, page, PAGE_SIZE);
   const dayGroups = groupPostsByDay(pageResult.items);
@@ -137,6 +133,5 @@ export function parseTypePageParam(path: string | undefined): number {
 }
 
 export function typePageNeedsKatex(posts: CollectionEntry<'posts'>[]): boolean {
-  const mathRegex = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
-  return posts.some((post) => mathRegex.test(post.body || ''));
+  return needsKatex(posts);
 }

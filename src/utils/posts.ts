@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { marked } from 'marked';
 import katex from 'katex';
 
-export function normalizeTags(value: any): string[] {
+export function normalizeTags(value: unknown): string[] {
   if (!value) return [];
   if (Array.isArray(value)) return value.map(v => String(v));
 
@@ -19,8 +19,44 @@ export function normalizeTags(value: any): string[] {
 }
 
 // Kept for backward compatibility
-export function normalizeToArray(value: any): string[] {
+export function normalizeToArray(value: unknown): string[] {
   return normalizeTags(value);
+}
+
+/** 匹配行内数学公式 `$...$` 和块级数学公式 `$$...$$`。 */
+export const MATH_REGEX = /(?<!\$)\$[^$\n]+?\$(?!\$)|\$\$[\s\S]+?\$\$/;
+
+interface WithDate {
+  data: { date?: Date | string };
+}
+
+export function sortPostsByDate<T extends WithDate>(posts: T[], direction: 'asc' | 'desc' = 'desc'): T[] {
+  return [...posts].sort((a, b) => {
+    const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
+    const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
+    const delta = dateB - dateA;
+    return direction === 'asc' ? -delta : delta;
+  });
+}
+
+/** 判断一组文章中是否有任何一篇包含数学公式，用于决定是否加载 KaTeX CSS。 */
+export function needsKatex(posts: Array<{ body?: string }>): boolean {
+  return posts.some((post) => MATH_REGEX.test(post.body || ''));
+}
+
+/** 清理 Markdown 正文，用于生成搜索索引。 */
+export function cleanBodyForSearch(body: string): string {
+  return body
+    .replace(/```[\s\S]*?```/g, ' ')       // 代码块
+    .replace(/`[^`]*`/g, ' ')               // 行内代码
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ') // 图片
+    .replace(/\[[^\]]*\]\([^)]+\)/g, '$1') // 链接保留文字
+    .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/m, '') // frontmatter
+    .replace(/<\/?[^>]+(>|$)/g, ' ')        // HTML 标签
+    .replace(/https?:\/\/\S+/g, ' ')        // URL
+    .replace(/[#*~>_|=\-]/g, ' ')           // Markdown 语法字符
+    .replace(/\s+/g, ' ')                   // 合并空白
+    .trim();
 }
 
 export function getPostDisplayTitle(post: CollectionEntry<'posts'>): string {
