@@ -98,7 +98,7 @@ export interface TypeSidebarData {
 }
 
 export function getTypeSidebarData(typePosts: CollectionEntry<'posts'>[]): TypeSidebarData {
-  const recentContent = typePosts.slice(0, 20).map((post) => ({
+  const recentContent = typePosts.slice(0, 10).map((post) => ({
     id: post.id,
     title: getPostDisplayTitle(post),
     date: post.data.date,
