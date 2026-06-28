@@ -16,7 +16,7 @@ description: '创建日志'
 # 把下面的模板内容复制到新文件中，{{TITLE}} 替换为用户输入的标题，{{CURRENT_DATE}} 替换为当前时间，时间格式为 "YYYY-MM-DD"。
 ```md
 ---
-layout: single
+type: article
 title:  "{{TITLE}}"
 date:   {{CURRENT_DATE}} 08:00:00 +0800
 categories: 

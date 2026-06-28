@@ -1,5 +1,5 @@
 ---
-layout: single
+type: article
 title:  "本周 AI 新闻 YYYYMMDD"
 date:   YYYY-MM-DD 00:00:00 +0800
 tags: [ai-weekly, <其他推断标签>]

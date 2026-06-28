@@ -1,5 +1,5 @@
 ---
-layout: single
+type: article
 title:  "基于 DSpark 的投机解码训练框架原理与实现（论文+代码对照）"
 date:   2026-06-27 21:19:00 +0800
 tags: [dspark, paper, deepspec, deepseek, speculative-decoding, llm, inference, draft-model, rejection-sampling]
