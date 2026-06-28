@@ -71,3 +71,152 @@ const formattedDate = date ? formatDateTimeChinese(date) : '';
     <p class="sidebar-stat">阅读 <span id="busuanzi_value_page_pv"></span></p>
   </div>
 </aside>
+
+<script is:inline>
+  (function() {
+    const btn = document.getElementById('postActionsBtn');
+    const menu = document.getElementById('postActionsMenu');
+    if (!btn || !menu) return;
+
+    const items = Array.from(menu.querySelectorAll('[role="menuitem"]'));
+
+    function openMenu() {
+      menu.classList.remove('hidden');
+      btn.setAttribute('aria-expanded', 'true');
+      if (items[0]) {
+        items[0].focus();
+      }
+    }
+
+    function closeMenu(returnFocus) {
+      menu.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+      if (returnFocus !== false) {
+        btn.focus();
+      }
+    }
+
+    function toggleMenu() {
+      if (menu.classList.contains('hidden')) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    }
+
+    function focusNext(current) {
+      const idx = items.indexOf(current);
+      const next = items[(idx + 1) % items.length];
+      if (next) next.focus();
+    }
+
+    function focusPrev(current) {
+      const idx = items.indexOf(current);
+      const prev = items[(idx - 1 + items.length) % items.length];
+      if (prev) prev.focus();
+    }
+
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    btn.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (menu.classList.contains('hidden')) {
+          openMenu();
+          if (e.key === 'ArrowUp') {
+            focusPrev(items[0]);
+          }
+        }
+      }
+    });
+
+    menu.addEventListener('keydown', function(e) {
+      const current = document.activeElement;
+      if (!items.includes(current)) return;
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          closeMenu();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          focusNext(current);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          focusPrev(current);
+          break;
+        case 'Home':
+          e.preventDefault();
+          if (items[0]) items[0].focus();
+          break;
+        case 'End':
+          e.preventDefault();
+          if (items[items.length - 1]) items[items.length - 1].focus();
+          break;
+        case 'Tab':
+          e.preventDefault();
+          closeMenu();
+          break;
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!btn.contains(e.target) && !menu.contains(e.target)) {
+        closeMenu(false);
+      }
+    });
+
+    const copyBtn = menu.querySelector('[data-action="copy-md"]');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function() {
+        fetch(window.location.pathname.replace(/\/$/, '') + '.md')
+          .then(function(res) { return res.text(); })
+          .then(function(text) {
+            var cleaned = text.replace(/^---\s*[\r\n]+[\s\S]*?[\r\n]+---\s*[\r\n]*/, '');
+            return navigator.clipboard.writeText(cleaned);
+          })
+          .then(function() {
+            var span = copyBtn.querySelector('span');
+            var original = span.textContent;
+            span.textContent = '已复制！';
+            setTimeout(function() { span.textContent = original; }, 2000);
+          })
+          .catch(function(err) { console.error('复制失败', err); });
+        closeMenu();
+      });
+    }
+
+    var chatBtn = menu.querySelector('[data-action="chat"]');
+    if (chatBtn) {
+      chatBtn.addEventListener('click', function() {
+        var h1 = document.querySelector('h1');
+        var title = h1 ? h1.textContent.trim() : '这篇文章';
+        var prompt = '请帮我分析这篇文章《' + title + '》的核心内容。';
+        if (window.__aiChat) {
+          window.__aiChat.sendMessage(prompt);
+        } else {
+          alert('AIChat 尚未加载，请稍后再试');
+        }
+        closeMenu();
+      });
+    }
+
+    var exportPdfBtn = menu.querySelector('[data-action="export-pdf"]');
+    if (exportPdfBtn) {
+      exportPdfBtn.addEventListener('click', function() {
+        var h1 = document.querySelector('h1');
+        var title = h1 ? h1.textContent.trim() : document.title;
+        var originalTitle = document.title;
+        document.title = title;
+        window.print();
+        document.title = originalTitle;
+        closeMenu();
+      });
+    }
+  })();
+</script>
