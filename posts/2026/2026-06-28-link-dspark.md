@@ -6,7 +6,7 @@ tags: [paper, dspark, deepspec, deepseek, llm, speculative-decoding, draft-model
 linkUrl: https://github.com/deepseek-ai/DeepSpec/blob/main/DSpark_paper.pdf
 ---
 
-![](/public/images/2026/dspark/architecture.webp)
+![](/images/2026/dspark/architecture.webp)
 
 这篇研究论文介绍了 **[DSpark](https://github.com/deepseek-ai/DeepSpec/blob/main/DSpark_paper.pdf)**，一个由北京大学和 DeepSeek-AI 联合开发的投机采样（Speculative Decoding）大模型推理加速框架。以下是该论文的核心要点总结：
 
