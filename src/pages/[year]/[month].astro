@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { groupPostsByDay, getAllTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from '../../utils/posts';
+import { groupPostsByDay, getAllTags, getPostDisplayTitle, sortPostsByDate, needsKatex, getShanghaiDateComponents } from '../../utils/posts';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import DayGroup from '../../components/DayGroup.astro';
 import StreamTabs from '../../components/StreamTabs.astro';
@@ -11,10 +11,8 @@ export async function getStaticPaths() {
   const monthKeys = new Set<string>();
   for (const post of posts) {
     if (!post.data.date) continue;
-    const date = new Date(post.data.date);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    monthKeys.add(`${year}/${month}`);
+    const { year, month } = getShanghaiDateComponents(post.data.date);
+    monthKeys.add(`${year}/${String(month).padStart(2, '0')}`);
   }
 
   return Array.from(monthKeys).map((key) => {
@@ -31,8 +29,8 @@ const posts = await getCollection('posts');
 const monthPosts = sortPostsByDate(
   posts.filter((post) => {
     if (!post.data.date) return false;
-    const date = new Date(post.data.date);
-    return date.getFullYear() === yearNum && date.getMonth() + 1 === monthNum;
+    const { year, month } = getShanghaiDateComponents(post.data.date);
+    return year === yearNum && month === monthNum;
   })
 );
 
