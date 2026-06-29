@@ -1,14 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { formatDate, getPostDisplayTitle, sortPostsByDate } from '../utils/posts';
+import { formatDate, getPostDisplayTitle, sortPostsByDate, getShanghaiDateComponents } from '../utils/posts';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
   const years = new Set<number>();
   for (const post of posts) {
-    const year = post.data.date ? new Date(post.data.date).getFullYear() : 0;
+    const year = post.data.date ? getShanghaiDateComponents(post.data.date).year : 0;
     if (year > 0) {
       years.add(year);
     }
@@ -23,13 +23,13 @@ const yearNum = parseInt(year, 10);
 
 const posts = await getCollection('posts');
 const yearPosts = sortPostsByDate(
-  posts.filter((post) => post.data.date && new Date(post.data.date).getFullYear() === yearNum)
+  posts.filter((post) => post.data.date && getShanghaiDateComponents(post.data.date).year === yearNum)
 );
 
 const postsByMonth = new Map<string, typeof yearPosts>();
 for (const post of yearPosts) {
-  const date = new Date(post.data.date);
-  const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  const { year: postYear, month } = getShanghaiDateComponents(post.data.date!);
+  const monthKey = `${postYear}-${String(month).padStart(2, '0')}`;
   if (!postsByMonth.has(monthKey)) {
     postsByMonth.set(monthKey, []);
   }

@@ -32,6 +32,38 @@ interface WithDate {
   data: { date?: Date | string };
 }
 
+const SHANGHAI_TIME_ZONE = 'Asia/Shanghai';
+
+interface ShanghaiDateComponents {
+  year: number;
+  month: number;
+  day: number;
+  hours: number;
+  minutes: number;
+}
+
+/** 将日期按 Asia/Shanghai（北京时间）拆分为年月日时分，避免构建服务器时区影响。 */
+export function getShanghaiDateComponents(date: Date | string): ShanghaiDateComponents {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: SHANGHAI_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '0';
+  return {
+    year: parseInt(get('year'), 10),
+    month: parseInt(get('month'), 10),
+    day: parseInt(get('day'), 10),
+    hours: parseInt(get('hour'), 10),
+    minutes: parseInt(get('minute'), 10),
+  };
+}
+
 export function sortPostsByDate<T extends WithDate>(posts: T[], direction: 'asc' | 'desc' = 'desc'): T[] {
   return [...posts].sort((a, b) => {
     const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
@@ -133,29 +165,19 @@ export function formatDate(
 ): string {
   if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('zh-CN', options);
+  return d.toLocaleDateString('zh-CN', { ...options, timeZone: SHANGHAI_TIME_ZONE });
 }
 
 export function formatTime(date: Date | string | undefined): string {
   if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  const { year, month, day, hours, minutes } = getShanghaiDateComponents(date);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
 export function formatDateTimeChinese(date: Date | string | undefined): string {
   if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  return `${year}年${month}月${day}日 ${hours}时${minutes}分`;
+  const { year, month, day, hours, minutes } = getShanghaiDateComponents(date);
+  return `${year}年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日 ${String(hours).padStart(2, '0')}时${String(minutes).padStart(2, '0')}分`;
 }
 
 export function calculateReadingTime(body: string | undefined): number {
@@ -200,13 +222,10 @@ export function groupPostsByDay(posts: CollectionEntry<'posts'>[]): Map<string, 
   const groups = new Map<string, CollectionEntry<'posts'>[]>();
   for (const post of posts) {
     const date = post.data.date ? new Date(post.data.date) : new Date(0);
-    // Use local date components so the grouping key matches the locale-formatted
+    // Use Asia/Shanghai components so the grouping key matches the locale-formatted
     // date shown in EntryCard (avoiding UTC vs local timezone mismatch).
-    const key = [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ].join('-');
+    const { year, month, day } = getShanghaiDateComponents(date);
+    const key = [year, String(month).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
     if (!groups.has(key)) {
       groups.set(key, []);
     }

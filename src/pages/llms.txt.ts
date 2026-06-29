@@ -1,17 +1,14 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { normalizeTags, formatDate, getPostDisplayTitle, sortPostsByDate } from '../utils/posts';
+import { normalizeTags, formatDate, getPostDisplayTitle, sortPostsByDate, getShanghaiDateComponents } from '../utils/posts';
 
 const SITE_URL = 'https://wangjunjian.com';
 
 function formatPostDate(date: Date | string | undefined): string {
   if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const { year, month, day } = getShanghaiDateComponents(date);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 export async function getStaticPaths() {
