@@ -5,7 +5,7 @@ date:   2026-07-04 19:09:00 +0800
 tags: [translation, claude, claude-code, claude.md, coding-guidelines, andrej-karpathy, agent, llm, ai]
 ---
 
-下面是 **`CLAUDE.md`** 文件，用于改善 Claude Code 的行为，源自 [Andrej Karpathy 的观察](https://x.com/karpathy/status/2015883857489522876) 关于 LLM 编码陷阱的总结。
+下面是 [**`CLAUDE.md`**](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md) 文件的内容，用于改善 Claude Code 的行为，源自 [Andrej Karpathy 的观察](https://x.com/karpathy/status/2015883857489522876) 关于 LLM 编码陷阱的总结。
 
 ---
 
