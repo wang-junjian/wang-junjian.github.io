@@ -38,3 +38,5 @@ tags: [baai, world-model, physical-ai, 2026北京智源大会]
 ![](/images/2026/baai/world-model/16.webp)
 
 ![](/images/2026/baai/world-model/17.webp)
+
+- [智源对世界模型的思考（王仲远）](https://www.bilibili.com/video/BV16Yji65Ez1/)
