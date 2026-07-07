@@ -48,6 +48,16 @@ magick -delay 200 -loop 0 \
 * **`'.../OpenDesign.mp4'`**：ImageMagick 会自动识别并将其转换为 MP4 视频。
 
 
+## GIF 转 MP4 视频
+
+```bash
+ffmpeg -i input.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" output.mp4
+```
+- `-pix_fmt yuv420p`：确保生成的 MP4 兼容性最好，能在 QuickTime、iPhone 和网页上正常播放（许多播放器不支持 GIF 默认转出来的 yuv444p）。
+- `-vf "scale=..."`：关键步骤！ MP4（H.264 编码）要求视频的宽高必须是偶数。这个参数会自动把奇数像素向下裁剪 1 像素，防止报错 width not divisible by 2。
+- `-movflags faststart`：优化视频结构，让视频可以实现“边下边播”。
+
+
 ## 智能压缩视频（丢弃重复画面）
 
 这三个 FFmpeg 命令的核心目的都是**通过识别并剔除视频中的静态/重复画面（如录屏中的无位移段落）来大幅压缩体积**。由于处理音频和时间戳的策略不同，它们分别适用于不同的应用场景。
