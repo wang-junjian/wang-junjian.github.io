@@ -1,8 +1,8 @@
 ---
 type: article
-title:  "WorkBuddy 实战案例合集：AI 助手办公新范式"
+title:  "WorkBuddy 实战案例：日常办公"
 date:   2026-07-07 10:31:00 +0800
-tags: [workbuddy, agent, office-automation, excel-processing, data-analysis, visualization, website-development]
+tags: [workbuddy, agent, office-automation, excel-processing, data-analysis, visualization]
 ---
 
 ## [WorkBuddy 介绍](https://www.codebuddy.cn/work/)
@@ -26,6 +26,226 @@ tags: [workbuddy, agent, office-automation, excel-processing, data-analysis, vis
 <h2 style="margin: 0.2em 0; line-height: 1.2;">MCP 生态 + 自定义 Skills，能力无限扩展</h2>
 
 ---
+
+![](/images/2026/workbuddy/work.webp)
+
+---
+
+
+## 截图重命名与分类
+
+### 输入
+
+```PROMPT
+把 截图 目录中的图像根据图像的内容进行重命名及文件夹分类。
+```
+
+### 输出
+
+```PROCESS
+我先看看截图文件夹里有哪些图像，然后分析每张图的内容来重命名和分类。
+截图文件夹有 11 张 PNG 图像。我需要逐一查看每张图的内容来判断如何命名和分类。我先读取这些图像。
+```
+
+我已经看完了全部 11 张截图，根据内容可以把它们分成三类。分类方案如下：
+
+**1. AI-概念图/**  
+- `Claude-Code-上下文工程.png`（Claude Code 的上下文工程结构图）  
+- `RAG-检索增强生成.png`（ChatGPT / RAG 流程图）  
+- `Multi-Agent-ChatDev工作流.png`（ChatDev 多智能体开发流程）  
+
+**2. Claude-Agent-SDK/**  
+- `Claude-Agent-SDK-封面.png`  
+- `Claude-Agent-SDK-场景示例.png`  
+- `Claude-Agent-SDK-核心能力总览.png`  
+- `Claude-Agent-SDK-编排能力.png`  
+- `Claude-Agent-SDK-工具能力.png`  
+- `Claude-Agent-SDK-权限控制.png`  
+- `Claude-Agent-SDK-生产就绪.png`  
+
+**3. macOS-自动化/**  
+- `Automator-PDF转JPG快捷操作.png`（Automator 的「PDF 转 JPG」快捷操作 Shell 脚本）  
+
+你确认这个分类方案后，我就直接创建文件夹并移动/重命名文件。
+
+### 输入
+
+```PROMPT
+OK
+```
+
+### 输出
+
+```PROCESS
+确认收到，开始执行。我会创建三个子文件夹，并把每张图移动并改名为对应名称。
+全部 11 张图已按内容分类并改名完成。结构如下：
+
+截图/
+├── AI-概念图/
+│   ├── Claude-Code-上下文工程.png
+│   ├── Multi-Agent-ChatDev工作流.png
+│   └── RAG-检索增强生成.png
+├── Claude-Agent-SDK/
+│   ├── Claude-Agent-SDK-封面.png
+│   ├── Claude-Agent-SDK-场景示例.png
+│   ├── Claude-Agent-SDK-核心能力总览.png
+│   ├── Claude-Agent-SDK-编排能力.png
+│   ├── Claude-Agent-SDK-工具能力.png
+│   ├── Claude-Agent-SDK-权限控制.png
+│   └── Claude-Agent-SDK-生产就绪.png
+└── macOS-自动化/
+    └── Automator-PDF转JPG快捷操作.png
+
+11 张全部归位，无遗漏。顺便记录一下今天的工作。
+```
+
+完成 ✅
+
+截图文件夹里的 11 张图已经按内容重新命名并归入三个分类文件夹：
+
+- **AI-概念图/**（3 张）：Claude Code 上下文工程、RAG 检索增强生成、Multi-Agent/ChatDev 工作流
+- **Claude-Agent-SDK/**（7 张）：封面、场景示例、核心能力总览、编排能力、工具能力、权限控制、生产就绪
+- **macOS-自动化/**（1 张）：Automator PDF 转 JPG 快捷操作
+
+原来的时间戳文件名（`截屏2025-09-21 19.55.30.png` 之类）已全部替换为能反映图像内容的语义化命名，方便日后检索。如果某个分类或命名想再调整，告诉我就行。
+
+![](/images/2026/workbuddy/work-screenshot-rename-and-categorization.webp)
+
+
+## 开源项目研究全流程自动化
+
+### 📋 概览
+
+本案例完整演示了 **腾讯文档 → 开源项目研究 → Excel 入库 → Word 报告** 的一站式自动化工作流。以 GitHub 开源项目 MOSS-Transcribe-Diarize 为目标，全程在对话内完成，无需手动切换工具。
+
+| 维度 | 说明 |
+|------|------|
+| **目标项目** | MOSS-Transcribe-Diarize（端到端音频理解模型，Apache-2.0） |
+| **涉及能力** | 腾讯文档 MCP、open-source-ai-researcher 技能、xlsx 技能、docx 技能 |
+| **执行流程** | 列出文档 → 导出 Excel → 研究项目 → 写入数据库 → 生成报告 |
+| **最终产出** | `开源 AI 生态研究与落地指南.xlsx`（更新）+ `AI 项目研究.docx`（报告） |
+| **总耗时** | 约 10 分钟 |
+
+### 输入（查看腾讯文档）
+
+- **连接器**：`腾讯文档`
+
+```PROMPT
+列出我的腾讯文档
+```
+
+### 输出
+
+以下是你在腾讯云文档中的最近文档列表（共 20 条，按最近查看时间排序）：
+
+| # | 文档名称 | 类型 |
+|---|---------|------|
+| 1 | 人工智能赋能业务提效减负专项需求调研 - 需求分析报告 | 文档 |
+| 2 | 开源 AI 生态研究与落地指南 | 表格 |
+| 3 | 2026年XXX平台组周报 | 表格 |
+| 4 | 6月9日作业截图收集 | 表单 |
+| 5 | 6月8日作业截图收集 | 表单 |
+| 6 | 6月7日作业截图收集 | 表单 |
+| 7 | 作业截图收集 | 表单 |
+| 8 | 本周工作内容 | 表格 |
+
+如果你需要对某个文档进行查看详情、编辑内容、导出等操作，告诉我文档名称或编号即可。
+
+### 输入（保存文档到本地）
+
+- **连接器**：`腾讯文档`
+
+```PROMPT
+把“开源 AI 生态研究与落地指南”保存到本地
+```
+
+### 输出
+
+文件已成功保存到本地！
+
+**开源 AI 生态研究与落地指南.xlsx** → `/Users/junjian/工作/2026/WorkBuddy实战/开源 AI 生态研究与落地指南.xlsx`（约 35KB）
+
+### 输入（研究开源 AI 项目）
+
+- **技能**：`open-source-ai-researcher`
+
+```PROMPT
+使用 /open-source-ai-researcher 研究项目 https://github.com/OpenMOSS/MOSS-Transcribe-Diarize。
+```
+
+### 输出
+
+```PROCESS
+好的，我来用 `open-source-ai-researcher` 研究项目。
+项目信息已提取（owner: `OpenMOSS`, repo: `MOSS-Transcribe-Diarize`），开始抓取仓库详情。
+项目信息已收集完毕（许可证为 **Apache 2.0**）。
+```
+
+全部完成！以下是成果汇总：
+
+#### ✅ MOSS-Transcribe-Diarize 项目研究结果
+
+| 字段 | 内容 |
+|------|------|
+| **项目名称** | MOSS-Transcribe-Diarize |
+| **类别** | 大模型（语音AI） |
+| **GitHub URL** | https://github.com/OpenMOSS/MOSS-Transcribe-Diarize |
+| **定位** | 开源的端到端音频理解模型，专为长语音、多人对话场景设计，一次性完成 ASR + 说话人日志 + 时间戳生成 |
+| **应用场景** | 会议转录、电话录音分析、播客/访谈文字稿、课堂笔记、视频字幕 |
+| **依赖** | Python 3.12, Transformers 5.x, PyTorch, uv, ffmpeg |
+| **许可证** | Apache-2.0 ✅ **商业/内部项目可合规使用** |
+
+### 输入（写入研究结果到 Excel）
+
+- **技能**：`Excel 文件处理`
+
+```PROMPT
+使用 /Excel 文件处理 把研究结果写入到 “开源 AI 生态研究与落地指南.xlsx” 中。
+```
+
+### 输出
+
+```PROCESS
+现在加载 Excel 处理技能来写入文件。
+好的，现在来研究 Excel 文件结构，然后把研究成果写入其中。
+文件修复成功，现在来添加新项目数据。
+验证写入结果：
+```
+
+#### ✅ Excel 写入结果
+
+已在 **「趋势洞察和研究落地」** 工作表的 **第 42 行** 追加了该项目记录，包括项目名称、GitHub URL、定位、应用场景、依赖、许可证等信息，样式与现有数据一致。
+
+### 输入（写入研究结果为 Word 文档）
+
+- **技能**：`docx`
+
+```PROMPT
+使用 /docx 保存研究结果，文档名“AI 项目研究”
+```
+
+### 输出
+
+```PROCESS
+文档验证通过 ✅。现在呈现结果并记录工作日志。
+```
+
+完成！**AI 项目研究.docx** 已生成并保存到本地工作目录。
+
+#### 📄 文档概览
+
+| 章节 | 内容 |
+|------|------|
+| **项目概览** | 项目名称、类别、GitHub 链接（可点击跳转）、定位、依赖、许可证 |
+| **应用场景** | 会议转录、电话录音、播客访谈、课堂笔记、视频字幕 |
+| **技术架构** | 文本骨干、音频编码器、音频-文本桥接、推理框架 |
+| **推理部署** | 原生 Transformers、vLLM、SGLang Omni 三种方式 |
+| **许可证合规** | Apache-2.0 的商业使用注意事项 |
+| **评估结果** | 四个数据集上的 SOTA 性能表现 |
+
+文档样式规整，含页眉（"开源 AI 项目研究"）、页脚（页码）、自动编号列表、带背景色的关键信息表格，所有验证均已通过 ✅。
+
+![](/images/2026/workbuddy/work-mcp-skill-docx.webp)
 
 
 ## Excel 文件处理
@@ -242,180 +462,128 @@ tags: [workbuddy, agent, office-automation, excel-processing, data-analysis, vis
 ![](/images/2026/workbuddy/llm-benchmark.webp)
 
 
-## 开发网站
+## 设计系统
 
-### 输入（复刻竞品官网）
-
-```PROMPT
-根据 https://www.codebuddy.ai/ 网站的信息，生成一个鲁软慧码的官网。鲁软慧码的能力等同于 CodeBuddy。
-```
-
-### 输出
-
-已完成。我根据 CodeBuddy 官网及官方文档资料，为**鲁软慧码**生成了一套能力对标的官网，单文件 `/Users/junjian/工作/2026/WorkBuddy实战/luruan-huima/index.html`，可直接在浏览器打开预览。
-
-**网站还原了 CodeBuddy 的核心能力（等价映射）：**
-- **三大产品形态**：慧码 IDE（产设研一体·对话即编程）/ 慧码插件（即插即用）/ 慧码 Code（CLI 智能体·系统级操作）
-- **全流程覆盖**：规划 → 设计 → 开发 → 测试 → 部署
-- **12 项核心能力**：Craft 自主智能体、智能补全、设计稿转代码、工程理解、单元测试、智能评审、安全扫描、MCP 生态、知识库 RAG、多模态对话、Plan 规划、多模型引擎
-- **Craft 智能体**专题区、**应用场景**（个人/团队/企业/行业四Tab）、**生态集成**（Figma/CloudBase/EdgeOne/CloudStudio/MCP 等）、**硬核指标**（200+ 语言、50+ IDE、5 步生命周期、3 端形态）、用户评价与 CTA
-
-**交互与视觉：** 深色 Hero + 浅色正文、滚动揭示动画、数字滚动计数、Hero 打字机风格代码窗、场景 Tab 切换，移动端响应式适配。
-
-**说明：** codebuddy.ai 首页是 JS 渲染页，直接抓取只拿到标题，所以能力信息我综合了 codebuddy.cn 官方文档与公开搜索资料来对齐，确保内容真实准确。如需我把它拆成多页、替换 Logo/配色、补充下载页或接入真实下载链接，告诉我即可。
-
-![](/images/2026/workbuddy/smart-coding.webp)
-
-### 输入（支持中英文，国网绿为主色）
+### 输入（宫崎骏的太空之城风格设计系统）
 
 ```PROMPT
-支持中英文，颜色以国网绿为主色
-```
-
-### 输出
-
-已更新。两处改动都已完成：
-
-**1. 国网绿主色**
-- 主色 `#00A887`（国网绿），配亮绿 `#11C9A0`、深绿 `#00805F` 做层次。
-- Hero、Craft 专题区改为深绿底，按钮、渐变文字、卡片悬停、阴影、时间轴连线等全部绿色化，整体观感统一为「国网绿」体系。
-
-**2. 中英文双语**
-- 全站 188 处文案均做了中英双版本（用 `<span class="zh">` / `<span class="en">` 包裹，按 `body` 语言类切换）。
-- 导航右上角新增「中 / EN」切换按钮，点击即时切换整站语言；英文品牌名定为 **Lusoft CodeMind**。
-- 覆盖：导航、Hero、三端形态、全流程、12 项核心能力、Craft 专题、四大应用场景、生态集成、硬核指标、用户评价、CTA、页脚。
-
-技术校验通过：HTML 结构闭合（section/div 配对正常），188 对双语文案数量一致，语言切换与数字滚动动画均保留。直接刷新预览即可看到右上角语言按钮，点击在中文/English 间切换。
-
-如需把国网绿换成更精确的某个色值（如官网指定的 `#00865A` 或 `#00A887` 之外的版本），或给双语加上「记住选择 / URL 参数」持久化，告诉我即可。
-
-![](/images/2026/workbuddy/smart-coding-en.webp)
-
-
-## 创建技能
-
-### 输入（创建开源 AI 项目研究技能）
-
-- **技能**：`skill-creator`
-- **技能**：`Excel 文件处理`
-
-```PROMPT
-@command:skill-creator  使用 @command:Excel 文件处理 读取文档开源 AI 生态研究与落地指南.xlsx ，理解项目的列（项目名称、类别、GitHub URL、定位、应用场景、依赖、许可证）的内容。整理规则创建研究项目的技能，用户输入 GitHub URL，输出：项目名称、类别、GitHub URL、定位、应用场景、依赖、许可证。
+帮我建立一套完整的 Design System，包含颜色体系、字体层级、间距规则和基础组件规范文档，风格为宫崎骏的太空之城
 ```
 
 ### 输出
 
 ```PROCESS
-好的，我来先读取 Excel 文件理解数据结构，然后按照 skill-creator 的流程创建技能。
+好的！宫崎骏的太空之城——这个风格真的太棒了。让我来系统性地建立这套 Design System。先加载所有需要的设计规则和指南文件。
+这是要建立一个完整的 Design System！宫崎骏的太空之城——融合了宫崎骏的温暖治愈与太空的深邃梦幻。让我现在开始搭建。
 
-首先，读取 Excel 文件：
-好，我理解了 Excel 文件的结构——它是一个**研究字段定义文档**，定义了记录开源 AI 项目时需要填写的各个字段含义。现在按照 skill-creator 流程创建技能。
+先创建设计文件并搜索风格指南。
+文件已成功创建！现在来分析搜索到的候选方案。对于"宫崎骏的太空之城"这个独特风格，我选择了以下方向：
 
-先找到 init_skill.py 脚本的位置：
-技能目录已创建。现在清理示例文件并编写技能内容。
-包中包含了一个多余的示例文件，清理后重新打包：
+- **风格**: `bento-japanese` — 宫崎骏的日式美学根基，温暖治愈
+- **色彩**: `soft-pale-blue-glow` — 淡蓝画布加柔和辉光，如太空城市的梦幻氛围
+- **字体**: `bento-japanese-noto-serif-jp` — 日式书法感搭配简单英文字体
+- **布局**: `bento-figma-ds-component-showcase` — 专为设计系统文档设计的布局
+
+开始构建风格指南！
+风格指南已构建完成！现在我来融合"宫崎骏的太空之城"这一独特审美方向，对返回的色彩体系进行调整。
+
+设计的核心思路：**把宫崎骏的温暖釉色与太空的深邃梦幻糅合在一起**——暖陶土、琥珀金代表大地的温度，蔚蓝、薰衣草紫代表星空的诗意。
+
+先定位画布空间并创建主框架。
+画布已就绪。现在开始搭建 Design System 规范页面，先创建主容器和颜色系统区域。
+好的，开始执行！先检查可用字体，然后开始逐步构建。
+字体库已就绪！现在开始逐步构建设计系统页面。先创建主框架和头部区域。
+
+本次设计稿内容将使用中文生成。
+结构已创建，修复颜色格式问题，然后添加颜色体系区域。
+颜色体系开始成型！继续添加所有色值和分类。
+继续添加中性色和语义色。
+颜色体系完成！现在搭建字体层级部分。
+继续添加剩余字体层级。
+继续添加间距尺度和圆角规则。
+修复圆角 fill 问题，然后创建组件展示区域。
+修复引用问题并完成输入框组件。
+好的，来看看设计稿的视觉效果！
+视觉雏形已经出来了，整体风格很到位。现在做细节打磨：把主框架高度改为自适应，添加设计原则模块和页脚，并给深空头部加几颗星星装饰。
 ```
 
-#### ✅ 技能创建完成！`open-source-ai-researcher`
-
-##### 做了什么
-
-基于「开源 AI 生态研究与落地指南.xlsx」的字段定义结构，创建了一个完整的 **开源 AI 项目研究技能**。
-
-##### 技能用法
-
-用户输入一个 **GitHub URL**（例如 `https://github.com/langgenius/dify`），技能会自动：
-
-1. 访问 GitHub 仓库页面和 README
-2. 查阅 LICENSE 文件确认许可证
-3. 提取并整理以下 7 项结构化信息：
-
-| # | 字段 | 说明 |
-|---|------|------|
-| 1 | **项目名称** | 官方标准名称 |
-| 2 | **类别** | AI 框架/智能体/RAG引擎 等归类 |
-| 3 | **GitHub URL** | 用户提供的仓库地址 |
-| 4 | **定位** | 底层逻辑，通俗解释 |
-| 5 | **应用场景** | 能解决什么具体业务问题 |
-| 6 | **依赖** | 基础设施需求（LLM、数据库等） |
-| 7 | **许可证** | 合规性分析与建议 |
-
-##### 技能文件
-
-技能包已导出：**`open-source-ai-researcher.zip`**
-
-如需安装，解压后将 `open-source-ai-researcher/` 文件夹放入 `~/.workbuddy/skills/` 目录即可。
-
-### 输入（使用技能）
-
-```PROMPT
-研究 https://github.com/usestrix/strix
-```
-
-### 输出
-
-#### 项目研究报告
-
-##### 项目名称
-**Strix**
-
-##### 类别
-AI 渗透测试工具 / AI 安全测试工具
-
-##### GitHub URL
-https://github.com/usestrix/strix
-
-##### 定位
-**开源 AI 渗透测试工具**——自主 AI 黑客能够发现并修复应用漏洞。Strix 是一个自主的 AI 渗透测试代理，其行为模式与真实黑客完全一致：**动态运行你的代码**，发现漏洞，并通过实际的 **概念验证（PoC）** 来验证它们。专为需要快速、准确安全测试的开发者和安全团队打造，省去了手动渗透测试的开销，也避免了静态分析工具的误报问题。
-
-##### 应用场景
-- **应用程序安全测试** — 检测并验证应用程序中的关键漏洞（OWASP Top 10 全覆盖）
-- **快速渗透测试** — 在几小时（而非几周）内完成渗透测试并生成合规报告
-- **漏洞赏金自动化** — 自动化漏洞赏金研究并生成 PoC，以便更快地提交报告
-- **CI/CD 集成** — 与 GitHub Actions、GitLab CI 等集成，在漏洞进入生产环境前拦截
-- **DevSecOps 流水线** — 支持 GitHub、GitLab、Bitbucket、Slack、Jira、Linear 等
-
-##### 依赖
-| 依赖项 | 说明 |
-|--------|------|
-| **Docker** | 运行中状态，用于沙箱环境隔离 |
-| **LLM API 密钥** | 必须，支持 OpenAI（GPT-5.4）、Anthropic（Claude Sonnet 4.6）、Google（Gemini 3 Pro）等 |
-| 可选：Perplexity API 密钥 | 用于搜索能力增强 |
-| 可选：本地模型 | 支持通过 `LLM_API_BASE` 配置 Ollama / LMStudio 等本地模型 |
-| 底层依赖 | LiteLLM（LLM 调用）、Caido（HTTP 代理）、Nuclei（漏洞扫描）、Playwright（浏览器自动化）、Textual（CLI 交互） |
-
-##### 许可证
-**Apache License 2.0**（Copyright 2025 OmniSecure Inc.）
-
-**合规分析**：Apache 2.0 对商业使用非常友好，允许在公司内部使用、修改和分发，无需公开衍生代码的源代码。适合企业内网私有化部署和商业化集成。
+Design System 已完成，并且保存了一份完整的规范文档在 Ardot 中。
 
 ---
 
-**补充信息**：Strix 也提供了托管云平台 [app.strix.ai](https://app.strix.ai)，可直接注册使用。文档地址：[docs.strix.ai](https://docs.strix.ai)
+页面从深空 header 开始，嵌入了几颗带辉光的星星作为「太空之城」的气氛符号；往下依次是 4 条设计原则卡片、完整的颜色体系（暖釉色 + 星际冷色 + 中性色 + 语义色）、12 级字体层级、8px 网格间距与圆角规范，以及 Buttons / Inputs / Cards / Badges 四类组件的状态示例。所有内容都用中文标注了 token 名称与用途。
 
-### 输入（写入 Excel）
+为了让这套系统真正可复用，我还创建了 4 组 Design Variables，共 47 个 tokens：
+- `MiyazakiSpaceColors`：17 个颜色 token
+- `MiyazakiSpaceSpacing`：9 个间距 token
+- `MiyazakiSpaceRadius`：5 个圆角 token
+- `MiyazakiSpaceTypography`：11 个字阶 token
+
+---
+
+设计文件已打开：[宫崎骏太空之城-Design System](https://ardot.tencent.com/file/702019004568596)
+
+这套系统融合了宫崎骏的温暖手绘感与太空的深邃梦幻——用 Terracotta、Golden、Amber 表达大地温度，用 Sky Blue、Deep Space、Lavender、Celestial Pink 构建星际诗意，同时保留了 8px 网格、柔和圆角和日式留白，方便直接用于后续界面设计。
+
+如果还有想补充的模块（比如 Icons、Elevation 层级、深色模式 Dark Mode，或者直接把组件做成可复用的 Component Symbols），告诉我，我可以继续完善。
+
+![](/images/2026/workbuddy/design-system-sky.webp)
+
+### 输入（创建关于 AI 技术的中文博客）
 
 ```PROMPT
-把研究的结果增加到 Excel 文档中
+基于这套太空之城的设计系统创建关于 AI 技术的中文博客
 ```
 
 ### 输出
 
-已完成！Strix 的研究结果已追加到 **「开源 AI 生态研究与落地指南.xlsx」→「趋势洞察和研究落地」工作表** 第 41 行。
+```PROCESS
+好的！基于刚才建立的太空之城设计系统，我来创建一个 AI 技术中文博客页面。先加载必要的指南和创建新文件。
+很好，博客页面设计需求明确。先确认一下文章结构偏好。
+文档已创建，让我检查文件加载状态。
+现在开始搭建博客页面。基于我们刚才的太空之城设计系统——
 
-新增的记录概览：
+本次设计稿内容将使用中文生成。
+现在创建文章网格。
+修复问题并添加第二行文章和页脚。
+博客页面效果很完整，整体与太空之城设计系统保持一致。我将记录今天的进展。
+```
 
-| 字段 | 内容 |
-|------|------|
-| **项目名称** | Strix |
-| **类别** | AI 安全测试工具 |
-| **GitHub URL** | https://github.com/usestrix/strix |
-| **定位** | 开源 AI 渗透测试工具——自主 AI 黑客能够发现并修复应用漏洞 |
-| **应用场景** | 应用安全测试、快速渗透测试、漏洞赏金自动化、CI/CD 集成、DevSecOps |
-| **依赖** | Docker + LLM API（OpenAI/Anthropic/Google 等） |
-| **许可证** | Apache-2.0（商业友好） |
-| **来源/状态** | GitHub趋势 / 趋势 |
-| **完成日期** | 2026-07-08 |
+博客页面设计完成了！整套视觉从配色到圆角都直接复用了刚才的太空之城设计系统。
+
+---
+
+页面包含：
+- **深空导航栏**（Logo + 5 个导航项）
+- **博客标题区**（「AI 技术前沿」+ 副标题 + 6 个分类筛选标签）
+- **文章网格**（3×2 卡片布局，共 6 篇 AI 技术文章：大模型、AI Agent、深度学习、计算机视觉、AGI、开源生态）
+- **深空页脚**（简介 + 分类链接 + 关于链接 + 版权）
+
+每张文章卡片都包含分类色块、标题、摘要、发布日期和作者头像占位；整体沿用暖陶土色、天空蓝、薰衣草紫等主题色，卡片 12px 圆角 + 柔和投影，与 Design System 保持一致。
+
+---
+
+设计文件已打开：[太空之城-AI技术博客](https://ardot.tencent.com/file/702023445995282)
+
+如果还想继续扩展，比如：
+- 加一篇精选「Hero 文章」放在网格上方
+- 给文章卡片加入真实配图或插画
+- 补充 Newsletter 订阅模块
+- 做成文章详情页 / 分类筛选页
+
+都可以继续迭代。
+
+![](/images/2026/workbuddy/design-system-sky_blog-prototype.webp)
+
+### 输入（将当前画布中的设计稿生成应用）
+
+```PROMPT
+将当前画布中的设计稿生成应用，严格还原设计稿中的布局结构、配色、圆角、间距等视觉细节。
+```
+
+### 输出
+
+![](/images/2026/workbuddy/design-system-sky_blog-app.webp)
 
 
 ## 自动化
