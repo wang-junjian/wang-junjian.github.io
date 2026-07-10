@@ -10,7 +10,7 @@ author: Lilian Weng
 
 这种反馈循环在现代 AI 中可能意味着模型直接重写自身的权重，或者更广泛地说，模型改进了*训练流水线*和*部署系统*，从而催生出一个在经济价值任务上表现更优的继任模型。AI 研究发展的速度在前沿实验室中已被证明正在急剧加速（[Anthropic](https://www.anthropic.com/institute/recursive-self-improvement)；[OpenAI](https://openai.com/index/how-agents-are-transforming-work/)）。
 
-我特意提到*"部署系统"*，因为原始模型与真实世界环境之间的这一层，似乎与模型原始智能（即预训练后的评估）同等重要。Harness 是 AI 部署的重要组成部分，Claude Code 和 Codex 等成功的编码智能体产品已证明了这一点。**Harness（Harness）** 是围绕基础模型的系统，负责编排执行、决定模型如何思考和规划、调用工具和执行动作、感知和管理上下文、存储产物以及评估结果。
+我特意提到 *"部署系统"*，因为原始模型与真实世界环境之间的这一层，似乎与模型原始智能（即预训练后的评估）同等重要。Harness 是 AI 部署的重要组成部分，Claude Code 和 Codex 等成功的编码智能体产品已证明了这一点。**Harness** 是围绕基础模型的系统，负责编排执行、决定模型如何思考和规划、调用工具和执行动作、感知和管理上下文、存储产物以及评估结果。
 
 本文将聚焦于 harness 工程相关的研究，以及它如何促进 RSI。近期关于自动研究、自我改进智能体和进化程序搜索的许多工作都可以围绕这一问题来组织。模型自对弈、合成数据、测试时训练以及更广泛的持续学习等主题也符合 RSI 的愿景（例如 [Yuan et al. 2024](https://arxiv.org/abs/2401.10020)、[Chen et al. 2024](https://arxiv.org/abs/2401.01335)、[Zhao et al. 2025](https://arxiv.org/abs/2505.03335)、[Choi et al. 2026](https://openreview.net/forum?id=lTbBFAoPSA)），但它们不是本文的重点。
 
