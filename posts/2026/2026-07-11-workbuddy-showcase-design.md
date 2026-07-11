@@ -2,7 +2,7 @@
 type: article
 title:  "WorkBuddy 实战案例：设计创意"
 date:   2026-07-11 07:44:00 +0800
-tags: [workbuddy, agent, design, webapp, skill]
+tags: [workbuddy, agent, design, webapp, skill, poster, illustration]
 ---
 
 ## [WorkBuddy 介绍](https://www.codebuddy.cn/work/)
