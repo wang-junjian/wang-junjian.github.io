@@ -5,6 +5,8 @@ date: 2026-07-12 23:34:00 +0800
 tags: [workbuddy, agent, models, ioa]
 ---
 
+![](/images/2026/workbuddy-research/ioa-models.webp)
+
 > 数据来源：`cli/product.ioa.json`（iOA 部署渠道覆盖层）  
 > 共 **82** 个模型条目，按路由代号（vendor）分组。
 
