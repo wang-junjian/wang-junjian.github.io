@@ -24,7 +24,7 @@ resources/templates/
 │   ├── workbuddy-ask-prompt.tpl           ← Ask / 通用
 │   ├── workbuddy-ask-coding-prompt.tpl    ← Ask / 编码
 │   ├── workbuddy-craft-coding-prompt.tpl  ← Craft / 编码
-│   ├── workbuddy-craft-design-prompt.tpl← Craft / 设计 ★ 完全独立体系
+│   ├── workbuddy-craft-design-prompt.tpl  ← Craft / 设计 ★ 完全独立体系
 │   ├── workbuddy-expert-prompt.tpl        ← Expert / 通用
 │   ├── workbuddy-expert-coding-prompt.tpl ← Expert / 编码
 │   └── workbuddy-prompt.tpl               ← Craft / 通用（默认主模板）
@@ -56,11 +56,32 @@ resources/templates/
 └─────────────────────────────────────────────────┘
 ```
 
-### 模板语法
+### 模板语法体系
 全目录使用 **Jinja2/Nunjucks** 语法：
-- `{% if Variable %}` — 条件渲染
-- `{{ Variable }}` — 变量插值
-- `{%- if ... %}` — 控制空白字符
+
+| 语法 | 用途 | 示例 |
+|---|---|---|
+| `{{ var }}` | 变量插值 | `{{ modelName }}`, `{{ productName }}` |
+| `{% if cond %}` | 条件块 | `{% if IsWindows %}...{% endif %}` |
+| `{%- if cond %}` | 带空白控制 | `{%- if not productFeatures.DisableMultimodalGeneration %}` |
+
+特别用法：`{% if '中文' in ResponseLanguage %}` 进行语言判断。
+
+### 关键变量全景
+
+| 变量 | 用途 |
+|---|---|
+| `modelName` / `productName` / `dataFolderName` | 模型、产品、数据目录名 |
+| `ResponseLanguage` / `BinaryContext` | 响应语言、二进制上下文 |
+| `IsWindows` | 平台检测 |
+| `WorkspaceIdentityMode` | `onboarding` vs 正常运行 |
+| `SoulContent` / `IdentityContent` / `UserContent` | 三大身份文件内容 |
+| `ToneStyleContent` | 用户选择的沟通风格 |
+| `UserCustomPrompt` | 用户自定义指令 |
+| `ClawMemory_1/2/3` | 三层记忆注入点 |
+| `subAgentPrompt` / `ExpertManagement` | 子代理 / 专家管理内容 |
+| `PluginAgentPrompt` | Expert 模式角色定义 |
+| `ArtifactDirectoryPath` | Artifact 输出目录 |
 
 ---
 
