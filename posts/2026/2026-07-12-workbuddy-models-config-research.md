@@ -28,6 +28,8 @@ tags: [workbuddy, agent, models, ioa]
 - 其余 4 个文件是**差异覆盖层（overlay）**，只包含需要改写的键。例如 `product.cloudhosted.json` 仅含 8 个键：`agents / models / links / productFeatures / galileo / commit / date / genieVersion`。
 - 运行时把「基座 + 选中的覆盖层」按同名键合并（overlay 覆盖 base），得到该部署渠道最终生效的配置。
 
+![](/images/2026/workbuddy-research/model-config.webp)
+
 ---
 
 ## 二、渠道选择机制
@@ -48,6 +50,8 @@ tags: [workbuddy, agent, models, ioa]
 ---
 
 ## 三、单个模型条目（model entry）的 Schema
+
+![](/images/2026/workbuddy-research/model-define.webp)
 
 以 iOA 中字段最完整的条目为例：
 
