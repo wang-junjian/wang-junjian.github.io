@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="逐行文本差异对比工具，高亮新增、删除与修改，纯前端运行。">
+  <meta name="keywords" content="文本对比, Diff, 差异, 比较, 逐行">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>文本 Diff 对比</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --accent-hover: #0284c7; --error: #dc2626;
+      --add: #16a34a; --add-bg: #dcfce7; --del: #dc2626; --del-bg: #fee2e2;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --accent-hover: #0ea5e9; --error: #f87171;
+      --add: #4ade80; --add-bg: #14331f; --del: #f87171; --del-bg: #3a1d1d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh;
+    }
+    .wrap { flex: 1; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    button {
+      border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.5rem 0.875rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button:hover { background: var(--bg); border-color: var(--muted); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .editor { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex: 1; min-height: 0; }
+    @media (max-width: 768px) { .editor { grid-template-columns: 1fr; } }
+    .field { display: flex; flex-direction: column; min-height: 0; }
+    label { font-size: 0.875rem; color: var(--muted); margin-bottom: 0.375rem; }
+    textarea {
+      flex: 1; min-height: 160px; resize: vertical; border: 1px solid var(--border);
+      border-radius: 0.5rem; padding: 0.875rem; font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.9rem; line-height: 1.5; background: var(--panel); color: var(--text);
+    }
+    textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    #diff { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.875rem; line-height: 1.55; border: 1px solid var(--border); border-radius: 0.5rem;
+      padding: 0.875rem; background: var(--panel); overflow: auto; min-height: 200px; max-height: 50vh; }
+    .ln-add { background: var(--add-bg); color: var(--add); }
+    .ln-del { background: var(--del-bg); color: var(--del); }
+    .status { font-size: 0.875rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <select id="mode">
+        <option value="line">逐行对比</option>
+        <option value="word">逐词对比</option>
+      </select>
+      <button class="primary" id="compare">对比</button>
+      <button id="swap">交换</button>
+      <button id="clear">清空</button>
+      <span class="status" id="status"></span>
+    </div>
+    <div class="editor">
+      <div class="field">
+        <label>旧文本</label>
+        <textarea id="old" placeholder="粘贴原始文本..."></textarea>
+      </div>
+      <div class="field">
+        <label>新文本</label>
+        <textarea id="new" placeholder="粘贴修改后文本..."></textarea>
+      </div>
+    </div>
+    <div class="field">
+      <label>差异结果（<span style="color:var(--add)">绿=新增</span> / <span style="color:var(--del)">红=删除</span>）</label>
+      <div id="diff"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    function lcs(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({length: m + 1}, () => new Array(n + 1).fill(0));
+      for (let i = m - 1; i >= 0; i--)
+        for (let j = n - 1; j >= 0; j--)
+          dp[i][j] = a[i] === b[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+      const res = [];
+      let i = 0, j = 0;
+      while (i < m && j < n) {
+        if (a[i] === b[j]) { res.push({t:'eq', v:a[i]}); i++; j++; }
+        else if (dp[i+1][j] >= dp[i][j+1]) { res.push({t:'del', v:a[i]}); i++; }
+        else { res.push({t:'add', v:b[j]}); j++; }
+      }
+      while (i < m) { res.push({t:'del', v:a[i]}); i++; }
+      while (j < n) { res.push({t:'add', v:b[j]}); j++; }
+      return res;
+    }
+    function tokenize(s, mode) {
+      return mode === 'word' ? s.split(/(\s+)/) : s.split('\n');
+    }
+    $('compare').onclick = () => {
+      const mode = $('mode').value;
+      const a = tokenize($('old').value, mode);
+      const b = tokenize($('new').value, mode);
+      const diff = lcs(a, b);
+      const box = $('diff');
+      box.innerHTML = '';
+      let add = 0, del = 0;
+      diff.forEach(d => {
+        const span = document.createElement('span');
+        const prefix = d.t === 'add' ? '+ ' : d.t === 'del' ? '- ' : '  ';
+        span.textContent = prefix + d.v + (mode === 'line' && d.v !== '\n' ? '\n' : '');
+        if (d.t === 'add') { span.className = 'ln-add'; add++; }
+        else if (d.t === 'del') { span.className = 'ln-del'; del++; }
+        box.appendChild(span);
+      });
+      $('status').textContent = `新增 ${add} 处，删除 ${del} 处`;
+    };
+    $('swap').onclick = () => {
+      const o = $('old').value; $('old').value = $('new').value; $('new').value = o;
+    };
+    $('clear').onclick = () => { $('old').value=''; $('new').value=''; $('diff').innerHTML=''; $('status').textContent=''; };
+  </script>
+</body>
+</html>

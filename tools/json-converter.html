@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线 JSON 与 YAML、CSV 互转工具，支持双向转换，纯前端运行。">
+  <meta name="keywords" content="JSON, YAML, CSV, 转换, 互转, 在线工具">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>JSON 互转工具</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --accent-hover: #0284c7; --error: #dc2626;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --accent-hover: #0ea5e9; --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    .app-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.875rem 1.25rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); z-index:10; }
+    .app-header h1 { font-size:1.125rem; margin:0; font-weight:600; }
+    .icon-btn { border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:0.5rem; width:2.25rem; height:2.25rem; cursor:pointer; font-size:1.1rem; }
+    .icon-btn:hover { background:var(--bg); }
+    .wrap { max-width: 980px; margin:0 auto; padding:1.25rem; display:flex; flex-direction:column; gap:1rem; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:0.75rem; padding:1rem; }
+    label { font-size:0.875rem; color:var(--muted); display:block; margin-bottom:0.375rem; }
+    textarea { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:0.5rem; padding:0.625rem; font-size:0.9rem; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; width:100%; min-height:200px; resize:vertical; line-height:1.6; }
+    textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    button.btn { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:0.5rem 0.875rem; border-radius:0.375rem; font-size:0.875rem; cursor:pointer; }
+    button.btn:hover { background:var(--bg); }
+    button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+    .row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .status { font-size:0.85rem; color:var(--muted); min-height:1.25rem; }
+    .status.error { color:var(--error); }
+    .tabs { display:flex; gap:0.5rem; }
+    .tab { padding:0.5rem 1rem; border:1px solid var(--border); border-radius:0.5rem; cursor:pointer; font-size:0.9rem; background:var(--panel); color:var(--muted); }
+    .tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .editor { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media (max-width:720px){ .editor { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>JSON 互转工具</h1>
+    <button class="icon-btn" id="themeToggle" title="切换主题">🌓</button>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="yaml">JSON ⇄ YAML</div>
+        <div class="tab" data-tab="csv">JSON ⇄ CSV</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="editor">
+        <div>
+          <label for="input">输入</label>
+          <textarea id="input" placeholder='{"name":"张三","age":18}'></textarea>
+        </div>
+        <div>
+          <label for="output">输出</label>
+          <textarea id="output" readonly placeholder="转换结果"></textarea>
+        </div>
+      </div>
+      <div class="row" style="margin-top:.75rem">
+        <button class="btn primary" id="btnTo">转换为目标格式</button>
+        <button class="btn" id="btnFrom">反向转换</button>
+        <button class="btn" id="btnCopy">复制结果</button>
+        <button class="btn" id="btnClear">清空</button>
+        <span class="status" id="status"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const inputEl = $('input'), outputEl = $('output'), statusEl = $('status');
+    let mode = 'yaml';
+    function setStatus(msg, isError){ statusEl.textContent = msg || ''; statusEl.classList.toggle('error', !!isError); }
+
+    // ----- CSV -----
+    function csvEscape(v){
+      const s = (v === null || v === undefined) ? '' : String(v);
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    function jsonToCsv(json){
+      if (!Array.isArray(json)) throw new Error('CSV 转换需要 JSON 数组（每行一个对象）');
+      if (json.length === 0) return '';
+      const keys = Array.from(new Set(json.flatMap(o => Object.keys(o))));
+      const rows = [keys.map(csvEscape).join(',')];
+      for (const row of json) rows.push(keys.map(k => csvEscape(row[k])).join(','));
+      return rows.join('\n');
+    }
+    function csvParse(text){
+      const rows = []; let row = [], field = '', inQ = false;
+      for (let i = 0; i < text.length; i++){
+        const c = text[i];
+        if (inQ){
+          if (c === '"'){ if (text[i+1] === '"'){ field += '"'; i++; } else inQ = false; }
+          else field += c;
+        } else {
+          if (c === '"') inQ = true;
+          else if (c === ',') { row.push(field); field = ''; }
+          else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+          else if (c === '\r') {}
+          else field += c;
+        }
+      }
+      if (field !== '' || row.length) { row.push(field); rows.push(row); }
+      if (rows.length === 0) return [];
+      const header = rows[0];
+      return rows.slice(1).map(r => { const o = {}; header.forEach((h, i) => o[h] = r[i] ?? ''); return o; });
+    }
+
+    function convert(toTarget){
+      const raw = inputEl.value.trim();
+      if (!raw) { setStatus('请输入内容'); return; }
+      try {
+        if (mode === 'yaml'){
+          if (toTarget){
+            const data = JSON.parse(raw);
+            outputEl.value = jsyaml.dump(data, { lineWidth: -1, indent: 2 });
+            setStatus('已转换为 YAML');
+          } else {
+            const data = jsyaml.load(raw);
+            outputEl.value = JSON.stringify(data, null, 2);
+            setStatus('已转换为 JSON');
+          }
+        } else {
+          if (toTarget){
+            const data = JSON.parse(raw);
+            outputEl.value = jsonToCsv(data);
+            setStatus('已转换为 CSV');
+          } else {
+            const data = csvParse(raw);
+            outputEl.value = JSON.stringify(data, null, 2);
+            setStatus('已转换为 JSON');
+          }
+        }
+      } catch(e){ setStatus('转换失败：' + e.message, true); }
+    }
+
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active'); mode = t.dataset.tab; outputEl.value=''; setStatus('');
+      });
+    });
+    $('btnTo').addEventListener('click', () => convert(true));
+    $('btnFrom').addEventListener('click', () => convert(false));
+    $('btnCopy').addEventListener('click', async () => {
+      if (!outputEl.value) return setStatus('没有可复制的内容');
+      try { await navigator.clipboard.writeText(outputEl.value); setStatus('已复制'); }
+      catch(e){ setStatus('复制失败', true); }
+    });
+    $('btnClear').addEventListener('click', () => { inputEl.value=''; outputEl.value=''; setStatus(''); });
+
+    $('themeToggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      root.classList.toggle('dark');
+      try { localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+    });
+  </script>
+</body>
+</html>

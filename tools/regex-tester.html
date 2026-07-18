@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线正则表达式测试器，支持实时高亮匹配、分组捕获与替换预览，纯前端运行。">
+  <meta name="keywords" content="正则, 正则表达式, Regex, 测试器, 匹配高亮, 替换预览">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>正则表达式测试器</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --panel: #ffffff;
+      --text: #1c1917;
+      --muted: #78716c;
+      --border: #e7e5e4;
+      --accent: #0ea5e9;
+      --accent-hover: #0284c7;
+      --error: #dc2626;
+    }
+    html.dark {
+      --bg: #0c0a09;
+      --panel: #1c1917;
+      --text: #f5f5f4;
+      --muted: #a8a29e;
+      --border: #292524;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .app-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--panel); z-index: 10;
+    }
+    .app-header h1 { font-size: 1.125rem; margin: 0; font-weight: 600; }
+    .icon-btn {
+      border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      border-radius: 0.5rem; width: 2.25rem; height: 2.25rem; cursor: pointer; font-size: 1.1rem;
+    }
+    .icon-btn:hover { background: var(--bg); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
+    label { font-size: 0.875rem; color: var(--muted); display: block; margin-bottom: 0.375rem; }
+    textarea, input, select {
+      background: var(--panel); color: var(--text); border: 1px solid var(--border);
+      border-radius: 0.5rem; padding: 0.625rem; font-size: 0.9rem; font-family: inherit; width: 100%;
+    }
+    textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height: 1.6; }
+    textarea:focus, input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    button.btn {
+      border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.5rem 0.875rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer;
+    }
+    button.btn:hover { background: var(--bg); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .status { font-size: 0.85rem; color: var(--muted); min-height: 1.25rem; }
+    .status.error { color: var(--error); }
+    .pattern-row { display: grid; grid-template-columns: 1fr 9rem; gap: 0.5rem; }
+    .pattern-row .slash { display: flex; align-items: center; color: var(--muted); font-family: ui-monospace, monospace; }
+    #highlight { white-space: pre-wrap; word-break: break-word; line-height: 1.8; font-family: ui-monospace, monospace; font-size: 0.9rem; min-height: 8rem; border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.625rem; background: var(--bg); }
+    mark { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); border-radius: 2px; padding: 0 1px; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>正则表达式测试器</h1>
+    <button class="icon-btn" id="themeToggle" title="切换主题">🌓</button>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="pattern-row">
+        <div>
+          <label for="pattern">正则表达式</label>
+          <div class="row" style="gap:.25rem">
+            <span class="slash">/</span>
+            <input id="pattern" value="(b|d)(?&lt;!\s)\w+" style="flex:1" placeholder="输入正则，例如 \d+">
+            <span class="slash">/</span>
+            <input id="flags" value="g" style="width:6rem" placeholder="gimsuy">
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:.75rem">
+        <button class="btn" id="btnTest">测试匹配</button>
+        <span class="status" id="status"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="text">测试文本</label>
+      <textarea id="text" rows="6" placeholder="在此粘贴待匹配的文本...">ab12 cd34 book dog bright
+订单号 b2024 与 d7788 都有效</textarea>
+    </div>
+
+    <div class="card">
+      <label>匹配高亮（共 <span id="matchCount">0</span> 处）</label>
+      <div id="highlight"></div>
+      <div class="meta" id="groups"></div>
+    </div>
+
+    <div class="card">
+      <label for="replacement">替换字符串（可用 $1 $2 等分组引用）</label>
+      <input id="replacement" placeholder="例如 [&lt;$&gt;]">
+      <div class="row" style="margin-top:.75rem">
+        <button class="btn" id="btnReplace">预览替换</button>
+        <button class="btn" id="btnCopyReplace">复制替换结果</button>
+      </div>
+      <label style="margin-top:.75rem">替换结果</label>
+      <textarea id="replaceResult" rows="4" readonly placeholder="替换后的文本将显示在这里"></textarea>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const patternEl = $('pattern'), flagsEl = $('flags'), textEl = $('text');
+    const statusEl = $('status'), highlightEl = $('highlight'), countEl = $('matchCount'), groupsEl = $('groups');
+    const replaceEl = $('replacement'), replaceResultEl = $('replaceResult');
+
+    function setStatus(msg, isError) { statusEl.textContent = msg || ''; statusEl.classList.toggle('error', !!isError); }
+    function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function buildRegex(forceGlobal) {
+      const p = patternEl.value;
+      let f = flagsEl.value || '';
+      if (forceGlobal && !f.includes('g')) f += 'g';
+      return new RegExp(p, f);
+    }
+
+    function render() {
+      const text = textEl.value;
+      const p = patternEl.value;
+      if (!p) { highlightEl.innerHTML = escapeHtml(text); countEl.textContent = '0'; groupsEl.textContent = ''; setStatus(''); return; }
+      let re;
+      try { re = buildRegex(true); }
+      catch (e) { highlightEl.textContent = text; countEl.textContent = '0'; groupsEl.textContent = ''; setStatus('正则错误：' + e.message, true); return; }
+
+      let out = '', last = 0, count = 0, groups = [];
+      let m;
+      try {
+        while ((m = re.exec(text)) !== null) {
+          if (m.index < last) break;
+          out += escapeHtml(text.slice(last, m.index));
+          if (m[0] === '') { re.lastIndex++; last = re.lastIndex; continue; }
+          out += '<mark>' + escapeHtml(m[0]) + '</mark>';
+          count++;
+          if (m.length > 1) groups.push('匹配 ' + count + ': ' + m.slice(1).map(escapeHtml).join(' | '));
+          last = re.lastIndex;
+        }
+        out += escapeHtml(text.slice(last));
+      } catch (e) { setStatus('匹配异常：' + e.message, true); return; }
+      highlightEl.innerHTML = out || '<span style="color:var(--muted)">（无内容）</span>';
+      countEl.textContent = String(count);
+      groupsEl.innerHTML = groups.slice(0, 20).join('<br>');
+      setStatus('匹配成功，共 ' + count + ' 处');
+    }
+
+    function doReplace() {
+      const p = patternEl.value;
+      if (!p) { setStatus('请先输入正则', true); return; }
+      let re;
+      try { re = buildRegex(false); }
+      catch (e) { setStatus('正则错误：' + e.message, true); return; }
+      try {
+        replaceResultEl.value = textEl.value.replace(re, replaceEl.value);
+        setStatus('替换完成');
+      } catch (e) { setStatus('替换失败：' + e.message, true); }
+    }
+
+    $('btnTest').addEventListener('click', render);
+    $('btnReplace').addEventListener('click', doReplace);
+    $('btnCopyReplace').addEventListener('click', async () => {
+      if (!replaceResultEl.value) return setStatus('没有可复制的内容');
+      try { await navigator.clipboard.writeText(replaceResultEl.value); setStatus('已复制到剪贴板'); }
+      catch (e) { setStatus('复制失败', true); }
+    });
+    [patternEl, flagsEl, textEl].forEach(el => el.addEventListener('input', render));
+    render();
+
+    $('themeToggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      root.classList.toggle('dark');
+      try { localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+    });
+  </script>
+</body>
+</html>

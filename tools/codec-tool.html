@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线编解码三合一工具，支持 Base64、URL 与 HTML 实体的编码与解码，纯前端运行。">
+  <meta name="keywords" content="Base64, URL编码, HTML实体, 编解码, 在线工具, 转码">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>编解码三合一</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --accent-hover: #0284c7; --error: #dc2626;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --accent-hover: #0ea5e9; --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    .app-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.875rem 1.25rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); z-index:10; }
+    .app-header h1 { font-size:1.125rem; margin:0; font-weight:600; }
+    .icon-btn { border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:0.5rem; width:2.25rem; height:2.25rem; cursor:pointer; font-size:1.1rem; }
+    .icon-btn:hover { background:var(--bg); }
+    .wrap { max-width: 880px; margin:0 auto; padding:1.25rem; display:flex; flex-direction:column; gap:1rem; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:0.75rem; padding:1rem; }
+    label { font-size:0.875rem; color:var(--muted); display:block; margin-bottom:0.375rem; }
+    textarea, input, select { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:0.5rem; padding:0.625rem; font-size:0.9rem; font-family:inherit; width:100%; }
+    textarea { resize: vertical; min-height: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height:1.6; }
+    textarea:focus, input:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    button.btn { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:0.5rem 0.875rem; border-radius:0.375rem; font-size:0.875rem; cursor:pointer; }
+    button.btn:hover { background:var(--bg); }
+    button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+    .row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .status { font-size:0.85rem; color:var(--muted); min-height:1.25rem; }
+    .status.error { color:var(--error); }
+    .tabs { display:flex; gap:0.5rem; }
+    .tab { padding:0.5rem 1rem; border:1px solid var(--border); border-radius:0.5rem; cursor:pointer; font-size:0.9rem; background:var(--panel); color:var(--muted); }
+    .tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .editor { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media (max-width:680px){ .editor { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>编解码三合一</h1>
+    <button class="icon-btn" id="themeToggle" title="切换主题">🌓</button>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="base64">Base64</div>
+        <div class="tab" data-tab="url">URL</div>
+        <div class="tab" data-tab="html">HTML 实体</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="editor">
+        <div>
+          <label for="input">输入</label>
+          <textarea id="input" placeholder="在此粘贴待编/解码的文本..."></textarea>
+        </div>
+        <div>
+          <label for="output">输出</label>
+          <textarea id="output" readonly placeholder="结果将显示在这里"></textarea>
+        </div>
+      </div>
+      <div class="row" style="margin-top:.75rem">
+        <button class="btn primary" id="btnEncode">编码</button>
+        <button class="btn" id="btnDecode">解码</button>
+        <button class="btn" id="btnSwap">⇅ 互换</button>
+        <button class="btn" id="btnCopy">复制结果</button>
+        <button class="btn" id="btnClear">清空</button>
+        <span class="status" id="status"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const inputEl = $('input'), outputEl = $('output'), statusEl = $('status');
+    let mode = 'base64';
+
+    function setStatus(msg, isError){ statusEl.textContent = msg || ''; statusEl.classList.toggle('error', !!isError); }
+
+    function b64encode(str){ return btoa(String.fromCharCode(...new TextEncoder().encode(str))); }
+    function b64decode(b64){
+      const bin = atob(b64.trim());
+      const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+    const htmlMap = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+    function htmlEncode(s){ return s.replace(/[&<>"']/g, c => htmlMap[c]); }
+    function htmlDecode(s){ const d = document.createElement('div'); d.innerHTML = s; return d.textContent || ''; }
+
+    function encode(){
+      const v = inputEl.value;
+      try {
+        if (mode === 'base64') outputEl.value = b64encode(v);
+        else if (mode === 'url') outputEl.value = encodeURIComponent(v);
+        else outputEl.value = htmlEncode(v);
+        setStatus('已编码');
+      } catch(e){ setStatus('编码失败：' + e.message, true); }
+    }
+    function decode(){
+      const v = inputEl.value;
+      try {
+        if (mode === 'base64') outputEl.value = b64decode(v);
+        else if (mode === 'url') outputEl.value = decodeURIComponent(v);
+        else outputEl.value = htmlDecode(v);
+        setStatus('已解码');
+      } catch(e){ setStatus('解码失败，请检查输入格式', true); }
+    }
+
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        mode = t.dataset.tab;
+        outputEl.value = '';
+        setStatus('');
+      });
+    });
+    $('btnEncode').addEventListener('click', encode);
+    $('btnDecode').addEventListener('click', decode);
+    $('btnSwap').addEventListener('click', () => { const t = inputEl.value; inputEl.value = outputEl.value; outputEl.value = t; });
+    $('btnCopy').addEventListener('click', async () => {
+      if (!outputEl.value) return setStatus('没有可复制的内容');
+      try { await navigator.clipboard.writeText(outputEl.value); setStatus('已复制到剪贴板'); }
+      catch(e){ setStatus('复制失败', true); }
+    });
+    $('btnClear').addEventListener('click', () => { inputEl.value=''; outputEl.value=''; setStatus(''); });
+
+    $('themeToggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      root.classList.toggle('dark');
+      try { localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+    });
+  </script>
+</body>
+</html>

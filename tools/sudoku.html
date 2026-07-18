@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="数独游戏，支持难度生成、手动填写与一键求解，纯前端运行。">
+  <meta name="keywords" content="数独, Sudoku, 益智, 求解, 逻辑">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>数独（带求解器）</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --accent-hover: #0284c7; --error: #dc2626; --fixed: #e7e5e4;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --accent-hover: #0ea5e9; --error: #f87171; --fixed: #292524;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+    .wrap { flex: 1; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; align-items: center; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+    button { border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.5rem 0.875rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; }
+    button:hover { background: var(--bg); border-color: var(--muted); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    select { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 0.375rem; padding: 0.5rem; }
+    #board { display: grid; grid-template-columns: repeat(9, 1fr); gap: 1px; background: var(--border);
+      border: 2px solid var(--border); border-radius: 0.5rem; overflow: hidden; width: min(92vw, 480px); }
+    .cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+      background: var(--panel); cursor: pointer; user-select: none; }
+    .cell.fixed { background: var(--fixed); font-weight: 700; }
+    .cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .cell.err { color: var(--error); }
+    .cell:nth-child(3n) { border-right: 1px solid var(--border); }
+    .status { font-size: 0.9rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <select id="diff">
+        <option value="easy">简单</option>
+        <option value="medium">中等</option>
+        <option value="hard">困难</option>
+      </select>
+      <button class="primary" id="new">新游戏</button>
+      <button id="solve">一键求解</button>
+      <button id="check">检查</button>
+    </div>
+    <div id="board"></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const N = 9;
+    let board = [], solution = [], fixed = [], sel = -1;
+
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+    function valid(b, r, c, v) {
+      for (let i=0;i<N;i++){ if(b[r][i]===v||b[i][c]===v) return false; }
+      const br=Math.floor(r/3)*3, bc=Math.floor(c/3)*3;
+      for(let i=0;i<3;i++) for(let j=0;j<3;j++) if(b[br+i][bc+j]===v) return false;
+      return true;
+    }
+    function solve(b) {
+      for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+        if(b[r][c]===0){
+          for(const v of shuffle([1,2,3,4,5,6,7,8,9])){
+            if(valid(b,r,c,v)){ b[r][c]=v; if(solve(b)) return true; b[r][c]=0; }
+          }
+          return false;
+        }
+      }
+      return true;
+    }
+    function makePuzzle(holes) {
+      solution = Array.from({length:N},()=>new Array(N).fill(0));
+      solve(solution);
+      board = solution.map(r=>r.slice());
+      let removed = 0, cells = shuffle([...Array(81).keys()]);
+      for(const idx of cells){ if(removed>=holes) break; const r=Math.floor(idx/9), c=idx%9; board[r][c]=0; removed++; }
+      fixed = board.map(r=>r.map(v=>v!==0));
+    }
+    function render() {
+      const bd = $('board'); bd.innerHTML='';
+      for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+        const d=document.createElement('div');
+        d.className='cell'+(fixed[r][c]?' fixed':'')+(sel===r*9+c?' sel':'');
+        d.textContent = board[r][c]||'';
+        d.onclick=()=>{ sel=r*9+c; render(); };
+        bd.appendChild(d);
+      }
+    }
+    document.addEventListener('keydown', e=>{
+      if(sel<0) return;
+      const r=Math.floor(sel/9), c=sel%9;
+      if(fixed[r][c]) return;
+      if(/^[1-9]$/.test(e.key)){ board[r][c]=+e.key; render(); }
+      else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){ board[r][c]=0; render(); }
+    });
+    function isComplete(){
+      for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(board[r][c]===0||!validFilled(r,c)) return false;
+      return true;
+    }
+    function validFilled(r,c){
+      const v=board[r][c]; if(v===0) return false; board[r][c]=0; const ok=valid(board,r,c,v); board[r][c]=v; return ok;
+    }
+    $('new').onclick=()=>{
+      const holes={easy:40,medium:50,hard:58}[$('diff').value];
+      makePuzzle(holes); sel=-1; render(); $('status').textContent='新游戏已开始';
+    };
+    $('solve').onclick=()=>{
+      for(let r=0;r<N;r++) for(let c=0;c<N;c++) board[r][c]=solution[r][c];
+      render(); $('status').textContent='已求解';
+    };
+    $('check').onclick=()=>{
+      if(isComplete()){ $('status').textContent='🎉 已完成且正确！'; }
+      else {
+        let bad=0;
+        for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+          if(board[r][c]!==0 && !validFilled(r,c)) bad++;
+        }
+        $('status').textContent = bad? `有 ${bad} 处冲突` : '暂无明显冲突，继续加油';
+      }
+    };
+    $('new').click();
+  </script>
+</body>
+</html>

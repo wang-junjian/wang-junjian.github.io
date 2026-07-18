@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="经典 2048 数字合并游戏，键盘方向键操作，纯前端运行。">
+  <meta name="keywords" content="2048, 数字游戏, 合并, 益智">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>2048</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --grid: #e7e5e4;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --grid: #292524;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+    .wrap { flex: 1; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; align-items: center; }
+    .toolbar { display: flex; gap: 0.5rem; align-items: center; }
+    button { border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.5rem 0.875rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; }
+    button:hover { background: var(--bg); }
+    .score { font-size: 0.95rem; }
+    #board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: var(--grid);
+      padding: 8px; border-radius: 0.6rem; width: min(90vw, 400px); }
+    .tile { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+      font-weight: 700; background: var(--panel); border-radius: 0.4rem; }
+    .t2{background:#eee4da;color:#776e65} .t4{background:#ede0c8;color:#776e65}
+    .t8{background:#f2b179;color:#fff} .t16{background:#f59563;color:#fff} .t32{background:#f67c5f;color:#fff}
+    .t64{background:#f65e3b;color:#fff} .t128{background:#edcf72;color:#fff;font-size:1.5rem}
+    .t256{background:#edcc61;color:#fff;font-size:1.5rem} .t512{background:#edc850;color:#fff;font-size:1.5rem}
+    .t1024{background:#edc53f;color:#fff;font-size:1.2rem} .t2048{background:#edc22e;color:#fff;font-size:1.2rem}
+    .status { font-size: 0.9rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <button class="primary" id="new">新游戏</button>
+      <span class="score">分数：<b id="score">0</b></span>
+      <span class="score">最高：<b id="best">0</b></span>
+    </div>
+    <div id="board"></div>
+    <div class="status" id="status">方向键操作（手机可用按钮）</div>
+    <div class="toolbar">
+      <button data-dir="up">↑</button><button data-dir="left">←</button>
+      <button data-dir="down">↓</button><button data-dir="right">→</button>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let grid, score=0, best=+(localStorage.getItem('g2048best')||0);
+    $('best').textContent=best;
+    function empty(){ return [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]; }
+    function spawn(){
+      const cells=[];
+      for(let r=0;r<4;r++)for(let c=0;c<4;c++) if(grid[r][c]===0) cells.push([r,c]);
+      if(!cells.length) return;
+      const [r,c]=cells[Math.floor(Math.random()*cells.length)];
+      grid[r][c]=Math.random()<0.9?2:4;
+    }
+    function slide(row){
+      let arr=row.filter(v=>v); const res=[];
+      for(let i=0;i<arr.length;i++){
+        if(arr[i]===arr[i+1]){ res.push(arr[i]*2); score+=arr[i]*2; arr[i+1]=0; i++; }
+        else res.push(arr[i]);
+      }
+      while(res.length<4) res.push(0);
+      return res;
+    }
+    function rotate(g){ const n=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+      for(let r=0;r<4;r++)for(let c=0;c<4;c++) n[c][3-r]=g[r][c]; return n; }
+    function move(dir){
+      const before=JSON.stringify(grid);
+      if(dir==='left') grid=grid.map(slide);
+      else if(dir==='right') grid=grid.map(r=>slide(r.reverse()).reverse());
+      else if(dir==='up'){ grid=rotate(grid); grid=grid.map(slide); grid=rotate(rotate(rotate(grid))); }
+      else if(dir==='down'){ grid=rotate(grid); grid=grid.map(r=>slide(r.reverse()).reverse()); grid=rotate(rotate(rotate(grid))); }
+      if(JSON.stringify(grid)!==before){ spawn(); render(); checkEnd(); }
+    }
+    function checkEnd(){
+      for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+        if(grid[r][c]===0) return;
+        if(c<3&&grid[r][c]===grid[r][c+1]) return;
+        if(r<3&&grid[r][c]===grid[r+1][c]) return;
+      }
+      $('status').textContent='游戏结束！';
+    }
+    function render(){
+      const bd=$('board'); bd.innerHTML='';
+      for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+        const t=document.createElement('div'); const v=grid[r][c];
+        t.className='tile'+(v?' t'+v:'');
+        t.textContent=v||'';
+        bd.appendChild(t);
+      }
+      $('score').textContent=score;
+      if(score>best){ best=score; localStorage.setItem('g2048best',best); $('best').textContent=best; }
+    }
+    $('new').onclick=()=>{ grid=empty(); score=0; spawn(); spawn(); render(); $('status').textContent='方向键操作'; };
+    document.addEventListener('keydown',e=>{
+      const m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+      if(m[e.key]){ e.preventDefault(); move(m[e.key]); }
+    });
+    document.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>move(b.dataset.dir));
+    $('new').click();
+  </script>
+</body>
+</html>

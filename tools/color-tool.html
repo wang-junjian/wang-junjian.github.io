@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线颜色工具，支持 HEX/RGB/HSL 互转、对比度检查与取色，纯前端运行。">
+  <meta name="keywords" content="颜色, HEX, RGB, HSL, 对比度, 颜色转换, 在线工具">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>颜色工具</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --accent-hover: #0284c7; --error: #dc2626;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --accent-hover: #0ea5e9; --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    .app-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.875rem 1.25rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); z-index:10; }
+    .app-header h1 { font-size:1.125rem; margin:0; font-weight:600; }
+    .icon-btn { border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:0.5rem; width:2.25rem; height:2.25rem; cursor:pointer; font-size:1.1rem; }
+    .icon-btn:hover { background:var(--bg); }
+    .wrap { max-width: 860px; margin:0 auto; padding:1.25rem; display:flex; flex-direction:column; gap:1rem; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:0.75rem; padding:1rem; }
+    label { font-size:0.875rem; color:var(--muted); display:block; margin-bottom:0.375rem; }
+    input, select { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:0.5rem; padding:0.625rem; font-size:0.9rem; font-family:inherit; width:100%; }
+    input:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    button.btn { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:0.5rem 0.875rem; border-radius:0.375rem; font-size:0.875rem; cursor:pointer; }
+    button.btn:hover { background:var(--bg); }
+    button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+    .row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .status { font-size:0.85rem; color:var(--muted); min-height:1.25rem; }
+    .status.error { color:var(--error); }
+    .swatch { height:120px; border-radius:0.75rem; border:1px solid var(--border); display:flex; align-items:flex-end; justify-content:flex-start; padding:0.75rem; font-family:ui-monospace,monospace; font-weight:600; }
+    .kv { display:flex; justify-content:space-between; gap:1rem; padding:0.45rem 0; border-bottom:1px dashed var(--border); font-size:0.9rem; }
+    .kv:last-child { border-bottom:none; }
+    .kv b { font-family:ui-monospace, monospace; font-weight:600; }
+    .contrast { display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem; }
+    .ccell { flex:1; min-width:140px; border:1px solid var(--border); border-radius:0.5rem; padding:0.6rem; text-align:center; font-size:0.85rem; }
+    .ccell .ratio { font-size:1.25rem; font-weight:700; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>颜色工具</h1>
+    <button class="icon-btn" id="themeToggle" title="切换主题">🌓</button>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <label for="cin">输入颜色（支持 #fff / #1a2b3c / rgb(26,43,60) / hsl(210,40%,17%)）</label>
+      <div class="row">
+        <input id="cin" value="#0ea5e9" style="flex:1" placeholder="输入颜色值">
+        <input type="color" id="picker" value="#0ea5e9" style="width:3rem; padding:0.2rem; cursor:pointer">
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card">
+      <div class="swatch" id="swatch">示例文字 ABC</div>
+    </div>
+
+    <div class="card">
+      <label>格式互转</label>
+      <div id="formats"></div>
+    </div>
+
+    <div class="card">
+      <label>对比度检查（WCAG）</label>
+      <div class="contrast" id="contrast"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const cin = $('cin'), picker = $('picker'), swatch = $('swatch');
+    const formatsEl = $('formats'), contrastEl = $('contrast'), statusEl = $('status');
+
+    function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+    function toHex(n){ return clamp(Math.round(n),0,255).toString(16).padStart(2,'0'); }
+
+    function hslToRgb(h, s, l){
+      h = ((h % 360) + 360) % 360 / 360; s = clamp(s,0,100)/100; l = clamp(l,0,100)/100;
+      let r,g,b;
+      if (s === 0){ r=g=b=l; }
+      else {
+        const hue2rgb = (p,q,t) => {
+          if (t < 0) t += 1; if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q-p)*6*t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q-p)*(2/3-t)*6;
+          return p;
+        };
+        const q = l < 0.5 ? l*(1+s) : l+s-l*s;
+        const p = 2*l-q;
+        r = hue2rgb(p,q,h+1/3); g = hue2rgb(p,q,h); b = hue2rgb(p,q,h-1/3);
+      }
+      return { r: Math.round(r*255), g: Math.round(g*255), b: Math.round(b*255) };
+    }
+
+    function parse(str){
+      str = str.trim();
+      let m;
+      if ((m = str.match(/^#?([0-9a-f]{3,8})$/i))){
+        let h = m[1].toLowerCase();
+        if (h.length === 3) h = h.split('').map(c=>c+c).join('');
+        if (h.length === 6 || h.length === 8){
+          return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16), a: h.length===8 ? parseInt(h.slice(6,8),16)/255 : 1 };
+        }
+      }
+      if ((m = str.match(/rgba?\(([^)]+)\)/i))){
+        const p = m[1].split(',').map(x=>parseFloat(x));
+        return { r: p[0], g: p[1], b: p[2], a: p[3]===undefined?1:p[3] };
+      }
+      if ((m = str.match(/hsla?\(([^)]+)\)/i))){
+        const p = m[1].split(',').map(x=>parseFloat(x));
+        return Object.assign(hslToRgb(p[0], p[1], p[2]), { a: p[3]===undefined?1:p[3] });
+      }
+      return null;
+    }
+
+    function rgbToHsl(r,g,b){
+      r/=255; g/=255; b/=255;
+      const max=Math.max(r,g,b), min=Math.min(r,g,b);
+      let h,s,l=(max+min)/2;
+      if (max===min){ h=s=0; }
+      else {
+        const d=max-min;
+        s = l>0.5 ? d/(2-max-min) : d/(max+min);
+        switch(max){
+          case r: h=(g-b)/d+(g<b?6:0); break;
+          case g: h=(b-r)/d+2; break;
+          case b: h=(r-g)/d+4; break;
+        }
+        h/=6;
+      }
+      return { h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100) };
+    }
+
+    function lum({r,g,b}){
+      const a=[r,g,b].map(v=>{ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+      return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2];
+    }
+    function contrastRatio(c1,c2){
+      const l1=lum(c1), l2=lum(c2);
+      const hi=Math.max(l1,l2), lo=Math.min(l1,l2);
+      return (hi+0.05)/(lo+0.05);
+    }
+
+    let current = null;
+    function render(){
+      const c = parse(cin.value);
+      if (!c){ statusEl.textContent='无法解析颜色'; statusEl.classList.add('error'); return; }
+      statusEl.textContent=''; statusEl.classList.remove('error');
+      current = c;
+      const hex = '#'+toHex(c.r)+toHex(c.g)+toHex(c.b);
+      const hsl = rgbToHsl(c.r,c.g,c.b);
+      swatch.style.background = hex;
+      swatch.style.color = lum(c) > 0.5 ? '#000' : '#fff';
+      picker.value = hex;
+      const rows = [
+        ['HEX', hex],
+        ['RGB', 'rgb('+c.r+', '+c.g+', '+c.b+')'],
+        ['HSL', 'hsl('+hsl.h+', '+hsl.s+'%, '+hsl.l+'%)'],
+      ];
+      formatsEl.innerHTML = rows.map(([k,v])=>'<div class="kv"><span>'+k+'</span><b>'+v+' <button class="btn" data-c="'+v+'">复制</button></b></div>').join('');
+      formatsEl.querySelectorAll('button[data-c]').forEach(b=>b.addEventListener('click',()=>navigator.clipboard.writeText(b.dataset.c).then(()=>statusEl.textContent='已复制 '+b.dataset.c)));
+
+      const white={r:255,g:255,b:255}, black={r:0,g:0,b:0};
+      const cw = contrastRatio(c, white), cb = contrastRatio(c, black);
+      const cell = (bg, fg, ratio) => {
+        const aa = ratio>=4.5, aaa = ratio>=7;
+        return '<div class="ccell" style="background:'+(bg.r===255?'#fff':'#000')+';color:'+(fg.r===255?'#fff':'#000')+'"><div class="ratio">'+ratio.toFixed(2)+':1</div><div>'+(bg.r===255?'白底':'黑底')+'</div><div>'+(aaa?'AAA':aa?'AA':'不达标')+'</div></div>';
+      };
+      contrastEl.innerHTML = cell(white, c, cw) + cell(black, c, cb);
+    }
+
+    cin.addEventListener('input', render);
+    picker.addEventListener('input', () => { cin.value = picker.value; render(); });
+
+    $('themeToggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      root.classList.toggle('dark');
+      try { localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+    });
+    render();
+  </script>
+</body>
+</html>
