@@ -1,6 +1,6 @@
 ---
 type: article
-title: "CodeBuddy 官方插件市场 · 四大领域插件整理"
+title: "CodeBuddy 官方插件市场 · 四大领域插件"
 date: 2026-07-17 20:11:00 +0800
 tags: [workbuddy, codebuddy, agent, plugins, marketplace, coding, design, security, office]
 ---
