@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="记忆翻牌配对游戏，翻转卡片找出相同图案，纯前端运行。">
+  <meta name="keywords" content="记忆翻牌, Memory, 配对, 休闲游戏, 记忆">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>记忆翻牌</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root { --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c; --border: #e7e5e4; --accent: #0ea5e9; --card: #e7e5e4; }
+    html.dark { --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e; --border: #292524; --accent: #38bdf8; --card: #292524; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+    .wrap { flex: 1; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; align-items: center; }
+    .toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+    button { border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.5rem 0.875rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; }
+    button:hover { background: var(--bg); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    select { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 0.375rem; padding: 0.5rem; }
+    #grid { display: grid; gap: 0.5rem; }
+    .card { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 2rem;
+      background: var(--card); border-radius: 0.5rem; cursor: pointer; user-select: none; transition: transform 0.2s; }
+    .card.up { background: var(--panel); border: 2px solid var(--accent); }
+    .card.matched { background: #dcfce7; border: 2px solid #16a34a; }
+    html.dark .card.matched { background: #14331f; border-color: #4ade80; }
+    .status { font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <select id="size">
+        <option value="4">4 × 4（8 对）</option>
+        <option value="6">6 × 6（18 对）</option>
+      </select>
+      <button class="primary" id="new">新游戏</button>
+      <span class="status">步数：<b id="moves">0</b> · 配对：<b id="pairs">0</b></span>
+    </div>
+    <div id="grid"></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const EMOJI = ['🍎','🍌','🍇','🍉','🍓','🍒','🥝','🍑','🍍','🥥','🥭','🍊','🫐','🍐','🍋','🥑','🌶️','🍆'];
+    let grid, first=null, lock=false, moves=0, matched=0, total=0;
+
+    function newGame(){
+      const n=+$('size').value; total=(n*n)/2;
+      const picks=EMOJI.slice(0,total);
+      const deck=[...picks,...picks].sort(()=>Math.random()-0.5);
+      grid=$('grid'); grid.style.gridTemplateColumns=`repeat(${n},1fr)`;
+      grid.style.width=`min(92vw,${n*72}px)`;
+      grid.innerHTML='';
+      deck.forEach((e,i)=>{
+        const d=document.createElement('div'); d.className='card'; d.dataset.i=i; d.dataset.e=e; d.textContent='?';
+        d.onclick=()=>flip(d,e); grid.appendChild(d);
+      });
+      first=null; lock=false; moves=0; matched=0; $('moves').textContent=0; $('pairs').textContent=0; $('status').textContent='翻牌开始';
+    }
+    function flip(d,e){
+      if(lock||d.classList.contains('up')||d.classList.contains('matched')) return;
+      d.classList.add('up'); d.textContent=e;
+      if(!first){ first=d; return; }
+      moves++; $('moves').textContent=moves;
+      if(first.dataset.e===e){
+        first.classList.add('matched'); d.classList.add('matched'); first=null; matched++;
+        $('pairs').textContent=matched;
+        if(matched===total) $('status').textContent=`🎉 完成！共 ${moves} 步`;
+      } else {
+        lock=true; const f=first; first=null;
+        setTimeout(()=>{ f.classList.remove('up'); d.classList.remove('up'); f.textContent='?'; d.textContent='?'; lock=false; },650);
+      }
+    }
+    $('new').onclick=newGame;
+    newGame();
+  </script>
+</body>
+</html>

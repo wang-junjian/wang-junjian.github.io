@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="上传 PDF 文件，提取文本并支持朗读，纯前端运行（基于 pdf.js）。">
+  <meta name="keywords" content="PDF, 阅读, 文本提取, 朗读, 解析">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>PDF 文本提取 + 朗读</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --accent-hover: #0284c7; --error: #dc2626;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --accent-hover: #0ea5e9; --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh;
+    }
+    .top { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+    button {
+      border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.45rem 0.8rem; border-radius: 0.375rem; font-size: 0.85rem; cursor: pointer;
+    }
+    button:hover { background: var(--bg); border-color: var(--muted); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .content { flex: 1; overflow: auto; padding: 2rem; line-height: 1.8; font-size: 1rem; max-width: 820px; margin: 0 auto; width: 100%; white-space: pre-wrap; }
+    .status { font-size: 0.85rem; color: var(--muted); margin-left: auto; }
+    .status.error { color: var(--error); }
+    input[type=file] { font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <input type="file" id="file" accept=".pdf">
+    <button id="read" disabled>朗读全文</button>
+    <button id="stop" disabled>停止</button>
+    <span class="status" id="status">请选择一个 .pdf 文件</span>
+  </div>
+  <div class="content" id="content">未加载文件。</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const status = $('status');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    let fullText = '';
+
+    $('file').onchange = async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      status.textContent = '解析中…';
+      try {
+        const buf = await f.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const tc = await page.getTextContent();
+          text += tc.items.map(it => it.str).join(' ') + '\n\n';
+        }
+        fullText = text;
+        $('content').textContent = text;
+        $('read').disabled = false;
+        status.textContent = `共 ${pdf.numPages} 页`;
+      } catch(err) { status.textContent = '解析失败：' + err.message; status.classList.add('error'); }
+    };
+
+    $('read').onclick = () => {
+      if (!('speechSynthesis' in window)) { status.textContent = '浏览器不支持朗读'; return; }
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(fullText.replace(/\s+/g, ' ').trim().slice(0, 12000));
+      u.lang = 'zh-CN';
+      u.onend = () => { $('stop').disabled = true; };
+      speechSynthesis.speak(u);
+      $('stop').disabled = false;
+    };
+    $('stop').onclick = () => { speechSynthesis.cancel(); $('stop').disabled = true; };
+  </script>
+</body>
+</html>

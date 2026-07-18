@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="经典俄罗斯方块，键盘操作，消除整行得分，纯前端运行。">
+  <meta name="keywords" content="俄罗斯方块, Tetris, 方块, 休闲游戏">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>俄罗斯方块</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root { --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c; --border: #e7e5e4; --accent: #0ea5e9; }
+    html.dark { --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e; --border: #292524; --accent: #38bdf8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+    .wrap { flex: 1; display: flex; gap: 1.5rem; padding: 1rem; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+    .toolbar { display: flex; flex-direction: column; gap: 0.5rem; min-width: 140px; }
+    button { border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.5rem 0.875rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; }
+    button:hover { background: var(--bg); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    canvas { background: var(--panel); border: 2px solid var(--border); border-radius: 0.5rem; }
+    .info { font-size: 0.95rem; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="cv" width="300" height="600"></canvas>
+    <div class="toolbar">
+      <div class="info">分数：<b id="score">0</b><br>行数：<b id="lines">0</b><br>等级：<b id="lvl">1</b></div>
+      <button class="primary" id="start">开始 / 重开</button>
+      <button id="pause">暂停</button>
+      <div class="info" style="font-size:0.8rem;color:var(--muted)">← → 移动<br>↑ 旋转<br>↓ 加速<br>空格 直降</div>
+      <div class="info" id="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const cv = $('cv'), ctx = cv.getContext('2d');
+    const COLS=10, ROWS=20, SZ=30;
+    const SHAPES = {
+      I:[[1,1,1,1]], O:[[1,1],[1,1]],
+      T:[[0,1,0],[1,1,1]], S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]],
+      J:[[1,0,0],[1,1,1]], L:[[0,0,1],[1,1,1]]
+    };
+    const COLORS = { I:'#38bdf8', O:'#fbbf24', T:'#a78bfa', S:'#4ade80', Z:'#f87171', J:'#60a5fa', L:'#fb923c' };
+    let board, cur, curColor, pos, score, lines, lvl, timer, paused=false, running=false;
+
+    function reset(){ board=Array.from({length:ROWS},()=>new Array(COLS).fill(null)); score=0; lines=0; lvl=1; spawn(); }
+    function spawn(){
+      const keys=Object.keys(SHAPES); const k=keys[Math.floor(Math.random()*keys.length)];
+      cur=SHAPES[k].map(r=>r.slice()); curColor=COLORS[k];
+      pos={r:0,c:Math.floor((COLS-cur[0].length)/2)};
+      if(collide(pos.r,pos.c,cur)){ running=false; $('status').textContent='游戏结束'; clearInterval(timer); }
+    }
+    function collide(r,c,shape){
+      for(let i=0;i<shape.length;i++)for(let j=0;j<shape[i].length;j++){
+        if(!shape[i][j]) continue;
+        const nr=r+i, nc=c+j;
+        if(nr>=ROWS||nc<0||nc>=COLS) return true;
+        if(nr>=0&&board[nr][nc]) return true;
+      }
+      return false;
+    }
+    function merge(){
+      cur.forEach((row,i)=>row.forEach((v,j)=>{ if(v){ board[pos.r+i][pos.c+j]=curColor; } }));
+      let cleared=0;
+      for(let r=ROWS-1;r>=0;r--){ if(board[r].every(c=>c)){ board.splice(r,1); board.unshift(new Array(COLS).fill(null)); cleared++; r++; } }
+      if(cleared){ lines+=cleared; score+=cleared*100*lvl; lvl=Math.floor(lines/10)+1; }
+      spawn();
+    }
+    function step(){ if(!running||paused) return; if(!collide(pos.r+1,pos.c,cur)) pos.r++; else merge(); draw(); }
+    function draw(){
+      ctx.clearRect(0,0,cv.width,cv.height);
+      for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+        if(board[r][c]){ ctx.fillStyle=board[r][c]; ctx.fillRect(c*SZ,r*SZ,SZ-1,SZ-1); }
+      }
+      if(cur) cur.forEach((row,i)=>row.forEach((v,j)=>{ if(v){ ctx.fillStyle=curColor; ctx.fillRect((pos.c+j)*SZ,(pos.r+i)*SZ,SZ-1,SZ-1); } }));
+      $('score').textContent=score; $('lines').textContent=lines; $('lvl').textContent=lvl;
+    }
+    function move(d){ if(!running||paused) return; if(!collide(pos.r,pos.c+d,cur)){ pos.c+=d; draw(); } }
+    function rotate(){
+      if(!running||paused) return;
+      const n=cur[0].map((_,j)=>cur.map(r=>r[j]).reverse());
+      if(!collide(pos.r,pos.c,n)) { cur=n; draw(); }
+    }
+    function drop(){ if(!running||paused) return; while(!collide(pos.r+1,pos.c,cur)) pos.r++; merge(); draw(); }
+    document.addEventListener('keydown',e=>{
+      if(e.key==='ArrowLeft') move(-1);
+      else if(e.key==='ArrowRight') move(1);
+      else if(e.key==='ArrowUp'){ e.preventDefault(); rotate(); }
+      else if(e.key==='ArrowDown') step();
+      else if(e.key===' ') { e.preventDefault(); drop(); }
+    });
+    $('start').onclick=()=>{ reset(); running=true; paused=false; $('status').textContent=''; clearInterval(timer);
+      timer=setInterval(step, 500); draw(); };
+    $('pause').onclick=()=>{ if(!running) return; paused=!paused; $('status').textContent=paused?'已暂停':'继续'; };
+  </script>
+</body>
+</html>

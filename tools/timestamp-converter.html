@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线时间戳与日期互转工具，支持秒/毫秒自动识别、时区转换与当前时间查看，纯前端运行。">
+  <meta name="keywords" content="时间戳, Unix时间戳, 时间转换, 时区, 日期转换, Timestamp">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>时间戳转换器</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c;
+      --border: #e7e5e4; --accent: #0ea5e9; --accent-hover: #0284c7; --error: #dc2626;
+    }
+    html.dark {
+      --bg: #0c0a09; --panel: #1c1917; --text: #f5f5f4; --muted: #a8a29e;
+      --border: #292524; --accent: #38bdf8; --accent-hover: #0ea5e9; --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    .app-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.875rem 1.25rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); z-index:10; }
+    .app-header h1 { font-size:1.125rem; margin:0; font-weight:600; }
+    .icon-btn { border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:0.5rem; width:2.25rem; height:2.25rem; cursor:pointer; font-size:1.1rem; }
+    .icon-btn:hover { background:var(--bg); }
+    .wrap { max-width:860px; margin:0 auto; padding:1.25rem; display:flex; flex-direction:column; gap:1rem; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:0.75rem; padding:1rem; }
+    label { font-size:0.875rem; color:var(--muted); display:block; margin-bottom:0.375rem; }
+    textarea, input, select { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:0.5rem; padding:0.625rem; font-size:0.9rem; font-family:inherit; width:100%; }
+    textarea:focus, input:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    button.btn { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:0.5rem 0.875rem; border-radius:0.375rem; font-size:0.875rem; cursor:pointer; }
+    button.btn:hover { background:var(--bg); }
+    button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+    .row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .status { font-size:0.85rem; color:var(--muted); min-height:1.25rem; }
+    .status.error { color:var(--error); }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+    @media (max-width:640px){ .grid2 { grid-template-columns:1fr; } }
+    .kv { display:flex; justify-content:space-between; gap:1rem; padding:0.4rem 0; border-bottom:1px dashed var(--border); font-size:0.9rem; }
+    .kv:last-child { border-bottom:none; }
+    .kv b { font-family:ui-monospace, monospace; font-weight:600; }
+    .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>时间戳转换器</h1>
+    <button class="icon-btn" id="themeToggle" title="切换主题">🌓</button>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="mono" id="now" style="font-size:1.05rem;font-weight:600"></div>
+          <div class="status" id="nowSub"></div>
+        </div>
+        <button class="btn" id="refresh">刷新</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="ts">时间戳 → 日期（支持秒 10 位 / 毫秒 13 位，自动识别）</label>
+      <div class="row">
+        <input id="ts" class="mono" placeholder="例如 1752768000 或 1752768000000">
+        <button class="btn primary" id="tsToDate">转换</button>
+        <button class="btn" id="tsNow">用当前时间</button>
+      </div>
+      <div id="tsOut" style="margin-top:.75rem"></div>
+    </div>
+
+    <div class="card">
+      <label for="dt">日期 → 时间戳</label>
+      <div class="row">
+        <input id="dt" type="datetime-local" style="flex:1">
+        <button class="btn primary" id="dateToTs">转换</button>
+      </div>
+      <div id="dtOut" class="status" style="margin-top:.75rem"></div>
+    </div>
+
+    <div class="card">
+      <label>时区</label>
+      <select id="tz">
+        <option value="local">本地时区</option>
+        <option value="UTC">UTC</option>
+        <option value="Asia/Shanghai">Asia/Shanghai (北京)</option>
+        <option value="Asia/Tokyo">Asia/Tokyo (东京)</option>
+        <option value="America/New_York">America/New_York (纽约)</option>
+        <option value="Europe/London">Europe/London (伦敦)</option>
+      </select>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const tzEl = $('tz');
+
+    function fmt(d, tz) {
+      const opt = { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
+      if (tz === 'local' || tz === 'UTC') return d.toLocaleString('zh-CN', Object.assign(opt, { timeZone: tz === 'UTC' ? 'UTC' : undefined }));
+      return d.toLocaleString('zh-CN', Object.assign(opt, { timeZone: tz }));
+    }
+
+    function updateNow() {
+      const d = new Date();
+      $('now').textContent = fmt(d, tzEl.value === 'local' ? Intl.DateTimeFormat().resolvedOptions().timeZone : tzEl.value);
+      $('nowSub').textContent = 'Unix 秒: ' + Math.floor(d.getTime()/1000) + '  ·  毫秒: ' + d.getTime();
+    }
+
+    function renderTsToDate() {
+      const raw = $('ts').value.trim();
+      const out = $('tsOut');
+      if (!raw) { out.innerHTML = ''; return; }
+      const n = Number(raw);
+      if (!Number.isFinite(n)) { out.innerHTML = '<div class="status error">请输入有效数字</div>'; return; }
+      const ms = raw.length <= 10 ? n * 1000 : n;
+      const d = new Date(ms);
+      if (isNaN(d.getTime())) { out.innerHTML = '<div class="status error">时间戳无效</div>'; return; }
+      const rows = [
+        ['本地时间', fmt(d, Intl.DateTimeFormat().resolvedOptions().timeZone)],
+        ['UTC', fmt(d, 'UTC')],
+      ];
+      if (tzEl.value !== 'local' && tzEl.value !== 'UTC') rows.push([tzEl.value, fmt(d, tzEl.value)]);
+      rows.push(['ISO 8601', d.toISOString()]);
+      rows.push(['Unix 秒', Math.floor(ms/1000)]);
+      rows.push(['毫秒', ms]);
+      out.innerHTML = rows.map(([k,v]) => '<div class="kv"><span>'+k+'</span><b>'+v+'</b></div>').join('');
+    }
+
+    function renderDateToTs() {
+      const v = $('dt').value;
+      const out = $('dtOut');
+      if (!v) { out.textContent = ''; return; }
+      const d = new Date(v);
+      if (isNaN(d.getTime())) { out.textContent = '日期无效'; out.classList.add('error'); return; }
+      out.classList.remove('error');
+      out.textContent = 'Unix 秒: ' + Math.floor(d.getTime()/1000) + '   ·   毫秒: ' + d.getTime();
+    }
+
+    function setNowInput() {
+      const d = new Date();
+      const off = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - off*60000);
+      $('dt').value = local.toISOString().slice(0,16);
+    }
+
+    $('tsToDate').addEventListener('click', renderTsToDate);
+    $('ts').addEventListener('input', renderTsToDate);
+    $('tsNow').addEventListener('click', () => { $('ts').value = Math.floor(Date.now()/1000); renderTsToDate(); });
+    $('dateToTs').addEventListener('click', renderDateToTs);
+    $('dt').addEventListener('input', renderDateToTs);
+    $('refresh').addEventListener('click', updateNow);
+    tzEl.addEventListener('change', () => { updateNow(); renderTsToDate(); });
+    setNowInput();
+    updateNow();
+    renderTsToDate();
+
+    $('themeToggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      root.classList.toggle('dark');
+      try { localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="在线渲染 Mermaid 图表代码（流程图、时序图等），支持平移、缩放、适应窗口，基于 mermaid.js，纯前端运行。">
+  <meta name="keywords" content="Mermaid, 流程图, 时序图, 图表渲染, 可视化">
+  <meta name="author" content="军舰">
+  <meta name="date" content="2026-06-18">
+  <title>Mermaid 渲染</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root { --bg: #fafaf9; --panel: #ffffff; --text: #1c1917; --muted: #78716c; --border: #e7e5e4; --accent: #0ea5e9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; }
+    .top { display: flex; gap: 0.4rem; align-items: center; padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    button { border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      padding: 0.45rem 0.8rem; border-radius: 0.375rem; font-size: 0.85rem; cursor: pointer; }
+    button:hover { background: var(--bg); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .zoom { font-size: 0.82rem; color: var(--muted); min-width: 4.5rem; text-align: center; }
+    .status { font-size: 0.85rem; color: var(--muted); margin-left: auto; }
+    .status.err { color: #dc2626; }
+    textarea { width: 42%; min-width: 280px; resize: none; border: 1px solid var(--border); border-right: none;
+      padding: 0.8rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; background: var(--panel); color: var(--text); }
+    #out { flex: 1; overflow: hidden; padding: 0; background:
+        linear-gradient(45deg, #f1f5f9 25%, transparent 25%, transparent 75%, #f1f5f9 75%) 0 0 / 20px 20px,
+        linear-gradient(45deg, #f1f5f9 25%, #e2e8f0 25%, #e2e8f0 75%, #f1f5f9 75%) 10px 10px / 20px 20px;
+      position: relative; cursor: grab; touch-action: none; }
+    #out.grabbing { cursor: grabbing; }
+    #stage { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+    #stage svg { display: block; max-width: none; }
+    .empty { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 0.9rem; }
+    .main { flex: 1; display: flex; min-height: 0; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <button class="primary" id="render">渲染</button>
+    <button id="zin">放大</button>
+    <button id="zout">缩小</button>
+    <button id="fit">适应窗口</button>
+    <button id="reset">重置</button>
+    <button id="copy">复制 SVG</button>
+    <span class="zoom" id="zoom">100%</span>
+    <span class="status" id="status">支持 flowchart / sequence / gantt 等</span>
+  </div>
+  <div class="main">
+    <textarea id="code">graph TD
+  A[开始] --> B{是否登录?}
+  B -- 是 --> C[进入首页]
+  B -- 否 --> D[跳转登录]
+  C --> E[结束]
+  D --> E</textarea>
+    <div id="out"><div id="stage"></div><div class="empty" id="empty">点击「渲染」生成图表</div></div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let seq = 0;
+    let scale = 1, tx = 0, ty = 0;
+    const out = $('out'), stage = $('stage');
+    // 承接 mermaid 渲染的临时容器：必须留在渲染树中（display:none 会导致文字测量为 0、
+    // 节点重叠、边标签定位抛 "Could not find a suitable point..."），因此用离屏定位隐藏。
+    const tmp = document.createElement('div');
+    tmp.style.cssText = 'position:absolute;left:-10000px;top:-10000px;width:auto;height:auto;overflow:hidden;';
+    document.body.appendChild(tmp);
+
+    function apply(){
+      stage.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+      $('zoom').textContent = Math.round(scale * 100) + '%';
+    }
+    function getSvgSize(svg){
+      // 优先取真实内容包围盒（getBBox 不含 mermaid 外层留白），让适应更紧凑、充满窗口
+      try {
+        const bb = svg.getBBox();
+        if (bb && bb.width && bb.height) return { w: bb.width, h: bb.height, ox: bb.x, oy: bb.y };
+      } catch (e) {}
+      const vb = svg.getAttribute('viewBox');
+      if (vb){ const p = vb.trim().split(/[\s,]+/); if (+p[2] && +p[3]) return { w: +p[2], h: +p[3], ox: 0, oy: 0 }; }
+      const w = parseFloat(svg.getAttribute('width')), h = parseFloat(svg.getAttribute('height'));
+      if (w && h) return { w, h, ox: 0, oy: 0 };
+      return null;
+    }
+    function fit(){
+      const svg = stage.querySelector('svg'); if (!svg) return;
+      const saved = stage.style.transform; stage.style.transform = 'none';  // 复位变换再测量
+      const sz = getSvgSize(svg);
+      stage.style.transform = saved;
+      if (!sz) return;
+      const cw = out.clientWidth, ch = out.clientHeight;
+      scale = Math.min(cw / sz.w, ch / sz.h) * 0.95;
+      // 内容原点 (ox,oy) 在 svg 用户坐标中，需一并平移使其居中
+      tx = (cw - sz.w * scale) / 2 - sz.ox * scale;
+      ty = (ch - sz.h * scale) / 2 - sz.oy * scale;
+      apply();
+    }
+    function zoomAt(mx, my, factor){
+      const ns = Math.min(8, Math.max(0.1, scale * factor));
+      tx = mx - (mx - tx) * (ns / scale);
+      ty = my - (my - ty) * (ns / scale);
+      scale = ns; apply();
+    }
+
+    // 平移（鼠标 + 触屏）
+    let dragging = false, sx = 0, sy = 0;
+    out.addEventListener('pointerdown', e => {
+      if (e.target.closest('a, button')) return;
+      dragging = true; sx = e.clientX - tx; sy = e.clientY - ty;
+      out.classList.add('grabbing'); out.setPointerCapture(e.pointerId);
+    });
+    out.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      tx = e.clientX - sx; ty = e.clientY - sy; apply();
+    });
+    const endDrag = () => { dragging = false; out.classList.remove('grabbing'); };
+    out.addEventListener('pointerup', endDrag);
+    out.addEventListener('pointercancel', endDrag);
+
+    // 滚轮缩放（以光标为中心）
+    out.addEventListener('wheel', e => {
+      e.preventDefault();
+      const r = out.getBoundingClientRect();
+      zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.1 : 1 / 1.1);
+    }, { passive: false });
+
+    function init(){
+      if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+    }
+    async function render(){
+      const status = $('status');
+      status.classList.remove('err');
+      if (!window.mermaid){ status.textContent = 'mermaid 加载中或加载失败（需联网）'; return; }
+      init();
+      const code = $('code').value;
+      tmp.innerHTML = '';          // 清空上一次可能残留的错误节点
+      try {
+        const id = 'm' + (seq++);
+        const { svg } = await mermaid.render(id, code, tmp);
+        stage.innerHTML = svg;
+        $('empty').style.display = 'none';
+        tmp.innerHTML = '';
+        status.textContent = '渲染成功';
+        fit();
+      } catch (e) {
+        tmp.innerHTML = '';        // 清除 mermaid 写入的错误窗口
+        status.classList.add('err');
+        let msg = (e && e.message) ? e.message : String(e);
+        if (msg.includes('suitable point')) {
+          msg += '（多为边标签/隐藏节点导致布局重叠：检查边上的文字标签，或 classDef hidden 未设宽高）';
+        }
+        status.textContent = '渲染失败：' + msg;
+      }
+    }
+
+    $('render').onclick = render;
+    $('zin').onclick = () => zoomAt(out.clientWidth / 2, out.clientHeight / 2, 1.2);
+    $('zout').onclick = () => zoomAt(out.clientWidth / 2, out.clientHeight / 2, 1 / 1.2);
+    $('fit').onclick = fit;
+    $('reset').onclick = () => { scale = 1; tx = 0; ty = 0; apply(); fit(); };
+    $('copy').onclick = async () => {
+      const svg = stage.querySelector('svg');
+      if (!svg) return;
+      await navigator.clipboard.writeText(svg.outerHTML);
+      $('status').textContent = 'SVG 已复制';
+    };
+
+    window.addEventListener('resize', () => { if (stage.querySelector('svg')) fit(); });
+    render();
+  </script>
+</body>
+</html>
