@@ -5,6 +5,44 @@ date: 2026-07-18 21:10:00 +0800
 tags: [hallmark, skill, design, ai, coding, ux]
 ---
 
+```mermaid
+mindmap
+  root((Hallmark))
+    是什么
+      反 AI 味的设计技能
+      让 AI 生成的网页像人做的
+      Together AI 出品 · MIT 开源
+    给谁用
+      Claude Code
+      Cursor
+      Codex
+    核心功能 · 四个动词
+      默认 · 新建设计
+        预检扫描现有项目
+        设计三问 · 受众/用途/基调
+        先预览后写码
+      audit · 体检
+        给旧代码查 AI 味
+        只出清单不改代码
+      redesign · 重构
+        留文案和品牌
+        推翻视觉重做
+      study · 提取 DNA
+        从截图或 URL 学设计
+        拒绝像素级抄袭
+    凭什么不像 AI
+      21 种页面结构
+      20 个主题 · 4 流派
+      58 道俗套检测门
+      六维交付自评
+    关键机制
+      log.json 强制每次不重样
+      tokens.css 设计系统可移植
+      design.md 锁定整站风格
+    怎么用
+      npx skills add nutlope/hallmark
+```
+
 > 项目地址：https://github.com/Nutlope/hallmark
 > 在线演示：https://www.usehallmark.com
 > 许可证：MIT
