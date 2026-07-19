@@ -8,8 +8,6 @@ tags: [workbuddy, codebuddy, agent, plugins, marketplace, coding, design, securi
 > 数据来源：`codebuddy-plugins-official` 市场 manifest（共 207 个插件，2026-07-16）
 > 整理口径：从 207 个插件中筛出 **软件开发生命周期、安全、办公、设计** 四个领域；一个插件只归入一个主领域，跨领域插件在说明中以「兼属 ××」标注；其余 32 个插件列入文末「未归入」。
 
-**分类概览**：软件开发生命周期：134 | 安全：13 | 办公：15 | 设计：13 | 未归入：32
-
 ---
 
 ## 一、软件开发生命周期（134）
