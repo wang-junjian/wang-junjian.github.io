@@ -5,6 +5,51 @@ date: 2026-07-06 23:52:00 +0800
 tags: [translation, claude, fable, unknowns, agent, coding, design, anthropic]
 ---
 
+```mermaid
+mindmap
+  root((找到你的未知))
+    【是什么】
+      Anthropic 官方 agentic coding 指南
+      核心观点：减少并管理未知 = 核心技能
+      高手特征：未知少、懂代码库也懂模型
+    【给谁用】
+      用 Claude Code 的开发者
+      面对陌生代码库/新领域的人
+      想让 AI 协作更可控的人
+    【核心框架：未知四象限】
+      已知已知
+        写进提示词的需求
+      已知未知
+        知道自己还没搞懂
+      未知已知
+        太显然没写 看到才认出
+      未知未知
+        完全没想到的坑 最危险
+    【关键机制】
+      告知起点上下文
+        经验水平 思路进度 熟悉程度
+      指令粒度要平衡
+        太细→错过更优路径
+        太粗→模型乱假设
+      趁便宜先暴露未知
+        原型期改成本远低于实施后
+    【核心方法：按阶段】
+      实施前
+        盲点扫描：让 Claude 列出你的未知未知
+        头脑风暴+原型：快速看到多种方向
+        访谈：让 Claude 逐题问你澄清歧义
+        参考引用：给源码当参照 比截图好
+        实施计划：把易改决策放前面评审
+      实施中
+        实施笔记：记录偏离计划的决策
+      实施后
+        宣讲文档：加速评审者理解与批准
+        测验：通过测验才算真懂 才合并
+    【一句话精髓】
+      让 Claude 帮你找未知
+      在代价变大之前
+```
+
 > 原文：[A field guide to Claude Fable 5: Finding your unknowns](https://claude.com/blog/a-field-guide-to-claude-fable-finding-your-unknowns)
 > 作者：Thariq Shihipar（Anthropic 技术团队成员）
 
