@@ -345,13 +345,13 @@ function protectCodeBlocks(md: string): { text: string; placeholders: string[] }
   const placeholders: string[] = [];
   const text = md.replace(/(```[\s\S]*?```|`[^`]+`)/g, (match) => {
     placeholders.push(match);
-    return ` CODE${placeholders.length - 1} `;
+    return `\x00CODE${placeholders.length - 1}\x00`;
   });
   return { text, placeholders };
 }
 
 function restoreCodeBlocks(text: string, placeholders: string[]): string {
-  return text.replace(/ CODE(\d+) /g, (_, i) => placeholders[parseInt(i, 10)]);
+  return text.replace(/\x00CODE(\d+)\x00/g, (_, i) => placeholders[parseInt(i, 10)]);
 }
 
 function renderInlineMath(md: string): string {
@@ -457,17 +457,22 @@ export function renderPreview(body: string | undefined, maxChars = 600): string 
     }
 
     const isCodeBlock = realBlock.startsWith('```');
+    const isMermaidBlock = isCodeBlock && /^```mermaid\b/.test(realBlock);
     const isImageBlock = /^!\[/.test(realBlock);
     const isTableBlock = /^\|.*\|/m.test(realBlock) && /^\|?[\s\-:|]+\|?\s*$/m.test(realBlock);
 
+    // Include Mermaid diagrams in excerpts but do not truncate them and do not
+    // count their characters against the preview budget. Truncated diagrams
+    // cause "Syntax error in text" when Mermaid tries to render them.
     let processedBlock = realBlock;
-    if (isCodeBlock) {
+    if (isCodeBlock && !isMermaidBlock) {
       processedBlock = truncateCodeBlock(realBlock, 15);
     }
 
     const html = renderMarkdownBlock(processedBlock);
     const text = stripHtmlTags(html);
-    const blockLength = text.length;
+    // Mermaid blocks are included but do not consume the excerpt budget.
+    const blockLength = isMermaidBlock ? 0 : text.length;
 
     if (charCount + blockLength > maxChars && previewBlocks.length > 0) {
       // We've reached the limit. For plain text blocks, try to truncate gracefully.
