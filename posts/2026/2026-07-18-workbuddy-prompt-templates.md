@@ -6,6 +6,79 @@ tags: [workbuddy, prompt, templates, coding, design, agent]
 ---
 
 > 本文件研究了 `/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/resources/templates` 目录下的全部 `*.tpl` 模板（12个文件），每个文件作为独立章节，原文（含 Jinja 占位符与 XML 标签）原样保留在代码块中。
+基于你提供的 WorkBuddy Prompt 模板文件，以下是其整体架构与各模板关系的思维导图（Mermaid 格式）：
+
+```mermaid
+mindmap
+  root((WorkBuddy Prompt 模板))
+    分类与概览
+      共12个模板
+      分类：模式提醒 / 系统提醒 / 身份上下文 / 主Prompt
+      主Prompt分4个场景：Ask·编码 / Ask·通用 / Craft·编码 / Craft·设计 / 专家·编码 / 专家·通用 / 通用Craft
+    模式提醒片段
+      ask-mode-reminder
+        Ask模式硬性规则：只读·不编辑·不运行命令
+        建议切换至Craft
+      craft-mode-reminder
+        Craft模式能力激活：可自由编辑与创建文件
+        直接执行任务
+    系统提醒片段
+      system-reminder
+        占位标签
+        运行时由系统注入提醒
+    身份上下文模板
+      user-context-expert-identity
+        专家模式身份注入
+        含BOOTSTRAP.md / USER.md
+        聚焦产品身份与语气占位
+      user-context-identity
+        通用身份注入
+        含SOUL.md / IDENTITY.md / USER.md
+        用户自定义指令与语气风格覆盖
+    主Prompt·Ask模式
+      workbuddy-ask-prompt
+        纯对话场景
+        只读工具·不可编辑
+        可视化工具（read_me / show_widget）
+        MCP配置引导
+      workbuddy-ask-coding-prompt
+        Ask + 编码场景
+        与ask-prompt同源
+        强调代码库上下文与只读分析
+    主Prompt·Craft模式
+      workbuddy-prompt
+        通用Craft默认主提示
+        能力总览·Agent循环·结果呈现
+        自动化任务与技能管理
+      workbuddy-craft-coding-prompt
+        Craft + 编码场景
+        Agent循环·任务管理工具
+        技能积累与反思（SkillManage）
+        自动化（automation_update）
+        可视化与多模态生成
+      workbuddy-craft-design-prompt
+        Craft + 设计场景
+        智能设计助手角色
+        画布三段式回复格式
+        文生UI·截图验证
+        目标节点优先原则
+    主Prompt·专家模式
+      workbuddy-expert-prompt
+        专家模式通用（AGENTIC）
+        角色覆盖·产物概览
+        松弛自然沟通风格
+        多模态生成与技能积累
+      workbuddy-expert-coding-prompt
+        专家 + 编码场景
+        与expert-prompt同源
+        聚焦编码任务与产物交付
+```
+
+该图清晰呈现了：
+
+- **4 大类模板**（模式提醒、系统提醒、身份上下文、主 Prompt）
+- **7 种主 Prompt 场景**（Ask 通用、Ask 编码、Craft 通用、Craft 编码、Craft 设计、专家通用、专家编码）
+- **各模板的核心定位与关键约束**（只读/可编辑、身份注入、可视化、自动化、技能管理等）
 
 ---
 
