@@ -7,6 +7,8 @@ tags: [mineru, rag, llm, pdf, docx, pptx, xlsx, markdown, json]
 
 > 面向 LLM · RAG · Agent 的高精度文档解析引擎 ｜ 实测版本 `3.4.4` ｜ 含本地真实跑通经验与踩坑实录
 
+- [【WorkBuddy】MinerU使用指南](https://workbuddy.link/p/G9IxAFywdsYXCAdWPf9PvD?ext2=copy_link)
+
 ## 一、介绍：MinerU 是什么
 
 **MinerU**（[opendatalab/MinerU](https://github.com/opendatalab/MinerU)）是一个面向 **LLM · RAG · Agent 工作流** 的高精度文档解析引擎。它把 PDF / 图片 / DOCX / PPTX / XLSX / 网页转换为机器可读的 **Markdown / JSON**，供下游检索、抽取与处理。它的起源是 InternLM 预训练过程中的科学文献符号（公式、表格）转换需求，因此对公式和表格的处理是强项。
