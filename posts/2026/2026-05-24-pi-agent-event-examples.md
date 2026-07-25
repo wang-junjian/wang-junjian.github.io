@@ -113,7 +113,7 @@ const calculatorTool: AgentTool<typeof CalculatorParams, { expression: string; r
   },
 };
 
-process.env.OPENAI_API_KEY = "ak_1984ca0Z44JH84E2NI2xS4rA7593u";
+process.env.OPENAI_API_KEY = "your api key";
 
 // 模型配置
 const baseModel = getModel("openai", "gpt-5");
