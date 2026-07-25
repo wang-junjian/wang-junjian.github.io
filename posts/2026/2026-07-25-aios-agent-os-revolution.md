@@ -9,6 +9,9 @@ tags: [aios, agent, step, android, linux, rtos, kimi-k3]
 >
 > **一句话结论**：六家科技巨头已全部下场做 AI OS，2025–2026 年集中爆发；学界与产业界对其核心要素（记忆 / 决策 / 行动 / 安全四大系统原语）的定义高度收敛——AI OS 已从营销概念变成架构共识，竞争焦点转向「协议路线 vs GUI 路线」与「重构 vs 叠加」。
 
+- [【Kimi】AI OS:智能体操作系统的范式革命
+六巨头布局、核心本质与架构设计深度调研](https://5s7dly6oinj3i.ok.kimi.link)
+
 ---
 
 ## Section 01 · 新闻背景
