@@ -9,6 +9,8 @@ tags: [officecli, skill, agent, office, word, excel, ppt]
 > 时间线：研究 → 安装到 WorkBuddy → 能力验证 → 三格式展示文档
 > 文档性质：将「深度研究」与「本机实践」合并沉淀，既含结论也含可复现的操作记录
 
+- [【WorkBuddy】AIOS_智能体操作系统范式革命.pptx](https://codebuddy.work/agents/share/1s5_HPWDbj4jGyRD6p74QO8zcOYhbWQeuUUgZmjplV35uQopRE9RFsSbSnHdbooG?platform=workbuddy&ext2=copy_link)
+
 ---
 
 ## 〇、一句话结论
