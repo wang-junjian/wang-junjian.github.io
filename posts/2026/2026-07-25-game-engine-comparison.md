@@ -7,6 +7,8 @@ tags: [game, engine, godot, unity, unreal, cocos, phaser, game-marker]
 
 > 覆盖 8 款主流引擎，从开发语言、授权费用、2D/3D 能力、目标平台、学习曲线到生态资源全面对比。评分基于公开资料与社区共识，含主观判断，仅供选型参考。
 
+- [游戏引擎对比分析](https://workbuddy.link/p/DvsPoX7wSjbsPJbO4KScVT)
+
 ## 一、选型看哪些维度
 
 - **① 开发语言**：JS/TS 适合网页派；C# 门槛适中；C++ 性能强但陡峭；无代码更适合零基础。
