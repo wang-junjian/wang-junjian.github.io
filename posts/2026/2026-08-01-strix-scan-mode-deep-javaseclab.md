@@ -5,11 +5,11 @@ date: 2026-08-01 15:21:00 +0800
 tags: [strix, javaseclab, agent, llm, security, fix, hacker]
 ---
 
-![](/images/2026/strix/strix-scan-mode-deep-javaseclab.webp)
-
 本文档基于Strix 多智能体网络安全渗透测试工具，对开源 Java 漏洞实训平台 JavaSecLab 开展深度白盒代码审计与系统性安全渗透测试。依托 Strix 多智能体协同检测能力，本次测试覆盖项目全部源代码、框架配置、业务逻辑及第三方依赖组件，完整挖掘、归类、验证项目内置的各类安全漏洞。
 
 JavaSecLab 作为面向安全学习、代码审计、安全开发与工具测评的综合型 Java 漏洞靶场，集中复现了 Web 安全、代码缺陷、组件漏洞、业务逻辑风险等大量典型安全问题。本次通过 Strix 深度扫描模式，完成全量代码静态分析、漏洞溯源、数据流审计、风险定级与攻击路径复盘，累计检出严重、高危、中危、低危多维度安全漏洞，覆盖反序列化 RCE、SQL 注入、认证绕过、SSRF、XXE、XSS、模板注入、文件操作漏洞及第三方依赖高危 CVE 等核心风险场景。
+
+![](/images/2026/strix/strix-scan-mode-deep-javaseclab.webp)
 
 
 ## Strix 命令行帮助文档
