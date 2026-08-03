@@ -1,6 +1,6 @@
 ---
 type: article
-title: "智会 T1 (SmartMeet T1)"
+title: "智会 T1 (SmartMeet T1) 硬件结构设计（Kimi K3 ✚ FreeCAD）"
 date: 2026-07-23 21:04:00 +0800
 tags: [smartmeet, smartmeet-t1, meeting-terminal, hardware, design, freecad, cad, 3d-printing, step, stl, kimi-k3]
 ---
