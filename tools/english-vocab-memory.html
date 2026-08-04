@@ -211,11 +211,11 @@
     gap:30px;padding:30px;text-align:center;position:relative;
   }
   .imm-word{
-    font-size:clamp(44px,9vw,132px);font-weight:900;letter-spacing:-2px;color:var(--imm-word);line-height:1.05;
+    font-size:calc(clamp(44px,9vw,132px) * var(--imm-scale, 1));font-weight:900;letter-spacing:-2px;color:var(--imm-word);line-height:1.05;
     text-shadow:0 0 40px var(--acid-dim);word-break:break-word;max-width:90vw;
   }
   .imm-cn{
-    font-size:clamp(20px,3vw,34px);color:var(--sub);opacity:0;transform:translateY(6px);
+    font-size:calc(clamp(20px,3vw,34px) * var(--imm-scale, 1));color:var(--sub);opacity:0;transform:translateY(6px);
     transition:opacity .45s, transform .45s;max-width:80vw;line-height:1.5;
   }
   .imm-cn.show{opacity:1;transform:none;color:var(--text)}
@@ -230,6 +230,10 @@
     display:flex;flex-direction:column;gap:12px;align-items:center;
   }
   .imm-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+  .imm-row.imm-seek{width:100%;max-width:520px}
+  .imm-row.imm-seek input[type=range]{flex:1}
+  .imm-row.imm-settings{flex-wrap:wrap;gap:8px}
+  .imm-sep{width:1px;height:28px;background:var(--border2);flex:none}
   .imm-btn{
     min-width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);
     display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text);
@@ -242,6 +246,14 @@
   .imm-btn.sm{min-width:auto;width:auto;height:auto;border-radius:8px;padding:8px 14px;font-size:13px}
   .imm-hints{font-size:11px;color:var(--dim);text-align:center;letter-spacing:.3px}
   .imm-hints kbd{background:var(--panel2);border:1px solid var(--border2);border-radius:4px;padding:1px 6px;font-family:inherit;font-size:10px;color:var(--sub)}
+
+  /* 全屏沉浸：只展示单词和中文 */
+  body.fs-imm #imm .imm-top{display:none}
+  body.fs-imm #imm .imm-controls{display:none}
+  body.fs-imm #imm .imm-group-tag{display:none}
+  body.fs-imm #imm .imm-stage{justify-content:center}
+  body.fs-imm #imm .imm-word{font-size:calc(clamp(60px,12vw,160px) * var(--imm-scale, 1))}
+  body.fs-imm #imm .imm-cn{font-size:calc(clamp(28px,4vw,42px) * var(--imm-scale, 1))}
 
   /* ===== Shortcut help ===== */
   #help{
@@ -341,19 +353,24 @@
     <div class="imm-group-tag" id="immGroupTag"></div>
   </div>
   <div class="imm-controls">
-    <div class="imm-row">
+    <div class="imm-row imm-playback">
       <button class="imm-btn" id="immPrev" title="上一个（←）">◀</button>
       <button class="imm-btn big" id="immPlay" title="播放/暂停（空格）">▶</button>
       <button class="imm-btn" id="immNext" title="下一个（→）">▶|</button>
+      <span class="imm-sep"></span>
       <button class="imm-btn sm" id="immReplay" title="重读当前词（R）">↻ 重读</button>
       <button class="imm-btn sm" id="immReveal" title="显示/隐藏中文（M）">中文</button>
       <button class="imm-btn sm" id="immQuizBtn" title="自测模式：不自动显示中文（S）">🕶 自测</button>
     </div>
-    <div class="imm-row">
+    <div class="imm-row imm-seek">
+      <input type="range" id="immSeekRange" min="1" max="1" step="1" value="1" />
+      <span class="pause-val" id="immSeekVal">1 / 1</span>
+    </div>
+    <div class="imm-row imm-settings">
       <span class="ctrl-label">间隔</span>
       <input type="range" id="immPauseRange" min="0" max="10000" step="100" value="2500" />
       <span class="pause-val" id="immPauseVal">2.5s</span>
-      <span style="width:12px"></span>
+      <span class="imm-sep"></span>
       <span class="ctrl-label">变速</span>
       <div class="chips" id="immPresetChips">
         <button class="chip-btn" data-preset="slow">慢速</button>
@@ -361,9 +378,17 @@
         <button class="chip-btn" data-preset="fast">快速</button>
         <button class="chip-btn" data-preset="burst">连读</button>
       </div>
+      <span class="imm-sep"></span>
+      <span class="ctrl-label">字号</span>
+      <div class="chips" id="immFontChips">
+        <button class="chip-btn" data-font="0">小</button>
+        <button class="chip-btn on" data-font="1">标准</button>
+        <button class="chip-btn" data-font="2">大</button>
+        <button class="chip-btn" data-font="3">超大</button>
+      </div>
     </div>
     <div class="imm-hints">
-      <kbd>空格</kbd> 播放/暂停 &nbsp;·&nbsp; <kbd>←</kbd><kbd>→</kbd> 上/下一个 &nbsp;·&nbsp; <kbd>R</kbd> 重读 &nbsp;·&nbsp; <kbd>M</kbd> 中英节奏 &nbsp;·&nbsp; <kbd>1/2/3</kbd> 切换聚类 &nbsp;·&nbsp; <kbd>F</kbd> 全屏 &nbsp;·&nbsp; <kbd>Esc</kbd> 退出
+      <kbd>空格</kbd> 播放/暂停 &nbsp;·&nbsp; <kbd>←</kbd><kbd>→</kbd> 上/下一个 &nbsp;·&nbsp; <kbd>R</kbd> 重读 &nbsp;·&nbsp; <kbd>M</kbd> 中英节奏 &nbsp;·&nbsp; <kbd>1/2/3/4</kbd> 切换聚类 &nbsp;·&nbsp; <kbd>F</kbd> 全屏 &nbsp;·&nbsp; <kbd>Esc</kbd> 退出
     </div>
   </div>
 </div>
@@ -379,6 +404,7 @@
       <div class="help-row"><kbd>1</kbd><span>主题联想（人工主题）</span></div>
       <div class="help-row"><kbd>2</kbd><span>语义分组（关键词匹配）</span></div>
       <div class="help-row"><kbd>3</kbd><span>近义聚合（向量聚类）</span></div>
+      <div class="help-row"><kbd>4</kbd><span>全部单词（按首字母 A-Z 排列）</span></div>
       <div class="help-row"><kbd>M</kbd><span>切换中英节奏（先英后中/同时/先中后英/仅英文）</span></div>
       <div class="help-row"><kbd>S</kbd><span>自测模式（隐藏中文）</span></div>
       <div class="help-row"><kbd>R</kbd><span>重读当前单词</span></div>
@@ -419,15 +445,72 @@ const PRESETS = {
 };
 const CN_MODES = ['en-first', 'both', 'cn-first', 'en-only'];
 const CN_LABELS = { 'en-first': '先英后中', both: '同时显示', 'cn-first': '先中后英', 'en-only': '仅英文' };
-const MODE_KEYS = ['theme', 'semantic', 'synonym'];
-const MODE_NAMES = { theme: '主题联想', semantic: '语义分组', synonym: '近义聚合' };
+const MODE_KEYS = ['theme', 'semantic', 'synonym', 'all'];
+const MODE_NAMES = { theme: '主题联想', semantic: '语义分组', synonym: '近义聚合', all: '全部单词' };
 
-let settings = { voice: '', pause: 2500, cnMode: 'en-first', preset: 'std', quiz: false, minSize: 2, theme: 'dark', shuffle: false };
+// 获取模式数据：内置模式直接取；'all' 模式从三大聚类去重合并，按首字母分组
+let _allModeCache = null;
+function getModeData(mode){
+  if (mode !== 'all') return DATA.modes[mode];
+  if (_allModeCache) return _allModeCache;
+  const seen = new Set();
+  const buckets = {}; // { 'A': [...], 'B': [...], ... }
+  MODE_KEYS.forEach(k => {
+    if (k === 'all') return;
+    const m = DATA.modes[k];
+    // 合并 groups + others 为一个迭代
+    const allWords = [];
+    m.groups.forEach(g => allWords.push(...g.words));
+    allWords.push(...m.others);
+    allWords.forEach(w => {
+      const key = w.w.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        const letter = w.w.charAt(0).toUpperCase();
+        const bucket = /^[A-Z]/.test(letter) ? letter : '#';
+        if (!buckets[bucket]) buckets[bucket] = [];
+        buckets[bucket].push(w);
+      }
+    });
+  });
+  // 构建分组，按 A-Z 排列，# 放在最后
+  const letterOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const groups = [];
+  letterOrder.forEach(l => {
+    if (buckets[l]) {
+      buckets[l].sort((a, b) => a.w.toLowerCase().localeCompare(b.w.toLowerCase(), 'en'));
+      groups.push({ name: l, words: buckets[l] });
+    }
+  });
+  if (buckets['#']) {
+    buckets['#'].sort((a, b) => a.w.toLowerCase().localeCompare(b.w.toLowerCase(), 'en'));
+    groups.push({ name: '# 其他', words: buckets['#'] });
+  }
+  _allModeCache = { label: '全部单词', groups, others: [] };
+  return _allModeCache;
+}
+
+let settings = { voice: '', pause: 2500, cnMode: 'en-first', preset: 'std', quiz: false, minSize: 2, theme: 'dark', shuffle: false, resumePositions: { theme: 0, semantic: 0, synonym: 0, all: 0 }, immFontIdx: 1 };
+const IMM_FONT_SCALES = [
+  { label: '小',   scale: 0.65 },
+  { label: '标准', scale: 1 },
+  { label: '大',   scale: 1.4 },
+  { label: '超大', scale: 1.9 },
+];
 const LS_KEY = 'vocab_memory_settings_v1';
 
 function loadSettings(){
-  try{ const s = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); Object.assign(settings, s); }
-  catch(e){}
+  try{ const s = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    // 兼容旧版单进度字段
+    if (s.resumeMode !== undefined && !s.resumePositions) {
+      s.resumePositions = { theme: 0, semantic: 0, synonym: 0, all: 0 };
+      if (s.resumeMode && s.resumeQi > 0) s.resumePositions[s.resumeMode] = s.resumeQi;
+    }
+    Object.assign(settings, s);
+    // 确保 resumePositions 包含所有模式
+    if (!settings.resumePositions) settings.resumePositions = { theme: 0, semantic: 0, synonym: 0, all: 0 };
+    MODE_KEYS.forEach(k => { if (!(k in settings.resumePositions)) settings.resumePositions[k] = 0; });
+  } catch(e){}
 }
 function saveSettings(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(settings)); }catch(e){}
@@ -443,7 +526,7 @@ const grid = $('grid'), imm = $('imm'), qEl = $('q');
 
 /* ================= 统计 ================= */
 function renderStats(){
-  const m = DATA.modes[S.mode];
+  const m = getModeData(S.mode);
   const grouped = m.groups.reduce((a, g) => a + g.words.length, 0);
   const total = grouped + m.others.length;
   const cov = (grouped / total * 100).toFixed(1);
@@ -456,7 +539,7 @@ function renderStats(){
 /* ================= Tabs ================= */
 function renderTabs(){
   $('tabs').innerHTML = MODE_KEYS.map(k => {
-    const m = DATA.modes[k];
+    const m = getModeData(k);
     const grouped = m.groups.reduce((a, g) => a + g.words.length, 0);
     return `<button class="tab ${k === S.mode ? 'active' : ''}" data-mode="${k}">
       ${MODE_NAMES[k]}<span class="cnt">${m.groups.length} 组 · ${grouped.toLocaleString()} 词</span></button>`;
@@ -467,7 +550,7 @@ function renderTabs(){
 /* ================= 渲染网格 ================= */
 function buildQueue(includeOthers){
   /* 返回当前模式下全部词（含组信息） */
-  const m = DATA.modes[S.mode];
+  const m = getModeData(S.mode);
   const q = [];
   m.groups.forEach((g, gi) => {
     g.words.forEach(w => q.push({ w: w.w, cn: w.cn, g: g.name, gi, inOthers: false }));
@@ -489,9 +572,9 @@ function hl(s, q){
 let visibleCount = 0; // 当前可见词数（用于播放范围提示）
 
 function renderGrid(){
-  const m = DATA.modes[S.mode];
+  const m = getModeData(S.mode);
   const q = qEl.value.trim().toLowerCase();
-  let groups = [...m.groups].sort((a, b) => b.words.length - a.words.length);
+  let groups = S.mode === 'all' ? [...m.groups] : [...m.groups].sort((a, b) => b.words.length - a.words.length);
 
   const frag = document.createDocumentFragment();
   visibleCount = 0;
@@ -637,7 +720,7 @@ function stopAll(){
   syncRange();
 }
 function buildPlayQueue(){
-  const m = DATA.modes[S.mode];
+  const m = getModeData(S.mode);
   const q = [];
   m.groups.forEach((g, gi) => {
     g.words.forEach(w => q.push({ w: w.w, cn: w.cn, g: g.name, gi }));
@@ -655,8 +738,14 @@ function enterImmersive(){
   if (!S.playing) {
     S.playing = true; S.paused = false;
     queue = buildPlayQueue();
-    S.qi = 0;
-    renderImmersiveWord(queue[0], 0);
+    // 恢复上次播放位置：同模式、非随机、位置有效时才恢复
+    let startIdx = 0;
+    const saved = settings.resumePositions && settings.resumePositions[S.mode];
+    if (!S.shuffle && saved > 0 && saved < queue.length) {
+      startIdx = saved;
+    }
+    S.qi = startIdx;
+    renderImmersiveWord(queue[startIdx], startIdx);
     scheduleNext();
   }
   $('immPlay').textContent = S.paused ? '▶' : '❚❚';
@@ -667,12 +756,16 @@ function exitImmersive(){
 }
 function renderImmersiveWord(item, idx){
   S.qi = idx;
+  // 保存播放进度（非随机模式下才可恢复，每个模式独立记录）
+  if (!S.shuffle) { settings.resumePositions[S.mode] = idx; saveSettings(); }
   curGroupGi = item.gi;
   inOthers = item.gi === -1;
   $('immTitle').textContent = MODE_NAMES[S.mode];
   $('immGroup').textContent = item.g;
   $('immGroupTag').textContent = item.g + (inOthers ? ' · 未聚类' : '');
   $('immProgress').textContent = `${idx + 1} / ${queue.length}`;
+  const sr = $('immSeekRange'); sr.max = queue.length; sr.value = idx + 1;
+  $('immSeekVal').textContent = `${idx + 1} / ${queue.length}`;
   const wEl = $('immWord'), cnEl = $('immCn');
   wEl.textContent = item.w;
   cnEl.textContent = item.cn;
@@ -704,7 +797,7 @@ function scheduleNext(){
   if (cur) applyCnVisibility($('immCn'), mode, cnDelay);
   S.itemTimer = setTimeout(() => {
     if (!S.playing || S.paused) return;
-    if (S.qi + 1 >= queue.length) { stopAll(); return; }
+    if (S.qi + 1 >= queue.length) { settings.resumePositions[S.mode] = 0; saveSettings(); stopAll(); return; }
     renderImmersiveWord(queue[S.qi + 1], S.qi + 1);
     scheduleNext();
   }, total);
@@ -769,6 +862,12 @@ function syncRange(){
   const s = (settings.pause / 1000).toFixed(1);
   $('pauseVal').textContent = s + 's';
   $('immPauseVal').textContent = s + 's';
+}
+function applyImmFontScale(){
+  const sc = IMM_FONT_SCALES[settings.immFontIdx];
+  imm.style.setProperty('--imm-scale', sc.scale);
+  document.querySelectorAll('#immFontChips [data-font]').forEach(b => b.classList.toggle('on', +b.dataset.font === settings.immFontIdx));
+  saveSettings();
 }
 function applyPreset(p){
   settings.preset = p;
@@ -865,12 +964,21 @@ document.addEventListener('keydown', e => {
     case '1': switchMode('theme'); break;
     case '2': switchMode('semantic'); break;
     case '3': switchMode('synonym'); break;
+    case '4': switchMode('all'); break;
   }
 });
 function toggleFullscreen(){
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-  else document.exitFullscreen();
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(()=>{});
+    if (imm.classList.contains('on')) document.body.classList.add('fs-imm');
+  } else {
+    document.exitFullscreen();
+    document.body.classList.remove('fs-imm');
+  }
 }
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) document.body.classList.remove('fs-imm');
+});
 
 /* ================= 事件绑定 ================= */
 function bindEvents(){
@@ -883,8 +991,16 @@ function bindEvents(){
   $('immReplay').onclick = immReplay;
   $('immReveal').onclick = immReveal;
   $('immQuizBtn').onclick = toggleQuiz;
+  document.querySelectorAll('#immFontChips [data-font]').forEach(b => b.onclick = () => { settings.immFontIdx = +b.dataset.font; applyImmFontScale(); });
   $('pauseRange').oninput = e => { settings.pause = +e.target.value; settings.preset = ''; document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('on')); syncRange(); saveSettings(); };
   $('immPauseRange').oninput = e => { settings.pause = +e.target.value; settings.preset = ''; document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('on')); syncRange(); saveSettings(); };
+  $('immSeekRange').oninput = e => {
+    const target = +e.target.value - 1;
+    if (target >= 0 && target < queue.length && S.playing) {
+      renderImmersiveWord(queue[target], target);
+      scheduleNext();
+    }
+  };
   document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => applyPreset(b.dataset.preset));
   $('btnCnMode').onclick = cycleCnMode;
   $('btnShuffle').onclick = () => {
@@ -892,7 +1008,7 @@ function bindEvents(){
     settings.shuffle = S.shuffle;
     $('btnShuffle').classList.toggle('on', S.shuffle);
     saveSettings();
-    if (S.playing && imm.classList.contains('on')) { queue = buildPlayQueue(); S.qi = 0; renderImmersiveWord(queue[0], 0); scheduleNext(); }
+    if (S.playing && imm.classList.contains('on')) { queue = buildPlayQueue(); S.qi = 0; settings.resumePositions[S.mode] = 0; saveSettings(); renderImmersiveWord(queue[0], 0); scheduleNext(); }
   };
   $('btnQuiz').onclick = toggleQuiz;
   $('btnExpand').onclick = () => document.querySelectorAll('.gcard').forEach(c => c.classList.remove('collapsed'));
@@ -920,6 +1036,8 @@ function init(){
   $('immQuizBtn').classList.toggle('on', S.quiz);
   $('btnCnMode').textContent = CN_LABELS[settings.cnMode];
   if (settings.preset) applyPreset(settings.preset); else syncRange();
+  if (settings.immFontIdx === undefined) settings.immFontIdx = 1;
+  applyImmFontScale();
   renderTabs();
   renderStats();
   renderGrid();
