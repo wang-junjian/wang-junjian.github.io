@@ -9,7 +9,7 @@ tags: [dsh, dsh-plugin, ui, react, cordis, deepseek, harness]
 
 > 面向第一次接触 dsh 的开发者。读完本文你将能：理解 dsh 插件的运行原理、照着完整流程从零写一个 UI 插件、避开主题/背景/测试等高频坑。
 >
-> 全文以正在开发的 `ui-sprite`（精灵插件）为贯穿案例。
+> 全文以正在开发的 [Spritely（精灵插件）](https://github.com/wang-junjian/spritely)为贯穿案例。
 
 ---
 
