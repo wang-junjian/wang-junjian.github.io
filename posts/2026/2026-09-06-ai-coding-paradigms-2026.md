@@ -1,7 +1,7 @@
 ---
 type: article
 title: "AI 编程开发范式深度研究（2026）"
-date: 2026-09-05 20:24:00 +0800
+date: 2026-09-06 20:24:00 +0800
 tags: [agentic, agentic-sdlc, ai-coding, ai-engineering, ai-agent, context-engineering, spec-driven-development]
 ---
 
