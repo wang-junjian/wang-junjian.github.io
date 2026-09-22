@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>架构走查报告 — 长辈计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { border-style: dashed !important; }
+      .module-box {
+        border: 2px solid #334155;
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.9rem;
+        background: #fff;
+      }
+      .module-label { font-size: 0.7rem; letter-spacing: 0.08em; color: #64748b; }
+      .deep-box {
+        border: 3px solid #0f172a;
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.9rem;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: #f8fafc;
+      }
+      .deep-box .module-label { color: #94a3b8; }
+      .faded { opacity: 0.45; }
+      .leak-text { color: #dc2626; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+      <header class="space-y-4">
+        <h1 class="font-serif text-4xl">架构走查报告：长辈计算器</h1>
+        <p class="text-slate-500 text-sm">2026-09-21 · ElderCalculator（SwiftUI / macOS）· 范围：全部 Swift 源码与测试</p>
+        <div class="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-600 border-y border-slate-200 py-3">
+          <span><span class="inline-block w-4 h-4 align-middle module-box !p-0 !rounded-sm"></span> 实线框 = 模块（module）</span>
+          <span><span class="inline-block w-8 border-t-2 border-dashed border-slate-500 align-middle"></span> 虚线 = 接缝（seam）</span>
+          <span class="leak-text">红色 = 泄漏 / 隐式耦合</span>
+          <span><span class="inline-block w-4 h-4 align-middle deep-box !p-0 !rounded-sm"></span> 深色厚框 = 深模块（deep module）</span>
+        </div>
+        <p class="text-sm text-slate-600">
+          总体结论：计算引擎与中文朗读转换两侧已是深模块范本，测试只打接口。唯一的结构性短板在语音播报——
+          产品的核心卖点，却是唯一没有测试接缝的行为规则集中地。
+        </p>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+
+        <!-- 候选 1 -->
+        <article id="c1" class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm space-y-6">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h2 class="font-serif text-2xl">1 · 播报词决策与语音合成器分层</h2>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">ports &amp; adapters</span>
+          </div>
+          <div class="font-mono text-sm text-slate-500">
+            ElderCalculator/Speech/VoiceAnnouncer.swift · ElderCalculator/ContentView.swift:52-57
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Before -->
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-3">
+              <p class="module-label uppercase">Before — 决策与硬件焊死</p>
+              <div class="module-box text-center">
+                <div class="module-label">ContentView.press</div>
+                <div class="text-sm font-medium">唯一的播报触发点</div>
+              </div>
+              <div class="text-center text-slate-400">↓</div>
+              <div class="module-box !border-red-400">
+                <div class="module-label">VoiceAnnouncer</div>
+                <div class="text-sm font-medium mb-2">一个模块，两层职责</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="rounded border border-slate-300 p-2 bg-white">
+                    播报词规则<br /><span class="text-slate-500">"点" / "正负号" / "已清除" / 错误优先</span>
+                  </div>
+                  <div class="rounded border border-red-300 p-2 bg-red-50">
+                    AVSpeechSynthesizer<br /><span class="leak-text">硬编码私有属性，一调就真出声</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-center text-slate-400">↓</div>
+              <div class="rounded border-2 border-dashed border-red-300 p-2 text-center text-xs leak-text bg-white">
+                测试接缝够不到 announce —— 产品核心规则零测试覆盖
+              </div>
+            </div>
+            <!-- After -->
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-3">
+              <p class="module-label uppercase">After — 纯决策 + 可替换适配器</p>
+              <div class="module-box text-center">
+                <div class="module-label">ContentView.press</div>
+                <div class="text-sm font-medium">编排不变</div>
+              </div>
+              <div class="text-center text-slate-400">↓</div>
+              <div class="deep-box">
+                <div class="module-label">播报词决策模块（深）</div>
+                <div class="text-sm font-medium">(key, DisplayState) → 播报词?</div>
+                <div class="text-xs mt-1 text-slate-300">纯函数，像引擎一样 TDD</div>
+              </div>
+              <div class="text-center text-slate-400">↓</div>
+              <div class="rounded border-2 border-dashed border-slate-400 p-2 text-center text-xs bg-white">
+                接缝：语音合成器接口
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="module-box text-center">
+                  <div class="module-label">适配器 · 生产</div>
+                  AVSpeechSynthesizer
+                </div>
+                <div class="module-box text-center">
+                  <div class="module-label">适配器 · 测试</div>
+                  记录播报词的假合成器
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <div>
+              <h3 class="module-label uppercase mb-1">问题</h3>
+              <p>错误优先、"="念结果、每个功能键的中文播报词，这些适老化核心规则锁在与 AVSpeechSynthesizer 硬耦合的模块里，现有测试接缝完全够不到；非法数字键的防御判断还在引擎与播报侧各写了一份。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">方案</h3>
+              <p>把"按键 + 状态 → 播报词"的纯决策从 VoiceAnnouncer 中提出为独立模块，合成器退到接口之后成为可注入的适配器。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">收益</h3>
+              <ul class="list-disc list-inside space-y-1 text-slate-700">
+                <li>局部性：播报规则集中一处，可 TDD</li>
+                <li>两个适配器 = 真实接缝</li>
+                <li>删除测试：决策模块删掉，规则散进 View</li>
+                <li>接口即测试面：断言播报词字符串</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- 候选 2 -->
+        <article id="c2" class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm space-y-6">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h2 class="font-serif text-2xl">2 · 数值规范口径收敛为一处</h2>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">Worth exploring</span>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">in-process</span>
+          </div>
+          <div class="font-mono text-sm text-slate-500">
+            ElderCalculator/Engine/CalculatorEngine.swift:334-343 · ElderCalculator/Speech/ChineseSpeechFormatter.swift:27-32
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="module-label uppercase mb-2">Before — 同一口径两处实现</p>
+              <pre class="mermaid">
+flowchart TB
+  E["CalculatorEngine.formatted<br/>%.10g"]
+  S["ChineseSpeechFormatter.numericText<br/>%.10g"]
+  E <-.->|"隐式约定：靠注释对齐"| S
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#dc2626;
+  linkStyle 0 stroke:#dc2626,stroke-width:2px,stroke-dasharray:5 5;
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="module-label uppercase mb-2">After — 一个数值规范模块</p>
+              <pre class="mermaid">
+flowchart TB
+  N["数值规范文本（深模块）<br/>10 位有效数字 · 去尾零"]
+  E["CalculatorEngine.formatted<br/>屏幕显示"]
+  S["ChineseSpeechFormatter.numericText<br/>语音转换"]
+  N --> E
+  N --> S
+  classDef deep fill:#0f172a,color:#f8fafc,stroke:#0f172a;
+  class N deep;
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <div>
+              <h3 class="module-label uppercase mb-1">问题</h3>
+              <p>"结果最多 10 位有效数字"的口径在两个模块各实现一遍，一致性靠注释维持；改口径漏一处，屏幕显示与语音播报就会对不上。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">方案</h3>
+              <p>提取共享的"数值规范文本"概念，屏幕格式化与语音朗读转换都从同一口径出发。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">收益</h3>
+              <ul class="list-disc list-inside space-y-1 text-slate-700">
+                <li>局部性：口径改一次，两处同时生效</li>
+                <li>隐式耦合变显式依赖</li>
+                <li>口径本身获得独立测试面</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- 候选 3 -->
+        <article id="c3" class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm space-y-6">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h2 class="font-serif text-2xl">3 · 运算符的全部表述住进一个文件</h2>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">Worth exploring</span>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">in-process</span>
+          </div>
+          <div class="font-mono text-sm text-slate-500">
+            ElderCalculator/Engine/CalculatorEngine.swift:366-395 · ElderCalculator/Speech/VoiceAnnouncer.swift:67-77
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-3">
+              <p class="module-label uppercase">Before — 一个概念被切开</p>
+              <div class="module-box">
+                <div class="module-label">Engine/ · ArithmeticOperation</div>
+                <div class="flex gap-2 mt-2 text-xs">
+                  <span class="rounded bg-slate-100 px-2 py-1">symbol 屏幕符号</span>
+                  <span class="rounded bg-slate-100 px-2 py-1">apply 运算语义</span>
+                  <span class="rounded bg-slate-100 px-2 py-1">percentValue 百分比</span>
+                </div>
+              </div>
+              <div class="module-box !border-red-400">
+                <div class="module-label">Speech/ · 扩展</div>
+                <div class="flex gap-2 mt-2 text-xs">
+                  <span class="rounded bg-red-50 px-2 py-1 leak-text">spokenWord 播报用词</span>
+                </div>
+              </div>
+              <p class="text-xs leak-text">新增第五种运算 / 改"除"的念法 → 跨目录找两个 switch</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-3">
+              <p class="module-label uppercase">After — 表述集中</p>
+              <div class="deep-box">
+                <div class="module-label">ArithmeticOperation（一处）</div>
+                <div class="flex flex-wrap gap-2 mt-2 text-xs">
+                  <span class="rounded bg-slate-700 px-2 py-1">symbol</span>
+                  <span class="rounded bg-slate-700 px-2 py-1">apply</span>
+                  <span class="rounded bg-slate-700 px-2 py-1">percentValue</span>
+                  <span class="rounded bg-slate-700 px-2 py-1">spokenWord</span>
+                </div>
+                <p class="text-xs mt-3 text-slate-300">或：候选 1 落地后，播报用词并入播报词决策层，同样集中</p>
+              </div>
+              <div class="module-box faded">
+                <div class="module-label">Speech/ · 扩展</div>
+                <div class="text-xs line-through text-slate-400 mt-1">spokenWord（搬走）</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <div>
+              <h3 class="module-label uppercase mb-1">问题</h3>
+              <p>运算符的屏幕符号、运算语义、百分比规则在引擎文件里，播报用词却在 Speech 目录的扩展里——"一个运算的所有表述"被切到两个文件。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">方案</h3>
+              <p>把播报用词并回运算符定义所在处（或并入候选 1 的播报词决策层），一个概念住一个文件。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">收益</h3>
+              <ul class="list-disc list-inside space-y-1 text-slate-700">
+                <li>局部性：改运算只动一处</li>
+                <li>体量小：4 行代码搬家级别</li>
+                <li>可与候选 1 合并落地</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- 候选 4 -->
+        <article id="c4" class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm space-y-6">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h2 class="font-serif text-2xl">4 · 错误态改为 DisplayState 的显式 case</h2>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 text-slate-700">Speculative</span>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">in-process</span>
+          </div>
+          <div class="font-mono text-sm text-slate-500">
+            ElderCalculator/Engine/CalculatorEngine.swift:15-16, 162-170 · 消费方：ContentView.swift:103 / VoiceAnnouncer.swift:27
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-3">
+              <p class="module-label uppercase">Before — 两个字段说同一事实</p>
+              <div class="module-box">
+                <div class="module-label">DisplayState</div>
+                <div class="space-y-1 mt-2 text-xs font-mono">
+                  <div class="flex justify-between rounded bg-slate-100 px-2 py-1"><span>mainText</span><span>"不能除以零"</span></div>
+                  <div class="flex justify-between rounded bg-red-50 px-2 py-1 leak-text"><span>errorMessage</span><span>"不能除以零"</span></div>
+                </div>
+                <p class="text-xs mt-2 text-slate-500">enterDivideByZeroError 分别写两个字段，靠人肉保持同步</p>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-3">
+              <p class="module-label uppercase">After — 错误是显式状态</p>
+              <div class="module-box">
+                <div class="module-label">DisplayState</div>
+                <div class="space-y-1 mt-2 text-xs font-mono">
+                  <div class="rounded bg-slate-100 px-2 py-1">case normal(mainText, …)</div>
+                  <div class="rounded bg-emerald-50 px-2 py-1 text-emerald-800">case error(message) — 单一事实来源</div>
+                </div>
+                <p class="text-xs mt-2 text-slate-500">红色样式与错误优先播报都从 case 派生</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <div>
+              <h3 class="module-label uppercase mb-1">问题</h3>
+              <p>错误态下 mainText 与 errorMessage 同值，两个并行字段表达同一事实，同步靠写入方自觉。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">方案</h3>
+              <p>让错误态成为 DisplayState 的显式 case，而不是两个并行字段。收益小，不动也成立。</p>
+            </div>
+            <div>
+              <h3 class="module-label uppercase mb-1">收益</h3>
+              <ul class="list-disc list-inside space-y-1 text-slate-700">
+                <li>单一事实来源</li>
+                <li>现有消费方用法都合理</li>
+                <li>冗余真实但代价低</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- 已验证足够深 -->
+      <section class="rounded-xl border border-emerald-200 bg-emerald-50 p-6 space-y-3">
+        <h2 class="font-serif text-xl text-emerald-900">已验证足够深，不建议动</h2>
+        <ul class="text-sm text-emerald-900 space-y-1.5">
+          <li><span class="font-mono">CalculatorEngine</span> — 接口 3 个成员（press / displayState / history）对约 400 行实现；历史记录、算式拼装、格式化全部内聚；40+ 测试只打接口。</li>
+          <li><span class="font-mono">ChineseSpeechFormatter</span> — 一个静态方法对约 90 行纯函数实现，测试充分（唯一瑕疵见候选 2）。</li>
+          <li><span class="font-mono">HistoryDrawer / SettingsView / AppSettings</span> — 称职的薄壳，数据单向流入，无逻辑埋藏，无假想接缝。</li>
+          <li>屏幕按钮与物理键盘两个适配器共用 <span class="font-mono">press</span> 入口 — 真实接缝（两个适配器、一条路径），行为一致性从构造上保证，不要抽象掉。</li>
+        </ul>
+      </section>
+
+      <!-- 最高推荐 -->
+      <section id="top-recommendation" class="rounded-xl border-2 border-emerald-500 bg-white p-8 space-y-3">
+        <p class="module-label uppercase text-emerald-700">最高推荐</p>
+        <h2 class="font-serif text-3xl">候选 1 · 播报词决策与语音合成器分层</h2>
+        <p class="text-slate-700 max-w-3xl">
+          语音播报是 CONTEXT.md 钦定的适老化核心功能，却是代码库中唯一"有产品规则、无测试路径"的模块。
+          分层后播报词决策变成 (key, DisplayState) → String 的纯函数，可以像 CalculatorEngine 一样 TDD；
+          合成器退到接缝之后，生产用 AVSpeechSynthesizer、测试用记录型假适配器——两个适配器，真实接缝。
+          成本低（一个文件的重构），收益直接落在产品卖点上。<a href="#c1" class="text-emerald-700 underline underline-offset-2">回到候选 1</a>
+        </p>
+      </section>
+
+    </main>
+  </body>
+</html>
