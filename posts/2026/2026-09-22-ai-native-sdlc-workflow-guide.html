@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="一份可以照着做的 AI 原生软件开发工作流指南：基于 mattpocock-skills × Claude Code 的真实项目实践，覆盖从需求访谈到架构演进的全生命周期。">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-22">
+<title>AI 原生软件开发工作流实战指南：从需求访谈到架构演进</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --ink-faint: #888;
+    --accent: #e8590c;
+    --accent-soft: #fff3ea;
+    --green: #2f9e44;
+    --green-soft: #ebf7ee;
+    --line: #e4e2dd;
+    --bg: #fdfdfc;
+    --panel: #f6f6f4;
+    --code-bg: #f3f2ef;
+    --node-bg: #ffffff;
+    --node-line: #c9c6bf;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  /* ---------- Header ---------- */
+  header { border-bottom: 3px solid var(--ink); padding-bottom: 24px; margin-bottom: 40px; }
+  .kicker { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 12px; }
+  h1 { font-size: 30px; line-height: 1.35; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 16px; }
+  .meta { font-size: 13px; color: var(--ink-faint); display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .meta .tag { background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 1px 8px; color: var(--ink-soft); }
+
+  .lede {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 16px 20px; margin: 32px 0; font-size: 15px; color: #4a3a30; border-radius: 0 4px 4px 0;
+  }
+
+  /* ---------- Typography ---------- */
+  h2 { font-size: 21px; font-weight: 800; margin: 56px 0 20px; padding-left: 14px; border-left: 5px solid var(--accent); line-height: 1.4; }
+  h2.evo { border-left-color: var(--green); }
+  h3 { font-size: 17px; font-weight: 700; margin: 32px 0 14px; }
+  p { margin: 0 0 18px; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(232,89,12,.35); }
+  a:hover { border-bottom-color: var(--accent); }
+  strong { font-weight: 700; }
+  ul, ol { margin: 0 0 18px 22px; }
+  li { margin-bottom: 6px; }
+
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 3px; padding: 1px 6px;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px;
+    padding: 16px 18px; overflow-x: auto; margin: 0 0 20px; line-height: 1.7;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: 13.5px; }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { overflow-x: auto; margin: 0 0 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--ink); color: #fff; text-align: left; padding: 10px 14px; font-weight: 700; white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--panel); }
+  td code { white-space: nowrap; }
+
+  /* ---------- Figures ---------- */
+  figure { margin: 28px 0 32px; }
+  figure svg { width: 100%; height: auto; display: block; background: var(--node-bg); border: 1px solid var(--line); border-radius: 8px; }
+  figcaption { font-size: 13px; color: var(--ink-faint); text-align: center; margin-top: 10px; }
+
+  /* ---------- Callout ---------- */
+  .callout { border: 1px solid var(--line); border-left: 4px solid var(--ink); background: var(--panel); padding: 16px 20px; margin: 0 0 20px; border-radius: 0 4px 4px 0; font-size: 15px; }
+  .callout p { margin: 0 0 10px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.warn { border-left-color: var(--accent); background: var(--accent-soft); }
+  .callout.evo { border-left-color: var(--green); background: var(--green-soft); }
+
+  /* ---------- Badge ---------- */
+  .badge { display: inline-block; font-size: 12px; font-weight: 700; border-radius: 3px; padding: 0 7px; line-height: 1.7; white-space: nowrap; }
+  .badge.strong { background: var(--accent); color: #fff; }
+  .badge.worth { background: var(--ink); color: #fff; }
+  .badge.spec { background: var(--panel); border: 1px solid var(--line); color: var(--ink-soft); }
+
+  footer { margin-top: 72px; padding-top: 24px; border-top: 3px solid var(--ink); font-size: 13px; color: var(--ink-faint); }
+  footer code { border: none; background: none; padding: 0; }
+
+  @media print { body { font-size: 12px; } .page { padding: 0; } figure svg { border: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="kicker">AI-Native SDLC · 实战指南</div>
+  <h1>AI 原生软件开发工作流实战指南：从需求访谈到架构演进</h1>
+  <div class="meta">
+    <span>2026-09-22</span>
+    <span class="tag">ai-native</span><span class="tag">ai-sdlc</span><span class="tag">mattpocock-skills</span>
+    <span class="tag">claude-code</span><span class="tag">context-engineering</span><span class="tag">tdd</span>
+    <span class="tag">adr</span><span class="tag">workflow</span>
+  </div>
+</header>
+
+<div class="lede">
+  这是一份<strong>可以照着做</strong>的 AI 原生软件开发工作流指南。我用 Claude Code 加 <a href="https://github.com/mattpocock/skills">mattpocock/skills</a> 技能集，从零开发了一款 macOS 原生应用「长辈计算器」，并在交付后走完了完整的架构演进循环。本文拆解这条工作流的每一个环节——<strong>为什么这样设计（所以然）、具体怎么做（操作步骤）、实战中长什么样（真实证据）</strong>——让没有经验的开发者也能照着走完全程。
+</div>
+
+<!-- ================= 1 ================= -->
+<h2>一、为什么需要「AI 原生」工作流</h2>
+<p>大多数人的 AI 编码方式是：打开编辑器，描述一个需求，AI 吐出代码，人肉检查。这是 <strong>AI 辅助</strong>——AI 是打字快的初级程序员，工程过程还是人的那套。</p>
+<p><strong>AI 原生</strong>的含义不同：整个软件工程过程——需求澄清、规格化、任务拆解、实现、测试、评审、演进——都围绕 AI 的特性重新设计。</p>
+
+<h3>1.1 四个经典失败模式</h3>
+<p>mattpocock/skills 的作者 Matt Pocock 在仓库 README 里总结了他观察到的四个 AI 编码失败模式，这套技能集就是对着这四个失败模式设计的。理解它们，就理解了整条工作流的"所以然"：</p>
+
+<p><strong>失败模式 #1：智能体做的不是我要的（misalignment）</strong></p>
+<div class="callout"><p>"No-one knows exactly what they want" —— 《程序员修炼之道》</p></div>
+<p>软件开发最常见的失败是供需错位：你以为开发懂了，看到成品才发现完全不是那么回事。AI 时代一模一样——你和智能体之间隔着一条沟通鸿沟。药方是 <strong>grilling（盘问式访谈）</strong>：让智能体在动手之前，先把你追问到无处可逃。</p>
+
+<p><strong>失败模式 #2：智能体太啰嗦（没有共享语言）</strong></p>
+<div class="callout"><p>"With a ubiquitous language, conversations among developers and expressions of the code are all derived from the same domain model." —— Eric Evans《领域驱动设计》</p></div>
+<p>项目开始时，开发者和领域专家说的是两种语言。智能体被扔进项目时也一样，只能边猜边学，于是一句话能说清的事它用二十句。药方是一份<strong>共享术语表（CONTEXT.md）</strong>。它的好处不只是省字：变量、函数、文件命名全都跟着术语表走，代码库对智能体更好导航，它思考时烧的 Token 都更少。</p>
+
+<p><strong>失败模式 #3：代码不工作（没有反馈环）</strong></p>
+<div class="callout"><p>"The rate of feedback is your speed limit." —— 《程序员修炼之道》</p></div>
+<p>就算需求对齐了，智能体还是会产出垃圾——如果它得不到"代码跑起来到底对不对"的反馈，就是闭着眼睛飞。药方是反馈环：静态类型、自动化测试，尤其是 <strong>TDD 红绿循环</strong>——先写一个失败的测试，再让它通过，智能体的每一步都有即时反馈。</p>
+
+<p><strong>失败模式 #4：滚成泥石流（熵增加速）</strong></p>
+<div class="callout"><p>"The best modules are deep." —— John Ousterhout《A Philosophy of Software Design》</p></div>
+<p>智能体让写代码变快，也让软件熵增变快——代码库以前所未有的速度腐化。药方是<strong>真正关心代码设计</strong>：深模块、清晰的接缝、定期的架构走查。</p>
+
+<h3>1.2 从 AI 特性反推工程过程</h3>
+<p>换一个角度，从 AI 的客观特性出发，可以直接反推出工程过程必须长什么样：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:50%">AI 的特性</th><th>对工程过程的要求</th></tr></thead>
+  <tbody>
+    <tr><td>上下文窗口有限，塞满后质量衰减</td><td>任务必须切成"单个上下文能装下"的批次</td></tr>
+    <tr><td>每次会话开始时最"清醒"</td><td>频繁开新会话，而不是一条会话干到底</td></tr>
+    <tr><td>不会主动追问，猜错了就错到底</td><td>需求阶段强制访谈，分歧在写代码前解决</td></tr>
+    <tr><td>产出无限、判断有限</td><td>人只做检查点决策，不做中间执行</td></tr>
+    <tr><td>记不住上一次的对话</td><td>共识必须落盘为文件，而不是留在脑子里</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>mattpocock/skills 就是围绕这两张表设计的。它的口号是 "skills for engineers who actually ship"——面向真正要交付软件的工程师。和 GSD、BMAD、Spec-Kit 这类"接管整个流程"的重型框架不同，它的设计取向是<strong>小、可改、可组合</strong>：每个技能是一份 Markdown 文档，你可以读、可以改、可以只取其中几个用。</p>
+
+<!-- ================= 2 ================= -->
+<h2>二、准备工作：安装与初始化</h2>
+
+<h3>2.1 安装（30 秒）</h3>
+<p>两种安装方式，<strong>二选一，不要都装</strong>（否则每个技能会出现两遍）：</p>
+<pre><code># 方式一：Claude Code 官方插件市场（订阅式，自动更新，只读）
+claude plugins install mattpocock-skills
+
+# 方式二：skills.sh 安装器（把技能文件拷进你的仓库，可编辑、可魔改）
+npx skills add mattpocock/skills</code></pre>
+<p>想长期定制自己团队的工作流，选方式二——技能落地为仓库里的普通文件，改完就是你自己团队的版本；想省心跟着作者更新，选方式一。</p>
+
+<h3>2.2 初始化（每个仓库一次）</h3>
+<pre><code>/setup-matt-pocock-skills</code></pre>
+<p>它会问你三件事，回答后生成仓库约定文件：</p>
+<ol>
+  <li><strong>用哪个 issue tracker</strong>：GitHub（用 <code>gh</code> CLI）、GitLab、本地 Markdown 文件（<code>.scratch/</code> 目录，适合个人项目），或其他（Jira/Linear，用一段话描述你的工作流即可）。</li>
+  <li><strong>triage 标签词汇</strong>：五个标准状态标签——<code>needs-triage</code>、<code>needs-info</code>、<code>ready-for-agent</code>、<code>ready-for-human</code>、<code>wontfix</code>。直接用默认值就好。</li>
+  <li><strong>领域文档放哪</strong>：默认单上下文（根目录一个 <code>CONTEXT.md</code> + <code>docs/adr/</code>），monorepo 才需要多上下文布局。</li>
+</ol>
+<p>产出结构：</p>
+<pre><code>.
+├── CLAUDE.md              # 追加「## Agent skills」约定块
+└── docs
+    └── agents
+        ├── domain.md          # 领域文档的布局与消费规则
+        ├── issue-tracker.md   # issue 在哪、怎么读写
+        └── triage-labels.md   # 五个状态标签</code></pre>
+<p>这些文件是给<strong>智能体</strong>看的约定——后续每个技能启动时都会先读它们，知道"issue 写去哪、术语表在哪、状态标签叫什么"。之后想改约定，直接编辑 <code>docs/agents/*.md</code> 即可，不用重跑初始化。</p>
+
+<h3>2.3 技能体系地图</h3>
+<p>这套技能集分两类，理解这个分类有助于后面看懂它们怎么互相调用：</p>
+<ul>
+  <li><strong>User-invoked（用户触发）</strong>：只有你敲命令才会启动，负责<strong>编排流程</strong>——<code>/grill-with-docs</code>、<code>/to-spec</code>、<code>/to-tickets</code>、<code>/implement</code>、<code>/improve-codebase-architecture</code> 等。</li>
+  <li><strong>Model-invoked（模型触发）</strong>：智能体在合适时机自动加载，承载<strong>可复用的纪律</strong>——<code>/tdd</code>、<code>/code-review</code>、<code>/grilling</code>、<code>/domain-modeling</code>、<code>/codebase-design</code> 等。</li>
+</ul>
+<p>规则是：用户触发的技能可以调用模型触发的技能，但反过来不行。所以你会看到 <code>/implement</code> 内部自动驱动 <code>/tdd</code> 和 <code>/code-review</code>，<code>/grill-with-docs</code> 内部自动驱动 <code>/grilling</code> 和 <code>/domain-modeling</code>——<strong>你只敲一条命令，纪律自动跟着来</strong>。</p>
+<p>主流程是一条线：<code>idea → ship</code>。此外有三条"入口匝道"：issue 堆积用 <code>/triage</code>、疑难杂症用 <code>/diagnosing-bugs</code>、大到看不清全貌的项目用 <code>/wayfinder</code>。本文聚焦主流程加上交付后的架构演进循环——这是 80% 的日常开发会走的路。</p>
+
+<!-- ================= 3 ================= -->
+<h2>三、全景图与上下文纪律</h2>
+<p>整条工作流的全貌——注意图里每一条边上的标注：<strong>每一环的产出物都是文件，下一环消费的是文件而不是对话记忆</strong>。这是整条工作流最重要的结构特征。</p>
+
+<figure>
+<svg viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI 原生工作流全景：构建循环与演进循环">
+  <defs>
+    <marker id="p1-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="p1-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/>
+    </marker>
+    <marker id="p1-arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2f9e44"/>
+    </marker>
+  </defs>
+  <g font-family="-apple-system, PingFang SC, sans-serif">
+    <!-- band 1 label -->
+    <text x="20" y="24" fill="#1a1a1a" font-size="13" font-weight="800">构建循环 · 从 0 到 1</text>
+    <!-- row 1 boxes -->
+    <g>
+      <rect x="20" y="40" width="150" height="56" rx="8" fill="#1a1a1a"/>
+      <text x="95" y="64" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">grill-with-docs</text>
+      <text x="95" y="84" text-anchor="middle" fill="#ffb27a" font-size="11">需求访谈</text>
+    </g>
+    <g>
+      <rect x="210" y="40" width="110" height="56" rx="8" fill="#1a1a1a"/>
+      <text x="265" y="64" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">to-spec</text>
+      <text x="265" y="84" text-anchor="middle" fill="#ffb27a" font-size="11">规格化</text>
+    </g>
+    <g>
+      <rect x="360" y="40" width="120" height="56" rx="8" fill="#1a1a1a"/>
+      <text x="420" y="64" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">to-tickets</text>
+      <text x="420" y="84" text-anchor="middle" fill="#ffb27a" font-size="11">任务拆解</text>
+    </g>
+    <g>
+      <rect x="520" y="40" width="120" height="56" rx="8" fill="#e8590c"/>
+      <text x="580" y="64" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">implement</text>
+      <text x="580" y="84" text-anchor="middle" fill="#fff3ea" font-size="11">逐票实现</text>
+    </g>
+    <g>
+      <rect x="680" y="46" width="100" height="44" rx="22" fill="none" stroke="#1a1a1a" stroke-width="2"/>
+      <text x="730" y="73" text-anchor="middle" fill="#1a1a1a" font-size="12.5" font-weight="700">✅ main</text>
+    </g>
+    <!-- row 1 arrows -->
+    <line x1="170" y1="68" x2="204" y2="68" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p1-arr)"/>
+    <line x1="320" y1="68" x2="354" y2="68" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p1-arr)"/>
+    <line x1="480" y1="68" x2="514" y2="68" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p1-arr)"/>
+    <line x1="640" y1="68" x2="674" y2="68" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p1-arr)"/>
+    <!-- artifact labels -->
+    <text x="187" y="132" text-anchor="middle" fill="#e8590c" font-size="11" font-weight="600">CONTEXT.md + ADR</text>
+    <text x="337" y="132" text-anchor="middle" fill="#e8590c" font-size="11" font-weight="600">spec.md</text>
+    <text x="468" y="132" text-anchor="middle" fill="#e8590c" font-size="11" font-weight="600">issues/*.md</text>
+    <text x="657" y="132" text-anchor="middle" fill="#e8590c" font-size="11" font-weight="600">commits</text>
+    <!-- inner loop under implement -->
+    <rect x="430" y="155" width="100" height="36" rx="6" fill="#fff" stroke="#c9c6bf"/>
+    <text x="480" y="178" text-anchor="middle" fill="#1a1a1a" font-size="11.5" font-weight="600">tdd 红绿循环</text>
+    <rect x="550" y="155" width="140" height="36" rx="6" fill="#fff" stroke="#c9c6bf"/>
+    <text x="620" y="178" text-anchor="middle" fill="#1a1a1a" font-size="11.5" font-weight="600">code-review 双轴</text>
+    <line x1="545" y1="96" x2="500" y2="149" stroke="#e8590c" stroke-width="1.6" marker-end="url(#p1-arrA)"/>
+    <line x1="605" y1="96" x2="615" y2="149" stroke="#e8590c" stroke-width="1.6" marker-end="url(#p1-arrA)"/>
+    <line x1="530" y1="167" x2="544" y2="167" stroke="#9a968e" stroke-width="1.5" marker-end="url(#p1-arr)"/>
+    <line x1="544" y1="179" x2="530" y2="179" stroke="#9a968e" stroke-width="1.5" marker-end="url(#p1-arr)"/>
+    <text x="430" y="212" fill="#888" font-size="11">implement 内部：TDD → 评审 → 提交，全自动</text>
+    <!-- divider -->
+    <line x1="20" y1="228" x2="780" y2="228" stroke="#c9c6bf" stroke-width="1" stroke-dasharray="6 5"/>
+    <!-- band 2 label -->
+    <text x="20" y="252" fill="#2f9e44" font-size="13" font-weight="800">演进循环 · 从 1 到 N（交付后定期运行）</text>
+    <!-- row 2 boxes (right to left flow) -->
+    <g>
+      <rect x="650" y="266" width="130" height="52" rx="8" fill="#2f9e44"/>
+      <text x="715" y="288" text-anchor="middle" fill="#fff" font-size="12.5" font-weight="700">code-review</text>
+      <text x="715" y="306" text-anchor="middle" fill="#ebf7ee" font-size="11">全量评审 · 定基线</text>
+    </g>
+    <g>
+      <rect x="360" y="266" width="230" height="52" rx="8" fill="#fff" stroke="#2f9e44" stroke-width="1.5"/>
+      <text x="475" y="288" text-anchor="middle" fill="#1a1a1a" font-size="11.5" font-weight="700">improve-codebase-architecture</text>
+      <text x="475" y="306" text-anchor="middle" fill="#2f9e44" font-size="11">架构走查 · 候选分级</text>
+    </g>
+    <g>
+      <rect x="190" y="266" width="140" height="52" rx="8" fill="#fff" stroke="#2f9e44" stroke-width="1.5"/>
+      <text x="260" y="288" text-anchor="middle" fill="#1a1a1a" font-size="12.5" font-weight="700">grilling</text>
+      <text x="260" y="306" text-anchor="middle" fill="#2f9e44" font-size="11">决策访谈 · 挖实锤</text>
+    </g>
+    <g>
+      <rect x="20" y="266" width="140" height="52" rx="8" fill="#fff" stroke="#2f9e44" stroke-width="1.5"/>
+      <text x="90" y="288" text-anchor="middle" fill="#1a1a1a" font-size="12" font-weight="700">ADR + 新 tickets</text>
+      <text x="90" y="306" text-anchor="middle" fill="#2f9e44" font-size="11">三道闸门筛选</text>
+    </g>
+    <!-- row 2 arrows (right to left) -->
+    <line x1="644" y1="292" x2="596" y2="292" stroke="#2f9e44" stroke-width="2" marker-end="url(#p1-arrG)"/>
+    <line x1="354" y1="292" x2="336" y2="292" stroke="#2f9e44" stroke-width="2" marker-end="url(#p1-arrG)"/>
+    <line x1="184" y1="292" x2="166" y2="292" stroke="#2f9e44" stroke-width="2" marker-end="url(#p1-arrG)"/>
+    <!-- main down to evolution loop -->
+    <path d="M 730 90 L 725 260" fill="none" stroke="#2f9e44" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#p1-arrG)"/>
+    <text x="742" y="170" fill="#2f9e44" font-size="10.5" font-weight="700">交付后</text>
+    <text x="742" y="184" fill="#2f9e44" font-size="10.5" font-weight="700">定期</text>
+    <!-- return path: ADR box up to grill box -->
+    <path d="M 90 260 L 90 102" fill="none" stroke="#2f9e44" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#p1-arrG)"/>
+    <text x="100" y="185" fill="#2f9e44" font-size="11" font-weight="600">候选生成新想法，回到主流程</text>
+  </g>
+</svg>
+<figcaption>图 1 · AI 原生工作流全景：构建循环（黑/橙）+ 演进循环（绿），每一环的产出物都是文件</figcaption>
+</figure>
+
+<h3>3.1 上下文纪律：什么时候一个窗口，什么时候开新窗口</h3>
+<p>这套流程对上下文窗口的使用有明确纪律（来自 <code>ask-matt</code> 技能的 Context hygiene 规则）：</p>
+<ul>
+  <li><strong>访谈 → spec → 拆票，保持在同一个窗口</strong>。grill 的讨论、spec 的归纳、tickets 的切分建立在同一坨思考上，中间不要 <code>/clear</code> 也不要 <code>/compact</code>。</li>
+  <li><strong>每个 <code>/implement</code> 开全新窗口</strong>。实现智能体冷启动，从 ticket 文件读上下文，看不到你 grill 时的任何讨论——这正是 spec 和 tickets 必须存在的原因。</li>
+</ul>
+
+<h3>3.2 Smart zone 与阶段边界</h3>
+<p>纪律有一个例外出口：<strong>smart zone（黄金上下文区间）</strong>——大约是前 150k Token，模型还能清晰思考的区间。如果 grill 到一半发现事情比预想的大、会话逼近上限，不要硬撑：在阶段边界 <code>/compact</code>，或者升级路径补走 <code>/to-spec</code>。</p>
+<p>在每个<strong>阶段边界</strong>上，你有五个选项：继续（continue）、<code>/clear</code>（清空）、<code>/handoff</code>（写成交接文档）、子智能体（派发任务拿回报告）、<code>/compact</code>（压缩续接，默认兜底）。记住结论就够了：<strong>单会话判断不是签生死状，中途可以改道</strong>。</p>
+
+<!-- ================= 4 ================= -->
+<h2>四、第一环：grill-with-docs 需求访谈</h2>
+
+<h3>4.1 为什么：设计树与 frontier 机制</h3>
+<p><code>grill-with-docs</code> 解决的是失败模式 #1（供需错位）。它底层的 <code>/grilling</code> 技能把你的方案建模成一棵<strong>设计树</strong>：每个决策都分叉出挂在它下面的子决策。</p>
+<p>访谈按<strong>轮次</strong>推进。每一轮，智能体把 <strong>frontier（前沿）</strong>——所有前置条件已敲定、现在就可以问的决策——一次性全部抛出，每个问题<strong>附带它自己的推荐答案</strong>，然后停下来等你回答。你的答案落定后，前沿向外推进，解锁下一轮问题。终止条件是 frontier 清空：设计树的每个分支都走过，没有任何"默默假设"残留。</p>
+<p>这个机制里有两个关键分工：</p>
+<ul>
+  <li><strong>找事实是智能体的活</strong>。问题需要查证环境（文件系统、工具版本）时，它自己去查或派子智能体查，绝不问你"你能帮我看一下吗"。</li>
+  <li><strong>做决定是你的活</strong>。每个决策都摆到你面前，等你拍板。</li>
+</ul>
+
+<h3>4.2 为什么：stateful 是杀手锏</h3>
+<p>其他访谈类技能把会话留在你脑子里；<code>grill-with-docs</code> 把文件留在磁盘上——它内部同时驱动 <code>/domain-modeling</code> 技能：</p>
+<ul>
+  <li><strong>一个术语被敲定的那一刻</strong>，它就落进 <code>CONTEXT.md</code>（领域术语表），而不是访谈结束批量补交；</li>
+  <li><strong>一个决策同时满足三道闸门</strong>，就落成一条 ADR（架构决策记录）：
+    <ol>
+      <li><strong>难逆转</strong>：以后反悔的代价是真实的；</li>
+      <li><strong>缺背景会意外</strong>：未来的读者会疑惑"当时为什么这么做"；</li>
+      <li><strong>真实权衡</strong>：存在过真正的备选方案，你基于具体理由选了一个。</li>
+    </ol>
+  </li>
+</ul>
+<p>三道闸门缺任何一道，就不写 ADR——这个克制很重要，后面演进循环里会看到它的效果。<code>CONTEXT.md</code> 有严格的纯度要求：<strong>只放领域术语与共识，不放任何实现细节</strong>——它不是 spec、不是草稿本，只是词汇表。</p>
+
+<h3>4.3 怎么做</h3>
+<pre><code>/mattpocock-skills:grill-with-docs 给老人开发一款计算器 macOS 原生应用。</code></pre>
+<p>发起后，你的工作量极小：每轮看 5~7 个问题，每个都带推荐答案，<strong>回答"都按推荐"即可</strong>，或者针对某几条给出不同选择。访谈结束的标志是：智能体宣布 frontier 已清空，给出完整共识总结，请你确认。<strong>在它给出总结、你确认之前，它不会动手写任何代码。</strong></p>
+<p>中途有两个改道口：</p>
+<ul>
+  <li>冒出"只能在纸上吵不出结果"的问题（比如某个交互手感）→ 绕道 <code>/prototype</code>，用一次性原型代码回答这个问题，再回到访谈；</li>
+  <li>发现规模比预想的大 → 按 smart zone 规则 <code>/compact</code>，或升级走多会话路径。</li>
+</ul>
+
+<h3>4.4 实战：四轮访谈定案一款产品</h3>
+<p>「长辈计算器」的访谈共四轮 27 问，我四轮都只回了三个字："都按推荐"。</p>
+<p>第一轮铺最外层分支：目标用户画像、功能范围、界面语言、技术栈、分发方式、适老化核心手段。第二轮深入：语音播报粒度与读法、记忆功能取舍、窗口形态、配色、历史记录形态、键盘输入、错误边界。第三轮：计算语义（实体计算器式 vs 表达式式）、清除防误触、千分位、设置项、测试策略、命名。第四轮收尾：系统版本、历史条目交互、重复等号、首次启动、图标。</p>
+<p>每一轮结束，智能体当场重写 <code>CONTEXT.md</code>。看一个真实条目——"砍掉记忆功能"这个取舍落地成这样：</p>
+
+<div class="callout">
+  <p><strong>不做记忆功能</strong>（M+/M− 等）——历史记录已覆盖"之前算的数字想再用"的场景，记忆键的隐式状态对老人是纯负担。</p>
+</div>
+
+<p>注意它不只记录了决策，还记录了<strong>理由</strong>。三个月后任何人（或任何智能体）读到这里，都不需要重新争论一遍。这就是共享语言的复利。</p>
+<p>四轮结束后智能体给出共识总结，最后一句话是：</p>
+
+<div class="callout warn">
+  <p><strong>请确认：以上理解是否与你心目中的产品一致？</strong> 确认后我就开始动手搭建工程和实现。如有任何一条想改，现在说是最便宜的时机。</p>
+</div>
+
+<p>"现在说是最便宜的时机"——这句话就是整个环节的存在意义。</p>
+
+<figure>
+<svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="grill 访谈循环">
+  <defs>
+    <marker id="p2-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="p2-arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2f9e44"/>
+    </marker>
+  </defs>
+  <g font-family="-apple-system, PingFang SC, sans-serif">
+    <!-- 主流程：一轮访谈 -->
+    <rect x="40" y="40" width="200" height="76" rx="8" fill="#1a1a1a"/>
+    <text x="140" y="64" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">第 N 轮问题</text>
+    <text x="140" y="84" text-anchor="middle" fill="#ffb27a" font-size="11">当前能问的全问掉，不限个数</text>
+    <text x="140" y="102" text-anchor="middle" fill="#ffb27a" font-size="11">每个问题附推荐答案</text>
+
+    <rect x="330" y="40" width="180" height="76" rx="8" fill="#fff" stroke="#c9c6bf"/>
+    <text x="420" y="70" text-anchor="middle" fill="#1a1a1a" font-size="13" font-weight="700">用户确认 / 纠偏</text>
+    <text x="420" y="92" text-anchor="middle" fill="#888" font-size="11">"都按推荐"即可</text>
+
+    <rect x="580" y="40" width="220" height="76" rx="8" fill="#e8590c"/>
+    <text x="690" y="62" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">即时落盘（敲定那一刻）</text>
+    <text x="690" y="82" text-anchor="middle" fill="#fff3ea" font-size="11">术语 → CONTEXT.md</text>
+    <text x="690" y="100" text-anchor="middle" fill="#fff3ea" font-size="11">过三道 gate 的决策 → ADR</text>
+
+    <line x1="240" y1="78" x2="324" y2="78" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p2-arr)"/>
+    <line x1="510" y1="78" x2="574" y2="78" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p2-arr)"/>
+
+    <!-- 旁路：事实查找（机器的活，不阻塞） -->
+    <rect x="40" y="150" width="320" height="78" rx="8" fill="#fff" stroke="#c9c6bf" stroke-dasharray="5 4"/>
+    <text x="60" y="174" fill="#1a1a1a" font-size="12" font-weight="700">事实查找（子智能体，不阻塞）</text>
+    <text x="60" y="194" fill="#555" font-size="11.5">代码能回答的自己查，不问用户</text>
+    <text x="60" y="212" fill="#555" font-size="11.5">只有依赖它的问题延后，其余照问</text>
+    <line x1="140" y1="116" x2="140" y2="144" stroke="#888" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#p2-arr)"/>
+
+    <!-- 落盘后进入终止判断 -->
+    <polyline points="690,116 690,190 656,190" fill="none" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p2-arr)"/>
+    <polygon points="470,190 560,150 650,190 560,230" fill="#fff" stroke="#c9c6bf" stroke-width="1.5"/>
+    <text x="560" y="185" text-anchor="middle" fill="#1a1a1a" font-size="12" font-weight="600">还有能问的</text>
+    <text x="560" y="203" text-anchor="middle" fill="#1a1a1a" font-size="12" font-weight="600">问题吗？</text>
+
+    <!-- 否：回流到下一轮（黑色，循环语义） -->
+    <path d="M 560 150 L 560 23 L 140 23 L 140 34" fill="none" stroke="#1a1a1a" stroke-width="2" marker-end="url(#p2-arr)"/>
+    <text x="300" y="17" text-anchor="middle" fill="#555" font-size="12" font-weight="700">否 → 答案解锁了新问题，下一轮</text>
+
+    <!-- 是：终止（绿色只给终结路径） -->
+    <line x1="560" y1="230" x2="560" y2="256" stroke="#2f9e44" stroke-width="2" marker-end="url(#p2-arrG)"/>
+    <text x="575" y="248" fill="#2f9e44" font-size="12" font-weight="700">是 · 没有可问的了</text>
+    <rect x="440" y="262" width="240" height="56" rx="8" fill="#1a1a1a"/>
+    <text x="560" y="284" text-anchor="middle" fill="#fff" font-size="12.5" font-weight="700">共识总结 + 最后确认</text>
+    <text x="560" y="302" text-anchor="middle" fill="#ffb27a" font-size="11">确认后才行动（通常接 to-spec）</text>
+
+    <!-- 有状态 vs 无状态 -->
+    <rect x="40" y="262" width="320" height="96" rx="8" fill="#f6f6f4" stroke="#e4e2dd"/>
+    <text x="60" y="288" fill="#1a1a1a" font-size="12" font-weight="700">有状态 vs 无状态</text>
+    <text x="60" y="310" fill="#555" font-size="11.5">其他 grilling skill：session 留在你脑子里</text>
+    <text x="60" y="330" fill="#555" font-size="11.5">grill-with-docs：文件留在磁盘上，</text>
+    <text x="60" y="346" fill="#555" font-size="11.5">且决策记录里包含理由，而非仅结论</text>
+  </g>
+</svg>
+<figcaption>图 2 · grill-with-docs 访谈循环：每轮即时落盘，能问的问题清空后进入共识确认</figcaption>
+</figure>
+
+
+<h3>4.5 访谈之后：单会话还是多会话</h3>
+<p>访谈完成后按规模分岔：</p>
+<ul>
+  <li><strong>一个会话能做完</strong> → 直接 <code>/implement</code>（内部驱动 TDD 和 code-review），不落 spec。此时盘问结论还活在当前上下文窗口里，再写 spec 等于把模型已经知道的东西序列化一遍再读回来，纯属搬运。但注意这不等于"零存档"——<code>CONTEXT.md</code> 和 ADR 在访谈过程中已经落盘了。</li>
+  <li><strong>多会话才能做完</strong> → 走 <code>/to-spec</code> → <code>/to-tickets</code> → 逐票 <code>/implement</code>。</li>
+</ul>
+<p>一句话记住：<strong>"为什么这么做"永远落盘（ADR + 术语表）；"具体做什么"只在需要跨窗口传递时才落盘（spec + tickets）</strong>。</p>
+
+<!-- ================= 5 ================= -->
+<h2>五、第二环：to-spec 规格化</h2>
+
+<h3>5.1 为什么：spec 是序列化工具，不是思考工具</h3>
+<p><code>/to-spec</code> 的技能说明里有句话极其重要：<strong>"no interview, just synthesis"</strong>——不做访谈，只综合你们已经讨论过的内容。思考在 grill 阶段已经完成，spec 的职责是把盘问结论<strong>压缩成一份能跨窗口传递的文档</strong>。</p>
+<p>它存在的唯一理由是对抗上下文丢失：<code>/implement</code> 是在新窗口冷启动的，看不到你 grill 时的任何讨论。所以多会话构建必须把思考固化成可携带的制品。</p>
+<p>这也解释了 spec 模板里一条看似奇怪的禁令：<strong>不许写具体文件路径和代码片段</strong>——它们过时得太快。spec 是易腐的执行计划，写的是决策和行为，不是实现快照。</p>
+
+<h3>5.2 为什么：接缝（Seam）先行</h3>
+<p><code>to-spec</code> 最不传统的地方是它的<strong>写入顺序</strong>：动笔写 spec 之前，先和你确认<strong>测试接缝</strong>。</p>
+<p><strong>Seam（接缝）</strong>是 Michael Feathers（《修改代码的艺术》）的术语：一个无需在那个位置编辑代码就能改变行为的地点。对测试来说，接缝就是"测试从外部观察系统的位置"。</p>
+<p>确认接缝的三条原则（来自技能原文）：</p>
+<ol>
+  <li><strong>优先复用既有接缝</strong>，新接缝能不开就不开；</li>
+  <li>必须开新缝时，<strong>在尽可能高的位置开</strong>——测试从离用户最近的地方进；</li>
+  <li><strong>接缝越少越好，理想数量是一个</strong>。</li>
+</ol>
+<p>这一步的价值在于：<strong>架构决策（哪里是深模块、哪里是薄壳）在写代码之前就以"可测试性"的形式被双方锁定</strong>，而不是实现到一半才想起"这玩意儿怎么测"。</p>
+
+<h3>5.3 怎么做</h3>
+<pre><code>/mattpocock-skills:to-spec</code></pre>
+<p>智能体先提出接缝方案请你确认，确认后写出完整 spec，发布到初始化时约定的 tracker（本地模式是 <code>.scratch/&lt;feature-slug&gt;/spec.md</code>），并标记 <code>Status: ready-for-agent</code>。</p>
+<p>spec 的固定六段结构：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:28%">段落</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td>Problem Statement</td><td>用户视角的问题</td></tr>
+    <tr><td>Solution</td><td>用户视角的解决方案</td></tr>
+    <tr><td>User Stories</td><td>编号用户故事长清单，格式「作为 &lt;角色&gt;，我想 &lt;功能&gt;，以便 &lt;收益&gt;」，要写到穷尽</td></tr>
+    <tr><td>Implementation Decisions</td><td>模块划分、接口、架构决策——不含文件路径和代码</td></tr>
+    <tr><td>Testing Decisions</td><td>什么是好测试、测哪些模块、测试先例</td></tr>
+    <tr><td>Out of Scope</td><td>明确排除什么</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>5.4 实战：两个接缝 + 36 条用户故事</h3>
+<p>「长辈计算器」是全新代码库，没有既有接缝，智能体提议在最高层设两个：</p>
+
+<div class="callout">
+  <p><strong>接缝 1：计算引擎</strong>——纯逻辑状态机。测试从"用户按键"这个最高点进，断言"屏幕显示什么、历史里多了什么"，完全不碰内部实现。</p>
+  <p><strong>接缝 2：中文数字朗读转换</strong>——纯函数，规则最复杂、最容易出错，独立成接缝。</p>
+  <p><strong>不在接缝上的</strong>：SwiftUI 界面、配色、语音实际播放——这些手工验证。理由：<strong>接缝越少越好</strong>。</p>
+</div>
+
+<p>我确认后，spec 落盘：36 条用户故事按"基本计算 / 看得清 / 听得见 / 错得起 / 回看核对 / 键盘与其他"六组组织；实现决策写明"两个深模块 + SwiftUI 薄壳"；Out of Scope 明确排除 10 项（记忆功能、科学计算、运算优先级、结果复制、历史持久化、按键音效……）。</p>
+<p>Out of Scope 这一段常常被忽视，但它在后面的评审环节会发挥真实作用——第八节你会看到。</p>
+
+<!-- ================= 6 ================= -->
+<h2>六、第三环：to-tickets 任务拆解</h2>
+
+<h3>6.1 为什么：ticket ≠ 用户故事</h3>
+<p>这是最容易误解的一环。spec 里的 36 条用户故事描述的是"系统该有什么行为"；<code>/to-tickets</code> 拆的是<strong>实现批次</strong>——一张 ticket 会打包多条相关的故事。</p>
+<p>拆票遵循 <strong>tracer-bullet（曳光弹）</strong>原则，四条规则：</p>
+<ol>
+  <li>每张票切一条<strong>窄而完整</strong>的通路，贯穿所有层（引擎、UI、测试）——垂直切片，不是水平分层；</li>
+  <li>每张票做完<strong>独立可演示、可验证</strong>；</li>
+  <li>每张票的尺寸<strong>装进单个全新上下文窗口</strong>；</li>
+  <li>需要预重构（prefactor）的活排最前——"让改变变容易，再做容易的改变"。</li>
+</ol>
+<p>每张票还要声明自己的 <strong>blocking edges（阻塞边）</strong>：哪些票必须先完成它才能开工。没有阻塞的票可以立即动工，已完工票解锁的票构成新的 frontier。</p>
+<p>（例外情况：波及全库的宽重构——改一个列名牵动几千个调用点那种——不硬塞进曳光弹，改用 expand–contract 三段式：先并存、分批迁移、最后删除。日常开发很少用到，知道有这个出口即可。）</p>
+
+<h3>6.2 为什么：人的介入节奏是设计出来的</h3>
+<p>这套流程里，<strong>手工介入次数 ≈ ticket 数量</strong>：拆票确认 1 次 + 每张票启动 1 次。而且这是设计意图，不是缺点：</p>
+<ul>
+  <li>每张票之间有<strong>天然检查点</strong>——打开应用亲手点点看，方向错了马上纠偏，而不是等 36 条故事全写完才发现不对；</li>
+  <li>每张票开<strong>全新会话</strong>，智能体永远在最清醒的状态下写代码。让一个会话连续做完 36 条故事，后半程的代码是上下文被塞满的智能体写的，质量衰减的代价远大于多敲几次命令。</li>
+</ul>
+
+<h3>6.3 怎么做</h3>
+<pre><code>/mattpocock-skills:to-tickets</code></pre>
+<p>智能体给出拆票草案后，会<strong>反问你三个问题</strong>：粒度合适吗？阻塞边对吗？有想合并或再拆的吗？——又一个低成本确认点。你确认后，它把每张票写成独立文件：</p>
+<pre><code>.scratch/elder-calculator/issues/
+├── 01-project-scaffolding.md
+├── 02-digit-input-display.md
+└── ... （每票一文件，编号按依赖顺序）</code></pre>
+<p>单票模板极简：<code>What to build</code>（用户视角的端到端行为）、<code>Blocked by</code>、<code>Status: ready-for-agent</code>、验收清单。同样<strong>不写文件路径和代码片段</strong>。</p>
+
+<h3>6.4 实战：12 张垂直切片</h3>
+<p>「长辈计算器」被拆成 12 张票：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:8%">#</th><th>Ticket</th><th style="width:40%">Blocked by</th></tr></thead>
+  <tbody>
+    <tr><td>01</td><td>工程脚手架</td><td>无 ✅ 可立即开始</td></tr>
+    <tr><td>02</td><td>数字输入与大屏显示</td><td>01</td></tr>
+    <tr><td>03</td><td>四则运算与等号</td><td>02</td></tr>
+    <tr><td>04</td><td>小数、正负号、百分比</td><td>03</td></tr>
+    <tr><td>05</td><td>退格与分级清除</td><td>02（可与 03 并行）</td></tr>
+    <tr><td>06</td><td>错误与边界</td><td>04</td></tr>
+    <tr><td>07</td><td>中文数字朗读转换模块</td><td>01（可与主干并行）</td></tr>
+    <tr><td>08</td><td>语音播报接入</td><td>07, 03</td></tr>
+    <tr><td>09</td><td>计算历史</td><td>03</td></tr>
+    <tr><td>10</td><td>设置面板与高对比双主题</td><td>08</td></tr>
+    <tr><td>11</td><td>键盘输入</td><td>06</td></tr>
+    <tr><td>12</td><td>窗口行为与应用收尾</td><td>09, 10, 11</td></tr>
+  </tbody>
+</table>
+</div>
+
+<figure>
+<svg viewBox="0 0 760 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="12 张 ticket 依赖图">
+  <defs>
+    <marker id="p3-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9a968e"/>
+    </marker>
+  </defs>
+  <g font-family="-apple-system, PingFang SC, sans-serif">
+    <g stroke="#9a968e" stroke-width="1.5" fill="none">
+      <path d="M 368 62 L 278 118" marker-end="url(#p3-arr)"/>
+      <path d="M 408 62 L 512 118" marker-end="url(#p3-arr)"/>
+      <path d="M 240 158 L 240 196" marker-end="url(#p3-arr)"/>
+      <path d="M 204 150 L 118 274" marker-end="url(#p3-arr)"/>
+      <path d="M 240 236 L 240 274" marker-end="url(#p3-arr)"/>
+      <path d="M 268 240 L 356 274" marker-end="url(#p3-arr)"/>
+      <path d="M 268 236 L 476 280" marker-end="url(#p3-arr)"/>
+      <path d="M 540 158 L 540 274" marker-end="url(#p3-arr)"/>
+      <path d="M 240 314 L 240 352" marker-end="url(#p3-arr)"/>
+      <path d="M 240 392 L 240 430" marker-end="url(#p3-arr)"/>
+      <path d="M 540 314 L 540 352" marker-end="url(#p3-arr)"/>
+      <path d="M 268 450 L 356 500" marker-end="url(#p3-arr)"/>
+      <path d="M 540 392 L 540 430 L 432 500" marker-end="url(#p3-arr)"/>
+      <path d="M 400 310 L 400 500" marker-end="url(#p3-arr)"/>
+    </g>
+    <g font-size="12.5" font-weight="600" text-anchor="middle">
+      <g><rect x="312" y="28" width="152" height="36" rx="18" fill="#1a1a1a"/><text x="388" y="51" fill="#fff">01 工程脚手架</text></g>
+      <g><rect x="176" y="120" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="240" y="143" fill="#1a1a1a">02 数字输入</text></g>
+      <g><rect x="476" y="120" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="540" y="143" fill="#1a1a1a">07 中文朗读转换</text></g>
+      <g><rect x="176" y="198" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="240" y="221" fill="#1a1a1a">03 四则运算</text></g>
+      <g><rect x="44" y="276" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="108" y="299" fill="#1a1a1a">05 退格/清除</text></g>
+      <g><rect x="176" y="276" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="240" y="299" fill="#1a1a1a">04 小数/百分比</text></g>
+      <g><rect x="476" y="276" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="540" y="299" fill="#1a1a1a">08 语音播报</text></g>
+      <g><rect x="308" y="276" width="112" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="364" y="299" fill="#1a1a1a">09 计算历史</text></g>
+      <g><rect x="176" y="354" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="240" y="377" fill="#1a1a1a">06 错误与边界</text></g>
+      <g><rect x="476" y="354" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="540" y="377" fill="#1a1a1a">10 设置/主题</text></g>
+      <g><rect x="176" y="432" width="128" height="36" rx="8" fill="#fff" stroke="#c9c6bf"/><text x="240" y="455" fill="#1a1a1a">11 键盘输入</text></g>
+      <g><rect x="312" y="502" width="128" height="36" rx="18" fill="#e8590c"/><text x="376" y="525" fill="#fff">12 收尾</text></g>
+    </g>
+    <text x="30" y="580" fill="#888" font-size="12">主干：01 → 02 → 03 → 04 → 06 → 11；07 独立模块可与主干并行；每张票都是贯穿"引擎 → UI → 测试"的垂直切片。</text>
+  </g>
+</svg>
+<figcaption>图 3 · 12 张 tracer-bullet ticket 的依赖图（橙色为终点票，黑色为起点）</figcaption>
+</figure>
+
+<p>注意几张票的切法：<strong>一张"四则运算与等号"票（03）打包了链式语义、运算符替换、重复等号等十几条故事</strong>——因为它们是同一个状态机的同一层逻辑；而"中文朗读转换"（07）单独成票——它是独立的纯逻辑模块，且能和主干<strong>并行</strong>。这就是垂直切片和水平分层的区别。</p>
+
+<!-- ================= 7 ================= -->
+<h2>七、第四环：implement 实现（TDD + 双轴评审）</h2>
+
+<h3>7.1 为什么：TDD 给智能体装反馈环</h3>
+<p><code>/implement</code> 内部首先驱动 <code>/tdd</code> 技能。TDD 在这里的角色不是"测试信仰"，而是失败模式 #3 的药方：<strong>红→绿循环让智能体的每一步都有即时、客观的反馈</strong>。</p>
+<p>技能对"什么是好测试"有严格定义：<strong>通过公开接口验证行为，不碰实现细节</strong>。代码可以整个重写，测试不该动——一条好测试读起来像规格书："用户可以用有效购物车结账"，它活过任何重构，因为它不关心内部结构。</p>
+<p>三个反模式被点名禁止：</p>
+<ul>
+  <li><strong>Implementation-coupled（耦合实现）</strong>：mock 内部协作者、测私有方法。特征：重构没改行为，测试却红了；</li>
+  <li><strong>Tautological（同义反复）</strong>：断言用和实现相同的方式算期望值（<code>expect(add(a,b)).toBe(a+b)</code>），永远通过、永远抓不到 bug。期望值必须来自独立的真相源：已知正确的字面量、手工演算的样例、spec；</li>
+  <li><strong>Horizontal slicing（水平切片）</strong>：先写完全部测试再写全部实现——你测的是想象中的形状而不是行为。正确做法是垂直切片：<strong>一个测试 → 一个实现 → 重复</strong>，每个测试都是曳光弹。</li>
+</ul>
+<p>还有两条循环纪律：红灯在绿灯之前（不许预写实现）；<strong>重构不属于红绿循环</strong>——它归后面的 code-review 阶段。</p>
+<p>最重要的一条：<strong>只在预先约定的接缝上写测试</strong>。接缝在 to-spec 阶段已经双方确认过，没有确认的接缝不写测试——这是测试火力集中在关键路径上、而不是撒胡椒面的机制。</p>
+
+<h3>7.2 怎么做（含一个真实的坑）</h3>
+<pre><code>/mattpocock-skills:implement .scratch/elder-calculator/issues/03-arithmetic-equals.md</code></pre>
+
+<div class="callout warn">
+  <p>⚠️ <strong>坑：<code>/implement</code> 必须显式传入单个 ticket 文件路径</strong>。不带参数裸跑 <code>/mattpocock-skills:implement</code>，它会尝试执行<strong>所有</strong> tickets——多票并存时尤其危险。</p>
+</div>
+
+<p>一张票的内部流程（全自动，无需人介入）：</p>
+<ol>
+  <li>读 ticket、CONTEXT.md、spec、既有代码，确认依赖票已完成；</li>
+  <li>在接缝上 TDD：写失败测试（红）→ 最小实现（绿）→ 下一切片；</li>
+  <li>期间定期跑类型检查和单个测试文件，结尾跑一次完整套件；</li>
+  <li>跑 <code>/code-review</code> 双轴评审；</li>
+  <li>提交代码、勾选 ticket 验收项。</li>
+</ol>
+
+<h3>7.3 为什么：评审分双轴</h3>
+<p><code>/code-review</code> 把评审拆成两条轴，用<strong>并行子智能体</strong>分别执行——互不污染对方的上下文，然后并排报告：</p>
+<ul>
+  <li><strong>Standards 轴</strong>：代码是否遵循本仓库成文的编码标准？在此之上永远叠加一层 <strong>Fowler 代码坏味道基线</strong>（《重构》第三章的 12 种：神秘命名、重复代码、数据泥团、Primitive Obsession、霰弹式修改……）。两条约束：仓库成文标准优先于基线；坏味道永远是"判断题"而非硬性违规。</li>
+  <li><strong>Spec 轴</strong>：代码是否忠实实现了原始 spec？报三类问题：spec 要求但缺失/半成品的、diff 里 spec 没要的（scope creep）、看似实现但实现错了的。</li>
+</ul>
+<p>为什么必须分轴？因为<strong>一轴的通过不能掩盖另一轴的失败</strong>：代码可能完全符合规范但做错了事（Standards 过、Spec 挂）；也可能完全做对了事但破坏了项目约定（Spec 过、Standards 挂）。合并报告会让一类问题被另一类冲淡。</p>
+
+<h3>7.4 实战：ticket 03 的一次完整实现</h3>
+<p><strong>TDD 阶段</strong>——4 个红→绿切片：基本加法与完整算式 → 四则与链式执行 → 运算符替换/出结果开新笔/重复等号 → 结果格式化（10 位有效数字、去尾零、千分位）。最终 23 个引擎行为测试全绿，全部只经 <code>press</code> / <code>displayState</code> 断言外部行为。</p>
+<p><strong>评审阶段</strong>——两条轴的表现正好演示了设计的意图：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:16%">评审轴</th><th>实战结果</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Spec 轴</strong></td>
+      <td>发现真实偏差：算式行中的数字未带千分位（CONTEXT.md 明确要求）→ 补测试修复 ✅；另注明"12 + ="静默无反应是 spec 未定义行为，<strong>记录在案留待 ticket 06</strong>，而不是当场拍脑袋决定</td>
+    </tr>
+    <tr>
+      <td><strong>Standards 轴</strong></td>
+      <td>两项轻量重构被采纳（消除数据泥团、橙色按钮去重）；一项 Primitive Obsession 建议<strong>暂不做</strong>——现有实现已被 23 个测试钉住，留待 ticket 09 再评估</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>最关键的细节是评审意见的处理方式：<strong>Spec 轴发现的是"和共识的偏差"，必须修；Standards 轴给的是"判断性建议"，可以基于测试覆盖情况有理有据地拒绝</strong>。AI 评审不再是无差别的意见倾泻，而是有优先级的工程判断。</p>
+<p><strong>收尾</strong>：两个提交落到 main（<code>cc2f124 feat: 四则运算与等号（ticket 03）</code>、<code>c098cda chore: 勾选 ticket 03 验收项</code>），issue 文件验收项逐条勾选。</p>
+
+<!-- ================= 8 ================= -->
+<h2 class="evo">八、演进循环：让代码库对 AI 持续友好</h2>
+<p>交付不是终点。智能体加速写代码也加速熵增（失败模式 #4），所以这套工作流有一条专门的演进循环。<strong>建议每隔几天就在代码库上跑一次架构走查</strong>——这是作者的原文建议。</p>
+
+<h3>8.1 全量 code-review：固定点决定一切</h3>
+<p>交付 12 张票后，先做一次全量评审：</p>
+<pre><code>/mattpocock-skills:code-review 64f0c0a</code></pre>
+<p><code>64f0c0a</code> 是<strong>固定点（基点）</strong>——评审审的不是整个代码库，而是 <code>git diff &lt;基点&gt;...HEAD</code> 这个差异。基点的选择直接决定审查范围：</p>
+<pre><code>f241e09  chore: setup 配置
+64f0c0a  docs: spec + 12 张 ticket   ← ★ 基点：spec 定格，实现未开始
+bda3dd3  feat: 工程脚手架（ticket 01）
+  …      tickets 02–12 …
+c9bd0b5  chore: HEAD</code></pre>
+<p>选 <code>64f0c0a</code> 的理由：这一刻 spec 和 tickets 已写好、一行实现代码都还没写，从它往后的 diff 正好覆盖全部实现，不多不少。<strong>基点太早，diff 混入无关旧代码，报告充满噪音；基点太晚，部分实现被漏审。</strong>技能要求基点错误要在源头就失败，而不是等两个子智能体跑出垃圾报告才发现。</p>
+<p>全量评审的实战产出：</p>
+<ul>
+  <li><strong>Standards 轴</strong>抓到 1 项硬性违规：仓库的设计流水线文档要求界面类 ticket 在 spec 里引用 DESIGN.md 和原型链接，而 spec 与 12 个 issue 都没有——流程衔接的缺口被找了出来；另有 5 条判断题坏味道（重复代码、数据泥团、Divergent Change 等）。</li>
+  <li><strong>Spec 轴</strong>抓到 1 项口径偏差：spec 要求"结果最多保留 10 位有效数字"，但整数路径实际会显示 13 位——<strong>未经记录的偏差，需要澄清或补记</strong>；还识别出 2 项 scope creep（spec 之外的交付物）。</li>
+</ul>
+<p>注意这两类发现恰好对应 spec 里 Out of Scope 和 Implementation Decisions 的价值——当时白纸黑字写下的边界，现在成了审判的标尺。</p>
+
+<h3>8.2 improve-codebase-architecture：架构走查</h3>
+<pre><code>/mattpocock-skills:improve-codebase-architecture</code></pre>
+
+<p><strong>所以然：深模块词汇表。</strong>这个技能建立在一套精确的架构词汇上（来自 <code>/codebase-design</code>，它要求所有建议严格使用这些术语，不许漂移成 "component""service""API"）：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:26%">术语</th><th>定义</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Module（模块）</strong></td><td>任何有接口和实现的东西，刻意尺度无关：函数、类、包都算</td></tr>
+    <tr><td><strong>Interface（接口）</strong></td><td>调用方正确使用模块必须知道的一切：类型签名，还有不变式、顺序约束、错误模式、性能特征</td></tr>
+    <tr><td><strong>Depth（深度）</strong></td><td>接口处的杠杆率：少量接口背后压着大量行为 = 深；接口和实现一样复杂 = 浅</td></tr>
+    <tr><td><strong>Seam（接缝）</strong></td><td>模块接口所在的<em>位置</em>；接缝放哪是独立的设计决策</td></tr>
+    <tr><td><strong>Adapter（适配器）</strong></td><td>在接缝处满足接口的具体东西，描述角色而非内容</td></tr>
+    <tr><td><strong>Leverage（杠杆）</strong></td><td>深度给调用方的好处：学一份接口，获得 N 处能力</td></tr>
+    <tr><td><strong>Locality（局部性）</strong></td><td>深度给维护者的好处：修改、bug、知识、验证集中在一处</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>三条核心判断原则：</p>
+<ul>
+  <li><strong>删除测试</strong>：想象删掉这个模块。复杂度消失了，说明它是透传（白存在）；复杂度在 N 个调用方身上重新冒出来，说明它在挣钱。</li>
+  <li><strong>接口就是测试面</strong>：调用方和测试跨过同一条接缝。想越过接口去测内部，说明模块形状错了。</li>
+  <li><strong>一个适配器 = 假想接缝，两个适配器 = 真实接缝</strong>：没有真实变化点就不要抽象（YAGNI）。</li>
+</ul>
+
+<p><strong>怎么做。</strong>智能体先扫 git 历史找热点（最近常改的地方值得优先深化），再派子智能体走查代码库，产出一份<strong>可视化 HTML 报告</strong>（写进系统临时目录，不污染仓库）：每个候选项一张卡片——涉及文件、问题、方案、before/after 对比图、强度分级。报告看完，你挑一个候选，它用 grilling 流程陪你把决策走完。</p>
+
+<p><strong>实战：四个候选与一个最大结论。</strong>「长辈计算器」的走查报告给出四个候选：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:6%">#</th><th>候选</th><th style="width:22%">强度</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><strong>播报词决策与语音合成器分层</strong>——错误优先、每键播报词这些适老化核心规则锁在与 AVSpeechSynthesizer 硬耦合的模块里，零测试覆盖</td><td><span class="badge strong">Strong</span></td></tr>
+    <tr><td>2</td><td><strong>数值规范口径收敛</strong>——"10 位有效数字"在引擎和语音格式化器各实现一遍，靠注释对齐</td><td><span class="badge worth">Worth exploring</span></td></tr>
+    <tr><td>3</td><td><strong>运算符表述集中</strong>——符号/语义在 Engine 目录，播报用词在 Speech 目录，一个概念被切开</td><td><span class="badge worth">Worth exploring</span></td></tr>
+    <tr><td>4</td><td>错误态改为 DisplayState 显式 case</td><td><span class="badge spec">Speculative</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>报告里的最大结论值得抄下来：</p>
+
+<div class="callout evo">
+  <p>这个项目的计算与朗读转换两侧已经够深，<strong>唯一的结构性短板在语音播报的"决策/硬件"不分层</strong>——它恰好是产品的核心卖点，却是唯一没有测试接缝的行为规则集中地。</p>
+</div>
+
+<h3>8.3 grilling 推进：访谈是持续发现机制</h3>
+<p>我选了候选 1、2、3，进入 grilling。又是熟悉的节奏：三轮 13 问，每问附推荐答案，我三次"都按推荐"。</p>
+<p>但真正的价值在过程中——<strong>访谈本身就是持续发现机制</strong>。智能体在追问前重读了相关代码，挖出两个走查报告都没抓到的实锤：</p>
+<ol>
+  <li><strong>阈值发散是现存行为不是理论风险</strong>：引擎的整数快路径阈值是 1e13，语音格式化器是 1e16——结果落在中间区间时，<strong>屏幕显示科学计数法，语音却把完整精确值念出来</strong>，对不上账是正在发生的；</li>
+  <li><strong>e-notation 会念出错误文本</strong>：结果 ≥ 1e16 时 <code>%.10g</code> 产出 <code>"9.999999999e+23"</code>，逐字符映射把 <code>e</code>、<code>+</code> 吞成"零"——<strong>今天就会念出"九点九九九…零二三"</strong>。</li>
+</ol>
+<p>这就是为什么这套流程不厌其烦地访谈：每一轮追问都迫使智能体把代码事实重新核实一遍，猜测在这个过程中被事实替换。</p>
+
+<h3>8.4 ADR 落盘：三道闸门的实战效果</h3>
+<p>13 项决策尘埃落定后，用 ADR 三道闸门检验，<strong>只有 2 项够格</strong>：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:44%">决策</th><th>检验</th></tr></thead>
+  <tbody>
+    <tr><td><strong>语音数值口径对齐屏幕</strong>（超范围念固定提示语）</td><td>✅ 三条全中：未来读者会疑惑"为什么语音不念精确大数"，可能把它"修"回发散状态</td></tr>
+    <tr><td><strong>播报词决策与语音合成分层</strong></td><td>✅ 三条全中：未来会有人图省事把合成器直接内联回去</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>其余 11 项（双守卫、假适配器位置、目录选择……）因为"易逆转、不意外"全部跳过——<strong>三道闸门的克制让 ADR 保持信噪比</strong>。</p>
+<p>两份 ADR 各自记录了被否决的备选方案和否决理由。价值在下次架构走查时兑现：<strong>"要不要让语音念精确值""要不要把合成器内联回去"这类问题永远不会再被重新提议</strong>。</p>
+
+<h3>8.5 回到构建循环：ticket 13/14</h3>
+<p>决策树变成两张新 ticket（13 数值规范文本、14 播报词决策分层），走熟悉的 TDD 流程落地。结果：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:22%">提交</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td><code>c8fb22b</code> docs</td><td>ADR-0001、ADR-0002、CONTEXT.md 新增两个术语</td></tr>
+    <tr><td><code>a076f7f</code> feat (ticket 13)</td><td>NumericText 统一数值口径；修掉 e-notation 念错、1e13–1e16 发散两个存量 bug</td></tr>
+    <tr><td><code>32e375b</code> refactor (ticket 14)</td><td>SpeechScript 纯函数决策模块、SpeechSynthesizing 接缝 + 双适配器</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>测试从 66 个增长到 <strong>76 个，全绿</strong>。过程中还有一处诚实更正被记录在案：走查阶段判断"万亿节单位可删"，实现前复核发现万亿级整数结果真实可达，予以保留——分析错了就改，记录里写明。</p>
+<p>两张票最后都标记 <code>ready-for-human</code>：大数播报和整体听感留给我手工验收。<strong>自动化测试管行为，人的感官管体验，边界清晰。</strong></p>
+
+<!-- ================= 9 ================= -->
+<h2>九、设计哲学：六条可带走的信条</h2>
+<p>走完两个循环，提炼六条信条。即使你不用这套技能集，这些原则也成立：</p>
+
+<p><strong>1. 共识的所有权在文件系统，不在对话。</strong>人在访谈中说过的话可以忘，写进 CONTEXT.md 的一句都不能丢。每次会话切换、每个新智能体接手，都是从文件冷启动，零记忆丢失。</p>
+
+<figure>
+<svg viewBox="0 0 800 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="共识的所有权在文件系统">
+  <defs>
+    <marker id="p4-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="p4-arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/>
+    </marker>
+  </defs>
+  <g font-family="-apple-system, PingFang SC, sans-serif">
+    <rect x="30" y="50" width="280" height="240" rx="10" fill="none" stroke="#b8b4ac" stroke-width="1.5" stroke-dasharray="7 5"/>
+    <text x="170" y="82" text-anchor="middle" fill="#888" font-size="14" font-weight="700">对话（易失）</text>
+    <rect x="70" y="110" width="90" height="52" rx="8" fill="#fff" stroke="#c9c6bf"/>
+    <text x="115" y="141" text-anchor="middle" fill="#1a1a1a" font-size="13" font-weight="600">人的判断</text>
+    <rect x="180" y="110" width="90" height="52" rx="8" fill="#fff" stroke="#c9c6bf"/>
+    <text x="225" y="141" text-anchor="middle" fill="#1a1a1a" font-size="13" font-weight="600">AI 的理解</text>
+    <path d="M 160 128 L 176 128" stroke="#888" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#p4-arr)"/>
+    <path d="M 176 146 L 160 146" stroke="#888" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#p4-arr)"/>
+    <text x="170" y="255" text-anchor="middle" fill="#888" font-size="11.5">会话结束即蒸发，</text>
+    <text x="170" y="273" text-anchor="middle" fill="#888" font-size="11.5">人说过的话可以忘</text>
+    <rect x="480" y="30" width="290" height="280" rx="10" fill="#f6f6f4" stroke="#1a1a1a" stroke-width="1.5"/>
+    <text x="625" y="60" text-anchor="middle" fill="#1a1a1a" font-size="14" font-weight="700">文件系统（持久）</text>
+    <rect x="510" y="80" width="230" height="48" rx="6" fill="#1a1a1a"/>
+    <text x="625" y="109" text-anchor="middle" fill="#fff" font-size="12.5" font-weight="700">CONTEXT.md · 术语与理由</text>
+    <rect x="510" y="146" width="230" height="48" rx="6" fill="#fff" stroke="#c9c6bf"/>
+    <text x="625" y="175" text-anchor="middle" fill="#1a1a1a" font-size="12.5" font-weight="600">spec.md · 行为规格</text>
+    <rect x="510" y="212" width="230" height="48" rx="6" fill="#fff" stroke="#c9c6bf"/>
+    <text x="625" y="241" text-anchor="middle" fill="#1a1a1a" font-size="12.5" font-weight="600">issues/*.md · 验收清单</text>
+    <line x1="625" y1="128" x2="625" y2="142" stroke="#9a968e" stroke-width="1.5" marker-end="url(#p4-arr)"/>
+    <line x1="625" y1="194" x2="625" y2="208" stroke="#9a968e" stroke-width="1.5" marker-end="url(#p4-arr)"/>
+    <text x="625" y="288" text-anchor="middle" fill="#888" font-size="11.5">写进 CONTEXT.md 的一句都不能丢</text>
+    <path d="M 270 122 C 360 90, 420 90, 504 96" fill="none" stroke="#e8590c" stroke-width="2" marker-end="url(#p4-arrA)"/>
+    <text x="390" y="80" text-anchor="middle" fill="#e8590c" font-size="11.5" font-weight="700">每轮即时写入</text>
+    <path d="M 504 240 C 420 300, 340 310, 178 262" fill="none" stroke="#e8590c" stroke-width="2" marker-end="url(#p4-arrA)"/>
+    <text x="340" y="322" text-anchor="middle" fill="#e8590c" font-size="11.5" font-weight="700">新会话冷启动 · 零记忆丢失</text>
+  </g>
+</svg>
+<figcaption>图 4 · 共识的所有权在文件系统，不在对话</figcaption>
+</figure>
+
+<p><strong>2. spec 和 tickets 是跨会话的通信协议，不是流程的仪式感。</strong>单会话能做完的事，ADR 和术语表已经留下了该留的东西；要跨窗口传递时，才需要 spec 和 tickets 这两个序列化格式。</p>
+<p><strong>3. 接缝越少越好，且在写代码前锁定。</strong>测试接缝是架构决策的可测试化表达。理想数量是一个。</p>
+<p><strong>4. 评审分轴：偏离共识必修，改进建议可拒。</strong>Spec 轴守护"做对了事"，Standards 轴守护"事做得好"，分开报告，互不稀释。</p>
+<p><strong>5. 频繁人工介入是特性，不是缺点。</strong>每张票之间的检查点让你能亲手点点看；每张票的新会话让智能体永远清醒。人的介入全部发生在决策点，而不是执行点。</p>
+<p><strong>6. ADR 防翻案：被否决的备选也要写下来。</strong>记录"为什么不这么做"和记录"为什么这么做"同样重要——它让未来的走查不重复提议，让三个月后的自己不重新争论。</p>
+
+<!-- ================= 10 ================= -->
+<h2>十、实战账本</h2>
+<p>「长辈计算器」全程的量化记录：</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:24%">环节</th><th>数量</th></tr></thead>
+  <tbody>
+    <tr><td>需求访谈</td><td>4 轮 27 问，人只回答了 4 次（全是"都按推荐"+ 确认）</td></tr>
+    <tr><td>领域术语表</td><td>CONTEXT.md 持续演进，17 个术语条目（含取舍理由）</td></tr>
+    <tr><td>spec</td><td>1 份，36 条用户故事，10 项 Out of Scope</td></tr>
+    <tr><td>tickets</td><td>12 + 2 张，每张含依赖声明与验收清单</td></tr>
+    <tr><td>行为测试</td><td>76 个，全部经公开接口断言</td></tr>
+    <tr><td>ADR</td><td>2 份（13 项决策过三道闸门筛选）</td></tr>
+    <tr><td>评审发现</td><td>千分位偏差、口径偏差、设计流水线衔接缺失、2 项 scope creep、2 个存量播报 bug</td></tr>
+    <tr><td>人的介入</td><td>全部在决策点：访谈确认、接缝确认、拆票确认、每票启动、架构候选挑选、ADR 确认、最终人工验收</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ================= 11 ================= -->
+<h2>十一、局限与适用边界</h2>
+<p>推广不等于吹捧，实战中暴露的问题如实记录：</p>
+<p><strong>1. <code>/implement</code> 的调用方式有坑。</strong>不带参数会尝试执行所有 tickets，必须显式传入单个 issue 文件路径。</p>
+<p><strong>2. 工具链噪音需要人有判断力。</strong>实现过程中 SourceKit 持续报错，但 <code>xcodebuild</code> 实际编译通过——智能体正确识别了这是"缓存噪音"。反过来，如果它判断错了，"测试全绿"就建立在幻觉上。<strong>人的检查点价值正在于此。</strong></p>
+<p><strong>3. spec 不可能完备。</strong>"12 + ="（没输右操作数就按等号）是 spec 没覆盖的行为。正确处理是"静默无反应 + 记录在案、留待错误态 ticket"——<strong>显式记录"已知未定义行为"，比假装 spec 完备重要</strong>。</p>
+<p><strong>4. 规模适配。</strong>这套流程的重型仪式（四轮访谈、十几张票、双轴评审）对中等复杂度项目刚好。一个 200 行的脚本用它是杀鸡用牛刀；一个超大系统需要在 to-tickets 之上加 <code>/wayfinder</code> 级别的路线规划。但<strong>"访谈落盘 → 接缝先行 → 曳光弹切票 → 每票新上下文"这四条原则是规模无关的</strong>。</p>
+<p><strong>5. 架构走查是体检不是抢救。</strong>作者的原话：在真正老旧的代码库上它能找到真候选，但不会替你解开那团泥。它的最佳用法是<strong>从项目早期就定期跑</strong>，让泥石流不发生。</p>
+
+<!-- ================= 12 ================= -->
+<h2>十二、团队落地路径</h2>
+<p>如果你想在团队里推广这套工作流，我建议的路径：</p>
+<p><strong>第一步：选一个中等复杂度的真实项目。</strong>不是 demo（没有真实约束，流程的价值显现不出来），也不是核心系统（试错成本太高）。一个两周量级、有真实用户的新功能或独立小工具最合适。</p>
+<p><strong>第二步：先走通构建循环。</strong>安装、初始化、grill、to-spec、to-tickets、逐票 implement。走一两张票感受一下"每票新会话"的节奏，觉得介入太烦再考虑合并票——<strong>不要一开始就打折扣</strong>。</p>
+<p><strong>第三步：补上仓库自己的标准文档。</strong>Standards 轴需要"成文的仓库标准"可审。团队跑顺之后，把编码规范沉淀成 <code>CODING_STANDARDS.md</code> 或 CLAUDE.md 的章节，评审的 Standards 轴才有牙齿。</p>
+<p><strong>第四步：交付后启动演进循环。</strong>全量 code-review 定基线，定期跑 improve-codebase-architecture，让架构走查成为团队节拍的一部分（作者建议每隔几天一次）。</p>
+<p><strong>第五步：把技能变成团队自己的。</strong>如果用的是 <code>npx skills add</code> 安装方式，技能就是仓库里的普通 Markdown 文件——按团队的习惯改它：你们的术语、你们的评审侧重、你们的 ticket 模板。这套东西的设计取向本来就是 "hack around with them, make them your own"。</p>
+
+<!-- ================= 13 ================= -->
+<h2>十三、结语</h2>
+<p>这次实践给我最大的冲击不是"AI 写代码有多快"，而是<strong>工程过程本身被重新定义了</strong>：</p>
+<ul>
+  <li>需求评审变成了多轮选择题——每轮 5~7 个问题、附推荐答案、确认成本趋近于零；</li>
+  <li>架构设计以"测试接缝"的形式在写代码前锁定；</li>
+  <li>任务拆解以"人的检查点节奏"为约束反推；</li>
+  <li>代码评审按"是否偏离共识"和"是否够好"分轴处理；</li>
+  <li>架构演进有固定的体检节拍，决策有 ADR 防翻案。</li>
+</ul>
+<p>人在这条流水线里的角色，从"写代码的人"变成了<strong>共识的仲裁者和方向的把关人</strong>。这才是"AI 原生"的含义：不是 AI 替人干活，而是把工程过程改造成人和 AI 各自做最擅长的事。</p>
+
+<footer>
+  相关阅读：《AI SDLC 实践实录：mattpocock-skills 开发长辈计算器》·《AI 原生软件开发实践（速读版）》·《Smart Zone：AI 编程助手黄金上下文区间》·《AI 原生设计流水线》<br><br>
+  工具链接：<a href="https://github.com/mattpocock/skills">mattpocock/skills</a> · 安装：<code>npx skills add mattpocock/skills</code> 或 <code>claude plugins install mattpocock-skills</code><br><br>
+  本页为零依赖单文件 HTML，4 张图均为内联 SVG，离线可用、可直接打印。
+</footer>
+
+</div>
+</body>
+</html>
