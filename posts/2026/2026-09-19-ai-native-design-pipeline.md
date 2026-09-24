@@ -5,7 +5,7 @@ date: 2026-09-19 14:00:00 +0800
 tags: [ai-native, ai-sdlc, design-system, design-tokens, figma, claude-code, designmd, workflow]
 ---
 
-> 实践记录：在[上一篇](/posts/2026/2026-09-18-ai-native-sdlc-practice/)里，我用 Claude Code + mattpocock-skills 走通了 AI 原生的开发流水线。这一次，我把目光投向开发之前被忽略的环节——**设计**。我基于 Google 的 DESIGN.md 规范，为「长辈计算器」建立了完整的设计流水线：从现有网站提炼设计规范 → 生成高保真 HTML 原型 → 导入 Figma → 与代码对齐。本文拆解每个阶段的做法、工具的能力边界，以及实战中踩过的六个坑。
+> 实践记录：在[上一篇](/posts/2026-09-18-ai-native-sdlc-practice/)里，我用 Claude Code + mattpocock-skills 走通了 AI 原生的开发流水线。这一次，我把目光投向开发之前被忽略的环节——**设计**。我基于 Google 的 DESIGN.md 规范，为「长辈计算器」建立了完整的设计流水线：从现有网站提炼设计规范 → 生成高保真 HTML 原型 → 导入 Figma → 与代码对齐。本文拆解每个阶段的做法、工具的能力边界，以及实战中踩过的六个坑。
 
 ## 一、范式转变：设计的事实源搬家了
 
