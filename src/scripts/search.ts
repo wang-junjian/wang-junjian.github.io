@@ -109,7 +109,10 @@ function generateSearchExcerpt(item: SearchItem, maxChars = 120): string {
 }
 
 function renderSearchResultItem(item: SearchItem, index: number): string {
-  const href = `/posts/${encodeURIComponent(item.id)}/`;
+  // HTML 文章的 url 指向独立 .html 页面，必须绕过 Turbo
+  const isHtml = item.url?.endsWith('.html');
+  const href = isHtml ? item.url : `/posts/${encodeURIComponent(item.id)}/`;
+  const turboAttr = isHtml ? ' data-turbo="false"' : '';
   const title = escapeHtml(item.title || item.id);
   const date = formatSearchDate(item.date);
   const excerpt = escapeHtml(generateSearchExcerpt(item));
@@ -131,7 +134,7 @@ function renderSearchResultItem(item: SearchItem, index: number): string {
       data-id="${escapeHtml(item.id)}"
     >
       <h3 class="entry-title">
-        <a href="${href}">${title}</a>
+        <a href="${escapeHtml(href)}"${turboAttr}>${title}</a>
       </h3>
       ${excerpt ? `<div class="entry-excerpt"><p>${excerpt}</p></div>` : ''}
       <div class="entry-meta">

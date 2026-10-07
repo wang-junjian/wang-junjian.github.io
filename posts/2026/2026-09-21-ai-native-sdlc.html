@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="基于 mattpocock/skills 技能集的 AI 原生软件开发生命周期最佳实践图解：从需求、设计、实现到评审与合入，人负责决策、智能体负责执行。">
+<meta name="keywords" content="AI 原生, SDLC, Claude Code, mattpocock-skills, 智能体">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-21">
+<title>AI 原生软件开发生命周期 · 基于 mattpocock/skills 的最佳实践</title>
+<style>
+  :root{
+    --ink:#16181d;
+    --ink-2:#43474f;
+    --ink-3:#7a7f88;
+    --paper:#fbfaf7;
+    --panel:#ffffff;
+    --line:#e4e2dc;
+    --line-strong:#c9c6be;
+    --accent:#1a5fb4;        /* 主色：结构蓝 */
+    --accent-soft:#eaf1fb;
+    --green:#1a7f4f;         /* 模型调用 */
+    --green-soft:#e8f4ee;
+    --amber:#9a6700;         /* 注意/分支 */
+    --amber-soft:#fdf3dd;
+    --red:#b3261e;           /* 用户调用（醒目，人发起）*/
+    --red-soft:#fdeceb;
+    --purple:#6941c6;
+    --purple-soft:#f1ecfb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,sans-serif;
+    background:var(--paper);color:var(--ink);
+    font-size:15px;line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px 96px;}
+
+  /* ---------- header ---------- */
+  header{border-bottom:3px solid var(--ink);padding:64px 0 32px;margin-bottom:8px;}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:16px;}
+  h1{font-size:40px;line-height:1.2;font-weight:800;letter-spacing:-.02em;margin-bottom:16px;}
+  .lede{font-size:17px;color:var(--ink-2);max-width:44em;}
+  .meta{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3);}
+  .meta span{border:1px solid var(--line-strong);border-radius:999px;padding:3px 12px;background:var(--panel);}
+
+  /* ---------- toc ---------- */
+  nav.toc{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:32px 0 0;}
+  nav.toc b{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);}
+  nav.toc ol{margin:10px 0 0 20px;columns:2;column-gap:40px;font-size:14px;}
+  nav.toc li{margin:4px 0;break-inside:avoid;}
+  nav.toc a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid transparent;}
+  nav.toc a:hover{color:var(--accent);border-bottom-color:var(--accent);}
+
+  /* ---------- sections ---------- */
+  section{margin-top:72px;}
+  .sec-num{font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
+  h2{font-size:27px;font-weight:800;letter-spacing:-.01em;margin-bottom:12px;}
+  h3{font-size:18px;font-weight:700;margin:32px 0 10px;}
+  p{margin-bottom:12px;}
+  .muted{color:var(--ink-3);}
+  strong{font-weight:700;}
+  em{font-style:normal;background:linear-gradient(transparent 62%,var(--accent-soft) 0);}
+  code{
+    font-family:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    font-size:.88em;background:#f1efe9;border:1px solid var(--line);
+    border-radius:4px;padding:1px 6px;white-space:nowrap;
+  }
+  ul.plain{margin:0 0 12px 20px;}
+  ul.plain li{margin:6px 0;}
+  ol.steps{margin:0 0 12px 22px;}
+  ol.steps li{margin:8px 0;}
+
+  /* ---------- callouts ---------- */
+  .callout{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:14.5px;}
+  .callout.warn{border-color:var(--amber);background:var(--amber-soft);}
+  .callout.why{border-color:var(--purple);background:var(--purple-soft);}
+  .callout b.tag{display:block;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px;}
+  .callout.why b.tag{color:var(--purple);}
+  .callout.warn b.tag{color:var(--amber);}
+
+  /* ---------- quote ---------- */
+  blockquote{border-left:3px solid var(--line-strong);padding:4px 0 4px 18px;margin:16px 0;color:var(--ink-2);font-size:14.5px;}
+  blockquote cite{display:block;margin-top:6px;font-size:12.5px;color:var(--ink-3);font-style:normal;}
+
+  /* ---------- stage cards ---------- */
+  .stage{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:28px 32px;margin-top:28px;
+  }
+  .stage-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:18px;}
+  .stage-no{font-size:13px;font-weight:800;color:var(--paper);background:var(--ink);border-radius:4px;padding:2px 10px;letter-spacing:.05em;white-space:nowrap;}
+  .stage-head h3{margin:0;font-size:21px;}
+  .skill-chips{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 14px;}
+  .chip{font-size:12.5px;font-weight:700;border-radius:6px;padding:3px 10px;border:1px solid transparent;}
+  .chip.user{background:var(--red-soft);color:var(--red);border-color:#f2c7c4;}
+  .chip.model{background:var(--green-soft);color:var(--green);border-color:#bfe0cf;}
+  .chip.plain{background:#f1efe9;color:var(--ink-2);border-color:var(--line);}
+  .chip.orch{background:var(--accent-soft);color:var(--accent);border-color:#c5d9f3;}
+
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:6px 16px;margin:14px 0;font-size:14.5px;}
+  .kv dt{font-weight:700;color:var(--ink-3);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;padding-top:2px;}
+  .kv dd{margin:0;}
+
+  /* ---------- badges ---------- */
+  .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;border-radius:4px;padding:2px 8px;vertical-align:2px;}
+  .badge.u{background:var(--red-soft);color:var(--red);}
+  .badge.m{background:var(--green-soft);color:var(--green);}
+
+  /* ---------- appendix skill cards ---------- */
+  .skill-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 24px;margin-top:14px;}
+  .skill-card h4{font-size:16px;font-weight:800;margin-bottom:2px;}
+  .skill-card .sub{font-size:13px;color:var(--ink-3);margin-bottom:10px;}
+  .skill-card p{margin-bottom:8px;font-size:14.5px;}
+  .skill-card .where{font-size:13px;color:var(--ink-2);border-top:1px dashed var(--line);padding-top:10px;margin-top:10px;}
+  .skill-card .where b{color:var(--accent);}
+
+  /* ---------- table ---------- */
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;background:var(--panel);}
+  th{background:var(--ink);color:var(--paper);text-align:left;padding:10px 14px;font-weight:700;font-size:13px;}
+  td{border:1px solid var(--line);padding:10px 14px;vertical-align:top;}
+  tr:nth-child(even) td{background:#faf9f6;}
+
+  /* ---------- svg figure ---------- */
+  figure{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;margin:24px 0;overflow-x:auto;}
+  figcaption{font-size:13px;color:var(--ink-3);margin-top:12px;text-align:center;}
+
+  /* ---------- checklist ---------- */
+  .check{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 24px;margin:12px 0;}
+  .check li{margin:7px 0 7px 24px;font-size:14.5px;}
+  .check ul{list-style:none;}
+  .check li::before{content:"□";margin-left:-24px;margin-right:10px;color:var(--accent);font-weight:700;}
+
+  footer{margin-top:80px;border-top:2px solid var(--ink);padding-top:20px;font-size:13px;color:var(--ink-3);}
+  a{color:var(--accent);}
+  .legend{display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:10px;}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">AI-Native SDLC · Best Practices</div>
+  <h1>AI 原生软件开发生命周期<br>mattpocock/skills 工作流程与技能全景</h1>
+  <p class="lede">以 <strong>mattpocock/skills</strong>（"Skills For Real Engineers"）为蓝本，整理出一条从「模糊想法」到「可合并代码」的完整工作流程：每个环节做什么、用哪个技能、<em>为什么这样设计</em>，以及可直接落地的检查清单。附录逐一讲解全部 37 个技能。</p>
+  <div class="meta">
+    <span>蓝本：mattpocock/skills</span>
+    <span>37 个技能 · 5 个分类桶</span>
+    <span>适用：Claude Code / Codex / 任意编码智能体</span>
+    <span>生成日期：2026-09-21</span>
+  </div>
+
+  <nav class="toc">
+    <b>目录</b>
+    <ol>
+      <li><a href="#philosophy">一、设计哲学：四个失败模式</a></li>
+      <li><a href="#overview">二、全流程总览图</a></li>
+      <li><a href="#setup">三、环节 0 · 一次性初始化</a></li>
+      <li><a href="#align">四、环节 1 · 想法对齐（拷问）</a></li>
+      <li><a href="#prototype">五、环节 2 · 原型验证（分支）</a></li>
+      <li><a href="#spec">六、环节 3 · 规格化</a></li>
+      <li><a href="#tickets">七、环节 4 · 拆票</a></li>
+      <li><a href="#implement">八、环节 5 · 实现（TDD）</a></li>
+      <li><a href="#review">九、环节 6 · 双轴评审</a></li>
+      <li><a href="#onramps">十、三条汇入通道</a></li>
+      <li><a href="#health">十一、代码库健康与词汇层</a></li>
+      <li><a href="#context">十二、上下文卫生</a></li>
+      <li><a href="#checklist">十三、落地检查清单</a></li>
+      <li><a href="#appendix">附录 A · 全部技能详解</a></li>
+      <li><a href="#install">附录 B · 安装与仓库组织</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ================= 1 philosophy ================= -->
+<section id="philosophy">
+  <div class="sec-num">Section 01</div>
+  <h2>设计哲学：先理解它反对什么</h2>
+  <p>这套技能的设计者 Matt Pocock（Total TypeScript 作者）的立场很明确：GSD、BMAD、Spec-Kit 这类"全流程框架"试图<em>接管</em>开发过程，代价是你失去了控制权，流程出了 bug 也难以修复。这套技能反其道而行——<strong>小、易改、可组合</strong>，每个技能只封装一件事，由你决定怎么串。它不是框架，是一套可以拆开改造的工具箱。</p>
+  <p>整套体系来自四个 AI 编码最常见的失败模式，每个失败模式对应一组"修复技能"。理解这个映射，就理解了每个环节存在的理由：</p>
+
+  <table>
+    <tr><th style="width:22%">失败模式</th><th style="width:36%">典型症状</th><th>修复技能</th></tr>
+    <tr>
+      <td><strong>#1 智能体没做我想要的</strong><br><span class="muted">对齐失败</span></td>
+      <td>你以为它懂了，看到产出才发现完全理解错了。"没人确切知道自己想要什么"（《程序员修炼之道》）。</td>
+      <td><code>/grill-with-docs</code>、<code>/grill-me</code> —— 用一轮轮追问把模糊想法逼成清晰设计</td>
+    </tr>
+    <tr>
+      <td><strong>#2 智能体太啰嗦</strong><br><span class="muted">缺乏共享语言</span></td>
+      <td>智能体被扔进项目里自己猜行话，20 个词说 1 个词的事；命名不一致，代码库难导航。</td>
+      <td><code>/grill-with-docs</code> 内建的 <code>/domain-modeling</code> —— 维护 <code>CONTEXT.md</code> 词汇表 + ADR</td>
+    </tr>
+    <tr>
+      <td><strong>#3 代码跑不起来</strong><br><span class="muted">反馈回路缺失</span></td>
+      <td>没有反馈就没有纠偏，智能体在盲飞。"反馈速率就是你的速度上限"。</td>
+      <td><code>/tdd</code>（红-绿-重构）、<code>/diagnosing-bugs</code>（先造反馈回路再谈假设）</td>
+    </tr>
+    <tr>
+      <td><strong>#4 造出一团泥球</strong><br><span class="muted">软件熵加速</span></td>
+      <td>智能体写码太快，复杂度积累得也更快。"最好的模块是深的：简单接口后面藏大量功能"（Ousterhout）。</td>
+      <td><code>/to-spec</code> 先问模块、<code>/codebase-design</code> 深模块词汇、<code>/improve-codebase-architecture</code> 定期巡检</td>
+    </tr>
+  </table>
+
+  <blockquote>
+    <p>软件工程的基本功在 AI 时代不是过时了，而是更值钱了——这套技能就是把基本功压缩成可重复执行的动作。</p>
+  </blockquote>
+
+  <div class="callout">
+    <b class="tag">贯穿全程的一个机制设计</b>
+    技能分两类：<span class="badge u">用户调用</span> 只能由你敲命令触发，负责<strong>编排</strong>（决定下一步做什么）；<span class="badge m">模型调用</span> 可以由智能体在任务匹配时自动触发，承载<strong>可复用的纪律</strong>（怎么写测试、怎么评审、怎么建模）。用户调用技能可以调用模型调用技能，但永远不会调用另一个用户调用技能——这条规则保证了流程的"方向盘"始终在你手里。
+  </div>
+</section>
+
+<!-- ================= 2 overview ================= -->
+<section id="overview">
+  <div class="sec-num">Section 02</div>
+  <h2>全流程总览：主流程 + 三条汇入通道</h2>
+  <p>大多数工作沿着一条<strong>主流程</strong>（idea → ship）走，三条<strong>汇入通道</strong>（on-ramp）处理特殊情况后并入主流程。底下还垫着一层"词汇层"技能，为上面所有环节提供统一的术语。</p>
+
+  <figure>
+  <svg viewBox="0 0 920 560" xmlns="http://www.w3.org/2000/svg" font-family="Inter,'PingFang SC',sans-serif">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#43474f"/>
+      </marker>
+      <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#1a5fb4"/>
+      </marker>
+    </defs>
+
+    <!-- lane labels -->
+    <text x="24" y="52" font-size="13" font-weight="800" fill="#1a5fb4" letter-spacing="2">主流程 IDEA → SHIP</text>
+    <text x="24" y="330" font-size="13" font-weight="800" fill="#9a6700" letter-spacing="2">汇入通道 ON-RAMPS</text>
+    <text x="700" y="330" font-size="13" font-weight="800" fill="#6941c6" letter-spacing="2">词汇层</text>
+
+    <!-- main flow row -->
+    <g>
+      <rect x="30" y="80" width="130" height="64" rx="10" fill="#fdeceb" stroke="#b3261e" stroke-width="1.5"/>
+      <text x="95" y="106" text-anchor="middle" font-size="14" font-weight="700" fill="#b3261e">① grill-with-docs</text>
+      <text x="95" y="126" text-anchor="middle" font-size="11" fill="#7a7f88">对齐 · 建词汇表</text>
+
+      <line x1="160" y1="112" x2="210" y2="112" stroke="#43474f" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <rect x="215" y="80" width="118" height="64" rx="10" fill="#eaf1fb" stroke="#1a5fb4" stroke-width="1.5"/>
+      <text x="274" y="106" text-anchor="middle" font-size="14" font-weight="700" fill="#1a5fb4">② to-spec</text>
+      <text x="274" y="126" text-anchor="middle" font-size="11" fill="#7a7f88">合成规格 · 发布</text>
+
+      <line x1="333" y1="112" x2="383" y2="112" stroke="#43474f" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <rect x="388" y="80" width="128" height="64" rx="10" fill="#eaf1fb" stroke="#1a5fb4" stroke-width="1.5"/>
+      <text x="452" y="106" text-anchor="middle" font-size="14" font-weight="700" fill="#1a5fb4">③ to-tickets</text>
+      <text x="452" y="126" text-anchor="middle" font-size="11" fill="#7a7f88">垂直切片 · 阻塞边</text>
+
+      <line x1="516" y1="112" x2="566" y2="112" stroke="#43474f" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <rect x="571" y="80" width="128" height="64" rx="10" fill="#eaf1fb" stroke="#1a5fb4" stroke-width="1.5"/>
+      <text x="635" y="106" text-anchor="middle" font-size="14" font-weight="700" fill="#1a5fb4">④ implement</text>
+      <text x="635" y="126" text-anchor="middle" font-size="11" fill="#7a7f88">每票一个新会话</text>
+
+      <line x1="699" y1="112" x2="749" y2="112" stroke="#43474f" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <rect x="754" y="80" width="136" height="64" rx="10" fill="#e8f4ee" stroke="#1a7f4f" stroke-width="1.5"/>
+      <text x="822" y="106" text-anchor="middle" font-size="14" font-weight="700" fill="#1a7f4f">⑤ code-review</text>
+      <text x="822" y="126" text-anchor="middle" font-size="11" fill="#7a7f88">双轴 · 提交</text>
+
+      <!-- inner detail under implement -->
+      <rect x="571" y="170" width="140" height="46" rx="8" fill="#ffffff" stroke="#c9c6be" stroke-dasharray="4 3"/>
+      <text x="641" y="189" text-anchor="middle" font-size="11.5" fill="#43474f">内部驱动 tdd（红→绿）</text>
+      <text x="641" y="205" text-anchor="middle" font-size="11.5" fill="#43474f">收尾 code-review</text>
+      <line x1="635" y1="144" x2="635" y2="168" stroke="#c9c6be" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+      <!-- prototype detour -->
+      <rect x="80" y="196" width="150" height="56" rx="10" fill="#fdf3dd" stroke="#9a6700" stroke-width="1.5"/>
+      <text x="155" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#9a6700">分支：prototype</text>
+      <text x="155" y="238" text-anchor="middle" font-size="11" fill="#7a7f88">handoff 出 → 答题 → handoff 回</text>
+      <path d="M 95 144 L 95 194" fill="none" stroke="#9a6700" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+      <path d="M 230 224 L 274 224 L 274 146" fill="none" stroke="#9a6700" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrA)"/>
+    </g>
+
+    <!-- on-ramps -->
+    <g>
+      <rect x="30" y="360" width="200" height="64" rx="10" fill="#fdf3dd" stroke="#9a6700" stroke-width="1.5"/>
+      <text x="130" y="386" text-anchor="middle" font-size="14" font-weight="700" fill="#9a6700">triage</text>
+      <text x="130" y="406" text-anchor="middle" font-size="11" fill="#7a7f88">bug / 外部需求堆积 → 产出 agent-ready 票</text>
+
+      <rect x="255" y="360" width="215" height="64" rx="10" fill="#fdf3dd" stroke="#9a6700" stroke-width="1.5"/>
+      <text x="362" y="386" text-anchor="middle" font-size="14" font-weight="700" fill="#9a6700">diagnosing-bugs</text>
+      <text x="362" y="406" text-anchor="middle" font-size="11" fill="#7a7f88">疑难 bug：先造反馈回路，后假设</text>
+
+      <rect x="495" y="360" width="175" height="64" rx="10" fill="#fdf3dd" stroke="#9a6700" stroke-width="1.5"/>
+      <text x="582" y="386" text-anchor="middle" font-size="14" font-weight="700" fill="#9a6700">wayfinder</text>
+      <text x="582" y="406" text-anchor="middle" font-size="11" fill="#7a7f88">超大雾团项目：决策票地图</text>
+
+      <!-- merge arrows to main flow -->
+      <path d="M 130 360 L 130 300 L 95 300 L 95 150" fill="none" stroke="#9a6700" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+      <path d="M 362 360 L 362 300 L 274 300 L 274 146" fill="none" stroke="#9a6700" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+      <path d="M 582 360 L 582 300 L 274 300" fill="none" stroke="#9a6700" stroke-width="1.3" stroke-dasharray="5 3"/>
+      <text x="600" y="295" font-size="11" fill="#9a6700">雾散后 → to-spec 收敛</text>
+    </g>
+
+    <!-- vocab layer -->
+    <g>
+      <rect x="700" y="360" width="190" height="64" rx="10" fill="#f1ecfb" stroke="#6941c6" stroke-width="1.5"/>
+      <text x="795" y="386" text-anchor="middle" font-size="14" font-weight="700" fill="#6941c6">domain-modeling</text>
+      <text x="795" y="406" text-anchor="middle" font-size="11" fill="#7a7f88">CONTEXT.md 词汇表 + ADR</text>
+      <rect x="700" y="446" width="190" height="64" rx="10" fill="#f1ecfb" stroke="#6941c6" stroke-width="1.5"/>
+      <text x="795" y="472" text-anchor="middle" font-size="14" font-weight="700" fill="#6941c6">codebase-design</text>
+      <text x="795" y="492" text-anchor="middle" font-size="11" fill="#7a7f88">深模块词汇：module / seam / depth</text>
+    </g>
+
+    <!-- health -->
+    <rect x="30" y="446" width="440" height="64" rx="10" fill="#f1efe9" stroke="#7a7f88" stroke-width="1.5"/>
+    <text x="250" y="472" text-anchor="middle" font-size="14" font-weight="700" fill="#43474f">代码库健康：improve-codebase-architecture</text>
+    <text x="250" y="492" text-anchor="middle" font-size="11" fill="#7a7f88">每隔几天巡检 → 深化候选 → 选中后回到 ① grill-with-docs</text>
+
+    <!-- legend -->
+  </svg>
+  <figcaption>图 1 · mattpocock/skills 全流程地图。实线为主流程，虚线为分支与汇入。</figcaption>
+  </figure>
+
+  <div class="legend">
+    <span><i style="background:#fdeceb"></i>用户调用（你敲命令）</span>
+    <span><i style="background:#eaf1fb"></i>用户调用（编排型）</span>
+    <span><i style="background:#e8f4ee"></i>模型调用（自动触发）</span>
+    <span><i style="background:#fdf3dd"></i>汇入通道</span>
+    <span><i style="background:#f1ecfb"></i>词汇层</span>
+  </div>
+
+  <div class="callout why">
+    <b class="tag">为什么是这个形状</b>
+    三个关键判断：① <strong>对齐放在最前面且成本最高</strong>——改一张规格远比改一堆代码便宜；② <strong>实现的上下文每票重置</strong>——主流程前半段（拷问→规格→拆票）在同一个连续上下文里完成以保证思路连贯，而每个 <code>/implement</code> 从票出发开新会话，因为票已经是自包含的；③ <strong>巨型任务不硬拆</strong>——雾还没散时先做决策（wayfinder），而不是假装能写规格。
+  </div>
+</section>
+
+<!-- ================= 3 setup ================= -->
+<section id="setup">
+  <div class="sec-num">Section 03 · 环节 0</div>
+  <h2>一次性初始化：告诉智能体你的仓库约定</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">STAGE 0</span>
+      <h3>仓库配置</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip user">/setup-matt-pocock-skills · 用户调用</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>每个仓库跑一次。探索仓库现状（git remote、AGENTS.md/CLAUDE.md、是否 monorepo），然后依次确认三件事：<strong>① 问题追踪器</strong>用哪个（GitHub / GitLab / 本地 markdown <code>.scratch/</code> / 其他）；<strong>② 分诊标签</strong>是否沿用默认五态（<code>needs-triage / needs-info / ready-for-agent / ready-for-human / wontfix</code>）；<strong>③ 领域文档布局</strong>（默认单上下文：根目录一个 <code>CONTEXT.md</code> + <code>docs/adr/</code>）。结果写入 <code>docs/agents/*.md</code>，并在 AGENTS.md / CLAUDE.md 里加一个 <code>## Agent skills</code> 块。</dd>
+      <dt>为什么</dt>
+      <dd>后面所有编排技能（to-spec、to-tickets、triage、wayfinder）都要回答"票发到哪、标签叫什么、词汇表在哪"。把这三个答案<em>物化成文件</em>而不是每次口头重申，是整个体系能跨会话运转的前提。这也是典型的"prompt 驱动而非脚本"设计：先探索、再确认、后写入，绝不覆盖你已有的编辑。</dd>
+      <dt>落地要点</dt>
+      <dd>个人项目 / 没有远端仓库 → 选本地 markdown 模式，票落在 <code>.scratch/&lt;feature&gt;/issues/</code> 下，一票一文件。团队项目 → GitHub Issues + 原生 blocking 关系。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ================= 4 align ================= -->
+<section id="align">
+  <div class="sec-num">Section 04 · 环节 1</div>
+  <h2>想法对齐：把"我以为"逼成"我们都确认了"</h2>
+  <p>这是整套体系里<strong>最受欢迎、也最该每次都用</strong>的环节。你想做一件事，先别让智能体动手——让它来拷问你。</p>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">STAGE 1</span>
+      <h3>拷问式对齐（Grilling Session）</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip orch">/grill-with-docs · 用户调用 · 有仓库时首选</span>
+      <span class="chip plain">= /grilling + /domain-modeling 两个模型调用技能</span>
+      <span class="chip user">/grill-me · 无仓库场景的无状态版</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>智能体把你的想法画成一棵<strong>设计树</strong>：每个决策分叉出挂在它下面的子决策。然后按"轮"推进——每一轮把<strong>前沿</strong>（frontier，即前置条件都已敲定、现在就能问的问题）一次性全问出来，每个问题编号并附<strong>推荐答案</strong>，等你回答后重算前沿、进入下一轮，直到前沿为空：设计树的每个分支都被访问过，没有留下任何"默认假设"。</dd>
+      <dt>为什么有效</dt>
+      <dd>三条精巧的分工规则让它区别于普通问答：① <strong>事实是智能体的活</strong>——问题需要环境里的事实（文件、配置、API 行为）时，派子代理去查，不拿来烦你；② <strong>决策是你的活</strong>——每个真正需要拍板的点都摆到你面前并附推荐答案，一个词就能接受；③ <strong>一轮一计算</strong>——依赖未决问题的留到下一轮，避免你回答"看情况"后前功尽弃。结束前<strong>不动手</strong>，直到你确认达成共识。</dd>
+      <dt>grill-with-docs 的加成</dt>
+      <dd>它在拷问的同时驱动 <code>/domain-modeling</code>：<strong>当场</strong>把敲定的术语写进 <code>CONTEXT.md</code>，把"难以逆转 + 没有上下文会让人费解 + 真实权衡的结果"三条全满足的决策记成 ADR。副产品是项目的<strong>共享语言</strong>——README 里的例子：以前说"课程章节里的课被'实化'（在文件系统里拿到位置）时出问题"，有了词汇表之后一句"materialization cascade 出问题"就够了。省 token、命名一致、代码库更好导航。</dd>
+      <dt>何时用 grill-me</dt>
+      <dd>不在工作目录里时（打磨一份计划、一篇文档、一个没有仓库承载的想法）。同一套拷问，但什么都不落盘。有仓库就用 grill-with-docs——它严格更优：同样的访谈，还留下书面痕迹。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      对齐失败（失败模式 #1）的根源是沟通鸿沟，而鸿沟最大的成本发生在<em>实现之后</em>才被发现。这个环节把发现点前移到写第一行代码之前，且用"前沿 + 轮次"的结构保证了问题之间的依赖顺序——你永远不会被问到前提还没定的问题。推荐答案机制则把"访谈"的成本压到接近零：大多数时候你只需要回一个"同意"。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 5 prototype ================= -->
+<section id="prototype">
+  <div class="sec-num">Section 05 · 环节 2（分支）</div>
+  <h2>原型验证：纸上谈不清的问题，用一次性代码回答</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">STAGE 2</span>
+      <h3>原型分支（可选）</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip model">/prototype · 模型调用</span>
+      <span class="chip user">/handoff · 用户调用 · 分支桥接</span>
+    </div>
+    <dl class="kv">
+      <dt>何时分支</dt>
+      <dd>拷问中遇到<strong>对话无法裁决的问题</strong>：这个状态机摸起来对不对？这段业务逻辑对不对？UI 该长什么样？——需要"跑起来看"才能回答的问题。</dd>
+      <dt>怎么做</dt>
+      <dd>原型分两个形态，选错形态浪费整个原型：<strong>逻辑/状态问题</strong> → 单个可分享的 HTML 文件（自由操作按钮 + 分步引导），非开发者也能上手推演；<strong>UI 问题</strong> → 同一路由下生成若干个<strong> radically different</strong> 的变体，用 URL 参数切换。铁律：第一天就是一次性的、明显标注、一条命令能跑、不持久化、不抛光、每步操作后把完整状态打印出来让你看见变化。</dd>
+      <dt>分支的桥接</dt>
+      <dd>原型活在独立目录，正好用 <code>/handoff</code> 双向桥接：handoff 出去 → 开新会话做原型 → handoff 回来带着结论 → 回到原想法线程继续拷问。原型本身不进主干：验证出的<strong>决策</strong>折进真实代码，原型提交到一个 <code>prototype/&lt;name&gt;</code> 分支留作"一手证据"，在实现票上留个指针。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      一次性（throwaway）不是承诺销毁，而是<strong>约束写法</strong>：因为你不必维护它，所以敢在半天内试三种方案。而"答案折进真码、原型留作 primary source"保证学习成果不丢失——规格模板里甚至专门留了例外条款：原型产出的状态机/reducer/schema 片段如果比散文更精确地编码了决策，可以内联进规格，注明出处。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 6 spec ================= -->
+<section id="spec">
+  <div class="sec-num">Section 06 · 环节 3</div>
+  <h2>规格化：把对话结晶成可执行文档</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">STAGE 3</span>
+      <h3>对话 → 规格</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip orch">/to-spec · 用户调用</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd><strong>不再访谈</strong>——直接把当前会话里已经讨论清楚的东西合成为规格，发布到追踪器并打上 <code>ready-for-agent</code> 标签（无需再分诊）。规格模板六段：问题陈述（用户视角）→ 解决方案（用户视角）→ <strong>超长的用户故事编号清单</strong> → 实现决策 → 测试决策 → 范围外。</dd>
+      <dt>关键动作：先定接缝</dt>
+      <dd>写规格前先画出"准备在哪些<strong>接缝（seam）</strong>上测试"，并与你确认。优先复用现有接缝、尽量用最高的接缝——"接缝越少越好，理想数量是一"。这是整个体系里测试纪律的源头：<code>/tdd</code> 会拒绝在任何未确认接缝上写测试。</dd>
+      <dt>刻意的禁令</dt>
+      <dd>规格里<strong>禁止写具体文件路径和代码片段</strong>——它们过期得最快。唯一例外是原型产出的"决策密集"片段（状态机、类型形状）。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      为什么不做访谈？因为访谈已经在环节 1 做完了——to-spec 的职责是<em>结晶</em>而不是<em>再挖</em>，两个职责分开防止流程来回震荡。为什么用户故事要"极长"？因为实现者是一个没有会话记忆的智能体：它只看得到票和规格，故事清单是它重建"这个功能到底服务谁"的唯一材料。为什么禁文件路径？AI 时代文档的半衰期极短，规格应只承载<em>决策</em>，不承载<em>定位</em>。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 7 tickets ================= -->
+<section id="tickets">
+  <div class="sec-num">Section 07 · 环节 4</div>
+  <h2>拆票：曳光弹切片 + 阻塞边</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">STAGE 4</span>
+      <h3>规格 → 一组自包含的票</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip orch">/to-tickets · 用户调用</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>把规格切成一组<strong>曳光弹（tracer bullet）垂直切片</strong>，每张票声明自己被哪些票<strong>阻塞</strong>。切片规则四条：每片窄但完整地穿过所有层（schema → API → UI → 测试）；完成即独立可演示/可验证；每片大小正好装进一个全新上下文窗口；prefactoring（"先让改动变容易，再做容易的改动"）放在最前面。</dd>
+      <dt>宽重构的例外</dt>
+      <dd>改一个共享符号、重命名一列——爆炸半径横跨全库，垂直切片没法保持绿色。此时改走 <strong>expand–contract</strong>：先"扩张"（新旧形式并存）→ 分批迁移调用点（每批一票，批间 CI 常绿）→ 最后"收缩"（删掉旧形式）。批次也撑不住时共享一个集成分支，只承诺最终集成票是绿的。</dd>
+      <dt>先给你看，再发布</dt>
+      <dd>拆完先以编号列表呈现（每票：标题 / 被谁阻塞 / 交付什么端到端行为），问你三件事——粒度对不对？阻塞边对不对？要不要合并或再拆？——你批准后才发布到追踪器，按依赖序编号，打 <code>ready-for-agent</code>。</dd>
+      <dt>之后怎么干活</dt>
+      <dd>沿<strong>前沿</strong>（frontier）推进：任何阻塞者全部完成的票都可以抓走。每个 <code>/implement</code> 会话结束后 <code>/clear</code>，从下一张票冷启动。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      垂直切片对抗的是"水平切片"的经典陷阱（先写完所有 schema 再写 API 再写 UI）：那样每一步都不可演示，错误要到最后才暴露。垂直切片让每张票都是一次<em>曳光弹试射</em>——真实的端到端反馈。"每票装进一个新上下文窗口"则是对 LLM 现实的直接适配：票是自包含的，所以会话间上下文是<strong>可丢弃的</strong>，这正是"每票 /clear"得以成立的原因。阻塞边让追踪器 UI 直接渲染出"现在能拿哪些票"，多会话并行成为可能。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 8 implement ================= -->
+<section id="implement">
+  <div class="sec-num">Section 08 · 环节 5</div>
+  <h2>实现：红-绿循环 + 预先约定的接缝</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">STAGE 5</span>
+      <h3>每张票一次实现会话</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip orch">/implement · 用户调用</span>
+      <span class="chip model">内部驱动 /tdd</span>
+      <span class="chip model">/codebase-design（接缝有争议时）</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>实现票/规格描述的工作，指令刻意简短：在预先约定的接缝上尽量用 <code>/tdd</code>；<strong>定期跑类型检查、定期跑单个测试文件、最后跑一次全量测试</strong>；完成后跑 <code>/code-review</code>，然后提交到当前分支。</dd>
+      <dt>tdd 的三条纪律</dt>
+      <dd>
+        ① <strong>红先于绿</strong>：先写失败的测试，再写恰好让它通过的代码，不预写未来的测试、不加投机功能。② <strong>一次一片</strong>：一个接缝、一个测试、一个最小实现。③ <strong>重构不在循环里</strong>——它属于评审阶段。好测试的标准：通过公共接口验证<em>行为</em>而非实现细节；测试读起来像规格说明书。三大反模式：实现耦合（重构就挂）、同义反复（<code>expect(add(a,b)).toBe(a+b)</code> 这种按实现复算期望值的测试永不可能失败）、水平切片（一次写完所有测试再写实现——验证的是想象中的行为）。
+      </dd>
+      <dt>上下文配套</dt>
+      <dd>动手前读 <code>CONTEXT.md</code>，让测试命名和接口词汇与项目领域语言对齐；尊重所触区域的 ADR。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      为什么 TDD 对智能体比对人类更关键？因为"红→绿"给智能体提供了一个<strong>恒定的反馈信号</strong>——它不再盲飞，每写一小步都能自证。失败模式 #3 的解法本质是把"反馈速率"变成速度上限，而 tdd 把这个上限制度化了。"接缝必须预先和用户确认"则防止测试努力摊薄到每个边缘案例上：你不可能全测，先约定接缝才能让测试落在关键路径和复杂逻辑上。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 9 review ================= -->
+<section id="review">
+  <div class="sec-num">Section 09 · 环节 6</div>
+  <h2>双轴评审：Standards 与 Spec 分开打分</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">STAGE 6</span>
+      <h3>提交前的两轴审查</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip model">/code-review · 模型调用（implement 自动收尾，也可单独用）</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>对 <code>git diff &lt;固定点&gt;...HEAD</code> 做双轴评审：<strong>Standards 轴</strong>——代码是否符合仓库书面编码规范 + 一组固定的 Fowler 代码坏味道基线（Mysterious Name、Duplicated Code、Feature Envy、Primitive Obsession、Shotgun Surgery 等 12 条，每条都是"是什么→怎么改"的判断题而非硬违规，仓库规范永远覆盖基线）；<strong>Spec 轴</strong>——代码是否忠实实现了来源规格：缺了什么、多了什么（scope creep）、看似实现了但实现得不对。</dd>
+      <dt>怎么跑</dt>
+      <dd>两轴各派一个<strong>并行子代理</strong>，互不污染上下文；固定点无效或 diff 为空要先失败在这里而不是子代理里；Spec 轴按顺序找规格（commit 里的 issue 引用 → 用户传的路径 → docs/specs/.scratch 下按分支名匹配 → 问用户）。最后聚合呈现为两节，<strong>不合并、不重排序</strong>，各轴内部给出最严重问题。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      一个变更完全可能一轴通过、另一轴失败：符合每一条规范但实现错了东西（Standards 过、Spec 挂），或精确实现了需求但破坏了项目惯例（反过来）。把两轴<em>分给两个子代理</em>，是防止"评审语境互相污染"——混在一起评，Spec 的发现会被 Standards 的细节淹没。而"不重排序"的禁令则防止聚合层替你决定哪个轴更重要——那是人的判断。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 10 onramps ================= -->
+<section id="onramps">
+  <div class="sec-num">Section 10</div>
+  <h2>三条汇入通道：不是所有工作都从"想法"开始</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">ON-RAMP A</span>
+      <h3>bug 报告和外部需求堆积 → /triage</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip user">/triage · 用户调用</span>
+      <span class="chip plain">内部调用 grilling + domain-modeling</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>把 issue（以及配置开启后的外部 PR，"一个 PR 就是带代码的 issue"）推过一个五态状态机：<code>needs-triage → needs-info / ready-for-agent / ready-for-human / wontfix</code>。流程：收集上下文 → 给出分类/状态建议及理由 → <strong>验证声称</strong>（bug 按报告者步骤复现；PR 检出跑测试）→ 需要时拷问补全 → 应用结果。<code>ready-for-agent</code> 的票附上 agent brief（面向智能体的任务简报）。</dd>
+      <dt>两个值得抄的细节</dt>
+      <dd>① 分诊时先查<strong>重复实现</strong>（按领域概念而非措辞搜索）和 <code>.out-of-scope/</code> 拒绝知识库——被拒的增强请求记档，防止同一个请求下个月再来一遍；② 所有 AI 产的 issue 评论强制带免责声明。注意：<code>/to-tickets</code> 产出的票天生 agent-ready，<strong>不要再分诊</strong>。</dd>
+    </dl>
+  </div>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">ON-RAMP B</span>
+      <h3>疑难 bug → /diagnosing-bugs</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip model">/diagnosing-bugs · 模型调用</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>六阶段纪律环，跳过任何阶段都要显式说明理由：<strong>① 造反馈回路</strong>（十种手段按序尝试：失败测试→curl 脚本→CLI+快照→无头浏览器→重放 trace→一次性 harness→fuzz→bisect harness→差分循环→HITL bash 脚本；验收标准是一条"红 capable、确定性、秒级、可无人值守"的命令）→ <strong>② 复现并最小化</strong>（逐个砍掉非承重元素）→ <strong>③ 提假设</strong>（先列 3–5 个可证伪假设再动手，防止单假设锚定；列表给用户看一眼，领域知识常能立刻重排）→ <strong>④ 插桩</strong>（一次只改一个变量；调试日志统一加 <code>[DEBUG-xxxx]</code> 前缀方便最后一把清理；性能问题先测基线再二分）→ <strong>⑤ 修复 + 回归测试</strong>（回归测试写在使用"真实 bug 模式"的正确接缝上；<em>找不到正确接缝本身就是发现</em>——说明架构拦不住这类 bug，转交架构巡检）→ <strong>⑥ 清理</strong>（原始 repro 不再红、插桩全删、把最终成立的假设写进 commit）。</dd>
+      <dt>红线</dt>
+      <dd>没有红命令之前<em>禁止</em>进入假设阶段——"盯着代码读出理论"正是这个技能要防止的失败。真造不出回路就明说，向用户要环境/脱敏产物/临时插桩授权。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      "造出正确的反馈回路，bug 就修好了 90%。"这把调试从"智力游戏"变成"工程问题"：二分、假设检验、插桩都只是消费那个红绿信号的机械动作。非确定性 bug 的目标也随之明确——不是干净复现，而是<em>把复现率提到可调试水平</em>（50% 的 flake 可调试，1% 不行）。
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">ON-RAMP C</span>
+      <h3>巨型雾团项目 → /wayfinder</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip user">/wayfinder · 用户调用 · 认知负荷最高，留给真正的大家伙</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>想法太大、一个会话装不下、路还看不清时，不硬写规格。先拷问出<strong>目的地</strong>（固定 scope 的锚点），再广度优先铺开<strong>决策票</strong>：每张票是一个问题，票的产出是一个<strong>决策</strong>而非交付物。票分四类——research（AFK，派研究子代理）、prototype（HITL）、grilling（HITL，默认）、task（为解锁决策而做的手工活）。地图刻意不完整："雾中之战"（fog of war）区域先记在 <strong>Not yet specified</strong>，决策推进到哪里、雾就散到哪里、新的票才被具体化出来。判定标准：<em>能不能现在把问题说精确</em>，而不是能不能回答。</dd>
+      <dt>运作方式</dt>
+      <dd>地图是一张带 <code>wayfinder:map</code> 标签的 issue（索引而非存储，决策细节只活在票里）；票是它的子 issue，用追踪器原生 blocking 关系。开工前先<strong>认领</strong>（assign 自己）防多会话撞车；一次会话只解决一张票（research 票除外）。地图收口后<strong>移交而不建造</strong>：合并回主流程的 <code>/to-spec</code>，把散落的决策收敛成可建造的规格——直接从地图冲进 implement 会丢掉关联细节。</dd>
+    </dl>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      巨型项目的瓶颈不是执行而是<em>决策依赖链</em>：很多问题在前面的问题回答之前根本无法精确陈述。wayfinder 用"决策票 + 雾"诚实地建模了这一点——把不可知的部分留在雾里，而不是假装能提前排期。"producing decisions, not deliverables"防止了最经典的走偏：在规划会话里忍不住写起了产品代码。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 11 health ================= -->
+<section id="health">
+  <div class="sec-num">Section 11</div>
+  <h2>代码库健康与词汇层</h2>
+
+  <div class="stage">
+    <div class="stage-head">
+      <span class="stage-no">UPKEEP</span>
+      <h3>定期巡检：improve-codebase-architecture</h3>
+    </div>
+    <div class="skill-chips">
+      <span class="chip user">/improve-codebase-architecture · 用户调用 · 建议每隔几天跑一次</span>
+      <span class="chip model">引用 /codebase-design 词汇</span>
+    </div>
+    <dl class="kv">
+      <dt>做什么</dt>
+      <dd>三步：① <strong>YAGNI 定范围</strong>——先看 git log 找热点（最近常改的地方优先，因为深化是为未来的改动服务的），读 CONTEXT.md 和 ADR，再派子代理自由探索，找"浅模块"（接口复杂度≈实现复杂度）、缺 locality 的纯函数抽取、跨接缝泄漏；对疑似浅模块做<strong>删除测试</strong>（删掉它是复杂度集中了还是只是搬家了）。② 产出一份<strong>可视化 HTML 报告</strong>（写到系统临时目录，不进仓库），每个候选一张卡：涉及文件 / 问题 / 方案 / 以 locality 和 leverage 表述的收益 / before-after 图 / 推荐强度徽章，最后给 Top 推荐。③ 你选中一个候选后进入 grilling 循环细化，术语和 ADR 沿途更新。</dd>
+      <dt>定位</dt>
+      <dd>它是<em>巡检</em>不是<em>救援</em>：在真正老化的代码库上会找到真实候选，但不会替你解开泥球。选中的候选作为一个"想法"，从环节 1（grill-with-docs）重新进入主流程。</dd>
+    </dl>
+  </div>
+
+  <h3>词汇层：垫在所有环节下面的两块基石</h3>
+  <div class="stage">
+    <div class="skill-chips">
+      <span class="chip model">/domain-modeling · 模型调用</span>
+      <span class="chip model">/codebase-design · 模型调用</span>
+    </div>
+    <p><strong>domain-modeling</strong> 管<em>领域语言</em>：用词和词汇表冲突当场指出（"你的词汇表把'取消'定义为 X，你现在说的像 Y，到底是哪个？"）；模糊词给出精确的规范术语；用具体场景压力测试概念边界；用户陈述与代码矛盾时摆到桌面上；术语敲定<strong>当场</strong>写入 CONTEXT.md（纯词汇表，禁止当规格或便签用）。ADR 三条件才立：难以逆转 + 脱离上下文会费解 + 真实权衡的结果。</p>
+    <p><strong>codebase-design</strong> 管<em>架构词汇</em>：module / interface / depth / seam / adapter / leverage / locality 七个术语严格统一（禁用 component、service、API、boundary 这些漂移词）。核心原则：深度是接口的属性而非实现的属性；<strong>删除测试</strong>；接口即测试面；<strong>一个 adapter 是假想接缝，两个才是真接缝</strong>。<code>/tdd</code> 和 <code>/improve-codebase-architecture</code> 都说这门语言——统一词汇让"哪里该深、哪里该薄"的讨论有共同坐标。</p>
+    <div class="callout why">
+      <b class="tag">知其所以然</b>
+      这就是失败模式 #2 的系统性解法：不止让一次会话少啰嗦，而是把共享语言<em>物化</em>为 CONTEXT.md 和 ADR 两组文件，让"20 个词说 1 个词的事"的问题在每个后续会话里持续衰减。ADR 的三条件门槛防止决策档案变成流水账——只记"未来读者真的会问为什么"的决定。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 12 context ================= -->
+<section id="context">
+  <div class="sec-num">Section 12</div>
+  <h2>上下文卫生：智能体时代的"工作内存管理"</h2>
+  <p>流程的形状很大程度上由 LLM 的一个物理约束决定：<strong>smart zone</strong>——约 150k token 以内模型仍然推理敏锐，超过就开始劣化。由此派生出两条核心规则和一套边界决策树：</p>
+  <ul class="plain">
+    <li><strong>规则一</strong>：环节 1–4（拷问 → 原型分支 → 规格 → 拆票）保持在<strong>同一个不中断的上下文窗口</strong>里，中途不要 compact 或 clear——规格和票必须建立在同一段思考之上。真逼近 smart zone，就在最近的阶段边界 <code>/compact</code>。</li>
+    <li><strong>规则二</strong>：进入环节 5 后反过来——<strong>每个 /implement 都冷启动</strong>，从票出发，会话结束后上下文即可丢弃。</li>
+  </ul>
+
+  <h3>阶段边界（phase boundary）的五个选项</h3>
+  <table>
+    <tr><th style="width:16%">选项</th><th style="width:44%">适用</th><th>关键理由</th></tr>
+    <tr><td><strong>继续</strong></td><td>默认起点。当前内容对下一步还有用。</td><td>成本为零，损失为零。因"一手信息"最贵，先排除其他选项再考虑它。</td></tr>
+    <tr><td><code>/clear</code></td><td>当前内容对接下来要做的事毫无价值。</td><td>最彻底的重置。</td></tr>
+    <tr><td><code>/handoff</code></td><td>换 harness、换目录、交给同事、阶段中途分叉支线任务。</td><td>买的是<strong>可移植性</strong>：一份 markdown 摘要（含"建议调用的技能"清单，引用既有产物而非复制，脱敏）。写到系统临时目录而非工作区。</td></tr>
+    <tr><td><strong>子代理</strong></td><td>范围收紧的独立任务，要一份报告回来。</td><td>主窗口不被污染。</td></tr>
+    <tr><td><code>/compact</code></td><td>窗口要满但工作要续。</td><td>压缩现状并播种新会话。是树底的默认，不是第一反应用。</td></tr>
+  </table>
+  <p class="muted">决策发生在边界上；阶段中途只允许"继续"或"把剩余拆成子代理"。</p>
+</section>
+
+<!-- ================= 13 checklist ================= -->
+<section id="checklist">
+  <div class="sec-num">Section 13</div>
+  <h2>落地检查清单</h2>
+  <p>把这套体系落到你自己的项目，按顺序过一遍：</p>
+
+  <div class="check">
+    <b>初始化（每仓库一次）</b>
+    <ul>
+      <li>安装技能（Claude Code 插件或 <code>npx skills@latest add mattpocock/skills</code>，二选一）</li>
+      <li>跑一次 <code>/setup-matt-pocock-skills</code>：定追踪器、标签、领域文档布局</li>
+      <li>确认 <code>CONTEXT.md</code> 与 <code>docs/adr/</code> 约定生效（第一个术语出现时才建文件，允许懒创建）</li>
+    </ul>
+  </div>
+
+  <div class="check">
+    <b>每个新想法（主流程）</b>
+    <ul>
+      <li>动手前先 <code>/grill-with-docs</code>，直到前沿为空、你确认达成共识</li>
+      <li>对话裁决不了的分支 → 原型验证，handoff 双向桥接，决策折回</li>
+      <li>同窗口完成 <code>/to-spec</code>：接缝先行并与你确认；规格里不写文件路径</li>
+      <li><code>/to-tickets</code>：垂直切片 + 阻塞边；宽重构走 expand–contract；你批准粒度后才发布</li>
+      <li>每票一次 <code>/implement</code>，会话间 <code>/clear</code>；tdd 只在预约定接缝上写测试</li>
+      <li>提交前 <code>/code-review</code>：Standards / Spec 两轴都看，不接受"合并排序"的偷懒结论</li>
+    </ul>
+  </div>
+
+  <div class="check">
+    <b>日常运维</b>
+    <ul>
+      <li>外部 bug/需求堆积 → <code>/triage</code>（先查重复实现和 out-of-scope 档案）</li>
+      <li>疑难 bug → <code>/diagnosing-bugs</code>：先有红命令，再谈假设；插桩统一前缀，收尾全清</li>
+      <li>每隔几天 → <code>/improve-codebase-architecture</code> 巡检热点区域，选中候选回到主流程</li>
+      <li>逼近上下文上限 → 在阶段边界 <code>/compact</code> 或 <code>/handoff</code>，不要带病硬撑</li>
+    </ul>
+  </div>
+
+  <div class="check">
+    <b>反模式自查</b>
+    <ul>
+      <li>别让智能体在拷问未完成时就动手写码</li>
+      <li>别 triage 自己通过 to-tickets 产出的票</li>
+      <li>别在规格/票里写具体文件路径</li>
+      <li>别写同义反复或实现耦合的测试</li>
+      <li>别从 wayfinder 地图直接跳 implement——先 to-spec 收敛</li>
+      <li>别把 CONTEXT.md 当规格或便签用，它是纯词汇表</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= appendix A ================= -->
+<section id="appendix">
+  <div class="sec-num">Appendix A</div>
+  <h2>全部技能详解（37 个）</h2>
+  <p>按仓库的分类桶组织。调用类型标注：<span class="badge u">用户调用</span> 只能你敲命令触发（编排职责）；<span class="badge m">模型调用</span> 智能体可自动触发（纪律职责）。<code>engineering/</code> 和 <code>productivity/</code> 是"晋升桶"（随插件发布、有文档页）；<code>in-progress/</code> 是公测（需单独安装）；<code>misc/</code> 是低频留存；<code>deprecated/</code> 当前为空（退役技能直接删除并在 changeset 里注明替代者）。</p>
+
+  <h3>Engineering · 用户调用（9）</h3>
+
+  <div class="skill-card">
+    <h4>ask-matt <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/ask-matt</div>
+    <p>全套技能的<strong>路由器</strong>：记不住该用哪个时，问它。它把所有用户可达技能组织成主流程、三条汇入通道、代码库健康、词汇层、独立技能五张图，并回答"我现在这个处境该从哪进"。仓库规定：任何新增/改名/改变用户可达技能的变更都必须同步更新它——"一个不认识新技能、还指向已删技能的路由器是在撒谎"。</p>
+    <div class="where"><b>在流程中的位置：</b>入口。迷路时从它进，其余时候它只是文档。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>grill-with-docs <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/grill-with-docs</div>
+    <p>带文档产出的拷问会话——整个体系的核心技能。SKILL.md 本体只有一句话："调用两次 Skill 工具：grilling 和 domain-modeling"。这句话本身就是设计示范：编排技能应该薄，纪律下沉到可复用的模型调用技能里。</p>
+    <div class="where"><b>在流程中的位置：</b>主流程环节 1。有仓库时永远优先于 grill-me。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>triage <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/triage</div>
+    <p>把 issue 和外部 PR 推过五态分诊状态机，产出 agent-ready 的任务简报。要点：AI 评论强制免责声明；先复现/验证声称再拷问；拒绝的增强请求写入 <code>.out-of-scope/</code> 知识库防止重复提议；支持续聊（读旧分诊笔记，不重复问已答问题）。</p>
+    <div class="where"><b>在流程中的位置：</b>汇入通道 A。产物由 implement 拾取。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>improve-codebase-architecture <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/improve-codebase-architecture</div>
+    <p>扫描代码库找"深化机会"，产出到临时目录的可视化 HTML 报告（候选卡片 + before/after 图 + 推荐强度），选中候选后进入 grilling 循环。热点优先（YAGNI）、删除测试、ADR 冲突只在摩擦真实时重提。</p>
+    <div class="where"><b>在流程中的位置：</b>代码库健康巡检；选中候选 → 生成想法 → 回主流程环节 1。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>setup-matt-pocock-skills <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/setup-matt-pocock-skills</div>
+    <p>每仓库一次的初始化：配置问题追踪器（GitHub/GitLab/本地 markdown/自定义 prose）、分诊标签词汇、领域文档布局（默认单上下文）。写入 <code>docs/agents/*.md</code> 并在 AGENTS.md/CLAUDE.md 加 <code>## Agent skills</code> 块，绝不覆盖用户已有编辑。</p>
+    <div class="where"><b>在流程中的位置：</b>STAGE 0，其他工程技能的前置条件。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>to-spec <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/to-spec</div>
+    <p>不做访谈，把当前对话直接合成为规格并发布（打 ready-for-agent）。先定测试接缝并与用户确认；模板含超长用户故事清单；禁文件路径与代码片段（原型决策密集片段除外）。</p>
+    <div class="where"><b>在流程中的位置：</b>主流程环节 3；wayfinder 地图收口后的指定收敛点。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>to-tickets <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/to-tickets</div>
+    <p>把规格/计划/对话拆成带阻塞边的曳光弹垂直切片，先给用户过目（粒度、阻塞边、合并/拆分）再发布。宽重构走 expand–contract。本地追踪器一票一文件，真追踪器用原生 blocking。</p>
+    <div class="where"><b>在流程中的位置：</b>主流程环节 4。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>implement <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/implement</div>
+    <p>按票/规格实现，指令极简（这是特性不是缺陷）：在预约定接缝用 tdd；定期类型检查 + 单测、最后全量；收尾 code-review；提交当前分支。</p>
+    <div class="where"><b>在流程中的位置：</b>主流程环节 5，每票一个新会话。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>wayfinder <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/engineering/wayfinder</div>
+    <p>为超过单会话容量的巨型任务绘制决策票地图：目的地先行、雾中之战、四类票（research/prototype/grilling/task）、认领防撞、一次一票、地图收口后移交 to-spec。详述见第十章 ON-RAMP C。</p>
+    <div class="where"><b>在流程中的位置：</b>汇入通道 C，认知负荷最高，只留给真正的大雾团。</div>
+  </div>
+
+  <h3>Engineering · 模型调用（9）</h3>
+
+  <div class="skill-card">
+    <h4>prototype <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/prototype</div>
+    <p>一次性代码回答一个设计问题。两分支：逻辑/状态 → 单 HTML 可玩文件；UI → 同路由多变体。铁律：标注一次性、一条命令能跑、不持久化、不抛光、状态可见；收尾时决策折进真码、原型留 primary source 分支。</p>
+    <div class="where"><b>在流程中的位置：</b>主流程环节 2 的分支本体；wayfinder 的 prototype 票。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>diagnosing-bugs <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/diagnosing-bugs</div>
+    <p>疑难 bug 六阶段纪律环，核心是阶段 1 的"造反馈回路"（十种手段、红-capable 验收标准）。全程先脱敏；性能问题先测基线；找不到回归测试的正确接缝本身即为发现，转交架构巡检。详述见第十章 ON-RAMP B。</p>
+    <div class="where"><b>在流程中的位置：</b>汇入通道 B；用户说"debug/diagnose"时自动触发。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>research <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/research</div>
+    <p>把阅读调研委托给<strong>后台子代理</strong>：针对高信任一手来源调查一个问题，产出带引用的 Markdown 文件落回仓库。你继续干活，它读完留档。产物是喂给 grill-with-docs 的素材——研究是喂养思考，不是替代思考。</p>
+    <div class="where"><b>在流程中的位置：</b>独立技能；wayfinder research 票的执行者。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>tdd <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/tdd</div>
+    <p>红-绿循环的参考手册：好测试 = 通过公共接口验证行为；测试只写在预约定接缝上；三反模式（实现耦合/同义反复/水平切片）；三规则（红先于绿/一次一片/重构不在循环里）。可单独用（"就想测试优先做这个行为"），也被 implement 驱动。</p>
+    <div class="where"><b>在流程中的位置：</b>主流程环节 5 的内部引擎。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>domain-modeling <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/domain-modeling</div>
+    <p>领域模型的<em>主动</em>纪律：挑战词汇表冲突、锐化模糊词、场景压测边界、代码与陈述交叉验证、当场更新 CONTEXT.md。ADR 三条件门槛。支持多上下文布局（CONTEXT-MAP.md + 各子域自己的 CONTEXT.md/ADR）。</p>
+    <div class="where"><b>在流程中的位置：</b>词汇层；被 grill-with-docs、triage、wayfinder、improve-codebase-architecture 驱动。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>codebase-design <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/codebase-design</div>
+    <p>深模块设计词汇的单一事实来源：module/interface/depth/seam/adapter/leverage/locality 七术语 + 四原则（深度是接口属性/删除测试/接口即测试面/两 adapter 才是真接缝）+ 可测试性三招（接受依赖不创建、返回结果不产副作用、小表面）。附带 DEEPENING 和 DESIGN-IT-TWICE 两个进阶模式（后者用并行子代理设计多个 radically different 的接口再比较）。</p>
+    <div class="where"><b>在流程中的位置：</b>词汇层；tdd 和 improve-codebase-architecture 都说这门语言。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>code-review <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/code-review</div>
+    <p>对 diff 做双轴评审：Standards（仓库规范 + 12 条 Fowler 坏味道基线，仓库覆盖基线，全部是判断题）+ Spec（缺失/越界/错实现），两轴并行子代理、聚合不重排。详述见第九章。</p>
+    <div class="where"><b>在流程中的位置：</b>主流程环节 6；也可独立评审任意分支/PR。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>resolving-merge-conflicts <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/resolving-merge-conflicts</div>
+    <p>逐 hunk 处理进行中的 merge/rebase 冲突：按<strong>意图</strong>解决——追溯每一方的一手来源，而不是挑行拼接；然后完成整个操作。<strong>永不 <code>--abort</code></strong>。</p>
+    <div class="where"><b>在流程中的位置：</b>独立技能，已在冲突中时直接进。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>wizard <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/engineering/wizard</div>
+    <p>为"只有人能做"的步骤生成交互式 bash 向导：开 provision 基础设施、配凭据/CI secrets、点陌生第三方后台、跑一次性割接。脚本打开每个 URL、捕获每个值、写进 .env 和 GitHub secrets。判据：智能体能自己做的就自己做，这是给"人真正在环里"的环节用的。</p>
+    <div class="where"><b>在流程中的位置：</b>独立技能；智能体撞到"只有你能过"的墙时自动掏出来。</div>
+  </div>
+
+  <h3>Productivity · 用户调用（5）</h3>
+
+  <div class="skill-card">
+    <h4>grill-me <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/productivity/grill-me</div>
+    <p>grill-with-docs 的无状态版：同一套拷问，但不落盘、不建词汇表。用于没有工作目录的场景（打磨计划/设计/文章）。有仓库时它严格劣于 grill-with-docs。</p>
+    <div class="where"><b>在流程中的位置：</b>独立；仓库外的一切对齐场景。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>handoff <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/productivity/handoff</div>
+    <p>把当前对话压缩成交接文档存到系统临时目录（不进工作区），让新智能体无缝续接。含"建议调用的技能"清单；引用既有产物（规格/ADR/commit）的路径而非复制；脱敏。可传参指定下一会话的重点。</p>
+    <div class="where"><b>在流程中的位置：</b>阶段边界五选项之一；原型分支的双向桥。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>teach <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/productivity/teach</div>
+    <p>跨多个会话教你一个新技能/概念，用当前目录做有状态的教学工作区（进度、练习、笔记都在里面）。</p>
+    <div class="where"><b>在流程中的位置：</b>独立，学习场景。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>to-questionnaire <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/productivity/to-questionnaire</div>
+    <p>挡路的信息既不在你脑子里也不在代码库里，而在<strong>别人</strong>脑子里时：它拷问你的<em>发送</em>（问谁、要什么回来），而不是拷问主题本身，然后产出一份 Markdown 问卷（异步填或会上过）。grill-me 的逆操作。收到的答案回喂 grill-with-docs / to-spec。</p>
+    <div class="where"><b>在流程中的位置：</b>独立；信息在他人处时的对齐前置。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>wait-what <span class="badge u">用户调用</span></h4>
+    <div class="sub">skills/productivity/wait-what</div>
+    <p>"等等，没听懂"的即时补救：智能体用你缺的上下文、大白话、CONTEXT.md 的词汇重新讲一遍刚才说的东西。任何会话中途可用。治标；治本靠 grill-with-docs 早早建立共享语言。</p>
+    <div class="where"><b>在流程中的位置：</b>独立，任何技能内部皆可触发。</div>
+  </div>
+
+  <h3>Productivity · 模型调用（2）</h3>
+
+  <div class="skill-card">
+    <h4>grilling <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/productivity/grilling</div>
+    <p>访谈原语本身：设计树、轮次、前沿、事实智能体查/决策用户拍。grill-me、grill-with-docs、triage、wayfinder、improve-codebase-architecture 全部在内部跑它。详述见第四章。</p>
+    <div class="where"><b>在流程中的位置：</b>词汇层之下最底层的复用件。</div>
+  </div>
+
+  <div class="skill-card">
+    <h4>writing-for-agents <span class="badge m">模型调用</span></h4>
+    <div class="sub">skills/productivity/writing-for-agents</div>
+    <p>给智能体写文档的参考：SKILL.md 怎么写、AGENTS.md/CLAUDE.md 怎么写、被指针引用的文档怎么写。让"写给 AI 看的文本"有自己的写作规范。</p>
+    <div class="where"><b>在流程中的位置：</b>独立参考；维护本体系自身的文档时用。</div>
+  </div>
+
+  <h3>In-progress · 公测（8，不随插件发布，需单独安装）</h3>
+  <table>
+    <tr><th style="width:22%">技能</th><th>说明</th></tr>
+    <tr><td><strong>loop-me</strong> <span class="badge u">用户调用</span></td><td>跨会话把自己拷问出可实施的工作流规格，当前目录做有状态工作区。</td></tr>
+    <tr><td><strong>writing-beats</strong></td><td>把文章组织成一串"节拍"的旅程，选一个起点只写那一拍，再跳下一拍，直到自然收尾。</td></tr>
+    <tr><td><strong>writing-fragments</strong></td><td>拷问式挖掘写作素材碎片，追加到单一文档，为未来文章攒原料。</td></tr>
+    <tr><td><strong>writing-shape</strong></td><td>把原料文档逐段整形成文章，每步都论证格式选择。</td></tr>
+    <tr><td><strong>claude-handoff</strong> <span class="badge u">用户调用</span></td><td>把当前对话经 <code>claude --bg</code> 移交给一个立刻接手的后台智能体。</td></tr>
+    <tr><td><strong>setup-ts-deep-modules</strong> <span class="badge u">用户调用</span></td><td>给 TypeScript 仓库接上 dependency-cruiser，强制每个 package 成为深模块（实现藏子目录、只从入口可达、测试走入口）。</td></tr>
+    <tr><td><strong>implement-spec</strong> <span class="badge u">用户调用</span></td><td>把整份规格在一个分支上实现：票当任务图处理，implementer 子代理沿"就绪前沿"并行推进，落成单个 PR。相当于 to-tickets + implement 的自动化版。</td></tr>
+    <tr><td><strong>retro</strong> <span class="badge u">用户调用</span></td><td>会话结束后建议改进智能体环境（steering 文件、编码规范、自动化检查、工具链）。目前是 STUB，只有设计笔记。</td></tr>
+  </table>
+
+  <h3>Misc · 低频留存（4，不晋升）</h3>
+  <table>
+    <tr><th style="width:30%">技能</th><th>说明</th></tr>
+    <tr><td><strong>git-guardrails-claude-code</strong></td><td>配置 Claude Code hooks，在危险 git 命令（push、reset --hard、clean 等）执行前拦截。</td></tr>
+    <tr><td><strong>migrate-to-shoehorn</strong></td><td>把测试文件里的 <code>as</code> 类型断言迁移到 @total-typescript/shoehorn。</td></tr>
+    <tr><td><strong>scaffold-exercises</strong></td><td>生成练习目录结构：sections / problems / solutions / explainers。</td></tr>
+    <tr><td><strong>setup-pre-commit</strong></td><td>配置 Husky pre-commit：lint-staged + Prettier + 类型检查 + 测试。</td></tr>
+  </table>
+
+  <h3>Deprecated</h3>
+  <p class="muted">当前为空。退役策略：技能直接删除，移除它的 changeset 必须注明由什么替代。</p>
+</section>
+
+<!-- ================= appendix B ================= -->
+<section id="install">
+  <div class="sec-num">Appendix B</div>
+  <h2>安装与仓库组织</h2>
+
+  <h3>两条安装路线，二选一</h3>
+  <table>
+    <tr><th style="width:22%">路线</th><th>说明</th></tr>
+    <tr><td><strong>Claude Code 插件</strong></td><td><code>claude plugins install mattpocock-skills</code>。官方市场直接装，托管式只读包，作者更新自动同步——"订阅"哲学。</td></tr>
+    <tr><td><strong>skills.sh 安装器</strong></td><td><code>npx skills@latest add mattpocock/skills</code>。把技能文件复制进你的仓库，归你所有、随便改，无后台更新——"fork"哲学。记得勾上 <code>setup-matt-pocock-skills</code>。</td></tr>
+  </table>
+  <p class="muted">两条都装会导致每个技能出现两份。装完跑 <code>/setup-matt-pocock-skills</code> 完成仓库配置。</p>
+
+  <h3>仓库自身的组织规则（可以借鉴到自己的技能库）</h3>
+  <ul class="plain">
+    <li>技能按桶分类：<code>engineering/</code>（每日代码工作）、<code>productivity/</code>（非代码工作流）、<code>misc/</code>（低频留存）、<code>in-progress/</code>（公测）、<code>deprecated/</code>（退役）。前两个是<strong>晋升桶</strong>。</li>
+    <li>晋升桶的每个技能必须：出现在顶层 README、进入 <code>.claude-plugin/plugin.json</code> 的 skills 数组、拥有 <code>docs/&lt;bucket&gt;/&lt;skill&gt;.md</code> 文档页（四节结构：What it does / When to reach for it / Common questions / It's working if）。</li>
+    <li>每个 SKILL.md 要么是用户调用（<code>disable-model-invocation: true</code>），要么是模型调用——二选一，且有明确的存在理由。</li>
+    <li><code>ask-matt</code> 路由器随技能变更同步更新，保证地图不撒谎。</li>
+    <li>改动清单后跑 <code>claude plugin validate . --strict</code> 验证。</li>
+    <li>仓库文风规定：所有正文<strong>禁止使用长破折号（em dash）</strong>——句子需要时改用逗号、冒号、句号、括号或连词。</li>
+    <li><code>scripts/link-skills.sh</code> 把技能软链到本机技能目录，<code>git pull</code> 即更新。</li>
+  </ul>
+
+  <div class="callout">
+    <b class="tag">可迁移的核心思想</b>
+    如果只带走三件事：① <strong>编排薄、纪律厚</strong>——用户调用技能只做路由和串联，可复用的方法论下沉为模型调用技能；② <strong>产物物化</strong>——共识、语言、决策、任务全部落成文件（CONTEXT.md / ADR / 规格 / 票），跨会话不丢失；③ <strong>反馈回路优先</strong>——测试先行、红绿循环、调试先造红命令，让智能体永远不在盲区里飞。
+  </div>
+</section>
+
+<footer>
+  本文档基于 mattpocock/skills 仓库（2026-09 快照）整理：README.md、AGENTS.md、ask-matt 路由器及 14 个核心 SKILL.md 原文。单文件、零外部依赖、离线可用。
+</footer>
+
+</div>
+</body>
+</html>
