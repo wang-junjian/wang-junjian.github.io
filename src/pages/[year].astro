@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
 import { formatDate, getPostDisplayTitle, sortPostsByDate, getShanghaiDateComponents } from '../utils/posts';
+import { getMergedPosts, isHtmlEntry } from '../utils/htmlPosts';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts');
+  const posts = await getMergedPosts();
   const years = new Set<number>();
   for (const post of posts) {
     const year = post.data.date ? getShanghaiDateComponents(post.data.date).year : 0;
@@ -21,7 +21,7 @@ export async function getStaticPaths() {
 const { year } = Astro.params;
 const yearNum = parseInt(year, 10);
 
-const posts = await getCollection('posts');
+const posts = await getMergedPosts();
 const yearPosts = sortPostsByDate(
   posts.filter((post) => post.data.date && getShanghaiDateComponents(post.data.date).year === yearNum)
 );
@@ -78,8 +78,9 @@ const monthLabel = new Intl.DateTimeFormat('zh-CN', { month: 'numeric' });
                     {formatDate(post.data.date, { day: '2-digit' })}
                   </time>
                   <a
-                    href={`/posts/${post.id}/`}
+                    href={isHtmlEntry(post) ? post.htmlUrl : `/posts/${post.id}/`}
                     class="text-[var(--text-primary)] no-underline transition-colors duration-200 hover:text-[var(--accent)]"
+                    {...(isHtmlEntry(post) ? { 'data-turbo': 'false' } : {})}
                   >
                     {getPostDisplayTitle(post)}
                   </a>

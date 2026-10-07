@@ -1,6 +1,6 @@
-import type { CollectionEntry } from 'astro:content';
 import { groupPostsByDay, getAllTags, normalizeTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from './posts';
 import { paginate, PAGE_SIZE } from './pagination';
+import { isHtmlEntry, type StreamEntry } from './htmlPosts';
 
 export interface TypePageConfig {
   title: string;
@@ -55,20 +55,20 @@ export const TYPE_PAGE_CONFIG: Record<string, TypePageConfig> = {
 };
 
 export interface TypePageData {
-  typePosts: CollectionEntry<'posts'>[];
+  typePosts: StreamEntry[];
   pageResult: {
-    items: CollectionEntry<'posts'>[];
+    items: StreamEntry[];
     currentPage: number;
     totalPages: number;
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
-  dayGroups: Map<string, CollectionEntry<'posts'>[]>;
+  dayGroups: Map<string, StreamEntry[]>;
   sortedDays: string[];
 }
 
 export function getTypePageData(
-  allPosts: CollectionEntry<'posts'>[],
+  allPosts: StreamEntry[],
   type: string,
   page = 1
 ): TypePageData {
@@ -89,15 +89,16 @@ export function getTypePageData(
 }
 
 export interface TypeSidebarData {
-  recentContent: Array<{ id: string; title: string; date: Date | string }>;
+  recentContent: Array<{ id: string; title: string; date: Date | string; href?: string }>;
   recentTags: Array<[string, number]>;
 }
 
-export function getTypeSidebarData(typePosts: CollectionEntry<'posts'>[]): TypeSidebarData {
+export function getTypeSidebarData(typePosts: StreamEntry[]): TypeSidebarData {
   const recentContent = typePosts.slice(0, 10).map((post) => ({
     id: post.id,
     title: getPostDisplayTitle(post),
     date: post.data.date,
+    href: isHtmlEntry(post) ? post.htmlUrl : undefined,
   }));
 
   const allTags = getAllTags(typePosts);
@@ -112,12 +113,12 @@ export function getTypeSidebarData(typePosts: CollectionEntry<'posts'>[]): TypeS
   };
 }
 
-export function getTypePageTotalPages(allPosts: CollectionEntry<'posts'>[], type: string): number {
+export function getTypePageTotalPages(allPosts: StreamEntry[], type: string): number {
   const typePosts = allPosts.filter((post) => post.data.type === type);
   return Math.max(1, Math.ceil(typePosts.length / PAGE_SIZE));
 }
 
-export function getTypeStaticPaths(allPosts: CollectionEntry<'posts'>[], type: string) {
+export function getTypeStaticPaths(allPosts: StreamEntry[], type: string) {
   const totalPages = getTypePageTotalPages(allPosts, type);
   const paths: Array<{ params: { path: string | undefined } }> = [{ params: { path: undefined } }];
   for (let p = 2; p <= totalPages; p++) {
@@ -132,6 +133,6 @@ export function parseTypePageParam(path: string | undefined): number {
   return match ? parseInt(match[1], 10) : 1;
 }
 
-export function typePageNeedsKatex(posts: CollectionEntry<'posts'>[]): boolean {
+export function typePageNeedsKatex(posts: StreamEntry[]): boolean {
   return needsKatex(posts);
 }

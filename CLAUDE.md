@@ -46,7 +46,26 @@ GitHub Actions 自动部署到 GitHub Pages，自定义域名 `wangjunjian.com`�
 - `tags`：标签（字符串或数组）
 - `excerpt`：摘要
 
-## 7. HTML 工具页面规范
+## 7. HTML 文章规范
+
+智能体生成的独立 HTML 文档可作为"HTML 文章"直接放入 `posts/YYYY/`，与 Markdown 文章并存。站点会自动将其收录进首页/归档/年度/月度/标签页/RSS/搜索索引，点击后跳转到保留原样的独立页面 `/posts/<文件名>.html`（URL 为扁平结构，年份目录会被剥掉）。
+
+约定：
+- 文件名建议 `YYYY-MM-DD-slug.html`；**basename（去扩展名）必须全库唯一**，冲突会导致构建报错
+- 必须是**自包含文档**（内联 CSS/JS，或使用 `/images/...` 等绝对路径资源）——相对路径资源会因 URL 压平而 404
+- `<head>` 必需：
+  - `<title>`（列表与 RSS 标题，缺省回退文件名）
+  - `<meta name="date" content="YYYY-MM-DD">`（缺省尝试文件名日期前缀，再缺构建时告警）
+- `<head>` 推荐：
+  - `<meta name="description" content="...">`（列表摘要、RSS、搜索摘要）
+  - `<meta name="keywords" content="a, b">`（映射为标签，支持中英文逗号；缺失则不进标签页）
+  - `<meta name="author" content="军舰">`
+- `_` 前缀的 HTML 文件不会被收录
+- 同名 `.md` 与 `.html` 共存时，列表中两者都展示（Markdown 渲染为常规文章页，HTML 直达独立页）
+
+实现见 `src/utils/htmlPosts.ts`（扫描/解析/合并）与 `src/integrations/htmlPostsStatic.ts`（dev 服务 + build 复制）。
+
+## 8. HTML 工具页面规范
 
 `tools/*.html` 下的独立 HTML 工具页面需遵循：
 
@@ -61,7 +80,7 @@ GitHub Actions 自动部署到 GitHub Pages，自定义域名 `wangjunjian.com`�
   - `<meta name="author" content="军舰">`
   - `<meta name="date" content="YYYY-MM-DD">`（当前日期）
 
-## 8. Git 工作流
+## 9. Git 工作流
 
 - 本项目为个人站点，日常小改动直接在 `main` 分支上提交，不必为每个小功能新建独立分支。
 - 只有涉及较大重构、实验性功能或需要长时间隔离的改动，才考虑新建分支。

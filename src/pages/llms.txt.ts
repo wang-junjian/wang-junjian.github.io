@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import { normalizeTags, formatDate, getPostDisplayTitle, sortPostsByDate, getShanghaiDateComponents } from '../utils/posts';
+import { getHtmlPosts } from '../utils/htmlPosts';
 
 const SITE_URL = 'https://wangjunjian.com';
 
@@ -37,11 +38,18 @@ export const GET: APIRoute = async () => {
   content += `- [关于](${SITE_URL}/about/)\n\n`;
 
   content += `## 文章\n\n`;
-  for (const post of sortedPosts) {
-    const title = getPostDisplayTitle(post);
-    const date = formatPostDate(post.data.date);
-    const excerpt = post.data.excerpt ? ` — ${post.data.excerpt}` : '';
-    content += `- [${title}](${SITE_URL}/posts/${post.id}.md) — ${date}${excerpt}\n`;
+  const mdEntries = sortedPosts.map((post) => ({
+    date: post.data.date ? new Date(post.data.date) : new Date(0),
+    line: `- [${getPostDisplayTitle(post)}](${SITE_URL}/posts/${post.id}.md) — ${formatPostDate(post.data.date)}${post.data.excerpt ? ` — ${post.data.excerpt}` : ''}\n`,
+  }));
+  // HTML 文章是独立页面，链接指向 .html（无 .md 源）
+  const htmlEntries = getHtmlPosts().map((post) => ({
+    date: post.date,
+    line: `- [${post.title}](${SITE_URL}${post.url}) — ${formatPostDate(post.date)}${post.excerpt ? ` — ${post.excerpt}` : ''}\n`,
+  }));
+  const allEntries = [...mdEntries, ...htmlEntries].sort((a, b) => b.date.getTime() - a.date.getTime());
+  for (const entry of allEntries) {
+    content += entry.line;
   }
 
   content += `\n`;

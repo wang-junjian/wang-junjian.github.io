@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
 import { groupPostsByDay, getAllTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from '../utils/posts';
+import { getMergedPosts, isHtmlEntry } from '../utils/htmlPosts';
 import { paginate, PAGE_SIZE } from '../utils/pagination';
 import { getTools } from '../utils/tools';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
@@ -11,7 +11,7 @@ import StreamTabs from '../components/StreamTabs.astro';
 import Pagination from '../components/Pagination.astro';
 
 export async function getStaticPaths() {
-  const allPosts = await getCollection('posts');
+  const allPosts = await getMergedPosts();
   const totalPages = Math.max(1, Math.ceil(allPosts.length / PAGE_SIZE));
   const paths: Array<{ params: { path: string | undefined } }> = [{ params: { path: undefined } }];
   for (let p = 2; p <= totalPages; p++) {
@@ -26,7 +26,7 @@ function parsePageParam(path: string | undefined): number {
   return match ? parseInt(match[1], 10) : 1;
 }
 
-const allPosts = await getCollection('posts');
+const allPosts = await getMergedPosts();
 const page = parsePageParam(Astro.params.path);
 
 // Sort posts by date descending
@@ -50,6 +50,7 @@ const recentContent = sortedPosts.slice(0, 10).map((post) => ({
   id: post.id,
   title: getPostDisplayTitle(post),
   date: post.data.date,
+  href: isHtmlEntry(post) ? post.htmlUrl : undefined,
 }));
 
 // Random content: shuffled list for the sidebar (6 items)
@@ -60,6 +61,7 @@ const randomContent = [...sortedPosts]
     id: post.id,
     title: getPostDisplayTitle(post),
     date: post.data.date,
+    href: isHtmlEntry(post) ? post.htmlUrl : undefined,
   }));
 
 // Random tools for homepage sidebar

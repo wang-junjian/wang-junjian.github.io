@@ -1,23 +1,23 @@
-import type { CollectionEntry } from 'astro:content';
 import { getAllTags, groupPostsByDay, normalizeTags, sortPostsByDate, needsKatex } from './posts';
 import { paginate, PAGE_SIZE } from './pagination';
+import type { StreamEntry } from './htmlPosts';
 
 export interface TagPageData {
-  sortedPosts: CollectionEntry<'posts'>[];
+  sortedPosts: StreamEntry[];
   pageResult: {
-    items: CollectionEntry<'posts'>[];
+    items: StreamEntry[];
     currentPage: number;
     totalPages: number;
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
-  dayGroups: Map<string, CollectionEntry<'posts'>[]>;
+  dayGroups: Map<string, StreamEntry[]>;
   sortedDays: string[];
   recentTags: [string, number][];
   pageNeedsKatex: boolean;
 }
 
-export function getTagStaticPaths(posts: CollectionEntry<'posts'>[]) {
+export function getTagStaticPaths(posts: StreamEntry[]) {
   const tags = getAllTags(posts);
   const allTagCounts = new Map(
     Array.from(tags.entries()).map(([tagName, tagPosts]) => [tagName, tagPosts.length])
@@ -31,7 +31,7 @@ export function getTagStaticPaths(posts: CollectionEntry<'posts'>[]) {
 
 export function getTagPageData(
   tag: string,
-  posts: CollectionEntry<'posts'>[],
+  posts: StreamEntry[],
   allTagCounts: Map<string, number>,
   page = 1
 ): TagPageData {

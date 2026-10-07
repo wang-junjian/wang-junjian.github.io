@@ -118,7 +118,13 @@ export function cleanBodyForSearch(body: string): string {
     .trim();
 }
 
-export function getPostDisplayTitle(post: CollectionEntry<'posts'>): string {
+interface DisplayTitleSource {
+  id: string;
+  body?: string;
+  data: { title?: string; type?: string; author?: string; linkUrl?: string };
+}
+
+export function getPostDisplayTitle(post: DisplayTitleSource): string {
   const { type, title, author, linkUrl } = post.data;
   if (title) return title;
   if (type === 'quote' && author) return `来自 ${author} 的引用`;
@@ -145,8 +151,8 @@ export function getPostDisplayTitle(post: CollectionEntry<'posts'>): string {
   return post.id;
 }
 
-export function getAllTags(posts: CollectionEntry<'posts'>[]): Map<string, CollectionEntry<'posts'>[]> {
-  const tags = new Map<string, CollectionEntry<'posts'>[]>();
+export function getAllTags<T extends { data: { tags?: unknown } }>(posts: T[]): Map<string, T[]> {
+  const tags = new Map<string, T[]>();
   for (const post of posts) {
     const tagList = normalizeTags(post.data.tags);
     for (const tag of tagList) {
@@ -218,8 +224,8 @@ export function getWordCount(body: string | undefined): number {
   return chineseChars + englishWords;
 }
 
-export function groupPostsByDay(posts: CollectionEntry<'posts'>[]): Map<string, CollectionEntry<'posts'>[]> {
-  const groups = new Map<string, CollectionEntry<'posts'>[]>();
+export function groupPostsByDay<T extends WithDate>(posts: T[]): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
   for (const post of posts) {
     const date = post.data.date ? new Date(post.data.date) : new Date(0);
     // Use Asia/Shanghai components so the grouping key matches the locale-formatted

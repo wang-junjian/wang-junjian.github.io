@@ -8,7 +8,11 @@ import tailwindcss from '@tailwindcss/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'astro/config';
 import toolsStatic from './src/integrations/toolsStatic.ts';
+import htmlPostsStatic from './src/integrations/htmlPostsStatic.ts';
 import markdownDevMiddleware from './src/integrations/markdownDevMiddleware.ts';
+import { getHtmlPosts } from './src/utils/htmlPosts.ts';
+
+const htmlPostUrls = getHtmlPosts().map((p) => `https://wangjunjian.com${p.url}`);
 
 // https://astro.build/config
 export default defineConfig({
@@ -17,7 +21,7 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
-  integrations: [mdx(), sitemap(), toolsStatic()],
+  integrations: [mdx(), sitemap({ customPages: htmlPostUrls }), toolsStatic(), htmlPostsStatic()],
   markdown: {
     syntaxHighlight: false,
     gfm: true,
