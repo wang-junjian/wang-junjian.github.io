@@ -1,4 +1,5 @@
 import type { SearchResult, Message } from '../utils/ai';
+import { getPostUrl } from '../utils/entryUrls';
 
 export interface ApiConfig {
   ollamaBaseUrl: string;
@@ -89,7 +90,7 @@ export function getPostTitles(contextChunks: SearchResult[]): [string, string][]
 export function appendReferences(answer: string, postTitles: [string, string][]): string {
   if (postTitles.length > 0 && !answer.includes('参考文章：')) {
     const referencesSection = '\n\n参考文章：\n' + postTitles
-      .map(([slug, title]) => `- [${title}](/posts/${slug.toLowerCase()}.html)`)
+      .map(([slug, title]) => `- [${title}](${getPostUrl(slug)})`)
       .join('\n');
     answer += referencesSection;
   }

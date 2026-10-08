@@ -1,4 +1,5 @@
 import Fuse from 'fuse.js';
+import { getPostUrl, isHtmlUrl } from '../utils/entryUrls';
 
 type SearchItem = {
   id: string;
@@ -110,9 +111,8 @@ function generateSearchExcerpt(item: SearchItem, maxChars = 120): string {
 
 function renderSearchResultItem(item: SearchItem, index: number): string {
   // HTML 文章的 url 指向独立 .html 页面，必须绕过 Turbo
-  const isHtml = item.url?.endsWith('.html');
-  const href = isHtml ? item.url : `/posts/${encodeURIComponent(item.id)}/`;
-  const turboAttr = isHtml ? ' data-turbo="false"' : '';
+  const href = item.url || getPostUrl(item.id);
+  const turboAttr = isHtmlUrl(href) ? ' data-turbo="false"' : '';
   const title = escapeHtml(item.title || item.id);
   const date = formatSearchDate(item.date);
   const excerpt = escapeHtml(generateSearchExcerpt(item));
