@@ -1,4 +1,5 @@
-import { groupPostsByDay, needsKatex } from './posts';
+import { groupPostsByDay } from './dates';
+import { needsKatex } from './preview';
 import { paginate, PAGE_SIZE, type PaginatedResult } from './pagination';
 import type { StreamEntry } from './htmlPosts';
 

@@ -1,7 +1,8 @@
 import type { APIContext } from 'astro';
 import rss from '@astrojs/rss';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { getPostDisplayTitle, generateExcerpt } from '../utils/posts';
+import { getPostDisplayTitle } from '../utils/displayTitle';
+import { generateExcerpt } from '../utils/preview';
 import { isHtmlEntry, getEntryUrl } from '../utils/htmlPosts';
 import { getMergedPosts } from '../utils/mergedPosts';
 

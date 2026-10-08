@@ -1,5 +1,8 @@
 import type { APIContext } from 'astro';
-import { normalizeTags, formatDate, getPostDisplayTitle, cleanBodyForSearch } from '../utils/posts';
+import { formatDate } from '../utils/dates';
+import { getPostDisplayTitle } from '../utils/displayTitle';
+import { normalizeTags } from '../utils/tags';
+import { cleanBodyForSearch } from '../utils/textCleaning';
 import { isHtmlEntry, stripHtmlForSearch, getEntryUrl } from '../utils/htmlPosts';
 import { getMergedPosts } from '../utils/mergedPosts';
 import { readFileSync } from 'node:fs';

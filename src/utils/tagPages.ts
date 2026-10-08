@@ -1,4 +1,4 @@
-import { getAllTags, normalizeTags } from './posts';
+import { getAllTags, normalizeTags } from './tags';
 import { PAGE_SIZE, getPagePaths } from './pagination';
 import { getStreamPageData } from './streamPage';
 import type { StreamEntry } from './htmlPosts';
