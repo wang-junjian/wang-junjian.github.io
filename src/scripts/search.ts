@@ -93,17 +93,6 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function formatSearchDate(dateString: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
 function generateSearchExcerpt(item: SearchItem, maxChars = 120): string {
   const source = (item.excerpt || item.body || '').replace(/\s+/g, ' ').trim();
   return source.length > maxChars ? source.slice(0, maxChars).trim() + '…' : source;
@@ -114,7 +103,7 @@ function renderSearchResultItem(item: SearchItem, index: number): string {
   const href = item.url || getPostUrl(item.id);
   const turboAttr = isHtmlUrl(href) ? ' data-turbo="false"' : '';
   const title = escapeHtml(item.title || item.id);
-  const date = formatSearchDate(item.date);
+  const date = item.formattedDate || '';
   const excerpt = escapeHtml(generateSearchExcerpt(item));
   const tags = item.tags || [];
 

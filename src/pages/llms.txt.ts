@@ -1,17 +1,11 @@
 import type { APIRoute } from 'astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { getPostDisplayTitle, getShanghaiDateComponents } from '../utils/posts';
+import { getPostDisplayTitle, formatDayKey } from '../utils/posts';
 import { isHtmlEntry, getEntryUrl } from '../utils/htmlPosts';
 import { getMergedPosts } from '../utils/mergedPosts';
 import { getPostSourceUrl } from '../utils/entryUrls';
 
 const SITE_URL = 'https://wangjunjian.com';
-
-function formatPostDate(date: Date | string | undefined): string {
-  if (!date) return '';
-  const { year, month, day } = getShanghaiDateComponents(date);
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
 
 export async function getStaticPaths() {
   return [{ params: {} }];
@@ -37,7 +31,7 @@ export const GET: APIRoute = async () => {
     const title = isHtmlEntry(post) ? post.data.title : getPostDisplayTitle(post);
     const url = isHtmlEntry(post) ? getEntryUrl(post) : getPostSourceUrl(post.id);
     const excerpt = post.data.excerpt;
-    content += `- [${title}](${SITE_URL}${url}) — ${formatPostDate(post.data.date)}${excerpt ? ` — ${excerpt}` : ''}\n`;
+    content += `- [${title}](${SITE_URL}${url}) — ${post.data.date ? formatDayKey(post.data.date) : ''}${excerpt ? ` — ${excerpt}` : ''}\n`;
   }
 
   content += `\n`;

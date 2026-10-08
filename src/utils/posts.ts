@@ -186,6 +186,27 @@ export function formatDateTimeChinese(date: Date | string | undefined): string {
   return `${year}年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日 ${String(hours).padStart(2, '0')}时${String(minutes).padStart(2, '0')}分`;
 }
 
+/** 上海时区的日键 `YYYY-MM-DD`，用于按日分组、data-date 与 llms.txt 等场景。 */
+export function formatDayKey(date: Date | string): string {
+  const { year, month, day } = getShanghaiDateComponents(date);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** 上海时区的月键 `YYYY-MM`。 */
+export function formatMonthKey(date: Date | string): string {
+  const { year, month } = getShanghaiDateComponents(date);
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+/**
+ * 把日键解析回 Date（上海时区午夜）。
+ * 不能用 `new Date(dayKey + 'T00:00:00')`——本地时区解析在 UTC+13/+14
+ * 构建机上会把日键错回前一天。
+ */
+export function parseDayKey(dayKey: string): Date {
+  return new Date(`${dayKey}T00:00:00+08:00`);
+}
+
 export function calculateReadingTime(body: string | undefined): number {
   if (!body) return 0;
   // Remove code blocks and inline code
@@ -230,8 +251,7 @@ export function groupPostsByDay<T extends WithDate>(posts: T[]): Map<string, T[]
     const date = post.data.date ? new Date(post.data.date) : new Date(0);
     // Use Asia/Shanghai components so the grouping key matches the locale-formatted
     // date shown in EntryCard (avoiding UTC vs local timezone mismatch).
-    const { year, month, day } = getShanghaiDateComponents(date);
-    const key = [year, String(month).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
+    const key = formatDayKey(date);
     if (!groups.has(key)) {
       groups.set(key, []);
     }
