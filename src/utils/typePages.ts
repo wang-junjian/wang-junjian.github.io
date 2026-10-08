@@ -1,4 +1,5 @@
-import { getAllTags, normalizeTags, getPostDisplayTitle } from './posts';
+import { getPostDisplayTitle } from './displayTitle';
+import { getAllTags, normalizeTags } from './tags';
 import { PAGE_SIZE, getPagePaths } from './pagination';
 import { getStreamPageData } from './streamPage';
 import { getEntryUrl, type StreamEntry } from './htmlPosts';

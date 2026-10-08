@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { getPostDisplayTitle, formatDayKey } from '../utils/posts';
+import { formatDayKey } from '../utils/dates';
+import { getPostDisplayTitle } from '../utils/displayTitle';
 import { isHtmlEntry, getEntryUrl } from '../utils/htmlPosts';
 import { getMergedPosts } from '../utils/mergedPosts';
 import { getPostSourceUrl } from '../utils/entryUrls';
