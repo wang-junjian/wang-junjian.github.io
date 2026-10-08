@@ -2,9 +2,10 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { getMergedPosts } from '../../../utils/htmlPosts';
 import { getTagStaticPaths, getTagPageData } from '../../../utils/tagPages';
+import { parsePageParam } from '../../../utils/pagination';
 import { SITE_TITLE } from '../../../consts';
 import TagPageHeader from '../../../components/TagPageHeader.astro';
-import DayGroup from '../../../components/DayGroup.astro';
+import StreamContent from '../../../components/StreamContent.astro';
 import Pagination from '../../../components/Pagination.astro';
 import TagSidebar from '../../../components/TagSidebar.astro';
 
@@ -14,6 +15,7 @@ export async function getStaticPaths() {
 }
 
 const { tag, posts, allTagCounts } = Astro.props;
+const page = parsePageParam(Astro.params.page);
 const tagUrl = `/tags/${encodeURIComponent(tag)}`;
 
 const {
@@ -22,12 +24,19 @@ const {
   sortedDays,
   recentTags,
   pageNeedsKatex,
-} = getTagPageData(tag, posts, allTagCounts, 1);
+} = getTagPageData(tag, posts, allTagCounts, page);
+
+const title = page > 1
+  ? `${tag} - 第 ${page} 页 - 标签 - ${SITE_TITLE}`
+  : `${tag} - 标签 - ${SITE_TITLE}`;
+const description = page > 1
+  ? `浏览标签 "${tag}" 下的文章 - 第 ${page} 页。`
+  : `浏览标签 "${tag}" 下的文章。`;
 ---
 
 <BaseLayout
-  title={`${tag} - 标签 - ${SITE_TITLE}`}
-  description={`浏览标签 "${tag}" 下的文章。`}
+  title={title}
+  description={description}
   canonical={Astro.url.toString()}
   showChat={false}
   needsKatex={pageNeedsKatex}
@@ -35,39 +44,30 @@ const {
   <TagPageHeader tag={tag} postCount={posts.length} />
 
   <link rel="stylesheet" href="/styles/prose.css" />
-  <div class="max-w-grid mx-auto">
-    <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
-      <!-- Main Stream -->
-      <div class="flex-1 min-w-0">
-        <div id="postsContainer" class="stream-container">
-          {
-            sortedDays.map((dayKey, dayIndex) => {
-              const dayPosts = dayGroups.get(dayKey) || [];
-              const entryStartIndex = sortedDays
-                .slice(0, dayIndex)
-                .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
-              return (
-                <DayGroup
-                  date={new Date(dayKey + 'T00:00:00')}
-                  posts={dayPosts}
-                  startIndex={entryStartIndex}
-                />
-              );
-            })
-          }
+
+  <section class="pt-4 pb-6 px-8">
+    <div class="max-w-grid mx-auto">
+      <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+        <!-- Main Stream -->
+        <div class="flex-1 min-w-0">
+          <StreamContent
+            dayGroups={dayGroups}
+            sortedDays={sortedDays}
+            totalPosts={posts.length}
+          />
+
+          <Pagination
+            currentPage={pageResult.currentPage}
+            totalPages={pageResult.totalPages}
+            baseUrl={tagUrl}
+          />
         </div>
 
-        <Pagination
-          currentPage={pageResult.currentPage}
-          totalPages={pageResult.totalPages}
-          baseUrl={tagUrl}
-        />
+        <!-- Sidebar -->
+        <TagSidebar recentTags={recentTags} />
       </div>
-
-      <!-- Sidebar -->
-      <TagSidebar recentTags={recentTags} />
     </div>
-  </div>
+  </section>
   <script>
     import { enhancePostContent } from '../../../scripts/post-scripts';
 

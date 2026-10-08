@@ -1,42 +1,28 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { groupPostsByDay, getAllTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from '../utils/posts';
+import { getAllTags, getPostDisplayTitle } from '../utils/posts';
 import { getMergedPosts, getEntryUrl } from '../utils/htmlPosts';
-import { paginate, PAGE_SIZE } from '../utils/pagination';
+import { PAGE_SIZE, parsePageParam, getPagePaths } from '../utils/pagination';
+import { getStreamPageData } from '../utils/streamPage';
 import { getTools } from '../utils/tools';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import DayGroup from '../components/DayGroup.astro';
 import StreamSidebar from '../components/StreamSidebar.astro';
 import StreamTabs from '../components/StreamTabs.astro';
+import StreamSearchBar from '../components/StreamSearchBar.astro';
+import StreamContent from '../components/StreamContent.astro';
 import Pagination from '../components/Pagination.astro';
 
 export async function getStaticPaths() {
   const allPosts = await getMergedPosts();
   const totalPages = Math.max(1, Math.ceil(allPosts.length / PAGE_SIZE));
-  const paths: Array<{ params: { path: string | undefined } }> = [{ params: { path: undefined } }];
-  for (let p = 2; p <= totalPages; p++) {
-    paths.push({ params: { path: `page/${p}` } });
-  }
-  return paths;
-}
-
-function parsePageParam(path: string | undefined): number {
-  if (!path) return 1;
-  const match = path.match(/^page\/(\d+)$/);
-  return match ? parseInt(match[1], 10) : 1;
+  return getPagePaths(totalPages).map((path) => ({ params: { path } }));
 }
 
 const allPosts = await getMergedPosts();
 const page = parsePageParam(Astro.params.path);
 
-// Sort posts by date descending
-const sortedPosts = sortPostsByDate(allPosts);
-
-const pageResult = paginate(sortedPosts, page, PAGE_SIZE);
-
-// Group paginated posts by day
-const dayGroups = groupPostsByDay(pageResult.items);
-const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
+const { sortedPosts, pageResult, dayGroups, sortedDays, pageNeedsKatex } =
+  getStreamPageData(allPosts, { page });
 
 // Prepare sidebar data: top tags by count
 const allTags = getAllTags(allPosts);
@@ -69,9 +55,6 @@ const randomTools = getTools()
   .sort(() => Math.random() - 0.5)
   .slice(0, 2);
 
-// Load KaTeX CSS on the homepage if any recent post contains math syntax.
-const pageNeedsKatex = needsKatex(pageResult.items);
-
 const pageTitle = page > 1 ? `${SITE_TITLE} - 第 ${page} 页` : `${SITE_TITLE} - ${SITE_DESCRIPTION}`;
 ---
 
@@ -90,48 +73,13 @@ const pageTitle = page > 1 ? `${SITE_TITLE} - 第 ${page} 页` : `${SITE_TITLE} 
         <!-- Main Stream -->
         <div class="flex-1 min-w-0">
           <StreamTabs currentType="all" />
+          <StreamSearchBar placeholder="搜索本站..." />
 
-          <!-- Search Bar -->
-          <div class="mb-4">
-            <div class="relative max-w-[560px]">
-              <input
-                type="search"
-                id="searchInput"
-                placeholder="搜索本站..."
-                autocomplete="off"
-                class="w-full py-2 pl-10 pr-3 text-sm border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] outline-none transition-all duration-200 ease font-sans rounded-md focus:border-[var(--text-primary)] focus:bg-[var(--white)]"
-              />
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.3-4.3"/>
-                </svg>
-              </span>
-            </div>
-          </div>
-
-          <div id="postsContainer" class="stream-container" data-type-filter="" data-type-total={allPosts.length}>
-            {sortedDays.map((dayKey, dayIndex) => {
-              const dayPosts = dayGroups.get(dayKey) || [];
-              const entryStartIndex = sortedDays
-                .slice(0, dayIndex)
-                .reduce((acc, key) => acc + (dayGroups.get(key)?.length || 0), 0);
-              return (
-                <DayGroup
-                  date={new Date(dayKey + 'T00:00:00')}
-                  posts={dayPosts}
-                  startIndex={entryStartIndex}
-                />
-              );
-            })}
-          </div>
-
-          <!-- No Results Message -->
-          <div id="noResults" class="hidden text-center py-16 px-8">
-            <p class="font-serif-display text-2xl text-[var(--text-secondary)]">
-              没有找到匹配的文章
-            </p>
-          </div>
+          <StreamContent
+            dayGroups={dayGroups}
+            sortedDays={sortedDays}
+            totalPosts={allPosts.length}
+          />
 
           <Pagination
             currentPage={pageResult.currentPage}

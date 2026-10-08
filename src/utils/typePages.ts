@@ -1,5 +1,6 @@
-import { groupPostsByDay, getAllTags, normalizeTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from './posts';
-import { paginate, PAGE_SIZE } from './pagination';
+import { getAllTags, normalizeTags, getPostDisplayTitle } from './posts';
+import { PAGE_SIZE, getPagePaths } from './pagination';
+import { getStreamPageData } from './streamPage';
 import { getEntryUrl, type StreamEntry } from './htmlPosts';
 
 export interface TypePageConfig {
@@ -73,19 +74,12 @@ export function getTypePageData(
   type: string,
   page = 1
 ): TypePageData {
-  const typePosts = sortPostsByDate(
-    allPosts.filter((post) => post.data.type === type)
-  );
-
-  const pageResult = paginate(typePosts, page, PAGE_SIZE);
-  const dayGroups = groupPostsByDay(pageResult.items);
-  const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
-
-  // Load KaTeX CSS if any post on this page contains math syntax.
-  const pageNeedsKatex = needsKatex(pageResult.items);
+  const filtered = allPosts.filter((post) => post.data.type === type);
+  const { sortedPosts, pageResult, dayGroups, sortedDays, pageNeedsKatex } =
+    getStreamPageData(filtered, { page });
 
   return {
-    typePosts,
+    typePosts: sortedPosts,
     pageResult,
     dayGroups,
     sortedDays,
@@ -125,15 +119,5 @@ export function getTypePageTotalPages(allPosts: StreamEntry[], type: string): nu
 
 export function getTypeStaticPaths(allPosts: StreamEntry[], type: string) {
   const totalPages = getTypePageTotalPages(allPosts, type);
-  const paths: Array<{ params: { path: string | undefined } }> = [{ params: { path: undefined } }];
-  for (let p = 2; p <= totalPages; p++) {
-    paths.push({ params: { path: `page/${p}` } });
-  }
-  return paths;
-}
-
-export function parseTypePageParam(path: string | undefined): number {
-  if (!path) return 1;
-  const match = path.match(/^page\/(\d+)$/);
-  return match ? parseInt(match[1], 10) : 1;
+  return getPagePaths(totalPages).map((path) => ({ params: { path } }));
 }
