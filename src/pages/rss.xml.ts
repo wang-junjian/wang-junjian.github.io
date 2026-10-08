@@ -1,16 +1,24 @@
 import type { APIContext } from 'astro';
-import { getCollection } from 'astro:content';
 import rss from '@astrojs/rss';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { getPostDisplayTitle, generateExcerpt, sortPostsByDate } from '../utils/posts';
-import { getHtmlPosts } from '../utils/htmlPosts';
-import { getPostUrl } from '../utils/entryUrls';
+import { getPostDisplayTitle, generateExcerpt } from '../utils/posts';
+import { isHtmlEntry, getEntryUrl } from '../utils/htmlPosts';
+import { getMergedPosts } from '../utils/mergedPosts';
 
 export async function GET(context: APIContext) {
-  const posts = await getCollection('posts');
-  const sortedPosts = sortPostsByDate(posts);
+  // 已按日期降序（getMergedPosts 契约），无需再排序
+  const posts = await getMergedPosts();
 
-  const mdItems = sortedPosts.map((post) => {
+  const items = posts.map((post) => {
+    // HTML 文章是独立页面，链接指向 /posts/<id>.html
+    if (isHtmlEntry(post)) {
+      return {
+        title: post.data.title,
+        pubDate: post.data.date,
+        description: post.data.excerpt || '',
+        link: getEntryUrl(post),
+      };
+    }
     const isShort =
       post.data.type === 'quote' ||
       post.data.type === 'note' ||
@@ -23,21 +31,9 @@ export async function GET(context: APIContext) {
       title: getPostDisplayTitle(post),
       pubDate: post.data.date,
       description,
-      link: getPostUrl(post.id),
+      link: getEntryUrl(post),
     };
   });
-
-  // HTML 文章是独立页面，链接指向 /posts/<id>.html
-  const htmlItems = getHtmlPosts().map((post) => ({
-    title: post.title,
-    pubDate: post.date,
-    description: post.excerpt || '',
-    link: post.url,
-  }));
-
-  const items = [...mdItems, ...htmlItems].sort(
-    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-  );
 
   return rss({
     title: SITE_TITLE,
