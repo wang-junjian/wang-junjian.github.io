@@ -2,36 +2,26 @@
 import TypePage from '../../components/TypePage.astro';
 import { getMergedPosts } from '../../utils/mergedPosts';
 import { parsePageParam } from '../../utils/pagination';
+import { CONTENT_TYPES, CONTENT_TYPE_MAP, getTypeUrl } from '../../utils/contentTypes';
 import {
-  TYPE_PAGE_CONFIG,
   getTypePageData,
   getTypeSidebarData,
   getTypeStaticPaths,
 } from '../../utils/typePages';
 
 export async function getStaticPaths() {
-  const TYPE_ALIASES: Record<string, string> = {
-    articles: 'article',
-    links: 'link',
-    notes: 'note',
-    quotes: 'quote',
-    releases: 'release',
-  };
-  const VALID_TYPES = Object.values(TYPE_ALIASES);
-
   const allPosts = await getMergedPosts();
   const paths: Array<{
     params: { type: string; path?: string };
     props: { type: string; baseUrl: string };
   }> = [];
 
-  for (const type of VALID_TYPES) {
-    const alias = Object.entries(TYPE_ALIASES).find(([_, value]) => value === type)?.[0] ?? type;
-    const typePaths = getTypeStaticPaths(allPosts, type);
+  for (const ct of CONTENT_TYPES) {
+    const typePaths = getTypeStaticPaths(allPosts, ct.type);
     for (const p of typePaths) {
       paths.push({
-        params: { type: alias, path: p.params.path },
-        props: { type, baseUrl: `/${alias}` },
+        params: { type: ct.alias, path: p.params.path },
+        props: { type: ct.type, baseUrl: getTypeUrl(ct.type) },
       });
     }
   }
@@ -41,7 +31,7 @@ export async function getStaticPaths() {
 
 const { type, baseUrl } = Astro.props;
 const { path } = Astro.params;
-const config = TYPE_PAGE_CONFIG[type];
+const config = CONTENT_TYPE_MAP[type];
 
 if (!config) {
   return Astro.redirect('/404/');
@@ -54,12 +44,12 @@ const { recentContent, recentTags } = getTypeSidebarData(typePosts);
 ---
 
 <TypePage
-  title={config.title}
+  title={config.label}
   description={config.description}
-  pageTitle={config.pageTitle}
+  pageTitle={config.label}
   countLabel={config.countLabel(typePosts.length)}
   emptyMessage={config.emptyMessage}
-  type={config.typeFilter}
+  type={config.type}
   dayGroups={dayGroups}
   sortedDays={sortedDays}
   currentPage={pageResult.currentPage}
