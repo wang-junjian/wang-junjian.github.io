@@ -3,58 +3,6 @@ import { PAGE_SIZE, getPagePaths } from './pagination';
 import { getStreamPageData } from './streamPage';
 import { getEntryUrl, type StreamEntry } from './htmlPosts';
 
-export interface TypePageConfig {
-  title: string;
-  description: string;
-  pageTitle: string;
-  countLabel: (count: number) => string;
-  emptyMessage: string;
-  typeFilter: string;
-}
-
-export const TYPE_PAGE_CONFIG: Record<string, TypePageConfig> = {
-  article: {
-    title: '文档',
-    description: '技术文章与教程。',
-    pageTitle: '文档',
-    countLabel: (count) => `共 ${count} 篇文章`,
-    emptyMessage: '暂无文档',
-    typeFilter: 'article',
-  },
-  quote: {
-    title: '引用',
-    description: '收集的文本引用。',
-    pageTitle: '引用',
-    countLabel: (count) => `共 ${count} 条文本引用`,
-    emptyMessage: '暂无文本引用',
-    typeFilter: 'quote',
-  },
-  note: {
-    title: '笔记',
-    description: '短小的笔记与思考。',
-    pageTitle: '笔记',
-    countLabel: (count) => `共 ${count} 条笔记`,
-    emptyMessage: '暂无笔记',
-    typeFilter: 'note',
-  },
-  link: {
-    title: '链接',
-    description: '收集的链接与推荐。',
-    pageTitle: '链接',
-    countLabel: (count) => `共 ${count} 条链接`,
-    emptyMessage: '暂无链接',
-    typeFilter: 'link',
-  },
-  release: {
-    title: '发布',
-    description: '软件发布与版本更新。',
-    pageTitle: '发布',
-    countLabel: (count) => `共 ${count} 条发布`,
-    emptyMessage: '暂无发布',
-    typeFilter: 'release',
-  },
-};
-
 export interface TypePageData {
   typePosts: StreamEntry[];
   pageResult: {
