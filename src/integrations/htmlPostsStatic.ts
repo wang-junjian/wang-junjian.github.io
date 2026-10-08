@@ -1,9 +1,10 @@
 import type { AstroIntegration } from 'astro';
 import type { Plugin } from 'vite';
-import { resolve, join, basename } from 'node:path';
+import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, cpSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { walkHtmlPosts, findHtmlPostFile } from '../utils/htmlPosts';
+import { walkHtmlPosts } from '../utils/htmlPosts';
+import { findPostFile, assertUniqueBasenames } from '../utils/postFiles';
 
 const POSTS_DIR = 'posts';
 
@@ -33,7 +34,7 @@ function htmlPostsDevMiddleware(): Plugin {
         }
 
         const postsDir = resolve(process.cwd(), POSTS_DIR);
-        const filePath = findHtmlPostFile(postsDir, id);
+        const filePath = findPostFile(postsDir, id, '.html');
         if (!filePath || !existsSync(filePath)) {
           return next();
         }
@@ -65,15 +66,7 @@ export default function htmlPostsStatic(): AstroIntegration {
         const files = Array.from(walkHtmlPosts(src));
         if (files.length === 0) return;
 
-        const byId = new Map<string, string>();
-        for (const file of files) {
-          const id = basename(file, '.html');
-          const existing = byId.get(id);
-          if (existing) {
-            throw new Error(`[html-posts] HTML 文章 basename 冲突：${existing} 与 ${file}（id 均为 ${id}）`);
-          }
-          byId.set(id, file);
-        }
+        const byId = assertUniqueBasenames(files, '.html');
 
         const outDir = join(fileURLToPath(dir), POSTS_DIR);
         mkdirSync(outDir, { recursive: true });

@@ -3,6 +3,7 @@ import { join, basename } from 'node:path';
 import type { CollectionEntry } from 'astro:content';
 import { metaContent, titleContent } from './htmlMeta';
 import { getHtmlPostUrl, getPostUrl } from './entryUrls';
+import { assertUniqueBasenames } from './postFiles';
 
 const POSTS_DIR = 'posts';
 
@@ -116,16 +117,7 @@ export function getHtmlPosts(baseDir = process.cwd()): HtmlPostMeta[] {
     return [];
   }
 
-  const seen = new Map<string, string>();
-  for (const file of files) {
-    const id = basename(file, '.html');
-    const existing = seen.get(id);
-    if (existing) {
-      throw new Error(`[html-posts] HTML 文章 basename 冲突：${existing} 与 ${file}（id 均为 ${id}）`);
-    }
-    seen.set(id, file);
-  }
-
+  assertUniqueBasenames(files, '.html');
   return files
     .map(parseHtmlPost)
     .sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -159,20 +151,6 @@ export async function getMergedPosts(): Promise<StreamEntry[]> {
   return [...mdPosts, ...htmlEntries].sort(
     (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
   );
-}
-
-/** 在 postsDir 下递归查找 id 对应的 HTML 文件，供 dev 中间件使用。 */
-export function findHtmlPostFile(postsDir: string, id: string): string | null {
-  for (const entry of readdirSync(postsDir, { withFileTypes: true })) {
-    const fullPath = join(postsDir, entry.name);
-    if (entry.isDirectory()) {
-      const found = findHtmlPostFile(fullPath, id);
-      if (found) return found;
-    } else if (entry.isFile() && entry.name === `${id}.html`) {
-      return fullPath;
-    }
-  }
-  return null;
 }
 
 /** 剥离 HTML 的 script/style/标签，生成纯文本供搜索索引使用。 */

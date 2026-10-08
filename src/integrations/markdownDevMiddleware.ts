@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { ViteDevServer, Plugin } from 'vite';
+import { findPostFile } from '../utils/postFiles';
 
 /**
  * Vite plugin that resolves `/posts/<post-id>.md` requests in development
@@ -20,15 +21,20 @@ export default function markdownDevMiddleware(): Plugin {
           return next();
         }
 
-        const match = req.url.match(/^\/([^/]+)\.md$/);
+        const match = req.url.split('?')[0].match(/^\/([^/]+)\.md$/);
         if (!match) {
           return next();
         }
 
         const postId = decodeURIComponent(match[1]);
+        // 目录穿越防护：id 不允许包含路径分隔符（正则已限制无 /，再防 ..）
+        if (postId.includes('..') || postId.includes('\\')) {
+          return next();
+        }
+
         const postsDir = path.resolve(process.cwd(), 'posts');
 
-        const filePath = findPostFile(postsDir, postId);
+        const filePath = findPostFile(postsDir, postId, '.md');
         if (!filePath || !fs.existsSync(filePath)) {
           return next();
         }
@@ -40,16 +46,3 @@ export default function markdownDevMiddleware(): Plugin {
   };
 }
 
-function findPostFile(postsDir: string, postId: string): string | null {
-  const entries = fs.readdirSync(postsDir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(postsDir, entry.name);
-    if (entry.isDirectory()) {
-      const found = findPostFile(fullPath, postId);
-      if (found) return found;
-    } else if (entry.isFile() && entry.name === `${postId}.md`) {
-      return fullPath;
-    }
-  }
-  return null;
-}
