@@ -65,6 +65,7 @@ export interface TypePageData {
   };
   dayGroups: Map<string, StreamEntry[]>;
   sortedDays: string[];
+  pageNeedsKatex: boolean;
 }
 
 export function getTypePageData(
@@ -80,11 +81,15 @@ export function getTypePageData(
   const dayGroups = groupPostsByDay(pageResult.items);
   const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
 
+  // Load KaTeX CSS if any post on this page contains math syntax.
+  const pageNeedsKatex = needsKatex(pageResult.items);
+
   return {
     typePosts,
     pageResult,
     dayGroups,
     sortedDays,
+    pageNeedsKatex,
   };
 }
 
@@ -131,8 +136,4 @@ export function parseTypePageParam(path: string | undefined): number {
   if (!path) return 1;
   const match = path.match(/^page\/(\d+)$/);
   return match ? parseInt(match[1], 10) : 1;
-}
-
-export function typePageNeedsKatex(posts: StreamEntry[]): boolean {
-  return needsKatex(posts);
 }
