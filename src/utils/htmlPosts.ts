@@ -31,6 +31,8 @@ export interface HtmlPostEntry {
   collection: 'posts';
   body: string;
   isHtml: true;
+  /** 源文件绝对路径，供搜索索引等端点读取正文 */
+  filePath: string;
   data: {
     title: string;
     date: Date;
@@ -129,6 +131,7 @@ export function toStreamEntry(meta: HtmlPostMeta): HtmlPostEntry {
     collection: 'posts',
     body: '',
     isHtml: true,
+    filePath: meta.filePath,
     data: {
       title: meta.title,
       date: meta.date,
@@ -138,19 +141,6 @@ export function toStreamEntry(meta: HtmlPostMeta): HtmlPostEntry {
       author: meta.author,
     },
   };
-}
-
-/**
- * Markdown 文章与 HTML 文章合并后的全量列表，按日期降序。
- * 注意：astro:content 不能在 Astro 配置上下文中加载，故此处动态导入。
- */
-export async function getMergedPosts(): Promise<StreamEntry[]> {
-  const { getCollection } = await import('astro:content');
-  const mdPosts = await getCollection('posts');
-  const htmlEntries = getHtmlPosts().map(toStreamEntry);
-  return [...mdPosts, ...htmlEntries].sort(
-    (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
-  );
 }
 
 /** 剥离 HTML 的 script/style/标签，生成纯文本供搜索索引使用。 */
