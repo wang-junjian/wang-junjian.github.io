@@ -1,5 +1,6 @@
-import { getAllTags, groupPostsByDay, normalizeTags, sortPostsByDate, needsKatex } from './posts';
-import { paginate, PAGE_SIZE } from './pagination';
+import { getAllTags, normalizeTags } from './posts';
+import { PAGE_SIZE, getPagePaths } from './pagination';
+import { getStreamPageData } from './streamPage';
 import type { StreamEntry } from './htmlPosts';
 
 export interface TagPageData {
@@ -17,16 +18,30 @@ export interface TagPageData {
   pageNeedsKatex: boolean;
 }
 
+/**
+ * 生成 tags/[tag]/[...page] 的完整静态路径：
+ * 每个标签含首页（page 为 undefined）与 page/2..N 分页。
+ */
 export function getTagStaticPaths(posts: StreamEntry[]) {
   const tags = getAllTags(posts);
   const allTagCounts = new Map(
     Array.from(tags.entries()).map(([tagName, tagPosts]) => [tagName, tagPosts.length])
   );
 
-  return Array.from(tags.entries()).map(([tag, tagPosts]) => ({
-    params: { tag },
-    props: { tag, posts: tagPosts, allTagCounts },
-  }));
+  const paths: Array<{
+    params: { tag: string; page: string | undefined };
+    props: { tag: string; posts: StreamEntry[]; allTagCounts: Map<string, number> };
+  }> = [];
+  for (const [tag, tagPosts] of tags.entries()) {
+    const totalPages = Math.max(1, Math.ceil(tagPosts.length / PAGE_SIZE));
+    for (const page of getPagePaths(totalPages)) {
+      paths.push({
+        params: { tag, page },
+        props: { tag, posts: tagPosts, allTagCounts },
+      });
+    }
+  }
+  return paths;
 }
 
 export function getTagPageData(
@@ -35,10 +50,8 @@ export function getTagPageData(
   allTagCounts: Map<string, number>,
   page = 1
 ): TagPageData {
-  const sortedPosts = sortPostsByDate(posts);
-  const pageResult = paginate(sortedPosts, page, PAGE_SIZE);
-  const dayGroups = groupPostsByDay(pageResult.items);
-  const sortedDays = Array.from(dayGroups.keys()).sort((a, b) => b.localeCompare(a));
+  const { sortedPosts, pageResult, dayGroups, sortedDays, pageNeedsKatex } =
+    getStreamPageData(posts, { page });
 
   // Related tags: union of tags from posts in this tag, excluding the current tag.
   // Display counts use the global total for each tag.
@@ -52,9 +65,6 @@ export function getTagPageData(
     .map((t) => [t, allTagCounts.get(t) || 0] as [string, number])
     .sort((a, b) => b[1] - a[1])
     .slice(0, 20);
-
-  // Load KaTeX CSS if any post on this page contains math syntax.
-  const pageNeedsKatex = needsKatex(pageResult.items);
 
   return {
     sortedPosts,
