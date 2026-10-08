@@ -2,26 +2,13 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import fs from 'node:fs';
 import path from 'node:path';
+import { findPostFile } from '../../utils/postFiles';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
   return posts.map((post) => ({
     params: { slug: `${post.id}.md` },
   }));
-}
-
-function findPostFile(postsDir: string, postId: string): string | null {
-  const entries = fs.readdirSync(postsDir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(postsDir, entry.name);
-    if (entry.isDirectory()) {
-      const found = findPostFile(fullPath, postId);
-      if (found) return found;
-    } else if (entry.isFile() && entry.name === `${postId}.md`) {
-      return fullPath;
-    }
-  }
-  return null;
 }
 
 export const GET: APIRoute = async ({ params, url }) => {
@@ -32,7 +19,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   }
   const postId = rawSlug.replace(/\.md$/, '');
   const postsDir = path.resolve(process.cwd(), 'posts');
-  const filePath = findPostFile(postsDir, postId);
+  const filePath = findPostFile(postsDir, postId, '.md');
 
   if (!filePath || !fs.existsSync(filePath)) {
     return new Response('Not found', { status: 404 });
