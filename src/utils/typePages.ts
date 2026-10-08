@@ -1,6 +1,6 @@
 import { groupPostsByDay, getAllTags, normalizeTags, getPostDisplayTitle, sortPostsByDate, needsKatex } from './posts';
 import { paginate, PAGE_SIZE } from './pagination';
-import { isHtmlEntry, type StreamEntry } from './htmlPosts';
+import { getEntryUrl, type StreamEntry } from './htmlPosts';
 
 export interface TypePageConfig {
   title: string;
@@ -94,7 +94,7 @@ export function getTypePageData(
 }
 
 export interface TypeSidebarData {
-  recentContent: Array<{ id: string; title: string; date: Date | string; href?: string }>;
+  recentContent: Array<{ id: string; title: string; date: Date | string; url: string }>;
   recentTags: Array<[string, number]>;
 }
 
@@ -103,7 +103,7 @@ export function getTypeSidebarData(typePosts: StreamEntry[]): TypeSidebarData {
     id: post.id,
     title: getPostDisplayTitle(post),
     date: post.data.date,
-    href: isHtmlEntry(post) ? post.htmlUrl : undefined,
+    url: getEntryUrl(post),
   }));
 
   const allTags = getAllTags(typePosts);

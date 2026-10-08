@@ -4,6 +4,7 @@ import rss from '@astrojs/rss';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import { getPostDisplayTitle, generateExcerpt, sortPostsByDate } from '../utils/posts';
 import { getHtmlPosts } from '../utils/htmlPosts';
+import { getPostUrl } from '../utils/entryUrls';
 
 export async function GET(context: APIContext) {
   const posts = await getCollection('posts');
@@ -22,7 +23,7 @@ export async function GET(context: APIContext) {
       title: getPostDisplayTitle(post),
       pubDate: post.data.date,
       description,
-      link: `/posts/${post.id}`,
+      link: getPostUrl(post.id),
     };
   });
 

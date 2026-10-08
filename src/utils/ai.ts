@@ -1,3 +1,5 @@
+import { getPostUrl } from './entryUrls';
+
 export interface Chunk {
   id: string;
   slug: string;
@@ -184,7 +186,7 @@ export async function generateAnswer(
 5. 在回答的最后，引用相关的文章链接，格式如下：
 
 参考文章：
-- [文章标题](/posts/文章slug.html)
+- [文章标题](/posts/文章slug/)
 
 请确保引用的文章与回答内容相关。
 6. 这是多轮对话，请结合历史对话理解用户的后续问题。如果当前问题比较模糊（如"如何配置""它的原理是什么"），请参考之前的对话内容进行理解`;
@@ -231,7 +233,7 @@ ${context}
 
   if (postTitles.length > 0 && !answer.includes('参考文章：')) {
     const referencesSection = '\n\n参考文章：\n' + postTitles
-      .map(([slug, title]) => `- [${title}](/posts/${slug.toLowerCase()}.html)`)
+      .map(([slug, title]) => `- [${title}](${getPostUrl(slug)})`)
       .join('\n');
     answer += referencesSection;
   }

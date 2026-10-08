@@ -2,6 +2,7 @@ import type { APIContext } from 'astro';
 import { getCollection } from 'astro:content';
 import { normalizeTags, formatDate, getPostDisplayTitle, sortPostsByDate, cleanBodyForSearch } from '../utils/posts';
 import { getHtmlPosts, stripHtmlForSearch } from '../utils/htmlPosts';
+import { getPostUrl } from '../utils/entryUrls';
 import { readFileSync } from 'node:fs';
 
 export async function GET(context: APIContext) {
@@ -17,7 +18,7 @@ export async function GET(context: APIContext) {
     tags: normalizeTags(post.data.tags),
     type: post.data.type,
     body: cleanBodyForSearch(post.body || '').slice(0, 5000), // 限制单篇长度
-    url: `/posts/${post.id}`,
+    url: getPostUrl(post.id),
   }));
 
   // HTML 文章：正文剥离标签后入库，url 指向独立 .html 页面

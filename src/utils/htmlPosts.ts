@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import type { CollectionEntry } from 'astro:content';
 import { metaContent, titleContent } from './htmlMeta';
+import { getHtmlPostUrl, getPostUrl } from './entryUrls';
 
 const POSTS_DIR = 'posts';
 
@@ -29,7 +30,6 @@ export interface HtmlPostEntry {
   collection: 'posts';
   body: string;
   isHtml: true;
-  htmlUrl: string;
   data: {
     title: string;
     date: Date;
@@ -44,6 +44,11 @@ export type StreamEntry = CollectionEntry<'posts'> | HtmlPostEntry;
 
 export function isHtmlEntry(entry: StreamEntry): entry is HtmlPostEntry {
   return (entry as HtmlPostEntry).isHtml === true;
+}
+
+/** 条目的页面 URL：HTML 文章指向独立 .html 页，Markdown 文章指向 /posts/<id>/。 */
+export function getEntryUrl(entry: StreamEntry): string {
+  return isHtmlEntry(entry) ? getHtmlPostUrl(entry.id) : getPostUrl(entry.id);
 }
 
 /** 递归遍历 dir 下的 HTML 文章文件（跳过 `_` 前缀）。 */
@@ -94,7 +99,7 @@ export function parseHtmlPost(filePath: string): HtmlPostMeta {
     excerpt: metaContent(raw, 'description'),
     tags,
     author: metaContent(raw, 'author'),
-    url: `/posts/${id}.html`,
+    url: getHtmlPostUrl(id),
   };
 }
 
@@ -132,7 +137,6 @@ export function toStreamEntry(meta: HtmlPostMeta): HtmlPostEntry {
     collection: 'posts',
     body: '',
     isHtml: true,
-    htmlUrl: meta.url,
     data: {
       title: meta.title,
       date: meta.date,
