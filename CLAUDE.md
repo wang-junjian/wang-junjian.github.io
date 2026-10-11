@@ -26,7 +26,8 @@ npm run preview   # 预览生产构建
 
 ## 4. 项目结构
 
-- `posts/YYYY/`：博客文章，按年份分目录，命名格式 `YYYY-MM-DD-slug.md`
+- `posts/YYYY/`：Markdown 博客文章，按年份分目录，命名格式 `YYYY-MM-DD-slug.md`
+- `posts-html/YYYY/`：HTML 独立文档（见第 7 节），按年份分目录
 - `src/components/`：Astro 组件
 - `src/layouts/`：页面布局
 - `src/pages/`：站点页面
@@ -48,7 +49,7 @@ GitHub Actions 自动部署到 GitHub Pages，自定义域名 `wangjunjian.com`�
 
 ## 7. HTML 文章规范
 
-智能体生成的独立 HTML 文档可作为"HTML 文章"直接放入 `posts/YYYY/`，与 Markdown 文章并存。站点会自动将其收录进首页/归档/年度/月度/标签页/RSS/搜索索引，点击后跳转到保留原样的独立页面 `/posts/<文件名>.html`（URL 为扁平结构，年份目录会被剥掉）。
+智能体生成的独立 HTML 文档可作为"HTML 文章"直接放入 `posts-html/YYYY/`，与 `posts/YYYY/` 下的 Markdown 文章并存。站点会自动将其收录进首页/归档/年度/月度/标签页/RSS/搜索索引，点击后跳转到保留原样的独立页面 `/posts/<文件名>.html`（URL 为扁平结构，年份目录会被剥掉）。
 
 约定：
 - 文件名建议 `YYYY-MM-DD-slug.html`；**basename（去扩展名）必须全库唯一**，冲突会导致构建报错

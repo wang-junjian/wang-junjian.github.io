@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="用 playwright-core 驱动系统 Chrome，把一篇稿子自动填进知乎专栏编辑器，走通「登录 → 进编辑器 → 写标题正文 → 存草稿」全链路。记录安装失败、浏览器一启动就崩、全站强制登录、Draft.js 拒绝赋值四道坎的排错过程。">
+<meta name="keywords" content="Playwright, playwright-core, 浏览器自动化, 知乎, 自动发文, Draft.js, 踩坑实录">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-11">
+<title>用 Playwright 打通知乎自动发文 · 一份完整的踩坑实录</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --border:#E4E1DA; --border2:#F0EEE8;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FDF4E8;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EEF7EE;
+  --blue:#2F6FB0;  --blue-t:#1F5288;  --blue-bg:#EDF3FA;
+  --teal:#0F766E;  --teal-t:#0A5750;  --teal-bg:#E9F5F3;
+  --purple:#6D3FB5;--purple-t:#5A3099;--purple-bg:#F3EEFB;
+  --red:#B3261E;   --red-t:#A0211A;   --red-bg:#FBEDEC;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.75;
+  overflow-wrap:break-word; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px; margin:0 auto; padding:0 24px}
+a{color:var(--blue-t)}
+code{font-family:var(--mono); font-size:.875em; overflow-wrap:anywhere;
+  background:var(--border2); padding:1px 5px; border-radius:4px; color:var(--ink2)}
+strong{color:var(--ink); font-weight:650}
+
+/* ---------- 导航 ---------- */
+nav.toc{
+  position:sticky; top:0; z-index:50;
+  background:rgba(251,250,247,.92); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+nav.toc .inner{
+  max-width:1060px; margin:0 auto; padding:10px 24px;
+  display:flex; gap:6px; overflow-x:auto; align-items:center;
+}
+nav.toc .brand{
+  font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--ink3);
+  text-transform:uppercase; white-space:nowrap; padding-right:10px; margin-right:6px;
+  border-right:1px solid var(--border);
+}
+nav.toc a{
+  font-size:13px; color:var(--ink2); text-decoration:none; white-space:nowrap;
+  padding:4px 10px; border-radius:6px; transition:.15s;
+}
+nav.toc a:hover{background:var(--amber-bg); color:var(--amber-t)}
+
+/* ---------- 头部 ---------- */
+header.hero{padding:64px 0 40px; border-bottom:1px solid var(--border)}
+.kicker{
+  font-size:12.5px; font-weight:700; letter-spacing:.12em; color:var(--amber-t);
+  text-transform:uppercase; margin-bottom:18px;
+}
+h1{
+  font-size:clamp(30px,4.4vw,44px); line-height:1.22; margin:0 0 20px;
+  font-weight:800; letter-spacing:-.02em;
+}
+.lede{font-size:17.5px; color:var(--ink2); max-width:760px; margin:0 0 28px}
+.hero-meta{
+  display:flex; flex-wrap:wrap; gap:8px;
+}
+.chip{
+  font-size:12px; padding:4px 11px; border-radius:999px;
+  background:var(--card); border:1px solid var(--border); color:var(--ink2);
+}
+.chip b{color:var(--ink); font-weight:650}
+
+/* ---------- 区块 ---------- */
+section{padding:60px 0 8px; scroll-margin-top:24px; border-top:1px solid var(--border2)}
+section:first-of-type{border-top:none}
+h2{
+  font-size:clamp(23px,3vw,30px); margin:0 0 8px; font-weight:750;
+  letter-spacing:-.01em; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+}
+h2 .num{
+  font-family:var(--mono); font-size:13px; font-weight:700; color:var(--amber-t);
+  background:var(--amber-bg); padding:3px 9px; border-radius:6px; letter-spacing:.02em;
+}
+h3{font-size:18.5px; margin:34px 0 10px; font-weight:700}
+h4{font-size:15.5px; margin:24px 0 8px; font-weight:700; color:var(--ink2)}
+.sec-sub{color:var(--ink2); font-size:16.5px; margin:0 0 28px; max-width:780px}
+p{margin:0 0 16px}
+ul,ol{margin:0 0 16px; padding-left:22px}
+li{margin-bottom:8px}
+
+/* ---------- 卡片 ---------- */
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:10px;
+  padding:22px 24px; margin:0 0 18px; min-width:0;
+}
+.g2{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.g3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+.g2>*,.g3>*{min-width:0}
+
+/* ---------- 坑位卡片 ---------- */
+.pit{
+  background:var(--card); border:1px solid var(--border); border-left:3px solid var(--red);
+  border-radius:10px; padding:18px 20px; min-width:0;
+}
+.pit .tag{
+  display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.04em;
+  color:var(--red-t); background:var(--red-bg); padding:2px 9px; border-radius:5px;
+  margin-bottom:10px;
+}
+.pit h4{margin:0 0 8px; font-size:16px; color:var(--ink)}
+.pit .sym{
+  font-family:var(--mono); font-size:12.5px; color:var(--red-t);
+  background:var(--red-bg); padding:7px 10px; border-radius:6px;
+  display:block; margin:0 0 10px; overflow-wrap:anywhere;
+}
+.pit p{margin:0; font-size:14.5px; color:var(--ink2)}
+
+/* ---------- 提示块 ---------- */
+.note{
+  border-radius:10px; padding:16px 20px; margin:0 0 18px;
+  border:1px solid var(--border); font-size:15px;
+}
+.note .nt{font-weight:700; font-size:13.5px; letter-spacing:.03em; display:block; margin-bottom:6px}
+.note p:last-child{margin-bottom:0}
+.note.fix{background:var(--green-bg); border-color:#CFE6D0}
+.note.fix .nt{color:var(--green-t)}
+.note.warn{background:var(--amber-bg); border-color:#F0DCC2}
+.note.warn .nt{color:var(--amber-t)}
+.note.info{background:var(--blue-bg); border-color:#D5E3F1}
+.note.info .nt{color:var(--blue-t)}
+.note.corr{background:var(--purple-bg); border-color:#E0D5F2}
+.note.corr .nt{color:var(--purple-t)}
+
+/* ---------- 表格 ---------- */
+.tbl{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px; background:var(--card)}
+.tbl caption{
+  caption-side:top; text-align:left; font-size:13px; color:var(--ink3);
+  padding:0 0 10px; font-weight:600;
+}
+.tbl th,.tbl td{
+  border:1px solid var(--border); padding:10px 13px; text-align:left; vertical-align:top;
+}
+.tbl thead th{background:var(--border2); font-weight:700; color:var(--ink); font-size:13.5px}
+.tbl tbody tr:nth-child(even){background:#FCFBF9}
+.tbl td code{font-size:12.5px}
+
+/* ---------- 代码 ---------- */
+.code{
+  background:#1B1D22; border-radius:10px; margin:0 0 20px; overflow:hidden;
+  border:1px solid #2A2D34;
+}
+.code-head{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 14px; background:#23262C; border-bottom:1px solid #2F333A;
+}
+.code-head .lang{
+  font-family:var(--mono); font-size:11.5px; color:#9AA3B2; letter-spacing:.05em;
+}
+.code-head .copy{
+  font-family:var(--sans); font-size:11.5px; cursor:pointer;
+  background:#33373F; color:#D5DAE3; border:1px solid #41454D;
+  padding:3px 11px; border-radius:6px; transition:.15s;
+}
+.code-head .copy:hover{background:#3E434C; color:#fff}
+.code pre{
+  margin:0; padding:16px 18px; overflow-x:auto;
+  font-family:var(--mono); font-size:13px; line-height:1.65; color:#E4E8EF;
+}
+.code code{background:none; padding:0; color:inherit; font-size:13px}
+.t-cm{color:#7E8797; font-style:italic}
+.t-kw{color:#C792EA}
+.t-str{color:#A5D6A7}
+.t-num{color:#F5C27A}
+.t-fn{color:#82AAFF}
+.t-out{color:#8B94A3}
+
+/* ---------- 图 ---------- */
+figure{margin:0 0 24px; min-width:0}
+.fig-box{
+  overflow-x:auto; background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:20px 18px; min-width:0;
+}
+.fig-box svg{display:block; min-width:600px; margin:0 auto}
+figcaption{
+  font-size:13px; color:var(--ink3); margin-top:10px; line-height:1.6;
+}
+figcaption b{color:var(--ink2); font-weight:650}
+
+/* ---------- 步骤条 ---------- */
+.steps{counter-reset:st; margin:0 0 20px}
+.step{
+  position:relative; padding:0 0 22px 42px; border-left:2px solid var(--border);
+  margin-left:11px;
+}
+.step:last-child{border-left-color:transparent; padding-bottom:0}
+.step::before{
+  counter-increment:st; content:counter(st);
+  position:absolute; left:-12px; top:-2px; width:24px; height:24px;
+  background:var(--amber); color:#fff; border-radius:50%;
+  font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono);
+}
+.step h4{margin:0 0 6px; font-size:15.5px}
+.step p{margin:0; font-size:14.5px; color:var(--ink2)}
+
+/* ---------- 经验清单 ---------- */
+.check{list-style:none; padding:0; margin:0}
+.check li{
+  position:relative; padding:14px 18px 14px 48px; background:var(--card);
+  border:1px solid var(--border); border-radius:10px; margin-bottom:10px;
+  font-size:15px; color:var(--ink2);
+}
+.check li::before{
+  content:"✓"; position:absolute; left:16px; top:14px;
+  width:20px; height:20px; border-radius:50%; background:var(--green-bg);
+  color:var(--green-t); font-size:12px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+.check li b{color:var(--ink)}
+
+footer{
+  margin-top:56px; padding:32px 0 56px; border-top:1px solid var(--border);
+  font-size:13.5px; color:var(--ink3);
+}
+footer p{margin:0 0 8px}
+
+@media (max-width:820px){
+  .g2,.g3{grid-template-columns:1fr}
+  header.hero{padding:44px 0 30px}
+}
+@media (max-width:760px){
+  table.tbl{display:block; overflow-x:auto; white-space:nowrap}
+  .tbl td,.tbl th{white-space:normal; min-width:120px}
+}
+</style>
+</head>
+<body>
+
+<nav class="toc">
+  <div class="inner">
+    <span class="brand">踩坑实录</span>
+    <a href="#s01">速览</a>
+    <a href="#s02">全链路</a>
+    <a href="#s02b">Playwright 是什么</a>
+    <a href="#s03">坎一·装不上</a>
+    <a href="#s04">坎二·启动崩</a>
+    <a href="#s05">坎三·强制登录</a>
+    <a href="#s06">坎四·Draft.js</a>
+    <a href="#s07">完整链路</a>
+    <a href="#s08">环境陷阱</a>
+    <a href="#s09">经验清单</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">浏览器自动化 · 实战复盘</div>
+  <h1>用 Playwright 打通知乎自动发文</h1>
+  <p class="lede">
+    把一篇稿子自动填进知乎专栏编辑器，走通「登录 → 进编辑器 → 写标题正文 → 存草稿」全链路。
+    路上有四道坎，每一道的报错信息都指向了错误的排查方向。
+  </p>
+  <div class="hero-meta">
+    <span class="chip">目标 <b>知乎专栏编辑器</b></span>
+    <span class="chip">执行层 <b>playwright-core 库</b></span>
+    <span class="chip">浏览器 <b>系统 Chrome 154 · headless</b></span>
+    <span class="chip">结果 <b>链路打通</b></span>
+  </div>
+</header>
+
+<section id="s01">
+  <h2><span class="num">00</span>速览：三个必踩的坑，先说结论</h2>
+  <p class="sec-sub">
+    下面三条是最花时间的。每一条的报错信息都把排查方向指偏了——这是它们真正危险的地方。
+  </p>
+
+  <div class="g3">
+    <div class="pit">
+      <span class="tag">坑 1 · 版本错配</span>
+      <h4>浏览器版本错配</h4>
+      <code class="sym">Error: Target crashed</code>
+      <p>报错长得像环境问题，其实是 CLI 期望的浏览器 revision 与本地缓存对不上。</p>
+      <p style="margin-top:10px"><strong>正解：</strong>用 <code>channel: 'chrome'</code> 走系统 Chrome，别用 bundled Chromium。</p>
+    </div>
+
+    <div class="pit">
+      <span class="tag">坑 2 · 凭据失效</span>
+      <h4>二维码秒失效</h4>
+      <code class="sym">手机提示：二维码已过期</code>
+      <p>扫码凭据绑定在会话上，浏览器一关，二维码当场作废。</p>
+      <p style="margin-top:10px"><strong>正解：</strong>浏览器必须<strong>常驻轮询</strong>，不能截图后关掉。</p>
+    </div>
+
+    <div class="pit">
+      <span class="tag">坑 3 · 受控编辑器</span>
+      <h4>Draft.js 不接受赋值</h4>
+      <code class="sym">看着写进去了，字数始终为 0</code>
+      <p>正文是 Draft.js 受控编辑器，DOM 只是渲染结果，内部 state 才是真相。</p>
+      <p style="margin-top:10px"><strong>正解：</strong>必须走真实输入事件 <code>keyboard.insertText()</code>。</p>
+    </div>
+  </div>
+
+  <div class="note warn" style="margin-top:20px">
+    <span class="nt">还有一道更靠前的坎</span>
+    <p>在遇到上面三个坑之前，安装本身就会先被拒一次——但那是环境策略问题，不是 Playwright 的问题。见下一节。</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">01</span>全链路总览</h2>
+  <p class="sec-sub">
+    整条链路要穿过四道坎。每一道都对应一个具体的解法，也对应后文的一节。
+  </p>
+
+  <figure id="fig-1">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="发文链路的四道坎与对应正解">
+        <defs>
+          <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#C9C4BA"/>
+          </marker>
+        </defs>
+
+        <line x1="40" y1="150" x2="104" y2="150" stroke="#DAD6CE" stroke-width="3"/>
+        <line x1="176" y1="150" x2="324" y2="150" stroke="#DAD6CE" stroke-width="3"/>
+        <line x1="396" y1="150" x2="544" y2="150" stroke="#DAD6CE" stroke-width="3"/>
+        <line x1="616" y1="150" x2="764" y2="150" stroke="#DAD6CE" stroke-width="3"/>
+        <line x1="836" y1="150" x2="916" y2="150" stroke="#DAD6CE" stroke-width="3" marker-end="url(#ar1)"/>
+
+        <circle cx="140" cy="150" r="36" fill="#FBEDEC" stroke="#B3261E" stroke-width="2.5"/>
+        <text x="140" y="160" text-anchor="middle" font-size="24" font-weight="700" fill="#A0211A" font-family="ui-monospace,Menlo,monospace">1</text>
+        <text x="140" y="88" text-anchor="middle" font-size="13.5" font-weight="700" fill="#16181D">装不上</text>
+        <text x="140" y="220" text-anchor="middle" font-size="11" fill="#4A505A" font-family="ui-monospace,Menlo,monospace">--prefix $HOME/.local</text>
+        <text x="140" y="242" text-anchor="middle" font-size="11.5" fill="#4A505A">装进用户目录</text>
+
+        <circle cx="360" cy="150" r="36" fill="#FDF4E8" stroke="#B45309" stroke-width="2.5"/>
+        <text x="360" y="160" text-anchor="middle" font-size="24" font-weight="700" fill="#8F3F06" font-family="ui-monospace,Menlo,monospace">2</text>
+        <text x="360" y="88" text-anchor="middle" font-size="13.5" font-weight="700" fill="#16181D">浏览器启动即崩</text>
+        <text x="360" y="220" text-anchor="middle" font-size="11" fill="#4A505A" font-family="ui-monospace,Menlo,monospace">channel: 'chrome'</text>
+        <text x="360" y="242" text-anchor="middle" font-size="11.5" fill="#4A505A">绕开版本错配</text>
+
+        <circle cx="580" cy="150" r="36" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="2.5"/>
+        <text x="580" y="160" text-anchor="middle" font-size="24" font-weight="700" fill="#1F5288" font-family="ui-monospace,Menlo,monospace">3</text>
+        <text x="580" y="88" text-anchor="middle" font-size="13.5" font-weight="700" fill="#16181D">全站强制登录</text>
+        <text x="580" y="220" text-anchor="middle" font-size="11" fill="#4A505A" font-family="ui-monospace,Menlo,monospace">canvas.Qrcode-qrcode</text>
+        <text x="580" y="242" text-anchor="middle" font-size="11.5" fill="#4A505A">常驻轮询等扫码</text>
+
+        <circle cx="800" cy="150" r="36" fill="#F3EEFB" stroke="#6D3FB5" stroke-width="2.5"/>
+        <text x="800" y="160" text-anchor="middle" font-size="24" font-weight="700" fill="#5A3099" font-family="ui-monospace,Menlo,monospace">4</text>
+        <text x="800" y="88" text-anchor="middle" font-size="13.5" font-weight="700" fill="#16181D">Draft.js 不吃赋值</text>
+        <text x="800" y="220" text-anchor="middle" font-size="11" fill="#4A505A" font-family="ui-monospace,Menlo,monospace">keyboard.insertText()</text>
+        <text x="800" y="242" text-anchor="middle" font-size="11.5" fill="#4A505A">走真实输入事件</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>图 1</b>　链路上的四道坎与一句话正解。四道坎的共同特征是：<b>报错信息指向的方向，和真正的根因往往不是一回事</b>。
+    </figcaption>
+  </figure>
+</section>
+
+<section id="s02b">
+  <h2><span class="num">02</span>前置：Playwright 是什么</h2>
+  <p class="sec-sub">
+    后面几节会反复出现三个名字相近、但不是一回事的东西。先分清它们，再看报错就不容易被带偏。
+  </p>
+
+  <p>
+    Playwright 是微软开源的浏览器自动化库，用<strong>一套统一 API</strong> 驱动 Chromium / Firefox / WebKit 三大渲染引擎。
+    2020 年 1 月发布，核心成员来自原 Google Puppeteer 团队；TypeScript 编写，Apache-2.0 许可，
+    官方绑定覆盖 TS/JS、Python、Java、.NET。
+  </p>
+
+  <table class="tbl">
+    <caption>表 1　名字相近、但不是一回事的三个包</caption>
+    <thead>
+      <tr><th style="width:28%">名字</th><th style="width:24%">是什么</th><th>当前版本</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>@playwright/cli</code></td>
+        <td>官方 CLI 封装</td>
+        <td>0.1.22（仍是 0.1.x 实验包，且<strong>锁定 alpha 内核</strong>）</td>
+      </tr>
+      <tr>
+        <td><code>playwright-core</code></td>
+        <td>纯客户端库</td>
+        <td>1.64.0（CLI 内部也带一份，<strong>本文实际调用的就是它</strong>）</td>
+      </tr>
+      <tr>
+        <td><code>@playwright/test</code></td>
+        <td>测试运行器</td>
+        <td>1.64.0（与上面<b>不是同一个包</b>）</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <figure id="fig-pw">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 350" role="img" aria-label="Playwright 的调用栈分层，以及 CLI 路径独有的 daemon 层">
+        <defs>
+          <marker id="arpw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#C9C4BA"/>
+          </marker>
+        </defs>
+
+        <rect x="120" y="40" width="560" height="48" rx="8" fill="#F0EEE8" stroke="#C9C4BA" stroke-width="1.5"/>
+        <text x="144" y="59" font-size="13.5" font-weight="700" fill="#16181D">你的代码</text>
+        <text x="144" y="75" font-size="12" fill="#4A505A">脚本 / 测试 / Agent</text>
+
+        <line x1="400" y1="88" x2="400" y2="98" stroke="#C9C4BA" stroke-width="2" marker-end="url(#arpw)"/>
+
+        <rect x="120" y="100" width="560" height="48" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="144" y="119" font-size="13.5" font-weight="700" fill="#A0211A">daemon（仅 @playwright/cli 路径）</text>
+        <text x="144" y="135" font-size="12" fill="#A0211A">常驻会话层 —— 崩溃就发生在这里</text>
+        <line x1="684" y1="124" x2="704" y2="124" stroke="#C9C4BA" stroke-width="1.5"/>
+        <text x="710" y="124" font-size="12" fill="#A0211A">CLI 独有的这一层</text>
+
+        <line x1="400" y1="148" x2="400" y2="158" stroke="#C9C4BA" stroke-width="2" marker-end="url(#arpw)"/>
+
+        <rect x="120" y="160" width="560" height="48" rx="8" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="144" y="179" font-size="13.5" font-weight="700" fill="#1F5288">客户端库 playwright-core</text>
+        <text x="144" y="195" font-size="12" fill="#1F5288">把 API 调用翻译成浏览器指令</text>
+        <line x1="684" y1="184" x2="704" y2="184" stroke="#C9C4BA" stroke-width="1.5"/>
+        <text x="710" y="184" font-size="12" fill="#1F5288">本文实际调用的是它</text>
+
+        <line x1="400" y1="208" x2="400" y2="218" stroke="#C9C4BA" stroke-width="2" marker-end="url(#arpw)"/>
+
+        <rect x="120" y="220" width="560" height="48" rx="8" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="144" y="239" font-size="13.5" font-weight="700" fill="#1F5288">通信层</text>
+        <text x="144" y="255" font-size="12" fill="#1F5288">一条长连接 WebSocket，Chromium 走 CDP</text>
+
+        <line x1="400" y1="268" x2="400" y2="278" stroke="#C9C4BA" stroke-width="2" marker-end="url(#arpw)"/>
+
+        <rect x="120" y="280" width="560" height="48" rx="8" fill="#E9F5F3" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="144" y="299" font-size="13.5" font-weight="700" fill="#0A5750">浏览器进程</text>
+        <text x="144" y="315" font-size="12" fill="#0A5750">bundled Chromium 或系统 Chrome（channel）</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>图 2</b>　Playwright 的调用栈。<b>第二层 daemon 只存在于 CLI 路径</b>——第 04 节那个 <code>Assertion error</code> 就抛在这一层；
+      库层直连没有这一跳，所以同一台机器上「库能跑、CLI 不能跑」。
+    </figcaption>
+  </figure>
+
+  <p>浏览器还有两种来源，这正是下一节的核心：</p>
+
+  <div class="g2">
+    <div class="card">
+      <h4 style="margin-top:0">bundled · 下载到本地缓存</h4>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        由 <code>playwright-cli install-browser</code> 下到 <code>~/Library/Caches/ms-playwright/</code>，
+        <strong>版本由 <code>playwright-core</code> 锁定</strong>——对不上就是下一节那个崩。
+      </p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">channel · 用系统已装的浏览器</h4>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        <code>channel: 'chrome'</code> 直接用本机 Chrome，<strong>版本由你自己决定</strong>，
+        不受下载缓存与内核版本约束。
+      </p>
+    </div>
+  </div>
+
+  <p>
+    最后是操作对象的层级：<strong>Browser</strong>（浏览器进程）→ <strong>BrowserContext</strong>
+    （隔离会话，各自独立 cookie 与登录态）→ <strong>Page</strong>（标签页）。
+    第 05 节的 <code>launchPersistentContext('./.zprofile')</code> 所做的，就是把这个 Context 落到磁盘、
+    不随进程销毁——登录态因此能跨进程复用。
+  </p>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>坎一：装不上</h2>
+  <p class="sec-sub">按官方姿势安装，第一条命令就被拒。</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">bash · 安装</span><button class="copy">复制</button></div>
+<pre><code>npm install -g @playwright/cli@latest</code></pre>
+  </div>
+
+  <p>直接被拒：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">输出 · 失败</span><button class="copy">复制</button></div>
+<pre><code><span class="t-out">npm error code CODEBUDDY_BROKER_DENY
+npm error ENOENT: no such file or directory, rename
+  '.../node/versions/22.22.2-6/bin/playwright-cli'
+  -&gt; '.../node/versions/22.22.2-6/bin/.playwright-cli-PKNf4PUR'</span></code></pre>
+  </div>
+
+  <div class="note info">
+    <span class="nt">为什么会被拒</span>
+    <p>
+      安装目标落在了<strong>托管运行时（managed runtime）的二进制目录</strong>里，这个位置被沙箱策略保护，不允许写入。
+      跟 Playwright 本身没有关系，换任何全局包都会撞上同一堵墙。
+    </p>
+  </div>
+
+  <p>解法是换个 prefix，装进用户目录：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">bash · 解法</span><button class="copy">复制</button></div>
+<pre><code>npm install -g @playwright/cli@latest --prefix "$HOME/.local"
+<span class="t-cm"># → ~/.local/bin/playwright-cli (v0.1.22)</span></code></pre>
+  </div>
+
+  <div class="note fix">
+    <span class="nt">关键点</span>
+    <p>
+      <code>npm prefix</code> 对应的 bin 目录如果<strong>已经在 <code>PATH</code> 里</strong>，装完就能直接调用——
+      不需要改环境变量，也不需要 sudo。动手前先确认这一点，能省掉一轮折腾。
+    </p>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>坎二：浏览器一启动就崩</h2>
+  <p class="sec-sub">CLI 装好了，跑第一个冒烟测试，浏览器进程起来了，页面却立刻崩。</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">bash · 冒烟测试</span><button class="copy">复制</button></div>
+<pre><code>playwright-cli open https://example.com
+<span class="t-out">### Browser `default` opened with pid 52335.
+### Error
+Error: Target crashed</span></code></pre>
+  </div>
+
+  <p>换成官方支持的 <code>--browser=chrome</code> 也一样：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">输出 · 换 chrome channel</span><button class="copy">复制</button></div>
+<pre><code><span class="t-out">Error: Assertion error
+    at _CRSession._onMessage (.../coreBundle.js:36256:11)</span></code></pre>
+  </div>
+
+  <div class="note warn">
+    <span class="nt">这个报错极具误导性</span>
+    <p>
+      它长得像环境问题，很容易让人去怀疑沙箱、权限、图形界面——并且会在这三个方向上各浪费一轮排查。
+      <strong>但真因是版本错配。</strong>
+    </p>
+  </div>
+
+  <figure id="fig-2">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="报错信息、误判方向与真实根因的对照">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#C9C4BA"/>
+          </marker>
+        </defs>
+        <text x="24" y="32" font-size="12.5" font-weight="700" fill="#4A505A">屏幕上看到的</text>
+        <text x="408" y="32" font-size="12.5" font-weight="700" fill="#4A505A">真正的根因</text>
+
+        <rect x="24" y="52" width="280" height="56" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="40" y="86" font-size="12" fill="#A0211A" font-family="ui-monospace,Menlo,monospace">Error: Target crashed</text>
+        <line x1="318" y1="80" x2="392" y2="80" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar2)"/>
+        <text x="324" y="70" font-size="10.5" fill="#4A505A">误判为</text>
+        <rect x="408" y="52" width="528" height="56" rx="8" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="426" y="86" font-size="13" fill="#1F5288">CLI 期望的浏览器 revision 是 1247，本机只有 1243</text>
+
+        <rect x="24" y="132" width="280" height="56" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="40" y="166" font-size="12" fill="#A0211A" font-family="ui-monospace,Menlo,monospace">Error: Assertion error</text>
+        <line x1="318" y1="160" x2="392" y2="160" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar2)"/>
+        <text x="324" y="150" font-size="10.5" fill="#4A505A">误判为</text>
+        <rect x="408" y="132" width="528" height="56" rx="8" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="426" y="166" font-size="13" fill="#1F5288">同一个根因：bundled Chromium 在这台机器上根本不存在</text>
+
+        <rect x="24" y="212" width="280" height="56" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="40" y="246" font-size="12" fill="#A0211A" font-family="ui-monospace,Menlo,monospace">字数统计 = 0</text>
+        <line x1="318" y1="240" x2="392" y2="240" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar2)"/>
+        <text x="324" y="230" font-size="10.5" fill="#4A505A">误判为</text>
+        <rect x="408" y="212" width="528" height="56" rx="8" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="426" y="246" font-size="13" fill="#1F5288">Draft.js 内部 state 未更新，DOM 上的变化是假的</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>图 3</b>　三条报错、三次误判、以及它们真正的根因。前两条都出在 CLI 的启动链路上，第三条属于另一类问题（受控编辑器），
+      详见第 06 节。<b>报错的字面意思，和根因的层级经常不在一处。</b>
+    </figcaption>
+  </figure>
+
+  <h3>怎么定位：别猜，用最小复现矩阵</h3>
+
+  <p>直接用 CLI 自带的那套库去测。<code>playwright-cli</code> 依赖的 <code>playwright-core</code> 就在它自己的 <code>node_modules</code> 里：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">js · 最小复现矩阵</span><button class="copy">复制</button></div>
+<pre><code><span class="t-kw">const</span> PW = <span class="t-str">'~/.local/lib/node_modules/@playwright/cli/node_modules/playwright-core'</span>;
+<span class="t-kw">const</span> { chromium } = <span class="t-fn">require</span>(PW);
+
+<span class="t-kw">for</span> (<span class="t-kw">const</span> opt <span class="t-kw">of</span> [
+  { channel: <span class="t-str">'chrome'</span>, headless: <span class="t-kw">true</span>, args: [<span class="t-str">'--no-sandbox'</span>, <span class="t-str">'--disable-gpu'</span>] },
+  { headless: <span class="t-kw">true</span>, args: [<span class="t-str">'--no-sandbox'</span>, <span class="t-str">'--disable-gpu'</span>] },
+]) {
+  <span class="t-kw">try</span> {
+    <span class="t-kw">const</span> b = <span class="t-kw">await</span> chromium.<span class="t-fn">launch</span>(opt);
+    <span class="t-kw">const</span> p = <span class="t-kw">await</span> b.<span class="t-fn">newPage</span>();
+    <span class="t-kw">await</span> p.<span class="t-fn">goto</span>(<span class="t-str">'https://example.com'</span>);
+    console.<span class="t-fn">log</span>(<span class="t-str">'OK'</span>, <span class="t-kw">await</span> p.<span class="t-fn">title</span>());
+    <span class="t-kw">await</span> b.<span class="t-fn">close</span>();
+  } <span class="t-kw">catch</span> (e) { console.<span class="t-fn">log</span>(<span class="t-str">'FAIL'</span>, e.message.<span class="t-fn">split</span>(<span class="t-str">'\n'</span>)[<span class="t-num">0</span>]); }
+}</code></pre>
+  </div>
+
+  <p>结果一目了然：</p>
+
+  <table class="tbl">
+    <caption>表 2　最小复现矩阵——把配置逐项隔离后的结果</caption>
+    <thead>
+      <tr><th style="width:44%">配置</th><th>结果</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>channel: 'chrome'</code> + headless</td>
+        <td>✅ <code>title="Example Domain"</code>，4.9s</td>
+      </tr>
+      <tr>
+        <td>bundled chromium（默认）</td>
+        <td>❌ <code>Executable doesn't exist at .../chromium_headless_shell-1247/...</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note info">
+    <span class="nt">根因</span>
+    <p>
+      <code>@playwright/cli@0.1.22</code> 依赖 <code>playwright-core@1.64.0-alpha-1790635538000</code>，
+      它期望的浏览器 revision 是 <strong>1247</strong>，而本机 <code>~/Library/Caches/ms-playwright</code> 里只有 <strong>1243</strong>。
+      版本对不上，浏览器启动即崩。
+    </p>
+    <p style="margin-top:10px">
+      所以 <code>playwright-cli</code> 开箱不能用的原因，<strong>跟沙箱、权限、图形界面都无关</strong>，纯粹是浏览器二进制版本不匹配。
+    </p>
+  </div>
+
+  <div class="note corr">
+    <span class="nt">更正（后续补充）</span>
+    <p>
+      上面这条结论只对了一半。补装 <code>chromium_headless_shell-1247</code> 之后，
+      <code>playwright-cli</code> 命令行<strong>依旧报同一个 <code>Assertion error</code></strong>，
+      而库层六种启动配置（bundled 与 <code>channel: 'chrome'</code>、带不带 <code>--no-sandbox</code>）全部正常。
+    </p>
+    <p style="margin-top:10px">
+      也就是说：浏览器版本不匹配是真实存在的（当时 bundled Chromium 确实缺 1247，补装即修复），
+      但它<strong>不是 CLI 崩溃的根因</strong>——CLI 在调用栈上比库多一层 daemon，问题出在那里，见第 02 节的调用栈图。
+    </p>
+  </div>
+
+  <h3>两条解法</h3>
+
+  <div class="g2">
+    <div class="card">
+      <h4 style="margin-top:0">解法 A · 把缺的浏览器补上</h4>
+      <div class="code" style="margin-bottom:12px">
+        <div class="code-head"><span class="lang">bash</span><button class="copy">复制</button></div>
+<pre><code>playwright-cli install-browser</code></pre>
+      </div>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        会下载 <code>chromium_headless_shell-1247</code>。适合希望完全跟随 CLI 默认行为的场景。
+      </p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">解法 B · 绕开 bundled Chromium</h4>
+      <div class="code" style="margin-bottom:12px">
+        <div class="code-head"><span class="lang">bash</span><button class="copy">复制</button></div>
+<pre><code>playwright-cli open --browser=chrome \
+  https://example.com</code></pre>
+      </div>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        直接用系统 Chrome，不依赖缓存里的 revision。
+      </p>
+    </div>
+  </div>
+
+  <div class="note fix">
+    <span class="nt">本次的选择</span>
+    <p>
+      走的是解法 B 的思路，并且<strong>直接下到库里调用</strong>——因为后续需要更细粒度的控制
+      （精确指定 <code>channel: 'chrome'</code>、控制 <code>deviceScaleFactor</code> 等），CLI 命令行给不了。
+    </p>
+  </div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>坎三：知乎全站强制登录</h2>
+  <p class="sec-sub">打开知乎首页，第一件事就是被踢到登录页。</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">重定向链</span><button class="copy">复制</button></div>
+<pre><code><span class="t-out">https://www.zhihu.com                → 302 /signin?next=%2F
+https://zhuanlan.zhihu.com/write     → 302 /signin?next=...%2Fwrite</span></code></pre>
+  </div>
+
+  <p>
+    未登录状态下，编辑器元素数量是 <strong>0</strong>（<code>contenteditable</code> 计数为 0），完全不可达。
+    而且知乎只给两条路：<strong>扫码</strong>（知乎 App / 微信）或 <strong>手机短信验证码 / 密码</strong>。
+  </p>
+
+  <div class="note warn">
+    <span class="nt">结论前置</span>
+    <p>登录是整条发文流程<strong>唯一的硬阻塞点</strong>，而且必须有真人参与——没有绕过的办法。</p>
+  </div>
+
+  <h3>二维码为什么会「秒失效」</h3>
+
+  <p>第一版实现是这样的：打开登录页 → 截取二维码 → 关闭浏览器 → 把图片拿给人扫。<strong>这个流程是错的。</strong></p>
+
+  <figure id="fig-3">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="二维码登录的两种做法对比">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#C9C4BA"/>
+          </marker>
+        </defs>
+
+        <text x="24" y="46" font-size="13" font-weight="700" fill="#A0211A">错误做法：截图后就关浏览器</text>
+
+        <rect x="40" y="62" width="190" height="50" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="56" y="92" font-size="12.5" fill="#A0211A">打开 zhihu.com/signin</text>
+        <line x1="232" y1="87" x2="266" y2="87" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar3)"/>
+
+        <rect x="270" y="62" width="190" height="50" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="286" y="92" font-size="12.5" fill="#A0211A">截取二维码存成图片</text>
+        <line x1="462" y1="87" x2="496" y2="87" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar3)"/>
+
+        <rect x="500" y="62" width="190" height="50" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="516" y="92" font-size="12.5" fill="#A0211A">关闭浏览器</text>
+        <line x1="692" y1="87" x2="726" y2="87" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar3)"/>
+
+        <rect x="730" y="62" width="190" height="50" rx="8" fill="#F5D9D6" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="746" y="86" font-size="12.5" font-weight="700" fill="#8C1B15">用户扫码</text>
+        <text x="746" y="102" font-size="11" fill="#A0211A">✗ 二维码已作废</text>
+
+        <text x="24" y="200" font-size="13" font-weight="700" fill="#1B5820">正确做法：浏览器常驻，脚本自己轮询</text>
+
+        <rect x="40" y="214" width="190" height="50" rx="8" fill="#EEF7EE" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="56" y="244" font-size="12.5" fill="#1B5820">打开 zhihu.com/signin</text>
+        <line x1="232" y1="239" x2="266" y2="239" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar3)"/>
+
+        <rect x="270" y="214" width="190" height="50" rx="8" fill="#EEF7EE" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="286" y="244" font-size="12.5" fill="#1B5820">截取二维码存成图片</text>
+        <line x1="462" y1="239" x2="496" y2="239" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar3)"/>
+
+        <rect x="500" y="214" width="190" height="50" rx="8" fill="#EEF7EE" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="516" y="238" font-size="12.5" fill="#1B5820">常驻轮询等待</text>
+        <text x="516" y="254" font-size="11" fill="#1B5820">最多 8 分钟</text>
+        <line x1="692" y1="239" x2="726" y2="239" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar3)"/>
+
+        <rect x="730" y="214" width="190" height="50" rx="8" fill="#D8EED9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="746" y="238" font-size="12.5" font-weight="700" fill="#154C19">检测跳出 /signin</text>
+        <text x="746" y="254" font-size="11" fill="#1B5820">✓ 登录态落盘</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>图 4</b>　两条路径的唯一差别在第三步：<b>截完二维码之后，浏览器是关掉还是留着</b>。
+      二维码绑定在会话上，浏览器一关，会话没了，二维码当场作废——人扫到的必然是一张死图。
+    </figcaption>
+  </figure>
+
+  <p>正确做法是<strong>让浏览器常驻，脚本自己轮询</strong>：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">js · 常驻轮询登录</span><button class="copy">复制</button></div>
+<pre><code><span class="t-cm">// 1) 打开登录页并截二维码</span>
+<span class="t-kw">await</span> page.<span class="t-fn">goto</span>(<span class="t-str">'https://www.zhihu.com/signin'</span>);
+<span class="t-kw">const</span> qr = page.<span class="t-fn">locator</span>(<span class="t-str">'canvas.Qrcode-qrcode'</span>).<span class="t-fn">first</span>();
+<span class="t-kw">await</span> qr.<span class="t-fn">screenshot</span>({ path: <span class="t-str">'zhihu-qr.png'</span> });
+
+<span class="t-cm">// 2) 常驻轮询：登录成功后页面会自动跳出 /signin</span>
+<span class="t-kw">let</span> ok = <span class="t-kw">false</span>;
+<span class="t-kw">for</span> (<span class="t-kw">let</span> i = <span class="t-num">0</span>; i &lt; <span class="t-num">160</span>; i++) {          <span class="t-cm">// 160 × 3s = 8 分钟</span>
+  <span class="t-kw">if</span> (!page.<span class="t-fn">url</span>().<span class="t-fn">includes</span>(<span class="t-str">'signin'</span>)) { ok = <span class="t-kw">true</span>; <span class="t-kw">break</span>; }
+  <span class="t-kw">await</span> page.<span class="t-fn">waitForTimeout</span>(<span class="t-num">3000</span>);
+}</code></pre>
+  </div>
+
+  <h3>两个值得记的细节</h3>
+
+  <div class="g2">
+    <div class="card">
+      <h4 style="margin-top:0">选择器是 canvas，不是 img</h4>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        二维码的选择器是 <code>canvas.Qrcode-qrcode</code>，渲染在 canvas 上。
+        用 <code>&lt;img&gt;</code> 那套选择器会<strong>一无所获</strong>——这一步会让人以为"页面上没有二维码"。
+      </p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">调高 deviceScaleFactor</h4>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        该 canvas 的 CSS 尺寸只有 138×138，截图出来太小不好扫；
+        设 <code>deviceScaleFactor: 3</code> 后拿到 414px，手机一扫就中。
+      </p>
+    </div>
+  </div>
+
+  <h3>登录态要落到持久化 profile</h3>
+
+  <p>用 <code>launchPersistentContext</code> 指定一个固定目录，登录态就存下来了，后续进程直接复用，不用反复扫码：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">js · 持久化上下文</span><button class="copy">复制</button></div>
+<pre><code><span class="t-kw">const</span> ctx = <span class="t-kw">await</span> chromium.<span class="t-fn">launchPersistentContext</span>(<span class="t-str">'./.zprofile'</span>, {
+  channel: <span class="t-str">'chrome'</span>,
+  headless: <span class="t-kw">true</span>,
+  args: [<span class="t-str">'--no-sandbox'</span>, <span class="t-str">'--disable-gpu'</span>],
+  viewport: { width: <span class="t-num">1280</span>, height: <span class="t-num">900</span> },
+  deviceScaleFactor: <span class="t-num">3</span>,
+});</code></pre>
+  </div>
+
+  <div class="note fix">
+    <span class="nt">本次实测</span>
+    <p>
+      二维码生成后约 <strong>2 分钟</strong>扫码完成，登录成功落到 <code>https://www.zhihu.com/</code>，
+      页面标题变成「(99+ 封私信 / 21 条消息) 首页 - 知乎」。
+      之后换进程重开，登录态依然有效。
+    </p>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>坎四：Draft.js 不接受赋值</h2>
+  <p class="sec-sub">这是最容易被低估的一个坑——因为它<strong>不报错</strong>。</p>
+
+  <p>进入 <code>zhuanlan.zhihu.com/write</code>，先探测编辑器结构：</p>
+
+  <table class="tbl">
+    <caption>表 3　知乎写文章页的编辑器结构</caption>
+    <thead>
+      <tr><th style="width:22%">元素</th><th>选择器</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>标题</td><td><code>textarea[placeholder="请输入标题（最多 100 个字）"]</code></td></tr>
+      <tr><td>正文</td><td><code>div.public-DraftEditor-content</code>（<code>contenteditable="true"</code>）</td></tr>
+      <tr><td>上传</td><td><code>input.UploadPicture-input</code>（type=file）</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    标题是普通 <code>textarea</code>，<code>fill()</code> 一把过。但正文这个 <code>div.public-DraftEditor-content</code>
+    <strong>是 Draft.js</strong>——它维护着自己的内部 state，DOM 只是渲染结果。
+  </p>
+
+  <figure id="fig-4">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="Draft.js 的 DOM 层与内部 state 层，两种写入方式的差异">
+        <defs>
+          <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#C9C4BA"/>
+          </marker>
+        </defs>
+
+        <text x="24" y="34" font-size="12.5" font-weight="700" fill="#4A505A">写入方式</text>
+        <text x="326" y="34" font-size="12.5" font-weight="700" fill="#4A505A">编辑器内部</text>
+        <text x="616" y="34" font-size="12.5" font-weight="700" fill="#4A505A">结果</text>
+
+        <rect x="24" y="59" width="210" height="54" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="40" y="92" font-size="12" fill="#A0211A" font-family="ui-monospace,Menlo,monospace">fill() / innerText</text>
+        <line x1="246" y1="86" x2="300" y2="86" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar4)"/>
+
+        <rect x="312" y="52" width="170" height="32" rx="6" fill="#FDF4E8" stroke="#B45309" stroke-width="1.5"/>
+        <text x="326" y="73" font-size="12" fill="#8F3F06">DOM（渲染结果）</text>
+        <rect x="312" y="88" width="170" height="32" rx="6" fill="#F0EEE8" stroke="#C9C4BA" stroke-width="1.5"/>
+        <text x="326" y="109" font-size="12" fill="#4A505A">内部 State（真相）</text>
+
+        <text x="496" y="73" font-size="11.5" fill="#8F3F06">DOM 变了</text>
+        <text x="496" y="109" font-size="11.5" fill="#4A505A">State 没变</text>
+
+        <rect x="616" y="59" width="320" height="54" rx="8" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="636" y="92" font-size="13" fill="#A0211A">字数 = 0，提交为空</text>
+
+        <rect x="24" y="187" width="210" height="54" rx="8" fill="#EEF7EE" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="40" y="220" font-size="12" fill="#1B5820" font-family="ui-monospace,Menlo,monospace">keyboard.insertText()</text>
+        <line x1="246" y1="214" x2="300" y2="214" stroke="#C9C4BA" stroke-width="2" marker-end="url(#ar4)"/>
+
+        <rect x="312" y="180" width="170" height="32" rx="6" fill="#D8EED9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="326" y="201" font-size="12" fill="#154C19">DOM（渲染结果）</text>
+        <rect x="312" y="216" width="170" height="32" rx="6" fill="#D8EED9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="326" y="237" font-size="12" fill="#154C19">内部 State（真相）</text>
+
+        <text x="496" y="201" font-size="11.5" fill="#1B5820">DOM 变了</text>
+        <text x="496" y="237" font-size="11.5" fill="#1B5820">State 也变了</text>
+
+        <rect x="616" y="187" width="320" height="54" rx="8" fill="#D8EED9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="636" y="220" font-size="13" fill="#154C19">字数 = 256，草稿已自动保存</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>图 5</b>　Draft.js 维护着两层：外层是 DOM，内层是真正权威的 state。
+      直接赋值只改得到外层——<b>页面看起来写进去了，但字数统计纹丝不动，提交时也是空的</b>。
+      只有能同时触发内层的真实输入事件才算数。
+    </figcaption>
+  </figure>
+
+  <div class="note warn">
+    <span class="nt">这个坑最阴的地方</span>
+    <p>
+      它<strong>不抛异常、不报错、DOM 检查也能通过</strong>。用 <code>fill()</code> 或改 <code>innerText</code> 之后，
+      你去读 <code>innerText</code> 确实能读到自己写的内容——一切看起来都对了。唯一的破绽是字数统计始终显示 0。
+    </p>
+  </div>
+
+  <p>正确姿势是聚焦后走真实输入事件：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">js · 真实输入事件</span><button class="copy">复制</button></div>
+<pre><code><span class="t-kw">const</span> body = page.<span class="t-fn">locator</span>(<span class="t-str">'div.public-DraftEditor-content'</span>).<span class="t-fn">first</span>();
+<span class="t-kw">await</span> body.<span class="t-fn">click</span>();
+<span class="t-kw">await</span> page.<span class="t-fn">waitForTimeout</span>(<span class="t-num">700</span>);
+
+<span class="t-kw">for</span> (<span class="t-kw">const</span> para <span class="t-kw">of</span> PARAS) {
+  <span class="t-kw">await</span> page.keyboard.<span class="t-fn">insertText</span>(para);   <span class="t-cm">// 触发 beforeinput/input，Draft.js 能捕获</span>
+  <span class="t-kw">await</span> page.<span class="t-fn">waitForTimeout</span>(<span class="t-num">250</span>);
+  <span class="t-kw">await</span> page.keyboard.<span class="t-fn">press</span>(<span class="t-str">'Enter'</span>);     <span class="t-cm">// 分段</span>
+  <span class="t-kw">await</span> page.<span class="t-fn">waitForTimeout</span>(<span class="t-num">250</span>);
+}</code></pre>
+  </div>
+
+  <p>实测结果：</p>
+
+  <div class="code">
+    <div class="code-head"><span class="lang">输出 · 编辑器状态</span><button class="copy">复制</button></div>
+<pre><code><span class="t-out">状态: {
+  "wordCount": "256",
+  "draftState": "刚刚",
+  "titleValue": "自动化发文链路验证（测试稿 · 请勿发布）",
+  "bodyLen": 263
+}
+!!! 未点击发布，仅停留在编辑器 !!!</span></code></pre>
+  </div>
+
+  <p>
+    字数 256、草稿状态「刚刚」，说明内容确实写进了 Draft.js，知乎也自动保存了草稿。
+  </p>
+
+  <div class="note corr">
+    <span class="nt">补充（发布本文时新发现的边界）</span>
+    <p>
+      上面这条结论适用于<strong>纯文本</strong>。如果要往编辑器里注入<strong>富文本</strong>——
+      标题层级、表格、代码块、列表——<code>insertText()</code> 不够用，它会把这些内容当纯文本落进去，
+      <code>##</code>、<code>|</code>、<code>```</code> 会原样显示。
+    </p>
+    <p style="margin-top:10px">
+      富文本的正确入口是<strong>合成一个 <code>paste</code> 事件，并把内容放在 <code>text/html</code> 里</strong>：
+      Draft.js 的粘贴处理器会解析 HTML 并转换成对应的 block 类型。实测 <code>text/plain</code> 粘贴无效（符号裸露），
+      <code>text/html</code> 粘贴则能正确生成二级标题、加粗、行内代码、代码块（含语法高亮）、表格与列表。
+    </p>
+    <p style="margin-top:10px">
+      换言之：<strong>纯文本走 <code>insertText()</code>，富文本走 <code>text/html</code> 合成粘贴。</strong>
+      两者的共同前提都是「必须让 Draft.js 的内部 state 跟着更新」。
+    </p>
+  </div>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>完整链路</h2>
+  <p class="sec-sub">每个环节的做法与实测结果。</p>
+
+  <table class="tbl">
+    <caption>表 4　「登录 → 进编辑器 → 写标题正文 → 存草稿」全链路实测结果</caption>
+    <thead>
+      <tr><th style="width:22%">环节</th><th style="width:46%">做法</th><th>结果</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>浏览器启动</td><td><code>channel:'chrome'</code> + headless + <code>--no-sandbox</code></td><td><span style="color:var(--green-t)">✅</span></td></tr>
+      <tr><td>扫码登录</td><td>截 <code>canvas.Qrcode-qrcode</code> + 常驻轮询 URL</td><td><span style="color:var(--green-t)">✅</span> 约 2 分钟</td></tr>
+      <tr><td>登录态持久化</td><td>persistent profile 目录</td><td><span style="color:var(--green-t)">✅</span> 跨进程复用</td></tr>
+      <tr><td>编辑器可达</td><td><code>zhuanlan.zhihu.com/write</code></td><td><span style="color:var(--green-t)">✅</span></td></tr>
+      <tr><td>标题写入</td><td><code>textarea</code> + <code>fill()</code></td><td><span style="color:var(--green-t)">✅</span></td></tr>
+      <tr><td>正文写入</td><td>Draft.js + <code>insertText()</code> + <code>Enter</code></td><td><span style="color:var(--green-t)">✅</span> 256 字</td></tr>
+      <tr><td>草稿保存</td><td>知乎自动，状态「刚刚 · 草稿」</td><td><span style="color:var(--green-t)">✅</span></td></tr>
+      <tr><td>点击发布</td><td>—</td><td><span style="color:var(--red-t)">⛔</span> 未执行</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note info">
+    <span class="nt">一个说明：本次执行层用的是库，不是 CLI 命令行</span>
+    <p>
+      本文记录的实践中，最终执行层用的是 <code>playwright-cli</code> 自带的 <code>playwright-core</code> 库，而非 CLI 命令行。
+      原因是第 04 节说的启动问题——直接调用库可以精确指定 <code>channel: 'chrome'</code> 并控制 <code>deviceScaleFactor</code> 等参数。
+      <strong>两者是同一套引擎，能力一致，只是入口不同。</strong>
+    </p>
+  </div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>环境里还有两个小陷阱</h2>
+  <p class="sec-sub">不影响主流程，但都会让人在原地卡很久。</p>
+
+  <div class="g2">
+    <div class="card">
+      <span class="tag" style="display:inline-block;font-size:11.5px;font-weight:700;color:var(--amber-t);background:var(--amber-bg);padding:2px 9px;border-radius:5px;margin-bottom:10px">陷阱 1</span>
+      <h4 style="margin-top:0">CDP 常驻方案不通</h4>
+      <p style="font-size:14.5px;color:var(--ink2)">
+        本来想用 <code>--remote-debugging-port=9222</code> 起一个长期 Chrome，再用
+        <code>connectOverCDP</code> 反复连。实测 9222 端口无响应，走不通。
+      </p>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        改用「单进程内轮询」不但更简单，效果还更好。
+      </p>
+    </div>
+
+    <div class="card">
+      <span class="tag" style="display:inline-block;font-size:11.5px;font-weight:700;color:var(--amber-t);background:var(--amber-bg);padding:2px 9px;border-radius:5px;margin-bottom:10px">陷阱 2</span>
+      <h4 style="margin-top:0">进程残留会锁死 profile</h4>
+      <p style="font-size:14.5px;color:var(--ink2)">
+        Chrome 会锁住 <code>user-data-dir</code>，残留进程不清理，下次启动直接失败。
+        而在这个环境里 <code>ps</code> / <code>pkill</code> 都被限制（<code>ps: operation not permitted</code>），
+        查不到进程列表。
+      </p>
+      <p style="margin:0;font-size:14.5px;color:var(--ink2)">
+        最后的办法是<strong>直接换一个全新的 profile 目录</strong>绕开锁冲突——比清进程靠谱。
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>经验清单</h2>
+  <p class="sec-sub">如果只记五条，记这五条。</p>
+
+  <ul class="check">
+    <li>
+      <b>报错要有怀疑精神。</b>
+      <code>Target crashed</code> 看着像环境问题，实际是版本错配。用「最小复现矩阵」把配置逐项隔离，比顺着错误信息猜快得多。
+    </li>
+    <li>
+      <b>先看依赖的真实版本要求</b>，再决定是补下载浏览器，还是切换到系统 Chrome channel。
+    </li>
+    <li>
+      <b>任何需要人工介入的短暂凭据（二维码 / 验证码），会话必须存活。</b>
+      截图后关浏览器的做法必然失败。
+    </li>
+    <li>
+      <b>遇到 contenteditable 编辑器，先去判断它是不是 Draft.js / ProseMirror / Slate 这类受控编辑器。</b>
+      是的话，一律走真实输入事件，不要试图赋值。
+    </li>
+    <li>
+      <b>持久化 profile 是登录类自动化的基础设施</b>，一次扫码换长期复用。
+    </li>
+  </ul>
+</section>
+
+<footer>
+  <p>本文为自动化链路验证的实践记录。</p>
+  <p>文中所有代码片段均来自本次实测，未做简化改写。文章本身在发布环节保留人工确认。</p>
+</footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var box = btn.closest('.code');
+    var code = box ? box.querySelector('code') : null;
+    if (!code) return;
+    var text = code.textContent;
+    var done = function (label) {
+      btn.textContent = label;
+      setTimeout(function () { btn.textContent = '复制'; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done('已复制'); }, function () { done('复制失败'); });
+    } else {
+      done('不支持');
+    }
+  });
+});
+</script>
+
+</div>
+</body>
+</html>

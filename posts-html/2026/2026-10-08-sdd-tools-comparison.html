@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="同一个需求（适老化计算器）分别交给 OpenSpec、mattpocock-skills、Spec Kit 三个 SDD 工具，从流程文档重量、功能矩阵与工程质量三个维度对比三者做出的应用产物，观察工具如何塑造最终产品。">
+<meta name="keywords" content="SDD, 规范驱动开发, OpenSpec, mattpocock-skills, Spec Kit, AI 原生开发, 产物对比">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-08">
+<title>三个 SDD 工具，三个不同的计算器 —— 应用产物深度对比</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --paper: #ffffff;
+    --ink: #1f2328;
+    --ink-soft: #57606a;
+    --line: #e4e1da;
+    --os: #4f6ef7;
+    --ms: #e8590c;
+    --sk: #2f9e44;
+    --code-bg: #f2f0eb;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.85; font-size: 16px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.hero { padding: 56px 0 36px; border-bottom: 1px solid var(--line); margin-bottom: 40px; }
+  .hero .kicker { font-size: 13px; letter-spacing: .15em; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 12px; }
+  .hero h1 { font-size: 32px; line-height: 1.4; font-weight: 700; margin-bottom: 14px; }
+  .hero .meta { color: var(--ink-soft); font-size: 14px; }
+  .hero .meta code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+  h2 { font-size: 23px; margin: 56px 0 18px; padding-left: 14px; border-left: 4px solid var(--ink); line-height: 1.4; }
+  h3 { font-size: 18.5px; margin: 34px 0 12px; }
+  p { margin: 13px 0; }
+  ul, ol { margin: 12px 0 12px 1.6em; }
+  li { margin: 6px 0; }
+  strong { font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; background: var(--paper); font-size: 14.5px; }
+  th, td { border: 1px solid var(--line); padding: 9px 13px; text-align: left; vertical-align: top; }
+  th { background: #f0ede6; font-weight: 600; }
+  tr:nth-child(even) td { background: #fbfaf7; }
+  td.c, th.c { text-align: center; }
+
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; color: #fff; }
+  .tag.os { background: var(--os); } .tag.ms { background: var(--ms); } .tag.sk { background: var(--sk); }
+
+  .yes { color: var(--sk); font-weight: 700; }
+  .no  { color: #b0aca3; }
+  .half { color: #d97706; font-weight: 600; }
+
+  code { background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: .92em; font-family: "SF Mono", Menlo, Consolas, monospace; }
+  pre { background: #24292f; color: #e6edf3; padding: 18px 20px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.7; margin: 16px 0; font-family: "SF Mono", Menlo, Consolas, monospace; }
+  pre code { background: none; padding: 0; color: inherit; }
+
+  /* ---- CSS 条形图 ---- */
+  .chart { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 24px 26px; margin: 20px 0; }
+  .chart .title { font-weight: 600; margin-bottom: 4px; }
+  .chart .subtitle { font-size: 13px; color: var(--ink-soft); margin-bottom: 18px; }
+  .bar-row { display: grid; grid-template-columns: 150px 1fr 90px; align-items: center; gap: 12px; margin: 10px 0; font-size: 14px; }
+  .bar-row .lbl { text-align: right; color: var(--ink-soft); white-space: nowrap; }
+  .bar-track { background: #efece5; border-radius: 6px; height: 26px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; min-width: 2px; }
+  .bar-fill.os { background: var(--os); } .bar-fill.ms { background: var(--ms); } .bar-fill.sk { background: var(--sk); }
+  .bar-row .val { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .legend { display: flex; gap: 18px; font-size: 13px; color: var(--ink-soft); margin-top: 14px; flex-wrap: wrap; }
+  .legend span::before { content: "■"; margin-right: 5px; }
+  .legend .l-os::before { color: var(--os); } .legend .l-ms::before { color: var(--ms); } .legend .l-sk::before { color: var(--sk); }
+
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; margin: 18px 0; }
+  .card h3 { margin-top: 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 22px 0; }
+  .grid-3 .card { margin: 0; }
+  @media (max-width: 760px) { .grid-3 { grid-template-columns: 1fr; } .bar-row { grid-template-columns: 110px 1fr 70px; } }
+
+  .callout { border-left: 4px solid var(--sk); background: #eef7ef; padding: 15px 20px; border-radius: 0 8px 8px 0; margin: 22px 0; }
+  .callout.warn { border-color: var(--ms); background: #fdf1e7; }
+  .callout.blue { border-color: var(--os); background: #eef1fe; }
+  .callout p:first-child { margin-top: 0; } .callout p:last-child { margin-bottom: 0; }
+
+  blockquote { border-left: 3px solid var(--line); color: var(--ink-soft); padding: 4px 0 4px 18px; margin: 18px 0; }
+  footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 13.5px; }
+  nav.toc { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 20px 26px; margin: 32px 0; }
+  nav.toc ol { margin: 0 0 0 1.4em; }
+  nav.toc a { color: var(--os); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">AI 原生开发实践 · 产物对比分析</div>
+  <h1>三个 SDD 工具，做出三个不同的计算器</h1>
+  <div class="meta">
+    分析对象：<code>elder-friendly-calculator_open-spec</code> ·
+    <code>elder-friendly-calculator_matt-skills</code> ·
+    <code>elder-friendly-calculator_spec-kit</code><br>
+    完成时间线：2026-09-10 → 09-21 → 10-07 ｜ 报告日期：2026-10-08
+  </div>
+</header>
+
+<p>同一作者，同一个应用想法（"给老人开发一款 macOS 计算器"），分别用三种规格驱动开发（Spec-Driven Development）工具完成。本文以<strong>应用产物</strong>为基准，对比三个工具实际交付了什么、为什么不同。</p>
+
+<nav class="toc">
+  <strong>目录</strong>
+  <ol>
+    <li><a href="#s1">流程文档 vs 应用产物：重量对比</a></li>
+    <li><a href="#s2">功能矩阵：三个产品，三种定义</a></li>
+    <li><a href="#s3">工程质量对比</a></li>
+    <li><a href="#s4">流程产物差异（简述）</a></li>
+    <li><a href="#s5">深层洞察：工具如何塑造产品</a></li>
+    <li><a href="#s6">结论：怎么选</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1">一、流程文档 vs 应用产物：重量对比</h2>
+
+<p>先把两个可量化的维度摆在同一坐标系里：<strong>流程投入</strong>（规格/流程文档总行数）与<strong>产物产出</strong>（Swift 代码行数、测试数）。</p>
+
+<div class="chart">
+  <div class="title">流程文档总行数（规格 / 提案 / 任务 / 决策记录）</div>
+  <div class="subtitle">统计口径：各项目 specs/、openspec/、.scratch/、docs/adr/、CONTEXT.md、constitution.md 等流程性文档</div>
+  <div class="bar-row"><div class="lbl"><span class="tag sk">Spec Kit</span></div><div class="bar-track"><div class="bar-fill sk" style="width:100%"></div></div><div class="val">1005 行</div></div>
+  <div class="bar-row"><div class="lbl"><span class="tag ms">matt-skills</span></div><div class="bar-track"><div class="bar-fill ms" style="width:50%"></div></div><div class="val">503 行</div></div>
+  <div class="bar-row"><div class="lbl"><span class="tag os">OpenSpec</span></div><div class="bar-track"><div class="bar-fill os" style="width:30.2%"></div></div><div class="val">304 行</div></div>
+  <div class="legend"><span class="l-sk">Spec Kit</span><span class="l-ms">matt-skills</span><span class="l-os">OpenSpec</span></div>
+</div>
+
+<div class="chart">
+  <div class="title">交付的 Swift 代码行数（不含工程文件）</div>
+  <div class="subtitle">统计口径：各项目 *.swift 源文件总行数（含测试代码）</div>
+  <div class="bar-row"><div class="lbl"><span class="tag ms">matt-skills</span></div><div class="bar-track"><div class="bar-fill ms" style="width:100%"></div></div><div class="val">1902 行</div></div>
+  <div class="bar-row"><div class="lbl"><span class="tag sk">Spec Kit</span></div><div class="bar-track"><div class="bar-fill sk" style="width:55.4%"></div></div><div class="val">1053 行</div></div>
+  <div class="bar-row"><div class="lbl"><span class="tag os">OpenSpec</span></div><div class="bar-track"><div class="bar-fill os" style="width:45.2%"></div></div><div class="val">860 行</div></div>
+  <div class="legend"><span class="l-sk">Spec Kit</span><span class="l-ms">matt-skills</span><span class="l-os">OpenSpec</span></div>
+</div>
+
+<div class="chart">
+  <div class="title">自动化测试数量</div>
+  <div class="subtitle">OpenSpec：41 个 XCTest ｜ matt-skills：76 个 Swift Testing（中文测试名）｜ Spec Kit：34 个 XCTest + 2 个 UI 测试</div>
+  <div class="bar-row"><div class="lbl"><span class="tag ms">matt-skills</span></div><div class="bar-track"><div class="bar-fill ms" style="width:100%"></div></div><div class="val">76 个</div></div>
+  <div class="bar-row"><div class="lbl"><span class="tag os">OpenSpec</span></div><div class="bar-track"><div class="bar-fill os" style="width:53.9%"></div></div><div class="val">41 个</div></div>
+  <div class="bar-row"><div class="lbl"><span class="tag sk">Spec Kit</span></div><div class="bar-track"><div class="bar-fill sk" style="width:47.4%"></div></div><div class="val">36 个</div></div>
+  <div class="legend"><span class="l-sk">Spec Kit</span><span class="l-ms">matt-skills</span><span class="l-os">OpenSpec</span></div>
+</div>
+
+<div class="callout blue">
+  <p><strong>第一眼结论：</strong>流程投入与产物规模<strong>不成正比</strong>。Spec Kit 的流程文档是 OpenSpec 的 3.3 倍，但交付的代码只多 22%；matt-skills 流程文档仅为 Spec Kit 的一半，交付的代码却是 1.8 倍。流程重量买的是"别的属性"——可验证性、可追溯性，而不是更多功能。</p>
+</div>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2">二、功能矩阵：三个产品，三种定义</h2>
+
+<p>把三个应用按功能点逐条核对（✓ = 有，✗ = 明确不做，◐ = 有但形态不同）：</p>
+
+<table>
+  <tr>
+    <th>功能点</th>
+    <th class="c"><span class="tag os">OpenSpec</span></th>
+    <th class="c"><span class="tag ms">matt-skills</span></th>
+    <th class="c"><span class="tag sk">Spec Kit</span></th>
+  </tr>
+  <tr><td>四则运算 + 连续运算</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+  <tr><td>退格（逐位删除）</td><td class="c no">✗ 只有一键清除</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+  <tr><td>百分比 %（"100+10%=110"语义）</td><td class="c no">✗</td><td class="c yes">✓</td><td class="c no">✗</td></tr>
+  <tr><td>正负号 +/-</td><td class="c no">✗</td><td class="c yes">✓</td><td class="c no">✗</td></tr>
+  <tr><td>重复等号（再按 = 重复上次运算）</td><td class="c no">✗</td><td class="c yes">✓</td><td class="c no">✗</td></tr>
+  <tr><td>计算历史（抽屉回看）</td><td class="c no">✗</td><td class="c yes">✓ 50 条</td><td class="c no">✗</td></tr>
+  <tr><td>设置页</td><td class="c no">✗</td><td class="c yes">✓ 语音/语速/配色</td><td class="c no">✗</td></tr>
+  <tr><td>中文语音播报</td><td class="c half">◐ 按需点"读出来"按钮</td><td class="c yes">✓ 每键播报 + 慢/标准两档</td><td class="c half">◐ 可开关，默认关，重启保持</td></tr>
+  <tr><td>中文读法文字显示</td><td class="c yes">✓ 常驻屏幕（"十二万三千四百五十六"）</td><td class="c no">✗ 仅用于播报</td><td class="c half">◐ 用于播报文案</td></tr>
+  <tr><td>数字分组显示</td><td class="c half">四位分节（贴合"万"：12 3456）</td><td class="c half">千分位（1,234,567）</td><td class="c no">✗ 无分节</td></tr>
+  <tr><td>窗口行为</td><td class="c half">◐ 固定尺寸不可缩放</td><td class="c half">◐ 可调 + 最小尺寸下限</td><td class="c half">◐ 最小 480×640，内容随窗口缩放</td></tr>
+  <tr><td>主题</td><td class="c half">◐ 跟随系统深浅色</td><td class="c half">◐ 深色默认，可切浅色高对比</td><td class="c half">◐ 高对比常量色（对比度 ≥7:1）</td></tr>
+  <tr><td>本地化资源文件</td><td class="c no">✗</td><td class="c no">✗</td><td class="c yes">✓ Localizable.strings</td></tr>
+  <tr><td>UI 测试</td><td class="c no">✗</td><td class="c no">✗</td><td class="c yes">✓ 关键路径冒烟</td></tr>
+  <tr><td>应用图标</td><td class="c no">✗</td><td class="c yes">✓ 自制 + 生成脚本</td><td class="c no">✗</td></tr>
+</table>
+
+<p>矩阵一目了然地分出三类产品：</p>
+<ul>
+  <li><strong>OpenSpec 版是一个"减法产品"</strong> —— 唯一主动砍掉了退格，换来的差异化是别处都没有的：常驻中文读法和四位分节，这是三个版本里唯一"为中国老人重新设计数字呈现"的尝试；</li>
+  <li><strong>matt-skills 版是一个"完整还原实体计算器"的产品</strong> —— 功能面最宽（多出 6 个功能点），但呈现层沿用国际标准（千分位）；</li>
+  <li><strong>spec-kit 版是一个"合规产品"</strong> —— 功能面与 OpenSpec 版接近，但把力气花在没有用户感知却可验证的地方：本地化文件、UI 测试、对比度常量。</li>
+</ul>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3">三、工程质量对比</h2>
+
+<table>
+  <tr><th>维度</th><th><span class="tag os">OpenSpec</span></th><th><span class="tag ms">matt-skills</span></th><th><span class="tag sk">Spec Kit</span></th></tr>
+  <tr>
+    <th>数值实现</th>
+    <td><code>Decimal</code>，design.md 明确"禁止 Double 参与运算路径"</td>
+    <td><code>Double</code>，配"数值规范文本"约束（≤10 位有效数字、智能去尾零）</td>
+    <td><code>Decimal</code>，research.md 论证拒绝 Double；8 位小数四舍五入</td>
+  </tr>
+  <tr>
+    <th>测试框架与风格</th>
+    <td>XCTest，41 个，集中在纯逻辑（中文读法 15 + 引擎 13）</td>
+    <td>Swift Testing，76 个，中文测试名（<code>连续按数字键_依次拼接显示</code>），"只测外部行为、不触碰内部状态"</td>
+    <td>XCTest + UI 测试；含独有的"设计常量合规断言"（字号 ≥24pt、按钮 ≥44pt、对比度）</td>
+  </tr>
+  <tr>
+    <th>错误处理</th>
+    <td>除以零 → "不能除以零"，任意键恢复</td>
+    <td>同上 + 输入超 12 位拒绝并提示</td>
+    <td>同上 + 溢出（极大数）→ "数字太大了"</td>
+  </tr>
+  <tr>
+    <th>模块边界</th>
+    <td>Core 层不 import SwiftUI，可脱离 UI 测试</td>
+    <td>引擎为纯 Swift 值类型状态机；播报拆出 SpeechScript / Formatter / Adapter / Announcer 四层</td>
+    <td>Engine 目录不 import SwiftUI/AppKit；语音经协议替身隔离测试</td>
+  </tr>
+  <tr>
+    <th>完成度</th>
+    <td>任务 6.1（逐条人工验收）未勾选</td>
+    <td>14 个 issue 全部完成，留 1 项"实际播报效果手工验证"</td>
+    <td>38 个任务完成 37，剩 1 项</td>
+  </tr>
+</table>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4">四、流程产物差异（简述）</h2>
+
+<table>
+  <tr><th>流程产物</th><th><span class="tag os">OpenSpec</span></th><th><span class="tag ms">matt-skills</span></th><th><span class="tag sk">Spec Kit</span></th></tr>
+  <tr><td>核心工件</td><td>1 个 change：proposal（为什么）+ design（怎么做，含备选与放弃理由）+ tasks + 3 份能力规格</td><td>CONTEXT.md 术语表（权威定义）+ spec.md（36 条用户故事 + 显式测试决策）+ 14 个带依赖与状态的 issue</td><td>constitution 章程（5 原则，2 条不可妥协）+ spec（FR 编号需求 / SC 编号成功标准）+ research 决策 + API/UI 契约 + 任务清单</td></tr>
+  <tr><td>独有概念</td><td>Non-goals 段落；change 归档后 specs/ 保留为长期真相源</td><td>测试接缝（test seams）；"好测试 = 只测外部行为"；术语表优先于 spec</td><td>Constitution Check 合规门；契约验收线（字号 ≥48pt、对比度 ≥7:1、按钮 ≥64pt）</td></tr>
+  <tr><td>流程重量</td><td>最轻：约 6 个文件，304 行</td><td>居中：503 行，但工件类型最多元</td><td>最重：1005 行，阶段门最多</td></tr>
+</table>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5">五、深层洞察：工具如何塑造产品</h2>
+
+<div class="grid-3">
+  <div class="card">
+    <h3><span class="tag os">OpenSpec</span> 收敛</h3>
+    <p>Non-goals 段落逼你在动手前砍功能；design.md 风险段把测试资源集中到最易错的纯逻辑。产物是克制的 MVP，差异化来自"敢不做"。</p>
+  </div>
+  <div class="card">
+    <h3><span class="tag ms">matt</span> 还原</h3>
+    <p>技能集不约束范围，范围控制全靠 CONTEXT.md 术语共识。忠实还原实体计算器全部语义，行为测试最彻底，但功能面最大。</p>
+  </div>
+  <div class="card">
+    <h3><span class="tag sk">Spec Kit</span> 合规</h3>
+    <p>章程 + 契约把质量写成可机械核查的验收线。用户感知不到的地方（本地化、常量、UI 测试）投入最多，交接完整度最高。</p>
+  </div>
+</div>
+
+<h3>洞察 1：同一个工程问题，在三个流程里"住"在不同位置</h3>
+<p><code>0.1 + 0.2 = 0.3</code> 的精度问题，是三个项目都绕不开的同一道坎，但它的解决方案"登记"在完全不同的工件里：</p>
+<table>
+  <tr><th>项目</th><th>精度决策的位置</th><th>最终方案</th></tr>
+  <tr><td><span class="tag os">OpenSpec</span></td><td><code>design.md</code> 第 2 号决策（含备选与放弃理由）</td><td rowspan="2"><code>Decimal</code> 全程参与运算</td></tr>
+  <tr><td><span class="tag sk">Spec Kit</span></td><td><code>research.md</code> R1（含备选与拒绝理由）</td></tr>
+  <tr><td><span class="tag ms">matt-skills</span></td><td><code>CONTEXT.md</code> 术语表条目"数值规范文本"（领域概念，非技术决策）</td><td><code>Double</code> 运算 + 展示层 10 位有效数字规范</td></tr>
+</table>
+<p>三个工具的"严肃性"都恰好体现在各自最强调的工件里：OpenSpec 的决策记录、Spec Kit 的研究阶段、matt 的术语表。讽刺的是，最强调工程纪律的 matt 版是唯一用 <code>Double</code> 的 —— 因为它的纪律集中在<strong>行为测试</strong>而非<strong>架构决策</strong>，精度被当成"展示口径"问题交给领域层处理，而非"运算正确性"问题。</p>
+
+<h3>洞察 2：范围控制的抓手不同，直接决定功能面宽度</h3>
+<table>
+  <tr><th>工具</th><th>范围控制机制</th><th>结果</th></tr>
+  <tr><td><span class="tag os">OpenSpec</span></td><td>proposal 的 Non-goals 段落（一次性）</td><td>砍掉 %、+/-、退格、历史、设置页 → 功能面最窄</td></tr>
+  <tr><td><span class="tag sk">Spec Kit</span></td><td>章程原则 II"简洁至上" + FR 编号排除（长期有效）</td><td>同上，且规则可继承到下一版</td></tr>
+  <tr><td><span class="tag ms">matt</span></td><td>CONTEXT.md 术语共识（砍掉了 M+/M− 记忆键）</td><td>%、历史、设置全部保留 → 功能面最宽</td></tr>
+</table>
+<p>关键差异在于机制的<strong>可继承性</strong>：OpenSpec 的 Non-goals 随 change 归档而失效，Spec Kit 的章程是持久约束，matt 的共识在术语表里天然持久但约束力最弱（它只是"定义"，不是"门禁"）。</p>
+
+<h3>洞察 3：测试的角色分化为三种</h3>
+<ul>
+  <li><strong>matt 的测试是"行为契约"</strong> —— 76 个测试全部模拟按键事件、断言展示状态，明令"不得触碰内部状态字段"；测试即规格的可执行形式；</li>
+  <li><strong>Spec Kit 的测试是"合规检查"</strong> —— 独有设计常量断言（字号、对比度写进 XCTest）与 UI 冒烟测试，测试即验收工具；</li>
+  <li><strong>OpenSpec 的测试是"风险对冲"</strong> —— 测试数最少，但密度最高的地方恰是 design.md 风险段点名的"最容易写错"的中文读法边界（10008 / 100000000 / 100200300）。</li>
+</ul>
+
+<h3>洞察 4：流程重量买的是什么</h3>
+<p>回到第一组数据：Spec Kit 用 3.3 倍的流程文档没有换来更多功能（功能面反而比 matt 版窄），买到的是三样东西 —— <strong>可追溯性</strong>（FR→SC→契约→任务互相编号引用）、<strong>可机械核查性</strong>（合规测试实际断言了契约条款）、<strong>交接完整度</strong>（新人或新 AI 会话从 plan.md 即可完整接手，甚至预声明了"引擎文件被多个故事共享，不跨故事并行"）。这些属性在单人快速迭代中价值有限，在团队协作与长期维护中价值倍增。</p>
+
+<h3>洞察 5：工具反向塑造了"做什么"</h3>
+<p>三个项目完成于 2026-09-10 → 09-21 → 10-07，同一作者对同一个应用想法，写出的三份规格本质上就是三个不同的产品定义。工具不只规定"怎么做"的流程，还通过各自的文档结构（Non-goals 段落 / 用户故事 + FR-SC / 术语表）<strong>预设了思考问题的框架</strong>，从而反向塑造了需求本身。</p>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6">六、结论：怎么选</h2>
+
+<table>
+  <tr><th>场景</th><th>建议</th><th>理由</th></tr>
+  <tr>
+    <td>个人项目、快速迭代、想尽快收敛范围</td>
+    <td><span class="tag os">OpenSpec</span></td>
+    <td>流程最轻，Non-goals 机制天然防镀金，归档后规格即长期真相源</td>
+  </tr>
+  <tr>
+    <td>重视测试质量与知识沉淀、范围判断有自信</td>
+    <td><span class="tag ms">matt-skills</span></td>
+    <td>行为测试哲学最彻底，术语表/ADR 沉淀最好；但范围控制全靠人，易膨胀</td>
+  </tr>
+  <tr>
+    <td>团队协作、需要审计合规、长期维护</td>
+    <td><span class="tag sk">Spec Kit</span></td>
+    <td>可追溯、可核查、可交接；代价是流程负担最重</td>
+  </tr>
+</table>
+
+<div class="callout">
+  <p><strong>一句话总结：</strong>OpenSpec 帮你决定<strong>不做什么</strong>，matt-skills 帮你把做的<strong>测到最彻底</strong>，Spec Kit 帮你证明<strong>做的是对的</strong>。</p>
+</div>
+
+<footer>
+  <p>分析基于三个项目的实际文件：流程文档（proposal / design / tasks、CONTEXT.md / spec / issues、constitution / spec / plan / research / contracts / tasks）、Swift 源代码与测试代码的逐行核对。报告生成于 2026-10-08。</p>
+</footer>
+
+</div>
+</body>
+</html>
