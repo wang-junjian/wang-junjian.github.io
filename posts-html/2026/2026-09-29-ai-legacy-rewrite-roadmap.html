@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="以13年、73万行的自研系统为例，用十条论断戳破AI一键重写的幻觉：AI独立完成率仅约5%，大爆炸重写失败率超七成，胜负不在编码而在认知与验证。报告主张改为行为迁移，以知识图谱、决策日志、特征测试三件套打底，用影子流量验真，并给出90天路线图与十五条反模式。">
+<meta name="keywords" content="遗留系统, AI 重构, 行为迁移, 绞杀者模式, ERP, 可实操路线图">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-29">
+<title>用 AI 重写 13 年 73 万行 ERP — 全网最佳实践与可实操路线图</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --line:#E3E0D8; --line2:#CFCBC0;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FDF4E7;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EDF3FA;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E9F5F3;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F2EDFB;
+  --red:#B3261E; --red-t:#8C1D18; --red-bg:#FBEDEC;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EDF6ED;
+  --gray-bg:#F4F2ED;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.86em;overflow-wrap:anywhere;background:var(--gray-bg);padding:.08em .34em;border-radius:5px;color:var(--ink2)}
+a{color:var(--blue-t);text-decoration:none;border-bottom:1px solid rgba(47,111,176,.28)}
+a:hover{border-bottom-color:var(--blue-t)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+
+/* ---------- nav ---------- */
+nav.top{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;align-items:center;gap:18px;height:56px;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+nav.top .wrap::-webkit-scrollbar{display:none}
+nav.top .brand{font-weight:700;font-size:14px;white-space:nowrap;color:var(--ink);letter-spacing:.01em}
+nav.top .brand span{color:var(--amber-t)}
+nav.top a{font-size:13px;color:var(--ink3);white-space:nowrap;border:0;padding:4px 0}
+nav.top a:hover{color:var(--amber-t)}
+
+/* ---------- hero ---------- */
+header.hero{padding:72px 0 44px;border-bottom:1px solid var(--line)}
+.kicker{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-t);margin:0 0 14px}
+h1{font-size:clamp(30px,4.4vw,46px);line-height:1.22;margin:0 0 18px;letter-spacing:-.02em;font-weight:800}
+h1 em{font-style:normal;color:var(--amber-t)}
+.lede{font-size:18px;line-height:1.72;color:var(--ink2);max-width:820px;margin:0 0 26px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--ink3)}
+.meta b{color:var(--ink2);font-weight:600}
+
+/* ---------- section ---------- */
+section{padding:60px 0 8px;scroll-margin-top:24px;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+h2{font-size:clamp(22px,2.6vw,30px);line-height:1.3;margin:0 0 8px;letter-spacing:-.015em;font-weight:750;display:flex;gap:14px;align-items:baseline}
+h2 .num{font-size:13px;font-weight:700;color:var(--amber-t);letter-spacing:.1em;flex:0 0 auto;padding-top:.35em}
+h3{font-size:18.5px;margin:34px 0 10px;font-weight:700;letter-spacing:-.005em}
+h4{font-size:15.5px;margin:22px 0 8px;font-weight:700;color:var(--ink2)}
+p{margin:0 0 14px}
+.sub{font-size:16.5px;color:var(--ink2);margin:0 0 26px;max-width:860px}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin:0 0 7px}
+strong{font-weight:700}
+.verdict{border-left:4px solid var(--amber);background:var(--amber-bg);border-radius:0 var(--r) var(--r) 0;padding:16px 20px;margin:22px 0}
+.verdict h4{margin:0 0 6px;color:var(--amber-t);font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.verdict p{margin:0;font-size:15.5px;color:var(--ink2)}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;min-width:0}
+.card h4{margin-top:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+.g2>*,.g3>*{min-width:0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;min-width:0}
+.stat .n{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1.15;color:var(--ink)}
+.stat .u{font-size:12.5px;color:var(--ink3);margin-top:4px;line-height:1.5}
+.stat .u b{color:var(--ink2)}
+
+/* ---------- thesis ---------- */
+ol.theses{list-style:none;padding:0;counter-reset:t;margin:24px 0}
+ol.theses>li{counter-increment:t;position:relative;padding:18px 22px 18px 66px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;min-width:0}
+ol.theses>li::before{content:counter(t,decimal-leading-zero);position:absolute;left:20px;top:17px;font-size:13px;font-weight:800;color:var(--amber-t);letter-spacing:.04em;font-family:ui-monospace,monospace}
+ol.theses>li b{display:block;font-size:16.5px;margin-bottom:5px;font-weight:750}
+ol.theses>li p{margin:0;font-size:15px;color:var(--ink2)}
+.ev{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:20px;margin-left:6px;vertical-align:1.5px;white-space:nowrap}
+.ev.rct{background:var(--green-bg);color:var(--green-t)}
+.ev.obs{background:var(--blue-bg);color:var(--blue-t)}
+.ev.case{background:var(--purple-bg);color:var(--purple-t)}
+.ev.vendor{background:var(--gray-bg);color:var(--ink3)}
+.ev.model{background:var(--red-bg);color:var(--red-t)}
+
+/* ---------- tables ---------- */
+figure{margin:26px 0;min-width:0}
+.tbl-box{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card);min-width:0}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.6}
+th{background:var(--gray-bg);font-weight:700;color:var(--ink2);font-size:13px;letter-spacing:.02em;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+figcaption{font-size:13px;color:var(--ink3);margin-top:9px;line-height:1.6}
+figcaption b{color:var(--ink2)}
+
+/* ---------- svg fig ---------- */
+.fig-box{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:16px 18px;min-width:0}
+.fig-box svg{display:block;min-width:600px;width:100%;height:auto}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.03em}
+.t-amber{background:var(--amber-bg);color:var(--amber-t)}
+.t-blue{background:var(--blue-bg);color:var(--blue-t)}
+.t-teal{background:var(--teal-bg);color:var(--teal-t)}
+.t-purple{background:var(--purple-bg);color:var(--purple-t)}
+.t-red{background:var(--red-bg);color:var(--red-t)}
+.t-green{background:var(--green-bg);color:var(--green-t)}
+.t-gray{background:var(--gray-bg);color:#333941}
+
+/* ---------- checklist ---------- */
+ul.check{list-style:none;padding:0}
+ul.check li{position:relative;padding-left:26px;margin-bottom:9px}
+ul.check li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;border:1.5px solid var(--line2);border-radius:3px}
+
+footer{margin-top:60px;padding:34px 0 60px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink3)}
+footer p{margin:0 0 8px}
+
+@media(max-width:760px){
+  .g2,.g3{grid-template-columns:1fr}
+  table{display:block;overflow-x:auto}
+  header.hero{padding:48px 0 34px}
+  .wrap{padding:0 18px}
+}
+</style>
+</head>
+<body>
+
+<nav class="top"><div class="wrap">
+  <span class="brand">AI 重构 <span>/</span> 可实操路线图</span>
+  <a href="#s00">摘要</a>
+  <a href="#s01">范式判定</a>
+  <a href="#s02">理论根基</a>
+  <a href="#s03">系统画像</a>
+  <a href="#s04">第零步</a>
+  <a href="#s05">路径选型</a>
+  <a href="#s06">行为迁移</a>
+  <a href="#s07">数据攻坚</a>
+  <a href="#s08">AI 工程体系</a>
+  <a href="#s09">组织治理</a>
+  <a href="#s10">路线图</a>
+  <a href="#s11">反模式</a>
+  <a href="#s12">结论</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">深度调研 · 遗留系统 AI 现代化</p>
+  <h1>用 AI 重写一个 13 年、73 万行的 ERP：<em>把重构从「迁移代码」改成「迁移行为」</em></h1>
+  <p class="lede">
+    你手上的系统——reed 2.0.6 自研平台、Spring 3.2 + JDK 1.7、3412 个 Java 文件约 73 万行、508 个 MyBatis 手写 Oracle mapper XML、Hibernate 3 只服务 pigeon 工作流引擎、2013 年开发至今——在全世界的遗留系统现代化案例里属于公认最难的那一档：<strong>规模中等但业务密度极高、耦合面极广、且没有任何现成的测试网</strong>。
+    这份报告不给你「AI 能一键重写」的幻觉，而是给出被 Google、Amazon、微软、Meta、蚂蚁、华为反复验证过的真实工程形状，以及一份可以直接开工的 90 天动作清单。
+  </p>
+  <div class="meta">
+    <span><b>调研范围</b> 学术论文 · 大厂一手实证 · 工具链 · 失败率统计</span>
+    <span><b>面向场景</b> 自研平台 + 三轨数据访问 + Oracle</span>
+    <span><b>证据标注</b> RCT / 大样本 / 单一案例 / 厂商自报</span>
+    <span><b>更新</b> 2026-09</span>
+  </div>
+</div></header>
+
+<main>
+
+<!-- ============ 00 摘要 ============ -->
+<section id="s00"><div class="wrap">
+<h2><span class="num">00</span>摘要：十条核心论断</h2>
+<p class="sub">如果你只读一页，读这一页。每条论断都可以被证伪，并标注了主要证据的类型。</p>
+
+<ol class="theses">
+<li><b>「用 AI 重新开发一个全新系统」这个提问方式本身是错的。<span class="ev obs">大样本 + 多案例</span></b>
+<p>正确的目标定义是<strong>行为迁移（Behavior Migration）</strong>——把交付标准从「新系统写完了」改成「新系统在约定业务边界内，与老系统行为等价，且这一点被证据证明」。代码只是行为的载体；你真正要搬走的是 13 年里长在生产环境里的判定逻辑。蚂蚁在支付宝生活缴费 60 万行系统上的原话是：把重构目标「从迁移代码转变为迁移行为」。</p></li>
+
+<li><b>AI 在遗留系统上失败，95% 死在同一层：认知层。<span class="ev obs">大样本观察</span></b>
+<p>Meta 内部对 4100+ 遗留改造任务的统计显示，AI 能<strong>独立完成</strong>的只有约 5%。原因不是它不会写代码，而是「为什么这段逻辑要这么写」根本不在文件里——它在十年前的邮件、离职同事的脑子里、在没人写下来的口头约定里。对你这套 2013 年起步的系统，这是最致命的一层。</p></li>
+
+<li><b>编码能力早已不是瓶颈，判断力才是。<span class="ev obs">基准测试 + 生产统计</span></b>
+<p>SWE-bench Verified 上顶级模型已达 78–88%，但更接近真实工作的 SWE-bench Pro 只有 23%，Senior SWE-Bench（欠规格、多服务、长周期）约 24%；生产环境真实 PR 采纳率约 35–50%。<strong>把它理解为：AI 能完成「定义清楚的小任务」，不能完成「定义本身」。</strong></p></li>
+
+<li><b>大爆炸式重写失败率 70–88%，且主因是组织性的。<span class="ev obs">多来源统计（口径不一）</span></b>
+<p>失败原因排序：范围从「替换」膨胀成「重建」、特性冻结在第 4 个月被业务打破、懂老系统的工程师在第 18 个月流失、缺少并行运行期。全部与框架选型无关。<strong>这不是技术问题，是节奏问题。</strong></p></li>
+
+<li><b>第零步不可跳过：先把 13 年资产变成 AI 可读的东西。<span class="ev case">方法论 + 多案例共识</span></b>
+<p>三件套缺一不可：<strong>代码知识图谱</strong>（AST + 调用图 + 反向依赖 + CODEOWNERS）、<strong>决策日志/ADR</strong>（把「为什么」从人脑搬到 git）、<strong>特征测试</strong>（把「现在长这样」固化成可验证的不变量）。不做这三件事，后面所有 AI 动作都是在沙地上盖楼。</p></li>
+
+<li><b>验证体系的建设成本必须前置，它是决定成败的单一最大投入。<span class="ev case">单一深度案例</span></b>
+<p>蚂蚁案例：60 万行、单接口分支超 8000 个、有效验证耗时 2–3 小时、<strong>在传统验证环境上 AI 的验证成功率只有约 60%</strong>。解法是 Golden Set 场景集（PERS 建模）+ 影子流量回放 + 差分验真，专门为 AI 重造可验证的工程地基。你这套系统的合同域（928 文件）分支密度大概率同级甚至更高。</p></li>
+
+<li><b>「AI 生成占比」和「AI 独立完成占比」是两个完全不同的数，混淆会致命。<span class="ev case">大厂自报数据</span></b>
+<p>Google 内部新代码 AI 生成占比 2024 年 25% → 2026Q1 约 75%，看着震撼；但同一时间 Meta 的 AI <strong>独立完成</strong>占比只有 5%，DX 测到真正合入主干的 AI 代码约 22%。<strong>前者衡量杠杆，后者衡量能力边界。汇报时只报前者，是在自欺。</strong></p></li>
+
+<li><b>代码转换 ≠ 应用现代化。<span class="ev case">厂商方法论 + 工程共识</span></b>
+<p>把 73 万行 Java 1.7 翻译成 Java 21 + Spring Boot 4，如果领域边界、数据模型、接口契约全没变，你只是把技术债换了个更贵的新版本，还额外背上了「AI 生成的代码没人真正理解」的认知债。<strong>语言升级是副产品，不是目标。</strong></p></li>
+
+<li><b>数据层是最硬的骨头，且唯一必须「先建双轨、再切」的部分。<span class="ev case">工具链实证</span></b>
+<p>你的三轨数据访问（508 个 MyBatis 手写 SQL + reed-grail 元数据 ORM + Hibernate 3 工作流）意味着业务逻辑同时寄生在 Java、XML、数据库元数据三层。<strong>自动转换工具（ora2pg / AWS SCT / 国产库迁移链）只能覆盖 90%，剩下 10% 的硬逻辑（层次查询、包级状态、自治事务、空串当 NULL）吃掉项目大部分时间。</strong></p></li>
+
+<li><b>AI 会引入一种新负债：认知债（Cognitive Debt）。<span class="ev obs">行业雷达 + 咨询共识</span></b>
+<p>Thoughtworks Technology Radar v34 的核心警告：AI 生成代码量越大，人与系统之间的理解鸿沟越宽。<strong>而对遗留系统重构这个场景，认知债是致命的——因为你的目标恰恰是让人重新理解这个系统。</strong>所以本报告把「可解释、可审查、可回滚」当成硬约束，而不是加分项。</p></li>
+</ol>
+
+<div class="verdict">
+<h4>一句话结论</h4>
+<p>不要启动「AI 重写项目」，启动「<strong>行为迁移工程</strong>」：先用 3–6 个月把 73 万行代码 + 508 个 mapper + Oracle 数据字典变成 AI 可读的知识基座，再用特征测试和影子流量织一张验证网，然后从 contract 域（928 文件）里划出最小的一条业务闭环做端到端试点，一个域一个域地绞杀。AI 在这条路径上的角色不是「写代码的」，而是<strong>认知放大器 + 确定性子任务的执行器</strong>。</p>
+</div>
+</div></section>
+
+<!-- ============ 01 范式判定 ============ -->
+<section id="s01"><div class="wrap">
+<h2><span class="num">01</span>范式判定：什么才算「用 AI 重新开发」</h2>
+<p class="sub">在开工之前必须先分清三种被混为一谈的做法。它们的目标、成本、失败率和验收标准完全不同，而绝大多数「AI 重构」项目翻车，都是因为嘴上说的是第三种，实际做的是第一种。</p>
+
+<h3>1.1 三种范式的分野</h3>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 380" role="img" aria-label="三种范式分野对比图">
+  <defs>
+    <marker id="ar1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- 三列卡片 -->
+  <g>
+    <rect x="20" y="34" width="296" height="300" rx="10" fill="#FBEDEC" stroke="#E6C9C6" stroke-width="1.4"/>
+    <text x="40" y="64" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" font-weight="700" fill="#8C1D18" letter-spacing="1.6">范 式 A</text>
+    <text x="40" y="92" font-family="-apple-system,PingFang SC,sans-serif" font-size="18" font-weight="700" fill="#16181D">代码翻译</text>
+    <text x="40" y="114" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" fill="#4A505A">Code Translation</text>
+
+    <text x="40" y="146" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">目标</text>
+    <text x="40" y="166" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">语法等价地换个语言/框架</text>
+
+    <text x="40" y="196" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">产出</text>
+    <text x="40" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">能编译、能跑的新代码</text>
+
+    <text x="40" y="246" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">验收</text>
+    <text x="40" y="266" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">编译通过 + 冒烟测试</text>
+
+    <text x="40" y="296" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8C1D18">真实结局</text>
+    <text x="40" y="316" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8C1D18">架构照旧，债换新版</text>
+  </g>
+
+  <g>
+    <rect x="332" y="34" width="296" height="300" rx="10" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.4"/>
+    <text x="352" y="64" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" font-weight="700" fill="#8F3F06" letter-spacing="1.6">范 式 B</text>
+    <text x="352" y="92" font-family="-apple-system,PingFang SC,sans-serif" font-size="18" font-weight="700" fill="#16181D">全量重写</text>
+    <text x="352" y="114" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" fill="#4A505A">Greenfield Rewrite</text>
+
+    <text x="352" y="146" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">目标</text>
+    <text x="352" y="166" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">从头设计一套理想架构</text>
+
+    <text x="352" y="196" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">产出</text>
+    <text x="352" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">新系统 + 一次性切换</text>
+
+    <text x="352" y="246" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">验收</text>
+    <text x="352" y="266" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">功能对齐（实际很难证明）</text>
+
+    <text x="352" y="296" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06">真实结局</text>
+    <text x="352" y="316" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8F3F06">失败率 70–88%</text>
+  </g>
+
+  <g>
+    <rect x="644" y="34" width="296" height="300" rx="10" fill="#EDF6ED" stroke="#C5DEC6" stroke-width="1.4"/>
+    <text x="664" y="64" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" font-weight="700" fill="#1B5820" letter-spacing="1.6">范 式 C</text>
+    <text x="664" y="92" font-family="-apple-system,PingFang SC,sans-serif" font-size="18" font-weight="700" fill="#16181D">行为迁移</text>
+    <text x="664" y="114" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" fill="#4A505A">Behavior Migration</text>
+
+    <text x="664" y="146" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">目标</text>
+    <text x="664" y="166" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">等价地搬走业务行为</text>
+
+    <text x="664" y="196" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">产出</text>
+    <text x="664" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">新系统 + 差分证据链</text>
+
+    <text x="664" y="246" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">验收</text>
+    <text x="664" y="266" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">新老系统 PERS 层面一致</text>
+
+    <text x="664" y="296" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820">真实结局</text>
+    <text x="664" y="316" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#1B5820">可控、可停、可回滚</text>
+  </g>
+
+  <line x1="20" y1="358" x2="940" y2="358" stroke="#E3E0D8" stroke-width="1.4"/>
+  <text x="480" y="376" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">本报告推荐的唯一路径是最右侧那一栏——因为它把「证明」变成了工程动作，而不是交付后的祈祷</text>
+</svg>
+</div>
+<figcaption><b>图 1</b> 三种范式分野。范式 A 的诱惑最大（工具链成熟、见效快），但它解决的是「语言版本过时」这个你最不痛的问题；范式 B 的失败率数据来自多份行业统计，口径不一但方向一致。</figcaption>
+</figure>
+
+<h3>1.2 判别式：三个问题定路径</h3>
+<div class="g3">
+  <div class="card">
+    <h4>问题一：业务规则还在变吗？</h4>
+    <p style="font-size:14.5px;color:var(--ink2)">如果 contract 域近 12 个月仍在按新业务需求改动，说明它的<strong>业务规格还活着</strong>——重写风险极高，因为你追的是一个移动靶。此时应选「模块化 + 增量绞杀」。</p>
+  </div>
+  <div class="card">
+    <h4>问题二：运行时还受支持吗？</h4>
+    <p style="font-size:14.5px;color:var(--ink2)">Spring 3.2 + JDK 1.7 早已 EOL，安全补丁缺失是<strong>真实的合规风险</strong>（尤其涉及合同、金额、经营指标）。这是唯一能构成「必须动」的硬理由——但它支持的是<strong>分层升级</strong>，不是全量重写。</p>
+  </div>
+  <div class="card">
+    <h4>问题三：数据模型挡住业务了吗？</h4>
+    <p style="font-size:14.5px;color:var(--ink2)">只有当 Oracle 里的表结构（而非代码结构）<strong>主动阻塞</strong>新产品能力时，全量重写才被行业共识认可。<strong>注意：「表设计很丑」不构成理由，「表达不了业务」才构成。</strong></p>
+  </div>
+</div>
+
+<div class="verdict">
+<h4>给你系统的初判</h4>
+<p>
+<strong>问题一</strong>：合同全生命周期 + 经营指标，13 年持续演进，业务规则必然仍活跃 → <span class="tag t-amber">重写风险高</span><br>
+<strong>问题二</strong>：JDK 1.7 / Spring 3.2 / Hibernate 3 全部 EOL，是真实的驱动因素 → <span class="tag t-red">必须动，但可按层动</span><br>
+<strong>问题三</strong>：需要你补一个事实——Oracle 数据模型是否阻塞了新业务表达。这是本报告唯一无法替你判断的输入。<br>
+<strong>综合建议</strong>：走范式 C，目标架构倾向<strong>模块化单体（Modular Monolith）</strong>而非微服务。原因见 05 章：你的团队不具备成熟 SRE/可观测体系时，微服务的运维复杂度会吃掉全部收益。
+</p>
+</div>
+</div></section>
+
+<!-- ============ 02 理论根基 ============ -->
+<section id="s02"><div class="wrap">
+<h2><span class="num">02</span>理论根基：为什么必须是这个形状</h2>
+<p class="sub">这一章不堆比喻。每一条理论都会推导出一个具体的工程动作——这是它存在的唯一理由。</p>
+
+<h3>2.1 阿姆达尔定律：为什么「给团队发 AI 工具」在你的系统里感觉不到效果</h3>
+<p>最大整体加速比 = 1 / (1 − P)，其中 P 是能被 AI 加速的部分占整体的比例。在个人小项目里 P 可以到 0.9，加速比轻松 10×。但在一个 73 万行、13 年历史、跨部门交付的系统里，<strong>写代码这件事本身可能只占全生命周期的 20–30%</strong>；剩下的是读懂祖传逻辑、跨团队对齐接口、等评审与合规、跑全量回归、协调发布窗口。</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 400" role="img" aria-label="阿姆达尔定律：整体加速比与可加速部分的关系">
+  <defs>
+    <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- 坐标系 -->
+  <line x1="90" y1="320" x2="900" y2="320" stroke="#4A505A" stroke-width="1.6"/>
+  <line x1="90" y1="320" x2="90" y2="40" stroke="#4A505A" stroke-width="1.6"/>
+  <text x="70" y="46" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="end">10×</text>
+  <text x="70" y="130" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="end">5×</text>
+  <text x="70" y="214" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="end">2×</text>
+  <text x="70" y="298" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="end">1.1×</text>
+  <text x="70" y="342" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="end">1×</text>
+
+  <text x="90" y="342" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A">0</text>
+  <text x="290" y="342" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">25%</text>
+  <text x="490" y="342" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">50%</text>
+  <text x="690" y="342" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">75%</text>
+  <text x="890" y="342" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">100%</text>
+  <text x="495" y="376" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="middle">P = 可被 AI 加速的工作占总工作量的比例</text>
+  <text x="46" y="180" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="middle" transform="rotate(-90 46 180)">整体加速比上限</text>
+
+  <!-- 曲线 y=320-... 用分段折线近似 1/(1-P) -->
+  <path d="M90,320 L140,321 L190,323 L240,315 L290,306 L340,297 L390,287 L440,275 L490,262
+           L540,244 L590,222 L640,193 L690,160 L740,122 L790,86 L840,58 L890,44"
+        fill="none" stroke="#2F6FB0" stroke-width="2.6"/>
+
+  <!-- 25% 处标记 -->
+  <line x1="290" y1="306" x2="290" y2="320" stroke="#B45309" stroke-width="2.6"/>
+  <circle cx="290" cy="306" r="5.5" fill="#B45309"/>
+  <g style="background-color:#FDF4E7">
+    <rect x="212" y="252" width="200" height="44" rx="7" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.2"/>
+    <text x="224" y="271" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06">典型 13 年老系统</text>
+    <text x="224" y="288" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8F3F06">P≈0.25 → 上限仅 1.33×</text>
+  </g>
+
+  <!-- 75% 处标记 -->
+  <line x1="690" y1="160" x2="690" y2="204" stroke="#0F766E" stroke-width="2" stroke-dasharray="5 4"/>
+  <circle cx="690" cy="160" r="5.5" fill="#0F766E"/>
+  <g style="background-color:#E9F5F3">
+    <rect x="660" y="210" width="212" height="48" rx="7" fill="#E9F5F3" stroke="#B9DCD8" stroke-width="1.2"/>
+    <text x="674" y="230" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#0A5750">把验证也做薄之后</text>
+    <text x="674" y="247" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#0A5750">P≈0.75 → 上限 4×</text>
+  </g>
+</svg>
+</div>
+<figcaption><b>图 2</b> 阿姆达尔定律的直接工程含义：<b>不要把力气花在「让写代码更快」，要花在「把 (1−P) 变薄」</b>——也就是让理解更快、让验证更便宜、让评审更短。这就是后面第 04 章（认知层）和第 06 章（验证层）占据本报告最大篇幅的原因。</figcaption>
+</figure>
+
+<p><strong>推导出的工程动作：</strong></p>
+<ul>
+<li><strong>让理解更便宜</strong> → 建代码知识图谱 + 为每个核心模块写「持久上下文」（边界、契约、已知坑、对接人），一次写清、会话自动加载，删掉「反复向 AI 解释仓库」这道串行工序。</li>
+<li><strong>让验证更便宜</strong> → 特征测试 + 影子流量回放 + 差分比对。注意方向：<strong>目标不是让评审更快，而是让验证不需要评审</strong>。评审是最贵的串行环节。</li>
+<li><strong>让协作更短</strong> → 明确的模块边界（模块化单体），让接口变更不必跨 5 个团队对齐。</li>
+</ul>
+
+<h3>2.2 知识的分布：为什么「读懂代码」比「写新代码」难一个量级</h3>
+<p>遗留系统研究里有一条反复被验证的经验律：<strong>源码中只有 20–30% 能对应到真正的业务规则，其余 70–80% 是与具体技术环境耦合的胶水代码</strong>（通信中间件、数据库宏、框架适配、日志、异常兜底）。这也是为什么「把遗留代码整体迁移到新平台」在学术上被明确判定为不明智——你会把 80% 的历史技术债原样搬进新系统。</p>
+<p>更麻烦的是，那 20–30% 的业务规则<strong>不局限在单个模块内</strong>：一个判定条件可能在 A 模块计算，在 C 模块消费，中间经 B 模块裁剪。提取工具必须能跨模块追踪执行路径。</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 260" role="img" aria-label="源码中业务规则与技术胶水的占比">
+  <!-- 100% 长条 -->
+  <rect x="60" y="70" width="800" height="56" rx="8" fill="#F4F2ED" stroke="#CFCBC0" stroke-width="1.2"/>
+  <!-- 业务规则 25% -->
+  <rect x="61" y="71" width="198" height="54" rx="7" fill="#D8ECD9" stroke="#2E7D32" stroke-width="1.6"/>
+  <text x="160" y="104" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#1B5820" text-anchor="middle">业务规则 ≈25%</text>
+  <!-- 技术胶水 75% -->
+  <text x="560" y="104" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#333941" text-anchor="middle">技术环境胶水 ≈75%（框架适配 / 日志 / 异常兜底 / 通信与数据库胶水）</text>
+
+  <!-- 轴刻度 -->
+  <line x1="60" y1="140" x2="860" y2="140" stroke="#CFCBC0" stroke-width="1.2"/>
+  <text x="60" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A">0%</text>
+  <text x="260" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">25%</text>
+  <text x="460" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">50%</text>
+  <text x="660" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">75%</text>
+  <text x="860" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A" text-anchor="middle">100%</text>
+
+  <!-- 下方两条出路 -->
+  <g style="background-color:#EDF3FA">
+    <rect x="60" y="186" width="384" height="56" rx="9" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.2"/>
+    <text x="76" y="208" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1F5288">做法 A：整体翻译</text>
+    <text x="76" y="228" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#1F5288">把 75% 的历史技术债原样搬进新系统</text>
+  </g>
+  <g style="background-color:#EDF6ED">
+    <rect x="476" y="186" width="384" height="56" rx="9" fill="#EDF6ED" stroke="#C5DEC6" stroke-width="1.2"/>
+    <text x="492" y="208" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820">做法 B：先提取规则，再重建</text>
+    <text x="492" y="228" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#1B5820">只带 25% 的业务语义过河，胶水全部重写</text>
+  </g>
+</svg>
+</div>
+<figcaption><b>图 3</b> 知识分布的工程含义。这张图解释了为什么「先做业务规则提取（Business Rule Mining）再动手」不是流程洁癖，而是<b>决定新系统质量的分水岭</b>。行业统计口径下，业务规则考古平均占现代化项目总投入的 27%，而多数厂商报价低估了 3–4 倍。</figcaption>
+</figure>
+
+<h3>2.3 遗留代码困境与特征测试：为什么必须「先锁行为，再让 AI 碰它」</h3>
+<p>Michael Feathers 给出的困境是：<strong>安全地改代码需要测试，而建立测试往往需要先改代码</strong>。遗留系统的定义就是「没有测试的代码」——你的 73 万行全部符合这个定义。</p>
+<p>破解办法是特征测试（Characterization Test，也叫 Golden Master / Approval Test）：<em>目的不是验证代码正确，而是记录代码的实际行为</em>。它的算法很朴素但极其有效：</p>
+<ol>
+<li>写一个调用目标单元的测试，断言一个<strong>你明知是错的</strong>值（例如随便填 <code>expected = 0</code>，而实际返回值尚未可知）。</li>
+<li>运行，从失败输出里读到真实值。</li>
+<li>把期望值改成观察到的真实值。</li>
+<li>用描述行为的名字重命名测试。重复下一个输入。</li>
+</ol>
+<p><strong>关键纪律：所有期望值必须来自实际执行。来自文档、注释、提交历史或推测的期望值，记录的是猜测，不是系统行为。</strong></p>
+
+<div class="verdict">
+<h4>一条会被反复引用的原则</h4>
+<p>「当系统进入生产，它在某种程度上就成为了自己的规格说明书。」Old code is the spec.<br>
+—— 一个 COBOL→Java 的实测案例中，LLM 一次性转换后「连 1994 年就存在的保费进位错误都完整保留了下来」，而这<strong>并不是失败，而是正确结果</strong>：会计部门的工作流是围绕这个误差建立的。迁移阶段不要要求 AI「顺手优化」，否则你会丢掉自己都不知道依赖了的行为。<strong>修 bug 是迁移完成之后独立的、被审批过的工作。</strong></p>
+</div>
+
+<h3>2.4 认知债：AI 时代新增的一类系统性风险</h3>
+<p>Thoughtworks Technology Radar v34（2026）把「认知债」列为核心议题：AI 生成的代码量越大，人与系统之间的理解鸿沟越宽。技术债影响的是「改起来贵不贵」，认知债影响的是「还有没有人能改」。</p>
+<p>对遗留系统重构而言这是致命的悖论：<strong>你引入 AI 的目的是让人重新理解系统，但如果 AI 只是加速了代码产出而没有加速理解，你最终会得到一个「代码更新、但更没人看得懂」的系统</strong>——比原系统更糟，因为它连历史惯性都没有了。</p>
+<p><strong>推导出的硬约束（贯穿本报告后续所有章节）：</strong></p>
+<ul>
+<li>每个由 AI 生成的模块，<strong>必须同时产出该模块的「决策记录 + 持久上下文文档」</strong>，与代码同 PR 合入。没有文档的 AI 代码不允许进主干。</li>
+<li>禁止把「通过测试」当作唯一验收。必须回答：<strong>这段代码是否符合本仓库既有约定？是否重复实现了已存在的抽象？资深评审是否会打回？</strong>（这就是 Senior SWE-Bench 强调的「tasteful solve」）</li>
+<li>汇报指标里必须包含「<strong>AI 独立完成占比</strong>」，而不仅是「AI 生成占比」。</li>
+</ul>
+</div></section>
+
+<!-- ============ 03 系统画像 ============ -->
+<section id="s03"><div class="wrap">
+<h2><span class="num">03</span>系统画像：你面对的东西到底特殊在哪</h2>
+<p class="sub">在全世界公开的遗产现代化案例里，绝大多数是 COBOL 大型机、或者「标准框架 + 标准架构」的 Java 老系统。你这套系统属于第三类，也是最难被现成方法论直接覆盖的一类：<strong>自研平台 + 高业务密度 + 三层业务逻辑寄生</strong>。</p>
+
+<h3>3.1 量化基线</h3>
+<div class="g3">
+  <div class="stat"><div class="n">3 412</div><div class="u">Java 文件 / <b>约 73 万行</b><br>属于中型规模，但业务密度极高</div></div>
+  <div class="stat"><div class="n">928</div><div class="u">contract 域文件数<br><b>最大业务域</b>：合同全生命周期</div></div>
+  <div class="stat"><div class="n">623</div><div class="u">operation 域文件数<br>经营指标</div></div>
+  <div class="stat"><div class="n">508</div><div class="u">MyBatis mapper XML<br><b>手写 Oracle SQL</b>，非生成</div></div>
+  <div class="stat"><div class="n">13 年</div><div class="u">2013 → 2026<br>连续演进，无重写历史</div></div>
+  <div class="stat"><div class="n">3 轨</div><div class="u">数据访问技术栈并存<br>MyBatis / reed-grail / Hibernate 3</div></div>
+</div>
+
+<h3>3.2 平台层画像：五个自研组件</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>组件</th><th>职责</th><th>技术实质</th><th>重构风险</th></tr></thead>
+<tbody>
+<tr><td><b>grail</b></td><td>建模 / 元数据 ORM</td><td>自研元数据驱动的对象映射，承载业务对象</td><td><span class="tag t-red">极高</span> 业务模型寄生于此，且无外部对标物</td></tr>
+<tr><td><b>pigeon</b></td><td>工作流引擎</td><td>基于 Hibernate 3 实现，独立技术栈</td><td><span class="tag t-red">高</span> 流程状态机是隐性规格，且 Hibernate 3 已 EOL</td></tr>
+<tr><td><b>brick</b></td><td>页面设计器</td><td>元数据驱动的界面描述</td><td><span class="tag t-amber">中</span> UI 层需重建，但业务语义相对独立</td></tr>
+<tr><td><b>tiger</b></td><td>安全</td><td>认证 / 授权 / 审计</td><td><span class="tag t-amber">中</span> 可对标标准 RBAC/ABAC，但历史权限数据是硬约束</td></tr>
+<tr><td><b>runway</b></td><td>聚合</td><td>跨模块数据聚合</td><td><span class="tag t-green">可控</span> 相对独立，适合作为首个试点域</td></tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 1</b> reed 2.0.6 的五个自研组件。注意「重构风险」一列的判断依据不是代码量，而是<b>业务语义的寄生深度</b>——grail 和 pigeon 承载了最多隐性规格。</figcaption>
+</figure>
+
+<div class="verdict">
+<h4>全文最重要的一个判断：自研平台是 AI 的盲区</h4>
+<p>
+所有公开的 AI 现代化方法论都隐含一个前提：<strong>目标框架是主流开源框架（Spring Boot、Java 17、PostgreSQL），AI 在训练数据里见过成千上万个样本，能补全语义。</strong><br><br>
+但你面对的是 <strong>reed / grail / pigeon / brick / tiger / runway</strong>——这些名字在公开语料里的出现次数是零。这意味着：<br><br>
+① AI 无法通过迁移学习理解 grail 的元数据语义，你必须<strong>显式地把平台规格喂给它</strong>；<br>
+② 不存在任何现成的「reed → 现代框架」转换工具，工具链必须自建；<br>
+③ 这恰恰是 AI 最擅长的场景——<strong>不是让它猜，而是在你提供完整规格后，让它做确定性的转换与验证</strong>。<br><br>
+<strong>结论：本项目第零步的核心交付物，是一份人类专家与 AI 都能读的《reed 平台语义规格》。这份文档的质量，直接决定后续所有 AI 动作的上限。</strong>
+</p>
+</div>
+
+<h3>3.3 数据访问三轨制：业务逻辑寄生在三个地方</h3>
+<p>这是你系统里最容易被低估的结构性风险。<strong>同一个业务规则可能同时存在于三个地方</strong>，而且在 Java 代码里看不出来：</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 400" role="img" aria-label="业务逻辑在数据访问三轨上的寄生分布">
+  <!-- 上层：Java -->
+  <rect x="60" y="30" width="840" height="82" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="84" y="58" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#1F5288">轨道一 · Java 应用层</text>
+  <text x="84" y="80" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#1F5288">Service / Domain 逻辑、流程编排、校验规则</text>
+  <text x="84" y="99" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#1F5288">reed-grail 元数据 ORM 把业务对象映射为表结构</text>
+  <text x="876" y="66" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1F5288" text-anchor="end">可被 AI 静态分析</text>
+
+  <!-- 中层：mapper XML -->
+  <rect x="60" y="132" width="840" height="82" rx="10" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.4"/>
+  <text x="84" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#8F3F06">轨道二 · 508 个 MyBatis mapper XML（手写 Oracle SQL）</text>
+  <text x="84" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8F3F06">动态 <tspan font-family="ui-monospace,monospace">&lt;if&gt;</tspan> / <tspan font-family="ui-monospace,monospace">&lt;choose&gt;</tspan> 分支 → 事实上的业务判定逻辑</text>
+  <text x="84" y="201" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8F3F06">Oracle 方言：DECODE / NVL / ROWNUM / CONNECT BY / 分析函数</text>
+  <text x="876" y="168" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06" text-anchor="end">半结构化 · 需专门解析</text>
+
+  <!-- 下层：数据库 -->
+  <rect x="60" y="234" width="840" height="82" rx="10" fill="#FBEDEC" stroke="#E6C9C6" stroke-width="1.4"/>
+  <text x="84" y="262" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#8C1D18">轨道三 · Oracle 数据库内部</text>
+  <text x="84" y="284" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8C1D18">存储过程 / 函数 / 触发器 / 序列 / 物化视图 / 定时作业</text>
+  <text x="84" y="303" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8C1D18">oracle.dmp 里的数据字典、约束、注释 —— 唯一的事实来源</text>
+  <text x="876" y="270" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8C1D18" text-anchor="end">需导入 + 解析才能看见</text>
+
+  <!-- 底部结论 -->
+  <text x="60" y="348" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#333941">任何一个只做单轨的分析都会漏掉行为：</text>
+  <text x="60" y="372" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" fill="#4A505A">只管 Java → 漏掉 SQL 分支与存储过程；只管代码 → 漏掉数据字典里的约束语义与历史兼容字段</text>
+</svg>
+</div>
+<figcaption><b>图 4</b> 三轨数据访问的寄生结构。特别注意第二轨：<b>MyBatis 的动态 SQL 分支（<code>&lt;if&gt;</code> / <code>&lt;choose&gt;</code> / <code>&lt;foreach&gt;</code>）是业务逻辑，不是查询优化</b>——在合同域这种多机构、多类型、多状态的场景里，单个 mapper 可能包含几十个分支，它们共同定义了一份「查询语义规格」。迁移时漏掉任何一个 <code>&lt;if&gt;</code> 都等于丢业务行为。</figcaption>
+</figure>
+
+<h3>3.4 开工前必须采集的事实清单</h3>
+<p>行业数据显示，现代化项目最常见的超支原因是<strong>「集成面未知」——不知道老系统有多少未被记录的下游消费者</strong>。以下清单建议在两周内完成采集，它同时是后续所有估算的输入：</p>
+
+<div class="g2">
+<div class="card">
+<h4>代码侧事实</h4>
+<ul class="check">
+<li>508 个 mapper 的 SQL 语句总数、动态分支数、跨表关联深度分布</li>
+<li>Oracle 专有构造清单（<code>CONNECT BY</code> / <code>DECODE</code> / <code>ROWNUM</code> / <code>(+)</code> 外连接 / 分析函数 / <code>MERGE</code>）及各自出现次数</li>
+<li>存储过程 / 函数 / 触发器的数量、总行数、依赖关系图</li>
+<li>grail 元数据定义文件（建模产物）全量导出与结构分析</li>
+<li>pigeon 工作流定义：流程数、状态数、状态迁移条件</li>
+<li>tiger 权限模型：角色数、权限点、数据行级权限规则</li>
+<li>跨域引用矩阵：contract 与 operation 之间的双向依赖清单</li>
+</ul>
+</div>
+<div class="card">
+<h4>运行侧事实（更关键）</h4>
+<ul class="check">
+<li><strong>接口契约清单</strong>：对外暴露的 API / 页面入口 / 批处理作业 / 报表 / 数据导出，全量枚举</li>
+<li><strong>下游消费者清单</strong>：谁在读你的库、调用你的接口、解析你的文件（这一项决定成败）</li>
+<li>近 12 个月的变更热点：哪个模块改动最频繁（改动频率 ≈ 业务价值密度）</li>
+<li>近 12 个月的生产事故清单：出过问题的地方就是规则最密的地方</li>
+<li>关键人物清单：每个模块「还能说清为什么」的人是谁、是否在职</li>
+<li>数据量基线：核心表行数、日增量、批处理窗口时长</li>
+<li>Oracle 授权成本与合规要求（合同 / 财务数据的出境与外部处理限制）</li>
+</ul>
+</div>
+</div>
+</div></section>
+
+<!-- ============ 04 第零步 ============ -->
+<section id="s04"><div class="wrap">
+<h2><span class="num">04</span>第零步：把 13 年资产变成 AI 可读的东西</h2>
+<p class="sub">这是整个项目的前置条件，也是唯一一个「不做就一定失败」的环节。Google 的经验是 <code>Context is all you need</code>；对巨系统而言，context 不是 prompt 里的几行字，而是一整套基础设施。第零步的目标只有一个：<strong>让 AI（以及新人）能在不打扰老兵的前提下，回答「这段逻辑为什么这样」。</strong></p>
+
+<h3>4.1 三件套总览</h3>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 330" role="img" aria-label="第零步三件套：知识图谱、决策日志、特征测试">
+  <defs>
+    <marker id="ar4" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- 输入 -->
+  <rect x="20" y="100" width="150" height="120" rx="10" fill="#F4F2ED" stroke="#CFCBC0" stroke-width="1.4"/>
+  <text x="95" y="128" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#333941" text-anchor="middle">13 年历史资产</text>
+  <text x="95" y="152" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">73 万行 Java</text>
+  <text x="95" y="172" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">508 mapper XML</text>
+  <text x="95" y="192" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">oracle.dmp</text>
+  <text x="95" y="212" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">人脑里的「为什么」</text>
+
+  <line x1="172" y1="160" x2="200" y2="160" stroke="#4A505A" stroke-width="1.8" marker-end="url(#ar4)"/>
+
+  <!-- 三件套 -->
+  <rect x="204" y="30" width="330" height="94" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="224" y="56" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#1F5288">① 代码知识图谱</text>
+  <text x="224" y="78" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">AST + 调用图 + 反向依赖 + 所有权</text>
+  <text x="224" y="97" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">回答：改这里会影响谁</text>
+  <text x="224" y="115" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">对象：代码「是什么」</text>
+
+  <rect x="204" y="134" width="330" height="94" rx="10" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.4"/>
+  <text x="224" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#8F3F06">② 决策日志 + ADR</text>
+  <text x="224" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">把「为什么这么写」搬进 git</text>
+  <text x="224" y="201" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">回答：当年为什么这么选</text>
+  <text x="224" y="219" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">对象：代码「为什么」← Meta 的 5% 症结</text>
+
+  <rect x="204" y="238" width="330" height="80" rx="10" fill="#EDF6ED" stroke="#C5DEC6" stroke-width="1.4"/>
+  <text x="224" y="264" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#1B5820">③ 特征测试网</text>
+  <text x="224" y="286" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">把「现在长这样」固化为不变量</text>
+  <text x="224" y="304" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">对象：代码「现在输出什么」</text>
+
+  <line x1="536" y1="160" x2="564" y2="160" stroke="#4A505A" stroke-width="1.8" marker-end="url(#ar4)"/>
+
+  <!-- 输出 -->
+  <rect x="568" y="78" width="372" height="164" rx="10" fill="#E9F5F3" stroke="#B9DCD8" stroke-width="1.4"/>
+  <text x="590" y="106" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#0A5750">AI 可读的知识基座</text>
+  <text x="590" y="132" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#0A5750">· 结构化查询：「谁调用了这个函数」</text>
+  <text x="590" y="154" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#0A5750">· 语义检索：「合同变更的税费逻辑在哪」</text>
+  <text x="590" y="176" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#0A5750">· 变更影响分析：改 X 会波及 Y Z</text>
+  <text x="590" y="198" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#0A5750">· 自动判对错：改动是否破坏既有行为</text>
+  <text x="590" y="226" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#0A5750">→ 后续所有 AI 动作的地基</text>
+</svg>
+</div>
+<figcaption><b>图 5</b> 第零步三件套及其分工。<b>三者不可互相替代</b>：知识图谱知道结构但不知道意图；决策日志知道意图但不知道现状；特征测试知道现状但不能解释原因。缺任何一个，AI 都会在某个维度上瞎猜。</figcaption>
+</figure>
+
+<h3>4.2 工序一：代码知识图谱</h3>
+<p><strong>为什么纯向量检索不够：</strong>代码不是散文。「谁调用了这个函数」「哪个接口依赖这个服务」「改这里的影响面多大」是<strong>关系问题，不是相似度问题</strong>。纯相似度检索会把同一个工具类的多个副本召回，却漏掉真正解释行为的那条调用链。</p>
+<p><strong>2026 年的工程共识架构是「双索引」：</strong>向量索引负责语义邻域（找到候选），图索引负责结构扩展（决定哪些邻居必须一起带上），再用 token 预算封顶。</p>
+
+<div class="g2">
+<div class="card">
+<h4>建图的技术要点</h4>
+<ul>
+<li><strong>解析层</strong>：用 Tree-sitter 做增量解析，只重算变更文件。公开基准显示该方案可在约 3 分钟内索引 2800 万行 / 7.5 万文件的 Linux 内核（M3 Pro，厂商自测数据）。你的 73 万行属于轻量级。</li>
+<li><strong>节点类型</strong>：project / package / file / class / method / interface / **mapper / SQL 语句 / 表 / 字段 / 存储过程 / 工作流状态**——后四类是本项目的特殊扩展，通用工具不提供，需自建。</li>
+<li><strong>边类型</strong>：CALLS / IMPORTS / IMPLEMENTS / INHERITS / **READS_TABLE / WRITES_TABLE / RESOLVES_TO_SQL / DEFINES_FLOW / GRANTS_ROLE**。</li>
+<li><strong>切块粒度选择方法级</strong>——文件级太粗（问一个方法返回整个大文件）、类级仍偏粗（一个类 20 个方法时臃肿）。每个 chunk 只含一个方法 + 签名 + 注解 + Javadoc，类级摘要作为元数据保留。</li>
+<li><strong>索引治理是架构的一部分</strong>：文件重命名/删除时必须同步移除或重新索引旧向量，否则失效路径会持续占据检索位。</li>
+</ul>
+</div>
+<div class="card">
+<h4>本项目的三个特殊扩展（自建）</h4>
+<ul>
+<li><b>SQL 子图。</b>把 508 个 mapper XML 解析为图节点：每个 <code>&lt;select&gt;</code>/<code>&lt;update&gt;</code> 是一个节点，其动态分支、引用表、引用字段成为边。这样「哪些 mapper 依赖 <code>CONTRACT_MAIN</code> 表」变成一条查询而不是一次搜索。</li>
+<li><b>元数据子图。</b>把 grail 建模产物（业务对象 → 表 → 字段映射）导入图谱，打通「业务对象」与「物理表」两套命名体系。这是让 AI 理解 grail 的唯一途径。</li>
+<li><b>平台语义层。</b>为 reed 五个组件各写一份规格文档（见 4.5），作为图谱的「注释节点」，检索时强制随主节点一起带上。</li>
+</ul>
+</div>
+</div>
+
+<h3>4.3 工序二：决策日志与 ADR</h3>
+<p>Meta 那 5% 的根因就是「reasoning lives outside the files」——逻辑背后的理由不在文件里。治本的办法是把「为什么」从人脑搬到 AI 能读的结构化位置：</p>
+<ul>
+<li><strong>为现存系统补写「追溯型 ADR」。</strong>不要试图一次补齐 13 年，只补<strong>高风险 + 高变更频率</strong>的模块。格式固定五段：背景 / 当时的约束 / 选择 / 放弃了什么方案 / 今天还成立吗。<strong>注意最后一段——很多历史决策的前提已经消失了，这正是清理与简化的机会。</strong></li>
+<li><strong>设立「知识守门人」角色。</strong>专人负责图谱维护、向量库、检索管道、上下文清理。<em>把领域专长外化成 AI 能读的结构，这本身就是护城河。</em></li>
+<li><strong>新决策强制 ADR。</strong>从现在起，任何影响跨模块接口、数据模型、权限模型的决策，必须与代码同 PR 合入 ADR。规则简单：<strong>没有 ADR 的重构 PR 不允许合入。</strong></li>
+</ul>
+
+<h3>4.4 工序三：特征测试网</h3>
+<p>这是三件套里最需要投入、也最直接产生回报的一件。要点：</p>
+<ol>
+<li><strong>优先级排序，不做全量。</strong>只覆盖「高风险 + 高变更频率 + 高业务价值」的模块。行业经验：特征测试覆盖率到 60–70% 通常已经能拦住绝大多数回归。</li>
+<li><strong>粒度从粗到细。</strong>先做端到端场景级（一次业务动作的输入输出），再做方法级。场景级成本低但覆盖面大。</li>
+<li><strong>命名必须可识别。</strong>测试名里显式带 <code>characterises</code> 标记，文件名用独立后缀。目的：<strong>让未来的人和 AI 一眼看出这是「记录现状」而非「断言正确」，并且知道它是临时脚手架、将在重构后被行为测试替换。</strong></li>
+<li><strong>可疑行为要显式标记，不要偷偷放过。</strong>当特征测试捕获到一个看起来像 bug 的行为时，在测试里加注释标记 <code>SUSPICIOUS</code> 并说明——原样记录、单独升级评审。<strong>绝不在迁移阶段顺手修。</strong></li>
+<li><strong>用 AI 批量生成，但要验证「测试有效」。</strong>两道自检：跑覆盖率找出从未被触及的输入；人为注入一个 bug，确认至少有一个测试能抓住它。做不到这两点，测试网就是装饰。</li>
+</ol>
+
+<div class="verdict">
+<h4>一个会被忽略但很关键的细节</h4>
+<p>特征测试的期望值<strong>必须来自实际执行输出</strong>。让 AI「看着代码推理出预期值」是反模式——那记录的是 AI 对代码的理解，而不是代码的行为。正确做法是：把老系统跑起来，喂真实输入，捕获真实输出（生产日志是最佳样本来源），再用这些输入输出对作为黄金样本。<strong>这也是影子流量回放（第 06 章）能无缝衔接的原因——它们是同一套样本基础设施。</strong></p>
+</div>
+
+<h3>4.5 第零步的交付物清单</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>交付物</th><th>内容</th><th>验收方式</th><th>建议周期</th></tr></thead>
+<tbody>
+<tr><td><b>代码知识图谱</b></td><td>含 Java / mapper / 元数据 / 平台语义四层子图的查询库 + 检索接口</td><td>任取 20 个真实问题（如「改 X 影响谁」），图谱答案 vs 老兵答案一致率 ≥ 80%</td><td class="n">6–10 周</td></tr>
+<tr><td><b>《reed 平台语义规格》</b></td><td>grail / pigeon / brick / tiger / runway 五份规格：概念模型、约定、扩展点、已知坑</td><td>新人 + AI 仅读规格即可理解一个中型模块，无需老兵解释</td><td class="n">4–8 周</td></tr>
+<tr><td><b>Top 20 模块持久上下文</b></td><td>每模块一页：边界、契约、已知坑、对接人、相关 ADR 链接</td><td>会话自动加载后，AI 首次回答的准确率显著提升（可做 A/B）</td><td class="n">3–4 周</td></tr>
+<tr><td><b>追溯型 ADR 集</b></td><td>高风险模块的历史决策记录，含「今天还成立吗」判断</td><td>每份 ADR 由该模块原负责人签字确认</td><td class="n">持续</td></tr>
+<tr><td><b>特征测试网</b></td><td>高风险模块的黄金样本测试，含 <code>SUSPICIOUS</code> 标记</td><td>注入式 bug 检出率 ≥ 90%；语句覆盖率纳入看板</td><td class="n">8–12 周</td></tr>
+<tr><td><b>事实清单</b></td><td>第 03.4 节全部条目</td><td>下游消费者清单须经业务与运维双向签字</td><td class="n">2 周</td></tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 2</b> 第零步交付物。注意验收方式全部是<b>可测量的</b>——这是从「感觉准备得差不多了」变成「有明确完成标准」的关键。行业经验：这一步的投入看起来「不产代码」，但它是 P 能被有效放大的天花板。</figcaption>
+</figure>
+</div></section>
+
+<!-- ============ 05 路径选型 ============ -->
+<section id="s05"><div class="wrap">
+<h2><span class="num">05</span>路径选型：五条路对比与决策树</h2>
+<p class="sub">行业里真正可用的现代化路径只有五条。先把它们放在同一张表上，再走决策树排除。</p>
+
+<h3>5.1 五条路径的硬对比</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>路径</th><th>做法</th><th>风险</th><th>业务连续性</th><th>成功率证据</th><th>成本量级</th></tr></thead>
+<tbody>
+<tr>
+<td><b>A 代码翻译</b><br><span class="tag t-gray">工具驱动</span></td>
+<td>用转换工具 / LLM 把代码逐层升级到新语言版本与新框架，架构基本不动</td>
+<td><span class="tag t-amber">中</span> 依赖与方言陷阱多</td>
+<td>阶段性停机或双跑</td>
+<td>高（机械部分）。Amazon 自报：数万个生产应用 Java 8/11 → 17，单应用从约 50 天降至数小时</td>
+<td class="n">低–中</td>
+</tr>
+<tr>
+<td><b>B 增量绞杀</b><br><span class="tag t-green">Strangler Fig</span></td>
+<td>在老系统前加路由层，一个能力一个能力切到新系统，老系统持续缩小直至退役</td>
+<td><span class="tag t-green">低</span> 每片可停可回滚</td>
+<td><b>零中断</b></td>
+<td>高。对比数据：增量迁移超支/取消率 28%，大爆炸重写 76%</td>
+<td class="n">中（可分期）</td>
+</tr>
+<tr>
+<td><b>C 模块化单体</b><br><span class="tag t-blue">就地重构</span></td>
+<td>不换代码宿主，但把内部按领域切成严格模块，模块间只走明确接口</td>
+<td><span class="tag t-green">低</span></td>
+<td><b>零中断</b></td>
+<td>中高。公认的「先看清真实边界，再决定是否切服务」的前置步骤</td>
+<td class="n">低–中</td>
+</tr>
+<tr>
+<td><b>D 全量重写</b><br><span class="tag t-red">Big Bang</span></td>
+<td>冻结特性，从头建新系统，一次性切换</td>
+<td><span class="tag t-red">极高</span></td>
+<td>长期双系统并行 + 一次性高危切换</td>
+<td>低。<b>失败率 70–88%</b>（多来源，口径不一）；大型项目成功率 &lt;10%（CHAOS 报告口径）</td>
+<td class="n">高（中位 140 万美元量级 / 22 个月）</td>
+</tr>
+<tr>
+<td><b>E 平台替换 / 重托管</b><br><span class="tag t-gray">Re-platform</span></td>
+<td>代码基本不动，换运行时/数据库/部署形态（如去 O、上容器）</td>
+<td><span class="tag t-amber">中</span></td>
+<td>短窗口切换</td>
+<td>中。中位 5 个月、成本量级 24 万美元（行业内统计）；但「换完还是老系统」</td>
+<td class="n">低</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 3</b> 五条路径对比。<b>注意成本与周期数据来自不同咨询机构的统计口径，量级可比、绝对值不可比</b>，仅供排序参考。表中最关键的一列是「业务连续性」——因为对你这种内部信息化系统，任何超过一天的业务中断都会立刻上升到管理层问题。</figcaption>
+</figure>
+
+<h3>5.2 决策树</h3>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 500" role="img" aria-label="现代化路径决策树">
+  <defs>
+    <marker id="ar5" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- Q1 -->
+  <rect x="330" y="22" width="300" height="60" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="480" y="46" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#1F5288" text-anchor="middle">Q1 · 运行时已 EOL 且有合规风险？</text>
+  <text x="480" y="68" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288" text-anchor="middle">JDK 1.7 / Spring 3.2 / Hibernate 3 全部 EOL → 是</text>
+
+  <!-- Q1 否 → 叶子 A（左） -->
+  <line x1="328" y1="52" x2="284" y2="52" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar5)"/>
+  <text x="306" y="44" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8F3F06" text-anchor="middle">否</text>
+  <rect x="30" y="22" width="250" height="60" rx="10" fill="#F4F2ED" stroke="#CFCBC0" stroke-width="1.4"/>
+  <text x="155" y="46" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#333941" text-anchor="middle">维持现状 · 只做第零步</text>
+  <text x="155" y="66" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">无合规压力时，不要为重构而重构</text>
+
+  <!-- Q1 是 → 下到 Q2 -->
+  <line x1="480" y1="84" x2="480" y2="132" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar5)"/>
+  <text x="492" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1F5288">是</text>
+
+  <!-- Q2 -->
+  <rect x="330" y="134" width="300" height="60" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="480" y="158" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#1F5288" text-anchor="middle">Q2 · 业务规则仍在演进？</text>
+  <text x="480" y="180" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288" text-anchor="middle">合同 / 经营指标近 12 月仍有新需求</text>
+
+  <!-- Q2 否 → 叶子 B（左） -->
+  <line x1="328" y1="164" x2="284" y2="164" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar5)"/>
+  <text x="306" y="156" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8F3F06" text-anchor="middle">否</text>
+  <rect x="30" y="134" width="250" height="60" rx="10" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.4"/>
+  <text x="155" y="158" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">路径 A + E · 分层升级</text>
+  <text x="155" y="178" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06" text-anchor="middle">稳定系统只需换运行时，不需重设计</text>
+
+  <!-- Q2 是 → 下到 Q3 -->
+  <line x1="480" y1="196" x2="480" y2="244" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar5)"/>
+  <text x="492" y="224" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1F5288">是</text>
+
+  <!-- Q3 -->
+  <rect x="330" y="246" width="300" height="60" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="480" y="270" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#1F5288" text-anchor="middle">Q3 · 数据模型阻塞业务表达？</text>
+  <text x="480" y="292" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288" text-anchor="middle">是「表设计丑」还是「表达不了新业务」？只看后者</text>
+
+  <!-- Q3 否 → 叶子 C（右）高亮 -->
+  <line x1="632" y1="276" x2="676" y2="276" stroke="#1B5820" stroke-width="1.9" marker-end="url(#ar5)"/>
+  <text x="654" y="268" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1B5820" text-anchor="middle">否</text>
+  <rect x="680" y="238" width="256" height="76" rx="10" fill="#EDF6ED" stroke="#2E7D32" stroke-width="2"/>
+  <text x="808" y="262" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#1B5820" text-anchor="middle">★ 推荐路径</text>
+  <text x="808" y="283" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#1B5820" text-anchor="middle">C 模块化单体 + B 增量绞杀</text>
+  <text x="808" y="302" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820" text-anchor="middle">A 作为机械转换的执行手段</text>
+
+  <!-- Q3 是 → 下到叶子 D -->
+  <line x1="480" y1="308" x2="480" y2="368" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar5)"/>
+  <text x="492" y="340" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8F3F06">是</text>
+  <rect x="300" y="370" width="360" height="76" rx="10" fill="#FBEDEC" stroke="#E6C9C6" stroke-width="1.4"/>
+  <text x="480" y="396" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="700" fill="#8C1D18" text-anchor="middle">路径 D 重写被纳入讨论</text>
+  <text x="480" y="417" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#8C1D18" text-anchor="middle">也仅限「数据模型驱动的那个域」重写</text>
+  <text x="480" y="436" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#8C1D18" text-anchor="middle">其余域仍走 C + B</text>
+
+  <!-- 底部说明 -->
+  <line x1="30" y1="470" x2="930" y2="470" stroke="#E3E0D8" stroke-width="1.4"/>
+  <text x="30" y="492" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A">整棵树里没有「全量重写」这个选项——它只在 Q3 为「是」时以「单域重写」的形式出现，且必须被增量路径包裹</text>
+</svg>
+</div>
+<figcaption><b>图 6</b> 路径决策树。三个问题按顺序排除，唯一的高亮结果就是推荐路径。<b>注意 Q3 的措辞陷阱</b>：「表设计很丑」几乎永远成立，但它不构成重写理由；只有「现有数据模型表达不了新业务」才构成，而这个判断必须由业务方而不只是技术方做出。</figcaption>
+</figure>
+
+<h3>5.3 目标架构：为什么推荐模块化单体而非微服务</h3>
+<p>行业统计里最刺眼的一个数字：<strong>单体 → 微服务的中位成本约 250 万美元、周期 18–36 个月，成功率约 40%</strong>。而模块化单体的核心价值在于：<strong>它让你在不付微服务运维代价的前提下，先看清真实的领域边界。</strong></p>
+
+<div class="g2">
+<div class="card">
+<h4>模块化单体的定义与收益</h4>
+<ul>
+<li><strong>定义</strong>：单一可部署应用，内部按领域切成严格模块，每个模块拥有自己的领域切片（合同 / 履约 / 结算 / 对账 / 经营指标…），模块间只通过明确接口交互，禁止伸进对方内部。</li>
+<li><strong>数据库通常仍然共用</strong>，但表按模块分组，跨模块泄漏被主动遏制。</li>
+<li><strong>运维简单</strong>：一套部署管道、一个运行时、协调成本远低于服务集群。这对尚不具备成熟 SRE / 可观测 / 值守体系的团队是关键优势。</li>
+<li><strong>暴露真实边界</strong>：当你在单体内部强制模块边界时，会看到哪些模块总是一起改、哪些藏着隐性业务规则、哪里真的需要自治——这些信息在拆分前是拿不到的。</li>
+<li><strong>给未来留门</strong>：模块边界清晰后，若某个模块确有独立扩容或独立交付需求，再单独抽出为服务，代价远低于盲目先拆。</li>
+</ul>
+</div>
+<div class="card">
+<h4>什么信号才支持真的拆服务</h4>
+<ul>
+<li>某个模块出现<strong>明显的独立扩容压力</strong>（不是均匀的）</li>
+<li>某个模块需要<strong>独立的交付节奏</strong>（不同团队、不同发布窗口）</li>
+<li>领域边界已经清晰且稳定</li>
+<li>团队具备分布式系统的<strong>运维成熟度</strong>：CI/CD、监控、自动化测试到位</li>
+<li>有真实的<strong>业务理由</strong>，而不是技术趋势</li>
+</ul>
+<p style="font-size:14.5px;color:var(--ink3);margin-top:12px"><strong>判据：</strong>六条里少于三条成立时，拆服务带来的运维复杂度会吃掉收益。你当前的状态大概率是 0–1 条。</p>
+</div>
+</div>
+
+<h3>5.4 工具与 AI 的分工：什么交给机器，什么必须交给人</h3>
+<p>这是整个选型里最实用的一张表。核心原则：<strong>确定性的重复改动交给确定性工具（recipe / AST 转换），需要判断的地方才用 AI，架构与领域设计永远由人主导。</strong></p>
+
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>任务类型</th><th>AI / 工具适用度</th><th>推荐手段</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>替换废弃 API</td><td><span class="tag t-green">高</span></td><td>OpenRewrite recipe</td><td>确定性、可重复、零幻觉</td></tr>
+<tr><td>升级重复的依赖</td><td><span class="tag t-green">高</span></td><td>OpenRewrite + 依赖矩阵</td><td>机械劳动，工具比 LLM 更可靠</td></tr>
+<tr><td>生成测试</td><td><span class="tag t-green">高</span></td><td>LLM + 特征测试框架</td><td>但期望值必须来自实际执行</td></tr>
+<tr><td>解释陌生类 / 模块</td><td><span class="tag t-green">高</span></td><td>知识图谱 + LLM</td><td>第零步的核心收益</td></tr>
+<tr><td>重构重复代码</td><td><span class="tag t-green">高</span></td><td>LLM + 人工评审</td><td>需要「符合本仓库约定」的判断</td></tr>
+<tr><td>更新配置</td><td><span class="tag t-green">高</span></td><td>规则引擎 + LLM 兜底</td><td>注意属性重命名会静默失败</td></tr>
+<tr><td>应用服务器模式转换</td><td><span class="tag t-amber">中高</span></td><td>LLM + 集成测试</td><td>需要大量回归验证</td></tr>
+<tr><td>单体边界分解</td><td><span class="tag t-amber">中</span></td><td><strong>人主导</strong> + AI 辅助分析</td><td>AI 提供依赖证据，人做边界决策</td></tr>
+<tr><td>领域架构重设计</td><td><span class="tag t-red">人主导</span></td><td>人 + Event Storming</td><td>AI 无法承担业务判断</td></tr>
+<tr><td>目标架构定义</td><td><span class="tag t-red">人主导</span></td><td>架构委员会</td><td>涉及组织与长期取舍</td></tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 4</b> 工具与 AI 的能力分工。这张表的实践含义是：<b>把「用 LLM 做每一处改动」的冲动压下去</b>。大规模现代化的正确形态是「确定性转换工具打底 + AI 处理需要判断的部分」，而不是让 LLM 包办一切——后者在编译通过率上看起来不错，但结构性问题会被 CodeBLEU 这类文本重叠指标掩盖（有研究显示两种方法在该指标上都得 91 分，而实际结构正确率天差地别）。</figcaption>
+</figure>
+
+<div class="verdict">
+<h4>AI 与代码图谱的实证效果（可作为立项依据）</h4>
+<p>
+有一项针对企业级代码迁移的对比研究值得注意：标准向量 RAG 与<strong>分层上下文驻留图（HCRG，基于 AST + 属性图 + 上下文缓存）</strong>相比，后者在多项指标上显著更好——<strong>API 幻觉率从 56.4% 降至 16.2%</strong>，依赖解析质量从 34.8% 升至 65.9%，父子一致性从 26.7% 升至 45.5%。代价是引入了一定的「防御性过度设计」（圈复杂度一致性从 71.6% 降到 46.7%）。<br><br>
+<strong>这条证据同时说明两件事：① 图结构检索对代码迁移是实质性的改进，不是噱头；② 它会带来新的副作用（过度抽象），需要人工评审兜住。</strong>
+</p>
+</div>
+</div></section>
+
+<!-- ============ 06 行为迁移 ============ -->
+<section id="s06"><div class="wrap">
+<h2><span class="num">06</span>行为迁移工程：把「等价」变成可证明的工程动作</h2>
+<p class="sub">这一章是本报告的技术核心。它解决的问题是：<strong>当新老两套代码结构完全不同时，你凭什么说新系统是对的？</strong>行业里最成熟的公开答案是蚂蚁在支付宝生活缴费 60 万行系统上的双 Loop 体系——它的规模、技术栈、业务密度与你的系统高度可比，因此本报告把它作为主要参照。</p>
+
+<h3>6.1 起点：把重构的验收标准从「代码」换成「行为」</h3>
+<p>传统交付方式——代码评审 + 补充用例 + 上线观察——只能发现局部实现问题，<strong>无法证明新系统在预期业务边界内保持了老系统的关键行为</strong>。原因很直接：代码评审通过、生成用例 PASS、覆盖率上升，这些都只说明「部分实现得到了检查」，不能证明「目标业务分支真的被执行过」。</p>
+<p>因此需要换一个可计算的等价性定义：</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 240" role="img" aria-label="PERS 等价性定义">
+  <rect x="60" y="34" width="840" height="70" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="480" y="62" font-family="-apple-system,PingFang SC,sans-serif" font-size="15" font-weight="700" fill="#1F5288" text-anchor="middle">把每个业务接口视为一个函数：( P + E ) → ( R + S )</text>
+  <text x="480" y="88" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#1F5288" text-anchor="middle">单个测试用例 = 决策路径上的一次 PERS 采样</text>
+
+  <rect x="60" y="126" width="196" height="72" rx="9" fill="#FFFFFF" stroke="#C6D8EC" stroke-width="1.3"/>
+  <text x="158" y="152" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#16181D" text-anchor="middle">P · 入参</text>
+  <text x="158" y="174" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">请求参数 / 报文 / 操作上下文</text>
+  <text x="158" y="191" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">（含用户、机构、时点）</text>
+
+  <rect x="276" y="126" width="196" height="72" rx="9" fill="#FFFFFF" stroke="#C6D8EC" stroke-width="1.3"/>
+  <text x="374" y="152" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#16181D" text-anchor="middle">E · 环境</text>
+  <text x="374" y="174" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">数据库状态 / 配置 / 权限</text>
+  <text x="374" y="191" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">/ 开关 / 下游依赖状态</text>
+
+  <rect x="492" y="126" width="196" height="72" rx="9" fill="#FFFFFF" stroke="#C6D8EC" stroke-width="1.3"/>
+  <text x="590" y="152" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#16181D" text-anchor="middle">R · 返回</text>
+  <text x="590" y="174" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">业务终点 / 核心返回字段</text>
+  <text x="590" y="191" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">/ 状态码 / 错误语义</text>
+
+  <rect x="708" y="126" width="192" height="72" rx="9" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.5"/>
+  <text x="804" y="152" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#8F3F06" text-anchor="middle">S · 副作用</text>
+  <text x="804" y="174" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06" text-anchor="middle">写库 / 发消息 / 生成单据</text>
+  <text x="804" y="191" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06" text-anchor="middle">← 最容易被漏掉的一项</text>
+</svg>
+</div>
+<figcaption><b>图 7</b> PERS 等价性定义。关键约束：<b>要求新老系统在「同一条决策路径」下，R 与 S 完全一致</b>。不要求新旧代码结构逐行对应——这正好绕开了「结构无法映射」这个死结。<b>副作用 S 是绝大多数团队会漏掉的一项</b>：你的系统里，一次合同变更很可能同时写主表、写流水、写日志、触发工作流、发通知，这些都属于 S。</figcaption>
+</figure>
+
+<h3>6.2 双 Loop：提取什么，验证什么</h3>
+<p>两个 Loop 相互校验，各自回答一个不可省略的问题。</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 420" role="img" aria-label="行为迁移双 Loop 体系">
+  <defs>
+    <marker id="ar6" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- Loop 1 -->
+  <rect x="20" y="24" width="440" height="330" rx="12" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.5"/>
+  <text x="44" y="54" font-family="-apple-system,PingFang SC,sans-serif" font-size="14.5" font-weight="700" fill="#1F5288">LOOP 1 · 回到老系统：确定「要迁移什么行为」</text>
+
+  <rect x="44" y="72" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#C6D8EC" stroke-width="1.2"/>
+  <text x="62" y="94" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#16181D">① PERS 建模</text>
+  <text x="62" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">把接口形式化为 (P+E)→(R+S)，定义可观察边界</text>
+
+  <line x1="240" y1="126" x2="240" y2="140" stroke="#4A505A" stroke-width="1.6" marker-end="url(#ar6)"/>
+
+  <rect x="44" y="142" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#C6D8EC" stroke-width="1.2"/>
+  <text x="62" y="164" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#16181D">② 路径压缩（Case-Forge）</text>
+  <text x="62" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">从上千分支中提取「规模可控但不失真」的行为集合</text>
+
+  <line x1="240" y1="196" x2="240" y2="210" stroke="#4A505A" stroke-width="1.6" marker-end="url(#ar6)"/>
+
+  <rect x="44" y="212" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#C6D8EC" stroke-width="1.2"/>
+  <text x="62" y="234" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#16181D">③ 人机协同场景生成</text>
+  <text x="62" y="252" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">AI 生成候选 + 业务专家确认，形成 Golden Set 场景集</text>
+
+  <line x1="240" y1="266" x2="240" y2="280" stroke="#4A505A" stroke-width="1.6" marker-end="url(#ar6)"/>
+
+  <rect x="44" y="282" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#2E7D32" stroke-width="1.5"/>
+  <text x="62" y="304" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820">④ 产出 Golden Set</text>
+  <text x="62" y="322" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">可枚举、可生成、可覆盖的行为基线</text>
+
+  <!-- 中间双向连接 -->
+  <line x1="462" y1="150" x2="496" y2="150" stroke="#1B5820" stroke-width="2" marker-end="url(#ar6)"/>
+  <line x1="498" y1="230" x2="464" y2="230" stroke="#8F3F06" stroke-width="2" marker-end="url(#ar6)"/>
+  <text x="480" y="140" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#1B5820" text-anchor="middle">场景</text>
+  <text x="480" y="252" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#8F3F06" text-anchor="middle">差异</text>
+
+  <!-- Loop 2 -->
+  <rect x="500" y="24" width="440" height="330" rx="12" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.5"/>
+  <text x="524" y="54" font-family="-apple-system,PingFang SC,sans-serif" font-size="14.5" font-weight="700" fill="#8F3F06">LOOP 2 · 在新系统回放：验证「是否真实复现」</text>
+
+  <rect x="524" y="72" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#EBD5B4" stroke-width="1.2"/>
+  <text x="542" y="94" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#16181D">① 场景回放（Bubble）</text>
+  <text x="542" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">在新系统执行同一 Golden Set 场景</text>
+
+  <line x1="720" y1="126" x2="720" y2="140" stroke="#4A505A" stroke-width="1.6" marker-end="url(#ar6)"/>
+
+  <rect x="524" y="142" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#EBD5B4" stroke-width="1.2"/>
+  <text x="542" y="164" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#16181D">② 实际执行路径校验</text>
+  <text x="542" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">识别 AI 生成用例的「路径偏移」与假覆盖</text>
+
+  <line x1="720" y1="196" x2="720" y2="210" stroke="#4A505A" stroke-width="1.6" marker-end="url(#ar6)"/>
+
+  <rect x="524" y="212" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#EBD5B4" stroke-width="1.2"/>
+  <text x="542" y="234" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#16181D">③ 行为差异判定</text>
+  <text x="542" y="252" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">按 PERS 维度比对，输出带优先级的差异报告</text>
+
+  <line x1="720" y1="266" x2="720" y2="280" stroke="#4A505A" stroke-width="1.6" marker-end="url(#ar6)"/>
+
+  <rect x="524" y="282" width="392" height="52" rx="8" fill="#FFFFFF" stroke="#2E7D32" stroke-width="1.5"/>
+  <text x="542" y="304" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820">④ 真实流量回放支撑切流决策</text>
+  <text x="542" y="322" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">为分阶段灰度提供可发布 / 可观测 / 可回退依据</text>
+
+  <text x="480" y="386" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941" text-anchor="middle">重构最终必须回答三个问题：老系统有哪些关键行为要迁移 → 新系统是否真实复现 → 发现差异后能否据此作出发布决策</text>
+</svg>
+</div>
+<figcaption><b>图 8</b> 行为迁移双 Loop。两个 Loop 的分工不可混淆：<b>Loop 1 决定「测什么」，Loop 2 决定「能不能上」</b>。实践中最大的工程量在 Loop 1 的②「路径压缩」——因为你的 contract 域单个查询接口在 13 年演进后，分支组合数很可能远超可穷举范围。</figcaption>
+</figure>
+
+<h3>6.3 路径压缩：从上千分支到可管理的场景集</h3>
+<p>以合同域为例：<strong>合同类型 × 机构差异 × 状态 × 权限 × 时点 × 特殊条款</strong>，组合爆炸。行业公开案例中的对照数字是「2B 侧 600+ 技术接口、千家机构异构；单接口分支超 8000 个」。你的系统不会更简单。</p>
+<p><strong>压缩策略（按优先级）：</strong></p>
+<ol>
+<li><strong>等价类合并</strong>：把「同一个 <code>&lt;if&gt;</code> 分支内、参数取值不同但走完全相同的执行路径」的输入合并为一类。判据不是参数值，而是<strong>最终执行到的路径标识</strong>。</li>
+<li><strong>决策路径覆盖优先于参数覆盖</strong>：目标不是覆盖参数空间，而是覆盖<strong>决策路径集合</strong>。这直接把问题从「指数级」降到「分支数级」。</li>
+<li><strong>真实流量反哺</strong>：从生产日志里聚类高频路径，用真实分布决定压缩后的场景权重。<strong>生产流量天然包含那些没人想得起来的边缘场景</strong>——这是它比人工设计用例强的地方。</li>
+<li><strong>高价值低频场景单独保留</strong>：金额、结算、税务相关路径，哪怕一天只跑一次，也必须单列。低频高价值场景正是灰度放量后翻车的高发区。</li>
+</ol>
+
+<div class="verdict">
+<h4>必须警惕的「假覆盖」（False Coverage）</h4>
+<p>
+这是 AI 生成用例最危险的失败模式：<strong>用例看起来覆盖了目标分支，覆盖率指标上升了，但实际执行路径发生了偏移，目标分支从未被真正执行。</strong><br><br>
+典型表现：AI 根据代码文本推理出「这段逻辑应该走 A 分支」，于是构造了一个看起来能触发 A 的输入；但由于上游某个校验先拦住了请求，实际执行到的是 B 分支（或提前 return）。测试 PASS，覆盖率 +1%，业务行为完全没有被验证。<br><br>
+<strong>破解手段只有一个：在 Loop 2 里采集「实际执行路径」并与预期路径比对，而不是只看返回值。</strong>这要求新系统具备运行时路径埋点能力——这属于第 08 章的 Harness Engineering 范畴，必须在试点阶段就建设，不能等。
+</p>
+</div>
+
+<h3>6.4 影子流量与差分验真</h3>
+<p>场景回放解决的是「已知路径的等价性」；影子流量解决的是「未知路径的覆盖率」。两者互补，缺一不可。</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 400" role="img" aria-label="影子流量与差分验真架构">
+  <defs>
+    <marker id="ar7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- 用户 -->
+  <rect x="20" y="40" width="130" height="56" rx="9" fill="#F4F2ED" stroke="#CFCBC0" stroke-width="1.3"/>
+  <text x="85" y="64" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941" text-anchor="middle">线上用户请求</text>
+  <text x="85" y="84" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">真实全量流量</text>
+
+  <line x1="152" y1="68" x2="188" y2="68" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar7)"/>
+
+  <!-- 复制层 -->
+  <rect x="190" y="40" width="150" height="56" rx="9" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.6"/>
+  <text x="265" y="62" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1F5288" text-anchor="middle">流量复制层</text>
+  <text x="265" y="82" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1F5288" text-anchor="middle">异步镜像 · 不阻塞主链路</text>
+
+  <!-- 上分支：老系统 -->
+  <line x1="342" y1="58" x2="400" y2="34" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar7)"/>
+  <rect x="404" y="10" width="200" height="56" rx="9" fill="#FFFFFF" stroke="#CFCBC0" stroke-width="1.4"/>
+  <text x="504" y="32" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">老系统（现网）</text>
+  <text x="504" y="52" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">正常处理 · 真实响应给用户</text>
+
+  <line x1="606" y1="38" x2="662" y2="38" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar7)"/>
+  <rect x="666" y="10" width="270" height="56" rx="9" fill="#EDF6ED" stroke="#C5DEC6" stroke-width="1.4"/>
+  <text x="801" y="32" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820" text-anchor="middle">用户收到 200 OK</text>
+  <text x="801" y="52" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1B5820" text-anchor="middle">业务零感知 · 完全无感</text>
+
+  <!-- 下分支 -->
+  <line x1="265" y1="98" x2="265" y2="136" stroke="#B45309" stroke-width="1.9" marker-end="url(#ar7)"/>
+  <text x="278" y="122" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#8F3F06">镜像</text>
+
+  <!-- 清洗脱敏 -->
+  <rect x="190" y="138" width="150" height="56" rx="9" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.4"/>
+  <text x="265" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06" text-anchor="middle">清洗 / 脱敏 / 改写</text>
+  <text x="265" y="180" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8F3F06" text-anchor="middle">换影子请求 ID · 拦截写操作</text>
+
+  <line x1="342" y1="166" x2="398" y2="166" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar7)"/>
+
+  <!-- 新系统影子 -->
+  <rect x="402" y="138" width="200" height="56" rx="9" fill="#FDF4E7" stroke="#B45309" stroke-width="1.6"/>
+  <text x="502" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06" text-anchor="middle">新系统（影子实例）</text>
+  <text x="502" y="180" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8F3F06" text-anchor="middle">完整计算 · 响应被丢弃</text>
+
+  <line x1="604" y1="166" x2="660" y2="166" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar7)"/>
+
+  <!-- DIFF -->
+  <rect x="664" y="138" width="272" height="56" rx="9" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.6"/>
+  <text x="800" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1F5288" text-anchor="middle">DIFF 比对引擎</text>
+  <text x="800" y="180" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1F5288" text-anchor="middle">按 PERS 维度比对 · 忽略规则过滤噪音</text>
+
+  <line x1="800" y1="196" x2="800" y2="234" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar7)"/>
+
+  <!-- 准出 -->
+  <rect x="640" y="236" width="320" height="62" rx="9" fill="#EDF6ED" stroke="#2E7D32" stroke-width="1.8"/>
+  <text x="800" y="260" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820" text-anchor="middle">准出决策系统</text>
+  <text x="800" y="281" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1B5820" text-anchor="middle">差异率达标 → 放量 ／ 超阈值 → 拦住并定位</text>
+
+  <!-- 三个坑 -->
+  <text x="20" y="248" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#333941">三个必踩的坑（上生产前必须解决）</text>
+  <text x="20" y="272" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8C1D18">① 影子流量写脏生产数据</text>
+  <text x="20" y="291" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">→ 应用层 / 中间件层拦截写操作，路由到影子表</text>
+  <text x="20" y="313" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8C1D18">② 新系统调用下游影响第三方</text>
+  <text x="20" y="332" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">→ 下游依赖隔离（Mock 或影子下游环境）</text>
+  <text x="20" y="354" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8C1D18">③ DIFF 结果噪音太大，被淹没</text>
+  <text x="20" y="373" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">→ 配置忽略规则：日志 ID / 时间戳 / 非核心统计字段</text>
+</svg>
+</div>
+<figcaption><b>图 9</b> 影子流量与差分验真。设计要点：<b>镜像必须异步且失败不影响主链路</b>；<b>影子必须覆盖全量而非抽样</b>——抽样会让长尾场景进不了比对池，而这恰恰是影子相对场景回放的核心优势。另一个易错点：<b>差分统计必须按业务标签拆分</b>，只看整体差异率会被「占比小但差异巨大」的类别掩盖（公开案例中，某次整体差异仅 1.2%，但按标签拆开后发现某类场景字段错位率达 7%，靠标签维度才拦下了这次发布）。</figcaption>
+</figure>
+
+<h3>6.5 差异治理：把差分结果变成发布决策</h3>
+<p>差分结果的用途不是「报告」，而是<strong>决策</strong>。建议把差异按四级分类，并为每一级预设动作：</p>
+
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>差异等级</th><th>典型情形</th><th>预设动作</th><th>决定权</th></tr></thead>
+<tbody>
+<tr><td><span class="tag t-red">L1 行为缺失</span></td><td>老系统产生了副作用（写流水 / 触发流程），新系统没有；或反向</td><td><b>立即阻断</b>，不计入差异率统计，直接定位</td><td>工程负责人</td></tr>
+<tr><td><span class="tag t-red">L2 结果不一致</span></td><td>核心返回字段值不同（金额、状态、单号、日期）</td><td><b>阻断放量</b>，逐个定位后重新验收</td><td>工程 + 业务双签</td></tr>
+<tr><td><span class="tag t-amber">L3 非核心差异</span></td><td>日志文本、中间态字段、非业务性排序</td><td>必要时显式配置忽略规则（须记录理由），否则视为缺陷</td><td>工程负责人</td></tr>
+<tr><td><span class="tag t-gray">L4 已知历史缺陷</span></td><td>老系统 13 年积累的、被业务绕过的错误行为</td><td><b>按老系统行为复制</b>，纳入「待修复清单」单独排期，<em>不在迁移期修</em></td><td>业务负责人</td></tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 5</b> 差异分级与预设动作。<b>L4 是最容易被团队误解的一级</b>：很多人出于工程师本能想「顺手修掉」，但这会在迁移期同时引入两个变化（迁移 + 修 bug），使差异归因失效。<b>正确做法是原样复制那个 bug，然后在迁移完成后作为独立的、被审批的变更去修。</b></figcaption>
+</figure>
+
+<h3>6.6 一条重要的反直觉纪律</h3>
+<div class="verdict">
+<h4>不要在迁移阶段要求 AI「优化」</h4>
+<p>
+给 AI 的指令必须是<strong>范围受限、输出格式已定义、运行环境已锁定、不得引入任何「改进」</strong>的。原因：遗留系统的现有行为就是规格——会计流程可能是围绕某个历史误差建立的，下游系统可能依赖某个看起来错误的排序。<br><br>
+公开案例中的做法值得照抄：<strong>把测试集与历史错误记录一起塞进上下文</strong>，让模型知道「这段代码为什么长成这样」；<strong>用文件级流水线</strong>（读一段 → 生成新类 → 编译 → 跑测试 → 报 diff），<strong>只有 diff 数超过阈值时才叫人</strong>。该案例中 AI 仍然幻觉出两处新的 off-by-one 错误——是被静态分析步骤拦下的。<br><br>
+<strong>结论：AI 复制老 bug 是它理解了契约的证明；测试网才是用来确认它没有发明新 bug 的。</strong>真正的风险不是 AI 抄错了，而是它<strong>悄悄生成了新的错误，同时把老代码显得很干净</strong>。
+</p>
+</div>
+</div></section>
+
+<!-- ============ 07 数据攻坚 ============ -->
+<section id="s07"><div class="wrap">
+<h2><span class="num">07</span>数据层攻坚：三轨数据访问与 Oracle 的正确打开方式</h2>
+<p class="sub">如果你只从这份报告里拿走一条战略建议，就是这一条：<strong>把「应用现代化」和「数据库替换」解耦，不要同时做。</strong>这是唯一能让你把项目风险从「乘积」降成「相加」的操作。</p>
+
+<div class="verdict">
+<h4>最重要的一个战略判断：数据库可以延后</h4>
+<p>
+绝大多数「AI 重写 + 去 O」项目失败，是因为把<strong>两个独立的极高风险变量绑在了一起</strong>：既要重构 73 万行应用逻辑，又要重建数据模型和全部 SQL。任何一个出问题都无法归因，回滚也没有干净的边界。<br><br>
+<strong>建议路径：</strong><br>
+① <strong>第一阶段（0–18 个月）</strong>：新系统<strong>继续使用 Oracle</strong>。数据访问层用标准 JDBC / JPA / SQL 抽象隔离，SQL 保持 Oracle 方言。目标是先把应用逻辑与行为等价性做出来。<br>
+② <strong>第二阶段（18 个月后）</strong>：当新系统稳定运行、且已建立起完整的 SQL 清单与影子验证能力后，把数据库替换作为一个<strong>独立的、有明确边界的项目</strong>来做，届时它已经从「600 个未知」变成了「一份已知清单」。<br><br>
+<strong>只有一种情况例外：合规或授权成本构成硬约束。</strong>如果去 O 是政策要求而非技术选择，那它有自己的时间表，此时应把数据库替换当作<strong>独立工作流并行推进</strong>，但绝不让它成为应用重构的前置依赖。
+</p>
+</div>
+
+<h3>7.1 Oracle 专有构造：转换难度分三档</h3>
+<p>公开工具链的实测边界很明确：<strong>自动化工具能完整转换 90%+ 的数据库代码，剩余不到 10% 需要人工</strong>。问题在于，这 10% 吃掉了项目的大部分时间。所以关键是<strong>提前知道这 10% 在哪</strong>——工具的评估报告（迁移成本评分）就是这张地图。</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 470" role="img" aria-label="Oracle 构造转换难度三档分类">
+  <!-- 档 1 -->
+  <rect x="30" y="20" width="900" height="128" rx="10" fill="#EDF6ED" stroke="#C5DEC6" stroke-width="1.4"/>
+  <text x="52" y="48" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#1B5820">第一档 · 机械可自动（工具直接覆盖，抽查即可）</text>
+  <text x="52" y="76" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#1B5820">NVL(a,b) → COALESCE(a,b)　｜　DECODE(x,v1,r1,def) → CASE WHEN</text>
+  <text x="52" y="98" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#1B5820">ROWNUM &lt;= n → LIMIT n　｜　sequence.NEXTVAL → nextval('seq')　｜　SELECT 1 FROM DUAL → SELECT 1</text>
+  <text x="52" y="120" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#1B5820">Oracle (+) 外连接 → 标准 LEFT / RIGHT JOIN　｜　VARCHAR2 → VARCHAR　｜　DATE → TIMESTAMP(0)</text>
+  <text x="52" y="140" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">注意：DATE 必须映射为 timestamp(0)——Oracle 的 DATE 是含时分秒的，映射成 date 会丢时间</text>
+
+  <!-- 档 2 -->
+  <rect x="30" y="162" width="900" height="140" rx="10" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.4"/>
+  <text x="52" y="190" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#8F3F06">第二档 · 必须语义重写（工具不覆盖，逐个手工，工作量大头）</text>
+  <text x="52" y="218" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#8F3F06">CONNECT BY PRIOR … START WITH → WITH RECURSIVE（层次查询，最常见的重写项）</text>
+  <text x="52" y="240" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#8F3F06">PRAGMA AUTONOMOUS_TRANSACTION（自治事务）　｜　动态 SQL 拼接　｜　Optimizer Hints</text>
+  <text x="52" y="262" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#8F3F06">DBMS_* 系统包　｜　UTL_FILE 文件操作　｜　CREATE SYNONYM（无 DDL 等价物）</text>
+  <text x="52" y="284" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#8C1D18">空字符串 '' 等于 NULL —— 改变 IS NULL 判断、约束行为与字符串拼接结果</text>
+  <text x="52" y="302" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">最后一条是最隐蔽的坑：Oracle 里 '' 与 NULL 同义，PG 系并非如此；WHERE col = '' 这类条件会静默改变语义</text>
+
+  <!-- 档 3 -->
+  <rect x="30" y="316" width="900" height="126" rx="10" fill="#FBEDEC" stroke="#E6C9C6" stroke-width="1.4"/>
+  <text x="52" y="344" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#8C1D18">第三档 · 架构级问题（不是语法问题，必须重新设计）</text>
+  <text x="52" y="372" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8C1D18">PL/SQL 包裹（PACKAGE）无直接等价物 → 需拆解为 schema，包级变量重新设计为会话状态</text>
+  <text x="52" y="394" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8C1D18">事务边界哲学不同：Oracle 文化里的隐式提交 vs 调用方界定事务；函数内不能 COMMIT</text>
+  <text x="52" y="416" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#8C1D18">逐行循环必须重写为集合式（同语义但性能差一个量级）　｜　异常处理块滥用导致性能退化</text>
+  <text x="52" y="436" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">只要内存中有任何 Oracle 例程在例程体内提交事务，就必须逐一审计——这类逻辑无法自动转换</text>
+
+  <text x="930" y="464" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="end">三档的实际工时分布：第一档 ≈5%，第二档 ≈60%，第三档 ≈35%</text>
+</svg>
+</div>
+<figcaption><b>图 10</b> Oracle 构造的转换难度分档。底部工时比例是经验分布，用于校准预期——<b>不要在立项时按「90% 自动」来排期</b>，因为那 90% 是代码行数口径，而工时口径下机械部分只占 5%。<b>正确的排期原则：围绕测试排期，而不是围绕代码转换排期</b>，因为剩余风险全部集中在验证环节。</figcaption>
+</figure>
+
+<h3>7.2 工具链选型</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>工具</th><th>定位</th><th>自动转换率</th><th>适合与不适合</th></tr></thead>
+<tbody>
+<tr><td><b>ora2pg</b></td><td>开源（Perl），schema + 部分 PL/SQL</td><td>schema 全覆盖；PL/SQL 仅简单逻辑</td><td><span class="tag t-green">适合</span> 预算敏感、目标 PG 系；<span class="tag t-red">不适合</span> 复杂 PL/SQL、CONNECT BY</td></tr>
+<tr><td><b>AWS SCT / DMS</b></td><td>商业，schema 转换 + 数据搬迁 + CDC</td><td>完整转换 90%+ 数据库代码</td><td><span class="tag t-green">适合</span> 云迁移、需要一体化的全量+CDC；<span class="tag t-red">不适合</span> 不想上云的场景</td></tr>
+<tr><td><b>国产库迁移链</b><br><span class="tag t-gray">金仓 / OceanBase 等</span></td><td>信创场景，含 Oracle 兼容模式</td><td>厂商自报 80–95%（视产品路线）</td><td><span class="tag t-green">适合</span> 有信创要求；<span class="tag t-amber">注意</span> 高级特性（UTL_FILE、CONNECT BY 等效性）仍有差异，需实测</td></tr>
+<tr><td><b>Istio / 网关流量镜像</b></td><td>流量复制，不做数据转换</td><td>不适用</td><td><span class="tag t-green">适合</span> 影子验证阶段；与上述工具互补而非替代</td></tr>
+<tr><td><b>LLM 辅助重写</b></td><td>处理第二 / 三档的人工部分</td><td>视上下文质量而定</td><td><span class="tag t-green">适合</span> 语义重写 + 生成对照测试；<span class="tag t-red">严禁</span> 单独作为迁移唯一手段</td></tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 6</b> 数据层工具链。实践中的正确组合是：<b>确定性工具做第一档 → 人工 + LLM 做第二档 → 架构设计 + 人工做第三档 → 影子流量验证全部</b>。任何声称「一键完成」的宣传都应假定它只覆盖了第一档。</figcaption>
+</figure>
+
+<h3>7.3 数据切换三阶段</h3>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 300" role="img" aria-label="数据迁移的三阶段：全量装载、CDC 同步、切换">
+  <defs>
+    <marker id="ar8" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- 阶段一 -->
+  <rect x="24" y="36" width="288" height="180" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="46" y="64" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#1F5288">阶段一 · 全量装载</text>
+  <text x="46" y="90" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1F5288">从 oracle.dmp 导入 → 抽取 → 装载</text>
+  <text x="46" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1F5288">卸载索引 → 装载 → 重建索引</text>
+  <text x="46" y="134" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1F5288">分批并行，耗时可能达数天</text>
+  <text x="46" y="162" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" font-weight="700" fill="#1F5288">关键动作</text>
+  <text x="46" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">数据类型逐列映射决策</text>
+  <text x="46" y="200" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">序列复位到当前最大值</text>
+
+  <line x1="314" y1="126" x2="338" y2="126" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar8)"/>
+
+  <!-- 阶段二 -->
+  <rect x="342" y="36" width="288" height="180" rx="10" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.4"/>
+  <text x="364" y="64" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#8F3F06">阶段二 · CDC 增量同步</text>
+  <text x="364" y="90" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#8F3F06">捕获 oracle.dmp 源库变更 → 实时同步</text>
+  <text x="364" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#8F3F06">老系统持续读写老库，互不阻塞</text>
+  <text x="364" y="134" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#8F3F06">新系统双写 → 新库为影子记录</text>
+  <text x="364" y="162" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" font-weight="700" fill="#8F3F06">关键动作</text>
+  <text x="364" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">每日全量校验 + 实时增量比对</text>
+  <text x="364" y="200" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">此阶段可持续数周至数月</text>
+
+  <line x1="632" y1="126" x2="656" y2="126" stroke="#4A505A" stroke-width="1.7" marker-end="url(#ar8)"/>
+
+  <!-- 阶段三 -->
+  <rect x="660" y="36" width="276" height="180" rx="10" fill="#EDF6ED" stroke="#2E7D32" stroke-width="1.8"/>
+  <text x="682" y="64" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#1B5820">阶段三 · 切换与收尾</text>
+  <text x="682" y="90" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1B5820">一致性验证通过 → 新库成为记录系统</text>
+  <text x="682" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1B5820">待同步延迟收敛到零，短暂停写切换</text>
+  <text x="682" y="134" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1B5820">新系统独占读写新库</text>
+  <text x="682" y="162" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" font-weight="700" fill="#1B5820">回滚窗口</text>
+  <text x="682" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">移除老对象前可回滚</text>
+  <text x="682" y="200" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">移除后回滚需还原对象 + 重放变更</text>
+
+  <!-- 底部 -->
+  <line x1="24" y1="240" x2="936" y2="240" stroke="#E3E0D8" stroke-width="1.4"/>
+  <text x="24" y="264" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8C1D18">铁律：把「移除遗留对象」当作每个领域的最后一步，且只在验证通过后才执行。</text>
+  <text x="24" y="286" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A">移除前：回滚只是切回路由。移除后：回滚需要还原对象并重放数据变更，工作量与风险大幅上升。</text>
+</svg>
+</div>
+<figcaption><b>图 11</b> 数据切换三阶段。<b>回滚窗口是这张图的全部要点</b>——阶段一、二期间回滚只是路由切换，移除老对象后回滚则要还原对象并重放变更。因此「删老表」这个动作必须被显式地当作独立决策来审批，而不是迁移完成后的顺手清理。</figcaption>
+</figure>
+
+<h3>7.4 508 个 mapper XML 的处理工序</h3>
+<p>这是你系统里最特殊的一块，公开方法论很少直接覆盖。建议按下列工序处理：</p>
+<ol>
+<li><strong>解析为结构化数据（而非文本）。</strong>把每个 mapper 解析为：语句 ID、类型、引用表、引用字段、动态分支树、Oracle 专有函数清单、结果映射。<strong>产出一份可查询的台账，这是后续一切自动化的输入。</strong></li>
+<li><strong>区分「查询语义」与「实现细节」。</strong>动态 <code>&lt;if&gt;</code> / <code>&lt;choose&gt;</code> 的分支条件属于<strong>业务语义</strong>，必须逐条确认并纳入 Golden Set 的场景枚举；而 <code>&lt;where&gt;</code> 拼接、字段别名、排序写法属于实现细节，可以自由重写。</li>
+<li><strong>按「引用表」而不是「按文件」聚类。</strong>同一个业务实体（如合同主表）往往被几十个 mapper 交叉引用。按表聚类能让迁移后的模块边界自然浮现，也是模块化单体划分的数据侧依据。</li>
+<li><strong>用真实执行计划做交叉验证。</strong>从 Oracle 的共享池 / AWR 里导出历史 SQL 的实际执行记录与执行计划，与静态解析结果比对。<strong>静态解析会漏掉运行时动态拼接的 SQL——而这正是最容易出生产事故的部分。</strong></li>
+<li><strong>生成对照测试。</strong>对每个语句，用老库数据构造输入、捕获输出，形成语句级的等价性测试。这比端到端测试便宜得多，且能精确定位差异。</li>
+</ol>
+
+<h3>7.5 关于 oracle.dmp 的使用建议</h3>
+<div class="g2">
+<div class="card">
+<h4>它是你最重要的资产</h4>
+<ul>
+<li><strong>数据字典是唯一的事实来源。</strong>表结构、约束、索引、外键、列注释、分区定义——这些决定了真实的数据模型，而不是代码里的假设。</li>
+<li><strong>列注释常含业务语义</strong>，是业务规则挖掘的免费线索。</li>
+<li><strong>历史数据本身是行为的证据</strong>：某些字段的取值分布能反推出被遗忘的业务规则（例如某个状态码只在特定机构出现）。</li>
+<li>导入一份到隔离环境，作为<strong>只读分析库</strong>与测试数据来源。</li>
+</ul>
+</div>
+<div class="card">
+<h4>使用它的三条安全底线</h4>
+<ul>
+<li><strong>不得上传到外部 LLM 服务。</strong>含真实合同、金额、人员数据的 dmp 属于高敏数据。需要 AI 辅助分析时，只发送<strong>脱敏后的结构（DDL + 注释 + 字段统计）</strong>。</li>
+<li><strong>导入环境必须网络隔离</strong>，与生产不互通，避免误连。</li>
+<li><strong>建可重复的脱敏管道</strong>：结构保留、值替换、比例保持（分布特征不丢）。这同时解决了「测试数据不真实」和「数据不出域」两个问题。</li>
+</ul>
+</div>
+</div>
+
+<div class="verdict">
+<h4>一个反直觉的提醒</h4>
+<p>不要试图用 AI 直接「读懂」整个 dump。<strong>dmp 是二进制导出格式，不是分析载体。</strong>正确顺序是：先导入 → 用数据库自身的数据字典视图导出结构元数据 → 用 SQL 查询导出字段级统计特征 → 把这些<strong>结构化、脱敏、体积可控</strong>的产物喂给 AI。<br><br>这一步做对了，AI 就能回答「哪些表是核心事实表」「哪些字段事实上是枚举且取值有哪些」「哪些外键关系已失效」——这些是模块划分的直接依据。</p>
+</div>
+</div></section>
+
+<!-- ============ 08 AI 工程体系 ============ -->
+<section id="s08"><div class="wrap">
+<h2><span class="num">08</span>AI 工程体系：窄域智能体网络 + 闸门化授权</h2>
+<p class="sub">这一章回答一个具体问题：<strong>AI 到底以什么方式接入你的工程流程？</strong>答案是：不要追求「一个全能智能体」，而要建一张<strong>被既有流程闸门包住的窄域智能体网络</strong>，每个只压缩一处瓶颈。</p>
+
+<h3>8.1 为什么是「窄域网络」而不是「全能智能体」</h3>
+<div class="g2">
+<div class="card">
+<h4>全能智能体的幻想</h4>
+<p style="font-size:14.5px;color:var(--ink2)">「让 AI 读完整套 73 万行代码，然后重写一个系统」——这是个人小项目的心智模型（vibe coding），放到巨系统里必然失败：</p>
+<ul style="font-size:14.5px">
+<li>上下文装不下（500 万行级别的仓库无法整体进入任何上下文窗口）</li>
+<li>无法归因（一次跑出来的东西错了，你连是哪一步错都不知道）</li>
+<li>无法回滚（大块产出没有可回退的粒度）</li>
+<li>无法信任（没有人能审阅它做的一切）</li>
+</ul>
+</div>
+<div class="card">
+<h4>窄域网络的实际形态</h4>
+<p style="font-size:14.5px;color:var(--ink2)">每个智能体只做一件事，且必须同时满足三个条件（<strong>巨系统上智能体的安全三件套</strong>）：</p>
+<ul style="font-size:14.5px">
+<li><b>窄</b>——职责边界清晰，输入输出格式固定</li>
+<li><b>可评测</b>——有自动化手段判断它做得好不好</li>
+<li><b>可回滚</b>——产出是离散的、可撤销的变更单元</li>
+</ul>
+<p style="font-size:14.5px;color:var(--ink2);margin-bottom:0">符合这三条的典型窄域：依赖升级、API 弃用替换、测试生成、API 文档生成、变更日志、只读问答、根因分析、**SQL 语句级等价性测试生成**。</p>
+</div>
+</div>
+
+<h3>8.2 四阶段授权模型：智能体永远不绕过人类闸门</h3>
+<p>这是整个落地路径里最容易翻车的地方：<strong>不能让智能体绕过现有的评审、回归、发布闸门</strong>。一次幻觉就可能冻住整条发布线。正确做法是借绞杀者模式对智能体也做渐进式授权：</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 400" role="img" aria-label="智能体四阶段渐进授权阶梯">
+  <defs>
+    <marker id="ar9" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A505A"/>
+    </marker>
+  </defs>
+
+  <!-- 阶梯：四级，从低到高 -->
+  <!-- 级 1 -->
+  <rect x="40" y="278" width="200" height="94" rx="9" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.3"/>
+  <text x="60" y="304" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1F5288">① 只读影子</text>
+  <text x="60" y="326" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">只读仓库 / 日志 / 监控</text>
+  <text x="60" y="344" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">回答「这段为什么这样」</text>
+  <text x="60" y="362" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1B5820">流程影响：零</text>
+
+  <!-- 级 2 -->
+  <rect x="258" y="212" width="200" height="160" rx="9" fill="#E9F5F3" stroke="#B9DCD8" stroke-width="1.3"/>
+  <text x="278" y="238" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#0A5750">② 影子提议</text>
+  <text x="278" y="260" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#0A5750">产出补丁 / 测试建议</text>
+  <text x="278" y="278" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#0A5750">但走与人类完全相同的</text>
+  <text x="278" y="296" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#0A5750">PR + 评审 + CI 闸门</text>
+  <text x="278" y="320" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#0A5750">人逐条 review 后 apply</text>
+  <text x="278" y="346" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1B5820">流程影响：不新增流程</text>
+  <text x="278" y="364" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">只加速既有流程</text>
+
+  <!-- 级 3 -->
+  <rect x="476" y="146" width="200" height="226" rx="9" fill="#FDF4E7" stroke="#EBD5B4" stroke-width="1.3"/>
+  <text x="496" y="172" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06">③ 带闸门自治</text>
+  <text x="496" y="194" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">在「有评测集 + 特征测试</text>
+  <text x="496" y="212" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">兜底」的窄域内：</text>
+  <text x="496" y="234" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">自动提 PR · 自动跑回归</text>
+  <text x="496" y="252" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">通过闸门后自动合入</text>
+  <text x="496" y="276" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8F3F06">人：设闸门 + 抽样审计</text>
+  <text x="496" y="302" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1B5820">流程影响：局部提速</text>
+  <text x="496" y="320" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">风险被测试网围住</text>
+  <text x="496" y="348" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8C1D18">前置条件：特征测试覆盖率</text>
+  <text x="496" y="364" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8C1D18">达阈值 + 差异率长期达标</text>
+
+  <!-- 级 4 -->
+  <rect x="694" y="80" width="226" height="292" rx="9" fill="#EDF6ED" stroke="#2E7D32" stroke-width="1.7"/>
+  <text x="714" y="106" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820">④ 边界内全自治</text>
+  <text x="714" y="128" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">边界清晰 / 可回滚 / 可评测</text>
+  <text x="714" y="146" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">的子域端到端自治</text>
+  <text x="714" y="170" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">典型：某类迁移、某类测试</text>
+  <text x="714" y="188" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">生成、批量文档补全</text>
+  <text x="714" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1B5820">人：只看 outcome 与 budget</text>
+  <text x="714" y="248" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1B5820">流程影响：该子域被重铸</text>
+  <text x="714" y="280" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8C1D18">注意：这一步不是「绕过流程」，</text>
+  <text x="714" y="298" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8C1D18">而是闸门本身已被智能体化</text>
+  <text x="714" y="326" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A">判定标准：AI 独立完成占比</text>
+  <text x="714" y="344" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A">（而非 AI 生成占比）持续提升</text>
+  <text x="714" y="362" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A">且事故率不上升</text>
+
+  <!-- 上升箭头 -->
+  <line x1="40" y1="392" x2="920" y2="392" stroke="#4A505A" stroke-width="1.6" marker-end="url(#ar9)"/>
+  <text x="480" y="386" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">授权程度（随时间推进，且每一级都必须以「上一级已稳定运行」为前提）</text>
+</svg>
+</div>
+<figcaption><b>图 12</b> 智能体四阶段渐进授权。<b>这条路径的灵魂是：智能体的产出永远先走既有闸门，而不是为它开一条绕过人的快通道。</b>阶段 ② 尤其关键——智能体提的 PR 走和人类一样的评审、一样的 CI、一样的发布窗口，不破坏任何既有流程，只是把「人写代码」这一步加速了。</figcaption>
+</figure>
+
+<div class="verdict">
+<h4>一条关于「假自动化」的判断标准</h4>
+<p>
+「95% 准确、剩下 5% 还要人审」叫<strong>假自动化</strong>——因为那 5% 仍然需要人的注意力，而人的注意力是稀缺资源，它依然是瓶颈。只有把最后那 5% 也推到可自动判定，人力才被真正释放。<br><br>
+<strong>因此本项目中「合格」的智能体不是「写得像」，而是「错了能被自动发现」。</strong>这也是为什么第 06 章的验证体系和本章的 Harness 建设，优先级高于任何编码类智能体。
+</p>
+</div>
+
+<h3>8.3 Harness Engineering：把验证环境改造成 AI 可用的</h3>
+<p>这是公开案例里一个很容易被忽略但极其重要的发现：<strong>传统验证环境对 AI 的适配性很差</strong>。在一项 60 万行系统的公开实践中，AI 在传统验证环境下的<strong>验证成功率仅约 60%，且单次有效验证耗时 2–3 小时</strong>。这意味着智能体大部分时间浪费在等待与误判上。</p>
+<p>解法是<strong>专门为 AI 重建验证基础设施（Harness Engineering）</strong>。以下是可直接照做的五项改造：</p>
+
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>改造项</th><th>传统做法（对 AI 不友好）</th><th>AI 友好做法</th><th>预期收益</th></tr></thead>
+<tbody>
+<tr><td><b>调用方式</b></td><td>人工点界面 / 填表单触发</td><td>提供可编程接口（命令行 / API），智能体可直接调用</td><td>从「人驱动」变「智能体驱动」</td></tr>
+<tr><td><b>反馈时延</b></td><td>一次有效验证 2–3 小时</td><td>环境常驻 + 增量构建 + 并行执行，压缩到分钟级</td><td>迭代次数提升一个数量级</td></tr>
+<tr><td><b>输出格式</b></td><td>人读的日志文本</td><td>结构化输出（JSON：通过/失败、差异字段、证据链接）</td><td>智能体能自己判断对错</td></tr>
+<tr><td><b>环境状态</b></td><td>手工准备数据，状态漂移</td><td>环境快照 / 可重置，每次验证从干净状态开始</td><td>消除「上次跑的残留」类伪失败</td></tr>
+<tr><td><b>失败归因</b></td><td>只报「用例失败」</td><td>附上实际执行路径 + 期望路径 + 差异字段</td><td>同时解决假覆盖问题（见 6.3）</td></tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 7</b> Harness Engineering 的五项改造。这五项的共同目标是同一件事：<b>让「验证」这个动作变得便宜到可以反复做</b>。回到阿姆达尔定律——把验证成本降下来，等于直接抬高 P 的上限。这项工作看起来不像「重构」，但它的杠杆率最高。</figcaption>
+</figure>
+
+<h3>8.4 指标设计：防止被好看的数字骗过去</h3>
+<p>这是本报告里最能直接用在汇报材料上的一张图。</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 330" role="img" aria-label="AI 生成占比与 AI 独立完成占比的对照">
+  <!-- 左：AI 生成占比 -->
+  <rect x="40" y="40" width="410" height="204" rx="10" fill="#EDF3FA" stroke="#C6D8EC" stroke-width="1.4"/>
+  <text x="64" y="68" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#1F5288">指标 A · AI 生成代码占比</text>
+  <text x="64" y="86" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">衡量「杠杆有多大」——但会被误读</text>
+
+  <!-- 纵轴：100% → y=110，0% → y=200（统一刻度，两图可直接比较） -->
+  <line x1="96" y1="110" x2="420" y2="110" stroke="#C6D8EC" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="96" y1="155" x2="420" y2="155" stroke="#C6D8EC" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="96" y1="110" x2="96" y2="200" stroke="#4A505A" stroke-width="1.3"/>
+  <line x1="96" y1="200" x2="420" y2="200" stroke="#4A505A" stroke-width="1.3"/>
+  <text x="90" y="114" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.5" fill="#4A505A" text-anchor="end">100%</text>
+  <text x="90" y="159" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.5" fill="#4A505A" text-anchor="end">50%</text>
+  <text x="90" y="204" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.5" fill="#4A505A" text-anchor="end">0</text>
+
+  <rect x="120" y="177" width="50" height="23" fill="#2F6FB0"/>
+  <text x="145" y="171" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1F5288" text-anchor="middle">25%</text>
+  <text x="145" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">2024</text>
+
+  <rect x="196" y="155" width="50" height="45" fill="#2F6FB0"/>
+  <text x="221" y="149" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1F5288" text-anchor="middle">50%</text>
+  <text x="221" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">2025</text>
+
+  <rect x="272" y="132" width="50" height="68" fill="#2F6FB0"/>
+  <text x="297" y="126" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1F5288" text-anchor="middle">75%</text>
+  <text x="297" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">2026Q1</text>
+
+  <rect x="348" y="110" width="50" height="90" fill="#8FB8DC"/>
+  <text x="373" y="104" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1F5288" text-anchor="middle">≈100%</text>
+  <text x="373" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">新项目</text>
+
+  <text x="64" y="236" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#1F5288">来源：Google 公开披露的内部数据（厂商自报）</text>
+
+  <!-- 右：独立完成占比（同一纵轴刻度） -->
+  <rect x="510" y="40" width="410" height="204" rx="10" fill="#FBEDEC" stroke="#E6C9C6" stroke-width="1.4"/>
+  <text x="534" y="68" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="700" fill="#8C1D18">指标 B · AI 独立完成占比</text>
+  <text x="534" y="86" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8C1D18">衡量「能力边界在哪」——这才是瓶颈指标</text>
+
+  <line x1="566" y1="110" x2="890" y2="110" stroke="#E6C9C6" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="566" y1="155" x2="890" y2="155" stroke="#E6C9C6" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="566" y1="110" x2="566" y2="200" stroke="#4A505A" stroke-width="1.3"/>
+  <line x1="566" y1="200" x2="890" y2="200" stroke="#4A505A" stroke-width="1.3"/>
+  <text x="560" y="114" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.5" fill="#4A505A" text-anchor="end">100%</text>
+  <text x="560" y="159" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.5" fill="#4A505A" text-anchor="end">50%</text>
+  <text x="560" y="204" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.5" fill="#4A505A" text-anchor="end">0</text>
+
+  <rect x="600" y="195" width="50" height="5" fill="#B3261E"/>
+  <text x="625" y="189" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8C1D18" text-anchor="middle">5%</text>
+  <text x="625" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">Meta 遗留任务</text>
+
+  <rect x="686" y="180" width="50" height="20" fill="#B3261E"/>
+  <text x="711" y="174" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8C1D18" text-anchor="middle">22%</text>
+  <text x="711" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">DX 合入主干</text>
+
+  <rect x="772" y="178" width="50" height="22" fill="#B3261E"/>
+  <text x="797" y="172" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8C1D18" text-anchor="middle">≈24%</text>
+  <text x="797" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">Senior SWE</text>
+
+  <rect x="848" y="179" width="50" height="21" fill="#D98A84"/>
+  <text x="873" y="173" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8C1D18" text-anchor="middle">≈23%</text>
+  <text x="873" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#4A505A" text-anchor="middle">SWE-bench</text>
+
+  <text x="534" y="236" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#8C1D18">同一时期、同一批前沿模型 — 两个数差了十几倍</text>
+
+  <!-- 底部结论 -->
+  <text x="480" y="272" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#333941" text-anchor="middle">巨系统的胜负手从来不在指标 A，而在指标 B。</text>
+  <text x="480" y="298" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#4A505A" text-anchor="middle">两图共用同一纵轴刻度。汇报时只报 A、不报 B，等于把「杠杆变长了」误读成「瓶颈变宽了」——这是大多数 AI 重构项目的立项误导源头。</text>
+</svg>
+</div>
+<figcaption><b>图 13</b> 双指标对照。同样的前沿模型、同一时期，AI 生成占比可以到 75%，而 AI 独立完成占比只有 5–24%。<b>建议在项目看板上同时挂这两个数，并明确「B 才是本项目的真实进度条」。</b>注意所有数据均来自厂商披露或第三方实测，口径不完全一致，仅用于表达量级差异。</figcaption>
+</figure>
+
+<h3>8.5 六条防幻觉机制（可直接写进开发规范）</h3>
+<ol>
+<li><strong>证据强制。</strong>任何 AI 给出的结论必须附代码位置 / 执行证据 / 数据出处。无法给出证据的结论一律视为推测。</li>
+<li><strong>路径校验而非结果校验。</strong>验证「实际执行到了哪条路径」，而不只是「返回了什么」。这是防假覆盖的唯一手段（见 6.3）。</li>
+<li><strong>确定性优先。</strong>能用工具链 recipe 解决的不走 LLM。LLM 只处理需要判断的部分（见 5.4）。</li>
+<li><strong>变更原子化。</strong>每次变更必须小到可被一次代码评审完整审阅。大块产出一律拆分。</li>
+<li><strong>负样本集。</strong>除了「正确样本」，还要维护一组「已知错误样本」，定期跑一遍确认智能体能识别它们。没有负样本集的评测是自欺。</li>
+<li><strong>私有留存集。</strong>不要用公开基准判断你的智能体行不行。从你自己的仓库里切出最近 6–12 个月的内部提交作为私有评测集——这个时间段的内容在任何模型的训练语料里都不存在，天然免疫污染。</li>
+</ol>
+</div></section>
+
+<!-- ============ 09 组织治理 ============ -->
+<section id="s09"><div class="wrap">
+<h2><span class="num">09</span>组织与治理：决定成败的是这些「非技术」的事</h2>
+<p class="sub">行业统计反复指向同一个结论：<strong>大规模现代化的失败主因是组织性的，不是技术性的</strong>——范围从「替换」膨胀成「重建」、特性冻结被业务打破、懂老系统的人流失、缺少明确的所有权。这一章处理的就是这些。</p>
+
+<h3>9.1 五个必须明确的角色</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th>角色</th><th>唯一职责</th><th>关键授权</th><th>常见错误配置</th></tr></thead>
+<tbody>
+<tr><td><b>现代化总负责人</b><br><span class="tag t-amber">单一责任人</span></td>
+<td>对整体节奏、范围与对外承诺负责</td>
+<td>可否决范围膨胀；可暂停任一试点</td>
+<td>设成委员会 → 无人负责，决策瘫痪</td></tr>
+<tr><td><b>业务行为权威</b><br><span class="tag t-amber">业务侧</span></td>
+<td>裁决「这个行为是业务规则还是历史缺陷」（即 L4 差异的判定权）</td>
+<td>对差异分级有最终裁定权</td>
+<td>由工程代劳 → L4 差异被当成 bug 顺手改掉，引入隐性回归</td></tr>
+<tr><td><b>知识守门人</b><br><span class="tag t-blue">新增角色</span></td>
+<td>维护代码知识图谱、决策日志、检索管道、上下文清理</td>
+<td>对文档质量有门禁权（无 ADR 的重构 PR 不得合入）</td>
+<td>无人负责 → 图谱三个月后就过期，检索质量崩塌</td></tr>
+<tr><td><b>验证体系负责人</b><br><span class="tag t-teal">新增角色</span></td>
+<td>Golden Set、影子流量、差分引擎、Harness 建设</td>
+<td>裁定「差异率是否达标」</td>
+<td>挂靠在测试团队下 → 被视为「测试工作」而非工程地基，投入被砍</td></tr>
+<tr><td><b>平台架构师</b></td>
+<td>目标架构、模块边界、平台语义规格（reed 五组件）</td>
+<td>模块边界最终裁决</td>
+<td>让 AI 或外部顾问决定边界 → 边界与业务不一致，后续全盘返工</td></tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 8</b> 五个关键角色。<b>其中「业务行为权威」和「知识守门人」是绝大多数项目缺失的两个。</b>前者的缺失会导致 L4 类差异被误改（见 6.5），后者的缺失会让第零步的成果在三个月内腐化——这是最常见的「做完知识图谱就没人维护」死法。</figcaption>
+</figure>
+
+<h3>9.2 三条不可协商的合规红线</h3>
+<div class="g3">
+<div class="card">
+<h4>红线一 · 数据不出域</h4>
+<p style="font-size:14.5px;color:var(--ink2)"><strong>oracle.dmp 与任何含真实合同、金额、人员数据的样本，不得上传至外部大模型服务。</strong>需要 AI 辅助时，只发送脱敏后的结构（DDL + 注释 + 统计特征）与合成样本。这是硬约束，不是建议。</p>
+</div>
+<div class="card">
+<h4>红线二 · 智能体最小权限</h4>
+<p style="font-size:14.5px;color:var(--ink2)">智能体的权限按第 08 章的四阶段模型逐级授予，<strong>默认只读</strong>。生产环境的写权限、数据库 DDL 权限、发布权限，必须有独立的、可审计的授权流程。<strong>零信任 + 沙箱执行是准入条件，不是加分项。</strong></p>
+</div>
+<div class="card">
+<h4>红线三 · 可审计的产出</h4>
+<p style="font-size:14.5px;color:var(--ink2)">每一条 AI 生成的代码都要能追溯到：哪个智能体、什么提示、哪些上下文、谁审阅、依据什么证据合入。<strong>审计链断了，后面对任何差异都无法归因。</strong></p>
+</div>
+</div>
+
+<h3>9.3 投资配比：真正的编码只占四分之一</h3>
+<p>这是最容易被管理层误解的一条。<strong>不要把预算全部按「开发人天」来规划</strong>——大规模现代化的成本结构与传统开发完全不同：</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 250" role="img" aria-label="现代化项目的投资配比">
+  <!-- 主条底 -->
+  <rect x="60" y="52" width="840" height="60" rx="8" fill="#F9F8F4" stroke="#CFCBC0" stroke-width="1.2"/>
+
+  <!-- 资产可读化 27% -->
+  <rect x="61" y="53" width="225" height="58" fill="#EFE9FA" stroke="#6D3FB5" stroke-width="1.5"/>
+  <text x="173" y="78" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#5A3099" text-anchor="middle">27%</text>
+  <text x="173" y="97" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#5A3099" text-anchor="middle">资产可读化</text>
+
+  <!-- 验证体系 28% -->
+  <rect x="286" y="53" width="237" height="58" fill="#E3F2F0" stroke="#0F766E" stroke-width="1.5"/>
+  <text x="404" y="78" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#0A5750" text-anchor="middle">28%</text>
+  <text x="404" y="97" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#0A5750" text-anchor="middle">验证与 Harness</text>
+
+  <!-- 架构与领域设计 17% -->
+  <rect x="523" y="53" width="141" height="58" fill="#E3EDF8" stroke="#2F6FB0" stroke-width="1.5"/>
+  <text x="593" y="78" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#1F5288" text-anchor="middle">17%</text>
+  <text x="593" y="97" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#1F5288" text-anchor="middle">架构与领域建模</text>
+
+  <!-- 编码（含 AI） 23% -->
+  <rect x="664" y="53" width="195" height="58" fill="#FBEEDC" stroke="#B45309" stroke-width="1.5"/>
+  <text x="761" y="78" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">23%</text>
+  <text x="761" y="97" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#8F3F06" text-anchor="middle">编码与迁移执行</text>
+
+  <!-- 治理与培训 5% -->
+  <rect x="859" y="53" width="40" height="58" fill="#ECEBE7" stroke="#4A505A" stroke-width="1.5"/>
+  <text x="879" y="88" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#333941" text-anchor="middle">5%</text>
+
+  <!-- 说明行 -->
+  <text x="60" y="140" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#5A3099">资产可读化</text>
+  <text x="60" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">业务规则考古 + 知识图谱</text>
+  <text x="60" y="177" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">+ 决策日志 + 特征测试网</text>
+
+  <text x="300" y="140" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#0A5750">验证与 Harness</text>
+  <text x="300" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">Golden Set + 影子流量</text>
+  <text x="300" y="177" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">+ 差分引擎 + 环境改造</text>
+
+  <text x="540" y="140" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1F5288">架构与领域建模</text>
+  <text x="540" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">模块边界 + 事件风暴</text>
+  <text x="540" y="177" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">+ 平台语义规格</text>
+
+  <text x="740" y="140" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06">编码与迁移执行</text>
+  <text x="740" y="160" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">含 AI 生成 + 人工评审</text>
+  <text x="740" y="177" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A">← <tspan font-weight="700">这是唯一被 AI 大幅压缩的 23%</tspan></text>
+
+  <line x1="60" y1="200" x2="900" y2="200" stroke="#E3E0D8" stroke-width="1.4"/>
+  <text x="60" y="224" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941">业务规则考古在行业统计中平均占总投入 <tspan font-weight="700">27%</tspan>，而多数厂商报价低估了 <tspan font-weight="700">3–4 倍</tspan>——因为「未记录的业务规则」只在</text>
+  <text x="60" y="243" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" fill="#333941">新系统与老系统给出不同答案时才浮现出来，在那之前它不在任何人的清单上。</text>
+</svg>
+</div>
+<figcaption><b>图 14</b> 投资配比建议。<b>这张图最重要的用途是管理预期</b>：如果立项时按「开发人天」估算，你会得出一个偏低的数字；而真实成本的大头在「理解」和「验证」上。<b>AI 压缩的是最下面那 23%，不是全部。</b>把它误当成「总成本打三折」是立项阶段最常见的灾难。</figcaption>
+</figure>
+
+<h3>9.4 向上汇报的正确口径</h3>
+<div class="g2">
+<div class="card">
+<h4>应该这样报</h4>
+<ul style="font-size:14.5px">
+<li>「已建立代码知识图谱，覆盖 X% 核心模块，变更影响分析自动回答准确率 Y%」</li>
+<li>「特征测试网锁定 Z 个关键业务行为，注入式缺陷检出率 90%+」</li>
+<li>「试点域在影子流量下运行 N 周，L1/L2 级差异归零」</li>
+<li>「AI 独立完成占比从 0% 提升到 M%，事故率未上升」</li>
+</ul>
+</div>
+<div class="card">
+<h4>不要这样报</h4>
+<ul style="font-size:14.5px">
+<li>「AI 生成了 80% 的代码」——这是指标 A，不反映能力边界</li>
+<li>「重构进度 60%」——没有定义「完成」的口径，这个数没有意义</li>
+<li>「节省了 N 人天」——在人天不是瓶颈的项目里，这个数会被追问倒</li>
+<li>「试点很成功」——没有差异率与覆盖率数据的成功不是证据</li>
+</ul>
+</div>
+</div>
+</div></section>
+
+<!-- ============ 10 路线图 ============ -->
+<section id="s10"><div class="wrap">
+<h2><span class="num">10</span>路线图：90 天 / 12 个月 / 36 个月</h2>
+<p class="sub">节奏设计的核心原则来自公开实践的经验教训：<strong>前 12 个月几乎不碰组织结构和发布流程</strong>，所有 AI 动作都被既有闸门包住。这样「不影响其他流程顺畅运行」这条红线才始终成立。</p>
+
+<h3>10.1 全景甘特图</h3>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 452" role="img" aria-label="36 个月现代化路线甘特图">
+  <!-- 时间轴 -->
+  <line x1="210" y1="46" x2="900" y2="46" stroke="#4A505A" stroke-width="1.4"/>
+  <text x="210" y="36" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">M0</text>
+  <text x="325" y="36" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">M6</text>
+  <text x="440" y="36" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">M12</text>
+  <text x="555" y="36" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">M18</text>
+  <text x="670" y="36" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">M24</text>
+  <text x="785" y="36" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">M30</text>
+  <text x="900" y="36" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#4A505A" text-anchor="middle">M36</text>
+
+  <!-- 刻度短线（不穿过任何条） -->
+  <line x1="325" y1="46" x2="325" y2="54" stroke="#CFCBC0" stroke-width="1.2"/>
+  <line x1="440" y1="46" x2="440" y2="54" stroke="#CFCBC0" stroke-width="1.2"/>
+  <line x1="555" y1="46" x2="555" y2="54" stroke="#CFCBC0" stroke-width="1.2"/>
+  <line x1="670" y1="46" x2="670" y2="54" stroke="#CFCBC0" stroke-width="1.2"/>
+  <line x1="785" y1="46" x2="785" y2="54" stroke="#CFCBC0" stroke-width="1.2"/>
+
+  <!-- 行 1：第零步 -->
+  <text x="196" y="72" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">第零步 · 资产可读化</text>
+  <rect x="210" y="58" width="230" height="22" rx="5" fill="#EFE9FA" stroke="#6D3FB5" stroke-width="1.4"/>
+  <text x="325" y="74" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#5A3099" text-anchor="middle">知识图谱 + 平台语义规格</text>
+
+  <!-- 行 2：事实清单 -->
+  <text x="196" y="104" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">事实清单与试点选型</text>
+  <rect x="245" y="90" width="115" height="22" rx="5" fill="#E3EDF8" stroke="#2F6FB0" stroke-width="1.4"/>
+  <text x="302" y="106" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#1F5288" text-anchor="middle">2 个月</text>
+
+  <!-- 行 3：特征测试 -->
+  <text x="196" y="136" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">特征测试网</text>
+  <rect x="268" y="122" width="287" height="22" rx="5" fill="#EFE9FA" stroke="#6D3FB5" stroke-width="1.4"/>
+  <text x="411" y="138" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#5A3099" text-anchor="middle">高风险模块优先 · 覆盖率爬坡</text>
+
+  <!-- 行 4：Harness -->
+  <text x="196" y="168" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">Harness 与验证基建</text>
+  <rect x="325" y="154" width="287" height="22" rx="5" fill="#E3F2F0" stroke="#0F766E" stroke-width="1.4"/>
+  <text x="468" y="170" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#0A5750" text-anchor="middle">Golden Set + 影子流量 + 差分引擎</text>
+
+  <!-- 行 5：试点 -->
+  <text x="196" y="200" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">★ 试点域端到端绞杀</text>
+  <rect x="440" y="186" width="307" height="22" rx="5" fill="#D8ECD9" stroke="#2E7D32" stroke-width="1.4"/>
+  <text x="593" y="202" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#1B5820" text-anchor="middle">contract 域一条最小业务闭环</text>
+
+  <!-- 行 6：域扩展 -->
+  <text x="196" y="232" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">逐域扩展</text>
+  <rect x="555" y="218" width="345" height="22" rx="5" fill="#D8ECD9" stroke="#2E7D32" stroke-width="1.4"/>
+  <text x="727" y="234" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#1B5820" text-anchor="middle">第 2、3 个域 → 全量域（operation 等）</text>
+
+  <!-- 行 7：SQL 层 -->
+  <text x="196" y="264" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">SQL / mapper 层迁移</text>
+  <rect x="555" y="250" width="230" height="22" rx="5" fill="#FBEEDC" stroke="#B45309" stroke-width="1.4"/>
+  <text x="670" y="266" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#8F3F06" text-anchor="middle">语句级等价性测试驱动</text>
+
+  <!-- 行 8：数据库 -->
+  <text x="196" y="296" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">数据库替换（独立评估）</text>
+  <rect x="670" y="282" width="230" height="22" rx="5" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.4"/>
+  <text x="785" y="298" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#8C1D18" text-anchor="middle">不作为前置依赖</text>
+
+  <!-- 行 9：组织 -->
+  <text x="196" y="328" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" font-weight="700" fill="#333941" text-anchor="end">组织与流程重塑</text>
+  <rect x="670" y="314" width="230" height="22" rx="5" fill="#ECEBE7" stroke="#4A505A" stroke-width="1.4"/>
+  <text x="785" y="330" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" font-weight="700" fill="#333941" text-anchor="middle">仅在智能体已稳定覆盖后动</text>
+
+  <!-- 里程碑标记（圆点，不穿过任何条） -->
+  <circle cx="440" cy="46" r="5" fill="#B45309"/>
+  <circle cx="670" cy="46" r="5" fill="#B45309"/>
+
+  <!-- 底部说明 -->
+  <line x1="210" y1="392" x2="900" y2="392" stroke="#E3E0D8" stroke-width="1.4"/>
+  <text x="210" y="414" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A">前 12 个月不碰组织与发布流程；M18 之后才开始动结构——那时闸门本身已被智能体化，而不是被绕过</text>
+  <text x="210" y="438" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#8F3F06">● 里程碑：M12 试点域首次通过影子流量验收　／　M24 半数业务域完成行为迁移</text>
+</svg>
+</div>
+<figcaption><b>图 15</b> 36 个月路线。三条设计原则：<b>① 前置验证基建先于任何业务编码；② 试点必须是端到端的一条业务闭环（不是「一个技术模块」）；③ 数据库替换与组织重构排在最后，且不做前置依赖。</b>注意 M12 与 M24 两个里程碑都是「验收」而非「开工」——里程碑的定义方式决定团队是往前赶还是往钱花。</figcaption>
+</figure>
+
+<h3>10.2 第一个 90 天：可直接执行的动作清单</h3>
+<div class="g3">
+<div class="card">
+<h4>第 1–30 天 · 摸清家底</h4>
+<ol style="font-size:14.5px">
+<li>导出并导入 Oracle 数据字典，产出表 / 字段 / 约束 / 索引 / 注释的全量清单</li>
+<li>静态解析 508 个 mapper XML，产出 SQL 台账（语句数、动态分支数、引用表、Oracle 专有构造计数）</li>
+<li>导出存储过程 / 触发器 / 序列清单与依赖关系</li>
+<li>枚举对外接口、批处理作业、报表、导出的<strong>全量清单</strong></li>
+<li><strong>盘下游消费者：谁在读你的库 / 调你的接口</strong>（这一步最容易漏，也最致命）</li>
+<li>拉近 12 个月变更热点 + 生产事故清单，生成「风险—价值」四象限</li>
+</ol>
+</div>
+<div class="card">
+<h4>第 31–60 天 · 选点与准备</h4>
+<ol style="font-size:14.5px">
+<li>基于四象限选定试点域（建议：<strong>价值高 + 耦合面小 + 可端到端闭环</strong>）</li>
+<li>为 reed 五组件写首版平台语义规格（先写 grail 与 pigeon）</li>
+<li>搭代码知识图谱 MVP：Java AST + mapper SQL 子图 + 调用图</li>
+<li>把最痛的 20 个历史决策补成 ADR（只做高风险的，不求全）</li>
+<li>为试点域写第一批特征测试（目标：锁定 10 条核心业务行为）</li>
+<li>建立<strong>私有评测集</strong>：从自有仓库切最近 6–12 个月的提交，作为智能体能力的真实标尺</li>
+</ol>
+</div>
+<div class="card">
+<h4>第 61–90 天 · 首个闭环验证</h4>
+<ol style="font-size:14.5px">
+<li>把验证环境改造成可编程调用（Harness 五项改造）</li>
+<li>对试点域的一条业务闭环做 PERS 建模，产出首个 Golden Set</li>
+<li>把这一条闭环用新架构重写（<strong>只做这一条，不扩范围</strong>）</li>
+<li>搭最小影子流量链路，在真实流量下比对</li>
+<li>产出第一份差异报告，跑完 L1–L4 分级流程</li>
+<li><strong>复盘并向管理层汇报「AI 独立完成占比」与「L1/L2 差异率」</strong></li>
+</ol>
+</div>
+</div>
+
+<div class="verdict">
+<h4>90 天结束时的成功标准</h4>
+<p>
+不是「写完了多少代码」，而是三件事：<br>
+① <strong>事实清单完整</strong>——你知道系统有多少接口、多少表、多少下游；<br>
+② <strong>一条业务闭环的 PERS 等价性被证据证明</strong>——不是「跑通了」，而是「差异率为零且证据可查」；<br>
+③ <strong>验证成本显著下降</strong>——从「2–3 小时一次」降到「分钟级一次」。<br><br>
+这三条达成，才支持你向管理层申请扩大投入。任何一条没达成，都不应该进入第二阶段——<strong>这不是保守，这是把失败成本锁在 90 天以内。</strong>
+</p>
+</div>
+
+<h3>10.3 成熟度阶梯：你的目标不是一步到位</h3>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 340" role="img" aria-label="现代化能力成熟度五级阶梯">
+  <!-- 5 级 -->
+  <rect x="740" y="40" width="196" height="250" rx="9" fill="#EDF6ED" stroke="#2E7D32" stroke-width="1.6"/>
+  <text x="760" y="66" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1B5820">L5 · 自演化</text>
+  <text x="760" y="88" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1B5820">行为等价性可持续证明</text>
+  <text x="760" y="106" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1B5820">技术债有自动清偿回路</text>
+  <text x="760" y="124" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1B5820">人只守判断力</text>
+  <text x="760" y="150" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1B5820">判定：新增需求可以</text>
+  <text x="760" y="168" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1B5820">在旧系统退役后正常交付</text>
+
+  <rect x="580" y="86" width="148" height="204" rx="9" fill="#E9F5F3" stroke="#0F766E" stroke-width="1.4"/>
+  <text x="596" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#0A5750">L4 · 可授权</text>
+  <text x="596" y="134" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#0A5750">窄域智能体带闸门</text>
+  <text x="596" y="152" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#0A5750">自治；人设闸门</text>
+  <text x="596" y="170" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#0A5750">判定：AI 独立完成</text>
+  <text x="596" y="188" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#0A5750">占比持续提升</text>
+  <text x="596" y="206" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#0A5750">且事故率不升</text>
+
+  <rect x="420" y="132" width="148" height="158" rx="9" fill="#FDF4E7" stroke="#B45309" stroke-width="1.4"/>
+  <text x="436" y="158" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8F3F06">L3 · 可验证</text>
+  <text x="436" y="180" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8F3F06">Golden Set + 影子</text>
+  <text x="436" y="198" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8F3F06">流量 + 差分归零</text>
+  <text x="436" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8F3F06">判定：L1/L2 差异</text>
+  <text x="436" y="234" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8F3F06">为零且证据可查</text>
+
+  <rect x="260" y="178" width="148" height="112" rx="9" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.4"/>
+  <text x="276" y="204" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#1F5288">L2 · 可读</text>
+  <text x="276" y="226" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1F5288">知识图谱 + 决策</text>
+  <text x="276" y="244" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1F5288">日志 + 特征测试</text>
+  <text x="276" y="262" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1F5288">判定：新人能独立</text>
+  <text x="276" y="280" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#1F5288">理解一个中型模块</text>
+
+  <rect x="100" y="224" width="148" height="66" rx="9" fill="#FBEDEC" stroke="#B3261E" stroke-width="1.4"/>
+  <text x="116" y="250" font-family="-apple-system,PingFang SC,sans-serif" font-size="12.5" font-weight="700" fill="#8C1D18">L1 · 无序</text>
+  <text x="116" y="272" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8C1D18">无测试，靠人，改动靠勇气</text>
+  <text x="116" y="288" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#8C1D18">← 你当前的起点</text>
+
+  <!-- 阶梯基线 -->
+  <line x1="100" y1="300" x2="936" y2="300" stroke="#CFCBC0" stroke-width="1.4"/>
+
+  <text x="100" y="326" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#4A505A">每一级都有明确的、可测量的进入标准。不要跳级——L4 的授权若无 L3 的验证网兜底，必然出事故。</text>
+</svg>
+</div>
+<figcaption><b>图 16</b> 能力成熟度五级。<b>注意每一级的「判定」一栏都是可观测的事实，而不是主观评价。</b>这套划分的实用价值在于：它让「我们做到哪一步了」这个问题有了不含糊的答案，也让你能在任何一级安全地停下来——包括停在 L2。</figcaption>
+</figure>
+</div></section>
+
+<!-- ============ 11 反模式 ============ -->
+<section id="s11"><div class="wrap">
+<h2><span class="num">11</span>反模式清单：十五条会让你翻车的做法</h2>
+<p class="sub">建议把这一章单独打印贴出来。<strong>每一条都来自公开案例中的真实失败，而不是理论推演。</strong></p>
+
+<h3>11.1 战略层（4 条）</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th style="width:26%">反模式</th><th style="width:37%">症状</th><th>修正</th></tr></thead>
+<tbody>
+<tr>
+<td><b>① 范围膨胀</b></td>
+<td>从「替换合同模块」变成「顺便重做权限、重做界面、上微服务、换数据库」。范围先翻倍、再翻三倍。</td>
+<td><strong>锁定功能对等。</strong>新需求一律排到迁移完成之后。任何在迁移期加进来的「新想法」都要走独立的、被否决权覆盖的审批。</td>
+</tr>
+<tr>
+<td><b>② 大爆炸切换</b></td>
+<td>单一切换日，所有风险（技术、运营、组织）压在同一天。没有部分回滚，只有 go-live 与事后复盘。</td>
+<td>改走<strong>绞杀者 + 可回滚切片</strong>。每一片在并行运行窗口内验证，出问题回滚是路由切换而非数据修复。</td>
+</tr>
+<tr>
+<td><b>③ 双高风险绑定</b></td>
+<td>应用重构与数据库替换同时推进。出错无法归因，回滚没有干净边界。</td>
+<td><strong>解耦。</strong>第一阶段新系统继续用 Oracle（见 07 章）。数据库替换独立立项、独立排期。</td>
+</tr>
+<tr>
+<td><b>④ KPI 选错</b></td>
+<td>用「AI 生成代码占比」作为项目健康度指标。数字漂亮，实际瓶颈毫无改善。</td>
+<td>改用<strong>AI 独立完成占比 + L1/L2 差异率 + 验证反馈时延</strong>三个指标（见 8.4）。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 9</b> 战略层反模式。这四条的共同点是<b>在错误的层面上做优化</b>——优化范围、优化切换方式、优化指标，唯独没有优化那块真正卡住进度的瓶颈。</figcaption>
+</figure>
+
+<h3>11.2 工程层（7 条）</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th style="width:26%">反模式</th><th style="width:37%">症状</th><th>修正</th></tr></thead>
+<tbody>
+<tr>
+<td><b>⑤ 让 AI 通读后重写</b></td>
+<td>「把整个仓库喂给模型，让它产出新系统」。上下文装不下、无法归因、无法回滚、无人能审。</td>
+<td>拆成<strong>窄域智能体网络</strong>，每个只压缩一处瓶颈，且必须<strong>窄 / 可评测 / 可回滚</strong>（见 8.1）。</td>
+</tr>
+<tr>
+<td><b>⑥ 用 LLM 做机械转换</b></td>
+<td>把本该用 recipe 完成的 API 替换、依赖升级交给 LLM 逐文件处理。成本高、结果不可复现。</td>
+<td><strong>确定性优先</strong>：OpenRewrite 类 recipe 打底，LLM 只处理需要判断的部分（见 5.4）。</td>
+</tr>
+<tr>
+<td><b>⑦ 迁移期顺手修 bug</b></td>
+<td>发现老系统一个 13 年的错误行为，顺手「修好了」。业务侧随之上报严重回归。</td>
+<td><strong>L4 差异原样复制</strong>，纳入待修复清单单独排期。迁移期同时引入两个变化会让差异归因失效（见 6.5）。</td>
+</tr>
+<tr>
+<td><b>⑧ 用覆盖率当验证证据</b></td>
+<td>「生成用例全 PASS，覆盖率 85%」，但目标业务分支从未被执行——假覆盖。</td>
+<td><strong>校验实际执行路径</strong>，而非只看返回值。要求验证环境输出「实际路径 vs 期望路径」（见 6.3 / 表 7）。</td>
+</tr>
+<tr>
+<td><b>⑨ 期望值来自 AI 推理</b></td>
+<td>让 AI「看着代码推出预期返回值」，然后以此为测试基线。记录的是 AI 的理解，不是系统行为。</td>
+<td><strong>所有期望值必须来自实际执行</strong>。生产日志是最佳样本来源——真实、且天然包含边缘场景。</td>
+</tr>
+<tr>
+<td><b>⑩ 只分析一轨</b></td>
+<td>只做 Java 侧分析，漏掉 508 个 mapper 的动态 SQL 分支与存储过程里的业务规则。</td>
+<td><strong>三轨全覆盖</strong>：Java / mapper XML / 数据库对象。任何单轨分析都会漏行为（见 图 4）。</td>
+</tr>
+<tr>
+<td><b>⑪ 忽视下游消费者</b></td>
+<td>新系统行为「正确地」变了，但某个没人记录的下游系统被打破。这被行业统计列为现代化项目超支的<strong>首要原因</strong>。</td>
+<td>开工前完成<strong>下游消费者清单</strong>，由业务与运维双向签字（见 3.4）。契约变更走兼容层，不直接破坏。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 10</b> 工程层反模式。⑤–⑪ 条指向同一件事：<b>把「理解系统」和「验证行为」当成了可以压缩的成本</b>。而在 13 年的遗留系统里，这两项恰恰是不可压缩的——它们就是项目本身。</figcaption>
+</figure>
+
+<h3>11.3 治理层（4 条）</h3>
+<figure>
+<div class="tbl-box">
+<table>
+<thead><tr><th style="width:26%">反模式</th><th style="width:37%">症状</th><th>修正</th></tr></thead>
+<tbody>
+<tr>
+<td><b>⑫ 责任委员会化</b></td>
+<td>设「现代化推进委员会」，重大决策集体表决。结果是无人对节奏负责，决策周期超过迭代周期。</td>
+<td><strong>单一责任人</strong>对整体节奏负责，委员会只做咨询（见 表 8）。</td>
+</tr>
+<tr>
+<td><b>⑬ 文档无主</b></td>
+<td>知识图谱建得很漂亮，三个月后无人更新，检索质量崩塌，团队重新回去问老兵。</td>
+<td>设<strong>知识守门人</strong>角色，并给它门禁权：无 ADR 的重构 PR 不允许合入。</td>
+</tr>
+<tr>
+<td><b>⑭ 敏感数据外流</b></td>
+<td>把 oracle.dmp 或含真实合同 / 金额的样本传给外部大模型服务做分析。</td>
+<td>建<strong>可重复的脱敏管道</strong>：结构保留、值替换、分布保持。只传结构与合成样本（见 9.2）。</td>
+</tr>
+<tr>
+<td><b>⑮ 一次给足权限</b></td>
+<td>直接让智能体持有写权限与发布权限，跳过渐进授权。一次幻觉冻住整条发布线。</td>
+<td><strong>四阶段渐进授权</strong>，默认只读，逐级开放，永不绕过既有闸门（见 图 12）。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption><b>表 11</b> 治理层反模式。⑫–⑮ 的共同后果是<b>问题无法被归因</b>：责任不清则无法追责，文档无主则无法判断对错，权限过宽则无法定位来源，数据外流则无法审计。归因能力丧失，整个项目就失去了自我修正的回路。</figcaption>
+</figure>
+
+<div class="verdict">
+<h4>这十五条的共同结构</h4>
+<p>
+拆开看，它们其实是三类错误的变体：<strong>① 把「理解系统」这件慢活当成可以跳过的前置工作；② 把「验证」当成交付后的动作而不是交付的前提；③ 用好看的过程指标替代真实的能力指标。</strong><br><br>
+换句话说——所有这些坑的共同解法，都可以归结为本报告第 02 章那一句话：<strong>不要优化「写代码」这条最快已经很快的路径，去把那些又慢又贵的路径变便宜。</strong>
+</p>
+</div>
+</div></section>
+
+<!-- ============ 12 结论 ============ -->
+<section id="s12"><div class="wrap">
+<h2><span class="num">12</span>结论与判断</h2>
+
+<h3>12.1 六条明确判断</h3>
+<p class="sub" style="margin-bottom:16px">以下标注为「观点」的部分是我的判断，不是行业共识，请按此权重理解。</p>
+
+<div class="g2">
+<div class="card">
+<h4>判断一 · 不要让「重写」成为立项词 <span class="tag t-gray">观点</span></h4>
+<p style="font-size:14.5px;color:var(--ink2)">立项文件里出现「重写」二字，就会不断吸引范围膨胀。<strong>把它写成「行为迁移」或「渐进现代化」，不只是措辞——它会改变团队对「完成」的定义。</strong></p>
+</div>
+<div class="card">
+<h4>判断二 · 第零步是唯一不可压缩的环节 <span class="tag t-amber">强观点</span></h4>
+<p style="font-size:14.5px;color:var(--ink2)">如果预算只够做一件事，<strong>做知识图谱 + 平台语义规格</strong>。它本身就能立刻降低新人上手成本、降低变更风险、减少对特定人员的依赖——<strong>即使后续不再推进重构，它也是净收益。</strong></p>
+</div>
+<div class="card">
+<h4>判断三 · 数据库先不动 <span class="tag t-amber">强观点</span></h4>
+<p style="font-size:14.5px;color:var(--ink2)">除非有硬性合规要求，<strong>第一阶段保留 Oracle</strong>。把两个高风险变量解耦，是把项目从「乘法风险」降成「加法风险」的唯一操作。这一条能显著提高项目存活率。</p>
+</div>
+<div class="card">
+<h4>判断四 · 试点要选「能端到端闭环」的，不是「技术最干净的」 <span class="tag t-blue">观点</span></h4>
+<p style="font-size:14.5px;color:var(--ink2)">试点的目的不是验证技术可行性，而是<strong>验证整套方法（提取 → 重建 → 差分 → 切流）能不能走通</strong>。一个技术简单但走不通全链路的试点，几乎没有价值。</p>
+</div>
+<div class="card">
+<h4>判断五 · 模块化单体优于微服务 <span class="tag t-blue">观点</span></h4>
+<p style="font-size:14.5px;color:var(--ink2)">在团队尚不具备成熟 SRE 与可观测体系时，微服务的运维复杂度会吃掉全部收益（行业成功率仅约 40%）。<strong>先做模块化单体，看清真实边界，再让「是否拆服务」由真实压力而非趋势决定。</strong></p>
+</div>
+<div class="card">
+<h4>判断六 · 停在 L2 也是一个可接受的结局 <span class="tag t-green">观点</span></h4>
+<p style="font-size:14.5px;color:var(--ink2)">如果第零步做完，你已经有知识图谱、决策日志、特征测试网——即使不继续重构，这套资产的收益也是实在的。<strong>把第零步当作一个可以独立收口的成果，反而更容易推动它获得预算。</strong></p>
+</div>
+</div>
+
+<h3>12.2 如果你只记住三句话</h3>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 250" role="img" aria-label="三条核心结论">
+  <rect x="30" y="24" width="900" height="60" rx="10" fill="#EDF6ED" stroke="#2E7D32" stroke-width="1.5"/>
+  <text x="52" y="50" font-family="-apple-system,PingFang SC,sans-serif" font-size="14.5" font-weight="700" fill="#1B5820">① 别从「让 AI 写代码」开始，从「让 AI 读懂你 13 年的代码」开始。</text>
+  <text x="52" y="72" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1B5820">前者是给马车换更大的引擎，而引擎本来就不是瓶颈。（阿姆达尔定律：P 只有 0.25 时，加速上限 1.33×）</text>
+
+  <rect x="30" y="96" width="900" height="60" rx="10" fill="#FDF4E7" stroke="#B45309" stroke-width="1.5"/>
+  <text x="52" y="122" font-family="-apple-system,PingFang SC,sans-serif" font-size="14.5" font-weight="700" fill="#8F3F06">② 目标不是「迁移代码」，是「迁移行为」，而且要能把这件事证明出来。</text>
+  <text x="52" y="144" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#8F3F06">验收标准是 PERS 层面的等价性证据，不是编译通过，也不是覆盖率上升。</text>
+
+  <rect x="30" y="168" width="900" height="60" rx="10" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+  <text x="52" y="194" font-family="-apple-system,PingFang SC,sans-serif" font-size="14.5" font-weight="700" fill="#1F5288">③ 把「验证」变便宜，比把「写代码」变快重要一个量级。</text>
+  <text x="52" y="216" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#1F5288">第零步与 Harness 建设占总投入的一半以上，因为它们是 P 的上限。</text>
+</svg>
+</div>
+<figcaption><b>图 17</b> 全报告的浓缩。这三句话分别对应第 02 章（为什么）、第 06 章（做什么）与第 04 / 08 章（先做什么）。</figcaption>
+</figure>
+
+<h3>12.3 参考来源</h3>
+<p class="sub" style="font-size:15px">按证据类型分组。<strong>浏览本报告时请对照正文里的证据标注理解每个数字的可信度</strong>：一手研究 &gt; 行业调查 &gt; 单一案例 &gt; 厂商自报 &gt; 建模。</p>
+
+<h4>一手研究与学术论文</h4>
+<ol style="font-size:14.5px">
+<li>Ziftci, C., Nikolov, S., Sjövall, A., Kim, B., Codecasa, D., Kim, M. <em>Migrating Code At Scale With LLMs At Google</em>. FSE Companion '25, pp. 162–173.（arXiv:2504.09691）— 39 项迁移、595 个变更、93 574 次编辑，74.45% 变更与 69.46% 编辑由 LLM 生成；总耗时降约 50%。</li>
+<li>Jimenez, C. E. et al. <em>SWE-bench: Can Language Models Resolve Real-World GitHub Issues?</em> ICLR 2024；及其 Verified / Pro 变体（SWE-bench Pro 由 Scale AI 构建）。</li>
+<li>METR. <em>Measuring AI Ability to Complete Long Tasks</em>（arXiv:2503.14499）— 前沿智能体可自主完成的任务时长约每 7 个月翻倍。</li>
+<li><em>Beyond Vector Similarity: Hierarchical Context-Aware Graph RAG vs Standard RAG in Enterprise Code Migration</em>（arXiv:2609.12464）— API 幻觉率 56.4% → 16.2%，依赖解析质量 34.8% → 65.9%。</li>
+<li>Ulrich, W. & Newcomb, P. <em>From COBOL to Business Rules — Extracting Business Rules from Legacy Code</em>. — 源码中约 20–30% 与业务规则相关；IRS 重写项目损失约 30 亿美元，根因是业务知识流失。</li>
+<li>Feathers, M. <em>Working Effectively with Legacy Code</em>. Prentice Hall, 2004. — 特征测试（Characterization Test）与接缝（Seam）概念的原始出处。</li>
+</ol>
+
+<h4>行业调查与基准统计</h4>
+<ol start="7" style="font-size:14.5px">
+<li>NextGen Coding Company. <em>Legacy Modernization Benchmark 2026</em>. — 大爆炸重写超支/取消率 76%，增量迁移 28%；中位成本与周期对比。</li>
+<li>Standish Group CHAOS Report（转引）— 大型项目成功率低于 10%；31% 的 IT 项目在交付任何功能前被取消。</li>
+<li>DX（Developer Experience）开发者报告与 2025 DORA 报告（转引）— 约 90% 开发者使用 AI、80% 自认提效，但真正合入主干的 AI 代码约 22%。</li>
+<li>Presenc AI. <em>Coding Agent Benchmarks 2026</em> / cowork.ink <em>SWE-bench Explained</em> / genalphai <em>SWE-bench Pro vs Verified</em> — 生产环境真实 PR 采纳率约 35–50%；Senior SWE-Bench 高质量解率约 24%。</li>
+</ol>
+
+<h4>云厂商与咨询机构方法论</h4>
+<ol start="11" style="font-size:14.5px">
+<li>Microsoft Azure Architecture Center. <em>Strangler Fig 模式</em>（含数据库绞杀三阶段图示与回滚窗口说明）。</li>
+<li>AWS Prescriptive Guidance. <em>Strangler fig pattern</em>（Transform / Coexist / Eliminate 三阶段）。</li>
+<li>AWS Documentation. <em>Oracle database schema conversion</em> — AWS SCT 完整转换 90%+ 数据库代码，剩余不到 10% 需人工。</li>
+<li>AWS DevOps Blog. <em>Amazon Q Developer just reached a $260 million dollar milestone</em> — 数万个生产应用 Java 8/11 → 17，节省 4 500 开发年，2.6 亿美元年度成本节省；单应用从约 50 天降至数小时（<strong>厂商自报</strong>）。</li>
+<li>Huawei. <em>Cloud-Native Meets AI-Native: Huawei Empowers Banks to Build a Resilient Core</em>（2026）— CodeArts 编码智能体平台支撑主机下移，交付效率提升约 50%（<strong>厂商自报</strong>）。</li>
+<li>Thoughtworks. <em>Technology Radar Vol. 33 / Vol. 34</em>（2025 / 2026）— Vol.33 指出生成式 AI 在理解遗留代码库上的成功应用与 AI 反模式；Vol.34 提出「认知债」与「给编码智能体上缰绳」（spec-driven development、mutation testing）。</li>
+<li>Infosys. <em>Modernizing enterprises: The power of generative AI in code migration</em> — 航空与能源行业案例；八条大规模使用生成式 AI 的建议，含「用规则驱动的确定性与生成式 AI 互补」。</li>
+<li>Techment / Sphere / Coderio / 10Pearls / Dextralabs 等 2026 年企业现代化指南（用于交叉印证趋势判断，<strong>非一手数据来源</strong>）。</li>
+</ol>
+
+<h4>工程实践与一线案例</h4>
+<ol start="19" style="font-size:14.5px">
+<li>蒋宇（蚂蚁集团 / 支付宝）. <em>60 万行巨石应用 AI 重构的可验证交付工程</em>. QCon 上海。「Vibe Coding 时代的新质量债」专题。<strong>本报告第 06 章主要参照</strong>：PERS 建模、Case-Forge 路径压缩、Bubble 回放、Golden Set、影子流量四坑、验证成功率约 60% 与单次验证 2–3 小时。</li>
+<li>OpenCurve. <em>当 AI Coding 撞上巨型遗留软件 —— 屎山代码全生命周期 AI Agent 体系的落地路线图</em>. 墨天轮, 2026-07。<strong>本报告第 08 章四阶段授权模型与第 02 章阿姆达尔定律框架的主要参照</strong>；含 Meta 4 100+ 遗留任务中 AI 独立可解约 5%、Google 新代码 AI 生成占比 25%→75%、Microsoft 2030 年 C/C++ 现代化目标等数据（多为转引）。</li>
+<li>Synapse Studios. <em>Characterization Testing</em>（对 Feathers、Fowler、Bache、Cartwright/Horn/Lewis《Patterns of Legacy Displacement》的综合）。</li>
+<li>BPM Institute. <em>Mining Rules From Code: Plan It Well</em> / <em>Extracting Business Rules from Legacy Systems</em> — 业务规则挖掘的六步项目规划法。</li>
+<li>Google Cloud. <em>Mainframe Assessment Tool — Extract business rules</em> — 用 Gemini 智能体把遗留代码逻辑提取为 Gherkin 格式业务规则与可读规格（Objective / Functional Requirements / User Journeys / Glossary）。</li>
+<li>Pretius. <em>Escaping the Oracle ecosystem: Migrating Oracle Forms to PostgreSQL</em> — Oracle→PostgreSQL 工具对比表与 SQL 构造转换清单（CONNECT BY / ROWNUM / NVL / DECODE / ROWID / (+) 外连接 / SYNONYM）。</li>
+<li>Ispirer / labhub / knowledgelib 的 Oracle→PostgreSQL 2026 迁移指南 — PL/SQL 包需重构为 schema、包级变量需重新设计为会话状态、空串与 NULL 语义差异、事务边界差异。</li>
+<li>华为河图 / 金仓 / CSDN 社区关于央国企 Oracle 国产化替代的实践记录 — 1 200 余处语法差异、双写运行三个月、深层特性依赖（统计信息收集机制）导致查询计划抖动。</li>
+<li>关于流量镜像与差分验证的工程记录（Istio 流量镜像实践、模型网关影子对比实践）— 异步 fire-and-forget、全量镜像优于抽样、按业务标签拆分差异统计的关键性。</li>
+</ol>
+
+<h4>工具链</h4>
+<ol start="27" style="font-size:14.5px">
+<li><b>OpenRewrite / Moderne</b> — Spring Boot 版本升级 recipe 链（<code>UpgradeSpringBoot_3_0</code> 至 <code>_4_0</code>）、<code>MigrateToJakartaEE10</code> 等确定性转换。</li>
+<li><b>ora2pg</b> — 开源 Oracle→PostgreSQL 转换，含迁移成本评分（Simple / Medium / Complex）的评估报告。</li>
+<li><b>AWS SCT / DMS Schema Conversion / DMS</b> — schema 转换 + 全量装载 + CDC 一体化。</li>
+<li><b>Tree-sitter + 图数据库（Memgraph / Spanner Property Graph / SQLite 图）</b> — 构建代码知识图谱的通用技术栈；公开基准显示可支撑千万行级仓库的秒级结构查询。</li>
+<li><b>Istio / Envoy 流量镜像</b>、<b>approvaltests / Verify</b> 系列、<b>Testcontainers</b> — 影子流量与特征测试的落地工具。</li>
+</ol>
+
+<div class="verdict">
+<h4>关于本报告数据可信度的说明</h4>
+<p>
+报告中的数字来自四类不同可靠度的来源，请分级理解：<br>
+<strong>① 一手研究</strong>（Google FSE 论文、SWE-bench、METR）——方法公开、可复核，可信度高，但样本多来自特定组织环境，外推需谨慎。<br>
+<strong>② 行业统计</strong>（CHAOS、现代化基准报告）——方向性参考价值高，<strong>但各机构口径不一，绝对值不可直接比较</strong>（例如「失败率 70%」中的「失败」可能指超支、延期或被静默取消）。<br>
+<strong>③ 单一案例</strong>（蚂蚁 QCon 分享、COBOL 迁移实测）——细节丰富、极具参考价值，但 n=1，不能当作普遍规律。<br>
+<strong>④ 厂商自报</strong>（AWS、华为、国产数据库厂商的 ROI 数字）——<strong>请按显著折扣理解</strong>，它们的主要价值在于证明「这件事有人做成了」，而不是证明「你能获得同样收益」。<br><br>
+<strong>本报告对你系统的一切具体建议（尤其是第 03、04、07 章），都建立在「未经验证的项目事实」之上——它们需要在第 10 章的前 30 天里被验证或推翻。</strong>
+</p>
+</div>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <p><b>关于本报告</b>：基于 2026 年 9 月的公开资料调研编写，覆盖学术论文（FSE/ICLR/arXiv）、云厂商与咨询机构方法论、大厂一手工程实证、开源工具链与行业基准统计。所有关键数据均标注来源类型；标注为「厂商自报」或「建模」的数字请按相应折扣理解。</p>
+  <p><b>使用方式</b>：第 04、06、07 章为可直接开工的动作章节；第 10 章给出 90 天 / 12 个月 / 36 个月三档路线；第 11 章建议打印贴在项目室墙上。</p>
+  <p style="margin-top:14px;color:var(--ink3)">零外部依赖 · 单文件 · 离线可用 · 手写 SVG 图表</p>
+</div></footer>
+
+</body>
+</html>

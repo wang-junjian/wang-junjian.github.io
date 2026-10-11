@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="把 Cordis 官方七篇教程揉成一份离线图解手册，逐章对照真实仓库源码，讲透一切皆插件的心智模型、effect 自动清理、服务与注册表、五种事件分发、配置校验、热替换与插件卡死诊断，最后从一份清单从零拼出能跑的智能体，附速查表与源码索引，看图抄代码即可上手。">
+<meta name="keywords" content="Cordis, 插件开发, deepseek-harness, 图解教程, 生命周期, HMR">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-08-27">
+<title>Cordis 插件开发图解教程 · 结合 deepseek-harness 真实代码</title>
+<style>
+  :root {
+    --bg: #fbfbfd;
+    --surface: #ffffff;
+    --ink: #1f2330;
+    --muted: #6b7280;
+    --border: #e6e8ee;
+    --accent: #4f46e5;
+    --accent-soft: #eef0fe;
+    --teal: #0d9488;
+    --amber: #b45309;
+    --amber-soft: #fef3e2;
+    --red: #b91c1c;
+    --red-soft: #fdecec;
+    --green: #15803d;
+    --green-soft: #e7f6ec;
+    --code-bg: #f4f5f8;
+    --code-ink: #1f2330;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 4px 16px rgba(16,24,40,.06);
+    --radius: 12px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Layout */
+  .wrap { display: grid; grid-template-columns: 264px 1fr; max-width: 1240px; margin: 0 auto; }
+  aside {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 18px 40px; border-right: 1px solid var(--border); background: var(--surface);
+  }
+  aside .brand { font-weight: 700; font-size: 15px; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
+  aside .brand .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
+  aside nav { margin-top: 18px; }
+  aside nav a {
+    display: flex; gap: 10px; padding: 7px 10px; border-radius: 8px; color: var(--muted);
+    font-size: 13.5px; line-height: 1.35;
+  }
+  aside nav a .num {
+    flex: 0 0 22px; height: 22px; border-radius: 6px; background: var(--accent-soft);
+    color: var(--accent); font-size: 12px; font-weight: 700; display: grid; place-items: center;
+  }
+  aside nav a:hover { background: var(--bg); color: var(--ink); text-decoration: none; }
+  aside nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  main { padding: 40px clamp(20px, 4vw, 64px) 120px; min-width: 0; }
+
+  .hero { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 8px; }
+  .kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 10px 0 14px; letter-spacing: -.01em; }
+  .lede { font-size: 17px; color: var(--muted); max-width: 70ch; }
+  .meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  section { margin-top: 56px; scroll-margin-top: 24px; }
+  h2 { font-size: 26px; letter-spacing: -.01em; margin: 0 0 6px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .ch { font-size: 13px; font-weight: 700; color: #fff; background: var(--accent); padding: 3px 9px; border-radius: 7px; letter-spacing: .04em; }
+  h3 { font-size: 18px; margin: 30px 0 10px; }
+  p { max-width: 76ch; }
+  ul { max-width: 76ch; }
+  li { margin: 6px 0; }
+  code.inline { font-family: var(--mono); font-size: 13.5px; background: var(--code-bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; color: #be2e6b; }
+
+  .one-liner {
+    background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0;
+    padding: 12px 16px; margin: 18px 0; font-size: 15px; color: #2b2f55;
+  }
+  .one-liner b { color: var(--accent); }
+
+  .callout { border-radius: 10px; padding: 14px 16px; margin: 18px 0; font-size: 14.5px; border: 1px solid; }
+  .callout .tag { font-weight: 700; font-size: 12.5px; letter-spacing: .04em; display: block; margin-bottom: 4px; }
+  .callout.warn { background: var(--amber-soft); border-color: #f3d8a8; color: #6b3e07; }
+  .callout.warn .tag { color: var(--amber); }
+  .callout.danger { background: var(--red-soft); border-color: #f3c2c2; color: #7a1414; }
+  .callout.danger .tag { color: var(--red); }
+  .callout.ok { background: var(--green-soft); border-color: #bfe6cb; color: #14532d; }
+  .callout.ok .tag { color: var(--green); }
+  .callout.tip { background: #eef6fb; border-color: #cfe4f4; color: #173a52; }
+  .callout.tip .tag { color: #0369a1; }
+
+  /* Code */
+  .code { margin: 16px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+  .code .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--code-bg); border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+  .code .bar .lang { font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+  .code .bar .file { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+  .code .bar .src { margin-left: auto; font-size: 11.5px; }
+  .code pre { margin: 0; padding: 14px 16px; overflow-x: auto; background: var(--code-bg); }
+  .code code { font-family: var(--mono); font-size: 13px; color: var(--code-ink); line-height: 1.6; white-space: pre; }
+
+  /* Real-code emphasis */
+  .real { border-color: #b9c7f5; }
+  .real .bar { background: #eef0fe; border-bottom-color: #d6ddfb; }
+  .real .bar .lang { color: #4338ca; }
+
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; box-shadow: var(--shadow); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  th { background: var(--surface); font-weight: 600; color: var(--ink); }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .diagram { margin: 20px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram .cap { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+  .step { display: flex; gap: 14px; margin: 14px 0; }
+  .step .n { flex: 0 0 28px; height: 28px; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+  .step .body { min-width: 0; }
+  .step .body p { margin: 0; }
+
+  .pillrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .pill { font-family: var(--mono); font-size: 12.5px; padding: 3px 9px; border-radius: 7px; background: var(--accent-soft); color: var(--accent); border: 1px solid #d6ddfb; }
+
+  footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13.5px; }
+
+  .topbar { display: none; }
+  @media (max-width: 880px) {
+    .wrap { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    aside nav { display: grid; grid-template-columns: 1fr 1fr; }
+    .topbar { display: block; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <div class="brand"><span class="dot"></span> Cordis 图解教程</div>
+    <nav id="toc">
+      <a href="#mental"><span class="num">★</span> 核心心智模型</a>
+      <a href="#start"><span class="num">▶</span> 怎么跑起来</a>
+      <a href="#ch1"><span class="num">1</span> 第一个插件</a>
+      <a href="#ch2"><span class="num">2</span> 生命周期与 effect</a>
+      <a href="#ch3"><span class="num">3</span> 服务 Service</a>
+      <a href="#ch4"><span class="num">4</span> 事件 Events</a>
+      <a href="#ch5"><span class="num">5</span> 配置 Config</a>
+      <a href="#ch6"><span class="num">6</span> 组合 · HMR · 诊断</a>
+      <a href="#ch7"><span class="num">7</span> 进入 harness</a>
+      <a href="#agent"><span class="num">★</span> 从零到一个 Agent</a>
+      <a href="#cheatsheet"><span class="num">≡</span> API 速查表</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="kicker">deepseek-harness · Cordis 插件框架</div>
+      <h1>把官方 7 篇教程，揉成一份能直接上手的手册</h1>
+      <p class="lede">本教程浓缩自官方 <code class="inline">cordis-tutorial/01~07</code> 七篇文档，并逐章对照 <b>deepseek-harness 本仓库的真实代码</b>（文件路径与片段均可在 <code class="inline">packages/</code>、<code class="inline">vendor/cordis/</code>、<code class="inline">examples/</code> 中查证）。目标：少术语、多图示、每个概念都有「本项目里谁在这么写」作锚点。</p>
+      <div class="meta">
+        <span class="chip">来源：<b>7 篇官方教程</b></span>
+        <span class="chip">对照：<b>deepseek-harness 源码</b></span>
+        <span class="chip">形式：<b>单文件 HTML · 离线可读</b></span>
+        <span class="chip">主题：<b>浅色</b></span>
+      </div>
+    </div>
+
+    <!-- ============ MENTAL MODEL ============ -->
+    <section id="mental">
+      <h2><span class="ch">心智</span> 先记住三件事</h2>
+      <div class="one-liner">
+        <b>Cordis 的本质：一切皆插件（everything is a plugin）。</b> 应用 = 一份插件清单（<code class="inline">cordis.yml</code>）+ 一堆插件（<code class="inline">apply(ctx)</code> 函数）。框架负责把插件按依赖关系组装、启动、卸载、热替换。
+      </div>
+
+      <div class="grid2">
+        <div class="callout tip">
+          <span class="tag">比喻 1 · 插线板</span>
+          <code class="inline">ctx</code> 是一块插线板。插件是插头，插上去就通过 <code class="inline">apply(ctx)</code> 通电。服务（Service）是插线板上固定编号的「专用插座」（如 <code class="inline">ctx.tools</code>、<code class="inline">ctx.llm</code>），别的插头想用电就认插座号，不关心谁在供电。
+        </div>
+        <div class="callout tip">
+          <span class="tag">比喻 2 · 接线清单</span>
+          <code class="inline">cordis.yml</code> 是接线清单：每行写一个要挂的插件。谁先通电不由清单顺序决定，而由「谁依赖谁」（<code class="inline">inject</code>）决定——像电路里的上下游。
+        </div>
+      </div>
+
+      <h3>三个必须刻进肌肉记忆的 API</h3>
+      <div class="pillrow">
+        <span class="pill">apply(ctx)</span>
+        <span class="pill">ctx.effect(disposer)</span>
+        <span class="pill">ctx.plugin(...)</span>
+        <span class="pill">ctx.on(event, fn)</span>
+        <span class="pill">ctx.emit(event, ...)</span>
+        <span class="pill">super(ctx, 'name')</span>
+        <span class="pill">inject: ['svc']</span>
+        <span class="pill">declare module</span>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">最常被坑的一点</span>
+        插件不是按 <code class="inline">cordis.yml</code> 的书写顺序启动的。如果你的插件 <code class="inline">inject: ['tools']</code> 但清单里没有人提供 <code class="inline">tools</code>，它不会报错，而是安静地停在 <code class="inline">PENDING</code> 状态——进程可能悄无声息地以 0 退出。第 6 章教你怎么诊断这种「明明写了却没输出」的情况。
+      </div>
+    </section>
+
+    <!-- ============ START ============ -->
+    <section id="start">
+      <h2><span class="ch">▶</span> 怎么跑起来</h2>
+      <p>教程的 7 个最小示例都放在一个 <code class="inline">tmp/cordis-tutorial/</code> 目录里，用裸 Cordis loader 启动：</p>
+      <div class="code">
+        <div class="bar"><span class="lang">sh</span><span class="file">从教程目录运行</span></div>
+        <pre><code>node --import tsx ../../vendor/cordis/bin.js</code></pre>
+      </div>
+      <p>而在 <b>本仓库</b>里，你不会直接敲这条命令——harness 把它包进了 CLI。等价入口是：</p>
+      <div class="code">
+        <div class="bar"><span class="lang">sh</span><span class="file">仓库内运行一个任务（需要 DEEPSEEK_API_KEY）</span></div>
+        <pre><code>pnpm dsh --profile headless "帮我看看这个仓库的 README"</code></pre>
+      </div>
+      <p>两条命令的底层完全一致：都是「创建根 <code class="inline">Context</code> → 挂 Loader 插件 → 读 <code class="inline">cordis.yml</code> → 逐个挂载子插件 → 调用每个插件的 <code class="inline">apply(ctx)</code>」。理解前者，就理解了后者。</p>
+    </section>
+
+    <!-- ============ CH1 ============ -->
+    <section id="ch1">
+      <h2><span class="ch">01</span> 第一个插件</h2>
+      <div class="one-liner"><b>一句话：</b>插件就是一个导出 <code class="inline">apply(ctx)</code> 的函数；<code class="inline">cordis.yml</code> 决定把它挂不挂、挂哪个。</div>
+
+      <h3>最小插件（教程示例）</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">hello.ts</span><span class="src">教程 01</span></div>
+        <pre><code>import type { Context } from '@deepseek-ai/cordis'
+
+export const name = 'hello'
+
+export function apply(ctx: Context) {
+  console.log('hello from my first plugin')
+}</code></pre>
+      </div>
+
+      <h3>用一份清单把它挂上去</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">yaml</span><span class="file">cordis.yml</span><span class="src">教程 01</span></div>
+        <pre><code>- name: './hello.ts'</code></pre>
+      </div>
+      <p>运行后输出 <code class="inline">hello from my first plugin</code>。注意：你的文件里<b>没有任何框架启动代码</b>——插件只描述自己的贡献，组合交给 <code class="inline">cordis.yml</code>。本仓库的 <code class="inline">packages/bundle/base/cordis.patch.yml</code> 就是一份长得多的「插件接线清单」（见第 6 章）。</p>
+
+      <h3>插件有三种长相</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">三种形态</span><span class="src">教程 01</span></div>
+        <pre><code>// 1. 函数插件（你刚写的，最常用）
+export function apply(ctx: Context) {}
+
+// 2. 对象插件：带 apply 方法的对象
+export const objectPlugin = {
+  name: 'object-plugin',
+  apply(ctx: Context) {},
+}
+
+// 3. 类插件：Service 的子类（第 3 章才用）
+export class MyService extends Service {
+  constructor(ctx: Context) {
+    super(ctx, 'myTutorialService')
+  }
+}</code></pre>
+      </div>
+      <div class="callout ok">
+        <span class="tag">经验法则</span>
+        在你需要对外<b>公开一项服务</b>之前，一律用函数形态。类形态是给「要注册成 <code class="inline">ctx.xxx</code> 服务」的场景准备的（第 3 章）。
+      </div>
+
+      <h3>本项目里到处都是这种函数插件</h3>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/schedule/schedule/src/index.ts</span><span class="src">真实代码</span></div>
+        <pre><code>/** Cordis 函数插件名 */
+export const name = 'schedule'
+/** 依赖的服务：这些就绪后本插件才会启动 */
+export const inject = ['agents', 'sessions', 'tools', 'sessionPersistence']
+
+export function apply(ctx: Context): void {
+  // ...挂载定时提醒能力...
+}</code></pre>
+      </div>
+      <p>这正是教程里 <code class="inline">hello.ts</code> 的「生产版」：同样的 <code class="inline">name</code> / <code class="inline">inject</code> / <code class="inline">apply(ctx)</code> 三件套，只是 <code class="inline">inject</code> 列出了它需要的服务。</p>
+
+      <div class="callout danger">
+        <span class="tag">坑 · apply 抛错 vs 模块解析失败</span>
+        如果 <code class="inline">apply</code> 内部抛异常，<b>进程会直接挂掉</b>。但如果只是 <code class="inline">cordis.yml</code> 里的模块路径 / 包名拼错（解析失败），Cordis 只会打一条日志、不会崩溃——而且这条日志可能在 console 导出器就绪前就丢了。所以「加了配置项却毫无反应」时，<b>先查拼写</b>。
+      </div>
+    </section>
+
+    <!-- ============ CH2 ============ -->
+    <section id="ch2">
+      <h2><span class="ch">02</span> 生命周期与 effect</h2>
+      <div class="one-liner"><b>一句话：</b>插件会被卸载（改配置、热替换、缺服务、显式释放）。通过 Cordis API 建立的注册会自动撤销；<b>框架管不到的资源</b>（定时器、连接、watcher）必须装进 <code class="inline">ctx.effect()</code> 并返回一个「清理函数」。</div>
+
+      <h3>把资源关进 effect</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">lifecycle.ts</span><span class="src">教程 02</span></div>
+        <pre><code>import type { Context } from '@deepseek-ai/cordis'
+
+export const name = 'lifecycle-demo'
+
+function heartbeat(ctx: Context) {
+  console.log('heartbeat plugin loading')
+  ctx.effect(() => {
+    const timer = setInterval(() => console.log('tick'), 200)
+    return () => {                 // ← disposer：卸载时运行
+      clearInterval(timer)
+      console.log('heartbeat cleaned up')
+    }
+  })
+}
+
+export function apply(ctx: Context) {
+  const fiber = ctx.plugin(heartbeat)   // 把函数当插件挂上去，返回 fiber
+  ctx.effect(() => {
+    const timer = setTimeout(async () => {
+      await fiber.dispose()             // 等 heartbeat 全部清理完才结束
+      console.log('disposed')
+      process.exit(0)
+    }, 700)
+    return () => clearTimeout(timer)
+  })
+}</code></pre>
+      </div>
+      <p>运行输出：<code class="inline">heartbeat plugin loading → tick ×3 → heartbeat cleaned up → disposed</code>。三个要点：</p>
+      <ul>
+        <li><code class="inline">ctx.plugin(heartbeat)</code> 把「来自代码的函数」挂成插件——和 YAML loader 对每个配置项做的事一模一样。它返回一个 <b>fiber</b>（已加载插件实例的运行时句柄）。</li>
+        <li>effect 的主体在<b>加载期</b>运行，返回的 disposer 在<b>卸载期</b>运行。生命周期和插件一致的资源，你永远不用手动调 disposer。</li>
+        <li><code class="inline">fiber.dispose()</code> 会等该插件的所有清理（含异步）完成，并递归卸载它挂的子插件。</li>
+      </ul>
+
+      <h3>Fiber 状态机</h3>
+      <p>每个已加载的插件实例都有一个 fiber，在这些状态间流转。当你排查「为什么没输出」时，这张图就是答案。</p>
+      <div class="diagram">
+        <svg viewBox="0 0 680 200" role="img" aria-label="Fiber 状态机">
+          <defs>
+            <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 z" fill="#9aa3b2"/>
+            </marker>
+            <style>
+              .st{fill:#fff;stroke:#cdd3df;stroke-width:1.5}
+              .st.active{fill:#eef0fe;stroke:#4f46e5}
+              .st.failed{fill:#fdecec;stroke:#d9534f}
+              .lbl{font:600 13px var(--sans, sans-serif);fill:#1f2330}
+              .sub{font:11px var(--sans, sans-serif);fill:#6b7280}
+              .edge{stroke:#9aa3b2;stroke-width:1.6;fill:none}
+            </style>
+          </defs>
+          <!-- boxes -->
+          <g>
+            <rect class="st" x="14" y="70" width="104" height="46" rx="10"/>
+            <text class="lbl" x="66" y="92" text-anchor="middle">PENDING</text>
+            <text class="sub" x="66" y="108" text-anchor="middle">等依赖就绪</text>
+          </g>
+          <g>
+            <rect class="st" x="150" y="70" width="104" height="46" rx="10"/>
+            <text class="lbl" x="202" y="92" text-anchor="middle">LOADING</text>
+            <text class="sub" x="202" y="108" text-anchor="middle">apply 运行中</text>
+          </g>
+          <g>
+            <rect class="st active" x="286" y="70" width="104" height="46" rx="10"/>
+            <text class="lbl" x="338" y="92" text-anchor="middle">ACTIVE</text>
+            <text class="sub" x="338" y="108" text-anchor="middle">运行中</text>
+          </g>
+          <g>
+            <rect class="st" x="422" y="70" width="116" height="46" rx="10"/>
+            <text class="lbl" x="480" y="92" text-anchor="middle">UNLOADING</text>
+            <text class="sub" x="480" y="108" text-anchor="middle">disposer 运行</text>
+          </g>
+          <g>
+            <rect class="st" x="568" y="70" width="104" height="46" rx="10"/>
+            <text class="lbl" x="620" y="92" text-anchor="middle">DISPOSED</text>
+            <text class="sub" x="620" y="108" text-anchor="middle">已拆除</text>
+          </g>
+          <g>
+            <rect class="st failed" x="150" y="150" width="104" height="40" rx="10"/>
+            <text class="lbl" x="202" y="174" text-anchor="middle">FAILED</text>
+          </g>
+          <!-- edges -->
+          <path class="edge" d="M118,93 L148,93" marker-end="url(#arw)"/>
+          <path class="edge" d="M254,93 L284,93" marker-end="url(#arw)"/>
+          <path class="edge" d="M390,93 L420,93" marker-end="url(#arw)"/>
+          <path class="edge" d="M538,93 L566,93" marker-end="url(#arw)"/>
+          <path class="edge" d="M202,116 L202,148" marker-end="url(#arw)" stroke="#d9534f"/>
+        </svg>
+        <div class="cap">PENDING = 已声明，但所需服务还不可用（第 3 章）。LOADING 时 <code>apply</code> 在跑；FAILED 表示 <code>apply</code> 或配置校验抛错。你会在第 6 章反复遇到 PENDING。</div>
+      </div>
+
+      <h3>哪些操作「本来就是 effect」，不用你手写</h3>
+      <ul>
+        <li><code class="inline">ctx.on(event, listener)</code>：监听器随插件卸载自动移除（第 4 章）。</li>
+        <li><code class="inline">ctx.plugin(child)</code>：子插件随父插件一起 dispose。</li>
+        <li>服务注册、以及 harness 的注册表（如 <code class="inline">ctx.tools.register(...)</code>）都会把返回的 disposer 挂到调用插件上——卸载时自动注销（第 7 章）。</li>
+      </ul>
+      <div class="callout warn">
+        <span class="tag">顺位注意</span>
+        disposer 按「注册顺序的逆序」启动；但多个<b>异步</b> disposer 是并发跑的。如果拆除必须按顺序，把它们放进<b>同一个</b> disposer 里依次 <code class="inline">await</code>。
+      </div>
+
+      <h3>真实代码：嵌套 effect（schedule 插件）</h3>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/schedule/schedule/src/index.ts</span><span class="src">真实代码</span></div>
+        <pre><code>export function apply(ctx: Context): void {
+  ctx.effect(() => {                          // 外层：插件级生命周期
+    const stopCreated = ctx.on('agent/created', ({ agent }) => {
+      if (/* 不是根 agent 等条件 */) return
+      const cleanup = agent.ctx.effect(() => { // 内层：单个 agent 的生命周期
+        const disposeTools = registerScheduleTools(ctx, agent.ctx, agent, ...)
+        const stopStatus = agent.ctx.on('agent/status', ...)
+        runtime.start()
+        return async () => {                    // 该 agent 消失时清理
+          stopStatus()
+          disposeTools()
+          await runtime.dispose()
+        }
+      }, 'schedule.runtime()')
+      runtimes.set(agent, cleanup)
+    })
+    return async () => {                        // 插件卸载：取消所有监听并清理
+      stopCreated()
+      await Promise.allSettled([...runtimes.values()].map(c => c()))
+    }
+  }, 'schedule.lifecycle()')
+}</code></pre>
+      </div>
+      <p>这就是教程 <code class="inline">lifecycle.ts</code> 的「工程版」：外层 effect 负责「新 agent 出现就给它装能力」，内层 effect 负责「单个 agent 消失就拆掉它的定时器/工具」。父子两层 effect 自动级联清理。</p>
+    </section>
+
+    <!-- ============ CH3 ============ -->
+    <section id="ch3">
+      <h2><span class="ch">03</span> 服务 Service</h2>
+      <div class="one-liner"><b>一句话：</b>服务 = 一个插件<b>提供</b>、其他插件通过 <code class="inline">ctx</code> <b>消费</b>的具名能力（如 <code class="inline">ctx.tools</code>、<code class="inline">ctx.llm</code>）。消费方只认能力名、不认提供方，所以换实现不用改消费方。</div>
+
+      <h3>提供服务：写一个 Service 子类</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">greeter.ts</span><span class="src">教程 03</span></div>
+        <pre><code>import { Service, type Context } from '@deepseek-ai/cordis'
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    greeter: GreeterService      // 编译时：让 ctx.greeter 有类型
+  }
+}
+
+export class GreeterService extends Service {
+  constructor(ctx: Context) {
+    super(ctx, 'greeter')         // 运行时：以 'greeter' 注册到 ctx
+  }
+  greet(who: string) {
+    return `Hello, ${who}!`
+  }
+}
+
+export const name = 'greeter'
+export function apply(ctx: Context) {
+  ctx.plugin(GreeterService)      // Service 子类本身就是插件
+}</code></pre>
+      </div>
+      <p>两段协同：<b>运行时</b>靠 <code class="inline">super(ctx, 'greeter')</code> 注册，之后任何插件都能 <code class="inline">ctx.greeter</code> 访问它，且注册是 effect，提供方卸载时服务自动消失；<b>编译时</b>靠 <code class="inline">declare module</code> 的声明合并把 <code class="inline">greeter</code> 加进 <code class="inline">Context</code> 接口，拿到类型安全（不写也能跑，只是没类型）。</p>
+
+      <h3>消费服务：用 <code class="inline">inject</code></h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">consumer.ts</span><span class="src">教程 03</span></div>
+        <pre><code>export const name = 'consumer'
+export const inject = ['greeter']     // 声明硬依赖
+
+export function apply(ctx: Context) {
+  console.log(ctx.greeter.greet('world'))  // 这里保证 greeter 已就绪
+}</code></pre>
+      </div>
+      <p><code class="inline">inject</code> 列出本插件需要的服务，Cordis 会让它保持 <b>PENDING</b> 直到每一项都存在——所以在 <code class="inline">apply</code> 里可以放心用 <code class="inline">ctx.greeter</code>。清单里两行的先后无关紧要：<b>决定启动时机的是依赖，不是文件顺序</b>。把 <code class="inline">./greeter.ts</code> 整行删掉，消费方就永远 PENDING、不输出、不报错。</p>
+
+      <h3>真实代码：harness 里的服务</h3>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/e2b/e2b/src/index.ts</span><span class="src">真实代码 · E2B 沙箱服务</span></div>
+        <pre><code>import { Context, Service } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
+
+declare module '@deepseek-ai/cordis' {
+  interface Context { e2b: E2BRuntime }
+}
+
+export class E2BRuntime extends Service {
+  static Config: z&lt;Config&gt; = z.object({
+    apiKey: z.string(),
+    cwd: z.string().default('/home/user/workspace'),
+    timeoutMs: z.number().default(300_000),
+  })
+  constructor(ctx: Context, config: Config) {
+    super(ctx, 'e2b')            // 注册为 ctx.e2b
+  }
+}</code></pre>
+      </div>
+      <p>再看 harness 最核心的服务之一——工具注册表 <code class="inline">ctx.tools</code>：</p>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/core/tools/src/index.ts</span><span class="src">真实代码 · 工具服务</span></div>
+        <pre><code>export class ToolRuntime extends Service {
+  static inject = ['systemPrompt']   // 工具要向系统提示词贡献 schema
+  static Config: z&lt;Config&gt; = z.object({
+    mode: z.union(['native', 'code', 'both'] as const).default('native'),
+    maxParallelSubCalls: z.natural().min(1).default(10),
+  })
+  constructor(ctx: Context, config: Config = {}) {
+    super(ctx, 'tools')               // 注册为 ctx.tools
+    ctx.systemPrompt.tools(context => this.wireSchemas(context.scope))
+  }
+}</code></pre>
+      </div>
+
+      <div class="grid2">
+        <div class="callout tip">
+          <span class="tag">依赖是活的</span>
+          <code class="inline">inject</code> 不是一次性启动检查。运行中若服务消失（提供方被卸载 / 热替换），每个依赖它的插件会跟着卸载；服务恢复后又会自动重新加载。结合 effect，这能防止消费方持有已失效服务的引用。
+        </div>
+        <div class="callout tip">
+          <span class="tag">可选依赖</span>
+          硬依赖才用 <code class="inline">inject</code>。某项功能「没有也能跑」时，跳过 <code class="inline">inject</code>，在使用处探测：<code class="inline">const greeter = ctx.get('greeter')</code>，为 <code class="inline">undefined</code> 就走降级路径。
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">命名空间</span>
+        全应用的服名共用一个扁平命名空间。给自己的服务加辨识度前缀（harness 已占用 <code class="inline">tools</code>、<code class="inline">llm</code> 等普通名）。生成的 <code class="inline">cordis-surface</code> 区块列出了 harness 注册的所有名称。
+      </div>
+    </section>
+
+    <!-- ============ CH4 ============ -->
+    <section id="ch4">
+      <h2><span class="ch">04</span> 事件 Events</h2>
+      <div class="one-liner"><b>一句话：</b>服务适合「直接调用」；<b>事件</b>让插件在「不知道谁在听」的情况下发通知。harness 用事件传递工具结果、模型请求、审批决定等。</div>
+
+      <h3>声明、发出、监听</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">stats.ts</span><span class="src">教程 04</span></div>
+        <pre><code>import { Service, type Context } from '@deepseek-ai/cordis'
+
+declare module '@deepseek-ai/cordis' {
+  interface Context { stats: StatsService }
+  interface Events {                  // 声明事件名 + 监听器签名
+    'stats/report'(name: string, count: number): void
+  }
+}
+
+export class StatsService extends Service {
+  private counts = new Map&lt;string, number&gt;()
+  constructor(ctx: Context) { super(ctx, 'stats') }
+  bump(name: string) {
+    const next = (this.counts.get(name) ?? 0) + 1
+    this.counts.set(name, next)
+    this.ctx.emit('stats/report', name, next)   // 发出
+  }
+}</code></pre>
+      </div>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">reporter.ts</span><span class="src">教程 04</span></div>
+        <pre><code>import type {} from './stats.ts'     // 仅为让 TS 看到声明合并
+
+export const name = 'reporter'
+export const inject = ['stats']
+
+export function apply(ctx: Context) {
+  ctx.on('stats/report', (name, count) => {     // 监听
+    console.log(`[stats] ${name} -> ${count}`)
+  })
+  ctx.stats.bump('tool_call')
+  ctx.stats.bump('tool_call')
+  ctx.stats.bump('prompt')
+}</code></pre>
+      </div>
+      <p>输出 <code class="inline">[stats] tool_call -> 1 / 2</code> 和 <code class="inline">[stats] prompt -> 1</code>。因为 <code class="inline">ctx.on()</code> 是 effect，监听器随插件一起消失，<b>永远不用手动 removeListener</b>。<code class="inline">interface Events</code> 的声明合并和上一章 <code class="inline">interface Context</code> 对应：它声明事件名与签名，使 <code class="inline">emit</code> / <code class="inline">on</code> 都带完整类型。</p>
+
+      <h3>五种分发模式</h3>
+      <p>事件用哪种模式是「约定的一部分」，决定监听器能否返回值、能否并发、能否互相短路：</p>
+      <table>
+        <thead><tr><th>模式</th><th>调用</th><th>语义</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">emit</code></td><td><code class="inline">ctx.emit(name, ...args)</code></td><td>同步广播；不等待、不收集返回值 / promise。</td></tr>
+          <tr><td><code class="inline">parallel</code></td><td><code class="inline">await ctx.parallel(name, ...)</code></td><td>所有监听器并发跑，一起等待（任一个 reject 则 AggregateError）。</td></tr>
+          <tr><td><code class="inline">serial</code></td><td><code class="inline">await ctx.serial(name, ...)</code></td><td>按顺序、逐个 await；第一个非 null/false/undefined 返回值「胜出」并停止后续。</td></tr>
+          <tr><td><code class="inline">bail</code></td><td><code class="inline">ctx.bail(name, ...)</code></td><td><code class="inline">serial</code> 的同步版。</td></tr>
+          <tr><td><code class="inline">waterfall</code></td><td><code class="inline">ctx.waterfall(name, ...next)</code></td><td>环绕式中间件（见下），用于「转换或短路」。</td></tr>
+        </tbody>
+      </table>
+      <p>下面这段就是 Cordis 源码里 <code class="inline">waterfall</code> 的真实实现——它把监听器排成「从外到内」的链，每层都能拿到 <code class="inline">next()</code>：</p>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">vendor/cordis/src/events.ts</span><span class="src">真实代码 · 事件分发</span></div>
+        <pre><code>waterfall(...args: any[]) {
+  const cbs = this.dispatch('waterfall', args)
+  const inner = args.pop()            // 最内层的默认行为
+  const next = () => {
+    const cb = cbs.shift() ?? inner   // 没有更多监听器就跑默认行为
+    return cb(...args)
+  }
+  args.push(next)
+  return next()                       // 从最外层监听器开始
+}</code></pre>
+      </div>
+
+      <h3>waterfall：转换 or 否决（veto）</h3>
+      <p>每个监听器拿到参数和一个 <code class="inline">next()</code> 续体：可以「转换 <code class="inline">next()</code> 的返回值」，也可以「不调 <code class="inline">next()</code> 直接返回」来<b>短路</b>整条链（Cordis 称之为否决）。</p>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">waterfall-demo.ts</span><span class="src">教程 04</span></div>
+        <pre><code>declare module '@deepseek-ai/cordis' {
+  interface Events {
+    'demo/transform'(input: string, next: () => Promise&lt;string&gt;): Promise&lt;string&gt;
+  }
+}
+export function apply(ctx: Context) {
+  ctx.on('demo/transform', async (input, next) => {
+    const downstream = await next()        // 先让下游跑
+    return downstream.toUpperCase()         // 再包装结果
+  })
+  ctx.on('demo/transform', async (input, next) => {
+    if (input.includes('blocked')) return '** blocked **'  // 否决：不调 next()
+    return next()
+  })
+  // 输出：HELLO / ** BLOCKED **
+}</code></pre>
+      </div>
+      <div class="callout danger">
+        <span class="tag">铁律</span>
+        <b>只负责观察 / 标注的 waterfall 监听器必须调用 <code class="inline">next()</code></b>；不调用就返回 = 有意短路。如果某个日志监听器忘了调 <code class="inline">next()</code>，会悄无声息吞掉所有下游默认行为。这是本仓库的常设规则。
+      </div>
+
+      <h3>真实代码：harness 的 <code class="inline">tools/result</code> 事件</h3>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/context/agent-instructions/src/index.ts</span><span class="src">真实代码 · 监听每次工具结果</span></div>
+        <pre><code>ctx.on('tools/result', (exec: ToolExecution, result: ToolExecutionResult) => {
+  // 每次有工具跑完，这里都能拿到执行信息与结果
+})</code></pre>
+      </div>
+      <p>harness 还用 waterfall 做「协作插件可以包装或回答的决策」：<code class="inline">agent/request</code> 允许插件替换模型调用配置，<code class="inline">approval/request</code> 允许策略代替用户作答。这正是 waterfall 否决模式的用武之地。</p>
+    </section>
+
+    <!-- ============ CH5 ============ -->
+    <section id="ch5">
+      <h2><span class="ch">05</span> 配置 Config</h2>
+      <div class="one-liner"><b>一句话：</b><code class="inline">cordis.yml</code> 里每个插件项可带 <code class="inline">config</code> 块；插件导出一个 <b>Schema</b>，在 <code class="inline">apply</code> 之前校验它。配置不合法就加载失败并给精确错误——插件绝不会在配置残缺时启动。</div>
+
+      <h3>可配置插件</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">config-demo.ts</span><span class="src">教程 05</span></div>
+        <pre><code>import type { Context } from '@deepseek-ai/cordis'
+import Schema from '@deepseek-ai/schemastery'
+
+export const name = 'config-demo'
+
+export interface Config {
+  greeting: string
+  targets: string[]
+}
+
+// 同名 Config：既是 TS 类型，又是运行时校验器
+export const Config: Schema&lt;Config&gt; = Schema.object({
+  greeting: Schema.string().default('Hello'),
+  targets: Schema.array(String).default(['world']),
+})
+
+export function apply(ctx: Context, config: Config) {
+  for (const target of config.targets) {
+    console.log(`${config.greeting}, ${target}!`)
+  }
+}</code></pre>
+      </div>
+      <div class="code">
+        <div class="bar"><span class="lang">yaml</span><span class="file">cordis.yml</span><span class="src">教程 05</span></div>
+        <pre><code>- name: './config-demo.ts'
+  config:
+    targets: ['alpha', 'beta']</code></pre>
+      </div>
+      <p>没给 <code class="inline">greeting</code>，schema 默认值补上 → 输出 <code class="inline">Hello, alpha! / Hello, beta!</code>。<b>导出的 <code class="inline">Config</code> 既是 TypeScript 接口，也是同名运行时 schema</b>：消费方拿类型，Cordis 拿校验器。本仓库用 <a href="https://github.com/shigma/schemastery">Schemastery</a>；Cordis 本身接受任意 <a href="https://standardschema.dev/">Standard Schema</a> 校验器——所以「把普通对象导出成 <code class="inline">Config</code>」是行不通的。</p>
+
+      <h3>明确报错</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">yaml</span><span class="file">cordis.yml（错误配置）</span><span class="src">教程 05</span></div>
+        <pre><code>- name: './config-demo.ts'
+  config:
+    targets: 'not-an-array'     # 类型错了</code></pre>
+      </div>
+      <p>报错：<code class="inline">ValidationError: invalid config: - $.targets expected array but got not-an-array</code>。fiber 进入 FAILED，启动器打印错误后以状态码 1 退出。</p>
+
+      <h3>真实代码：本仓库的 Schema 长这样</h3>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/core/tools/src/index.ts（节选）</span><span class="src">真实代码 · ToolRuntime 配置</span></div>
+        <pre><code>static Config: z&lt;Config&gt; = z.object({
+  mode: z.union(['native', 'code', 'both'] as const).default('native'),
+  maxParallelSubCalls: z.natural().min(1).default(10),
+})</code></pre>
+      </div>
+      <p>和教程的 <code class="inline">Schema.object({...})</code> 是同一套思想，只是本仓库统一用 <code class="inline">@deepseek-ai/schemastery</code> 的 <code class="inline">z.object / z.string / z.union / z.natural</code> 写法。</p>
+
+      <h3>计算得到的配置值：<code class="inline">!!js</code> 标签</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">yaml</span><span class="file">cordis.yml（加载时求值）</span><span class="src">教程 05</span></div>
+        <pre><code>- name: './config-demo.ts'
+  config:
+    greeting: !!js process.env.DEMO_GREETING ?? 'Hello'</code></pre>
+      </div>
+      <p><code class="inline">!!js</code> 仅在 <code class="inline">config</code> 与条目 <code class="inline">disabled</code> 字段内有效。本仓库大量用它做「按环境 / 平台门控」，例如 <code class="inline">examples/headless-agent/cordis.yml</code> 里：</p>
+      <div class="code real">
+        <div class="bar"><span class="lang">yaml</span><span class="file">examples/headless-agent/cordis.yml</span><span class="src">真实代码</span></div>
+        <pre><code>- id: agent-spine
+  name: '@deepseek-ai/dsh-agent-spine-demo'
+  config:
+    agents:
+      - id: main
+        cwd: !!js process.cwd()        # 加载时求值
+- id: persistence
+  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  config:
+    compression: !!js "process.env.DSH_SNAPSHOT === undefined ? 'zstd' : 'none'"</code></pre>
+      </div>
+    </section>
+
+    <!-- ============ CH6 ============ -->
+    <section id="ch6">
+      <h2><span class="ch">06</span> 组合 · HMR · 诊断</h2>
+      <div class="one-liner"><b>一句话：</b>到目前为止每项能力都是插件，<code class="inline">cordis.yml</code> 选择插件树。本章改组合、热替换一个插件、并诊断「永远加载不出来」的插件。</div>
+
+      <h3>Cordis 配置项不止有名字</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">yaml</span><span class="file">cordis.yml</span><span class="src">教程 06</span></div>
+        <pre><code>- id: greeter          # 配置项的稳定身份
+  name: './greeter.ts'
+- id: consumer
+  name: './consumer.ts'
+  disabled: true       # 保留条目但不挂载</code></pre>
+      </div>
+      <ul>
+        <li><code class="inline">id</code>：给配置项稳定标识，loader 由此区分「改了现有项」还是「删了再添」。</li>
+        <li><code class="inline">disabled: true</code>：卸载插件但不删配置项；改回原值后，它和所有因依赖它而 PENDING 的插件会重新加载。</li>
+        <li>组（group）可嵌套子列表整体加载 / 卸载；<code class="inline">isolate</code> 为组提供某服务的独立实例——两个组各自看到配置不同的 <code class="inline">shell</code> 提供方，互不干扰。</li>
+      </ul>
+
+      <h3>热模块替换（HMR）</h3>
+      <p>卸载会释放 effect（第 2 章），加载遵循依赖（第 3 章），所以 HMR 可以先卸载、再加载来替换运行中的插件。<code class="inline">@deepseek-ai/cordis-plugin-hmr</code> 会监视文件，保存时自动执行这套流程。它依赖 <code class="inline">logger</code> 服务记录日志、<code class="inline">inject</code> <code class="inline">timer</code> 服务做去抖——所以清单里要带上这两个辅助插件，否则 HMR 会永远停在 PENDING 且不发声。</p>
+
+      <div class="callout warn">
+        <span class="tag">为什么配置项要带 id</span>
+        不带 <code class="inline">id</code> 的配置项每次读取都会生成一个新 id，于是只要配置文件有任何编辑（哪怕自身文本没变），它也会被当成「先删再添」而重新挂载。显式写 <code class="inline">id</code> 才能做到「只挂载 / 卸载真正变化的部分」。
+      </div>
+
+      <h3>诊断：我的插件为什么一直 PENDING？</h3>
+      <p>依赖驱动加载的另一面：<code class="inline">inject</code> 指了没人提供的服务，它就一直等、不输出。这不是错误（PENDING 是合法状态）。你可以直接枚举插件注册表看状态：</p>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">diagnose.ts</span><span class="src">教程 06</span></div>
+        <pre><code>import { FiberState, type Context } from '@deepseek-ai/cordis'
+
+export const name = 'diagnose'
+export function apply(ctx: Context) {
+  setTimeout(() => {
+    for (const runtime of ctx.registry.values()) {
+      for (const fiber of runtime.fibers) {
+        if (fiber.state === FiberState.PENDING) {
+          console.log(`${fiber.name} is PENDING — a required service is missing`)
+        }
+      }
+    }
+  }, 500)
+}</code></pre>
+      </div>
+      <p>配合一个「要不到服务」的插件，运行就会打印 <code class="inline">needs-timer is PENDING — a required service is missing</code>。往清单加 <code class="inline">- name: '@deepseek-ai/cordis-plugin-timer'</code> 它就活了。不加 PENDING 过滤地遍历，你还会看到 loader 自身的插件（Loader、Include）处于 ACTIVE。</p>
+
+      <h3>真实代码：base bundle 的长清单</h3>
+      <p>教程那个一行清单，放大到本仓库就是 <code class="inline">packages/bundle/base/cordis.patch.yml</code>——它一次性插入几十个带 <code class="inline">id</code> 的核心插件，后续各 mode 的 bundle 按 <code class="inline">id</code> 覆盖某一行的 <code class="inline">config</code>：</p>
+      <div class="code real">
+        <div class="bar"><span class="lang">yaml</span><span class="file">packages/bundle/base/cordis.patch.yml</span><span class="src">真实代码 · 共享核心</span></div>
+        <pre><code>- insert:
+    - id: timer
+      name: '@deepseek-ai/cordis-plugin-timer'
+    - id: hmr
+      name: '@deepseek-ai/cordis-plugin-hmr'
+      config:
+        root: ['.']
+    - id: llm
+      name: '@deepseek-ai/dsh-llm'
+    - id: session
+      name: '@deepseek-ai/dsh-session'
+    - id: agent
+      name: '@deepseek-ai/dsh-agent'
+    # ...（共数十行，按 id 可被后续 bundle 覆盖）</code></pre>
+      </div>
+    </section>
+
+    <!-- ============ CH7 ============ -->
+    <section id="ch7">
+      <h2><span class="ch">07</span> 进入 harness</h2>
+      <div class="one-liner"><b>一句话：</b>把前几章的模式直接用在真实 harness 服务上——向 <code class="inline">ctx.tools</code> 注册一个模型可调用的工具，通过真实工具流水线执行它，并监听 <code class="inline">tools/result</code> 事件。本例无需密钥、不调模型。</div>
+
+      <h3>工具插件：注册 + 执行</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">greet-tool.ts</span><span class="src">教程 07</span></div>
+        <pre><code>import type { Context } from '@deepseek-ai/cordis'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import { CallId } from '@deepseek-ai/dsh-llm'
+
+export const name = 'greet-tool'
+export const inject = ['tools']
+
+export function apply(ctx: Context) {
+  ctx.tools.register(defineTool({
+    name: 'greet',
+    description: 'Greet the named person.',
+    parameters: {
+      name: { type: 'string', required: true, description: 'Who to greet' },
+    },
+    output: {
+      schema: { type: 'string' },
+      render: (_args, value) => [{ type: 'text', text: value }],
+    },
+    async execute(args) {
+      return `Hello, ${args.name}!`
+    },
+  }))
+
+  // 代替模型，直接驱动一次调用走真实执行流水线
+  void (async () => {
+    const result = await ctx.tools.execute({
+      callId: CallId('demo-1'),
+      name: 'greet',
+      arguments: { name: 'Cordis' },
+      signal: new AbortController().signal,
+    })
+    console.log('tool replied:', JSON.stringify(result.content))
+  })()
+}</code></pre>
+      </div>
+      <p>每个模式都来自前几章：<code class="inline">inject: ['tools']</code>（第 3 章）让插件等服务就绪；<code class="inline">ctx.tools.register(...)</code> 把注册 disposer 挂到插件（第 2 章），卸载即注销。<code class="inline">defineTool</code> 把 <code class="inline">parameters</code> 规约为给模型看的 JSON Schema、推导 <code class="inline">args</code> 类型、并在 <code class="inline">execute</code> 前校验模型给的参数；<code class="inline">output.render</code> 是 Native renderer，把规范值转成可持久化的内容块。</p>
+
+      <h3>观察插件：监听工具结果</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">ts</span><span class="file">tool-logger.ts</span><span class="src">教程 07</span></div>
+        <pre><code>import type {} from '@deepseek-ai/dsh-tools'   // 引入声明合并，使事件有类型
+
+export const name = 'tool-logger'
+export const inject = ['tools']
+
+export function apply(ctx: Context) {
+  ctx.on('tools/result', (exec, result) => {
+    const text = result.content
+      .map(block => (block.type === 'text' ? block.text : ''))
+      .join('')
+    console.log(`[tool-logger] ${exec.name} -> ${text}`)
+  })
+}</code></pre>
+      </div>
+
+      <h3>组合并运行</h3>
+      <div class="code">
+        <div class="bar"><span class="lang">yaml</span><span class="file">cordis.yml</span><span class="src">教程 07</span></div>
+        <pre><code>- name: '@deepseek-ai/dsh-system-prompt'
+- name: '@deepseek-ai/dsh-tools'
+- name: './tool-logger.ts'
+- name: './greet-tool.ts'</code></pre>
+      </div>
+      <p>注意 <code class="inline">@deepseek-ai/dsh-tools</code> 会注入 <code class="inline">systemPrompt</code> 服务（工具要向系统提示词贡献 schema），所以清单里也要列它的提供方；缺了提供方，工具插件就按第 6 章那样 PENDING。运行输出：</p>
+      <div class="code">
+        <div class="bar"><span class="lang">txt</span><span class="file">stdout</span></div>
+        <pre><code>[tool-logger] greet -> Hello, Cordis!
+tool replied: [{"type":"text","text":"Hello, Cordis!"}]</code></pre>
+      </div>
+      <p>logger 先触发：<code class="inline">tools/result</code> 在结果「物化过程中」发出，早于 <code class="inline">execute</code> 返回的 promise 兑现。两个插件互不知道对方存在——它们由「注册表服务」和「事件」连接。</p>
+
+      <h3>真实代码：<code class="inline">defineTool</code> 与 <code class="inline">register</code> 在做什么</h3>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/core/tools/src/schema.ts（节选）</span><span class="src">真实代码 · 工具定义</span></div>
+        <pre><code>export function defineTool(options: DefineToolOptions): ToolDefinition {
+  const parameters = parameterSchemaSpecToJsonSchema(options.parameters)
+  const outputSchema = valueSchemaSpecToJsonSchema(options.output.schema)
+  const validate = (args) => validateJsonSchemaValue(parameters, args, '')
+  return {
+    name: options.name,
+    description: options.description,
+    parameters,
+    output: {
+      schema: outputSchema,
+      render: (args, value) => options.output.render(args, value),
+    },
+    async execute(args, exec) {
+      const violations = validate(args)
+      if (violations.length) throw new ToolArgsError(violations)  // 校验模型参数
+      return options.execute(args, exec)
+    },
+  }
+}</code></pre>
+      </div>
+      <div class="code real">
+        <div class="bar"><span class="lang">ts</span><span class="file">packages/core/tools/src/index.ts（节选）</span><span class="src">真实代码 · 注册即 effect</span></div>
+        <pre><code>register(definition: ToolDefinition): () => void {
+  const name = definition.name
+  if (name === RUN_CODE_NAME) throw new Error(`tool name "${RUN_CODE_NAME}" is reserved ...`)
+  // 注册本身是 effect：返回的 disposer 会随插件卸载自动注销工具
+  return this.layers.effect(
+    this.ctx,
+    layer => layer.tools.insert(name, definition),
+    { label: 'tools.register()' },
+  )
+}</code></pre>
+      </div>
+      <p>这就把第 2 章「注册会自动撤销」和第 3 章「<code class="inline">ctx.tools</code> 是个服务」连起来了：<code class="inline">defineTool</code> 负责把你的函数变成规范定义，<code class="inline">ToolRuntime.register</code> 用 effect 把它插进注册表——插件一卸载，工具自动消失。</p>
+    </section>
+
+    <!-- ============ AGENT ============ -->
+    <section id="agent">
+      <h2><span class="ch">★</span> 从零到一个 Agent</h2>
+      <div class="one-liner"><b>一句话：</b>真实的 agent = 上面这套组合，再加上 LLM 适配器、agent loop、持久化、运行入口。读懂下面这份清单，你就能读懂 harness 是怎么「拼」出来的。</div>
+      <p><code class="inline">examples/headless-agent/cordis.yml</code> 就是一个完整的一次性编码 agent。你已经能逐行读懂它了：</p>
+      <div class="code real">
+        <div class="bar"><span class="lang">yaml</span><span class="file">examples/headless-agent/cordis.yml（节选）</span><span class="src">真实代码</span></div>
+        <pre><code>- id: settings        name: '@deepseek-ai/dsh-settings-file'   # 用户设置
+- id: credentials     name: '@deepseek-ai/dsh-credentials-local' # 密钥
+- id: llm-deepseek    name: '@deepseek-ai/dsh-llm-deepseek'     # LLM 适配器
+    config: { thinking: enabled, reasoningEffort: max, models: [...] }
+- id: subprocess      name: '@deepseek-ai/dsh-subprocess-local'
+- id: bash            name: '@deepseek-ai/dsh-bash-local'        # bash 能力
+- id: agent-spine     name: '@deepseek-ai/dsh-agent-spine-demo'  # agent 主脊
+- id: persistence     name: '@deepseek-ai/dsh-session-persistence-jsonl'
+- id: compaction-basic name: '@deepseek-ai/dsh-compaction-basic' # 上下文压缩
+- id: subagent        name: '@deepseek-ai/dsh-subagent'          # 子智能体
+- id: todo / fs / workflow / ralph ...                            # 各类工具
+- id: fs-local        name: '@deepseek-ai/dsh-fs-local'          # 文件系统</code></pre>
+      </div>
+      <p>把教程里的 <code class="inline">greet-tool.ts</code> 加进这份清单的副本，你就拥有了一个「会打招呼」的真实 agent。后续可深入：<code class="inline">构建工具</code>（defineTool 的呈现与更丰富 schema）、<code class="inline">三层能力设计</code>（harness 如何组织可替换能力）、各 <code class="inline">子系统页面</code> 上生成的 <code class="inline">cordis-surface</code> 区块（可注入 / 可监听的一切）。</p>
+
+      <div class="diagram">
+        <svg viewBox="0 0 680 230" role="img" aria-label="插件组合与依赖示意">
+          <defs>
+            <marker id="dep" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 z" fill="#6366f1"/>
+            </marker>
+            <style>
+              .box{fill:#fff;stroke:#cdd3df;stroke-width:1.5}
+              .box.svc{fill:#eef0fe;stroke:#4f46e5}
+              .t{font:600 12.5px var(--sans, sans-serif);fill:#1f2330}
+              .st{font:10.5px var(--sans, sans-serif);fill:#6b7280}
+              .edge{stroke:#6366f1;stroke-width:1.5;fill:none}
+            </style>
+          </defs>
+          <rect class="box svc" x="280" y="14" width="120" height="40" rx="9"/>
+          <text class="t" x="340" y="32" text-anchor="middle">Loader</text>
+          <text class="st" x="340" y="46" text-anchor="middle">读 cordis.yml</text>
+
+          <rect class="box" x="40" y="96" width="150" height="46" rx="9"/>
+          <text class="t" x="115" y="116" text-anchor="middle">dsh-tools</text>
+          <text class="st" x="115" y="131" text-anchor="middle">提供 ctx.tools</text>
+
+          <rect class="box" x="265" y="96" width="150" height="46" rx="9"/>
+          <text class="t" x="340" y="116" text-anchor="middle">dsh-system-prompt</text>
+          <text class="st" x="340" y="131" text-anchor="middle">提供 systemPrompt</text>
+
+          <rect class="box" x="490" y="96" width="150" height="46" rx="9"/>
+          <text class="t" x="565" y="116" text-anchor="middle">greet-tool</text>
+          <text class="st" x="565" y="131" text-anchor="middle">inject:['tools']</text>
+
+          <rect class="box" x="490" y="170" width="150" height="46" rx="9"/>
+          <text class="t" x="565" y="190" text-anchor="middle">tool-logger</text>
+          <text class="st" x="565" y="205" text-anchor="middle">on('tools/result')</text>
+
+          <path class="edge" d="M340,54 L115,94" marker-end="url(#dep)"/>
+          <path class="edge" d="M340,54 L340,94" marker-end="url(#dep)"/>
+          <path class="edge" d="M340,54 L565,94" marker-end="url(#dep)"/>
+          <path class="edge" d="M565,142 L565,168" marker-end="url(#dep)"/>
+          <path class="edge" d="M490,119 C420,119 420,119 340,119" marker-end="url(#dep)" stroke-dasharray="4 3"/>
+        </svg>
+        <div class="cap">Loader 按清单挂载插件；箭头表示 inject 依赖（如 <code>greet-tool</code> 等 <code>ctx.tools</code> 就绪才启动）。<code>tool-logger</code> 与 <code>greet-tool</code> 互不认识，靠 <code>tools/result</code> 事件连接。</div>
+      </div>
+    </section>
+
+    <!-- ============ CHEATSHEET ============ -->
+    <section id="cheatsheet">
+      <h2><span class="ch">≡</span> API 速查表</h2>
+      <table>
+        <thead><tr><th>你要做什么</th><th>怎么做</th><th>章节</th></tr></thead>
+        <tbody>
+          <tr><td>写一个插件</td><td><code class="inline">export function apply(ctx) {}</code> + <code class="inline">cordis.yml</code> 里一行 <code class="inline">name</code></td><td>01</td></tr>
+          <tr><td>管一个定时器 / 连接 / watcher</td><td><code class="inline">ctx.effect(() =&gt; { const h = ...; return () =&gt; cleanup(h) })</code></td><td>02</td></tr>
+          <tr><td>挂一个子插件并拿到句柄</td><td><code class="inline">const fiber = ctx.plugin(Foo); fiber.dispose()</code></td><td>02</td></tr>
+          <tr><td>对外提供一项能力</td><td><code class="inline">class X extends Service { constructor(ctx){ super(ctx,'x') } }</code> + <code class="inline">declare module</code></td><td>03</td></tr>
+          <tr><td>声明我依赖某服务</td><td><code class="inline">export const inject = ['tools']</code>（缺了会 PENDING）</td><td>03</td></tr>
+          <tr><td>发通知 / 广播</td><td><code class="inline">ctx.emit('ns/action', ...args)</code></td><td>04</td></tr>
+          <tr><td>监听通知</td><td><code class="inline">ctx.on('ns/action', (...args) =&gt; {})</code>（自动随插件移除）</td><td>04</td></tr>
+          <tr><td>包裹 / 短路决策</td><td><code class="inline">ctx.waterfall('ns/action', ...next)</code>，监听器可 <code class="inline">next()</code> 或否决</td><td>04</td></tr>
+          <tr><td>给插件加配置 + 校验</td><td>导出 <code class="inline">Config</code> schema（Schemastery / Standard Schema）</td><td>05</td></tr>
+          <tr><td>加载时计算配置</td><td><code class="inline">config: !!js process.env.X ?? 'default'</code></td><td>05</td></tr>
+          <tr><td>给配置项稳定身份</td><td>写 <code class="inline">id</code>；临时关掉写 <code class="inline">disabled: true</code></td><td>06</td></tr>
+          <tr><td>诊断 PENDING</td><td>遍历 <code class="inline">ctx.registry</code>，找 <code class="inline">fiber.state === FiberState.PENDING</code></td><td>06</td></tr>
+          <tr><td>注册一个模型工具</td><td><code class="inline">ctx.tools.register(defineTool({ name, parameters, output, execute }))</code></td><td>07</td></tr>
+        </tbody>
+      </table>
+
+      <h3>本教程引用到的真实文件索引</h3>
+      <ul>
+        <li><code class="inline">vendor/cordis/bin.js</code> — 裸 Cordis loader 入口</li>
+        <li><code class="inline">vendor/cordis/src/events.ts</code> — <code class="inline">emit/parallel/serial/bail/waterfall</code> 真实实现</li>
+        <li><code class="inline">vendor/cordis/src/service.ts</code> — <code class="inline">Service</code> 基类与注册机制</li>
+        <li><code class="inline">packages/core/tools/src/index.ts</code> — <code class="inline">ToolRuntime</code>（<code class="inline">ctx.tools</code> 服务）、<code class="inline">register</code></li>
+        <li><code class="inline">packages/core/tools/src/schema.ts</code> — <code class="inline">defineTool</code></li>
+        <li><code class="inline">packages/e2b/e2b/src/index.ts</code> — <code class="inline">E2BRuntime</code>（真实 Service 子类 + Schema 配置）</li>
+        <li><code class="inline">packages/schedule/schedule/src/index.ts</code> — 嵌套 <code class="inline">ctx.effect</code> 的真实范例</li>
+        <li><code class="inline">packages/bundle/base/cordis.patch.yml</code> — 生产级插件组合清单</li>
+        <li><code class="inline">examples/headless-agent/cordis.yml</code> — 一个完整 agent 的组合</li>
+      </ul>
+
+      <footer>
+        本手册由官方 7 篇 Cordis 教程浓缩，并对照 deepseek-harness 仓库源码整理而成。所有「真实代码」片段均来自上述文件，可用绝对路径在本地打开核对。建议配合仓库 <code class="inline">docs/architecture.md</code> 与 <code class="inline">docs/cordis-primer.md</code> 深入阅读。
+      </footer>
+    </section>
+  </main>
+</div>
+
+<script>
+  // 目录高亮 + 平滑滚动（轻量、无依赖）
+  (function () {
+    const links = Array.from(document.querySelectorAll('#toc a'));
+    const map = new Map();
+    links.forEach(a => {
+      const id = a.getAttribute('href').slice(1);
+      const el = document.getElementById(id);
+      if (el) map.set(el, a);
+    });
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const a = map.get(e.target);
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+    map.forEach((_, el) => obs.observe(el));
+  })();
+</script>
+</body>
+</html>

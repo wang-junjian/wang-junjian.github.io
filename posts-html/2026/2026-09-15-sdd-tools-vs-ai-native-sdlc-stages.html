@@ -1,0 +1,166 @@
+<meta name="description" content="从原生研发手册的线与环、依赖图出发，逐环节对比 Spec Kit、OpenSpec、mattpocock 三款规格驱动工具在意图、设计、构建、测试、部署、维护上的覆盖强弱，并给出整体覆盖评分与落地组合策略：部署审批、评测回归与生产闭环是三者共同空白。">
+<meta name="keywords" content="SDD 工具, AI-Native SDLC, Spec Kit, OpenSpec, 环节映射, 对比分析">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-15">
+<title>SDD 工具与 AI-Native SDLC 环节映射分析</title>
+<style>
+  :root {
+    --fg: #1a1a18;
+    --muted: #5f5e5a;
+    --accent: #c1502e;
+    --surface: #f5f4ef;
+    --border: #d8d6cd;
+    --code-bg: #efeee8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fg: #e8e6df;
+      --muted: #a3a198;
+      --accent: #e0784f;
+      --surface: #1c1b18;
+      --border: #3a382f;
+      --code-bg: #26251f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --fg: #e8e6df;
+    --muted: #a3a198;
+    --accent: #e0784f;
+    --surface: #1c1b18;
+    --border: #3a382f;
+    --code-bg: #26251f;
+  }
+  body {
+    background: var(--surface);
+    color: var(--fg);
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.75;
+    padding-inline: max(16px, env(safe-area-inset-left));
+  }
+  main { max-width: 880px; margin: 0 auto; padding-block: 48px 96px; }
+  h1 { font-size: 1.9rem; line-height: 1.3; margin-bottom: 0.25em; }
+  h2 { font-size: 1.4rem; margin-top: 2.4em; padding-top: 0.6em; border-top: 1px solid var(--border); }
+  h3 { font-size: 1.1rem; margin-top: 1.8em; }
+  .lede { color: var(--muted); font-size: 0.95rem; margin-bottom: 2em; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.88em; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; }
+  .table-wrap { overflow-x: auto; }
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--code-bg);
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 1em 0;
+  }
+  strong { color: var(--fg); }
+  a { color: var(--accent); }
+</style>
+
+<main>
+  <h1>SDD 工具与 AI-Native SDLC 环节映射分析</h1>
+  <p class="lede">基于《The AI-Native SDLC Playbook》的两张核心图示（线 vs 环、Plays 采用顺序依赖图），对比 Spec Kit / OpenSpec / mattpocock-skills 三个 SDD 工具在各环节的覆盖方式。</p>
+
+  <h2>1. 两张图的核心信息</h2>
+
+  <h3>图 1：线 vs 环</h3>
+  <p>传统 SDLC 是 Plan→…→Maintain 的单向流水线，回流一次就是一个新发布周期；AI 原生模式下六阶段变成以 Claude 为中心的<strong>环</strong>，周期从周压缩到小时，人从"环内执行者"变为"环上的发起、指挥与治理者"。</p>
+
+  <h3>图 2：Plays 采用顺序依赖图</h3>
+  <p>图中箭头是<strong>采纳顺序</strong>（先建什么能力），不是阶段顺序。五个橙色起点 play 无前置依赖，可任意开始：</p>
+  <pre><code>第1层(起点): Capture intent │ CLAUDE.md │ Feedback loop │ Hooks │ Plan mode
+第2层:       Skills / Subagents / Evals        ← 依赖 CLAUDE.md、Feedback loop、Hooks
+第3层:       Requirements &amp; design / PR review  ← 依赖 intent、Skills、Evals
+第4层:       CI/CD                              ← 依赖 Plan mode、PR review
+第5层:       Closing the loop                   ← 依赖 Capture intent、CI/CD，闭环回写</code></pre>
+
+  <h2>2. 逐环节映射</h2>
+
+  <h3>2.1 Plan（Capture intent → intent.md）</h3>
+  <p>Playbook 主张：提出者用自己的语言与 AI 头脑风暴，产出<strong>版本化的 proto-spec</strong>。</p>
+  <div class="table-wrap"><table>
+    <tr><th>工具</th><th>工作流</th><th>对应产物</th></tr>
+    <tr><td><strong>OpenSpec</strong></td><td><code>/opsx:explore</code>（先澄清想法、调研代码库）→ <code>/opsx:propose</code></td><td><code>changes/&lt;name&gt;/proposal.md</code> —— 最接近 intent.md 的定位：why + what changes</td></tr>
+    <tr><td><strong>Spec Kit</strong></td><td><code>/speckit.specify</code>（自动编号 001/002…、自动建分支、生成 <code>specs/[branch]/</code> 结构）</td><td><code>spec.md</code> 直接进入正式规格，跳过了 proto-spec 这一层</td></tr>
+    <tr><td><strong>mattpocock</strong></td><td><code>research</code>（查一手资料存成 Markdown）→ 对话收敛后 <code>to-spec</code>（把对话发布到 issue tracker）</td><td>issue 即 intent，工件留在 tracker 而非 repo</td></tr>
+  </table></div>
+  <div class="callout"><strong>差异要点</strong>：OpenSpec 的 explore→propose 与 playbook 的"头脑风暴→intent.md"几乎一一对应；Spec Kit 把 Plan 和 Design 压缩成一步，适合意图已清晰的新项目；mattpocock 不定义 intent 格式，把载体交给团队已有的 issue tracker。</div>
+
+  <h3>2.2 Design（Requirements &amp; design → spec.md）</h3>
+  <p>Playbook 主张：需求与设计在一次会话内完成，组织政策以 skills 形式<strong>在写 spec 时</strong>生效，而非数周后评审时发现。</p>
+  <div class="table-wrap"><table>
+    <tr><th>工具</th><th>工作流</th><th>Spec 定义模式</th></tr>
+    <tr><td><strong>OpenSpec</strong></td><td>propose 时生成 <code>specs/</code> + <code>design.md</code>；<code>/opsx:update</code> 保持各工件一致</td><td>纯 Markdown 的<strong>增量 delta spec</strong>：<code>## ADDED Requirements</code>，每条 Requirement 下挂 <code>WHEN/THEN</code> 场景；无特殊语法，brownfield 友好</td></tr>
+    <tr><td><strong>Spec Kit</strong></td><td><code>/speckit.constitution</code>（一次性确立原则，相当于 playbook 的"政策 skills"）→ specify → <code>/speckit.plan</code></td><td><strong>全量 spec</strong>：用户故事 + 验收标准 + 强制澄清标记 <code>[NEEDS CLARIFICATION]</code>；constitution 是全局不可违抗约束</td></tr>
+    <tr><td><strong>mattpocock</strong></td><td><code>domain-modeling</code>（统一领域词汇）→ <code>grill-with-docs</code>（拷问式访谈 sharpen 设计，顺带产出 ADR 和术语表）→ 存疑先 <code>prototype</code>（一次性原型验证设计问题）</td><td>无固定模板，产出是 ADR + glossary + issue，<strong>人是设计的主导者</strong>，skill 只负责逼问</td></tr>
+  </table></div>
+  <div class="callout"><strong>差异要点</strong>：这是三者分化最大的环节。OpenSpec 的 delta spec + archive 机制天然支持"spec 随代码演进"（brownfield）；Spec Kit 的 constitution 最接近 playbook 说的"政策编码为 skills"；mattpocock 的 grill-with-docs 对应 playbook 里"像分析师一样提问"的步骤，但拒绝模板化。</div>
+
+  <h3>2.3 Build（CLAUDE.md / Plan mode / Skills / Subagents → plan.md + diff）</h3>
+  <p>Playbook 主张：plan mode 起步、提交 <code>plan.md</code>、工件可被一个没看过对话的人执行。</p>
+  <div class="table-wrap"><table>
+    <tr><th>工具</th><th>工作流</th></tr>
+    <tr><td><strong>Spec Kit</strong></td><td><code>/speckit.plan</code>（读 spec + constitution，产出 plan + data-model + contracts + research）→ <code>/speckit.tasks</code>（拆成可执行任务清单）→ <code>/speckit.implement</code>。<strong>链路最完整</strong>，plan.md 是一等公民</td></tr>
+    <tr><td><strong>OpenSpec</strong></td><td>快路径 <code>/opsx:propose</code> 一步生成全部规划工件；展开路径 <code>/opsx:new</code> → <code>/opsx:continue</code>（逐工件生成）→ <code>/opsx:ff</code>；执行用 <code>/opsx:apply</code> 按 <code>tasks.md</code> checklist 逐项打勾，<strong>允许实现中回改工件</strong>（fluid）</td></tr>
+    <tr><td><strong>mattpocock</strong></td><td><code>to-tickets</code>（把 plan/spec 拆成 tracer-bullet tickets，声明依赖）→ <code>implement</code>（按 spec/ticket 实现）。超大块工作用 <code>wayfinder</code> 拆成跨会话的决策 ticket 地图</td></tr>
+  </table></div>
+  <div class="callout"><strong>差异要点</strong>：Spec Kit 是"计划先行、工件驱动实现"的重量级流程；OpenSpec 的 apply 允许边做边改工件，对应 playbook 的"实现偏离计划时在同一 commit 更新 plan.md"；mattpocock 用 ticket 替代 plan.md，把"计划"外置到 tracker。</div>
+
+  <h3>2.4 Test（Feedback loop / Evals）</h3>
+  <p>Playbook 主张：会话自我验证（跑测试/构建/截图），验证先于人看；配置变更要像代码一样过 eval 回归。</p>
+  <div class="table-wrap"><table>
+    <tr><th>工具</th><th>能力</th></tr>
+    <tr><td><strong>mattpocock</strong></td><td><strong>最强</strong>：<code>tdd</code>（red-green-refactor，正是 playbook"先写失败测试再修"的玩法）；<code>diagnosing-bugs</code>（疑难 bug 的诊断循环）</td></tr>
+    <tr><td><strong>Spec Kit</strong></td><td><code>/speckit.converge</code>：实现完毕后对照 spec、plan、tasks <strong>收敛校验</strong>，反复直到报告 Converged</td></tr>
+    <tr><td><strong>OpenSpec</strong></td><td><code>/opsx:verify</code>：验证实现与工件是否一致</td></tr>
+  </table></div>
+  <div class="callout"><strong>差异要点</strong>：三者都覆盖"对照工件验证"，但只有 mattpocock 覆盖 playbook 强调的<strong>会话内即时反馈环</strong>（TDD）；Evals 这一层（对 agent 配置本身的回归测试）三者都没有，需按 playbook 自建 CI eval 套件。</div>
+
+  <h3>2.5 Deploy（Hooks / PR review / CI/CD）</h3>
+  <p>Playbook 主张：hook 做确定性审批门，PR review 双向（AI 评审人、AI 响应评审），agent 止步于 production gate。</p>
+  <p>三个工具在这一环节<strong>都基本没有内建能力</strong>——它们刻意不碰部署治理。能用的是：</p>
+  <ul>
+    <li><strong>mattpocock</strong>：<code>code-review</code>（沿 Standards 与 Spec 符合度两条轴审查 diff，最接近 playbook 的 REVIEW.md 分 pass 思路）、<code>triage</code>（issue/PR 状态机分拣）、<code>resolving-merge-conflicts</code>、<code>wizard</code>（生成 bash 向导，引导人执行只有人能做的步骤——恰好对应"production gate 留给人"）</li>
+    <li><strong>OpenSpec / Spec Kit</strong>：依赖 git 分支 + PR 的常规流程，review 交给 agent 平台自身能力（如 Claude Code Review）</li>
+  </ul>
+  <div class="callout">这一环节是 playbook 相对三个工具最大的增量：<strong>hooks as approval gates + 分层评审</strong>需要按 playbook 第 5 章自建。</div>
+
+  <h3>2.6 Maintain（Closing the loop）</h3>
+  <p>Playbook 主张：确定性检测脚本发现 control-band 违规 → 无人工触发 Claude → 诊断写回为新的 intent.md，环自启动。</p>
+  <div class="table-wrap"><table>
+    <tr><th>工具</th><th>相关机制</th></tr>
+    <tr><td><strong>OpenSpec</strong></td><td><code>/opsx:archive</code> 把完成的 change 合并回 <code>openspec/specs/</code> 主规格——<strong>唯一内建"知识回写"机制</strong>的工具，但方向是"实现→规格"，不是"生产→intent"</td></tr>
+    <tr><td><strong>mattpocock</strong></td><td><code>diagnosing-bugs</code> + <code>triage</code> 覆盖人工响应侧；<code>wizard</code> 可固化 runbook</td></tr>
+    <tr><td><strong>Spec Kit</strong></td><td>无对应机制（其 spec-driven.md 提到生产反馈更新规格，但工具未实现）</td></tr>
+  </table></div>
+  <div class="callout"><strong>结论</strong>：闭环的检测层（确定性脚本、bands.yaml 分层响应）三个工具都不提供，是自建空间；但 OpenSpec 的 change→archive 循环可以复用为"新 intent 落地"的承载结构。</div>
+
+  <h2>3. 整体覆盖度与组合建议</h2>
+  <p>把三者放到 Plays 依赖图上，覆盖度一览：</p>
+  <pre><code>Playbook 环节        OpenSpec      Spec Kit      mattpocock    需自建
+Capture intent       ●●●          ●●            ●●
+Requirements/design  ●●●          ●●●           ●●
+Plan/Build           ●●●          ●●●           ●●
+Feedback loop/Test   ●            ●●            ●●●
+PR review/Deploy     ○            ○             ●●            hooks/gates
+Closing the loop     ●(archive)   ○             ●             检测脚本+触发器</code></pre>
+
+  <p><strong>可落地的组合策略</strong>：</p>
+  <ol>
+    <li><strong>以 OpenSpec 为工件骨架</strong>：<code>changes/</code> + delta spec + archive 机制最贴合 playbook 的"工件链即审计轨迹"，且 brownfield 友好，可从任意存量项目起步。</li>
+    <li><strong>以 mattpocock skills 填充工程实践层</strong>：TDD（feedback loop）、code-review（PR 双向评审）、grill-with-docs（设计澄清）——它们不拥有流程，恰好嵌入 OpenSpec 的各个环节而不冲突。</li>
+    <li><strong>Spec Kit 作为 greenfield 参照系</strong>：其 constitution→specify→plan→tasks→converge 全链路展示了"规格即源码"的极限形态，适合新项目或需要强审计的受监管场景借鉴其 constitution 机制。</li>
+    <li><strong>自建治理层</strong>：hooks（审批门）、evals（配置回归）、生产闭环（检测脚本→intent）按 playbook 落地——这是三个工具共同的空白，也是方法论的最大增值点。</li>
+  </ol>
+</main>

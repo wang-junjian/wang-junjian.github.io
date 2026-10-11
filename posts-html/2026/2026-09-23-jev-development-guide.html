@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="以俄罗斯方块为例的 Jev 集成开发实战：复盘 v1 逐键询问的反面教材，再拆解 v2 落点决策闭环——代码枚举合法落点、隐患转成语义词、优先级列表注入策略，实测六十秒从零消行跃升至消十二行三千零九十四分，附 CORS 代理与智能体接口清单。">
+<meta name="keywords" content="Jev, 俄罗斯方块, 集成开发, 实战指南, 智能体, 游戏 AI">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-23">
+<title>让 AI 自己玩游戏：Jev 集成开发实战指南 —— 以俄罗斯方块为例</title>
+<style>
+  :root {
+    --bg: #fafaf8;
+    --panel: #ffffff;
+    --ink: #1a1a1a;
+    --ink-2: #55565a;
+    --ink-3: #8a8b90;
+    --line: #e4e4e1;
+    --line-2: #d0d0cc;
+    --acid: #7cc11f;
+    --acid-dark: #5a8f14;
+    --magenta: #d81b7a;
+    --code-bg: #1e1f24;
+    --code-ink: #d8d9de;
+    --ok: #1a7f37;
+    --warn: #b45309;
+    --bad: #b91c1c;
+    --sp: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  .hero { border-bottom: 2px solid var(--ink); padding: 64px 0 40px; }
+  .hero .kicker {
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--acid-dark); font-weight: 700; margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 42px; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 20px; }
+  .hero .sub { font-size: 18px; color: var(--ink-2); max-width: 680px; }
+  .hero .meta { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .hero .meta span {
+    font-size: 12.5px; border: 1px solid var(--line-2); border-radius: 3px;
+    padding: 3px 10px; color: var(--ink-2); background: var(--panel);
+  }
+
+  /* TOC */
+  nav.toc { border-bottom: 1px solid var(--line); padding: 24px 0; }
+  nav.toc .t { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin-bottom: 12px; }
+  nav.toc ol { list-style: none; columns: 2; column-gap: 40px; }
+  nav.toc li { margin-bottom: 6px; break-inside: avoid; }
+  nav.toc a { color: var(--ink-2); text-decoration: none; font-size: 14.5px; }
+  nav.toc a:hover { color: var(--acid-dark); }
+  nav.toc .no { color: var(--ink-3); font-variant-numeric: tabular-nums; margin-right: 8px; font-size: 13px; }
+
+  /* Sections */
+  section { padding: 48px 0 8px; }
+  section > .secno {
+    font-size: 13px; font-weight: 800; color: var(--magenta);
+    letter-spacing: 0.1em; margin-bottom: 4px; font-variant-numeric: tabular-nums;
+  }
+  h2 { font-size: 27px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 20px; line-height: 1.3; }
+  h3 { font-size: 19px; font-weight: 700; margin: 36px 0 12px; }
+  h4 { font-size: 16px; font-weight: 700; margin: 24px 0 8px; }
+  p { margin-bottom: 14px; color: var(--ink-2); }
+  p strong, li strong { color: var(--ink); }
+  ul, ol { margin: 0 0 16px 24px; color: var(--ink-2); }
+  li { margin-bottom: 6px; }
+  a { color: var(--acid-dark); }
+
+  /* Callouts */
+  .box {
+    border: 1px solid var(--line-2); border-left: 4px solid var(--acid);
+    background: var(--panel); border-radius: 4px; padding: 16px 20px; margin: 20px 0;
+  }
+  .box .bt { font-weight: 800; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .box p { margin-bottom: 6px; }
+  .box.key { border-left-color: var(--magenta); }
+  .box.key .bt { color: var(--magenta); }
+  .box.good .bt { color: var(--ok); }
+  .box.bad { border-left-color: var(--bad); }
+  .box.bad .bt { color: var(--bad); }
+  .box.warn { border-left-color: var(--warn); }
+  .box.warn .bt { color: var(--warn); }
+
+  /* Code */
+  pre {
+    background: var(--code-bg); color: var(--code-ink);
+    border-radius: 6px; padding: 18px 20px; overflow-x: auto;
+    font-size: 13px; line-height: 1.65; margin: 16px 0 22px;
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #eeeee9; border-radius: 3px; padding: 1px 6px; color: var(--ink);
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  pre .c { color: #7f828c; font-style: italic; }
+  pre .k { color: #9ad1ff; }
+  pre .s { color: #b5e38a; }
+  pre .n { color: #f0b86e; }
+  pre .hl { color: #ef8fb6; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 14px; background: var(--panel); }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: #f0f0ec; font-weight: 700; font-size: 13px; }
+  td { color: var(--ink-2); }
+  td strong { color: var(--ink); }
+  .num { font-variant-numeric: tabular-nums; }
+  .good-t { color: var(--ok); font-weight: 600; }
+  .bad-t { color: var(--bad); font-weight: 600; }
+
+  /* Figures */
+  figure { margin: 24px 0 28px; }
+  figure svg { width: 100%; height: auto; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+  figcaption { font-size: 13px; color: var(--ink-3); margin-top: 8px; text-align: center; }
+
+  /* Decision log mock */
+  .logmock { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; margin: 16px 0 24px; font-size: 13.5px; }
+  .logmock .row { padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .logmock .row:last-child { border-bottom: none; }
+  .logmock .head { font-weight: 700; color: var(--ink); }
+  .logmock .stats { color: var(--ink-3); font-size: 12px; margin-left: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+  .bar-row .lbl { width: 84px; color: var(--ink-2); font-size: 12.5px; text-align: right; }
+  .bar-track { flex: 1; height: 14px; background: #f0f0ec; border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--acid); }
+  .bar-fill.m { background: var(--magenta); }
+  .bar-row .pct { width: 42px; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  footer { border-top: 2px solid var(--ink); margin-top: 64px; padding: 28px 0 64px; color: var(--ink-3); font-size: 13.5px; }
+  .divider { border-top: 1px solid var(--line); margin-top: 40px; }
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 30px; }
+    nav.toc ol { columns: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="kicker">Engineering Journal · TypeSafe Jev · System One</div>
+  <h1>让 AI 自己玩游戏：<br>Jev 集成开发实战指南</h1>
+  <p class="sub">以一个真实开发过程为蓝本：俄罗斯方块如何从「AI 玩不起来」迭代到「每分钟消十几行」。本文讲透三件事——如何为智能体设计游戏接口、如何集成 Jev、如何组织 Jev 的输入与输出——读完你可以把同样的方法迁移到任何游戏或应用。</p>
+  <div class="meta">
+    <span>面向零经验开发者</span><span>单文件 · 零依赖</span><span>含完整代码</span><span>含实测数据</span><span>2026-09-23</span>
+  </div>
+</header>
+
+<!-- ================= TOC ================= -->
+<nav class="toc">
+  <div class="t">目录</div>
+  <ol>
+    <li><a href="#s1"><span class="no">01</span>Jev 是什么：先建立正确的心智模型</a></li>
+    <li><a href="#s2"><span class="no">02</span>核心设计哲学：代码玩游戏，Jev 做判断</a></li>
+    <li><a href="#s3"><span class="no">03</span>反面教材：我们第一个失败版本（v1）</a></li>
+    <li><a href="#s4"><span class="no">04</span>正确架构：v2 的决策闭环</a></li>
+    <li><a href="#s5"><span class="no">05</span>组织输入：state 的设计规范</a></li>
+    <li><a href="#s6"><span class="no">06</span>组织输出使用：questions 与答案消费</a></li>
+    <li><a href="#s7"><span class="no">07</span>工程落地：CORS、代理与防御性编程</a></li>
+    <li><a href="#s8"><span class="no">08</span>为外部智能体暴露接口</a></li>
+    <li><a href="#s9"><span class="no">09</span>实测数据：v1 vs v2</a></li>
+    <li><a href="#s10"><span class="no">10</span>迁移指南：把方法用到你的游戏/应用</a></li>
+    <li><a href="#s11"><span class="no">11</span>附录：文件清单与参考资料</a></li>
+    <li><a href="#s12"><span class="no">12</span>讨论：代码枚举了一切，Jev 还有什么意义？</a></li>
+  </ol>
+</nav>
+
+<!-- ================= S1 ================= -->
+<section id="s1">
+  <div class="secno">01 / JEV 是什么</div>
+  <h2>先建立正确的心智模型</h2>
+
+  <p>Jev 是 TypeSafe（<a href="https://docs.typesafe.ai/" target="_blank">docs.typesafe.ai</a>）提供的 <strong>System One 模型</strong>。名字借自心理学的「系统一 / 系统二」：系统一是快速、直觉的判断；系统二（传统 LLM 聊天模型）是缓慢、深思熟虑的推理。Jev 不生成文章，它只做一件事——<strong>给定一段状态描述和一组问题，返回带概率分布和置信度的结构化判断</strong>。</p>
+
+  <p>这决定了它和 LLM 的用法完全不同：</p>
+
+  <table>
+    <tr><th style="width:22%"></th><th>传统 LLM（Chat API）</th><th>Jev（System One API）</th></tr>
+    <tr><td><strong>输入</strong></td><td>自由对话，提示词工程没有硬性结构</td><td><code>state</code>（状态快照）+ <code>questions</code>（类型化问题）</td></tr>
+    <tr><td><strong>输出</strong></td><td>自然语言文本，需要自己解析</td><td><strong>结构化答案</strong>：选项、概率分布、置信度、分数</td></tr>
+    <tr><td><strong>擅长</strong></td><td>长文本生成、开放式推理、多步规划</td><td><strong>单点判断</strong>：在明确选项中挑一个、给一个评分、回答真假</td></tr>
+    <tr><td><strong>延迟/成本</strong></td><td>秒级、贵</td><td>百毫秒级、极便宜（本文实测每步约 940 token，约几分钱一局）</td></tr>
+    <tr><td><strong>正确用法</strong></td><td>把 LLM 当「大脑」，让它输出动作序列</td><td>把 Jev 当「直觉/品味」，<strong>代码负责计算与执行，Jev 负责在选项中判断</strong></td></tr>
+  </table>
+
+  <h3>API 一瞥</h3>
+  <p>整个集成只涉及一个 endpoint：<code>POST https://api.typesafe.ai/v1/systemone</code>，Bearer 认证。请求体三要素：<code>model</code>、<code>state</code>、<code>questions</code>。</p>
+
+  <pre><code><span class="c">// 请求（示意，节选自本项目真实代码）</span>
+POST /v1/systemone
+Authorization: Bearer &lt;TYPESAFE_API_KEY&gt;
+{
+  <span class="hl">"model"</span>: "jev-latest",
+  <span class="hl">"state"</span>: {                          <span class="c">// 任意结构：字符串或 JSON 对象都行</span>
+    game: {
+      board_rows_top_to_bottom: ["..........", "......##..", <span class="c">/* … 20 行 */</span>],
+      current_piece: "T",
+      stack_height: "high",
+      holes_in_stack: "one hole"
+    }
+  },
+  <span class="hl">"questions"</span>: {                      <span class="c">// 一次可并行问多个问题</span>
+    placement: { type: <span class="s">"choice"</span>, instructions: {…}, criteria: {…} },
+    risk:      { type: <span class="s">"score"</span>,  instructions: "…" },
+    safe:      { type: <span class="s">"noul"</span>,   instructions: "…" }
+  }
+}</code></pre>
+
+  <pre><code><span class="c">// 响应</span>
+{
+  <span class="hl">"answers"</span>: {
+    "placement": {
+      "choice": "p14",                          <span class="c">// 选中的选项 id</span>
+      "probabilities": { "p14": 0.76, "p3": 0.11, … },  <span class="c">// 全选项概率分布</span>
+      "confidence": 0.82                        <span class="c">// 校准置信度</span>
+    },
+    "risk":  { "score": 0.31 },
+    "safe":  { "noul": 0.62 }
+  },
+  "usage": { "input_tokens": 930, "output_tokens": 12 },
+  "model": "jev-1.13.0"
+}</code></pre>
+
+  <div class="box key">
+    <div class="bt">关键认知</div>
+    <p>Jev 的三种问题原语覆盖了游戏决策的全部需求：<strong>Choice</strong>（在明确选项中挑一个）、<strong>Score</strong>（给一个 0–1 分数）、<strong>Noul</strong>（带真/假两面的判断，返回倾向值）。你的全部工作就是把游戏问题「翻译」成这三类问题。</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S2 ================= -->
+<section id="s2">
+  <div class="secno">02 / 设计哲学</div>
+  <h2>代码玩游戏，Jev 做判断</h2>
+
+  <p>这句话是整个项目的灵魂，也是社区所有成功案例（官方 Tetris demo、Doom bot、Pac-Man demo、开源项目 <code>trungdq88/jev-tetris</code>）共同遵循的模式：</p>
+
+  <div class="box good">
+    <div class="bt">The Golden Rule</div>
+    <p><strong>"Code owns the game, Jev supplies the judgment."</strong> —— 所有确定性计算（枚举、模拟、评估、执行动画）由代码完成；Jev 只在「已经算好的选项」之间做价值判断。</p>
+  </div>
+
+  <p>具体拆成三条铁律：</p>
+
+  <h3>铁律一：代码枚举，不要让 Jev 想象</h3>
+  <p>不要把棋盘丢给模型说「你看着办」。Jev 没有持久的工作记忆，让它做空间旋转推理、心算十几步落点，既慢又不可靠。<strong>代码应该穷举所有合法选择，模拟每个选择的后果，把结果做成选项表</strong>交给它。</p>
+
+  <h3>铁律二：数字转词，不要让 Jev 算术</h3>
+  <p>System One 对文本的「语义感觉」远强于算术。<code>holes: 2</code> 不如 <code>"two holes"</code>；<code>bumpiness: 7</code> 不如 <code>"slightly uneven"</code>。把所有量化指标转成有语义的词（下文 §5 给出完整实现）。</p>
+
+  <h3>铁律三：一次调用决策一个「完整决策点」</h3>
+  <p>决策点的粒度应该是「一个方块的最终落点」，而不是「一次按键」。前者选项有限、后果明确、一次调用搞定；后者会把一个大决策拆成十几个犹豫不决的小调用——我们 v1 就死在这里（§3）。</p>
+
+  <figure>
+    <svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg" font-family="Inter, PingFang SC, sans-serif">
+      <rect x="0" y="0" width="880" height="300" fill="#ffffff"/>
+      <text x="24" y="32" font-size="14" font-weight="700" fill="#1a1a1a">错误心智模型（LLM 式 agent 循环）</text>
+      <rect x="24" y="52" width="832" height="82" rx="6" fill="#fdf2f2" stroke="#e8c8c8"/>
+      <g font-size="12.5" fill="#7a2e2e">
+        <rect x="44" y="76" width="150" height="34" rx="4" fill="#ffffff" stroke="#d8a8a8"/>
+        <text x="119" y="97" text-anchor="middle">Jev 看生棋盘</text>
+        <rect x="234" y="76" width="150" height="34" rx="4" fill="#ffffff" stroke="#d8a8a8"/>
+        <text x="309" y="97" text-anchor="middle">自己想象落点</text>
+        <rect x="424" y="76" width="150" height="34" rx="4" fill="#ffffff" stroke="#d8a8a8"/>
+        <text x="499" y="97" text-anchor="middle">问一个动作</text>
+        <rect x="614" y="76" width="150" height="34" rx="4" fill="#ffffff" stroke="#d8a8a8"/>
+        <text x="689" y="97" text-anchor="middle">再问下一个…</text>
+        <text x="44" y="126" font-size="12" fill="#b91c1c">→ 空间推理靠脑补 · 一次按键一次调用 · 概率摊平 · 决策瘫痪</text>
+      </g>
+      <text x="24" y="182" font-size="14" font-weight="700" fill="#1a1a1a">正确心智模型（code-enumerated placement）</text>
+      <rect x="24" y="202" width="832" height="82" rx="6" fill="#f3f9e8" stroke="#c8ddad"/>
+      <g font-size="12.5" fill="#3d5c14">
+        <rect x="44" y="226" width="150" height="34" rx="4" fill="#ffffff" stroke="#a8c886"/>
+        <text x="119" y="247" text-anchor="middle">代码枚举落点</text>
+        <rect x="234" y="226" width="150" height="34" rx="4" fill="#ffffff" stroke="#a8c886"/>
+        <text x="309" y="247" text-anchor="middle">模拟每种后果</text>
+        <rect x="424" y="226" width="150" height="34" rx="4" fill="#ffffff" stroke="#a8c886"/>
+        <text x="499" y="247" text-anchor="middle">Jev 选一个</text>
+        <rect x="614" y="226" width="150" height="34" rx="4" fill="#ffffff" stroke="#a8c886"/>
+        <text x="689" y="247" text-anchor="middle">代码执行动画</text>
+        <text x="44" y="276" font-size="12" fill="#5a8f14">→ 确定性计算交给代码 · 一次调用定落点 · 概率集中于最优选项</text>
+      </g>
+    </svg>
+    <figcaption>图 1 · 两种心智模型的对比。上面的循环是我们真实踩过的坑。</figcaption>
+  </figure>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S3 ================= -->
+<section id="s3">
+  <div class="secno">03 / 反面教材</div>
+  <h2>我们第一个失败版本（v1）</h2>
+
+  <p>先看错误做法，你才知道正确做法为什么长那样。v1 的设计非常「直觉」：把 Jev 当成一个 LLM agent，让它像人打游戏一样<strong>每按一次键就问一次</strong>。</p>
+
+  <h3>v1 的问题设计</h3>
+  <p>state 是生棋盘文本 + 当前方块的旋转形状；question 是一个 Choice，选项是五个抽象动作：</p>
+
+  <pre><code><span class="c">// v1：错误的组织方式（保留下来做对照实验用）</span>
+state: <span class="s">"当前棋盘 20 行文本…… 当前方块：T（可旋转）……"</span>
+
+questions: {
+  action: {
+    type: "choice",
+    instructions: { goal: "你正在逐步玩俄罗斯方块……每步之后会再次询问你。" },
+    criteria: {
+      left:      "左移一格",
+      right:     "右移一格",
+      rotate:    "顺时针旋转 90°",
+      soft_drop: "下落一行",
+      hard_drop: "立刻锁定（不可逆）"
+    }
+  }
+}</code></pre>
+
+  <h3>实测决策日志：AI 做不出决定</h3>
+  <p>游戏跑起来后，Jev 的决策日志是这样的（真实数据）：</p>
+
+  <div class="logmock">
+    <div class="row">
+      <div class="head">#36 <span class="stats">conf 13% · risk 0.71 · 416ms · 942 tok</span></div>
+      <div class="bar-row"><div class="lbl">soft_drop</div><div class="bar-track"><div class="bar-fill" style="width:32%"></div></div><div class="pct">32%</div></div>
+      <div class="bar-row"><div class="lbl">hard_drop</div><div class="bar-track"><div class="bar-fill m" style="width:23%"></div></div><div class="pct">23%</div></div>
+      <div class="bar-row"><div class="lbl">right</div><div class="bar-track"><div class="bar-fill m" style="width:22%"></div></div><div class="pct">22%</div></div>
+    </div>
+    <div class="row">
+      <div class="head">#34 <span class="stats">conf 20% · risk 0.68 · 402ms · 942 tok</span></div>
+      <div class="bar-row"><div class="lbl">soft_drop</div><div class="bar-track"><div class="bar-fill" style="width:36%"></div></div><div class="pct">36%</div></div>
+      <div class="bar-row"><div class="lbl">hard_drop</div><div class="bar-track"><div class="bar-fill m" style="width:26%"></div></div><div class="pct">26%</div></div>
+      <div class="bar-row"><div class="lbl">right</div><div class="bar-track"><div class="bar-fill m" style="width:17%"></div></div><div class="pct">17%</div></div>
+    </div>
+  </div>
+
+  <p>三个致命症状，每个都有明确的根因：</p>
+
+  <table>
+    <tr><th style="width:30%">症状</th><th>数据表现</th><th>根因分析</th></tr>
+    <tr>
+      <td><strong>概率摊平，置信度极低</strong></td>
+      <td class="num">置信度 9–23%，top2 选项概率只差几个百分点</td>
+      <td>「下一步往哪动」取决于再往后几步，单看当前状态五个动作都「合理」。问题本身欠约束，Jev 只能平均分配概率。</td>
+    </tr>
+    <tr>
+      <td><strong>行为退化成磨蹭</strong></td>
+      <td class="num">60 秒 74 次调用，0 消行，反复 soft_drop</td>
+      <td>提示词里 hard_drop 标注了「不可逆」，模型天然回避不可逆动作；而每次 soft_drop 后局面几乎没变，下一步的回答也几乎不变。</td>
+    </tr>
+    <tr>
+      <td><strong>成本高、无进展</strong></td>
+      <td class="num">74 次调用 × 942 tok ≈ 7 万 token，得分 112</td>
+      <td>agent 式 while 循环正是官方文档明确列出的<strong>反模式</strong>：每次调用都携带全部上下文却只推进一小步。</td>
+    </tr>
+  </table>
+
+  <div class="box bad">
+    <div class="bt">教训</div>
+    <p>如果你发现 Jev 的概率分布长期摊平、置信度上不去，<strong>先怀疑问题本身设计错了</strong>，而不是怀疑模型能力。摊平的概率不是「模型不确定」，是「你的问题没有给模型可以抓住的抓手」。</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S4 ================= -->
+<section id="s4">
+  <div class="secno">04 / 正确架构</div>
+  <h2>v2 的决策闭环</h2>
+
+  <p>v2 把决策粒度从「一次按键」提升为「一个方块的最终落点」，并把所有空间计算移进代码。每个新方块到来时执行以下闭环：</p>
+
+  <figure>
+    <svg viewBox="0 0 880 420" xmlns="http://www.w3.org/2000/svg" font-family="Inter, PingFang SC, sans-serif">
+      <rect x="0" y="0" width="880" height="420" fill="#ffffff"/>
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8a8b90"/>
+        </marker>
+      </defs>
+      <g font-size="13" fill="#1a1a1a">
+        <!-- step 1 -->
+        <rect x="24" y="24" width="250" height="84" rx="6" fill="#f0f0ec" stroke="#d0d0cc"/>
+        <text x="40" y="48" font-weight="800" font-size="12" fill="#8a8b90">STEP 1 · 代码</text>
+        <text x="40" y="70" font-weight="700">枚举合法落点</text>
+        <text x="40" y="92" font-size="12" fill="#55565a">所有旋转 × 所有列 → 12~34 个</text>
+        <!-- step 2 -->
+        <rect x="314" y="24" width="250" height="84" rx="6" fill="#f0f0ec" stroke="#d0d0cc"/>
+        <text x="330" y="48" font-weight="800" font-size="12" fill="#8a8b90">STEP 2 · 代码</text>
+        <text x="330" y="70" font-weight="700">模拟每个落点的后果</text>
+        <text x="330" y="92" font-size="12" fill="#55565a">锁定→消行→数洞→量高度/表面</text>
+        <!-- step 3 -->
+        <rect x="604" y="24" width="252" height="84" rx="6" fill="#f0f0ec" stroke="#d0d0cc"/>
+        <text x="620" y="48" font-weight="800" font-size="12" fill="#8a8b90">STEP 3 · 代码</text>
+        <text x="620" y="70" font-weight="700">数字全部转成词</text>
+        <text x="620" y="92" font-size="12" fill="#55565a">"two lines" / "flat" / "one hole"</text>
+        <!-- arrows row 1 -->
+        <line x1="274" y1="66" x2="314" y2="66" stroke="#8a8b90" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="564" y1="66" x2="604" y2="66" stroke="#8a8b90" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- step 4: jev -->
+        <rect x="304" y="150" width="272" height="96" rx="6" fill="#fff7fb" stroke="#e5a8c8" stroke-width="2"/>
+        <text x="440" y="178" text-anchor="middle" font-weight="800" font-size="12" fill="#d81b7a">STEP 4 · JEV（唯一一次调用）</text>
+        <text x="440" y="202" text-anchor="middle" font-weight="700">placement Choice（30+ 落点选项）</text>
+        <text x="440" y="224" text-anchor="middle" font-size="12" fill="#55565a">并行附问：strategy / board_health / next_piece_fits</text>
+        <!-- arrows into jev -->
+        <path d="M730,108 C730,140 620,150 576,165" fill="none" stroke="#8a8b90" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- step 5 -->
+        <rect x="24" y="288" width="250" height="84" rx="6" fill="#f0f0ec" stroke="#d0d0cc"/>
+        <text x="40" y="312" font-weight="800" font-size="12" fill="#8a8b90">STEP 5 · 代码</text>
+        <text x="40" y="334" font-weight="700">消费答案并执行</text>
+        <text x="40" y="356" font-size="12" fill="#55565a">choice→落点·概率→备选·执行动画</text>
+        <!-- step 6 -->
+        <rect x="314" y="288" width="250" height="84" rx="6" fill="#f0f0ec" stroke="#d0d0cc"/>
+        <text x="330" y="312" font-weight="800" font-size="12" fill="#8a8b90">STEP 6 · 代码</text>
+        <text x="330" y="334" font-weight="700">防御性检查</text>
+        <text x="330" y="356" font-size="12" fill="#55565a">答案校验·步数上限·退避·错误兜底</text>
+        <!-- step 7 -->
+        <rect x="604" y="288" width="252" height="84" rx="6" fill="#f3f9e8" stroke="#c8ddad"/>
+        <text x="620" y="312" font-weight="800" font-size="12" fill="#5a8f14">LOOP</text>
+        <text x="620" y="334" font-weight="700">下一块到来，回到 STEP 1</text>
+        <text x="620" y="356" font-size="12" fill="#55565a">每块 1 次调用，240~400ms</text>
+        <!-- arrows row 2 -->
+        <line x1="440" y1="246" x2="440" y2="270" stroke="#8a8b90" stroke-width="1.5"/>
+        <path d="M440,270 C440,290 380,288 274,318" fill="none" stroke="#8a8b90" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="274" y1="330" x2="314" y2="330" stroke="#8a8b90" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="564" y1="330" x2="604" y2="330" stroke="#8a8b90" stroke-width="1.5" marker-end="url(#arr)"/>
+        <path d="M730,288 C760,180 740,120 730,108" fill="none" stroke="#c8ddad" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <!-- annotation -->
+        <rect x="24" y="150" width="240" height="96" rx="6" fill="#ffffff" stroke="#e4e4e1" stroke-dasharray="5 4"/>
+        <text x="40" y="176" font-size="12" font-weight="700" fill="#55565a">职责划分</text>
+        <text x="40" y="198" font-size="12" fill="#55565a">代码：确定性计算 + 执行</text>
+        <text x="40" y="220" font-size="12" fill="#d81b7a">Jev：唯一的「品味」判断</text>
+      </g>
+    </svg>
+    <figcaption>图 2 · v2 每方块决策闭环。六个步骤里只有 STEP 4 是一次 Jev 调用。</figcaption>
+  </figure>
+
+  <h3>Step 1–2：枚举与模拟（核心代码）</h3>
+  <p>对当前方块的每一种旋转、每一列，模拟「硬降到最低合法位置 → 锁定 → 消行 → 统计新局面」，产出一个落点对象列表：</p>
+
+  <pre><code><span class="c">// 枚举当前方块的每个合法落点（rotation × column），模拟锁定后的结果</span>
+function <span class="hl">enumeratePlacements</span>(engine) {
+  const type = engine.cur.type;
+  const before = gridStats(engine.grid);        <span class="c">// 现局统计：高度/洞/粗糙度</span>
+  const seen = new Set();
+  const placements = [];
+
+  SHAPES[type].forEach((m, rot) =&gt; {
+    for (let x = 0; x &lt;= COLS - m[0].length; x++) {
+      if (collidesGrid(engine.grid, m, x, 0)) continue;   <span class="c">// 该列放不下，跳过</span>
+      let y = 0;
+      while (!collidesGrid(engine.grid, m, x, y + 1)) y++; <span class="c">// 硬降到最低合法位置</span>
+
+      <span class="c">// 复制棋盘并锁定方块</span>
+      const locked = engine.grid.map(r =&gt; r.slice());
+      for (let my = 0; my &lt; m.length; my++)
+        for (let mx = 0; mx &lt; m[my].length; mx++)
+          if (m[my][mx]) locked[y + my][x + mx] = type;
+
+      <span class="c">// 不同旋转可能产生相同终局（O/I/S/Z），去重</span>
+      const key = locked.map(r =&gt; r.join("")).join("/");
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      <span class="c">// 模拟消行，统计落点后的局面</span>
+      const { grid: afterGrid, cleared } = clearGridRows(locked);
+      const after = gridStats(afterGrid);
+      const p = {
+        id: <span class="s">`p${placements.length}`</span>,     <span class="c">// 稳定 id，Jev 的答案靠它映射回来</span>
+        type, rot, x, y,
+        linesCleared: cleared,
+        holesCreated: Math.max(0, after.holes - before.holes),
+        heightDelta:  after.maxHeight - before.maxHeight,
+        after,
+      };
+      placements.push(p);
+    }
+  });
+  return placements;   <span class="c">// 典型规模：12~34 个落点</span>
+}</code></pre>
+
+  <div class="box">
+    <div class="bt">为什么这一步是全项目最重要的一步</div>
+    <p>枚举把「玩俄罗斯方块」这个开放问题，压缩成了「从 30 个带完整后果描述的选项里挑一个」这个封闭问题。封闭问题的概率分布才有意义，置信度才有校准价值。这个套路可以直接搬到棋类（枚举合法着法）、资源管理类（枚举可行操作）等任何游戏。</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S5 ================= -->
+<section id="s5">
+  <div class="secno">05 / 组织输入</div>
+  <h2>state 的设计规范</h2>
+
+  <p><code>state</code> 支持纯字符串或任意嵌套的 JSON 对象。对象形式更好——它让 <code>instructions</code> 里可以用反引号路径精确引用（如 <code>`game.current_piece`</code>）。本项目的 state 结构：</p>
+
+  <pre><code>function <span class="hl">buildState</span>(engine) {
+  const stats = gridStats(engine.grid);
+  return {
+    game: {
+      <span class="c">// 规则说明：给不知道游戏规则的模型</span>
+      rules: <span class="s">"Standard Tetris. Board is 10 columns wide and 20 rows tall.
+              Rows fill left to right; a full row disappears.
+              The game is lost when the stack reaches the top."</span>,
+
+      <span class="c">// 棋盘原文 + 图例：文本形态的原始证据，供模型核对</span>
+      board_rows_top_to_bottom: engine.grid.map(r =&gt; r.join("")),
+      legend: <span class="s">"# is a filled cell, . is an empty cell.
+               The first row is the top of the board."</span>,
+
+      <span class="c">// 预计算的量化指标 —— 注意：全部转成了词</span>
+      column_heights_left_to_right: stats.heights,
+      stack_height:      describeHeight(stats.maxHeight),   <span class="c">// "medium"</span>
+      holes_in_stack:    describeHoles(stats.holes),        <span class="c">// "one hole"</span>
+      surface:           describeSurface(stats.bumpiness),  <span class="c">// "slightly uneven"</span>
+
+      current_piece: engine.cur.type,
+      next_piece:    engine.nextType,
+      lines_cleared_so_far: engine.lines,
+    },
+  };
+}</code></pre>
+
+  <h3>规范一：结构分层，字段名自解释</h3>
+  <p>state 的每个字段名都应该「读完就懂」。模型拿到 <code>board_rows_top_to_bottom</code> 不需要猜方向；<code>holes_in_stack</code> 不需要猜定义。宁可字段名长，也不要让模型从字段名反推语义。</p>
+
+  <h3>规范二：数字转词（全项目最划算的一行原则）</h3>
+  <p>把每个量化指标映射到一个人工设计的语义区间。这个映射本身就是你的「领域知识注入」：</p>
+
+  <pre><code><span class="c">// —— 数字转词：Jev 读文本强于算术 ——</span>
+function <span class="hl">describeLines</span>(n) {
+  return ["none", "one line", "two lines", "three lines", "four lines (a Tetris)"][n]
+         ?? `${n} lines`;
+}
+function <span class="hl">describeHoles</span>(n) {
+  return n === 0 ? "none" : n === 1 ? "one hole"
+       : n === 2 ? "two holes" : "three or more holes";
+}
+function <span class="hl">describeHeight</span>(h) {
+  if (h &lt;= 4)  return "very low";
+  if (h &lt;= 8)  return "low";
+  if (h &lt;= 12) return "medium";
+  if (h &lt;= 15) return "high";
+  return "dangerously high, close to the top";
+}
+function <span class="hl">describeSurface</span>(b) {          <span class="c">// b = bumpiness（相邻列高度差之和）</span>
+  return b &lt;= 4 ? "flat" : b &lt;= 9 ? "slightly uneven"
+       : b &lt;= 16 ? "bumpy" : "very jagged";
+}</code></pre>
+
+  <div class="box">
+    <div class="bt">设计要点</div>
+    <p>区间边界不是随便定的，它们编码了<strong>游戏策略</strong>：15 行以上标为 "dangerously high"，是为了让 Jev 在「堆到临界」时能直接从字面读懂危险。当你调整游戏风格时，改的就是这些边界。</p>
+  </div>
+
+  <h3>规范三：原文 + 提炼并存</h3>
+  <p>注意 state 里同时放了 <code>board_rows_top_to_bottom</code>（原始棋盘）和提炼后的指标。原则是：<strong>提炼指标承担 90% 的判断依据，原文用于模型在拿不准时交叉核对</strong>。只给原文，模型要做心算；只给提炼，模型无法发现指标没覆盖的细节（比如某个特定的井形）。</p>
+
+  <h3>规范四：不要塞无关内容</h3>
+  <p>state 越大 token 越多、注意力越散。棋盘历史、已消行的过程动画、UI 状态这些统统不要放。每次调用只放<strong>这一次判断需要的信息</strong>。</p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S6 ================= -->
+<section id="s6">
+  <div class="secno">06 / 组织输出使用</div>
+  <h2>questions 与答案消费</h2>
+
+  <p>questions 是你向 Jev 提问的全部接口。v2 用了三个原语、四个问题，一次调用并行返回：</p>
+
+  <h3>主问题：placement Choice</h3>
+  <p>这是决策核心。每个落点转成一个 <strong>criteria 对象</strong>——注意所有选项<strong>字段名完全一致</strong>，这让 Jev 可以逐字段横向比较：</p>
+
+  <pre><code><span class="c">// Choice criteria 条目：每个落点一个对象，字段名跨选项一致，全部用词不用数</span>
+function <span class="hl">describePlacement</span>(p) {
+  const m = SHAPES[p.type][p.rot];
+  const left = p.x + 1, right = p.x + m[0].length;
+  const where = left === right ? `column ${left}` : `columns ${left}-${right}`;
+  let hChange;
+  if (p.linesCleared &gt; 0 &amp;&amp; p.heightDelta &lt; 0) hChange = <span class="s">"stack gets lower"</span>;
+  else if (p.heightDelta &lt;= 0)                 hChange = <span class="s">"stack does not get taller"</span>;
+  else if (p.heightDelta === 1)                hChange = <span class="s">"stack grows by one row"</span>;
+  else                                         hChange = <span class="s">"stack grows by several rows"</span>;
+  return {
+    where,                                            <span class="c">// "columns 4-6"</span>
+    lines_cleared:     describeLines(p.linesCleared), <span class="c">// "one line"</span>
+    holes_created:     describeHoles(p.holesCreated), <span class="c">// "none"</span>
+    holes_uncovered:   p.holesRemoved &gt; 0 ? describeHoles(p.holesRemoved) : "none",
+    stack_height_after: describeHeight(p.after.maxHeight),
+    height_change:     hChange,
+    surface_after:     describeSurface(p.after.bumpiness),
+    wells_after:       describeWells(p.after.wells),  <span class="c">// "one deep well at column 9"</span>
+  };
+}</code></pre>
+
+  <h3>priorities：用一句话列表注入策略</h3>
+  <p>Choice 的 <code>instructions.priorities</code> 是一组按优先级排列的判据短句。它就是 Jev 的「价值观」，也是你调整 AI 风格的旋钮——想让它更激进或更保守，改这几行即可：</p>
+
+  <pre><code>const <span class="hl">PLACEMENT_PRIORITIES</span> = [
+  "Clearing lines is good. Clearing more lines at once is better.",
+  "Do not create holes. A placement with holes_created of none beats one that
+   creates holes, unless the one with holes clears far more lines
+   or the stack is dangerously high.",
+  "Keep the stack low. Prefer a lower stack_height_after and a height_change
+   that does not grow the stack.",
+  "Keep the surface flat. Prefer surface_after of flat over slightly uneven,
+   bumpy, or very jagged.",
+  "One deep well is acceptable because the next I piece can fill it.
+   Several deep wells are bad.",
+  "When the stack is dangerously high, survival matters more than a clean surface.",
+];</code></pre>
+
+  <div class="box good">
+    <div class="bt">为什么 priorities 用英文写</div>
+    <p>实测与文档都表明：Jev 的训练语料以英文为主，<strong>state 内容、criteria、priorities 全部用英文写，判断质量最稳</strong>。中文做游戏完全没问题，但提示词层面建议英文——这是「游戏实现语言」和「提示词语言」解耦的典型场景。</p>
+  </div>
+
+  <h3>三个并行投机问题</h3>
+  <p>同一次调用里还附了三个「顺路问一嘴」的问题，成本几乎为零，但给决策日志和后续策略提供了丰富信号：</p>
+
+  <pre><code>function <span class="hl">buildQuestions</span>(placements) {
+  const criteria = {};
+  for (const p of placements) criteria[p.id] = describePlacement(p);
+  return {
+    <span class="c">// ① 主问题：从 30+ 落点里挑一个</span>
+    placement: {
+      type: <span class="s">"choice"</span>,
+      instructions: {
+        question: <span class="s">"Which placement of `game.current_piece` should the player
+                   choose? Each option describes the board after that placement."</span>,
+        priorities: PLACEMENT_PRIORITIES,
+      },
+      criteria,   <span class="c">// { p0: {where, lines_cleared, …}, p1: {…}, … }</span>
+    },
+    <span class="c">// ② 策略判断（choice over 固定策略集）</span>
+    strategy: {
+      type: <span class="s">"choice"</span>,
+      instructions: <span class="s">"Looking at `game`, which strategy fits the current
+                     situation best for the next few pieces?"</span>,
+      criteria: STRATEGY_OPTIONS,   <span class="c">// build_clean / clear_lines / repair_surface / survive</span>
+    },
+    <span class="c">// ③ 局面健康分（score）</span>
+    board_health: {
+      type: <span class="s">"score"</span>,
+      instructions: <span class="s">"How healthy is the stack in `game` for a Tetris player
+                     who wants to keep playing for a long time?"</span>,
+      criteria: HEALTH_LEVELS,      <span class="c">// 给 score 提供锚点：Clean / Fine / Rough / Critical</span>
+    },
+    <span class="c">// ④ 下一块是否有好去处（noul，真假倾向）</span>
+    next_piece_fits: {
+      type: <span class="s">"noul"</span>,
+      instructions: <span class="s">"Given `game.column_heights_left_to_right` and `game.surface`,
+                     is there an obvious clean spot for `game.next_piece`
+                     after this move, without creating holes?"</span>,
+      criteria: { true: "A clean spot is easy to see.",
+                  false: "The next piece will be awkward to place." },
+    },
+  };
+}</code></pre>
+
+  <h3>消费答案：永远做好兜底</h3>
+  <p>答案回来后如何用？三条实践：</p>
+
+  <pre><code>const a = data.answers.placement;
+
+<span class="c">// 1. choice → 落点对象；choice 无效时退化到概率最高项，再退化到第一个落点</span>
+const byId = new Map(placements.map(p =&gt; [p.id, p]));
+const ranked = Object.entries(a.probabilities || {})
+  .filter(([id]) =&gt; byId.has(id)).sort((x, y) =&gt; y[1] - x[1]);
+const chosen = byId.get(a.choice) || byId.get(ranked[0]?.[0]) || placements[0];
+
+<span class="c">// 2. probabilities → 记录 top3，写进决策日志（人可以看懂 AI 在犹豫什么）</span>
+this.appendLog({ top: ranked.slice(0, 3), confidence: a.confidence, … });
+
+<span class="c">// 3. 与经典启发式对比（Felicitas: -0.51h + 0.76c - 0.36o - 0.18b），统计一致率</span>
+const hBest = placements.reduce((b, p) =&gt; (p.heuristic &gt; b.heuristic ? p : b), placements[0]);
+this.heuristicCount++; if (chosen.id === hBest.id) this.agreeCount++;</code></pre>
+
+  <table>
+    <tr><th style="width:18%">返回字段</th><th>类型</th><th>怎么用</th></tr>
+    <tr><td><code>choice</code></td><td>选项 id</td><td>映射回代码侧对象执行。必须做 <strong>存在性校验</strong>（模型可能返回不存在的 id）。</td></tr>
+    <tr><td><code>probabilities</code></td><td>{id: 0~1}</td><td>展示 top 选项分布；可做「次优备选」：首选执行失败时用第二名。</td></tr>
+    <tr><td><code>confidence</code></td><td>0~1</td><td><strong>置信度低于阈值时可触发保守策略</strong>（如选启发式最优项）。注意它反映的是「这个判断值得信吗」，不是「选项好不好」。</td></tr>
+    <tr><td><code>score</code></td><td>0~1</td><td>连续评估信号，适合画趋势图或触发策略切换（本项目中 health 恶化 → 优先 survive）。</td></tr>
+    <tr><td><code>noul</code></td><td>0~1 倾向</td><td>二元判断的软版本：0.62 表示「更倾向 true 但不坚决」，可做阈值告警。</td></tr>
+  </table>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S7 ================= -->
+<section id="s7">
+  <div class="secno">07 / 工程落地</div>
+  <h2>CORS、代理与防御性编程</h2>
+
+  <h3>坑一：浏览器无法直连 API（实测）</h3>
+  <p>这是本文档最「值钱」的一条实测结论。<code>api.typesafe.ai</code> 的 CORS 是 <strong>origin 白名单</strong>模式：我们对 <code>http://localhost:8000</code>、<code>localhost</code>、<code>null</code>、<code>https://example.com</code> 甚至 <code>https://console.typesafe.ai</code> 逐一发了预检请求，<strong>全部被拒（无 <code>Access-Control-Allow-Origin</code> 头）</strong>。</p>
+
+  <div class="box warn">
+    <div class="bt">结论</div>
+    <p><strong>纯前端页面无法直连 TypeSafe API</strong>。这其实印证了官方建议——API key 应放服务端。解法：架一个本地转发代理。</p>
+  </div>
+
+  <p>代理可以极简——零依赖 Node 脚本（Node 20+ 自带 fetch），完整代码只有 70 行：</p>
+
+  <pre><code><span class="c">#!/usr/bin/env node</span>
+<span class="c">// jev-proxy.mjs —— 浏览器 CORS 桥。用法: TYPESAFE_API_KEY=sk-xxx node jev-proxy.mjs 8787</span>
+import http from <span class="s">"node:http"</span>;
+
+const PORT = Number(process.argv[2] || process.env.PORT || 8787);
+const UPSTREAM = <span class="s">"https://api.typesafe.ai"</span>;
+const ENV_KEY = process.env.TYPESAFE_API_KEY || <span class="s">""</span>;
+
+const CORS = {
+  <span class="s">"Access-Control-Allow-Origin"</span>: <span class="s">"*"</span>,
+  <span class="s">"Access-Control-Allow-Methods"</span>: <span class="s">"GET, POST, OPTIONS"</span>,
+  <span class="s">"Access-Control-Allow-Headers"</span>: <span class="s">"Authorization, Content-Type"</span>,
+  <span class="s">"Access-Control-Max-Age"</span>: <span class="s">"600"</span>,
+};
+
+http.createServer(async (req, res) =&gt; {
+  for (const [k, v] of Object.entries(CORS)) res.setHeader(k, v);
+  if (req.method === <span class="s">"OPTIONS"</span>) { res.writeHead(204); res.end(); return; }
+  if (req.method !== <span class="s">"POST"</span> || !req.url.startsWith(<span class="s">"/v1/"</span>)) {
+    res.writeHead(404); res.end(JSON.stringify({ error: <span class="s">"only POST /v1/* is proxied"</span> })); return;
+  }
+
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  const body = Buffer.concat(chunks);
+
+  <span class="c">// 客户端自带 Authorization 则优先，否则用环境变量里的 key</span>
+  const headers = { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> };
+  headers[<span class="s">"Authorization"</span>] = req.headers[<span class="s">"authorization"</span>]
+    || (ENV_KEY ? `Bearer ${ENV_KEY}` : <span class="s">""</span>);
+
+  try {
+    const upstream = await fetch(UPSTREAM + req.url, { method: <span class="s">"POST"</span>, headers, body });
+    const respBody = Buffer.from(await upstream.arrayBuffer());
+    res.writeHead(upstream.status, {
+      <span class="s">"Content-Type"</span>: upstream.headers.get(<span class="s">"content-type"</span>) || <span class="s">"application/json"</span>,
+    });
+    res.end(respBody);
+  } catch (err) {
+    res.writeHead(502); res.end(JSON.stringify({ error: <span class="s">"upstream_failed"</span> }));
+  }
+}).listen(PORT, () =&gt; console.log(`Jev proxy on http://localhost:${PORT}`));</code></pre>
+
+  <p>页面里把 API 地址填 <code>http://localhost:8787</code> 即可。key 可以放环境变量（更安全），也可以继续填在页面里由代理转发（本地实验够用）。</p>
+
+  <h3>坑二：没有防御性编程的 AI 玩家活不过十分钟</h3>
+  <p>生产可用的 Jev 循环必须内建这些保险丝：</p>
+
+  <table>
+    <tr><th style="width:28%">保险丝</th><th>实现</th><th>为什么需要</th></tr>
+    <tr><td><strong>步数上限</strong></td><td>每方块最多 N 步动作（v1 遗留模式里 30 步强制 hard_drop）</td><td>模型可能陷入重复动作死循环（v1 实测反复 soft_drop）。</td></tr>
+    <tr><td><strong>指数退避</strong></td><td>429 / 529 时 sleep 1s → 2s → 4s… 重试</td><td>API 有速率限制；官方文档明确 529 是过载。</td></tr>
+    <tr><td><strong>答案校验</strong></td><td>choice 不在候选里 → 退化到概率最高项 → 再退化到启发式最优</td><td>生成式判断永远有小概率输出无效 id。</td></tr>
+    <tr><td><strong>错误面板</strong></td><td>CORS/网络错误给出可操作的提示文案</td><td>用户最常见的第一坑就是没启动代理。</td></tr>
+    <tr><td><strong>可观测性</strong></td><td>每次调用记录：耗时、token、概率 top3、置信度、与启发式的一致率</td><td>没有日志你根本无法诊断「AI 为什么这么玩」（本文 §3 的诊断全靠它）。</td></tr>
+  </table>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S8 ================= -->
+<section id="s8">
+  <div class="secno">08 / 智能体接口</div>
+  <h2>为外部智能体暴露接口</h2>
+
+  <p>「留接口让 AI 能自己玩」不只有内置 Jev 一条路。把游戏引擎的<strong>观测、动作、事件</strong>三要素暴露到 <code>window</code> 上，任何外部智能体（Playwright/Puppeteer 脚本、你的 harness 插件、另一个 LLM）都能驱动游戏。这是本项目 v2 的完整接口：</p>
+
+  <pre><code>window.<span class="hl">TetrisAPI</span> = {
+  <span class="c">// —— 观测（Read）——</span>
+  getState:      () =&gt; engine.getState(),        <span class="c">// 结构化 JSON：棋盘/当前块/分数/消行数</span>
+  getStateText:  () =&gt; engine.getStateText(),    <span class="c">// 文本形态，适合直接粘给任何 LLM</span>
+  getPlacements: () =&gt; {                          <span class="c">// ★ 帮智能体做完所有难的计算</span>
+    const ps = enumeratePlacements(engine);
+    return ps.map(p =&gt; ({ id: p.id, rot: p.rot, x: p.x,
+                          ...describePlacement(p), heuristic: p.heuristic }));
+  },
+
+  <span class="c">// —— 动作（Write）——</span>
+  applyAction: (a) =&gt; engine.applyAction(a),      <span class="c">// left/right/rotate/soft_drop/hard_drop</span>
+  executePlacement: (p) =&gt; {                      <span class="c">// ★ 高层动作：直接执行一个落点</span>
+    let guard = 0;
+    while (engine.cur &amp;&amp; engine.cur.rot !== p.rot &amp;&amp; guard++ &lt; 4)
+      engine.applyAction(<span class="s">"rotate"</span>);
+    const dx = p.x - engine.cur.x;
+    for (let i = 0; i &lt; Math.abs(dx); i++)
+      engine.applyAction(dx &gt; 0 ? <span class="s">"right"</span> : <span class="s">"left"</span>);
+    return engine.applyAction(<span class="s">"hard_drop"</span>);
+  },
+
+  <span class="c">// —— 事件（Subscribe）——</span>
+  onEvent: (evt, cb) =&gt; engine.on(evt, cb),       <span class="c">// lock / clear / gameover / score</span>
+
+  <span class="c">// —— 控制 ——</span>
+  start: () =&gt; {…}, reset: () =&gt; engine.reset(),
+  isGameOver: () =&gt; engine.over,
+  setGravity: (on) =&gt; engine.setGravity(!!on),    <span class="c">// 关重力 = AI 有无限思考时间</span>
+};</code></pre>
+
+  <h3>接口设计四原则</h3>
+  <ol>
+    <li><strong>观测必须可序列化</strong>：<code>getState()</code> 返回纯 JSON，不含 DOM、Canvas、函数引用。智能体可能在完全不同的进程里消费它。</li>
+    <li><strong>动作分两层</strong>：低层 <code>applyAction</code>（按键级，灵活）+ 高层 <code>executePlacement</code>（意图级，省事）。外部智能体如果只想「选落点」，不应该被迫写移动循环。</li>
+    <li><strong>把难的计算做成接口</strong>：<code>getPlacements()</code> 把枚举+模拟+词化一次给全。外部智能体（哪怕是个简单的随机脚本）拿到选项表就能玩出可看的水准。</li>
+    <li><strong>事件推送代替轮询</strong>：<code>onEvent("lock", cb)</code> 让智能体在方块锁定时才做下一次决策，而不是定时盲扫。</li>
+  </ol>
+
+  <h3>驱动示例：20 行让任意模型玩游戏</h3>
+  <pre><code><span class="c">// 伪代码：任何能发 HTTP 请求的智能体都能这样玩</span>
+const page = await browser.newPage();
+await page.goto(<span class="s">"file:///path/to/index.html"</span>);
+await page.evaluate(() =&gt; TetrisAPI.start() || TetrisAPI.setGravity(false));
+
+while (!(await page.evaluate(() =&gt; TetrisAPI.isGameOver()))) {
+  const placements = await page.evaluate(() =&gt; TetrisAPI.getPlacements());
+  const state      = await page.evaluate(() =&gt; TetrisAPI.getStateText());
+
+  <span class="c">// 把 state + placements 发给任意决策者：Jev / LLM / 你自己写的启发式</span>
+  const pick = await decideWithYourAgent(state, placements);
+
+  await page.evaluate((p) =&gt; TetrisAPI.executePlacement(p), pick);
+}</code></pre>
+
+  <div class="box">
+    <div class="bt">延伸</div>
+    <p>这个接口层同时是<strong>测试钩子</strong>：自动化测试可以用它确定性地下棋、验证计分；也可以用它跑「Jev vs 启发式 vs 随机」的对照实验——本文 §9 的数据就是这么测出来的。</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S9 ================= -->
+<section id="s9">
+  <div class="secno">09 / 实测数据</div>
+  <h2>v1 vs v2：同一环境各 60 秒</h2>
+
+  <table>
+    <tr><th style="width:34%">指标</th><th>v1 · 逐步动作循环</th><th>v2 · 落点决策</th></tr>
+    <tr><td>置信度</td><td class="bad-t">9–23%（概率摊平）</td><td class="good-t num">76–90%（偶尔低至 33%，多为平局局面）</td></tr>
+    <tr><td>60 秒产出</td><td class="bad-t num">74 次调用，0 消行，112 分</td><td class="good-t num">69 块全部落定，消 12 行，3094 分</td></tr>
+    <tr><td>单次延迟</td><td class="num">约 400ms</td><td class="num">约 240–400ms（每块仅 1 次）</td></tr>
+    <tr><td>Token 效率</td><td class="num">≈ 7 万 tok / 60s，无进展</td><td class="num">≈ 6.6 万 tok / 60s，稳定推进</td></tr>
+    <tr><td>与经典启发式一致率</td><td>无法衡量（判断无锚点）</td><td class="good-t num">67%</td></tr>
+    <tr><td>策略适应性</td><td>无</td><td class="good-t">堆到临界时自动切换 survive 策略，优先「不增高」落点</td></tr>
+  </table>
+
+  <p>两个值得一提的行为细节：</p>
+  <ul>
+    <li><strong>置信度是问题质量的温度计</strong>：v2 偶尔出现 33% 的低置信，事后核对都是「多个落点后果几乎相同」的真实平局——置信度如实反映了局面的模糊性，这正是校准良好的表现。</li>
+    <li><strong>它有代价权衡意识</strong>：决策日志里出现过选「消一行但引入一个洞」的落点——priorities 里写的「消行收益远大于小代价时可例外」被正确执行了。</li>
+  </ul>
+
+  <h3>下一步实验方向</h3>
+  <ul>
+    <li>精简 state 文本（去掉棋盘原文只留词化指标），观察置信度和成本变化；</li>
+    <li>用 <code>probabilities</code> 做 beam search：同时模拟 top-3 落点往后看一块，提升长线规划；</li>
+    <li>调整 <code>PLACEMENT_PRIORITIES</code> 做风格消融（激进消行 vs 保守堆叠）。</li>
+  </ul>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S10 ================= -->
+<section id="s10">
+  <div class="secno">10 / 迁移指南</div>
+  <h2>把方法用到你的游戏 / 应用</h2>
+
+  <p>最后把全文收敛成一张可执行的 checklist。无论你做的是俄罗斯方块、棋类、模拟经营还是任何「有状态、有选择」的应用，流程都是同一套：</p>
+
+  <h3>第一步：找到「决策点」并降低它的粒度</h3>
+  <ul>
+    <li>你的应用里，AI 每次判断的<strong>最小完整决策单元</strong>是什么？是「一个落点」「一次投资」「一条回复的选稿」？</li>
+    <li>如果决策点太大（整局游戏）就往下拆；太小（一次按键）就往上合。<strong>目标是：一个决策点对应有限个、可完整描述后果的选项。</strong></li>
+  </ul>
+
+  <h3>第二步：写枚举器（代码的活，不是 AI 的活）</h3>
+  <ul>
+    <li>穷举所有合法选项；模拟每个选项执行后的<strong>完整后果</strong>；给每个选项一个稳定 id。</li>
+    <li>无法穷举时（选项空间爆炸）：先用启发式剪枝到 top-N，再交给 Jev 选。N 在 10~50 之间是舒适区。</li>
+  </ul>
+
+  <h3>第三步：把后果翻译成「词」</h3>
+  <ul>
+    <li>列出判断需要的 3~6 个维度（本例：消行数/洞/高度/表面/井）。</li>
+    <li>为每个维度设计语义区间，把数字映射成短语。<strong>区间边界就是你的策略知识</strong>。</li>
+    <li>所有选项用<strong>相同字段名</strong>输出成 criteria 对象。</li>
+  </ul>
+
+  <h3>第四步：写 priorities 和投机问题</h3>
+  <ul>
+    <li>priorities 写成 4~6 句按优先级排列的判据短句——这是你注入策略的地方，也是日后调风格的旋钮。</li>
+    <li>同一次调用免费捎上 1~3 个投机问题（策略分类、健康分、真假判断），丰富可观测性。</li>
+  </ul>
+
+  <h3>第五步：消费答案 + 保险丝</h3>
+  <ul>
+    <li>choice → 校验存在性 → 映射回对象 → 执行；failure 链：choice 无效 → 概率最高项 → 启发式兜底。</li>
+    <li>步数上限、指数退避、错误面板、决策日志，一样都不能少。</li>
+  </ul>
+
+  <h3>第六步：暴露智能体接口</h3>
+  <ul>
+    <li>观测（可序列化 JSON + 文本态）、动作（低层按键 + 高层意图）、事件（订阅制）、控制（开始/暂停/重力）。</li>
+    <li>把枚举器本身做成接口（<code>getPlacements()</code>）——外部智能体直接复用你的全部计算。</li>
+  </ul>
+
+  <div class="box key">
+    <div class="bt">一句话总结</div>
+    <p>为智能体设计应用的本质是：<strong>把一个开放问题压缩成一组封闭选项，把封闭选项的后果翻译成语义词，然后把最后一步「品味判断」交给 Jev。</strong>代码永远拥有游戏；Jev 永远只做选择。</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S11 ================= -->
+<section id="s11">
+  <div class="secno">11 / 附录</div>
+  <h2>文件清单与参考资料</h2>
+
+  <h3>本项目文件</h3>
+  <table>
+    <tr><th style="width:36%">文件</th><th>说明</th></tr>
+    <tr><td><code>tetris-jev/index.html</code></td><td>单文件零依赖俄罗斯方块：完整玩法 + 内置 Jev 玩家（v2 落点决策 / v1 逐步动作可切换）+ 决策日志 + <code>window.TetrisAPI</code> 智能体接口。</td></tr>
+    <tr><td><code>tetris-jev/jev-proxy.mjs</code></td><td>70 行零依赖 Node CORS 代理，桥接浏览器与 TypeSafe API。</td></tr>
+  </table>
+
+  <h3>上手三步</h3>
+  <pre><code><span class="c"># 1. 启动代理（key 放环境变量，或在页面里填）</span>
+TYPESAFE_API_KEY=sk-xxxx node tetris-jev/jev-proxy.mjs 8787
+
+<span class="c"># 2. 浏览器打开 index.html，API 地址填 http://localhost:8787</span>
+
+<span class="c"># 3. 点「▶ 启动 Jev 玩家」，观察决策日志</span></code></pre>
+
+  <h3>参考资料</h3>
+  <ul>
+    <li>TypeSafe 官方文档：<a href="https://docs.typesafe.ai/" target="_blank">docs.typesafe.ai</a>（Quick Start / HTTP API / State / How to Build with System One）</li>
+    <li>开源参考实现（本文 v2 的设计蓝本）：<a href="https://github.com/trungdq88/jev-tetris" target="_blank">trungdq88/jev-tetris</a> —— 150 块消 50 行的验证数据与 "code-enumerated legal placements" 思想均出自其 README</li>
+    <li>官方早期 demo 记述：Flavio Copes《Jev》—— Pac-Man demo 的 nearby state 设计、Doom bot 的每秒 10 次结构化查询</li>
+    <li>经典四参数启发式（用于对照基准）：Gutnik & Carmona, "Tetris: A study of randomized constraint satisfaction"（-0.51h + 0.76c − 0.36o − 0.18b）</li>
+  </ul>
+</section>
+
+<div class="divider"></div>
+
+<!-- ================= S12 ================= -->
+<section id="s12">
+  <div class="secno">12 / 讨论</div>
+  <h2>代码枚举了一切，Jev 还有什么意义？</h2>
+
+  <p>项目做到 v2 之后，一个无法回避的质疑浮出水面：<strong>「程序已经把所有落点的结果都遍历了，那还用 Jev 干嘛？是不是没有意义？」</strong>这个问题值得认真回答，因为它触及整个集成范式的合法性。本节是这场讨论的完整记录。</p>
+
+  <h3>枚举了结果 ≠ 能判断好坏</h3>
+  <p>代码遍历解决的是「<strong>每个选择会发生什么</strong>」，但没有解决「<strong>哪个结果更好</strong>」。这是两件分开的事：</p>
+  <ul>
+    <li><strong>代码算的（事实）</strong>：落点 A 消 1 行、产生 1 个洞、高度 +2；落点 B 不消行、无洞、表面平整。——确定性的计算，没有争议。</li>
+    <li><strong>代码算不了的（价值判断）</strong>：当前局面下，「消 1 行带 1 个洞」和「不消行但干净」哪个更值得？——没有封闭解。</li>
+  </ul>
+  <p>有人会说：用启发式公式 <code>-0.51h + 0.76c − 0.36o − 0.18b</code> 打分不就行了？但注意，<strong>那四个权重本身就是别人拍脑袋固化的判断</strong>——公式不是「正确答案」，只是把某个人（或某次实验）的品味冻成了数字。它在大量局面下和真人高手的选择并不一致。</p>
+
+  <h3>插曲：「67% 一致率」到底是什么意思</h3>
+  <p>决策日志里有一个「与启发式一致率 67%」的指标，容易被误读，在这里讲清楚。每来一个方块：</p>
+  <ol>
+    <li>代码枚举全部合法落点（约 30 个）；</li>
+    <li>用上面的四参数公式给每个落点打分，得分最高者记为「启发式首选」；</li>
+    <li>Jev 从同样的落点集合中选一个；</li>
+    <li>两者选中<strong>同一个落点</strong>记一次「一致」，否则记「不同」。</li>
+  </ol>
+  <p>67% = 一致次数 ÷ 总方块数，即每 10 个方块里约 7 个选择相同、3 个不同。解读这个指标的三条纪律：</p>
+  <ul>
+    <li><strong>它衡量判断的相似度，不是对错。</strong>一致率高不代表 Jev 玩得好，只代表它的品味和这个公式接近；分歧的 33% 里，有的是 Jev 对（危高时优先保命，公式看不懂语境），有的可能是公式对。</li>
+    <li><strong>它是健康指标，不是成绩。</strong>一致率骤降（如 20%）多半是 state/问题设计出了 bug；一致率极高（如 99%）则说明 Jev 沦为了公式的昂贵复读机——上文那个质疑就完全成立了。</li>
+    <li><strong>基准本身很弱。</strong>四参数公式是最朴素的启发式。要回答「Jev 到底有没有判断力」，光看一致率不够，得让它和启发式同环境对打比分。</li>
+  </ul>
+
+  <h3>Jev 的三个真实价值</h3>
+  <table>
+    <tr><th style="width:26%">价值</th><th>说明</th><th>本项目证据</th></tr>
+    <tr>
+      <td><strong>判断是上下文敏感的，权重不是</strong></td>
+      <td>堆到 15 层时「活下去」压倒一切；堆得低时应该「搭 Tetris 等 I 块」。固定公式只有一套权重，Jev 能读着局面语义动态切换价值取向。</td>
+      <td>v2 日志：堆到临界时自动切换 survive 策略，优先「不增高」落点。</td>
+    </tr>
+    <tr>
+      <td><strong>策略用自然语言注入，不用改代码</strong></td>
+      <td><code>priorities</code> 那 6 句话就是「价值观配置」，改几行英文就能换打法风格。启发式要改风格得重新调权重——而调权重本身是没有标准答案的苦活。</td>
+      <td>priorities 中「消行收益远大于小代价时可例外」被正确执行（选过「消一行但引入一个洞」的落点）。</td>
+    </tr>
+    <tr>
+      <td><strong>范式可迁移</strong></td>
+      <td>换到没有成熟启发式的领域（策略游戏、资源调度、运营决策），「代码枚举 + 模型判断」就是唯一可行的结构。俄罗斯方块只是载体。</td>
+      <td>§10 的迁移 checklist 全部成立。</td>
+    </tr>
+  </table>
+
+  <h3>诚实的结论</h3>
+  <p>在俄罗斯方块<strong>这个特定游戏</strong>上，质疑基本成立：纯 Dellacherie 级启发式大概率比 Jev 玩得好，而且零成本零延迟。如果目标是「最强俄罗斯方块 AI」，正确答案是强化学习或精调的启发式，不是 Jev。</p>
+  <p>但这个项目的目标从来不是造最强俄罗斯方块 AI——是<strong>验证「代码枚举 + 模型判断」这个集成范式</strong>。俄罗斯方块恰好是最诚实的试验场：规则简单、有公开基准、判断质量可以直接比分量化。</p>
+
+  <div class="box key">
+    <div class="bt">由此引出的下一步实验</div>
+    <p>质疑指出了最有价值的后续工作：<strong>把纯启发式玩家加进页面做同环境对照</strong>，量化 Jev 到底比公式强还是弱、在哪些局面（危高抢救？Tetris 搭建？）有真实优势。有了基线，「智能不智能」就从手感变成数据——再据此决定是改进 Jev 的输入，还是承认这个游戏就该用启发式。</p>
+  </div>
+</section>
+
+<footer>
+  <p>Tetris × Jev 开发实践指南 · 基于真实开发过程撰写，所有数据为本地实测 · 单文件零依赖，可直接离线阅读</p>
+</footer></div>
+</body>
+</html>

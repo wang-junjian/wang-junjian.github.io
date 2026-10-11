@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="借 Claude Code 与 mattpocock-skills 开发 macOS「长辈计算器」，复盘访谈、规格、拆票、TDD、双轴评审五环节流水线：4 轮访谈落定 25 个决策点，36 条故事切为 12 张曳光弹切片，23 个测试全绿，关键在上下文工程。">
+<meta name="keywords" content="AI 原生开发, Claude Code, mattpocock-skills, 智能体工程, SwiftUI, 软件开发实践">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-25">
+<title>AI 原生软件开发实践：让智能体成为一支工程团队</title>
+<style>
+  :root {
+    --text: #1A1B1C;
+    --secondary: #5A6472;
+    --bg: #FAFAF7;
+    --card: #FFFFFF;
+    --border: #E4E3DD;
+    --accent: #5B8DD9;
+    --accent-soft: rgba(91,141,217,0.12);
+    --accent-2: #E8B84B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', -apple-system, 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 48px 28px 80px; }
+  header.hero {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+  .kicker {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    background: var(--accent-soft);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  h1 { font-size: 30px; line-height: 1.35; letter-spacing: 0.01em; margin-bottom: 14px; }
+  h1 .accent { color: var(--accent); }
+  .subtitle { font-size: 16px; color: var(--secondary); }
+  .meta { margin-top: 16px; font-size: 13px; color: var(--secondary); }
+  h2 {
+    font-size: 22px;
+    margin: 52px 0 18px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    line-height: 1.4;
+  }
+  h3 { font-size: 17px; margin: 30px 0 10px; color: var(--text); }
+  p { margin: 12px 0; }
+  strong { color: var(--text); }
+  .highlight { background: var(--accent-soft); border-radius: 6px; padding: 0 4px; }
+  blockquote {
+    margin: 18px 0;
+    padding: 14px 20px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 10px 10px 0;
+    font-size: 15.5px;
+    color: #333A46;
+  }
+  blockquote .src { display: block; margin-top: 8px; font-size: 13px; color: var(--secondary); }
+  .fig {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin: 22px 0;
+    overflow-x: auto;
+  }
+  .fig .cap { font-size: 13px; color: var(--secondary); text-align: center; margin-top: 10px; }
+  .fig svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-size: 14.5px;
+    background: var(--card);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  th {
+    background: var(--accent-soft);
+    color: #2C3E5C;
+    text-align: left;
+    font-weight: 600;
+  }
+  th, td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  td.code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; color: #3B5998; white-space: nowrap; }
+  ul, ol { margin: 12px 0; padding-left: 24px; }
+  li { margin: 7px 0; }
+  .insight {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin: 18px 0;
+  }
+  .insight .num {
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+  .insight h4 { font-size: 16px; margin: 6px 0 8px; }
+  .insight p { margin: 8px 0; font-size: 15px; }
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    margin: 22px 0;
+  }
+  .stat {
+    flex: 1 1 150px;
+    background: linear-gradient(135deg, rgba(91,141,217,0.10), rgba(91,141,217,0.20));
+    border-radius: 12px;
+    padding: 16px;
+    min-width: 0;
+  }
+  .stat .v { font-size: 24px; font-weight: 700; color: #2C3E5C; }
+  .stat .k { font-size: 12.5px; color: var(--secondary); margin-top: 4px; }
+  .pipeline {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin: 22px 0;
+  }
+  .pipeline .steps { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  .step {
+    flex: 1 1 140px; min-width: 0;
+    border-radius: 10px;
+    padding: 12px 12px 10px;
+    background: var(--accent-soft);
+  }
+  .step .sname { font-size: 14px; font-weight: 700; color: #2C3E5C; font-family: 'SF Mono', Menlo, Consolas, monospace; }
+  .step .sdesc { font-size: 12.5px; color: var(--secondary); margin-top: 4px; }
+  .step .sout { font-size: 12px; color: var(--text); margin-top: 8px; border-top: 1px dashed rgba(91,141,217,0.4); padding-top: 7px; }
+  .step .sout b { display: block; font-size: 11.5px; color: var(--accent); margin-bottom: 2px; }
+  .arrow { font-size: 20px; color: var(--accent); align-self: center; padding: 0 2px; font-weight: 700; }
+  .note {
+    font-size: 13.5px; color: var(--secondary);
+    background: var(--card); border: 1px dashed var(--border);
+    border-radius: 10px; padding: 12px 16px; margin: 14px 0;
+  }
+  .src-links { margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--secondary); }
+  .src-links a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  .src-links a:hover { text-decoration: underline; }
+  footer { margin-top: 40px; font-size: 13px; color: var(--secondary); text-align: center; }
+  @media (max-width: 600px) {
+    h1 { font-size: 24px; }
+    h2 { font-size: 19px; }
+    .wrap { padding: 32px 18px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="kicker">AI 原生开发实践复盘</span>
+  <h1>让智能体成为一支工程团队<br>——<span class="accent">AI 原生软件开发</span>的一次完整实践</h1>
+  <p class="subtitle">用 Claude Code + mattpocock-skills 全链路开发「长辈计算器」macOS 应用的复盘手记</p>
+  <div class="meta">实践日期：2026-09-17 · 项目：面向 60–80 岁老年用户的 macOS 原生计算器 · 技术栈：SwiftUI / Swift 6.3.3</div>
+</header>
+
+<section>
+  <h2>一、引言：这不是一篇「AI 写代码」的文章</h2>
+  <p>我用 Claude Code 配合 <strong>mattpocock/skills</strong> 技能集，从零开发了一款 macOS 原生应用「长辈计算器」。项目本身并不复杂——四则运算、语音播报、计算历史，一个计算器而已。真正值得记录的，是它的<strong>开发过程</strong>：需求澄清、规格编写、任务拆分、TDD 实现、代码评审，五个环节全部由「人 + AI 智能体」协作完成，而 AI 在每个环节都承担了可独立交付的实质性工作。</p>
+  <p>这篇文章复盘这次实践，试图回答一个问题：<strong>当 AI 不再只是「帮你写代码」的工具，而是整条软件开发生命周期（SDLC）的参与者时，软件开发本身会发生什么变化？</strong></p>
+  <p>我的核心结论是：<span class="highlight">AI 原生开发的关键不在「AI 能写多少代码」，而在于把软件开发中大量隐性的东西——需求理解、决策理由、测试接缝、验收标准——变成仓库里显式、可审查、可追踪的工件。</span>这套流程的每个环节都在做同一件事：<strong>上下文工程（Context Engineering）</strong>。谁管理好了上下文，谁就管理好了 AI 开发的质量。</p>
+</section>
+
+<section>
+  <h2>二、从「AI 辅助编程」到「AI 原生开发」</h2>
+  <p>过去两年被称作「AI 编程」的实践，绝大多数是<strong>AI 辅助编程</strong>：人写代码，AI 补全片段、生成函数、修 bug。开发流程本身不变，AI 只是加快了打字速度。</p>
+  <p><strong>AI 原生开发</strong>不同：它重新设计了软件开发生命周期本身。人不再逐行写代码，而是——</p>
+  <ul>
+    <li>用<strong>访谈</strong>把模糊想法澄清成领域模型，而不是自己默默假设；</li>
+    <li>用<strong>规格文档</strong>把「系统该有什么行为」说清楚，而不是边写边想；</li>
+    <li>用<strong>任务系统</strong>把规格拆成可独立验证的切片，而不是一次性写一大坨；</li>
+    <li>用<strong>测试先行</strong>驱动实现，而不是写完再补测试；</li>
+    <li>用<strong>双轴评审</strong>把关质量，而不是自己 review 自己。</li>
+  </ul>
+  <p>在这次实践中，这个分工具体化为一条有状态的流水线。</p>
+</section>
+
+<section>
+  <h2>三、工作流全景：一条把隐性知识显式化的流水线</h2>
+  <p>mattpocock-skills 把 AI 开发组织成一条流水线，五个环节首尾相接：</p>
+
+  <div class="pipeline">
+    <div class="steps">
+      <div class="step">
+        <div class="sname">grill-with-docs</div>
+        <div class="sdesc">访谈式需求澄清，人和 AI 共享同一理解</div>
+        <div class="sout"><b>产物</b>CONTEXT.md 术语表 + 逐轮落档的硬决策</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="sname">to-spec</div>
+        <div class="sdesc">把共识写成行为契约</div>
+        <div class="sout"><b>产物</b>spec.md：36 条用户故事 + 2 个测试接缝 + Out of Scope</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="sname">to-tickets</div>
+        <div class="sdesc">把规格拆成可独立交付的批次</div>
+        <div class="sout"><b>产物</b>12 张 tracer-bullet 垂直切片 + 依赖图</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="sname">implement + tdd</div>
+        <div class="sdesc">测试先行，红→绿循环驱动实现</div>
+        <div class="sout"><b>产物</b>引擎 / UI 代码 + 23 个引擎行为测试</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="sname">code-review</div>
+        <div class="sdesc">双轴审查：对 Spec + 对 Standards</div>
+        <div class="sout"><b>产物</b>审查意见 → 修正 → 提交落 main</div>
+      </div>
+    </div>
+  </div>
+
+  <p>注意这条链路与传统流程的一个关键差异：<span class="highlight">文档不是过程的副产品，而是过程的主线。</span>每个阶段结束时，产出物都不是「口头共识」，而是磁盘上可读、可 diff、可追溯的真实文件：<code>CONTEXT.md</code>、<code>.scratch/elder-calculator/spec.md</code>、<code>issues/01…12.md</code>，以及最终落进 git 的代码与测试。</p>
+</section>
+
+<section>
+  <h2>四、四个阶段的实践拆解</h2>
+
+  <h3>4.1 需求：把「给老人做个计算器」变成领域模型</h3>
+  <p><code>grill-with-docs</code> 的工作方式是一场结构化的苏格拉底式访谈：AI 不直接开写，而是一轮一轮「拷问」，直到人和 AI 对产品共享同一个理解。这次项目经历了 <strong>4 轮访谈、约 25 个决策点</strong>，覆盖：目标用户画像（60–80 岁、老花眼、手部灵活性、听力状况）、功能边界（要不要记忆功能）、界面语言（全中文）、技术栈（SwiftUI vs AppKit）、分发方式、适老手段、语音播报粒度与读法、计算语义（实体计算器式 vs 表达式式）、清除键防误触机制、历史记录形态、首次启动体验……</p>
+  <p>有两个机制值得单独拎出来：</p>
+  <p><strong>其一，决策即时落档。</strong>「一个术语被敲定，它落地到 <code>CONTEXT.md</code> 的时机就是它被敲定的那一刻，而不是最后批量补交。」材料中 <code>CONTEXT.md</code> 更新了 3 次，每次都在一轮访谈结束后立即写入，术语表从最初 7 个条目增长为覆盖计算语义、千分位、分级清除、设置项、错误边界的完整领域模型。</p>
+  <p><strong>其二，推荐 + 确认的低摩擦决策模式。</strong>每一轮，AI 都会给出推荐及理由，用户只需「都按推荐」或针对性修改。例如砍掉记忆功能（M+/M−）这一重要取舍，AI 的理由是：「历史记录已经覆盖『之前算的数字想再用』的场景，记忆键的隐式状态（屏幕上多一个 M 指示灯）对老人是纯负担。」访谈的深度靠 AI 的结构化提问保证，决策速度靠推荐机制保证——这是「人做决策、AI 提供决策支持」的典型形态。</p>
+  <blockquote>
+    「四轮下来，设计树的分支已经全部走完，frontier 已清空……如有任何一条想改，现在说是最便宜的时机。」
+    <span class="src">—— 访谈结束时 AI 输出的共识总结，请用户做最终确认</span>
+  </blockquote>
+  <p>这句话点出了这套流程的核心价值：<strong>把错误扼杀在需求阶段，因为这是纠偏成本最低的时机。</strong></p>
+
+  <h3>4.2 规格：先定接缝，再写故事</h3>
+  <p><code>to-spec</code> 阶段有两个亮点。</p>
+  <p><strong>亮点一：测试接缝（seam）设计被前置到规格阶段。</strong>seam 是 Michael Feathers 的术语：一个「无需在那个位置编辑代码就能改变行为」的地点。在写任何代码之前，AI 先和人确认「在哪里测试」——最终确定两个接缝：</p>
+  <ul>
+    <li><strong>计算引擎</strong>：纯逻辑状态机，测试从「用户按键」这个最高点进，断言「屏幕显示什么、历史里多了什么」，完全不碰内部实现；</li>
+    <li><strong>中文数字朗读转换</strong>：纯函数，数字（含小数、负数、万/亿量级）→ 播报文本，这是「规则最复杂、最容易出错的部分」。</li>
+  </ul>
+  <p>理由很工程化：「接缝越少越好，这两个模块是真正独立的纯逻辑，其余都是它们的薄壳。」这个决策把「软件架构」从实现阶段提前到了规格阶段，并且用测试的视角来定义模块边界——<strong>先决定哪里可以被测试，再决定代码怎么组织。</strong></p>
+  <p><strong>亮点二：规格是行为契约，不是实现说明书。</strong><code>spec.md</code> 包含：问题陈述（老年用户用系统计算器的具体痛点）、36 条用户故事（按「基本计算 / 看得清 / 听得见 / 错得起 / 回看核对 / 键盘与其他」六组组织）、实现决策（两个深模块 + 薄壳）、测试决策（只测外部行为，不测内部实现）、10 项明确的 Out of Scope。特别值得注意的是行为权威的单一来源：</p>
+  <blockquote>
+    「领域术语与全部交互共识的权威定义在根目录 <code>CONTEXT.md</code>……spec 与术语表冲突时以术语表为准并在实现前澄清。」
+  </blockquote>
+
+  <h3>4.3 任务：曳光弹切片与依赖图</h3>
+  <p><code>to-tickets</code> 把 36 条用户故事拆成 <strong>12 张 ticket</strong>。关键原则是 ticket ≠ 用户故事：一张 ticket 会打包多条相关故事，每张是一个 <strong>tracer-bullet（曳光弹）垂直切片</strong>——贯穿引擎 → UI → 测试，独立可演示、可验证，尺寸控制在单个上下文窗口内。</p>
+  <p>ticket 03（四则运算与等号）就是一个例子：它一次性覆盖链式语义、运算符替换、出结果后开新笔、重复等号等十几条故事对应的引擎 + UI + 测试。</p>
+  <p>12 张票的依赖结构体现了明确的工程判断：</p>
+  <div class="fig">
+    <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="12 张 ticket 的依赖图">
+      <defs>
+        <marker id="arw" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 Z" fill="#5B8DD9"/>
+        </marker>
+      </defs>
+      <!-- 主干行 -->
+      <g font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+        <!-- 主干节点 -->
+        <g>
+          <rect x="10" y="30" width="130" height="46" rx="9" fill="rgba(91,141,217,0.14)" stroke="#5B8DD9" stroke-width="1.2"/>
+          <text x="75" y="48" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2C3E5C">01 工程脚手架</text>
+          <text x="75" y="64" text-anchor="middle" font-size="10.5" fill="#5A6472">无依赖</text>
+        </g>
+        <g>
+          <rect x="175" y="30" width="130" height="46" rx="9" fill="rgba(91,141,217,0.14)" stroke="#5B8DD9" stroke-width="1.2"/>
+          <text x="240" y="48" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2C3E5C">02 数字输入</text>
+          <text x="240" y="64" text-anchor="middle" font-size="10.5" fill="#5A6472">大屏显示</text>
+        </g>
+        <g>
+          <rect x="340" y="30" width="130" height="46" rx="9" fill="rgba(91,141,217,0.14)" stroke="#5B8DD9" stroke-width="1.2"/>
+          <text x="405" y="48" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2C3E5C">03 四则与等号</text>
+          <text x="405" y="64" text-anchor="middle" font-size="10.5" fill="#5A6472">链式立即执行</text>
+        </g>
+        <g>
+          <rect x="505" y="30" width="130" height="46" rx="9" fill="rgba(91,141,217,0.14)" stroke="#5B8DD9" stroke-width="1.2"/>
+          <text x="570" y="48" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2C3E5C">04 小数正负百分比</text>
+          <text x="570" y="64" text-anchor="middle" font-size="10.5" fill="#5A6472">100+10%=110</text>
+        </g>
+        <g>
+          <rect x="670" y="30" width="130" height="46" rx="9" fill="rgba(91,141,217,0.14)" stroke="#5B8DD9" stroke-width="1.2"/>
+          <text x="735" y="48" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2C3E5C">06 错误与边界</text>
+          <text x="735" y="64" text-anchor="middle" font-size="10.5" fill="#5A6472">除以零 / 12 位上限</text>
+        </g>
+        <g>
+          <rect x="835" y="30" width="115" height="46" rx="9" fill="rgba(91,141,217,0.30)" stroke="#5B8DD9" stroke-width="1.4"/>
+          <text x="892" y="48" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2C3E5C">11 键盘输入</text>
+          <text x="892" y="64" text-anchor="middle" font-size="10.5" fill="#5A6472">主干末端</text>
+        </g>
+        <!-- 主干箭头 -->
+        <line x1="140" y1="53" x2="173" y2="53" stroke="#5B8DD9" stroke-width="1.6" marker-end="url(#arw)"/>
+        <line x1="305" y1="53" x2="338" y2="53" stroke="#5B8DD9" stroke-width="1.6" marker-end="url(#arw)"/>
+        <line x1="470" y1="53" x2="503" y2="53" stroke="#5B8DD9" stroke-width="1.6" marker-end="url(#arw)"/>
+        <line x1="635" y1="53" x2="668" y2="53" stroke="#5B8DD9" stroke-width="1.6" marker-end="url(#arw)"/>
+        <line x1="800" y1="53" x2="833" y2="53" stroke="#5B8DD9" stroke-width="1.6" marker-end="url(#arw)"/>
+
+        <!-- 并行行：07 → 08 → 10 -->
+        <g>
+          <rect x="10" y="190" width="130" height="46" rx="9" fill="rgba(232,184,75,0.14)" stroke="#E8B84B" stroke-width="1.2"/>
+          <text x="75" y="208" text-anchor="middle" font-size="12.5" font-weight="700" fill="#7A5A14">07 中文朗读转换</text>
+          <text x="75" y="224" text-anchor="middle" font-size="10.5" fill="#5A6472">纯函数，可与主干并行</text>
+        </g>
+        <g>
+          <rect x="175" y="190" width="130" height="46" rx="9" fill="rgba(232,184,75,0.14)" stroke="#E8B84B" stroke-width="1.2"/>
+          <text x="240" y="208" text-anchor="middle" font-size="12.5" font-weight="700" fill="#7A5A14">08 语音播报接入</text>
+          <text x="240" y="224" text-anchor="middle" font-size="10.5" fill="#5A6472">依赖 07 + 03</text>
+        </g>
+        <g>
+          <rect x="340" y="190" width="130" height="46" rx="9" fill="rgba(232,184,75,0.14)" stroke="#E8B84B" stroke-width="1.2"/>
+          <text x="405" y="208" text-anchor="middle" font-size="12.5" font-weight="700" fill="#7A5A14">10 设置与双主题</text>
+          <text x="405" y="224" text-anchor="middle" font-size="10.5" fill="#5A6472">依赖 08</text>
+        </g>
+        <!-- 并行箭头 -->
+        <line x1="140" y1="213" x2="173" y2="213" stroke="#E8B84B" stroke-width="1.6" marker-end="url(#arw)"/>
+        <line x1="305" y1="213" x2="338" y2="213" stroke="#E8B84B" stroke-width="1.6" marker-end="url(#arw)"/>
+        <!-- 从 01 分支到 07 -->
+        <path d="M75 76 C 75 130, 75 155, 75 188" stroke="#E8B84B" stroke-width="1.4" fill="none" stroke-dasharray="4 3" marker-end="url(#arw)"/>
+
+        <!-- 05 挂在 02 下 -->
+        <g>
+          <rect x="175" y="125" width="130" height="46" rx="9" fill="rgba(91,141,217,0.07)" stroke="#5B8DD9" stroke-width="1" stroke-dasharray="4 3"/>
+          <text x="240" y="143" text-anchor="middle" font-size="12.5" fill="#4A5568">05 退格与分级清除</text>
+          <text x="240" y="159" text-anchor="middle" font-size="10.5" fill="#5A6472">依赖 02，可与 03 并行</text>
+        </g>
+        <line x1="240" y1="76" x2="240" y2="123" stroke="#5B8DD9" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arw)"/>
+
+        <!-- 09 挂在 03 下 -->
+        <g>
+          <rect x="340" y="125" width="130" height="46" rx="9" fill="rgba(91,141,217,0.07)" stroke="#5B8DD9" stroke-width="1" stroke-dasharray="4 3"/>
+          <text x="405" y="143" text-anchor="middle" font-size="12.5" fill="#4A5568">09 计算历史</text>
+          <text x="405" y="159" text-anchor="middle" font-size="10.5" fill="#5A6472">依赖 03</text>
+        </g>
+        <line x1="405" y1="76" x2="405" y2="123" stroke="#5B8DD9" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arw)"/>
+
+        <!-- 12 收尾 -->
+        <g>
+          <rect x="670" y="125" width="195" height="52" rx="9" fill="rgba(91,141,217,0.30)" stroke="#5B8DD9" stroke-width="1.4"/>
+          <text x="767" y="145" text-anchor="middle" font-size="13" font-weight="700" fill="#2C3E5C">12 窗口行为与应用收尾</text>
+          <text x="767" y="162" text-anchor="middle" font-size="10.5" fill="#5A6472">依赖 09、10、11，全部就绪后收尾</text>
+        </g>
+        <!-- 09 → 12 -->
+        <path d="M470 148 C 540 148, 560 148, 620 148" stroke="#5B8DD9" stroke-width="1.4" fill="none" stroke-dasharray="4 3" marker-end="url(#arw)"/>
+        <!-- 10 → 12 -->
+        <path d="M470 213 C 560 213, 620 190, 668 165" stroke="#E8B84B" stroke-width="1.4" fill="none" stroke-dasharray="4 3" marker-end="url(#arw)"/>
+        <!-- 11 → 12 -->
+        <path d="M892 76 C 892 110, 830 130, 780 145" stroke="#5B8DD9" stroke-width="1.4" fill="none" stroke-dasharray="4 3" marker-end="url(#arw)"/>
+
+        <!-- 图例 -->
+        <g font-size="11" fill="#5A6472">
+          <line x1="30" y1="275" x2="55" y2="275" stroke="#5B8DD9" stroke-width="1.6"/>
+          <text x="60" y="279">主干链路</text>
+          <line x1="140" y1="275" x2="165" y2="275" stroke="#E8B84B" stroke-width="1.6"/>
+          <text x="170" y="279">并行分支</text>
+          <line x1="240" y1="275" x2="265" y2="275" stroke="#5B8DD9" stroke-width="1.4" stroke-dasharray="4 3"/>
+          <text x="270" y="279">分支依赖（虚线）</text>
+        </g>
+      </g>
+    </svg>
+    <div class="cap">图：12 张 tracer-bullet ticket 的依赖结构（据实践记录整理）</div>
+  </div>
+
+  <p>材料中有一段关于「为什么拆票」的论述，我认为是这套流程最深刻的设计思想：</p>
+  <ul>
+    <li><strong>每张票之间是一个天然的检查点</strong>：可以打开应用亲手点点看，不满意马上纠偏，而不是等 36 条故事全写完才发现方向错了。</li>
+    <li><strong>每张票一个全新会话</strong>：智能体永远在最清醒的状态下写代码。「如果让 36 条故事在一个会话里连续做完，后半程的代码是上下文被塞满的智能体写的，质量衰减比『多敲几次命令』的代价大得多。」</li>
+    <li>因此，<strong>人的介入次数 ≈ ticket 数量</strong>（本次约 6–9 次「输入一行命令」），每次介入之间 <code>/implement</code> 是全自动的：读 spec、TDD 红绿循环、跑 code review、提交。</li>
+  </ul>
+  <blockquote>
+    「这个『频繁介入』恰恰是这套流程的设计意图，不是缺点。」
+  </blockquote>
+  <p>这句话颠覆了很多人对 AI 开发的直觉。我们总希望 AI 一口气干完，但上下文是有穷的，质量随上下文长度衰减。<strong>用会话边界换取上下文清醒，用检查点换取纠偏机会</strong>，是这套流程对「上下文工程」最具体的落实。</p>
+
+  <h3>4.4 实现与验证：TDD 红绿循环与双轴评审</h3>
+  <p><code>/implement</code> 会自动调用 <code>/tdd</code> 和 <code>/code-review</code>。以 ticket 03（四则运算与等号）为例，实现过程是教科书式的 TDD：</p>
+  <ul>
+    <li>4 个红→绿切片：基本加法与算式 → 四则与链式 → 替换 / 新笔 / 重复等号 → 格式化；</li>
+    <li>每个切片先写测试（断言引擎外部行为），确认红灯，再实现转绿；</li>
+    <li>最终 23 个引擎行为测试全绿。</li>
+  </ul>
+  <p>code-review 的「双轴」设计是另一个亮点：<strong>一个审查轴对 Spec（规格），一个审查轴对 Standards（编码标准）</strong>，两个审查子智能体并行运行。这次评审的结果很有说服力：</p>
+  <ul>
+    <li><strong>Spec 轴抓到了真实偏差</strong>：算式行中的数字未带千分位（违反 <code>CONTEXT.md</code> 的要求「屏幕上的数字带千分位」），已补测试修复——证明 review 不是走过场；</li>
+    <li><strong>Standards 轴给出判断性建议</strong>：落实了两项轻量重构（消除数据泥团、橙色按钮去重），同时明确拒绝了一项过度设计（算式字符串的 token 列表化重写），理由很克制：「现有实现已被 23 个测试钉住，留待 ticket 09 历史记录时再看是否需要。」</li>
+  </ul>
+  <p>值得注意的是，review 的结果不只是意见，还区分了「必须修」和「暂不做」，并为「暂不做」给出了未来的触发条件——这是成熟的工程判断，不是机械执行。</p>
+</section>
+
+<section>
+  <h2>五、五个关键洞察</h2>
+  <p>把这次实践提炼为可迁移的方法论，我认为有五个洞察值得强调：</p>
+
+  <div class="insight">
+    <div class="num">洞察 01</div>
+    <h4>上下文工程取代编码技巧，成为 AI 开发的第一生产力</h4>
+    <p>这套流程的全部机制——<code>CONTEXT.md</code> 术语表、spec 的行为契约、ticket 的验收清单、每票全新会话——都是在管理上下文：给智能体提供正确的、结构化的、不过载的上下文。写代码的能力（Claude Code）现在是商品化的，管理上下文的能力才是差异化的。</p>
+  </div>
+
+  <div class="insight">
+    <div class="num">洞察 02</div>
+    <h4>文档即产品，工件即真实</h4>
+    <p><code>CONTEXT.md</code>、<code>spec.md</code>、issues 不是「文档化」的装饰，它们是流水线的工作产物。实践记录特别提醒：「这些工件是真实仓库里的真实文件，所以它们可以在你以为存在时缺席，也可能在不止一个人往里写的时候漂移。」这意味着文档要像代码一样对待：review、diff、版本管理。</p>
+  </div>
+
+  <div class="insight">
+    <div class="num">洞察 03</div>
+    <h4>决策的时机比决策的内容更值钱</h4>
+    <p>「现在说是最便宜的时机」贯穿全程：需求阶段的约 25 个决策点每个都被显式确认；Out of Scope 明确列出 10 项「不做的事」（记忆功能、科学计算、结果复制、历史持久化、按键音效……）。很多项目死在需求模糊或范围蔓延，这套流程用结构化的方式消灭这两者。</p>
+  </div>
+
+  <div class="insight">
+    <div class="num">洞察 04</div>
+    <h4>测试接缝是架构决策，要在写代码之前做</h4>
+    <p>用「在哪里测试」来定义模块边界，比用「怎么分层」更本质。两个接缝的选择（纯逻辑状态机 + 纯函数）让 23 个测试全部落在稳定、快速、不依赖 UI 的接缝上，UI 和语音播放交给手工验证——自动化测试的投入产出比因此被拉满。</p>
+  </div>
+
+  <div class="insight">
+    <div class="num">洞察 05</div>
+    <h4>人的介入次数少，不等于人的参与少</h4>
+    <p>用户全程只做了若干次「都按推荐」和几次启动 ticket，但每个决策点都被显式呈现并确认。AI 原生开发的理想分工是：<strong>AI 负责遍历可能性和执行，人负责确认方向和做取舍</strong>——人不是退出了开发，而是从执行层上升到了决策层。</p>
+  </div>
+</section>
+
+<section>
+  <h2>六、实践数据盘点</h2>
+  <div class="stats">
+    <div class="stat"><div class="v">4 轮</div><div class="k">访谈式需求澄清，约 25 个决策点全部显式确认</div></div>
+    <div class="stat"><div class="v">3 次</div><div class="k">CONTEXT.md 迭代，覆盖 16+ 个领域条目</div></div>
+    <div class="stat"><div class="v">36 条</div><div class="k">用户故事，按 6 组能力域组织</div></div>
+    <div class="stat"><div class="v">12 张</div><div class="k">tracer-bullet 垂直切片 ticket + 1 张依赖图</div></div>
+    <div class="stat"><div class="v">2 个</div><div class="k">测试接缝：计算引擎 + 中文朗读转换</div></div>
+    <div class="stat"><div class="v">23 个</div><div class="k">引擎行为测试（ticket 03，TDD 全绿）</div></div>
+  </div>
+  <div class="note">数据口径：全部来自 2026-09-17 的实践记录；「16+ 个领域条目」为 CONTEXT.md 最终版本中术语条目的统计。</div>
+</section>
+
+<section>
+  <h2>七、可以直接复用的方法清单</h2>
+  <ol>
+    <li>新项目从<strong>访谈式需求澄清</strong>开始，不要直接让 AI 写代码；每个决策点给「推荐 + 理由」，用户只需确认或修改。</li>
+    <li>术语和决策<strong>即时落档</strong>到 <code>CONTEXT.md</code>，不要等最后批量补交。</li>
+    <li>写规格前先定<strong>测试接缝</strong>：问「在哪里测试」，用答案定义模块边界；接缝越少越好。</li>
+    <li>用户故事按能力域分组，每组用术语表的词汇表述（基本计算 / 看得清 / 听得见 / 错得起 / 回看核对 / 键盘与其他）。</li>
+    <li>明确写 <strong>Out of Scope</strong>，把「不做什么」和「做什么」一样写清楚。</li>
+    <li>任务拆成 <strong>tracer-bullet 垂直切片</strong>，每张控制在单个上下文窗口内，标注 Blocked by，画出依赖图并管理 frontier。</li>
+    <li>每张票一个<strong>全新会话</strong>，接受「频繁介入」并把它当作检查点。</li>
+    <li>TDD 红→绿切片推进，测试只断言外部行为、不碰内部实现。</li>
+    <li>code review <strong>双轴</strong>：Spec 轴查「做没做对」，Standards 轴查「写得好不好」；区分「必须修」与「暂不做」。</li>
+    <li>行为权威单一来源：<code>CONTEXT.md</code> &gt; <code>spec.md</code> &gt; ticket &gt; 测试。</li>
+  </ol>
+</section>
+
+<section>
+  <h2>八、结语：下一个被重新设计的是工程师的角色</h2>
+  <p>这次实践给我的最大感受是：AI 原生开发不是「让 AI 干活、人验收」的偷懒模式，而是一套<strong>更严格的工程纪律</strong>。它把传统开发中靠人脑记忆、靠会议口头对齐、靠隐式经验的东西——领域术语、决策理由、测试策略、验收标准——全部显式化、文件化、可追踪化。</p>
+  <p>当智能体承担了访谈、写作、拆解、编码、测试、评审这些执行性工作，人终于可以专注于它最擅长也最该做的事：<strong>判断什么是对的</strong>。</p>
+  <p>这也许就是「AI 原生」的真正含义：不是 AI 替代了工程师，而是工程师被重新定义——从「写代码的人」变成「定义问题、管理上下文、做决策的人」。下一次实践，真正值得设计的也许不是应用本身，而是这条流水线。</p>
+</section>
+
+<div class="src-links">
+  <p>参考来源：</p>
+  <ul>
+    <li>mattpocock/skills 技能集：<a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener">github.com/mattpocock/skills</a></li>
+    <li>AI 编码词典（agent / stateful / session 等术语）：<a href="https://www.aihero.dev/ai-coding-dictionary/agent" target="_blank" rel="noopener">aihero.dev/ai-coding-dictionary</a></li>
+    <li>grill-me 技能：<a href="https://aihero.dev/skills-grill-me" target="_blank" rel="noopener">aihero.dev/skills-grill-me</a></li>
+    <li>本文全部过程与数据来自实践记录《matt-pocock skills: 面向真正工程师的技能集》（2026-09-17）</li>
+  </ul>
+</div>
+
+<footer>AI 原生软件开发实践 · 基于 2026-09-17「长辈计算器」项目实践记录撰写</footer>
+</div>
+</body>
+</html>

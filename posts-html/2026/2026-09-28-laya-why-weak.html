@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Laya 玩俄罗斯方块只得几百分，而 Jev 能拿几万分。本文用三组受控实验分离接口与能力：即便候选只给两个、信息完整进入模型，它仍以熵 0.995 近乎抛硬币地选走最差落点。根因是 421M 编码器缺语义先验，截断只是次因，并给出微调等三条对策路径。">
+<meta name="keywords" content="Laya, 根因诊断, 俄罗斯方块, 棋力, 受控实验, 排错">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-28">
+<title>Laya 棋力根因诊断 —— 为什么它只得几百分</title>
+<style>
+  :root {
+    --bg: #fafaf8;
+    --panel: #ffffff;
+    --ink: #1a1a1a;
+    --ink-2: #55565a;
+    --ink-3: #8a8b90;
+    --line: #e4e4e1;
+    --line-2: #d0d0cc;
+    --acid: #7cc11f;
+    --acid-dark: #5a8f14;
+    --magenta: #d81b7a;
+    --code-bg: #1e1f24;
+    --code-ink: #d8d9de;
+    --ok: #1a7f37;
+    --warn: #b45309;
+    --bad: #b91c1c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.75; font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { border-bottom: 2px solid var(--ink); padding: 64px 0 40px; }
+  .hero .kicker {
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--acid-dark); font-weight: 700; margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 40px; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 20px; }
+  .hero .sub { font-size: 18px; color: var(--ink-2); max-width: 700px; }
+  .hero .meta { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .hero .meta span {
+    font-size: 12.5px; border: 1px solid var(--line-2); border-radius: 3px;
+    padding: 3px 10px; color: var(--ink-2); background: var(--panel);
+  }
+
+  nav.toc { border-bottom: 1px solid var(--line); padding: 24px 0; }
+  nav.toc .t { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin-bottom: 12px; }
+  nav.toc ol { list-style: none; columns: 2; column-gap: 40px; }
+  nav.toc li { margin-bottom: 6px; break-inside: avoid; }
+  nav.toc a { color: var(--ink-2); text-decoration: none; font-size: 14.5px; }
+  nav.toc a:hover { color: var(--acid-dark); }
+  nav.toc .no { color: var(--ink-3); font-variant-numeric: tabular-nums; margin-right: 8px; font-size: 13px; }
+
+  section { padding: 48px 0 8px; }
+  section > .secno {
+    font-size: 13px; font-weight: 800; color: var(--magenta);
+    letter-spacing: 0.1em; margin-bottom: 4px; font-variant-numeric: tabular-nums;
+  }
+  h2 { font-size: 27px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 20px; line-height: 1.3; }
+  h3 { font-size: 19px; font-weight: 700; margin: 36px 0 12px; }
+  h4 { font-size: 16px; font-weight: 700; margin: 24px 0 8px; }
+  p { margin-bottom: 14px; color: var(--ink-2); }
+  p strong, li strong { color: var(--ink); }
+  ul, ol { margin: 0 0 16px 24px; color: var(--ink-2); }
+  li { margin-bottom: 7px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 22px 0; font-size: 14px; }
+  th {
+    text-align: left; font-weight: 700; font-size: 11.5px; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--ink-3);
+    border-bottom: 2px solid var(--ink); padding: 8px 10px;
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line); color: var(--ink-2); vertical-align: top; }
+  tbody tr:hover { background: #f4f4f1; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hi { color: var(--ink); font-weight: 600; }
+  .bad-t { color: var(--bad); font-weight: 700; }
+  .ok-t { color: var(--ok); font-weight: 700; }
+  .warn-t { color: var(--warn); font-weight: 700; }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+    background: #efeff0; padding: 1px 5px; border-radius: 3px; color: #b8006a;
+  }
+  pre {
+    background: var(--code-bg); color: var(--code-ink); padding: 16px 18px;
+    border-radius: 4px; overflow-x: auto; font-size: 13px; line-height: 1.65; margin: 16px 0;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: 13px; }
+
+  .verdict {
+    background: var(--panel); border: 1px solid var(--line-2); border-left: 4px solid var(--bad);
+    border-radius: 4px; padding: 22px 24px; margin: 28px 0;
+  }
+  .verdict .lbl {
+    font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--bad); font-weight: 800; margin-bottom: 10px;
+  }
+  .verdict p { color: var(--ink); font-size: 17px; margin-bottom: 10px; }
+  .verdict p:last-child { margin-bottom: 0; }
+
+  .note {
+    background: #f7f7f4; border: 1px solid var(--line); border-radius: 4px;
+    padding: 16px 20px; margin: 20px 0; font-size: 14.5px;
+  }
+  .note .h { font-weight: 700; color: var(--ink); margin-bottom: 6px; font-size: 14px; }
+  .note p:last-child { margin-bottom: 0; }
+
+  figure { margin: 28px 0 32px; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 13px; color: var(--ink-3); margin-top: 10px; line-height: 1.6; }
+
+  .pill {
+    display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px;
+    border-radius: 3px; letter-spacing: 0.03em;
+  }
+  .pill.bad { background: #fdeaea; color: var(--bad); }
+  .pill.ok { background: #e8f5ec; color: var(--ok); }
+  .pill.warn { background: #fdf3e4; color: var(--warn); }
+
+  footer { border-top: 1px solid var(--line); margin-top: 64px; padding: 32px 0 64px; font-size: 13.5px; color: var(--ink-3); }
+  footer code { font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Root Cause Analysis · Tetris × Laya</div>
+  <h1>Laya 只得几百分：根因诊断</h1>
+  <p class="sub">本地 Laya 玩家开箱只得几百分，同环境 Jev 可以得几万分。本文用三组受控实验把「接口适配问题」与「模型能力问题」分离，给出决定性的根因与可行的对策。</p>
+  <div class="meta">
+    <span>2026-09-28</span>
+    <span>laya 0.3.21</span>
+    <span>ModernBERT-large 421M</span>
+    <span>typed-decisions / english</span>
+    <span>Mac MPS</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="t">目录</div>
+  <ol>
+    <li><a href="#s1"><span class="no">01</span>结论</a></li>
+    <li><a href="#s2"><span class="no">02</span>实验设计</a></li>
+    <li><a href="#s3"><span class="no">03</span>决定性证据</a></li>
+    <li><a href="#s4"><span class="no">04</span>根因剖析</a></li>
+    <li><a href="#s5"><span class="no">05</span>已排除的可能</a></li>
+    <li><a href="#s6"><span class="no">06</span>为什么 Jev 能行</a></li>
+    <li><a href="#s7"><span class="no">07</span>三条对策路径</a></li>
+    <li><a href="#s8"><span class="no">08</span>复现与附录</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <div class="secno">01</div>
+  <h2>结论</h2>
+
+  <div class="verdict">
+    <div class="lbl">根因</div>
+    <p><strong>Laya 开箱模型对本项目的棋局表示没有判别力，而不是接口没接通。</strong></p>
+    <p>决定性证据：只给模型两个候选（启发式最优 −7.64 vs 最差 −16.29，差距相当于 11 行的价值），题干与选项<strong>都完整进入了模型</strong>，它依然给出 <code>top=0.541</code>、<code>熵=0.995</code> 的近似抛硬币输出，并选走了最差的那一个。</p>
+    <p>第二位的因素确实存在——<code>head_max_len=256</code> 的预算把题干从 190 token 压到 22 token（<strong>评分标准 priorities 全部丢失</strong>）、把每个候选从 82 token 压到 26 token（<strong>决定棋力的字段被拦腰砍断</strong>）。但受控实验表明：即便修掉截断，熵只从 0.982 降到 0.967，<strong>几乎不改善</strong>。所以它是真实的缺陷，却不是主因。</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>层次</th><th>问题</th><th>对棋力的影响</th><th>可修复性</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="hi">主因</td>
+        <td>模型缺语义先验：421M 编码器从未见过「俄方块盘面 → 落点决策」这类任务，也没有见过这套 state 词化</td>
+        <td class="bad-t">决定性——输出近乎均匀分布</td>
+        <td>只有微调能解</td>
+      </tr>
+      <tr>
+        <td class="hi">次因</td>
+        <td>Prompt 规模与 <code>head_max_len</code> 预算冲突：题干 + 候选需要的 head 远超 256 token</td>
+        <td class="warn-t">实测影响很小（熵 0.982→0.967）</td>
+        <td>可修（压缩文案）</td>
+      </tr>
+      <tr>
+        <td class="hi">非问题</td>
+        <td>协议适配层：请求/响应字段、选项 key 映射、state 序列化</td>
+        <td class="ok-t">已验证全部正确</td>
+        <td>无需改</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s2">
+  <div class="secno">02</div>
+  <h2>实验设计</h2>
+  <p>要区分「模型不会」和「我们没把信息喂对」，关键是构造一个<strong>信息绝对充足</strong>的场景：如果在这种场景下模型依然无法区分，那问题就与适配无关。</p>
+  <p>固定同一个中局盘面（seed 42，先落 5 块，第 6 块决策），从 9 个合法落点里挑出启发式最高与最低的两个，只把这两个给模型选：</p>
+
+  <pre><code>启发式最优  p2  -7.64
+启发式最差  p8  -16.29
+分差        8.65  ≈ 11 行的价值（Dellacherie 尺度：消一行仅 +0.76）</code></pre>
+
+  <p>三组变体逐步放宽信息供给：</p>
+  <table>
+    <thead>
+      <tr><th>变体</th><th>候选</th><th>选项文本</th><th>目的</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="hi">A 现状</td><td>9 个</td><td>8 字段对象（与线上完全一致）</td><td>复现线上行为</td></tr>
+      <tr><td class="hi">B 极简</td><td>9 个</td><td>压成一句短自然语言，消除截断</td><td>隔离「截断」的影响</td></tr>
+      <tr><td class="hi">C 判别力</td><td>2 个（最优/最差）</td><td>极简文本，题干与选项均完整</td><td><strong>测模型能力上限</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <div class="h">判读基准</div>
+    <p>归一化熵：<strong>1.0 = 完全均匀（模型没有任何信息）</strong>，0 = 完全确定。9 选项均匀时 top=0.111；2 选项均匀时 top=0.5。C 变体的关键判据就是 top 是否显著高于 0.5。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="secno">03</div>
+  <h2>决定性证据</h2>
+
+  <h3>3.1 全量结果</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>变体</th><th>checkpoint</th>
+        <th>题干入模型</th><th>选项入模型</th>
+        <th>选择</th><th>top</th><th>熵</th><th>启发式排名</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>A 现状（9 项）</td><td>typed</td>
+        <td class="num bad-t">190 → 22</td><td class="num bad-t">82 → 26</td>
+        <td class="num">p1</td><td class="num">0.172</td><td class="num warn-t">0.982</td><td class="num">6 / 9</td>
+      </tr>
+      <tr>
+        <td>B 极简（9 项）</td><td>typed</td>
+        <td class="num warn-t">190 → 39</td><td class="num ok-t">23（完整）</td>
+        <td class="num">p2</td><td class="num">0.162</td><td class="num warn-t">0.967</td><td class="num">1 / 9</td>
+      </tr>
+      <tr style="background:#fdeaea">
+        <td class="hi">C 判别力（2 项）</td><td>typed</td>
+        <td class="num ok-t">190（完整）</td><td class="num ok-t">22（完整）</td>
+        <td class="num bad-t">p8</td><td class="num bad-t">0.541</td><td class="num bad-t">0.995</td><td class="num bad-t">9 / 9</td>
+      </tr>
+      <tr>
+        <td>A 现状（9 项）</td><td>english</td>
+        <td class="num bad-t">190 → 21</td><td class="num bad-t">82 → 19</td>
+        <td class="num">p1</td><td class="num">0.212</td><td class="num warn-t">0.964</td><td class="num">6 / 9</td>
+      </tr>
+      <tr>
+        <td>B 极简（9 项）</td><td>english</td>
+        <td class="num bad-t">190 → 21</td><td class="num warn-t">23 → 19</td>
+        <td class="num">p1</td><td class="num">0.447</td><td class="num warn-t">0.815</td><td class="num">6 / 9</td>
+      </tr>
+      <tr style="background:#fdeaea">
+        <td class="hi">C 判别力（2 项）</td><td>english</td>
+        <td class="num warn-t">190 → 145</td><td class="num ok-t">22（完整）</td>
+        <td class="num">p2</td><td class="num bad-t">0.507</td><td class="num bad-t">1.000</td><td class="num">1 / 9</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 读这张表</h3>
+  <p><strong>C 变体是全部证据里最硬的一条。</strong>它给足了信息：题干 190 token 完整进入（typed 顶格 209 token 的 head 预算），两个选项各 22 token 完整进入，没有任何截断。候选只有两个，差距悬殊到「肉眼可辨」。</p>
+  <p>结果：typed checkpoint 选走了<strong>最差</strong>的 p8，熵 0.995 已近乎完全均匀；english checkpoint 熵直接等于 1.000，即输出分布<strong>与均匀分布不可区分</strong>——它命中 p2 纯属二选一的运气。</p>
+  <p>换句话说：把它放在一个「闭着眼睛都该选对」的局面里，它依然在抛硬币。这正是「模型没有棋力」的判定标准。</p>
+
+  <figure>
+    <svg viewBox="0 0 800 310" role="img" aria-label="归一化熵对比：六个变体全部接近 1.0">
+      <text x="24" y="26" font-family="Inter, PingFang SC, sans-serif" font-size="14" font-weight="700" fill="#1a1a1a">归一化熵：六种组合全部逼近 1.0（= 完全均匀）</text>
+      <text x="24" y="46" font-family="Inter, PingFang SC, sans-serif" font-size="12" fill="#8a8b90">越接近 1.0，说明模型输出越像在选项间随机分配概率</text>
+
+      <line x1="110" y1="250" x2="760" y2="250" stroke="#d0d0cc" stroke-width="1"/>
+      <line x1="110" y1="160" x2="760" y2="160" stroke="#e4e4e1" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="110" y1="70" x2="760" y2="70" stroke="#d0d0cc" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="100" y="254" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">0.0</text>
+      <text x="100" y="164" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">0.5</text>
+      <text x="100" y="74" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">1.0</text>
+      <text x="752" y="62" text-anchor="end" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#b91c1c">完全均匀</text>
+
+      <rect x="150" y="73" width="52" height="177" fill="#e08a1e"/>
+      <rect x="222" y="76" width="52" height="174" fill="#e08a1e"/>
+      <rect x="294" y="71" width="52" height="179" fill="#b91c1c"/>
+      <rect x="420" y="76" width="52" height="174" fill="#8a8b90"/>
+      <rect x="492" y="103" width="52" height="147" fill="#8a8b90"/>
+      <rect x="564" y="70" width="52" height="180" fill="#b91c1c"/>
+
+      <text x="176" y="65" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#55565a">.982</text>
+      <text x="248" y="68" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#55565a">.967</text>
+      <text x="320" y="63" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#b91c1c">.995</text>
+      <text x="446" y="68" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#55565a">.964</text>
+      <text x="518" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#55565a">.815</text>
+      <text x="590" y="62" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#b91c1c">1.000</text>
+
+      <text x="248" y="272" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#55565a">typed 检查点</text>
+      <text x="518" y="272" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#55565a">english 检查点</text>
+      <text x="176" y="292" text-anchor="middle" font-family="Inter, sans-serif" font-size="11.5" fill="#8a8b90">A</text>
+      <text x="248" y="292" text-anchor="middle" font-family="Inter, sans-serif" font-size="11.5" fill="#8a8b90">B</text>
+      <text x="320" y="292" text-anchor="middle" font-family="Inter, sans-serif" font-size="11.5" fill="#b91c1c" font-weight="700">C</text>
+      <text x="446" y="292" text-anchor="middle" font-family="Inter, sans-serif" font-size="11.5" fill="#8a8b90">A</text>
+      <text x="518" y="292" text-anchor="middle" font-family="Inter, sans-serif" font-size="11.5" fill="#8a8b90">B</text>
+      <text x="590" y="292" text-anchor="middle" font-family="Inter, sans-serif" font-size="11.5" fill="#b91c1c" font-weight="700">C</text>
+    </svg>
+    <figcaption>红色为 C 判别力变体——信息最充足的那组，混得最差。B 变体（橙色）虽然仅靠二选一场景看不出优势，但在 9 选项场景下把熵从 0.982 拉到 0.967，说明消除截断确有一点作用，只是远不足以翻盘。</figcaption>
+  </figure>
+</section>
+
+<section id="s4">
+  <div class="secno">04</div>
+  <h2>根因剖析</h2>
+
+  <h3>4.1 主因：模型缺语义先验</h3>
+  <p>Laya 是 ModernBERT-large（421M）加两层 head 的<strong>非自回归判别模型</strong>。它的 <code>typed-decisions</code> 检查点来自官方 7313 步、1.96 小时的微调，数据是<strong>通用 typed-decisions 基准</strong>——不包含俄罗斯方块，也不包含本项目的 state 词化。</p>
+  <p>关键认知是：判别式模型<strong>没有推理能力可以「借」</strong>。它不像大语言模型那样能从常识推出「消行是好事、造洞是坏事」。它的全部判断力来自训练分布里见过的模式。一旦把它们放进训练分布之外的状态表示（<code>board_rows_top_to_bottom</code> 这样的 JSON 数组、<code>{"where": "columns 7-8", ...}</code> 这样的富结构候选），它给出的就是接近均匀的分数——这正是熵 0.99+ 的含义。</p>
+  <p>顺带一个反面证据：连<strong>只有 4 个选项、文本完整、语义直白</strong>的 strategy 问题（"The stack is low, flat, and has no holes..."），熵也高达 <code>0.998</code>；二选一的 <code>next_piece_fits</code> 给出 <code>0.5228</code>，约等于抛硬币。整个模型在这套输入上没有可用的判别信号。</p>
+
+  <h3>4.2 次因：prompt 规模与 head 预算的结构性冲突</h3>
+  <p>Laya 的输入结构由 <code>laya/common.py: build_sequence</code> 决定：</p>
+  <pre><code>[CLS] &lt;type&gt; question: instructions [SEP] [MASK]opt0 [MASK]opt1 ... [SEP] state [SEP]
+              ↑ 这里必须在 head_max_len 内塞完 ↑</code></pre>
+  <p>题干和<strong>所有</strong>选项共享一个固定预算 <code>head_max_len</code>（typed-decisions 为 256）。超预算时的降级策略是等比例压缩每个选项：</p>
+  <pre><code>opt_budget = head_max_len - sum(len(o) for o in opt_ids)
+if opt_budget &lt; 16:
+    per = max(4, (head_max_len - 16) // max(1, len(opt_ids)))
+    opt_ids = [o[:per] for o in opt_ids]
+head_ids = head_ids[: max(8, opt_budget)]      # 剩下的才给题干</code></pre>
+  <p>本项目的真实请求命中了两条压缩路径：</p>
+  <table>
+    <thead>
+      <tr><th>内容</th><th>原始</th><th>实际入模型</th><th>丢失了什么</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="hi">题干（question + 6 条 priorities）</td>
+        <td class="num">190 token</td>
+        <td class="num bad-t">22 token</td>
+        <td class="bad-t">6 条评分标准全部丢失，连问句本身都没读完</td>
+      </tr>
+      <tr>
+        <td class="hi">每个候选落点</td>
+        <td class="num">82 token</td>
+        <td class="num bad-t">26 token</td>
+        <td class="bad-t">只剩 <code>{"where": "columns 7-8", "lines_cleared": "none", "holes_created</code> —— <code>holes_created</code> 的值都没进来，<code>height_change</code>、<code>stack_height_after</code>、<code>surface_after</code>、<code>wells_after</code> 全丢</td>
+      </tr>
+      <tr>
+        <td class="hi">state（盘面）</td>
+        <td class="num">259 token</td>
+        <td class="num ok-t">259 token（完整）</td>
+        <td class="ok-t">—— 盘面本身反而没被截断</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <figure>
+    <svg viewBox="0 0 800 330" role="img" aria-label="题干与单个候选的 token 预算截断对比">
+      <text x="24" y="26" font-family="Inter, PingFang SC, sans-serif" font-size="14" font-weight="700" fill="#1a1a1a">真实请求下 head 预算如何砍掉关键信息</text>
+      <text x="24" y="46" font-family="Inter, PingFang SC, sans-serif" font-size="12" fill="#8a8b90">head_max_len = 256 token，题干与全部选项共享</text>
+
+      <line x1="110" y1="260" x2="740" y2="260" stroke="#1a1a1a" stroke-width="1.5"/>
+      <line x1="110" y1="210" x2="740" y2="210" stroke="#e4e4e1" stroke-width="1"/>
+      <line x1="110" y1="160" x2="740" y2="160" stroke="#e4e4e1" stroke-width="1"/>
+      <line x1="110" y1="110" x2="740" y2="110" stroke="#e4e4e1" stroke-width="1"/>
+      <line x1="110" y1="60" x2="740" y2="60" stroke="#e4e4e1" stroke-width="1"/>
+      <text x="100" y="264" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">0</text>
+      <text x="100" y="214" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">50</text>
+      <text x="100" y="164" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">100</text>
+      <text x="100" y="114" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">150</text>
+      <text x="100" y="64" text-anchor="end" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90">200</text>
+      <text x="58" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#8a8b90" transform="rotate(-90 58 160)">token</text>
+
+      <rect x="176" y="70" width="58" height="190" fill="#b91c1c"/>
+      <rect x="250" y="238" width="58" height="22" fill="#7cc11f"/>
+      <text x="205" y="62" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#b91c1c">190</text>
+      <text x="279" y="230" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#5a8f14">22</text>
+      <text x="205" y="286" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#b91c1c">原始</text>
+      <text x="279" y="286" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#5a8f14">入模型</text>
+
+      <rect x="470" y="178" width="58" height="82" fill="#b91c1c"/>
+      <rect x="544" y="234" width="58" height="26" fill="#7cc11f"/>
+      <text x="499" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#b91c1c">82</text>
+      <text x="573" y="226" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#5a8f14">26</text>
+      <text x="499" y="286" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#b91c1c">原始</text>
+      <text x="573" y="286" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#5a8f14">入模型</text>
+
+      <text x="252" y="312" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#1a1a1a">题干（含 6 条评分标准）</text>
+      <text x="536" y="312" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#1a1a1a">单个候选落点</text>
+
+      <text x="350" y="150" font-family="Inter, PingFang SC, sans-serif" font-size="12" fill="#b91c1c" font-weight="600">这两处截断</text>
+      <text x="350" y="170" font-family="Inter, PingFang SC, sans-serif" font-size="12" fill="#b91c1c">发生了，但修掉</text>
+      <text x="350" y="190" font-family="Inter, PingFang SC, sans-serif" font-size="12" fill="#b91c1c">也救不回棋力</text>
+    </svg>
+    <figcaption>实测（typed-decisions，真实 9 候选请求）：题干从 190 token 压到 22，候选从 82 压到 26。B 变体完整保留了候选文本，熵仅从 0.982 降到 0.967——截断是真实缺陷，但不是主因。</figcaption>
+  </figure>
+
+  <h3>4.3 决策机制：为什么「分布平」直接等于「棋力低」</h3>
+  <p>Laya 的 choice 答案是纯 argmax 的，没有任何采样或后处理：</p>
+  <pre><code># laya/agent.py: _decode_answers
+z = logits[r, :k] / t_scale
+p = np.exp(z - z.max()); p = p / p.sum()
+answers[qid] = {..., "choice": keys[int(p.argmax())], ...}</code></pre>
+  <p>所以分布的平坦度不是「模型犹豫一下」，而是<strong>决策依据的质量本身</strong>。当 9 个选项的概率落在 0.11（均匀值）附近时，模型实际上是在选项编号之间按微小噪声取最大值——这与随机落点没有实质区别，宏观表现就是几百分。</p>
+</section>
+
+<section id="s5">
+  <div class="secno">05</div>
+  <h2>已排除的可能</h2>
+  <p>为了让结论站得住，下面每一项都做了验证，确认<strong>不是</strong>原因：</p>
+  <table>
+    <thead>
+      <tr><th>假设</th><th>验证方式</th><th>结果</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>请求/响应协议没对齐</td><td>用 engine.js 构造真实请求打本地服务，逐字段核对页面消费项</td><td><span class="pill ok">字段全兼容</span></td></tr>
+      <tr><td>state 被截断，模型看不到盘面</td><td>实测 state token 数与可用 room</td><td><span class="pill ok">259 / 764，完整</span></td></tr>
+      <tr><td>选项 key 映射错，答非所问</td><td>核对 probabilities 的键与 criteria 的键</td><td><span class="pill ok">一一对应</span></td></tr>
+      <tr><td>选错了 checkpoint</td><td>typed-decisions 与 english 各跑一遍完整对照</td><td><span class="pill ok">两个都无判别力</span></td></tr>
+      <tr><td>instructions 展平方式引入失真</td><td>C 变体中题干完整进入模型，仍无判别力</td><td><span class="pill ok">不是主因</span></td></tr>
+      <tr><td>候选枚举有 bug，漏掉好落点</td><td>9 个候选与启发式枚举结果一致</td><td><span class="pill ok">枚举正常</span></td></tr>
+      <tr><td>推理没跑在 MPS 上 / 权重加载不全</td><td>加载日志与一次性 72ms 前向</td><td><span class="pill ok">正常</span></td></tr>
+      <tr><td>服务层降级逻辑掩盖了错误</td><td>日志中无 head_max_len 溢出降级触发</td><td><span class="pill ok">未触发</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s6">
+  <div class="secno">06</div>
+  <h2>为什么 Jev 能行</h2>
+  <p>同样的请求格式、同样的 state、同样的 criteria，Jev 能得几万分，说明这套<strong>协议</strong>没问题——问题出在协议两端模型的<strong>能力与训练分布</strong>上。</p>
+  <table>
+    <thead>
+      <tr><th></th><th>Jev（TypeSafe System One）</th><th>Laya（开源复刻）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="hi">定位</td><td>厂商服务端模型</td><td>社区复刻，Apache 2.0 自托管</td></tr>
+      <tr><td class="hi">规模</td><td>未公开（服务端）</td><td>421M 编码器 + 2 层 head</td></tr>
+      <tr><td class="hi">对本任务</td><td>已对齐「结构化 state + 富 criteria → 决策」这一形态</td><td>通用 typed-decisions 基准，无游戏/规划语义</td></tr>
+      <tr><td class="hi">输入预算</td><td>无 <code>head_max_len</code> 这类硬上限</td><td>head 固定 256 token，题干与选项互相挤占</td></tr>
+      <tr><td class="hi">实测表现</td><td>几万分</td><td>几百分（等价随机）</td></tr>
+    </tbody>
+  </table>
+  <p>这解释了为什么替换 Jev 不是「换个后端」那么简单：<strong>Laya 复刻的是协议，不是能力</strong>。协议层面的同构让我们能零成本接上它，但也正因为它是「同一个提问方式」，能力差距会被完整暴露出来。</p>
+</section>
+
+<section id="s7">
+  <div class="secno">07</div>
+  <h2>三条对策路径</h2>
+  <table>
+    <thead>
+      <tr><th>路径</th><th>做法</th><th>成本</th><th>预期天花板</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="hi">① 微调<br><span class="pill ok">唯一能真正解决</span></td>
+        <td>用 harness 批量产出的 (state, 候选, 结果) 日志构造训练集，以启发式或事后最优落点作标签，对 Laya 做 SFT。官方有 T4 四小时模板</td>
+        <td>需跑数千局生成数据 + 一次训练</td>
+        <td class="ok-t">可以做到接近启发式基线（193.9 行）的水平</td>
+      </tr>
+      <tr>
+        <td class="hi">② 适配层优化<br><span class="pill warn">成本低，收益小</span></td>
+        <td>压缩题干与候选文案（B 变体方案），让两者都落进 256 token；或减少候选数量</td>
+        <td>半天</td>
+        <td class="warn-t">实测熵 0.982→0.967，棋力提升有限</td>
+      </tr>
+      <tr>
+        <td class="hi">③ 重新定位<br><span class="pill ok">务实</span></td>
+        <td>承认 Laya 是「本地研究对照基线」而非 Jev 的替代：免费、离线、72ms、无 key。主力仍走 Jev</td>
+        <td>零</td>
+        <td class="ok-t">不影响现有玩法，保住双后端的研究价值</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>建议的下一步</h3>
+  <ol>
+    <li><strong>先做一次低成本验证</strong>：把 state 从 JSON 数组改写成更口语化的散文（或 ASCII 盘面图），只跑 C 判别力测试。若熵仍逼近 1.0，则「表示形式」这一线也无救，可以直接跳到微调。</li>
+    <li><strong>再决定是否微调</strong>：微调需要把启发式当训练标签，这会触及 ADR 0001「决策路径禁止代码估值」的边界。我的判断是——训练期用标签 ≠ 运行时把估值喂进决策路径，属于 imitation learning 的标准做法，但应当在 ADR 里补一条明确记录，而不是悄悄做。</li>
+    <li><strong>顺便修掉截断</strong>：无论走哪条路，让选项文本落进 head 预算都是对的（候选压到 26 token 内、题干精简到 40 token 内），否则微调出来的模型也会被同一个坑拖累。</li>
+  </ol>
+
+  <div class="note">
+    <div class="h">一句话提醒</div>
+    <p>不要用「Laya 比 Jev 弱」来收尾。真正的结论是：<strong>这个项目的 prompt 形态是按 Jev 这类服务端大模型设计的，它的信息量（900+ token 的题干与候选）从根本上超出了 421M 本地模型 256 token 的判别预算。</strong>要本地化，就得让模型重新学这套表示，而不是指望它开箱理解。</p>
+  </div>
+</section>
+
+<section id="s8">
+  <div class="secno">08</div>
+  <h2>复现与附录</h2>
+
+  <h3>复现命令</h3>
+  <pre><code># 1) 生成带启发式分的真实请求
+node -e '...见 eval/laya_abc_diag.py 头部注释...'   # 写入 /tmp/laya-req2.json
+
+# 2) prompt 预算诊断（题干/选项各被压到多少 token）
+USE_TF=0 HF_HUB_OFFLINE=1 &lt;venv-python&gt; eval/laya_prompt_diag.py typed-decisions
+
+# 3) A/B/C 三组对照（含两个 checkpoint）
+USE_TF=0 HF_HUB_OFFLINE=1 &lt;venv-python&gt; eval/laya_abc_diag.py typed-decisions
+USE_TF=0 HF_HUB_OFFLINE=1 &lt;venv-python&gt; eval/laya_abc_diag.py english</code></pre>
+
+  <h3>关键代码位置</h3>
+  <table>
+    <thead><tr><th>文件</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>laya/common.py:106 render_options</code></td><td>对象型 criteria 被 <code>json.dumps</code> 成富文本（本项目的候选落点走这条路径）</td></tr>
+      <tr><td><code>laya/common.py:135 build_sequence</code></td><td>head 预算分配与选项截断策略</td></tr>
+      <tr><td><code>laya/agent.py:752 _encode_state</code></td><td>逐问题组装序列，超预算直接抛 <code>head_max_len</code> 错误</td></tr>
+      <tr><td><code>laya/agent.py:869 _decode_answers</code></td><td>argmax 决策、温度校准、confidence 与 answer_confidence 的差异</td></tr>
+      <tr><td><code>engine.js:313 describePlacement</code></td><td>候选落点的 8 字段词化，是 82 token 的来源</td></tr>
+      <tr><td><code>engine.js:411 buildQuestions</code></td><td>placement 的题干（question + 6 条 priorities），190 token 的来源</td></tr>
+      <tr><td><code>eval/laya_prompt_diag.py</code></td><td>本次新增：prompt 预算诊断</td></tr>
+      <tr><td><code>eval/laya_abc_diag.py</code></td><td>本次新增：A/B/C 根因对照实验</td></tr>
+    </tbody>
+  </table>
+
+  <h3>本次实测环境</h3>
+  <ul>
+    <li>laya 0.3.21，torch 2.13.0，transformers 4.57.6，Mac MPS（arm64）</li>
+    <li>typed-decisions：<code>max_len=1024, head_max_len=256</code>（官方微调 7313 步 / 1.96h）</li>
+    <li>english：<code>max_len=512, head_max_len=192</code></li>
+    <li>固定局面：seed 42，落 5 块后第 6 块决策，9 个合法落点</li>
+  </ul>
+</section>
+
+<footer>
+  诊断脚本：<code>eval/laya_prompt_diag.py</code>、<code>eval/laya_abc_diag.py</code>　·　相关文档：<code>docs/laya-best-practices.html</code>、<code>docs/adr/</code>　·　2026-09-28
+</footer>
+
+</div>
+</body>
+</html>

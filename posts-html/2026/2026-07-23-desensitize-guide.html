@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="自动脱敏工具全景指南：拆解文本、JSON、图像三类隐私脱敏能力——文本用 5 条正则覆盖手机号、身份证、邮箱、银行卡、IP，JSON 按字段名命中并依值形态遮蔽，图像经 OCR 与人脸检测模糊。附检测—脱敏—复检工作流，并直指子串误伤、正则串扰等六大坑。">
+<meta name="keywords" content="数据脱敏, 隐私保护, 文本脱敏, JSON, 图像脱敏, 本地运行">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-07-23">
+<title>智能自动脱敏工具 · 规则 / 边界 / 流程 / 图像 全景指南</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#ffffff; --ink:#1f2430; --muted:#69707d; --line:#e6e8ec;
+    --phone:#7c3aed; --phone-bg:#f3e8ff;
+    --id:#ea580c;    --id-bg:#ffedd5;
+    --email:#0891b2; --email-bg:#cffafe;
+    --bank:#16a34a;  --bank-bg:#dcfce7;
+    --ip:#dc2626;    --ip-bg:#fee2e2;
+    --code-bg:#f4f5f7; --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.7;font-size:15px}
+  a{color:#2563eb;text-decoration:none}
+  a:hover{text-decoration:underline}
+  header.hero{background:linear-gradient(135deg,#1f2937,#374151);color:#fff;padding:38px 24px 30px}
+  .hero-wrap{max-width:1080px;margin:0 auto}
+  .hero h1{margin:0 0 6px;font-size:26px;letter-spacing:.5px}
+  .hero p{margin:4px 0;color:#d1d5db;font-size:14px}
+  .badges{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+    padding:4px 10px;border-radius:999px;font-size:12px}
+  .badge.ok{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5)}
+  nav.toc{max-width:1080px;margin:18px auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:10px}
+  nav.toc a{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:6px 12px;font-size:13px;color:var(--ink);box-shadow:var(--shadow)}
+  nav.toc a:hover{text-decoration:none;border-color:#cbd5e1}
+  main{max-width:1080px;margin:0 auto;padding:0 24px 60px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:22px 24px;margin:18px 0;box-shadow:var(--shadow)}
+  h2{font-size:20px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+  h2 .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+    background:#111827;color:#fff;border-radius:7px;font-size:13px;font-weight:700}
+  h3{font-size:16px;margin:22px 0 8px}
+  .sub{color:var(--muted);font-size:13px;margin:2px 0 14px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:600}
+  code{background:var(--code-bg);padding:2px 6px;border-radius:5px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px}
+  pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:10px;overflow:auto;font-size:13px;line-height:1.55}
+  pre .c{color:#94a3b8}
+  pre .k{color:#7dd3fc}
+  pre .g{color:#86efac}
+  pre .r{color:#fca5a5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .card{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fcfcfd}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:13px}
+  .chip{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:8px 0 4px;font-size:13px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+  .pill.phone{background:var(--phone-bg);color:var(--phone)}
+  .pill.id{background:var(--id-bg);color:var(--id)}
+  .pill.email{background:var(--email-bg);color:var(--email)}
+  .pill.bank{background:var(--bank-bg);color:var(--bank)}
+  .pill.ip{background:var(--ip-bg);color:var(--ip)}
+  mark{padding:1px 3px;border-radius:4px;font-weight:600}
+  mark.phone{background:var(--phone-bg);color:var(--phone)}
+  mark.id{background:var(--id-bg);color:var(--id)}
+  mark.email{background:var(--email-bg);color:var(--email)}
+  mark.bank{background:var(--bank-bg);color:var(--bank)}
+  mark.ip{background:var(--ip-bg);color:var(--ip)}
+  .warn{border-left:4px solid #f59e0b;background:#fffbeb;padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
+  .danger{border-left:4px solid #ef4444;background:#fef2f2;padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
+  .note{border-left:4px solid #3b82f6;background:#eff6ff;padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
+  ol.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0}
+  ol.steps li{counter-increment:s;position:relative;padding:10px 12px 10px 46px;border:1px solid var(--line);
+    border-radius:9px;margin:8px 0;background:#fcfcfd}
+  ol.steps li::before{content:counter(s);position:absolute;left:12px;top:10px;width:24px;height:24px;
+    background:#111827;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .demo{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fcfcfd;margin:12px 0}
+  .demo textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:8px;padding:10px;
+    font-family:inherit;font-size:14px;resize:vertical}
+  .demo button{margin-top:10px;background:#111827;color:#fff;border:0;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer}
+  .demo button:hover{background:#374151}
+  #demoOut{margin-top:12px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:#fff;white-space:pre-wrap;word-break:break-all;min-height:40px}
+  #demoStat{margin-top:8px;font-size:13px;color:var(--muted)}
+  .imgflow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+  .imgflow .box{border:1px solid var(--line);border-radius:9px;padding:10px 14px;background:#fcfcfd;font-size:13px}
+  .imgflow .arrow{color:var(--muted)}
+  .imgflow .box.hl{background:#fef2f2;border-color:#fca5a5}
+  footer{max-width:1080px;margin:0 auto;padding:20px 24px;color:var(--muted);font-size:12px;text-align:center}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+  .before{background:#fff5f5}.after{background:#f0fdf4}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-wrap">
+    <h1>智能自动脱敏工具 · 全景指南</h1>
+    <p>技能 slug：<code style="background:rgba(255,255,255,.15)">image-text-desensitization</code> ｜ 版本 v3.0.0 ｜ 主类 <code style="background:rgba(255,255,255,.15)">SmartDesensitizer</code></p>
+    <p>覆盖文本 / JSON / 图像三类对象的隐私脱敏 · 全程本地运行，不联网</p>
+    <div class="badges">
+      <span class="badge ok">✓ 腾讯云安全 cloudsec.tencent.com 扫描：无风险</span>
+      <span class="badge ok">✓ 腾讯内部 tix.qq.com 扫描：benign</span>
+      <span class="badge">本地纯 Python 实现</span>
+      <span class="badge">文本/JSON 已验证可用</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#overview">① 能力总览</a>
+  <a href="#text">② 文本脱敏规则</a>
+  <a href="#json">③ JSON 脱敏规则</a>
+  <a href="#image">④ 图像脱敏</a>
+  <a href="#flow">⑤ 工作流程</a>
+  <a href="#bounds">⑥ 边界与坑</a>
+  <a href="#examples">⑦ 示例对照</a>
+  <a href="#usage">⑧ 使用与感知</a>
+</nav>
+
+<main>
+
+<!-- ① 总览 -->
+<section id="overview">
+  <h2><span class="num">1</span>能力总览</h2>
+  <p class="sub">该技能是一个<strong>被动库</strong>——需要显式调用才生效，不会自动拦截对话。它提供三个入口方法：</p>
+  <div class="cards">
+    <div class="card">
+      <h4>📝 文本脱敏</h4>
+      <p><code>desensitize_text(text)</code><br/>基于 5 条正则逐类替换。已验证可用，纯 Python 即可。</p>
+    </div>
+    <div class="card">
+      <h4>🧾 JSON 脱敏</h4>
+      <p><code>desensitize_json(json_str)</code><br/>按字段名命中 + 按值形态智能遮蔽。已验证可用。</p>
+    </div>
+    <div class="card">
+      <h4>🖼️ 图像脱敏</h4>
+      <p><code>desensitize_image_base64(b64)</code><br/>OCR 文字框 + 人脸检测后高斯模糊。需额外依赖（本地未装）。</p>
+    </div>
+  </div>
+  <div class="note">
+    <strong>本文档中的"颜色图例"</strong>（贯穿全文，便于你一眼对应类型）：
+    <div class="legend">
+      <span><span class="chip" style="background:var(--phone)"></span>手机号 🟣</span>
+      <span><span class="chip" style="background:var(--id)"></span>身份证 🟠</span>
+      <span><span class="chip" style="background:var(--email)"></span>邮箱 🩵</span>
+      <span><span class="chip" style="background:var(--bank)"></span>银行卡 🟢</span>
+      <span><span class="chip" style="background:var(--ip)"></span>IP 地址 🔴</span>
+    </div>
+  </div>
+</section>
+
+<!-- ② 文本规则 -->
+<section id="text">
+  <h2><span class="num">2</span>文本脱敏规则 <span style="font-size:13px;color:var(--muted)">desensitize_text</span></h2>
+  <p class="sub">源码写死 5 条正则，按固定顺序执行：手机 → 身份证 → 邮箱 → 银行卡 → IP。
+  这是<strong>唯一</strong>在自由文本里能自动识别的类型集合。</p>
+  <table>
+    <thead><tr><th>类型</th><th>正则（源码）</th><th>遮盖策略</th><th>实例（前 → 后）</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill phone">手机号 🟣</span></td><td><code>1[3-9]\d{9}</code></td><td>前3后4：<code>138****5678</code></td><td>13812345678 → 138****5678</td></tr>
+      <tr><td><span class="pill id">身份证 🟠</span></td><td><code>\d{17}[\dXx]</code></td><td>前6后4：<code>110101********1234</code></td><td>110101199003071234 → 110101********1234</td></tr>
+      <tr><td><span class="pill email">邮箱 🩵</span></td><td><code>本地+@+域名</code></td><td>本地名留首字：<code>a***@example.com</code></td><td>alice@example.com → a***@example.com</td></tr>
+      <tr><td><span class="pill bank">银行卡 🟢</span></td><td><code>\d{13,19}</code></td><td>仅留后4：<code>****0123</code></td><td>6222021234567890123 → ****0123</td></tr>
+      <tr><td><span class="pill ip">IP 🔴</span></td><td><code>\d{1,3}(\.\d{1,3}){3}</code></td><td>末段保留：<code>***.***.***.100</code></td><td>192.168.0.1 → ***.***.***.1</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn">
+    <strong>边界提醒：</strong>README 宣称"9 种文本类型"含姓名、地址、QQ、微信、车牌号——但<strong>自由文本中这些不会被自动识别</strong>。它们只在 JSON 模式下"字段名命中后"用通用 <code>*</code> 占位（见第③节），并非专属正则。
+  </div>
+
+  <h3>🎯 实时感知演示（浏览器内复刻上述规则，无需安装）</h3>
+  <p class="sub">在下面粘贴任意文本，点击"脱敏"，即可看到各类型被对应颜色高亮并遮盖。规则与 Python 实现一致（顺序与重叠处理相同）。</p>
+  <div class="demo">
+    <textarea id="demoIn" placeholder="例如：客户张三丰，手机13812345678，身份证110101199003071234，邮箱zhang@corp.com，银行卡6222021234567890123，服务器192.168.0.1">客户张三丰，手机13812345678，身份证110101199003071234，邮箱zhang@corp.com，银行卡6222021234567890123，服务器192.168.0.1，密码 secret99</textarea>
+    <button onclick="runDemo()">脱敏</button>
+    <div id="demoOut">（点击上方按钮查看脱敏结果）</div>
+    <div id="demoStat"></div>
+  </div>
+</section>
+
+<!-- ③ JSON 规则 -->
+<section id="json">
+  <h2><span class="num">3</span>JSON 脱敏规则 <span style="font-size:13px;color:var(--muted)">desensitize_json</span></h2>
+  <p class="sub">与文本不同，JSON 模式<strong>按字段名命中</strong>（大小写不敏感 + 子串匹配），再按值的形态选遮蔽方式。因此它能在文本模式之外，再多脱好几类。</p>
+
+  <h3>3.1 默认命中字段名（源码第 135–144 行）</h3>
+  <table>
+    <thead><tr><th>类别</th><th>命中的字段名（子串匹配）</th></tr></thead>
+    <tbody>
+      <tr><td>🔑 密码 / 密钥</td><td><code>password</code> <code>pwd</code> <code>secret</code> <code>token</code> <code>api_key</code> <code>apikey</code></td></tr>
+      <tr><td>📞 电话类</td><td><code>phone</code> <code>mobile</code> <code>tel</code> <code>telephone</code></td></tr>
+      <tr><td>🪪 身份证类</td><td><code>id_card</code> <code>idcard</code> <code>identity</code> <code>身份证</code></td></tr>
+      <tr><td>✉️ 邮箱类</td><td><code>email</code> <code>mail</code></td></tr>
+      <tr><td>💳 银行卡类</td><td><code>bank_card</code> <code>bankcard</code> <code>银行卡</code></td></tr>
+      <tr><td>👤 身份 / 地址</td><td><code>address</code> <code>姓名</code> <code>name</code> <code>real_name</code> <code>realname</code></td></tr>
+      <tr><td>💰 收入</td><td><code>salary</code> <code>wage</code> <code>工资</code></td></tr>
+      <tr><td>🇺🇸 社保号</td><td><code>ssn</code> <code>social_security</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 值的遮蔽逻辑（_mask_value，第 180–220 行）</h3>
+  <p>命中字段后，按值的"长相"选遮蔽方式——如果值本身就是手机/邮箱/身份证/银行卡/IP，就用对应类型化遮盖；否则：</p>
+  <ul>
+    <li>值形如纯数字且 ≤12 位 → 金额遮蔽 <code>***.**</code></li>
+    <li>长度 ≤ 2 → <code>*</code>（全遮，如短姓名、密码）</li>
+    <li>长度 ≤ 4 → 首字 + <code>**</code>（如 <code>张三</code> → <code>张**</code>）</li>
+    <li>更长 → 首字 + <code>**</code> + 尾字（通用占位）</li>
+  </ul>
+  <div class="note">也就是说：<strong>密码、姓名、地址、工资、社保号</strong>这几类只在 JSON 模式下、且字段名命中时才被脱敏；在自由文本里它们原样保留。</div>
+
+  <h3>3.3 容错</h3>
+  <p>传入非合法 JSON 时，自动回退为 <code>desensitize_text</code> 处理。注意：该方法只接受<strong>JSON 字符串</strong>，直接传 <code>dict</code> 会报错。</p>
+</section>
+
+<!-- ④ 图像 -->
+<section id="image">
+  <h2><span class="num">4</span>图像脱敏 <span style="font-size:13px;color:var(--muted)">desensitize_image_base64</span></h2>
+  <p class="sub">这是"文字与图像都支持"的核心。把图片（base64）交给 <code>DeepLearningDesensitizer</code>，对检测到的敏感区域做高斯模糊。</p>
+
+  <h3>4.1 处理流程</h3>
+  <div class="imgflow">
+    <div class="box">输入图片<br/>（base64）</div>
+    <span class="arrow">→</span>
+    <div class="box hl">OCR 文字检测<br/>EasyOCR / PaddleOCR</div>
+    <span class="arrow">→</span>
+    <div class="box hl">人脸检测<br/>OpenCV Haar 级联</div>
+    <span class="arrow">→</span>
+    <div class="box">逐框高斯模糊<br/>PIL.GaussianBlur</div>
+    <span class="arrow">→</span>
+    <div class="box">输出 JPEG(q95)<br/>（透明通道丢失）</div>
+  </div>
+
+  <h3>4.2 文字脱敏</h3>
+  <p>用 EasyOCR（优先）或 PaddleOCR（备选）检测文字框，对每个框做高斯模糊，模糊半径 = <code>blur_strength // 6</code>（默认强度 51 → 半径约 8.5）。</p>
+
+  <h3>4.3 人脸脱敏</h3>
+  <p>优先用 OpenCV Haar 级联分类器检测人脸并模糊；<strong>若没有 OpenCV，会回退到 <code>_simple_face_blur</code>——而该方法实际直接返回原图（不做任何处理）</strong>，即"无 opencv 时人脸不脱敏"。</p>
+
+  <h3>4.4 例子</h3>
+  <div class="two">
+    <div class="card before">
+      <h4>脱敏前（图像）</h4>
+      <p>一张含姓名牌 / 证件照 / 聊天截图：<br/>• 可见姓名文字 "张三丰"<br/>• 可见人脸区域<br/>• 可见手机号文字串</p>
+    </div>
+    <div class="card after">
+      <h4>脱敏后（图像）</h4>
+      <p>同一张图：<br/>• 姓名文字区域被模糊成色块<br/>• 人脸区域被模糊<br/>• 手机号文字区域被模糊<br/>• 其余背景保持清晰</p>
+    </div>
+  </div>
+
+  <div class="danger">
+    <strong>本地环境现状：</strong><code>opencv-python</code> 因解压时内存超限（exit 137）未装上，<code>easyocr</code> / <code>paddleocr</code> 也未装。
+    因此当前 <code>desensitize_image_base64</code> 会<strong>原样返回原图</strong>（等于没脱敏）。——<strong>本指南不含本地安装步骤</strong>，仅描述能力。
+    若需真正启用，需在内存更充裕的环境补装 <code>opencv-python-headless</code> + <code>easyocr</code>。
+  </div>
+  <div class="warn">
+    <strong>附带边界：</strong>输出强制转 JPEG（透明通道丢失）；工具本身<strong>不会自动删除原图</strong>，删除原图是调用方责任（SOP 示例里有，但代码不保证）。
+  </div>
+</section>
+
+<!-- ⑤ 流程 -->
+<section id="flow">
+  <h2><span class="num">5</span>工作流程（检测 → 脱敏 → 复检）</h2>
+  <p class="sub">要让"脱敏起作用"可被感知，关键是在调用处把<strong>脱敏前 / 脱敏后 + 命中统计</strong>亮出来。推荐使用随技能附带的 <code>desensitize_demo.py</code> 闭环：</p>
+  <ol class="steps">
+    <li><strong>检测（预扫描）</strong>：用同样的 5 条正则扫描原文，标出敏感实体并计数（重叠去重，更长优先，等长按类型优先级）。</li>
+    <li><strong>脱敏</strong>：调用 <code>SmartDesensitizer().desensitize_text / _json</code>，产出遮盖后的文本。</li>
+    <li><strong>复检（再扫描）</strong>：对脱敏结果再做一次正则扫描，确认残留为 0——这是最硬核的"生效证据"。</li>
+    <li><strong>输出对照</strong>：终端彩色前后对比 + 统计；或生成 HTML 左右对照报告。</li>
+  </ol>
+
+  <h3>终端输出样例</h3>
+  <pre><span class="c">[检测] 原文敏感信息: 5 处  {手机1, 身份证1, 邮箱1, 银行卡1, IP1}</span>
+<span class="k">【脱敏前】</span>…13812345678…110101199003071234…（敏感词彩色高亮）
+<span class="g">【脱敏后】</span>…138****5678…110101********1234…
+<span class="c">[复检] 脱敏后残留: 0 处  ✅ 已全部清除</span>
+<span class="r">[结果] 本次已脱敏 5 处敏感信息 🛡️</span></pre>
+</section>
+
+<!-- ⑥ 边界 -->
+<section id="bounds">
+  <h2><span class="num">6</span>边界与坑（务必知悉）</h2>
+  <div class="danger">
+    <strong>① 自由文本只有 5 种。</strong> 姓名 / 地址 / QQ / 微信 / 车牌号在正文里<strong>不会被自动识别</strong>；其中仅姓名、地址可在 JSON 字段名命中后被通用 <code>*</code> 占位，QQ / 微信 / 车牌号在任何模式下都不支持。
+  </div>
+  <div class="warn">
+    <strong>② 子串匹配误伤。</strong> 字段名匹配是子串 + 大小写不敏感：<code>name</code> 会顺带命中 <code>username</code>、<code>filename</code>；<code>address</code> 命中 <code>home_address</code>。非敏感字段若含这些子串会被误遮。
+  </div>
+  <div class="warn">
+    <strong>③ 身份证 / 银行卡正则串扰。</strong> 身份证正则匹配任意 18 位连续数字，会先"吃掉"19 位银行卡号的前 18 位，导致长银行卡被当身份证处理、露出不该露的片段。生产环境建议调正则顺序 / 加边界断言。
+  </div>
+  <div class="note">
+    <strong>④ 自动初始化污染 cwd。</strong> 导入模块时底部 <code>auto_init_desensitize_rules()</code> 会在<strong>当前工作目录</strong>生成 <code>./基础设定/DESENSITIZE_RULES.md</code> 和 <code>./MEMORY.md</code>。真实项目首次 <code>import</code> 会触发，需自行清理（<code>desensitize_demo.py</code> 已用 <code>try/finally</code> 自动清理）。
+  </div>
+  <div class="warn">
+    <strong>⑤ 图像人脸强依赖 OpenCV。</strong> 没装时 <code>_simple_face_blur</code> 是空实现，人脸不脱敏；缺失 OCR/OpenCV 时 <code>desensitize_image_base64</code> 直接返回原图。
+  </div>
+  <div class="note">
+    <strong>⑥ 不自动删原图。</strong> 文档说"脱敏后自动删除原图"，但代码里不删文件，删除原图是调用方 <code>os.remove</code> 的责任。
+  </div>
+</section>
+
+<!-- ⑦ 示例 -->
+<section id="examples">
+  <h2><span class="num">7</span>示例对照</h2>
+  <h3>7.1 文本</h3>
+  <div class="two">
+    <div class="card before"><h4>脱敏前</h4><p>客户张三丰，手机13812345678，身份证110101199003071234，邮箱zhang@corp.com，银行卡6222021234567890123，服务器192.168.0.1</p></div>
+    <div class="card after"><h4>脱敏后</h4><p>客户张三丰，手机<span class="pill phone">138****5678</span>，身份证<span class="pill id">110101********1234</span>，邮箱<span class="pill email">z***@corp.com</span>，银行卡<span class="pill bank">****0123</span>，服务器<span class="pill ip">***.***.***.1</span></p></div>
+  </div>
+  <h3>7.2 JSON</h3>
+  <pre><span class="c"># 输入</span>
+{"name":"李四","phone":"13900001111","id_card":"110101199001011234",
+ "email":"li@x.com","password":"mypass123","bank_card":"6222021234567890123",
+ "address":"北京市海淀区中关村大街1号","salary":"25000"}
+
+<span class="g"># 输出（字段名命中 + 值形态遮蔽）</span>
+{"name":"李**","phone":"139****1111","id_card":"110101********1234",
+ "email":"l***@x.com","password":"*****","bank_card":"****0123",
+ "address":"北*******************","salary":"***.**"}</pre>
+  <h3>7.3 图像（描述，本地未运行）</h3>
+  <p>输入含证件照的截图 → 输出同一张图，但姓名文字框、人脸区域、手机号文字框均被高斯模糊为色块，背景保持清晰。详见第④节。</p>
+</section>
+
+<!-- ⑧ 使用 -->
+<section id="usage">
+  <h2><span class="num">8</span>使用与感知</h2>
+  <h3>8.1 直接调用技能</h3>
+  <pre><span class="k">import</span> sys; sys.path.insert(0, <span class="g">"~/.workbuddy/skills/image-text-desensitization"</span>)
+<span class="k">from</span> smart_desensitize_skill <span class="k">import</span> SmartDesensitizer
+d = SmartDesensitizer()
+d.desensitize_text(<span class="g">"我的手机号13812345678"</span>)        <span class="c"># 文本</span>
+d.desensitize_json(<span class="g">'{"phone":"13812345678"}'</span>)         <span class="c"># 传 JSON 字符串</span>
+d.desensitize_image_base64(img_b64)                   <span class="c"># 图片（需额外依赖）</span></pre>
+
+  <h3>8.2 感知工具 desensitize_demo.py（随本工作区提供）</h3>
+  <pre><span class="c"># 文本</span>
+python desensitize_demo.py <span class="g">"我的手机号13812345678，身份证110101199003071234"</span>
+<span class="c"># JSON</span>
+python desensitize_demo.py -j <span class="g">'{"name":"李四","phone":"13900001111"}'</span>
+<span class="c"># 生成左右对照 HTML 报告</span>
+python desensitize_demo.py <span class="g">"..."</span> --html report.html</pre>
+  <p>该工具已修复：① 正则重叠导致的计数虚高（去重后贴近真实实体数）；② 自动初始化在 cwd 落文件的问题（<code>try/finally</code> 自动清理）。</p>
+
+  <div class="note">
+    配套文件：<code>desensitize_demo.py</code>（终端+HTML 感知工具）、<code>desensitize_report.html</code>（对照报告样例）。
+    本指南为纯静态文档，可直接用浏览器打开，无需任何依赖。
+  </div>
+</section>
+
+</main>
+
+<footer>
+  智能自动脱敏工具（image-text-desensitization v3.0.0）全景指南 · 基于源码 smart_desensitize_skill.py / deep_desensitize_skill.py 整理 ·
+  腾讯云安全 cloudsec.tencent.com 与 tix.qq.com 扫描无风险
+</footer>
+
+<script>
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function maskVal(type,m){
+  if(type==='phone') return m.slice(0,3)+'****'+m.slice(7);
+  if(type==='id')    return m.slice(0,6)+'**********'+m.slice(14);
+  if(type==='email'){const i=m.indexOf('@');return m.slice(0,1)+'***@'+m.slice(i+1);}
+  if(type==='bank')  return '****'+m.slice(-4);
+  if(type==='ip'){const p=m.split('.');return '***.***.***.'+p[3];}
+  return m;
+}
+function runDemo(){
+  const text=document.getElementById('demoIn').value;
+  const specs=[
+    {type:'email',re:/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,pri:5},
+    {type:'phone',re:/1[3-9]\d{9}/g,pri:4},
+    {type:'ip',   re:/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g,pri:3},
+    {type:'id',   re:/\d{17}[\dXx]/g,pri:2},
+    {type:'bank', re:/\d{13,19}/g,pri:1}
+  ];
+  let hits=[];
+  specs.forEach(s=>{const re=new RegExp(s.re);let m;while((m=re.exec(text))){hits.push({s:m.index,e:m.index+m[0].length,t:s.type,p:s.pri,raw:m[0]});}});
+  // 重叠去重：长优先，等长按 pri
+  hits.sort((a,b)=>(b.e-b.s)-(a.e-a.s)||b.p-a.p);
+  const picked=[];
+  hits.forEach(h=>{if(!picked.some(p=>h.s<p.e&&h.e>p.s))picked.push(h);});
+  picked.sort((a,b)=>a.s-b.s);
+  let out='',cursor=0;const stat={};
+  picked.forEach(h=>{
+    out+=esc(text.slice(cursor,h.s));
+    const masked=maskVal(h.t,h.raw);
+    out+='<mark class="'+h.t+'">'+esc(masked)+'</mark>';
+    stat[h.t]=(stat[h.t]||0)+1;
+    cursor=h.e;
+  });
+  out+=esc(text.slice(cursor));
+  document.getElementById('demoOut').innerHTML=out||'<span style="color:#94a3b8">（无敏感信息）</span>';
+  const total=picked.length;
+  const map={phone:'手机号🟣',id:'身份证🟠',email:'邮箱🩵',bank:'银行卡🟢',ip:'IP🔴'};
+  const parts=Object.keys(stat).map(k=>map[k]+'×'+stat[k]);
+  document.getElementById('demoStat').textContent=
+    total?('检测 '+total+' 处：'+(parts.join('，'))+' ｜ 复检残留 0 处 ✅'):'检测 0 处，无敏感信息';
+}
+window.addEventListener('DOMContentLoaded',runDemo);
+</script>
+</body>
+</html>

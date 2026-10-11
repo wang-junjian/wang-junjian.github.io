@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="深度拆解开源 AI Agent 运行时 OpenClaw 的架构与核心模块：从本地优先、模型无关的设计哲学与常驻网关单体架构，到推理、执行环境、本地记忆、通道路由等模块，再到十步请求生命周期、六大设计原则、最新版特性、冷启动提速与三层安全总闸。">
+<meta name="keywords" content="OpenClaw, 架构设计, Agent 运行时, Gateway, 核心模块, 深度研究">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-07-30">
+<title>OpenClaw 架构设计与核心模块 · 深度研究</title>
+<style>
+  :root{
+    --bg:#08090c;
+    --panel:#101218;
+    --panel-2:#161a22;
+    --line:#222732;
+    --text:#e7eaf0;
+    --muted:#8b93a3;
+    --acid:#ccff00;
+    --magenta:#ff2bd6;
+    --cyan:#27e0ff;
+    --gap:8px;
+    --maxw:1180px;
+    font-family:'Inter','Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.65;
+    font-size:15px;
+    -webkit-font-smoothing:antialiased;
+    padding-top:56px;
+  }
+  a{color:var(--cyan);text-decoration:none}
+  /* ---- top nav ---- */
+  nav{
+    position:fixed;top:0;left:0;right:0;height:56px;z-index:50;
+    background:rgba(8,9,12,.82);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:18px;padding:0 24px;
+  }
+  nav .brand{font-weight:800;letter-spacing:.5px;color:var(--acid);font-size:16px}
+  nav .brand span{color:var(--magenta)}
+  nav .links{display:flex;gap:16px;margin-left:auto;flex-wrap:wrap}
+  nav .links a{color:var(--muted);font-size:13px;font-weight:600;transition:.2s}
+  nav .links a:hover{color:var(--acid)}
+  /* ---- hero ---- */
+  header.hero{
+    position:relative;overflow:hidden;
+    padding:72px 24px 56px;
+    border-bottom:1px solid var(--line);
+    background:
+      radial-gradient(900px 420px at 78% -10%,rgba(255,43,214,.16),transparent 60%),
+      radial-gradient(700px 360px at 12% 0%,rgba(204,255,0,.14),transparent 55%);
+  }
+  .hero-inner{max-width:var(--maxw);margin:0 auto}
+  .tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:1.5px;
+    color:var(--acid);border:1px solid var(--acid);border-radius:999px;padding:4px 14px;margin-bottom:20px}
+  h1{font-size:46px;line-height:1.08;font-weight:800;letter-spacing:-1px;margin-bottom:18px}
+  h1 .ac{color:var(--acid)} h1 .mg{color:var(--magenta)}
+  .sub{color:var(--muted);max-width:740px;font-size:17px}
+  .meta{display:flex;gap:24px;flex-wrap:wrap;margin-top:28px}
+  .meta .pill{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px}
+  .meta .pill b{display:block;color:var(--acid);font-size:20px;font-weight:800}
+  .meta .pill span{font-size:12px;color:var(--muted)}
+  /* ---- layout ---- */
+  main{max-width:var(--maxw);margin:0 auto;padding:48px 24px 80px}
+  section{margin-bottom:64px;scroll-margin-top:70px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:24px}
+  .sec-num{font-size:13px;font-weight:800;color:var(--bg);background:var(--acid);
+    padding:3px 9px;border-radius:6px;letter-spacing:1px}
+  h2{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  h3{font-size:17px;font-weight:700;margin-bottom:8px;color:var(--text)}
+  p{color:#c7cdd9;margin-bottom:12px}
+  .muted{color:var(--muted)}
+  /* ---- formula ---- */
+  .formula{
+    background:linear-gradient(135deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-left:4px solid var(--magenta);
+    border-radius:12px;padding:22px 26px;font-size:18px;font-weight:600;
+    letter-spacing:.3px;margin-bottom:24px;
+  }
+  .formula .op{color:var(--muted);margin:0 10px}
+  .formula .k{color:var(--acid)}
+  /* ---- philosophy grid ---- */
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;transition:.2s}
+  .card:hover{border-color:var(--acid);transform:translateY(-2px)}
+  .card h3{display:flex;align-items:center;gap:8px}
+  .card .dot{width:9px;height:9px;border-radius:50%;background:var(--acid);flex:none}
+  .card p{font-size:14px;margin:0;color:#aeb6c4}
+  /* ---- architecture diagram ---- */
+  .arch{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px;overflow-x:auto}
+  .arch .row{display:flex;gap:10px;margin-bottom:10px;min-width:760px}
+  .arch .box{flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    background:var(--panel-2);text-align:center;font-weight:700;font-size:13px}
+  .arch .box small{display:block;color:var(--muted);font-weight:500;font-size:11px;margin-top:3px}
+  .b-gw{background:linear-gradient(135deg,#1b2230,#241627);border-color:var(--magenta);color:var(--magenta)}
+  .b-brain{color:var(--acid);border-color:var(--acid)}
+  .b-hands{color:var(--cyan);border-color:var(--cyan)}
+  .b-mem{color:#ffd166;border-color:#ffd166}
+  .label-row{font-size:11px;color:var(--muted);text-align:center;letter-spacing:1px;margin:6px 0 2px}
+  /* ---- module detail ---- */
+  .module{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:14px;border-left:4px solid var(--acid)}
+  .module .mh{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .module .mh .name{font-size:19px;font-weight:800}
+  .module .mh .role{font-size:12px;color:var(--bg);background:var(--acid);padding:3px 10px;border-radius:999px;font-weight:700}
+  .module .mh .src{font-size:11px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .module ul{list-style:none;margin:6px 0 0}
+  .module ul li{position:relative;padding-left:18px;margin-bottom:6px;color:#bcc4d2;font-size:14px}
+  .module ul li::before{content:"";position:absolute;left:0;top:9px;width:7px;height:7px;border-radius:2px;background:var(--magenta)}
+  /* ---- lifecycle ---- */
+  .flow{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-bottom:20px}
+  @media(max-width:820px){.flow{grid-template-columns:repeat(5,1fr)}}
+  .step{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 8px;text-align:center;position:relative}
+  .step .n{font-size:18px;font-weight:800;color:var(--acid)}
+  .step .t{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3}
+  /* ---- timeline ---- */
+  .tl{position:relative;padding-left:24px}
+  .tl::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  .tl .ev{position:relative;margin-bottom:18px}
+  .tl .ev::before{content:"";position:absolute;left:-21px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--acid);border:2px solid var(--bg)}
+  .tl .ev b{color:var(--text);font-size:14px}
+  .tl .ev span{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  /* ---- principles ---- */
+  .prin{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:820px){.prin{grid-template-columns:1fr}}
+  .prin .p{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .prin .p .pc{font-size:13px;font-weight:800;color:var(--magenta);letter-spacing:.5px}
+  .prin .p h4{font-size:15px;margin:6px 0 4px}
+  .prin .p p{font-size:13px;color:#9aa2b1;margin:0}
+  /* ---- security ---- */
+  .sec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:820px){.sec-grid{grid-template-columns:1fr}}
+  .sec-grid .s{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;gap:12px}
+  .sec-grid .s .ic{font-size:20px;color:var(--acid);flex:none}
+  .sec-grid .s b{display:block;font-size:14px;margin-bottom:3px}
+  .sec-grid .s span{font-size:13px;color:#9aa2b1}
+  /* ---- footer ---- */
+  footer{border-top:1px solid var(--line);padding:32px 24px;text-align:center;color:var(--muted);font-size:13px}
+  .callout{background:var(--panel-2);border:1px dashed var(--line);border-radius:12px;padding:16px 20px;color:var(--muted);font-size:13px;margin-top:20px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">Open<span>Claw</span> · 架构研究</div>
+  <div class="links">
+    <a href="#pos">定位</a>
+    <a href="#arch">架构</a>
+    <a href="#modules">核心模块</a>
+    <a href="#life">生命周期</a>
+    <a href="#prin">原则</a>
+    <a href="#ver">版本</a>
+    <a href="#sec">安全</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="tag">DEEP RESEARCH · 2026-07-30</div>
+    <h1>OpenClaw <span class="ac">架构设计</span> 与<br><span class="mg">核心模块</span> 深度解析</h1>
+    <p class="sub">一个开源（MIT）的 AI Agent 运行时框架——坐在 LLM 与外部世界之间的常驻单体网关，将自然语言指令转化为真实系统操作。最新稳定版 v2026.7.1。</p>
+    <div class="meta">
+      <div class="pill"><b>v2026.7.1</b><span>最新稳定版 · 2026-07-13</span></div>
+      <div class="pill"><b>250K+</b><span>GitHub Stars</span></div>
+      <div class="pill"><b>26+</b><span>通道插件</span></div>
+      <div class="pill"><b>13K+</b><span>ClawHub 技能</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- 定位 -->
+<section id="pos">
+  <div class="sec-head"><span class="sec-num">01</span><h2>项目定位与设计哲学</h2></div>
+  <div class="formula">
+    OpenClaw <span class="op">=</span> <span class="k">Gateway</span> <span class="op">+</span> <span class="k">Agent Runtime</span> <span class="op">+</span> <span class="k">Skills</span> <span class="op">+</span> <span class="k">Memory</span>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3><span class="dot"></span>Local-first</h3><p>本地优先，数据不离开设备；记忆为本地 Markdown，Ollama/vLLM 本地模型时内容永不外传。</p></div>
+    <div class="card"><h3><span class="dot"></span>网关而非框架</h3><p>不是 SDK/库，而是独立运行的控制平面进程，统一编排 AI 与外部世界。</p></div>
+    <div class="card"><h3><span class="dot"></span>模型无关</h3><p>一行配置切换 Claude/GPT/Gemini/DeepSeek，按任务路由不同模型。</p></div>
+    <div class="card"><h3><span class="dot"></span>插件化内核</h3><p>Skills、Channels、Providers 均可热插拔（v2026.3.22+ 全面插件化）。</p></div>
+    <div class="card"><h3><span class="dot"></span>工程化 Agent</h3><p>从聊天机器人升级为任务调度执行系统，危险路径暴露为操作者可控开关。</p></div>
+    <div class="card"><h3><span class="dot"></span>透明可审计</h3><p>记忆可读、配置 JSON、WS 用 JSON 帧、审批显式展示命令，无黑箱。</p></div>
+  </div>
+  <div class="callout">命名含义：Claw（龙虾钳子）= 抓取/操控/执行；Open = 完全开源、社区驱动。前身：WhatsApp Relay → Clawdbot → Moltbot → OpenClaw（2026.02 定名）。</div>
+</section>
+
+<!-- 架构 -->
+<section id="arch">
+  <div class="sec-head"><span class="sec-num">02</span><h2>整体架构：Gateway-Centric</h2></div>
+  <p>单一长驻 Node.js 进程，在 LLM（Brain）、本地执行（Hands）、记忆（Memory）、通道（Channels）之间编排通信。<b>无微服务、无容器依赖、无跨进程复杂通信</b>，靠事件循环天然处理并发，部署只需"一个二进制 + 一个配置文件"。</p>
+  <div class="arch">
+    <div class="label-row">CLI 层 · entry.ts → run-main.ts → command-registry</div>
+    <div class="row">
+      <div class="box">CLI 启动入口</div>
+    </div>
+    <div class="label-row">Gateway 层（控制平面）· WebSocket + HTTP · 通道管理 · 热重载</div>
+    <div class="row">
+      <div class="box b-gw">⚡ Gateway<small>127.0.0.1:18789 · 常驻进程</small></div>
+    </div>
+    <div class="label-row">Channel 层 · Routing 层 · Plugin 层</div>
+    <div class="row">
+      <div class="box">🔗 Channels<small>26+ 平台桥接</small></div>
+      <div class="box">🛣️ Routing<small>会话键 + 多 Agent</small></div>
+      <div class="box">🧩 Plugin<small>工具/通道/Provider</small></div>
+    </div>
+    <div class="label-row">Auto-Reply / Agent 执行层 · dispatch → get-reply → agent-runner</div>
+    <div class="row">
+      <div class="box">🤖 Agent 执行引擎<small>Lane 并发 · QueueMode · 上下文守护</small></div>
+    </div>
+    <div class="label-row">AI Provider 层 · 持久化 / 基础设施层</div>
+    <div class="row">
+      <div class="box b-brain">🧠 Brain<small>LLM 推理 · 模型路由</small></div>
+      <div class="box b-hands">🤖 Hands<small>shell/file/browser/http</small></div>
+      <div class="box b-mem">💾 Memory<small>本地 Markdown + 混合检索</small></div>
+      <div class="box">🫀 Heartbeat<small>自治任务循环</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- 核心模块 -->
+<section id="modules">
+  <div class="sec-head"><span class="sec-num">03</span><h2>核心模块逐一详解</h2></div>
+
+  <div class="module">
+    <div class="mh"><span class="name">Gateway</span><span class="role">控制平面</span><span class="src">src/gateway/</span></div>
+    <p class="muted" style="margin-bottom:8px">系统中心，必须常驻。默认监听 127.0.0.1:18789，暴露 WebSocket（主控制协议）与 HTTP（同端口）两个接口。</p>
+    <ul>
+      <li>WebSocket 四层：连接层（握手/Challenge-Response/10s 超时）→ 协议层（AJV 帧校验）→ 方法层（authorizeGatewayMethod 鉴权）→ 事件层（流式广播/慢消费者丢弃）</li>
+      <li>三道总闸：连接总闸（握手必须成功）/ 权限总闸（role+scope 不符拒绝）/ 带宽总闸（MAX_PAYLOAD_BYTES 防拖垮）</li>
+      <li>配置热重载 startGatewayConfigReloader：可热更新直接 applyHotReload，否则请求进程重启</li>
+    </ul>
+  </div>
+
+  <div class="module">
+    <div class="mh"><span class="name">Brain</span><span class="role">推理引擎</span><span class="src">src/agents/ · src/providers/</span></div>
+    <p class="muted" style="margin-bottom:8px">LLM 负责理解、推理、决策；从不直接触碰文件系统/网络，仅通过结构化 tool-call 协议请求动作。</p>
+    <ul>
+      <li>Prompt 装配：SOUL.md + AGENTS/TOOLS.md + Memory(混合检索) + 激活 Skills + 会话历史 + 通道消息（带 EXTERNAL_UNTRUSTED_CONTENT 边界）</li>
+      <li>模型路由：心跳用 Haiku、对话用 Sonnet、复杂推理用 Opus、隐私敏感用本地模型</li>
+      <li>Provider 回退 runWithModelFallback()；子 Agent Bootstrap 作用域（v2026.5.22+）只加载 AGENTS+TOOLS 降本</li>
+      <li>支持 Anthropic / OpenAI / Gemini / xAI / OpenRouter / DeepSeek / Ollama / Bedrock / Qwen / Moonshot 等</li>
+    </ul>
+  </div>
+
+  <div class="module">
+    <div class="mh"><span class="name">Hands</span><span class="role">执行环境</span><span class="src">src/agents/pi-tools.ts</span></div>
+    <p class="muted" style="margin-bottom:8px">执行 Brain 的决策。四类能力：Shell / Filesystem / Browser(Playwright) / HTTP。</p>
+    <ul>
+      <li>Tool-Call 协议：tool_call → tool_result 结构化 JSON，可链式多工具调用并逐结果决策</li>
+      <li>Exec Approval Manager：执行前生成审批请求（规范化 argv/cwd/rawCommand），策略 always / on-miss / off</li>
+      <li>工具权限 Profile（minimal/coding/messaging/full）+ 工具组 deny list；blocked_commands 拦截危险命令</li>
+      <li>Docker 沙箱隔离（scope: agent/session/shared；mode: off/non-main/all；workspace: none/ro/rw）</li>
+    </ul>
+  </div>
+
+  <div class="module">
+    <div class="mh"><span class="name">Memory</span><span class="role">记忆系统</span><span class="src">src/memory/</span></div>
+    <p class="muted" style="margin-bottom:8px">本地 Markdown 文件（~/.openclaw/memory/），重启/更新后依然存活，随时间积累成知识库。</p>
+    <ul>
+      <li>混合检索 70/30：向量检索 70%（sqlite-vec 本地 embedding，无外部 API）+ BM25 30%（SQLite FTS5）</li>
+      <li>上下文预算 max_context_tokens（默认 2000）是最有效降本杠杆</li>
+      <li>Dreaming 模式（v2026.5+）：Light→REM→Deep 三阶段后台整合，6 信号打分晋升/归档，结果写入 DREAMS.md</li>
+      <li>可插拔后端：内置 / memory-core / PostClaw / Redis / Qdrant / ChromaDB 等 12+</li>
+    </ul>
+  </div>
+
+  <div class="module">
+    <div class="mh"><span class="name">Channel · Router · Heartbeat</span><span class="role">接入与编排</span><span class="src">src/channels/ · src/routing/</span></div>
+    <ul>
+      <li>Channels：消息入口/出口，插件化注册；26+ 平台；账号是一级实体，故障隔离</li>
+      <li>Router：8 级匹配优先级（peer→parent→guild+roles→guild→team→account→channel→default）；Session Key 设计实现会话串联与并发隔离</li>
+      <li>Heartbeat：每个 Agent 周期性自治任务循环（结合 Dreaming），HEARTBEAT.md 定义任务</li>
+      <li>Node Registry：追踪已连接执行会话与命令队列</li>
+    </ul>
+  </div>
+
+  <div class="module">
+    <div class="mh"><span class="name">Auto-Reply / Agent 执行层</span><span class="role">最复杂编排</span><span class="src">src/auto-reply/ · src/agents/</span></div>
+    <p class="muted" style="margin-bottom:8px">5 子层流水线：dispatch → dispatch-from-config → get-reply → get-reply-run → pi-embedded-runner。</p>
+    <ul>
+      <li>Lane 并发：每 Session 独占 Session Lane，共享 Global Lane；concurrency + maxPending 控制</li>
+      <li>QueueMode：interrupt / steer / steer-backlog / followup / collect(防抖批处理) / queue</li>
+      <li>上下文守护：硬红线 16,000 tokens（拒绝）/ 软警告 32,000 tokens（压缩）；预检+卫生+修复+重试+快照兜底</li>
+      <li>模型回退 model-fallback.ts 多候选轮换</li>
+    </ul>
+  </div>
+
+  <div class="module">
+    <div class="mh"><span class="name">Skills · Plugin · 持久化</span><span class="role">扩展与底座</span><span class="src">src/plugins/ · src/config/</span></div>
+    <ul>
+      <li>Skills：YAML+Markdown 定义（ClawHub 13K+ 技能、162 Agent 模板），教 Agent 何时/如何用工具</li>
+      <li>Plugin 系统：Core 对扩展不可知，扩展仅经 plugin-sdk/manifest/api.ts 跨越边界；v2026.3.22+ 社区可扩展每一层</li>
+      <li>持久化层：Config(TOML/JSON+热重载) / Sessions(按 key 分区) / Media(TTL) / Security(审计) / Cron / Daemon(常驻)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 生命周期 -->
+<section id="life">
+  <div class="sec-head"><span class="sec-num">04</span><h2>请求生命周期</h2></div>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="t">消息到达</div></div>
+    <div class="step"><div class="n">2</div><div class="t">Router 匹配 Agent</div></div>
+    <div class="step"><div class="n">3</div><div class="t">分发 Orchestrator</div></div>
+    <div class="step"><div class="n">4</div><div class="t">加载记忆</div></div>
+    <div class="step"><div class="n">5</div><div class="t">组装 Prompt</div></div>
+    <div class="step"><div class="n">6</div><div class="t">发送至 LLM</div></div>
+    <div class="step"><div class="n">7</div><div class="t">Hands 执行工具</div></div>
+    <div class="step"><div class="n">8</div><div class="t">结果回喂 Brain</div></div>
+    <div class="step"><div class="n">9</div><div class="t">产出最终响应</div></div>
+    <div class="step"><div class="n">10</div><div class="t">保存并回复</div></div>
+  </div>
+  <div class="callout">外部消息全程包裹在 <b>EXTERNAL_UNTRUSTED_CONTENT</b> 边界标记中，防御 prompt injection。工具调用可在步骤 6→8 间循环，直至 Brain 产出最终文本。</div>
+</section>
+
+<!-- 原则 -->
+<section id="prin">
+  <div class="sec-head"><span class="sec-num">05</span><h2>六大设计原则</h2></div>
+  <div class="prin">
+    <div class="p"><div class="pc">01</div><h4>Single Process</h4><p>单一 gateway 管理一切，垂直扩展为主，部署极简。</p></div>
+    <div class="p"><div class="pc">02</div><h4>Local-First</h4><p>数据全落盘，除 LLM API 外无云依赖。</p></div>
+    <div class="p"><div class="pc">03</div><h4>Model-Agnostic</h4><p>换 Provider 只改一行，任务级模型路由。</p></div>
+    <div class="p"><div class="pc">04</div><h4>Extensible</h4><p>Skills 是 Markdown，Channels 是插件，按需从 ClawHub 安装。</p></div>
+    <div class="p"><div class="pc">05</div><h4>Transparent</h4><p>记忆可读、配置 JSON、审批显式展示命令。</p></div>
+    <div class="p"><div class="pc">06</div><h4>Security-Conscious</h4><p>localhost 绑定 + 设备配对 + 边界标记 + 执行审批。</p></div>
+  </div>
+</section>
+
+<!-- 版本 -->
+<section id="ver">
+  <div class="sec-head"><span class="sec-num">06</span><h2>最新版本动态（v2026.7.1 · 2026-07-13）</h2></div>
+  <div class="tl">
+    <div class="ev"><b>Control UI 大改版</b><span>对话/会话/工作区/用量统一管理；多 session 并排分屏、刷新保留布局；实时 Tasks 视图；Usage 页对比各 Provider/模型花费占比（7/30/90 天图）。</span></div>
+    <div class="ev"><b>官方移动端升级</b><span>iOS / Android / macOS App 重大更新；配对管理员可从 Control UI 生成移动端设置 QR/可复制码。</span></div>
+    <div class="ev"><b>模型与 Provider 扩展</b><span>GPT-5.6 兼容、腾讯 Hy3（Tencent Hy3）、Meta Muse Spark 1.1、Gemini 3.1、GLM-5；更强 Codex / coding-agent 工作流。</span></div>
+    <div class="ev"><b>通道与稳定性</b><span>Telegram / Slack / Discord / Apple Messages 各自大幅更新；远程浏览器控制、工作区终端改进；修复 Gateway crash loop、定时任务。</span></div>
+    <div class="ev"><b>性能演进（5.22→5.28）</b><span>冷启动提速 5.1x（9.8s→1.9s）、热启动 4.0x、峰值 RSS 降 15%、tarball 缩小 59%、安装依赖降至 300。</span></div>
+    <div class="ev"><b>安全修复</b><span>v2026.3.31 修补 Snyk 文件沙箱 TOCTOU 漏洞（CVSS 9.4），文件操作移入 Docker 容器内校验；建议始终运行最新版。</span></div>
+  </div>
+</section>
+
+<!-- 安全 -->
+<section id="sec">
+  <div class="sec-head"><span class="sec-num">07</span><h2>安全机制</h2></div>
+  <div class="sec-grid">
+    <div class="s"><div class="ic">🔒</div><div><b>绑定与认证</b><span>默认绑定 localhost；设备配对 + challenge-response 认证。</span></div></div>
+    <div class="s"><div class="ic">🚧</div><div><b>三层网关总闸</b><span>连接 / 权限 / 带宽总闸，越界直接拒绝或限流。</span></div></div>
+    <div class="s"><div class="ic">🛡️</div><div><b>注入防御</b><span>外部内容 EXTERNAL_UNTRUSTED_CONTENT 边界标记。</span></div></div>
+    <div class="s"><div class="ic">✅</div><div><b>执行审批</b><span>Exec Approval Manager 执行前显式展示确切命令。</span></div></div>
+    <div class="s"><div class="ic">🚫</div><div><b>权限与拦截</b><span>工具 Profile + deny list；blocked_commands 拦截 rm -rf /、dd 等。</span></div></div>
+    <div class="s"><div class="ic">📦</div><div><b>沙箱隔离</b><span>Docker 沙箱；v2026.3.31 后文件操作在容器内校验（修复 TOCTOU）。</span></div></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  OpenClaw 架构设计与核心模块深度研究 · 数据来源：官方架构文档 (clawdocs.org)、源码级剖析 (openclaws.cursor.zone)、发布说明 (docs.openclaw.ai)<br>
+  生成于 2026-07-30 · 版本迭代极快，落地前请以对应版本官方文档为准
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,449 @@
+<meta name="description" content="AI 原生设计流水线实战：把设计事实源从 Figma 上移到可 diff 可 lint 的 DESIGN.md，按四阶段完成规范提炼、HTML 高保真原型、导入 Figma 与代码对齐，并给出设计治理、工具链配置、六个真实踩坑、人机分工与落地检查清单。">
+<meta name="keywords" content="AI 原生设计, DESIGN.md, 高保真原型, Figma MCP, 设计流水线, 设计治理">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-19">
+<title>AI 原生设计流水线</title>
+<style>
+  /* ===== Tokens —— 本页即以指南所述的 DESIGN.md（SGCC Portal）渲染 ===== */
+  :root {
+    --primary: #00796A;
+    --primary-strong: #00695C;
+    --primary-bright: #00A096;
+    --accent: #F6AB00;
+    --danger: #E94547;
+    --bg: #FFFFFF;
+    --surface: #F2F2F2;
+    --surface-hover: #FAFAFA;
+    --ink: #333333;
+    --body: #404145;
+    --muted: #666666;
+    --faint: #999999;
+    --border: #DDDDDD;
+    --divider: #EEEEEE;
+    --on-primary: #FFFFFF;
+    --code-bg: #242B2A;
+    --code-ink: #E8EFEE;
+    --code-kw: #7FD4C9;
+    --code-str: #F2C14E;
+    --code-cm: #7A8B88;
+    --tag-bg: #E3F0EE;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --primary: #2FB3A1;
+      --primary-strong: #4CC9B7;
+      --primary-bright: #2FB3A1;
+      --accent: #E8A93D;
+      --danger: #E06A6C;
+      --bg: #191D1C;
+      --surface: #212626;
+      --surface-hover: #262C2B;
+      --ink: #E9EDEC;
+      --body: #C4CAC8;
+      --muted: #9AA3A0;
+      --faint: #77817D;
+      --border: #363E3C;
+      --divider: #2C3331;
+      --on-primary: #0E1514;
+      --code-bg: #101615;
+      --code-ink: #D9E4E1;
+      --code-kw: #6FCBBB;
+      --code-str: #E5B85C;
+      --code-cm: #67736F;
+      --tag-bg: #233736;
+    }
+  }
+  :root[data-theme="dark"] {
+    --primary: #2FB3A1;
+    --primary-strong: #4CC9B7;
+    --primary-bright: #2FB3A1;
+    --accent: #E8A93D;
+    --danger: #E06A6C;
+    --bg: #191D1C;
+    --surface: #212626;
+    --surface-hover: #262C2B;
+    --ink: #E9EDEC;
+    --body: #C4CAC8;
+    --muted: #9AA3A0;
+    --faint: #77817D;
+    --border: #363E3C;
+    --divider: #2C3331;
+    --on-primary: #0E1514;
+    --code-bg: #101615;
+    --code-ink: #D9E4E1;
+    --code-kw: #6FCBBB;
+    --code-str: #E5B85C;
+    --code-cm: #67736F;
+    --tag-bg: #233736;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--body);
+    font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  .page { max-width: 1080px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 200px 1fr; gap: 48px; }
+
+  /* ===== 页头 ===== */
+  header.masthead { border-bottom: 1px solid var(--border); padding: 28px 0; margin-bottom: 36px; }
+  .masthead-inner { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .book-name { font-size: 13px; letter-spacing: 3px; color: var(--primary); margin-bottom: 10px; }
+  h1 { font-size: 30px; font-weight: 700; color: var(--ink); line-height: 1.4; text-wrap: balance; }
+  .subtitle { margin-top: 10px; font-size: 15px; color: var(--muted); max-width: 720px; }
+  .meta-row { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { font-size: 12px; color: var(--primary); background: var(--tag-bg); padding: 2px 10px; letter-spacing: 1px; }
+
+  /* ===== 目录 ===== */
+  nav.toc { position: sticky; top: 24px; align-self: start; font-size: 13px; line-height: 2; }
+  .toc-title { font-size: 12px; letter-spacing: 2px; color: var(--faint); margin-bottom: 8px; }
+  nav.toc a { display: block; color: var(--muted); padding: 3px 0 3px 14px; border-left: 2px solid var(--divider); }
+  nav.toc a:hover { color: var(--primary); border-left-color: var(--primary); text-decoration: none; }
+
+  /* ===== 章节 ===== */
+  section { margin-bottom: 56px; scroll-margin-top: 24px; }
+  .sec-kicker { font-size: 12px; letter-spacing: 3px; color: var(--primary); margin-bottom: 6px; }
+  h2 { font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); text-wrap: balance; }
+  h3 { font-size: 17px; font-weight: 700; color: var(--ink); margin: 28px 0 10px; }
+  p { margin-bottom: 12px; max-width: 46em; }
+  ul, ol { margin: 0 0 12px 1.4em; max-width: 44em; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--ink); }
+  blockquote {
+    margin: 16px 0; padding: 14px 20px; background: var(--surface);
+    border-left: 3px solid var(--primary); color: var(--ink); font-size: 15px;
+  }
+
+  /* ===== 代码 ===== */
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; background: var(--surface); padding: 1px 6px; color: var(--ink); }
+  pre {
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 16px 20px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px; line-height: 1.7; border-radius: 3px;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  .cm { color: var(--code-cm); }
+  .kw { color: var(--code-kw); }
+  .st { color: var(--code-str); }
+
+  /* ===== 流程图（纯 CSS） ===== */
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 16px 0 20px; }
+  .flow .node {
+    padding: 10px 16px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--ink); font-size: 14px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .flow .node small { color: var(--faint); font-size: 11px; letter-spacing: 1px; }
+  .flow .node.hot { border-color: var(--primary); background: var(--tag-bg); }
+  .flow .arrow { align-self: center; color: var(--faint); font-size: 16px; }
+
+  /* ===== 对比双栏 ===== */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 20px; }
+  .vs .col { border: 1px solid var(--border); padding: 18px 20px; }
+  .vs .col.new { border-color: var(--primary); }
+  .vs .col h4 { font-size: 13px; letter-spacing: 2px; margin-bottom: 10px; color: var(--faint); }
+  .vs .col.new h4 { color: var(--primary); }
+  .vs .col p, .vs .col ul { font-size: 14px; margin-bottom: 8px; }
+
+  /* ===== 表格 ===== */
+  .table-wrap { overflow-x: auto; margin: 14px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 560px; }
+  th { text-align: left; font-size: 12px; letter-spacing: 1px; color: var(--faint); padding: 8px 14px; border-bottom: 2px solid var(--primary); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--divider); vertical-align: top; }
+  tr:hover td { background: var(--surface-hover); }
+  td b { color: var(--ink); font-weight: 700; }
+
+  /* ===== 提示块 ===== */
+  .callout { margin: 16px 0; padding: 14px 20px; border: 1px solid var(--border); border-left: 3px solid var(--danger); background: var(--surface); font-size: 14px; }
+  .callout.warn { border-left-color: var(--accent); }
+  .callout.ok { border-left-color: var(--primary); }
+  .callout b { color: var(--ink); }
+  .callout .label { font-size: 11px; letter-spacing: 2px; display: block; margin-bottom: 4px; }
+  .callout .label.no { color: var(--danger); }
+  .callout .label.wa { color: var(--accent); }
+  .callout .label.yes { color: var(--primary); }
+
+  /* ===== 检查清单 ===== */
+  .checklist { list-style: none; margin: 14px 0; }
+  .checklist li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; border: 1px solid var(--divider); margin-bottom: 8px; background: var(--surface-hover); }
+  .checklist input { margin-top: 6px; width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; }
+  .checklist label { font-size: 14px; }
+  .checklist label b { color: var(--ink); }
+
+  footer.end { border-top: 1px solid var(--border); margin-top: 48px; padding: 28px 0 56px; font-size: 13px; color: var(--faint); max-width: 1080px; margin-left: auto; margin-right: auto; padding-left: 24px; padding-right: 24px; }
+
+  @media (max-width: 900px) {
+    .page { grid-template-columns: 1fr; gap: 24px; }
+    nav.toc { position: static; border: 1px solid var(--divider); padding: 14px 16px; background: var(--surface-hover); }
+    .vs { grid-template-columns: 1fr; }
+    h1 { font-size: 24px; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="book-name">《AI 原生软件开发生命周期》 · 设计环节</div>
+    <h1>AI 原生设计流水线</h1>
+    <p class="subtitle">从设计规范到高保真原型、再到 Figma 与代码的可执行指南——基于一次完整的真实实践（为适老化产品建立设计系统）整理而成。</p>
+    <div class="meta-row">
+      <span class="tag">DESIGN.md</span>
+      <span class="tag">Claude Code</span>
+      <span class="tag">Figma</span>
+      <span class="tag">MCP</span>
+      <span class="tag">设计治理</span>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <a href="#paradigm">范式转变</a>
+    <a href="#stage1">阶段一 · 提炼规范</a>
+    <a href="#stage2">阶段二 · HTML 原型</a>
+    <a href="#stage3">阶段三 · 导入 Figma</a>
+    <a href="#stage4">阶段四 · 对齐与实现</a>
+    <a href="#governance">设计治理</a>
+    <a href="#toolchain">工具链配置</a>
+    <a href="#pitfalls">踩坑记录</a>
+    <a href="#roles">人工介入点</a>
+    <a href="#checklist">落地检查清单</a>
+  </nav>
+
+  <main>
+    <!-- ========== 范式转变 ========== -->
+    <section id="paradigm">
+      <div class="sec-kicker">WHY</div>
+      <h2>范式转变：设计的事实源搬家了</h2>
+      <p>传统 SDLC 中，设计的事实源（single source of truth）是 Figma：设计师在画板上创作，开发通过「交付」把设计变成代码。AI 原生 SDLC 中，事实源上移到<strong>仓库里的文本规范</strong>——因为文本是 AI 的原生格式：可读、可 diff、可 lint、可版本化。</p>
+
+      <div class="vs">
+        <div class="col">
+          <h4>传统流向 · 人类设计师主导</h4>
+          <div class="flow" style="margin:8px 0">
+            <span class="node">规范<small>口头 / Wiki</small></span><span class="arrow">→</span>
+            <span class="node">Figma<small>事实源</small></span><span class="arrow">→</span>
+            <span class="node">代码<small>交付</small></span>
+          </div>
+          <p>Figma 是创作层。设计师改稿后，AI 经 Figma MCP 读取画板、更新代码——Framelink 等只读 MCP 原生支持这个方向。</p>
+        </div>
+        <div class="col new">
+          <h4>AI 原生流向 · AI 主导设计</h4>
+          <div class="flow" style="margin:8px 0">
+            <span class="node hot">DESIGN.md<small>事实源</small></span><span class="arrow">→</span>
+            <span class="node">HTML 原型<small>设计稿</small></span><span class="arrow">→</span>
+            <span class="node">Figma<small>协作层</small></span><span class="arrow">→</span>
+            <span class="node">代码</span>
+          </div>
+          <p>两个现实约束塑造了这条流向：<strong>Figma 对 AI 只读</strong>（免费账号 REST API 只读、官方写能力需付费席位）；<strong>HTML 是 AI 的天然设计稿</strong>（秒级迭代、真实渲染、可交互）。</p>
+        </div>
+      </div>
+
+      <blockquote>AI 原生设计环节的本质：把设计从「图片」变成「文本 + 工具链」——规范可执行、原型可生成、偏离可审计、流程可复现。</blockquote>
+
+      <p>两种流向并非互斥，长期维护的产品会形成<strong>双向闭环</strong>：AI 产出 HTML → 导入 Figma 供人评审 → 人在画板上微调 → AI 经 MCP 读回改动 → 同步代码。而 DESIGN.md 在两种流向里都是最上游的锚。</p>
+    </section>
+
+    <!-- ========== 阶段一 ========== -->
+    <section id="stage1">
+      <div class="sec-kicker">STAGE 1</div>
+      <h2>阶段一 · 提炼设计规范（网站 → DESIGN.md）</h2>
+      <p>设计规范采用 Google 的 <strong>DESIGN.md</strong> 格式（npm 包 <code>@google/design.md</code>）：一个双层 Markdown 文件，YAML front matter 存机器可读的 design tokens，正文存人类可读的设计理念。Tokens 给 AI 精确的值，prose 告诉它为什么。</p>
+
+      <h3>1.1 抓取参考来源</h3>
+      <p>从现有网站提炼时，抓取 HTML 与主样式表，分析颜色、字阶、圆角、间距与组件模式。目标站有反爬保护时的退路是 Wayback Machine：</p>
+      <pre><code><span class="cm"># 查最近快照</span>
+curl <span class="st">"http://web.archive.org/cdx/search/cdx?url=example.com&output=json&limit=-3&filter=statuscode:200"</span>
+<span class="cm"># 抓快照页面与 CSS</span>
+curl -L <span class="st">"http://web.archive.org/web/&lt;时间戳&gt;/http://example.com/"</span></code></pre>
+
+      <h3>1.2 编写 DESIGN.md</h3>
+      <pre><code>---
+name: SGCC Portal · 国网绿央企门户
+colors:
+  primary: <span class="st">"#00796A"</span>      <span class="cm"># 全站唯一交互强调色</span>
+  accent:  <span class="st">"#F6AB00"</span>      <span class="cm"># 琥珀金，每屏至多一处</span>
+typography:
+  body:
+    fontFamily: Microsoft YaHei, sans-serif
+    fontSize: 14px
+components:
+  button-page:
+    backgroundColor: <span class="st">"{colors.primary}"</span>
+    textColor: <span class="st">"#FFFFFF"</span>
+    rounded: <span class="st">"{rounded.sm}"</span>
+---
+
+## Overview
+央企门户美学：庄重、秩序、信息密集但不杂乱……
+
+## Do's and Don'ts
+- 不要渐变、投影、发光——庄重感来自"什么都没有"。</code></pre>
+
+      <p>三条写作心法（来自 DESIGN.md 的哲学，实践中全部验证）：</p>
+      <ul>
+        <li><strong>一个具体引用胜过一串形容词。</strong>「央企门户、机关报式排版」比「简洁、现代、大气」信息量大得多——后者只会生成平庸的中间态。</li>
+        <li><strong>负面约束是免费的。</strong>引用足够具体时，「不要渐变、不要大圆角」这类限制直接封死风格漂移，不必逐条罗列。</li>
+        <li><strong>格式靠生长，不靠 spec。</strong>规范只规定最小结构，项目可自由扩展章节，linter 对未知内容宽容（保留，不报错）。</li>
+      </ul>
+
+      <h3>1.3 质量门：lint 必须 0/0</h3>
+      <pre><code><span class="cm"># 校验（0 errors / 0 warnings 才放行）</span>
+designmd lint DESIGN.md
+<span class="cm"># 版本对比（审计偏离、检测回归）</span>
+designmd diff DESIGN.md DESIGN-v2.md
+<span class="cm"># 导出 tokens 到代码（Tailwind v4 / DTCG）</span>
+designmd export --format css-tailwind DESIGN.md &gt; theme.css</code></pre>
+      <p>lint 内置 11 条规则，最实用的三条：<code>broken-ref</code>（token 引用悬空，error）、<code>contrast-ratio</code>（组件前景/背景低于 WCAG AA 4.5:1，warning）、<code>orphaned-tokens</code>（定义了却没被组件引用的颜色）。<strong>对比度检查与适老化设计天然同向</strong>——规范工具本身就是无障碍守门员。</p>
+    </section>
+
+    <!-- ========== 阶段二 ========== -->
+    <section id="stage2">
+      <div class="sec-kicker">STAGE 2</div>
+      <h2>阶段二 · HTML 高保真原型（DESIGN.md → 设计稿）</h2>
+      <p>HTML 是 AI 的设计稿，原因有三：<strong>迭代速度</strong>（改 prompt → 刷新，几秒一轮）；<strong>保真度</strong>（真实排版引擎、真实字体渲染，高于画板）；<strong>可交互</strong>（hover、锚点、流程可直接体验）。设计评审在浏览器里完成，不在 Figma 里。</p>
+
+      <h3>2.1 生成规则</h3>
+      <ul>
+        <li><strong>单文件、零依赖</strong>：tokens 内联为 <code>:root</code> CSS 变量，整页自包含，随处可开。</li>
+        <li><strong>内容对齐领域文档</strong>：文案、功能描述必须来自项目的领域文档（如 CONTEXT.md），AI 不杜撰产品行为。</li>
+        <li><strong>规范忠实</strong>：颜色、字号、圆角、间距全部取自 tokens；组件模式（导航、卡片、页签、页脚）按规范组件实现。</li>
+        <li><strong>项目偏离显式化</strong>：确需偏离（如适老化把正文从 14px 提到 16px），写入 <code>DESIGN.overrides.md</code> 并在 HTML 头部注释引用——见「设计治理」。</li>
+      </ul>
+
+      <h3>2.2 原型即评审物</h3>
+      <p>把原型在浏览器打开即进入评审循环：看效果 → 口头反馈 → AI 修改 → 刷新。确认前<strong>不要</strong>进 Figma——HTML 阶段的修改成本是秒，Figma 阶段是分钟级且不可由 AI 代劳。</p>
+      <div class="callout warn"><span class="label wa">经验</span><b>在 HTML 阶段把设计定稿。</b>本次实践中，原型一次通过评审；若在 Figma 导入后才发现要改结构，只能回到 HTML 改完再重新导入。</div>
+    </section>
+
+    <!-- ========== 阶段三 ========== -->
+    <section id="stage3">
+      <div class="sec-kicker">STAGE 3</div>
+      <h2>阶段三 · 导入 Figma（HTML → 协作层）</h2>
+      <p>Figma 在 AI 原生流程中的角色是<strong>协作与存档</strong>：给人看、给人评论、留版本、做交付。先认清工具的能力边界：</p>
+      <div class="table-wrap"><table>
+        <tr><th>途径</th><th>能力</th><th>适用</th></tr>
+        <tr><td><b>Figma REST API</b></td><td>只读（读文件、节点、样式、导出图）</td><td>免费账号可用；回读校验</td></tr>
+        <tr><td><b>官方 Dev Mode MCP</b></td><td>读选中图层的结构化数据与设计变量</td><td>完整功能需付费席位</td></tr>
+        <tr><td><b>Framelink MCP</b>（figma-developer-mcp）</td><td>只读，用 personal token</td><td>设计稿 → 喂给 AI → 生成代码</td></tr>
+        <tr><td><b>html.to.design</b>（扩展 + 插件）</td><td>单向写入：HTML 页面 → 可编辑画板</td><td>本流程的导入桥</td></tr>
+      </table></div>
+
+      <h3>3.1 操作步骤（人工完成）</h3>
+      <ol>
+        <li>AI 在原型目录起本地服务器：<code>python3 -m http.server 8901 --bind 127.0.0.1</code>；</li>
+        <li>Chrome 打开 <code>http://127.0.0.1:8901/</code>，点 html.to.design 扩展 → <strong>Capture this page</strong>；</li>
+        <li><strong>Send to Figma</strong> → 桌面端唤起，配套插件自动落地为可编辑画板；</li>
+        <li>把文件链接发回给 AI，进入对齐校验。</li>
+      </ol>
+
+      <div class="callout"><span class="label no">禁止路径</span><b>不要在 Figma 插件里直接粘贴 localhost URL。</b>插件的渲染在厂商服务器上进行，访问不到你的本机——本次实践因此产生过一个空文件。本地页面必须走 Chrome 扩展（扩展在本机抓取渲染结果，不受网络可达性限制）；同理，直接双击打开的 <code>file://</code> 页面扩展无权访问，必须起本地服务器。</div>
+    </section>
+
+    <!-- ========== 阶段四 ========== -->
+    <section id="stage4">
+      <div class="sec-kicker">STAGE 4</div>
+      <h2>阶段四 · 对齐与实现（规范 ⇄ 设计稿 ⇄ 代码）</h2>
+      <h3>4.1 规范直达代码</h3>
+      <p><code>export --format css-tailwind</code> 产出的 <code>@theme</code> CSS 变量块，即使不用 Tailwind 也能直接贴进任何项目的 <code>&lt;style&gt;</code> 当 design tokens 用——规范与实现同源，不存在「设计稿和代码两个版本」。<p>
+      <h3>4.2 设计稿回读校验</h3>
+      <p>新会话中通过 Framelink MCP 的 <code>get_figma_data</code> 读取画板结构与样式，与 DESIGN.md tokens 比对，确认导入无损、实现无漂移。</p>
+      <div class="callout"><span class="label no">注意</span><b>不要轮询 Figma REST API。</b>免费（Starter）账号限流阈值低，轮询必触发 429。校验用一次性读取，或干脆人工目测——别把流程卡在自动化校验上。</div>
+      <h3>4.3 变更与审计</h3>
+      <p>规范或产出变更时跑 <code>designmd diff 旧 新</code>：token 级增删改一目了然，回归（错误/警告变多）时退出码为 1，可直接接 CI。<code>diff</code> 在这里不是「改完留痕」的工具，而是<strong>审计工具</strong>——确认项目偏离始终只有 overrides 里声明的那几条。</p>
+    </section>
+
+    <!-- ========== 治理 ========== -->
+    <section id="governance">
+      <div class="sec-kicker">GOVERNANCE</div>
+      <h2>设计治理：标准只读，偏离显式</h2>
+      <p>AI 会顺手改文件——治理规则必须前置。三层模型：</p>
+      <div class="flow">
+        <span class="node hot">公司标准 DESIGN.md<small>只读消费</small></span><span class="arrow">→</span>
+        <span class="node">项目偏离 DESIGN.overrides.md<small>只记 delta + 理由</small></span><span class="arrow">→</span>
+        <span class="node">产出物<small>原型 / Figma / 代码</small></span>
+      </div>
+      <ul>
+        <li><strong>标准不被项目修改。</strong>DESIGN.md 是输入，不是草稿。</li>
+        <li><strong>偏离必须带理由。</strong>例：「正文 14px → 16px——目标用户为 60–80 岁老花眼人群，适老化可读性优先」。</li>
+        <li><strong>偏离可审计。</strong>定期用 diff 对照标准，确认没有隐性漂移。</li>
+        <li><strong>回流有门槛。</strong>某条偏离在多个项目反复验证有效后，由标准维护者走评审回流入公司标准——项目侧不代劳。</li>
+      </ul>
+    </section>
+
+    <!-- ========== 工具链 ========== -->
+    <section id="toolchain">
+      <div class="sec-kicker">SETUP</div>
+      <h2>工具链配置（一次性）</h2>
+      <h3>Figma token 管理</h3>
+      <p>Personal access token 放入 shell 环境，<strong>绝不进 git</strong>：</p>
+      <pre><code><span class="cm"># ~/.zshrc</span>
+export FIGMA_TOKEN=<span class="st">"figd_xxxxxxxx"</span></code></pre>
+      <h3>Figma MCP 注册（Claude Code）</h3>
+      <p>注册在<strong>用户级</strong>且 token 直接内嵌——GUI 启动的编辑器不读 <code>~/.zshrc</code>，用 <code>${VAR}</code> 引用会取到空值：</p>
+      <pre><code>claude mcp add figma --scope user -- \
+  npx -y figma-developer-mcp --figma-api-key figd_xxxxxxxx --stdio
+<span class="cm"># 验证</span>
+claude mcp list   <span class="cm"># 期望输出：figma: ... ✔ Connected</span></code></pre>
+      <h3>DESIGN.md CLI</h3>
+      <p>可用 <code>npx @google/design.md</code>，或克隆仓库后用 <code>bun run cli &lt;cmd&gt;</code> 本地调用（后者绕开包下载的权限拦截，也便于锁定版本）。</p>
+    </section>
+
+    <!-- ========== 踩坑 ========== -->
+    <section id="pitfalls">
+      <div class="sec-kicker">PITFALLS</div>
+      <h2>踩坑记录：每个坑只踩一次</h2>
+      <p>以下全部来自一次真实实践。固化的意义就是把「试错」变成「照做」。</p>
+      <div class="table-wrap"><table>
+        <tr><th>坑</th><th>现象</th><th>正确路径</th></tr>
+        <tr><td><b>目标站反爬</b></td><td>curl 返回 412 与 JS 挑战页（瑞数类保护）</td><td>改走 Wayback Machine 快照（CDX API 查档）</td></tr>
+        <tr><td><b>npx 权限拦截</b></td><td><code>npx @google/design.md</code> 被安全策略拦下</td><td>本地克隆仓库，<code>bun run cli lint</code></td></tr>
+        <tr><td><b>file:// 抓不了</b></td><td>Chrome 扩展默认无权访问本地文件页</td><td><code>python3 -m http.server</code> 起 localhost</td></tr>
+        <tr><td><b>插件抓 localhost</b></td><td>Figma 插件粘贴 localhost URL → 生成空文件</td><td>必须走 Chrome 扩展本机抓取</td></tr>
+        <tr><td><b>REST 限流</b></td><td>Starter 账号轮询校验 → 429 Rate limit</td><td>一次性读取 / MCP 回读 / 人工目测</td></tr>
+        <tr><td><b>环境变量取空</b></td><td>GUI 启动的编辑器不读 ~/.zshrc，MCP 报 missing env</td><td>MCP 配置用户级注册、token 内嵌</td></tr>
+      </table></div>
+    </section>
+
+    <!-- ========== 人工介入点 ========== -->
+    <section id="roles">
+      <div class="sec-kicker">ROLES</div>
+      <h2>人工介入点：AI 与人的分界</h2>
+      <div class="table-wrap"><table>
+        <tr><th>步骤</th><th>执行者</th></tr>
+        <tr><td>提炼规范、生成原型、lint / export / diff、起本地服务器</td><td><b>AI 全自动</b></td></tr>
+        <tr><td>安装浏览器扩展与 Figma 插件、点 Capture、发回文件链接</td><td><b>人</b>（约 2 分钟）</td></tr>
+        <tr><td>设计评审拍板、偏离回流标准的决策</td><td><b>人</b></td></tr>
+      </table></div>
+      <p>把这张表写进流程文档后，AI 能自动跑到「需要人点扩展」那一步并把指引递过来——人机分工显式化，是流程可复现的前提。</p>
+    </section>
+
+    <!-- ========== 检查清单 ========== -->
+    <section id="checklist">
+      <div class="sec-kicker">CHECKLIST</div>
+      <h2>落地检查清单</h2>
+      <p>把设计环节嵌入 ticket 生命周期：<strong>界面类 ticket 标记 ready-for-agent 之前</strong>，逐项确认：</p>
+      <ul class="checklist">
+        <li><input type="checkbox" id="ck1"><label for="ck1"><b>规范就绪</b> —— DESIGN.md 存在且 lint 0 errors / 0 warnings</label></li>
+        <li><input type="checkbox" id="ck2"><label for="ck2"><b>原型就绪</b> —— HTML 原型通过评审，tokens 全部取自规范，内容与领域文档对齐</label></li>
+        <li><input type="checkbox" id="ck3"><label for="ck3"><b>偏离显式</b> —— 所有项目级偏离已写入 DESIGN.overrides.md 并附理由</label></li>
+        <li><input type="checkbox" id="ck4"><label for="ck4"><b>Figma 存档</b> —— 画板已生成（扩展路径），链接记录在 ticket 中</label></li>
+        <li><input type="checkbox" id="ck5"><label for="ck5"><b>实现同源</b> —— 代码使用的 tokens 来自 export 产物，非手抄色值</label></li>
+        <li><input type="checkbox" id="ck6"><label for="ck6"><b>标准纯净</b> —— 公司标准文件本次零改动（git diff 为空）</label></li>
+      </ul>
+    </section>
+
+    <blockquote style="margin-top:40px">一句话总结：<strong>规范先行、原型即设计、Figma 为协作层、偏离可审计、流程可复现。</strong></blockquote>
+  </main>
+</div>
+
+<footer class="end">
+  《AI 原生软件开发生命周期》设计环节实践指南 · 本页即以文中所述的 DESIGN.md 设计系统渲染——讲规范的页面，自己先遵守规范。
+</footer>

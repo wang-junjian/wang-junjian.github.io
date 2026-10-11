@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="以真实项目「适老友好计算器」为案例，系统讲透基于 spec-kit 的规格驱动开发：从项目章程、功能规格、实现计划、任务分解，到一致性分析、测试驱动实现与收敛核查，完整八步流程附真实提示词、二十九个任务与九次提交记录，助零经验开发者快速上手 AI 原生开发。">
+<meta name="keywords" content="规格驱动开发, spec-kit, SDD, Claude Code, AI 原生开发, 实战指南">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-08">
+<title>AI 原生开发实践指南 — 基于 spec-kit 的规格驱动开发</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --panel: #ffffff;
+    --ink: #1f2329;
+    --ink-2: #4b5563;
+    --ink-3: #6b7280;
+    --line: #e5e7eb;
+    --brand: #2563eb;
+    --brand-soft: #eff6ff;
+    --accent: #0d9488;
+    --accent-soft: #f0fdfa;
+    --warn: #b45309;
+    --warn-soft: #fffbeb;
+    --code-bg: #f3f4f6;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 1px 2px rgba(16, 24, 40, .04);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.85;
+  }
+  /* ---------- 头部 ---------- */
+  header.hero {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #0d9488 100%);
+    color: #fff;
+    padding: 56px 32px 48px;
+  }
+  .hero-inner { max-width: 1280px; margin: 0 auto; }
+  header.hero h1 { margin: 0 0 12px; font-size: 34px; line-height: 1.3; letter-spacing: .5px; }
+  header.hero p.sub { margin: 0; font-size: 17px; opacity: .92; max-width: 860px; }
+  .hero-meta { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .hero-meta span {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.28);
+    padding: 4px 14px; border-radius: 999px; font-size: 13.5px;
+  }
+  /* ---------- 布局 ---------- */
+  .layout {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 28px 80px;
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 36px;
+    align-items: start;
+  }
+  nav.toc {
+    position: sticky; top: 24px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 16px;
+    font-size: 14px;
+  }
+  nav.toc .toc-title { font-weight: 700; font-size: 13px; color: var(--ink-3); letter-spacing: 1px; margin-bottom: 8px; }
+  nav.toc a {
+    display: block; color: var(--ink-2); text-decoration: none;
+    padding: 5px 8px; border-radius: 6px; line-height: 1.5;
+  }
+  nav.toc a:hover { background: var(--brand-soft); color: var(--brand); }
+  nav.toc a.l2 { padding-left: 24px; font-size: 13.5px; color: var(--ink-3); }
+  main { min-width: 0; }
+  section.card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 36px 44px;
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 25px; margin: 0 0 18px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--brand-soft); line-height: 1.4;
+  }
+  h2 .no { color: var(--brand); margin-right: 10px; font-variant-numeric: tabular-nums; }
+  h3 { font-size: 19px; margin: 30px 0 10px; color: var(--ink); }
+  h4 { font-size: 16.5px; margin: 22px 0 8px; }
+  p { margin: 10px 0; }
+  ul, ol { padding-left: 26px; margin: 10px 0; }
+  li { margin: 5px 0; }
+  a { color: var(--brand); }
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1.5px 7px;
+    font-size: 13.5px;
+    font-family: "SF Mono", Menlo, Consolas, "Courier New", monospace;
+    color: #b91c1c;
+    word-break: break-all;
+  }
+  pre {
+    background: #1f2937;
+    color: #e5e7eb;
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.7;
+    margin: 14px 0;
+  }
+  pre code { background: none; border: none; color: inherit; padding: 0; font-size: inherit; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    font-size: 14.5px; background: var(--panel);
+  }
+  th, td { border: 1px solid var(--line); padding: 9px 13px; text-align: left; vertical-align: top; }
+  th { background: #f9fafb; font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  blockquote {
+    margin: 14px 0; padding: 12px 18px;
+    border-left: 4px solid var(--brand);
+    background: var(--brand-soft);
+    border-radius: 0 8px 8px 0;
+    color: var(--ink-2);
+  }
+  /* ---------- 组件 ---------- */
+  .callout {
+    border-radius: 8px; padding: 14px 18px; margin: 16px 0; font-size: 15px;
+    border: 1px solid;
+  }
+  .callout.tip { background: var(--accent-soft); border-color: #99f6e4; }
+  .callout.warn { background: var(--warn-soft); border-color: #fde68a; }
+  .callout .tag { font-weight: 700; margin-right: 8px; }
+  .callout.tip .tag { color: var(--accent); }
+  .callout.warn .tag { color: var(--warn); }
+  .prompt-box {
+    background: #f8fafc;
+    border: 1px dashed #94a3b8;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: 14.5px;
+  }
+  .prompt-box .pb-label {
+    display: inline-block; font-size: 12px; font-weight: 700; color: #fff;
+    background: var(--accent); border-radius: 4px; padding: 1px 9px; margin-bottom: 8px;
+  }
+  .prompt-box .pb-cmd {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 700; color: var(--brand); font-size: 14.5px;
+  }
+  .step-flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0; }
+  .step-flow .sf {
+    background: var(--brand-soft); color: #1e40af; border: 1px solid #bfdbfe;
+    border-radius: 8px; padding: 8px 14px; font-size: 14px; font-weight: 600;
+    text-align: center;
+  }
+  .step-flow .sf small { display: block; font-weight: 400; color: var(--ink-3); font-size: 12px; }
+  .step-flow .arrow { color: var(--ink-3); font-weight: 700; }
+  .artifact-list { font-size: 14.5px; }
+  .artifact-list li { margin: 4px 0; }
+  .badge {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    border-radius: 999px; padding: 1px 10px; margin-left: 8px; vertical-align: middle;
+  }
+  .badge.must { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .badge.opt { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+  .checklist { list-style: none; padding-left: 4px; }
+  .checklist li { padding-left: 28px; position: relative; margin: 7px 0; }
+  .checklist li::before {
+    content: "✓"; position: absolute; left: 2px; top: 0;
+    color: var(--accent); font-weight: 700;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 14px 0; }
+  .mini-card {
+    border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px;
+    background: #fcfcfd; font-size: 14.5px;
+  }
+  .mini-card h4 { margin-top: 0; }
+  footer {
+    max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px;
+    color: var(--ink-3); font-size: 13.5px; text-align: center;
+  }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; }
+    section.card { padding: 24px 20px; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>AI 原生开发实践指南<br>基于 spec-kit 的规格驱动开发（SDD）</h1>
+    <p class="sub">以「适老友好计算器」macOS 原生应用为完整实战案例，从零经验到独立上手：What → Why → How，每一步都给出可直接复制的命令、提示词与产物检查清单。</p>
+    <div class="hero-meta">
+      <span>工具链：spec-kit + Claude Code（Kimi-K3）</span>
+      <span>实战项目：elder-friendly-calculator</span>
+      <span>方法：SDD · TDD · Git 版本化</span>
+      <span>读者：无 AI 原生开发经验的开发者</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <div class="toc-title">目录</div>
+  <a href="#what">1. What：是什么</a>
+  <a href="#why">2. Why：为什么</a>
+  <a href="#overview">3. 全流程总览</a>
+  <a href="#setup">4. 环境准备</a>
+  <a href="#step0">5. 第 0 步：项目章程</a>
+  <a href="#step1">6. 第 1 步：功能规格</a>
+  <a href="#step2">7. 第 2 步：实现计划</a>
+  <a href="#step3">8. 第 3 步：任务分解</a>
+  <a href="#step4">9. 第 4 步：一致性分析</a>
+  <a href="#step5">10. 第 5 步：执行实现</a>
+  <a href="#step6">11. 第 6 步：收敛收尾</a>
+  <a href="#versioning">12. Git 版本化策略</a>
+  <a href="#best-practice">13. 最佳实践总结</a>
+  <a href="#faq">14. 常见问题 FAQ</a>
+  <a href="#appendix">15. 附录：速查表</a>
+</nav>
+
+<main>
+
+<!-- ============ 1. WHAT ============ -->
+<section class="card" id="what">
+  <h2><span class="no">1.</span>What：这是什么？</h2>
+
+  <h3>1.1 AI 原生开发（AI-Native Development）</h3>
+  <p>AI 原生开发是一种以<strong>智能体编码工具</strong>（如 Claude Code）为主要执行者的开发范式：人负责定义「做什么、为什么、做到什么程度算好」，AI 智能体负责「怎么做」——生成计划、编写代码、运行测试、修复问题。人的角色从「写代码的人」转变为「<strong>写规格、做评审、把关口</strong>的人」。</p>
+
+  <h3>1.2 规格驱动开发（SDD, Spec-Driven Development）</h3>
+  <p>SDD 是 AI 原生开发的核心方法论：<strong>规格说明（Spec）是项目的唯一真相源</strong>，代码是规格的「可执行表达」。开发流程不再是「边想边写」，而是：</p>
+  <div class="step-flow">
+    <span class="sf">章程<small>Constitution</small></span><span class="arrow">→</span>
+    <span class="sf">规格<small>Specify</small></span><span class="arrow">→</span>
+    <span class="sf">计划<small>Plan</small></span><span class="arrow">→</span>
+    <span class="sf">任务<small>Tasks</small></span><span class="arrow">→</span>
+    <span class="sf">分析<small>Analyze</small></span><span class="arrow">→</span>
+    <span class="sf">实现<small>Implement</small></span><span class="arrow">→</span>
+    <span class="sf">收敛<small>Converge</small></span>
+  </div>
+  <p>每一阶段都产出<strong>可评审的文档</strong>，下一阶段以上一阶段的文档为输入。文档先行，代码最后。</p>
+
+  <h3>1.3 spec-kit 是什么</h3>
+  <p><a href="https://github.com/github/spec-kit">spec-kit</a> 是 GitHub 开源的 SDD 工具包。它不做代码生成，而是向你的智能体编码工具（Claude Code、Copilot、Cursor 等）注入一组<strong>斜杠命令（技能）</strong>和<strong>文档模板</strong>，把上述 SDD 流程固化下来：</p>
+  <ul>
+    <li><code>/speckit-constitution</code> — 制定项目章程（不可妥协的开发原则）</li>
+    <li><code>/speckit-specify</code> — 把一句话需求变成结构化功能规格</li>
+    <li><code>/speckit-plan</code> — 生成技术实现计划与设计产物</li>
+    <li><code>/speckit-tasks</code> — 把计划分解为可执行的任务清单</li>
+    <li><code>/speckit-analyze</code> — 跨文档一致性分析（规格/计划/任务是否互相矛盾）</li>
+    <li><code>/speckit-implement</code> — 按任务清单执行实现</li>
+    <li><code>/speckit-converge</code> — 实现后收敛核查（代码 vs 规格的差距闭环）</li>
+  </ul>
+
+  <h3>1.4 本指南的实战案例</h3>
+  <p>本指南全部内容来自一个真实完成的项目：<strong>适老友好计算器</strong>（macOS 原生应用，Swift 6 + SwiftUI）。从「给老人开发一款计算器 macOS 原生应用」这一句话开始，全程通过 spec-kit + Claude Code 完成，共产出 1 份章程、1 份规格、5 份设计文档、29 个任务、全部单元测试与可运行应用。文中所有提示词、产物、提交记录均为该项目的真实历史。</p>
+</section>
+
+<!-- ============ 2. WHY ============ -->
+<section class="card" id="why">
+  <h2><span class="no">2.</span>Why：为什么需要 SDD？</h2>
+
+  <h3>2.1 直接让 AI「凭感觉写代码」（Vibe Coding）的四大问题</h3>
+  <div class="grid-2">
+    <div class="mini-card">
+      <h4>① 需求漂移</h4>
+      <p>没有书面规格，AI 会自行脑补需求。聊得越久，上下文越长，最初的目标越容易被稀释、遗忘或曲解。</p>
+    </div>
+    <div class="mini-card">
+      <h4>② 质量无标准</h4>
+      <p>「做到什么程度算好」没有定义，AI 交付的代码是否合格无从判断，评审只能凭感觉。</p>
+    </div>
+    <div class="mini-card">
+      <h4>③ 复杂度失控</h4>
+      <p>AI 倾向于「多做」——加功能、加抽象、加依赖。没有约束，一个计算器也能长出用户系统和云同步。</p>
+    </div>
+    <div class="mini-card">
+      <h4>④ 无法交接与复现</h4>
+      <p>对话记录不是工程资产。换一个人（或换一个会话）继续开发，无法知道当初为什么这样决策。</p>
+    </div>
+  </div>
+
+  <h3>2.2 SDD 如何解决这些问题</h3>
+  <table>
+    <tr><th>机制</th><th>作用</th><th>本项目实例</th></tr>
+    <tr>
+      <td><strong>章程（Constitution）</strong></td>
+      <td>把不可妥协的原则写成「法律」，后续所有产物必须过章程门禁检查</td>
+      <td>「适老性优先（字号≥24、对比度4.5:1）」「测试先行（TDD）」等 5 条原则，每条都标注理由</td>
+    </tr>
+    <tr>
+      <td><strong>规格（Spec）</strong></td>
+      <td>用用户故事 + 验收场景 + 可度量成功标准锁定「做什么」，不含技术细节</td>
+      <td>3 个用户故事（P1 四则运算 / P2 防错 / P3 语音播报）、15 条功能需求、6 条成功标准</td>
+    </tr>
+    <tr>
+      <td><strong>计划（Plan）</strong></td>
+      <td>锁定「怎么做」：技术栈、架构、目录结构，并做章程合规检查</td>
+      <td>Swift 6 + SwiftUI、纯逻辑状态机引擎、零第三方依赖；章程门禁 5 项全 PASS</td>
+    </tr>
+    <tr>
+      <td><strong>任务（Tasks）</strong></td>
+      <td>把计划切成可独立验证的小任务，标注依赖与并行性，测试任务强制先行</td>
+      <td>29 个任务（T001–T029），按 Setup → 基础 → US1 → US2 → US3 → 打磨 → 收敛 分 7 个阶段</td>
+    </tr>
+    <tr>
+      <td><strong>分析 + 收敛</strong></td>
+      <td>实现前查文档间矛盾，实现后查代码与规格的差距，形成闭环</td>
+      <td>收敛阶段发现并修复 3 个遗留差距（T027–T029：窗口缩放、上限提示、魔法数字）</td>
+    </tr>
+    <tr>
+      <td><strong>Git 版本化</strong></td>
+      <td>每个阶段产物单独提交，历史即审计轨迹，可随时回滚与追溯</td>
+      <td>9 次提交，从 <code>specify init</code> 到收敛任务完成，每一步可查</td>
+    </tr>
+  </table>
+
+  <div class="callout tip">
+    <span class="tag">核心理念</span>
+    在 AI 原生开发中，<strong>写得最好的代码是规格</strong>。你的工程能力不再体现在打字速度上，而体现在：能否写出无歧义的需求、能否制定有效的约束、能否评审 AI 的产出。
+  </div>
+</section>
+
+<!-- ============ 3. OVERVIEW ============ -->
+<section class="card" id="overview">
+  <h2><span class="no">3.</span>全流程总览</h2>
+  <p>整个实战项目从初始化到收尾共 8 个操作步骤，对应 9 次 Git 提交。记住这张地图，后面每一章展开讲一步：</p>
+  <table>
+    <tr><th>步骤</th><th>命令</th><th>核心产物</th><th>对应提交</th></tr>
+    <tr><td>0. 初始化</td><td><code>specify init --here --integration claude</code></td><td><code>.specify/</code> 模板、<code>.claude/skills/</code> 技能</td><td><code>2d8e96d</code></td></tr>
+    <tr><td>1. 章程</td><td><code>/speckit-constitution</code></td><td><code>.specify/memory/constitution.md</code></td><td><code>bc7534f</code></td></tr>
+    <tr><td>2. 规格</td><td><code>/speckit-specify</code></td><td><code>specs/001-.../spec.md</code> + 质量清单</td><td><code>c57afe0</code></td></tr>
+    <tr><td>3. 计划</td><td><code>/speckit-plan</code></td><td><code>plan/research/data-model/contracts/quickstart</code></td><td><code>028c24a</code></td></tr>
+    <tr><td>4. 任务</td><td><code>/speckit-tasks</code></td><td><code>tasks.md</code>（26 个任务）</td><td><code>e17138a</code></td></tr>
+    <tr><td>5. 分析</td><td><code>/speckit-analyze</code></td><td>一致性报告（对话内）</td><td>—</td></tr>
+    <tr><td>6. 实现</td><td><code>/speckit-implement</code></td><td>全部源码 + 测试（TDD）</td><td><code>1e64725</code></td></tr>
+    <tr><td>7. 收敛</td><td><code>/speckit-converge</code> + <code>/speckit-implement</code></td><td>追加任务 T027–T029 并完成</td><td><code>7794f32</code> <code>5603619</code></td></tr>
+  </table>
+
+  <div class="callout warn">
+    <span class="tag">关键纪律</span>
+    每个阶段完成后<strong>立即 git commit</strong>。这让「文档先行」可追溯：任何一行代码都能回溯到产生它的任务、计划、规格和章程。
+  </div>
+</section>
+
+<!-- ============ 4. SETUP ============ -->
+<section class="card" id="setup">
+  <h2><span class="no">4.</span>环境准备（一次性）</h2>
+
+  <h3>4.1 你需要什么</h3>
+  <ul>
+    <li><strong>智能体编码工具</strong>：Claude Code（本指南使用，模型 Kimi-K3）。spec-kit 也支持 Copilot / Cursor / Gemini CLI 等，命令完全兼容。</li>
+    <li><strong>spec-kit CLI</strong>：<code>specify</code>，用于初始化项目脚手架。</li>
+    <li><strong>Git</strong>：版本化是流程的一部分，不是可选项。</li>
+    <li><strong>目标平台工具链</strong>：本项目为 Xcode 15+（Swift 6），换成你自己的技术栈即可。</li>
+  </ul>
+
+  <h3>4.2 初始化项目</h3>
+  <p>在你的（可以是全新的）Git 仓库根目录执行：</p>
+  <pre><code># 在已有仓库中初始化（--here）；指定集成 Claude Code
+specify init --here --integration claude</code></pre>
+  <p>初始化后项目多出两块内容：</p>
+  <ul class="artifact-list">
+    <li><code>.specify/</code> — 模板（spec/plan/tasks/checklist 模板）、章程存放处（<code>memory/</code>）、集成配置</li>
+    <li><code>.claude/skills/speckit-*/</code> — 9 个技能（斜杠命令），Claude Code 启动后自动可用</li>
+  </ul>
+
+  <div class="callout tip">
+    <span class="tag">验证</span>
+    在 Claude Code 中输入 <code>/speckit</code>，能看到自动补全列表即说明安装成功。
+  </div>
+</section>
+
+<!-- ============ 5. CONSTITUTION ============ -->
+<section class="card" id="step0">
+  <h2><span class="no">5.</span>第 0 步：制定项目章程 <span class="badge must">建议必做</span></h2>
+
+  <h3>5.1 这一步在做什么（What &amp; Why）</h3>
+  <p>章程是项目的「宪法」：5–8 条<strong>不可妥协</strong>的原则，每条附带「为什么」。它回答的问题是：<em>当 AI（或人）面临取舍时，应该牺牲什么、保住什么？</em>后续的计划命令会对章程做<strong>门禁检查（Constitution Check）</strong>，不合规的设计必须返工或书面声明偏离。</p>
+
+  <h3>5.2 怎么操作（How）</h3>
+  <div class="prompt-box">
+    <span class="pb-label">在 Claude Code 中输入</span><br>
+    <span class="pb-cmd">/speckit-constitution</span>
+    <p style="margin:8px 0 0;">可以不带参数直接运行（本项目即如此），智能体会基于项目背景交互式地引导你确认原则；也可以在参数中直接给出你的原则草案。</p>
+  </div>
+
+  <h3>5.3 本项目的真实产物（节选）</h3>
+  <p>产物位于 <code>.specify/memory/constitution.md</code>（v1.0.0），共五条核心原则：</p>
+  <table>
+    <tr><th>原则</th><th>要点</th><th>是否 NON-NEGOTIABLE</th></tr>
+    <tr><td>I. 适老性优先</td><td>字号 ≥24px、对比度 ≥4.5:1、点击目标 ≥44×44、防误触间距</td><td>✅ 是</td></tr>
+    <tr><td>II. 简洁至上</td><td>只做四则运算；单屏完成；YAGNI；新增复杂度须书面理由</td><td>否</td></tr>
+    <tr><td>III. 测试先行</td><td>严格 TDD 红-绿-重构；测试先于实现并观察到失败</td><td>✅ 是</td></tr>
+    <tr><td>IV. 防错设计与清晰反馈</td><td>除零等非法操作给通俗中文提示；禁止技术性错误码</td><td>否</td></tr>
+    <tr><td>V. 可访问性合规</td><td>WCAG 2.1 AA；屏幕阅读器标签；全键盘可达</td><td>否</td></tr>
+  </table>
+  <p>注意章程中<strong>每条原则都有「理由」段落</strong>——理由是给 AI 看的，让它在边界情况下能推理出符合原则的决策，而不是机械执行字面规则。</p>
+
+  <h3>5.4 完成标志与提交</h3>
+  <ul class="checklist">
+    <li>章程文件无占位符，版本号、批准日期齐全</li>
+    <li>原则数量控制在 5 条左右，每条可执行、可检查</li>
+    <li>提交：<code>docs: 制定项目章程 v1.0.0</code></li>
+  </ul>
+</section>
+
+<!-- ============ 6. SPECIFY ============ -->
+<section class="card" id="step1">
+  <h2><span class="no">6.</span>第 1 步：编写功能规格（Specify）</h2>
+
+  <h3>6.1 这一步在做什么</h3>
+  <p>把「一句话需求」变成一份<strong>结构化、可测试、不含技术细节</strong>的功能规格。规格只描述「用户是谁、要达成什么、怎样算成功」，<strong>禁止出现语言、框架、API</strong> 等实现细节——那是下一步计划的事。</p>
+
+  <h3>6.2 怎么操作</h3>
+  <div class="prompt-box">
+    <span class="pb-label">本项目的真实输入</span><br>
+    <span class="pb-cmd">/speckit-specify 给老人开发一款计算器 macOS 原生应用。</span>
+    <p style="margin:8px 0 0;">就这一句话。智能体会自动创建特性分支目录 <code>specs/001-elder-friendly-calculator/</code> 并生成完整规格。</p>
+  </div>
+
+  <h3>6.3 产物的骨架（照此评审）</h3>
+  <p>生成的 <code>spec.md</code> 必须包含以下部分，评审时逐项核对：</p>
+  <ul>
+    <li><strong>用户故事（User Stories）</strong>：按优先级 P1/P2/P3 排序，每个故事都要写「Why this priority」和「Independent Test」（如何独立验证）。本项目的 P1 故事仅「大字号四则运算」一条——<em>仅此一条即可构成 MVP</em>。</li>
+    <li><strong>验收场景（Acceptance Scenarios）</strong>：Given/When/Then 格式，每个故事 3–4 条。</li>
+    <li><strong>边界情况（Edge Cases）</strong>：超长输入、溢出、无限循环小数、窗口失焦……本项目列了 5 条，全部在后续转化为防错需求。</li>
+    <li><strong>功能需求（FR-xxx）</strong>：可测试的 MUST 语句，本项目 15 条。</li>
+    <li><strong>成功标准（SC-xxx）</strong>：<em>可度量、技术无关</em>的结果指标，如「90% 老年用户 1 分钟内完成一次两位数加法」。</li>
+    <li><strong>假设（Assumptions）</strong>：把未言明的默认决策写下来（如「语音默认关闭」「界面语言为中文」）。</li>
+  </ul>
+
+  <h3>6.4 质量门禁</h3>
+  <p>spec-kit 会同时生成 <code>checklists/requirements.md</code> 质量清单，逐条自查。本项目的清单 16 项一次通过。重点关注：</p>
+  <ul class="checklist">
+    <li>无 <code>[NEEDS CLARIFICATION]</code> 标记残留（有歧义时要么用 <code>/speckit-clarify</code> 澄清，要么依据章程取合理默认值并记入 Assumptions）</li>
+    <li>成功标准可度量且技术无关</li>
+    <li>无实现细节泄露（本项目允许 24pt/44×44/4.5:1 出现在规格中，因为它们是<em>用户可感知的验收约束</em>，直接来自章程）</li>
+  </ul>
+
+  <div class="callout tip">
+    <span class="tag">经验</span>
+    规格阶段「忍住不谈技术」是最难也最重要的一条。技术约束（如「必须用 Swift」）留给下一步 <code>/speckit-plan</code> 的输入参数。规格越纯粹，它作为真相源的寿命越长。
+  </div>
+
+  <p>提交：<code>docs: 新增 001 适老友好计算器功能规格说明</code></p>
+</section>
+
+<!-- ============ 7. PLAN ============ -->
+<section class="card" id="step2">
+  <h2><span class="no">7.</span>第 2 步：制定实现计划（Plan）</h2>
+
+  <h3>7.1 这一步在做什么</h3>
+  <p>在规格的约束下做技术决策：选什么技术栈、什么架构、目录怎么组织、关键技术风险怎么解决。这一步是<strong>你向 AI 施加技术意图的最佳时机</strong>——通过命令参数显式给出。</p>
+
+  <h3>7.2 怎么操作</h3>
+  <div class="prompt-box">
+    <span class="pb-label">本项目的真实输入</span><br>
+    <span class="pb-cmd">/speckit-plan 使用 Swift 6 + SwiftUI 开发 macOS 原生应用，最低支持 macOS 13，不引入任何第三方依赖。语音播报使用系统 AVSpeechSynthesizer 中文语音。遵循 TDD：计算引擎作为独立的纯逻辑模块先行开发并用 XCTest 覆盖，UI 层尽量薄。</span>
+  </div>
+  <p>这段参数包含四类信息，写你自己的项目时照此组织：<strong>①技术栈 ②版本/平台底线 ③硬约束（零依赖）④架构意图（引擎纯逻辑、UI 极薄、TDD）</strong>。</p>
+
+  <h3>7.3 产出的五份设计文档</h3>
+  <table>
+    <tr><th>文件</th><th>内容</th><th>本项目要点</th></tr>
+    <tr><td><code>plan.md</code></td><td>技术上下文 + <strong>章程门禁检查表</strong> + 目录结构</td><td>5 条章程原则逐项 PASS；单 target 约 10 个源文件</td></tr>
+    <tr><td><code>research.md</code></td><td>关键技术决策：Decision / Rationale / Alternatives</td><td>7 项决策（R1–R7），如「用 Decimal 而非 Double，避免 0.1+0.2 浮点误差伤害老年用户信任」</td></tr>
+    <tr><td><code>data-model.md</code></td><td>实体、字段、验证规则、状态机转移表</td><td>计算会话状态机 5 个状态，每个转移标注对应的需求编号（FR-007 等）</td></tr>
+    <tr><td><code>contracts/</code></td><td>模块间契约</td><td>引擎 API 契约 + UI 契约（字号/对比度等硬线写成可验收条款 U1–U15）</td></tr>
+    <tr><td><code>quickstart.md</code></td><td>端到端验证场景，直接映射 spec 验收场景</td><td>V1–V4 四组场景，覆盖构建、四则运算、防错、语音、边界与度量</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <span class="tag">评审重点</span>
+    计划阶段你必须亲自评审 <code>plan.md</code> 的「Constitution Check」表和 <code>research.md</code> 的每个 Alternatives——AI 否决某个方案的理由是否成立，是体现你工程判断力的地方。
+  </div>
+
+  <p>提交：<code>docs: 新增 001 实现计划与设计产物（plan/research/data-model/contracts/quickstart）</code></p>
+</section>
+
+<!-- ============ 8. TASKS ============ -->
+<section class="card" id="step3">
+  <h2><span class="no">8.</span>第 3 步：分解任务清单（Tasks）</h2>
+
+  <h3>8.1 这一步在做什么</h3>
+  <p>把计划切成<strong>编号任务</strong>，每个任务粒度为「一个文件的一次改动」，并标注：所属用户故事、是否可并行 <code>[P]</code>、依赖关系。这是 AI 执行实现时的「施工图纸」。</p>
+
+  <h3>8.2 怎么操作</h3>
+  <div class="prompt-box">
+    <span class="pb-label">在 Claude Code 中输入</span><br>
+    <span class="pb-cmd">/speckit-tasks</span>
+    <p style="margin:8px 0 0;">无需参数，智能体读取 specs 目录下全部设计文档自动生成本项目 26 个任务（T001–T026）。</p>
+  </div>
+
+  <h3>8.3 产物结构（tasks.md）</h3>
+  <ul>
+    <li><strong>Phase 1 Setup</strong>：工程初始化（T001–T003）</li>
+    <li><strong>Phase 2 Foundational</strong>：全部故事共享的基础类型、文案资源、设计常量——<em>完成前阻断所有用户故事</em>（T004–T007）</li>
+    <li><strong>Phase 3–5 用户故事</strong>：每个故事内部<strong>测试任务先行</strong>（如 T008 写失败测试 → T009 实现使其通过），严格 TDD</li>
+    <li><strong>Phase 6 Polish</strong>：性能验证、UI 冒烟测试、代码清理（T022–T026）</li>
+  </ul>
+  <p>任务格式：<code>[ID] [P?] [Story] 描述 + 确切文件路径</code>。示例：</p>
+  <pre><code>- [ ] T008 [P] [US1] 编写失败测试 ElderCalculatorTests/CalculatorEngineTests.swift（US1 部分）：
+      C1 初始显示 "0"；C2 四则运算各至少 2 例（12+7=19 …）…</code></pre>
+
+  <div class="callout tip">
+    <span class="tag">经验</span>
+    好的任务清单有三个特征：① 每个任务写明<strong>确切文件路径</strong>；② 测试任务明确要求「<strong>先确认失败（Red）再实现（Green）</strong>」；③ 明确标注「本项目故事间共享引擎文件，<strong>不可并行</strong>，严格 P1→P2→P3」——不盲目套用模板的并行建议。
+  </div>
+
+  <p>提交：<code>docs: 新增 001 任务分解清单 tasks.md（26 个任务，TDD 测试先行）</code></p>
+</section>
+
+<!-- ============ 9. ANALYZE ============ -->
+<section class="card" id="step4">
+  <h2><span class="no">9.</span>第 4 步：跨文档一致性分析（Analyze）<span class="badge opt">实现前必跑一次</span></h2>
+
+  <h3>9.1 这一步在做什么</h3>
+  <p>在写任何代码之前，让智能体交叉审阅 spec / plan / tasks 三份文档，找出：<strong>矛盾</strong>（A 文档说要、B 文档说不要）、<strong>遗漏</strong>（需求没有对应任务）、<strong>含糊</strong>（任务描述无法执行）。这是成本最低的缺陷修复点——文档阶段改一句话，胜过实现后改一堆代码。</p>
+
+  <h3>9.2 怎么操作</h3>
+  <div class="prompt-box">
+    <span class="pb-label">在 Claude Code 中输入</span><br>
+    <span class="pb-cmd">/speckit-analyze</span>
+  </div>
+  <p>分析报告在对话中输出（不写文件）。发现的问题分严重级列出，你可以让智能体当场修订对应文档，修订后再跑一遍直到没有高危项。</p>
+
+  <div class="callout warn">
+    <span class="tag">注意</span>
+    Analyze 是只读的——它只报告问题，不擅自改文档。修不修、怎么修，由你决定。这正是「人把关口」原则的体现。
+  </div>
+</section>
+
+<!-- ============ 10. IMPLEMENT ============ -->
+<section class="card" id="step5">
+  <h2><span class="no">10.</span>第 5 步：执行实现（Implement）</h2>
+
+  <h3>10.1 这一步在做什么</h3>
+  <p>智能体按 tasks.md 的顺序逐任务执行：勾选任务 → 写代码 → 跑测试 → 勾选完成。你在这个过程中要做的不是写代码，而是<strong>监督节奏、审查关键产出、验证检查点</strong>。</p>
+
+  <h3>10.2 怎么操作</h3>
+  <div class="prompt-box">
+    <span class="pb-label">在 Claude Code 中输入</span><br>
+    <span class="pb-cmd">/speckit-implement</span>
+    <p style="margin:8px 0 0;">全量执行所有任务；也可以传参数只执行指定阶段，如 <code>/speckit-implement 完成 Phase 7 收敛任务 T027、T028、T029</code>（本项目收敛阶段即如此使用）。</p>
+  </div>
+
+  <h3>10.3 执行中的监督要点</h3>
+  <ul class="checklist">
+    <li><strong>TDD 纪律</strong>：测试任务（T008/T015/T018）必须先写并<strong>观察到失败</strong>，再实现。若 AI 跳过了 Red 环节，要求它回退演示失败。</li>
+    <li><strong>阶段检查点（Checkpoint）</strong>：tasks.md 每个阶段末尾有检查点（如「US1 完整可用——运行 quickstart V1 全部通过，可作为 MVP 演示」）。到达检查点时<strong>亲自运行验证</strong>，不要只看 AI 的自述。</li>
+    <li><strong>测试通过是硬门槛</strong>：本项目通过 <code>xcodebuild test</code> 运行引擎全分支测试 + 设计常量合规断言 + 播报文案测试，全部通过才算完成。</li>
+    <li><strong>运行真实应用</strong>：本项目执行中用户多次提供应用截图反馈界面问题——把截图直接发给智能体是非常高效的视觉反馈方式。</li>
+  </ul>
+
+  <h3>10.4 本项目的执行结果</h3>
+  <table>
+    <tr><th>维度</th><th>结果</th></tr>
+    <tr><td>源码结构</td><td><code>Engine/</code>（纯 Swift 状态机，零 UI 依赖）、<code>Views/</code>（4 个薄视图 + 设计常量）、<code>Speech/</code>（协议隔离的语音服务）</td></tr>
+    <tr><td>测试</td><td>CalculatorEngineTests（含 ≥1000 组随机按键序列的属性式测试）、SpeechServiceTests（mock 合成器）、AccessibilityMetricsTests（字号/对比度自动断言）</td></tr>
+    <tr><td>提交</td><td><code>feat: 实现适老友好计算器 macOS 原生应用（T001–T024、T026）</code></td></tr>
+  </table>
+  <p>注意提交信息里<strong>诚实标注了未含 T025</strong>（人工验证任务）——人工验证本就该由人完成，这是人机职责边界的正确示范。</p>
+</section>
+
+<!-- ============ 11. CONVERGE ============ -->
+<section class="card" id="step6">
+  <h2><span class="no">11.</span>第 6 步：收敛收尾（Converge）</h2>
+
+  <h3>11.1 这一步在做什么</h3>
+  <p>实现完成后，代码与文档之间往往存在「静默差距」：规格里写了但实现漏了的、契约里承诺了但代码没兑现的。收敛步骤系统性地核查这些差距，把它们变成追加任务并闭环。这是 SDD 区别于「一锤子生成」的关键机制。</p>
+
+  <h3>11.2 怎么操作</h3>
+  <div class="prompt-box">
+    <span class="pb-label">分两步</span><br>
+    <span class="pb-cmd">/speckit-converge</span>
+    <p style="margin:6px 0;">产出差距清单，追加为 Phase 7 任务（本项目追加 T027–T029）：</p>
+    <ul style="margin:4px 0 8px;">
+      <li>T027 窗口放大时按钮与字号按比例缩放（契约 U5 只实现了部分）</li>
+      <li>T028 输入达 12 位上限时的轻微视觉提示（spec 边界情况只做到静默忽略）</li>
+      <li>T029 残留魔法数字迁移至 AccessibilityMetrics（T026 的「无魔法数字」声明未真正成立）</li>
+    </ul>
+    <span class="pb-cmd">/speckit-implement 完成 Phase 7 收敛任务 T027、T028、T029</span>
+  </div>
+
+  <p>两次提交收尾：<code>docs: 追加 001 收敛任务 Phase 7</code> → <code>feat: 完成收敛任务 T027–T029 + 窗口可见性保障</code>。</p>
+
+  <div class="callout tip">
+    <span class="tag">为什么收敛如此重要</span>
+    T029 暴露了一个典型问题：AI 在 T026 中「声明」完成了魔法数字清理，但实际残留了硬编码。<strong>收敛核查就是对 AI 自我声明的独立审计</strong>——没有这一步，这类差距会永远藏在代码里。
+  </div>
+</section>
+
+<!-- ============ 12. VERSIONING ============ -->
+<section class="card" id="versioning">
+  <h2><span class="no">12.</span>Git 版本化策略</h2>
+  <p>本项目的完整提交历史就是一部 SDD 流程史，照此节奏提交即可：</p>
+  <pre><code>5603619 feat: 完成收敛任务 T027–T029（窗口缩放/输入上限提示/魔法数字清理）
+7794f32 docs: 追加 001 收敛任务 Phase 7（T027–T029）
+1e64725 feat: 实现适老友好计算器 macOS 原生应用（T001–T024、T026）
+e17138a docs: 新增 001 任务分解清单 tasks.md（26 个任务，TDD 测试先行）
+028c24a docs: 新增 001 实现计划与设计产物（plan/research/data-model/contracts/quickstart）
+c57afe0 docs: 新增 001 适老友好计算器功能规格说明
+bc7534f docs: 制定项目章程 v1.0.0（适老性优先等五条核心原则 + 治理规则）
+2d8e96d specify init --here --integration claude
+d9f4de5 Initial commit</code></pre>
+  <ul>
+    <li><strong>文档产物用 <code>docs:</code>，代码产物用 <code>feat:</code></strong>，一眼区分阶段性质。</li>
+    <li><strong>一个阶段一次提交</strong>，提交信息里带上任务编号范围，可追溯。</li>
+    <li>每个阶段完成后，在 Claude Code 里直接说「<code>git commit</code>」即可，智能体会按惯例生成规范信息。</li>
+  </ul>
+</section>
+
+<!-- ============ 13. BEST PRACTICE ============ -->
+<section class="card" id="best-practice">
+  <h2><span class="no">13.</span>最佳实践总结（来自实战的十条经验）</h2>
+  <ol>
+    <li><strong>章程先行，且写出理由</strong>。理由段落让 AI 能在边界情况下推理，而不是机械执行。章程会在计划阶段被自动门禁检查，写得越具体约束力越强。</li>
+    <li><strong>规格里忍住不谈技术</strong>。技术约束通过 <code>/speckit-plan</code> 的参数传入。规格只写用户价值、验收场景与可度量标准。</li>
+    <li><strong>一句话也能启动</strong>。本项目的规格输入只有「给老人开发一款计算器 macOS 原生应用」——模板和章程会引导 AI 补全结构，但你要评审它补的 Assumptions。</li>
+    <li><strong>用优先级用户故事换取 MVP</strong>。P1 故事必须能独立验证、独立交付（本项目的 P1 = 大字号四则运算，做完即可演示）。</li>
+    <li><strong>TDD 不可协商</strong>。把「测试先行」写进章程并标记 NON-NEGOTIABLE；任务清单强制测试任务在前；执行时要求演示测试先失败。</li>
+    <li><strong>实现前跑 Analyze，实现后跑 Converge</strong>。前者查文档间矛盾，后者查代码对文档的欠账——两次审计兜住大部分 AI 偏差。</li>
+    <li><strong>每阶段立即提交</strong>。Git 历史即审计轨迹；文档与代码分开提交，任务编号写进提交信息。</li>
+    <li><strong>核心逻辑做成纯模块</strong>。计算引擎不 import 任何 UI 框架，因此可以脱离界面全分支测试——这既是好架构，也是 AI 时代「可验证性」的前提。</li>
+    <li><strong>把质量底线变成可执行的测试</strong>。本项目的「字号 ≥24pt、对比度 ≥4.5:1」不靠自觉，靠 AccessibilityMetricsTests 自动断言防回归。</li>
+    <li><strong>人在三个位置把关</strong>：评审章程与规格（意图层）、评审计划与分析报告（决策层）、运行检查点与人工验收（结果层）。其余交给 AI。</li>
+  </ol>
+</section>
+
+<!-- ============ 14. FAQ ============ -->
+<section class="card" id="faq">
+  <h2><span class="no">14.</span>常见问题 FAQ</h2>
+
+  <h4>Q1：需求很简单，也要走完整流程吗？</h4>
+  <p>流程粒度可伸缩，但<strong>章程 → 规格 → 任务 → 实现 → 提交</strong>这条主干不建议省。小需求下每份文档可能只有半页，但「写下来再实现」的纪律不变。计算器就是个小需求，完整流程依然带来了 T027–T029 三个真实改进。</p>
+
+  <h4>Q2：规格写到一半发现需求有歧义怎么办？</h4>
+  <p>两条路：歧义影响方向性决策时用 <code>/speckit-clarify</code> 做交互式澄清；有合理默认值时依据章程取默认并记入 spec 的 Assumptions（本项目未用 clarify，全部走了默认值路线）。</p>
+
+  <h4>Q3：AI 实现时偏离了任务清单怎么办？</h4>
+  <p>任务编号就是你的缰绳：要求它「只做 T0xx，完成后停下汇报」。大阶段之间用 quickstart 场景亲自验证，验证不过不让进入下一阶段。</p>
+
+  <h4>Q4：规格写错了，已经进入实现了怎么办？</h4>
+  <p>改规格 → 同步改计划与任务 → 提交说明 → 再让智能体按新任务实现。<strong>永远不要只改代码不改文档</strong>——规格是唯一真相源，文档与代码分叉后 SDD 就失效了。</p>
+
+  <h4>Q5：这套流程换其他技术栈/其他 AI 工具能用吗？</h4>
+  <p>能。spec-kit 与语言无关（文档全是 Markdown），初始化时用 <code>--integration</code> 换成你的工具即可（copilot / cursor / gemini 等）。命令名与流程完全一致。</p>
+
+  <h4>Q6：多个特性怎么组织？</h4>
+  <p>每个特性一个编号目录（<code>specs/001-...</code>、<code>specs/002-...</code>），章程全项目共享一份。特性之间通过 Git 分支或顺序开发隔离。</p>
+</section>
+
+<!-- ============ 15. APPENDIX ============ -->
+<section class="card" id="appendix">
+  <h2><span class="no">15.</span>附录：速查表</h2>
+
+  <h3>15.1 命令速查</h3>
+  <table>
+    <tr><th>命令</th><th>何时用</th><th>产物</th></tr>
+    <tr><td><code>specify init --here --integration claude</code></td><td>项目开始，一次性</td><td>.specify/ 模板 + 技能</td></tr>
+    <tr><td><code>/speckit-constitution</code></td><td>项目开始，一次性（可修订）</td><td>.specify/memory/constitution.md</td></tr>
+    <tr><td><code>/speckit-specify &lt;需求描述&gt;</code></td><td>每个新特性</td><td>specs/NNN-*/spec.md + checklists/</td></tr>
+    <tr><td><code>/speckit-clarify</code></td><td>规格有重大歧义时（可选）</td><td>更新后的 spec.md</td></tr>
+    <tr><td><code>/speckit-plan &lt;技术约束&gt;</code></td><td>规格通过后</td><td>plan/research/data-model/contracts/quickstart</td></tr>
+    <tr><td><code>/speckit-tasks</code></td><td>计划评审通过后</td><td>tasks.md</td></tr>
+    <tr><td><code>/speckit-analyze</code></td><td>实现之前</td><td>对话内一致性报告</td></tr>
+    <tr><td><code>/speckit-implement [范围]</code></td><td>分析通过后，可分阶段调用</td><td>源码 + 测试</td></tr>
+    <tr><td><code>/speckit-converge</code></td><td>实现完成后</td><td>追加任务（差距闭环）</td></tr>
+  </table>
+
+  <h3>15.2 项目目录结构（最终形态）</h3>
+  <pre><code>elder-friendly-calculator_spec-kit/
+├── .specify/
+│   ├── memory/constitution.md        # 项目章程（全项目共享一份）
+│   └── templates/                    # spec/plan/tasks/checklist 模板
+├── .claude/skills/speckit-*/         # 9 个 spec-kit 技能
+├── specs/
+│   └── 001-elder-friendly-calculator/
+│       ├── spec.md                   # 功能规格（唯一真相源）
+│       ├── checklists/requirements.md# 规格质量清单
+│       ├── plan.md                   # 实现计划 + 章程门禁
+│       ├── research.md               # 技术决策（R1–R7）
+│       ├── data-model.md             # 状态机与数据模型
+│       ├── contracts/                # 引擎 API / UI 契约
+│       ├── quickstart.md             # 端到端验证场景 V1–V4
+│       └── tasks.md                  # 任务清单 T001–T029
+├── ElderCalculator/                  # Xcode 工程（源码 + 测试）
+└── docs/                             # 本指南</code></pre>
+
+  <h3>15.3 参考资料</h3>
+  <ul>
+    <li>spec-kit 官方仓库：<a href="https://github.com/github/spec-kit">github.com/github/spec-kit</a>（含 <code>spec-driven.md</code> 方法论原文）</li>
+    <li>本实战项目仓库：<code>elder-friendly-calculator_spec-kit</code>（全部文档与提交历史可供对照学习）</li>
+    <li>WCAG 2.1：<a href="https://www.w3.org/TR/WCAG21/">w3.org/TR/WCAG21</a>（章程原则 V 的依据）</li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<footer>
+  AI 原生开发实践指南 · 基于 spec-kit 的规格驱动开发 · 实战案例：适老友好计算器（2026-10）<br>
+  本文档由 Claude Code 依据项目真实开发记录生成
+</footer>
+
+</body>
+</html>

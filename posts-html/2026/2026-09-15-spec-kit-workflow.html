@@ -1,0 +1,426 @@
+<meta name="description" content="一文吃透 GitHub Spec Kit：从规范即源码的权力反转与项目宪法门禁讲起，覆盖 specify CLI 安装初始化、九步命令链逐一拆解、扩展与模板定制，配中文示例与常见坑，再对照 AI 原生 SDLC 工件链给出速查表，助你从零上手规范驱动开发。">
+<meta name="keywords" content="Spec Kit, 实践指南, 规范驱动开发, SDD, GitHub, 命令链">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-15">
+<title>Spec Kit 实践指南</title>
+<style>
+:root {
+  --fg: #1a1a18; --muted: #5f5e5a; --accent: #c1502e;
+  --surface: #f5f4ef; --border: #d8d6cd; --code-bg: #efeee8;
+  --green: #3a7d44; --amber: #9a6a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fg: #e8e6df; --muted: #a3a198; --accent: #e0784f;
+    --surface: #1c1b18; --border: #3a382f; --code-bg: #26251f;
+    --green: #6fbf7a; --amber: #d9a940;
+  }
+}
+:root[data-theme="dark"] {
+  --fg: #e8e6df; --muted: #a3a198; --accent: #e0784f;
+  --surface: #1c1b18; --border: #3a382f; --code-bg: #26251f;
+  --green: #6fbf7a; --amber: #d9a940;
+}
+body {
+  background: var(--surface); color: var(--fg);
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  line-height: 1.75; padding-inline: max(16px, env(safe-area-inset-left));
+}
+main { max-width: 920px; margin: 0 auto; padding-block: 48px 96px; }
+h1 { font-size: 1.9rem; line-height: 1.3; margin-bottom: 0.25em; }
+h2 { font-size: 1.45rem; margin-top: 2.4em; padding-top: 0.6em; border-top: 1px solid var(--border); }
+h3 { font-size: 1.15rem; margin-top: 1.8em; }
+h4 { font-size: 1rem; margin-top: 1.4em; color: var(--accent); }
+.lede { color: var(--muted); font-size: 0.95rem; margin-bottom: 2em; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9rem; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--code-bg); white-space: nowrap; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.87em; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 0.83rem; line-height: 1.55; }
+pre code { background: none; padding: 0; }
+.callout { border-left: 3px solid var(--accent); background: var(--code-bg); padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 1em 0; }
+.callout.warn { border-left-color: var(--amber); }
+.callout.ok { border-left-color: var(--green); }
+figure { margin: 1.5em 0; }
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); }
+ol, ul { padding-left: 1.4em; }
+li { margin: 0.25em 0; }
+</style>
+
+<main>
+<h1>Spec Kit 实践指南</h1>
+<p class="lede">从零上手 GitHub Spec Kit：安装、初始化、九步命令链逐一拆解，配中文示例与落地建议。本文基于对 spec-kit 仓库（README.md、spec-driven.md、templates/、docs/）的实际阅读整理，版本以 1.0.0 之后的形态为准。</p>
+
+<h2>1. 项目定位与核心理念</h2>
+
+<h3>1.1 一句话定位</h3>
+<p>Spec Kit 是 GitHub 开源的<strong>规范驱动开发（Spec-Driven Development, SDD）工具包</strong>：一个 <code>specify</code> CLI + 一套斜杠命令模板，让你在任意 AI 编码 agent（Claude Code、Copilot、Gemini CLI 等 40+ 种集成）中，走一条"先定义要构建什么，再构建"的结构化流程。</p>
+
+<h3>1.2 核心理念：规格即源码</h3>
+<p>spec-driven.md 称之为 <strong>The Power Inversion（权力反转）</strong>：传统开发中代码是真理之源，规范只是脚手架，写完即弃；SDD 把这个关系倒过来——</p>
+<ul>
+  <li><strong>规范不服务于代码，代码服务于规范</strong>。spec 是 source of truth，代码是从 spec 生成的、可再生的表达物。</li>
+  <li><strong>可执行规范（Executable Specifications）</strong>：spec 必须精确、完整、无歧义到足以生成可工作的系统，从而消除"意图与实现之间的鸿沟"。</li>
+  <li><strong>维护软件 = 演进规范</strong>。调试意味着修复产生错误代码的规范；加新功能意味着重访 spec 并生成新的实现计划。过程是 0 → 1, (1', ...), 2, 3, N。</li>
+  <li><strong>持续求精而非一次性门禁</strong>：一致性验证贯穿全程；生产反馈（指标、事故）回流为新的非功能需求。</li>
+</ul>
+<p>README 的 "Core Philosophy" 概括为四条：意图驱动开发（先说 what 再说 how）、带护栏的富规范创建、多步求精而非一次性 prompt 生成、深度依赖先进 AI 模型的规范理解能力。</p>
+
+<h3>1.3 模板如何"驯化" LLM</h3>
+<p>spec-driven.md 专门用一节说明模板是对 LLM 的约束性提示，关键点：</p>
+<ul>
+  <li><strong>阻止过早陷入实现细节</strong>：spec 模板明确要求"✅ 聚焦 WHAT 和 WHY，❌ 避免 HOW（技术栈、API、代码结构）"。</li>
+  <li><strong>强制显式的不确定性标记</strong>：不允许 LLM"合理地瞎猜"，必须标 <code>[NEEDS CLARIFICATION: 具体问题]</code>（如认证方式未指明 - 邮箱密码 / SSO / OAuth？）。</li>
+  <li><strong>清单即"英语的单元测试"</strong>：质量检查清单迫使 LLM 系统性自审。</li>
+  <li><strong>宪法门禁（Constitution Gates）</strong>：plan 模板中有 Phase -1 前置门禁（简洁性门禁、反抽象门禁等），未通过必须在 "Complexity Tracking" 中书面说明理由。</li>
+  <li><strong>测试先行排序</strong>：文件创建顺序为 contracts → 契约测试 → 集成测试 → e2e → 单元测试 → 源码。</li>
+</ul>
+
+<h3>1.4 Constitution：不可违抗的架构约束</h3>
+<p>宪法（<code>.specify/memory/constitution.md</code>）是项目的"架构 DNA"。spec-driven.md 描述了九条纲领（Nine Articles）的参考结构：</p>
+<ul>
+  <li><strong>Article I 库优先</strong>：每个功能必须先以独立库的形态存在；<strong>Article II CLI 接口强制</strong>：一切功能可通过文本 in/out 的 CLI 触达（可观测、可测试）；<strong>Article III 测试先行（NON-NEGOTIABLE）</strong>：先写测试、用户批准、确认测试失败（Red）后才写实现。</li>
+  <li><strong>Article IV–VI 由项目自定义</strong>：Spec Kit 只给占位与示例（集成测试、可观测性、版本化等），各项目填入自己的不可协商标准。<code>/speckit.analyze</code> 会按项目实际的宪法做合规检查。</li>
+  <li><strong>Article VII/VIII 简洁与反抽象</strong>：初始实现最多 3 个项目、直接使用框架而非包装；<strong>Article IX 集成测试优先</strong>：真实数据库优于 mock。</li>
+</ul>
+<div class="callout warn">
+<p>注意：这是 spec-driven.md 描述的参考宪法结构。<code>templates/constitution-template.md</code> 实际给出的是可填空的通用模板（核心原则 + 附加章节 + Governance，含版本号/批准日期/修订日期），你的项目宪法由 <code>/speckit.constitution</code> 命令根据你的输入生成。宪法<strong>高于其他一切实践</strong>，修订需要文档化理由、审批与迁移计划。</p>
+</div>
+
+<h2>2. 安装与初始化</h2>
+
+<h3>2.1 前置条件</h3>
+<ul>
+  <li>Linux/macOS/Windows（PowerShell 脚本原生支持，无需 WSL）</li>
+  <li>Python 3.11+、<a href="https://docs.astral.sh/uv/">uv</a>（推荐）或 pipx</li>
+  <li>Git（可选——只有启用 git 扩展时才必需）</li>
+  <li>一个受支持的 AI 编码 agent</li>
+</ul>
+
+<h3>2.2 安装 Specify CLI</h3>
+<pre><code># 推荐：从 GitHub 源码安装，pin 到具体 release tag（保留前导 v，例如 v0.12.11）
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@vX.Y.Z
+
+# 或者从 PyPI 安装
+uv tool install specify-cli
+
+# 验证
+specify version
+
+# 后续升级（self 子命令，自动识别 uv tool / pipx 安装方式）
+specify self check              # 只读检查是否有新版本
+specify self upgrade --dry-run  # 预览升级动作
+specify self upgrade            # 原地升级到最新稳定版</code></pre>
+
+<h3>2.3 初始化项目</h3>
+<pre><code>specify init my-project --integration claude
+cd my-project
+
+# 在已有仓库中原地初始化（brownfield）：
+# 先提交/暂存现有工作、建一个可评审的分支，然后：
+specify init --here --force --integration claude
+
+# CI / 无键盘环境：加 --non-interactive，未指定的选择走文档化默认值而不是卡在方向键选择器
+specify init my-project --non-interactive --ignore-agent-tools</code></pre>
+<p><code>--integration</code> 指定 agent 集成，内置目录里有 40+ 个：<code>claude</code>、<code>copilot</code>、<code>gemini</code>、<code>codex</code>、<code>cursor-agent</code>、<code>codebuddy</code>、<code>kimi</code>、<code>qwen</code>、<code>opencode</code>、<code>trae</code>、<code>kiro-cli</code>、<code>pi</code>、<code>omp</code> 等。运行 <code>specify integration list</code> 查看你安装版本支持的全部集成。交互式终端会让你现场选；非交互（CI、管道）默认选 GitHub Copilot，除非显式传 <code>--integration</code>。</p>
+<p>自动化脚本有三种变体：<code>--script sh</code>（Linux/macOS 默认）、<code>--script ps</code>（Windows 默认）、<code>--script py</code>。对支持 skills 模式的集成，可用 <code>--integration-options="--skills"</code> 安装 agent skills 而非斜杠命令 prompt 文件。</p>
+
+<h3>2.4 初始化后的目录结构</h3>
+<pre><code>my-project/
+├── .specify/
+│   ├── memory/
+│   │   └── constitution.md      # 项目宪法（/speckit.constitution 生成）
+│   ├── templates/               # spec/plan/tasks/checklist/constitution 模板
+│   │   └── overrides/           # 项目级一次性模板覆盖（优先级最高）
+│   ├── scripts/
+│   │   └── bash/                # setup-plan.sh、check-prerequisites.sh 等
+│   ├── feature.json             # 记录"当前活跃特性目录"的状态文件
+│   └── init-options.json        # 初始化选项（如 feature_numbering）
+├── specs/                       # 各特性的工件目录（运行后生成）
+└── .claude/commands/ 等         # 按所选集成写入的斜杠命令文件</code></pre>
+<div class="callout">
+<p><strong>关键机制</strong>：Spec Kit 通过 <code>.specify/feature.json</code>（或环境变量 <code>SPECIFY_FEATURE_DIRECTORY</code>）追踪当前活跃特性，<strong>不依赖 git 分支</strong>——不装 git 也能用。编号特性分支（如 <code>001-feature-name</code>）由可选的 <strong>git 扩展</strong>提供（<code>specify extension add git</code>），装了之后 <code>git checkout</code> 也不会改变活跃特性——它永远由 feature.json 指向。</p>
+</div>
+
+<h3>2.5 命令的调用形式</h3>
+<p>大多数 agent 把 Spec Kit 暴露为 <code>/speckit.*</code> 斜杠命令（如 <code>/speckit.specify</code>）；Codex CLI 和 Command Code 的 skills 模式用 <code>$speckit-*</code>；Kimi 用 <code>/skill:speckit-*</code>；GitHub Copilot CLI 用 <code>/agents</code> 选择 agent。README 的命令表里同时列出了两种写法（如 <code>/speckit.specify</code> 对应 skill 名 <code>speckit-specify</code>）。本文统一用 <code>/speckit.*</code> 形式，请按你的 agent 实际暴露的形式替换。</p>
+
+<h2>3. 完整工作流命令链</h2>
+
+<p>官方 quickstart 给出两条路径：</p>
+<div class="table-wrap"><table>
+<tr><th>路径</th><th>命令链</th><th>适用场景</th></tr>
+<tr><td><strong>短路径</strong></td><td>specify → plan → tasks → implement → converge</td><td>小特性、探索性开发</td></tr>
+<tr><td><strong>全路径</strong></td><td>constitution → specify → clarify → plan → checklist → tasks → analyze → implement → converge</td><td>生产级特性，带质量门禁</td></tr>
+</table></div>
+<p>converge 与 implement 构成循环：<strong>重复 implement → converge，直到 converge 报告 Converged（已收敛）</strong>。下面按全路径逐步拆解。</p>
+
+<h3>3.1 <code>/speckit.constitution</code> — 立规矩（每项目一次）</h3>
+<p><strong>做什么</strong>：根据你传入的原则文本，填充 <code>constitution-template.md</code>，生成 <code>.specify/memory/constitution.md</code>。该命令有明确的范围护栏：只做宪法更新，绝不碰应用代码；若你的输入里夹带了"顺手实现某功能"之类的非治理意图，它会被列为 deferred intent 而不执行。</p>
+<p><strong>产出</strong>：<code>.specify/memory/constitution.md</code>（含版本号、批准日期、修订日期）。<strong>被谁读</strong>：specify、plan、tasks、analyze、converge 都会在执行时加载它作为治理约束。</p>
+<p><strong>中文示例</strong>：</p>
+<pre><code>/speckit.constitution 本项目"安全优先"：所有用户输入必须校验；
+数据库迁移必须附回滚方案；遵循现有服务边界，不引入新框架；
+所有 PR 必须通过既有的单元与集成测试套件。</code></pre>
+<div class="callout warn">
+<p>来自 brownfield 指南的忠告：宪法应写<strong>仓库里已经成立或团队明确同意采纳</strong>的原则，用 README、架构决策记录、CI 配置作为证据。为了填满模板而编造不现实的标准，只会在后续 plan/analyze 阶段制造噪音。</p>
+</div>
+
+<h3>3.2 <code>/speckit.specify</code> — 描述要构建什么</h3>
+<p><strong>做什么</strong>：把一句自然语言特性描述变成结构化 spec。命令内部流程（见 <code>templates/commands/specify.md</code>）：</p>
+<ol>
+  <li>从你的描述提炼 2–4 个词的短名（如 <code>user-auth</code>、<code>analytics-dashboard</code>）；</li>
+  <li>在 <code>specs/</code> 下创建特性目录——编号方式由 <code>init-options.json</code> 的 <code>feature_numbering</code> 决定：<code>sequential</code>（默认，扫描已有目录取下一个三位数）或 <code>timestamp</code>（<code>YYYYMMDD-HHMMSS</code> 前缀），目录形如 <code>specs/003-user-auth/</code>；并把路径写入 <code>.specify/feature.json</code>；</li>
+  <li>复制 spec 模板为 <code>spec.md</code> 并填充：用户场景（按 P1/P2/P3 优先级排序）、Given/When/Then 验收场景、边界情况、编号功能需求（FR-001...）、关键实体、可度量成功标准（SC-001...）、假设；</li>
+  <li>自动生成质量清单 <code>checklists/requirements.md</code> 并逐项自检，最多迭代 3 轮修复；</li>
+  <li>歧义处理：<strong>最多标 3 个 <code>[NEEDS CLARIFICATION]</code></strong>，只用于影响范围/安全/体验且无合理默认的关键决策；有遗留标记时，会以"选项 A/B/C/自定义"的表格形式向你提问，用你的回答回填。</li>
+</ol>
+<p><strong>产出</strong>：<code>specs/&lt;NNN-特性名&gt;/spec.md</code> + <code>specs/&lt;NNN-特性名&gt;/checklists/requirements.md</code>。<strong>被谁读</strong>：clarify、plan、tasks、analyze、converge。</p>
+<p><strong>中文示例 —— 从一个产品想法到 spec.md</strong>：</p>
+<pre><code>/speckit.specify 做一个团队待办看板：预设的五名成员可以创建项目、
+在"待办/进行中/待评审/已完成"四列之间拖拽任务卡片、在卡片下评论。
+第一阶段不做登录，预置三个示例项目。</code></pre>
+<p>生成的 <code>specs/001-team-kanban/spec.md</code> 大致长这样（节选，注释为本文所加）：</p>
+<pre><code># Feature Specification: 团队待办看板
+
+**Feature Branch**: `001-team-kanban`
+**Status**: Draft
+
+### User Story 1 - 看板拖拽管理任务 (Priority: P1)
+
+成员在看板上把任务卡片在四列之间拖动，直观反映任务状态。
+
+**Why this priority**: 这是产品的核心价值，仅这一条就能构成可演示的 MVP。
+
+**Independent Test**: 创建任务并拖入"进行中"，刷新页面后状态保持。
+
+**Acceptance Scenarios**:
+
+1. **Given** 看板存在一个"待办"任务, **When** 成员将其拖入"进行中", **Then** 卡片移动且状态持久化
+2. **Given** 卡片已在"已完成", **When** 成员拖回"待办", **Then** 允许回退且评论保留
+
+### User Story 2 - 任务评论 (Priority: P2)
+...
+
+### Edge Cases
+
+- 两个成员同时拖动同一张卡片时如何处理？[NEEDS CLARIFICATION: 并发策略未指定 —— 后写覆盖还是冲突提示？]
+
+### Functional Requirements
+
+- **FR-001**: 系统 MUST 提供四个固定状态列：待办、进行中、待评审、已完成
+- **FR-002**: 用户 MUST 能够通过拖拽改变任务状态
+- **FR-003**: 系统 MUST 持久化任务状态与评论
+- **FR-006**: 系统 MUST 记录操作者身份 [NEEDS CLARIFICATION: 无登录阶段如何标识成员——会话选择还是固定账号？]
+
+### Measurable Outcomes
+
+- **SC-001**: 成员可在 10 秒内完成一次状态变更
+- **SC-002**: 拖拽操作反馈延迟小于 300ms
+- **SC-003**: 95% 的新成员无需培训即可完成首次任务移动</code></pre>
+<div class="callout">
+<p>spec 的纪律：<strong>只写 WHAT/WHY，不写 HOW</strong>——技术栈、API、代码结构一概不出现；成功标准必须技术无关且可度量（反面教材："API 响应 &lt; 200ms"、"Redis 命中率 &gt; 80%"，这些是实现细节）。不确定但有行业惯例的地方做合理猜测并记入 Assumptions，只有真正关键且无默认的分歧才用 <code>[NEEDS CLARIFICATION]</code>，且最多 3 个。</p>
+</div>
+
+<h3>3.3 <code>/speckit.clarify</code> — 消除歧义（推荐在 plan 之前）</h3>
+<p><strong>做什么</strong>：对当前 spec 做结构化的"歧义与覆盖度扫描"，覆盖功能范围、领域数据模型、交互/UX、非功能属性（性能/可靠性/安全）、外部依赖、边界与失败处理、约束取舍、术语一致性、完成信号等类目，然后<strong>最多提 5 个高针对性问题</strong>，把你的回答编码回 spec（更新对应需求条目并在 Clarifications 小节留痕），同时维护 <code>checklists/requirements.md</code>。</p>
+<p><strong>产出</strong>：更新后的 <code>spec.md</code>（原地修改）。如果你明确说这是探索性 spike 要跳过澄清，命令允许继续，但会警告下游返工风险上升。</p>
+<pre><code>/speckit.clarify 聚焦任务卡片行为——状态变更、评论权限与成员指派</code></pre>
+
+<h3>3.4 <code>/speckit.plan</code> — 技术方案与设计工件</h3>
+<p><strong>做什么</strong>：这是"实现细节该出现的地方"。命令读取 spec + 宪法，运行 <code>setup-plan.sh --json</code> 拿到上下文后按 plan 模板执行：</p>
+<ol>
+  <li>填 Technical Context（语言/依赖/存储/测试/平台/性能目标/约束/规模，未知项标 NEEDS CLARIFICATION）；</li>
+  <li><strong>Constitution Check 门禁</strong>：Phase 0 研究前必须过，Phase 1 设计后复查；违规且不书面论证则 ERROR；</li>
+  <li><strong>Phase 0 研究</strong>：每个未知项/技术选型派发研究任务，结论汇入 <code>research.md</code>（格式：Decision / Rationale / Alternatives considered），解决所有 NEEDS CLARIFICATION；</li>
+  <li><strong>Phase 1 设计</strong>：从 spec 抽取实体生成 <code>data-model.md</code>（字段、关系、校验规则、状态迁移）；为对外接口生成 <code>contracts/</code>（REST 端点、CLI 命令 schema、库 API 等，纯内部项目可跳过）；生成 <code>quickstart.md</code>——可运行的端到端验证场景指南（前置条件、运行命令、预期结果），<strong>不含实现代码</strong>。</li>
+</ol>
+<p><strong>产出</strong>：<code>plan.md</code>、<code>research.md</code>、<code>data-model.md</code>、<code>contracts/</code>、<code>quickstart.md</code>。<strong>被谁读</strong>：tasks、analyze、implement、converge。</p>
+<pre><code>/speckit.plan 前端用 React + Vite，后端 Node.js + Express，SQLite 持久化；
+拖拽用原生 HTML5 Drag API；REST API 暴露项目/任务/评论资源。</code></pre>
+<p>生成的 <code>plan.md</code> 骨架（节选）：</p>
+<pre><code># Implementation Plan: 团队待办看板
+
+**Branch**: `001-team-kanban` | **Date**: 2026-09-15 | **Spec**: [spec.md](spec.md)
+
+## Summary
+单页看板应用：React 前端 + Express REST API + SQLite，原生拖拽。
+
+## Technical Context
+
+**Language/Version**: TypeScript 5.x（前后端统一）
+**Primary Dependencies**: React 19, Vite, Express, better-sqlite3
+**Storage**: SQLite（本地文件）
+**Testing**: Vitest + Playwright
+**Target Platform**: 现代浏览器（桌面优先）
+**Performance Goals**: 拖拽反馈 &lt; 300ms
+**Constraints**: 无登录；单机部署
+
+## Constitution Check
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+- [x] 输入校验：所有 API 入口校验任务字段 ✓
+- [x] 无新框架引入 ✓
+
+## Project Structure
+### Documentation (this feature)
+specs/001-team-kanban/
+├── plan.md              # 本文件（/speckit.plan 产出）
+├── research.md          # Phase 0 产出
+├── data-model.md        # Phase 1 产出
+├── quickstart.md        # Phase 1 产出
+├── contracts/           # Phase 1 产出
+└── tasks.md             # Phase 2 产出（由 /speckit.tasks 生成，不是本命令）
+
+## Complexity Tracking
+&gt; 仅当 Constitution Check 有需论证的违规时填写</code></pre>
+
+<h3>3.5 <code>/speckit.checklist</code> — 给需求写"单元测试"（可选质量门）</h3>
+<p><strong>做什么</strong>：按你指定的领域（如 UX、安全、无障碍）生成自定义质量清单到 <code>checklists/</code> 目录。关键概念（命令原文）：清单是<strong>"需求写作的单元测试"</strong>——验证的是需求的完整性/清晰度/一致性，<strong>不是</strong>验证代码或实现是否符合 spec。条目编号为 CHK001、CHK002…。</p>
+<div class="callout warn">
+<p><strong>勾选语义别搞错</strong>：自定义清单是评审者所有的工件，<code>[x]</code> 表示"评审者确认该需求质量条目已满足"，<strong>不表示实现完成</strong>。命令只生成条目、绝不替你把它们标成 <code>[x]</code>。<code>checklists/requirements.md</code> 是例外——它由 specify/clarify 自动维护。而后面的 <code>/speckit.implement</code> 会把清单勾选状态当作只读门禁。</p>
+</div>
+
+<h3>3.6 <code>/speckit.tasks</code> — 拆解为可执行任务</h3>
+<p><strong>做什么</strong>：读取 plan.md（必需）、spec.md（必需，取用户故事优先级）、以及可选的 data-model.md / contracts/ / research.md / quickstart.md，生成<strong>按用户故事组织</strong>的 <code>tasks.md</code>——每个故事一个 Phase，可独立实现、独立测试、独立交付 MVP 增量。</p>
+<p><strong>严格格式</strong>（命令文件强调为 REQUIRED）：</p>
+<pre><code>- [ ] [TaskID] [P?] [Story?] 带确切文件路径的描述</code></pre>
+<ul>
+  <li><strong>复选框</strong>：永远以 <code>- [ ]</code> 开头；实现完成后由 implement 标成 <code>[X]</code>；</li>
+  <li><strong>Task ID</strong>：按执行顺序编号 T001、T002…；</li>
+  <li><strong>[P]</strong>：仅当任务可并行（不同文件、不依赖未完成任务）；</li>
+  <li><strong>[Story]</strong>：仅用户故事阶段的任务必须带（<code>[US1]</code>、<code>[US2]</code>…）；Setup/Foundational/Polish 阶段不带；</li>
+  <li><strong>描述</strong>：必须含确切文件路径；data-model 中的字段约束（最大长度、必填、枚举值）要逐字引用进任务描述，不留给实现时自由发挥。</li>
+</ul>
+<p><strong>阶段结构</strong>：Phase 1 Setup（项目初始化）→ Phase 2 Foundational（<strong>阻塞所有故事</strong>的前置设施：数据库 schema、鉴权框架、错误处理等）→ Phase 3+ 每个用户故事一个阶段（故事内顺序：测试（如要求）→ 模型 → 服务 → 端点 → 集成）→ 最终 Polish 阶段（文档、清理、跑 quickstart.md 验证）。</p>
+<p><strong>中文示例 tasks.md</strong>（节选）：</p>
+<pre><code># Tasks: 团队待办看板
+
+## Phase 1: Setup (Shared Infrastructure)
+
+- [ ] T001 按 plan.md 创建项目结构
+- [ ] T002 初始化 Vite + React 前端与 Express 后端依赖
+- [ ] T003 [P] 配置 ESLint 与 Prettier
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+- [ ] T004 建立 SQLite schema 与迁移框架（tasks/projects/comments 表）
+- [ ] T005 [P] 实现 Express 路由与统一错误处理中间件
+- [ ] T006 [P] 创建全局日志配置
+
+**Checkpoint**: 基础设施就绪 —— 用户故事可并行开工
+
+## Phase 3: User Story 1 - 看板拖拽管理任务 (Priority: P1) 🎯 MVP
+
+**Independent Test**: 创建任务拖入"进行中"，刷新后状态保持
+
+### Implementation for User Story 1
+
+- [ ] T007 [P] [US1] 创建 Task 模型 src/models/task.ts（status 枚举: todo|doing|review|done）
+- [ ] T008 [P] [US1] 实现任务 CRUD API src/routes/tasks.ts
+- [ ] T009 [US1] 实现看板拖拽组件 src/components/Board.tsx（依赖 T007）
+- [ ] T010 [US1] 接入拖拽持久化：drop 后调用 PATCH /tasks/:id
+
+**Checkpoint**: US1 可独立演示 —— 即 MVP
+
+## Phase 4: User Story 2 - 任务评论 (Priority: P2)
+- [ ] T011 [P] [US2] 创建 Comment 模型 src/models/comment.ts
+- [ ] T012 [US2] 实现评论列表与提交组件 src/components/Comments.tsx
+
+## Phase N: Polish & Cross-Cutting Concerns
+- [ ] T0XX [P] 更新 README 运行说明
+- [ ] T0XX 跑 quickstart.md 全部验证场景</code></pre>
+<p>tasks.md 还会附"依赖与执行顺序"、"并行机会"、"实现策略（MVP 优先 / 增量交付 / 多人并行）"三节。执行策略的建议是：先 Setup + Foundational，然后只完成 US1 就<strong>停下来独立验证</strong>——那已是 MVP。</p>
+
+<h3>3.7 <code>/speckit.analyze</code> — 跨工件一致性分析（只读）</h3>
+<p><strong>做什么</strong>：在 implement 之前，对 spec.md / plan.md / tasks.md 三份核心工件做<strong>非破坏性</strong>交叉分析：不一致、重复、歧义、覆盖缺口（哪条 FR 没有任务承接、哪个任务不对应任何需求）、术语漂移，以及<strong>宪法冲突（自动判为 CRITICAL）</strong>。</p>
+<p><strong>产出</strong>：结构化分析报告 + 可选的修复建议。<strong>它不修改任何文件</strong>——发现问题要回到源头（spec/plan/tasks）修好再重跑。宪法冲突的修复方向是调整工件，而不是稀释或重新解释原则；原则本身要改，必须单独走宪法更新流程。</p>
+
+<h3>3.8 <code>/speckit.implement</code> — 执行任务</h3>
+<p><strong>做什么</strong>：</p>
+<ol>
+  <li>先跑前置检查脚本，确认 tasks.md 齐备；</li>
+  <li><strong>清单门禁</strong>：扫描 <code>checklists/</code> 下所有清单，输出勾选状态表（Total/Checked/Unchecked/Status）；只要有未勾选项就 <strong>STOP</strong> 并询问"是否仍要继续？(yes/no)"——它只读不改勾选；</li>
+  <li>加载 tasks.md + plan.md + 全部设计工件 + 宪法；校验/创建 .gitignore、.dockerignore 等忽略文件（按检测到的技术栈）；</li>
+  <li>按 Phase 执行：尊重依赖顺序、<code>[P]</code> 任务并行、同一文件的任务串行、测试先于实现（TDD）；每完成一个任务在 tasks.md 中把 <code>- [ ]</code> 标成 <code>- [X]</code>；非并行任务失败即中止并报告。</li>
+</ol>
+<p>可以一次跑完全部任务，也可以按 Phase 分次执行（大特性推荐后者）。</p>
+
+<h3>3.9 <code>/speckit.converge</code> — 收敛验证（与 implement 循环）</h3>
+<p><strong>做什么</strong>：以 spec.md / plan.md / tasks.md 为<strong>唯一意图来源</strong>（宪法为治理约束），评估<strong>当前代码库状态</strong>：哪些 FR、验收标准、计划决策、既有任务仍未满足或部分满足，然后把每项剩余工作<strong>追加</strong>为 tasks.md 底部的新 <code>## Phase N: Convergence</code> 任务段，交给下一轮 implement 完成。</p>
+<p><strong>铁的纪律（APPEND-ONLY）</strong>：唯一允许的写操作是向 tasks.md 追加新任务；绝不修改 spec.md / plan.md，绝不重排/重编号/删除既有任务，绝不改应用代码。若代码已满足一切，tasks.md 保持<strong>逐字节不变</strong>并报告干净结果。这不是 diff 工具——不看 git、不比分支、不追历史，只评现状。</p>
+<div class="callout ok">
+<p>循环直至收敛：<code>/speckit.implement</code> → <code>/speckit.converge</code> → （发现缺口则追加任务）→ <code>/speckit.implement</code> → … 直到 converge 报告已收敛。收敛后进入正常评审 / 开 PR。</p>
+</div>
+
+<h3>3.10 工件引用关系一览</h3>
+<pre><code>/speckit.constitution ──► .specify/memory/constitution.md ─┐
+                                                           │（被后续所有命令读取为治理约束）
+/speckit.specify ──► specs/NNN-x/spec.md ─┐                │
+                   └► specs/NNN-x/checklists/requirements.md│
+/speckit.clarify ──（原地更新 spec.md + requirements.md）   │
+/speckit.plan ──► plan.md, research.md, data-model.md,     │
+                  contracts/, quickstart.md                │
+/speckit.checklist ──► checklists/&lt;领域&gt;.md（评审者所有）   │
+/speckit.tasks ──► tasks.md ◄── 读 spec + plan + 全部设计工件
+/speckit.analyze ── 只读交叉检查 spec/plan/tasks           │
+/speckit.implement ── 执行 tasks.md（勾选 [X]）◄── 读 checklists 作门禁
+/speckit.converge ── 对照 spec/plan/tasks 评代码现状 ──► 追加任务到 tasks.md
+        │                                                  │
+        └──────────── 循环 ◄────────────────────────────────┘</code></pre>
+<p>另有 <code>/speckit.taskstoissues</code>：把 tasks.md 转成 GitHub issues 用于跟踪执行（需要相应的 agent 环境与权限）。</p>
+
+<h3>3.11 扩展机制（简述）</h3>
+<p>核心流程之外，Spec Kit 有三层定制机制：</p>
+<ul>
+  <li><strong>Extensions</strong>（<code>specify extension add &lt;名&gt;</code>）：加新命令/新能力。官方捆绑了两个可选扩展——<strong>bug</strong>（<code>/speckit-bug-assess → -fix → -test</code>：评估→修复→验证的修 bug 流程）和 <strong>assess</strong>（<code>/speckit-assess-intake → -research → -define → -shape → -decide</code>：把原始想法变成 go / needs-clarification / kill 决策，go 可交接给 <code>/speckit.specify</code>）。还有 git 扩展提供编号特性分支。</li>
+  <li><strong>Presets</strong>（<code>specify preset add &lt;名&gt;</code>）：覆盖核心与扩展的模板/命令——改工件格式、术语、方法论适配，甚至整套流程本地化。模板在<strong>运行时</strong>按优先级栈解析：项目本地覆盖（<code>.specify/templates/overrides/</code>）&gt; presets &gt; extensions &gt; 核心默认。</li>
+  <li><strong>Bundles</strong>（<code>specify bundle install &lt;id&gt;</code>）：把一组 extensions + presets 打包成面向角色（产品经理、安全研究员…）的一键配置。</li>
+</ul>
+<p>命令模板里还能看到 hooks 机制：<code>.specify/extensions.yml</code> 可注册 <code>before_specify</code> / <code>after_plan</code> 等命令前后钩子，分 optional（提示用户可选执行）与 mandatory（自动执行并等待结果）两类——这是扩展插入确定性行为的入口。</p>
+
+<h2>4. 实践建议与常见坑</h2>
+<p>以下均来自仓库文档与命令定义本身，非经验杜撰：</p>
+<ol>
+  <li><strong>spec 阶段忍住不谈技术栈</strong>。模板明确禁止在 spec 中出现语言/框架/API；技术选型留给 <code>/speckit.plan</code> 的参数。spec 里混入实现细节会被质量清单判为不合格项。</li>
+  <li><strong><code>[NEEDS CLARIFICATION]</code> 最多 3 个</strong>。specify 命令硬性限制，且只给"影响范围/安全/体验且无合理默认"的问题；其余做合理猜测并记入 Assumptions。别指望 agent 把所有含糊处都问你——也不要全让它猜，关键分歧主动说清。</li>
+  <li><strong>别跳过 clarify 直接 plan</strong>。clarify 命令自己声明"预期在 plan 之前运行"；显式跳过会得到返工风险警告。</li>
+  <li><strong>analyze 是只读的，别指望它帮你改</strong>。它只出报告；修复要回到源工件改完再跑。同样，converge 只追加任务不写代码——代码永远是 implement 的职责。</li>
+  <li><strong>implement 的清单门禁会拦你</strong>。<code>checklists/</code> 里有未勾选项时它会停下来问 yes/no。流程上应在 tasks 之前把该评审的清单评审完（勾选是评审者的动作，不是实现的完成标记）。</li>
+  <li><strong>活跃特性 ≠ git 分支</strong>。命令定位特性靠的是 <code>.specify/feature.json</code>；想切换特性就改它（或设 <code>SPECIFY_FEATURE_DIRECTORY</code>），<code>git checkout</code> 无效。没装 git 扩展时整个流程不依赖 git。</li>
+  <li><strong>tasks.md 的格式红线</strong>：缺复选框、缺任务 ID、用户故事阶段缺 <code>[USn]</code> 标签、描述缺文件路径——都是命令文件点名的错误写法。手写或改任务时保持 <code>- [ ] T001 [P] [US1] 描述+路径</code>。</li>
+  <li><strong>测试任务默认不生成</strong>。tasks 命令明确：除非 spec 或用户显式要求测试/TDD，否则不生成测试任务。想要契约测试/集成测试先行，就在 specify 或 tasks 时说出来。</li>
+  <li><strong>宪法要写实</strong>。brownfield 指南强调：用仓库现有的 README、架构决策、CI 配置做证据，写真实成立的原则；为了填满模板编造标准，会在每次 plan 的 Constitution Check 和 analyze 里变成噪音。</li>
+  <li><strong>brownfield 的正确姿势</strong>：先在可评审基线上 <code>specify init --here --force</code>（会覆盖受管路径但不会动你的应用代码），再 <code>/speckit.constitution</code> 固化既有护栏，第一个特性选"可独立评审的有界改动"，而不是"给整个存量系统补写 spec"。Spec Kit 工具文件升级与 <code>specs/</code> 工件演进分开管理（见 docs/guides/evolving-specs.md）。</li>
+  <li><strong>spec 目录名与分支名相互独立</strong>。specify 命令每次只创建一个特性；目录编号取下一个可用序号（或时间戳），与 git 分支命名是两回事。</li>
+</ol>
+
+<h2>5. 与 AI-Native SDLC Playbook 工件链的对应</h2>
+<p>对照 Anthropic《The AI-Native SDLC playbook》的工件链 <code>intent.md → spec.md → plan.md → diff+tests → PR+review findings</code>：</p>
+<div class="table-wrap"><table>
+<tr><th>Playbook 环节</th><th>Spec Kit 对应物</th><th>说明</th></tr>
+<tr><td>intent.md</td><td><code>/speckit.specify</code> 的自然语言输入（spec.md 的 Input 字段留存原文）；可选 assess 扩展的 intake/decision 工件</td><td>Spec Kit 没有独立的 intent 工件，意图被直接转写进 spec 并留痕；assess 扩展补上了"意图该不该做"的前置环节</td></tr>
+<tr><td>spec.md</td><td><code>specs/NNN-x/spec.md</code> + <code>checklists/requirements.md</code></td><td>几乎同名同构；clarify 对应"持续求精"</td></tr>
+<tr><td>plan.md</td><td><code>plan.md</code> + research/data-model/contracts/quickstart</td><td>比 playbook 的单文件更细，但 plan.md 是主入口</td></tr>
+<tr><td>diff + tests</td><td><code>tasks.md</code>（含测试任务、[P]/[USn] 可追溯标签）+ <code>/speckit.implement</code> 产出的代码</td><td>tasks.md 是 diff 的"施工图"；勾选状态即执行审计轨迹</td></tr>
+<tr><td>PR + review findings</td><td><code>/speckit.analyze</code>（实现前的静态评审）+ <code>/speckit.converge</code>（实现后的收敛评审，发现回写为任务）</td><td>converge 的"评审结论 → 追加任务 → 再实现"正是 playbook 说的循环而非线性；human gate 仍在 converge 收敛后的人工 PR 评审</td></tr>
+</table></div>
+<p>治理分层上也对得上：模板与命令提示是<strong>建议性控制</strong>（advisory），脚本前置检查、implement 的清单门禁、宪法 CRITICAL 判级是<strong>更强的约束</strong>，而宪法本身与最终 PR 的人工评审保留在人类手中。区别在于 playbook 的闭环由生产环境违规触发新的 intent.md；Spec Kit 的闭环目前收敛在特性内部（implement↔converge），生产反馈回流到 spec 仍靠人发起新一轮 specify。</p>
+
+<h2>6. 速查表</h2>
+<div class="table-wrap"><table>
+<tr><th>命令</th><th>输入</th><th>主要产出</th><th>何时跑</th></tr>
+<tr><td><code>/speckit.constitution</code></td><td>原则文本</td><td><code>.specify/memory/constitution.md</code></td><td>每项目一次</td></tr>
+<tr><td><code>/speckit.specify</code></td><td>特性描述（what/why）</td><td><code>spec.md</code> + <code>checklists/requirements.md</code></td><td>每个特性开头</td></tr>
+<tr><td><code>/speckit.clarify</code></td><td>可选聚焦方向</td><td>更新后的 spec.md（≤5 个问题的回答回填）</td><td>plan 之前</td></tr>
+<tr><td><code>/speckit.plan</code></td><td>技术栈与架构选择</td><td><code>plan.md</code>, <code>research.md</code>, <code>data-model.md</code>, <code>contracts/</code>, <code>quickstart.md</code></td><td>spec 稳定后</td></tr>
+<tr><td><code>/speckit.checklist</code></td><td>领域（如 ux、security）</td><td><code>checklists/&lt;领域&gt;.md</code></td><td>tasks 之前（可选）</td></tr>
+<tr><td><code>/speckit.tasks</code></td><td>可选上下文</td><td><code>tasks.md</code>（T001/[P]/[USn] 格式）</td><td>plan 之后</td></tr>
+<tr><td><code>/speckit.analyze</code></td><td>—</td><td>只读一致性报告</td><td>tasks 之后、implement 之前</td></tr>
+<tr><td><code>/speckit.implement</code></td><td>可按 phase 限定范围</td><td>代码 + tasks.md 勾选 [X]</td><td>任务就绪后</td></tr>
+<tr><td><code>/speckit.converge</code></td><td>—</td><td>tasks.md 追加 Convergence 任务段（或报告已收敛）</td><td>implement 之后，循环至收敛</td></tr>
+<tr><td><code>/speckit.taskstoissues</code></td><td>—</td><td>GitHub issues</td><td>需要 issue 跟踪时</td></tr>
+</table></div>
+<p class="lede" style="margin-top:2em">参考来源：github/spec-kit 仓库的 README.md、spec-driven.md、docs/quickstart.md、docs/installation.md、docs/guides/existing-projects.md、templates/ 下各模板与 templates/commands/ 下各命令定义（2026-09 阅读）。命令细节以你所安装版本的 <code>specify integration list</code> 与官方文档站（github.github.io/spec-kit）为准。</p>
+</main>

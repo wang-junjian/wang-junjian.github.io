@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="为 73 万行的十年 Java 单体落地 Matt Pocock 技能包：先压缩歧义再动手，以表征测试与垂直切片建起验证能力，而非让 AI 写得更快。结合实测慢 19% 与 GitClear 两亿行证据，给出十二条核心论断、度量方法与 90 天路线图。">
+<meta name="keywords" content="mattpocock skills, 遗留系统, 落地手册, 切片重构, 测试接缝, 实践指南">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-01">
+<title>mattpocock/skills 实践指南 · 面向 73 万行遗留 Java 系统的「项目计划管理」模块落地</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --panel:#F5F3EE;
+  --ink:#16181D; --ink2:#333941; --ink3:#474D57;
+  --border:#E4E1DA; --border2:#D6D2C8;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FDF1E3;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#ECF2FA;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E6F2F1;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F2EDFA;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#E9F3E9;
+  --red:#B3261E; --red-t:#B3261E; --red-bg:#FBEBEA;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+}
+.wrap{max-width:1060px; margin:0 auto; padding:0 24px}
+code{font-family:var(--mono); font-size:.88em; background:var(--panel); border:1px solid var(--border);
+  border-radius:5px; padding:.1em .38em; overflow-wrap:anywhere}
+pre{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 16px;
+  overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.65}
+pre code{background:none; border:0; padding:0; font-size:13px}
+
+/* nav */
+nav{position:sticky; top:0; z-index:50; background:rgba(251,250,247,.93);
+  backdrop-filter:saturate(1.4) blur(10px); border-bottom:1px solid var(--border)}
+nav .inner{max-width:1060px; margin:0 auto; padding:10px 24px; display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+nav .brand{font-weight:700; font-size:13.5px; letter-spacing:.02em; color:var(--ink); white-space:nowrap}
+nav .links{display:flex; gap:4px; flex-wrap:wrap; margin-left:auto}
+nav a{font-size:12.5px; color:var(--ink2); text-decoration:none; padding:4px 8px; border-radius:6px; white-space:nowrap}
+nav a:hover{background:var(--panel); color:var(--ink)}
+
+/* header */
+header.cover{padding:72px 0 40px; border-bottom:1px solid var(--border)}
+.kicker{font-size:12.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--amber-t)}
+h1{font-size:38px; line-height:1.22; letter-spacing:-.02em; margin:14px 0 0; font-weight:750}
+.sub{font-size:18.5px; color:var(--ink2); margin-top:14px; line-height:1.62}
+.meta{font-size:13.5px; color:var(--ink3); margin-top:22px; display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.tag{display:inline-block; font-size:11.5px; font-weight:650; padding:3px 9px; border-radius:999px; letter-spacing:.02em}
+.t-amber{background:var(--amber-bg); color:var(--amber-t)}
+.t-blue{background:var(--blue-bg); color:var(--blue-t)}
+.t-teal{background:var(--teal-bg); color:var(--teal-t)}
+.t-purple{background:var(--purple-bg); color:var(--purple-t)}
+.t-green{background:var(--green-bg); color:var(--green-t)}
+.t-red{background:var(--red-bg); color:var(--red-t)}
+.t-lite{background:var(--panel); color:var(--ink3)}
+
+/* sections */
+section{padding:60px 0 12px; scroll-margin-top:24px; border-top:1px solid var(--border); min-width:0}
+section:first-of-type{border-top:0}
+h2{font-size:26px; letter-spacing:-.015em; margin:0 0 8px; font-weight:730; line-height:1.3}
+h2 .num{font-family:var(--mono); font-size:14px; color:var(--amber-t); font-weight:700; display:block; margin-bottom:6px; letter-spacing:.06em}
+h3{font-size:19px; margin:34px 0 10px; font-weight:700; letter-spacing:-.01em}
+h4{font-size:15.5px; margin:22px 0 6px; font-weight:700}
+p{margin:12px 0}
+.lede{font-size:17.5px; color:var(--ink2); line-height:1.7}
+ul,ol{margin:12px 0; padding-left:22px}
+li{margin:7px 0}
+strong{font-weight:700}
+a{color:var(--blue-t)}
+hr{border:0; border-top:1px solid var(--border); margin:38px 0}
+
+/* cards & grids */
+.card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px 20px; min-width:0}
+.g2{display:grid; grid-template-columns:1fr 1fr; gap:16px; min-width:0}
+.g3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; min-width:0}
+.g2>*,.g3>*{min-width:0}
+@media(max-width:860px){.g2,.g3{grid-template-columns:1fr}}
+.callout{border-left:3px solid var(--amber); background:var(--amber-bg); border-radius:0 10px 10px 0; padding:14px 18px; margin:18px 0}
+.callout.blue{border-color:var(--blue); background:var(--blue-bg)}
+.callout.teal{border-color:var(--teal); background:var(--teal-bg)}
+.callout.red{border-color:var(--red); background:var(--red-bg)}
+.callout p:first-child{margin-top:0} .callout p:last-child{margin-bottom:0}
+.callout .lb{font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:4px}
+
+/* claim list */
+.claims{counter-reset:c; list-style:none; padding:0; margin:18px 0}
+.claims li{counter-increment:c; position:relative; padding:0 0 0 46px; margin:0 0 14px; min-height:32px}
+.claims li::before{content:counter(c); position:absolute; left:0; top:1px; width:30px; height:30px; border-radius:8px;
+  background:var(--amber-bg); color:var(--amber-t); font-family:var(--mono); font-size:13px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; border:1px solid #F0DFC6}
+.claims .ct{font-weight:700; display:block}
+.claims .cd{color:var(--ink2); font-size:15px; display:block; margin-top:2px}
+
+/* tables */
+.tw{overflow-x:auto; margin:18px 0}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:520px}
+th,td{border:1px solid var(--border); padding:9px 11px; text-align:left; vertical-align:top; line-height:1.6}
+th{background:var(--panel); font-weight:700; font-size:13px; color:var(--ink)}
+tbody tr:nth-child(even) td{background:#FDFCF9}
+td .strong{font-weight:700}
+@media(max-width:760px){table{display:block; overflow-x:auto}}
+
+/* figures */
+figure{margin:26px 0; min-width:0}
+.fig-box{overflow-x:auto; border:1px solid var(--border); border-radius:10px; background:var(--card); padding:10px; min-width:0}
+.fig-box svg{display:block; min-width:600px; width:100%; height:auto}
+figcaption{font-size:13.5px; color:var(--ink3); margin-top:9px; line-height:1.6}
+figcaption b{color:var(--ink2); font-weight:700}
+
+/* misc */
+.stat{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+.stat .n{font-family:var(--mono); font-size:27px; font-weight:700; letter-spacing:-.02em; color:var(--ink)}
+.stat .u{font-size:13px; color:var(--ink3)}
+.src{font-size:12.5px; color:var(--ink3); margin-top:6px}
+.verdict{border:1px solid var(--border2); border-radius:10px; padding:14px 16px; margin:14px 0; background:var(--card)}
+.verdict h4{margin:0 0 4px; font-size:14px; color:var(--amber-t); letter-spacing:.04em; text-transform:uppercase}
+footer{margin-top:60px; border-top:1px solid var(--border); padding:28px 0 60px; font-size:13px; color:var(--ink3)}
+.rf{font-size:14px}
+.rf li{margin:5px 0}
+.rf .no emph{font-family:var(--mono)}
+.step{display:flex; gap:12px; margin:12px 0}
+.step .sn{flex:0 0 26px; height:26px; border-radius:7px; background:var(--blue-bg); color:var(--blue-t);
+  font-family:var(--mono); font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:3px}
+.step .sc{flex:1; min-width:0}
+.step .sc b{display:block; margin-bottom:1px}
+</style>
+</head>
+<body>
+
+<nav><div class="inner">
+  <span class="brand">mattpocock/skills 实践指南</span>
+  <div class="links">
+    <a href="#s00">摘要</a>
+    <a href="#s01">系统画像</a>
+    <a href="#s02">为什么是它</a>
+    <a href="#s03">技能地图</a>
+    <a href="#s04">理论根基</a>
+    <a href="#s05">统一语言</a>
+    <a href="#s06">接缝与测试</a>
+    <a href="#s07">切片与宽重构</a>
+    <a href="#s08">证据全景</a>
+    <a href="#s09">度量</a>
+    <a href="#s10">90 天路线</a>
+    <a href="#s11">反模式</a>
+    <a href="#s12">结论</a>
+    <a href="#s13">来源</a>
+  </div>
+</div></nav>
+
+<header class="cover"><div class="wrap">
+  <span class="kicker">深度研究 · 场景 S2 · 落地手册</span>
+  <h1>用 mattpocock/skills 给一个 73 万行的十年 Java 系统<br>装一条「能停下来的传送带」</h1>
+  <p class="sub">目标是在一个 15 个 Maven 模块、3412 个 Java 文件、约 73 万行、持续开发逾十年的内部信息系统上，<strong>先落「项目计划管理」模块</strong>——投标基础信息、中标结果信息、项目经济评审、项目技术评审、基础信息维护五个子模块。本手册把 Matt Pocock 的技能包当成一套可编程的工程纪律来拆解，并给出每一步在这个具体代码库上的翻译。</p>
+  <div class="meta">
+    <span class="tag t-amber">零状态假设：仓库尚未配置任何 skill</span>
+    <span class="tag t-blue">30 个技能 · 2 类调用权</span>
+    <span class="tag t-teal">一手证据：METR RCT / DORA 2025 / GitClear 211M 行</span>
+    <span class="tag t-lite">2026-09-30</span>
+  </div>
+</div></header>
+
+<section id="s00"><div class="wrap">
+  <h2><span class="num">00</span>摘要：十二条核心论断</h2>
+  <p class="lede">这份手册不是技能说明书的中文版。它的论点是：<b>在一个十年高龄的单体上，Matt Pocock 技能包的价值不在于"让 AI 写得更快"，而在于"让每一次 AI 的产出都能被更便宜地验证"</b>。下面是支撑该论点的十二条论断，后续每一章都服务于其中一条。</p>
+
+  <ol class="claims">
+    <li><span class="ct">主瓶颈是反馈延迟，不是代码生成速度。</span><span class="cd">73 万行 Maven 单体的全量构建与测试动辄数十分钟，而 TDD 技能的红-绿循环只有在"单次反馈 ≤ 分钟级"时才成立。<b>先让某一个模块的单测能在 60 秒内跑完，再谈让智能体写功能</b>——这是所有工作的第一步。</span></li>
+    <li><span class="ct">技能包的本体是一条「先压缩歧义、再动手」的流水线。</span><span class="cd">它的五个修复目标（对齐、啰嗦、跑不起来、糊球赋值、导航慢）分别对应 grill → glossary → tdd → review → retro。<b>跳过前面的阶段直接 implement，等于把下游的全部负担推给代码评审</b>。</span></li>
+    <li><span class="ct">对这个系统最有杠杆的一个决策，是把"投标"和"项目"拆成两个概念。</span><span class="cd">五个子模块横跨两个生命周期。<b>旧系统最常见的熵源是用同一个实体承载中标前后</b>，于是评审、作废、变更全部要靠 status 分支打补丁。这条分界线应当先落在 <code>GLOSSARY.md</code> 里，再落到包结构上。</span></li>
+    <li><span class="ct">在这个体量的代码库上，AI 大概率先让你变慢，而且你察觉不到。</span><span class="cd">METR 的 RCT 选取的正是"平均 10 年历史、百万行级"的成熟仓库，结果是<b>慢 19%</b>，而参与者事后仍自认为快了 20%。感知与实测的缺口意味着：<b>任何"我觉得快了"的证据等级为零</b>。</span></li>
+    <li><span class="ct">AI 是放大器，而 15 模块单体是紧耦合：这是最不利的组合。</span><span class="cd">DORA 2025 的核心结论是"AI 放大既有强弱"，并明确指出<b>紧耦合架构 + 缓慢反馈循环的团队几乎拿不到收益</b>。先降耦合，再谈加速。</span></li>
+    <li><span class="ct">默认工作模式下 AI 会把"整理"这件事挤掉。</span><span class="cd">GitClear 对 2.11 亿行变更的纵向分析显示：被移动/重构的行从 24.8% 降到 9.5%，复制粘贴从 8.4% 升到 12.3%，重复代码块增长约 8 倍。<b>对一个债已经很重的系统，这是负利滚利</b>。</span></li>
+    <li><span class="ct">防腐的着力点不是"让 AI 少写"，而是"让人工性的验证更便宜"。</span><span class="cd"><code>code-review</code> 技能的双轴设计（Standards / Spec 并行子智能体）与 Fowler 十二种代码气味基线，本质是<b>把验证环节的成本后者</b>，而不是把闸门设在生成端。</span></li>
+    <li><span class="ct">在欠缺测试的老系统上，TDD 的第一步是写"表征测试"，不是写新功能的测试。</span><span class="cd"><code>tdd</code> 技能要求"只在事先约定的接缝处测试"。这个系统在建立特征锁之前没有可靠接缝，因此<b>第一个 ticket 永远是给即将触碰的旧代码加表征测试</b>（Michael Feathers 的做法）。</span></li>
+    <li><span class="ct">五个子模块不是五个同等规模的工作包，它们的"blast radius"相差一个数量级。</span><span class="cd">新增子模块是垂直切片；而"基础信息维护"中改动一个被全系统引用的字典/枚举字段属于<b>宽重构</b>，必须按 expand–contract 三段走，不能塞进 tracer bullet。</span></li>
+    <li><span class="ct">上下文窗口装不下 3412 个文件，所以"上下文指针"是一等工程手段。</span><span class="cd"><code>implement-spec</code> 明确要求子智能体之间通过<b>指针而非复制内容</b>通信，探索结果落在仓库之外的 Markdown 笔记里。这一点在你的单体上比其他项目重要得多。</span></li>
+    <li><span class="ct">这套技能要真正生效，必须先做一次仓库级配置。</span><span class="cd"><code>to-spec</code>、<code>to-tickets</code>、<code>code-review</code>、<code>wayfinder</code> 全都以"问题跟踪器已经被告知"为前提，未配置就直接报错。<b>第一步是 <code>/setup-matt-pocock-skills</code>，而且内网环境应当选本地 Markdown 跟踪器</b>。</span></li>
+    <li><span class="ct">技能必须本地化，直接使用是半成品状态。</span><span class="cd">作者的立场是"小而可组合、随便改"。对这个系统至少需要自研三个技能：<b>快速反馈通道、Maven 模块边界守门、遗留代码安全网</b>。它们决定了前九条能不能落地。</span></li>
+  </ol>
+
+  <div class="callout"><span class="lb">阅读建议</span>
+  <p>如果你只有十五分钟：读第 00 章的十二条论断、第 06 章的接缝设计、第 10 章的 90 天路线图。如果你要明天就动手：直接执行第 03 章末尾的「最小可用配置」与第 06 章的「第一张 ticket」。</p></div>
+</div></section>
+<section id="s01"><div class="wrap">
+  <h2><span class="num">01</span>先给系统画像：它属于哪一类难题</h2>
+  <p class="lede">在谈任何技能之前，必须先把这套十年单体的"难题类别"判定清楚。因为后续所有纪律的强度都由这个判定决定：<b>新项目可以宽松，高默契 + 紧耦合 + 弱自动化验证的存量系统必须严格。</b></p>
+
+  <div class="g3">
+    <div class="card"><div class="stat"><span class="n">15</span><span class="u">个 Maven 模块</span></div><p style="margin:6px 0 0;font-size:14px;color:var(--ink2)">多模块单体。<code>-pl</code> 与 <code>-am</code> 的边界决定了反馈延迟。<b>这是一切速度问题的物理上限。</b></p></div>
+    <div class="card"><div class="stat"><span class="n">3,412</span><span class="u">个 Java 文件</span></div><p style="margin:6px 0 0;font-size:14px;color:var(--ink2)">约 214 行/文件。经验上偏高的单文件行数通常指向<b>已经长成的"上帝类"</b>与复制粘贴式扩展。</p></div>
+    <div class="card"><div class="stat"><span class="n">~73 万</span><span class="u">行代码</span></div><p style="margin:6px 0 0;font-size:14px;color:var(--ink2)">与 METR 实验所选"平均百万行级"的成熟仓库<b>处于同一量级</b>，因此那组最悲观的实测数据适用于此。</p></div>
+  </div>
+
+  <h3>1.1 三个特性，决定了纪律的强度</h3>
+  <p>这套系统同时具备三个特性，而这三者的组合恰好是 AI 辅助开发收益最低的区域：</p>
+  <div class="tw"><table>
+    <thead><tr><th style="width:22%">特性</th><th style="width:30%">在本系统上的表现</th><th style="width:48%">对智能体的直接后果</th></tr></thead>
+    <tbody>
+      <tr><td><b>高 tacit knowledge</b><br>（暗中约定多）</td><td>十年演进、内部制度驱动、"某些字段必须在某个状态才能改"这类规则多半写在人脑或老员工的口头规范里，不在代码里。</td><td>智能体缺少 <b>隐性约束</b>。它生成的代码会编译通过、跑得起来，但破坏一条没人告诉它的业务铁律。这正是 METR 观察到的"仓库年限拖累 AI 有用性"的机制。</td></tr>
+      <tr><td><b>紧耦合</b></td><td>15 个模块共占一个 reactor，跨模块的 service 互相注入常见；"基础信息"类字典被全系统引用。</td><td>任何"局部正确"的改动都可能跨模块漏出。<b>DORA 2025 明确指出：紧耦合 + 慢反馈的团队几乎拿不到 AI 收益。</b></td></tr>
+      <tr><td><b>弱自动化验证</b></td><td>十年老系统常见状态：测试覆盖极低或测试依赖数据库/容器，跑不动或跑得慢。</td><td>红-绿循环没有"红"。<b>没有红灯的智能体等于闭眼开车</b>，而这恰恰是 <code>tdd</code> 技能唯一无法代你去做的部分。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>1.2 五个子模块跨越了两个生命周期，不是一个</h3>
+  <p>把用户列出的五个子模块按时序摆到业务时间轴上，会看到一个被很多遗留系统抹平的分界：<b>中标前，处理的对象是"投标机会"；中标后，处理的对象才是"项目"。</b>这两件事的字段、状态机、权限、留痕要求都不同。旧系统最常见的熵源就是把它们塞进同一张主表和同一个"项目"名词里，于是所有差异只能靠 <code>if (status == 6)</code> 之类的分支去补。</p>
+
+  <figure id="fig1"><div class="fig-box"><svg viewBox="0 0 960 410" role="img" aria-label="五个子模块在业务时间轴上的覆盖关系">
+    <rect x="0" y="0" width="960" height="396" fill="#FFFFFF"/>
+    <text x="24" y="26" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">业务时间轴（示意，非实测架构）</text>
+
+    <!-- 6 lifecycle cells -->
+    <rect x="60" y="42" width="140" height="44" rx="8" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="130" y="69" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">投标登记</text>
+    <rect x="208" y="42" width="140" height="44" rx="8" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="278" y="69" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">投标评审</text>
+    <rect x="356" y="42" width="140" height="44" rx="8" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="426" y="69" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">中标公示</text>
+    <rect x="504" y="42" width="140" height="44" rx="8" fill="#ECF2FA" stroke="#C7D8EA"/>
+    <text x="574" y="69" font-size="13" font-weight="700" fill="#1F5288" text-anchor="middle">项目立项</text>
+    <rect x="652" y="42" width="140" height="44" rx="8" fill="#ECF2FA" stroke="#C7D8EA"/>
+    <text x="722" y="69" font-size="13" font-weight="700" fill="#1F5288" text-anchor="middle">双评审</text>
+    <rect x="800" y="42" width="140" height="44" rx="8" fill="#ECF2FA" stroke="#C7D8EA"/>
+    <text x="870" y="69" font-size="13" font-weight="700" fill="#1F5288" text-anchor="middle">项目执行</text>
+
+    <!-- arrows between cells -->
+    <path d="M200,64 L206,64" stroke="#8F3F06" stroke-width="1.6"/>
+    <path d="M204,61 L208,64 L204,67 z" fill="#8F3F06"/>
+    <path d="M348,64 L354,64" stroke="#8F3F06" stroke-width="1.6"/>
+    <path d="M352,61 L356,64 L352,67 z" fill="#8F3F06"/>
+    <path d="M496,64 L502,64" stroke="#1F5288" stroke-width="1.6"/>
+    <path d="M500,61 L504,64 L500,67 z" fill="#1F5288"/>
+    <path d="M644,64 L650,64" stroke="#1F5288" stroke-width="1.6"/>
+    <path d="M648,61 L652,64 L648,67 z" fill="#1F5288"/>
+    <path d="M792,64 L798,64" stroke="#1F5288" stroke-width="1.6"/>
+    <path d="M796,61 L800,64 L796,67 z" fill="#1F5288"/>
+
+    <!-- divider -->
+    <line x1="498" y1="42" x2="498" y2="344" stroke="#B3261E" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <text x="493" y="104" font-size="12" font-weight="700" fill="#B3261E" text-anchor="end">中标前</text>
+    <text x="503" y="104" font-size="12" font-weight="700" fill="#B3261E" text-anchor="start">中标后</text>
+    <text x="506" y="121" font-size="11" fill="#B3261E" text-anchor="start">概念分界线</text>
+
+    <!-- context bracket top -->
+    <rect x="60" y="126" width="436" height="22" rx="6" fill="#FDF1E3"/>
+    <text x="278" y="141" font-size="11.5" font-weight="700" fill="#8F3F06" text-anchor="middle">投标上下文 bid-intake</text>
+    <rect x="504" y="126" width="436" height="22" rx="6" fill="#ECF2FA"/>
+    <text x="722" y="141" font-size="11.5" font-weight="700" fill="#1F5288" text-anchor="middle">项目上下文 project-delivery</text>
+
+    <!-- 5 coverage bands -->
+    <rect x="60" y="156" width="436" height="34" rx="7" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="72" y="178" font-size="12.5" font-weight="700" fill="#1B5820">① 投标基础信息</text>
+    <text x="486" y="178" font-size="11" fill="#1B5820" text-anchor="end">跨 3 个阶段</text>
+
+    <rect x="356" y="198" width="140" height="34" rx="7" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="368" y="220" font-size="12.5" font-weight="700" fill="#1B5820">② 中标结果</text>
+
+    <rect x="652" y="240" width="140" height="34" rx="7" fill="#F2EDFA" stroke="#D6C6EE"/>
+    <text x="664" y="262" font-size="12.5" font-weight="700" fill="#5A3099">③ 经济评审</text>
+
+    <rect x="652" y="282" width="140" height="34" rx="7" fill="#F2EDFA" stroke="#D6C6EE"/>
+    <text x="664" y="304" font-size="12.5" font-weight="700" fill="#5A3099">④ 技术评审</text>
+
+    <rect x="60" y="324" width="880" height="34" rx="7" fill="#E6F2F1" stroke="#B8D9D5"/>
+    <text x="72" y="346" font-size="12.5" font-weight="700" fill="#0A5750">⑤ 基础信息维护</text>
+    <text x="928" y="346" font-size="11" fill="#0A5750" text-anchor="end">全周期贯穿 · 被所有上下文依赖</text>
+
+    <!-- foot note -->
+    <text x="24" y="381" font-size="12" fill="#474D57">典型熵源：</text>
+    <text x="104" y="381" font-size="12" fill="#333941">把"投标机会"与"项目"塞进同一主键实体，导致评审 / 作废 / 变更全靠 status 分支打补丁</text>
+    <text x="24" y="400" font-size="12" fill="#474D57">建议先落：</text>
+    <text x="104" y="400" font-size="12" fill="#333941">两个上下文各自维护 GLOSSARY，先做概念分界，再谈包结构与模块边界</text>
+  </svg></div>
+  <figcaption><b>图 1</b>　五个子模块在业务时间轴上的覆盖范围。注意垂直虚线：<b>中标前与中标后是两个不同的上下文</b>，概念分界之后才谈得上模块边界。<span class="t-lite tag">示意</span>该图依据用户给出的子模块清单绘制，不假定现有的表结构与包结构。</figcaption></figure>
+
+  <div class="callout red"><span class="lb">这一推论的使用前提</span>
+  <p>本手册没有访问你的代码库，因此图 1 是<b>按子模块语义推导的定位图，不是现状架构</b>。落地第一步必须是第 3.3 节的探测清单——用五条命令把"到底是共用一张表，还是已经有拆分"问出来。<b>不要用图 1 直接当作现状。</b></p></div>
+
+  <h3>1.3 派生出一个数量级：这笔债值多少钱</h3>
+  <p>按 Sonar 公开的 2023 年基准——每百万行代码每年约产生 <b>30.6 万美元</b>技术债敞口、约 <b>5,500 开发小时</b>用于修复——线性折算到 73 万行，约 <b>22 万美元 / 4,000 小时 / 年</b>，折算约 2 个人年。</p>
+  <div class="callout"><span class="lb">建模值，不是实测值</span>
+  <p>上面这串数字是<b>按单一第三方基准线性外推的建模结果</b>，用途是给"值不值得投入"一个数量级锚点，<b>不能写进立项预算</b>。真正可辩护的做法是用第 09 章的度量方法，在你自己的仓库上跑两周拿到实测基线。Sonar 基准本身也不区分语言与业务密度。</p></div>
+</div></section>
+
+<section id="s02"><div class="wrap">
+  <h2><span class="num">02</span>为什么是这套技能，而不是别的</h2>
+  <p class="lede">市面上"接管整个流程"的框架（GSD、BMAD、Spec-Kit）与这套技能的分野，不在于谁更全，而在于<b>出了问题时你能不能定位到具体某一句话</b>。这是选择它的第一性理由，对一个无法承受流程黑箱的存量系统尤其重要。</p>
+
+  <h3>2.1 作者的自我定位：小、可改、可组合</h3>
+  <p>仓库 README 的开场自述是"<i>My agent skills that I use every day to do real engineering - not vibe coding</i>"，并明确与 GSD / BMAD / Spec-Kit 划清界限：</p>
+  <blockquote style="margin:16px 0;padding:14px 18px;border-left:3px solid var(--purple);background:var(--purple-bg);border-radius:0 10px 10px 0">
+    <p style="margin:0">"像 GSD、BMAD 和 Spec-Kit 这类方案试图接管整个流程来解决问题。但这样做同时夺走了你的控制权，并且让流程里的 bug 难以修复。"</p>
+    <p style="margin:8px 0 0">"这些技能被设计成<b>小而易改、可组合</b>，与任何模型无关……随便 hack，改成你自己的。"</p>
+  </blockquote>
+  <p>这段话直接决定了本手册第 10 章的立场：<b>不要原样使用，要在第二个 Sprint 开始本地化改造</b>。第 10.4 节给出三个针对本系统的自研技能草案。</p>
+
+  <h3>2.2 它的组织原理：一条轴、两种调用权</h3>
+  <p>技能包只有一个真正的分类轴——<b>谁能调用它</b>：</p>
+  <div class="g2">
+    <div class="card" style="border-color:#C7D8EA;background:var(--blue-bg)">
+      <h4 style="margin-top:0;color:var(--blue-t)">User-invoked（编排层 · 16 个）</h4>
+      <p style="font-size:14.5px;margin:6px 0 0">只能由人敲名字触发。在 Claude Code 里靠 frontmatter 的 <code>disable-model-invocation: true</code> 实现。<b>职责是编排</b>，例如 <code>grill-with-docs</code>、<code>to-tickets</code>、<code>implement-spec</code>、<code>retro</code>。</p>
+      <p style="font-size:13.5px;color:var(--ink2);margin:8px 0 0"><b>描述写给人看</b>：去掉"当用户说..."这类触发器措辞，改成一句话摘要。</p>
+    </div>
+    <div class="card" style="border-color:#D6C6EE;background:var(--purple-bg)">
+      <h4 style="margin-top:0;color:var(--purple-t)">Model-invoked（能力层 · 11 个）</h4>
+      <p style="font-size:14.5px;margin:6px 0 0">可以被智能体自主取用。描述<b>写给模型看</b>，保留丰富的触发措辞。<b>职责是可复用纪律</b>，例如 <code>tdd</code>、<code>codebase-design</code>、<code>code-review</code>、<code>diagnosing-bugs</code>。</p>
+      <p style="font-size:13.5px;color:var(--ink2);margin:8px 0 0"><b>判定法</b>：模型能否有用地自主取出它？能，就保留在这层。</p>
+    </div>
+  </div>
+  <p><b>一条硬约束</b>（<code>.agents/invocation.md</code>）：用户可调技能可以调用模型可调技能，<b>但永远不能调用另一个用户可调技能</b>。这就是为什么 <code>to-spec</code> 里写着"如果用户没跑过 setup，就告诉用户去跑 <code>/setup-matt-pocock-skills</code>"，而不是自己调用它——它不是调用不到，而是被设计性地禁止。<b>这条约束保证了任何一次长流程都由人掌着方向盘。</b></p>
+
+  <h3>2.3 它修复的四个失效模式，恰好对应你的四个痛点</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:20%">失效模式</th><th style="width:30%">症状（会在你系统上这样出现）</th><th style="width:26%">修复技能</th><th style="width:24%">机制</th></tr></thead>
+    <tbody>
+      <tr><td><b>#1 智能体没做我要它做的事</b></td><td>做完了才发现它把"评审通过"理解成了一个布尔而非带意见状态的结论；投标与项目混为一谈。</td><td><code>grill-with-docs</code><br><code>grilling</code></td><td>把歧义在设计树上一次问干净；前提是先把协商好的术语写进 <code>GLOSSARY.md</code>。</td></tr>
+      <tr><td><b>#2 智能体太啰嗦 / 术语漂移</b></td><td>同一个"标段"在代码里出现 3 种叫法，检索与复用全部失效。</td><td><code>domain-modeling</code></td><td>术语一冲突立即指出并落盘；模糊词当场 sharpen。</td></tr>
+      <tr><td><b>#3 代码跑不起来</b></td><td>Maven 编译过了，一跑 MyBatis 或者事务就炸；或者改动悄悄覆盖了别人的字段。</td><td><code>tdd</code><br><code>diagnosing-bugs</code></td><td>红-绿循环 + 阶段化诊断（含人工介入循环脚本模板）。</td></tr>
+      <tr><td><b>#4 写成了泥球</b></td><td>五个子模块各自有独立的 XXService + XXDao + XXController 三件套，逻辑却几乎重复。</td><td><code>codebase-design</code><br><code>improve-codebase-architecture</code></td><td>用"深模块 / 接缝 / 局部性"词汇找<b>加深</b>候选，产出可视化 HTML 报告后逐个 grill。</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout blue"><span class="lb">最重要的一句自我限定</span>
+  <p>README 对 <code>improve-codebase-architecture</code> 的说明值得单独抄出来：它是<b>"一次勘察，不是一次救援"</b>——"<i>on a genuinely old codebase it will find real candidates, but it won't untangle the mud for you</i>"。对一个十年的系统，这句话应当写进团队的操作规程：<b>不要指望跑一次这个技能就把泥球解开，它只负责给你候选清单。</b></p></div>
+</div></section>
+<section id="s03"><div class="wrap">
+  <h2><span class="num">03</span>技能地图与最小可用配置</h2>
+  <p class="lede">这一章给出可直接执行的安装、配置与路由规则。<b>目标状态：明天早上团队里任何一个人都能正确启动一次完整的实现流程，不需要记住 27 个技能。</b></p>
+
+  <h3>3.1 安装：两条路，不要两条都走</h3>
+  <p>官方文档给了两种安装哲学，<b>并且明确警告二者只能选一</b>：同时安装会让每个技能在你机器上都出现两次。</p>
+  <div class="g2">
+    <div class="card" style="border-color:#C7D8EA;background:var(--blue-bg)">
+      <h4 style="margin-top:0;color:var(--blue-t)">路线 A · Claude Code 插件（订阅式）</h4>
+      <p style="font-size:14.5px;margin:6px 0 0">托管只读包，作者更新你会自动收到。<b>适合先把流程跑顺的前 4—6 周。</b></p>
+      <pre style="margin:10px 0 0;background:#FFFFFF"><code>claude plugins install mattpocock-skills</code></pre>
+      <p style="font-size:13px;color:var(--ink2);margin:8px 0 0">或在会话内直接 <code>/plugin install mattpocock-skills</code>。</p>
+    </div>
+    <div class="card" style="border-color:#D6C6EE;background:var(--purple-bg)">
+      <h4 style="margin-top:0;color:var(--purple-t)">路线 B · skills.sh（Fork 式，推荐最终形态）</h4>
+      <p style="font-size:14.5px;margin:6px 0 0">把技能<b>以普通文件形式写进你的仓库</b>，归你所有、随你改。<b>适合第 5 周开始本地化。</b></p>
+      <pre style="margin:10px 0 0;background:#FFFFFF"><code>npx skills@latest add mattpocock/skills</code></pre>
+      <p style="font-size:13px;color:var(--ink2);margin:8px 0 0">安装时<b>务必勾上 <code>setup-matt-pocock-skills</code></b>；后续用 <code>npx skills update</code> 同步上游。</p>
+    </div>
+  </div>
+  <div class="callout"><span class="lb">针对内网的建议</span>
+  <p>路线 B 依赖 npm 拉取；如果开发机不通外网，采用路线 A 的托管包同样会被墙。<b>稳妥做法是：在一台能联网的机器上用 <code>npx skills@latest add</code> 拉下技能目录，把产出的 Markdown 文件直接提交到你的内网仓库里</b>（作者许 MIT），从此就是普通文件，不依赖任何外网。这也是本手册第 10.4 节"本地化改造"的前提。<b>注意：</b>这样做之后，你的 <code>CLAUDE.md</code> 会跳过 <code>npx</code> 那一层，属于手动安装形态。</p></div>
+
+  <h3>3.2 一次完整的流程长什么样</h3>
+  <p>下图是这套技能在"实现一个新模块"场景下的标准编排。<b>上层六个方块是人敲命令触发的编排层，下层十一个胶囊是被它们自动取用的能力层。</b>箭头方向即推荐顺序。</p>
+
+  <figure id="fig2"><div class="fig-box"><svg viewBox="0 0 960 470" role="img" aria-label="mattpocock/skills 的技能编排流水线">
+    <rect x="0" y="0" width="960" height="470" fill="#FFFFFF"/>
+    <text x="24" y="24" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">编排层（人显式调用）</text>
+
+    <!-- stage 1 -->
+    <rect x="24" y="40" width="136" height="132" rx="10" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="38" y="60" font-size="10.5" font-weight="700" fill="#8F3F06" letter-spacing="1">阶段 1 · 对齐</text>
+    <text x="38" y="80" font-size="13.5" font-weight="700" fill="#16181D">grill-with-docs</text>
+    <text x="38" y="99" font-size="11" fill="#333941">追问到设计树</text>
+    <text x="38" y="114" font-size="11" fill="#333941">每个分支都落地</text>
+    <text x="38" y="129" font-size="11" fill="#333941">产出 GLOSSARY</text>
+    <text x="38" y="144" font-size="11" fill="#333941">与 ADR</text>
+
+    <!-- stage 2 -->
+    <rect x="177" y="40" width="136" height="132" rx="10" fill="#ECF2FA" stroke="#C7D8EA"/>
+    <text x="191" y="60" font-size="10.5" font-weight="700" fill="#1F5288" letter-spacing="1">阶段 2 · 成文</text>
+    <text x="191" y="80" font-size="13.5" font-weight="700" fill="#16181D">to-spec</text>
+    <text x="191" y="99" font-size="11" fill="#333941">当前会话合成</text>
+    <text x="191" y="114" font-size="11" fill="#333941">规格：问题 / 方案</text>
+    <text x="191" y="129" font-size="11" fill="#333941">用户故事 / 测试决策</text>
+    <text x="191" y="144" font-size="11" fill="#8F3F06">不做二次访谈</text>
+
+    <!-- stage 3 -->
+    <rect x="330" y="40" width="136" height="132" rx="10" fill="#ECF2FA" stroke="#C7D8EA"/>
+    <text x="344" y="60" font-size="10.5" font-weight="700" fill="#1F5288" letter-spacing="1">阶段 3 · 拆解</text>
+    <text x="344" y="80" font-size="13.5" font-weight="700" fill="#16181D">to-tickets</text>
+    <text x="344" y="99" font-size="11" fill="#333941">追踪弹式垂直切片</text>
+    <text x="344" y="114" font-size="11" fill="#333941">每张票声明 blocked by</text>
+    <text x="344" y="129" font-size="11" fill="#333941">宽重构改走</text>
+    <text x="344" y="144" font-size="11" fill="#B3261E">expand–contract</text>
+
+    <!-- stage 4 -->
+    <rect x="483" y="40" width="136" height="132" rx="10" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="497" y="60" font-size="10.5" font-weight="700" fill="#1B5820" letter-spacing="1">阶段 4 · 实现</text>
+    <text x="497" y="80" font-size="13.5" font-weight="700" fill="#16181D">implement</text>
+    <text x="497" y="99" font-size="11" fill="#333941">单票：走 tdd</text>
+    <text x="497" y="114" font-size="10.5" fill="#333941">全规格：implement-spec</text>
+    <text x="497" y="129" font-size="11" fill="#333941">子智能体各自 worktree</text>
+    <text x="497" y="144" font-size="11" fill="#1B5820">前沿并发</text>
+
+    <!-- stage 5 -->
+    <rect x="636" y="40" width="136" height="132" rx="10" fill="#F2EDFA" stroke="#D6C6EE"/>
+    <text x="650" y="60" font-size="10.5" font-weight="700" fill="#5A3099" letter-spacing="1">阶段 5 · 闸门</text>
+    <text x="650" y="80" font-size="13.5" font-weight="700" fill="#16181D">code-review</text>
+    <text x="650" y="99" font-size="11" fill="#333941">双轴并行子智能体</text>
+    <text x="650" y="114" font-size="11" fill="#333941">Standards：编码规范</text>
+    <text x="650" y="129" font-size="11" fill="#333941">+ Fowler 12 气味</text>
+    <text x="650" y="144" font-size="11" fill="#333941">Spec：是否忠于规格</text>
+
+    <!-- stage 6 -->
+    <rect x="789" y="40" width="136" height="132" rx="10" fill="#E6F2F1" stroke="#B8D9D5"/>
+    <text x="803" y="60" font-size="10.5" font-weight="700" fill="#0A5750" letter-spacing="1">阶段 6 · 沉淀</text>
+    <text x="803" y="80" font-size="13.5" font-weight="700" fill="#16181D">retro</text>
+    <text x="803" y="99" font-size="11" fill="#333941">改的是环境不是人</text>
+    <text x="803" y="114" font-size="11" fill="#333941">导航 / 自动检查</text>
+    <text x="803" y="129" font-size="11" fill="#333941">编码标准 / 工具经济</text>
+    <text x="803" y="144" font-size="11" fill="#0A5750">按严重度排序</text>
+
+    <!-- arrows -->
+    <path d="M162,106 L174,106" stroke="#4A505A" stroke-width="1.6"/>
+    <path d="M172,102 L176,106 L172,110 z" fill="#4A505A"/>
+    <path d="M315,106 L327,106" stroke="#4A505A" stroke-width="1.6"/>
+    <path d="M325,102 L329,106 L325,110 z" fill="#4A505A"/>
+    <path d="M468,106 L480,106" stroke="#4A505A" stroke-width="1.6"/>
+    <path d="M478,102 L482,106 L478,110 z" fill="#4A505A"/>
+    <path d="M621,106 L633,106" stroke="#4A505A" stroke-width="1.6"/>
+    <path d="M631,102 L635,106 L631,110 z" fill="#4A505A"/>
+    <path d="M774,106 L786,106" stroke="#4A505A" stroke-width="1.6"/>
+    <path d="M784,102 L788,106 L784,110 z" fill="#4A505A"/>
+
+    <!-- feedback loop -->
+    <path d="M859,172 L859,232 L92,232 L92,182" fill="none" stroke="#0A5750" stroke-width="1.6" stroke-dasharray="6 4"/>
+    <path d="M88,190 L92,180 L96,190 z" fill="#0A5750"/>
+    <rect x="330" y="238" width="300" height="22" rx="6" fill="#FFFFFF"/>
+    <text x="480" y="253" font-size="11.5" fill="#0A5750" text-anchor="middle">retro 的发现回写「编码标准与导航指针」</text>
+
+    <text x="24" y="288" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">能力层（可被上方自动取用）</text>
+
+    <!-- chips row 1 -->
+    <rect x="24" y="300" width="172" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="36" y="319" font-size="12.5" font-weight="700" fill="#16181D">grilling</text>
+    <text x="36" y="335" font-size="10.5" fill="#4A505A">被 grill / wayfinder 取用</text>
+
+    <rect x="206" y="300" width="172" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="218" y="319" font-size="12.5" font-weight="700" fill="#16181D">domain-modeling</text>
+    <text x="218" y="335" font-size="10.5" fill="#4A505A">术语淬炼 / ADR 落盘</text>
+
+    <rect x="388" y="300" width="172" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="400" y="319" font-size="12.5" font-weight="700" fill="#16181D">codebase-design</text>
+    <text x="400" y="335" font-size="10.5" fill="#4A505A">深模块 / 接缝词汇表</text>
+
+    <rect x="570" y="300" width="172" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="582" y="319" font-size="12.5" font-weight="700" fill="#16181D">tdd</text>
+    <text x="582" y="335" font-size="10.5" fill="#4A505A">红绿循环 / 反同义反复</text>
+
+    <rect x="752" y="300" width="172" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="764" y="319" font-size="12.5" font-weight="700" fill="#16181D">code-review</text>
+    <text x="764" y="335" font-size="10.5" fill="#4A505A">implement 收尾调用</text>
+
+    <!-- chips row 2 -->
+    <rect x="24" y="356" width="141" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="36" y="375" font-size="12.5" font-weight="700" fill="#16181D">diagnosing-bugs</text>
+    <text x="36" y="391" font-size="10.5" fill="#4A505A">难 bug 阶段化诊断</text>
+
+    <rect x="175" y="356" width="141" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="187" y="375" font-size="12.5" font-weight="700" fill="#16181D">research</text>
+    <text x="187" y="391" font-size="10.5" fill="#4A505A">wayfinder 研究票</text>
+
+    <rect x="326" y="356" width="141" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="338" y="375" font-size="12.5" font-weight="700" fill="#16181D">prototype</text>
+    <text x="338" y="391" font-size="10.5" fill="#4A505A">单文件 HTML 原型</text>
+
+    <rect x="477" y="356" width="141" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="489" y="375" font-size="12.5" font-weight="700" fill="#16181D">pr</text>
+    <text x="489" y="391" font-size="10.5" fill="#4A505A">合并危险度判断</text>
+
+    <rect x="628" y="356" width="141" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="640" y="375" font-size="12.5" font-weight="700" fill="#16181D">writing-for-agents</text>
+    <text x="640" y="391" font-size="10.5" fill="#4A505A">retro / 写技能时</text>
+
+    <rect x="779" y="356" width="141" height="44" rx="8" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <text x="791" y="375" font-size="12.5" font-weight="700" fill="#16181D">wizard</text>
+    <text x="791" y="391" font-size="10.5" fill="#4A505A">只能人做的步骤</text>
+
+    <text x="24" y="424" font-size="11.5" fill="#4A505A">扶手型技能（跨阶段）：ask-matt 路由 · wayfinder 超大工作量地图 · triage · improve-codebase-architecture · handoff · teach · wait-what</text>
+    <text x="24" y="444" font-size="11.5" fill="#4A505A">硬约束：编排层可以调用能力层，但编排层不能调用另一个编排层 —— 每次长流程的方向盘始终在人手里</text>
+  </svg></div>
+  <figcaption><b>图 2</b>　技能编排流水线。上层 6 个阶段是人显式触发的编排层，下层 11 个胶囊是可被自动取用的能力层。<b>虚线回环是全过程中最容易被跳过、但对你这个系统最值钱的一步</b>：retro 把发现回写为标准与检查。</figcaption></figure>
+
+  <h3>3.3 最小可用配置：三条必须一次答对的问题</h3>
+  <p><code>to-spec</code>、<code>to-tickets</code>、<code>code-review</code>、<code>wayfinder</code> 四个技能的前提都是"仓库已经告诉过我它的跟踪器在哪"。<b>没跑过 setup 就直接调用，它们不会替你猜，只会报错让你回去跑 setup。</b>因此这是真正的第 0 步。</p>
+  <div class="tw"><table>
+    <thead><tr><th style="width:22%">Setup 会问</th><th style="width:38%">本系统的推荐回答</th><th style="width:40%">为什么这么选</th></tr></thead>
+    <tbody>
+      <tr><td><b>问题跟踪器</b></td><td>内网环境：<b>本地 Markdown</b>（<code>.scratch/&lt;feature&gt;/issues/</code>）。有 GitHub / GitLab：<b>选对应项</b>（分别走 <code>gh</code> / <code>glab</code> CLI）。</td><td>技能原生支持四种形态。<b>选你实际跟踪工作的地方，而不是理想的地方</b>——否则 ticket 会写到一个没人看的目录里。</td></tr>
+      <tr><td><b>triage 标签词汇</b></td><td>接受默认的五个：<code>needs-triage</code> / <code>needs-info</code> / <code>ready-for-agent</code> / <code>ready-for-human</code> / <code>wontfix</code>。<b>只有装了 <code>triage</code> 才会问这题。</b></td><td><code>ready-for-agent</code> 是关键：它是"这张票已经 grill 到可以被智能体安全接走"的唯一信号。<b>不要自定义这套名字，除非你的跟踪器已有同义标签。</b></td></tr>
+      <tr><td><b>领域文档布局</b></td><td>两个上下文都用，就选 <b>multi-context</b>（根 <code>GLOSSARY-MAP.md</code> + 各上下文自己一份）。否则默认<b>单上下文</b>。</td><td>按第 01 章图 1 的判断，"投标"与"项目"是两个上下文，<b>应当选多上下文布局</b>——这正是 <code>GLOSSARY-MAP.md</code> 存在的理由：一个 map 指向两份术语表，并写清两者之间的关系。</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>写完之后，仓库根部的 <code>CLAUDE.md</code>（若不存在则 <code>AGENTS.md</code>）会增加一段「Agent skills」区块</b>，它只包含三行<b>导航指针</b>，指向 <code>docs/agents/issue-tracker.md</code> 等文件。这个设计值得照抄到你的项目：<b><code>CLAUDE.md</code> 应当极为克制，只放指针，不放内容</b>（见第 11 章反模式 #9）。</p>
+
+  <h3>3.4 当前现状探测：动手前先问出五件事</h3>
+  <p>因为你要在别人的十年代码上动刀，<b>图 1 只是假设</b>。先把下面五条命令跑一遍，把答案写进 <code>GLOSSARY.md</code> 的备注与规格草稿：</p>
+  <pre><code># 1. 模块边界：本次改动实际会跨越哪几个 Maven 模块
+mvn -q -o dependency:tree -Dincludes=com.yourorg | head -60
+
+# 2. 有没有 Conway 式共用实体：搜 Project / 实体名在哪些 module 出现
+rg -l "class Project|PO\b|ProjectEntity" --glob "*.java" | xargs -I{} dirname {} | sort | uniq -c
+
+# 3. 状态机是否散落：数一下 status== 的分支密度
+rg -c "status\s*==|getStatus\(\)\s*==" --glob "*.java" | sort -t: -k2 -rn | head -20
+
+# 4. 反馈延迟基线：单模块跑一次测试的墙上时间
+time mvn -q -pl &lt;目标模块&gt; -am -DskipITs test
+
+# 5. 现有 seams：有没有能直接作为表征测试入口的 Service 接口
+rg -l "@Service|@Repository" --glob "*.java" | wc -l</code></pre>
+  <div class="callout red"><span class="lb">第 4 条是整个前期最重要的一次测量</span>
+  <p>其余四条可以边做边补，<b>但"单模块 <code>mvn test</code> 的墙上时间"必须现在就测</b>，因为它决定了第 06 章所有设计的可行性。经验阈值：<b>≤ 60 秒，TDD 循环成立；3—10 分钟，必须做测试切片与模块隔离优化；&gt; 15 分钟，任何"AI 提效"都是先把这一项降下来再说。</b></p></div>
+</div></section>
+<section id="s04"><div class="wrap">
+  <h2><span class="num">04</span>理论根基：每条理论都必须能推出一个具体动作</h2>
+  <p class="lede">这一章只收录<b>能推出工程动作</b>的理论。凡是只能当比喻用、推不出具体该改哪条命令或哪个文件的，一律不收。每条给出：理论 → 推导 → 在你这个 15 模块系统上的具体动作。</p>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:17%">理论</th><th style="width:25%">表述（含来源）</th><th style="width:26%">推导</th><th style="width:32%">本系统上的动作</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>T1 反馈速率是速度上限</b></td>
+        <td>"反馈的速率就是你的速度上限。永远不要承担过大的任务。"<br><span class="src">《程序员修炼之道》</span></td>
+        <td>智能体的产出速率可以很高，但<b>验证速率被构建与测试时间绑死</b>。系统的实际速度是两者的较小值。提升智能体的产出而不同步提升验证，只是把工作量堆到下游。</td>
+        <td>把 <code>mvn -pl &lt;mod&gt; -am test</code> 的墙上时间作为<b>一号度量</b>，先降到 60 秒内。这是第 06 章全部设计的可行性前提。</td>
+      </tr>
+      <tr>
+        <td><b>T2 深模块（接口小而实现深）</b></td>
+        <td>"最好的模块是深的：通过简单接口访问大量功能。"<br><span class="src">Ousterhout《软件设计的哲学》</span><br><span class="tag t-red">注意</span> 技能明确<b>拒绝</b> Ousterhout 的"行数比值"定义（那会奖励注水），改用 <b>depth-as-leverage</b>。</td>
+        <td>模块的<b>接口宽度</b>决定调用方与测试需要理解多少。三个各 5 个方法的 Service，不如一个 5 方法、把三者都收进去的深模块。</td>
+        <td>对五个子模块逐个做 <b>deletion test</b>：设想删掉它——复杂度是消失了，还是重回到 N 个调用方？是后者才值得存在（详见第 07 章表格）。</td>
+      </tr>
+      <tr>
+        <td><b>T3 一个适配器=假接缝；两个=真接缝</b></td>
+        <td>技能内部的接缝纪律。</td>
+        <td>只有一个实现的 port 是纯间接层，它<b>不承载任何信息</b>，只增加导航成本。引入 port 的合理理由是"至少有生产 + 测试两个适配器"。</td>
+        <td><b>禁止"未来可能换数据源"式的提前抽象</b>。但如果 DAO 层已经有第二个实现（如内存版用于测试），那接缝才是真的，应在 <code>GLOSSARY</code> 里给它命名。</td>
+      </tr>
+      <tr>
+        <td><b>T4 接口就是测试面</b></td>
+        <td>调用方与测试<b>穿过同一个接缝</b>。想测到接口之外，说明模块形状错了。<br><span class="src">codebase-design 技能</span></td>
+        <td>如果为了测一个业务规则必须启动 Spring 容器 + 连库，说明<b>接缝位置放错了</b>，而不是"只能写集成测试"。</td>
+        <td>把评审规则、评审结论状态机<b>抽成不依赖 Spring 的纯 Java</b>，接缝压在这条活塞上；集成测试只留少数几条确认路径。</td>
+      </tr>
+      <tr>
+        <td><b>T5 AI 是放大器，不是修正器</b></td>
+        <td>"AI 放大的是组织的既有强弱，而非均匀地雨露均沾。"<br><span class="src">DORA 2025，n≈5,000</span><br>并明确指出：<b>紧耦合 + 慢反馈的团队收益最小。</b></td>
+        <td>在验证能力弱的系统上加装 AI，等于<b>放大泄漏率</b>。因此顺序不可颠倒：先建控制系，再加动力。</td>
+        <td>第 10 章路线图的前 30 天<b>不允许任何 AI 生成业务代码</b>，只能复制狄做测试和 CI 集成的全部未XP 工作。</td>
+      </tr>
+      <tr>
+        <td><b>T6 验证要比生产便宜</b></td>
+        <td>反格言版的"让验证更便宜，而不是让评审更慢"。<br><span class="src">由 T1 + DORA 的稳定性结论推导</span></td>
+        <td>把精力投进"评审更严"收益是线性的；投进"跑一次更便宜"是乘性的，因为它<b>提高了单位时间内可尝试的次数</b>。</td>
+        <td>投资顺序：<b>单测秒回 &gt; 静态检查 &gt; 人工评审</b>。新增的每一条人工评审规则，都要先问"能不能写成 ArchUnit / Checkstyle 规则"。</td>
+      </tr>
+      <tr>
+        <td><b>T7 改环境优于改指令</b></td>
+        <td><code>retro</code> 的归类：导航 / 自动检查 / 编码标准 / 工具经济。</td>
+        <td>给智能体的<b>每条散文指令都有"是否被遵守"的不确定性</b>；而一条 CI 检查要么过要么不过。机械性问题应当先机械化。</td>
+        <td>retro 产出的每一项，先问能否变成 ArchUnit/Checkstyle 规则；<b>只有真正的裁量判断</b>（跨文件一致性、风格）才写进 <code>CODING_STANDARDS.md</code>。</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout teal"><span class="lb">T4 的一个直接推论（对这个系统最值钱）</span>
+  <p>技能里这句"<b>the interface is the test surface</b>"，配上 Feathers 的接缝思想，可以推出一条具体的 ticket 切割规则：<b>凡是含有业务规则的代码，不得与 Spring / MyBatis / HTTP 在同一个类里。</b>理由不是美学，而是——只有这样才能在不启动容器的前提下用毫秒级代价画出红灯。这条规则可以直接写成 ArchUnit 检查，属于可靠刻度。</p></div>
+</div></section>
+
+<section id="s05"><div class="wrap">
+  <h2><span class="num">05</span>第一优先级：把「项目计划管理」的术语砸实</h2>
+  <p class="lede">作者的论证很直接：<b>智能体被丢进一个项目里被迫边做边猜术语，于是它用二十个词表达本来一个词就够了。</b>统一语言的价值不止于省 token——它让变量、函数、文件的命名自动一致，从而让检索变得更准。</p>
+
+  <h3>5.1 grilling 的机制：前沿、轮次、必须给推荐答案</h3>
+  <p><code>grilling</code> 是整个技能包复用次数最多的原语。它的协议有四条硬规则：</p>
+  <ol>
+    <li><b>把对手表示为设计树</b>——每个决策分叉出挂在它下面的决策。</li>
+    <li><b>按"前沿"问，而不是按顺号问题清单问</b>。<b>frontier</b> = 所有前提已经尘埃落定的决策，也就是"现在问不会猜错"的那批。</li>
+    <li><b>一轮问完整个前沿</b>，每个问题编号，并<b>必须给出你的推荐答案</b>（<code>➡️</code>）。</li>
+    <li><b>找事实是你（智能体）的活，不是人的活</b>。前沿里需要事实（文件系统、命令行）的，派子智能体去查，别问人；别因为等待而阻塞——只把依赖该事实的问题推到下一轮。</li>
+  </ol>
+  <p><b>会话结束的条件是"前沿为空"</b>：设计树的每个分支都走过一遍，没有剩下的隐含假设。而且<b>在你确认双方达到共识之前，不许动手。</b></p>
+
+  <h4>一次 Round 1 示范（针对本项目，推荐答案已给出）</h4>
+  <div class="card" style="border-color:#E8CFA8;background:var(--amber-bg)">
+    <p style="margin:0 0 10px"><b>❓ Q1 — 投标与项目是否共用同一个实体？</b><br>现有表里，"一个还没投标的对象"和一个"已经中标开始交付的对象"，是同一行记录还是两行？这决定了后续所有状态机、权限、留痕的形状。<br><span style="color:var(--amber-t)">➡️ 推荐：拆成 <b>BidOpportunity</b> 与 <b>Project</b> 两个概念，由 <b>AwardNotice</b> 事件触发 Project 创建。</span></p>
+    <p style="margin:0 0 10px"><b>❓ Q2 — 评审结论是布尔还是枚举？</b><br>"通过/不通过"之外，实务里几乎必然存在"有条件通过""退回修改"。如果现在是 <code>int status</code>，后续每加一种结论都要改所有分支。<br><span style="color:var(--amber-t)">➡️ 推荐：定义 <b>ReviewVerdict</b> 枚举：待审 / 审核通过 / 附条件通过 / 退回修改 / 否决。<b>禁止</b>布尔与魔法数字。</span></p>
+    <p style="margin:0"><b>❓ Q3 — 「基础信息」变更是否需要留痕与追溯？</b><br>被全系统引用的字典项一旦改了，历史单据算新值还是旧值？<br><span style="color:var(--amber-t)">➡️ 推荐：单据<b>快照</b>当时的字典值；字典项本身的变更走 <b>expand–contract</b>（详见 7.2），不直接改名。</span></p>
+  </div>
+  <p class="src">这三题的答案会分别落成 <code>ADR-0001</code> / <code>ADR-0002</code> / <code>ADR-0003</code>，见 5.3。</p>
+
+  <h3>5.2 可直接抄用的术语表草案</h3>
+  <p>下面是<b>按卢文件格式写好的种子</b>，条目内容需要根据你们实际的申请表字段校准——但<b>结构与"Be opinionated / 给 Avoid 列"这个做法是照抄的</b>。核心规则：定义一到两句、只定义"它是什么"而非"它做什么"、<b>只收录本项目特有的概念</b>（超时、通用错误码这类不收）。</p>
+
+  <pre><code># 投标上下文 bid-intake
+
+我方从识别招标信息到递交投标文件这一段的信息对象。此上下文内的东西都还不是"项目"。
+
+## Language
+
+**Bid Opportunity（投标机会）**:
+我方识别出的一条可参与的外部招标线索及其跟踪状态。
+_Avoid_: 项目前期、招标、业务机会
+
+**Invitation to Tender（招标）**:
+甲方发出的招标行为与招标文件本身。方向是甲方→我方。
+_Avoid_: 投标（混淆方向）、标讯
+
+**Bid（投标）**:
+我方对一次招标的响应行为与其提交的整套文件。方向是我方→甲方。
+_Avoid_: 标书（既指文件又指行为）、报价
+
+**Package（标段）**:
+一份招标文件拆成的可独立投标、可独立中标的最小单元。
+_Avoid_: 包、标段包、标包
+
+**Bid Opening（开标）**:
+甲方公开拆封投标人提交的文件的时点与过程。
+_Avoid_: 开标（与"开始评标"混用）
+
+**Award Notice（中标通知书）**:
+甲方向我方正式发出的中标确认文件。是本上下文唯一能触发下一个上下文的事件。
+_Avoid_: 中标结果（太宽，含落标）、成交通知
+
+**Award Outcome（中标结果）**:
+一次投标的最终结局，取值：中标 / 未中标 / 主动弃标。含结果日期与原因。
+_Avoid_: 结果（任何含糊说法）</code></pre>
+
+  <pre><code># 项目上下文 project-delivery
+
+中标后进入内部交付与评审阶段的信息对象。仅由 Award Notice 触发创建。
+
+## Language
+
+**Project（项目）**:
+中标通知书生效后，公司正式启动的一次内部交付活动。是本上下文的根实体。
+_Avoid_: 工程、订单、标的
+
+**Project Initiation（立项）**:
+把已中标的投标机会登记为公司内部项目的动作。此前不得存在 Project。
+_Avoid_: 建项、立项申请（与审批动作混用）
+
+**Economic Review（经济评审）**:
+对项目的成本、预算、付款与保证金等经济条款的独立评审。
+_Avoid_: 财务评审、成本审核、商务评审
+
+**Technical Review（技术评审）**:
+对项目的技术方案、工期、资源与实施可行性的独立评审。
+_Avoid_: 方案评审、技术审核
+
+**Review Verdict（评审结论）**:
+一次评审给出的正式结论。取值：待审 / 审核通过 / 附条件通过 / 退回修改 / 否决。
+_Avoid_: 评审状态、审核标志、isPassed
+
+**Review Comment（评审意见）**:
+评审人针对某一具体条款提出的可追溯书面意见，含提出人与处理状态。
+_Avoid_: 备注、说明</code></pre>
+
+  <div class="callout"><span class="lb">跨上下文的一条关键词：字典项</span>
+  <p><b>Dictionary Entry（字典项）／ Qualification（资质）／ Counterparty（合作方）</b>属于被两个上下文共享的基础信息。它们必须放在各自的 <code>GLOSSARY</code> 之外单独成章，并在 <code>GLOSSARY-MAP.md</code> 的 <b>Relationships</b> 段写清依赖方向：<b>两个上下文都依赖它，它不依赖任何上下文。</b>这条写完之后，第 07 章的"宽重构"判定才能有依据。</p></div>
+
+  <h3>5.3 三条候选 ADR 的判断</h3>
+  <p>技能对 ADR 的把门极严——<b>必须同时满足三条</b>：难以逆转 / 缺了上下文会让人困惑 / 是真实权衡的结果。缺任一条就不写 ADR。按此筛：</p>
+  <div class="tw"><table>
+    <thead><tr><th style="width:20%">候选 ADR</th><th style="width:26%">难逆转？</th><th style="width:26%">缺上下文会困惑？</th><th style="width:12%">真实权衡？</th><th style="width:16%">结论</th></tr></thead>
+    <tbody>
+      <tr><td><b>ADR-0001</b> BidOpportunity 与 Project 分离</td><td>是。一旦拆开，历史数据与所有引用都要迁移。</td><td>是。后人会问"为什么中标是两张表"。</td><td>是。代价是 JOIN 与数据迁移；收益是状态机不再分叉。</td><td><span class="tag t-green">写 ADR</span></td></tr>
+      <tr><td><b>ADR-0002</b> 评审结论用枚举不用布尔</td><td>是。扩散到全系统后要改无数分支。</td><td>是。后人会想加第 6 种是否被允许。</td><td>是。枚举不够灵活，换来的是穷尽性。</td><td><span class="tag t-green">写 ADR</span></td></tr>
+      <tr><td><b>ADR-0003</b> 字典项只能 expand–contract 变更</td><td>是。定了之后不能给字典项改名。</td><td>是。后人会问"为什么不能直接改名"。</td><td>是。牺牲便利换取可回滚。</td><td><span class="tag t-green">写 ADR</span></td></tr>
+      <tr><td><b>反例</b> 用 MyBatis 而不是 JPA</td><td>是。但……</td><td>——</td><td>否。多半是路径依赖而非权衡。</td><td><span class="tag t-lite">不写</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="src">对照：还会触发 ADR 的情形之一是"<b>用户在 grill 中以一个站得住的理由否决了某个候选</b>"——此时应主动提议："要不要把你这个理由记成 ADR，免得以后的架构复查又推荐一遍？"</p>
+</div></section>
+<section id="s06"><div class="wrap">
+  <h2><span class="num">06</span>接缝：整个方案的地基在哪里</h2>
+  <p class="lede"><code>tdd</code> 技能有一条极硬的规则：<b>"只在事先约定好的接缝处写测试。没有确认过的接缝，一个测试都不许写。"</b>对一个没有测试的十年系统，这条规则会立刻暴露真正的问题——<b>你现在根本没有可用的接缝</b>。</p>
+
+  <h3>6.1 第一张 ticket 永远是表征测试，不是新功能</h3>
+  <p>这里要引入技能包之外的一个必要补充：<b>Michael Feathers 的表征测试（characterization test）</b>。技能作者自己强调他关心的是"care about the design of the code"，但没写如何处理零测试遗产，而 Feathers 的做法正好补上缺口：</p>
+  <div class="step"><div class="sn">1</div><div class="sc"><b>先把当前行为冻住</b><br>对你即将要改的那段旧代码，写一批测试，<b>断言它现在实际做了什么（哪怕那是 bug）</b>。目的不是验证正确性，而是锁定"改完之后行为有没有意外变化"。</div></div>
+  <div class="step"><div class="sn">2</div><div class="sc"><b>再用红-绿循环加新能力</b><br>安全网织好之后，才开始 <code>tdd</code> 真正的循环：先写失败的测试，再写最少的代码让它通过，一个垂直切片一个循环。</div></div>
+  <div class="step"><div class="sn">3</div><div class="sc"><b>旧的单测该删就删</b><br>DEEPENING 里的策略叫 <b>replace, don't layer</b>：一旦在深模块接口上有了新测试，<b>旧的浅模块单测是净负担，删掉</b>，不要叠加。</div></div>
+
+  <div class="callout blue"><span class="lb">对照 Java 生态</span>
+  <p>表征测试在 Java 里通常有两种载体，<b>选哪种取决于"输出是否是结构化清单"</b>：</p>
+  <ul style="margin:8px 0 0">
+    <li><b>Approval / Golden Master 风格</b>：把一个复杂对象（报价单、评审结论聚合）整体序列化成文本作为基线快照。适合"输出是一张大清单且你不敢保证自己算得对"的场景。<b>注意：基线第一次必须由人逐字段验收一次</b>，否则演变成"把现有 bug 刻成石碑"。</li>
+    <li><b>普通 JUnit 断言</b>：适合单一返回值、明确的计算。<b>优先用它</b>，因为它的失败信息可读。</li>
+  </ul></div>
+
+  <h3>6.2 这个系统的四层接缝地图</h3>
+  <p>把 73 万行按"测试它需要付出多少"重新分层，会得到下面这张图。<b>深浅不是艺术效果，而是单位时间能得到多少次反馈。</b></p>
+
+  <figure id="fig3"><div class="fig-box"><svg viewBox="0 0 960 400" role="img" aria-label="Java 系统的四层接缝地图与各自的反馈成本">
+    <rect x="0" y="0" width="960" height="400" fill="#FFFFFF"/>
+    <text x="40" y="26" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">层（上=离数据库近，下=离规则近）</text>
+    <text x="612" y="26" font-size="12.5" font-weight="700" fill="#4A505A">反馈成本</text>
+    <text x="764" y="26" font-size="12.5" font-weight="700" fill="#4A505A">推荐测试密度</text>
+
+    <!-- L1 Controller -->
+    <rect x="40" y="40" width="560" height="64" rx="9" fill="#FBEBEA" stroke="#EBC4C1"/>
+    <text x="56" y="62" font-size="13.5" font-weight="700" fill="#16181D">Controller / View</text>
+    <text x="56" y="80" font-size="11.5" fill="#333941">参数绑定、权限校验、视图渲染</text>
+    <text x="56" y="96" font-size="11.5" fill="#333941">典型形态：和事务注解、拦截器纠缠在一起</text>
+    <rect x="612" y="52" width="140" height="40" rx="8" fill="#FBEBEA" stroke="#EBC4C1"/>
+    <text x="682" y="70" font-size="11.5" font-weight="700" fill="#B3261E" text-anchor="middle">分钟级</text>
+    <text x="682" y="86" font-size="11" fill="#333941" text-anchor="middle">需启动容器</text>
+    <rect x="764" y="52" width="156" height="40" rx="8" fill="#FFFFFF" stroke="#D6D2C8"/>
+    <text x="842" y="70" font-size="11.5" font-weight="700" fill="#333941" text-anchor="middle">不写单测</text>
+    <text x="842" y="86" font-size="11" fill="#4A505A" text-anchor="middle">仅少量端到端冒烟</text>
+
+    <!-- L2 Service -->
+    <rect x="40" y="116" width="560" height="64" rx="9" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="56" y="138" font-size="13.5" font-weight="700" fill="#16181D">Application Service（@Service）</text>
+    <text x="56" y="156" font-size="11.5" fill="#333941">编排、事务边界、跨模块调用</text>
+    <text x="56" y="172" font-size="11.5" fill="#333941">五个子模块最容易在这里长成宽度接口</text>
+    <rect x="612" y="128" width="140" height="40" rx="8" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="682" y="146" font-size="11.5" font-weight="700" fill="#8F3F06" text-anchor="middle">秒至十秒级</text>
+    <text x="682" y="162" font-size="11" fill="#333941" text-anchor="middle">可用切片 + 替身</text>
+    <rect x="764" y="128" width="156" height="40" rx="8" fill="#FFFFFF" stroke="#D6D2C8"/>
+    <text x="842" y="146" font-size="11.5" font-weight="700" fill="#333941" text-anchor="middle">中等</text>
+    <text x="842" y="162" font-size="11" fill="#4A505A" text-anchor="middle">集成 + 契约测试</text>
+
+    <!-- L3 Domain -->
+    <rect x="40" y="192" width="560" height="64" rx="9" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="56" y="214" font-size="13.5" font-weight="700" fill="#16181D">Domain / 规则核心（纯 Java）</text>
+    <text x="56" y="232" font-size="11.5" fill="#333941">资金与报价计算、评审结论状态机、有效性校验</text>
+    <text x="56" y="248" font-size="11.5" fill="#1B5820">不依赖 Spring、不碰数据库、不做远程调用</text>
+    <rect x="612" y="204" width="140" height="40" rx="8" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="682" y="222" font-size="11.5" font-weight="700" fill="#1B5820" text-anchor="middle">毫秒级</text>
+    <text x="682" y="238" font-size="11" fill="#333941" text-anchor="middle">无需任何基础设施</text>
+    <rect x="764" y="204" width="156" height="40" rx="8" fill="#FFFFFF" stroke="#D6D2C8"/>
+    <text x="842" y="222" font-size="11.5" font-weight="700" fill="#1B5820" text-anchor="middle">主力</text>
+    <text x="842" y="238" font-size="11" fill="#4A505A" text-anchor="middle">绝大多数测试写在这</text>
+
+    <!-- L4 Persistence -->
+    <rect x="40" y="268" width="560" height="64" rx="9" fill="#FBEBEA" stroke="#EBC4C1"/>
+    <text x="56" y="290" font-size="13.5" font-weight="700" fill="#16181D">Persistence / 外部系统</text>
+    <text x="56" y="308" font-size="11.5" fill="#333941">MyBatis Mapper、外部 HTTP 接口、文件与报表导出</text>
+    <text x="56" y="324" font-size="11.5" fill="#333941">属于 DEEPENING 分类里的 external 依赖</text>
+    <rect x="612" y="280" width="140" height="40" rx="8" fill="#FBEBEA" stroke="#EBC4C1"/>
+    <text x="682" y="298" font-size="11.5" font-weight="700" fill="#B3261E" text-anchor="middle">分钟级</text>
+    <text x="682" y="314" font-size="11" fill="#333941" text-anchor="middle">库、容器、三方服务</text>
+    <rect x="764" y="280" width="156" height="40" rx="8" fill="#FFFFFF" stroke="#D6D2C8"/>
+    <text x="842" y="298" font-size="11.5" font-weight="700" fill="#333941" text-anchor="middle">少量</text>
+    <text x="842" y="314" font-size="11" fill="#4A505A" text-anchor="middle">仅测 SQL 与字段映射</text>
+
+    <!-- target seam -->
+    <line x1="40" y1="192" x2="920" y2="192" stroke="#1B5820" stroke-width="2"/>
+    <rect x="264" y="344" width="432" height="34" rx="8" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="480" y="365" font-size="12.5" font-weight="700" fill="#1B5820" text-anchor="middle">目标接缝：压在 Domain 与 Service 之间</text>
+    <text x="40" y="386" font-size="11.5" fill="#4A505A">判定法：若测一条业务规则必须启动容器，说明接缝位置放错了 —— 是模块形状的问题，不是"只能写集成测试"</text>
+  </svg></div>
+  <figcaption><b>图 3</b>　四层接缝地图。绿色范围(L3)应承载绝大多数测试。<b>绿线是目标接缝位置</b>：把业务规则从 Spring 与持久层里剥离出来，是让 TDD 循环在这个系统上成立的最小必要的那个动作。</figcaption></figure>
+
+  <h3>6.3 依赖四象限：决定每个接缝要不要加 port</h3>
+  <p>技能给出一张判断表，用来决定"这个接缝值不值得抽象出一个接口"。核心纪律是 T3：<b>只有一个适配器的接缝是假的，别加。</b></p>
+  <div class="tw"><table>
+    <thead><tr><th style="width:24%">依赖类别</th><th style="width:26%">在你系统里的实例</th><th style="width:22%">接缝条件</th><th style="width:28%">处理方式</th></tr></thead>
+    <tbody>
+      <tr><td><b>1. 进程内</b><br>纯计算、无 I/O</td><td>报价计算、税率、评审结论流转</td><td>永远可以加深</td><td><b>直接合并进深模块，通过接口测</b>。不需要 port。</td></tr>
+      <tr><td><b>2. 可本地替换</b><br>有本地替身</td><td>数据库（H2 / Testcontainers）、文件系统</td><td>替身存在即可加深</td><td>接缝<b>在模块内部</b>，不出现在外部接口上。</td></tr>
+      <tr><td><b>3. 远程但自有</b><br>自己的其他服务</td><td>公司内部的其他 Maven 模块、内部网关</td><td>需定义 port</td><td>在接缝处定义 port，<b>生产用 HTTP 适配器、测试用内存适配器</b>。</td></tr>
+      <tr><td><b>4. 真正的外部</b><br>三方服务</td><td>外部招标信息源、短信/开票网关</td><td>注入 + mock</td><td>把外部依赖作为<b>注入的 port</b>，测试提供 mock 适配器。</td></tr>
+    </tbody>
+  </table></div>
+  <p class="src">来源：<code>skills/engineering/codebase-design/DEEPENING.md</code>。原词为 In-process / Local-substitutable / Remote but owned / True external。</p>
+
+  <h3>6.4 三条反模式：技能自己点名的坏测试</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:22%">反模式</th><th style="width:40%">在这个系统上会长什么样</th><th style="width:38%">识别 / 修正</th></tr></thead>
+    <tbody>
+      <tr><td><b>同义反复式断言</b></td><td><code>assertEquals(add(a,b), a+b)</code>；或者直接把被测代码的返回值手抄成期望值。</td><td><b>期望值必须来自独立的事实来源</b>：已知的标答、手算的算例、规格里的条款。这种测试<b>结构上不可能失败</b>。</td></tr>
+      <tr><td><b>横切式测试</b></td><td>先把五个子模块的所有测试写完，再统一写实现。</td><td>批量测试验证的是<b>想象中的行为</b>，而且会在理解实现之前就锁定测试结构。改用<b>垂直切片</b>：一个测试 → 一个实现 → 再下一个。</td></tr>
+      <tr><td><b>为测而抽却丢掉局部性</b></td><td>把一段又长的 Service 里的某个方法抽成 <code>static</code> 纯函数去测，但真正的 bug 都在<b>怎么调用它</b>的地方。</td><td><code>improve-codebase-architecture</code> 特意点了这一条：<b>抽出来的纯函数好测了，但复杂性只是搬了家</b>。修正方向是加深模块，而不是抽出纯函数。</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><span class="lb">一条容易被忽略的规则</span>
+  <p><code>tdd</code> 明确写着：<b>"重构不属于循环的一部分"</b>。红 → 绿这段时间里只做一件事：写最少的代码让测试通过。<b>重构属于评审阶段</b>（交给 <code>code-review</code>）。这条规则对"看到老代码就想顺手改"的工程师尤其难遵守，但它是 <code>implement-spec</code> 里"每个子智能体一个 worktree、互不污染"能成立的前提。</p></div>
+</div></section>
+
+<section id="s07"><div class="wrap">
+  <h2><span class="num">07</span>拆票：五个子模块的任务图与那个"宽重构"陷阱</h2>
+  <p class="lede"><code>to-tickets</code> 把工作拆成<b>追踪弹式的垂直切片</b>，每张票声明它阻塞谁。它同时有一条极其重要的例外规则，而这条例外恰好命中你的"基础信息维护"。</p>
+
+  <h3>7.1 垂直切片的三条硬规则</h3>
+  <ul>
+    <li><b>纵向而非横向</b>：每个切片窄而完整地穿过所有层（表结构 → 服务 → 接口 → 测试），不是"先把所有 DAO 写完"这种横向一层。</li>
+    <li><b>单独可验证</b>：一个切片完成后<b>单独可演示或可验证</b>。</li>
+    <li><b>装得进一个全新的上下文窗口</b>：切片大小的上限由 context 决定，而不是由业务重要性决定。<b>这一点对 3412 个文件的系统尤其关键。</b></li>
+  </ul>
+  <p>每条票在发布前必须<b>亲自问过人三个问题</b>：颗粒度合适吗？阻塞边对吗（每张票只依赖真正门控它的票）？有没有该合并或该再拆的？<b>迭代到人认可为止。</b></p>
+
+  <h3>7.2 那个例外：什么叫"宽重构"，为什么要排除出垂直切片</h3>
+  <div class="callout red"><span class="lb">技能原文的定义</span>
+  <p><b>宽重构</b> = 一个机械性改动（改一个列名、改一个共享符号的类型），其<b>爆炸半径横跨整个代码库</b>，单次改动会同时打断上千个调用点，因此没有任何垂直切片能保持绿色。</p>
+  <p style="margin-top:8px"><b>处理方式不是硬塞进追踪弹，而是排成 expand–contract 三段：</b></p>
+  <ol style="margin:6px 0 0">
+    <li><b>Expand（扩展）</b>：把新形态加在旧形态旁边，<b>什么都不会坏</b>。</li>
+    <li><b>Migrate（迁移）</b>：按爆炸半径分批搬运调用点（每包一批、每目录一批），<b>每批一张票，都阻塞于 expand</b>。因为旧形态还在，所以<b>每批之间 CI 都是绿的</b>。</li>
+    <li><b>Contract（收缩）</b>：确认无人调用后删掉旧形态，这张票<b>阻塞于所有迁移批次</b>。</li>
+  </ol>
+  </div>
+  <p>技能还给出最后一道保险：<b>如果连批次都无法各自保持绿色，就让它们共用一个集成分支</b>，全部阻塞在一个"集成并验证"票上，此时"绿"只在这一处承诺。</p>
+  <p><b>在你的五个子模块里，属于宽重构的典型情形是：</b></p>
+  <div class="tw"><table>
+    <thead><tr><th style="width:34%">情形</th><th style="width:22%">判定</th><th style="width:44%">为什么跳过垂直切片</th></tr></thead>
+    <tbody>
+      <tr><td>给"评审结论"从 <code>int</code> 换成枚举</td><td><span class="tag t-red">宽重构</span></td><td>所有读 status 的地方一起断。<b>必须先加枚举列并双写（expand），再分批迁移读取点。</b></td></tr>
+      <tr><td>改一个被全系统引用的字典项字段名</td><td><span class="tag t-red">宽重构</span></td><td>引用点可能上百。且需按第 5.3 节 ADR-0003 走。</td></tr>
+      <tr><td>调整"基础信息维护"的审批流</td><td><span class="tag t-green">垂直切片</span></td><td>若只影响维护入口本身，可以纵向切。</td></tr>
+      <tr><td>新增"投标基础信息"子模块</td><td><span class="tag t-green">垂直切片</span></td><td>全新代码，天然纵向。</td></tr>
+      <tr><td>把 BidOpportunity 从 Project 表里拆出来</td><td><span class="tag t-red">宽重构</span></td><td>这是最典型的：一张表两个概念。必须同时保持两形态共存。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>7.3 五个子模块的任务图</h3>
+  <p>下图给出一组推荐的任务图。<b>"前沿（frontier）"是所有前置都已完成、可以立刻开工的票的集合</b>——这个概念在 <code>to-tickets</code>、<code>grilling</code>、<code>implement-spec</code>、<code>wayfinder</code> 四个技能里反复出现，是这套方法论的核心概念之一。</p>
+
+  <figure id="fig4"><div class="fig-box"><svg viewBox="0 0 960 400" role="img" aria-label="项目计划管理五个子模块的任务依赖图">
+    <rect x="0" y="0" width="960" height="400" fill="#FFFFFF"/>
+    <text x="24" y="24" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">任务图 · 箭头即 blocked by · 同一列可并发</text>
+
+    <!-- T1 T2 -->
+    <rect x="40" y="52" width="126" height="58" rx="9" fill="#E6F2F1" stroke="#B8D9D5"/>
+    <text x="52" y="72" font-size="11" font-weight="700" fill="#0A5750">T1 前置</text>
+    <text x="52" y="89" font-size="12" font-weight="700" fill="#16181D">表征测试</text>
+    <text x="52" y="104" font-size="10.5" fill="#4A505A">锁住旧行为</text>
+
+    <rect x="40" y="132" width="126" height="58" rx="9" fill="#E6F2F1" stroke="#B8D9D5"/>
+    <text x="52" y="152" font-size="11" font-weight="700" fill="#0A5750">T2 前置</text>
+    <text x="52" y="169" font-size="12" font-weight="700" fill="#16181D">秒级反馈</text>
+    <text x="52" y="184" font-size="10.5" fill="#4A505A">mvn -pl 切片</text>
+
+    <!-- T3 -->
+    <rect x="191" y="92" width="126" height="58" rx="9" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="203" y="112" font-size="11" font-weight="700" fill="#8F3F06">T3 宽重构</text>
+    <text x="203" y="129" font-size="12" font-weight="700" fill="#16181D">概念分离</text>
+    <text x="203" y="144" font-size="10.5" fill="#4A505A">expand 阶段</text>
+
+    <!-- T4 T9 -->
+    <rect x="342" y="52" width="126" height="58" rx="9" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="354" y="72" font-size="11" font-weight="700" fill="#1B5820">T4</text>
+    <text x="354" y="89" font-size="12" font-weight="700" fill="#16181D">投标基础信息</text>
+    <text x="354" y="104" font-size="10.5" fill="#4A505A">垂直切片</text>
+
+    <rect x="342" y="132" width="126" height="58" rx="9" fill="#FBEBEA" stroke="#EBC4C1" stroke-dasharray="5 3"/>
+    <text x="354" y="152" font-size="11" font-weight="700" fill="#B3261E">T9 宽重构</text>
+    <text x="354" y="169" font-size="12" font-weight="700" fill="#16181D">基础信息改造</text>
+    <text x="354" y="184" font-size="10.5" fill="#4A505A">expand–contract</text>
+
+    <!-- T5 -->
+    <rect x="493" y="52" width="126" height="58" rx="9" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="505" y="72" font-size="11" font-weight="700" fill="#1B5820">T5</text>
+    <text x="505" y="89" font-size="12" font-weight="700" fill="#16181D">中标结果</text>
+    <text x="505" y="104" font-size="10.5" fill="#4A505A">含落标与弃标</text>
+
+    <!-- T6 -->
+    <rect x="644" y="92" width="126" height="58" rx="9" fill="#ECF2FA" stroke="#C7D8EA"/>
+    <text x="656" y="112" font-size="11" font-weight="700" fill="#1F5288">T6</text>
+    <text x="656" y="129" font-size="12" font-weight="700" fill="#16181D">项目立项</text>
+    <text x="656" y="144" font-size="10.5" fill="#4A505A">通知书触发</text>
+
+    <!-- T7 T8 -->
+    <rect x="795" y="52" width="126" height="58" rx="9" fill="#F2EDFA" stroke="#D6C6EE"/>
+    <text x="807" y="72" font-size="11" font-weight="700" fill="#5A3099">T7</text>
+    <text x="807" y="89" font-size="12" font-weight="700" fill="#16181D">经济评审</text>
+    <text x="807" y="104" font-size="10.5" fill="#4A505A">枚举结论</text>
+
+    <rect x="795" y="132" width="126" height="58" rx="9" fill="#F2EDFA" stroke="#D6C6EE"/>
+    <text x="807" y="152" font-size="11" font-weight="700" fill="#5A3099">T8</text>
+    <text x="807" y="169" font-size="12" font-weight="700" fill="#16181D">技术评审</text>
+    <text x="807" y="184" font-size="10.5" fill="#4A505A">共用引擎</text>
+
+    <!-- edges -->
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0,1 L9,5 L0,9 z" fill="#4A505A"/>
+      </marker>
+    </defs>
+    <path d="M166,81 C178,81 179,121 191,121" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M166,161 C178,161 179,121 191,121" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M317,121 L342,121" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M317,121 C330,121 330,161 342,161" fill="none" stroke="#B3261E" stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M468,81 L493,81" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M619,81 C632,81 632,121 644,121" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M770,121 C783,121 783,81 795,81" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M770,121 C783,121 783,161 795,161" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar)"/>
+
+    <rect x="24" y="220" width="912" height="46" rx="9" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="40" y="240" font-size="12" font-weight="700" fill="#8F3F06">初始前沿 = {T1, T2}</text>
+    <text x="40" y="256" font-size="11.5" fill="#333941">两张票无前置、互不依赖，可以立刻并发推进；T3 之后每次分裂都重算前沿</text>
+
+    <rect x="24" y="278" width="440" height="46" rx="9" fill="#FBEBEA" stroke="#EBC4C1"/>
+    <text x="40" y="298" font-size="12" font-weight="700" fill="#B3261E">T9 是宽重构，不是垂直切片</text>
+    <text x="40" y="314" font-size="11.5" fill="#333941">它内部再拆成 expand / migrate×N / contract 若干票</text>
+
+    <rect x="496" y="278" width="440" height="46" rx="9" fill="#F2EDFA" stroke="#D6C6EE"/>
+    <text x="512" y="298" font-size="12" font-weight="700" fill="#5A3099">T7 与 T8 应共用评审引擎</text>
+    <text x="512" y="314" font-size="11.5" fill="#333941">两者的差异是评审项定义，不是流程本身</text>
+
+    <text x="24" y="352" font-size="11.5" fill="#4A505A">发布形态：本地 Markdown 追踪器时，票写在 .scratch/project-planning/issues/NN-slug.md；GitHub / GitLab 时用平台原生 blocking 关系。</text>
+    <text x="24" y="372" font-size="11.5" fill="#4A505A">票的正文禁止写文件路径与代码片段 —— 它们会飞快过期。例外：原型产出的精简片段（状态机、表结构）可以内联。</text>
+  </svg></div>
+  <figcaption><b>图 4</b>　推荐任务图。注意 <b>T1 / T2 两张前置票本身不交付任何业务功能</b>——它们买的是"后面每一张票都能安全推进"的权利。<b>跳过它们，后面每一张票都要额外付一次返工成本。</b></figcaption></figure>
+
+  <h3>7.4 对照：怎样才算切得好</h3>
+  <div class="g2">
+    <div class="card" style="border-color:#BCD6BC;background:var(--green-bg)">
+      <h4 style="margin-top:0;color:var(--green-t)">✓ 好的切片</h4>
+      <ul style="margin:6px 0 0;font-size:14.5px">
+        <li>一张票能在一个全新上下文窗口里做完。</li>
+        <li>完成后单独可演示：如"能在列表页看到一条含三个标段的投标基础信息"。</li>
+        <li>穿过所有层：表、服务、接口、测试全都动了。</li>
+        <li>只依赖真正门控它的票。</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:#EBC4C1;background:var(--red-bg)">
+      <h4 style="margin-top:0;color:var(--red-t)">✗ 坏的切片</h4>
+      <ul style="margin:6px 0 0;font-size:14.5px">
+        <li>"先把五个子模块的 Entity 和 Mapper 都写完"——横向切片。</li>
+        <li>"重构评审模块"——没有完成定义，也装不进一个窗口。</li>
+        <li>"统一改字典字段"——宽重构伪装成切片。</li>
+        <li>所有票线性串联——没有可并发的前沿，等于放弃 <code>implement-spec</code> 的主要收益。</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+<section id="s08"><div class="wrap">
+  <h2><span class="num">08</span>证据全景：正反同列，并标注证据强度</h2>
+  <p class="lede">这一章把支持与反对的证据放在同一张表里。<b>任何只引一边的结论都不可信</b>——尤其当一个 25 万+ 星的技能包正处在舆论的顺风上时。每条都标注来源、年份与证据强度：<code>RCT &gt; 受控实验 &gt; 大样本观察 &gt; 自报调查 &gt; 单一案例 &gt; 建模</code>。</p>
+
+  <h3>8.1 主证据：为什么在这个系统上，"先用起来"大概率是错的</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:26%">支持/反证据</th><th style="width:16%">来源 · 年份</th><th style="width:14%">强度</th><th style="width:26%">内容</th><th style="width:18%">对本系统的适用度</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="tag t-green">支持</span> <b>AI 在成熟大仓库上让资深开发者变慢</b></td>
+        <td>METR RCT · 2025-07</td>
+        <td><b>RCT</b>（最高）</td>
+        <td>16 名资深开发者、246 个真实任务，仓库平均<b>超过 100 万行、平均 10 年历史</b>。随机分组后，允许用 AI 的一组<b>完成时间增加 19%</b>。更关键的是：<b>参与者事前预测会快 24%，事后仍认为快了 20%</b>。接受率低于 44%，约 9% 的任务时间花在审阅 AI 输出上。</td>
+        <td><b>高</b>——画像几乎完全吻合：规模同量级、年限吻合、开发者熟悉度高。这是本报告最重要的一条证据。</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-green">支持</span> <b>AI 是放大器，紧耦合系统收益最小</b></td>
+        <td>Google Cloud DORA · 2025</td>
+        <td>大样本调查<br>n≈5,000</td>
+        <td>"AI 放大既有强弱而非均匀普适"。AI 采纳与交付吞吐量首次转为正相关，但<b>与交付不稳定性仍正相关</b>。明确指出：<b>紧耦合架构 + 缓慢反馈循环的团队几乎看不到收益</b>。个体效能的正向效应在全部指标中最大。</td>
+        <td><b>高</b>——15 个模块共享 reactor 正是"紧耦合"的定义场景。</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-green">支持</span> <b>默认工作模式会挤掉"整理"</b></td>
+        <td>GitClear 纵向研究 · 2025</td>
+        <td>大样本观察<br>2.11 亿行变更</td>
+        <td>2020—2024 年间：被移动/重构成行占比 <b>24.8% → 9.5%</b>；复制粘贴行 <b>8.4% → 12.3%</b>；含 5 行以上重复块的提交<b>增长约 8 倍</b>；变更流失率 3.3% → 5.7%。<b>2024 年是数据集中第一次出现"复制 > 重构"。</b></td>
+        <td><b>高</b>——这直接预测了你们仓库若不做防护会变成什么样。</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-red">反证据</span> <b>Copilot 组任务完成数 +26%</b></td>
+        <td>MIT / Princeton / UPenn · 2024</td>
+        <td>受控 + 观察<br>4,800 名开发者</td>
+        <td>覆盖 Microsoft、Accenture 与一家财富 100 强。<b>使用 Copilot 的开发者平均多完成 26% 的任务。</b></td>
+        <td><b>中</b>——场景差异巨大：多为隔离、规模较小的任务，不是十年单体上的功能改造。</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-red">反证据</span> <b>受控实验中快 55.8%</b></td>
+        <td>GitHub 官方实验</td>
+        <td>受控实验</td>
+        <td>另一个经常被引用的数字：<b>持 Copilot 的开发者完成同一任务快 55.8%</b>；并报告可读性 +3.62%、可维护性 +2.47% 等小幅正向。</td>
+        <td><b>低</b>——任务是孤立的、无历史的，与"在三百万行上下文里加一个受限于业务铁律的功能"不可比。</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-red">反证据</span> <b>质量并非必然下降</b></td>
+        <td>Qodo 数据<br>（厂商来源）</td>
+        <td>厂商数据<br>强度最低</td>
+        <td>AI 工具结合 <b>AI 代码评审</b>时，团队报告质量改善者达 81%，而只用 AI 工具不做自动评审的为 55%。</td>
+        <td><b>中</b>——强度低，但它指向的结论与本报告一致：<b>差别在于评审这一个变量</b>。</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-lite">背景</span> <b>维护成本是常态而非意外</b></td>
+        <td>Stripe Developer Coefficient · 2018</td>
+        <td>自报调查<br>n=1,000+ 开发者 / 1,000+ 高管</td>
+        <td>开发者每周 17.3 小时用于技术债与坏代码（13.5 + 3.8），占 41.1 小时工作周的 <b>42%</b>；并外推出约 3,000 亿美元的全球产出损失。</td>
+        <td><b>中低</b>——自报且数据已过多年，<b>只能当背景锚点，不能当预算依据</b>。</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-lite">背景</span> <b>信任赤字真实存在</b></td>
+        <td>Stack Overflow 开发者调查 · 2025</td>
+        <td>调查<br>（经 DORA 综述引用）</td>
+        <td>对 AI 输出<b>不信任度 46%、信任 33%</b>；另有 66% 表示<b>修复"差一点就对"的 AI 代码比自己写更花时间</b>。</td>
+        <td><b>中</b>——二手转述自综述报道，原始问卷未直接核验；但与 METR 的"审阅开销"互相印证。</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <h3>8.2 J 曲线：这笔学费要交多久</h3>
+  <p>DORA 团队把 AI 采纳早期的稳定性下滑明确称为<b>"expected J-Curve (or tuition cost)"</b>——并给出了压平曲线的处方：<b>投资平台工程 + 强版本控制实践 + 小批量size</b>。这条处方与本手册第 06、07 章的建议是同一件事的两种说法。</p>
+
+  <figure id="fig5"><div class="fig-box"><svg viewBox="0 0 960 400" role="img" aria-label="AI 采纳的 J 曲线示意图">
+    <rect x="0" y="0" width="960" height="400" fill="#FFFFFF"/>
+    <text x="40" y="26" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">净交付速度相对基线（基线 = 100）</text>
+
+    <!-- axes -->
+    <line x1="80" y1="330" x2="920" y2="330" stroke="#D6D2C8" stroke-width="1.5"/>
+    <line x1="80" y1="60" x2="80" y2="330" stroke="#D6D2C8" stroke-width="1.5"/>
+
+    <!-- gridlines 80..140 -->
+    <line x1="80" y1="300" x2="920" y2="300" stroke="#F0EEE8" stroke-width="1"/>
+    <text x="72" y="304" font-size="11" fill="#4A505A" text-anchor="end">80</text>
+    <line x1="80" y1="260" x2="920" y2="260" stroke="#F0EEE8" stroke-width="1"/>
+    <text x="72" y="264" font-size="11" fill="#4A505A" text-anchor="end">90</text>
+    <line x1="80" y1="220" x2="920" y2="220" stroke="#D6D2C8" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="72" y="224" font-size="11" font-weight="700" fill="#333941" text-anchor="end">100</text>
+    <text x="86" y="215" font-size="10.5" fill="#333941">基线</text>
+    <line x1="80" y1="180" x2="920" y2="180" stroke="#F0EEE8" stroke-width="1"/>
+    <text x="72" y="184" font-size="11" fill="#4A505A" text-anchor="end">110</text>
+    <line x1="80" y1="140" x2="920" y2="140" stroke="#F0EEE8" stroke-width="1"/>
+    <text x="72" y="144" font-size="11" fill="#4A505A" text-anchor="end">120</text>
+    <line x1="80" y1="100" x2="920" y2="100" stroke="#F0EEE8" stroke-width="1"/>
+    <text x="72" y="104" font-size="11" fill="#4A505A" text-anchor="end">130</text>
+
+    <!-- tuition zone -->
+    <rect x="80" y="60" width="205" height="240" fill="#FBEBEA" opacity="0.55"/>
+    <text x="182" y="80" font-size="11.5" font-weight="700" fill="#B3261E" text-anchor="middle">学费期</text>
+
+    <!-- curve: y(v)=300-(v-80)/60*240 -->
+    <path d="M80,220 C110,258 120,268 148,268 C200,268 240,240 285,220 C360,193 420,170 490,148 C640,108 760,104 900,100"
+          fill="none" stroke="#16181D" stroke-width="2.6"/>
+
+    <!-- points -->
+    <circle cx="80" cy="220" r="4.5" fill="#FFFFFF" stroke="#16181D" stroke-width="2"/>
+    <circle cx="148" cy="268" r="4.5" fill="#B3261E"/>
+    <text x="148" y="290" font-size="11.5" font-weight="700" fill="#B3261E" text-anchor="middle">88</text>
+    <circle cx="285" cy="220" r="4.5" fill="#B45309"/>
+    <text x="285" y="206" font-size="11.5" font-weight="700" fill="#8F3F06" text-anchor="middle">100 回本</text>
+    <circle cx="490" cy="148" r="4.5" fill="#2E7D32"/>
+    <text x="490" y="134" font-size="11.5" font-weight="700" fill="#1B5820" text-anchor="middle">118</text>
+    <circle cx="900" cy="100" r="4.5" fill="#2E7D32"/>
+    <text x="896" y="94" font-size="11.5" font-weight="700" fill="#1B5820" text-anchor="end">130</text>
+
+    <!-- breakeven vertical -->
+    <line x1="285" y1="226" x2="285" y2="330" stroke="#B45309" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+    <!-- x labels -->
+    <text x="80" y="348" font-size="11" fill="#4A505A" text-anchor="middle">第 0 周</text>
+    <text x="148" y="348" font-size="11" fill="#4A505A" text-anchor="middle">第 2 周</text>
+    <text x="285" y="348" font-size="11" fill="#4A505A" text-anchor="middle">第 6 周</text>
+    <text x="490" y="348" font-size="11" fill="#4A505A" text-anchor="middle">第 12 周</text>
+    <text x="900" y="348" font-size="11" fill="#4A505A" text-anchor="end">第 24 周</text>
+
+    <!-- annotations -->
+    <text x="96" y="372" font-size="11.5" fill="#333941">谷底成因：织表征测试、改 CI 切片、建术语表 —— 三件都不产出业务功能</text>
+    <text x="96" y="390" font-size="11.5" fill="#333941">压平方式（DORA 处方）：投资平台能力 + 强版本控制实践 + 小批量提交</text>
+  </svg></div>
+  <figcaption><b>图 5</b>　J 曲线示意。<span class="tag t-red">建模值</span><b>曲线的形状有文献依据（DORA 明确描述了先降后升的学费期），但具体的百分比与时间坐标是本文的建模假设，不是某个实测样本</b>。正确使用姿势：用它来对齐"前六周会变慢"的预期，不要在立项会上当承诺。</figcaption></figure>
+
+  <div class="callout teal"><span class="lb">三条反向校验</span>
+  <p><b>①</b> METR 作者自己列了一张"我们不提供证据的主张"清单，明确<b>没有主张</b>"大多数开发者的多数场景"或"未来不会变快"，甚至明说"显然存在能取得正收益的使用方式"。<b>引这条数据时不能过度外推。</b></p>
+  <p><b>②</b> GitClear 反映的是<b>相关性而非因果</b>：它的 diff 分类无法区分"团队有意识地少重构"与"AI 导致的复制"。但它与 METR 的"接受率不足 44% + 大改后再提交"描述了同一个现象。</p>
+  <p><b>③</b> 正<strong>反证据没有被隐藏</strong>：隔离任务上的确显著更快。真实结论因此是条件的——<b>收益取决于任务是否与庞大的隐含上下文耦合</b>，而这恰好是你这类系统的定义特征。</p></div>
+</div></section>
+
+<section id="s09"><div class="wrap">
+  <h2><span class="num">09</span>度量：怎么知道它到底有没有用</h2>
+  <p class="lede">METR 那 19% 与开发者自认为快 20% 之间的缺口，直接推出一条度量原则：<b>主观感受不能参与度量，只能作为线索。</b>下面是三层指标与四条防作弊原则。</p>
+
+  <h3>9.1 三层指标</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:14%">层</th><th style="width:26%">指标</th><th style="width:32%">怎么测</th><th style="width:28%">为什么是它</th></tr></thead>
+    <tbody>
+      <tr><td><b>L1 输入</b><br>（采纳广度）</td><td>被标记为 <code>ready-for-agent</code> 的票占比</td><td>跟踪器里的标签计数。</td><td>它衡量的不是"用了多少 AI"，而是<b>有多少工作被 grill 到了能安全交给智能体的程度</b>。</td></tr>
+      <tr><td rowspan="2"><b>L2 过程</b><br>（效率）</td><td><b>单模块构建-测试墙钟时间</b>（P50 / P90）</td><td>定时跑 <code>mvn -pl &lt;mod&gt; -am test</code> 并上报。</td><td>一号指标。它是反馈速率的直接代理，也是 T1 那条理论的可观测量。</td></tr>
+      <tr><td>单票周期 P50 / P90</td><td>票创建到关闭的时间戳差。</td><td>比"工时估计"客观，而且能暴露<b>被卡在哪一层</b>。</td></tr>
+      <tr><td rowspan="2"><b>L3 结果</b><br>（质量）</td><td>变更失败率 / 回滚率</td><td>发布后 7 天内需要热修或回滚的变更占比（DORA 四指标的变形）。</td><td>这是<b>唯一能证伪" AI 让我更快"这件事</b>的指标——速度可以自欺，回滚不能。</td></tr>
+      <tr><td>重复块增量 / 重构行数占比</td><td>本地跑一次 GitClear 式的 diff 分类（或用 SonarQube 的重复行指标）。</td><td>直接监测第 6 章的 prediction：若 <b>重构占比在下降而重复在上升</b>，说明 AI 正在给这座仓库加债。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>9.2 四条反 Goodhart 原则</h3>
+  <ol>
+    <li><b>绝不把"AI 生成的行数"当产量。</b>它同时是分子也是分母的一部分——GitClear 的重合数据已经证明这条会导致什么。</li>
+    <li><b>每个速度指标配一个质量指标成对看。</b>单票周期 P50 下降而回滚率上升，结论是"变快了她——但没有用"，不能只报前者。</li>
+    <li><b>优先采用不可人为修饰的客观指标。</b>构建墙钟时间、回滚率、CI 红灯数都不由填报者决定；自评量表最容易漂移（这正是 METR 那 39 个百分点的缺口）。</li>
+    <li><b>基线必须先测两周。</b>没有基线的任何百分比改善都是无从验证的主张。<b>建议把 T1 / T2 两张前置票的周期当作天然基线段。</b></li>
+  </ol>
+
+  <div class="callout"><span class="lb">一个便宜但是有效的起点</span>
+  <p>不要一上来做看板。抓起<b>三个数字</b>就足够启动：<b>① 单模块测试墙钟时间（每天自动跑一次）；② 回滚/热修率（每周一次）；③ ready-for-agent 票占比（每周一次）。</b>等到这三条曲线稳定两周、有了真实基线，再考虑加指标。<b>度量体系本身也应该遵循"小批量"。</b></p></div>
+</div></section>
+<section id="s10"><div class="wrap">
+  <h2><span class="num">10</span>90 天落地路线图</h2>
+  <p class="lede">这份路线图有一个反常识的安排：<b>前三十天禁止让智能体生成任何业务代码。</b>理由是第 08 章的证据——在紧耦合、慢反馈、高默契约定的系统里，先把前置的安全网与快速反馈建好，是唯一能把 J 曲线压平的做法。</p>
+
+  <h3>10.1 成熟度阶梯：先判断自己在哪一级</h3>
+
+  <figure id="fig6"><div class="fig-box"><svg viewBox="0 0 960 380" role="img" aria-label="AI 辅助开发的五级成熟度阶梯">
+    <rect x="0" y="0" width="960" height="380" fill="#FFFFFF"/>
+    <text x="24" y="26" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">成熟度阶梯 · 每级必须先满足左侧全部条件才允许进入右侧用法</text>
+
+    <!-- L0 -->
+    <rect x="24" y="240" width="171" height="100" rx="9" fill="#FBEBEA" stroke="#EBC4C1"/>
+    <text x="38" y="262" font-size="12.5" font-weight="700" fill="#B3261E">L0 裸奔</text>
+    <text x="38" y="282" font-size="11" fill="#333941">直接让智能体改代码</text>
+    <text x="38" y="300" font-size="11" fill="#333941">无术语表、无测试</text>
+    <text x="38" y="318" font-size="11" fill="#333941">CI 只有编译这一关</text>
+
+    <!-- L1 -->
+    <rect x="205" y="200" width="171" height="140" rx="9" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="219" y="222" font-size="12.5" font-weight="700" fill="#8F3F06">L1 有语言</text>
+    <text x="219" y="242" font-size="11" fill="#333941">建立了 GLOSSARY</text>
+    <text x="219" y="260" font-size="11" fill="#333941">关键决策写成 ADR</text>
+    <text x="219" y="278" font-size="11" fill="#333941">会话前必做 grill</text>
+    <text x="219" y="302" font-size="11" font-weight="700" fill="#8F3F06">允许：解释旧代码</text>
+    <text x="219" y="320" font-size="11" fill="#333941">写文档、生成测试用例</text>
+    <text x="219" y="338" font-size="11" fill="#333941">禁止：改动业务逻辑</text>
+
+    <!-- L2 -->
+    <rect x="386" y="160" width="171" height="180" rx="9" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="400" y="182" font-size="12.5" font-weight="700" fill="#8F3F06">L2 有安全网</text>
+    <text x="400" y="202" font-size="11" fill="#333941">改动处已表征测试</text>
+    <text x="400" y="220" font-size="11" fill="#333941">测试能独立跑通</text>
+    <text x="400" y="238" font-size="11" fill="#333941">失败时能看出改了啥</text>
+    <text x="400" y="262" font-size="11" font-weight="700" fill="#8F3F06">允许：单张切片票</text>
+    <text x="400" y="280" font-size="11" fill="#333941">一次一个垂直切片</text>
+    <text x="400" y="298" font-size="11" fill="#333941">必须走红绿循环</text>
+    <text x="400" y="322" font-size="11" fill="#333941">禁止：跨模块改动</text>
+    <text x="400" y="340" font-size="11" fill="#333941">禁止：顺手重构</text>
+
+    <!-- L3 -->
+    <rect x="567" y="120" width="171" height="220" rx="9" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="581" y="142" font-size="12.5" font-weight="700" fill="#1B5820">L3 有快速反馈</text>
+    <text x="581" y="162" font-size="11" fill="#333941">单模块测试进 60 秒</text>
+    <text x="581" y="180" font-size="11" fill="#333941">自动检查已接入 CI</text>
+    <text x="581" y="198" font-size="11" fill="#333941">规则由 ArchUnit 承载</text>
+    <text x="581" y="222" font-size="11" font-weight="700" fill="#1B5820">允许：多前沿并发</text>
+    <text x="581" y="240" font-size="11" fill="#333941">子智能体各占 worktree</text>
+    <text x="581" y="258" font-size="11" fill="#333941">双轴代码评审</text>
+    <text x="581" y="276" font-size="11" fill="#333941">宽重构走三段式</text>
+    <text x="581" y="300" font-size="11" fill="#333941">此时 implement-spec</text>
+    <text x="581" y="318" font-size="11" fill="#333941">的并发收益才真正</text>
+    <text x="581" y="336" font-size="11" fill="#333941">能够兑现</text>
+
+    <!-- L4 -->
+    <rect x="748" y="80" width="171" height="260" rx="9" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="762" y="102" font-size="12.5" font-weight="700" fill="#1B5820">L4 有度量</text>
+    <text x="762" y="122" font-size="11" fill="#333941">三条基线跑满两周</text>
+    <text x="762" y="140" font-size="11" fill="#333941">回填率与墙钟时间</text>
+    <text x="762" y="158" font-size="11" fill="#333941">进入趋势图</text>
+    <text x="762" y="176" font-size="11" fill="#333941">retro 已常态化</text>
+    <text x="762" y="200" font-size="11" font-weight="700" fill="#1B5820">允许：自行调配</text>
+    <text x="762" y="218" font-size="11" fill="#333941">哪些工作交给智能体</text>
+    <text x="762" y="236" font-size="11" fill="#333941">基于自家数据决定</text>
+    <text x="762" y="260" font-size="11" font-weight="700" fill="#1B5820">标志：</text>
+    <text x="762" y="278" font-size="11" fill="#333941">可以回答"我们到底</text>
+    <text x="762" y="296" font-size="11" fill="#333941">有没有变快"，而且</text>
+    <text x="762" y="314" font-size="11" fill="#333941">答案不是靠感觉</text>
+    <text x="762" y="332" font-size="11" fill="#333941">而是靠那三条曲线</text>
+
+    <text x="24" y="368" font-size="11.5" fill="#4A505A">起步判定：你的系统目前大概率在 L0，目标是在第 90 天稳住 L3，并在第 4 个月达到 L4。</text>
+  </svg></div>
+  <figcaption><b>图 6</b>　五级成熟度阶梯。<b>每一级都同时规定"允许"与"禁止"</b>——这是有意的：只写"允许"的规范会被解释成"没禁止就行"。</figcaption></figure>
+
+  <h3>10.2 90 天安排</h3>
+
+  <figure id="fig7"><div class="fig-box"><svg viewBox="0 0 960 440" role="img" aria-label="90 天落地甘特图">
+    <rect x="0" y="0" width="960" height="440" fill="#FFFFFF"/>
+    <text x="24" y="24" font-size="12.5" font-weight="700" fill="#4A505A" letter-spacing="1">90 天路线图 · 前 30 天不产出业务功能</text>
+
+    <!-- week header W1..W13 : x = 200 + (w-1)*55, width 55 -->
+    <text x="200" y="48" font-size="10.5" fill="#4A505A">W1</text>
+    <text x="255" y="48" font-size="10.5" fill="#4A505A">W2</text>
+    <text x="310" y="48" font-size="10.5" fill="#4A505A">W3</text>
+    <text x="365" y="48" font-size="10.5" fill="#4A505A">W4</text>
+    <text x="420" y="48" font-size="10.5" fill="#4A505A">W5</text>
+    <text x="475" y="48" font-size="10.5" fill="#4A505A">W6</text>
+    <text x="530" y="48" font-size="10.5" fill="#4A505A">W7</text>
+    <text x="585" y="48" font-size="10.5" fill="#4A505A">W8</text>
+    <text x="640" y="48" font-size="10.5" fill="#4A505A">W9</text>
+    <text x="695" y="48" font-size="10.5" fill="#4A505A">W10</text>
+    <text x="750" y="48" font-size="10.5" fill="#4A505A">W11</text>
+    <text x="805" y="48" font-size="10.5" fill="#4A505A">W12</text>
+    <text x="860" y="48" font-size="10.5" fill="#4A505A">W13</text>
+    <line x1="200" y1="56" x2="915" y2="56" stroke="#D6D2C8" stroke-width="1"/>
+
+    <rect x="200" y="66" width="715" height="26" fill="#FDFCF9"/>
+    <rect x="200" y="130" width="715" height="26" fill="#FDFCF9"/>
+    <rect x="200" y="194" width="715" height="26" fill="#FDFCF9"/>
+    <rect x="200" y="258" width="715" height="26" fill="#FDFCF9"/>
+    <rect x="200" y="322" width="715" height="26" fill="#FDFCF9"/>
+
+    <!-- row1 -->
+    <text x="24" y="80" font-size="11.5" font-weight="700" fill="#16181D">术语与 ADR 基线</text>
+    <rect x="200" y="68" width="106" height="20" rx="5" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="253" y="82" font-size="10.5" fill="#8F3F06" text-anchor="middle">grill 两轮</text>
+
+    <!-- row2 -->
+    <text x="24" y="112" font-size="11.5" font-weight="700" fill="#16181D">表征测试安全网</text>
+    <rect x="200" y="100" width="216" height="20" rx="5" fill="#E6F2F1" stroke="#B8D9D5"/>
+    <text x="308" y="114" font-size="10.5" fill="#0A5750" text-anchor="middle">只覆盖即将触碰的代码</text>
+
+    <!-- row3 -->
+    <text x="24" y="144" font-size="11.5" font-weight="700" fill="#16181D">秒级反馈与静态检查</text>
+    <rect x="255" y="132" width="220" height="20" rx="5" fill="#E6F2F1" stroke="#B8D9D5"/>
+    <text x="365" y="146" font-size="10.5" fill="#0A5750" text-anchor="middle">一号指标上线</text>
+
+    <!-- row4 -->
+    <text x="24" y="176" font-size="11.5" font-weight="700" fill="#16181D">T3 概念分离 expand</text>
+    <rect x="365" y="164" width="216" height="20" rx="5" fill="#FDF1E3" stroke="#E8CFA8"/>
+    <text x="473" y="178" font-size="10.5" fill="#8F3F06" text-anchor="middle">新旧两形态共存</text>
+
+    <!-- row5 -->
+    <text x="24" y="208" font-size="11.5" font-weight="700" fill="#16181D">T4 投标基础信息</text>
+    <rect x="475" y="196" width="162" height="20" rx="5" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="556" y="210" font-size="10.5" fill="#1B5820" text-anchor="middle">第一个真切片</text>
+
+    <!-- row6 -->
+    <text x="24" y="240" font-size="11.5" font-weight="700" fill="#16181D">T5 中标结果信息</text>
+    <rect x="640" y="228" width="106" height="20" rx="5" fill="#E9F3E9" stroke="#BCD6BC"/>
+    <text x="693" y="242" font-size="10.5" fill="#1B5820" text-anchor="middle">含落标弃标</text>
+
+    <!-- row7 -->
+    <text x="24" y="272" font-size="11.5" font-weight="700" fill="#16181D">T6 项目立项衔接</text>
+    <rect x="750" y="260" width="162" height="20" rx="5" fill="#ECF2FA" stroke="#C7D8EA"/>
+    <text x="831" y="274" font-size="10.5" fill="#1F5288" text-anchor="middle">通知书触发</text>
+
+    <!-- row8 -->
+    <text x="24" y="304" font-size="11.5" font-weight="700" fill="#16181D">T7 / T8 双评审</text>
+    <rect x="750" y="292" width="162" height="20" rx="5" fill="#F2EDFA" stroke="#D6C6EE"/>
+    <text x="831" y="306" font-size="10.5" fill="#5A3099" text-anchor="middle">共用引擎</text>
+
+    <!-- row9 -->
+    <text x="24" y="336" font-size="11.5" font-weight="700" fill="#16181D">T9 基础信息宽重构</text>
+    <rect x="640" y="324" width="271" height="20" rx="5" fill="#FBEBEA" stroke="#EBC4C1" stroke-dasharray="5 3"/>
+    <text x="775" y="338" font-size="10.5" fill="#B3261E" text-anchor="middle">migrate 分批 · 每批 CI 必须绿</text>
+
+    <!-- row10 retro -->
+    <text x="24" y="368" font-size="11.5" font-weight="700" fill="#16181D">retro 双周复盘</text>
+    <rect x="310" y="356" width="46" height="20" rx="5" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <rect x="420" y="356" width="46" height="20" rx="5" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <rect x="530" y="356" width="46" height="20" rx="5" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <rect x="640" y="356" width="46" height="20" rx="5" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <rect x="750" y="356" width="46" height="20" rx="5" fill="#F5F3EE" stroke="#D6D2C8"/>
+    <rect x="860" y="356" width="46" height="20" rx="5" fill="#F5F3EE" stroke="#D6D2C8"/>
+
+    <text x="24" y="404" font-size="11.5" fill="#4A505A">虚线框 = 宽重构批次；每批都必须单独保持 CI 绿色，最后由一张 contract 票统一收尾。</text>
+    <text x="24" y="424" font-size="11.5" fill="#4A505A">前四周的时间原则上不交付任何业务功能：建文档语言、织安全网、把反馈拉进一分钟。</text>
+  </svg></div>
+  <figcaption><b>图 7</b>　90 天甘特示意。周数为相对节奏而非承诺日历。<b>两条硬约束：前三行的三条前置任务不能压缩</b>；<b>真正能压缩的是后面业务票的并行度</b>。</figcaption></figure>
+
+  <h3>10.3 投资配比建议</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:24%">投入方向</th><th style="width:18%">建议配比</th><th style="width:58%">理由</th></tr></thead>
+    <tbody>
+      <tr><td><b>反馈通道</b>（测试速度、CI 切片、静态检查）</td><td><b>40%</b></td><td>这是唯一对后续所有工作产生乘数效应的投入。对应 T1、T6 与第 9.1 节的二号指标。</td></tr>
+      <tr><td><b>术语与规格</b>（grill、GLOSSARY、ADR、票）</td><td><b>25%</b></td><td>决定返工率。在一个误解成本极高的系统里，这部分最容易被砍，也最不该被砍。</td></tr>
+      <tr><td><b>业务功能实现</b></td><td><b>25%</b></td><td>看起来偏低，但在前置就绪后，这一块的实际速度会被抬起来。</td></tr>
+      <tr><td><b>度量与复盘</b></td><td><b>10%</b></td><td>三条曲线 + 双周 retro。没有它，你无法证伪，也就无法知道该停还是该加。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>10.4 本地化：至少自研这三个技能</h3>
+  <p>作者的原话是"Hack around with them. Make them your own."。下面是针对本系统最值得自己写的三个技能，都遵循同一套格式约定：<b>YAML frontmatter + 极短的正文 + 按需引用的附属文件</b>。</p>
+
+  <h4>草案 A · 快速反馈通道（建议命名 <code>legacy-fast-feedback</code>，模型可调）</h4>
+  <pre><code>---
+name: legacy-fast-feedback
+description: Use when running or changing tests in this Maven reactor, or when a
+  test command is needed. Knows which modules are cheap to test alone and which
+  fan out through -am.
+---
+
+先跑 docs/agents/feedback-baseline.md 里记录的最快命令。
+对目标模块优先尝试：mvn -o -q -pl &lt;mod&gt; -am -DskipITs test
+不得使用全量 reactor 构建来验证单个模块。
+若某模块 -am 会拖入超过 4 个模块，先查阅上述文档里的替代切片。
+
+禁止为了"能跑起来"而跳过测试（-DskipTests / -Dmaven.test.skip=true）。</code></pre>
+
+  <h4>草案 B · 模块边界守门（建议 <code>maven-boundary-guard</code>，模型可调）</h4>
+  <pre><code>---
+name: maven-boundary-guard
+description: Use when adding imports across Maven modules, adding a dependency to
+  pom.xml, or placing a new class. Classifies each dependency into the four
+  DEEPENING categories.
+---
+
+跨 import 或新增 pom 依赖前，先回答三个问题：
+1. 这次依赖属于 in-process / local-substitutable / remote-owned / true-external 哪一类？
+2. 若为 remote-owned，接缝处是否需要 port？是否已有两个及以上适配器？
+   只有一个适配器的接缝是假接缝，不要引入。
+3. 新增的类不得同时承担业务规则与 I/O。业务规则必须独立于 Spring 容器可实例化。
+
+违反第 3 条时，先在 target seam 处剥离规则，而不是写集成测试绕开。</code></pre>
+
+  <h4>草案 C · 遗留代码安全网（建议 <code>legacy-safety-net</code>，用户可调）</h4>
+  <pre><code>---
+name: legacy-safety-net
+description: Weave characterization tests around a piece of old code before any
+  change is allowed to touch it.
+disable-model-invocation: true
+---
+
+改动任何十年以上、无测试的旧代码之前：
+
+1. 找出即将被触碰的最小行为集合（一个服务方法的输入/输出，或一张表的写入结果）。
+2. 用 JUnit 或 Approval 风格把"它现在实际做什么"冻结下来。允许对现有 bug
+   做记录性断言，并在测试名里标注 @Characterization 与日期。
+3. 基线第一次必须由一个人逐字段过一遍并签字（写在票的评论里）。
+4. 测试必须能在 60 秒内单独跑完，否则先处理第 3.3 节的第 4 条测量。
+
+红线：不得在没做完第 2 步的情况下让任何智能体改动该段代码。</code></pre>
+
+  <div class="callout"><span class="lb">写作这些技能时要遵守的格式约定</span>
+  <p><b>①</b> 用户可调技能的 <code>description</code> 写给人看，<b>去掉"当用户说..."式触发措辞</b>；模型可调技能反过来，<b>要保留丰富的触发措辞</b>。<br>
+  <b>②</b> 技能之间互相调用时写 <code>Call the Skill tool with "技能名"</code>，不要用相对路径跨目录引用；一次调用只能带一个技能名。<br>
+  <b>③</b> <b>不能让一个技能去调用另一个用户可调技能</b>——需要人做的，就写成"告诉用户去跑 /xxx"。</p></div>
+</div></section>
+
+<section id="s11"><div class="wrap">
+  <h2><span class="num">11</span>反模式清单</h2>
+  <p class="lede">每条给症状与修正。<b>症状一律写成"在这类系统上的具体样子"</b>——因为泛泛而谈的反模式，在人们恰好犯了它的时候也认不出来。</p>
+
+  <h3>11.1 战略层</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:26%">反模式</th><th style="width:38%">在你这个系统上的症状</th><th style="width:36%">修正</th></tr></thead>
+    <tbody>
+      <tr><td><b>把 AI 当成求援信号</b></td><td>工期紧了就"让智能体先写一版"，跳过术语与测试；理由是"先出东西再说"。</td><td>承认这是<b>借高利贷</b>。<b>唯一合规的提速是 Ticket 颗粒度变小</b>，不是跳过前置阶段。</td></tr>
+      <tr><td><b>用"感觉快了"做立项论据</b></td><td>汇报里写"效率提升明显"，但没有任何一条第 09 章的曲线。</td><td>METR 那 39 个百分点的感知缺口是这个问题的直接证据。<b>没基线不算证据。</b></td></tr>
+      <tr><td><b>指望一次 <code>improve-codebase-architecture</code> 解开十年泥球</b></td><td>跑完拿到一堆候选，团队很兴奋，然后发现没有一条能直接落地。</td><td>它<b>只产出候选，然后针对你选中的那一个继续 grill</b>。价值在"持续缩小脂肪"，不在"一次换血"。</td></tr>
+      <tr><td><b>同时安装两套安装形态</b></td><td>插件版与 skills.sh 版共存，每个技能出现两次，改了不生效。</td><td>文档明确要求二选一。<b>最终形态应为本地化后的 skills.sh 版本。</b></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>11.2 工程层</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:26%">反模式</th><th style="width:38%">症状</th><th style="width:36%">修正</th></tr></thead>
+    <tbody>
+      <tr><td><b>横向切片</b></td><td>"先把五个子模块的 Entity 和 Mapper 全部生成出来"，看起来进展神速。</td><td>批量产出验证的是<b>想象中的行为</b>。改垂直切片：一条能演示的窄路径走完全部层次。</td></tr>
+      <tr><td><b>宽重构伪装成切片</b></td><td>一张"评审结论改为枚举"的票改了一百多个文件，最后必须集成分支才能编译。</td><td>改走 <b>expand → 分批 migrate → contract</b>，每批一张票，每批 CI 绿。</td></tr>
+      <tr><td><b>把 Port 当勋章</b></td><td>为"将来可能换数据库"给每个 DAO 加了接口，只有一个实现。</td><td><b>一个适配器 = 假接缝</b>。等出现第二个真正的适配器时再抽。</td></tr>
+      <tr><td><b>为可测性抽出纯函数</b></td><td>抽出 static 方法测过了，但真正的 bug 藏在调用它的那几个分支里。</td><td>这是 <b>locality 缺失</b>。修正方向是加深模块，不是抽函数。</td></tr>
+      <tr><td><b>在红绿循环里顺手重构</b></td><td>改一个投标字段时顺手"优化"了旁边的命名与结构，diff 涨了三倍。</td><td>技能写得很清楚：<b>重构属于评审阶段，不属于循环。</b>它是并行实现能成立的前提。</td></tr>
+      <tr><td><b>让 AI 写像素复制的代码而不做整合</b></td><td>五个子模块各有各的 <code>XxxHelper</code>，逻辑重复但未察觉。</td><td><code>code-review</code> 的 <b>Duplicated Code</b> 基线会抓到它；更好的是事前用自动化重复块检查拦住。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>11.3 治理层</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:26%">反模式</th><th style="width:38%">症状</th><th style="width:36%">修正</th></tr></thead>
+    <tbody>
+      <tr><td><b>把 <code>CLAUDE.md</code> 写成百科全书</b></td><td>根目录的转向文件越长越好几千行，每条都会被推进上下文，而且谁也没验证过是否被遵守。</td><td>它<b>只放导航指针</b>。具体内容应当由 <code>CODING_STANDARDS.md</code> 与自动检查承担。</td></tr>
+      <tr><td><b>用散文规则约束机械性问题</b></td><td>"新增类不要跨模块依赖"写进规范，但没人记得住。</td><td><b>机械性问题默认做成 ArchUnit / Checkstyle 规则</b>；只有真正的裁量判断才写规范。</td></tr>
+      <tr><td><b>ADR 通货膨胀</b></td><td>每个技术选型都写一篇，三个月后没人读，真需要时找不到。</td><td>严格执行三道门槛：<b>难逆转 / 缺上下文会困惑 / 是真实权衡</b>。缺一即不写。</td></tr>
+      <tr><td><b>GLOSSARY 里塞实现细节</b></td><td>术语表出现了表名、字段名、REST 路径。</td><td>它<b>只收本上下文特有的概念</b>，且定义"是什么"而非"做什么"。通用编程概念不入册。</td></tr>
+      <tr><td><b>跳过 retro</b></td><td>项目做完了没任何沉淀，下一个模块重复踩同一个坑。</td><td>每次办双周 retro，产出<b>按严重度排序的环境改动</b>，且优先落到自动化检查。</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section id="s12"><div class="wrap">
+  <h2><span class="num">12</span>结论与判断</h2>
+
+  <div class="verdict"><h4>共识（有实测证据支撑）</h4>
+    <p style="margin:0">① 在与你画像吻合的系统上（成熟、大、高默契），现有 AI 编码工具<b>大概率先降低交付速度</b>（METR RCT）。② AI 采纳<b>会提高交付不稳定性</b>，而紧耦合 + 慢反馈的组织<b>收益最小</b>（DORA 2025）。③ 默认工作模式下，代码库的<b>整合类活动占比在下降</b>（GitClear 2.11 亿行）。④ 因此，<b>先建验证能力，再加生成能力</b>这一顺序，是目前证据唯一支持的稳妥解。</p></div>
+
+  <div class="verdict" style="border-color:var(--amber)"><h4>本文的判断（这是观点，不是共识）</h4>
+    <p style="margin:0 0 10px">① <b>「投标」与「项目」的概念分离，是这五个子模块里回报最高的一件事</b>，高于任何单个功能的交付。这不是证据直接给出的结论，而是依据"降低隐式耦合"的一般原理推导出的判断——需要在 grill 阶段被你们自己的业务专家证伪。<br>
+    ② <b>前 30 天禁止生成业务代码的安排是可辩护的</b>，但对工期紧的团队可能政治上门槛太高。若必须压缩，<b>至少保留 T1 表征测试这一张票</b>。<br>
+    ③ <b>mattpocock/skills 的真正价值是它把"什么时候该停下来问清楚"写成了可执行的协议</b>，而不是它提供的任何一个写代码的技巧。后者会随模型换代过期，前者不会。</p></div>
+
+  <div class="callout blue"><span class="lb">明天早上可以做的一件事</span>
+  <p>不需要任何审批、不需要装插件：<b>在仓库里新建一个 <code>GLOSSARY.md</code>，只写第 5.2 节里那十几个术语，然后找一个业务同事核对一轮。</b>这件事的成本是半天，收益是——从此你们讨论"项目"这个词时，指的是同一个东西，<b>而且这份共识可以直接被任何智能体读取</b>。</p></div>
+
+  <p class="src">三条最重要的提醒：本手册未访问你的代码库，因此图 1 的架构判断与 5.2 节的术语内容<b>均为待校验的假设</b>；图 5 的 J 曲线<b>是建模值而非实测值</b>；第 1.3 节的成本折算<b>是线性外推的建模结果</b>，不可用于预算。</p>
+</div></section>
+
+<section id="s13"><div class="wrap">
+  <h2><span class="num">13</span>参考来源</h2>
+  <p class="rf">按证据类型分组。<b>核心部分全部回溯到一手来源</b>——技能的原始 Markdown、研究报告原文、官方博客。</p>
+
+  <h3>一手来源：技能包本身</h3>
+  <ol class="rf">
+    <li>mattpocock/skills 仓库 README（我去用作应该注意的 <b>Installing</b> 与 <b>Why These Skills Exist</b> 两节）：<code>https://github.com/mattpocock/skills</code>（MIT）</li>
+    <li><code>skills/productivity/grilling/SKILL.md</code> — 设计树、前沿、轮次协议，"找事实是你的活"</li>
+    <li><code>skills/engineering/grill-with-docs/SKILL.md</code> — 两行：调用 grilling + domain-modeling</li>
+    <li><code>skills/engineering/to-spec/SKILL.md</code> — 规格模板、接缝数量、"不超过一个"原则</li>
+    <li><code>skills/engineering/to-tickets/SKILL.md</code> — 垂直切片三条规则、<b>宽重构的 expand–contract 定义</b></li>
+    <li><code>skills/engineering/implement/SKILL.md</code> 与 <code>implement-spec/SKILL.md</code> — 上下文指针、前沿并发、worktree</li>
+    <li><code>skills/engineering/tdd/SKILL.md</code> — 只测约定接缝、三条反模式、重构不属于循环</li>
+    <li><code>skills/engineering/codebase-design/SKILL.md</code> 与 <code>DEEPENING.md</code> — 深模块词汇表、依赖四象限、replace-don't-layer</li>
+    <li><code>skills/engineering/code-review/SKILL.md</code> — 双轴并行、Fowler 十二种气味基线</li>
+    <li><code>skills/engineering/domain-modeling/SKILL.md</code> 与 <code>GLOSSARY-FORMAT.md</code> — ADR 三门槛、术语表格式</li>
+    <li><code>skills/engineering/setup-matt-pocock-skills/SKILL.md</code> — 三 Section、五种 triage 标签、CLAUDE.md 区块</li>
+    <li><code>skills/engineering/improve-codebase-architecture/SKILL.md</code> — 五个摩擦探测点、"勘察不是救援"</li>
+    <li><code>skills/engineering/retro/SKILL.md</code> — 六个改进类别、机械性问题优先机械化</li>
+    <li><code>.agents/invocation.md</code> — 两类调用权的定义与"不得跨调用"的硬约束</li>
+  </ol>
+
+  <h3>一手实证</h3>
+  <ol class="rf">
+    <li><b>METR</b>（2025-07）：<i>Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity</i>。RCT，16 名开发者、246 个任务，仓库平均百万行级、约十年历史。<b>+19% 耗时</b>，预测 -24%，事后自评 -20%。原文含"我们不提供证据的主张"清单。</li>
+    <li><b>Google Cloud DORA</b>（2025）：<i>State of AI-assisted Software Development</i>，n≈5,000。<b>AI 是放大器</b>；AI 采纳与交付不稳定性正相关；<b>紧耦合 + 慢反馈团队收益最小</b>。另有 DORA <i>The ROI of AI-assisted Software Development</i>（2026）给出标准化效应量与<b>J 曲线（学费成本）</b>表述。</li>
+    <li><b>DORA</b>（2024）：n=39,000+。AI 采纳每提高 25%，交付<b>速度下降 1.5%、稳定性下降 7.2%</b><b>该组数字来自二手报道转述，正式引用前请回到报告原文核对</b>。</li>
+    <li><b>GitClear</b>（2025）：<i>AI Copilot Code Quality</i>，2.11 亿行变更（2020—2024）。move/refactor <b>24.8% → 9.5%</b>；copy/paste <b>8.4% → 12.3%</b>；重复块约 <b>8 倍</b>；churn 3.3% → 5.7%。</li>
+    <li><b>Stripe</b>（2018）：<i>The Developer Coefficient</i>，与 Harris Poll 合作，1,000+ 开发者与 1,000+ 高管，美英法德新。每周 17.3 小时 / 42% 用于债与坏代码。<span class="tag t-lite">自报调查，且年份较早</span></li>
+    <li><b>Stack Overflow 开发者调查</b>（2025）：不信任 46% / 信任 33%。经 DORA 综述引用，原始问卷建议回溯核对。</li>
+    <li><b>Sonar</b>（2023）：每百万行代码每年约 30.6 万美元债敞口、约 5,500 修复小时。<span class="tag t-lite">厂商基准，本文仅用于数量级外推</span></li>
+  </ol>
+
+  <h3>反证据（有意保留）</h3>
+  <ol class="rf">
+    <li><b>MIT / Princeton / UPenn</b>：4,800 名开发者数据，Copilot 组<b>任务完成数 +26%</b>。</li>
+    <li><b>GitHub 官方实验</b>：同一任务<b>快 55.8%</b>；可读性 +3.62%、可维护性 +2.47% 等小幅正向。</li>
+    <li><b>Qodo</b>（厂商数据）：AI 工具配 AI 代码评审时质量改善报告率 81% vs 55%。<span class="tag t-lite">强度最低，但结论方向与本文一致</span></li>
+  </ol>
+
+  <h3>方法论补充</h3>
+  <ol class="rf">
+    <li><b>Michael Feathers</b>，《修改代码的艺术》：<b>表征测试</b>与接缝的概念来源。技能包本身未覆盖零测试遗产的处理，这里是必要补充。</li>
+    <li><b>John Ousterhout</b>，《软件设计的哲学》：深模块原创表述。注意技能包<b>明确拒绝</b>其"行数比值"定义，改用 depth-as-leverage。</li>
+    <li><b>David Thomas &amp; Andrew Hunt</b>，《程序员修炼之道》："反馈的速率就是你的速度上限"。被 README 引用两次。</li>
+    <li><b>Eric Evans</b>，《领域驱动设计》：统一语言。被 README 引用来论证 GLOSSARY 的价值。</li>
+    <li><b>Martin Fowler</b>，《重构》第 3 章：十二种代码气味，作为 <code>code-review</code> 的默认基线。</li>
+  </ol>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0 0 6px"><b>报告形态</b>：单文件 HTML，零外部依赖（无 CDN、无字体加载、无脚本图表库）。所有图示为手写 SVG，离线可用。</p>
+  <p style="margin:0 0 6px"><b>证据纪律</b>：正文中的每条数据都标注了来源、年份与证据强度；建模值（图 5 的 J 曲线坐标、第 1.3 节的成本折算）已在出现处显式标记为建模结果，未混入实测数据。</p>
+  <p style="margin:0"><b>未核实项</b>：本手册未访问目标代码库，第 01 章图 1 与第 05 章术语草案为待校验假设；DORA 2024 的速度/稳定性数字来自二手报道转述，正式引用前请回到报告原文核对。</p>
+</div></footer>
+</body>
+</html>

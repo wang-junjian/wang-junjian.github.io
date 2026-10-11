@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="面对 73 万行、3412 个 Java 文件的 onesystem 老系统，本文提出「这不是翻译工程，而是考古工程」的核心判断，给出建知识库、业务考古、规格重建、可对账切片、平行对账绞杀式替换五阶段路线，附 90 天计划与十大陷阱，以数字对账验证替代性。">
+<meta name="keywords" content="遗留系统重建, AI 原生, 智能体工程, onesystem, Spring, 重构方法论">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-03">
+<title>老系统 AI 原生重建方法论 · onesystem</title>
+<style>
+  :root {
+    --ink: #1a2233;
+    --ink-2: #4a5568;
+    --ink-3: #8a94a6;
+    --line: #e4e9f0;
+    --bg: #f7f9fc;
+    --card: #ffffff;
+    --accent: #2563eb;
+    --accent-soft: #eaf1fe;
+    --accent-2: #0d9488;
+    --accent-2-soft: #e6f7f5;
+    --warn: #b45309;
+    --warn-soft: #fdf3e3;
+    --ok: #15803d;
+    --ok-soft: #e9f7ee;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    font-size: 15.5px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 28px 80px; }
+
+  /* ===== 头部 ===== */
+  header.hero {
+    background: linear-gradient(135deg, #fdfefe 0%, #eef4fd 100%);
+    border-bottom: 1px solid var(--line);
+    padding: 64px 0 48px;
+    margin-bottom: 40px;
+  }
+  header.hero .wrap { padding-bottom: 0; }
+  .eyebrow {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 12px; border-radius: 999px; font-weight: 600; margin-bottom: 18px;
+  }
+  h1 { font-size: 34px; line-height: 1.3; letter-spacing: -0.01em; margin-bottom: 14px; }
+  .subtitle { color: var(--ink-2); font-size: 16.5px; max-width: 720px; }
+  .meta { margin-top: 22px; color: var(--ink-3); font-size: 13px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .meta span::before { content: "·"; margin-right: 6px; color: var(--accent); font-weight: 700; }
+
+  /* ===== 目录 ===== */
+  nav.toc {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 22px 28px; margin-bottom: 44px;
+  }
+  nav.toc h2 { font-size: 14px; color: var(--ink-3); letter-spacing: .1em; margin-bottom: 12px; font-weight: 600; }
+  nav.toc ol { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 32px; }
+  nav.toc a { color: var(--ink-2); text-decoration: none; font-size: 14px; }
+  nav.toc a:hover { color: var(--accent); }
+  nav.toc a::before { content: counter(item) ". "; counter-increment: item; color: var(--accent); font-weight: 600; }
+  nav.toc ol { counter-reset: item; }
+
+  /* ===== 章节 ===== */
+  section { margin-bottom: 56px; }
+  h2.sec {
+    font-size: 24px; margin-bottom: 6px; padding-top: 8px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  h2.sec .no {
+    font-size: 14px; color: var(--accent); font-weight: 700;
+    background: var(--accent-soft); border-radius: 8px; padding: 2px 10px; flex-shrink: 0;
+  }
+  .sec-sub { color: var(--ink-3); font-size: 14px; margin-bottom: 22px; }
+  h3 { font-size: 17.5px; margin: 28px 0 10px; }
+  h4 { font-size: 15.5px; margin: 18px 0 8px; color: var(--ink-2); }
+  p { margin-bottom: 12px; }
+  ul, ol { padding-left: 24px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 650; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px;
+    background: #eef2f7; padding: 2px 6px; border-radius: 5px; color: #b91c7c;
+  }
+  hr.sep { border: none; border-top: 1px dashed var(--line); margin: 26px 0; }
+
+  /* ===== 卡片与强调块 ===== */
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 24px 28px; margin: 18px 0;
+  }
+  .callout { border-radius: var(--radius); padding: 18px 22px; margin: 18px 0; font-size: 14.5px; border: 1px solid; }
+  .callout .tag { font-weight: 700; font-size: 13px; letter-spacing: .08em; display: block; margin-bottom: 6px; }
+  .callout.key { background: var(--accent-soft); border-color: #c8dbfb; }
+  .callout.key .tag { color: var(--accent); }
+  .callout.warn { background: var(--warn-soft); border-color: #f0dcbb; }
+  .callout.warn .tag { color: var(--warn); }
+  .callout.ok { background: var(--ok-soft); border-color: #c4e8d1; }
+  .callout.ok .tag { color: var(--ok); }
+  .callout.teal { background: var(--accent-2-soft); border-color: #bfe8e3; }
+  .callout.teal .tag { color: var(--accent-2); }
+
+  /* ===== 表格 ===== */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 22px; font-size: 14px; background: var(--card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
+  th { background: #f1f5fb; text-align: left; padding: 10px 14px; font-weight: 650; color: var(--ink-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #f8fafe; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ===== 阶段流程 ===== */
+  .pipeline { display: flex; align-items: stretch; gap: 0; margin: 24px 0; overflow-x: auto; }
+  .pipe-step {
+    flex: 1; min-width: 130px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 14px 16px; position: relative; margin-right: 26px;
+  }
+  .pipe-step:last-child { margin-right: 0; }
+  .pipe-step::after {
+    content: "→"; position: absolute; right: -22px; top: 50%; transform: translateY(-50%);
+    color: var(--accent); font-weight: 700; font-size: 16px;
+  }
+  .pipe-step:last-child::after { content: ""; }
+  .pipe-step .p-no { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+  .pipe-step .p-name { font-weight: 650; font-size: 14.5px; margin: 2px 0 4px; }
+  .pipe-step .p-desc { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+
+  /* ===== Phase 卡片 ===== */
+  .phase {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    margin: 22px 0; overflow: hidden;
+  }
+  .phase-head {
+    display: flex; align-items: center; gap: 16px; padding: 18px 26px;
+    background: linear-gradient(90deg, #f4f8fe, #fdfefe); border-bottom: 1px solid var(--line);
+  }
+  .phase-badge {
+    width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 17px; color: #fff;
+  }
+  .ph0 .phase-badge { background: #64748b; }
+  .ph1 .phase-badge { background: #2563eb; }
+  .ph2 .phase-badge { background: #0d9488; }
+  .ph3 .phase-badge { background: #d97706; }
+  .ph4 .phase-badge { background: #7c3aed; }
+  .ph5 .phase-badge { background: #15803d; }
+  .phase-title { font-size: 17.5px; font-weight: 700; }
+  .phase-time { font-size: 12.5px; color: var(--ink-3); margin-top: 1px; }
+  .phase-body { padding: 20px 26px 22px; }
+  .phase-goal { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 10px 16px; font-size: 14px; margin-bottom: 14px; }
+  .phase-goal b { color: var(--accent); }
+
+  /* 产出物清单 */
+  .deliverables { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 4px; }
+  .dl {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: #fafcfe; border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; font-size: 13.5px;
+  }
+  .dl .dot { color: var(--accent); font-weight: 800; flex-shrink: 0; }
+  .dl b { display: block; font-size: 13.5px; }
+  .dl span { color: var(--ink-3); font-size: 12.5px; line-height: 1.5; }
+
+  /* 检查清单 */
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 28px; position: relative; margin-bottom: 8px; }
+  .checklist li::before {
+    content: "✓"; position: absolute; left: 0; top: 1px;
+    width: 18px; height: 18px; border-radius: 5px; font-size: 11.5px;
+    background: var(--ok-soft); color: var(--ok); font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* 陷阱 */
+  .pitfall { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }
+  .pitfall .x {
+    width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; margin-top: 2px;
+    background: var(--warn-soft); color: var(--warn); font-weight: 800; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pitfall p { margin: 0; font-size: 14.5px; }
+  .pitfall p b { color: var(--warn); }
+
+  /* 引用式金句 */
+  .quote {
+    border-left: 3px solid var(--accent); padding: 4px 0 4px 20px; margin: 20px 0;
+    font-size: 16.5px; font-weight: 600; color: var(--ink); line-height: 1.6;
+  }
+
+  footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media (max-width: 720px) {
+    nav.toc ol { grid-template-columns: 1fr; }
+    .deliverables { grid-template-columns: 1fr; }
+    h1 { font-size: 27px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">AI 原生软件开发 · 遗留系统重建 · 实践方法论</span>
+    <h1>73 万行老代码的 AI 原生重建路线</h1>
+    <p class="subtitle">面对一个持续开发 10 余年、业务知识只存在于代码与数据中的内部信息系统：如何从零开始，用智能体工程的方法逐步重建一个功能完整、可被验证的新系统。</p>
+    <div class="meta">
+      <span>对象：onesystem / old-src（15 个 Maven 模块 · 3412 个 Java 文件）</span>
+      <span>技术基线：Spring 3.2 · JDK 1.7 · JSP · MyBatis · Oracle</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s0">核心判断：这不是翻译工程，是考古工程</a></li>
+    <li><a href="#s1">现状盘点：onesystem 老系统实况</a></li>
+    <li><a href="#s2">总路线：五阶段推进图</a></li>
+    <li><a href="#s3">Phase 0 · 把代码变成可提问的知识库</a></li>
+    <li><a href="#s4">Phase 1 · 业务考古：从代码反推业务真相</a></li>
+    <li><a href="#s5">Phase 2 · 规格重建：新系统的"纸上建筑"</a></li>
+    <li><a href="#s6">Phase 3 · 垂直切片：选对第一场仗</a></li>
+    <li><a href="#s7">Phase 4–5 · 平行对账与逐个替换</a></li>
+    <li><a href="#s8">AI 原生工程实践清单</a></li>
+    <li><a href="#s9">90 天落地计划</a></li>
+    <li><a href="#s10">常见陷阱 Top 10</a></li>
+    <li><a href="#s11">对你当前两个实践的判断</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <h2 class="sec"><span class="no">0</span>核心判断：这不是翻译工程，是考古工程</h2>
+  <p class="sec-sub">先纠正一个几乎必然走错的方向，再谈怎么做。</p>
+
+  <div class="quote">用 AI 重写老系统，最大的误区是把它当成"翻译任务"——把 Java 翻译成新技术栈。<br>它真正的本质是"考古任务"——从 73 万行代码和 Oracle 数据里，把流失的业务知识挖出来、结构化、再表达。</div>
+
+  <p>三个不可回避的事实，决定了整个方法论：</p>
+  <table>
+    <thead><tr><th style="width:36%">事实</th><th>推论（方法论必须回答的问题）</th></tr></thead>
+    <tbody>
+      <tr><td><strong>① 业务知识只存在于代码和数据里。</strong>10 年的人员更替，文档早已失效，连"懂业务的人"也只懂自己经手的那一块。</td><td>唯一可靠的需求来源是代码本身。所以第一要务不是写新代码，而是建立一套<strong>从代码中批量提取业务知识的流水线</strong>。</td></tr>
+      <tr><td><strong>② 你不懂业务。</strong>你自述没有业务背景，第一个练手模块（项目计划管理）因此无法验证"真实替代"是否可行。</td><td>不懂业务没关系，但<strong>验收标准不能依赖业务判断</strong>，必须设计"不依赖懂业务的验证机制"——答案是对账：让旧系统的数据输出当裁判。</td></tr>
+      <tr><td><strong>③ "功能相同"不可言说，"数字一致"可以言说。</strong>"新系统做得对不对"在不懂业务时无法口头论证，但"新系统算出的金额、数量、状态与旧系统逐条一致"是机器可判定的。</td><td>替代性验证的唯一硬标准：<strong>平行运行 + 输出对账</strong>。做不到对账的模块，就不具备被验证替代的资格——这也是切片选择的准绳。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <span class="tag">方法论一句话版本</span>
+    先建<strong>知识库</strong>（代码 → 业务规格），再定<strong>契约</strong>（规格 → 可验收陈述），然后选<strong>一个可对账的闭环切片</strong>做新系统，与旧系统<strong>平行对账</strong>，通过后按模块逐个绞杀替换。AI 在每个环节的角色是"阅读器、整理者、对账员"，而你是"考古队长与验收官"。
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2 class="sec"><span class="no">1</span>现状盘点：onesystem 老系统实况</h2>
+  <p class="sec-sub">方法论不是空泛的，以下是从 old-src 实际清点出的结构事实，后续所有策略都以此为输入。</p>
+
+  <h3>1.1 模块规模与业务域</h3>
+  <table>
+    <thead><tr><th>模块</th><th class="num">Java 文件数</th><th>推测业务域</th><th>重建优先级信号</th></tr></thead>
+    <tbody>
+      <tr><td><code>contract</code></td><td class="num">928</td><td>合同管理（全系统最大模块）</td><td>核心业务，复杂度最高，中后期切</td></tr>
+      <tr><td><code>operation</code></td><td class="num">623</td><td>运营管理 / 经营统计</td><td>报表口径密集区，替代难点所在</td></tr>
+      <tr><td><code>outsourcing</code></td><td class="num">453</td><td>外包管理</td><td>中大型业务域</td></tr>
+      <tr><td><code>purchasing</code></td><td class="num">375</td><td>采购管理</td><td>单据流完整，适合作为对账切片候选</td></tr>
+      <tr><td><code>marketing</code></td><td class="num">306</td><td>市场 / 营销</td><td>中大型业务域</td></tr>
+      <tr><td><code>humanresources</code></td><td class="num">195</td><td>人力资源</td><td>含考勤、人事等高频子域</td></tr>
+      <tr><td><code>finance</code></td><td class="num">173</td><td>财务</td><td>金额对账价值最高，但口径最敏感</td></tr>
+      <tr><td><code>general</code></td><td class="num">94</td><td>通用 / 基础功能</td><td>基础支撑，先行</td></tr>
+      <tr><td><code>core</code></td><td class="num">79</td><td>核心框架 / 公共组件</td><td>含 reed 内部框架依赖，迁移第一道坎</td></tr>
+      <tr><td><code>dailylog</code></td><td class="num">65</td><td>工作日志</td><td>简单闭环，可作为早期练手切片</td></tr>
+      <tr><td><code>externalorganization</code></td><td class="num">46</td><td>外部单位 / 客户供应商</td><td>主数据类，先行</td></tr>
+      <tr><td><code>reimbursement</code></td><td class="num">40</td><td>报销</td><td>单据 + 审批 + 金额，对账切片最佳候选</td></tr>
+      <tr><td><code>cost</code></td><td class="num">22</td><td>成本</td><td>口径敏感，依附于上游单据</td></tr>
+      <tr><td><code>operatingStatistic</code></td><td class="num">12</td><td>经营统计</td><td>报表型，最后切</td></tr>
+      <tr><td><code>r1</code></td><td class="num">1</td><td>War 打包聚合模块</td><td>部署形态参考</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 技术形态与风险点</h3>
+  <table>
+    <thead><tr><th style="width:30%">事实</th><th>对重建的影响</th></tr></thead>
+    <tbody>
+      <tr><td>Spring 3.2 + JDK 1.7 + JSP（仅 54 个 JSP）+ MyBatis + Oracle</td><td>典型 2012–2015 年代企业 Java 单体。JSP 少说明大量页面逻辑可能由前端 JS 或 reed 框架渲染，重建时需另行清点前端资产。</td></tr>
+      <tr><td>依赖内部框架 <code>reed</code>（brick / pigeon / tiger / grail / tools 等 10+ 个构件，无外部文档）</td><td><strong>最大暗礁。</strong>很多"业务行为"实际藏在 reed 的注解、基类、拦截器里（权限、审计、事务、数据权限）。Phase 0 必须专门逆向 reed 的能力清单，否则新系统会漏掉隐形功能。</td></tr>
+      <tr><td>Quartz 2.1.7 定时任务</td><td>定时任务是典型的"没人记得但每天在生产数据"的代码，必须全量清点，否则新旧系统对账时会出现"数据怎么多了一笔"的灵异现象。</td></tr>
+      <tr><td>CAS 单点登录客户端（cas-client 3.2.1）</td><td>账号体系与权限模型是横切所有的地基，属于第一批要重建的规格。</td></tr>
+      <tr><td>SVN 管理，版本 1.2.4-SNAPSHOT</td><td>建议迁移到 Git 并保留全量历史——<code>git log/blame</code> 是业务考古的重要线索（某段奇怪的逻辑是哪年、因为什么加的）。</td></tr>
+      <tr><td>含 <code>ess(deprecated)</code> 与 <code>oracle.dmp</code></td><td>已有废弃模块与数据库转储文件——后者是业务考古的另一半金矿（见 §11 对你 dmp 工具的评价）。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2 class="sec"><span class="no">2</span>总路线：五阶段推进图</h2>
+  <p class="sec-sub">每个阶段都有明确的产出物和"完成判据"，不允许裸奔进入下一阶段。</p>
+
+  <div class="pipeline">
+    <div class="pipe-step"><div class="p-no">PHASE 0</div><div class="p-name">知识库基建</div><div class="p-desc">代码索引、调用链、任务清单——让 3412 个文件可检索、可提问</div></div>
+    <div class="pipe-step"><div class="p-no">PHASE 1</div><div class="p-name">业务考古</div><div class="p-desc">从代码反推领域模型、单据流、审批流、报表口径</div></div>
+    <div class="pipe-step"><div class="p-no">PHASE 2</div><div class="p-name">规格重建</div><div class="p-desc">词汇表、能力清单、契约、数据字典——新系统的纸上建筑</div></div>
+    <div class="pipe-step"><div class="p-no">PHASE 3</div><div class="p-name">切片验证</div><div class="p-desc">选一个可对账的闭环业务，新系统与旧系统平行跑</div></div>
+    <div class="pipe-step"><div class="p-no">PHASE 4–5</div><div class="p-name">逐个替换</div><div class="p-desc">按模块绞杀式替换、对账达标后退役旧模块</div></div>
+  </div>
+
+  <div class="callout teal">
+    <span class="tag">节奏建议</span>
+    Phase 0–2 共约 6–10 周，期间<strong>不写任何新系统业务代码</strong>。这违背直觉，但它是本方法论与"拿着 AI 就开始逐文件翻译"的本质区别：你缺的不是开发能力，是业务真相；在真相到手之前写的每一行新代码都是负债。
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2 class="sec"><span class="no">3</span>Phase 0 · 把代码变成可提问的知识库</h2>
+  <p class="sec-sub">目标：让任何一个后续的问题（"报销单谁审批" "这个金额怎么算的"）都能在分钟级得到带代码证据的答案。</p>
+
+  <div class="phase ph0">
+    <div class="phase-head">
+      <div class="phase-badge">0</div>
+      <div><div class="phase-title">知识库基建（约 1–2 周）</div><div class="phase-time">完成判据：业务问题可定位到具体类 / 方法 / SQL；所有清单覆盖率 100%</div></div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-goal"><b>本阶段本质：</b>用 agent 对 3412 个 Java 文件做结构化清点，产出索引层产物。这批产物不只是给人看，更是后续每个 agent 任务的常驻上下文（context）——<b>这是 AI 原生开发的关键动作：先把上下文工程做好，再谈生成。</b></div>
+
+      <h4>六张底表（清单即资产）</h4>
+      <div class="deliverables">
+        <div class="dl"><span class="dot">①</span><div><b>URL → 功能链路表</b><span>从 JSP / JS / Spring 注解提取全量 URL，映射到 Controller → Service → Mapper → 物理表。这是"系统到底有多少功能"的完整清单。</span></div></div>
+        <div class="dl"><span class="dot">②</span><div><b>菜单 / 权限点清单</b><span>菜单树、按钮级权限、角色定义。新系统的权限模型直接从这张表长出来。</span></div></div>
+        <div class="dl"><span class="dot">③</span><div><b>Quartz 定时任务清单</b><span>每个 Job 的 cron、触发的 Service、读写了哪些表、产出什么数据。</span></div></div>
+        <div class="dl"><span class="dot">④</span><div><b>报表与口径 SQL 清单</b><span>所有统计类 SQL 全文归档。报表口径 = 未来对账的期望值，单独成册。</span></div></div>
+        <div class="dl"><span class="dot">⑤</span><div><b>表结构数据字典</b><span>从 Oracle 元数据 + Mapper XML 导出：表、字段、注释、主外键、估算行数。用你已有的 dmp 查看能力自动化产出。</span></div></div>
+        <div class="dl"><span class="dot">⑥</span><div><b>reed 框架能力清单</b><span>逆向内部框架：注解、基类、拦截器、隐式行为（审计、数据权限、字段加密如 bcprov）。回答"代码里看不到但系统真在做的事"。</span></div></div>
+      </div>
+
+      <h4>操作要点</h4>
+      <ul>
+        <li><strong>批量 agent 阅读，而非自己翻。</strong>按模块切分任务（contract 928 个文件可再按包切），每个 agent 负责一块，输出统一 schema 的 JSON/Excel，再汇总。这正是子代理并行擅长的形态。</li>
+        <li><strong>每条结论带证据锚点。</strong>清单里的每一行都要能跳回具体文件与行号（方法论文件中的引用规范同样适用于机器上下文）——防止 agent 编造，也便于人工抽查。</li>
+        <li><strong>全量入库、持久保存。</strong>这批清单放进项目目录（如 <code>knowledge/</code>），并作为后续所有 agent 任务的默认携带上下文。它们是本项目的"业务记忆"，价值随时间递增。</li>
+        <li><strong>人工抽查 5%。</strong>每个清单随机抽 5% 核对原代码，确认 agent 提取准确率；不达标则调整提取 prompt 重跑。这是整个考古流水线的质量阀。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2 class="sec"><span class="no">4</span>Phase 1 · 业务考古：从代码反推业务真相</h2>
+  <p class="sec-sub">目标：把 Phase 0 的"结构清单"升华为"业务叙述"——领域词汇、单据生命周期、审批流、口径公式。</p>
+
+  <div class="phase ph1">
+    <div class="phase-head">
+      <div class="phase-badge">1</div>
+      <div><div class="phase-title">业务知识提取（约 2–4 周）</div><div class="phase-time">完成判据：能用领域词汇向一个不懂代码的人讲清任一单据"从哪来、到哪去、谁批、钱怎么算"</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>三视角交叉验证法</h4>
+      <p>单个视角都会骗人，三个视角互相印证才能得到可信的业务叙述：</p>
+      <table>
+        <thead><tr><th style="width:22%">视角</th><th style="width:40%">看什么</th><th>回答的问题</th></tr></thead>
+        <tbody>
+          <tr><td><strong>数据视角</strong></td><td>表名、字段、状态字段的取值分布（dmp 里有真实数据）</td><td>系统里真实存在哪些业务对象？一个"状态"字段里 0/1/2/3 各出现了多少次、占多少比例？</td></tr>
+          <tr><td><strong>界面视角</strong></td><td>JSP/JS 页面、菜单、按钮文案</td><td>用户看到的业务概念叫什么？操作路径是什么？哪些字段是必填、怎么校验？</td></tr>
+          <tr><td><strong>逻辑视角</strong></td><td>Service / SQL / 状态变更代码</td><td>单据状态机怎么流转？金额公式是什么？什么条件下允许操作？</td></tr>
+        </tbody>
+      </table>
+
+      <h4>四类核心产出</h4>
+      <div class="deliverables">
+        <div class="dl"><span class="dot">①</span><div><b>领域词汇表（中英对照）</b><span>如：报销单=reimbursement order，责任单元=responsibility unit。全项目强制统一，消除"同一个东西三个名字"。这是所有 agent 对话与代码生成的地基。</span></div></div>
+        <div class="dl"><span class="dot">②</span><div><b>单据生命周期 / 状态机图</b><span>每张核心单据（合同、采购单、报销单…）的状态枚举、迁移条件、触发动作。状态机是从代码反推业务的最高密度载体。</span></div></div>
+        <div class="dl"><span class="dot">③</span><div><b>审批流清单</b><span>谁提交、谁审批、几级、什么条件走哪条分支、是否可驳回/撤回。审批流往往散落在 reed 注解和硬编码双重位置，需专门提取。</span></div></div>
+        <div class="dl"><span class="dot">④</span><div><b>报表口径文档</b><span>每个统计数字 = 一段可执行的口径描述（取哪张表、什么过滤条件、怎么聚合）。这是 Phase 4 对账的裁判书，也是全项目最难替代的部分，值得投入最深。</span></div></div>
+      </div>
+
+      <div class="callout warn">
+        <span class="tag">为什么口径文档值得花最大力气</span>
+        业务用户判断"新系统对不对"，最终靠的就是报表数字。代码里的统计 SQL 往往包含十年间层层叠加的补丁条件（"当年某某说要把 X 类合同剔除"）。这些隐含决策只存在于 SQL 本身——把每条统计 SQL 连同它的过滤条件、JOIN 关系逐条文档化，等于把十年间流失的业务决策重新存档。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2 class="sec"><span class="no">5</span>Phase 2 · 规格重建：新系统的"纸上建筑"</h2>
+  <p class="sec-sub">目标：在写第一行业务代码之前，先完成可验收的规格层。</p>
+
+  <div class="phase ph2">
+    <div class="phase-head">
+      <div class="phase-badge">2</div>
+      <div><div class="phase-title">契约与规格（约 2–3 周，可与 Phase 1 部分并行）</div><div class="phase-time">完成判据：任一功能的"正确"可以被一条可执行检查判定</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>三件规格资产</h4>
+      <ul>
+        <li><strong>能力清单（Capability Inventory）。</strong>以"可对账的验收陈述"重写全部功能：不是"系统支持报销审批"，而是"员工提交报销单后，金额 ≤ 5000 走直属上级一级审批，＞5000 增加部门负责人二级审批；审批通过后生成凭证记录，科目字段取自费用类型映射表"。每条陈述标注：来源证据（文件/行号）、新旧系统对账方式。</li>
+        <li><strong>数据字典与迁移映射。</strong>旧表 → 新模型映射、字段语义、编码值翻译（如 status 0/1/2 → 枚举）、历史数据迁移策略与清洗规则。</li>
+        <li><strong>新系统技术基线与脚手架。</strong>选型原则：<strong>克制</strong>。选你和 agent 都最熟、招聘市场最大、能再跑 10 年的主流栈（如 Spring Boot 3 + 现代前端或成熟低代码形态），而不是追新。脚手架包含：统一鉴权、审计日志、数据权限、异常与返回约定——这四样正是 reed 隐形提供的能力，必须显式重建。</li>
+      </ul>
+
+      <h4>Spec-driven 工作回路（此后所有开发的默认姿势）</h4>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="p-no">回路</div><div class="p-name">改规格</div><div class="p-desc">能力清单/契约的变更先行，写清验收方式</div></div>
+        <div class="pipe-step"><div class="p-no">回路</div><div class="p-name">agent 实现</div><div class="p-desc">携带词汇表+链路表+相关规格作为上下文</div></div>
+        <div class="pipe-step"><div class="p-no">回路</div><div class="p-name">对账/测试裁决</div><div class="p-desc">机器判定通过与否，人只仲裁争议</div></div>
+        <div class="pipe-step"><div class="p-no">回路</div><div class="p-name">沉淀</div><div class="p-desc">决策写入 ADR 与词汇表，更新知识库</div></div>
+      </div>
+      <p>这个回路里，<strong>你的角色从"写代码的人"变成"写验收标准的人"</strong>——这正是"不懂业务也能主导重建"的制度基础。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <h2 class="sec"><span class="no">6</span>Phase 3 · 垂直切片：选对第一场仗</h2>
+  <p class="sec-sub">目标：用一个切片回答"AI 重建的新系统，能否在真实业务数据上替代旧系统"。这是整个方法论中唯一"验证可行性"的环节，选错切片 = 白验证。</p>
+
+  <h3>6.1 切片选择矩阵</h3>
+  <table>
+    <thead><tr><th>维度</th><th>为什么重要</th><th>高分特征</th></tr></thead>
+    <tbody>
+      <tr><td><strong>可对账性</strong>（权重最高）</td><td>替代性只能靠数字一致来证明</td><td>有明确的金额/数量/状态输出，旧系统数据可直接导出比对</td></tr>
+      <tr><td><strong>闭环完整性</strong></td><td>半个流程验证不了端到端替代</td><td>从录入 → 审批 → 生效/出数，一个完整单据生命周期</td></tr>
+      <tr><td><strong>业务核心度</strong></td><td>验证结果要能让各方信服</td><td>是真实每天在用的流程，而非边缘功能</td></tr>
+      <tr><td><strong>复杂度适中</strong></td><td>第一场仗要赢得快、赢得清楚</td><td>1–2 个状态机、1–2 条审批路径，避开 contract（928 文件）这种巨兽</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <span class="tag">推荐候选</span>
+    <strong>首选：<code>reimbursement</code>（报销，40 文件）。</strong>单据录入 → 审批流 → 金额 → 财务凭证，天然全闭环，金额可对账，体量适中。备选：<code>dailylog</code>（工作日志，65 文件）作为纯练手，以及 <code>purchasing</code>（采购，375 文件）作为第二切片。<strong>避免首选</strong>：报表统计类（口径黑箱太多）与 contract（复杂度爆炸）。
+  </div>
+
+  <div class="callout warn">
+    <span class="tag">为什么"项目计划管理"验证不了替代性</span>
+    不是这个模块做得不好，而是它选错了验证命题。计划管理类功能属于"管理辅助流"：做出来的东西"看起来像"就够了，没有可对账的数字、没有必须由旧系统当裁判的输出，于是"做对没有"无法判定——你缺的不是开发能力，是<strong>一个能让旧系统当裁判的切片</strong>。把同样的开发方法用在报销单上，平行跑一个月，对账差异为零，可行性就自动被证明了。
+  </div>
+
+  <h3>6.2 切片实施方式</h3>
+  <ul class="checklist">
+    <li>新系统实现该单据的完整生命周期（录入、审批、状态机、凭证/出数）。</li>
+    <li>历史数据按 Phase 2 的迁移映射导入新系统。</li>
+    <li>规定一个平行运行期（如 4 周）：同一业务在旧系统正常跑，数据同时同步/录入新系统。</li>
+    <li>每周末自动生成<strong>对账报告</strong>：单据数、金额合计、状态分布、逐条差异明细。差异为 0 或全部解释归因，即达标。</li>
+    <li>达标后该模块流量切到新系统，旧模块进入"只读归档"状态。</li>
+  </ul>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <h2 class="sec"><span class="no">7</span>Phase 4–5 · 平行对账与逐个替换</h2>
+  <p class="sec-sub"> strangler fig（绞杀榕）模式：新系统沿模块边界一圈圈长大，旧系统一圈圈枯死。</p>
+
+  <div class="phase ph4">
+    <div class="phase-head">
+      <div class="phase-badge">4</div>
+      <div><div class="phase-title">绞杀式替换（持续数月，按模块推进）</div><div class="phase-time">退役判据：对账连续 N 周零差异 + 用户无回退诉求</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>替换顺序建议</h4>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="p-no">第一批</div><div class="p-name">地基</div><div class="p-desc">组织/人员/权限、外部单位等主数据（general / externalorganization / core 能力）</div></div>
+        <div class="pipe-step"><div class="p-no">第二批</div><div class="p-name">已验证切片</div><div class="p-desc">reimbursement、purchasing 等对账友好单据流，复制切片打法</div></div>
+        <div class="pipe-step"><div class="p-no">第三批</div><div class="p-name">业务主干</div><div class="p-desc">contract、outsourcing、humanresources、marketing</div></div>
+        <div class="pipe-step"><div class="p-no">第四批</div><div class="p-name">口径区</div><div class="p-desc">finance、cost、operation、operatingStatistic 报表与统计，最后切</div></div>
+      </div>
+      <h4>每模块的固定动作（模板化、可复用）</h4>
+      <ul class="checklist">
+        <li>从知识库取该模块的链路表 / 状态机 / 口径文档，更新为当前版。</li>
+        <li>写可对账的验收陈述，与业务侧逐条确认口径（这一阶段建议开始引入真实业务用户）。</li>
+        <li>agent 实现 + 数据迁移 + 平行运行 + 周末对账报告。</li>
+        <li>达标 → 切流量 → 旧模块只读归档；未达标 → 差异归因 → 修规格或修实现，绝不带病切流。</li>
+        <li>写一份本模块 ADR（架构决策记录）：替代过程、踩坑、口径裁决，喂回知识库。</li>
+      </ul>
+      <div class="callout key">
+        <span class="tag">对账工具本身值得做成基础设施</span>
+        每周末自动对账报告不应是临时脚本，而应是一个可配置的平台：选模块、选口径、跑比对、出差异明细。它会陪伴整个替换周期，也是你向业务方证明进度与质量的核心证据物。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <h2 class="sec"><span class="no">8</span>AI 原生工程实践清单</h2>
+  <p class="sec-sub">贯穿所有阶段的日常操作纪律。</p>
+
+  <div class="card">
+    <h4>Context Engineering（上下文工程）—— 决定 agent 产出质量的第一变量</h4>
+    <ul>
+      <li><strong>任务包模板化。</strong>每个 agent 任务固定携带：相关模块的链路表切片、领域词汇表、相关状态机/口径、项目编码规范。缺上下文的生成 = 幻觉自由发挥。</li>
+      <li><strong>结论必须带证据锚点。</strong>凡 agent 输出的业务结论，强制附"来源文件:行号"或"来源 SQL 原文"，无锚点的结论一律视为推测。</li>
+      <li><strong>抽查制度。</strong>所有批量提取产物随机抽 5% 人工核对，准确率不达标就改 prompt 重跑，不凑合。</li>
+    </ul>
+    <h4>知识即资产（Knowledge as Code）</h4>
+    <ul>
+      <li>词汇表、链路表、口径文档、ADR 全部版本化入库，与代码同仓；它们是被代码生成和消费的一等公民。</li>
+      <li>每次与真实业务用户的交流结论，24 小时内回写知识库——口头共识是本项目最贵的流失资产。</li>
+    </ul>
+    <h4>测试与对账资产</h4>
+    <ul>
+      <li><strong>Golden Master（特征化测试）：</strong>对关键旧逻辑，先录输入输出对再重建——新实现必须逐对复现，把旧系统变成免费的测试 oracle。</li>
+      <li><strong>对账即验收：</strong>一切"对不对"的争议以差异报告仲裁，不以会议仲裁。</li>
+      <li>新系统自身保持正常单测/集成测试纪律；对账层是额外的、面向业务的测试。</li>
+    </ul>
+    <h4>防漂移</h4>
+    <ul>
+      <li>agent 每次会话以最新知识库快照为上下文，防止模型凭早期印象生成过时命名与结构。</li>
+      <li>新代码评审由第二个 agent 扮演"考古质疑者"：对照旧系统证据链挑刺，专问"这个行为旧系统里证据在哪"。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <h2 class="sec"><span class="no">9</span>90 天落地计划</h2>
+  <p class="sec-sub">按周排布，可直接执行。</p>
+  <table>
+    <thead><tr><th style="width:14%">周</th><th>动作</th><th style="width:30%">产出 / 判据</th></tr></thead>
+    <tbody>
+      <tr><td>W1–W2</td><td>Phase 0：代码索引与六张底表；SVN → Git 迁移保留历史</td><td>链路表、权限清单、定时任务清单、口径 SQL 清单、数据字典、reed 能力清单；5% 抽查通过</td></tr>
+      <tr><td>W3–W5</td><td>Phase 1：按"数据/界面/逻辑"三视角对 reimbursement、purchasing 做深度考古，其余模块做广度考古</td><td>词汇表 v1、报销/采购状态机、审批流清单、口径文档首批</td></tr>
+      <tr><td>W6–W7</td><td>Phase 2：报销切片的能力清单与验收陈述；新系统脚手架（鉴权/审计/数据权限/返回约定）</td><td>报销单全量"可对账陈述"清单；脚手架可运行</td></tr>
+      <tr><td>W8–W9</td><td>切片实现：agent 按陈述逐条实现 + 历史数据迁移</td><td>报销模块在新系统全生命周期可用</td></tr>
+      <tr><td>W10–W13</td><td>平行运行 + 周末对账（把对账平台本身做成可复用工具）</td><td><strong>连续 4 周对账零差异或全部归因 → 可行性结论落地</strong></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <h2 class="sec"><span class="no">10</span>常见陷阱 Top 10</h2>
+  <p class="sec-sub">每一条都来自同类项目的高频死法。</p>
+
+  <div class="card">
+    <div class="pitfall"><div class="x">✕</div><p><b>Big-Bang 翻译：</b>让 AI 按文件逐个翻译 3412 个 Java 文件。产出物"像代码"但无人知道对不对，三个月后没人敢碰。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>照抄 UI：</b>把旧界面当规格。界面是十年前交互理念的化石，新系统应对齐业务目标而非对齐像素。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>忽视 reed 隐形行为：</b>权限、审计、数据权限、字段加密藏在内部框架里，不显式重建，上线后必然出事。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>跳过考古直接开发：</b>你目前的直觉（"还没找到感觉"）就是这条陷阱的警报——感觉缺失的本质是业务真相缺失。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>选了不可对账的切片：</b>没有数字裁判的模块做得再漂亮也证明不了替代性。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>低估报表口径：</b>统计数字背后的十年补丁条件是最深的知识，最后做报表 = 最后发现地雷。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>定时任务与 Job 遗漏：</b>没人记得的 Job 每天在生产数据，漏一个，对账就永远对不平。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>agent 结论无证据：</b>不带文件/行号锚点的"业务结论"是幻觉的温床，且会污染整个知识库。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>没有业务用户介入：</b>考古能还原 90%，剩下 10% 的"为什么"只存在于人脑——W6 起必须引入真实用户确认口径。</p></div>
+    <div class="pitfall"><div class="x">✕</div><p><b>追新技术栈：</b>重建的目标是再稳定跑 10 年 + 你自己和 agent 都熟，不是简历好看。</p></div>
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="s11">
+  <h2 class="sec"><span class="no">11</span>对你当前两个实践的判断</h2>
+  <p class="sec-sub">你说"不要受目前实践影响，还没找到感觉"——我的判断是：方向都不坏，但都停在了到达价值的一半路程上。</p>
+
+  <div class="card">
+    <h4>① 项目计划管理模块（新系统练手）</h4>
+    <p>开发方法本身没问题，问题在<strong>命题选错</strong>：它只能验证"AI 能做出一个系统"，验证不了"AI 能替代旧系统"。不需要推倒重来——把它当作脚手架与工程纪律的试验田保留，然后按 §6 换一个<strong>可对账的切片（报销）</strong>去回答真正的命题。</p>
+    <h4>② Oracle .dmp 查看 Web 工具</h4>
+    <p>这个工具的直觉其实非常准——<strong>数据是业务真相的另一半</strong>，而且它比代码更诚实（代码说"应该"，数据说"实际"）。但不要停在"能查看"，按本方法论的路线升级它：</p>
+    <ul class="checklist">
+      <li>从"查看 dmp"升级为<strong>自动化数据画像</strong>：每张表的行数、字段取值分布、状态字段的频数（状态机考古的数据视角全靠它）。</li>
+      <li>升级为<strong>表 → 业务实体映射工作台</strong>：表结构字典（Phase 0 底表⑤）从这里直接导出。</li>
+      <li>最终升级为 §7 的<strong>对账平台</strong>：新旧系统差异比对是它最自然的产品形态。</li>
+    </ul>
+    <div class="callout teal">
+      <span class="tag">"感觉"到底去哪找</span>
+      你缺的感觉，本质是<strong>闭环</strong>：从"能看、能做"到"能证明对"。这个闭环 = 知识库 → 规格 → 切片 → 对账 → 退役。一旦报销切片在平行运行里对出连续零差异，你就会得到那种感觉——因为它不再是感觉，而是证据。
+    </div>
+  </div>
+
+  <footer>
+    <span>onesystem · 老系统 AI 原生重建方法论</span>
+    <span>基于 old-src 实际清点：15 模块 / 3412 Java 文件 / Spring 3.2 · JDK 1.7 · JSP · MyBatis · Oracle · reed 内部框架</span>
+  </footer>
+</section>
+
+</div>
+</body>
+</html>

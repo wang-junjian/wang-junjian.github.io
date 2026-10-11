@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="公司规格驱动开发技能集定制方案：以可组合技能三层架构为骨架，借鉴差异增量防漂移机制与宪法门禁，并注入自研 AI 设计流水线实践，覆盖需求拷问至归档全链路。正文含三大工具源码级对比、裁剪清单、新增技能设计、质量门与治理不变量、人机分工及三阶段落地路线图。">
+<meta name="keywords" content="SDD, 技能集定制, mattpocock skills, OpenSpec, spec-kit, 内部方案">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-21">
+<title>公司 SDD 技能集定制方案 — 基于 mattpocock skills 的裁剪与增强</title>
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink-soft: #4a4a68;
+    --ink-mute: #8a8aa3;
+    --paper: #ffffff;
+    --bg: #f7f7fa;
+    --line: #e4e4ee;
+    --accent: #00695c;
+    --accent-soft: #e0f2f1;
+    --amber: #b26a00;
+    --amber-soft: #fff3e0;
+    --rose: #ad1457;
+    --rose-soft: #fce4ec;
+    --blue: #1565c0;
+    --blue-soft: #e3f2fd;
+    --code-bg: #f0f2f5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.75;
+    font-size: 15.5px;
+  }
+  .page { max-width: 920px; margin: 0 auto; padding: 48px 32px 96px; background: var(--paper); }
+  header.doc { border-bottom: 3px solid var(--ink); padding-bottom: 24px; margin-bottom: 40px; }
+  .kicker { font-size: 13px; letter-spacing: 0.12em; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+  h1 { font-size: 30px; line-height: 1.3; margin-bottom: 12px; }
+  .meta { font-size: 13px; color: var(--ink-mute); }
+  h2 { font-size: 21px; margin: 48px 0 16px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h2 .no { color: var(--accent); margin-right: 10px; font-variant-numeric: tabular-nums; }
+  h3 { font-size: 16.5px; margin: 28px 0 10px; color: var(--ink); }
+  p { margin: 10px 0; }
+  ul, ol { padding-left: 24px; margin: 10px 0; }
+  li { margin: 4px 0; }
+  strong { font-weight: 700; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; background: var(--code-bg); padding: 1px 6px; border-radius: 4px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; overflow-x: auto; margin: 14px 0; }
+  pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th { background: var(--ink); color: #fff; text-align: left; padding: 9px 12px; font-weight: 600; }
+  td { border-bottom: 1px solid var(--line); padding: 9px 12px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafc; }
+  .tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 9px; border-radius: 20px; margin-right: 6px; white-space: nowrap; }
+  .t-keep { background: var(--accent-soft); color: var(--accent); }
+  .t-mod  { background: var(--amber-soft); color: var(--amber); }
+  .t-new  { background: var(--rose-soft); color: var(--rose); }
+  .t-drop { background: #eceff1; color: #546e7a; }
+  .callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 18px 0; font-size: 14.5px; }
+  .callout.warn { border-color: var(--amber); background: var(--amber-soft); }
+  .callout b { display: block; margin-bottom: 4px; }
+  figure { margin: 24px 0; text-align: center; }
+  figcaption { font-size: 13px; color: var(--ink-mute); margin-top: 10px; }
+  .toc { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 20px 26px; margin: 28px 0; }
+  .toc ol { margin: 0; columns: 2; column-gap: 40px; }
+  .toc a { color: var(--ink-soft); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-mute); }
+  .small { font-size: 13.5px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc">
+  <div class="kicker">Spec-Driven Development · 内部方案</div>
+  <h1>公司 SDD 技能集定制方案</h1>
+  <p class="meta">基于 mattpocock skills 裁剪修改 · 借鉴 OpenSpec 与 spec-kit 治理机制 · 融合 AI 原生 SDLC / 设计流水线实践经验<br>
+  调研对象：<code>mattpocock/skills</code> · <code>Fission-AI/OpenSpec</code> · <code>github/spec-kit</code>（源码级） · 2026-09-20</p>
+</header>
+
+<nav class="toc">
+  <b>目录</b>
+  <ol>
+    <li><a href="#s1">方案概览与设计立场</a></li>
+    <li><a href="#s2">三大工具源码级对比</a></li>
+    <li><a href="#s3">实践经验沉淀（输入约束）</a></li>
+    <li><a href="#s4">技能集总体架构</a></li>
+    <li><a href="#s5">裁剪决策清单</a></li>
+    <li><a href="#s6">新增技能设计</a></li>
+    <li><a href="#s7">目录与工件约定</a></li>
+    <li><a href="#s8">质量门与治理机制</a></li>
+    <li><a href="#s9">人机分工</a></li>
+    <li><a href="#s10">落地路线图</a></li>
+    <li><a href="#s11">附录：命令速查与检查清单</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1"><span class="no">1</span>方案概览与设计立场</h2>
+
+<p><strong>目标</strong>：为团队定制一套可分发、可治理的 SDD（规范驱动开发）技能集，覆盖「需求拷问 → 规范 → 拆票 → 实现 → 审查 → 归档」全链路，并与设计流水线（DESIGN.md）打通。</p>
+
+<p><strong>为什么底座选 mattpocock skills，而不是 OpenSpec 或 spec-kit？</strong></p>
+
+<div class="callout">
+  <b>核心判断：拿组合式架构，借治理式机制。</b>
+  三个工具的根本差异不在功能，而在<strong>控制权归属</strong>：
+  <ul>
+    <li><strong>spec-kit</strong> 是「own the process」的全流程框架——命令链固定（constitution → specify → clarify → plan → tasks → analyze → implement），产出物模板强制，适合从零起步的绿地项目；对已有工作流的公司而言是<strong>替换</strong>而非<strong>融合</strong>。</li>
+    <li><strong>OpenSpec</strong> 是「brownfield-first」的双区模型——它解决了 SDD 最难的问题（<strong>规范漂移</strong>），但以自有 CLI + 目录结构为载体，与 Claude Code 技能体系是两套运行时。</li>
+    <li><strong>mattpocock skills</strong> 明确声明自己是「small, easy to adapt, and composable」——编排层（user-invoked）与纪律层（model-invoked）分层，用户调用型技能编排、模型调用型技能承载可复用纪律，且<strong>禁止编排技能调用另一个编排技能</strong>。这个分层规则正是公司定制需要的骨架：我们可以在不破坏架构的前提下替换任何一层的内容。</li>
+  </ul>
+  结论：<strong>以 mattpocock skills 的三层架构为骨架做裁剪，把 OpenSpec 的 delta/校验/归档机制和 spec-kit 的宪法门禁「翻译」成技能的形式注入</strong>——治理能力不来自外部 CLI，而来自写进技能正文的纪律与检查项。
+</div>
+
+<p><strong>三条不可妥协的定制原则</strong>（源自实践复盘）：</p>
+<ol>
+  <li><strong>上下文会消失，共识必须落盘</strong>——术语进 <code>CONTEXT.md</code>、决策进 ADR、环境进 <code>docs/agents/</code>，技能的每个阶段都要有明确的落盘动作。</li>
+  <li><strong>产出无限而判断有限，质量门必须工具化</strong>——<code>ready-for-agent</code> 状态、lint 0/0、双轴审查，全部固化进技能，不依赖人的自觉。</li>
+  <li><strong>人机分工必须显式</strong>——每个技能写明「AI 全自动段落」与「人工介入点」，人只出现在拍板处。</li>
+</ol>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2"><span class="no">2</span>三大工具源码级对比</h2>
+
+<table>
+  <tr><th style="width:15%">维度</th><th style="width:29%">mattpocock/skills</th><th style="width:28%">OpenSpec</th><th style="width:28%">spec-kit</th></tr>
+  <tr>
+    <td><strong>定位</strong></td>
+    <td>可组合技能集，反对全流程接管</td>
+    <td>轻量 spec 变更管理（npm CLI）</td>
+    <td>SDD 方法论 + 脚手架 CLI（Specify）</td>
+  </tr>
+  <tr>
+    <td><strong>核心结构</strong></td>
+    <td>三层技能：编排层（grill-with-docs → to-spec → to-tickets → implement）/ 纪律层（tdd、code-review、diagnosing-bugs）/ 原语层（grilling、domain-modeling）</td>
+    <td>双区模型：<code>openspec/specs/</code>（当前事实源，按 capability）+ <code>openspec/changes/</code>（进行中提案：proposal / design / tasks / delta）</td>
+    <td><code>.specify/</code>（宪法 + 模板 + 脚本）+ <code>specs/&lt;NNN-feature&gt;/</code>（spec / plan / tasks / checklists）</td>
+  </tr>
+  <tr>
+    <td><strong>工作流</strong></td>
+    <td>idea → ship：拷问访谈（状态化，实时写 CONTEXT.md/ADR）→ spec → 曳光弹垂直切片 ticket → 每票独立会话 implement（内嵌 TDD 红绿循环 + 双轴 code-review）</td>
+    <td>proposal → specs delta（可并行 design）→ tasks → apply → archive；「Specs describe current → Changes propose deltas → Archive merges」</td>
+    <td>constitution → specify → clarify（9 类歧义、限 5 问）→ plan（宪法检查门禁）→ tasks → <strong>analyze（只读一致性分析）</strong> → implement → converge</td>
+  </tr>
+  <tr>
+    <td><strong>质量门</strong></td>
+    <td><code>ready-for-agent</code> 状态标签；spec/ticket 模板内嵌（XML 风格块）；双轴审查刻意不合并排序</td>
+    <td><code>validate --strict</code>：Zod schema 校验（requirement 须含 SHALL/MUST、scenario 须四级标题、单 change ≤10 delta）；archive 原子合并、失败可回滚</td>
+    <td>Constitution Check（plan 前后各一次，违反须论证）；checklists 门禁（implement 前检查）；analyze 输出 CRITICAL~LOW 分级报告</td>
+  </tr>
+  <tr>
+    <td><strong>防漂移机制</strong></td>
+    <td>文档四段式规范、双桶治理（README 与 plugin.json 必须同步）</td>
+    <td>delta 只描述差异（ADDED/MODIFIED/REMOVED）；MODIFIED 须完整拷贝原需求块且标题精确匹配；归档是<strong>唯一</strong>写入主 spec 的路径</td>
+    <td>宪法语义化版本演进；「宪法冲突自动 CRITICAL，只能改产物不能稀释原则」</td>
+  </tr>
+  <tr>
+    <td><strong>分发</strong></td>
+    <td><code>claude plugins install</code>（仓库即市场）+ <code>npx skills add</code>；changesets 管版本</td>
+    <td><code>openspec init --tools</code> 为 40+ AI 工具生成 skills/commands，指令文本单一来源防多工具漂移</td>
+    <td><code>uv tool install</code>；45+ 代理集成注册表（INTEGRATION_REGISTRY），占位符令牌替换调用前缀</td>
+  </tr>
+  <tr>
+    <td><strong>最适合借鉴的</strong></td>
+    <td>分层架构、技能组合规则、模板内嵌、状态机</td>
+    <td>delta 格式、validate 校验、archive 归档、change 隔离并行</td>
+    <td>宪法门禁、analyze 一致性分析、clarify 歧义分类法</td>
+  </tr>
+</table>
+
+<figure>
+<svg viewBox="0 0 860 300" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三大工具的能力来源映射">
+  <rect x="0" y="0" width="860" height="300" fill="#ffffff"/>
+  <text x="430" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">定制技能集的能力来源映射</text>
+  <!-- mattpocock -->
+  <rect x="30" y="55" width="250" height="200" rx="10" fill="#e0f2f1" stroke="#00695c" stroke-width="1.5"/>
+  <text x="155" y="82" text-anchor="middle" font-size="14" font-weight="700" fill="#00695c">mattpocock/skills</text>
+  <text x="155" y="104" text-anchor="middle" font-size="12" fill="#004d40">骨架：三层架构</text>
+  <text x="155" y="130" text-anchor="middle" font-size="12" fill="#1a1a2e">· 编排层 / 纪律层 / 原语层</text>
+  <text x="155" y="152" text-anchor="middle" font-size="12" fill="#1a1a2e">· grill → spec → tickets → implement</text>
+  <text x="155" y="174" text-anchor="middle" font-size="12" fill="#1a1a2e">· CONTEXT.md / ADR 落盘机制</text>
+  <text x="155" y="196" text-anchor="middle" font-size="12" fill="#1a1a2e">· ready-for-agent 状态机</text>
+  <text x="155" y="218" text-anchor="middle" font-size="12" fill="#1a1a2e">· TDD + 双轴 code-review</text>
+  <text x="155" y="242" text-anchor="middle" font-size="11" fill="#546e7a">提供「流程骨架」</text>
+  <!-- OpenSpec -->
+  <rect x="305" y="55" width="250" height="200" rx="10" fill="#fff3e0" stroke="#b26a00" stroke-width="1.5"/>
+  <text x="430" y="82" text-anchor="middle" font-size="14" font-weight="700" fill="#b26a00">OpenSpec</text>
+  <text x="430" y="104" text-anchor="middle" font-size="12" fill="#7a4700">治理：规范生命周期</text>
+  <text x="430" y="130" text-anchor="middle" font-size="12" fill="#1a1a2e">· delta（ADDED/MODIFIED/REMOVED）</text>
+  <text x="430" y="152" text-anchor="middle" font-size="12" fill="#1a1a2e">· 结构校验（SHALL / Scenario）</text>
+  <text x="430" y="174" text-anchor="middle" font-size="12" fill="#1a1a2e">· archive 原子归档（唯一写路径）</text>
+  <text x="430" y="196" text-anchor="middle" font-size="12" fill="#1a1a2e">· change 隔离、并行、可回滚</text>
+  <text x="430" y="242" text-anchor="middle" font-size="11" fill="#546e7a">提供「防漂移纪律」</text>
+  <!-- spec-kit -->
+  <rect x="580" y="55" width="250" height="200" rx="10" fill="#fce4ec" stroke="#ad1457" stroke-width="1.5"/>
+  <text x="705" y="82" text-anchor="middle" font-size="14" font-weight="700" fill="#ad1457">spec-kit</text>
+  <text x="705" y="104" text-anchor="middle" font-size="12" fill="#880e4f">门禁：宪法与分析</text>
+  <text x="705" y="130" text-anchor="middle" font-size="12" fill="#1a1a2e">· constitution 项目宪法</text>
+  <text x="705" y="152" text-anchor="middle" font-size="12" fill="#1a1a2e">· Constitution Check 门禁</text>
+  <text x="705" y="174" text-anchor="middle" font-size="12" fill="#1a1a2e">· analyze 只读一致性分析</text>
+  <text x="705" y="196" text-anchor="middle" font-size="12" fill="#1a1a2e">· clarify 歧义分类法</text>
+  <text x="705" y="242" text-anchor="middle" font-size="11" fill="#546e7a">提供「原则与检查」</text>
+  <!-- arrows to bottom -->
+  <rect x="205" y="262" width="450" height="30" rx="15" fill="#1a1a2e"/>
+  <text x="430" y="282" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">公司 SDD 技能集（技能形式承载治理，不引入外部 CLI）</text>
+  <line x1="155" y1="255" x2="300" y2="262" stroke="#00695c" stroke-width="2" marker-end="url(#a1)"/>
+  <line x1="430" y1="255" x2="430" y2="262" stroke="#b26a00" stroke-width="2"/>
+  <line x1="705" y1="255" x2="560" y2="262" stroke="#ad1457" stroke-width="2"/>
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#00695c"/></marker>
+  </defs>
+</svg>
+<figcaption>图 1 · 三家之长各取所需：骨架取 mattpocock，防漂移取 OpenSpec，门禁取 spec-kit</figcaption>
+</figure>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3"><span class="no">3</span>实践经验沉淀（作为定制输入）</h2>
+
+<p>两篇实践记录提供了三个工具仓库里没有的<strong>实战约束</strong>，直接转化为定制要求：</p>
+
+<table>
+  <tr><th style="width:30%">实践发现</th><th style="width:35%">教训</th><th style="width:35%">转化为定制要求</th></tr>
+  <tr>
+    <td><strong>grill-with-docs 的状态化访谈</strong>（长辈计算器 4 轮 27 问）</td>
+    <td>术语敲定即落盘 CONTEXT.md，比批量补交可靠；每轮访谈后知识不丢失</td>
+    <td>公司版 grill 技能必须强制「实时写盘」，并约定 CONTEXT.md 只记术语与共识、不含实现细节</td>
+  </tr>
+  <tr>
+    <td><strong>spec 质量取决于术语表</strong></td>
+    <td>36 条用户故事全部使用 CONTEXT.md 词汇，spec 与术语表冲突时以术语表为准</td>
+    <td>to-spec 技能增加自检项：「spec 中每个领域名词必须能在 CONTEXT.md 中找到定义」</td>
+  </tr>
+  <tr>
+    <td><strong>ticket 是实现批次而非用户故事</strong></td>
+    <td>12 张曳光弹切片、每张单会话完成；每票之间是天然的检查点；上下文满仓的后半程质量衰减</td>
+    <td>to-tickets 保留曳光弹原则，模板显式写入「单上下文窗口可完成」约束与 Blocked-by 依赖图</td>
+  </tr>
+  <tr>
+    <td><strong>code-review 双轴发现真实偏差</strong></td>
+    <td>Spec 轴抓到「算式行数字未带千分位」这种真 bug；Standards 轴的建议需人工取舍</td>
+    <td>公司版增加第三轴（安全轴），三轴并行、各自报告</td>
+  </tr>
+  <tr>
+    <td><strong>DESIGN.md 三层治理</strong>（标准只读 / 偏离显式 / 回流有门槛）</td>
+    <td>AI 会顺手改文件，治理规则必须前置；「项目没有资格修改标准」</td>
+    <td>新增 design-pipeline 技能；标准文件在技能正文中声明为只读输入，偏离必须写入 overrides 并附理由</td>
+  </tr>
+  <tr>
+    <td><strong>环境变量取空、npx 拦截、限流 429 等踩坑</strong></td>
+    <td>试错解法固化进 <code>docs/agents/design-pipeline.md</code> 后「试错变成照做」</td>
+    <td>每个技能配一个「已知坑」小节，AI 遇到对应症状直接走正确路径</td>
+  </tr>
+  <tr>
+    <td><strong>Figma 只读、HTML 才是 AI 的设计稿</strong></td>
+    <td>设计事实源上移到仓库文本规范；HTML 原型秒级迭代，Figma 退居协作层</td>
+    <td>设计流水线以「网站 → DESIGN.md → HTML 原型 → Figma 存档」为标准路径，Figma 段落是唯一的人工环节</td>
+  </tr>
+</table>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4"><span class="no">4</span>技能集总体架构</h2>
+
+<p>沿用 mattpocock 的分层规则并扩展一层公司治理技能（仍属编排层，但只在特定入口被调用）：</p>
+
+<div class="callout">
+  <b>分层规则（扩展版）</b><br>
+  ① user-invoked skills 负责编排，model-invoked skills 承载可复用纪律；<br>
+  ② 编排技能可以调用纪律技能，<strong>永不调用另一个编排技能</strong>；<br>
+  ③ 治理类技能（constitution、analyze、archive）由编排技能在工作流节点上调用，或由人显式调用；<br>
+  ④ 每个技能的 SKILL.md 内嵌模板块（XML 风格），模板即规范——AI 不需要外部文件就能拿到格式约定。
+</div>
+
+<figure>
+<svg viewBox="0 0 860 470" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="公司 SDD 技能集分层架构">
+  <rect x="0" y="0" width="860" height="470" fill="#ffffff"/>
+  <text x="430" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">公司 SDD 技能集（company-sdd）分层架构</text>
+
+  <!-- Lane 1: 编排层 -->
+  <text x="24" y="66" font-size="12" font-weight="700" fill="#00695c">编排层</text>
+  <text x="24" y="82" font-size="10.5" fill="#8a8aa3">user-invoked</text>
+  <rect x="90" y="48" width="110" height="44" rx="8" fill="#00695c"/>
+  <text x="145" y="67" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">constitution</text>
+  <text x="145" y="83" text-anchor="middle" font-size="9.5" fill="#b2dfdb">项目宪法 · 新增</text>
+  <rect x="212" y="48" width="118" height="44" rx="8" fill="#00695c"/>
+  <text x="271" y="67" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">grill-with-docs</text>
+  <text x="271" y="83" text-anchor="middle" font-size="9.5" fill="#b2dfdb">需求拷问 · 改造</text>
+  <rect x="342" y="48" width="86" height="44" rx="8" fill="#00695c"/>
+  <text x="385" y="67" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">to-spec</text>
+  <text x="385" y="83" text-anchor="middle" font-size="9.5" fill="#b2dfdb">规范 · 改造</text>
+  <rect x="440" y="48" width="96" height="44" rx="8" fill="#00695c"/>
+  <text x="488" y="67" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">to-tickets</text>
+  <text x="488" y="83" text-anchor="middle" font-size="9.5" fill="#b2dfdb">拆票 · 改造</text>
+  <rect x="548" y="48" width="96" height="44" rx="8" fill="#00695c"/>
+  <text x="596" y="67" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">implement</text>
+  <text x="596" y="83" text-anchor="middle" font-size="9.5" fill="#b2dfdb">实现 · 保留</text>
+  <rect x="656" y="48" width="96" height="44" rx="8" fill="#00695c"/>
+  <text x="704" y="67" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">design-pipe</text>
+  <text x="704" y="83" text-anchor="middle" font-size="9.5" fill="#b2dfdb">设计流水线 · 新增</text>
+  <rect x="764" y="48" width="76" height="44" rx="8" fill="#00695c"/>
+  <text x="802" y="67" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">archive</text>
+  <text x="802" y="83" text-anchor="middle" font-size="9.5" fill="#b2dfdb">归档 · 新增</text>
+
+  <!-- Lane 2: 治理层 -->
+  <text x="24" y="146" font-size="12" font-weight="700" fill="#b26a00">治理层</text>
+  <text x="24" y="162" font-size="10.5" fill="#8a8aa3">节点上被调用</text>
+  <rect x="90" y="128" width="150" height="44" rx="8" fill="#b26a00"/>
+  <text x="165" y="147" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">spec-validate</text>
+  <text x="165" y="163" text-anchor="middle" font-size="9.5" fill="#ffe0b2">规范校验 · 新增（OpenSpec）</text>
+  <rect x="252" y="128" width="150" height="44" rx="8" fill="#b26a00"/>
+  <text x="327" y="147" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">analyze</text>
+  <text x="327" y="163" text-anchor="middle" font-size="9.5" fill="#ffe0b2">一致性分析 · 新增（spec-kit）</text>
+  <rect x="414" y="128" width="150" height="44" rx="8" fill="#b26a00"/>
+  <text x="489" y="147" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">constitution-check</text>
+  <text x="489" y="163" text-anchor="middle" font-size="9.5" fill="#ffe0b2">宪法门禁 · 新增（spec-kit）</text>
+  <rect x="576" y="128" width="150" height="44" rx="8" fill="#b26a00"/>
+  <text x="651" y="147" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">design-lint</text>
+  <text x="651" y="163" text-anchor="middle" font-size="9.5" fill="#ffe0b2">设计规范校验 · 新增（实践）</text>
+
+  <!-- Lane 3: 纪律层 -->
+  <text x="24" y="226" font-size="12" font-weight="700" fill="#ad1457">纪律层</text>
+  <text x="24" y="242" font-size="10.5" fill="#8a8aa3">model-invoked</text>
+  <rect x="90" y="208" width="86" height="44" rx="8" fill="#ad1457"/>
+  <text x="133" y="227" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">tdd</text>
+  <text x="133" y="243" text-anchor="middle" font-size="9.5" fill="#f8bbd0">保留</text>
+  <rect x="188" y="208" width="110" height="44" rx="8" fill="#ad1457"/>
+  <text x="243" y="227" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">code-review</text>
+  <text x="243" y="243" text-anchor="middle" font-size="9.5" fill="#f8bbd0">三轴 · 改造</text>
+  <rect x="310" y="208" width="130" height="44" rx="8" fill="#ad1457"/>
+  <text x="375" y="227" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">diagnosing-bugs</text>
+  <text x="375" y="243" text-anchor="middle" font-size="9.5" fill="#f8bbd0">保留</text>
+  <rect x="452" y="208" width="130" height="44" rx="8" fill="#ad1457"/>
+  <text x="517" y="227" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">domain-modeling</text>
+  <text x="517" y="243" text-anchor="middle" font-size="9.5" fill="#f8bbd0">保留</text>
+  <rect x="594" y="208" width="130" height="44" rx="8" fill="#ad1457"/>
+  <text x="659" y="227" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">codebase-design</text>
+  <text x="659" y="243" text-anchor="middle" font-size="9.5" fill="#f8bbd0">保留</text>
+
+  <!-- Lane 4: 原语层 -->
+  <text x="24" y="306" font-size="12" font-weight="700" fill="#1565c0">原语层</text>
+  <text x="24" y="322" font-size="10.5" fill="#8a8aa3">被访谈类调用</text>
+  <rect x="90" y="288" width="96" height="44" rx="8" fill="#1565c0"/>
+  <text x="138" y="307" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">grilling</text>
+  <text x="138" y="323" text-anchor="middle" font-size="9.5" fill="#bbdefb">保留</text>
+  <rect x="198" y="288" width="96" height="44" rx="8" fill="#1565c0"/>
+  <text x="246" y="307" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="700">prototype</text>
+  <text x="246" y="323" text-anchor="middle" font-size="9.5" fill="#bbdefb">保留（可选）</text>
+
+  <!-- flows -->
+  <text x="430" y="380" text-anchor="middle" font-size="12" fill="#4a4a68">主流程：constitution（一次性）→ grill-with-docs → to-spec ⇄ spec-validate → to-tickets → implement（内嵌 tdd + code-review）⇄ constitution-check → archive</text>
+  <text x="430" y="402" text-anchor="middle" font-size="12" fill="#4a4a68">设计分支：design-pipe（DESIGN.md → HTML 原型 → Figma 存档 ⇄ design-lint）</text>
+  <text x="430" y="424" text-anchor="middle" font-size="12" fill="#4a4a68">横切：analyze 在 implement 前对 spec / plan / tasks 做只读一致性检查</text>
+  <text x="430" y="452" text-anchor="middle" font-size="11" fill="#8a8aa3">标签含义：保留 = 原样入库 · 改造 = 模板/规则替换为公司版 · 新增 = 从 OpenSpec / spec-kit / 实践经验翻译为技能</text>
+</svg>
+<figcaption>图 2 · company-sdd 四层架构与调用关系</figcaption>
+</figure>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5"><span class="no">5</span>裁剪决策清单</h2>
+
+<h3>5.1 编排层（user-invoked）</h3>
+<table>
+  <tr><th style="width:20%">技能</th><th style="width:10%">决策</th><th style="width:70%">定制要点</th></tr>
+  <tr>
+    <td><code>grill-with-docs</code></td>
+    <td><span class="tag t-mod">改造</span></td>
+    <td>保留「有状态访谈」内核（每轮敲定即写盘）。公司化改动：① 文档固定为 <code>CONTEXT.md</code>（术语）+ <code>docs/adr/</code>（决策），路径不开放配置；② 增加「合规三问」固定题项——数据边界、权限边界、对外依赖；③ 访谈结论必须回指公司工程宪法（见 §6.1），与宪法冲突的选项在访谈中即被标记。</td>
+  </tr>
+  <tr>
+    <td><code>to-spec</code></td>
+    <td><span class="tag t-mod">改造</span></td>
+    <td>保留模板六段结构（Problem / Solution / User Stories / Implementation Decisions / Testing Decisions / Out of Scope）。公司化改动：① 增加「测试接缝」必填段（Feathers seam，实践已验证有效）；② 增加「设计关联」段——涉及界面的 spec 必须引用 DESIGN.md tokens 或声明 overrides；③ 发布路径固定 <code>.scratch/&lt;feature-slug&gt;/spec.md</code>；④ 发布前自动执行 spec-validate（见 §6.2），0 错误才允许打 <code>ready-for-agent</code>。</td>
+  </tr>
+  <tr>
+    <td><code>to-tickets</code></td>
+    <td><span class="tag t-mod">改造</span></td>
+    <td>保留曳光弹垂直切片、Blocked-by 依赖图、单上下文窗口约束。公司化改动：① ticket 模板增加「验证方式」必填字段（对齐 OpenSpec tasks 的约束——每个任务必须含验证方式）；② ticket 状态机固定：<code>draft → ready-for-agent → in-progress → done</code>，状态行格式与 spec 一致；③ 拆票完成后强制产出依赖图摘要表。</td>
+  </tr>
+  <tr>
+    <td><code>implement</code></td>
+    <td><span class="tag t-keep">保留</span></td>
+    <td>16 行的纯编排者，调用 tdd + code-review。仅两处修改：① 结尾增加「工单验收项勾选 + 提交」步骤（实践已跑通的模式）；② 实现前检查 constitution-check 快速项（只查禁令类，不做全量分析）。</td>
+  </tr>
+  <tr>
+    <td><code>constitution</code></td>
+    <td><span class="tag t-new">新增</span></td>
+    <td>从 spec-kit 翻译为技能形式（见 §6.1）。</td>
+  </tr>
+  <tr>
+    <td><code>design-pipeline</code></td>
+    <td><span class="tag t-new">新增</span></td>
+    <td>把设计流水线实践固化为技能（见 §6.4）。</td>
+  </tr>
+  <tr>
+    <td><code>archive</code></td>
+    <td><span class="tag t-new">新增</span></td>
+    <td>从 OpenSpec 翻译为技能形式（见 §6.3）。</td>
+  </tr>
+  <tr>
+    <td><code>setup-*</code></td>
+    <td><span class="tag t-mod">改造</span></td>
+    <td>公司版每仓库初始化技能：issue tracker 选项收敛为公司唯一系统；文档目录固定；写入 <code>docs/agents/issue-tracker.md</code> 等；并生成 <code>CLAUDE.md</code> 骨架（引用宪法与 CONTEXT.md）。</td>
+  </tr>
+  <tr>
+    <td><code>wayfinder</code></td>
+    <td><span class="tag t-keep">保留</span></td>
+    <td>超大工作的决策地图机制原样保留，issue tracker 适配公司系统。</td>
+  </tr>
+  <tr>
+    <td><code>triage</code> / <code>ask-matt</code></td>
+    <td><span class="tag t-mod">改造</span></td>
+    <td>triage 保留状态机、标签表改公司版；ask-matt 改为公司路由图（改名 <code>sdd-map</code>），补充新增治理技能的入口说明。</td>
+  </tr>
+</table>
+
+<h3>5.2 纪律层（model-invoked）</h3>
+<table>
+  <tr><th style="width:20%">技能</th><th style="width:10%">决策</th><th style="width:70%">定制要点</th></tr>
+  <tr>
+    <td><code>tdd</code></td>
+    <td><span class="tag t-keep">保留</span></td>
+    <td>红绿循环纪律与 references（tests.md / mocking.md）原样保留，实践已验证。</td>
+  </tr>
+  <tr>
+    <td><code>code-review</code></td>
+    <td><span class="tag t-mod">改造</span></td>
+    <td>双轴（Standards / Spec）扩为<strong>三轴并行</strong>：新增 <strong>Security 轴</strong>（对照公司安全清单 + OWASP 常见项，与安全扫描工具的产出互补——扫描管已知模式，该轴管业务逻辑层面的安全意图偏离）。三轴刻意不合并排序，各出各的报告。</td>
+  </tr>
+  <tr>
+    <td><code>diagnosing-bugs</code> / <code>domain-modeling</code> / <code>codebase-design</code> / <code>prototype</code> / <code>research</code></td>
+    <td><span class="tag t-keep">保留</span></td>
+    <td>原样入库。这些是模型自主调用的纪律与原语，不涉及公司流程。</td>
+  </tr>
+  <tr>
+    <td><code>resolving-merge-conflicts</code> / <code>wizard</code> / <code>improve-codebase-architecture</code></td>
+    <td><span class="tag t-keep">保留</span></td>
+    <td>原样入库。</td>
+  </tr>
+</table>
+
+<h3>5.3 productivity 桶</h3>
+<table>
+  <tr><th style="width:20%">技能</th><th style="width:10%">决策</th><th style="width:70%">说明</th></tr>
+  <tr><td><code>grilling</code></td><td><span class="tag t-keep">保留</span></td><td>可复用访谈原语，grill-with-docs 的依赖，必须保留。</td></tr>
+  <tr><td><code>handoff</code></td><td><span class="tag t-keep">保留</span></td><td>与 prototype 配套的交接技能。</td></tr>
+  <tr><td><code>grill-me</code> / <code>teach</code> / <code>to-questionnaire</code> / <code>wait-what</code> / <code>writing-for-agents</code></td><td><span class="tag t-drop">不进</span></td><td>个人向/内容向技能，不属于公司 SDD 流程，不随插件分发（仓库内可保留在独立目录供个人安装）。</td></tr>
+</table>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6"><span class="no">6</span>新增技能设计</h2>
+
+<h3>6.1 <code>constitution</code> — 工程宪法（译自 spec-kit）</h3>
+<p>一次性技能：建立/修订 <code>docs/constitution.md</code>。宪法是公司工程原则的最小集，后续所有阶段加载并受其约束。</p>
+<pre><code>---
+name: constitution
+description: 建立/修订项目工程宪法。修订须语义化版本并输出 Sync Impact Report。
+---
+
+## 流程
+1. 读取公司基线宪法（docs/standards/engineering-constitution.md，只读）
+2. 访谈确认项目级增补原则（≤5 条，每条须含「为什么」与「违反时的处理」）
+3. 写入 docs/constitution.md，含版本号与批准日期
+4. 输出 Sync Impact Report：本次变化影响哪些下游工件（模板/skill/CI）
+
+## 规则
+- 公司基线原则：项目只能引用、不能稀释（冲突 = CRITICAL，只能改项目产物）
+- 项目增补原则：MAJOR=删除/重定义 · MINOR=新增 · PATCH=澄清
+- 宪法冲突不可协商绕过；确需绕过时必须在 Complexity 论证段留痕</code></pre>
+<div class="small">公司基线建议首版五条（可讨论）：① 测试先行的变更不可协商；② 规范与代码同源（tokens/spec 来自 export 产物，禁止手抄）；③ 标准文件只读、偏离显式留痕；④ 安全审查为合并前必经门禁；⑤ 最小依赖与离线可用优先。</div>
+
+<h3>6.2 <code>spec-validate</code> — 规范校验（译自 OpenSpec，去掉 CLI 依赖）</h3>
+<p>纪律型技能：对 spec / delta 做结构校验，把 OpenSpec 的 Zod 规则翻译成技能正文里的检查清单。AI 逐项执行，输出 0 errors / 0 warnings 才放行。</p>
+<table>
+  <tr><th style="width:28%">检查项</th><th>规则（源自 OpenSpec validator）</th></tr>
+  <tr><td>需求措辞</td><td>每条 Requirement 须含 SHALL/MUST（RFC 2119）；单条 ≤500 字符</td></tr>
+  <tr><td>场景格式</td><td>Scenario 用 GIVEN/WHEN/THEN；标题层级精确（OpenSpec 的教训：3 个 # 会静默失败）</td></tr>
+  <tr><td>动机充分</td><td>Why/Problem 段 ≥50 字符（防「一句话 spec」）</td></tr>
+  <tr><td>delta 完整性</td><td>MODIFIED 须完整拷贝原需求块且标题精确匹配，防场景丢失；REMOVED 须带 Reason 与 Migration</td></tr>
+  <tr><td>规模上限</td><td>单次变更 ≤10 个 delta，超出应拆分</td></tr>
+  <tr><td>词汇对齐</td><td>spec 中的领域名词必须能在 CONTEXT.md 找到定义（公司特有，源自实践）</td></tr>
+  <tr><td>占位符残留</td><td>检出 TODO/占位符（含排除 fenced code block 的误报，OpenSpec 踩过的坑）</td></tr>
+</table>
+
+<h3>6.3 <code>archive</code> — 规范归档（译自 OpenSpec 双区模型）</h3>
+<p>功能完成、验收通过后执行：把 <code>.scratch/&lt;feature&gt;/</code> 中已达成的行为契约合并进 <code>specs/</code>（按 capability 组织的当前事实源），原变更目录移入 <code>specs/archive/YYYY-MM-DD-&lt;feature&gt;/</code> 留审计。要点：</p>
+<ul>
+  <li><strong>归档是唯一写入 <code>specs/</code> 的路径</strong>——杜绝「顺手改规范」造成的漂移（与 DESIGN.md 三层治理同构）；</li>
+  <li>合并前跑 spec-validate 全量校验；写入失败即中止并保留原目录（可回滚）；</li>
+  <li>归档时检查 ticket 验收项全部勾选（借鉴 OpenSpec <code>--archived</code> 检查）。</li>
+</ul>
+
+<h3>6.4 <code>design-pipeline</code> — 设计流水线（源自实践，固化为技能）</h3>
+<p>把两篇博文中的设计环节做成与开发环节平行的技能，五个阶段各带质量门：</p>
+<table>
+  <tr><th style="width:8%">阶段</th><th style="width:30%">动作</th><th style="width:32%">质量门</th><th style="width:30%">执行者</th></tr>
+  <tr><td>1</td><td>提炼设计规范（参考站 → DESIGN.md）</td><td>designmd lint 0 errors / 0 warnings</td><td>AI 全自动</td></tr>
+  <tr><td>2</td><td>生成 HTML 高保真原型（tokens 内联、单文件零依赖、内容对齐 CONTEXT.md）</td><td>规范忠实 + 领域文档对齐自检</td><td>AI 全自动</td></tr>
+  <tr><td>3</td><td>导入 Figma（本地服务器 → Chrome 扩展 → Send to Figma）</td><td>画板落地非空</td><td><strong>人</strong>（约 2 分钟）</td></tr>
+  <tr><td>4</td><td>对齐校验（MCP 一次性回读 vs tokens 比对）</td><td>禁轮询 REST（429）</td><td>AI 全自动</td></tr>
+  <tr><td>5</td><td>偏离治理（偏离写 DESIGN.overrides.md 并附理由；标准文件 git diff 必须为空）</td><td>标准纯净检查</td><td>AI 检查 / 人拍板回流</td></tr>
+</table>
+<div class="small">技能正文内置「已知坑」小节：反爬走 Wayback、npx 被拦走本地克隆、file:// 无权走 localhost、插件抓不到 localhost 必须走扩展、GUI 不读 ~/.zshrc 所以 token 内嵌——全部来自实践记录，症状出现即走正确路径。</div>
+
+<h3>6.5 <code>analyze</code> — 只读一致性分析（译自 spec-kit）</h3>
+<p>implement 前执行，只读不改文件：重复与歧义扫描、欠指定项识别、宪法对齐、<strong>覆盖缺口</strong>（哪些 spec 需求没有任何 ticket 承载）、产物间矛盾。输出 CRITICAL~LOW 分级报告，限 50 条。CRITICAL 项未清零前，implement 拒绝开始。</p>
+
+<h3>6.6 <code>sdd-map</code> — 路由图（改自 ask-matt）</h3>
+<p>人读的流程地图：什么规模的工作走哪条路。单会话装得下的小活直接 implement；标准工作走全流程；超大/多雾工作先 wayfinder 建决策地图；涉及界面的工作在 grill 后插入 design-pipeline。</p>
+
+<figure>
+<svg viewBox="0 0 860 360" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="端到端流程与质量门">
+  <rect x="0" y="0" width="860" height="360" fill="#ffffff"/>
+  <text x="430" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">端到端流程与质量门（菱形 = 门禁 · 灰框 = 人工介入点）</text>
+  <!-- nodes -->
+  <rect x="20" y="70" width="92" height="40" rx="8" fill="#00695c"/><text x="66" y="95" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="700">constitution</text>
+  <rect x="140" y="70" width="112" height="40" rx="8" fill="#00695c"/><text x="196" y="95" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="700">grill-with-docs</text>
+  <rect x="280" y="70" width="86" height="40" rx="8" fill="#00695c"/><text x="323" y="95" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="700">to-spec</text>
+  <polygon points="398,90 446,70 494,90 446,110" fill="#b26a00"/><text x="446" y="87" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">spec-validate</text><text x="446" y="100" text-anchor="middle" font-size="9" fill="#ffe0b2">0/0 放行</text>
+  <rect x="522" y="70" width="90" height="40" rx="8" fill="#00695c"/><text x="567" y="95" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="700">to-tickets</text>
+  <polygon points="640,90 688,70 736,90 688,110" fill="#b26a00"/><text x="688" y="87" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">analyze</text><text x="688" y="100" text-anchor="middle" font-size="9" fill="#ffe0b2">CRITICAL=0</text>
+  <rect x="764" y="70" width="86" height="40" rx="8" fill="#00695c"/><text x="807" y="95" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="700">implement</text>
+
+  <rect x="764" y="170" width="86" height="40" rx="8" fill="#00695c"/><text x="807" y="195" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="700">archive</text>
+  <rect x="640" y="170" width="90" height="40" rx="8" fill="#eceff1"/><text x="685" y="195" text-anchor="middle" font-size="11.5" fill="#37474f" font-weight="700">验收拍板</text>
+  <polygon points="500,190 548,170 596,190 548,210" fill="#b26a00"/><text x="548" y="187" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">code-review</text><text x="548" y="200" text-anchor="middle" font-size="9" fill="#ffe0b2">三轴全绿</text>
+  <rect x="380" y="170" width="86" height="40" rx="8" fill="#ad1457"/><text x="423" y="195" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="700">tdd 红绿</text>
+
+  <!-- design branch -->
+  <rect x="140" y="170" width="112" height="40" rx="8" fill="#ad1457" opacity="0.85"/><text x="196" y="188" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">design-pipeline</text><text x="196" y="202" text-anchor="middle" font-size="9" fill="#f8bbd0">DESIGN.md→HTML→Figma</text>
+  <polygon points="270,190 308,174 346,190 308,206" fill="#b26a00"/><text x="308" y="193" text-anchor="middle" font-size="9.5" fill="#fff" font-weight="700">lint 0/0</text>
+
+  <!-- human note -->
+  <rect x="140" y="260" width="440" height="60" rx="8" fill="#f5f5f5" stroke="#cfd8dc"/>
+  <text x="160" y="282" font-size="11.5" fill="#37474f" font-weight="700">人工介入点（仅三处）：</text>
+  <text x="160" y="300" font-size="11" fill="#546e7a">① grill 各轮作答与终局确认 · ② 设计评审拍板 + Figma 导入点击 · ③ 每张 ticket 完成后的验收</text>
+
+  <!-- arrows -->
+  <g stroke="#90a4ae" stroke-width="1.6" fill="none">
+    <line x1="112" y1="90" x2="140" y2="90"/><line x1="252" y1="90" x2="280" y2="90"/>
+    <line x1="366" y1="90" x2="398" y2="90"/><line x1="494" y1="90" x2="522" y2="90"/>
+    <line x1="612" y1="90" x2="640" y2="90"/><line x1="736" y1="90" x2="764" y2="90"/>
+    <line x1="807" y1="110" x2="807" y2="170"/>
+    <line x1="764" y1="190" x2="730" y2="190"/><line x1="640" y1="190" x2="596" y2="190"/>
+    <line x1="500" y1="190" x2="466" y2="190"/><line x1="380" y1="190" x2="330" y2="190"/>
+    <line x1="196" y1="110" x2="196" y2="170"/><line x1="140" y1="90" x2="140" y2="120" stroke-dasharray="4"/>
+    <line x1="140" y1="120" x2="196" y2="120" stroke-dasharray="4"/><line x1="196" y1="120" x2="196" y2="170" stroke-dasharray="4"/>
+  </g>
+  <text x="620" y="150" font-size="10" fill="#8a8aa3">（每张 ticket 循环：implement → tdd → review → 验收）</text>
+  <text x="240" y="145" font-size="10" fill="#8a8aa3">（涉及界面的工作插入设计分支）</text>
+</svg>
+<figcaption>图 3 · 端到端流程：AI 跑到每个门禁前停下，人只在拍板处出现</figcaption>
+</figure>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7"><span class="no">7</span>目录与工件约定</h2>
+
+<p>统一所有项目的仓库布局（每仓库初始化时由 <code>setup-sdd</code> 生成骨架）：</p>
+
+<pre><code>.
+├── CLAUDE.md                      # 入口：指向宪法、CONTEXT.md、工作流地图
+├── CONTEXT.md                     # 领域术语表（grill-with-docs 实时落盘；spec 冲突时以此为准）
+├── docs/
+│   ├── constitution.md            # 项目宪法（公司基线 + 项目增补，语义化版本）
+│   ├── adr/                       # 架构决策记录（三道闸门通过的决策落这里）
+│   ├── agents/                    # 环境配置（AI 的"入职文档"）
+│   │   ├── issue-tracker.md       #   工单系统约定（公司唯一系统）
+│   │   ├── domain.md              #   领域背景
+│   │   └── design-pipeline.md     #   设计流水线操作指引 + 已知坑
+│   └── standards/
+│       └── engineering-constitution.md   # 公司基线宪法（只读）
+├── DESIGN.md                      # 公司标准设计规范（只读消费；有 UI 的项目引入）
+├── DESIGN.overrides.md            # 项目偏离（只记 delta + 理由）
+├── .scratch/&lt;feature-slug&gt;/       # 进行中工作区
+│   ├── spec.md                    #   Status: ready-for-agent ...
+│   └── issues/NN-*.md             #   曳光弹切片，各带 Blocked-by 与 Status
+└── specs/                         # 已归档行为契约（事实源，按 capability；archive 唯一写入口）
+    └── archive/YYYY-MM-DD-*/      #   归档留痕（审计上下文）</code></pre>
+
+<table>
+  <tr><th style="width:22%">工件</th><th style="width:26%">事实源属性</th><th style="width:26%">谁写入</th><th>谁只读</th></tr>
+  <tr><td><code>CONTEXT.md</code></td><td>领域词汇权威定义</td><td>grill-with-docs（访谈中实时）</td><td>所有技能</td></tr>
+  <tr><td><code>docs/constitution.md</code></td><td>工程原则权威</td><td>constitution 技能（版本化）</td><td>全部阶段加载</td></tr>
+  <tr><td><code>DESIGN.md</code></td><td>公司设计标准</td><td>标准维护者（评审回流）</td><td>项目侧一律只读</td></tr>
+  <tr><td><code>specs/</code></td><td>系统当前行为契约</td><td>archive 技能（唯一路径）</td><td>spec / implement</td></tr>
+  <tr><td><code>.scratch/</code></td><td>进行中提案（隔离）</td><td>to-spec / to-tickets / implement</td><td>analyze / review</td></tr>
+</table>
+
+<!-- ============ 8 ============ -->
+<h2 id="s8"><span class="no">8</span>质量门与治理机制</h2>
+
+<p>四个来源的门禁统一收口到一张表，每个门禁都有明确的「不过怎么办」：</p>
+
+<table>
+  <tr><th style="width:16%">门禁</th><th style="width:16%">所处节点</th><th style="width:34%">判定标准</th><th style="width:34%">不通过时</th></tr>
+  <tr><td>spec-validate</td><td>spec 发布前</td><td>结构校验 0 errors / 0 warnings；词汇全部对齐 CONTEXT.md</td><td>AI 修复后重校；不得带伤打 ready-for-agent</td></tr>
+  <tr><td>analyze</td><td>implement 前</td><td>CRITICAL = 0（覆盖缺口、宪法冲突、产物矛盾）</td><td>回改 spec/tasks；LOW 项记录后可放行</td></tr>
+  <tr><td>constitution-check</td><td>plan/design 前后</td><td>禁令类原则零违反；取舍类违反须在 Complexity 段论证</td><td>改方案；不可协商项无论证豁免</td></tr>
+  <tr><td>code-review 三轴</td><td>每张 ticket 提交前</td><td>Spec 轴（忠实实现）/ Standards 轴（规范+坏味道）/ Security 轴（安全意图）</td><td>Spec 轴问题必须修；其余轴按严重度取舍并留痕</td></tr>
+  <tr><td>design-lint</td><td>原型进 Figma 前</td><td>designmd lint 0/0；标准文件 git diff 为空</td><td>偏离改走 overrides；禁止回写标准</td></tr>
+  <tr><td>archive 前置检查</td><td>归档前</td><td>ticket 验收项全勾；delta 校验通过</td><td>中止归档，保留原目录（可回滚）</td></tr>
+</table>
+
+<div class="callout warn">
+  <b>治理的不变量</b><br>
+  ① <strong>写入路径唯一</strong>：<code>specs/</code> 只能由 archive 写入、<code>DESIGN.md</code> 项目侧永远只读——「AI 会顺手改文件，治理规则必须前置」；<br>
+  ② <strong>状态机驱动</strong>：spec 与 ticket 都用 <code>Status:</code> 行驱动，AI 只认状态不认口头；<br>
+  ③ <strong>审计留痕</strong>：归档目录保留完整提案上下文；宪法修订必须 Sync Impact Report；<br>
+  ④ <strong>回流有门槛</strong>：项目偏离在多个项目验证有效后，由标准维护者走评审回流——项目侧不代劳。
+</div>
+
+<!-- ============ 9 ============ -->
+<h2 id="s9"><span class="no">9</span>人机分工</h2>
+
+<table>
+  <tr><th style="width:55%">AI 全自动</th><th style="width:45%">人工（全部是拍板，不是操作）</th></tr>
+  <tr>
+    <td>访谈出题、实时落盘 CONTEXT.md/ADR；spec / tickets 生成与校验；analyze 报告；TDD 红绿循环；三轴审查；归档合并；设计规范提炼、原型生成、lint、对齐回读、起本地服务器</td>
+    <td>grill 各轮作答与共识终局确认；设计评审拍板 + Figma 导入的扩展点击（约 2 分钟）；每张 ticket 完成后的验收；偏离回流标准的评审；宪法修订批准</td>
+  </tr>
+</table>
+<p class="small">把分工写进每个技能的正文，AI 就能自动跑到「需要人拍板」的那一步并递上决策材料——这是流程可复现的前提。</p>
+
+<!-- ============ 10 ============ -->
+<h2 id="s10"><span class="no">10</span>落地路线图</h2>
+
+<table>
+  <tr><th style="width:14%">阶段</th><th style="width:30%">动作</th><th style="width:34%">产出</th><th>验收信号</th></tr>
+  <tr>
+    <td><strong>P1 试点</strong><br><span class="small">1–2 周</span></td>
+    <td>fork mattpocock/skills 改名 <code>company-sdd</code>；按 §5 清单裁剪；用真实项目（建议选一个中型功能）走完全流程</td>
+    <td>私有插件仓库；试点项目的完整工件链（CONTEXT → spec → tickets → 归档）</td>
+    <td>一张 ticket 从 ready-for-agent 到 archive 全程无需 improvisation；spec-validate/analyze 在试点中至少拦下 1 个真实问题</td>
+  </tr>
+  <tr>
+    <td><strong>P2 内化</strong><br><span class="small">2–4 周</span></td>
+    <td>制定公司基线宪法与 DESIGN.md 标准；code-review 接入安全轴；把试点暴露的问题回写技能（已知坑小节）</td>
+    <td><code>docs/standards/</code> 两份标准；v1.0 插件</td>
+    <td>第二个项目零培训跑通；门禁拦截率有数据记录</td>
+  </tr>
+  <tr>
+    <td><strong>P3 规模化</strong></td>
+    <td>插件市场私有分发（参考 mattpocock 的 repo-as-marketplace + changesets 版本管理）；CI 集成（结构校验、标准纯净检查）；季度审计（diff 对照标准，确认无隐性漂移）</td>
+    <td>团队级分发 + CI 门禁 + 度量看板</td>
+    <td>新项目接入成本 = 一条 init 命令；偏离回流开始产生（标准在进化）</td>
+  </tr>
+</table>
+
+<div class="small"><strong>分发细节</strong>：仓库根放 <code>.claude-plugin/marketplace.json</code>（仓库即市场），版本由 changesets 统一管理；公司内安装 <code>claude plugins install company-sdd</code>。双桶治理沿用上游规则：README 与 plugin.json 的技能清单必须同步，CI 校验。</div>
+
+<!-- ============ 11 ============ -->
+<h2 id="s11"><span class="no">11</span>附录</h2>
+
+<h3>11.1 命令速查</h3>
+<pre><code># 初始化（每仓库一次）
+/setup-sdd                        # 写 docs/agents/、CLAUDE.md 骨架、工单约定
+/constitution                     # 建项目宪法（公司基线 + 项目增补）
+
+# 标准工作流
+/grill-with-docs &lt;一句话想法&gt;      # 访谈 → CONTEXT.md / ADR 落盘
+/to-spec                          # → .scratch/&lt;slug&gt;/spec.md（过 spec-validate 后 ready-for-agent）
+/to-tickets                       # → issues/NN-*.md 曳光弹切片 + 依赖图
+/analyze                          # implement 前只读一致性检查
+/implement issues/NN-*.md         # 单票单会话：tdd → 三轴 review → 提交勾选
+/archive &lt;feature-slug&gt;           # 合入 specs/ + 归档留痕
+
+# 设计分支（有界面的工作）
+/design-pipeline                  # DESIGN.md → HTML 原型 → (人) Figma → 对齐 → overrides 治理
+
+# 地图
+/sdd-map                          # 什么规模走哪条路</code></pre>
+
+<h3>11.2 界面类 ticket 进入 ready-for-agent 前的检查清单</h3>
+<ul>
+  <li>☐ 规范就绪——DESIGN.md 存在且 lint 0/0</li>
+  <li>☐ 原型就绪——HTML 原型过评审，tokens 全部取自规范（export 产物，非手抄）</li>
+  <li>☐ 偏离显式——所有偏离在 DESIGN.overrides.md 且附理由</li>
+  <li>☐ 词汇对齐——spec/ticket 领域名词全部能在 CONTEXT.md 找到定义</li>
+  <li>☐ Figma 存档——画板已生成，链接记录在 ticket 中</li>
+  <li>☐ 标准纯净——公司标准文件本次零改动（git diff 为空）</li>
+  <li>☐ analyze CRITICAL = 0</li>
+</ul>
+
+<h3>11.3 参考资料与调研依据</h3>
+<ul>
+  <li>技能骨架：<code>/Users/junjian/GitHub/mattpocock/skills</code> —— 分层规则见 <code>README.md</code>；编排者范式见 <code>skills/engineering/implement/SKILL.md</code>、<code>grill-with-docs/SKILL.md</code>；模板内嵌见 <code>to-spec/SKILL.md</code>、<code>to-tickets/SKILL.md</code></li>
+  <li>防漂移机制：<code>/Users/junjian/GitHub/Fission-AI/OpenSpec</code> —— delta 格式见 <code>schemas/spec-driven/templates/</code>；校验规则见 <code>src/core/validation/validator.ts</code>；归档合并见 <code>src/core/specs-apply.ts</code></li>
+  <li>宪法门禁：<code>/Users/junjian/GitHub/github/spec-kit</code> —— 方法论见 <code>spec-driven.md</code>；宪法模板见 <code>templates/constitution-template.md</code>；analyze 见 <code>templates/commands/analyze.md</code></li>
+  <li>实践经验：博客《AI 原生 SDLC 实践：mattpocock skills 走通全链路》（2026-09-17）、《AI 原生设计流水线》（2026-09-19）—— wang-junjian.github.io/posts/2026/</li>
+</ul>
+
+<footer>
+  公司 SDD 技能集定制方案 · 2026-09-20 · 单文件零依赖 HTML，离线可用<br>
+  结论一句话：<strong>骨架取 mattpocock（小而组合），防漂移取 OpenSpec（delta + 唯一写路径），门禁取 spec-kit（宪法 + 一致性分析），设计环节取自己的实践（标准只读、偏离显式）。</strong>
+</footer>
+
+</div>
+</body>
+</html>

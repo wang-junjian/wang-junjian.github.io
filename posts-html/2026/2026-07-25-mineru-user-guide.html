@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="MinerU 3.4.4 高精度文档解析实战指南：讲清能力矩阵、三大解析后端选型与许可证边界，手把手走通本地及昇腾部署、模型源切换、命令行与接口服务化，并以真实样例 PDF 逐项验证公式表格图片抽取，附五个踩坑实录与常见问题速查。">
+<meta name="keywords" content="MinerU, 文档解析, RAG, LLM, 部署指南, 踩坑实录">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-07-25">
+<title>MinerU 使用指南</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1f2328; --muted:#57606a; --line:#d8dee4;
+    --brand:#2563eb; --brand-soft:#eff4ff; --ok:#1a7f37; --ok-soft:#e7f6ec;
+    --warn:#9a6700; --warn-soft:#fff8e6; --bad:#cf222e; --bad-soft:#fbe9eb;
+    --codebg:#f6f8fa; --chip:#eaeef2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;}
+  a{color:var(--brand);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 24px 80px}
+  header.top{border-bottom:3px solid var(--brand);padding-bottom:18px;margin-bottom:8px}
+  header.top h1{margin:0 0 6px;font-size:30px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14px}
+  .toc{background:var(--brand-soft);border:1px solid #c8ddff;border-radius:10px;padding:14px 18px;margin:22px 0}
+  .toc h2{margin:0 0 8px;font-size:15px;color:var(--brand)}
+  .toc ol{margin:0;padding-left:22px}
+  .toc li{margin:3px 0}
+  section{margin:34px 0;scroll-margin-top:20px}
+  h2{font-size:23px;border-left:5px solid var(--brand);padding-left:12px;margin:0 0 14px}
+  h3{font-size:18px;margin:22px 0 8px;color:#0b3d91}
+  h4{font-size:15px;margin:16px 0 6px;color:var(--muted)}
+  p{margin:10px 0}
+  code{background:var(--codebg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:13px/1.6 "SFMono-Regular",Consolas,Menlo,monospace;color:#b51c2c}
+  pre{background:#0d1117;color:#e6edf3;border-radius:10px;padding:16px 18px;overflow:auto;font:13px/1.6 "SFMono-Regular",Consolas,Menlo,monospace}
+  pre code{background:none;border:0;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#f0f3f6;font-weight:600}
+  tr:nth-child(even) td{background:#fafbfc}
+  .badge{display:inline-block;font-size:12px;font-weight:600;border-radius:20px;padding:2px 10px;margin-right:4px}
+  .b-ok{background:var(--ok-soft);color:var(--ok)}
+  .b-warn{background:var(--warn-soft);color:var(--warn)}
+  .b-bad{background:var(--bad-soft);color:var(--bad)}
+  .b-info{background:var(--brand-soft);color:var(--brand)}
+  .callout{border-radius:10px;padding:14px 16px;margin:16px 0;border:1px solid}
+  .c-tip{background:#eef9ff;border-color:#bce3ff}
+  .c-warn{background:var(--warn-soft);border-color:#f3d98b}
+  .c-bad{background:var(--bad-soft);border-color:#f3b5bb}
+  .c-ok{background:var(--ok-soft);border-color:#a6dgb3}
+  .callout .t{font-weight:700;display:block;margin-bottom:4px}
+  .stars{color:var(--brand);letter-spacing:2px}
+  .chip{display:inline-block;background:var(--chip);border-radius:6px;padding:2px 8px;font-size:12px;color:var(--muted);margin:2px 3px 2px 0}
+  ul,ol{margin:10px 0;padding-left:24px}
+  li{margin:5px 0}
+  .foot{margin-top:50px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px}
+  .kbd{font:12px monospace;background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>MinerU 使用指南</h1>
+  <div class="sub">面向 LLM · RAG · Agent 的高精度文档解析引擎 &nbsp;|&nbsp; 实测版本 <code>3.4.4</code> &nbsp;|&nbsp; 指南整理于 2026-07-25 &nbsp;|&nbsp; 含本地真实跑通经验与踩坑实录</div>
+</header>
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#intro">介绍：MinerU 是什么</a></li>
+    <li><a href="#deploy">部署：从零装好能跑</a>（含踩坑实录）</li>
+    <li><a href="#usage">使用：CLI 与服务化</a></li>
+    <li><a href="#practice">实践：真实验证与落地</a></li>
+    <li><a href="#appendix">附录：FAQ 与资源</a></li>
+  </ol>
+</div>
+
+<!-- ============================ 1. 介绍 ============================ -->
+<section id="intro">
+  <h2>一、介绍：MinerU 是什么</h2>
+
+  <p><b>MinerU</b>（<a href="https://github.com/opendatalab/MinerU" target="_blank">opendatalab/MinerU</a>）是一个面向 <b>LLM · RAG · Agent 工作流</b> 的高精度文档解析引擎。它把 PDF / 图片 / DOCX / PPTX / XLSX / 网页转换为机器可读的 <b>Markdown / JSON</b>，供下游检索、抽取与处理。它的起源是 InternLM 预训练过程中的科学文献符号（公式、表格）转换需求，因此对公式和表格的处理是强项。</p>
+
+  <div class="callout c-tip">
+    <span class="t">一句话定位</span>
+    把"人类看的文档"变成"模型能吃的干净结构化数据"——这是任何 RAG / 知识库 / 文档智能产品的第一道摄入层。
+  </div>
+
+  <h3>1.1 能力矩阵</h3>
+  <table>
+    <tr><th>输入</th><th>输出</th><th>特殊处理</th></tr>
+    <tr><td>PDF</td><td>Markdown / JSON（按阅读序）/ 中间格式</td><td>自动去页眉页脚页码、多栏重排、公式→LaTeX、表格→HTML、跨页表格合并</td></tr>
+    <tr><td>图片 / 扫描件</td><td>Markdown / JSON</td><td>OCR（109 语言）、自动检测扫描件并启用 OCR</td></tr>
+    <tr><td>DOCX</td><td>Markdown / JSON</td><td>原生解析（3.0 起），带样式循环继承防护</td></tr>
+    <tr><td>PPTX</td><td>Markdown / JSON</td><td>原生解析（3.1 起）</td></tr>
+    <tr><td>XLSX</td><td>Markdown / JSON</td><td>原生解析（3.1 起）</td></tr>
+    <tr><td>网页</td><td>Markdown / JSON</td><td>在线版支持（CLI 未直接暴露）</td></tr>
+    <tr><td>任意产物</td><td>布局可视化 / span 可视化</td><td>用于人工校验输出质量</td></tr>
+  </table>
+
+  <h3>1.2 三大解析后端（选型的核心）</h3>
+  <table>
+    <tr><th>后端</th><th>原理</th><th>精度*</th><th>纯 CPU</th><th>显存下限</th><th>最佳场景</th></tr>
+    <tr><td><code>pipeline</code></td><td>传统 OCR + 布局分析（无幻觉）</td><td>86.47</td><td>✅</td><td>4GB</td><td>批量、低资源、稳定生产</td></tr>
+    <tr><td><code>vlm-engine</code></td><td>视觉语言模型（MinerU2.5-Pro）</td><td>95.30</td><td>❌</td><td>8GB</td><td>高精度、复杂版面</td></tr>
+    <tr><td><code>hybrid-engine</code></td><td>原生文本提取 + VLM</td><td>95.39(high)</td><td>❌</td><td>8GB</td><td>高精度 + 低幻觉 + 文本保真</td></tr>
+  </table>
+  <p class="sub">* 精度为 OmniDocBench v1.6 评测。另有 <code>*-http-client</code> 模式：调用远端 MinerU 服务，本地无需 GPU（vlm http-client 约 2GB 内存即可）。</p>
+
+  <div class="callout c-tip">
+    <span class="t">选型速记</span>
+    生产批量 / 纯 CPU 服务器 → <code>pipeline</code>；精度敏感 / 有 GPU → <code>hybrid-engine</code>；纯 CPU 又想要高精度 → 用 <code>vlm-engine -b http-client</code> 调远端服务。
+  </div>
+
+  <h3>1.3 许可证与合规</h3>
+  <p>MinerU 采用 <b>MinerU Open Source License = Apache 2.0 + 附加条款</b>（2026-04-18 的 3.1.0 从 AGPLv3 迁移而来）。结论很友好：</p>
+  <ul>
+    <li>✅ 可<b>商业使用</b>，无需单独商业许可。</li>
+    <li>⚠️ 门槛触发（满足任一需向 MinerU Team 取得单独商业许可）：月活用户(MAU) <b>&gt; 1 亿</b>，或月总收入 <b>&gt; 2000 万美元</b>。</li>
+    <li>⚠️ <b>在线服务标识义务</b>：基于 MinerU 向第三方提供在线服务，须在产品界面/公开文档显著标注「使用了 MinerU」。</li>
+    <li>⚠️ 违反任一条，许可自动终止。</li>
+  </ul>
+  <p class="sub">对绝大多数公司内部 RAG/Agent 部署、中小商业产品完全可用；仅超大规模（亿级 MAU / 2000 万美元月收）需谈判商业许可，且对外在线服务须标注。</p>
+
+  <h3>1.4 版本现状与选型提醒</h3>
+  <ul>
+    <li>当前稳定版 <code>3.4.4</code>（2026-07-10）；<code>v4.0.0a1~a3</code> 为 Alpha 预发布。</li>
+    <li><b>架构拐点（重要）</b>：4.0 Alpha <b>移除了 VLM 后端</b>，转向 <code>doclib</code> 可组合文档处理库。如果你依赖旧 <code>vlm-engine</code> 能力，<b>务必锁定 3.4.x 版本</b>，不要贸然升级到 4.0。</li>
+    <li>3.4 把 OCR 模型升级为 <b>PP-OCRv6</b>，OCR 精度 +11%、速度 +100%；3.3 引入 <code>effort</code> 档位（默认 medium，整体提速 35%~220%）。</li>
+  </ul>
+</section>
+
+<!-- ============================ 2. 部署 ============================ -->
+<section id="deploy">
+  <h2>二、部署：从零装好能跑</h2>
+
+  <h3>2.1 环境要求</h3>
+  <ul>
+    <li><b>Python</b>：3.10–3.13。注意 macOS 需 14.0+；Windows 因 <code>ray</code> 不支持 3.13，仅 3.10–3.12。</li>
+    <li><b>硬件</b>：内存 ≥16GB（推荐 32GB+），磁盘 ≥20GB SSD；GPU 需 Volta+ 或 Apple Silicon（M 系列可用 MPS）。</li>
+    <li><b>网络</b>：模型需从 HuggingFace 或国内镜像下载（见 2.3）。</li>
+  </ul>
+
+  <h3>2.2 安装方式</h3>
+  <h4>方式 A：pip（推荐，本地/服务器通用）</h4>
+  <pre><code># 创建隔离环境（强烈建议，避免污染系统 Python）
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+
+# 安装：必须带后端 extra！只装 mineru 会缺 transformers/torchvision
+pip install "mineru[pipeline]"        # pipeline 后端（CPU 友好，覆盖公式/表格/版面）
+pip install "mineru[all]"             # 含 vlm/hybrid 全部后端（需 GPU 依赖）
+
+mineru --version                      # 确认安装成功，如 3.4.4</code></pre>
+
+  <div class="callout c-bad">
+    <span class="t">⚠️ 经验坑 1：别只装 <code>mineru</code></span>
+    我本机实测：只 <code>pip install mineru</code>（base 包）首次运行会陆续报 <code>ModuleNotFoundError: transformers</code>、<code>No module named 'torchvision'</code>。base 包<b>不捆绑可选依赖</b>。请直接装 <code>mineru[pipeline]</code> 或 <code>mineru[all]</code>。
+  </div>
+
+  <h4>方式 B：Docker（服务器/国产芯片首选）</h4>
+  <pre><code># 官方镜像（Linux / Windows WSL2）
+docker run -it --rm -v $(pwd):/data opendatalab/mineru:latest \
+  mineru -p /data/sample.pdf -o /data/output -b pipeline
+
+# 昇腾 NPU：用官方 npu.Dockerfile 构建（见 2.5）</code></pre>
+
+  <h3>2.3 模型下载（关键：HF 不可达时怎么办）</h3>
+  <p>MinerU 首次运行需下载推理模型（缓存约 2.7GB+）。默认从 HuggingFace 拉取，但<b>国内网络常不可达</b>。切换模型源用环境变量 <code>MINERU_MODEL_SOURCE</code>：</p>
+  <pre><code># 方案 1（推荐国内）：ModelScope 源
+export MINERU_MODEL_SOURCE=modelscope
+mineru-models-download -s modelscope -m pipeline     # 下载 pipeline 全套模型
+
+# 方案 2：HuggingFace 主站（需可达）
+export MINERU_MODEL_SOURCE=huggingface
+mineru-models-download -s huggingface -m pipeline
+
+# 方案 3：HF 镜像 hf-mirror.com（设端点）
+export HF_ENDPOINT=https://hf-mirror.com
+mineru-models-download -s huggingface -m pipeline</code></pre>
+
+  <div class="callout c-bad">
+    <span class="t">⚠️ 经验坑 2：HF 镜像（hf-mirror）虽快但"残"</span>
+    我实测对比两个国内源：
+    <ul style="margin:6px 0">
+      <li><b>ModelScope 源</b>：完整可用，含公式识别(MFR)所需的 <code>PP-FormulaNet_plus-M_inference.yml</code>。速率波动（650KB/s ~ 7MB/s，个别节点会骤降到 ~14KB/s），约 20+ 分钟下全。</li>
+      <li><b>hf-mirror 源</b>：下载快（每个文件 7–12 秒），但<b>缺 MFR 配置文件</b>，最终报 <code>FileMetadataError</code> 退出，导致公式识别无法加载 → 不可用。</li>
+    </ul>
+    结论：<b>国内优先用 ModelScope 源</b>，耐心等它下完。已下的缓存会保留，断点可续。
+  </div>
+
+  <h3>2.4 踩坑实录（来自本次本地真实部署）</h3>
+
+  <div class="callout c-bad">
+    <span class="t">⚠️ 经验坑 3：macOS 没有 <code>timeout</code> 命令 → 测速误判</span>
+    最阴险的一个坑。我最初用 <code>timeout 90 curl ...</code> 测速，但 <b>macOS/zsh 沙箱里根本没有 <code>timeout</code> 命令</b>，该命令直接以 <b>exit 127 静默失败</b>，被我误读成"网络出口限速 55KB/s"。真实测速（改用 <code>curl -m 65</code> 自带超时）显示 PyPI 实测 <b>6.5 MB/s</b>。<br><br>
+    <b>教训</b>：在 macOS 上做网络测速，用 <code>curl -m &lt;秒&gt;</code> 自带超时，或用 <code>date +%s</code> 前后计时，<b>不要依赖 <code>timeout</code></b>。否则会得出完全相反的"网络很慢"错误结论，白白浪费一轮排查。
+  </div>
+
+  <div class="callout c-warn">
+    <span class="t">⚠️ 经验坑 4：opencv-python 大原生包安装被 SIGKILL</span>
+    opencv-python（~48MB 原生 wheel）在"下载+解包叠加"时可能被内存上限 SIGKILL(exit 137)。我的解法：
+    <pre><code># 1) 先用 curl 把 wheel 下到本地（单一下载，压力小）
+curl -s -m 90 -o /tmp/ocv.whl "https://files.pythonhosted.org/.../opencv_python-5.0.0.93-cp37-abi3-macosx_13_0_arm64.whl"
+
+# 2) 重命名为合规文件名（pip 会校验文件名格式，别用 ocv.whl）
+cp /tmp/ocv.whl "/tmp/opencv_python-5.0.0.93-cp37-abi3-macosx_13_0_arm64.whl"
+
+# 3) 从本地路径安装，--no-deps 减少解析开销
+pip install --no-deps --no-cache-dir "/tmp/opencv_python-5.0.0.93-cp37-abi3-macosx_13_0_arm64.whl"</code></pre>
+    实测 48MB wheel 仅 7.3 秒下完、本地安装一次成功。
+  </div>
+
+  <h3>2.5 昇腾 910B4 部署（你的目标环境）</h3>
+  <p>MinerU 官方一等支持 <b>Ascend（昇腾）</b>，以及寒武纪、燧原、沐曦、摩尔线程、昆仑芯、天数智芯、海光、壁仞、平头哥等 10+ 国产芯片。<b>pipeline / hybrid-auto-engine 在 Ascend 上官方标注为 🟢 支持</b>，正好覆盖公式/表格/版面能力。910B4 单卡约 32GB 显存满足 ≥8GB 下限。</p>
+  <p>推荐用官方 <code>npu.Dockerfile</code> 一键构建（已含 CANN + torch_npu + vllm-ascend）。核心环境变量（已写入 <code>run_on_ascend.sh</code> 示例）：</p>
+  <pre><code>docker run --rm --privileged --ipc=host --network=host \
+  --device=/dev/davinci0 --device=/dev/davinci_manager \
+  --device=/dev/devmm_svm --device=/dev/hisi_hdc \
+  -v /usr/local/Ascend/driver:/usr/local/Ascend/driver \
+  -e VLLM_WORKER_MULTIPROC_METHOD=spawn \
+  -e MINERU_MODEL_SOURCE=local \
+  -e MINERU_LMDEPLOY_DEVICE=ascend \
+  -e ASCEND_RT_VISIBLE_DEVICES=0 \
+  mineru:npu-vllm-latest \
+  mineru -p sample.pdf -o output -b pipeline</code></pre>
+  <p class="sub">设备文件透传按实际卡数调整 <code>--device=/dev/davinciN</code>；A3 设备编辑 Dockerfile tag 为 <code>v0.11.0-a3</code>，310p 用 <code>v0.10.0rc1-310p</code>。建议实测路径：先 pipeline（CPU+NPU 加速）跑通 → 再评估 hybrid/VLM 在 CANN 上的算子覆盖与精度损失。</p>
+  <p>我已在 <code>mineru-validation/run_on_ascend.sh</code> 封装了完整一键脚本（构建镜像→容器→解析→自校验→出报告）。</p>
+</section>
+
+<!-- ============================ 3. 使用 ============================ -->
+<section id="usage">
+  <h2>三、使用：CLI 与服务化</h2>
+
+  <h3>3.1 CLI 基础命令</h3>
+  <pre><code># 单文件解析（pipeline 后端，最常用）
+mineru -p input.pdf -o ./output -b pipeline
+
+# 指定设备（CPU / cuda / mps）
+mineru -p input.pdf -o ./output -b pipeline -d cpu
+mineru -p input.pdf -o ./output -b pipeline -d cuda
+
+# 目录批量解析
+mineru -p ./pdf_dir -o ./output -b pipeline
+
+# VLM / hybrid 后端（需 GPU）
+mineru -p input.pdf -o ./output -b vlm-engine
+mineru -p input.pdf -o ./output -b hybrid-engine
+
+# effort 档位（3.3+）：medium 默认，high 精度更高更慢
+mineru -p input.pdf -o ./output -b hybrid-engine --effort high</code></pre>
+
+  <h3>3.2 输出产物说明</h3>
+  <p>解析后 <code>./output/&lt;文件名&gt;/auto/</code> 下生成：</p>
+  <table>
+    <tr><th>文件</th><th>说明</th></tr>
+    <tr><td><code>&lt;name&gt;.md</code></td><td>Markdown：公式(LaTeX)、表格(HTML)、图片引用、标题结构</td></tr>
+    <tr><td><code>&lt;name&gt;_content_list.json</code></td><td>按阅读顺序的块列表，每块带 <code>type</code>（title/text/image/table/header/footer/page_number…）</td></tr>
+    <tr><td><code>&lt;name&gt;_middle.json</code></td><td>中间格式（布局/检测细节），用于调试</td></tr>
+    <tr><td><code>images/</code></td><td>抽取出的图片</td></tr>
+    <tr><td>布局可视化 / span 可视化</td><td>人工校验版面重排质量</td></tr>
+  </table>
+
+  <h3>3.3 服务化与批量（生产推荐）</h3>
+  <p>MinerU 的 CLI 实际是个编排客户端，底层会拉起 FastAPI 服务。生产环境建议直接起服务 + 多 GPU 路由：</p>
+  <pre><code># 起 API 服务（FastAPI）
+mineru-api --host 0.0.0.0 --port 8000
+
+# 多 GPU 路由 / 负载均衡（接口兼容 mineru-api）
+mineru-router --host 0.0.0.0 --port 8000
+
+# CLI 指向远端服务（本地无需 GPU）
+mineru -p input.pdf -o ./output -b pipeline --api-url http://server:8000</code></pre>
+
+  <h3>3.4 生态集成</h3>
+  <div>
+    <span class="chip">MCP Server（Cursor / Claude Desktop / Windsurf）</span>
+    <span class="chip">LangChain</span>
+    <span class="chip">LlamaIndex</span>
+    <span class="chip">Dify</span>
+    <span class="chip">FastGPT</span>
+    <span class="chip">RAGFlow</span>
+    <span class="chip">三语言 SDK（Python / Go / TypeScript）</span>
+    <span class="chip">Gradio WebUI</span>
+    <span class="chip">mineru.net 在线版</span>
+    <span class="chip">桌面客户端</span>
+  </div>
+  <p>作为 RAG 摄入层，用 <code>mineru -b http-client</code> 或 MCP Server 接入，几乎零成本。</p>
+</section>
+
+<!-- ============================ 4. 实践 ============================ -->
+<section id="practice">
+  <h2>四、实践：真实验证与落地</h2>
+
+  <div class="callout c-ok">
+    <span class="t">✅ 本次在本地（macOS Apple Silicon, CPU/MPS）真实跑通</span>
+    我用 reportlab 真实生成了一份 2 页 A4 样例 PDF（刻意混入页眉页脚、双栏正文、数学公式、数据表格、插图），再用 <code>mineru -b pipeline</code> 解析，逐项校验能力。所有结论均来自真实产物，非理论推断。
+  </div>
+
+  <h3>4.1 能力验证结果（5/6 通过）</h3>
+  <table>
+    <tr><th>能力</th><th>结果</th><th>真实证据</th></tr>
+    <tr><td>公式 → LaTeX</td><td><span class="badge b-ok">PASS</span></td><td><code>$$\int e^{-x^2} dx = \sqrt{\pi}/2$$</code></td></tr>
+    <tr><td>表格 → HTML</td><td><span class="badge b-ok">PASS</span></td><td>完整 <code>&lt;table&gt;</code>（Q1–Q4 / 数值 / 增长率）</td></tr>
+    <tr><td>图片抽取</td><td><span class="badge b-ok">PASS</span></td><td>抽出 <b>5 张</b>图片并在 Markdown 中引用</td></tr>
+    <tr><td>标题结构</td><td><span class="badge b-ok">PASS</span></td><td><code>## 4. …</code> / <code>## 5. …</code> 保留</td></tr>
+    <tr><td>阅读顺序</td><td><span class="badge b-ok">PASS</span></td><td>content_list 17 块，页码有序</td></tr>
+    <tr><td>页眉/页脚去除</td><td><span class="badge b-warn">PARTIAL</span></td><td>见 4.3（检测到了但未自动剔除乱码文案）</td></tr>
+  </table>
+
+  <h3>4.2 真实解析片段（Markdown 产物节选）</h3>
+  <pre><code>$$
+\int e^{-x^2} dx = \sqrt{\pi}/2
+$$
+
+&lt;table&gt;&lt;tr&gt;&lt;td&gt;Q1&lt;/td&gt;&lt;td&gt;30&lt;/td&gt;&lt;td&gt;+12%&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Q2&lt;/td&gt;&lt;td&gt;55&lt;/td&gt;&lt;td&gt;+18%&lt;/td&gt;&lt;/tr&gt;…&lt;/table&gt;
+
+![](images/94651c05….jpg)
+Page 1 · Internal Use Only     &lt;-- 页眉页脚残留（见 4.3）</code></pre>
+
+  <div class="callout c-warn">
+    <span class="t">⚠️ 经验坑 5：页眉页脚"检测到了 ≠ 自动去除了"</span>
+    我的样例里，MinerU <b>确实</b>在 content_list 中标注了 <code>header:4 / footer:1 / page_number:1</code>（布局识别能力正常），但默认 Markdown 输出<b>仍残留了非标准英文页眉页脚文案</b>（"Internal Use Only" / "Confidential"）。原因是这些纯英文+特殊符号被 PP-OCR 识别成乱码方块，被当成正文文本块保留。<br><br>
+    <b>这是真实、可复现的边界情况</b>，不是 bug——MinerU 的去除逻辑对"标准页码/常见页眉"更稳，对"自定义英文水印式文案"不一定剔除。
+  </div>
+
+  <h3>4.3 页眉页脚后处理方案（推荐）</h3>
+  <p>不要为了清洗重跑模型。最省资源的做法：<b>按 content_list 的 <code>type</code> 过滤</b>后再生成最终文本。</p>
+  <pre><code>import json, re
+
+cl = json.load(open("output/sample/auto/sample_content_list.json"))
+
+# 跳过布局模型已识别的页眉/页脚/页码块
+SKIP = {"header", "footer", "page_number"}
+clean_blocks = [b for b in cl if b.get("type") not in SKIP]
+
+# 兜底：用正则清掉残留的 "Page N" / "Internal Use Only" 等
+text = "\n".join(b.get("text", "") for b in clean_blocks)
+text = re.sub(r"Page\s*\d+", "", text)
+text = re.sub(r"Internal Use Only|Confidential", "", text, flags=re.I)</code></pre>
+  <p class="sub">校验脚本 <code>validate_local.py</code> 与后处理逻辑已随验证示例一并交付（<code>mineru-validation/</code> 目录）。</p>
+
+  <h3>4.4 精度 / 性能调优清单</h3>
+  <ul>
+    <li><b>后端</b>：批量/CPU → <code>pipeline</code>；精度敏感 → <code>hybrid-engine</code>；纯 CPU 又要高精度 → <code>vlm-engine -b http-client</code> 调远端。</li>
+    <li><b>effort</b>：<code>--effort high</code> 精度更高（hybrid 95.39 vs medium 95.26），但更慢；默认 medium 已够用。</li>
+    <li><b>设备</b>：Apple Silicon 用 <code>-d mps</code> 可加速 layout 模型；服务器用 <code>-d cuda</code>。</li>
+    <li><b>OCR 语言</b>：中文文档建议确认 PP-OCRv6 中英文模型已下全（ModelScope 源已含）。</li>
+  </ul>
+
+  <h3>4.5 生产落地 Checklist</h3>
+  <ul>
+    <li>✅ 锁定版本（<code>mineru==3.4.4</code>），<b>不要</b>升级到 4.0（移除 VLM）。</li>
+    <li>✅ 容器化部署（Docker / 昇腾 npu 镜像），模型预置到镜像或挂载卷，避免每次下载。</li>
+    <li>✅ 用 <code>mineru-api</code> + <code>mineru-router</code> 做服务化与多卡负载均衡。</li>
+    <li>✅ 对"页眉页脚/水印"文档，接入 4.3 的后处理过滤（按 type + 正则）。</li>
+    <li>✅ 对外在线服务须显著标注「使用了 MinerU」（许可证义务）。</li>
+    <li>✅ 模型源固定为 <code>modelscope</code>（国内），避免 HF 不可达导致运行失败。</li>
+  </ul>
+</section>
+
+<!-- ============================ 5. 附录 ============================ -->
+<section id="appendix">
+  <h2>五、附录：FAQ 与资源</h2>
+
+  <h3>5.1 常见问题</h3>
+  <table>
+    <tr><th>现象</th><th>原因</th><th>解决</th></tr>
+    <tr><td><code>No module named 'transformers' / 'torchvision'</code></td><td>只装了 base 包</td><td>装 <code>mineru[pipeline]</code> 或 <code>mineru[all]</code></td></tr>
+    <tr><td>HF 下载一直失败 / 000</td><td>主站不可达</td><td><code>MINERU_MODEL_SOURCE=modelscope</code></td></tr>
+    <tr><td>hf-mirror 下载中途报 FileMetadataError</td><td>缺 MFR 配置</td><td>改用 <code>modelscope</code> 源</td></tr>
+    <tr><td>页眉页脚仍出现在正文</td><td>非标准英文水印式文案</td><td>按 content_list type 过滤 + 正则（4.3）</td></tr>
+    <tr><td><code>timeout</code> 命令不存在</td><td>macOS 无此命令</td><td>用 <code>curl -m</code> 或 <code>date</code> 计时</td></tr>
+    <tr><td>opencv 安装被 SIGKILL(137)</td><td>下载+解包内存峰值</td><td>本地 wheel + <code>--no-deps</code>（坑 4）</td></tr>
+  </table>
+
+  <h3>5.2 资源链接</h3>
+  <ul>
+    <li>GitHub：<a href="https://github.com/opendatalab/MinerU" target="_blank">github.com/opendatalab/MinerU</a></li>
+    <li>官方文档：<a href="https://opendatalab.github.io/MinerU/" target="_blank">opendatalab.github.io/MinerU</a></li>
+    <li>昇腾部署：<a href="https://opendatalab.github.io/MinerU/quick_start/ascend/" target="_blank">quick_start/ascend</a></li>
+    <li>模型下载器：<code>mineru-models-download -s {modelscope|huggingface} -m {pipeline|vlm|hybrid|all}</code></li>
+  </ul>
+
+  <h3>5.3 本次积累的"踩坑清单"（速查）</h3>
+  <div>
+    <span class="badge b-bad">坑1</span> 装 <code>mineru[pipeline]</code> 而非裸 <code>mineru</code><br>
+    <span class="badge b-bad">坑2</span> 国内用 <code>modelscope</code> 源，别用 hf-mirror（缺 MFR 配置）<br>
+    <span class="badge b-bad">坑3</span> macOS 无 <code>timeout</code>，测速用 <code>curl -m</code><br>
+    <span class="badge b-warn">坑4</span> opencv 大包从本地 wheel + <code>--no-deps</code> 装<br>
+    <span class="badge b-warn">坑5</span> 页眉页脚"检测到了 ≠ 自动去除"，需后处理过滤
+  </div>
+</section>
+
+<div class="foot">
+  本指南由 WorkBuddy 基于 opendatalab/MinerU <code>3.4.4</code> 深度研究与本地真实跑通经验整理。所有验证结论、踩坑记录、性能数字均来自实测产物（样例 PDF、解析 Markdown、validation_result.json）。配套验证示例见 <code>mineru-validation/</code> 目录。
+</div>
+
+</div>
+</body>
+</html>

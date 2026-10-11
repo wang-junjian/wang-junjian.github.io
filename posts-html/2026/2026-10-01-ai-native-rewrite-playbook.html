@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="73万行遗留Java内管系统的AI原生重写作战手册：先过五道闸门判定路线，再以放大器定律、接缝、表征测试与规格先行推导动作，按战前护栏、代码考古、规格抽取、切片定序、七步循环、数据层与下线七阶段绞杀替换，核心是瓶颈在验收不在生成，附度量止损线与反模式清单。">
+<meta name="keywords" content="AI 原生重写, 作战手册, 绞杀者模式, 规格抽取, 代码考古, 遗留系统">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-01">
+<title>73 万行遗留内管系统的 AI 原生重写作战手册</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --line:#E3E0D8; --line2:#EEEBE4;
+  --ink:#16181D; --ink2:#333941; --ink3:#3D434B;
+  --blue:#2F6FB0; --blue-t:#1F5288; --teal:#0F766E; --teal-t:#0A5750;
+  --amber:#B45309; --amber-t:#8F3F06; --purple:#6D3FB5; --purple-t:#5A3099;
+  --green:#2E7D32; --green-t:#1B5820; --red:#B3261E;
+  --bluebg:#EAF2FA; --tealbg:#E5F1EF; --amberbg:#FBEFE0; --purplebg:#F2ECFA;
+  --greenbg:#E9F3E9; --redbg:#FBE9E7;
+  --radius:10px; --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+}
+.wrap{max-width:1060px; margin:0 auto; padding:0 24px 96px}
+/* ---------- nav ---------- */
+nav{position:sticky; top:0; z-index:50; background:rgba(251,250,247,.92); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line); overflow-x:auto; white-space:nowrap}
+nav ol{display:flex; gap:2px; list-style:none; margin:0 auto; padding:8px 24px; max-width:1060px; min-width:0}
+nav a{display:block; padding:6px 10px; border-radius:6px; font-size:13px; color:var(--ink2); text-decoration:none; min-width:0}
+nav a:hover{background:var(--line2); color:var(--ink)}
+nav .brand{padding:6px 12px 6px 0; font-size:13px; font-weight:600; color:var(--amber-t)}
+/* ---------- type ---------- */
+h1{font-size:34px; line-height:1.3; letter-spacing:-.6px; margin:0 0 16px; font-weight:680}
+h2{font-size:25px; line-height:1.4; letter-spacing:-.3px; margin:0 0 8px; font-weight:640; scroll-margin-top:80px}
+h3{font-size:18px; line-height:1.5; margin:32px 0 10px; font-weight:620}
+h4{font-size:15.5px; margin:20px 0 6px; font-weight:620; color:var(--ink2)}
+p{margin:0 0 14px}
+a{color:var(--blue-t)}
+strong{font-weight:640}
+code{font-family:var(--mono); font-size:13px; background:var(--line2); border:1px solid var(--line);
+  border-radius:4px; padding:1px 5px; overflow-wrap:anywhere}
+pre{background:#FFFFFF; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;
+  overflow-x:auto; margin:0 0 16px; font-size:12.6px; line-height:1.7}
+pre code{background:none; border:0; padding:0; font-size:12.6px; color:var(--ink); overflow-wrap:normal; white-space:pre}
+.meta{font-size:13px; color:var(--ink3); margin:0 0 8px}
+.lead{font-size:17.5px; line-height:1.7; color:var(--ink2)}
+/* ---------- layout ---------- */
+header.hero{padding:56px 0 40px; border-bottom:1px solid var(--line)}
+section{padding:52px 0 8px; border-bottom:1px solid var(--line2); scroll-margin-top:24px}
+section:last-of-type{border-bottom:0}
+.kicker{font-size:12.5px; font-weight:620; letter-spacing:.08em; text-transform:uppercase; color:var(--amber-t); margin:0 0 10px}
+h2 .num{font-family:var(--mono); font-size:15px; color:var(--amber-t); margin-right:10px; font-weight:600}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+.grid2>*,.grid3>*,.card,figure,.fig-box{min-width:0}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin:0 0 16px}
+.card.tight{padding:14px 16px}
+/* ---------- components ---------- */
+.tag{display:inline-block; font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:99px; line-height:1.7}
+.tag.a{background:var(--amberbg); color:var(--amber-t)}
+.tag.b{background:var(--bluebg); color:var(--blue-t)}
+.tag.t{background:var(--tealbg); color:var(--teal-t)}
+.tag.p{background:var(--purplebg); color:var(--purple-t)}
+.tag.g{background:var(--greenbg); color:var(--green-t)}
+.tag.r{background:var(--redbg); color:var(--red)}
+ol.claims{list-style:none; margin:0; padding:0; counter-reset:c}
+ol.claims>li{counter-increment:c; position:relative; padding:14px 0 14px 46px; border-top:1px solid var(--line2)}
+ol.claims>li::before{content:counter(c,decimal-leading-zero); position:absolute; left:0; top:14px;
+  font-family:var(--mono); font-size:13px; font-weight:600; color:var(--amber-t);
+  background:var(--amberbg); border-radius:6px; padding:2px 7px; line-height:1.5}
+ol.claims>li:last-child{border-bottom:1px solid var(--line2)}
+ol.claims strong{display:block; margin-bottom:3px; font-size:16.5px}
+ol.claims span.ev{font-size:13.5px; color:var(--ink3)}
+.callout{border-left:3px solid var(--amber); background:var(--amberbg); border-radius:0 var(--radius) var(--radius) 0;
+  padding:12px 16px; margin:0 0 16px; font-size:14.5px}
+.callout.b{border-color:var(--blue); background:var(--bluebg)}
+.callout.t{border-color:var(--teal); background:var(--tealbg)}
+.callout.r{border-color:var(--red); background:var(--redbg)}
+.callout.g{border-color:var(--green); background:var(--greenbg)}
+.callout h4{margin:0 0 4px; font-size:14.5px}
+.callout p:last-child{margin-bottom:0}
+table{border-collapse:collapse; width:100%; margin:0 0 16px; font-size:13.6px; background:var(--card)}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; line-height:1.6}
+th{background:#F4F2EC; font-weight:620; color:var(--ink)}
+td code{font-size:12.2px}
+figure{margin:24px 0}
+.fig-box{border:1px solid var(--line); border-radius:var(--radius); background:var(--card);
+  padding:8px; overflow-x:auto}
+svg{display:block; min-width:600px; width:100%; height:auto}
+figcaption{font-size:13px; color:var(--ink3); margin:10px 2px 0; line-height:1.65}
+figcaption b{color:var(--ink2); font-weight:620}
+.stepbox{border:1px solid var(--line); border-left:3px solid var(--teal); border-radius:0 var(--radius) var(--radius) 0;
+  padding:14px 18px; margin:0 0 14px; background:var(--card)}
+.stepbox .sno{font-family:var(--mono); font-size:12.5px; color:var(--teal-t); font-weight:600; letter-spacing:.04em}
+.stepbox h4{margin:2px 0 8px; font-size:16px; color:var(--ink)}
+.stepbox p:last-child,.stepbox ul:last-child,.stepbox ol:last-child,.stepbox pre:last-child{margin-bottom:0}
+ul.tight,ol.tight{margin:0 0 14px; padding-left:22px}
+ul.tight li,ol.tight li{margin-bottom:5px}
+.kv{font-size:13.5px; color:var(--ink3); margin:2px 0 0}
+.dotd{border:0; border-top:1px dotted var(--line); margin:28px 0}
+.chk{list-style:none; padding-left:0; margin:0 0 14px}
+.chk li{position:relative; padding-left:26px; margin-bottom:7px; font-size:14.5px}
+.chk li::before{content:""; position:absolute; left:0; top:8px; width:11px; height:11px;
+  border:1.5px solid var(--teal); border-radius:3px}
+.risk{list-style:none; padding-left:0; margin:0 0 14px}
+.risk li{position:relative; padding-left:26px; margin-bottom:7px; font-size:14.5px}
+.risk li::before{content:""; position:absolute; left:0; top:8px; width:11px; height:11px;
+  border:1.5px solid var(--red); border-radius:3px}
+footer{padding:40px 0 0; font-size:13px; color:var(--ink3)}
+footer ol{padding-left:20px}
+footer li{margin-bottom:6px}
+.toc{display:grid; grid-template-columns:repeat(2,1fr); gap:4px 20px; font-size:14px; margin:0 0 4px; padding:0; list-style:none}
+.toc a{color:var(--ink2); text-decoration:none; display:block; padding:3px 0}
+.toc a:hover{color:var(--amber-t)}
+@media(max-width:900px){.grid2,.grid3,.toc{grid-template-columns:1fr} h1{font-size:28px}}
+@media(max-width:760px){table{display:block; overflow-x:auto}}
+</style>
+</head>
+<body>
+
+<nav><ol>
+<li class="brand">AI 原生重写作战手册</li>
+<li><a href="#s00">摘要</a></li><li><a href="#s01">判定</a></li><li><a href="#s02">四条根基</a></li>
+<li><a href="#s03">总蓝图</a></li><li><a href="#s04">战前两周</a></li><li><a href="#s05">代码考古</a></li>
+<li><a href="#s06">抽取规格</a></li><li><a href="#s07">切片定序</a></li><li><a href="#s08">切片七步</a></li>
+<li><a href="#s09">数据层</a></li><li><a href="#s10">组织与下线</a></li><li><a href="#s11">度量止损</a></li>
+<li><a href="#s12">反模式</a></li><li><a href="#s13">附录</a></li>
+</ol></nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">AI Native Rewrite Playbook · v1.0</p>
+  <h1>把 15 个模块、3412 个文件、73 万行的遗留内部系统，<br>用 AI 原生方式重写一遍</h1>
+  <p class="lead">这份手册不是讲道理的，是照着做就能跑的。给的是一个绞杀者式增量替换的完整生命周期：<b>迁移到 TypeScript/Node 或 Python、以 Claude Code 为主力、每一步都有命令、脚本、门禁和验收标准</b>。从第一周该干什么到最后下线旧系统的一行开关，中间没有跳步。</p>
+  <p class="meta">目标系统：持续开发 10 余年的内部信息系统 · 15 个 Maven 模块 · 3412 个 Java 文件 · 约 73 万行代码　|　2026 年 9 月</p>
+  <ul class="toc" style="margin-top:24px">
+    <li><a href="#s00">00 · 摘要：十一条核心论断</a></li>
+    <li><a href="#s07">07 · 阶段三 · 切片定序与排期</a></li>
+    <li><a href="#s01">01 · 判定：你的系统处在什么位置</a></li>
+    <li><a href="#s08">08 · 阶段四 · 切片七步循环</a></li>
+    <li><a href="#s02">02 · 四条理论根基推导出工程动作</a></li>
+    <li><a href="#s09">09 · 阶段五 · 数据层的硬骨头</a></li>
+    <li><a href="#s03">03 · 总蓝图：七个阶段</a></li>
+    <li><a href="#s10">10 · 阶段六 · 组织转型与下线</a></li>
+    <li><a href="#s04">04 · 阶段零 · 战前两周建 Harness</a></li>
+    <li><a href="#s11">11 · 度量体系与止损线</a></li>
+    <li><a href="#s05">05 · 阶段一 · 代码考古与做减法</a></li>
+    <li><a href="#s12">12 · 反模式清单</a></li>
+    <li><a href="#s06">06 · 阶段二 · 抽取可执行规格</a></li>
+    <li><a href="#s13">13 · 附录 · 可复制的命令与模板</a></li>
+  </ul>
+</header>
+
+<section id="s00">
+  <p class="kicker">Section 00</p>
+  <h2><span class="num">00</span>摘要：十一条核心论断</h2>
+  <p>这份手册的每一章都服务于下面某一条论断。论断是可证伪的：如果你的系统在某一条上不成立，那一章的做法就该改或跳过。只读这一页，你也应该能判断自己要付出什么代价。</p>
+  <ol class="claims">
+    <li><strong>73 万行不是起点，是待压缩的输入。</strong><span class="ev">长时间演化的企业级 Java 系统里，未使用或已死的代码占到相当比例：Romano 与 Scanniello 对若干 Java 仓库样本的统计给出<b>未使用函数的中位数约 15%</b>，行业观察则把典型区间放在 <b>5%~30%</b>，且<b>系统越大、越老，比例越高</b>（单一案例报道过清理掉 67% 体量的做法，属个案而非均值）。所以目标规模应先按 <b>150k~300k 行</b>估算，而不是 730k。见证据强度：中位数来自受控样本研究，67% 为单一案例。</span></li>
+    <li><strong>旧系统真正的资产不是代码，是冻结在代码里、且没有任何文档的业务规则。</strong><span class="ev">「那个大客户的特殊折扣」「某种币值的舍入规则」「因为合作方系统不稳才加的重试」——这些<b>载荷性行为</b>（load-bearing behaviour）既不写在需求里，也常常不在测试里，只有真实流量会触发它们。第一件要造的东西不是新系统，是<b>能观测并锁定这些行为的装置</b>。</span></li>
+    <li><strong>Java → TypeScript/Python 不存在逐行翻译。</strong><span class="ev">这是本次选路最大的单点风险。Spring 的事务语义、MyBatis/Hibernate 的一级缓存与延迟加载、反射装配、拦截器链、AO P 切面——这些<b>运行时行为无法在另一语言里被结构性对应</b>。任何「把 XxxService.java 翻译成 TypeScript」的做法都不会通过生产验收，必须改为<b>按行为切片重写 + 等价性判据</b>。</span></li>
+    <li><strong>瓶颈不在生成，在验收；这份手册的重心因此放在 Harness 而不是 Prompt。</strong><span class="ev">DORA 2025（n≈5000）发现 AI 采纳虽正向关联交付吞吐量，但<b>同时与软件交付不稳定性上升相关联</b>；CodeRabbit 对 470 个真实 PR 的对照测量显示，AI 撰写 PR 的平均问题数是人工 PR 的 <b>1.7 倍（10.83 vs 6.45）</b>，安全问题最多到 <b>2.74 倍</b>。生成器已经够快了，缺的是能自动说「不」的东西。</span></li>
+    <li><strong>AI 是放大器，不是捷径——它会放大你现在的样子。</strong><span class="ev">同一份 DORA 数据：AI 采纳也需要底层平台能力承接，否则只是更快地堆积技术债。对一个<b>本就缺乏自动化测试、CI 慢、回滚贵的老团队</b>，直接上 AI 重写的结果是灾难性的。因此阶段零不是写代码，是<b>先修平台</b>（快速 CI、一键回滚、可观测）。</span></li>
+    <li><strong>规格取代代码成为一等公民，代码降为「编译产物」。</strong><span class="ev">这里说的 spec 不是写文档，而是<b>从旧系统提取 + 人确认过的行为契约</b>，用 markdown 落到仓库里。失败itim要修的是 spec 而不是代码——这正是 MISSION+ 的 ACDC 循环里「验证失败回退到规格」那条纪律。</span></li>
+    <li><strong>上下文工程决定成败，模型强弱是第二位的。</strong><span class="ev">一个 60% 塞满探索噪音的上下文窗口，表现不如 15% 精选信号的窗口。3412 个文件的全仓库「你来分析一下」注定产出空泛结论。正确姿势是<b>分层 CLAUDE.md + 每接缝一份 brief + 用子智能体卸载探索</b>。</span></li>
+    <li><strong>绞杀者的最小单位不是 Maven 模块，是路由规则。</strong><span class="ev">15 个模块是按技术分层和历史演进切出来的，不是按业务接缝切的。<b>直接把模块当作迁移单元会撞上跨模块调用网</b>。要先把「模块依赖图」还原成「行为接缝图」，再按业务语义重新打包。</span></li>
+    <li><strong>每个切片走同一条七步固定流程，这是「真实能开发出来」的关键。</strong><span class="ev">固定流程让工作<b>可被批处理、可被换人执行、可被 AI 半自动执行</b>，也让进度可度量。MISSION+ 的现场纪录是：<b>一名工程师 + 每阶段最多 20 个子智能体，把 35 万行 Java/JSP 重建为 TypeScript，第 5 天跑到可运行的开发版本</b>（注意：是可运行开发版，不是生产上线）。</span></li>
+    <li><strong>护栏必须机器化，不能靠「人仔细看」。</strong><span class="ev">Anthropic 的 Claude Code 使用研究里，专业人员达到<b>已验证成功的会话约 30%</b>，约九成代码产出会话只到「部分成功」。差距正是靠 Stop hook、CI 门禁、差异率阈值、准入列表这些<b>确定性机制</b>来补，而不是靠评审态度。</span></li>
+    <li><strong>必须预先写死止损线。</strong><span class="ev">如果第 3 个切片在 12 周内没完成生产切换，说明接缝假设或团队能力不成立，应当<b>降级为原地现代化</b>而不是加人硬推。没有 kill criteria 的重写项目会在第 18 个月变成政治问题。</span></li>
+  </ol>
+
+  <figure id="fig01">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 400" role="img" aria-label="从 73 万行到可交付新系统的三级规模压缩漏斗">
+        <rect x="0" y="0" width="960" height="400" fill="#FFFFFF"/>
+        <text x="24" y="30" font-size="14" font-weight="600" fill="#16181D">图 1 · 规模漏斗：真实要写的代码远小于 730k</text>
+        <text x="24" y="50" font-size="12" fill="#3D434B">每一级都必须由工具的产出证据驱动，不能凭直觉缩放</text>
+
+        <!-- level 1 -->
+        <rect x="40" y="80" width="880" height="56" rx="8" fill="#FBEFE0" stroke="#B45309" stroke-width="1.5"/>
+        <text x="60" y="104" font-size="15" font-weight="620" fill="#8F3F06">① 现状：730,000 行 / 3412 文件 / 15 模块</text>
+        <text x="60" y="124" font-size="12.5" fill="#3D434B">静态检出量。含未使用代码、早期实验、被取代的旧实现、只为自证而存在的测试</text>
+        <text x="900" y="117" font-size="22" font-weight="680" fill="#8F3F06" text-anchor="end">100%</text>
+
+        <path d="M480 136 L480 160" stroke="#B45309" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="480,164 475,155 485,155" fill="#B45309"/>
+
+        <!-- level 2 -->
+        <rect x="40" y="168" width="740" height="56" rx="8" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="60" y="192" font-size="15" font-weight="620" fill="#1F5288">② 减去未使用代码后：约 480k ~ 620k 行</text>
+        <text x="60" y="212" font-size="12.5" fill="#3D434B">由运行时插桩 + 调用图 + Jar 依赖扫描三方交叉取证，取保守区间</text>
+        <text x="760" y="205" font-size="20" font-weight="680" fill="#1F5288" text-anchor="end">66~85%</text>
+
+        <path d="M410 224 L410 248" stroke="#2F6FB0" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="410,252 405,243 415,243" fill="#2F6FB0"/>
+
+        <!-- level 3 -->
+        <rect x="40" y="256" width="560" height="56" rx="8" fill="#E5F1EF" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="60" y="280" font-size="15" font-weight="620" fill="#0A5750">③ 减去可复用为通用能力后：约 300k ~ 400k 行</text>
+        <text x="60" y="300" font-size="12.5" fill="#3D434B">用开源库代替自写框架、配置取代代码生成器、收敛重复 CRUD 与报表</text>
+        <text x="580" y="293" font-size="20" font-weight="680" fill="#0A5750" text-anchor="end">41~55%</text>
+
+        <path d="M320 312 L320 336" stroke="#0F766E" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="320,340 315,331 325,331" fill="#0F766E"/>
+
+        <!-- level 4 -->
+        <rect x="40" y="344" width="360" height="42" rx="8" fill="#E9F3E9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="60" y="363" font-size="14.5" font-weight="620" fill="#1B5820">④ 新系统实际体量估计</text>
+        <text x="60" y="379" font-size="12.5" fill="#3D434B">约 150k ~ 250k 行 TS/Python</text>
+        <text x="380" y="371" font-size="19" font-weight="680" fill="#1B5820" text-anchor="end">21~34%</text>
+
+        <line x1="440" y1="365" x2="620" y2="365" stroke="#B3261E" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="632" y="370" font-size="12.5" fill="#B3261E">跨语言后的等价份量，非行数等价</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1</b>　四级压缩必须逐级取证：①→②靠运行时证据，②→③靠重复度扫描，③→④靠目标栈的表达力。虚线提醒：TS/Python 的 1 行并不等价于 Java 的 1 行，比例给的是<b>估算区间</b>而非换算率。</figcaption>
+  </figure>
+
+  <div class="callout r">
+    <h4>给决策者的三句话</h4>
+    <p>一、这条路技术上是通的，已有同规模、跨同种语言组合的公开现场纪录。二、它的成本大头不是 Token，是<b>验收体系的建设，以及懂业务的人被占用的时间</b>。三、最危险的做法是把旧系统交给 AI 让它「自由发挥」，那就等于把十年积累的业务规则一次性扔掉。</p>
+  </div>
+</section>
+
+<section id="s01">
+  <p class="kicker">Section 01</p>
+  <h2><span class="num">01</span>判定：你的系统究竟处在什么位置</h2>
+  <p>不是所有遗留系统都适合走这条路。先花两周做五项闸门体检，用<b>工具的真实输出</b>填下面这张表，然后按表末的裁决规则选择路线。这五项的共同点是：<b>它们决定了「你我有无办法证明新旧等价」</b>——证明不了等价，绞杀者就退化成赌博。</p>
+
+  <table>
+    <thead><tr><th style="width:14%">闸门</th><th style="width:30%">怎么测（两周内）</th><th style="width:20%">绿灯</th><th style="width:36%">黄灯 / 红灯意味着什么</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>A. 生产调用面</b></td>
+        <td>网关或 Nginx 日志按 endpoint 聚合 90 天，统计每个 path 的 PV 与调用方来源</td>
+        <td>≥ 60% 的请求集中在 ≤ 20% 的 endpoint 上</td>
+        <td><b>黄</b>：长尾很重，说明「隐藏使用者」多，需要更久的绞杀期；<b>红</b>：存在无法定位来源的调用（如 FTP 投递、直连 DB 的 Excel），必须先补齐访问控制与调用方登记</td>
+      </tr>
+      <tr>
+        <td><b>B. 数据写入面</b></td>
+        <td>枚举所有写库入口：应用、定时任务、存储过程、触发器、外部 ETL、人工 SQL</td>
+        <td>写入路径全部可枚举且有清单</td>
+        <td><b>红</b>：存在<b>绕过应用直写生产库</b>的外部系统。这是跨语言迁移最大的暗礁，必须先收敛为 API，否则新系统的不变量会被外部写破坏</td>
+      </tr>
+      <tr>
+        <td><b>C. 事务与 DB 逻辑</b></td>
+        <td>统计存储过程/触发器/视图数量，标记 Spring 事务边界</td>
+        <td>存储过程 &lt; 50 个且无触发器写业务逻辑</td>
+        <td><b>黄</b>：把存储过程的迁移单独列为一条工作线（见第 09 章）；<b>红</b>：大量业务在存储过程里，TS/Python 侧无法天然继承事务语义，需先剥离</td>
+      </tr>
+      <tr>
+        <td><b>D. 目标栈人力</b></td>
+        <td>问一句：谁能独立写完一个 TS/Python 服务并保证生产可用？</td>
+        <td>≥ 3 人具备目标栈生产经验，且含 1 名深入过旧系统的老员工</td>
+        <td><b>红</b>：只有 PM 会写 TS。这条红就把整条路线降级——因为<b>人类验收者必须比生成器更懂目标系统</b></td>
+      </tr>
+      <tr>
+        <td><b>E. 交付平台</b></td>
+        <td>量三个数：CI 全量时长、回滚耗时、灰度能力</td>
+        <td>CI &lt; 15 分钟、回滚 &lt; 5 分钟、支持按百分比切流</td>
+        <td><b>黄</b>：CI 40 分钟以上，AI 迭代循环会被拖垮，先优化 CI；<b>红</b>：无灰度开关，只能整包发布的风险不可承受</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <h4>裁决规则（在开项目之前就写进立项书）</h4>
+    <p><b>五绿或四绿一黄 → 走本手册的全量绞杀路线。</b><br>
+    <b>两黄及以上 → 降级为「核心域重写 + 外围通过防腐层沿用」，把 15 个模块里真正有价值的 3~5 个迁走，其余维持 Java 运维。</b><br>
+    <b>任一红 → 不要启动迁移。</b>先花 2~3 个月做「原地现代化」：补 CI、补可被iftrastructure 观测、把直写数据库的入口收成 API、把一个模块抽成服务验证可行性。</p>
+  </div>
+
+  <h3>五个数字的基线，第一天就要测出来</h3>
+  <p>下面这组基线数字会在后面每一步反复用到。它们不是装饰性指标，而是<b>用来判断某一步是否真的推进了</b>的唯一依据。</p>
+  <pre><code># 1. 真实体量：排除 generated / protobuf / 前端打包产物
+find . -name "*.java" -not -path "*/generated/*" -not -path "*/target/*" | wc -l
+find . -name "*.java" -not -path "*/generated/*" -not -path "*/target/*" -print0 \
+  | xargs -0 wc -l | tail -1
+
+# 2. 每模块体量分布（决定切片优先看的战场）
+for m in */pom.xml; do d=$(dirname "$m");
+  printf "%-28s %6s files  %8s loc\n" "$d" \
+    "$(find "$d" -name '*.java' | wc -l | tr -d ' ')" \
+    "$(find "$d" -name '*.java' -print0 | xargs -0 cat 2>/dev/null | wc -l | tr -d ' ')"
+done | sort -k4 -nr
+
+# 3. 生产被调用的接口比例（从 Nginx / 网关 access log）
+awk '{print $7}' access.log* | sed 's/[0-9]\{3,\}/:id:/g; s/?.*//' \
+  | sort | uniq -c | sort -nr &gt; /tmp/ep.tsv
+wc -l /tmp/ep.tsv            # 分母：生产实际出现过的 URL 形态数
+awk '$1&lt;10' /tmp/ep.tsv | wc -l   # 90 天内调用 &lt; 10 次的长尾
+
+# 4. 数据库写入面
+grep -rn "@Insert\|@Update\|@Delete\|executeUpdate\|\.persist(\|\.save(" --include="*.java" . | wc -l
+
+# 5. CI 与回滚耗时（直接问运维要最近 20 次发布的数字）</code></pre>
+
+  <div class="callout b">
+    <h4>关于结论 ① 的证据强度，请如实理解</h4>
+    <p>「清理掉 67% 代码」是<b>单一案例</b>（某美国金融机构），不是行业均值；「未使用函数中位数约 15%」来自 Romano 与 Scanniello 对一组 Java 仓库的<b>样本研究</b>；「典型 5%~30%」属于行业观察汇总。<b>你自己的系统是什么比例，必须用第 05 章的运行时插桩去测</b>，不能引用别人的数字来立项。<span class="tag a" style="margin-left:4px">证据强度：样本研究 &gt; 行业观察 &gt; 单一案例</span></p>
+  </div>
+</section>
+
+<section id="s02">
+  <p class="kicker">Section 02</p>
+  <h2><span class="num">02</span>四条理论根基，各自推出一批具体工程动作</h2>
+  <p>好的理论要能推导。这里每条根基都硬推出一份「必须做 / 不许做」的清单——后面所有章节的操作都是从这四条推出来的，遇到没写到的情况，回到这四条自行推导。</p>
+
+  <figure id="fig02">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 340" role="img" aria-label="生成成本下降快于验收成本，瓶颈从写代码转移到证明代码正确">
+        <rect x="0" y="0" width="960" height="340" fill="#FFFFFF"/>
+        <text x="24" y="28" font-size="14" font-weight="600" fill="#16181D">图 2 · 剪刀差：瓶颈已经从「写」转移到「证明」　（定性示意，非实测数据）</text>
+        <!-- axes -->
+        <line x1="90" y1="60" x2="90" y2="250" stroke="#E3E0D8" stroke-width="1.2"/>
+        <line x1="90" y1="250" x2="700" y2="250" stroke="#E3E0D8" stroke-width="1.2"/>
+        <line x1="90" y1="60" x2="700" y2="60" stroke="#EEEBE4" stroke-width="1"/>
+        <line x1="90" y1="155" x2="700" y2="155" stroke="#EEEBE4" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="80" y="64" font-size="11.5" fill="#3D434B" text-anchor="end">高</text>
+        <text x="80" y="159" font-size="11.5" fill="#3D434B" text-anchor="end">中</text>
+        <text x="80" y="254" font-size="11.5" fill="#3D434B" text-anchor="end">低</text>
+        <text x="196" y="270" font-size="11.5" fill="#3D434B" text-anchor="middle">2020</text>
+        <text x="395" y="270" font-size="11.5" fill="#3D434B" text-anchor="middle">2023</text>
+        <text x="594" y="270" font-size="11.5" fill="#3D434B" text-anchor="middle">2026</text>
+        <text x="90" y="290" font-size="12" fill="#3D434B">时间</text>
+        <text x="24" y="26" font-size="0" fill="none">.</text>
+        <text x="34" y="160" font-size="12" fill="#3D434B" transform="rotate(-90 34 160)">单位功能所需投入</text>
+
+        <!-- gen line -->
+        <path d="M196 90 Q 380 170 594 228" fill="none" stroke="#2F6FB0" stroke-width="2.6"/>
+        <circle cx="196" cy="90" r="4.5" fill="#2F6FB0"/>
+        <circle cx="395" cy="163" r="4.5" fill="#2F6FB0"/>
+        <circle cx="594" cy="228" r="4.5" fill="#2F6FB0"/>
+        <text x="596" y="248" font-size="12.5" font-weight="620" fill="#1F5288">生成成本</text>
+
+        <!-- verify line -->
+        <path d="M196 196 Q 380 200 594 206" fill="none" stroke="#B3261E" stroke-width="2.6"/>
+        <circle cx="196" cy="196" r="4.5" fill="#B3261E"/>
+        <circle cx="395" cy="200" r="4.5" fill="#B3261E"/>
+        <circle cx="594" cy="206" r="4.5" fill="#B3261E"/>
+        <text x="560" y="188" font-size="12.5" font-weight="620" fill="#B3261E" text-anchor="end">验收成本</text>
+
+        <polygon points="196,90 196,196 190,190 202,190" fill="none"/>
+        <text x="300" y="60" font-size="0" fill="none">x</text>
+        <rect x="212" y="96" width="6" height="96" fill="#B45309" opacity="0.16"/>
+        <text x="222" y="150" font-size="12" font-weight="620" fill="#8F3F06">这个缺口</text>
+        <text x="222" y="168" font-size="12" font-weight="620" fill="#8F3F06">就是全部风险</text>
+
+        <!-- right panel: measured data -->
+        <rect x="720" y="60" width="220" height="186" rx="8" fill="#FBFAF7" stroke="#E3E0D8"/>
+        <text x="736" y="84" font-size="12.5" font-weight="620" fill="#16181D">已测：AI PR 的缺陷密度</text>
+        <text x="736" y="102" font-size="11" fill="#3D434B">CodeRabbit, 470 个真实 PR</text>
+        <text x="736" y="130" font-size="11.5" fill="#3D434B">AI 撰写</text>
+        <rect x="736" y="136" width="150" height="16" fill="#B3261E" opacity="0.75"/>
+        <text x="894" y="148" font-size="12.5" font-weight="640" fill="#B3261E" text-anchor="end">10.83</text>
+        <text x="736" y="170" font-size="11.5" fill="#3D434B">人工撰写</text>
+        <rect x="736" y="176" width="89" height="16" fill="#2E7D32" opacity="0.7"/>
+        <text x="833" y="188" font-size="12.5" font-weight="640" fill="#1B5820" text-anchor="end">6.45</text>
+        <text x="736" y="214" font-size="11.5" font-weight="620" fill="#8F3F06">安全问题最多达 2.74×</text>
+        <text x="736" y="232" font-size="11" fill="#3D434B">每 PR 平均问题数</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2</b>　左：定性示意——生成侧成本断崖式下降，验收侧几乎持平，二者拉开的距离正是遗留迁移的主要风险敞口。<b>右：唯一在这张图里是实测数据的部分</b>（CodeRabbit 对 470 个真实 GitHub PR 的对照测量），它说明「看起来完成了」的代码所需的复核量远超直觉。左曲线<b>不可用作业立项的成本依据</b>。</figcaption>
+  </figure>
+
+  <h3>根基一：放大器定律 —— AI 放大的是你现有的样子</h3>
+  <p>DORA 2025 对约 5000 名技术从业者的调研给出一个反复被验证的判断：<b>AI 在软件交付中的作用是「放大器」</b>。它放大高效团队的成效，也放大陷于混乱的团队的功能失调。同一份数据里还有一组常被忽略的张力：90% 的人已在日常使用 AI，八成以上说生产力提升了，但<b>约三成对 AI 输出缺乏信任</b>；与此同时 AI 采纳与软件交付不稳定性上升相关联。</p>
+  <ul class="chk">
+    <li><b>必须做：</b>阶段零先把 CI 压到 15 分钟内、把回滚做成单点操作、补上可观测（traceID 贯穿）。这三条没做完，不要开始</li>
+    <li><b>必须做：</b>把「每笔请求都有 traceID」做成新的乳化标准——后面影子流量比对要靠它做请求对齐</li>
+    <li><b>不许做：</b>不许因为 AI 写得快就跳过 lint / typecheck / 格式化。类型系统是 TS 迁移最便宜的一道防线</li>
+  </ul>
+
+  <h3>根基二：Feathers 的接缝 —— 先造接缝，再造手术</h3>
+  <p>遗留代码之所以难改，通常不是逻辑复杂，而是<b>依赖藏得太深</b>：函数中间直接连库、直接读时间、直接发 HTTP、直接碰全局单例。Michael Feathers 给的接缝（seam）定义是「无须在该处编辑代码就能改变其行为的位置」。有了接缝，你才能在旧系统上插探针、装容错、把流量引到新实现。</p>
+  <ul class="chk">
+    <li><b>必须做：</b>在每个待迁移切片的入口先造一个接缝（路由层或仓储层），再谈提取逻辑</li>
+    <li><b>必须做：</b>把时间、随机数、外部 HTTP、消息队列这些非确定性依赖先抽出来，否则 golden master 比对全是噪点</li>
+    <li><b>不许做：</b>不许在没有接缝的地方「原地改造」。先引流，再替换，最后才删除旧代码——这三步的顺序不可颠倒</li>
+  </ul>
+
+  <h3>根基三：表征测试 —— 旧系统的行为是唯一真实的规格说明</h3>
+  <p>普通测试是「需求 → 写测试 → 让代码通过」。表征测试（characterization test，Michael Feathers 提出，也叫 Golden Master）反过来：<b>跑一遍代码 → 观察输出 → 把这个输出钉死为期望值</b>。它记录的是「它现在做什么」，而不是「它应该做什么」。对于一份跑了十年、需求文档早就对不上的内部系统，这是唯一诚实的规格来源。</p>
+  <pre><code>// 表征测试的写法：先故意写错，拿到真实值，再把真实值回填为期望值
+test('characterize: calcSettlement', async () =&gt; {
+  const out = await calcSettlement(fixture.order_20240701);
+  expect(out).toBe('<mark>THIS_IS_WRONG_ON_PURPOSE</mark>');   // 1. 跑 → 失败信息给出真实输出
+});
+// 2. 把失败信息里的 actual 回填进去，测试转绿 → 行为被钉住
+// 3. 之后的任何重构，只要这个值变了，测试立刻报警</code></pre>
+  <div class="callout">
+    <h4>Golden Master 的产出物比测试本身更值钱</h4>
+    <p>把 200 个输入的投影（不是原文）写进 master 文件，那往往<b>是这份系统历史上第一份成文的行为描述</b>。同时请记住：golden master 失败时是<b>需要人来判定</b>「这是预期的变更还是回归」——所以它应该生成一个待审阅的差异清单并显式签收，而不是简单地让 CI 变红。</p>
+  </div>
+
+  <h3>根基四：规格先行 —— 失败时改规格，而不是改代码</h3>
+  <p>MISSION+ 的 ACDC 循环里有一条纪律被反复强调：<b>验证失败要把工作退回规格，而不是退进代码</b>。这与 Endgate 的 ACDC 白皮书所述一致——当 intent 只存在于聊天记录里，团队就丢失了「为什么这么做」的记录，结果是产出更快、返工更多。落到做法上：</p>
+  <ul class="chk">
+    <li><b>必须做：</b>每个切片先产出 <code>spec/&lt;slice&gt;/behavior.md</code>，人签字后再让 AI 生成代码</li>
+    <li><b>必须做：</b>Vibe 式 diff 打到 spec 上时，把它和改动物一起进评审；半年后有人问「为什么部分退款的标签变了」，答案应该在那个评审里</li>
+    <li><b>不许做：</b>不许让 AI 反过来从自己生成的代码总结写 spec。那会产生自洽但错误的闭环——spec 必须从<b>旧系统行为 + 人工确认</b>双向而来</li>
+  </ul>
+</section>
+
+<section id="s03">
+  <p class="kicker">Section 03</p>
+  <h2><span class="num">03</span>总蓝图：七个阶段，和一条不断重复的循环</h2>
+  <p>整个工程分成<b>七个阶段</b>。其中前三个是一次性投入（约 3~4 个月），第五阶段是要被<b>重复 15~25 次</b>的核心循环，第六阶段与第五阶段并行推进，第七阶段收尾。真正决定周期长短的不是一次迁移多少行，而是<b>你多久完成一次完整的切片循环</b>。</p>
+
+  <figure id="fig03">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 430" role="img" aria-label="AI 原生重写的七个阶段闭环图">
+        <rect x="0" y="0" width="960" height="430" fill="#FFFFFF"/>
+        <text x="24" y="26" font-size="14" font-weight="600" fill="#16181D">图 3 · 七阶段生命周期：一次性投入三段，第五阶段核心循环</text>
+
+        <text x="480" y="222" font-size="13" font-weight="620" fill="#333941" text-anchor="middle">阶段五要被</text>
+        <text x="480" y="242" font-size="13" font-weight="620" fill="#333941" text-anchor="middle">重复 15 ~ 25 次</text>
+
+        <!-- nodes -->
+        <g style="background-color:#FBEFE0">
+        <circle cx="480" cy="105" r="29" fill="#FBEFE0" stroke="#B45309" stroke-width="1.6"/>
+        <text x="480" y="111" font-size="15" font-weight="660" fill="#8F3F06" text-anchor="middle">零</text>
+        </g>
+        <g style="background-color:#EAF2FA">
+        <circle cx="577.7" cy="152.1" r="29" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.6"/>
+        <text x="577.7" y="158.1" font-size="15" font-weight="660" fill="#1F5288" text-anchor="middle">一</text>
+        </g>
+        <g style="background-color:#EAF2FA">
+        <circle cx="601.9" cy="257.8" r="29" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.6"/>
+        <text x="601.9" y="263.8" font-size="15" font-weight="660" fill="#1F5288" text-anchor="middle">二</text>
+        </g>
+        <g style="background-color:#E5F1EF">
+        <circle cx="534.2" cy="342.6" r="29" fill="#E5F1EF" stroke="#0F766E" stroke-width="1.6"/>
+        <text x="534.2" y="348.6" font-size="15" font-weight="660" fill="#0A5750" text-anchor="middle">三</text>
+        </g>
+        <g style="background-color:#F2ECFA">
+        <circle cx="425.8" cy="342.6" r="34" fill="#F2ECFA" stroke="#6D3FB5" stroke-width="2.2"/>
+        <text x="425.8" y="348.6" font-size="15" font-weight="660" fill="#5A3099" text-anchor="middle">四</text>
+        </g>
+        <g style="background-color:#E5F1EF">
+        <circle cx="358.1" cy="257.8" r="29" fill="#E5F1EF" stroke="#0F766E" stroke-width="1.6"/>
+        <text x="358.1" y="263.8" font-size="15" font-weight="660" fill="#0A5750" text-anchor="middle">五</text>
+        </g>
+        <g style="background-color:#E9F3E9">
+        <circle cx="382.3" cy="152.1" r="29" fill="#E9F3E9" stroke="#2E7D32" stroke-width="1.6"/>
+        <text x="382.3" y="158.1" font-size="15" font-weight="660" fill="#1B5820" text-anchor="middle">六</text>
+        </g>
+
+        <!-- arrows -->
+        <g fill="#B45309"><polygon points="0,-5.5 10,0 0,5.5" transform="translate(534.2,117.4) rotate(25.71)"/></g>
+        <g fill="#2F6FB0"><polygon points="0,-5.5 10,0 0,5.5" transform="translate(601.9,202.2) rotate(77.14)"/></g>
+        <g fill="#2F6FB0"><polygon points="0,-5.5 10,0 0,5.5" transform="translate(577.7,307.9) rotate(128.57)"/></g>
+        <g fill="#0F766E"><polygon points="0,-5.5 10,0 0,5.5" transform="translate(480,355) rotate(180)"/></g>
+        <g fill="#6D3FB5"><polygon points="0,-5.5 10,0 0,5.5" transform="translate(382.3,307.9) rotate(231.43)"/></g>
+        <g fill="#0F766E"><polygon points="0,-5.5 10,0 0,5.5" transform="translate(358.1,202.2) rotate(282.86)"/></g>
+        <g fill="#2E7D32"><polygon points="0,-5.5 10,0 0,5.5" transform="translate(425.8,117.4) rotate(334.29)"/></g>
+
+        <!-- labels -->
+        <text x="480" y="52" font-size="12.5" font-weight="620" fill="#8F3F06" text-anchor="middle">阶段零 · 战前建 Harness</text>
+        <text x="619.2" y="119.1" font-size="12.5" font-weight="620" fill="#1F5288" text-anchor="start">阶段一 · 清创与减负</text>
+        <text x="653.5" y="269.6" font-size="12.5" font-weight="620" fill="#1F5288" text-anchor="start">阶段二 · 抽取规格</text>
+        <text x="557.2" y="390.4" font-size="12.5" font-weight="620" fill="#0A5750" text-anchor="start">阶段三 · 切片定序</text>
+        <text x="402.8" y="390.4" font-size="12.5" font-weight="620" fill="#5A3099" text-anchor="end">阶段四 · 切片七步循环</text>
+        <text x="306.5" y="269.6" font-size="12.5" font-weight="620" fill="#0A5750" text-anchor="end">阶段五 · 数据层迁移</text>
+        <text x="340.8" y="119.1" font-size="12.5" font-weight="620" fill="#1B5820" text-anchor="end">阶段六 · 绞杀与下线</text>
+
+        <rect x="24" y="40" width="196" height="86" rx="8" fill="#FBFAF7" stroke="#E3E0D8"/>
+        <text x="38" y="62" font-size="11.5" font-weight="620" fill="#333941">一次性投入（约 3~4 个月）</text>
+        <text x="38" y="82" font-size="11.5" fill="#3D434B">阶段零 / 一 / 二</text>
+        <text x="38" y="100" font-size="11.5" fill="#3D434B">产出：平台、清册、</text>
+        <text x="38" y="118" font-size="11.5" fill="#3D434B">规格库、首个验证结论</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3</b>　一次性投入的三段（零/一/二）决定后续所有循环能不能跑起来；阶段四是核心循环，重复次数取决于你把系统切成多少个行为接缝；阶段五（数据层）与阶段四并行；阶段六收尾。注意箭头方向是<b>顺时针</b>，表示每个循环的输出（已验证的规格与被测新代码）会沉淀回前面的层。</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th style="width:12%">阶段</th><th style="width:16%">产出物</th><th style="width:38%">完成判据（缺一不可）</th><th style="width:12%">典型工期</th><th style="width:22%">失败时意味着什么</th></tr></thead>
+    <tbody>
+      <tr><td><b>零 · 建 Harness</b></td><td>可跑的 CI、灰度开关、护栏配置、仓库骨架</td><td>CI 全量 &lt; 15 min；回滚单点 &lt; 5 min；<code>Stop</code> hook 能真实拦住不合格产物；<code>.env</code> 读被 deny</td><td>2~4 周</td><td>平台撑不住 AI 的迭代速度，后面全是返工</td></tr>
+      <tr><td><b>一 · 清创减负</b></td><td>代码资产清册、存活率报告、删除批次</td><td>给出「生产 90 天未被调用的入口文件」清单，删除批次 ≥ 1 且配置值没变</td><td>3~6 周</td><td>后面每轮 AI 探索都要为噪音付费</td></tr>
+      <tr><td><b>二 · 抽取规格</b></td><td><code>spec/</code> 目录、golden master 集</td><td>至少 1 个高价值域 ≤ 30 页 <code>behavior.md</code>，每条规则可追溯到代码位置或生产样本</td><td>4~8 周</td><td>新旧系统无法判定等价，绞杀死于无法验收</td></tr>
+      <tr><td><b>三 · 切片定序</b></td><td>接缝图、打分表、排期甘特</td><td>≥ 15 个候选切片全部有「入口、数据所有权、下游调用方、回滚方式」四项明确</td><td>1~2 周</td><td>切片边界会反复扯皮，团队失去节奏</td></tr>
+      <tr><td><b>四 · 切片循环</b></td><td>一个个已上线的替换</td><td>每片：双跑差异率 &lt; 0.5% 且已知差异全部署名解释；灰度 0→1→5→20→100% 各档无告警</td><td>每片 4~8 周</td><td>触发止损线，回到第 11 章裁决</td></tr>
+      <tr><td><b>五 · 数据层</b></td><td>防腐层、CDC 管道、schema 迁移</td><td>新数据源独立可提供读能力，且双写期间两侧一致性可测</td><td>与四并行</td><td>见第 09 章，是最容易翻车的一条线</td></tr>
+      <tr><td><b>六 · 绞杀下线</b></td><td>旧模块报废、文档、团队交接</td><td>旧侧连续 30 天零调用；<b>旧代码被物理删除</b>而不是留注释</td><td>收尾 2~4 周</td><td>永远养着两套系统，成本翻倍</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout t">
+    <h4>节奏感比总量重要</h4>
+    <p>行业现场反复观察到的模式是：<b>每个切片 4~8 周，切成一笔会谈专项demo，每个 demo 用来争取下一片的资源</b>。组织看到的是连续进展而不是一个黑盒的大重写。这也让你在任何时刻都能停止，且手上是可用的东西。</p>
+  </div>
+</section>
+
+<section id="s04">
+  <p class="kicker">Section 04</p>
+  <h2><span class="num">04</span>阶段零 · 战前两周：把 Harness 建起来</h2>
+  <p>这一步完全不碰业务代码。它的产出是一个<b>「可以让 AI 在里面连续工作而人敢离开」的环境</b>。跳过这步的团队，通常会在第 3 个月发现自己在用人工 review 补 AI 的漏洞，速度优势全部吐回去。</p>
+
+  <figure id="fig04">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 366" role="img" aria-label="AI 原生重写的四层 Harness 架构">
+        <rect x="0" y="0" width="960" height="366" fill="#FFFFFF"/>
+        <text x="24" y="26" font-size="14" font-weight="600" fill="#16181D">图 4 · Harness 四层：越往上越高杠杆，但下层不牢上层会塌</text>
+
+        <!-- L3 -->
+        <text x="24" y="72" font-size="13.5" font-weight="660" fill="#8F3F06">L3 验收层</text>
+        <text x="24" y="90" font-size="11" fill="#3D434B">自动说「不」</text>
+        <rect x="100" y="56" width="836" height="44" rx="8" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <rect x="112" y="64" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="120" y="82" font-size="11.5" fill="#16181D">typecheck + lint</text>
+        <rect x="246" y="64" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="254" y="82" font-size="11.5" fill="#16181D">golden master</text>
+        <rect x="380" y="64" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="388" y="82" font-size="11.5" fill="#16181D">shadow 差异率</text>
+        <rect x="514" y="64" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="522" y="82" font-size="11.5" fill="#16181D">测试覆盖率门禁</text>
+        <rect x="648" y="64" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="656" y="82" font-size="11.5" fill="#16181D">人机双签</text>
+        <rect x="782" y="64" width="142" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="790" y="82" font-size="11.5" fill="#16181D">spec diff 评审</text>
+
+        <!-- L2 -->
+        <text x="24" y="140" font-size="13.5" font-weight="660" fill="#0A5750">L2 上下文层</text>
+        <text x="24" y="158" font-size="11" fill="#3D434B">喂什么给它</text>
+        <rect x="100" y="124" width="836" height="44" rx="8" fill="#E5F1EF" stroke="#0F766E" stroke-width="1.3"/>
+        <rect x="112" y="132" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="120" y="150" font-size="11.5" fill="#16181D">根 CLAUDE.md</text>
+        <rect x="246" y="132" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="254" y="150" font-size="11.5" fill="#16181D">子目录分层</text>
+        <rect x="380" y="132" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="388" y="150" font-size="11.5" fill="#16181D">每接缝 brief</text>
+        <rect x="514" y="132" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="522" y="150" font-size="11.5" fill="#16181D">spec 索引</text>
+        <rect x="648" y="132" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="656" y="150" font-size="11.5" fill="#16181D"> archaeology快照</text>
+        <rect x="782" y="132" width="142" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="790" y="150" font-size="11.5" fill="#16181D">子智能体卸载</text>
+
+        <!-- L1 -->
+        <text x="24" y="208" font-size="13.5" font-weight="660" fill="#1F5288">L1 护栏层</text>
+        <text x="24" y="226" font-size="11" fill="#3D434B">不许做什么</text>
+        <rect x="100" y="192" width="836" height="44" rx="8" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.3"/>
+        <rect x="112" y="200" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="120" y="218" font-size="11.5" fill="#16181D">deny 密钥文件</text>
+        <rect x="246" y="200" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="254" y="218" font-size="11.5" fill="#16181D">allowlist</text>
+        <rect x="380" y="200" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="388" y="218" font-size="11.5" fill="#16181D">Stop 门禁 hook</text>
+        <rect x="514" y="200" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="522" y="218" font-size="11.5" fill="#16181D">沙箱 Bash</text>
+        <rect x="648" y="200" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="656" y="218" font-size="11.5" fill="#16181D">副作用拦截</text>
+        <rect x="782" y="200" width="142" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="790" y="218" font-size="11.5" fill="#16181D">工作树隔离</text>
+
+        <!-- L0 -->
+        <text x="24" y="276" font-size="13.5" font-weight="660" fill="#333941">L0 交付基座</text>
+        <text x="24" y="294" font-size="11" fill="#3D434B">团队既有能力</text>
+        <rect x="100" y="260" width="836" height="44" rx="8" fill="#F4F2EC" stroke="#E3E0D8" stroke-width="1.3"/>
+        <rect x="112" y="268" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="120" y="286" font-size="11.5" fill="#16181D">CI &lt; 15 min</text>
+        <rect x="246" y="268" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="254" y="286" font-size="11.5" fill="#16181D">一键回滚</text>
+        <rect x="380" y="268" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="388" y="286" font-size="11.5" fill="#16181D">traceID 全链路</text>
+        <rect x="514" y="268" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="522" y="286" font-size="11.5" fill="#16181D">百分比灰度</text>
+        <rect x="648" y="268" width="126" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="656" y="286" font-size="11.5" fill="#16181D">生产只读副本</text>
+        <rect x="782" y="268" width="142" height="28" rx="5" fill="#FFFFFF" stroke="#E3E0D8"/>
+        <text x="790" y="286" font-size="11.5" fill="#16181D">不可变构建</text>
+
+        <text x="100" y="330" font-size="12" fill="#3D434B">自下而上：L0 不牢，L3 的门禁就只是「跑得慢的装饰」</text>
+        <text x="100" y="348" font-size="12" fill="#3D434B">自上而下：L3 不做，L0~L2 的全部投资都换不来对 AI 产出的信任</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4</b>　四个层次缺一不可。多数团队从 L3 开始（先买/装个测试工具），然后发现 CI 跑一趟 40 分钟、没有灰度开关、密钥还在仓库里——这就是典型的「上层塌在松软的下层上」。</figcaption>
+  </figure>
+
+  <h3>第 1 天 · 建三条硬护栏（半天）</h3>
+  <p>先写 <code>.claude/settings.json</code> 并提交进仓库，让<b>每个参与的人都继承同一套护栏</b>。三条护栏对应三类真实事故：读走密钥、一次改动跨太多 file、以及「看起来完成了」。</p>
+  <pre><code>// .claude/settings.json —— 提交进仓库，全团队继承
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run verify)", "Bash(npm run test *)", "Bash(npx tsc *)",
+      "Bash(git status)", "Bash(git diff *)", "Bash(git log *)"
+    ],
+    "deny": [
+      "Read(./.env)", "Read(./.env.*)", "Read(./secrets/**)",
+      "Read(./src/main/resources/**/*.properties)",
+      "Bash(cat .env*)", "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Edit|Write",
+        "hooks": [{ "type": "command",
+          "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/protect-files.sh" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write",
+        "hooks": [{ "type": "command",
+          "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-on-write.sh" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command",
+          "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/verify-gate.sh" }] }
+    ]
+  }
+}</code></pre>
+
+  <p class="kv">注意：权限是一层层叠加的（user → project → local），而 <code>.claudeignore</code> 或允许规则都<b>可能被索引、全局搜索、系统提醒绕过</b>；要真正挡住对密钥文件的读取，靠的是 <code>PreToolUse</code> hook 退出码 2，而不是某条 allow 规则。把 hook（覆盖动态逻辑和 Bash 读取）与 deny 规则（在权限层覆盖文件工具）成对使用。</p>
+
+  <pre><code># .claude/hooks/protect-files.sh   —— 挡住 .env / lock 文件 / .git
+#!/bin/bash
+INPUT=$(cat)
+FP=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+for p in ".env" "package-lock.json" ".git/"; do
+  if [[ "$FP" == *"$p"* ]]; then
+    echo "Blocked: $FP matches protected pattern '$p'" &gt;&amp;2
+    exit 2                      # 退出码 2 = 阻断该次工具调用
+  fi
+done
+exit 0
+
+# .claude/hooks/verify-gate.sh    —— Stop hook：不通过就不许这一轮结束
+#!/bin/bash
+set -o pipefail
+OUT=$(npm run verify 2&gt;&amp;1)      # 指向你的 typecheck + lint + test + golden 比对
+if [ $? -ne 0 ]; then
+  echo "$OUT" | tail -40 &gt;&amp;2     # 把失败输出喂回给模型，它会接着修
+  exit 2
+fi
+exit 0</code></pre>
+
+  <div class="callout b">
+    <h4>Stop hook 是「让 AI 连续工作而人敢离开」的关键装置</h4>
+    <p>它的契约极其简单：<b>跑一遍验证脚本，通过就退出 0 让这一轮结束；失败就把失败输出打到 stderr 并返回退出码 2，模型会带着错误信息继续修。</b>中间不必有人参与。记录里有提到：连续被拦 8 次后 Claude Code 会强制结束这一轮——这正好是「这个任务可能根本不具备自动验收条件」的天然信号，别把它当成要绕过的障碍。</p>
+  </div>
+
+  <h3>第 2~3 天 · 定义 <code>npm run verify</code>（或对应的 <code>make verify</code>）</h3>
+  <p>这一条命令是整个 Harness 的心脏。<b>所有</b>门禁最终都收敛到它身上，因为 hook 只能跑一个命令。它的设计原则：快、确定性、无副作用、失败信息可读。</p>
+  <pre><code>// package.json （Python 侧对应 Makefile + pytest + ruff + mypy）
+{
+  "scripts": {
+    "verify": "npm run typecheck &amp;&amp; npm run lint &amp;&amp; npm run test:unit &amp;&amp; npm run golden",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test:unit": "vitest run --reporter=dot",
+    "golden": "node scripts/golden-compare.js --dir ./golden --fail-on-diff",
+    "shadow:report": "node scripts/shadow-diff.js --since 24h --threshold 0.005"
+  }
+}</code></pre>
+  <ul class="risk">
+    <li><code>verify</code> <b>必须</b>能在 15 分钟内跑完，否则 AI 的迭代节奏被拖垮——这是阶段零要先优化 CI 的原因</li>
+    <li><code>verify</code> <b>不得</b>触碰生产数据库或外部服务；golden 比对只读本地 fixture</li>
+    <li><code>verify</code> 的失败输出<b>必须</b>包含「哪个输入、期望什么、实际得到什么」，否则模型修不动</li>
+  </ul>
+
+  <h3>第 4~5 天 · 三层 <code>CLAUDE.md</code> 骨架</h3>
+  <p>单文件 <code>CLAUDE.md</code> 超过一两百行后，指令遵循度会明显下降——模型会有选择地忽略。正确做法是<b>分层加载</b>：Claude Code 会向上加载从当前目录到根目录沿路所有 <code>CLAUDE.md</code>，子目录则是<b>访问到才加载</b>，兄弟目录<em>永不</em>互相加载。这意味着你可以精确控制「在某个切片里工作时，AI 看到什么」。</p>
+  <pre><code>repo/
+├── CLAUDE.md                    # 根：全局规则 + 架构地图 + 入口索引（≤ 200 行）
+├── packages/
+│   ├── gateway/CLAUDE.md        # 仅在这个包工作时加载
+│   ├── settlement/CLAUDE.md     # 仅在这个包工作时加载
+│   └── ...
+└── spec/                        # 规格库，见第 06 章
+    └── index.md                 # 所有 spec 的索引，根 CLAUDE.md 指向它</code></pre>
+
+  <pre><code># CLAUDE.md（根，示范）
+
+## 这是什么项目
+旧系统 X（Java / 15 Maven 模块）正在被绞杀式替换为新栈（TypeScript）。
+旧代码在 `legacy/`，只读，不要修改。新代码在 `packages/`。
+
+## 永远不要做
+- 不要把 `legacy/` 下的 Java 文件整份喂给上下文，按 `spec/` 里的 brief 走
+- 不要在没写 spec 的情况下生成业务代码 —— 先建 `spec/&lt;slice&gt;/behavior.md`
+- 不要读 `.env`、不要碰 `resources/*.properties`（已被 hook 拦截，这里再写一次）
+
+## 这次任务怎么开始
+1. 读 `spec/&lt;slice&gt;/behavior.md` —— 它是唯一的需求来源
+2. 允许直接读的旧代码：behavior.md 里「溯源」字段列出的那些文件
+3. 实现完成后跑 `npm run verify`；Stop hook 会替你跑，不要假装通过
+
+## 验证纪录片
+- `npm run verify`        主门禁（typecheck + lint + 单测 + golden）
+- `npm run shadow:report` 生产影子流量差异率报告，阈值 0.5%
+
+## 各包入口
+- gateway:      packages/gateway/src/index.ts
+- settlement:   packages/settlement/src/app.ts
+（改动涉及多包时，先写 plan 到 `.plan/` 下的 md，再动手）</code></pre>
+
+  <div class="callout">
+    <h4>写完 <code>CLAUDE.md</code> 之后请记得这句话</h4>
+    <p><code>CLAUDE.md</code>、<code>memory.md</code>、<code>constitution.md</code> 都<b>不保证任何事情</b>。写 Rules 不要写感受——用具体可执行的指令，而不是抽象的「必须」。真正起作用的是<b>结构化的 CLAUDE.md + 分层加载 + 机械化的 hook</b> 三者叠加，缺一个就会漏。</p>
+  </div>
+</section>
+
+<section id="s05">
+  <p class="kicker">Section 05</p>
+  <h2><span class="num">05</span>阶段一 · 代码考古：先把 730k 压下去</h2>
+  <p>这是<b>投产比最高、也最容易被跳过</b>的一步。理由很直接：后面每一个 AI 探索任务，都要为仓库里的噪音付 Context 税。把 30% 的死代码删掉，等价于让后面所有对话免费获得 30% 的额外上下文预算。</p>
+
+  <figure id="fig05">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 348" role="img" aria-label="代码资产清册的四源交叉取证流水线">
+        <rect x="0" y="0" width="960" height="348" fill="#FFFFFF"/>
+        <text x="24" y="26" font-size="14" font-weight="600" fill="#16181D">图 5 · 资产清册流水线：四条独立证据源交叉，单一来源不得作为删除依据</text>
+
+        <text x="40" y="56" font-size="12" font-weight="620" fill="#333941">证据源（四条独立）</text>
+        <g style="background-color:#EAF2FA">
+        <rect x="40" y="66" width="230" height="46" rx="7" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.3"/>
+        <text x="54" y="85" font-size="12" font-weight="620" fill="#1F5288">① 静态调用图</text>
+        <text x="54" y="102" font-size="11" fill="#3D434B">import / 方法引用的反向索引</text>
+        </g>
+        <g style="background-color:#EAF2FA">
+        <rect x="40" y="122" width="230" height="46" rx="7" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.3"/>
+        <text x="54" y="141" font-size="12" font-weight="620" fill="#1F5288">② 运行时插桩</text>
+        <text x="54" y="158" font-size="11" fill="#3D434B">生产 JVM 实跑过的方法集</text>
+        </g>
+        <g style="background-color:#EAF2FA">
+        <rect x="40" y="178" width="230" height="46" rx="7" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.3"/>
+        <text x="54" y="197" font-size="12" font-weight="620" fill="#1F5288">③ 网关 / Nginx 日志</text>
+        <text x="54" y="214" font-size="11" fill="#3D434B">90 天真实到过的端点</text>
+        </g>
+        <g style="background-color:#EAF2FA">
+        <rect x="40" y="234" width="230" height="46" rx="7" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.3"/>
+        <text x="54" y="253" font-size="12" font-weight="620" fill="#1F5288">④ Git 与 DB 审计</text>
+        <text x="54" y="270" font-size="11" fill="#3D434B">改动频率、作者数、写库入口</text>
+        </g>
+
+        <g fill="#2F6FB0">
+        <polygon points="0,-5 9,0 0,5" transform="translate(272,89)"/><line x1="272" y1="89" x2="306" y2="140" stroke="#2F6FB0" stroke-width="1.2"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(272,145)"/><line x1="272" y1="145" x2="306" y2="158" stroke="#2F6FB0" stroke-width="1.2"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(272,201)"/><line x1="272" y1="201" x2="306" y2="176" stroke="#2F6FB0" stroke-width="1.2"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(272,257)"/><line x1="272" y1="257" x2="306" y2="194" stroke="#2F6FB0" stroke-width="1.2"/>
+        </g>
+
+        <g style="background-color:#FBEFE0">
+        <rect x="310" y="66" width="250" height="226" rx="8" fill="#FBEFE0" stroke="#B45309" stroke-width="1.5"/>
+        <text x="326" y="92" font-size="13" font-weight="660" fill="#8F3F06">交叉取证</text>
+        <text x="326" y="114" font-size="11.5" fill="#3D434B">任一来源单独都不能作为</text>
+        <text x="326" y="130" font-size="11.5" fill="#3D434B">删除依据 —— 反射、动态代理、</text>
+        <text x="326" y="146" font-size="11.5" fill="#3D434B">字符串查表会让静态分析漏报；</text>
+        <text x="326" y="162" font-size="11.5" fill="#3D434B">季度报表、年末结算会让运行时</text>
+        <text x="326" y="178" font-size="11.5" fill="#3D434B">样本短期看起来像死代码。</text>
+        <text x="326" y="204" font-size="11.5" font-weight="620" fill="#8F3F06">三方以上同时判定「未存活」</text>
+        <text x="326" y="220" font-size="11.5" fill="#3D434B">才进入候选删除名单，且仍需</text>
+        <text x="326" y="236" font-size="11.5" fill="#3D434B">「加日志观察两周」这道工序。</text>
+        <text x="326" y="258" font-size="11.5" fill="#3D434B">窗口须覆盖完整业务周期</text>
+        <text x="326" y="274" font-size="11.5" fill="#3D434B">（月结 / 季报 / 年结）</text>
+        </g>
+
+        <g fill="#B45309">
+        <line x1="560" y1="122" x2="596" y2="122" stroke="#B45309" stroke-width="1.2"/><polygon points="0,-5 9,0 0,5" transform="translate(596,122)"/>
+        <line x1="560" y1="186" x2="596" y2="186" stroke="#B45309" stroke-width="1.2"/><polygon points="0,-5 9,0 0,5" transform="translate(596,186)"/>
+        <line x1="560" y1="250" x2="596" y2="250" stroke="#B45309" stroke-width="1.2"/><polygon points="0,-5 9,0 0,5" transform="translate(596,250)"/>
+        </g>
+
+        <g style="background-color:#E9F3E9">
+        <rect x="604" y="88" width="332" height="68" rx="7" fill="#E9F3E9" stroke="#2E7D32" stroke-width="1.3"/>
+        <text x="620" y="110" font-size="12.5" font-weight="620" fill="#1B5820">A. 可删除名单</text>
+        <text x="620" y="128" font-size="11" fill="#3D434B">连同只为了让它存在的测试一起删</text>
+        <text x="620" y="144" font-size="11" fill="#3D434B">单笔隔离 commit，随时可 revert</text>
+        </g>
+        <g style="background-color:#F2ECFA">
+        <rect x="604" y="152" width="332" height="68" rx="7" fill="#F2ECFA" stroke="#6D3FB5" stroke-width="1.3"/>
+        <text x="620" y="174" font-size="12.5" font-weight="620" fill="#5A3099">B. 观察名单</text>
+        <text x="620" y="192" font-size="11" fill="#3D434B">季节性 / 低频业务的路径</text>
+        <text x="620" y="208" font-size="11" fill="#3D434B">加埋点，延长观测窗口到一整个周期</text>
+        </g>
+        <g style="background-color:#FBEFE0">
+        <rect x="604" y="216" width="332" height="64" rx="7" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <text x="620" y="238" font-size="12.5" font-weight="620" fill="#8F3F06">C. 高风险保留名单</text>
+        <text x="620" y="256" font-size="11" fill="#3D434B">罕见失败分支、合规路径、离线兜底作业</text>
+        <text x="620" y="270" font-size="11" fill="#3D434B">默认保留，原样迁移，禁止「顺手优化」</text>
+        </g>
+
+        <text x="40" y="320" font-size="11.5" fill="#3D434B">产出物是一份可查询的清单，而不是一篇报告 —— 后面每一步都要按条目 ID 回查</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5</b>　四个证据源独立采集再交叉。关键纪律：<b>窗口必须覆盖一个完整业务周期</b>（月结、季报、年结），否则会把季节性代码误杀；删除必须<b>单笔隔离 commit</b>，因为「误删的可恢复性」正是敢于删除的前提。</figcaption>
+  </figure>
+
+  <h3>步骤 1 · 静态调用图：谁从来没被人引用过</h3>
+  <p>不需要买商业工具。用正则做粗粒度近似就够了——因为它的作用只是<b>筛出候选</b>，定罪权交给运行时证据。</p>
+  <pre><code>#!/usr/bin/env python3
+"""fanin_scan.py —— 粗粒度静态存活性筛查（候选生成，不定罪）
+用法: python3 fanin_scan.py /path/to/repo &gt; /tmp/fanin.tsv"""
+import re, sys, os, collections
+
+ROOT = sys.argv[1]
+CLASS_RE   = re.compile(r'(?:class|interface|enum)\s+([A-Z][A-Za-z0-9_]*)')
+IMPORT_RE  = re.compile(r'import\s+(?:static\s+)?([\w.]+)\.([A-Z][A-Za-z0-9_]*)\s*;')
+USAGE_RE   = re.compile(r'\b([A-Z][A-Za-z0-9_]{2,})\b')
+
+decls, files = {}, {}
+for dp, _, fns in os.walk(ROOT):
+    if '/target/' in dp or '/generated/' in dp: continue
+    for fn in fns:
+        if not fn.endswith('.java'): continue
+        p = os.path.join(dp, fn)
+        src = open(p, encoding='utf-8', errors='ignore').read()
+        files[p] = src
+        for name in CLASS_RE.findall(src):
+            decls.setdefault(name, set()).add(p)
+
+imp_cnt = collections.Counter()
+body_cnt = collections.Counter()
+for src in files.values():
+    for full, cls in IMPORT_RE.findall(src):
+        imp_cnt[cls] += 1
+    body = IMPORT_RE.sub('', src)
+    for name in USAGE_RE.findall(body):
+        body_cnt[name] += 1
+
+print("class\timports\tbody_uses\tsource_file")
+for name, paths in sorted(decls.items()):
+    i, b = imp_cnt.get(name, 0), body_cnt.get(name, 0)
+    if i == 0 and b &lt;= 1:                      # 只出现在自己的声明里
+        print(f"{name}\t{i}\t{b}\t{','.join(sorted(paths))}")</code></pre>
+  <pre><code># 出来的数字应该让你警觉：通常几百到一两千个类属于这一类
+python3 fanin_scan.py . &gt; /tmp/fanin.tsv
+wc -l /tmp/fanin.tsv
+awk -F'\t' '{print $4}' /tmp/fanin.tsv | tr ',' '\n' | sed 's#/[^/]*$##' | sort | uniq -c | sort -nr | head -20
+# ↑ 按包聚合：死代码往往高度集中在几个「当年做完没上线」的模块里</code></pre>
+
+  <h3>步骤 2 · 运行时插桩：生产到底跑了哪些方法</h3>
+  <p>静态分析会被反射、动态代理、字符串查表骗过去。<b>唯一诚实的答案来自运行的 JVM</b>。两个成本递增的做法：</p>
+  <div class="stepbox">
+    <div class="sno">做法 A（低门槛，先做这个）</div>
+    <h4>Spring 端点清单 × 网关日志交集</h4>
+    <pre><code>// 在旧系统里临时加一个 actuator endpoint，dump 所有注册路由
+@ReadOperation
+public Map&lt;String,String&gt; routes(RequestMappingHandlerMapping m) {
+    return m.getHandlerMethods().entrySet().stream()
+        .collect(toMap(e -&gt; e.getKey().toString(),
+                       e -&gt; e.getValue().getBeanType().getName() + "#"
+                            + e.getValue().getMethod().getName()));
+}</code></pre>
+    <p>拿这份清单和 90 天网关日志里的 URL 形态做交集，立刻得到「<b>注册了但生产一年没被调用过的接口</b>」——这类接口在你系统里通常有几百个，是最干净的第一批候选。</p>
+  </div>
+  <div class="stepbox">
+    <div class="sno">做法 B（更彻底）</div>
+    <h4>JVM 级的方法调用采样</h4>
+    <p>让 MyBatis/JPA 之外的基础设施记录「本次运行加载并执行过的类」—— 记录决策可以落在字节码解释器、AppCDS 或 JIT 侧。<b>关键是给每次 JVM 运行打上环境标签</b>（prod / uat / test），否则会出现「代码和单测互相证明对方活着」的死循环。观测窗口建议覆盖<b>一整个业务周期</b>，先把显而易见的清掉，剩下的随着窗口延长继续收敛。</p>
+  </div>
+
+  <h3>步骤 3 · Git 考古：给每个文件算 bus factor</h3>
+  <pre><code># 每个文件的：最后修改时间 / 改动次数 / 独立作者数
+git log --since="3 years ago" --name-only --format="COMMIT|%at|%ae" \
+  | awk -F'|' '/^COMMIT\|/{ t=$2; a=$3; next } NF{ print $0"\t"t"\t"a }' \
+  | sort | awk -F'\t' '{ c[$1]++; who[$1"|"$3]=1; if($2&gt;last[$1]) last[$1]=$2 }
+    END{ for(f in c){ n=split("",x); # 统计 who[...]
+        for(k in who){ split(k,p,"|"); if(p[1]==f) authors[f]++ }
+        printf "%s\t%d\t%d\t%d\n", f, c[f], authors[f], last[f] } }' \
+  | sort -k4 -n &gt; /tmp/git-heat.tsv
+
+# 「两年没人动 + 只有 1 个作者 + 静态零引用」→ 高置信候选
+join -t$'\t' &lt;(sort /tmp/fanin-code.tsv) &lt;(sort /tmp/git-heat.tsv) | awk -F'\t' '$5==1'</code></pre>
+
+  <h3>步骤 4 · 删除纪律</h3>
+  <ol class="tight">
+    <li><b>先加日志再删。</b>对候选路径打点，观察两周零命中后才允许删除</li>
+    <li><b>连带删除它的测试。</b>一个只用来验证已删行为的测试，以及只为了让这个测试通过而存在的代码——它们是一对共生的僵尸，必须成对清除，否则 CI 会变成维护死代码的成本</li>
+    <li><b>单笔隔离 commit。</b>一次删一个自包含的包，跑完构建再删下一批。误删的代码在 Git 历史里，<code>git revert</code> 一次就回来</li>
+    <li><b>分批递增。</b>从「自包含包 → 明确下线功能的开关 → 已知废弃的旧接口」逐步升级到更大的块</li>
+  </ol>
+  <div class="callout g">
+    <h4>这一步的收益率</h4>
+    <p>删掉 20%~30% 代码的收益不止于「少几行」：<b>新工程师的心智负担下降、PR 更小更易评审、CI 更快、AI 探索时能被更少的噪音污染</b>。前面提到的行业实证里，清理后变更发行频次有显著改善，还解锁了此前被依赖卡住而无法升级的老库。</p>
+  </div>
+</section>
+
+<section id="s06">
+  <p class="kicker">Section 06</p>
+  <h2><span class="num">06</span>阶段二 · 抽取规格：让旧系统说出它真正在做什么</h2>
+  <p>这一步是整个工程的<b>价值枢纽</b>。请注意它不是「让 AI 读完代码生成一份设计文档」——那样做出来的文档漂亮但没法验收。<b>规格 = 可被追溯的行为断言 + 人工签署</b>。</p>
+
+  <h3>三层材料，缺一层就不能签字</h3>
+  <table>
+    <thead><tr><th style="width:16%">层</th><th style="width:32%">从哪来</th><th style="width:26%">解决什么问题</th><th style="width:26%">典型规模（每个切片）</th></tr></thead>
+    <tbody>
+      <tr><td><b>输入/输出样本</b></td><td>生产影子请求、DB 快照、消息队列里的历史消息</td><td>把「散落在几十处的参数与分支组合」变成真实 fixtures</td><td>100~500 组</td></tr>
+      <tr><td><b> golden master</b></td><td>旧系统对样本的实际输出（投影化后钉死）</td><td>证明新旧等价的唯一可执行判据</td><td>与样本同数量</td></tr>
+      <tr><td><b> behavior.md</b></td><td>AI 读该切片范围内的旧代码 + 上面的样本后写，人签字</td><td>把隐性规则写成规范陈述，供人与 AI 共同引用</td><td>15~40 页</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout r">
+    <h4>严禁的做法：让 AI 从它自己生成的代码反推 spec</h4>
+    <p>那会形成<b>自洽但错误的闭环</b>——模型把自己写出来的行为当作「原本就是这样」。spec 必须始终双向溯源：<b>向上追溯到业务方确认，向下追溯到旧系统的代码位置或生产样本。</b>每条规则后必须附这两条溯源字段，缺任一条就不允许进 <code>spec/</code>。</p>
+  </div>
+
+  <h3>步骤 1 · 造接缝，把真样本抓出来</h3>
+  <p>在要迁移的切片入口插一层薄薄的拦截，把每次调用的入参与返回值落盘（脱敏后）。这就是 Feathers 说的 seam——<b>不改业务逻辑，只为观测</b>。</p>
+  <pre><code>// 旧系统侧：一个 request-scoped 的采集切面，两周即可下线
+@Aspect @Component @Profile("capture")
+public class CaptureAspect {
+    @Around("within(com.corp.settlement..*) &amp;&amp; @annotation(Capture)")
+    public Object capture(ProceedingJoinPoint pjp) throws Throwable {
+        long t0 = System.nanoTime();
+        Object out; Throwable err = null;
+        try { out = pjp.proceed(); }
+        catch (Throwable e) { err = e; throw e; }
+        finally {
+            Captured c = new Captured(
+                MDC.get("traceId"),
+                pjp.getSignature().toShortString(),
+                scrub(pjp.getArgs()),          // 必须脱敏：手机号/身份证/金额
+                scrub(out), err,
+                System.nanoTime() - t0);
+            captureSink.write(c);              // 落 Parquet / JSONL，勿写生产库
+        }
+        return out;
+    }
+}</code></pre>
+  <ul class="risk">
+    <li>采集必须<b>异步且不阻塞</b>主流程；Sink 失败只能记录不能抛异常</li>
+    <li><b>脱敏在采集侧做</b>，不要让原始 PII 落到中间文件里</li>
+    <li>样本要<b>按段落分层采样</b>（新客/老客/异常流/边界值），而不是简单地取前 1000 条——那里全是同一形状的正常流</li>
+  </ul>
+
+  <h3>步骤 2 · 生成 golden master：金的是「投影」而不是「原文」</h3>
+  <p>直接快照返回值在两种场景下会失效：输出本身不确定（时间戳、随机 ID、浮点结合率），以及 LLM 类组件的温度导致的抖动。正确的做法是<b>钉住一个确定性投影函数的结果</b>。常见投影，按稳定度大致排序：</p>
+  <table>
+    <thead><tr><th style="width:22%">投影</th><th style="width:40%">例子</th><th style="width:38%">它能抓到什么回归</th></tr></thead>
+    <tbody>
+      <tr><td>结构（shape）</td><td>JSON 的 key 集合与各值类型</td><td>新增/删除字段、类型漂移——最容易在迁移中静默发生</td></tr>
+      <tr><td>分类（label）</td><td>从固定集合中选出的那个标签</td><td>业务判定规则的回归，正是最常见的迁移破坏</td></tr>
+      <tr><td>副作用调用序列</td><td>调用了哪些外部模块、参数 key 列表，按顺序</td><td>某一步悄悄不再调用某个系统</td></tr>
+      <tr><td>实体召回</td><td>输入里的哪些标识符出现在输出里</td><td>某一行代码悄悄不再携带必需的事实</td></tr>
+      <tr><td>数值（带容差）</td><td>金额、税率，比到两位小数</td><td>舍入规则的变化——财务类系统的头号事故来源</td></tr>
+      <tr><td>粗粒度桶</td><td>输出长度区间、语言、是否拒绝</td><td>单看很弱，聚合起来有用</td></tr>
+    </tbody>
+  </table>
+  <pre><code>// golden/api/settlement.calc.jsonl —— 每行一组输入，首行是 pin 下来的配置
+{"_config":{"captured":"2026-08-11","samples":5,"old_version":"v10.4.2","note":"临时="-journalable"}}
+{"case_id":"inv-0031","shape":["amount:currency:due_date:order_id"],
+ "label":"overdue","entities":["4417","CNY"],
+ "amount":128.40,"side_effects":["notifyFinance"]}
+{"case_id":"inv-0032","shape":["amount:currency:due_date:order_id"],
+ "label":"partial_overdue","entities":["4418","CNY"],
+ "amount":0.00,"side_effects":[]}</code></pre>
+  <div class="callout">
+    <h4>稳定性的判据要「测」出来，不能凭直觉选</h4>
+    <p>做法：抽 150~300 组真实输入，<b>固定模型 id / 参数 / SDK 版本，每组跑 3~5 遍</b>；对每个候选投影计算跨运行的稳定性，只在<b>全部样本都一致</b>的投影写进 master。<b>今天就跑飞的字段从来就不是保证</b>，把它冻起来只会制造一个 flaky 测试。把不一致的那些样本也一并记下来——那些是真正在抖的输入，知道它们是哪些本身就是个发现。</p>
+  </div>
+
+  <h3>步骤 3 · 让 AI 写 behavior.md，人来签</h3>
+  <p>这一步的 Prompt 要给「bound context」而不是「请你总结一下」。关键：<b>在 Prompt 里指定可读哪些文件</b>，这样探测器就不会被庞大的仓库污染。</p>
+  <pre><code>&gt; 你在为一个使用了 10 年的遗留系统做行为规格提取。严格遵守：
+&gt;
+&gt; 1. 只能读我列出的这些文件：`legacy/module-a/src/main/java/com/corp/settlement/` 下
+&gt;    的 Calc*.java、Rule*.java、DiscountPolicy.java。**不要**读 com.corp.settlement.batch/ 之外的目录，
+&gt;    不要读任何 *Test.java（那些是错的，别被它们误导）。
+&gt; 2. 同时读样本：`golden/api/settlement.calc.jsonl`（前 60 行即可），它是真实生产输入的投影。
+&gt; 3. 产出 spec/settlement/behavior.md，每条规则必须写成三段：
+&gt;      规则 / 判定：  〈一句话，必须是可被测试用例反驳的陈述〉
+&gt;      溯源：         〈代码位置，或某个 case_id 的样本〉——两者都没有就整条删掉
+&gt;      状态：         confirmed-by-business |疑似bug-待确认 |无法确认
+&gt; 4. 遇到看起来像 bug 的行为：**照实记录**并标记「疑似bug-待确认」，
+&gt;    不许替我把 bug 修好。我们要的是「它现在做什么」，不是「它应该做什么」。
+&gt; 5. 用到 URL/IQ/报表等外部依赖时列清单，不要深入展开。
+&gt; 6. 每产出 10 条规则暂停，等我确认方向后继续。</code></pre>
+  <pre><code># spec/settlement/behavior.md （示范片段）
+
+## R-017 部分还款的逾期标签判定
+**判定**：当还款额 &gt; 0 但 &lt; 应还额，且距到期日 &gt; 3 天时，标签取 `partial_overdue`，
+         并且**不**触发催缴通知。
+**溯源**：`DiscountPolicy.java:184-192`；样本 `inv-0032`（2026-08-11 采集）
+**状态**：疑似bug-待确认 —— 业务方表示「应当触发催缴」，此行为疑似 2019 年为某大客户临时放宽
+
+## R-018 外币结算的舍入方向
+**判定**：外币金额一律按 `ROUND_HALF_UP` 保留两位，本位币按 `ROUND_HALF_EVEN`。
+**溯源**：`CalcSettlement.java:311`；样本 `fx-0007`、`fx-0041`
+**状态**：confirmed-by-business</code></pre>
+
+  <div class="callout b">
+    <h4>双模型交叉提取，用差异找「真正难以确定的地方」</h4>
+    <p>用两个不同系列的模型各自独立提取同一切片，然后 diff。<b>交集部分是高置信的</b>；<b>差异部分恰恰是值得人工介入的地方</b>——通常落在反射调用、隐式约定、被注释掉但仍有副作用的代码这些位置。这比让一个模型反复检查自己便宜且有效。</p>
+  </div>
+
+  <h3>步骤 4 · 签字的意义</h3>
+  <p>behavior.md 必须由<b>既懂业务又看得懂这份代码的人</b>逐条签署，包括那些「疑似 bug」。<b>签字的那一刻你在回答一个不可逆的问题：我们要把这个 bug 一起搬过去，还是趁此机会修正它？</b>无论哪种都要写下来——这决定了后面双跑时哪些差异是「预期的」。</p>
+  <p>有一个现场经验值得记住：一个跑了十年、几乎没有文档、只有过时用户故事的系统，在重建之后拥有数十万行 markdown——其中约八成<b>是模型改代码的副产物</b>而不是额外劳动，其余约一成半由从旧代码抽出来的规格种子长出来。关键在于<b>让规格成为流水线的副产物，而不是额外任务</b>。</p>
+</section>
+
+<section id="s07">
+  <p class="kicker">Section 07</p>
+  <h2><span class="num">07</span>阶段三 · 切片定序：把 15 个模块打散成 15~25 个行为接缝</h2>
+  <p><b>这一步最常见的错误是：直接拿 Maven 模块当切片。</b>15 个模块是按技术分层和<b>历史演进</b>切出来的，不是按业务接缝切的——你会发现「订单」这个业务概念横跨 6 个模块，而「报表」模块里躺着三种完全不相干的东西。切片必须按<b>能被一条路由规则切出来的行为边界</b>来定义。</p>
+
+  <figure id="fig06">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 500" role="img" aria-label="候选接缝的四道准入闸门决策树">
+        <rect x="0" y="0" width="960" height="500" fill="#FFFFFF"/>
+        <text x="24" y="26" font-size="14" font-weight="600" fill="#16181D">图 6 · 接缝准入决策树：四道闸门任一不过，先做补救动作而不是硬迁</text>
+
+        <!-- D1 -->
+        <text x="24" y="62" font-size="11.5" font-weight="620" fill="#333941">闸门一</text>
+        <g style="background-color:#FBEFE0">
+        <rect x="24" y="72" width="390" height="52" rx="7" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <text x="40" y="94" font-size="12.5" font-weight="620" fill="#8F3F06">这张表/这个域的数据所有权能落到单一团队吗？</text>
+        <text x="40" y="112" font-size="11" fill="#3D434B">存在多个团队都能写同一张表 → 先做数据治理</text>
+        </g>
+        <g fill="#B3261E"><line x1="414" y1="124" x2="414" y2="140" stroke="#B3261E" stroke-width="1.2"/><polygon points="0,-5 9,0 0,5" transform="translate(414,140)"/></g>
+        <rect x="440" y="72" width="250" height="52" rx="7" fill="#FBE9E7" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="456" y="94" font-size="11.5" font-weight="620" fill="#B3261E">否 → 先立 data owner</text>
+        <text x="456" y="112" font-size="11" fill="#3D434B">登记写入方，收敛为 API</text>
+
+        <!-- arrow down -->
+        <line x1="219" y1="124" x2="219" y2="138" stroke="#2E7D32" stroke-width="1.2"/>
+        <g fill="#2E7D32"><polygon points="0,-5 9,0 0,5" transform="translate(219,138)"/></g>
+        <text x="231" y="136" font-size="11.5" font-weight="620" fill="#1B5820">是</text>
+
+        <!-- D2 -->
+        <text x="24" y="164" font-size="11.5" font-weight="620" fill="#333941">闸门二</text>
+        <g style="background-color:#FBEFE0">
+        <rect x="24" y="174" width="390" height="52" rx="7" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <text x="40" y="196" font-size="12.5" font-weight="620" fill="#8F3F06">所有下游调用方能枚举出来吗？</text>
+        <text x="40" y="214" font-size="11" fill="#3D434B">含定时任务、MQ 消费者、报表、直连 DB 的脚本</text>
+        </g>
+        <rect x="440" y="174" width="250" height="52" rx="7" fill="#FBE9E7" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="456" y="196" font-size="11.5" font-weight="620" fill="#B3261E">否 → 先做调用方登记</text>
+        <text x="456" y="214" font-size="11" fill="#3D434B">traceID + 来源标识全量埋点两周</text>
+
+        <line x1="219" y1="226" x2="219" y2="240" stroke="#2E7D32" stroke-width="1.2"/>
+        <g fill="#2E7D32"><polygon points="0,-5 9,0 0,5" transform="translate(219,240)"/></g>
+
+        <!-- D3 -->
+        <text x="24" y="266" font-size="11.5" font-weight="620" fill="#333941">闸门三</text>
+        <g style="background-color:#FBEFE0">
+        <rect x="24" y="276" width="390" height="52" rx="7" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <text x="40" y="298" font-size="12.5" font-weight="620" fill="#8F3F06">能构造出可执行的 golden master 吗？</text>
+        <text x="40" y="316" font-size="11" fill="#3D434B">没有它，就无法证明等价 —— 只能「看着像」</text>
+        </g>
+        <rect x="440" y="276" width="250" height="52" rx="7" fill="#FBE9E7" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="456" y="298" font-size="11.5" font-weight="620" fill="#B3261E">否 → 先补采集</text>
+        <text x="456" y="316" font-size="11" fill="#3D434B">按第 06 章做样本与投影</text>
+
+        <line x1="219" y1="328" x2="219" y2="342" stroke="#2E7D32" stroke-width="1.2"/>
+        <g fill="#2E7D32"><polygon points="0,-5 9,0 0,5" transform="translate(219,342)"/></g>
+
+        <!-- D4 -->
+        <text x="24" y="368" font-size="11.5" font-weight="620" fill="#333941">闸门四</text>
+        <g style="background-color:#FBEFE0">
+        <rect x="24" y="378" width="390" height="52" rx="7" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <text x="40" y="400" font-size="12.5" font-weight="620" fill="#8F3F06">能在网关层按百分比切流并一键回退吗？</text>
+        <text x="40" y="418" font-size="11" fill="#3D434B">不能灰度 = 只能big-bang切换，风险不可接受</text>
+        </g>
+        <rect x="440" y="378" width="250" height="52" rx="7" fill="#FBE9E7" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="456" y="400" font-size="11.5" font-weight="620" fill="#B3261E">否 → 先加路由层</text>
+        <text x="456" y="418" font-size="11" fill="#3D434B">防腐层（见阶段零 / 09 章）</text>
+
+        <line x1="219" y1="430" x2="219" y2="444" stroke="#2E7D32" stroke-width="1.2"/>
+        <g fill="#2E7D32"><polygon points="0,-5 9,0 0,5" transform="translate(219,444)"/></g>
+
+        <g style="background-color:#E9F3E9">
+        <rect x="24" y="450" width="666" height="40" rx="7" fill="#E9F3E9" stroke="#2E7D32" stroke-width="1.4"/>
+        <text x="40" y="475" font-size="12.5" font-weight="620" fill="#1B5820">进入候选池 → 按优先级分数排序 → 取前三个作为首批</text>
+        </g>
+
+        <rect x="720" y="72" width="216" height="418" rx="8" fill="#FBFAF7" stroke="#E3E0D8"/>
+        <text x="738" y="98" font-size="12.5" font-weight="660" fill="#333941">首批切片的挑选原则</text>
+        <text x="738" y="124" font-size="11.5" fill="#3D434B">① 高业务价值、含痛点的</text>
+        <text x="738" y="142" font-size="11.5" fill="#3D434B">② 影响面可控（blast radius）</text>
+        <text x="738" y="160" font-size="11.5" fill="#3D434B">③ 数据所有权清晰</text>
+        <text x="738" y="192" font-size="11.5" font-weight="620" fill="#B3261E">不该选的头三个：</text>
+        <text x="738" y="210" font-size="11.5" fill="#3D434B">✗ 交易引擎的核心</text>
+        <text x="738" y="228" font-size="11.5" fill="#3D434B">✗ 归属不明的模块</text>
+        <text x="738" y="246" font-size="11.5" fill="#3D434B">✗ 别人正在重构的地方</text>
+        <text x="738" y="278" font-size="11.5" font-weight="620" fill="#1B5820">常见的好第一个：</text>
+        <text x="738" y="296" font-size="11.5" fill="#3D434B">✓ 用户/权限/通知</text>
+        <text x="738" y="314" font-size="11.5" fill="#3D434B">✓ 查询类的读接口</text>
+        <text x="738" y="332" font-size="11.5" fill="#3D434B">✓ 你自己最熟的那一片</text>
+        <text x="738" y="364" font-size="11.5" fill="#3D434B">第一个切片的目标不是</text>
+        <text x="738" y="382" font-size="11.5" fill="#3D434B">「做出多大成果」，而是</text>
+        <text x="738" y="400" font-size="11.5" fill="#3D434B">「把整套机器跑通一遍」。</text>
+        <text x="738" y="430" font-size="11.5" fill="#3D434B">它的工期会被拉长，正常。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6</b>　四道闸门是「能不能被绞杀」的工程判据，不是业务排序。<b>右侧任一红色补救动作本身就是有价值的工作</b>——调用方登记、数据 owner、路由层这些即便不做迁移也该做。</figcaption>
+  </figure>
+
+  <h3>用静态依赖矩阵找回真实的业务边界</h3>
+  <p>把「module → module」的调用关系画成矩阵，再和<b>数据库表的所有权</b>叠起来看，通常几分钟就能看出哪几处才是真正的接缝。</p>
+  <pre><code># 1. 从 Maven 模块”到“模块”的调用强度矩阵（正则近似胜过没有）
+python3 - &lt;&lt;'PY'
+import re, os, collections, itertools
+ROOT='.'; mods=['module-a','module-b','module-c']        # 换成你的 15 个模块名
+imp = collections.Counter()
+for dp,_,fns in os.walk(ROOT):
+    if '/target/' in dp: continue
+    for fn in fns:
+        if not fn.endswith('.java'): continue
+        src=open(os.path.join(dp,fn),encoding='utf-8',errors='ignore').read()
+        src_mod=next((m for m in mods if f'/{m}/' in dp), None)
+        if not src_mod: continue
+        for pkg,cls in re.findall(r'import\s+([\w.]+)\.([A-Z]\w+)\s*;', src):
+            tgt_mod=next((m for m in mods if f'corp.{m.replace("-",".")}' in pkg), None)
+            if tgt_mod and tgt_mod!=src_mod: imp[(src_mod,tgt_mod)]+=1
+print('\t'+'\t'.join(mods))
+for a in mods:
+    print(a+'\t'+'\t'.join(str(imp.get((a,b),0)) for b in mods))
+PY
+# 2. 把表的所有权叠加上去
+SELECT table_schema, table_name, COUNT(*) AS write_sites
+  FROM information_schema.tables t JOIN audit_log_table_access a USING(table_name)
+ WHERE a.op IN ('INSERT','UPDATE','DELETE') GROUP BY 1,2 ORDER BY 3 DESC;</code></pre>
+
+  <div class="callout t">
+    <h4>打分公式（推荐用这一个，简单且不容易被操纵）</h4>
+    <p><code>优先级分数 = 业务价值 × 团队熟悉度 ÷ (依赖出度 + 1)</code>。分母用依赖出度是因为：<b>一个被调用很多的地方迁移后要通知很多人，一个调用很多别人的地方迁移时要先把别人都带上</b>。分子里的「团队熟悉度」常被忽略，但它是决定前几片能不能打胜仗的关键——第一批必须赢。</p>
+  </div>
+
+  <h3>排期：把 24 个月切成能看见的刻度</h3>
+  <table>
+    <thead><tr><th style="width:14%">窗口</th><th style="width:30%">在做什么</th><th style="width:28%">里程碑（可对外展示的那种）</th><th style="width:28%">此刻可以停下来的安全点</th></tr></thead>
+    <tbody>
+      <tr><td>第 1~3 月</td><td>阶段零 + 阶段一：Harness、清创、调用方摸底</td><td>「连续 90 天一个请求都没来过的数百个接口」清单 + 首个删除批次上线</td><td>随时可停：删掉的代码本来就没用，平台改良不吃亏</td></tr>
+      <tr><td>第 4~6 月</td><td>阶段二 + 首个切片的双跑</td><td><b>第一个切片完成影子双跑，差异率降至阈值以下</b>——这是整个项目的第一个真凭据</td><td>可以停在「有 spec 未 IBAN迁移」，此时已收获一份行为规格</td></tr>
+      <tr><td>第 7~12 月</td><td>切片 2~5</td><td>每 4~8 周一个 demo；小团队开始能独立跑完一轮</td><td>可停：已切的片都在生产上跑着</td></tr>
+      <tr><td>第 13~20 月</td><td>核心域：交易/结算/主数据</td><td>最值钱也最难的几片完成</td><td><b>不建议在此处停</b>：半空的核心域是最难维护的状态</td></tr>
+      <tr><td>第 21~24 月</td><td>数据平台、批处理、报表，然后下线</td><td>旧系统变 Chernobyl 实例，最后一天物理删除</td><td>可停：只剩尾巴，成本极低</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout r">
+    <h4>排期上最容易被忽略的一条命令</h4>
+    <p><b>永远不要先迁移 schema 再迁移代码。</b>在一个还活着的生产系统依赖它确切形状的时候，你没法轻松地迁移数据库。正确顺序是：<b>先动代码 → 用仓储层把 schema 隔离起来 → 最后才动存储</b>。把先后顺序搞反，是现代化项目最容易踩的坑之一。</p>
+  </div>
+</section>
+
+<section id="s08">
+  <p class="kicker">Section 08</p>
+  <h2><span class="num">08</span>阶段四 · 切片七步：这套循环要跑 15~25 遍</h2>
+  <p>这是手册的核心。每一个切片都走<b>同七步</b>，不多不少。固定流程的价值在于：它让工作<b>可批处理、可换人、可被 AI 半自动执行</b>，也让「进度到哪了」变成一个客观数字。</p>
+
+  <figure id="fig07">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 250" role="img" aria-label="切片七步管道与失败回退路径">
+        <rect x="0" y="0" width="960" height="250" fill="#FFFFFF"/>
+        <text x="24" y="26" font-size="14" font-weight="600" fill="#16181D">图 7 · 七步管道：注意回退箭头指向「规格」而不是「代码」</text>
+
+        <g style="background-color:#FBEFE0">
+        <rect x="40" y="60" width="110" height="66" rx="7" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <text x="50" y="80" font-size="11" font-weight="660" fill="#8F3F06">① 度量</text>
+        <text x="50" y="98" font-size="11" fill="#3D434B">调用面</text>
+        <text x="50" y="114" font-size="11" fill="#3D434B">依赖清单</text>
+        </g>
+        <g style="background-color:#FBEFE0">
+        <rect x="160" y="60" width="110" height="66" rx="7" fill="#FBEFE0" stroke="#B45309" stroke-width="1.3"/>
+        <text x="170" y="80" font-size="11" font-weight="660" fill="#8F3F06">② 造接缝</text>
+        <text x="170" y="98" font-size="11" fill="#3D434B">路由开关</text>
+        <text x="170" y="114" font-size="11" fill="#3D434B">默认全走旧</text>
+        </g>
+        <g style="background-color:#EAF2FA">
+        <rect x="280" y="60" width="110" height="66" rx="7" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.3"/>
+        <text x="290" y="80" font-size="11" font-weight="660" fill="#1F5288">③ 提规格</text>
+        <text x="290" y="98" font-size="11" fill="#3D434B">behavior.md</text>
+        <text x="290" y="114" font-size="11" fill="#3D434B">golden set</text>
+        </g>
+        <g style="background-color:#F2ECFA">
+        <rect x="400" y="60" width="110" height="66" rx="7" fill="#F2ECFA" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="410" y="80" font-size="11" font-weight="660" fill="#5A3099">④ 生成</text>
+        <text x="410" y="98" font-size="11" fill="#3D434B">AI 实现</text>
+        <text x="410" y="114" font-size="11" fill="#3D434B">Stop 门禁</text>
+        </g>
+        <g style="background-color:#E5F1EF">
+        <rect x="520" y="60" width="110" height="66" rx="7" fill="#E5F1EF" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="530" y="80" font-size="11" font-weight="660" fill="#0A5750">⑤ 双跑</text>
+        <text x="530" y="98" font-size="11" fill="#3D434B">影子流量</text>
+        <text x="530" y="114" font-size="11" fill="#3D434B">差异归因</text>
+        </g>
+        <g style="background-color:#E5F1EF">
+        <rect x="640" y="60" width="110" height="66" rx="7" fill="#E5F1EF" stroke="#0F766E" stroke-width="1.3"/>
+        <text x="650" y="80" font-size="11" font-weight="660" fill="#0A5750">⑥ 灰度</text>
+        <text x="650" y="98" font-size="11" fill="#3D434B">1→5→20→100</text>
+        <text x="650" y="114" font-size="11" fill="#3D434B">每档观察窗</text>
+        </g>
+        <g style="background-color:#E9F3E9">
+        <rect x="760" y="60" width="110" height="66" rx="7" fill="#E9F3E9" stroke="#2E7D32" stroke-width="1.3"/>
+        <text x="770" y="80" font-size="11" font-weight="660" fill="#1B5820">⑦ 摘除</text>
+        <text x="770" y="98" font-size="11" fill="#3D434B">物理删旧代码</text>
+        <text x="770" y="114" font-size="11" fill="#3D434B">更新生死簿</text>
+        </g>
+
+        <g fill="#333941">
+        <polygon points="0,-4.5 8,0 0,4.5" transform="translate(153,93)"/>
+        <polygon points="0,-4.5 8,0 0,4.5" transform="translate(273,93)"/>
+        <polygon points="0,-4.5 8,0 0,4.5" transform="translate(393,93)"/>
+        <polygon points="0,-4.5 8,0 0,4.5" transform="translate(513,93)"/>
+        <polygon points="0,-4.5 8,0 0,4.5" transform="translate(633,93)"/>
+        <polygon points="0,-4.5 8,0 0,4.5" transform="translate(753,93)"/>
+        </g>
+
+        <!-- rollback path -->
+        <path d="M575 126 L575 168 L335 168 L335 132" fill="none" stroke="#B3261E" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <g fill="#B3261E"><polygon points="0,-5 9,0 0,5" transform="translate(335,132)"/></g>
+        <text x="400" y="186" font-size="12" font-weight="620" fill="#B3261E">验证失败 → 退回规格，不退进代码</text>
+        <text x="400" y="204" font-size="11.5" fill="#3D434B">补一条 behavior.md 的 Rule、或修正某一组 golden 的投影，然后重跑④</text>
+
+        <text x="40" y="232" font-size="11.5" fill="#3D434B">①②一般只需要做一次（基础设施层）；③~⑦ 是每片的固定动作</text>
+      </svg>
+    </div>
+    <figcaption><b>图 7</b>　虚线回退是整个方法的灵魂：MISSION+ 的 ACDC 循环把「验证失败 → 回规格」列为要被训练出来的习惯，而不是权宜之计。回退到代码会让你在同一个错误上打转；回退到规格才会真正收敛。</figcaption>
+  </figure>
+
+  <figure id="fig08">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 320" role="img" aria-label="影子流量双跑与等价性比对架构">
+        <rect x="0" y="0" width="960" height="320" fill="#FFFFFF"/>
+        <text x="24" y="26" font-size="14" font-weight="600" fill="#16181D">图 8 · 步骤⑤ 的骨架：镜像真实流量，比对之后再谈切换</text>
+
+        <g style="background-color:#F4F2EC">
+        <rect x="30" y="132" width="110" height="52" rx="7" fill="#F4F2EC" stroke="#E3E0D8" stroke-width="1.3"/>
+        <text x="46" y="155" font-size="12.5" font-weight="620" fill="#333941">生产请求</text>
+        <text x="46" y="172" font-size="11" fill="#3D434B">真实流量</text>
+        </g>
+
+        <g style="background-color:#FBEFE0">
+        <rect x="180" y="104" width="130" height="108" rx="8" fill="#FBEFE0" stroke="#B45309" stroke-width="1.4"/>
+        <text x="196" y="130" font-size="12.5" font-weight="660" fill="#8F3F06">路由 / 防腐层</text>
+        <text x="196" y="150" font-size="11" fill="#3D434B">主路径照常返回</text>
+        <text x="196" y="168" font-size="11" fill="#3D434B">同时异步镜像</text>
+        <text x="196" y="186" font-size="11" fill="#3D434B">到新实现</text>
+        <text x="196" y="202" font-size="11" font-weight="620" fill="#8F3F06">按 % 抽样</text>
+        </g>
+
+        <g style="background-color:#EAF2FA">
+        <rect x="360" y="68" width="200" height="64" rx="8" fill="#EAF2FA" stroke="#2F6FB0" stroke-width="1.4"/>
+        <text x="376" y="92" font-size="12.5" font-weight="660" fill="#1F5288">旧实现（主）</text>
+        <text x="376" y="112" font-size="11" fill="#3D434B">结果返回给用户，这是唯一真相</text>
+        </g>
+
+        <g style="background-color:#F2ECFA">
+        <rect x="360" y="184" width="200" height="64" rx="8" fill="#F2ECFA" stroke="#6D3FB5" stroke-width="1.4"/>
+        <text x="376" y="208" font-size="12.5" font-weight="660" fill="#5A3099">新实现（影子）</text>
+        <text x="376" y="228" font-size="11" fill="#3D434B">结果不返回，只用于比对</text>
+        </g>
+
+        <g style="background-color:#FBE9E7">
+        <rect x="620" y="184" width="180" height="64" rx="8" fill="#FBE9E7" stroke="#B3261E" stroke-width="1.4"/>
+        <text x="636" y="208" font-size="12.5" font-weight="660" fill="#B3261E">副作用必须被抑制</text>
+        <text x="636" y="228" font-size="11" fill="#3D434B">禁写库 / 发信 / 扣款 / 推 MQ</text>
+        </g>
+
+        <g style="background-color:#E5F1EF">
+        <rect x="620" y="68" width="200" height="64" rx="8" fill="#E5F1EF" stroke="#0F766E" stroke-width="1.4"/>
+        <text x="636" y="92" font-size="12.5" font-weight="660" fill="#0A5750">比对与归因</text>
+        <text x="636" y="112" font-size="11" fill="#3D434B">按 traceID 对齐，先归一化再比</text>
+        </g>
+
+        <g style="background-color:#E9F3E9">
+        <rect x="840" y="68" width="96" height="64" rx="8" fill="#E9F3E9" stroke="#2E7D32" stroke-width="1.4"/>
+        <text x="856" y="92" font-size="12.5" font-weight="660" fill="#1B5820">差异率</text>
+        <text x="856" y="112" font-size="11" fill="#3D434B">目标 &lt; 0.5%</text>
+        </g>
+
+        <g fill="#333941">
+        <polygon points="0,-5 9,0 0,5" transform="translate(143,158)"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(313,120)"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(313,196)"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(563,196)"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(563,100)"/>
+        <polygon points="0,-5 9,0 0,5" transform="translate(823,100)"/>
+        </g>
+        <path d="M100 158 A 200 200 0 0 1 100 100" fill="none" stroke="#E3E0D8" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="86" y="82" font-size="11" fill="#3D434B">响应</text>
+
+        <text x="30" y="292" font-size="11.5" fill="#3D434B">① 影子侧出错不影响用户　② 影子路径的性能不必对齐生产　③ 关掉镜像开关即可瞬时停止，这是最便宜的回滚</text>
+      </svg>
+    </div>
+    <figcaption><b>图 8</b>　三条不变的性质：<b>零用户影响</b>（用户只看主路径结果）、<b>异步</b>（影子侧慢不拖累主请求）、<b>可逆</b>（关掉镜像开关就停）。红色框是最危险的实现细节——<b>影子侧绝不能产生真实副作用</b>，这一条必须被验证而不是被假定。</figcaption>
+  </figure>
+
+  <div class="stepbox">
+    <div class="sno">步骤 ①</div>
+    <h4>度量：先把这片的生产画像量出来</h4>
+    <p>在动任何代码之前，拿出这张切片的一张体检表，它同时也是最后验收时的对照组。</p>
+    <pre><code># 每片必须量化七个数，写在 spec/&lt;slice&gt;/README.md 顶部
+日请求量:      128,000        P99 延迟:    340 ms
+读 / 写比:     92 : 8         数据量:      表 14 张，主表 2.3 GB
+下游依赖:      5 个内部服务 + 1 个外部 API
+上游调用方:    11 个已登记，0 个未知
+变更频率:      近 6 个月 34 次提交，3 个作者</code></pre>
+    <p class="kv">「上游调用方 0 个未知」这一项做不到就先回到第 07 章的闸门二。</p>
+  </div>
+
+  <div class="stepbox">
+    <div class="sno">步骤 ②</div>
+    <h4>造接缝：在旧系统前面加路由，默认全走旧</h4>
+    <p>这一步交付的代码<b>不改变任何行为</b>，只增加一层可以被切换的开关。它的目的是让「替换」变成一个可以回滚的配置变更，而不是一次发布。</p>
+    <pre><code># Nginx 侧：先把镜像跑起来（响应丢弃，用户无感）
+location /api/settlement/ {
+    proxy_pass      http://legacy-upstream;
+    mirror          /shadow;
+    mirror_request_body on;
+}
+location = /shadow {
+    internal;
+    proxy_pass      http://new-svc$request_uri;
+    proxy_connect_timeout 1;   # fire-and-forget：不等待影子结果
+    proxy_send_timeout    1;
+    proxy_read_timeout    1;
+}</code></pre>
+    <p>如果是服务网格，等价设施是 VirtualService 的 <code>mirror</code> + <code>mirrorPercentage</code>；用 10% 起是很常见的做法，因为 100% 镜像会让负载翻倍。</p>
+  </div>
+
+  <div class="stepbox">
+    <div class="sno">步骤 ③</div>
+    <h4>提规格：产出 behavior.md 与 golden set，人签字</h4>
+    <p>按第 06 章的工序执行。这一步<b>不能压缩</b>——它是后面所有「自动通过」的依据，也是 @失败时唯一能回退到的地方。产出要求：</p>
+    <ul class="chk">
+      <li>每条规则有「判定 / 溯源 / 状态」三段，<b>溯源缺失的条目直接删掉</b></li>
+      <li>golden set 覆盖常规流、边界值、空值、0、负数、以及至少一组已知的异常输入</li>
+      <li>标注哪些差异是「预期变更」（业务方同意顺手修掉的 bug），它们会在双跑里被显式豁免</li>
+    </ul>
+  </div>
+
+  <div class="stepbox">
+    <div class="sno">步骤 ④</div>
+    <h4>生成：让 AI 按规格实现，而不是按旧代码翻译</h4>
+    <p>这是唯一「AI 唱主角」的一步，也是最容易跑偏的一步。核心纪律：<b>给它规格和样本，不给它整个旧模块。</b></p>
+    <pre><code>&gt; 实现 `packages/settlement/src/settle.ts`。
+&gt; 需求来源只有 `spec/settlement/behavior.md`（你现在读它），
+&gt; 验收标准是 `golden/settlement.jsonl`（跑 `npm run golden` 比对）。
+&gt;
+&gt; 硬性约束：
+&gt; - **不要**去读 legacy/ 下的 Java 源码来「对齐实现」。如果你发现 behavior.md
+&gt;   有遗漏或自相矛盾，停下来告诉我，我会补 spec，而不是让你自己悟出来。
+&gt; - 不确定性的来源必须作为参数注入：`now: Clock`、`random: Random`、`fx: RateProvider`。
+&gt;   不允许在函数内部直接调用 Date.now() 或 Math.random()。
+&gt; - 输出必须与 golden 里的 shape 完全一致；金额一律用 decimal 库，禁止浮点累加。
+&gt; - 完成后跑 `npm run verify`；Stop hook 会替你跑，但你也要自己看一次输出。</code></pre>
+    <div class="callout r">
+      <h4>为什么禁止读旧源码</h4>
+      <p>因为一旦读了，模型会<b>复刻旧系统的偶然实现细节</b>（包括那些 bug 和权宜之计），并且你会失去一次「用规格重新审视这个行为」的机会。要让 <code>.claude/settings.json</code> 真的帮你执行这条：把 <code>legacy/</code> 放进 Read 的 deny 列表，只在需要时由人显式解除。</p>
+    </div>
+    <p>一次并行多个子任务时注意：<b>探索类任务交给子智能体</b>，主上下文只收结论。改动跨多个包时，先让 Claude 把 plan 写到一个 markdown 文件再动手——压缩过的历史会丢，写下来的 plan 不会。</p>
+  </div>
+
+  <div class="stepbox">
+    <div class="sno">步骤 ⑤</div>
+    <h4>双跑：让真实流量告诉你哪里不一样</h4>
+    <p>这是整套方法<b>唯一能把「我们认为行为一样」变成「有证据表明行为一样」</b>的环节。三个必须做对的细节：</p>
+    <ol class="tight">
+      <li><b>先归一化再比对。</b>时间戳、生成的 ID、顺序无语义的列表——不处理这些，差异日志会被噪音淹没，然后被所有人忽略。这是整套机制最常见的死法。</li>
+      <li><b>自动分类而不是手工抽样。</b>手工抽样只会找到你已经知道的那些差异。自动归类到「新实现缺陷 / 未记录的旧行为 / 有意的变更」三类。</li>
+      <li><b>副作用必须被验证而非假定。</b>影子侧不得写库、不得发邮件、不得扣款、不得推 MQ。这条出问题，安全机制本身会变成一次事故。</li>
+    </ol>
+    <pre><code>// scripts/shadow-diff.js —— 归一化后按 traceID 对齐比对
+const normalize = (o) =&gt; ({
+  ...omit(o, ['requestId','timestamp','latencyMs','serverHost']),
+  items: sortBy(o.items ?? [], 'id'),        // 顺序无语义时先排序
+  amount: round2(o.amount),
+});
+for (const [tid, {old: a, new: b}] of aligned) {
+  const d = deepDiff(normalize(a), normalize(b));
+  if (!d) continue;
+  classify(tid, d);
+  // 三类：NEW_BUG / UNDOCUMENTED_OLD_BEHAVIOR / EXPECTED_CHANGE
+}
+report({ total, diffCount, rate: diffCount / total, unexplained });</code></pre>
+    <p><b>退出判据要事先写死：</b>差异率持续低于阈值（建议先设 0.5%），并且<b>每一条剩余差异都有署名解释</b>。没有这两个条件，不允许进入步骤⑥。</p>
+  </div>
+
+  <div class="stepbox">
+    <div class="sno">步骤 ⑥</div>
+    <h4>灰度：0 → 1 → 5 → 20 → 50 → 100</h4>
+    <p>每一档都不是「等一会儿」，而是<b>带着明确的观察指标</b>等待。推荐每档观察窗：读接口 24 小时，写接口 72 小时或跨过一个完整工作日。需要盯的四件事：错误率、延迟分布、业务指标（下单成功率 / 金额正确率 / 下游告警）、以及差异率是否回升。</p>
+    <ul class="risk">
+      <li>双写期间<b>保留双写 4 周作为保险</b>，把读翻到新侧之后再继续观察，然后才废弃旧代码路径</li>
+      <li>每一档都要有一键回退的开关，并且<b>回退路径本身要被演练过</b>——没演练过的回滚等于没有回滚</li>
+      <li>不要跳过 1% 直达 20%。1% 的意义是让「极少数人才会触发的路径」在小范围内先暴露</li>
+    </ul>
+  </div>
+
+  <div class="stepbox">
+    <div class="sno">步骤 ⑦</div>
+    <h4>摘除：物理删掉旧代码，而不是注释掉</h4>
+    <p>这是一个容易被无限推迟的动作，但它是整套方法<b>唯一真正兑现收益的动作</b>。经验规律很清楚：<b>每一片被绞杀之后如果不马上把旧路径移除，你最终会永远养着两套系统。</b></p>
+    <ol class="tight">
+      <li>连续 30 天「旧侧零调用」作为前置条件</li>
+      <li>删除代码 <b>连带删除只为它存在的测试</b>，避免 CI 继续为死代码付费</li>
+      <li>更新那份「生死簿」（哪个模块还剩多少 Java 在生产跑），这是向上汇报最好的材料</li>
+    </ol>
+  </div>
+
+  <div class="callout g">
+    <h4>每个切片的人力配比（一个被反复验证过的配置）</h4>
+    <p><b>2 名工程师 + AI 智能体池。</b>其中一人必须<b>同时熟悉旧系统和目标栈</b>——「新团队去另起炉灶、老团队维持运转」的组合在这种项目里几乎必败。公开现场纪录里出现过「一名工程师调度每阶段最多 20 个子智能体」的配置，但那是在<b>规格与门禁都已就位之后</b>才成立的，不要倒因为果。</p>
+  </div>
+</section>
+
+<section id="s09">
+  <p class="kicker">Section 09</p>
+  <h2><span class="num">09</span>阶段五 · 数据层：整个迁移里最硬的那块骨头</h2>
+  <p>把 Java 换成 TypeScript 或 Python，最容易被低估的不是语法，而是<b>整套运行时语义的迁移</b>：Spring 的事务传播、ORM 的一级缓存与延迟加载、AOP 切面、拦截器链、以及藏在存储过程里的业务。这一章单独列出这些「结构性无法一一对应」的地方。</p>
+
+  <h3>先给一条不可违背的顺序</h3>
+  <div class="callout r">
+    <h4>永远不要先迁移 schema，再迁移代码</h4>
+    <p>当一个还活着的生产系统在依赖数据库的确切形状时，你无法轻松地迁移它。正确顺序是：<b>① 先动代码 → ② 用仓储层（Repository）把 schema 隔离起来 → ③ 最后才动存储。</b>把顺序搞反，是现代化项目里最经典的自杀方式之一。</p>
+  </div>
+
+  <h3>六个「跨语言不天然等价」的点，逐个给对策</h3>
+  <table>
+    <thead><tr><th style="width:22%">旧侧机制</th><th style="width:30%">迁移时的坑</th><th style="width:48%">对策</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b><code>@Transactional</code> 传播</b></td>
+        <td>Spring 的传播行为（尤其是默认的 <code>REQUIRED</code> 与同类内自调用<b>不经过代理</b>那个经典坑）在 TS/Python 里没有内建对应物</td>
+        <td>在调用栈顶一处显式声明事务边界：用一个 <code>UnitOfWork</code> 对象把连接/会话显式传下去，禁止「隐形全局事务」。把旧侧每个 <code>@Transactional</code> 的传播类型抄进 spec，逐条对照</td>
+      </tr>
+      <tr>
+        <td><b>ORM 一级缓存</b></td>
+        <td>同一 Session 内两次相同查询返回同一个对象引用，业务代码依赖了这个「隐式去重」和由此带来的写回</td>
+        <td>新侧默认<b>不启用</b>任何隐式缓存；如果 spec 里记录了依赖此行为的地方，改为显式查询一次传入，并在 behavior.md 标注</td>
+      </tr>
+      <tr>
+        <td><b>延迟加载</b></td>
+        <td>Java 侧 <code>LazyInitializationException</code> 的存在意味着「某些访问会炸」，而它常常被用作隐式的数据访问边界</td>
+        <td>新侧用显式 <code>eager_load</code>，把「该次调用会碰哪些表」写进 spec 的副作用清单；用 golden 的 <code>side_effects</code> 投影去校验 SQL 序列</td>
+      </tr>
+      <tr>
+        <td><b>AOP 切面与拦截器</b></td>
+        <td>日志、鉴权、审计、重试这些横切逻辑<b>不在调用栈里可见</b>，代码读起来仿佛不存在</td>
+        <td>这正是第 05 章「单一静态证据不可定罪」的典型场景：用<b>运行时插桩</b>列出每个入口实际经过的切面链，把结果作为 spec 的一部分</td>
+      </tr>
+      <tr>
+        <td><b>存储过程与触发器</b></td>
+        <td>业务藏在数据库里，应用写库时和有人绕过应用直写时都会触发，两边都看不见</td>
+        <td>单独列为一条工作线：<b>先清点出来、翻译成服务层代码、加守卫</b>；过渡期在 DB 侧保留 triggers 做 double-check，最后才下触发器</td>
+      </tr>
+      <tr>
+        <td><b>报表与批处理</b></td>
+        <td>常常直连库、用临时表、依赖时区与会话变量</td>
+        <td>放到<b>最后</b>再做。报表对行为的容忍度与联机交易不同：可以并行产出同一份报表做全量比对，这是天然的 golden master</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>过渡期的两面：防腐层 + CDC</h3>
+  <p>在「新旧并存」的那段时间，数据要两边同步。做法是在新侧前面加一层<b>防腐层（Anti-Corruption Layer）</b>——它的职责是把旧系统的数据与操作以干净的现代形态暴露出来，所有新消费者只跟它对话。它是这 24 个月里你<b>要维护最久、也最应该写得无聊</b>的一段代码。</p>
+  <pre><code># 数据面：CDC 把旧库的变更实时复制到新侧
+# 1. 用 Debezium / Canal 之类抓 binlog，落到 Kafka
+# 2. 消费者把变更 UPSERT 到新库，注意保留 __op 与 __ts_ms 以便回溯
+# 3. 一致性校验：定期对边比对，不能只靠 CDC 的「我发了」
+
+async function verifyConsistency(sampleRate = 0.01) {
+  const keys = await pickSampleKeys(sampleRate);           // 按主键空间均匀抽样
+  let mismatch = 0;
+  for (const rowPk of keys) {
+    const [oldRow, newRow] = await Promise.all([
+      legacyRepo.find(rowPk), typedRepo.find(rowPk),
+    ]);
+    if (canonicalize(oldRow) !== canonicalize(newRow)) {
+      mismatch++;
+      await driftLog.write({ rowPk, oldRow, newRow });      // 人工判定：CDC 延迟 or 真漂移
+    }
+  }
+  metrics.gauge('drift.rate', mismatch / keys.length);      // 必须长期 &lt; 0.1%
+}</code></pre>
+
+  <div class="callout b">
+    <h4>关于抽样的建议</h4>
+    <p>全表比对成本太高，但随机抽样会漏掉「刚好这一批数据有问题」的情况。更实用的法是<b>主键空间均匀抽样 + 对最近变更过的行做全量</b>，两者结合。</p>
+  </div>
+
+  <div class="callout t">
+    <h4>并行期的不变量要写下来</h4>
+    <p>在双写阶段必须先定义清楚：<b>谁是 source of truth？冲突以谁为准？写入失败一侧怎么办？</b>这三个问题没有答案就开双写，等于在生产上做不可控实验。本书推荐的做法：过渡期<b>旧侧仍是权威</b>，新侧为追随者；只有当某一片完成 100% 切换后，该片的权威才转移。</p>
+  </div>
+</section>
+
+<section id="s10">
+  <p class="kicker">Section 10</p>
+  <h2><span class="num">10</span>阶段六 · 组织怎么排，以及旧系统怎么下线</h2>
+
+  <h3>三种编队，别只用一种</h3>
+  <div class="grid3">
+    <div class="card tight">
+      <p class="tag a">平台组 · 1~2 人</p>
+      <p style="margin-top:8px;font-size:14px">只负责 Harness：CI、灰度、门禁、安全防护、 spec 工具链。KPI 是<b>切片 Pod 的周期时间</b>，而不是自己交付多少功能。</p>
+    </div>
+    <div class="card tight">
+      <p class="tag p">切片 Pod · 2 人</p>
+      <p style="margin-top:8px;font-size:14px">一名熟旧系统 + 一名熟目标栈，;<b>必须有一人两边都熟</b>。KPI 是「本片完成 100% 切换且旧路径被删」。</p>
+    </div>
+    <div class="card tight">
+      <p class="tag t">业务方 · 兼职</p>
+      <p style="margin-top:8px;font-size:14px">唯一的职责是<b>给 behavior.md 签字</b>，以及参与差异归因会议。没有这一角色，spec 就退化为 AI 的猜测。</p>
+    </div>
+  </div>
+  <div class="callout r">
+    <h4>最有害的一种编队</h4>
+    <p>「新团队去创新 + 老团队维持运转」。现代化项目的工程师<b>必须像熟悉新栈一样熟悉遗留系统</b>。把两边分开，注定得到一个漏掉全部隐性规则的新系统。</p>
+  </div>
+
+  <h3>三种循环，第三种最花钱但最必需</h3>
+  <table>
+    <thead><tr><th style="width:16%">循环</th><th style="width:32%">怎么跑</th><th style="width:26%">谁参与</th><th style="width:26%">频率</th></tr></thead>
+    <tbody>
+      <tr><td><b>全自动短循环</b></td><td>智能体 A 写代码，智能体 B 审查，A 修 B 提的问题，往复到你设定的上限</td><td>无人</td><td>每次提交</td></tr>
+      <tr><td><b>人工门循环</b></td><td>在预设检查点停下等人。人的提问与反应会纠正方向</td><td>工程师</td><td>每隔几条提示</td></tr>
+      <tr><td><b>长周期再验证循环</b></td><td>回头整体复查<b>已经上线</b>的功能，每次换一个角度看；至少三分之一的项目时间花在这里</td><td>工程师 + 业务方</td><td>每 2~4 周</td></tr>
+    </tbody>
+  </table>
+  <p><b>第三种循环是「能上线的原型」和「正在服务真实用户的系统」之间的差别。</b>单个智能体每次只盯着一个任务，而「所有功能彼此怎么协调一致」这件事<b>只存在于你的脑子里</b>。所以需要一个位于单个任务之上的层：批量复查已建成的功能，而且<b>每次刻意换角度</b>。两类典型的启动提示：</p>
+  <pre><code>&gt; 【指定角度】看看 product 表是怎么实现的，然后把后台里所有类似的列表
+&gt;   在功能、展示、链接行为上对齐它。列一张不一致清单，逐条处理。
+
+&gt; 【开放角度】检查所有注册场景潜在的错误情况：网络超时、重复提交、
+&gt;   第三方返回未知状态、验证码过期。列出目前一处都没处理的场景。</code></pre>
+
+  <h3>上下文的多样性与「笨区」</h3>
+  <p>一个很反直觉的教训：<b>AI 辅助开发的质量，主要由智能体能访问到的上下文的多样性决定</b>，而不是 Prompt 写得多么精巧。在那个 550K 行系统重建的现场，被允许的上下文远不止旧代码、文档和数据库 schema——还包括<b>让智能体直接查询一份本地的旧数据库副本、让它自己去浏览旧站点的页面</b>；接入不熟悉的外部域时，甚至直接问它「你还需要哪些上下文源」。</p>
+  <div class="callout">
+    <h4>但别一次性打开所有源</h4>
+    <p>一个塞到 60% 满、充斥探索噪音的上下文窗口，表现<b>不如</b>只有 15% 精选信号的窗口。这被称作「笨区」：上下文过多会让智能体飘向复杂或错误的解法，甚至去解决不存在的问题。<b>「给不给、什么时候给」这种取舍本身就是上下文工程的核心内容。</b>另外提醒一句：编码类智能体默认<b>不会</b>主动搜索网页，需要时你得明说。</p>
+  </div>
+
+  <h3>下线清单：最后一周要做的事</h3>
+  <ul class="chk">
+    <li>确认旧侧<b>连续 30 天零调用</b>（网关日志 + 应用内计数器双证据）</li>
+    <li>所有 Mic check：定时任务、批处理、报表订阅、数据推送、手工 SQL 入口</li>
+    <li>旧代码的<b>物理删除</b>，包括只为它存在的测试与配置；在 Git 里留最后一个 tag 作为墓碑</li>
+    <li>归档留痕：把最终的 behavior.md 集合、golden set、差异归因记录归档为<b>系统的行为档案</b>——这是这次迁移最持久的资产</li>
+    <li>对外公告与文档更新：给运维、客服、业务方各一份「哪些界面变了」的说明</li>
+    <li>最后再保留旧实例运行 <b>只读</b> 30 天，然后停机。停机前<b>先做一次冷备份</b></li>
+  </ul>
+</section>
+
+<section id="s11">
+  <p class="kicker">Section 11</p>
+  <h2><span class="num">11</span>度量体系，和预先写死的止损线</h2>
+  <p>度量要覆盖三层，并且<b>每一层都要能被操纵至失效</b>——所以配套给出反制。</p>
+
+  <figure id="fig09">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 320" role="img" aria-label="双跑差异率随周数收敛到阈值以下的曲线与退出判据">
+        <rect x="0" y="0" width="960" height="320" fill="#FFFFFF"/>
+        <text x="24" y="26" font-size="14" font-weight="600" fill="#16181D">图 9 · 差异率收敛：唯一的放行依据，也是防止「差不多就这样」的装置</text>
+
+        <line x1="90" y1="60" x2="90" y2="250" stroke="#E3E0D8" stroke-width="1.2"/>
+        <line x1="90" y1="250" x2="700" y2="250" stroke="#E3E0D8" stroke-width="1.2"/>
+        <line x1="90" y1="60" x2="700" y2="60" stroke="#EEEBE4" stroke-width="1"/>
+        <line x1="90" y1="155" x2="700" y2="155" stroke="#EEEBE4" stroke-width="1"/>
+        <line x1="90" y1="205" x2="700" y2="205" stroke="#EEEBE4" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="80" y="64" font-size="11.5" fill="#3D434B" text-anchor="end">5%</text>
+        <text x="80" y="159" font-size="11.5" fill="#3D434B" text-anchor="end">2.3%</text>
+        <text x="80" y="254" font-size="11.5" fill="#3D434B" text-anchor="end">0</text>
+        <text x="34" y="155" font-size="12" fill="#3D434B" transform="rotate(-90 34 155)">影子双跑差异率</text>
+
+        <text x="196" y="270" font-size="11.5" fill="#3D434B" text-anchor="middle">W1</text>
+        <text x="330" y="270" font-size="11.5" fill="#3D434B" text-anchor="middle">W2</text>
+        <text x="450" y="270" font-size="11.5" fill="#3D434B" text-anchor="middle">W3</text>
+        <text x="570" y="270" font-size="11.5" fill="#3D434B" text-anchor="middle">W4</text>
+        <text x="690" y="270" font-size="11.5" fill="#3D434B" text-anchor="end">周</text>
+
+        <polyline points="196,72 330,110 450,158 570,192 690,232" fill="none" stroke="#2F6FB0" stroke-width="2.6"/>
+        <circle cx="196" cy="72" r="4.5" fill="#2F6FB0"/>
+        <circle cx="330" cy="110" r="4.5" fill="#2F6FB0"/>
+        <circle cx="450" cy="158" r="4.5" fill="#2F6FB0"/>
+        <circle cx="570" cy="192" r="4.5" fill="#2F6FB0"/>
+        <circle cx="690" cy="232" r="4.5" fill="#2F6FB0"/>
+        <text x="186" y="78" font-size="11.5" fill="#1F5288" text-anchor="end">4.7%</text>
+        <text x="338" y="104" font-size="11.5" fill="#1F5288" text-anchor="start">3.4%</text>
+        <text x="458" y="152" font-size="11.5" fill="#1F5288" text-anchor="start">1.8%</text>
+        <text x="578" y="186" font-size="11.5" fill="#1F5288" text-anchor="start">0.9%</text>
+        <text x="692" y="244" font-size="11.5" fill="#1B5820" text-anchor="end">0.2%</text>
+
+        <line x1="90" y1="231" x2="700" y2="231" stroke="#2E7D32" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="96" y="227" font-size="11.5" font-weight="620" fill="#1B5820" text-anchor="start">放行阈值 0.5%</text>
+
+        <rect x="720" y="60" width="216" height="186" rx="8" fill="#FBFAF7" stroke="#E3E0D8"/>
+        <text x="738" y="84" font-size="12.5" font-weight="660" fill="#333941">每一段下降对应的动作</text>
+        <text x="738" y="108" font-size="11.5" fill="#3D434B">W1 4.7% → 补归一化规则</text>
+        <text x="738" y="126" font-size="11.5" fill="#3D434B">W2 3.4% → 补 spec 缺失规则</text>
+        <text x="738" y="144" font-size="11.5" fill="#3D434B">W3 1.8% → 修新实现缺陷</text>
+        <text x="738" y="162" font-size="11.5" fill="#3D434B">W4 0.9% → 归因剩余差异</text>
+        <text x="738" y="186" font-size="11.5" fill="#3D434B">最后，剩余差异必须</text>
+        <text x="738" y="204" font-size="11.5" fill="#3D434B">全部有署名解释，才放行</text>
+        <text x="738" y="232" font-size="11.5" font-weight="620" fill="#8F3F06">「看得见的下降」必须能</text>
+        <text x="738" y="248" font-size="11.5" fill="#8F3F06">归因到具体动作，否则是噪音</text>
+
+        <text x="90" y="296" font-size="11.5" fill="#3D434B">典型的收敛形状：前两周下降最快（噪音类差异），之后每条都对应一次真正的行为修正</text>
+      </svg>
+    </div>
+    <figcaption><b>图 9</b>　<b>这张图给的是形状，不是你的具体数值</b>——不同切片的初始差异率可以差一个量级。要学的判据只有两条：<b>持续下降</b>，以及<b>剩余差异全部有署名解释</b>。只满足阈值而不做归因，等于把问题推迟到上线后。</figcaption>
+  </figure>
+
+  <h3>三层指标与它们的反滥用条款</h3>
+  <table>
+    <thead><tr><th style="width:14%">层</th><th style="width:26%">指标</th><th style="width:24%">健康区间</th><th style="width:36%">反滥用条款</th></tr></thead>
+    <tbody>
+      <tr><td><b>交付</b></td><td>切片周期（从开片到 100% 切换）</td><td>4~8 周，且逐片下降</td><td>不许通过缩小切片来保证周期。同时看「周期 × 切片规模」的复合量</td></tr>
+      <tr><td><b>质量</b></td><td>双跑差异率、生产逃逸缺陷、回滚率</td><td>&lt; 0.5%、逐季下降、&lt; 5%</td><td><b>不许通过放宽归一化规则来降低差异率</b>——归一化规则的每一次改动都要进评审</td></tr>
+      <tr><td><b>业务</b></td><td>需求交付时长、故障平均恢复时长</td><td>迁移期不应显著劣化</td><td>把这两条做成<b>红线指标</b>：任何劣化都优先于迁移进度</td></tr>
+    </tbody>
+  </table>
+
+  <h3>止损线（写在立项书里，而不是事后讨论）</h3>
+  <ol class="tight">
+    <li><b>第 3 个切片若在 12 周内未完成生产切换</b> → 停下复盘。通常是接缝假设错了（边界不该这样切），而不是人手不够</li>
+    <li><b>连续两片上线后出现被判定为「新实现缺陷」的生产逃逸</b> → 回到阶段零，重审验证体系而不是继续迁移</li>
+    <li><b>业务交付时长连续两个月劣化超过 30%</b> → 降速，把 Pod 的一部分人挪回维持性工作</li>
+    <li><b>关键人员离职且无人接手其负责的 spec</b> → 立即冻结该片的迁移，先把规格补齐</li>
+    <li><b>降级路径要提前设计：</b>从「全量绞杀」降到「核心域重写 + 外围沿用」，再降到「原地现代化」。每一级都明确要放弃什么</li>
+  </ol>
+  <div class="callout g">
+    <h4>最后一句关于这份方法的最后判断（这是观点，不是共识）</h4>
+    <p>这类项目真正的分水岭，往往不在技术而在<b>有没有一个人持续对「新旧是否等价」这个问题负责任</b>。技术动作——绞杀、规格、双跑、灰度——都是已知的；组织迟迟拿不到进展的项目，几乎都能追溯到「没有人被明确指派去回答那句「你凭什么说它们一样」」。</p>
+  </div>
+</section>
+
+<section id="s12">
+  <p class="kicker">Section 12</p>
+  <h2><span class="num">12</span>反模式清单：症状 → 后果 → 修正</h2>
+  <table>
+    <thead><tr><th style="width:8%">层</th><th style="width:26%">反模式</th><th style="width:30%">典型症状</th><th style="width:36%">修正</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3"><b>战略</b></td><td>一次性 big-bang 重写</td><td>18 个月后仍无可用产物；旧系统在期间继续生长，目标一直在跑</td><td>改为按行为接缝绞杀；每个循环 4~8 周并对外 demo</td></tr>
+      <tr><td>先迁移数据库</td><td>应用天天为适应新 schema 打补丁，没有人能说清当前权威在哪一侧</td><td>先动代码 → 仓储层隔离 schema → 最后动存储</td></tr>
+      <tr><td>让「新团队」独立于老团队</td><td>新系统缺全部隐性规则；生产一上线就爆出一整类未记录的行为差异</td><td>每片都必须有既熟旧系统又熟新栈的人</td></tr>
+      <tr><td rowspan="4"><b>工程</b></td><td>让 AI 逐行翻译 Java 文件</td><td>产出的 TypeScript 长着 Java 的样子；Spring 的事务/缓存语义悄悄丢失</td><td>改为按 behavior.md + golden set 重写实现，禁止参考旧源码</td></tr>
+      <tr><td>把整个仓库塞给 AI 分析</td><td>产出空泛、自我矛盾的总结；上下文迅速耗尽</td><td>分层 CLAUDE.md + 每接缝 brief + 子智能体卸载探索</td></tr>
+      <tr><td>golden master 快照原文</td><td>第一次重跑就红了，之后被加 <code>--update</code> 一路刷新，最终成为形式</td><td>改为钉住<b>确定性投影</b>（shape/label/side_effects/数值带容差）</td></tr>
+      <tr><td>跳过双跑直接灰度</td><td>差异在生产上才暴露，且此时已无退出路径</td><td>把双跑作为硬门禁：没有差异率报告不许进入灰度</td></tr>
+      <tr><td rowspan="3"><b>治理</b></td><td>spec 由 AI 从其产物反推</td><td>文档自洽但与真实行为不符，所有人以为有文档</td><td>spec 必须双向溯源 + 人工签字；<b>溯源缺失即删除</b></td></tr>
+      <tr><td>差异参观了不归因</td><td>差异日志堆了几千条无人认领，最后被静音</td><td>差异分三类归档，每条必须有署名解释才允许放行</td></tr>
+      <tr><td>切片上线后不删旧路径</td><td>系统变成双胞胎，成本翻倍，任何人都不敢动</td><td>把「旧代码物理删除」作为切片完成的<b>唯一定义</b></td></tr>
+      <tr><td>没有 kill criteria</td><td>项目在第 18 个月变成政治问题而不是工程问题</td><td>立项时就写好四条止损线与降级路径</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s13">
+  <p class="kicker">Section 13</p>
+  <h2><span class="num">13</span>附录：可以直接复制的东西</h2>
+
+  <h3>A. 命令速查</h3>
+  <table>
+    <thead><tr><th style="width:22%">什么时候</th><th style="width:78%">命令</th></tr></thead>
+    <tbody>
+      <tr><td>量体量</td><td><code>find . -name "*.java" -not -path "*/target/*" | wc -l</code>　<code>find . -name "*.java" -print0 | xargs -0 wc -l | tail -1</code></td></tr>
+      <tr><td>生产调用面</td><td><code>awk '{print $7}' access.log* | sed 's/[0-9]\{3,\}/:id:/g; s/?.*//' | sort | uniq -c | sort -nr</code></td></tr>
+      <tr><td>静态存活性</td><td><code>python3 fanin_scan.py . &gt; /tmp/fanin.tsv</code>（第 05 章脚本）</td></tr>
+      <tr><td>Git 热度</td><td><code>git log --since="3 years ago" --name-only --format="COMMIT|%at|%ae" |</code> ……（第 05 章）</td></tr>
+      <tr><td>主门禁</td><td><code>npm run verify</code>　= <code>typecheck + lint + unit + golden</code></td></tr>
+      <tr><td>差异率报告</td><td><code>npm run shadow:report -- --since 24h --threshold 0.005</code></td></tr>
+      <tr><td>上下文用量</td><td><code>/compact</code>（建议用到 50% 就手动执行，别等自动压缩）；探索任务用子智能体</td></tr>
+      <tr><td>权限 closed loop</td><td>把 <code>legacy/</code> 加入 deny，只在需要时由人显式解除</td></tr>
+    </tbody>
+  </table>
+
+  <h3>B. Prompt 模板库（每张便利贴对应一个固定动作）</h3>
+  <table>
+    <thead><tr><th style="width:22%">用途</th><th style="width:78%">模板要点</th></tr></thead>
+    <tbody>
+      <tr><td><b>行为提取</b></td><td>限定可读文件清单 → 三条字段（判定/溯源/状态）→ 遇到疑似 bug 照实记录不许修好 → 每 10 条暂停</td></tr>
+      <tr><td><b>按规格实现</b></td><td>需求来源只有 behavior.md → 验收只有 golden set → 不确定性必须参数注入 → 发现 spec 矛盾就停下来问</td></tr>
+      <tr><td><b>差异归因</b></td><td>给出 traceID 清单 → 要求分三类（新缺陷 / 未记录的旧行为 / 预期变更）→ 每条给代码位置 → 不许只给结论</td></tr>
+      <tr><td><b>再验证循环</b></td><td>指定角度（对齐某处的实现）或开放角度（穷举某类错误场景）→ 要求产出清单而不是直接改代码</td></tr>
+      <tr><td><b>反向诘问</b></td><td>让另一个智能体专门尝试推翻上一份结论；执行任务者不得评判自己</td></tr>
+    </tbody>
+  </table>
+
+  <h3>C. 每个切片的文件夹骨架</h3>
+  <pre><code>spec/&lt;slice&gt;/
+├── README.md          # 七个数：请求量/P99/读写比/数据量/上下游/变更频率
+├── behavior.md        # 行为规格，人签字；每条含「判定/溯源/状态」
+├── migration-plan.md  # 接缝位置、路由开关名、回滚方式、灰度档位与观察窗
+├── diff-log.md        # 双跑差异归因记录，每条有署名解释
+└── done.md            # 完成证明：100% 切换日期 + 旧代码删除 commit 号
+golden/&lt;slice&gt;.jsonl   # 投影化的 golden master
+packages/&lt;slice&gt;/      # 新实现</code></pre>
+
+  <h3>D. 一句话提醒，写给三个月后的自己</h3>
+  <ul class="tight">
+    <li>如果你没法证明新旧等价，那就还不是迁移，只是重写到了一半</li>
+    <li>验证失败改规格，不改代码</li>
+    <li>每片完成的定义是<b>旧代码被删掉</b>，不是新代码跑起来</li>
+    <li>给 AI 更多上下文和给它更好的上下文是两件事，后者才有用</li>
+    <li>护栏一定是机械化的（hook、CI、门禁），而不是「大家小心一点」——<code>.claudeignore</code> 和权限允许列表都可能被索引绕过，能用 <code>PreToolUse</code> hook 挡的就别指望权限规则</li>
+  </ul>
+</section>
+
+<footer>
+  <p><b>关于本手册的证据使用</b>：手册中的每条量化结论都标注了出处与证据强度，请按以下层级理解：<b>受控样本研究 &gt; 大样本调查 &gt; 行业观察汇总 &gt; 单一案例 &gt; 定性示意</b>。图 2 左半部分与图 9 的曲线均为<b>定性示意形状</b>，不可用作立项的成本依据；图 2 右半部分、DORA 2025 与第 00 章引用的各项数字为<b>已发表的实测数据</b>。</p>
+  <p><b>写作日期</b>：2026 年 9 月　|　<b>适用对象</b>：持续演化 10 年以上的企业级 Java 内部信息系统，目标栈 TypeScript/Node 或 Python，以 Claude Code 为主要编码智能体。</p>
+</footer>
+
+</div>
+</body>
+</html>

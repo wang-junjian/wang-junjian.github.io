@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="以 Anthropic 的 AI 原生 SDLC 为主线，横评 OpenSpec、spec-kit、mattpocock skills 三大规约流派，拆解计划到维护六阶段与八条元原则，并用同一个适老化计算器跑通三条路径做对照，给出落地路线与三条必避失败路径。">
+<meta name="keywords" content="AI 原生 SDLC, 规约框架, OpenSpec, spec-kit, mattpocock skills, 实战总结">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-08">
+<title>AI 原生软件开发生命周期实战总结</title>
+<style>
+  :root{
+    --bg:#F7F7F4;
+    --card:#FFFFFF;
+    --ink:#1C2321;
+    --ink-2:#4B5563;
+    --ink-3:#6B7280;
+    --line:#E5E2DB;
+    --accent:#0D7377;
+    --accent-soft:#E6F4F4;
+    --accent-ink:#0A5A5D;
+    --amber:#B45309;
+    --amber-soft:#FDF3E3;
+    --indigo:#4338CA;
+    --indigo-soft:#EEEEFB;
+    --rose:#BE123C;
+    --rose-soft:#FDEEF1;
+    --code-bg:#F2F1EC;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(28,35,33,.05),0 4px 16px rgba(28,35,33,.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.85;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+
+  /* ── 顶部导航 ── */
+  nav{
+    position:sticky;top:0;z-index:50;
+    background:rgba(247,247,244,.88);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{display:flex;align-items:center;gap:22px;height:54px;overflow-x:auto}
+  nav .brand{font-weight:700;font-size:14px;color:var(--accent-ink);white-space:nowrap;letter-spacing:.02em}
+  nav a{color:var(--ink-3);text-decoration:none;font-size:13.5px;white-space:nowrap;transition:color .15s}
+  nav a:hover{color:var(--accent)}
+
+  /* ── Hero ── */
+  header.hero{padding:84px 0 56px;border-bottom:1px solid var(--line)}
+  .kicker{
+    display:inline-block;font-size:13px;font-weight:600;letter-spacing:.14em;
+    color:var(--accent);background:var(--accent-soft);
+    padding:5px 14px;border-radius:999px;margin-bottom:22px;
+  }
+  h1{font-size:clamp(30px,4.6vw,46px);line-height:1.25;font-weight:800;letter-spacing:-.01em;max-width:20em}
+  h1 .hl{color:var(--accent)}
+  .hero-sub{margin-top:20px;font-size:17.5px;color:var(--ink-2);max-width:44em}
+  .hero-meta{margin-top:30px;display:flex;flex-wrap:wrap;gap:10px}
+  .chip{
+    font-size:12.5px;color:var(--ink-2);background:var(--card);
+    border:1px solid var(--line);border-radius:999px;padding:4px 13px;
+  }
+
+  /* ── 通用 ── */
+  section{padding:64px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  .sec-tag{font-size:12.5px;font-weight:700;letter-spacing:.16em;color:var(--accent);margin-bottom:10px}
+  h2{font-size:clamp(23px,3vw,30px);font-weight:800;line-height:1.35;margin-bottom:14px;letter-spacing:-.01em}
+  h3{font-size:19px;font-weight:700;margin:34px 0 10px;color:var(--ink)}
+  h4{font-size:16px;font-weight:700;margin:22px 0 6px}
+  p{margin:10px 0;color:var(--ink-2)}
+  p strong,li strong{color:var(--ink)}
+  ul,ol{margin:10px 0 10px 1.4em;color:var(--ink-2)}
+  li{margin:6px 0}
+  code{
+    font-family:"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+    background:var(--code-bg);border:1px solid var(--line);
+    padding:1px 6px;border-radius:6px;color:var(--accent-ink);
+  }
+  .lead{font-size:17.5px;color:var(--ink);max-width:46em}
+
+  .grid{display:grid;gap:18px;margin:26px 0}
+  .grid.c2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .grid.c3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px 26px;box-shadow:var(--shadow);
+  }
+  .card h4{margin-top:0;font-size:16.5px}
+  .card p{font-size:14.5px}
+  .card ul{font-size:14.5px}
+  .card .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:30px;height:30px;border-radius:9px;font-size:14px;font-weight:800;
+    background:var(--accent-soft);color:var(--accent-ink);margin-bottom:12px;
+  }
+
+  blockquote{
+    margin:26px 0;padding:20px 26px;border-left:3px solid var(--accent);
+    background:var(--accent-soft);border-radius:0 var(--radius) var(--radius) 0;
+    color:var(--accent-ink);font-size:16.5px;font-weight:600;line-height:1.7;
+  }
+  blockquote .src{display:block;margin-top:8px;font-size:13px;font-weight:500;color:var(--ink-3)}
+
+  table{width:100%;border-collapse:collapse;margin:24px 0;font-size:14px;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  th,td{padding:13px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);line-height:1.7}
+  th{background:#EFEDE7;font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+
+  .tag{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.06em;padding:2px 10px;border-radius:999px;margin-right:6px;white-space:nowrap}
+  .tag.a{background:var(--accent-soft);color:var(--accent-ink)}
+  .tag.b{background:var(--amber-soft);color:var(--amber)}
+  .tag.c{background:var(--indigo-soft);color:var(--indigo)}
+  .tag.d{background:var(--rose-soft);color:var(--rose)}
+
+  /* 阶段卡 */
+  .stage{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:30px 32px;margin:22px 0;box-shadow:var(--shadow);
+  }
+  .stage-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  .stage-no{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.12em}
+  .stage-head h3{margin:0;font-size:20px}
+  .stage .shift{
+    margin:14px 0;padding:14px 18px;background:#FBFAF7;border:1px dashed var(--line);
+    border-radius:10px;font-size:14.5px;color:var(--ink-2);
+  }
+  .stage .shift b{color:var(--ink)}
+  .practice{
+    margin-top:16px;padding:16px 20px;background:var(--amber-soft);
+    border:1px solid #F0DFC0;border-radius:10px;font-size:14.5px;color:#7C4A12;
+  }
+  .practice b{color:var(--amber)}
+  .practice .plabel{
+    display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.1em;
+    color:var(--amber);margin-bottom:6px;
+  }
+
+  .chain{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:26px 0;
+    font-family:"SF Mono",Menlo,monospace;font-size:13.5px;
+  }
+  .chain .node{
+    background:var(--card);border:1.5px solid var(--accent);color:var(--accent-ink);
+    border-radius:9px;padding:8px 14px;font-weight:700;
+  }
+  .chain .node.human{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
+  .chain .arrow{color:var(--ink-3);font-weight:700}
+
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:16px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+  .vs>div{padding:16px 20px}
+  .vs .old{background:#F5F4F0;color:var(--ink-3);border-right:1px solid var(--line)}
+  .vs .new{background:var(--accent-soft);color:var(--accent-ink)}
+  .vs .lbl{display:block;font-size:11.5px;font-weight:800;letter-spacing:.12em;margin-bottom:6px}
+  .vs .old .lbl{color:var(--ink-3)}
+  .vs .new .lbl{color:var(--accent)}
+  @media(max-width:640px){.vs{grid-template-columns:1fr}.vs .old{border-right:none;border-bottom:1px solid var(--line)}}
+
+  footer{padding:46px 0 70px;color:var(--ink-3);font-size:13.5px}
+  footer .wrap{border-top:1px solid var(--line);padding-top:28px}
+  footer p{font-size:13.5px;color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <span class="brand">AI-Native SDLC · 实战总结</span>
+    <a href="#thesis">核心判断</a>
+    <a href="#schools">三大流派</a>
+    <a href="#stages">六阶段实战</a>
+    <a href="#principles">元原则</a>
+    <a href="#practice">一需求三实现</a>
+    <a href="#roadmap">落地路线</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">EXPERT FIELD REPORT · 2026</span>
+    <h1>AI 原生软件开发生命周期实战总结：<br><span class="hl">当规约成为新的代码，流程成为制品的流水线</span></h1>
+    <p class="hero-sub">
+      基于 Anthropic《The AI-Native SDLC Playbook》、三大开源规约框架（OpenSpec / spec-kit / mattpocock skills）的源码研读，
+      以及同一个真实需求（适老化 macOS 计算器）在三条方法论路径上的完整实现对比，给出一份不抄概念、只讲实战的专家级总结。
+    </p>
+    <div class="hero-meta">
+      <span class="chip">参考：Anthropic AI-Native SDLC Playbook（2026-08）</span>
+      <span class="chip">框架：OpenSpec · GitHub spec-kit · mattpocock/skills</span>
+      <span class="chip">实战：同一需求 × 三条路径的 SwiftUI 完整实现</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════ 1. 核心判断 ═══════════ -->
+<section id="thesis">
+  <div class="wrap">
+    <div class="sec-tag">01 · THESIS</div>
+    <h2>核心判断：瓶颈迁移了，而大多数流程还停留在旧瓶颈上</h2>
+    <p class="lead">
+      传统 SDLC 的全部设计前提——PRD、估算仪式、串行评审、阶段性签核——都建立在"写代码最贵、最慢"这一事实上。
+      当智能体把实现阶段压缩到小时级，这个前提失效了，三件事同时成真：
+    </p>
+    <div class="grid c3">
+      <div class="card">
+        <span class="num">1</span>
+        <h4>瓶颈向左右两侧迁移</h4>
+        <p>计划、评审/测试、发布仍以人速运行。构建越快，队列在这些环节堆得越高——安全评审团队是按人类产出配置的，智能体放大产出后，要么评审排队，要么代码欠审上线。</p>
+      </div>
+      <div class="card">
+        <span class="num">2</span>
+        <h4>旧控制与现实脱节</h4>
+        <p>逐行人工评审在"人写每一行"的时代是合理的；当智能体写出大部分 diff，它既不可行也无意义。控制必须改由机器执行，人退到门禁上。</p>
+      </div>
+      <div class="card">
+        <span class="num">3</span>
+        <h4>治理成本不降反升</h4>
+        <p>例外事项仍要排进周会/月会的委员会。产出越快，等待治理裁决的积压越贵——治理本身成了最需要自动化的环节。</p>
+      </div>
+    </div>
+
+    <blockquote>
+      "代码不再是瓶颈——瓶颈是它周围以人速运行的环节。AI 原生 SDLC 不是删掉控制，而是保留旧的控制目标、换上新的执行机制。"
+      <span class="src">—— Anthropic, The AI-Native SDLC Playbook</span>
+    </blockquote>
+
+    <h3>贯穿全局的主线：制品链（The Committed Artifact Chain）</h3>
+    <p>
+      AI 原生 SDLC 的流程不再是"文档 + 工单 + 签核"的人际接力，而是一条<strong>制品链</strong>：每个阶段以向版本库提交一个制品结束，下个阶段以读取这个制品开始。
+      前半程的制品是 Markdown（产品负责人和智能体都能读、都能改的同一文件），从构建起制品变成代码及其记录。整条 git 提交链就是审计链：谁提的需求、智能体产出了什么、谁批准的。
+    </p>
+    <div class="chain">
+      <span class="node">intent.md</span><span class="arrow">→</span>
+      <span class="node">spec.md</span><span class="arrow">→</span>
+      <span class="node">plan.md</span><span class="arrow">→</span>
+      <span class="node">diff + tests</span><span class="arrow">→</span>
+      <span class="node">PR + 评审记录</span><span class="arrow">→</span>
+      <span class="node">发布门</span><span class="arrow">→</span>
+      <span class="node human">事故 / 监控告警</span><span class="arrow">→</span>
+      <span class="node">新的 intent.md</span>
+    </div>
+    <p>
+      这一设计的深刻之处在于：<strong>它把"流程"变成了"数据"</strong>。阶段交接不再是会议和工单，而是文件系统的状态转移——可以被钩子（hook）触发、被 CI 编排、被度量直接读取（两个 git 时间戳之差就是阶段耗时）。
+      人的注意力从"启动每个阶段"收敛到"守护制品被接受的门禁"。这就是"流程即代码"在 SDLC 层面的真正含义。
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════ 2. 三大流派 ═══════════ -->
+<section id="schools">
+  <div class="wrap">
+    <div class="sec-tag">02 · THREE SCHOOLS</div>
+    <h2>同一个问题，三种哲学：规约框架的流派分野</h2>
+    <p class="lead">
+      OpenSpec、spec-kit、mattpocock/skills 都在回答同一个问题——"怎么让智能体持续做对的事"——但给出了三种截然不同的答案。
+      看懂它们的分歧，比学会其中任何一个都重要；Anthropic 的 playbook 则站在企业治理的高度，把三者共通的底层逻辑讲透了。
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>维度</th>
+          <th>OpenSpec<span class="tag a" style="margin-left:8px">规约即活文档</span></th>
+          <th>spec-kit<span class="tag c" style="margin-left:8px">规约即可执行</span></th>
+          <th>mattpocock/skills<span class="tag b" style="margin-left:8px">纪律即技能</span></th>
+          <th>Anthropic Playbook<span class="tag d" style="margin-left:8px">治理即配置</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>核心哲学</td>
+          <td>fluid not rigid、iterative not waterfall、为棕地而生。规格是与代码共同演进的活文档</td>
+          <td>"翻转剧本"：几十年来代码为王、规格是用完即弃的脚手架；SDD 让规格直接生成实现</td>
+          <td>反对 GSD/BMAD/spec-kit 式"流程占有"——流程一旦拥有你，流程里的 bug 就难修。技能要小、可改、可组合</td>
+          <td>控制目标不变、执行机制重写。企业级的门禁、审计与合规如何在智能体速度下成立</td>
+        </tr>
+        <tr>
+          <td>制品模型</td>
+          <td><code>specs/</code>（当前真相）+ <code>changes/</code>（增量提案：proposal/design/tasks/delta-specs），archive 后合并回 specs</td>
+          <td>每特性一个目录：<code>spec → plan → tasks</code>，外加 research / data-model / contracts / quickstart / checklists，<code>constitution</code> 作为全局章程</td>
+          <td>轻量文本：<code>CONTEXT.md</code> 术语表、<code>docs/adr/</code> 决策记录、issue 跟踪器上的 spec/tickets</td>
+          <td>制品链：<code>intent.md → spec.md → plan.md → diff → PR → 事故记录</code>，每环都可审计</td>
+        </tr>
+        <tr>
+          <td>工作流形态</td>
+          <td><code>/opsx:propose → /opsx:apply → /opsx:archive</code>；delta 语义（ADDED/MODIFIED Requirements + WHEN/THEN 场景）</td>
+          <td><code>constitution → specify → plan → tasks → implement → converge</code> 六步仪式；另有 bug（assess→fix→test）、assess（想法评估）扩展</td>
+          <td>无固定流水线。用户触发型技能（grill-me / to-spec / implement / triage）编排模型触发型纪律（tdd / code-review / domain-modeling）</td>
+          <td>六阶段非线性 plays，带依赖图与采纳顺序；终点是闭环——生产异常自动写回 intent.md</td>
+        </tr>
+        <tr>
+          <td>质量保障</td>
+          <td>规约评审先于实现；verify-change 核对实现与规约的偏差</td>
+          <td>章程门禁（Constitution Check）、需求 checklist、converge 循环直至收敛</td>
+          <td>TDD 红绿重构、双轴 code-review（标准轴 + 规约轴，并行子代理互不污染）、diagnosing-bugs 分阶段诊断环</td>
+          <td>skill（建议性控制）+ hook（确定性控制）双层；CI 中跑 evals 回归测试智能体配置本身</td>
+        </tr>
+        <tr>
+          <td>适用场景</td>
+          <td>持续演进的存量项目；特性横跨多仓库（stores 共享规约）</td>
+          <td>从零启动的大特性、组织级标准化、需要完整交接产物链的团队</td>
+          <td>资深工程师的日常驱动；重视对齐、反馈环与代码设计的长期项目</td>
+          <td>受监管组织、平台团队、需要向审计与合规交代的规模化落地</td>
+        </tr>
+        <tr>
+          <td>根本分歧点</td>
+          <td colspan="2">规约驱动派相信"把规格写对，代码自然对"——分歧只在规格的生命周期（OpenSpec 认为是持续演进的差量，spec-kit 认为是完整的前置仪式）</td>
+          <td colspan="2">工程纪律派与治理派则相信"规格写不全所有事"——真正决定质量的是对齐访谈、反馈环速率、代码设计品味，以及控制是否由机器确定性执行</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>专家视角：三派其实并不矛盾，它们在不同的失效模式下各管一段</h3>
+    <ul>
+      <li><strong>需求歧义期</strong>（想法还没成型）：mattpocock 的 grill 式访谈最有效——"没人确切知道自己想要什么"，先用追问把设计树的每个分支问完，再谈写规约。</li>
+      <li><strong>需求成型期</strong>（要动真格实现）：spec-kit 的完整仪式最稳——章程当门禁、用户故事带独立可测性、plan 里写明技术宪法约束，产物链完整到可以交给没见过对话的人。</li>
+      <li><strong>持续演进期</strong>（第 N 个特性）：OpenSpec 的 delta 语义最省——只写"什么变了"，archive 后 specs/ 自动成为系统当前的准确描述，避免 spec-kit 每特性一全套产物在长尾阶段的维护负担。</li>
+      <li><strong>规模化与合规期</strong>：Anthropic playbook 的双层控制（skill 让违规稀少、hook 让违规近乎不可能）和 evals-in-CI，是唯一正面回答"智能体配置本身如何回归测试"的方案。</li>
+    </ul>
+    <p>
+      实战中最常见的错误是<strong>错配阶段</strong>：在需求还是一团雾时上 spec-kit 的重仪式（产出一堆精致的错误规格），
+      或在项目已进入持续演进期后还在为每个小改动跑完整流水线（流程成本超过收益）。
+      成熟的做法是按阶段切换工具，而三者共享的底层资产——术语表、ADR、测试套件、CLAUDE.md——可以一路沉淀下去。
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════ 3. 六阶段 ═══════════ -->
+<section id="stages">
+  <div class="wrap">
+    <div class="sec-tag">03 · SIX STAGES</div>
+    <h2>六阶段实战：每个阶段真正改变了什么</h2>
+
+    <!-- Plan -->
+    <div class="stage">
+      <div class="stage-head"><span class="stage-no">STAGE 1</span><h3>Plan 计划：意图只捕获一次，用提出者自己的语言</h3></div>
+      <div class="vs">
+        <div class="old"><span class="lbl">传统</span>想法经过 backlog、用户故事、故事点、澄清会，每过一次手就离提出者的本意远一步。</div>
+        <div class="new"><span class="lbl">AI 原生</span>提出者与智能体头脑风暴，直接产出 <code>intent.md</code> 原型规约——人可读、可版本化、下一阶段立即可消费。从数周的引出-澄清周期压缩到小时级。</div>
+      </div>
+      <p>
+        要点不在"写得快"，而在<strong>零转译损耗</strong>：intent.md 保留了提出者的原话、约束和悬而未决的问题（Open Questions 是必备章节），
+        产品负责人审的是智能体是否误解了意图，而不是替智能体重写。非工程师无需碰 git——连接器让智能体代为提交。
+      </p>
+      <div class="practice">
+        <span class="plabel">实战印证 · OpenSpec 路径</span><br>
+        计算器项目的 <code>proposal.md</code> 用 Why / What Changes / Capabilities / <b>Non-goals</b> 四段结构，其中 Non-goals（明确不做人民币大写、历史记录、设置页）事后证明价值最高——它封死了智能体在实现阶段"顺手多做"的空间。写给智能体的规约里，<b>负面约束的边际收益远高于正面描述</b>。
+      </div>
+    </div>
+
+    <!-- Design -->
+    <div class="stage">
+      <div class="stage-head"><span class="stage-no">STAGE 2</span><h3>Design 设计：需求与设计坍缩成一次会话，策略在写作时生效</h3></div>
+      <div class="vs">
+        <div class="old"><span class="lbl">传统</span>分析师把想法形式化为需求，设计师再把需求解析回设计。分离为问责而存在，但缓慢且有损。</div>
+        <div class="new"><span class="lbl">AI 原生</span>单次会话内从 intent.md 产出需求+设计规约；品牌、安全、合规、UX 策略以 skills 形式作为约束实时施加，冲突点在写作时被标记（flagged concerns），而不是数周后在评审会上被发现。</div>
+      </div>
+      <p>
+        这一阶段最被低估的变化是<strong>设计的事实源上移</strong>：传统流程的事实源是 Figma 画板，AI 原生流程中它变成仓库里的文本规范——因为文本是 AI 的原生格式：可读、可 diff、可 lint、可版本化。Figma 退为协作与存档层，HTML 高保真原型成为设计稿的形态（真实排版引擎渲染、秒级迭代）。
+      </p>
+      <div class="practice">
+        <span class="plabel">实战印证 · matt-skills 路径的设计流水线</span><br>
+        项目采用 Google DESIGN.md 规范（YAML front matter 存 design tokens、正文存设计理念——<b>tokens 给 AI 精确的值，prose 告诉它为什么</b>），并配 <code>designmd lint</code> 做质量门：断引用报错、对比度低于 WCAG AA 4.5:1 告警——规范工具本身就是无障碍守门员。写作心法的核心：<b>一个具体引用胜过一串形容词</b>（"央企门户、机关报式排版"远比"简洁现代大气"信息量高）；<b>负面约束是免费的</b>（"不要渐变、不要大圆角"直接封死风格漂移）。
+      </div>
+    </div>
+
+    <!-- Build -->
+    <div class="stage">
+      <div class="stage-head"><span class="stage-no">STAGE 3</span><h3>Build 构建：先有计划制品，后有代码；护栏是代码不是习惯</h3></div>
+      <div class="vs">
+        <div class="old"><span class="lbl">传统</span>工程师读完设计开始写代码，"怎么改"留在脑子里；评审者第一眼看到的是成品 diff，返工成本极高。</div>
+        <div class="new"><span class="lbl">AI 原生</span>以 plan mode 起步：智能体只读代码库、产出实现计划（改哪些文件、顺序、用什么测试证明），工程师在改一个文档的成本下纠偏，批准后提交为 <code>plan.md</code>，后续评审拿它对照 diff。计划够扎实，实现往往一次通过。</div>
+      </div>
+      <p>构建阶段的四块基石，实战中缺一不可：</p>
+      <ul>
+        <li><strong>CLAUDE.md / AGENTS.md 是"新员工入职包"</strong>：构建/测试/lint 命令、真正重要的约定、"智能体反复犯的错"。工作规则：<em>同一个错误犯两次，纠正就进 CLAUDE.md</em>；保持一页以内，因为它每会话被全量读入。</li>
+        <li><strong>Skills 是制度知识的可操作化</strong>：判断标准——必须被一致执行的制度知识写成 skill；属于项目常识的放 CLAUDE.md；一次性的留在 prompt 里。</li>
+        <li><strong>Hooks 是 skill 背后的确定性层</strong>：skill 是建议性控制（让违规稀少），hook 是确定性控制（让违规近乎不可能）。构建期 hook 要快、按文件作用域；重型检查留给提交和 PR。</li>
+        <li><strong>并行会话 + 子代理</strong>：一个工程师驱动多个 worktree 会话，天花板不是算力而是"一个人能认真评审多少路输出"。重复性工作固化成子代理（verifier、code-simplifier、researcher），定义入库共享。</li>
+      </ul>
+      <div class="practice">
+        <span class="plabel">实战印证 · spec-kit 路径</span><br>
+        plan.md 中一句话决定了整个代码结构："计算引擎作为无 UI 依赖的纯 Swift 状态机模块，TDD 先行，UI 层保持极薄"。这正是 mattpocock 所谓<b>深模块</b>（deep module）——大量行为藏在极小接口之后、处于干净接缝上、可脱离 UI 完整测试。<b>在计划阶段指定模块边界，是约束智能体不产生泥球架构的最有效手段</b>——因为智能体默认倾向于"哪里顺手写哪里"。
+      </div>
+    </div>
+
+    <!-- Test -->
+    <div class="stage">
+      <div class="stage-head"><span class="stage-no">STAGE 4</span><h3>Test 测试：每个会话自查，智能体配置本身也要回归测试</h3></div>
+      <div class="vs">
+        <div class="old"><span class="lbl">传统</span>"代码能工作"的信号来得很晚：CI 几分钟后、测试人员几天后、生产几周后。信号越晚，人就必须检查智能体的全部产出——人成为瓶颈。</div>
+        <div class="new"><span class="lbl">AI 原生</span>会话被赋予自查手段（跑测试、跑构建、截图比对），迭代到检查通过才上报；工程师看到的产出已经过了第一道关。</div>
+      </div>
+      <ul>
+        <li><strong>反馈环要可量化</strong>："test_status.py 全部通过"、"截图与 mock 一致"、"端点返回 200 且含新字段"——能被智能体不问人就验证的目标才算目标。</li>
+        <li><strong>修 bug 先写失败测试并提交</strong>，再让智能体在不许改测试的前提下修绿——一份先于修复存在、且智能体无法改写的测试，才是 bug 已修复的证据。配 hook 禁止修复任务中编辑测试文件。</li>
+        <li><strong>保护反馈环本身</strong>：修代码的智能体不能削弱对代码的检查——这是 AI 原生测试阶段最新、也最容易漏的一条控制。</li>
+        <li><strong>Evals 是阶段门禁 QA 的 AI 原生等价物</strong>：收集 20–50 个真实任务及其可接受标准，在 CLAUDE.md / skills / hooks 任何变更时非交互式重跑。换模型、改 prompt 之后智能体是否仍达标，由 eval 套件说话。每个生产事故转化为一个永久 eval。</li>
+      </ul>
+      <div class="practice">
+        <span class="plabel">实战印证 · matt-skills 路径</span><br>
+        <code>/tdd</code> 技能把红-绿-重构固化为纪律，配合"一次一个垂直切片"的步长控制；<code>/diagnosing-bugs</code> 把调试包成分阶段门禁的循环（构造复现环 → 最小化 → 假设 → 插桩 → 修复 → 回归测试）。经验是：<b>反馈环的速率就是你的速度上限</b>——智能体没有反馈时不是写得慢，而是在错误方向上写得飞快。
+      </div>
+    </div>
+
+    <!-- Deploy -->
+    <div class="stage">
+      <div class="stage-head"><span class="stage-no">STAGE 5</span><h3>Deploy 发布：双向评审，治理在智能体行动时执行</h3></div>
+      <div class="vs">
+        <div class="old"><span class="lbl">传统</span>评审容量按人类产出规划；PR 等待评审者逐行读完，质量随评审者负载波动，作者在积压中追赶。</div>
+        <div class="new"><span class="lbl">AI 原生</span>所有 PR 接受同一套评审通道、按严重度排序输出；人的注意力上移一层——判断"改动是否符合计划意图、风险是否可接受"。<code>@claude</code> 标记即修复，修复循环可由智能体自己跑到全绿，只等 code owner 批准。</div>
+      </div>
+      <ul>
+        <li><strong>评审策略写成 REVIEW.md</strong>：分通道（bug / 安全 / 对 spec.md 与 plan.md 的符合性）、定义 Important 与 Nit、封顶 Nit 数量、排除生成文件——否则智能体评审会淹没在噪音里。</li>
+        <li><strong>职责分离天然保留</strong>：写代码的智能体无权批准自己的代码；批准永远来自分支保护后的人类。评审发现第二次出现时，纠正进 CLAUDE.md——因为评审也读它，错误从下一个 PR 起被拦截。</li>
+        <li><strong>Hooks 即审批门</strong>：把"变更管理签核、发布授权、受保护路径"逐条表达为 allow / ask / block 的钩子，入 <code>.claude/settings.json</code> 或平台托管配置；block 必须自解释（原因 + 申诉路径）。生产部署的批准永远留给具名的人。</li>
+        <li><strong>CI/CD 中的智能体</strong>：从只读判断步骤起步（分拣失败构建、总结 flaky 测试、起草 changelog），再到门禁后的写步骤；按环境分级自治——开发环境自由部署，生产环境智能体备妥发布、发布经理授权。回滚路径必须是流水线中演练最多的那条路。</li>
+      </ul>
+      <div class="practice">
+        <span class="plabel">实战印证</span><br>
+        三个项目共同验证了一条：<b>评审发现的归宿是配置文件，不是人的记忆</b>。凡是在评审中第二次出现的问题，当场写进 CLAUDE.md / CONTEXT.md / 章程，之后同类问题在前端被拦截——评审者得以专注在只有人能判断的意图与风险上。
+      </div>
+    </div>
+
+    <!-- Maintain -->
+    <div class="stage">
+      <div class="stage-head"><span class="stage-no">STAGE 6</span><h3>Maintain 维护：闭环——触发路径上没有人，发现重新流入 intent.md</h3></div>
+      <div class="vs">
+        <div class="old"><span class="lbl">传统</span>维护是被动响应：凌晨的告警可能被错过，工单在 backlog 里等人认领，复盘行动项在下一场火之前到不了代码库。</div>
+        <div class="new"><span class="lbl">AI 原生</span>确定性脚本盯住生产指标的控制带：1σ 只记录，2σ 智能体只读诊断，3σ 可以行动——但行动路径只有开 PR 进评审门、或触发预批准的 runbook。诊断写成 intent.md 格式的制品，从第一阶段重新流入流水线。</div>
+      </div>
+      <ul>
+        <li><strong>检测保持确定性</strong>：均值/标准差 + Western Electric 规则抓漂移与尖峰，无模型参与；模型只在带被突破后被调用，层级（tier）决定它能做什么。</li>
+        <li><strong>阶段间设独立置信门</strong>：确定性检查或对抗性评审智能体决定上一阶段的产出是继续流转还是升级给人。</li>
+        <li><strong>定期代码库扫描取代"扫描事件"</strong>：安全扫描是对"某时刻代码库 × 某代模型"的陈述，两半都会过时——代码每周在变，每代模型能发现上一代漏掉的漏洞。按周期跑、发现走评审门、每次修复为漏洞类别补 eval。</li>
+        <li><strong>闭环的度量</strong>：领先指标——从控制带突破到 intent.md 进入分诊队列的时间；滞后指标——发现转化为合并修复的比例、同类事故复发率（应随 eval 积累下降）。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 4. 元原则 ═══════════ -->
+<section id="principles">
+  <div class="wrap">
+    <div class="sec-tag">04 · META-PRINCIPLES</div>
+    <h2>八条元原则：穿越所有框架与阶段的底层规律</h2>
+    <p class="lead">这些原则在三套框架和 playbook 中反复出现、又被实战反复验证——它们比任何具体工具都长寿。</p>
+    <div class="grid c2">
+      <div class="card">
+        <span class="num">1</span>
+        <h4>对齐先于生成</h4>
+        <p>软件开发最常见的失败模式是错位（misalignment），AI 时代亦然。mattpocock 的 grill 式访谈把"让智能体追问你"固化为技能：在生成任何东西之前，把设计树的每个分支问到收敛。<strong>提示词质量的上限不是措辞技巧，而是你想清楚的程度</strong>——访谈是强迫你想清楚的机制。</p>
+      </div>
+      <div class="card">
+        <span class="num">2</span>
+        <h4>共享语言是最高杠杆的上下文工程</h4>
+        <p>CONTEXT.md 式术语表把项目黑话压缩成智能体可解码的共享语言：变量/函数/文件命名因此一致，代码库对智能体更可导航，思考消耗的 token 更少。实战中"播报词决策""数值规范文本""链式立即执行"这类命名一旦确立，后续每个会话都在吃它的红利。</p>
+      </div>
+      <div class="card">
+        <span class="num">3</span>
+        <h4>反馈环的速率 = 开发速度的上限</h4>
+        <p>没有反馈的智能体不是慢，而是在错误方向上飞快。静态类型、一条命令的测试、浏览器/截图回环，缺一不可。并且必须保护反馈环本身：修复代码的智能体不得削弱检查代码的测试。</p>
+      </div>
+      <div class="card">
+        <span class="num">4</span>
+        <h4>双层控制：skill 建议，hook 决定</h4>
+        <p>skill 让违规变得稀少，hook 让违规近乎不可能；必须无条件成立的策略，背后一定要有确定性机制。人的批准只放在门禁上——把批准提示塞进构建环路，等于把人重新钉回所有并行会话的关键路径。</p>
+      </div>
+      <div class="card">
+        <span class="num">5</span>
+        <h4>AI 加速代码，也加速熵</h4>
+        <p>智能体以空前速率生产复杂度。对策是 Kent Beck 的老话："每天投资于系统设计"——深模块（小接口、厚实现、干净接缝、可经接口测试）要成为日常纪律，定期扫描代码库的"深化机会"，而不是等泥球成形后抢救。</p>
+      </div>
+      <div class="card">
+        <span class="num">6</span>
+        <h4>文本制品 &gt; 会话</h4>
+        <p>会话是易失的，仓库里的 Markdown 才是团队记忆。每个阶段以提交制品结束、以读取制品开始；交接（handoff）的本质是把上下文压成下一个智能体能独立接手的文档。"一个没见过对话的人能否仅凭计划实施"是制品质量的试金石。</p>
+      </div>
+      <div class="card">
+        <span class="num">7</span>
+        <h4>负面约束与退出条件的杠杆最高</h4>
+        <p>Non-goals、"不要渐变"、禁改清单、封顶 Nit 数量——对智能体而言，封死错误方向比描述正确方向更有效、更省 token。正面描述留下无穷多种"对的"实现，负面约束直接消除整片错误空间。</p>
+      </div>
+      <div class="card">
+        <span class="num">8</span>
+        <h4>度量内建于制品元数据</h4>
+        <p>不需要新的度量系统：两个 git 时间戳之差是阶段耗时，PR 元数据给一次通过率与返工轮次，hook 决策日志给门禁等待时间，eval 通过率给配置质量。每个 play 都明确领先/滞后指标——<strong>不能从 git 和 CI 里读出来的度量，在 AI 原生流程里不存在</strong>。</p>
+      </div>
+    </div>
+
+    <blockquote>
+      "The loop keeps running. Human judgement stays above it." —— 闭环持续运转，人的判断悬于其上。
+      <span class="src">—— Anthropic Playbook 结语。人的角色从"写代码的人"变为"定义意图、评审制品、守护门禁的人"</span>
+    </blockquote>
+  </div>
+</section>
+
+<!-- ═══════════ 5. 一需求三实现 ═══════════ -->
+<section id="practice">
+  <div class="wrap">
+    <div class="sec-tag">05 · FIELD NOTES</div>
+    <h2>实战对照：同一个适老化计算器，三条路径各教会了我们什么</h2>
+    <p class="lead">
+      用同一个真实需求（面向老年用户的 macOS 原生计算器：大字体大按钮、四位分节/千分位、中文读数与语音播报、防误触、实体计算器语义）
+      分别走 OpenSpec、spec-kit、mattpocock skills 三条路径完整实现。这是极少有人做过的对照实验，结论如下。
+    </p>
+
+    <h3>三条路径的差异化产出</h3>
+    <table>
+      <thead>
+        <tr><th></th><th>OpenSpec 路径</th><th>spec-kit 路径</th><th>matt-skills 路径</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>最有价值的产物</td>
+          <td><code>proposal.md</code> 的 Why/Non-goals；delta spec 的 WHEN/THEN 场景清单——天然就是验收用例</td>
+          <td><code>constitution</code>（适老化硬性指标：字号 ≥24pt、触控目标 ≥44×44pt、对比度 ≥4.5:1）作为 Phase 0 前置门禁；用户故事的 Independent Test 让 MVP 边界无争议</td>
+          <td><code>CONTEXT.md</code> 术语表 + <code>docs/adr/</code>（语音数值策略、播报脚本分层）；访谈中涌现的"播报词决策""数值规范文本"等概念成为全代码库的命名基准</td>
+        </tr>
+        <tr>
+          <td>流程体感</td>
+          <td>最轻。propose → apply → archive 三步，规约随代码生长，几乎没有仪式负担</td>
+          <td>最重也最全。spec → plan → tasks → research → data-model → contracts → quickstart → checklists，产物链完整到可直接移交陌生团队</td>
+          <td>对话密度最高。大量时间花在 grill 访谈与术语打磨上，生成阶段的返工反而最少</td>
+        </tr>
+        <tr>
+          <td>暴露的短板</td>
+          <td>对"还没想清楚"的需求帮不上忙——它假设你已有可提案的变更</td>
+          <td>仪式成本固定，小改动不划算；产物多了之后维护规约与代码的一致性成为新工作</td>
+          <td>高度依赖工程师本人的判断力；技能是纪律而非门禁，没有确定性强制，团队规模化时需要自己补 hook 层</td>
+        </tr>
+        <tr>
+          <td>最适用的阶段</td>
+          <td>项目进入持续演进后的每个增量特性</td>
+          <td>从零启动的大特性、需要正式交接与审计的场景</td>
+          <td>需求模糊期的对齐、以及全周期的工程质量保障</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>对照实验的三条硬结论</h3>
+    <div class="grid c3">
+      <div class="card">
+        <span class="num">①</span>
+        <h4>前期对话深度决定后期返工量</h4>
+        <p>matt-skills 路径前期花了最多时间在访谈和术语上，但实现阶段几乎零返工；反过来，任何路径里凡是"先写了再说"的部分，都在测试阶段以更高代价还了回来。<strong>智能体时代，想清楚的速度才是真正的开发速度。</strong></p>
+      </div>
+      <div class="card">
+        <span class="num">②</span>
+        <h4>量化约束是规约的质量分水岭</h4>
+        <p>"大字体"在各路径里都产生过平庸结果；"结果区字号 ≥24pt、点击目标 ≥44×44pt、对比度 ≥4.5:1"则一次到位。能被机器或人客观核对的约束才是约束，形容词不是。</p>
+      </div>
+      <div class="card">
+        <span class="num">③</span>
+        <h4>规约的价值在第二次变更时才兑现</h4>
+        <p>第一次实现时，三条路径的代码质量差距不大；差距出现在后续修改——有活规约（OpenSpec specs/）和决策记录（ADR）的项目，变更成本显著更低。<strong>规约不是实现的输入，而是演进的资产。</strong></p>
+      </div>
+    </div>
+
+    <div class="practice" style="font-size:15px">
+      <span class="plabel">综合建议</span><br>
+      不必皈依任何一派。推荐的组合姿势：<b>用 grill 式访谈对齐意图 → 用 spec-kit 式完整仪式落地首个大特性（章程 + 故事 + 计划 + 契约）→ 用 OpenSpec delta 规约承接后续演进 → 全程用 mattpocock 的工程纪律（TDD、深模块、双轴评审）兜底质量 → 规模化时按 Anthropic playbook 补 hook 门禁与 CI evals</b>。五条线索共享同一套沉淀物：CLAUDE.md、CONTEXT.md、ADR、测试套件与 git 历史。
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 6. 落地路线 ═══════════ -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="sec-tag">06 · ADOPTION ROADMAP</div>
+    <h2>落地路线：按组织规模选择切入点</h2>
+
+    <table>
+      <thead>
+        <tr><th>规模</th><th>起步动作（本周可做）</th><th>三个月后</th><th>成熟形态</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>个人 / 小团队</td>
+          <td>写 CLAUDE.md（命令 + 约定 + 常犯错误，一页内）；建立 CONTEXT.md 术语表；重要改动先 grill 后动手；接入 TDD 反馈环</td>
+          <td>把反复出现的纠正沉淀为 skills；ADR 记录关键决策；实现与测试配对提交</td>
+          <td>OpenSpec delta 规约管理演进；hook 保护测试文件与受保护路径</td>
+        </tr>
+        <tr>
+          <td>成长型团队</td>
+          <td>约定 intent/spec/plan 制品模板与存放位置；PR 引入智能体评审（REVIEW.md 定通道与 Nit 上限）</td>
+          <td>评审发现回流 CLAUDE.md；CI 中对 CLAUDE.md/skills 变更跑 eval 套件；分支保护 + code owner 批准</td>
+          <td>制品链自动化触发：intent 合并即生成 spec PR；并行会话 + 子代理成为常态</td>
+        </tr>
+        <tr>
+          <td>受监管企业</td>
+          <td>平台团队托管不可覆盖的 settings（deny 清单、沙箱、凭据隔离）；列出必须保留的人类审批门并表达为 hook</td>
+          <td>每环境分级自治（开发自由 / 生产具名授权）；部署经 MCP 暴露为白名单工具；回滚路径定期演练</td>
+          <td>闭环维护：确定性控制带监控 → 智能体诊断 → intent.md 回流；定期安全扫描 + 事故转 eval；OpenTelemetry 全程审计</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>三条最常见的失败路径（务必避开）</h3>
+    <ul>
+      <li><strong>只加速构建，不改造两侧</strong>——代码产出翻倍，评审队列和发布等待也翻倍，净收益被排队吃掉。改造必须左右两侧同步推进。</li>
+      <li><strong>把批准提示撒得到处都是</strong>——每个并行会话都在等人点"允许"，人再次成为关键路径。批准只该出现在门禁上，其余用预批准清单（allow list）消化。</li>
+      <li><strong>规约写完就扔</strong>——把 spec 当一次性脚手架，就退回了"代码为王"的旧世界；规约不进版本库、不随实现更新，下一轮变更就失去地基。</li>
+    </ul>
+
+    <blockquote>
+      一句话总结：AI 原生 SDLC 的本质，是把软件工程从"人写代码、流程管住人"重构为"智能体写代码、制品承载意图、机器执行控制、人守护判断"。先建反馈环与制品链，再谈自动化；先对齐与约束，再谈生成。
+    </blockquote>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><strong>参考来源</strong>：Anthropic《The AI-Native SDLC Playbook》（2026-08）· Fission-AI/OpenSpec · github/spec-kit · mattpocock/skills</p>
+    <p><strong>实战项目</strong>：elder-friendly-calculator 三路径实现（OpenSpec / matt-skills / spec-kit），macOS SwiftUI 适老化计算器</p>
+    <p style="margin-top:14px">AI-Native SDLC Field Report · 2026-10</p>
+  </div>
+</footer>
+
+</body>
+</html>

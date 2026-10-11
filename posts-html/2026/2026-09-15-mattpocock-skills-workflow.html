@@ -1,0 +1,500 @@
+<meta name="description" content="基于对 mattpocock/skills 仓库的真实阅读，面向初次上手的工程师：讲清「反流程」立场与四类 AI 编码失败模式，拆解两类 skill 的调用规则，并给出从安装配置到把「想法 → 规格 → 工单 → 实现 → 验证 → 评审」串成工作流的路径。">
+<meta name="keywords" content="mattpocock skills, 实践指南, 工作流, 安装配置, 规格驱动, Claude Code">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-15">
+<title>mattpocock/skills 实践指南</title>
+<style>
+:root {
+  --fg: #1a1a18; --muted: #5f5e5a; --accent: #c1502e;
+  --surface: #f5f4ef; --border: #d8d6cd; --code-bg: #efeee8;
+  --green: #3a7d44; --amber: #9a6a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fg: #e8e6df; --muted: #a3a198; --accent: #e0784f;
+    --surface: #1c1b18; --border: #3a382f; --code-bg: #26251f;
+    --green: #6fbf7a; --amber: #d9a940;
+  }
+}
+:root[data-theme="dark"] {
+  --fg: #e8e6df; --muted: #a3a198; --accent: #e0784f;
+  --surface: #1c1b18; --border: #3a382f; --code-bg: #26251f;
+  --green: #6fbf7a; --amber: #d9a940;
+}
+body {
+  background: var(--surface); color: var(--fg);
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  line-height: 1.75; padding-inline: max(16px, env(safe-area-inset-left));
+}
+main { max-width: 920px; margin: 0 auto; padding-block: 48px 96px; }
+h1 { font-size: 1.9rem; line-height: 1.3; margin-bottom: 0.25em; }
+h2 { font-size: 1.45rem; margin-top: 2.4em; padding-top: 0.6em; border-top: 1px solid var(--border); }
+h3 { font-size: 1.15rem; margin-top: 1.8em; }
+h4 { font-size: 1rem; margin-top: 1.4em; color: var(--accent); }
+.lede { color: var(--muted); font-size: 0.95rem; margin-bottom: 2em; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9rem; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--code-bg); white-space: nowrap; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.87em; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 0.83rem; line-height: 1.55; }
+pre code { background: none; padding: 0; }
+.callout { border-left: 3px solid var(--accent); background: var(--code-bg); padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 1em 0; }
+.callout.warn { border-left-color: var(--amber); }
+.callout.ok { border-left-color: var(--green); }
+figure { margin: 1.5em 0; }
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); }
+ol, ul { padding-left: 1.4em; }
+li { margin: 0.25em 0; }
+</style>
+<main>
+
+<h1>mattpocock/skills 实践指南</h1>
+<p class="lede">面向第一次接触这套 skills 的工程师：从安装、首次配置，到把"想法 → 规格 → 工单 → 实现 → 验证 → 评审"串成一条可直接上手的工作流。全部内容基于对 <a href="https://github.com/mattpocock/skills">mattpocock/skills</a> 仓库的真实阅读（README、CONTEXT.md、各 SKILL.md 与 docs/ 页面），示例对话与工单内容翻译为中文。</p>
+
+<h2>一、项目定位与核心理念</h2>
+
+<p>这是 Matt Pocock（Total TypeScript 作者）日常自用的 agent skills 集合，口号是 <em>"Skills For Real Engineers"</em>——做真实的工程，而不是 vibe coding。</p>
+
+<h3>反流程框架立场</h3>
+
+<p>README 开篇就点明了与主流 SDD 框架的分歧：</p>
+
+<div class="callout">
+"开发真实应用是困难的。GSD、BMAD、Spec-Kit 这类方法试图通过<strong>拥有流程</strong>（owning the process）来提供帮助。但在这样做的同时，它们拿走了你的控制权，而且流程里的 bug 很难解决。"<br><br>
+"这些 skills 被设计为<strong>小而易改、可组合</strong>。它们适用于任何模型，基于数十年的工程经验。拿去魔改，变成你自己的。"
+</div>
+
+<p>与 Spec-Kit 等"规格即源码、命令链驱动全流程"的框架相比，差异在于：</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>维度</th><th>GSD / BMAD / Spec-Kit</th><th>mattpocock/skills</th></tr>
+<tr><td>流程归属</td><td>框架拥有流程，定义固定的阶段链与命令顺序</td><td>不拥有流程；只提供可组合的 skill，由工程师自己决定何时调用哪个</td></tr>
+<tr><td>控制粒度</td><td>整条流水线被编排好，人按框架的节奏走</td><td>每个 skill 是一个独立工具（访谈、写规格、拆工单、TDD……），工程师保留每一步的控制权</td></tr>
+<tr><td>可修改性</td><td>流程的 bug 难以定位和修复</td><td>skill 就是普通 Markdown 文件，可以直接改、可以只取一部分</td></tr>
+<tr><td>状态存放</td><td>spec 模板是强制的 source of truth</td><td>产物落在 issue tracker、<code>CONTEXT.md</code>、<code>docs/adr/</code> 这些团队已有的位置，而非框架私有格式</td></tr>
+</table>
+</div>
+
+<h3>要解决的四个失败模式</h3>
+
+<p>README 把这套 skills 的存在理由归纳为 AI 编码的四个常见失败模式，每个对应一组 skill：</p>
+
+<ol>
+<li><strong>"Agent 没做我要的东西"</strong>——错位（misalignment）是最常见的失败。解法是<strong>拷问式访谈</strong>（grilling session）：让 agent 反过来向你追问细节。对应 <code>/grill-with-docs</code>（有仓库时）与 <code>/grill-me</code>（无仓库时）。</li>
+<li><strong>"Agent 太啰嗦"</strong>——缺一套共享语言。解法是领域词汇表 <code>CONTEXT.md</code>：同一个概念用一个词。README 举的例子：没有共享语言时 agent 写"课程里某个章节下的一节课被'实体化'（即在文件系统里分配了位置）时出了问题"，有了之后就是一句话——"materialization cascade 出了问题"。这同时让命名一致、代码库更易导航、思考 token 更少。</li>
+<li><strong>"代码不工作"</strong>——缺反馈回路。解法是静态类型、浏览器访问、自动化测试，核心是 <code>/tdd</code> 的 red-green 循环；调试硬 bug 用 <code>/diagnosing-bugs</code> 的分阶段纪律。</li>
+<li><strong>"我们堆出了一个烂泥球"</strong>——agent 加速了编码，也以前所未有的速度加速了软件熵。解法是认真关心代码设计：<code>/to-spec</code> 在写规格前追问你动到哪些模块，<code>/improve-codebase-architecture</code> 定期扫描"深化（deepening）机会"。</li>
+</ol>
+
+<h3>User-invoked 与 Model-invoked：两类 skill</h3>
+
+<p>这套 skills 只沿一条轴划分：<strong>谁能调用它</strong>。</p>
+
+<ul>
+<li><strong>User-invoked（用户调用）</strong>：只有你输入斜杠命令才能触发（如 <code>/grill-with-docs</code>、<code>/to-tickets</code>、<code>/implement</code>）。它们的职责是<strong>编排</strong>（orchestrate）。技术上通过 frontmatter 里的 <code>disable-model-invocation: true</code> 实现。</li>
+<li><strong>Model-invoked（模型可调用）</strong>：你可以显式调用，agent 在任务匹配时也会自动取用（如 <code>/tdd</code>、<code>/research</code>、<code>/diagnosing-bugs</code>、<code>/codebase-design</code>）。它们承载<strong>可复用的纪律</strong>。</li>
+</ul>
+
+<p>组合规则只有一条：<strong>user-invoked 的 skill 可以调用 model-invoked 的 skill，但绝不能调用另一个 user-invoked 的 skill</strong>。这就是为什么 <code>implement</code> 内部"驱动 <code>tdd</code>、收尾时跑 <code>code-review</code>"是合法的，而主链路上每一步都要由你亲手敲下斜杠命令——编排权在人手里，这正是"工程师保留控制权"的落地方式。</p>
+
+<h2>二、安装：两条路，两种哲学</h2>
+
+<p>README 明确说"二选一，两个都装会让每个 skill 出现两份"：</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>方式</th><th>命令</th><th>哲学</th><th>适合谁</th></tr>
+<tr>
+<td><strong>Claude Code 插件</strong></td>
+<td><code>claude plugins install mattpocock-skills</code><br>或会话内 <code>/plugin install mattpocock-skills</code></td>
+<td>订阅制：整套 skills 作为<strong>托管的只读包</strong>安装，作者发布更新时自动跟进。在 Claude Code 官方 marketplace 里，无需先添加市场</td>
+<td>想"开箱即用、跟着作者升级"的人</td>
+</tr>
+<tr>
+<td><strong>skills.sh 安装器</strong><br>（Codex 及其他 agent；也适合折腾党）</td>
+<td><code>npx skills@latest add mattpocock/skills</code></td>
+<td>复制制：把 skill 文件<strong>复制进你的项目</strong>，成为你拥有、可编辑的普通文件。安装器允许你挑选要哪些 skill、装给哪些 agent。更新靠手动 <code>npx skills update</code></td>
+<td>用 Codex 等其他 agent 的人；以及想魔改 skill 内容、让它们"变成自己的"的人</td>
+</tr>
+</table>
+</div>
+
+<div class="callout warn">
+<strong>注意</strong>：用 npx 安装器时，务必勾选 <code>setup-matt-pocock-skills</code>——它是后续所有 engineering skills 的前置配置步骤。README 专门加粗提醒了这一点。
+</div>
+
+<h2>三、首次配置：<code>/setup-matt-pocock-skills</code></h2>
+
+<p>装好之后在仓库里跑一次 <code>/setup-matt-pocock-skills</code>（每个仓库一次）。它是<strong>提示驱动的 skill，不是确定性脚本</strong>：流程是"探索 → 向你汇报发现 → 逐项确认 → 落盘"。</p>
+
+<h3>它做什么</h3>
+
+<p>先探索仓库现状：<code>git remote</code> 指向哪里、有没有 <code>CLAUDE.md</code>/<code>AGENTS.md</code>、有没有 <code>CONTEXT.md</code> 和 <code>docs/adr/</code>、<code>triage</code> skill 是否安装、有没有 monorepo 信号（<code>pnpm-workspace.yaml</code> 等）。然后分三节与你确认：</p>
+
+<ol>
+<li><strong>Issue tracker（问题追踪器）</strong>：<code>to-tickets</code>、<code>triage</code>、<code>to-spec</code> 这些 skill 要往哪里读写 issue。默认推荐 GitHub（用 <code>gh</code> CLI）；也支持 GitLab（<code>glab</code>）、<strong>本地 Markdown</strong>（issue 以文件形式放在 <code>.scratch/&lt;feature&gt;/</code> 下，适合个人项目或无 remote 的仓库）、以及其他（Jira、Linear 等，用一段自由文本描述工作流）。</li>
+<li><strong>Triage 标签词汇表</strong>：仅当 <code>triage</code> 已安装才问。默认是五个规范角色，标签字符串与角色同名：<code>needs-triage</code>、<code>needs-info</code>、<code>ready-for-agent</code>、<code>ready-for-human</code>、<code>wontfix</code>。推荐直接接受默认值。</li>
+<li><strong>领域文档布局</strong>：默认单上下文（根目录一个 <code>CONTEXT.md</code> + <code>docs/adr/</code>），几乎适合所有仓库；只有发现 monorepo 信号时才提供多上下文选项（根 <code>CONTEXT-MAP.md</code> 指向各上下文自己的 <code>CONTEXT.md</code>）。</li>
+</ol>
+
+<h3>它写什么</h3>
+
+<ul>
+<li>在已有的 <code>CLAUDE.md</code> 或 <code>AGENTS.md</code> 里追加（或就地更新）一个 <code>## Agent skills</code> 小节，指向下面三个文件。它<strong>不会</strong>替你新造另一个文件：有 <code>CLAUDE.md</code> 就改它，有 <code>AGENTS.md</code> 就改它。</li>
+<li><code>docs/agents/issue-tracker.md</code>——tracker 的工作流说明（用哪个 CLI、怎么建 issue 等）</li>
+<li><code>docs/agents/domain.md</code>——领域文档的消费者规则与布局</li>
+<li><code>docs/agents/triage-labels.md</code>——五个角色到实际标签字符串的映射（仅装了 <code>triage</code> 时）</li>
+</ul>
+
+<p>落盘前会把要写入的内容草稿给你过目。之后这些文件可以直接手改；只有想换 tracker 或推倒重来时才需要重跑该 skill。没有跑过 setup 时，<code>to-spec</code>/<code>to-tickets</code>/<code>triage</code>/<code>code-review</code> 会提示你先补跑。</p>
+
+<h2>四、工作流总览：一条主链路，两条入口匝道</h2>
+
+<p>仓库里的 <code>ask-matt</code> skill 本身就是一张路由图（"你不记得每个 skill 是干嘛的，就问"），它把所有 user-invoked skill 组织成：<strong>一条主链路</strong>（idea → ship）、<strong>两条入口匝道</strong>（triage / diagnosing-bugs / wayfinder 汇入主流）、加上<strong>代码库健康</strong>与若干<strong>独立工具</strong>。</p>
+
+<pre><code>                    [入口匝道]                          [主链路]
+  别人提的 bug/需求 ──→ /triage ──────────────┐
+  硬 bug ────────────→ /diagnosing-bugs ──→（修复 + 回归测试）
+  超大模糊工程 ──────→ /wayfinder ──→ 地图清晰后汇入 to-spec
+                                              │
+  想法 → /grill-with-docs → [/prototype 绕行] → /to-spec → /to-tickets
+                                              │
+                                              ▼
+                              每个 ticket 一个新会话：/implement
+                              （内部驱动 /tdd，收尾跑 /code-review）
+                                              │
+                                              ▼
+                                   提交，由你更新工单状态
+
+  底层词汇层（被上面各 skill 自动取用）：/domain-modeling、/codebase-design、/grilling
+  独立工具：/research、/wizard、/resolving-merge-conflicts、/handoff、/wait-what …</code></pre>
+
+<h3>上下文卫生：这条链路对"什么时候清空上下文"有明确规定</h3>
+
+<div class="callout">
+从 <code>/grill-with-docs</code> 到 <code>/to-tickets</code> 保持在<strong>同一个不中断的上下文窗口</strong>里（中间不要 compact 或 clear），让访谈、规格、工单建立在同一份思考之上。之后<strong>每个 ticket 开一个全新会话</strong>跑 <code>/implement</code>，因为 ticket 本身就是自包含的。唯一的约束是 "smart zone"（约 150K token 内模型仍然思路清晰的窗口）：快撞上时，在最近的阶段边界 <code>/compact</code>，不要带病硬撑。
+</div>
+
+<h2>五、逐个 skill：何时触发、做什么、产出什么</h2>
+
+<h3>1. 想法阶段</h3>
+
+<h4>/grill-with-docs —— 拷问式访谈 + 顺手沉淀文档（user-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：在仓库里开始一次改动、计划还模糊、术语还没定下来时。作者的建议是"每次想做改动都用"。</li>
+<li><strong>做什么</strong>：它的 SKILL.md 只有一行——调用 <code>grilling</code> 和 <code>domain-modeling</code> 两个 model-invoked skill。<code>grilling</code> 把访谈组织成<strong>设计树</strong>，一轮一轮地问：每一轮问出整个"前沿"（frontier，即前置条件已全部敲定的问题），每个问题附推荐答案，然后停下来等你回答。查事实是 agent 的活（它会派子代理去查代码），做决定是你的活。直到设计树的每个分支都被走完。</li>
+<li><strong>产出什么</strong>（它是"有状态"的，这是与 <code>/grill-me</code> 的本质区别）：
+  <ul>
+  <li>一个术语被敲定 → 当场写入 <code>CONTEXT.md</code>（词汇表，仅此而已，不含实现细节）</li>
+  <li>一个决策同时满足三个门槛（难以逆转、没有上下文会让人惊讶、是真正的权衡）→ 写成 <code>docs/adr/</code> 下的 ADR。大多数决策不满足，所以大多数会话产不出 ADR，这是设计如此</li>
+  <li>其余所有共识 → 只存在于对话里。所以会话结束后要直接接 <code>/to-spec</code>，而不是 clear 掉</li>
+  </ul></li>
+</ul>
+
+<h4>/prototype —— 用一次性代码回答设计问题（model-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：访谈中有个问题光靠纸面谈不拢——"这个状态模型感觉对吗"（逻辑分支：产出一个可分享的单 HTML 文件）或"这 UI 应该长什么样"（UI 分支：同一路由下多个差异巨大的变体，URL 参数切换）。</li>
+<li><strong>做什么</strong>：写刻意的"一次性代码"：不做持久化、不打磨、不写测试，但每次操作都把完整状态摆出来给你看。</li>
+<li><strong>产出什么</strong>：验证过的决策折叠进真实代码；原型本身提交到 <code>prototype/&lt;name&gt;</code> 一次性分支（不进 main），作为"一手资料"从实现 issue 里链过去。主链路里用 <code>/handoff</code> 往返衔接原型会话。</li>
+</ul>
+
+<h4>/research —— 把阅读跑腿活丢给后台 agent（model-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：需要查官方文档、API 事实、第三方库细节时。</li>
+<li><strong>做什么</strong>：起一个<strong>后台 agent</strong>，对着一手来源（官方文档、源码、规范）调查，你继续干别的。</li>
+<li><strong>产出什么</strong>：仓库里一份带引用的 Markdown 文件。它是主链路的"饲料"——拿着它进 <code>/grill-with-docs</code>。</li>
+</ul>
+
+<h3>2. 规格阶段</h3>
+
+<h4>/to-spec —— 把对话直接合成规格，不再访谈（user-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：grill 完、共识已达成，趁热在同一个上下文窗口里运行。</li>
+<li><strong>做什么</strong>：明确<strong>不做访谈</strong>，只综合已有对话。其中一个关键动作是划定<strong>测试接缝（seam）</strong>：优先用已有接缝、用尽量高的接缝、理想数量是一个，并跟你确认。规格全程使用 <code>CONTEXT.md</code> 里的领域词汇，尊重相关 ADR。</li>
+<li><strong>产出什么</strong>：按固定模板写规格并发布到 issue tracker，打上 <code>ready-for-agent</code> 标签。模板章节：Problem Statement（问题陈述）、Solution（方案）、User Stories（一份<strong>极长</strong>的编号用户故事列表）、Implementation Decisions（实现决策：动哪些模块、接口怎么改、schema/API 约定；<strong>不含具体文件路径和代码片段</strong>——它们很快过期；例外是原型产出的、比文字更精确地编码了决策的片段）、Testing Decisions（测试决策：什么是好测试、测哪些模块、代码库里的先例）、Out of Scope、Further Notes。</li>
+</ul>
+
+<h3>3. 工单阶段</h3>
+
+<h4>/to-tickets —— 拆出 tracer-bullet 工单并声明阻塞边（user-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：构建要跨多个会话时。<strong>整个改动一个上下文窗口装得下就别用它</strong>，直接 <code>/implement</code>。</li>
+<li><strong>做什么</strong>：把工作拆成 <strong>tracer bullet（曳光弹）式垂直切片</strong>：每个 ticket 是一条窄而完整的路径，一次穿透所有层（schema、API、UI、测试），落地即可独立演示或验证，大小以"一个全新上下文窗口能装下"为限。切之前先找<strong>预重构</strong>机会（"让改动变容易，然后再做容易的改动"），预重构排在最前。每个 ticket 声明自己的<strong>阻塞边</strong>（哪些 ticket 必须先完成）。拆完后会拿编号列表反问你：粒度合适吗？阻塞边是真的吗？要不要合并或再拆？<strong>你批准之前什么都不发布</strong>。</li>
+<li><strong>产出什么</strong>：本地 tracker 下是 <code>.scratch/&lt;feature-slug&gt;/issues/&lt;NN&gt;-&lt;slug&gt;.md</code>，一个 ticket 一个文件，按依赖顺序从 01 编号；真实 tracker（GitHub、Linear…）下是一个个 issue，优先用平台原生阻塞/子 issue 关系，统一打 <code>ready-for-agent</code> 标签。</li>
+<li><strong>例外：宽重构（wide refactor）</strong>。改列名、改共享符号类型这类"一次编辑炸掉全代码库"的机械变更，塞不进垂直切片，改用 <strong>expand–contract</strong> 编排：先 expand（新旧并存）→ 按爆炸半径分批 migrate（每批一个 ticket）→ 最后 contract（删旧形式，被所有 migrate 批次阻塞）。</li>
+</ul>
+
+<h3>4. 实现阶段</h3>
+
+<h4>/implement —— 极简的工作→反馈→提交循环（user-invoked）</h4>
+<p>SKILL.md 全文只有几句话，刻意简单：按 spec 或 ticket 实现；在事先约定的接缝处尽量用 <code>/tdd</code>；定期跑类型检查和单测试文件，完整测试套件只在最后跑一次；完成后用 <code>/code-review</code> 评审；提交到当前分支。它是"编排者"，纪律都在它驱动的 model-invoked skill 里。</p>
+
+<h4>/tdd —— red → green 循环的纪律参考（model-invoked）</h4>
+<ul>
+<li><strong>角色</strong>：它是<strong>参考，不是驱动器</strong>——循环由你或 <code>/implement</code> 来跑。</li>
+<li><strong>三条铁律</strong>：先红后绿（先写失败测试，再写刚好够通过的代码，不预支未来的测试）；一次一个切片（一个接缝、一个测试、一个最小实现）；<strong>重构不属于这个循环</strong>——重构阶段在 2026 年 6 月被有意移除，因为 agent 实际上几乎从不执行它，且把实现与评审拆成不同会话效果更好，重构归 <code>/code-review</code> 管。</li>
+<li><strong>接缝纪律</strong>：不写任何未确认的接缝处的测试。动手前先列出要测的接缝并跟你确认。</li>
+<li><strong>三个反模式</strong>：实现耦合（mock 内部协作者、重构导致行为没变测试却挂了）；同义反复（断言按代码同样的方式重算期望值，恒真）；水平切片（先写全部测试再写全部实现）。</li>
+</ul>
+
+<h3>5. 验证与评审阶段</h3>
+
+<h4>/code-review —— 双轴评审（model-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：<code>/implement</code> 收尾时自动跑；任何时候想评审一个分支或 PR 也可单独调用。</li>
+<li><strong>做什么</strong>：钉住一个固定点（commit、tag、<code>main</code>…），用 <code>git diff &lt;fixed-point&gt;...HEAD</code> 取 diff，然后沿两条轴各派一个<strong>并行的子代理</strong>评审（互不污染上下文）：
+  <ul>
+  <li><strong>Standards（规范）轴</strong>：是否符合仓库文档化的编码标准；外加一份 Fowler《重构》第三章的"坏味道基线"（Mysterious Name、Feature Envy、Shotgun Surgery 等 12 种），仓库有文档时仓库优先，坏味道永远是"判断题"而非"硬伤"。</li>
+  <li><strong>Spec（规格）轴</strong>：是否忠实实现了原始 issue/spec——漏做的、没要求却多做的（scope creep）、看起来实现了但实现错了的。spec 来源按序查找：commit message 里的 issue 引用 → 用户传入的路径 → <code>docs/</code>、<code>specs/</code>、<code>.scratch/</code> 下匹配的文件 → 问你。</li>
+  </ul></li>
+<li><strong>产出什么</strong>：两份报告按 <code>## Standards</code> 和 <code>## Spec</code> 分标题原样并列呈现，<strong>刻意不合并、不跨轴排序</strong>——因为"符合全部规范但做错了东西"和"做的正是要的但破坏了项目约定"是两种完全不同的失败，合并会让一轴掩盖另一轴。</li>
+</ul>
+
+<h3>6. 入口匝道与配套</h3>
+
+<h4>/triage —— 把外部 issue 推过状态机（user-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：处理<strong>别人提交的</strong> bug 报告和功能请求时。<code>/to-tickets</code> 产出的 ticket 天生就是 agent-ready 的，不要对它们跑 triage。</li>
+<li><strong>做什么</strong>：两个类别角色（<code>bug</code> / <code>enhancement</code>）× 五个状态角色（<code>needs-triage</code> → <code>needs-info</code> / <code>ready-for-agent</code> / <code>ready-for-human</code> / <code>wontfix</code>）。处理单个 issue 时会先对代码库做两项检查——冗余检查（这功能是不是已经实现了）和既往拒绝检查（查 <code>.out-of-scope/*.md</code> 知识库）；然后<strong>验证报告是否属实</strong>（bug 要复现、PR 要 checkout 下来跑测试），必要时就地 grill 补全信息。所有发到 tracker 上的评论必须以 <code>&gt; *This was generated by AI during triage.*</code> 开头。</li>
+<li><strong>产出什么</strong>：<code>ready-for-agent</code> 时附上一份 agent 简报（agent brief），之后由 <code>/implement</code> 领走；被拒绝的增强请求会写入 <code>.out-of-scope/</code> 知识库，防止未来反复重提。</li>
+</ul>
+
+<h4>/diagnosing-bugs —— 硬 bug 的六阶段诊断纪律（model-invoked）</h4>
+<p>为"第一眼看不出来的 bug、间歇性 flake、两个已知良好状态之间溜进来的回归"准备。核心立场：<strong>没有反馈回路，盯着代码看多久都没用</strong>。六个阶段：</p>
+<ol>
+<li><strong>构建反馈回路</strong>（"这才是这个 skill 的本体，其他都是机械步骤"）：造一条能在<em>这个 bug</em> 上变红的紧致 pass/fail 信号——失败测试、curl 脚本、CLI 快照对比、无头浏览器、流量回放、一次性 harness、属性/fuzz 循环、二分 harness……完成标准是：能说出一条<strong>已经跑过至少一次</strong>的命令，它 red-capable、确定性、秒级、agent 可无人值守运行。<strong>回路不存在之前禁止进入假设阶段</strong>。</li>
+<li><strong>复现 + 最小化</strong>：确认复现的是用户描述的那个失败（而不是附近的另一个），然后一次砍一个要素，砍到"每个剩余要素都是承重墙"。</li>
+<li><strong>假设</strong>：先列 3–5 个<strong>可证伪</strong>的排序假设（"如果 X 是原因，那么改 Y 会让 bug 消失"），列出来先给用户过目再动手。</li>
+<li><strong>插桩</strong>：一次只改一个变量；调试器优先于日志；每条调试日志打唯一前缀（如 <code>[DEBUG-a4f2]</code>），收尾时一次 grep 全部清除。</li>
+<li><strong>修复 + 回归测试</strong>：回归测试写在修复<strong>之前</strong>，但只在存在"正确接缝"时——如果没有能复现真实 bug 模式的接缝，<strong>"没有接缝"本身就是发现</strong>，记下来，它正是 <code>/improve-codebase-architecture</code> 的输入。</li>
+<li><strong>清理</strong>：原始场景不再复现、回归测试通过、调试日志清干净、真正的原因写进 commit/PR 信息。</li>
+</ol>
+
+<h4>/wayfinder —— 装不进一个会话的大工程，先画地图（user-invoked）</h4>
+<ul>
+<li><strong>何时触发</strong>：一个松散的想法太大、被迷雾包裹，从这儿到目的地（spec、决策或一次改动）的路还看不见。它<strong>更慢更重，只留给这种场合</strong>——范围清晰的功能上它是误用。</li>
+<li><strong>做什么</strong>：在 issue tracker 上建一张带 <code>wayfinder:map</code> 标签的"地图" issue，子 issue 是一个个<strong>决策工单</strong>（解决的是"问题"而非"构建切片"），分四种类型：research（AFK，子代理查资料）、prototype（HITL，做个便宜的具体产物来讨论）、grilling（HITL，对话，默认类型）、task（人工跑腿）。地图刻意不完整：说不清的问题先写在 <code>Not yet specified</code>（战争迷雾）区，随着前沿推进再"毕业"成工单。<strong>默认只规划不执行</strong>：地图产出的应该是决策，不是交付物。</li>
+<li><strong>产出什么</strong>：每个会话最多解决一个工单（research 除外），解决即在 issue 上留 resolution comment、关闭、并在地图的 Decisions so far 里加一行索引。地图清空后<strong>交棒给主链路的 <code>/to-spec</code></strong>，由它把散落的决策塌缩成可构建的计划，而不是直接跳进 <code>/implement</code>。</li>
+</ul>
+
+<h4>词汇层与独立工具（速查）</h4>
+
+<div class="table-wrap">
+<table>
+<tr><th>skill</th><th>定位</th></tr>
+<tr><td><code>/domain-modeling</code></td><td>领域建模的主动纪律：挑战模糊术语、用边缘场景压力测试概念关系、当场更新 <code>CONTEXT.md</code> 与 ADR。被 <code>grill-with-docs</code>、<code>triage</code>、<code>wayfinder</code> 驱动</td></tr>
+<tr><td><code>/codebase-design</code></td><td>深模块词汇表（module / interface / depth / seam / adapter / leverage / locality）：小接口背后藏大量行为。删除测试、"接口即测试面"、"一个适配器是假想接缝，两个才是真接缝"。<code>/tdd</code> 与 <code>/improve-codebase-architecture</code> 共用</td></tr>
+<tr><td><code>/improve-codebase-architecture</code></td><td>扫描代码库找"深化机会"，产出一份自包含的 HTML 可视化报告（写进系统临时目录，不污染仓库），你挑一个候选项后进入 grill 环节。作者建议隔几天跑一次；它是"调查"不是"救援"</td></tr>
+<tr><td><code>/resolving-merge-conflicts</code></td><td>逐个 hunk 解决进行中的 merge/rebase 冲突：回溯双方改动的一手来源（commit、PR、原始 issue），按<strong>意图</strong>解决而不是按行取舍，绝不 <code>--abort</code></td></tr>
+<tr><td><code>/wizard</code></td><td>把"只有人能做的事"（开通基础设施、配凭证和 CI secrets、在第三方后台点点点、一次性迁移）生成成交互式 bash 向导脚本，逐步打开 URL、隐藏输入密钥、幂等写 <code>.env</code> 和 GitHub secrets</td></tr>
+<tr><td><code>/grill-me</code></td><td>与 <code>grill-with-docs</code> 同一场访谈，但无状态、不留文件——用于没有仓库的场景。有仓库时永远优先 <code>grill-with-docs</code></td></tr>
+<tr><td><code>/handoff</code>、<code>/wait-what</code>、<code>/teach</code>、<code>/to-questionnaire</code></td><td>productivity 桶：会话交接文档；一句话没听懂时让 agent 用你的 <code>CONTEXT.md</code> 词汇重讲一遍；跨会话教学；给"唯一知道答案的人"写异步问卷</td></tr>
+</table>
+</div>
+
+<h2>六、中文示例</h2>
+
+<p>以下示例内容按各 SKILL.md 定义的格式翻译/演绎为中文，命令与文件名保持原文。</p>
+
+<h3>示例 1：<code>/grill-with-docs</code> 的一轮拷问</h3>
+
+<p>背景：你想给博客系统加"草稿"功能。agent 按 <code>grilling</code> 的格式提问——整轮前沿一次问完，每题带推荐答案（❓/➡️ 格式即 SKILL.md 规定格式）：</p>
+
+<pre><code>❓ **Q1** - **草稿的可见性**: 草稿是只对作者可见，
+   还是可以通过一个不可猜测的链接分享给他人预览？
+   这决定了我们是否需要引入"预览令牌"这个概念。
+
+➡️ 推荐: 先只做作者可见。预览分享是一个独立功能，
+   它的权限模型会把这次改动的范围扩大一倍。
+
+---
+
+❓ **Q2** - **"发布"是不是一个独立动作**: 文章从草稿到公开,
+   是用户在编辑器里点"发布"按钮的瞬间完成,
+   还是需要经过审核队列?
+
+➡️ 推荐: 单动作即时发布。你的仓库里没有任何审核
+   相关代码,引入队列会牵扯出通知、角色两个新概念。
+
+---
+
+❓ **Q3** - **术语确认**: 你说"草稿"时,指的是"从未公开
+   过的文章",还是也包括"已发布文章的未发布修改"?
+   你的 CONTEXT.md 目前只有 Article 这一个概念。
+
+➡️ 推荐: 本次只覆盖前者,并在 CONTEXT.md 里把 Draft
+   定义为"从未发布过的 Article"。后者(已发布文章的
+   修订)是个更深的模型,值得单独开一次 grill。</code></pre>
+
+<p>你回答后，agent 重算前沿、问下一轮；期间"Draft"一词敲定后会<strong>当场</strong>写入 <code>CONTEXT.md</code>。若"发布不可撤销、立即公开"这类决策同时满足"难以逆转 + 没有上下文令人惊讶 + 真实权衡"三个条件，agent 会主动提议记成 ADR。</p>
+
+<h3>示例 2：<code>/to-spec</code> 产出的规格骨架</h3>
+
+<pre><code>## Problem Statement（问题陈述）
+博主在正式发布前无法保存半成品文章，关掉编辑器就丢失进度。
+
+## Solution（方案）
+为 Article 引入 Draft 状态：作者可以随时保存、回到草稿列表继续编辑，
+确认后一键发布。
+
+## User Stories（用户故事，一份极长的编号列表）
+1. 作为博主,我想把写了一半的文章存为草稿,以便不会丢失进度
+2. 作为博主,我想在草稿列表里看到所有未发布文章,以便选择继续编辑哪篇
+3. 作为博主,我想点击"发布"让草稿立即公开,以便读者可以看到
+4. ……（覆盖该功能的方方面面,尽可能详尽）
+
+## Implementation Decisions（实现决策）
+- 修改的模块: Article 模块增加状态字段（draft / published）; 新增
+  DraftList 模块负责草稿的查询
+- Article 的接口增加 publish() 动作; 发布即时生效, 无审核队列
+- Schema 变更: articles 表增加 status 列, 默认 'published'
+  （存量文章全部为已发布）
+- （不含具体文件路径与代码片段——它们很快过期）
+
+## Testing Decisions（测试决策）
+- 好测试的标准: 只测外部行为, 不测实现细节
+- 测试接缝: 在 Article 模块的公开接口这一层测试（唯一接缝,
+  已与作者确认）
+- 先例: 参照代码库中 orders 模块的接口级测试写法
+
+## Out of Scope（范围之外）
+- 草稿的分享预览链接
+- 已发布文章的修订版本</code></pre>
+
+<h3>示例 3：<code>/to-tickets</code> 拆出的本地 tracer-bullet ticket</h3>
+
+<p>本地 tracker 模式下，一个 ticket 一个文件，按依赖顺序编号：</p>
+
+<pre><code># .scratch/draft-feature/issues/01-draft-crud.md
+
+# 01: 草稿的保存与列表
+
+**What to build:** 博主能把写了一半的文章存为草稿,
+并在草稿列表里看到它、点进去继续编辑——从 schema
+到 UI 整条路径打通, 功能本身即可演示。
+
+**Blocked by:** None (can start immediately)
+
+**Status:** ready-for-agent
+
+- [ ] 保存一篇只有标题、没有正文的文章后, 它出现在草稿列表
+- [ ] 从列表点进草稿能恢复之前的内容并继续编辑
+- [ ] 已发布文章不出现在草稿列表中</code></pre>
+
+<pre><code># .scratch/draft-feature/issues/02-publish-action.md
+
+# 02: 一键发布草稿
+
+**What to build:** 博主在草稿编辑器里点"发布",
+文章立即公开可见, 并从草稿列表消失。
+
+**Blocked by:** 01: 草稿的保存与列表
+
+**Status:** ready-for-agent
+
+- [ ] 发布后文章出现在公开文章列表, 携带发布时间
+- [ ] 发布后不再出现在草稿列表
+- [ ] 发布动作不可撤销地对外可见（无审核队列）</code></pre>
+
+<p>注意每个 ticket 都能回答"做完后能演示什么"，且答案是<strong>行为</strong>而不是某一层——这是 tracer bullet 与水平切片的分水岭。</p>
+
+<h3>示例 4：<code>/tdd</code> 的 red → green 切片</h3>
+
+<p>动手前，agent 先停下来确认接缝（铁律：不写未确认接缝处的测试）：</p>
+
+<pre><code>agent: 我打算只在 Article 模块的公开接口这一层测试:
+       saveDraft() / listDrafts() / publish() 三个入口。
+       不直接测数据库, 不测内部的状态转换函数。
+       这个接缝符合你的预期吗?
+你:    可以。</code></pre>
+
+<p>然后一个切片一个循环——先红：</p>
+
+<pre><code>// draft.test.ts —— 先写失败测试, 运行, 看它红
+test("作者可以把写了一半的文章存为草稿", async () =&gt; {
+  const article = await saveDraft({ title: "未完成的思考", body: "" });
+
+  const drafts = await listDrafts({ authorId: article.authorId });
+
+  // 期望值来自规格的字面事实, 不是按代码逻辑重算
+  expect(drafts).toHaveLength(1);
+  expect(drafts[0].status).toBe("draft");
+});</code></pre>
+
+<p>再绿：只写刚好让这个测试通过的代码（不预支"发布"功能的任何实现）。绿了以后才写下一个测试（"已发布文章不出现在草稿列表"），再红、再绿。全程没有独立的重构阶段——重构留待 <code>/code-review</code>。</p>
+
+<h3>示例 5：<code>/triage</code> 的状态机速览</h3>
+
+<pre><code>你:   /triage 让我看看有什么需要我处理的
+
+agent: 【未打标签】（从未分诊, 最旧在前）
+       1. #58 [issue] "导出 CSV 时中文乱码" — 2026-09-02
+       2. #61 [PR] 外部贡献者: 修复移动端导航折叠
+       【needs-triage】
+       3. #55 [issue] "希望支持深色模式" — 已初步评估
+       【needs-info 且报告者有新回复】
+       4. #49 [issue] "偶发登录态丢失" — 报告者 3 天前补充了日志
+
+你:   看看 #58
+
+agent: （复现了乱码, 确认 bug 属实; 在代码库里按领域概念搜索
+       发现导出功能已存在于 Export 模块）
+       建议: 类别 bug + 状态 ready-for-agent。
+       已按你的确认发布 agent brief, 打上标签。
+       （评论以 "This was generated by AI during triage." 开头）</code></pre>
+
+<h2>七、实践建议</h2>
+
+<p>以下全部来自仓库文档（README、docs/ 各页的 Common questions 与 It's working if 一节），是作者和社区已经踩过的坑：</p>
+
+<h4>链路顺序与上下文</h4>
+<ol>
+<li><strong>从 grill 到 to-tickets 不要 clear/compact</strong>。访谈中敲定的大部分共识只存在于对话里（词汇表不收、ADR 门槛高），clear 掉就永远丢了；而且大 spec 从 tracker 取回时可能被截断。同一个窗口跑完 <code>grill-with-docs → to-spec → to-tickets</code>，然后才按 ticket 分会话。</li>
+<li><strong>不确定用哪个 skill，就问 <code>/ask-matt</code></strong>。它是覆盖全部 user-invoked skill 的路由器。</li>
+<li><strong>规模决定入口</strong>：一次会话能敲定 → <code>grill-with-docs</code>；一个窗口能装下的构建 → 直接 <code>implement</code>；跨会话 → <code>to-spec + to-tickets</code>；连路都看不清的大工程 → <code>wayfinder</code>。最常见的误用是对范围清晰的功能动用 wayfinder。</li>
+</ol>
+
+<h4>质量控制</h4>
+<ol start="4">
+<li><strong>拆票过度是 <code>to-tickets</code> 最常被报告的问题</strong>。quiz 环节就是给你推回来的地方：让它合并。验收时逐票问一句"做完能演示什么"，答不上来的就是水平切片。还可以在发布前抽查验收标准：每条都要能说出"什么观察会证明它不成立"，并且在实现起点上它应该是红的。</li>
+<li><strong>别把 <code>to-tickets</code> 产的 ticket 再拿去 <code>triage</code></strong>——它们天生 agent-ready；triage 只处理"别人交来的"工作。</li>
+<li><strong><code>implement</code> 不会可靠地关闭或勾选 ticket</strong>（GitHub 和本地 Markdown 都一样），ticket 状态由你自己更新。</li>
+<li><strong>在 <code>CLAUDE.md</code> 里声明浏览器/e2e 测试在行为跑通之后再写</strong>——否则 agent 可能先写 Playwright 测试，然后在慢循环里空转。</li>
+<li><strong><code>grill-with-docs</code> 依赖 <code>grilling</code> 和 <code>domain-modeling</code> 两个 skill 被正确加载</strong>。如果它一次性倒出所有问题、不给推荐答案、也不提 <code>CONTEXT.md</code>，说明依赖没加载上——直接问 agent 它加载了哪些 skill。在别的编排框架（SDD 包装器、多 agent 框架）里内嵌调用它时，有"访谈照跑但文件没落盘"的未修复报告，跑完检查工作目录再信结果。</li>
+</ol>
+
+<h4>GitHub 上的已知毛边</h4>
+<ol start="9">
+<li>ticket 可能没有自动建成 spec issue 的子 issue（issue #554），<code>gh issue create --parent</code> / <code>gh issue edit &lt;parent&gt; --add-sub-issue</code> 可以手动补。</li>
+<li>阻塞关系可能被写成正文文字而非原生 blocking link（issue #513），手动补：<code>gh issue create --blocked-by 12,15</code>。</li>
+</ol>
+
+<h4>让 skills 保持锋利</h4>
+<ol start="11">
+<li><strong>隔几天跑一次 <code>/improve-codebase-architecture</code></strong>，把"深化机会"变成下一轮 <code>grill-with-docs</code> 的输入。它是调查不是救援——老代码库它能找到真候选，但不会替你解开烂泥。</li>
+<li><strong><code>CONTEXT.md</code> 只是词汇表</strong>：别往里塞实现细节、规格或草稿笔记。ADR 只记"难以逆转 + 令人惊讶 + 真实权衡"三者齐备的决策。</li>
+<li><strong>skill 是建议性控制，不是强制</strong>。文档坦率承认没有指令能让 agent 100% 遵守（有用户追问为何先写实现，模型回答"我知道 skill 说了一次一个测试。我读了。我只是默认了自己的习惯"）。循环即使不被严格执行也值得跑；某个切片要求严格遵守时，盯着跑。</li>
+</ol>
+
+<h2>八、与 AI-Native SDLC Playbook 工件链的对应</h2>
+
+<p>Playbook 的工件链是 <code>intent.md → spec.md → plan.md → diff+tests → PR+review findings → incident record</code>，强调"每个阶段提交工件、下一阶段读取工件"的循环。mattpocock/skills 的产物可以映射上去，但有两个刻意的"缺口"：</p>
+
+<div class="table-wrap">
+<table>
+<tr><th>Playbook 环节</th><th>mattpocock/skills 对应物</th><th>说明</th></tr>
+<tr><td><code>intent.md</code>（意图）</td><td>对话本身 + <code>CONTEXT.md</code> / ADR 增量</td><td><code>grill-with-docs</code> 沉淀的是<strong>词汇与关键决策</strong>，不是完整的意图文档；意图的主体留在对话里，由下一步立刻消费。这是它刻意轻量的地方</td></tr>
+<tr><td><code>spec.md</code>（规格）</td><td><code>/to-spec</code> 发布到 issue tracker 的规格 issue（<code>ready-for-agent</code>）</td></tr>
+<tr><td><code>plan.md</code>（计划）</td><td><code>/to-tickets</code> 的 tracer-bullet ticket 集 + 阻塞边；超大工程则先用 <code>/wayfinder</code> 的决策地图充当前置规划</td></tr>
+<tr><td>diff + tests</td><td><code>/implement</code> 驱动 <code>/tdd</code> 产出的实现与接口级测试（只测事先约定的接缝）</td></tr>
+<tr><td>PR + review findings</td><td><code>/code-review</code> 的双轴报告（Standards / Spec 并列呈现）+ 提交</td></tr>
+<tr><td>incident record（事故记录）</td><td><code>/diagnosing-bugs</code> 收尾时把正确假设写进 commit/PR 信息；被拒绝的增强进 <code>.out-of-scope/</code> 知识库；架构缺陷回流到 <code>/improve-codebase-architecture</code></td></tr>
+</table>
+</div>
+
+<p>对照 Playbook 的三个控制分层：这套 skills 几乎全部是 <strong>skill 层的建议性控制</strong>——没有 hook、没有确定性强制，人类审批以"quiz 确认"的形式嵌在 <code>to-tickets</code> 的发布前、<code>tdd</code> 的接缝确认、<code>grilling</code> 的每轮等待里。它不追求 Playbook 式的自动化闭环，而是把"工程师保留控制权"推到底：工件链存在，但每个环节的推进都由人敲下命令。两种立场的取舍本身，就是 AI 原生 SDLC 设计空间里最有意思的一道题。</p>
+
+</main>

@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="13年、73万行的Java遗留系统如何现代化？本报告断言「推倒重来」才是最大风险，正解是AI加速的绞杀者迁移：五阶段十八至三十个月路线图，用大厂案例证明AI能把理解与翻译成本压低六到九成，但最后业务规则仍须人工验证；先行为锁定再动代码，配四线考古与六道门禁。">
+<meta name="keywords" content="遗留系统, 现代化, 绞杀者迁移, AI 重构, 数据迁移, 路线图">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-29">
+<title>13 年遗留系统的 AI 时代重建路线图 — 深度调研报告</title>
+<style>
+:root{
+  --bg:#FBFAF7; --card:#FFFFFF; --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --border:#E4E1D8; --soft:#F3F1EA;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FBF0E3;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EAF2F9;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E8F4F2;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F2EDFA;
+  --red:#B3261E; --red-t:#94201A; --red-bg:#FAECEA;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EBF3EA;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75;
+  overflow-wrap:break-word;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+header.hero{padding:64px 0 40px;border-bottom:1px solid var(--border)}
+.kicker{font-size:12.5px;letter-spacing:.14em;color:var(--amber-t);font-weight:700;text-transform:uppercase;margin-bottom:14px}
+h1{font-size:34px;line-height:1.3;font-weight:800;letter-spacing:-.01em;margin-bottom:14px}
+.hero p.sub{color:var(--ink2);font-size:17px;max-width:760px}
+.meta{margin-top:20px;font-size:13px;color:var(--ink3)}
+nav.toc{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding:8px 24px}
+nav.toc a{white-space:nowrap;font-size:12.5px;color:var(--ink2);text-decoration:none;padding:5px 10px;border-radius:999px}
+nav.toc a:hover{background:var(--soft);color:var(--ink)}
+section{padding:56px 0 8px;scroll-margin-top:24px}
+h2{font-size:25px;font-weight:800;letter-spacing:-.01em;margin-bottom:20px}
+h2 .num{color:var(--amber-t);font-variant-numeric:tabular-nums;margin-right:10px;font-size:20px}
+h3{font-size:17.5px;font-weight:700;margin:32px 0 12px;color:var(--ink)}
+p{margin-bottom:14px;color:var(--ink)}
+p.lead{color:var(--ink2);font-size:17px;margin-bottom:20px}
+ul,ol{margin:0 0 16px 22px}
+li{margin-bottom:8px;color:var(--ink)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--soft);border:1px solid var(--border);border-radius:5px;padding:1px 6px;overflow-wrap:anywhere}
+strong{font-weight:700}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:22px 24px;margin-bottom:20px;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid2>*{min-width:0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid3>*{min-width:0}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.stat .v{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.stat .u{font-size:12.5px;color:var(--ink3);margin-top:2px}
+table{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:14px}
+th{background:var(--soft);text-align:left;padding:9px 12px;border:1px solid var(--border);color:var(--ink2);font-weight:700;vertical-align:top}
+td{padding:9px 12px;border:1px solid var(--border);vertical-align:top;color:var(--ink)}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;letter-spacing:.02em;vertical-align:middle}
+.tag.amber{background:var(--amber-bg);color:var(--amber-t)}
+.tag.blue{background:var(--blue-bg);color:var(--blue-t)}
+.tag.teal{background:var(--teal-bg);color:var(--teal-t)}
+.tag.purple{background:var(--purple-bg);color:var(--purple-t)}
+.tag.red{background:var(--red-bg);color:var(--red-t)}
+.tag.green{background:var(--green-bg);color:var(--green-t)}
+.tag.grey{background:var(--soft);color:var(--ink2)}
+figure{margin:24px 0 30px;min-width:0}
+.fig-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;overflow-x:auto}
+.fig-box svg{min-width:600px;width:100%;height:auto;display:block}
+figcaption{font-size:13px;color:var(--ink3);margin-top:10px;line-height:1.6}
+.callout{border-left:4px solid var(--amber);background:var(--amber-bg);border-radius:0 10px 10px 0;padding:16px 20px;margin:18px 0 22px}
+.callout.blue{border-left-color:var(--blue);background:var(--blue-bg)}
+.callout.red{border-left-color:var(--red);background:var(--red-bg)}
+.callout.green{border-left-color:var(--green);background:var(--green-bg)}
+.callout p{margin-bottom:8px}
+.callout p:last-child{margin-bottom:0}
+.verdict{border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:16px 0;background:var(--card)}
+.verdict h4{font-size:14px;margin-bottom:8px}
+.claims{counter-reset:claim}
+.claim{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.claim:last-child{border-bottom:none}
+.claim .n{flex:0 0 34px;height:34px;border-radius:50%;background:var(--amber-bg);color:var(--amber-t);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center}
+.claim .body{min-width:0}
+.claim .body p{margin-bottom:6px}
+.claim .evi{font-size:12.5px;color:var(--ink3)}
+.src{font-size:12.5px;color:var(--ink3)}
+footer{padding:40px 0 56px;border-top:1px solid var(--border);margin-top:56px}
+footer p{font-size:13px;color:var(--ink3)}
+@media(max-width:760px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  h1{font-size:26px}
+  table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">深度调研报告 · 2026-09</div>
+    <h1>13 年遗留系统的 AI 时代重建路线图<br>——从「推倒重来」到「AI 加速的绞杀者迁移」</h1>
+    <p class="sub">面向 73 万行 Java 遗留系统（Spring 3.2 / JDK 1.7 / 自研 reed 平台 / Oracle）的现代化专项调研：综合大厂一手案例、行业反证与数据迁移工程实践，给出一套可实操的五阶段路线图。</p>
+    <div class="meta">系统画像：reed 2.0.6 平台（grail 建模 / pigeon 工作流 / brick 页面设计器 / tiger 安全 / runway 聚合）· 3412 个 Java 文件 / 约 73 万行 · contract 域 928 文件 · operation 域 623 文件 · MyBatis 508 mapper XML + 元数据 ORM + Hibernate 3 三轨数据访问 · 2013–2026 持续演进 · 手头资产：全部源代码 + oracle.dmp</div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#s00">00 摘要</a><a href="#s01">01 系统解剖</a><a href="#s02">02 范式判定</a><a href="#s03">03 AI 改变了什么</a><a href="#s04">04 总路线图</a><a href="#s05">05 AI 代码考古</a><a href="#s06">06 行为锁定</a><a href="#s07">07 波次迁移</a><a href="#s08">08 目标架构</a><a href="#s09">09 数据迁移</a><a href="#s10">10 AI 工程化治理</a><a href="#s11">11 组织与度量</a><a href="#s12">12 反模式</a><a href="#s13">13 结论与来源</a>
+  </div>
+</nav>
+
+<main>
+<!-- ============ 00 摘要 ============ -->
+<section id="s00">
+  <div class="wrap">
+    <h2><span class="num">00</span>摘要：九条核心论断</h2>
+    <p class="lead">以下每一条论断都可以被证据证伪，报告正文即为论证。每条后附证据强度：<span class="tag green">一手案例</span> &gt; <span class="tag blue">大样本调查</span> &gt; <span class="tag purple">行业分析</span> &gt; <span class="tag grey">单一实践</span>。</p>
+    <div class="card claims">
+      <div class="claim"><div class="n">1</div><div class="body">
+        <p><strong>「用 AI 全部重写一个全新系统」是本项目最大的风险，而不是解决方案。</strong>25 年重写史（Netscape、Borland、Chandler）表明大爆炸式重写默认失败——不是代码写不出来，而是旧代码里 13 年积累的未成文业务规则会静默丢失。<span class="evi">证据强度：多案例交叉验证 + <span class="tag purple">Gartner</span> 预测过度押注生成式 AI 的迁移项目 70% 以上不达预期。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">2</div><div class="body">
+        <p><strong>AI 真正改变的是「理解与翻译」环节的成本曲线，不是「验证」环节。</strong>一手案例显示代码考古、文档提取、测试生成提速 60–90%（Salesforce 33 个 API 迁移：231 人天 → 13 天；LG CNS：2913 个 API 99.1% 自动转换），但最后 10–15% 的业务规则人工验证不可压缩。<span class="evi">证据强度：<span class="tag green">厂商一手案例</span>，注意厂商有利益相关。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">3</div><div class="body">
+        <p><strong>你们最大的资产不是 73 万行代码，而是系统 13 年来的实际行为。</strong>508 个手写 SQL、合同域 928 个文件、2013 年至今的生产修复，都是未成文业务规则的唯一载体。迁移第一步是「表征测试 + 双跑对账」把行为锁定成可执行的规约，之后才谈得上动代码。<span class="evi">证据强度：<span class="tag green">工程方法论</span>（Michael Feathers 表征测试 + 金融业影子运行实践）。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">4</div><div class="body">
+        <p><strong>三轨数据访问是理解成本的最大黑洞，也是 AI 考古的第一切面。</strong>MyBatis 508 个手写 XML（业务规则的最大藏身处）+ reed-grail 元数据 ORM（规则在元数据和数据库对象里）+ Hibernate 3（pigeon 工作流专用）——业务规则散落三处，任何只读 Java 代码的考古都会漏掉一半以上。<span class="evi">证据强度：基于系统画像的结构性推断 + <span class="tag grey">CAST</span> 死代码研究。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">5</div><div class="body">
+        <p><strong>迁移顺序由业务域波次决定，不由技术栈决定。</strong>对 3412 个文件按业务价值 / 耦合度 / 变更频率做 A/B/C 分级：从边缘、高频变更的域试点，contract 域按子模块最后分批切换。金仓 A/B/C 分级迁移与 Salesforce 波次制都是可直接抄的作业。<span class="evi">证据强度：<span class="tag green">厂商一手实践</span> + <span class="tag grey">单一案例</span>。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">6</div><div class="body">
+        <p><strong>目标架构首选「模块化单体」，微服务不是必选项。</strong>为 73 万行系统直接上微服务会放大「第二系统效应」；先按 DDD 边界做模块化（Maven 多模块 + 接口隔离），服务化按需演进。508 个 MyBatis XML 里的 SQL 大部分是可以复用的资产而非负债。<span class="evi">证据强度：<span class="tag purple">行业方法论</span>（DDD + 绞杀者模式共识）。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">7</div><div class="body">
+        <p><strong>AI 工程化的核心是「修流程，而不是修生成的代码」。</strong>Salesforce 与 Anthropic 的一手方法论一致：用规则文件（CLAUDE.md / markdown 规约）+ 阶段门 + 自动验证回路 + PR 反馈回写，让每一次失败沉淀进流程。无门禁的 AI 生成代码只是把技术债换成概率性缺陷。<span class="evi">证据强度：<span class="tag green">厂商一手案例</span>。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">8</div><div class="body">
+        <p><strong>数据迁移是与代码重写同等重要的独立工程。</strong>oracle.dmp 不只是数据，里面有存储过程、视图、触发器和 grail 元数据——是第四条考古线索。迁移走「全量 + 增量同步 + 三级校验 + 单写双轨」路线，银行级验收线是校验通过率 99.99%、TPS 不低于旧库基线 95%。<span class="evi">证据强度：<span class="tag grey">厂商实践 + 银行案例</span>。</span></p>
+      </div></div>
+      <div class="claim"><div class="n">9</div><div class="body">
+        <p><strong>组织因素比技术选型更能预测成败。</strong>对 78 个企业现代化项目的研究显示：技术改造与组织转型双轮驱动的项目 91% 达成业务目标，纯技术驱动的只有 43%。懂合同业务的专家必须全程坐在迁移闭环里。<span class="evi">证据强度：<span class="tag purple">学术研究</span>（WJARR 2025，n=78，单篇期刊、中等强度）。</span></p>
+      </div></div>
+    </div>
+  </div>
+</section>
+<!-- ============ 01 系统解剖 ============ -->
+<section id="s01">
+  <div class="wrap">
+    <h2><span class="num">01</span>你的处境：系统解剖与真实风险评估</h2>
+    <p class="lead">先冷静地看清楚手里有什么。这套系统的技术栈确实老了，但它的真正价值和真正风险都不在「老」上。</p>
+
+    <h3>1.1 规模画像</h3>
+    <div class="grid3">
+      <div class="stat"><div class="v">73 万</div><div class="u">行 Java 代码（3412 文件），2013–2026 年持续演进</div></div>
+      <div class="stat"><div class="v">928</div><div class="u">contract 域文件数（合同全生命周期，最大业务域）</div></div>
+      <div class="stat"><div class="v">508</div><div class="u">个 MyBatis mapper XML（手写 Oracle SQL）</div></div>
+      <div class="stat"><div class="v">623</div><div class="u">operation 域文件数（经营指标，第二大业务域）</div></div>
+      <div class="stat"><div class="v">3 轨</div><div class="u">数据访问并存：MyBatis / reed-grail 元数据 ORM / Hibernate 3</div></div>
+      <div class="stat"><div class="v">13 年</div><div class="u">生产运行积累的未成文业务规则与边界修复</div></div>
+    </div>
+
+    <h3>1.2 分层解剖</h3>
+    <p>这套系统的特殊之处在于：业务代码只是冰山露出水面的一半，另一半藏在 reed 自研平台的元数据里。理解这一点对后面所有决策至关重要。</p>
+
+    <figure>
+      <div class="fig-box">
+      <svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+        <!-- 层1 业务域 -->
+        <rect x="40" y="20" width="880" height="92" rx="10" fill="#FBF0E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="60" y="46" font-size="14" font-weight="700" fill="#8F3F06">业务模块层（插件形式挂接）</text>
+        <rect x="60" y="58" width="240" height="40" rx="6" fill="#FFFFFF" stroke="#B45309"/>
+        <text x="180" y="75" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">contract 合同域</text>
+        <text x="180" y="91" font-size="11" fill="#4A505A" text-anchor="middle">928 文件 · 全生命周期</text>
+        <rect x="316" y="58" width="240" height="40" rx="6" fill="#FFFFFF" stroke="#B45309"/>
+        <text x="436" y="75" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">operation 经营域</text>
+        <text x="436" y="91" font-size="11" fill="#4A505A" text-anchor="middle">623 文件 · 经营指标</text>
+        <rect x="572" y="58" width="328" height="40" rx="6" fill="#FFFFFF" stroke="#D9C4A5"/>
+        <text x="736" y="75" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">其他业务模块</text>
+        <text x="736" y="91" font-size="11" fill="#4A505A" text-anchor="middle">约 1863 文件 · 分散挂接</text>
+
+        <!-- 层2 reed 平台 -->
+        <rect x="40" y="132" width="880" height="112" rx="10" fill="#EAF2F9" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="60" y="158" font-size="14" font-weight="700" fill="#1F5288">reed 2.0.6 自研平台层 —— 元数据驱动，规则一半藏在这里</text>
+        <rect x="60" y="172" width="160" height="56" rx="6" fill="#FFFFFF" stroke="#2F6FB0"/>
+        <text x="140" y="194" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">grail 建模</text>
+        <text x="140" y="211" font-size="10.5" fill="#4A505A" text-anchor="middle">业务对象元数据 ORM</text>
+        <rect x="236" y="172" width="160" height="56" rx="6" fill="#FFFFFF" stroke="#2F6FB0"/>
+        <text x="316" y="194" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">pigeon 工作流</text>
+        <text x="316" y="211" font-size="10.5" fill="#4A505A" text-anchor="middle">审批流 · Hibernate 3</text>
+        <rect x="412" y="172" width="160" height="56" rx="6" fill="#FFFFFF" stroke="#2F6FB0"/>
+        <text x="492" y="194" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">brick 页面设计器</text>
+        <text x="492" y="211" font-size="10.5" fill="#4A505A" text-anchor="middle">页面配置存元数据</text>
+        <rect x="588" y="172" width="160" height="56" rx="6" fill="#FFFFFF" stroke="#2F6FB0"/>
+        <text x="668" y="194" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">tiger 安全</text>
+        <text x="668" y="211" font-size="10.5" fill="#4A505A" text-anchor="middle">权限模型 · 组织架构</text>
+        <rect x="764" y="172" width="136" height="56" rx="6" fill="#FFFFFF" stroke="#2F6FB0"/>
+        <text x="832" y="194" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">runway 聚合</text>
+        <text x="832" y="211" font-size="10.5" fill="#4A505A" text-anchor="middle">门户 / 集成</text>
+
+        <!-- 层3 底座 -->
+        <rect x="40" y="264" width="880" height="52" rx="10" fill="#FAECEA" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="60" y="288" font-size="14" font-weight="700" fill="#94201A">底座层（风险最高：均已停止安全支持）</text>
+        <text x="60" y="306" font-size="12" fill="#4A505A">Spring 3.2（2013 年发布，EOL）· JDK 1.7（2015 年停止公开更新）· 仅是承重墙，不是业务价值所在</text>
+
+        <!-- 层4 数据访问三轨 -->
+        <rect x="40" y="336" width="880" height="100" rx="10" fill="#E8F4F2" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="60" y="362" font-size="14" font-weight="700" fill="#0A5750">数据访问三轨制 —— 业务规则的三大藏身处，考古必须三轨并行</text>
+        <rect x="60" y="374" width="268" height="48" rx="6" fill="#FFFFFF" stroke="#0F766E"/>
+        <text x="194" y="393" font-size="12" font-weight="700" fill="#16181D" text-anchor="middle">MyBatis 508 个 mapper XML</text>
+        <text x="194" y="410" font-size="10.5" fill="#4A505A" text-anchor="middle">手写 SQL · 规则密度最高</text>
+        <rect x="346" y="374" width="268" height="48" rx="6" fill="#FFFFFF" stroke="#0F766E"/>
+        <text x="480" y="393" font-size="12" font-weight="700" fill="#16181D" text-anchor="middle">reed-grail 元数据 ORM</text>
+        <text x="480" y="410" font-size="10.5" fill="#4A505A" text-anchor="middle">规则在元数据表和数据库对象里</text>
+        <rect x="632" y="374" width="268" height="48" rx="6" fill="#FFFFFF" stroke="#0F766E"/>
+        <text x="766" y="393" font-size="12" font-weight="700" fill="#16181D" text-anchor="middle">Hibernate 3（仅 pigeon）</text>
+        <text x="766" y="410" font-size="10.5" fill="#4A505A" text-anchor="middle">工作流状态机的映射逻辑</text>
+
+        <!-- 层5 数据 -->
+        <rect x="40" y="456" width="880" height="84" rx="10" fill="#F2EDFA" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="60" y="482" font-size="14" font-weight="700" fill="#5A3099">Oracle 数据库 —— oracle.dmp 里藏着第四条考古线索</text>
+        <text x="60" y="502" font-size="12" fill="#4A505A">表数据 · 存储过程 / 函数 / 触发器（可能承载核心业务规则）· 视图 · grail 元数据表 · brick 页面配置表 · 13 年生产数据</text>
+        <text x="60" y="522" font-size="11.5" fill="#5A3099">⚠ 只读 Java 源码的考古会漏掉这一整层</text>
+      </svg>
+      </div>
+      <figcaption>图 1 · 系统分层解剖：业务插件、reed 平台五组件、老底座、三轨数据访问与 Oracle。风险最高的地方（底座）业务价值最低；业务价值和未知规则集中在平台元数据、508 个手写 SQL 与数据库对象里。</figcaption>
+    </figure>
+
+    <h3>1.3 风险清单与真实紧迫性</h3>
+    <table>
+      <tr><th style="width:26%">风险项</th><th style="width:14%">等级</th><th>事实与影响</th></tr>
+      <tr><td>JDK 1.7 已停止公开更新（2015 年起）</td><td><span class="tag red">高</span></td><td>十年无安全补丁，等保 / 审计 / 客户安全问卷都是硬伤；新依赖库全部无法引入。</td></tr>
+      <tr><td>Spring 3.2 / Hibernate 3 EOL</td><td><span class="tag red">高</span></td><td>已知漏洞（如 Spring 相关反序列化类 CVE）不再修复；招不到也留不住会用这些栈的工程师。</td></tr>
+      <tr><td>reed 平台知识集中在少数人</td><td><span class="tag red">高</span></td><td>grail / pigeon / brick 的设计意图只存在于原作者脑中（巴士系数 = 1–2）；这是比技术老 10 倍的风险。</td></tr>
+      <tr><td>Oracle 许可与迁移被锁</td><td><span class="tag amber">中</span></td><td>许可成本与议价能力逐年恶化；若有信创要求则成为硬性约束。</td></tr>
+      <tr><td>业务规则未成文</td><td><span class="tag amber">中</span></td><td>13 年的需求变更、政策适配、客户特例全部沉淀为代码补丁，没有任何系统外文档能还原。</td></tr>
+      <tr><td>单体全量发布</td><td><span class="tag grey">低-中</span></td><td>若当前发布节奏尚可接受，此项不构成重写的充分理由——只构成模块化的理由。</td></tr>
+    </table>
+
+    <div class="callout">
+      <p><strong>一个关键自问：</strong>这套系统现在每月出几次生产事故？新需求交付周期多长？如果答案是「偶尔出事、改需求很痛苦但可控」，那么问题本质是<strong>演进能力受限</strong>，解法是受控迁移；如果答案是「随时可能崩溃、没人敢动」，解法是先做行为锁定（第 06 章）再谈其他。两种情况都不是「全部重写」。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 范式判定 ============ -->
+<section id="s02">
+  <div class="wrap">
+    <h2><span class="num">02</span>范式判定：为什么「推倒重来」是最危险的答案</h2>
+    <p class="lead">「我有源代码和 dmp，让 AI 重写一个全新系统」——这个直觉必须先被认真质疑一次。过去 25 年，这种做法杀死公司的案例远多于成功案例。</p>
+
+    <h3>2.1 Netscape 的教训：重写杀死的不是代码，是知识</h3>
+    <p>1998 年 Netscape 决定将浏览器推倒重写：3 年没有任何有竞争力的版本发布，IE 吃掉市场，公司消亡。Joel Spolsky 2000 年的《Things You Should Never Do》把它定义为「软件公司所能犯的最糟糕的战略错误」。核心洞察是：<strong>那些看起来丑陋的老代码，每一行怪异的条件判断都是一次生产事故后的修复</strong>。扔掉代码 = 扔掉 13 年无人记录的业务知识，然后等着把每一个坑重新踩一遍。</p>
+
+    <figure>
+      <div class="fig-box">
+      <svg viewBox="0 0 960 360" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+        <!-- 坐标 -->
+        <line x1="70" y1="300" x2="900" y2="300" stroke="#4A505A" stroke-width="1.5"/>
+        <line x1="70" y1="300" x2="70" y2="40" stroke="#4A505A" stroke-width="1.5"/>
+        <!-- y 轴标签 -->
+        <text x="58" y="305" font-size="11" fill="#4A505A" text-anchor="end">0</text>
+        <text x="58" y="175" font-size="11" fill="#4A505A" text-anchor="end">100</text>
+        <text x="58" y="45" font-size="11" fill="#4A505A" text-anchor="end">200</text>
+        <text x="34" y="170" font-size="11.5" fill="#4A505A" transform="rotate(-90,34,170)" text-anchor="middle">业务交付能力（相对值）</text>
+        <!-- x 轴标签：月份 -->
+        <text x="70" y="320" font-size="11" fill="#4A505A" text-anchor="middle">0</text>
+        <text x="210" y="320" font-size="11" fill="#4A505A" text-anchor="middle">6月</text>
+        <text x="350" y="320" font-size="11" fill="#4A505A" text-anchor="middle">12月</text>
+        <text x="490" y="320" font-size="11" fill="#4A505A" text-anchor="middle">18月</text>
+        <text x="630" y="320" font-size="11" fill="#4A505A" text-anchor="middle">24月</text>
+        <text x="770" y="320" font-size="11" fill="#4A505A" text-anchor="middle">30月</text>
+        <text x="900" y="320" font-size="11" fill="#4A505A" text-anchor="middle">36月</text>
+        <!-- 大爆炸曲线：快速跌到谷底，30月+缓慢回升 -->
+        <path d="M 70,70 C 110,70 140,180 210,255 C 280,288 420,292 560,290 C 660,288 720,240 770,190 C 810,150 860,115 900,105"
+              fill="none" stroke="#B3261E" stroke-width="2.5" stroke-dasharray="7 5"/>
+        <!-- 渐进曲线：缓慢稳定爬升 -->
+        <path d="M 70,70 C 160,68 300,62 470,54 C 620,48 780,40 900,36"
+              fill="none" stroke="#2E7D32" stroke-width="3"/>
+        <!-- 谷底标注 -->
+        <circle cx="420" cy="291" r="5" fill="#B3261E"/>
+        <text x="420" y="248" font-size="12" font-weight="700" fill="#94201A" text-anchor="middle">feature freeze 谷底</text>
+        <text x="420" y="266" font-size="11" fill="#4A505A" text-anchor="middle">旧系统冻结 · 新系统无产出 · 竞争对手在跑</text>
+        <!-- 回升标注 -->
+        <text x="838" y="66" font-size="11.5" fill="#94201A" text-anchor="middle">新系统上线，</text>
+        <text x="838" y="82" font-size="11.5" fill="#94201A" text-anchor="middle">但带着重新踩过的坑</text>
+        <!-- 渐进标注 -->
+        <text x="480" y="24" font-size="12" font-weight="700" fill="#1B5820" text-anchor="middle">绞杀者式渐进迁移：每个波次都在交付，业务永不中断</text>
+        <!-- 图例（置于左中空白区，避开两条曲线） -->
+        <line x1="180" y1="145" x2="200" y2="145" stroke="#B3261E" stroke-width="2.5" stroke-dasharray="7 5"/>
+        <text x="208" y="149" font-size="12" fill="#16181D">大爆炸重写（Netscape / Borland / Chandler 模式）</text>
+        <line x1="180" y1="169" x2="200" y2="169" stroke="#2E7D32" stroke-width="3"/>
+        <text x="208" y="173" font-size="12" fill="#16181D">AI 加速的绞杀者迁移（Twitter / Salesforce / LG CNS 模式）</text>
+      </svg>
+      </div>
+      <figcaption>图 2 · 两种路线的交付能力曲线。大爆炸重写在数年内业务交付趋零，回升时还带着重新引入的老 bug；渐进迁移每个波次都有产出。示意图，非实测数据。</figcaption>
+    </figure>
+
+    <h3>2.2 失败墓园与幸存者</h3>
+    <div class="grid2">
+      <div class="card">
+        <h4 style="margin-bottom:10px"><span class="tag red">失败墓园</span></h4>
+        <table style="margin-bottom:6px">
+          <tr><th>案例</th><th>结局</th></tr>
+          <tr><td>Netscape 浏览器重写</td><td>3 年无发布，市场归零，公司消亡</td></tr>
+          <tr><td>Borland dBase / Quattro Pro</td><td>两个产品同时重写，双双被竞品抢滩</td></tr>
+          <tr><td>Chandler PIM（2002–2008）</td><td>6 年、数千万美元，只产出勉强可用的预览版；Google Calendar 免费解决了同一个问题</td></tr>
+        </table>
+        <p class="src">共同点：大爆炸、旧系统冻结、工期 2–3 倍超支、未成文规则丢失、竞品全速前进。（Spolsky 2000；Brooks《人月神话》第二系统效应；potapov.dev 25 年案例综述）</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-bottom:10px"><span class="tag green">幸存者</span></h4>
+        <table style="margin-bottom:6px">
+          <tr><th>案例</th><th>做法</th></tr>
+          <tr><td>Twitter 2008–2013</td><td>Rails 单体 → 组件逐个替换（消息队列 → 存储 → 服务化），5 年不停服</td></tr>
+          <tr><td>LG CNB 韩企系统</td><td>MiPlatform → React + 云原生，API 转换率 99.1%，7 个月、约一半成本</td></tr>
+          <tr><td>某保险企业核心系统</td><td>绞杀者模式单体 → 微服务，2 年，零业务中断</td></tr>
+        </table>
+        <p class="src">共同点：旧系统全程在线、逐波替换、每波都有验证与回滚。（Anthropic 官方案例；CSDN 架构实践综述）</p>
+      </div>
+    </div>
+
+    <h3>2.3 什么时候全量重写才是对的？（判别式）</h3>
+    <p>「永远不要重写」同样是一种懒惰。以下四个条件<strong>同时满足</strong>时，重写才是合理选项：</p>
+    <table>
+      <tr><th style="width:40%">判别条件</th><th>本系统的情况</th></tr>
+      <tr><td>① 平台/语言已死且无法过渡（如 COBOL、无法迁移的框架）</td><td><span class="tag green">不满足</span>。Java 语言是活的，只是版本老；Spring 3.2 → Boot 3 有成熟升级路径。</td></tr>
+      <tr><td>② 原架构在结构上无法承载目标业务（不是「难受」，是「不可能」）</td><td><span class="tag green">不满足</span>。合同/经营管理这类 CRUD + 工作流 + 报表系统，是现代技术栈最成熟的领域。</td></tr>
+      <tr><td>③ 旧系统没有生产风险包袱（可以停机、可以慢慢对齐）</td><td><span class="tag red">不满足</span>。13 年生产系统，合同数据是公司命脉，不可能「重写完再对」。</td></tr>
+      <tr><td>④ 无人能理解旧系统，且维护成本已超过重建</td><td><span class="tag amber">部分满足</span>。reed 平台知识确实在流失——但这恰恰是第 05 章 AI 考古要解决的，而不是重写的理由。</td></tr>
+    </table>
+
+    <div class="verdict">
+      <h4><span class="tag amber">本报告判断</span></h4>
+      <p>四条判别式三条不满足、一条部分满足。<strong>正确定义你们的项目不是「重写」，而是「AI 加速的演进式重建」</strong>：新系统在旧系统旁边一个域一个域地长出来，旧系统每个域验证通过后退役。AI 的作用是把这个过程从「10 年」压缩到「18–30 个月」，而不是允许你们跳过过程本身。Gartner 2026 年预测：过度依赖生成式 AI 承担主要工作的大型机迁移项目，70% 以上无法产生预期效益——AI 是转型工具箱里缺失的一件工具，不是工具箱本身。</p>
+    </div>
+  </div>
+</section>
+<!-- ============ 03 AI 改变了什么 ============ -->
+<section id="s03">
+  <div class="wrap">
+    <h2><span class="num">03</span>AI 改变了什么、没改变什么：证据全景</h2>
+    <p class="lead">这一章回答一个问题：把「AI 能力」放进第 02 章的框架里，哪些环节的成本结构真的变了？每个数字标注来源与证据强度。</p>
+
+    <h3>3.1 一手案例：AI 在迁移各环节的实测产出</h3>
+    <table>
+      <tr><th style="width:17%">案例</th><th style="width:23%">场景</th><th style="width:32%">结果</th><th style="width:15%">AI 承担的环节</th><th style="width:13%">证据强度</th></tr>
+      <tr><td>Salesforce（2026 官方）</td><td>33 个 API 端点迁往云原生架构</td><td>估算 231 人天 → <strong>13 天完成（约 18 倍）</strong>；最大单 PR 21 个端点、100% 测试覆盖；同时期事故率反降 5%</td><td>规则框架 + 自治 build-fix-validate 循环 + 并行生成</td><td><span class="tag green">一手</span>（有利益相关）</td></tr>
+      <tr><td>LG CNS（Anthropic 官方案例）</td><td>韩国企业系统现代化：2913 个 API + 1340 个屏幕（MiPlatform → React）</td><td><strong>99.1% API 转换率</strong>（2888/2913），7 个月、约为传统重建一半成本；随后推广到 200 人团队</td><td>遗留分析 + 代码转换 + 屏幕迁移</td><td><span class="tag green">一手</span>（有利益相关）</td></tr>
+      <tr><td>Morgan Stanley DevGen.AI</td><td>900 万行过时代码解读</td><td>节省约 <strong>28 万开发者小时</strong></td><td>代码理解与翻译</td><td><span class="tag blue">一手</span></td></tr>
+      <tr><td>Fiserv</td><td>大型机现代化</td><td>预计 29 个月 → <strong>17 个月（-41%）</strong>；AI 生成测试套件捕获人工遗漏的边界用例</td><td>测试生成 + 代码转换</td><td><span class="tag grey">厂商披露</span></td></tr>
+      <tr><td>Sanlam / BBD</td><td>COBOL 地址管理 → Spring Boot 微服务</td><td>核心功能迁移从约 2 个月 → <strong>3–4 天（提速 90%+）</strong>；路径是「COBOL → 业务文档 → API」两步法</td><td>文档提取 + 代码生成</td><td><span class="tag grey">厂商披露</span></td></tr>
+      <tr><td>Deluxe（2026 CIO 100）</td><td>50 年历史大型机整体迁云</td><td><strong>约 12 个月完成、无重大故障</strong>，预计年省 490 万美元；同口径 Gartner 预测多数同类项目不达预期</td><td>重写 + 文档 + 测试生成</td><td><span class="tag grey">厂商披露</span></td></tr>
+      <tr><td>AWS Transform（Twitch）</td><td>913 个仓库 AWS SDK v1 → v2</td><td>节省约 <strong>2876 开发者日（11 人年）</strong>，提速 70%</td><td>规模化机械转换</td><td><span class="tag green">一手</span>（有利益相关）</td></tr>
+    </table>
+
+    <figure>
+      <div class="fig-box">
+      <svg viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+        <text x="60" y="30" font-size="14" font-weight="700" fill="#16181D">各案例时间/工期压缩率（同一工作传统方式 vs AI 辅助）</text>
+        <!-- 轴线 -->
+        <line x1="60" y1="280" x2="900" y2="280" stroke="#4A505A" stroke-width="1.5"/>
+        <!-- 刻度 0-100%，绘图区 x:60..860，每 20% = 160px -->
+        <line x1="60" y1="276" x2="60" y2="284" stroke="#4A505A"/>
+        <line x1="220" y1="276" x2="220" y2="284" stroke="#4A505A"/>
+        <line x1="380" y1="276" x2="380" y2="284" stroke="#4A505A"/>
+        <line x1="540" y1="276" x2="540" y2="284" stroke="#4A505A"/>
+        <line x1="700" y1="276" x2="700" y2="284" stroke="#4A505A"/>
+        <line x1="860" y1="276" x2="860" y2="284" stroke="#4A505A"/>
+        <text x="60" y="300" font-size="11" fill="#4A505A" text-anchor="middle">0%</text>
+        <text x="220" y="300" font-size="11" fill="#4A505A" text-anchor="middle">20%</text>
+        <text x="380" y="300" font-size="11" fill="#4A505A" text-anchor="middle">40%</text>
+        <text x="540" y="300" font-size="11" fill="#4A505A" text-anchor="middle">60%</text>
+        <text x="700" y="300" font-size="11" fill="#4A505A" text-anchor="middle">80%</text>
+        <text x="860" y="300" font-size="11" fill="#4A505A" text-anchor="middle">100%</text>
+        <!-- 条1 Salesforce 94% → 宽 = 94/100*800 = 752 -->
+        <text x="60" y="62" font-size="12.5" font-weight="700" fill="#16181D">Salesforce · 33 API 迁移</text>
+        <rect x="60" y="70" width="752" height="24" rx="4" fill="#EAF2F9" stroke="#2F6FB0" stroke-width="1.2"/>
+        <text x="796" y="87" font-size="12" font-weight="700" fill="#1F5288" text-anchor="end">94%（231 人天 → 13 天）</text>
+        <!-- 条2 Sanlam: 90% → 720 -->
+        <text x="60" y="122" font-size="12.5" font-weight="700" fill="#16181D">Sanlam · COBOL→Spring Boot</text>
+        <rect x="60" y="130" width="720" height="24" rx="4" fill="#E8F4F2" stroke="#0F766E" stroke-width="1.2"/>
+        <text x="764" y="147" font-size="12" font-weight="700" fill="#0A5750" text-anchor="end">90%+（约 2 月 → 3–4 天）</text>
+        <!-- 条3 Rakuten 79% → 632 -->
+        <text x="60" y="182" font-size="12.5" font-weight="700" fill="#16181D">Rakuten · 功能上市周期</text>
+        <rect x="60" y="190" width="632" height="24" rx="4" fill="#F2EDFA" stroke="#6D3FB5" stroke-width="1.2"/>
+        <text x="676" y="207" font-size="12" font-weight="700" fill="#5A3099" text-anchor="end">79%（24 天 → 5 天）</text>
+        <!-- 条4 Fiserv 41% → 328 -->
+        <text x="60" y="242" font-size="12.5" font-weight="700" fill="#16181D">Fiserv · 大型机现代化</text>
+        <rect x="60" y="250" width="328" height="24" rx="4" fill="#FBF0E3" stroke="#B45309" stroke-width="1.2"/>
+        <text x="372" y="267" font-size="12" font-weight="700" fill="#8F3F06" text-anchor="end">41%（29 月 → 17 月）</text>
+      </svg>
+      </div>
+      <figcaption>图 3 · 时间压缩率对比。数值换算：Salesforce (231−13)/231≈94%；Sanlam 按厂商披露「提速 90%+」取下限；Rakuten (24−5)/24≈79%；Fiserv (29−17)/29≈41%。注意：越是大体量、长周期的项目，压缩率越低——40% 已属优秀，宣称 95%+ 的多是小范围试点。</figcaption>
+    </figure>
+
+    <h3>3.2 反证：AI 没有改变的部分</h3>
+    <table>
+      <tr><th style="width:34%">反证</th><th>对你们的含义</th></tr>
+      <tr><td>Gartner（2026 预测）：过度依赖生成式 AI 的迁移项目 <strong>70%+ 不达预期</strong>；分析师明确指出「代码转换类工具尚无广泛成功先例，作为业务转型一部分的项目效果更好」</td><td>AI 必须嵌在第 02 章的受控迁移框架内使用，而不能替代框架本身。</td></tr>
+      <tr><td>Stack Overflow 2025 开发者调查（n≈4.9 万）：84% 开发者在用或计划用 AI，但<strong>信任其准确性的比例从 40% 降至 29%</strong></td><td>「AI 说改好了」不是验收标准；行为对账（第 06 章）才是。</td></tr>
+      <tr><td>Adidas RPG 系统案例：自动化转换完成 85% 后，剩余 <strong>3 万行需要 4 名专家 3 个月人工修复</strong>（Sogeti 2026 评估：最后 15% 须人工）</td><td>按 73 万行等比推算，最后一公里仍有数千行硬骨头；工期估算必须给「最后一公里」单列预算。</td></tr>
+      <tr><td>Forrester 2026（转述）：失败项目 47% 源于「未知依赖」</td><td>依赖地图（第 05 章）的质量直接决定成败，这是 AI 考古的第一产出物。</td></tr>
+      <tr><td>CAST 研究：大型 COBOL 遗产中死代码可占 <strong>25%</strong>；Java 遗产通常也有可观死代码</td><td>73 万行未必都是有效资产。考古阶段先剥离死代码，可能直接减掉 10–15 万行的迁移量。</td></tr>
+    </table>
+
+    <div class="callout blue">
+      <p><strong>本章结论（论断 2 的展开）：</strong>AI 把三件事的成本打掉了 60–90%——代码理解与文档化、机械翻译、测试用例生成。它没有改变三件事——业务规则的最终裁决权在业务方手里、边界行为必须与生产对账、组织必须学会管理一个「高产出但需要门禁」的新成员。把「AI 重写」理解为「把 Netscape 式重写的风险用更快的速度重新踩一遍」，是本报告最想阻止的一件事。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 总路线图 ============ -->
+<section id="s04">
+  <div class="wrap">
+    <h2><span class="num">04</span>总体路线图：五阶段，18–30 个月</h2>
+    <p class="lead">综合绞杀者模式、金仓五阶段迁移法与 Salesforce 波次制，你们的项目可以拆成五个阶段。每个阶段有明确的产出物和退出标准——不达标不进下一阶段。</p>
+
+    <figure>
+      <div class="fig-box">
+      <svg viewBox="0 0 960 400" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+        <!-- 时间轴：0-30 月，绘图区 x:150..900，每月 25px -->
+        <text x="60" y="34" font-size="14" font-weight="700" fill="#16181D">阶段甘特（月为刻度，M0 = 项目启动）</text>
+        <!-- 交替列底纹替代网格线（每 6 月一列，150px） -->
+        <rect x="300" y="50" width="150" height="310" fill="#F3F1EA"/>
+        <rect x="600" y="50" width="150" height="310" fill="#F3F1EA"/>
+        <!-- 刻度短线 -->
+        <line x1="150" y1="360" x2="150" y2="368" stroke="#4A505A"/>
+        <line x1="300" y1="360" x2="300" y2="368" stroke="#4A505A"/>
+        <line x1="450" y1="360" x2="450" y2="368" stroke="#4A505A"/>
+        <line x1="600" y1="360" x2="600" y2="368" stroke="#4A505A"/>
+        <line x1="750" y1="360" x2="750" y2="368" stroke="#4A505A"/>
+        <line x1="900" y1="360" x2="900" y2="368" stroke="#4A505A"/>
+        <line x1="150" y1="360" x2="900" y2="360" stroke="#4A505A" stroke-width="1"/>
+        <text x="150" y="382" font-size="11" fill="#4A505A" text-anchor="middle">M0</text>
+        <text x="300" y="382" font-size="11" fill="#4A505A" text-anchor="middle">M6</text>
+        <text x="450" y="382" font-size="11" fill="#4A505A" text-anchor="middle">M12</text>
+        <text x="600" y="382" font-size="11" fill="#4A505A" text-anchor="middle">M18</text>
+        <text x="750" y="382" font-size="11" fill="#4A505A" text-anchor="middle">M24</text>
+        <text x="900" y="382" font-size="11" fill="#4A505A" text-anchor="middle">M30</text>
+
+        <!-- P1 评估 0-2月 -->
+        <text x="140" y="72" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="end">① AI 评估与考古</text>
+        <rect x="150" y="58" width="50" height="22" rx="5" fill="#EAF2F9" stroke="#2F6FB0" stroke-width="1.2"/>
+        <text x="175" y="73" font-size="10.5" font-weight="700" fill="#1F5288" text-anchor="middle">4-6周</text>
+        <!-- P2 行为锁定 1.5-4月 -->
+        <text x="140" y="122" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="end">② 行为锁定</text>
+        <rect x="188" y="108" width="62" height="22" rx="5" fill="#E8F4F2" stroke="#0F766E" stroke-width="1.2"/>
+        <text x="219" y="123" font-size="10.5" font-weight="700" fill="#0A5750" text-anchor="middle">8-10周</text>
+        <!-- P3 试点 4-8月 -->
+        <text x="140" y="172" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="end">③ 试点域迁移</text>
+        <rect x="250" y="158" width="100" height="22" rx="5" fill="#F2EDFA" stroke="#6D3FB5" stroke-width="1.2"/>
+        <text x="300" y="173" font-size="10.5" font-weight="700" fill="#5A3099" text-anchor="middle">8-12周</text>
+        <!-- P4 波次推广 8-26月 -->
+        <text x="140" y="222" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="end">④ 波次迁移 × N</text>
+        <rect x="350" y="208" width="450" height="22" rx="5" fill="#FBF0E3" stroke="#B45309" stroke-width="1.2"/>
+        <text x="575" y="223" font-size="10.5" font-weight="700" fill="#8F3F06" text-anchor="middle">contract 域分模块、operation 域、其他域分波推进，每波 6-10 周</text>
+        <!-- P4b 数据割接 22-27月 -->
+        <text x="140" y="272" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="end">⑤ 数据双轨与割接</text>
+        <rect x="700" y="258" width="125" height="22" rx="5" fill="#FAECEA" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="762" y="273" font-size="10.5" font-weight="700" fill="#94201A" text-anchor="middle">与④重叠推进</text>
+        <!-- P5 退役 26-30月 -->
+        <text x="140" y="322" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="end">⑥ 旧系统退役</text>
+        <rect x="800" y="308" width="100" height="22" rx="5" fill="#E4E1D8" stroke="#4A505A" stroke-width="1.2"/>
+        <text x="850" y="323" font-size="10.5" font-weight="700" fill="#333941" text-anchor="middle">按域逐个下线</text>
+        <!-- 里程碑 -->
+        <circle cx="250" cy="169" r="6" fill="#FBFAF7" stroke="#6D3FB5" stroke-width="2.5"/>
+        <text x="250" y="148" font-size="10.5" font-weight="700" fill="#5A3099" text-anchor="middle">里程碑 A：试点验收</text>
+        <circle cx="450" cy="206" r="6" fill="#FBFAF7" stroke="#B45309" stroke-width="2.5"/>
+        <text x="450" y="192" font-size="10.5" font-weight="700" fill="#8F3F06" text-anchor="middle">里程碑 B：50% 流量在新系统</text>
+        <circle cx="825" cy="269" r="6" fill="#FBFAF7" stroke="#B3261E" stroke-width="2.5"/>
+        <text x="825" y="248" font-size="10.5" font-weight="700" fill="#94201A" text-anchor="middle">里程碑 C：正式割接</text>
+      </svg>
+      </div>
+      <figcaption>图 4 · 五阶段路线图（18–30 个月）。注意两点：数据双轨（⑤）不是最后才开始的独立阶段，从第一个域切流量起就同步运行；「行为锁定」（②）在试点之前完成，此后每个波次复用同一套表征测试基线并持续扩充。</figcaption>
+    </figure>
+
+    <h3>4.1 各阶段目标与退出标准</h3>
+    <table>
+      <tr><th style="width:16%">阶段</th><th style="width:34%">核心动作</th><th style="width:28%">关键产出物</th><th>退出标准（不达标不进入下一阶段）</th></tr>
+      <tr><td><strong>① AI 评估与考古</strong><br><span class="src">第 05 章展开</span></td><td>AI 代码考古（Java / 三轨数据访问 / dmp 数据库对象三线并行）；死代码剥离；A/B/C 业务域分级</td><td>业务规则目录、依赖地图、A/B/C 分级与波次计划、死代码清单</td><td>合同域至少 1 个子模块的业务规则经业务专家逐条确认；依赖地图覆盖全部对外接口</td></tr>
+      <tr><td><strong>② 行为锁定</strong><br><span class="src">第 06 章展开</span></td><td>对试点域生成表征测试；搭建双跑对账设施；确定哨兵指标</td><td>表征测试基线库、新旧系统对账平台、差异分类规则</td><td>试点域表征测试覆盖全部对外接口与核心分支；对账平台在生产影子流量上运行且差异可解释</td></tr>
+      <tr><td><strong>③ 试点域迁移</strong><br><span class="src">第 07 章展开</span></td><td>选一个边缘、高频变更、边界清晰的域，用 AI 规则流水线重建到新架构，灰度切流</td><td>新架构骨架、AI 迁移流水线（规则文件 + 阶段门）、试点域 100% 切流</td><td>试点域 30 天生产运行零 P1 事故、对账差异率收敛到约定阈值、回滚演练通过</td></tr>
+      <tr><td><strong>④ 波次迁移</strong></td><td>按 A/B/C 分级分波推进；每波复用③打磨的流水线；每波结束复盘并把经验写回规则文件</td><td>每波次的验收报告；持续更新的迁移规则库</td><td>每波独立验收；contract 域按子模块（台账→起草→审批→履约→归档）拆成 3–5 个波次</td></tr>
+      <tr><td><strong>⑤ 数据双轨与割接</strong><br><span class="src">第 09 章展开</span></td><td>全量迁移 + 增量同步 + 三级校验；单写双轨；择机割接</td><td>数据校验报告、割接手册、回滚预案</td><td>校验通过率 ≥99.99%；新库性能 ≥ 旧库基线 95%；故障注入演练通过</td></tr>
+      <tr><td><strong>⑥ 旧系统退役</strong></td><td>按域逐个关闭旧入口；数据归档；reed 平台知识文档化封存</td><td>退役清单、归档库、复盘报告</td><td>每个域在旧系统关闭前有 30 天 clean run 记录</td></tr>
+    </table>
+
+    <div class="callout">
+      <p><strong>为什么不是「先定新架构再动手」？</strong>传统做法会花 3–6 个月写新架构方案，然后发现方案里一半的假设不成立。绞杀者模式把这个顺序反过来：<strong>用试点域的真实迁移来逼出架构决策</strong>。第 08 章给出的目标架构是「预置立场」而非「最终裁决」——试点波次结束时回头修订它。</p>
+    </div>
+  </div>
+</section>
+<!-- ============ 05 AI 代码考古 ============ -->
+<section id="s05">
+  <div class="wrap">
+    <h2><span class="num">05</span>阶段一：AI 代码考古——四条线索挖出全部业务规则</h2>
+    <p class="lead">评估阶段的目标只有一个：把散落在四处的业务规则变成一份「人可审、AI 可用」的业务规则目录。这是整个项目 ROI 最高的阶段——行业共识是：过去这类「发现与分析」吃掉现代化预算的一半，AI 把它压缩了 60–80%。</p>
+
+    <h3>5.1 四条考古线索，缺一不可</h3>
+    <table>
+      <tr><th style="width:20%">线索</th><th style="width:30%">里面藏着什么</th><th>AI 考古方法</th></tr>
+      <tr><td><strong>① Java 源码</strong><br>3412 文件 / 73 万行</td><td>Service 层业务逻辑、校验规则、状态流转、计算公式；contract 域 928 个文件是重点</td><td>按域分批投喂 AI（agentic 工具可全程自主遍历），产出：模块清单、调用关系图、业务规则候选列表（每条带源码位置引用）</td></tr>
+      <tr><td><strong>② MyBatis 508 个 mapper XML</strong></td><td>手写 Oracle SQL 是规则密度最高的地方：报表口径、权限过滤、特殊 join、UNION 里的业务分支、ROWNUM 分页里的隐含语义</td><td>逐个 mapper 提取 SQL → AI 解释每条 SQL 的业务意图 → 与 Java 层规则交叉对照。经验上这一步会挖出大量「代码里看不出来、只有 SQL 才知道」的规则</td></tr>
+      <tr><td><strong>③ reed-grail 元数据</strong></td><td>业务对象定义、字段约束、页面配置（brick）、流程定义（pigeon）——平台是元数据驱动的，<strong>一半业务逻辑不在 Java 里而在元数据表里</strong></td><td>从 grail 元数据表导出对象模型 → AI 重建 ER 图与对象关系；从 brick 配置表还原页面清单与字段级规则</td></tr>
+      <tr><td><strong>④ oracle.dmp 数据库对象</strong></td><td>存储过程 / 函数 / 触发器 / 视图（若存在，核心财务与状态计算很可能在这里）；序列初始值；历史数据本身的分布规律</td><td>把 dmp 还原到一个隔离测试库（expdp → impdp），提取全部 PL/SQL 对象 → AI 逐个解释业务意图并标注「待迁移 / 可废弃 / 需业务确认」</td></tr>
+    </table>
+
+    <div class="callout red">
+      <p><strong>最容易踩的坑：</strong>只让 AI 读 Java 代码。对本系统而言，②③④加起来的规则占比很可能不低于 40%——三轨数据访问 + 元数据驱动平台意味着「源代码考古」这个词本身就不完整。 dmp 文件不是「等新系统好了再导数据」的备份，它是要在第一周就还原、就分析的活体。</p>
+    </div>
+
+    <h3>5.2 考古的五类产出物</h3>
+    <div class="grid2">
+      <div class="card">
+        <h4 style="margin-bottom:8px">a. 业务规则目录（最重要）</h4>
+        <p style="font-size:14.5px">每条规则一条记录：<code>规则描述 / 源码位置（文件+行号或 SQL id）/ 生效场景 / 最后修改原因（可考时）/ 置信度</code>。AI 初筛 + <strong>业务专家逐条确认</strong>——确认过程本身就是把老人脑子里的知识显性化，这一步的价值独立于迁移项目存在。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-bottom:8px">b. 依赖地图与接口清单</h4>
+        <p style="font-size:14.5px">对外系统接口（银行、税务、OA、邮件…）、内部模块耦合点、定时任务清单。失败项目 47% 死于未知依赖（Forrester 转述），这份清单是保险单。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-bottom:8px">c. 死代码清单</h4>
+        <p style="font-size:14.5px">无入口、无配置引用、无调用的模块。CAST 研究显示大型遗产死代码可达 25%——<strong>先删后迁</strong>，每删 10% 就少迁一个波次的工作量。删除动作本身也要有灰度（先下线观察一个季度再物理删除）。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-bottom:8px">d. A/B/C 域分级 + 波次计划</h4>
+        <p style="font-size:14.5px">按业务影响、数据敏感性、耦合度三维分级（金仓方法论）：A 类核心域最后动但投入最多，C 类边缘域先动练手。输出波次表（第 07 章）。</p>
+      </div>
+    </div>
+    <p>e. <strong>风险热力图与改造工作量清单</strong>：每个域的「AI 可自动转换比例 / 需人工比例 / 需业务确认比例」预估，作为全项目工期的量化基础。注意第 03 章教训：自动化比例按保守口径报（大型项目 40% 的压缩率是优秀水平，别按试点口径拍胸脯）。</p>
+
+    <h3>5.3 AI 考古的操作纪律</h3>
+    <ul>
+      <li><strong>规则文件法（Salesforce 一手经验）：</strong>把「本公司的命名规约、领域术语表、已确认的业务规则」维护成 markdown 规则库，每次 AI 会话都带上。每轮人工纠错都回写规则库——AI 的产出质量随规则库增长而复利式提升。</li>
+      <li><strong>每条 AI 结论必须带源码引用</strong>，业务专家按引用抽查。无引用的结论视为不存在。这对应 AWS Transform 的「全链路可追溯」设计：业务规则 → 源码行 → 需求 → 新代码，审计链完整。</li>
+      <li><strong>保密边界先谈好：</strong>内部信息化系统涉及合同与经营数据。三个选项：合规的企业级 SaaS（数据不用于训练、可部署在指定区域，参照 Pictet 在瑞士银行业的做法）；私有化部署开源模型（能力有折损）；或「代码脱敏 + 混合」策略。这个决策要在阶段①开始前完成，而不是出事之后。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 06 行为锁定 ============ -->
+<section id="s06">
+  <div class="wrap">
+    <h2><span class="num">06</span>阶段二：行为锁定——迁移前必须先给旧系统做「行为公证」</h2>
+    <p class="lead">表征测试（characterization tests，Michael Feathers 提出）的哲学只有一句话：<strong>不测试代码「应该」做什么，只记录它「实际」做什么</strong>。旧系统虽然代码丑，但它是「正确行为」的唯一权威来源——哪怕那些行为当年是 bug，只要下游已经依赖，它就是事实契约。</p>
+
+    <figure>
+      <div class="fig-box">
+      <svg viewBox="0 0 960 400" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+        <defs>
+          <marker id="arr" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L9,4 L0,8 z" fill="#4A505A"/>
+          </marker>
+          <marker id="arrR" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L9,4 L0,8 z" fill="#B3261E"/>
+          </marker>
+        </defs>
+        <!-- 四个主阶段 -->
+        <rect x="30" y="60" width="192" height="120" rx="10" fill="#EAF2F9" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="126" y="88" font-size="13.5" font-weight="700" fill="#1F5288" text-anchor="middle">① 表征测试</text>
+        <text x="126" y="112" font-size="11" fill="#333941" text-anchor="middle">AI 读旧代码生成测试</text>
+        <text x="126" y="130" font-size="11" fill="#333941" text-anchor="middle">记录输入→输出（含边界）</text>
+        <text x="126" y="148" font-size="11" fill="#333941" text-anchor="middle">含「历史上的 bug」行为</text>
+        <text x="126" y="166" font-size="11" fill="#333941" text-anchor="middle">人工审核边界用例</text>
+
+        <rect x="262" y="60" width="192" height="120" rx="10" fill="#E8F4F2" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="358" y="88" font-size="13.5" font-weight="700" fill="#0A5750" text-anchor="middle">② Golden Master 双跑</text>
+        <text x="358" y="112" font-size="11" fill="#333941" text-anchor="middle">同一生产流量喂新旧系统</text>
+        <text x="358" y="130" font-size="11" fill="#333941" text-anchor="middle">输出逐字段比对（bit 级）</text>
+        <text x="358" y="148" font-size="11" fill="#333941" text-anchor="middle">典型运行 4–8 周</text>
+        <text x="358" y="166" font-size="11" fill="#333941" text-anchor="middle">覆盖季度末/年末等罕见路径</text>
+
+        <rect x="494" y="60" width="192" height="120" rx="10" fill="#F2EDFA" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="590" y="88" font-size="13.5" font-weight="700" fill="#5A3099" text-anchor="middle">③ 灰度切流</text>
+        <text x="590" y="112" font-size="11" fill="#333941" text-anchor="middle">真实流量 1%→10%→50%→100%</text>
+        <text x="590" y="130" font-size="11" fill="#333941" text-anchor="middle">网关层开关，回滚=改配置</text>
+        <text x="590" y="148" font-size="11" fill="#333941" text-anchor="middle">每档观察期 + 哨兵指标</text>
+        <text x="590" y="166" font-size="11" fill="#333941" text-anchor="middle">差异实时对账</text>
+
+        <rect x="726" y="60" width="192" height="120" rx="10" fill="#EBF3EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="822" y="88" font-size="13.5" font-weight="700" fill="#1B5820" text-anchor="middle">④ 退役</text>
+        <text x="822" y="112" font-size="11" fill="#333941" text-anchor="middle">30 天 clean run 记录</text>
+        <text x="822" y="130" font-size="11" fill="#333941" text-anchor="middle">关闭旧入口</text>
+        <text x="822" y="148" font-size="11" fill="#333941" text-anchor="middle">数据归档</text>
+        <text x="822" y="166" font-size="11" fill="#333941" text-anchor="middle">进入下一波次</text>
+
+        <line x1="222" y1="120" x2="256" y2="120" stroke="#4A505A" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="454" y1="120" x2="488" y2="120" stroke="#4A505A" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="686" y1="120" x2="720" y2="120" stroke="#4A505A" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- 失败回环 -->
+        <path d="M 358,180 L 358,240 L 126,240 L 126,186" fill="none" stroke="#B3261E" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arrR)"/>
+        <text x="242" y="232" font-size="11" font-weight="700" fill="#94201A" text-anchor="middle">发现未记录行为 → 补表征测试基线</text>
+        <path d="M 590,180 L 590,286 L 358,286 L 358,186" fill="none" stroke="#B3261E" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arrR)"/>
+        <text x="474" y="228" font-size="11" font-weight="700" fill="#94201A" text-anchor="middle">对账差异 → 三方归因：</text>
+        <text x="474" y="246" font-size="11" font-weight="700" fill="#94201A" text-anchor="middle">新实现错 / 基线漏 / 旧系统真实缺陷</text>
+        <path d="M 822,180 L 822,330 L 590,330 L 590,186" fill="none" stroke="#B3261E" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arrR)"/>
+        <text x="706" y="322" font-size="11" font-weight="700" fill="#94201A" text-anchor="middle">生产异常 → 一键回滚（网关配置），旧系统仍在</text>
+
+        <!-- 底部注释 -->
+        <text x="480" y="374" font-size="11.5" fill="#4A505A" text-anchor="middle">任何一步不通过都不前进：这是「每一波都可控」的机制保证，不是态度口号</text>
+      </svg>
+      </div>
+      <figcaption>图 5 · 行为锁定四步法与三条失败回环。经典案例：旧系统某应付款模块在特定边界返回哨兵值 0.00 表示「无应付」，AI 新实现「语义更合理」地返回 null——新系统自己的测试全绿，但下游对账立即爆掉。只有 bit 级双跑能抓住这类问题（Kellton 影子运行实践）。</figcaption>
+    </figure>
+
+    <h3>6.1 三层验证各自的分工</h3>
+    <table>
+      <tr><th style="width:20%">层</th><th style="width:26%">抓什么</th><th style="width:26%">抓不到什么</th><th>实施要点</th></tr>
+      <tr><td><strong>表征测试</strong>（离线、每个波次都跑）</td><td>函数/服务级逻辑等价；罕见分支（闰年、季度末、汇率精度）</td><td>端到端集成差异；数据状态相关行为</td><td>AI 生成 + 人工审核边界用例；测试即「可执行的业务规约」，进版本库、进 CI</td></tr>
+      <tr><td><strong>双跑对账</strong>（上线前、每域 4–8 周）</td><td>真实生产流量下的全链路差异，包括环境、数据、并发引出的行为</td><td>切流后的运维类问题；长周期才暴露的问题（年结）</td><td>差异必须三方分类：新实现错 / 基线漏 / 旧系统真实缺陷（此类的裁决权在业务方）</td></tr>
+      <tr><td><strong>灰度切流</strong>（切流中持续）</td><td>性能、并发、运维、用户体验层面的回归</td><td>——</td><td>1%→10%→50%→100%，每档设观察期与回滚红线；回滚必须是配置变更而非「救火」</td></tr>
+    </table>
+
+    <div class="callout green">
+      <p><strong>论断 3 的工程落地：</strong>对你们的系统，合同域 928 个文件不可能也不需要 100% 表征覆盖。按二八律：优先锁定「对外接口 + 金额计算 + 状态流转 + 权限判定」四类高价值行为，这通常只占代码量的 20–30%，却覆盖绝大部分事故面。金仓银行项目的同类实践是三级校验（行数与校验和 → 关键字段抽样 → 业务逻辑轧差如账户余额勾稽），可直接借鉴到合同台账场景（合同金额、履约状态、审批流水的勾稽关系）。</p>
+    </div>
+  </div>
+</section>
+<!-- ============ 07 波次迁移 ============ -->
+<section id="s07">
+  <div class="wrap">
+    <h2><span class="num">07</span>阶段三：波次迁移——先动哪个域、后动哪个域</h2>
+    <p class="lead">顺序错误是迁移项目最常见的死法之一：一上来就动 contract 核心，卡住后进退两难。正确顺序由业务属性决定，不由技术难度决定。</p>
+
+    <figure>
+      <div class="fig-box">
+      <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+        <defs>
+          <marker id="arr2" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L9,4 L0,8 z" fill="#4A505A"/>
+          </marker>
+        </defs>
+        <!-- 根问题 -->
+        <rect x="330" y="24" width="300" height="52" rx="10" fill="#FBF0E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="480" y="46" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">该业务域的「变更频率 × 业务价值」</text>
+        <text x="480" y="64" font-size="11.5" fill="#8F3F06" text-anchor="middle">和「与核心域的耦合度」评分（考古阶段产出）</text>
+        <line x1="480" y1="76" x2="480" y2="104" stroke="#4A505A" stroke-width="2" marker-end="url(#arr2)"/>
+
+        <!-- 判断1：核心域？ -->
+        <path d="M 480,106 L 570,140 L 480,174 L 390,140 z" fill="#EAF2F9" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="480" y="136" font-size="12.5" font-weight="700" fill="#1F5288" text-anchor="middle">是核心域？</text>
+        <text x="480" y="154" font-size="10.5" fill="#333941" text-anchor="middle">（contract 台账/审批 / 财务口径）</text>
+
+        <!-- 是 → 最后 -->
+        <line x1="570" y1="140" x2="700" y2="140" stroke="#4A505A" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="620" y="128" font-size="11.5" font-weight="700" fill="#94201A">是</text>
+        <rect x="704" y="112" width="226" height="56" rx="10" fill="#FAECEA" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="817" y="134" font-size="12.5" font-weight="700" fill="#94201A" text-anchor="middle">排入最后波次（W3–W4）</text>
+        <text x="817" y="152" font-size="10.5" fill="#333941" text-anchor="middle">先拆子模块再逐个切；表征覆盖最全</text>
+
+        <!-- 否 → 判断2 -->
+        <line x1="390" y1="140" x2="290" y2="140" stroke="#4A505A" stroke-width="2"/>
+        <line x1="290" y1="140" x2="290" y2="204" stroke="#4A505A" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="304" y="180" font-size="11.5" font-weight="700" fill="#1B5820">否</text>
+        <path d="M 290,206 L 380,240 L 290,274 L 200,240 z" fill="#E8F4F2" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="290" y="236" font-size="12.5" font-weight="700" fill="#0A5750" text-anchor="middle">变更频率高？</text>
+        <text x="290" y="254" font-size="10.5" fill="#333941" text-anchor="middle">（需求单多的域）</text>
+
+        <!-- 是 → 第二波 -->
+        <line x1="380" y1="240" x2="700" y2="240" stroke="#4A505A" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="420" y="228" font-size="11.5" font-weight="700" fill="#94201A">是</text>
+        <rect x="704" y="212" width="226" height="56" rx="10" fill="#FBF0E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="817" y="234" font-size="12.5" font-weight="700" fill="#8F3F06" text-anchor="middle">第二波（W2）：operation 等</text>
+        <text x="817" y="252" font-size="10.5" fill="#333941" text-anchor="middle">迁完立刻减负，团队快速积累信心</text>
+
+        <!-- 否 → 判断3 -->
+        <line x1="290" y1="274" x2="290" y2="304" stroke="#4A505A" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="304" y="296" font-size="11.5" font-weight="700" fill="#1B5820">否</text>
+        <path d="M 290,306 L 380,340 L 290,374 L 200,340 z" fill="#F2EDFA" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="290" y="336" font-size="12.5" font-weight="700" fill="#5A3099" text-anchor="middle">边界清晰、对外依赖少？</text>
+        <text x="290" y="354" font-size="10.5" fill="#333941" text-anchor="middle">（报表、查询、日志类）</text>
+
+        <!-- 是 → 第一波试点 -->
+        <line x1="380" y1="340" x2="700" y2="340" stroke="#4A505A" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="420" y="328" font-size="11.5" font-weight="700" fill="#1B5820">是</text>
+        <rect x="704" y="312" width="226" height="56" rx="10" fill="#EBF3EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="817" y="334" font-size="12.5" font-weight="700" fill="#1B5820" text-anchor="middle">第一波试点（W1）</text>
+        <text x="817" y="352" font-size="10.5" fill="#333941" text-anchor="middle">用它打磨 AI 流水线与全套验证设施</text>
+
+        <!-- 否 → C 类 -->
+        <line x1="290" y1="374" x2="290" y2="404" stroke="#4A505A" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="304" y="396" font-size="11.5" font-weight="700" fill="#8F3F06">否</text>
+        <rect x="150" y="406" width="280" height="66" rx="10" fill="#F3F1EA" stroke="#4A505A" stroke-width="1.5"/>
+        <text x="290" y="430" font-size="12.5" font-weight="700" fill="#16181D" text-anchor="middle">C 类：暂缓 / 考虑退役</text>
+        <text x="290" y="448" font-size="10.5" fill="#333941" text-anchor="middle">先问业务方还要不要：无人使用直接下线</text>
+        <text x="290" y="464" font-size="10.5" fill="#333941" text-anchor="middle">低频使用的维持旧系统到项目末期统一处理</text>
+
+        <!-- 底部：平台基础件 -->
+        <rect x="470" y="406" width="460" height="66" rx="10" fill="#EAF2F9" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="700" y="430" font-size="12.5" font-weight="700" fill="#1F5288" text-anchor="middle">平台基础件（pigeon / tiger / runway）：贯穿所有波次</text>
+        <text x="700" y="448" font-size="10.5" fill="#333941" text-anchor="middle">pigeon 工作流 → 换现代引擎（Flowable/Camunda），W1 试点即引入</text>
+        <text x="700" y="464" font-size="10.5" fill="#333941" text-anchor="middle">tiger 安全 → 第一波就用新认证体系承接；runway → API 网关原生替代</text>
+      </svg>
+      </div>
+      <figcaption>图 6 · A/B/C 波次决策树。原则：试点域（W1）选「低风险 + 高频变更 + 边界清晰」三条件齐备的域——常见答案是报表/查询类模块或 operation 域的一个子模块；contract 核心排最后但准备最充分。</figcaption>
+    </figure>
+
+    <h3>7.1 建议波次表（以本系统画像为输入的草案）</h3>
+    <table>
+      <tr><th style="width:10%">波次</th><th style="width:24%">范围</th><th style="width:36%">理由</th><th>特别注意</th></tr>
+      <tr><td><strong>W1 试点</strong></td><td>报表/查询类模块，或 operation 域单一子模块</td><td>只读为主、无资金风险、边界清晰；高频变更意味着迁完立刻减负，是向管理层证明价值的最佳载体</td><td>本波次的真正产出是<strong>流水线本身</strong>：AI 规则库、阶段门、对账平台。工期允许超预期 30%，学费交在这里</td></tr>
+      <tr><td><strong>W2</strong></td><td>operation 域其余部分（623 文件）</td><td>第二大域、非资金核心、口径类规则密集，正好检验三轨数据访问的迁移方法</td><td>报表口径是「双跑对账」的重灾区——新旧系统报表数字必须分毫不差，提前和财务/经营部门约好仲裁人</td></tr>
+      <tr><td><strong>W3</strong></td><td>contract 域前半：合同台账、起草、归档</td><td>合同域拆解后的低风险部分：偏 CRUD，审批流以外的逻辑可机械迁移为主</td><td>合同模板与条款库的结构化迁移；历史合同数据的归属切换</td></tr>
+      <tr><td><strong>W4</strong></td><td>contract 域后半：审批流、履约、变更、用印/收付款联动</td><td>全系统风险最高部分：pigeon 工作流状态机 + 金额计算 + 权限交织</td><td>表征覆盖最全、双跑期最长（8 周+）、灰度最细（1% 起步）；需要业务专家驻场</td></tr>
+      <tr><td><strong>贯穿</strong></td><td>pigeon → 现代工作流引擎；tiger → 新安全体系；brick → 新前端方案</td><td>基础件不能「最后一起换」：W1 试点就必须用新工作流引擎跑通一个审批流，否则 W4 会被平台层卡死</td><td>流程定义迁移（pigeon 流程 XML/元数据 → BPMN 2.0）本身是独立子项目，安排在 W1–W2 之间</td></tr>
+    </table>
+
+    <div class="callout">
+      <p><strong>灰度切流的实现：</strong>reed 的 runway 聚合层正好可以改造成过渡期网关——按域、按用户组、按比例把请求路由到新/旧系统。回滚 = 改一行路由配置。这就是「回滚是配置变更，不是救火演习」的全部含义。切流节奏参考行业实践：每档观察 3–7 天，合同域关键操作（审批提交、金额变更）单独设置更长的 1% 观察期。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 目标架构 ============ -->
+<section id="s08">
+  <div class="wrap">
+    <h2><span class="num">08</span>目标架构：模块化单体优先，reed 平台能力的现代替代</h2>
+    <p class="lead">新架构的核心决策只有一个：单体还是微服务？对 20–50 人规模、内部信息化场景，答案几乎是确定的。</p>
+
+    <h3>8.1 单体 vs 微服务</h3>
+    <table>
+      <tr><th style="width:30%">考量</th><th style="width:35%">模块化单体</th><th style="width:35%">微服务</th></tr>
+      <tr><td>团队规模匹配</td><td>✅ 一个内部团队即可开发运维</td><td>❌ 需要平台工程能力（服务治理、链路追踪、分布式事务），通常 3–5 个以上团队才回本</td></tr>
+      <tr><td>事务一致性</td><td>✅ 本地事务够用（合同审批 + 台账更新天然是同一事务）</td><td>❌Saga/最终一致性，复杂度暴涨且正是事故来源</td></tr>
+      <tr><td>与绞杀者模式的配合</td><td>✅ 每个域是新单体里的一个 Maven 模块，边界用接口隔离，将来可拆出</td><td>⚠️ 过早拆分 = 第二系统效应的最大放大器</td></tr>
+      <tr><td>演进路径</td><td>✅ 模块边界先立住，哪块真有独立扩缩/团队需求再拆（Twitter 也是先拆组件后拆服务）</td><td>——</td></tr>
+    </table>
+    <p><strong>结论（论断 6）：</strong>新系统 = Spring Boot 3.x / JDK 21 LTS 的模块化单体，按 DDD 划分模块（contract / operation / workflow / platform-security / reporting…），模块间只经接口通信、数据库 schema 按模块分 schema。服务化留作远期选项，不进本期目标。</p>
+
+    <h3>8.2 reed 平台五组件的替代映射</h3>
+    <p>一个常见误区是「新系统要连平台一起自研」。reed 平台的五个能力，2026 年全部有成熟开源或轻量方案，自研平台是 2013 年的正确决定、2026 年的错误决定。</p>
+    <table>
+      <tr><th style="width:18%">reed 组件</th><th style="width:34%">能力</th><th style="width:30%">现代替代</th><th>迁移要点</th></tr>
+      <tr><td>grail 建模</td><td>元数据驱动的业务对象 ORM</td><td>JPA/MyBatis + 代码生成器；或保留「元数据表 + 解释器」模式但用新栈重写</td><td>grail 元数据表是重要资产：考古阶段已结构化导出，可生成新系统的实体类与 DDL 初稿</td></tr>
+      <tr><td>pigeon 工作流</td><td>审批流引擎（Hibernate 3）</td><td><strong>Flowable / Camunda 8</strong>（BPMN 2.0 标准）</td><td>存量流程定义迁移为 BPMN；在途流程实例选择「走完旧流程或冻结快照迁移」二选一，切流窗口对齐</td></tr>
+      <tr><td>brick 页面设计器</td><td>配置式页面生成</td><td><strong>Amis / Formily</strong> 等开源低代码 JSON Schema 方案，或纯前端 + 代码生成</td><td>brick 配置表 → JSON Schema 的转换器是个一次性的小工具，AI 可全自动完成 80%</td></tr>
+      <tr><td>tiger 安全</td><td>用户/角色/权限/组织</td><td>Spring Security + OAuth2/OIDC；或轻量方案（Sa-Token 类）+ 数据权限层自研</td><td>权限模型迁移要先做「权限语义对账」：旧系统的数据权限过滤藏在 508 个 SQL 里（见第 05 章②）</td></tr>
+      <tr><td>runway 聚合</td><td>门户/集成/聚合入口</td><td>API 网关（Nginx / APISIX）+ 前端微加载或单体前端</td><td>过渡期兼任新旧系统流量路由器（第 07 章）</td></tr>
+    </table>
+
+    <h3>8.3 技术栈建议表</h3>
+    <table>
+      <tr><th style="width:20%">层</th><th style="width:40%">建议</th><th>理由</th></tr>
+      <tr><td>运行时</td><td>JDK 21 LTS（虚拟线程可用）</td><td>当前 LTS 主力，生态与 AI 工具支持最全</td></tr>
+      <tr><td>框架</td><td>Spring Boot 3.x</td><td>从 Spring 3.2 的编程模型演进路径清晰，团队经验复用度最高</td></tr>
+      <tr><td>数据访问</td><td><strong>保留 MyBatis</strong>（升级到 mybatis-spring 3.x）+ 新代码用 JPA 或 MyBatis-Plus</td><td>论断 4 的直接推论：508 个 XML 里的 SQL 是资产。SQL 90% 兼容可平移（Oracle 方言若换库则见第 09 章），比让 AI 重写 SQL 然后逐条对账便宜得多</td></tr>
+      <tr><td>前端</td><td>Vue 3 / React + TS，表单密集页面配 Amis/Formily</td><td>替换 brick 的配置式开发体验；国内生态 Vue 更厚</td></tr>
+      <tr><td>工作流</td><td>Flowable（BPMN 2.0）</td><td>Java 生态原生、社区活跃、与 Spring Boot 集成成熟</td></tr>
+      <tr><td>数据库</td><td>PostgreSQL（首选）或国产库（若有信创要求）</td><td>迁移路径见第 09 章；若现有 Oracle 许可成本可接受，也可「先换应用、缓换库」，分两步降低风险</td></tr>
+      <tr><td>CI/CD</td><td>流水线内置：编译 → 静态扫描 → 表征测试 → 安全扫描 → 部署灰度</td><td>第 10 章的门禁就长在这里</td></tr>
+    </table>
+
+    <div class="callout blue">
+      <p><strong>关于「AI 原生架构」的克制建议：</strong>不要为了「AI 重写」而让新系统采用团队不熟悉的花哨架构（如全事件溯源、CQRS）。新系统要优化的是<strong>未来 10 年你们团队维护它的成本</strong>，不是本次迁移的新鲜感。用团队最熟的方式表达业务，AI 工具链反而能发挥最大作用——AI 对主流模式的理解远好于对自创架构的理解。</p>
+    </div>
+  </div>
+</section>
+<!-- ============ 09 数据迁移 ============ -->
+<section id="s09">
+  <div class="wrap">
+    <h2><span class="num">09</span>数据迁移专项：dmp 的正确打开方式</h2>
+    <p class="lead">数据迁移失败没有「回滚重试」的余地——数据错了就是经营事故。国产数据库厂商与银行业在过去几年沉淀了一套高度工程化的方法，可直接借用。</p>
+
+    <h3>9.1 先做一个关键决策：新系统用什么库？</h3>
+    <table>
+      <tr><th style="width:26%">选项</th><th style="width:36%">适用条件</th><th>对迁移的影响</th></tr>
+      <tr><td>A. 保留 Oracle（先换应用后换库）</td><td>许可成本可接受、无信创硬指标</td><td>数据层零迁移，风险大减；508 个 SQL 原样可用；把换库推迟为独立二期项目</td></tr>
+      <tr><td>B. PostgreSQL / 开源库</td><td>想摆脱 Oracle 锁定、无信创要求</td><td>SQL 方言转换是主要工作量（CONNECT BY → 递归 CTE、ROWNUM、NVL/DECODE、序列语法）；AI 辅助方言转换 + 逐条对账</td></tr>
+      <tr><td>C. 国产库（达梦/金仓/OceanBase 等）</td><td>有信创合规要求</td><td>主流国产库主打 Oracle 兼容，DMP 可直导或近原生导入；但 PL/SQL 对象仍需逐个验证（金仓实践：127 个存储过程 + 43 个函数 + 89 个复杂视图是典型改造清单量级）</td></tr>
+    </table>
+    <p>本报告的建议：<strong>若非硬性约束，选 A</strong>。「换应用」与「换数据库」是两个高风险变更，叠加在一起出事时无法归因。分开做，每一步都可验证、可回滚。</p>
+
+    <h3>9.2 五步迁移法（银行业 / 信创实践综合）</h3>
+    <ol>
+      <li><strong>对象盘点与分级：</strong>从 dmp 还原到测试库，盘点全部表 / 视图 / 存储过程 / 触发器 / 序列 / 同义词，生成兼容性报告与改造工作量清单。按 A/B/C 分级：核心交易表优先，归档历史数据延后。</li>
+      <li><strong>全量迁移：</strong>expdp 导出 → 目标库分片导入（大表延迟建索引）。全量迁移可在项目中期就做——它不干扰生产。</li>
+      <li><strong>增量同步 + 单写双轨：</strong>切换窗口前，用 Oracle LogMiner / goldengate 类工具或目标库自带同步链路，把增量变更秒级同步到新库。<span class="tag red">红线</span>：双轨期间写操作只走一端（旧库），另一端只读——双写会让数据不一致无限放大，这是所有银行案例一致强调的铁律。</li>
+      <li><strong>三级校验：</strong>①行数与校验和逐表比对；②关键字段抽样比对（金额、日期、状态）；③业务逻辑校验——合同台账场景即：合同金额 vs 审批单金额 vs 收付款流水轧差、履约状态 vs 审批记录勾稽。验收线：<strong>通过率 ≥ 99.99%</strong>。</li>
+      <li><strong>割接与回滚预案：</strong>选业务最低谷窗口（凌晨/周末）；流程 = 停旧写 → 增量追平 → 终态快照比对 → 切连接 → 冒烟验证 → 放量。割接手册 + 回滚预案 + 监控指标清单三份文档缺一不可；连接池初始化数、validation 查询（<code>SELECT 1</code>）这类细节提前演练——它们是割接夜里最常见的翻车点。</li>
+    </ol>
+
+    <div class="callout">
+      <p><strong>性能验收（别忘了）：</strong>新库性能不得低于旧库基线——TPS ≥ 基线 95%、P99 延迟不劣化。用负载回放引擎录制真实交易回放验证，并做故障注入（杀主节点、断网络）验证高可用切换。功能跑通 ≠ 迁移完成。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 AI 工程化治理 ============ -->
+<section id="s10">
+  <div class="wrap">
+    <h2><span class="num">10</span>AI 工程化与治理：让 AI 成为「有门禁的高产员工」</h2>
+    <p class="lead">AI 不是一次性引入的工具，而是要进团队编制的「新员工」：给它岗前培训（规则库）、给它工作规范（阶段门）、给它绩效考核（对账差异率）。这一章讲怎么管。</p>
+
+    <h3>10.1 工具格局（2026 年中）</h3>
+    <table>
+      <tr><th style="width:22%">层</th><th style="width:30%">代表工具</th><th>对本项目的适配判断</th></tr>
+      <tr><td><strong>确定性机械转换层</strong></td><td>OpenRewrite / Moderne（Java 配方式重构）</td><td>处理「已知且可枚举」的变更：JDK 升级、javax→jakarta、依赖 bump。确定性 100%，优先于 AI 使用——凡配方能表达的，不用 AI</td></tr>
+      <tr><td><strong>Agentic 编码层</strong></td><td>Claude Code / Copilot / 开源 agent 框架</td><td>主力工具：代码考古、表征测试生成、业务逻辑迁移、测试补齐。配合规则文件（CLAUDE.md / 规约库）与 MCP 接内部系统</td></tr>
+      <tr><td><strong>云厂商迁移服务</strong></td><td>AWS Transform / GitHub Copilot app modernization / watsonx</td><td>绑定云厂商生态（AWS Transform 目标是把你迁去 AWS）；若不上公有云则参考其方法论（评估→试点→规模化→持续学习四段式），不必绑定产品</td></tr>
+      <tr><td><strong>架构分析</strong></td><td>vFunction / CAST 类知识图谱</td><td>单体拆分边界发现、死代码检测；HCLTech 试点显示「确定性知识图谱 + AI」比纯 AI 准确率更高——预算允许可引入，预算紧张则 AI 考古 + 人工复核可覆盖 80% 价值</td></tr>
+    </table>
+    <p class="src">行业综述（dev.to 2026）的关键结论：失败项目大多「拿为一层设计的工具去打另一层」——用配方工具做架构拆分，或用 AI 做 RGB 机械升级。先分层，再选工具。</p>
+
+    <h3>10.2 门禁分层：AI 产出进主干必过的六道关</h3>
+    <figure>
+      <div class="fig-box">
+      <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+        <defs>
+          <marker id="arr3" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L9,4 L0,8 z" fill="#4A505A"/>
+          </marker>
+        </defs>
+        <!-- 六道关：宽 132 间距 18，起点 x=40 -->
+        <rect x="40" y="50" width="132" height="90" rx="10" fill="#EAF2F9" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="106" y="80" font-size="12.5" font-weight="700" fill="#1F5288" text-anchor="middle">① 编译构建</text>
+        <text x="106" y="102" font-size="10.5" fill="#333941" text-anchor="middle">可编译可启动</text>
+        <text x="106" y="120" font-size="10.5" fill="#333941" text-anchor="middle">硬门 · 自动</text>
+
+        <rect x="190" y="50" width="132" height="90" rx="10" fill="#E8F4F2" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="256" y="80" font-size="12.5" font-weight="700" fill="#0A5750" text-anchor="middle">② 静态扫描</text>
+        <text x="256" y="102" font-size="10.5" fill="#333941" text-anchor="middle">SonarQube 质量门</text>
+        <text x="256" y="120" font-size="10.5" fill="#333941" text-anchor="middle">硬门 · 自动</text>
+
+        <rect x="340" y="50" width="132" height="90" rx="10" fill="#EBF3EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="406" y="80" font-size="12.5" font-weight="700" fill="#1B5820" text-anchor="middle">③ 表征测试</text>
+        <text x="406" y="102" font-size="10.5" fill="#333941" text-anchor="middle">行为基线全绿</text>
+        <text x="406" y="120" font-size="10.5" fill="#333941" text-anchor="middle">硬门 · 自动</text>
+
+        <rect x="490" y="50" width="132" height="90" rx="10" fill="#FBF0E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="556" y="80" font-size="12.5" font-weight="700" fill="#8F3F06" text-anchor="middle">④ 安全扫描</text>
+        <text x="556" y="102" font-size="10.5" fill="#333941" text-anchor="middle">依赖 CVE + 代码注入面</text>
+        <text x="556" y="120" font-size="10.5" fill="#333941" text-anchor="middle">硬门 · 自动</text>
+
+        <rect x="640" y="50" width="132" height="90" rx="10" fill="#F2EDFA" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="706" y="80" font-size="12.5" font-weight="700" fill="#5A3099" text-anchor="middle">⑤ 人工评审</text>
+        <text x="706" y="102" font-size="10.5" fill="#333941" text-anchor="middle">金额/权限/状态机必审</text>
+        <text x="706" y="120" font-size="10.5" fill="#333941" text-anchor="middle">软门 · 人</text>
+
+        <rect x="790" y="50" width="132" height="90" rx="10" fill="#FAECEA" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="856" y="80" font-size="12.5" font-weight="700" fill="#94201A" text-anchor="middle">⑥ 灰度验证</text>
+        <text x="856" y="102" font-size="10.5" fill="#333941" text-anchor="middle">双跑对账 + 切流观察</text>
+        <text x="856" y="120" font-size="10.5" fill="#333941" text-anchor="middle">硬门 · 自动+人</text>
+
+        <line x1="172" y1="95" x2="184" y2="95" stroke="#4A505A" stroke-width="2" marker-end="url(#arr3)"/>
+        <line x1="322" y1="95" x2="334" y2="95" stroke="#4A505A" stroke-width="2" marker-end="url(#arr3)"/>
+        <line x1="472" y1="95" x2="484" y2="95" stroke="#4A505A" stroke-width="2" marker-end="url(#arr3)"/>
+        <line x1="622" y1="95" x2="634" y2="95" stroke="#4A505A" stroke-width="2" marker-end="url(#arr3)"/>
+        <line x1="772" y1="95" x2="784" y2="95" stroke="#4A505A" stroke-width="2" marker-end="url(#arr3)"/>
+
+        <text x="480" y="182" font-size="12" font-weight="700" fill="#16181D" text-anchor="middle">任何一道失败：不修 AI 的输出，先修 AI 的流程</text>
+        <text x="480" y="206" font-size="11.5" fill="#4A505A" text-anchor="middle">失败原因归类 → 回写规则库/修正表征基线/调整提示词模板 → 重跑。同一错误第二次出现即流程缺陷（Salesforce/Anthropic 一手方法论）</text>
+      </svg>
+      </div>
+      <figcaption>图 7 · AI 生成代码的六道门禁。硬门全自动、不过不放行；人工评审按风险分级抽样加必审清单。方向：随规则库成熟，软门逐步收窄到高风险清单。</figcaption>
+    </figure>
+
+    <h3>10.3 三条治理纪律</h3>
+    <ul>
+      <li><strong>修流程，不修代码（fix the process, not the code）：</strong>AI 第 N 次犯同类错误时，正确动作是改规则文件、加自动检查 hook，而不是人肉改掉这次的输出。团队的核心资产从「代码」变成「规则库 + 验证设施」——这也是为什么第 04 章说 W1 试点真正的交付物是流水线本身。</li>
+      <li><strong>数据不出域：</strong>合同与经营数据是敏感资产。参照 Pictet（221 年历史瑞士私人银行）的落地方案：企业级合约（数据不训练模型）、部署区域约束、按角色分阶段放开。若有条件，用「脱敏后的代码 + 结构」做 AI 分析，真实数据只在隔离环境流转。</li>
+      <li><strong>信任但有验证：</strong>Stack Overflow 2025：开发者信任 AI 输出的比例已从 40% 降到 29%——这不是 AI 变差了，是用过的人变多了。把「验证成本」显性编入工期（第 03 章：大型项目按 40% 压缩率做计划，而非试点的 90%），信任问题就从情绪问题变成了排期问题。</li>
+    </ul>
+  </div>
+</section>
+<!-- ============ 11 组织与度量 ============ -->
+<section id="s11">
+  <div class="wrap">
+    <h2><span class="num">11</span>组织与度量：决定成败的「非技术因素」</h2>
+    <p class="lead">WJARR 2025 对 78 个企业现代化项目的研究结论：技术改造 + 组织转型双轮驱动的项目 91% 达成业务目标，纯技术驱动的只有 43%。差距不在代码里。</p>
+
+    <h3>11.1 团队构成建议</h3>
+    <table>
+      <tr><th style="width:24%">角色</th><th style="width:16%">人数参考</th><th>职责与要点</th></tr>
+      <tr><td>迁移专项小组（全职）</td><td>4–8 人</td><td>禁止兼职——兼职的迁移永远排不上优先级，这是行业血泪共识。构成：2–3 名熟旧系统的工程师 + 2–3 名新栈工程师 + 1 名 AI 工程化负责人（管规则库/流水线/门禁）</td></tr>
+      <tr><td>业务专家（in the loop）</td><td>每域 1–2 人</td><td>合同管理员/财务/经营口。职责：确认业务规则目录、裁决对账差异、验收灰度。给他们算工时、进项目组——不是「有空时帮忙」</td></tr>
+      <tr><td>旧系统守护者</td><td>1–2 人（可兼职）</td><td>迁移期间旧系统照常运转：修 bug、上必要的政策性需求。明确「冻结 vs 维持」边界：默认维持（绞杀者模式的前提），只冻结重构性改动</td></tr>
+      <tr><td>reed 原作者/资深维护者</td><td>至少 1 人</td><td>巴士系数风险的最大对冲。若已离职，第 05 章考古产出就是唯一替代——更要确保业务专家确认环节严格执行</td></tr>
+    </table>
+
+    <h3>11.2 度量体系（防 Goodhart）</h3>
+    <table>
+      <tr><th style="width:26%">指标</th><th style="width:22%">健康线</th><th>防扭曲说明</th></tr>
+      <tr><td>波次交付周期（每域从开工到 100% 切流）</td><td>逐波缩短</td><td>只统计「切流完成」不统计「代码写完」——防止为赶进度跳过双跑</td></tr>
+      <tr><td>双跑对账差异率</td><td>收敛且可解释</td><td>差异必须三方归因；「差异率为 0」若出现太早，先怀疑对账覆盖面不足而非完美迁移</td></tr>
+      <tr><td>旧系统代码量（活跃入口数）</td><td>单调下降</td><td>真正的北极星：新系统代码量无意义，旧系统的消亡速度才是项目进度</td></tr>
+      <tr><td>生产事故（P1/P2）</td><td>不高于基线</td><td>Salesforce 数据显示 AI 加速与质量可以兼得，但前提是门禁真实生效——事故率抬头先查门禁是否被绕过</td></tr>
+      <tr><td>规则库覆盖率（已确认规则 / 目录规则）</td><td>核心域 100%</td><td>防「AI 说了算」：未经业务确认的规则不得作为迁移依据</td></tr>
+    </table>
+    <p class="src">反 Goodhart 原则：任何单一指标被考核，它就会撒谎。以上指标成组看，永远不设「AI 代码占比」这类 vanity metric 考核。</p>
+  </div>
+</section>
+
+<!-- ============ 12 反模式 ============ -->
+<section id="s12">
+  <div class="wrap">
+    <h2><span class="num">12</span>反模式清单：别人已经踩过的 12 个坑</h2>
+    <p class="lead">每一条都来自真实案例。用法：每两周拿这张表过一遍项目现状，命中任何一条立即纠偏。</p>
+    <h3>战略层</h3>
+    <table>
+      <tr><th style="width:24%">反模式</th><th style="width:36%">症状</th><th>修正</th></tr>
+      <tr><td>①「先重写后切换」</td><td>新系统闷头开发一年，旧系统照常演进，差距越拉越大</td><td>绞杀者模式：新功能在新系统长，旧系统只维持（第 02 章）</td></tr>
+      <tr><td>② 把 AI 当项目主角</td><td>方案 PPT 第一页是「AI 自动重写 73 万行」，没有验证与回滚章节</td><td>AI 是加速器不是方法论；Gartner：这类项目 70% 不达预期（第 03 章）</td></tr>
+      <tr><td>③ 按技术栈切波次</td><td>「先把所有前端换了，再换后端」——业务断裂，没法对账</td><td>按业务域垂直切波（第 07 章）</td></tr>
+      <tr><td>④ 大而全的新架构设计</td><td>3 个月架构评审，微服务/中台/AI 原生全家桶</td><td>模块化单体 + 试点域逼出架构决策（第 08 章）</td></tr>
+      <tr><td>⑤ 无限期并行</td><td>新旧双轨跑了两年谁也不敢切</td><td>每个域设硬性退役时限；30 天 clean run 即关旧入口（第 06 章）</td></tr>
+      <tr><td>⑥ 应用与数据库同时切换</td><td>割接夜出事，无法归因是代码还是 SQL 方言</td><td>两个高风险变更分开做（第 09 章）</td></tr>
+    </table>
+    <h3>工程层</h3>
+    <table>
+      <tr><th style="width:24%">反模式</th><th style="width:36%">症状</th><th>修正</th></tr>
+      <tr><td>⑦ 只考 Java 代码</td><td>考古报告没有 SQL / 元数据 / 存储过程章节</td><td>四线考古（第 05 章）——本系统三轨数据访问是高危点</td></tr>
+      <tr><td>⑧ 无表征基线就迁移</td><td>新系统测试全绿但生产对账差异不断</td><td>先行为公证再动代码（第 06 章）</td></tr>
+      <tr><td>⑨ AI 产出免检进主干</td><td>「AI 写的测试都过了」</td><td>六道门禁；信任比例 29% 的教训（第 10 章）</td></tr>
+      <tr><td>⑩ 不删死代码直接迁</td><td>给 25% 的死代码买全票</td><td>考古阶段剥离 + 灰度下线观察（第 05 章）</td></tr>
+    </table>
+    <h3>治理层</h3>
+    <table>
+      <tr><th style="width:24%">反模式</th><th style="width:36%">症状</th><th>修正</th></tr>
+      <tr><td>⑪ 兼职迁移团队</td><td>「大家抽空搞」，半年无产出</td><td>全职专项小组 + 业务专家算工时（第 11 章）</td></tr>
+      <tr><td>⑫ 敏感数据裸奔给 AI</td><td>把生产库直接丢给公有云模型</td><td>数据不出域方案先行（第 05/10 章）</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 13 结论与来源 ============ -->
+<section id="s13">
+  <div class="wrap">
+    <h2><span class="num">13</span>结论：如果你的团队只记住五句话</h2>
+    <div class="card">
+      <ol>
+        <li><strong>这不是重写项目，是受控迁移项目</strong>——AI 把 10 年的绞杀者迁移压缩到 18–30 个月，但没有取消「行为验证」这个环节。</li>
+        <li><strong>先花 6 周做四线考古</strong>（Java / 508 个 SQL / grail 元数据 / dmp 数据库对象），产出业务规则目录——这是全项目 ROI 最高的投入。</li>
+        <li><strong>先行为公证，后动代码</strong>：表征测试 + 双跑对账 + 灰度切流，是每一波都可控的机制保证。</li>
+        <li><strong>从边缘域试点，contract 域最后分模块切</strong>；试点真正的交付物是 AI 流水线与验证设施本身。</li>
+        <li><strong>组织先行</strong>：全职专项小组 + 算工时的业务专家 + 六道门禁。双轮驱动 91% vs 纯技术 43% 的差距，全部在这句话里。</li>
+      </ol>
+    </div>
+
+    <h3>参考来源（按证据类型分组）</h3>
+    <h4 style="margin:14px 0 6px;font-size:15px"><span class="tag green">厂商一手案例（有利益相关，数字按保守口径采信）</span></h4>
+    <ul style="font-size:14px">
+      <li>Anthropic 官方：LG CNS 案例研究（2913 API、99.1%、7 个月）；Pictet 案例研究（银行业 AI 治理与数据驻留）；Cognizant 合作公告（legacy modernization 实践框架）</li>
+      <li>Salesforce 官方《How Engineering Became Agentic》（2026）：33 API 迁移 231 人天→13 天、规则框架法、事故率 -5%</li>
+      <li>AWS：AWS Transform 官方文档与 FAQ（四段式方法论、全链路可追溯、Twitch/Coupang/Air Canada 案例）</li>
+    </ul>
+    <h4 style="margin:14px 0 6px;font-size:15px"><span class="tag blue">行业调查与分析</span></h4>
+    <ul style="font-size:14px">
+      <li>Stack Overflow Developer Survey 2025（n≈4.9 万）：AI 使用率 84%、信任度 40%→29%</li>
+      <li>Gartner（2026，经 CIO/D1Net 转述）：生成式 AI 依赖型大型机迁移 70%+ 不达预期；AI-ready data 警示</li>
+      <li>Stripe Developer Coefficient：开发者每周约 17 小时用于维护类工作</li>
+    </ul>
+    <h4 style="margin:14px 0 6px;font-size:15px"><span class="tag purple">方法论与学术</span></h4>
+    <ul style="font-size:14px">
+      <li>Joel Spolsky《Things You Should Never Do, Part I》（2000）——Netscape 案例原文论证</li>
+      <li>Fred Brooks《人月神话》（1975）——第二系统效应；Martin Fowler——Strangler Fig Application（2004）</li>
+      <li>WJARR 2025《Legacy Application Modernization: A Strategic Framework》（n=78，86% 绞杀者成功率、91% vs 43% 双轮驱动结论；单篇期刊、中等强度）</li>
+      <li>Michael Feathers《Working Effectively with Legacy Code》——表征测试概念源头</li>
+    </ul>
+    <h4 style="margin:14px 0 6px;font-size:15px"><span class="tag grey">工程实践与厂商技术博客</span></h4>
+    <ul style="font-size:14px">
+      <li>电科金仓：某省交通集团 Oracle 全栈迁移纪实（五阶段、三级校验、A/B/C 分级）；华为云社区：银行核心 6 步迁移法（单写双轨、99.99%、TPS≥95% 基线）</li>
+      <li>Kellton：Shadow Execution 框架（golden master 双跑 4–8 周、0.00 哨兵值案例、三层验证）；HCLTech：iLIT-AI + CAST 知识图谱两步转换试点（2026-03，900 万行）；BBD/Sanlam：COBOL→文档→Spring Boot（90% 提速）</li>
+      <li>腾讯云开发者社区：遗留系统微服务改造系列（房地产 CRM 100 万行案例）；dev.to：2026 遗留 Java 现代化工具格局综述（确定性层 vs 纠缠层）</li>
+      <li>Deluxe 大型机迁移（2026 CIO 100，12 个月、年省 490 万美元；D1Net 报道）</li>
+    </ul>
+
+    <div class="callout red" style="margin-top:28px">
+      <p><strong>证据边界声明：</strong>厂商一手案例的数字存在天然的选择性披露偏差，本报告已在每处标注证据强度并按保守口径采信（如工期压缩按大型项目 40% 做计划而非试点口径 90%）。Forrester「47% 失败源于未知依赖」与部分工具对比数字来自二手转述，仅作方向性参考。所有涉及本系统的具体波次划分、工期与人数均为基于系统画像的推演草案，须经第 04 章阶段①的实际考古结果修正。</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>深度调研报告 · 生成于 2026-09-29 · 零外部依赖 / 单文件 / 离线可用 · 本报告为调研结论与推演框架，落地前须经项目实际考古数据修正</p>
+  </div>
+</footer>
+
+</body>
+</html>

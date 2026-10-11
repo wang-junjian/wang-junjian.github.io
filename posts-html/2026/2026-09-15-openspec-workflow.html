@@ -1,0 +1,464 @@
+<meta name="description" content="面向没用过 OpenSpec 的工程师，基于对官方仓库的真实阅读，讲清规范驱动开发的核心：用增量规格取代一次性文档、用随时可做的动作取代线性阶段，并完整梳理安装初始化与探索、提案、实现、同步、归档闭环，附中文实战实例、四大工件格式与八条常见坑。">
+<meta name="keywords" content="OpenSpec, 实践指南, 规范驱动开发, 工作流, Fission-AI, 提案流程">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-15">
+<title>OpenSpec 实践指南</title>
+<style>
+:root {
+  --fg: #1a1a18; --muted: #5f5e5a; --accent: #c1502e;
+  --surface: #f5f4ef; --border: #d8d6cd; --code-bg: #efeee8;
+  --green: #3a7d44; --amber: #9a6a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fg: #e8e6df; --muted: #a3a198; --accent: #e0784f;
+    --surface: #1c1b18; --border: #3a382f; --code-bg: #26251f;
+    --green: #6fbf7a; --amber: #d9a940;
+  }
+}
+:root[data-theme="dark"] {
+  --fg: #e8e6df; --muted: #a3a198; --accent: #e0784f;
+  --surface: #1c1b18; --border: #3a382f; --code-bg: #26251f;
+  --green: #6fbf7a; --amber: #d9a940;
+}
+body {
+  background: var(--surface); color: var(--fg);
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  line-height: 1.75; padding-inline: max(16px, env(safe-area-inset-left));
+}
+main { max-width: 920px; margin: 0 auto; padding-block: 48px 96px; }
+h1 { font-size: 1.9rem; line-height: 1.3; margin-bottom: 0.25em; }
+h2 { font-size: 1.45rem; margin-top: 2.4em; padding-top: 0.6em; border-top: 1px solid var(--border); }
+h3 { font-size: 1.15rem; margin-top: 1.8em; }
+h4 { font-size: 1rem; margin-top: 1.4em; color: var(--accent); }
+.lede { color: var(--muted); font-size: 0.95rem; margin-bottom: 2em; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9rem; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--code-bg); white-space: nowrap; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.87em; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 0.83rem; line-height: 1.55; }
+pre code { background: none; padding: 0; }
+.callout { border-left: 3px solid var(--accent); background: var(--code-bg); padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 1em 0; }
+.callout.warn { border-left-color: var(--amber); }
+.callout.ok { border-left-color: var(--green); }
+figure { margin: 1.5em 0; }
+img { max-width: 100%; height: auto; }
+a { color: var(--accent); }
+ol, ul { padding-left: 1.4em; }
+li { margin: 0.25em 0; }
+</style>
+<main>
+
+<h1>OpenSpec 实践指南</h1>
+<p class="lede">面向没用过 OpenSpec 的工程师：读完即可在自己的项目里跑通"探索 → 提案 → 实现 → 归档"的完整闭环。本文基于对 <a href="https://github.com/Fission-AI/OpenSpec">Fission-AI/OpenSpec</a> 仓库（README、docs/、schemas/、skills/ 以及其自用的 openspec/ 目录）的实际阅读整理，所有命令与文件路径均来自仓库本身。</p>
+
+<h2>1. 项目定位与核心理念</h2>
+
+<p>OpenSpec 是一个<strong>规范驱动开发（SDD）</strong>的轻量框架：在你和 AI 编码助手之间加一层"规格层"，让双方<strong>在写任何代码之前先就"要构建什么"达成一致</strong>。README 里写的理念（philosophy）直接决定了它的设计：</p>
+
+<pre><code>→ fluid not rigid                流动，不僵硬
+→ iterative not waterfall        迭代，不瀑布
+→ easy not complex               简单，不复杂
+→ built for brownfield not just greenfield   为存量项目而生，不只服务绿地项目
+→ scalable from personal projects to enterprises</code></pre>
+
+<p>落地为三个关键设计决策：</p>
+
+<h3>1.1 Delta spec（增量规格）模式</h3>
+<p>这是 OpenSpec 最核心的概念。规格分两层存放：</p>
+<ul>
+  <li><code>openspec/specs/</code> —— <strong>主规格</strong>，描述系统<strong>当前</strong>的行为，是 source of truth，按能力域组织（如 <code>specs/auth/</code>、<code>specs/cli-init/</code>）。</li>
+  <li><code>openspec/changes/&lt;change-name&gt;/</code> —— <strong>进行中的变更</strong>。每个变更一个文件夹，其中的 <code>specs/</code> 子目录不是完整规格，而是<strong>相对主规格的增量（delta）</strong>：用 <code>## ADDED / MODIFIED / REMOVED / RENAMED Requirements</code> 四种段落标记"这次要加什么、改什么、删什么"。</li>
+</ul>
+<p>变更完成归档时，delta 被合并回主规格：ADDED 追加、MODIFIED 替换、REMOVED 删除。于是<strong>主规格始终与代码同步演进</strong>，而每一次演进的历史都保留在 <code>openspec/changes/archive/</code> 里。</p>
+
+<h3>1.2 动作而非阶段（actions, not phases）</h3>
+<p>传统 SDD 工具（README 点名对比了 GitHub Spec Kit）把工作流锁死成"规划阶段 → 实现阶段 → 完成"的线性门禁。OpenSpec 认为真实工作不是这样：你实现到一半发现设计错了，就得回去改规格再继续。所以它的命令是<strong>随时可做的动作</strong>，工件之间的依赖关系（proposal → specs → design → tasks）只是"使能器"（enabler），不是强制门禁——任何工件任何时候都可以回头修改。</p>
+
+<h3>1.3 规格随代码演进，而非一次性文档</h3>
+<p>变更文件夹本身就是审计轨迹：proposal 记录意图，delta spec 记录行为变化，design 记录技术决策，tasks 记录执行进度。归档后整个文件夹移入 <code>archive/YYYY-MM-DD-&lt;name&gt;/</code>，形成可追溯的历史。OpenSpec 仓库自己就是这么用的——它的 <code>openspec/specs/</code> 下有 30 多个能力域规格，<code>openspec/changes/archive/</code> 下积累了从 2025-01 到 2026-01 的几十个已归档变更，可以直接当真实样例浏览。</p>
+
+<h2>2. 安装与初始化</h2>
+
+<h3>2.1 安装 CLI</h3>
+<p><strong>前置条件：Node.js 20.19.0 或更高</strong>（用 <code>node --version</code> 确认）。</p>
+<pre><code>npm install -g @fission-ai/openspec@latest
+# 也支持 pnpm / yarn(1.x) / bun / deno / nix，见 docs/installation.md</code></pre>
+
+<h3>2.2 在项目里初始化</h3>
+<pre><code>cd your-project
+openspec init
+# 或非交互地指定工具（多个用逗号）：
+openspec init --tools claude,cursor</code></pre>
+<p><code>init</code> 做三件事：</p>
+<ol>
+  <li>创建 <code>openspec/</code> 目录骨架：<code>specs/</code>、<code>changes/archive/</code>、<code>config.yaml</code>；已有 <code>openspec/</code> 目录时会刷新但不碰你的 specs 和 changes。</li>
+  <li>为你选中的 AI 工具生成接入文件。以 <strong>Claude Code</strong> 为例，生成 <code>.claude/skills/openspec-*/SKILL.md</code>（技能）和 <code>.claude/commands/opsx/&lt;id&gt;.md</code>（斜杠命令），之后你在对话里直接输入 <code>/opsx:propose</code> 即可。不同工具拼写不同：Cursor / GitHub Copilot 是 <code>/opsx-propose</code>，Amazon Q 是 <code>@opsx-propose</code>，Codex 是 <code>$openspec-propose</code>——<code>init</code> 会打印你这套工具的正确写法。</li>
+  <li>引导你创建项目配置 <code>openspec/config.yaml</code>（可选但推荐）。</li>
+</ol>
+
+<div class="callout">
+<strong>两套命令别搞混</strong>（官方文档称这是新手最常见的绊脚点）：<code>openspec ...</code> 在<strong>终端</strong>里跑；<code>/opsx:...</code> 在 <strong>AI 助手的对话框</strong>里输入。没有单独的"交互模式"要启动，直接在聊天框敲斜杠命令即可。
+</div>
+
+<h3>2.3 工作流 profile：core 与 expanded</h3>
+<p>默认安装的是 <strong>core</strong> profile，包含 6 个命令：<code>propose</code>、<code>explore</code>、<code>apply</code>、<code>update</code>、<code>sync</code>、<code>archive</code>——对大多数人够用。如果想要展开式工作流命令（<code>new</code>、<code>continue</code>、<code>ff</code>、<code>verify</code>、<code>bulk-archive</code>、<code>onboard</code>），执行：</p>
+<pre><code>openspec config profile   # 选择工作流配置
+openspec update           # 重新生成 agent 指令与命令文件</code></pre>
+<p>另外，升级 OpenSpec 版本后也应在每个项目里跑一次 <code>openspec update</code> 刷新 agent 指令。</p>
+
+<h3>2.4 config.yaml：给 AI 注入项目上下文</h3>
+<p><code>openspec/config.yaml</code> 的 <code>context</code> 会被注入到所有工件的生成指令里（包在 <code>&lt;context&gt;</code> 标签中），<code>rules</code> 按工件类型注入（包在 <code>&lt;rules&gt;</code> 标签中）。OpenSpec 仓库自己的 config 就是一个好例子：</p>
+<pre><code># openspec/config.yaml
+schema: spec-driven
+
+context: |
+  技术栈：TypeScript、React、Node.js
+  API 约定：RESTful，JSON 响应
+  测试：Vitest 单测，Playwright 端到端
+
+rules:
+  proposal:
+    - 必须包含回滚方案
+    - 标明受影响的团队
+  specs:
+    - 场景使用 Given/When/Then 格式
+  design:
+    - 复杂流程要画时序图</code></pre>
+<p>注意：<code>context</code> 上限 50KB；文件名必须是 <code>config.yaml</code> 而不是 <code>.yml</code>；改动即时生效。</p>
+
+<h2>3. 完整工作流</h2>
+
+<p>两条路径，按需选择：</p>
+<pre><code>快路径（core，默认）：
+  /opsx:explore（可选）──► /opsx:propose ──► /opsx:apply ──► /opsx:sync（可选）──► /opsx:archive
+
+展开路径（expanded）：
+  /opsx:new ──► /opsx:ff 或 /opsx:continue ──► /opsx:apply ──► /opsx:verify ──► /opsx:archive</code></pre>
+
+<div class="table-wrap">
+<table>
+  <tr><th>命令</th><th>做什么</th><th>读 / 写什么文件</th></tr>
+  <tr><td><code>/opsx:explore</code></td><td>不写任何工件的"思考伙伴"：读代码、比较方案、收敛模糊想法</td><td>只读代码库；<strong>不创建</strong>任何文件</td></tr>
+  <tr><td><code>/opsx:propose &lt;名字或描述&gt;</code></td><td>一步创建变更文件夹并生成全部规划工件（默认快路径）</td><td>写 <code>changes/&lt;name&gt;/</code> 下的 proposal.md、specs/、design.md、tasks.md</td></tr>
+  <tr><td><code>/opsx:new</code></td><td>只搭变更脚手架（展开路径）</td><td>写 <code>changes/&lt;name&gt;/</code> 目录与元数据</td></tr>
+  <tr><td><code>/opsx:continue</code></td><td>按依赖图一次创建"下一个就绪的"工件，可反复调用</td><td>增量写各个工件；通过 <code>openspec status --json</code> 判断就绪状态</td></tr>
+  <tr><td><code>/opsx:ff</code></td><td>fast-forward：一次生成全部规划工件（想清楚时用）</td><td>同 propose 的工件集合</td></tr>
+  <tr><td><code>/opsx:apply [name]</code></td><td>按 tasks.md 逐项实现，边做边勾掉 checkbox；实现中发现计划不对就改工件再继续</td><td>读全部工件；写代码；更新 tasks.md 勾选状态</td></tr>
+  <tr><td><code>/opsx:update &lt;name&gt;</code></td><td>修订已有规划工件并保持彼此一致（只改计划，不碰代码，也不补建缺失工件）</td><td>改 proposal/specs/design/tasks</td></tr>
+  <tr><td><code>/opsx:verify</code></td><td>归档前校验实现是否与 specs / tasks / design 一致（展开路径）</td><td>读工件 + 代码，产出核对结论</td></tr>
+  <tr><td><code>/opsx:sync</code></td><td>不归档，直接把当前变更的 delta 合并进主 <code>specs/</code>，变更保持激活</td><td>写 <code>openspec/specs/&lt;capability&gt;/spec.md</code></td></tr>
+  <tr><td><code>/opsx:archive</code></td><td>完工归档：提示先 sync，然后把变更文件夹移入 archive</td><td>合并 delta 到主 specs；移动到 <code>changes/archive/YYYY-MM-DD-&lt;name&gt;/</code></td></tr>
+  <tr><td><code>/opsx:bulk-archive</code> / <code>/opsx:onboard</code></td><td>批量归档多个已完成变更 / 端到端引导式教学</td><td>—</td></tr>
+</table>
+</div>
+
+<h3>3.1 探索：/opsx:explore</h3>
+<p>官方文档的原话："如果只从文档里带走一个习惯，那就是——<strong>不确定的时候，先 explore 再 propose</strong>。"AI 助手很"勤快"，需求含糊时它会自信地构建出错误的东西。explore 是一场零成本的对话：它读你的代码、摆出几种方案的取舍、帮你把模糊想法收敛成可构建的范围，<strong>不创建变更文件夹、不写任何工件、不改代码</strong>。想清楚之后自然过渡到 propose。适合的场景：知道问题但不知道方案、在多个技术路线间犹豫、刚接手一个代码库、怀疑工作量比看起来大或小。</p>
+
+<h3>3.2 提案：/opsx:propose（或 new → continue / ff）</h3>
+<p>知道要做什么之后：</p>
+<pre><code>You: /opsx:propose add-dark-mode
+
+AI:  Created openspec/changes/add-dark-mode/
+     ✓ proposal.md — 为什么做、改什么
+     ✓ specs/       — 需求与场景（delta）
+     ✓ design.md    — 技术方案
+     ✓ tasks.md     — 实现清单
+     Ready for implementation!</code></pre>
+<p>展开路径把它拆成两步：<code>/opsx:new</code> 只建脚手架；然后<strong>想得清楚</strong>就 <code>/opsx:ff</code> 一次生成全部规划工件，<strong>边想边定</strong>就反复 <code>/opsx:continue</code> 一次建一个（它会按依赖图告诉你哪些工件已就绪、创建哪个、建完解锁了什么）。</p>
+<p>底层机制：skill 通过 <code>openspec status --change "&lt;name&gt;" --json</code> 查询工件状态（done / ready / blocked），再用 <code>openspec instructions &lt;artifact&gt; --json</code> 拿到模板与上下文，一次只建一个工件。依赖图是 DAG：<code>proposal → specs、design → tasks</code>，apply 阶段要求 tasks 存在。</p>
+
+<div class="callout warn">
+<strong>规划与实现有明确边界。</strong>propose 这个 skill 自带"planning boundary"规则：它只创建规划工件，即使你最初的请求是"帮我构建 XX"，它生成完工件也会停下来，等你明确说开始才进入 apply。这是刻意设计——你拿到计划后应先评审，再放行写代码。
+</div>
+
+<h3>3.3 实现：/opsx:apply</h3>
+<p><code>/opsx:apply</code> 按 tasks.md 逐项实现并勾选 checkbox。多个变更并行时可以 <code>/opsx:apply &lt;name&gt;</code> 指定；不指定时它从对话上下文推断，推断不出来就列出候选让你选。这是"流动"理念体现得最明显的环节：<strong>实现中发现设计错了，直接改 design.md 或 specs，然后让 apply 从断点继续</strong>，不需要推倒重来。结构性的大改可以用 <code>/opsx:update</code> 修订规划工件并保持它们彼此一致（一个设计改动可能反向波及 proposal）。</p>
+<p>什么时候该 update、什么时候该新开一个 change？文档给了启发式：意图相同、范围收窄、学习驱动的修正 → update；意图根本变了、范围爆炸、原变更本身可以独立完工 → 先归档原变更，再新开一个。"Update 保留上下文，new 提供清晰度"，类比 git 分支：同一个特性内持续提交，真正不同的工作才开新分支。</p>
+
+<h3>3.4 验证：/opsx:verify（展开路径）</h3>
+<p>归档前用 <code>/opsx:verify</code> 核对实现与工件是否一致：规格里的场景是否都实现了、tasks 是否全部完成、设计决策是否被遵守。发现问题就回到 apply（修实现）或 update（修计划）。</p>
+
+<h3>3.5 同步与归档：/opsx:sync、/opsx:archive</h3>
+<p><code>/opsx:sync</code> 是可选步骤：把当前变更的 delta 合并进主 <code>openspec/specs/</code>，但变更<strong>保持激活、不归档</strong>。它应用整个 delta——REMOVED 段落下的需求会从主规格中删除、改名的需求就地换标题，delta 没提到的内容原样保留。适用场景：想让主规格先反映新行为、另一个并行变更需要建立在本次新增的规格之上、归档前想先 review 合并结果。</p>
+<p><code>/opsx:archive</code> 是收尾：如果你还没 sync 它会先提示你 sync；确认后把变更文件夹移入 <code>openspec/changes/archive/YYYY-MM-DD-&lt;name&gt;/</code>（名字已有日期前缀就不叠加）。归档语义：ADDED 追加进主规格、MODIFIED 整体替换、REMOVED 删除。CLI 等价物是 <code>openspec archive &lt;change-name&gt; --yes</code>（跳过确认，仍会先校验再应用 delta 并归档）。</p>
+
+<h2>4. 工件格式详解</h2>
+
+<p>默认 schema 叫 <code>spec-driven</code>，定义在仓库的 <code>schemas/spec-driven/schema.yaml</code>，四个工件的依赖关系与生成指令都在其中。你也可以用 <code>openspec schema fork spec-driven my-workflow</code> 复制一份自定义（比如加一个 <code>research</code> 工件放在 proposal 之前），schema 存放在 <code>openspec/schemas/</code>（项目级，纳入版本控制）。</p>
+
+<h3>4.1 proposal.md —— 为什么做、做什么</h3>
+<p>模板（<code>schemas/spec-driven/templates/proposal.md</code>）固定四个段落：</p>
+<ul>
+  <li><code>## Why</code> —— 1–2 句说清问题或机会：解决什么问题？为什么是现在？</li>
+  <li><code>## What Changes</code> —— 变更清单，具体到新增能力、修改、移除；破坏性变更标 <strong>BREAKING</strong>。</li>
+  <li><code>## Capabilities</code> —— 提案与规格之间的"契约"：<code>### New Capabilities</code> 列出新增能力路径（kebab-case，每个对应一个 <code>specs/&lt;capability-path&gt;/spec.md</code>）；<code>### Modified Capabilities</code> 列出需求级行为发生变化的既有能力（要用 <code>openspec/specs/</code> 下的既有精确路径，只有实现细节变化不算）。</li>
+  <li><code>## Impact</code> —— 受影响的代码、API、依赖、系统。</li>
+</ul>
+<p>保持 1–2 页，聚焦 why 而非 how（实现细节属于 design.md）。</p>
+<div class="callout warn">
+<strong>零 delta 校验：</strong>每个变更必须声明至少一个能力（新增或修改），否则 <code>openspec validate</code> 会拒绝——除非你在变更目录的 <code>.openspec.yaml</code> 里显式设置 <code>skip_specs: true</code>（仅用于纯重构、工具、文档类不变更行为的场景）。<strong>不要为了满足校验而编造需求。</strong>
+</div>
+
+<h3>4.2 specs/ 下的 delta spec —— 行为契约</h3>
+<p>spec 是<strong>行为契约，不是实现计划</strong>。写：用户或下游系统依赖的可观察行为、输入输出与错误条件、外部约束（安全/隐私/兼容性）、可测试的场景。不写：内部类名/函数名、库与框架选型、逐步实现细节。快速判据：如果实现换了而外部可见行为不变，那它就不该出现在 spec 里。</p>
+<p>格式规则（来自 schema.yaml 的生成指令，条条都是硬约束）：</p>
+<ul>
+  <li>delta 操作用二级标题：<code>## ADDED Requirements</code> / <code>## MODIFIED Requirements</code> / <code>## REMOVED Requirements</code> / <code>## RENAMED Requirements</code>（改名用 FROM:/TO: 格式）。</li>
+  <li>每条需求：<code>### Requirement: &lt;名称&gt;</code> 后接描述，用 SHALL/MUST 表达规范性要求。</li>
+  <li>每个场景：<code>#### Scenario: &lt;名称&gt;</code>，WHEN/THEN 格式。<strong>场景必须恰好 4 个 #</strong>——写成 3 个 # 或 bullet 会静默失败。</li>
+  <li><strong>每条需求至少一个场景。</strong></li>
+  <li>MODIFIED 必须包含<strong>完整的更新后内容</strong>（从 <code>### Requirement:</code> 到全部场景整块复制再改），部分内容会在归档时丢失细节；如果只是新增关注点而不改既有行为，应该用 ADDED。</li>
+  <li>REMOVED 必须写明 <code>**Reason**</code> 和 <code>**Migration**</code>。</li>
+  <li><strong>新增能力</strong>的 delta 以 <code>## Purpose</code> 开头（一两句话，归档时会被复制进新建的主规格；不写的话主规格会留下 <code>TBD</code> 占位符）。<strong>既有能力</strong>的 delta 不要加 Purpose（会被忽略；想改既有能力的 Purpose 就直接改主规格文件）。</li>
+</ul>
+
+<h3>4.3 design.md —— 怎么做（按需创建）</h3>
+<p>只在以下情况创建：跨模块/跨服务的横切变更或新架构模式；引入新的外部依赖或重大数据模型变更；安全、性能、迁移复杂度；开工前需要先把技术决策定下来的歧义点。段落：Context（只写解释方案所需的现状与约束）、Goals / Non-Goals、Decisions（关键技术选择及理由、考虑过的备选）、Risks / Trade-offs（格式：[风险] → 缓解）、Migration Plan（部署与回滚，如适用）、Open Questions（可以安全延后的未知项——<strong>会改变 specs、方案或任务拆分的问题不能留作 open question，应当场问用户</strong>）。</p>
+
+<h3>4.4 tasks.md —— 实现清单</h3>
+<p>硬性格式要求：相关任务归在 <code>## 编号标题</code> 下；每个任务必须是 checkbox：<code>- [ ] X.Y 任务描述</code>——apply 阶段靠解析这个格式跟踪进度，<strong>不用 <code>- [ ]</code> 的任务不会被跟踪</strong>。任务要小到能在一个会话内完成、按依赖排序，且<strong>每个任务都要写明如何验证完成</strong>（一个测试、一条命令、一个可观察行为）。</p>
+
+<h2>5. 中文示例：添加深色模式</h2>
+
+<p>以下示例以仓库 README / getting-started 文档中的 add-dark-mode 示例和真实变更（如 <code>openspec/changes/add-change-stacking-awareness/</code>）的结构为底，改写为中文。</p>
+
+<h3>5.1 发起变更</h3>
+<pre><code>You: /opsx:propose add-dark-mode
+AI:  Created openspec/changes/add-dark-mode/
+     ✓ proposal.md  ✓ specs/  ✓ design.md  ✓ tasks.md</code></pre>
+
+<h3>5.2 proposal.md</h3>
+<pre><code>## Why
+
+用户反馈夜间使用应用时眼睛疲劳，希望提供深色模式。
+目前界面只有亮色主题，长期夜间使用体验差。
+
+## What Changes
+
+- 在设置页新增主题切换开关（亮色 / 深色）
+- 支持跟随系统偏好（prefers-color-scheme）作为默认主题
+- 用户选择持久化到 localStorage，跨会话生效
+
+## Capabilities
+
+### New Capabilities
+- `ui-theming`: 应用的主题选择能力，包括手动切换、
+  系统偏好检测与偏好持久化
+
+### Modified Capabilities
+（无——本次不修改任何既有能力的需求级行为）
+
+## Impact
+
+- 代码：全局样式表、设置页、应用入口组件
+- 依赖：无新增依赖（纯 CSS 自定义属性 + React context）
+- 兼容性：不支持 CSS 自定义属性的旧浏览器保持亮色主题</code></pre>
+
+<h3>5.3 specs/ui-theming/spec.md（delta spec）</h3>
+<p>注意这是<strong>新能力</strong>的 delta，所以以 <code>## Purpose</code> 开头：</p>
+<pre><code>## Purpose
+
+让用户可以在亮色与深色主题之间切换，并记住自己的选择。
+
+## ADDED Requirements
+
+### Requirement: 主题选择
+系统 SHALL 允许用户在亮色与深色主题之间切换，
+未做选择时 SHALL 默认跟随系统偏好。
+
+#### Scenario: 手动切换主题
+- **WHEN** 用户点击主题切换开关
+- **THEN** 界面立即切换到所选主题
+- **AND** 该选择被持久化，跨会话生效
+
+#### Scenario: 跟随系统偏好
+- **WHEN** 没有任何已保存偏好的用户打开应用
+- **THEN** 使用操作系统的 prefers-color-scheme 作为当前主题
+
+#### Scenario: 持久化偏好优先于系统偏好
+- **WHEN** 已保存主题偏好的用户打开应用
+- **THEN** 使用已保存的偏好，忽略系统设置</code></pre>
+
+<p>如果这次变更同时要<strong>修改</strong>一个既有能力（例如把既有 <code>settings</code> 能力里"设置项即时生效"的需求改掉），就在 <code>changes/add-dark-mode/specs/settings/spec.md</code> 里写（注意用既有能力的精确路径，且不加 Purpose）：</p>
+<pre><code>## MODIFIED Requirements
+
+### Requirement: 设置项即时生效
+系统 SHALL 在用户修改任何设置项后立即应用，
+（此前为：仅在外观类设置上即时生效，其余需刷新页面。）
+
+#### Scenario: 修改外观设置
+- **WHEN** 用户修改主题或字体设置
+- **THEN** 界面无刷新立即反映新设置</code></pre>
+
+<h3>5.4 design.md</h3>
+<pre><code>## Context
+见 proposal.md - Why。样式目前是硬编码颜色值，集中在全局 CSS。
+
+## Goals / Non-Goals
+- Goals: 无新依赖；切换无闪烁；偏好持久化
+- Non-Goals: 自定义配色（用户自选色值）、按页面分别设置主题
+
+## Decisions
+- 用 CSS 自定义属性承载主题色，亮/暗两套变量：
+  理由是不引入 CSS-in-JS 依赖，且旧浏览器可自然降级。
+  备选方案（Tailwind dark: 前缀）被否决：项目未使用 Tailwind。
+- 用 React context 管理主题状态，入口组件挂载时读取
+  localStorage → 回退到 matchMedia('(prefers-color-scheme: dark)')。
+
+## Risks / Trade-offs
+- [SSR 首屏闪烁] → 在 &lt;head&gt; 内联一段读取偏好的同步脚本
+- [硬编码颜色的遗漏组件] → apply 阶段全量检索 hex 颜色字面量
+
+## Migration Plan
+纯前端变更，直接发布即可；异常时回滚入口组件的主题注入。</code></pre>
+
+<h3>5.5 tasks.md</h3>
+<pre><code>## 1. 主题基础设施
+
+- [ ] 1.1 创建 ThemeContext（light/dark 状态），
+       用单元测试验证默认读取系统偏好
+- [ ] 1.2 在全局 CSS 定义亮/暗两套自定义属性，
+       浏览器 DevTools 中切换 data-theme 可见颜色变化
+- [ ] 1.3 实现 localStorage 持久化，
+       刷新页面后主题保持
+
+## 2. UI 组件
+
+- [ ] 2.1 实现 ThemeToggle 组件并渲染两种状态
+- [ ] 2.2 把开关接入设置页，
+       点击后界面立即切换（对应场景：手动切换主题）
+
+## 3. 收尾
+
+- [ ] 3.1 全量检索硬编码颜色值并替换为变量，
+       grep 结果为空
+- [ ] 3.2 端到端测试覆盖三个 spec 场景并全部通过</code></pre>
+
+<h3>5.6 实现与归档</h3>
+<pre><code>You: /opsx:apply
+AI:  Working through tasks...
+     ✓ 1.1 Created ThemeContext ... ✓ 3.2 端到端测试通过
+     All tasks complete!
+
+You: /opsx:archive
+AI:  Archiving add-dark-mode...
+     ✓ Merged specs into openspec/specs/ui-theming/spec.md
+     ✓ Moved to openspec/changes/archive/2026-09-15-add-dark-mode/</code></pre>
+
+<p>归档后，<code>openspec/specs/ui-theming/spec.md</code> 成为主规格（delta 的 Purpose 被复制进来，ADDED 的需求去掉 "ADDED" 段落头、挂到 <code>## Requirements</code> 下），样子像这样——以下是 OpenSpec 仓库真实主规格（<code>openspec/specs/cli-init/spec.md</code>）的节选，展示了归档后的实际形态：</p>
+<pre><code># CLI Init Specification
+
+## Purpose
+
+The `openspec init` command SHALL create a complete OpenSpec
+directory structure in any project, ...
+
+## Requirements
+
+### Requirement: Directory Creation
+
+The command SHALL create the OpenSpec directory structure with
+config file.
+
+#### Scenario: Creating OpenSpec structure
+
+- **WHEN** `openspec init` is executed
+- **THEN** create the following directory structure:
+  openspec/
+  ├── config.yaml
+  ├── specs/
+  └── changes/
+      └── archive/</code></pre>
+<p>对照可见：主规格 = <code># 标题 + ## Purpose + ## Requirements</code>（不再有 ADDED/MODIFIED 字样），需求与场景的写法与 delta 完全一致。后续的变更再用新的 delta 在它基础上叠加。</p>
+
+<h2>6. 目录结构示例</h2>
+
+<p>一个采用 OpenSpec 的项目，初始化并完成若干变更后长这样：</p>
+<pre><code>your-project/
+├── .claude/
+│   ├── commands/opsx/          # init 生成的斜杠命令（/opsx:propose 等）
+│   └── skills/openspec-*/      # init 生成的技能（SKILL.md）
+├── openspec/
+│   ├── config.yaml             # 项目配置：schema / context / rules
+│   ├── specs/                  # 主规格：系统当前行为的 source of truth
+│   │   ├── auth/
+│   │   │   └── spec.md
+│   │   └── ui-theming/
+│   │       └── spec.md
+│   └── changes/                # 进行中的变更（每个一个文件夹）
+│       ├── add-order-idempotency-key/
+│       │   ├── proposal.md
+│       │   ├── design.md
+│       │   ├── tasks.md
+│       │   └── specs/          # delta spec（只写变化的部分）
+│       │       └── orders/
+│       │           └── spec.md
+│       └── archive/            # 已完成变更的审计历史
+│           ├── 2026-09-15-add-dark-mode/
+│           └── 2026-08-02-add-user-auth/
+└── src/ ...                    # 你的代码</code></pre>
+
+<h2>7. CLI 速查（终端里用）</h2>
+
+<div class="table-wrap">
+<table>
+  <tr><th>命令</th><th>用途</th></tr>
+  <tr><td><code>openspec init [--tools &lt;ids&gt;]</code></td><td>初始化项目、配置 AI 工具接入</td></tr>
+  <tr><td><code>openspec update</code></td><td>升级后刷新 agent 指令与命令文件</td></tr>
+  <tr><td><code>openspec list [--specs]</code></td><td>列出进行中的变更；加 <code>--specs</code> 列出能力清单</td></tr>
+  <tr><td><code>openspec show &lt;name&gt; [--type spec]</code></td><td>查看某个变更或某条主规格的详情</td></tr>
+  <tr><td><code>openspec validate &lt;name&gt;</code></td><td>校验变更的 spec 格式（场景层级、delta 段落等）</td></tr>
+  <tr><td><code>openspec status --change &lt;name&gt; [--json]</code></td><td>查看工件状态（done / ready / blocked）</td></tr>
+  <tr><td><code>openspec view</code></td><td>交互式 dashboard</td></tr>
+  <tr><td><code>openspec archive &lt;name&gt; --yes</code></td><td>命令行归档（跳过确认，仍先校验并应用 delta）</td></tr>
+  <tr><td><code>openspec schemas</code> / <code>openspec schema fork|init|validate|which</code></td><td>管理自定义工作流 schema</td></tr>
+  <tr><td><code>openspec config profile</code></td><td>切换 core / expanded 工作流命令集</td></tr>
+</table>
+</div>
+
+<h2>8. 实践建议与常见坑</h2>
+
+<div class="callout warn">
+<strong>场景标题必须恰好四个 #。</strong><code>#### Scenario:</code> 写成 <code>###</code> 或用 bullet 列表会<strong>静默失败</strong>——不报错，但场景没被解析。写完后跑 <code>openspec validate &lt;change&gt;</code> 是最便宜的保险。
+</div>
+
+<ul>
+  <li><strong>MODIFIED 要复制整条需求。</strong>MODIFIED 段落必须包含从 <code>### Requirement:</code> 到全部场景的完整更新后内容；只写差异部分会在归档合并时丢掉细节。只是新增行为就用 ADDED，别用 MODIFIED。</li>
+  <li><strong>别把 spec 写成实现计划。</strong>spec 描述可观察行为（用户视角、输入输出、错误条件），内部类名、库选型、步骤细节放进 design.md / tasks.md。判据：实现换了而外部行为不变的东西，不属于 spec。</li>
+  <li><strong>变更命名用 kebab-case、动词开头。</strong>浏览 OpenSpec 自己的 archive 可见惯例：<code>add-*</code>、<code>fix-*</code>、<code>update-*</code>、<code>improve-*</code>、<code>extend-*</code>，如 <code>add-dark-mode</code>、<code>fix-cli-local-date-semantics</code>。</li>
+  <li><strong>修改既有能力用精确路径。</strong>Modified Capabilities 与 delta 文件路径必须对应 <code>openspec/specs/</code> 下既有能力的确切路径；先 <code>openspec list --specs</code> 确认再写，写错路径等于瞄准了一个不存在的能力。也不要为一个已扁平组织的项目新造层级。</li>
+  <li><strong>零 delta 变更要显式声明。</strong>纯重构 / 工具 / 文档类变更，在变更目录的 <code>.openspec.yaml</code> 里设 <code>skip_specs: true</code>，否则 <code>validate</code> 拒绝。别编造需求来"过关"。</li>
+  <li><strong>新能力的 delta 记得写 ## Purpose</strong>（50 字符以上），否则归档后新主规格会留下 <code>TBD</code> 占位符要手工补。既有能力的 delta 则不要写 Purpose。</li>
+  <li><strong>保持主规格与代码同步的纪律：归档前 sync。</strong>delta 只有 sync/archive 时才进入主规格；并行变更若要建立在本次新增的规格之上，先 <code>/opsx:sync</code> 再让对方开工，避免各写各的。</li>
+  <li><strong>实现中计划变了就改工件，别硬扛。</strong>这是 OpenSpec 相对 Spec Kit 的核心差异：apply 中发现设计不对，直接编辑 design.md / specs 再继续，或用 <code>/opsx:update</code> 保持一致性。但意图本身变了就开新变更，不要把原 proposal 改得面目全非。</li>
+  <li><strong>注意上下文卫生。</strong>README 明确建议：开始实现前清空对话上下文，并在会话中保持良好的 context hygiene；模型选择上推荐高推理模型做规划与实现。</li>
+  <li><strong>先 explore 再 propose。</strong>需求含糊时，<code>/opsx:explore</code> 零成本地把问题想清楚，能显著降低"AI 自信地构建错误东西"的概率。</li>
+  <li><strong>规划完先评审再放行。</strong>propose 只生成工件不动代码，拿到 proposal/specs/design/tasks 后由人评审，这是整个流程中最重要的人工 gate。</li>
+</ul>
+
+<h2>9. 与 AI-Native SDLC Playbook 工件链的映射</h2>
+
+<p><a href="https://www.anthropic.com/engineering/ai-native-sdlc-playbook">The AI-Native SDLC playbook</a> 提出的工件链是 <code>intent.md → spec.md → plan.md → diff+tests → PR+review findings → incident record</code>。OpenSpec 的产物大致对应：</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Playbook 环节</th><th>OpenSpec 对应物</th><th>说明</th></tr>
+  <tr><td><code>intent.md</code></td><td><code>proposal.md</code>（Why / What Changes）</td><td>捕获意图与范围；<code>/opsx:explore</code> 相当于意图成形前的对话式探索</td></tr>
+  <tr><td><code>spec.md</code></td><td><code>changes/&lt;name&gt;/specs/</code> 的 delta spec</td><td>WHEN/THEN 场景是可验证的行为契约；归档后并入主 <code>specs/</code> 成为系统行为的长期事实来源</td></tr>
+  <tr><td><code>plan.md</code></td><td><code>design.md</code> + <code>tasks.md</code></td><td>design 回答 how（技术决策与取舍），tasks 是可勾选的执行清单</td></tr>
+  <tr><td>diff + tests</td><td><code>/opsx:apply</code> 产出的代码 + tasks.md 勾选进度</td><td>tasks 要求每项写明验证方式，天然把测试纳进工件</td></tr>
+  <tr><td>PR + review findings</td><td><code>/opsx:verify</code> + 人工评审 proposal/plan</td><td>OpenSpec 把 review 重心前移到"写代码前评审计划"，verify 做归档前的一致性核对</td></tr>
+  <tr><td>incident record / 审计轨迹</td><td><code>changes/archive/YYYY-MM-DD-*/</code></td><td>每次变更的完整工件原样归档，构成可追溯历史</td></tr>
+</table>
+</div>
+
+<p>差异也值得注意：playbook 强调<strong>循环</strong>（生产环境违规触发新的 intent），OpenSpec 的循环体现在"主规格 → 新 delta → 合并回主规格"的规格演进上，尚未内建生产信号回流的机制；playbook 的控制分层（skill 建议性 / hook 强制性）在 OpenSpec 里表现为 skill 给 AI 的生成指令 + <code>openspec validate</code> 的确定性格式校验，人类审批则落在 propose 之后的计划评审 gate。</p>
+
+<div class="callout ok">
+<strong>一句话上手：</strong><code>npm i -g @fission-ai/openspec@latest</code> → 项目里 <code>openspec init --tools claude</code> → 对话框里 <code>/opsx:explore</code> 想清楚 → <code>/opsx:propose &lt;name&gt;</code> 出计划并评审 → <code>/opsx:apply</code> 实现 → <code>/opsx:archive</code> 归档。主规格随每次归档自动演进，历史留在 archive 里。
+</div>
+
+</main>

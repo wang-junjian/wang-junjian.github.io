@@ -1,0 +1,3105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Jev 为软件而生的结构化决策模型：不写文本，只用 RLCD 校准概率直接返回可分支、可排序、可路由的答案，延迟约 100ms，十三个问题合并比逐个便宜 12.2 倍。本篇为官方文档全站中文整理，覆盖三大原语、四大架构模式、置信度门控路由与九个已知失效模式。">
+<meta name="keywords" content="Jev, System One, TypeSafe, 中文文档, Choice, 校准概率">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-23">
+<title>Jev 完全文档 · TypeSafe AI System One 模型中文参考</title>
+<style>
+/* ============ 设计令牌 ============ */
+:root{
+  --bg:#ffffff;
+  --bg-sub:#f7f8fa;
+  --bg-code:#fbfbfd;
+  --panel:#ffffff;
+  --border:#e3e5e9;
+  --border-strong:#cdd1d8;
+  --text:#16181d;
+  --text-mid:#4a4f59;
+  --text-dim:#797f8a;
+  --accent:#1f6feb;
+  --accent-soft:#e8f0fe;
+  --accent-2:#7c3aed;
+  --green:#0a7d3f;
+  --green-soft:#e6f4ec;
+  --amber:#9a5b00;
+  --amber-soft:#fdf3e2;
+  --red:#b42318;
+  --red-soft:#fdeceb;
+  --purple:#7c3aed;
+  --purple-soft:#f1eafe;
+  --cyan:#0b7285;
+  --code-key:#7c3aed;
+  --code-str:#0a7d3f;
+  --code-num:#b45309;
+  --code-kw:#a21caf;
+  --code-fn:#1f6feb;
+  --code-com:#8a8f98;
+  --code-punc:#6b7280;
+  --radius:10px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:"Inter","Inter var",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.05);
+}
+html[data-theme="dark"]{
+  --bg:#0e1116;
+  --bg-sub:#151a21;
+  --bg-code:#12161d;
+  --panel:#151a21;
+  --border:#252c36;
+  --border-strong:#333c48;
+  --text:#e6e9ee;
+  --text-mid:#a8b0bd;
+  --text-dim:#7a8390;
+  --accent:#5aa2ff;
+  --accent-soft:#13233d;
+  --accent-2:#b980ff;
+  --green:#4ec97e;
+  --green-soft:#0f2a1c;
+  --amber:#e3a344;
+  --amber-soft:#2c2113;
+  --red:#ff8075;
+  --red-soft:#2c1615;
+  --purple:#b980ff;
+  --purple-soft:#241a38;
+  --cyan:#67d7e8;
+  --code-key:#c8a2ff;
+  --code-str:#7ee2a8;
+  --code-num:#ffb86b;
+  --code-kw:#ff9ede;
+  --code-fn:#78b6ff;
+  --code-com:#6b7482;
+  --code-punc:#8b949e;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:15px;line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============ 顶栏 ============ */
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--accent);width:0;z-index:60;transition:width .1s linear}
+.topbar{
+  position:sticky;top:0;z-index:50;height:56px;
+  display:flex;align-items:center;gap:16px;
+  padding:0 20px;background:var(--bg);
+  border-bottom:1px solid var(--border);
+}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em;white-space:nowrap}
+.logo{
+  width:26px;height:26px;border-radius:7px;flex:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;color:#fff;font-size:13px;font-weight:800;font-family:var(--mono)
+}
+.brand small{color:var(--text-dim);font-weight:450;font-size:12px}
+.topbar .spacer{flex:1}
+.iconbtn{
+  border:1px solid var(--border);background:var(--panel);color:var(--text-mid);
+  height:32px;min-width:32px;padding:0 10px;border-radius:8px;cursor:pointer;
+  font-size:13px;display:inline-flex;align-items:center;gap:6px;font-family:var(--sans)
+}
+.iconbtn:hover{border-color:var(--border-strong);color:var(--text)}
+#menuBtn{display:none}
+.searchwrap{position:relative;flex:none}
+#search{
+  width:230px;height:32px;padding:0 10px 0 30px;border-radius:8px;
+  border:1px solid var(--border);background:var(--bg-sub);color:var(--text);
+  font-family:var(--sans);font-size:13px;outline:none
+}
+#search:focus{border-color:var(--accent);background:var(--panel)}
+.searchwrap svg{position:absolute;left:9px;top:8px;opacity:.5}
+
+/* ============ 布局 ============ */
+.layout{display:flex;max-width:1500px;margin:0 auto;align-items:flex-start}
+.sidebar{
+  width:286px;flex:none;position:sticky;top:56px;height:calc(100vh - 56px);
+  overflow-y:auto;padding:22px 14px 60px;border-right:1px solid var(--border);
+  background:var(--bg)
+}
+.sidebar::-webkit-scrollbar{width:8px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.navgroup{margin-bottom:18px}
+.navgroup h4{
+  margin:0 0 6px;padding:0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-dim);font-weight:700
+}
+.navgroup a{
+  display:block;padding:5px 10px;margin:1px 0;border-radius:6px;
+  color:var(--text-mid);text-decoration:none;font-size:13.5px;line-height:1.5;
+  border-left:2px solid transparent
+}
+.navgroup a:hover{background:var(--bg-sub);color:var(--text)}
+.navgroup a.active{background:var(--accent-soft);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.navgroup a.hide{display:none}
+
+.content{flex:1;min-width:0;padding:36px 46px 120px;max-width:960px}
+@media(max-width:1180px){.content{padding:30px 28px 100px}}
+@media(max-width:900px){
+  .sidebar{
+    position:fixed;left:0;top:56px;bottom:0;transform:translateX(-100%);
+    transition:transform .22s ease;background:var(--panel);z-index:45;box-shadow:var(--shadow)
+  }
+  body.navopen .sidebar{transform:none}
+  #menuBtn{display:inline-flex}
+  .content{padding:24px 18px 100px}
+  #search{width:130px}
+}
+
+/* ============ 排版 ============ */
+h1{font-size:34px;line-height:1.25;letter-spacing:-.02em;margin:0 0 12px;font-weight:750}
+h2{
+  font-size:24px;letter-spacing:-.015em;margin:0 0 6px;padding-top:14px;font-weight:700;
+  scroll-margin-top:76px
+}
+h3{font-size:18px;margin:30px 0 8px;font-weight:650;letter-spacing:-.01em;scroll-margin-top:76px}
+h4{font-size:15px;margin:22px 0 6px;font-weight:650;color:var(--text)}
+p{margin:10px 0;color:var(--text-mid)}
+.content > p, .content > ul, .content > ol{max-width:80ch}
+strong{color:var(--text);font-weight:650}
+a{color:var(--accent)}
+hr{border:0;border-top:1px solid var(--border);margin:44px 0}
+section{margin-bottom:52px;scroll-margin-top:70px}
+.lede{font-size:17px;color:var(--text-mid);max-width:74ch}
+.eyebrow{
+  font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+  font-weight:700;margin-bottom:8px
+}
+ul,ol{color:var(--text-mid);padding-left:22px;margin:10px 0}
+li{margin:5px 0}
+li > strong{color:var(--text)}
+code:not(pre code){
+  font-family:var(--mono);font-size:.855em;background:var(--bg-sub);
+  border:1px solid var(--border);padding:.1em .38em;border-radius:5px;color:var(--text);
+  word-break:break-word
+}
+kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:var(--bg-sub)}
+
+/* hero */
+.hero{
+  border:1px solid var(--border);border-radius:16px;padding:28px 30px;margin:0 0 40px;
+  background:
+    radial-gradient(900px 260px at 92% -20%,var(--accent-soft),transparent 70%),
+    radial-gradient(700px 240px at 8% 120%,var(--purple-soft),transparent 70%),
+    var(--panel);
+  box-shadow:var(--shadow)
+}
+.hero h1{font-size:40px}
+@media(max-width:700px){.hero h1{font-size:30px}.hero{padding:22px}}
+.hero .sub{font-size:17px;color:var(--text-mid);margin:6px 0 18px;max-width:72ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{
+  font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);
+  background:var(--bg-sub);color:var(--text-mid);font-family:var(--mono)
+}
+.chip b{color:var(--text);font-family:var(--sans)}
+
+/* meta grid */
+.metagrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin:18px 0}
+.metacard{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--panel)}
+.metacard .k{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);font-weight:700}
+.metacard .v{font-size:19px;font-weight:700;color:var(--text);margin-top:4px;font-family:var(--mono)}
+.metacard .n{font-size:12.5px;color:var(--text-dim);margin-top:2px}
+
+/* 表格 */
+.tablewrap{overflow-x:auto;margin:16px 0;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+thead th{background:var(--bg-sub);color:var(--text);font-weight:650;font-size:12.5px;letter-spacing:.02em;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--bg-sub)}
+td p{margin:2px 0;font-size:13.5px}
+
+/* callout */
+.callout{
+  border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--bg-sub);
+  border-radius:8px;padding:12px 16px;margin:16px 0;font-size:14px
+}
+.callout p{margin:6px 0}
+.callout > p:first-child{margin-top:0}
+.callout > p:last-child{margin-bottom:0}
+.callout .t{font-weight:700;color:var(--text);display:block;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green);background:var(--green-soft)}
+.callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}
+.callout.danger{border-left-color:var(--red);background:var(--red-soft)}
+.callout.note{border-left-color:var(--purple);background:var(--purple-soft)}
+
+/* 卡片网格 */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:18px 0}
+.card{border:1px solid var(--border);border-radius:var(--radius);padding:16px;background:var(--panel)}
+.card h5{margin:0 0 6px;font-size:14.5px;color:var(--text)}
+.card p{margin:0;font-size:13.5px}
+.card .ico{
+  width:28px;height:28px;border-radius:7px;display:grid;place-items:center;margin-bottom:10px;
+  background:var(--accent-soft);color:var(--accent);font-family:var(--mono);font-size:13px;font-weight:700
+}
+.card.p .ico{background:var(--purple-soft);color:var(--purple)}
+.card.g .ico{background:var(--green-soft);color:var(--green)}
+.card.a .ico{background:var(--amber-soft);color:var(--amber)}
+
+/* 代码块 */
+.codeblock{
+  position:relative;margin:16px 0;border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;background:var(--bg-code)
+}
+.codeblock .head{
+  display:flex;align-items:center;gap:8px;padding:6px 10px 6px 14px;
+  background:var(--bg-sub);border-bottom:1px solid var(--border)
+}
+.codeblock .lang{
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-dim);font-weight:700
+}
+.codeblock .title{font-size:12.5px;color:var(--text-dim);font-family:var(--mono);margin-left:auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}
+.copybtn{
+  margin-left:8px;border:1px solid var(--border);background:var(--panel);color:var(--text-dim);
+  border-radius:6px;font-size:11.5px;padding:2px 8px;cursor:pointer;font-family:var(--sans);flex:none
+}
+.copybtn:hover{color:var(--text);border-color:var(--border-strong)}
+.copybtn.done{color:var(--green);border-color:var(--green)}
+pre{
+  margin:0;padding:14px 16px;overflow-x:auto;font-family:var(--mono);
+  font-size:12.9px;line-height:1.72;color:var(--text);tab-size:4
+}
+pre code{background:none;border:0;padding:0;font-size:inherit;color:inherit;white-space:pre}
+pre::-webkit-scrollbar{height:8px}
+pre::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px}
+.tok-kw{color:var(--code-kw)}
+.tok-str{color:var(--code-str)}
+.tok-num{color:var(--code-num)}
+.tok-com{color:var(--code-com);font-style:italic}
+.tok-fn{color:var(--code-fn)}
+.tok-key{color:var(--code-key)}
+.tok-punc{color:var(--code-punc)}
+.tok-b{color:var(--cyan);font-weight:600}
+
+/* 字段表 (API) */
+.fields{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:14px 0;background:var(--panel)}
+.field{display:grid;grid-template-columns:minmax(140px,26%) 1fr;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.field:last-child{border-bottom:0}
+.field .fname{font-family:var(--mono);font-size:12.8px;color:var(--text);font-weight:600;word-break:break-all}
+.field .ftype{display:block;font-family:var(--mono);font-size:11.5px;color:var(--text-dim);font-weight:400;margin-top:2px}
+.field .fdesc{font-size:13.5px;color:var(--text-mid)}
+.field .fdesc p{margin:0}
+@media(max-width:640px){.field{grid-template-columns:1fr}}
+
+/* SVG 图 */
+.diagram{
+  border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);
+  padding:18px;margin:20px 0;overflow-x:auto
+}
+.diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* 条形 vis */
+.bars{margin:14px 0;border:1px solid var(--border);border-radius:var(--radius);padding:16px;background:var(--panel)}
+.bar{display:grid;grid-template-columns:minmax(110px,190px) 1fr 58px;align-items:center;gap:12px;margin:7px 0;font-size:13px}
+.bar .lbl{color:var(--text-mid);font-family:var(--mono);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .track{height:16px;border-radius:5px;background:var(--bg-sub);overflow:hidden;border:1px solid var(--border)}
+.bar .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:5px 0 0 5px}
+.bar .val{font-family:var(--mono);font-size:12.5px;color:var(--text);text-align:right}
+
+/* steps */
+.steps{counter-reset:st;margin:18px 0;padding-left:0;list-style:none}
+.steps > li{
+  counter-increment:st;position:relative;padding:0 0 6px 44px;margin:0 0 16px;
+  border-left:1px solid var(--border);margin-left:14px
+}
+.steps > li::before{
+  content:counter(st);position:absolute;left:-14px;top:0;width:28px;height:28px;border-radius:50%;
+  background:var(--accent);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700;
+  font-family:var(--mono);border:3px solid var(--bg)
+}
+.steps > li > strong{display:block;color:var(--text);font-size:15px;margin-bottom:2px}
+.steps > li > p{margin:2px 0}
+
+/* footer nav */
+.docnav{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--border);flex-wrap:wrap}
+.docnav a{
+  flex:1;min-width:220px;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;
+  text-decoration:none;background:var(--panel)
+}
+.docnav a:hover{border-color:var(--accent)}
+.docnav .dir{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);font-weight:700}
+.docnav .ttl{color:var(--text);font-weight:600;font-size:15px}
+footer{
+  border-top:1px solid var(--border);margin-top:40px;padding:24px 46px;color:var(--text-dim);font-size:13px;
+  max-width:1500px;margin-left:auto;margin-right:auto
+}
+.toTop{
+  position:fixed;right:18px;bottom:18px;width:38px;height:38px;border-radius:50%;border:1px solid var(--border);
+  background:var(--panel);color:var(--text-mid);cursor:pointer;display:none;place-items:center;box-shadow:var(--shadow);z-index:40
+}
+.toTop.show{display:grid}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<header class="topbar">
+  <button class="iconbtn" id="menuBtn" aria-label="目录">☰</button>
+  <div class="brand">
+    <span class="logo">J</span>
+    <span>Jev 文档 <small>System One · TypeSafe AI</small></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="searchwrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="search" type="search" placeholder="筛选章节…" autocomplete="off" />
+  </div>
+  <button class="iconbtn" id="themeBtn" aria-label="切换主题">◐ 主题</button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="navgroup">
+      <h4>开始</h4>
+      <a href="#overview">01 · Jev 是什么</a>
+      <a href="#system-one">02 · System One 与 RLCD</a>
+      <a href="#primitives">03 · 三个 AI 原语</a>
+      <a href="#quickstart">04 · 快速上手</a>
+    </div>
+    <div class="navgroup">
+      <h4>核心概念</h4>
+      <a href="#state">05 · State 状态</a>
+      <a href="#questions">06 · Questions 问题</a>
+      <a href="#answers">07 · Answers 与校准概率</a>
+      <a href="#confidence">08 · Confidence 置信度</a>
+    </div>
+    <div class="navgroup">
+      <h4>原语详解</h4>
+      <a href="#choice">09 · Choice 选择</a>
+      <a href="#score">10 · Score 评分</a>
+      <a href="#noul">11 · Noul 是否</a>
+      <a href="#structure">12 · 结构化问题</a>
+    </div>
+    <div class="navgroup">
+      <h4>架构模式</h4>
+      <a href="#fanout">13 · 投机扇出</a>
+      <a href="#conf-route">14 · 置信度门控路由</a>
+      <a href="#composite">15 · 复合评分</a>
+      <a href="#intent">16 · 意图路由</a>
+    </div>
+    <div class="navgroup">
+      <h4>工程实践</h4>
+      <a href="#build">17 · 如何构建系统</a>
+      <a href="#jagged">18 · Jev 1.13 的棱角</a>
+      <a href="#models">19 · 模型 · 定价 · 限额</a>
+      <a href="#httpapi">20 · HTTP API 参考</a>
+      <a href="#pysdk">21 · Python SDK</a>
+      <a href="#jssdk">22 · JavaScript SDK</a>
+      <a href="#errors">23 · 错误与重试</a>
+      <a href="#cookbooks">24 · Cookbook 索引</a>
+      <a href="#agentskill">25 · Agent Skill</a>
+      <a href="#bestpractice">26 · 最佳实践与反模式</a>
+    </div>
+  </nav>
+
+  <main class="content">
+
+    <div class="hero">
+      <div class="eyebrow">TypeSafe AI · 中文整理版</div>
+      <h1>Jev：为软件而生的<br/>结构化决策模型</h1>
+      <p class="sub">
+        Jev 是 TypeSafe 的旗舰模型，也是第一个 <strong>System One 模型</strong>。它不生成文本、不写代码、不对话——
+        它接收一份 <strong>state（状态）</strong> 和一组<strong>带类型的问题</strong>，直接返回带概率分布的
+        <strong>结构化答案</strong>，让你的代码可以分支、排序与路由。
+      </p>
+      <div class="chips">
+        <span class="chip"><b>模型</b> jev-1.13.0</span>
+        <span class="chip"><b>别名</b> jev-latest</span>
+        <span class="chip"><b>端点</b> POST /v1/systemone</span>
+        <span class="chip"><b>延迟</b> ≈100–150ms</span>
+        <span class="chip"><b>上下文</b> 64k tokens</span>
+        <span class="chip"><b>价格</b> $42 / Btok（输出免费）</span>
+      </div>
+    </div>
+
+    <!-- ============ 01 ============ -->
+    <section id="overview">
+      <h2>01 · Jev 是什么</h2>
+      <p class="lede">
+        大语言模型（LLM）被设计成产出<em>给人读的文本</em>。当你的代码实际需要的是模型的一个<strong>判断</strong>时，
+        就会产生错配：你在强迫一个文本生成系统输出结构化决策，再把结果解析回代码能依赖的形式。
+      </p>
+
+      <div class="callout">
+        <span class="t">Machine Native Intelligence（机器原生智能）</span>
+        <p>
+          TypeSafe 的判断是：大规模自动化将由 AI-to-AI、AI-to-Software 的交互主导，机器接口比聊天接口更重要。
+          因此他们把「读起来舒服」这个目标，换成了「在软件里行为可预测」：具备<strong>结构化、可靠性、可观测性、
+          可测试性、速度、一致性与低成本</strong>这些类软件属性。
+        </p>
+      </div>
+
+      <h3>一次请求，一次响应，全部并行</h3>
+      <div class="diagram">
+        <svg viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Jev 数据流图">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.55"/>
+            </marker>
+          </defs>
+          <rect x="10" y="62" width="140" height="66" rx="10" fill="var(--bg-sub)" stroke="var(--border-strong)"/>
+          <text x="80" y="90" text-anchor="middle" font-family="var(--sans)" font-size="13" font-weight="600" fill="var(--text)">state</text>
+          <text x="80" y="110" text-anchor="middle" font-family="var(--sans)" font-size="13" font-weight="600" fill="var(--text)">+ questions</text>
+
+          <line x1="150" y1="95" x2="218" y2="95" stroke="currentColor" stroke-width="1.6" opacity="0.5" marker-end="url(#ar)"/>
+          <text x="184" y="84" text-anchor="middle" font-family="var(--sans)" font-size="11" fill="var(--text-dim)">one request</text>
+
+          <rect x="222" y="30" width="268" height="130" rx="12" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="356" y="54" text-anchor="middle" font-family="var(--sans)" font-size="12.5" font-weight="700" fill="var(--accent)">Jev（System One 模型）</text>
+          <rect x="240" y="66" width="232" height="26" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+          <text x="356" y="83" text-anchor="middle" font-family="var(--mono)" font-size="11.5" fill="var(--text-mid)">Choice · 并行评估</text>
+          <rect x="240" y="98" width="232" height="26" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+          <text x="356" y="115" text-anchor="middle" font-family="var(--mono)" font-size="11.5" fill="var(--text-mid)">Score · 互相隔离</text>
+          <rect x="240" y="130" width="232" height="20" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+          <text x="356" y="144" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--text-mid)">Noul · 同一份 state</text>
+
+          <line x1="490" y1="95" x2="556" y2="95" stroke="currentColor" stroke-width="1.6" opacity="0.5" marker-end="url(#ar)"/>
+          <text x="523" y="84" text-anchor="middle" font-family="var(--sans)" font-size="11" fill="var(--text-dim)">one response</text>
+
+          <rect x="560" y="52" width="190" height="86" rx="10" fill="var(--green-soft)" stroke="var(--green)"/>
+          <text x="655" y="76" text-anchor="middle" font-family="var(--sans)" font-size="12.5" font-weight="700" fill="var(--green)">typed answers</text>
+          <text x="655" y="96" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--text-mid)">probabilities</text>
+          <text x="655" y="112" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--text-mid)">confidence</text>
+          <text x="655" y="130" text-anchor="middle" font-family="var(--sans)" font-size="11" fill="var(--text-dim)">no text, no parsing</text>
+        </svg>
+      </div>
+
+      <p>Jev 的四个关键承诺：</p>
+      <div class="cards">
+        <div class="card">
+          <div class="ico">T</div><h5>类型安全 by construction</h5>
+          <p>答案永远约束在你给出的选项或等级内。代码不需要从生成的散文里「捞」值，也不存在 JSON 解析失败。</p>
+        </div>
+        <div class="card g">
+          <div class="ico">∥</div><h5>并行且互相独立</h5>
+          <p>一次请求里的每个问题独立并行评估。加问题几乎不改变响应时间，也不会互相污染（无 context-rot）。</p>
+        </div>
+        <div class="card p">
+          <div class="ico">P</div><h5>校准过的概率</h5>
+          <p>RLCD 校准后的概率跨越大量预测成立：被判 0.8 的这批预测约 80% 真的发生。不确定性成为可用信号。</p>
+        </div>
+        <div class="card a">
+          <div class="ico">⚡</div><h5>快到可以放进 UI</h5>
+          <p>多数查询约 100ms 完成，适合实时请求路径、交互界面、游戏，以及大规模离线 Map-Reduce。</p>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="t">Jev 不是什么</span>
+        <p>
+          Jev <strong>不是</strong>聊天 / 代码补全 LLM，不能替代 Claude Code、Cursor、Copilot 等编码智能体背后的模型。
+          它没有「两种模式」的开关，也不产出解释。正确用法是：<strong>继续用你的编码智能体写业务代码，
+          在需要快速、低成本、结构化判断的地方调用 Jev</strong>。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 02 ============ -->
+    <section id="system-one">
+      <h2>02 · System One 与 RLCD</h2>
+      <p class="lede">
+        System One 是一类模型：为软件做<strong>快速、结构化决策</strong>而生。名字取自 Kahneman《思考，快与慢》——
+        System 1 是快而直觉的，System 2 是慢而审慎的；这里强调的是「快而聚焦的判断」。
+      </p>
+
+      <h3>与 LLM 的差异</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>维度</th><th>通用 LLM</th><th>System One（Jev）</th></tr></thead>
+          <tbody>
+            <tr><td>输出</td><td>自然语言文本、代码</td><td>类型化的决策 + 概率分布 + 置信度</td></tr>
+            <tr><td>消费方</td><td>人</td><td>代码</td></tr>
+            <tr><td>答案空间</td><td>开放</td><td>由你通过 primitives 约束</td></tr>
+            <tr><td>不确定性</td><td>通常不表达，且趋于过度自信</td><td>校准概率，可阈值化</td></tr>
+            <tr><td>失败模式</td><td>幻觉、格式错误、啰嗦</td><td>字面化理解、数学 / 计数弱、不耐多跳间接</td></tr>
+            <tr><td>典型延迟</td><td>数百毫秒到数十秒</td><td>≈100ms，且加问题几乎不增加延迟</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>三条后训练路线：RLHF / RLVR / RLCD</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="ico">H</div><h5>RLHF</h5>
+          <p><strong>Reinforcement Learning from Human Feedback</strong>：把预训练模型变成聊天机器人，优化「人更喜欢」。由 TypeSafe 联合创始人 Diogo Almeida 共同发明。</p>
+        </div>
+        <div class="card a">
+          <div class="ico">V</div><h5>RLVR</h5>
+          <p><strong>Reinforcement Learning with Verifiable Rewards</strong>：造就了擅长数学等可验证任务的推理模型，但更慢、更贵。</p>
+        </div>
+        <div class="card g">
+          <div class="ico">C</div><h5>RLCD ★</h5>
+          <p><strong>Reinforcement Learning for Calibrated Decisions</strong>：TypeSafe 的第三条路——训练模型返回<strong>决策与校准概率</strong>，而非生成文本。</p>
+        </div>
+      </div>
+
+      <h3>校准意味着什么</h3>
+      <p>在一个校准良好的模型上，跨<strong>大量预测</strong>来看：</p>
+      <ul>
+        <li>被赋予概率 <code>0.2</code> 的结果，大约有 20% 真的发生；</li>
+        <li>被赋予概率 <code>0.8</code> 的结果，大约有 80% 真的发生；</li>
+        <li>被赋予概率 <code>1.0</code> 的结果，应当 100% 发生。</li>
+      </ul>
+      <p>这些比率描述的是<strong>一组预测</strong>，不是对<strong>单个答案</strong>的保证。</p>
+
+      <div class="callout danger">
+        <span class="t">RLHF 的两个隐患</span>
+        <p>
+          <strong>1) 迎合性幻觉：</strong>RLHF 奖励「人更喜欢的话」，会连带奖励阿谀与自信口吻的编造。<br/>
+          <strong>2) Mode dropping（模式丢弃）：</strong>偏好优化让模型偏向某种风格（如指令遵循），
+          压低其它可能输出的概率 —— 这是 GAN 中 <em>mode collapse</em> 的温和版本。
+        </p>
+        <p>一句极其重要的话：<strong>「读起来让人信服」与「可靠到可以无人值守自动化」是两个不同的优化目标。</strong></p>
+      </div>
+    </section>
+
+    <!-- ============ 03 ============ -->
+    <section id="primitives">
+      <h2>03 · 三个 AI 原语</h2>
+      <p>TypeSafe 暴露三个 AI 原语，类似软件原语：模块化、可组合、结构化、可靠、快速。每种回答一种形状的问题。</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>原语</th><th>回答什么</th><th>适用场景</th><th>返回字段</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><a href="#choice"><strong>Choice</strong></a></td>
+              <td>是哪一个？</td>
+              <td>选项集合固定且无序：路由到部门、文档分类、识别编程语言</td>
+              <td><code>choice</code>、<code>probabilities</code>、<code>confidence</code></td>
+            </tr>
+            <tr>
+              <td><a href="#score"><strong>Score</strong></a></td>
+              <td>落在哪一档？</td>
+              <td>答案在可描述的谱系上：缺陷严重度、客户情绪、技能水平</td>
+              <td><code>score</code>、<code>legend</code>、<code>probabilities</code>、<code>confidence</code></td>
+            </tr>
+            <tr>
+              <td><a href="#noul"><strong>Noul</strong></a></td>
+              <td>这句话是真的吗？</td>
+              <td>干净的是 / 否，且概率本身就是有用信号：是否含 PII、是否要求退款</td>
+              <td><code>noul</code>（0–1）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout tip">
+        <span class="t">一条硬规则：一次请求打包所有问题</span>
+        <p>
+          三种类型可以<strong>自由混用</strong>于同一个请求。所有问题在同一份 state 上并行、独立评估，
+          加问题几乎不改变延迟，只增加极便宜的问题 token。
+          实测（13 个问题合并 vs 13 次单独调用）：<strong>便宜 12.2 倍、快 10 倍，答案无变化</strong>。
+        </p>
+      </div>
+
+      <h3>原子问题，在代码里组合</h3>
+      <p>
+        把每个问题想成一次「直觉式判定」：一个懂行的人在给到正确上下文后几秒钟内能做的那种判断。
+        如果一个问题需要长时间推理、或同时权衡多个独立因素，就<strong>拆开</strong>。
+      </p>
+      <div class="callout note">
+        <span class="t">例子</span>
+        <p>不要问「给这个创业路演打分」。而是分别问：市场规模、技术可行性、差异化程度，
+        再用<strong>你自己的公式</strong>组合这些分数。优先级变了，就改代码里的一个系数，而不是重写提示词。</p>
+      </div>
+    </section>
+
+    <!-- ============ 04 ============ -->
+    <section id="quickstart">
+      <h2>04 · 快速上手</h2>
+
+      <h3>路径 A · Playground（先看效果，不写代码）</h3>
+      <ol>
+        <li>打开 <a href="https://console.typesafe.ai/playground" target="_blank" rel="noopener">Playground</a> 并登录；</li>
+        <li>把任意文本粘成 state；</li>
+        <li>加一个 Noul 问题：<code>"Does this message express urgency?"</code></li>
+        <li>继续加 Choice / Score，混在一次调用里看全部结果。</li>
+      </ol>
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">Sample state</span><button class="copybtn">复制</button></div>
+        <pre><code>Hi, I've been trying to connect my Stripe account for 3 days and the integration keeps failing. I'm losing sales. Please help ASAP.</code></pre>
+      </div>
+
+      <h3>路径 B · HTTP API（cURL）</h3>
+      <ol>
+        <li>从 <a href="https://console.typesafe.ai/keys" target="_blank" rel="noopener">dashboard</a> 拿 API key；</li>
+        <li><code>POST https://api.typesafe.ai/v1/systemone</code>，Header 带 <code>Authorization: Bearer &lt;KEY&gt;</code>；</li>
+        <li>完整字段见 <a href="#httpapi">§20 HTTP API 参考</a>。</li>
+      </ol>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">cURL</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash">curl -X POST https://api.typesafe.ai/v1/systemone \
+  -H "Authorization: Bearer $TYPESAFE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @- &lt;&lt;'EOF'
+  {
+    "state": "Hi, I've been trying to connect my Stripe account for 3 days and the integration keeps failing. I'm losing sales. Please help ASAP.",
+    "model": "jev-latest",
+    "questions": {
+      "urgency": {
+        "type": "noul",
+        "instructions": "Does this message express urgency?"
+      }
+    }
+  }
+EOF</code></pre>
+      </div>
+
+      <h3>完整请求体：三种类型混用</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">request body</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "state": "Hi, I've been trying to connect my Stripe account for 3 days and the integration keeps failing. I'm losing sales. Please help ASAP.",
+  "model": "jev-latest",
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this",
+      "criteria": {
+        "billing": "Payment or subscription issues",
+        "technical": "Bugs or integration problems",
+        "sales": "Pricing or account questions"
+      }
+    },
+    "frustration": {
+      "type": "score",
+      "instructions": "How frustrated the customer appears",
+      "criteria": [
+        "Calm, just stating facts",
+        "Frustrated but civil",
+        "Very angry, strong language"
+      ]
+    },
+    "is_urgent": {
+      "type": "noul",
+      "instructions": "The message conveys urgency or time-sensitivity"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h3>完整响应体</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">response body</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "model": "jev-1.13.0",
+  "answers": {
+    "department": {
+      "type": "choice",
+      "choice": "technical",
+      "confidence": 0.78,
+      "probabilities": { "technical": 0.85, "sales": 0.0, "billing": 0.15 }
+    },
+    "frustration": {
+      "type": "score",
+      "score": 1.0,
+      "confidence": 1.0,
+      "legend": {
+        "0": "Calm, just stating facts",
+        "1": "Frustrated but civil",
+        "2": "Very angry, strong language"
+      },
+      "probabilities": { "0": 0.0, "1": 1.0, "2": 0.0 }
+    },
+    "is_urgent": { "type": "noul", "noul": 1.0 }
+  },
+  "usage": { "input_tokens": 392, "output_tokens": 65 }
+}</code></pre>
+      </div>
+
+      <h3>路径 C · Python SDK</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">install</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash">pip install typesafe-sdk      # 要求 Python &gt;= 3.10
+# 或
+uv add typesafe-sdk</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">hello_jev.py</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+
+client = TypeSafeClient()   # 读取环境变量 TYPESAFE_API_KEY，默认模型 jev-latest
+
+ticket = "Hi, I've been trying to connect my Stripe account for 3 days and the integration keeps failing. I'm losing sales. Please help ASAP."
+
+response = client.system_one(
+    state=ticket,
+    questions={
+        "department": Choice(
+            instructions="Which team should handle this",
+            criteria={
+                "billing": "Payment or subscription issues",
+                "technical": "Bugs or integration problems",
+                "sales": "Pricing or account questions",
+            },
+        ),
+        "frustration": Score(
+            instructions="How frustrated the customer appears",
+            criteria=[
+                "Calm, just stating facts",
+                "Frustrated but civil",
+                "Very angry, strong language",
+            ],
+        ),
+        "is_urgent": Noul(
+            instructions="The message conveys urgency or time-sensitivity",
+        ),
+    },
+)
+
+print(response.answers["department"].choice)   # "technical"
+print(response.answers["frustration"].score)   # 1.0
+print(response.answers["is_urgent"].noul)      # 1.0</code></pre>
+      </div>
+
+      <h3>路径 D · 让编码智能体帮你写</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">Claude Code / Codex / 其他智能体</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash"># Claude Code
+claude plugin marketplace add typesafe-ai/skills
+claude plugin install typesafe@typesafe-ai
+
+# 其他智能体（交互式选择）
+npx skills add typesafe-ai/skills --skill typesafe-ai      # 加 -g 全局安装</code></pre>
+      </div>
+      <p>装好后给智能体一个起点式提示词：</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">coding agent prompt</span><button class="copybtn">复制</button></div>
+        <pre><code>Let's build a simple CLI that uses the TypeSafe API to evaluate a set of supplied
+documents on multiple dimensions. Use the TypeSafe skill to understand how to use the
+TypeSafe API and how to structure the system. Ask me questions about what kinds of
+documents I want to evaluate and on what dimensions.</code></pre>
+      </div>
+    </section>
+
+    <!-- ============ 05 ============ -->
+    <section id="state">
+      <h2>05 · State 状态</h2>
+      <p class="lede">
+        <strong>State</strong> 是你请模型审视的内容：一条客服消息、一段文本、或你的应用当前状态。
+        它填在请求的 <code>state</code> 字段里。一次请求 = 一份 state + N 个问题；所有问题看到同一份 state，彼此独立。
+      </p>
+
+      <h3>三种合法形状</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>格式</th><th>适合</th><th>示例</th></tr></thead>
+          <tbody>
+            <tr><td>String</td><td>一条消息、一篇文章、一个段落</td><td><code>"My card was charged twice."</code></td></tr>
+            <tr><td>Object</td><td>具名字段、相关记录、应用状态</td><td><code>{"message": "...", "order_id": "A-104"}</code></td></tr>
+            <tr><td>Array</td><td>一串消息或记录</td><td><code>["Hi", "My customer number is TS1337.", "..."]</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>大多数请求建议用 <strong>Object</strong>，让每一部分都有描述性名字，字段之间的关系保持清晰。</p>
+
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">一份包含会话、订单与策略的 state</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "ticket": {
+    "subject": "Duplicate charge",
+    "messages": [
+      {"from": "customer", "text": "I was charged twice for order A-104. Please refund the duplicate."},
+      {"from": "support",  "text": "We are checking the charges."}
+    ]
+  },
+  "order": {
+    "id": "A-104",
+    "charges": [
+      {"amount_usd": 49, "status": "captured"},
+      {"amount_usd": 49, "status": "captured"}
+    ]
+  },
+  "refund_policy": "Duplicate charges are eligible for a refund."
+}</code></pre>
+      </div>
+
+      <div class="callout note">
+        <span class="t">内容 与 问题 分离</span>
+        <p>state 里放<strong>内容和支持事实</strong>（退款请求、政策原文）；questions 里放<strong>判断</strong>
+        （是否请求退款？政策是否支持？）。把需要互相比较的东西一次性放进同一份 state ——
+        上面的例子虽然含会话 + 订单 + 策略，但它们<em>是</em>一份 state。</p>
+      </div>
+
+      <div class="callout warn">
+        <span class="t">限制</span>
+        <p>Jev 只接受文本。<strong>不支持</strong>图片 / 音频 / 视频（截至 jev-1.13）。多模态输入请先在代码里转成文本或结构化字段。<br/>
+        主训练语言是<strong>英语</strong>；包括 CJK 在内的其它语言可以处理但准确率较低，上线前务必用自己的语料测试，
+        并重点观察 confidence。</p>
+      </div>
+    </section>
+
+    <!-- ============ 06 ============ -->
+    <section id="questions">
+      <h2>06 · Questions 问题</h2>
+      <p>
+        每个问题由四部分组成：<strong>ID</strong>、<code>type</code>、<code>instructions</code>，
+        以及（Choice / Score 必需的）<code>criteria</code>。Noul 的 <code>criteria</code> 可选，用于澄清「是」与「否」的边界。
+      </p>
+      <div class="fields">
+        <div class="field"><div><span class="fname">ID<span class="ftype">你自定义的 key</span></span></div>
+          <div class="fdesc">在响应里标识答案。<strong>不会发送给模型</strong>，也不参与推理。因此指令里必须写完整的问题。</div></div>
+        <div class="field"><div><span class="fname">type<span class="ftype">"choice" | "score" | "noul"</span></span></div>
+          <div class="fdesc">决定答案形状。</div></div>
+        <div class="field"><div><span class="fname">instructions<span class="ftype">string | object | array</span></span></div>
+          <div class="fdesc">你对 state 提出的问题，或让模型判断的一句话。这是<strong>评估逻辑所在</strong>。多数情况一个字符串就够了。</div></div>
+        <div class="field"><div><span class="fname">criteria<span class="ftype">map | array | object</span></span></div>
+          <div class="fdesc">可能的答案：Choice 是选项 map，Score 是有序等级数组，Noul 是可选的 true / false 描述。</div></div>
+      </div>
+
+      <h3>如何选类型</h3>
+      <ul>
+        <li><strong>Choice</strong>：答案落在已知集合、且集合<em>无序</em>。把完整列表给它；担心漏项就加 <code>other</code> / <code>none of the above</code>。</li>
+        <li><strong>Score</strong>：答案落在一个你能逐点描述的<em>谱系</em>上。</li>
+        <li><strong>Noul</strong>：干净的是 / 否，且<em>概率本身就是有用信号</em>。</li>
+      </ul>
+      <p>两种都像？选答案<strong>能直接被代码消费</strong>的那个：Choice 的结果直接映射多条代码路径；Score 映射到一个阈值；Noul 映射到一个 <code>if</code>。</p>
+
+      <div class="callout warn">
+        <span class="t">Noul ≠ 「中等」</span>
+        <p>「候选人 Python 强吗？」缺少「强」的定义。Noul 返回 0.5 意味着<strong>是与不是的概率各半</strong>，
+        <em>不</em>代表候选人水平中等。想测水平请用 Score 定义等级（无经验 / 略有了解 / 日常使用 / 深度专家）；
+        想要是 / 否就写清楚条件（「简历是否写明在工作中使用过 Python？」）。</p>
+      </div>
+
+      <h3>用反引号路径引用 state 内部字段</h3>
+      <p>当 state 是 JSON 对象时，可以用<strong>带反引号的点 + 索引路径</strong>指定要看哪一部分：</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">dot-and-index path</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">questions = {
+    "refund_requested": {
+        "type": "noul",
+        "instructions": "Does `ticket.messages[0].text` request a refund?",
+    },
+    "policy_supports_refund": {
+        "type": "noul",
+        "instructions": (
+            "Does `refund_policy` support the refund requested "
+            "in `ticket.messages[0].text`, given `order.charges`?"
+        ),
+    },
+}</code></pre>
+      </div>
+
+      <h3>一次打包多个问题</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">mixed types in one call</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+
+state = {
+    "ticket_message": "My flight was cancelled. Can I get a refund?",
+    "refund_policy": "Cancelled flights are eligible for a full refund.",
+}
+
+with TypeSafeClient() as client:
+    response = client.system_one(
+        state=state,
+        questions={
+            "refund_requested": Noul(
+                instructions="Does `ticket_message` request a refund?",
+            ),
+            "request_type": Choice(
+                instructions="What is the main request in `ticket_message`?",
+                criteria={
+                    "refund": "The customer wants money returned.",
+                    "rebooking": "The customer wants a replacement flight.",
+                    "information": "The customer is asking for information only.",
+                },
+            ),
+            "frustration": Score(
+                instructions="How frustrated does the customer appear in `ticket_message`?",
+                criteria=[
+                    "Calm and neutral.",
+                    "Concerned but civil.",
+                    "Very angry or using strong language.",
+                ],
+            ),
+        },
+    )
+
+print(response.answers["refund_requested"].noul)
+print(response.answers["request_type"].choice)
+print(response.answers["frustration"].score)</code></pre>
+      </div>
+
+      <h3>什么时候才需要发第二次请求</h3>
+      <p>
+        同一请求里的问题是独立的：一个答案不会成为另一个问题的上下文。发第二次请求的前提是
+        <strong>你的代码必须拿到第一个答案才能构造第二次请求的 state 或选项</strong>：
+      </p>
+      <ul>
+        <li><strong>Skill suggestion</strong>：先一次请求给 182 个技能排序，再取前三的完整文本重新评判；</li>
+        <li><strong>Structure recovery</strong>：先判断每个换行是否切断了句子，据此合并成「块」，再分类这些<em>直到此刻才存在</em>的块；</li>
+        <li><strong>Hierarchical classification</strong>：每个 Choice 的答案决定下一层提供哪些选项。</li>
+      </ul>
+      <p>除此之外，请合并到一次请求里，让代码忽略它不需要的答案。</p>
+    </section>
+
+    <!-- ============ 07 ============ -->
+    <section id="answers">
+      <h2>07 · Answers 与校准概率</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>类型</th><th>答案字段</th><th>怎么读</th></tr></thead>
+          <tbody>
+            <tr><td>Choice</td><td><code>choice</code>、<code>probabilities</code>、<code>confidence</code></td>
+              <td><code>choice</code> 是被选中的选项；<code>probabilities</code> 是全部选项上的分布；<code>confidence</code> 概括分布有多尖锐。</td></tr>
+            <tr><td>Score</td><td><code>score</code>、<code>legend</code>、<code>probabilities</code>、<code>confidence</code></td>
+              <td><code>score</code> 是沿你等级的位置，<strong>可以落在两档之间</strong>；<code>legend</code> 把等级编号映射回描述。</td></tr>
+            <tr><td>Noul</td><td><code>noul</code></td>
+              <td>为「是」的概率。接近 1 强是，接近 0 强否，接近 0.5 不确定。<strong>没有独立的 confidence</strong>。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>答案之所以可组合，靠两条性质：</p>
+      <ol>
+        <li><strong>答案被约束在你提供的选项内。</strong>模型只在你给的选项或等级上返回分布，不会凭空造值。</li>
+        <li><strong>每个答案彼此独立。</strong>一个问题的答案不会成为另一个问题的隐藏上下文，增删问题不影响其它答案。</li>
+      </ol>
+
+      <h3>为什么 Noul 没有 confidence</h3>
+      <p>
+        Noul 的分布只有「是 / 否」两个结果，单个 <code>noul</code> 值已经把分布完全描述出来了。
+        Choice / Score 把概率摊在多个选项或等级上，才需要 <code>confidence</code> 来概括这个摊开的形状。
+      </p>
+
+      <div class="callout danger">
+        <span class="t">同一个 score，可能来自完全不同的分布</span>
+        <p>
+          <code>score = 1.0</code> 可能是「全部概率压在等级 1」，也可能是「等级 0 与等级 2 各占一半」——
+          两种情况的实际含义天差地别。因此做落地决策时要<strong>连读 probabilities 与 confidence</strong>。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 08 ============ -->
+    <section id="confidence">
+      <h2>08 · Confidence 置信度</h2>
+      <p class="lede">
+        所有 Choice 与 Score 答案都带 <code>probabilities</code>。<strong>分布的形状</strong>告诉你模型有多确定；
+        <code>confidence</code> 是把这个形状压扁成 0–1 的单一统计量，让你不必自己做数学。（Noul 没有这个字段。）
+      </p>
+
+      <h3>confidence 由 probabilities 推导</h3>
+      <p>TypeSafe 帮你算好并返回。分布越平 → 置信度越低；单点尖峰 → 置信度高。</p>
+      <div class="bars">
+        <div class="bar"><span class="lbl">单点尖峰</span><span class="track"><span class="fill" style="width:97%"></span></span><span class="val">0.97</span></div>
+        <div class="bar"><span class="lbl">双峰分裂</span><span class="track"><span class="fill" style="width:42%"></span></span><span class="val">0.42</span></div>
+        <div class="bar"><span class="lbl">近均匀摊开</span><span class="track"><span class="fill" style="width:20%"></span></span><span class="val">0.20</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim)">示意：同样的候选数量下，概率集中度不同 → confidence 差别巨大。</p>
+
+      <div class="callout note">
+        <span class="t">默认够用，但不锁死</span>
+        <p>
+          <code>confidence</code> 是「大多数场景合适」的便利度量。你也可以用自己的统计量替代 ——
+          这正是 TypeSafe 在响应里<strong>始终给出完整 probabilities</strong> 的原因。
+        </p>
+      </div>
+
+      <h3>「我不知道」是有用的信号</h3>
+      <p>一个有智能的系统，如果不能诚实表达不确定性，就不能被信任。confidence 给了代码一套分档行为的基础。</p>
+
+      <h3>代码里的三条路径</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>档位</th><th>行为</th></tr></thead>
+          <tbody>
+            <tr><td><strong>高置信度</strong></td><td>自动执行。不需要人介入。</td></tr>
+            <tr><td><strong>中置信度</strong></td><td>谨慎推进：请用户确认、打标复核、或再取一点信息再动。</td></tr>
+            <tr><td><strong>低置信度</strong></td><td>不行动：转人工、请求澄清、或退回另一套系统。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>阈值随风险缩放</h3>
+      <p>一个置信度阈值从来不是「一个数字」。同一系统内不同动作应按后果分别设门：</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">risk-scaled thresholds</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">response = client.system_one(
+    state=user_message,
+    questions={
+        "action": Choice(
+            instructions="What is the user trying to do?",
+            criteria={
+                "check_balance": "View account balance",
+                "approve_transfer": "Approve the pending withdrawal request",
+                "support": "Get help with an issue",
+            },
+        ),
+    },
+)
+
+action = response.answers["action"]
+confidence = action.confidence
+
+if confidence &lt; 0.5:
+    # 模型真的不确定，不要猜
+    route_to_human(user_message)
+
+elif action.choice == "check_balance":
+    # 低风险：显示错页面是可以恢复的
+    show_balance(account_id)
+
+elif action.choice == "approve_transfer":
+    if confidence &gt; 0.9:
+        # 高风险 + 高置信度：确认后执行
+        confirm_then_execute(account_id)
+    else:
+        # 高风险 + 中等置信度：先验证
+        ask_user_to_confirm(account_id)</code></pre>
+      </div>
+
+      <div class="callout warn">
+        <span class="t">注意：这些数字是教学示例，不是推荐值</span>
+        <p>
+          正确的阈值取决于你的领域和模型在你数据上的实际表现。<strong>从保守阈值开始，用自己的数据观测后调整</strong>。
+          另外：如果你只关心「选最好的那一个」，直接取概率最高的即可，不必设阈值；
+          如果你心里有特定统计算法，那应该用 <code>probabilities</code> 而不是 <code>confidence</code>。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 09 ============ -->
+    <section id="choice">
+      <h2>09 · Choice 选择</h2>
+      <p class="lede">从一组已定义的选项中挑一个。返回值包含被选选项、每个选项的概率，以及置信度。</p>
+
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">example questions</span><button class="copybtn">复制</button></div>
+        <pre><code>"What programming language is this code written in"
+  → options: python, javascript, typescript, go, rust, other
+
+"What type of meeting is this based on the title and description"
+  → options: standup, planning, retrospective, one on one, brainstorm, none of the above
+
+"Which product category does this item belong to"
+  → options: electronics, clothing, home garden, food and beverage</code></pre>
+      </div>
+
+      <h3>请求结构</h3>
+      <ul>
+        <li><code>type</code>：恒为 <code>"choice"</code>。</li>
+        <li><code>instructions</code>：模型要回答的问题。</li>
+        <li><code>criteria</code>：答案选项 map。key 是选项名，value 是该选项的描述。</li>
+      </ul>
+      <div class="callout note">
+        <span class="t">关键约束</span>
+        <p>一个 Choice 最多 <strong>255 个选项</strong>。选项名与描述都会发给模型，描述要能<strong>把彼此区分开</strong>。
+        不需要额外描述的选项可以写 <code>null</code>。</p>
+      </div>
+
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">basic choice</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Choice, TypeSafeClient
+
+with TypeSafeClient() as client:
+    response = client.system_one(
+        state="My running shoes arrived in the wrong size. Can I swap them for a size 10?",
+        questions={
+            "department": Choice(
+                instructions="Which team should handle this?",
+                criteria={
+                    "returns": "Exchanges, wrong or damaged items",
+                    "shipping": "Delivery status, delays, lost packages",
+                    "billing": "Charges, invoices, payment problems",
+                },
+            ),
+        },
+    )
+
+    print(response.answers["department"].choice)   # "returns"</code></pre>
+      </div>
+
+      <h3>响应示例：五个 Choice 一次性返回</h3>
+      <p>场景：一张更模糊的工单 —— 涉及三个团队，且没说客户想要什么。其中两个问题是<strong>投机性的</strong>。</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">response</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "model": "jev-1.13.0",
+  "answers": {
+    "department": {
+      "type": "choice", "choice": "returns", "confidence": 0.42,
+      "probabilities": { "shipping": 0.04, "billing": 0.35, "returns": 0.61 }
+    },
+    "return_reason": {
+      "type": "choice", "choice": "wrong_size", "confidence": 1.0,
+      "probabilities": { "other": 0.0, "wrong_size": 1.0, "changed_mind": 0.0, "damaged": 0.0, "wrong_item": 0.0 }
+    },
+    "shipping_issue": {
+      "type": "choice", "choice": "delayed", "confidence": 0.67,
+      "probabilities": { "wrong_address": 0.0, "other": 0.26, "not_delivered": 0.0, "damaged_in_transit": 0.0, "delayed": 0.74 }
+    },
+    "requested_resolution": {
+      "type": "choice", "choice": "refund", "confidence": 0.2,
+      "probabilities": { "replacement": 0.34, "refund": 0.4, "information": 0.02, "exchange": 0.24 }
+    },
+    "tone": {
+      "type": "choice", "choice": "frustrated", "confidence": 0.76,
+      "probabilities": { "frustrated": 0.84, "angry": 0.16, "calm": 0.0 }
+    }
+  },
+  "usage": { "input_tokens": 589, "output_tokens": 212 }
+}</code></pre>
+      </div>
+      <ol>
+        <li><code>department</code> 是 <code>returns</code>（0.61），但因为提到了重复扣款，<code>billing</code> 拿到 0.35 —— 这张工单<strong>同时属于两个团队</strong>，置信度 0.42 如实反映了这一点。</li>
+        <li><code>return_reason</code> 是 <code>wrong_size</code>，置信度 1.0 —— 工单里说得很明白。</li>
+        <li><code>shipping_issue</code> 分散在 <code>delayed</code> 与 <code>other</code>。作为投机性问题时可以<strong>直接被代码忽略</strong>。</li>
+        <li><code>requested_resolution</code> 偏向 <code>refund</code>（0.40），但 <code>replacement</code> 和 <code>exchange</code> 分走了大部分；置信度仅 0.20 —— 客户从没说到底要哪一个。</li>
+        <li><code>tone</code> 是 <code>frustrated</code>（0.84），置信度 0.76。</li>
+      </ol>
+
+      <h3>把消费逻辑写成普通 if</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">triage.py</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">def triage(ticket: str) -&gt; None:
+    with TypeSafeClient() as client:
+        response = client.system_one(state=ticket, questions=TRIAGE_QUESTIONS)
+    answers = response.answers
+
+    department = answers["department"]
+    if department.confidence &lt; 0.3:
+        # 不清楚给哪个团队，让人决定
+        send_to_manual_triage(ticket)
+        return
+
+    if department.choice == "returns":
+        # return_reason 的答案只在这里使用
+        assign(ticket, team="returns", issue=answers["return_reason"].choice)
+    elif department.choice == "shipping":
+        assign(ticket, team="shipping", issue=answers["shipping_issue"].choice)
+    else:
+        assign(ticket, team="billing")
+
+    # 概率占比真实的第二个团队也收到副本
+    for team, probability in department.probabilities.items():
+        if team != department.choice and probability &gt; 0.25:
+            notify(ticket, team=team)
+
+    resolution = answers["requested_resolution"]
+    if resolution.confidence &lt; 0.5:
+        # 客户没说要什么。去问，不要猜。
+        ask_customer_what_they_want(ticket)
+    elif resolution.choice == "refund":
+        flag_for_refund_approval(ticket)
+
+    if answers["tone"].choice == "angry":
+        flag_for_senior_agent(ticket)</code></pre>
+      </div>
+      <p>对上面那张工单：这段代码把票分给 returns 团队并注明问题是 <code>wrong_size</code>；
+        因为 <code>billing</code> 的 0.35 超过 0.25 阈值而给它抄送一份；
+        因为 resolution 置信度 0.20 低于 0.5 而去问客户想要什么；<code>shipping_issue</code> 的答案被完全忽略。</p>
+
+      <div class="callout tip">
+        <span class="t">不要为了省 token 而拆请求</span>
+        <p>
+          <code>Choice</code> 最多 255 个选项，每个选项只花几个 token —— 所以<strong>把完整的团队表 / 类目表 / 产品表都给它</strong>，
+          而不是给一个短名单。担心覆盖不全就加 <code>other</code> 或 <code>none of the above</code>。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 10 ============ -->
+    <section id="score">
+      <h2>10 · Score 评分</h2>
+      <p class="lede">
+        Score 用于把内容对着<strong>有序的、描述性的等级</strong>打分。答案包括 <code>score</code>、每个等级的概率和置信度。
+      </p>
+
+      <h3>请求结构</h3>
+      <ul>
+        <li><code>type</code>：恒为 <code>"score"</code>。</li>
+        <li><code>instructions</code>：模型在给什么打分。</li>
+        <li><code>criteria</code>：<strong>有序数组</strong>，从量表低端排到高端。至少两级，最多 <strong>10 级</strong>。</li>
+      </ul>
+
+      <h4>Levels：编号从 0 开始</h4>
+      <p>等级编号就是它在 <code>criteria</code> 数组里的位置，从 0 起。<strong>模型只看得到描述</strong>，
+        看不到编号也看不到邻居 —— 每个等级都是独立对着 state 判的。</p>
+
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">bug severity</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Score, TypeSafeClient
+
+with TypeSafeClient() as client:
+    response = client.system_one(
+        state="The export button crashes the settings page in Safari. It works in Chrome, but a few of our customers only use Safari.",
+        questions={
+            "bug_severity": Score(
+                instructions="How severe is the reported issue?",
+                criteria=[
+                    "Cosmetic; no impact to functionality",
+                    "Broken or degraded feature, but workaround exists",
+                    "Blocking issue; no workaround exists",
+                ],
+            ),
+        },
+    )
+
+    print(response.answers["bug_severity"].score)   # 1.43</code></pre>
+      </div>
+
+      <h3>响应：score 是概率加权均值</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">response</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "model": "jev-1.13.0",
+  "answers": {
+    "bug_severity": {
+      "type": "score",
+      "score": 1.43,
+      "confidence": 0.35,
+      "legend": {
+        "0": "Cosmetic; no impact to functionality",
+        "1": "Broken or degraded feature, but workaround exists",
+        "2": "Blocking issue; no workaround exists"
+      },
+      "probabilities": { "0": 0.0, "1": 0.57, "2": 0.43 }
+    }
+  },
+  "usage": { "input_tokens": 332, "output_tokens": 18 }
+}</code></pre>
+      </div>
+      <p>
+        <code>score = 0×0.0 + 1×0.57 + 2×0.43 = 1.43</code>，意为模型在等级 1 与 2 之间分裂、略偏向 1，
+        置信度 0.35 也是因为这个分裂。<strong>注意：这不代表「43% 的客户没有变通方法」</strong> ——
+        分数是等级编号的加权均值，不是数量比例。
+      </p>
+
+      <h3>不同输入的对比</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>State</th><th>score</th><th>confidence</th><th>L0</th><th>L1</th><th>L2</th></tr></thead>
+          <tbody>
+            <tr><td>导出按钮在设置页歪了几个像素。</td><td>0.0</td><td>1.0</td><td>1.0</td><td>0.0</td><td>0.0</td></tr>
+            <tr><td>PDF 导出按钮点了没反应。我还能导出 CSV 再自己转，但太慢了。</td><td>1.0</td><td>1.0</td><td>0.0</td><td>1.0</td><td>0.0</td></tr>
+            <tr><td>PDF 导出失败、转圈不停。团队里有人说 CSV 还能用，有人说也失败了。</td><td>1.11</td><td>0.84</td><td>0.0</td><td>0.89</td><td>0.11</td></tr>
+            <tr><td>Safari 里导出按钮让设置页崩溃。Chrome 正常，但少数客户只用 Safari。</td><td>1.43</td><td>0.35</td><td>0.0</td><td>0.57</td><td>0.43</td></tr>
+            <tr><td>今天早上起我们全组都登录不了，每次都是 500 错误。</td><td>2.0</td><td>1.0</td><td>0.0</td><td>0.0</td><td>1.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim)">
+        注意最后一列的关系：<code>confidence 1.0</code> 只说明「返回的概率分布把全部概率压在一档上」，
+        <strong>不代表答案一定正确</strong>。
+      </p>
+
+      <h3>写好等级的规则</h3>
+      <ol>
+        <li><strong>描述情境，不要描述程度。</strong>「功能损坏但有变通方案」有东西可比；「中等严重」什么都没有。</li>
+        <li><strong>不要写数字。</strong>当等级只有 <code>["0","1","2"]</code> 时模型没有可比对象 —— 上面那条「歪了几个像素」的报告会从 0.0/1.0 退化成 score 0.55、confidence 0.33。</li>
+        <li><strong>一个 Score 只测一个维度。</strong>「准时<em>且</em>聪明<em>且</em>有经验」是三件事，无法放置。</li>
+        <li><strong>极端尾部单独成级。</strong>情绪量表最高档若是「非常愤怒」，建议再加一级「辱骂或威胁」。</li>
+        <li><strong>没有中间态就用 Choice</strong>；可用 3 级，最多 10 级，别加你描述不清的等级。</li>
+      </ol>
+
+      <h3>拆复杂判断 → 归一化 → 加权</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">composite priority</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">def normalized(answers, question_id: str) -&gt; float:
+    """把 score 除以最高等级编号，压到 0–1。"""
+    top_level = len(TRIAGE_QUESTIONS[question_id].criteria) - 1
+    return answers[question_id].score / top_level
+
+
+def priority(ticket: str) -&gt; float:
+    with TypeSafeClient() as client:
+        response = client.system_one(state=ticket, questions=TRIAGE_QUESTIONS)
+    answers = response.answers
+
+    severity       = normalized(answers, "severity")         # 0.62
+    frustration    = normalized(answers, "frustration")      # 0.64
+    report_quality = normalized(answers, "report_quality")   # 1.00
+
+    # 详细的复现步骤有助于工程师排查，因此略微提升优先级
+    return 0.6 * severity + 0.3 * frustration + 0.1 * report_quality
+    # → 0.6 × 0.62 + 0.3 × 0.64 + 0.1 × 1.0 = 0.664</code></pre>
+      </div>
+      <div class="callout tip">
+        <span class="t">为什么必须归一化</span>
+        <p>
+          不同量表长度不同：四级量表返回 0–3，三级返回 0–2。不归一化的话，「某量表满分」天然比另一个大，
+          权重就失去了你以为的含义。
+        </p>
+      </div>
+
+      <h3>结构化等级 + examples 的实测效果</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">levels with examples</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">"criteria": [
+  { "what": "Cosmetic; no impact to functionality",
+    "examples": ["typo in a label", "misaligned icon"] },
+  { "what": "Broken or degraded feature, but workaround exists",
+    "examples": ["export fails in one browser but works in another"] },
+  { "what": "Blocking issue; no workaround exists",
+    "examples": ["cannot log in", "data loss"] }
+]</code></pre>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>等级描述</th><th>score</th><th>confidence</th></tr></thead>
+          <tbody>
+            <tr><td>纯字符串，无 examples</td><td>1.43</td><td>0.35</td></tr>
+            <tr><td>加入<strong>相关</strong>示例："export fails in one browser but works in another"</td><td>1.03</td><td>0.96</td></tr>
+            <tr><td>加入<strong>无关</strong>示例："search fails, but browsing categories still works"</td><td>1.43</td><td>0.35</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>示例会引导模型，但<strong>只有长得像你真实输入的示例才有用</strong>；无关的示例等价于没加。
+        而且：更高的置信度并不证明答案更正确 —— 请用已知期望等级挑示例，并在另外的输入上验证后再保留。</p>
+    </section>
+
+    <!-- ============ 11 ============ -->
+    <section id="noul">
+      <h2>11 · Noul 是否</h2>
+      <p class="lede">Noul 让模型判断一个是 / 否问题，并返回「答案为是」的概率。</p>
+
+      <h3>请求结构</h3>
+      <ul>
+        <li><code>type</code>：恒为 <code>"noul"</code>。</li>
+        <li><code>instructions</code>：是 / 否问题，或一句让模型判断的陈述。</li>
+        <li><code>criteria</code>：<em>可选</em>，含 <code>true</code> / <code>false</code> 两段描述的对象。</li>
+      </ul>
+
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">noul with criteria</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Noul, NoulCriteria, TypeSafeClient
+
+with TypeSafeClient() as client:
+    response = client.system_one(
+        model="jev-latest",
+        state="I have asked three times now. Can I please just talk to a real person?",
+        questions={
+            "is_human_escalation": Noul(
+                instructions="Is the customer asking for a human agent?",
+            ),
+            "is_repeat_contact": Noul(
+                instructions="Has the customer contacted support about this before?",
+                criteria=NoulCriteria(
+                    true="Mentions a prior attempt, ticket, or that they have asked before",
+                    false="No sign of any previous contact",
+                ),
+            ),
+        },
+    )
+
+    print(response.answers["is_human_escalation"].noul)   # 0.99
+    print(response.answers["is_repeat_contact"].noul)     # 0.93</code></pre>
+      </div>
+
+      <h3>怎么读 Noul（实测 jev-1.13.0）</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>State</th><th>noul</th></tr></thead>
+          <tbody>
+            <tr><td>Thanks, that fixed it!</td><td>0.02</td></tr>
+            <tr><td>How do I reset my password?</td><td>0.07</td></tr>
+            <tr><td>I need this sorted today, whatever it takes.</td><td>0.26</td></tr>
+            <tr><td>Are you a bot?</td><td>0.40</td></tr>
+            <tr><td>Is there any way to speak to someone about my invoice?</td><td>0.84</td></tr>
+            <tr><td>I have asked three times now. Can I please just talk to a real person?</td><td>0.99</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        「今天必须搞定」很紧急但<strong>没有</strong>要求人工 → 0.26；「你是机器人吗？」暗示想要人但没明说 → 0.40。
+        这两类正是需要用代码里的阈值来兜的场景。
+      </p>
+
+      <h3>Noul 不是程度量尺</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>候选人</th><th>Noul："候选人 Python 强吗？"</th><th>Score："候选人 Python 经验多少？"</th></tr></thead>
+          <tbody>
+            <tr><td>我的经验是 Java 和 Go，没用过 Python。</td><td>0.03</td><td>0.0（无经验）</td></tr>
+            <tr><td>偶尔用小脚本，主职是 Java。</td><td>0.14</td><td>1.0（略有了解）</td></tr>
+            <tr><td>上一份工作两年每天用 Python，主要是数据管道。</td><td>0.81</td><td>2.05（工作中常规使用）</td></tr>
+            <tr><td>写了八年 Python，维护过大型 Django 代码库。</td><td>0.92</td><td>2.89（深度专家）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Noul 判断的是一个命题「强」，值是它的可能性。你可以在代码里把 0.3–0.7 划为「有些经验」，
+        但模型<strong>并不会看到这些区间</strong>，答案里也没有任何东西是对着它们判的。
+        中间值可能意味着「中等经验」，也可能意味着「这个案例不清楚」；候选之间的间距也不是你选的。
+      </p>
+
+      <h3>写好 Noul 的四条</h3>
+      <ol>
+        <li><strong>一个问题只问一件事。</strong>「客户<em>既</em>生气<em>又</em>要求退款吗？」模型要同时判两件事，值就没有意义了。拆成两个 Noul，代码里组合。</li>
+        <li><strong>让「高值 = 是」。</strong>「这条消息含个人数据吗？」是对的；「这条消息<em>不含</em>个人数据吗？」会把后来的代码读反。</li>
+        <li><strong>陈述句也一样有效。</strong>「客户正在请求退款」，接近 1 即陈述为真。两种写法都用你自己的数据试试。</li>
+        <li><strong>让边界无歧义。</strong>「候选人<em>有</em>用过 Python 吗？」里的「有」没有中间地带。边界微妙时加 <code>criteria</code> 的 true / false 描述。</li>
+      </ol>
+
+      <h3>阈值三档：自动 / 复核 / 拒答</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">three-way split</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">YES = 0.8
+NO  = 0.2
+
+def route(message: str) -&gt; None:
+    with TypeSafeClient() as client:
+        response = client.system_one(
+            model="jev-latest", state=message, questions=SUPPORT_QUESTIONS
+        )
+    answers = response.answers
+
+    wants_human = answers["is_human_escalation"].noul
+    repeat      = answers["is_repeat_contact"].noul
+
+    if NO &lt; wants_human &lt; YES or NO &lt; repeat &lt; YES:
+        # 模型两边都不确定，让人决定
+        send_to_review(message)
+        return
+
+    priority = "high" if repeat &gt; YES else "normal"
+    if wants_human &gt; YES:
+        route_to_agent(message, priority=priority)
+    else:
+        route_to_bot(message, priority=priority)</code></pre>
+      </div>
+      <p>
+        阈值怎么定取决于「错的代价」：<code>0.5</code> 用于是 / 否同样容易行动的场景；
+        <strong>误判「是」代价高时抬高</strong>（呼叫值班人员、放款）；
+        <strong>漏掉「是」代价高时降低</strong>（没标出安全问题）。
+        复核队列太多就收窄这个区间；放过去的错太多就放宽。
+      </p>
+
+      <h3>结构化 instructions：一份简历 vs N 条候选库记录</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">built in code</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">SAME_PERSON = "Is the resume for the same person as `potential_duplicate`?"
+
+def duplicate_questions(candidates: list[dict]) -&gt; dict[str, Noul]:
+    """每个候选库记录一个 Noul，问同一个问题，全部打包进一次请求。"""
+    return {
+        f"same_as_record_{candidate['id']}": Noul(
+            instructions={
+                "potential_duplicate": {
+                    "name": candidate["name"],
+                    "location": candidate["location"],
+                    "last_employer": candidate["last_employer"],
+                },
+                "question": SAME_PERSON,
+            },
+        )
+        for candidate in candidates
+    }</code></pre>
+      </div>
+      <p>实测响应：<code>same_as_record_18 = 0.74</code>（名字拼写不同但地点与雇主一致）、
+        <code>_42 = 0.09</code>（同名不同城市不同雇主）、<code>_77 = 0.08</code>（近似名同地点不同雇主）。
+        在代码里各自阈值化，中间值送人工。</p>
+    </section>
+
+    <!-- ============ 12 ============ -->
+    <section id="structure">
+      <h2>12 · 结构化问题（Advanced）</h2>
+      <p>System One 模型是<strong>被训练来懂结构</strong>的。<code>instructions</code>、Choice 的选项描述、Score 的等级、Noul 的 criteria 全都接受 JSON 结构。</p>
+
+      <h3>哪里可以结构化</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>字段</th><th>适用</th><th>可接受形状</th></tr></thead>
+          <tbody>
+            <tr><td><code>instructions</code></td><td>Choice / Score / Noul</td><td><code>string</code>、<code>object</code>、<code>array</code>、<code>null</code></td></tr>
+            <tr><td><code>criteria</code> 值（选项描述）</td><td>Choice</td><td>同上</td></tr>
+            <tr><td><code>criteria</code> 条目（等级描述）</td><td>Score</td><td>同上</td></tr>
+            <tr><td><code>criteria.true</code> / <code>criteria.false</code></td><td>Noul</td><td>同上</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>什么时候值得结构化</h3>
+      <ul>
+        <li><strong>为了清楚。</strong>当问题有多个部分时，JSON 的 key 自带标签。</li>
+        <li><strong>当问题需要附带数据。</strong>schema、分类法、数据库行本来就是 JSON —— 直接整体传入或取相关子字段，
+        不要序列化拼接成字符串模板。</li>
+      </ul>
+
+      <h3>结构化 Choice 选项：用对比式 rubric 拉清边界</h3>
+      <p>先给每个选项一行描述。当两个相似选项被模型反复混淆时，改成对象：包含「覆盖什么」、
+      「什么属于邻居选项而非本选项」、以及一些示例输入。</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">contrastive criteria</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "return_topic": {
+    "type": "choice",
+    "instructions": "What is this ticket about?",
+    "criteria": {
+      "return_policy": {
+        "what": "Asks how returns work: the window, condition rules, who pays shipping",
+        "not_for": "A question about the state of an already-opened return",
+        "examples": ["What is your return window?", "Do I pay return shipping?"]
+      },
+      "return_status": {
+        "what": "Asks about a specific in-flight return: where it is, when refund lands",
+        "not_for": "General questions about how the policy works",
+        "examples": ["Where is my return?", "When will my refund arrive?"]
+      }
+    }
+  }
+}</code></pre>
+      </div>
+      <p>结果是 <code>return_status</code>，置信度 1.0。字段名 <code>question</code>、<code>focus</code>、<code>what</code>、
+      <code>not_for</code>、<code>examples</code><strong>都不是 API 的一部分，也不保留</strong> —— 你随便起，
+      模型会连同值一起看到，所以用短名字准确标注。</p>
+
+      <h3>遍历分类树</h3>
+      <p>
+        要分到很深的分类树，就<strong>每层一个 Choice，在代码里走树</strong>：每一步的选项是当前节点的子节点，
+        每个选项的值是那棵子树。这样模型在提交之前能看到分支下面有什么 ——
+        当目标叶子节点的名字从分支名看不出来时，这很关键。
+      </p>
+      <p>
+        例：一个水瓶商品可能同时落在 <code>Sporting Goods &gt; Cycling &gt; Bike Bottles &amp; Cages</code> 与
+        <code>Home &amp; Kitchen &gt; Drinkware &gt; Water Bottles</code> 之下。把子树展示出来，模型才能权衡
+        「强调车用水壶架」与「日常水杯」两侧。<code>probabilities</code> 还告诉你这个分裂是否接近，值不值得两条分支都探。
+      </p>
+      <div class="callout warn">
+        <span class="t">子树可能很大</span>
+        <p>分支过大时，把值裁剪成「直接子节点 + 一部分叶子样本」。参见 Hierarchical Classification cookbook 里的 beam search。</p>
+      </div>
+
+      <h3>数组形式的 instructions</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">array instructions</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">"instructions": {
+  "question": "Does the claimed sender identity conflict with the sending domain?",
+  "compare": ["ticket.sender.display_name", "ticket.sender.email"],
+  "focus": "Compare the named organization with the email domain."
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- ============ 13 ============ -->
+    <section id="fanout">
+      <h2>13 · 模式一：投机扇出（Speculative Fan-Out）</h2>
+      <p class="lede">
+        把你的系统<strong>可能需要的所有问题</strong>都塞进一次调用，包括投机性的那些，让代码事后决定哪些相关。
+      </p>
+
+      <div class="diagram">
+        <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="投机扇出流程图">
+          <defs>
+            <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.55"/>
+            </marker>
+          </defs>
+          <rect x="8" y="120" width="112" height="52" rx="9" fill="var(--bg-sub)" stroke="var(--border-strong)"/>
+          <text x="64" y="150" text-anchor="middle" font-family="var(--sans)" font-size="13" font-weight="600" fill="var(--text)">support ticket</text>
+
+          <line x1="120" y1="146" x2="186" y2="146" stroke="currentColor" stroke-width="1.6" opacity="0.5" marker-end="url(#ar2)"/>
+
+          <rect x="190" y="18" width="230" height="256" rx="12" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="305" y="40" text-anchor="middle" font-family="var(--sans)" font-size="12" font-weight="700" fill="var(--accent)">并行评估（一次请求）</text>
+          <g font-family="var(--mono)" font-size="11.5" fill="var(--text)">
+            <rect x="204" y="52" width="202" height="34" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+            <text x="214" y="74">Choice: category</text>
+            <rect x="204" y="94" width="202" height="34" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+            <text x="214" y="116">Score: bug severity ①</text>
+            <rect x="204" y="136" width="202" height="34" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+            <text x="214" y="158">Noul: reproducible? ①</text>
+            <rect x="204" y="178" width="202" height="34" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+            <text x="214" y="200">Noul: refund? ②</text>
+            <rect x="204" y="220" width="202" height="34" rx="6" fill="var(--panel)" stroke="var(--border)"/>
+            <text x="214" y="242">Score: frustration</text>
+          </g>
+          <text x="305" y="268" text-anchor="middle" font-family="var(--sans)" font-size="10.5" fill="var(--text-dim)">① 仅 bug_report 相关 ② 仅 billing 相关</text>
+
+          <line x1="420" y1="146" x2="486" y2="146" stroke="currentColor" stroke-width="1.6" opacity="0.5" marker-end="url(#ar2)"/>
+
+          <rect x="490" y="112" width="120" height="68" rx="9" fill="var(--purple-soft)" stroke="var(--purple)"/>
+          <text x="550" y="140" text-anchor="middle" font-family="var(--sans)" font-size="12" font-weight="700" fill="var(--purple)">your code</text>
+          <text x="550" y="158" text-anchor="middle" font-family="var(--sans)" font-size="10.5" fill="var(--text-mid)">filter / combine</text>
+
+          <path d="M610,130 L650,130 L650,60 L700,60" stroke="var(--border-strong)" fill="none"/>
+          <path d="M610,146 L700,146" stroke="var(--border-strong)" fill="none"/>
+          <path d="M610,162 L650,162 L650,232 L700,232" stroke="var(--border-strong)" fill="none"/>
+          <g font-family="var(--sans)" font-size="11.5" fill="var(--text-mid)">
+            <text x="700" y="56">eng / escalate</text>
+            <text x="700" y="143">billing</text>
+            <text x="700" y="236">log it</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">triage.py</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">category     = response.answers["category"]
+bug_severity = response.answers["bug_severity"]
+bug_repro    = response.answers["has_reproducible_steps"]
+refund       = response.answers["refund_requested"]
+frustration  = response.answers["frustration"]
+
+if category.choice == "bug_report":
+    if bug_severity.score &gt; 1.5 and bug_repro.noul &gt; 0.6:
+        escalate_to_engineering(ticket_id, severity="high")
+    else:
+        add_to_bug_backlog(ticket_id)
+
+elif category.choice == "billing":
+    if refund.noul &gt; 0.7:
+        route_to_billing_with_flag(ticket_id, refund_likely=True)
+    else:
+        route_to_billing(ticket_id)
+
+elif category.choice == "feature_request":
+    log_feature_request(ticket_id)
+
+# Frustration 与分类无关，始终有用
+if frustration.score &gt; 1.5:
+    flag_for_priority_response(ticket_id)</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <span class="t">收益</span>
+        <p>
+          完整决策树所需的一切来自<strong>一次调用</strong>。投机问题在无关时被忽略、在相关时省下一次往返。
+          13 问合并 vs 13 次单独调用的实测：成本 <strong>↓12.2×</strong>、延迟 <strong>↓10×</strong>，
+          且重复运行间的标准差没有变化（多数答案 5 次重复完全一致）。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 14 ============ -->
+    <section id="conf-route">
+      <h2>14 · 模式二：置信度门控路由</h2>
+      <p class="lede">把置信度当作第二个决策轴：<strong>答案告诉你「是什么」，置信度告诉你「要不要动」。</strong></p>
+
+      <h3>场景：语音银行指令</h3>
+      <p>同一个系统里，不同操作的后果不同，就该配不同的门限。</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">voice banking</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">action = response.answers["intent"]
+
+# 任何动作的置信度低于 0.6 → 转人工
+if action.confidence &lt; 0.6:
+    route_to_support_agent(account_id)
+
+elif action.choice == "check_balance":
+    # 低风险：0.6 足够
+    show_balance(account_id)
+
+elif action.choice == "approve_transfer":
+    if action.confidence &gt; 0.85:
+        # 高风险但高置信度：自动执行
+        approve_transfer(account_id)
+    else:
+        # 高风险 + 中等置信度：先和用户确认
+        ask_user_to_confirm("Just to confirm: you would like to approve this transfer, is that correct?")
+
+else:
+    route_to_support_agent(account_id)</code></pre>
+      </div>
+      <p>
+        <code>0.6</code> 这个地板捞住模型真心不确定的一切。地板之上，每个动作按自己出错的代价设阈值：
+        查余额 0.6 就够（最坏也就是用户听了一遍余额），转账要 &gt;0.85，否则请用户确认。
+      </p>
+      <div class="callout warn">
+        <span class="t">注意：以上阈值来自文档示例</span>
+        <p>它们是<strong>教学用的数字</strong>，不是推荐值。请用你自己的数据画「置信度 vs 准确率」曲线来标定真值。</p>
+      </div>
+    </section>
+
+    <!-- ============ 15 ============ -->
+    <section id="composite">
+      <h2>15 · 模式三：复合评分</h2>
+      <p class="lede">
+        把复杂判断拆成互相独立的若干维度，各自打分，再用<strong>你控制的权重</strong>在代码里合成。
+      </p>
+
+      <h3>场景：简历筛选</h3>
+      <p>一次请求四个 Score：Python 深度、团队领导、系统设计、通才程度。全部归一化到 0–1 后按岗位加权。</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">scoring.py</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">py      = response.answers["python_depth"].score / 4
+lead    = response.answers["team_leadership"].score / 4
+arch    = response.answers["system_design"].score / 4
+general = response.answers["generalist"].score / 4
+
+# Senior IC 权重
+ic_score = (0.40 * py) + (0.10 * lead) + (0.40 * arch) + (0.10 * general)
+
+# Engineering Manager 权重
+em_score = (0.15 * py) + (0.40 * lead) + (0.20 * arch) + (0.25 * general)</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <span class="t">这套写法的真正价值：可审查性</span>
+        <p>
+          你能清楚看到最终分数是怎么算出来的。排名不符合预期时，<strong>改系数再跑一遍</strong>，
+          而不是回去重写一段提示词。<em>收益：</em>成本↓、可靠性↑、速度↑。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 16 ============ -->
+    <section id="intent">
+      <h2>16 · 模式四：意图路由</h2>
+      <p class="lede">
+        不是每个请求都需要同一种处理器。有的查数据库就行，有的需要带领域上下文的专家 LLM，
+        有的必须给人。TypeSafe 可以站在最前面，当作一个<strong>又快又便宜的分类器</strong>来决定调谁。
+      </p>
+
+      <h3>场景：客服路由</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">routing.py</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">def route_ticket(ticket_id, response):
+    intent     = response.answers["intent"]
+    complexity = response.answers["complexity"]
+
+    if intent.confidence &lt; 0.5:
+        # 连分类都没有足够把握 → 转人工
+        return route_to_human_agent(ticket_id)
+
+    if intent.choice == "order_status":
+        handle_order_status(ticket_id)                        # 确定性代码，不碰 LLM
+
+    elif intent.choice == "product_question":
+        handle_with_llm(ticket_id, PRODUCT_SPECIALIST)
+
+    elif intent.choice == "return_exchange":
+        handle_with_llm(ticket_id, RETURNS_SPECIALIST)
+
+    elif intent.choice == "complaint":
+        low_confidence = complexity.confidence &lt; 0.5
+        # complexity.score 越高越倾向于「需要升级」
+        if complexity.score &gt; 1 or low_confidence:
+            # 太复杂不适合安全自动化，或我们对复杂度也没把握 → 给人
+            route_to_human_agent(ticket_id)
+        else:
+            handle_with_llm(ticket_id, COMPLAINT_RESOLUTION)</code></pre>
+      </div>
+      <p>
+        一个意图直接落到确定性代码（完全不用 LLM），两个落到不同上下文的专家 LLM，
+        一个用复杂度分数在「LLM vs 人」之间选择。<strong>昂贵的资源只在真正需要的请求上被调用。</strong>
+      </p>
+      <div class="callout note">
+        <span class="t">别忘了给 complexity 也做置信度检查</span>
+        <p>低置信度分数在你这个系统语境下的含义、以及这个决策的赌注，永远要一并考虑。</p>
+      </div>
+    </section>
+
+    <!-- ============ 17 ============ -->
+    <section id="build">
+      <h2>17 · 如何用 TypeSafe 构建系统</h2>
+      <p class="lede">
+        一句话总结：<strong>先写一个正常的软件工作流，然后只在真正需要 AI 的地方插入 System One。</strong>
+      </p>
+
+      <div class="callout">
+        <span class="t">五条原则</span>
+        <p>
+          ① 控制流、确定性规则、副作用留在代码里；<br/>
+          ② 把宽泛的判断拆成窄而类型化的问题，配显式 instructions 与 criteria；<br/>
+          ③ 每个问题只给它需要的上下文；<br/>
+          ④ 用概率与置信度决定「行动 / 复核 / 升级」；<br/>
+          ⑤ 独立问题一起问，答案在代码里组合。
+        </p>
+      </div>
+
+      <h3>三种软件架构</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>架构</th><th>特征</th></tr></thead>
+          <tbody>
+            <tr><td>传统软件</td><td>由简单软件原语构成的复杂决策树。每个原语可靠，开发者才能把它们组合成更高层抽象。</td></tr>
+            <tr><td>LLM 智能体</td><td>处理指令并自行选择下一步。有人盯着时很好用，但每个循环都多一次脱轨机会。</td></tr>
+            <tr><td><strong>AI 驱动的软件</strong></td><td>代码做确定性工作、拥有控制流；模型只出现在需要「可编程常识」或解读非结构化数据的地方，且每个 AI 任务都保持原子与受约束。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>System One 为什么可组合</h3>
+      <div class="cards">
+        <div class="card"><div class="ico">{ }</div><h5>Structured</h5><p>类型安全 by construction，结果符合你的结构化类型 / JSON schema。</p></div>
+        <div class="card g"><div class="ico">∥</div><h5>Parallel</h5><p>独立并行评估，一个结果不会变成改变别人的隐藏上下文。</p></div>
+        <div class="card a"><div class="ico">↕</div><h5>Comparable</h5><p>输出可排序，可驱动 if、阈值与比较。</p></div>
+        <div class="card p"><div class="ico">~</div><h5>Calibrated</h5><p>RLCD 用校准概率表达不确定性，而非趋于过度自信。</p></div>
+      </div>
+
+      <h3>设计流程八步</h3>
+      <ol class="steps">
+        <li><strong>能用代码就用代码</strong>
+          <p>确定性工作可靠且便宜。别用智能体的 <code>while</code> 循环表达一个软件工作流能说完的行为。</p>
+          <div class="codeblock" style="margin:8px 0">
+            <div class="head"><span class="lang">python</span><button class="copybtn">复制</button></div>
+            <pre><code class="language-python">days_overdue = (today - invoice.due_date).days
+
+if days_overdue &gt; 30:
+    route_to_collections(invoice)</code></pre>
+          </div>
+        </li>
+        <li><strong>裁剪输入 state</strong>
+          <p>只带当前问题相关的上下文。不要用模型权重里的知识替代你自己的知识库。</p>
+        </li>
+        <li><strong>在 state 里用结构</strong>
+          <p>嵌套 JSON + 反引号点索引路径（如 <code>`support.tickets[0].message`</code>）指向具体值。</p>
+        </li>
+        <li><strong>拆解问题（最重要的一步）</strong>
+          <p>宽泛的问题把好几个判断藏在一个答案背后；原子问题把这些判断<strong>暴露出来</strong>，让你能检查、调参、组合。</p>
+        </li>
+        <li><strong>在 question 里用结构</strong>
+          <p>短而无歧义的问题保持字符串；需要上下文 / 示例、或部分由代码生成时才用对象。</p>
+        </li>
+        <li><strong>一次请求里大量提问</strong>
+          <p>问题并行执行，加问题几乎不增加延迟 —— 这是把「每美元智能」最大化的核心手段。</p>
+        </li>
+        <li><strong>在代码里组合输出（或喂给经典 ML 模型）</strong>
+          <div class="codeblock" style="margin:8px 0">
+            <div class="head"><span class="lang">python</span><button class="copybtn">复制</button></div>
+            <pre><code class="language-python">quality = (
+    0.4 * answers["answers_request"].noul
+    + 0.4 * answers["citations_are_supported"].noul
+    + 0.2 * (1 - answers["contradicts_context"].noul)
+)</code></pre>
+          </div>
+          <p>没有标签给下游模型时，可以用一组昂贵的推理模型生成标签（见 AutoResearch cookbook）。</p>
+        </li>
+        <li><strong>按不确定性路由</strong>
+          <div class="codeblock" style="margin:8px 0">
+            <div class="head"><span class="lang">python</span><button class="copybtn">复制</button></div>
+            <pre><code class="language-python">answer = response.answers["card_help_topic"]
+
+if answer.confidence &lt; 0.8:
+    route_to_human_review(ticket)
+else:
+    route_to_handler(answer.choice, ticket)</code></pre>
+          </div>
+          <p>阈值请用「置信度 vs 准确率」曲线在自己数据上标定。</p>
+        </li>
+      </ol>
+
+      <h3>端到端示例：客服工单分流</h3>
+      <p>下面这段把以上八步串起来：确定性前置 → 结构化 state → 原子 + 结构化问题 → 加权组合 → 置信度门控 → 投机答案按需使用。</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">triage_ticket.py</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Choice, Noul, NoulCriteria, Score, TypeSafeClient
+
+
+def triage_ticket(ticket, customer):
+    # 1) 确定性状态不调用模型
+    if ticket["status"] == "closed":
+        return "no_action"
+
+    open_orders = [
+        order for order in customer["orders"] if order["status"] != "delivered"
+    ]
+
+    # 2) 只带上问题需要的结构化上下文
+    state = {
+        "ticket": {"message": ticket["message"], "sender": ticket["sender"], "links": ticket["links"]},
+        "customer": {"plan": customer["plan"], "open_orders": open_orders},
+        "policy": {"sensitive_credentials": ["password", "security code", "API key"]},
+    }
+
+    # 3) 结构化 + 原子问题，一次性并行
+    questions = {
+        "topic": Choice(
+            instructions={
+                "question": "Which team should handle `ticket.message`?",
+                "focus": "Classify the customer's primary request.",
+            },
+            criteria={
+                "billing": {
+                    "what": "Charges, invoices, refunds, or subscriptions",
+                    "not_for": "Order tracking or account access",
+                    "examples": ["I was charged twice", "Where is my refund?"],
+                },
+                "orders": {
+                    "what": "Order status, delivery, cancellation, or returns",
+                    "not_for": "Charges or account access",
+                    "examples": ["Where is my order?", "Cancel my shipment"],
+                },
+                "account": {
+                    "what": "Login, profile, permissions, or security",
+                    "not_for": "Charges or order tracking",
+                    "examples": ["Reset my password", "I cannot sign in"],
+                },
+            },
+        ),
+        "requests_credentials": Noul(
+            instructions={
+                "question": "Does the message request a sensitive credential?",
+                "compare": ["`ticket.message`", "`policy.sensitive_credentials`"],
+                "focus": "Look for a request to disclose the credential itself.",
+            },
+            criteria=NoulCriteria(
+                true={"what": "Asks the recipient to disclose a listed credential",
+                      "examples": ["Reply with your password", "Send us your API key"]},
+                false={"what": "Does not ask the recipient to disclose a credential",
+                       "not_for": "A legitimate instruction to reset a credential",
+                       "examples": ["Use this link to reset your password"]},
+            ),
+        ),
+        "sender_identity_mismatch": Noul(
+            instructions={
+                "question": "Does the claimed sender identity conflict with its domain?",
+                "compare": ["`ticket.sender.display_name`", "`ticket.sender.email`"],
+                "focus": "Compare the named organization with the email domain.",
+            },
+            criteria=NoulCriteria(
+                true={"what": "Claims an organization unrelated to the email domain",
+                      "examples": ["Acme Payroll sent from claim-bonus.example"]},
+                false={"what": "The identity and domain agree or make no conflicting claim",
+                       "examples": ["Acme Payroll sent from acme.example"]},
+            ),
+        ),
+        "unexpected_reward": Noul(
+            instructions={
+                "question": "Does the message announce an unexpected reward?",
+                "inspect": "`ticket.message`",
+                "focus": "Look for an unsolicited prize, payment, or reward claim.",
+            },
+            criteria=NoulCriteria(
+                true={"what": "Announces an unrequested prize, payment, or reward",
+                      "examples": ["You were selected for a $1,000 bonus"]},
+                false={"what": "Contains no reward claim or discusses an expected payment",
+                       "not_for": "A customer asking about a known refund or payroll deposit",
+                       "examples": ["When will my approved refund arrive?"]},
+            ),
+        ),
+        "frustration": Score(
+            instructions={
+                "question": "How frustrated does the customer appear?",
+                "inspect": "`ticket.message`",
+                "focus": "Judge expressed frustration, not issue severity.",
+            },
+            criteria=[
+                {"what": "Calm and matter-of-fact",
+                 "signals": ["Neutral wording", "No complaint about the experience"]},
+                {"what": "Frustrated but civil",
+                 "signals": ["Expresses annoyance", "Remains constructive"]},
+                {"what": "Very angry or threatening to leave",
+                 "signals": ["Hostile language", "Threatens cancellation or churn"]},
+            ],
+        ),
+    }
+
+    with TypeSafeClient() as client:
+        response = client.system_one(state=state, questions=questions)
+
+    answers = response.answers
+
+    # 4) 加权组合 —— 权重由代码掌控
+    spam_risk = (
+        0.45 * answers["requests_credentials"].noul
+        + 0.30 * answers["sender_identity_mismatch"].noul
+        + 0.25 * answers["unexpected_reward"].noul
+    )
+
+    # 5) 不确定的判断升级，而不是硬猜
+    spam_is_uncertain = 0.4 &lt; spam_risk &lt; 0.6
+    if spam_is_uncertain or answers["topic"].confidence &lt; 0.75:
+        return route_to_human_review(ticket)
+    if spam_risk &gt;= 0.6:
+        return quarantine_as_spam(ticket)
+
+    # 6) 投机答案只在对应路径上使用
+    if answers["topic"].choice == "billing":
+        return route_to_billing(ticket, refund_requested=answers["refund_requested"].noul &gt;= 0.7)
+    if answers["topic"].choice == "orders":
+        return route_to_orders(ticket, mentions_open_order=answers["mentions_open_order"].noul &gt;= 0.7)
+
+    priority = (
+        "high"
+        if answers["frustration"].confidence &gt;= 0.7 and answers["frustration"].score &gt;= 1.5
+        else "normal"
+    )
+    return route_to_account_support(ticket, priority=priority)</code></pre>
+      </div>
+    </section>
+
+    <!-- ============ 18 ============ -->
+    <section id="jagged">
+      <h2>18 · Jev 1.13 的棱角（已知失效模式）</h2>
+      <p class="lede">
+        Jev 并不完美。<code>jev-1.13</code> 快、校准良好、常识判断不错，但它<strong>会在需要额外一层间接的地方绊倒</strong>，
+        理解有时会过于字面，数学方面吃力。以下是官方公开的九个失效模式（最后审阅：2026-09-17）。
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>#</th><th>失效模式</th><th>应当怎么做</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><strong>字面化理解</strong></td><td>把条件写死，每个选项都写清 criteria</td></tr>
+            <tr><td>2</td><td><strong>数学与数字</strong></td><td>算术留在代码里</td></tr>
+            <tr><td>3</td><td><strong>日期与时间比较</strong></td><td>抽出组成部分，在代码里比较</td></tr>
+            <tr><td>4</td><td><strong>间接指代</strong></td><td>减少跳数，直接点名 state 的相关部分</td></tr>
+            <tr><td>5</td><td><strong>塞满无关细节的大 state</strong></td><td>先过滤，只发问题需要的</td></tr>
+            <tr><td>6</td><td><strong>对抗性内容</strong></td><td>提示要精确，上线前测边界用例</td></tr>
+            <tr><td>7</td><td><strong>指令与 criteria 自相矛盾</strong></td><td>把 criteria 视为指令的延伸并保持一致</td></tr>
+            <tr><td>8</td><td><strong>常识性结构不变量</strong></td><td>每个判断只用一种方式提问，恒等式在代码里强制</td></tr>
+            <tr><td>9</td><td><strong>生成文本</strong></td><td>用生成式模型</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>1 · 字面化理解</h3>
+      <p>
+        Jev 回答的是<strong>你写下的</strong>问题，不是你<em>想</em>问的问题。范围词、否定、隐含条件都会被按字面读。
+      </p>
+      <p>
+        <strong>替代做法：</strong>把确切条件写进 <code>instructions</code>，边界用例放进 criteria。
+        当你看着一个错答案、并开始解释「我其实想问的是……」时，<strong>这段解释就是指令里缺失的那一半</strong>。
+        如果确实不可避免要解释，就拆成两个字面问题，在代码里组合。
+      </p>
+
+      <h3>2 · 数学与数字</h3>
+      <p>
+        <strong>计数不可靠。</strong>包括单词里的字母数、段落里某词的出现次数、长列表里的条目数。
+        模型是在「认出答案的形状」，而不是在计数，误差随被计对象的规模增长。
+      </p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">count in code, judge in jev</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Noul, TypeSafeClient
+
+client = TypeSafeClient(model="jev-1.13")
+YES = 0.5  # 阈值视你的场景而定
+
+items = ["typesafe", "apple", "california", "banana", "likes", "calibration", "orange", "vertex"]
+
+result = client.system_one(
+    {"items": items},
+    {
+        f"item_{i}": Noul(instructions=f"Is `items[{i}]` the name of a fruit?")
+        for i in range(len(items))
+    },
+)
+
+count = sum(result.nouls[f"item_{i}"].noul &gt; YES for i in range(len(items)))</code></pre>
+      </div>
+      <p>
+        <strong>数值表示也很弱。</strong>用十六进制值问颜色会明显劣于英文色名；给 RGB / hex 无法可靠判断两个值是否接近。
+        高层编程语言的题优于汇编或二进制 —— 语义表达优于数值表达。<br/>
+        <strong>不要用 Score 做算术插值：</strong><code>jev-1.13</code> 的等级在数值校准上是弱的，
+        无法通过在相邻两级之间插值来还原精确数值；但可以用期望值去卡阈值。
+      </p>
+
+      <h3>3 · 日期与时间比较</h3>
+      <p>
+        Jev 把日期读成文本，不是有序量。问「哪个日期在前」「相隔多久」「是否落在窗口内」都不可靠，
+        混合格式、相对表述、季度 / 结算窗口等域边界会让它更糟。
+      </p>
+      <p>
+        <strong>替代做法：切开做。</strong>抽取是判断 → 给模型；算术不是 → 留在代码。
+        日期的每个部分都是小闭集（12 个月、31 个可能的日、有限年份），
+        于是抽取可以变成一个枚举上的 <strong>Choice</strong>，还能显式放一个「未说明」选项让缺失被报告而非被猜。
+        代码负责把各部分组装成真日期，并拥有之后的一切：排序、时长、偏移、星期。
+      </p>
+
+      <h3>4 · 间接指代</h3>
+      <p>含双重否定或复杂间接的指令可靠性更差。「某个属性的属性」、需要多跳推理的问题都会掉点。</p>
+      <p><strong>替代做法：</strong>尽可能直写；能的话把 state 的相关部分<strong>按名字点出来</strong>。</p>
+
+      <h3>5 · 塞满无关细节的大 state</h3>
+      <p>
+        state 里与决策无关的内容越多，准确率越低：无关细节是<strong>干扰项</strong>，
+        而且大 state 更难定位是哪个部分造成了错答案。
+      </p>
+      <p><strong>替代做法：</strong>先在代码里检索与过滤，只发送问题需要的字段。无法过滤时，
+      可以用一个 <code>Noul</code> 筛相关性（见 Classifying RAG passages cookbook）。</p>
+      <div class="callout warn">
+        <span class="t">上下文上限</span>
+        <p><code>jev-1.13</code> 上下文窗口有界：整请求 64k tokens；state + <em>最长那一个问题</em> 为 32k tokens。</p>
+      </div>
+
+      <h3>6 · 对抗性内容</h3>
+      <p>
+        state 是<strong>数据</strong>，Jev 默认不把它当敌对的。被写成要刻意引导模型的内容
+        （注入的指令、刻意误导的框架、论证自身应如何被分类的文本）都可能挪动答案。官方表示未来会改进。
+      </p>
+      <p><strong>替代做法：</strong>criteria 写得明确，集成彻底测试后再放给用户。</p>
+
+      <h3>7 · 指令与 criteria 自相矛盾</h3>
+      <p>
+        当 <code>instructions</code> 与 <code>criteria</code> 要的是不同的东西，模型可能糊涂。
+        例如一个 Noul 里 <code>true</code> 映射到「否」、<code>false</code> 映射到「是」，表现就更差。
+        最佳表现来自清楚的措辞 —— 目标是让普通人也容易读懂。
+      </p>
+      <p><strong>替代做法：</strong>把 criteria 当作指令的延伸，用清晰准确的语言对齐二者。</p>
+
+      <h3>8 · 常识性结构不变量（重要）</h3>
+      <p>
+        Jev 极其一致 —— 语义相近的输入会得到量化相近的输出。
+        但你能想到的很多结构恒等式<strong>并不被模型保证</strong>。
+      </p>
+      <p>同一个命题同时用 Noul 和 yes / no Choice 提问（针对工单 "I'm not happy with the fit. What are my options here?"）：</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Noul <code>noul</code></th><th>Choice <code>yes</code></th><th>Choice <code>no</code></th><th>Choice <code>confidence</code></th></tr></thead>
+          <tbody><tr><td>0.22</td><td>0.01</td><td>0.99</td><td>0.97</td></tr></tbody>
+        </table>
+      </div>
+      <p>命题与其否定分别作为两个 Noul（针对另一条工单）：</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><code>refund</code></th><th><code>not_refund</code></th><th>求和</th></tr></thead>
+          <tbody><tr><td>0.72</td><td>0.47</td><td>1.19</td></tr></tbody>
+        </table>
+      </div>
+      <p>
+        <strong>替代做法：不要依赖预期的结构恒等式。</strong>也不要把在 Noul 上调好的阈值原样搬到 Choice 上。
+        一个多选项的 Choice 和「一个选项一个 Noul」回答的是<em>不同的问题</em>：
+        Choice 是<strong>相对的</strong>（决定<em>哪一个</em>），每个 Noul 是<strong>绝对的</strong>（可能全部都低）。
+        Skill suggestion cookbook 同时使用两者来处理同一份短名单 —— Choice 挑技能，Noul 决定要不要给建议。
+      </p>
+
+      <h3>9 · 生成</h3>
+      <p>
+        Jev 没被训练来生成文本。虽然可以通过串联 Choice 强行让它生成，但效果差且非常慢。
+        数据抽取更好的做法是用正则或生成模型先找出候选，让 Jev 挑正确的一个。
+      </p>
+
+      <div class="callout danger">
+        <span class="t">总禁令清单</span>
+        <p>
+          ✗ 让模型算代码能精确算出来的东西<br/>
+          ✗ 把多个判断藏进一个问题里<br/>
+          ✗ System Two 任务（多层间接推理）<br/>
+          ✗ 给 state 超出问题需要的上下文 —— Jev 会 context rot，无关材料直接损耗准确率
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 19 ============ -->
+    <section id="models">
+      <h2>19 · 模型 · 定价 · 限额</h2>
+      <p>所有模型都由同一个端点 <code>POST /v1/systemone</code> 提供服务，请求里的 <code>model</code> 字段决定谁来回答。</p>
+
+      <div class="metagrid">
+        <div class="metacard"><div class="k">版本 ID</div><div class="v">jev-1.13.0</div><div class="n">Jev 1.13</div></div>
+        <div class="metacard"><div class="k">价格</div><div class="v">$42 / Btok</div><div class="n">即 $0.042 / Mtok，输出免费</div></div>
+        <div class="metacard"><div class="k">速率上限</div><div class="v">250k tps</div><div class="n">1,200 请求 / 分钟</div></div>
+        <div class="metacard"><div class="k">上下文</div><div class="v">64k / 32k</div><div class="n">整请求 64k；state + 最长问题 32k</div></div>
+        <div class="metacard"><div class="k">输入</div><div class="v">仅文本</div><div class="n">string / object / array</div></div>
+      </div>
+
+      <ul>
+        <li><strong>Price：</strong>按输入 token 计费，输出 token 免费。Btok = 十亿 token，Mtok = 百万 token。</li>
+        <li><strong>Rate limits：</strong>以 token/秒 与 请求/分钟 计。超任一限制返回 <code>429 Too Many Requests</code>。SDK 默认带退避重试，并遵守 <code>retry-after</code>；直接调 HTTP 请自行实现。</li>
+        <li><strong>Context：</strong>Jev 只摄入 state 一次，并让所有问题在其上并行评估。64k 预算覆盖 state + 全部问题；32k 预算适用于 state + 单条最长的问题。</li>
+        <li><strong>Input：</strong>先把非文本输入（图像、音频、视频、二进制）预处理成文本或结构化字段。</li>
+      </ul>
+
+      <div class="callout warn">
+        <span class="t">速率上限会动态调整</span>
+        <p>官方明示当前需求量大，以上限额可能<strong>无通知地变化</strong>；定制与企业计划可提供更高上限。</p>
+      </div>
+
+      <h3>别名</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>别名</th><th>指向</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>jev-latest</code></td><td><code>jev-1.13.0</code></td><td>最新的<strong>稳定正式</strong>发布。SDK 默认值，也是文档示例使用的名字。</td></tr>
+            <tr><td><code>jev-preview</code></td><td><code>jev-1.13.0</code></td><td>最新发布（无论是否正式）。有预览构建时会跑到 <code>jev-latest</code> 之前。当前两者同指，暂无预览构建。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <span class="t">别名会移动</span>
+        <p>
+          新发布上线时别名会挪，其背后的答案可能在你没改动的情况下变化。
+          响应的 <code>model</code> 字段会报告实际作答的版本化 ID，便于日志记录。
+          <strong>如果你针对某个特定版本调好了置信度阈值，请钉住版本 ID 而不是别名</strong>，按自己的节奏升级。
+        </p>
+      </div>
+
+      <h3>没有微调，没有 LoRA</h3>
+      <p>Jev 不使用客户数据微调或 LoRA 适配，用同一套权重服务所有账户。你通过请求而非私有权重来塑造它：</p>
+      <ul>
+        <li>把专有内容、记录、参考材料放进 <code>state</code>；</li>
+        <li>把领域规则与边界用例写进每个问题的 <code>instructions</code> 与 <code>criteria</code>；</li>
+        <li>把宽泛判断拆成原子问题，在代码里组合（含用 Jev 的概率训练下游经典模型）。</li>
+      </ul>
+
+      <h3>其它</h3>
+      <ul>
+        <li><strong>语言支持：</strong>英语为主训练语言且当前最优；含 CJK 在内的其它语言可处理但相对较弱。</li>
+        <li><strong>数据：</strong>不使用客户请求与响应进行训练；企业提供 ZDR（零数据留存）。</li>
+      </ul>
+
+      <h3>列出可用模型</h3>
+      <p><code>GET /v1/models</code> 返回你的账户可以发送的 model 名字（当前列出别名），含描述与发布日期。版本化 ID 无论是否在列表里都可被接受。</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">cURL</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash">curl https://api.typesafe.ai/v1/models \
+  -H "Authorization: Bearer $TYPESAFE_API_KEY"</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">Python</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import TypeSafeClient
+
+with TypeSafeClient() as client:
+    for model in client.models.list().models:
+        print(model.name, model.release_date, model.description)</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">typescript</span><span class="title">JavaScript</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-ts">import { TypeSafeClient } from "@typesafe-ai/sdk";
+
+const client = new TypeSafeClient();
+const models = await client.models.list();
+for (const model of models) {
+  console.log(model.name, model.release_date, model.description);
+}</code></pre>
+      </div>
+      <p>响应字段：<code>models[]</code> → <code>name</code>（可被 model 字段接受的 ID 或别名）、<code>description</code>、<code>release_date</code>。</p>
+    </section>
+
+    <!-- ============ 20 ============ -->
+    <section id="httpapi">
+      <h2>20 · HTTP API 参考</h2>
+      <div class="codeblock">
+        <div class="head"><span class="lang">http</span><span class="title">endpoint</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-http">POST https://api.typesafe.ai/v1/systemone
+Authorization: Bearer &lt;API_KEY&gt;
+Content-Type: application/json</code></pre>
+      </div>
+
+      <h3>请求体顶层字段</h3>
+      <div class="fields">
+        <div class="field"><div><span class="fname">state<span class="ftype">string | object | array</span></span></div>
+          <div class="fdesc">要审视的内容。字符串用于纯文本；对象 / 数组用于聊天记录、业务记录、应用当前状态。</div></div>
+        <div class="field"><div><span class="fname">model<span class="ftype">string</span></span></div>
+          <div class="fdesc">处理请求的模型。用 <code>"jev-latest"</code>。</div></div>
+        <div class="field"><div><span class="fname">questions<span class="ftype">map&lt;string, Question&gt;</span></span></div>
+          <div class="fdesc">类型化 Question 对象的 map。key 由你定；答案在同一批 key 下返回。<br/>
+          <strong>map 条目：</strong>你选的 key —— 不会发给底层模型，也不参与推理。</div></div>
+      </div>
+
+      <h3>Noul question</h3>
+      <div class="fields">
+        <div class="field"><div><span class="fname">type<span class="ftype">"noul"</span></span></div><div class="fdesc">固定值。</div></div>
+        <div class="field"><div><span class="fname">instructions<span class="ftype">string | object | array</span></span></div>
+          <div class="fdesc">要判断的是 / 否问题。对象可以一个问题字段 + 若干它引用的数据字段。</div></div>
+        <div class="field"><div><span class="fname">criteria<span class="ftype">object（可选）</span></span></div>
+          <div class="fdesc"><code>true</code>：值为「是」（接近 1）意味着什么；<code>false</code>：值为「否」意味着什么。二者均为 string | object | array | null。</div></div>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">noul example</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "state": "Help! My payouts have been failing for 3 days.",
+  "model": "jev-latest",
+  "questions": {
+    "is_urgent": {
+      "type": "noul",
+      "instructions": "Does this convey urgency?",
+      "criteria": {
+        "true": "Explicitly time-sensitive",
+        "false": "No urgency expressed"
+      }
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h3>Choice question</h3>
+      <div class="fields">
+        <div class="field"><div><span class="fname">type<span class="ftype">"choice"</span></span></div><div class="fdesc">固定值。</div></div>
+        <div class="field"><div><span class="fname">instructions<span class="ftype">string | object | array</span></span></div><div class="fdesc">模型要决定什么。</div></div>
+        <div class="field"><div><span class="fname">criteria<span class="ftype">map&lt;string, string | object | array | null&gt;</span></span></div>
+          <div class="fdesc">选项 → rubric 描述；不需要额外细节时写 <code>null</code>。<strong>每个 Choice 最多 255 个选项。</strong></div></div>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">choice example</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "state": "Help! My payouts have been failing for 3 days.",
+  "model": "jev-latest",
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": {
+        "billing": "Payments, invoicing, refunds",
+        "technical": "Bugs, outages, integrations",
+        "sales": "Pricing, upgrades, new accounts"
+      }
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h3>Score question</h3>
+      <div class="fields">
+        <div class="field"><div><span class="fname">type<span class="ftype">"score"</span></span></div><div class="fdesc">固定值。</div></div>
+        <div class="field"><div><span class="fname">instructions<span class="ftype">string | object | array</span></span></div><div class="fdesc">模型要给什么打分。</div></div>
+        <div class="field"><div><span class="fname">criteria<span class="ftype">array&lt;string | object | array&gt;</span></span></div>
+          <div class="fdesc">等级描述的有序数组。<strong>至少 2 级，API 最多接受 10 级。</strong></div></div>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">score example</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "state": "Help! My payouts have been failing for 3 days.",
+  "model": "jev-latest",
+  "questions": {
+    "frustration": {
+      "type": "score",
+      "instructions": "How frustrated is the customer?",
+      "criteria": ["Calm", "Frustrated", "Very angry"]
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h3>结构化 instructions（任意问题类型通用）</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">object instructions</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">"instructions": {
+  "potential_duplicate": {
+    "name": "John Smith",
+    "location": "Oakland, California",
+    "last_employer": "Google"
+  },
+  "question": "Is the resume for the same person as `potential_duplicate`?"
+}</code></pre>
+      </div>
+
+      <h3>响应体</h3>
+      <div class="fields">
+        <div class="field"><div><span class="fname">model<span class="ftype">string</span></span></div><div class="fdesc">实际执行评估的模型。</div></div>
+        <div class="field"><div><span class="fname">answers<span class="ftype">map&lt;string, Answer&gt;</span></span></div>
+          <div class="fdesc">每个问题一个答案，key 与你提问时使用的 ID 相同。</div></div>
+        <div class="field"><div><span class="fname">usage<span class="ftype">object</span></span></div>
+          <div class="fdesc"><code>input_tokens</code>（integer）、<code>output_tokens</code>（integer）。</div></div>
+      </div>
+
+      <h4>Answer 类型</h4>
+      <div class="fields">
+        <div class="field"><div><span class="fname">type<span class="ftype">"noul" | "choice" | "score"</span></span></div><div class="fdesc">与其问题类型一致。</div></div>
+        <div class="field"><div><span class="fname">noul<span class="ftype">number</span></span></div><div class="fdesc">Noul 专用。0（否）到 1（是）。</div></div>
+        <div class="field"><div><span class="fname">choice<span class="ftype">string</span></span></div><div class="fdesc">Choice 专用。概率最高的选项。</div></div>
+        <div class="field"><div><span class="fname">score<span class="ftype">number</span></span></div><div class="fdesc">Score 专用。等级编号线上的位置，可落在两档之间。</div></div>
+        <div class="field"><div><span class="fname">legend<span class="ftype">map&lt;string, string&gt;</span></span></div><div class="fdesc">Score 专用。等级编号（字符串键）→ 该级描述。</div></div>
+        <div class="field"><div><span class="fname">probabilities<span class="ftype">map&lt;string, number&gt;</span></span></div><div class="fdesc">Choice / Score 专用。每个选项 / 等级的概率，和为 1。</div></div>
+        <div class="field"><div><span class="fname">confidence<span class="ftype">number</span></span></div><div class="fdesc">Choice / Score 专用。0–1，由概率分布形状导出。</div></div>
+      </div>
+
+      <div class="codeblock">
+        <div class="head"><span class="lang">json</span><span class="title">score answer example</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-json">{
+  "model": "jev-1.13.0",
+  "answers": {
+    "frustration": {
+      "type": "score",
+      "score": 1.05,
+      "legend": { "0": "Calm", "1": "Frustrated", "2": "Very angry" },
+      "probabilities": { "0": 0.0, "1": 0.95, "2": 0.05 },
+      "confidence": 0.92
+    }
+  },
+  "usage": { "input_tokens": 304, "output_tokens": 18 }
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- ============ 21 ============ -->
+    <section id="pysdk">
+      <h2>21 · Python SDK</h2>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">install</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash">uv add typesafe-sdk
+# 或
+pip install typesafe-sdk</code></pre>
+      </div>
+      <p>要求 <strong>Python &gt;= 3.10</strong>。客户端自动读取环境变量 <code>TYPESAFE_API_KEY</code>，默认模型 <code>jev-latest</code>。</p>
+
+      <h3>同步 / 异步</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">AsyncTypeSafeClient</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import AsyncTypeSafeClient, Choice, Noul, Score
+
+async def main() -&gt; None:
+    async with AsyncTypeSafeClient() as client:
+        response = await client.system_one(
+            state={"document": "I was charged twice. Please fix this ASAP."},
+            questions={
+                "billing": Noul(instructions="Is this ticket about billing?"),
+                "tone": Choice(
+                    instructions="What is the customer's tone?",
+                    criteria={"calm": None, "frustrated": None, "angry": None},
+                ),
+                "urgency": Score(
+                    instructions="How urgent is this ticket?",
+                    criteria=["can wait", "this week", "today"],
+                ),
+            },
+        )
+
+    print(response.nouls["billing"].noul)
+    print(response.choices["tone"].choice)
+    print(response.scores["urgency"].score)</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">TypeSafeClient（同步）</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+
+with TypeSafeClient() as client:
+    response = client.system_one(
+        state={"document": "I was charged twice. Please fix this ASAP."},
+        questions={
+            "billing": Noul(instructions="Is this ticket about billing?"),
+            "tone": Choice(
+                instructions="What is the customer's tone?",
+                criteria={"calm": None, "frustrated": None, "angry": None},
+            ),
+            "urgency": Score(
+                instructions="How urgent is this ticket?",
+                criteria=["can wait", "this week", "today"],
+            ),
+        },
+    )
+
+print(response.nouls["billing"].noul)
+print(response.choices["tone"].choice)
+print(response.scores["urgency"].score)</code></pre>
+      </div>
+
+      <h3>核心类型</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>类型</th><th>字段 / 说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>JSONValue</code></td><td>JSON 风格的值，可嵌套、可含 <code>None</code>。</td></tr>
+            <tr><td><code>JSONContent</code></td><td>纯字符串，或 <code>JSONValue</code> 组成的 mapping / sequence。</td></tr>
+            <tr><td><code>NoulCriteria</code></td><td><code>true</code>、<code>false</code>（各为 JSONContent 或 None）；<code>additionalProperties: false</code>。</td></tr>
+            <tr><td><code>Noul</code></td><td><code>type="noul"</code>、<code>instructions</code>、<code>criteria</code>（可选）。</td></tr>
+            <tr><td><code>Choice</code></td><td><code>type="choice"</code>、<code>instructions</code>、<code>criteria</code>（选项 map）。</td></tr>
+            <tr><td><code>Score</code></td><td><code>type="score"</code>、<code>instructions</code>、<code>criteria</code>（有序等级数组）。</td></tr>
+            <tr><td><code>ChoiceAnswer</code></td><td>必填：<code>choice</code>、<code>confidence</code>、<code>probabilities</code>。</td></tr>
+            <tr><td><code>ScoreAnswer</code></td><td>必填：<code>score</code>、<code>confidence</code>、<code>legend</code>、<code>probabilities</code>。</td></tr>
+            <tr><td><code>NoulAnswer</code></td><td>必填：<code>noul</code>。</td></tr>
+            <tr><td><code>SystemOneResponse</code></td><td>答案按类型分组成 <code>nouls</code> / <code>choices</code> / <code>scores</code>，另有 <code>answers</code>（按原 ID）、<code>model</code>、<code>usage</code>。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout note">
+        <span class="t">SDK 与 HTTP 的一处差异</span>
+        <p>Python SDK 的 <code>probabilities</code> 与 <code>legend</code> 按<strong>整数等级</strong>作为键，而 HTTP 响应里是<strong>字符串键</strong>。</p>
+      </div>
+
+      <h3>常量</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>常量</th><th>值</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>API_KEY_ENV</code></td><td><code>TYPESAFE_API_KEY</code></td><td>API key 环境变量</td></tr>
+            <tr><td><code>BASE_URL_ENV</code></td><td><code>TYPESAFE_BASE_URL</code></td><td>API 根地址环境变量</td></tr>
+            <tr><td><code>DEFAULT_MODEL_ENV</code></td><td><code>TYPESAFE_DEFAULT_MODEL</code></td><td>默认模型环境变量</td></tr>
+            <tr><td><code>LOG_LEVEL_ENV</code></td><td><code>TYPESAFE_LOG_LEVEL</code></td><td>日志级别环境变量</td></tr>
+            <tr><td><code>DEFAULT_BASE_URL</code></td><td><code>https://api.typesafe.ai</code></td><td>默认 API 根地址</td></tr>
+            <tr><td><code>DEFAULT_MODEL</code></td><td><code>jev-latest</code></td><td>默认模型名</td></tr>
+            <tr><td><code>DEFAULT_TIMEOUT</code></td><td><code>10.0</code></td><td>每个 HTTP 操作的默认超时（秒）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>重试策略</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">python</span><span class="title">RetryPolicy</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-python">from typesafe_sdk import RetryPolicy, TypeSafeClient
+
+client = TypeSafeClient(
+    retry=RetryPolicy(
+        max_retries=3, timeout=10.0, http_statuses={429, 500, 502, 503, 504}
+    )
+)</code></pre>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>参数</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><code>max_retries</code></td><td>初始尝试之后的最大重试次数；<code>0</code> 关闭重试。</td></tr>
+            <tr><td><code>backoff_initial</code> / <code>backoff_max</code></td><td>首次退避秒数、退避上限秒数（每次翻倍）；<code>0</code> 关闭退避。</td></tr>
+            <tr><td><code>backoff_jitter</code></td><td>每次退避随机减去的比例，0–1。</td></tr>
+            <tr><td><code>http_statuses</code></td><td>被重试的 HTTP 状态码集合。</td></tr>
+            <tr><td><code>respect_retry_after</code></td><td>是否遵守 <code>Retry-After</code> / <code>retry-after-ms</code> 响应头。</td></tr>
+            <tr><td><code>api_connection_error</code></td><td>是否重试 <code>TypeSafeAPIConnectionError</code>。</td></tr>
+            <tr><td><code>api_timeout_error</code></td><td>是否重试 <code>TypeSafeAPITimeoutError</code>。</td></tr>
+            <tr><td><code>exceptions</code></td><td>在内置规则之外额外触发重试的异常类型。</td></tr>
+            <tr><td><code>predicate</code></td><td>可选的判定函数；收到异常时返回 <code>True</code> 即在其它规则之外额外触发重试。</td></tr>
+            <tr><td><code>timeout</code></td><td>每次 SDK 调用的总重试预算（秒），含首次尝试与延迟；<code>None</code> 关闭上限。会在某次退避达到或超过预算前停止，并重新抛出最后一个错误。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ 22 ============ -->
+    <section id="jssdk">
+      <h2>22 · JavaScript / TypeScript SDK</h2>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">install（Node.js 20+）</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash">npm install @typesafe-ai/sdk</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">typescript</span><span class="title">quickstart</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-ts">import { choice, TypeSafeClient } from "@typesafe-ai/sdk";
+
+const client = new TypeSafeClient();
+const response = await client.systemOne({
+  state: { document: "I was charged twice. Please fix this ASAP." },
+  questions: {
+    category: choice("What is this ticket about?", {
+      billing: null,
+      technical: null,
+      other: null,
+    }),
+  },
+});
+
+console.log(response.answers.category.choice);</code></pre>
+      </div>
+      <p>
+        设置环境变量 <code>TYPESAFE_API_KEY</code> 后即可使用。答案类型由你的 questions <strong>推断</strong>；
+        包内含 ESM、CommonJS 与 TypeScript 声明。三个构造辅助函数：<code>choice()</code>、<code>score()</code>、<code>noul()</code>。
+      </p>
+
+      <h3>客户端配置 <code>TypeSafeClientConfig</code></h3>
+      <p>优先级：<strong>显式传入值 &gt; 环境变量 &gt; SDK 默认值</strong>。</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>选项</th><th>类型</th><th>说明与回退</th></tr></thead>
+          <tbody>
+            <tr><td><code>apiKey</code></td><td><code>string</code></td><td>必需的 API key；回退 <code>TYPESAFE_API_KEY</code></td></tr>
+            <tr><td><code>baseURL</code></td><td><code>string</code></td><td>API 根；回退 <code>TYPESAFE_BASE_URL</code> → <code>https://api.typesafe.ai</code></td></tr>
+            <tr><td><code>defaultModel</code></td><td><code>string</code></td><td>回退 <code>TYPESAFE_DEFAULT_MODEL</code> → <code>jev-latest</code></td></tr>
+            <tr><td><code>timeout</code></td><td><code>number</code></td><td>每次尝试的超时（毫秒），无总重试预算。默认 <code>10000</code></td></tr>
+            <tr><td><code>retry</code></td><td><code>Partial&lt;RetryPolicy&gt;</code></td><td>重试覆盖；省略的字段用 <code>RetryPolicy</code> 默认值</td></tr>
+            <tr><td><code>logLevel</code></td><td><code>LogLevel</code></td><td>回退 <code>TYPESAFE_LOG_LEVEL</code> → <code>warn</code>。<code>info</code> 打请求摘要；<code>debug</code> 加 headers 与 body（已知凭据头会被脱敏，<strong>body 不会</strong>）</td></tr>
+            <tr><td><code>logger</code></td><td><code>Logger</code></td><td>按 <code>logLevel</code> 过滤。默认带前缀的 <code>console</code></td></tr>
+            <tr><td><code>defaultHeaders</code></td><td><code>Record&lt;string,string&gt;</code></td><td>额外请求头；单次调用的 header 优先</td></tr>
+            <tr><td><code>fetch</code></td><td><code>Fetch</code></td><td>自定义 fetch，默认全局 <code>fetch</code></td></tr>
+            <tr><td><code>dangerouslyAllowBrowser</code></td><td><code>boolean</code></td><td>允许浏览器端使用，会把 API key 暴露给页面用户。默认 <code>false</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout danger">
+        <span class="t">不要把 key 放进浏览器</span>
+        <p><code>dangerouslyAllowBrowser</code> 字面意思就是「危险地允许浏览器」。前端应用请让后端代理请求。</p>
+      </div>
+
+      <h3>主要类型</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>类别</th><th>成员</th></tr></thead>
+          <tbody>
+            <tr><td>核心接口</td><td><code>SystemOneRequest</code>、<code>SystemOneRequestPayload</code>、<code>SystemOneResult</code>、<code>Questions</code>、<code>Question</code>、<code>ResultFor</code></td></tr>
+            <tr><td>问题 / 响应</td><td><code>ChoiceQuestion</code>、<code>ChoiceCriteria</code>、<code>ChoiceResponse</code>、<code>ScoreQuestion</code>、<code>ScoreCriteria</code>、<code>ScoreLegend</code>、<code>ScoreOf</code>、<code>ScoreResponse</code>、<code>NoulQuestion</code>、<code>NoulResponse</code></td></tr>
+            <tr><td>其它</td><td><code>Usage</code>、<code>WithResponse</code>、<code>RequestOptions</code>、<code>RetryPolicy</code>、<code>ModelCard</code>、<code>Models</code>、<code>EntryType</code>、<code>JsonValue</code>、<code>Description</code>、<code>Logger</code></td></tr>
+            <tr><td>常量</td><td><code>ENV</code>、<code>LOG_LEVELS</code>、<code>VERSION</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>Usage</code> 为只读的 <code>input_tokens</code> 与 <code>output_tokens</code>；<code>WithResponse&lt;T&gt;</code> 提供解析后的数据、HTTP 响应与 request ID。</p>
+    </section>
+
+    <!-- ============ 23 ============ -->
+    <section id="errors">
+      <h2>23 · 错误与重试</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>状态码</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>401 Unauthorized</code></td><td>缺少或无效的 API key。检查 <code>Authorization</code> 头。</td></tr>
+            <tr><td><code>422 Unprocessable Entity</code></td><td>请求体校验失败 —— 缺少必填字段或问题格式错误。响应体会指出出问题的字段。</td></tr>
+            <tr><td><code>429 Too Many Requests</code></td><td>超过速率上限。退避后重试。</td></tr>
+            <tr><td><code>529 Overloaded</code></td><td>TypeSafe 临时过载。稍后重试。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        收到 <code>429</code> 或 <code>529</code> 时，<strong>用指数退避重试，而不是立刻重试</strong>。
+        官方 SDK 带默认重试策略会自动处理，并在响应携带 <code>retry-after</code> 头时遵守它。
+      </p>
+
+      <h3>Python 异常层级</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">exception tree</span><button class="copybtn">复制</button></div>
+        <pre><code>TypeSafeError                      # SDK 失败的基类
+├── TypeSafeAPIError               # 不成功的 HTTP 响应，带 status / body / headers
+├── TypeSafeAPIConnectionError     # 请求无法到达或无法读取服务端
+└── TypeSafeAPITimeoutError        # 请求超过设定的超时</code></pre>
+      </div>
+
+      <h3>JavaScript 异常层级</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">exception tree</span><button class="copybtn">复制</button></div>
+        <pre><code>TypeSafeError
+├── APIError                       # 基类；带 HTTP status 与 body
+│   ├── BadRequestError
+│   ├── AuthenticationError
+│   ├── PermissionDeniedError
+│   ├── NotFoundError
+│   ├── RateLimitError
+│   ├── UnprocessableEntityError
+│   └── InternalServerError
+├── APIConnectionError             # 请求/响应投递失败（DNS、TLS、连接关闭等）
+│   └── APITimeoutError
+└── APIUserAbortError              # 请求被用户主动中止</code></pre>
+      </div>
+      <p>
+        <code>APIConnectionError</code> 被 <code>APITimeoutError</code> 继承。
+        另外 <code>APIPromise&lt;T&gt;</code> 是 SDK 返回的 Promise 类型，
+        可通过 <code>WithResponse&lt;T&gt;</code> 拿到解析后的数据、HTTP 响应与 request ID。
+      </p>
+    </section>
+
+    <!-- ============ 24 ============ -->
+    <section id="cookbooks">
+      <h2>24 · Cookbook 索引</h2>
+      <p class="lede">
+        每份 cookbook 都是一个可跑的完整例子：真实数据集 + 决定某件事的 TypeSafe 问题 + 把这些决定变成可用系统的代码。
+        阅读前请假定你已掌握三个原语与置信度。
+      </p>
+
+      <h3>自检一致性（Beginner）</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Cookbook</th><th>做什么</th></tr></thead>
+          <tbody>
+            <tr><td>Self-consistency: nouls</td><td>把不确定的概率路由给人工复核，同时保留底层 noul 值可见。</td></tr>
+            <tr><td>Self-consistency: choices</td><td>给审核决策加一个「不确定」结果，并比较标签一致率与自动执行占比。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>批处理（Beginner）</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Cookbook</th><th>做什么</th></tr></thead>
+          <tbody>
+            <tr><td>Parallel questions</td><td>对 GDPR 维基百科条目跑 13 个问题的合规简报。证明把全部问题合并成一次 TypeSafe 调用比拆开便宜 <strong>12.2 倍</strong>、快 <strong>10 倍</strong>，且答案不变。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>How-to</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Cookbook</th><th>做什么</th><th>难度</th></tr></thead>
+          <tbody>
+            <tr><td>Re-ranking</td><td>为 40 条 CLERC 法律查询构建 30 段 BM25 短名单，再用「每个查询-候选对一个 TypeSafe 问题」重排：top-1 准确率 <strong>5% → 18%</strong>，top-10 <strong>38% → 62%</strong>。</td><td>Beginner</td></tr>
+            <tr><td>Line-by-line search</td><td>给 GitHub 服务条款做语义搜索。一次请求里用 Choice 对 218 个行 id 打分，并用 Noul 判断文档是否包含答案。</td><td>Beginner</td></tr>
+            <tr><td>Structure recovery</td><td>两次请求把丢失格式的纯文本恢复成 Markdown：一次缝合被硬换行切断的行，一次给每个块分类（标题 / 列表 / 代码 / callout）。</td><td>Beginner</td></tr>
+            <tr><td>Function calling</td><td>把自然语言交易请求变成普通类型化函数的调用 —— 把函数名与闭集参数映射成带置信度的 TypeSafe 问题。</td><td>Intermediate</td></tr>
+            <tr><td>Skill suggestion</td><td>从 Nous Research Hermes 目录的 182 个技能里，为一次智能体回合挑至多一个：两次 TypeSafe 请求，先排序再复核前三名。</td><td>Intermediate</td></tr>
+            <tr><td>Knowledge graph entity alignment</td><td>判断两份啤酒目录的 450 对候选是否描述同一产品：一个 Score + 三个伴随 Noul（用于暴露哪些字段不一致）。</td><td>Beginner</td></tr>
+            <tr><td>Classifying RAG passages</td><td>用一次 TypeSafe 请求给每条召回段落打分，再由代码决定哪些进入作答模型。</td><td>Intermediate</td></tr>
+            <tr><td>Double-checking citations</td><td>对照源文档检查引文是否错误或幻觉：一个 Choice 判断这段引用的上下文是否支撑该主张。</td><td>Beginner</td></tr>
+            <tr><td>Guardrails for LLMs</td><td>用一次 TypeSafe 请求筛查进出 LLM 应用的每条消息，对风险概率与严重度设阈值后放行 / 复核 / 拦截 / 转人工。</td><td>Intermediate</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Extraction</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Cookbook</th><th>做什么</th><th>难度</th></tr></thead>
+          <tbody>
+            <tr><td>SDE cascade</td><td>两阶段结构化数据抽取级联（mini → verify → reasoning），以极低成本拿到接近大型推理模型的质量。</td><td>Intermediate</td></tr>
+            <tr><td>Date extraction</td><td>向 TypeSafe 要文档里提到的日期组成部分，再在代码里解析与校验，配合置信度复核，处理绝对与相对日期。</td><td>Beginner</td></tr>
+            <tr><td>Pre-parsed value extraction</td><td>先用正则找出候选的邮箱 / 电话 / 金额，再让 TypeSafe 选出被请求的那一段，代码逐字复制并归一化。</td><td>Beginner</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Classification</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Cookbook</th><th>做什么</th><th>难度</th></tr></thead>
+          <tbody>
+            <tr><td>Hierarchical classification</td><td>在专利、零售商品、生物医学与源代码等深层分类体系上做 beam search，遍历 Choice 概率。</td><td>Intermediate</td></tr>
+            <tr><td>Autoresearch feature discovery</td><td>跑一个自动研究循环：提出 TypeSafe 问题 → 把自由文本转成数值特征 → 用模型误差改进一个有监督的 CatBoost 回归器。</td><td>Advanced</td></tr>
+            <tr><td>Classification using confidence</td><td>用每个 SEC 年报一次 Choice 分到 75 个行业组，再读答案自带的置信度决定是报该组还是上报其所属大类。</td><td>Beginner</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout tip">
+        <span class="t">值得注意的一处口径差异</span>
+        <p>
+          「Parallel questions」cookbook 给出的数字是 <strong>12.2× 便宜 / 10.0× 快</strong>；
+          Primitives 页面引用同一实验时写的是 <strong>11.5× / 9.6×</strong>。量级一致，但具体比值在两个页面上不同 ——
+          引用请以 cookbook 自身的数字为准。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 25 ============ -->
+    <section id="agentskill">
+      <h2>25 · Agent Skill</h2>
+      <p class="lede">
+        针对 Claude Code、Codex 与其它智能体环境的即装即用技能包。它给编码智能体提供 TypeSafe API 的完整上下文：
+        三种问题类型、架构模式，以及组织评估任务的最佳实践。
+      </p>
+
+      <h3>安装</h3>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">install</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash"># Claude Code
+claude plugin marketplace add typesafe-ai/skills
+claude plugin install typesafe@typesafe-ai
+
+# 其他智能体：交互式选择；默认项目局部安装，加 -g 全局安装
+npx skills add typesafe-ai/skills --skill typesafe-ai</code></pre>
+      </div>
+      <p>
+        手动安装：<a href="https://github.com/typesafe-ai/skills/tree/main/skills/typesafe-ai" target="_blank" rel="noopener">复制 skills/typesafe-ai 整个目录</a>
+        （含其 reference 文件）到你的技能目录。<strong>只用一种安装方式</strong>，避免重复副本。
+      </p>
+
+      <h4>更新</h4>
+      <div class="codeblock">
+        <div class="head"><span class="lang">bash</span><span class="title">update</span><button class="copybtn">复制</button></div>
+        <pre><code class="language-bash">claude plugin marketplace update typesafe-ai
+claude plugin update typesafe@typesafe-ai
+# 重启 Claude Code 或运行 /reload-plugins
+# 自动更新：/plugin → Marketplaces → typesafe-ai → Enable auto-update
+
+# skills.sh 安装方式
+npx skills update</code></pre>
+      </div>
+
+      <h3>示例提示词</h3>
+      <p>在提示词里点名技能（「use the TypeSafe skill」）在任何智能体里都有效。Claude Code 插件还可直接用 <code>/typesafe:typesafe-ai</code>。</p>
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">头脑风暴</span><button class="copybtn">复制</button></div>
+        <pre><code>Using the TypeSafe skill, explore the project and find opportunities for using
+intelligent judgement to stand in for complex parsing or other fragile code.</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">让它自己做实验</span><button class="copybtn">复制</button></div>
+        <pre><code>Using the TypeSafe skill, run some experiments using the TypeSafe API key that I've
+exported to `TYPESAFE_API_KEY`. Propose changes based on the most promising results.</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="head"><span class="lang">text</span><span class="title">用 cookbook 重构</span><button class="copybtn">复制</button></div>
+        <pre><code>Using the TypeSafe skill, analyze my code and see if there are any applicable
+cookbooks (https://console.typesafe.ai/docs/cookbooks) that show how I could
+refactor my code to be less fragile or complex.</code></pre>
+      </div>
+
+      <h3>四条 vibe coding 原则</h3>
+      <ol>
+        <li>先把想法和你的智能体聊透，用上面的提示词起步；</li>
+        <li>实现前<strong>先审一遍计划</strong>，确认它说得通；</li>
+        <li>把常量（问题、阈值）集中放在一处便于 review。智能体不擅长写问题，预期要和它协作改；</li>
+        <li>不要轻信它的断言，鼓励它验证自己的假设。</li>
+      </ol>
+
+      <h3>常见故障</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>症状</th><th>怎么办</th></tr></thead>
+          <tbody>
+            <tr><td>智能体没用这个技能</td><td>Claude Code 里用 <code>/typesafe:typesafe-ai</code>；其它智能体说「use the TypeSafe skill」。仍不生效就确认安装器针对的是你正在用的那个智能体，然后重启。</td></tr>
+            <tr><td>路由表现不符合预期</td><td>检查问题与阈值。阈值可能过高（假阴性）或过低（假阳性），也可能需要把问题写得更具体。</td></tr>
+            <tr><td>到处都在用置信度阈值</td><td>如果你只关心挑最好的选项，取最高置信度即可，不必设阈值；如果你心里有特定统计算法，应该用概率而不是置信度。</td></tr>
+            <tr><td>TypeSafe 代码难 review</td><td>最需要人 review 的是「问题」与「阈值常量」。把它们集中放在单个文件里。</td></tr>
+            <tr><td>智能体编造了请求 / 响应字段</td><td>技能版本旧了。按你的安装方式更新后重试。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ 26 ============ -->
+    <section id="bestpractice">
+      <h2>26 · 最佳实践与反模式</h2>
+
+      <h3>典型决策形状 → 该用什么</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>决策形状</th><th>什么时候用</th><th>例子</th></tr></thead>
+          <tbody>
+            <tr><td><strong>分类 Classification</strong></td><td>应当有一个已知类别胜出</td><td>意图、主题、部门、风险类型、实体类型</td></tr>
+            <tr><td><strong>检测 Detection</strong></td><td>需要「某个属性存在」的概率</td><td>垃圾内容、欺诈、紧急性、越狱、敏感数据</td></tr>
+            <tr><td><strong>评分 Scoring</strong></td><td>答案落在一个有序 rubric 上</td><td>严重度、相关性、质量、情绪、适合度</td></tr>
+            <tr><td><strong>路由 Routing</strong></td><td>一个类别决定下一段代码路径</td><td>工具调用、升级、模型路由、支持队列</td></tr>
+            <tr><td><strong>搜索 Search</strong></td><td>要找出匹配自然语言查询的条目</td><td>语义搜索、文档发现、候选生成</td></tr>
+            <tr><td><strong>检索 Retrieval</strong></td><td>工作流需要最相关的上下文或记录</td><td>RAG 上下文、证据检索、知识查找</td></tr>
+            <tr><td><strong>排序 Ranking</strong></td><td>条目要按语义相关性或质量排</td><td>搜索结果、推荐、候选优先级</td></tr>
+            <tr><td><strong>校验 Verification</strong></td><td>必须检查某个产物有无特定失败模式</td><td>引文是否有支撑、政策违规、工具调用错误</td></tr>
+            <tr><td><strong>ML 特征提取</strong></td><td>下游经典 ML 模型需要语义信号</td><td>购买意向、产品兴趣、竞争压力、流失信号</td></tr>
+            <tr><td><strong>结构化数据抽取</strong></td><td>必须从非结构化输入里还原已知字段</td><td>候选人属性、订单字段、文档标签</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>五大用例类别</h3>
+      <div class="cards">
+        <div class="card"><div class="ico">A</div><h5>AI 自动化软件</h5><p>把 AI 与可靠软件交织在一起，可以在后台跑一百万次而无需人类共同驾驶。代码拥有控制流（不是 markdown 文件），TypeSafe 处理语义决策。</p></div>
+        <div class="card g"><div class="ico">Z</div><h5>实时应用</h5><p>150ms 级的前沿智能意味着 AI 的决策可以快过人类感知 —— 快到能被编程去打游戏或嵌入 UI。</p></div>
+        <div class="card p"><div class="ico">M</div><h5>大数据上的 AI Map Reduce</h5><p>便宜 100 倍意味着你能处理巨型数据集：在巨量语料里检索、给海量智能体轨迹分类、抽取特征做预测。</p></div>
+        <div class="card a"><div class="ico">V</div><h5>通用校验器</h5><p>校验任何 AI 的 prompt、抽取结果、推理轨迹、工具调用 —— 检测越狱、引文错误、幻觉，成本只是那次 LLM 调用的零头。</p></div>
+      </div>
+
+      <h3>Do（做这些）</h3>
+      <ul>
+        <li><strong>一次请求打包所有问题</strong>，包括投机性的 —— 它们是接近免费的。</li>
+        <li><strong>把宽判断拆成原子问题</strong>，在代码里合成。<strong>这是整份文档最重要的概念。</strong></li>
+        <li><strong>只给必要上下文</strong>。想清楚用条例退税政策时，不要把整个 CRM 导出扔进去。</li>
+        <li><strong>question 与 criteria 保持一致</strong>，去掉自相矛盾的表述。</li>
+        <li><strong>数学、日期算术、去重留在代码里</strong>，Jev 只负责它真正擅长的那部分判断。</li>
+        <li><strong>难分辨的选项用对象描述</strong>：<code>what</code> / <code>not_for</code> / <code>examples</code>。</li>
+        <li><strong>给每一项选项列表加兜底</strong>（<code>other</code> 或 <code>none of the above</code>）。</li>
+        <li><strong>组合 Score 前先归一化</strong>（除以最高等级编号）。</li>
+        <li><strong>把阈值常量集中在一处</strong>，方便 review 和调整。</li>
+        <li><strong>钉住版本 ID</strong>，如果阈值是针对某个版本标定的。</li>
+      </ul>
+
+      <h3>Don't（别做这些）</h3>
+      <ul>
+        <li>✗ 每个问题发一次请求 —— 这是<strong>编码智能体最容易犯的习惯</strong>。</li>
+        <li>✗ 让 Jev 生成文本（可以用 Choice 串联，但这会慢且差）。</li>
+        <li>✗ 依赖实现细节：<code>P(x)</code> 与 <code>1-P(not x)</code> 不一定相等。</li>
+        <li>✗ 把 Noul 的阈值直接搬到 Choice 上。</li>
+        <li>✗ 把 Noul 的中间值当成「程度中等」。</li>
+        <li>✗ 只看 <code>score</code> 而不看 <code>probabilities</code> 与 <code>confidence</code>。</li>
+        <li>✗ 把「写长 prompt」的习惯搬过来 —— prompt 越长，Jev 的原子判断越容易被稀释。</li>
+        <li>✗ 只用 Level <strong>编号</strong>「0/1/2」当 criteria 描述 —— 模型没有可比对象，必须配文字定义。</li>
+      </ul>
+
+      <h3>落地检查清单</h3>
+      <ol>
+        <li>问题是不是<strong>原子</strong>的？能不能被打断成一件事？</li>
+        <li>是不是只发送了需要的内容？</li>
+        <li>criteria 是否<strong>互相排斥且覆盖完整</strong>？有没有兜底选项？</li>
+        <li>阈值是否写在了<strong>一处集中定义</strong>的地方？</li>
+        <li>低置信度 / 中等 noul 的路径是<strong>转人工 / 追问</strong>，而不是硬猜吗？</li>
+        <li>权重是否与 requires 符合？改动它们是否需要重新验证？</li>
+        <li>在<strong>真实的业务数据</strong>上校准过吗？</li>
+      </ol>
+
+      <div class="callout note">
+        <span class="t">本文档的范围与口径</span>
+        <p>
+          内容整理自 <strong>docs.typesafe.ai</strong> 全站（含 <code>llms-full.txt</code>，共约 20,600 行、
+          覆盖全部 100+ 页面：概念、原语、模式、HTTP API、Python / JavaScript SDK 全量 API 参考、
+          15 份 cookbook、模型与锯齿说明）。所有数值示例（概率、置信度、评分、延迟、价格、限额）
+          均为官方文档给出的实测或标称值，<strong>并非我们自己跑出来的 Benchmark</strong>。
+          若与官网存在差异，以官网实时版本为准。
+        </p>
+      </div>
+    </section>
+
+    <div class="docnav">
+      <a href="#overview"><span class="dir">开始</span><span class="ttl">回到总览 ↑</span></a>
+      <a href="https://docs.typesafe.ai/" target="_blank" rel="noopener"><span class="dir">原文</span><span class="ttl">docs.typesafe.ai ↗</span></a>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  本页为 <strong>docs.typesafe.ai</strong> 全站内容的中文整理与重组织版本 · 依据 <code>llms-full.txt</code> 与逐页 <code>.md</code> 源抓取整理 ·
+  原始文档以英文为准：<a href="https://docs.typesafe.ai/" target="_blank" rel="noopener">docs.typesafe.ai</a>
+</footer>
+
+<button class="toTop" id="toTop" aria-label="回到顶部">↑</button>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 语法高亮（自写，零依赖） ---------- */
+  function esc(s){
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  var KW = {
+    python: "def|return|if|elif|else|for|while|in|not|and|or|is|None|True|False|import|from|as|class|with|try|except|finally|raise|lambda|yield|async|await|pass|break|continue|assert|global|del",
+    ts: "const|let|var|function|return|if|else|for|while|import|from|export|await|async|new|class|extends|interface|type|of|in|try|catch|finally|throw|typeof|as|readonly|null|undefined|true|false|void",
+    js: "const|let|var|function|return|if|else|for|while|import|from|export|await|async|new|class|extends|try|catch|finally|throw|typeof|null|undefined|true|false|void"
+  };
+  var BUILTIN = "print|sum|len|range|list|dict|str|int|float|bool|enumerate|zip|round|sorted|min|max|abs|self|console|client|response|questions|answers|Promise|Record|Partial|Array|Number|String|Boolean";
+  var DEC = "choice|score|noul|Choice|Score|Noul|NoulCriteria|TypeSafeClient|AsyncTypeSafeClient|system_one|models|list|RetryPolicy";
+
+  function hl(src, lang){
+    if(!lang) return esc(src);
+    var s = esc(src);
+    if(lang === "json"){
+      // JSON: 先保护字符串，再给 key 上色
+      s = s.replace(/(&quot;|")((?:[^"\\]|\\.)*)"(\s*:)/g, function(m,q,inner,colon){
+        return '<span class="tok-key">' + q + inner + q + '</span><span class="tok-punc">' + colon + '</span>';
+      });
+      s = s.replace(/:\s*(&quot;|")((?:[^"\\]|\\.)*)"/g, function(m,q,inner){
+        return ': <span class="tok-str">' + q + inner + q + '</span>';
+      });
+      s = s.replace(/\b(true|false|null)\b/g,'<span class="tok-kw">$1</span>');
+      s = s.replace(/(?<![\w.])-?\d+(\.\d+)?\b/g,'<span class="tok-num">$&</span>');
+      return s;
+    }
+    if(lang === "bash"){
+      s = s.replace(/(^|\n)(\s*)(#[^\n]*)/g, function(m,p,sp,c){ return m ? p + sp + '<span class="tok-com">' + c + '</span>' : m; });
+      s = s.replace(/^(\s*)(curl|pip|uv|npm|npx|claude|echo|cd|export|python|chmod|make|git)\b/gm,'$1<span class="tok-fn">$2</span>');
+      s = s.replace(/(&quot;|")((?:[^"\\]|\\.)*)"/g,'<span class="tok-str">$1$2"</span>');
+      s = s.replace(/\$(?:\{)?([A-Za-z_][A-Za-z0-9_]*)/g,'<span class="tok-b">$${$1}</span>'.replace("{","").replace("}",""));
+      s = s.replace(/(^|\s)(--?[a-zA-Z][\w-]*)/g,'$1<span class="tok-key">$2</span>');
+      return s;
+    }
+    if(lang === "http"){
+      s = s.replace(/^(POST|GET|PUT|DELETE|PATCH)\b/gm,'<span class="tok-fn">$1</span>');
+      s = s.replace(/^(Bearer)(\s)/gm,'<span class="tok-kw">$1</span>$2');
+      s = s.replace(/^([A-Za-z-]+)(:)/gm,'<span class="tok-key">$1</span><span class="tok-punc">$2</span>');
+      return s;
+    }
+    var kw = KW[lang] || KW.python;
+    // 注释
+    if(lang === "python"){
+      s = s.replace(/(#[^\n]*)/g,'\u0000$1\u0000');
+    } else {
+      s = s.replace(/(\/\/[^\n]*)/g,'\u0000$1\u0000');
+      s = s.replace(/(\/\*[\s\S]*?\*\/)/g,'\u0000$1\u0000');
+    }
+    // 字符串（含三引号）
+    s = s.replace(/("""[\s\S]*?"""|'''[\s\S]*?'''|`[^`]*`|"[^"\n]*"|'[^'\n]*')/g,'\u0001$1\u0001');
+    // 关键字
+    s = s.replace(new RegExp("\\b("+kw+")\\b","g"),'\u0002$1\u0002');
+    // SDK / 内置
+    s = s.replace(new RegExp("\\b("+DEC+")\\b","g"),'\u0003$1\u0003');
+    s = s.replace(new RegExp("\\b("+BUILTIN+")\\b","g"),'\u0004$1\u0004');
+    // 数字
+    s = s.replace(/\b(\d+\.?\d*)\b/g,'\u0005$1\u0005');
+    // 还原
+    s = s.replace(/\u0000([^\u0000]*)\u0000/g,'<span class="tok-com">$1</span>')
+         .replace(/\u0001([^\u0001]*)\u0001/g,'<span class="tok-str">$1</span>')
+         .replace(/\u0002([^\u0002]*)\u0002/g,'<span class="tok-kw">$1</span>')
+         .replace(/\u0003([^\u0003]*)\u0003/g,'<span class="tok-b">$1</span>')
+         .replace(/\u0004([^\u0004]*)\u0004/g,'<span class="tok-fn">$1</span>')
+         .replace(/\u0005([^\u0005]*)\u0005/g,'<span class="tok-num">$1</span>');
+    return s;
+  }
+
+  var LANGS = {bash:"bash",python:"python",ts:"ts",js:"js",json:"json",http:"http",typescript:"ts"};
+  var blocks = document.querySelectorAll("pre code");
+  for(var i=0;i<blocks.length;i++){
+    var el = blocks[i];
+    var cls = (el.className||"").replace("language-","");
+    var lang = LANGS[cls] || null;
+    var raw = el.textContent;
+    // 去掉 \} 之类转义：这里用 \\? 处理 " 转义
+    raw = raw.replace(/\\"/g,'"');
+    el.innerHTML = hl(raw, lang);
+  }
+
+  /* ---------- 复制按钮 ---------- */
+  document.addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest(".copybtn") : null;
+    if(!b) return;
+    var pre = b.closest(".codeblock").querySelector("pre code");
+    var txt = pre.textContent;
+    var done = function(){
+      b.textContent = "已复制";
+      b.classList.add("done");
+      setTimeout(function(){ b.textContent = "复制"; b.classList.remove("done"); },1400);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, fallback);
+    } else { fallback(); }
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); done(); }catch(err){}
+      document.body.removeChild(ta);
+    }
+  });
+
+  /* ---------- 搜索过滤目录 ---------- */
+  var search = document.getElementById("search");
+  var links = Array.prototype.slice.call(document.querySelectorAll(".navgroup a"));
+  var groups = Array.prototype.slice.call(document.querySelectorAll(".navgroup"));
+  search.addEventListener("input", function(){
+    var q = search.value.trim().toLowerCase();
+    if(!q){
+      links.forEach(function(a){ a.classList.remove("hide"); });
+      groups.forEach(function(g){ g.style.display = ""; });
+      return;
+    }
+    links.forEach(function(a){
+      var hit = a.textContent.toLowerCase().indexOf(q) >= 0;
+      a.classList.toggle("hide", !hit);
+    });
+    groups.forEach(function(g){
+      var any = g.querySelector("a:not(.hide)");
+      g.style.display = any ? "" : "none";
+    });
+  });
+
+  /* ---------- 移动端目录 ---------- */
+  var menuBtn = document.getElementById("menuBtn");
+  menuBtn.addEventListener("click", function(){
+    document.body.classList.toggle("navopen");
+  });
+  document.getElementById("sidebar").addEventListener("click", function(e){
+    if(e.target.tagName === "A" && window.innerWidth <= 900){
+      document.body.classList.remove("navopen");
+    }
+  });
+
+  /* ---------- 滚动：进度条 / 回到顶部 / scrollspy ---------- */
+  var bar = document.getElementById("progress");
+  var toTop = document.getElementById("toTop");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section[id]"));
+  var navLinks = {};
+  links.forEach(function(a){
+    var id = a.getAttribute("href").slice(1);
+    if(id) navLinks[id] = a;
+  });
+
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    bar.style.width = pct + "%";
+    toTop.classList.toggle("show", h.scrollTop > 600);
+
+    var best = null, bestDist = Infinity, fallback = null, fbDist = Infinity;
+    for(var i=0;i<sections.length;i++){
+      var r = sections[i].getBoundingClientRect();
+      var d = Math.abs(r.top - 90);
+      if(r.top < 320 && d < bestDist){ bestDist = d; best = sections[i]; }
+      if(d < fbDist){ fbDist = d; fallback = sections[i]; }
+    }
+    for(var k in navLinks){ navLinks[k].classList.remove("active"); }
+    if(!best){ best = fallback; }
+    if(best && navLinks[best.id]){
+      navLinks[best.id].classList.add("active");
+    }
+  }
+  window.addEventListener("scroll", onScroll, {passive:true});
+  window.addEventListener("resize", onScroll);
+  onScroll();
+
+  toTop.addEventListener("click", function(){
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  /* ---------- 主题切换 ---------- */
+  var themeBtn = document.getElementById("themeBtn");
+  function applyTheme(t){
+    document.documentElement.setAttribute("data-theme", t);
+    try{ localStorage.setItem("jev-doc-theme", t); }catch(e){}
+  }
+  var saved = null;
+  try{ saved = localStorage.getItem("jev-doc-theme"); }catch(e){}
+  applyTheme(saved || "light");
+  themeBtn.addEventListener("click", function(){
+    var cur = document.documentElement.getAttribute("data-theme");
+    applyTheme(cur === "dark" ? "light" : "dark");
+  });
+})();
+</script>
+</body>
+</html>
