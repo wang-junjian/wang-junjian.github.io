@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Jev 是 TypeSafe AI 推出的「System One」决策模型——不生成文本，而是对软件给出的状态与封闭问题返回带校准概率的结构化判定。本文梳理 Jev 是什么、怎么工作、谁在用它，以及围绕它生长的数百个开源项目与选型建议。">
+<meta name="keywords" content="Jev, System One, TypeSafe AI, 决策模型, AI Agent, 开源生态, 校准概率">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-08">
+<title>Jev 生态全景研究报告 · System One 决策模型与热门开源项目</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --text: #1f2329;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --green: #059669;
+    --green-soft: #ecfdf5;
+    --orange: #d97706;
+    --orange-soft: #fffbeb;
+    --purple: #7c3aed;
+    --purple-soft: #f5f3ff;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+  header.hero {
+    background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 48px 40px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow);
+  }
+  .hero .tag {
+    display: inline-block; background: var(--accent-soft); color: var(--accent);
+    font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px;
+    letter-spacing: .5px; margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 30px; line-height: 1.3; margin-bottom: 12px; }
+  .hero p.sub { color: var(--muted); font-size: 16px; max-width: 760px; }
+  .meta { margin-top: 20px; color: var(--muted); font-size: 13px; display: flex; gap: 24px; flex-wrap: wrap; }
+  h2 {
+    font-size: 22px; margin: 48px 0 20px; padding-left: 14px;
+    border-left: 4px solid var(--accent); line-height: 1.4;
+  }
+  h3 { font-size: 17px; margin: 28px 0 12px; }
+  p { margin-bottom: 12px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 24px 28px; margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .grid { display: grid; gap: 16px; }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .stat { text-align: center; padding: 20px 12px; }
+  .stat .num { font-size: 26px; font-weight: 700; color: var(--accent); }
+  .stat .lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); font-size: 14px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .tbl-wrap { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px;
+    background: #f1f5f9; padding: 2px 6px; border-radius: 6px; color: #be185d;
+  }
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .pill.blue { background: var(--accent-soft); color: var(--accent); }
+  .pill.green { background: var(--green-soft); color: var(--green); }
+  .pill.orange { background: var(--orange-soft); color: var(--orange); }
+  .pill.purple { background: var(--purple-soft); color: var(--purple); }
+  .proj { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); }
+  .proj h4 { font-size: 15.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .proj h4 .name { color: var(--text); }
+  .proj h4 .repo { font-size: 12.5px; color: var(--muted); font-weight: 400; font-family: Menlo, monospace; }
+  .proj p { font-size: 14px; color: #4b5563; margin-bottom: 8px; }
+  .proj .stars { font-size: 12.5px; color: var(--orange); font-weight: 600; }
+  .callout {
+    border-radius: var(--radius); padding: 18px 22px; margin: 20px 0; font-size: 14.5px;
+  }
+  .callout.info { background: var(--accent-soft); border: 1px solid #bfdbfe; }
+  .callout.warn { background: var(--orange-soft); border: 1px solid #fde68a; }
+  .callout.ok { background: var(--green-soft); border: 1px solid #a7f3d0; }
+  .callout strong { display: block; margin-bottom: 6px; }
+  ul.tight { padding-left: 22px; margin-bottom: 12px; }
+  ul.tight li { margin-bottom: 6px; }
+  ol.tight { padding-left: 22px; margin-bottom: 12px; }
+  ol.tight li { margin-bottom: 8px; }
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .flow .step {
+    background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13.5px;
+    padding: 8px 14px; border-radius: 8px; border: 1px solid #bfdbfe;
+  }
+  .flow .arrow { color: var(--muted); font-weight: 700; }
+  footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="tag">研究报告 · AI Agent 生态</span>
+  <h1>Jev 生态全景：System One 决策模型与围绕它的热门开源项目</h1>
+  <p class="sub">Jev 是 TypeSafe AI 于 2026 年 9 月 15 日推出的「System One（系统一）」决策模型——它不生成文本，而是对软件给出的状态与封闭问题，直接返回带校准概率的结构化判定（choice / score / noul）。发布两周内，GitHub 上围绕它生长出数百个开源项目。本文梳理 Jev 是什么、怎么工作、谁在用它，以及各热门项目的用途与选型建议。</p>
+  <div class="meta">
+    <span>📅 整理日期：2026 年 10 月 8 日</span>
+    <span>📊 生态规模：Awesome Jev 目录收录 228 个项目 / 10 大类别</span>
+    <span>🔖 模型发布：TypeSafe AI，2026-09-15</span>
+  </div>
+</header>
+
+<!-- ============ 第一部分：Jev 是什么 ============ -->
+<h2>一、Jev 是什么：先建立全面认识</h2>
+
+<div class="grid grid-3">
+  <div class="card stat"><div class="num">70–500ms</div><div class="lbl">单个问题的响应延迟</div></div>
+  <div class="card stat"><div class="num">≈200×</div><div class="lbl">分类决策任务上相对前沿大模型的最高提速（官方口径）</div></div>
+  <div class="card stat"><div class="num">≈1/400</div><div class="lbl">官方宣称的成本下限（输出 token 免费，输入约 $0.042/M）</div></div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">1. 定位：与聊天模型互补的「决策模型」</h3>
+  <p>传统大语言模型（GPT、Claude、Qwen 等）擅长开放式理解、长程推理与文本生成；Jev 走的是另一条路线。它面向 Agent 运行中最高频、边界最明确的一类需求——<strong>分类、选择、评分、真伪判断</strong>：给定一段状态（state：工单、日志、邮件、JSON、DOM 快照、文档片段……）和一组事先定义好的类型化问题，Jev 不做自回归文本生成，而是直接返回程序可以立即分支使用的答案与置信概率。</p>
+  <p>Jev 由前 OpenAI 研究员、曾参与 ChatGPT 研发的 Diogo Almeida 创办的 TypeSafe AI 发布，训练方法为 <strong>RLCD（Reinforcement Learning for Calibrated Decisions）</strong>，目标是让模型报出的概率尽量接近真实正确率（校准，Calibration）。模型名字取自 19 世纪经济学家杰文斯（Jevons），暗合「杰文斯悖论」：智能使用成本的暴跌，将带来智能用量的暴涨。</p>
+
+  <h3>2. 三种类型化问题：Choice / Score / Noul</h3>
+  <table>
+    <tr><th>类型</th><th>作用</th><th>典型场景</th></tr>
+    <tr><td><code>choice</code></td><td>从给定选项中选出一个，返回每个选项的概率</td><td>工单路由、工具选择、点击哪个网页元素</td></tr>
+    <tr><td><code>score</code></td><td>按有序量表打分，返回各档位概率</td><td>风险评级、内容质量分、优先级排序</td></tr>
+    <tr><td><code>noul</code></td><td>判断一段陈述为真的可能性，返回 0–1 概率</td><td>「任务完成了吗」「这是垃圾邮件吗」式的二元/真伪判断</td></tr>
+  </table>
+  <p style="margin-top:12px">所有问题对着同一份 state 材料<strong>并行评估</strong>，一次 API 往返返回全部答案；延迟几乎不随问题数量线性爆炸。每个回答附带校准概率，开发者可以在代码里设阈值：置信度不足时自动转交人工或更大的模型处理——这是它比「让 LLM 输出 JSON」更可靠的工程原因（格式上不可能产生解析错误，也几乎不可能出现格式幻觉）。</p>
+
+  <h3>3. 工作机制：「快慢分工」的 Harness 架构</h3>
+  <div class="flow">
+    <span class="step">感知：代码把状态整理成结构化输入</span>
+    <span class="arrow">→</span>
+    <span class="step">Jev：在封闭选项里给概率（快思考）</span>
+    <span class="arrow">→</span>
+    <span class="step">程序：按阈值分支，决定执行</span>
+    <span class="arrow">→</span>
+    <span class="step">大模型：规划、写作等慢思考（按需）</span>
+  </div>
+  <p>业内把这种分工称为 Agent 架构的「快慢分工」：昂贵的大模型负责规划等「慢思考」，高频、原子化的「快判断」交给轻量决策模型；负责组装与调度这套分工的工程层被称为 <strong>Harness</strong>。Jev 社区项目的共同设计纪律是：<strong>写和想归大模型，判和选归 Jev，执行权留在确定性代码里</strong>（例如 Prism 刻意不让模型碰下单键，Canny 坚持「只有事实能否决」）。</p>
+</div>
+
+<div class="callout warn">
+  <strong>⚠️ 重要事实澄清</strong>
+  Jev <strong>模型本身是闭源的托管服务</strong>：截至 2026 年 9 月下旬，没有公开的权重或训练代码发布；TypeSafe 以宽松许可公开的是官方 Python / JavaScript SDK 和一个 Agent Skill。社区里的「Open Jev」项目复刻的是<strong>接口形态</strong>（状态 + 类型化问题 + 概率输出），而非模型本身——它们的权重、训练数据与概率校准均与官方 Jev 不等价。另外官方宣称的「193.6× 提速、444.6× 成本优势」来自 TypeSafe 自家准备的测试集，宜作为方向性参考而非基准结论。
+</div>
+
+<!-- ============ 第二部分：生态总览 ============ -->
+<h2>二、生态总览：规模、类别与代表项目</h2>
+
+<div class="card">
+  <p>发布后两周内，GitHub 上围绕 Jev 长出的生态项目已达 200+。最具参考价值的是社区维护的 <strong>Awesome JEV</strong> 目录（BeatAPI/awesome-jev，已被 HelloGitHub 等收录推荐）：截至 2026-09-28 收录 <strong>228 个项目、10 大类别</strong>，所有仓库均有 50+ Stars 并附固定 commit 的源码证据；其中约 48 个达 1K+ Stars。早期整合文章统计的 28 个代表项目（8 个模型复刻 + 20 个应用）至今仍是最常被引用的入门清单。</p>
+  <table>
+    <tr><th>类别</th><th>在做什么</th><th>代表项目</th></tr>
+    <tr><td><span class="pill blue">浏览器与电脑操作</span></td><td>把页面/屏幕的可交互元素编成候选动作表，Jev 每步选择动作与目标</td><td>jev-ultrafast（browser-use）、Cua · JEV Use、fast-browser-use（APUS）</td></tr>
+    <tr><td><span class="pill blue">SDK 与框架集成</span></td><td>在主流框架里暴露 choice/score/noul 决策接口</td><td>LangChain · TypeSafe、Vercel AI SDK、json-render（Vercel Labs）</td></tr>
+    <tr><td><span class="pill blue">路由与优化</span></td><td>按任务难度/复杂度分流模型档位、压缩上下文</td><td>LiteLLM · JEV Router、fast-jev-compaction、Winnow、jev-codex-router</td></tr>
+    <tr><td><span class="pill green">Open Jev 开放模型</span></td><td>从不同技术路线复刻决策模型本身</td><td>Laya、Kev、Nimble、SemIf、Von、Verdict、OpenJev、Simple Jev</td></tr>
+    <tr><td><span class="pill green">搜索与数据</span></td><td>语义检索、图遍历、训练数据筛选</td><td>jegrep、neo4jev、jev-curate、Blink</td></tr>
+    <tr><td><span class="pill orange">安全与审查</span></td><td>越狱/泄密检测、代码审查分诊、事实核查</td><td>Agentgateway · JEV Guardrail、jev-review、jev-mcp、Canny</td></tr>
+    <tr><td><span class="pill orange">Agent 工作流</span></td><td>MCP 工具箱、完成度核验、意图判断</td><td>typesafe-mcp、jev-mcp、Canny、SemDecide</td></tr>
+    <tr><td><span class="pill purple">界面与自动化</span></td><td>生成式 UI、表单填写、邮件分拣等终端应用</td><td>json-render、Jev for Gmail、Jev Form Fill、TipTour</td></tr>
+    <tr><td><span class="pill purple">开发者工具</span></td><td>CLI、提示词转换、评测基准</td><td>jeff-cli、llm-to-jev、judgekit、SemDecide</td></tr>
+    <tr><td><span class="pill purple">垂直工具</span></td><td>游戏、无人机、量化交易、物联网等实时控制</td><td>typesafe-mario、jev-drone、jev-trader、Prism、OneVOneJev</td></tr>
+  </table>
+</div>
+
+<!-- ============ 第三部分：热门应用项目 ============ -->
+<h2>三、热门应用项目：都有什么用</h2>
+
+<h3>🔥 头部项目（万星生态中的核心）</h3>
+<div class="grid grid-2">
+  <div class="proj">
+    <h4><span class="name">jev-ultrafast</span><span class="pill blue">浏览器操作</span><span class="stars">⭐ 20K</span></h4>
+    <div class="repo">github.com/browser-use / jev-ultrafast</div>
+    <p>browser-use 出品的标志性项目：把网页转成带编号的控件表，Jev 每步只回答「下一步做什么、点哪个元素」两件事；只有需要打字时才交给小生成模型。Google Flights 苏黎世→伦敦完整搜索约 7.1 秒、中位 Jev 延迟约 178ms，浏览器协议调用从一千多次降到约一百次。是「感知在代码、决策在模型」路线的代表作。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">LangChain · TypeSafe 集成</span><span class="pill blue">SDK 集成</span><span class="stars">⭐ 146.9K</span></h4>
+    <div class="repo">LangChain 官方集成</div>
+    <p>在 Python 工作流中原生暴露二值判断、分类、序数打分三类 Jev 决策节点。LangChain 还发布过小规模实验：让 Jev 与多个前沿大模型对固定 Agent 输出反复打分，Jev 每次调用约 0.44 秒、成本约 $0.00035，且连续打分一致性良好（官方也强调这仍是早期小规模测试）。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">LiteLLM · JEV Router</span><span class="pill blue">路由优化</span><span class="stars">⭐ 59.4K</span></h4>
+    <div class="repo">LiteLLM 集成</div>
+    <p>在请求进入后端模型之前，先用 Jev 对任务复杂度做分类，据此选择模型档位与推理深度——简单的改注释走便宜快档，架构/安全问题走强档。代表「决策模型做流量调度」的典型用法。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">Vercel AI SDK · TypeSafe</span><span class="pill blue">SDK 集成</span><span class="stars">⭐ 26.9K</span></h4>
+    <div class="repo">Vercel AI SDK 集成</div>
+    <p>把 choice / score / yes-no 三类问题映射到统一的 evaluate 接口，前端与全栈开发者可以在既有 AI SDK 习惯里直接嵌入类型化决策。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">Cua · JEV Use</span><span class="pill blue">电脑操作</span><span class="stars">⭐ 26.0K</span></h4>
+    <div class="repo">trycua / cua</div>
+    <p>在 Cua 的计算机使用 Agent 中，由 Jev 从 DOM 描述或视觉区域描述中选择动作 ID——把「下一步操作」收敛为封闭选项选择，降低每步调用的延迟与成本。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">json-render（Vercel Labs）</span><span class="pill purple">生成式 UI</span></h4>
+    <div class="repo">github.com/vercel-labs / json-render</div>
+    <p>生成式 UI 框架：先定义组件白名单目录，模型只能在目录内组装界面。v0.21.0 加入实验性 Jev 组合器——Jev 不逐 token 生成 JSON，只在候选组件、属性、布局中做 Choice，代码把选择拼成合法 spec 再渲染，从机制上消灭非法 JSON。适合受不了模型写出非法 schema 的产品团队。</p>
+  </div>
+</div>
+
+<h3>🛠 Agent 基建与工作流</h3>
+<div class="grid grid-2">
+  <div class="proj">
+    <h4><span class="name">fast-jev-compaction</span><span class="pill orange">上下文压缩</span></h4>
+    <div class="repo">github.com/tamaratran / fast-jev-compaction</div>
+    <p>Claude Code 插件。官方 compaction 会「总结」旧对话、容易丢掉文件路径和报错原文；该插件把整段会话交给 Jev，对每条工具调用问「还需要吗」，无用的删除或截断、有用的原文保留。实测 18.8 万 token 压到 3.3 万，约 1.4 秒、压缩率 82%，失败后回退官方摘要。发布后迅速走红并衍生多个移植版。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">Winnow</span><span class="pill orange">上下文治理</span></h4>
+    <div class="repo">github.com/GhalebDweik / Winnow</div>
+    <p>在工具结果刚进上下文的那一刻做「垃圾回收」：大段 Read/Bash/Grep 输出切成约 25 行一块，Jev 判断「当前任务还需要吗」，确定无关的换成三行占位（全文本地缓存可回取），看起来像报错的一律不藏。原则：不确定就不能丢。适合被大文件和日志淹没上下文的 Agent 用户。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">typesafe-mcp</span><span class="pill orange">MCP 接入</span></h4>
+    <div class="repo">github.com/itsmostafa / typesafe-mcp</div>
+    <p>Go 单二进制 MCP 服务器：装好后 Claude Code、Claude Desktop、Codex、Pi 都能直接调 <code>evaluate</code> 工具，把 state + 类型化问题丢给 Jev 拿回概率答案。没有提示词要维护，一条命令完成注册——最适合刚拿到 API Key 的人先验证「Agent 会不会主动来问 Jev」。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">jev-mcp</span><span class="pill orange">判断工具箱</span></h4>
+    <div class="repo">github.com/jkudish / jev-mcp</div>
+    <p>把常见判断收成十个 MCP 工具：<code>jev_verify</code>（主张 vs 证据核对）、<code>jev_screen</code>（进上下文前筛不可信内容）、<code>jev_find/rerank</code>（语义查找与重排）、<code>jev_review/gate</code>（看 diff、核对「做完了」的声明）等。Agent 仍负责改文件跑命令，Jev 只给类型化判决，单次调用约 150–500ms。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">jev-review</span><span class="pill orange">代码审查</span></h4>
+    <div class="repo">github.com/devagrawal0 / jev-review</div>
+    <p>分阶段审查流水线：风险矩阵（Noul）→ 文件画像（Choice+Score）→ 抽证据 → 机制分类 → 严重度打分 → 再决定要不要交给更贵的模型或人，结果在本机看板展开。强调「Jev 打分，人或 Agent 改代码」。被社区评价为「最值得抄」的审查类项目。适合 PR 太多、想先筛「周五能不能合」的团队。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">Canny</span><span class="pill orange">完成度核验</span></h4>
+    <div class="repo">github.com/qkal / Canny</div>
+    <p>挂在 Claude Code / Codex 的 hook 上，记一本只追加不改写的账本：改了哪些文件、跑过什么命令、退出码多少、测试过没有。Agent 宣称「完成」时先看账本有没有证据——没跑测试、没构建、刚改完就报完成，直接拦住。README 第一行写着设计原则：事实归代码，判断归 Jev，只有事实能否决。零运行时依赖。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">jev-codex-router</span><span class="pill orange">模型路由</span></h4>
+    <div class="repo">github.com/0xNatoshi / jev-codex-router</div>
+    <p>Codex 每一轮（含工具续写）先由 Jev 判断任务难度，再自动选择模型档位、思考深度与速度模式。本地跑分类服务，接到 Codex Router 的 <code>jev/auto</code> provider。适合订阅里有多档模型、心疼每轮都开满推理的人。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">SemDecide</span><span class="pill orange">语义 CLI</span></h4>
+    <div class="repo">github.com/sharziki / semdecide</div>
+    <p>被称为「意义版 grep、判断版 jq」：标准输入灌文本或 JSONL，输出谓词判断、路由、分数、过滤后的流和稳定的进程退出码。典型接法：爬虫结果先过相关性过滤、CI 里对 changelog/告警分类、数据管道按语义丢垃圾行。适合运维与数据工程师，不想为一次分类拉起完整 Agent。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">Blink</span><span class="pill green">语义搜索</span></h4>
+    <div class="repo">github.com/ellipsis-dev / Blink</div>
+    <p>把代码仓库当成要走的迷宫：多个 walker 从根目录出发，Jev 给文件夹和文件名打分（只读路径名不读全文），高分路径分到更多 walker，直到落到具体文件，输出每个文件收走多少 walker 的关注。适合大仓库冷启动时快速缩小范围，再让大模型精读。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">jegrep / neo4jev / jev-curate</span><span class="pill green">数据与检索</span></h4>
+    <div class="repo">多个仓库</div>
+    <p><strong>jegrep</strong>：对活代码树做语义搜索、无需建索引。<strong>neo4jev</strong>（Neo4j 社区老兵 Michael Hunger）：在知识图谱上边走边问——走到一个节点就把出边列成 Choice，由 Jev 概率分布决定下一条边，提供可解释的 GraphRAG 探索路径。<strong>jev-curate</strong>：Rust CLI + Python，流式筛选 JSONL/Parquet 训练数据（质量/相关性/风险量表），宣称每秒 1500+ 行，利用「输出 token 免费」的成本优势做海量语料过滤。</p>
+  </div>
+</div>
+
+<h3>🎮 实时控制与垂直应用</h3>
+<div class="grid grid-2">
+  <div class="proj">
+    <h4><span class="name">typesafe-mario</span><span class="pill purple">游戏控制</span></h4>
+    <div class="repo">github.com/fhshaik / typesafe-mario</div>
+    <p>把模拟器 RAM 翻译成结构化 JSON（马里奥位置、敌人、地形、近期操作效果），Jev 在封闭动作集里每 8 帧做一次决策。教学意义极强：感知完全在代码里完成，模型只做选择——去掉视觉才能单独衡量决策质量。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">jev-drone</span><span class="pill purple">机器人/无人机</span></h4>
+    <div class="repo">github.com/RomanSlack / jev-drone</div>
+    <p>MuJoCo 四旋翼仿真的「战术层」示范：几何控制器跑在控制频率上负责稳定与安全，Jev 以约 2.5Hz 看结构化态势，决定爬升、刹车、穿缝等上层动作；策略全部写成可调数值而非提示词长文。把「判断」与「控制」拆开，对机器人与自动驾驶很有参考价值（仿真演示，非真机适航）。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">jev-trader / Prism</span><span class="pill purple">量化交易</span></h4>
+    <div class="repo">github.com/jarrodwatts / jev-trader</div>
+    <p>对照着看最有意思：<strong>jev-trader</strong> 让 Jev 在 Monad 约 300ms 的区块节奏里直接判断买/卖（模型延迟约 81ms），代码负责算中间价、库存与硬风控；<strong>Prism</strong> 则刻意保守——Jev 只判断 toxic flow、市场压力、均值回归等状态标签，执行仍走原有确定性策略，「亏钱的那一步保持确定性」。两者代表同一技术的两种风险态度。</p>
+  </div>
+  <div class="proj">
+    <h4><span class="name">APUS fast-browser-use / RSI-Jev</span><span class="pill green">复现研究</span></h4>
+    <div class="repo">APUS-AI-Lab / fast-browser-use；RSI-Jev</div>
+    <p>APUS 基于公开文档独立复现了 Jev 的核心逻辑（跳过自回归解码、隐状态直接打分、KV-Cache 广播与并发批量评估），封装为开箱即用的本地 Agent Skill：可见交互元素编成编号候选，由本地 Qwen3.5 单次前向完成「点哪里」的决策，从机制上消除选择器幻觉，MIT 协议、纯本地离线。<strong>RSI-Jev</strong>（哈佛研究员）则更进一步：让 AI Agent 自动提出类 Jev 模型的改进方案、跑实验、评估并迭代（已迭代至 v3.0、累计 204 个实验分支），在记忆重排序任务上把 R@1 从 0.192 提升到 0.308。</p>
+  </div>
+</div>
+
+<!-- ============ 第四部分：Open Jev 复刻 ============ -->
+<h2>四、Open Jev：复刻决策模型的八条技术路线</h2>
+
+<div class="callout info">
+  <strong>为什么有这么多复刻？</strong>
+  Jev 是托管闭源服务，且未向中国大陆开放。社区「Open Jev」阵营的目标是从不同技术路线复刻「状态 + 类型化问题 + 概率输出」这一接口形态，换取本地部署、离线运行和数据不出域。注意：各项目自测数字来自不同题集，复刻的是接口而非决策质量，概率校准普遍未达到 Jev 水平，生产使用前必须用自有业务数据验证。
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <tr><th>项目</th><th>路线</th><th>特点与自测数据</th><th>适合谁</th></tr>
+  <tr>
+    <td><strong>SemIf</strong><br><span style="color:var(--muted);font-size:12px">TheoLeeCJ</span></td>
+    <td>冻结现成大模型，读选项位置 logits</td>
+    <td>不解码任何 token，一次前向取固定选项分数做 softmax。Qwen3.5-4B，RTX 3090 上 21 个二元判断约 1.02 秒（生成同等 JSON 需 5.3 秒），102 行对齐子集一致率约 84.5%（Jev 公布 88.3%）。概率未经校准。MIT。</td>
+    <td>想当天跑通、门槛最低（3090 / Apple Silicon / WebGPU 均可）</td>
+  </tr>
+  <tr>
+    <td><strong>Simple Jev</strong><br><span style="color:var(--muted);font-size:12px">featherless</span></td>
+    <td>共享前缀只读一次（KV cache 复用）</td>
+    <td>公共说明 + state 算成共享前缀，每个问题只跑自己的后缀再读允许标签的 logits，由服务器拼 JSON。作者明确声明：复刻的是接口和用法，不代表准确率与校准已达 Jev 水平。提供本地 HF/PyTorch 服务与在线演示 API。</td>
+    <td>想把工单路由、情绪分级先跑起来的团队</td>
+  </tr>
+  <tr>
+    <td><strong>Laya</strong><br><span style="color:var(--muted);font-size:12px">Convai Innovations</span></td>
+    <td>专用小型分类器结构</td>
+    <td>几亿参数：ModernBERT/mmBERT 编码 state 与选项 + 决策头。速度是名片：T4 上单问题 p50 约 32.8ms，比 Jev 公布值快 7–8 倍。短板：Banking77 意图分类仅 42.5%（Jev 87.0%），选项一多就被挤爆。Apache 2.0，完全本地。</td>
+    <td>选项不多、要极低延迟、要离线的场景（⭐ 17.1K）</td>
+  </tr>
+  <tr>
+    <td><strong>Von</strong><br><span style="color:var(--muted);font-size:12px">wfzyx</span></td>
+    <td>从头训练的专用决策模型</td>
+    <td>约 395M，双向编码器 + Option-Marker 并行选项注意力，单次前向同时处理 Choice/Noul/Score；本地 GPU / Apple MPS 单次十几到二十毫秒。自测 49 任务宏准确率约 71.5%，与闭源 Jev 有可见落差。定位为本地替代：工单分流、内容审核、亚 20ms 闭环控制。</td>
+    <td>要极小模型、可本地、延迟敏感的控制类任务</td>
+  </tr>
+  <tr>
+    <td><strong>Verdict</strong><br><span style="color:var(--muted);font-size:12px">Heman10x</span></td>
+    <td>专打校准与顺序稳健性</td>
+    <td>约 150M，ModernBERT-base 双头：一个输出选项分布、一个单独输出置信度；训练加入 Symmetric Permutation-KL（打乱选项顺序惩罚分布不一致）。2000 条留出决策：准确率 77.10%、Brier 0.0636、置信度头 ECE 0.0144。GTX 1660 Ti 训练约 8.8 小时。</td>
+    <td>最在意「虚高置信度」和「换序变卦」问题的人——复刻派里最对题的一个</td>
+  </tr>
+  <tr>
+    <td><strong>Kev</strong><br><span style="color:var(--muted);font-size:12px">Jared Palmer</span></td>
+    <td>改造现有大模型（Qwen3.5）</td>
+    <td>共享前缀只读一次，问题间用块因果掩码隔离；API 刻意对齐官方 System One，官方 SDK 改 base URL 即可指向本地。公开 0.8B / 4B / 9B。Kev-9B 外部测试集约 83.7%（Jev 约 85.7%），Brier 差距在收窄。Apache-2.0。</td>
+    <td>愿意微调、又想留住 Qwen 世界知识的人——最接近「开源版 Jev 配方」</td>
+  </tr>
+  <tr>
+    <td><strong>Nimble</strong><br><span style="color:var(--muted);font-size:12px">Bespoke Labs</span></td>
+    <td>训练把 Qwen 练成决策模型</td>
+    <td>更像可复现的训练论文：Qwen3.5-9B 底座，LoRA 只训答案 token；数据配方是构造几乎相同、只改一个事实让答案翻转的两段材料，逼模型学「哪一句在决定答案」。324 条留出样本匹配率 90.12%，超过未微调 27B（84.88%），距 Jev 的 93.21% 约 3 个点；样本偏窄、概率未完全校准。</td>
+    <td>想做垂直领域「小 Jev」的团队——对比翻转的数据配方比堆分类样本更值得抄</td>
+  </tr>
+  <tr>
+    <td><strong>OpenJev</strong><br><span style="color:var(--muted);font-size:12px">razorback16</span></td>
+    <td>扩散模型一次填多个答案槽</td>
+    <td>最不一样的一条：不按 token 生成，对整块「画布」去噪，一次填多个答案槽，没有 JSON 解析、格式上不可能写出 schema 以外的东西。NVIDIA 量化 DiffusionGemma 26B-A4B，RTX PRO 6000 上每请求 3 个问题并发 1 时 p50/p95 约 94ms。限制：choice 最多 128 选项（Jev 为 255），显存门槛约 24GB。</td>
+    <td>愿意折腾扩散生成物理的实验者——「换一种生成物理」的路线</td>
+  </tr>
+</table>
+</div>
+
+<!-- ============ 第五部分：选型 ============ -->
+<h2>五、选型建议与上手路径</h2>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h3 style="margin-top:0">按需求选项目</h3>
+    <ul class="tight">
+      <li><strong>网页/桌面自动化</strong>：jev-ultrafast（云端 API、最快上手）、APUS fast-browser-use（纯本地、无 GPU 也可）</li>
+      <li><strong>上下文治理</strong>：Winnow（工具输出进上下文前过滤）、fast-jev-compaction（会话压缩）</li>
+      <li><strong>代码审查</strong>：jev-review（本地看板分阶段审查）</li>
+      <li><strong>给 Agent 加判断层</strong>：typesafe-mcp（快速接入）→ jev-mcp（十个判断工具）</li>
+      <li><strong>训练数据筛选</strong>：jev-curate（Rust 高吞吐流水线）</li>
+      <li><strong>本地/离线部署</strong>：Simple Jev（服务化）、Laya/Von（极小模型低延迟）、Kev/Nimble（可微调的 Qwen 路线）</li>
+      <li><strong>最在意概率校准</strong>：Verdict</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">推荐的上手顺序</h3>
+    <ol class="tight">
+      <li><strong>先装 typesafe-mcp</strong>：一条命令注册，验证「Agent 会不会主动来问 Jev」这个最小闭环。</li>
+      <li><strong>按场景挑一个单点工具</strong>：上下文乱选 Winnow，做网页 Agent 选 jev-ultrafast，筛数据选 jev-curate。</li>
+      <li><strong>有合规/离线需求再评估 Open Jev</strong>：用自有业务数据做分桶校准验证，不要直接采信各仓库自测数字。</li>
+      <li><strong>确立设计纪律</strong>：写和想归大模型，判和选归 Jev，执行权与事实核验留在确定性代码里。</li>
+    </ol>
+  </div>
+</div>
+
+<div class="callout ok">
+  <strong>✅ 三条值得记住的规律</strong>
+  ① 所有成功项目的共同点：模型只负责在封闭选项里给概率，程序自己决定怎么分支，执行权留在代码里（Prism 不碰下单键、Canny 只有事实能否决、jev-review 强调 Jev 打分人改代码）。② 复刻派证明「接口形态」可以当天复刻，但不证明「决策质量」已经齐平——概率校准是核心壁垒。③ 「封闭选项 + 概率输出」这个接口形态本身比任何单一模型都更值得投资：模型会迭代，接口可以先在自己的系统里试起来。
+</div>
+
+<div class="callout warn">
+  <strong>⚠️ 风险与注意事项</strong>
+  ① Jev 服务未向中国大陆开放，接入需考虑网络与合规；② 生态极度年轻（2026-09 中才发布），多数项目没有正式版本、提交数少，社区评估直言「没有一个能上生产，建议读它们而不是上线它们」；③ 官方性能数字来自自家测试集；④ 复刻项目之间准确率不可横向比较（题集不同）；⑤ 浏览器/桌面自动化项目的共同盲区：无障碍树残缺、自定义绘制控件、验证码会让判断层「失明」。
+</div>
+
+<footer>
+  <p><strong>主要参考来源</strong>：TypeSafe AI 官方发布信息与社区案例；Awesome JEV（BeatAPI/awesome-jev，228 项目目录）；《Jev 火了两周，开源生态已经长出 28 个项目》（掘金/技术栈转载整合）；36氪《Why Is Jev Viral?》；科技日报、央广网对 APUS 开源复现的报道；腾讯新闻对 RSI-Jev 的报道；failproof.ai《Is Jev open source?》核验文章；bestjev / jev-ai.ai 项目目录。各项目数据以原始仓库为准，本报告整理于 2026-10-08。</p>
+  <p style="margin-top:8px">免责声明：本报告仅供技术调研参考，不构成任何投资或使用建议；涉及交易类项目（jev-trader 等）均为实验性质。</p>
+</footer>
+
+</div>
+</body>
+</html>

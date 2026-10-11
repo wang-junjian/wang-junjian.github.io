@@ -5,9 +5,9 @@ import { metaContent, titleContent } from './htmlMeta';
 import { getHtmlPostUrl, getPostUrl } from './entryUrls';
 import { assertUniqueBasenames } from './postFiles';
 
-const POSTS_DIR = 'posts';
+const POSTS_DIR = 'posts-html';
 
-/** HTML 文章的元数据，从 posts/YYYY/*.html 的 <head> 中解析。 */
+/** HTML 文章的元数据，从 posts-html/YYYY/*.html 的 <head> 中解析。 */
 export interface HtmlPostMeta {
   /** basename 去扩展名，如 2026-09-22-ai-native-sdlc-workflow-guide */
   id: string;
@@ -107,7 +107,7 @@ export function parseHtmlPost(filePath: string): HtmlPostMeta {
 }
 
 /**
- * 扫描 posts/ 下全部 HTML 文章，按日期降序返回。
+ * 扫描 posts-html/ 下全部 HTML 文章，按日期降序返回。
  * basename（年份目录剥掉后的 id）必须全库唯一，冲突直接抛错。
  */
 export function getHtmlPosts(baseDir = process.cwd()): HtmlPostMeta[] {
