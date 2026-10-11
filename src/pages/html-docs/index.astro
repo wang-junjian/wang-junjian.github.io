@@ -1,0 +1,84 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolCard from '../../components/ToolCard.astro';
+import { getHtmlPosts } from '../../utils/htmlPosts';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+
+const docs = getHtmlPosts();
+---
+
+<BaseLayout
+  title={`HTML文档 - ${SITE_TITLE}`}
+  description={`独立 HTML 文档集合，自包含页面，点击直达原文。${SITE_DESCRIPTION}`}
+  canonical={Astro.url.toString()}
+  showChat={false}
+>
+  <section class="pt-10 pb-16 px-8">
+    <div class="max-w-grid mx-auto">
+      <div class="max-w-2xl mx-auto mb-10">
+        <div class="relative">
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+          </div>
+          <input
+            type="search"
+            id="docSearch"
+            placeholder={`搜索 ${docs.length} 篇 HTML 文档...`}
+            class="w-full pl-12 pr-4 py-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus-visible:outline-none focus:border-[var(--accent)] transition-colors"
+            style="outline: none !important; box-shadow: none !important;"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      {docs.length === 0 ? (
+        <p class="text-center text-[var(--text-secondary)]">暂无 HTML 文档。</p>
+      ) : (
+        <div id="docsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {docs.map((doc, index) => (
+            <ToolCard
+              href={doc.url}
+              title={doc.title}
+              excerpt={doc.excerpt}
+              tags={doc.tags}
+              date={doc.date.toISOString()}
+              author={doc.author}
+              index={index}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  (function() {
+    const searchInput = document.getElementById('docSearch') as HTMLInputElement | null;
+    const grid = document.getElementById('docsGrid');
+    if (!searchInput || !grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.tool-card'));
+
+    function filterDocs(query: string) {
+      const normalized = query.trim().toLowerCase();
+
+      cards.forEach((card) => {
+        const title = card.getAttribute('data-title') || '';
+        const excerpt = card.getAttribute('data-excerpt') || '';
+        const tags = card.getAttribute('data-tags') || '';
+        const match =
+          !normalized ||
+          title.includes(normalized) ||
+          excerpt.includes(normalized) ||
+          tags.includes(normalized);
+        (card as HTMLElement).style.display = match ? '' : 'none';
+      });
+    }
+
+    searchInput.addEventListener('input', () => filterDocs(searchInput.value));
+  })();
+</script>
