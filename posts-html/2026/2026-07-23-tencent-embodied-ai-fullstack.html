@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="深度解析腾讯 WAIC 2026 具身智能全栈方案：以「拟人脑」映射串联 VLM 右脑、RxBrain 大脑与 VLA 小脑，首创文本推理与视觉想象协同，真机平均成功率 87%；逐层拆解四层架构、TairosAgent 调度与云端 EaaS，并附开源模型地址。">
+<meta name="keywords" content="腾讯, 具身智能, 全栈架构, WAIC 2026, Robotics X, 技术解析">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-07-23">
+<title>腾讯具身智能全栈方案 · 技术原理深度解析（WAIC 2026）</title>
+<style>
+  :root{
+    --blue:#0052D9; --blue-soft:#E8F0FE; --ink:#1A1A1A; --sub:#555;
+    --line:#E2E6EE; --bg:#FFFFFF; --gray-bg:#F6F8FB;
+    --green:#1AAD6B; --orange:#FF7A1A; --purple:#7B5CFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.75;font-size:15px;}
+  .wrap{max-width:980px;margin:0 auto;padding:48px 28px 80px;}
+  h1{font-size:30px;line-height:1.3;margin:0 0 6px;}
+  .lead{color:var(--sub);font-size:15px;margin:0 0 28px;}
+  h2{font-size:22px;margin:46px 0 14px;padding-left:12px;border-left:5px solid var(--blue);}
+  h3{font-size:17px;margin:28px 0 8px;color:var(--blue);}
+  p{margin:10px 0;}
+  .meta{font-size:13px;color:#8A93A3;margin-bottom:30px;}
+  .card{background:var(--gray-bg);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:18px 0;}
+  .tag{display:inline-block;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--blue-soft);color:var(--blue);font-weight:600;margin-right:6px;}
+  .flow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;}
+  .box{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .box b{color:var(--ink);}
+  .box .s{font-size:13px;color:var(--sub);}
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px;}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;}
+  th{background:var(--blue-soft);color:var(--blue);font-weight:600;}
+  code{background:#F0F2F7;padding:2px 6px;border-radius:5px;font-size:13px;font-family:"SFMono-Regular",Consolas,monospace;}
+  .note{border-left:4px solid var(--orange);background:#FFF6EE;padding:12px 16px;border-radius:0 10px 10px 0;margin:16px 0;font-size:14px;}
+  .ok{border-left:4px solid var(--green);background:#EEFBF4;padding:12px 16px;border-radius:0 10px 10px 0;margin:16px 0;font-size:14px;}
+  .fig{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin:20px 0;text-align:center;}
+  .fig svg{width:100%;height:auto;max-width:760px;}
+  .cap{font-size:13px;color:var(--sub);margin-top:8px;}
+  ul{margin:10px 0;padding-left:22px;} li{margin:6px 0;}
+  .pill-blue{background:#0052D9;color:#fff;} .pill-purple{background:#7B5CFF;color:#fff;}
+  .pill-green{background:#1AAD6B;color:#fff;} .pill-orange{background:#FF7A1A;color:#fff;}
+  .pill{display:inline-block;font-size:12px;padding:3px 9px;border-radius:14px;font-weight:600;}
+  .footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:#8A93A3;}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>腾讯具身智能全栈方案 · 技术原理深度解析</h1>
+  <p class="lead">WAIC 2026 腾讯 AI 应用创新论坛 · 首次系统性打通「感知—身体—行动」闭环</p>
+  <div class="meta">资料来源：腾讯官方发布稿、腾讯云开发者社区技术文章、Robotics X 实验室 & 福田实验室 & 腾讯混元联合发布内容（2026-07）</div>
+
+  <div class="card">
+    <p style="margin-top:0"><span class="tag">核心理念</span>腾讯首席科学家张正友提出：今天最聪明的人工智能本质是「缸中之脑」——善于逻辑、文本与问答，却缺少与物理世界直接互动的闭环。真正的智能要让<strong>语言、视觉、空间认知、身体控制和环境反馈</strong>在「感知—身体—行动」闭环里接受验证。</p>
+    <p style="margin-bottom:0">本次发布的五项成果，体现了腾讯「<strong>从离身走向具身、从分裂模块走向整体闭环</strong>」的探索思路：三个基座模型 + 一个智能体框架 + 一个 Always-on 智能体 + 升级的开源平台 + 云端 EaaS 服务。</p>
+  </div>
+
+  <!-- ===== 总览：四层架构 ===== -->
+  <h2>一、全栈四层架构总览</h2>
+  <p>整套方案贯穿四个层级，从下到上分别是<strong>云底座 → 模型层 → 智能体框架层 → 平台层</strong>，最上层是零售导览、养老照护、工厂作业等真实应用，形成「数据/算力 → 模型 → 调度 → 本体 → 反馈」的完整链路。</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 760 520" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC',sans-serif">
+      <!-- 应用层 -->
+      <rect x="40" y="20" width="680" height="60" rx="12" fill="#FFF6EE" stroke="#FF7A1A" stroke-width="1.5"/>
+      <text x="60" y="46" fill="#FF7A1A" font-size="15" font-weight="700">应用层 · 真实场景落地</text>
+      <text x="60" y="68" fill="#555" font-size="13">零售导览（众擎PM01）· 文旅导览（敦煌·宇树G1）· 养老照护 · 工厂作业（日化产线）· 按摩服务（小六机器人）</text>
+
+      <!-- 平台层 -->
+      <rect x="40" y="100" width="680" height="78" rx="12" fill="#F3EFFF" stroke="#7B5CFF" stroke-width="1.5"/>
+      <text x="60" y="126" fill="#7B5CFF" font-size="15" font-weight="700">平台层 · Tairos（钛螺丝）开放平台（2025 发布，2026 全面升级 + 开源）</text>
+      <text x="60" y="150" fill="#555" font-size="13">开源模型 / 智能体 / 开发工具 · RoboFusion「一线连接」· HAL 硬件抽象层 · 建图语料工具 · Isaac Sim 云端仿真（62类物体/20种动画）</text>
+
+      <!-- 智能体框架层 -->
+      <rect x="40" y="198" width="680" height="78" rx="12" fill="#E8F0FE" stroke="#0052D9" stroke-width="1.5"/>
+      <text x="60" y="224" fill="#0052D9" font-size="15" font-weight="700">智能体框架层 · TairosAgent 框架 + Apexio（Always-on）智能体</text>
+      <text x="60" y="248" fill="#555" font-size="13">调度「左右脑 / 大脑 / 小脑 / 身体」整合成完整系统 → 持续感知、持续决策、持续行动的闭环整体</text>
+
+      <!-- 模型层 -->
+      <rect x="40" y="296" width="680" height="92" rx="12" fill="#EEFBF4" stroke="#1AAD6B" stroke-width="1.5"/>
+      <text x="60" y="322" fill="#1AAD6B" font-size="15" font-weight="700">模型层 · 混元基座之上的具身模型矩阵（拟人脑映射）</text>
+      <text x="60" y="346" fill="#555" font-size="13"><tspan fill="#FF7A1A" font-weight="700">VLM-1.0「右脑」</tspan> 感知/空间/场景理解（1/10 算力达旗舰性能）</text>
+      <text x="60" y="370" fill="#555" font-size="13"><tspan fill="#7B5CFF" font-weight="700">RxBrain-1.0「大脑」</tspan> 认知推理 + 视觉想象 · <tspan fill="#0052D9" font-weight="700">VLA-0.5「小脑+身体」</tspan> 视觉-语言-动作统一建模</text>
+
+      <!-- 云底座 -->
+      <rect x="40" y="408" width="680" height="92" rx="12" fill="#F6F8FB" stroke="#8A93A3" stroke-width="1.5"/>
+      <text x="60" y="434" fill="#333" font-size="15" font-weight="700">云底座 · EaaS（Embodied-AI-as-a-Service）三层体系</text>
+      <text x="60" y="458" fill="#555" font-size="13">① 算力底座：GPU/HCC 万卡集群 · 星脉网络 · COS / GooseFS 存储</text>
+      <text x="60" y="482" fill="#555" font-size="13">② 模型服务：TI-ONE 训练推理 · TokenHub 承载 MaaS 调度</text>
+      <text x="60" y="504" fill="#555" font-size="13">③ 感知交互：TRTC 实时音视频 · TRRO 远程实时操控 · 视图计算 · MPS · 智能标注 · 语音交互</text>
+
+      <!-- 连接线 -->
+      <line x1="380" y1="80" x2="380" y2="100" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="380" y1="178" x2="380" y2="198" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="380" y1="276" x2="380" y2="296" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="380" y1="388" x2="380" y2="408" stroke="#ccc" stroke-width="1.5"/>
+    </svg>
+    <div class="cap">图 1 · 腾讯具身智能全栈四层架构（自下而上：云底座支撑模型，模型经智能体框架整合，平台层开放给开发者，最终落到真实应用）</div>
+  </div>
+
+  <!-- ===== 拟人脑映射与闭环 ===== -->
+  <h2>二、拟人脑映射：三个模型如何分工协作</h2>
+  <p>三个模型都基于<strong>腾讯混元大模型</strong>打造，官方形象地将其映射为「左右脑 + 大脑 + 小脑 + 身体」：</p>
+
+  <table>
+    <tr><th>拟人角色</th><th>模型</th><th>核心职责</th><th>关键能力 / 数据</th></tr>
+    <tr>
+      <td><span class="pill pill-orange">右脑</span></td>
+      <td><b>Hy-Embodied-VLM-1.0</b></td>
+      <td>感知：看懂图像、空间关系、场景</td>
+      <td>仅约 <b>1/10 算力</b>即逼近上一代旗舰性能；语言-视觉-空间联合理解，构建层次化信息与具身记忆</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">大脑</span></td>
+      <td><b>Hy-Embodied-RxBrain-1.0</b></td>
+      <td>认知推理 + 对未来状态的想象（goal）</td>
+      <td>首创「文本推理 × 视觉想象」协同；基于 <b>5w+ 小时</b>具身数据；约 6.2B 参数</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-blue">小脑+身体</span></td>
+      <td><b>Hy-Embodied-VLA-0.5</b></td>
+      <td>把高层目标转成连续、可纠错的动作</td>
+      <td>视觉-语言-动作统一建模；超 <b>1 万小时</b>人类示教数据；RoboDojo 仿真综合第一</td>
+    </tr>
+  </table>
+
+  <div class="fig">
+    <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC',sans-serif">
+      <!-- 感知 -->
+      <rect x="30" y="140" width="130" height="80" rx="12" fill="#FFF6EE" stroke="#FF7A1A" stroke-width="1.5"/>
+      <text x="95" y="172" fill="#FF7A1A" font-size="14" font-weight="700" text-anchor="middle">VLM 右脑</text>
+      <text x="95" y="194" fill="#555" font-size="12" text-anchor="middle">看场景/空间</text>
+
+      <!-- 大脑 -->
+      <rect x="200" y="140" width="150" height="80" rx="12" fill="#F3EFFF" stroke="#7B5CFF" stroke-width="1.5"/>
+      <text x="275" y="168" fill="#7B5CFF" font-size="14" font-weight="700" text-anchor="middle">RxBrain 大脑</text>
+      <text x="275" y="190" fill="#555" font-size="12" text-anchor="middle">推理 + 想象目标</text>
+
+      <!-- 小脑 -->
+      <rect x="390" y="140" width="150" height="80" rx="12" fill="#E8F0FE" stroke="#0052D9" stroke-width="1.5"/>
+      <text x="465" y="168" fill="#0052D9" font-size="14" font-weight="700" text-anchor="middle">VLA 小脑+身体</text>
+      <text x="465" y="190" fill="#555" font-size="12" text-anchor="middle">生成可执行动作</text>
+
+      <!-- 本体 -->
+      <rect x="580" y="140" width="150" height="80" rx="12" fill="#EEFBF4" stroke="#1AAD6B" stroke-width="1.5"/>
+      <text x="655" y="172" fill="#1AAD6B" font-size="14" font-weight="700" text-anchor="middle">机器人本体</text>
+      <text x="655" y="194" fill="#555" font-size="12" text-anchor="middle">执行 / 接触世界</text>
+
+      <!-- 箭头 -->
+      <line x1="160" y1="180" x2="198" y2="180" stroke="#999" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="350" y1="180" x2="388" y2="180" stroke="#999" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="540" y1="180" x2="578" y2="180" stroke="#999" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- 调度层 -->
+      <rect x="200" y="40" width="530" height="48" rx="10" fill="#fff" stroke="#0052D9" stroke-dasharray="5 4" stroke-width="1.5"/>
+      <text x="465" y="69" fill="#0052D9" font-size="13" font-weight="700" text-anchor="middle">TairosAgent 框架 + Apexio（Always-on）：调度整合「左右脑/大脑/小脑/身体」</text>
+
+      <!-- 反馈环 -->
+      <path d="M655 220 C 700 300, 95 300, 95 224" fill="none" stroke="#1AAD6B" stroke-width="2" marker-end="url(#a)"/>
+      <text x="380" y="320" fill="#1AAD6B" font-size="13" font-weight="700" text-anchor="middle">环境反馈（视觉/力觉/触觉）→ 持续感知 → 持续决策 → 持续行动</text>
+
+      <defs>
+        <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#999"/>
+        </marker>
+      </defs>
+    </svg>
+    <div class="cap">图 2 · 拟人脑分工与「感知—身体—行动」闭环（绿色回路=环境反馈驱动的持续闭环，由 TairosAgent/Apexio 统一调度）</div>
+  </div>
+
+  <div class="note">为什么需要三个模型而不是一个？单一 VLA 把「理解、推理、想象、动作」强行塞进一个模型时，目标物理状态往往是<strong>隐式的</strong>，还需要额外世界模型/价值模型判断结果；而纯 World Model 又难以显式表达任务逻辑。腾讯的分工是让每个部件各司其职、再通过智能体框架闭环整合。</div>
+
+  <!-- ===== 模型层详解 ===== -->
+  <h2>三、模型层技术原理详解</h2>
+
+  <h3>3.1  VLM-1.0「右脑」· 高效感知</h3>
+  <ul>
+    <li>定位：多模态感知模型，实现<strong>语言-视觉-空间联合理解</strong>，构建层次化信息与具身记忆。</li>
+    <li>核心卖点：依托混元基座的蒸馏/高效架构，仅用约 <b>1/10 算力</b>即达到上一代旗舰感知模型的性能——这对机器人本体端侧/边缘部署意义重大（更低延迟、更低功耗）。</li>
+    <li>它同时是下游 RxBrain 的基座（RxBrain「依托 Hy-Embodied-VLM 系列基座开发」）。</li>
+  </ul>
+
+  <h3>3.2  RxBrain-1.0「大脑」· 会推理且会想象（最核心创新）</h3>
+  <p>这是整套方案里最具突破性的模型。机器人进入开放环境后，不仅要知道「下一步做什么」，还要理解「为什么这样做」和「完成后世界应该变成什么样」。RxBrain 把<strong>文本推理</strong>与<strong>视觉想象</strong>在一条连续认知序列中协同发生。</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,'PingFang SC',sans-serif">
+      <!-- 架构框 -->
+      <rect x="40" y="30" width="680" height="120" rx="14" fill="#F3EFFF" stroke="#7B5CFF" stroke-width="1.5"/>
+      <text x="60" y="56" fill="#7B5CFF" font-size="15" font-weight="700">RxBrain 架构：以模态为路由的 Mixture-of-Transformers（MoT）</text>
+      <text x="60" y="80" fill="#555" font-size="13">共享统一注意力空间 + 模态专用计算路径；文本通路≈1.5B、视觉理解通路≈1.5B、视觉生成 FFN Expert≈2.4B</text>
+
+      <rect x="60" y="98" width="180" height="40" rx="8" fill="#fff" stroke="#7B5CFF"/>
+      <text x="150" y="123" fill="#333" font-size="12" text-anchor="middle">文本通路（因果自回归 / NTP）</text>
+      <rect x="270" y="98" width="200" height="40" rx="8" fill="#fff" stroke="#7B5CFF"/>
+      <text x="370" y="118" fill="#333" font-size="12" text-anchor="middle">视觉理解 Token</text>
+      <text x="370" y="133" fill="#888" font-size="10" text-anchor="middle">（与生成共享 ViT + QKV）</text>
+      <rect x="500" y="98" width="200" height="40" rx="8" fill="#fff" stroke="#7B5CFF"/>
+      <text x="600" y="118" fill="#333" font-size="12" text-anchor="middle">视觉生成 Token</text>
+      <text x="600" y="133" fill="#888" font-size="10" text-anchor="middle">（独立 FFN 专家 · Flow Matching）</text>
+
+      <!-- 共享骨干 -->
+      <rect x="270" y="156" width="430" height="30" rx="8" fill="#EFE9FF" stroke="#7B5CFF"/>
+      <text x="485" y="176" fill="#7B5CFF" font-size="12" text-anchor="middle">共享 Vision Transformer + 共享 QKV：让「看见的世界」与「想象的世界」同空间交互</text>
+
+      <!-- 交错生成 -->
+      <rect x="40" y="210" width="680" height="80" rx="14" fill="#EEFBF4" stroke="#1AAD6B" stroke-width="1.5"/>
+      <text x="60" y="236" fill="#1AAD6B" font-size="14" font-weight="700">交错式生成（核心机制）</text>
+      <text x="60" y="260" fill="#555" font-size="13">每一步生成的目标图像 → 转成与观测一致的视觉表示 → 重新加入上下文</text>
+      <text x="60" y="282" fill="#555" font-size="13">后续文本/视觉不是独立调用，而是持续「条件于」已推理/想象出的状态（避免图像与计划脱节、状态漂移）</text>
+
+      <!-- 为下游提供条件 -->
+      <rect x="40" y="306" width="680" height="78" rx="14" fill="#E8F0FE" stroke="#0052D9" stroke-width="1.5"/>
+      <text x="60" y="332" fill="#0052D9" font-size="14" font-weight="700">为下游动作模型（VLA）提供两种条件</text>
+      <text x="60" y="356" fill="#555" font-size="13">① 语言计划 → 任务理解 / 动作选择</text>
+      <text x="60" y="378" fill="#555" font-size="13">② 目标图像 → goal-conditioned policy / 逆动力学 / 动作解码器的视觉目标；与实测图差异 → 进度判断 / 失败检测 / 重规划</text>
+    </svg>
+    <div class="cap">图 3 · RxBrain-1.0 的 MoT 架构与「文本推理 × 视觉想象」交错协同机制</div>
+  </div>
+
+  <p><b>关键技术细节：</b></p>
+  <ul>
+    <li><b>模态路由 MoT</b>：文本、输入视觉、生成视觉 Token 路由到各自专用计算路径，但在统一注意力空间交换信息。视觉理解 Token 与生成 Token <strong>共享同一个 ViT 与 QKV 投影</strong>，使「看见的世界」和「想象的世界」能在同一视觉表示空间交互；又通过独立 FFN 专家保留各自的专门计算。</li>
+    <li><b>两种生成范式共存</b>：文本用 Causal Attention + Next-Token Prediction；图像/未来帧在连续 VAE Latent 中通过 <strong>Flow Matching</strong> 生成（帧内双向注意力建空间结构，跨帧保持因果时序）。</li>
+    <li><b>数据建设</b>：预训练用 <b>50,177 小时</b>操作数据（第一视角/UMI 31,568h、真实机器人 17,292h、仿真 1,317h；开源 28,597h，约 57%）。自动视频分割流水线把长视频转成带动作描述/起止状态/时间边界的原子动作序列，构建 <b>约 2.1 亿条</b>训练样本，分 L0 连续状态想象 / L1 原子动作 / L2 子任务 / L3 最终目标四档粒度；Mid-train 再加 3,500 万条空间推理、因果推断、三维感知等能力数据。</li>
+    <li><b>评测</b>：自建 RxBrain-Bench，统一联合具身规划综合分 <b>0.68</b>，高于 Cosmos3-Nano Agent（0.521）、BAGEL-7B-MoT（0.503）、Qwen-Agent（0.431）；文生图 GenEval 82.4，逼近专用生成模型 BAGEL（82）。</li>
+    <li><b>扩展到动作（Action MoT）</b>：为验证认知能否转成控制，腾讯在 RxBrain 上扩展动作生成分支——动作 Token 有独立注意力投影/FFN/归一化，仍参与全局注意力（可同时获得观测、指令、未来目标条件）；由视觉理解分支初始化，并设计 <strong>Gated Expert Fusion</strong>（门控初始为零，训练后自主学习从生成专家复用世界状态预测特征）。</li>
+  </ul>
+
+  <div class="ok">真机验证（DOBOT X-Trainer、方舟无限 A5 机械臂）：摆餐具 97%、折叠收纳眼镜 95%、丢垃圾 68%，平均 <b>87%</b>；对比 π0 的 68%、π0.5 的 82%。证明「视觉想象」不是炫技展示，而是能被动作模型实际利用的中间认知表示。</div>
+
+  <h3>3.3  VLA-0.5「小脑+身体」· 视觉-语言-动作统一建模</h3>
+  <ul>
+    <li>定位：把 RxBrain 给的高层目标 + VLM 给的感知，转成<strong>连续、可纠错</strong>的机器人动作。</li>
+    <li><b>架构（Hy-Embodied-0.5 MoT 骨干）</b>：VLM 塔继承 Hy-Embodied-0.5 的 Mixture-of-Transformers——视觉 Token 与语言 Token 各走自己的参数子集，只在共享 self-attention 做跨模态交互；视觉编码器用 <strong>Hy-ViT 2.0</strong>（原始分辨率编码，不做固定 crop）。</li>
+    <li><b>双塔 Flow-Matching Action Expert</b>：与 π0 系列、OpenVLA 的根本区别——不把动作离散化成语言 token，而是单独训练一个约 <b>370M</b> 参数的动作专家塔，用 conditional flow matching 建模连续动作分布。</li>
+    <li><b>跨具身迁移</b>：用 <code>delta-chunk</code> 动作表示把动作从具体运动学参数解耦，同一策略可换不同形态机器人使用。</li>
+    <li><b>长时序记忆</b>：用 parameter-free 时序-空间注意力做 compact memory encoder，把 K 帧历史压缩进当前帧 token，不涨参数量（解决「刚才放哪了」类记忆问题）。</li>
+    <li><b>数据</b>：超 1 万小时高质量人类示教（开源 2000+ 小时，指尖 UMI + 光学动捕采集方案）。</li>
+    <li><b>实际落地</b>：已进入某日化工厂生产实测——高混合/小批量/SKU 频繁迭代产线，作业成功率 &gt;95%、节拍 &lt;6 秒/件，新增一个 SKU 的数据采集+后训练 &lt;3 天。</li>
+  </ul>
+
+  <div class="note">诚实的边界：在更严苛的第三方 RoboDojo「珠峰级」评测中，Hy-Embodied-0.5-VLA 虽位列<strong>仿真综合第一（均分 13.07 / 成功率 8.80%）</strong>，但整体仍远低于人类专家（76% / 80.42 分）。泛化、精细控制、长程、开放语义仍是全行业短板——这是行业现状，非腾讯独有。</div>
+
+  <!-- ===== 智能体框架 ===== -->
+  <h2>四、智能体框架层：TairosAgent + Apexio</h2>
+  <p>三个模型各自擅长一块，<strong>TairosAgent（具身原生智能体框架）</strong>与 <strong>Apexio（Always-on 具身智能体）</strong>负责把「左右脑、大脑、小脑、身体」调度整合成完整系统，让机器人成为「持续感知 → 持续决策 → 持续行动」的整体。</p>
+  <ul>
+    <li><b>TairosAgent</b>：具身原生的智能体框架，提供任务编排、长程规划、工具调用、失败重规划等调度能力，是连接模型与本体之间的「操作系统层」。</li>
+    <li><b>Apexio</b>：Always-on（常驻）智能体，强调机器人不止于「单次响应」，而是持续在线地感知环境、维持状态、主动决策。</li>
+  </ul>
+
+  <!-- ===== 平台层 ===== -->
+  <h2>五、平台层：Tairos（钛螺丝）升级 + 开源</h2>
+  <ul>
+    <li>2025 年发布，2026 年 WAIC 全面升级并<strong>保持开源开放</strong>，继续提供模型、智能体、开发工具与服务，降低「模型 → 本体 → 应用」全链条门槛。</li>
+    <li><b>RoboFusion「一线连接」</b>：Robotics X 与福田实验室联合研发，从总线物理接口到通信协议的全栈互连体系，解决传统机器人布线复杂、扩展难、实时性不足等痛点，为「软件定义机器人」奠定通用开放底层。开放模型地址见文末。</li>
+    <li><b>云端仿真</b>：基于 Isaac Sim，免配置一键直达；提供 62 类通用物体仿真 + 20 种平滑交互动画，支持自定义机器人导入及智能体导航交互；可实时验证规划大模型/感知模型/感知行动联合大模型在仿真中的运行。</li>
+  </ul>
+
+  <!-- ===== 云底座 ===== -->
+  <h2>六、云底座层：EaaS（Embodied-AI-as-a-Service）</h2>
+  <p>腾讯云提出业内首个云端 <strong>EaaS</strong>，并搭建「算力底座 → 模型服务 → 感知交互」三层体系，把具身智能从技术研发推向规模商用：</p>
+  <table>
+    <tr><th>层级</th><th>关键组件</th><th>作用</th></tr>
+    <tr><td><b>算力底座</b></td><td>GPU/HCC 万卡集群 · 星脉网络 · COS / GooseFS 存储</td><td>支撑万卡级稳定训练、海量多模态数据存储与高速读取</td></tr>
+    <tr><td><b>模型服务</b></td><td>TI-ONE 训练推理平台 · TokenHub（MaaS 调度）</td><td>模型训练/精调/评测，按量推理调度</td></tr>
+    <tr><td><b>感知交互</b></td><td>TRTC 实时音视频 · TRRO 远程实时操控 · 视图计算 · MPS · 智能标注 · 语音交互</td><td>覆盖数据采集、传输到理解交互的完整感官链路；远程操控与低延迟实时交互</td></tr>
+  </table>
+  <div class="note">腾讯云的明确定位：<strong>不参与硬件竞争，专注平台能力</strong>——一端连接本体/算法/场景方，另一端连接制造、文旅、零售、服务等行业客户，帮企业把精力放在本体能力、应用逻辑与行业 know-how 上，而非重复建设基础设施。</div>
+
+  <!-- ===== 端到端工作流 ===== -->
+  <h2>七、端到端：一个任务怎么跑完</h2>
+  <div class="flow">
+    <div class="box"><b>① 感知</b><br><span class="s">VLM 右脑读取相机/力觉/触觉，理解场景、空间关系与可操作物</span></div>
+    <div class="box"><b>② 推理</b><br><span class="s">RxBrain 大脑接指令，做任务分解、约束与长程决策（语言）</span></div>
+    <div class="box"><b>③ 想象</b><br><span class="s">RxBrain 同时生成每步「目标状态图像」（视觉），作为显式 goal</span></div>
+    <div class="box"><b>④ 动作</b><br><span class="s">VLA 小脑+身体用 Flow-Matching 动作专家解码出连续、可纠错动作</span></div>
+    <div class="box"><b>⑤ 反馈</b><br><span class="s">实测图 vs 目标图 → 进度/失败检测 → 重规划，闭环回到①</span></div>
+  </div>
+  <p style="margin-top:16px">整个调度由 <strong>TairosAgent + Apexio</strong> 驱动，开发与部署跑在 <strong>Tairos 平台 + 腾讯云 EaaS</strong> 之上。模型持续从真实反馈中回流数据，形成「数据闭环 → 模型迭代 → 性能提升」的正循环。</p>
+
+  <!-- ===== 开源地址 ===== -->
+  <h2>八、开源地址（可直接获取）</h2>
+  <ul>
+    <li>Hy-Embodied-VLM-1.0：<a href="https://github.com/Tencent-Hunyuan/HY-Embodied">github.com/Tencent-Hunyuan/HY-Embodied</a> · <a href="https://huggingface.co/tencent/Hy-Embodied-VLM-1.0">HF: tencent/Hy-Embodied-VLM-1.0</a></li>
+    <li>Hy-Embodied-RxBrain-1.0：<a href="https://github.com/Tencent-Hunyuan/Hy-Embodied-RxBrain-1.0">github.com/Tencent-Hunyuan/Hy-Embodied-RxBrain-1.0</a> · <a href="https://huggingface.co/tencent/Hy-Embodied-RxBrain-1.0">HF: tencent/Hy-Embodied-RxBrain-1.0</a></li>
+    <li>Hy-Embodied-VLA-0.5：<a href="https://github.com/Tencent-Hunyuan/Hy-Embodied-0.5-VLA">github.com/Tencent-Hunyuan/Hy-Embodied-0.5-VLA</a> · 数据集 <a href="https://huggingface.co/datasets/tencent/Hy-Embodied-0.5-VLA-Data">HF: tencent/Hy-Embodied-0.5-VLA-Data</a></li>
+    <li>Tairos 平台：<a href="https://tairos.tencent.com/">tairos.tencent.com</a></li>
+  </ul>
+
+  <div class="footer">
+    本文基于腾讯 WAIC 2026 官方发布内容与公开技术文章整理，用于技术原理学习。模型版本、数据规模与评测数字均引自官方披露。具身智能仍处于快速演进期，部分能力边界（如 RoboDojo 长尾任务）为行业共有挑战。
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="基于 onesystem 项目真实实践的 AI 原生开发全生命周期指南：讲清代码不再是瓶颈、瓶颈左右移到计划与评审的核心转变，拆解路由立项、调研共识、规格拆票、实现、双轴评审、架构深化六个阶段，附 L1/L2/L3 决策权红线与 10 条反模式改正。">
+<meta name="keywords" content="AI 原生 SDLC, 最佳实践, Claude Code, mattpocock skills, 产物规约, 决策权红线">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-03">
+<title>AI 原生软件开发全生命周期最佳实践 — 基于 onesystem 项目实践</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --secondary: #6b7280;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --green: #059669;
+    --green-soft: #ecfdf5;
+    --red: #dc2626;
+    --red-soft: #fef2f2;
+    --amber: #d97706;
+    --amber-soft: #fffbeb;
+    --code-bg: #f3f4f6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ===== Header ===== */
+  header {
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 56px 24px 40px;
+  }
+  header .container { padding-bottom: 0; }
+  .badge {
+    display: inline-block; background: var(--accent); color: #fff;
+    font-size: 12px; padding: 3px 12px; border-radius: 999px;
+    letter-spacing: 1px; margin-bottom: 16px;
+  }
+  h1 { font-size: 30px; line-height: 1.35; margin-bottom: 12px; }
+  .subtitle { color: var(--secondary); font-size: 15px; max-width: 720px; }
+  .meta { margin-top: 20px; font-size: 13px; color: var(--secondary); }
+  .meta code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+
+  /* ===== Nav ===== */
+  nav.toc {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px; overflow-x: auto; white-space: nowrap;
+  }
+  nav.toc a {
+    color: var(--secondary); text-decoration: none; font-size: 13px;
+    margin-right: 18px; padding: 4px 2px;
+  }
+  nav.toc a:hover { color: var(--accent); }
+  nav.toc a strong { color: var(--accent); }
+
+  /* ===== Sections ===== */
+  section { margin-top: 56px; }
+  h2 { font-size: 22px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  h2 .num {
+    flex: none; width: 30px; height: 30px; border-radius: 8px;
+    background: var(--accent); color: #fff; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  h3 { font-size: 16px; margin: 26px 0 10px; color: var(--text); }
+  .lead { color: var(--secondary); margin-bottom: 18px; max-width: 760px; }
+  p { margin-bottom: 12px; }
+  ul, ol { padding-left: 22px; margin-bottom: 12px; }
+  li { margin-bottom: 6px; }
+  code {
+    background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px;
+    color: #b91c1c;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px; margin-top: 16px;
+  }
+
+  /* ===== Tables ===== */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+  th { background: #f9fafb; font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  td:first-child { white-space: nowrap; font-weight: 600; }
+
+  /* ===== Skill tag ===== */
+  .skill {
+    display: inline-block; background: var(--accent-soft); color: var(--accent);
+    border: 1px solid #bfdbfe; font-size: 12.5px; padding: 1px 8px;
+    border-radius: 6px; font-family: Menlo, Consolas, monospace; margin: 0 2px;
+  }
+
+  /* ===== Case boxes ===== */
+  .case { border-radius: 10px; padding: 14px 18px; margin: 14px 0; font-size: 14px; }
+  .case .tag {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    padding: 1px 10px; border-radius: 999px; margin-bottom: 8px;
+  }
+  .case.good { background: var(--green-soft); border: 1px solid #a7f3d0; }
+  .case.good .tag { background: var(--green); color: #fff; }
+  .case.bad { background: var(--red-soft); border: 1px solid #fecaca; }
+  .case.bad .tag { background: var(--red); color: #fff; }
+  .case.fix { background: var(--amber-soft); border: 1px solid #fde68a; }
+  .case.fix .tag { background: var(--amber); color: #fff; }
+  .case p:last-child { margin-bottom: 0; }
+
+  /* ===== Checklist ===== */
+  .checklist { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 16px 20px; margin: 14px 0; }
+  .checklist ul { list-style: none; padding-left: 4px; margin-bottom: 0; }
+  .checklist li::before { content: "☐ "; color: var(--accent); font-weight: 700; }
+
+  /* ===== Decision rights table ===== */
+  .level { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .level.l1 { background: #dcfce7; color: #15803d; }
+  .level.l2 { background: #fef9c3; color: #a16207; }
+  .level.l3 { background: #fee2e2; color: #b91c1c; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .flow .step {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; font-size: 13.5px; font-weight: 600;
+  }
+  .flow .step span { display: block; font-weight: 400; font-size: 12px; color: var(--secondary); }
+  .flow .arrow { color: var(--secondary); }
+
+  footer {
+    margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border);
+    color: var(--secondary); font-size: 13px;
+  }
+  .callout {
+    background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 10px;
+    padding: 14px 18px; margin: 16px 0; font-size: 14px;
+  }
+  .callout strong { color: #7e22ce; }
+  @media (max-width: 640px) {
+    td:first-child { white-space: normal; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="badge">团队交流文档</div>
+    <h1>AI 原生软件开发全生命周期最佳实践</h1>
+    <p class="subtitle">基于 onesystem 项目（matt-pocock 技能集 + Claude Code）的真实开发实践总结。每个阶段讲清四件事：<strong>练什么核心能力、用什么技能、产物规约有什么用、审查什么</strong>——正反案例全部来自本项目，可直接对照。</p>
+    <div class="meta">
+      项目路径 <code>onesystem</code> ｜ 技能集 <code>matt-pocock/skills</code> ｜ 参考 <code>Anthropic《AI-native SDLC Playbook》</code>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#shift"><strong>核心转变</strong></a>
+  <a href="#rights"><strong>决策权红线</strong></a>
+  <a href="#s0">0 路由立项</a>
+  <a href="#s1">1 调研与领域共识</a>
+  <a href="#s2">2 规格与拆票</a>
+  <a href="#s3">3 实现</a>
+  <a href="#s4">4 评审与验收</a>
+  <a href="#s5">5 阶段边界与架构深化</a>
+  <a href="#s6">6 贯穿：提交与工程卫生</a>
+  <a href="#anti">反模式清单</a>
+  <a href="#cheatsheet">一页速查</a>
+</nav>
+
+<div class="container">
+
+<!-- ================= 核心转变 ================= -->
+<section id="shift">
+  <h2><span class="num">◆</span>核心转变：代码不再是瓶颈</h2>
+  <p class="lead">AI 原生开发的前提认知（来自 Anthropic SDLC Playbook）：agent 写代码的速度已经超过传统流程的承载力，于是三件事随之成立——</p>
+  <div class="card">
+    <ul>
+      <li><strong>瓶颈左移和右移</strong>：构建（Build）环节坍缩到小时级，慢的是两侧的"人速"环节——计划、评审、部署。人应该把注意力集中在那里。</li>
+      <li><strong>每个阶段以"提交的产物"结束</strong>：调研报告、CONTEXT.md、ADR、spec.md、票据、代码与测试、评审记录——全部入库。下一阶段从读这些文件开始，而不是从聊天记录开始。<strong>提交链就是审计链：谁提了什么需求、agent 产出了什么、谁批准了什么，一查 commit 便知。</strong></li>
+      <li><strong>技能（Skills）是 advisory 控制</strong>：它让 agent"倾向于"遵守规约，但不强制。必须无条件成立的规则，背后要有确定性手段（hook、CI、测试）。本项目用"票据 DoD + 阶段边界自查"充当这个确定性层。</li>
+    </ul>
+  </div>
+  <p>本项目走通的主链路（也是本文的章节骨架）：</p>
+  <div class="flow">
+    <div class="step">ask-matt<span>路由：我现在该干什么</span></div><span class="arrow">→</span>
+    <div class="step">research<span>调研老系统 / 代码库</span></div><span class="arrow">→</span>
+    <div class="step">grill-with-docs<span>领域共识 → ADR</span></div><span class="arrow">→</span>
+    <div class="step">to-spec<span>40 条用户故事</span></div><span class="arrow">→</span>
+    <div class="step">to-tickets<span>线性阻塞票据链</span></div><span class="arrow">→</span>
+    <div class="step">implement + tdd<span>逐票实现</span></div><span class="arrow">→</span>
+    <div class="step">code-review<span>双轴评审</span></div><span class="arrow">→</span>
+    <div class="step">架构深化<span>阶段边界体检</span></div><span class="arrow">↺</span>
+  </div>
+</section>
+
+<!-- ================= 决策权红线 ================= -->
+<section id="rights">
+  <h2><span class="num">!</span>决策权红线表（先立这条规矩，再看后面的流程）</h2>
+  <p class="lead">本项目 48 条有效输入里有 16 条（33%）是「按你推荐的来」式批准。执行层放手是对的，但决策层橡皮图章会让判断力长不出来。按风险分三级：</p>
+  <div class="card">
+    <table>
+      <tr><th>级别</th><th>决策类型</th><th>规矩</th><th>本项目实例</th></tr>
+      <tr>
+        <td><span class="level l1">L1 放手</span></td>
+        <td>执行层：跑什么命令、先改哪个文件、怎么提交、测试怎么补</td>
+        <td>可以直接说「按推荐的来」</td>
+        <td>「git commit」「按你的推荐来」（拆分粒度）</td>
+      </tr>
+      <tr>
+        <td><span class="level l2">L2 复述</span></td>
+        <td>方案层：模块形态、测试面怎么切、票据怎么拆、迁移方式</td>
+        <td>批准前<strong>先用一句话复述取舍和"什么情况下它会错"</strong>，复述不出就继续问（可用 <span class="skill">/wait-what</span> <span class="skill">/teach</span>）</td>
+        <td>票据 01 的 10 问决策（ReviewProgress 值对象、单步重构 vs 双轨）</td>
+      </tr>
+      <tr>
+        <td><span class="level l3">L3 绝不橡皮图章</span></td>
+        <td>约束层：ADR（技术栈、状态机策略、数据模型镜像）、grilling 里不懂的选项</td>
+        <td>必须理解到能向别人解释，再批准；不懂就追问到懂</td>
+        <td>反面案例见下</td>
+      </tr>
+    </table>
+    <div class="case bad">
+      <span class="tag">反面案例 · 2026-10-01</span>
+      <p>grilling Q4：「"显式状态机，不引引擎"<strong>我没有很好地理解</strong>」→ 几分钟后「按推荐的来」。ADR-0002 就此定案。后果：后面四轮架构深化（状态机收口）全部围绕这个当初没读懂的决策展开，理解债连本带息偿还。</p>
+    </div>
+    <div class="case fix">
+      <span class="tag">改正</span>
+      <p>L3 决策写进 ADR 前，要求 agent 用「备选方案 + 否决理由」格式呈现（本项目票据 07 后来就是这样记的：删透传留残值，含两案否决理由）。你能复述备选方案为什么被否，才算真懂了选中的方案。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 阶段 0 ================= -->
+<section id="s0">
+  <h2><span class="num">0</span>路由与立项</h2>
+  <p class="lead"><strong>练的核心能力</strong>：知道自己不知道什么——在正确的阶段入口开始，而不是拿着锤子找钉子。</p>
+  <div class="card">
+    <h3>使用技能：<span class="skill">/ask-matt</span></h3>
+    <p>技能集自带的路由器。每个阶段边界（切片完成、深化轮结束、backlog 清空）问它一句"接下来该做什么"，它会按技能地图给出带理由的下一步。它的回答值得保存——阶段边界判断本身就是 L2 级决策。</p>
+
+    <h3>产物与规约</h3>
+    <table>
+      <tr><th>产物</th><th>作用</th></tr>
+      <tr><td><code>CLAUDE.md</code>（仓库根）</td><td>每个会话开局必读的项目级指令：issue tracker 在哪、领域文档怎么消费。它是"新入职者第一天需要的一切"，版本化、可评审。规矩：agent 犯两次的错，修正就写进这里；保持一页以内。</td></tr>
+      <tr><td><code>docs/agents/*.md</code></td><td>告诉技能"本仓库的 issue tracker 是什么、领域文档怎么读"——技能是通用的，这份适配层让通用技能长在本仓库的土壤里。</td></tr>
+    </table>
+
+    <h3>不同情况怎么处理</h3>
+    <ul>
+      <li><strong>全新想法 / 不知从何入手</strong> → <span class="skill">/ask-matt</span> 路由到调研或 grilling。</li>
+      <li><strong>业务问题没有现成技能</strong> → ask-matt 回答不了时它会明说，此时直接描述问题即可，不要硬套技能。</li>
+      <li><strong>每轮会话开工</strong> → 新 effort 开新会话，开工先读 <code>.scratch/&lt;effort&gt;/</code> 下的看板与票据（见阶段 5 的教训）。</li>
+    </ul>
+
+    <div class="case good">
+      <span class="tag">正面案例</span>
+      <p>2026-10-01 切片完成后问 ask-matt"接下来做什么"，得到标准答案：先 <code>/clear</code> 清上下文（状态都在仓库里）→ 空档跑 <span class="skill">/improve-codebase-architecture</span> → 下一切片从 <span class="skill">/grill-with-docs</span> 重新开始。阶段边界的判断完全交给"仓库状态 + 路由器"，不依赖会话记忆。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 阶段 1 ================= -->
+<section id="s1">
+  <h2><span class="num">1</span>调研与领域共识</h2>
+  <p class="lead"><strong>练的核心能力</strong>：在写任何代码之前，把"业务在说什么"和"技术定什么调"变成人机都能读的共识文件。这一阶段花的时间是整个生命周期里杠杆最大的。</p>
+  <div class="card">
+    <h3>使用技能</h3>
+    <p>
+      <span class="skill">/research</span> 调研老系统/代码库，产出报告 ｜
+      <span class="skill">/grill-with-docs</span>  grilling（拷问式决策访谈）→ 术语表 + ADR ｜
+      <span class="skill">/domain-modeling</span> 在 grilling 中惰性补术语缺口 ｜
+      <span class="skill">/to-questionnaire</span> 把悬而未决的业务问题变成给业务人员的问卷
+    </p>
+
+    <h3>产物与规约（审查这些文件）</h3>
+    <table>
+      <tr><th>产物</th><th>规约要点</th><th>审查什么</th></tr>
+      <tr>
+        <td><code>docs/research/*.md</code></td>
+        <td>调研报告：老系统模块、数据表、流程、发现的疑点清单</td>
+        <td>疑点是否<strong>显式编号列出</strong>（本项目列了 12 项）——它们是问卷和后续 ADR 的输入</td>
+      </tr>
+      <tr>
+        <td><code>CONTEXT.md</code></td>
+        <td>术语表：每个业务名词给定义 + <code>_Avoid_</code> 反义词标注（老系统叫法/易混词）</td>
+        <td>每个术语有没有 Avoid；新增概念时反问"这是项目已有的词，还是我在造词"——造词是信号，要么重审要么留给 domain-modeling</td>
+      </tr>
+      <tr>
+        <td><code>docs/adr/*.md</code></td>
+        <td>架构决策记录：0001 技术栈 / 0002 显式状态机 / 0003 SQLite 切片期 Postgres 生产 / 0004 镜像老数据模型</td>
+        <td>是否记录了<strong>备选方案与否决理由</strong>；是否与既有 ADR 冲突（冲突要显式标注，不许默默覆盖）</td>
+      </tr>
+      <tr>
+        <td><code>to-questionnaire-*.md</code></td>
+        <td>业务问卷：把"调研疑点 + 需要业务拍板的问题"翻译成业务人员能答的形式</td>
+        <td>每个悬而未决项是否都有归处：问卷、ADR 注明"切片期取值"、或明确留到下一切片</td>
+      </tr>
+    </table>
+
+    <h3>不同情况怎么处理</h3>
+    <ul>
+      <li><strong>不懂业务、身边没有业务人员</strong> → 先 <span class="skill">/research</span> 读老系统，再 <span class="skill">/grill-with-docs</span>；无法拍板的写成问卷。本项目就是这样处理的。</li>
+      <li><strong>grilling 中出现不懂的选项</strong> → 停下来追问，这是 L3 决策（见红线表）。</li>
+      <li><strong>问卷答了、答案和现有实现冲突</strong> → 不回改代码了事，而是<strong>记新 ADR</strong>：业务确认推翻切片期假设，决策链要可追溯。</li>
+    </ul>
+
+    <div class="case bad">
+      <span class="tag">反面案例 · 悬置的问卷</span>
+      <p>to-questionnaire 生成的 12 项业务疑点（工作流真实节点、码表全集等）至今未找业务确认，而架构深化已经基于"5 节点审批"等假设做了四轮收口。<strong>假设固化越深，业务答案回来时返工越贵。</strong>下一步切片（大概率销售合同）开工前必须先把问卷吃掉。</p>
+    </div>
+    <div class="case good">
+      <span class="tag">正面案例</span>
+      <p>CONTEXT.md 的 <code>_Avoid_</code> 标注是本阶段最有价值的习惯：如「分标 <em>Avoid: 标段</em>」「包 <em>Avoid: 包件、Bag</em>」。它保证后续所有产物（票据标题、代码命名、测试名）使用同一套词汇，人和 agent 对话不串词。写 spec、写票据时引用术语表，是 domain.md 里"使用词汇表词汇"规约的落地。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 阶段 2 ================= -->
+<section id="s2">
+  <h2><span class="num">2</span>规格与拆票</h2>
+  <p class="lead"><strong>练的核心能力</strong>：把共识压缩成一份"人和 agent 都能读、都能执行"的 spec，再切成每张可独立验证的 tracer-bullet 票据。拆票质量决定后面所有实现会话的顺畅度。</p>
+  <div class="card">
+    <h3>使用技能：<span class="skill">/to-spec</span> → <span class="skill">/to-tickets</span></h3>
+    <p>to-spec 把决策变成用户故事 + 实现/测试决策（本项目：40 条故事）。to-tickets 把 spec 切成票据并 quiz 粒度与阻塞边（本项目：8 张线性阻塞链，第 8 张是端到端冒烟 + 种子数据）。</p>
+
+    <h3>产物与规约（审查这些文件）</h3>
+    <table>
+      <tr><th>产物</th><th>规约要点</th><th>审查什么</th></tr>
+      <tr>
+        <td><code>.scratch/&lt;effort&gt;/spec.md</code></td>
+        <td>一功能一目录；故事编号贯穿后续票据引用</td>
+        <td>每条故事可测试吗；票据覆盖了哪些故事要能对上号</td>
+      </tr>
+      <tr>
+        <td><code>.scratch/&lt;effort&gt;/issues/NN-slug.md</code></td>
+        <td>一票一文件，从 01 编号；<code>What to build</code> 写用户视角的端到端行为；<code>Blocked by</code> 只写真正挡路的前置</td>
+        <td>① 票据是否切穿全层（schema+actions+UI+测试，tracer-bullet）；② <strong>验收项里不得写具体文件路径</strong>——它们很快腐烂；③ Blocked by 是真实依赖还是虚假的先后关系</td>
+      </tr>
+    </table>
+
+    <h3>不同情况怎么处理</h3>
+    <ul>
+      <li><strong>粒度拿不准</strong> → to-tickets 自带 quiz 环节，用它裁决"这张票是不是该再切"。</li>
+      <li><strong>票据是重构票而非功能票</strong> → "用户"是未来维护者，验收项写成可验证行为（测试绿、某结构消失、编译期报错），本项目 07/08 两张纯重构票是范例。</li>
+      <li><strong>实现中才发现票据有缺陷</strong> → 回改票据（修订验收项表述）而不是默默扩大实现范围；票据 01 的"列表页节点展示"就是这样修订的。</li>
+      <li><strong>深化轮里 grilling 已经拆好了票</strong> → 不必为走流程再跑一次 to-tickets，但发布票据时必须严格对齐它的模板。本项目 agent 当时明确说明了这一点（它的前四步会被 grilling 重复）。</li>
+    </ul>
+
+    <div class="case good">
+      <span class="tag">正面案例</span>
+      <p>票据 04 的 <code>What to build</code>：从"部门操作员可创建经济评审"的完整行为写到"覆盖 spec 故事 19–24"，一句话能审、能测、能追溯。8 张票构成 01→08 线性阻塞链，每张只依赖真正挡它的前一张。</p>
+    </div>
+    <div class="case bad">
+      <span class="tag">反面案例 · 腐烂的路径</span>
+      <p>票据 01 验收项写着「Playwright 冒烟测试（<code>e2e/smoke.spec.ts</code>，端口 3200）」——该文件后来改名 <code>happy-path.spec.ts</code>，验收项里的路径腐烂了。这正是 to-tickets 模板"avoid specific file paths"规约的活样本。<strong>教训：写完票据自查一遍，把路径从验收项里清出去，路径只配留在 Comments 的实现记录里。</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 阶段 3 ================= -->
+<section id="s3">
+  <h2><span class="num">3</span>实现</h2>
+  <p class="lead"><strong>练的核心能力</strong>：把判断全部前置到阶段 1–2，实现阶段只负责盯着 agent 执行。每张票据一个会话、一条红线：先红后绿，测试和实现同 commit。</p>
+  <div class="card">
+    <h3>使用技能：<span class="skill">/implement</span> + <span class="skill">/tdd</span></h3>
+    <p>implement 驱动单票实现，内部要求提交前跑 code-review；tdd 强制先写失败测试再实现。执行层全面放手（L1），人在这一阶段的职责只剩两个：<strong>票据选对、偏离拦截</strong>。</p>
+
+    <h3>产物与规约</h3>
+    <table>
+      <tr><th>产物</th><th>规约要点</th><th>审查什么</th></tr>
+      <tr>
+        <td>代码 + 测试</td>
+        <td>测试与实现同一 commit；票据内所有验收项可勾选</td>
+        <td>是否先红后绿（让 agent 展示红灯再绿灯）；测试是否真的断言行为而非镜像实现</td>
+      </tr>
+      <tr>
+        <td>票据 <code>## Comments</code></td>
+        <td>实现记录：模块落点、关键决策、评审处置、测试口径</td>
+        <td>票据 04 是黄金标准：6 条关键决策 + 评审与 refactor 处置 + 测试数字（18 例 + 5 例，全套 72 绿）</td>
+      </tr>
+      <tr>
+        <td>git commit</td>
+        <td>一票一 commit（或实现 + 勾选两个 commit），信息引用票据号</td>
+        <td>「票据 04：经济评审…（实现见 bebd30a）」这种格式——任何一行变更都能反查到票</td>
+      </tr>
+    </table>
+
+    <h3>不同情况怎么处理</h3>
+    <ul>
+      <li><strong>agent 想扩大票据范围</strong> → 拦下，新开票据或更新 spec。</li>
+      <li><strong>实现暴露票据缺陷</strong> → 修订票据（见阶段 2），实现记录里写明偏差原因。</li>
+      <li><strong>一张票做不完</strong> → 先问是不是票据粒度错了（回 to-tickets 的 quiz），而不是硬扛；真做大了就拆票。</li>
+    </ul>
+
+    <div class="case good">
+      <span class="tag">正面案例 · 票据 06</span>
+      <p>「技术评审 + 双完成自动建项」把"经济评审已确认 且 技术评审已评审"的自动建项逻辑和覆盖式维护、同事务约束一次切穿，Comments 记录了 dsh/yps 两态与 yqr+yps 同事务建项的决策。测试从 72 例一路涨到 133 例全绿。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 阶段 4 ================= -->
+<section id="s4">
+  <h2><span class="num">4</span>评审与验收</h2>
+  <p class="lead"><strong>练的核心能力</strong>：让评审结论成为仓库里的证据，而不是聊天记录里的口头承诺。评审不可审计 = 没评审。</p>
+  <div class="card">
+    <h3>使用技能：<span class="skill">/code-review</span>（双轴：Standards / Spec）</h3>
+    <p>implement 提交前内部跑逐票评审；阶段边界可以整切片再审一次——它的独有增量是逐票视角看不到的：<strong>spec 完整性端到端核对</strong>（跨故事缝隙）和<strong>跨票据渐进漂移</strong>（同类模式重复实现、命名惯例偏移）。</p>
+
+    <h3>产物与规约：评审记录是 DoD 的一环</h3>
+    <div class="checklist">
+      <strong>每张票关门前必须齐活（Definition of Done）：</strong>
+      <ul>
+        <li>验收项全部勾选，且勾选与实现落在可追溯的 commit 里</li>
+        <li>Comments 有实现记录（模块、关键决策、测试口径）</li>
+        <li>Comments 有评审结论（哪怕只有"双轴通过，无遗留"；有发现就写处置）</li>
+        <li>Status 更新为关门状态——<strong>和上面的内容同一次闭环完成，不许拖到下次</strong></li>
+      </ul>
+    </div>
+
+    <h3>不同情况怎么处理</h3>
+    <ul>
+      <li><strong>评审发现验收项字面与合理实现有偏差</strong> → 采纳 Spec 轴建议修订验收项表述（票据 01 案例：availableActions 管"动作"，节点名展示是状态数据，invariant 由状态机维护）。修订要留痕。</li>
+      <li><strong>agent 报告"测试全绿"</strong> → 默认信任但要可复核：仓库里必须有你自己能一条命令重跑的验证脚本（见阶段 6），阶段边界亲自跑一遍。</li>
+      <li><strong>某票跳过了评审</strong> → 整切片 review 就不是重复劳动而是补账，必须跑。</li>
+    </ul>
+
+    <div class="case bad">
+      <span class="tag">反面案例 · 不可审计的评审</span>
+      <p>2026-10-01 问"不需要对整个切片跑一次 code-review？"时，agent 的回答暴露了一个事实：<strong>提交历史里无法证实每张票是否真跑了双轴评审</strong>——"这点你比我清楚"。流程的正确性依赖人的记忆而非仓库证据，这是本项目目前最大的审计缺口。</p>
+    </div>
+    <div class="case fix">
+      <span class="tag">改正</span>
+      <p>把"评审结论落 Comments"写进 DoD（上面的清单），写进 CLAUDE.md。票据 04 已有这个形态——把它从"做得好"变成"每票必须"。</p>
+    </div>
+    <div class="case good">
+      <span class="tag">正面案例 · 票据 01 的评审处置</span>
+      <p>双轴评审发现「initialProgress 曾被两轴同指为死导出」→ 已接入 saveEconomyReview 新建分支，语义闭环；Spec 轴指出验收项字面偏差 → 修订表述并记录理由；"准入两行式重复 6 处"→ 采纳评审者"不改可接受"的判断并写明理由（seam 的统一消费形状）。<strong>每条发现都有处置和理由，这就是可审计的样子。</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 阶段 5 ================= -->
+<section id="s5">
+  <h2><span class="num">5</span>阶段边界与架构深化</h2>
+  <p class="lead"><strong>练的核心能力</strong>：识别"什么时候该停下来体检"，并把体检产出管理成一个有看板、有纪律的待办池，而不是一脑子浆糊。</p>
+  <div class="card">
+    <h3>使用技能</h3>
+    <p>
+      <span class="skill">/improve-codebase-architecture</span> 体检切片（13 条发现 → 8 张候选卡是本项目实例）｜
+      <span class="skill">/grill-with-docs</span> 每张深化票动工前敲定形状决策 ｜
+      <span class="skill">/wayfinder</span> 多票并行的地图协议（map / frontier / claim）｜
+      <span class="skill">/codebase-design</span> 模块形态设计
+    </p>
+
+    <h3>产物与规约（审查这些文件）</h3>
+    <table>
+      <tr><th>产物</th><th>规约要点</th><th>审查什么</th></tr>
+      <tr>
+        <td>架构评审报告</td>
+        <td>发现按 Strong / Worth exploring / Speculative 分级，标注与既有 ADR 是否冲突</td>
+        <td>每条发现有没有证据（文件、行为），分级是否诚实</td>
+      </tr>
+      <tr>
+        <td>深化票据 <code>issues/NN-*.md</code></td>
+        <td><strong>诊断（问题是什么）与方案（怎么做）分离</strong>：发布时只冻结"问题 + 验收项"，动工前的 grilling 才冻结"方案"</td>
+        <td>决策记录是否完整：模块形态 + 红线 + 测试面 + <strong>备选方案否决理由</strong>；第一个 checkbox"动工前完成 grilling"是否已勾</td>
+      </tr>
+      <tr>
+        <td><code>map.md</code> / effort 看板</td>
+        <td>一张 backlog 表：票号 / 一句话 / Status / 阻塞；会话结束必须更新</td>
+        <td>是否存在（本项目长期缺失！）；Status 词汇是否全仓库统一</td>
+      </tr>
+    </table>
+
+    <h3>不同情况怎么处理</h3>
+    <ul>
+      <li><strong>体检出 8 个候选，先做哪个</strong> → 先 grilling 深入 1–2 个（本项目选了候选 1/2），其余留池；选谁的标准是"成本最低 + 延续当前主题"。</li>
+      <li><strong>深化票 vs 下一个切片，谁先</strong> → 小票趁热做（决策新鲜、范围半天内）；大方向不挡路就推进切片。</li>
+      <li><strong>票据动工前的 grilling 和当初生成票据的 grilling 是一回事吗</strong> → 不是。生成票只冻结"问题"，动工前才冻结"方案"。本项目票据 03 就是活证据：生成时设想的"写入模块"被票据 02 以不同形态实质完成——若当时把方案 grill 死，现在就要返工。</li>
+      <li><strong>既有票据部分过时</strong> → 在 Comments 追加现状备注（本项目票据 03 的处置），避免下轮评审重复建议。</li>
+      <li><strong>上下文快爆了</strong> → 阶段边界 <code>/clear</code> 而不是 <code>/compact</code>——状态都在仓库里，窗口内容没有保留价值；跨夜长会话要切分。</li>
+    </ul>
+
+    <div class="case bad">
+      <span class="tag">反面案例 · 迷失的 backlog</span>
+      <p><span class="skill">/wayfinder</span> 在 09-30 启用 1 分钟后被放弃，此后再没用过；<code>.scratch/</code> 下没有任何 map.md。结果 10-02 出现真实崩溃："03–06 的票据还没有实现？这又有 07/08 需要实现，<strong>我都不知道应该怎么办了</strong>。"加上 Status 词汇不统一（done / resolved / ready-for-agent 混用）、06/08 完成后 Status 没关门——三个小缺口叠加成一次流程信任危机。</p>
+    </div>
+    <div class="case fix">
+      <span class="tag">改正</span>
+      <p>① 每个 effort 目录放一个极简看板（README.md 或正式启用 wayfinder 的 map.md），会话结束时让 agent 更新；② 全仓库统一 Status 词汇；③ Status 关门并入票据 DoD（阶段 4 清单）。agent 当时现场补的那张 01–08 状态一览表就是正确形态——问题在于它只存在于聊天里，<strong>没落盘</strong>。</p>
+    </div>
+    <div class="case bad">
+      <span class="tag">反面案例 · 摘要式决策记录</span>
+      <p>2026-10-02 票据 07/08 实施后，Comments 里只写了一行摘要，而 01/02 有完整的 <code>## 决策记录</code>（三轮 12 问逐条可查）。被当场抓出后补记（commit febffcd）。教训：<strong>先例即标准</strong>——每轮 grilling 的产出形态要对齐本 effort 已落地的最佳先例，agent 图省事时人要拦住。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 阶段 6 ================= -->
+<section id="s6">
+  <h2><span class="num">6</span>贯穿始终：提交与工程卫生</h2>
+  <p class="lead"><strong>练的核心能力</strong>：让流程离开会话记忆也能自立。所有"agent 自报"的东西，都要有仓库里的确定性证据兜底。</p>
+  <div class="card">
+    <h3>清单（当前缺口已标注）</h3>
+    <table>
+      <tr><th>项</th><th>规矩</th><th>本项目现状</th></tr>
+      <tr>
+        <td><code>.gitignore</code></td>
+        <td>数据库、构建产物、系统文件全部忽略</td>
+        <td><strong>缺口</strong>：只有 <code>old-src/</code> 一行，<code>local.db</code>、<code>e2e.db</code>、<code>test-results/</code>、<code>tsconfig.tsbuildinfo</code>、<code>.DS_Store</code> 均未忽略，一次 <code>git add .</code> 就会把二进制数据库提交进去</td>
+      </tr>
+      <tr>
+        <td>git remote</td>
+        <td>至少一份异地备份</td>
+        <td><strong>缺口</strong>：纯本地仓库，两周工作量只有一份拷贝</td>
+      </tr>
+      <tr>
+        <td>验证脚本</td>
+        <td>一条命令重跑全部验证（tsc + lint + 单测 + build），CLAUDE.md 写明健康输出示例</td>
+        <td>命令分散在多个脚本里；agent 每次都自报"全绿"，但阶段边界没有"人亲自跑一遍"的记录</td>
+      </tr>
+      <tr>
+        <td>提交纪律</td>
+        <td>一逻辑一 commit，信息引用票据号，历史即审计链</td>
+        <td>优秀：双 commit 模式（实现 + 验收勾选），票据号贯穿</td>
+      </tr>
+    </table>
+    <div class="case fix">
+      <span class="tag">行动项</span>
+      <p>补全 .gitignore → 建 remote → package.json 加 <code>verify</code> 脚本 → 把"阶段边界亲自跑 verify"写进 CLAUDE.md。四件事半天内完成，直接把"评审是否真跑了、测试是否真绿了"的信任问题变成可复核事实。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 反模式清单 ================= -->
+<section id="anti">
+  <h2><span class="num">✕</span>反模式速查（全部来自本项目，附改正）</h2>
+  <div class="card">
+    <table>
+      <tr><th>反模式</th><th>出处</th><th>一句话改正</th></tr>
+      <tr><td>没读懂的 ADR 也批准</td><td>grilling Q4 显式状态机</td><td>L3 决策必须能复述备选方案的否决理由</td></tr>
+      <tr><td>33% 的输入是「按推荐的来」</td><td>全部会话统计</td><td>先分清 L1/L2/L3，L2 起必须复述取舍</td></tr>
+      <tr><td>路由技能（wayfinder）启用即弃</td><td>09-30 会话</td><td>backlog 超过 3 张就必须有持久化看板</td></tr>
+      <tr><td>评审结论只留在聊天里</td><td>code-review 覆盖质疑</td><td>评审记录是票据 DoD 的一环，落 Comments</td></tr>
+      <tr><td>票据完成后 Status 不关门</td><td>票据 06/08</td><td>Status 更新并入 DoD，词汇全仓库统一</td></tr>
+      <tr><td>验收项写文件路径</td><td>票据 01 的 smoke.spec.ts</td><td>路径只进 Comments，验收项写可验证行为</td></tr>
+      <tr><td>摘要式决策记录</td><td>票据 07/08 被抓（febffcd）</td><td>对齐本 effort 最佳先例：形态/红线/测试面/否决理由</td></tr>
+      <tr><td>业务问卷无限期悬置</td><td>12 项疑点未确认</td><td>下一切片开工前先吃掉问卷，冲突记新 ADR</td></tr>
+      <tr><td>21 小时跨夜会话 + 困惑中 compact</td><td>827a1ac1 / 1dad3ee8</td><td>每 effort 开新会话，边界 /clear</td></tr>
+      <tr><td>gitignore 一行 + 无 remote</td><td>仓库现状</td><td>见阶段 6 行动项</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ================= 速查表 ================= -->
+<section id="cheatsheet">
+  <h2><span class="num">≡</span>一页速查</h2>
+  <div class="card">
+    <table>
+      <tr><th>你在哪</th><th>用哪个技能</th><th>产出落盘</th><th>人必须做什么</th></tr>
+      <tr><td>有想法，不知从何开始</td><td>/ask-matt</td><td>—</td><td>L2：判断它的下一步建议是否合理</td></tr>
+      <tr><td>要懂老系统 / 业务</td><td>/research → /grill-with-docs</td><td>调研报告、CONTEXT.md、ADR、问卷</td><td>L3：每个 ADR 读懂再批；疑点全列出来</td></tr>
+      <tr><td>要开工写功能</td><td>/to-spec → /to-tickets</td><td>spec.md、票据链</td><td>L2：quiz 粒度；审验收项无路径</td></tr>
+      <tr><td>逐票实现</td><td>/implement + /tdd</td><td>代码+测试、Comments 实现记录</td><td>L1 放手；拦范围蔓延</td></tr>
+      <tr><td>票做完了</td><td>/code-review</td><td>Comments 评审结论、Status 关门</td><td>核对 DoD 四件套齐活</td></tr>
+      <tr><td>切片做完了</td><td>/clear → /improve-codebase-architecture</td><td>评审报告、深化票、更新看板</td><td>趁热 grill 1–2 票；亲跑 verify</td></tr>
+      <tr><td>票动工（深化）</td><td>/grill-with-docs</td><td>票据决策记录（对齐先例）</td><td>L2/L3：形态、红线、测试面逐条过</td></tr>
+      <tr><td>任何时候</td><td>—</td><td>CLAUDE.md 累积修正</td><td>agent 犯两次的错 → 写进 CLAUDE.md</td></tr>
+    </table>
+    <div class="callout">
+      <strong>全文一句话</strong>：判断前置、执行放手、产物入库、评审留痕、边界体检。<strong>人的注意力只花在两个地方：决策点（grilling/ADR）和关口（DoD/阶段边界）</strong>——这就是 AI 原生开发里"人在环中"的准确含义。
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>基于 onesystem 项目 2026-09-30 ~ 2026-10-03 开发实践整理 · 正反案例均可通过 git 历史与 <code>.scratch/</code> 票据核实 · 参考：Anthropic《The AI-native SDLC playbook》与 matt-pocock/skills 技能集文档。</p>
+</footer>
+
+</div>
+</body>
+</html>

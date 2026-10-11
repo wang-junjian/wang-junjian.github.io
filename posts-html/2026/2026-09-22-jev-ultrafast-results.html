@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="实测超快浏览器智能体：离线契约测试全过，无需密钥即跑通决策循环；接入真实浏览器后三次运行定位过期日期根因，第三次以 $0.0114 成本完成苏黎世到伦敦航班任务，7/7 独立校验全过。报告拆解投机扇出机制、56% 决策过期率与延迟差距，并附三层可审计日志。">
+<meta name="keywords" content="jev-ultrafast, browser-use, 浏览器 Agent, 决策层, 契约测试, 实战">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-22">
+<title>jev-ultrafast 实战工作成果 · 从源码研究到真实联网任务成功</title>
+<style>
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --ink: #18181b; --ink-2: #52525b; --ink-3: #a1a1aa;
+    --line: #e4e4e7; --accent: #2563eb; --accent-soft: #eff6ff;
+    --green: #059669; --green-soft: #ecfdf5; --amber: #d97706; --amber-soft: #fffbeb;
+    --violet: #7c3aed; --violet-soft: #f5f3ff; --red: #dc2626; --red-soft: #fef2f2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; font-size: 15px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  header { border-bottom: 3px solid var(--ink); padding-bottom: 24px; margin-bottom: 40px; }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  h1 { font-size: 32px; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; }
+  .subtitle { margin-top: 12px; color: var(--ink-2); font-size: 16px; max-width: 760px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); }
+  .chip b { color: var(--ink); }
+
+  section { margin-top: 56px; }
+  h2 { font-size: 21px; font-weight: 800; letter-spacing: -.01em; padding-left: 14px; border-left: 4px solid var(--accent); margin-bottom: 8px; }
+  h3 { font-size: 15px; font-weight: 700; margin: 24px 0 10px; }
+  .sec-desc { color: var(--ink-2); margin-bottom: 24px; max-width: 780px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card .t { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .card .d { font-size: 13px; color: var(--ink-2); }
+  .card .d code { font-size: 12px; background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 4px; }
+
+  /* timeline */
+  .tl { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .tl-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; position: relative; }
+  .tl-item .no { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: .1em; }
+  .tl-item .t { font-weight: 700; font-size: 14px; margin: 4px 0; }
+  .tl-item .d { font-size: 12.5px; color: var(--ink-2); }
+  .tl-item .badge { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .stat .v { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .stat .v.green { color: var(--green); } .stat .v.amber { color: var(--amber); } .stat .v.violet { color: var(--violet); }
+  .stat .k { font-size: 12.5px; font-weight: 600; margin-top: 2px; }
+  .stat .s { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); padding: 12px 16px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .pill.g { background: var(--green-soft); color: var(--green); }
+  .pill.r { background: var(--red-soft); color: var(--red); }
+  .pill.b { background: var(--accent-soft); color: var(--accent); }
+  .pill.v { background: var(--violet-soft); color: var(--violet); }
+  .pill.o { background: var(--amber-soft); color: var(--amber); }
+  td .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .flight { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .flight:last-child { border-bottom: none; }
+  .flight .airline { font-weight: 700; font-size: 14px; }
+  .flight .route { font-size: 13px; color: var(--ink-2); }
+  .flight .price { font-size: 18px; font-weight: 800; color: var(--green); white-space: nowrap; }
+  .flight .price small { font-size: 11px; color: var(--ink-3); font-weight: 600; display: block; text-align: right; }
+
+  .findings { counter-reset: f; display: grid; gap: 14px; }
+  .finding { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px 18px 56px; position: relative; }
+  .finding::before { counter-increment: f; content: counter(f); position: absolute; left: 18px; top: 18px; width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .finding .t { font-weight: 700; font-size: 14px; }
+  .finding .d { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .finding .d b { color: var(--ink); }
+
+  .compare-row { display: grid; grid-template-columns: 130px 1fr 1fr; gap: 4px 16px; align-items: center; margin: 6px 0; font-size: 13px; }
+  .compare-row .lbl { font-weight: 600; color: var(--ink-2); text-align: right; padding-right: 4px; }
+  .bar-track { height: 16px; background: var(--bg); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-fill.official { background: var(--violet); }
+  .bar-fill.real { background: var(--accent); }
+  .val { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; margin-left: 8px; }
+  .legend { font-size: 12px; color: var(--ink-3); margin-top: 12px; }
+  .legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 4px 0 14px; vertical-align: middle; }
+
+  .note { margin-top: 16px; font-size: 13px; color: var(--ink-2); background: var(--amber-soft); border: 1px solid #fde68a; border-radius: 10px; padding: 12px 16px; }
+  .note b { color: var(--amber); }
+  .success-banner { background: var(--green-soft); border: 1px solid #a7f3d0; border-radius: 12px; padding: 18px 22px; margin-bottom: 20px; }
+  .success-banner .big { font-size: 17px; font-weight: 800; color: var(--green); }
+  .success-banner .d { font-size: 13.5px; color: var(--ink-2); margin-top: 4px; }
+
+  pre.code { background: #f4f4f5; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-x: auto; line-height: 1.6; color: var(--ink); }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+  .diagram-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  @media (max-width: 640px) { h1 { font-size: 25px; } .compare-row { grid-template-columns: 90px 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">browser-use/jev-ultrafast · 源码研究 → 离线试用 → 真实联网任务</div>
+  <h1>jev-ultrafast 实战工作成果</h1>
+  <p class="subtitle">从安装、31 条契约测试、无 API key 的离线决策循环试跑，到配置真实 key 后在真实 Chrome 上完成 Google Flights 任务并通过 7/7 独立校验——完整记录「决策层浏览器 Agent」的一次落地验证。</p>
+  <div class="meta-row">
+    <span class="chip">日期：<b>2026-09-22</b></span>
+    <span class="chip">离线契约测试：<b>31/31 通过</b></span>
+    <span class="chip">真实任务：<b>✅ 7/7 校验通过</b></span>
+    <span class="chip">真实成本：<b>$0.0114 / 任务</b></span>
+  </div>
+</header>
+
+<!-- ============ 1. 项目 ============ -->
+<section>
+  <h2>研究对象</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="t">browser-use/jev-ultrafast ⚡（17.5k★ / 6 天，MIT）</div>
+      <div class="d">browser-use 官方出品的超快浏览器 Agent：TypeSafe Jev 从动态索引的动作空间里<b>选出</b>操作与目标元素，只有 <code>TYPE_TEXT</code> 时才由小 LLM 生成文本——「用选择替代生成」。8 种操作：CLICK / TYPE_TEXT / SELECT / SCROLL_UP / SCROLL_DOWN / WAIT / DONE / BLOCKED。</div>
+    </div>
+    <div class="card">
+      <div class="t">核心机制：投机扇出（Speculative Fan-out）</div>
+      <div class="d">每轮决策把 operation 与各操作的 target 作为并行 Choice 问题放进<b>一次</b> TypeSafe 请求，两次判断一次网络往返；每个 target head 只含兼容元素，未命中的 head 作废。官方 Demo：Google Flights 全任务 7.07s，Jev 中位延迟 178ms。</div>
+    </div>
+    <div class="card">
+      <div class="t">本环境配置</div>
+      <div class="d"><code>TYPESAFE_API_KEY</code>（jev-latest，实测有效）+ <code>TEXT_MODEL_API_KEY</code>（DeepSeek deepseek-chat）。写入 <code>.env</code>（gitignored，权限 600）。浏览器层：browser-harness 通过 CDP 驱动真实 Chrome（需手动开 chrome://inspect/#remote-debugging）。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. 工作流时间线 ============ -->
+<section>
+  <h2>工作流程：四步从零到真实任务</h2>
+  <div class="tl">
+    <div class="tl-item">
+      <div class="no">STEP 1</div><div class="t">安装与契约验证</div>
+      <div class="d">git clone + uv sync（仅 2 个运行时依赖）。官方离线测试套件 31/31 通过（0.37s，零付费），覆盖 14 条安全契约：非法概率拒绝、过期决策先消费、文本 helper 拒绝猜值等。</div>
+      <span class="badge" style="background:var(--green-soft);color:var(--green)">✅ 31/31</span>
+    </div>
+    <div class="tl-item">
+      <div class="no">STEP 2</div><div class="t">离线试跑（无 key）</div>
+      <div class="d">只替换两个网络边界（FakeBrowser 模拟机票站 + 按脚 本作答的假 Jev），驱动<b>真实</b> Agent 代码路径跑通 9 决策 / 2 文本调用 / done，并产出完整工作日志。</div>
+      <span class="badge" style="background:var(--accent-soft);color:var(--accent)">✅ done</span>
+    </div>
+    <div class="tl-item">
+      <div class="no">STEP 3</div><div class="t">配置真实 key</div>
+      <div class="d">TypeSafe key 与 DeepSeek key 均以最小请求实测验证（成本忽略不计）；Chrome 开启远程调试开关后 browser-harness 自动连接 CDP 端口 9222。</div>
+      <span class="badge" style="background:var(--green-soft);color:var(--green)">✅ 双 key 有效</span>
+    </div>
+    <div class="tl-item">
+      <div class="no">STEP 4</div><div class="t">真实联网任务</div>
+      <div class="d">真实 Chrome 上跑 Google Flights：3 次运行定位过期日期根因后，第 3 次成功完成并通过独立校验器 7/7 项检查。</div>
+      <span class="badge" style="background:var(--green-soft);color:var(--green)">🎉 成功</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. 动作生命周期 ============ -->
+<section>
+  <h2>动作工作原理：一条动作的完整生命周期</h2>
+  <p class="sec-desc">每一步都经过同一条流水线：观察 → 动作空间 → 一次投机扇出请求 → 严格校验 → 消费决策 → 新鲜度守卫 → 执行 → 先记日志再重观察。模型输出永远只走「从观察到的 DOM 节点解析」这一条窄通道。</p>
+  <div class="diagram-card">
+    <svg viewBox="0 0 1000 430" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter, PingFang SC, sans-serif">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/>
+        </marker>
+        <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+        </marker>
+      </defs>
+      <g font-size="13" fill="#18181b" font-weight="600" text-anchor="middle">
+        <!-- row 1 -->
+        <rect x="20" y="30" width="170" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="105" y="56">① 原子观察</text>
+        <text x="105" y="76" font-size="11" fill="#52525b" font-weight="400">1 次 CDP 读 · snapshot.js</text>
+        <text x="105" y="88" font-size="10.5" fill="#a1a1aa" font-weight="400">fingerprint = sha256(url+text+actions)</text>
+
+        <rect x="255" y="30" width="170" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="340" y="56">② 动作空间</text>
+        <text x="340" y="76" font-size="11" fill="#52525b" font-weight="400">元素表 [1][2][3]…</text>
+        <text x="340" y="88" font-size="10.5" fill="#a1a1aa" font-weight="400">每个操作一个兼容 target head</text>
+
+        <rect x="490" y="30" width="230" height="64" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="605" y="56">③ 一次 TypeSafe 请求</text>
+        <text x="605" y="76" font-size="11" fill="#52525b" font-weight="400">operation + click_target + type_text_target</text>
+        <text x="605" y="88" font-size="10.5" fill="#a1a1aa" font-weight="400">并行投机作答 · 中位延迟 809ms（实测）</text>
+
+        <rect x="785" y="30" width="190" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="880" y="56">④ 概率严格校验</text>
+        <text x="880" y="76" font-size="11" fill="#52525b" font-weight="400">候选一致 · Σ=1±0.02 · argmax</text>
+        <text x="880" y="88" font-size="10.5" fill="#a1a1aa" font-weight="400">任一不过 → 拒绝执行</text>
+
+        <!-- row 2 -->
+        <rect x="785" y="160" width="190" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="880" y="186">⑤ 消费决策 + 守卫</text>
+        <text x="880" y="206" font-size="11" fill="#52525b" font-weight="400">decision 先置空，重试不可能双击</text>
+        <text x="880" y="218" font-size="10.5" fill="#a1a1aa" font-weight="400">重查指纹 · 遮挡 · 几何</text>
+
+        <rect x="490" y="160" width="230" height="64" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+        <text x="605" y="186">⑥ 执行（代码拥有动作）</text>
+        <text x="605" y="206" font-size="11" fill="#52525b" font-weight="400">CLICK=节点坐标+鼠标事件</text>
+        <text x="605" y="218" font-size="10.5" fill="#a1a1aa" font-weight="400">TYPE_TEXT=小 LLM 单键 JSON → selectAll+insertText</text>
+
+        <rect x="255" y="160" width="170" height="64" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+        <text x="340" y="186">⑦ 先记日志</text>
+        <text x="340" y="206" font-size="11" fill="#52525b" font-weight="400">概率/延迟/token 落盘</text>
+        <text x="340" y="218" font-size="10.5" fill="#a1a1aa" font-weight="400">过期观察不能抹掉已执行动作</text>
+
+        <rect x="20" y="160" width="170" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="105" y="186">⑧ 重新观察</text>
+        <text x="105" y="206" font-size="11" fill="#52525b" font-weight="400">fingerprint 对比</text>
+        <text x="105" y="218" font-size="10.5" fill="#a1a1aa" font-weight="400">page_changed 写入历史</text>
+
+        <!-- loop arrow -->
+        <path d="M 105 224 L 105 300 L 500 300 L 500 100" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arr)"/>
+        <text x="300" y="292" font-size="11.5" fill="#2563eb" font-weight="600">循环：回到 ①（status=ready）</text>
+
+        <!-- guard branches -->
+        <rect x="600" y="330" width="180" height="56" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="690" y="352" font-size="12.5" fill="#dc2626" font-weight="700">StalePage</text>
+        <text x="690" y="370" font-size="10.5" fill="#52525b" font-weight="400">页面在决策后变化 → 重新决策</text>
+
+        <rect x="810" y="330" width="170" height="56" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="895" y="352" font-size="12.5" fill="#dc2626" font-weight="700">熔断 blocked</text>
+        <text x="895" y="370" font-size="10.5" fill="#52525b" font-weight="400">连续 3 次无变化(非WAIT) · 步数≤60</text>
+
+        <path d="M 880 94 L 880 160" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arr)"/>
+        <path d="M 785 192 L 720 192" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arr)"/>
+        <path d="M 490 192 L 425 192" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arr)"/>
+        <path d="M 255 192 L 190 192" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arr)"/>
+        <path d="M 605 224 L 605 330 L 610 330" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrg)"/>
+        <path d="M 880 224 L 880 330 L 885 330" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrg)"/>
+      </g>
+    </svg>
+  </div>
+  <div class="note" style="margin-top:16px"><b>安全模型：</b>校验层保证「结构合法」（概率分布、候选一致），不保证「语义正确」——语义靠规则（DONE 需可见证据）与独立结果校验器兜底。模型输出永不成为选择器、坐标、shell 命令或可执行 JS。</div>
+</section>
+
+<!-- ============ 4. 工作日志解剖 ============ -->
+<section>
+  <h2>工作日志解剖：三层全可审计</h2>
+  <p class="sec-desc">Agent 每步产出三层日志，事后审查无需重放。以下字段全部来自真实运行落盘的 state.json。</p>
+  <div class="cards">
+    <div class="card">
+      <div class="t">decisions[] —— 模型判断层</div>
+      <div class="d">operation 与 target 的选择、<b>完整概率分布</b>（operation_probabilities / target_probabilities）、置信度、延迟、token 用量，以及 request 原始请求体——投机扇出在这里直接可见：questions 同时含 operation + 各操作 head。</div>
+    </div>
+    <div class="card">
+      <div class="t">history[] —— 执行层</div>
+      <div class="d">实际执行的 choice、<b>执行概率</b>（target head 的，归因准确）、生成的文本、page_changed（执行后指纹对比，熔断的输入）、text_helper 与其延迟。被过期吞掉的决策不污染历史。</div>
+    </div>
+    <div class="card">
+      <div class="t">text_calls[] —— 文本生成账本</div>
+      <div class="d">字段 → 生成值 → 模型 → 延迟 → token，独立于 Jev 计量。真实运行：<code>Where from? → "Zurich"（667ms）</code>、<code>Where to? → "London"（714ms）</code>。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. 三次真实运行 ============ -->
+<section>
+  <h2>真实联网实测：三次运行定位根因</h2>
+  <div class="success-banner">
+    <div class="big">🎉 第 3 次运行成功：苏黎世 → 伦敦，10 月 20 日，7/7 独立校验全过</div>
+    <div class="d">独立校验器核验 URL、单程、出发地、目的地、日期、年份与可见航班——DONE 判定从不被当作成功的证据。</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>运行</th><th>目标日期</th><th>决策数</th><th>执行动作</th><th>结果</th><th>根因</th></tr></thead>
+      <tbody>
+        <tr><td class="num">Run 1</td><td>2026-09-20</td><td class="num">10</td><td class="num">8</td><td><span class="pill r">❌ blocked</span></td><td>「Open Departure」点击 3 次页面无变化 → 无进展熔断（真实浏览器连接首跑 + 授权弹窗干扰）</td></tr>
+        <tr><td class="num">Run 2</td><td>2026-09-20</td><td class="num">28</td><td class="num">~25</td><td><span class="pill r">❌ blocked</span></td><td><b>官方 Demo 硬编码日期已过期</b>：9 月 20 日已成过去，日历中不可选，Agent 在翻月中迷失。熔断正确兜底</td></tr>
+        <tr><td class="num">Run 3</td><td><b>2026-10-20</b></td><td class="num">71</td><td class="num">31</td><td><span class="pill g">✅ passed 7/7</span></td><td>换未来日期后成功。总耗时 75.6s，成本 $0.0114</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>研究价值：</b>官方 README 的目标日期（September 20, 2026）在录制时是未来值，发布一周后即失效——<b>任务型 Demo 的可复现性有时效</b>。修正版脚本 flights_future.py 已随报告附带。</div>
+</section>
+
+<!-- ============ 6. 数据对比 ============ -->
+<section>
+  <h2>实测数据 vs 官方 Demo</h2>
+  <div class="stat-grid" style="margin-bottom:24px">
+    <div class="stat"><div class="v">75.6s</div><div class="k">总耗时（真实）</div><div class="s">官方 7.07s</div></div>
+    <div class="stat"><div class="v amber">809ms</div><div class="k">Jev 中位延迟</div><div class="s">官方 178ms · 差异=网络 RTT</div></div>
+    <div class="stat"><div class="v violet">56%</div><div class="k">决策过期作废率</div><div class="s">71 决策仅 31 执行</div></div>
+    <div class="stat"><div class="v green">$0.0114</div><div class="k">Jev 成本 / 任务</div><div class="s">271,559 输入 token</div></div>
+  </div>
+  <div class="diagram-card">
+    <h3 style="margin-top:0">逐项对比（官方 Demo = 最优路径 + 低延迟链路）</h3>
+    <div class="compare-row"><div class="lbl">总耗时</div><div><div class="bar-track"><div class="bar-fill official" style="width:9.4%"></div></div></div><div class="val">7.07s</div></div>
+    <div class="compare-row"><div class="lbl"></div><div><div class="bar-track"><div class="bar-fill real" style="width:100%"></div></div></div><div class="val">75.6s</div></div>
+    <div class="compare-row"><div class="lbl">Jev 延迟</div><div><div class="bar-track"><div class="bar-fill official" style="width:21.9%"></div></div></div><div class="val">178ms</div></div>
+    <div class="compare-row"><div class="lbl"></div><div><div class="bar-track"><div class="bar-fill real" style="width:100%"></div></div></div><div class="val">809ms</div></div>
+    <div class="compare-row"><div class="lbl">决策数</div><div><div class="bar-track"><div class="bar-fill official" style="width:24%"></div></div></div><div class="val">17</div></div>
+    <div class="compare-row"><div class="lbl"></div><div><div class="bar-track"><div class="bar-fill real" style="width:100%"></div></div></div><div class="val">71（31 执行）</div></div>
+    <div class="compare-row"><div class="lbl">输入 token</div><div><div class="bar-track"><div class="bar-fill official" style="width:33.3%"></div></div></div><div class="val">90,558</div></div>
+    <div class="compare-row"><div class="lbl"></div><div><div class="bar-track"><div class="bar-fill real" style="width:100%"></div></div></div><div class="val">271,559</div></div>
+    <div class="legend"><span style="background:var(--violet)"></span>官方 Demo <span style="background:var(--accent)"></span>本环境实测（延迟条以各自较大值为 100% 基准）</div>
+  </div>
+  <div class="cards" style="margin-top:20px">
+    <div class="card"><div class="t">Run 3 操作分布</div><div class="d">CLICK 22 · WAIT 5 · TYPE_TEXT 2 · SCROLL_DOWN 2 —— 典型的「判断密集、生成极少」形态：全程只有 2 次文本生成（DeepSeek 667ms / 714ms），其余全部是 Jev 的 Choice 判断。</div></div>
+    <div class="card"><div class="t">成本结构确认</div><div class="d">Jev $0.042/M 输入、输出免费；单任务 $0.0114 ≈ 官方口径的 3 倍（决策数多 4 倍）。token 是唯一变量——<b>页面稳定性直接决定花费</b>。</div></div>
+  </div>
+</section>
+
+<!-- ============ 7. 任务成果 ============ -->
+<section>
+  <h2>任务成果：真实航班（2026-10-20 苏黎世 → 伦敦，单程经济舱）</h2>
+  <div class="diagram-card">
+    <div class="flight">
+      <div><div class="airline">easyJet ✈ 直飞 1h 45m</div><div class="route">11:10 苏黎世机场 → 11:55 伦敦盖特威克</div></div>
+      <div class="price">SGD 70<small>不含行李架上包费</small></div>
+    </div>
+    <div class="flight">
+      <div><div class="airline">British Airways ✈ 直飞 2h</div><div class="route">20:10 苏黎世机场 → 21:10 伦敦希思罗</div></div>
+      <div class="price">SGD 112</div>
+    </div>
+    <div class="flight">
+      <div><div class="airline">SWISS ✈ 直飞 1h 50m</div><div class="route">15:35 苏黎世机场 → 16:25 伦敦希思罗</div></div>
+      <div class="price">SGD 166</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8. 关键发现 ============ -->
+<section>
+  <h2>关键发现</h2>
+  <div class="findings">
+    <div class="finding"><div class="t">Demo 的可复现性有时效</div><div class="d">README 硬编码「September 20, 2026」，发布一周后即过期。Agent 面对不可能目标不会硬编，而是 stuck → blocked——<b>熔断机制正确兜底</b>，但复现官方结果必须先换未来日期。</div></div>
+    <div class="finding"><div class="t">stale 率是真实成本的大头</div><div class="d">56% 的决策在执行前因页面 fingerprint 变化被丢弃（价格刷新、动画）。官方「减少浏览器往返」优化针对的正是这个——<b>页面稳定性比模型延迟更影响花费</b>。</div></div>
+    <div class="finding"><div class="t">「ultrafast」强依赖网络位置</div><div class="d">Jev 中位延迟 809ms vs 官方 178ms，纯 RTT 差异。决策循环是串行的，延迟直接乘在每一步上——跨区域使用时体感约慢 4.5 倍。</div></div>
+    <div class="finding"><div class="t">会 wander，但不越界</div><div class="d">搜索页上多次绕路、误点、重复动作，但每次动作都被守卫约束在观察到的节点上；最终靠「DONE 需可见证据」规则自我纠正并通过独立校验。<b>语义错误存在但被架构无害化</b>。</div></div>
+    <div class="finding"><div class="t">可审计性是设计出来的</div><div class="d">71 次决策的概率、置信度、延迟、token 全部落盘；blocked 可解释（3 次重试记录）；成本可预算（计费到步）。对生产化而言，这比 7 秒的体感更有价值。</div></div>
+  </div>
+</section>
+
+<!-- ============ 9. 复现 ============ -->
+<section>
+  <h2>复现方式</h2>
+  <pre class="code">cd jev-ultrafast
+uv run pytest                                # 离线契约测试（31/31，零付费）
+uv run python ../jev-ultrafast_dryrun.py     # 无 key 离线驱动真实 Agent 循环
+# 真实运行（.env 填入 TYPESAFE_API_KEY + TEXT_MODEL_API_KEY）：
+uv run --env-file .env python flights_future.py        # 未来日期修正版，✅ 7/7 校验通过
+# 产物：artifacts/flights/future-date/state.json（完整三层工作日志）</pre>
+  <p style="font-size:13px;color:var(--ink-2);margin-top:12px">环境门槛：新版 Chrome 需在 <code>chrome://inspect/#remote-debugging</code> 手动开启「Allow remote debugging」；browser-harness daemon 随 Agent 启动自动拉起并连接 CDP。</p>
+</section>
+
+<footer>
+  jev-ultrafast 实战工作成果 · 2026-09-22 · 单文件零依赖 HTML，可离线查看 · 数据来源：本地实测 state.json（3 次运行）+ 官方 performance.md 对照
+</footer>
+
+</div>
+</body>
+</html>

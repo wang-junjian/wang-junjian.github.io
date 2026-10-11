@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="一套从三路独立分析合并实践中反向提炼的通用工作流程：三阶段七步骤、十条可复制提示词、八条铁律，不依赖任何框架与工具。实测揭示核心真相——需求覆盖满分毫无区分度，差异全部出现在需求没写的地方；「未定义点穷举」不可跳过，并给出按需求规模裁剪用法。">
+<meta name="keywords" content="需求分析, 规范编写, 通用工作流程, 提示词, 三源合并, 工具无关">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-10">
+<title>需求 → 规范 · 通用工作流程（工具无关）</title>
+<style>
+:root{
+  --ink:#11151C; --ink-2:#2C3440; --muted:#525C6A; --faint:#656D76;
+  --line:#E2E6EC; --line-2:#EDF0F4; --bg:#FFFFFF; --bg-soft:#F8F9FB; --bg-card:#FBFCFD;
+  --accent:#2B4AE0; --accent-soft:#EEF1FE; --accent-line:#C8D1F8;
+  --ok:#0E7A4A; --ok-soft:#E8F5EE;
+  --warn:#946000; --warn-soft:#FDF3E3;
+  --bad:#B22C1A; --bad-soft:#FBEDEA;
+  --purple:#5B3FBF; --purple-soft:#F0EDFC;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:"Inter","Helvetica Neue",-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:14.5px;line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px 96px;display:grid;grid-template-columns:244px minmax(0,1fr);gap:48px;align-items:start}
+@media (max-width:1000px){.wrap{grid-template-columns:minmax(0,1fr);gap:0;padding:0 18px 72px}}
+
+/* ---------- masthead ---------- */
+.masthead{grid-column:1/-1;padding:56px 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);font-weight:650;margin:0 0 14px}
+.masthead h1{margin:0 0 14px;font-size:33px;line-height:1.24;font-weight:730;letter-spacing:-.02em}
+.masthead h1 .thin{font-weight:430;color:var(--muted)}
+.masthead .sub{margin:0;max-width:820px;color:var(--muted);font-size:15px}
+.masthead .meta{margin:22px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:11.5px;padding:3px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--bg-card)}
+.chip b{color:var(--ink-2);font-weight:650}
+
+/* ---------- toc ---------- */
+nav.toc{position:sticky;top:24px;font-size:12.5px;padding-top:40px}
+@media (max-width:1000px){nav.toc{position:static;padding:26px 0 0;border-bottom:1px solid var(--line);padding-bottom:20px}}
+nav.toc p{margin:0 0 10px;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:650}
+nav.toc ol{list-style:none;margin:0 0 20px;padding:0;border-left:1px solid var(--line)}
+nav.toc li{margin:0}
+nav.toc a{display:block;padding:5px 0 5px 12px;color:var(--muted);text-decoration:none;border-left:2px solid transparent;margin-left:-1px;line-height:1.45}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft)}
+nav.toc a.l2{padding-left:24px;font-size:12px;color:var(--faint)}
+nav.toc a.l2:hover{color:var(--accent)}
+
+main{padding-top:40px;min-width:0}
+section{margin:0 0 60px;scroll-margin-top:24px}
+h2{margin:0 0 18px;font-size:23px;font-weight:700;letter-spacing:-.015em;display:flex;align-items:baseline;gap:12px;padding-bottom:12px;border-bottom:2px solid var(--ink-2)}
+h2 .num{font-family:var(--mono);font-size:13px;color:#fff;background:var(--ink-2);padding:3px 9px;border-radius:5px;font-weight:600;letter-spacing:0}
+h3{margin:34px 0 14px;font-size:17px;font-weight:680;letter-spacing:-.01em}
+h4{margin:0 0 8px;font-size:13.5px;font-weight:680;color:var(--ink-2)}
+h5{margin:0;font-size:12.5px;font-weight:650;color:var(--ink-2)}
+p{margin:0 0 14px}
+.lead{font-size:15.5px;color:var(--ink-2);line-height:1.8}
+code{font-family:var(--mono);font-size:.9em;background:var(--bg-soft);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:#1B3FC4;overflow-wrap:anywhere}
+b,strong{font-weight:670;color:var(--ink-2)}
+a{color:var(--accent)}
+
+/* ---------- tables ---------- */
+.tbl-wrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);border-radius:10px;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:560px}
+caption{caption-side:top;text-align:left;padding:11px 14px;font-size:12px;font-weight:650;color:var(--muted);background:var(--bg-soft);border-bottom:1px solid var(--line)}
+th{text-align:left;font-weight:660;color:var(--ink-2);background:var(--bg-soft);padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:bottom;font-size:12.5px}
+td{padding:10px 12px;border-bottom:1px solid var(--line-2);vertical-align:top;line-height:1.65}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#FCFDFF}
+.ctr{text-align:center}
+.tbl-tight td,.tbl-tight th{padding:8px 11px}
+.tbl-tight{font-size:12.5px}
+
+/* ---------- cards / stats ---------- */
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.grid2,.grid3,.grid4{grid-template-columns:minmax(0,1fr)}}
+.card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;background:var(--bg-card)}
+.card--flat{background:#fff}
+.stat{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--bg-card)}
+.stat .k{font-size:11.5px;color:var(--faint);font-weight:600;margin-bottom:6px}
+.stat .v{font-size:26px;font-weight:730;letter-spacing:-.02em;line-height:1.1;color:var(--ink)}
+.stat .v small{font-size:14px;font-weight:500;color:var(--muted)}
+.stat .n{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+/* ---------- notes ---------- */
+.note{border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:0 8px 8px 0;padding:13px 16px;margin:0 0 20px;background:var(--bg-card);font-size:13px;line-height:1.75}
+.note__t{display:block;font-weight:680;color:var(--ink-2);margin-bottom:4px;font-size:12.5px}
+.note--info{border-left-color:var(--accent);background:var(--accent-soft)}
+.note--info .note__t{color:#1B3FC4}
+.note--warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note--warn .note__t{color:var(--warn)}
+.note--bad{border-left-color:var(--bad);background:var(--bad-soft)}
+.note--bad .note__t{color:var(--bad)}
+.note--ok{border-left-color:var(--ok);background:var(--ok-soft)}
+.note--ok .note__t{color:var(--ok)}
+
+/* ---------- figures ---------- */
+figure{margin:0 0 26px;padding:20px 18px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-card)}
+figure svg{display:block;width:100%;height:auto}
+figcaption{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.7}
+figcaption b{color:var(--ink-2)}
+
+/* ---------- steps ---------- */
+.step{border:1px solid var(--line);border-radius:12px;margin:0 0 22px;background:#fff;overflow:hidden}
+.step__hd{display:flex;align-items:center;gap:12px;padding:13px 18px;background:var(--bg-soft);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.step__n{font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;background:var(--ink-2);padding:3px 9px;border-radius:5px;letter-spacing:.02em}
+.step__hd h3{margin:0;font-size:16.5px;font-weight:690}
+.step__tag{margin-left:auto;font-size:11.5px;font-weight:620;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:#fff;white-space:nowrap}
+.step__body{padding:18px}
+.step__body > :last-child{margin-bottom:0}
+.facts{margin:0 0 16px;display:grid;gap:0;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.facts > div{display:grid;grid-template-columns:88px minmax(0,1fr);gap:0;border-bottom:1px solid var(--line-2)}
+.facts > div:last-child{border-bottom:0}
+.facts dt{padding:9px 12px;background:var(--bg-soft);font-size:12px;font-weight:650;color:var(--muted);border-right:1px solid var(--line-2)}
+.facts dd{margin:0;padding:9px 14px;font-size:13px;line-height:1.7}
+@media (max-width:640px){.facts > div{grid-template-columns:minmax(0,1fr)}.facts dt{border-right:0;border-bottom:1px solid var(--line-2)}}
+
+/* ---------- prompt blocks ---------- */
+.prompt{position:relative;margin:18px 0 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.prompt__hd{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#F1F3F7;border-bottom:1px solid var(--line)}
+.prompt__hd .pid{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-line);padding:2px 8px;border-radius:5px;white-space:nowrap}
+.prompt__hd .ptitle{font-size:12.5px;font-weight:650;color:var(--ink-2)}
+.prompt__hd .pmeta{margin-left:auto;font-size:11px;color:var(--faint);white-space:nowrap}
+.prompt__hd .ptitle + .copy{margin-left:auto}
+.copy{font:inherit;font-size:11.5px;font-weight:600;padding:3px 11px;border:1px solid var(--accent-line);background:#fff;color:var(--accent);border-radius:6px;cursor:pointer;white-space:nowrap}
+.copy:hover{background:var(--accent-soft)}
+.copy:active{transform:translateY(1px)}
+.prompt pre{margin:0;padding:14px 16px;background:var(--bg-soft);font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;overflow-x:auto}
+.prompt pre .ph{color:#1B3FC4;font-weight:600}
+.prompt__ft{padding:8px 12px;border-top:1px solid var(--line-2);background:#fff;font-size:11.5px;color:var(--muted);line-height:1.6}
+
+/* ---------- misc ---------- */
+.check{list-style:none;margin:0;padding:0}
+.check li{position:relative;padding:6px 0 6px 24px;line-height:1.7;border-bottom:1px solid var(--line-2)}
+.check li:last-child{border-bottom:0}
+.check li::before{content:"";position:absolute;left:3px;top:14px;width:9px;height:9px;border:1.5px solid var(--faint);border-radius:2px}
+.legend{font-size:12.5px;color:var(--muted);line-height:1.75;margin:-8px 0 20px}
+.tag{display:inline-block;font-size:11px;font-weight:650;padding:2px 8px;border-radius:999px;border:1px solid transparent;white-space:nowrap;line-height:1.5}
+.t-ok{color:var(--ok);background:var(--ok-soft);border-color:#BFE3CE}
+.t-warn{color:var(--warn);background:var(--warn-soft);border-color:#EBD7A8}
+.t-bad{color:var(--bad);background:var(--bad-soft);border-color:#F0C4BB}
+.t-new{color:var(--accent);background:var(--accent-soft);border-color:var(--accent-line)}
+.t-purple{color:var(--purple);background:var(--purple-soft);border-color:#D5CBF4}
+.t-gray{color:var(--muted);background:var(--bg-soft);border-color:var(--line)}
+.flowline{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.9;white-space:pre;margin:0 0 20px}
+footer{grid-column:1/-1;margin-top:40px;padding-top:22px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.8}
+footer p{margin:0 0 6px}
+@media print{
+  .wrap{display:block;max-width:none;padding:0}
+  nav.toc,.copy{display:none}
+  body{font-size:10.5pt}
+  section{page-break-inside:avoid}
+  .step,figure,.tbl-wrap{page-break-inside:avoid}
+  h2{page-break-after:avoid}
+  a{color:var(--ink);text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">方法论 · 与工具无关</p>
+    <h1>从需求到规范<br><span class="thin">一套不依赖任何工具的工作流程与 10 条提示词</span></h1>
+    <p class="sub">本流程从「销售框架合同信息查询」的三源合并实践中反向提炼：用三条互不可读的独立路径分析同一份需求，再把结果合并成一份可评审、可实施的规范。下面这套步骤与提示词<strong>不依赖任何特定框架、CLI 或技能库</strong>——换成别的工具、甚至只用裸模型对话，都能照做。</p>
+    <div class="meta">
+      <span class="chip">来源 <b>三路独立分析 + 逐条裁决</b></span>
+      <span class="chip">步骤 <b>7</b></span>
+      <span class="chip">提示词 <b>10</b></span>
+      <span class="chip">实测需求要素 <b>26/26</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <p>目录</p>
+    <ol>
+      <li><a href="#s0">0 · 六条关键认知</a></li>
+      <li><a href="#s1">1 · 流程总览</a></li>
+      <li><a href="#s2">2 · 七个步骤</a></li>
+      <li><a class="l2" href="#p1">P1 冻结输入</a></li>
+      <li><a class="l2" href="#p2">P2 事实取证</a></li>
+      <li><a class="l2" href="#p3">P3 未定义点穷举</a></li>
+      <li><a class="l2" href="#p4">P4 规范成文</a></li>
+      <li><a class="l2" href="#p5">P5 合并与分流</a></li>
+      <li><a class="l2" href="#p6">P6 切片与验收</a></li>
+      <li><a class="l2" href="#p7">P7 评审</a></li>
+      <li><a href="#s3">3 · 提示词速查</a></li>
+      <li><a href="#s4">4 · 八条铁律</a></li>
+      <li><a href="#s5">5 · 各工具在此流程中的位置</a></li>
+      <li><a href="#s6">6 · 按需求规模裁剪</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+  <!-- ============ 0 ============ -->
+  <section id="s0">
+    <h2><span class="num">00</span>六条关键认知</h2>
+    <p class="lead">这六条不是流程步骤，而是决定流程该怎么设计的前提。它们全部来自实测数据，不是经验之谈——如果不同意其中任何一条，后面的步骤设计都会跟着变。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>① 覆盖完整性不构成区分度</h4>
+        <p style="margin:0;font-size:13px">三条互不相通的路径分析同一份需求，需求要素覆盖都是 <b>26/26</b>。所以「有没有漏需求」几乎不是流程质量的指标——<b>真正的差异 100% 出现在需求没写的地方</b>。</p>
+      </div>
+      <div class="card">
+        <h4>② 流程越重 ≠ 越能想到边界</h4>
+        <p style="margin:0;font-size:13px">用最重拷问流程的那一路产出了最多的未定义点（16 个），却漏掉了「订单指向的框架不存在」；用最简流程的那一路（9 个）抓到了。加流程步骤解决不了这个，<b>只有结构化的边界清单能解决</b>。</p>
+      </div>
+      <div class="card">
+        <h4>③ 未定义点必须带答案</h4>
+        <p style="margin:0;font-size:13px">「这里需求没写」是问题清单；「这里需求没写，我推荐这样做，理由是…」才是规范。前者永远无法定稿，只会变成一张待办。</p>
+      </div>
+      <div class="card">
+        <h4>④ 裁决必须写影响面</h4>
+        <p style="margin:0;font-size:13px">只说「我选 A」，业务无法拍板；补上「如果选 B，代价是…」，业务才能在 30 秒内签字。<b>影响面是裁决的一部分，不是附注。</b></p>
+      </div>
+      <div class="card">
+        <h4>⑤ 待确认项不得阻塞开发</h4>
+        <p style="margin:0;font-size:13px">把未定事项拆成「有默认值 → 直接做」与「属口径 → 按裁决先行、签字后调整」。这样规范不会变成一张待办清单，开发第一天就能开工。</p>
+      </div>
+      <div class="card">
+        <h4>⑥ 共识项不要重新讨论</h4>
+        <p style="margin:0;font-size:13px">被多条独立路径一致确认的结论，重开一次的成本高于收益。把它明确写进文档，能省掉评审会上最贵的 20 分钟。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 1 ============ -->
+  <section id="s1">
+    <h2><span class="num">01</span>流程总览</h2>
+    <p class="lead">七个步骤，三个阶段：<b>发散</b>（把事实和未知都摊开）→ <b>收敛</b>（形成唯一依据）→ <b>落地</b>（变成可执行、可验收、可评审）。每一步都产出一个文件，每一步都能被下一个人接手。</p>
+
+    <figure>
+      <svg viewBox="0 0 960 480" role="img" aria-label="需求到规范的七步工作流程图，分为发散、收敛、落地三个阶段">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#656D76"></path>
+          </marker>
+        </defs>
+
+        <!-- 阶段 1 -->
+        <text x="16" y="28" font-size="12.5" font-weight="700" fill="#B22C1A" font-family="Inter,system-ui,sans-serif">阶段一 · 发散</text>
+        <text x="130" y="28" font-size="12" fill="#656D76" font-family="Inter,system-ui,sans-serif">把事实与未知摊开，不做取舍</text>
+        <rect x="16" y="40" width="928" height="120" rx="10" fill="#FDFBFA" stroke="#EEDDD8"></rect>
+
+        <rect x="40" y="64" width="248" height="68" rx="8" fill="#FFFFFF" stroke="#C9CFD8"></rect>
+        <text x="56" y="88" font-size="14" font-weight="700" fill="#2C3440" font-family="Inter,system-ui,sans-serif">P1 · 冻结输入</text>
+        <text x="56" y="108" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">需求原文 · 事实源 · 边界</text>
+        <text x="56" y="124" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">产出：输入契约</text>
+
+        <rect x="352" y="64" width="248" height="68" rx="8" fill="#FFFFFF" stroke="#C9CFD8"></rect>
+        <text x="368" y="88" font-size="14" font-weight="700" fill="#2C3440" font-family="Inter,system-ui,sans-serif">P2 · 事实取证</text>
+        <text x="368" y="108" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">只写现状，不写方案</text>
+        <text x="368" y="124" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">产出：现状 + 文件行号</text>
+
+        <rect x="664" y="64" width="248" height="68" rx="8" fill="#FBEDEA" stroke="#B22C1A"></rect>
+        <text x="680" y="88" font-size="14" font-weight="700" fill="#B22C1A" font-family="Inter,system-ui,sans-serif">P3 · 未定义点穷举</text>
+        <text x="680" y="108" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">需求没写但必须拍板的</text>
+        <text x="680" y="124" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">产出：决策台账</text>
+
+        <path d="M288 98 H352" fill="none" stroke="#656D76" stroke-width="1.4" marker-end="url(#ar)"></path>
+        <path d="M600 98 H664" fill="none" stroke="#656D76" stroke-width="1.4" marker-end="url(#ar)"></path>
+        <path d="M480 160 V196" fill="none" stroke="#656D76" stroke-width="1.4" marker-end="url(#ar)"></path>
+
+        <!-- 阶段 2 -->
+        <text x="16" y="188" font-size="12.5" font-weight="700" fill="#2B4AE0" font-family="Inter,system-ui,sans-serif">阶段二 · 收敛</text>
+        <text x="130" y="188" font-size="12" fill="#656D76" font-family="Inter,system-ui,sans-serif">形成唯一依据，分歧逐条裁决</text>
+        <rect x="16" y="200" width="928" height="120" rx="10" fill="#FAFBFE" stroke="#DCE3F6"></rect>
+
+        <rect x="40" y="224" width="248" height="68" rx="8" fill="#FFFFFF" stroke="#C9CFD8"></rect>
+        <text x="56" y="248" font-size="14" font-weight="700" fill="#2C3440" font-family="Inter,system-ui,sans-serif">P4 · 规范成文</text>
+        <text x="56" y="268" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">固定结构 · 规则编号</text>
+        <text x="56" y="284" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">产出：规范正文</text>
+
+        <rect x="352" y="224" width="248" height="68" rx="8" fill="#EEF1FE" stroke="#2B4AE0"></rect>
+        <text x="368" y="248" font-size="14" font-weight="700" fill="#2B4AE0" font-family="Inter,system-ui,sans-serif">P5 · 合并与分流</text>
+        <text x="368" y="268" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">分歧裁决 · 假设与待确认</text>
+        <text x="368" y="284" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">产出：唯一依据</text>
+
+        <rect x="664" y="224" width="248" height="68" rx="8" fill="#FFFFFF" stroke="#C9CFD8" stroke-dasharray="5 4"></rect>
+        <text x="680" y="248" font-size="13" font-weight="700" fill="#2C3440" font-family="Inter,system-ui,sans-serif">两种走法</text>
+        <text x="680" y="268" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">多路：共识 / 分歧 / 缺项</text>
+        <text x="680" y="284" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">单路：漏项反向自查</text>
+
+        <path d="M288 258 H352" fill="none" stroke="#656D76" stroke-width="1.4" marker-end="url(#ar)"></path>
+        <path d="M600 258 H664" fill="none" stroke="#656D76" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar)"></path>
+        <path d="M480 320 V356" fill="none" stroke="#656D76" stroke-width="1.4" marker-end="url(#ar)"></path>
+
+        <!-- 阶段 3 -->
+        <text x="16" y="348" font-size="12.5" font-weight="700" fill="#0E7A4A" font-family="Inter,system-ui,sans-serif">阶段三 · 落地</text>
+        <text x="130" y="348" font-size="12" fill="#656D76" font-family="Inter,system-ui,sans-serif">变成可执行、可验收、可评审</text>
+        <rect x="16" y="360" width="928" height="120" rx="10" fill="#FAFDFB" stroke="#D7EBE1"></rect>
+
+        <rect x="40" y="384" width="280" height="68" rx="8" fill="#FFFFFF" stroke="#C9CFD8"></rect>
+        <text x="56" y="408" font-size="14" font-weight="700" fill="#2C3440" font-family="Inter,system-ui,sans-serif">P6 · 垂直切片与验收</text>
+        <text x="56" y="428" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">每片可独立演示，每标准可判定</text>
+        <text x="56" y="444" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">产出：任务图 + 验收表</text>
+
+        <rect x="360" y="384" width="280" height="68" rx="8" fill="#E8F5EE" stroke="#0E7A4A"></rect>
+        <text x="376" y="408" font-size="14" font-weight="700" fill="#0E7A4A" font-family="Inter,system-ui,sans-serif">P7 · 评审</text>
+        <text x="376" y="428" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">清单化，逐项带编号</text>
+        <text x="376" y="444" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">产出：检查清单</text>
+
+        <path d="M320 418 H360" fill="none" stroke="#656D76" stroke-width="1.4" marker-end="url(#ar)"></path>
+
+        <rect x="680" y="384" width="232" height="68" rx="8" fill="#FFFFFF" stroke="#C9CFD8" stroke-dasharray="5 4"></rect>
+        <text x="696" y="408" font-size="13" font-weight="700" fill="#2C3440" font-family="Inter,system-ui,sans-serif">一条捷径</text>
+        <text x="696" y="428" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">P2 → P4 → P6</text>
+        <text x="696" y="444" font-size="12" fill="#525C6A" font-family="Inter,system-ui,sans-serif">单点改动时够用</text>
+      </svg>
+      <figcaption><b>图 1</b>｜三个阶段、七个步骤。注意 <b>P3 是唯一不可跳过的步骤</b>——它承担了本流程的全部价值增量；P5 有「多路 / 单路」两种走法，单路时退化为反向自查。</figcaption>
+    </figure>
+
+    <div class="grid4">
+      <div class="stat"><div class="k">输入契约</div><div class="v">1</div><div class="n">需求 + 事实源 + 边界</div></div>
+      <div class="stat"><div class="k">现状取证</div><div class="v">1</div><div class="n">每条带 <code>文件:行号</code></div></div>
+      <div class="stat"><div class="k">决策台账</div><div class="v">9–20</div><div class="n">未定义点，每点带推荐答案</div></div>
+      <div class="stat"><div class="k">待业务确认</div><div class="v">0</div><div class="n">不阻塞开发（有裁决先行）</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section id="s2">
+    <h2><span class="num">02</span>七个步骤</h2>
+    <p class="lead">每步给：目的、做什么、产出、常见失败模式，以及<b>可直接复制的提示词</b>。提示词里的 <code>{花括号}</code> 是替换位。整体基调是「不要让模型停下来问你」——所有不确定性都在产出里标注为假设，人在评审环节一次性裁决。</p>
+
+    <!-- P1 -->
+    <article class="step" id="p1">
+      <div class="step__hd">
+        <span class="step__n">P1</span>
+        <h3>冻结输入</h3>
+        <span class="step__tag">阶段一 · 发散</span>
+      </div>
+      <div class="step__body">
+        <dl class="facts">
+          <div><dt>目的</dt><dd>让多路产出可比、让人换手后仍可复现。输入不冻结，后面每一步的「差异」都分不清是方法差异还是语境差异。</dd></div>
+          <div><dt>做什么</dt><dd>写一份输入契约，固定六件事：需求原文路径、事实源路径、只读边界、输出语言、编号规则、产出结构约定。</dd></div>
+          <div><dt>产出</dt><dd>输入契约一份（如 <code>BRIEF.md</code>），外加需求原文的纯文本版本——原始 <code>.docx</code> 的表格与格式会带来歧义，转纯文本能消掉一部分。</dd></div>
+          <div><dt>失败模式</dt><dd>各路人马各自理解边界，合并时必须先逐条对齐语境，成本翻倍；或者事实源被误当成可写目录，产出被污染。</dd></div>
+        </dl>
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 01</span>
+            <span class="ptitle">输入契约 · 开场设定</span>
+            <span class="copy" data-target="pr1">复制</span>
+          </div>
+          <pre id="pr1">输入：
+- 需求原文：{路径}
+- 事实源（只读，不得修改）：{路径}
+- 输出语言：中文
+
+规则：
+① 技术断言必须带 `文件:行号`；查不到就写「未找到 + 已检索范围」，禁止用常识或框架惯例填充。
+② 需求与事实源冲突时以事实源为准，并列明冲突点。
+③ 有疑问不要停下来问我，按最合理方案决定，并标注为「假设 An」。
+④ 不写代码片段与文件路径（那是实现阶段的事）。
+
+先复述你对需求的理解（不超过 200 字），再列出你认为最不确定的 3 个点。</pre>
+          <div class="prompt__ft">第 ③ 条是这套流程能跑起来的关键：<b>把提问权从模型手里收回</b>，改成人一次性评审假设。</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- P2 -->
+    <article class="step" id="p2">
+      <div class="step__hd">
+        <span class="step__n">P2</span>
+        <h3>事实取证</h3>
+        <span class="step__tag">阶段一 · 发散</span>
+      </div>
+      <div class="step__body">
+        <dl class="facts">
+          <div><dt>目的</dt><dd>把「现状」与「需求」彻底分开。规范里每一条技术断言都要能找到一手来源，否则它就是猜测。</dd></div>
+          <div><dt>做什么</dt><dd>只读事实源，查明四类信息：数据从哪里来、现在的过滤/排序/权限怎么写的、需求提到但事实源里不存在的东西、需求描述与代码不一致的地方。</dd></div>
+          <div><dt>产出</dt><dd>现状取证一份，每条结论格式为「结论 → <code>文件:行号</code>」。</dd></div>
+          <div><dt>失败模式</dt><dd><b>把「我没找到」写成「不存在」</b>。实测中有一条路径停在「源码里没有」，于是把一处完全可查证的事实（某个编号没有唯一索引）记成了不可查证——后面的裁决全部建立在错误的「未知」之上。</dd></div>
+        </dl>
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 02</span>
+            <span class="ptitle">事实取证 · 只写现状</span>
+            <span class="copy" data-target="pr2">复制</span>
+          </div>
+          <pre id="pr2">只做取证，不写方案。
+
+从 {事实源} 中查明需求涉及的：
+1. 数据来源（表 / 字段 / 类型 / 约束 / 索引）
+2. 现有的过滤、排序、权限判定是怎么写的
+3. 需求提到、但事实源中并不存在的东西
+4. 需求描述与代码实际行为不一致的地方
+
+格式：结论 → `文件:行号`。
+查不到就写「未找到（已检索：具体范围）」——禁止把「我没找到」写成「不存在」。</pre>
+          <div class="prompt__ft">最后那句是本条提示词的全部价值。用「已检索范围」这个词，是在逼模型区分<b>证据缺失</b>与<b>事实为负</b>。</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- P3 -->
+    <article class="step" id="p3">
+      <div class="step__hd">
+        <span class="step__n">P3</span>
+        <h3>未定义点穷举</h3>
+        <span class="step__tag" style="border-color:#F0C4BB;color:#B22C1A;background:#FBEDEA">核心步骤 · 不可跳过</span>
+      </div>
+      <div class="step__body">
+        <dl class="facts">
+          <div><dt>目的</dt><dd>这是整个流程的价值所在。需求文档只写正向流程，剩下的全靠这一步挖。实测中三路的需求要素覆盖都是满分，差异<b>全部</b>产生在这里。</dd></div>
+          <div><dt>做什么</dt><dd>按结构化的边界清单逐类扫描，每个点给 2–3 个候选方案 + 推荐方案 + 理由。</dd></div>
+          <div><dt>产出</dt><dd>决策台账，编号 U-nn。实测三路分别产出 16 / 9 / 16 个点，其中 3 处结论冲突、1 处是其中一路完全没想到的场景。</dd></div>
+          <div><dt>失败模式</dt><dd><b>只列问题不给答案</b>——台账退化成待办清单；或者只扫「正常业务范围」，漏掉边界类。</dd></div>
+        </dl>
+
+        <div class="note note--warn">
+          <span class="note__t">边界清单（八类）——这才是「想到没想到」的真正分水岭</span>
+          实测证明：靠把流程做重、把追问轮次调多，并不能保证想到边界。用最重拷问流程的那一路漏掉了「上级对象缺失」。真正有效的是把边界固化成一张清单一类一类过：<b>空值</b> · <b>边界值（含端点）</b> · <b>未生效状态</b> · <b>上级 / 父对象缺失</b> · <b>跨权限边界</b> · <b>历史数据</b> · <b>重复键</b> · <b>极值数据量</b>。
+        </div>
+
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 03</span>
+            <span class="ptitle">未定义点穷举 · 决策台账</span>
+            <span class="copy" data-target="pr3">复制</span>
+          </div>
+          <pre id="pr3">列出「需求没写、但实现时必须拍板」的全部点。
+
+每点输出：编号 U-nn｜议题｜2~3 个候选方案（各注明适用场景）｜推荐方案 + 理由。
+
+必须逐类扫描这些边界：
+空值 / 边界值含端点 / 未生效状态 / 上级对象缺失 / 跨权限 /
+历史数据 / 重复键 / 极值数据量
+
+要求：
+- 每点必须给出推荐答案，只提问不算；
+- 目标 10~20 个；只有一个候选方案的点不算未定义点；
+- 输出表格，不要散文。</pre>
+          <div class="prompt__ft">「只有一个候选方案的点不算未定义点」这条过滤条件很重要——它挡掉了那些看起来像决策、其实是唯一解的伪条目。</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- P4 -->
+    <article class="step" id="p4">
+      <div class="step__hd">
+        <span class="step__n">P4</span>
+        <h3>规范成文</h3>
+        <span class="step__tag">阶段二 · 收敛</span>
+      </div>
+      <div class="step__body">
+        <dl class="facts">
+          <div><dt>目的</dt><dd>把决策固化成可验收的条文。规范的读者有两类：写代码的人、验收的人——他们都要能凭编号指认某一条。</dd></div>
+          <div><dt>做什么</dt><dd>按固定结构成文；所有规则编号（需求可追溯的用 FR-nn，边界规则 / 假设用 R-nn）；不写代码与文件路径。</dd></div>
+          <div><dt>产出</dt><dd>规范正文，十节固定结构。</dd></div>
+          <div><dt>失败模式</dt><dd>条文含糊（「排序合理」）；规则与需求无法一一对应；写成了实现方案。注意：<b>不写技术选型不是遗漏，是刻意留白</b>——选型会掩盖需求本身的模糊。</dd></div>
+        </dl>
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 04</span>
+            <span class="ptitle">规范成文 · 固定结构</span>
+            <span class="copy" data-target="pr4">复制</span>
+          </div>
+          <pre id="pr4">按固定结构写规范：
+1 范围与目标｜2 数据模型｜3 输入字段｜4 输出字段｜5 处理规则
+｜6 查询语义｜7 权限与数据范围｜8 接口契约｜9 导出与搜索｜10 前端要求
+
+要求：
+- 每条规则编号：FR-nn（可追溯需求）／R-nn（边界规则与假设）；
+- 每条都能被后文的验收条目引用；
+- 需求没写的，引用 P3 的假设编号，不要重新发明；
+- 把「空值怎么排序」「无子项怎么显示」这类容易含糊的地方显式写死；
+- 不写代码片段与文件路径。</pre>
+        </div>
+
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 05</span>
+            <span class="ptitle">要素覆盖核对 · 后置校验</span>
+            <span class="copy" data-target="pr5">复制</span>
+          </div>
+          <pre id="pr5">把需求原文拆成最小可验证要素，逐条编号，输出表格：
+编号｜要素原文｜规范中对应条款｜状态（已覆盖 / 部分 / 缺失）
+
+规则：
+- 禁止先合并同类项再计数（否则覆盖数是假的）；
+- 状态为「部分 / 缺失」的必须单独列出并说明原因；
+- 最后给出「已覆盖 x / 共 y」。</pre>
+          <div class="prompt__ft">这条提示词是规范定稿前的最后一道闸。它同时给出了一个可对外汇报的数字：<b>覆盖 x/y</b>。</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- P5 -->
+    <article class="step" id="p5">
+      <div class="step__hd">
+        <span class="step__n">P5</span>
+        <h3>合并与分流</h3>
+        <span class="step__tag">阶段二 · 收敛</span>
+      </div>
+      <div class="step__body">
+        <dl class="facts">
+          <div><dt>多路走法</dt><dd>拿到 N 份独立规范后，<b>不要取并集</b>——把冲突的两条并列，等于什么都没做。按三分处理：共识（直接采纳）、分歧（逐条裁决 + 影响面）、缺项（只有一份提到、其余没意识到的）。</dd></div>
+          <div><dt>单路走法</dt><dd>只有一份规范时，这一步退化为<b>反向自查</b>：拿提示词 05 和边界清单反过来问「哪些边界我没扫到」，并补写缺的规则。实测表明这一步不能省。</dd></div>
+          <div><dt>分流</dt><dd>把全部未定事项拆成两个集合：<code>A-nn</code> 有合理默认值 → 开发直接实施；<code>C-nn</code> 属业务口径 → 写清裁决与代价，开发按裁决先行，业务签字后如需调整再改。</dd></div>
+          <div><dt>产出</dt><dd>唯一依据（合并规范或 v2 规范）+ 待确认清单（可直接打印签字）。</dd></div>
+          <div><dt>失败模式</dt><dd>取并集；把待确认项当阻塞项、开发停工等答复；裁决只写结论不写代价。</dd></div>
+        </dl>
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 06</span>
+            <span class="ptitle">多路合并 · 三分裁决</span>
+            <span class="copy" data-target="pr6">复制</span>
+          </div>
+          <pre id="pr6">有 {n} 份独立规范。不要取并集，按三分处理：
+
+1 共识：所有规范答案一致 → 列表，直接采纳；
+2 分歧：答案不一致 → 表格：议题｜各方主张｜裁决｜理由｜若采纳另一方案的代价；
+3 缺项：只有一份提到、其余未意识到 → 单独列出，判断是否应升格为规则。
+
+裁决优先级：需求原文 > 事实源现状 > 数据结构自洽 > 行业惯例。
+每条裁决必须写「不采纳那一方的影响面」，否则视为未完成。</pre>
+          <div class="prompt__ft">第 3 类「缺项」是三分里最容易被忽略、价值却最高的一类——它抓的是<b>独有发现</b>，往往是真正的边界漏洞。</div>
+        </div>
+
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 07</span>
+            <span class="ptitle">未定事项分流 · 假设与待确认</span>
+            <span class="copy" data-target="pr7">复制</span>
+          </div>
+          <pre id="pr7">把规范中所有未定事项分成两类：
+
+A-xx 已有合理默认值（开发可直接实施）→ 写：默认值 + 理由；
+C-xx 属业务口径、必须由业务拍板 → 写：议题｜裁决（开发按此先行）｜
+      若选另一方案的代价｜确认签字栏。
+
+要求：
+- C 类不得阻塞开发，开发一律按裁决值先行；
+- C 类按是否阻塞开工排序，标出哪一项是硬阻塞；
+- 代价一栏必须具体到「改动点在哪、影响谁」。</pre>
+          <div class="prompt__ft">A / C 分流是「规范不变成待办清单」的关键。实测中 4 项待确认全部不影响开工——<b>其中 3 项初稿里被当成了阻塞项</b>。</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- P6 -->
+    <article class="step" id="p6">
+      <div class="step__hd">
+        <span class="step__n">P6</span>
+        <h3>垂直切片与验收</h3>
+        <span class="step__tag">阶段三 · 落地</span>
+      </div>
+      <div class="step__body">
+        <dl class="facts">
+          <div><dt>目的</dt><dd>让规范变成可执行、可验证的计划。切片方式和验收口径决定了这份规范是被人用还是被人挂在墙上。</dd></div>
+          <div><dt>切片规则</dt><dd><b>垂直切，不水平切</b>。每一片要从数据打通到界面，能独立演示、独立验收。「数据层一片、服务层一片、界面一片」是反模式——三片都做完之前，什么都演示不了。</dd></div>
+          <div><dt>验收三件套</dt><dd>最小种子数据（覆盖全部边界）+ 验收场景（操作 / 期望 / 覆盖的规则编号）+ 可度量标准（必须含数字）。</dd></div>
+          <div><dt>失败模式</dt><dd>验收写「正确显示」「符合预期」——不可判定，等于没写；切片按层拆，等到最后才发现集成问题。</dd></div>
+        </dl>
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 08</span>
+            <span class="ptitle">垂直切片 + 依赖图</span>
+            <span class="copy" data-target="pr8">复制</span>
+          </div>
+          <pre id="pr8">把实现拆成垂直切片。每片给：编号｜目标｜依赖（Blocked by）｜落点｜验证方式。
+
+约束：
+- 垂直切片 = 从数据打通到界面的一条窄链路；
+  禁止按层拆（schema 一片、service 一片）；
+- 每片必须能独立演示与独立验收，写不出验证方式的片不算合格；
+- 标注哪一片是 MVP、哪一片是硬前置；
+- 最后画出依赖图，指出哪些片可以并行。</pre>
+        </div>
+
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 09</span>
+            <span class="ptitle">验收标准 · 可判定</span>
+            <span class="copy" data-target="pr9">复制</span>
+          </div>
+          <pre id="pr9">输出三部分：
+1 最小种子数据：必须覆盖空值 / 未生效状态 / 无子项 / 跨权限边界 / 重复键，
+  做成表格，标出每条数据「用来验什么」；
+2 验收场景 V1…Vn：操作｜期望结果（具体到数字或可见元素）｜覆盖的规则编号；
+3 可度量标准 SC-nn：必须能用数字判定（如「越权行数为 0」「偏差为 0」「3 秒内」）。
+
+禁止出现「正确显示」「符合预期」这类不可判定的措辞。</pre>
+          <div class="prompt__ft">种子数据那一段最容易偷懒。要求「标出每条数据用来验什么」是刻意的——没有对应的场景，这条数据就不该出现在种子集里。</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- P7 -->
+    <article class="step" id="p7">
+      <div class="step__hd">
+        <span class="step__n">P7</span>
+        <h3>评审</h3>
+        <span class="step__tag">阶段三 · 落地</span>
+      </div>
+      <div class="step__body">
+        <dl class="facts">
+          <div><dt>目的</dt><dd>把评审会从自由讨论变成逐项勾选，并且让每条意见都能落到具体编号上。</dd></div>
+          <div><dt>做什么</dt><dd>三份清单：技术评审（指向最容易做错的实现点）、业务评审（只列需要拍板的口径问题）、不建议重开的问题（已被多路一致确认的结论）。</dd></div>
+          <div><dt>产出</dt><dd>检查清单，每条带编号与影响。</dd></div>
+          <div><dt>失败模式</dt><dd>评审意见没有编号 →「我觉得那个地方要改」，然后没人找得到是哪个地方；或者把已达成共识的结论重开一遍，吃掉大半会议时间。</dd></div>
+        </dl>
+        <div class="prompt">
+          <div class="prompt__hd">
+            <span class="pid">提示词 10</span>
+            <span class="ptitle">评审清单 · 带编号</span>
+            <span class="copy" data-target="pr10">复制</span>
+          </div>
+          <pre id="pr10">生成评审检查清单，分三部分：
+1 技术评审：指向最容易做错的实现点，每条带规则编号；
+2 业务评审：只列需要业务拍板的口径问题，每条带确认项编号；
+3 不建议重新打开的问题：已被多份规范一致确认的结论，
+  注明「重新讨论的成本高于收益」，并要求变更方提供新依据。
+
+所有条目必须带编号，便于评审时直接指认改动位置。</pre>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section id="s3">
+    <h2><span class="num">03</span>提示词速查</h2>
+    <p class="lead">十条提示词按流程顺序排列。前五条（01–05）决定规范质量，中间两条（06–07）只在特定情形下需要，后三条（08–10）决定规范能不能落地。</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption>表 3-1｜十条提示词总表</caption>
+        <thead>
+          <tr><th style="width:56px" class="ctr">编号</th><th style="width:150px">名称</th><th style="width:74px">所属</th><th>用在什么时候</th><th style="width:120px">产出</th><th style="width:96px">必需性</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="ctr"><code>01</code></td><td><b>输入契约</b></td><td>P1</td><td>每次任务开始时，一次性设定</td><td>输入契约 + 首轮理解</td><td><span class="tag t-new">必需</span></td></tr>
+          <tr><td class="ctr"><code>02</code></td><td><b>事实取证</b></td><td>P2</td><td>需要以存量系统为依据时</td><td>现状 + 文件行号</td><td><span class="tag t-new">必需</span></td></tr>
+          <tr><td class="ctr"><code>03</code></td><td><b>未定义点穷举</b></td><td>P3</td><td>取证完成后，成文之前</td><td>决策台账 U-nn</td><td><span class="tag t-new">必需</span></td></tr>
+          <tr><td class="ctr"><code>04</code></td><td><b>规范成文</b></td><td>P4</td><td>决策台账定稿后</td><td>规范正文 FR / R</td><td><span class="tag t-new">必需</span></td></tr>
+          <tr><td class="ctr"><code>05</code></td><td><b>要素覆盖核对</b></td><td>P4</td><td>规范定稿前的最后一道闸</td><td>覆盖矩阵 x/y</td><td><span class="tag t-gray">建议</span></td></tr>
+          <tr><td class="ctr"><code>06</code></td><td><b>多路合并裁决</b></td><td>P5</td><td>只有跑了多路独立分析时</td><td>三分表 + 裁决</td><td><span class="tag t-purple">条件</span></td></tr>
+          <tr><td class="ctr"><code>07</code></td><td><b>未定事项分流</b></td><td>P5</td><td>台账中有口径类问题时</td><td>A 表 + C 表</td><td><span class="tag t-purple">条件</span></td></tr>
+          <tr><td class="ctr"><code>08</code></td><td><b>垂直切片</b></td><td>P6</td><td>规范进入排期前</td><td>任务 + 依赖图</td><td><span class="tag t-new">必需</span></td></tr>
+          <tr><td class="ctr"><code>09</code></td><td><b>验收标准</b></td><td>P6</td><td>与切片同步产出</td><td>种子数据 + 场景 + 指标</td><td><span class="tag t-new">必需</span></td></tr>
+          <tr><td class="ctr"><code>10</code></td><td><b>评审清单</b></td><td>P7</td><td>评审会前一天</td><td>三份清单</td><td><span class="tag t-gray">建议</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note note--info">
+      <span class="note__t">最小可用组合</span>
+      如果只记四条，记 <code>01 → 02 → 03 → 04</code>。这四条串起来就是「设定边界 → 查清现状 → 挖出未定义点 → 写成条文」，已经能产出比多数人手写更好的规范。其余六条是围绕它做的加固与落地。
+    </div>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section id="s4">
+    <h2><span class="num">04</span>八条铁律</h2>
+    <p class="lead">这些是从实测中付出代价换来的。前六条各对应一次具体的错误或一次具体的返工；第七条是整个流程的地基。</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:42px" class="ctr">#</th><th style="width:230px">铁律</th><th>为什么</th></tr></thead>
+        <tbody>
+          <tr><td class="ctr">1</td><td><b>「查不到」不等于「不存在」</b></td><td>必须写「已检索范围」。实测中一条路径停在「源码里没有」，把一处<b>完全可查证</b>的事实记成了不可查证，导致后续裁决建立在错误的未知之上。</td></tr>
+          <tr><td class="ctr">2</td><td><b>多路必须互不可读</b></td><td>一旦互相能看到，第二路就会锚定第一路的结论，多路的全部价值（发现差异）当场归零——退化成一次分析加两次润色。</td></tr>
+          <tr><td class="ctr">3</td><td><b>未定义点必须带推荐答案</b></td><td>只列问题 = 待办清单，永远无法定稿；带答案 = 可评审、可裁决、可直接进规范。</td></tr>
+          <tr><td class="ctr">4</td><td><b>裁决必须写影响面</b></td><td>不写「如果选另一方案会怎样」，业务无法在不知道代价的情况下拍板，评审必然反复。</td></tr>
+          <tr><td class="ctr">5</td><td><b>待确认项不得阻塞开发</b></td><td>每条未定项都要有可先行的裁决值。实测中初稿里被当作阻塞的 3 项，实际都不影响开工。</td></tr>
+          <tr><td class="ctr">6</td><td><b>共识项不重新讨论</b></td><td>被多条独立路径一致确认的结论，重开的成本高于收益。明确写进文档，并要求变更方提供新依据。</td></tr>
+          <tr><td class="ctr">7</td><td><b>技术断言必须带 <code>文件:行号</code></b></td><td>这是整个流程的地基。没有它，取证退化成「我记得应该是这样」，规范的权威性无从谈起。</td></tr>
+          <tr><td class="ctr">8</td><td><b>验收标准必须可判定</b></td><td>「正确显示」「符合预期」是无效标准。必须含数字、含具体可见元素，否则无法验收，也无法回归。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note note--bad">
+      <span class="note__t">反铁律（实测中最容易犯的三个错）</span>
+      <b>① 用流程复杂度代替边界清单。</b>把追问轮次从 8 加到 16，并不会让你想到「上级对象缺失」。<b>② 用并集代替裁决。</b>把两份冲突的规范并列放进文档，看起来谁都没得罪，实际上把决策推迟到了编码阶段。<b>③ 用「未找到」代替「不存在」。</b>前者诚实且可继续追查，后者会永久关闭一条调查线。
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section id="s5">
+    <h2><span class="num">05</span>各工具在此流程中的位置</h2>
+    <p class="lead">下面这张表用来证明这套流程确实与工具无关——它的每一步都只是「一件事」，而主流方法体系只是给这件事准备了不同的容器。选哪个容器不影响步骤本身。</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption>表 5-1｜通用步骤 × 三种主流方法体系的对应关系</caption>
+        <thead>
+          <tr><th style="width:130px">通用步骤</th><th>A · 技能链式</th><th>B · 增量规格式</th><th>C · 阶段流水线式</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>P1 冻结输入</b></td><td>公用输入目录 + 输入契约</td><td>工作区 + 提案前置</td><td>项目工作区 + 宪法</td></tr>
+          <tr><td><b>P2 事实取证</b></td><td>调研技能</td><td>提案文档的现状段</td><td>研究阶段</td></tr>
+          <tr><td><b>P3 未定义点穷举</b></td><td>拷问技能（人在环）</td><td>设计文档的未定义点段</td><td>澄清阶段（有提问数上限）</td></tr>
+          <tr><td><b>P4 规范成文</b></td><td>成文技能（固定模板）</td><td>需求 / 场景条目</td><td>规格阶段（刻意不写技术栈）</td></tr>
+          <tr><td><b>P4 后置 · 覆盖核对</b></td><td>—（靠人复核）</td><td>严格校验按机检执行</td><td>交叉分析阶段</td></tr>
+          <tr><td><b>P5 合并与分流</b></td><td>决策台账 + 补充说明</td><td>增量规格的归档</td><td>澄清记录表</td></tr>
+          <tr><td><b>P6 切片与验收</b></td><td>票据拆分（垂直切片 + 阻塞边）</td><td>任务清单（每项自带验证）</td><td>任务阶段 + 快速验证清单</td></tr>
+          <tr><td><b>P7 评审</b></td><td>—</td><td>机检护栏</td><td>宪法门禁</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>三个体系各有其独有能力，也各有实测短板：<b>A</b> 的拷问机制能产出最细的决策台账，但流程本身不保证想到边界；<b>B</b> 的机检护栏能零成本拦住格式错误，但在结构化信息密度上并无额外增量；<b>C</b> 的宪法层与三方交叉检查对治理类需求价值高，但用在整个团队的表单类需求上，用户故事的粒度偏粗。</p>
+
+    <div class="note note--ok">
+      <span class="note__t">结论</span>
+      这套七步流程是它们的最小公倍数。选工具时真正该问的不是「哪个流程更完整」，而是「<b>我的需求里，未定义点由谁负责挖、挖出来的分歧由谁裁决</b>」——这个问题在三个工具里都没有默认答案，它始终是人的工作。
+    </div>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section id="s6">
+    <h2><span class="num">06</span>按需求规模裁剪</h2>
+    <p class="lead">七个步骤全跑一遍是有成本的。按需求规模裁剪——但有一条底线：<b>P3 永远不跳</b>。</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:130px">需求规模</th><th style="width:150px">保留步骤</th><th style="width:170px">用哪几条提示词</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>单点改动</b><br><span class="tag t-gray">半天–2 天</span></td>
+            <td>P2 → P4 → P6</td>
+            <td><code>02 03 04</code></td>
+            <td>跳过合并与评审。P3 仍需跑，但目标数量降到 5 个以内——单点改动照样有空值与权限边界。</td>
+          </tr>
+          <tr>
+            <td><b>一个功能页</b><br><span class="tag t-gray">1–2 周</span></td>
+            <td>全部七步，<b>单路</b></td>
+            <td><code>01 02 03 04 05 08 09</code></td>
+            <td>不加 06（没有多路可合）。但 07 仍建议跑：口径类问题的分流对单路同样适用。</td>
+          </tr>
+          <tr>
+            <td><b>跨模块 / 有存量系统</b><br><span class="tag t-bad">2 周以上</span></td>
+            <td>全部七步，<b>多路</b></td>
+            <td>全部十条</td>
+            <td>这是本流程的完整形态。多路并行的成本主要体现在 P2/P3，而价值也在那里——实测中三路的最大分歧恰好落在权限与数据口径上，那是最不该出错的地方。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <h4>什么时候该跑多路</h4>
+        <p style="margin:0;font-size:13px">① 需求涉及权限、金额、合规口径；② 要在存量系统上做、事实源不完整；③ 这份规范会被另一支团队实施。三条占一条，多路的成本就值。</p>
+      </div>
+      <div class="card">
+        <h4>什么时候单路就够</h4>
+        <p style="margin:0;font-size:13px">全新的、自己团队实施的、不涉及权限与金额口径的功能。此时单路 + 提示词 05 的反向自查已经能抓住绝大部分问题。</p>
+      </div>
+      <div class="card">
+        <h4>永远不要省的</h4>
+        <p style="margin:0;font-size:13px">P3 未定义点穷举，与提示词 02 里那句「查不到写已检索范围」。前者是价值来源，后者是可信度来源——省掉任何一个，后面的产出都不可复核。</p>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <footer>
+    <p>需求 → 规范 · 通用工作流程与提示词｜2026-10-10｜从「销售框架合同信息查询」三源合并实践反向提炼</p>
+    <p>源交付物：<code>sdd-eval/销售框架合同信息查询-规范（合并版）.html</code>；三路原始产物与评测数据见 <code>sdd-eval/README.md</code>。本文件为单文件离线文档，零外部依赖。</p>
+  </footer>
+
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.getAttribute('data-target'));
+    if (!el) return;
+    var text = el.innerText;
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = '已复制';
+      setTimeout(function () { btn.textContent = old; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+    } else {
+      fallback(text, done);
+    }
+  });
+});
+function fallback(text, done) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { /* 手动复制 */ }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>

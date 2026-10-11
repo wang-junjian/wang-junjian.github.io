@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="深度拆解 Jev 决策模型接进智能体循环的真实收益与边界：官方称快至 200 倍，社区实测端到端仅提速 25%，因决策仅占流程 53%。报告归纳四种集成模式与决策树，讲清置信度门控、模型路由等实践，点明上下文压缩是唯一硬失败案例，并附落地清单与本地化复现方案。">
+<meta name="keywords" content="Jev, System One, 智能体集成, Agent, 决策模型, 实测">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-22">
+<title>Jev 集成到智能体：速度、成本与最佳实践深度研究</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --line:#E4E1DA; --line2:#EFEDE7;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FDF3E7;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EEF4FB;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E9F5F3;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F3EDFA;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EDF5EE;
+  --red:#B3261E; --red-t:#B3261E; --red-bg:#FCEDEC;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+}
+.wrap{max-width:1060px; margin:0 auto; padding:0 24px 96px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; font-size:.88em;
+  background:var(--line2); padding:.1em .38em; border-radius:5px; overflow-wrap:anywhere}
+pre{background:#F6F4EF; border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto;
+  font-size:13px; line-height:1.65}
+pre code{background:none; padding:0; font-size:13px}
+
+/* ---------- header ---------- */
+header{padding:64px 0 32px; border-bottom:1px solid var(--line); margin-bottom:40px}
+.kicker{font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--amber-t); font-weight:650; margin-bottom:14px}
+h1{font-size:36px; line-height:1.28; margin:0 0 16px; letter-spacing:-.015em; font-weight:700}
+.sub{font-size:17px; color:var(--ink2); max-width:820px; margin:0 0 22px}
+.meta{display:flex; flex-wrap:wrap; gap:8px 10px; font-size:12.5px; color:var(--ink3)}
+.meta span{background:var(--card); border:1px solid var(--line); border-radius:999px; padding:3px 12px}
+
+/* ---------- nav ---------- */
+nav{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin-bottom:44px}
+nav .nt{font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); font-weight:650; margin-bottom:10px}
+nav ol{margin:0; padding-left:20px; columns:2; column-gap:32px; font-size:14px}
+nav li{margin-bottom:5px; break-inside:avoid}
+nav a{color:var(--blue-t); text-decoration:none}
+nav a:hover{text-decoration:underline}
+
+/* ---------- sections ---------- */
+section{margin-bottom:56px; scroll-margin-top:20px}
+h2{font-size:25px; line-height:1.35; margin:0 0 6px; letter-spacing:-.01em; font-weight:700; display:flex; gap:12px; align-items:baseline}
+h2 .num{font-size:14px; color:var(--amber-t); font-weight:650; font-variant-numeric:tabular-nums; flex:none}
+h3{font-size:19px; margin:32px 0 10px; font-weight:680; letter-spacing:-.005em}
+h4{font-size:15.5px; margin:22px 0 8px; font-weight:660}
+p{margin:0 0 14px}
+.lead{font-size:16.5px; color:var(--ink2)}
+ul,ol{margin:0 0 14px; padding-left:22px}
+li{margin-bottom:7px}
+strong{font-weight:660}
+a{color:var(--blue-t)}
+
+/* ---------- cards ---------- */
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:18px 0; min-width:0}
+.verdict{border-left:3px solid var(--amber); background:var(--amber-bg)}
+.verdict h4{margin:0 0 6px; color:var(--amber-t); font-size:15px}
+.callout{border-left:3px solid var(--red); background:var(--red-bg)}
+.callout h4{margin:0 0 6px; color:var(--red-t)}
+.ok{border-left:3px solid var(--green); background:var(--green-bg)}
+.ok h4{margin:0 0 6px; color:var(--green-t)}
+.g2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 0}
+.g3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:18px 0}
+.g2>*,.g3>*,.card,.axis>div{min-width:0}
+@media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+.card h4:first-child{margin-top:0}
+
+/* ---------- tables ---------- */
+table{width:100%; border-collapse:collapse; font-size:14px; margin:16px 0}
+th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top}
+th{background:#F4F2ED; font-weight:650; font-size:13.5px}
+td.num,th.num{font-variant-numeric:tabular-nums; text-align:right}
+@media(max-width:760px){table{display:block; overflow-x:auto}}
+
+/* ---------- tags ---------- */
+.tag{display:inline-block; font-size:11.5px; font-weight:650; padding:2px 9px; border-radius:999px; line-height:1.6; white-space:nowrap}
+.t-hi{background:var(--green-bg); color:var(--green-t)}
+.t-mid{background:var(--amber-bg); color:var(--amber-t)}
+.t-lo{background:var(--red-bg); color:var(--red-t)}
+.t-n{background:var(--blue-bg); color:var(--blue-t)}
+.t-p{background:var(--purple-bg); color:var(--purple-t)}
+.t-t{background:var(--teal-bg); color:var(--teal-t)}
+
+/* ---------- figures ---------- */
+figure{margin:26px 0; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 18px 14px; min-width:0}
+.fig-box{overflow-x:auto}
+figure svg{display:block; width:100%; height:auto; min-width:600px}
+figcaption{font-size:13.5px; color:var(--ink3); margin-top:12px; line-height:1.65; padding-top:10px; border-top:1px solid var(--line2)}
+figcaption b{color:var(--ink2)}
+.fig-t{font-size:14.5px; font-weight:650; color:var(--ink2); margin-bottom:12px}
+
+/* ---------- misc ---------- */
+.src{font-size:12.5px; color:var(--ink3)}
+.stat{display:flex; flex-wrap:wrap; gap:14px; margin:18px 0}
+.stat div{flex:1 1 150px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; min-width:0}
+.stat .v{font-size:24px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+.stat .u{font-size:12px; color:var(--ink3); margin-top:2px; font-weight:500}
+footer{border-top:1px solid var(--line); margin-top:60px; padding-top:24px; font-size:13px; color:var(--ink3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Deep Research · Agent Architecture</div>
+  <h1>Jev 集成到智能体：速度、成本与最佳实践</h1>
+  <p class="sub">TypeSafe AI 的 System One 决策模型如何被接进 Agent 循环，社区已经跑出哪些可复用的集成模式，以及那些被厂商宣传掩盖的数量级落差与硬失败案例。</p>
+  <div class="meta">
+    <span>研究日期 2026-09-22</span>
+    <span>对象 Jev 1.13 / jev-1.13.0</span>
+    <span>发布 2026-09-15</span>
+    <span>证据等级 一手文档 + 第三方实测</span>
+    <span>零外部依赖单文件</span>
+  </div>
+</header>
+
+<nav>
+  <div class="nt">目录</div>
+  <ol>
+    <li><a href="#s1">核心论断（一页读完）</a></li>
+    <li><a href="#s2">范式判定：Jev 是什么 / 不是什么</a></li>
+    <li><a href="#s3">机制：为什么快，为什么便宜</a></li>
+    <li><a href="#s4">四种集成模式与决策树</a></li>
+    <li><a href="#s5">模式一：动态动作空间</a></li>
+    <li><a href="#s6">模式二：投机扇出 + 置信度门控</a></li>
+    <li><a href="#s7">模式三：校验器、裁判与模型路由</a></li>
+    <li><a href="#s8">模式四（反面案例）：上下文压缩</a></li>
+    <li><a href="#s9">速度与成本全景校准</a></li>
+    <li><a href="#s10">失败模式与适用边界</a></li>
+    <li><a href="#s11">开源生态地图与本地化</a></li>
+    <li><a href="#s12">落地检查清单</a></li>
+    <li><a href="#s13">结论与参考来源</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <h2><span class="num">01</span> 核心论断</h2>
+  <p class="lead">先给结论。以下九条中，第 4、8 条是对主流宣传最直接的校正，也是本报告最有决策价值的部分。</p>
+
+  <div class="card verdict">
+    <h4>论断 1 · Jev 替换的不是规划器，是 Agent 循环里的"判断点"</h4>
+    <p style="margin:0">它不写代码、不聊天、不生成工具调用字符串。它占据的是循环里那些高频、原子、可枚举的岔路口：下一步调哪个工具、点哪个元素、这个请求该路由给谁、这段输出合不合规。把这些岔路口从"生成 + 解析"换成"一次前向、并行打分"，是全部收益的来源。</p>
+  </div>
+
+  <div class="card verdict">
+    <h4>论断 2 · 速度收益的真实落点不是"模型更快"，是"少等了"</h4>
+    <p style="margin:0">三处结构性省时：① 一次请求并行评估 N 个问题（官方称加问题几乎不增加响应时间）；② 不需要等输入完整——语音浏览器在用户还没说完时就执行 <code>go back</code>；③ 消除了解析失败重试与格式校验的返工。</p>
+  </div>
+
+  <div class="card verdict">
+    <h4>论断 3 · 成本结构翻转为"输入侧主导"，且随判断密度放大</h4>
+    <p style="margin:0"><code>$0.042/MTok</code> 输入 + <b>输出免费</b>。传统 LLM 输出单价约为输入的 5 倍，而 Agent 的每一轮决策都要为"解释答案"付输出费。判断越密集、上下文越大，优势越明显——因为省掉的是最贵的那一半。</p>
+  </div>
+
+  <div class="card callout">
+    <h4>论断 4 · 端到端提速远小于模型层提速（最重要的一条校正）</h4>
+    <p>官方宣称 20–200× 快、40–400× 便宜（帕累托前沿口径：193.6× / 444.6×）。第三方实测（Every）落在 <b>25× 快、580× 便宜</b>。而社区最优的<b>端到端</b>实测——browser-use 创始人亲自接线的那个 demo——只有 <b>25% 提速</b>（9.45s → 7.09s）。</p>
+    <p style="margin:0">原因很直白：Agent 循环里模型推理往往不是瓶颈。Jev 决策总共只占全流程 3.72s / 7.07s（53%），其余是浏览器渲染、等待与执行。<b>先把决策算成多少倍，再问它在你的端到端里占多少比例。</b></p>
+  </div>
+
+  <div class="card verdict">
+    <h4>论断 5 · 社区已沉淀出四类可复用集成模式</h4>
+    <p style="margin:0">① 动态动作空间（工具/元素选择）② 投机扇出 + 置信度门控 ③ 校验器 / 裁判 / 模型路由 ④ 上下文与记忆管理。前三类有正面实证，第四类出现了明确的失败数据——见论断 8。</p>
+  </div>
+
+  <div class="card verdict">
+    <h4>论断 6 · 价值在分工，不在替代：快不等于深</h4>
+    <p style="margin:0">开发者 Hassan 的下棋对照是最好的注脚：Jev 每步约 0.3s / &lt;$0.0001，GLM5.3 每步约 5.8s / $0.008——但 29 步后是 GLM5.3 将死了对手。正确姿势是让 Jev 管"快速且明确"的判断，把需要深推的交给推理模型。</p>
+  </div>
+
+  <div class="card verdict">
+    <h4>论断 7 · 官方自述的 9 项失败模式，比能力清单更能定义边界</h4>
+    <p style="margin:0">不数数、不算数、不比日期、怕多层间接推理、怕大状态里的无关细节、不生成文本。这份"锯齿清单"实质上是一份使用说明书：<b>凡是算术、计数与多层推理，必须留在代码里</b>。</p>
+  </div>
+
+  <div class="card callout">
+    <h4>论断 8 · 唯一有硬失败数据的场景是上下文压缩：Jev 只能判断它能看见的东西</h4>
+    <p><code>fast-jev-compaction</code> 的会话回放（issue #26）：16 段真实 Claude Code 会话、256 个工具结果，<b>没有一个保留分数达到默认的 0.5 阈值</b>；240 个被删除或截断，字符数减少 87.7%。而一个"一律不保留"的假评分器减少 88.5%——两者几乎无差别。</p>
+    <p style="margin:0">根因不是模型笨，是<b>喂不进去</b>：为了塞进 64k 状态上限，插件把工具结果写成 <code>ok, 4213 chars (omitted)</code> 的占位符，Jev 看不见那 4213 个字符里有没有关键报错。这是一条通用律。</p>
+  </div>
+
+  <div class="card verdict">
+    <h4>论断 9 · 闭源不可自托管是最大工程风险，但护城河不是架构而是校准</h4>
+    <p style="margin:0">"跳过自回归、单次前向打分"这一层已被开源复现（<code>fast-browser-use</code> 本地 79ms、<code>Nimble</code> 一致率 90.12% vs Jev 93.21%、基座 66.36%）。Jev 真正难以复制的是 RLCD 训练出的<b>校准概率</b>，以及真·并行多问题采样器——那才是置信度门控能成立的前提。</p>
+  </div>
+</section>
+
+<section id="s2">
+  <h2><span class="num">02</span> 范式判定：Jev 是什么，不是什么</h2>
+  <p class="lead">名字取自卡尼曼《思考，快与慢》的"系统一"，以及杰文斯悖论——智能成本每降一个数量级，就会解锁数量级更多的场景。</p>
+
+  <h3>2.1 一句话定义</h3>
+  <p>Jev 接收一段非结构化 <b>state</b>（字符串 / JSON 对象 / 文本数组）和一组<b>类型化问题</b>，在一次请求中<b>并行</b>评估全部问题，返回类型安全的答案 + 概率分布 + 置信度。官方把它称作"前沿智能的函数调用"：非结构化状态进，带概率的类型化决策出。</p>
+
+  <h3>2.2 三种原语</h3>
+  <table>
+    <thead>
+      <tr><th style="width:15%">原语</th><th style="width:22%">回答什么</th><th style="width:26%">返回字段</th><th>典型场景（社区实跑过的）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b>Choice</b></td><td>从已定义选项中选一个</td><td><code>choice</code>、<code>probabilities</code>、<code>confidence</code></td><td>工单路由、意图识别、<b>点哪个 DOM 元素</b>、调哪个工具（上限 255 项）</td></tr>
+      <tr><td><b>Score</b></td><td>在有序量表上处于哪一级</td><td><code>score</code>、<code>legend</code>、<code>probabilities</code>、<code>confidence</code></td><td>严重度、客户挫败感、滚动幅度、简历各维度打分（2–10 级）</td></tr>
+      <tr><td><b>Noul</b></td><td>这个命题为真吗</td><td><code>noul</code>（0–1 概率，无独立 confidence）</td><td>是否请求退款、是否破坏性操作、<b>用户这句话说完了吗</b></td></tr>
+    </tbody>
+  </table>
+  <p class="src">原语设计上刻意保持"一个知识丰富的人几秒钟内能做的直觉判断"。需要多因素权衡的问题，官方明确要求拆成多个原子问题、再用代码加权组合。</p>
+
+  <h3>2.3 它不是什么</h3>
+  <div class="g2">
+    <div class="card" style="border-left:3px solid var(--red)">
+      <h4>不是 LLM 的替代品</h4>
+      <p style="margin:0;font-size:14.5px">不写散文、不聊天、不写代码、不生成工具调用字符串、不做数学、不可靠地数数。官方"生成"一项被直接列为失败模式之一。</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--red)">
+      <h4>不是"零幻觉"的正确率保证</h4>
+      <p style="margin:0;font-size:14.5px">零幻觉的准确含义是<b>类型安全</b>：schema 匹配是数学保证，不可能返回 schema 外的答案。但格式良好的错误答案依然是错的——只是此时你有校准概率告诉你它有多确定。</p>
+    </div>
+  </div>
+
+  <h3>2.4 关键规格（生产必读）</h3>
+  <table>
+    <thead><tr><th style="width:24%">规格</th><th style="width:38%">数值</th><th>工程含义</th></tr></thead>
+    <tbody>
+      <tr><td>端点</td><td><code>POST https://api.typesafe.ai/v1/systemone</code></td><td>仅文本输入，不支持图像 / 音频 / 视频</td></tr>
+      <tr><td>模型别名</td><td><code>jev-latest</code>（稳定）/ <code>jev-preview</code></td><td><b>生产须 pin 版本</b> <code>jev-1.13.0</code>；别名会移动，调好的置信度阈值会悄悄失效</td></tr>
+      <tr><td>上下文</td><td>单请求 64k tokens；state + 最长单问题 32k</td><td>决定了"能看见多少"，是论断 8 失败的根因</td></tr>
+      <tr><td>延迟</td><td>端到端 70–500ms（官方美西实测）</td><td>社区实测 p50 ≈ 178–300ms</td></tr>
+      <tr><td>价格</td><td>输入 $0.042 / MTok；<b>输出 $0</b></td><td>第三方网关见 §11 价格表，最低 $0.0105</td></tr>
+      <tr><td>限流</td><td>250,000 tokens/秒；1,200 请求/分钟</td><td>early access 期间动态调整，超限 429 + SDK 自动退避</td></tr>
+      <tr><td>Choice 基数</td><td>最多 255 个选项</td><td>更高基数走"先独立打分、再显式选择"两阶段</td></tr>
+      <tr><td>语言</td><td>英语最优，CJK 可用但不对等</td><td>中文场景须自行实测并善用 confidence 路由</td></tr>
+      <tr><td>定制</td><td>不支持微调 / LoRA，全账户共享权重</td><td>只能通过 state 与 instructions 定制</td></tr>
+      <tr><td>数据</td><td>不用客户数据训练；企业可谈 ZDR</td><td><b>未向中国大陆地区开放</b></td></tr>
+    </tbody>
+  </table>
+  <p class="src">来源：docs.typesafe.ai/models（2026-09-17 复核）、CSDN 技术整理（2026-09-20）、llm24 聚合（2026-09-18）。</p>
+
+  <figure>
+    <div class="fig-t">图 1 · Agent 循环中的快慢分工：Jev 插在哪里</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 420" role="img" aria-label="Agent 循环中 System 2 与 System 1 的分工图">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+          <path d="M0,0 L8,3.2 L0,6.4 z" fill="#4A505A"/>
+        </marker>
+        <marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+          <path d="M0,0 L8,3.2 L0,6.4 z" fill="#8F3F06"/>
+        </marker>
+      </defs>
+
+      <!-- System 2 lane -->
+      <rect x="20" y="24" width="920" height="120" rx="12" fill="#EEF4FB" stroke="#2F6FB0" stroke-width="1.2"/>
+      <text x="38" y="50" font-size="14.5" font-weight="700" fill="#1F5288">System 2 · 慢思考（前沿 LLM，秒到百秒级）</text>
+      <text x="38" y="70" font-size="12" fill="#4A505A">职责：目标分解 · 多步规划 · 代码与文本生成 · 需要深推的难题</text>
+
+      <rect x="46" y="86" width="170" height="42" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1.2"/>
+      <text x="131" y="112" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">目标 / 计划</text>
+
+      <rect x="256" y="86" width="200" height="42" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1.2"/>
+      <text x="356" y="106" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">生成代码 / 文本</text>
+      <text x="356" y="121" font-size="11" fill="#4A505A" text-anchor="middle">唯一的文字出口</text>
+
+      <rect x="496" y="86" width="200" height="42" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1.2"/>
+      <text x="596" y="106" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">难例升级处理</text>
+      <text x="596" y="121" font-size="11" fill="#4A505A" text-anchor="middle">低置信度时接手</text>
+
+      <rect x="736" y="86" width="180" height="42" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1.2"/>
+      <text x="826" y="112" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">结果核验 / 收尾</text>
+
+      <path d="M216,107 L250,107" stroke="#4A505A" stroke-width="1.4" marker-end="url(#ar)"/>
+      <path d="M456,107 L490,107" stroke="#4A505A" stroke-width="1.4" marker-end="url(#ar)"/>
+      <path d="M696,107 L730,107" stroke="#4A505A" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <!-- System 1 lane -->
+      <rect x="20" y="176" width="920" height="150" rx="12" fill="#FDF3E7" stroke="#B45309" stroke-width="1.2"/>
+      <text x="38" y="202" font-size="14.5" font-weight="700" fill="#8F3F06">System 1 · 快判断（Jev，70–500ms，一次请求 N 个问题并行）</text>
+      <text x="38" y="222" font-size="12" fill="#4A505A">职责：工具/元素选择 · 意图路由 · 打分排序 · 完成度与破坏性判定 · 输出合规校验</text>
+
+      <rect x="46" y="240" width="176" height="62" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="1.2"/>
+      <text x="134" y="263" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">下一步调哪个工具</text>
+      <text x="134" y="281" font-size="11" fill="#4A505A" text-anchor="middle">Choice · 动态动作空间</text>
+
+      <rect x="248" y="240" width="176" height="62" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="1.2"/>
+      <text x="336" y="263" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">说完了吗 / 危险吗</text>
+      <text x="336" y="281" font-size="11" fill="#4A505A" text-anchor="middle">Noul · 部分输入即可判</text>
+
+      <rect x="450" y="240" width="176" height="62" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="1.2"/>
+      <text x="538" y="263" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">严重度 / 优先级</text>
+      <text x="538" y="281" font-size="11" fill="#4A505A" text-anchor="middle">Score · 阈值分支</text>
+
+      <rect x="652" y="240" width="176" height="62" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="1.2"/>
+      <text x="740" y="263" font-size="13" font-weight="600" fill="#16181D" text-anchor="middle">输出合不合规</text>
+      <text x="740" y="281" font-size="11" fill="#4A505A" text-anchor="middle">裁判 / 越狱检测</text>
+
+      <rect x="854" y="240" width="64" height="62" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="1.2"/>
+      <text x="886" y="263" font-size="12.5" font-weight="600" fill="#16181D" text-anchor="middle">路由</text>
+      <text x="886" y="281" font-size="11" fill="#4A505A" text-anchor="middle">难度判</text>
+
+      <!-- vertical handoff -->
+      <path d="M480,144 L480,176" stroke="#8F3F06" stroke-width="1.8" marker-end="url(#ar2)"/>
+      <path d="M480,326 L480,352" stroke="#8F3F06" stroke-width="1.8" marker-end="url(#ar2)"/>
+      <text x="492" y="166" font-size="11.5" fill="#8F3F06">派判断</text>
+      <text x="492" y="346" font-size="11.5" fill="#8F3F06">回结果</text>
+
+      <!-- code layer -->
+      <rect x="20" y="356" width="920" height="44" rx="10" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.2"/>
+      <text x="38" y="383" font-size="13.5" font-weight="650" fill="#1B5820">代码层（你自己的策略）：阈值 · 权重 · 组合 · 回退</text>
+      <text x="400" y="383" font-size="12" fill="#4A505A">置信度门控：高 → 自动执行；中 → 请求确认；低 → 转人工 / 升级大模型</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>Jev 从不独占循环，它只替换循环里可枚举的岔路口。文字出口始终留在 System 2，最终策略与阈值始终留在代码层——这是所有社区实践中共同的结构。</figcaption>
+  </figure>
+</section>
+
+<section id="s3">
+  <h2><span class="num">03</span> 机制：为什么快，为什么便宜</h2>
+  <p class="lead">三条机制，每条都能推出一个具体的工程动作。理解机制而不是背倍数，才能判断自己的场景吃不吃得到这份收益。</p>
+
+  <h3>3.1 机制一：跳过自回归，一次前向并行出全部答案</h3>
+  <p>传统 LLM 即便只需要输出一个 "A"，也要为解释答案逐 token 生成；Jev 直接对隐状态打分，单 token logits 完成决策，并用 KV-Cache 广播把多个候选 / 多个问题的评估并行化为一次批处理前向。复杂度从 <code>O(tokens × layers)</code> 的解码循环降到 <code>O(1)</code> 的 logits 投影。</p>
+  <div class="card ok">
+    <h4>可推出的工程动作</h4>
+    <p style="margin:0"><b>把问题堆到一次请求里。</b>官方原话："问一个你可能不需要的问题，成本接近于零。"社区实践走得更远——语音浏览器一次发 9–11 个问题，浏览器 agent 把 operation 与 target 两个头塞进同一个请求。这是唯一没有副收益递减的优化。</p>
+  </div>
+
+  <h3>3.2 机制二：问题之间彼此独立，不产生上下文腐化</h3>
+  <p>同一次请求中的所有问题针对同一个 state <b>并行、独立</b>评估：增删问题不影响其他问题的结果，不存在 context-rot。这与"把所有条件写进一个大 prompt 让模型在思维链里权衡"形成鲜明对比——后者的问题会互相污染。</p>
+  <div class="card ok">
+    <h4>可推出的工程动作</h4>
+    <p style="margin:0"><b>原子化提问，在代码里组合。</b>不要问"给这个创业 pitch 打分"，而是分别问市场规模、技术可行性、差异化，再用自己的公式合成。优先级变化时改代码里的系数，而不是重写 prompt——这把"调优"从玄学变成了可版本控制的算术。</p>
+  </div>
+
+  <h3>3.3 机制三：RLCD 把概率训练成"认知诚实"的信号</h3>
+  <p>第三条后训练路线。RLHF 优化"人类偏好的文本"（会奖励谄媚与听起来自信的幻觉），RLVR 优化"可验证的正确性"，RLCD 优化<b>决策 + 校准概率</b>：被赋予 0.8 概率的结果，应在约 80% 的情况下发生。</p>
+  <p>为什么这是自动化的入场券：一个 95% 准确率但不说自己何时落在那 5% 里的模型，<b>无法被自动化</b>。LLM 即使被要求输出置信度，也往往过度自信且不一致。</p>
+  <div class="card ok">
+    <h4>可推出的工程动作</h4>
+    <p style="margin:0"><b>把置信度当成第二决策轴，按后果设阈值。</b>查余额 0.6 就够（最坏是用户多听一遍）；批准转账要 &gt;0.85，否则请用户确认。阈值不是全局常数，是<b>按动作的风险分级</b>的函数。</p>
+  </div>
+
+  <figure>
+    <div class="fig-t">图 2 · 串行决策 vs 并行决策：一次 Agent 循环的等待结构</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 320" role="img" aria-label="串行与并行决策时序对比">
+      <text x="20" y="22" font-size="13.5" font-weight="700" fill="#B3261E">上：传统 LLM 串行（每个判断一次往返 + 解析重试）</text>
+      <text x="20" y="182" font-size="13.5" font-weight="700" fill="#1B5820">下：Jev 并行（N 个问题一次往返，无解析环节）</text>
+
+      <!-- axis -->
+      <line x1="120" y1="40" x2="930" y2="40" stroke="#E4E1DA" stroke-width="1"/>
+      <line x1="120" y1="200" x2="930" y2="200" stroke="#E4E1DA" stroke-width="1"/>
+      <text x="930" y="30" font-size="11" fill="#4A505A" text-anchor="end">t</text>
+      <text x="930" y="190" font-size="11" fill="#4A505A" text-anchor="end">t</text>
+
+      <!-- serial blocks -->
+      <rect x="120" y="52" width="150" height="26" rx="5" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.1"/>
+      <text x="195" y="70" font-size="11.5" fill="#B3261E" text-anchor="middle">判断 1 · 生成</text>
+      <rect x="278" y="52" width="46" height="26" rx="5" fill="#FFFFFF" stroke="#B3261E" stroke-width="1.1" stroke-dasharray="3 2"/>
+      <text x="301" y="70" font-size="11.5" fill="#B3261E" text-anchor="middle">解析</text>
+
+      <rect x="332" y="52" width="150" height="26" rx="5" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.1"/>
+      <text x="407" y="70" font-size="11.5" fill="#B3261E" text-anchor="middle">判断 2 · 生成</text>
+      <rect x="490" y="52" width="46" height="26" rx="5" fill="#FFFFFF" stroke="#B3261E" stroke-width="1.1" stroke-dasharray="3 2"/>
+      <text x="513" y="70" font-size="11.5" fill="#B3261E" text-anchor="middle">解析</text>
+
+      <rect x="544" y="52" width="150" height="26" rx="5" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.1"/>
+      <text x="619" y="70" font-size="11.5" fill="#B3261E" text-anchor="middle">判断 3 · 生成</text>
+      <rect x="702" y="52" width="46" height="26" rx="5" fill="#FFFFFF" stroke="#B3261E" stroke-width="1.1" stroke-dasharray="3 2"/>
+      <text x="725" y="70" font-size="11.5" fill="#B3261E" text-anchor="middle">解析</text>
+
+      <rect x="756" y="52" width="150" height="26" rx="5" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.1"/>
+      <text x="831" y="70" font-size="11.5" fill="#B3261E" text-anchor="middle">判断 4 · 生成</text>
+
+      <rect x="120" y="88" width="786" height="20" rx="4" fill="#F4F2ED" stroke="#E4E1DA" stroke-width="1"/>
+      <text x="513" y="103" font-size="11.5" fill="#333941" text-anchor="middle">累计等待 = 4× 生成 + 3× 解析 + 可能的重试返工</text>
+
+      <text x="120" y="132" font-size="11.5" fill="#4A505A">✕ 问题越多，等待线性增长；✕ 前序判断错了，后续全错；✕ 必须等输入完整</text>
+
+      <!-- parallel blocks -->
+      <rect x="120" y="212" width="300" height="40" rx="6" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.2"/>
+      <text x="270" y="230" font-size="12.5" font-weight="650" fill="#1B5820" text-anchor="middle">一次请求：判断 1 · 2 · 3 · 4 并行</text>
+      <text x="270" y="245" font-size="11" fill="#4A505A" text-anchor="middle">端到端 70–500ms（社区 p50 ≈ 178–300ms）</text>
+
+      <rect x="436" y="212" width="72" height="40" rx="6" fill="#FFFFFF" stroke="#2E7D32" stroke-width="1.2"/>
+      <text x="472" y="230" font-size="11.5" font-weight="650" fill="#1B5820" text-anchor="middle">代码</text>
+      <text x="472" y="245" font-size="11" fill="#4A505A" text-anchor="middle">阈值分支</text>
+
+      <rect x="524" y="212" width="150" height="40" rx="6" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.2"/>
+      <text x="599" y="236" font-size="12.5" font-weight="650" fill="#1B5820" text-anchor="middle">直接动作</text>
+
+      <text x="120" y="272" font-size="11.5" fill="#4A505A">✓ 加问题几乎不增加响应时间；✓ 问题互不干扰；✓ 可对部分输入提前决策</text>
+      <text x="120" y="292" font-size="11.5" fill="#4A505A">✓ 类型安全：不可能返回 schema 外的值，无解析失败重试</text>
+      <text x="120" y="312" font-size="11.5" fill="#8F3F06">⚠ 但：端到端耗时里模型只占一部分——见 §9 的数量级校准</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>并行的收益是"等待从线性变常数"。但要注意这张图只比较<b>决策环节</b>本身；Agent 的端到端时间里还有渲染、网络、执行、等待——它们不会因为换了决策模型而消失。</figcaption>
+  </figure>
+
+  <h3>3.4 RLCD 的另一面：为什么"校准"比"准确"更值钱</h3>
+  <p>官方评测（Workflow Evals）的方法值得单独说：假设存在一个用代码表达的正确计算图，把任务分解为程序化规则 + 若干独立原子问题，由 GPT-6 Astra 与 Claude Fable 5.1（均开最高思考档）对每题作答取平均作为<b>参照标签</b>。</p>
+  <p>结论有两条：① <b>每个模型</b>用工作流方式都比用大 prompt 更准确、更便宜、更快——"结构总是更好"；② Jev 位于帕累托前沿，在相近智能水平下速度 / 成本领先约两个数量级。</p>
+  <p class="src">官方自己也标注了偏差（"Nuance"小节，值得称道）：193.6× / 444.6× 属于真实世界收益的<b>偏高端</b>；工作流由其模型能力团队编写；参照答案取两家平均可能低估 Jev 与 DeepSeek；速度 / 成本声明无法证明没有补贴。</p>
+</section>
+
+<section id="s4">
+  <h2><span class="num">04</span> 四种集成模式与决策树</h2>
+  <p class="lead">官方给出 4 个 pattern，社区实践把它们落到了四类场景。这张表把官方意图与社区实测并排列出——右侧"实证状态"列是本节的价值所在。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:16%">模式</th><th style="width:22%">官方定义</th><th style="width:24%">社区落地形态</th><th style="width:22%">代表项目</th><th>实证状态</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>① 动态动作空间</b><br><span class="src">≈ Speculative Fan-Out</span></td>
+        <td>一次请求发多个问题（含投机性的），由代码事后决定哪些相关</td>
+        <td>把"可选动作"枚举成编号候选集，Jev 一次请求同时选 <b>操作</b> 与 <b>目标</b>，代码校验后执行</td>
+        <td><code>browser-use/jev-ultrafast</code><br><code>APUS-AI-Lab/fast-browser-use</code></td>
+        <td><span class="tag t-hi">正向</span> 端到端 −25%，浏览器协议调用 −90.7%</td>
+      </tr>
+      <tr>
+        <td><b>② 投机扇出 + 置信度门控</b><br><span class="src">Fan-Out + Confidence Routing</span></td>
+        <td>置信度作第二决策轴：高 → 自动执行；中 → 确认；低 → 转人工</td>
+        <td>对<b>部分输入</b>持续采样，一次请求问 intent / target / 完成度 / 破坏性，代码按阈值决定 act / wait / ignore / confirm</td>
+        <td><code>moritzkremb/jev-voice-browser</code><br>Gradium 语音智能体</td>
+        <td><span class="tag t-hi">正向</span> 34/34 集成用例通过，p50 ≈ 300ms</td>
+      </tr>
+      <tr>
+        <td><b>③ 校验器 / 裁判 / 模型路由</b><br><span class="src">≈ Composite Scoring</span></td>
+        <td>拆成独立维度打分，用代码控制的权重组合</td>
+        <td>给 LLM 的 prompt / 推理轨迹 / 输出做打分、裁判、越狱检测；按难度路由到快模型或推理模型</td>
+        <td>fx 安全分类器<br>Elvis Saravia 自定义验证器<br>Hassan 下棋路由测试</td>
+        <td><span class="tag t-mid">正向但有限</span> 快 ≠ 深，深推任务仍须大模型</td>
+      </tr>
+      <tr>
+        <td><b>④ 上下文 / 记忆管理</b><br><span class="src">社区自创，官方未推荐</span></td>
+        <td>—</td>
+        <td>对每条 tool_use / tool_result 逐项问"还需要保留吗"，按阈值删除或截断</td>
+        <td><code>tamaratran/fast-jev-compaction</code></td>
+        <td><span class="tag t-lo">失败</span> 256 条无一达阈值，与"全删"基线无差别</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <figure>
+    <div class="fig-t">图 3 · 决策树：这个判断点该不该交给 Jev</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 500" role="img" aria-label="Jev 适用判断决策树">
+      <defs>
+        <marker id="arb" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+          <path d="M0,0 L8,3.2 L0,6.4 z" fill="#4A505A"/>
+        </marker>
+      </defs>
+
+      <rect x="330" y="14" width="300" height="46" rx="9" fill="#EEF4FB" stroke="#2F6FB0" stroke-width="1.4"/>
+      <text x="480" y="36" font-size="14" font-weight="700" fill="#16181D" text-anchor="middle">这个判断点需要 Jev 吗？</text>
+      <text x="480" y="52" font-size="11.5" fill="#4A505A" text-anchor="middle">Agent 循环中的一次岔路决策</text>
+
+      <!-- Q1 -->
+      <path d="M480,60 L480,86" stroke="#4A505A" stroke-width="1.4" marker-end="url(#arb)"/>
+      <rect x="270" y="90" width="420" height="42" rx="9" fill="#FFFFFF" stroke="#B45309" stroke-width="1.3"/>
+      <text x="480" y="116" font-size="13.5" font-weight="650" fill="#16181D" text-anchor="middle">Q1 · 输出是自由文本吗？（写代码 / 聊天 / 长篇解释）</text>
+      <path d="M480,132 L480,158" stroke="#4A505A" stroke-width="1.4" marker-end="url(#arb)"/>
+      <text x="492" y="150" font-size="11.5" fill="#1B5820">否</text>
+      <path d="M690,111 L840,111 L840,158" stroke="#4A505A" stroke-width="1.4" fill="none" marker-end="url(#arb)"/>
+      <text x="858" y="115" font-size="11.5" fill="#B3261E">是</text>
+
+      <rect x="740" y="162" width="200" height="52" rx="9" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.3"/>
+      <text x="840" y="184" font-size="13" font-weight="700" fill="#B3261E" text-anchor="middle">不接 Jev</text>
+      <text x="840" y="201" font-size="11.5" fill="#4A505A" text-anchor="middle">交给生成式模型</text>
+
+      <!-- Q2 -->
+      <rect x="270" y="162" width="420" height="42" rx="9" fill="#FFFFFF" stroke="#B45309" stroke-width="1.3"/>
+      <text x="480" y="188" font-size="13.5" font-weight="650" fill="#16181D" text-anchor="middle">Q2 · 答案空间可枚举吗？（N ≤ 255 的离散选项 / 有序等级 / 是非）</text>
+      <path d="M480,204 L480,230" stroke="#4A505A" stroke-width="1.4" marker-end="url(#arb)"/>
+      <text x="492" y="222" font-size="11.5" fill="#1B5820">是</text>
+      <path d="M690,168 L736,168" stroke="#4A505A" stroke-width="1.4" fill="none" marker-end="url(#arb)"/>
+      <text x="700" y="155" font-size="11.5" fill="#B3261E">否</text>
+
+      <!-- Q3 -->
+      <rect x="270" y="234" width="420" height="42" rx="9" fill="#FFFFFF" stroke="#B45309" stroke-width="1.3"/>
+      <text x="480" y="254" font-size="13.5" font-weight="650" fill="#16181D" text-anchor="middle">Q3 · 判断所需的全部证据，能被塞进 state 吗？</text>
+      <text x="480" y="270" font-size="11.5" fill="#4A505A" text-anchor="middle">（≤ 32k tokens，且不会被占位符省略成 <tspan fill="#B3261E">ok, 4213 chars (omitted)</tspan>）</text>
+      <path d="M480,276 L480,302" stroke="#4A505A" stroke-width="1.4" marker-end="url(#arb)"/>
+      <text x="492" y="294" font-size="11.5" fill="#1B5820">能</text>
+      <path d="M690,255 L790,255 L790,302" stroke="#4A505A" stroke-width="1.4" fill="none" marker-end="url(#arb)"/>
+      <text x="802" y="259" font-size="11.5" fill="#B3261E">不能 → 必败</text>
+
+      <rect x="700" y="306" width="240" height="56" rx="9" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.3"/>
+      <text x="820" y="328" font-size="13" font-weight="700" fill="#B3261E" text-anchor="middle">不接 Jev</text>
+      <text x="820" y="346" font-size="11.5" fill="#4A505A" text-anchor="middle">它看不见的东西判断不了</text>
+
+      <!-- Q4 -->
+      <rect x="270" y="306" width="420" height="42" rx="9" fill="#FFFFFF" stroke="#B45309" stroke-width="1.3"/>
+      <text x="480" y="326" font-size="13.5" font-weight="650" fill="#16181D" text-anchor="middle">Q4 · 涉及算术 / 计数 / 日期比较 / 多层间接推理吗？</text>
+      <text x="480" y="342" font-size="11.5" fill="#4A505A" text-anchor="middle">（官方 jaggedness 清单的前四项）</text>
+      <path d="M480,348 L480,374" stroke="#4A505A" stroke-width="1.4" marker-end="url(#arb)"/>
+      <text x="492" y="366" font-size="11.5" fill="#1B5820">否</text>
+      <path d="M690,330 L690,368 L820,368 L820,374" stroke="#4A505A" stroke-width="1.4" fill="none" marker-end="url(#arb)"/>
+      <text x="700" y="300" font-size="11.5" fill="#B3261E">是</text>
+
+      <rect x="700" y="378" width="240" height="52" rx="9" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+      <text x="820" y="400" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">拆开接</text>
+      <text x="820" y="417" font-size="11.5" fill="#4A505A" text-anchor="middle">算术与比较留在代码里</text>
+
+      <!-- Q5 -->
+      <rect x="270" y="378" width="420" height="42" rx="9" fill="#FFFFFF" stroke="#B45309" stroke-width="1.3"/>
+      <text x="480" y="398" font-size="13.5" font-weight="650" fill="#16181D" text-anchor="middle">Q5 · 这个判断每秒 / 每会话会发生多少次？</text>
+      <text x="480" y="414" font-size="11.5" fill="#4A505A" text-anchor="middle">高频（≥ 每秒级或每会话数十次）→ 收益最大</text>
+
+      <path d="M400,420 L400,446" stroke="#4A505A" stroke-width="1.4" marker-end="url(#arb)"/>
+      <path d="M560,420 L560,446" stroke="#4A505A" stroke-width="1.4" marker-end="url(#arb)"/>
+      <text x="412" y="438" font-size="11.5" fill="#1B5820">高频</text>
+      <text x="572" y="438" font-size="11.5" fill="#8F3F06">低频</text>
+
+      <rect x="270" y="450" width="260" height="42" rx="9" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.4"/>
+      <text x="400" y="476" font-size="13.5" font-weight="700" fill="#1B5820" text-anchor="middle">接：收益最大</text>
+      <rect x="550" y="450" width="240" height="42" rx="9" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+      <text x="670" y="476" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">接但收益有限</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>Q3 是最容易被忽略、也最致命的一关——<code>fast-jev-compaction</code> 正是倒在这里。Q4 不是"不接"，是"拆开接"：让 Jev 判语义，让代码算数。</figcaption>
+  </figure>
+</section>
+
+<section id="s5">
+  <h2><span class="num">05</span> 模式一：动态动作空间（工具 / 元素选择）</h2>
+  <p class="lead">这是目前证据最扎实、也最能代表"Jev 该被怎么用"的一类。两个项目几乎同时独立做出同样的设计，而且都完整公开了原始测量文件。</p>
+
+  <h3>5.1 机制：把"可选动作"变成编号候选集</h3>
+  <p>传统 Agent 让模型<b>生成</b>一个动作（选择器、坐标、JSON）。Jev 路线反过来——先由 Harness 扫描当前状态，把<b>真实存在且可交互</b>的候选整理成编号表，再让模型从编号里<b>选</b>。</p>
+
+  <pre><code>[1] button    Change ticket type · Round trip
+[2] combobox  Where from?        · San Francisco
+[3] combobox  Where to?          · empty
+[4] textbox   Departure          · empty
+...</code></pre>
+
+  <p>关键在 <code>jev-ultrafast</code> 的"投机目标头"设计：一次请求同时问 <b>operation</b>（CLICK / TYPE_TEXT / SELECT / SCROLL / WAIT / DONE / BLOCKED）和三个<b>投机性</b>的 target 头（click_target / type_text_target / select_target）。如果操作是 CLICK，就只有 click_target 能执行——<b>两个决策，一次网络往返</b>。每个 target 头只包含与之兼容的元素，从机制上杜绝了"点错类型的元素"。</p>
+
+  <div class="card ok">
+    <h4>这个设计的三重收益（可迁移到任何工具调用场景）</h4>
+    <ul style="margin:0">
+      <li><b>结构性消除幻觉</b>：模型从不写选择器、坐标、shell 命令或可执行 JS——它只选编号。类型安全是数学保证，不是经验比率。</li>
+      <li><b>动作与生成解耦</b>：只有 <code>TYPE_TEXT</code> 才唤醒小模型生成文字，其余 99% 决策不产生任何文本生成成本。</li>
+      <li><b>状态是原子快照</b>：一次浏览器调用读完可见控件、名称、值与文本，并保留真实 DOM 节点引用；执行前重新校验新鲜度与遮挡。</li>
+    </ul>
+  </div>
+
+  <h3>5.2 实证 A：<code>browser-use/jev-ultrafast</code>（MIT，2026-09-16）</h3>
+  <p>由 browser-use 创始人 Gregor Zunic 亲自接线。任务：在 Google Flights 上搜苏黎世 → 伦敦单程机票，含真实文本生成与加载等待。</p>
+  <div class="stat">
+    <div><div class="v">7,073 ms</div><div class="u">端到端任务耗时（1× 原速录制）</div></div>
+    <div><div class="v">17 → 178 ms</div><div class="u">决策请求数 · 单次中位延迟</div></div>
+    <div><div class="v">1,092 → 101</div><div class="u">浏览器协议调用数（−90.7%）</div></div>
+    <div><div class="v">$0.0038</div><div class="u">全流程 Jev 输入成本（90,558 tokens）</div></div>
+  </div>
+  <p>更值得看的是<b>对照实验</b>：六次交替运行、相同模型与设置，两版均 3/3 通过。中位任务时间 <b>9.450s → 7.092s（−25%）</b>，中位浏览器协议调用 <b>1,092 → 101</b>。</p>
+  <div class="card callout">
+    <h4>但请注意这几个数字的分母</h4>
+    <ul style="margin:0">
+      <li>决策总耗时 3,720ms，占全流程 7,073ms 的 <b>53%</b>——也就是说另外 47% 是浏览器工作、加载等待与陈旧决策重试，换模型动不了。</li>
+      <li>计时<b>从首次页面观察之后</b>开始，不含初始导航与浏览器启动（Hacker News 上被直接质疑："那部分不就是最耗时的吗"）。</li>
+      <li>三对配对样本太少（双侧符号检验 <code>p = 0.25</code>），仓库自己声明"这不是通用可靠性基准"。</li>
+      <li>任务只做到<b>搜索结果出现</b>，不是完成订票；<code>DONE</code> 从来不是成功的独立证据。</li>
+    </ul>
+  </div>
+  <p class="src">来源：仓库 <code>docs/flights-measurement.json</code>、<code>docs/full-speed-measurement.json</code>、<code>docs/performance.md</code>（2026-09-17）。同政策还跑出 Wikipedia 任务 2.798s、本地酒店搜索筛选 1.896s。</p>
+
+  <h3>5.3 实证 B：<code>APUS-AI-Lab/fast-browser-use</code>（MIT，2026-09-19）</h3>
+  <p>没有 API key、也不能接受数据出境场景下的答案：<b>把它搬到本地</b>。APUS 基于公开文档反推出"跳过自回归解码、隐状态直接打分"的核心逻辑，用 Qwen3.5-9B 复现了单 token logits 决策 + KV-Cache 广播 + 并发批量评估。</p>
+  <table>
+    <thead><tr><th style="width:30%">场景任务</th><th style="width:18%">Qwen3.5-9B</th><th style="width:18%">Qwen3.5-35B-A3B</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>Wikipedia 导航（搜到 Python 条目）</td><td class="num">4.055 s</td><td class="num">4.944 s</td><td>仅 <b>4 个</b>离散单 token 评分步骤</td></tr>
+      <tr><td>Workspace 设置表单（填表 / 下拉 / 开关）</td><td class="num">2.488 s</td><td class="num">3.360 s</td><td>—</td></tr>
+      <tr><td>本地阅览室导航</td><td class="num">0.808 s</td><td class="num">1.049 s</td><td>—</td></tr>
+      <tr><td>Python.org 导航（到 About）</td><td class="num">1.789 s</td><td class="num">2.120 s</td><td>—</td></tr>
+      <tr><td>Example.com → IANA Info</td><td class="num">1.263 s</td><td class="num">1.535 s</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p class="src">测量环境：NVIDIA RTX PRO 6000 Blackwell（96GB VRAM，Linux），PyTorch 2.14.0 + Flash Linear Attention，100% 本地推理。<b>单次决策 79ms</b>，与 Jev 官方 70–500ms 区间对齐。在 M2 Pro 消费级笔记本上跑同样的维基百科任务，中位耗时约 18s——无 GPU 也能用，只是慢一档。全程零云端调用、零 API 费用、数据不出本机。</p>
+
+  <div class="card verdict">
+    <h4>本地化带来的三个额外性质</h4>
+    <ul style="margin:0">
+      <li><b>成本归零且不再受限流约束</b>：没有 1,200 req/min 的天花板，也没有 250k tokens/s 的共享配额。</li>
+      <li><b>数据不出本机</b>：对政企 / 金融场景是硬需求，也是闭源 API 结构性给不了的。</li>
+      <li><b>可作为 Agent Skill 挂进宿主</b>：<code>npx skills add APUS-AI-Lab/fast-browser-use --skill fast-browser-use -a claude-code -a codex -g -y</code>，然后在 Claude Code 里 <code>/fast-browser-use &lt;目标&gt;</code>——这就是 System 1 / System 2 分工的最直观形态。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="num">06</span> 模式二：投机扇出 + 置信度门控</h2>
+  <p class="lead">语音场景把 Jev 的能力边界推到了最有趣的地方——它可以在用户<b>还没说完</b>的时候就行动。</p>
+
+  <h3>6.1 打破"等一句话结束"的串行假设</h3>
+  <p>传统语音智能体的链路是：等一句话说完 → ASR 定稿 → LLM 推理 → 执行。Gradium 团队的测试把中间那一步换成了"<b>对每个部分转写持续判断</b>"，于是链路变成：部分转写 → Jev 判断 → 若已足够明确则提前触发工具调用。</p>
+  <p><code>moritzkremb/jev-voice-browser</code> 把这个思路做成了完整实现，而且工程细节非常值得抄：</p>
+
+  <h4>一次请求问 9–11 个问题（全部并行）</h4>
+  <table>
+    <thead><tr><th style="width:18%">问题 ID</th><th style="width:12%">类型</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>intent</code></td><td>Choice</td><td>导航 / 搜索 / 点击 / 输入 / 滚动 / 后退 / 标签页 / 确认 / 取消 / none——每个选项都带 <code>{what, not_for, examples}</code></td></tr>
+      <tr><td><code>target</code></td><td>Choice</td><td>页面上所有元素编号 + <code>none</code></td></tr>
+      <tr><td><code>site</code></td><td>Choice</td><td>google / wikipedia / youtube / github / … 用于选 URL 模板</td></tr>
+      <tr><td><code>complete</code></td><td>Noul</td><td><b>用户说完这句话了吗</b>——这才是"提前执行"的开关</td></tr>
+      <tr><td><code>is_command</code></td><td>Noul</td><td>用户是在跟浏览器说话吗（闲聊时 ≈ 0.02，直接忽略）</td></tr>
+      <tr><td><code>destructive</code></td><td>Noul</td><td>会不会提交 / 购买 / 删除 / 发送</td></tr>
+      <tr><td><code>is_correction</code></td><td>Noul</td><td>用户是否在否定上一个动作（"不是这个，另一个"）</td></tr>
+      <tr><td><code>scroll_amount</code></td><td>Score</td><td>一点点 / 一页 / 到底</td></tr>
+      <tr><td><code>text_span</code> / <code>url_span</code></td><td>Choice</td><td>由<b>正则代码</b>抽出的候选片段，Jev 只负责选一个，代码原样复制</td></tr>
+    </tbody>
+  </table>
+
+  <h4>策略层：阈值不是常数，是按风险分级的门控表</h4>
+  <pre><code>0. is_correction ≥ 0.6 且无新指令  → 撤销上一个动作
+1. is_command    &lt; 0.5             → 忽略
+2. intent.confidence &lt; 0.55        → 等待
+3. complete &lt; 0.6 且未静音 900ms    → 等待
+4. 自由文本类意图额外静音 600ms      → 防止 "search for alan" 截断
+5. 目标需 confidence ≥ 0.45 且 top-p ≥ 0.35，否则弹编号浮层让人选（无模型调用）
+6. destructive ≥ 0.5               → 必须口头 "confirm"</code></pre>
+
+  <div class="stat">
+    <div><div class="v">≈ 300 ms</div><div class="u">Jev p50 延迟（avg 330ms，首请求 ~700ms 含 TLS）</div></div>
+    <div><div class="v">≈ 300 ms</div><div class="u">最后一个词 → 做出决策（含 200ms 防抖）</div></div>
+    <div><div class="v">$0.0002</div><div class="u">单次决策成本</div></div>
+    <div><div class="v">34/34</div><div class="u">真实 API 集成用例通过率</div></div>
+  </div>
+  <p class="src">来源：仓库 README 与 <code>test/integration/</code>（2026-09-21）。整个 16 条语音命令的 demo 花费约 $0.01。</p>
+
+  <div class="card verdict">
+    <h4>这里有三个可以立刻抄走的设计</h4>
+    <ul style="margin:0">
+      <li><b>记忆放在 state 里，不放在模型里。</b>Jev 请求之间无记忆，所以项目把 <code>previous_page</code> 与最近 3 个动作（说了什么 / 做了什么 / 结果如何）编码进 state——这才让"回到刚才的结果""不是这个，另一个"可解析。</li>
+      <li><b>文本生成由代码拥有，Jev 只做选择。</b>搜索词、URL 由正则抽成候选 span，Jev 选一个，代码<b>原样复制</b>。绝不让它生成。</li>
+      <li><b>低置信度时不问模型，问人。</b>目标不确定时弹编号浮层、用户说个数字即可——<b>这一次消歧不花任何模型调用</b>。</li>
+    </ul>
+  </div>
+
+  <h3>6.2 官方的置信度门控范式（可直接套用）</h3>
+  <pre><code>action = response.answers["intent"]
+
+if action.confidence &lt; 0.6:
+    route_to_support_agent(account_id)          # 通用地板
+elif action.choice == "check_balance":
+    show_balance(account_id)                    # 低风险：0.6 够用
+elif action.choice == "approve_transfer":
+    if action.confidence &gt; 0.85:
+        approve_transfer(account_id)            # 高风险 + 高置信：自动执行
+    else:
+        ask_user_to_confirm(...)                # 高风险 + 中置信：先确认
+else:
+    route_to_support_agent(account_id)</code></pre>
+  <p class="src">来源：docs.typesafe.ai/patterns/confidence-routing（语音银行示例）。要点：先设一个通用地板（0.6）兜住"模型真的不确定"，再按<b>后果严重性</b>给每类动作单独设阈值。</p>
+
+  <h3>6.3 复合评分：把权重留在代码里</h3>
+  <p>官方的简历筛选示例展示了"原子打分 + 代码加权"的形态——四个维度各自 Score，归一化到 0–1 后按不同岗位套不同权重：</p>
+  <pre><code>py      = answers["python_depth"].score   / 4
+lead    = answers["team_leadership"].score / 4
+arch    = answers["system_design"].score  / 4
+general = answers["generalist"].score     / 4
+
+ic_score = 0.40*py + 0.10*lead + 0.40*arch + 0.10*general   # 高级 IC
+em_score = 0.15*py + 0.40*lead + 0.20*arch + 0.25*general   # 工程经理</code></pre>
+  <p>同一批打分，换权重就是换岗位标准——<b>不需要重跑模型，也不需要改 prompt</b>。这是"判断原子化"最实际的回报：优先级调整从重写提示词变成了改一行系数。</p>
+</section>
+
+<section id="s7">
+  <h2><span class="num">07</span> 模式三：校验器、裁判与模型路由</h2>
+  <p class="lead">"Verify Everything"——用便宜的判断去给昂贵的输出把关。这一类在社区里花样最多，也最容易高估收益。</p>
+
+  <h3>7.1 三类玩法</h3>
+  <div class="g3">
+    <div class="card">
+      <h4>① 输出合规裁判</h4>
+      <p style="margin:0;font-size:14.5px">把 LLM 的 prompt / 推理轨迹 / 输出交给 Jev 打分：是否越狱、是否跑题、是否自相矛盾、是否真的完成了宣称的任务。</p>
+    </div>
+    <div class="card">
+      <h4>② 完成度复核</h4>
+      <p style="margin:0;font-size:14.5px">开发者 Elvis Saravia 把 Jev 接进自己的 Agent 框架，构建自定义验证器——在 Agent <b>宣称任务完成</b>之后再检查一遍，成本足够低到可以每次都跑。</p>
+    </div>
+    <div class="card">
+      <h4>③ 难度路由</h4>
+      <p style="margin:0;font-size:14.5px">先让 Jev 判断请求难度：简单任务走快模型，难题升级给推理模型。这是最贴近"成本优化"本意的用法。</p>
+    </div>
+  </div>
+
+  <h3>7.2 实测数据</h3>
+  <table>
+    <thead><tr><th style="width:24%">场景</th><th style="width:22%">对照</th><th style="width:26%">结果</th><th>证据强度</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>fx 自动模式安全分类器<br><span class="src">Vercel 工程师 Pranit</span></td>
+        <td>原方案 GPT-5.6 Luna</td>
+        <td><b>快 518 倍</b>，且准确性更高</td>
+        <td><span class="tag t-mid">单一案例 · 厂商转述</span></td>
+      </tr>
+      <tr>
+        <td>商业邮件分类<br><span class="src">BryoAI 技术总监 Nikhil Mudholkar</span></td>
+        <td>Gemini</td>
+        <td>Gemini 准确率<b>略胜</b>，但价格是 Jev 的 <b>10–20 倍</b></td>
+        <td><span class="tag t-mid">单一案例 · 厂商转述</span></td>
+      </tr>
+      <tr>
+        <td>缺陷检出（12 段文本，6 段植入缺陷）<br><span class="src">Every · Mike Taylor 独立测试</span></td>
+        <td>Claude Fable 5.1（高推理档）</td>
+        <td>Jev 中位 0.35s vs 8.83s（≈25×）；成本约低 580×；<b>但 6/7 vs 7/7</b></td>
+        <td><span class="tag t-n">受控实验 · 样本小</span></td>
+      </tr>
+      <tr>
+        <td>下棋（每步决策）<br><span class="src">开发者 Hassan</span></td>
+        <td>GLM5.3</td>
+        <td>Jev 0.3s / &lt;$0.0001；GLM5.3 5.8s / $0.008；<b>但 GLM5.3 在 29 步内将死</b></td>
+        <td><span class="tag t-mid">单一案例 · 结论明确</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card callout">
+    <h4>"快不等于深"——这是本节最重要的一条</h4>
+    <p>Hassan 的下棋测试同时给出了速度与智能两个维度的读数：Jev 每步快约 19 倍、便宜约 80 倍，<b>但棋力明显不如 GLM5.3</b>。Every 的缺陷检出同向印证：快 25 倍、便宜 580 倍，代价是漏掉一个缺陷（一段"教一个共享日历"的用词不当，Fable 三档推理都抓到了，Jev 三次都漏）。</p>
+    <p style="margin:0"><b>结论：Jev 适合做"早期预警系统"和"高频闸门"，不适合做最终判官。</b>Every 的测试者原话：现在宜先当预警，而不是生产判官——样本规模还不足以支撑生产结论。</p>
+  </div>
+
+  <h3>7.3 一个被低估的用法：给 Agent 轨迹做可观测性审查</h3>
+  <p>官方四个公开工作流里有一个是 <b>Agent 轨迹可观测性审查</b>。这恰好对应真实痛点：Agent 跑了几百步之后，你无法人工回看每一条轨迹。而 Jev 的输入侧定价让"全量审查"在经济上第一次成立——审查 1 万条轨迹、每条 20 个原子判断，输入按 4k tokens 计，成本约 <code>10000 × 4000 / 1e6 × 0.042 ≈ $1.68</code>。</p>
+  <p class="src">这是纯建模估算，不是实测值。它的意义在于说明数量级：<b>同样的全量审查用前沿 LLM 做，成本会高两个数量级，因而根本不会被做</b>。这就是杰文斯悖论在 Agent 工程里的具体形态——便宜到某个阈值以下，原本"不值得做"的事变得值得做。</p>
+</section>
+
+<section id="s8">
+  <h2><span class="num">08</span> 模式四（反面）：上下文压缩为什么失败了</h2>
+  <p class="lead">这一章专门留给一个失败的案例。它比任何成功案例都更能说明边界在哪，而且失败原因是可以推广的通用律。</p>
+
+  <h3>8.1 它原本想解决什么</h3>
+  <p>普通上下文压缩让模型把前面的对话重写成短摘要，痛点是：文件路径、精确报错、限制条件、已经试过的失败方案，都可能在改写时消失。<code>fast-jev-compaction</code> 换了个思路——<b>不写摘要，只做选择题</b>：把每个 <code>tool_use</code> 与对应的 <code>tool_result</code> 配成一组，让 Jev 分别回答两个问题：这个调用还要保留吗？它的结果还要原样保留吗？</p>
+  <p>默认阈值 0.5，最近 6 条消息与第一条消息默认不动。演示里压缩几乎瞬时完成，保留下来的内容<b>一字不改</b>——这是它最吸引人的地方。</p>
+
+  <h3>8.2 回放测试的打击</h3>
+  <p>GitHub issue #26 给出了一组真实会话回放：2 个项目、16 段 Claude Code 会话，在上下文达到 12 万 token 时触发压缩，共让 Jev 评估 <b>256 个非固定工具调用</b>。</p>
+
+  <figure>
+    <div class="fig-t">图 4 · 上下文压缩：Jev 评分器 vs "一律不保留"基线</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 300" role="img" aria-label="上下文压缩效果对比条形图">
+      <text x="20" y="20" font-size="13" font-weight="700" fill="#16181D">字符数减少幅度（16 段真实会话回放，256 个工具结果）</text>
+
+      <!-- axis -->
+      <line x1="200" y1="52" x2="200" y2="232" stroke="#E4E1DA" stroke-width="1.2"/>
+      <text x="200" y="252" font-size="11.5" fill="#4A505A" text-anchor="middle">0%</text>
+      <text x="380" y="252" font-size="11.5" fill="#4A505A" text-anchor="middle">25%</text>
+      <text x="560" y="252" font-size="11.5" fill="#4A505A" text-anchor="middle">50%</text>
+      <text x="740" y="252" font-size="11.5" fill="#4A505A" text-anchor="middle">75%</text>
+      <text x="920" y="252" font-size="11.5" fill="#4A505A" text-anchor="middle">100%</text>
+      <line x1="200" y1="232" x2="930" y2="232" stroke="#E4E1DA" stroke-width="1"/>
+
+      <!-- scale: 0% -> x=200, 100% -> x=920, 7.2px per 1% -->
+      <!-- bar 1: Jev scorer 87.7% -> 200 + 87.7*7.2 = 831.4, width = 631.4 -->
+      <rect x="200" y="70" width="631" height="42" rx="6" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+      <text x="831" y="97" font-size="15" font-weight="700" fill="#8F3F06" text-anchor="end">87.7%</text>
+      <text x="22" y="88" font-size="13" font-weight="650" fill="#16181D">fast-jev-compaction</text>
+      <text x="22" y="105" font-size="11.5" fill="#4A505A">240 / 256 条被删除或截断</text>
+
+      <!-- bar 2: naive baseline 88.5% -->
+      <rect x="200" y="132" width="637" height="42" rx="6" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.3"/>
+      <text x="837" y="159" font-size="15" font-weight="700" fill="#B3261E" text-anchor="end">88.5%</text>
+      <text x="22" y="150" font-size="13" font-weight="650" fill="#16181D">"一律不保留"假评分器</text>
+      <text x="22" y="167" font-size="11.5" fill="#4A505A">不需要任何模型</text>
+
+      <!-- annotation -->
+      <line x1="831" y1="118" x2="837" y2="126" stroke="#B3261E" stroke-width="1.2" stroke-dasharray="3 2"/>
+      <rect x="212" y="184" width="718" height="34" rx="8" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.1"/>
+      <text x="228" y="206" font-size="12.5" font-weight="650" fill="#B3261E">差距 0.8 个百分点 —— 花了一整个模型，效果与无条件全删无法区分</text>
+
+      <text x="560" y="278" font-size="11.5" fill="#4A505A" text-anchor="middle">刻度换算：y = 200 + 百分比 × 7.2px。87.7% → 宽 631px；88.5% → 宽 637px</text>
+      <text x="560" y="294" font-size="11.5" fill="#4A505A" text-anchor="middle">数据：GitHub issue #26 真实会话回放（样本仅来自 1 位用户、2 个项目，且会话多为中文）</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>两根条几乎等长。这不是模型能力问题，是<b>输入问题</b>——Jev 被喂的是 <code>ok, 4213 chars (omitted)</code> 这样的占位符，它看得见工具名、入参与长度，却看不见那 4213 个字符里有没有关键报错。</figcaption>
+  </figure>
+
+  <h3>8.3 根因：Jev 只能判断它能看见的东西</h3>
+  <div class="card callout">
+    <h4>一条通用律</h4>
+    <p style="margin:0">64k 上下文上限 + "必须把所有待判对象塞进一次请求"的设计，共同造成一个后果：<b>为了并行，你必须压缩；为了压缩，你丢失了判断所必需的证据</b>。任何"让 Jev 逐条评判大体积数据"的设计都会撞上这堵墙。规避方式只有两种：① 把判断所需的关键片段显式提取进 state；② 改成分批，但那就放弃了并行优势。</p>
+  </div>
+
+  <h3>8.4 更有分量的批评：压缩不是筛选</h3>
+  <p>Theo（t3.gg）看过演示后写了措辞很重的长评，核心区分是：<b>整理任务状态 ≠ 逐条过滤工具记录</b>。六条意见里五条直接关系到使用效果，其中两条尤其值得记：</p>
+  <ul>
+    <li><b>局部判断会丢掉关系。</b>模型做摘要时会利用整段对话，重新整理当前目标、已确认事实、失败路径和下一步动作。逐项决定保留 / 删除则可能保住一条"看起来有用"的记录，却丢掉它与前后步骤的关系。</li>
+    <li><b>删 token 不一定省钱。</b>提示词缓存依赖历史前缀不变——删掉中间的 2，后面的 3、4、5、6 都可能需要重写缓存。Theo 自己的账单里 <code>cache write</code> 曾超过总模型开销的 <b>60%</b>。<b>频繁改写历史，可能拿更贵的缓存写入去换更小的上下文。</b></li>
+  </ul>
+  <p>另有开发者给出更激进的对比：Jev 删掉了 98.7% 的上下文，但在复杂会话里丢了 7 个关键测试与边界事实中的 <b>6 个</b>。Agent 忘掉之前为什么失败，很容易重新走一遍老路（Theo 称之为 <code>stupid loops</code>）。</p>
+
+  <div class="card ok">
+    <h4>那这条路是不是就废了？不是——但定位要改</h4>
+    <p>作者 Tamara Tran 回应了"它只是在删 tool results"的批评：Anthropic 自己的 context editing 同样会清理旧工具结果，区别在于 Jev 想做得更有选择性。这个回应成立，但没有回答"看不见正文"与"触发缓存重写"两个实现问题。</p>
+    <p style="margin:0"><b>可执行的定位</b>：把它当成<b>摘要前的预清理</b>——先删高置信度噪音，压不动或判断不稳时回退到内置摘要。若要用于长时间编码任务，至少补三层保护：① 让 Jev 看见工具结果的关键片段；② 默认固定失败记录、编辑操作与不可重跑的输出；③ 用<b>任务成功率与缓存成本</b>评估效果，而不是只看压缩率。</p>
+  </div>
+</section>
+
+<section id="s9">
+  <h2><span class="num">09</span> 速度与成本全景校准</h2>
+  <p class="lead">本章回答"到底能快多少、省多少"。结论是：<b>倍数取决于你把测量边界画在哪里</b>——从 1.33× 到 518× 都有人报，而且都是诚实的数字。</p>
+
+  <figure>
+    <div class="fig-t">图 5 · 提速倍数全景（对数刻度）：测量边界决定你看到多少倍</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 400" role="img" aria-label="提速倍数对数刻度条形图">
+      <text x="20" y="20" font-size="13" font-weight="700" fill="#16181D">同一件事，五种口径（x 轴为对数刻度）</text>
+
+      <!-- gridlines: stop at y=300 so they never cross the footnote band -->
+      <line x1="200" y1="36" x2="200" y2="300" stroke="#C9C5BC" stroke-width="1"/>
+      <line x1="440" y1="36" x2="440" y2="300" stroke="#E4E1DA" stroke-width="1"/>
+      <line x1="680" y1="36" x2="680" y2="300" stroke="#E4E1DA" stroke-width="1"/>
+      <line x1="920" y1="36" x2="920" y2="300" stroke="#E4E1DA" stroke-width="1"/>
+      <text x="200" y="318" font-size="11.5" fill="#4A505A" text-anchor="middle">1×</text>
+      <text x="440" y="318" font-size="11.5" fill="#4A505A" text-anchor="middle">10×</text>
+      <text x="680" y="318" font-size="11.5" fill="#4A505A" text-anchor="middle">100×</text>
+      <text x="920" y="318" font-size="11.5" fill="#4A505A" text-anchor="middle">1000×</text>
+      <text x="560" y="336" font-size="11.5" fill="#4A505A" text-anchor="middle">换算：v 倍 → 条宽 = log₁₀(v) / 3 × 720 px</text>
+
+      <!-- rows: row_y = 44, 96, 148, 200, 252 ; bar y = row+2 h=40 -->
+      <!-- 1.33x -> log10(1.33)/3*720 = 29.8 -->
+      <rect x="200" y="46" width="30" height="40" rx="5" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.3"/>
+      <text x="238" y="70" font-size="13.5" font-weight="700" fill="#B3261E">1.33×</text>
+      <text x="22" y="60" font-size="13" font-weight="650" fill="#16181D">端到端：browser-use</text>
+      <text x="22" y="75" font-size="11.5" fill="#4A505A">9.45s → 7.09s</text>
+      <text x="22" y="89" font-size="11" fill="#1F5288">社区实测 · 端到端口径</text>
+
+      <!-- 19.3x -> 308.6 -->
+      <rect x="200" y="98" width="309" height="40" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+      <text x="517" y="122" font-size="13.5" font-weight="700" fill="#8F3F06">19.3×</text>
+      <text x="22" y="112" font-size="13" font-weight="650" fill="#16181D">每步决策：下棋对照</text>
+      <text x="22" y="127" font-size="11.5" fill="#4A505A">0.3s vs 5.8s（棋力更弱）</text>
+      <text x="22" y="141" font-size="11" fill="#1F5288">社区实测 · 单次调用</text>
+
+      <!-- 25x -> 335.5 -->
+      <rect x="200" y="150" width="336" height="40" rx="5" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.3"/>
+      <text x="544" y="174" font-size="13.5" font-weight="700" fill="#1B5820">25×</text>
+      <text x="22" y="164" font-size="13" font-weight="650" fill="#16181D">缺陷检出：Every 独立测试</text>
+      <text x="22" y="179" font-size="11.5" fill="#4A505A">0.35s vs 8.83s</text>
+      <text x="22" y="193" font-size="11" fill="#1F5288">第三方实测 · 单次调用</text>
+
+      <!-- 193.6x -> 548.9 -->
+      <rect x="200" y="202" width="549" height="40" rx="5" fill="#EEF4FB" stroke="#2F6FB0" stroke-width="1.3"/>
+      <text x="757" y="226" font-size="13.5" font-weight="700" fill="#1F5288">193.6×</text>
+      <text x="22" y="216" font-size="13" font-weight="650" fill="#16181D">帕累托前沿：官方评测</text>
+      <text x="22" y="231" font-size="11.5" fill="#4A505A">厂商自评，偏高端</text>
+      <text x="22" y="245" font-size="11" fill="#8F3F06">厂商自评 · 工作流口径</text>
+
+      <!-- 518x -> 651.4 -->
+      <rect x="200" y="254" width="651" height="40" rx="5" fill="#F3EDFA" stroke="#6D3FB5" stroke-width="1.3"/>
+      <text x="859" y="278" font-size="13.5" font-weight="700" fill="#5A3099">518×</text>
+      <text x="22" y="268" font-size="13" font-weight="650" fill="#16181D">安全分类器：Vercel fx</text>
+      <text x="22" y="283" font-size="11.5" fill="#4A505A">对比 GPT-5.6 Luna</text>
+      <text x="22" y="297" font-size="11" fill="#8F3F06">厂商转述 · 单一案例</text>
+
+      <!-- footnote band -->
+      <rect x="200" y="350" width="720" height="26" rx="6" fill="#F4F2ED" stroke="#E4E1DA" stroke-width="1"/>
+      <text x="560" y="368" font-size="12.5" font-weight="650" fill="#333941" text-anchor="middle">只有最上面那条是"端到端"口径 —— 其余全部只测决策环节本身</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>五个数字都不假，只是分母不同。<b>做预算时请只用第一行那种口径</b>：先量出决策环节在你的端到端里占多少比例（browser-use 实测是 53%），再把模型层倍数乘以这个占比，才是真实可得的提速。</figcaption>
+  </figure>
+
+  <h3>9.1 成本：为什么是"输入侧主导"</h3>
+  <p>传统 LLM 的输出单价约为输入的 5 倍，而 Agent 的每一轮决策都要为"把答案写出来"付输出费——哪怕最终只需要一个枚举值。Jev 的输出是 logits 投影，不是 token 序列，因而输出免费。</p>
+
+  <figure>
+    <div class="fig-t">图 6 · 单次 Agent 决策的成本解剖（假设 4k 输入 / 300 输出 tokens）</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 300" role="img" aria-label="单次决策成本堆叠条形图">
+      <text x="20" y="20" font-size="13" font-weight="700" fill="#16181D">每 1,000 次决策的成本构成</text>
+
+      <line x1="200" y1="46" x2="200" y2="250" stroke="#C9C5BC" stroke-width="1"/>
+      <text x="200" y="268" font-size="11.5" fill="#4A505A" text-anchor="middle">$0</text>
+      <text x="416" y="268" font-size="11.5" fill="#4A505A" text-anchor="middle">$5.4</text>
+      <text x="632" y="268" font-size="11.5" fill="#4A505A" text-anchor="middle">$10.8</text>
+      <text x="848" y="268" font-size="11.5" fill="#4A505A" text-anchor="middle">$16.2</text>
+      <text x="920" y="268" font-size="11.5" fill="#4A505A" text-anchor="middle">$18</text>
+      <line x1="200" y1="250" x2="930" y2="250" stroke="#E4E1DA" stroke-width="1"/>
+      <text x="560" y="288" font-size="11.5" fill="#4A505A" text-anchor="middle">换算：每 $1 = 40px。Jev 输入 $0.168 → 6.7px；LLM 输入 $12.00 → 480px；LLM 输出 $4.50 → 180px</text>
+
+      <!-- Jev bar -->
+      <rect x="200" y="66" width="7" height="44" rx="3" fill="#2E7D32" stroke="#1B5820" stroke-width="1"/>
+      <text x="216" y="85" font-size="13.5" font-weight="700" fill="#1B5820">$0.168</text>
+      <text x="216" y="101" font-size="11.5" fill="#4A505A">输入 $0.168 · 输出 $0</text>
+      <text x="22" y="80" font-size="13" font-weight="650" fill="#16181D">Jev 1.13</text>
+      <text x="22" y="98" font-size="11.5" fill="#4A505A">$0.042 / MTok</text>
+
+      <!-- LLM bar -->
+      <rect x="200" y="134" width="480" height="44" rx="4" fill="#FDF3E7" stroke="#B45309" stroke-width="1.2"/>
+      <rect x="680" y="134" width="180" height="44" rx="4" fill="#F7E3CC" stroke="#B45309" stroke-width="1.2"/>
+      <text x="860" y="162" font-size="13.5" font-weight="700" fill="#8F3F06" text-anchor="end">$16.50</text>
+      <text x="400" y="162" font-size="12.5" font-weight="650" fill="#8F3F06" text-anchor="middle">输入 $12.00</text>
+      <text x="770" y="162" font-size="12.5" font-weight="650" fill="#8F3F06" text-anchor="middle">输出 $4.50</text>
+      <text x="22" y="148" font-size="13" font-weight="650" fill="#16181D">前沿 LLM</text>
+      <text x="22" y="166" font-size="11.5" fill="#4A505A">$3 / $15 每 MTok</text>
+
+      <!-- ratio note -->
+      <rect x="200" y="196" width="720" height="40" rx="8" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.1"/>
+      <text x="220" y="215" font-size="13" font-weight="700" fill="#1B5820">成本比 ≈ 98×</text>
+      <text x="220" y="231" font-size="11.5" fill="#333941">其中 71× 来自输入单价差，剩余来自"输出免费"。若 LLM 需要更长解释性输出（如 1,500 tokens），比值升至约 205×</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>绿色那条细到几乎看不见——这就是重点。<b>输出免费带来的收益随"要解释多少"增长</b>：决策任务越简单、LLM 却写得越长，Jev 的相对优势越大。这是纯建模估算，非实测值；实测对照见 §7.2 表格（Every 的 580×、BryoAI 的 10–20×）。</figcaption>
+  </figure>
+
+  <h3>9.2 一个可以直接套用的估算式</h3>
+  <pre><code># Jev：只算输入
+jev_cost   = (state_tokens + Σ question_tokens) / 1e6 × 0.042
+
+# LLM：输入 + 输出（输出单价通常 ≈ 输入的 5 倍）
+llm_cost   = in_tokens / 1e6 × P_in  +  out_tokens / 1e6 × P_out
+
+# 真实可得的端到端收益 —— 别忘了这一项
+real_gain  = 1 + (model_layer_speedup − 1) × decision_share_of_end_to_end</code></pre>
+  <p><code>decision_share</code> 是你必须自己测的那个数。browser-use 实测为 <b>53%</b>（3,720ms / 7,073ms）——所以即便模型层快 25 倍，端到端也只能拿到 −25%。<b>在测量之前，任何"10 倍提速"的承诺都是无意义的。</b></p>
+
+  <h3>9.3 便宜到某个阈值以下，会解锁原本不做的事</h3>
+  <p>这是杰文斯悖论在 Agent 工程里的具体形态，也是 Jev 命名由来。三个已经在社区出现的例子：</p>
+  <ul>
+    <li><b>全量轨迹审查</b>：1 万条 Agent 轨迹 × 20 个原子判断 × 4k tokens ≈ $1.68（建模值）——原本因成本根本不会被做。</li>
+    <li><b>实时游戏 / 机器人闭环</b>：Doom 演示每秒约 10 次决策，成本约 $7/小时。贵，但在"可接受"的量级内。</li>
+    <li><b>大数据 map-reduce</b>：输入便宜 + 输出免费 + 可大规模并行，把 PB 级数据变成特征和洞察在经济上第一次成立。</li>
+  </ul>
+  <p class="src">反过来说：如果你的场景每秒只做几次判断、且判断本身不是瓶颈，那么这份"便宜"换不来任何结构性变化——你只是省了一点钱。</p>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span> 失败模式与适用边界</h2>
+  <p class="lead">TypeSafe 单独维护了一页 <code>jaggedness</code>（锯齿）说明，列出 <code>jev-1.13</code> 的九项已知弱点，最后复核日期 2026-09-17。厂商主动公开失败模式这件事本身就值得称道——而且这份清单实质上是一份使用说明书。</p>
+
+  <figure>
+    <div class="fig-t">图 7 · 九项已知失败模式与规避动作</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 460" role="img" aria-label="Jev 九项失败模式与规避动作对照图">
+      <!-- header -->
+      <rect x="20" y="14" width="400" height="26" rx="6" fill="#FCEDEC" stroke="#B3261E" stroke-width="1.1"/>
+      <text x="220" y="32" font-size="13" font-weight="700" fill="#B3261E" text-anchor="middle">失败模式（官方自述）</text>
+      <rect x="440" y="14" width="500" height="26" rx="6" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.1"/>
+      <text x="690" y="32" font-size="13" font-weight="700" fill="#1B5820" text-anchor="middle">规避动作（官方建议 / 社区实践）</text>
+
+      <!-- rows: y start 52, step 40 -->
+      <g font-size="12.5">
+        <rect x="20" y="52" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="74" fill="#16181D">1 · 字面理解（答你写的，不是你想的）</text>
+        <rect x="440" y="52" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="74" fill="#333941">把条件写死；给每个选项补上 criteria 与反例</text>
+
+        <rect x="20" y="94" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="116" fill="#16181D">2 · 数学与算术（不是计算器）</text>
+        <rect x="440" y="94" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="116" fill="#333941">算术一律留在代码里</text>
+
+        <rect x="20" y="136" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="158" fill="#16181D">3 · 计数不可靠（字符 / 词频 / 长清单）</text>
+        <rect x="440" y="136" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="158" fill="#333941">它识别"答案的形状"而非清点；误差随规模增长</text>
+
+        <rect x="20" y="178" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="200" fill="#16181D">4 · 日期与时间比较</text>
+        <rect x="440" y="178" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="200" fill="#333941">抽取成分，在代码里比较</text>
+
+        <rect x="20" y="220" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="242" fill="#16181D">5 · 多层间接推理（多跳）</text>
+        <rect x="440" y="220" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="242" fill="#333941">减少跳数；直接指向相关 state</text>
+
+        <rect x="20" y="262" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="284" fill="#16181D">6 · 塞满无关细节的大 state</text>
+        <rect x="440" y="262" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="284" fill="#333941">先过滤，只发该问题需要的部分</text>
+
+        <rect x="20" y="304" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="326" fill="#16181D">7 · 对抗性内容</text>
+        <rect x="440" y="304" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="326" fill="#333941">写精确 prompt，部署前测边界用例</text>
+
+        <rect x="20" y="346" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="368" fill="#16181D">8 · 指令与准则自相矛盾</text>
+        <rect x="440" y="346" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="368" fill="#333941">对齐 criteria 与 instruction；恒等式用代码强制</text>
+
+        <rect x="20" y="388" width="400" height="34" rx="5" fill="#FFFFFF" stroke="#E4E1DA"/>
+        <text x="34" y="410" fill="#16181D">9 · 生成文本</text>
+        <rect x="440" y="388" width="500" height="34" rx="5" fill="#F6F9F6" stroke="#E4E1DA"/>
+        <text x="454" y="410" fill="#333941">改用生成式模型</text>
+      </g>
+
+      <rect x="20" y="432" width="920" height="22" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1"/>
+      <text x="480" y="447" font-size="12" font-weight="650" fill="#8F3F06" text-anchor="middle">共同点：凡是"算"与"数"的部分都留给代码，Jev 只负责语义判断</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>第 3 项尤其值得注意——官方明确写"模型识别答案的形状而非清点，误差随被计对象的规模增长"。这意味着<b>任何"数一下有几个"的提问都是错的</b>，哪怕看起来很自然。</figcaption>
+  </figure>
+
+  <h3>10.1 反模式清单</h3>
+  <table>
+    <thead><tr><th style="width:20%">层级</th><th style="width:32%">反模式</th><th style="width:22%">症状</th><th>修正</th></tr></thead>
+    <tbody>
+      <tr>
+        <td rowspan="2"><b>战略</b></td>
+        <td>拿 Jev 当"更便宜的通用 LLM"</td>
+        <td>要求它写代码、聊天、做总结，然后抱怨它不行</td>
+        <td>它根本不做这些。生成环节必须走生成式模型</td>
+      </tr>
+      <tr>
+        <td>用压缩率衡量收益</td>
+        <td>上下文少了 87%，但任务成功率掉了</td>
+        <td>改用<b>任务成功率 + 缓存成本</b>双指标评估</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><b>工程</b></td>
+        <td>让 Jev 评判它看不见的内容</td>
+        <td>占位符 <code>ok, 4213 chars (omitted)</code>；结果与"全删"基线无差别</td>
+        <td>把判断必需的关键片段显式提取进 state</td>
+      </tr>
+      <tr>
+        <td>一个巨型问题代替多个原子问题</td>
+        <td>多因素权衡时概率失真，且无法调权重</td>
+        <td>拆成原子 Score / Noul，在代码里加权</td>
+      </tr>
+      <tr>
+        <td>用 <code>jev-latest</code> 别名上生产</td>
+        <td>某天阈值悄悄失效</td>
+        <td>pin 到 <code>jev-1.13.0</code>，并把响应的 <code>model</code> 字段记入日志</td>
+      </tr>
+      <tr>
+        <td rowspan="2"><b>治理</b></td>
+        <td>把敏感数据发给闭源 API 而不做评估</td>
+        <td>数据出境；无自托管路径；未向中国大陆开放</td>
+        <td>企业谈 ZDR；或走 <code>fast-browser-use</code> 本地路线</td>
+      </tr>
+      <tr>
+        <td>相信"零幻觉"等于"不会错"</td>
+        <td>格式正确的错误答案照样通过</td>
+        <td>记住：类型安全是数学保证，<b>正确性不是</b>。依赖置信度门控</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span> 开源生态地图与本地化路线</h2>
+  <p class="lead">Jev 本身完全闭源——无权重、无自托管、官方从未承诺开源。但社区在一周内就把这条路铺开了。</p>
+
+  <figure>
+    <div class="fig-t">图 8 · 生态分层：从闭源 API 到纯本地复现</div>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 340" role="img" aria-label="Jev 生态分层图">
+      <!-- Layer 1 -->
+      <rect x="20" y="16" width="920" height="76" rx="10" fill="#EEF4FB" stroke="#2F6FB0" stroke-width="1.3"/>
+      <text x="38" y="40" font-size="13.5" font-weight="700" fill="#1F5288">层 1 · 闭源托管 API（官方）</text>
+      <text x="38" y="58" font-size="11.5" fill="#4A505A">Jev 1.13 · $0.042/MTok 输入，输出免费 · 70–500ms · 250k tok/s，1,200 req/min</text>
+      <rect x="38" y="64" width="150" height="20" rx="5" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1"/>
+      <text x="113" y="78" font-size="11" fill="#16181D" text-anchor="middle">typesafe.ai 直连</text>
+      <rect x="196" y="64" width="150" height="20" rx="5" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1"/>
+      <text x="271" y="78" font-size="11" fill="#16181D" text-anchor="middle">OpenRouter</text>
+      <rect x="354" y="64" width="150" height="20" rx="5" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1"/>
+      <text x="429" y="78" font-size="11" fill="#16181D" text-anchor="middle">Vercel AI Gateway</text>
+      <rect x="512" y="64" width="150" height="20" rx="5" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1"/>
+      <text x="587" y="78" font-size="11" fill="#16181D" text-anchor="middle">OpenCode Zen（免费）</text>
+      <rect x="670" y="64" width="150" height="20" rx="5" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1"/>
+      <text x="745" y="78" font-size="11" fill="#16181D" text-anchor="middle">ZenMUX / Nano-GPT</text>
+      <text x="838" y="78" font-size="11" fill="#4A505A">等 8 个渠道</text>
+
+      <!-- Layer 2 -->
+      <rect x="20" y="104" width="920" height="76" rx="10" fill="#F3EDFA" stroke="#6D3FB5" stroke-width="1.3"/>
+      <text x="38" y="128" font-size="13.5" font-weight="700" fill="#5A3099">层 2 · 集成层（开源，把 Jev 接进 Agent）</text>
+      <text x="38" y="146" font-size="11.5" fill="#4A505A">这一层才是"最佳实践"的载体：动作空间设计、扇出问题集、阈值策略、回退路径都在这里</text>
+      <rect x="38" y="152" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#6D3FB5" stroke-width="1"/>
+      <text x="136" y="166" font-size="11" fill="#16181D" text-anchor="middle">jev-ultrafast（MIT）</text>
+      <rect x="242" y="152" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#6D3FB5" stroke-width="1"/>
+      <text x="340" y="166" font-size="11" fill="#16181D" text-anchor="middle">jev-voice-browser</text>
+      <rect x="446" y="152" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#6D3FB5" stroke-width="1"/>
+      <text x="544" y="166" font-size="11" fill="#16181D" text-anchor="middle">fast-jev-compaction</text>
+      <rect x="650" y="152" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#6D3FB5" stroke-width="1"/>
+      <text x="748" y="166" font-size="11" fill="#16181D" text-anchor="middle">system-one-adapter-python</text>
+      <text x="854" y="166" font-size="11" fill="#4A505A">官方出品</text>
+
+      <!-- Layer 3 -->
+      <rect x="20" y="192" width="920" height="76" rx="10" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+      <text x="38" y="216" font-size="13.5" font-weight="700" fill="#8F3F06">层 3 · 开源复现（把机制搬到本地）</text>
+      <text x="38" y="234" font-size="11.5" fill="#4A505A">核心是"单 token logits + KV-Cache 广播 + 语法约束"，可完全离线；但缺 RLCD 校准训练</text>
+      <rect x="38" y="240" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#B45309" stroke-width="1"/>
+      <text x="136" y="254" font-size="11" fill="#16181D" text-anchor="middle">fast-browser-use（MIT）</text>
+      <rect x="242" y="240" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#B45309" stroke-width="1"/>
+      <text x="340" y="254" font-size="11" fill="#16181D" text-anchor="middle">Nimble（Apache 2.0）</text>
+      <rect x="446" y="240" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#B45309" stroke-width="1"/>
+      <text x="544" y="254" font-size="11" fill="#16181D" text-anchor="middle">jevlike（MIT）</text>
+      <rect x="650" y="240" width="196" height="20" rx="5" fill="#FFFFFF" stroke="#B45309" stroke-width="1"/>
+      <text x="748" y="254" font-size="11" fill="#16181D" text-anchor="middle">APUS-OpenJev-v1（HF）</text>
+
+      <!-- callout -->
+      <rect x="20" y="280" width="920" height="44" rx="10" fill="#EDF5EE" stroke="#2E7D32" stroke-width="1.2"/>
+      <text x="38" y="302" font-size="12.5" font-weight="700" fill="#1B5820">护城河判定：</text>
+      <text x="140" y="302" font-size="12.5" fill="#333941">架构层已可被复现（Nimble 与参考标签一致率 90.12% vs Jev 93.21% vs 基座 Qwen3.5-9B 66.36%）</text>
+      <text x="38" y="319" font-size="12.5" fill="#333941">真正难复制的是 RLCD 校准出的可信概率，以及真·并行多问题采样器——那才是置信度门控能成立的前提</text>
+    </svg>
+    </div>
+    <figcaption><b>读图要点：</b>层 2 是值得投入的地方（工程可复用、与模型解耦），层 3 是数据合规场景的退路。层 1 的风险是单点与不可自托管。</figcaption>
+  </figure>
+
+  <h3>11.1 项目速查表</h3>
+  <table>
+    <thead><tr><th style="width:26%">项目</th><th style="width:11%">许可</th><th style="width:12%">首发</th><th style="width:28%">做什么</th><th>关键数据</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>browser-use/jev-ultrafast</code></td><td>MIT</td><td>09-16</td>
+        <td>动态索引动作空间的浏览器 agent；operation + 投机 target 头共用一次请求</td>
+        <td>7.07s 完成任务；1,092→101 协议调用；端到端 −25%</td>
+      </tr>
+      <tr>
+        <td><code>APUS-AI-Lab/fast-browser-use</code></td><td>MIT</td><td>09-19</td>
+        <td>本地复现：Qwen3.5-9B 单 token logits，可挂为 Agent Skill</td>
+        <td>决策 79ms（RTX PRO 6000）；Wikipedia 4.055s；M2 Pro 约 18s；零 API 费用</td>
+      </tr>
+      <tr>
+        <td><code>moritzkremb/jev-voice-browser</code></td><td>—</td><td>09-17</td>
+        <td>语音控浏览器：部分转写即决策，9–11 问题并行 + 阈值策略层</td>
+        <td>p50 ≈ 300ms；$0.0002/次；34/34 集成用例</td>
+      </tr>
+      <tr>
+        <td><code>tamaratran/fast-jev-compaction</code></td><td>—</td><td>09-18 前后</td>
+        <td>Claude Code 插件：逐条给 tool_use / tool_result 打保留分</td>
+        <td><b>失败</b>：256 条无一达 0.5 阈值；−87.7% vs 基线 −88.5%</td>
+      </tr>
+      <tr>
+        <td><code>bespokelabsai/nimble</code></td><td>Apache 2.0</td><td>09 月中</td>
+        <td>Qwen3.5-9B LoRA 适配器 + 训练数据与方法全开源；对比式数据构造</td>
+        <td>一致率 66.36% → 90.12%（Jev 93.21%）</td>
+      </tr>
+      <tr>
+        <td><code>vinnylarouge/jevlike</code></td><td>MIT</td><td>09-16</td>
+        <td>独立起始模型：同输入形状，一次前向出 N 个概率；也用于游戏控制器</td>
+        <td>8 选项任务比小型自回归解码器快约 100×；无 RLCD</td>
+      </tr>
+      <tr>
+        <td><code>typesafe-ai/system-one-adapter-python</code></td><td>—</td><td>官方</td>
+        <td><code>TypeSafeClient</code> 的 drop-in 替换，底层走 OpenAI / Anthropic，把 LLM 包成 System One 结构化输出</td>
+        <td>用途：<b>自己跑 A/B 对比</b>，量化 Jev 与 LLM 的成本 / 速度 / 智能差</td>
+      </tr>
+      <tr>
+        <td><code>apus-ailab/APUS-OpenJev-v1</code></td><td>HF</td><td>09-20</td>
+        <td>9B / 4B 参数规模的开源复现权重</td>
+        <td>团队称可更小参数复现 Jev 性能</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 接入渠道与价格（2026-09-18 前后）</h3>
+  <table>
+    <thead><tr><th style="width:32%">渠道</th><th style="width:18%">模型名</th><th style="width:16%">输入 $/MTok</th><th style="width:16%">输出 $/MTok</th><th>备注</th></tr></thead>
+    <tbody>
+      <tr><td>TypeSafe 官方</td><td><code>jev-1.13.0</code></td><td class="num">0.042</td><td class="num">0</td><td>最完整：Playground / SDK / Skill，$5 试用额度；需排队</td></tr>
+      <tr><td>OpenCode Zen</td><td><code>jev-1.13-free</code></td><td class="num">0</td><td class="num">0</td><td><b>零密钥零额度</b>；<code>/models</code> 里选带 free 的即可</td></tr>
+      <tr><td>Surplus Intelligence</td><td><code>jev-1.13</code></td><td class="num">0.0105</td><td class="num">0</td><td>P2P 渠道</td></tr>
+      <tr><td>Qubax AI</td><td><code>JEV 1.13</code></td><td class="num">0.0158</td><td class="num">0</td><td>P2P 渠道</td></tr>
+      <tr><td>OpenRouter / Nano-GPT / ZenMUX</td><td><code>typesafe/jev-1.13</code></td><td class="num">0.042</td><td class="num">0</td><td>OpenAI 兼容通道；OpenRouter 标 32K context</td></tr>
+      <tr><td>Vercel AI Gateway</td><td><code>typesafe-ai/jev</code></td><td class="num">0.04</td><td class="num">0</td><td>可经 AI SDK 的 <code>experimental_evaluate</code> 调用</td></tr>
+      <tr><td>AIHubMix</td><td><code>jev-1.13</code></td><td class="num">0.0462</td><td class="num">0</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p class="src">来源：llm24.net / llmpricing.dev 聚合（2026-09-18～20）。价格会随渠道调整；生产前请以官方文档与账单为准。</p>
+
+  <div class="card verdict">
+    <h4>最省事的零成本上手路径</h4>
+    <p style="margin:0">① 想先看效果：OpenCode 里 <code>/models</code> 选 <code>jev-1.13-free</code>，零密钥。② 想在自己的代码里试：官方 <code>npx skills add typesafe-ai/skills --skill typesafe-ai</code>，然后在 Claude Code 里说 "use the TypeSafe skill"。③ 想做严谨对比：装 <code>system-one-adapter-python</code>，同一份问题集分别走 Jev 与 LLM，自己测——<b>厂商的倍数永远不如你自己的对照实验可信</b>。</p>
+  </div>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span> 落地检查清单</h2>
+  <p class="lead">把前十一章压缩成可勾选的动作。按"先测量、后接入"排序——跳过第 1 步直接接入，是本项目观察到的最主要失败方式。</p>
+
+  <h3>12.1 接入前（必做）</h3>
+  <div class="card">
+    <ul style="margin:0">
+      <li><b>量出 <code>decision_share</code>。</b>在你的 Agent 端到端耗时里，决策环节占百分之多少？参考值：browser-use 实测 53%。低于 20% 的话，换决策模型带来的端到端收益会被稀释到几乎不可见。</li>
+      <li><b>列出现有判断点，按"可枚举 / 高频 / 低风险"排序。</b>只把同时满足这三条的交给 Jev。</li>
+      <li><b>确认证据可见性。</b>判断所需的全部内容能否塞进 32k 的 state？会不会被占位符省略？——这是 §8 失败案例的直接教训。</li>
+      <li><b>先跑一次 A/B。</b>用 <code>system-one-adapter-python</code>，同一份问题集分别走 Jev 与你现在用的 LLM，测准确率 / 延迟 / 成本三项。<b>不要采信任何未经你自己复现的倍数。</b></li>
+    </ul>
+  </div>
+
+  <h3>12.2 接入时（设计要点）</h3>
+  <div class="card">
+    <ul style="margin:0">
+      <li><b>把问题堆到一次请求里。</b>投机性的问题也一起发——加问题几乎不增加响应时间，事后由代码决定哪些相关。</li>
+      <li><b>原子化提问，代码里组合。</b>一个知识丰富的人几秒内能做完的直觉判断 = 一个问题。多因素权衡拆成多个 Score 再加权。</li>
+      <li><b>答案空间要包含 <code>none</code> / <code>other</code> 兜底。</b>Choice 上限 255，超过走"先打分、再显式选择"两阶段。</li>
+      <li><b>阈值按后果分级，不是全局常数。</b>先设 0.6 地板兜住"真的不确定"，再给高风险动作单独设 &gt;0.85。</li>
+      <li><b>算术、计数、日期比较全部留在代码里。</b>官方 jaggedness 前四项。</li>
+      <li><b>记忆放 state，不放模型。</b>Jev 请求间无状态，把"上一页 / 最近 3 个动作 / 结果"显式编码进去。</li>
+      <li><b>文本生成仍归代码。</b>候选片段由代码（正则 / 模板）抽出，Jev 只选一个，代码原样复制。</li>
+      <li><b>pin 版本号</b>（<code>jev-1.13.0</code> 而非 <code>jev-latest</code>），并把响应的 <code>model</code> 字段记入日志。</li>
+    </ul>
+  </div>
+
+  <h3>12.3 接入后（护栏）</h3>
+  <div class="card">
+    <ul style="margin:0">
+      <li><b>必须有回退路径。</b><code>fast-jev-compaction</code> 做对了一件事：Jev 请求失败、返回格式不对、或压缩幅度不够时，回退到内置摘要。<b>任何 Jev 调用都不能是单点。</b></li>
+      <li><b>低置信度时问人，不要问模型。</b>语音浏览器的做法：目标不确定就弹编号浮层，用户说个数字即可——这一次消歧零成本。</li>
+      <li><b>评估指标换掉。</b>不要看"压缩率""调用次数"，看<b>任务成功率 + 缓存写入成本 + 端到端 P95 延迟</b>。</li>
+      <li><b>监控版本漂移。</b>别名会移动；调好的阈值会悄悄失效。</li>
+      <li><b>数据合规先谈清楚。</b>闭源、无自托管、未向中国大陆开放；企业需谈 ZDR，或走本地复现路线。</li>
+    </ul>
+  </div>
+
+  <h3>12.4 成熟度阶梯</h3>
+  <table>
+    <thead><tr><th style="width:12%">阶段</th><th style="width:28%">形态</th><th style="width:30%">典型收益</th><th>判断依据</th></tr></thead>
+    <tbody>
+      <tr><td><b>L0</b> 未接入</td><td>所有判断都由 LLM 生成 + 解析</td><td>—</td><td>有解析失败重试、有格式校验代码</td></tr>
+      <tr><td><b>L1</b> 单点替换</td><td>一个高频分类点换成 Jev</td><td>该环节降本 10–100×，端到端几乎无感</td><td>已跑通 A/B，有回退</td></tr>
+      <tr><td><b>L2</b> 动作空间</td><td>枚举候选 + 一次请求选操作与目标</td><td><b>协议调用数 −90%</b>；端到端可感知（实测 −25%）</td><td>候选集由 Harness 生成，模型不写选择器</td></tr>
+      <tr><td><b>L3</b> 扇出 + 门控</td><td>N 问题并行 + 按风险的阈值策略层</td><td>可对部分输入提前决策；消歧成本趋零</td><td>置信度已进入你的策略分支</td></tr>
+      <tr><td><b>L4</b> 全链路分工</td><td>System 1 / System 2 各自负责明确边界，含校验器与路由</td><td>解锁原本不做的事（全量轨迹审查、实时闭环）</td><td>你能量出 <code>decision_share</code> 并按它做预算</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s13">
+  <h2><span class="num">13</span> 结论与参考来源</h2>
+
+  <h3>13.1 判断（以下为观点，不是共识）</h3>
+  <div class="card verdict">
+    <h4>① Jev 真正的产品不是"更快的模型"，是"可被代码依赖的判断接口"</h4>
+    <p style="margin:0">放弃字符串生成换来四样东西：类型安全、校准概率、真·并行多问题、毫秒级延迟。前两样让"自动化"这件事第一次在工程上成立——一个不说自己何时不确定的模型，无论多准都无法无人值守地跑。</p>
+  </div>
+  <div class="card verdict">
+    <h4>② 但它不是 Agent 的万能加速器，端到端收益有硬上限</h4>
+    <p style="margin:0">社区最优实测是 −25%，不是 −96%。<b>先用 <code>decision_share</code> 做预算，再决定是否接入。</b>那些 100× 以上的数字都只在"决策环节"这个口径内成立。</p>
+  </div>
+  <div class="card verdict">
+    <h4>③ 最值得抄的不是模型调用，是 Harness 设计</h4>
+    <p style="margin:0">两个浏览器项目独立做出了同一套东西：候选集由 Harness 扫描生成、模型只选不写、执行前重新校验新鲜度与遮挡、结果必须独立验证。这套工程与模型解耦——<b>即使明天换成别家的决策模型，它依然有效。</b></p>
+  </div>
+  <div class="card verdict">
+    <h4>④ 边界由"它看得见什么"决定，而不是由"它有多聪明"决定</h4>
+    <p style="margin:0">上下文压缩的失败不是能力问题，是输入问题。这条律可以推广到所有"用 Jev 逐条评判大体积数据"的设计。</p>
+  </div>
+
+  <h3>13.2 参考来源（按证据类型分组）</h3>
+
+  <h4>一手官方文档</h4>
+  <ul>
+    <li>TypeSafe AI 官方文档 <span class="src">docs.typesafe.ai</span> —— 规格 / 原语 / 置信度 / Patterns（fan-out、confidence-routing、composite-scoring、intent-routing）</li>
+    <li><code>docs.typesafe.ai/model-jaggedness/jev-1.13</code> —— 九项失败模式，最后复核 2026-09-17</li>
+    <li><code>docs.typesafe.ai/introduction/machine-learning-primer</code> —— RLCD 与 RLHF / RLVR 的路线对比</li>
+    <li>官方博客 <em>Introducing System One Models &amp; Jev</em>（2026-09-15）；Workflow Evals 评测站 evals.typesafe.ai</li>
+  </ul>
+
+  <h4>开源项目（含原始测量文件）</h4>
+  <ul>
+    <li><code>github.com/browser-use/jev-ultrafast</code> —— MIT；<code>docs/flights-measurement.json</code>、<code>docs/full-speed-measurement.json</code>、<code>docs/performance.md</code></li>
+    <li><code>github.com/APUS-AI-Lab/fast-browser-use</code> —— MIT；README 含五场景性能表与 RTX PRO 6000 实测</li>
+    <li><code>github.com/moritzkremb/jev-voice-browser</code> —— README 含完整策略阈值表；<code>test/integration/</code> 34 例</li>
+    <li><code>github.com/tamaratran/fast-jev-compaction</code> —— <b>issue #26</b> 为关键反证据</li>
+    <li><code>github.com/bespokelabsai/nimble</code>（Apache 2.0）、<code>github.com/vinnylarouge/jevlike</code>（MIT）、<code>github.com/typesafe-ai/system-one-adapter-python</code></li>
+  </ul>
+
+  <h4>第三方实测与评测</h4>
+  <ul>
+    <li>Every · Mike Taylor（2026-09-15）—— 目前唯一公开的独立第三方测试：777 判断 &lt;0.7s、约 1/4 美分；缺陷检出 6/7 vs 7/7；0.35s vs 8.83s</li>
+    <li>Hacker News 讨论（2026-09-17，89 分）—— 含计时边界质疑、封閉性顾虑、遥测指控（<b>未经独立核实</b>）</li>
+    <li>llm24.net / llmpricing.dev —— 多渠道价格聚合</li>
+  </ul>
+
+  <h4>中文报道与访谈（二手，用于线索发现与交叉印证）</h4>
+  <ul>
+    <li>科技日报 / 央广网 / 新浪（2026-09-20）—— APUS 复现报道</li>
+    <li>网易《独家｜撬开 Jev 黑箱，对话全球首批复现者》—— APUS AI 首席科学家张旭博士访谈，含 79ms 数据来源</li>
+    <li>量子位《输出 token 永久免费！Jev 爆火后，开源版也跟着火了》—— Nimble 一致率数据、社区案例转述</li>
+    <li>知乎 RTE 开发者日报（2026-09-21）—— Gradium 语音智能体、<code>jev-voice-browser</code> 案例</li>
+  </ul>
+
+  <div class="card callout">
+    <h4>本报告未能亲自调用的验证边界</h4>
+    <p style="margin:0">本次研究未持有 TypeSafe / OpenRouter / Vercel 的 API key，未亲手调用 Jev API。所有延迟、成本与准确率数字均标注了来源与性质（厂商自评 / 第三方实测 / 社区实测 / 建模估算），建模值已在正文显式区分。Jev 发布于 2026-09-15，本研究距发布仅 7 天——<b>样本量与时间跨度均不足以支撑长期生产结论</b>。</p>
+  </div>
+</section>
+
+<footer>
+  <p style="margin:0 0 6px"><b>Jev 集成到智能体：速度、成本与最佳实践</b> · 研究日期 2026-09-22 · 对象 jev-1.13.0</p>
+  <p style="margin:0">单文件零外部依赖 HTML。所有图表为手写 SVG，无 CDN、无外部字体、无追踪脚本。数据均标注来源与证据强度；建模估算与实测值已在正文中显式区分。</p>
+</footer>
+
+
+
+</div>
+</body>
+</html>

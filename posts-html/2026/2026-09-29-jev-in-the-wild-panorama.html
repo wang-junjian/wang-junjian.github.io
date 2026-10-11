@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="深读《Jev 在野》论文：发布一周内 1,865 个新仓库、305 次既有接入，合计 2,170 个公开项目、43,750 星。拆解 8 大类 18 子类、三接口与六种决策目的，点破「19.6% 项目吃掉 63.0% 星」的错配，附七个在野案例与本地实测。">
+<meta name="keywords" content="Jev, 开源生态, 论文解读, GitHub, 量化分析, 生态全景">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-29">
+<title>Jev 在野 · 生态全景解读 — 2,170 个公开项目的量化拆解</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --rule:#E2DFD7; --rule2:#EFEDE6;
+  --amber:#B45309; --amber-t:#8F3F06;
+  --blue:#2F6FB0;  --blue-t:#1F5288;
+  --teal:#0F766E;  --teal-t:#0A5750;
+  --green:#2E7D32; --green-t:#1B5820;
+  --red:#B3261E;   --red-t:#8C1A14;
+  --purple:#6D3FB5;--purple-t:#5A3099;
+  --slate:#475569; --slate-t:#39485C;
+  /* 图内专用（显式写死，不依赖主题） */
+  --p-attr:#1F4E86; --p-score:#8FB4DC; --p-action:#0B5A50;
+  --p-filter:#B45309; --p-outcome:#5A2E8F; --p-model:#9F1239;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+section{scroll-margin-top:24px}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+main{padding-bottom:96px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;overflow-wrap:anywhere;
+  background:rgba(31,78,134,.07);padding:.1em .38em;border-radius:4px;color:var(--blue-t)}
+a{color:var(--blue-t)}
+hr{border:0;border-top:1px solid var(--rule);margin:0}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--rule)}
+nav .wrap{display:flex;gap:4px;align-items:center;overflow-x:auto;padding:10px 24px;scrollbar-width:none}
+nav .wrap::-webkit-scrollbar{display:none}
+nav .brand{font-weight:700;font-size:13px;letter-spacing:.06em;color:var(--ink);white-space:nowrap;
+  margin-right:12px;text-transform:uppercase}
+nav a{font-size:13px;color:var(--ink3);text-decoration:none;padding:4px 9px;border-radius:6px;white-space:nowrap}
+nav a:hover{background:rgba(31,78,134,.08);color:var(--blue-t)}
+
+/* ---------- header ---------- */
+header{padding:72px 0 40px;border-bottom:1px solid var(--rule)}
+.kicker{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-t)}
+h1{font-size:clamp(30px,4.6vw,50px);line-height:1.14;letter-spacing:-.022em;margin:16px 0 0;font-weight:800}
+h1 em{font-style:normal;color:var(--blue-t)}
+.lede{font-size:18.5px;line-height:1.68;color:var(--ink2);margin:20px 0 0;max-width:62ch}
+.byline{margin-top:26px;padding-top:18px;border-top:1px solid var(--rule2);font-size:13.5px;color:var(--ink3);
+  display:flex;flex-wrap:wrap;gap:8px 22px}
+.byline b{color:var(--ink2);font-weight:600}
+
+/* ---------- stat strip ---------- */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--rule);
+  border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:40px 0 0}
+.stats>div{background:var(--card);padding:18px 16px}
+.stats .v{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.stats .k{font-size:11.5px;color:var(--ink3);margin-top:7px;line-height:1.45}
+.stats .u{font-size:14px;font-weight:600;color:var(--ink3);margin-left:2px}
+
+/* ---------- section ---------- */
+section{padding:60px 0 8px;border-top:1px solid var(--rule)}
+section:first-of-type{border-top:0}
+h2{font-size:clamp(22px,2.9vw,30px);line-height:1.25;letter-spacing:-.018em;margin:0 0 4px;font-weight:750}
+h2 .num{font-size:12.5px;font-weight:800;letter-spacing:.1em;color:var(--amber-t);display:block;margin-bottom:9px}
+h3{font-size:18px;margin:38px 0 10px;font-weight:700;letter-spacing:-.01em}
+h4{font-size:15.5px;margin:26px 0 8px;font-weight:700;color:var(--ink2)}
+p{margin:14px 0 0}
+.sub{color:var(--ink2);font-size:16.5px;margin-top:12px;max-width:70ch}
+ul,ol{margin:14px 0 0;padding-left:22px}
+li{margin:7px 0}
+strong{font-weight:700}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em}
+
+/* ---------- claim cards ---------- */
+.claims{margin:26px 0 0;display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);
+  border-radius:10px;overflow:hidden}
+.claims>div{background:var(--card);padding:18px 20px;display:grid;grid-template-columns:34px 1fr;gap:14px}
+.claims .n{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;font-weight:700;
+  color:var(--amber-t);padding-top:3px}
+.claims .t{font-size:15.5px;line-height:1.65}
+.claims .t b{color:var(--blue-t)}
+.claims .t span{display:block;font-size:13px;color:var(--ink3);margin-top:5px}
+
+/* ---------- figures ---------- */
+figure{margin:34px 0 0;min-width:0}
+.fig-box{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--card);padding:18px 16px}
+.fig-box svg{display:block;min-width:600px;width:100%;height:auto}
+figcaption{font-size:13.5px;color:var(--ink3);margin-top:12px;line-height:1.6}
+figcaption b{color:var(--ink2);font-weight:600}
+.src{display:block;font-size:12.5px;color:var(--ink3);margin-top:4px}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:22px 0 0;border:1px solid var(--rule);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--rule2)}
+th{font-size:12.5px;font-weight:700;color:var(--ink2);background:#F6F5F1;letter-spacing:.02em;white-space:nowrap}
+td.n{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+tbody tr:last-child td{border-bottom:0}
+tr.tot td{font-weight:700;background:#FAF9F5}
+.chip{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:8px;vertical-align:1px}
+
+/* ---------- callout ---------- */
+.callout{margin:26px 0 0;border:1px solid var(--rule);border-left:3px solid var(--amber);border-radius:0 10px 10px 0;
+  background:#FDFAF3;padding:18px 22px}
+.callout .lab{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber-t)}
+.callout p{margin-top:8px;font-size:15.5px}
+.note{margin:26px 0 0;border:1px dashed var(--rule);border-radius:10px;padding:16px 20px;background:#FCFCFB}
+.note .lab{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--slate-t)}
+.note p{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+/* ---------- grid cards ---------- */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule);
+  border-radius:10px;overflow:hidden;margin:26px 0 0}
+.g2>*{background:var(--card);padding:20px 22px;min-width:0}
+.g2 h4{margin-top:0}
+.g2 p{font-size:14.5px}
+.g2 ul{margin-top:10px;font-size:14.5px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);
+  border-radius:10px;overflow:hidden;margin:26px 0 0}
+.g3>*{background:var(--card);padding:18px 20px;min-width:0}
+.g3 .v{font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.g3 .k{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.55}
+
+footer{margin-top:64px;padding-top:26px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink3)}
+footer p{margin-top:8px}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .g2,.g3{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .wrap{padding:0 18px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  table{display:block;overflow-x:auto}
+  .claims>div{grid-template-columns:26px 1fr;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <span class="brand">Jev in the Wild</span>
+  <a href="#s00">摘要</a>
+  <a href="#s01">全景图</a>
+  <a href="#s02">方法</a>
+  <a href="#s03">首周增长</a>
+  <a href="#s04">生态版图</a>
+  <a href="#s05">三大接口</a>
+  <a href="#s06">六种目的</a>
+  <a href="#s07">领域×目的</a>
+  <a href="#s08">错配</a>
+  <a href="#s09">在野案例</a>
+  <a href="#s10">本地对照</a>
+  <a href="#s11">结论</a>
+  <a href="#s12">来源</a>
+</div></nav>
+
+<header><div class="wrap">
+  <div class="kicker">论文解读 · arXiv:2609.30216v1 · cs.SE</div>
+  <h1>Jev 在野：一周之内，一个<em>决策原语</em>如何铺满 GitHub</h1>
+  <p class="lede">Jev 发布后的七天内，公开生态里冒出 1,865 个新仓库、另有 305 个既有项目把它接进了自己的流程，合计 2,170 个项目、43,750 颗星。这篇论文第一次把这张版图量化下来——而它给出的最重要的发现不是「Jev 很火」，而是<strong>同一个决策模型，在不同工作流里干着完全不同的活</strong>。</p>
+  <div class="byline">
+    <span><b>原论文</b> Jev in the Wild: A Data-Driven Analysis of the Jev Model’s Functionality, Applications and Ecosystem</span>
+    <span><b>作者</b> Guoming Ling、Muen Xue（中山大学）、Zijian Ye（中国香港中文大学）</span>
+    <span><b>数据快照</b> 2026-09-22 快照 · 正文 4 节 + 附录 7 个在野案例</span>
+  </div>
+
+  <div class="stats">
+    <div><div class="v">2,170</div><div class="k">已验证的公开 Jev 项目</div></div>
+    <div><div class="v">1,865<span class="u">/305</span></div><div class="k">首周新建 / 既有接入</div></div>
+    <div><div class="v">43,750</div><div class="k">首周新仓库获得的星</div></div>
+    <div><div class="v">8<span class="u">×18</span></div><div class="k">应用大类 × 子类</div></div>
+    <div><div class="v">3<span class="u">+6</span></div><div class="k">接口 × 决策目的</div></div>
+    <div><div class="v">19.6<span class="u">→63.0%</span></div><div class="k">两类项目的占比 → 星占比</div></div>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<!-- ============ 00 摘要 ============ -->
+<section id="s00">
+  <h2><span class="num">00 · 摘要</span>七条论断，一眼看完</h2>
+  <p class="sub">下面每一条都可以被论文里的数据证伪或证实。报告中所有图表都在展开这七条中的某一条。</p>
+
+  <div class="claims">
+    <div><div class="n">C1</div><div class="t">这不是「涌现」，是<b>一周内的爆发式接管</b>。<span>9 月 15 日发布，一周内新增 1,865 个仓库；同时有 305 个发布前就存在的仓库主动接入——两条路径同时发生。</span></div></div>
+    <div><div class="n">C2</div><div class="t">生态<b>没有主导场景</b>。<span>最大的两类——内容与专家任务 17.8%、搜索与记忆 17.6%——合计仅 35.4%。没有任何一个应用领域占到 1/5。</span></div></div>
+    <div><div class="n">C3</div><div class="t">Jev 的真实身份是<b>可复用的决策组件</b>，不是垂直应用模型。<span>有明确决策目的的项目中，69.7% 用它做两个以上目的。</span></div></div>
+    <div><div class="n">C4</div><div class="t"><b>三接口齐用是主流，不是例外</b>。<span>36.8% 的项目同时用 Choice + Noul + Score，是七种组合里占比最高的一档；只用 Score 的仅 1.7%。</span></div></div>
+    <div><div class="n">C5</div><div class="t"><b>领域决定职能</b>：同一个 Jev，在仿真与控制里 52% 用来选动作，在搜索与记忆里 21% 用来过滤内容，在路由里 27% 用来选模型或工具。<span>论文由此得出结论：其功能随周边工作流而变。</span></div></div>
+    <div><div class="n">C6</div><div class="t">但<b>判断仍是基本盘</b>：8 个领域中有 6 个仍以属性判断为首要目的。领域塑造的是「次要职能」。<span>唯二的例外是仿真与控制、接口智能体——它们由动作选择主导。</span></div></div>
+    <div><div class="n">C7</div><div class="t">公开关注度与项目量<b>严重脱钩</b>。<span>路由与自动化 + 接口智能体只占 19.6% 的项目，却拿走 63.0% 的星。论文的判断是：这反映可见度不均，而非需求未被满足。</span></div></div>
+  </div>
+
+  <div class="callout">
+    <div class="lab">一句话结论</div>
+    <p>Jev 之所以被铺开，不是因为它在某个场景里最强，而是因为它把「做一个判断」这件事的成本压到了可以被当成语法糖来用——于是判断这件事就散进了系统各处。论文给同类模型的建议也因此很直接：<strong>选择、判断、评分三类接口要能灵活组合</strong>，而评测要同时覆盖「反复出现的决策目的」和「它们所处的应用情境」。</p>
+  </div>
+</section>
+<!-- ============ 01 全景图 ============ -->
+<section id="s01">
+  <h2><span class="num">01 · 全景图</span>八个领域，两种体量</h2>
+  <p class="sub">先把版图一次看全。这张图有两个径向通道：<strong>内环半径 = 项目数</strong>（规模有多大），<strong>外环半径 = 每项目平均星数</strong>（被关注到什么程度）。虚线是两个基准值——271 项目/类、101★/项目。外圈文字给出每个领域的主导职能，也就是下一章要展开的那件事。</p>
+
+  <figure id="fig1">
+    <div class="fig-box">
+<svg viewBox="0 0 960 812" role="img" aria-label="Jev 生态全景：八个应用领域的项目规模与关注度">
+<rect x="0" y="0" width="960" height="812" fill="#FFFFFF"/>
+<circle cx="480" cy="402" r="159.51" fill="none" stroke="#C9C6BC" stroke-width="1" stroke-dasharray="3 4"/>
+<circle cx="480" cy="402" r="309.74" fill="none" stroke="#C9C6BC" stroke-width="1" stroke-dasharray="3 4"/>
+<path d="M483.66 332.1L490.35 204.56A197.71 197.71 0 0 1 612.29 255.07L526.84 349.98A70 70 0 0 0 483.66 332.1Z" fill="#1F4E86"/>
+<path d="M532.02 355.16L625.46 271.03A195.73 195.73 0 0 1 675.46 391.76L549.9 398.34A70 70 0 0 0 532.02 355.16Z" fill="#0B5A50"/>
+<path d="M549.9 405.66L651.4 410.98A171.64 171.64 0 0 1 607.55 516.85L532.02 448.84A70 70 0 0 0 549.9 405.66Z" fill="#5A3099"/>
+<path d="M526.84 454.02L582.48 515.82A153.16 153.16 0 0 1 488.02 554.95L483.66 471.9A70 70 0 0 0 526.84 454.02Z" fill="#1B5820"/>
+<path d="M476.34 471.9L472.02 554.29A152.5 152.5 0 0 1 377.96 515.33L433.16 454.02A70 70 0 0 0 476.34 471.9Z" fill="#8F3F06"/>
+<path d="M427.98 448.84L368.63 502.28A149.86 149.86 0 0 1 330.35 409.84L410.1 405.66A70 70 0 0 0 427.98 448.84Z" fill="#39485C"/>
+<path d="M410.1 398.34L352.43 395.31A127.75 127.75 0 0 1 385.06 316.52L427.98 355.16A70 70 0 0 0 410.1 398.34Z" fill="#A21C6E"/>
+<path d="M433.16 349.98L394.52 307.06A127.75 127.75 0 0 1 473.31 274.43L476.34 332.1A70 70 0 0 0 433.16 349.98Z" fill="#8C1A14"/>
+<path d="M492.98 154.34L495.02 115.32A287.07 287.07 0 0 1 672.09 188.67L645.94 217.7A248 248 0 0 0 492.98 154.34Z" fill="#B45309"/>
+<path d="M664.3 236.06L695.83 207.67A290.43 290.43 0 0 1 770.03 386.8L727.66 389.02A248 248 0 0 0 664.3 236.06Z" fill="#B45309"/>
+<path d="M727.66 414.98L752.44 416.28A272.81 272.81 0 0 1 682.74 584.55L664.3 567.94A248 248 0 0 0 727.66 414.98Z" fill="#B45309"/>
+<path d="M645.94 586.3L655.26 596.65A261.93 261.93 0 0 1 493.71 663.57L492.98 649.66A248 248 0 0 0 645.94 586.3Z" fill="#B45309"/>
+<path d="M467.02 649.66L462.51 735.74A334.2 334.2 0 0 1 256.38 650.36L314.06 586.3A248 248 0 0 0 467.02 649.66Z" fill="#B45309"/>
+<path d="M295.7 567.94L242.53 615.82A319.55 319.55 0 0 1 160.89 418.72L232.34 414.98A248 248 0 0 0 295.7 567.94Z" fill="#B45309"/>
+<path d="M232.34 389.02L151.87 384.8A328.58 328.58 0 0 1 235.81 182.13L295.7 236.06A248 248 0 0 0 232.34 389.02Z" fill="#B45309"/>
+<path d="M314.06 217.7L283.47 183.73A293.71 293.71 0 0 1 464.63 108.7L467.02 154.34A248 248 0 0 0 314.06 217.7Z" fill="#B45309"/>
+<circle cx="480" cy="402" r="159.51" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-dasharray="3 4" stroke-opacity="0.7"/>
+<circle cx="480" cy="402" r="309.74" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-dasharray="3 4" stroke-opacity="0.7"/>
+<g style="background-color:#16181D"><circle cx="480" cy="402" r="50" fill="#16181D"/>
+<text x="480.0" y="399.0" font-size="15" fill="#FFFFFF" text-anchor="middle" font-weight="700">Jev</text>
+<text x="480.0" y="416.0" font-size="11" fill="#D9DEE6" text-anchor="middle">2,170 项目</text>
+<text x="480.0" y="431.0" font-size="9.5" fill="#D9DEE6" text-anchor="middle">2026-09-22</text>
+</g>
+<text x="616.2" y="73.1" font-size="12.5" fill="#1F4E86" font-weight="700">内容与专家任务</text>
+<text x="616.2" y="89.1" font-size="11" fill="#4A505A">387 项目 · 31★/项目</text>
+<text x="616.2" y="104.1" font-size="10.5" fill="#4A505A">属性判断 45%</text>
+<text x="808.9" y="265.8" font-size="12.5" fill="#0B5A50" font-weight="700">搜索与记忆</text>
+<text x="808.9" y="281.8" font-size="11" fill="#4A505A">381 项目 · 37★/项目</text>
+<text x="808.9" y="296.8" font-size="10.5" fill="#4A505A">属性判断 42%</text>
+<text x="808.9" y="538.2" font-size="12.5" fill="#5A3099" font-weight="700">软件工程</text>
+<text x="808.9" y="554.2" font-size="11" fill="#4A505A">308 项目 · 15★/项目</text>
+<text x="808.9" y="569.2" font-size="10.5" fill="#4A505A">属性判断 41%</text>
+<text x="616.2" y="730.9" font-size="12.5" fill="#1B5820" font-weight="700">仿真与控制</text>
+<text x="616.2" y="746.9" font-size="11" fill="#4A505A">252 项目 · 8★/项目</text>
+<text x="616.2" y="761.9" font-size="10.5" fill="#4A505A">动作选择 52%</text>
+<text x="343.8" y="730.9" font-size="12.5" fill="#8F3F06" text-anchor="end" font-weight="700">路由与自动化</text>
+<text x="343.8" y="746.9" font-size="11" fill="#4A505A" text-anchor="end">250 项目 · 364★/项目</text>
+<text x="343.8" y="761.9" font-size="10.5" fill="#4A505A" text-anchor="end">属性判断 29%</text>
+<text x="151.1" y="538.2" font-size="12.5" fill="#39485C" text-anchor="end" font-weight="700">基础设施及其他</text>
+<text x="151.1" y="554.2" font-size="11" fill="#4A505A" text-anchor="end">242 项目 · 169★/项目</text>
+<text x="151.1" y="569.2" font-size="10.5" fill="#4A505A" text-anchor="end">属性判断 42%</text>
+<text x="151.1" y="265.8" font-size="12.5" fill="#A21C6E" text-anchor="end" font-weight="700">接口智能体</text>
+<text x="151.1" y="281.8" font-size="11" fill="#4A505A" text-anchor="end">175 项目 · 271★/项目</text>
+<text x="151.1" y="296.8" font-size="10.5" fill="#4A505A" text-anchor="end">动作选择 47%</text>
+<text x="343.8" y="73.1" font-size="12.5" fill="#8C1A14" text-anchor="end" font-weight="700">安全与治理</text>
+<text x="343.8" y="89.1" font-size="11" fill="#4A505A" text-anchor="end">175 项目 · 44★/项目</text>
+<text x="343.8" y="104.1" font-size="10.5" fill="#4A505A" text-anchor="end">属性判断 36%</text>
+</svg>
+    </div>
+    <figcaption><b>图 1 · Jev 生态全景。</b>八个应用领域按项目数从大到小顺时针排列。最直观的一眼：内环最长的两个（内容与专家任务 387、搜索与记忆 381）在外环上几乎缩到最短（31★、37★/项目），而内环中等长度的路由与自动化（250）外环却探到最外（364★/项目）。<span class="src">数据来源：论文 Table 1，作者按 2,170 个项目重算聚合。外环为对数尺度，否则 8★ 与 364★ 的 45 倍差距会把其余全部压平。</span></figcaption>
+  </figure>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>应用领域</th><th style="text-align:right">项目数</th><th style="text-align:right">项目占比</th><th style="text-align:right">星数</th><th style="text-align:right">星数占比</th><th style="text-align:right">均值 ★/项目</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip" style="background:#1F4E86"></span>内容与专家任务</td><td class="n">387</td><td class="n">17.83%</td><td class="n">11,960</td><td class="n">5.44%</td><td class="n">31</td></tr>
+      <tr><td><span class="chip" style="background:#0B5A50"></span>搜索与记忆</td><td class="n">381</td><td class="n">17.56%</td><td class="n">14,036</td><td class="n">6.39%</td><td class="n">37</td></tr>
+      <tr><td><span class="chip" style="background:#5A3099"></span>软件工程</td><td class="n">308</td><td class="n">14.19%</td><td class="n">4,514</td><td class="n">2.06%</td><td class="n">15</td></tr>
+      <tr><td><span class="chip" style="background:#1B5820"></span>仿真与控制</td><td class="n">252</td><td class="n">11.61%</td><td class="n">2,089</td><td class="n">0.95%</td><td class="n">8</td></tr>
+      <tr><td><span class="chip" style="background:#8F3F06"></span>路由与自动化</td><td class="n">250</td><td class="n">11.52%</td><td class="n">91,003</td><td class="n">41.43%</td><td class="n">364</td></tr>
+      <tr><td><span class="chip" style="background:#39485C"></span>基础设施及其他</td><td class="n">242</td><td class="n">11.15%</td><td class="n">40,917</td><td class="n">18.63%</td><td class="n">169</td></tr>
+      <tr><td><span class="chip" style="background:#A21C6E"></span>接口智能体</td><td class="n">175</td><td class="n">8.06%</td><td class="n">47,485</td><td class="n">21.62%</td><td class="n">271</td></tr>
+      <tr><td><span class="chip" style="background:#8C1A14"></span>安全与治理</td><td class="n">175</td><td class="n">8.06%</td><td class="n">7,654</td><td class="n">3.48%</td><td class="n">44</td></tr>
+      <tr class="tot"><td>合计</td><td class="n">2,170</td><td class="n">100%</td><td class="n">219,658</td><td class="n">100%</td><td class="n">101</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>表里的<strong>星数</strong>不在论文 Table 1 的汇总层面出现，是按子类逐行相加得到的；加总后的均值星数（271 / 364 / 8 / 31 / 37）与论文 §3.4 正文逐一吻合，这是本文档所有比例的自洽性校验。</p>
+</section>
+
+<!-- ============ 02 方法 ============ -->
+<section id="s02">
+  <h2><span class="num">02 · 数据是怎么来的</span>三阶段流水线 + 双智能体复核</h2>
+  <p class="sub">这份研究最有价值的部分之一，是它把「数一个生态」的方法写清楚了。三个阶段的取舍直接决定了后面所有结论的口径。</p>
+
+  <figure id="fig2">
+    <div class="fig-box">
+<svg viewBox="0 0 960 344" role="img" aria-label="数据集构建的三个阶段">
+<rect x="0" y="0" width="960" height="344" fill="#FFFFFF"/>
+<rect x="40" y="22" width="880" height="46" rx="8" fill="#F1F0EA" stroke="#E2DFD7"/>
+<text x="64.0" y="44.0" font-size="12" fill="#333941" font-weight="700">GitHub 仓库搜索 + 代码搜索</text>
+<text x="64.0" y="60.0" font-size="11" fill="#4A505A">预定义查询：Jev 关键词 / API 端点 / SDK 引用；按 GitHub 仓库 ID 去重</text>
+<rect x="40" y="104" width="256" height="150" rx="10" fill="#FFFFFF" stroke="#E2DFD7"/>
+<circle cx="66" cy="130" r="13" fill="#1F4E86"/>
+<text x="66.0" y="134.5" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="700">1</text>
+<text x="88.0" y="135.0" font-size="14" fill="#16181D" font-weight="700">候选检索</text>
+<text x="60.0" y="164.0" font-size="11.5" fill="#4A505A">仓库搜索与代码搜索并行</text>
+<text x="60.0" y="186.0" font-size="11" fill="#333941">去重后得到候选仓库池</text>
+<rect x="352" y="104" width="256" height="150" rx="10" fill="#FFFFFF" stroke="#E2DFD7"/>
+<circle cx="378" cy="130" r="13" fill="#0B5A50"/>
+<text x="378.0" y="134.5" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="700">2</text>
+<text x="400.0" y="135.0" font-size="14" fill="#16181D" font-weight="700">项目验证</text>
+<text x="372.0" y="164.0" font-size="11.5" fill="#4A505A">GPT-6 Luna Max 智能体</text>
+<text x="372.0" y="186.0" font-size="11" fill="#333941">逐个检查：仅当公开代码或文档提供明确证</text>
+<text x="372.0" y="203.0" font-size="11" fill="#333941">据表明 Jev 被用于具体任务时才纳入</text>
+<rect x="664" y="104" width="256" height="150" rx="10" fill="#FFFFFF" stroke="#E2DFD7"/>
+<circle cx="690" cy="130" r="13" fill="#5A3099"/>
+<text x="690.0" y="134.5" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="700">3</text>
+<text x="712.0" y="135.0" font-size="14" fill="#16181D" font-weight="700">标注</text>
+<text x="684.0" y="164.0" font-size="11.5" fill="#4A505A">GPT-6 Luna Max 智能体</text>
+<text x="684.0" y="186.0" font-size="11" fill="#333941">标注主要应用领域、决策目的、接口使</text>
+<text x="684.0" y="203.0" font-size="11" fill="#333941">用等属性</text>
+<path d="M300 179H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M324 179l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M612 179H636" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M636 179l-7 -4.5v9z" fill="#C9C6BC"/>
+<rect x="40" y="276" width="880" height="46" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="64.0" y="305.0" font-size="14" fill="#8F3F06" font-weight="700">2,170 个已验证的 Jev 项目</text>
+<text x="300.0" y="305.0" font-size="11" fill="#4A505A">关键纳入决策与应用领域标签由第二个 GPT-6 Luna Max 智能体独立复核，分歧通过检查原始仓库材料解决</text>
+</svg>
+    </div>
+    <figcaption><b>图 2 · 数据集构建。</b>检索用仓库搜索与代码搜索两路并行、按仓库 ID 去重；验证阶段的纳入门槛是「公开代码或文档里有明确证据表明 Jev 被用于某个具体任务」——只提到 Jev、或只提供一个通用包装器/SDK 的仓库被排除，这一条把「蹭热度」的项目挡在了外面。<span class="src">来源：论文 §2.1。标注与应用领域标签由第二个 GPT-6 Luna Max 智能体独立复核，分歧回到原始仓库材料解决。</span></figcaption>
+  </figure>
+
+  <div class="callout">
+    <div class="lab">读表前必看的一处口径</div>
+    <p>论文 Table 1 里 <span class="mono">Classification</span>（184 个项目）那一行的「主类」单元格是空的。这不是排版失误造成的孤立项——它是 <strong>搜索与记忆</strong> 的第三个子类。因此 <span class="mono">Search &amp; Memory = 77 + 120 + 184 = 381</span>，占 17.56%，正好对上论文 §3.1 的原话「最大的两类是 387 和 381 个项目」。若按字面把 Classification 单列成一个大类，搜索与记忆只有 197 个项目，正文里所有百分比都会算错。</p>
+  </div>
+  <div class="note">
+    <div class="lab">这份数据集不包含什么</div>
+    <p>只统计<strong>公开 GitHub 仓库</strong>。私有仓库与商业应用完全不在范围内，作者在 Limitations 里明确说：因此本文不构成 Jev 采用情况的完整图景。</p>
+  </div>
+</section>
+
+<!-- ============ 03 增长 ============ -->
+<section id="s03">
+  <h2><span class="num">03 · 首周</span>1,865 个新仓库，305 次既有接入</h2>
+  <p class="sub">Jev 在 2026 年 9 月 15 日发布。一周之后，样本里已经有 2,170 个把 Jev 用在了具体任务上的公开项目。</p>
+
+  <figure id="fig3">
+    <div class="fig-box">
+<svg viewBox="0 0 960 420" role="img" aria-label="Jev 发布后首周的累计项目数与累计星数">
+<rect x="0" y="0" width="960" height="420" fill="#FFFFFF"/>
+<path d="M96 344H690" stroke="#EDEBE4" stroke-width="1"/>
+<text x="86.0" y="348.0" font-size="11" fill="#4A505A" text-anchor="end">0</text>
+<path d="M96 274H690" stroke="#EDEBE4" stroke-width="1"/>
+<text x="86.0" y="278.0" font-size="11" fill="#4A505A" text-anchor="end">475</text>
+<path d="M96 204H690" stroke="#EDEBE4" stroke-width="1"/>
+<text x="86.0" y="208.0" font-size="11" fill="#4A505A" text-anchor="end">950</text>
+<path d="M96 134H690" stroke="#EDEBE4" stroke-width="1"/>
+<text x="86.0" y="138.0" font-size="11" fill="#4A505A" text-anchor="end">1425</text>
+<path d="M96 64H690" stroke="#EDEBE4" stroke-width="1"/>
+<text x="86.0" y="68.0" font-size="11" fill="#4A505A" text-anchor="end">1900</text>
+<text x="706.0" y="348.0" font-size="11" fill="#4A505A">0k</text>
+<text x="706.0" y="292.0" font-size="11" fill="#4A505A">10k</text>
+<text x="706.0" y="236.0" font-size="11" fill="#4A505A">20k</text>
+<text x="706.0" y="180.0" font-size="11" fill="#4A505A">30k</text>
+<text x="706.0" y="124.0" font-size="11" fill="#4A505A">40k</text>
+<text x="706.0" y="68.0" font-size="11" fill="#4A505A">50k</text>
+<path d="M96 344H690" stroke="#C9C6BC" stroke-width="1.2"/>
+<path d="M96 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="96.0" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.15</text>
+<path d="M180.86 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="180.9" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.16</text>
+<path d="M265.71 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="265.7" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.17</text>
+<path d="M350.57 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="350.6" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.18</text>
+<path d="M435.43 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="435.4" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.19</text>
+<path d="M520.29 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="520.3" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.20</text>
+<path d="M605.14 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="605.1" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.21</text>
+<path d="M690 344V350" stroke="#C9C6BC" stroke-width="1"/>
+<text x="690.0" y="366.0" font-size="11" fill="#4A505A" text-anchor="middle">9.22</text>
+<text x="86.0" y="42.0" font-size="10.5" fill="#1F4E86" text-anchor="end" font-weight="700">累计项目（左轴）</text>
+<text x="706.0" y="42.0" font-size="10.5" fill="#8F3F06" font-weight="700">累计星数（右轴）</text>
+<path d="M96 344L96,344L180.86,329.71L265.71,290.06L350.57,239.66L435.43,184.11L520.29,136.95L605.14,92.44L690,69.16L690 344Z" fill="#1F4E86" opacity="0.10"/>
+<path d="M96 344L96,344L180.86,339.62L265.71,305.5L350.57,263.9L435.43,220.54L520.29,175.01L605.14,125.22L690,99L690 344Z" fill="#B45309" opacity="0.13"/>
+<polyline points="96,344 180.86,329.71 265.71,290.06 350.57,239.66 435.43,184.11 520.29,136.95 605.14,92.44 690,69.16" fill="none" stroke="#1F4E86" stroke-width="2.4"/>
+<polyline points="96,344 180.86,339.62 265.71,305.5 350.57,263.9 435.43,220.54 520.29,175.01 605.14,125.22 690,99" fill="none" stroke="#B45309" stroke-width="2.4"/>
+<circle cx="96" cy="344" r="3.4" fill="#1F4E86"/>
+<rect x="92.8" y="340.8" width="6.4" height="6.4" fill="#B45309"/>
+<circle cx="180.86" cy="329.71" r="3.4" fill="#1F4E86"/>
+<rect x="177.66" y="336.42" width="6.4" height="6.4" fill="#B45309"/>
+<circle cx="265.71" cy="290.06" r="3.4" fill="#1F4E86"/>
+<rect x="262.51" y="302.3" width="6.4" height="6.4" fill="#B45309"/>
+<circle cx="350.57" cy="239.66" r="3.4" fill="#1F4E86"/>
+<rect x="347.37" y="260.7" width="6.4" height="6.4" fill="#B45309"/>
+<circle cx="435.43" cy="184.11" r="3.4" fill="#1F4E86"/>
+<rect x="432.23" y="217.34" width="6.4" height="6.4" fill="#B45309"/>
+<circle cx="520.29" cy="136.95" r="3.4" fill="#1F4E86"/>
+<rect x="517.09" y="171.81" width="6.4" height="6.4" fill="#B45309"/>
+<circle cx="605.14" cy="92.44" r="3.4" fill="#1F4E86"/>
+<rect x="601.94" y="122.02" width="6.4" height="6.4" fill="#B45309"/>
+<circle cx="690" cy="69.16" r="3.4" fill="#1F4E86"/>
+<rect x="686.8" y="95.8" width="6.4" height="6.4" fill="#B45309"/>
+<path d="M96 64V344" stroke="#8C1A14" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="104.0" y="80.0" font-size="11" fill="#8C1A14" font-weight="700">9 月 15 日 Jev 发布</text>
+<text x="640.0" y="32.0" font-size="12" fill="#1F4E86" text-anchor="end" font-weight="700">1,865 项目</text>
+<text x="640.0" y="56.0" font-size="12" fill="#8F3F06" text-anchor="end" font-weight="700">43,750★</text>
+<rect x="748" y="186" width="204" height="152" rx="8" fill="#FCFCFB" stroke="#E2DFD7"/>
+<text x="760.0" y="206.0" font-size="10.5" fill="#333941" font-weight="700">逐日累计</text>
+<text x="760.0" y="221.0" font-size="9.5" fill="#4A505A">据图 1 反读，±2%</text>
+<text x="760.0" y="240.0" font-size="9.5" fill="#4A505A">日期</text>
+<text x="806.0" y="240.0" font-size="9.5" fill="#4A505A">项目</text>
+<text x="918.0" y="240.0" font-size="9.5" fill="#4A505A" text-anchor="end">星数</text>
+<text x="760.0" y="257.0" font-size="9.5" fill="#4A505A">9.15</text>
+<text x="806.0" y="257.0" font-size="9.5" fill="#1F4E86">0</text>
+<text x="918.0" y="257.0" font-size="9.5" fill="#8F3F06" text-anchor="end">0</text>
+<text x="760.0" y="268.0" font-size="9.5" fill="#4A505A">9.16</text>
+<text x="806.0" y="268.0" font-size="9.5" fill="#1F4E86">97</text>
+<text x="918.0" y="268.0" font-size="9.5" fill="#8F3F06" text-anchor="end">783</text>
+<text x="760.0" y="279.0" font-size="9.5" fill="#4A505A">9.17</text>
+<text x="806.0" y="279.0" font-size="9.5" fill="#1F4E86">366</text>
+<text x="918.0" y="279.0" font-size="9.5" fill="#8F3F06" text-anchor="end">6875</text>
+<text x="760.0" y="290.0" font-size="9.5" fill="#4A505A">9.18</text>
+<text x="806.0" y="290.0" font-size="9.5" fill="#1F4E86">708</text>
+<text x="918.0" y="290.0" font-size="9.5" fill="#8F3F06" text-anchor="end">14304</text>
+<text x="760.0" y="301.0" font-size="9.5" fill="#4A505A">9.19</text>
+<text x="806.0" y="301.0" font-size="9.5" fill="#1F4E86">1085</text>
+<text x="918.0" y="301.0" font-size="9.5" fill="#8F3F06" text-anchor="end">22047</text>
+<text x="760.0" y="312.0" font-size="9.5" fill="#4A505A">9.20</text>
+<text x="806.0" y="312.0" font-size="9.5" fill="#1F4E86">1405</text>
+<text x="918.0" y="312.0" font-size="9.5" fill="#8F3F06" text-anchor="end">30177</text>
+<text x="760.0" y="323.0" font-size="9.5" fill="#4A505A">9.21</text>
+<text x="806.0" y="323.0" font-size="9.5" fill="#1F4E86">1707</text>
+<text x="918.0" y="323.0" font-size="9.5" fill="#8F3F06" text-anchor="end">39068</text>
+<text x="760.0" y="334.0" font-size="9.5" fill="#4A505A">9.22</text>
+<text x="806.0" y="334.0" font-size="9.5" fill="#1F4E86">1865</text>
+<text x="918.0" y="334.0" font-size="9.5" fill="#8F3F06" text-anchor="end">43750</text>
+</svg>
+    </div>
+    <figcaption><b>图 3 · 发布后首周的累计增长。</b>左轴是累计新建仓库，右轴是累计获得星数。关键不是曲线有多陡，而是<strong>两条路径同时发生</strong>：1,865 个仓库是这一周内新建的，另外 305 个是发布前就存在、被开发者把 Jev 接了进去——前者说明有人在围绕它开新项目，后者说明有人把它当成现有系统里的一颗零件。<span class="src">来源：论文 §2.2 与 Figure 1。终值 1,865 与 43,750★ 为论文正文数字；逐日点位由论文 Figure 1 反读，误差约 ±2%。</span></figcaption>
+  </figure>
+
+  <div class="g3">
+    <div><div class="v">1,865</div><div class="k">首周新建仓库——生态的「增量」</div></div>
+    <div><div class="v">305</div><div class="k">发布前已存在、主动接入 Jev 的仓库——生态的「嵌入」</div></div>
+    <div><div class="v">43,750</div><div class="k">这批新仓库在同期获得的星——论文称增长「强劲且持续」</div></div>
+  </div>
+</section>
+
+<!-- ============ 04 版图 ============ -->
+<section id="s04">
+  <h2><span class="num">04 · 生态版图</span>8 个大类、18 个子类，没有一个成为主导</h2>
+  <p class="sub">把 2,170 个项目摊开，第一件反直觉的事是：<strong>没有主导场景</strong>。最大的两类合计只占 35.4% 的项目，最大的单个子类（游戏与仿真 227 个）也只占 10.5%。</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>大类</th><th>子类</th><th style="text-align:right">项目数</th><th style="text-align:right">占总项目</th><th style="text-align:right">星数</th><th style="text-align:right">占总星数</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="2">接口智能体</td><td>Web 交互</td><td class="n">125</td><td class="n">5.8%</td><td class="n">46,067</td><td class="n">21.0%</td></tr>
+      <tr><td>桌面与移动</td><td class="n">50</td><td class="n">2.3%</td><td class="n">1,418</td><td class="n">0.6%</td></tr>
+      <tr><td rowspan="2">软件工程</td><td>代码质量</td><td class="n">90</td><td class="n">4.1%</td><td class="n">1,500</td><td class="n">0.7%</td></tr>
+      <tr><td>开发工作流</td><td class="n">218</td><td class="n">10.0%</td><td class="n">3,014</td><td class="n">1.4%</td></tr>
+      <tr><td rowspan="3">搜索与记忆</td><td>上下文与记忆</td><td class="n">77</td><td class="n">3.5%</td><td class="n">10,533</td><td class="n">4.8%</td></tr>
+      <tr><td>搜索与数据</td><td class="n">120</td><td class="n">5.5%</td><td class="n">2,334</td><td class="n">1.1%</td></tr>
+      <tr><td>分类</td><td class="n">184</td><td class="n">8.5%</td><td class="n">1,169</td><td class="n">0.5%</td></tr>
+      <tr><td rowspan="2">安全与治理</td><td>审查与批准</td><td class="n">82</td><td class="n">3.8%</td><td class="n">5,750</td><td class="n">2.6%</td></tr>
+      <tr><td>安全与合规</td><td class="n">93</td><td class="n">4.3%</td><td class="n">1,904</td><td class="n">0.9%</td></tr>
+      <tr><td rowspan="2">路由与自动化</td><td>模型与工具路由</td><td class="n">132</td><td class="n">6.1%</td><td class="n">71,671</td><td class="n">32.6%</td></tr>
+      <tr><td>工作流自动化</td><td class="n">118</td><td class="n">5.4%</td><td class="n">19,332</td><td class="n">8.8%</td></tr>
+      <tr><td rowspan="2">仿真与控制</td><td>游戏与仿真</td><td class="n">227</td><td class="n">10.5%</td><td class="n">1,825</td><td class="n">0.8%</td></tr>
+      <tr><td>机器人与控制</td><td class="n">25</td><td class="n">1.2%</td><td class="n">264</td><td class="n">0.1%</td></tr>
+      <tr><td rowspan="2">内容与专家任务</td><td>专业任务</td><td class="n">176</td><td class="n">8.1%</td><td class="n">6,597</td><td class="n">3.0%</td></tr>
+      <tr><td>内容与对话</td><td class="n">211</td><td class="n">9.7%</td><td class="n">5,363</td><td class="n">2.4%</td></tr>
+      <tr><td rowspan="3">基础设施及其他</td><td>SDK 与工具</td><td class="n">175</td><td class="n">8.1%</td><td class="n">34,800</td><td class="n">15.8%</td></tr>
+      <tr><td>研究与资源</td><td class="n">56</td><td class="n">2.6%</td><td class="n">6,010</td><td class="n">2.7%</td></tr>
+      <tr><td>其他应用</td><td class="n">11</td><td class="n">0.5%</td><td class="n">107</td><td class="n">&lt;0.1%</td></tr>
+      <tr class="tot"><td colspan="2">合计（18 个子类）</td><td class="n">2,170</td><td class="n">100%</td><td class="n">219,658</td><td class="n">100%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>这张表逐行相加等于 2,170，是本文档对数据集完整性的第二道校验。它也顺带说明了一件事：<strong>「SDK 与工具」这一类有 175 个项目、34,800 颗星，占全部星数的 15.8%</strong>——但按论文的纳入标准，只有通用包装器而没有具体应用的仓库是被排除的，所以这里统计的是「既提供了 SDK/工具、又能看到它在具体任务里怎么用」的项目。</p>
+</section>
+
+<!-- ============ 05 接口 ============ -->
+<section id="s05">
+  <h2><span class="num">05 · 三个接口</span>「全都要」是主流，不是例外</h2>
+  <p class="sub">Jev 对外只有三种提问方式：<strong>Choice</strong>（从候选项里选一个）、<strong>Noul</strong>（是 / 否二元判断）、<strong>Score</strong>（按预先定义好的等级给分）。这三种接口怎么被搭配使用，是这份研究里最能直接指导工程的一条。</p>
+
+  <figure id="fig4">
+    <div class="fig-box">
+<svg viewBox="0 0 960 492" role="img" aria-label="三个接口的采用率与七种组合的分布">
+<rect x="0" y="0" width="960" height="492" fill="#FFFFFF"/>
+<text x="0.0" y="18.0" font-size="13" fill="#16181D" font-weight="700">A · 各接口单独采用率（占 2,170 个项目）</text>
+<text x="160.0" y="50.0" font-size="12.5" fill="#333941" text-anchor="end" font-weight="700">Choice</text>
+<rect x="176" y="34" width="590" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="176" y="34" width="477.9" height="22" rx="4" fill="#1F4E86"/>
+<text x="662.9" y="50.0" font-size="12" fill="#333941" font-weight="700">81.0%</text>
+<text x="160.0" y="90.0" font-size="12.5" fill="#333941" text-anchor="end" font-weight="700">Noul</text>
+<rect x="176" y="74" width="590" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="176" y="74" width="425.98" height="22" rx="4" fill="#0B5A50"/>
+<text x="611.0" y="90.0" font-size="12" fill="#333941" font-weight="700">72.2%</text>
+<text x="160.0" y="130.0" font-size="12.5" fill="#333941" text-anchor="end" font-weight="700">Score</text>
+<rect x="176" y="114" width="590" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="176" y="114" width="267.86" height="22" rx="4" fill="#B45309"/>
+<text x="452.9" y="130.0" font-size="12" fill="#333941" font-weight="700">45.4%</text>
+<text x="176.0" y="166.0" font-size="10" fill="#4A505A" text-anchor="middle">0%</text>
+<text x="294.0" y="166.0" font-size="10" fill="#4A505A" text-anchor="middle">20%</text>
+<text x="412.0" y="166.0" font-size="10" fill="#4A505A" text-anchor="middle">40%</text>
+<text x="530.0" y="166.0" font-size="10" fill="#4A505A" text-anchor="middle">60%</text>
+<text x="648.0" y="166.0" font-size="10" fill="#4A505A" text-anchor="middle">80%</text>
+<text x="766.0" y="166.0" font-size="10" fill="#4A505A" text-anchor="middle">100%</text>
+<text x="0.0" y="206.0" font-size="13" fill="#16181D" font-weight="700">B · 每个项目用了几类接口</text>
+<rect x="176" y="222" width="225.38" height="26" fill="#C9D8EA"/>
+<text x="288.7" y="239.5" font-size="11.5" fill="#1F4E86" text-anchor="middle">1 类 · 38.2%</text>
+<rect x="401.38" y="222" width="147.5" height="26" fill="#9FBBDB"/>
+<text x="475.1" y="239.5" font-size="11.5" fill="#1F4E86" text-anchor="middle">2 类 · 25.0%</text>
+<g style="background-color:#1F4E86"><rect x="548.88" y="222" width="217.12" height="26" fill="#1F4E86"/>
+<text x="657.4" y="239.5" font-size="11.5" fill="#FFFFFF" text-anchor="middle">3 类 · 36.8%</text>
+</g>
+<text x="0.0" y="276.0" font-size="13" fill="#16181D" font-weight="700">C · 七种精确组合</text>
+<text x="124.0" y="276.0" font-size="10" fill="#4A505A">（字母顺序，不代表使用顺序）</text>
+<text x="240.0" y="304.0" font-size="11.5" fill="#333941" text-anchor="end">Choice + Noul + Score</text>
+<rect x="252" y="292" width="576" height="15" rx="3" fill="#F1F0EA"/>
+<rect x="252" y="292" width="529.92" height="15" rx="3" fill="#1F4E86"/>
+<text x="788.9" y="304.0" font-size="11" fill="#333941" font-weight="700">36.8%</text>
+<text x="240.0" y="326.0" font-size="11.5" fill="#333941" text-anchor="end">仅 Choice</text>
+<rect x="252" y="314" width="576" height="15" rx="3" fill="#F1F0EA"/>
+<rect x="252" y="314" width="338.4" height="15" rx="3" fill="#1F4E86"/>
+<text x="597.4" y="326.0" font-size="11" fill="#333941" font-weight="700">23.5%</text>
+<text x="240.0" y="348.0" font-size="11.5" fill="#333941" text-anchor="end">Choice + Noul</text>
+<rect x="252" y="336" width="576" height="15" rx="3" fill="#F1F0EA"/>
+<rect x="252" y="336" width="260.64" height="15" rx="3" fill="#1F4E86"/>
+<text x="519.6" y="348.0" font-size="11" fill="#333941" font-weight="700">18.1%</text>
+<text x="240.0" y="370.0" font-size="11.5" fill="#333941" text-anchor="end">仅 Noul</text>
+<rect x="252" y="358" width="576" height="15" rx="3" fill="#F1F0EA"/>
+<rect x="252" y="358" width="187.2" height="15" rx="3" fill="#7FA3D0"/>
+<text x="446.2" y="370.0" font-size="11" fill="#333941" font-weight="700">13.0%</text>
+<text x="240.0" y="392.0" font-size="11.5" fill="#333941" text-anchor="end">Noul + Score</text>
+<rect x="252" y="380" width="576" height="15" rx="3" fill="#F1F0EA"/>
+<rect x="252" y="380" width="61.92" height="15" rx="3" fill="#7FA3D0"/>
+<text x="320.9" y="392.0" font-size="11" fill="#333941" font-weight="700">4.3%</text>
+<text x="240.0" y="414.0" font-size="11.5" fill="#333941" text-anchor="end">Choice + Score</text>
+<rect x="252" y="402" width="576" height="15" rx="3" fill="#F1F0EA"/>
+<rect x="252" y="402" width="37.44" height="15" rx="3" fill="#7FA3D0"/>
+<text x="296.4" y="414.0" font-size="11" fill="#333941" font-weight="700">2.6%</text>
+<text x="240.0" y="436.0" font-size="11.5" fill="#333941" text-anchor="end">仅 Score</text>
+<rect x="252" y="424" width="576" height="15" rx="3" fill="#F1F0EA"/>
+<rect x="252" y="424" width="24.48" height="15" rx="3" fill="#7FA3D0"/>
+<text x="283.5" y="436.0" font-size="11" fill="#333941" font-weight="700">1.7%</text>
+<text x="252.0" y="461.0" font-size="10" fill="#4A505A" text-anchor="middle">0%</text>
+<text x="396.0" y="461.0" font-size="10" fill="#4A505A" text-anchor="middle">10%</text>
+<text x="540.0" y="461.0" font-size="10" fill="#4A505A" text-anchor="middle">20%</text>
+<text x="684.0" y="461.0" font-size="10" fill="#4A505A" text-anchor="middle">30%</text>
+<text x="828.0" y="461.0" font-size="10" fill="#4A505A" text-anchor="middle">40%</text>
+</svg>
+    </div>
+    <figcaption><b>图 4 · 接口采用率与组合分布。</b>三个接口单独看都是主流（Choice 81.0%、Noul 72.2%、Score 45.4%）。但真正的信号在 C 面板：<strong>「三接口齐用」36.8% 是七种组合里占比最高的一档</strong>，比「只用 Choice」还高；而只用一个接口的项目合计 38.2%，其中只用 Score 的仅有 1.7%。<span class="src">来源：论文 Figure 3 与 §3.2。作者按七种精确组合反解出各接口采用率，可交叉验算：Choice = 23.5+18.1+2.6+36.8 = 81.0%。</span></figcaption>
+  </figure>
+
+  <div class="callout">
+    <div class="lab">论文由此给出的设计建议</div>
+    <p>「同类决策模型因此应当同时支持<strong>分类选择、二元判断与评分</strong>，以降低开发者的接入成本。」这句话的分量来自一个反差：<strong>Score 的采用率最低（45.4%），但「评分 / 排序」在决策目的里占 52%</strong>——也就是说，评分类需求很普遍，而能把评分做得顺手的接口供给最少。</p>
+  </div>
+</section>
+
+<!-- ============ 06 目的 ============ -->
+<section id="s06">
+  <h2><span class="num">06 · 六种决策目的</span>Jev 在一件事上被用得最多：判断</h2>
+  <p class="sub">「决策目的」描述的是 Jev 在项目里<em>扮演什么角色</em>，与项目本身是什么领域无关。一个项目可以有多个目的，所以各项占比会重叠。</p>
+
+  <figure id="fig5">
+    <div class="fig-box">
+<svg viewBox="0 0 960 292" role="img" aria-label="六种决策目的的项目占比与每项目目的数量分布">
+<rect x="0" y="0" width="960" height="292" fill="#FFFFFF"/>
+<text x="0.0" y="18.0" font-size="13" fill="#16181D" font-weight="700">A · 六种决策目的：各占多少项目</text>
+<text x="148.0" y="50.0" font-size="12" fill="#333941" text-anchor="end">属性判断</text>
+<rect x="158" y="34" width="500" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="158" y="34" width="481.25" height="22" rx="4" fill="#1F4E86"/>
+<text x="648.2" y="50.0" font-size="12" fill="#333941" font-weight="700">77%</text>
+<text x="148.0" y="84.0" font-size="12" fill="#333941" text-anchor="end">评分 / 排序</text>
+<rect x="158" y="68" width="500" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="158" y="68" width="325" height="22" rx="4" fill="#8FB4DC"/>
+<text x="492.0" y="84.0" font-size="12" fill="#333941" font-weight="700">52%</text>
+<text x="148.0" y="118.0" font-size="12" fill="#333941" text-anchor="end">动作选择</text>
+<rect x="158" y="102" width="500" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="158" y="102" width="193.75" height="22" rx="4" fill="#0B5A50"/>
+<text x="360.8" y="118.0" font-size="12" fill="#333941" font-weight="700">31%</text>
+<text x="148.0" y="152.0" font-size="12" fill="#333941" text-anchor="end">结果判断</text>
+<rect x="158" y="136" width="500" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="158" y="136" width="125" height="22" rx="4" fill="#5A2E8F"/>
+<text x="292.0" y="152.0" font-size="12" fill="#333941" font-weight="700">20%</text>
+<text x="148.0" y="186.0" font-size="12" fill="#333941" text-anchor="end">内容过滤</text>
+<rect x="158" y="170" width="500" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="158" y="170" width="93.75" height="22" rx="4" fill="#B45309"/>
+<text x="260.8" y="186.0" font-size="12" fill="#333941" font-weight="700">15%</text>
+<text x="148.0" y="220.0" font-size="12" fill="#333941" text-anchor="end">模型 / 工具选择</text>
+<rect x="158" y="204" width="500" height="22" rx="4" fill="#F1F0EA"/>
+<rect x="158" y="204" width="81.25" height="22" rx="4" fill="#9F1239"/>
+<text x="248.2" y="220.0" font-size="12" fill="#333941" font-weight="700">13%</text>
+<path d="M826 128L826 108A62 62 0 0 1 884.59 190.27L865.69 183.73A42 42 0 0 0 826 128Z" fill="#C9D8EA"/>
+<text x="889.5" y="126.7" font-size="11.5" fill="#333941" font-weight="700">30.3%</text>
+<text x="889.5" y="139.7" font-size="10" fill="#4A505A">1 个目的</text>
+<path d="M865.69 183.73L884.59 190.27A62 62 0 0 1 789.24 219.93L801.1 203.82A42 42 0 0 0 865.69 183.73Z" fill="#9FBBDB"/>
+<text x="849.2" y="246.5" font-size="11.5" fill="#333941" font-weight="700">29.8%</text>
+<text x="849.2" y="259.5" font-size="10" fill="#4A505A">2 个目的</text>
+<path d="M801.1 203.82L789.24 219.93A62 62 0 0 1 826 108L826 128A42 42 0 0 0 801.1 203.82Z" fill="#1F4E86"/>
+<text x="751.9" y="147.7" font-size="11.5" fill="#333941" text-anchor="end" font-weight="700">39.9%</text>
+<text x="751.9" y="160.7" font-size="10" fill="#4A505A" text-anchor="end">≥3 个目的</text>
+<text x="826.0" y="174.0" font-size="10" fill="#4A505A" text-anchor="middle">n = 2,170</text>
+<text x="0.0" y="252.0" font-size="12" fill="#333941">B · 有明确目的的项目中，69.7% 用 Jev 做两个以上目的——它是被组合使用的，不是被单独调用的。</text>
+</svg>
+    </div>
+    <figcaption><b>图 5 · 六种决策目的与目的多重性。</b>属性判断 77% 一骑绝尘，后面依次是评分/排序 52%、动作选择 31%、结果判断 20%、内容过滤 15%、模型/工具选择 13%。右侧环形揭示的是另一件事：<strong>39.9% 的项目用它做三个以上目的，只有 30.3% 只做一个</strong>——合计 69.7% 的项目在做两个以上判断。<span class="src">来源：论文 Figure 2 与 §3.2。环形三档 30.3 + 29.8 + 39.9 = 100%，其中后两档之和 69.7% 与正文完全一致。</span></figcaption>
+  </figure>
+
+  <p>这个分布读起来像一句设计判词：开发者不是拿 Jev 去替换某个分类器，而是把它当成<strong>系统里的一个通用判断位</strong>——同一处代码里，先问「这段代码有风险吗」，再问「哪块 diff 是证据」，最后问「这个风险算几级」。这三问分别对应 Noul、Choice、Score。</p>
+</section>
+
+<!-- ============ 07 领域×目的 ============ -->
+<section id="s07">
+  <h2><span class="num">07 · 领域 × 目的</span>同一个 Jev，八种活法</h2>
+  <p class="sub">这是全文信息量最大的一张图。论文的总结是：<strong>「Jev 扮演的是一个可复用的判断组件，它的角色随应用输入与下游动作而变。」</strong></p>
+
+  <figure id="fig6">
+    <div class="fig-box">
+<svg viewBox="0 0 960 470" role="img" aria-label="八个领域的决策目的构成，每行合计 100%">
+<rect x="0" y="0" width="960" height="470" fill="#FFFFFF"/>
+<rect x="0" y="12" width="11" height="11" rx="2" fill="#1F4E86"/>
+<text x="16.0" y="22.0" font-size="11" fill="#333941">属性判断</text>
+<rect x="78" y="12" width="11" height="11" rx="2" fill="#8FB4DC"/>
+<text x="94.0" y="22.0" font-size="11" fill="#333941">评分 / 排序</text>
+<rect x="174.15" y="12" width="11" height="11" rx="2" fill="#0B5A50"/>
+<text x="190.2" y="22.0" font-size="11" fill="#333941">动作选择</text>
+<rect x="252.15" y="12" width="11" height="11" rx="2" fill="#B45309"/>
+<text x="268.1" y="22.0" font-size="11" fill="#333941">内容过滤</text>
+<rect x="330.15" y="12" width="11" height="11" rx="2" fill="#5A2E8F"/>
+<text x="346.1" y="22.0" font-size="11" fill="#333941">结果判断</text>
+<rect x="408.15" y="12" width="11" height="11" rx="2" fill="#9F1239"/>
+<text x="424.1" y="22.0" font-size="11" fill="#333941">模型 / 工具选择</text>
+<rect x="0" y="66" width="10" height="10" rx="2" fill="#1F4E86"/>
+<text x="16.0" y="76.0" font-size="12.5" fill="#16181D" font-weight="700">内容与专家任务</text>
+<g style="background-color:#1F4E86"><rect x="250" y="56" width="256.5" height="30" fill="#1F4E86"/>
+<text x="378.2" y="75.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">45%</text>
+</g>
+<rect x="506.5" y="56" width="171" height="30" fill="#8FB4DC"/>
+<text x="592.0" y="75.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">30%</text>
+<g style="background-color:#0B5A50"><rect x="677.5" y="56" width="62.7" height="30" fill="#0B5A50"/>
+</g>
+<rect x="740.2" y="56" width="22.8" height="30" fill="#B45309"/>
+<g style="background-color:#5A2E8F"><rect x="763" y="56" width="45.6" height="30" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="808.6" y="56" width="11.4" height="30" fill="#9F1239"/>
+</g>
+<text x="830.0" y="76.0" font-size="10.5" fill="#333941">属性判断 45%</text>
+<rect x="0" y="112" width="10" height="10" rx="2" fill="#0B5A50"/>
+<text x="16.0" y="122.0" font-size="12.5" fill="#16181D" font-weight="700">搜索与记忆</text>
+<g style="background-color:#1F4E86"><rect x="250" y="102" width="239.4" height="30" fill="#1F4E86"/>
+<text x="369.7" y="121.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">42%</text>
+</g>
+<rect x="489.4" y="102" width="159.6" height="30" fill="#8FB4DC"/>
+<text x="569.2" y="121.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">28%</text>
+<g style="background-color:#0B5A50"><rect x="649" y="102" width="17.1" height="30" fill="#0B5A50"/>
+</g>
+<rect x="666.1" y="102" width="119.7" height="30" fill="#B45309"/>
+<text x="726.0" y="121.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">21%</text>
+<g style="background-color:#5A2E8F"><rect x="785.8" y="102" width="22.8" height="30" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="808.6" y="102" width="11.4" height="30" fill="#9F1239"/>
+</g>
+<text x="830.0" y="122.0" font-size="10.5" fill="#333941">属性判断 42%</text>
+<rect x="0" y="158" width="10" height="10" rx="2" fill="#5A3099"/>
+<text x="16.0" y="168.0" font-size="12.5" fill="#16181D" font-weight="700">软件工程</text>
+<g style="background-color:#1F4E86"><rect x="250" y="148" width="233.7" height="30" fill="#1F4E86"/>
+<text x="366.9" y="167.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">41%</text>
+</g>
+<rect x="483.7" y="148" width="153.9" height="30" fill="#8FB4DC"/>
+<text x="560.6" y="167.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">27%</text>
+<g style="background-color:#0B5A50"><rect x="637.6" y="148" width="51.3" height="30" fill="#0B5A50"/>
+</g>
+<rect x="688.9" y="148" width="28.5" height="30" fill="#B45309"/>
+<g style="background-color:#5A2E8F"><rect x="717.4" y="148" width="68.4" height="30" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="785.8" y="148" width="34.2" height="30" fill="#9F1239"/>
+</g>
+<text x="830.0" y="168.0" font-size="10.5" fill="#333941">属性判断 41%</text>
+<rect x="0" y="204" width="10" height="10" rx="2" fill="#1B5820"/>
+<text x="16.0" y="214.0" font-size="12.5" fill="#16181D" font-weight="700">仿真与控制</text>
+<g style="background-color:#1F4E86"><rect x="250" y="194" width="142.5" height="30" fill="#1F4E86"/>
+<text x="321.2" y="213.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">25%</text>
+</g>
+<rect x="392.5" y="194" width="102.6" height="30" fill="#8FB4DC"/>
+<text x="443.8" y="213.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">18%</text>
+<g style="background-color:#0B5A50"><rect x="495.1" y="194" width="296.4" height="30" fill="#0B5A50"/>
+<text x="643.3" y="213.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">52%</text>
+</g>
+<g style="background-color:#5A2E8F"><rect x="791.5" y="194" width="22.8" height="30" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="814.3" y="194" width="5.7" height="30" fill="#9F1239"/>
+</g>
+<text x="830.0" y="214.0" font-size="10.5" fill="#333941">动作选择 52%</text>
+<rect x="240" y="194" width="4" height="30" rx="2" fill="#B45309"/>
+<rect x="0" y="250" width="10" height="10" rx="2" fill="#8F3F06"/>
+<text x="16.0" y="260.0" font-size="12.5" fill="#16181D" font-weight="700">路由与自动化</text>
+<g style="background-color:#1F4E86"><rect x="250" y="240" width="165.3" height="30" fill="#1F4E86"/>
+<text x="332.6" y="259.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">29%</text>
+</g>
+<rect x="415.3" y="240" width="114" height="30" fill="#8FB4DC"/>
+<text x="472.3" y="259.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">20%</text>
+<g style="background-color:#0B5A50"><rect x="529.3" y="240" width="57" height="30" fill="#0B5A50"/>
+</g>
+<rect x="586.3" y="240" width="22.8" height="30" fill="#B45309"/>
+<g style="background-color:#5A2E8F"><rect x="609.1" y="240" width="57" height="30" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="666.1" y="240" width="153.9" height="30" fill="#9F1239"/>
+<text x="743.0" y="259.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">27%</text>
+</g>
+<text x="830.0" y="260.0" font-size="10.5" fill="#333941">属性判断 29%</text>
+<rect x="0" y="296" width="10" height="10" rx="2" fill="#39485C"/>
+<text x="16.0" y="306.0" font-size="12.5" fill="#16181D" font-weight="700">基础设施及其他</text>
+<g style="background-color:#1F4E86"><rect x="250" y="286" width="239.4" height="30" fill="#1F4E86"/>
+<text x="369.7" y="305.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">42%</text>
+</g>
+<rect x="489.4" y="286" width="199.5" height="30" fill="#8FB4DC"/>
+<text x="589.1" y="305.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">35%</text>
+<g style="background-color:#0B5A50"><rect x="688.9" y="286" width="45.6" height="30" fill="#0B5A50"/>
+</g>
+<rect x="734.5" y="286" width="22.8" height="30" fill="#B45309"/>
+<g style="background-color:#5A2E8F"><rect x="757.3" y="286" width="45.6" height="30" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="802.9" y="286" width="17.1" height="30" fill="#9F1239"/>
+</g>
+<text x="830.0" y="306.0" font-size="10.5" fill="#333941">属性判断 42%</text>
+<rect x="0" y="342" width="10" height="10" rx="2" fill="#A21C6E"/>
+<text x="16.0" y="352.0" font-size="12.5" fill="#16181D" font-weight="700">接口智能体</text>
+<g style="background-color:#1F4E86"><rect x="250" y="332" width="159.6" height="30" fill="#1F4E86"/>
+<text x="329.8" y="351.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">28%</text>
+</g>
+<rect x="409.6" y="332" width="51.3" height="30" fill="#8FB4DC"/>
+<g style="background-color:#0B5A50"><rect x="460.9" y="332" width="267.9" height="30" fill="#0B5A50"/>
+<text x="594.9" y="351.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">47%</text>
+</g>
+<rect x="728.8" y="332" width="28.5" height="30" fill="#B45309"/>
+<g style="background-color:#5A2E8F"><rect x="757.3" y="332" width="51.3" height="30" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="808.6" y="332" width="11.4" height="30" fill="#9F1239"/>
+</g>
+<text x="830.0" y="352.0" font-size="10.5" fill="#333941">动作选择 47%</text>
+<rect x="240" y="332" width="4" height="30" rx="2" fill="#B45309"/>
+<rect x="0" y="388" width="10" height="10" rx="2" fill="#8C1A14"/>
+<text x="16.0" y="398.0" font-size="12.5" fill="#16181D" font-weight="700">安全与治理</text>
+<g style="background-color:#1F4E86"><rect x="250" y="378" width="205.2" height="30" fill="#1F4E86"/>
+<text x="352.6" y="397.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">36%</text>
+</g>
+<rect x="455.2" y="378" width="131.1" height="30" fill="#8FB4DC"/>
+<text x="520.8" y="397.0" font-size="11" fill="#16181D" text-anchor="middle" font-weight="700">23%</text>
+<g style="background-color:#0B5A50"><rect x="586.3" y="378" width="22.8" height="30" fill="#0B5A50"/>
+</g>
+<rect x="609.1" y="378" width="62.7" height="30" fill="#B45309"/>
+<g style="background-color:#5A2E8F"><rect x="671.8" y="378" width="136.8" height="30" fill="#5A2E8F"/>
+<text x="740.2" y="397.0" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">24%</text>
+</g>
+<g style="background-color:#9F1239"><rect x="808.6" y="378" width="11.4" height="30" fill="#9F1239"/>
+</g>
+<text x="830.0" y="398.0" font-size="10.5" fill="#333941">属性判断 36%</text>
+<path d="M250 420H820" stroke="#C9C6BC" stroke-width="1"/>
+<text x="250.0" y="440.0" font-size="10" fill="#4A505A" text-anchor="middle">0%</text>
+<text x="364.0" y="440.0" font-size="10" fill="#4A505A" text-anchor="middle">20%</text>
+<text x="478.0" y="440.0" font-size="10" fill="#4A505A" text-anchor="middle">40%</text>
+<text x="592.0" y="440.0" font-size="10" fill="#4A505A" text-anchor="middle">60%</text>
+<text x="706.0" y="440.0" font-size="10" fill="#4A505A" text-anchor="middle">80%</text>
+<text x="820.0" y="440.0" font-size="10" fill="#4A505A" text-anchor="middle">100%</text>
+<text x="0.0" y="440.0" font-size="10" fill="#8F3F06">◧ 橙色竖条 = 动作选择主导的领域</text>
+</svg>
+    </div>
+    <figcaption><b>图 6 · 八个领域的决策目的构成。</b>每一行合计 100%，是「该领域内所有目的标签的占比」。功能随工作流漂移的幅度很大：仿真与控制里 52% 是动作选择，接口智能体 47%，但搜索与记忆只有 3%；反过来，路由与自动化里 27% 是模型/工具选择，软件工程只有 6%；内容过滤在搜索与记忆里占 21%，结果判断在安全与治理里占 24%。<span class="src">来源：论文 Figure 4（作者从论文原始 SVG 逐段反解并归一化，与正文引用的 52%/47%/27%/6%/21%/24% 六个数字全部吻合）。</span></figcaption>
+  </figure>
+
+  <p>但漂移之下有一条稳定的底线：<strong>8 个领域里有 6 个仍以属性判断为首要目的</strong>。唯二的例外是仿真与控制、接口智能体（图中左侧橙色竖条标记的两行）——只有这两个领域把「选动作」摆在了「做判断」前面。换句话说，<strong>领域塑造的是次要职能，判断始终是基本盘。</strong></p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>领域</th><th style="text-align:right">属性判断</th><th style="text-align:right">评分/排序</th><th style="text-align:right">动作选择</th><th style="text-align:right">内容过滤</th><th style="text-align:right">结果判断</th><th style="text-align:right">模型/工具选择</th><th>首要目的</th></tr></thead>
+    <tbody>
+      <tr><td>内容与专家任务</td><td class="n">45</td><td class="n">30</td><td class="n">11</td><td class="n">4</td><td class="n">8</td><td class="n">2</td><td>属性判断 45%</td></tr>
+      <tr><td>搜索与记忆</td><td class="n">42</td><td class="n">28</td><td class="n">3</td><td class="n">21</td><td class="n">4</td><td class="n">2</td><td>属性判断 42%</td></tr>
+      <tr><td>软件工程</td><td class="n">41</td><td class="n">27</td><td class="n">9</td><td class="n">5</td><td class="n">12</td><td class="n">6</td><td>属性判断 41%</td></tr>
+      <tr><td>仿真与控制</td><td class="n">25</td><td class="n">18</td><td class="n">52</td><td class="n">0</td><td class="n">4</td><td class="n">1</td><td>动作选择 52%</td></tr>
+      <tr><td>路由与自动化</td><td class="n">29</td><td class="n">20</td><td class="n">10</td><td class="n">4</td><td class="n">10</td><td class="n">27</td><td>属性判断 29%</td></tr>
+      <tr><td>基础设施及其他</td><td class="n">42</td><td class="n">35</td><td class="n">8</td><td class="n">4</td><td class="n">8</td><td class="n">3</td><td>属性判断 42%</td></tr>
+      <tr><td>接口智能体</td><td class="n">28</td><td class="n">9</td><td class="n">47</td><td class="n">5</td><td class="n">9</td><td class="n">2</td><td>动作选择 47%</td></tr>
+      <tr><td>安全与治理</td><td class="n">36</td><td class="n">23</td><td class="n">4</td><td class="n">11</td><td class="n">24</td><td class="n">2</td><td>属性判断 36%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>表格每一行合计 100。论文正文明确点出了六个数字（52%、47%、27%、6%、21%、24%），本表全部对齐；其余格子的数值来自对论文原始图的逐段几何反解，四舍五入到整数。</p>
+</section>
+
+<!-- ============ 08 错配 ============ -->
+<section id="s08">
+  <h2><span class="num">08 · 错配</span>19.6% 的项目，吃掉 63.0% 的星</h2>
+  <p class="sub">如果把 GitHub 星数当成「什么方向有价值」的信号，这张图会让你重新掂量一下。</p>
+
+  <figure id="fig7">
+    <div class="fig-box">
+<svg viewBox="0 0 960 436" role="img" aria-label="八个领域的项目占比与星数占比对比">
+<rect x="0" y="0" width="960" height="436" fill="#FFFFFF"/>
+<circle cx="234" cy="16" r="5" fill="#1F4E86"/>
+<text x="246.0" y="20.0" font-size="10.5" fill="#1F4E86" font-weight="700">项目占比</text>
+<circle cx="312" cy="16" r="5" fill="#B45309"/>
+<text x="324.0" y="20.0" font-size="10.5" fill="#8F3F06" font-weight="700">星数占比</text>
+<text x="390.0" y="20.0" font-size="10" fill="#4A505A">线越长 = 供给与关注越脱钩</text>
+<path d="M230 34V410" stroke="#EDEBE4" stroke-width="1"/>
+<text x="230.0" y="426.0" font-size="10" fill="#4A505A" text-anchor="middle">0%</text>
+<path d="M356.67 34V410" stroke="#EDEBE4" stroke-width="1"/>
+<text x="356.7" y="426.0" font-size="10" fill="#4A505A" text-anchor="middle">10%</text>
+<path d="M483.33 34V410" stroke="#EDEBE4" stroke-width="1"/>
+<text x="483.3" y="426.0" font-size="10" fill="#4A505A" text-anchor="middle">20%</text>
+<path d="M610 34V410" stroke="#EDEBE4" stroke-width="1"/>
+<text x="610.0" y="426.0" font-size="10" fill="#4A505A" text-anchor="middle">30%</text>
+<path d="M736.67 34V410" stroke="#EDEBE4" stroke-width="1"/>
+<text x="736.7" y="426.0" font-size="10" fill="#4A505A" text-anchor="middle">40%</text>
+<text x="942.0" y="20.0" font-size="10" fill="#4A505A" text-anchor="end">项目占比</text>
+<text x="942.0" y="38.0" font-size="10" fill="#4A505A" text-anchor="end">星数占比</text>
+<rect x="0" y="52" width="10" height="10" rx="2" fill="#8F3F06"/>
+<text x="16.0" y="61.0" font-size="12" fill="#16181D" font-weight="700">路由与自动化</text>
+<path d="M375.92 58H754.78" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="375.92" cy="58" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="754.78" cy="58" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="54.0" font-size="10.5" fill="#1F4E86" text-anchor="end">11.52%</text>
+<text x="942.0" y="69.0" font-size="10.5" fill="#8F3F06" text-anchor="end">41.43%</text>
+<rect x="0" y="96" width="10" height="10" rx="2" fill="#A21C6E"/>
+<text x="16.0" y="105.0" font-size="12" fill="#16181D" font-weight="700">接口智能体</text>
+<path d="M332.09 102H503.85" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="332.09" cy="102" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="503.85" cy="102" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="98.0" font-size="10.5" fill="#1F4E86" text-anchor="end">8.06%</text>
+<text x="942.0" y="113.0" font-size="10.5" fill="#8F3F06" text-anchor="end">21.62%</text>
+<rect x="0" y="140" width="10" height="10" rx="2" fill="#39485C"/>
+<text x="16.0" y="149.0" font-size="12" fill="#16181D" font-weight="700">基础设施及其他</text>
+<path d="M371.23 146H465.98" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="371.23" cy="146" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="465.98" cy="146" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="142.0" font-size="10.5" fill="#1F4E86" text-anchor="end">11.15%</text>
+<text x="942.0" y="157.0" font-size="10.5" fill="#8F3F06" text-anchor="end">18.63%</text>
+<rect x="0" y="184" width="10" height="10" rx="2" fill="#0B5A50"/>
+<text x="16.0" y="193.0" font-size="12" fill="#16181D" font-weight="700">搜索与记忆</text>
+<path d="M452.43 190H310.94" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="452.43" cy="190" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="310.94" cy="190" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="186.0" font-size="10.5" fill="#1F4E86" text-anchor="end">17.56%</text>
+<text x="942.0" y="201.0" font-size="10.5" fill="#8F3F06" text-anchor="end">6.39%</text>
+<rect x="0" y="228" width="10" height="10" rx="2" fill="#1F4E86"/>
+<text x="16.0" y="237.0" font-size="12" fill="#16181D" font-weight="700">内容与专家任务</text>
+<path d="M455.85 234H298.91" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="455.85" cy="234" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="298.91" cy="234" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="230.0" font-size="10.5" fill="#1F4E86" text-anchor="end">17.83%</text>
+<text x="942.0" y="245.0" font-size="10.5" fill="#8F3F06" text-anchor="end">5.44%</text>
+<rect x="0" y="272" width="10" height="10" rx="2" fill="#8C1A14"/>
+<text x="16.0" y="281.0" font-size="12" fill="#16181D" font-weight="700">安全与治理</text>
+<path d="M332.09 278H274.08" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="332.09" cy="278" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="274.08" cy="278" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="274.0" font-size="10.5" fill="#1F4E86" text-anchor="end">8.06%</text>
+<text x="942.0" y="289.0" font-size="10.5" fill="#8F3F06" text-anchor="end">3.48%</text>
+<rect x="0" y="316" width="10" height="10" rx="2" fill="#5A3099"/>
+<text x="16.0" y="325.0" font-size="12" fill="#16181D" font-weight="700">软件工程</text>
+<path d="M409.74 322H256.09" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="409.74" cy="322" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="256.09" cy="322" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="318.0" font-size="10.5" fill="#1F4E86" text-anchor="end">14.19%</text>
+<text x="942.0" y="333.0" font-size="10.5" fill="#8F3F06" text-anchor="end">2.06%</text>
+<rect x="0" y="360" width="10" height="10" rx="2" fill="#1B5820"/>
+<text x="16.0" y="369.0" font-size="12" fill="#16181D" font-weight="700">仿真与控制</text>
+<path d="M377.06 366H242.03" stroke="#C9C6BC" stroke-width="2.4"/>
+<circle cx="377.06" cy="366" r="6" fill="#1F4E86" stroke="#FFFFFF" stroke-width="1.6"/>
+<circle cx="242.03" cy="366" r="6" fill="#B45309" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="942.0" y="362.0" font-size="10.5" fill="#1F4E86" text-anchor="end">11.61%</text>
+<text x="942.0" y="377.0" font-size="10.5" fill="#8F3F06" text-anchor="end">0.95%</text>
+</svg>
+    </div>
+    <figcaption><b>图 7 · 项目供给 vs 公开关注。</b>每行两个刻度：蓝点 = 该项目占全部项目数的比例，橙点 = 占全部星数的比例。线越长，说明这个领域「做的人不少、但被看见的少」，或者反过来。<strong>路由与自动化 + 接口智能体合计只占 19.6% 的项目，却拿走 63.0% 的星。</strong><span class="src">来源：论文 §3.4 与 Figure 5。作者按 Table 1 重算验证：路由与自动化项目占比 11.52%、星占比 41.43%，均值 364★/项目。</span></figcaption>
+  </figure>
+
+  <p>最能说明问题的是这一组对照：<strong>路由与自动化 250 个项目、平均 364★；仿真与控制 252 个项目、平均 8★</strong>。项目数几乎一模一样（差 0.8%），均值星数差 <strong>45 倍</strong>。</p>
+  <p>同一逻辑也解释了为什么两个「最大」的领域在关注度上是两个「最小」：内容与专家任务 387 个项目、搜索与记忆 381 个项目，均值只有 31★ 和 37★。</p>
+  <div class="callout">
+    <div class="lab">论文自己的限定词，比结论更重要</div>
+    <p>作者特意补了一句：星数衡量的是<strong>整个仓库</strong>获得的兴趣，而且可能集中在少数几个明星项目上。所以这个落差说明的是<strong>可见度不均，而不是需求未被满足</strong>。任何拿星数当「哪个方向更有前途」的论证，都要先接受这个限定。</p>
+  </div>
+</section>
+
+<!-- ============ 09 在野案例 ============ -->
+<section id="s09">
+  <h2><span class="num">09 · 在野案例</span>七条真实代码路径</h2>
+  <p class="sub">论文附录拆了七个真实项目，逐个交代同一件事的三段：<strong>喂给 Jev 什么状态、它回答什么、代码拿这个回答做什么</strong>。论文特别声明：这些图总结的是<em>源码路径</em>，不是录制下来的运行轨迹。右侧色块标出每个项目用到的接口。</p>
+
+  <figure id="fig8">
+    <div class="fig-box">
+<svg viewBox="0 0 960 682" role="img" aria-label="七个真实项目的代码路径：状态、Jev 判断与代码消费">
+<rect x="0" y="0" width="960" height="682" fill="#FFFFFF"/>
+<text x="0.0" y="23.0" font-size="12" fill="#16181D" font-weight="700">B.1 · Jev Ultrafast</text>
+<text x="133.4" y="22.0" font-size="10.5" fill="#4A505A">｜ 接口智能体 / Web 交互</text>
+<rect x="936" y="12" width="20" height="15" rx="4" fill="#1F4E86"/>
+<text x="946.0" y="23.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">C</text>
+<rect x="1" y="30" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="13.0" y="45.0" font-size="9.5" fill="#4A505A" font-weight="700">输入 / 状态</text>
+<text x="13.0" y="61.0" font-size="10" fill="#333941">页面结构化状态：目标、近期动作、带索引的可交互控</text>
+<text x="13.0" y="75.0" font-size="10" fill="#333941">件（标签、当前值、支持操作）</text>
+<rect x="343" y="30" width="274" height="66" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="355.0" y="45.0" font-size="9.5" fill="#8F3F06" font-weight="700">Jev 判断</text>
+<text x="355.0" y="61.0" font-size="10" fill="#333941">Choice 选下一操作（点击 / 键入 / 选择 / 滚动 /</text>
+<text x="355.0" y="75.0" font-size="10" fill="#333941">等待 / 终止）；各操作类型的 target 问题并行发出，</text>
+<text x="355.0" y="89.0" font-size="10" fill="#333941">只取与所选操作兼容的那个</text>
+<rect x="685" y="30" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="697.0" y="45.0" font-size="9.5" fill="#4A505A" font-weight="700">代码如何消费</text>
+<text x="697.0" y="61.0" font-size="10" fill="#333941">校验选择后作用于实时 DOM 元素；键入字段的文本由</text>
+<text x="697.0" y="75.0" font-size="10" fill="#333941">另一个小模型生成</text>
+<path d="M288 63H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M330 63l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M630 63H666" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M672 63l-7 -4.5v9z" fill="#C9C6BC"/>
+<text x="0.0" y="119.0" font-size="12" fill="#16181D" font-weight="700">B.2 · Jev Review</text>
+<text x="113.6" y="118.0" font-size="10.5" fill="#4A505A">｜ 软件工程 / 代码质量</text>
+<rect x="936" y="108" width="20" height="15" rx="4" fill="#B45309"/>
+<text x="946.0" y="119.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">S</text>
+<rect x="912" y="108" width="20" height="15" rx="4" fill="#0B5A50"/>
+<text x="922.0" y="119.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">N</text>
+<rect x="888" y="108" width="20" height="15" rx="4" fill="#1F4E86"/>
+<text x="898.0" y="119.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">C</text>
+<rect x="1" y="126" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="13.0" y="141.0" font-size="9.5" fill="#4A505A" font-weight="700">输入 / 状态</text>
+<text x="13.0" y="157.0" font-size="10" fill="#333941">从 PR 提取的结构化信息：变更文件、单个</text>
+<text x="13.0" y="171.0" font-size="10" fill="#333941">patch hunk、修改或新增的测试</text>
+<rect x="343" y="126" width="274" height="66" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="355.0" y="141.0" font-size="9.5" fill="#8F3F06" font-weight="700">Jev 判断</text>
+<text x="355.0" y="157.0" font-size="10" fill="#333941">Noul 筛查正确性 / 安全 / 可靠性 / 兼容性 / 测试</text>
+<text x="355.0" y="171.0" font-size="10" fill="#333941">覆盖；命中风险后用 Choice 选支撑 diff 块并分类</text>
+<text x="355.0" y="185.0" font-size="10" fill="#333941">失败机制；Score 估严重性</text>
+<rect x="685" y="126" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="697.0" y="141.0" font-size="9.5" fill="#4A505A" font-weight="700">代码如何消费</text>
+<text x="697.0" y="157.0" font-size="10" fill="#333941">组装为审查报告并指向证据；每条关注点是「进一步检</text>
+<text x="697.0" y="171.0" font-size="10" fill="#333941">查的提示」，而不是缺陷的证明</text>
+<path d="M288 159H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M330 159l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M630 159H666" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M672 159l-7 -4.5v9z" fill="#C9C6BC"/>
+<text x="0.0" y="215.0" font-size="12" fill="#16181D" font-weight="700">B.3 · Fast Jev Compaction</text>
+<text x="173.0" y="214.0" font-size="10.5" fill="#4A505A">｜ 搜索与记忆 / 上下文</text>
+<rect x="936" y="204" width="20" height="15" rx="4" fill="#0B5A50"/>
+<text x="946.0" y="215.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">N</text>
+<rect x="1" y="222" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="13.0" y="237.0" font-size="9.5" fill="#4A505A" font-weight="700">输入 / 状态</text>
+<text x="13.0" y="253.0" font-size="10" fill="#333941">当前上下文的紧凑表示；逐个评估符合条件的旧工具交</text>
+<text x="13.0" y="267.0" font-size="10" fill="#333941">互（调用 + 结果）</text>
+<rect x="343" y="222" width="274" height="66" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="355.0" y="237.0" font-size="9.5" fill="#8F3F06" font-weight="700">Jev 判断</text>
+<text x="355.0" y="253.0" font-size="10" fill="#333941">每个交互问两个 Noul——还要不要记住这次调用、还要</text>
+<text x="355.0" y="267.0" font-size="10" fill="#333941">不要完整结果；返回保留概率</text>
+<rect x="685" y="222" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="697.0" y="237.0" font-size="9.5" fill="#4A505A" font-weight="700">代码如何消费</text>
+<text x="697.0" y="253.0" font-size="10" fill="#333941">按阈值转三档：完整保留 / 保留调用并截断结果 / 整</text>
+<text x="697.0" y="267.0" font-size="10" fill="#333941">对移除；存活内容逐字保留，不重写</text>
+<path d="M288 255H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M330 255l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M630 255H666" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M672 255l-7 -4.5v9z" fill="#C9C6BC"/>
+<text x="0.0" y="311.0" font-size="12" fill="#16181D" font-weight="700">B.4 · pi-jev</text>
+<text x="87.2" y="310.0" font-size="10.5" fill="#4A505A">｜ 安全与治理 / 审查与批准</text>
+<rect x="936" y="300" width="20" height="15" rx="4" fill="#B45309"/>
+<text x="946.0" y="311.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">S</text>
+<rect x="912" y="300" width="20" height="15" rx="4" fill="#0B5A50"/>
+<text x="922.0" y="311.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">N</text>
+<rect x="1" y="318" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="13.0" y="333.0" font-size="9.5" fill="#4A505A" font-weight="700">输入 / 状态</text>
+<text x="13.0" y="349.0" font-size="10" fill="#333941">待执行的工具调用：用户请求、工具名、相关参数（如</text>
+<text x="13.0" y="363.0" font-size="10" fill="#333941">shell 命令或文件编辑）</text>
+<rect x="343" y="318" width="274" height="66" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="355.0" y="333.0" font-size="9.5" fill="#8F3F06" font-weight="700">Jev 判断</text>
+<text x="355.0" y="349.0" font-size="10" fill="#333941">Noul 评估破坏性、数据外泄、是否超出请求范围；</text>
+<text x="355.0" y="363.0" font-size="10" fill="#333941">Score 估潜在影响</text>
+<rect x="685" y="318" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="697.0" y="333.0" font-size="9.5" fill="#4A505A" font-weight="700">代码如何消费</text>
+<text x="697.0" y="349.0" font-size="10" fill="#333941">与阈值比较决定是否需关注；默认影子模式（警告但仍</text>
+<text x="697.0" y="363.0" font-size="10" fill="#333941">可运行），强制模式要求运行前确认</text>
+<path d="M288 351H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M330 351l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M630 351H666" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M672 351l-7 -4.5v9z" fill="#C9C6BC"/>
+<text x="0.0" y="407.0" font-size="12" fill="#16181D" font-weight="700">B.5 · jev-router</text>
+<text x="113.6" y="406.0" font-size="10.5" fill="#4A505A">｜ 路由与自动化 / 模型与工具路由</text>
+<rect x="936" y="396" width="20" height="15" rx="4" fill="#1F4E86"/>
+<text x="946.0" y="407.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">C</text>
+<rect x="1" y="414" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="13.0" y="429.0" font-size="9.5" fill="#4A505A" font-weight="700">输入 / 状态</text>
+<text x="13.0" y="445.0" font-size="10" fill="#333941">当前任务、账户可用模型层级、正在使用的模型、用户</text>
+<text x="13.0" y="459.0" font-size="10" fill="#333941">是否显式指定了层级</text>
+<rect x="343" y="414" width="274" height="66" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="355.0" y="429.0" font-size="9.5" fill="#8F3F06" font-weight="700">Jev 判断</text>
+<text x="355.0" y="445.0" font-size="10" fill="#333941">Choice 推荐一个模型层级并给出置信度，说明哪一类</text>
+<text x="355.0" y="459.0" font-size="10" fill="#333941">模型适合该请求</text>
+<rect x="685" y="414" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="697.0" y="429.0" font-size="9.5" fill="#4A505A" font-weight="700">代码如何消费</text>
+<text x="697.0" y="445.0" font-size="10" fill="#333941">先按支持层级校验答案再切换；用户显式选择优先；答</text>
+<text x="697.0" y="459.0" font-size="10" fill="#333941">案无效或缺失则保持当前层级</text>
+<path d="M288 447H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M330 447l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M630 447H666" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M672 447l-7 -4.5v9z" fill="#C9C6BC"/>
+<text x="0.0" y="503.0" font-size="12" fill="#16181D" font-weight="700">B.6 · TypeSafe Mario</text>
+<text x="140.0" y="502.0" font-size="10.5" fill="#4A505A">｜ 仿真与控制 / 游戏与仿真</text>
+<rect x="936" y="492" width="20" height="15" rx="4" fill="#B45309"/>
+<text x="946.0" y="503.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">S</text>
+<rect x="912" y="492" width="20" height="15" rx="4" fill="#0B5A50"/>
+<text x="922.0" y="503.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">N</text>
+<rect x="888" y="492" width="20" height="15" rx="4" fill="#1F4E86"/>
+<text x="898.0" y="503.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">C</text>
+<rect x="1" y="510" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="13.0" y="525.0" font-size="9.5" fill="#4A505A" font-weight="700">输入 / 状态</text>
+<text x="13.0" y="541.0" font-size="10" fill="#333941">遥测与 RAM 转成的结构化状态：位置运动、跳跃轨迹、</text>
+<text x="13.0" y="555.0" font-size="10" fill="#333941">敌人、地形、近期结果、时间；另给一小组合</text>
+<text x="13.0" y="569.0" font-size="10" fill="#333941">法控制器宏</text>
+<rect x="343" y="510" width="274" height="66" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="355.0" y="525.0" font-size="9.5" fill="#8F3F06" font-weight="700">Jev 判断</text>
+<text x="355.0" y="541.0" font-size="10" fill="#333941">Choice 选下一合法宏；Noul 估此刻前跳是否有用；</text>
+<text x="355.0" y="555.0" font-size="10" fill="#333941">Score 评即时危险——同一状态上并行评估</text>
+<rect x="685" y="510" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="697.0" y="525.0" font-size="9.5" fill="#4A505A" font-weight="700">代码如何消费</text>
+<text x="697.0" y="541.0" font-size="10" fill="#333941">仿真器执行该宏若干帧并记录新状态，循环；时序与状</text>
+<text x="697.0" y="555.0" font-size="10" fill="#333941">态提取留在确定性代码</text>
+<path d="M288 543H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M330 543l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M630 543H666" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M672 543l-7 -4.5v9z" fill="#C9C6BC"/>
+<text x="0.0" y="599.0" font-size="12" fill="#16181D" font-weight="700">B.7 · tax-doc-classifier</text>
+<text x="166.4" y="598.0" font-size="10.5" fill="#4A505A">｜ 搜索与记忆 / 分类</text>
+<rect x="936" y="588" width="20" height="15" rx="4" fill="#1F4E86"/>
+<text x="946.0" y="599.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">C</text>
+<rect x="1" y="606" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="13.0" y="621.0" font-size="9.5" fill="#4A505A" font-weight="700">输入 / 状态</text>
+<text x="13.0" y="637.0" font-size="10" fill="#333941">PDF 抽取的页面文本 + 生成的 IRS 表格与附表描述注</text>
+<text x="13.0" y="651.0" font-size="10" fill="#333941">册表；逐页独立分类</text>
+<rect x="343" y="606" width="274" height="66" rx="8" fill="#FDF6EC" stroke="#E8CFA8"/>
+<text x="355.0" y="621.0" font-size="9.5" fill="#8F3F06" font-weight="700">Jev 判断</text>
+<text x="355.0" y="637.0" font-size="10" fill="#333941">Choice 在候选表格与 7 种页面类型上作答并返回选项</text>
+<text x="355.0" y="651.0" font-size="10" fill="#333941">概率；部分表单族用第二次更窄的 Choice 区分主</text>
+<text x="355.0" y="665.0" font-size="10" fill="#333941">表与附表</text>
+<rect x="685" y="606" width="274" height="66" rx="8" fill="#FFFFFF" stroke="#E2DFD7"/>
+<text x="697.0" y="621.0" font-size="9.5" fill="#4A505A" font-weight="700">代码如何消费</text>
+<text x="697.0" y="637.0" font-size="10" fill="#333941">置信度取分类路径上的最小值，阈值由外围程序设定；</text>
+<text x="697.0" y="651.0" font-size="10" fill="#333941">高置信下游接受，低置信暂缓</text>
+<path d="M288 639H324" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M330 639l-7 -4.5v9z" fill="#C9C6BC"/>
+<path d="M630 639H666" stroke="#C9C6BC" stroke-width="1.6"/>
+<path d="M672 639l-7 -4.5v9z" fill="#C9C6BC"/>
+</svg>
+    </div>
+    <figcaption><b>图 8 · 七个项目的「状态 → 判断 → 消费」。</b>注意最右一列——没有任何一个项目把最终决定权交给 Jev：执行、门控、回退、置信阈值全部留在确定性代码里。B.2 甚至写明了「每个关注点是进一步检查的提示，而不是缺陷的证明」。<span class="src">来源：论文附录 B.1–B.7。接口色块：<b>C</b> = Choice，<b>N</b> = Noul，<b>S</b> = Score。</span></figcaption>
+  </figure>
+
+  <div class="g3">
+    <div><div class="k" style="font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--amber-t);text-transform:uppercase">规律一</div>
+      <h4 style="margin-top:8px">Jev 只做判断，不做生成</h4>
+      <p>B.1 里选完操作后，要键入的文本交给另一个小模型；B.3 里 Jev 只估「该不该留」，从不负责写摘要。把生成和判断拆开，是这七个案例的共同前提。</p></div>
+    <div><div class="k" style="font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--amber-t);text-transform:uppercase">规律二</div>
+      <h4 style="margin-top:8px">策略留在确定性代码里</h4>
+      <p>B.3 用阈值把「保留概率」翻译成三档处置；B.4 用模式（影子 / 强制）决定风险信号是否触发确认；B.5 规定用户显式选择优先、答案无效则维持现状。模型给概率，代码给政策。</p></div>
+    <div><div class="k" style="font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--amber-t);text-transform:uppercase">规律三</div>
+      <h4 style="margin-top:8px">输出是信号，不是裁决</h4>
+      <p>B.2 的审查报告明确写着结论是「待查线索」；B.7 用分类路径上的最小置信度做准入，低置信就暂缓。Jev 提供的是可被否决的判断，而否决权在设计上就留给人和代码。</p></div>
+  </div>
+  <p>还有一条附带的工程信号值得记下：<strong>B.6 和 B.7 都出现了「同一状态上并行发多个问题」的用法</strong>——B.6 用 Choice 定动作、用 Noul 和 Score 旁路评估风险与危险度；B.7 用两次 Choice 串成层级分类。接口能并行组合，比接口本身更影响接入的顺手程度。</p>
+</section>
+
+<!-- ============ 10 本地对照 ============ -->
+<section id="s10">
+  <h2><span class="num">10 · 本地对照</span>把 tetris-jev 放回论文的坐标系</h2>
+  <p class="sub">本仓库的俄罗斯方块项目是一个「在野」的 Jev 集成样本，恰好可以拿来当论文结论的一次点验。<span class="mono">（本节为解读者的对照注释，不是论文内容。）</span></p>
+
+  <figure id="fig9">
+    <div class="fig-box">
+<svg viewBox="0 0 960 246" role="img" aria-label="把 tetris-jev 放回论文的坐标系">
+<rect x="0" y="0" width="960" height="246" fill="#FFFFFF"/>
+<path d="M480 8V238" stroke="#E2DFD7" stroke-width="1"/>
+<text x="0.0" y="20.0" font-size="12.5" fill="#16181D" font-weight="700">① 领域 × 主导职能</text>
+<text x="0.0" y="38.0" font-size="10.5" fill="#4A505A">仿真与控制 · 252 个项目 · 均值 8★/项目（全生态最低）</text>
+<g style="background-color:#1F4E86"><rect x="0" y="50" width="116.5" height="32" fill="#1F4E86"/>
+<text x="58.2" y="70.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">25%</text>
+</g>
+<rect x="116.5" y="50" width="83.88" height="32" fill="#8FB4DC"/>
+<text x="158.4" y="70.0" font-size="10.5" fill="#16181D" text-anchor="middle" font-weight="700">18%</text>
+<g style="background-color:#0B5A50"><rect x="200.38" y="50" width="242.32" height="32" fill="#0B5A50"/>
+<text x="321.5" y="70.0" font-size="10.5" fill="#FFFFFF" text-anchor="middle" font-weight="700">52%</text>
+</g>
+<rect x="200.38" y="50" width="242.32" height="32" fill="none" stroke="#B45309" stroke-width="2.5"/>
+<g style="background-color:#5A2E8F"><rect x="442.7" y="50" width="18.64" height="32" fill="#5A2E8F"/>
+</g>
+<g style="background-color:#9F1239"><rect x="461.34" y="50" width="4.66" height="32" fill="#9F1239"/>
+</g>
+<text x="0.0" y="100.0" font-size="10.5" fill="#333941">该领域的决策目的标签里，动作选择占 52%——八个领域中最高。</text>
+<text x="0.0" y="118.0" font-size="10.5" fill="#8F3F06">橙色描边 = 本项目主要落入的用途</text>
+<text x="0.0" y="144.0" font-size="10" fill="#4A505A">论文原话：「Action selection accounts for 52% of purpose labels in</text>
+<text x="0.0" y="159.0" font-size="10" fill="#4A505A">Simulation &amp; Control」，反映 Jev 被用于引导动作与交互。（§3.3）</text>
+<text x="504.0" y="20.0" font-size="12.5" fill="#16181D" font-weight="700">② 接口组合</text>
+<text x="504.0" y="38.0" font-size="10.5" fill="#4A505A">Choice 81.0% · Noul 72.2% · Score 45.4%</text>
+<rect x="504" y="50" width="30" height="32" rx="6" fill="#1F4E86"/>
+<text x="519.0" y="70.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="700">C</text>
+<text x="542.0" y="70.0" font-size="10.5" fill="#333941" font-weight="700">Choice</text>
+<rect x="602.65" y="50" width="30" height="32" rx="6" fill="#0B5A50"/>
+<text x="617.6" y="70.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="700">N</text>
+<text x="640.6" y="70.0" font-size="10.5" fill="#333941" font-weight="700">Noul</text>
+<rect x="689.75" y="50" width="30" height="32" rx="6" fill="#B45309"/>
+<text x="704.8" y="70.0" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="700">S</text>
+<text x="727.8" y="70.0" font-size="10.5" fill="#333941" font-weight="700">Score</text>
+<text x="504.0" y="100.0" font-size="10.5" fill="#333941">本项目三个接口同时在用：落点判断用 Choice，</text>
+<text x="504.0" y="115.0" font-size="10.5" fill="#333941">board_health / next_piece_fits 用 Noul，strategy 用 Score。</text>
+<text x="504.0" y="144.0" font-size="10" fill="#4A505A">论文原话：36.8% 的项目三接口齐用，是七种组合里最高的一档；</text>
+<text x="504.0" y="159.0" font-size="10" fill="#4A505A">因此同类模型应同时支持选择、二元判断与评分。（§3.2）</text>
+<rect x="0" y="186" width="960" height="50" rx="8" fill="#FCFCFB" stroke="#E2DFD7"/>
+<text x="16.0" y="206.0" font-size="10.5" fill="#333941" font-weight="700">三条跨案例规律，本地项目逐条对上：</text>
+<text x="16.0" y="224.0" font-size="10.5" fill="#4A505A">① Jev 只做判断不做生成 · ② 阈值、门控与回退一律留在确定性代码里 · ③ 输出是信号而非裁决</text>
+</svg>
+    </div>
+    <figcaption><b>图 9 · 定位。</b>左：本项目落在「仿真与控制」领域，而该领域 52% 的目的标签是动作选择，为八个领域中最高。右：它同时使用三个接口——落点判断用 Choice，<code>board_health</code> / <code>next_piece_fits</code> 用 Noul，<code>strategy</code> 用 Score，正落在「三接口齐用」那 36.8% 里。<span class="src">领域与目的构成来自论文 Figure 4 反解；项目自身的接口用法来自本仓库 README 与 engine.js 的问题构造逻辑。</span></figcaption>
+  </figure>
+
+  <p>更值得看的是本地实测数据如何印证论文第九节的「规律一」。项目保留了失败的第一版做对照：</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>指标</th><th>v1 · 逐步动作循环（每按一键问一次）</th><th>v2 · 落点决策（每块问一次）</th></tr></thead>
+    <tbody>
+      <tr><td>置信度</td><td class="n">9–23%</td><td class="n">76–90%</td></tr>
+      <tr><td>60 秒产出</td><td class="n">74 次调用，0 消行，112 分</td><td class="n">69 块落定，消 12 行，3,094 分</td></tr>
+      <tr><td>单次延迟</td><td class="n">约 400 ms</td><td class="n">约 240–400 ms</td></tr>
+      <tr><td>与经典启发式一致率</td><td class="n">无法衡量</td><td class="n">67%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>v1 的失败方式恰好是「让模型做它不擅长的那部分」：把「下一步按哪个键」这种需要规划的问题丢给 Jev，概率摊平成 9–23%，决策瘫痪。v2 把枚举与模拟全部收回代码，只让 Jev 在<strong>已经算好后果的候选落点之间做价值判断</strong>，置信度升到 76–90%。这与图 8 里的 B.6（TypeSafe Mario）是同一种形状：<strong>代码枚举合法动作、Jev 在合法集合里选，动作的合法性由代码保证，不由模型保证。</strong></p>
+  <div class="note">
+    <div class="lab">一处值得注意的差异</div>
+    <p>论文的稳健性研究发现 Jev <strong>对选项名称敏感</strong>——「有效输出类型本身并不保证正确决策」（Sun and Xu, 2026）。这个项目里对应的现象是：候选落点的<strong>词化质量</strong>直接决定判断质量。v1 的失败不只是「问题问错了」，也是「状态没翻译成模型能读的词」。换句话说，词化本身就是接口设计的一部分。</p>
+  </div>
+  <p>另外，本项目用 Laya（开源对标模型，421M 双向编码器，Apache 2.0，<span class="mono">choice / score / noul</span> 同协议）做了同协议的第二后端以便离线对照——这正好落在论文 §3.2 的建议上：<strong>同类决策模型应当同时提供三类接口</strong>，这样既有调用方才可能零改动地换模型。本地实测也给出了这条建议的另一面：Laya 基座在本项目的棋局表示上没有判别力（输出接近均匀分布，棋力只有同环境 Jev 的百分之一量级），根因是<strong>缺任务语义先验</strong>而非接口不兼容——协议一致解决的是「接得上」，不解决「判断得准」。</p>
+</section>
+
+<!-- ============ 11 结论 ============ -->
+<section id="s11">
+  <h2><span class="num">11 · 结论</span>五条判断、三条边界、四件可执行的事</h2>
+  <h3>五条判断</h3>
+  <ol>
+    <li><strong>Jev 被当作通用判断位来用，而不是某个领域的模型。</strong>属性判断覆盖 77% 的项目，69.7% 的项目在做两个以上不同类型的判断。</li>
+    <li><strong>接口可组合，比接口本身更决定接入成本。</strong>36.8% 的项目三接口齐用，是占比最高的一档；而 Score 以 45.4% 的采用率对应着 52% 的评分类需求，是最大的功能供给缺口。</li>
+    <li><strong>领域塑造职能，但不改变基本盘。</strong>动作选择的占比从搜索与记忆的 3% 到仿真与控制的 52%，但 8 个领域里仍有 6 个以属性判断为首要目的。</li>
+    <li><strong>公开关注度不能代表使用结构。</strong>19.6% 的项目拿走 63.0% 的星；项目数几乎相同的两个领域，均值星数差 45 倍。</li>
+    <li><strong>模型给判断，代码给政策。</strong>七个在野案例无一例外把执行、门控、阈值与回退留在确定性代码中。</li>
+  </ol>
+  <h3>论文自陈的三条边界</h3>
+  <ul>
+    <li><strong>时间快照</strong>：结论只对 2026-09-22 这一刻成立，生态在变，项目数、使用模式与关注分布都可能漂移。</li>
+    <li><strong>只覆盖公开仓库</strong>：私有仓库与商业应用可能呈现不同模式，本文不构成采用情况的完整图景。</li>
+    <li><strong>星数是代理指标</strong>：它衡量仓库整体可见度，可能被少数明星项目主导，不等于需求。</li>
+  </ul>
+  <h3>四件可执行的事</h3>
+  <div class="g2">
+    <div>
+      <h4>如果你在设计同类决策模型</h4>
+      <ul>
+        <li>三接口缺一不可，尤其别把 Score 当可选项。</li>
+        <li>支持「同一状态上并行发多个问题」，并让调用方只消费相关分支的答案。</li>
+        <li>把输出做成概率 + 置信度，让下游能用阈值做政策，而不是替你下结论。</li>
+      </ul>
+    </div>
+    <div>
+      <h4>如果你要评估这类模型</h4>
+      <ul>
+        <li>评测集要覆盖两层：反复出现的决策目的，以及这些决策所处的应用情境。</li>
+        <li>按目的稀缺度采样，而不是按当前热度——否则会系统性高估路由类场景。</li>
+        <li>把「对选项措辞的敏感性」当作独立评测项，有效输出类型不等于正确决策。</li>
+      </ul>
+    </div>
+    <div>
+      <h4>如果你在读生态信号</h4>
+      <ul>
+        <li>用星数判断「什么有用」会系统性高估路由与接口智能体，低估分类、仿真与内容任务。</li>
+        <li>要看规模就看项目数，要看可见度才看星数，两者在同一年份已经明显脱钩。</li>
+      </ul>
+    </div>
+    <div>
+      <h4>如果你在做一个集成</h4>
+      <ul>
+        <li>先划清边界：模型只负责判断，枚举、模拟、执行、阈值、回退全在代码里。</li>
+        <li>把「模型答错的代价」写进设计：默认影子模式、低置信暂缓、无效答案维持现状。</li>
+        <li>把状态词化当成接口来设计——它决定模型能看见什么。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 来源 ============ -->
+<section id="s12">
+  <h2><span class="num">12 · 来源</span>数据出处与本文档的推导路径</h2>
+  <h3>一手来源</h3>
+  <ul>
+    <li><strong>论文</strong>：Guoming Ling、Muen Xue（中山大学）、Zijian Ye（中国香港中文大学），<em>Jev in the Wild: A Data-Driven Analysis of the Jev Model’s Functionality, Applications and Ecosystem</em>，<span class="mono">arXiv:2609.30216v1 [cs.SE]</span>，2026-09-24。数据快照 2026-09-22，覆盖 2,170 个公开 GitHub 项目。</li>
+    <li><strong>论文图表</strong>：Figure 1（增长）、Figure 2（决策目的）、Figure 3（接口组合）、Figure 4（领域×目的）、Figure 5（供给与关注）、Table 1（8 大类 18 子类分布）、附录 B.1–B.7（七个案例）。</li>
+  </ul>
+  <h3>本文档数据的推导路径</h3>
+  <ul>
+    <li><strong>Fig 1 / 图 1、Fig 7 / 图 7</strong>：由 Table 1 逐子类相加重新聚合，星数汇总值与论文 §3.1、§3.4 的比例逐一吻合。</li>
+    <li><strong>Fig 3 / 图 3</strong>：终值 1,865 与 43,750★ 取自论文正文；逐日点位由论文 Figure 1 的原始 SVG 反解，误差约 ±2%，图中已标注。</li>
+    <li><strong>Fig 4 / 图 4、Fig 5 / 图 5、Fig 6 / 图 6</strong>：由论文原始 SVG 的几何逐段反解并做行内归一化。校验方式是把反解结果与论文正文明确给出的数字对照——Choice 81.0%、Noul 72.2%、Score 45.4%、36.8% 三接口齐用、69.7% 多用、52%、47%、27%、6%、21%、24% 全部对上。</li>
+    <li><strong>Fig 8 / 图 8</strong>：逐字改写自附录 B.1–B.7 的 <span class="mono">Task and Input / Jev Decision / Use of the Decision</span> 三段结构。</li>
+    <li><strong>Fig 9 / 图 9</strong>：解读者的对照注释，数据分别来自论文 Figure 4 与本仓库 README、<span class="mono">engine.js</span>、<span class="mono">CONTEXT.md</span>。</li>
+  </ul>
+  <h3>论文引用的相关研究（按主题分组）</h3>
+  <ul>
+    <li><strong>Jev 的应用与评测（§A.2）</strong>：服务编排中把自然语言请求转成结构化需求（Li et al., 2026b/2026a）；Jev-Mem 用 Jev 做记忆组织与检索控制（Jiang et al., 2026）；REFLEX 用 Jev 做动作选择并以置信度回退到更强 LLM（Wu and Lim, 2026）；另有碰撞叙事标注（Rafe and Das, 2026）、科学计算前的语义关系选择（Deng et al., 2026）、从元数据估计视频质量（Robitza, 2026）。评测显示准确率与校准随任务变化，把不确定个案路由到更强 LLM 可改善精度-成本平衡；<strong>对选项名称敏感</strong>（Sun and Xu, 2026）。</li>
+    <li><strong>通用决策模型（§A.3）</strong>：Universal classifiers（Laurer et al., 2023）、UniMC（Wang et al., 2023）、Universal Discriminator（Xu et al., 2023）、GLiNER（Zaratiana et al., 2024）、GLiClass（Stepanov et al., 2025）、GLiNER2（Zaratiana et al., 2025）、UniEval（Zhong et al., 2022）、this-that-model-1.0（Cheng et al., 2026，单次前向返回多问题概率）、Visual Jev（Yu and Yao, 2026）。论文对自身工作的定位是：这些研究关注模型设计与预测质量，本文互补地考察 Jev 如何在公开生态里被集成进应用。</li>
+    <li><strong>分类方法谱系（§A.1）</strong>：监督式文本分类（Devlin et al., 2019；Liu et al., 2019；He et al., 2020）→ 零样本方法（Yin et al., 2019；Halder et al., 2020；Clarke et al., 2023）→ 生成式语言模型（Brown et al., 2020；Puri and Catanzaro, 2019）→ 指令微调（Wei et al., 2022；Sanh et al., 2021）。Jev 定位在这条链的空隙上：监督分类器换标签集就要重训，LLM 零样本泛化好但自回归生成带来延迟与成本。</li>
+  </ul>
+  <h3>证据强度说明</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>结论</th><th>证据强度</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>生态规模与增长（2,170 / 1,865 / 305 / 43,750）</td><td>大样本观察</td><td>全量公开仓库普查，非抽样；但受 GitHub 检索召回率与纳入判定影响</td></tr>
+      <tr><td>领域与目的分布、接口采用率</td><td>大样本观察 + 模型标注</td><td>标注由 LLM 智能体完成，关键标签经第二个智能体独立复核</td></tr>
+      <tr><td>「功能随工作流而变」</td><td>大样本观察 + 案例佐证</td><td>统计分布与附录七个源码级案例互相印证</td></tr>
+      <tr><td>「注意度与项目量脱钩」</td><td>大样本观察</td><td>数据可靠，但星数作为「需求代理」本身有偏，论文已显式限定</td></tr>
+      <tr><td>本地项目对照（第 10 节）</td><td>单一案例 + 自报实测</td><td>仅一个仓库、一组固定种子对照；作示例，不作普适结论</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>本报告为 <span class="mono">arXiv:2609.30216v1</span> 的解读性重构。所有图表由作者根据论文正文、Table 1 与论文原始 SVG 逐值反解后重绘，比例均做行内与总计两道自洽性校验。原始论文章节编号在文中以 <span class="mono">§x.y</span> 标注。</p>
+  <p>零依赖单文件 · 离线可用 · 不含任何外部请求。</p>
+</footer>
+
+</body>
+</html>
