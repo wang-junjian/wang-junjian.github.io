@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="REA 6.4.0 编排层实测：36 个依赖零反编译引擎，170 个 MCP 工具零引擎下仅 18 项 target-free 可用，nib 解码得 780 节点 421 边；五元证据模型与 fail-closed 契约让结论可复核，另附三条被实测推翻的判断。">
+<meta name="keywords" content="rea, agent-orchestration, provider-routing, evidence-model, fail-closed, reverse-engineering">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-12">
+<title>REA 工作原理 · 复刻 macOS 应用〔便笺〕</title>
+<style>
+:root{
+  --paper:#FBFAF7; --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --line:#E4E1D8; --line2:#CFCABD; --card:#FFFFFF;
+  --amber:#B45309; --amber-t:#8F3F06;
+  --green:#2E7D32; --green-t:#1B5820;
+  --blue:#2F6FB0;  --blue-t:#1F5288;
+  --teal:#0F766E;  --teal-t:#0A5750;
+  --purple:#6D3FB5;--purple-t:#5A3099;
+  --red:#B3261E;   --red-t:#8C1D17;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);overflow-wrap:break-word;
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-feature-settings:"kern" 1,"liga" 1;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+
+nav{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.95);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;gap:4px;overflow-x:auto;padding:9px 28px;scrollbar-width:none}
+nav .wrap::-webkit-scrollbar{display:none}
+nav a{flex:0 0 auto;font-size:12.5px;color:var(--ink3);text-decoration:none;padding:4px 9px;border-radius:6px;white-space:nowrap}
+nav a:hover{background:#F0EDE5;color:var(--ink)}
+nav a.on{background:#EFE9DC;color:var(--amber-t);font-weight:650}
+
+header{padding:58px 0 32px;border-bottom:1px solid var(--line)}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber-t);margin:0 0 15px}
+h1{font-size:41px;line-height:1.16;letter-spacing:-.022em;margin:0 0 16px;font-weight:770}
+.sub{font-size:19px;line-height:1.55;color:var(--ink2);margin:0 0 20px;font-weight:500;letter-spacing:-.008em}
+.lede{font-size:16.5px;line-height:1.72;color:var(--ink2);margin:0 0 24px;max-width:840px}
+.meta{display:flex;flex-wrap:wrap;gap:7px 22px;font-size:13px;color:var(--ink3)}
+.meta span b{color:var(--ink2);font-weight:620}
+
+section{padding:54px 0 0;scroll-margin-top:62px}
+h2{font-size:27px;line-height:1.28;letter-spacing:-.014em;margin:0 0 6px;font-weight:720;display:flex;gap:12px;align-items:baseline}
+h2 .num{font-size:12.5px;font-weight:800;color:var(--amber-t);font-variant-numeric:tabular-nums;flex:0 0 auto;padding-top:4px;letter-spacing:.04em}
+.sect-sub{font-size:15px;color:var(--ink3);margin:0 0 22px;padding-left:34px;line-height:1.6}
+h3{font-size:18.5px;margin:36px 0 12px;font-weight:700;letter-spacing:-.008em}
+h4{font-size:15px;margin:22px 0 8px;font-weight:700;letter-spacing:.01em}
+p{margin:0 0 15px}
+ul,ol{margin:0 0 15px;padding-left:22px}
+li{margin:0 0 7px}
+li::marker{color:var(--ink3)}
+strong{font-weight:700}
+a.ref{color:var(--blue-t);text-decoration:none;border-bottom:1px solid #BFD0E4}
+code{font-family:var(--mono);font-size:.875em;background:#F1EEE6;padding:1.5px 5px;border-radius:4px;color:#2B3038;overflow-wrap:anywhere}
+
+.tbl{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.8px}
+.tbl th,.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);border-bottom:1.5px solid var(--line2);white-space:nowrap}
+.tbl td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl td.mono{font-family:var(--mono);font-size:12.2px;overflow-wrap:anywhere}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:#F8F6F0}
+.tbl caption{caption-side:top;text-align:left;font-size:12.5px;color:var(--ink3);padding:0 0 8px}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g2>*,.g3>*{min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.card h4{margin:0 0 9px}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.card.is-yes{border-top:3px solid var(--green)}
+.card.is-no{border-top:3px solid var(--red)}
+
+.verdict{background:#FFFCF5;border:1px solid #EFE3CC;border-left:3px solid var(--amber);border-radius:9px;padding:16px 19px;margin:22px 0}
+.verdict .vh{font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--amber-t);margin:0 0 8px}
+.verdict p:last-child{margin-bottom:0}
+.verdict.warn{background:#FDF6F5;border-color:#F0D9D6;border-left-color:var(--red)}
+.verdict.warn .vh{color:var(--red-t)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}
+.stats>*{min-width:0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.stat .v{font-size:25px;font-weight:760;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2;color:var(--ink)}
+.stat .k{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.45}
+.stat.accent .v{color:var(--amber-t)}
+
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
+.tag.g{background:#E8F3E9;color:var(--green-t)}
+.tag.r{background:#FBE9E7;color:var(--red-t)}
+.tag.b{background:#E8F0F9;color:var(--blue-t)}
+.tag.a{background:#FCF1E0;color:var(--amber-t)}
+.tag.t{background:#E4F2F0;color:var(--teal-t)}
+.tag.p{background:#F0EAF9;color:var(--purple-t)}
+.tag.n{background:#EEECE5;color:var(--ink2)}
+
+figure{margin:24px 0;min-width:0}
+.fig-box{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 8px;min-width:0}
+figure svg{display:block;min-width:600px;width:100%;height:auto}
+figcaption{font-size:12.8px;color:var(--ink3);margin-top:9px;line-height:1.62}
+figcaption b{color:var(--ink2);font-weight:620}
+
+pre{background:#F7F5EF;border:1px solid var(--line);border-radius:9px;padding:14px 16px;overflow-x:auto;margin:16px 0;font-size:12.6px;line-height:1.68}
+pre code{background:none;padding:0;font-size:1em;color:#2B3038}
+
+.claims{counter-reset:c;list-style:none;padding:0;margin:22px 0}
+.claims>li{counter-increment:c;position:relative;padding:15px 0 15px 46px;border-top:1px solid var(--line)}
+.claims>li:last-child{border-bottom:1px solid var(--line)}
+.claims>li::before{content:counter(c,decimal-leading-zero);position:absolute;left:0;top:16px;font-size:12px;font-weight:800;color:var(--amber-t);font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.claims .claim{font-weight:650;font-size:15.5px;letter-spacing:-.006em;line-height:1.58}
+.claims .ev{display:block;font-size:13.2px;color:var(--ink3);margin-top:6px;line-height:1.64}
+.claims .ev code{font-size:12.4px}
+
+.ledger{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:18px 0}
+.ledger .row{display:grid;grid-template-columns:190px 1fr;border-bottom:1px solid var(--line);font-size:13.5px}
+.ledger .row:last-child{border-bottom:none}
+.ledger .row>div{padding:9px 14px}
+.ledger .row>div:first-child{background:#F8F6F0;font-family:var(--mono);font-size:12.2px;color:var(--ink2);border-right:1px solid var(--line)}
+
+footer{margin-top:74px;padding:26px 0 54px;border-top:1px solid var(--line);font-size:13px;color:var(--ink3);line-height:1.7}
+footer b{color:var(--ink2);font-weight:620}
+
+@media (max-width:860px){
+  .stats{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .wrap{padding:0 18px}
+  nav .wrap{padding:9px 18px}
+  .g2{grid-template-columns:1fr}
+  table{display:block;overflow-x:auto}
+  h1{font-size:29px}
+  .sub{font-size:16.5px}
+  .lede{font-size:15.5px}
+  section{padding-top:42px}
+  h2{font-size:22px}
+  .sect-sub{padding-left:0}
+  .ledger .row{grid-template-columns:1fr}
+  .ledger .row>div:first-child{border-right:none;border-bottom:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a href="#s00">摘要</a>
+  <a href="#s01">定位</a>
+  <a href="#s02">分层</a>
+  <a href="#s03">生命周期</a>
+  <a href="#s04">Provider</a>
+  <a href="#s05">引擎边界</a>
+  <a href="#s06">产物图</a>
+  <a href="#s07">证据模型</a>
+  <a href="#s08">双接口</a>
+  <a href="#s09">复刻契约</a>
+  <a href="#s10">进程与工程</a>
+  <a href="#s11">失效与更正</a>
+  <a href="#s12">正确用法</a>
+  <a href="#s13">结论</a>
+  <a href="#s14">附录</a>
+</div></nav>
+
+<header><div class="wrap">
+  <p class="kicker">机制解剖 · 实践复盘</p>
+  <h1>REA 工作原理</h1>
+  <p class="sub">编排、路由与证据：一个分析编排层的内部机制，以及它在零引擎环境下的真实边界</p>
+  <p class="lede">这篇文档不讲"REA 能做什么"，讲"它为什么是这样运作的"。所有结论来自一次完整实践：安装 REA 6.4.0 → 读源码分层与依赖 → 用它逆向 <code>/System/Applications/Stickies.app</code> → 落到一份可运行的 HTML 单页应用。文中每条机制判断都挂命令输出或源码路径；另有三条我一度写进交付物、后来被实测推翻的判断，单列一章。</p>
+  <div class="meta">
+    <span>实测时间 <b>2026-10-12</b></span>
+    <span>版本 <b>rea-agents 6.4.0</b>（npm 最新）</span>
+    <span>分析目标 <b>Stickies.app</b>（SIP 保护 · universal Mach-O）</span>
+    <span>引擎环境 <b>零原生引擎</b></span>
+    <span>样本规模 <b>2,957 文件 / 2,444 提交</b></span>
+  </div>
+</div></header>
+
+<main class="wrap">
+<section id="s00">
+<h2><span class="num">00</span>摘要：十二条核心论断</h2>
+<p class="sect-sub">每条都是可证伪的机制判断，后面各章逐一展开。证据标记见表末说明。</p>
+
+<div class="stats">
+  <div class="stat accent"><div class="v">36</div><div class="k">运行时依赖<br>其中反编译引擎 <b>0</b> 个</div></div>
+  <div class="stat"><div class="v">18</div><div class="k">零引擎可用操作<br>（target-free，全部可用）</div></div>
+  <div class="stat"><div class="v">170</div><div class="k">MCP 工具<br>（CLI 侧 129 个子命令）</div></div>
+  <div class="stat"><div class="v">780</div><div class="k">单次 nib 解码节点<br>421 条边</div></div>
+</div>
+
+<ol class="claims">
+  <li><span class="claim">REA 自己不产出分析知识。</span><span class="ev">它把"知识"外包给 provider，自身只负责调度、约束与存档。证据：<code>package.json</code> 的 36 个运行时依赖里，<b>没有任何原生反编译引擎</b>；唯一带分析语义的依赖是 <code>evmole</code>（EVM 字节码，纯 WASM 可内联）。 <span class="tag n">源码</span></span></li>
+
+  <li><span class="claim">它的调度单位是 provider，不是工具。</span><span class="ev">170 个 MCP 工具只是 provider 能力的投影面；引擎（Ghidra/Hopper/IDA/JEB）本身也只是 provider 的一种实现。证据：官方架构图把 13 个 provider 与 <code>src/server/</code>（仅做请求转译）分列为不同层。 <span class="tag n">源码</span></span></li>
+
+  <li><span class="claim">provider 选择是确定性的，且失败即报错不猜测。</span><span class="ev">注册表按排序取候选、命中即用、无模糊回退。实测对 <code>Stickies.app</code> 调 <code>rea inspect</code>，直接返回 <code>provider_unavailable</code> 并逐条列出四个引擎各自的不可用原因。 <span class="tag n">实测</span></span></li>
+
+  <li><span class="claim">能力面天然分两层，且可以在零引擎下完全运行。</span><span class="ev"><code>rea capabilities --json</code> 返回 18 项 target-free 操作，本机零引擎环境下 <b>18/18 全部 available</b>。这条"纯净子集"是它可裁剪性的来源。 <span class="tag n">实测</span></span></li>
+
+  <li><span class="claim">"操作可用"不等于"对任意目标可用"——这是两套不同的可用性。</span><span class="ev"><code>inspect_asset_catalog</code> 在能力目录里是 <code>available: true</code>，但真拿 <code>Assets.car</code> 去调，返回 <code>target_unavailable / unsupported binary format</code>。能力声明管"操作存不存在"，目标准入管"这个输入能不能读"。 <span class="tag n">实测</span></span></li>
+
+  <li><span class="claim">它用一张"产物图"统一所有目标类型。</span><span class="ev">nib、JavaScript 应用、.NET 程序集、Mach-O、APK 都归一到 <code>nodes + edges + kind</code> 的同一结构。实测 <code>decode-interface-builder</code> 对 3 个 nib 产出 780 节点 / 421 边。 <span class="tag n">实测</span> <span class="tag n">源码</span></span></li>
+
+  <li><span class="claim">它真正可移植的资产是证据模型，不是分析算法。</span><span class="ev">输出结构固定为 <code>observations / hypotheses / contradictions / unexplored_branches / next_probes</code>，每份证据带稳定 ID 与 <code>authority</code> 分级。换掉引擎，这套口径不变。 <span class="tag n">实测</span></span></li>
+
+  <li><span class="claim">复刻不是附带功能，是一等公民。</span><span class="ev">仓库里有独立的义务台账服务、覆盖度服务、9 阶段一致性契约，以及 <code>docs/reconstruction-obligation-ledgers.md</code> 与 <code>docs/reconstruction-readiness.md</code>，并有 CI 脚本 <code>verify-reconstruction-readiness.mjs</code>。 <span class="tag n">源码</span></span></li>
+
+  <li><span class="claim">它的判定是 fail-closed：不合格一律不聚合为通过。</span><span class="ev">契约明确规定 <code>fail</code>、<code>unknown</code>、<code>unsupported</code>、<code>truncated</code>、<code>skipped</code> <b>永不聚合为 pass</b>；每阶段与每项检查必须<b>恰好出现一次</b>并链接到证据。 <span class="tag n">源码</span></span></li>
+
+  <li><span class="claim">CLI 与 MCP 是同一内核的两个薄适配器，能力等价。</span><span class="ev">官方架构图里 <code>scripts/rea.mjs</code> 只是 dispatcher，把请求路由到 <code>src/cli.ts</code>（one-shot）或 <code>src/main.ts</code>（MCP stdio），两者共用 <code>src/application/</code> 与 <code>src/composition/</code>。所以未激活 MCP 不构成能力损失。 <span class="tag n">源码</span> <span class="tag n">实测</span></span></li>
+
+  <li><span class="claim">它的价值上限由你装的 provider 决定。</span><span class="ev">这是"编排层"定位的必然代价——工具再多，反汇编深度仍取决于你装了 Ghidra 还是 Hopper。反过来也成立：不装引擎时它退化成一套诚实、可复现的静态产物分析器，而非什么都做不了的空壳。 <span class="tag n">推断</span></span></li>
+
+  <li><span class="claim">它把"分析失败"与"环境损坏"分开归因。</span><span class="ev">9 阶段契约里 <code>diagnose-environment</code> 的必需证明是"把损坏的运行时与分析失败分开、检测版本偏差、恢复后 revision 变化"。多数工具会把两者混成一个"运行失败"。 <span class="tag n">源码</span></span></li>
+</ol>
+
+<div class="verdict">
+  <p class="vh">怎么读这篇文档</p>
+  <p>01—02 章讲<strong>静态形态</strong>（它由什么构成）；03—05 章讲<strong>运行时机制</strong>（一次调用如何在内部流转、边界在哪）；06—09 章讲<strong>数据契约</strong>（产物图、证据模型、双接口、复刻契约）；10—12 章讲<strong>工程与用法</strong>（进程、失效模式、正确姿势）。第 11 章专门收录三条被实测推翻的判断——如果你只想看最有信息量的一章，看它。</p>
+</div>
+</section>
+
+<section id="s01">
+<h2><span class="num">01</span>定位判定：它为什么不是反编译器</h2>
+<p class="sect-sub">先把最容易误判的一点钉死，后面所有机制都建立在它之上。</p>
+
+<p>第一次看到 REA 的能力清单，最自然的理解是"一个 AI 版的反编译器"。但这个理解会立刻导致一连串错误的预期：为什么装完它还是"什么都反不了"？为什么 <code>doctor</code> 退出码是 1？为什么 170 个工具里绝大多数在零引擎环境下用不了？</p>
+
+<p>正确答案是：<strong>REA 是分析编排层（analysis orchestration layer），不是分析引擎</strong>。它把"产生分析知识"这件事整体外包给 provider，自己只做三件事——<strong>把请求路由到合适的 provider</strong>、<strong>把能力边界与限制声明清楚</strong>、<strong>把观测结果封成可复现的证据</strong>。</p>
+
+<h3>证据一：依赖审计——36 个运行时依赖，零引擎</h3>
+
+<p>这是最直接的判据。一个真正的反编译器必须依赖反编译算法；如果依赖树里一个都没有，它在结构上就不可能是反编译器。</p>
+
+<figure id="f01">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 430" role="img" aria-label="REA 36 个运行时依赖按职责分类的条形图，证明无原生引擎">
+    <line x1="230" y1="44" x2="830" y2="44" stroke="#CFCABD" stroke-width="1"/>
+    <line x1="230" y1="38" x2="230" y2="46" stroke="#CFCABD" stroke-width="1"/>
+    <line x1="401" y1="38" x2="401" y2="46" stroke="#CFCABD" stroke-width="1"/>
+    <line x1="573" y1="38" x2="573" y2="46" stroke="#CFCABD" stroke-width="1"/>
+    <line x1="744" y1="38" x2="744" y2="46" stroke="#CFCABD" stroke-width="1"/>
+    <text x="230" y="30" text-anchor="middle" font-size="11" fill="#4A505A">0</text>
+    <text x="401" y="30" text-anchor="middle" font-size="11" fill="#4A505A">2</text>
+    <text x="573" y="30" text-anchor="middle" font-size="11" fill="#4A505A">4</text>
+    <text x="744" y="30" text-anchor="middle" font-size="11" fill="#4A505A">6</text>
+
+    <text x="210" y="83" text-anchor="end" font-size="13" fill="#333941">结构化文本解析</text>
+    <rect x="230" y="70" width="600" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="838" y="83" font-size="12" font-weight="700" fill="#333941">7</text>
+
+    <text x="210" y="113" text-anchor="end" font-size="13" fill="#333941">通用工具</text>
+    <rect x="230" y="100" width="600" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="838" y="113" font-size="12" font-weight="700" fill="#333941">7</text>
+
+    <text x="210" y="143" text-anchor="end" font-size="13" fill="#333941">终端与进程</text>
+    <rect x="230" y="130" width="514" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="752" y="143" font-size="12" font-weight="700" fill="#333941">6</text>
+
+    <text x="210" y="173" text-anchor="end" font-size="13" fill="#333941">Schema 与校验</text>
+    <rect x="230" y="160" width="343" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="581" y="173" font-size="12" font-weight="700" fill="#333941">4</text>
+
+    <text x="210" y="203" text-anchor="end" font-size="13" fill="#333941">配置与清单</text>
+    <rect x="230" y="190" width="257" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="495" y="203" font-size="12" font-weight="700" fill="#333941">3</text>
+
+    <text x="210" y="233" text-anchor="end" font-size="13" fill="#333941">归档与打包</text>
+    <rect x="230" y="220" width="171" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="409" y="233" font-size="12" font-weight="700" fill="#333941">2</text>
+
+    <text x="210" y="263" text-anchor="end" font-size="13" fill="#333941">浏览器与网络</text>
+    <rect x="230" y="250" width="171" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="409" y="263" font-size="12" font-weight="700" fill="#333941">2</text>
+
+    <text x="210" y="293" text-anchor="end" font-size="13" fill="#333941">MCP 协议</text>
+    <rect x="230" y="280" width="171" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="409" y="293" font-size="12" font-weight="700" fill="#333941">2</text>
+
+    <text x="210" y="323" text-anchor="end" font-size="13" fill="#333941">日志与诊断</text>
+    <rect x="230" y="310" width="86" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="324" y="323" font-size="12" font-weight="700" fill="#333941">1</text>
+
+    <text x="210" y="353" text-anchor="end" font-size="13" fill="#333941">版本控制</text>
+    <rect x="230" y="340" width="86" height="18" rx="3" fill="#A8B8C9"/>
+    <text x="324" y="353" font-size="12" font-weight="700" fill="#333941">1</text>
+
+    <text x="210" y="383" text-anchor="end" font-size="13" font-weight="700" fill="#8F3F06">字节码分析</text>
+    <rect x="230" y="370" width="86" height="18" rx="3" fill="#B45309"/>
+    <text x="324" y="383" font-size="12" font-weight="700" fill="#8F3F06">1 · evmole</text>
+  </svg>
+  </div>
+  <figcaption><b>图 1</b> · REA 的 36 个运行时依赖按职责分类。整棵依赖树里<b>没有任何原生反编译引擎</b>：没有 Ghidra 绑定、没有 Capstone/LLVM、没有 IDA SDK。唯一带分析语义的是琥珀色的 <code>evmole</code>——EVM 字节码反编译器，且是纯 WebAssembly 实现，可内联进进程而不需要外部可执行文件。这个细节恰好体现了架构偏好：<b>能内联的就内联，需要外部引擎的一律交给用户自备</b>。（数据来源：<code>package.json</code> dependencies 字段，36 项全列）</figcaption>
+</figure>
+
+<table class="tbl">
+  <caption>表 1 · 36 个运行时依赖的完整归属（实测取自 <code>package.json</code>）</caption>
+  <thead><tr><th>职责类别</th><th class="n">数量</th><th>代表包</th><th>与"分析能力"的关系</th></tr></thead>
+  <tbody>
+    <tr><td>结构化文本解析</td><td class="n">7</td><td class="mono">@babel/parser, @babel/types, parse5, @xmldom/xmldom, jsonc-parser, lossless-json, smol-toml</td><td>把各种源码/标记/BLOB 解析成 AST 或 DOM。<b>是解析器，不是反编译器</b>——只做语法还原，不做语义恢复</td></tr>
+    <tr><td>通用工具</td><td class="n">7</td><td class="mono">@clack/prompts, canonicalize, diff, ignore, incur, write-file-atomic, @jridgewell/trace-mapping</td><td>CLI 交互、确定性序列化、结果比对、原子落盘、源码映射</td></tr>
+    <tr><td>终端与进程</td><td class="n">6</td><td class="mono">@lydell/node-pty, @xterm/headless, @xterm/addon-serialize, cross-spawn, stream-chain, stream-json</td><td>为"自有子进程"提供终端仿真与结构化流——是<b>运行被测程序</b>的基础设施</td></tr>
+    <tr><td>Schema 与校验</td><td class="n">4</td><td class="mono">ajv, ajv-formats, zod, semver</td><td>输入契约与版本约束的运行时校验，是"确定性"的前提</td></tr>
+    <tr><td>配置与清单</td><td class="n">3</td><td class="mono">yaml, plist, har-schema</td><td>读客户端配置、Apple plist、HTTP 归档</td></tr>
+    <tr><td>归档与打包</td><td class="n">2</td><td class="mono">@zip.js/zip.js, @electron/asar</td><td>解包 zip / ASAR，属产物层</td></tr>
+    <tr><td>浏览器与网络</td><td class="n">2</td><td class="mono">playwright-core, ws</td><td>CDP/Playwright 驱动真实浏览器做动态观测</td></tr>
+    <tr><td>MCP 协议</td><td class="n">2</td><td class="mono">@modelcontextprotocol/client, @modelcontextprotocol/server</td><td>对外接口层的 SDK</td></tr>
+    <tr><td>日志与诊断</td><td class="n">1</td><td class="mono">pino</td><td>结构化日志</td></tr>
+    <tr><td>版本控制</td><td class="n">1</td><td class="mono">isomorphic-git</td><td>纯 JS 的 git 客户端——用于分发 bundled skill</td></tr>
+    <tr><td><b>字节码分析</b></td><td class="n"><b>1</b></td><td class="mono"><b>evmole</b></td><td><b>全树唯一的分析型引擎</b>，且限定在 EVM 域、以 WASM 形式内联</td></tr>
+  </tbody>
+</table>
+
+<h3>证据二：官方架构图把"引擎"和"调度"分到不同层</h3>
+
+<p>仓库的 <code>docs/architecture.mermaid</code> 用 11 个 subgraph 描述了自己的构成。其中 <code>src/server/</code> 的标注是 <b>「MCP request translation」</b>（MCP 请求转译），而所有引擎——Ghidra、Hopper、IDA、JEB、pwntools、EVM、Binwalk——都落在独立的 <code>Provider Layers</code> 里，并且各自的标注都在强调<b>适配</b>而非<b>实现</b>：</p>
+
+<pre><code>Provider Layers
+├─ src/ghidra/   Ghidra discovery, profile &amp; function analysis
+│                snapshot, Unix/Windows transport, bounded lifecycle
+├─ src/hopper/   Hopper launch &amp; Unix-socket protocol
+│                BridgeLauncher, HopperClient, protocol
+├─ src/ida/      Upstream MCP contract adaptation
+│                live GUI binding or owned headless database
+├─ src/native/pwntools/ + pwndbg/
+│                BYO offline ELF/core adapters
+│                unchanged upstream parsers, ABI structures
+├─ src/evm/      unchanged EVMole/WASM in bounded owned worker
+└─ ... (共 13 个)</code></pre>
+
+<p>注意几个措辞：「<b>adaptation</b>」（适配）、「<b>BYO</b>」（bring your own）、「<b>unchanged upstream</b>」（上游未改动）。REA 在架构文档里明确承认这些能力不是它实现的：<code>src/ida/</code> 是"上游 MCP 契约的适配"，<code>pwntools/pwndbg</code> 是"BYO 离线适配器，上游解析器/ABI 结构/映射 API 均未改动"。</p>
+
+<div class="verdict">
+  <p class="vh">判据</p>
+  <p>如果一个项目<b>自认</b>它的核心分析组件是"适配"和"未改动的上游"，那么它的原创性必然在别处。REA 的原创性在三处：<b>provider 路由</b>、<b>能力边界声明</b>、<b>证据模型</b>。后面 03—07 章就是逐个拆这三样。</p>
+</div>
+
+<h3>证据三：实测报错自证了边界</h3>
+
+<p>最干脆的证据来自一次真实调用。用 REA 的"正规入口"分析一个 macOS 应用：</p>
+
+<pre><code>$ rea inspect /System/Applications/Stickies.app
+error: provider_unavailable
+  operation = current_document
+  ghidra : not_configured
+  ghidra : architecture_unsupported   ← v1 无法强制 universal Mach-O 的架构
+  hopper : executable_missing
+  ida    : not_configured</code></pre>
+
+<p>它没有尝试"降级用别的方式凑一个结果"，没有返回半个分析，也没有含糊地报"分析失败"。它做的是：<b>列出所有候选 provider，逐个说明为什么用不了</b>。这正是"编排层"的自证——当没有可用的执行者时，编排者唯一诚实的动作就是报告"没有执行者"。</p>
+
+<h3>反过来：它也不是"空壳"</h3>
+
+<p>把 REA 简化成"只是个包装层"同样是误判。零引擎环境下它依然能完成实质工作——18 项 target-free 操作中有 <code>decode_interface_builder</code>（解 nib）、<code>inspect_keyed_archive</code>（解 keyed archive）、<code>inspect_plist</code>、<code>inspect_macho</code>、<code>list_architectures</code>、<code>demangle_swift</code>、<code>trace_dylib_resolution</code> 等。这些不是"包装"，是它自己实现的静态解析能力（<code>src/domain/apple/interfaceBuilderGraph.ts</code>、<code>src/domain/artifactGraph.ts</code> 等）。</p>
+
+<p>所以准确的定位是：<strong>REA = 自研的静态产物分析内核 + 对第三方引擎的统一编排 + 一套证据契约</strong>。三者权重随你安装了什么而变。</p>
+
+<div class="g2">
+  <div class="card is-no">
+    <h4>它不是</h4>
+    <ul>
+      <li><b>不是反编译器</b>——依赖树里零引擎，核心能力靠外部 provider</li>
+      <li><b>不是分析算法库</b>——不实现反汇编/反编译/符号恢复算法</li>
+      <li><b>不是规则引擎 / 特征库</b>——没有静态规则集，判定来自证据而非模式匹配</li>
+      <li><b>不是一次性脚本集合</b>——有会话、身份、账本、缓存等状态设施</li>
+    </ul>
+  </div>
+  <div class="card is-yes">
+    <h4>它是</h4>
+    <ul>
+      <li><b>是调度层</b>——把请求按 target 与 operation 路由到唯一合适的 provider</li>
+      <li><b>是约束层</b>——每项能力都声明自己的可见限制（<code>exact visible limits</code>）</li>
+      <li><b>是存档层</b>——把观测封成带稳定 ID 与 authority 的可复现证据</li>
+      <li><b>是编排层</b>——把多个 provider 的产出组织成可评估的完整调查</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<section id="s02">
+<h2><span class="num">02</span>分层架构：依赖为什么必须向内流动</h2>
+<p class="sect-sub">官方架构图给出 11 个层次。理解层间依赖方向，才能理解为什么"换个引擎"不会牵动其他部分。</p>
+
+<p>仓库的 <code>docs/architecture.mermaid</code> 是理解 REA 结构最好的入口。它把系统切成 11 个 subgraph，并且给出了层间连线。把连线关系提炼出来，依赖方向非常干净：</p>
+
+<pre><code>DISPATCH (scripts/rea.mjs)  →  CLI (src/cli.ts)  |  MAIN (src/main.ts)
+MAIN  →  CONFIG  |  SERVER  |  APP
+CLI   →  APP
+MAIN  →  COMPOSITION     CLI → COMPOSITION     SERVER → COMPOSITION</code></pre>
+
+<p>关键点在于 <b>Composition 层被三个入口同时依赖，而 Composition 自己不依赖任何入口</b>。这是典型的依赖倒置：入口层薄，装配层重，能力层（provider）只被装配层引用。</p>
+
+<figure id="f02">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 580" role="img" aria-label="REA 八层架构栈，依赖向内流动">
+    <rect x="90" y="70" width="4" height="44" fill="#B45309"/>
+    <rect x="94" y="70" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="97" font-size="15" font-weight="700" fill="#16181D">入口层</text>
+    <text x="768" y="97" text-anchor="end" font-size="11.5" fill="#4A505A">scripts/rea.mjs · src/cli.ts · src/main.ts</text>
+
+    <rect x="90" y="126" width="4" height="44" fill="#B45309"/>
+    <rect x="94" y="126" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="153" font-size="15" font-weight="700" fill="#16181D">组合层</text>
+    <text x="768" y="153" text-anchor="end" font-size="11.5" fill="#4A505A">src/composition/  typed provider &amp; session factories</text>
+
+    <rect x="90" y="182" width="4" height="44" fill="#2F6FB0"/>
+    <rect x="94" y="182" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="209" font-size="15" font-weight="700" fill="#16181D">适配器层</text>
+    <text x="768" y="209" text-anchor="end" font-size="11.5" fill="#4A505A">src/server/ · hopper_bridge.py · ReaGhidraBridge.java</text>
+
+    <rect x="90" y="238" width="4" height="44" fill="#2F6FB0"/>
+    <rect x="94" y="238" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="265" font-size="15" font-weight="700" fill="#16181D">应用层</text>
+    <text x="768" y="265" text-anchor="end" font-size="11.5" fill="#4A505A">src/application/  Router · Registry · EvidenceLedger</text>
+
+    <rect x="90" y="294" width="4" height="44" fill="#6D3FB5"/>
+    <rect x="94" y="294" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="321" font-size="15" font-weight="700" fill="#16181D">Provider 层</text>
+    <text x="768" y="321" text-anchor="end" font-size="11.5" fill="#4A505A">src/ghidra/ hopper/ ida/ jeb/ browser/ dotnet/ … 共 13 个</text>
+
+    <rect x="90" y="350" width="4" height="44" fill="#6D3FB5"/>
+    <rect x="94" y="350" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="377" font-size="15" font-weight="700" fill="#16181D">进程基础层</text>
+    <text x="768" y="377" text-anchor="end" font-size="11.5" fill="#4A505A">src/process/  owned groups · private roots · deadlines</text>
+
+    <rect x="90" y="406" width="4" height="44" fill="#2E7D32"/>
+    <rect x="94" y="406" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="433" font-size="15" font-weight="700" fill="#16181D">契约层</text>
+    <text x="768" y="433" text-anchor="end" font-size="11.5" fill="#4A505A">src/contracts/  caller-visible schemas</text>
+
+    <rect x="90" y="462" width="4" height="44" fill="#2E7D32"/>
+    <rect x="94" y="462" width="696" height="44" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="114" y="489" font-size="15" font-weight="700" fill="#16181D">领域层</text>
+    <text x="768" y="489" text-anchor="end" font-size="11.5" fill="#4A505A">src/domain/  pure side-effect-free modules</text>
+
+    <line x1="60" y1="72" x2="60" y2="500" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M60,506 L54,494 L66,494 Z" fill="#CFCABD"/>
+    <text x="46" y="290" text-anchor="middle" font-size="11.5" font-weight="700" fill="#4A505A" transform="rotate(-90 46 290)">依赖向内</text>
+  </svg>
+  </div>
+  <figcaption><b>图 2</b> · REA 的八层结构（另有三层未收入：配置层 <code>src/config/</code> 为横切关注点、测试 <code>tests/</code>、评估 <code>src/evaluation/</code>）。层号自上而下递增，<b>依赖只向内流动</b>：入口层依赖应用层，应用层依赖契约与领域层，领域层不依赖任何其它层。<b>provider 层不在任何入口的直接依赖路径上</b>——它只被组合层装配。这正是"换引擎不牵动其它部分"的结构保证。（数据来源：<code>docs/architecture.mermaid</code>）</figcaption>
+</figure>
+
+<h3>三件关键装置</h3>
+
+<p>官方架构图在应用层单独点名了三个装置。它们是理解 REA 运行时行为的钥匙：</p>
+
+<div class="ledger">
+  <div class="row"><div>SessionProviderRouter<br>+ BinarySession</div><div><b>每个目标一个不可变深绑定。</b>一旦选定 provider 处理某个二进制目标，整条会话链路都绑定在它上面，中途不切换。标注还提到「disjoint auxiliary routing」——辅助能力（如符号 demangle）走独立的、不相交的路由，不污染主绑定。</div></div>
+  <div class="row"><div>AnalysisProviderRegistry</div><div><b>排序的深候选 + 确定性选择、无回退。</b>候选按序排列，选中即定，不因失败而模糊降级。这就是 <code>provider_unavailable</code> 里那份"逐条列出为什么用不了"的候选清单的来源。</div></div>
+  <div class="row"><div>EvidenceLedger<br>+ Unknown ownership</div><div><b>证据账本 + 未知归属。</b>仓库里有 <code>EvidenceLedger.residualUnknown.test.ts</code>——"残留未知"是被<b>单独测试</b>的一等概念，而不是遗漏。这与第 07 章的失败哲学直接相关。</div></div>
+</div>
+
+<h3>Provider 层的真实规模</h3>
+
+<p>官方图列了 13 个 provider subgraph。按文件数看它们的权重差异很大——这个分布本身就是一种表态：</p>
+
+<table class="tbl">
+  <caption>表 2 · Provider 目录规模（按 <code>git tree</code> 递归统计的文件数，实测）</caption>
+  <thead><tr><th>Provider</th><th class="n">文件数</th><th>性质</th><th>引擎依赖</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">src/browser/</td><td class="n">113</td><td>CDP / Playwright 动态观测</td><td><span class="tag b">内联</span> 需真实浏览器</td></tr>
+    <tr><td class="mono">src/ghidra/</td><td class="n">60</td><td>反汇编 / 伪代码 / 引用 / CFG</td><td><span class="tag p">外部</span> Ghidra 自备</td></tr>
+    <tr><td class="mono">src/process/</td><td class="n">59</td><td>自有进程组、私有根、时限</td><td><span class="tag n">无</span> 基础层</td></tr>
+    <tr><td class="mono">src/artifacts/</td><td class="n">58</td><td>产物库存与抽取、格式读取</td><td><span class="tag g">自研</span> 无需外部</td></tr>
+    <tr><td class="mono">src/native/</td><td class="n">55</td><td>pwntools/pwndbg BYO 适配</td><td><span class="tag p">外部</span> 上游未改动</td></tr>
+    <tr><td class="mono">src/dotnet/</td><td class="n">34</td><td>.NET 静态元数据（PE/CLI）</td><td><span class="tag g">自研</span> 静态解析</td></tr>
+    <tr><td class="mono">src/hopper/</td><td class="n">29</td><td>Hopper 启动 + Unix socket 协议</td><td><span class="tag p">外部</span> Hopper 自备</td></tr>
+    <tr><td class="mono">src/ida/</td><td class="n">23</td><td>上游 ida-pro-mcp 契约适配</td><td><span class="tag p">外部</span> 上游生态</td></tr>
+    <tr><td class="mono">src/javascript/</td><td class="n">23</td><td>sourceMap 编解码、堆限制进程</td><td><span class="tag g">自研</span> 固定上游 codec</td></tr>
+    <tr><td class="mono">src/firmware/</td><td class="n">10</td><td>Binwalk / Unblob 适配</td><td><span class="tag p">外部</span> 自带进程</td></tr>
+    <tr><td class="mono">src/evm/</td><td class="n">10</td><td>EVMole/WASM 受限 worker</td><td><span class="tag g">内联</span> WASM</td></tr>
+    <tr><td class="mono">src/android/</td><td class="n">8</td><td>静态 APK 适配、pin 住 JADX</td><td><span class="tag p">外部</span> 再分发</td></tr>
+    <tr><td class="mono">src/inspector/</td><td class="n">8</td><td>被动 V8 Inspector 发现与捕获</td><td><span class="tag b">内联</span> 运行时</td></tr>
+    <tr><td class="mono">src/reference/</td><td class="n">8</td><td>参考源文件读取</td><td><span class="tag n">无</span> 纯 IO</td></tr>
+    <tr><td class="mono">src/jeb/</td><td class="n">5</td><td>JEB 适配</td><td><span class="tag p">外部</span> 商业许可</td></tr>
+  </tbody>
+</table>
+
+<div class="verdict">
+  <p class="vh">一个值得注意的分布</p>
+  <p>四个"外部引擎"provider（ghidra 60 / hopper 29 / ida 23 / jeb 5）合计 117 个文件，而对应的"自研产物分析"能力（artifacts 58 + dotnet 34 + javascript 23 + android 8 + inspector 8）合计 131 个文件。<b>它花在"自己解析产物"上的代码量，并不少于花在"适配别人引擎"上的。</b>这与"只是个包装层"的印象正好相反。</p>
+  <p>另注意 Ghidra（60）远超 Hopper（29）与 JEB（5）——因为 Ghidra 开源、可 headless 自动化，而 Hopper/JEB 是商业软件、需要图形界面或商业许可。<b>provider 的权重分布，实际上由"可自动化程度"决定，而不是由"引擎强弱"决定。</b></p>
+</div>
+</section>
+<section id="s03">
+<h2><span class="num">03</span>一次分析的完整生命周期</h2>
+<p class="sect-sub">从请求进入到证据封存，中间发生八件事。其中"run 分配先于 provider 启动"是最容易被忽略、却最能说明设计意图的一步。</p>
+
+<p>把 CLI 与 MCP 两条入口合起来看，一次分析请求的流转可以切成八段。这段流程不是我从文档猜的——它由三处交叉确认：官方架构图的层间连线、<code>docs/mcp-contracts.md</code> 里对 <code>binary_session</code> 的逐字段规定，以及实测的 <code>provider_unavailable</code> 报错结构。</p>
+
+<figure id="f03">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 430" role="img" aria-label="REA 一次分析请求的八段生命周期管道">
+    <rect x="40" y="70" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="56" y="92" font-size="11" font-weight="800" fill="#8F3F06">01</text>
+    <text x="56" y="113" font-size="14" font-weight="700" fill="#16181D">请求进入</text>
+    <text x="56" y="133" font-size="11" fill="#4A505A">CLI one-shot / MCP stdio</text>
+
+    <path d="M245,110 L258,110" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M265,110 L257,105 L257,115 Z" fill="#CFCABD"/>
+
+    <rect x="265" y="70" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="281" y="92" font-size="11" font-weight="800" fill="#8F3F06">02</text>
+    <text x="281" y="113" font-size="14" font-weight="700" fill="#16181D">会话身份</text>
+    <text x="281" y="133" font-size="11" fill="#4A505A">binary_session 协商</text>
+
+    <path d="M470,110 L483,110" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M490,110 L482,105 L482,115 Z" fill="#CFCABD"/>
+
+    <rect x="490" y="70" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="506" y="92" font-size="11" font-weight="800" fill="#8F3F06">03</text>
+    <text x="506" y="113" font-size="14" font-weight="700" fill="#16181D">目标解析</text>
+    <text x="506" y="133" font-size="11" fill="#4A505A">二进制 · 架构 · 配置文件</text>
+
+    <path d="M695,110 L708,110" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M715,110 L707,105 L707,115 Z" fill="#CFCABD"/>
+
+    <rect x="715" y="70" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="731" y="92" font-size="11" font-weight="800" fill="#8F3F06">04</text>
+    <text x="731" y="113" font-size="14" font-weight="700" fill="#16181D">Provider 选择</text>
+    <text x="731" y="133" font-size="11" fill="#4A505A">确定性选取 · 无回退</text>
+
+    <path d="M817,150 L817,212" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M817,220 L812,210 L822,210 Z" fill="#CFCABD"/>
+
+    <rect x="715" y="230" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="731" y="252" font-size="11" font-weight="800" fill="#8F3F06">05</text>
+    <text x="731" y="273" font-size="14" font-weight="700" fill="#16181D">run 分配</text>
+    <text x="731" y="293" font-size="11" fill="#4A505A">run_id 先于启动</text>
+
+    <path d="M715,270 L702,270" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M695,270 L703,265 L703,275 Z" fill="#CFCABD"/>
+
+    <rect x="490" y="230" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="506" y="252" font-size="11" font-weight="800" fill="#8F3F06">06</text>
+    <text x="506" y="273" font-size="14" font-weight="700" fill="#16181D">能力裁剪</text>
+    <text x="506" y="293" font-size="11" fill="#4A505A">按组给出可用性</text>
+
+    <path d="M490,270 L477,270" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M470,270 L478,265 L478,275 Z" fill="#CFCABD"/>
+
+    <rect x="265" y="230" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="281" y="252" font-size="11" font-weight="800" fill="#8F3F06">07</text>
+    <text x="281" y="273" font-size="14" font-weight="700" fill="#16181D">执行与观测</text>
+    <text x="281" y="293" font-size="11" fill="#4A505A">自有进程 · lineage</text>
+
+    <path d="M265,270 L252,270" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M245,270 L253,265 L253,275 Z" fill="#CFCABD"/>
+
+    <rect x="40" y="230" width="205" height="80" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="56" y="252" font-size="11" font-weight="800" fill="#8F3F06">08</text>
+    <text x="56" y="273" font-size="14" font-weight="700" fill="#16181D">证据封存</text>
+    <text x="56" y="293" font-size="11" fill="#4A505A">evidence_id · authority</text>
+
+    <path d="M367,310 L367,336 M137,310 L137,336" stroke="#B3261E" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <path d="M367,344 L362,334 L372,334 Z" fill="#B3261E"/>
+    <path d="M137,344 L132,334 L142,334 Z" fill="#B3261E"/>
+    <line x1="137" y1="350" x2="367" y2="350" stroke="#B3261E" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="480" y="378" text-anchor="middle" font-size="12" font-weight="700" fill="#8C1D17">失败不回退：选定 provider 运行失败后永不被自动替换</text>
+    <text x="480" y="400" text-anchor="middle" font-size="11.5" fill="#4A505A">fail-closed —— unknown 与 fail 显式保留，永不聚合为 pass</text>
+  </svg>
+  </div>
+  <figcaption><b>图 3</b> · 一次分析请求的八段流转。第 04 段（provider 选择）与第 05 段（run 分配）的先后顺序是契约明文规定的：<b>每次成功的目标切换都必须在任何 provider 启动之前分配 <code>analysis_run.run_id</code></b>。红色部分标出失败路径的关键性质——它不尝试替代方案，而是把失败类型化后如实返回。（依据：<code>docs/mcp-contracts.md</code>、<code>docs/architecture.mermaid</code>、实测 <code>provider_unavailable</code> 输出）</figcaption>
+</figure>
+
+<h3>逐段说明</h3>
+
+<table class="tbl">
+  <caption>表 3 · 八段的职责与契约依据</caption>
+  <thead><tr><th class="n">段</th><th>名称</th><th>发生什么</th><th>依据</th></tr></thead>
+  <tbody>
+    <tr><td class="n">01</td><td>请求进入</td><td><code>scripts/rea.mjs</code> 作为 dispatcher 把请求路由到 CLI（one-shot）或 MCP stdio server。两条路径共用同一个内核。</td><td class="mono">architecture.mermaid</td></tr>
+    <tr><td class="n">02</td><td>会话身份</td><td><code>binary_session</code> 报告活动 package、server、SDK 与协商后的协议细节。这是后续一切权限与能力判定的基线。可选传入 <code>expected_package_version</code> / <code>expected_catalog_digest</code> / <code>expected_server_path</code> 与调用方预期做比对。</td><td class="mono">mcp-contracts.md</td></tr>
+    <tr><td class="n">03</td><td>目标解析</td><td>解析出实际二进制（对 <code>.app</code> 而言是 <code>Contents/MacOS/</code> 下的可执行文件）与架构信息。<code>BinaryTargetResolver</code> / <code>AppBundleExecutable</code> 负责这一层。</td><td class="mono">src/application/</td></tr>
+    <tr><td class="n">04</td><td>Provider 选择</td><td>先做 target-free 发现（按 provider ID 排序、报告 host 可用性与 <code>unknown</code> 目标支持情况、<b>不创建 analysis client</b>），再按确定性策略选取。选中即绑定，见第 04 章。</td><td class="mono">mcp-contracts.md</td></tr>
+    <tr><td class="n">05</td><td>run 分配</td><td>分配 <code>analysis_run.run_id</code>。<b>这一步必须先于 provider 启动</b>——保证任何后续失败都能归因到一次可标识的运行，而不是"某个说不清的进程崩了"。</td><td class="mono">mcp-contracts.md</td></tr>
+    <tr><td class="n">06</td><td>能力裁剪</td><td>按组给出当前可调用操作，每组携带 surface、availability、reason、remediation、default-mode 状态、modes 与 client 需求。</td><td class="mono">mcp-contracts.md</td></tr>
+    <tr><td class="n">07</td><td>执行与观测</td><td>provider 在自己的进程中执行。<code>process_lineage</code> 在动态 provider 启动前是 <code>not_observed</code>，启动后转为 <code>snapshots</code>，逐条记录 launcher PID、父 PID、进程组与后代；无法重新验证所有权时记为 <code>unavailable</code> 并附原因。</td><td class="mono">mcp-contracts.md</td></tr>
+    <tr><td class="n">08</td><td>证据封存</td><td>观测归一化为 <code>normalized_result</code>，写入 EvidenceLedger，分配稳定 <code>evidence_id</code> 与 <code>authority</code>。详见第 07 章。</td><td class="mono">实测 + src/domain/evidence.ts</td></tr>
+  </tbody>
+</table>
+
+<div class="verdict">
+  <p class="vh">第 05 段为什么值得单独说</p>
+  <p>把 run_id 的分配放在 provider 启动之前，是一个很小的实现决策，但它决定了三件事：<b>①</b> 失败的归因粒度——是"这次 run 没成"而不是"进程挂了"；<b>②</b> 重放能力——有了稳定 run 标识，同一次调查才可以被确定性重放；<b>③</b> 所有权审计——<code>process_lineage</code> 的每条观测挂在 run 上，进程泄漏才有归属可查。</p>
+  <p>配套的是第 07 段的 <code>verified</code> / <code>unavailable</code> 二态：<b>它不把"没能验证所有权"当成"没有所有权"</b>，而是标成 <code>unavailable</code> 并说明原因。这与第 09 章的 fail-closed 是同一种价值观。</p>
+</div>
+
+<h3>一个反向证据：目录是不变的</h3>
+
+<p>契约文档里有一条容易被读漏、但很能说明问题：</p>
+
+<pre><code>tools/list returns the complete canonical tool inventory,
+including tools that are currently unavailable.
+
+Opening or closing a target or observing a provider health
+transition leaves that catalog unchanged and does not emit
+notifications/tools/list_changed.</code></pre>
+
+<p>也就是说：<strong>打开一个引擎、或引擎从故障中恢复，都不会让工具目录发生变化</strong>。目录是"规范全量"，不是"当前可用集"。这与很多工具"动态注册能力"的做法正好相反。</p>
+
+<p>这个选择的代价是：调用方必须在每次调用前用 <code>binary_session</code> 查当前可调用集，不能靠目录推断。收益是：<strong>宿主（以及模型上下文）里的工具定义永远稳定</strong>——不会因为某个引擎的启动或崩溃而让上下文里的一大块 schema 失效重算。</p>
+
+<div class="verdict">
+  <p class="vh">这就是为什么"170 个工具"和"18 项可用"可以同时成立</p>
+  <p>实测 <code>tools/list</code> 返回 170 个工具（170/170 带完整 inputSchema），而 <code>rea capabilities --json</code> 在零引擎环境下只承认 18 项可用。这两个数字并不矛盾——前者是<b>规范目录</b>（不随环境变），后者是<b>当前路由的可用集</b>（随 host、target、provider、客户端能力变）。契约文档把这两者的关系写得很直白：判断工具是否真的可用，应当以 <code>binary_session</code> 的 <code>tool_availability</code> 为准，<code>tools/list</code> 只负责提供完整定义。</p>
+</div>
+</section>
+
+<section id="s04">
+<h2><span class="num">04</span>Provider 模型：确定性与不可替换性</h2>
+<p class="sect-sub">"确定性选择、无回退"听着像一句广告语，但它有精确的字段级语义。这一章把它拆开。</p>
+
+<p>REA 的 provider 不是插件式的"多路尝试"。它是一套<strong>带类型的选择协议</strong>——候选、绑定、选择来源、歧义，各自是不同字段，语义不可互换。契约文档对此有明文规定。</p>
+
+<h3>三类 provider</h3>
+
+<p>13 个 provider 按"能力从哪来"可以归为三类。这个分类决定了它们在零引擎环境下的命运：</p>
+
+<div class="g3">
+  <div class="card">
+    <h4>自研静态解析</h4>
+    <p><code>src/artifacts/</code> <code>src/dotnet/</code> <code>src/javascript/</code> <code>src/android/</code> <code>src/inspector/</code> <code>src/domain/apple/</code></p>
+    <p><b>零外部依赖。</b>nib 图解析、keyed archive、plist、Mach-O 头部、.NET 元数据、APK 资源、sourceMap 解码，都是 REA 自己实现的解析器。这是它在零引擎环境下仍能做实质工作的原因。</p>
+  </div>
+  <div class="card">
+    <h4>外部引擎适配</h4>
+    <p><code>src/ghidra/</code> <code>src/hopper/</code> <code>src/ida/</code> <code>src/jeb/</code> <code>src/native/</code> <code>src/firmware/</code></p>
+    <p><b>BYO（自带）。</b>REA 提供启动、协议、快照、生命周期管理，引擎本体由用户自备。Ghidra 走打包的 HeadlessScript（<code>ReaGhidraBridge.java</code>），Hopper 走进程 + Unix socket 协议（<code>hopper_bridge.py</code>）。</p>
+  </div>
+  <div class="card">
+    <h4>运行时观测</h4>
+    <p><code>src/browser/</code> <code>src/inspector/</code> <code>src/process/</code></p>
+    <p><b>需要真实运行时。</b>CDP/Playwright 驱动浏览器；V8 Inspector 被动捕获脚本与目标位置；进程捕获记录真实执行。这类 provider 产出的是"动态证据"，与静态证据在 authority 上不等价。</p>
+  </div>
+</div>
+
+<h3>选择协议的精确语义</h3>
+
+<p>契约文档对 <code>binary_session</code> 的几个字段做了明确的区分，这几条合起来就是"确定性"的完整定义：</p>
+
+<div class="ledger">
+  <div class="row"><div>analysis_provider_candidates</div><div><b>深度引擎发现的权威来源。</b>每个候选的能力集描述"这个可能的 provider 能做什么"——<b>它们不构成选择</b>。这是一个纯粹的发现结果，不产生副作用（不创建 analysis client）。</div></div>
+  <div class="row"><div>capabilities<br>（顶层）</div><div><b>描述当前路由。</b>即"现在这条会话走的是谁"。</div></div>
+  <div class="row"><div>analysis_provider_binding</div><div><b>标识具体选定的路由</b>——一个不可变的 provider、具体版本、选择来源、完整分析画像。契约原文特别强调这几个字段<b>不可互换</b>（not interchangeable）。</div></div>
+  <div class="row"><div>open_binary.provider_id</div><div>接受具体 provider ID 或 <code>auto</code>；使用与 CLI <code>--provider</code> 和 <code>REA_ANALYSIS_PROVIDER</code> <b>同一套解析与选择策略</b>。这是 CLI/MCP 能力等价的一个具体证据。</div></div>
+  <div class="row"><div>歧义与失败</div><div>歧义、未知、不可用、不支持的选择各自返回<b>带类型的 selection details</b>——不兜底、不猜。</div></div>
+  <div class="row"><div>不可替换性</div><div><b>"A selected provider is never replaced automatically after a runtime failure."</b> 选定之后，即使运行时失败，也不会自动换一个 provider 顶上。</div></div>
+</div>
+
+<figure id="f04">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 452" role="img" aria-label="REA 的 provider 路由决策路径">
+    <rect x="320" y="30" width="320" height="46" rx="8" fill="#FFFFFF" stroke="#CFCABD"/>
+    <text x="480" y="59" text-anchor="middle" font-size="14" font-weight="700" fill="#16181D">深开请求（analyze / decompile）</text>
+
+    <path d="M480,76 L480,104" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M480,112 L475,102 L485,102 Z" fill="#CFCABD"/>
+
+    <rect x="320" y="120" width="320" height="46" rx="8" fill="#FFFFFF" stroke="#CFCABD"/>
+    <text x="480" y="142" text-anchor="middle" font-size="13.5" font-weight="700" fill="#16181D">候选发现</text>
+    <text x="480" y="158" text-anchor="middle" font-size="11" fill="#4A505A">按 provider ID 排序 · 不创建 analysis client</text>
+
+    <path d="M480,166 L480,194" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M480,202 L475,192 L485,192 Z" fill="#CFCABD"/>
+
+    <rect x="290" y="210" width="380" height="46" rx="8" fill="#FFFFFF" stroke="#CFCABD"/>
+    <text x="480" y="232" text-anchor="middle" font-size="13.5" font-weight="700" fill="#16181D">逐候选检查</text>
+    <text x="480" y="248" text-anchor="middle" font-size="11" fill="#4A505A">已配置？ 可执行？ 架构受支持？</text>
+
+    <path d="M480,256 L480,272 L225,272 L225,296" stroke="#CFCABD" stroke-width="1.5" fill="none"/>
+    <path d="M225,304 L220,294 L230,294 Z" fill="#CFCABD"/>
+    <path d="M480,256 L480,304" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M480,312 L475,302 L485,302 Z" fill="#CFCABD"/>
+    <path d="M480,256 L480,272 L815,272 L815,296" stroke="#CFCABD" stroke-width="1.5" fill="none"/>
+    <path d="M815,304 L810,294 L820,294 Z" fill="#CFCABD"/>
+
+    <rect x="100" y="312" width="250" height="62" rx="8" fill="#FCF1E0" stroke="#B45309"/>
+    <text x="225" y="335" text-anchor="middle" font-size="13" font-weight="700" fill="#8F3F06">歧义 / 未知</text>
+    <text x="225" y="355" text-anchor="middle" font-size="11" fill="#4A505A">返回带类型的</text>
+    <text x="225" y="369" text-anchor="middle" font-size="11" fill="#4A505A">selection details</text>
+
+    <rect x="395" y="312" width="250" height="62" rx="8" fill="#FBE9E7" stroke="#B3261E"/>
+    <text x="520" y="335" text-anchor="middle" font-size="13" font-weight="700" fill="#8C1D17">零命中</text>
+    <text x="520" y="355" text-anchor="middle" font-size="11" fill="#4A505A">provider_unavailable</text>
+    <text x="520" y="369" text-anchor="middle" font-size="11" fill="#4A505A">+ 逐条不可用原因</text>
+
+    <rect x="690" y="312" width="250" height="62" rx="8" fill="#E8F3E9" stroke="#2E7D32"/>
+    <text x="815" y="335" text-anchor="middle" font-size="13" font-weight="700" fill="#1B5820">唯一命中 → 绑定</text>
+    <text x="815" y="355" text-anchor="middle" font-size="11" fill="#4A505A">不可变 provider</text>
+    <text x="815" y="369" text-anchor="middle" font-size="11" fill="#4A505A">版本 · 来源 · 分析画像</text>
+
+    <path d="M815,374 L815,400" stroke="#2E7D32" stroke-width="1.5"/>
+    <path d="M815,408 L810,398 L820,398 Z" fill="#2E7D32"/>
+    <text x="480" y="415" text-anchor="middle" font-size="12" font-weight="700" fill="#1B5820">绑定后运行时失败也不自动替换：run 失败 → 类型化错误，不换 provider 重试</text>
+  </svg>
+  </div>
+  <figcaption><b>图 4</b> · provider 路由的三条出口。左边两条是失败出口，各自携带<b>不同粒度</b>的信息：<code>provider_unavailable</code> 给的是"每个候选为什么不行"的清单，而歧义/未知给的是"选择过程本身不唯一"的类型化细节。右边是成功出口，一旦绑定就产生一个不可变的路由标识。（依据：<code>docs/mcp-contracts.md</code> 对 <code>binary_session</code> 的字段规定）</figcaption>
+</figure>
+
+<h3>实测：失败出口长什么样</h3>
+
+<p>对 <code>Stickies.app</code> 调 <code>rea inspect</code>，命中的是中间那条出口。它的输出结构值得逐行读：</p>
+
+<pre><code>error: provider_unavailable
+  operation = current_document      ← 失败的是哪个"操作"，不是哪个"工具"
+  ghidra : not_configured           ← 候选 1：装了没配
+  ghidra : architecture_unsupported ← 候选 1 的第二个卡点
+  hopper : executable_missing       ← 候选 2：可执行文件不在
+  ida    : not_configured           ← 候选 3：未配置
+  (jeb 甚至没进入候选)</code></pre>
+
+<p>三点值得注意：</p>
+
+<ul>
+  <li><b>按"操作"失败，不按"工具"失败。</b>报的是 <code>operation = current_document</code>。这与架构图里"operation"是路由的一等公民一致——工具只是 operation 的对外投影。</li>
+  <li><b>同一候选可以有多个卡点。</b><code>ghidra</code> 出现了两次：既未配置，又架构不支持。<code>architecture_unsupported</code> 这一条特别有信息量——它说明这类检查带有<b>目标侧约束</b>，不只是"环境里有没有"。</li>
+  <li><b>没有进入候选的引擎不会出现。</b><code>jeb</code> 不在清单里，说明候选集本身也是过滤后的结果，而不是"所有已知引擎都列一遍"。</li>
+</ul>
+
+<div class="verdict warn">
+  <p class="vh">这条实测推翻了我先前的一个判断</p>
+  <p>我在复刻规划里写过"接 Ghidra 只需设 <code>GHIDRA_INSTALL_DIR</code>"。<b>实测不成立。</b><code>Stickies.app</code> 是 <code>x86_64 + arm64e</code> 的 universal Mach-O，而这里明确报 <code>architecture_unsupported</code>——<b>装了 Ghidra 之后还得先把二进制 thin 成单架构</b>，才能进入分析。我把这条列进第 11 章的更正清单。</p>
+</div>
+</section>
+
+<section id="s05">
+<h2><span class="num">05</span>引擎边界：两套可用性，别混为一谈</h2>
+<p class="sect-sub">"这个操作能用吗"和"这个操作能处理这个文件吗"是两个不同的问题。REA 把它们分成了两套机制。</p>
+
+<p>零引擎环境下，<code>rea capabilities --json</code> 返回 18 项 <code>available: true</code> 的操作。这份清单是本次实践最有用的产出之一——它精确划出了"不装任何东西也能做什么"的边界。</p>
+
+<figure id="f05">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 380" role="img" aria-label="REA 能力边界：18 项 target-free 全可用与四个引擎候选全不可用">
+    <text x="250" y="60" text-anchor="end" font-size="13.5" font-weight="700" fill="#16181D">target-free 操作</text>
+    <rect x="270" y="42" width="570" height="24" rx="4" fill="#2E7D32"/>
+    <text x="852" y="60" font-size="13" font-weight="700" fill="#1B5820">18 / 18 可用</text>
+    <text x="270" y="86" font-size="11" fill="#4A505A">完全不依赖外部引擎 —— 零引擎环境下的实际能力面</text>
+
+    <line x1="270" y1="112" x2="840" y2="112" stroke="#E4E1D8" stroke-width="1"/>
+
+    <text x="250" y="148" text-anchor="end" font-size="13.5" font-weight="700" fill="#16181D">引擎候选</text>
+    <rect x="270" y="130" width="6" height="24" rx="3" fill="#B3261E"/>
+    <text x="288" y="148" font-size="12.5" fill="#333941">ghidra</text>
+    <text x="378" y="148" font-size="11.5" fill="#4A505A">not_configured · architecture_unsupported</text>
+
+    <rect x="270" y="172" width="6" height="24" rx="3" fill="#B3261E"/>
+    <text x="288" y="190" font-size="12.5" fill="#333941">hopper</text>
+    <text x="378" y="190" font-size="11.5" fill="#4A505A">executable_missing</text>
+
+    <rect x="270" y="214" width="6" height="24" rx="3" fill="#B3261E"/>
+    <text x="288" y="232" font-size="12.5" fill="#333941">ida</text>
+    <text x="378" y="232" font-size="11.5" fill="#4A505A">not_configured</text>
+
+    <rect x="270" y="256" width="6" height="24" rx="3" fill="#A8B8C9"/>
+    <text x="288" y="274" font-size="12.5" fill="#333941">jeb</text>
+    <text x="378" y="274" font-size="11.5" fill="#4A505A">未进入候选集（商业许可，未安装）</text>
+
+    <text x="270" y="316" font-size="11" fill="#4A505A">零引擎可用的 18 项操作全部标 available:true</text>
+    <text x="270" y="334" font-size="11" fill="#4A505A">而任何需要反汇编 / 伪代码的操作都落在引擎候选上</text>
+    <text x="270" y="352" font-size="11" font-weight="700" fill="#8F3F06">两者互不重叠：不装引擎不会让 18 项里的任何一项失效</text>
+  </svg>
+  </div>
+  <figcaption><b>图 5</b> · 零引擎环境下的能力边界。上半部分 18 项 target-free 操作全部可用；下半部分四个引擎候选全部不可用，且各自给出了不同的原因码。<b>两栏之间没有交集</b>——这意味着"装引擎"只会<b>新增</b>能力，不会修复或影响已有能力。这正是分层解耦的直接后果。（数据来源：<code>rea capabilities --json</code> 与 <code>rea inspect</code> 实测输出）</figcaption>
+</figure>
+
+<h3>18 项零引擎能力全清单</h3>
+
+<p>按作用对象分组，这 18 项构成了一套完整的"静态产物分析"工具集：</p>
+
+<table class="tbl">
+  <caption>表 4 · 零引擎可用的 18 项操作（<code>rea capabilities --json</code> 实测，18/18 <code>available: true</code>）</caption>
+  <thead><tr><th>分组</th><th>操作</th><th class="n">项</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr>
+      <td rowspan="11"><b>Apple / 产物</b></td>
+      <td class="mono">decode_interface_builder</td><td class="n">11</td>
+      <td>解析 nib/xib 成产物图（本次实践的主力）</td>
+    </tr>
+    <tr><td class="mono">inspect_keyed_archive</td><td class="n"></td><td>解析 NSKeyedArchiver 归档</td></tr>
+    <tr><td class="mono">inspect_asset_catalog</td><td class="n"></td><td>读取 Assets.car 元数据</td></tr>
+    <tr><td class="mono">inspect_macho</td><td class="n"></td><td>Mach-O 头部与加载命令</td></tr>
+    <tr><td class="mono">inspect_plist</td><td class="n"></td><td>属性列表解析</td></tr>
+    <tr><td class="mono">inspect_signature</td><td class="n"></td><td>代码签名与授权信息</td></tr>
+    <tr><td class="mono">list_architectures</td><td class="n"></td><td>列出 fat binary 中的架构切片</td></tr>
+    <tr><td class="mono">demangle_swift</td><td class="n"></td><td>Swift 符号反混淆（<b>不需要 Hopper</b>）</td></tr>
+    <tr><td class="mono">trace_dylib_resolution</td><td class="n"></td><td>逐条追踪动态库解析路径</td></tr>
+    <tr><td class="mono">extract_artifact</td><td class="n"></td><td>从包中抽取子产物</td></tr>
+    <tr><td class="mono">inspect_artifact</td><td class="n"></td><td>产物库存 + 后续探测建议</td></tr>
+
+    <tr>
+      <td rowspan="3"><b>托管代码</b></td>
+      <td class="mono">inspect_managed_artifact</td><td class="n">3</td>
+      <td>.NET / CLI 程序集元数据</td>
+    </tr>
+    <tr><td class="mono">inspect_managed_members</td><td class="n"></td><td>类型与成员清单</td></tr>
+    <tr><td class="mono">inspect_managed_native_boundaries</td><td class="n"></td><td>托管到原生的边界</td></tr>
+
+    <tr>
+      <td rowspan="4"><b>运行观测</b></td>
+      <td class="mono">capture_native_ui_scenario</td><td class="n">4</td>
+      <td>观测原生 UI 交互场景（本次未跑，见第 11 章）</td>
+    </tr>
+    <tr><td class="mono">observe_native_ui</td><td class="n"></td><td>原生窗口/控件观测</td></tr>
+    <tr><td class="mono">observe_native_calls</td><td class="n"></td><td>原生调用序列观测</td></tr>
+    <tr><td class="mono">inspect_native_dispatch_metadata</td><td class="n"></td><td>Objective-C 消息分发元数据</td></tr>
+  </tbody>
+</table>
+
+<h3>第二套可用性：目标准入</h3>
+
+<p>上表里有一项 <code>inspect_asset_catalog</code>。它在能力目录里是绿的。但真拿一个 <code>Assets.car</code> 去调用时：</p>
+
+<pre><code>$ rea inspect-asset-catalog .../Stickies.app/Contents/Resources/Assets.car
+error: target_unavailable
+  reason: unsupported binary format</code></pre>
+
+<p>这不是 bug，也不是配置问题。它是<strong>两套独立机制</strong>在各自如实表态：</p>
+
+<div class="g2">
+  <div class="card">
+    <h4>第一套：操作级可用性</h4>
+    <p>回答"这个操作在这个 host 上能不能被调用"。取决于：是否装了所需引擎、客户端是否提供所需能力、操作是否处于默认启用的 mode。</p>
+    <p>查询方式：<code>binary_session.tool_availability</code> 或 <code>rea capabilities</code>。</p>
+  </div>
+  <div class="card">
+    <h4>第二套：目标准入</h4>
+    <p>回答"这个具体输入能不能被这个操作读"。取决于：文件格式、架构、版本、是否加密、是否被截断。</p>
+    <p>失败形态：<code>target_unavailable</code> + 具体原因（如 <code>unsupported binary format</code>）。</p>
+  </div>
+</div>
+
+<div class="verdict">
+  <p class="vh">这条区分为什么值得单独讲</p>
+  <p>多数工具把这两种失败混成一个"运行出错"。混同的代价是<b>无法区分"我缺个东西"和"这个文件我读不了"</b>——前者你可以去装，后者你只能换方法。REA 把它们分开之后，第 09 章的义务台账才可能做到"给不出结果时明确告诉你缺什么、下一步该采什么证据"（<code>required_next_evidence</code> 字段）。</p>
+  <p>顺带纠正我自己先前的判断：我在复刻规划的自我批评里写过"<code>Assets.car</code> 是完全跳过的遗漏"。<b>实测证明这是工具边界，不是我的疏漏</b>——REA 自己也打不开这个文件。我已把这条列进第 11 章的更正清单。</p>
+</div>
+
+<h3>三个状态，而不是两个</h3>
+
+<p>从 <code>binary_session</code> 与 <code>rea doctor</code> 的字段设计可以看出，REA 的可用性是<strong>三态</strong>的：</p>
+
+<table class="tbl">
+  <thead><tr><th>状态</th><th>含义</th><th>典型触发</th><th>调用方该做什么</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tag g">available</span></td><td>可以调用</td><td>所需条件全部满足</td><td>直接调用</td></tr>
+    <tr><td><span class="tag r">unavailable</span></td><td>不可用，且<b>原因已知</b></td><td><code>not_configured</code> / <code>executable_missing</code> / <code>architecture_unsupported</code></td><td>按 <code>remediation</code> 字段处置，或换操作</td></tr>
+    <tr><td><span class="tag a">unknown</span></td><td>不可用，<b>且原因未知</b></td><td>未建立活动连接时 <code>doctor</code> 对实时服务器状态的判定</td><td>先建连接再判断，不要假定为可用或不可用</td></tr>
+  </tbody>
+</table>
+
+<p>第三态最容易被忽略，也最能说明这套设计的性格。契约文档里对 <code>rea doctor</code> 的原文是：它"<b>keeps live-server state <code>unknown</code> unless the active connection supplies identity</b>"——在没有活动连接提供身份之前，它宁可说"我不知道"，也不猜。</p>
+
+<p>同样地，target-free 发现阶段会返回 <code>unknown</code> target support，而不是把"没试过"标成"不支持"。这是一个很克制、也很少见的默认值选择。</p>
+</section>
+<section id="s06">
+<h2><span class="num">06</span>产物图：一张图管住所有目标类型</h2>
+<p class="sect-sub">nib、JavaScript 应用、.NET 程序集、Mach-O、APK——它们的分析结果落在同一个数据结构里。这是 REA 能"一套工具面覆盖多种目标"的结构前提。</p>
+
+<p>实测中信息量最大的一次调用是 <code>decode-interface-builder</code>。它把 3 个 nib 文件解成了一张 780 节点、421 条边的图，并在结果里标了 <code>hierarchy_complete: true</code>。但真正值得注意的是这个结果的<b>形状</b>——它不是"nib 专用输出"，而是通用产物图。</p>
+
+<figure id="f06">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 360" role="img" aria-label="REA 产物图的节点类型与连接结构">
+    <rect x="30" y="70" width="180" height="52" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="120" y="92" text-anchor="middle" font-size="11" font-weight="700" fill="#1F5288">kind = view</text>
+    <text x="120" y="110" text-anchor="middle" font-size="12.5" fill="#333941">视图节点</text>
+
+    <line x1="210" y1="96" x2="390" y2="96" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M398,96 L388,91 L388,101 Z" fill="#CFCABD"/>
+
+    <rect x="390" y="70" width="180" height="52" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="480" y="92" text-anchor="middle" font-size="11" font-weight="700" fill="#1F5288">kind = control</text>
+    <text x="480" y="110" text-anchor="middle" font-size="12.5" fill="#333941">控件节点</text>
+
+    <line x1="570" y1="96" x2="750" y2="96" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M758,96 L748,91 L748,101 Z" fill="#CFCABD"/>
+
+    <rect x="750" y="70" width="180" height="52" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="840" y="92" text-anchor="middle" font-size="11" font-weight="700" fill="#1F5288">kind = outlet</text>
+    <text x="840" y="110" text-anchor="middle" font-size="12.5" fill="#333941">出口声明</text>
+
+    <line x1="120" y1="122" x2="120" y2="200" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M120,208 L115,198 L125,198 Z" fill="#CFCABD"/>
+    <line x1="480" y1="122" x2="480" y2="200" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M480,208 L475,198 L485,198 Z" fill="#CFCABD"/>
+    <line x1="840" y1="122" x2="840" y2="200" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M840,208 L835,198 L845,198 Z" fill="#CFCABD"/>
+
+    <rect x="30" y="210" width="180" height="52" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="120" y="232" text-anchor="middle" font-size="11" font-weight="700" fill="#5A3099">kind = objc_selector</text>
+    <text x="120" y="250" text-anchor="middle" font-size="12.5" fill="#333941">方法选择器</text>
+
+    <rect x="390" y="210" width="180" height="52" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="480" y="232" text-anchor="middle" font-size="11" font-weight="700" fill="#5A3099">kind = action</text>
+    <text x="480" y="250" text-anchor="middle" font-size="12.5" fill="#333941">动作连线</text>
+
+    <rect x="750" y="210" width="180" height="52" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="840" y="232" text-anchor="middle" font-size="11" font-weight="700" fill="#5A3099">kind = constraint</text>
+    <text x="840" y="250" text-anchor="middle" font-size="12.5" fill="#333941">约束关系</text>
+
+    <text x="480" y="308" text-anchor="middle" font-size="12" fill="#333941">同一套 nodes + edges 结构，也用于 JavaScript 应用图 · .NET 托管图 · 应用版本比较图</text>
+    <text x="480" y="332" text-anchor="middle" font-size="11.5" fill="#4A505A">实测：单次 decode-interface-builder 产出 780 节点 / 421 边 / hierarchy_complete = true</text>
+  </svg>
+  </div>
+  <figcaption><b>图 6</b> · 产物图的节点类型。上半两类（<code>view</code> / <code>control</code> / <code>outlet</code>）表达<b>结构</b>，下半三类（<code>objc_selector</code> / <code>action</code> / <code>constraint</code>）表达<b>行为与关系</b>。本次实践中，正是这后三类让功能面得以还原——从图里直接读出了 80 个方法选择器与 11 个 outlet，而不是靠界面文案反推。（数据来源：<code>rea decode-interface-builder</code> JSON 输出的 <code>normalized_result.graph</code>）</figcaption>
+</figure>
+
+<h3>节点与边的字段</h3>
+
+<p>从实测输出的 JSON 结构可以直接读出图的模型：</p>
+
+<div class="ledger">
+  <div class="row"><div>node.id</div><div>全局唯一标识，路径形式，包含所属文档（如 <code>…/SNDocument.nib/…</code>）。因此<b>一个节点天然知道它来自哪个文件</b>。</div></div>
+  <div class="row"><div>node.kind</div><div>节点类型枚举：<code>view</code>、<code>control</code>、<code>resource</code>、<code>constraint</code>、<code>objc_selector</code>、<code>action</code>、<code>outlet</code>。</div></div>
+  <div class="row"><div>node.name</div><div>可读名称（类名、方法名等）。</div></div>
+  <div class="row"><div>node.attributes.<br>interface_builder_object_id</div><div>回指 Interface Builder 内部的 objectID——<b>保留了与原始工具的对应关系</b>，使结论可回溯到具体控件。</div></div>
+  <div class="row"><div>node.attributes.nibValues</div><div>归档中的原始键值（如 <code>NSSelectorName</code>、<code>NSMenuItems</code>）。<b>这是行为信息的来源</b>——方法名就藏在这里。</div></div>
+  <div class="row"><div>edges[]</div><div>节点间的连接。本次实测 421 条。</div></div>
+</div>
+
+<h3>同构的姊妹实现</h3>
+
+<p>产物图不是只有 Apple 一种。仓库里能数出一组平行实现，共用同一套"节点 + 边"抽象：</p>
+
+<table class="tbl">
+  <caption>表 5 · 产物图模型的平行实现（源码路径实测）</caption>
+  <thead><tr><th>领域实现</th><th>作用对象</th><th>同构点</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">src/domain/apple/<br>interfaceBuilderGraph.ts</td><td>nib / xib</td><td>节点 = 对象 + 连线</td></tr>
+    <tr><td class="mono">src/domain/artifactGraph.ts</td><td>通用产物包</td><td>节点 = 产物内的可寻址单元</td></tr>
+    <tr><td class="mono">src/domain/javascript/<br>javascriptApplicationGraph.ts</td><td>JavaScript 应用</td><td>节点 = 模块 / 入口 / 依赖</td></tr>
+    <tr><td class="mono">src/domain/javascript/<br>javascriptRuntimeReconciliationGraph.ts</td><td>静态图 × 运行时</td><td><b>两个图的差分</b>——静态声明与运行事实的对照</td></tr>
+    <tr><td class="mono">src/domain/managed/<br>managedApplicationGraphCoverage.ts</td><td>.NET 程序集</td><td>节点 = 类型 / 成员 / 边界</td></tr>
+    <tr><td class="mono">src/domain/analysisView/<br>analysisViewCoverage.ts</td><td>分析视图</td><td>覆盖度是图的一个投影</td></tr>
+  </tbody>
+</table>
+
+<p>注意第四行：<code>javascriptRuntimeReconciliationGraph</code>——<strong>把静态图与运行时观测图做对账</strong>。这说明图模型不只是"记录"，还是"比较"的载体。这直接支撑了第 09 章的义务闭合逻辑（静态事实只能产生候选义务，不能证明运行时行为）。</p>
+
+<div class="verdict">
+  <p class="vh">一个必须说清的边界</p>
+  <p>nib 解码的 <code>limitations</code> 里明确写着：<b>不含像素几何</b>。我实测确认了这一点——遍历全部 780 个节点的 <code>attributes</code>，<code>frame</code> / <code>bounds</code> / <code>width</code> / <code>height</code> / <code>autoresizing</code> 等几何键<b>命中为零</b>。</p>
+  <p>这意味着它可以告诉你"这个窗口有标题栏、有关闭按钮、有文本视图，关闭按钮触发了 <code>performClose:</code>"，但<b>不能告诉你这些控件的坐标和尺寸</b>。要拿到几何，必须走 <code>capture_native_ui_scenario</code> 这类运行时观测 provider（见第 11 章）——也就是从"读归档"升级到"看运行"。</p>
+  <p>这个边界不是缺陷，而是权威等级的体现：<b>静态图的 authority 不足以支撑几何结论</b>，所以它不声称能给出几何。</p>
+</div>
+</section>
+
+<section id="s07">
+<h2><span class="num">07</span>证据模型：五元口径与稳定标识</h2>
+<p class="sect-sub">这是 REA 最可移植的一层，也是它和"跑个脚本输出一段文字"之间最本质的区别。</p>
+
+<p>实测 <code>rea inspect-artifact</code> 的输出是一份 426 KB 的 JSON，其顶层结构给出了 REA 对"一次调查"的定义：</p>
+
+<figure id="f07">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 360" role="img" aria-label="REA 证据输出的五元结构与五类稳定标识">
+    <rect x="30" y="46" width="172" height="88" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="116" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#1B5820">observations</text>
+    <text x="116" y="94" text-anchor="middle" font-size="11.5" fill="#333941">直接观测到</text>
+    <text x="116" y="112" text-anchor="middle" font-size="11.5" fill="#333941">的事实</text>
+
+    <rect x="216" y="46" width="172" height="88" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="302" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#1F5288">hypotheses</text>
+    <text x="302" y="94" text-anchor="middle" font-size="11.5" fill="#333941">由观测推出的</text>
+    <text x="302" y="112" text-anchor="middle" font-size="11.5" fill="#333941">假设</text>
+
+    <rect x="402" y="46" width="172" height="88" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="488" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#8C1D17">contradictions</text>
+    <text x="488" y="94" text-anchor="middle" font-size="11.5" fill="#333941">互相矛盾的</text>
+    <text x="488" y="112" text-anchor="middle" font-size="11.5" fill="#333941">证据</text>
+
+    <rect x="588" y="46" width="172" height="88" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="674" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#8F3F06">unexplored_branches</text>
+    <text x="674" y="94" text-anchor="middle" font-size="11.5" fill="#333941">未探索的</text>
+    <text x="674" y="112" text-anchor="middle" font-size="11.5" fill="#333941">分支</text>
+
+    <rect x="774" y="46" width="172" height="88" rx="8" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="860" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#5A3099">next_probes</text>
+    <text x="860" y="94" text-anchor="middle" font-size="11.5" fill="#333941">建议的下一步</text>
+    <text x="860" y="112" text-anchor="middle" font-size="11.5" fill="#333941">（带 authority）</text>
+
+    <path d="M480,142 L480,168" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M480,176 L475,166 L485,166 Z" fill="#CFCABD"/>
+    <text x="480" y="196" text-anchor="middle" font-size="12" font-weight="700" fill="#333941">封存为带稳定标识的证据记录</text>
+
+    <rect x="30" y="216" width="172" height="80" rx="8" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="116" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">evidence_id</text>
+    <text x="116" y="264" text-anchor="middle" font-size="11" fill="#4A505A">ev_ + 64 位</text>
+    <text x="116" y="282" text-anchor="middle" font-size="11" fill="#4A505A">内容寻址</text>
+
+    <rect x="216" y="216" width="172" height="80" rx="8" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="302" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">inspection_id</text>
+    <text x="302" y="264" text-anchor="middle" font-size="11" fill="#4A505A">ai_ + 64 位</text>
+    <text x="302" y="282" text-anchor="middle" font-size="11" fill="#4A505A">一次调查</text>
+
+    <rect x="402" y="216" width="172" height="80" rx="8" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="488" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">run_id</text>
+    <text x="488" y="264" text-anchor="middle" font-size="11" fill="#4A505A">运行标识</text>
+    <text x="488" y="282" text-anchor="middle" font-size="11" fill="#4A505A">先于 provider 启动</text>
+
+    <rect x="588" y="216" width="172" height="80" rx="8" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="674" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">sha256</text>
+    <text x="674" y="264" text-anchor="middle" font-size="11" fill="#4A505A">产物摘要</text>
+    <text x="674" y="282" text-anchor="middle" font-size="11" fill="#4A505A">锚定到字节</text>
+
+    <rect x="774" y="216" width="172" height="80" rx="8" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="860" y="242" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">catalog_digest</text>
+    <text x="860" y="264" text-anchor="middle" font-size="11" fill="#4A505A">目录摘要</text>
+    <text x="860" y="282" text-anchor="middle" font-size="11" fill="#4A505A">锚定到工具面</text>
+  </svg>
+  </div>
+  <figcaption><b>图 7</b> · 上半：一次调查的输出被拆成五个语义桶——观测、假设、矛盾、未探索分支、下一步探测。注意<b>"矛盾"和"未探索分支"都是输出的正式字段</b>，不是异常路径。下半：五类稳定标识，分别锚定"这条证据""这次调查""这次运行""这个字节流""这个工具面"。（数据来源：实测 <code>rea inspect-artifact</code> 输出结构、<code>docs/mcp-contracts.md</code>）</figcaption>
+</figure>
+
+<h3>实测的标识长什么样</h3>
+
+<p>这些 ID 不是示意，是本次实践真实返回的值：</p>
+
+<pre><code>evidence_id    = ev_68273f72…
+inspection_id  = ai_75fdbdff4d78311f95e2f7355a84e9be4249907362b59373bbbaa6efc
+
+next_probes[0] = { operation: analyze_javascript_application,
+                   authority: ast-static-analysis }</code></pre>
+
+<p>三个细节：</p>
+
+<ul>
+  <li><b>ID 带类型前缀。</b><code>ev_</code> 是证据、<code>ai_</code> 是 inspection。前缀让 ID 在日志和引用中自带语义，不需要额外查表。</li>
+  <li><b>inspection_id 是 64 位十六进制</b>——长度暗示它是内容摘要而非自增序号。配合目录摘要 <code>catalog_digest</code>，一次调查可以被完整锚定。</li>
+  <li><b><code>next_probes</code> 带 <code>authority</code>。</b>它不只是说"建议下一步做什么"，还说"这一步的证据权威性属于哪一级"。</li>
+</ul>
+
+<h3>authority 是什么，为什么它重要</h3>
+
+<p>从契约文档能确认 <code>authority</code> 至少有三个取值：<code>process</code>、<code>packaged-process</code>、<code>ast-static-analysis</code>。它的作用在第 09 章的复刻台账里说得最清楚：</p>
+
+<blockquote>
+  <p>一个必需义务只有在"<b>验证者的权威性与原始观测相当</b>"（a passing verifier whose authority is comparable to the original observation）时才能闭合。</p>
+</blockquote>
+
+<p>换句话说：<strong>你不能用一个静态分析的结论，去证明一个只有真实运行时才能确立的事实。</strong>这条规则把"证据强度"从一句定性描述，变成了机器可校验的字段约束。</p>
+
+<div class="verdict">
+  <p class="vh">这一层为什么是可移植资产</p>
+  <p>换掉引擎、换掉目标类型、换掉客户端——<b>这套口径都不用改</b>。观测/假设/矛盾/未探索/下一步这五个桶，对 nib 成立，对 JavaScript 应用成立，对 .NET 程序集也成立。所以 REA 的真正沉淀不是"支持了 13 种目标"，而是"<b>把这 13 种目标的分析输出，约束到同一套可评估、可比较、可复现的形态上</b>"。</p>
+  <p>这也是它和"一堆分析脚本"的分水岭：脚本产出结论，REA 产出<b>可被第三方复核的记录</b>。</p>
+</div>
+
+<h3>一条很讲成本意识的工程约束</h3>
+
+<p>契约文档里有这么一条，值得单独摘出来：</p>
+
+<pre><code>Hosts forward input schemas to the model with every request,
+so advertised examples never copy complete producer Evidence.
+An embedded Evidence record is shown as its exact
+{"kind":"retained-evidence","evidence_id":"ev_..."} reference.</code></pre>
+
+<p>因为宿主（IDE、CLI 客户端）会把工具定义连同示例<b>随每一次请求</b>发给模型，所以工具广告里的示例<strong>绝不复制完整的证据正文</strong>——只给一个引用指针。这是对 token 成本的正向设计：<b>工具面的大小不能随证据体量膨胀</b>。</p>
+
+<p>配套的还有 <code>REA_MCP_INPUT_SCHEMA_PROFILE=compact</code>：某些函数调用型客户端对单个工具的 <code>parameters</code> schema 有字面序列化大小上限（文档记录了 Moonshot 系客户端如 kimi-cli 在默认目录下<b>每个请求都会失败</b>，社区实测 13.7 KB 被接受、约 15 KB 被拒绝）。compact profile 把每个输入 schema 压进 13,312 字节预算，而<b>服务端仍按完整 schema 校验</b>——所以按精简广告调用的调用方会收到类型化错误，而不是被静默接受。</p>
+
+<p>这个取舍很有意思：<strong>宁可让不按规范调用的客户端收到明确报错，也不放宽真实校验。</strong>又是一次 fail-closed。</p>
+</section>
+
+<section id="s08">
+<h2><span class="num">08</span>双接口：同一内核的两个薄适配器</h2>
+<p class="sect-sub">"你没激活 MCP 就等于没用上 REA"是一个自然但错误的推断。这一章用结构证据说明为什么。</p>
+
+<p>本次实践里，<code>mcp__rea__*</code> 工具始终未出现（需要用户在连接器页手动信任）。但整个工作流照常跑通了——这说明 CLI 与 MCP 不是"主从"关系。官方架构图给出了结构上的解释：</p>
+
+<pre><code>DISPATCH  scripts/rea.mjs
+  ├─→  CLI   src/cli.ts + src/cli/
+  │         One-shot CLI adapter
+  │         setup, diagnostics, analysis, decompilation
+  └─→  MAIN  src/main.ts + src/main/
+            MCP stdio server adapter
+            config, session, process lifetime
+
+CLI  →  APP          MAIN  →  APP
+CLI  →  COMPOSITION  MAIN  →  COMPOSITION
+SERVER (MCP 转译) →  COMPOSITION</code></pre>
+
+<p>两条路径<b>汇合在同一个 <code>src/application/</code> 与 <code>src/composition/</code></b>。<code>scripts/rea.mjs</code> 只是一个 dispatcher（文档原话：<b>Executable dispatcher，routes mcp / one-shot</b>）。所以适配层是薄的，内核是共享的。</p>
+
+<figure id="f08">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 380" role="img" aria-label="REA 的 CLI 子命令与 MCP 工具命名对应关系">
+    <text x="240" y="34" text-anchor="middle" font-size="12" font-weight="700" fill="#333941">CLI 子命令（kebab-case）</text>
+    <text x="720" y="34" text-anchor="middle" font-size="12" font-weight="700" fill="#333941">MCP 工具名（snake_case）</text>
+
+    <rect x="60" y="52" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="76" y="76" font-size="12" fill="#2B3038">decode-interface-builder</text>
+    <path d="M404,71 L552,71" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M560,71 L550,66 L550,76 Z" fill="#CFCABD"/>
+    <path d="M556,71 L408,71" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M400,71 L410,66 L410,76 Z" fill="#CFCABD"/>
+    <rect x="560" y="52" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="576" y="76" font-size="12" fill="#2B3038">decode_interface_builder</text>
+
+    <rect x="60" y="102" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="76" y="126" font-size="12" fill="#2B3038">build-reconstruction-obligation-ledger</text>
+    <path d="M404,121 L552,121" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M560,121 L550,116 L550,126 Z" fill="#CFCABD"/>
+    <path d="M556,121 L408,121" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M400,121 L410,116 L410,126 Z" fill="#CFCABD"/>
+    <rect x="560" y="102" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="576" y="126" font-size="12" fill="#2B3038">build_reconstruction_obligation_ledger</text>
+
+    <rect x="60" y="152" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="76" y="176" font-size="12" fill="#2B3038">capture-native-ui-scenario</text>
+    <path d="M404,171 L552,171" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M560,171 L550,166 L550,176 Z" fill="#CFCABD"/>
+    <path d="M556,171 L408,171" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M400,171 L410,166 L410,176 Z" fill="#CFCABD"/>
+    <rect x="560" y="152" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="576" y="176" font-size="12" fill="#2B3038">capture_native_ui_scenario</text>
+
+    <rect x="60" y="202" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="76" y="226" font-size="12" fill="#2B3038">compare-source-to-bundle</text>
+    <path d="M404,221 L552,221" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M560,221 L550,216 L550,226 Z" fill="#CFCABD"/>
+    <path d="M556,221 L408,221" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M400,221 L410,216 L410,226 Z" fill="#CFCABD"/>
+    <rect x="560" y="202" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="576" y="226" font-size="12" fill="#2B3038">compare_source_to_bundle</text>
+
+    <rect x="60" y="252" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="76" y="276" font-size="12" fill="#2B3038">evidence-export</text>
+    <path d="M404,271 L552,271" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M560,271 L550,266 L550,276 Z" fill="#CFCABD"/>
+    <path d="M556,271 L408,271" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M400,271 L410,266 L410,276 Z" fill="#CFCABD"/>
+    <rect x="560" y="252" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="576" y="276" font-size="12" fill="#2B3038">evidence_export</text>
+
+    <rect x="60" y="302" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="76" y="326" font-size="12" fill="#2B3038">analyze-javascript-application</text>
+    <path d="M404,321 L552,321" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M560,321 L550,316 L550,326 Z" fill="#CFCABD"/>
+    <path d="M556,321 L408,321" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M400,321 L410,316 L410,326 Z" fill="#CFCABD"/>
+    <rect x="560" y="302" width="340" height="38" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="576" y="326" font-size="12" fill="#2B3038">analyze_javascript_application</text>
+  </svg>
+  </div>
+  <figcaption><b>图 8</b> · 两个接口面的命名映射。左侧是 CLI 子命令，右侧是 MCP 工具名，双向箭头表示它们是同一个内核操作的两个暴露面。<b>命名规则严格一致</b>：kebab-case ↔ snake_case，逐词对应。（数据来源：<code>rea --help</code> 实测、MCP 工具清单实测、<code>docs/mcp-contracts.md</code>）</figcaption>
+</figure>
+
+<h3>能力等价的三个结构证据</h3>
+
+<div class="ledger">
+  <div class="row"><div>共享组合层</div><div>CLI 与 MCP server <b>同时依赖 <code>src/composition/</code></b>——provider 与 session 工厂是共享的，不存在"某条路径少一个 provider"的可能。</div></div>
+  <div class="row"><div>共享选择策略</div><div><code>open_binary.provider_id</code>、CLI <code>--provider</code>、环境变量 <code>REA_ANALYSIS_PROVIDER</code> 使用<b>同一套解析与选择策略</b>（契约原文：<i>it uses the same parser and selection policy as CLI</i>）。</div></div>
+  <div class="row"><div>共享目录身份</div><div>CLI 的 <code>capabilities</code> 与 <code>providers</code> 返回<b>与 MCP <code>server_identity.catalog</code> 相同的目录身份摘要</b>。两边的"自我描述"是同一份。</div></div>
+</div>
+
+<h3>实测：MCP 通道确实在工作</h3>
+
+<p>虽然会话里没有 <code>mcp__rea__*</code> 工具，但 MCP 服务器本身是通的。用事件驱动的 stdio 探针实测：</p>
+
+<pre><code>→ initialize (protocolVersion 2024-11-05)
+← serverInfo {"name":"rea","version":"6.4.0"}
+→ notifications/initialized
+→ tools/list
+← 170 个工具，170/170 带完整 inputSchema</code></pre>
+
+<p>同时实测出一个<strong>对使用者有实际影响的特性：冷启动成本高</strong>。首次 <code>tools/list</code> 需要加载全部 170 个工具的 schema，用固定延时等待的探针连续三次超时（最长等到 260 秒）。换成<strong>事件驱动</strong>——一收到 <code>initialize</code> 响应就立刻发 <code>tools/list</code>，而不是靠定时——才稳定取回结果。</p>
+
+<div class="verdict">
+  <p class="vh">实践提示</p>
+  <p>如果你要写程序直接和 REA 的 MCP 通道对话，<b>不要用固定 sleep 等待就绪</b>。JSON-RPC 是应答式的，按响应推进即可。另外：若用 Node 脚本收尾，<code>process.exit()</code> 会截断尚未刷盘的异步 stdout——本次实践中两次"结果为空"都是这个原因，改用同步写（<code>fs.writeSync</code>）才拿到完整输出。</p>
+</div>
+
+<h3>数量不对称不等于能力不对称</h3>
+
+<p>实测中，CLI 侧用正则从 <code>rea --help</code> 提取到 <b>129 个子命令</b>，MCP 侧 <code>tools/list</code> 返回 <b>170 个工具</b>。两者数量不等，原因在于<strong>暴露粒度不同</strong>——同一个底层 operation 可能按 surface（CLI / MCP）、按 mode、或按客户端能力差异，投影成不同数量的对外条目。</p>
+
+<p>契约文档对这种粒度有一套明确的展开规则（<code>tool_availability.groups[].names</code> 逐条展开，携带 surface、availability、reason、remediation、default-mode 状态、modes 与 client 需求），并给了一条校验建议：<b>把各组的名字取并集，与 <code>tools/list</code> 比对</b>，即可验证客户端是否收到了完整目录。它还补了一句关键的：某操作若<strong>不出现在任何组里</strong>，就意味着它从完整清单中缺失——<b>而不是"隐式地不可用"</b>。</p>
+</section>
+
+<section id="s09">
+<h2><span class="num">09</span>复刻契约：把"逆向一个应用"变成可判定的工程</h2>
+<p class="sect-sub">这是 REA 最独特的一层，也是本次实践真正用到的那部分。它不满足于"给你一堆观测"，而是要判定"复刻到什么程度算完成"。</p>
+
+<p>仓库里有一组专门的设施，规模远超"顺手加个功能"的程度：</p>
+
+<table class="tbl">
+  <caption>表 6 · 复刻相关设施（源码路径实测）</caption>
+  <thead><tr><th>组成部分</th><th>文件</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td>义务台账服务</td><td class="mono">ReconstructionObligationLedgerService.ts<br>+ Authority / Candidates / Policies / Diagnostics / Evaluation / Projection</td><td>把认证过的证据转成<b>确定性的复刻主张列表</b></td></tr>
+    <tr><td>覆盖度评估</td><td class="mono">ReconstructionCoverageService.ts<br>+ ReconstructionObligationLedgerEvaluation.ts</td><td>判定复刻覆盖到什么程度</td></tr>
+    <tr><td>配套文档</td><td class="mono">docs/reconstruction-obligation-ledgers.md<br>docs/reconstruction-readiness.md</td><td>给出完整请求示例与契约规定</td></tr>
+    <tr><td>CI 验证器</td><td class="mono">scripts/verify-reconstruction-readiness.mjs<br>+ src/contracts/reconstructionReadinessExample.ts</td><td>在干净检出上跑 9 阶段一致性验证</td></tr>
+    <tr><td>领域测试</td><td class="mono">ManagedReconstructionService.test.ts<br>managedReconstruction.ts<br>JavaScriptArtifactReconstruction.ts</td><td>按目标类型分别实现复刻重建</td></tr>
+  </tbody>
+</table>
+
+<h3>义务台账：闭合条件</h3>
+
+<p>义务台账（obligation ledger）的核心机制可以概括成一句话：<strong>把"应该复刻什么"变成带闭合条件的条目，然后逐条判定它闭没闭合。</strong></p>
+
+<p>一条必需的复刻义务只有在<strong>同时满足以下全部条件</strong>时才能闭合：</p>
+
+<ol>
+  <li>一个 manifest binding 提供了<b>唯一的实现方</b>（unique owner）；</li>
+  <li>提供了所有必需的 parser / schema / domain 类型；</li>
+  <li>提供了每一个必需的用例 fixture；</li>
+  <li>有一个<b>通过的验证器</b>，且该验证器的 <code>authority</code> 与原始观测<b>相当</b>；</li>
+  <li>该验证器枚举了这条义务的 ID；</li>
+  <li>验证结果存在于输入证据包中。</li>
+</ol>
+
+<p>而下列任何一条都会让闭合保持 <code>open</code> 或转为 <code>failed</code>：矛盾、重复的定义或实现方、残留未知、缺失依赖、权威不可用。</p>
+
+<p>义务条目的字段设计本身就是一份方法论：</p>
+
+<div class="ledger">
+  <div class="row"><div>obligation_id<br>obligation_version</div><div>稳定 ID + 版本号。文档原文：<b>"稳定 ID 与版本让改动可复核"</b>。</div></div>
+  <div class="row"><div>application_layer<br>family</div><div>义务落在哪一层（如 <code>cli</code>）、属于哪个族（如 <code>argument-parsing</code>）。</div></div>
+  <div class="row"><div>target</div><div>四选一定位：<code>artifact_sha256</code> / <code>application_node_id</code> / <code>semantic_node_id</code> / <code>location</code>。<b>既能锚到字节，也能锚到语义节点</b>。</div></div>
+  <div class="row"><div>required_case_kinds</div><div>必需用例类型。文档示例里是 <code>["positive","negative","malformed"]</code>——<b>正常路径、拒绝路径、畸形输入三者都要有</b>。</div></div>
+  <div class="row"><div>required_original_authority<br>required_fixture_authority<br>required_verifier_authority</div><div>三级权威要求。示例值：<code>process</code> / <code>packaged-process</code> / <code>packaged-process</code>。这是"不能拿静态结论证明运行时事实"的落地形态。</div></div>
+  <div class="row"><div>residual_unknown_ids<br>unavailable_authority</div><div>残留未知与不可用权威<b>必须显式列在义务上</b>，不能省略。</div></div>
+  <div class="row"><div>required_next_evidence</div><div>明确的下一步取证动作。示例：<i>"Capture the installed CLI for all three cases."</i></div></div>
+  <div class="row"><div>review_evidence_ids</div><div>支持这条义务的评审记录（<code>ev_…</code>）。<b>义务本身也必须有证据支撑。</b></div></div>
+</div>
+
+<div class="verdict">
+  <p class="vh">最关键的一条：空输入不声称闭合</p>
+  <p>文档里给了一个刻意留空的请求示例，并解释了它的用途：可以拿它来<b>检查客户端集成</b>。它返回一个 <code>unknown</code> 且零义务的账本。文档原文强调：<b>"源证据缺失永不声称闭合"（absence of source Evidence never claims closure）</b>。</p>
+  <p>这条把"没做"和"做完了"严格分开——一个退回空结果的工具，永远不会被误读成"复刻已验证完成"。同一条价值观还体现在：<b>静态应用图事实只能产生候选义务，不能证明运行时或进程行为</b>。</p>
+</div>
+
+<h3>9 阶段一致性契约</h3>
+
+<p>仓库另有一套"复刻就绪度"契约，通过 <code>npm run verify:readiness</code> 在干净检出上执行，并且<b>不对公众暴露为 CLI 命令或 MCP 工具</b>（文档明确说明：它是项目自己的验证器，不是产品能力）。它规定了 9 个必需阶段：</p>
+
+<figure id="f09">
+  <div class="fig-box">
+  <svg viewBox="0 108 960 152" role="img" aria-label="REA 复刻就绪度的九个必需阶段">
+    <rect x="30" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="78" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">01</text>
+    <text x="78" y="163" text-anchor="middle" font-size="11" fill="#333941">发现</text>
+
+    <rect x="134" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="182" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">02</text>
+    <text x="182" y="163" text-anchor="middle" font-size="11" fill="#333941">诊断</text>
+
+    <rect x="238" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="286" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">03</text>
+    <text x="286" y="163" text-anchor="middle" font-size="11" fill="#333941">声明</text>
+
+    <rect x="342" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="390" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">04</text>
+    <text x="390" y="163" text-anchor="middle" font-size="11" fill="#333941">静态</text>
+
+    <rect x="446" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="494" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">05</text>
+    <text x="494" y="163" text-anchor="middle" font-size="11" fill="#333941">场景</text>
+
+    <rect x="550" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="598" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">06</text>
+    <text x="598" y="163" text-anchor="middle" font-size="11" fill="#333941">比较</text>
+
+    <rect x="654" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="702" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">07</text>
+    <text x="702" y="163" text-anchor="middle" font-size="11" fill="#333941">矛盾</text>
+
+    <rect x="758" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="806" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">08</text>
+    <text x="806" y="163" text-anchor="middle" font-size="11" fill="#333941">闭合</text>
+
+    <rect x="862" y="120" width="96" height="56" rx="6" fill="#FFFFFF" stroke="#E4E1D8"/>
+    <text x="910" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#8F3F06">09</text>
+    <text x="910" y="163" text-anchor="middle" font-size="11" fill="#333941">重放</text>
+
+    <line x1="30" y1="196" x2="958" y2="196" stroke="#B3261E" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="480" y="220" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8C1D17">fail · unknown · unsupported · truncated · skipped —— 永不聚合为 pass</text>
+    <text x="480" y="242" text-anchor="middle" font-size="11" fill="#4A505A">每阶段与每项必需检查必须恰好出现一次，并链接到嵌入证据包中的记录</text>
+  </svg>
+  </div>
+  <figcaption><b>图 9</b> · 9 个必需阶段（完整名称见下方表格）。红色虚线标出这套契约的性格：<b>五种非通过状态永不聚合为通过</b>，且每个阶段与每项检查必须<b>恰好出现一次</b>——重复出现或缺失同样不合格。（数据来源：<code>docs/reconstruction-readiness.md</code> 的 Required stages 表）</figcaption>
+</figure>
+
+<table class="tbl">
+  <caption>表 7 · 9 阶段的必需证明（译自 <code>docs/reconstruction-readiness.md</code>）</caption>
+  <thead><tr><th class="n">#</th><th>阶段</th><th>必需证明</th></tr></thead>
+  <tbody>
+    <tr><td class="n">01</td><td class="mono">discover-classify</td><td>target-free 启动、产物库存、兼容工作流选择，以及<b>精确的可见限制</b></td></tr>
+    <tr><td class="n">02</td><td class="mono">diagnose-environment</td><td>把"损坏的运行时"与"分析失败"分开归因；检测版本偏差；恢复后 revision 已变</td></tr>
+    <tr><td class="n">03</td><td class="mono">declare-request</td><td>精确的 target、operation、lifecycle <b>在启动之前</b>已被请求携带</td></tr>
+    <tr><td class="n">04</td><td class="mono">static-analysis</td><td>原生与 JavaScript 双路路由；<b>保留</b>歧义、截断、不支持的语法与残留未知</td></tr>
+    <tr><td class="n">05</td><td class="mono">reactive-scenarios</td><td>谓词驱动的交互、后代结算、Electron 关联、取消清理的证据</td></tr>
+    <tr><td class="n">06</td><td class="mono">compare-authority-candidate</td><td>显式的偏序 / 有限迹语义；主分歧本地化；比较不完整时给出 <code>unknown</code></td></tr>
+    <tr><td class="n">07</td><td class="mono">preserve-contradictions</td><td>记录并继续；受影响的等价性被阻断；未受影响的比较被保留</td></tr>
+    <tr><td class="n">08</td><td class="mono">verify-reconstruction-closure</td><td>检测到不完整复刻；增量验证器闭合；<b>拒绝"权威委托"型候选</b></td></tr>
+    <tr><td class="n">09</td><td class="mono">export-replay</td><td>CLI/MCP 一致；进程与结构化失败一致；确定性重放；篡改与过期输入被拒绝</td></tr>
+  </tbody>
+</table>
+
+<h3>fail-closed：12 条拒绝就绪的情形</h3>
+
+<p>契约还列了一张"什么时候判定为不就绪"的清单。它比"通过条件"更能说明设计取向——因为这里每一条都是<strong>主动拒绝给出结论</strong>：</p>
+
+<ul>
+  <li>一个有界能力<b>没有给出有效的数值限制</b>；</li>
+  <li>一个 fixture 缺少<b>恰好一个</b>兼容的选中工作流；</li>
+  <li>调用了不兼容或不可用的 provider；</li>
+  <li>类型化的 CLI 失败<b>却以 0 退出</b>，或 MCP 失败<b>却报告成功</b>；</li>
+  <li>并发行为使用了全域序比较；</li>
+  <li><b>把截断、不稳定、权威不可用或矛盾标记为等价</b>；</li>
+  <li>一处刻意的主分歧没有被本地化；</li>
+  <li>矛盾证据或受影响的比较缺失；</li>
+  <li>复刻义务台账不是 <code>ready</code>、没有必需义务，或保留了未归属/未验证的必需义务；</li>
+  <li>进程超出其声明的 target / lifecycle、取消丢失诊断信息，或自有资源未释放；</li>
+  <li>重放不确定、篡改与过期未被检测，或预期源摘要不符。</li>
+</ul>
+
+<p>最后一条尤其能说明"可复现"是被当作硬要求写进契约的：<strong>连"上次的源摘要和这次不一样"都必须被检测出来并拒绝</strong>。</p>
+
+<div class="verdict">
+  <p class="vh">这一层对本次实践的意义</p>
+  <p>我在便笺复刻的规划里自定了一套 ■/□ 标记来表示"证据强 / 证据弱"。读完这套契约才明白差距在哪：<b>我的标记只是我自己的判断，而 REA 的 obligation 是可被机器校验的字段约束</b>——它要求每条义务挂 stable ID、挂 authority 等级、挂必需用例类型、挂支持证据 ID，并且拒绝用低权威证据闭合高权威义务。</p>
+  <p>如果重做那份规划，正确形态应该是产出一份 obligation ledger（哪怕手工写），而不是一张带标记的规格表。</p>
+</div>
+</section>
+<section id="s10">
+<h2><span class="num">10</span>进程基础层与工程纪律</h2>
+<p class="sect-sub">编排层要长期跑别人的引擎、启别人的进程、读别人写的文件——这一层的约束条件，比功能更能看出项目的成熟度。</p>
+
+<p>官方架构图里有一个专门的 subgraph 叫 <code>Provider Process Foundation</code>，包含 <code>src/process/</code>（59 个文件）与 <code>src/windows/</code>。它的标注是：<b>owned process groups, private roots, deadlines, bounded file reads and diagnostics, cleanup</b>。这六项就是 REA 对"如何安全地跑一个第三方引擎"给出的答案。</p>
+
+<figure id="f10">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 400" role="img" aria-label="REA 进程基础层对自有进程施加的六项约束">
+    <rect x="370" y="155" width="220" height="70" rx="10" fill="#FFFFFF" stroke="#6D3FB5" stroke-width="1.5"/>
+    <text x="480" y="184" text-anchor="middle" font-size="14" font-weight="700" fill="#5A3099">provider 自有进程</text>
+    <text x="480" y="204" text-anchor="middle" font-size="11" fill="#4A505A">不属于调用方，不被共享</text>
+
+    <line x1="480" y1="155" x2="480" y2="44" stroke="#CFCABD" stroke-width="1.5"/>
+    <rect x="390" y="4" width="180" height="40" rx="7" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="480" y="21" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">owned process groups</text>
+    <text x="480" y="36" text-anchor="middle" font-size="11" fill="#4A505A">自有进程组</text>
+
+    <line x1="590" y1="178" x2="720" y2="105" stroke="#CFCABD" stroke-width="1.5"/>
+    <line x1="590" y1="202" x2="720" y2="275" stroke="#CFCABD" stroke-width="1.5"/>
+    <rect x="720" y="85" width="180" height="40" rx="7" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="810" y="102" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">private roots</text>
+    <text x="810" y="117" text-anchor="middle" font-size="11" fill="#4A505A">私有根目录</text>
+
+    <rect x="720" y="255" width="180" height="40" rx="7" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="810" y="272" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">deadlines</text>
+    <text x="810" y="287" text-anchor="middle" font-size="11" fill="#4A505A">时限</text>
+
+    <line x1="480" y1="225" x2="480" y2="336" stroke="#CFCABD" stroke-width="1.5"/>
+    <rect x="390" y="340" width="180" height="40" rx="7" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="480" y="357" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">bounded file reads</text>
+    <text x="480" y="372" text-anchor="middle" font-size="11" fill="#4A505A">有界文件读取</text>
+
+    <rect x="60" y="255" width="180" height="40" rx="7" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="150" y="272" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">diagnostics</text>
+    <text x="150" y="287" text-anchor="middle" font-size="11" fill="#4A505A">诊断留存</text>
+
+    <line x1="370" y1="202" x2="240" y2="275" stroke="#CFCABD" stroke-width="1.5"/>
+    <line x1="370" y1="178" x2="240" y2="105" stroke="#CFCABD" stroke-width="1.5"/>
+    <rect x="60" y="85" width="180" height="40" rx="7" fill="#F8F6F0" stroke="#E4E1D8"/>
+    <text x="150" y="102" text-anchor="middle" font-size="11" font-weight="700" fill="#333941">cleanup</text>
+    <text x="150" y="117" text-anchor="middle" font-size="11" fill="#4A505A">清理</text>
+  </svg>
+  </div>
+  <figcaption><b>图 10</b> · 进程基础层对每个 provider 自有进程施加的六项约束。注意"私有根目录"与"有界文件读取"这两项——它们不是性能优化，而是<b>把第三方引擎可能造成的影响限制在可控范围内</b>。配合第 03 章的 <code>verified</code> / <code>unavailable</code> 所有权观测，自有资源的泄漏是可查的。（数据来源：<code>docs/architecture.mermaid</code>）</figcaption>
+</figure>
+
+<h3>安装期安全审计</h3>
+
+<p>本次实践在安装前对 npm 包做了一轮审计。结论如下——这一节的方法比结论更有参考价值：</p>
+
+<table class="tbl">
+  <caption>表 8 · <code>rea-agents@6.4.0</code> 安装期行为审计（实测）</caption>
+  <thead><tr><th>检查项</th><th>结果</th><th>含义</th></tr></thead>
+  <tbody>
+    <tr><td><code>preinstall</code> / <code>install</code> / <code>postinstall</code></td><td><span class="tag g">均不存在</span></td><td><b>安装时不执行任何代码</b>。这是最要紧的一条——安装期脚本是供应链攻击最常见的入口</td></tr>
+    <tr><td><code>prepare</code> / <code>prepack</code></td><td><span class="tag a">存在</span></td><td>但只在 git 检出安装与 publish 时触发，<b>从 registry 装 tarball 不会跑</b></td></tr>
+    <tr><td>发布者</td><td><span class="tag g">GitHub Actions OIDC</span></td><td>受信发布（非个人 token），带 npm provenance</td></tr>
+    <tr><td>完整性</td><td><span class="tag g">sha512</span></td><td>npm 安装时自动校验</td></tr>
+    <tr><td>native optionalDependencies</td><td><span class="tag g">无</span></td><td>不下载预编译原生二进制</td></tr>
+    <tr><td>外部副作用</td><td><span class="tag a">需显式同意</span></td><td>文档明确：写客户端配置、安装引擎都需另行显式同意</td></tr>
+  </tbody>
+</table>
+
+<div class="verdict">
+  <p class="vh">顺带说一个被跳过的安装路径</p>
+  <p>官方文档提供了一条 <code>curl -fsSL … | bash</code> 的安装方式。本次实践<b>没有采用</b>，而是走 npm 包路径。原因是审计面差异很大：直接执行远程脚本无法在安装前做上述任何检查，而 npm 路径可以逐项验证。<b>能审计的路径优先于方便的路径</b>——这条与 REA 自己的 fail-closed 取向倒是同构的。</p>
+</div>
+
+<h3>生命周期：一个被推翻的担心</h3>
+
+<p>本次实践用独立前缀安装（<code>~/.local/share/rea</code> + 软链），而不是 npm 全局。安装后我产生过一个担心：<b>既然 <code>npm root -g</code> 指向的位置与我们的实际安装位置不同，那么 <code>rea setup</code> 注册客户端时会不会写入一个坏掉的启动器路径？</b></p>
+
+<p>实测证明这个担心不成立：</p>
+
+<pre><code>$ rea setup --client codex --dry-run
+  Command: "/Users/junjian/.local/share/rea/lib/node_modules/rea-agents/scripts/rea.mjs" "mcp"
+                                    ↑ 正是我们的实际安装位置
+
+$ rea update
+  {"status":"current","currentVersion":"6.4.0","installMethod":"npm"}</code></pre>
+
+<p>REA 用的是<strong>自身路径自省</strong>，而不是去问 <code>npm root -g</code>。所以"装在哪"这个问题，它自己知道答案，不需要外部约定。</p>
+
+<p>顺带记一条实测到的 Node 生态机制，它解释了为什么当初必须显式指定前缀：nvm 的 <code>npm</code> 首行是 <code>#!/usr/bin/env node</code>，所以<strong>用绝对路径调用它，它仍然会去跑 PATH 上的那个 node</strong>，从而把 prefix 解析成那个 node 的目录。显式 <code>--prefix</code> 因此是必要且正确的。</p>
+
+<h3><code>doctor</code> 的退出码语义</h3>
+
+<p>实测中 <code>rea doctor</code> 返回退出码 1。这不是环境坏了——它的检查项里同时包含"本机装了哪些受支持的客户端"和"引擎是否就绪"，于是<b>未注册的客户端与未安装的引擎都被计入不健康项</b>。</p>
+
+<p>真正需要关注的是环境侧的判定。契约文档对 <code>doctor</code> 的职责描述是：它检查受支持的 JSON/TOML 客户端注册，把它们的命令向量归类为 <b><code>aligned</code> / <code>stale</code> / <code>missing</code> / <code>invalid</code></b> 四态，并且在<b>没有活动连接提供身份之前，把实时服务器状态保持为 <code>unknown</code></b>。</p>
+
+<p>四态分类 + 一个诚实的 unknown，这又是一次"宁可分类细一点，也不含糊说一句配置有问题"。</p>
+
+<h3>工程纪律的几个可观测量</h3>
+
+<table class="tbl">
+  <caption>表 9 · 工程实践的可观测特征（实测）</caption>
+  <thead><tr><th>特征</th><th>观测值</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>仓库规模</td><td class="n">2,957 个文件</td><td>不含依赖，纯源码树</td></tr>
+    <tr><td>提交数</td><td class="n">2,444</td><td>—</td></tr>
+    <tr><td>测试框架</td><td class="mono">vitest + @fast-check/vitest</td><td><b>含属性测试（property-based）</b>，不只是示例测试</td></tr>
+    <tr><td>静态检查</td><td class="mono">oxlint, oxfmt, knip, jscpd</td><td>含<b>死代码检测</b>与<b>重复代码检测</b></td></tr>
+    <tr><td>提交守卫</td><td class="mono">husky, lint-staged</td><td>pre-commit 阶段拦截</td></tr>
+    <tr><td>构建</td><td class="mono">rolldown, turbo</td><td>现代打包器 + 任务编排</td></tr>
+    <tr><td>契约测试</td><td class="mono">src/contracts/*.test.ts</td><td>每个工具契约都有对应测试文件</td></tr>
+  </tbody>
+</table>
+
+<p>其中 <code>knip</code>（死代码）与 <code>jscpd</code>（重复代码）这两项值得单独注意：它们是"清理型"检查，不是功能型检查。一个项目愿意在 CI 里跑这两样，说明它把<strong>结构性整洁当成了持续约束</strong>，而不是一次性重构。</p>
+</section>
+
+<section id="s11">
+<h2><span class="num">11</span>失效模式，与三条被实测推翻的判断</h2>
+<p class="sect-sub">这一章是全文最该读的一章。前面十章的机制再准确，也不如"我错在哪、为什么错"来得有用。</p>
+
+<h3>三条更正</h3>
+
+<figure id="f11">
+  <div class="fig-box">
+  <svg viewBox="0 0 960 340" role="img" aria-label="三条被实测推翻的判断">
+    <rect x="40" y="50" width="400" height="70" rx="8" fill="#FDF6F5" stroke="#E8C4C0"/>
+    <text x="58" y="72" font-size="11" font-weight="700" fill="#8C1D17">原判断 1</text>
+    <text x="58" y="92" font-size="11.5" fill="#333941">npm root -g 与实际安装位置不一致，</text>
+    <text x="58" y="109" font-size="11.5" fill="#333941">setup 会注册一个坏掉的启动器路径</text>
+    <path d="M444,85 L512,85" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M520,85 L510,80 L510,90 Z" fill="#CFCABD"/>
+    <rect x="520" y="50" width="400" height="70" rx="8" fill="#F1F8F1" stroke="#BFDCC0"/>
+    <text x="538" y="72" font-size="11" font-weight="700" fill="#1B5820">实测：不成立</text>
+    <text x="538" y="92" font-size="11.5" fill="#333941">setup 用自身路径自省，正确解析到实际位置</text>
+    <text x="538" y="109" font-size="11.5" fill="#333941">update 也正常：installMethod = npm</text>
+
+    <rect x="40" y="135" width="400" height="70" rx="8" fill="#FDF6F5" stroke="#E8C4C0"/>
+    <text x="58" y="157" font-size="11" font-weight="700" fill="#8C1D17">原判断 2</text>
+    <text x="58" y="177" font-size="11.5" fill="#333941">没分析 Assets.car 是我的疏漏，</text>
+    <text x="58" y="194" font-size="11.5" fill="#333941">补跑 inspect-asset-catalog 就能补上</text>
+    <path d="M444,170 L512,170" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M520,170 L510,165 L510,175 Z" fill="#CFCABD"/>
+    <rect x="520" y="135" width="400" height="70" rx="8" fill="#F1F8F1" stroke="#BFDCC0"/>
+    <text x="538" y="157" font-size="11" font-weight="700" fill="#1B5820">实测：是我的误判</text>
+    <text x="538" y="177" font-size="11.5" fill="#333941">REA 自己也打不开：target_unavailable</text>
+    <text x="538" y="194" font-size="11.5" fill="#333941">unsupported binary format —— 是工具边界</text>
+
+    <rect x="40" y="220" width="400" height="70" rx="8" fill="#FDF6F5" stroke="#E8C4C0"/>
+    <text x="58" y="242" font-size="11" font-weight="700" fill="#8C1D17">原判断 3</text>
+    <text x="58" y="262" font-size="11.5" fill="#333941">接入 Ghidra 只需设置环境变量</text>
+    <text x="58" y="279" font-size="11.5" fill="#333941">GHIDRA_INSTALL_DIR 即可</text>
+    <path d="M444,255 L512,255" stroke="#CFCABD" stroke-width="1.5"/>
+    <path d="M520,255 L510,250 L510,260 Z" fill="#CFCABD"/>
+    <rect x="520" y="220" width="400" height="70" rx="8" fill="#F1F8F1" stroke="#BFDCC0"/>
+    <text x="538" y="242" font-size="11" font-weight="700" fill="#1B5820">实测：不完整</text>
+    <text x="538" y="262" font-size="11.5" fill="#333941">universal Mach-O 报 architecture_unsupported</text>
+    <text x="538" y="279" font-size="11.5" fill="#333941">须先把二进制 thin 成单架构才能进入分析</text>
+  </svg>
+  </div>
+  <figcaption><b>图 11</b> · 三条被实测推翻的判断。左栏是我在交付物里写过的原话，右栏是实测结果。<b>三条都不是"REA 的缺陷"</b>——一条是我的推测未经验证，一条是我把自己的疏漏安错了地方，一条是结论下得太快。它们共同的教训是：机制类结论必须落到一次真实调用上，否则很容易写成"听起来对但跑不通"的话。</figcaption>
+</figure>
+
+<h4>更正一：路径隐患不存在</h4>
+<p>本次改用独立前缀安装后，我担心 <code>rea setup</code> 会基于 <code>npm root -g</code> 拼出错误的启动器路径。<code>--dry-run</code> 实测显示它解析到的是真实安装位置。原因是它用自身路径自省。这条更正的含义是：<strong>不要用"通用生态常识"去推测一个具体工具的实现</strong>——REA 在这件事上做得比通用做法更可靠。</p>
+
+<h4>更正二：Assets.car 不是我的疏漏</h4>
+<p>我在复刻规划的自我批评里，把"完全跳过了 <code>Assets.car</code>"列为自己的遗漏。实际补跑后 <code>inspect-asset-catalog</code> 返回 <code>target_unavailable / unsupported binary format</code>。<strong>REA 自己也读不了这个文件。</strong>这条更正的含义是：<b>先验证工具是否具备某能力，再检讨自己是否遗漏</b>——否则会把工具边界误记成自己的失误，进而去做无效的补救。</p>
+
+<h4>更正三：接引擎不只是一个环境变量</h4>
+<p>我把"设 <code>GHIDRA_INSTALL_DIR</code> 即可"写进了规划。实测报错里出现了 <code>ghidra: architecture_unsupported</code>，并附有说明：v1 无法对 universal Mach-O 强制架构，须先 thin。<strong>这意味着接入 Ghidra 的前提条件里，包含一步针对目标文件的前置处理。</strong>这条更正的含义是：<b>"装上就能用"通常在编排层工具上不成立</b>——编排层的接入成本不只在你装了什么，还在目标本身的形态。</p>
+
+<h3>失效模式清单</h3>
+
+<p>把本次实践与契约文档合起来看，REA 会"用不了"或"给不出结论"的情形可以归纳成五类。它们都<strong>不表现为崩溃</strong>，而是表现为带原因的显式拒绝：</p>
+
+<table class="tbl">
+  <caption>表 10 · 五类失效模式</caption>
+  <thead><tr><th>失效类型</th><th>典型表现</th><th>根因</th><th>处置</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>引擎缺席</b></td>
+      <td><code>provider_unavailable</code> + <code>not_configured</code> / <code>executable_missing</code></td>
+      <td>没装或没配引擎</td>
+      <td>按 <code>remediation</code> 安装；或改用 target-free 操作</td>
+    </tr>
+    <tr>
+      <td><b>目标不兼容</b></td>
+      <td><code>provider_unavailable</code> + <code>architecture_unsupported</code>，或 <code>target_unavailable</code> + <code>unsupported binary format</code></td>
+      <td>文件格式 / 架构超出该 provider 或该操作的处理范围</td>
+      <td>预处理目标（如 thin），或换操作；<b>不要期待换引擎能解决格式问题</b></td>
+    </tr>
+    <tr>
+      <td><b>真机观测缺失</b></td>
+      <td>静态结论无法支撑运行时主张；义务保持 <code>open</code></td>
+      <td>静态 authority 低于原始观测 authority</td>
+      <td>跑运行时 provider 补证据，而不是放宽闭合条件</td>
+    </tr>
+    <tr>
+      <td><b>客户端容量不足</b></td>
+      <td>某些客户端对所有请求失败（单工具 schema 超上限）</td>
+      <td>函数调用客户端对 schema 字面大小有上限</td>
+      <td>开 <code>REA_MCP_INPUT_SCHEMA_PROFILE=compact</code>；<b>需重启生效</b></td>
+    </tr>
+    <tr>
+      <td><b>事实冲突</b></td>
+      <td>输出里出现 <code>contradictions</code>，或义务闭合被判 <code>failed</code></td>
+      <td>多个证据源互斥</td>
+      <td>按契约要求<b>记录并继续</b>，阻断受影响的等价性判定，保留未受影响的比较</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="verdict warn">
+  <p class="vh">一处我判不准的边界，如实说明</p>
+  <p>170 个 MCP 工具里，究竟多少个真正需要引擎？我尝试过两种判法：</p>
+  <p><b>按工具名匹配</b>（含 <code>native</code> / <code>_ida</code> / <code>hopper</code> / <code>ghidra</code> / <code>decompile</code>）会漏掉 <code>goto_address</code>、<code>list_documents</code>、<code>procedure_pseudo_code</code> 这类明显依赖活动反汇编会话的名字。</p>
+  <p><b>按描述文本匹配</b>又会高估——<code>demangle_swift</code> 的描述里明确写着 <i>"without requiring Hopper"</i>，却会被关键词命中。所以 <b>这个边界无法纯静态确定</b>。</p>
+  <p>我唯一敢引用的可靠数字是：<b>按描述直接点名引擎的工具至少 33 个</b>（Hopper GUI 光标类、Ghidra headless 类、JEB 类等）。至于"引擎绑定工具占多大比例"，本报告不给结论——<b>REA 自己给出的机器可读口径是那 18 项 target-free 操作，请以它为准</b>。</p>
+</div>
+
+<h3>本次实践未完成的项</h3>
+
+<p>为避免读者把"没提到"误当成"不需要"，这里列出我知道但没做的：</p>
+
+<ul>
+  <li><code>capture-native-ui-scenario</code> / <code>observe-native-ui</code> —— 这 4 项运行时观测能力可用但未跑。它们是补上 nib 几何缺失（第 06 章那个边界）的唯一途径，也是复刻规划里 P0 行为观测阶段的核心。<b>本机工具链（Xcode CLI）已具备，未跑的原因是需要在目标机上真实启动应用。</b></li>
+  <li><code>project-apple-application-graph</code> —— 未跑。它能把已采集的库存证据投影成应用图，是复刻规划的下一步。</li>
+  <li><code>build-reconstruction-obligation-ledger</code> / <code>evaluate-reconstruction-coverage</code> —— 未跑。第 09 章讲的机制来自文档与源码，不是执行结果；我给的字段清单有文档依据，但<b>没有实际产出过一份 ledger</b>。</li>
+  <li>DSh 客户端注册 —— npm 6.4.0 不含 <code>dsh</code> 适配器，需要从源码构建，未做。</li>
+  <li>真实引擎端到端 —— 未装任何引擎，所以"装上引擎后 REA 表现如何"这一半，本文无法评价。</li>
+</ul>
+</section>
+
+<section id="s12">
+<h2><span class="num">12</span>正确用法清单</h2>
+<p class="sect-sub">如果只带走一页，带这一页。每条都对应前面某一章的机制。</p>
+
+<div class="g2">
+  <div class="card">
+    <h4>判断可用性</h4>
+    <ul>
+      <li>用 <code>rea capabilities --json</code> 判断"零引擎下能做什么"，不要靠工具名猜</li>
+      <li>用 <code>binary_session.tool_availability</code> 判断"当前这次调用能不能成"，因为 <code>tools/list</code> 是全量目录、<b>不反映当前可用性</b></li>
+      <li>分清两种失败：<code>provider_unavailable</code>（缺东西，可补救）vs <code>target_unavailable</code>（这个输入读不了，只能换方法）</li>
+      <li>把 <code>unknown</code> 当独立状态对待——它既不是可用也不是不可用</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>组织调查</h4>
+    <ul>
+      <li>每个结论挂 <code>evidence_id</code>；没有 ID 的结论是"我看到的"，不是"可复核的"</li>
+      <li>区分观测与推断——REA 自己就是这么分桶的（<code>observations</code> vs <code>hypotheses</code>）</li>
+      <li>把"没查清"写进输出，而不是留给读者猜。<code>unexplored_branches</code> 和 <code>residual_unknown</code> 都是正式字段</li>
+      <li>复刻类任务用义务台账的形态组织：稳定 ID + 版本 + 必需用例 + authority 要求</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>控制成本</h4>
+    <ul>
+      <li>大输出用 <code>--token-limit</code> 截断（本次单次 <code>inspect-artifact</code> 输出 426 KB）</li>
+      <li>直接写程序对话 MCP 时，<b>用事件驱动而非固定等待</b>；冷启动要加载 170 个工具的 schema</li>
+      <li>Node 脚本收尾别用 <code>process.exit()</code>，异步 stdout 会被截断——用同步写</li>
+      <li>单工具 schema 超客户端上限时开 compact profile（需重启服务器生效）</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>避免踩坑</h4>
+    <ul>
+      <li>不要假定"装了引擎就能分析一切"——架构与格式是可独立否决的条件</li>
+      <li>不要因为工具清单里有某个工具，就认为它在当前环境可用</li>
+      <li>不要用低权威证据去支撑高权威结论（静态图 ≠ 运行时行为）</li>
+      <li>不要指望失败后自动换条路——REA 明确不这么做</li>
+    </ul>
+  </div>
+</div>
+
+<div class="verdict">
+  <p class="vh">一句话总结用法</p>
+  <p>把 REA 当成<strong>一个需要先问清楚"现在能做什么"、再接受"做不到就明说"的执行器</strong>。它的用法不舒服的地方，恰好也是它可信的地方——<b>你在它那里拿到的每一个结论，都带着"凭什么"的凭据。</b></p>
+</div>
+</section>
+
+<section id="s13">
+<h2><span class="num">13</span>结论</h2>
+<p class="sect-sub">以下判断是观点，不是共识。它们建立在前十二章的证据上，但推论部分由我负责。</p>
+
+<h3>它解决的问题不是"分析能力"，是"分析的可复核性"</h3>
+
+<p>如果把 REA 的价值理解成"让 AI 能反编译"，那它的天花板就是它所编排的引擎——你装了 Ghidra，它就有 Ghidra 的水平。<strong>这不是一个有护城河的位置。</strong></p>
+
+<p>但如果把它的价值理解成"让分析结论变得可复核、可比较、可复现"，那它做的事情就没有替代品：五元口径把观测与推断分开、authority 分级阻止证据越级、稳定 ID 让结论可追溯、fail-closed 让"没做成"无法伪装成"做成了"。<strong>这套东西在引擎换成什么之后都依然成立。</strong></p>
+
+<p>本次实践最有说服力的一个细节：126 KB 的证据包里，<code>contradictions</code> 与 <code>unexplored_branches</code> 是<b>正式字段</b>。一个把"我有哪些没查清"写进输出结构的工具，和一个只输出结论的工具，可信度不在一个层级上。</p>
+
+<h3>它的定位代价是真实的</h3>
+
+<p>编排层必然要付的代价是：<strong>能力上限受制于被编排者</strong>。零引擎环境下，REA 能做的是 18 项静态产物分析；要触及反汇编与伪代码，必须自带引擎。<code>doctor</code> 退出码 1、170 个工具里大量不可用、<code>provider_unavailable</code>——这些都是同一个代价的不同表现。</p>
+
+<p>但这个代价换来的是<strong>可裁剪性</strong>：不装引擎不会让任何一项已有能力失效（第 05 章的两栏没有交集）。对使用者来说，这意味着一件事：<strong>你可以从零成本开始用，然后按需加装</strong>，而不是必须先配齐一整条工具链。</p>
+
+<h3>对"AI 原生工具"的一点观察</h3>
+
+<p>REA 是少数把失败路径设计得和成功路径一样完整的工具。它有三套显式的失败分级（provider / target / authority）、一个诚实的三态可用性（含 <code>unknown</code>）、一份 12 条的就绪拒绝清单，以及"缺少源证据永不声称闭合"的明文规定。</p>
+
+<p>这与"AI Agent 需要什么"这个问题直接相关：<strong>Agent 最容易犯的错不是"不会做"，而是"不知道自己做没做成"。</strong>一个把"我做到了什么程度、还差什么、下一步该采什么证据"结构化输出的工具，比一个"能力强但只说结论"的工具更适合被编排进 Agent 流程——因为后者会让 Agent 在不确定的地方自信地继续往前走。</p>
+
+<div class="verdict">
+  <p class="vh">最后一个判断</p>
+  <p>本次实践的起点是"用 REA 复刻一个 macOS 应用"。走到最后，REA 给的最大收获不是它解出了多少 nib 对象（780 个节点确实有用，但那只占整件事的一小部分），而是<b>它示范了一种把"逆向"从手工技艺变成工程记录的做法</b>：先声明要证明什么，再为每条主张配置证据要求与权威等级，最后用机器判定闭合。</p>
+  <p>这套做法与工具无关。就算不用 REA，产出物也应该长成那个样子。</p>
+</div>
+</section>
+
+<section id="s14">
+<h2><span class="num">14</span>附录：本次实践的命令与产物</h2>
+
+<h3>实跑过的 REA 命令</h3>
+
+<pre><code># 版本与能力面
+rea --version                                    → 6.4.0
+rea --help                                       → 129 个子命令
+rea capabilities --json                          → 18 项 target-free，全 available
+rea doctor --json                                → node / host 双绿
+rea capabilities / providers                     → 目录身份摘要
+
+# 目标分析（零引擎路径）
+rea inspect /System/Applications/Stickies.app    → provider_unavailable（引擎绑定）
+rea decode-interface-builder &lt;app&gt; --format json → 780 节点 / 421 边 / 3 nib
+rea inspect-artifact &lt;app&gt; --format json         → 426 KB，ev_68273f72…
+rea inspect-asset-catalog &lt;Assets.car&gt;            → target_unavailable
+rea analyze-javascript-application &lt;fixture&gt;     → 退出码 0，11 阶段全走完
+
+# 生命周期
+rea setup --client codex --dry-run               → 解析到真实安装路径
+rea update --json                                → status: current
+
+# MCP 通道
+rea mcp  （stdio JSON-RPC）
+  → initialize (2024-11-05) ─→ serverInfo rea/6.4.0
+  → tools/list ─→ 170 个工具，170/170 带 inputSchema</code></pre>
+
+<h3>本次实践产出的三份交付物</h3>
+
+<table class="tbl">
+  <thead><tr><th>产物</th><th>规模</th><th>与本文的关系</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">rea-deep-research.html</td><td class="n">13 章报告</td><td>对 REA 项目本身的深度研究报告（热度、工程质量、法律边界、竞争格局）</td></tr>
+    <tr><td class="mono">stickies-replica-plan.md</td><td class="n">复刻规划</td><td>基于 REA 实测与只读侦察做的复刻方案；本文第 11 章的更正针对它</td></tr>
+    <tr><td class="mono">noteboard.html</td><td class="n">1,448 行</td><td>最终落地的单文件 HTML 便签应用；规格来自 nib 解码的 outlet 与 selector</td></tr>
+  </tbody>
+</table>
+
+<h3>关键数据来源</h3>
+
+<ul>
+  <li><b>本机 CLI 实测</b>：<code>rea <i>子命令</i></code> 的输出，2026-10-12</li>
+  <li><b>仓库文件</b>：通过 GitHub API 读取的 <code>docs/architecture.mermaid</code>、<code>docs/mcp-contracts.md</code>、<code>docs/reconstruction-obligation-ledgers.md</code>、<code>docs/reconstruction-readiness.md</code>、<code>package.json</code>、以及 <code>src/</code> 目录树</li>
+  <li><b>npm registry</b>：<code>rea-agents</code> 的版本、依赖、发布者与完整性信息</li>
+  <li><b>MCP 探针</b>：自写的 stdio JSON-RPC 探针（事件驱动）</li>
+</ul>
+
+<p>本文未使用任何 Apple 的界面文案、图标或资源文件。所有引用 REA 仓库内容的部分均已注明文件路径，读者可自行复核。</p>
+</section>
+</main>
+
+<footer><div class="wrap">
+  <p><b>证据口径说明</b>：本文所有数字来自 2026-10-12 当日实测——GitHub API、npm registry、本机 <code>rea</code> CLI 输出、以及 <code>gh api</code> 取得的仓库文件。标注 <span class="tag n">实测</span> 的为命令直接输出；标注 <span class="tag n">源码</span> 的为仓库文件内容；标注 <span class="tag n">推断</span> 的为前两者的合理外推，文中已显式注明。凡涉及未测项一律标为未知，不做补全。</p>
+  <p>REA 为第三方开源项目（morluto/rea）。本文为技术机制分析，不构成对其能力或合规性的背书。文中未使用任何 Apple 的界面文案、图标或资源文件。</p>
+</div></footer>
+
+</body>
+</html>
