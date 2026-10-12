@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="从 1513 星到 11 万星的六天里，REA 到底做了什么？本报告逐层拆开这个逆向工程 Agent 编排层的架构、16 类目标能力边界、证据强度与中美法律红线，并把星标曲线、npm 装机量、fork 比率与代码实现交叉核对，分清真实贡献与注意力泡沫。">
+<meta name="keywords" content="reverse-engineering, ai-agent, mcp-server, code-analysis, open-source-hype, deep-research">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-12">
+<title>REA 深度研究报告 · 当逆向工程被 Agent 化</title>
+<style>
+  :root{
+    --bg:#FBFAF7;
+    --panel:#FFFFFF;
+    --panel2:#F5F3EE;
+    --panel3:#EFEDE6;
+    --ink:#16181D;
+    --ink2:#333941;
+    --ink3:#454B54;
+    --border:#E3E0D8;
+    --border2:#D3CFC4;
+    --amber:#B45309;   --amber-t:#8F3F06;   --amber-bg:#FDF3E3;
+    --green:#2E7D32;   --green-t:#1B5820;   --green-bg:#EAF5EA;
+    --blue:#2F6FB0;    --blue-t:#1F5288;    --blue-bg:#EAF2FB;
+    --teal:#0F766E;    --teal-t:#0A5750;    --teal-bg:#E6F4F2;
+    --purple:#6D3FB5;  --purple-t:#5A3099;  --purple-bg:#F1EBFB;
+    --red:#B3261E;     --red-t:#8C1D17;     --red-bg:#FBEAE8;
+    --grid:#E8E5DD;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:16px; line-height:1.75; overflow-wrap:break-word;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px 96px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;
+    background:var(--panel2);border:1px solid var(--border);border-radius:5px;
+    padding:1px 5px;overflow-wrap:anywhere}
+  pre{background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+    padding:16px 18px;overflow-x:auto;font-size:13.5px;line-height:1.65}
+  pre code{background:none;border:none;padding:0;font-size:1em}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  nav .inner{max-width:1060px;margin:0 auto;padding:10px 24px;display:flex;
+    align-items:center;gap:14px;flex-wrap:wrap}
+  nav .brand{font-weight:700;font-size:14px;letter-spacing:.02em;white-space:nowrap}
+  nav .brand span{color:var(--amber-t)}
+  nav .links{display:flex;gap:2px;flex-wrap:wrap;font-size:12.5px}
+  nav a{color:var(--ink2);text-decoration:none;padding:3px 7px;border-radius:6px;white-space:nowrap}
+  nav a:hover{background:var(--panel3);color:var(--ink)}
+
+  /* ---------- header ---------- */
+  header{padding:64px 0 40px;border-bottom:1px solid var(--border)}
+  .kicker{display:inline-block;font-size:12.5px;font-weight:650;letter-spacing:.06em;
+    color:var(--amber-t);background:var(--amber-bg);border:1px solid #F0DCC0;
+    border-radius:999px;padding:3px 12px;margin-bottom:20px}
+  h1{font-size:38px;line-height:1.28;margin:0 0 18px;letter-spacing:-.015em;font-weight:760}
+  .lede{font-size:18px;line-height:1.72;color:var(--ink2);max-width:820px;margin:0 0 26px}
+  .byline{font-size:13px;color:var(--ink3);display:flex;gap:18px;flex-wrap:wrap}
+  .byline b{color:var(--ink2);font-weight:600}
+  .factstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));
+    gap:1px;background:var(--border);border:1px solid var(--border);
+    border-radius:10px;overflow:hidden;margin-top:30px}
+  .factstrip div{background:var(--panel);padding:14px 16px}
+  .factstrip b{display:block;font-size:21px;font-weight:720;letter-spacing:-.02em;line-height:1.25}
+  .factstrip span{display:block;font-size:11.5px;color:var(--ink3);margin-top:3px}
+
+  /* ---------- sections ---------- */
+  section{padding:56px 0 8px;scroll-margin-top:24px;border-top:1px solid var(--border)}
+  section:first-of-type{border-top:none}
+  h2{font-size:26px;line-height:1.35;margin:0 0 8px;letter-spacing:-.01em;font-weight:730;
+    display:flex;gap:12px;align-items:baseline}
+  h2 .num{font-size:13px;font-weight:700;color:var(--amber-t);font-variant-numeric:tabular-nums;
+    letter-spacing:.04em;flex:0 0 auto;padding-top:6px}
+  h3{font-size:18.5px;margin:34px 0 10px;letter-spacing:-.005em;font-weight:700}
+  h4{font-size:15.5px;margin:24px 0 8px;font-weight:700;color:var(--ink)}
+  .sub{color:var(--ink2);font-size:15.5px;margin:0 0 26px;max-width:840px}
+  p{margin:0 0 16px}
+  a{color:var(--blue-t)}
+  ul,ol{margin:0 0 16px;padding-left:22px}
+  li{margin-bottom:7px}
+
+  /* ---------- callouts ---------- */
+  .box{border:1px solid var(--border);border-left:3px solid var(--border2);
+    background:var(--panel);border-radius:8px;padding:16px 20px;margin:20px 0}
+  .box.warn{border-left-color:var(--amber);background:var(--amber-bg);border-color:#F0DCC0}
+  .box.stop{border-left-color:var(--red);background:var(--red-bg);border-color:#EFCFCB}
+  .box.ok{border-left-color:var(--green);background:var(--green-bg);border-color:#CFE6CF}
+  .box.info{border-left-color:var(--blue);background:var(--blue-bg);border-color:#CFE0F3}
+  .box .t{font-weight:700;font-size:14.5px;margin:0 0 6px;display:block}
+  .box.warn .t{color:var(--amber-t)} .box.stop .t{color:var(--red-t)}
+  .box.ok .t{color:var(--green-t)} .box.info .t{color:var(--blue-t)}
+  .box p:last-child{margin-bottom:0}
+
+  /* ---------- tables ---------- */
+  .tablewrap{margin:20px 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--panel)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  caption{text-align:left;font-size:13px;font-weight:650;color:var(--ink2);
+    padding:12px 16px;background:var(--panel2);border-bottom:1px solid var(--border)}
+  th{text-align:left;font-size:12.5px;font-weight:700;color:var(--ink2);
+    background:var(--panel2);padding:9px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+  td{padding:9px 14px;border-bottom:1px solid var(--grid);vertical-align:top;line-height:1.6}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--panel2)}
+  .num-col{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* ---------- tags ---------- */
+  .tag{display:inline-block;font-size:11.5px;font-weight:650;line-height:1.5;
+    padding:1px 7px;border-radius:999px;border:1px solid;white-space:nowrap}
+  .tag.a{color:var(--amber-t);background:var(--amber-bg);border-color:#F0DCC0}
+  .tag.g{color:var(--green-t);background:var(--green-bg);border-color:#CFE6CF}
+  .tag.b{color:var(--blue-t);background:var(--blue-bg);border-color:#CFE0F3}
+  .tag.t{color:var(--teal-t);background:var(--teal-bg);border-color:#C6E4E1}
+  .tag.p{color:var(--purple-t);background:var(--purple-bg);border-color:#DCCDF3}
+  .tag.r{color:var(--red-t);background:var(--red-bg);border-color:#EFCFCB}
+  .tag.n{color:var(--ink3);background:var(--panel2);border-color:var(--border2)}
+
+  /* ---------- claims ---------- */
+  .claims{counter-reset:cl;list-style:none;padding:0;margin:26px 0}
+  .claims li{counter-increment:cl;position:relative;padding:14px 18px 14px 60px;
+    border:1px solid var(--border);border-radius:10px;background:var(--panel);margin-bottom:10px}
+  .claims li::before{content:"K" counter(cl);position:absolute;left:16px;top:14px;
+    font-size:12px;font-weight:750;color:var(--amber-t);background:var(--amber-bg);
+    border:1px solid #F0DCC0;border-radius:6px;padding:2px 7px;letter-spacing:.02em}
+  .claims .head{font-weight:680;display:block;margin-bottom:3px}
+  .claims .why{font-size:14px;color:var(--ink2)}
+
+  /* ---------- figures ---------- */
+  figure{margin:26px 0;min-width:0}
+  .fig-box{overflow-x:auto;border:1px solid var(--border);border-radius:10px;
+    background:var(--panel);padding:16px}
+  svg{display:block;min-width:600px;width:100%;height:auto}
+  figcaption{font-size:12.5px;color:var(--ink3);margin-top:10px;line-height:1.6;padding:0 2px}
+  figcaption b{color:var(--ink2);font-weight:650}
+
+  /* ---------- evidence strength ---------- */
+  .grade{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:650}
+  .grade i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+  footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--border);
+    font-size:13px;color:var(--ink3);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+  @media (max-width:760px){
+    table{display:block;overflow-x:auto;white-space:nowrap}
+    .grid2{grid-template-columns:1fr !important}
+    h1{font-size:29px}
+    .lede{font-size:16.5px}
+    section{padding-top:40px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <div class="brand">REA 深度研究<span> · </span>morluto/rea</div>
+    <div class="links">
+      <a href="#s01">01 热度解剖</a>
+      <a href="#s02">02 范式判定</a>
+      <a href="#s03">03 工程实现</a>
+      <a href="#s04">04 主工作流</a>
+      <a href="#s05">05 能力全景</a>
+      <a href="#s06">06 竞品格局</a>
+      <a href="#s07">07 证据全景</a>
+      <a href="#s08">08 度量体系</a>
+      <a href="#s09">09 法律边界</a>
+      <a href="#s10">10 反模式</a>
+      <a href="#s11">11 可迁移方法论</a>
+      <a href="#s12">12 结论</a>
+      <a href="#s13">13 来源</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header>
+  <span class="kicker">深度研究 · 单文件离线报告</span>
+  <h1>当逆向工程被 Agent 化：<br />REA 的工程真相与热度泡沫</h1>
+  <p class="lede">
+    <code>morluto/rea</code> 在 2026 年 10 月的六天里从 1,513 星涨到 11 万星，被中文媒体称为「逆向灭霸」。
+    本报告不复述宣传语，只做一件事：把它的<strong>架构、能力边界、证据强度、法律位置</strong>逐层拆开，
+    并与它的星标曲线、npm 装机量、fork 比率做交叉核对——看哪些是真实的技术贡献，哪些只是注意力。
+  </p>
+  <div class="byline">
+    <span><b>研究对象</b> morluto/rea @ rea-agents v6.4.0</span>
+    <span><b>数据截止</b> 2026-10-12 03:00 UTC</span>
+    <span><b>一手来源</b> GitHub API / npm registry / 仓库源码</span>
+  </div>
+  <div class="factstrip">
+    <div><b>110,042</b><span>GitHub Stars</span></div>
+    <div><b>22.2%</b><span>Fork / Star 比率</span></div>
+    <div><b>349</b><span>Watchers</span></div>
+    <div><b>7.4 万</b><span>npm 月下载</span></div>
+    <div><b>2,444</b><span>提交总数</span></div>
+    <div><b>1,546</b><span>src 文件数</span></div>
+    <div><b>41</b><span>MCP 工具注册器</span></div>
+    <div><b>16</b><span>目标类型</span></div>
+  </div>
+</header>
+
+<section id="s00">
+  <h2><span class="num">00</span>摘要：十条核心论断</h2>
+  <p class="sub">每条论断都可以被证据证伪。报告后续每一章，都是其中若干条的展开。</p>
+
+  <ol class="claims">
+    <li>
+      <span class="head">REA 不是反编译器，而是「逆向调查的编排层」</span>
+      <span class="why">它不实现反编译，而是把 Hopper / Ghidra / IDA / JADX 等既有引擎包装成统一的 MCP 契约，真正的贡献是证据链路与跨工具的调查状态保持。</span>
+    </li>
+    <li>
+      <span class="head">11 万星是一次注意力事件，不是采用曲线</span>
+      <span class="why">fork/star 22.2%（成熟项目通常 2–8%）、watcher/star 0.32%（通常 1–3%）、npm 月下载 7.4 万对 11 万星——三个口径同时指向「收藏围观远大于真实装机」。</span>
+    </li>
+    <li>
+      <span class="head">工程质量显著高于它的「爆款」形象</span>
+      <span class="why">1,546 个 src 文件、800 个测试、287 个脚本、2,444 次提交、100+ 贡献者、41 个工具注册器，以及十余条 <code>real-*</code> 真机验证 CI lane——这不是 vibe-coding 的产物。</span>
+    </li>
+    <li>
+      <span class="head">「Anything」是范围宣称，不是能力承诺</span>
+      <span class="why">16 类目标中，所有深度原生分析都必须自带引擎；返回的是伪代码而非原始源码，且大二进制受上下文窗口硬约束。</span>
+    </li>
+    <li>
+      <span class="head">它降低的是「专业技能的准入门槛」，不是「逆向本身的难度」</span>
+      <span class="why">把 Ghidra 这台显微镜交给不读汇编的人，收益（审计、互操作、遗留系统接管）与风险（误判、合规越界）同源。</span>
+    </li>
+    <li>
+      <span class="head">法律边界在两个法域都清晰，红线是「直接复制代码」</span>
+      <span class="why">中国：法释〔2020〕7 号第十四条 + 《著作权法》第五十条第一款第（五）项 + 指导案例 48 号；美国：DTSA + DMCA §1201(f) + Sega v. Accolade。合法的是「为互操作性分析与重建」，不是「搬运」。</span>
+    </li>
+    <li>
+      <span class="head">它位于 Agent 安全能力的「侦察侧」</span>
+      <span class="why">与同期被用于攻击韩国七家银行的 ARTEX（利用侧）共享同一技术底座。时序相邻不等于因果，但同一技能栈的两端同时成熟，是本次事件最值得警惕的结构性变化。</span>
+    </li>
+    <li>
+      <span class="head">「MCP server + 工作流 skill 双注册」是当下工具分发的正确形态</span>
+      <span class="why">一次配置同时注入可调用工具与操作方法论，覆盖 17 个客户端（含 Hermes、Pi、Qwen Code、OMP、DeepSeek 适配脚本）——这是它对 Agent 产品开发者最直接的可迁移设计。</span>
+    </li>
+    <li>
+      <span class="head">薄包装层会被基座模型吸收，但「证据随结论返回」会留下来</span>
+      <span class="why">「让模型驱动反编译器」这个动作，主流编码 Agent 的训练更新正在内生；而 <em>findings + evidence + unknowns</em> 的返回结构，是对抗「模型对二进制过度自信」的结构性解法。</span>
+    </li>
+    <li>
+      <span class="head">对中国 Agent 团队，它演示了一套可复用的「专业工具 Agent 化」方法论</span>
+      <span class="why">契约先行（contracts 层独立）→ provider 可换（Registry 确定性选择、无回退）→ 验证 lane 真实化（真引擎、真二进制、真浏览器）→ 交付物同时服务 CLI 与 MCP。</span>
+    </li>
+  </ol>
+
+  <div class="box info">
+    <span class="t">怎么读这份报告</span>
+    <p>本报告对每条数据标注<strong>证据强度</strong>与<strong>来源</strong>。GitHub API 与 npm registry 的取值属一手实测；媒体引用均为二手转述，且本报告发现媒体间存在明显口径冲突（详见第 1 章表格），已逐条标注。凡属我个人判断的段落，均在标题或正文中显式标注「观点」。</p>
+  </div>
+</section>
+<section id="s01">
+  <h2><span class="num">01</span>事实基线：把热度拆成可核对的数字</h2>
+  <p class="sub">
+    关于 REA 的中文报道几乎都从星标曲线写起，但曲线本身并不说明任何能力。这一章先把「热度」还原成四个互相独立的口径，
+    再看它们是否彼此支持。
+  </p>
+
+  <h3>1.1 爆发时间轴：真正的引爆窗口只有六天</h3>
+  <p>
+    仓库创建于 2026 年 4 月 14 日，npm 包 <code>rea-agents</code> 首发于 7 月 12 日。在长达近半年的时间里，
+    npm 日下载量长期低于 60 次。<strong>转折发生在 10 月 3 日</strong>——日下载从两位数跳到 418，
+    两天后项目首次进入 GitHub Trending，随后星标以每天接近翻倍的速度滚雪球。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 300" role="img" aria-label="REA 关键事件时间轴">
+      <line x1="40" y1="152" x2="920" y2="152" stroke="#D3CFC4" stroke-width="2"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 静默期底纹 -->
+        <rect x="40" y="118" width="330" height="70" fill="#F5F3EE" rx="6"/>
+        <text x="205" y="196" text-anchor="middle" font-size="12.5" fill="#4A505A">静默期 172 天 · 日下载 &lt; 60</text>
+
+        <!-- 节点 1 -->
+        <circle cx="70" cy="152" r="5" fill="#2F6FB0"/>
+        <text x="70" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#1F5288">04-14</text>
+        <text x="70" y="176" text-anchor="middle" font-size="11.5" fill="#4A505A">仓库创建</text>
+
+        <!-- 节点 2 -->
+        <circle cx="176" cy="152" r="5" fill="#2F6FB0"/>
+        <text x="176" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#1F5288">07-12</text>
+        <text x="176" y="176" text-anchor="middle" font-size="11.5" fill="#4A505A">npm 首发 0.2.1</text>
+
+        <!-- 爆发分界 -->
+        <line x1="368" y1="104" x2="368" y2="200" stroke="#B45309" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="368" y="96" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8F3F06">引爆点 10-03</text>
+
+        <!-- 节点 3 -->
+        <circle cx="412" cy="152" r="5" fill="#B45309"/>
+        <text x="412" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">10-05</text>
+        <text x="412" y="176" text-anchor="middle" font-size="11.5" fill="#4A505A">进 Trending</text>
+
+        <!-- 节点 4 -->
+        <circle cx="512" cy="152" r="5" fill="#B45309"/>
+        <text x="512" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">10-07</text>
+        <text x="512" y="176" text-anchor="middle" font-size="11.5" fill="#4A505A">单日 +3,500</text>
+
+        <!-- 节点 5 -->
+        <circle cx="612" cy="152" r="6.5" fill="#B45309"/>
+        <text x="612" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">10-08</text>
+        <text x="612" y="176" text-anchor="middle" font-size="11.5" fill="#4A505A">v6.0 · 2 万星</text>
+
+        <!-- 节点 6 -->
+        <circle cx="712" cy="152" r="6.5" fill="#B45309"/>
+        <text x="712" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">10-09</text>
+        <text x="712" y="176" text-anchor="middle" font-size="11.5" fill="#4A505A">4 万星 · 3 个大版本</text>
+
+        <!-- 节点 7 -->
+        <circle cx="812" cy="152" r="7.5" fill="#8F3F06"/>
+        <text x="812" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">10-11</text>
+        <text x="812" y="176" text-anchor="middle" font-size="11.5" fill="#4A505A">v6.4 · 7.7 万星</text>
+
+        <!-- 节点 8 -->
+        <circle cx="898" cy="152" r="9" fill="#8C1D17"/>
+        <text x="898" y="128" text-anchor="middle" font-size="12.5" font-weight="750" fill="#8C1D17">10-12</text>
+        <text x="898" y="176" text-anchor="middle" font-size="11.5" font-weight="650" fill="#8C1D17">11.0 万星</text>
+
+        <!-- 加速提示 -->
+        <path d="M380,220 L890,220" stroke="#B45309" stroke-width="1.5" fill="none" marker-end="url(#arwTime)"/>
+        <defs>
+          <marker id="arwTime" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#B45309"/>
+          </marker>
+        </defs>
+        <text x="635" y="242" text-anchor="middle" font-size="12" fill="#8F3F06" font-weight="650">
+          6 天完成 0 → 11 万星，后 3 天星标接近每天翻倍
+        </text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 1</b> REA 从建库到爆发的关键节点。时间取自 GitHub API（仓库创建、发布日期）与各媒体转载的项目 README 里程碑提交（2 万 / 3 万 / 4 万 / 5 万 / 6 万星）。
+      注意「引爆点」与「npm 首发」相隔 83 天——这不是一次发布带来的增长，而是一次注意力事件。
+    </figcaption>
+  </figure>
+
+  <h3>1.2 四个口径的交叉核对：它们彼此矛盾</h3>
+  <p>
+    判断一个开源项目的真实健康度，单看星标是不够的。我取了四个互相独立的口径，并<strong>刻意放在同一纵轴刻度</strong>上对比——
+    量级的落差本身就是结论。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 400" role="img" aria-label="REA 星标增长与 npm 日下载共用刻度对比">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 左图：星标累计 -->
+        <text x="255" y="30" text-anchor="middle" font-size="14" font-weight="720" fill="#16181D">星标累计（GitHub）</text>
+        <text x="255" y="49" text-anchor="middle" font-size="11.5" fill="#4A505A">存量指标 · 单位：个</text>
+
+        <!-- 网格 -->
+        <line x1="60" y1="70" x2="450" y2="70" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="60" y1="135" x2="450" y2="135" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="60" y1="200" x2="450" y2="200" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="60" y1="265" x2="450" y2="265" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="60" y1="330" x2="450" y2="330" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <!-- y 轴刻度 -->
+        <text x="54" y="74" text-anchor="end" font-size="11" fill="#4A505A">12 万</text>
+        <text x="54" y="139" text-anchor="end" font-size="11" fill="#4A505A">9 万</text>
+        <text x="54" y="204" text-anchor="end" font-size="11" fill="#4A505A">6 万</text>
+        <text x="54" y="269" text-anchor="end" font-size="11" fill="#4A505A">3 万</text>
+        <text x="54" y="334" text-anchor="end" font-size="11" fill="#4A505A">0</text>
+
+        <!-- 面积 + 折线 -->
+        <path d="M166.4,326.7 L237.3,315.1 L272.7,307.5 L308.2,286.7 L343.6,243.3 L379.1,200 L414.5,162.4 L450,91.6 L450,330 L166.4,330 Z"
+              fill="#FDF3E3" stroke="none"/>
+        <path d="M166.4,326.7 L237.3,315.1 L272.7,307.5 L308.2,286.7 L343.6,243.3 L379.1,200 L414.5,162.4 L450,91.6"
+              fill="none" stroke="#B45309" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="166.4" cy="326.7" r="3.5" fill="#B45309"/>
+        <circle cx="237.3" cy="315.1" r="3.5" fill="#B45309"/>
+        <circle cx="272.7" cy="307.5" r="3.5" fill="#B45309"/>
+        <circle cx="308.2" cy="286.7" r="3.5" fill="#B45309"/>
+        <circle cx="343.6" cy="243.3" r="3.5" fill="#B45309"/>
+        <circle cx="379.1" cy="200" r="3.5" fill="#B45309"/>
+        <circle cx="414.5" cy="162.4" r="3.5" fill="#B45309"/>
+        <circle cx="450" cy="91.6" r="5" fill="#8C1D17"/>
+        <text x="446" y="82" text-anchor="end" font-size="12" font-weight="750" fill="#8C1D17">110,042</text>
+
+        <!-- x 轴 -->
+        <text x="166" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-04</text>
+        <text x="273" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-07</text>
+        <text x="380" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-10</text>
+        <text x="450" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-12</text>
+
+        <!-- 右图：npm 日下载 -->
+        <text x="705" y="30" text-anchor="middle" font-size="14" font-weight="720" fill="#16181D">npm 日下载量</text>
+        <text x="705" y="49" text-anchor="middle" font-size="11.5" fill="#4A505A">流量指标 · 单位：次/天 · 同一刻度</text>
+
+        <line x1="540" y1="70" x2="930" y2="70" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="540" y1="135" x2="930" y2="135" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="540" y1="200" x2="930" y2="200" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="540" y1="265" x2="930" y2="265" stroke="#E8E5DD" stroke-width="1"/>
+        <line x1="540" y1="330" x2="930" y2="330" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <text x="534" y="74" text-anchor="end" font-size="11" fill="#4A505A">12 万</text>
+        <text x="534" y="139" text-anchor="end" font-size="11" fill="#4A505A">9 万</text>
+        <text x="534" y="204" text-anchor="end" font-size="11" fill="#4A505A">6 万</text>
+        <text x="534" y="269" text-anchor="end" font-size="11" fill="#4A505A">3 万</text>
+        <text x="534" y="334" text-anchor="end" font-size="11" fill="#4A505A">0</text>
+
+        <!-- npm 柱（共用刻度，故很矮） -->
+        <rect x="598" y="329.1" width="26" height="0.9" fill="#0F766E"/>
+        <rect x="633" y="328.3" width="26" height="1.7" fill="#0F766E"/>
+        <rect x="669" y="321.2" width="26" height="8.8" fill="#0F766E"/>
+        <rect x="740" y="319.1" width="26" height="10.9" fill="#0F766E"/>
+        <rect x="775" y="310.5" width="26" height="19.5" fill="#0F766E"/>
+        <rect x="811" y="286.7" width="26" height="43.3" fill="#0F766E"/>
+        <rect x="846" y="254.6" width="26" height="75.4" fill="#0A5750"/>
+        <text x="859" y="244" text-anchor="middle" font-size="12" font-weight="750" fill="#0A5750">34,790</text>
+
+        <text x="611" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-03</text>
+        <text x="682" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-05</text>
+        <text x="788" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-08</text>
+        <text x="859" y="348" text-anchor="middle" font-size="11" fill="#4A505A">10-10</text>
+
+        <!-- 注释 -->
+        <text x="735" y="380" text-anchor="middle" font-size="12" font-weight="650" fill="#0A5750">
+          峰值 3.5 万/天，仍是星标存量的 1/3
+        </text>
+        <text x="255" y="380" text-anchor="middle" font-size="12" font-weight="650" fill="#8F3F06">
+          六天 0 → 11 万，曲线接近指数
+        </text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 2</b> 左右两图<strong>共用同一纵轴刻度（0 – 12 万）</strong>，以便直接比较量级。左图为累计星标（GitHub API + README 里程碑提交）；
+      右图为 npm 日下载量（npm registry downloads API，逐日实测）。右图的柱子近乎贴地，这正是要传达的信息：<b>人气与装机量之间存在一个数量级的落差</b>。
+      npm 在 10-06、10-11、10-12 三日返回 0，属日统计未产出，已在图中省略。
+    </figcaption>
+  </figure>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 1 · 四个口径的对照（数据截至 2026-10-12 03:00 UTC）</caption>
+      <thead>
+        <tr><th>口径</th><th class="num-col">数值</th><th>健康区间的经验参照</th><th>判读</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Stars</td><td class="num-col">110,042</td>
+          <td>—</td>
+          <td><span class="tag a">注意力指标</span></td>
+        </tr>
+        <tr>
+          <td>Fork / Star 比率</td><td class="num-col">22.2%</td>
+          <td>成熟工具类项目通常 2% – 8%</td>
+          <td><span class="tag r">异常偏高</span></td>
+        </tr>
+        <tr>
+          <td>Watchers / Star 比率</td><td class="num-col">0.32%<br /><span style="font-size:12px;color:#4A505A">349 / 110,042</span></td>
+          <td>热门项目通常 1% – 3%</td>
+          <td><span class="tag r">异常偏低</span></td>
+        </tr>
+        <tr>
+          <td>npm 月下载</td><td class="num-col">74,461</td>
+          <td>—</td>
+          <td><span class="tag t">约为星标的 2/3</span></td>
+        </tr>
+        <tr>
+          <td>提交总数</td><td class="num-col">≈ 2,444</td>
+          <td>—</td>
+          <td><span class="tag g">真实工程投入</span></td>
+        </tr>
+        <tr>
+          <td>贡献者数</td><td class="num-col">≥ 100</td>
+          <td>—</td>
+          <td><span class="tag g">真实协作</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>Fork/Star 与 Watcher/Star 这两个比率同时反向异常，是本报告发现的第一个硬信号。</strong>
+    正常的「爆款」项目，watcher 会随 star 同比上升（说明有人真的想知道后续进展），fork 则远低于 star
+    （说明多数人只是标记兴趣）。REA 的情况恰好相反：fork 是 watcher 的 70 倍。
+  </p>
+
+  <div class="box warn">
+    <span class="t">需要谨慎的地方：异常 ≠ 造假</span>
+    <p>
+      高 fork 比率也可能来自真实场景——REA 的安装方式鼓励 <code>npx</code> 或 fork 后本地改造，且项目被大量做「二次分发」的镜像与聚合站转载。
+      我在公开信息中<strong>没有找到任何直接证据表明存在刷星行为</strong>，Hacker News 上的 722 分讨论串也只是提出「unusual fork ratio」这一问题，并未给出结论。
+      本报告的处理方式是：<strong>把异常作为「需要更多证据的疑点」列出，而不是作为「造假」的结论</strong>。
+    </p>
+  </div>
+
+  <h3>1.3 媒体口径互相打架：一个可复用的警示</h3>
+  <p>
+    在核对热度数据时，我发现中文媒体之间的数字分歧大到无法调和。这本身就是一个值得记录的观察——它说明
+    <strong>大多数报道在互相转述星标，而非独立核对</strong>。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 2 · 同一时点、不同信源的星标口径冲突（均为 2026-10 上旬）</caption>
+      <thead>
+        <tr><th>信源</th><th>口径</th><th>数值</th><th>与本报告实测的关系</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>whatstrending.ai（独立每日快照）</td><td>2026-10-09</td><td class="num-col">25,876</td><td>早于 API 实测 30 小时，量级吻合</td></tr>
+        <tr><td>某中文科技号</td><td>2026-10-10</td><td class="num-col">2.5 万 / 3.4 万</td><td>同日两个数，互差 36%</td></tr>
+        <tr><td>另一中文媒体</td><td>2026-10-10</td><td class="num-col">4.1 万</td><td>与上一条同日，再差 20%</td></tr>
+        <tr><td>微博转载</td><td>2026-10-10</td><td class="num-col">75 万</td><td>疑为「7.5 万」多打一个零</td></tr>
+        <tr><td>英文科技媒体</td><td>2026-10-11</td><td class="num-col">88,900</td><td>晚于 API 实测约 20 小时，合理</td></tr>
+        <tr><td>本报告（GitHub API 实测）</td><td>2026-10-12 03:00</td><td class="num-col">110,042</td><td>基准值</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <span class="t">方法论提示（可迁移到任何热点研究）</span>
+    <p>
+      当一个项目的热度数据在不同信源间出现 30% 以上的分歧，且分歧方向不一致时，说明<strong>信源之间在互相引用而非独立测量</strong>。
+      此时最可靠的做法不是取平均值，而是直接回到平台 API 取一次实测值，并记录取数时刻——本报告后续所有数字均遵循此规则。
+    </p>
+  </div>
+</section>
+<section id="s02">
+  <h2><span class="num">02</span>范式判定：REA 到底是什么</h2>
+  <p class="sub">
+    中文媒体把它描述为「让 AI 扒光商业软件底裤」的工具，官方自述则克制得多——「一个用于跨二进制、应用与运行时行为的逆向工程 MCP」。
+    这两个说法描述的不是同一个东西。判定清楚它属于哪一类，后续所有能力与风险的讨论才有锚点。
+  </p>
+
+  <h3>2.1 官方自己给出的定位</h3>
+  <div class="box info">
+    <span class="t">README 原文（节选）</span>
+    <p>
+      “REA is not a decompiler and not a model. It is <strong>plumbing</strong>.” ——<br />
+      项目文档反复强调三件事：① 分析在本地运行；② 每个结论都附带<strong>证据与局限</strong>；
+      ③ 它<strong>不声称能还原原始源码</strong>，只给出伪代码、模块关系与调用链。
+    </p>
+  </div>
+  <p>
+    这个自我定位与它的实际代码结构完全一致——第 3 章的架构拆解会给出证明。真正需要辨析的是：
+    既然反编译引擎已经存在二十年，REA 新增的那一层究竟解决了什么问题？
+  </p>
+
+  <h3>2.2 三方对比：能力栈的深度差异</h3>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 400" role="img" aria-label="手工逆向、单引擎 MCP 与 REA 编排层的三层能力栈对比">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 列标题 -->
+        <text x="170" y="42" text-anchor="middle" font-size="14.5" font-weight="720" fill="#333941">① 手工时代</text>
+        <text x="170" y="62" text-anchor="middle" font-size="11.5" fill="#4A505A">20 年来的标准做法</text>
+
+        <text x="485" y="42" text-anchor="middle" font-size="14.5" font-weight="720" fill="#333941">② 单引擎 MCP 桥</text>
+        <text x="485" y="62" text-anchor="middle" font-size="11.5" fill="#4A505A">2025–2026 年主流形态</text>
+
+        <text x="800" y="42" text-anchor="middle" font-size="14.5" font-weight="720" fill="#8F3F06">③ REA 编排层</text>
+        <text x="800" y="62" text-anchor="middle" font-size="11.5" fill="#8F3F06">本次讨论的对象</text>
+
+        <!-- 列 A -->
+        <rect x="40" y="86" width="260" height="80" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="170" y="118" text-anchor="middle" font-size="13" font-weight="700" fill="#1F5288">逆向工程师</text>
+        <text x="170" y="140" text-anchor="middle" font-size="11.5" fill="#333941">读汇编 · 跟踪寄存器 · 反复回看</text>
+        <text x="170" y="157" text-anchor="middle" font-size="11.5" fill="#4A505A">瓶颈：人的注意力与经验</text>
+
+        <rect x="40" y="176" width="260" height="80" rx="8" fill="#FFFFFF" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="170" y="208" text-anchor="middle" font-size="13" font-weight="700" fill="#333941">反编译／反汇编引擎</text>
+        <text x="170" y="230" text-anchor="middle" font-size="11.5" fill="#333941">Ghidra · IDA · Hopper</text>
+        <text x="170" y="247" text-anchor="middle" font-size="11.5" fill="#4A505A">能力已高度成熟</text>
+
+        <rect x="40" y="266" width="260" height="80" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="170" y="298" text-anchor="middle" font-size="13" font-weight="700" fill="#333941">目标制品</text>
+        <text x="170" y="320" text-anchor="middle" font-size="11.5" fill="#333941">原生二进制 / 应用包</text>
+        <text x="170" y="337" text-anchor="middle" font-size="11.5" fill="#4A505A">人必须自己决定看哪里</text>
+
+        <!-- 列 B -->
+        <rect x="355" y="86" width="260" height="57" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="485" y="110" text-anchor="middle" font-size="13" font-weight="700" fill="#1B5820">模型</text>
+        <text x="485" y="130" text-anchor="middle" font-size="11.5" fill="#333941">Claude / GPT 等</text>
+
+        <rect x="355" y="153" width="260" height="57" rx="8" fill="#FFFFFF" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="485" y="177" text-anchor="middle" font-size="13" font-weight="700" fill="#333941">MCP 适配器</text>
+        <text x="485" y="197" text-anchor="middle" font-size="11.5" fill="#333941">把引擎 API 暴露成工具</text>
+
+        <rect x="355" y="220" width="260" height="57" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="485" y="244" text-anchor="middle" font-size="13" font-weight="700" fill="#333941">单一引擎</text>
+        <text x="485" y="264" text-anchor="middle" font-size="11.5" fill="#333941">只覆盖一类目标</text>
+
+        <rect x="355" y="287" width="260" height="57" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="485" y="311" text-anchor="middle" font-size="13" font-weight="700" fill="#333941">目标制品</text>
+        <text x="485" y="331" text-anchor="middle" font-size="11.5" fill="#333941">跨引擎需重新接一遍</text>
+
+        <!-- 列 C -->
+        <rect x="670" y="86" width="260" height="40" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="800" y="112" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1B5820">任意 MCP 客户端（17 个）</text>
+
+        <rect x="670" y="136" width="260" height="40" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="800" y="162" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1F5288">MCP 契约 · 41 组工具 + 工作流 skill</text>
+
+        <rect x="670" y="186" width="260" height="40" rx="8" fill="#F1EBFB" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="800" y="212" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5A3099">调查会话 · 证据台账 · 未知项所有权</text>
+
+        <rect x="670" y="236" width="260" height="40" rx="8" fill="#E6F4F2" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="800" y="262" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0A5750">Provider Registry · 确定性选择、无回退</text>
+
+        <rect x="670" y="286" width="260" height="40" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="800" y="312" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">引擎矩阵（全部 BYO，不代装）</text>
+
+        <rect x="670" y="336" width="260" height="40" rx="8" fill="#FDF3E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="800" y="362" text-anchor="middle" font-size="12.5" font-weight="700" fill="#8F3F06">16 类目标制品</text>
+
+        <!-- 右侧高度标记 -->
+        <line x1="948" y1="86" x2="948" y2="376" stroke="#B45309" stroke-width="1" stroke-dasharray="3 3"/>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 3</b> 三种形态的能力栈。REA 相对 ② 的新增层不是「更强的反编译」，而是
+      <b>会话与证据治理</b>（紫色层）与 <b>多引擎路由</b>（青色层）——它们位于模型与引擎之间，与引擎质量无关。
+    </figcaption>
+  </figure>
+
+  <p>
+    把这张图读完，第一章那个「不是反编译器」的判断就可以推导出来了：<strong>REA 的六层里，最下面两层（引擎、目标）全部依赖外部提供</strong>。
+    它自己的代码集中在中间三层。这意味着它的能力上限由你装的 Ghidra / Hopper / IDA 决定，它自己的工程只需要保证一件事——
+    当一个调查需要在多个引擎、多个目标之间来回切换时，<strong>不丢失上下文、不混淆证据归属</strong>。
+  </p>
+
+  <h3>2.3 概念分野：四个容易混淆的类别</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 3 · 逆向工程 AI 工具的四类形态与判别特征</caption>
+      <thead>
+        <tr><th>形态</th><th>代表</th><th>核心能力</th><th>它不解决什么</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>反编译器</strong></td>
+          <td>Ghidra、IDA、Hopper、JADX</td>
+          <td>把机器码转成可读的伪代码／CIL／Smali</td>
+          <td>不负责「你该看哪里」，也不做跨工具编排</td>
+        </tr>
+        <tr>
+          <td><strong>单引擎 MCP 桥</strong></td>
+          <td>GhidraMCP（9.3k★）、ida-pro-mcp（11.4k★）</td>
+          <td>把某一款引擎的函数暴露给 LLM，支持重命名／加注释／查交叉引用</td>
+          <td>只覆盖一类目标；换引擎要重接；无跨目标调查状态</td>
+        </tr>
+        <tr>
+          <td><strong>商业 AI 助手</strong></td>
+          <td>Binary Ninja Sidekick</td>
+          <td>内置语义搜索 + 声称具备「验证代理」交叉核对结论</td>
+          <td>闭源、绑定单一商业平台、模型细节不公开</td>
+        </tr>
+        <tr style="background:#FDF3E3">
+          <td><strong>编排层（REA）</strong></td>
+          <td>morluto/rea</td>
+          <td>统一契约 + 多引擎路由 + 证据台账 + 结论随局限返回，覆盖 16 类目标</td>
+          <td><strong>不自带任何反编译能力</strong>；引擎缺失时完全无法工作</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2.4 判别式：什么才算真正的「Agent 化逆向」</h3>
+  <p>
+    从 REA 的设计里可以反推出一组可复用的判据。任何声称「用 Agent 做逆向」的工具，都应当能被这五个问题检验：
+  </p>
+  <div class="box ok">
+    <span class="t">五项判别式</span>
+    <ul style="margin-bottom:0">
+      <li><strong>① 结论是否携带证据？</strong> 返回的是「这个函数在 0x4A12 做位运算」还是「这个函数大概是加密」——后者无法复核。</li>
+      <li><strong>② 是否显式声明未知？</strong> REA 的 <code>Unknown</code> 是一等公民（与 <code>EvidenceLedger</code> 并列拥有所有权），而非「没找到就当不存在」。</li>
+      <li><strong>③ 跨工具时状态是否保持？</strong> 从 Ghidra 切到浏览器抓包再切回原生分析，符号表与已确认事实是否还在。</li>
+      <li><strong>④ 证据归属是否可追溯？</strong> 一条结论来自哪个引擎、哪个会话、哪次快照，是否可定位。</li>
+      <li><strong>⑤ 是否声明真实授权边界？</strong> 静态读取与运行时执行（会以你的权限跑目标进程）是否被明确区分。</li>
+    </ul>
+  </div>
+
+  <div class="box warn">
+    <span class="t">观点：为什么「编排」这一层值钱</span>
+    <p>
+      反编译本身是已解决的工程问题，但「在一次调查里跨三个引擎、四种目标、十几步推理」不是。
+      模型在二进制语境下有一个特定的失效模式——<strong>伪代码密集、充满编译器痕迹，极易诱发听起来合理但错误的叙述</strong>。
+      把「证据 + 局限」与结论捆绑返回，是对这个失效模式的结构性回应，而不是产品话术。
+      这也是为什么我认为，即使「模型直连反编译器」这个动作被基座吸收，<strong>证据治理这一层会留下</strong>。
+    </p>
+  </div>
+</section>
+<section id="s03">
+  <h2><span class="num">03</span>工程实现：一份被热度掩盖的严肃代码库</h2>
+  <p class="sub">
+    在多数报道里，REA 是一个「六天涨十万星」的故事。但把它 clone 下来看，故事完全变了——
+    这是一份分层严格、测试密集、验证 lane 真实化的 TypeScript 工程。这一章用可复现的数字说明这一点。
+  </p>
+
+  <h3>3.1 规模：2,897 个文件，六成是测试与脚本</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 4 · 仓库文件分布（GitHub Git Trees API，<code>recursive=1</code>，截至 2026-10-12）</caption>
+      <thead>
+        <tr><th>目录</th><th class="num-col">文件数</th><th class="num-col">占比</th><th>职责</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>src/</code></td><td class="num-col">1,546</td><td class="num-col">53.4%</td><td>核心实现（含与源码同目录的 <code>*.test.ts</code>）</td></tr>
+        <tr><td><code>tests/</code></td><td class="num-col">800</td><td class="num-col">27.6%</td><td>Vitest 套件，<code>fixtures/</code> 内置伪启动器、伪桥接、伪 CDP 接缝</td></tr>
+        <tr><td><code>scripts/</code></td><td class="num-col">287</td><td class="num-col">9.9%</td><td>构建、验证、夹具生成、制品检查</td></tr>
+        <tr><td><code>website/</code></td><td class="num-col">84</td><td class="num-col">2.9%</td><td>官网与图文指南</td></tr>
+        <tr><td><code>docs/</code></td><td class="num-col">56</td><td class="num-col">1.9%</td><td>工具契约、provider 指南、错误契约、测试说明</td></tr>
+        <tr><td><code>bridge/</code></td><td class="num-col">30</td><td class="num-col">1.0%</td><td>跑在引擎内部的桥接脚本（Python / Java）</td></tr>
+        <tr><td>其余（<code>native/</code> <code>third_party/</code> 等）</td><td class="num-col">94</td><td class="num-col">3.2%</td><td>Windows Node-API 原生实现、第三方许可</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    语言构成上，TypeScript 占 15.24 MB（字节数，GitHub Languages API），JavaScript 1.80 MB。
+    另有值得注意的「非主力语言」：<strong>Python 293 KB、Java 295 KB</strong>——前者是 Hopper 桥与 pwntools 适配，
+    后者是打包进 Ghidra 的 headless 桥接脚本。<strong>C、C++、Swift、Objective-C、Assembly、Solidity</strong> 的少量存在，
+    对应的是原生夹具与 Apple 应用解析的测试样本。
+  </p>
+
+  <h3>3.2 架构：依赖严格向内流动</h3>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 600" role="img" aria-label="REA 分层架构栈">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 层 1 -->
+        <rect x="60" y="40" width="720" height="54" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="80" y="62" font-size="13" font-weight="720" fill="#1F5288">1 · 入口层 Entry Points</text>
+        <text x="80" y="81" font-size="11.5" fill="#333941">src/cli.ts（一次性 CLI）　·　src/main.ts（MCP stdio 服务器）　·　scripts/rea.mjs（可执行分发器）</text>
+
+        <!-- 层 2 -->
+        <rect x="60" y="104" width="720" height="54" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="80" y="126" font-size="13" font-weight="720" fill="#333941">2 · 组合层 Production Composition</text>
+        <text x="80" y="145" font-size="11.5" fill="#333941">类型化 provider / 会话工厂　·　一次性绑定　·　可选组件独立加载</text>
+
+        <!-- 层 3 -->
+        <rect x="60" y="168" width="720" height="54" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="80" y="190" font-size="13" font-weight="720" fill="#333941">3 · 适配器层 Adapters</text>
+        <text x="80" y="209" font-size="11.5" fill="#333941">src/server/（41 个工具注册器）　·　hopper_bridge.py　·　ReaGhidraBridge.java　·　宿主安装适配器</text>
+
+        <!-- 层 4 -->
+        <rect x="60" y="232" width="720" height="54" rx="8" fill="#F1EBFB" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="80" y="254" font-size="13" font-weight="720" fill="#5A3099">4 · 应用层 Application Workflows ★ REA 的核心资产</text>
+        <text x="80" y="273" font-size="11.5" fill="#333941">SessionProviderRouter + BinarySession（不可变深绑定）　·　ProviderRegistry（确定性选择）　·　EvidenceLedger</text>
+
+        <!-- 层 5 -->
+        <rect x="60" y="296" width="720" height="54" rx="8" fill="#E6F4F2" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="80" y="318" font-size="13" font-weight="720" fill="#0A5750">5 · Provider 层（全部 BYO · 项目不代装）</text>
+        <text x="80" y="337" font-size="11.5" fill="#333941">Hopper　Ghidra　IDA　pwntools/pwndbg　EVMole　Playwright/CDP　.NET 元数据　Binwalk/Unblob　JADX　WABT</text>
+
+        <!-- 层 6 -->
+        <rect x="60" y="360" width="720" height="54" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="80" y="382" font-size="13" font-weight="720" fill="#333941">6 · 进程基础设施 Process Foundation</text>
+        <text x="80" y="401" font-size="11.5" fill="#333941">进程组所有权　·　私有根目录　·　超时与有界文件读取　·　清理失败则保留所有权</text>
+
+        <!-- 层 7 -->
+        <rect x="60" y="424" width="720" height="54" rx="8" fill="#F5F3EE" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="80" y="446" font-size="13" font-weight="720" fill="#333941">7 · 契约层 Contracts</text>
+        <text x="80" y="465" font-size="11.5" fill="#333941">调用方可见的 JSON Schema（分析 / 托管代码 / 浏览器 / Electron / 应用 / 会话）· 生成的错误契约目录</text>
+
+        <!-- 层 8 -->
+        <rect x="60" y="488" width="720" height="54" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="80" y="510" font-size="13" font-weight="720" fill="#1B5820">8 · 领域层 Domain（纯函数 · 无副作用）</text>
+        <text x="80" y="529" font-size="11.5" fill="#333941">evidence 证据　·　comparisons 比较　·　application graphs 应用图　·　分析快照</text>
+
+        <!-- 依赖方向箭头 -->
+        <line x1="830" y1="60" x2="830" y2="528" stroke="#B45309" stroke-width="2"/>
+        <path d="M830,528 L824,514 L836,514 Z" fill="#B45309"/>
+        <text x="848" y="290" font-size="11.5" font-weight="700" fill="#8F3F06" transform="rotate(90 848 290)">依赖向内流动</text>
+
+        <!-- 左侧说明 -->
+        <text x="46" y="76" text-anchor="end" font-size="11" fill="#4A505A" transform="rotate(-90 46 76)">外</text>
+        <text x="46" y="520" text-anchor="end" font-size="11" fill="#4A505A" transform="rotate(-90 46 520)">内</text>
+
+        <!-- 顶部说明 -->
+        <text x="420" y="26" text-anchor="middle" font-size="12" fill="#4A505A">外层依赖内层：领域语义不与任何 provider 或传输耦合</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 4</b> REA 的八层架构（依据仓库内 <code>docs/architecture.mermaid</code> 与 <code>AGENTS.md</code> 的架构约束整理）。
+      值得注意的不是层数，而是 <b>第 4 层（紫色）</b>——会话路由、Provider Registry、证据台账三件事被集中放在应用层，
+      而不是散落在各 provider 适配器里。这是「编排层」这个定位在代码结构上的直接体现。
+    </figcaption>
+  </figure>
+
+  <div class="box ok">
+    <span class="t">架构层面的三个可验证事实</span>
+    <ul style="margin-bottom:0">
+      <li><strong>Provider 不在领域层出现。</strong> <code>AGENTS.md</code> 明文要求「把引擎协议与 provider 专有代码挡在 domain/application 层之外」，且仓库带一条专门的架构守卫检查：<code>npm run verify:architecture-guards</code>。</li>
+      <li><strong>Provider 选择是确定性的、不回退。</strong> <code>AnalysisProviderRegistry</code> 的注释明确写着 <em>deterministic selection, no fallback</em>——避免「意料之外换引擎」导致的证据来源漂移。</li>
+      <li><strong>「未知」与「证据」同为一级公民。</strong> 第 4 层同时持有 <code>EvidenceLedger</code> 与 <code>Unknown</code> 的所有权。这是第 2 章判别式②在代码里的落地。</li>
+    </ul>
+  </div>
+
+  <h3>3.3 依赖：36 个运行时依赖，零原生引擎</h3>
+  <p>
+    一个宣称能做二进制分析的项目，运行时依赖里<strong>没有任何反编译引擎</strong>——这本身就印证了「编排层」的定位。真正的依赖集中在四类：
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 5 · 运行时依赖分类（<code>package.json</code>，共 36 项；开发依赖 19 项）</caption>
+      <thead>
+        <tr><th>类别</th><th>代表依赖</th><th>作用</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>协议</td>
+          <td><code>@modelcontextprotocol/server</code> · <code>@modelcontextprotocol/client</code> <span class="tag n">2.3.1</span></td>
+          <td>MCP 服务端与客户端；前者面向宿主 Agent，后者用于连接外部 MCP（如 JEB）</td>
+        </tr>
+        <tr>
+          <td>解析与格式</td>
+          <td><code>@babel/parser</code> · <code>@electron/asar</code> · <code>parse5</code> · <code>plist</code> · <code>har-schema</code> · <code>@zip.js/zip.js</code></td>
+          <td>JavaScript AST、Electron 包、HTML、Apple plist、HAR 抓包、ZIP/APK 容器</td>
+        </tr>
+        <tr>
+          <td>运行时观测</td>
+          <td><code>playwright-core</code> · <code>@lydell/node-pty</code> · <code>@xterm/headless</code> · <code>ws</code></td>
+          <td>浏览器 CDP 控制、伪终端进程捕获、无头终端仿真、WebSocket 传输</td>
+        </tr>
+        <tr>
+          <td>领域与基础设施</td>
+          <td><code>zod</code> · <code>ajv</code> · <code>pino</code> · <code>evmole</code> · <code>diff</code></td>
+          <td>配置校验、JSON Schema 校验、日志、EVM 字节码选择器推断、制品差异比较</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>3.4 验证：把「真机验证」写进 CI，而不是写进宣传语</h3>
+  <p>
+    这是整个仓库最值得学习的部分。REA 的 <code>.github/workflows/</code> 下有一批以 <code>real-</code> 开头的流水线——
+    它们不在 mock 上跑，而是<strong>真的启动 Hopper、真的调 Ghidra、真的开浏览器、真的解析真二进制</strong>。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 6 · 真机验证 lane（部分，取自 <code>.github/workflows/</code>）</caption>
+      <thead>
+        <tr><th>工作流文件</th><th>验证对象</th><th>平台</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>real-hopper.yml</code> / <code>real-hopper-linux.yml</code></td><td>真实 Hopper 分析桥</td><td>macOS / Linux</td></tr>
+        <tr><td><code>real-ghidra-windows.yml</code></td><td>真实 Ghidra headless（Windows PE）</td><td>Windows</td></tr>
+        <tr><td><code>real-browser.yml</code> / <code>real-web-runtime.yml</code></td><td>真实 Chrome 家族浏览器 + 运行时观测</td><td>跨平台</td></tr>
+        <tr><td><code>real-web-source-map.yml</code></td><td>真实 source map 还原</td><td>跨平台</td></tr>
+        <tr><td><code>real-javascript-recovery.yml</code></td><td>真实 JS 制品恢复</td><td>跨平台</td></tr>
+        <tr><td><code>real-evm-interface.yml</code></td><td>真实 EVM 字节码接口推断</td><td>Linux x64</td></tr>
+        <tr><td><code>real-recorded-crash.yml</code></td><td>真实 Linux core dump 解析</td><td>Linux x64</td></tr>
+        <tr><td><code>real-binary-layout.yml</code></td><td>真实 ELF 布局与符号</td><td>Linux x64</td></tr>
+        <tr><td><code>real-web-network-captures.yml</code></td><td>真实 HAR / mitmproxy 抓包</td><td>跨平台</td></tr>
+        <tr><td><code>real-termux.yml</code></td><td>Termux（Android 终端）环境</td><td>Android</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    并且 <code>docs/roadmap.md</code> 把这条规则写成了准入条件：<strong>「Provider 与平台声明必须有其对应的真机验证 lane」</strong>，
+    且「模拟 provider 不能证明真实 provider 的行为」。一个六天涨十万星的项目，本可以省掉这些，
+    但它没有——这是本报告认为「工程质量显著高于爆款形象」判断的主要依据。
+  </p>
+
+  <div class="box">
+    <span class="t">一点平衡：工程严谨 ≠ 效果经过独立验证</span>
+    <p>
+      需要强调的是，以上全部是<strong>对仓库结构的静态观察</strong>。REA 的真机验证 lane 证明「在作者构造的场景下桥接能工作」，
+      不等于「在任意目标上都能给出正确结论」。目前公开可查的独立效果验证只有一例（第 7 章），
+      且其结论是「有帮助但不如宣传所说的那样具有决定性」。工程投入与效果上限是两件独立的事，不应互相替代。
+    </p>
+  </div>
+</section>
+<section id="s04">
+  <h2><span class="num">04</span>主工作流：一次调查的六个环节</h2>
+  <p class="sub">
+    REA 的文档把它的工作流定义得很具体。把它还原成流程图后可以看出：<strong>真正被工程化了的是「证据的生命周期」</strong>，
+    而不是「反编译」这个动作。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 530" role="img" aria-label="REA 调查工作流六环节闭环">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 弧线（在节点圆前断开，避免穿过节点内的编号） -->
+        <path d="M 518.6 115.4 A 140 140 0 0 1 577.3 149.3" fill="none" stroke="#D3CFC4" stroke-width="2"/>
+        <path d="M 615.8 216.1 A 140 140 0 0 1 615.8 283.9" fill="none" stroke="#D3CFC4" stroke-width="2"/>
+        <path d="M 577.3 350.7 A 140 140 0 0 1 518.6 384.6" fill="none" stroke="#D3CFC4" stroke-width="2"/>
+        <path d="M 441.4 384.6 A 140 140 0 0 1 382.8 350.7" fill="none" stroke="#D3CFC4" stroke-width="2"/>
+        <path d="M 344.2 283.9 A 140 140 0 0 1 344.2 216.1" fill="none" stroke="#D3CFC4" stroke-width="2"/>
+        <path d="M 382.8 149.3 A 140 140 0 0 1 441.4 115.4" fill="none" stroke="#D3CFC4" stroke-width="2"/>
+
+        <!-- 弧中箭头 -->
+        <path d="M0,-5.5 L10,0 L0,5.5 z" fill="#B45309" transform="translate(550,128.8) rotate(-30)"/>
+        <path d="M0,-5.5 L10,0 L0,5.5 z" fill="#B45309" transform="translate(620,250) rotate(90)"/>
+        <path d="M0,-5.5 L10,0 L0,5.5 z" fill="#B45309" transform="translate(550,371.2) rotate(150)"/>
+        <path d="M0,-5.5 L10,0 L0,5.5 z" fill="#B45309" transform="translate(410,371.2) rotate(210)"/>
+        <path d="M0,-5.5 L10,0 L0,5.5 z" fill="#B45309" transform="translate(340,250) rotate(270)"/>
+        <path d="M0,-5.5 L10,0 L0,5.5 z" fill="#B45309" transform="translate(410,128.8) rotate(330)"/>
+
+        <!-- 中心 -->
+        <circle cx="480" cy="250" r="82" fill="#FDF3E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="480" y="238" text-anchor="middle" font-size="14" font-weight="750" fill="#8F3F06">证据台账</text>
+        <text x="480" y="258" text-anchor="middle" font-size="11.5" fill="#333941">EvidenceLedger</text>
+        <text x="480" y="276" text-anchor="middle" font-size="11.5" fill="#333941">+ Unknown</text>
+
+        <!-- 节点 1 -->
+        <circle cx="480" cy="110" r="30" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.8"/>
+        <text x="480" y="116" text-anchor="middle" font-size="14" font-weight="750" fill="#1F5288">1</text>
+        <text x="480" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="#1F5288">路由目标</text>
+        <text x="480" y="74" text-anchor="middle" font-size="11" fill="#4A505A">按目标类型选首个工具</text>
+
+        <!-- 节点 2 -->
+        <circle cx="601.2" cy="180" r="30" fill="#E6F4F2" stroke="#0F766E" stroke-width="1.8"/>
+        <text x="601.2" y="186" text-anchor="middle" font-size="14" font-weight="750" fill="#0A5750">2</text>
+        <text x="650" y="157" text-anchor="start" font-size="13" font-weight="700" fill="#0A5750">深绑定 Provider</text>
+        <text x="650" y="174" text-anchor="start" font-size="11" fill="#4A505A">每目标一个不可变绑定</text>
+
+        <!-- 节点 3 -->
+        <circle cx="601.2" cy="320" r="30" fill="#E6F4F2" stroke="#0F766E" stroke-width="1.8"/>
+        <text x="601.2" y="326" text-anchor="middle" font-size="14" font-weight="750" fill="#0A5750">3</text>
+        <text x="650" y="343" text-anchor="start" font-size="13" font-weight="700" fill="#0A5750">采集证据</text>
+        <text x="650" y="360" text-anchor="start" font-size="11" fill="#4A505A">伪代码 / 模块图 / 抓包</text>
+
+        <!-- 节点 4 -->
+        <circle cx="480" cy="390" r="30" fill="#F1EBFB" stroke="#6D3FB5" stroke-width="1.8"/>
+        <text x="480" y="396" text-anchor="middle" font-size="14" font-weight="750" fill="#5A3099">4</text>
+        <text x="480" y="443" text-anchor="middle" font-size="13" font-weight="700" fill="#5A3099">记录台账与未知</text>
+        <text x="480" y="460" text-anchor="middle" font-size="11" fill="#4A505A">声明局限，而非默认「没有」</text>
+
+        <!-- 节点 5 -->
+        <circle cx="358.8" cy="320" r="30" fill="#FDF3E3" stroke="#B45309" stroke-width="1.8"/>
+        <text x="358.8" y="326" text-anchor="middle" font-size="14" font-weight="750" fill="#8F3F06">5</text>
+        <text x="310" y="343" text-anchor="end" font-size="13" font-weight="700" fill="#8F3F06">重建实现</text>
+        <text x="310" y="360" text-anchor="end" font-size="11" fill="#4A505A">模型写进你自己的技术栈</text>
+
+        <!-- 节点 6 -->
+        <circle cx="358.8" cy="180" r="30" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.8"/>
+        <text x="358.8" y="186" text-anchor="middle" font-size="14" font-weight="750" fill="#1B5820">6</text>
+        <text x="310" y="157" text-anchor="end" font-size="13" font-weight="700" fill="#1B5820">验证与对比</text>
+        <text x="310" y="174" text-anchor="end" font-size="11" fill="#4A505A">跑测试 / 比字节 / 比行为</text>
+
+        <!-- 底部说明 -->
+        <text x="480" y="505" text-anchor="middle" font-size="11.5" fill="#4A505A">
+          环节 1–3 由 REA 与引擎完成；环节 4 是 REA 独有的资产；环节 5–6 由宿主模型的编码能力完成
+        </text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 5</b> 一次调查的六环节闭环。中心是 <code>EvidenceLedger</code>——所有环节的产出都汇入台账，
+      并对未解部分保留 <code>Unknown</code>。注意 <b>REA 只负责 1–3 和 4 的「记账」，5–6 完全交给宿主模型</b>：
+      这是「编排层」定位的又一次体现。
+    </figcaption>
+  </figure>
+
+  <h3>4.1 逐环节的工程含义</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 7 · 六环节的输入、产出与失败模式</caption>
+      <thead>
+        <tr><th>环节</th><th>做什么</th><th>产出</th><th>典型失败模式</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1 路由</strong></td>
+          <td>按目标类型选第一个工具。技能文档给出了明确的映射表（ASAR → <code>analyze_javascript_application</code>，APK → <code>inspect_android_package</code>，固件 → <code>inspect_firmware_regions</code>…）</td>
+          <td>工具调用序列</td>
+          <td>目标类型判断错（如把 NativeAOT 的 PE 当作托管程序集，会走错完全不同的路径）</td>
+        </tr>
+        <tr>
+          <td><strong>2 深绑定</strong></td>
+          <td>为一个目标建立<strong>一个不可变的 provider 绑定</strong>，辅助路由相互独立</td>
+          <td>会话句柄</td>
+          <td>provider 不可用（未安装引擎）；此时 REA 明确「不回退」，直接报错而非悄悄换引擎</td>
+        </tr>
+        <tr>
+          <td><strong>3 采集</strong></td>
+          <td>调用引擎获取伪代码、汇编、字符串、符号、调用与引用</td>
+          <td>原始分析产物</td>
+          <td>大二进制超出上下文；引擎启动超时（可用环境变量调大启动期限）</td>
+        </tr>
+        <tr>
+          <td><strong>4 记录</strong></td>
+          <td>把结论连同证据来源与适用局限写入台账；未解部分登记为 <code>Unknown</code></td>
+          <td>可复核的证据记录</td>
+          <td><strong>这一环节没有技术失败模式，只有设计是否坚持</strong>——放弃它，工具就退化成普通 MCP 桥</td>
+        </tr>
+        <tr>
+          <td><strong>5 重建</strong></td>
+          <td>宿主模型依据证据写出目标技术栈下的实现</td>
+          <td>源代码</td>
+          <td>模型凭伪代码「合理想象」补全未验证部分（数值常量是最常见的错点）</td>
+        </tr>
+        <tr>
+          <td><strong>6 验证</strong></td>
+          <td>跑测试、比字节、比行为</td>
+          <td>通过/失败结论</td>
+          <td>无对齐基准时验证退化为「看起来对」</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>4.2 关键分叉：静态读取 vs 运行时执行</h3>
+  <p>
+    REA 的文档用一行字区分了两种工作模式，但这行字的操作风险差异极大：
+  </p>
+
+  <div class="box stop">
+    <span class="t">这是整份文档里最需要被反复强调的一句话</span>
+    <p>
+      <strong>静态模式</strong>（JavaScript / .NET 检查）「读取提供的文件，不运行应用」——风险等同于用文本编辑器打开文件。<br />
+      <strong>运行时模式</strong>（进程捕获、浏览器观测、Electron 运行时、adb 设备操作）「<strong>以你的用户权限运行或交互目标</strong>」——
+      等同于在你的机器上、用你的身份、执行一个来源不明的程序。
+    </p>
+    <p style="margin-top:10px">
+      这不是 REA 的缺陷（动态分析的定义就是如此），但它意味着：把 REA 的运行时能力指向未知二进制时，
+      正确的作业环境是<strong>一次性虚拟机或受限容器</strong>，而不是日常工作机。REA 没有为你提供沙箱，
+      它只提供了区分这两种模式的文档。
+    </p>
+  </div>
+
+  <h3>4.3 「不可变深绑定」这一设计为何重要</h3>
+  <p>
+    在整个架构里，<code>BinarySession</code> 的「每个目标一个不可变深绑定」是一个容易被忽略但后果显著的设计。
+    它解决的是一类特定问题：<strong>同一次调查中，如果中途换了 provider，之前产出的所有结论的证据来源就失效了</strong>。
+  </p>
+  <p>
+    举例来说：先用 Ghidra 分析了函数 A 的伪代码，之后因为某个操作失败而悄悄切到 Hopper——
+    那么后续基于 A 的所有推理都建立在一个未经说明的引擎切换上，而两个引擎对同一段代码的反编译结果可能不同。
+    REA 的选择是：<strong>宁可报错，也不静默回退</strong>。从可信度角度，这个取舍是对的。
+  </p>
+</section>
+<section id="s05">
+  <h2><span class="num">05</span>能力全景：16 类目标的真实边界</h2>
+  <p class="sub">
+    「Reverse Engineer Anything」里的 Anything 到底覆盖什么？把 README 的能力表逐行展开后可以看到，
+    覆盖面确实异常宽，但<strong>宽度是靠外部工具换来的</strong>——深度原生分析的每一类都要求你自己装引擎。
+  </p>
+
+  <h3>5.1 完整能力矩阵</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 8 · REA 的 16 类目标、返回产物与外部依赖（整理自项目 README 与 docs/）</caption>
+      <thead>
+        <tr><th>目标类型</th><th>返回什么</th><th>需要你提供什么</th><th class="num-col">引擎依赖</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>原生二进制</strong></td>
+          <td>伪代码、汇编、字符串、符号、调用与引用</td>
+          <td>Hopper / Ghidra / IDA（三者之一）</td>
+          <td class="num-col"><span class="tag r">重</span></td>
+        </tr>
+        <tr>
+          <td>离线 ELF 布局</td>
+          <td>段与节、原始符号与重定位、静态缓解候选</td>
+          <td>pwntools（Linux x64）</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr>
+          <td>WASM 制品</td>
+          <td>校验、节、精确导入导出 WAT 形式、解码后的 WAT</td>
+          <td>WABT 1.0.42</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr>
+          <td>EVM 字节码</td>
+          <td>分发选择器、字节偏移、推断参数与可变性</td>
+          <td>本地 raw/hex 载体（Linux x64）</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr>
+          <td>录制的 Linux 崩溃</td>
+          <td>各线程寄存器与信号、可选映射候选</td>
+          <td>pwntools；可选 GDB / pwndbg</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr style="background:#EAF5EA">
+          <td><strong>JavaScript / Electron</strong></td>
+          <td>模块、导入、source map、路由、IPC、原生插件关系</td>
+          <td><strong>只需 Node.js 与 npm</strong></td>
+          <td class="num-col"><span class="tag g">零</span></td>
+        </tr>
+        <tr>
+          <td>网站</td>
+          <td>页面结构、脚本、网络观测、按需截图</td>
+          <td>Chrome 家族浏览器</td>
+          <td class="num-col"><span class="tag g">零</span></td>
+        </tr>
+        <tr>
+          <td>保存的网络抓包</td>
+          <td>请求响应、暴露的载荷、源位置</td>
+          <td>HAR 文件；Linux 原生抓包需 mitmdump</td>
+          <td class="num-col"><span class="tag g">零</span></td>
+        </tr>
+        <tr style="background:#EAF5EA">
+          <td><strong>.NET 程序集</strong></td>
+          <td>元数据、CIL 指令、声明的原生依赖、构建比较</td>
+          <td><strong>无（仅静态）</strong></td>
+          <td class="num-col"><span class="tag g">零</span></td>
+        </tr>
+        <tr>
+          <td>Android APK</td>
+          <td>Manifest 声明、类、反编译方法、引用</td>
+          <td>headless JADX + 完整 JDK</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr>
+          <td>Android 设备</td>
+          <td>设备、包、进程、日志、内存 dump、截屏、文件传输</td>
+          <td>adb（模拟器或真机）</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr>
+          <td>JEB 项目</td>
+          <td>引擎支持的项目单元、制品摘要、类型与方法伪代码</td>
+          <td>自己启动的 JEB 客户端并暴露 MCP</td>
+          <td class="num-col"><span class="tag r">重</span></td>
+        </tr>
+        <tr>
+          <td>Android 资源</td>
+          <td>解码后的 Manifest、字符串表、语言、版本事实</td>
+          <td>Apktool</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr>
+          <td>固件</td>
+          <td>区域划分、提取结果、原生分析交接</td>
+          <td>Binwalk / Unblob（Linux）</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+        <tr>
+          <td>包与资源</td>
+          <td>文件清单、摘要、plist、Apple bundle 解剖</td>
+          <td>内置（无需外部工具）</td>
+          <td class="num-col"><span class="tag g">零</span></td>
+        </tr>
+        <tr>
+          <td>进程行为</td>
+          <td>终端输出、交互、退出与文件系统观测、运行比较</td>
+          <td>Linux/macOS 上的原生 PTY</td>
+          <td class="num-col"><span class="tag a">中</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box warn">
+    <span class="t">一个容易被忽略的事实：真正「开箱即用」的只有四类</span>
+    <p>
+      16 类目标中，<strong>不需要任何外部分析引擎</strong>的只有：JavaScript / Electron、网站、网络抓包、.NET 程序集（外加内置的包与资源解析）。
+      所有需要「深度原生分析」的场景——也就是逆向工程最有价值的部分——都必须先装好 Hopper、Ghidra 或 IDA。
+      这与「一行命令 <code>npx rea-agents setup</code> 就能逆向一切」的印象差距很大。
+    </p>
+  </div>
+
+  <h3>5.2 选型决策树</h3>
+  <p>
+    项目自己的技能文档里有一条明确的自我否决规则，值得单独提出：<strong>如果分析对象是一个完整的源码仓库，
+    应当使用普通的仓库工具，而不要运行 REA</strong>。这条规则说明作者清楚它的适用边界。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 470" role="img" aria-label="REA 适用性判断决策树">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 根 -->
+        <rect x="330" y="26" width="300" height="48" rx="8" fill="#F1EBFB" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="480" y="56" text-anchor="middle" font-size="13.5" font-weight="720" fill="#5A3099">你要分析的对象是什么？</text>
+
+        <!-- 根到两个分支 -->
+        <line x1="420" y1="74" x2="250" y2="122" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="540" y1="74" x2="710" y2="122" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <!-- 左：有源码 -->
+        <rect x="100" y="122" width="300" height="56" rx="8" fill="#FBEAE8" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="250" y="146" text-anchor="middle" font-size="13" font-weight="720" fill="#8C1D17">有完整源码</text>
+        <text x="250" y="166" text-anchor="middle" font-size="11.5" fill="#333941">→ 不要用 REA，用普通仓库工具</text>
+
+        <!-- 右：只有制品 -->
+        <rect x="560" y="122" width="300" height="56" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="710" y="146" text-anchor="middle" font-size="13" font-weight="720" fill="#1B5820">只有发布制品 / 无源码</text>
+        <text x="710" y="166" text-anchor="middle" font-size="11.5" fill="#333941">→ REA 的适用场景，继续分类</text>
+
+        <!-- 汇聚到四支 -->
+        <line x1="710" y1="178" x2="710" y2="205" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="180" y1="205" x2="840" y2="205" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="180" y1="205" x2="180" y2="230" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="400" y1="205" x2="400" y2="230" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="620" y1="205" x2="620" y2="230" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="840" y1="205" x2="840" y2="230" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <!-- 四支类别 -->
+        <rect x="80" y="230" width="200" height="50" rx="8" fill="#FFFFFF" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="180" y="252" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">原生二进制 / 固件</text>
+        <text x="180" y="270" text-anchor="middle" font-size="11" fill="#4A505A">PE · ELF · Mach-O · 嵌入式</text>
+
+        <rect x="300" y="230" width="200" height="50" rx="8" fill="#FFFFFF" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="400" y="252" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">JS / Electron / 网站</text>
+        <text x="400" y="270" text-anchor="middle" font-size="11" fill="#4A505A">含 source map 与 IPC</text>
+
+        <rect x="520" y="230" width="200" height="50" rx="8" fill="#FFFFFF" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="620" y="252" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">Android / .NET</text>
+        <text x="620" y="270" text-anchor="middle" font-size="11" fill="#4A505A">APK · 资源 · 托管程序集</text>
+
+        <rect x="740" y="230" width="200" height="50" rx="8" fill="#FFFFFF" stroke="#D3CFC4" stroke-width="1.5"/>
+        <text x="840" y="252" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">运行时行为</text>
+        <text x="840" y="270" text-anchor="middle" font-size="11" fill="#4A505A">进程 · 浏览器 · 设备</text>
+
+        <!-- 前置条件 -->
+        <line x1="180" y1="280" x2="180" y2="308" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="400" y1="280" x2="400" y2="308" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="620" y1="280" x2="620" y2="308" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="840" y1="280" x2="840" y2="308" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <rect x="80" y="308" width="200" height="66" rx="8" fill="#FBEAE8" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="180" y="330" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8C1D17">必须先装引擎</text>
+        <text x="180" y="348" text-anchor="middle" font-size="11" fill="#333941">Hopper / Ghidra / IDA</text>
+        <text x="180" y="364" text-anchor="middle" font-size="11" fill="#4A505A">否则完全不工作</text>
+
+        <rect x="300" y="308" width="200" height="66" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="400" y="330" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1B5820">开箱即用</text>
+        <text x="400" y="348" text-anchor="middle" font-size="11" fill="#333941">仅需 Node.js</text>
+        <text x="400" y="364" text-anchor="middle" font-size="11" fill="#4A505A">成本最低、成功率最高</text>
+
+        <rect x="520" y="308" width="200" height="66" rx="8" fill="#FDF3E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="620" y="330" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8F3F06">需装轻量工具链</text>
+        <text x="620" y="348" text-anchor="middle" font-size="11" fill="#333941">JADX + JDK / Apktool / adb</text>
+        <text x="620" y="364" text-anchor="middle" font-size="11" fill="#4A505A">.NET 无需额外依赖</text>
+
+        <rect x="740" y="308" width="200" height="66" rx="8" fill="#FBEAE8" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="840" y="330" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8C1D17">⚠ 会以你的权限执行</text>
+        <text x="840" y="348" text-anchor="middle" font-size="11" fill="#333941">等同运行未知程序</text>
+        <text x="840" y="364" text-anchor="middle" font-size="11" fill="#4A505A">应放在一次性环境</text>
+
+        <!-- 底部提示 -->
+        <text x="480" y="424" text-anchor="middle" font-size="11.5" fill="#4A505A">
+          横轴同时反映「门槛」：从左到右为 重依赖 → 零依赖 → 轻依赖 → 高风险，实践中成功率最高的路径在中左
+        </text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 6</b> REA 适用性判断决策树。左支是项目自己声明的「不该用」场景；
+      右支四条路线中，<b>只有 JS/Electron 与网站这一支是真正零配置的</b>，而它恰好也是逆向工程中信息价值最低的一类（前端代码本就可见）。
+    </figcaption>
+  </figure>
+
+  <h3>5.3 系统要求与版本节奏</h3>
+  <div class="tablewrap">
+    <table>
+      <caption>表 9 · 运行环境与发布节奏（npm registry / GitHub Releases 实测）</caption>
+      <thead><tr><th>项目</th><th>要求 / 数值</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>Node.js</td><td class="num-col">^22.19.0 ‖ ^24.11.0 ‖ &gt;=26.0.0</td><td>三个不连续区间，低于下限直接拒绝</td></tr>
+        <tr><td>包管理器</td><td>npm（Bun 需 ≥ 1.2.17）</td><td>Bun 全局更新在旧版本上会失败</td></tr>
+        <tr><td>npm 包名</td><td><code>rea-agents</code></td><td>可执行命令为 <code>rea</code> 与 <code>rea-agents</code></td></tr>
+        <tr><td>首次发布</td><td class="num-col">2026-07-12</td><td>版本 0.2.1</td></tr>
+        <tr><td>已发布版本数</td><td class="num-col">31</td><td>其中 4.0.0 → 6.4.0 集中在 10 月 7–11 日</td></tr>
+        <tr><td>最新版本</td><td class="num-col">6.4.0（2026-10-11）</td><td>单日之内还有 6.1 / 6.2 / 6.3 三个 minor 版本</td></tr>
+        <tr><td>许可证</td><td>MIT</td><td>宽松，允许商业二次开发</td></tr>
+        <tr><td>维护者</td><td>morluto（单一 npm 维护账号）</td><td>代码提交则有 ≥ 100 名贡献者，见第 3 章</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <span class="t">版本节奏的两种读法</span>
+    <p>
+      <strong>正面读法：</strong>六天四个大版本，且每个版本都带真实修复与新 provider（ADB 设备、JEB、Ghidra 语言配置），说明维护带宽充足。<br />
+      <strong>审慎读法：</strong>大版本密集意味着 <code>0.x</code> 之后仍无稳定 API 承诺，且项目自己在 README 中建议「经常更新，新版本包含频繁的缺陷修复」——
+      这在生产依赖中是成本项。选择接入时应锁定版本号，而非跟随 <code>latest</code>。
+    </p>
+  </div>
+</section>
+<section id="s06">
+  <h2><span class="num">06</span>竞品格局：它不是第一个，但换了一个赛道</h2>
+  <p class="sub">
+    「AI 驱动逆向」不是 REA 开创的。在它之前，社区已经有十几款成熟的 MCP 桥接项目，覆盖 Ghidra、IDA、Binary Ninja、JADX、WinDbg 等。
+    把 REA 放回这个坐标系里，它真正的差异点才会显现。
+  </p>
+
+  <h3>6.1 同赛道工具对比</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 10 · 逆向工程 MCP 生态（星标数据取自公开聚合清单，时点为 2026 年 8–10 月，属二手来源）</caption>
+      <thead>
+        <tr><th>工具</th><th>绑定引擎</th><th class="num-col">星标</th><th>定位</th><th>与 REA 的差异</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#FDF3E3">
+          <td><strong>REA</strong>（morluto）</td>
+          <td><strong>多引擎</strong>：Hopper / Ghidra / IDA / JADX / pwntools / WABT / EVMole</td>
+          <td class="num-col"><strong>110,042</strong></td>
+          <td>编排层 + 证据治理</td>
+          <td>—（基准）</td>
+        </tr>
+        <tr>
+          <td>ida-pro-mcp（mrexodia）</td>
+          <td>IDA Pro</td>
+          <td class="num-col">11,393</td>
+          <td>单引擎 MCP 桥</td>
+          <td>只服务 IDA 用户；无跨目标调查状态</td>
+        </tr>
+        <tr>
+          <td>GhidraMCP（LaurieWired）</td>
+          <td>Ghidra</td>
+          <td class="num-col">9,805</td>
+          <td>单引擎 MCP 桥</td>
+          <td>生态最成熟、社区最大；功能聚焦重命名与交叉引用</td>
+        </tr>
+        <tr>
+          <td>LLM4Decompile</td>
+          <td>自研模型（1.3B–33B）</td>
+          <td class="num-col">6,965</td>
+          <td>专用反编译模型</td>
+          <td>方法论相反：用微调模型替代通用模型 + 工具</td>
+        </tr>
+        <tr>
+          <td>ghidra-mcp</td>
+          <td>Ghidra</td>
+          <td class="num-col">3,333</td>
+          <td>GUI 插件 + headless 服务</td>
+          <td>工具覆盖面大，支持惰性加载</td>
+        </tr>
+        <tr>
+          <td>JS Reverse MCP</td>
+          <td>Chrome</td>
+          <td class="num-col">1,900</td>
+          <td>前端逆向专用</td>
+          <td>与 REA 的 JS/Electron 能力重叠，但只覆盖这一层</td>
+        </tr>
+        <tr>
+          <td>ReVa</td>
+          <td>Ghidra</td>
+          <td class="num-col">805</td>
+          <td>MCP + Claude Skills</td>
+          <td>同样做了「工具 + 技能」双注册，但仅限 Ghidra</td>
+        </tr>
+        <tr>
+          <td>GhidrAssistMCP</td>
+          <td>Ghidra</td>
+          <td class="num-col">719</td>
+          <td>原生扩展 + 安全门控</td>
+          <td>对敏感工具有权限门禁，设计上更保守</td>
+        </tr>
+        <tr>
+          <td>Binary Ninja Sidekick</td>
+          <td>Binary Ninja</td>
+          <td class="num-col">商业</td>
+          <td>官方 AI 助手</td>
+          <td>闭源；唯一宣称内置「验证代理」交叉核对结论</td>
+        </tr>
+        <tr>
+          <td>r0idamcp（r0ysue）</td>
+          <td>IDA Pro</td>
+          <td class="num-col">81</td>
+          <td>中文 IDA MCP</td>
+          <td>SSE 协议、开箱即用，面向中文安全圈</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 470" role="img" aria-label="逆向工程 MCP 工具星标对比，对数刻度">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <text x="480" y="26" text-anchor="middle" font-size="13.5" font-weight="720" fill="#16181D">星标量级对比（对数刻度，每格 ×10）</text>
+
+        <!-- 坐标轴与刻度（刻度改为轴上短线，避免竖线穿过条形内的数值标签） -->
+        <line x1="180" y1="44" x2="180" y2="404" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="312" y1="404" x2="312" y2="408" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="444" y1="404" x2="444" y2="408" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="576" y1="404" x2="576" y2="408" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="708" y1="404" x2="708" y2="408" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="840" y1="404" x2="840" y2="408" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <text x="180" y="420" text-anchor="middle" font-size="11" fill="#4A505A">1</text>
+        <text x="312" y="420" text-anchor="middle" font-size="11" fill="#4A505A">10</text>
+        <text x="444" y="420" text-anchor="middle" font-size="11" fill="#4A505A">100</text>
+        <text x="576" y="420" text-anchor="middle" font-size="11" fill="#4A505A">1k</text>
+        <text x="708" y="420" text-anchor="middle" font-size="11" fill="#4A505A">10k</text>
+        <text x="840" y="420" text-anchor="middle" font-size="11" fill="#4A505A">100k</text>
+
+        <!-- 条 -->
+        <g style="background-color:#8F3F06">
+          <rect x="180" y="50" width="665.7" height="22" rx="3" fill="#8F3F06"/>
+          <text x="836" y="65" text-anchor="end" font-size="11.5" font-weight="720" fill="#FFFFFF">110,042</text>
+        </g>
+        <text x="170" y="65" text-anchor="end" font-size="12" font-weight="720" fill="#8F3F06">REA</text>
+
+        <rect x="180" y="78" width="355.7" height="22" rx="3" fill="#1F5288"/>
+        <text x="170" y="93" text-anchor="end" font-size="11.5" fill="#333941">ida-pro-mcp</text>
+        <text x="545" y="94" text-anchor="start" font-size="11" fill="#1F5288">11,393</text>
+
+        <rect x="180" y="106" width="353.0" height="22" rx="3" fill="#1F5288"/>
+        <text x="170" y="121" text-anchor="end" font-size="11.5" fill="#333941">GhidraMCP</text>
+        <text x="543" y="122" text-anchor="start" font-size="11" fill="#1F5288">9,805</text>
+
+        <rect x="180" y="134" width="327.4" height="22" rx="3" fill="#1F5288"/>
+        <text x="170" y="149" text-anchor="end" font-size="11.5" fill="#333941">LLM4Decompile</text>
+        <text x="517" y="150" text-anchor="start" font-size="11" fill="#1F5288">6,965</text>
+
+        <rect x="180" y="162" width="285.2" height="22" rx="3" fill="#1F5288"/>
+        <text x="170" y="177" text-anchor="end" font-size="11.5" fill="#333941">ghidra-mcp</text>
+        <text x="475" y="178" text-anchor="start" font-size="11" fill="#1F5288">3,333</text>
+
+        <rect x="180" y="190" width="253.0" height="22" rx="3" fill="#0A5750"/>
+        <text x="170" y="205" text-anchor="end" font-size="11.5" fill="#333941">JS Reverse MCP</text>
+        <text x="443" y="206" text-anchor="start" font-size="11" fill="#0A5750">1,900</text>
+
+        <rect x="180" y="218" width="203.7" height="22" rx="3" fill="#0A5750"/>
+        <text x="170" y="233" text-anchor="end" font-size="11.5" fill="#333941">ReVa</text>
+        <text x="393" y="234" text-anchor="start" font-size="11" fill="#0A5750">805</text>
+
+        <rect x="180" y="246" width="197.2" height="22" rx="3" fill="#0A5750"/>
+        <text x="170" y="261" text-anchor="end" font-size="11.5" fill="#333941">GhidrAssistMCP</text>
+        <text x="387" y="262" text-anchor="start" font-size="11" fill="#0A5750">719</text>
+
+        <rect x="180" y="274" width="192.2" height="22" rx="3" fill="#0A5750"/>
+        <text x="170" y="289" text-anchor="end" font-size="11.5" fill="#333941">GhidraGPT</text>
+        <text x="382" y="290" text-anchor="start" font-size="11" fill="#0A5750">658</text>
+
+        <rect x="180" y="302" width="127.7" height="22" rx="3" fill="#4A505A"/>
+        <text x="170" y="317" text-anchor="end" font-size="11.5" fill="#333941">Binary Ninja MCP</text>
+        <text x="317" y="318" text-anchor="start" font-size="11" fill="#4A505A">214</text>
+
+        <rect x="180" y="330" width="80.0" height="22" rx="3" fill="#4A505A"/>
+        <text x="170" y="345" text-anchor="end" font-size="11.5" fill="#333941">Ghidra Headless MCP</text>
+        <text x="270" y="346" text-anchor="start" font-size="11" fill="#4A505A">93</text>
+
+        <rect x="180" y="358" width="72.1" height="22" rx="3" fill="#4A505A"/>
+        <text x="170" y="373" text-anchor="end" font-size="11.5" fill="#333941">r0idamcp</text>
+        <text x="262" y="374" text-anchor="start" font-size="11" fill="#4A505A">81</text>
+
+        <!-- 注释 -->
+        <line x1="845.7" y1="72" x2="845.7" y2="404" stroke="#B45309" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="838" y="446" text-anchor="end" font-size="11.5" font-weight="650" fill="#8F3F06">
+          REA 的量级约为同类工具总和的 3 倍
+        </text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 7</b> 逆向工程 MCP 工具的星标量级对比（对数刻度）。彩色表示生态归属：<b>蓝</b>=Ghidra/IDA 系单引擎桥，<b>青</b>=细分场景，
+      <b>灰</b>=长尾项目。需要说明的是，这些星标取自公开聚合清单（awesome-ai-security-tools 等），时点跨度达两个月，
+      属<b>二手数据</b>，仅用于判断量级关系，不用于精确排序。
+    </figcaption>
+  </figure>
+
+  <h3>6.2 差异点：三条它独有的设计</h3>
+  <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0">
+    <div class="box ok" style="margin:0">
+      <span class="t">① 多引擎 + 多目标，而非单引擎</span>
+      <p style="margin:0">同生态的其余项目几乎全部绑定一款引擎（Ghidra 系最多）。REA 把五款以上引擎与十六类目标统一到一个契约下，
+      这是它唯一无法被单个竞品直接替代的地方。</p>
+    </div>
+    <div class="box ok" style="margin:0">
+      <span class="t">② 把证据治理做成了架构，而非提示词</span>
+      <p style="margin:0">其他项目大多靠 system prompt 要求模型「说明依据」。REA 把 <code>EvidenceLedger</code> 与 <code>Unknown</code>
+      做成了应用层的实体，并规定 provider 选择「确定性、无回退」。</p>
+    </div>
+    <div class="box ok" style="margin:0">
+      <span class="t">③ 同时服务 CLI 与 MCP，共用同一套工作流</span>
+      <p style="margin:0">多数 MCP 桥只能从 Agent 内部调用。REA 的 CLI 与 MCP 走同一批工作流实现，
+      既支持「无 Agent 的脚本化批处理」，也支持「对话式调查」。</p>
+    </div>
+    <div class="box stop" style="margin:0">
+      <span class="t">④ 它的短板同样独特：什么都做，什么都不深</span>
+      <p style="margin:0">在与专精工具的正面比较中，REA 在单一引擎上的深度必然不及 GhidraMCP。
+      它换来的是广度，代价是深度与稳定性——这是「编排层」定位的固有取舍。</p>
+    </div>
+  </div>
+
+  <div class="box">
+    <span class="t">生态位判断（观点）</span>
+    <p>
+      在 2026 年 10 月这个时点，这个赛道的格局是：<strong>单引擎桥已经高度同质化且竞争充分</strong>（Ghidra 系至少五个项目，
+      功能相近），而 <strong>多引擎编排层此前是空白</strong>。REA 抢到的正是这个空位。
+      只要「跨引擎调查」这个需求真实存在，它就有独立价值；而如果实际情况是「多数人只用一款引擎」，
+      那么它的额外复杂度就难以被兑现——这正是第 8 章要讨论的度量问题。
+    </p>
+  </div>
+</section>
+<section id="s07">
+  <h2><span class="num">07</span>证据全景：哪些是真的，哪些还没被证明</h2>
+  <p class="sub">
+    热度、工程质量、能力宣称、效果验证——这是四件不同的事。前面的章节分别给出了证据，这一章把它们并排放，
+    并明确标出<strong>哪些结论已经有了硬证据，哪些还只是一个尚未被检验的承诺</strong>。
+  </p>
+
+  <h3>7.1 热度与验证深度的落差</h3>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 420" role="img" aria-label="REA 各维度的证据充分度对比">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <text x="40" y="26" font-size="13" font-weight="720" fill="#16181D">各维度的证据充分度（0 – 5 分，本报告评级）</text>
+
+        <!-- 坐标轴与刻度（刻度改为轴上短线，避免竖线穿过条形内的数值标签） -->
+        <line x1="290" y1="44" x2="290" y2="330" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="402" y1="330" x2="402" y2="334" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="514" y1="330" x2="514" y2="334" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="626" y1="330" x2="626" y2="334" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="738" y1="330" x2="738" y2="334" stroke="#D3CFC4" stroke-width="1.5"/>
+        <line x1="850" y1="330" x2="850" y2="334" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <text x="290" y="348" text-anchor="middle" font-size="11" fill="#4A505A">0</text>
+        <text x="402" y="348" text-anchor="middle" font-size="11" fill="#4A505A">1</text>
+        <text x="514" y="348" text-anchor="middle" font-size="11" fill="#4A505A">2</text>
+        <text x="626" y="348" text-anchor="middle" font-size="11" fill="#4A505A">3</text>
+        <text x="738" y="348" text-anchor="middle" font-size="11" fill="#4A505A">4</text>
+        <text x="850" y="348" text-anchor="middle" font-size="11" fill="#4A505A">5</text>
+
+        <!-- 条：宽度 = score * 112 -->
+        <!-- 1 星标热度 5 -->
+        <g style="background-color:#8F3F06">
+          <rect x="290" y="56" width="560" height="26" rx="3" fill="#8F3F06"/>
+          <text x="842" y="74" text-anchor="end" font-size="11.5" font-weight="700" fill="#FFFFFF">5.0 · 11 万星</text>
+        </g>
+        <text x="280" y="74" text-anchor="end" font-size="12" font-weight="650" fill="#333941">公众热度</text>
+
+        <!-- 2 代码结构 5 -->
+        <g style="background-color:#1B5820">
+          <rect x="290" y="92" width="560" height="26" rx="3" fill="#1B5820"/>
+          <text x="842" y="110" text-anchor="end" font-size="11.5" font-weight="700" fill="#FFFFFF">5.0 · 架构守卫</text>
+        </g>
+        <text x="280" y="110" text-anchor="end" font-size="12" font-weight="650" fill="#333941">代码与分层质量</text>
+
+        <!-- 3 文档 5 -->
+        <g style="background-color:#1B5820">
+          <rect x="290" y="128" width="560" height="26" rx="3" fill="#1B5820"/>
+          <text x="842" y="146" text-anchor="end" font-size="11.5" font-weight="700" fill="#FFFFFF">5.0 · 契约完整</text>
+        </g>
+        <text x="280" y="146" text-anchor="end" font-size="12" font-weight="650" fill="#333941">文档与契约完整度</text>
+
+        <!-- 4 真机 CI 4 -->
+        <g style="background-color:#1F5288">
+          <rect x="290" y="164" width="448" height="26" rx="3" fill="#1F5288"/>
+          <text x="730" y="182" text-anchor="end" font-size="11.5" font-weight="700" fill="#FFFFFF">4.0 · 10+ 条</text>
+        </g>
+        <text x="280" y="182" text-anchor="end" font-size="12" font-weight="650" fill="#333941">真机验证 lane</text>
+
+        <!-- 5 独立实测 1 -->
+        <rect x="290" y="200" width="112" height="26" rx="3" fill="#B45309"/>
+        <text x="280" y="218" text-anchor="end" font-size="12" font-weight="650" fill="#333941">独立效果验证</text>
+        <text x="412" y="219" text-anchor="start" font-size="11.5" font-weight="700" fill="#8F3F06">1.0 · 仅 1 例公开</text>
+
+        <!-- 6 生产使用 0.5 -->
+        <rect x="290" y="236" width="56" height="26" rx="3" fill="#B3261E"/>
+        <text x="280" y="254" text-anchor="end" font-size="12" font-weight="650" fill="#333941">规模化生产使用</text>
+        <text x="356" y="255" text-anchor="start" font-size="11.5" font-weight="700" fill="#8C1D17">0.5 · 无公开证据</text>
+
+        <!-- 7 端到端案例 1.5 -->
+        <rect x="290" y="272" width="168" height="26" rx="3" fill="#B45309"/>
+        <text x="280" y="290" text-anchor="end" font-size="12" font-weight="650" fill="#333941">可复现端到端案例</text>
+        <text x="468" y="291" text-anchor="start" font-size="11.5" font-weight="700" fill="#8F3F06">1.5 · 3 例同源</text>
+
+        <!-- 凹槽标注 -->
+        <text x="290" y="378" font-size="11.5" font-weight="650" fill="#8C1D17">
+          验证深度的凹槽：前三项为可外部独立复核的自评维度，后三项依赖第三方实测
+        </text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 8</b> 七个维度的证据充分度（本报告自评，0–5）。前四项可由外部独立复核（取 API、读源码、看 CI 配置），
+      因此评分高；后三项依赖第三方实测，而目前公开可查的只有一例。
+      <b>一个项目「工程质量高」与「效果被证明」是彼此独立的结论，热度不能替代后者。</b>
+    </figcaption>
+  </figure>
+
+  <h3>7.2 完整证据表：正反同列</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 11 · 关键论断的证据与反证据（证据强度按：API/源码实测 &gt; 独立第三方实测 &gt; 官方自述 &gt; 项目自报案例 &gt; 媒体转述）</caption>
+      <thead>
+        <tr><th>论断</th><th>支持证据</th><th>反证据 / 未验证部分</th><th class="num-col">强度</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>热度极高</td>
+          <td>GitHub API 实测 110,042 星；whatstrending 独立每日快照与趋势一致</td>
+          <td>媒体口径互相矛盾达 30%+；无任何独立审计证实增长来源</td>
+          <td class="num-col"><span class="tag g">实测</span></td>
+        </tr>
+        <tr>
+          <td>装机量远低于人气</td>
+          <td>npm registry API：月下载 74,461；峰值日下载 34,790，仍是星标存量的三分之一</td>
+          <td>npm 下载包含 CI 与缓存重复计数，实际活跃用户可能更低（对结论是同向的）</td>
+          <td class="num-col"><span class="tag g">实测</span></td>
+        </tr>
+        <tr>
+          <td>工程质量严肃</td>
+          <td>2,897 个文件、2,444 次提交、≥100 贡献者、41 组工具注册器、架构守卫检查、10+ 条真机 CI</td>
+          <td>提交数高也可能是高频小修；但贡献者分布（前三人占 2,108 次）说明核心集中度较高</td>
+          <td class="num-col"><span class="tag g">源码实测</span></td>
+        </tr>
+        <tr>
+          <td>它是编排层而非反编译器</td>
+          <td>36 个运行时依赖中无任何反编译引擎；架构图显示引擎位于 Provider 层且标注 BYO</td>
+          <td>无实质反证据；这是可被代码直接证伪的断言，且证伪失败</td>
+          <td class="num-col"><span class="tag g">源码实测</span></td>
+        </tr>
+        <tr>
+          <td>返回伪代码而非原始源码</td>
+          <td>官方 README 与 FAQ 明确声明「不声称恢复原始源码」</td>
+          <td>官方自述，无独立核验其伪代码质量</td>
+          <td class="num-col"><span class="tag b">官方</span></td>
+        </tr>
+        <tr>
+          <td>能重建出行为等价的实现</td>
+          <td>DX-Ball showcase：重建版通过 3,205 个原始 x86 用例，逐字节复刻 63 个函数字节</td>
+          <td><strong>目标是 DOS 时代的极小二进制</strong>；且三个 showcase 均由同一贡献者（N0zoM1z0）完成，非同源独立验证</td>
+          <td class="num-col"><span class="tag a">案例</span></td>
+        </tr>
+        <tr>
+          <td>在真实商业软件上有效</td>
+          <td>独立实测（第三方视频）：用 REA 辅助 Claude 重建 macOS Preview 的看图功能，结果接近原版（缩放、旋转、分享、绘图批注）</td>
+          <td>同一实测也指出：无库版本<strong>先完成</strong>，只是较卡；该视频本身批评热度跑在 demo 质量前面</td>
+          <td class="num-col"><span class="tag a">第三方</span></td>
+        </tr>
+        <tr>
+          <td>「Reverse Engineer Anything」名副其实</td>
+          <td>覆盖 16 类目标，广度确有压倒性优势</td>
+          <td>深度依赖外部引擎；Windows 工具缺 headless 模式；大二进制超出上下文窗口；无实时协作</td>
+          <td class="num-col"><span class="tag b">官方</span></td>
+        </tr>
+        <tr>
+          <td>它显著降低了逆向门槛</td>
+          <td>2026 年 R2AI 类研究显示 AI 辅助能把恶意样本分析从 3–6 天压缩到 2–4 天</td>
+          <td>同一批研究反复强调「AI 无法独立工作，必须由有经验的分析师持续引导」；本报告未发现针对 REA 的同类量化研究</td>
+          <td class="num-col"><span class="tag n">类推</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box stop">
+    <span class="t">最需要警惕的一类叙事</span>
+    <p>
+      独立评述中有一句判断值得原样引用：<strong>「这类报道反复出现的一个模式是——以 GitHub 星标增长图开头，而不是以实质性演示开头。
+      这通常是一个信号，说明实际展示出来的能力比包装所说的要薄。」</strong>
+    </p>
+    <p style="margin-top:10px">
+      本报告核对后的结论是<strong>部分同意</strong>：REA 的代码与工程确实扎实（第 3 章），不属「薄包装」；
+      但<strong>关于它「实际效果」的公开证据确实薄</strong>（图 8 的凹槽）——这两件事并不矛盾，它们是两个独立的判断。
+    </p>
+  </div>
+</section>
+<section id="s08">
+  <h2><span class="num">08</span>度量体系：怎么判断这类工具是不是真的有用</h2>
+  <p class="sub">
+    REA 的案例本身提出了一个通用问题：<strong>当星标、fork、下载量都可以被注意力事件扭曲时，该用什么指标判断一个 Agent 工具的成色？</strong>
+    这一章给出一个可复用的三层度量框架。
+  </p>
+
+  <h3>8.1 三层度量：采用 → 效果 → 治理</h3>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 400" role="img" aria-label="Agent 工具的三层度量体系">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 第一层 -->
+        <rect x="60" y="50" width="840" height="92" rx="10" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="84" y="76" font-size="13.5" font-weight="720" fill="#1F5288">第 1 层 · 采用 —— 「有人在用吗」</text>
+        <text x="84" y="99" font-size="11.5" fill="#333941">✗ 星标　✗ fork 数　✓ 周活跃安装（去 CI 与镜像）　✓ 真实工作流接入数　✓ issue 中可复现的真实案例</text>
+        <text x="84" y="121" font-size="11.5" font-weight="650" fill="#1F5288">REA 实测：月下载 7.4 万，但相对 11 万星仅 2/3；fork/star 22.2% 使 fork 失去代理能力</text>
+
+        <!-- 第二层 -->
+        <rect x="90" y="158" width="810" height="92" rx="10" fill="#FDF3E3" stroke="#B45309" stroke-width="1.5"/>
+        <text x="114" y="184" font-size="13.5" font-weight="720" fill="#8F3F06">第 2 层 · 效果 —— 「用了以后任务更容易完成吗」</text>
+        <text x="114" y="207" font-size="11.5" fill="#333941">✓ 任务完成率（需 ground truth）　✓ 分析师时间节省　✓ 结论正确率与误报率　✓ 关闭 Agent 后工具是否仍被单独使用</text>
+        <text x="114" y="229" font-size="11.5" font-weight="650" fill="#8F3F06">REA 现状：公开证据仅 1 例独立实测 + 3 例同源自报 showcase，缺量化对照</text>
+
+        <!-- 第三层 -->
+        <rect x="120" y="266" width="780" height="92" rx="10" fill="#F1EBFB" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="144" y="292" font-size="13.5" font-weight="720" fill="#5A3099">第 3 层 · 治理 —— 「结论可以被复核吗」</text>
+        <text x="144" y="315" font-size="11.5" fill="#333941">✓ 证据可追溯率　✓ 未知项显式声明率　✓ 引擎切换的透明度　✓ 运行时执行前的授权提示</text>
+        <text x="144" y="337" font-size="11.5" font-weight="650" fill="#5A3099">REA 现状：本报告认为这一层是它最强的部分——机制写进了架构而非提示词</text>
+
+        <!-- 向上箭头 -->
+        <line x1="46" y1="352" x2="46" y2="68" stroke="#333941" stroke-width="2"/>
+        <path d="M46,68 L40,82 L52,82 Z" fill="#333941"/>
+        <text x="34" y="212" font-size="11" font-weight="700" fill="#333941" transform="rotate(-90 34 212)">越往上越难测，但越接近真相</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 9</b> 三层度量体系。多数讨论停在第 1 层的错误指标上（星标）；而对实际工程决策真正有用的第 2 层，
+      恰恰是最难获得数据的一层。<b>REA 的情况是：第 1 层被注意力扭曲、第 2 层几乎空白、第 3 层设计优秀。</b>
+    </figcaption>
+  </figure>
+
+  <h3>8.2 会骗你的六个信号</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 12 · 常见代理指标及其失效方式（本案例中均可观察到真实例证）</caption>
+      <thead>
+        <tr><th>信号</th><th>通常的解读</th><th>失效方式</th><th>本案例中的表现</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stars</td><td>项目受欢迎</td><td>可被热点、转发、聚合站放大；与使用无关</td><td class="num-col">110,042</td></tr>
+        <tr><td>Fork 数</td><td>有人在改它</td><td>镜像站、二次分发、自动化脚本都会产生 fork</td><td class="num-col">24,505（占星标 22%）</td></tr>
+        <tr><td>Watchers</td><td>持续关注者</td><td>通常在爆款中同步上升；若显著偏低则说明「一次性围观」</td><td class="num-col">349（占星标 0.32%）</td></tr>
+        <tr><td>发布频率</td><td>开发活跃</td><td>高频发版也可能意味着 API 不稳定、缺陷修复频繁</td><td class="num-col">6 天 4 个大版本</td></tr>
+        <tr><td>下载量</td><td>真实装机</td><td>含 CI、缓存、镜像；但峰值口径仍可用于判断上限</td><td class="num-col">峰值 3.5 万 / 天</td></tr>
+        <tr><td>官方 showcase</td><td>能力已被证明</td><td>案例通常由核心成员制作，目标偏小、条件偏优</td><td class="num-col">3 例，同一贡献者</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box warn">
+    <span class="t">反 Goodhart 原则</span>
+    <p>
+      「当一个指标成为目标，它就不再是好的指标。」对本案例的具体含义是：
+      <strong>不要问「它有多少星」，要问「关掉 Agent 之后，我还会不会单独打开这个工具」。</strong>
+      后者才区分了「有独立价值的工具」与「一个刚好赶上了热点的技能包」。
+      对 REA 而言，这个检验的答案取决于你是否真的会做跨引擎调查——如果你的工作只涉及 Ghidra，那么单引擎桥更划算。
+    </p>
+  </div>
+
+  <h3>8.3 评估清单：接入前应当验证的八件事</h3>
+
+  <div class="box ok">
+    <span class="t">可直接执行的检查表</span>
+    <ol style="margin-bottom:0">
+      <li><strong>用你自己的目标试一次。</strong> 不要用官方 showcase 的目标，选一个你<em>已经知道答案</em>的二进制，看它给出的结论是否与已知事实一致。</li>
+      <li><strong>验证证据链。</strong> 随机抽一条它给出的结论，检查能否顺着它标注的源位置回溯到具体指令。</li>
+      <li><strong>检查未知项。</strong> 找一段确实无法确定的地方，看它标注为「未知」还是给出了一个自信但无依据的猜测。</li>
+      <li><strong>测大目标。</strong> 用你场景中最大的一个制品，确认是否触发上下文窗口限制，以及触发后是优雅降级还是直接失败。</li>
+      <li><strong>确认引擎边界。</strong> 明确哪些能力需要 Hopper / Ghidra / IDA，以及这些引擎在你团队的授权与安装情况。</li>
+      <li><strong>隔离运行时能力。</strong> 若要使用进程捕获、浏览器观测、adb 等运行时功能，先确认能在一次性容器/虚拟机中运行。</li>
+      <li><strong>锁定版本。</strong> 项目处于高频发版期，生产接入应锁定具体版本号并进行内部回归，而不是跟随 <code>latest</code>。</li>
+      <li><strong>核对法务口径。</strong> 按第 9 章的判定表，确认你的具体使用场景落在哪一档。</li>
+    </ol>
+  </div>
+</section>
+<section id="s09">
+  <h2><span class="num">09</span>法律边界：合法空间在哪里，红线在哪里</h2>
+  <p class="sub">
+    「逆向工程是否合法」是一个被问了几十年的问题，答案并不模糊。真正模糊的是<strong>具体场景落在哪一档</strong>。
+    这一章给出中美两个法域的对照，以及一条可操作的三问判定链。
+  </p>
+
+  <h3>9.1 三问判定链</h3>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 470" role="img" aria-label="逆向工程合法性三问判定链">
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+
+        <!-- 列头 -->
+        <rect x="60" y="34" width="260" height="40" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="190" y="59" text-anchor="middle" font-size="12.5" font-weight="720" fill="#1F5288">问 1 · 制品如何获得？</text>
+
+        <rect x="350" y="34" width="260" height="40" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="480" y="59" text-anchor="middle" font-size="12.5" font-weight="720" fill="#1F5288">问 2 · 目的是什么？</text>
+
+        <rect x="640" y="34" width="260" height="40" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="770" y="59" text-anchor="middle" font-size="12.5" font-weight="720" fill="#1F5288">问 3 · 产物如何产出？</text>
+
+        <!-- 列1 -->
+        <rect x="60" y="94" width="260" height="86" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="190" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#1B5820">合法取得</text>
+        <text x="190" y="139" text-anchor="middle" font-size="11" fill="#333941">购买 / 公开渠道下载</text>
+        <text x="190" y="157" text-anchor="middle" font-size="11" fill="#333941">自有产品 / 获授权</text>
+        <text x="190" y="173" text-anchor="middle" font-size="10.5" fill="#4A505A">→ 进入问 2</text>
+
+        <rect x="60" y="190" width="260" height="86" rx="8" fill="#FBEAE8" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="190" y="214" text-anchor="middle" font-size="12" font-weight="700" fill="#8C1D17">不正当手段取得</text>
+        <text x="190" y="235" text-anchor="middle" font-size="11" fill="#333941">窃取 · 欺诈 · 违反保密协议</text>
+        <text x="190" y="253" text-anchor="middle" font-size="11" fill="#333941">明知是商业秘密仍获取</text>
+        <text x="190" y="269" text-anchor="middle" font-size="10.5" font-weight="650" fill="#8C1D17">→ 直接落在红线，不可补救</text>
+
+        <!-- 列2 -->
+        <rect x="350" y="94" width="260" height="86" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="480" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#1B5820">功能性目的</text>
+        <text x="480" y="139" text-anchor="middle" font-size="11" fill="#333941">互操作性 / 兼容 / 接口对接</text>
+        <text x="480" y="157" text-anchor="middle" font-size="11" fill="#333941">安全研究 / 加密研究</text>
+        <text x="480" y="173" text-anchor="middle" font-size="10.5" fill="#4A505A">→ 进入问 3</text>
+
+        <rect x="350" y="190" width="260" height="86" rx="8" fill="#FBEAE8" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="480" y="214" text-anchor="middle" font-size="12" font-weight="700" fill="#8C1D17">非功能性目的</text>
+        <text x="480" y="235" text-anchor="middle" font-size="11" fill="#333941">绕过付费 / 制作盗版 / 破解</text>
+        <text x="480" y="253" text-anchor="middle" font-size="11" fill="#333941">商业捆绑对抗 / 直接牟利</text>
+        <text x="480" y="269" text-anchor="middle" font-size="10.5" font-weight="650" fill="#8C1D17">→ 不受技术措施例外保护</text>
+
+        <!-- 列3 -->
+        <rect x="640" y="94" width="260" height="86" rx="8" fill="#EAF5EA" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="770" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#1B5820">独立重写</text>
+        <text x="770" y="139" text-anchor="middle" font-size="11" fill="#333941">依据功能理解自行实现代码</text>
+        <text x="770" y="157" text-anchor="middle" font-size="11" fill="#333941">洁净室开发 / 独立实施</text>
+        <text x="770" y="173" text-anchor="middle" font-size="10.5" fill="#4A505A">→ 通常落入合法空间</text>
+
+        <rect x="640" y="190" width="260" height="86" rx="8" fill="#FBEAE8" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="770" y="214" text-anchor="middle" font-size="12" font-weight="700" fill="#8C1D17">直接复制代码</text>
+        <text x="770" y="235" text-anchor="middle" font-size="11" fill="#333941">把反编译结果搬进产品</text>
+        <text x="770" y="253" text-anchor="middle" font-size="11" fill="#333941">复制常量表 / 资源 / 数据结构</text>
+        <text x="770" y="269" text-anchor="middle" font-size="10.5" font-weight="650" fill="#8C1D17">→ 两国法域的共同红线</text>
+
+        <!-- 连接箭头 -->
+        <path d="M190,180 L190,188" stroke="#D3CFC4" stroke-width="1.5"/>
+        <path d="M320,137 L348,137" stroke="#D3CFC4" stroke-width="1.5"/>
+        <path d="M610,137 L638,137" stroke="#D3CFC4" stroke-width="1.5"/>
+
+        <!-- 结论条 -->
+        <rect x="60" y="310" width="840" height="60" rx="10" fill="#EAF5EA" stroke="#2E7D32" stroke-width="2"/>
+        <text x="480" y="336" text-anchor="middle" font-size="13" font-weight="750" fill="#1B5820">三问全部取「上」→ 在两国法域下均具备合法空间</text>
+        <text x="480" y="357" text-anchor="middle" font-size="11.5" fill="#333941">中国：法释〔2020〕7 号第十四条 · 《著作权法》第五十条第一款第（五）项 · 指导案例 48 号　　美国：DTSA · DMCA §1201(f) · Sega v. Accolade</text>
+
+        <rect x="60" y="384" width="840" height="52" rx="10" fill="#FBEAE8" stroke="#B3261E" stroke-width="2"/>
+        <text x="480" y="408" text-anchor="middle" font-size="13" font-weight="750" fill="#8C1D17">任一问题取「下」→ 落入侵权风险区，且多数情形不可通过「目的正当」抗辩挽回</text>
+        <text x="480" y="427" text-anchor="middle" font-size="11.5" fill="#8C1D17">特别注意：EULA 中的禁止反向工程条款在美国判例中可优先于版权法的允许性规定（Bowers v. Baystate）</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>图 10</b> 逆向工程合法性三问判定链。三个问题<strong>依次过滤</strong>：取得方式不合法时，后续无论目的多正当都不成立；
+      目的不合法时，也无法援引「互操作性例外」或「安全研究例外」。<b>REA 的 showcase 演示的正是「独立重写」这一列</b>——
+      这也是它在免责声明中只提「合法研究、分析与重建」而不提「复制」的原因。
+    </figcaption>
+  </figure>
+
+  <h3>9.2 两个法域的对照</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 13 · 中美欧三法域的关键规则对照</caption>
+      <thead>
+        <tr><th>法域</th><th>核心依据</th><th>允许什么</th><th>边界与陷阱</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>中国</strong></td>
+          <td>最高院《关于审理侵犯商业秘密民事案件适用法律若干问题的规定》（法释〔2020〕7 号）第十四条</td>
+          <td>通过自行研制或<strong>反向工程</strong>等方式获得商业秘密，<strong>不认定为侵犯商业秘密</strong></td>
+          <td>但「以不正当手段知悉后再主张反向工程合法」不予支持；反向工程的对象须是「从公开渠道取得的产品」</td>
+        </tr>
+        <tr>
+          <td><strong>中国</strong></td>
+          <td>2020 年修订《著作权法》第五十条第一款第（五）项</td>
+          <td>「进行<strong>加密研究</strong>或者<strong>计算机软件反向工程研究</strong>」属于可以避开技术措施的法定例外</td>
+          <td>例外须在合理限度内；规避手段不得超出实现兼容目的所必需的范围</td>
+        </tr>
+        <tr>
+          <td><strong>中国</strong></td>
+          <td>最高院指导案例 48 号（北京精雕诉上海奈凯）</td>
+          <td>为兼容目的分析数据格式属合理使用；受保护的技术措施必须<strong>服务于保护著作权本身</strong></td>
+          <td>以「保护」之名行「商业捆绑、排除竞争」之实的技术限制，不受保护；<strong>红线是直接复制代码</strong></td>
+        </tr>
+        <tr>
+          <td><strong>美国</strong></td>
+          <td>DTSA（保护商业秘密法）</td>
+          <td>improper means 的定义明确<strong>排除</strong> reverse engineering 与独立开发</td>
+          <td>若通过盗窃、欺诈、违反保密义务获得，则不适用该排除</td>
+        </tr>
+        <tr>
+          <td><strong>美国</strong></td>
+          <td>DMCA §1201(f)</td>
+          <td>合法持有程序副本者，可为实现<strong>互操作性</strong>而规避保护措施，并在该目的范围内分享所获知识</td>
+          <td>严格限定于互操作性目的，且不得构成其他侵权</td>
+        </tr>
+        <tr>
+          <td><strong>美国</strong></td>
+          <td>Sega v. Accolade（第九巡回，1992）；SAS v. WPL</td>
+          <td>为获取功能要素而进行的中间复制可构成合理使用；API 与功能不受版权保护</td>
+          <td><strong>合同可覆盖</strong>：Bowers v. Baystate 认定 EULA 中的禁止反向工程条款可执行</td>
+        </tr>
+        <tr>
+          <td><strong>欧盟</strong></td>
+          <td>Directive 2009/24/EC（计算机程序法律保护指令）</td>
+          <td>为互操作性目的的反编译在特定条件下被允许</td>
+          <td>各成员国实施细节有差异</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box warn">
+    <span class="t">实务中最大的陷阱：EULA 优先</span>
+    <p>
+      上述所有「法定允许」都可能被一纸用户协议推翻。美国判例（Bowers v. Baystate Technologies）确认
+      <strong>最终用户许可协议中的禁止反向工程条款可以在合同法层面被强制执行</strong>，从而优先于版权法中本来允许的行为。
+      这意味着：在分析任何商业软件前，<strong>先读它的授权协议</strong>，比先读法律条文更实用。
+    </p>
+  </div>
+
+  <h3>9.3 场景判定：REA 的典型用法各落在哪一档</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 14 · 常见使用场景的风险分级（一般性分析，不构成法律意见）</caption>
+      <thead>
+        <tr><th>场景</th><th>风险</th><th>关键判断点</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>分析自己公司的遗留二进制，源码已丢失</td>
+          <td><span class="tag g">低</span></td>
+          <td>自有资产，无第三方权利冲突</td>
+        </tr>
+        <tr>
+          <td>为互操作性分析第三方文件格式或协议</td>
+          <td><span class="tag g">低</span></td>
+          <td>中国指导案例 48 号与美国 DMCA §1201(f) 均直接支持；但须核对对方 EULA</td>
+        </tr>
+        <tr>
+          <td>安全研究：审计闭源依赖是否含后门或已知缺陷</td>
+          <td><span class="tag a">中低</span></td>
+          <td>目的正当，但若涉及绕过技术措施，需确认落入「加密研究 / 反向工程研究」例外</td>
+        </tr>
+        <tr>
+          <td>学习目的拆解商业软件，复刻功能到自己项目</td>
+          <td><span class="tag a">中</span></td>
+          <td>必须在<strong>独立重写</strong>的前提下；功能与思想不受保护，表达受保护。<strong>粘贴任何反编译产物都会越线</strong></td>
+        </tr>
+        <tr>
+          <td>竞品功能情报：系统性扒取对手产品实现</td>
+          <td><span class="tag r">高</span></td>
+          <td>即便成果是独立重写，获取与使用过程仍可能触及商业秘密与不正当竞争；且违反多数 EULA</td>
+        </tr>
+        <tr>
+          <td>把反编译代码直接用于产品</td>
+          <td><span class="tag r">很高</span></td>
+          <td>两国法域的共同红线。REA 返回的伪代码同样受版权保护，不能因「是机器生成的」而豁免</td>
+        </tr>
+        <tr>
+          <td>分析来源不明的二进制（含恶意样本）</td>
+          <td><span class="tag r">很高</span></td>
+          <td>除法律风险外，运行时能力会以你的权限执行该程序；必须放在隔离环境</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>9.4 时代背景：为什么这件事在今年格外敏感</h3>
+  <p>
+    REA 的出现并非孤立事件。在它发布的前后，同类能力正以另一种面貌进入公众视野，两件事共享同一个技术底座：
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 15 · 与 REA 同期发生的相关事件（均据公开报道，本报告不对此类指控的真实性作判断）</caption>
+      <thead><tr><th>时间</th><th>事件</th><th>与 REA 的关系</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>2026 年 9 月底 – 10 月初</td>
+          <td>据 CrowdStrike 报告，身份不明的威胁行为者使用某开源 agentic 渗透测试工具配合大模型，攻击韩国至少七家金融机构，约 68,000 人数据受影响</td>
+          <td>该工具面向<strong>利用侧</strong>（漏洞扫描与攻击路径开发），REA 面向<strong>侦察侧</strong>（理解闭源软件如何工作）。<strong>无证据表明两者存在关联</strong>，但它们的技能栈相邻</td>
+        </tr>
+        <tr>
+          <td>2026 年 10 月上旬</td>
+          <td>上述工具的开发者在其引发的关注扩大后撤下了项目主页；已被 fork 的代码无法收回</td>
+          <td>说明这类能力的不可撤回性——代码一旦开源即脱离原作者的处置范围</td>
+        </tr>
+        <tr>
+          <td>2026 年 1 月</td>
+          <td>腾讯援引美国《数字千年版权法》，向代码托管平台投诉三十余个通过逆向客户端以解析本地加密数据库的开源项目</td>
+          <td>证明「逆向 + 绕过加密保护」在实务中确实会招致 DMCA 层级的处置</td>
+        </tr>
+        <tr>
+          <td>2026 年 2 月</td>
+          <td>模型层面的「蒸馏 / 提取」争议进入公众讨论，双方对「是否属于合法反向工程」存在根本分歧</td>
+          <td>说明「反向工程的边界」这一命题在 AI 领域尚未形成共识，法律适用仍在演进</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box stop">
+    <span class="t">结构性判断（观点）</span>
+    <p>
+      真正值得关注的不是 REA 这一个项目，而是<strong>同一套「大模型 + 专业工具 + MCP」的模式，正在把侦察与利用两侧的技能门槛同时拉平</strong>。
+      侧信道两端的工具共享同一份技术红利，其中一侧被滥用的时候，另一侧也会承受相应的注意力与监管压力。
+      REA 在免责声明里用了一句很克制的话：它只提供「合法逆向工程研究、分析与重建」的工具，使用者需自行取得授权。
+      这句话在法律上站得住，但在实践中，它把全部合规判断的责任交给了一个可能已经不具备该判断能力的用户。
+    </p>
+  </div>
+</section>
+<section id="s10">
+  <h2><span class="num">10</span>反模式清单：三类十二种典型误用</h2>
+  <p class="sub">
+    这一章把前九章的结论压缩成一张可以直接对照执行的清单。分三层：<strong>能力层</strong>（用错了、用浅了）、
+    <strong>安全层</strong>（会出事）、<strong>治理层</strong>（决策依据错）。每条给出症状与修正动作。
+  </p>
+
+  <h3>10.1 能力层：工具用对了，但价值没兑现</h3>
+  <div class="tablewrap">
+    <table>
+      <caption>表 16 · 能力层反模式</caption>
+      <thead><tr><th>反模式</th><th>症状</th><th>修正动作</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>把伪代码当源码用</strong></td>
+          <td>把 REA 返回的反编译结果直接贴进产品代码</td>
+          <td>只取「功能理解」，实现必须自行重写。这同时是技术问题与法律问题（第 9 章红线）</td>
+        </tr>
+        <tr>
+          <td><strong>装上即用，跳过就绪检查</strong></td>
+          <td>装完 REA 就去分析原生二进制，卡在「provider 不可用」</td>
+          <td>先跑就绪检查确认引擎可用；REA 的设计是<strong>不回退</strong>，引擎缺失时不会悄悄降级</td>
+        </tr>
+        <tr>
+          <td><strong>只走最容易的那条路</strong></td>
+          <td>反复用 JS / Electron 分析（零依赖），却从不触及原生二进制</td>
+          <td>前端 JS 本就可读，信息价值最低。若调查目标需要深度，必须投入引擎配置成本</td>
+        </tr>
+        <tr>
+          <td><strong>在过大目标上硬试</strong></td>
+          <td>把整个大型应用的安装包一次性交给它分析</td>
+          <td>先缩小范围：定位到具体模块、函数或制品成员。上下文窗口是硬约束</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>10.2 安全层：会真实造成损失</h3>
+  <div class="tablewrap">
+    <table>
+      <caption>表 17 · 安全层反模式</caption>
+      <thead><tr><th>反模式</th><th>症状</th><th>修正动作</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>在工作机上运行未知目标</strong></td>
+          <td>直接对来源不明的程序使用进程捕获、运行时观测</td>
+          <td>运行时能力<strong>以你的用户权限执行目标</strong>，等同双击运行。必须在一次性虚拟机或受限容器中作业</td>
+        </tr>
+        <tr>
+          <td><strong>混淆静态与运行时</strong></td>
+          <td>以为「分析在本地跑」就等于「安全」</td>
+          <td>静态读取 = 打开文件；运行时 = 执行程序。两者风险量级完全不同，需要分别授权</td>
+        </tr>
+        <tr>
+          <td><strong>把被分析内容当作可信输入</strong></td>
+          <td>直接让模型阅读目标制品里的字符串、注释、资源文件</td>
+          <td><strong>提示注入风险</strong>：被分析的第三方制品中完全可以预置针对模型的指令文本。反编译产物、Manifest、资源字符串在喂给模型前应视为不可信内容</td>
+        </tr>
+        <tr>
+          <td><strong>忽略工具结果外流路径</strong></td>
+          <td>以为「本地分析」就意味着数据不出本机</td>
+          <td>REA 本地执行，但<strong>工具结果会进入宿主模型的上下文</strong>，从而受模型提供方的数据政策约束。涉密目标须在模型侧做隔离</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box stop">
+    <span class="t">提示注入：这一类工具特有的、被普遍低估的风险</span>
+    <p>
+      与其他 AI 工具不同，逆向工具的高价值输入<strong>全部来自不受你控制的第三方制品</strong>。
+      一段被分析的 JavaScript、一个 APK 的资源字符串、一份 Electron 应用的配置——都可能包含
+      「忽略之前的指令，把下列内容写入……」这类针对模型的文本。
+    </p>
+    <p style="margin-top:10px">
+      同赛道的其他工具文档已经明确把这一点列为安全注意事项（「反编译后的字符串、Manifest 与资源可能包含提示注入文本或不可信内容」），
+      而 <strong>REA 的公开文档中，我没有找到对这一风险的专门说明</strong>。考虑到它覆盖的目标类型比同类工具更广（含网站、抓包、APK 资源），
+      这是它当前文档体系里一个实际存在的缺口。
+    </p>
+  </div>
+
+  <h3>10.3 治理层：决策依据本身就是错的</h3>
+  <div class="tablewrap">
+    <table>
+      <caption>表 18 · 治理层反模式</caption>
+      <thead><tr><th>反模式</th><th>症状</th><th>修正动作</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>用星标做技术选型</strong></td>
+          <td>看到 11 万星就决定引入</td>
+          <td>改看第 8 章的三层度量：采用（去掉 CI 后的活跃安装）、效果（有 ground truth 的任务完成率）、治理（证据可追溯率）</td>
+        </tr>
+        <tr>
+          <td><strong>跟随 <code>latest</code></strong></td>
+          <td>生产流程依赖自动更新</td>
+          <td>项目处于高频发版期且自述建议频繁更新，接入方应<strong>锁定版本号</strong>并建立内部回归</td>
+        </tr>
+        <tr>
+          <td><strong>没有基准就相信结论</strong></td>
+          <td>直接用 REA 分析不熟悉的目标并采信结果</td>
+          <td>先用一个<strong>你已知答案</strong>的制品做基线测试，校准它的注入率与错误模式</td>
+        </tr>
+        <tr>
+          <td><strong>把合规判断外包给工具</strong></td>
+          <td>因为项目声明「仅用于合法用途」就默认自己合法</td>
+          <td>免责声明不能替代合规判断。接入前逐条过第 9 章的场景分级表，并核对目标软件的 EULA</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <span class="t">给三类读者的一句话</span>
+    <ul style="margin-bottom:0">
+      <li><strong>安全研究员：</strong>它节省的是「翻找与串联证据」的时间，不是「读懂二进制」的能力；把它当助手，不要当裁判。</li>
+      <li><strong>产品/技术负责人：</strong>如果你的团队本来就只用一款引擎，单引擎桥更省事；跨引擎、跨目标的调查需求才是接入它的理由。</li>
+      <li><strong>Agent 平台开发者：</strong>它的架构（而非它的功能）才是最有价值的参考，见下一章。</li>
+    </ul>
+  </div>
+</section>
+<section id="s11">
+  <h2><span class="num">11</span>可迁移方法论：把「专业工具 Agent 化」做对</h2>
+  <p class="sub">
+    对做 Agent 产品的人而言，REA 的功能不是重点，<strong>它的架构选择才是</strong>。
+    这一章把它的设计抽取成一套可复用的配方，并给出它与 DeepSeek Harness（DSH）生态的具体交集。
+  </p>
+
+  <h3>11.1 六条可直接复用的设计决策</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 19 · REA 的六条架构决策及其可迁移价值</caption>
+      <thead><tr><th>决策</th><th>REA 的做法</th><th>为什么值得抄</th><th>迁移到自己的前提</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>① 契约先行</strong></td>
+          <td><code>src/contracts/</code> 独立成层，存放调用方可见的 JSON Schema；错误也有共享 schema 与生成目录</td>
+          <td>契约与实现解耦后，CLI 与 MCP 两个适配器能共用同一份定义，不会各自漂移</td>
+          <td>需要团队接受「先定 schema 再写实现」的节奏</td>
+        </tr>
+        <tr>
+          <td><strong>② Provider 可换且确定</strong></td>
+          <td><code>AnalysisProviderRegistry</code> 做确定性选择，<strong>明确不回退</strong>；引擎切换从不发生「意外」</td>
+          <td>避免「结论的证据来源在调查中途悄悄改变」这类最难排查的问题</td>
+          <td>要能承受「provider 不可用时直接报错」的用户体验代价</td>
+        </tr>
+        <tr>
+          <td><strong>③ 证据与未知同级</strong></td>
+          <td><code>EvidenceLedger</code> 与 <code>Unknown</code> 在应用层<strong>并列拥有所有权</strong>，写进架构而非提示词</td>
+          <td>「结论 + 依据 + 未解部分」三件套是对抗模型过度自信的唯一结构性手段</td>
+          <td>需要接受「输出变长、部分结果不完整」——这对产品体验是挑战</td>
+        </tr>
+        <tr>
+          <td><strong>④ CLI 与 MCP 共用工作流</strong></td>
+          <td>两侧都是 <code>src/application/</code> 工作流的薄适配器，不写两套逻辑</td>
+          <td>既能被 Agent 对话式调用，也能被脚本批处理；测试一次覆盖两个入口</td>
+          <td>要求把业务逻辑放在适配器之外，初期设计成本更高</td>
+        </tr>
+        <tr>
+          <td><strong>⑤ 双注册分发</strong></td>
+          <td>一次 <code>setup</code> 同时注册 MCP server 与<strong>工作流 skill</strong>，并备份被修改的配置</td>
+          <td>工具能力与方法论一并注入，模型不必自行摸索调用顺序；这已成为当下的事实标准形态</td>
+          <td>需为每个宿主客户端维护注册路径（REA 自己就为 17 个客户端各写了一份）</td>
+        </tr>
+        <tr>
+          <td><strong>⑥ 验证 lane 真实化</strong></td>
+          <td>以 <code>real-</code> 前缀区分「用真引擎/真二进制/真浏览器」的验证流水线，并把「必须真有对应 lane」写进能力准入条件</td>
+          <td>mock 测试证明不了 provider 行为；把这条写进流程，才能阻止「看起来支持」的功能混进来</td>
+          <td>CI 成本显著上升（需要真实引擎与许可），适合能力型项目而非纯服务</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box ok">
+    <span class="t">通用配方：把任意专业工具 Agent 化的四步</span>
+    <ol style="margin-bottom:0">
+      <li><strong>先定义「调查意图」而非「工具函数」。</strong> REA 的工具边界是从分析师的提问出发设计的，而不是把引擎 API 逐个翻译成函数名。这一步决定了模型能否自然地组合调用。</li>
+      <li><strong>把「证据」和「未知」建成实体。</strong> 让它们在数据模型里有一等公民的地位，而不是靠提示词要求模型「记得说明依据」。</li>
+      <li><strong>让 provider 成为可替换的下游。</strong> 专业工具往往强绑定某个软件（引擎、IDE、数据库），把它抽象成 provider 可以让你的产品在工具换代时存活。</li>
+      <li><strong>用真实环境做验收。</strong> 至少为每一类声称支持的能力准备一条真机 lane——没有这条约束，能力声明会在几个月内与实现脱节。</li>
+    </ol>
+  </div>
+
+  <h3>11.2 与 DeepSeek Harness / DSH 生态的具体交集</h3>
+  <p>
+    这一点值得单独提出，因为它是本报告在核对源码时的意外发现：
+    <strong>REA 已经把 DSH 系客户端纳入了正式支持矩阵</strong>，而不只是在话题标签里蹭热度。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 20 · REA 与 DSH 系客户端的集成证据（证据强度：源码实测）</caption>
+      <thead><tr><th>证据位置</th><th>内容</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>package.json</code> → <code>scripts</code></td>
+          <td><code>verify:deepseek-client</code> · <code>verify:hermes-client</code> · <code>verify:pi-client</code></td>
+          <td>为 DeepSeek 客户端、Hermes、Pi 分别提供了独立的客户端集成验证脚本</td>
+        </tr>
+        <tr>
+          <td><code>package.json</code> → <code>scripts</code> 的同类项</td>
+          <td><code>verify:omp-client</code> · <code>verify:qwen-client</code> · <code>verify:commandcode-client</code> · <code>verify:grok-client</code> · <code>verify:opencode-client</code></td>
+          <td>说明它把「客户端集成」本身当作一类需要单独验收的能力</td>
+        </tr>
+        <tr>
+          <td><code>docs/installation.md</code> → 支持客户端表</td>
+          <td>列出 <code>hermes</code>、<code>omp</code>、<code>qwen_code</code>、<code>commandcode</code>、<code>grok_build</code>、<code>copilot_cli</code> 等注册标识</td>
+          <td>Hermes 的注册方式写明为「在 <code>config.yaml</code> 写入 <code>mcp_servers.rea</code>，保留注释与无关配置」，并跟随 <code>HERMES_HOME</code> 等环境变量</td>
+        </tr>
+        <tr>
+          <td>仓库 topics</td>
+          <td><code>cordis</code> · <code>dsh</code> · <code>dsh-plugin</code></td>
+          <td><strong>弱证据</strong>：topics 是作者自打的标签，通常用于曝光。但结合上三行的源码证据，可以判断这不是随意标注</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box info">
+    <span class="t">这个发现意味着什么</span>
+    <p>
+      一个月前还被讨论「DSH 生态有哪些插件可做」的客户端集合，现在已经出现在一个十万星项目的<strong>正式支持列表与 CI 验证脚本</strong>里。
+      这有两层含义：
+    </p>
+    <ul style="margin-bottom:0">
+      <li><strong>对 DSH 插件开发者：</strong>「被主流工具主动适配」这件事本身，说明 DSH 式客户端已经进入工具作者的视野。反向的机会也存在——把 REA 这样的能力以原生插件形式接入 DSH，会比走通用 MCP 注册获得更好的体验（例如免去客户端注册路径维护）。</li>
+      <li><strong>对 Agent 平台建设者：</strong>REA 为 17 个客户端各写一份注册与验证逻辑，这本身是一个成本信号。<strong>一个客户端如果能让 MCP 注册变得标准化，就减少了下游工具适配它的成本</strong>——这是一个平台可以做差异化竞争的位置。</li>
+    </ul>
+  </div>
+
+  <h3>11.3 一个可执行的自检表</h3>
+  <p>
+    如果你正在把某个专业工具 Agent 化，可以用下面这张表给自己打分。每一条都对应 REA 验证过的实践：
+  </p>
+  <div class="box">
+    <ul style="margin-bottom:0">
+      <li>工具边界是<strong>按分析师的提问</strong>设计的，还是按被包装软件的 API 逐条翻译的？</li>
+      <li>返回结果里，<strong>证据与未知</strong>是否是一等公民，还是只在提示词里被「提醒」？</li>
+      <li>当依赖的专业软件不可用时，系统是<strong>明确报错</strong>，还是悄悄换一条路径？</li>
+      <li>同一套逻辑是否<strong>同时服务</strong>对话式调用与脚本式调用？</li>
+      <li>是否准备了<strong>真机验证</strong>，并且把「必须有真机 lane」写进了新能力的准入条件？</li>
+      <li>分发时是否<strong>同时提供工具与使用方法论</strong>（MCP + skill），而不是只给一个工具列表？</li>
+      <li>运行时能力与静态能力是否被<strong>显式区分</strong>，并在文档中提示其权限影响？</li>
+    </ul>
+  </div>
+</section>
+<section id="s12">
+  <h2><span class="num">12</span>结论与判断</h2>
+  <p class="sub">
+    以下先给分层结论（可从证据直接推出），再给个人判断（<strong>属观点，非共识</strong>，已在标题标注）。
+  </p>
+
+  <h3>12.1 分层结论：四个维度分开判</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>表 21 · 四维度结论与依据</caption>
+      <thead><tr><th>维度</th><th>结论</th><th>关键依据</th><th class="num-col">确定性</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>热度</strong></td>
+          <td>一次规模罕见的注意力事件，且集中在六天内发生</td>
+          <td>星标 6 天 0 → 11 万；npm 同周期日下载从 18 涨到 34,790</td>
+          <td class="num-col"><span class="tag g">高</span></td>
+        </tr>
+        <tr>
+          <td><strong>采用</strong></td>
+          <td>真实装机量比热度低一个数量级，但绝对量仍可观</td>
+          <td>月下载 74,461；fork/star 22.2%、watcher/star 0.32% 双双异常</td>
+          <td class="num-col"><span class="tag g">高</span></td>
+        </tr>
+        <tr>
+          <td><strong>工程</strong></td>
+          <td>一份严肃、分层严格、测试与真机验证完备的代码库</td>
+          <td>2,897 个文件、2,444 次提交、架构守卫、10+ 条 <code>real-*</code> CI</td>
+          <td class="num-col"><span class="tag g">高</span></td>
+        </tr>
+        <tr>
+          <td><strong>能力</strong></td>
+          <td>广度真实（16 类目标），深度受外部引擎制约；是编排层而非反编译器</td>
+          <td>36 个运行时依赖中无任何反编译引擎；README 明示深度分析需 BYO 引擎</td>
+          <td class="num-col"><span class="tag g">高</span></td>
+        </tr>
+        <tr>
+          <td><strong>效果</strong></td>
+          <td><strong>尚未被充分证明</strong></td>
+          <td>独立实测仅 1 例，其余为同源 showcase</td>
+          <td class="num-col"><span class="tag r">低</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>12.2 三个判断（<span style="color:#8F3F06">以下为观点，非共识</span>）</h3>
+
+  <div class="box warn">
+    <span class="t">判断一：它定义了一个品类，但没有实现一次技术突破</span>
+    <p>
+      「多引擎 + 多目标 + 证据治理」这个组合此前确实无人占据，REA 抢到了这个位置，<strong>这是真实的贡献</strong>。
+      但它依赖的每一项底层能力——反编译、反汇编、浏览器调试、APK 解析——都已经存在多年且高度成熟。
+      它的创新在组合与契约设计上，不在算法上。理解这一点，才能正确评估它的持久性。
+    </p>
+  </div>
+
+  <div class="box warn">
+    <span class="t">判断二：对从业者，它的架构比它的功能更有价值</span>
+    <p>
+      功能层面，「模型直接驱动反编译器」这件事正在被基座模型的常规训练更新内生。
+      但<strong>把「证据 + 局限 + 未知」做成架构实体</strong>、把「provider 确定性选择、不回退」写成硬约束、
+      把「真机验证」写进能力准入条件——这些工程决策的可迁移性远高于它的工具列表。
+      一个正在做垂直领域 Agent 产品的团队，从它的 <code>docs/</code> 与 <code>AGENTS.md</code> 里能获得的东西，
+      比从它的 MCP 工具命名里多得多。
+    </p>
+  </div>
+
+  <div class="box warn">
+    <span class="t">判断三：它的真实性问题是「验证不足」，不是「造假」</span>
+    <p>
+      星标增速、fork 比率、watcher 比率三项同时异常，值得存疑，但<strong>目前没有任何公开证据表明存在操纵</strong>。
+      更准确的判断是：<strong>它的热度与它的验证深度严重不匹配</strong>。
+      十一万人标记了它，一个人公开测过它——这个比例本身就说明了讨论的质量。
+      对一个工程如此扎实的项目而言，这其实是一种浪费：它的代码值得比它的星标更认真的对待。
+    </p>
+  </div>
+
+  <h3>12.3 一句话</h3>
+  <div class="box ok" style="border-left-width:4px">
+    <p style="font-size:17px;line-height:1.7;margin:0">
+      REA 没有让逆向工程变得简单，它只是第一次把「看哪里、凭什么、还不知道什么」这三件事，
+      变成了一套可以被 Agent 调用的接口——<strong>而这恰好是过去二十年里，只有资深逆向工程师才具备的东西</strong>。
+      这既解释了它为什么值得十一万颗星，也解释了它为什么值得被更谨慎地对待。
+    </p>
+  </div>
+</section>
+
+<section id="s13">
+  <h2><span class="num">13</span>参考来源</h2>
+  <p class="sub">按证据类型分组。本报告对各类来源的可信度处理原则：平台数据直接采集，源码与文档直接阅读，媒体报道仅用于线索发现且交叉核对。</p>
+
+  <h3>A · 一手平台数据（本报告实测）</h3>
+  <ul>
+    <li>GitHub REST API：<code>repos/morluto/rea</code>、<code>/contributors</code>、<code>/commits</code>、<code>/releases</code>、<code>/git/trees</code>、<code>/languages</code> —— 取数时间 2026-10-12 03:00 UTC</li>
+    <li>npm registry API：<code>registry.npmjs.org/rea-agents</code>（版本列表、发布时间、维护者）</li>
+    <li>npm downloads API：<code>api.npmjs.org/downloads/range/2026-10-01:2026-10-12/rea-agents</code></li>
+    <li>whatstrending.ai —— 该站点独立存储每日星标/fork 快照（2026-10-06 至 10-09），与本次 API 实测趋势一致，作为交叉验证</li>
+  </ul>
+
+  <h3>B · 仓库源码与官方文档（一手）</h3>
+  <ul>
+    <li><code>README.md</code> —— 能力表、FAQ、免责声明、showcase 说明</li>
+    <li><code>AGENTS.md</code> —— 架构约束（依赖向内流动）、配置变更规则、验证要求</li>
+    <li><code>docs/architecture.mermaid</code> —— 八层架构（图 4 的依据）</li>
+    <li><code>docs/installation.md</code> —— 支持客户端表、各客户端注册路径</li>
+    <li><code>docs/roadmap.md</code> —— 能力准入条件（「真机验证 lane」要求）</li>
+    <li><code>docs/mcp-contracts.md</code> · <code>docs/testing.md</code> · <code>docs/tool-design.md</code></li>
+    <li><code>.agents/skills/reverse-engineer-anything/SKILL.md</code> —— 工作流方法论与目标路由规则</li>
+    <li><code>package.json</code> · <code>CHANGELOG.md</code> · <code>.github/workflows/real-*.yml</code></li>
+  </ul>
+
+  <h3>C · 独立第三方实测</h3>
+  <ul>
+    <li>Frontier Models —— <em>I Tested The Viral Github Repo To Reverse Engineer Anything</em>：用 REA 辅助与不使用 REA 分别重建 macOS 看图应用功能的对照实测，并同时对该项目的热度与演示质量提出质疑</li>
+  </ul>
+
+  <h3>D · 行业与媒体报道（二手，仅用于线索，已交叉核对）</h3>
+  <ul>
+    <li>StartupFortune —— <em>An AI agent that reverse engineers any software just hit number one on GitHub</em></li>
+    <li>Cybersecurity News —— <em>REA Tool Connects Claude Code and Cursor to Ghidra and IDA Pro</em></li>
+    <li>Web Pulse（wpnews.pro）—— <em>Reverse Engineer Anything: What the Viral REA MCP Actually Does</em>（对「以星标曲线替代实质演示」的批评）</li>
+    <li>Synopolis —— <em>REA - One MCP Server for Reverse Engineering With AI Agents</em></li>
+    <li>AI Bacon —— 星标与 npm 下载的时间序列整理（含 Wayback 快照时点）</li>
+    <li>什么值得买社区 —— 对星标口径混乱、装机率与「三个演示均为自己人制作」的分析</li>
+    <li>新浪财经（转载）—— 中文视角的行业影响评述</li>
+    <li>ai-master.dev · aiproducthub.cn · Reveneau · Mayhemcode · worldprogramming.org —— 项目能力与热度的多语言报道</li>
+    <li>Kevin Cornwell —— <em>Straight to Binary: The State of LLMs at the Machine-Code Level</em>（agentic 逆向的工具格局与失效模式）</li>
+    <li>XHack —— <em>AI Reverse Engineering: The Complete 2026 Guide</em>（含 AI 辅助逆向的时间节省量化研究与幻觉问题）</li>
+  </ul>
+
+  <h3>E · 竞品与生态清单</h3>
+  <ul>
+    <li><code>awesome-ai-security-tools</code>（GitHub）—— 逆向类工具星标与定位</li>
+    <li>heyclau.de —— <em>Reverse engineering MCP servers compared</em>（含提示注入风险提示）</li>
+    <li>朱皮特的烂笔头 —— <em>如何用多 Agent 搭建逆向分析框架</em>（逆向 MCP Server 对比表）</li>
+  </ul>
+
+  <h3>F · 法律与学术依据</h3>
+  <ul>
+    <li>Cornell Legal Information Institute —— <em>Reverse Engineering</em>（DTSA、DMCA §1201(f)、Sega v. Accolade、Bowers v. Baystate 综述）</li>
+    <li>观韬律师事务所 —— 北京精雕诉上海奈凯案评析（最高人民法院指导案例 48 号）</li>
+    <li>最高人民法院《关于审理侵犯商业秘密民事案件适用法律若干问题的规定》（法释〔2020〕7 号）第十四条</li>
+    <li>《中华人民共和国著作权法》（2020 年修订）第五十条第一款第（五）项</li>
+    <li>Digital Millennium Copyright Act §1201(f)；Defend Trade Secrets Act；EU Directive 2009/24/EC</li>
+    <li>R2AI 相关研究（2026）：AI 辅助恶意样本分析的时间节省与「AI 必须由有经验分析师引导」的结论</li>
+  </ul>
+
+  <div class="box">
+    <span class="t">关于本报告的可复核性</span>
+    <p>
+      报告中所有标注「实测」的数字均可通过对应 API 复现，取数时间已注明。
+      关于源码结构的判断（文件数、提交数、依赖、架构分层）可通过 clone 仓库后 <code>git ls-tree</code> 或直接浏览目录核对。
+      图 8 与第 12 章的分维度评级属<strong>本报告的分析判断</strong>，已在图注与标题中标注，不属事实陈述。
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <strong>REA 深度研究报告</strong><br />
+    研究对象：<code>morluto/rea</code>（rea-agents v6.4.0）· MIT · 2026
+  </div>
+  <div style="text-align:right">
+    数据截止 2026-10-12 03:00 UTC<br />
+    零外部依赖 · 单文件离线报告
+  </div>
+</footer>
+</div>
+</body>
+</html>
