@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="贴贴板 · 桌面便签：单文件纯前端便签工具，模拟桌面便签体验，支持新建关闭、自由拖动缩放、六列瀑布流排列、自定义颜色与字号、折叠与浮动置顶，并可 JSON / Markdown 导入导出、打印与语音朗读，数据本地持久化、离线可用。">
+<meta name="keywords" content="贴贴板, 桌面便签, 便签板, 单文件, 纯前端, 离线可用, 便签排列, 瀑布流, 导入导出, 语音朗读">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-12">
+<title>贴贴板 · 桌面便签</title>
+<style>
+:root{
+  --bar:rgba(247,247,248,.82);
+  --bar-brd:rgba(0,0,0,.13);
+  --ink:#1c1c1e;
+  --ink2:#63636a;
+  --ink3:#8b8b92;
+  --board:#e9e9ea;
+  --focus:#0a63d1;
+  --shadow:0 1px 1px rgba(0,0,0,.14), 0 5px 16px rgba(0,0,0,.10);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.18), 0 14px 34px rgba(0,0,0,.20);
+  --r:4px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;overflow:hidden;color:var(--ink);background:var(--board);
+  font:13px/1.45 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ───────── 菜单栏 ───────── */
+#menubar{
+  position:fixed;top:0;left:0;right:0;height:28px;z-index:900;
+  display:flex;align-items:center;gap:1px;padding:0 6px;
+  background:var(--bar);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
+  border-bottom:1px solid var(--bar-brd);user-select:none;
+}
+#menubar .brand{
+  display:flex;align-items:center;gap:5px;padding:0 9px 0 6px;font-weight:700;font-size:13px;color:var(--ink);
+}
+#menubar .brand svg{display:block}
+#menus{display:flex;align-items:center;gap:1px;min-width:0}
+.menu{position:relative}
+.menu>button{
+  appearance:none;border:0;background:none;font:inherit;color:var(--ink);
+  padding:3px 9px;border-radius:5px;cursor:default;
+}
+.menu>button:hover,.menu.open>button{background:rgba(0,0,0,.075)}
+.menu-panel{
+  position:absolute;top:calc(100% + 3px);left:0;min-width:198px;padding:4px;
+  background:rgba(252,252,253,.97);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border:1px solid rgba(0,0,0,.11);border-radius:7px;
+  box-shadow:0 10px 34px rgba(0,0,0,.20);display:none;z-index:901;
+}
+.menu.open .menu-panel{display:block}
+.menu-item{
+  display:flex;align-items:center;justify-content:space-between;gap:26px;
+  padding:4px 9px;border-radius:4px;cursor:default;white-space:nowrap;font-size:13px;
+}
+.menu-item:hover,.menu-item.hi{background:var(--focus);color:#fff}
+.menu-item.disabled{color:var(--ink3);pointer-events:none}
+.menu-item .kbd{font-size:12px;opacity:.45;letter-spacing:.5px}
+.menu-item:hover .kbd,.menu-item.hi .kbd{opacity:.85}
+.menu-item .swatch{
+  width:11px;height:11px;border-radius:2px;border:1px solid rgba(0,0,0,.22);margin-right:7px;flex:none;
+}
+.menu-item .tick{width:13px;margin-left:-13px;font-size:11px;opacity:0}
+.menu-item.on .tick{opacity:1}
+.menu-sep{height:1px;margin:4px 7px;background:rgba(0,0,0,.11)}
+
+/* ───────── 便签板 ───────── */
+#board{position:absolute;inset:28px 0 0 0;overflow:hidden}
+#canvas{position:absolute;inset:0;overflow:auto}
+
+.note{
+  position:absolute;width:262px;min-width:150px;
+  display:flex;flex-direction:column;overflow:hidden;
+  border-radius:var(--r);box-shadow:var(--shadow);
+  transition:opacity .16s ease, box-shadow .16s ease;
+}
+.note.sel{box-shadow:var(--shadow-lift)}
+.note.sel::after{content:"";position:absolute;inset:0;border:2px solid var(--focus);border-radius:var(--r);pointer-events:none;opacity:.55}
+.note.dragging{cursor:grabbing;box-shadow:var(--shadow-lift)}
+.note.translucent{opacity:.58}
+.note.float{box-shadow:0 0 0 2px rgba(255,168,32,.65), var(--shadow)}
+.note.float .spine::before{
+  content:"";width:5px;height:5px;border-radius:50%;background:#e08a00;flex:none;margin-left:1px;
+}
+
+/* 顶部条（对应 REA 解出的 spineView + 三按钮 + titleTextField） */
+.spine{
+  height:22px;flex:none;display:flex;align-items:center;gap:5px;padding:0 6px;
+  background:rgba(0,0,0,.055);cursor:grab;
+}
+.note.dragging .spine{cursor:grabbing}
+.spine .title{
+  flex:1;min-width:0;font-size:11px;font-weight:600;letter-spacing:.2px;
+  color:rgba(0,0,0,.52);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  text-align:center;
+}
+.ctl{
+  width:14px;height:14px;flex:none;padding:0;cursor:pointer;position:relative;
+  border:1px solid rgba(0,0,0,.16);border-radius:50%;background:rgba(255,255,255,.62);
+}
+.ctl:hover{background:rgba(255,255,255,.95)}
+.ctl:active{transform:scale(.92)}
+/* 折叠按钮 */
+.ctl.collapse::before{
+  content:"";position:absolute;left:3px;right:3px;top:6px;height:1.6px;
+  background:rgba(0,0,0,.48);border-radius:1px;
+}
+/* 缩放按钮 */
+.ctl.zoom::before{
+  content:"";position:absolute;left:2.5px;top:2.5px;width:5px;height:5px;
+  border-left:1.6px solid rgba(0,0,0,.48);border-top:1.6px solid rgba(0,0,0,.48);
+}
+/* 关闭按钮 */
+.ctl.close::before,.ctl.close::after{
+  content:"";position:absolute;left:2.5px;right:2.5px;top:5.6px;height:1.6px;
+  background:rgba(0,0,0,.48);border-radius:1px;
+}
+.ctl.close::before{transform:rotate(45deg)}
+.ctl.close::after{transform:rotate(-45deg)}
+
+.note.collapsed{height:22px !important}
+.note.collapsed .body,.note.collapsed .rz{display:none}
+
+/* 正文（对应 textView） */
+.body{
+  flex:1;padding:9px 11px 12px;min-height:96px;overflow:auto;outline:none;
+  font:15px/1.52 "Marker Felt","Chalkboard SE","Comic Sans MS","PingFang SC","Hiragino Sans GB",sans-serif;
+  color:#2a2a2c;word-break:break-word;
+}
+.body:empty::before{content:"写点什么…";color:rgba(0,0,0,.26)}
+.body ::selection{background:rgba(10,99,209,.24)}
+.body a{color:#0a4fa8}
+
+/* 缩放手柄 */
+.rz{position:absolute;right:0;bottom:0;width:15px;height:15px;cursor:nwse-resize;z-index:3}
+.rz::after{
+  content:"";position:absolute;right:3px;bottom:3px;width:6px;height:6px;
+  border-right:1.6px solid rgba(0,0,0,.26);border-bottom:1.6px solid rgba(0,0,0,.26);
+}
+
+/* ───────── 状态栏 ───────── */
+#statusbar{
+  position:fixed;left:0;right:0;bottom:0;height:24px;z-index:900;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 12px;
+  background:var(--bar);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--bar-brd);font-size:11.5px;color:var(--ink2);user-select:none;
+}
+#statusbar .right{display:flex;align-items:center;gap:10px}
+
+/* ───────── 查找条 ───────── */
+#findbar{
+  position:fixed;top:36px;right:16px;z-index:950;
+  display:none;align-items:center;gap:7px;padding:7px 9px;
+  background:rgba(252,252,253,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(0,0,0,.12);border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.18);
+}
+#findbar.show{display:flex}
+#findbar input[type=text]{
+  width:132px;font:inherit;font-size:12.5px;padding:3px 7px;
+  border:1px solid rgba(0,0,0,.18);border-radius:5px;background:#fff;color:var(--ink);
+}
+#findbar input[type=text]:focus{outline:2px solid var(--focus);outline-offset:-1px;border-color:transparent}
+#findbar button{
+  font:inherit;font-size:12.5px;padding:3px 9px;border-radius:5px;cursor:pointer;
+  border:1px solid rgba(0,0,0,.14);background:rgba(255,255,255,.9);color:var(--ink);
+}
+#findbar button:hover{background:#fff}
+#findbar #fcount{font-size:11.5px;color:var(--ink2);min-width:52px;text-align:center}
+
+/* ───────── 对话框 ───────── */
+#modal{
+  position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.24);backdrop-filter:blur(2px);
+}
+#modal.show{display:flex}
+#modal .box{
+  width:min(360px,92vw);background:#fbfbfc;border-radius:11px;padding:18px 18px 15px;
+  box-shadow:0 22px 60px rgba(0,0,0,.34);border:1px solid rgba(0,0,0,.10);
+}
+#modal h2{margin:0 0 4px;font-size:14px;font-weight:700}
+#modal p{margin:0 0 13px;font-size:12.5px;color:var(--ink2);line-height:1.5}
+#modal .row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+#modal input[type=color]{
+  width:46px;height:30px;padding:2px;border:1px solid rgba(0,0,0,.16);border-radius:6px;background:#fff;cursor:pointer;
+}
+#modal .hex{
+  flex:1;font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;padding:5px 8px;
+  border:1px solid rgba(0,0,0,.16);border-radius:6px;background:#fff;
+}
+#modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+#modal button{
+  font:inherit;font-size:12.5px;padding:5px 14px;border-radius:7px;cursor:pointer;
+  border:1px solid rgba(0,0,0,.14);background:rgba(255,255,255,.95);color:var(--ink);
+}
+#modal button.primary{background:var(--focus);border-color:var(--focus);color:#fff;font-weight:600}
+
+/* ───────── 空态 ───────── */
+#empty{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;color:var(--ink3);pointer-events:none;user-select:none;
+}
+#empty.show{display:flex}
+#empty .big{font-size:15px;font-weight:600;color:var(--ink2)}
+#empty .small{font-size:12.5px}
+
+/* ───────── 打印 ───────── */
+@media print{
+  #menubar,#statusbar,#findbar,#modal{display:none !important}
+  #board{position:static;inset:auto}
+  #canvas{position:static;overflow:visible;height:auto}
+  body{background:#fff;overflow:visible;height:auto}
+  .note{position:static !important;break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;
+        box-shadow:none;border:1px solid rgba(0,0,0,.22);width:100% !important;height:auto !important}
+  .note.sel::after{display:none}
+  .spine .ctl,.rz{display:none}
+  .note.collapsed .body{display:block}
+}
+
+@media (max-width:640px){
+  #menubar .brand span{display:none}
+  .menu>button{padding:3px 6px;font-size:12.5px}
+  #findbar{left:8px;right:8px;justify-content:center;flex-wrap:wrap}
+  #findbar input[type=text]{flex:1;min-width:80px}
+}
+</style>
+</head>
+<body>
+
+<header id="menubar">
+  <div class="brand" title="贴贴板">
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="11" height="11" rx="1.2" fill="#FFD84D" stroke="rgba(0,0,0,.22)"/>
+      <path d="M4 5h6M4 7.5h6M4 10h3.5" stroke="rgba(0,0,0,.40)" stroke-width="1" stroke-linecap="round"/>
+    </svg>
+    <span>贴贴板</span>
+  </div>
+  <nav id="menus" aria-label="主菜单"></nav>
+</header>
+
+<main id="board">
+  <div id="canvas">
+    <div id="empty">
+      <div class="big">还没有便签</div>
+      <div class="small">按 ⌘N 新建一张 · 拖动顶部条可移动 · 拖右下角可调整大小</div>
+    </div>
+  </div>
+</main>
+
+<footer id="statusbar">
+  <div class="left" id="sbinfo">就绪</div>
+  <div class="right">
+    <span id="sbcount">0 张便签</span>
+  </div>
+</footer>
+
+<div id="findbar" role="dialog" aria-label="查找">
+  <input type="text" id="fneedle" placeholder="查找…" aria-label="查找内容">
+  <span id="fcount">0/0</span>
+  <button data-find="prev" title="上一个">↑</button>
+  <button data-find="next" title="下一个">↓</button>
+  <button data-find="close" title="关闭">✕</button>
+</div>
+
+<div id="modal" role="dialog" aria-modal="true">
+  <div class="box">
+    <h2 id="mtitle">标题</h2>
+    <p id="mdesc"></p>
+    <div class="row" id="mbody"></div>
+    <div class="acts">
+      <button id="mcancel">取消</button>
+      <button id="mok" class="primary">好</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   贴贴板 — 单文件桌面便签
+   规格来源：REA 6.4.0 decode-interface-builder 解出的 nib 图
+     · SNDocument.nib 视图层级 + 11 个 outlet
+     · MainMenu.nib 的 80 个 action selector（功能 API 面）
+   界面文案与配色均自行撰写，未搬运任何 Apple 资源。
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+/* ── 色板：6 预设 + 自定义 ───────────────────────────────────────── */
+const PALETTE = [
+  { id:'yellow', name:'黄色', bg:'#fff6b8', edge:'#f0e08f' },
+  { id:'pink',   name:'粉红', bg:'#ffd0e0', edge:'#f2b3c8' },
+  { id:'blue',   name:'蓝色', bg:'#c8e6ff', edge:'#a8cdf0' },
+  { id:'green',  name:'绿色', bg:'#cdf3cf', edge:'#aadbac' },
+  { id:'purple', name:'紫色', bg:'#e0ccf7', edge:'#c6aee6' },
+  { id:'gray',   name:'灰色', bg:'#e3e3e6', edge:'#c9c9cd' }
+];
+const colorOf = id => PALETTE.find(p=>p.id===id) || PALETTE[0];
+
+/* ── 数据层 ──────────────────────────────────────────────────────── */
+const STORE = 'tieboard.v1';
+const DEFAULT_STYLE = { color:'yellow' };
+
+let notes = [];
+let selId = null;
+let zTop = 10;
+let undoStack = [], redoStack = [];       // 排列快照
+let styleClip = null;                      // 拷贝样式
+
+const uid = () => 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const nowISO = () => new Date().toISOString();
+
+function load(){
+  let raw = null;
+  try{ raw = localStorage.getItem(STORE); }catch(e){ /* file:// 下可能不可用 */ }
+  if(raw){
+    try{
+      const d = JSON.parse(raw);
+      if(Array.isArray(d.notes)) notes = d.notes.filter(n=>n && typeof n==='object');
+      if(d.defaultStyle && d.defaultStyle.color) DEFAULT_STYLE.color = d.defaultStyle.color;
+      if(typeof d.zTop === 'number') zTop = d.zTop;
+      return true;
+    }catch(e){}
+  }
+  return false;
+}
+function save(){
+  try{
+    localStorage.setItem(STORE, JSON.stringify({ notes, defaultStyle:DEFAULT_STYLE, zTop, v:1 }));
+  }catch(e){ setInfo('无法写入本地存储，改动不会保留'); }
+}
+
+function makeNote(opts){
+  const col = (opts && opts.color) || DEFAULT_STYLE.color;
+  return Object.assign({
+    id: uid(),
+    html: '',
+    color: col,
+    custom: null,             // 自定义色 {bg,edge}
+    x: 24 + (notes.length % 5) * 30,
+    y: 24 + (notes.length % 5) * 28,
+    w: 262,
+    h: 200,
+    collapsed: false,
+    floating: false,
+    translucent: false,
+    z: ++zTop,
+    created: nowISO(),
+    modified: nowISO()
+  }, opts||{});
+}
+
+/* ── 便签排版：六列瀑布流，用于「排列」 ───────────────────────────── */
+function layoutPositions(list){
+  const top = 18, left = 18, gapX = 16, gapY = 16, colW = 262;
+  const canvas = document.getElementById('canvas');
+  const avail = Math.max(colW + 2*left, canvas.clientWidth || 1200);
+  const cols = Math.max(1, Math.floor((avail - 2*left + gapX) / (colW + gapX)));
+  const heights = new Array(cols).fill(top);
+  return list.map(n=>{
+    const h = n.collapsed ? 22 : (n.h || 200);
+    let c = 0;
+    for(let i=1;i<cols;i++) if(heights[i] < heights[c]-0.5) c = i;
+    const x = left + c*(colW+gapX);
+    const y = heights[c];
+    heights[c] += h + gapY;
+    return { id:n.id, x, y };
+  });
+}
+
+/* ── 渲染 ────────────────────────────────────────────────────────── */
+const canvas = document.getElementById('canvas');
+const elEmpty = document.getElementById('empty');
+const elCount = document.getElementById('sbcount');
+const elInfo  = document.getElementById('sbinfo');
+const layer = {};           // id -> element
+
+function noteTitle(n){
+  if(n.collapsed && n._title) return n._title;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = n.html || '';
+  const t = (tmp.textContent || '').replace(/\s+/g,' ').trim();
+  n._title = t ? t.slice(0,28) : '';
+  return n._title;
+}
+function bgOf(n){
+  if(n.custom) return n.custom.bg;
+  return colorOf(n.color).bg;
+}
+function edgeOf(n){
+  if(n.custom) return n.custom.edge || n.custom.bg;
+  return colorOf(n.color).edge;
+}
+
+function buildNote(n){
+  const el = document.createElement('div');
+  el.className = 'note';
+  el.dataset.id = n.id;
+  el.setAttribute('role','group');
+  el.style.left = n.x + 'px';
+  el.style.top  = n.y + 'px';
+  el.style.width = n.w + 'px';
+  el.style.height = n.h + 'px';
+  el.style.zIndex = n.z;
+
+  const spine = document.createElement('div');
+  spine.className = 'spine';
+  spine.innerHTML =
+    '<button class="ctl collapse" data-act="collapse" title="折叠 / 展开" aria-label="折叠或展开"></button>' +
+    '<span class="title"></span>' +
+    '<button class="ctl zoom" data-act="zoom" title="按内容自适应高度" aria-label="缩放"></button>' +
+    '<button class="ctl close" data-act="close" title="关闭便签" aria-label="关闭"></button>';
+
+  const body = document.createElement('div');
+  body.className = 'body';
+  body.setAttribute('contenteditable','true');
+  body.setAttribute('spellcheck','true');
+  body.innerHTML = n.html || '';
+
+  const rz = document.createElement('div');
+  rz.className = 'rz';
+  rz.title = '拖动调整大小';
+
+  el.append(spine, body, rz);
+  paint(el, n);
+  return el;
+}
+
+function paint(el, n){
+  const bg = bgOf(n), edge = edgeOf(n);
+  el.style.background = bg;
+  el.style.border = '1px solid ' + edge;
+  const spine = el.querySelector('.spine');
+  if(spine){
+    spine.style.background = 'rgba(0,0,0,.045)';
+    spine.style.borderBottom = '1px solid ' + edge;
+  }
+  el.classList.toggle('collapsed', !!n.collapsed);
+  el.classList.toggle('translucent', !!n.translucent);
+  el.classList.toggle('float', !!n.floating);
+  el.classList.toggle('sel', n.id === selId);
+  el.style.zIndex = n.z;
+  const t = el.querySelector('.title');
+  if(t) t.textContent = noteTitle(n) || (n.floating ? '浮动便签' : '空白便签');
+}
+
+function render(){
+  // 复用已有 DOM，避免重建导致编辑态丢失
+  const seen = new Set();
+  notes.forEach(n=>{
+    seen.add(n.id);
+    let el = layer[n.id];
+    if(!el){
+      el = buildNote(n);
+      layer[n.id] = el;
+      canvas.appendChild(el);
+    }else{
+      el.style.left = n.x+'px'; el.style.top = n.y+'px';
+      el.style.width = n.w+'px'; el.style.height = n.h+'px';
+      paint(el, n);
+    }
+  });
+  Object.keys(layer).forEach(id=>{
+    if(!seen.has(id)){ layer[id].remove(); delete layer[id]; }
+  });
+  elEmpty.classList.toggle('show', notes.length === 0);
+  elCount.textContent = notes.length + ' 张便签';
+}
+
+function setInfo(msg){ elInfo.textContent = msg; }
+
+/* ── 选中 / 置顶 ─────────────────────────────────────────────────── */
+function select(id){
+  selId = id;
+  Object.values(layer).forEach(el=>el.classList.toggle('sel', el.dataset.id===id));
+  if(id){
+    const n = byId(id);
+    if(n && n.z !== zTop){ n.z = ++zTop; save(); }
+  }
+  refreshMenuTicks();
+}
+const byId = id => notes.find(n=>n.id===id);
+// 无显式选中时回退到最上层便签 —— 对应便签应用的「当前文稿」语义
+const selected = () => byId(selId) || notes.slice().sort((a,b)=>b.z-a.z)[0] || null;
+
+/* ── 交互：拖动 / 缩放 ───────────────────────────────────────────── */
+let drag = null;
+
+canvas.addEventListener('pointerdown', e=>{
+  const el = e.target.closest('.note');
+  if(!el) return;
+  const n = byId(el.dataset.id);
+  if(!n) return;
+  select(n.id);
+
+  const act = e.target.closest('[data-act]');
+  if(act){
+    e.preventDefault();
+    const a = act.dataset.act;
+    if(a==='collapse') toggleCollapse(n);
+    else if(a==='close') closeNote(n.id);
+    else if(a==='zoom') fitHeight(n);
+    render(); save(); return;
+  }
+  if(e.target.classList.contains('rz')){
+    drag = { mode:'resize', n, el, sx:e.clientX, sy:e.clientY, w0:n.w, h0:n.h };
+    el.setPointerCapture(e.pointerId); e.preventDefault(); return;
+  }
+  if(e.target.closest('.body')){
+    // 在正文里编辑：只置顶不拖动
+    return;
+  }
+  if(e.target.closest('.spine')){
+    drag = { mode:'move', n, el, sx:e.clientX, sy:e.clientY, x0:n.x, y0:n.y };
+    el.setPointerCapture(e.pointerId); el.classList.add('dragging'); e.preventDefault();
+  }
+});
+
+document.addEventListener('pointermove', e=>{
+  if(!drag) return;
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if(drag.mode==='move'){
+    drag.n.x = Math.max(0, drag.x0 + dx);
+    drag.n.y = Math.max(0, drag.y0 + dy);
+    drag.el.style.left = drag.n.x+'px';
+    drag.el.style.top  = drag.n.y+'px';
+  }else{
+    drag.n.w = Math.max(150, drag.w0 + dx);
+    drag.n.h = Math.max(22,  drag.h0 + dy);
+    drag.el.style.width = drag.n.w+'px';
+    drag.el.style.height = drag.n.h+'px';
+  }
+});
+
+document.addEventListener('pointerup', ()=>{
+  if(!drag) return;
+  drag.el.classList.remove('dragging');
+  if(drag.mode==='move'){ drag.n.modified = nowISO(); }
+  drag = null; save();
+});
+
+/* 编辑正文 */
+canvas.addEventListener('input', e=>{
+  const el = e.target.closest('.note');
+  if(!el) return;
+  const n = byId(el.dataset.id);
+  if(!n) return;
+  if(e.target.classList.contains('body')){
+    n.html = e.target.innerHTML;
+    n.modified = nowISO();
+    delete n._title;
+    const t = el.querySelector('.title');
+    if(t) t.textContent = noteTitle(n) || '空白便签';
+    saveDebounced();
+  }
+});
+let saveT = null;
+function saveDebounced(){ clearTimeout(saveT); saveT = setTimeout(save, 500); }
+
+/* ── 便签操作 ────────────────────────────────────────────────────── */
+function newNote(opts){
+  const n = makeNote(opts);
+  notes.push(n);
+  render();
+  select(n.id);
+  save();
+  setTimeout(()=>{
+    const el = layer[n.id];
+    if(el){ const b = el.querySelector('.body'); if(b) b.focus(); }
+  }, 30);
+  setInfo('已新建便签');
+  return n;
+}
+function closeNote(id){
+  const i = notes.findIndex(n=>n.id===id);
+  if(i<0) return;
+  notes.splice(i,1);
+  if(selId===id) selId = notes.length ? notes[Math.min(i,notes.length-1)].id : null;
+  render(); save();
+  setInfo('已关闭便签');
+}
+function toggleCollapse(n){
+  n.collapsed = !n.collapsed;
+  n.modified = nowISO();
+  if(n.collapsed) delete n._title;
+}
+function fitHeight(n){
+  const el = layer[n.id]; if(!el) return;
+  const b = el.querySelector('.body'); if(!b) return;
+  n.h = Math.max(60, Math.min(640, b.scrollHeight + 34));
+  n.collapsed = false;
+  setInfo('已按内容调整高度');
+}
+
+/* ── 富文本 ──────────────────────────────────────────────────────── */
+function activeBody(){
+  const n = selected();
+  if(!n) return null;
+  const el = layer[n.id];
+  return el ? el.querySelector('.body') : null;
+}
+function focusBody(){
+  const b = activeBody();
+  if(b){ b.focus(); }
+  return b;
+}
+function exec(cmd, val){
+  const b = focusBody(); if(!b) return;
+  try{
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand(cmd, false, val===undefined?null:val);
+  }catch(e){}
+  syncFromBody();
+}
+function syncFromBody(){
+  const b = activeBody(); if(!b) return;
+  const n = selected(); if(!n) return;
+  n.html = b.innerHTML; n.modified = nowISO(); delete n._title;
+  const el = layer[n.id];
+  if(el){ const t = el.querySelector('.title'); if(t) t.textContent = noteTitle(n)||'空白便签'; }
+  saveDebounced();
+}
+function wrapSelection(styleObj, tagName){
+  const b = focusBody(); if(!b) return;
+  const s = window.getSelection();
+  if(!s || s.rangeCount===0 || s.isCollapsed) { setInfo('请先选中一段文字'); return; }
+  const r = s.getRangeAt(0);
+  const span = document.createElement(tagName || 'span');
+  Object.assign(span.style, styleObj);
+  try{
+    span.appendChild(r.extractContents());
+    r.insertNode(span);
+    s.removeAllRanges();
+    const nr = document.createRange();
+    nr.selectNodeContents(span);
+    s.addRange(nr);
+  }catch(e){}
+  syncFromBody();
+}
+function fontSizeDelta(dir){
+  const b = focusBody(); if(!b) return;
+  const px = parseFloat(getComputedStyle(b).fontSize) || 15;
+  const next = Math.max(9, Math.min(48, Math.round(px + dir*2)));
+  // 对整个便签生效（对应「字号调大/调小」的整篇语义）
+  b.style.fontSize = next + 'px';
+  const n = selected();
+  if(n){ n.fontSize = next; n.modified = nowISO(); }
+  saveDebounced();
+  setInfo('字号 ' + next + 'px');
+}
+function kerningDelta(delta){
+  wrapSelection({ letterSpacing: (delta>0? '0.9px' : '-0.6px') });
+  setInfo(delta>0 ? '已松排' : '已紧排');
+}
+function outlineText(){
+  wrapSelection({
+    color:'transparent',
+    '-webkit-text-stroke':'1px #2a2a2c'
+  });
+  setInfo('已应用空心字');
+}
+
+/* ── 颜色 ────────────────────────────────────────────────────────── */
+function setColor(id){
+  const n = selected();
+  if(!n){ setInfo('请先选中一张便签'); return; }
+  n.color = id; n.custom = null;
+  paint(layer[n.id], n); save();
+  refreshMenuTicks();
+  setInfo('已应用' + colorOf(id).name);
+}
+function setCustomColor(bg){
+  const n = selected();
+  if(!n){ setInfo('请先选中一张便签'); return; }
+  n.custom = { bg, edge: shade(bg, -18) };
+  paint(layer[n.id], n); save();
+  setInfo('已应用自定义颜色');
+}
+function shade(hex, pct){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex); if(!m) return hex;
+  const num = parseInt(m[1],16);
+  let r = (num>>16)&255, g = (num>>8)&255, b = num&255;
+  const f = 1 + pct/100;
+  r = Math.max(0,Math.min(255,Math.round(r*f)));
+  g = Math.max(0,Math.min(255,Math.round(g*f)));
+  b = Math.max(0,Math.min(255,Math.round(b*f)));
+  return '#' + ((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+
+/* ── 排列（对应 arrange / undoArrange / redoArrange）──────────────── */
+function snapshot(){
+  return notes.map(n=>({ id:n.id, x:n.x, y:n.y, z:n.z }));
+}
+function applySnapshot(snap){
+  snap.forEach(s=>{ const n = byId(s.id); if(n){ n.x=s.x; n.y=s.y; n.z=s.z; } });
+  render(); save();
+}
+function pushUndo(){
+  undoStack.push(snapshot());
+  if(undoStack.length>40) undoStack.shift();
+  redoStack.length = 0;
+}
+function arrange(kind){
+  if(notes.length===0){ setInfo('没有可排列的便签'); return; }
+  pushUndo();
+
+  let ordered = notes.slice();
+  if(kind==='position'){
+    ordered.sort((a,b)=> (a.y-b.y) || (a.x-b.x));
+  }else if(kind==='content'){
+    ordered.sort((a,b)=> plain(a).localeCompare(plain(b),'zh-Hans-CN'));
+  }else if(kind==='color'){
+    const order = PALETTE.map(p=>p.id);
+    ordered.sort((a,b)=>{
+      const ia = order.indexOf(a.custom ? 'custom' : a.color);
+      const ib = order.indexOf(b.custom ? 'custom' : b.color);
+      return ia-ib;
+    });
+  }else if(kind==='date'){
+    ordered.sort((a,b)=> new Date(a.created) - new Date(b.created));
+  }
+
+  // 折叠的便签排到末尾（对应 chooseCollapseWhenArranging 的语义）
+  ordered.sort((a,b)=> (a.collapsed?1:0) - (b.collapsed?1:0));
+
+  const pos = layoutPositions(ordered);
+  pos.forEach((p,i)=>{
+    const n = byId(p.id);
+    if(n){ n.x = p.x; n.y = p.y; n.z = ++zTop - pos.length + i + 1; }
+  });
+  // 统一 z 序
+  notes.sort((a,b)=>a.z-b.z).forEach((n,i)=> n.z = 10 + i);
+  render(); save();
+  setInfo('已按' + ({position:'屏幕位置','content':'内容','color':'颜色','date':'日期'}[kind]) + '排列');
+}
+function plain(n){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = n.html || '';
+  return (tmp.textContent||'').trim();
+}
+
+/* ── 查找替换 ────────────────────────────────────────────────────── */
+let findState = { q:'', hits:[], idx:-1, mode:'find' };
+
+function clearHighlights(){
+  canvas.querySelectorAll('mark.tb-find').forEach(m=>{
+    const p = m.parentNode;
+    while(m.firstChild) p.insertBefore(m.firstChild, m);
+    p.removeChild(m);
+    p.normalize();
+  });
+}
+function runFind(q){
+  clearHighlights();
+  findState.q = q;
+  findState.hits = []; findState.idx = -1;
+  if(!q) { updateFindCount(); return; }
+  const re = new RegExp(escapeRe(q), 'gi');
+  notes.forEach(n=>{
+    const el = layer[n.id]; if(!el) return;
+    const body = el.querySelector('.body'); if(!body) return;
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null);
+    const targets = [];
+    let node;
+    while((node = walker.nextNode())){
+      if(node.parentNode && node.parentNode.nodeName === 'MARK') continue;
+      re.lastIndex = 0;
+      if(re.test(node.nodeValue)) targets.push(node);
+    }
+    targets.forEach(node=>{
+      const text = node.nodeValue;
+      const frag = document.createDocumentFragment();
+      let last = 0, m;
+      re.lastIndex = 0;
+      while((m = re.exec(text))){
+        if(m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+        const mk = document.createElement('mark');
+        mk.className = 'tb-find';
+        mk.style.background = 'rgba(255,214,0,.62)';
+        mk.style.borderRadius = '2px';
+        mk.textContent = m[0];
+        frag.appendChild(mk);
+        findState.hits.push(mk);
+        last = m.index + m[0].length;
+        if(m[0].length === 0) re.lastIndex++;
+      }
+      if(last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
+  updateFindCount();
+  if(findState.hits.length) stepFind(1);
+}
+function escapeRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function stepFind(dir){
+  if(!findState.hits.length){ setInfo('未找到「' + findState.q + '」'); return; }
+  findState.hits.forEach(h=>{ h.style.outline='none'; });
+  findState.idx = (findState.idx + dir + findState.hits.length) % findState.hits.length;
+  const h = findState.hits[findState.idx];
+  h.style.outline = '2px solid #0a63d1';
+  h.style.outlineOffset = '1px';
+  const owner = h.closest('.note');
+  if(owner){ select(owner.dataset.id); h.scrollIntoView({block:'center', behavior:'smooth'}); }
+  updateFindCount();
+}
+function updateFindCount(){
+  const el = document.getElementById('fcount');
+  el.textContent = findState.hits.length ? (findState.idx+1) + '/' + findState.hits.length : '0/0';
+}
+function replaceAll(q, rep){
+  if(!q){ setInfo('请输入要查找的内容'); return 0; }
+  const re = new RegExp(escapeRe(q), 'gi');
+  let total = 0;
+  notes.forEach(n=>{
+    const tmp = document.createElement('div');
+    tmp.innerHTML = n.html || '';
+    const walk = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT, null);
+    const list = []; let node;
+    while((node = walk.nextNode())) list.push(node);
+    list.forEach(node=>{
+      const t = node.nodeValue;
+      const m = t.match(re);
+      if(m){ total += m.length; node.nodeValue = t.replace(re, rep); }
+    });
+    n.html = tmp.innerHTML;
+    n.modified = nowISO();
+    delete n._title;
+    const el = layer[n.id];
+    if(el){ el.querySelector('.body').innerHTML = n.html; paint(el, n); }
+  });
+  clearHighlights();
+  save(); setInfo('已替换 ' + total + ' 处');
+  return total;
+}
+
+/* ── 导入 / 导出 / 打印 ───────────────────────────────────────────── */
+function download(name, text, mime){
+  const blob = new Blob([text], { type: (mime||'text/plain') + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+function stamp(){
+  const d = new Date(), p = x => String(x).padStart(2,'0');
+  return d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+}
+function exportOne(format){
+  const n = selected();
+  if(!n){ setInfo('请先选中一张便签'); return; }
+  const title = plain(n).split('\n')[0].slice(0,20) || '便签';
+  if(format==='json'){
+    download(title + '.json', JSON.stringify({
+      color:n.color, custom:n.custom, collapsed:n.collapsed, floating:n.floating,
+      translucent:n.translucent, created:n.created, modified:n.modified, html:n.html
+    }, null, 2), 'application/json');
+  }else{
+    download(title + '.txt', plain(n), 'text/plain');
+  }
+  setInfo('已导出便签');
+}
+function exportAll(format){
+  if(!notes.length){ setInfo('没有可导出的便签'); return; }
+  if(format==='json'){
+    download('贴贴板-' + stamp() + '.json', JSON.stringify({ app:'贴贴板', version:1, exported:nowISO(), notes }, null, 2), 'application/json');
+  }else{
+    const lines = ['# 贴贴板导出', '', '导出时间：' + new Date().toLocaleString('zh-CN'), ''];
+    notes.slice().sort((a,b)=>a.y-b.y||a.x-b.x).forEach((n,i)=>{
+      lines.push('## 便签 ' + (i+1) + ' · ' + colorOf(n.color).name);
+      lines.push('');
+      lines.push('> 创建 ' + new Date(n.created).toLocaleString('zh-CN') + '　·　修改 ' + new Date(n.modified).toLocaleString('zh-CN'));
+      lines.push('');
+      lines.push(plain(n) || '（空白）');
+      lines.push(''); lines.push('---'); lines.push('');
+    });
+    download('贴贴板-' + stamp() + '.md', lines.join('\n'), 'text/markdown');
+  }
+  setInfo('已导出 ' + notes.length + ' 张便签');
+}
+function importText(){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.txt,.md,.json,text/plain,application/json';
+  input.onchange = ()=>{
+    const f = input.files && input.files[0];
+    if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{
+      const text = String(r.result || '');
+      if(/\.json$/i.test(f.name)){
+        try{
+          const d = JSON.parse(text);
+          if(Array.isArray(d.notes)){
+            d.notes.forEach((o,i)=>{
+              notes.push(makeNote(Object.assign({}, o, {
+                id: uid(), x: 24 + (i%5)*30, y: 24 + (i%5)*28, z: ++zTop
+              })));
+            });
+            render(); save(); setInfo('已导入 ' + d.notes.length + ' 张便签');
+            return;
+          }
+        }catch(e){}
+      }
+      const chunks = text.split(/\n\s*\n+/).filter(s=>s.trim());
+      const list = chunks.length>1 ? chunks : [text];
+      list.forEach((c,i)=>{
+        notes.push(makeNote({
+          html: escapeHtml(c.trim()),
+          x: 24 + (i%5)*30, y: 24 + (i%5)*28, z: ++zTop
+        }));
+      });
+      render(); save();
+      setInfo('已导入 ' + list.length + ' 张便签');
+    };
+    r.readAsText(f, 'utf-8');
+  };
+  input.click();
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+          .replace(/\n/g,'<br>');
+}
+
+/* ── 语音朗读（对应 startSpeaking / stopSpeaking）─────────────────── */
+function speak(){
+  const n = selected(); if(!n){ setInfo('请先选中一张便签'); return; }
+  if(!('speechSynthesis' in window)){ setInfo('当前浏览器不支持语音朗读'); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(plain(n) || '空白便签');
+  u.lang = 'zh-CN';
+  window.speechSynthesis.speak(u);
+  setInfo('正在朗读…');
+}
+function stopSpeak(){
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  setInfo('已停止朗读');
+}
+
+/* ═══════════════════════ 菜单定义 ═══════════════════════ */
+const MENUS = [
+  { label:'贴贴板', items:[
+    { label:'关于贴贴板', act:'about' },
+    { sep:true },
+    { label:'新建便签', kbd:'⌘N', act:'new' },
+    { label:'关闭便签', kbd:'⌘W', act:'close' },
+    { sep:true },
+    { label:'全部折叠', act:'collapseAll' },
+    { label:'全部展开', act:'expandAll' },
+    { sep:true },
+    { label:'删除本地数据…', act:'reset' }
+  ]},
+  { label:'文件', items:[
+    { label:'导入文本…', kbd:'⇧⌘I', act:'import' },
+    { label:'导出便签…', kbd:'⌘S', act:'exportOne' },
+    { label:'全部导出…', kbd:'⌥⌘S', act:'exportAll' },
+    { sep:true },
+    { label:'打印…', kbd:'⌘P', act:'print' }
+  ]},
+  { label:'编辑', items:[
+    { label:'撤销', kbd:'⌘Z', act:'undo' },
+    { label:'重做', kbd:'⇧⌘Z', act:'redo' },
+    { sep:true },
+    { label:'剪切', kbd:'⌘X', act:'cut' },
+    { label:'拷贝', kbd:'⌘C', act:'copy' },
+    { label:'粘贴', kbd:'⌘V', act:'paste' },
+    { label:'粘贴为纯文本', kbd:'⇧⌘V', act:'pastePlain' },
+    { label:'全选', kbd:'⌘A', act:'selectAll' },
+    { sep:true },
+    { label:'查找…', kbd:'⌘F', act:'find' },
+    { label:'查找下一个', kbd:'⌘G', act:'findNext' },
+    { label:'查找上一个', kbd:'⇧⌘G', act:'findPrev' },
+    { label:'用所选内容查找', kbd:'⌘E', act:'findFromSel' },
+    { label:'替换全部…', kbd:'⌥⌘F', act:'replaceAll' }
+  ]},
+  { label:'字体', items:[
+    { label:'粗体', kbd:'⌘B', act:'bold' },
+    { label:'斜体', kbd:'⌘I', act:'italic' },
+    { label:'下划线', kbd:'⌘U', act:'underline' },
+    { label:'删除线', act:'strike' },
+    { label:'空心字', act:'outline' },
+    { sep:true },
+    { label:'大一号', kbd:'⌘+', act:'bigger' },
+    { label:'小一号', kbd:'⌘-', act:'smaller' },
+    { sep:true },
+    { label:'上标', act:'superscript' },
+    { label:'下标', act:'subscript' },
+    { sep:true },
+    { label:'紧排', act:'tighten' },
+    { label:'松排', act:'loosen' },
+    { sep:true },
+    { label:'拷贝样式', kbd:'⌥⌘C', act:'copyStyle' },
+    { label:'粘贴样式', kbd:'⌥⌘V', act:'pasteStyle' },
+    { label:'开始朗读', act:'speak' },
+    { label:'停止朗读', act:'stopSpeak' }
+  ]},
+  { label:'颜色', items: PALETTE.map(p=>({ label:p.name, act:'color:'+p.id, swatch:p.bg }))
+      .concat([
+        { sep:true },
+        { label:'自定义颜色…', act:'customColor' },
+        { sep:true },
+        { label:'设为新建默认', act:'setDefault' }
+      ])
+  },
+  { label:'便签', items:[
+    { label:'折叠 / 展开', kbd:'⌘M', act:'collapse' },
+    { sep:true },
+    { label:'半透明', act:'translucent' },
+    { label:'浮动在最前面', act:'floating' },
+    { sep:true },
+    { label:'按内容调整高度', act:'fitHeight' },
+    { label:'前置全部便签', act:'bringAllFront' }
+  ]},
+  { label:'排列', items:[
+    { label:'按屏幕位置', act:'arrange:position' },
+    { label:'按内容', act:'arrange:content' },
+    { label:'按颜色', act:'arrange:color' },
+    { label:'按日期', act:'arrange:date' },
+    { sep:true },
+    { label:'撤销排列', act:'undoArrange' },
+    { label:'重做排列', act:'redoArrange' }
+  ]},
+  { label:'帮助', items:[
+    { label:'快捷键与用法', act:'help' }
+  ]}
+];
+
+/* ═══════════════════════ 菜单渲染与动作 ═══════════════════════ */
+const elMenus = document.getElementById('menus');
+let openMenu = null;
+
+function buildMenus(){
+  MENUS.forEach((def, mi)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'menu';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = def.label;
+    btn.setAttribute('aria-haspopup','true');
+    const panel = document.createElement('div');
+    panel.className = 'menu-panel';
+    panel.setAttribute('role','menu');
+
+    def.items.forEach(it=>{
+      if(it.sep){
+        const s = document.createElement('div');
+        s.className = 'menu-sep';
+        panel.appendChild(s);
+        return;
+      }
+      const row = document.createElement('div');
+      row.className = 'menu-item';
+      row.setAttribute('role','menuitem');
+      row.dataset.act = it.act;
+      if(it.swatch) row.dataset.swatch = it.swatch;
+
+      const left = document.createElement('span');
+      left.style.display = 'flex'; left.style.alignItems = 'center';
+      if(it.swatch){
+        const sw = document.createElement('span');
+        sw.className = 'swatch'; sw.style.background = it.swatch;
+        left.appendChild(sw);
+      }
+      left.appendChild(document.createTextNode(it.label));
+
+      const right = document.createElement('span');
+      right.className = 'kbd';
+      right.textContent = it.kbd || '';
+
+      row.append(left, right);
+      panel.appendChild(row);
+    });
+
+    wrap.append(btn, panel);
+    elMenus.appendChild(wrap);
+
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const isOpen = wrap.classList.contains('open');
+      closeMenus();
+      if(!isOpen){ wrap.classList.add('open'); openMenu = wrap; markTicks(); }
+    });
+    wrap.addEventListener('mouseenter', ()=>{
+      if(openMenu && openMenu !== wrap){ closeMenus(); wrap.classList.add('open'); openMenu = wrap; markTicks(); }
+    });
+    panel.addEventListener('click', e=>{
+      const row = e.target.closest('.menu-item');
+      if(!row) return;
+      closeMenus();
+      runAction(row.dataset.act);
+    });
+  });
+}
+function closeMenus(){
+  document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'));
+  openMenu = null;
+}
+document.addEventListener('click', closeMenus);
+
+function markTicks(){
+  const n = selected();
+  document.querySelectorAll('.menu-item').forEach(row=>{
+    let on = false;
+    const a = row.dataset.act || '';
+    if(n){
+      if(a === 'color:' + n.color && !n.custom) on = true;
+      if(a === 'translucent' && n.translucent) on = true;
+      if(a === 'floating' && n.floating) on = true;
+      if(a === 'collapse' && n.collapsed) on = true;
+    }
+    row.classList.toggle('on', on);
+  });
+}
+function refreshMenuTicks(){ if(openMenu) markTicks(); }
+
+/* ── 对话框 ──────────────────────────────────────────────────────── */
+const elModal = document.getElementById('modal');
+function openModal({ title, desc, body, ok, onOk, okLabel }){
+  document.getElementById('mtitle').textContent = title;
+  document.getElementById('mdesc').textContent = desc || '';
+  const b = document.getElementById('mbody');
+  b.innerHTML = '';
+  if(body) b.appendChild(body);
+  const okBtn = document.getElementById('mok');
+  okBtn.textContent = okLabel || '好';
+  okBtn.onclick = ()=>{ const r = onOk ? onOk() : true; if(r !== false) closeModal(); };
+  elModal.classList.add('show');
+  const firstInput = b.querySelector('input');
+  if(firstInput) setTimeout(()=>firstInput.focus(), 40);
+}
+function closeModal(){ elModal.classList.remove('show'); }
+document.getElementById('mcancel').onclick = closeModal;
+elModal.addEventListener('click', e=>{ if(e.target === elModal) closeModal(); });
+
+function askText(title, desc, value, onOk, okLabel){
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.className = 'hex'; inp.value = value || '';
+  inp.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('mok').click(); }
+  });
+  openModal({ title, desc, body:inp, okLabel, onOk:()=>{ onOk(inp.value); return true; } });
+}
+function askColor(){
+  const n = selected();
+  const inp = document.createElement('input');
+  inp.type = 'color';
+  inp.value = n ? (n.custom ? n.custom.bg : colorOf(n.color).bg) : '#fff6b8';
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex'; wrap.style.alignItems = 'center'; wrap.style.gap = '10px'; wrap.style.width = '100%';
+  const hex = document.createElement('input');
+  hex.type = 'text'; hex.className = 'hex'; hex.value = inp.value;
+  inp.addEventListener('input', ()=>{ hex.value = inp.value; });
+  hex.addEventListener('change', ()=>{ if(/^#[0-9a-f]{6}$/i.test(hex.value)) inp.value = hex.value; });
+  wrap.append(inp, hex);
+  openModal({
+    title:'自定义颜色', desc:'为选中的便签选择背景色。',
+    body:wrap, okLabel:'应用',
+    onOk:()=>{ setCustomColor(inp.value); return true; }
+  });
+}
+
+/* ── 动作分发 ────────────────────────────────────────────────────── */
+function runAction(act){
+  if(!act) return;
+  const [head, arg] = act.split(':');
+
+  switch(head){
+    case 'about': return showAbout();
+    case 'help':  return showHelp();
+    case 'new':   return newNote();
+    case 'close': return selId ? closeNote(selId) : setInfo('没有选中的便签');
+    case 'collapseAll': notes.forEach(n=>{ n.collapsed = true; }); render(); save(); setInfo('已全部折叠'); return;
+    case 'expandAll':   notes.forEach(n=>{ n.collapsed = false; }); render(); save(); setInfo('已全部展开'); return;
+    case 'reset': return confirmReset();
+
+    case 'import': return importText();
+    case 'exportOne': return exportOne('txt');
+    case 'exportAll':
+      return openModal({
+        title:'全部导出', desc:'选择导出格式，将下载包含全部便签的文件。',
+        body: (()=>{
+          const w = document.createElement('div');
+          w.innerHTML = '<label style="display:flex;gap:7px;align-items:center;font-size:12.5px;margin-bottom:7px"><input type="radio" name="exf" value="md" checked> Markdown（便于阅读与分享）</label>' +
+                        '<label style="display:flex;gap:7px;align-items:center;font-size:12.5px"><input type="radio" name="exf" value="json"> JSON（可再次导入还原）</label>';
+          return w;
+        })(),
+        okLabel:'导出',
+        onOk:()=>{
+          const picked = document.querySelector('input[name=exf]:checked');
+          exportAll(picked ? picked.value : 'md');
+          return true;
+        }
+      });
+    case 'print': window.print(); return;
+
+    case 'undo': document.execCommand('undo'); return;
+    case 'redo': document.execCommand('redo'); return;
+    case 'cut':   exec('cut'); return;
+    case 'copy':  exec('copy'); return;
+    case 'paste': setInfo('请用 ⌘V 直接粘贴到便签正文'); return;
+    case 'pastePlain': setInfo('请用 ⇧⌘V 直接粘贴到便签正文'); return;
+    case 'selectAll': { const b = focusBody(); if(b) document.execCommand('selectAll'); return; }
+    case 'find':  return showFind();
+    case 'findNext': return stepFind(1);
+    case 'findPrev': return stepFind(-1);
+    case 'findFromSel': return findFromSelection();
+    case 'replaceAll': return askReplace();
+
+    case 'bold':      exec('bold'); return;
+    case 'italic':    exec('italic'); return;
+    case 'underline': exec('underline'); return;
+    case 'strike':    exec('strikeThrough'); return;
+    case 'outline':   return outlineText();
+    case 'bigger':    return fontSizeDelta(+1);
+    case 'smaller':   return fontSizeDelta(-1);
+    case 'superscript': exec('superscript'); return;
+    case 'subscript':   exec('subscript'); return;
+    case 'tighten': return kerningDelta(-1);
+    case 'loosen':  return kerningDelta(1);
+    case 'copyStyle': return copyStyle();
+    case 'pasteStyle': return pasteStyle();
+    case 'speak': return speak();
+    case 'stopSpeak': return stopSpeak();
+
+    case 'color': return setColor(arg);
+    case 'customColor': return askColor();
+    case 'setDefault': {
+      const n = selected();
+      if(!n) return setInfo('请先选中一张便签');
+      DEFAULT_STYLE.color = n.custom ? 'yellow' : n.color;
+      save(); setInfo('已设为新建便签的默认颜色');
+      return;
+    }
+
+    case 'collapse': { const n = selected(); if(!n) return setInfo('请先选中一张便签'); toggleCollapse(n); render(); save(); return; }
+    case 'translucent': { const n = selected(); if(!n) return setInfo('请先选中一张便签');
+      n.translucent = !n.translucent; paint(layer[n.id], n); save(); setInfo(n.translucent?'已开启半透明':'已关闭半透明'); return; }
+    case 'floating': { const n = selected(); if(!n) return setInfo('请先选中一张便签');
+      n.floating = !n.floating; if(n.floating) n.z = ++zTop; paint(layer[n.id], n); save();
+      setInfo(n.floating?'已浮动在最前面':'已取消浮动'); return; }
+    case 'fitHeight': { const n = selected(); if(!n) return setInfo('请先选中一张便签'); fitHeight(n); render(); save(); return; }
+    case 'bringAllFront': notes.forEach((n,i)=> n.z = 100 + i); render(); save(); setInfo('已前置全部便签'); return;
+
+    case 'arrange': return arrange(arg);
+    case 'undoArrange': {
+      if(!undoStack.length) return setInfo('没有可撤销的排列');
+      redoStack.push(snapshot()); applySnapshot(undoStack.pop()); setInfo('已撤销排列'); return;
+    }
+    case 'redoArrange': {
+      if(!redoStack.length) return setInfo('没有可重做的排列');
+      undoStack.push(snapshot()); applySnapshot(redoStack.pop()); setInfo('已重做排列'); return;
+    }
+  }
+}
+
+/* ── 样式拷贝 ────────────────────────────────────────────────────── */
+function copyStyle(){
+  const n = selected(); if(!n) return setInfo('请先选中一张便签');
+  styleClip = { color:n.color, custom:n.custom, fontSize:n.fontSize || null };
+  setInfo('已拷贝便签样式');
+}
+function pasteStyle(){
+  const n = selected(); if(!n) return setInfo('请先选中一张便签');
+  if(!styleClip) return setInfo('尚未拷贝任何样式');
+  n.color = styleClip.color; n.custom = styleClip.custom;
+  if(styleClip.fontSize){
+    n.fontSize = styleClip.fontSize;
+    const el = layer[n.id];
+    if(el) el.querySelector('.body').style.fontSize = styleClip.fontSize + 'px';
+  }
+  paint(layer[n.id], n); save(); setInfo('已粘贴便签样式');
+}
+
+/* ── 查找 UI ─────────────────────────────────────────────────────── */
+const elFind = document.getElementById('findbar');
+const elNeedle = document.getElementById('fneedle');
+function showFind(){
+  elFind.classList.add('show');
+  const n = selected();
+  if(n && !elNeedle.value) elNeedle.value = '';
+  setTimeout(()=>elNeedle.focus(), 30);
+  elNeedle.select();
+}
+function findFromSelection(){
+  const n = selected(); if(!n) return setInfo('请先选中一张便签');
+  const s = window.getSelection();
+  const t = s && String(s).trim();
+  if(!t) return setInfo('请先在正文中选中要查找的文字');
+  showFind(); elNeedle.value = t; runFind(t);
+}
+function askReplace(){
+  const q = findState.q || elNeedle.value;
+  askText('替换全部',
+    q ? '把所有便签中「' + q + '」替换为：' : '输入要查找并替换的内容（格式：查找|替换）',
+    '', (v)=>{
+      let needle = q, rep = v;
+      if(!q && v.includes('|')){ const p = v.split('|'); needle = p[0]; rep = p.slice(1).join('|'); }
+      replaceAll(needle, rep);
+    }, '替换');
+}
+elNeedle.addEventListener('input', ()=> runFind(elNeedle.value));
+elNeedle.addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); stepFind(e.shiftKey ? -1 : 1); }
+  if(e.key === 'Escape'){ e.preventDefault(); hideFind(); }
+});
+elFind.addEventListener('click', e=>{
+  const b = e.target.closest('[data-find]'); if(!b) return;
+  const a = b.dataset.find;
+  if(a==='next') stepFind(1);
+  else if(a==='prev') stepFind(-1);
+  else hideFind();
+});
+function hideFind(){ elFind.classList.remove('show'); clearHighlights(); elNeedle.blur(); }
+
+/* ── 帮助 / 关于 / 重置 ──────────────────────────────────────────── */
+function showAbout(){
+  const n = notes.length;
+  openModal({
+    title:'贴贴板',
+    desc:'一个单文件、零依赖的桌面便签板。数据保存在本机浏览器中，不会上传。',
+    body: (()=>{
+      const d = document.createElement('div');
+      d.style.fontSize = '12.5px'; d.style.color = '#63636a'; d.style.lineHeight = '1.7';
+      d.innerHTML = '当前便签数：<b style="color:#1c1c1e">' + n + '</b><br>' +
+                    '本地存储：' + (hasStorage() ? '可用' : '不可用（改动不会保留）');
+      return d;
+    })(),
+    okLabel:'知道了', onOk:()=>true
+  });
+}
+function hasStorage(){
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }catch(e){ return false; }
+}
+function showHelp(){
+  const rows = [
+    ['⌘N','新建便签'],
+    ['⌘W','关闭当前便签'],
+    ['⌘M','折叠 / 展开'],
+    ['⌘F / ⌘G','查找 / 查找下一个'],
+    ['⌥⌘F','替换全部'],
+    ['⌘S / ⌥⌘S','导出便签 / 全部导出'],
+    ['⌘P','打印'],
+    ['拖顶部条','移动便签'],
+    ['拖右下角','调整大小'],
+    ['双击顶部条','折叠 / 展开']
+  ];
+  const t = document.createElement('div');
+  t.style.cssText = 'font-size:12.5px;line-height:1.9;color:#3a3a3c;max-height:44vh;overflow:auto';
+  t.innerHTML = rows.map(r=> '<div style="display:flex;justify-content:space-between;gap:20px">' +
+      '<span style="color:#63636a">' + r[0] + '</span><span>' + r[1] + '</span></div>').join('');
+  openModal({ title:'用法与快捷键', desc:'贴贴板的常用操作。', body:t, okLabel:'好', onOk:()=>true });
+}
+function confirmReset(){
+  openModal({
+    title:'删除本地数据',
+    desc:'这会清空全部便签，且无法撤销。确定继续吗？',
+    okLabel:'删除全部',
+    onOk:()=>{
+      notes = []; selId = null; undoStack = []; redoStack = [];
+      render(); save(); setInfo('已清空全部便签');
+      return true;
+    }
+  });
+}
+
+/* ── 双击顶部条 = 折叠 ───────────────────────────────────────────── */
+canvas.addEventListener('dblclick', e=>{
+  const sp = e.target.closest('.spine');
+  if(!sp) return;
+  const el = sp.closest('.note'); if(!el) return;
+  const n = byId(el.dataset.id); if(!n) return;
+  toggleCollapse(n); render(); save();
+});
+
+/* ── 全局快捷键 ──────────────────────────────────────────────────── */
+document.addEventListener('keydown', e=>{
+  const mod = e.metaKey || e.ctrlKey;
+  if(!mod) {
+    if(e.key === 'Escape'){
+      if(elModal.classList.contains('show')) closeModal();
+      else if(elFind.classList.contains('show')) hideFind();
+      else closeMenus();
+    }
+    return;
+  }
+  const k = e.key.toLowerCase();
+  const map = {
+    'n':'new', 'w':'close', 'm':'collapse',
+    's':'exportOne', 'p':'print', 'f':'find', 'g':'findNext',
+    'b':'bold', 'i':'italic', 'u':'underline', 'e':'findFromSel',
+    'a':'selectAll', 'z':'undo',
+    '+':'bigger', '=':'bigger', '-':'smaller', '_':'smaller'
+  };
+  if(e.shiftKey){
+    if(k==='z'){ e.preventDefault(); runAction('redo'); return; }
+    if(k==='g'){ e.preventDefault(); runAction('findPrev'); return; }
+    if(k==='s'){ e.preventDefault(); runAction('exportAll'); return; }
+    if(k==='c'){ e.preventDefault(); runAction('copyStyle'); return; }
+    if(k==='v'){ e.preventDefault(); runAction('pasteStyle'); return; }
+  }
+  if(e.altKey){
+    if(k==='f'){ e.preventDefault(); runAction('replaceAll'); return; }
+    if(k==='s'){ e.preventDefault(); runAction('exportAll'); return; }
+  }
+  const act = map[k];
+  if(act){
+    // 让正文里的 ⌘A/⌘C/⌘V/⌘Z 走浏览器原生行为
+    if(['a','z'].includes(k) && e.target.closest('.body')) return;
+    e.preventDefault();
+    runAction(act);
+  }
+});
+
+/* ── 窗口尺寸变化：重排堆叠避免重叠 ──────────────────────────────── */
+let rzT = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(rzT);
+  rzT = setTimeout(()=>{ /* 位置保持不动，仅刷新空白态 */ render(); }, 120);
+});
+
+/* ── 首次启动：示例便签 ──────────────────────────────────────────── */
+function seed(){
+  const a = makeNote({ x:24, y:20, w:268, h:196, z:++zTop, color:'yellow' });
+  a.html = '欢迎使用贴贴板。<br><br>拖动顶部条移动，拖右下角调整大小。';
+  const b = makeNote({ x:312, y:20, w:268, h:170, z:++zTop, color:'blue' });
+  b.html = '按 ⌘N 新建便签，⌘M 折叠，⌘F 查找。';
+  const c = makeNote({ x:600, y:20, w:268, h:150, z:++zTop, color:'green' });
+  c.html = '「排列」菜单可按位置、内容、颜色或日期自动整理。';
+  notes.push(a,b,c);
+}
+
+/* ── 启动 ────────────────────────────────────────────────────────── */
+buildMenus();
+if(!load()){ seed(); save(); }
+render();
+// 修正越界位置
+(function clampAll(){
+  const w = canvas.clientWidth || 1200;
+  let changed = false;
+  notes.forEach(n=>{
+    if(n.x > w - 80){ n.x = Math.max(16, w - 280); changed = true; }
+  });
+  if(changed){ render(); save(); }
+})();
+setInfo(hasStorage() ? '就绪 · 数据保存在本机' : '就绪 · 本地存储不可用，改动不会保留');
+
+})();
+</script>
+</body>
+</html>
