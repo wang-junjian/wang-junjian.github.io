@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="以 GitHub Spec Kit 为工具底座，把「写规格→生成计划→拆任务→实现→收敛验证」变成可执行的工作流：七步核心命令、工件地图、质量护栏、宪法门禁、Bug 与想法评估两条分支，以及团队落地清单，一次讲透。">
+<meta name="keywords" content="spec-kit, spec-driven-development, sdd, ai-native-sdlc, agentic-coding, github-spec-kit">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-07">
+<title>Spec Kit · AI 原生软件开发工作流程（实践落地版）</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f6f8fa;
+    --bg-accent: #f0f6ff;
+    --border: #d8dee4;
+    --text: #1f2328;
+    --text-soft: #57606a;
+    --blue: #0969da;
+    --green: #1a7f37;
+    --red: #cf222e;
+    --amber: #9a6700;
+    --purple: #8250df;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body { font-family: var(--sans); color: var(--text); background: var(--bg); line-height: 1.75; font-size: 16px; }
+
+  /* ---------- 顶部导航 ---------- */
+  .topbar { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  .topbar-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--green); display: inline-block; }
+  .topnav { display: flex; gap: 4px; overflow-x: auto; }
+  .topnav a { color: var(--text-soft); text-decoration: none; font-size: 13.5px; padding: 6px 10px; border-radius: 6px; white-space: nowrap; }
+  .topnav a:hover { background: var(--bg-soft); color: var(--blue); }
+
+  /* ---------- 布局 ---------- */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 220px 1fr; gap: 48px; }
+  .sidebar { position: sticky; top: 80px; align-self: start; padding: 24px 0 48px; font-size: 13.5px; }
+  .sidebar a { display: block; color: var(--text-soft); text-decoration: none; padding: 5px 10px; border-left: 2px solid transparent; }
+  .sidebar a:hover { color: var(--blue); border-left-color: var(--blue); }
+  .sidebar .group { font-weight: 600; color: var(--text); margin: 14px 0 4px; padding-left: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  main { padding: 40px 0 96px; min-width: 0; }
+
+  /* ---------- Hero ---------- */
+  .hero { border-bottom: 1px solid var(--border); padding: 56px 0 40px; }
+  .hero h1 { font-size: 34px; line-height: 1.25; letter-spacing: -0.02em; margin: 12px 0 10px; }
+  .hero p.sub { font-size: 17px; color: var(--text-soft); max-width: 760px; }
+  .tagline { display: inline-block; font-size: 12.5px; font-weight: 600; color: var(--green); background: #dafbe1; border-radius: 999px; padding: 3px 12px; letter-spacing: .02em; }
+  .hero .facts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  .fact { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; color: var(--text-soft); background: var(--bg-soft); }
+  .fact b { color: var(--text); }
+
+  /* ---------- 章节 ---------- */
+  section { margin-top: 56px; scroll-margin-top: 72px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; padding-bottom: 10px; border-bottom: 2px solid var(--text); margin-bottom: 8px; }
+  h2 .no { color: var(--blue); font-variant-numeric: tabular-nums; margin-right: 10px; }
+  h3 { font-size: 18px; margin: 28px 0 10px; }
+  p { margin: 10px 0; }
+  .lead { color: var(--text-soft); margin-bottom: 16px; }
+  ul.plain { padding-left: 22px; margin: 10px 0; }
+  ul.plain li { margin: 5px 0; }
+
+  /* ---------- 卡片 ---------- */
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin: 16px 0; background: var(--bg); }
+  .card.soft { background: var(--bg-soft); }
+  .card.accent { background: var(--bg-accent); border-color: #bcd3f5; }
+  .card.warn { background: #fff8c5; border-color: #d4a72c66; }
+  .card.danger { background: #ffebe9; border-color: #ff818266; }
+  .card h4 { font-size: 15.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .pill { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; letter-spacing: .03em; }
+  .pill.blue { background: #ddf4ff; color: var(--blue); }
+  .pill.green { background: #dafbe1; color: var(--green); }
+  .pill.red { background: #ffebe9; color: var(--red); }
+  .pill.amber { background: #fff8c5; color: var(--amber); }
+  .pill.purple { background: #fbefff; color: var(--purple); }
+
+  /* ---------- 代码 ---------- */
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
+  pre { font-family: var(--mono); font-size: 13.5px; background: #161b22; color: #e6edf3; border-radius: 10px; padding: 16px 18px; overflow-x: auto; line-height: 1.6; margin: 14px 0; }
+  pre .c { color: #7d8590; }
+  pre .k { color: #79c0ff; }
+  pre .g { color: #7ee787; }
+  pre code, pre .cmd { background: none; border: none; padding: 0; color: inherit; }
+
+  /* ---------- 表格 ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th { text-align: left; background: var(--bg-soft); border-bottom: 2px solid var(--border); padding: 9px 12px; font-size: 13px; white-space: nowrap; }
+  td { border-bottom: 1px solid var(--border); padding: 9px 12px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+  .nowrap { white-space: nowrap; }
+
+  /* ---------- 阶段时间线 ---------- */
+  .stage { border: 1px solid var(--border); border-left: 4px solid var(--blue); border-radius: 10px; padding: 18px 20px; margin: 18px 0; background: var(--bg); }
+  .stage .head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage .num { font-family: var(--mono); font-weight: 700; color: var(--blue); font-size: 14px; }
+  .stage h4 { font-size: 17px; margin: 0; }
+  .stage .meta { font-size: 12.5px; color: var(--text-soft); }
+  .stage .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; margin-top: 12px; font-size: 14px; }
+  .stage .grid .lbl { color: var(--text-soft); font-weight: 600; font-size: 12.5px; }
+  .stage .grid > div { padding: 3px 0; }
+  .stage.accept { border-left-color: var(--green); }
+  .stage.accept .grid .lbl { color: var(--green); }
+
+  figure { margin: 24px 0; border: 1px solid var(--border); border-radius: 12px; padding: 20px; background: var(--bg); }
+  figcaption { text-align: center; color: var(--text-soft); font-size: 13px; margin-top: 12px; }
+  figure svg { display: block; width: 100%; height: auto; }
+
+  /* ---------- 检查清单 ---------- */
+  .check { list-style: none; padding: 0; margin: 10px 0; }
+  .check li { padding: 7px 0 7px 34px; position: relative; border-bottom: 1px dashed var(--border); font-size: 14.5px; }
+  .check li:last-child { border-bottom: none; }
+  .check li::before { content: ""; position: absolute; left: 4px; top: 11px; width: 15px; height: 15px; border: 2px solid #afb8c1; border-radius: 4px; background: #fff; }
+  .check li.done::before { background: var(--green); border-color: var(--green); }
+  .check li.done::after { content: ""; position: absolute; left: 8px; top: 14px; width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } .sidebar { display: none; } .two-col { grid-template-columns: 1fr; } .stage .grid { grid-template-columns: 1fr; } }
+  footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: center; color: var(--text-soft); font-size: 13px; }
+  footer .wrap { display: block; padding: 0; }
+  .kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; background: var(--bg-soft); }
+  .anchor { color: var(--border); text-decoration: none; margin-left: 6px; }
+  h2:hover .anchor, h3:hover .anchor { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="dot"></span>Spec Kit 工作流程 · 实践落地版</div>
+    <nav class="topnav">
+      <a href="#s0">理念</a>
+      <a href="#s1">初始化</a>
+      <a href="#s2">宪法</a>
+      <a href="#s3">核心工作流</a>
+      <a href="#s4">工件地图</a>
+      <a href="#s5">质量护栏</a>
+      <a href="#s6">分支场景</a>
+      <a href="#s7">团队落地</a>
+      <a href="#s8">定制体系</a>
+      <a href="#s9">落地清单</a>
+      <a href="#s10">常见陷阱</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+<aside class="sidebar">
+  <div class="group">起步</div>
+  <a href="#s0">0 · SDD 是什么</a>
+  <a href="#s1">1 · 环境初始化</a>
+  <a href="#s2">2 · 项目宪法</a>
+  <div class="group">主干流程</div>
+  <a href="#s3">3 · 七步核心工作流</a>
+  <a href="#s4">4 · 工件地图</a>
+  <a href="#s5">5 · 质量护栏</a>
+  <div class="group">扩展与团队</div>
+  <a href="#s6">6 · Bug 修复 / 想法评估</a>
+  <a href="#s7">7 · 团队协作落地</a>
+  <a href="#s8">8 · 定制与扩展</a>
+  <div class="group">执行</div>
+  <a href="#s9">9 · 每日落地清单</a>
+  <a href="#s10">10 · 常见陷阱</a>
+</aside>
+
+<main>
+<div class="hero">
+  <span class="tagline">GitHub Spec Kit · Spec-Driven Development</span>
+  <h1>AI 原生软件开发工作流程<br>实践落地版</h1>
+  <p class="sub">以 Spec Kit（specify CLI）为工具底座，把「写规格 → 生成计划 → 拆解任务 → 执行实现 → 收敛验证」变成一套可执行、可检查、可复制的日常工作流。本页所有命令均可在项目目录中直接运行。</p>
+  <div class="facts">
+    <div class="fact"><b>工具链</b> specify CLI（uv 安装）</div>
+    <div class="fact"><b>支持智能体</b> 30+（Copilot / Claude Code / Gemini / Codex / Kilo Code…）</div>
+    <div class="fact"><b>核心命令</b> 7 条 /speckit.* 斜杠命令</div>
+    <div class="fact"><b>当前版本</b> 1.0.0（dogfooding：Spec Kit 用自身开发自己）</div>
+  </div>
+</div>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <h2><span class="no">0</span>SDD 是什么：一次权力倒置<a class="anchor" href="#s0">§</a></h2>
+  <p class="lead">过去 30 年，代码是真理，规格是脚手架——写完就扔。SDD（Spec-Driven Development）把关系倒过来：<b>规格是唯一真理源，代码是规格的表达式</b>。维护软件 = 演进规格；调试 = 修复生成错误代码的规格；重构 = 为清晰度重组计划。</p>
+
+  <figure>
+    <svg viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="传统流程与 SDD 流程对比图">
+      <!-- 左侧：传统 -->
+      <text x="240" y="30" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="16" font-weight="700" fill="#1f2328">传统开发：代码是真理</text>
+      <rect x="40" y="60" width="400" height="52" rx="8" fill="#f6f8fa" stroke="#d8dee4"/>
+      <text x="60" y="92" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" fill="#1f2328">PRD / 设计文档（写完即弃，很快过时）</text>
+      <line x1="240" y1="112" x2="240" y2="146" stroke="#afb8c1" stroke-width="2"/>
+      <polygon points="234,142 246,142 240,154" fill="#afb8c1"/>
+      <rect x="40" y="154" width="400" height="52" rx="8" fill="#f6f8fa" stroke="#d8dee4"/>
+      <text x="60" y="186" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" fill="#1f2328">人工写代码（文档与代码逐渐脱节）</text>
+      <line x1="240" y1="206" x2="240" y2="240" stroke="#afb8c1" stroke-width="2" stroke-dasharray="5 4"/>
+      <text x="252" y="230" font-family="-apple-system,PingFang SC,sans-serif" font-size="12" fill="#cf222e">缺口：意图 ⇄ 实现永远对不齐</text>
+      <rect x="40" y="246" width="400" height="40" rx="8" fill="#ffebe9" stroke="#ff8182"/>
+      <text x="60" y="272" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" fill="#cf222e">规格 → 死文档，代码 → 唯一现实</text>
+
+      <!-- 右侧：SDD -->
+      <text x="720" y="30" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="16" font-weight="700" fill="#1f2328">SDD：规格是真理，代码是表达式</text>
+      <rect x="520" y="60" width="400" height="52" rx="8" fill="#dafbe1" stroke="#4ac26b"/>
+      <text x="540" y="92" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="600" fill="#1a5c2e">可执行规格 spec.md（自然语言，唯一真理源）</text>
+      <line x1="720" y1="112" x2="720" y2="146" stroke="#1a7f37" stroke-width="2"/>
+      <polygon points="714,142 726,142 720,154" fill="#1a7f37"/>
+      <rect x="520" y="154" width="400" height="52" rx="8" fill="#ddf4ff" stroke="#54aeff"/>
+      <text x="540" y="186" font-family="-apple-system,PingFang SC,sans-serif" font-size="14" font-weight="600" fill="#0550ae">实现计划 plan.md + 任务 tasks.md（AI 生成）</text>
+      <line x1="720" y1="206" x2="720" y2="240" stroke="#1a7f37" stroke-width="2"/>
+      <polygon points="714,236 726,236 720,248" fill="#1a7f37"/>
+      <rect x="520" y="246" width="400" height="40" rx="8" fill="#1a7f37"/>
+      <text x="540" y="272" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="600" fill="#ffffff">代码由规格生成 —— 没有缺口，只有转换</text>
+
+      <!-- 中间反向箭头 -->
+      <path d="M 500 280 C 470 300, 490 300, 512 280" fill="none" stroke="#8250df" stroke-width="0"/>
+    </svg>
+    <figcaption>图 0-1 · 传统开发与 SDD 的根本差异：SDD 用「规格 → 计划 → 代码」的生成链消除意图与实现之间的缺口</figcaption>
+  </figure>
+
+  <div class="two-col">
+    <div class="card soft">
+      <h4><span class="pill purple">原则</span>六大核心原则</h4>
+      <ul class="plain" style="font-size:14px">
+        <li><b>规格是通用语言</b>：spec 是第一工件，代码是其在特定语言/框架下的表达</li>
+        <li><b>可执行规格</b>：必须精确、完整、无歧义到足以生成可运行系统</li>
+        <li><b>持续精炼</b>：一致性检查不是一次性门禁，而是贯穿全程</li>
+        <li><b>研究驱动上下文</b>：调研智能体持续收集技术选型与组织约束</li>
+        <li><b>双向反馈</b>：生产环境的事故与指标回流为规格的修订输入</li>
+        <li><b>分支探索</b>：同一份规格可生成多个实现方案做并行实验</li>
+      </ul>
+    </div>
+    <div class="card soft">
+      <h4><span class="pill blue">适用</span>三类开发场景</h4>
+      <ul class="plain" style="font-size:14px">
+        <li><b>0 → 1 绿地开发</b>：从高层需求直接生成规格，构建生产级应用</li>
+        <li><b>创造性探索</b>：同一规格并行生成多套技术栈/UX 方案，快速试错与重启</li>
+        <li><b>迭代增强（棕地）</b>：在既有系统上增量加功能、现代化改造旧系统</li>
+      </ul>
+      <p style="font-size:13.5px;color:var(--text-soft)">关键区分：升级 Spec Kit 工具 ≠ 演进规格工件。工具升级刷新托管文件，<code>specs/</code> 下的工件只在预期行为变化时更新。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2><span class="no">1</span>环境初始化：10 分钟跑通<a class="anchor" href="#s1">§</a></h2>
+  <p class="lead">前置条件：安装 <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener" style="color:var(--blue)">uv</a>。一条命令装 CLI，一条命令初始化项目，从此该项目的 AI 编码智能体就拥有了完整的 SDD 斜杠命令。</p>
+
+<pre><span class="c"># 1. 安装 Specify CLI（用具体 release tag，保留前缀 v）</span>
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@vX.Y.Z
+<span class="c"># 或直接从 PyPI：uv tool install specify-cli</span>
+
+<span class="c"># 2. 初始化项目（--integration 选择你的 AI 编码智能体）</span>
+specify init my-project --integration copilot
+cd my-project
+
+<span class="c"># CI / 无键盘环境：加 --non-interactive，非空目录再加 --force</span>
+specify init --here --force --non-interactive --integration claude
+
+<span class="c"># CLI 自管理</span>
+specify self check          <span class="c"># 只检查，不改任何东西</span>
+specify self upgrade --dry-run  <span class="c"># 预览升级动作</span>
+specify self upgrade        <span class="c"># 原地升级（自动识别 uv tool / pipx）</span></pre>
+
+  <table>
+    <thead><tr><th>命令</th><th>作用</th><th>备注</th></tr></thead>
+    <tbody>
+      <tr><td><code>specify init &lt;dir&gt; --integration &lt;agent&gt;</code></td><td>初始化项目，写入 <code>.specify/</code> 与智能体命令目录</td><td>30+ 智能体可选；<code>specify integration list</code> 查看全部</td></tr>
+      <tr><td><code>specify init --here --force</code></td><td>在当前目录初始化（棕地项目）</td><td>CI 场景配合 <code>--non-interactive</code> <code>--ignore-agent-tools</code></td></tr>
+      <tr><td><code>specify extension add &lt;name&gt;</code></td><td>安装扩展（bug、assess、agent-context…）</td><td><code>specify extension search</code> 先搜索</td></tr>
+      <tr><td><code>specify preset add &lt;name&gt;</code></td><td>安装预设（覆盖模板与术语）</td><td>可多层叠加，优先级排序</td></tr>
+      <tr><td><code>specify bundle install &lt;id&gt;</code></td><td>一键安装整套角色化配置</td><td><code>bundle info</code> 先看装什么，幂等可卸载</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card accent">
+    <h4><span class="pill blue">验证</span>初始化成功的标志</h4>
+    <ul class="plain" style="font-size:14px">
+      <li>项目根出现 <code>.specify/</code> 目录（模板、脚本、集成清单）</li>
+      <li>智能体命令目录出现斜杠命令文件，如 <code>.claude/commands/speckit.*.md</code> 或 <code>.github/prompts/</code></li>
+      <li>在项目里启动智能体，输入 <code class="nowrap">/speckit.</code> 能补全出 constitution / specify / plan / tasks / implement / converge 等命令</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2><span class="no">2</span>项目宪法：一次性奠基，全程受约束<a class="anchor" href="#s2">§</a></h2>
+  <p class="lead">每个项目只做一次：<code>/speckit.constitution</code> 生成项目级治理原则（存于 <code>.specify/memory/constitution.md</code>）。它像「架构 DNA」——此后每份实现计划都要通过宪法门禁（Phase -1 Gates），不通过就必须在「Complexity Tracking」里书面解释为什么。</p>
+
+<pre><span class="c"># 一次性建立项目原则（可随时修订，但需走修订流程）</span>
+/speckit.constitution 创建聚焦代码质量、测试标准、用户体验一致性与性能要求的项目原则</pre>
+
+  <table>
+    <thead><tr><th>条款</th><th>主题</th><th>约束含义（落到计划模板的门禁）</th></tr></thead>
+    <tbody>
+      <tr><td><b>I</b></td><td>Library-First</td><td>每个功能必须先以独立库形态存在——从第一天就强制模块化</td></tr>
+      <tr><td><b>II</b></td><td>CLI 接口</td><td>库必须暴露文本输入/输出 + JSON 的 CLI 接口——可观测、可测试</td></tr>
+      <tr><td><b>III</b></td><td>Test-First（不可协商）</td><td>先写测试 → 用户确认 → 测试确认失败（红）→ 才允许写实现</td></tr>
+      <tr><td><b>IV–VI</b></td><td>项目自定义</td><td>由各项目自填：安全边界、集成测试、版本策略、破坏性变更等</td></tr>
+      <tr><td><b>VII</b></td><td>简单性</td><td>初始实现最多 3 个项目（projects），不做未来式设计</td></tr>
+      <tr><td><b>VIII</b></td><td>反抽象</td><td>直接用框架能力，不包一层壳；单一模型表示</td></tr>
+      <tr><td><b>IX</b></td><td>集成优先测试</td><td>真实数据库优于 mock、真实服务实例优于 stub；契约测试先行</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card warn">
+    <h4><span class="pill amber">要点</span>宪法是写给 AI 看的护栏</h4>
+    <p style="font-size:14px">宪法的真正价值在于<b>跨模型一致性</b>：不同的 AI 模型（甚至明年更强的模型）在同一份宪法约束下，生成的代码在架构上彼此兼容。原则本身不可变，应用方式可演进——修订需记录理由、评审通过、评估向后兼容。</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2><span class="no">3</span>七步核心工作流：从一句话到可交付<a class="anchor" href="#s3">§</a></h2>
+  <p class="lead">这是每天都会走的主干道。前四步产物全部落在 <code>specs/&lt;branch&gt;/</code> 目录并在功能分支上版本化；<code>implement ⇄ converge</code> 循环直到收敛报告输出 <b>Converged</b>。</p>
+
+  <figure>
+    <svg viewBox="0 0 960 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Spec Kit 七步核心工作流管道图">
+      <!-- 节点 -->
+      <g font-family="-apple-system,PingFang SC,sans-serif">
+        <rect x="20"  y="40" width="128" height="64" rx="10" fill="#dbeafe" stroke="#54aeff" stroke-width="1.5"/>
+        <text x="84"  y="66" text-anchor="middle" font-size="14" font-weight="700" fill="#0550ae">constitution</text>
+        <text x="84"  y="86" text-anchor="middle" font-size="11" fill="#0550ae">一次性 · 项目原则</text>
+
+        <rect x="168" y="40" width="128" height="64" rx="10" fill="#dafbe1" stroke="#4ac26b" stroke-width="1.5"/>
+        <text x="232" y="66" text-anchor="middle" font-size="14" font-weight="700" fill="#1a5c2e">specify</text>
+        <text x="232" y="86" text-anchor="middle" font-size="11" fill="#1a5c2e">建分支 + spec.md</text>
+
+        <rect x="316" y="40" width="128" height="64" rx="10" fill="#fff1e5" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="380" y="66" text-anchor="middle" font-size="14" font-weight="700" fill="#953800">clarify</text>
+        <text x="380" y="86" text-anchor="middle" font-size="11" fill="#953800">可选但强烈推荐</text>
+
+        <rect x="464" y="40" width="128" height="64" rx="10" fill="#dafbe1" stroke="#4ac26b" stroke-width="1.5"/>
+        <text x="528" y="66" text-anchor="middle" font-size="14" font-weight="700" fill="#1a5c2e">plan</text>
+        <text x="528" y="86" text-anchor="middle" font-size="11" fill="#1a5c2e">技术方案 + 门禁</text>
+
+        <rect x="612" y="40" width="128" height="64" rx="10" fill="#dafbe1" stroke="#4ac26b" stroke-width="1.5"/>
+        <text x="676" y="66" text-anchor="middle" font-size="14" font-weight="700" fill="#1a5c2e">tasks</text>
+        <text x="676" y="86" text-anchor="middle" font-size="11" fill="#1a5c2e">可执行任务清单</text>
+
+        <rect x="760" y="40" width="128" height="64" rx="10" fill="#fff1e5" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="824" y="66" text-anchor="middle" font-size="14" font-weight="700" fill="#953800">analyze</text>
+        <text x="824" y="86" text-anchor="middle" font-size="11" fill="#953800">一致性检查门禁</text>
+
+        <rect x="240" y="160" width="150" height="64" rx="10" fill="#ffebe9" stroke="#ff8182" stroke-width="1.5"/>
+        <text x="315" y="186" text-anchor="middle" font-size="14" font-weight="700" fill="#a40e26">implement</text>
+        <text x="315" y="206" text-anchor="middle" font-size="11" fill="#a40e26">按任务执行实现</text>
+
+        <rect x="500" y="160" width="150" height="64" rx="10" fill="#fbefff" stroke="#c297ff" stroke-width="1.5"/>
+        <text x="575" y="186" text-anchor="middle" font-size="14" font-weight="700" fill="#6639ba">converge</text>
+        <text x="575" y="206" text-anchor="middle" font-size="11" fill="#6639ba">对照 spec/plan/tasks 收敛</text>
+
+        <rect x="740" y="160" width="160" height="64" rx="10" fill="#1a7f37"/>
+        <text x="820" y="186" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">✓ Converged</text>
+        <text x="820" y="206" text-anchor="middle" font-size="11" fill="#dafbe1">交付 / 合并 / 评审</text>
+
+        <!-- 主线箭头 -->
+        <g stroke="#57606a" stroke-width="2" fill="#57606a">
+          <line x1="148" y1="72" x2="164" y2="72"/><polygon points="164,67 174,72 164,77"/>
+          <line x1="296" y1="72" x2="312" y2="72"/><polygon points="312,67 322,72 312,77"/>
+          <line x1="444" y1="72" x2="460" y2="72"/><polygon points="460,67 470,72 460,77"/>
+          <line x1="592" y1="72" x2="608" y2="72"/><polygon points="608,67 618,72 608,77"/>
+          <line x1="740" y1="72" x2="756" y2="72"/><polygon points="756,67 766,72 756,77"/>
+        </g>
+        <!-- analyze -> implement 弯箭头 -->
+        <path d="M 824 104 L 824 130 L 390 130 L 390 156" fill="none" stroke="#57606a" stroke-width="2"/>
+        <polygon points="385,154 390,166 395,154" fill="#57606a"/>
+        <!-- implement <-> converge 循环 -->
+        <g stroke="#8250df" stroke-width="2" fill="#8250df">
+          <line x1="390" y1="192" x2="494" y2="192"/><polygon points="494,187 504,192 494,197"/>
+          <path d="M 575 224 L 575 248 L 315 248 L 315 228" fill="none"/>
+          <polygon points="310,230 315,218 320,230"/>
+        </g>
+        <text x="445" y="242" text-anchor="middle" font-size="11" fill="#8250df">循环，直到 Converged</text>
+        <!-- converge -> done -->
+        <g stroke="#1a7f37" stroke-width="2" fill="#1a7f37">
+          <line x1="650" y1="192" x2="734" y2="192"/><polygon points="734,187 744,192 734,197"/>
+        </g>
+        <text x="697" y="182" text-anchor="middle" font-size="11" fill="#1a7f37">收敛</text>
+      </g>
+    </svg>
+    <figcaption>图 3-1 · Spec Kit 核心工作流：虚线框为质量门禁（可选命令但生产实践强烈建议保留），紫色循环是 implement ⇄ converge 迭代</figcaption>
+  </figure>
+
+  <!-- 阶段卡片 -->
+  <div class="stage">
+    <div class="head"><span class="num">STEP 1</span><h4>/speckit.specify —— 定义要建什么</h4><span class="meta">what &amp; why，不谈技术栈</span></div>
+    <div class="grid">
+      <div><span class="lbl">输入</span><br>一句功能描述（用户提示词）</div>
+      <div><span class="lbl">产出</span><br>语义化分支 + <code>specs/&lt;branch&gt;/spec.md</code></div>
+      <div><span class="lbl">自动完成</span><br>扫描现有 spec 分配功能编号（001…）、创建分支、套模板生成结构化需求</div>
+      <div><span class="lbl">关键纪律</span><br>模板强制「聚焦 WHAT/WHY，禁止 HOW」；不明确处必须标 <code>[NEEDS CLARIFICATION]</code>，禁止瞎猜</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="head"><span class="num">STEP 2</span><h4>/speckit.clarify —— 消灭规格里的模糊地带</h4><span class="meta">可选 · 建议在 plan 之前</span></div>
+    <div class="grid">
+      <div><span class="lbl">输入</span><br>spec.md 中的所有 <code>[NEEDS CLARIFICATION]</code> 标记</div>
+      <div><span class="lbl">产出</span><br>逐条澄清后的完整 spec（决策记录在案）</div>
+      <div><span class="lbl">实践价值</span><br>把传统开发中「几天会议」压缩为与 AI 的数小时聚焦对话；歧义在计划前暴露的成本远低于实现后</div>
+      <div><span class="lbl">验收标准</span><br>spec 中不再残留任何未决标记</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="head"><span class="num">STEP 3</span><h4>/speckit.plan —— 技术实现计划</h4><span class="meta">这里才谈技术栈与架构</span></div>
+    <div class="grid">
+      <div><span class="lbl">输入</span><br>spec.md + 你的技术选型指令</div>
+      <div><span class="lbl">产出</span><br><code>plan.md</code>、<code>research.md</code>（选型对比）、<code>data-model.md</code>、<code>contracts/</code>（API 契约）、<code>quickstart.md</code>（验证场景）</div>
+      <div><span class="lbl">强制检查</span><br>Phase -1 宪法门禁：简单性 ≤3 项目？无未来式设计？直接用框架？契约已定义？不通过须记录 Complexity Tracking</div>
+      <div><span class="lbl">关键纪律</span><br>计划保持高层可读；代码片段与细节下沉到 <code>implementation-details/</code> 文件；每个技术选择都可追溯到具体需求</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="head"><span class="num">STEP 4</span><h4>/speckit.tasks —— 拆成可执行任务</h4><span class="meta">契约与实体 → 具体任务</span></div>
+    <div class="grid">
+      <div><span class="lbl">输入</span><br><code>plan.md</code>（必需）+ <code>data-model.md</code> / <code>contracts/</code> / <code>research.md</code>（若有）</div>
+      <div><span class="lbl">产出</span><br><code>tasks.md</code>——独立任务标 <code>[P]</code> 可并行，并给出安全并行分组</div>
+      <div><span class="lbl">顺序约束</span><br>测试先行写进任务序：先 <code>contracts/</code> → 契约测试 → 集成 → e2e → 单元 → 再写实现让测试通过</div>
+      <div><span class="lbl">可选延伸</span><br><code>/speckit.taskstoissues</code> 把任务列表转成 GitHub Issues 跟踪</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="head"><span class="num">STEP 5</span><h4>/speckit.analyze —— 跨工件一致性审查</h4><span class="meta">tasks 之后 · implement 之前的最后门禁</span></div>
+    <div class="grid">
+      <div><span class="lbl">输入</span><br>spec + plan + tasks 三份工件</div>
+      <div><span class="lbl">产出</span><br>一致性 &amp; 覆盖度报告：歧义、矛盾、任务缺口、宪法违背项</div>
+      <div><span class="lbl">定位</span><br>不是一次性放行检查，而是持续精炼机制的一环；此时修复成本最低</div>
+      <div><span class="lbl">验收标准</span><br>报告中无阻断项（blocker）</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="head"><span class="num">STEP 6</span><h4>/speckit.implement —— 执行全部任务</h4><span class="meta">AI 按计划与任务逐条实现</span></div>
+    <div class="grid">
+      <div><span class="lbl">输入</span><br>tasks.md 及全部设计工件</div>
+      <div><span class="lbl">产出</span><br>功能分支上的实现代码 + 通过的测试</div>
+      <div><span class="lbl">纪律</span><br>严格按 tasks.md 顺序执行；测试先红后绿；不做任务清单之外的「顺手」功能</div>
+      <div><span class="lbl">迭代</span><br>实现后立即进入 converge，而不是先自己 review</div>
+    </div>
+  </div>
+
+  <div class="stage accept">
+    <div class="head"><span class="num" style="color:var(--green)">STEP 7</span><h4>/speckit.converge —— 收敛验证，直到 Converged</h4><span class="meta">实现 ⇄ 规格的闭环</span></div>
+    <div class="grid">
+      <div><span class="lbl">输入</span><br>当前代码库 + spec / plan / tasks</div>
+      <div><span class="lbl">产出</span><br>偏差评估报告；未完成项自动追加为新任务</div>
+      <div><span class="lbl">循环规则</span><br>implement → converge →（新任务）→ implement → …，直到报告 <b>Converged</b></div>
+      <div><span class="lbl">收敛后</span><br>进入常规 PR / 评审 / 合并流程——spec 工件随代码一起被评审与版本化</div>
+    </div>
+  </div>
+
+  <div class="card accent">
+    <h4><span class="pill blue">实操</span>一条完整的会话样例</h4>
+<pre style="margin:10px 0 0"><span class="c"># ① 一次性</span>
+/speckit.constitution 项目原则：代码质量、测试标准、UX 一致性、性能
+
+<span class="c"># ② 每个功能的标准节拍</span>
+/speckit.specify 构建一个照片相册应用：相册按日期分组、主页拖拽重排、
+                 相册不嵌套、相册内照片以磁贴网格预览
+/speckit.clarify
+/speckit.plan 使用 Vite + 原生 HTML/CSS/JS，尽量少依赖库；
+              照片不上传服务器，元数据存本地 SQLite
+/speckit.tasks
+/speckit.analyze
+/speckit.implement
+/speckit.converge      <span class="c"># 循环直至 Converged</span></pre>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2><span class="no">4</span>工件地图：specs/ 目录里到底有什么<a class="anchor" href="#s4">§</a></h2>
+  <p class="lead">SDD 的全部智慧都物化在 <code>specs/&lt;branch&gt;/</code> 里。读懂这张地图，你就能 review 别人的规格，也能诊断自己的流程卡在哪一步。</p>
+
+<pre>specs/003-chat-system/
+├── spec.md            <span class="c"># 功能规格：用户故事、验收标准、[NEEDS CLARIFICATION]</span>
+├── plan.md            <span class="c"># 实现计划：技术决策 + 理由 + Phase -1 宪法门禁</span>
+├── research.md        <span class="c"># 选型调研：库对比、性能基准、安全影响</span>
+├── data-model.md      <span class="c"># 数据模型：实体、关系、schema</span>
+├── contracts/         <span class="c"># API 契约：WebSocket 事件、REST 端点（实现前先定）</span>
+├── quickstart.md      <span class="c"># 关键验证场景：跑通这些 = 功能成立</span>
+├── tasks.md           <span class="c"># 任务清单：[P] 并行标记 + 执行顺序</span>
+└── implementation-details/  <span class="c"># 从 plan 下沉的代码细节，保持计划可读</span></pre>
+
+  <table>
+    <thead><tr><th>工件</th><th>生成命令</th><th>一句话检验「写对了没」</th></tr></thead>
+    <tbody>
+      <tr><td><code>spec.md</code></td><td><code>specify + clarify</code></td><td>只讲 what/why；测试可验证；无残留 [NEEDS CLARIFICATION]</td></tr>
+      <tr><td><code>plan.md</code></td><td><code>plan</code></td><td>每个技术选择有理由且有需求回链；门禁全过或有记录的豁免</td></tr>
+      <tr><td><code>contracts/</code></td><td><code>plan</code></td><td>契约测试能在零实现时编写并失败（红）</td></tr>
+      <tr><td><code>tasks.md</code></td><td><code>tasks</code></td><td>每条任务可独立验收；测试任务排在实现任务之前；无投机功能</td></tr>
+      <tr><td><code>quickstart.md</code></td><td><code>plan</code></td><td>照着做 10 分钟能验证核心价值</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2><span class="no">5</span>质量护栏：模板如何驯服 LLM<a class="anchor" href="#s5">§</a></h2>
+  <p class="lead">Spec Kit 的秘密不在命令本身，而在模板——每份模板都是一份精心设计的 prompt，用结构性约束把 LLM 从「有创意的作者」变成「有纪律的规格工程师」。理解这七道护栏，你就能举一反三地写自己的模板。</p>
+
+  <table>
+    <thead><tr><th>#</th><th>护栏机制</th><th>防住什么</th><th>落地观察点</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>抽象层级隔离</b><br><span style="font-size:12.5px;color:var(--text-soft)">spec 聚焦 WHAT/WHY，明令禁止 HOW</span></td><td>LLM 过早跳到「用 React + Redux 实现」</td><td>spec.md 中不应出现任何技术栈词</td></tr>
+      <tr><td>2</td><td><b>强制不确定标记</b><br><span style="font-size:12.5px;color:var(--text-soft)"><code>[NEEDS CLARIFICATION: …]</code></span></td><td>LLM 「合理但错误」的自行假设</td><td>grep 一下 spec 里的标记数量</td></tr>
+      <tr><td>3</td><td><b>清单即规格的单元测试</b></td><td>遗漏边界情况、不可测的成功标准</td><td>checklist 全勾才算 spec 完成</td></tr>
+      <tr><td>4</td><td><b>Phase -1 宪法门禁</b></td><td>过度工程：多层抽象、投机性项目结构</td><td>不通过必须在 Complexity Tracking 留痕</td></tr>
+      <tr><td>5</td><td><b>层级化信息架构</b><br><span style="font-size:12.5px;color:var(--text-soft)">计划高层可读，细节下沉子文件</span></td><td>规格沦为不可读的代码堆场</td><td>plan.md 单屏能看完主结构</td></tr>
+      <tr><td>6</td><td><b>测试先行的文件序</b><br><span style="font-size:12.5px;color:var(--text-soft)">契约 → 契约测试 → 集成 → e2e → 单元 → 实现</span></td><td>先生成代码再「补测试」</td><td>git 提交顺序反映这个序列</td></tr>
+      <tr><td>7</td><td><b>禁止投机功能</b></td><td>「以后可能用到」的镀金功能</td><td>每个功能可回溯到具体用户故事</td></tr>
+    </tbody>
+  </table>
+
+  <h3>用 /speckit.checklist 生成自定义质量清单</h3>
+  <p>内置清单之外，可以按领域生成专属检查表——作者称之为「<b>给英文写的单元测试</b>」：规格本身也是代码，也需要测试。</p>
+<pre><span class="c"># 例：为安全敏感功能生成安全规格清单</span>
+/speckit.checklist 生成覆盖认证、授权、数据脱敏与审计日志的规格质量清单</pre>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <h2><span class="no">6</span>两条分支工作流：Bug 修复 与 想法评估<a class="anchor" href="#s6">§</a></h2>
+  <p class="lead">主干流程之外，官方捆绑的两个可选扩展覆盖最高频的日常场景。均为 opt-in，<code>specify extension add</code> 后即装。</p>
+
+  <h3>🐞 Bug 扩展：assess → fix → test</h3>
+  <p class="lead">防的是「智能体从报错直接跳到补丁」：没有验证诊断、没确认修复了原始症状。bug 扩展让每次修复<b>范围受控、基于证据、从根因到验证全程留痕</b>。</p>
+<pre><span class="c"># 一次性安装</span>
+specify extension add bug
+
+<span class="c"># 三步修复一个 bug</span>
+/speckit-bug-assess "用户登录时崩溃" slug=login-crash   <span class="c"># 评估：定位根因</span>
+/speckit-bug-fix slug=login-crash                       <span class="c"># 修复：针对已评估的根因</span>
+/speckit-bug-test slug=login-crash                      <span class="c"># 测试：确认症状消失</span></pre>
+
+  <h3>💡 Assess 扩展：intake → research → define → shape → decide</h3>
+  <p class="lead">好想法值得先拿证据再承诺——<b>无论最后做不做软件</b>。assess 扩展把一个原始想法变成有据可查的 <b>go / needs-clarification / kill</b> 决策。</p>
+<pre><span class="c"># 一次性安装</span>
+specify extension add assess
+
+<span class="c"># 五步评估一个想法</span>
+/speckit-assess-intake "离线模式" slug=offline-mode       <span class="c"># ① 立项登记</span>
+/speckit-assess-research slug=offline-mode               <span class="c"># ② 收集支持/反对证据</span>
+/speckit-assess-define slug=offline-mode                 <span class="c"># ③ 定义问题、目标、成功指标</span>
+/speckit-assess-shape slug=offline-mode                  <span class="c"># ④ 塑形候选方案与权衡</span>
+/speckit-assess-decide slug=offline-mode                 <span class="c"># ⑤ 裁决：做 / 澄清 / 砍掉</span></pre>
+  <div class="card soft">
+    <h4><span class="pill green">衔接</span>两条流都通向主干</h4>
+    <p style="font-size:14px">assess 裁决为 <b>go</b> 的想法，直接交给 <code>/speckit.specify</code> 进入主干开发；bug 修复中发现更大范围的设计缺陷，也应收敛回 spec 层面处理。整张工作流网从此闭环。</p>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <h2><span class="no">7</span>团队协作落地：规格进 Git，评审进 PR<a class="anchor" href="#s7">§</a></h2>
+  <p class="lead">SDD 天然支持团队流程：规格是<b>可版本化、可分支、可合并</b>的工件——产品经理改验收标准，实现计划自动标记受影响的技术决策；架构师发现更优模式，PRD 反向更新。</p>
+
+  <table>
+    <thead><tr><th>实践</th><th>做法</th><th>工具支撑</th></tr></thead>
+    <tbody>
+      <tr><td><b>功能分支</b></td><td>每个功能一个分支，spec/plan/tasks 与代码同分支演进</td><td><code>/speckit.specify</code> 自动建语义化分支</td></tr>
+      <tr><td><b>规格评审</b></td><td>PR 同时评审规格与实现；「改需求 = 改 spec + 重新生成」</td><td>工件都是 Markdown，天然进 Git diff</td></tr>
+      <tr><td><b>任务跟踪</b></td><td>tasks.md → GitHub Issues，人在 Issue 层面认领与跟踪</td><td><code>/speckit.taskstoissues</code></td></tr>
+      <tr><td><b>并行开发</b></td><td>tasks 标 <code>[P]</code> 的任务组可分给多人/多智能体并行</td><td><code>/speckit.tasks</code> 的并行分组</td></tr>
+      <tr><td><b>棕地演进</b></td><td>工具升级与规格演进分离；行为变化才更新 specs/</td><td><a href="https://github.com/github/spec-kit/blob/main/docs/guides/evolving-specs.md" target="_blank" rel="noopener" style="color:var(--blue)">Evolving Specs 指南</a></td></tr>
+      <tr><td><b>角色配置</b></td><td>PM / BA / 安全研究员 / 开发者各装一套角色化命令栈</td><td><code>specify bundle install</code></td></tr>
+      <tr><td><b>自举（dogfooding）</b></td><td>Spec Kit 团队用 Spec Kit 开发 Spec Kit：重大功能走 assess → SDD 全流程</td><td>参考其 feature-assessment workflow</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card accent">
+    <h4><span class="pill blue">心智模型</span>角色重新分工</h4>
+    <p style="font-size:14px">开发者的时间从「机械翻译」（把需求翻译成代码）转向<b>创造力、实验与批判性思维</b>：定义验收标准、评审生成方案、追问边界情况、决定何时推翻重来（0 → 1 → 1′ → 2 → 3 → N 的重生式迭代）。</p>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <h2><span class="no">8</span>定制体系：把 Spec Kit 变成你的流程<a class="anchor" href="#s8">§</a></h2>
+  <p class="lead">四层优先级栈，运行时自顶向下解析，取第一个命中的模板——这意味着你可以不动核心、不建分支地定制任何环节。</p>
+
+  <figure>
+    <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="模板解析优先级栈">
+      <g font-family="-apple-system,PingFang SC,sans-serif">
+        <text x="480" y="26" text-anchor="middle" font-size="13" fill="#57606a">模板解析顺序：自顶向下，第一个命中即生效（运行时）</text>
+        <rect x="180" y="40"  width="600" height="52" rx="8" fill="#ffebe9" stroke="#ff8182"/>
+        <text x="210" y="62"  font-size="14.5" font-weight="700" fill="#a40e26">① 项目本地覆盖 .specify/templates/overrides/</text>
+        <text x="210" y="82"  font-size="12" fill="#a40e26">单项目一次性微调，最高优先级</text>
+
+        <rect x="180" y="102" width="600" height="52" rx="8" fill="#fff8c5" stroke="#d4a72c"/>
+        <text x="210" y="124" font-size="14.5" font-weight="700" fill="#7d4e00">② 预设 Presets .specify/presets/templates/</text>
+        <text x="210" y="144" font-size="12" fill="#7d4e00">改变「现有流程怎么跑」：合规格式、领域术语、方法论适配、强制门禁</text>
+
+        <rect x="180" y="164" width="600" height="52" rx="8" fill="#ddf4ff" stroke="#54aeff"/>
+        <text x="210" y="186" font-size="14.5" font-weight="700" fill="#0550ae">③ 扩展 Extensions .specify/extensions/templates/</text>
+        <text x="210" y="206" font-size="12" fill="#0550ae">新增「原来没有的能力」：新命令、新工作流、外部工具集成</text>
+
+        <rect x="180" y="226" width="600" height="52" rx="8" fill="#dafbe1" stroke="#4ac26b"/>
+        <text x="210" y="248" font-size="14.5" font-weight="700" fill="#1a5c2e">④ 核心 Spec Kit .specify/templates/（内置 SDD 命令与模板）</text>
+        <text x="210" y="268" font-size="12" fill="#1a5c2e">默认行为兜底；无任何覆盖/预设/扩展时生效</text>
+
+        <path d="M 810 66 L 830 66 L 830 252" fill="none" stroke="#afb8c1" stroke-width="2"/>
+        <polygon points="825,250 830,262 835,250" fill="#afb8c1"/>
+        <text x="845" y="165" font-size="12" fill="#57606a" transform="rotate(90 845 165)">优先级递减</text>
+      </g>
+    </svg>
+    <figcaption>图 8-1 · 模板解析优先级栈：命令文件在安装时写入智能体目录；同名命令取最高优先级版本，卸载后自动回退到下一层</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th>你的目标</th><th>用哪个</th><th>命令</th></tr></thead>
+    <tbody>
+      <tr><td>加一个全新命令或工作流</td><td>Extension</td><td><code>specify extension add &lt;name&gt;</code></td></tr>
+      <tr><td>改 spec/plan/tasks 的格式（如合规追溯、本地化语言）</td><td>Preset</td><td><code>specify preset add &lt;name&gt;</code></td></tr>
+      <tr><td>集成外部工具（Jira、内部平台…）</td><td>Extension</td><td>同上；也可自研，见 <code>extensions/EXTENSION-DEVELOPMENT-GUIDE.md</code></td></tr>
+      <tr><td>强制组织/监管标准（安全审查门禁、测试先行排序）</td><td>Preset</td><td>同上；可多层叠加并按优先级排序</td></tr>
+      <tr><td>单项目临时改一处模板</td><td>Project-local override</td><td>直接放 <code>.specify/templates/overrides/</code></td></tr>
+      <tr><td>给整个团队一键配齐角色化环境</td><td>Bundle</td><td><code>specify bundle search → info → install</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="card soft">
+    <h4><span class="pill green">保障</span>Bundle 的四条硬承诺</h4>
+    <ul class="plain" style="font-size:14px">
+      <li><b>透明</b>：<code>bundle info</code> 展示的内容 = <code>install</code> 实际安装的内容</li>
+      <li><b>幂等</b>：安装可重复，范围限于项目根目录</li>
+      <li><b>安全卸载</b>：<code>remove</code> 绝不触碰其他已装 bundle 仍需要的组件</li>
+      <li><b>离线可用</b>：全部命令可对本地或固定版本源离线执行</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <h2><span class="no">9</span>每日落地清单<a class="anchor" href="#s9">§</a></h2>
+  <p class="lead">把流程刻进肌肉记忆。可打印贴在工位，也可作为团队 code review 的前置自查。</p>
+
+  <h3>🚀 新项目上线前（一次性）</h3>
+  <ul class="check">
+    <li class="done">uv + specify CLI 安装完成，<code>specify self check</code> 无更新提示</li>
+    <li class="done"><code>specify init</code> 完成，斜杠命令在智能体里可用</li>
+    <li class="done"><code>/speckit.constitution</code> 已建立，条款覆盖质量/测试/性能/安全</li>
+    <li class="done">按需安装扩展（bug / assess）与团队预设</li>
+  </ul>
+
+  <h3>🔁 每个功能的标准节拍</h3>
+  <ul class="check">
+    <li class="done">spec 只写 what/why，技术词零出现；歧义全部 <code>[NEEDS CLARIFICATION]</code></li>
+    <li class="done">clarify 跑完，标记清零</li>
+    <li class="done">plan 过宪法门禁；豁免项在 Complexity Tracking 有记录</li>
+    <li class="done">tasks 测试任务先于实现任务；<code>[P]</code> 并行分组合理</li>
+    <li class="done">analyze 无阻断项</li>
+    <li class="done">implement 严格按任务序执行，先红后绿</li>
+    <li class="done">converge 报告 Converged 后才发起 PR</li>
+  </ul>
+
+  <h3>📅 每周团队例会</h3>
+  <ul class="check">
+    <li>抽查一份 spec：能否独立读懂？验收标准可测吗？</li>
+    <li>复盘 converge 循环次数异常多的功能——是规格质量问题还是计划质量问题？</li>
+    <li>生产事故/指标是否回流为新的规格约束（双向反馈）？</li>
+    <li>宪法是否有需要走修订流程的演进项？</li>
+  </ul>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <h2><span class="no">10</span>常见陷阱与对策<a class="anchor" href="#s10">§</a></h2>
+
+  <table>
+    <thead><tr><th>陷阱</th><th>症状</th><th>对策</th></tr></thead>
+    <tbody>
+      <tr><td><b>跳过 constitution 直接开写</b></td><td>各功能风格漂移，多智能体产出互不兼容</td><td>新项目第一件事就是 <code>/speckit.constitution</code>；门禁未建，纪律无处安放</td></tr>
+      <tr><td><b>spec 里混进技术栈</b></td><td>换实现方案时被迫重写规格</td><td>回读模板第 1 道护栏；技术选型只出现在 <code>/speckit.plan</code> 的参数里</td></tr>
+      <tr><td><b>让 AI 替你猜</b></td><td>生成物「看起来对」但假设错误，返工在实现后期爆发</td><td>要求所有假设显式标记 <code>[NEEDS CLARIFICATION]</code>，clarify 阶段逐条清零</td></tr>
+      <tr><td><b>把 plan 写成代码堆</b></td><td>计划不可读，评审失焦</td><td>细节下沉 <code>implementation-details/</code>；plan.md 保持一屏主结构</td></tr>
+      <tr><td><b>跳过 analyze 直奔 implement</b></td><td>三份工件互相矛盾，converge 循环次数暴涨</td><td>把 analyze 当作不可跳过的门禁——此时修复最便宜</td></tr>
+      <tr><td><b>过度工程</b></td><td>三层抽象包装框架、投机性「以后要用」的模块</td><td>宪法第 VII/VIII 条 + 门禁；每次复杂度提升必须书面辩护</td></tr>
+      <tr><td><b>mock 一切</b></td><td>单元测试全绿，集成即挂</td><td>宪法第 IX 条：真实数据库优于 mock，契约测试先行</td></tr>
+      <tr><td><b>converge 一次不过就人工修代码</b></td><td>代码与 spec 悄悄脱节，真理源失去意义</td><td>回到 implement ⇄ converge 循环；修代码之前先问「规格还是计划错了」</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card danger">
+    <h4><span class="pill red">底线</span>一句话记住 SDD</h4>
+    <p style="font-size:15px"><b>不要让代码成为真理。</b>当你想直接改代码时，先问：这个改动应该发生在 spec 层、plan 层还是 task 层？答案几乎从不在代码层。</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <div class="wrap">
+    基于 GitHub Spec Kit（spec-driven.md / README.md / 模板与扩展文档）整理 · 生成于 2026-10-07<br>
+    参考：<a href="https://github.com/github/spec-kit" style="color:var(--blue)">github/spec-kit</a> · <a href="https://github.github.io/spec-kit/" style="color:var(--blue)">官方文档</a>
+  </div>
+</footer>
+
+</body>
+</html>

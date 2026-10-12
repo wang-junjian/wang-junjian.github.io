@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="xwIraXaq6CI3oZRSICERAv">
+<head data-page-node-id="TBuwLFNlqLqpMPrz2kdYQP">
+<meta charset="utf-8" data-page-node-id="BGoxTNypQ6cEJo5wfb99gR">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="3XRLKmBfGEa5aStLUzt7TE">
+<meta name="description" content="逐节点拆解 Anthropic《The AI-Native SDLC Playbook》：六阶段闭环、工件驱动的自动交接、skill 与 hook 双层控制、成对度量，附 11 张手绘 SVG 结构图与反模式清单。">
+<meta name="keywords" content="ai-native-sdlc, agentic-engineering, claude-code, software-development-lifecycle, hooks, governance">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-13">
+<title>AI 原生 SDLC 全景拆解 — The AI-Native SDLC Playbook</title>
+<style>
+:root{
+  --bg:#FBFAF7;
+  --ink:#16181D;
+  --ink2:#3D434F;
+  --ink3:#71767F;
+  --line:#E4E0D7;
+  --line2:#CFC9BC;
+  --card:#FFFFFF;
+  --accent:#B45309;
+  --accent-bg:#FDF4E8;
+  --accent-line:#E9C08A;
+  --blue:#1D4ED8;
+  --blue-bg:#EEF2FE;
+  --teal:#0F766E;
+  --teal-bg:#EAF6F4;
+  --purple:#6D28D9;
+  --purple-bg:#F2EEFE;
+  --red:#B3261E;
+  --red-bg:#FDEDEC;
+  --green:#15803D;
+  --green-bg:#EDF7EF;
+  --grey-bg:#F2F0EA;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px;line-height:1.75;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* ---------- hero ---------- */
+.hero{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 14px}
+h1{font-size:clamp(28px,4.4vw,46px);line-height:1.18;letter-spacing:-.02em;margin:0 0 14px;font-weight:800}
+.sub{font-size:18px;color:var(--ink2);margin:0 0 24px;max-width:70ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;font-size:13px;color:var(--ink3)}
+.meta span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 12px}
+
+/* ---------- toc ---------- */
+.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:32px 0}
+.toc h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:0 0 14px;font-weight:700}
+.toc ol{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px 24px;counter-reset:t}
+.toc li{counter-increment:t;font-size:14px}
+.toc a{color:var(--ink2);text-decoration:none;display:flex;gap:10px;padding:3px 0;border-bottom:1px solid transparent}
+.toc a:hover{color:var(--accent)}
+.toc a::before{content:counter(t,decimal-leading-zero);color:var(--line2);font-variant-numeric:tabular-nums;font-size:12px;flex:none;padding-top:3px}
+
+/* ---------- sections ---------- */
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+h2{font-size:clamp(22px,2.8vw,30px);line-height:1.3;letter-spacing:-.01em;margin:0 0 8px;font-weight:800}
+h2 .num{display:inline-block;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-bg);border:1px solid var(--accent-line);border-radius:6px;padding:2px 9px;vertical-align:middle;margin-right:12px;transform:translateY(-3px);letter-spacing:.06em}
+h3{font-size:17px;margin:32px 0 10px;font-weight:700}
+h4{font-size:14px;margin:20px 0 8px;font-weight:700;color:var(--ink2);letter-spacing:.02em}
+p{margin:0 0 16px;color:var(--ink2)}
+p strong,li strong{color:var(--ink);font-weight:650}
+a{color:var(--accent)}
+.lead{font-size:17px;color:var(--ink2)}
+ul,ol{padding-left:22px;margin:0 0 16px;color:var(--ink2)}
+li{margin:0 0 7px}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.88em;background:var(--grey-bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink)}
+
+/* ---------- callout ---------- */
+.callout{background:var(--accent-bg);border:1px solid var(--accent-line);border-left:3px solid var(--accent);border-radius:10px;padding:16px 20px;margin:0 0 24px}
+.callout .k{display:block;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.callout p{margin:0;color:var(--ink);font-size:15.5px}
+
+/* ---------- figures ---------- */
+.fig{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 14px 10px;margin:24px 0;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:680px}
+.fig .cap{font-size:13px;color:var(--ink3);line-height:1.6;margin:12px 4px 6px;padding-top:10px;border-top:1px solid var(--line)}
+.fig .cap b{color:var(--ink2);font-weight:700}
+
+/* ---------- grid cards ---------- */
+.grid{display:grid;gap:14px;margin:20px 0}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h5{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--ink)}
+.card p{margin:0;font-size:14px;line-height:1.65}
+.card ul{margin:0;padding-left:18px;font-size:14px}
+
+/* ---------- compare ---------- */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:22px 0;background:var(--card)}
+.cmp>div{padding:16px 20px}
+.cmp>div:first-child{border-right:1px solid var(--line);background:var(--grey-bg)}
+.cmp .h{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px}
+.cmp .old .h{color:var(--ink3)}
+.cmp .new{background:var(--accent-bg)}
+.cmp .new .h{color:var(--accent)}
+.cmp p{font-size:14px;margin:0;line-height:1.7}
+.cmp p+p{margin-top:9px}
+@media(max-width:680px){.cmp{grid-template-columns:1fr}.cmp>div:first-child{border-right:0;border-bottom:1px solid var(--line)}}
+
+/* ---------- code ---------- */
+pre{background:#1B1E24;color:#E6E4DE;border-radius:10px;padding:16px 18px;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.7;margin:14px 0}
+pre .fn{color:#8FA3BF}
+pre code{background:none;border:0;padding:0;color:inherit;font-size:inherit}
+.codehead{font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:.05em;margin:18px 0 -6px;font-family:ui-monospace,Menlo,monospace}
+
+/* ---------- metrics ---------- */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+@media(max-width:680px){.metrics{grid-template-columns:1fr}}
+.metric{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--card);border-left-width:3px}
+.metric.lead{border-left-color:var(--teal)}
+.metric.lag{border-left-color:var(--purple)}
+.metric .tag{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:6px;display:block}
+.metric.lead .tag{color:var(--teal)}
+.metric.lag .tag{color:var(--purple)}
+.metric p{margin:0;font-size:14px;line-height:1.65}
+
+/* ---------- table ---------- */
+.tw{overflow-x:auto;margin:20px 0;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:620px}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--grey-bg);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:700;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td code{font-size:12px}
+
+/* ---------- stage header ---------- */
+.stage-head{display:flex;align-items:flex-start;gap:18px;margin-bottom:20px}
+.stage-badge{flex:none;width:58px;height:58px;border-radius:14px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.stage-head .t{padding-top:2px}
+.stage-head .t .en{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.stage-head .t h2{margin:0}
+
+.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.05em;border-radius:999px;padding:2px 10px;margin:0 6px 6px 0;border:1px solid}
+.pill.b{color:var(--blue);background:var(--blue-bg);border-color:#C6D2F7}
+.pill.t{color:var(--teal);background:var(--teal-bg);border-color:#B6DED8}
+.pill.p{color:var(--purple);background:var(--purple-bg);border-color:#D6C9F8}
+.pill.r{color:var(--red);background:var(--red-bg);border-color:#F3C9C6}
+.pill.g{color:var(--green);background:var(--green-bg);border-color:#BFE3C8}
+.pill.a{color:var(--accent);background:var(--accent-bg);border-color:var(--accent-line)}
+
+blockquote{margin:20px 0;padding:2px 0 2px 20px;border-left:3px solid var(--line2);color:var(--ink3);font-size:15px}
+
+footer{padding:48px 0 72px;color:var(--ink3);font-size:13.5px}
+footer h3{font-size:14px;color:var(--ink2);margin:0 0 12px}
+footer ol{padding-left:20px}
+footer li{margin-bottom:5px}
+footer code{font-size:12px}
+.src{font-size:12.5px;color:var(--ink3);margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body data-page-node-id="DJN4X2Lydh2hzY6Psf464V">
+
+<header class="hero" data-page-node-id="hXGkZPiTHjyUPtZhV3xzXm">
+  <div class="wrap" data-page-node-id="edF5rC1Bl4uXGyqmubKeyl">
+    <p class="eyebrow" data-page-node-id="HuxZIqBjoFhD87dDfFcKP2">SDLC · Agentic Engineering</p>
+    <h1 data-page-node-id="PxcepKdK8Clma38HoZ2Ovn">AI 原生 SDLC 全景拆解</h1>
+    <p class="sub" data-page-node-id="jT3omz5AOf1inPb1wiopCf">当代码不再是瓶颈，软件开发生命周期必须围绕智能体重建。本文逐节点拆解 Anthropic《The AI-Native SDLC Playbook》提出的六阶段闭环，每个节点配手绘 SVG 结构图。</p>
+    <div class="meta" data-page-node-id="itcaw58znq7AmGgeslASoN">
+      <span data-page-node-id="YMHqsTR05BJ44rEj9oT6nG">原文：The AI-Native SDLC playbook</span>
+      <span data-page-node-id="7StQcRHMiJiSUhRbFg19xC">作者：Louis Claxton</span>
+      <span data-page-node-id="tynvqKY2uBcmuVfiBjsDo6">来源：claude.com/blog</span>
+      <span data-page-node-id="9MY6F0I5L4sciMjGc1sFXW">6 阶段 · 11 张节点图</span>
+    </div>
+  </div>
+</header>
+
+<nav class="wrap" data-page-node-id="FPbbZhV69CKQyCHIfQtcIx">
+  <div class="toc" data-page-node-id="7POkWVF6FkIP1FZrD54WNw">
+    <h2 data-page-node-id="zUpamIxbnNTdchXmOVsz7I">目录</h2>
+    <ol data-page-node-id="l69JEJ4IJzZv6rF08kdXaB">
+      <li data-page-node-id="GVJLJny3FwQdwfYQfeVSp3"><a href="#s00" data-page-node-id="5HMG5aEQBiiJGSAA7KU2HC">核心论断</a></li>
+      <li data-page-node-id="5HxSkJhtLrUUFTctLsNQiw"><a href="#s01" data-page-node-id="P9mFU2CLydFrf0HoqdLppg">代码不再是瓶颈</a></li>
+      <li data-page-node-id="09qo2mvHFvuFH0KLrJrhOO"><a href="#s02" data-page-node-id="zDxVqtXtXiJksoGPHBo28i">什么是 AI 原生 SDLC</a></li>
+      <li data-page-node-id="7KMrhfM6stbvsq3bvNTvEd"><a href="#s03" data-page-node-id="JQOPTTYH2jy12foAJz8X7i">生命周期总览：六阶段闭环</a></li>
+      <li data-page-node-id="uZMU28H3YdsesmioaqvD5Y"><a href="#s04" data-page-node-id="sX39U6XmNOpDTJniCcMDFk">Stage 1 · Plan 规划</a></li>
+      <li data-page-node-id="pudLPxqAwI5JxXu7eE3xDw"><a href="#s05" data-page-node-id="Akcn8DVuzfhq2TfR1c4JiS">Stage 2 · Design 设计</a></li>
+      <li data-page-node-id="8ihngzagCKe9wj5B1Q6HGn"><a href="#s06" data-page-node-id="eB0deKxFNx8weXD6Kf8IVM">Stage 3 · Build 构建</a></li>
+      <li data-page-node-id="7RRyLahHD2ZDXWV4aK3W6a"><a href="#s07" data-page-node-id="9KJNjXQmqTgkp2kdE2knHM">Stage 4 · Test 测试</a></li>
+      <li data-page-node-id="3P15P6XtwWJdATJr1pqH8c"><a href="#s08" data-page-node-id="y0DPZurBKCoXiys5D0N036">Stage 5 · Deploy 部署</a></li>
+      <li data-page-node-id="7IZfqlGsAzvEBpjYoRN0Co"><a href="#s09" data-page-node-id="IGPo8rdLz3d8lnnRPjk82n">Stage 6 · Maintain 维护</a></li>
+      <li data-page-node-id="DM6Qv1G7uULTcNUiya9eml"><a href="#s10" data-page-node-id="LLpdINSM9WzXGeiHck2RHD">控制体系：skill / hook / 沙箱</a></li>
+      <li data-page-node-id="6YaPLrWqtIXJCv9PcYDQRv"><a href="#s11" data-page-node-id="4sFomw4LbA4fHOr6LoItPC">度量体系：成对指标</a></li>
+      <li data-page-node-id="IfNDlsC9GIGCCna7MqFSw6"><a href="#s12" data-page-node-id="wdQlBDS6jUaFwU5hmYMaXk">采纳路径与依赖图</a></li>
+      <li data-page-node-id="t0u9Pa6tFP1ulqDgEVwjhF"><a href="#s13" data-page-node-id="Bs3RHCpPOQVbzkTFUN06rC">反模式清单</a></li>
+      <li data-page-node-id="64ZkbJRzVCmHFJsijmTJq4"><a href="#s14" data-page-node-id="QP9Dm1Ffmc0RBQDxaadxPV">结论与出处</a></li>
+    </ol>
+  </div>
+</nav>
+
+<main class="wrap" data-page-node-id="WaptJq6hkBZSRP0fjndejn">
+
+<!-- ============ 00 ============ -->
+<section id="s00" data-page-node-id="LR3xk2sCfEkSqW5zdYY3hE">
+  <h2 data-page-node-id="7zgDxEFKB1Zj4i24F1iSPw"><span class="num" data-page-node-id="ne59FznHHiM1HnJy2Tjyuv">00</span>核心论断</h2>
+  <p class="lead" data-page-node-id="RYeONzhY2z8VwUno6ENcYf">只读这一节，也应该能拿到这份 playbook 的全部骨架。以下八条，是后面每一章的论点来源。</p>
+
+  <div class="grid g2" data-page-node-id="XzpD1GtRsW4BNHYZCUh72A">
+    <div class="card" data-page-node-id="wgghl33z9jtdk0UxKZWPFQ">
+      <h5 data-page-node-id="45wQaQ5jMz4PFKZ8etXezN">① 瓶颈已经迁移</h5>
+      <p data-page-node-id="AL7GkqyHaF3Ys0VMHkRcS2">Build 阶段压缩到小时级之后，<strong data-page-node-id="06FeMrpfwf1yMxbDKJmCAD">约束变成了它左右两侧的人类速度节点</strong>：Plan、Review/Test、Deploy。这三个阶段长度不变，于是整条流水线的节拍由它们决定。</p>
+    </div>
+    <div class="card" data-page-node-id="dXhbMYRXM9Ccs21tIfXKDn">
+      <h5 data-page-node-id="AplOeWp8JR79z3PsRt8lgH">② 控制开始失效</h5>
+      <p data-page-node-id="I6NLs7w4rO8o4SPA4q8TmH">为「一人写代码」设计的逐行人工评审，在智能体产出大部分 diff 之后<strong data-page-node-id="G6cFJNIJbNKdAqEWPtaqao">赶不上趟</strong>。安全团队按人类产出规模配置，产出翻倍后要么队列堆积，要么审查不足就上线——受监管组织两者都不能接受。</p>
+    </div>
+    <div class="card" data-page-node-id="lSQRI2TSycgkrPqmHjvdtx">
+      <h5 data-page-node-id="dvaykd2OLkyOyDtQlRhrT6">③ 线性流变成闭环</h5>
+      <p data-page-node-id="0tRbSrKQrHnrpzAHJeeaGJ">六个阶段不再靠人推动交接，而是<strong data-page-node-id="BQelkrclY3o8v3nJMKqUhA">阶段提交工件 → 工件触发下一阶段</strong>。被接受的 <code data-page-node-id="gROniqXzTlGru4AiSVx3go">intent.md</code> 触发设计，被批准的 <code data-page-node-id="phqywEk8TgU5DPJEBUpWTw">spec.md</code> 触发 plan mode，合并的 PR 触发流水线，被突破的控制带写回新的 <code data-page-node-id="Z7oOMvz1rHDyadwQ303nHx">intent.md</code>。</p>
+    </div>
+    <div class="card" data-page-node-id="nrbUt3RoYpXJ9aoME5B1H4">
+      <h5 data-page-node-id="EFtoBt24iE8ktFRb7V8K7b">④ 工件即审计追踪</h5>
+      <p data-page-node-id="pjDiJiloXtaQc6DiBDRaFG">每一阶段以<strong data-page-node-id="2xG8oOARmsNYdPcF7kZt3A">一个提交进版本控制的工件</strong>收口：<code data-page-node-id="X6h5CxVQGlpVeh2Vua9m2o">intent.md</code> → <code data-page-node-id="ONYQpALMkhnajbZpbALxCM">spec.md</code> → <code data-page-node-id="912wgOSFgxMwot2Y8DVUCL">plan.md</code> → diff 及其测试 → 带评审发现的 PR → 事件记录。这条提交链本身就是「谁要求了什么、智能体产出了什么、谁批准了」的审计追踪。</p>
+    </div>
+    <div class="card" data-page-node-id="jXNnWr3jabtCxFu7b2sU9a">
+      <h5 data-page-node-id="HfFW4D5QIFXfzlTKMaXLEK">⑤ 控制分两层</h5>
+      <p data-page-node-id="tcffRYpBQB5fsVZ9XR6w53"><strong data-page-node-id="xzd6q9Wa1uNenzclCbusLX">Skill 是建议性控制</strong>（让违规罕见），<strong data-page-node-id="OZqCEpZCJUypTjDU3Te6Ow">hook 是确定性控制</strong>（让违规几乎不可能）。必须无条件成立的策略，要在 skill 后面再加 hook、权限或沙箱。原文的判据一句话：skill 使违规罕见，hook 使它们几乎不可能。</p>
+    </div>
+    <div class="card" data-page-node-id="fOn7GSOnkGm9GFIejSlfPN">
+      <h5 data-page-node-id="SvW8bra78897YVs1iTBGZE">⑥ 智能体的行动边界</h5>
+      <p data-page-node-id="6gQD6rbwMDNml21mKunpJa">核心治理原则：<strong data-page-node-id="rHGG3aq7mGDSKj0p05qFIY">智能体可以做直到生产关卡的一切，不能做超过它的任何事</strong>。环境分层自治——dev 自由部署、staging 居中、production 必须由发布经理授权且由 hook 强制。</p>
+    </div>
+    <div class="card" data-page-node-id="lQcyFjEV5waZ36emF51GEa">
+      <h5 data-page-node-id="Vw3PSeSrvef1fVzpuZviKt">⑦ 度量必须成对</h5>
+      <p data-page-node-id="GfT2SSnmYf6BHb2HRWyufw">每个阶段都同时给出<strong data-page-node-id="FGnej0DPlvbZGpf7Xg8SnB">前置指标</strong>（leading，快反馈、来自 git/CI 元数据）与<strong data-page-node-id="6bJDwtKsENeXyQzlKrvfds">后置指标</strong>（lagging，结果验证、来自 PR 历史与事件追踪器）。只给前置会优化过程不优化结果，只给后置则反馈太慢。</p>
+    </div>
+    <div class="card" data-page-node-id="ZtnJHljId0ZwCaCNp8eQw5">
+      <h5 data-page-node-id="rHUYyrnqc9Epa9cijNGjIH">⑧ 人的位置</h5>
+      <p data-page-node-id="Bb0tqz5ijWoFx4ve88tYjJ">人类对<strong data-page-node-id="UV4h0b7YvuMvsyg5JUlfUm">每一个需要判断的决定</strong>保持负责。转变的不是「人是否在环内」，而是人的注意力落点：从逐行读代码，移到<strong data-page-node-id="xmN6pfCixPBR2XEgIneSvk">审阅工件、裁决关卡、处理智能体标记出的内容</strong>。</p>
+    </div>
+  </div>
+
+  <div class="callout" data-page-node-id="T4nZIJBEYdmVnUhqWGnHCO">
+    <span class="k" data-page-node-id="zmeAAsqqw3yFivZHGcy4W9">一句话总结</span>
+    <p data-page-node-id="CBlIOUA0cxPhXkiNc01uXh">AI 原生 SDLC = <strong data-page-node-id="TDgdFfDzi92NCpgxMLgvZJ">旧的控制目标 + 新的执行方式</strong>。流程从线性变为循环，AI 嵌入每一个点，人在每一个需要判断的关卡上做裁决。</p>
+  </div>
+</section>
+
+<!-- ============ 01 ============ -->
+<section id="s01" data-page-node-id="O6HGGax4XYLrJcXJNLz0uE">
+  <h2 data-page-node-id="vvpBm4bGOjZRVhw4sAYzKf"><span class="num" data-page-node-id="N1FD3lTgzuvhSYZYpyyLuB">01</span>核心命题：代码不再是瓶颈</h2>
+  <p class="lead" data-page-node-id="Up6vLEWb8JQihGtJXiFy5V">组织已经在用 AI 以一年前无法想象的速度写代码，但<strong data-page-node-id="ed8tItVB8xorXqcABC0SB0">围绕代码的流程没有以同样的速度改变</strong>。许多团队仍然保留着同样的审批关卡、评审、交接和策略——这些正是用来抑制 Claude Code 之类智能体编码方案生产力提升的东西。</p>
+
+  <p data-page-node-id="YiptbrWf3txAWAFyTFwp0D">传统 SDLC 之所以流程繁重，是因为它被设计出来的那个年代，<strong data-page-node-id="HEgpNJzKymGshvtyj5L7SD">编写和实现代码是最耗时、最昂贵的阶段</strong>。PRD、估算仪式、产品安全评审的存在，是为了在可能长达数周、数月甚至数季度的开发工作中强制对齐；而它隐含的另一个假设是——<strong data-page-node-id="kzAxVv1EGhqurx5z6uE3PO">每一步都由人执行</strong>，所以控制手段也是按人设计的。</p>
+
+  <p data-page-node-id="Cdw5TDJAmFjIOxbzr2HffH">当代码不再是瓶颈、Build 阶段运行得比传统 SDLC 允许的更快时，三件事同时成为现实：</p>
+
+  <div class="grid g3" data-page-node-id="bpHZ9OQaI5WQlciOjwBm6M">
+    <div class="card" data-page-node-id="z2P8A8rj7DWvR7T6uI5IFL">
+      <h5 data-page-node-id="lm1BLutQkhjMWGgKCdtU6C">① 瓶颈迁移</h5>
+      <p data-page-node-id="AjGlZYvusydusAaBLqPqan">约束移到 Build 左侧和右侧的步骤——主要是 <strong data-page-node-id="mRX7HbmUcpVW34ZJktI3CR">Plan、Review/Test 和 Deploy</strong>，它们仍然以人类速度运行。</p>
+    </div>
+    <div class="card" data-page-node-id="DQsGrZdelGJ8ifx79hHaud">
+      <h5 data-page-node-id="xb2MHAviRtIlEaHYw4Kx1F">② 控制失配</h5>
+      <p data-page-node-id="H6GzJY9BAKpboRW9KazB3A">当一个人写代码时，逐行人工评审是合理的；一旦<strong data-page-node-id="TBIyAMEYClEBFo3HJ14WD0">智能体写了大部分 diff</strong>，人工评审就赶不上了。</p>
+    </div>
+    <div class="card" data-page-node-id="1uLMg1iYhskL9ARP6DHdug">
+      <h5 data-page-node-id="O1j7LCb8QQutqTezB3eNr0">③ 治理成本上升</h5>
+      <p data-page-node-id="ZJxOH8vgM46ClJHGjIKSiR">例外情况仍然通过每周或每月开会的委员会来路由，<strong data-page-node-id="mf9hGLn6dNC4AiXQkoa2Bz">治理开销随产出增长而非下降</strong>。</p>
+    </div>
+  </div>
+
+  <p data-page-node-id="aaemiVBomGgrxseYqNFdtz">以安全瓶颈为例：安全团队的规模是按人类产出配置的。当智能体把代码产出倍增时，要么<strong data-page-node-id="U7BPVJONnTba0cchmZgElV">审查队列堆积</strong>，要么<strong data-page-node-id="7np5R4KSMClA005owdG1Db">代码在审查不足的情况下发布</strong>。受监管的组织不能接受这两种结果——所以安全和策略检查必须跟得上智能体。</p>
+
+  <div class="fig" data-page-node-id="eE9t8YJMYMgFwzN0EmwWQK">
+    <svg viewBox="0 0 960 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="传统 SDLC 与 AI 原生 SDLC 的阶段时长对比，以及瓶颈迁移" data-page-node-id="xjbhGcKEckaNJlPzR3qeEY">
+      <defs data-page-node-id="B7SI8kL5Ur9OUUqvq2BMeP">
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse" data-page-node-id="uMeQCXVhqkrXsjSMrTCvZf">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B3261E" data-page-node-id="eAqO5cSRLe4KbFVEDCYCdZ"/>
+        </marker>
+      </defs>
+
+      <!-- Row A -->
+      <text x="8" y="28" font-size="13" font-weight="700" fill="#3D434F" data-page-node-id="sHDDWoCbCDFmQFsZFlGNN6">传统 SDLC —— 每个阶段都由人推动</text>
+
+      <rect x="8" y="44" width="140" height="46" fill="#1D4ED8" data-page-node-id="Hp2QqGIjzFs7vyaK98Q7WT"/>
+      <text x="78" y="72" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="k8vbstdFzG8himA2u7ZAn8">Plan</text>
+      <rect x="148" y="44" width="140" height="46" fill="#7C3AED" data-page-node-id="sZcaAeAg9dFFa4h8tYPA8d"/>
+      <text x="218" y="72" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="qAFdU0oEcTrPiCj2gWNkvo">Design</text>
+      <rect x="288" y="44" width="260" height="46" fill="#B45309" data-page-node-id="PWtbjE76jxJWqoVQ1nvjHE"/>
+      <text x="418" y="72" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="keTHTcbCfxMnSNzVdWa9u3">Build</text>
+      <rect x="548" y="44" width="130" height="46" fill="#0F766E" data-page-node-id="0ZEh4HSEzPJRyvvIBwCAl2"/>
+      <text x="613" y="72" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="R4bsG2nk7ugRGyletwcV9Q">Test</text>
+      <rect x="678" y="44" width="140" height="46" fill="#15803D" data-page-node-id="YTLo9glVlaSl21irbbJacm"/>
+      <text x="748" y="72" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="wc5UjAumWar6XkMwSevsz2">Deploy</text>
+      <rect x="818" y="44" width="134" height="46" fill="#475569" data-page-node-id="y1wSqStdidOasLoVXVY1xN"/>
+      <text x="885" y="72" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="OEco2vPaAH410iGqWeOgPn">Maintain</text>
+
+      <path d="M288,96 L288,110 L548,110 L548,96" fill="none" stroke="#475569" stroke-width="1.6" data-page-node-id="BsLb6y74e7pQJfkiRDUrvl"/>
+      <text x="418" y="128" font-size="11.5" fill="#475569" text-anchor="middle" data-page-node-id="IhurlQL8aYhxt7frzPoj7v">旧约束：Build（写代码本身最耗时）</text>
+
+      <line x1="8" y1="156" x2="952" y2="156" stroke="#E4E0D7" stroke-width="1" data-page-node-id="20u0HP7h2tYwu7gG0k2jel"/>
+
+      <!-- Row B -->
+      <text x="8" y="180" font-size="13" font-weight="700" fill="#16181D" data-page-node-id="YOYLKezpF8lnXBpX0GEQ1y">AI 原生 SDLC —— 只有 Build 被压缩到小时级</text>
+
+      <rect x="718" y="192" width="234" height="46" fill="#EDF7EF" stroke="#BFE3C8" stroke-width="1" stroke-dasharray="5 4" data-page-node-id="7VEzbkzDj663g5n09GHFYE"/>
+      <text x="835" y="220" font-size="11" fill="#15803D" text-anchor="middle" data-page-node-id="2qEE93AFAuDrhQjXanW6RX">被压缩掉的时间</text>
+
+      <rect x="8" y="192" width="140" height="46" fill="#1D4ED8" data-page-node-id="9VDWgt4WznCOGd7t3mZFMA"/>
+      <text x="78" y="220" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="whGZSTxNm7qYcMY5NHXyKN">Plan</text>
+      <rect x="148" y="192" width="140" height="46" fill="#7C3AED" data-page-node-id="KMfWiNaDyjo3gAgIeDqgS3"/>
+      <text x="218" y="220" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="i3PA4e5U8BhnsICxURNQXu">Design</text>
+      <rect x="288" y="192" width="50" height="46" fill="#B45309" data-page-node-id="aVq5v9WuxqxxfC7Z4HnZ9W"/>
+      <text x="313" y="220" font-size="10" fill="#FFFFFF" text-anchor="middle" data-page-node-id="hcsKYGmmqyuxVtuCf7OfrD">Build</text>
+      <rect x="338" y="192" width="110" height="46" fill="#0F766E" data-page-node-id="9g5m1gBY243fX6bGmpRaJI"/>
+      <text x="393" y="220" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="Z2aCTcJik0JeSCCfMtKrrI">Test</text>
+      <rect x="448" y="192" width="150" height="46" fill="#15803D" data-page-node-id="BCJTVZf4rRaYt0GK11nVEA"/>
+      <text x="523" y="220" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="yexZERCxLuxj0ZfgJqjtMF">Deploy</text>
+      <rect x="598" y="192" width="120" height="46" fill="#475569" data-page-node-id="k8npsbHXzOnOHfIlPc6vLw"/>
+      <text x="658" y="220" font-size="12" fill="#FFFFFF" text-anchor="middle" data-page-node-id="bYf1uUgId63btA2tQs8WXU">Maintain</text>
+
+      <path d="M8,246 L8,260 L288,260 L288,246" fill="none" stroke="#B3261E" stroke-width="1.8" data-page-node-id="CkFMgAg9RfPGtuMyxlVSX0"/>
+      <text x="148" y="278" font-size="11.5" fill="#B3261E" text-anchor="middle" font-weight="700" data-page-node-id="1ISaTv4MFO437EewQEoEfQ">人类速度：Plan + Design</text>
+
+      <path d="M338,246 L338,260 L598,260 L598,246" fill="none" stroke="#B3261E" stroke-width="1.8" data-page-node-id="AC3vI7BHorkb8vBDxBvRsi"/>
+      <text x="468" y="278" font-size="11.5" fill="#B3261E" text-anchor="middle" font-weight="700" data-page-node-id="IFOFqRnYNRUTo8yFNsPNWL">人类速度：Review / Test + Deploy</text>
+
+      <line x1="952" y1="36" x2="952" y2="322" stroke="#CFC9BC" stroke-width="1" stroke-dasharray="4 4" data-page-node-id="3PugsHtdDOevnk3fqL0NTd"/>
+      <line x1="718" y1="36" x2="718" y2="322" stroke="#CFC9BC" stroke-width="1" stroke-dasharray="4 4" data-page-node-id="I6LDOA6UGkA9IGLq3B7ldM"/>
+      <line x1="718" y1="310" x2="952" y2="310" stroke="#B3261E" stroke-width="1.4" marker-start="url(#ah)" marker-end="url(#ah)" data-page-node-id="7fUa5iUAAuWY215iynPbkT"/>
+      <text x="835" y="304" font-size="11" fill="#B3261E" text-anchor="middle" data-page-node-id="pbF3C8WNcDBq7ah3ScGEUh">总时长缩短</text>
+    </svg>
+    <p class="cap" data-page-node-id="Hp1QePrvqvjxW65zhAL63i"><b data-page-node-id="pUlC2oKkk7jdaHxD7kOo6K">图 1 · 瓶颈迁移。</b>传统 SDLC 六阶段长度相当，Build 是约束；AI 原生 SDLC 中 Build 压缩到小时级，而 Plan、Review/Test、Deploy 这些人类速度阶段长度不变——于是约束从「写代码」迁移到 Build 左右的关卡上，总时长下降但节拍由关卡决定。</p>
+  </div>
+
+  <blockquote data-page-node-id="5tnXUt8H5zjpsqhl2LM8Qq">为了真正拿到智能体 AI 的生产力提升并保护它，传统 SDLC 生命周期需要经历与实现阶段同等程度的转型。</blockquote>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="s02" data-page-node-id="R1rJx9zN1dodLkJJTbtDwy">
+  <h2 data-page-node-id="Vf2DoOz6ra9IooUykYpPms"><span class="num" data-page-node-id="xkjxwJjEnFJFCzIY88LS7C">02</span>什么是 AI 原生 SDLC</h2>
+  <p class="lead" data-page-node-id="iiqcUmuAi7dg9FjJSJujge">AI 原生 SDLC 是一个<strong data-page-node-id="VR8zIE94Ge692MBzOqgo6R">重新构想的流程：保留旧的控制目标，换上新的执行方式</strong>。流程从线性流变成一个循环，AI 嵌入每一个点。</p>
+
+  <p data-page-node-id="qkykBP3mtv55SqqkqpT9nr">这个转变在不同组织里有不同叫法——agentic SDLC、AI SDLC、agentic software development——标签不同，描述的是同一件事。</p>
+
+  <h3 data-page-node-id="o08SNvBuCBmwIKAVx2tztU">关键差异：交接由谁推动</h3>
+
+  <div class="cmp" data-page-node-id="LyVBrKumtp9XhF40wYsUve">
+    <div class="old" data-page-node-id="qitoRLi6MC9sZKjnFFV2gO">
+      <p class="h" data-page-node-id="qQSciksRWWb8GdJri0iMMG">传统 SDLC</p>
+      <p data-page-node-id="fZ5a6qfZ68dT7SDyMAR60z">工作通过<strong data-page-node-id="geT7wFJYOOGTiUsU2gqMCf">文档、工单和签核</strong>在阶段之间移动。产品经理写需求，技术架构师把它转成设计，工程师构建设计，QA 团队验证它，发布团队发布它，运维监控运行中的东西。</p>
+      <p data-page-node-id="mQpYIYzuFcmNydbds48yKL">每次交接都<strong data-page-node-id="5tcLJwOHtK8icfOm0isNM9">手动且笨拙</strong>，所有权在交接时转移——到达工程的内容可能已经离源头者的本意差了好几步。</p>
+    </div>
+    <div class="new" data-page-node-id="DMcLNbBADsWlS34hY7kjSW">
+      <p class="h" data-page-node-id="HtzT3hSUoASvk4o0NINyeB">AI 原生 SDLC</p>
+      <p data-page-node-id="W58Rv9WP4fTcThtwAMWZPx">阶段之间靠<strong data-page-node-id="Xrz7TchphcBebWNMaJoNhZ">工件的自动交接</strong>驱动：被接受的 <code data-page-node-id="vQsBYA4Wxn4tmI365u1wXq">intent.md</code> 触发 Design，被批准的 <code data-page-node-id="DAMeOK0HT6GOn9k0e5pe7t">spec.md</code> 触发 plan mode，合并的 PR 触发流水线，被突破的控制带写出下一个 <code data-page-node-id="IFfIFpEKzsOBGTqYRm2GwK">intent.md</code>。</p>
+      <p data-page-node-id="WPaxHGoz1o4C1A0R4ZRMoF">人类注意力<strong data-page-node-id="VFzUbKkZLZxbGcVwvizztv">集中在关卡上</strong>——审阅智能体标记出的内容，而不是从头启动每个阶段。</p>
+    </div>
+  </div>
+
+  <div class="fig" data-page-node-id="VJri7W0f8dAQQk7Q7nkI5H">
+    <svg viewBox="0 0 960 390" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="传统线性流与 AI 原生闭环的结构对比" data-page-node-id="k8utIsNlfEHAxz73f1NasX">
+      <defs data-page-node-id="fUqPD3UDVSvsS9KrDguz4x">
+        <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="mOZND3TucYDP3bX0E8IiDm">
+          <path d="M0,0 L10,5 L0,10 z" fill="#71767F" data-page-node-id="SK9DlKxh9Oyw462IxnHSJ5"/>
+        </marker>
+        <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse" data-page-node-id="2INZFFhbOE9hc3oJFprcQu">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B45309" data-page-node-id="2RUvGSBkQQgNVAQ1GqzN6i"/>
+        </marker>
+      </defs>
+
+      <!-- LEFT: linear -->
+      <text x="8" y="24" font-size="12.5" font-weight="700" fill="#3D434F" data-page-node-id="d7zBdxTXCyhzhx5f1XX8wz">传统：线性流 · 靠人推动交接</text>
+
+      <rect x="8" y="46" width="138" height="32" rx="6" fill="#F2F0EA" stroke="#CFC9BC" data-page-node-id="rVdSpVwqSEmJlE9TsFl8Dl"/>
+      <text x="77" y="67" font-size="12" fill="#3D434F" text-anchor="middle" data-page-node-id="cEG6NbhuXujC7CA5PQy2VV">Plan</text>
+      <line x1="77" y1="78" x2="77" y2="94" stroke="#71767F" stroke-width="1.4" marker-end="url(#ag)" data-page-node-id="Mg7pM6mW5OLeAYOeksQ3On"/>
+      <rect x="168" y="79" width="286" height="18" rx="9" fill="#FBFAF7" stroke="#E4E0D7" data-page-node-id="6EHTrADs1sPNtfkNMmveVa"/>
+      <text x="178" y="92" font-size="10.5" fill="#71767F" data-page-node-id="X7x6PtQMpRj3pQwmtwjeWK">PRD · 用户故事 · 故事点 · 精炼会</text>
+
+      <rect x="8" y="100" width="138" height="32" rx="6" fill="#F2F0EA" stroke="#CFC9BC" data-page-node-id="xEx4ouMcRiCWEFMsGzou0d"/>
+      <text x="77" y="121" font-size="12" fill="#3D434F" text-anchor="middle" data-page-node-id="cqBssb3JHq2oJdhYDCM9BR">Design</text>
+      <line x1="77" y1="132" x2="77" y2="148" stroke="#71767F" stroke-width="1.4" marker-end="url(#ag)" data-page-node-id="E4HYdj0D22aIqGdv9BO6k1"/>
+      <rect x="168" y="133" width="286" height="18" rx="9" fill="#FBFAF7" stroke="#E4E0D7" data-page-node-id="SMnR5Nc2mTnjrnmaWGDN71"/>
+      <text x="178" y="146" font-size="10.5" fill="#71767F" data-page-node-id="40fKupyLW8O3KVRonySjSD">需求文档 → 设计稿，跨团队解析</text>
+
+      <rect x="8" y="154" width="138" height="32" rx="6" fill="#F2F0EA" stroke="#CFC9BC" data-page-node-id="yOKonbmkJCKYyrVDQlYnEN"/>
+      <text x="77" y="175" font-size="12" fill="#3D434F" text-anchor="middle" data-page-node-id="809FwDqVBd5gKnZqhze8ES">Build</text>
+      <line x1="77" y1="186" x2="77" y2="202" stroke="#71767F" stroke-width="1.4" marker-end="url(#ag)" data-page-node-id="6ciIfG0I8aDf21jMuJQm4w"/>
+      <rect x="168" y="187" width="286" height="18" rx="9" fill="#FBFAF7" stroke="#E4E0D7" data-page-node-id="kZn16KzsaC1l1yH0874XTV"/>
+      <text x="178" y="200" font-size="10.5" fill="#71767F" data-page-node-id="UXCB2PNUchOFhwqxrWwp2n">代码与测试手写，文档事后补</text>
+
+      <rect x="8" y="208" width="138" height="32" rx="6" fill="#F2F0EA" stroke="#CFC9BC" data-page-node-id="zhVIcqdvYiMgUP3MN9tO7O"/>
+      <text x="77" y="229" font-size="12" fill="#3D434F" text-anchor="middle" data-page-node-id="iLcoKf5XlDg7osHDsHWK3G">Test</text>
+      <line x1="77" y1="240" x2="77" y2="256" stroke="#71767F" stroke-width="1.4" marker-end="url(#ag)" data-page-node-id="Fmi5UzICjmhvZKUfZBELEG"/>
+      <rect x="168" y="241" width="286" height="18" rx="9" fill="#FBFAF7" stroke="#E4E0D7" data-page-node-id="tdGkl17zFiWMMPw4tCdzxB"/>
+      <text x="178" y="254" font-size="10.5" fill="#71767F" data-page-node-id="xZTZlGELwp5ZT6FbTP7Rzs">QA 关卡设在阶段边界</text>
+
+      <rect x="8" y="262" width="138" height="32" rx="6" fill="#F2F0EA" stroke="#CFC9BC" data-page-node-id="pfByXemgbVXzMmpokX6iGg"/>
+      <text x="77" y="283" font-size="12" fill="#3D434F" text-anchor="middle" data-page-node-id="1SfagGkJoAXq11iAuE5LDm">Deploy</text>
+      <line x1="77" y1="294" x2="77" y2="310" stroke="#71767F" stroke-width="1.4" marker-end="url(#ag)" data-page-node-id="NM2OU9WDA0EJQS1GIQtltN"/>
+      <rect x="168" y="295" width="286" height="18" rx="9" fill="#FBFAF7" stroke="#E4E0D7" data-page-node-id="vIJA7hVpMJfA1rkPO6u1lu"/>
+      <text x="178" y="308" font-size="10.5" fill="#71767F" data-page-node-id="98uN7130NBwrraQkHFW3KU">人工逐行评审 · 发布 runbook</text>
+
+      <rect x="8" y="316" width="138" height="32" rx="6" fill="#F2F0EA" stroke="#CFC9BC" data-page-node-id="CCC4TMFqS3YNjybhdE2G5R"/>
+      <text x="77" y="337" font-size="12" fill="#3D434F" text-anchor="middle" data-page-node-id="rUpsSTeRAynGhzkRbOzGBV">Maintain</text>
+
+      <text x="8" y="372" font-size="11" fill="#71767F" data-page-node-id="3U4cnuRK2KnYkQQvsgzwud">所有工单与事件都等人来启动 →</text>
+
+      <line x1="478" y1="20" x2="478" y2="376" stroke="#E4E0D7" stroke-width="1" data-page-node-id="Sg1AN6anPYwyMOyh9SsRXK"/>
+
+      <!-- RIGHT: ring -->
+      <text x="505" y="24" font-size="12.5" font-weight="700" fill="#B45309" data-page-node-id="o09HXwTHts0rpoetSnlfuN">AI 原生：闭环 · 工件触发下一阶段</text>
+
+      <circle cx="725" cy="210" r="120" fill="none" stroke="#E4E0D7" stroke-width="1.5" data-page-node-id="ILUnTMMtBGfVCyM8g3Gxrh"/>
+
+      <!-- closing arc highlighted -->
+      <path d="M 621.1,150 A 120,120 0 0 1 725,90" fill="none" stroke="#B45309" stroke-width="2.6" marker-end="url(#aa)" data-page-node-id="u268BCG8yqg8J90sSd8WFK"/>
+
+      <line x1="802" y1="76.6" x2="794" y2="80" stroke="#B45309" stroke-width="1" data-page-node-id="faJp7G4iFhO45H62S3XylG"/>
+      <text x="802" y="80" font-size="11" fill="#B45309" text-anchor="start" data-page-node-id="OUWR7dOaV1PZGBPjYv5HAu">⟲ 新的 intent.md</text>
+      <line x1="879" y1="214" x2="872" y2="211" stroke="#71767F" stroke-width="1" data-page-node-id="IEWAkEfJao60yy2n5lEDBy"/>
+      <text x="879" y="214" font-size="11" fill="#3D434F" text-anchor="start" data-page-node-id="vmwZ6QUhTlcTZwGrBWFlNb">intent.md</text>
+      <line x1="802" y1="347" x2="796" y2="344" stroke="#71767F" stroke-width="1" data-page-node-id="3Qdu7Ha9Bne0dwTxwtAQDp"/>
+      <text x="802" y="347" font-size="11" fill="#3D434F" text-anchor="start" data-page-node-id="gYDCHv1IP00K00hdxgBChR">spec.md</text>
+      <text x="648" y="347" font-size="11" fill="#3D434F" text-anchor="end" data-page-node-id="6MCqSZeAlMtCP2AmGgLHI4">plan.md · diff</text>
+      <text x="571" y="214" font-size="11" fill="#3D434F" text-anchor="end" data-page-node-id="Vj2tVlQMnwZbkEoMBKY4AO">合并的 PR</text>
+      <text x="648" y="80" font-size="11" fill="#3D434F" text-anchor="end" data-page-node-id="AxxK4sSO0P1qZ8ENF6psAy">测试证据 · evals</text>
+
+      <rect x="666" y="72" width="118" height="36" rx="8" fill="#1D4ED8" data-page-node-id="6UEzBZ4fCFadVsaewkan2X"/>
+      <text x="725" y="95" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="5AT53FmR0YD597iAAFywGd">Plan 规划</text>
+      <rect x="769.9" y="132" width="118" height="36" rx="8" fill="#7C3AED" data-page-node-id="m2Wsu9qvrmNwvD6DKr8Bn7"/>
+      <text x="828.9" y="155" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="CraZJB0WXh9J8BwXEdAN5l">Design 设计</text>
+      <rect x="769.9" y="252" width="118" height="36" rx="8" fill="#B45309" data-page-node-id="lIvxhkooF4vvh5pJX9FJ3b"/>
+      <text x="828.9" y="275" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="Fjdq3I9XW1e92VBJ9U9auV">Build 构建</text>
+      <rect x="666" y="312" width="118" height="36" rx="8" fill="#0F766E" data-page-node-id="CEmBqGInR2aTAy0n7Psues"/>
+      <text x="725" y="335" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="EZHXtwMeaD9yMYClXCHLB4">Test 测试</text>
+      <rect x="562.1" y="252" width="118" height="36" rx="8" fill="#15803D" data-page-node-id="69zgPC2nx5AlY6m8mOuOOS"/>
+      <text x="621.1" y="275" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="MCDATa9eHTncDa9k7z5Ap3">Deploy 部署</text>
+      <rect x="562.1" y="132" width="118" height="36" rx="8" fill="#475569" data-page-node-id="7xZY3mJSCGRkaoZZHeipcb"/>
+      <text x="621.1" y="155" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="TtMlsAlBs9g49xAdY1c24u">Maintain 维护</text>
+
+      <text x="725" y="204" font-size="11" fill="#B45309" text-anchor="middle" font-weight="700" data-page-node-id="JE19oF73gzNenpLtYczl2t">工件即触发</text>
+      <text x="725" y="222" font-size="10.5" fill="#71767F" text-anchor="middle" data-page-node-id="2DmxCXvMDr2HX6BYsrQT9u">提交链 = 审计追踪</text>
+    </svg>
+    <p class="cap" data-page-node-id="Zg7ItW7NANxwvoIhkUlzpu"><b data-page-node-id="wKq4COhWurQSmGse2sTSj1">图 2 · 线性 → 闭环。</b>左侧每个阶段之间都需要一次人为发起的交接；右侧每个箭头都是一次<strong data-page-node-id="y5VKvpXAo4LHOFVdNJWJnm">工件提交</strong>——<code data-page-node-id="o9mCDQFj33iJxBKEjHHlAg">intent.md</code> → <code data-page-node-id="jRh9c2o3Ht9lhc6k2UC548">spec.md</code> → <code data-page-node-id="sPV4eVjcQROa588uelnUbG">plan.md</code> + diff → 测试证据 → 合并的 PR。橙色的闭环边（Maintain → Plan）是整套机制的收口：被突破的控制带写回新的 <code data-page-node-id="C1N0jrMlwOf5pagDEl9rv8">intent.md</code>，循环自我续跑。</p>
+  </div>
+
+  <h3 data-page-node-id="1AEUXU1a1QQCtfCHhK34yc">六个阶段的两端对照</h3>
+  <p data-page-node-id="wpcPmwp1MLJcbbl6PlaOJD">下表列出传统 SDLC 与 AI 原生 SDLC 的两个极端。大多数组织位于两列之间的某个位置。</p>
+
+  <div class="tw" data-page-node-id="8MzBvEOky3lDQ524v7TI9M">
+    <table data-page-node-id="IUDo0BhJg6M2hWMtqOckmE">
+      <thead data-page-node-id="DkhUo9hFGHbsS7V2GBu900">
+        <tr data-page-node-id="A29F6mPvrLO6J6hxxyBqfj"><th data-page-node-id="uWErrnDRLaMvId0WCBeBLI">阶段</th><th data-page-node-id="OINMWlJ6yFgzE6by8QvJHF">传统 SDLC</th><th data-page-node-id="p7iF6MOnBQrx5YCsOzz61C">AI 原生 SDLC</th></tr>
+      </thead>
+      <tbody data-page-node-id="603kroW3z6jP2HFQsnNQZM">
+        <tr data-page-node-id="ZDyS1XCXHRuWbCACmlhwTc">
+          <td data-page-node-id="M81M33N71bMAITxHBq5e4v"><strong data-page-node-id="CB8errYqI948JtmnsFqAcD">Plan</strong></td>
+          <td data-page-node-id="L8KL9lNeCt4XBoOYuHUDFF">需求由委员会收集，通过研讨会和签核提炼，手工编写</td>
+          <td data-page-node-id="tbNdWKeEDB4eJ3DUmKbPg2">Claude 直接从源头综合痛点，捕获在 <code data-page-node-id="2v8s8faQtGM9FEkeGeJWzX">intent.md</code> 中——人类可读且机器可操作</td>
+        </tr>
+        <tr data-page-node-id="ELPgjpbGC8ZVgckPHKncEy">
+          <td data-page-node-id="ZKbB9UYjcEOzhRDtsr6X4T"><strong data-page-node-id="uctGPo8PK8cA4OBxxaqcQM">Design</strong></td>
+          <td data-page-node-id="NYC7ShQ8IlC6nJJTqDYckP">规格由分析师编写，再由设计师解析</td>
+          <td data-page-node-id="kcoOTAzQZ8p1pePaLgJycv">需求与设计压缩到与智能体的<strong data-page-node-id="y0OtIif03O4beFmCkDcrS7">一次工作会话</strong>中，由编码为 skills 的标准指导，在 git 中版本化</td>
+        </tr>
+        <tr data-page-node-id="0sXTdt3m9VWpahHBXa48Qd">
+          <td data-page-node-id="b89e8LruvG48F63GVp6H5p"><strong data-page-node-id="uBDgDhaPkTMCADV3DPieF7">Build</strong></td>
+          <td data-page-node-id="hjpcLqwhX3CKt7el3MDBFM">测试和代码手写，文档在主要开发之后编写</td>
+          <td data-page-node-id="fdnTVVoz0DyquyTfWiQxs6">测试和代码由 AI 生成，机构知识作为版本化的机器可读 <code data-page-node-id="JrbiIPBSIGJ7xhjKGpYjMP">CLAUDE.md</code> 与 skills 维护</td>
+        </tr>
+        <tr data-page-node-id="J1CZWnivHsGZVuuASTozBG">
+          <td data-page-node-id="dfpmZlvDutigwbEbEoHGDo"><strong data-page-node-id="mK4spT1gHW57UJJbEcAGYA">Test</strong></td>
+          <td data-page-node-id="HY0xnr3uLz6OAn6F275oA3">QA 关卡位于阶段边界</td>
+          <td data-page-node-id="F4cvnOPBJgMFnR7LuAdIy2"><strong data-page-node-id="cpz7aq0q4ju8lCZ9U9mhEV">持续评估贯穿实现</strong>——每个会话在人类看到之前自检</td>
+        </tr>
+        <tr data-page-node-id="jlSpxPou1ocE2CNfCmVkC3">
+          <td data-page-node-id="qZlvXCVH8C5A0aH0GDtdur"><strong data-page-node-id="mdLyVXwGZJSO1ZqevWGUa0">Deploy</strong></td>
+          <td data-page-node-id="xnpy98RG14RoElXy4hV38z">人类审查每一行代码，治理在评审周期中发生，通常不一致</td>
+          <td data-page-node-id="DYhHDkpQzKHbBtd1gbYtZA"><strong data-page-node-id="AJjfQIwpRCdvycxCD7P3HA">多层智能体评审</strong>，人类评审保留给受监管与关键代码；治理在 AI 行动时强制执行，hooks 作为审批关卡</td>
+        </tr>
+        <tr data-page-node-id="8JEsqaE7wAAriocWJWmlld">
+          <td data-page-node-id="VkEL83mf8cy5aNIDy0csrA"><strong data-page-node-id="zTQr3E6pDw0wPi6edbiGiM">Maintain</strong></td>
+          <td data-page-node-id="FdNZnOwEeApWracXVZFact">人类监视生产中的 bug</td>
+          <td data-page-node-id="BDzny18to7RGuXdsBRDaQO">智能体监控实时部署，任何被突破的控制带被诊断并作为新的 <code data-page-node-id="k1tRPbkUUvRTGjW9kJsK72">intent.md</code> <strong data-page-node-id="6KHfXEgnO8DV0DeQFUbHnb">写回循环</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" data-page-node-id="Y8vH5wgTJb42tIHF2DcoQr">
+    <span class="k" data-page-node-id="l28wArR7ZVFxynO4FrVtGT">贯穿右列的线索</span>
+    <p data-page-node-id="1h3w3l5zIdNxUNq0wPbiAi">是<strong data-page-node-id="GQEKtdc66n0lggVYVl41BJ">承诺的工件（committed artifact）</strong>。每个阶段以「写入版本控制的一个工件」结束，下一个阶段通过读取它开始。在早期阶段，<code data-page-node-id="C9jOZ2LgCBLGmCgKGbMwxP">.md</code> 文件是主要工件，因为产品负责人和智能体可以读、可以操作同一个文件；从 Build 开始，工件是代码及其记录。提交链同时也是审计追踪：<strong data-page-node-id="aSorHrYK8FGZfRrhnnG13U">谁要求了什么、智能体产出了什么、谁批准了它</strong>。</p>
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="s03" data-page-node-id="544cYkn8NOwEGMBMcUeEqs">
+  <h2 data-page-node-id="tR9ZISSvTn0F7p7CqCDUTa"><span class="num" data-page-node-id="V0BCaFsshQ3HAZEjT6SciK">03</span>生命周期总览：六阶段闭环</h2>
+  <p class="lead" data-page-node-id="uCN0mwV8WyeEIwzveCNLzR">Plays 是 playbook 的核心，分为六个<strong data-page-node-id="0Fnso4nabRuSvuHBAysgcl">非线性</strong>阶段。它们一起覆盖完整生命周期，但<strong data-page-node-id="6HW5D5uqqLRq2FiuX9H8B6">采纳顺序 ≠ 阶段顺序</strong>——你可以从任何一个没有前置依赖的阶段开始。</p>
+
+  <p data-page-node-id="gbzSmb18LLAAEHWw4kBFlZ">每个 play 都覆盖同样的五件事：<strong data-page-node-id="EHCF95eHqrRI3uTROIzumc">什么改变</strong>、<strong data-page-node-id="LEyEPIZUg2Evt4KGqINE6A">如何开始</strong>、<strong data-page-node-id="BfxGZeR3uHfCWEIx4LioTE">具体实现步骤</strong>、<strong data-page-node-id="dJgYPOEWhyyn98N3WSCtUg">治理考虑</strong>、以及<strong data-page-node-id="WSUVbdcctrHElImiynsQ9n">如何衡量它是否有效</strong>。步骤是模块化的，组织可以按自身需求在不同时间优先转型不同阶段。</p>
+
+  <div class="fig" data-page-node-id="lc48wT0PRLd47Y5YLirhL8">
+    <svg viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI 原生 SDLC 六阶段闭环总览，以及阶段之间交接的工件" data-page-node-id="G4JrOQmFnS16LyZR5Xp9B9">
+      <defs data-page-node-id="TtT1F3Uu9F4fX6thP28AjV">
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse" data-page-node-id="K5rzMAL0l4wsPkTzH0fa93">
+          <path d="M0,0 L10,5 L0,10 z" fill="#CFC9BC" data-page-node-id="K0LdX4zUFL9b7t5JXhXBOQ"/>
+        </marker>
+        <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse" data-page-node-id="Q2DWEIlQ7Uz7C3BI5IRqpN">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B45309" data-page-node-id="kKCd6HoDU3hitnAyMD6G8Y"/>
+        </marker>
+      </defs>
+
+      <!-- ring -->
+      <path d="M537.2,144 A185,185 0 0 1 603.8,182.5" fill="none" stroke="#CFC9BC" stroke-width="1.8" marker-end="url(#ar)" data-page-node-id="HKpnjRFiCPL8a2lhTvEOl9"/>
+      <path d="M661,281.5 A185,185 0 0 1 661,358.5" fill="none" stroke="#CFC9BC" stroke-width="1.8" marker-end="url(#ar)" data-page-node-id="nF5RoA9eo56C7TzF0bXdLo"/>
+      <path d="M603.8,457.5 A185,185 0 0 1 537.2,496" fill="none" stroke="#CFC9BC" stroke-width="1.8" marker-end="url(#ar)" data-page-node-id="m7ugUO4B6sTzDJp6D5yXU1"/>
+      <path d="M422.8,496 A185,185 0 0 1 356.2,457.5" fill="none" stroke="#CFC9BC" stroke-width="1.8" marker-end="url(#ar)" data-page-node-id="ecpuMpJIjsxWd5fLJaMDGd"/>
+      <path d="M299,358.5 A185,185 0 0 1 299,281.5" fill="none" stroke="#CFC9BC" stroke-width="1.8" marker-end="url(#ar)" data-page-node-id="B5539qLIrXkMfkXsRjanVr"/>
+      <path d="M356.2,182.5 A185,185 0 0 1 422.8,144" fill="none" stroke="#B45309" stroke-width="2.8" marker-end="url(#arA)" data-page-node-id="njirvPp0sKXB6yNAftwDHZ"/>
+
+      <!-- leader lines to artifact pills -->
+      <line x1="572.5" y1="158" x2="601.5" y2="123" stroke="#CFC9BC" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="oDuw0uPuzFhIk7ELfjQDnc"/>
+      <line x1="665" y1="320" x2="723" y2="320" stroke="#CFC9BC" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="1wlNiaaxqtUxY1tVar2AIK"/>
+      <line x1="572.5" y1="482" x2="601.5" y2="517" stroke="#CFC9BC" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="2T3tWwwpaVz9EF1x9KCzGh"/>
+      <line x1="387.5" y1="482" x2="358.5" y2="517" stroke="#CFC9BC" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="YZGKWC0uRhjr6KiyhwDFMH"/>
+      <line x1="295" y1="320" x2="237" y2="320" stroke="#CFC9BC" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="sjSIekeiSYVnBUoOiDXQ1s"/>
+      <line x1="387.5" y1="158" x2="358.5" y2="123" stroke="#B45309" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="yHeG8T5Ih5Z2tF0bSnQhU4"/>
+
+      <!-- artifact pills -->
+      <rect x="539.5" y="97.6" width="124" height="26" rx="13" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="IKrUHsd7b5zCKoh0jeTMwW"/>
+      <text x="601.5" y="114.6" font-size="11" fill="#3D434F" text-anchor="middle" data-page-node-id="CRr47xFiGjtJCNZ1nK1maS">intent.md</text>
+
+      <rect x="661" y="307" width="124" height="26" rx="13" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="z36mADpvjgzRXhPFmTxDXA"/>
+      <text x="723" y="324" font-size="11" fill="#3D434F" text-anchor="middle" data-page-node-id="ApDRMwFruXruCSg4kt7ave">spec.md</text>
+
+      <rect x="539.5" y="517.4" width="124" height="26" rx="13" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="BPfP9HjISHrrYLcZrZz9Pp"/>
+      <text x="601.5" y="534.4" font-size="11" fill="#3D434F" text-anchor="middle" data-page-node-id="iXbYGZazbsn59g91okV7r0">plan.md + diff</text>
+
+      <rect x="296.5" y="517.4" width="124" height="26" rx="13" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="t8fT7NiBi0gGOPUZbf3kB4"/>
+      <text x="358.5" y="534.4" font-size="11" fill="#3D434F" text-anchor="middle" data-page-node-id="EKRt5nuOXfmokanPmR5NS2">测试证据 + evals</text>
+
+      <rect x="175" y="307" width="124" height="26" rx="13" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="t3ShXIxXuV0EsJ6bHrAAvi"/>
+      <text x="237" y="324" font-size="11" fill="#3D434F" text-anchor="middle" data-page-node-id="LuQWtu278xb3Gdw8OSwIYe">合并的 PR</text>
+
+      <rect x="296.5" y="97.6" width="124" height="26" rx="13" fill="#FDF4E8" stroke="#E9C08A" data-page-node-id="3k54QV33P3JEdfBIFC1S8S"/>
+      <text x="358.5" y="114.6" font-size="11" fill="#B45309" text-anchor="middle" font-weight="700" data-page-node-id="FXAhfV1yJphqPz89du0YVr">⟲ 新的 intent.md</text>
+
+      <!-- center -->
+      <rect x="364" y="278" width="232" height="84" rx="12" fill="#FBFAF7" stroke="#E4E0D7" data-page-node-id="ApttiS5yfFzIEOPsjBSunj"/>
+      <text x="480" y="306" font-size="15" font-weight="800" fill="#16181D" text-anchor="middle" data-page-node-id="hq0CrYj5hk9IZkUfGoQuAF">人类判断</text>
+      <text x="480" y="328" font-size="11" fill="#71767F" text-anchor="middle" data-page-node-id="e9T3zt6TJOPAy5aNEy1Mye">留在每一个需要判断的关卡上</text>
+      <text x="480" y="348" font-size="10.5" font-weight="700" fill="#B45309" text-anchor="middle" data-page-node-id="VcPJdS67FRFG4090PkT9r4">裁决 · 审批 · 定责</text>
+
+      <!-- stage nodes -->
+      <circle cx="480" cy="135" r="48" fill="#1D4ED8" data-page-node-id="QBf1YokBSFJsgLzcoiOzyq"/>
+      <text x="480" y="121" font-size="10" fill="#BFD0FB" text-anchor="middle" font-weight="700" data-page-node-id="meQ0AY1cubcvghZ77obCKA">01</text>
+      <text x="480" y="137" font-size="11" fill="#DCE7FD" text-anchor="middle" data-page-node-id="0kd5WXRtBAyP0dHCLTpj7B">Plan</text>
+      <text x="480" y="155" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700" data-page-node-id="88mjrEmwCbBVAhwo4UXsL5">规划</text>
+
+      <circle cx="640.2" cy="227.5" r="48" fill="#7C3AED" data-page-node-id="shHAQclcoHGctAO2KUgbrR"/>
+      <text x="640.2" y="213.5" font-size="10" fill="#DDD0FB" text-anchor="middle" font-weight="700" data-page-node-id="kbLAFHd2IQycIhqKUKoZdH">02</text>
+      <text x="640.2" y="229.5" font-size="11" fill="#E7DEFD" text-anchor="middle" data-page-node-id="2keYodvRCUzn4sLYXFTSIL">Design</text>
+      <text x="640.2" y="247.5" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700" data-page-node-id="GgbF2BZ4MdjXIZ6NKqGaCC">设计</text>
+
+      <circle cx="640.2" cy="412.5" r="48" fill="#B45309" data-page-node-id="GHpQaBJwVmeOo092X7jLrB"/>
+      <text x="640.2" y="398.5" font-size="10" fill="#F3D2AC" text-anchor="middle" font-weight="700" data-page-node-id="WMJ4azvZUactck1F0uvqa2">03</text>
+      <text x="640.2" y="414.5" font-size="11" fill="#FBEAD6" text-anchor="middle" data-page-node-id="6oFOW98g76p6HSpP6x3UeL">Build</text>
+      <text x="640.2" y="432.5" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700" data-page-node-id="5d23Fv6sXGB7bGWFa8ssLH">构建</text>
+
+      <circle cx="480" cy="505" r="48" fill="#0F766E" data-page-node-id="PxKk4X4C5SJCxeWymfJFsq"/>
+      <text x="480" y="491" font-size="10" fill="#A9DDD7" text-anchor="middle" font-weight="700" data-page-node-id="SQoAeTZ0upr4xBzrHS81qV">04</text>
+      <text x="480" y="507" font-size="11" fill="#D5EFEC" text-anchor="middle" data-page-node-id="P4nDTzt3Clvp7IDilBOuCc">Test</text>
+      <text x="480" y="525" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700" data-page-node-id="G4baRPCCGogYmVMzQBHCU4">测试</text>
+
+      <circle cx="319.8" cy="412.5" r="48" fill="#15803D" data-page-node-id="FmDOMdM9EvMCBhLVmlRMAn"/>
+      <text x="319.8" y="398.5" font-size="10" fill="#B5E0C1" text-anchor="middle" font-weight="700" data-page-node-id="IEDBUwq7sYgcUGKbaglwaD">05</text>
+      <text x="319.8" y="414.5" font-size="11" fill="#DAF0E1" text-anchor="middle" data-page-node-id="wmt7MNv8FjlqP3sGquR6js">Deploy</text>
+      <text x="319.8" y="432.5" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700" data-page-node-id="sSpEiZDjEPPk3jdmnwW2l8">部署</text>
+
+      <circle cx="319.8" cy="227.5" r="48" fill="#475569" data-page-node-id="BGmsBW5YMIkyGEboPDDF6N"/>
+      <text x="319.8" y="213.5" font-size="10" fill="#C3CBD8" text-anchor="middle" font-weight="700" data-page-node-id="NFdkHkZRyfl6ScxU8DiwD6">06</text>
+      <text x="319.8" y="229.5" font-size="11" fill="#DDE2E9" text-anchor="middle" data-page-node-id="lVsoZQIuXsk2LrHzi5T2Da">Maintain</text>
+      <text x="319.8" y="247.5" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700" data-page-node-id="LPuwHMIprpVVp7iAjOWUXB">维护</text>
+
+      <!-- legend -->
+      <line x1="316" y1="580" x2="346" y2="580" stroke="#B45309" stroke-width="2.8" data-page-node-id="Jrg9UqGBAE4HLX6lBw1H7k"/>
+      <text x="354" y="584" font-size="11" fill="#3D434F" data-page-node-id="ZEHUzY32yviIRVEP7iH1fA">闭环边：自动续跑，无需人启动</text>
+      <line x1="560" y1="580" x2="590" y2="580" stroke="#CFC9BC" stroke-width="1.8" data-page-node-id="Tbl5gkVVCJGjYmMBH0aWiK"/>
+      <text x="598" y="584" font-size="11" fill="#3D434F" data-page-node-id="eoNHnAoAnr889hUyO9R2sR">工件交接边</text>
+    </svg>
+    <p class="cap" data-page-node-id="5cA7v9Txw5FeojTfrFocGw"><b data-page-node-id="iom99wf6V0cqvEygM3EDNL">图 3 · 生命周期总图。</b>六个阶段首尾相接成环，环上的每一段标注了<strong data-page-node-id="2KxwrA5p8Ofwtv3WZEiDbN">该次交接所提交的工件</strong>。前三段（<code data-page-node-id="ljYYEKZMB4Tlc8i4dnFKBM">intent.md</code>、<code data-page-node-id="2KzE9ZRakIrb7GDM9xBClB">spec.md</code>、<code data-page-node-id="H8BimrGsoFIGEUJB1TNN97">plan.md</code>）是 markdown，因为产品负责人与智能体需要读、写<strong data-page-node-id="QCnekDD3UGJRjC6RudO0sO">同一个文件</strong>；从 Build 起，工件变成代码及其证据记录。橙色边是闭环：<strong data-page-node-id="RjZK4HVaGWVCZWHvGs5DR0">Maintain 检测到的控制带突破写回一个新的 <code data-page-node-id="3snz62qJmnNuDrR9HKVlWm">intent.md</code></strong>，流水线无需人启动即可重启。</p>
+  </div>
+
+  <h3 data-page-node-id="vMhBrcx1VQtX9R5aj2apAd">六阶段速查</h3>
+  <div class="tw" data-page-node-id="Zk316Pbms4XK1I2m2Pg6V1">
+    <table data-page-node-id="kix65Y1nkIu4G1cc8d7sl4">
+      <thead data-page-node-id="GXYDHQNGa55isgTuwnfszY">
+        <tr data-page-node-id="odfkidniA1SHFCkMBT9pgG"><th data-page-node-id="sqv6JX8GFGaeP4xLUHb8Dv">#</th><th data-page-node-id="v2j9goUcbMYRwTBC3r2mVV">阶段</th><th data-page-node-id="6me9q8rolvZEfbWOrb3doV">收口工件</th><th data-page-node-id="NmmZL7BZvUFbaWUZ3onj7n">核心机制</th><th data-page-node-id="WOvcDK6EySJVAF9DTX1T8z">触发下一阶段的条件</th></tr>
+      </thead>
+      <tbody data-page-node-id="eZ3saKJEWNFTGqnlYAIMmT">
+        <tr data-page-node-id="MEQF8Rlka5HQRQ6VLRR8Y6">
+          <td data-page-node-id="eTyaA6b1IWOkPcm2fsZ8fT"><strong data-page-node-id="AvzNhocG6xGXvlwm0OL6uj">01</strong></td><td data-page-node-id="9xBzYpsZo1LcWpuBjSWgQk">Plan 规划</td>
+          <td data-page-node-id="IlLUTwI0fkBB7k5Mg4Pgc1"><code data-page-node-id="3ZdAcAArgN2sAoh3sGrjy5">intent.md</code></td>
+          <td data-page-node-id="CqGYOUF5Z5vNQBkmS6Ujou">源头者与 Claude 头脑风暴，用自己术语写下原型规格</td>
+          <td data-page-node-id="6Fnvh5ESKEXGu7C3lTsKAw">产品负责人<strong data-page-node-id="wBz4LwUJPPqCssH3wEEZhb">接受</strong>该 intent（记录为合并的评审）</td>
+        </tr>
+        <tr data-page-node-id="zexORf9OkxHKoYT7wa1d4u">
+          <td data-page-node-id="JTIjI4GEcpU6m1EvOCTFwa"><strong data-page-node-id="MZofwIGLw26jZ1EuqLbMHE">02</strong></td><td data-page-node-id="4Bl3HDb0WBuGSllzYS3IEc">Design 设计</td>
+          <td data-page-node-id="KPHdBWhHyLJNOjGE86inVt"><code data-page-node-id="lzlvHrlMBVSA9m28Q1tlzc">spec.md</code></td>
+          <td data-page-node-id="AjYQbL4al56M7dh00X0sgG">需求与设计压缩到一次会话，由组织的 skills 约束</td>
+          <td data-page-node-id="x73DTXz1BGUcPD94oSMGqK">产品负责人<strong data-page-node-id="TBxJj7DSq2njSbYgVEbJ63">批准</strong> spec，启动 plan mode</td>
+        </tr>
+        <tr data-page-node-id="RWUmcEHxhfWrXlRQFRtXRo">
+          <td data-page-node-id="opT9mX1XB83p5vo0DCL0tI"><strong data-page-node-id="ooW9DGvnsNVpj1OEke6XZS">03</strong></td><td data-page-node-id="Yh7h7k8HKOgSqb25WGB8Lf">Build 构建</td>
+          <td data-page-node-id="QfLKS9lEgKAHY2KGlowGcu"><code data-page-node-id="som4PHvDCUMO664BODl24z">plan.md</code> + diff</td>
+          <td data-page-node-id="K83oApDbodA06VcZicsQVt">plan mode 先出书面计划；<code data-page-node-id="IvgqV3coBwoxDHHwFS1UTy">CLAUDE.md</code>、skills、hooks 三层配置</td>
+          <td data-page-node-id="FrinbeqT8lgfteQQLoCIeJ">计划被接受 → 实施 → <strong data-page-node-id="HEVRLsfCEGi0CbmClQm9yg">PR 提交</strong></td>
+        </tr>
+        <tr data-page-node-id="3XyVagciTbYn7OUCPw0AAe">
+          <td data-page-node-id="9dETDY5eY4PVTJa9xJtJKA"><strong data-page-node-id="C4MN7mfIbcEHo938aRrKaA">04</strong></td><td data-page-node-id="BbxXMGbWvwm1odRP7se1rr">Test 测试</td>
+          <td data-page-node-id="iBgPmeh5Oz0cc2u1Dwk92w">测试证据 + evals</td>
+          <td data-page-node-id="tlC7NtEJrwV76CzGU7jYU7">自检反馈回路；evals 在 CI 中对智能体配置做回归测试</td>
+          <td data-page-node-id="Bgy1zYFcPEF2tFSRDqd68k"><strong data-page-node-id="tamNB1pOiE9xyPvF1kNDAA">CI 全绿</strong>且证据粘贴进 PR</td>
+        </tr>
+        <tr data-page-node-id="AACmCceGnY27GwcIZ0E2Hg">
+          <td data-page-node-id="Y4h4FAd4to8QxPsZhgQYxV"><strong data-page-node-id="XpHfHUtc6ySuYOb86DMZXj">05</strong></td><td data-page-node-id="Aw0Ec8IQHUY3FmY93QBDxX">Deploy 部署</td>
+          <td data-page-node-id="8RTPq3ZJNnstB3aWekKQU3">带评审发现的 PR</td>
+          <td data-page-node-id="zEVPZ0QvFHH7pAMHvsGFoV">三层智能体评审；hooks 作为审批关卡；按环境分层自治</td>
+          <td data-page-node-id="x6YMeDH7vTW0N182GdC8T6">代码所有者<strong data-page-node-id="sNUuHHZbyboz2yWkYIKB8D">批准</strong>（分支保护）→ 合并</td>
+        </tr>
+        <tr data-page-node-id="6fRmY31tse1XgzM0Y9m18h">
+          <td data-page-node-id="BQ47B9lJgekmR7s87ahFqs"><strong data-page-node-id="MEJZEeJtZdyLmn45Pqf5P0">06</strong></td><td data-page-node-id="6RwaD2ifpjAANPYv39fh0s">Maintain 维护</td>
+          <td data-page-node-id="EhLTIf4dzGBiAtJ0MtFI9O">事件记录 → 新的 <code data-page-node-id="Wzovn0X9IVXnJ8T49ZQI2q">intent.md</code></td>
+          <td data-page-node-id="IXFOCK5B8asuQFRkryx7tD">确定性检测脚本（σ 分层）→ 无头调用 Claude 诊断</td>
+          <td data-page-node-id="PpKApzW5ITHiEu7Unt4LoV">诊断写成 <code data-page-node-id="exEtxY4AUimz9AVoTMiloR">intent.md</code>，<strong data-page-node-id="ZXjjzhlyBLXGy8DQCvEYRu">回到 01</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" data-page-node-id="riWXqOH0do8TE06DlCFh6n">
+    <span class="k" data-page-node-id="bk3BgAy9XdNxT5SJlHrMnj">为什么是闭环而不是流水线</span>
+    <p data-page-node-id="SzIg4THLaTacidPbH4RmvE">因为<strong data-page-node-id="ggmoqmgQxBAHXfJEqjVZqB">「一个阶段以提交一个工件结束，该提交启动下一个阶段」</strong>。一旦这条链成立，人类注意力的落点就变了：不再是「从头启动每个阶段」，而是<strong data-page-node-id="D173Jgt0MootAnfjWb5i3Y">审阅智能体标记出的内容、在关卡上做裁决</strong>。第一步你手动提示每一步；最终状态是每个被接受的工件自动触发下一个关卡。</p>
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="s04" data-page-node-id="5kHCetYWc6EZfz3IT8sDmw">
+  <div class="stage-head" data-page-node-id="De24hyCRIhuStlzZB1gcJD">
+    <div class="stage-badge" data-page-node-id="xjy7WldZqfNg8Q8vXBQDL4">01</div>
+    <div class="t" data-page-node-id="pMnu3orEU0DE3NE3s97q1J">
+      <div class="en" data-page-node-id="ZcGwTBqO9rUqe5j3zFsYw2">Stage 1 · Plan</div>
+      <h2 data-page-node-id="RYaQMLBVCa6mFHlbXuo77E">规划：把意图一次捕获成版本化工件</h2>
+    </div>
+  </div>
+
+  <div class="callout" data-page-node-id="7RhQ08xEAu7b0oHmSAw94k">
+    <span class="k" data-page-node-id="SgmbqsuxHVbuqgUJMXrp4k">核心理念</span>
+    <p data-page-node-id="9rs8FfPVAtGVUvNmfHC8Y1">想法不再等待有人把它们写下来。<strong data-page-node-id="oQr3T5Y4VFN5ebsHQLRdpa">意图在来源者自己的话语中一次捕获，作为一个版本控制工件</strong>，下一个阶段可以直接对其操作。</p>
+  </div>
+
+  <h3 data-page-node-id="nmBvyU4fcOliPXL6XLrBHt">节点结构</h3>
+  <p data-page-node-id="XlDBfgY4yipHUxD4r8M8Cq">Plan 阶段有三个进入路径，但无论从哪条路径进入，流程是同一套：头脑风暴 → 起草 → 人工审阅更正 → 提交。</p>
+
+  <div class="fig" data-page-node-id="b3luir2ofnRjEO03TAZMUX">
+    <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Plan 阶段的节点流程：三条入口路径汇合后经头脑风暴与起草，提交 intent.md" data-page-node-id="JL9QxgHBuCveXm1vulNjm0">
+      <defs data-page-node-id="320NvCOKFFJPD8KNDBB28r">
+        <marker id="p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="rBZsLwiCyTmfKWCNVCSAfS">
+          <path d="M0,0 L10,5 L0,10 z" fill="#71767F" data-page-node-id="R84GTwpDkuz6W8EWRFymVT"/>
+        </marker>
+      </defs>
+
+      <rect x="846" y="18" width="90" height="24" rx="12" fill="#EDF7EF" stroke="#BFE3C8" data-page-node-id="DUOUhPGjjWencKvwbReqmA"/>
+      <text x="891" y="34" font-size="11" fill="#15803D" text-anchor="middle" font-weight="700" data-page-node-id="WqihalpPcnuSjxcA1G2RwV">前置依赖：无</text>
+
+      <!-- entry routes -->
+      <rect x="8" y="68" width="128" height="36" rx="8" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="n9PE2SSArngSVlnP1lzeqo"/>
+      <text x="72" y="91" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="4UEeeGFkiAMLVAJ9zRhWRf">有人有想法</text>
+      <rect x="8" y="122" width="128" height="36" rx="8" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="5JQIakFdvCgKMacLf1th7Q"/>
+      <text x="72" y="145" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="W3LSKK6CU73MyYGRBHcr0C">工单被提交</text>
+      <rect x="8" y="176" width="128" height="36" rx="8" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="sjP6ld3lKcZWaMHqKK6LhL"/>
+      <text x="72" y="199" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="4u1bcLGzHNBAiO3NiInKqC">事件经告警浮现</text>
+
+      <line x1="136" y1="86" x2="146" y2="86" stroke="#71767F" stroke-width="1.2" data-page-node-id="ZZCiSiLWuSy2OALeD1r0W2"/>
+      <line x1="136" y1="140" x2="146" y2="140" stroke="#71767F" stroke-width="1.2" data-page-node-id="J6hev1FlUibr1CBpOiCJCc"/>
+      <line x1="136" y1="194" x2="146" y2="194" stroke="#71767F" stroke-width="1.2" data-page-node-id="GjvFmnCIrpDE1sYMoc0g31"/>
+      <line x1="146" y1="86" x2="146" y2="194" stroke="#71767F" stroke-width="1.2" data-page-node-id="L0DmQfupSLkvBSo7BXPutO"/>
+      <line x1="146" y1="140" x2="166" y2="140" stroke="#71767F" stroke-width="1.4" marker-end="url(#p1)" data-page-node-id="hpW6U0nwRBCvpm0IBfDTIb"/>
+
+      <!-- main chain -->
+      <rect x="170" y="108" width="164" height="64" rx="10" fill="#1D4ED8" data-page-node-id="MMIAe5H27TGjCCaSBwhlkI"/>
+      <text x="252" y="133" font-size="10.5" fill="#BFD0FB" text-anchor="middle" font-weight="700" data-page-node-id="kDtAGnBuz60E5rJR4C7Ob4">步骤 1–2</text>
+      <text x="252" y="155" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="qGEoY0M2BggyYAK0k5noS6">与 Claude 头脑风暴</text>
+
+      <line x1="334" y1="140" x2="364" y2="140" stroke="#71767F" stroke-width="1.4" marker-end="url(#p1)" data-page-node-id="7lYeH6eOrOXqC3s71WsWCB"/>
+
+      <rect x="368" y="108" width="178" height="64" rx="10" fill="#1D4ED8" data-page-node-id="MyiAyS0HjHEmXJ6T35VqmL"/>
+      <text x="457" y="133" font-size="10.5" fill="#BFD0FB" text-anchor="middle" font-weight="700" data-page-node-id="KKKE9oGQQmm70cokLUTuXD">步骤 3</text>
+      <text x="457" y="155" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="EKUETgopcRHKCzPMDupABU">起草 intent.md</text>
+
+      <line x1="546" y1="140" x2="576" y2="140" stroke="#71767F" stroke-width="1.4" marker-end="url(#p1)" data-page-node-id="A2yaYhKbQwo5K2Oo0FVlPO"/>
+
+      <rect x="580" y="108" width="158" height="64" rx="10" fill="#1D4ED8" data-page-node-id="x6PIaQXXxT4nNhf92eV666"/>
+      <text x="659" y="133" font-size="10.5" fill="#BFD0FB" text-anchor="middle" font-weight="700" data-page-node-id="oDvStEzS8Ky0cFUFKqGPHD">步骤 4</text>
+      <text x="659" y="155" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="Pwk8CmaPYdghIDMuOho4g3">审阅 · 更正</text>
+
+      <line x1="738" y1="140" x2="768" y2="140" stroke="#71767F" stroke-width="1.4" marker-end="url(#p1)" data-page-node-id="8Exy5wzcNK8HdBncOnBd15"/>
+
+      <rect x="772" y="108" width="164" height="64" rx="10" fill="#1D4ED8" data-page-node-id="ObmBvC2q1ULEpxOEYjW7RJ"/>
+      <text x="854" y="133" font-size="10.5" fill="#BFD0FB" text-anchor="middle" font-weight="700" data-page-node-id="xrf5SIeWOvCoLnFAJ35rfm">步骤 5 · 收口</text>
+      <text x="854" y="155" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="VeLEWHBkrPVdAGUvWVRMms">提交到归属地</text>
+
+      <!-- role subtitles -->
+      <text x="252" y="192" font-size="10" fill="#71767F" text-anchor="middle" data-page-node-id="yoRKFXGcCOI4GUE6YU3oHt">来源者本人，不需要 git 经验</text>
+      <text x="457" y="192" font-size="10" fill="#71767F" text-anchor="middle" data-page-node-id="o8ngFU45ryC7opvF6BtdVk">组织 intent 模板编码为 skill</text>
+      <text x="659" y="192" font-size="10" fill="#71767F" text-anchor="middle" data-page-node-id="VHpr5BE7Bq7jd4DfS2nGGn">产品负责人</text>
+      <text x="854" y="192" font-size="10" fill="#71767F" text-anchor="middle" data-page-node-id="un0beVwFwVENnoVq4lWjEl">repo 的 intent/ 目录</text>
+
+      <line x1="8" y1="216" x2="952" y2="216" stroke="#E4E0D7" stroke-width="1" data-page-node-id="shPO9NMCFDlNFiSBFSfjLT"/>
+      <text x="8" y="240" font-size="11" fill="#B45309" font-weight="700" data-page-node-id="KevzOmyCpsz8FIC8ElIzhg">同为入口：</text>
+      <text x="76" y="240" font-size="11" fill="#3D434F" data-page-node-id="Xsf78DsZlxTF8sqe8T0nXR">Stage 6 的事件告警也会生成 intent.md，经由同一条链——差别只在「谁先写下第一版」。</text>
+      <text x="8" y="264" font-size="11" fill="#B45309" font-weight="700" data-page-node-id="fyvha99RlXZ0HNCen9ipqw">关键分工：</text>
+      <text x="76" y="264" font-size="11" fill="#3D434F" data-page-node-id="1EKmLp3sIHtdoxHqPsp5Mm">Claude 写草稿，人做更正。产品负责人对提交前的 intent.md 负最终责任。</text>
+    </svg>
+    <p class="cap" data-page-node-id="yl0CQihTIpY5FgbC1JwQ5K"><b data-page-node-id="U0nYcHmXXCpdIJihORZB47">图 4 · Plan 阶段节点图。</b>三条入口（想法 / 工单 / 事件告警）在头脑风暴处汇合，此后是<strong data-page-node-id="jmc710xuOGvI7Ri0dzbFdK">固定四步</strong>：与 Claude 头脑风暴具体化 → 按组织模板起草 <code data-page-node-id="1PbvaVsVNec25WCypen9RG">intent.md</code> → 来源者更正误解 → 提交到共享归属地。作者与时间戳随提交进入记录，产品负责人从这里接手。</p>
+  </div>
+
+  <h3 data-page-node-id="ARvotjzq7GYkaGuOk90X6F">传统 vs AI 原生</h3>
+  <div class="cmp" data-page-node-id="vjc0ihtHneeJJ4YhctySKJ">
+    <div class="old" data-page-node-id="QPPQbEyrJummwfBEdf3Net">
+      <p class="h" data-page-node-id="aT5uZmGmh7QUQ3imD4N1EA">传统</p>
+      <p data-page-node-id="dnjvq9AHcOQqVWnbom0Nzb">想法在任何人能对其采取行动之前，要通过 <strong data-page-node-id="qrjWUeCfLWzHVpPhssve11">backlog 条目、用户故事、故事点和精炼会议</strong>。每次交接时所有权转移，所以到达工程的内容与来源者本意<strong data-page-node-id="vCddq99AnDDJ6j5YOuiyJY">相差好几步</strong>。</p>
+    </div>
+    <div class="new" data-page-node-id="RIi1wBmT1HuKmqG29Pfcr4">
+      <p class="h" data-page-node-id="T0IGjCl6SKhatH6YpbST14">AI 原生</p>
+      <p data-page-node-id="UioQ95RbWOKvBSloN4Jp3g">来源者与 Claude 头脑风暴，把结果写成 <code data-page-node-id="RXWYSASmTRSW02jq9kv1YR">intent.md</code>——一份用<strong data-page-node-id="d8SNVTEcXz4B3p013wDqmw">来源者自己术语</strong>写的原型规格，包含想要什么、为什么、在哪些约束下。重复流程通过 skills 编码。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="7t0Ka1xyNQTqGGGyjqMMLn">基础设施（一次性搭建）</h3>
+  <ul data-page-node-id="EoV2XHDXhNfUGSgVwpVnGC">
+    <li data-page-node-id="UbuzYw6LnYDzyffAekLsLg"><strong data-page-node-id="W98BAuiUq0Hx8nKiUD5Vrj">非工程师人员能访问 Claude</strong>（claude.ai 或 Cowork）——这是关键前提，因为 Plan 阶段的主要作者不是工程师。</li>
+    <li data-page-node-id="REPV3CbokQ1JboH1DBo28o"><strong data-page-node-id="NQFF8SM1yZIOUWEVEhbEMt">一个商定的 <code data-page-node-id="SagdFvzHcRqYG4hF1yzrBk">intent.md</code> 模板</strong>，通常编码为技术团队成员设置、负责人签核的 skill。</li>
+    <li data-page-node-id="9P0gpIDq4h85A4ClMVlDNW"><strong data-page-node-id="YmGgOFbK7T3gDOibGbopxt">一个共享的、版本控制的 intent 归属地</strong>，产品负责人会关注它。单一产品最简单的归属地是<strong data-page-node-id="59EmAe7FiK2LwrETYZlVUi">产品 repo 中的 <code data-page-node-id="AxbFpbTBcKTb4ieW89xBy7">intent/</code> 文件夹</strong>——这让工件链留在由它派生出的代码旁边。专用 intent repo 只有在意图跨越许多仓库时才值得开销；在 monorepo 里它只是一个目录。</li>
+  </ul>
+  <p data-page-node-id="QqxpyJbeJcgdNrjwuoRJlG">搭建由平台或工程团队完成，需要决定<strong data-page-node-id="9Vtym64laRaYrmwv15RyG4">谁可以写入</strong>，因为许多贡献者会来自整个组织。一旦仓库存在，<strong data-page-node-id="7b8wofvZH9BYKhKzQJSRye">没有 git 经验的贡献者不需要直接使用 git</strong>——通过到版本控制系统（如 GitHub）的连接器，Claude 可以代表他们从 claude.ai 或 Cowork 提交 markdown 文件。</p>
+
+  <h3 data-page-node-id="JO2Le09FZHU8SlsYCnp3WA">执行步骤</h3>
+  <ol data-page-node-id="3mD6udNaqYgIGbKTYpBfWM">
+    <li data-page-node-id="6QSi5U7Xl3RhViiV4ajZfl"><strong data-page-node-id="yOMY3fRVjNU3Hb6PKBGhfS">来源者用自己的话描述问题。</strong>可以描述今天不能做什么、谁受这个想法影响、更好是什么样子、什么超出范围。不需要正式语言。</li>
+    <li data-page-node-id="vN3Z3vHS7xwoztGvDH1Xy6"><strong data-page-node-id="8GF8CwMtz7Uh9x46K1OCKH">头脑风暴直到想法具体化。</strong>Claude 问分析师会问的问题：范围、用户、约束、成功是什么样子。</li>
+    <li data-page-node-id="tpmFABsFxVCmY4Fm4WdYN3"><strong data-page-node-id="mJbRGcp5j111iJp63995UA">让 Claude 按组织模板写为 <code data-page-node-id="HNSiYVTvSJTuUdegVYcyEr">intent.md</code>。</strong>模板覆盖：问题、提议结果、受影响的用户和系统、约束、开放问题。</li>
+    <li data-page-node-id="ByQZvFnmADq10fhqiK79qw"><strong data-page-node-id="uCEAWT5s3vRAK1QtlFuoEM">来源者更正 Claude 误解的内容。</strong></li>
+    <li data-page-node-id="B647mI8OVqb43i5jqxVxG8"><strong data-page-node-id="CbB5f8XUAF5ZoNHbBAbMeO">提交到共享归属地。</strong>作者与时间戳进入记录，产品负责人从这里接手。</li>
+  </ol>
+
+  <p class="codehead" data-page-node-id="llngyhsUWEITzuh6oR7Qtu">示例 · intent.md</p>
+  <pre data-page-node-id="u4ROB5CTaDDfhQAcyauxJw"><code data-page-node-id="D4gCqbAkkbgdpvhQ6fZsW2"># Intent: claims status self-service
+Author: J. Ortiz (claims operations). Status: draft.
+
+## Problem
+Customers phone the contact center to ask where their claim is.
+Handlers spend roughly a third of call time on status-only queries.
+
+## Proposed outcome
+Customers see claim status, next step and expected date in the portal.
+
+## Affected users and systems
+Claims handlers, portal team, claims-core API.
+
+## Constraints
+No new PII in the portal session. Existing authentication only.
+
+## Open questions
+Do third-party loss adjusters need access too?</code></pre>
+  <pre data-page-node-id="u4ROB5CTaDDfhQAcyauxJw"><code data-page-node-id="D4gCqbAkkbgdpvhQ6fZsW2"># 意图：理赔进度自助查询
+作者：J. Ortiz（理赔运营团队）。状态：草案。
+
+## 问题描述
+客户拨打客服中心电话询问其理赔进度。
+处理人员大约将三分之一的通话时间用于解答仅针对进度的查询。
+
+## 预估效果 / 方案目标
+客户可在门户网站中查看理赔进度、下一步流程及预计完成日期。
+
+## 受影响的用户与系统
+理赔处理人员、门户网站团队、理赔核心 API。
+
+## 约束条件
+门户网站会话中不得引入新的个人身份信息（PII）。仅使用现有的身份验证机制。
+
+## 待解决问题
+第三方公估人（损失评估师）是否也需要访问权限？</code></pre>
+
+  <div class="grid g2" data-page-node-id="LD61ynKZVegTpnO8P0T8mn">
+    <div class="card" data-page-node-id="AHNCLx4Ta1x60GHosY1mfF">
+      <h5 data-page-node-id="aDydJcjSnMlNfV7z9V4JcK">治理</h5>
+      <p data-page-node-id="VApjmGOyQN9wEfNpRBSMzx">证据是<strong data-page-node-id="xR9yEut5V2NPrdriwYDYdz">已提交的 <code data-page-node-id="GmQHHG85anuN8SXTL8aVJu">intent.md</code></strong>：它列出作者、时间戳和完整修订历史，记录在 intent 归属地的 git 历史中。产品负责人的接受或拒绝决策，<strong data-page-node-id="OAF2DE3jXlU1thUNZGEf6X">记录为工件的合并或关闭的评审</strong>。</p>
+    </div>
+    <div class="card" data-page-node-id="BGWBjNhH5k7XSCyTx9qcmx">
+      <h5 data-page-node-id="wABqYhL4PELo6MPlAIcD6E">本阶段产出的控制证据</h5>
+      <p data-page-node-id="hNSvlawWsucokOsr5x4cP5">提交 SHA · 作者 · 时间戳 · 修订历史 · 合并/关闭的评审。这一组构成了后面所有审计链条的<strong data-page-node-id="dY206JFfnLDGgdytUqLTf3">起点</strong>——谁要求了什么从这里开始可追。</p>
+    </div>
+  </div>
+
+  <div class="metrics" data-page-node-id="t4F1OqTCyQf9stAMcBX7oI">
+    <div class="metric lead" data-page-node-id="Xyt1dKETC1AWaANhIgCi33">
+      <span class="tag" data-page-node-id="CydiTql1ojPFmcpTf1olZy">前置指标 · Leading</span>
+      <p data-page-node-id="veX3rcMMTySCGOHr53pipq"><strong data-page-node-id="wfaAlJOnKvzaLqr4r0z5CP">从第一次对话到提交 <code data-page-node-id="BMsBAetYpy6PzR5PZjXFTJ">intent.md</code> 的时间。</strong>从 intent 归属地的 git 历史读取。期望从多周的引导与精炼周期<strong data-page-node-id="X9lij2mjQPmxD0ys34dTNR">下降到数小时</strong>。</p>
+    </div>
+    <div class="metric lag" data-page-node-id="96C3soxYbuuvHQOJcP6pGy">
+      <span class="tag" data-page-node-id="rd7dLR24KbILwT7nNkb06q">后置指标 · Lagging</span>
+      <p data-page-node-id="Ac6R3ry6LbSj3zc2gTPV9W"><strong data-page-node-id="AWOGWbvJRMjwnPmG2DU8y9">存活率</strong>：产品负责人接受到 Stage 2 而不是关闭的 <code data-page-node-id="f1AtIuGAnbY9B7h9H0iHPE">intent.md</code> 文件份额。此外统计<strong data-page-node-id="jVn1wAXOgBPrmq9h4RtraP">同一变更在首次 <code data-page-node-id="zfdEJFlHh3A2u1Cm9lZxHd">spec.md</code> 提交之后对 <code data-page-node-id="kZQ01IP3GCPYE1ikvtcKh0">intent.md</code> 的改动次数</strong>——它衡量意图是否真的稳定了。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="s05" data-page-node-id="OiCepaU8LYE60kNpuR7E5G">
+  <div class="stage-head" data-page-node-id="5MSEyOhMyAmbRD2nEWpFld">
+    <div class="stage-badge" data-page-node-id="M0AHYFKEf6QtAxgbBufNPR">02</div>
+    <div class="t" data-page-node-id="18vJCjqM8W9U2YhZWaNMcM">
+      <div class="en" data-page-node-id="rhZFtTPUQVhwY3RkytF76O">Stage 2 · Design</div>
+      <h2 data-page-node-id="5ADceBSl7RlYBRIKc8FPwM">设计：需求与设计压缩成一次会话</h2>
+    </div>
+  </div>
+
+  <div class="callout" data-page-node-id="XjuhGgN46uUsnlwQEj8w7E">
+    <span class="k" data-page-node-id="5NwzPDxLUVbC4WCPWKCr1v">核心理念</span>
+    <p data-page-node-id="ngfccENwdCiCm4NmtqUL9D">需求和设计合并为<strong data-page-node-id="43RT8OlGnbA1sWG7PjvPSi">一次会话</strong>。<strong data-page-node-id="1MpDkAm3t5rGN5U7J2DwxR">策略在规格编写时就被应用</strong>，而不是几周后才在评审中被发现。</p>
+  </div>
+
+  <div class="fig" data-page-node-id="Qmro3hxz67U2KV2IbPLiBI">
+    <svg viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Design 阶段的节点流程：intent.md 经 skills 约束的会话产出 spec.md，再经审阅与决策" data-page-node-id="JfMefbSGKFyzdHV6Z8f6fi">
+      <defs data-page-node-id="4jjScBx0fNIXHQmb11ARtd">
+        <marker id="p2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="WYfJunoyFtNPne9riQzJNp">
+          <path d="M0,0 L10,5 L0,10 z" fill="#71767F" data-page-node-id="EiW5oCdPeEnQqARAtGlxWT"/>
+        </marker>
+      </defs>
+
+      <!-- skills bracket -->
+      <path d="M176,92 L176,54 L580,54 L580,92" fill="none" stroke="#0F766E" stroke-width="1.4" stroke-dasharray="5 4" data-page-node-id="q1ZyifO0mGd4pI1EZoY72u"/>
+      <text x="378" y="46" font-size="11" fill="#0F766E" text-anchor="middle" font-weight="700" data-page-node-id="J0LvxgrWwf665ASTI74yCF">组织 skills 约束：品牌 · 安全 · 合规 · UX（在 git 中版本化）</text>
+
+      <!-- main chain -->
+      <rect x="8" y="96" width="132" height="72" rx="10" fill="#7C3AED" data-page-node-id="ZOr5GfL9ow6ztQmxLxVJ97"/>
+      <text x="74" y="126" font-size="10.5" fill="#DDD0FB" text-anchor="middle" font-weight="700" data-page-node-id="WvsImCyR4cT1PZAvLVHsxI">输入（已接受）</text>
+      <text x="74" y="148" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="Z51Wz7YURBFkirM2pV6iUJ">intent.md</text>
+
+      <line x1="140" y1="132" x2="172" y2="132" stroke="#71767F" stroke-width="1.4" marker-end="url(#p2)" data-page-node-id="qaSAoPSyHWyf1sAzJBxLTv"/>
+
+      <rect x="176" y="96" width="200" height="72" rx="10" fill="#7C3AED" data-page-node-id="HArdtaVtPagvF8rmfgfMAj"/>
+      <text x="276" y="126" font-size="10.5" fill="#DDD0FB" text-anchor="middle" font-weight="700" data-page-node-id="NYtFObfCGzaaqwfrjfKCvM">一次提示会话</text>
+      <text x="276" y="148" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="26vxuDrlu5osFAE9CJ0k9B">需求 + 设计规格</text>
+
+      <line x1="376" y1="132" x2="408" y2="132" stroke="#71767F" stroke-width="1.4" marker-end="url(#p2)" data-page-node-id="sSsNUGAdHdvcdJmnCeAz2L"/>
+
+      <rect x="412" y="96" width="168" height="72" rx="10" fill="#7C3AED" data-page-node-id="o8hAqGq7UOQlY5gFJLmtMF"/>
+      <text x="496" y="126" font-size="10.5" fill="#DDD0FB" text-anchor="middle" font-weight="700" data-page-node-id="qdt4ZFUfhDQl0pKuVERDMY">输出工件</text>
+      <text x="496" y="148" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="6cJn4UR4LwALiiXIl1CSnb">spec.md + 关注点</text>
+
+      <line x1="580" y1="132" x2="612" y2="132" stroke="#71767F" stroke-width="1.4" marker-end="url(#p2)" data-page-node-id="Gt4eAt5x3PmW5AWMODeIFJ"/>
+
+      <rect x="616" y="96" width="156" height="72" rx="10" fill="#7C3AED" data-page-node-id="qta9EAzNyMa01i1DgmKRun"/>
+      <text x="694" y="126" font-size="10.5" fill="#DDD0FB" text-anchor="middle" font-weight="700" data-page-node-id="NbtcEikCCdxEQ39LiIQeZ3">审阅 · 裁定</text>
+      <text x="694" y="148" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="wjBK4ImUOlWkvOoDCZi7D7">产品负责人</text>
+
+      <line x1="772" y1="132" x2="804" y2="132" stroke="#71767F" stroke-width="1.4" marker-end="url(#p2)" data-page-node-id="rLDnJjP30iF1MO9GtaQHUu"/>
+
+      <rect x="808" y="96" width="144" height="72" rx="10" fill="#7C3AED" data-page-node-id="Ct1UTSSa1z8nJqzCawyNxi"/>
+      <text x="880" y="126" font-size="10.5" fill="#DDD0FB" text-anchor="middle" font-weight="700" data-page-node-id="7OOV4K3op5N1OfGgPwwGbR">决策（必须由人做）</text>
+      <text x="880" y="148" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="2yYOgbQ88N8LtAa2S9R15x">推进 Build</text>
+
+      <!-- policy chip -->
+      <rect x="616" y="180" width="156" height="24" rx="12" fill="#FDF4E8" stroke="#E9C08A" data-page-node-id="Y49jzr4c8A0XFqZohmh6ZP"/>
+      <text x="694" y="196" font-size="10" fill="#B45309" text-anchor="middle" font-weight="700" data-page-node-id="MNQgObAY9902QDwf4DPg7h">关注点 → 策略负责人</text>
+      <line x1="694" y1="180" x2="694" y2="170" stroke="#E9C08A" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="S1CUBc8TdjqE03DOYkJ2y9"/>
+
+      <line x1="8" y1="216" x2="952" y2="216" stroke="#E4E0D7" stroke-width="1" data-page-node-id="HEaifoVrzdjfGv9wvaugDx"/>
+
+      <!-- branch row -->
+      <rect x="8" y="228" width="388" height="76" rx="10" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="MR6M17N5m18zEdR5ILyzwh"/>
+      <text x="24" y="250" font-size="10.5" fill="#7C3AED" font-weight="700" data-page-node-id="hx5dPVHKVy5N9u9AtZ1hJk">并行路径 · 前端工作</text>
+      <text x="24" y="270" font-size="10.5" fill="#3D434F" data-page-node-id="nygWV64vbhCdwAsDLhgOQT">Claude Design (beta) 依 intent.md 出模拟</text>
+      <text x="24" y="288" font-size="10.5" fill="#3D434F" data-page-node-id="D6cdJeqsce4Yp7JVzvvh0Y">迭代模拟 → 导出到 Claude Code 构建</text>
+
+      <rect x="420" y="228" width="532" height="76" rx="10" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="bQYRtTGDuq0KNcViBuGARK"/>
+      <text x="436" y="250" font-size="10.5" fill="#0F766E" font-weight="700" data-page-node-id="JHcXsy4Wqh1jeqxw6ulEqh">治理要点</text>
+      <text x="436" y="270" font-size="10.5" fill="#3D434F" data-page-node-id="HG3aT88fGpHDBcEJXyfD4C">规格、产生它的提示、以及生效的 skill 版本，全部在版本控制中记录。</text>
+      <text x="436" y="288" font-size="10.5" fill="#3D434F" data-page-node-id="VJRjmLPuKNxNB706J0Bx7R">被标记的关注点是分析师会升级的点，必须先与策略负责人解决，再让工程看到规格。</text>
+    </svg>
+    <p class="cap" data-page-node-id="kNvYp2eG5dZ4bjJwMtjgbG"><b data-page-node-id="1enkNo6GfIT6eYZVTED3zN">图 5 · Design 阶段节点图。</b>注意两点：一是 <strong data-page-node-id="QdvuIdxUXtC5bwHpAigHFL">skills 是横向的约束层</strong>，在会话进行时就把品牌/安全/合规/UX 策略烧进规格，而不是等评审时才发现冲突；二是<strong data-page-node-id="YqKUUOYmuMY0uOWWRX6LFn">「推进 Build」这个决策永远由人做</strong>——产品负责人咨询技术负责人处理高风险内容，人类团队成员始终是决定者。</p>
+  </div>
+
+  <h3 data-page-node-id="ieVdlFIajEuyVOsNo00PK9">传统 vs AI 原生</h3>
+  <div class="cmp" data-page-node-id="dsG9DDeFMysMC6TmCJ7OyR">
+    <div class="old" data-page-node-id="0HSyiABi6avLGfg6xGX5OR">
+      <p class="h" data-page-node-id="WS6YoDpcK4GClun1OlAlbb">传统</p>
+      <p data-page-node-id="K5A37iJHU0gK8hZwA4vUbO">需求和设计是由<strong data-page-node-id="eaV2eHofOq4tAi6NtUCd1H">不同团队运行的独立阶段</strong>。分析师把想法形式化为需求，设计师再把这些解析回设计。分离是为责任而存在的，但它<strong data-page-node-id="TPNKemcbgLCh5IaBX6SFCX">缓慢且有损</strong>。</p>
+    </div>
+    <div class="new" data-page-node-id="zYuOVEy17LvZD1YTnT2PWo">
+      <p class="h" data-page-node-id="rhEJAC4PNcoKEF3mhcJjRK">AI 原生</p>
+      <p data-page-node-id="Dwb80rJaNhMWy4lynoaQvY">两个阶段在<strong data-page-node-id="BvY3M4yRnSTz3m168HOPeu">一次提示会话</strong>中发生。Claude 获取 <code data-page-node-id="zSTKsD5GgVvDEUJuSRIj7q">intent.md</code> 并产生需求与设计规格，受组织的 skills 约束，并主动<strong data-page-node-id="Vi9RNyj8EWTB4JTWdX9cSu">标记关注领域</strong>。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="DpAhDHW0uUeZNIj5NHLNFH">执行步骤</h3>
+  <ol data-page-node-id="m00aUlTeP0P9F3bDfGM068">
+    <li data-page-node-id="jXFOWUh95ZmPxP8b1cQHAg">产品负责人打开一个会话，挂载组织的 skills，并附上 <code data-page-node-id="3l48nEfeDC5gDxlY5p7MSQ">intent.md</code>。</li>
+    <li data-page-node-id="uMKLLjfQD24KAP7dZnqbAZ">提示指向 <code data-page-node-id="4FpgdRSnMASjVP5e4QLhY2">intent.md</code>、命名约束、要求标记关注点。<strong data-page-node-id="vGr6aIov42ko7fGDjDhwoF">先手动跑</strong>，然后编码为组织级 slash command。从那里进一步：把「intent 归属地中 <code data-page-node-id="ZRu9tFkDrWgU88qQRNtsHc">intent.md</code> 被接受」作为触发器，用<strong data-page-node-id="rPBqWrMholX6mNdZocDoRW">非交互式作业</strong>在合并时触发，自动把 <code data-page-node-id="hndwpuJquDE21zxqwVW6aN">spec.md</code> 作为 pull request 提交——产品负责人的第一次参与就是评审。</li>
+    <li data-page-node-id="ShfS8CmYgFWc0IMkti2wZh">同一个产品负责人对照想法审查规格：规格是否解决了陈述的问题？<code data-page-node-id="iavVRyDHqIsl6fpz4B62AL">intent.md</code> 中的开放问题是被回答还是被结转？</li>
+    <li data-page-node-id="miLUYsKSqyLhyw89NFKwzH"><strong data-page-node-id="iHbJAlooi8X8nYR7RKDWsa">先处理被标记的关注点</strong>，因为它们是分析师会升级的点。产品负责人在工程看到规格之前，先与策略负责人解决每一个问题。</li>
+    <li data-page-node-id="3KnhjLcjh92c6pqAhJVbDk">把 <code data-page-node-id="3cENCqx95vJvmvaDhQoeMo">spec.md</code> 与 <code data-page-node-id="8zaW8KRooGFezE1RVL0UAY">intent.md</code> 一起提交。这对文件记录了要求了什么和决定了什么。</li>
+    <li data-page-node-id="HJCWXwAIgWqicSVkIibNlv">产品负责人决定规格和意图是否推进到构建；对组织归类为更高风险的内容，咨询技术负责人。<strong data-page-node-id="R9hHSsCbNidAGf4oTcakLX">这个决定永远由人类做</strong>——接受规格就是启动 Stage 3 的 plan mode。</li>
+  </ol>
+
+  <p class="codehead" data-page-node-id="VLktjRiQOkmahwYnKh2Af2">示例 · 提示词</p>
+  <pre data-page-node-id="h7Dr3z1Rt3C3dutOupTkHT"><code data-page-node-id="KaDzky7ThQJQVcQ1YrrRNk">Read the attached intent.md and produce a requirements and design spec for
+integrating it into our existing codebase. Apply the skills available to you
+so the plan conforms to our brand guidelines, security policies and UX
+standards. Document the spec fully as spec.md, ready to hand to the
+engineering team. Describe clearly any areas of concern, especially where you
+cannot satisfy contradicting policies.</code></pre>
+  <pre data-page-node-id="h7Dr3z1Rt3C3dutOupTkHT"><code data-page-node-id="KaDzky7ThQJQVcQ1YrrRNk">阅读附加的 intent.md 并生成一份需求与设计规范，用于将其集成到我们现有的代码库中。
+运用你可用的技能，使该计划符合我们的品牌指南、安全策略和 UX 标准。
+将该规范完整记录为 spec.md，以便随时交付给工程团队。
+清晰说明所有需要关切的领域，尤其是你无法满足互相冲突的策略之处。</code></pre>
+
+  <div class="grid g2" data-page-node-id="NgxiF0Rgf6wk4NUxvNlnDu">
+    <div class="card" data-page-node-id="JuJ8hWpVtxNuZSu63c7XCs">
+      <h5 data-page-node-id="Jham0xWO1SloSOvWzkcdou">治理</h5>
+      <p data-page-node-id="ZU6dcHsMM5LJxvVdWQNCb5"><strong data-page-node-id="eWqj9i3kMf3JGYqX8tdde8">实时策略在规格编写时被读取和应用</strong>，而不是几周后在评审中发现。组织的 skills 作为规格的约束生效。规格、产生它的提示、生效的 skill 版本都在版本控制中记录。产品负责人签核规格，并把被标记的关注点路由给指定的策略负责人。</p>
+    </div>
+    <div class="card" data-page-node-id="RQ3Cm3zAAHIA5F5GohJTPr">
+      <h5 data-page-node-id="VRUyrAeymGVjrlaqwcB0xA">风险分级</h5>
+      <p data-page-node-id="RikUGeK1lBtCYEwBfXRjH2">常规变更由产品负责人单独决定；<strong data-page-node-id="2rg3wrtWwUDeQEjKUqxEyW">组织归类为更高风险的内容</strong>必须先咨询技术负责人。这个分级是「人在环内」的具体落地方式，而不是一句口号。</p>
+    </div>
+  </div>
+
+  <div class="metrics" data-page-node-id="FHhaj3PYuiQEASPPuDcHvE">
+    <div class="metric lead" data-page-node-id="SXhxufSKDqWGGgjErE4mkN">
+      <span class="tag" data-page-node-id="nzX6NQiSxen7oY2y9Hl9pH">前置指标 · Leading</span>
+      <p data-page-node-id="sanTqHqvy3n0tcWMHDilBQ"><strong data-page-node-id="Np9WeiniffcaGlG7AjbsCB">同一变更的 <code data-page-node-id="sm7rDLPrHNEJnlb89AGAUE">intent.md</code> 提交与 <code data-page-node-id="ndS8sZyFP7caNajgop8RBG">spec.md</code> 提交之间的经过时间</strong>（两个 git 时间戳之差），与旧的需求加设计周期相比。</p>
+    </div>
+    <div class="metric lag" data-page-node-id="zT7oQAkqWqZVNCH4CBnXNR">
+      <span class="tag" data-page-node-id="s3Ervu9poscC60nwOeTr7P">后置指标 · Lagging</span>
+      <p data-page-node-id="cms57DfAMHfDmusJQAnUZG"><strong data-page-node-id="ZC6WJTBsZEjET5et2FHK6K">构建开始后的需求返工</strong>：统计日期在首次 <code data-page-node-id="9hAZLkCNkMke4m4vzImB28">plan.md</code> 提交<strong data-page-node-id="qNSFDWLYUbGnUejBtUCSYD">之后</strong>的、同一变更的 <code data-page-node-id="on8LmtedFkOzo2GBkv24Mg">spec.md</code> 提交。git log 会直接给出这个数。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="s06" data-page-node-id="TgxMvEtKvbRvvNi9kOy5xy">
+  <div class="stage-head" data-page-node-id="JSKZNF8UcsohyoKpPtH4lc">
+    <div class="stage-badge" data-page-node-id="EoXYvAqk06DTqN9F5CVFS3">03</div>
+    <div class="t" data-page-node-id="CuGlEv7Z2sLQKru5eHyGao">
+      <div class="en" data-page-node-id="n6rvqEgEen55v1zk31NUGo">Stage 3 · Build</div>
+      <h2 data-page-node-id="ZEluOA2l80dRfGnYneKLBC">构建：没有已接受的计划就不实现任何东西</h2>
+    </div>
+  </div>
+
+  <div class="callout" data-page-node-id="BYP7n1rTxt2fr52kbECyGx">
+    <span class="k" data-page-node-id="NeEoUI54DYxlYZhXcwAYrp">核心理念</span>
+    <p data-page-node-id="0kEFkuxZAz6ojld4mf858I"><strong data-page-node-id="O4nS5m3yhEofE3xyfLTK3X">没有已接受的计划就不实现任何东西。</strong>机构知识成为智能体读取的文件，护栏作为代码运行而不是作为习惯。</p>
+  </div>
+
+  <h3 data-page-node-id="b3CeEwMqJOnic9qQxrXQ6T">节点结构：一条主链 + 一个横跨全阶段的配置层</h3>
+  <p data-page-node-id="4CAV3qzOcz5JpKXeI5SmLz">Build 阶段的结构与其他阶段不同——它有<strong data-page-node-id="BIRDCexcSetUmNK1ZkmfT8">一条顺序主链</strong>（plan mode → 审问 → 提交计划 → 实施），以及<strong data-page-node-id="b6HDFQmWw5lrcCteGucQ99">一层作用于每一个会话的配置</strong>（<code data-page-node-id="fmWMA773rlHkW1FygwDBEV">CLAUDE.md</code>、skills、hooks、权限）。配置层不参与顺序，它决定主链上每一次行动的行为。</p>
+
+  <div class="fig" data-page-node-id="IpJcpgYeX8wDfejk8748Vk">
+    <svg viewBox="0 0 960 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Build 阶段的节点流程：配置层、plan mode 主链，以及并行会话" data-page-node-id="CFjKWmynCp2GB0qe5g6jh1">
+      <defs data-page-node-id="UBRupcY0cIkrm3sZwbla82">
+        <marker id="p3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="iGhbeYh6wJNzOBarAn4HXz">
+          <path d="M0,0 L10,5 L0,10 z" fill="#71767F" data-page-node-id="LpNV9z2k9xRE9Xs1LDbCOs"/>
+        </marker>
+        <marker id="p3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse" data-page-node-id="wwpH3zzatV8ZmzMkVDyAd9">
+          <path d="M0,0 L10,5 L0,10 z" fill="#E9C08A" data-page-node-id="vguAOLuOImaoDimOnGGBPT"/>
+        </marker>
+      </defs>
+
+      <!-- config layer -->
+      <text x="8" y="24" font-size="12" font-weight="700" fill="#B45309" data-page-node-id="qWTSBysxjB7794IR3jGUyi">配置层 —— 决定所有会话的行为，随代码一起版本化并由 PR 评审</text>
+      <rect x="8" y="36" width="944" height="64" rx="10" fill="#FDF4E8" stroke="#E9C08A" data-page-node-id="roNSn5viY7zyQbwPniCSJG"/>
+      <rect x="24" y="50" width="216" height="36" rx="8" fill="#FFFFFF" stroke="#E9C08A" data-page-node-id="ZlpfMV5jwbVkz8zE3DvPLI"/>
+      <text x="132" y="73" font-size="11.5" fill="#3D434F" text-anchor="middle" data-page-node-id="BBFaGKcLrEFLnhALXX0UWv">CLAUDE.md · 约定与命令</text>
+      <rect x="256" y="50" width="216" height="36" rx="8" fill="#FFFFFF" stroke="#E9C08A" data-page-node-id="UCUx0Ngmv4HgdhWrDNwr9c"/>
+      <text x="364" y="73" font-size="11.5" fill="#3D434F" text-anchor="middle" data-page-node-id="mRmS7LhCIJBAoGmGGhkuvX">.claude/skills/ · 建议性</text>
+      <rect x="488" y="50" width="216" height="36" rx="8" fill="#FFFFFF" stroke="#E9C08A" data-page-node-id="XvftQOztM8DQpNOWAnfxIa"/>
+      <text x="596" y="73" font-size="11.5" fill="#3D434F" text-anchor="middle" data-page-node-id="PlCsBWcvGGggcUBNCO5ldp">hooks · 确定性护栏</text>
+      <rect x="720" y="50" width="216" height="36" rx="8" fill="#FFFFFF" stroke="#E9C08A" data-page-node-id="E5hZyQlZczkwe2IB3hnEod"/>
+      <text x="828" y="73" font-size="11.5" fill="#3D434F" text-anchor="middle" data-page-node-id="RfsvuZoyfDyBvvXX1QYwiw">permissions · 权限与沙箱</text>
+
+      <line x1="91" y1="102" x2="91" y2="120" stroke="#E9C08A" stroke-width="1.4" marker-end="url(#p3a)" data-page-node-id="MvulZtx942JG6Tf5rq8VCA"/>
+      <line x1="283" y1="102" x2="283" y2="120" stroke="#E9C08A" stroke-width="1.4" marker-end="url(#p3a)" data-page-node-id="Cj3RLjlcxtyBIPmidnrHtA"/>
+      <line x1="477" y1="102" x2="477" y2="120" stroke="#E9C08A" stroke-width="1.4" marker-end="url(#p3a)" data-page-node-id="yTJgvBGb8euuz3uMAZ04Ge"/>
+      <line x1="671" y1="102" x2="671" y2="120" stroke="#E9C08A" stroke-width="1.4" marker-end="url(#p3a)" data-page-node-id="CXXgAWt9DfqDqtSMAhp9A9"/>
+      <line x1="866" y1="102" x2="866" y2="120" stroke="#E9C08A" stroke-width="1.4" marker-end="url(#p3a)" data-page-node-id="WUNHeeB9fWyh9bbKB1osdS"/>
+
+      <!-- main chain -->
+      <rect x="8" y="126" width="166" height="70" rx="10" fill="#B45309" data-page-node-id="bP0nWHcFxOQKS1YDK7jn4f"/>
+      <text x="91" y="151" font-size="10.5" fill="#F3D2AC" text-anchor="middle" font-weight="700" data-page-node-id="iKV67DUpCfBn9PvDZTs3Vr">输入工件</text>
+      <text x="91" y="173" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="zAIXLZm5Mf2Szh2aEHYnUO">intent.md + spec.md</text>
+
+      <line x1="174" y1="161" x2="194" y2="161" stroke="#71767F" stroke-width="1.4" marker-end="url(#p3)" data-page-node-id="MAJr4V4kwWC6tAjU1uvBVR"/>
+
+      <rect x="198" y="126" width="170" height="70" rx="10" fill="#B45309" data-page-node-id="CMMDsCO0UMYxVBV8j5SgXB"/>
+      <text x="283" y="151" font-size="10.5" fill="#F3D2AC" text-anchor="middle" font-weight="700" data-page-node-id="ngsGW4GHXXnx91CtGGmTlz">步骤 1–2</text>
+      <text x="283" y="173" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="ZjaFjGJYaPI6VUEiEAqY6M">plan mode 出计划</text>
+
+      <line x1="368" y1="161" x2="388" y2="161" stroke="#71767F" stroke-width="1.4" marker-end="url(#p3)" data-page-node-id="u34m2E8M9Jz4VcbNb8ZarK"/>
+
+      <rect x="392" y="126" width="170" height="70" rx="10" fill="#B45309" data-page-node-id="juYf6QECuKEumC7WUAf1JQ"/>
+      <text x="477" y="151" font-size="10.5" fill="#F3D2AC" text-anchor="middle" font-weight="700" data-page-node-id="LLYiEjheuUf0bDzGDcaU39">步骤 3–4</text>
+      <text x="477" y="173" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="fANGJgM2Tb4EinI9ptth4E">工程师审问计划</text>
+
+      <line x1="562" y1="161" x2="582" y2="161" stroke="#71767F" stroke-width="1.4" marker-end="url(#p3)" data-page-node-id="KMMTghPifZtGNF9b8JrHmV"/>
+
+      <rect x="586" y="126" width="170" height="70" rx="10" fill="#B45309" data-page-node-id="YW9jDyjU8PE3xVu53A0iPb"/>
+      <text x="671" y="151" font-size="10.5" fill="#F3D2AC" text-anchor="middle" font-weight="700" data-page-node-id="dAfTbu3d2MFfuzuNSWx81v">步骤 5 · 收口</text>
+      <text x="671" y="173" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="fFmHI3BdKTkSlni4EQ9Gwx">提交 plan.md</text>
+
+      <line x1="756" y1="161" x2="776" y2="161" stroke="#71767F" stroke-width="1.4" marker-end="url(#p3)" data-page-node-id="J0Ht4DCZDQvAvMy1YurR8a"/>
+
+      <rect x="780" y="126" width="172" height="70" rx="10" fill="#B45309" data-page-node-id="5mJRrSYK0gB4mHCryNl8pG"/>
+      <text x="866" y="151" font-size="10.5" fill="#F3D2AC" text-anchor="middle" font-weight="700" data-page-node-id="boqDdKAiWEXJM12XuxlpCX">步骤 6–7</text>
+      <text x="866" y="173" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="FmnXohNYSJRpXvDb8eb78v">实施 · 一次通过</text>
+
+      <!-- plan mode note -->
+      <text x="477" y="214" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="700" data-page-node-id="nSlalnpgo5C2NxMekNxNLY">plan mode 的强制力：工程师接受计划之前，Claude 无法编辑文件</text>
+
+      <!-- parallel band -->
+      <rect x="8" y="232" width="944" height="86" rx="10" fill="#EEF2FE" stroke="#C6D2F7" data-page-node-id="uckwaJ4RnJDtlhAqKvLkHk"/>
+      <text x="24" y="254" font-size="11.5" font-weight="700" fill="#1D4ED8" data-page-node-id="cbL1innP4BhofOGvZCMcqv">并行会话与子智能体 —— 工程师的工作从「写」转向「编排 + 审查」</text>
+      <rect x="24" y="266" width="212" height="34" rx="8" fill="#FFFFFF" stroke="#C6D2F7" data-page-node-id="SfyRMGMeIW6FijKnMGFfHp"/>
+      <text x="130" y="288" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="1NFfYRVIl56KTHCx61NmzG">并行会话 2–3 个（合理起点）</text>
+      <rect x="248" y="266" width="212" height="34" rx="8" fill="#FFFFFF" stroke="#C6D2F7" data-page-node-id="II7BOM2kkxdLaN3BgQu7aA"/>
+      <text x="354" y="288" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="MBZ9TOmqo6tKJBGmPViSVv">git worktree 隔离，各占分支</text>
+      <rect x="472" y="266" width="220" height="34" rx="8" fill="#FFFFFF" stroke="#C6D2F7" data-page-node-id="yuiS7o9ranl0Mw2EuOl2Wf"/>
+      <text x="582" y="288" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="FuioohutVSH9ypFVrgyK9r">子智能体 .claude/agents/</text>
+      <rect x="704" y="266" width="232" height="34" rx="8" fill="#FFFFFF" stroke="#C6D2F7" data-page-node-id="7aeVKfIMZP8h8CjEHg6qPw"/>
+      <text x="820" y="288" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="HDc3mAJdmn3ARIVL6t6Epl">上限 = 一个人能正确审查的流数</text>
+
+      <text x="8" y="348" font-size="11" fill="#71767F" data-page-node-id="6l5yw6EHcX1Jz8fycpjiqg">风险分级：常规变更由工程师批准；组织归类为更高风险的内容交给技术负责人或架构师。</text>
+      <text x="8" y="372" font-size="11" fill="#71767F" data-page-node-id="QXZvLX8wmzIZJvmvuNfXO3">计划偏离现实时，在同一提交中更新 plan.md；可用 hook 强制两者保持同步。</text>
+    </svg>
+    <p class="cap" data-page-node-id="zSBloXUoPdcXHPspYDg2kw"><b data-page-node-id="IEqe9i4KJEcUhZEJAOYjEv">图 6 · Build 阶段节点图。</b>上层配置贯穿每一次行动，中层是 plan mode 主链，下层是并行化。关键点：<strong data-page-node-id="aHRxQx6uyt16O8E3p8ZeV1">plan mode 自带强制力</strong>——在工程师接受计划之前 Claude 无法编辑文件，于是「设计评审发生在任何代码生成之前」不再依赖自觉，而是机制。当实现偏离计划时，<code data-page-node-id="ZlesYx49sA5P5mSyBxHpJ3">plan.md</code> 必须在同一提交里更新。</p>
+  </div>
+
+  <h3 data-page-node-id="RpowVeRcHKWr2gAGj0hUd9">传统 vs AI 原生（plan mode）</h3>
+  <div class="cmp" data-page-node-id="yimtrpYJiaKxx2aQrQLPAX">
+    <div class="old" data-page-node-id="ORHVeJgpbe959u12uW24ii">
+      <p class="h" data-page-node-id="fTJ0WY1y4gsoSgFIP73SlJ">传统</p>
+      <p data-page-node-id="i8mumNtj1Jmg6Cd3IhITv4">工程师读设计就开始写代码。变更将如何进行、精确到<strong data-page-node-id="nTeCBNz7Ud1iRKA1y6bALc">哪些文件和哪些测试</strong>，留在工程师的头脑里或充其量是工单评论里。别人无法审查它。评审者看到的第一件事是<strong data-page-node-id="DTICxkik97R0LhpcVtZZeT">完成的 diff</strong>，到那时返工已经缓慢了。</p>
+    </div>
+    <div class="new" data-page-node-id="Jj3paokWXDhmTeyUUdkEiN">
+      <p class="h" data-page-node-id="6RPH0JWuUxvabzvFGoI9wj">AI 原生</p>
+      <p data-page-node-id="cK3sC6xRxf3KeB3AngvoJC">工作从 Claude 在 plan mode 下产生的<strong data-page-node-id="8t79aFHgMiAJ2wTBWkz2bd">书面计划</strong>开始——它能在不改变任何东西的情况下读代码库。工程师在写代码之前就修正计划，批准的版本<strong data-page-node-id="AakEz35uuTsNTg1qB4NnfZ">作为 <code data-page-node-id="MTvCEW0ukJNBDttmArl4F2">plan.md</code> 提交</strong>，供后续阶段检查。</p>
+    </div>
+  </div>
+
+  <p class="codehead" data-page-node-id="f2xmlJV5D5c33nbzySdAl5">示例 · plan.md</p>
+  <pre data-page-node-id="gd3SqAZtUIa4SsztVdHU54"><code data-page-node-id="7eFdZVzyeD8eLTUgoBJaZX"># Plan: claims status self-service (from intent.md 2026-06-02)
+
+## Files that change
+portal/src/claims/StatusPanel.tsx (new), claims-api/routes/status.py,
+claims-api/tests/test_status.py
+
+## Order of work
+1. Add the status endpoint behind existing auth.
+2. Panel against the endpoint.
+3. Wire into the portal nav.
+
+## Risks
+The claims-core API rate-limits at 50 rps; the panel must cache.
+
+## Proof
+test_status.py covers the four claim states; screenshot matches the
+approved mock.</code></pre>
+  <pre data-page-node-id="gd3SqAZtUIa4SsztVdHU54"><code data-page-node-id="7eFdZVzyeD8eLTUgoBJaZX"># 计划：理赔状态自助服务（来自 intent.md 2026-06-02）
+
+## 变更文件
+portal/src/claims/StatusPanel.tsx（新建）、claims-api/routes/status.py、
+claims-api/tests/test_status.py
+
+## 工作顺序
+1. 在现有身份验证后添加状态端点（status endpoint）。
+2. 基于该端点开发面板组件（Panel）。
+3. 接入 Portal 导航。
+
+## 风险
+claims-core API 的速率限制为 50 rps；面板必须进行缓存。
+
+## 验证依据
+test_status.py 覆盖了四种理赔状态；截图与已批准的原型图匹配。</code></pre>
+
+  <h3 data-page-node-id="0jET9udrGphkUrkv5PWyaI">三个子 play：机构知识怎么变成配置</h3>
+
+  <div class="grid g3" data-page-node-id="EZkqwUmATK3qYOqVis23xf">
+    <div class="card" data-page-node-id="bXICCv9nczEJJpFwn0hOXd">
+      <h5 data-page-node-id="AUktEv5Z9CNdHxsfxVfzqu">CLAUDE.md · 团队共享的上下文</h5>
+      <p data-page-node-id="sl1MCXKNJQjK2z1zqmyaTg">给 Claude 提供新加入者需要的上下文：约定、命令、架构、团队最常看到的错误。曾被放在人们头脑和 wiki 里的知识，变成<strong data-page-node-id="SVB5I2na5SGFyOFLXoryfz">每个会话开始时读取的一个文件</strong>。</p>
+      <p style="margin-top:8px" data-page-node-id="EjJs5eeeOHl23px2Aq3xX9">工作规则：<strong data-page-node-id="55wAVGb0DOFCnRSBbR6p3n">当 Claude 两次犯同一个错误时，更正进入 <code data-page-node-id="GwZBUfXbJZ5MAGPKWjN29w">CLAUDE.md</code>。</strong>保持在一页以内——任何过时的内容都在无收益地占用上下文。</p>
+    </div>
+    <div class="card" data-page-node-id="4PfgJTEeYxi5Pa2CswZScT">
+      <h5 data-page-node-id="YfAjBVQfctPqC66zuR48AD">Skills · 机构知识可操作化</h5>
+      <p data-page-node-id="OpsHREacyycDCnyh2lub8B">指令明确、版本控制、广泛应用，策略变化时集中更新。经验法则：<strong data-page-node-id="jNOU9smSaPikDimckONVDm">为「必须一致应用的机构知识」写 skill</strong>；不要为属于 <code data-page-node-id="L8KCbuz8Hb6jxVwZ8eLGUA">CLAUDE.md</code> 或提示的组件写 skill。</p>
+      <p style="margin-top:8px" data-page-node-id="6ymdNEBDyGUFsUALTWgfbz">放置位置：repo 的 <code data-page-node-id="hoa2MJHVkGHdxcQSuG2aNP">.claude/skills/&lt;name&gt;/</code> 随代码发布，或通过 plugin 组织范围内分发。</p>
+    </div>
+    <div class="card" data-page-node-id="bJHP8DdAKy9izP8wrg4t8d">
+      <h5 data-page-node-id="g95eGOIyzCu5Wk2KRl3G49">Hooks · 确定性护栏</h5>
+      <p data-page-node-id="gXu17O1wbree03JOApyF2o">Skill 是建议性控制，<strong data-page-node-id="B4E30sxdCutManSJmltRxn">hook 是背后的确定性层</strong>。Claude 的操作在实现期间大多是文件编辑和 shell 命令，所以构建阶段是 hooks 最频繁触发的地方。</p>
+      <p style="margin-top:8px" data-page-node-id="YAolS83JwuADGF2sYllejr">典型用途：阻止编辑受保护路径（生成类、冻结包）→ 编辑后跑格式化与 lint → 把凭证排除在 diff 之外。要求人工批准的 hook 应归入 Deploy 阶段的关卡。</p>
+    </div>
+  </div>
+
+  <p class="codehead" data-page-node-id="POGD2ARR9eWNv4Du9EuBhC">示例 · CLAUDE.md</p>
+  <pre data-page-node-id="gsej7O2O0XtUIy4TDV1M02"><code data-page-node-id="4K83BLFVrazoqoDl9nxOVJ"># Payments service
+
+## Commands
+- Build: make build
+- Test: make test (unit), make itest (integration, needs docker)
+- Lint: make lint (runs in CI; fix before pushing)
+
+## Conventions
+- Java 21, Spring Boot 3. No new Lombok.
+- Money is always BigDecimal, never double.
+- Every endpoint needs an integration test in src/itest.
+
+## Architecture
+- api/ holds REST controllers, core/ holds domain logic,
+  adapters/ talks to external systems.
+- Kafka events are defined in schemas/; never edit generated classes.
+
+## Things Claude gets wrong
+- Do not bump dependency versions; the platform team owns them.
+- The legacy v1/ package is frozen; changes go in v2/.</code></pre>
+  <pre data-page-node-id="gsej7O2O0XtUIy4TDV1M02"><code data-page-node-id="4K83BLFVrazoqoDl9nxOVJ"># 支付服务
+
+## 命令
+* 构建：`make build`
+* 测试：`make test`（单元测试），`make itest`（集成测试，需要 Docker）
+* 代码检查（Lint）：`make lint`（在 CI 中运行；推送前请先修复问题）
+
+## 规范 / 约定
+* 使用 Java 21、Spring Boot 3。禁止新增 Lombok 依赖。
+* 金额一律使用 `BigDecimal`，绝对不能用 `double`。
+* 每个 API 接口都必须在 `src/itest` 中编写集成测试。
+
+## 架构
+* `api/` 存放 REST 控制器（Controllers），`core/` 存放领域核心逻辑，`adapters/` 用于与外部系统对接。
+* Kafka 事件定义在 `schemas/` 目录下；切勿直接修改自动生成的类。
+
+## Claude 容易弄错的地方
+* **请勿**升级依赖包的版本；这些由平台团队（Platform team）统一维护。
+* 遗留的 `v1/` 包已被冻结；所有新修改必须在 `v2/` 中进行。</code></pre>
+
+  <p class="codehead" data-page-node-id="5YwBpTcR44qYBOe8CQFH0P">示例 · .claude/skills/secure-api-review/SKILL.md</p>
+  <pre data-page-node-id="Ev43r2HiYxeBcMItNMaloG"><code data-page-node-id="Hb4kV7BrHWRtxaHDOnOvLn">---
+name: secure-api-review
+description: Apply the API security standard. Use whenever creating or
+  modifying an external-facing endpoint, reviewing API code, or
+  generating an OpenAPI spec.
+---
+# Secure API review
+
+When you create or change an API endpoint:
+1. Authentication: every endpoint requires the gateway JWT;
+   no anonymous routes outside /health.
+2. Input validation: validate request bodies against the OpenAPI
+   schema and reject unknown fields.
+3. Audit: every state-changing endpoint emits an audit event with
+   actor, action, entity and timestamp.
+4. Data classification: fields tagged pii in the schema must never
+   appear in logs or error messages.
+
+Run scripts/check-endpoints.sh and include its output in your summary.</code></pre>
+  <pre data-page-node-id="Ev43r2HiYxeBcMItNMaloG"><code data-page-node-id="Hb4kV7BrHWRtxaHDOnOvLn">---
+name: secure-api-review
+description: 应用 API 安全标准。在创建或修改对外接口、审查 API 代码或生成 OpenAPI 规范时使用。
+---
+# API 安全审查
+
+当你创建或修改 API 接口时：
+1. 身份认证：每个接口都需要网关 JWT；除了 /health 外，不得设置匿名路由。
+2. 输入校验：根据 OpenAPI 规范校验请求体（Request Body），并拒绝未知字段。
+3. 审计：每个改变状态的接口都要触发审计事件，记录操作者（actor）、操作（action）、实体（entity）和时间戳（timestamp）。
+4. 数据分类：规范中标记为 PII（个人身份信息）的字段绝不能出现在日志或错误信息中。
+
+运行 scripts/check-endpoints.sh 并将其输出结果包含在你的总结中。</code></pre>
+
+  <div class="callout" data-page-node-id="GRtmTi8GGgPJhMr6EhHrca">
+    <span class="k" data-page-node-id="xw3Y1AGf8qlUUfZS3COAFM">skill 与 hook 的分工判据</span>
+    <p data-page-node-id="RWFXbX5XXvCNFxgn6Sli4y">Skill 是一个控制，但是<strong data-page-node-id="RTNdxv8jXexVmM4HiDm74S">一个建议性的控制</strong>——它让 Claude 在写代码时可能应用策略，但<strong data-page-node-id="D7oBaecMB18U02zvJACX5h">没有什么强制会话遵守它</strong>。必须始终成立的策略，需要在 skill 后面再加确定性的东西：阻止操作的 hook，或在 PR 上重新检查策略的评审通过。<strong data-page-node-id="3Ui3l2eiuQKNr0U2IXX6UC">skill 使违规罕见，hook 使它们几乎不可能。</strong></p>
+  </div>
+
+  <h3 data-page-node-id="z8u4Z8ULcFVWVDa3a0HOix">并行会话与子智能体</h3>
+  <ul data-page-node-id="oVWzywT7JhTyolNGwBJIV6">
+    <li data-page-node-id="JaTWePVhCwidZGfneBSbGF"><strong data-page-node-id="StilA3V0N1xA9awfUPDj8B">并行会话（parallel session）</strong>：另一个完整的 Claude Code 实例，在它自己的 git worktree 中处理一个单独任务。每个会话对其他会话一无所知，<strong data-page-node-id="bc91ilyD4lykh50m03ozRZ">指导它们的工程师是唯一的共享物</strong>。</li>
+    <li data-page-node-id="GlfGqVSMR8bhD6GHmkou4Z"><strong data-page-node-id="x7Ncnf4QjAn5tEar2cAFYC">子智能体（subagent）</strong>：在单个会话内运行的有范围助手，拥有自己的上下文窗口和工具限制。适合跨任务重复的工作，例如验证应用是否按预期运行。</li>
+  </ul>
+  <p data-page-node-id="flQ9I6D3ROP1mKiN9B6fyK">实践建议：把工作切成不碰同一批文件的任务；每个并行任务获得自己的 worktree（如<code data-page-node-id="sP9GyMztp6BsBmDhxLiblc">claude --worktree feature-auth</code>）。<strong data-page-node-id="kVFHh1ZZcPWj0FAdQarsHi">两到三个会话是合理起点</strong>——实际上限是一个人能正确审查多少流，只有在评审跟得上时才增加会话。将重复工作变成 <code data-page-node-id="nBTjow7Z3FhXHUEUSlDcFj">.claude/agents/</code> 下的 markdown 定义并检入 git。</p>
+
+  <p class="codehead" data-page-node-id="zcgx4i22BIxuCEmwohoP33">示例 · .claude/agents/verifier.md</p>
+  <pre data-page-node-id="4bDiOoAxYxZEWpfBxBZRbR"><code data-page-node-id="22szSd56DVJUDL89wIfbE1">---
+name: verifier
+description: Runs the app and checks the change works before the session
+  reports done
+tools: Bash, Read
+---
+Start the app with make run. Exercise the changed behavior and the two
+nearest neighboring flows. Report what you ran, what you saw, and any
+behavior that does not match plan.md. Do not fix anything; report only.</code></pre>
+  <pre data-page-node-id="4bDiOoAxYxZEWpfBxBZRbR"><code data-page-node-id="22szSd56DVJUDL89wIfbE1">---
+name: verifier
+description: 在会话报告完成之前，运行应用并检查修改是否正常生效
+tools: Bash, Read
+---
+使用 make run 启动应用。测试本次修改的功能以及与之最相邻的两条业务流程。
+报告你所运行的命令、看到的结果，以及任何与 plan.md 不符的行为。
+不要进行任何修复，仅作报告。</code></pre>
+
+  <div class="grid g2" data-page-node-id="VAubmMVEImItrLwNlGU1h1">
+    <div class="card" data-page-node-id="9FqwxRqc7lzXpvdNtZbXBP">
+      <h5 data-page-node-id="iKXlv7kCqKaObIRRDmb32t">治理</h5>
+      <p data-page-node-id="njrGREJW5ZQ35wuIl0Iu7O"><strong data-page-node-id="UF1av3T0AW9AnxIb5tnHnK">设计评审在任何代码生成之前发生</strong>，当改变方向仍然只是编辑文档的事情。计划及其修订与「谁接受它」一起记录。常规变更由工程师批准；更高风险内容交给技术负责人或架构师。更多会话意味着更多输出，所以<strong data-page-node-id="1hgicqhzBFct0KA2ggt580">控制必须来自 repo 中的配置</strong>——那里的 hooks 和权限设置适用于所有会话。</p>
+    </div>
+    <div class="card" data-page-node-id="AWmvWWNgJiWz3HvAXZvLw7">
+      <h5 data-page-node-id="CwOHsroPZpn5S5EH9vWPfO">Sidebar · 遗留系统的真相来源</h5>
+      <p data-page-node-id="CxDVlOZX7J1vf2uyjrUdad">现有流程可能已经跟踪工件，只是在 Jira / Figma / 变更委员会里。对每个工件，<strong data-page-node-id="SXaEW9wuZQXoZZry40xIjH">命名一个系统为真相来源，其他一切都持有副本或链接</strong>。三种可选配置：<strong data-page-node-id="0kl1BlRANAPAKvZMpTBcyN">仓库为真相来源</strong>（markdown 权威，遗留系统引用提交中的文件）、<strong data-page-node-id="NT4fd0n5aILFmuoH7hbBXK">遗留系统为真相来源</strong>（Jira/ServiceNow 权威，markdown 是工作副本，通过 MCP 读写）、<strong data-page-node-id="6WckjdLjMrPuTiKQuecfpB">链接作为最低标准</strong>（所有工件注明记录 ID，所有遗留记录含 markdown 提交 SHA）。</p>
+    </div>
+  </div>
+
+  <div class="metrics" data-page-node-id="qZdMJuatyDkTtTjsr3Z3nI">
+    <div class="metric lead" data-page-node-id="ZLE8jmk0e6MPqOgmeL4o3l">
+      <span class="tag" data-page-node-id="b7MFFECGJVsIRHZYQY5gGR">前置指标 · Leading</span>
+      <p data-page-node-id="7WhmNsDgTEmc6W1l4RoNc9"><strong data-page-node-id="Ft1kWfQF9boOP9FgXRotxm">从第一次实现通过就合并的变更份额</strong>，以及<strong data-page-node-id="v0MetZuo3nUCQ4JzC5U5Jc">从计划批准到合并 PR 的时间</strong>。两项数据都在 PR 元数据中直接可取。</p>
+    </div>
+    <div class="metric lag" data-page-node-id="rpuFatPVKi0PFMwJ4RKOGl">
+      <span class="tag" data-page-node-id="4nK5uMY91EZMZrxJuyTifB">后置指标 · Lagging</span>
+      <p data-page-node-id="oedP6YIQq59PXzXp7TuAO7"><strong data-page-node-id="0hAdldOD28mCrYllprCzhH">每个变更的返工周期</strong>（同样来自 PR 元数据），以及<strong data-page-node-id="z52cUD4DY6SN9p6QZrGRt5">合并的 diff 仍然匹配已提交 <code data-page-node-id="TT180Fxv9y8eicKNinTEXK">plan.md</code> 的频率</strong>——后者衡量计划是否真的约束了实现，而不只是走个流程。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="s07" data-page-node-id="kYh8deUKXIbQ7njODRx9aW">
+  <div class="stage-head" data-page-node-id="HCAOtb9jxdvM4ENGMofAue">
+    <div class="stage-badge" data-page-node-id="M6A2LEyqOR8PxKUNxhRfaW">04</div>
+    <div class="t" data-page-node-id="fuc3NGbdT1C21meBV0s4cK">
+      <div class="en" data-page-node-id="mCGKHuqOSEoOUYipc3HDSN">Stage 4 · Test</div>
+      <h2 data-page-node-id="X0DJjPohUsNyf7RuGsnMCK">测试：让每个会话在人类看到它之前检查自己的工作</h2>
+    </div>
+  </div>
+
+  <div class="callout" data-page-node-id="S8G09PnuBcWza3CDTYWpM2">
+    <span class="k" data-page-node-id="DQYCX5gKFwg655ZN83Sapf">核心理念</span>
+    <p data-page-node-id="SK5LOOL7wygvFp7l4OeG0u"><strong data-page-node-id="WHQnJZlgjoRtY0Vbq82iSw">每个会话在人类看到它之前检查自己的工作</strong>，指导智能体的配置像它编写的代码一样被回归测试。</p>
+  </div>
+
+  <h3 data-page-node-id="o4Hg7AVnUrQ8eA1A4sfJXI">节点结构：会话内自检循环 + CI 里的 evals</h3>
+  <p data-page-node-id="PTJxMGJQFg8AiTgBDIttks">Test 阶段有两个独立的机制，容易混淆：<strong data-page-node-id="PaUCfX8gQxvceh5BWKCNIW">反馈回路</strong>贯穿整个任务，让 Claude 边做边自检；<strong data-page-node-id="PCeAPRijGj2KFEXuyI8JWs">验证器子智能体</strong>则是在会话认为工作完成后，用<strong data-page-node-id="4D0YeIEyiP8JtPPzo6hnHt">全新的上下文窗口</strong>做最后打包检查——这样裁决不会被产生代码时的假设着色。</p>
+
+  <div class="fig" data-page-node-id="ZlDE2YgXtW5ZzLRZ2C2e10">
+    <svg viewBox="0 0 960 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Test 阶段的节点流程：三种反馈通道、会话内自检循环、以及 CI 中的持续 evals" data-page-node-id="MbpQDrjHrhAOHPUg5NuPAH">
+      <defs data-page-node-id="EGU8eEs3f1xfYnFAk80yP7">
+        <marker id="p4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="KFWl8PmHxgmk6SRAdHoZdc">
+          <path d="M0,0 L10,5 L0,10 z" fill="#71767F" data-page-node-id="QdXeNLUCDbNCiXMdSbtLWf"/>
+        </marker>
+        <marker id="p4r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="iEAirohy2mx3sjZvyEkjHg">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B3261E" data-page-node-id="173lDo1KXsDygBuvK16sOG"/>
+        </marker>
+      </defs>
+
+      <text x="8" y="26" font-size="12" font-weight="700" fill="#0F766E" data-page-node-id="gPcOG8HakQYJHvg91QYRKs">三种反馈通道 —— 会话必须能自己验证工作，否则工程师成为瓶颈</text>
+      <rect x="8" y="40" width="290" height="40" rx="9" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="30mK3smUdGZXiApOHGwliT"/>
+      <text x="153" y="65" font-size="11.5" fill="#3D434F" text-anchor="middle" data-page-node-id="GUXBLCrlyfXdIz6rpoEadD">make test · 失败时非零退出</text>
+      <rect x="335" y="40" width="290" height="40" rx="9" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="0EtQGYNKeQHGx3Y8Dk6FEG"/>
+      <text x="480" y="65" font-size="11.5" fill="#3D434F" text-anchor="middle" data-page-node-id="m7YtlxjARWW72XVv1sJ7Yq">make build · 构建成功</text>
+      <rect x="662" y="40" width="290" height="40" rx="9" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="EriMC1WkpKxxIvy5Eu7Eff"/>
+      <text x="807" y="65" font-size="11.5" fill="#3D434F" text-anchor="middle" data-page-node-id="ABm8Nqcyd6PTov76zvdwCP">浏览器 / 截图 diff · UI 工作</text>
+
+      <text x="8" y="118" font-size="12" font-weight="700" fill="#0F766E" data-page-node-id="8ArN7b4B0F5psuOzcM6fml">会话内自检循环 —— 在人类看到之前把错误修掉</text>
+
+      <rect x="8" y="136" width="170" height="64" rx="10" fill="#0F766E" data-page-node-id="GVq1XyMYlPwoN8pXgYalc9"/>
+      <text x="93" y="161" font-size="10.5" fill="#A9DDD7" text-anchor="middle" font-weight="700" data-page-node-id="JG4GhDdWSlvcoxXmIQD3GE">步骤 3</text>
+      <text x="93" y="183" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="pcXjHJUKaCkC9HQYPuGAAo">陈述可量化目标</text>
+
+      <line x1="178" y1="168" x2="198" y2="168" stroke="#71767F" stroke-width="1.4" marker-end="url(#p4)" data-page-node-id="rS1Lsphf9TW38tjHel11dM"/>
+
+      <rect x="202" y="136" width="170" height="64" rx="10" fill="#0F766E" data-page-node-id="ocJwXIrwYYZrpj53rBeDSF"/>
+      <text x="287" y="161" font-size="10.5" fill="#A9DDD7" text-anchor="middle" font-weight="700" data-page-node-id="WdecG4zVdk0W9irjvK8Yvt">步骤 6</text>
+      <text x="287" y="183" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="Pbi1bRWDIT0UbUbldr1fGO">Claude 迭代修改</text>
+
+      <line x1="372" y1="168" x2="392" y2="168" stroke="#71767F" stroke-width="1.4" marker-end="url(#p4)" data-page-node-id="mFiEl5NKJISsBX7GogeSEI"/>
+
+      <rect x="396" y="136" width="190" height="64" rx="10" fill="#0F766E" data-page-node-id="w58OlajE6rrSr3yFpBo9TF"/>
+      <text x="491" y="161" font-size="10.5" fill="#A9DDD7" text-anchor="middle" font-weight="700" data-page-node-id="akmUy3XIJY20awk4E7Rxtf">步骤 4–5</text>
+      <text x="491" y="183" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="5ZjpwUzx8l1I9x82WskjeD">跑测试 / 构建 / 截图</text>
+
+      <line x1="586" y1="168" x2="606" y2="168" stroke="#71767F" stroke-width="1.4" marker-end="url(#p4)" data-page-node-id="riv73ApBLCC8jbuJuGl6T7"/>
+
+      <rect x="610" y="136" width="170" height="64" rx="10" fill="#0F766E" data-page-node-id="GUTszj4lkoDc23R7E3OcLL"/>
+      <text x="695" y="161" font-size="10.5" fill="#A9DDD7" text-anchor="middle" font-weight="700" data-page-node-id="eLTRNX78rrcUDQZOoVzSNT">判据</text>
+      <text x="695" y="183" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="WFUNwxzw516HG5LGRqy1Y5">目标全部成立？</text>
+
+      <line x1="780" y1="168" x2="800" y2="168" stroke="#71767F" stroke-width="1.4" marker-end="url(#p4)" data-page-node-id="OQSd4f3w2LONyO5AmmXVFB"/>
+
+      <rect x="804" y="136" width="148" height="64" rx="10" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.6" data-page-node-id="JJUAhzBndBEGMmX2dKZzwX"/>
+      <text x="878" y="161" font-size="10.5" fill="#0F766E" text-anchor="middle" font-weight="700" data-page-node-id="3RS9BYtoDKpWxLN6pGtBmt">是</text>
+      <text x="878" y="183" font-size="11" fill="#16181D" text-anchor="middle" font-weight="600" data-page-node-id="xyn4IxWYps2pDQ7abLe0j5">报告完成 · 粘贴输出</text>
+
+      <path d="M695,200 L695,232 L287,232 L287,208" fill="none" stroke="#B3261E" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#p4r)" data-page-node-id="0FXEm4fFcG1QgFnkLiQcRk"/>
+      <text x="491" y="256" font-size="10.5" fill="#B3261E" text-anchor="middle" font-weight="700" data-page-node-id="ndJWLm9HlxSIrQ5trfH23G">否 → 修复代码，不改测试（hook 阻止对测试文件的编辑）</text>
+
+      <text x="8" y="290" font-size="12" font-weight="700" fill="#6D28D9" data-page-node-id="95hCYynGICO4tck0QDhDbo">CI 中的持续 evals —— 阶段关卡 QA 的 AI 原生等价物</text>
+      <rect x="8" y="300" width="944" height="78" rx="10" fill="#F2EEFE" stroke="#D6C9F8" data-page-node-id="z7jwYFEGbALQ9EkQLdcgnB"/>
+      <rect x="24" y="332" width="212" height="34" rx="8" fill="#FFFFFF" stroke="#D6C9F8" data-page-node-id="0abKl2MZqTa4H0F9Gm0on1"/>
+      <text x="130" y="354" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="dh1bCYk0Prn12BXqk0EYHM">20–50 个真实任务</text>
+      <rect x="248" y="332" width="212" height="34" rx="8" fill="#FFFFFF" stroke="#D6C9F8" data-page-node-id="Rs7StYe9jsXYOWxJcqBOTw"/>
+      <text x="354" y="354" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="QRgD7PjI1fDPP9pq2fKfYR">配置变更时非交互式运行</text>
+      <rect x="472" y="332" width="220" height="34" rx="8" fill="#FFFFFF" stroke="#D6C9F8" data-page-node-id="mDKSyaM1FkBrXvqvKWDt51"/>
+      <text x="582" y="354" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="hLCrHKCeFfdkF0hDCOB7BQ">通过率对合并设关卡</text>
+      <rect x="704" y="332" width="232" height="34" rx="8" fill="#FFFFFF" stroke="#D6C9F8" data-page-node-id="AUdnFa8LzDcPJAm6KwLmki"/>
+      <text x="820" y="354" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="TJi3dDLpb1olnQvnVraHkx">每个生产事件 → 一个 eval</text>
+      <text x="24" y="322" font-size="10.5" fill="#6D28D9" font-weight="700" data-page-node-id="ErD6cQh7rJiKTnGFG3w7o0">套件在 CI 中按计划运行，并且在 CLAUDE.md / skills / hooks 发生任何变更时运行</text>
+
+      <text x="8" y="404" font-size="11" fill="#71767F" data-page-node-id="IkxmyweIMxCP1FcAlSWbtE">evals 是活的套件：随着模型改进，曾经有区分度的案例会失去区分度，必须从持续监控中补充新案例。</text>
+    </svg>
+    <p class="cap" data-page-node-id="KfPLjcnGQPUFPsrmXfydDy"><b data-page-node-id="YMc8w1XvHS2x0zkXq5KM6V">图 7 · Test 阶段节点图。</b>上半是<strong data-page-node-id="7vD5XXXnjUi1oIdbL6jIsX">会话内循环</strong>：Claude 被给予可量化目标（"<code data-page-node-id="Gw79ApSEAVFJDIOEMIi7Hs">test_status.py</code> 中的所有测试通过"、"截屏匹配附加的模拟"），自己迭代直到通过，所以到达工程师的东西已经通过了它自己。下半是 <strong data-page-node-id="cJcHArj0UkjVpzmPfIQogU">evals</strong>：它把「指导智能体的配置」当作需要回归测试的生产代码——配置变了就跑套件，通过率下降就拦住合并。</p>
+  </div>
+
+  <h3 data-page-node-id="wPrJbBhJcM5BB0aZB3lBEc">传统 vs AI 原生</h3>
+  <div class="cmp" data-page-node-id="lTXRPY6jLePA6WO2zMElXf">
+    <div class="old" data-page-node-id="fwM1vlrMkwZeFLDFhE2JYx">
+      <p class="h" data-page-node-id="X5BgIL61PyfS4yNNDyQXoE">传统</p>
+      <p data-page-node-id="51hkMgaO1u5f9yfyNV0c3g">代码工作的信号<strong data-page-node-id="AL3hMKIMQEmBnXlzhrq14E">到达得很晚</strong>：CI 几分钟后，测试者几天后，生产几周后。当智能体产生代码时，晚到的信号意味着<strong data-page-node-id="QTyqz3fRiURn3wjc8jCpmr">一个人必须检查它的全部输出</strong>——那个人就成了瓶颈。</p>
+    </div>
+    <div class="new" data-page-node-id="XCudgqdJZPuspzU2zqi0dG">
+      <p class="h" data-page-node-id="dNagI1cKjqOBvJCJkPLVBG">AI 原生</p>
+      <p data-page-node-id="H2SgTdnhfOXN6ZHL5b7rwP">会话被给予一种<strong data-page-node-id="Ija60UMMd5gIFJRS3dBfZB">在人类看到之前检查自己工作</strong>的方式。运行测试、运行构建、截图。Claude 迭代直到检查通过。<strong data-page-node-id="xverxZxJNtTz1Yo00rKzEu">设置循环这件事落在运行会话的工程师身上</strong>，而不是 QA 团队。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="tODNFe5msgrijglqnu17vy">执行步骤要点</h3>
+  <ol data-page-node-id="ibYPB198QYDYjxTJfVN9eO">
+    <li data-page-node-id="IWO8M2MVhMmbVsLYtpUysF">如果今天检查工作需要一串命令和环境知识，把它包装成<strong data-page-node-id="LD4qG6GP9YS5U1anH5Y02r">单一目标</strong>如 <code data-page-node-id="ZmilygHc5jw9dQhU2Vo0or">make test</code> 或 <code data-page-node-id="sd7Nu40GZEXXXVULQ2Gru0">npm test</code>，失败时以非零退出。</li>
+    <li data-page-node-id="geT2SB1Fv4p5eQkPP1cBiu">在 <code data-page-node-id="OcKREZwSCByaMpMydKAlT4">CLAUDE.md</code> 的 Commands 部分列出每个命令，<strong data-page-node-id="vmXaF6ncNlozh6l1QXW9jQ">并给出健康输出的例子</strong>。</li>
+    <li data-page-node-id="P2EOs6uOC4T96ed1Co1qps">陈述目标时<strong data-page-node-id="LTJuqGPxlEfTgDYBf4DsY9">使其可量化</strong>，以便 Claude 能自己检查而不必问你。</li>
+    <li data-page-node-id="tr3GQ3YOhanZDlgUmodlkK"><strong data-page-node-id="0PDVELxAexMnf43T2EZxt1">修 bug 时先写失败的测试。</strong>让 Claude 把 bug 复现成测试、运行它、确认它因你期望的原因失败——然后提交那个测试。只有这样才让它在不编辑测试的前提下通过。一个在修复之前就存在、且智能体无法重写的测试，是 bug 已消失的证明。</li>
+    <li data-page-node-id="wQ0tVV1n2LjGnHT270ST5W">UI 工作用<strong data-page-node-id="XXcGnQvr5KNA4SIHeqEDoN">视觉检查</strong>关闭循环：实现 → 截屏 → 比较 → 调整。<strong data-page-node-id="ghRmvlLx1hE1yJvacSwdkb">两到三轮是正常的</strong>，结果应该每轮改善。</li>
+    <li data-page-node-id="1Ktmy10rDHQlnDXrutczMl">把验证作为「完成」的一部分：在报告任务完成之前跑测试并<strong data-page-node-id="VVjCVcZR0omYKIGH37AN5V">显示输出</strong>。</li>
+    <li data-page-node-id="jwD93U9XeZurkIq1JIzOUq"><strong data-page-node-id="XzrSYfEVp7JGolf1BuE1qu">循环本身也需要保护</strong>——修复代码的智能体不能削弱对该代码的检查。一个在修复任务期间阻止编辑测试文件的 hook 做到这一点；替代方案是在评审中检查 diff 并拒绝任何触及测试的变更。</li>
+  </ol>
+
+  <p class="codehead" data-page-node-id="4SKMaZWjYlT9iFkB2D969w">示例 · CLAUDE.md 的验证区块</p>
+  <pre data-page-node-id="Oq2UrJZHjnekCE7P5JSa4O"><code data-page-node-id="UTiXzBC518fHtnl6h41MId">## Verifying your work
+
+- Build: make build (must finish with "Build succeeded")
+- Test: make test (all green; never skip or delete a failing test)
+- Lint: make lint (zero warnings)
+
+Run all three before reporting any task complete, and paste the output.
+If a test fails, fix the code, not the test.</code></pre>
+  <pre data-page-node-id="Oq2UrJZHjnekCE7P5JSa4O"><code data-page-node-id="UTiXzBC518fHtnl6h41MId">## 验证你的工作
+
+- 构建：make build（必须以“Build succeeded”结束）
+- 测试：make test（全部通过；绝不跳过或删除失败的测试）
+- 代码检查：make lint（零警告）
+
+在报告任何任务完成之前运行上述全部三项，并粘贴输出结果。
+如果测试失败，请修复代码，而不是修改测试。</code></pre>
+
+  <p class="codehead" data-page-node-id="sfbsTsOLMErq8moSSbjLmH">示例 · .github/workflows/agent-evals.yml</p>
+  <pre data-page-node-id="Vqvv7maX9O4NEtzBBKB6gz"><code data-page-node-id="a9X98RdjmQgS3lEmjNzr5y">name: Agent evals
+on:
+  pull_request:
+    paths: ['CLAUDE.md', '.claude/**']
+  schedule:
+    - cron: '0 2 * * *'
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Run eval suite
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          for eval in evals/*.json; do
+            claude -p "$(jq -r '.prompt' $eval)" \
+              --allowedTools "Read,Edit,Bash(make test)" \
+              --output-format json > result.json
+            ./evals/check.sh "$eval" result.json
+          done</code></pre>
+
+  <div class="grid g2" data-page-node-id="Vq4vWH10EuYw7p1zHDG7xO">
+    <div class="card" data-page-node-id="MkcqEvd1B4tWDIDqRdTqbJ">
+      <h5 data-page-node-id="obWrrFT3ZZQx5Ro3NQmIfz">治理</h5>
+      <p data-page-node-id="jTxMROHAvsFGpgpRwM2iSt"><strong data-page-node-id="dlojAvR5xbDcfMtYbTJebQ">强制的是什么</strong>：任务报告完成前必须验证，以及修复期间阻止智能体编辑测试文件——两者都在组织想要保证的地方实现为 hooks。<br data-page-node-id="fz67QcNinBPC5EviedmeLK">
+      <strong data-page-node-id="OHAzvcGQxnBwDOOLD9BjWE">证据是什么</strong>：Claude 运行并粘贴的 <code data-page-node-id="sFFA0569Kpq2sReYgvEI68">make test</code> 字面输出、构建日志或截屏 diff——证据来自工具链，不是自述。<br data-page-node-id="4xtBTpKGK2zZ8df3U9hlNG">
+      <strong data-page-node-id="EbRDD6KsChGEubRfFt7biC">记录在哪</strong>：会话记录 + OpenTelemetry 导出到组织的可观测性栈，以及 PR 的检查运行中。<br data-page-node-id="zbcYOXnXRm802dDX7KOlQh">
+      <strong data-page-node-id="U3nqsHsi633SoDiIbiNrxJ">谁批准</strong>：评审 PR 的代码所有者，可以专注意图和风险，因为机械证据已经附加。</p>
+    </div>
+    <div class="card" data-page-node-id="ed48pA8KH8IBttKHEFJM6S">
+      <h5 data-page-node-id="KL2qWqWgNH0nzarxvJY5m4">Evals 怎么建</h5>
+      <p data-page-node-id="L0vlLAxig3Cgp0Hjl5CBUA">1. 平台工程师从最近工作中收集 <strong data-page-node-id="K9ahGnDYSBMAk7zUl4wKCk">20 到 50 个</strong>真实任务及其预期/接受的结果。<br data-page-node-id="EydO2tcjKsGdXGlExBOftG">
+      2. 每个任务写成一个 eval：提示 + 可接受的检查（测试通过、lint 干净、行为不变、策略遵循）。<br data-page-node-id="KKHS0RsLyp6Umh2NdALmxV">
+      3. 套件在 CI 中按计划、并在 <code data-page-node-id="xNHNaA4prxULjmIYDBoz35">CLAUDE.md</code>/skills/hooks 变更时运行——因为该配置指导智能体，值得得到代码级别的回归测试。<br data-page-node-id="w6ec5081C7anE1vLVHRR56">
+      4. 对降低通过率的配置变更设关卡。<br data-page-node-id="5Nt72Os5ZBAlBBgjiEpq1Z">
+      5. <strong data-page-node-id="jVcecstIN0zDeiYGvPyTuO">每个生产事件获得一个 eval</strong>，由拥有该事件的团队编写，并留在套件里作为回归测试。</p>
+    </div>
+  </div>
+
+  <div class="metrics" data-page-node-id="q1O6C5KfqqpV0RcgFZ2E3d">
+    <div class="metric lead" data-page-node-id="ErEDompnAb9i3UTQrtOp2Z">
+      <span class="tag" data-page-node-id="C3e3LB2VCkPDgWQPUcDW01">前置指标 · Leading</span>
+      <p data-page-node-id="q5HTjPA70f984vabq9OIIP"><strong data-page-node-id="0qfFoRZzRwkhBQZ021xqG9">智能体编写变更的第一次 CI 成功率</strong>（CI 系统已经支持），以及<strong data-page-node-id="IkFCBEE6e1cO1BSop6DCPF">随时间变化的 eval 通过率</strong>与<strong data-page-node-id="vCbIxTUXndC0UooQsRmla3">生产事件变成永久 eval 所需的时间</strong>。</p>
+    </div>
+    <div class="metric lag" data-page-node-id="GmoJTKZLKKYCfUeL2ZDZBk">
+      <span class="tag" data-page-node-id="r6uSAKf53oDszyIdO05u5p">后置指标 · Lagging</span>
+      <p data-page-node-id="44yEqpp4ArHrj26gcVowR6"><strong data-page-node-id="0t5WGTFJUz1Lod8eWNq4gZ">每个 PR 的评审时间</strong>——一旦测试捕获了评审者过去捕获的东西，应该下降；以及<strong data-page-node-id="NyaSdTYVI2zCtEy21ygVTS">CI 中捕获的回归 vs 生产中发现的回归</strong>，从事件追踪器导出。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="s08" data-page-node-id="4UiPSJGi11oookQo9U3JIJ">
+  <div class="stage-head" data-page-node-id="EXb6I01b8sdaZbEjsgaPWy">
+    <div class="stage-badge" data-page-node-id="20DAxHWCFzvd4oz4KTBKvH">05</div>
+    <div class="t" data-page-node-id="3yPimvMu3VvFlB2vLSt1Rf">
+      <div class="en" data-page-node-id="tdChDcuVIjzBkrGE4xgDYo">Stage 5 · Deploy</div>
+      <h2 data-page-node-id="KjlP5oyfE3eoNlU64lxJzQ">部署：评审双向运行，治理在智能体行动时执行</h2>
+    </div>
+  </div>
+
+  <div class="callout" data-page-node-id="FUeEEiYBhtaHfe1bxOPMAb">
+    <span class="k" data-page-node-id="l4uGMLnxiqqnu8XqhVlhiE">核心理念</span>
+    <p data-page-node-id="rKomj2HaM6k3gtmUygMPMj">评审在<strong data-page-node-id="HHGD5SO33VJJA2JO0eTEvo">两个方向</strong>运行：Claude 既评审传入的 PR，也处理自己 PR 上的评审评论。治理<strong data-page-node-id="ka57JJAFgmWqKuA39w2CcQ">在智能体行动时强制执行</strong>。<strong data-page-node-id="n30tYRFhEhPEPTpFTUTvW7">智能体做直到生产关卡的所有事情，而不做超过它的任何事。</strong></p>
+  </div>
+
+  <h3 data-page-node-id="Dq88FFHK0oCDuEBywJZoGn">节点结构：三通过集评审 → 人类关卡 → 分层自治</h3>
+
+  <div class="fig" data-page-node-id="TuqUBBf9Lsn10fqOAkPcYh">
+    <svg viewBox="0 0 960 390" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Deploy 阶段的节点流程：三通过集评审、发现分级、人类批准、按环境分层自主性" data-page-node-id="PvldIAQlWZgC3k9Tzmoz5t">
+      <defs data-page-node-id="G87tYMLTMqs0W8wUGaEeJE">
+        <marker id="p5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="Z1k3UYLTDNh9DiFyyoKaf3">
+          <path d="M0,0 L10,5 L0,10 z" fill="#71767F" data-page-node-id="xgeFSuuuviaWmVsHmv1eYp"/>
+        </marker>
+      </defs>
+
+      <text x="8" y="24" font-size="12" font-weight="700" fill="#15803D" data-page-node-id="lSPQPmBTndHE9LeJXZUEgv">评审链 —— 所有 PR 获得同一套评审通过集，发现按严重性排名</text>
+
+      <rect x="8" y="80" width="118" height="56" rx="10" fill="#15803D" data-page-node-id="aKPucQ1BzGEWTlD1kTAzTm"/>
+      <text x="67" y="113" font-size="11.5" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="cHsqGcWpmENqsyxUrdKPDY">PR 提交</text>
+
+      <line x1="126" y1="108" x2="146" y2="108" stroke="#71767F" stroke-width="1.3" data-page-node-id="vjDPy3bIQItp4vaELCsNK2"/>
+      <line x1="146" y1="68" x2="146" y2="148" stroke="#71767F" stroke-width="1.3" data-page-node-id="gy6QhxkUHUh98xlqC3gpDW"/>
+      <line x1="146" y1="68" x2="162" y2="68" stroke="#71767F" stroke-width="1.3" marker-end="url(#p5)" data-page-node-id="qKo6uN9X1VArqAiCqKorYC"/>
+      <line x1="146" y1="108" x2="162" y2="108" stroke="#71767F" stroke-width="1.3" marker-end="url(#p5)" data-page-node-id="Ea4AFsG2qR2nGboDq8qBRW"/>
+      <line x1="146" y1="148" x2="162" y2="148" stroke="#71767F" stroke-width="1.3" marker-end="url(#p5)" data-page-node-id="kAsEvCdGoQxraHbBGlG2CK"/>
+
+      <rect x="166" y="52" width="210" height="32" rx="8" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="DzAmwi3WvfqflruSnwz7qe"/>
+      <text x="271" y="72" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="gtdvPsK4jJEFlAJ5gTXJy5">Pass 1 · Bugs 逻辑与回归</text>
+      <rect x="166" y="92" width="210" height="32" rx="8" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="LUxA4DjC15oCACPCnD7e4o"/>
+      <text x="271" y="112" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="7HdufHtd8DfSWYyoEgA2Ph">Pass 2 · Security 安全与注入</text>
+      <rect x="166" y="132" width="210" height="32" rx="8" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="2HWWgpk59GAnV3maN1otwU"/>
+      <text x="271" y="152" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="cZ0IAPPDwUR4r7hRpFCy26">Pass 3 · Compliance 对照 spec</text>
+
+      <line x1="376" y1="68" x2="396" y2="68" stroke="#71767F" stroke-width="1.3" data-page-node-id="3stgr98CcwqgEkuqMlUpHK"/>
+      <line x1="376" y1="108" x2="396" y2="108" stroke="#71767F" stroke-width="1.3" data-page-node-id="t1E16sflrxfgLSIzapfPMf"/>
+      <line x1="376" y1="148" x2="396" y2="148" stroke="#71767F" stroke-width="1.3" data-page-node-id="UJ2mTHXvk49cgRQbxRZ9p9"/>
+      <line x1="396" y1="68" x2="396" y2="148" stroke="#71767F" stroke-width="1.3" data-page-node-id="9W7U0vdvZDgXTWv1CIwz8m"/>
+      <line x1="396" y1="108" x2="416" y2="108" stroke="#71767F" stroke-width="1.3" marker-end="url(#p5)" data-page-node-id="kkqqdi1C8vtU8HV7Aj9N2p"/>
+
+      <rect x="420" y="80" width="150" height="56" rx="10" fill="#15803D" data-page-node-id="e1O2m7cnMTEYAV8xrbwabS"/>
+      <text x="495" y="104" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="AEHrNAECM6sxnRsIcMWWNI">发现分级</text>
+      <text x="495" y="123" font-size="9.5" fill="#DAF0E1" text-anchor="middle" data-page-node-id="iamTx71Pu61Qs9uRVUGQK7">Important vs Nit · 上限 5 个</text>
+
+      <line x1="570" y1="108" x2="606" y2="108" stroke="#71767F" stroke-width="1.4" marker-end="url(#p5)" data-page-node-id="NBi6RXjKu32tq5ZBRH6Lzs"/>
+
+      <rect x="610" y="80" width="176" height="56" rx="10" fill="#16181D" data-page-node-id="eTrPNQrCyh7q4GDUpANXcj"/>
+      <text x="698" y="104" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="F7H0NC3M8xE8jh1w3SFFJX">人类批准（分支保护）</text>
+      <text x="698" y="123" font-size="9.5" fill="#B9BEC7" text-anchor="middle" data-page-node-id="EcUd1F6Cd6NSLBv74fiGHD">发现本身不批准、不阻止</text>
+
+      <line x1="786" y1="108" x2="822" y2="108" stroke="#71767F" stroke-width="1.4" marker-end="url(#p5)" data-page-node-id="NAHceZQYfkBvzf8GA51FiN"/>
+
+      <rect x="826" y="80" width="126" height="56" rx="10" fill="#15803D" data-page-node-id="YkxX2mACbJFyJFAXPg8DGJ"/>
+      <text x="889" y="113" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="bmNmcznaTqnBS1LyupGDjl">合并 → CI/CD</text>
+
+      <text x="8" y="176" font-size="12" font-weight="700" fill="#B45309" data-page-node-id="wPLO3qNNr9DpVcmneqVykt">审批关卡 —— hooks 不只能阻止，也能「询问」</text>
+      <rect x="8" y="188" width="944" height="44" rx="9" fill="#FDF4E8" stroke="#E9C08A" data-page-node-id="qIadAgSbXTzsdJg4kzpvPO"/>
+      <text x="24" y="206" font-size="10.5" fill="#3D434F" data-page-node-id="rTzROV7rFV71w8vLqo4i3X">.claude/hooks/production-gate.sh —— 命令含 deploy 且含 production 时，若 RELEASE_APPROVAL 为空则 exit 2 阻止，</text>
+      <text x="24" y="223" font-size="10.5" fill="#3D434F" data-page-node-id="5cRyzcYO0PiWp5zTj6VDXH">原因与批准路线出现在 Claude 的输出中。不可协商的 hooks 放在托管设置里，个别工程师无法关闭。</text>
+
+      <text x="8" y="262" font-size="12" font-weight="700" fill="#15803D" data-page-node-id="q7HbeXQzlfXGGIdvZawvtP">按环境分层自主性 —— 自治性越靠近生产越低</text>
+      <rect x="8" y="274" width="314" height="42" rx="9" fill="#EDF7EF" stroke="#BFE3C8" data-page-node-id="drH0uekO3N2r4RClpOFwn3"/>
+      <text x="165" y="300" font-size="12.5" fill="#15803D" text-anchor="middle" font-weight="700" data-page-node-id="wiKQu7thBCV4k3gU3cxsQE">Dev · 智能体自由部署</text>
+      <rect x="322" y="274" width="316" height="42" rx="0" fill="#FDF4E8" stroke="#E9C08A" data-page-node-id="TgEhdmRZaERDeBYC6J5nG0"/>
+      <text x="480" y="300" font-size="12.5" fill="#B45309" text-anchor="middle" font-weight="700" data-page-node-id="JMFXXeLDYJ6EJkjQ9GemQ0">Staging · 居中</text>
+      <rect x="638" y="274" width="314" height="42" rx="9" fill="#FDEDEC" stroke="#F3C9C6" data-page-node-id="PnRq2Yqw4X7Bld70qCtJiG"/>
+      <text x="795" y="300" font-size="12.5" fill="#B3261E" text-anchor="middle" font-weight="700" data-page-node-id="Sd0HiEojQsKSl26pXHfWve">Production · 需具名授权</text>
+
+      <text x="165" y="336" font-size="10.5" fill="#71767F" text-anchor="middle" data-page-node-id="kFIcLXB4Hfwk6FPSQWmAaL">智能体可自由执行</text>
+      <text x="480" y="336" font-size="10.5" fill="#71767F" text-anchor="middle" data-page-node-id="YWBbWMre2EPOpG1CsbY8Hu">自动部署，生产变更需授权</text>
+      <text x="795" y="336" font-size="10.5" fill="#71767F" text-anchor="middle" data-page-node-id="5km4ysIuhplnHKpDygKtli">准备就绪 → 发布经理授权 → hook 强制</text>
+
+      <text x="8" y="368" font-size="11" fill="#71767F" data-page-node-id="qzawxQpKmu79KNLrW386PD">核心原则：智能体可以行动直到生产关卡，不能通过它。回滚是流水线中排练最多的路径，必须提前被证明。</text>
+    </svg>
+    <p class="cap" data-page-node-id="llZSuhwPXwDIskxQ7bdzTk"><b data-page-node-id="Ha3vSfOQZXUfft9ORFgtBe">图 8 · Deploy 阶段节点图。</b>三个通过集（Bugs / Security / Compliance）<strong data-page-node-id="xbE17rQVOHsfWCSxKLIdXS">并行运行、各自打标签</strong>，然后汇聚到统一的分级与人类关卡。关键设计：<strong data-page-node-id="fIdIRiS7qWTuzP9XX8yvAc">发现本身不批准也不阻止 PR</strong>——分支保护仍然要求代码所有者的批准，发现只是让那个人看到按严重性排序的结论。下方绿色条是分层自治：越靠近生产，智能体可做的事越少。</p>
+  </div>
+
+  <h3 data-page-node-id="5uweBZrkWZE7VohsRL6jI4">传统 vs AI 原生</h3>
+  <div class="cmp" data-page-node-id="gUCy1smUheDOLwgsgSPhKo">
+    <div class="old" data-page-node-id="woMPsdXOPFcn8pcgKaRo34">
+      <p class="h" data-page-node-id="sLMpedTcjm4dncYUordGZY">传统</p>
+      <p data-page-node-id="z2XNzIkvyUXREAGvQwrr0u">评审能力围绕人类输出规划。一个 PR 等待评审者读完，<strong data-page-node-id="uZOMXgJMj08btewXVKWeO1">评审质量随评审者负载波动</strong>，作者追着评审者跑，积压持续增长。</p>
+    </div>
+    <div class="new" data-page-node-id="6ThQvRVMgao0t2E9LOVBKM">
+      <p class="h" data-page-node-id="pqkCu0C7VrxJeBTODoiz9G">AI 原生</p>
+      <p data-page-node-id="6IjPDTAX4GphtUfsDHJt2D">所有 PR 获得<strong data-page-node-id="2KPo6C6pixicMMyopWRJF0">同一套评审通过集</strong>，发现按严重性排名。人类注意力移到一个更高的层级：<strong data-page-node-id="it53GqBjvp2wHXdXdLAZE5">变更是否做了计划意图的事，风险是否可接受</strong>。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="SEVBNjT23fJKjodCli7FUq">执行步骤要点</h3>
+  <ol data-page-node-id="sKqbPECD0AzOjskttfgAWD">
+    <li data-page-node-id="HAqX1oYDmwvefTuyBsaBE5"><strong data-page-node-id="ghJLIFdz07JQGJyNvt4ebF">托管 Code Review 服务是最快的开始</strong>——管理员启用并选择仓库。需要控制流水线或想通过自己的云协议路由模型调用时，在 CI 中用 <code data-page-node-id="lGZ9umCk5wP1REWZoZrH29">claude-code-action</code> 自行运行。</li>
+    <li data-page-node-id="FXFaB21aNDvGZkxlOEha0X"><strong data-page-node-id="KNpS9W55Otvy61nwEKYtEO">技术负责人把评审策略写成 <code data-page-node-id="3G3bzA9rysbj4mTLPg7GSU">REVIEW.md</code></strong>，分为组织关心的通过集，并定义什么算 Important 与 Nit、跳过什么。</li>
+    <li data-page-node-id="8dVYRsAsAgLN50N1sQo0qF"><strong data-page-node-id="tKnCMIKb0MWC3BAB7qUyAF">设置人类阈值。</strong>发现不批准也不阻止 PR，分支保护仍要求代码所有者批准；想按发现对合并设关卡的平台工程师，可以读取检查运行发布的严重性计数作为机器可读统计。</li>
+    <li data-page-node-id="1rKlhRrn5eBWCUVC6JsGbC"><strong data-page-node-id="3ANtmOjBg5irKMZGnbrpp9">让 Claude 处理评审评论。</strong>评审者或作者在评论上标记 <code data-page-node-id="UlvDgjzo9zXLErhHjwJSze">@claude</code>，Claude 处理并推送修复，PR 线程记录请求与变更。进一步的做法是<strong data-page-node-id="L5nIse4BNF8eBOgRAHz0k9">让 Claude babysit PR 到合并</strong>：扫描未解决的评审评论与失败的检查，逐个处理直到 PR 变绿、只等代码所有者批准。</li>
+    <li data-page-node-id="eH31HwbJgOpYHMKfIg1p72"><strong data-page-node-id="xZu2FvFXH3xAqAEc74SAWs">评审发现反馈到 <code data-page-node-id="FHGqFECcTWQJxvEynghniq">CLAUDE.md</code>。</strong>当评审第二次标记同一个错误，更正作为该次评审的一部分进入 <code data-page-node-id="EWtAB5Jshal8AJ6H32zKRD">CLAUDE.md</code>——因为评审读 <code data-page-node-id="9qUMDvwl0mHFjt8SPOFVZl">CLAUDE.md</code>，这个错误从下一个 PR 起就被捕获。评审还应标记「变更何时使 <code data-page-node-id="9aenMVrwKuXbWvwziSo8PI">CLAUDE.md</code> 过时」。</li>
+    <li data-page-node-id="BKwGKgYc7nDaBrZcI7UAub"><strong data-page-node-id="NM829oBqCqbRpr0woZpawH">每月调优一次。</strong>技术负责人给发现评分以便评审者改进，并在 <code data-page-node-id="rgLQjSILBJgWQJmHkxfQtK">REVIEW.md</code> 中限制 Nit 数量；生成路径和 CI 已经强制的内容被排除。</li>
+  </ol>
+
+  <p class="codehead" data-page-node-id="rMgehrqDRVmIIkYIzEeeCJ">示例 · REVIEW.md</p>
+  <pre data-page-node-id="1Jqj1jXuOcxBGq1QYVSpk4"><code data-page-node-id="l1j3LstKIvoFEE6gVTXu9O"># Review instructions
+
+## Passes
+Run three passes and tag each finding with its pass:
+- Bugs: logic errors, broken edge cases, subtle regressions
+- Security: injection risks, authentication gaps, PII in logs
+- Compliance: the change matches spec.md, plan.md and our design principles
+
+## What Important means here
+Reserve Important for findings that would break behavior, leak data
+or breach a policy. Style and naming are nits.
+
+## Cap the nits
+Report at most five nits per review; summarize the rest as a count.
+
+## Do not report
+Generated files under src/gen/ and anything CI already enforces.</code></pre>
+  <pre data-page-node-id="1Jqj1jXuOcxBGq1QYVSpk4"><code data-page-node-id="l1j3LstKIvoFEE6gVTXu9O"># 审查指南
+
+## 审查轮次
+运行三轮审查，并在发现的每个问题上标注对应的轮次：
+
+- 逻辑缺陷（Bugs）：逻辑错误、边界情况失效、隐蔽的回归问题
+- 安全性（Security）：注入风险、身份验证漏洞、日志中的个人身份信息（PII）泄露
+- 合规性（Compliance）：变更是否符合 spec.md、plan.md 以及我们的设计原则
+
+## 此处“重要（Important）”的含义
+仅对会破坏系统行为、泄露数据或违反政策的发现保留“重要”标记。代码风格和命名规范仅属于微小瑕疵（nits）。
+
+## 限制微小瑕疵的数量
+每次审查最多报告 5 个微小瑕疵（nits）；其余的汇总为一个统计数量即可。
+
+## 无需报告的内容
+src/gen/ 目录下的生成文件，以及 CI（持续集成）已经强制约束的任何内容。</code></pre>
+
+  <h3 data-page-node-id="IIEMVODpUqoPIvxrlxhCID">CI/CD 集成与部署</h3>
+  <p data-page-node-id="QeNBWySTuA4NEK6wvEaGIx">传统流水线运行确定性脚本，<strong data-page-node-id="1CuweqUCerWXx7wcZ4Wp6V">任何需要判断的东西都等待人类</strong>——分类 flaky test、写变更日志、弄清楚构建为什么坏了；部署和回滚是人在压力下遵循的 runbook。AI 原生的做法是<strong data-page-node-id="Hj2Ftoxak0v8H7Yn6PUK7J">让 Claude 在流水线内非交互式地跑那些判断步骤</strong>，在具有有范围凭证的沙箱中；部署工具通过 MCP 暴露给智能体，所以写和测试变更的工作流也能发布它，并在组织为每个环境定义的关卡内回滚它。</p>
+
+  <ul data-page-node-id="R2QmoHhtvPNVJfue1K6zPa">
+    <li data-page-node-id="CAJVm90yDQlKIllnkAJcvD"><strong data-page-node-id="DlW0VXbbH93PPP9F1h0mZo">从只读判断步骤开始</strong>：在流水线作业中用 <code data-page-node-id="zF07YXThtEqVgkFxOhD0st">claude -p</code> 分类失败的构建、总结 flaky test、起草变更日志。</li>
+    <li data-page-node-id="Cx0ZMrW2NRQaED19AAGD8X"><strong data-page-node-id="RUqigemoIJVSzxQ8Hji2h9">在现有门后添加写步骤</strong>：修复 lint、更新生成的文档、通过 <code data-page-node-id="P4lawHQMZXTat0IUOqDICz">@claude</code> 处理评审评论。智能体写的任何东西<strong data-page-node-id="fYi39hDacADQvEMaNPQKo9">作为 PR 经分支保护到达，智能体没有推送到 main 的路线</strong>。</li>
+    <li data-page-node-id="hjvyCQks4dVwf7LSI8PrBF"><strong data-page-node-id="GZQO8gkGssymEsh0eyHIHB">执行是沙箱化的</strong>：智能体作业在带网络策略的容器中运行，使用短期有范围令牌，默认不持有生产凭证。</li>
+    <li data-page-node-id="7U8pdea0vF4O8MtvJQtP4U"><strong data-page-node-id="50OoDW29HISS9zPhGwnFFP">通过 MCP 暴露部署</strong>：Deploy、status、rollback 成为按环境限定范围的工具，所以智能体的部署能力是一份允许列表，而不是一段带凭证的 shell 脚本。</li>
+    <li data-page-node-id="DLGNJpZQC4h0wnj15EzW0H"><strong data-page-node-id="KOTb6qyk9wW7OvVlu18mbh">按环境分层自主性</strong>：开发环境智能体自由部署；生产环境智能体准备发布、发布经理授权、hook 强制关卡；Staging 位于中间。</li>
+    <li data-page-node-id="T0DklCJzY3HTJ1BjlRqqPv"><strong data-page-node-id="X6U3eIAKOFYF7CQ7DfWROd">回滚应该是流水线中排练最多的路径</strong>：一条智能体可以运行的单一命令，并定期在 staging 中演练——因为 Maintain 阶段在控制带被突破时会调用它。</li>
+  </ul>
+
+  <p class="codehead" data-page-node-id="prJFdgIJ1XEr5HdHImn4jw">示例 · 流水线步骤</p>
+  <pre data-page-node-id="88i4CcCOLxcoc9tDfXG7il"><code data-page-node-id="vsZdFlGQ1msQZIcIHLuaBN">- name: Triage failed build
+  if: failure()
+  run: >
+    claude -p "Read the build log at out/build.log. Identify the most
+    likely cause, say whether the failure looks flaky or real, and write a
+    three-line summary for the PR thread." >> triage.md</code></pre>
+  <pre data-page-node-id="88i4CcCOLxcoc9tDfXG7il"><code data-page-node-id="vsZdFlGQ1msQZIcIHLuaBN">- name: 诊断失败的构建
+  if: failure()
+  run: >
+    claude -p "读取 out/build.log 中的构建日志。找出最可能的失败原因，
+    说明该失败看起来是偶然交替出现的（flaky）还是真实存在的（real），
+    并为 PR 讨论串写一份三行的总结。" >> triage.md</code></pre>
+
+  <div class="grid g2" data-page-node-id="MozOp4Urlb2bBTlXI4lY9D">
+    <div class="card" data-page-node-id="yFeLharARu0g9UCYGom6LS">
+      <h5 data-page-node-id="HyvVJdOqI4Z8A3LTzCMIlm">治理 · 三条控制</h5>
+      <p data-page-node-id="dBFsKHTAcRTqEmLzEuqqqJ"><strong data-page-node-id="lZ5siS88CGL69N0V4QhNiD">分支保护</strong>把智能体写的任何东西变成 PR，没有直接通往 main 的路径。<br data-page-node-id="XMt9toZ2uLJ7RzozH527a6">
+      <strong data-page-node-id="7XcJ2M33QVQEkpiNE6o3L9">生产部署 hook</strong>阻止发布，直到具名的发布经理授权它。<br data-page-node-id="49pVxjJTgLbKYCOYUWtxPC">
+      <strong data-page-node-id="RCtfwAYH6xjl3Ef2HyVF6S">每个非交互式运行以自己的身份行动</strong>，所以流水线日志能把「智能体做的」与「触发它的工程师做的」分开。</p>
+      <p style="margin-top:8px" data-page-node-id="rTGpGzaB0UWiEUI0jh3qUP">按环境的权限层级，决定了智能体在到达关卡途中可以做多少事。</p>
+    </div>
+    <div class="card" data-page-node-id="V2CV0nwl7WuAghQDXa0z4A">
+      <h5 data-page-node-id="RbBjUPRELhoh98Ik5Qbq4X">托管设置 · 受监管企业的起点</h5>
+      <p data-page-node-id="orThY4t3sKUeeGN7B5bVAI">由平台团队通过 MDM 或管理控制台部署，<strong data-page-node-id="ZyKqOyVUvLWGC5DKjr8CbD">工程师不能编辑或覆盖任何内容</strong>。关键条款与控制含义：<br data-page-node-id="oaDLUkD2tL25B989FbELdh">
+      <code data-page-node-id="ppGc3ZCwmOPe32bf6KbLdg">permissions.deny</code> 把秘密排除在上下文之外并阻断任意网络出口；<br data-page-node-id="wnNhKqqTLDsHUEa8i4jaLP">
+      <code data-page-node-id="qE2cMIfrk3WSXqZ6VqCtvp">disableBypassPermissionsMode</code> + <code data-page-node-id="NAvhHNQno2giBPPET6XbVN">allowManagedPermissionRulesOnly</code> 让没有工程师、项目文件或命令行标志能扩大规则；<br data-page-node-id="MEqYQZLBr2HFEV3sqfQX3F">
+      <code data-page-node-id="lM2eBNznsHzhvC3HyzoQ8h">sandbox</code> 关闭权限关不掉的缺口（工具级拒绝拦不住 shell 命令联网，OS 级域允许列表可以）；<br data-page-node-id="YCoX9lzKAakhHKR56FtGxP">
+      <code data-page-node-id="zQKGQJdY8lOVoLfJT8qES8">credentials</code> 从每个沙箱化命令的环境中剥离命名秘密；<br data-page-node-id="jHmibR4FBjJzIBU8U4KuEu">
+      <code data-page-node-id="HEc2LcAqs1W6mZsdAxcEit">allowManagedHooksOnly</code> 让本 play 的关卡成为唯一运行的 hooks。</p>
+    </div>
+  </div>
+
+  <div class="metrics" data-page-node-id="RtFiOkHoK5LzHsgmSSk1Zj">
+    <div class="metric lead" data-page-node-id="EcMfgp0IRRSuo2jaFbaiRz">
+      <span class="tag" data-page-node-id="lj0mBkOqgQ1tE6kBL6huWf">前置指标 · Leading</span>
+      <p data-page-node-id="MJCHXSzpG0N7TlmYyN8DRw"><strong data-page-node-id="SoxpxQySl2cy7jZ1GNfjPs">第一次评审的时间</strong>（应该下降到分钟级），以及<strong data-page-node-id="eqqHijDkZZWqFhg50MZ7nS">在没有人类触及分支的情况下解决的评审评论份额</strong>——数据直接存在 Git 上。审批关卡本身则测<strong data-page-node-id="3M1RaOYxpiuXceFPavcLGn">等待每个关卡的时间</strong>，从 hook 决定的 OpenTelemetry 导出读取。</p>
+    </div>
+    <div class="metric lag" data-page-node-id="GyOK4glWFD1tqQZ8gZhPvz">
+      <span class="tag" data-page-node-id="r6j3wsnRrh1ABZduxIPDpp">后置指标 · Lagging</span>
+      <p data-page-node-id="VnYM2l7Od3eCK456PTKMEI"><strong data-page-node-id="0IWB4BHgPNsgsHfOg6iGRH">合并前捕获的缺陷与漏洞 vs 逃逸到生产的</strong>（从 PR 历史与事件追踪器导出），以及 <strong data-page-node-id="IFS8VPdS5NsARpLC6CD0VE">DORA 度量</strong>——CI 系统与部署工具已经在发出这些指标。关卡层面则看<strong data-page-node-id="gv3CuhnvSIRNFjeyyUEPNy">hooks 前后到达生产的关卡违规</strong>。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="s09" data-page-node-id="VUcvyLMj66NufYqfndJdp6">
+  <div class="stage-head" data-page-node-id="gTTiZE9jQ2AO0AKEtKmyxi">
+    <div class="stage-badge" data-page-node-id="rDrHHtKiBXDTWW0CdQNWvA">06</div>
+    <div class="t" data-page-node-id="wsoAxdan7TCxwBFOb76tmt">
+      <div class="en" data-page-node-id="zD9jbtLeyk2XKrCkNLya6i">Stage 6 · Maintain</div>
+      <h2 data-page-node-id="AU1nwb9uL5ef2YsteOVD0n">维护：循环关闭，触发器调用 Claude，发现回到 Plan</h2>
+    </div>
+  </div>
+
+  <div class="callout" data-page-node-id="LzDhFBsEvxinBPFbzgXeL7">
+    <span class="k" data-page-node-id="vzrtMpLwzs4I0Dtn6HEE6W">核心理念</span>
+    <p data-page-node-id="HcCMwzJAXmLmVyXURr0DUQ"><strong data-page-node-id="kWgmJrp53Pld6H9JEV4NLe">循环关闭。</strong>触发器调用 Claude，调用路径中没有一个人，它发现的内容作为 <code data-page-node-id="Ddt4HAKBgl0XCebYuyzU3R">intent.md</code> 重新进入流水线。</p>
+  </div>
+
+  <h3 data-page-node-id="ED2AcO2ebGKLkDUK5AAFzO">节点结构：确定性检测 → σ 分层 → 诊断写成 intent.md</h3>
+  <p data-page-node-id="idAqjtWbrdFFe9oeTWz0pm">前五个阶段都需要人类启动初始步骤，这个阶段把焦点转移到<strong data-page-node-id="BsfZwk4L3m1oDpuKKFhgkn">自主运行 Claude 以关闭循环</strong>。它无头运行，在阶段之间有独立的信心关卡——一个确定性检查或对抗性评审智能体，决定前一阶段的输出继续还是升级给人类。</p>
+
+  <div class="fig" data-page-node-id="cGcp8BDqmC1azOnENVzbEE">
+    <svg viewBox="0 0 960 370" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maintain 阶段的节点流程：确定性检测、sigma 分层响应、诊断写回 intent.md，以及计划扫描" data-page-node-id="Wa5i9jIByG7fdLkthDEWr3">
+      <defs data-page-node-id="YJOEowJIfo1nEqCa3ufc5z">
+        <marker id="p6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse" data-page-node-id="QFiFhmBAiV9XKUzJawyHPb">
+          <path d="M0,0 L10,5 L0,10 z" fill="#71767F" data-page-node-id="T4QJ3iTVOVJgKYg4bdgnJl"/>
+        </marker>
+      </defs>
+
+      <text x="8" y="24" font-size="12" font-weight="700" fill="#475569" data-page-node-id="4saUyPvO9EeE0euffGMeDC">闭环 —— 检测保持完全确定性，只有带状被突破之后才调用 Claude</text>
+
+      <rect x="8" y="70" width="140" height="56" rx="10" fill="#475569" data-page-node-id="fkdg481KjjwO5zLvhILgjZ"/>
+      <text x="78" y="94" font-size="10.5" fill="#C3CBD8" text-anchor="middle" font-weight="700" data-page-node-id="p8D0aKnlXJV77A6Xq4n5hi">步骤 1</text>
+      <text x="78" y="113" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="rE7VKILEraXZKB9TKU9NJD">生产指标</text>
+
+      <line x1="148" y1="98" x2="176" y2="98" stroke="#71767F" stroke-width="1.4" marker-end="url(#p6)" data-page-node-id="7fAp1Sk1tN14AELqUsoZwi"/>
+
+      <rect x="180" y="70" width="200" height="56" rx="10" fill="#475569" data-page-node-id="yAGDMeaZJRkDCCI0qdYGti"/>
+      <text x="280" y="94" font-size="10.5" fill="#C3CBD8" text-anchor="middle" font-weight="700" data-page-node-id="5msBECkrtuwaLoUqoVP4yD">步骤 2 · 不涉及模型</text>
+      <text x="280" y="113" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="q2LsDCYOC958tcD0g27EVJ">确定性检测脚本</text>
+
+      <line x1="380" y1="98" x2="396" y2="98" stroke="#71767F" stroke-width="1.3" data-page-node-id="7y7xEkfrSbPJ8IPaCpYvV9"/>
+      <line x1="396" y1="61" x2="396" y2="135" stroke="#71767F" stroke-width="1.3" data-page-node-id="ioog0ORuYAkA5WoCnEFEwo"/>
+      <line x1="396" y1="61" x2="406" y2="61" stroke="#71767F" stroke-width="1.3" marker-end="url(#p6)" data-page-node-id="vHIoklIA7GgiOrHtXfghyK"/>
+      <line x1="396" y1="98" x2="406" y2="98" stroke="#71767F" stroke-width="1.3" marker-end="url(#p6)" data-page-node-id="T8jiJIqPebztb3l5NDk3LH"/>
+      <line x1="396" y1="135" x2="406" y2="135" stroke="#71767F" stroke-width="1.3" marker-end="url(#p6)" data-page-node-id="Ic7WwhIAixnnaRgQLgPiBS"/>
+
+      <rect x="410" y="44" width="190" height="34" rx="8" fill="#EDF7EF" stroke="#BFE3C8" data-page-node-id="zcQxzws3ZyEGUpc0cc404T"/>
+      <text x="505" y="65" font-size="10.5" fill="#15803D" text-anchor="middle" font-weight="700" data-page-node-id="LqCoWPc8JNlU1xjNeaZBWE">1σ · 仅记录（log）</text>
+      <rect x="410" y="81" width="190" height="34" rx="8" fill="#FDF4E8" stroke="#E9C08A" data-page-node-id="DFG5urnJF4IyFxVVMbatd2"/>
+      <text x="505" y="102" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="700" data-page-node-id="GAUIauZjQHCgpsNfSIq2il">2σ · Claude 只读诊断</text>
+      <rect x="410" y="118" width="190" height="34" rx="8" fill="#FDEDEC" stroke="#F3C9C6" data-page-node-id="HdrTBKGn8z8ES26M4N9XeN"/>
+      <text x="505" y="139" font-size="10.5" fill="#B3261E" text-anchor="middle" font-weight="700" data-page-node-id="yUjPmp9fviZmBRDGjEll9b">3σ · 可行动（仅 PR / runbook）</text>
+
+      <line x1="600" y1="61" x2="616" y2="61" stroke="#71767F" stroke-width="1.3" data-page-node-id="upEQMuosryoUwe72pJFBxV"/>
+      <line x1="600" y1="98" x2="616" y2="98" stroke="#71767F" stroke-width="1.3" data-page-node-id="quUMHOAnEdtJUoqrNPq1JP"/>
+      <line x1="600" y1="135" x2="616" y2="135" stroke="#71767F" stroke-width="1.3" data-page-node-id="M3FSDaUhIwzAGcjsX19HqN"/>
+      <line x1="616" y1="61" x2="616" y2="135" stroke="#71767F" stroke-width="1.3" data-page-node-id="aX4PU4DIXDj8x6DGVP5l0F"/>
+      <line x1="616" y1="98" x2="624" y2="98" stroke="#71767F" stroke-width="1.4" marker-end="url(#p6)" data-page-node-id="mRq9z7bBQR2xnamWlJ2CBS"/>
+
+      <rect x="628" y="70" width="170" height="56" rx="10" fill="#B45309" data-page-node-id="qQbZSBWFqCWluIF5NGIDHd"/>
+      <text x="713" y="94" font-size="10.5" fill="#F3D2AC" text-anchor="middle" font-weight="700" data-page-node-id="upG3sILXQsiadrEHyEmZRz">步骤 5 · 收口</text>
+      <text x="713" y="113" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="7MDabyLCWENMXLGuMuMD9e">写成 intent.md</text>
+
+      <line x1="798" y1="98" x2="834" y2="98" stroke="#B45309" stroke-width="1.8" marker-end="url(#p6)" data-page-node-id="G9Dxv3XrvlqNLFmYRlZsrr"/>
+
+      <rect x="838" y="70" width="114" height="56" rx="10" fill="#1D4ED8" data-page-node-id="YTAlJeXlHEyiIUX2FzZDFk"/>
+      <text x="895" y="94" font-size="10.5" fill="#BFD0FB" text-anchor="middle" font-weight="700" data-page-node-id="mg1JNCfq6IymfMZcjlKIsH">回到 Stage 1</text>
+      <text x="895" y="113" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600" data-page-node-id="9KGQKhYp3lhTsu1Fe6cNMd">Plan</text>
+
+      <text x="8" y="180" font-size="12" font-weight="700" fill="#475569" data-page-node-id="nVkaiAyAC5hYCzlKBmH04B">找到的东西怎么处理</text>
+      <rect x="8" y="192" width="300" height="44" rx="9" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="QilaUJFL4KYcwkjGKOoH1D"/>
+      <text x="158" y="219" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="OQnRlcjNAZJULVI42a8zpJ">分类队列（服务所有者 / on-call）</text>
+      <rect x="324" y="192" width="280" height="44" rx="9" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="ABvl7WXJNL00sPTVzxXjKn"/>
+      <text x="464" y="219" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="pUhQNdv2wW2iz0uCzjtyaa">修复 → 走 PR 评审关卡</text>
+      <rect x="620" y="192" width="332" height="44" rx="9" fill="#FFFFFF" stroke="#CFC9BC" data-page-node-id="V7e4Rn4PW7UTMG8aBgtOjx"/>
+      <text x="786" y="219" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="Aj4ctoWX7U7mCFnjM8lwtm">驳回要带原因，并用于调优带状以降低噪音</text>
+
+      <text x="8" y="266" font-size="12" font-weight="700" fill="#0F766E" data-page-node-id="zGo4aLhHMt13TQ6LNDv9kX">计划扫描 —— 覆盖率从上次运行算起，而不是从第一次</text>
+      <rect x="8" y="278" width="944" height="72" rx="10" fill="#EAF6F4" stroke="#B6DED8" data-page-node-id="Goo91HYy3JrlEM4uunNw6F"/>
+      <rect x="24" y="310" width="300" height="30" rx="8" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="K9QV4gkQYO7cDtYCMDtFeF"/>
+      <text x="174" y="330" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="3cnVwpyPFvpn4F1jalKiCA">连接仓库 · 首次全扫即基线</text>
+      <rect x="336" y="310" width="300" height="30" rx="8" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="uSnftESl88XWfxSI7lawpT"/>
+      <text x="486" y="330" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="w3OsiW7I65bOMLM6TlaZen">每周节奏 · 带置信度评级分类</text>
+      <rect x="648" y="310" width="288" height="30" rx="8" fill="#FFFFFF" stroke="#B6DED8" data-page-node-id="Z3fMWt79UNp8ozJDJo7Pgo"/>
+      <text x="792" y="330" font-size="10.5" fill="#3D434F" text-anchor="middle" data-page-node-id="NDyX3vJPMstK9vYzEY4G6A">有界修复走 PR，更宽的写 intent.md</text>
+      <text x="24" y="300" font-size="10.5" fill="#0F766E" font-weight="700" data-page-node-id="oSs32v2wSW1u8eG3mvxZSL">代码每周变化、每一代模型发现前一代错过的漏洞 —— 所以扫描必须按计划重复</text>
+    </svg>
+    <p class="cap" data-page-node-id="CT4PIXvcFCeI6Hmk1VCyON"><b data-page-node-id="5nLErgD1misPtJxEHP7tGN">图 9 · Maintain 阶段节点图。</b>最左边的检测层<strong data-page-node-id="rSkYlExEUsIMTyXFrMRRPO">完全不涉及模型</strong>——它是版本控制、带单元测试的确定性脚本，用滚动窗口的均值与标准差加 Western Electric 规则，既能抓慢漂移也能抓尖峰。<strong data-page-node-id="1muYeinaR6qNKcOXcCTcz5">只有带状被突破之后才调用 Claude</strong>，层级决定它可以做什么（1σ 只记录 / 2σ 只读诊断 / 3σ 只能通过打开 PR 或触发预先批准的 runbook）。诊断最终写成 <code data-page-node-id="HNAJtvQCOMlURE1lOohGIE">intent.md</code>，回到 Stage 1——循环于是自我喂养。</p>
+  </div>
+
+  <h3 data-page-node-id="qRNkpeNqLwZWWrYb14l8vt">传统 vs AI 原生</h3>
+  <div class="cmp" data-page-node-id="Skpcuu15FfcO6USMrbzXHg">
+    <div class="old" data-page-node-id="hUsWJ3uwoGwV0XDhgFVSr0">
+      <p class="h" data-page-node-id="T0VOH7yISv7SH6VAs5WCYW">传统</p>
+      <p data-page-node-id="yyWDCjjX1zk6MYCUTsVEcY">维护是<strong data-page-node-id="GscIXQvukzhnOXjNp5Hpad">反应性阶段</strong>。所有工单或事件都等人对其采取行动再重启流程。警报在凌晨 3 点触发可能被错过，工单能在 backlog 里躺到有人捡起，事后行动可能<strong data-page-node-id="bKcwvTwTi2quBGColJrbyB">根本不触及代码库</strong>——如果另一个火先烧起来。</p>
+    </div>
+    <div class="new" data-page-node-id="xr0pfyl8iyfg4DdFKL3gsn">
+      <p class="h" data-page-node-id="vWHBSOReU6CHzoEnFFJ7xu">AI 原生</p>
+      <p data-page-node-id="g3YEfOXuwHASSFsI1MvPwZ">一个触发器（控制带突破、工单、渠道消息或计划）<strong data-page-node-id="oGlErGF6W96q5cIOMwGgja">在没有人的路径中</strong>调用 Claude。Claude 诊断，只通过关卡路由行动，把发现写成 <code data-page-node-id="4CWtlJigRzfbHsxn3qqADI">intent.md</code> 然后流经前述阶段。人<strong data-page-node-id="kJjR1W6fQ8emzBOnOFiHDM">分类和审查那项工作，而不再需要启动它</strong>。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="CMbJOWvtfe5j4h4pJgKmRk">闭环的执行步骤</h3>
+  <ol data-page-node-id="RhKyZZvKoto7Xsbn6aKQTk">
+    <li data-page-node-id="IFDFzbWGkMAHDrsJorKeDK"><strong data-page-node-id="hNTz3KKBZi6rEzDsQNwT1Z">选一个有稳定滚动基线的指标</strong>：CI 测试失败率、部署后 5xx 率，或 PR 周期时间。</li>
+    <li data-page-node-id="IGhTijoHVHpPItA6hxkrPi"><strong data-page-node-id="59BZpvvx9PIsBDf2OHIJAF">写检测脚本</strong>：通常是滚动窗口上的均值和标准差，带 Western Electric 或类似规则，以便带状同时捕获慢漂移和尖峰。<strong data-page-node-id="Dbr7v7CytZi5yQll3VeroN">脚本是版本控制和单元测试的，检测保持完全确定性，不涉及模型。</strong></li>
+    <li data-page-node-id="J3xZfjczATZvFxbEoZkiZW"><strong data-page-node-id="2GES0cToKfOvWTuwiSuYVU">在版本控制配置中定义响应层级</strong>：1σ 只记录；2σ 调用 Claude 只读诊断；3σ Claude 可以行动，但<strong data-page-node-id="EI5XX9HCUpkaR18PJOtuQJ">只能通过打开 PR 进入评审关卡、或触发预先批准的 runbook</strong>。</li>
+    <li data-page-node-id="bX1GOHM3J7lmGklK3tu052"><strong data-page-node-id="ZDCg99cD2FTSHJ3SqB7iv5">触发层</strong>可以是 GitHub/GitLab 中的计划工作流、来自现有监控栈的 webhook，或网络内的 Cron Job。Claude 无状态运行——作为 CI runner 上的非交互式步骤，或沙箱容器中的 Agent SDK 服务。因为运行是无状态且非交互式的，<strong data-page-node-id="uDcFahmP6RqCBeHHW5sKR1">循环可以在没有人启动的情况下开始和结束</strong>。</li>
+    <li data-page-node-id="D2otSI2Ca53xnIIW9FMSPT"><strong data-page-node-id="ECFHBBLCSydvkjQhHAwsvm">智能体把诊断写成 Stage 1 格式的 <code data-page-node-id="QeYmlZZpzjeti73nqrJ8e2">intent.md</code></strong>：异常及其证据、提议结果、受影响的系统、开放问题。从那里，发现像其他任何东西一样通过流水线。</li>
+    <li data-page-node-id="W3cWJbashSbF5xGGoZGtop"><strong data-page-node-id="etAtBBpieEIsK8Bqcn4tpD">服务所有者或 on-call 工程师分类队列</strong>，把面向产品的发现路由给产品负责人。现在修复、安排或驳回。<strong data-page-node-id="H1KHRcPdzc3xPx1zEFHQjQ">驳回调优带状并帮助减少噪音。</strong></li>
+    <li data-page-node-id="qCxYHHrCznZZYG1CPOR6Vs"><strong data-page-node-id="e3Bv4wtVcM9BIDobEBsl1K">当修复发布时，为该事件添加一个 eval</strong>（回到 Test 阶段的持续 evals play），确保此类问题在未来受到保护。</li>
+  </ol>
+
+  <p class="codehead" data-page-node-id="uTtt92zdCHSfdUhqPy6m4G">示例 · bands.yaml（监控 CI 测试失败率）</p>
+  <pre data-page-node-id="EeobDjZwKq60fdKWs4UF9K"><code data-page-node-id="4RFy90JPc8unVOVBBmzl1o">metric: ci_test_failure_rate
+baseline: rolling_30d
+rules: western_electric
+tiers:
+  1sigma: { action: log }
+  2sigma: { action: diagnose,
+            tools: "Read,Grep,Bash(gh run view *)" }
+  3sigma: { action: propose,
+            routes: [pull_request, runbook:rollback-deploy] }</code></pre>
+  <pre data-page-node-id="EeobDjZwKq60fdKWs4UF9K"><code data-page-node-id="4RFy90JPc8unVOVBBmzl1o">指标：ci_test_failure_rate（CI测试失败率）
+基线：rolling_30d（近30天滑动窗口）
+规则：western_electric（韦斯特电信号码规则/控制图规则）
+层级：
+  1sigma：{ 动作：记录日志 }
+  2sigma：{ 动作：故障诊断,
+            工具："Read,Grep,Bash(gh run view *)" }
+  3sigma：{ 动作：提出方案/建议,
+            路由：[拉取请求, 运行手册:回滚部署] }</code></pre>
+
+  <h3 data-page-node-id="0E5SXLsAEBVKYCwggM0nfy">三个典型闭环例子</h3>
+  <div class="grid g3" data-page-node-id="p3Lw0VX3NuSRpn0fKcH5rZ">
+    <div class="card" data-page-node-id="Dspj5eCqgPJhTrRv23CxbO">
+      <h5 data-page-node-id="eT8CBUk6LStemmHVNzs47r">CI 失败率突破 3σ</h5>
+      <p data-page-node-id="JGx6hHNXsG11iS2OeQ5tt3">智能体隔离 flaky test，或打开 revert PR——<strong data-page-node-id="FYKs4baJxWo8m7TufvnGKh">评审关卡决定</strong>。</p>
+    </div>
+    <div class="card" data-page-node-id="TVa48wzVQHVXbK5uzyVbpW">
+      <h5 data-page-node-id="vg4M9hwLrW9i59QMDeASi6">部署后 5xx 突破 3σ</h5>
+      <p data-page-node-id="6TcSdJitEvElayQ8i7KN5g">且窗口中有部署时，智能体<strong data-page-node-id="oMbqakqoSkEcDCMWVB5dJq">触发已有的回滚流水线</strong>。</p>
+    </div>
+    <div class="card" data-page-node-id="M18uHyZKip4IjH9Z9oAvLm">
+      <h5 data-page-node-id="Bccy2eUt4uB8y7dHU3FRXF">PR 周期时间漂移</h5>
+      <p data-page-node-id="iOQL5kKFuFCgKKYD4Z1ABf">智能体为工程领导层写一份报告——说明 <strong data-page-node-id="wosIiSE0r8blmiT0aEFnjE">harness 同样适用于流程指标，而不只是生产指标</strong>。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="E4fvEcAwyPPTC1v70Gwgym">计划扫描与 on-call</h3>
+  <p data-page-node-id="5SoCFCMBQYM1vqCIyFBpzv">安全扫描是<strong data-page-node-id="pkljAsQoloVtcRyPaRBkdK">关于特定模型下代码库的时间点陈述</strong>，两半都会过时：代码每周变化，每一代模型都发现前一代错过的漏洞。AI 原生的答案是<strong data-page-node-id="wcYq2nn3N8xSBgrRr9My3Y">按计划运行扫描，调用路径中没有人类</strong>，并把它发现的内容通过与任何其他代码库变更相同的关卡发送。</p>
+
+  <div class="grid g2" data-page-node-id="bkdLrzILHpdDO88wqWV3n8">
+    <div class="card" data-page-node-id="TWZGpKm9Sv6svl6BxaMI9D">
+      <h5 data-page-node-id="gS7anm1Sh4EwanD43NfR5L">Claude Security · 计划扫描的托管形式</h5>
+      <p data-page-node-id="DoCvGZCSsCTb0lfupQoJUG">连接一个 GitHub 仓库，扫描在 Anthropic 基础设施上的 Claude Mythos 5 上运行，<strong data-page-node-id="V6BfAFP1tX0aceQ5EsEFDU">每个发现都在报告前被验证并附加置信度评级</strong>。建议的补丁在 Claude Code on the web 中审查和应用。执行要点：对最关键仓库先跑<strong data-page-node-id="FgUggx2l3jeyBurBhlHqJu">首次完整扫描并当作基线</strong>——它可能会在被认为干净的代码中浮现发现；积极开发的服务<strong data-page-node-id="HnNZ0oVK58URdqSGSU7l9c">每周</strong>是一个合理默认；带原因驳回以便同一发现不会在下次运行时作为新发现返回；比一个补丁更宽的发现（架构弱点、跨服务重复模式）<strong data-page-node-id="Yy1eU3tti7akVedbgJsfRL">写成 <code data-page-node-id="2oBFkDdjk1Pc8xH7eOhsE3">intent.md</code> 从 Plan 开始</strong>。</p>
+    </div>
+    <div class="card" data-page-node-id="uE1DYqGaVxO7hnHUaXRqja">
+      <h5 data-page-node-id="YFpqzzNW6hylvgOdnXz5EH">Claude Tag · 事件从沟通渠道到达</h5>
+      <p data-page-node-id="qGxYrfiAndQ8D1hgRnP0az">事件也可以从 Slack / Teams 这类渠道到达。Claude Tag（公共 beta）让 Claude <strong data-page-node-id="4QpjISC4wn9luXvMQi2ADV">以自己的身份成为那些频道的成员</strong>，所以每个新事件获得一个第一响应者，响应本身成为循环和未来事件记忆的一部分。<strong data-page-node-id="HG8jrLu70oiEm2NygRDtsR">频道就是审计追踪</strong>：请求、诊断、人类授权和修复都留在事件被处理的地方。通过 MCP 访问，Claude 验证指标回到基线并在线程中确认，把事后分析写到版本控制的经验文件。<strong data-page-node-id="R7owT8yN6DIqjAjXX1AEUW">小而界定良好的修复作为 PR 通过评审关卡，更大的任何东西被写为 <code data-page-node-id="4E6R9lYkI8A23pB9tiruug">intent.md</code> 用于 Stage 1。</strong></p>
+    </div>
+  </div>
+
+  <div class="metrics" data-page-node-id="Nr8IVlSFUpImmgUf9u7vG6">
+    <div class="metric lead" data-page-node-id="4xWdyaBCAZjFvDeIBFWEaH">
+      <span class="tag" data-page-node-id="kCohpz6T8VBjg24dx7O8ZE">前置指标 · Leading</span>
+      <p data-page-node-id="oBhGNJmmGw4M336GsIHKgH"><strong data-page-node-id="hbAA4ZU69nGYSrXSUP70Nv">从带状突破到「分类队列中出现 <code data-page-node-id="kA2MONCSGzlSGc71rW7xQp">intent.md</code>」的时间</strong>，与旧的「从事件到事后行动」相比——检测脚本日志里有突破时间戳与事件层级。扫描侧则看<strong data-page-node-id="OxVLORsa4yJJIgtSL2tmad">按计划连接仓库的份额</strong>与<strong data-page-node-id="qUsqN2SnNt4CP0TFu03FpJ">从发现被报告到补丁进入 PR 评审关卡的时间</strong>。</p>
+    </div>
+    <div class="metric lag" data-page-node-id="WIpZ0L3XulCVC32VGQ5O4D">
+      <span class="tag" data-page-node-id="alc3THiYnZDTJLOv7ae8L9">后置指标 · Lagging</span>
+      <p data-page-node-id="KCu1YUdkyACtKQB5IA5RpQ"><strong data-page-node-id="qtFLu20dC5vvQr3L0FfAmM">成为合并修复的发现份额</strong>（分类队列 vs 实际 PR 历史），以及<strong data-page-node-id="M7PNj08czDrtPE957QyAdC">同一类别的重复事件</strong>——随着修复向 eval 套件添加案例，它应该下降。扫描侧则看<strong data-page-node-id="dBj5DJDX1L5Km2OSwtUTuN">计划扫描发现的漏洞 vs 在生产中或外部报告发现的</strong>，以及经过几次运行的仓库上<strong data-page-node-id="H9wgxEP6Q1LVDE7bIv2tIg">每次扫描发现的趋势</strong>。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <h2><span class="num">10</span>控制体系：skill / hook / 沙箱的三层分工</h2>
+  <p class="lead">整份 playbook 里最容易被误读的一点，是把 skills 当成「策略执行器」。原文的定位很明确：<strong>skill 是建议性控制，hook 是它背后的确定性层</strong>。分不清这两者，就会得到一堆「写了标准但没人遵守」的装饰。</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 960 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="控制的三层分工：skills 建议性、hooks 确定性、权限与沙箱不可绕过">
+      <defs>
+        <marker id="p7" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,0 L5,9 z" fill="#CFC9BC"/>
+        </marker>
+      </defs>
+
+      <text x="8" y="30" font-size="12" font-weight="700" fill="#3D434F">强制力自上而下递增：建议 → 确定性 → 不可绕过</text>
+
+      <!-- band 1 -->
+      <rect x="8" y="48" width="944" height="64" rx="10" fill="#FDF4E8" stroke="#E9C08A"/>
+      <text x="28" y="76" font-size="14" font-weight="800" fill="#B45309">Skills</text>
+      <text x="28" y="96" font-size="10" fill="#71767F">建议性 · advisory</text>
+      <text x="176" y="86" font-size="11.5" fill="#3D434F">在写代码时可能应用策略，但没有任何东西强制会话遵守它。</text>
+      <rect x="596" y="62" width="170" height="32" rx="8" fill="#FFFFFF" stroke="#E9C08A"/>
+      <text x="681" y="82" font-size="10" fill="#3D434F" text-anchor="middle">触发词命中时才加载</text>
+      <rect x="778" y="62" width="158" height="32" rx="8" fill="#FFFFFF" stroke="#E9C08A"/>
+      <text x="857" y="82" font-size="10" fill="#3D434F" text-anchor="middle">调用记录进会话追踪</text>
+
+      <line x1="480" y1="116" x2="480" y2="124" stroke="#CFC9BC" stroke-width="1.5" marker-end="url(#p7)"/>
+
+      <!-- band 2 -->
+      <rect x="8" y="128" width="944" height="64" rx="10" fill="#EEF2FE" stroke="#C6D2F7"/>
+      <text x="28" y="156" font-size="14" font-weight="800" fill="#1D4ED8">Hooks</text>
+      <text x="28" y="176" font-size="10" fill="#71767F">确定性 · deterministic</text>
+      <text x="176" y="166" font-size="11.5" fill="#3D434F">在每个匹配它的操作上运行，可以允许、询问或阻止。</text>
+      <rect x="596" y="142" width="170" height="32" rx="8" fill="#FFFFFF" stroke="#C6D2F7"/>
+      <text x="681" y="162" font-size="10" fill="#3D434F" text-anchor="middle">PreToolUse 按工具匹配</text>
+      <rect x="778" y="142" width="158" height="32" rx="8" fill="#FFFFFF" stroke="#C6D2F7"/>
+      <text x="857" y="162" font-size="10" fill="#3D434F" text-anchor="middle">exit 2 阻止并说明原因</text>
+
+      <line x1="480" y1="196" x2="480" y2="204" stroke="#CFC9BC" stroke-width="1.5" marker-end="url(#p7)"/>
+
+      <!-- band 3 -->
+      <rect x="8" y="208" width="944" height="64" rx="10" fill="#FDEDEC" stroke="#F3C9C6"/>
+      <text x="28" y="236" font-size="14" font-weight="800" fill="#B3261E">权限 / 沙箱</text>
+      <text x="28" y="256" font-size="10" fill="#71767F">不可绕过 · non-bypassable</text>
+      <text x="176" y="246" font-size="11.5" fill="#3D434F">托管设置由平台团队部署，工程师无法编辑或覆盖任何内容。</text>
+      <rect x="596" y="222" width="170" height="32" rx="8" fill="#FFFFFF" stroke="#F3C9C6"/>
+      <text x="681" y="242" font-size="10" fill="#3D434F" text-anchor="middle">托管规则不可被扩权</text>
+      <rect x="778" y="222" width="158" height="32" rx="8" fill="#FFFFFF" stroke="#F3C9C6"/>
+      <text x="857" y="242" font-size="10" fill="#3D434F" text-anchor="middle">OS 级沙箱 failIfUnavailable</text>
+
+      <text x="8" y="300" font-size="11.5" fill="#3D434F">放置判据：必须无条件成立的策略 → hooks + 托管设置；必须一致应用但无需强制的知识 → skills；团队约定与命令 → CLAUDE.md。</text>
+      <text x="8" y="324" font-size="11.5" fill="#3D434F">失败模式自检：如果引用某策略的评审发现不向零下降，要么 skill 没有触发，要么它的文本已经偏离官方策略。</text>
+    </svg>
+    <p class="cap"><b>图 10 · 控制分层。</b>三层不是替代关系而是<strong>兜底关系</strong>：skill 负责让 Claude「知道」策略，hook 负责让违反策略的操作「跑不起来」，权限与沙箱负责关掉 hook 也管不到的口子——例如工具级拒绝拦不住 shell 命令联网，只有 OS 级域允许列表可以。</p>
+  </div>
+
+  <h3>常见误配与症状</h3>
+  <div class="tw">
+    <table>
+      <thead>
+        <tr><th>如果只用了这一层</th><th>会发生什么</th><th>修正</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>只有 skills</strong></td>
+          <td>策略文本漂亮但可以被绕过；同一类评审发现在多个 PR 上反复出现，说明「让违规罕见」没有兑现成「几乎不可能」</td>
+          <td>在 skill 后面加 hook；对必须无条件成立的条款，改用托管设置</td>
+        </tr>
+        <tr>
+          <td><strong>只有 hooks</strong></td>
+          <td>违规被拦住但智能体不理解为什么，于是换个写法再试一次；批准提示过多会把所有并行会话拉回同一条关键路径</td>
+          <td>先用 skill 教会做法，再用 hook 兜底；把「要求人工批准」的 hook 归入部署关卡而非构建期</td>
+        </tr>
+        <tr>
+          <td><strong>只有人工评审</strong></td>
+          <td>评审者成为唯一瓶颈，队列堆积；且评审质量随负载波动</td>
+          <td>让机械证据（测试输出、构建日志、截图 diff）先附加到 PR，人类只裁决意图与风险</td>
+        </tr>
+        <tr>
+          <td><strong>策略变了但 skill 没变</strong></td>
+          <td>评审发现不下降，因为代码生成时应用的是过期标准</td>
+          <td>把「策略所有者批准 → skill 合并」的耗时作为前置指标来管</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="k">一句话判据</span>
+    <p><strong>Skill 使违规罕见，hook 使它们几乎不可能。</strong>如果你需要「几乎不可能」，就必须在 skill 之外再加确定性的一层。</p>
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="s11">
+  <h2><span class="num">11</span>度量体系：每个阶段都必须成对度量</h2>
+  <p class="lead">playbook 为每个阶段都同时给出前置指标与后置指标，这不是凑数。只给前置指标，团队会优化过程而不优化结果；只给后置指标，反馈太慢、无法在一周内纠正。</p>
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr><th>阶段</th><th>前置指标（Leading）</th><th>后置指标（Lagging）</th><th>数据来源</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Plan</strong></td>
+          <td>从首次对话到 <code>intent.md</code> 提交的时间（期望从数周降到数小时）</td>
+          <td><code>intent.md</code> 存活率；同一变更在首次 <code>spec.md</code> 提交后的 intent 改动次数</td>
+          <td>intent 归属地 git 历史</td>
+        </tr>
+        <tr>
+          <td><strong>Design</strong></td>
+          <td><code>intent.md</code> 提交与 <code>spec.md</code> 提交之间的经过时间</td>
+          <td>构建开始后的需求返工（首次 <code>plan.md</code> 提交之后的 spec 提交）</td>
+          <td>git 时间戳 / git log</td>
+        </tr>
+        <tr>
+          <td><strong>Build</strong></td>
+          <td>第一次实现通过就合并的份额；计划批准到合并 PR 的时间</td>
+          <td>每个变更的返工周期；合并 diff 仍匹配 <code>plan.md</code> 的频率</td>
+          <td>PR 元数据</td>
+        </tr>
+        <tr>
+          <td><strong>Test</strong></td>
+          <td>智能体编写变更的第一次 CI 成功率；eval 通过率；事件变成永久 eval 的耗时</td>
+          <td>每个 PR 的评审时间；CI 中捕获的回归 vs 生产中发现的回归</td>
+          <td>CI 系统 / 事件追踪器</td>
+        </tr>
+        <tr>
+          <td><strong>Deploy</strong></td>
+          <td>第一次评审的时间（应降至分钟级）；无人类触及分支即解决的评审评论份额；等待每个审批关卡的时间</td>
+          <td>合并前捕获的缺陷与漏洞 vs 逃逸到生产的；DORA 度量</td>
+          <td>Git / hook 的 OpenTelemetry 导出 / CI 与部署工具</td>
+        </tr>
+        <tr>
+          <td><strong>Maintain</strong></td>
+          <td>带状突破到「分类队列出现 <code>intent.md</code>」的时间；按计划连接的仓库份额；发现被报告到补丁进入 PR 的时间</td>
+          <td>成为合并修复的发现份额；同类重复事件；计划扫描发现 vs 生产发现；每次扫描发现数的趋势</td>
+          <td>检测脚本日志 / 扫描历史 / PR 元数据 / 事件追踪器</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h5>为什么这套度量「能落地」</h5>
+      <p>注意上表的数据来源——<strong>绝大部分是 git、PR 元数据、CI 与既有事件追踪器</strong>。整套度量体系几乎不需要新建遥测管道，它是对<strong>已有元数据的重新切片</strong>。这是它能被持续使用、而不是变成一年后没人看的仪表盘的前提。</p>
+    </div>
+    <div class="card">
+      <h5>反 Goodhart 原则</h5>
+      <p>前置指标单独存在会被直接优化（例如「缩短评审时间」可以通过不看 diff 达成）。所以每条前置指标都配了一条后置指标做对照——<strong>评审时间下降的同时，逃逸缺陷不能上升</strong>。同理，「并行会话数」必须与「返工率」一起读，「自动分类的故障份额」必须与「DORA 指标」一起读。</p>
+    </div>
+  </div>
+
+  <blockquote>度量成对出现，是为了让「过程变快」这件事必须同时证明「结果没变差」。</blockquote>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="s12">
+  <h2><span class="num">12</span>采纳路径：从任何无前置的 play 开始</h2>
+  <p class="lead">Plays 是非线性的。<strong>采纳顺序 ≠ 阶段顺序</strong>——依赖图决定的是「先采用哪些」，不是「先做哪个阶段」。</p>
+
+  <p>原文的规则很干脆：<strong>从任何没有箭头指向它的 play 开始</strong>——没有任何东西指向它，所以它不需要任何先决条件。对于任何其他 play，指向它的箭头就是需要先采用的 plays。</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 960 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Plays 的四层采纳依赖图">
+      <defs>
+        <marker id="p8" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,0 L5,9 z" fill="#CFC9BC"/>
+        </marker>
+      </defs>
+
+      <text x="8" y="30" font-size="12" font-weight="700" fill="#15803D">第 0 层 —— 无前置，可从任意一个开始（原文称为「clay play」）</text>
+      <rect x="8" y="42" width="180" height="46" rx="9" fill="#EDF7EF" stroke="#BFE3C8"/>
+      <text x="98" y="70" font-size="11" fill="#15803D" text-anchor="middle" font-weight="700">Plan · intent.md</text>
+      <rect x="196" y="42" width="180" height="46" rx="9" fill="#EDF7EF" stroke="#BFE3C8"/>
+      <text x="286" y="70" font-size="11" fill="#15803D" text-anchor="middle" font-weight="700">CLAUDE.md</text>
+      <rect x="384" y="42" width="180" height="46" rx="9" fill="#EDF7EF" stroke="#BFE3C8"/>
+      <text x="474" y="70" font-size="11" fill="#15803D" text-anchor="middle" font-weight="700">Skills</text>
+      <rect x="572" y="42" width="180" height="46" rx="9" fill="#EDF7EF" stroke="#BFE3C8"/>
+      <text x="662" y="70" font-size="11" fill="#15803D" text-anchor="middle" font-weight="700">Hooks</text>
+      <rect x="760" y="42" width="180" height="46" rx="9" fill="#EDF7EF" stroke="#BFE3C8"/>
+      <text x="850" y="70" font-size="11" fill="#15803D" text-anchor="middle" font-weight="700">反馈回路（Test）</text>
+
+      <line x1="480" y1="96" x2="480" y2="118" stroke="#CFC9BC" stroke-width="1.6" marker-end="url(#p8)"/>
+
+      <text x="8" y="122" font-size="12" font-weight="700" fill="#1D4ED8">第 1 层 —— 需要第 0 层中的指定条目</text>
+      <rect x="62" y="134" width="200" height="46" rx="9" fill="#EEF2FE" stroke="#C6D2F7"/>
+      <text x="162" y="154" font-size="11" fill="#1D4ED8" text-anchor="middle" font-weight="700">Design · spec.md</text>
+      <text x="162" y="171" font-size="9.5" fill="#71767F" text-anchor="middle">← Plan · Skills</text>
+      <rect x="274" y="134" width="200" height="46" rx="9" fill="#EEF2FE" stroke="#C6D2F7"/>
+      <text x="374" y="154" font-size="11" fill="#1D4ED8" text-anchor="middle" font-weight="700">plan mode</text>
+      <text x="374" y="171" font-size="9.5" fill="#71767F" text-anchor="middle">← Plan · CLAUDE.md</text>
+      <rect x="486" y="134" width="200" height="46" rx="9" fill="#EEF2FE" stroke="#C6D2F7"/>
+      <text x="586" y="154" font-size="11" fill="#1D4ED8" text-anchor="middle" font-weight="700">PR 评审循环</text>
+      <text x="586" y="171" font-size="9.5" fill="#71767F" text-anchor="middle">← CLAUDE.md</text>
+      <rect x="698" y="134" width="200" height="46" rx="9" fill="#EEF2FE" stroke="#C6D2F7"/>
+      <text x="798" y="154" font-size="11" fill="#1D4ED8" text-anchor="middle" font-weight="700">持续 evals</text>
+      <text x="798" y="171" font-size="9.5" fill="#71767F" text-anchor="middle">← CLAUDE.md · 反馈回路</text>
+
+      <line x1="480" y1="188" x2="480" y2="210" stroke="#CFC9BC" stroke-width="1.6" marker-end="url(#p8)"/>
+
+      <text x="8" y="214" font-size="12" font-weight="700" fill="#B45309">第 2 层 —— 需要两个前置同时就位</text>
+      <rect x="160" y="226" width="300" height="46" rx="9" fill="#FDF4E8" stroke="#E9C08A"/>
+      <text x="310" y="246" font-size="11" fill="#B45309" text-anchor="middle" font-weight="700">并行会话 / 子智能体</text>
+      <text x="310" y="263" font-size="9.5" fill="#71767F" text-anchor="middle">← CLAUDE.md · 反馈回路</text>
+      <rect x="500" y="226" width="300" height="46" rx="9" fill="#FDF4E8" stroke="#E9C08A"/>
+      <text x="650" y="246" font-size="11" fill="#B45309" text-anchor="middle" font-weight="700">CI/CD 自动化与沙箱执行</text>
+      <text x="650" y="263" font-size="9.5" fill="#71767F" text-anchor="middle">← PR 评审循环 · Hooks</text>
+
+      <line x1="480" y1="280" x2="480" y2="302" stroke="#CFC9BC" stroke-width="1.6" marker-end="url(#p8)"/>
+
+      <text x="8" y="306" font-size="12" font-weight="700" fill="#B3261E">第 3 层 —— 需要多个前置全部到位（自主性最高）</text>
+      <rect x="120" y="318" width="340" height="46" rx="9" fill="#FDEDEC" stroke="#F3C9C6"/>
+      <text x="290" y="338" font-size="11" fill="#B3261E" text-anchor="middle" font-weight="700">闭环自动化（Maintain）</text>
+      <text x="290" y="355" font-size="9.5" fill="#71767F" text-anchor="middle">← intent 格式 · PR 评审 · Hooks · CI/CD 回滚</text>
+      <rect x="500" y="318" width="340" height="46" rx="9" fill="#FDEDEC" stroke="#F3C9C6"/>
+      <text x="670" y="338" font-size="11" fill="#B3261E" text-anchor="middle" font-weight="700">计划扫描（Claude Security）</text>
+      <text x="670" y="355" font-size="9.5" fill="#71767F" text-anchor="middle">← PR 评审 · Hooks · intent 格式</text>
+
+      <text x="8" y="396" font-size="11" fill="#71767F">注意第 2、3 层包含了闭环的全部前置——所以「无人启动的循环」是采纳路径的终点，不是起点。</text>
+    </svg>
+    <p class="cap"><b>图 11 · 采纳依赖图。</b>第 0 层的五个 play 全部无前置，可以从任意一个切入。往下每一层都需要上层的指定条目就位，<strong>第 3 层的「闭环自动化」需要四个前置全部到位</strong>——这解释了为什么自主运行流水线是转型的终点：它的每一个前置本身就是一次独立转型。</p>
+  </div>
+
+  <h3>为什么采纳顺序不等于阶段顺序</h3>
+  <p>一个常见的错误是按 Plan → Design → Build → Test → Deploy → Maintain 的顺序推进。但依赖图说明：<strong><code>CLAUDE.md</code>、skills、hooks 三者都无前置</strong>，可以在没有任何流程改造的情况下先落地，并且它们会立刻改善后面所有阶段。反过来，<strong>闭环自动化（Maintain）看起来是「第六个阶段」，实际是最后一个能做的</strong>——它需要 PR 评审、hooks、CI/CD 回滚路径全部就位。</p>
+
+  <div class="callout">
+    <span class="k">推荐的启动顺序</span>
+    <p>先做<strong>无前置且全局受益</strong>的三件事：写好 <code>CLAUDE.md</code>、把一条执行不一致的机构知识写成 skill、给一个必须无条件成立的约束配一个 hook。然后接入 <code>intent.md</code> 与反馈回路。PR 评审循环与 CI/CD 自动化在其后。把闭环自动化留到最后——它是对前面所有投入的乘法项，而不是起步项。</p>
+  </div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section id="s13">
+  <h2><span class="num">13</span>反模式清单</h2>
+  <p class="lead">以下每条都对应 playbook 中一个明确的机制。用法：找到你已经在做的那些，右边就是修正方向。</p>
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr><th>层</th><th>反模式</th><th>症状</th><th>修正</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td rowspan="3"><strong>战略</strong></td>
+          <td>把 AI 原生 SDLC 当成工具采购</td>
+          <td>推了 Claude Code，流程照旧——瓶颈堆在 Plan、Review/Test、Deploy 上，生产力提升被关卡吃掉</td>
+          <td>转型必须覆盖 Build 左右两侧的人类速度节点，而不只是实现阶段</td>
+        </tr>
+        <tr>
+          <td>按阶段顺序推进六个 play</td>
+          <td>一开始就做闭环自动化，卡在「没有 PR 评审关卡、没有 hooks、没有回滚路径」</td>
+          <td>按依赖图走：先做无前置的 <code>CLAUDE.md</code>、skills、hooks、反馈回路</td>
+        </tr>
+        <tr>
+          <td>把配置当成一次性文档</td>
+          <td>模型升级或提示重写后，智能体输出质量悄悄下降却无人察觉</td>
+          <td>把 <code>CLAUDE.md</code>、skills、hooks 当作生产代码做回归测试（持续 evals）</td>
+        </tr>
+        <tr>
+          <td rowspan="5"><strong>工程</strong></td>
+          <td>逐行人工评审智能体的 diff</td>
+          <td>评审队列堆积；或者代码在审查不足的情况下发布——受监管组织两者都不能接受</td>
+          <td>多层智能体评审给出按严重性排名的发现，人类注意力移到「变更是否做了计划意图的事」</td>
+        </tr>
+        <tr>
+          <td>没有已接受的计划就开始写代码</td>
+          <td>评审者看到的第一件事是完成的 diff，此时返工已经昂贵</td>
+          <td>用 plan mode 起步，批准的版本提交为 <code>plan.md</code>，PR 评审对照它检查</td>
+        </tr>
+        <tr>
+          <td>让智能体自己宣布「完成」</td>
+          <td>报告完成但没有机械证据，工程师被迫全量复检</td>
+          <td>在 <code>CLAUDE.md</code> 写明：报告完成前必须运行 build / test / lint 并粘贴输出</td>
+        </tr>
+        <tr>
+          <td>修复任务期间允许改测试</td>
+          <td>测试被削弱以让实现通过，回归保护失效</td>
+          <td>用 hook 在修复任务期间阻止编辑测试文件；或评审时拒绝任何触及测试的变更</td>
+        </tr>
+        <tr>
+          <td>并行会话数超过审查能力</td>
+          <td>开了六个会话，但没人能正确审查这么多流</td>
+          <td>从 2–3 个会话起步；实际上限就是「一个人能正确审查多少流」</td>
+        </tr>
+        <tr>
+          <td rowspan="4"><strong>治理</strong></td>
+          <td>把 skill 当成策略执行器</td>
+          <td>标准写了，但违规照旧——skill 是建议性控制，没有任何东西强制会话遵守</td>
+          <td>必须无条件成立的策略，在 skill 后面补 hook、托管权限或沙箱</td>
+        </tr>
+        <tr>
+          <td>生产路径上没有关卡</td>
+          <td>智能体顺着流水线一路推到生产</td>
+          <td>按环境分层自治；生产部署由具名发布经理授权，并由 hook 强制</td>
+        </tr>
+        <tr>
+          <td>让智能体持有常设生产凭证</td>
+          <td>沙箱形同虚设，部署能力等于一段带凭证的 shell 脚本</td>
+          <td>短期有范围令牌；部署/回滚通过按环境限定范围的 MCP 工具暴露</td>
+        </tr>
+        <tr>
+          <td>只度量前置指标</td>
+          <td>「评审时间下降了」，同时逃逸到生产的缺陷上升</td>
+          <td>每条前置指标都配一条后置指标对照读取</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="k">最容易漏掉的一条</span>
+    <p><strong>监督本身是一个生产系统，需要做回归测试。</strong>智能体没完成你期望的事，通常不是模型变差了，而是 harness 变了——提示被重写、skill 被更新、hook 被停用、权限被放宽。持续 evals 就是为这件事存在的。</p>
+  </div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="s14">
+  <h2><span class="num">14</span>结论与出处</h2>
+
+  <p>模型和 harness 已经足够成熟，允许组织改变的<strong>不只是产生代码的方式，而是整个软件开发生命周期</strong>。这种转型把人类判断保持在流程的中心，并考虑大型企业组织的治理和监管要求。</p>
+
+  <p>把六阶段串起来看，这份 playbook 实际上在说一件事：<strong>当执行变便宜之后，控制的成本结构必须一起改变</strong>。传统 SDLC 把控制放在「人的注意力」上——逐行评审、阶段签核、委员会例会。这些控制在人类速度下是廉价的，在智能体速度下是最贵的。AI 原生的答案是把控制从人的注意力<strong>搬到可执行的配置里</strong>：约定进 <code>CLAUDE.md</code>，策略进 skills，硬约束进 hooks 与托管设置，判断进关卡——而人只在关卡上出现。</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h5>如果只能记住三件事</h5>
+      <p><strong>一、</strong>每个阶段以提交一个工件结束，工件触发下一阶段——提交链就是审计追踪。<br>
+      <strong>二、</strong>Skill 让违规罕见，hook 让违规几乎不可能。需要「几乎不可能」的，必须再加确定性的一层。<br>
+      <strong>三、</strong>度量成对读，人的注意力落在关卡上而不是每一行 diff 上。</p>
+    </div>
+    <div class="card">
+      <h5>标注：这是观点，不是共识</h5>
+      <p>本文整理的是 Anthropic Applied AI 团队基于客户合作总结的实践，<strong>不是经过对照实验验证的普适结论</strong>。文中给出的时间变化（如「从数周到数小时」）是<strong>期望值而非测量结果</strong>，量化示例（20–50 个 eval、2–3 个并行会话、5 个 nit 上限）也都是实践建议而非阈值定理。请把本文当作<strong>一套可检验的假设集合</strong>：逐条用你自己的前置/后置指标去验证，而不是直接当成结论采纳。</p>
+    </div>
+  </div>
+
+  <h3>资源清单（大致按推出顺序）</h3>
+  <p>原文给出的平台团队设置清单，按 rollout 顺序排列：</p>
+  <ol>
+    <li>组织级 Claude Code 安装——管理员决策图 —— <code>code.claude.com/docs/en/admin-setup</code></li>
+    <li>Settings 参考与优先级（含全部 managed-only key） —— <code>code.claude.com/docs/en/settings</code></li>
+    <li>从 Claude 管理控制台下发服务端托管设置 —— <code>code.claude.com/docs/en/server-managed-settings</code></li>
+    <li>Permissions —— <code>code.claude.com/docs/en/permissions</code></li>
+    <li>Sandboxing · OS 级文件系统与网络隔离 —— <code>code.claude.com/docs/en/sandboxing</code></li>
+    <li>Hooks 指南 —— <code>code.claude.com/docs/en/hooks-guide</code></li>
+    <li>Hooks 参考 —— <code>code.claude.com/docs/en/hooks</code></li>
+    <li>Skills —— <code>code.claude.com/docs/en/skills</code></li>
+    <li>Plugins 与私有 marketplace（skill 与 hook 的组织级分发方式） —— <code>code.claude.com/docs/en/plugin-marketplaces</code></li>
+    <li>Managed MCP · 集中管控智能体的工具面 —— <code>code.claude.com/docs/en/managed-mcp</code></li>
+    <li>企业部署总览 · Bedrock / Vertex / Foundry —— <code>code.claude.com/docs/en/third-party-integrations</code></li>
+    <li>企业网络配置 —— <code>code.claude.com/docs/en/network-config</code></li>
+    <li>监控（OpenTelemetry） —— <code>code.claude.com/docs/en/monitoring-usage</code></li>
+    <li>分析仪表盘 —— <code>code.claude.com/docs/en/analytics</code></li>
+    <li>Compliance API · 企业活动流、会话检索与删除 —— <code>platform.claude.com/docs/en/manage-claude/compliance-api</code></li>
+    <li>安全模型 —— <code>code.claude.com/docs/en/security</code></li>
+  </ol>
+
+  <footer>
+    <h3>来源与致谢</h3>
+    <p>
+      原文：<strong>The AI-Native SDLC playbook — How to transform your software development lifecycle with AI, stage by stage.</strong><br>
+      作者：Louis Claxton · 发布：claude.com/blog（2026-08-21）· 分类：Enterprise AI / Claude Code<br>
+      致谢：Jim Blackhurst、Will Steuk、Jamal Arif——本指南受他们先前工作的启发并建立在其基础上。<br>
+      文中提及的支撑性文章：<em>Securing an AI-native SDLC at Anthropic</em>、<em>How Claude Tag runs on-call for CI/CD at Anthropic</em>。
+    </p>
+    <div class="src">
+      本文是对上述原文的结构化整理与图解，六阶段框架、代码示例、指标定义与治理条款均来自原文；SVG 图表为本报告根据原文所述的节点关系重绘，非原文插图。<br>
+      报告生成时间：2026-09-13 · 单文件离线版本，无外部依赖。
+    </div>
+  </footer>
+</section>
+
+</main>
+</body>
+</html>
