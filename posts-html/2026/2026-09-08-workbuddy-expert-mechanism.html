@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="ozHi3mH1vHAWkfxBnZV9BF">
+<head data-page-node-id="pBHqIj0IY6ZkPBDQxuvxys">
+<meta charset="UTF-8" data-page-node-id="T3rknjPzRqYEG47yVMDtgZ">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="DLLDjRKPb1SXOXXDnIQndw">
+<meta name="description" content="「完整拆解 WorkBuddy 专家与专家团机制：从 plugin.json 元数据、七步生命周期，到主理人主导的星型协作拓扑、身份覆盖与团队命名规范，并给出可移植到自建智能体的最小落地骨架与避坑清单」">
+<meta name="keywords" content="workbuddy, expert-team, plugin-json, agent-orchestration, prompt-engineering, reverse-engineering">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-08">
+<title>WorkBuddy 专家 / 专家团机制研究</title>
+<style>
+:root{
+  --bg:#ffffff;
+  --bg-subtle:#f7f8f9;
+  --bg-code:#f5f6f7;
+  --bg-dark:#1a1d21;
+  --border:#e5e7ea;
+  --border-strong:#d0d4d9;
+  --text:#171a1e;
+  --text-mid:#4a5159;
+  --text-muted:#767e88;
+  --accent:#d4006a;
+  --accent-soft:#fdf1f7;
+  --accent-2:#0d7a6f;
+  --accent-2-soft:#eef7f5;
+  --amber:#a86500;
+  --amber-soft:#fdf5e9;
+  --radius:4px;
+  --unit:8px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --mono:'SF Mono','JetBrains Mono',Menlo,Consolas,'Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--bg);color:var(--text);
+  font-size:15px;line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+  font-feature-settings:"tnum" on;
+}
+
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);gap:0;max-width:1320px;margin:0 auto}
+
+/* ---------- sidebar ---------- */
+.sidebar{
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  padding:32px 8px 48px 24px;border-right:1px solid var(--border);
+}
+.sidebar::-webkit-scrollbar{width:5px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+.toc-brand{
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin-bottom:6px;
+}
+.toc-title{font-size:14px;font-weight:650;line-height:1.4;margin-bottom:24px;color:var(--text)}
+.toc-nav{display:flex;flex-direction:column;gap:1px}
+.toc-nav a{
+  display:block;padding:5px 10px;font-size:13px;color:var(--text-mid);
+  text-decoration:none;border-radius:var(--radius);border-left:2px solid transparent;
+  transition:background .12s,color .12s;
+}
+.toc-nav a:hover{background:var(--bg-subtle);color:var(--text)}
+.toc-nav a.sub{padding-left:22px;font-size:12.5px;color:var(--text-muted)}
+.toc-nav a.active{
+  background:var(--accent-soft);color:var(--accent);
+  border-left-color:var(--accent);font-weight:600;
+}
+.toc-nav .grp{
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);font-weight:700;padding:14px 10px 4px;
+}
+
+/* ---------- main ---------- */
+main{padding:56px 56px 120px;min-width:0}
+
+header.hero{padding-bottom:40px;border-bottom:2px solid var(--text);margin-bottom:48px}
+.eyebrow{
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin-bottom:16px;
+}
+h1{font-size:38px;line-height:1.2;font-weight:700;letter-spacing:-.02em;margin-bottom:16px}
+.hero p{font-size:16px;color:var(--text-mid);max-width:640px;line-height:1.7}
+.hero-meta{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;
+}
+.chip{
+  font-size:11.5px;font-family:var(--mono);color:var(--text-mid);
+  background:var(--bg-subtle);border:1px solid var(--border);
+  padding:4px 10px;border-radius:100px;
+}
+
+/* ---------- headings ---------- */
+h2{
+  font-size:24px;font-weight:700;letter-spacing:-.01em;
+  margin:64px 0 8px;padding-top:24px;scroll-margin-top:24px;
+}
+h2 .num{
+  font-family:var(--mono);font-size:13px;color:var(--accent);
+  font-weight:600;display:block;margin-bottom:6px;letter-spacing:.04em;
+}
+h3{
+  font-size:17px;font-weight:650;margin:36px 0 12px;
+  scroll-margin-top:24px;color:var(--text);
+}
+h4{font-size:14.5px;font-weight:650;margin:24px 0 8px;color:var(--text)}
+p{margin-bottom:14px;color:var(--text-mid)}
+p strong,li strong{color:var(--text);font-weight:650}
+a{color:var(--accent)}
+ul,ol{margin:0 0 16px 22px;color:var(--text-mid)}
+li{margin-bottom:6px}
+li::marker{color:var(--border-strong)}
+
+/* ---------- table ---------- */
+.tw{overflow-x:auto;margin:20px 0 24px;border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{
+  background:var(--bg-subtle);text-align:left;font-weight:650;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  color:var(--text);white-space:nowrap;font-size:12.5px;
+  letter-spacing:.02em;
+}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-mid);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg-subtle)}
+td code,th code{font-size:12.5px}
+td:first-child{color:var(--text);font-weight:550}
+
+/* ---------- code ---------- */
+code{
+  font-family:var(--mono);font-size:12.8px;
+  background:var(--bg-code);padding:1.5px 5px;border-radius:3px;
+  color:#b3286b;border:1px solid var(--border);
+}
+pre{
+  background:var(--bg-dark);color:#e6e8ea;
+  padding:18px 20px;border-radius:var(--radius);overflow-x:auto;
+  margin:18px 0 24px;font-size:12.8px;line-height:1.68;
+}
+pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
+pre::-webkit-scrollbar{height:7px}
+pre::-webkit-scrollbar-thumb{background:#3a4046;border-radius:4px}
+.c-comment{color:#7c8590}
+.c-key{color:#7fd1c1}
+.c-str{color:#e8b98a}
+.c-punc{color:#9aa3ac}
+
+/* ---------- callout ---------- */
+.callout{
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  padding:14px 18px;margin:20px 0 24px;border-radius:0 var(--radius) var(--radius) 0;
+}
+.callout .ct{
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:700;color:var(--accent);margin-bottom:6px;
+}
+.callout p:last-child{margin-bottom:0}
+.callout.note{border-left-color:var(--accent-2);background:var(--accent-2-soft)}
+.callout.note .ct{color:var(--accent-2)}
+.callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}
+.callout.warn .ct{color:var(--amber)}
+
+/* ---------- figure ---------- */
+figure{margin:28px 0 32px}
+figure svg{display:block;width:100%;height:auto;border:1px solid var(--border);border-radius:var(--radius);background:#fcfcfd}
+figcaption{
+  font-size:12.5px;color:var(--text-muted);margin-top:10px;
+  padding-left:2px;line-height:1.6;
+}
+
+/* ---------- flow (pipeline) ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:20px 0 24px}
+.flow .st{
+  background:var(--bg-subtle);border:1px solid var(--border);
+  padding:8px 14px;border-radius:var(--radius);font-size:13px;
+  color:var(--text);font-weight:550;
+}
+.flow .ar{color:var(--border-strong);font-size:14px;font-family:var(--mono)}
+
+/* ---------- cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:20px 0 24px}
+.card{border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;background:var(--bg)}
+.card .ch{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px;font-family:var(--mono)}
+.card p{font-size:13px;margin:0;color:var(--text-mid);line-height:1.6}
+
+/* ---------- rules list ---------- */
+.rules{list-style:none;margin:16px 0 24px;padding:0}
+.rules li{
+  padding:10px 0 10px 30px;border-bottom:1px solid var(--border);
+  position:relative;font-size:14px;color:var(--text-mid);
+}
+.rules li:last-child{border-bottom:none}
+.rules li::before{
+  content:attr(data-n);position:absolute;left:0;top:10px;
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  color:var(--accent);background:var(--accent-soft);
+  width:20px;height:20px;line-height:20px;text-align:center;border-radius:3px;
+}
+.rules.bad li::before{content:"✕";color:#c0392b;background:#fdeeec}
+.rules.bad li{color:var(--text-mid)}
+
+/* ---------- tree ---------- */
+pre.tree{background:var(--bg-subtle);color:var(--text-mid);border:1px solid var(--border)}
+pre.tree code{color:var(--text-mid)}
+pre.tree .dir{color:var(--accent);font-weight:600}
+pre.tree .cmt{color:var(--text-muted)}
+
+/* ---------- footer ---------- */
+footer{
+  margin-top:80px;padding-top:28px;border-top:2px solid var(--text);
+  font-size:13px;color:var(--text-muted);
+}
+footer p{margin-bottom:6px}
+
+/* ---------- responsive ---------- */
+@media(max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{
+    position:static;height:auto;border-right:none;
+    border-bottom:1px solid var(--border);padding:20px 20px 12px;
+  }
+  .toc-nav{display:none}
+  .toc-nav.open{display:flex}
+  .toc-toggle{
+    display:inline-block;margin-bottom:8px;font-size:12px;
+    color:var(--accent);cursor:pointer;font-weight:600;
+  }
+  main{padding:32px 20px 80px}
+  h1{font-size:28px}
+  h2{font-size:21px}
+}
+@media(min-width:961px){.toc-toggle{display:none}}
+@media print{
+  .sidebar{display:none}
+  .shell{grid-template-columns:1fr}
+  main{padding:0}
+  body{font-size:11pt}
+  pre{background:#f5f6f7;color:#171a1e;border:1px solid #ddd}
+  h2{page-break-after:avoid}
+  figure,table,.tw{page-break-inside:avoid}
+}
+</style>
+</head>
+<body data-page-node-id="oEBzvPPVfLCMMgAVjsv48Q">
+<div class="shell" data-page-node-id="C5lT0sEKrfewGBAsGUMS7W">
+
+<aside class="sidebar" data-page-node-id="D2CYr2TuDUbcnE7KZ3NfQ2">
+  <div class="toc-brand" data-page-node-id="9k2dCygoT2mPww2jIMnYQH">Mechanism Study</div>
+  <div class="toc-title" data-page-node-id="kj4uvAgue4AKSrJcl3Ee59">WorkBuddy 专家 / 专家团机制</div>
+  <div class="toc-toggle" onclick="document.querySelector('.toc-nav').classList.toggle('open')" data-page-node-id="VbArsaMAhEy2gotPnALM77">目录 ▾</div>
+  <nav class="toc-nav" id="toc" data-page-node-id="FuF4W6JOwG10eo40lrYw8y">
+    <a href="#s0" data-page-node-id="KR64CAjVDBFl2fbwVaAYoK">0 · 结论速览</a>
+    <a href="#s1" data-page-node-id="3KOSGadSbG58LCjAGt5fzy">1 · 本质：可安装的角色包</a>
+    <a href="#s2" data-page-node-id="19qc0FB0oOw4N7oLyJJ5gt">2 · 数据结构</a>
+    <a href="#s21" class="sub" data-page-node-id="G6CF9cvJX6RnWFBWW1MTDW">2.1 类型划分</a>
+    <a href="#s22" class="sub" data-page-node-id="7c91x6VJJViFbluBLTlikw">2.2 plugin.json 字段</a>
+    <a href="#s23" class="sub" data-page-node-id="RfjWRm3LXXTckUht9Xo5WE">2.3 Agent MD 规范</a>
+    <a href="#s24" class="sub" data-page-node-id="oAHXuAvxmeW5p6lYSA7Hoc">2.4 目录结构</a>
+    <a href="#s3" data-page-node-id="PW4QM0L1eSLyrQs8uaj49d">3 · 生命周期：7 步</a>
+    <a href="#s4" data-page-node-id="LxQlIJB7V6OwZGKjqBXWIV">4 · 发现与注册机制</a>
+    <a href="#s5" data-page-node-id="S4QlhN0AOxyhF0FDdZhK6D">5 · 运行期：如何生效</a>
+    <a href="#s51" class="sub" data-page-node-id="Ez3vnQwNxK42BOJIEttO6l">5.1 身份覆盖机制</a>
+    <a href="#s52" class="sub" data-page-node-id="X7ufhHVHlXqJeIGtACGmie">5.2 团队运行时</a>
+    <a href="#s53" class="sub" data-page-node-id="xGFg31K6U1JAKSNcjQk7eM">5.3 协作铁律</a>
+    <a href="#s54" class="sub" data-page-node-id="zVBaylzpODJ1CkGJ7cyTdC">5.4 编排模式</a>
+    <a href="#s6" data-page-node-id="bYoA09PAJ0PGf08gdHMm3S">6 · 配套机制</a>
+    <a href="#s7" data-page-node-id="x9i9vvOhGsJkk0LZo3JLdu">7 · 案例：trading-agent</a>
+    <a href="#s8" data-page-node-id="OdGLM7yEAVSoLBFcqR1J94">8 · 移植落地方案</a>
+    <a href="#s81" class="sub" data-page-node-id="AEuyRYup5KLSbvM15vpeoM">8.1 最小数据模型</a>
+    <a href="#s82" class="sub" data-page-node-id="WSuWTTaR3jYZOz5UEMXskc">8.2 目录与注册表</a>
+    <a href="#s83" class="sub" data-page-node-id="6h6ZUIjBnQizAafkh5XrQr">8.3 加载器实现</a>
+    <a href="#s84" class="sub" data-page-node-id="R3R2IXuUdW9NvCCrWeGXcS">8.4 四大原语</a>
+    <a href="#s85" class="sub" data-page-node-id="phfycChH4BOwKLnDbj7Kex">8.5 避坑清单</a>
+    <a href="#s9" data-page-node-id="xCxCUB2nJSpiBw7yxnAdW3">9 · 源码路径索引</a>
+  </nav>
+</aside>
+
+<main data-page-node-id="T8NnUKSlpI7ZR1I996DolZ">
+
+<header class="hero" data-page-node-id="OTBmf1CSxFHhoNIzBa9NKb">
+  <div class="eyebrow" data-page-node-id="dwIOoP7y5vltGRZBqufIQ2">Reverse Engineering Report</div>
+  <h1 data-page-node-id="6PTc9MUioQFzhulRXALtAe">WorkBuddy 专家 / 专家团<br data-page-node-id="itDL6QbiNbCbYE0iG4HuMx">机制研究</h1>
+  <p data-page-node-id="GGIrVoQlblEPbksBX916bU">完整还原 WorkBuddy 中「专家（Expert）」与「专家团（Expert Team）」的定义方式、生命周期与运行期协作机制，并给出可移植到自建智能体的落地方案。所有结论均来自本机实际安装文件，路径可溯源。</p>
+  <div class="hero-meta" data-page-node-id="SzSf10JWKuv9s5Kw9n2Idd">
+    <span class="chip" data-page-node-id="ZfT7PjRYezzsh5YEcqKBRB">2026-09-08</span>
+    <span class="chip" data-page-node-id="RDxB8hEO4yer2yGgAFb3lN">v2.0 规范</span>
+    <span class="chip" data-page-node-id="ZQ58DMX1HuQHNjDs8aYK7G">13 个实例验证</span>
+    <span class="chip" data-page-node-id="hXhgKqtC0D9UtgZjQCtjxH">零外部依赖</span>
+  </div>
+</header>
+
+<!-- ============ 0 ============ -->
+<h2 id="s0" data-page-node-id="CcZYR74IsXp9n61rqQyjEn"><span class="num" data-page-node-id="Va5jD5yPNCXnDmHGi4htiE">SECTION 00</span>结论速览</h2>
+<div class="tw" data-page-node-id="d6xu1kCeGmjlLj5WEDJApX">
+<table data-page-node-id="2yvoE46C5mzbsDE4Rva6xW">
+<thead data-page-node-id="S7RckkqP7HBMQ5OpFAlOCE"><tr data-page-node-id="Zl47zdB1vqK5tWI0XzlRRQ"><th style="width:24%" data-page-node-id="0mopY7C2TyE2FjbBqGSSTt">问题</th><th data-page-node-id="FigYDW0RRAm8rbObTIw1FS">结论</th></tr></thead>
+<tbody data-page-node-id="eqCb2IBzRvnP9mdcehkt5x">
+<tr data-page-node-id="8qjqbnVxDd7bkdkClYIIdF"><td data-page-node-id="1GB8a7avzZooqbQ5bAnnUA">专家是什么</td><td data-page-node-id="yY0Mntd4ITxj2EFv1poWbf">一个<strong data-page-node-id="QZ36hQK4bWwnuhHv77Z8We">本地目录形态的插件包</strong>，核心是 <code data-page-node-id="3gcTikircpjncK1X4EGYsp">plugin.json</code> 元数据 + <code data-page-node-id="6KR7XaYLo8cQeUWYYvJEkS">agents/*.md</code> 人格提示词。不是模型，不是微调，是纯 Prompt + 资源的组合</td></tr>
+<tr data-page-node-id="B7NNrMVmuzddaRBs4M5mQE"><td data-page-node-id="7DmokZ9nBps2aAEnKqhlbK">专家包放在哪</td><td data-page-node-id="b6UVq8sd02wuls7ZDAUt1H"><code data-page-node-id="MVP9QFBFkS1oqATgRMH93W">$WORKBUDDY_CONFIG_DIR/plugins/marketplaces/&lt;marketplace&gt;/plugins/&lt;expert-name&gt;/</code>（默认 <code data-page-node-id="gPKRGwFqpPSJi9PR7NIMVk">~/.workbuddy/...</code>）</td></tr>
+<tr data-page-node-id="TDO88BDC8eESLJdoako2L2"><td data-page-node-id="pTOgZcPPUVOJXY7FDGqJDJ">元数据文件</td><td data-page-node-id="iGxI2coJAB3g25RDFXhIt1"><code data-page-node-id="4mlNPA8QC7cjtmi459LEoi">.codebuddy-plugin/plugin.json</code>（兼容 <code data-page-node-id="AyOVdkQp8zaSXylHwyDtN5">.workbuddy-plugin/</code>）</td></tr>
+<tr data-page-node-id="cIXnTXQq6no64DVQOqa52n"><td data-page-node-id="8wHjIPtHhRerRBrf6tZxQ0">怎么被发现的</td><td data-page-node-id="KwiwtYUa7Fzibp9QJWUuOU">写入 marketplace 根目录下 <code data-page-node-id="set0x7mwIq3lByAYC42Inw">.codebuddy-plugin/marketplace.json</code> 的 <code data-page-node-id="f2ufsr6ARDdtGdy8xjwm20">plugins[]</code> 数组</td></tr>
+<tr data-page-node-id="VhFXFZUnp66WnL2cM8KTG9"><td data-page-node-id="c3Foe67q0e9dZNLH7F9FJb">专家 vs 专家团</td><td data-page-node-id="shFmh3zJlELxkEyXMC0EsX">由 <code data-page-node-id="CodvqSakAYqE5UYk8BfCTK">expertType</code> 区分：<code data-page-node-id="XKif3dYUoeEi8vkCCqQ4eI">agent</code> = 单角色，<code data-page-node-id="pUVFakpCeXC6KUxTvxXj8e">team</code> = 主理人 + N 个成员</td></tr>
+<tr data-page-node-id="ziJCE2xI2BsZsLtlQVhL6X"><td data-page-node-id="owrVJBcOzq0q5wIosx8y6k">专家团怎么协作</td><td data-page-node-id="QRFrcfY8YYghVJ4KdplIGC">主理人执行 <code data-page-node-id="z1X9AQOV1DE3m6BqMwiO1V">TeamCreate</code> → <code data-page-node-id="Vh4EfnBzdd7ONEiaHe0VHV">Agent spawn 成员</code> → 成员 <code data-page-node-id="wjPBl91Tkzyp4HraUrrQmH">SendMessage</code> 回传主理人，<strong data-page-node-id="VQ88ygc4zxr8snEvvUICj5">禁止成员互连</strong></td></tr>
+<tr data-page-node-id="iAMWbkWaAAz461JHG4rVZD"><td data-page-node-id="8QeAER8GCrCKHcB560sQar">关键设计</td><td data-page-node-id="FG8mhtLTXe3QuRigq7J6U2">专家模式下<strong data-page-node-id="22aOWbnmt7rqOvomqZpiKF">不注入助手默认人格</strong>（SOUL / IDENTITY），由专家 MD 自带的身份指令完全覆盖</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1" data-page-node-id="IuRDAiNBRnxxHy52vcriQG"><span class="num" data-page-node-id="36IBUpvIxqazqKyPaBNfMI">SECTION 01</span>本质：专家 = 可安装的角色包</h2>
+<p data-page-node-id="gdEbHdvXvnC1KZ8QluEhKf">WorkBuddy 的专家不是一个独立模型或 API，它是三层结构的组合：</p>
+
+<figure data-page-node-id="x7pwTKlggY6gotPYt5hsJK">
+<svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="专家包三层结构" data-page-node-id="JuzU4HDpSzTW1sgfsdh36N">
+  <rect width="680" height="260" fill="#fcfcfd" data-page-node-id="sMMQJdv0psrzgGgNdX260v"/>
+  <!-- layer 3 -->
+  <rect x="40" y="30" width="600" height="54" rx="4" fill="#fdf1f7" stroke="#e8c3d8" data-page-node-id="NCus0EQ3wyZ9rdYq6UOF6G"/>
+  <text x="60" y="52" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#d4006a" data-page-node-id="vh71XMyAuTdPJSum8vzArP">第 3 层 · 能力层</text>
+  <text x="60" y="70" font-family="-apple-system,sans-serif" font-size="12.5" fill="#4a5159" data-page-node-id="xDwGGIwqXKm8IezMvcLOoH">skills/ · bin/ —— 可选，挂载专业技能与可执行脚本</text>
+  <text x="620" y="62" text-anchor="end" font-family="monospace" font-size="11" fill="#a08" data-page-node-id="LdxXi9ajDyeqWCj6tdZ655">OPTIONAL</text>
+  <!-- layer 2 -->
+  <rect x="40" y="98" width="600" height="54" rx="4" fill="#ffffff" stroke="#d0d4d9" stroke-width="1.5" data-page-node-id="63Jl6IVeZx3scI9UDJOIm2"/>
+  <text x="60" y="120" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#171a1e" data-page-node-id="BrKTUoQP33OOZjAiq95E6X">第 2 层 · 人格层</text>
+  <text x="60" y="138" font-family="-apple-system,sans-serif" font-size="12.5" fill="#4a5159" data-page-node-id="WCm9nZJwtljuB1CDgy4E1I">agents/*.md —— 告诉模型「你是谁、怎么思考、怎么输出」</text>
+  <text x="620" y="130" text-anchor="end" font-family="monospace" font-size="11" fill="#767e88" data-page-node-id="LtAf1gGEpU9qvcT6flW8Cs">CORE</text>
+  <!-- layer 1 -->
+  <rect x="40" y="166" width="600" height="54" rx="4" fill="#eef7f5" stroke="#b8ddd6" data-page-node-id="sgCXTW7UsvXlG2AtIl4Bba"/>
+  <text x="60" y="188" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#0d7a6f" data-page-node-id="xHV14OjnOx1aiNlbBQWVh3">第 1 层 · 元数据层</text>
+  <text x="60" y="206" font-family="-apple-system,sans-serif" font-size="12.5" fill="#4a5159" data-page-node-id="Aw4OJKnjBzx7KzC4qil48x">plugin.json —— 告诉系统「这是谁、属于哪类、怎么展示」</text>
+  <text x="620" y="198" text-anchor="end" font-family="monospace" font-size="11" fill="#0d7a6f" data-page-node-id="t8qoY2JApiZ8z6HdP3RwOU">REQUIRED</text>
+  <!-- arrows -->
+  <path d="M340 84 L340 96" stroke="#d0d4d9" stroke-width="1.5" marker-end="url(#a1)" data-page-node-id="JXxkRibRGhCOhsA3qcix6g"/>
+  <path d="M340 152 L340 164" stroke="#d0d4d9" stroke-width="1.5" marker-end="url(#a1)" data-page-node-id="Kd3HJWdZRyEBwVLV0QRlNF"/>
+  <defs data-page-node-id="IFLUqaZ8bZyEHsJuE9GLFd"><marker id="a1" markerWidth="7" markerHeight="7" refX="4" refY="3" orient="auto" data-page-node-id="LJedpDskRQkXt5WcjKfRYM">
+    <path d="M0,0 L6,3 L0,6 Z" fill="#d0d4d9" data-page-node-id="bqR0wEAKksDHZmcplcBmfu"/></marker></defs>
+  <text x="40" y="244" font-family="-apple-system,sans-serif" font-size="12" fill="#767e88" data-page-node-id="FOdinwAzy9Ge8Ag08OPDf8">能力强弱 ≈ Agent MD 的质量，而不是模型本身</text>
+</svg>
+<figcaption data-page-node-id="jGVdytC8P6pmtMaSjlhOAp">图 1 · 专家包的三层结构。专业性全部是提示词工程 + 流程约束的产物。</figcaption>
+</figure>
+
+<div class="callout" data-page-node-id="GFffskdpNb990lmb4GLtCv">
+  <div class="ct" data-page-node-id="D24cL65ljZBRcalL15vgWT">核心洞察</div>
+  <p data-page-node-id="u1nCoWE27P6IRCYPvAXUyD">专家的能力强弱 ≈ <strong data-page-node-id="3iTEmVtRZXrAYdmhmuVlQz">Agent MD 的质量</strong>，而不是模型本身。所有「专业性」都是提示词工程 + 流程约束的产物。</p>
+</div>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2" data-page-node-id="zB2IzT3hI2yAo39ocXbnkf"><span class="num" data-page-node-id="jbkhK0bUk1qkXpDHPumkGO">SECTION 02</span>数据结构</h2>
+
+<h3 id="s21" data-page-node-id="oy0hdjDR7ZhVnl9Ac9LwT4">2.1 类型划分</h3>
+<div class="tw" data-page-node-id="89SYJuAXnyfm8k8ahJaonn">
+<table data-page-node-id="df7JjzEuZ6oHLnQAavbaFO">
+<thead data-page-node-id="NvdKRS3LBUUsireY93uPAK"><tr data-page-node-id="D6yNYYQCqCN4x4V7Emw8Uc"><th style="width:16%" data-page-node-id="0JFYkU6u5Bf3tUsDuqEJpC">expertType</th><th style="width:22%" data-page-node-id="QYV4bV4OQtC5DVj6MXbpop">含义</th><th data-page-node-id="9sxyAyFASpEHjzjzYepxB1">判定规则</th></tr></thead>
+<tbody data-page-node-id="5Uj6BQmwelznTUEuqBN3pH">
+<tr data-page-node-id="SQqhuApAYiAgOP20d4vNCJ"><td data-page-node-id="Iie7mHEJI9Ki33livSWf4V"><code data-page-node-id="B2QmfEDUv6SWg32JWYQKR1">agent</code></td><td data-page-node-id="SkcYQZaOpptOZtLpf1iHAp">专家（单角色）</td><td data-page-node-id="jQ5ovIXbR4v2kbCF5RYOpf">1 个 Agent MD</td></tr>
+<tr data-page-node-id="yKlwUXrJh26H3d9rkQY0oY"><td data-page-node-id="VynM2wmz742UCYNyQVnOBD"><code data-page-node-id="mf84Uup3lvHbUI9QGyv4Fc">team</code></td><td data-page-node-id="2nO459u60s1DAP2aFCo4pi">专家团（多角色协作）</td><td data-page-node-id="alVUK8y8pGGj3XUa2Bq3GZ">主理人 MD + N 个成员 MD，有 <code data-page-node-id="J4zemY1CqCFCxOfDQHqD4o">teamInfo</code> 和 <code data-page-node-id="eneBAX6FbvfYnmGG2PAomr">members</code></td></tr>
+</tbody>
+</table>
+</div>
+<p data-page-node-id="9fSjwGRiJr0f6aBmkEr0ch">判定不可随意指定，<strong data-page-node-id="AxuxQGMMBAcVwhnBiYcC8u">必须按实际结构判断</strong>：单角色 = agent，多角色协作 = team。</p>
+
+<h3 id="s22" data-page-node-id="K2QY4M0HYJhMJRHxRjDQZR">2.2 plugin.json 字段规范</h3>
+<p data-page-node-id="asTpsNhZ0cHoStmKSJBraC">来源：<code data-page-node-id="tSVE6Lyv9he8P7bdaNs1WJ">resources/plugins/workbuddy-builtin/skills/expert-manager/references/plugin-json-spec.md</code></p>
+
+<h4 data-page-node-id="DdNhzikEKxnsyyBmOy4YAR">基础字段（必填）</h4>
+<div class="tw" data-page-node-id="9vlNk4HdIAKIljyuGyXOH1">
+<table data-page-node-id="ZJRGATCyin8SEm89166LAF">
+<thead data-page-node-id="CQr6u9FkjDGogIupRuyvee"><tr data-page-node-id="4Fa7ePSuSdxo62ZTGL0BOu"><th style="width:18%" data-page-node-id="xH06hjY2wBZMhEl9WEqHVA">字段</th><th style="width:14%" data-page-node-id="hQcS0D1Oi4SUcZQKoAAArv">类型</th><th data-page-node-id="oxlOKVt9kmMHbmVLGNT7uM">说明</th></tr></thead>
+<tbody data-page-node-id="rgKj8ZAmTzhKW2JyoI2irc">
+<tr data-page-node-id="nH2FCygtpPxlBySgE6K5N1"><td data-page-node-id="EqSO4NECXJ2aYIdEbUJ5yy"><code data-page-node-id="mllgwijswTAdYKwxWXICeI">name</code></td><td data-page-node-id="xBjCvPqQVKQPSWRUvzHwEd">string</td><td data-page-node-id="V9ikIGL4CfGtB0Nu9f2QOB">唯一标识，kebab-case，同时是技能命名空间前缀</td></tr>
+<tr data-page-node-id="QrOqign2dHztiQD1liNV37"><td data-page-node-id="dhzrKcDzdbRZzr5skrwQcP"><code data-page-node-id="Dvm18L41jfoUeETEqHlDig">version</code></td><td data-page-node-id="yokvdhHHXDL8mcRZHkLDxF">string</td><td data-page-node-id="Mw8hGoyZ7JW9o3NG4kxWfU">语义化版本</td></tr>
+<tr data-page-node-id="pSqL6Jtyj8f5227hFpJJ8r"><td data-page-node-id="A4GaZ3BtAUn324hMtcKcgZ"><code data-page-node-id="BlCwYKA1DtCeiIEkZz1D8m">description</code></td><td data-page-node-id="Ap82dKI9CDiNXLSe8QkDxK">string</td><td data-page-node-id="RJToD2QRWDYROxDikosDvX">英文一句话描述</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4 data-page-node-id="dKlUmo9GC9by7pRN8pOLgV">类型字段</h4>
+<div class="tw" data-page-node-id="G7moZvzwoXeY4DhLgLINDc">
+<table data-page-node-id="Q8NhF84hYFQ1PpH5N0JVyz">
+<thead data-page-node-id="E9GntPY6y6RELDaHx1YOvL"><tr data-page-node-id="syZSO2yBIIkGM7dkcnkVzg"><th style="width:18%" data-page-node-id="tFIIPsRcGlQr7AS7bpzu6I">字段</th><th data-page-node-id="fMqQSFQEg4Us46IPfZEb7N">说明</th></tr></thead>
+<tbody data-page-node-id="KVSfzwzvNCM0qZsHJe4Xr9">
+<tr data-page-node-id="46ERhMaOr1cyvoLZORfH0R"><td data-page-node-id="xRH8Z0J6bUVYSn9ATJ4SoA"><code data-page-node-id="AMV5CdWFduEgEXzpf8VGlj">expertType</code></td><td data-page-node-id="cM1CrRdMZtq2jC2ifFC46v"><code data-page-node-id="yOG4AI4wmOk7CqoTBYFPUF">"agent"</code> / <code data-page-node-id="f0IGLFgVNihwvY9kRfD0je">"team"</code></td></tr>
+<tr data-page-node-id="bljVGheJvxHwqJgx6EUk24"><td data-page-node-id="t5IxzqewU5AoClUeUj8qi7"><code data-page-node-id="ZQmHnTaCl9mGuTHz3yY6Mq">agentName</code></td><td data-page-node-id="1C1YqZ8TNhInDnG9OVnnUd">主 Agent 名 = <code data-page-node-id="XEIbR7yhXrz7N2sLVybYtz">agents/</code> 下 MD 文件名（不含 .md）。<strong data-page-node-id="ZBopXNYTL6OdvOU1lgw2Hs">必须有业务语义</strong>，禁用 <code data-page-node-id="IcM4y8xND2jsH3iawCZbMP">team-lead</code> 等通用名</td></tr>
+<tr data-page-node-id="phO2QZum5Et9v7fhJtTZse"><td data-page-node-id="sg7v4bkuLqxnyBI9c8S4gI"><code data-page-node-id="enmumXX9YaA3F6xQsEb9nk">teamInfo</code></td><td data-page-node-id="D1KtoVWi0Gsdyai51YiKum">team 必填：<code data-page-node-id="KB7Q2iA0DT2bZZAWncQHNU">{leadAgent, memberAgents[]}</code>，<code data-page-node-id="zJWT4uV9y4AVsERXa5BBgc">memberAgents</code> <strong data-page-node-id="UpBUNQlKNglOxpxeYwRFrQ">不含主理人</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4 data-page-node-id="GIdnZjj1e9kpUhfpgbxA8H">资源声明</h4>
+<div class="tw" data-page-node-id="rEuZHjkqr6puEUm12DZuej">
+<table data-page-node-id="koCThwFxNapMlwXVbr0LcA">
+<thead data-page-node-id="99VAP5NwulZuO8cYeqZDEG"><tr data-page-node-id="1izP6NGmppHQPOTaFrN510"><th style="width:18%" data-page-node-id="xEbLtpLWevBDRvOXD6TqBG">字段</th><th data-page-node-id="oIopFk0vI80Mo3kaFOgKk0">说明</th></tr></thead>
+<tbody data-page-node-id="2RsgdmOjORCTZIei5QSuEK">
+<tr data-page-node-id="BbSy7vPkRV7vuKleFdghuB"><td data-page-node-id="C9hyUHFR7OtFVydPCHju0y"><code data-page-node-id="kgqDj6FfFtoe60oR2DJm6w">agents</code></td><td data-page-node-id="1qaFzK2PaBvmDgbCJ77VAf">string[]，Agent MD 路径，如 <code data-page-node-id="LXs8g8NCfav964TEirk0RZ">["./agents/my-expert.md"]</code></td></tr>
+<tr data-page-node-id="YHk73M3MrMbcwsh9veceyc"><td data-page-node-id="oYLRFHH4uFbLpN2xMij8Lr"><code data-page-node-id="1RLGZTxpkf4srZkcmGfiyy">skills</code></td><td data-page-node-id="2Moi3354nBZDElyT8OTClQ">string[]，Skill 目录路径，如 <code data-page-node-id="8Gpi99K2EemwFGzAShpnqo">["./skills/my-skill"]</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4 data-page-node-id="PvQdC7HTSbC4W56luzCMod">展示字段（上架市场必填）</h4>
+<div class="tw" data-page-node-id="FC5i4QOqA1c0viPiG6mNfy">
+<table data-page-node-id="Kz2bcj0Fi0847tEroW37lX">
+<thead data-page-node-id="9fI5DwOxHZLeC1verNVLn6"><tr data-page-node-id="hzbAHZ89193OD0fomHRFwV"><th style="width:22%" data-page-node-id="lw59kAkBfam3OOWhcWc9ot">字段</th><th style="width:40%" data-page-node-id="T0IrAPDDe89ZDWcA5zgUWh">说明</th><th data-page-node-id="CBhma1pxqtOSxzePz2tO3Q">硬约束</th></tr></thead>
+<tbody data-page-node-id="lfgF8Un528dxE0xZeEb7nt">
+<tr data-page-node-id="JAbDqPZhDGRqhZEzDIqLUd"><td data-page-node-id="DaXzMk3WUkd7QMPrARGwZL"><code data-page-node-id="1Y7N8elEjubXem9Fc45L9c">displayName</code></td><td data-page-node-id="ZtLCSFIlZVHxKSSvuzci7k"><code data-page-node-id="5uylpZCiAVCWpYw1oEvNjC">{en, zh}</code> 花名</td><td data-page-node-id="wpwv4rKnwZBsuBveupfFB0">可自由修改</td></tr>
+<tr data-page-node-id="0zKhIiBCOpOSEWE74QRFgS"><td data-page-node-id="XJEr378FgkHVMY7wNxAguU"><code data-page-node-id="vi6eIlhFb7wuI18DrHIkdk">profession</code></td><td data-page-node-id="rTc9YeWYv5Dj224h9T5mJy"><code data-page-node-id="DdZxg8ejwXEEMZqP6zVUue">{en, zh}</code> 职业头衔</td><td data-page-node-id="3rTpViDd50MCtpPuosL6aT">Team 型须与 displayName 一致</td></tr>
+<tr data-page-node-id="pDjsOYEIhDIPYFiz12wVBV"><td data-page-node-id="gSmEiU74IX60eB8bU6GIM2"><code data-page-node-id="DQRAAVU7MBSA5YUXyhgwXU">displayDescription</code></td><td data-page-node-id="CfYbTSLRFptf0mDljA8CGq"><code data-page-node-id="ZhhTfWLNu6c8BThBrPkzs4">{en, zh}</code> 能力介绍</td><td data-page-node-id="8KVU0Mh08XiBoDW6GLQvkC">中文 40–50 字</td></tr>
+<tr data-page-node-id="QtQs0RZopBXtgojgWOhPPP"><td data-page-node-id="HSIwoJl09ISjGAY5vyRnfn"><code data-page-node-id="P6tkTkRu7dzUVziJrc2COr">avatar</code></td><td data-page-node-id="X8oDc55JdD2EwMpX5gT5Dm">头像相对路径</td><td data-page-node-id="sBKqyZShu9Xps1C3hEXzfq">512×512，≤500KB</td></tr>
+<tr data-page-node-id="dhEsDUgGT7GXNxnznKYOtf"><td data-page-node-id="awb6oxxMtnv4NDGwoMJ4LW"><code data-page-node-id="ioPpH5IeuGBKnlxud8MJGY">categoryId</code></td><td data-page-node-id="n0fHNEgqlDzFEupSrX73j8">行业分类 ID</td><td data-page-node-id="k8ZlJOdEqCUoy6WzAOPrhk">见 §6.2</td></tr>
+<tr data-page-node-id="3KuLXS4tmySFD1lubcXhqC"><td data-page-node-id="E4BZbpf7G2R4hnZ4zqZDAn"><code data-page-node-id="5xythUeKw3Q7Ki1EhOyit5">defaultInitPrompt</code></td><td data-page-node-id="RXMryzo4JJbi7C6VWcsEWf"><code data-page-node-id="E3EA3mUZy3Kt0I8hhUWTBN">{en, zh}</code> 首次引导语</td><td data-page-node-id="kZWWlmPc3EF9UJax4CQwel"><strong data-page-node-id="8vudnIBUmyBsFgcaMNevR0">须与 quickPrompts[0] 一致</strong></td></tr>
+<tr data-page-node-id="Rjp1WucJKkGFznBRzgYAi4"><td data-page-node-id="xTZHsDgLwbq3ykyP1aP5KK"><code data-page-node-id="5eqI35GmacRPJgEX55rpou">tags</code></td><td data-page-node-id="3PvarGHUnG1OxrpTrxSolr"><code data-page-node-id="N3B6lscnpeByTENzJ25b1R">{en, zh}[]</code> 擅长领域</td><td data-page-node-id="yenj1Lm68n3zVDqBzAtX94"><strong data-page-node-id="AFppt4RQPKmUjw2kQcW2LA">固定 3 个</strong></td></tr>
+<tr data-page-node-id="77M6bdqIVL2bifnyLLM6ny"><td data-page-node-id="WMXBeRjw2fTvYUAC1uAnXy"><code data-page-node-id="EtEfKIYD4Qtzv4T8bFVba5">quickPrompts</code></td><td data-page-node-id="b4VkAPC0fuJaOck6g0yVdz"><code data-page-node-id="YHNQzVKpXmYEKoCYYNE89a">{en, zh}[]</code> 推荐提问</td><td data-page-node-id="y4tz8RXZVh6YmhB9yhCkCF"><strong data-page-node-id="fT4xINJvdzr4xd7FD5IRUf">固定 3 个</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4 data-page-node-id="Ujyl1MRmXqHEQvJT9EBpKA">Team 专用：members</h4>
+<pre data-page-node-id="6nKxON9XDCNKVuuSqAUyBm"><code data-page-node-id="xiTfxiSUoqCeucgAJ5s2R1">"members": [
+  { <span class="c-key" data-page-node-id="5jJB1bnlhbk4XA6Ve6oEMV">"id"</span>: <span class="c-str" data-page-node-id="IjdnDG0Xzxa9OIpB7hnzw9">"trading-team-lead"</span>, <span class="c-key" data-page-node-id="eHPThXUHXP7zLHHk54zmtB">"name"</span>: {<span class="c-str" data-page-node-id="QsGTMYfyq5dCWDHA65K03e">"en"</span>:<span class="c-str" data-page-node-id="hnt5GnYGOSc9O2SS1brXVH">"He"</span>,<span class="c-str" data-page-node-id="dltWB9iluVrSgB1Y7d8O9e">"zh"</span>:<span class="c-str" data-page-node-id="4tZ65w66Cq2dmPXm65Hi2U">"何执舟"</span>},
+    <span class="c-key" data-page-node-id="DEdroG2CteSuqtw7zXFmb2">"profession"</span>: {<span class="c-str" data-page-node-id="keUq9nmB0vcxxRWNXPONQ3">"en"</span>:<span class="c-str" data-page-node-id="G5N6UV7Ofgh3HMyC3FYaGG">"Chief Strategist"</span>,<span class="c-str" data-page-node-id="XUeBj6OPBaiPwaZsJWYXgM">"zh"</span>:<span class="c-str" data-page-node-id="ev4PmwT0V57RQSdoNYLcT0">"首席策略官"</span>},
+    <span class="c-key" data-page-node-id="GlYBfZ7pcOovtSaTIXwbOW">"avatar"</span>: <span class="c-str" data-page-node-id="2Pz12HT7UzIMaVV0LbVe3z">"avatars/team-lead.png"</span>, <span class="c-key" data-page-node-id="d5GFIXdfa0YN9NS0UgcliU">"role"</span>: <span class="c-str" data-page-node-id="kalYrF3fZ82evAyNrhUny6">"lead"</span> }
+]</code></pre>
+<ul data-page-node-id="D4SDLjrqdxbXk34U1M6DuQ">
+<li data-page-node-id="tSVZGIblauOaj2zUiFIwzc"><code data-page-node-id="xjnBAlTbE9WYkGGLjLn5Lk">role</code> 取值 <code data-page-node-id="5PfzEz5lUs6vCN5cHGhzC3">"lead"</code> / <code data-page-node-id="NVVVnWarxQEDQATCczNwzV">"member"</code></li>
+<li data-page-node-id="kNoHP8qa4pXmhy1Rs6pRY6"><strong data-page-node-id="DivAMhwFUe2uDdB0dX4jPp">主理人也必须在 <code data-page-node-id="6tR4mDyLxGL8OgRzGgwkDz">members</code> 里</strong>（role=lead），但 <code data-page-node-id="BgG6cIYdYxQA3vGDyVjrnx">teamInfo.memberAgents</code> 不含它</li>
+</ul>
+
+<h3 id="s23" data-page-node-id="GYLMr3Glg5dULUEzXYXdII">2.3 Agent MD 规范</h3>
+<p data-page-node-id="jbFnSlRUX9h9FavzSRxOHn">来源：<code data-page-node-id="w41rU8WU4N9FBvshEjD9vc">references/agent-md-spec.md</code></p>
+
+<h4 data-page-node-id="5LxxaMYPc9RmmnksFvrae0">Frontmatter（必填）</h4>
+<pre data-page-node-id="ZS4r2wzddndKYZpIU30V8Q"><code data-page-node-id="WDfKEqSk4bV5dYcCTNNHSy"><span class="c-punc" data-page-node-id="DoYNDQAUrv6uJmsWBI9nt5">---</span>
+name: {与文件名一致，必须有业务语义}
+description: {英文描述，AI 用来判断何时激活}
+displayName: { en: <span class="c-str" data-page-node-id="4Y73VdKkJtaSkinxj3kayS">"..."</span>, zh: <span class="c-str" data-page-node-id="4x1g2ivBrOCD2tEU2SQqly">"..."</span> }
+profession:  { en: <span class="c-str" data-page-node-id="s5ihk8me00TCWjRHWjJ7Op">"..."</span>, zh: <span class="c-str" data-page-node-id="HfGzdm3xf79k4zfaXofDdZ">"..."</span> }
+maxTurns: <span class="c-key" data-page-node-id="sXQpAtOUT9yXYAC7OA2bwc">50</span>          <span class="c-comment" data-page-node-id="u0KzLcSG503QQGPF1piilM"># 主理人建议 150-200</span>
+<span class="c-punc" data-page-node-id="BABEaHoqNNdDiQI9b7p2xT">---</span></code></pre>
+<div class="callout warn" data-page-node-id="SYnIQezT104VsekjewfnIE">
+  <div class="ct" data-page-node-id="56QHwsRs6oUK4Qm5mGzDVJ">禁止</div>
+  <p data-page-node-id="HPHSsejzArrAFt9HaZg7Qm">Frontmatter 中<strong data-page-node-id="nSOk4D4Z4A2N5JkKweygD2">禁止声明 <code data-page-node-id="sanyIyUaAFrpICZxtgKoWY">tools</code> 字段</strong> —— 工具权限由系统统一分配。</p>
+</div>
+
+<h4 data-page-node-id="FvDTySwSKWfNCo31cQP9yQ">正文结构</h4>
+<pre class="tree" data-page-node-id="aRVENHkekxBzo86xbra52W"><code data-page-node-id="xd09SUAHdB8MDDYxv7FBRl"># {角色名称} - {人名}
+{角色描述}
+
+## 核心能力
+## 工作流程
+## 输出规范
+## 注意事项</code></pre>
+
+<div class="cards" data-page-node-id="E4KSknvjzrGfJtOq7lSlv0">
+  <div class="card" data-page-node-id="L76Dq1jVqwwt5gprVRyooK">
+    <div class="ch" data-page-node-id="vS4ujbwgOYcAbIDIv6ilJo">团队成员额外要求</div>
+    <p data-page-node-id="AoOFTGB1gVIoXvTcovxo38">必须在 prompt 中明确写出「分析完成后通过 <code data-page-node-id="BCcFAEgqiHgd6USEy321XG">SendMessage</code> 回传给主理人」。</p>
+  </div>
+  <div class="card" data-page-node-id="m82oaByy5xAc19hrcQb7tV">
+    <div class="ch" data-page-node-id="KaZzhBBT8Qx67c5lNSFW36">主理人额外要求</div>
+    <p data-page-node-id="6bXQt6u5E0LkZr1vNCSeiG">文件名必须是 <code data-page-node-id="InSShPqiJcUyKm1oaaPIIt">{team}-team-lead.md</code>（禁用通用 <code data-page-node-id="lGD05BJNz5ABmG6CF1Blf4">team-lead.md</code>）；必须包含成员能力清单、预设 Workflow、单 agent 直调路由表。</p>
+  </div>
+</div>
+
+<h3 id="s24" data-page-node-id="HyvKwZWO9Dbehm9WuKjFSE">2.4 目录结构</h3>
+<pre class="tree" data-page-node-id="QLlFKM5mboUrfOLz8egb6o"><code data-page-node-id="cYvH73CWj599v0AunHjLdh"><span class="dir" data-page-node-id="YlBXvDQkqBmhTFW7z3UVCu">my-expert/</span>
+├── <span class="dir" data-page-node-id="30MhRtbkKxo3pvhJyjQiTE">.codebuddy-plugin/</span>
+│   └── plugin.json          <span class="cmt" data-page-node-id="3HEvO087rOypYSRFKiCeDk"># 元数据（核心）</span>
+├── settings.json            <span class="cmt" data-page-node-id="tiyHCYSi9vqeOF7JNs5h8r"># Team 型必需：{"agent": "{team}-team-lead"}</span>
+├── <span class="dir" data-page-node-id="R4oZG1dL9PZMFOqhKRxtUv">agents/</span>
+│   ├── {team}-team-lead.md  <span class="cmt" data-page-node-id="pL751phwFqUy6ul2IXByZJ"># 主理人（Team 型）</span>
+│   ├── {member-a}.md        <span class="cmt" data-page-node-id="69GjhXEKDk7rbVYjOLNWHX"># 成员</span>
+│   └── {member-b}.md
+├── <span class="dir" data-page-node-id="xW6fVIBxaTxHuftYEOeh1D">avatars/</span>
+│   ├── team.png             <span class="cmt" data-page-node-id="9dF8xjdmyPyWN31LKhv9HY"># 团队头像</span>
+│   ├── {team}-team-lead.png
+│   └── {member-a}.png
+├── <span class="dir" data-page-node-id="3jjyUTFUmV7hJH1dg6fB9r">skills/</span>                  <span class="cmt" data-page-node-id="hnHtEfCtEJPhSE09GNQ0tV"># 可选，专业技能</span>
+│   └── {skill-name}/SKILL.md
+├── <span class="dir" data-page-node-id="mbeHcbeMmxlVSWywFkQMe9">bin/</span>                     <span class="cmt" data-page-node-id="nEhGMDx1HXLH4aLUlKG9zK"># 可选，CLI 工具</span>
+└── .created-by-session      <span class="cmt" data-page-node-id="kRA33VwDBZdg3NyMKrkMiK"># 注册脚本自动写入</span></code></pre>
+<p data-page-node-id="tlxAd332klgXbs2vP7wrCy">Team 型的 <code data-page-node-id="lpFw09ikEcaXqY5DGB7tay">settings.json</code> 值必须与 <code data-page-node-id="E1dA7QJkm2H0e0KLjhBcar">plugin.json</code> 的 <code data-page-node-id="b9FWEKH0gVK7UhEJt8mdqA">agentName</code>、主理人 MD 的 <code data-page-node-id="wDwzc4OvR4dKxTkO0eWr3Q">name</code> <strong data-page-node-id="d8lHOvTUrDnQNSQMBBlYVB">三者一致</strong>。</p>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3" data-page-node-id="YGopZINGvZTby4mdHtIu1j"><span class="num" data-page-node-id="QvBO800raLxWu8uKS32FLq">SECTION 03</span>生命周期：7 步流水线</h2>
+<p data-page-node-id="bzzO9ud03evmAbkZEza3Xw">由 <code data-page-node-id="AlOevhcmKxMIMGEpolgmbg">expert-manager</code> skill 定义（<code data-page-node-id="5wAXtmzJ6zaQNF3VTVCsNt">resources/plugins/workbuddy-builtin/skills/expert-manager/SKILL.md</code>）：</p>
+
+<div class="flow" data-page-node-id="WMktyPxUHzdQbxbklwqNKA">
+  <span class="st" data-page-node-id="cEJ5uIspGAK9vLiWWbZycW">1 收集信息</span><span class="ar" data-page-node-id="qtefw26sHGabyoF5bhEqW3">→</span>
+  <span class="st" data-page-node-id="HguENwKF2RUePEUP0RPxGA">2 init_expert</span><span class="ar" data-page-node-id="W4GpFs3PlBnECHTcHSlB37">→</span>
+  <span class="st" data-page-node-id="CFmlrYN5Uqp6gn8B0tbE66">3 AI 填充</span><span class="ar" data-page-node-id="Zm2aueGONuOOHvoMbym31M">→</span>
+  <span class="st" data-page-node-id="caNSX4XOvKt2DTCB041LGX">4 生成头像</span><span class="ar" data-page-node-id="8h4DAb0VQpH7l8GlOfhKOu">→</span>
+  <span class="st" data-page-node-id="NnTO1rCKFWWbkkcd0Nv9Dn">5 validate</span><span class="ar" data-page-node-id="YPDotWEBzh2Fb4f7iCYxWv">→</span>
+  <span class="st" data-page-node-id="GlzODSmBUd0tcOxD1nf51Z">6 register</span><span class="ar" data-page-node-id="6BDyFBG9saKcmPK3V9NuPV">→</span>
+  <span class="st" data-page-node-id="gCsOtPmR9Ri4TReSMdQOoF">7 package</span>
+</div>
+
+<div class="tw" data-page-node-id="9v7t09FSP5FZD9n3DE2Nwf">
+<table data-page-node-id="tF4oraAnfhLH9G9Bhi5muo">
+<thead data-page-node-id="16cl086j88WjdY9B0Xpg7H"><tr data-page-node-id="kmMljecUfWHBRawc9enh4z"><th style="width:26%" data-page-node-id="SJMG19yMGwBj8vG6GiGM1p">脚本</th><th data-page-node-id="7WRQoBrIidaTMkvxE7R5fi">作用</th></tr></thead>
+<tbody data-page-node-id="su6dKU1npdoYADcOmiOBMa">
+<tr data-page-node-id="eYLvE9zfU1vRyupPuWjrqb"><td data-page-node-id="sSrYlmlBLhIXqV9oMc01ne"><code data-page-node-id="Vz8q7JcixMxjQkwxnLqVX2">init_expert.py</code></td><td data-page-node-id="IvS9VTvgRbLyDYPa6MYJph">建 <code data-page-node-id="zKwMR7H4DpBRvRb08AsZoZ">.codebuddy-plugin/</code>、<code data-page-node-id="c91VzxQAt4RARIGJSVgXKU">agents/</code>、<code data-page-node-id="x33Yq9VnbLBYxWT0culzW2">avatars/</code>，写模板文件（带 <code data-page-node-id="x0Z9tL9Flz0OCFl0GuL0Vh">[TODO]</code> 占位符）</td></tr>
+<tr data-page-node-id="rvCXr6xQF2PU4SGAMDJIs5"><td data-page-node-id="51eWpvt3qHUcvjoU6hUbS4"><code data-page-node-id="NdrrCWfmAQovIqIEEMOgmi">validate_expert.py</code></td><td data-page-node-id="cGMel3dShJYns3vZzNnhpK">校验必填字段、i18n 双语、categoryId 合法性、<code data-page-node-id="hRNb01I7wYgd6Rd44aOaQC">tools</code> 字段违禁等</td></tr>
+<tr data-page-node-id="ZSFrFrdge7nfXVgArXnEL9"><td data-page-node-id="NvaLafiEy31Ps1ywM4uvig"><code data-page-node-id="eBzfsL2dEpxVU4AoEfR7dB">register_expert.py</code></td><td data-page-node-id="iHBPw9y060Zaah11vK6Fmn">二次校验（拒绝 <code data-page-node-id="dIjxpjmFlNUcaPHqO8pPPP">[TODO]</code>）+ 写 <code data-page-node-id="8WJfJCx4bk7W7BxeLVQpQN">marketplace.json</code> + 写 <code data-page-node-id="QKJ4zxFNQhHxUCyoaG4CCw">.created-by-session</code></td></tr>
+<tr data-page-node-id="W1DweVxJ3EuI4oiFrCjGKR"><td data-page-node-id="pydZz6vFIe4JAhib3Cn6rR"><code data-page-node-id="2CqejTGSrammgKIciDnHVi">package_expert.py</code></td><td data-page-node-id="Q2HzQ2ABle5afNS6K47GY0">打包分发</td></tr>
+<tr data-page-node-id="T8k8LSCT7xrk10GdY0HQgo"><td data-page-node-id="WGSRcEDHSeJVHP4WmNo7PE"><code data-page-node-id="6M2mcPjymMaHYhkrExLj8r">batch_create.py</code></td><td data-page-node-id="4jqhtOIgEcl8YF6BMwhDyE">批量创建（必须串行走 init → validate → register）</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout warn" data-page-node-id="x5EXIBAyoo11CDnty407Pq">
+  <div class="ct" data-page-node-id="Di2yFnpvrdq8BUgWTQ4Poz">唯一标识铁律 · 不可修改</div>
+  <p data-page-node-id="I3pIDXRen3YNf1pQD3jg85">以下字段 / 文件名是专家的身份锚，改动会导致专家丢失：<br data-page-node-id="ngtKCnKAAoEdtPuGPj0BDn">
+  ① <code data-page-node-id="hDOSwo1wD8YcAFHI5MzvTk">plugin.json</code> 的 <code data-page-node-id="ThlaCefvq9KK5sTQvUfr0c">name</code>　② <code data-page-node-id="R257jdUhO4gnv55hTX3gZj">plugin.json</code> 的 <code data-page-node-id="yIPG1yyVGR0nv9EUbEZOdO">agentName</code>　③ 专家目录名　④ <code data-page-node-id="PuOonaWVNtLJ47YepjRFnq">agents/</code> 下的 <code data-page-node-id="6OVkw0p9uPOi5R72CtfMCM">.md</code> 文件名（因为 <code data-page-node-id="tB4rZnmc0pm1NanVJZRxwk">agentName</code> = MD 文件名）。<br data-page-node-id="5Gkaxc2JFPwVEU9GBiYmNy">
+  <strong data-page-node-id="dkYBa8zMd7NsJ3DOw20Gx5">改名 = 重新创建，不支持原地改名。</strong></p>
+</div>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4" data-page-node-id="SGsdEOKmOMWB5ehje1y7nm"><span class="num" data-page-node-id="rlm6XCkMcI0Wn41t9oWkdD">SECTION 04</span>发现与注册机制</h2>
+<p data-page-node-id="9AOOrvytebXL3R3I0m0yAz">专家<strong data-page-node-id="F7oFXKk341qCTGaH3iu8g8">不会自动被扫描到</strong>，必须显式注册。<code data-page-node-id="6IvNj1sdtXTMgAiwE8dNjg">register_expert.py</code> 的关键逻辑：</p>
+<pre data-page-node-id="YGTepUp3lAege6IXXbyGSD"><code data-page-node-id="e9gwOmLDJSwXlf7i5ww306">manifest_path = marketplace_dir / <span class="c-str" data-page-node-id="8AWmOdWxapAnSsfbhmtxmp">'.codebuddy-plugin'</span> / <span class="c-str" data-page-node-id="IsEbjGLTSZVnkYIcwUKJ36">'marketplace.json'</span>
+<span class="c-comment" data-page-node-id="RVnNnnbevL04SvB7mQk75E"># 不存在则创建：</span>
+<span class="c-comment" data-page-node-id="kxEBO0ChYmSRMmuN1khA5a">#   {"name":"my-experts", "description":"...", "plugins":[]}</span>
+
+source = f<span class="c-str" data-page-node-id="qshoRIt2GE6DvUwDYdmIvd">"./plugins/{expert_dir.name}"</span>
+plugins.append({
+    <span class="c-key" data-page-node-id="VjcWjA8BIvLf4ABRxr0agH">"name"</span>: expert_name,
+    <span class="c-key" data-page-node-id="YtptSQMu27nr4gbHq3g2tt">"source"</span>: source,
+    <span class="c-key" data-page-node-id="UCIvkCt9ohYMKFQdOq0dBc">"description"</span>: expert_description
+})</code></pre>
+
+<h4 data-page-node-id="TyTxyZYDSU678SVlkPuEpl">注册前的完整性校验</h4>
+<ol class="rules" data-page-node-id="Ae5bxGJO41CYxkdB4BaUb4">
+  <li data-n="1" data-page-node-id="LdWUzKuEsbPV3F2M0f3B5Z"><code data-page-node-id="ZHnQztZcPzR5mzqxHyKsGo">plugin.json</code> 存在（依次查 <code data-page-node-id="v2Qq4YmiuEoXjtH0a0YYz8">.codebuddy-plugin/</code> 和 <code data-page-node-id="sFZnnyElcLdxnlcphI6Ows">.workbuddy-plugin/</code>）</li>
+  <li data-n="2" data-page-node-id="3fCAkwrNAUiTVIXX2rcNpf"><code data-page-node-id="ScVjahok4D4GRMy9B860gi">name</code> / <code data-page-node-id="WzYfY016l3udZl0Gcy4fJk">description</code> / <code data-page-node-id="gIM9NK9QWnPYiPFktg6z1x">expertType</code> 非空且不含 <code data-page-node-id="EO0DsPvLzqYQd8iUYFcFfC">[TODO</code></li>
+  <li data-n="3" data-page-node-id="9AoM6gQE6DT2yn8AB9xFxP"><code data-page-node-id="Ff9N2pYLClsMQ9WTjZG8XN">displayName</code> 的 zh 或 en 已填</li>
+  <li data-n="4" data-page-node-id="QZ2aDLM7mEXSDGqeG3DaIp"><code data-page-node-id="ZjfIp5qi7UL8SmbAuQ4mVG">agents/</code> 目录存在且至少有一个 MD 文件，且 <code data-page-node-id="ZLAq3ZssRAUMSuh9G5FEo3">[TODO</code> 出现次数 ≤ 2</li>
+</ol>
+<p data-page-node-id="GjyOfdA3YvLtIdewDCxGpk">另外会从环境变量 <code data-page-node-id="Rajs89fwBwivSh1pfm8dBV">CODEBUDDY_SESSION_ID</code> 读取会话 ID，写入 <code data-page-node-id="6F4u5DH3rFH5IkMTDx2plw">.created-by-session</code>，用于「我的专家」面板归属。</p>
+<div class="callout note" data-page-node-id="6BeJtP29m1WZmqOApv0byM">
+  <div class="ct" data-page-node-id="nDimxvtvON9RuwBNCYbRCC">本机实际情况</div>
+  <p data-page-node-id="PRsOEB7c2y2xHC4Ug6f6jO"><code data-page-node-id="84CXNRbsuGqi70Jzk5XyYn">~/.workbuddy/plugins/marketplaces/experts/plugins/</code> 下有 <strong data-page-node-id="fkhlQOAUwAGMcqyt3jvMCy">13 个已安装专家</strong>，<code data-page-node-id="IAsMWQOwL9ocRAvxOEfA4r">my-experts</code> 为空（用户尚未自建）。</p>
+</div>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5" data-page-node-id="7DqsEg45RYDko2WWuR8upS"><span class="num" data-page-node-id="ezE2JXvFCm4z6kbw2DWiUN">SECTION 05</span>运行期：专家如何生效</h2>
+
+<h3 id="s51" data-page-node-id="LNUC0hJVMH0rtmp4XCQ5KB">5.1 身份覆盖机制（最关键的设计）</h3>
+<p data-page-node-id="y1nQ7zhkHbwpipeah3h5GL">WorkBuddy 有两套身份注入模板：</p>
+<div class="tw" data-page-node-id="SnP3guINywgTp3caHAHNPK">
+<table data-page-node-id="Armf93YOM2z5qeIs5cYg59">
+<thead data-page-node-id="q8ZkziKnnhqTwPcveRYn4y"><tr data-page-node-id="Ta68rGnjgalvKnA2v2E739"><th style="width:38%" data-page-node-id="dyzBhzZFHFsotZUeY4rFuK">模板</th><th style="width:26%" data-page-node-id="F5SzOGTVwUn5DNOdZtjgCS">注入内容</th><th data-page-node-id="XGmzQB20MaxXdEUZAdJmtp">使用场景</th></tr></thead>
+<tbody data-page-node-id="fvVlXg3smNQ320WvZaBIIx">
+<tr data-page-node-id="T7SWtBwpue2jhpA5yetBZ6"><td data-page-node-id="oA7eJEdg4JASgzmqn5tRAA"><code data-page-node-id="CIyXCGOpHUk2tx9UDuNPeF">user-context-identity.tpl</code></td><td data-page-node-id="xYPJ7WsHtSRrYeM8aGXKBJ">SOUL.md + IDENTITY.md + USER.md</td><td data-page-node-id="DGPBIsHoIE2hsbLUCnDv1A">普通模式</td></tr>
+<tr data-page-node-id="01Ywd1nh9OCElzw0L0b7OQ"><td data-page-node-id="KTbGOFFBvHYdV79o7XttvE"><code data-page-node-id="Of946pwMy6TBdx9lL1a5YW">user-context-expert-identity.tpl</code></td><td data-page-node-id="uALZi0u2LtpUWDP9YnjdX6"><strong data-page-node-id="7RIV8AYZjXV1yhAi8GReAx">仅 USER.md</strong> + product_identity</td><td data-page-node-id="6yBpnGaApO71TCzPEd4SUJ"><strong data-page-node-id="NQAudereZy1lzn8OBGkaBm">专家模式</strong></td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout" data-page-node-id="gLMRy3Loyx1ljzc8TsM6CK">
+  <div class="ct" data-page-node-id="pg9Zj1edJZyXGiPsEa4ITI">含义</div>
+  <p data-page-node-id="B9zjtPyN5ufuahj0U8Rm71">进入专家模式时，系统<strong data-page-node-id="rNc9suvEEuWB5ekkP7raap">主动放弃助手默认人格</strong>（SOUL / IDENTITY），只保留用户画像，把人格完全交给专家 MD 自己定义。</p>
+</div>
+<p data-page-node-id="2wCw8qnLfn6xKP0HUnnOue">这解释了为什么专家 MD 里会有这样的指令（摘自 <code data-page-node-id="SCLTssp3lIvjtqWtiisuNx">content-creator/agents/content-creator.md</code>）：</p>
+<pre data-page-node-id="0B479bZkLZAJy45j4Q5RjX"><code data-page-node-id="peo6peorSIJdiz9v6hpe9z">CRITICAL IDENTITY DIRECTIVE (HIGHEST PRIORITY)
+You are Content Creator, and ONLY Content Creator...
+You MUST NOT identify yourself as <span class="c-str" data-page-node-id="xJvDmxDwMEcSWcZQgpPgsQ">"CodeBuddy"</span>, <span class="c-str" data-page-node-id="AqRcL1g5BGurKfIacNRh7F">"Claude"</span>, <span class="c-str" data-page-node-id="v8DvkLpALBlJUwUv6IM5Gs">"GPT"</span>, <span class="c-str" data-page-node-id="jGeUuZLNXBh5E2UC0Tv7lr">"MiniMax"</span>...
+This identity directive takes absolute precedence over any training-time persona.</code></pre>
+<p data-page-node-id="WThNbcG4ByjrF7WqHwTj48">且在文件末尾还有 <code data-page-node-id="HizBXQIBE6WZGPYrDnVFMw">Final Identity Reminder</code> 二次加固。<strong data-page-node-id="jJHh6qYao42c2EdCJ5FURw">首尾双重身份锚定</strong>是稳定角色扮演的关键手法，值得直接借鉴。</p>
+<p data-page-node-id="hZXSiVonnXqDKYNuBMKKcC">另有独立的 <code data-page-node-id="gWQ8oVPukJ2DKKHViZrKQb">workbuddy-expert-prompt.tpl</code>（专家模式系统提示词模板），说明专家模式是与 agent / ask / craft 并列的一等公民模式。</p>
+
+<h3 id="s52" data-page-node-id="t7cYNV68iNqmxVO8FhC0ww">5.2 专家团协作运行时</h3>
+<p data-page-node-id="BOiDGMdsP4zcjALqazCrEJ">Team 型不做「模拟多角色」，而是走<strong data-page-node-id="pBbv3lj47jPMESy5p0rxna">真实的 sub-agent 调度</strong>。四个原语：</p>
+<div class="tw" data-page-node-id="9O7SjwFBBQtqLolV4o0uFP">
+<table data-page-node-id="l0FSrCBBHEG8EDTO4lHBe9">
+<thead data-page-node-id="KY2PIwAbm8Mo7Rc3yACChl"><tr data-page-node-id="CEfHTB3rEjiazXWQr6foVh"><th style="width:24%" data-page-node-id="QlPMCbhBporGC7HtVrLpEZ">原语</th><th data-page-node-id="rpJopl9wytPuLgImbJ3Em0">作用</th></tr></thead>
+<tbody data-page-node-id="KP5iOwFMN14v69lxpH6XwJ">
+<tr data-page-node-id="K71dVOvSACpCgmpmQEA8FJ"><td data-page-node-id="2xAvqXu9jAwC6QViA7htUW"><code data-page-node-id="qIhVL6MK5qPBPT48SvNbLQ">TeamCreate</code></td><td data-page-node-id="1PTBmrD20Bp67kgucuvGjb">主理人创建团队，<strong data-page-node-id="c4hrgFlpWjKX4dBRIIIO5U">必须且只能由主理人执行</strong></td></tr>
+<tr data-page-node-id="r97OeUEnd3nhf0rdJv9MDO"><td data-page-node-id="1536xKLGXgEe9giBg8b4bt"><code data-page-node-id="OdxdvybMpsqQdcl9WsfqLz">Agent spawn</code></td><td data-page-node-id="4CuFjjYffrVoGjfDCHP05Y">按 SOP 阶段把成员拉入协作，下达独立任务</td></tr>
+<tr data-page-node-id="RjAxd5lIO2dCoGCE1kTW9h"><td data-page-node-id="yNPOs5RmSymFDaFjQjqWjq"><code data-page-node-id="GB4VHBXFX9jRRbh3nDOqrS">SendMessage</code></td><td data-page-node-id="dYuYFmHHMQi1wCi0HFwQcy">成员把产出回传给主理人</td></tr>
+<tr data-page-node-id="JFlw1De8EeBH42VvHRsifN"><td data-page-node-id="soGNom3IKkkmrrIXsBZcJL">主理人汇编</td><td data-page-node-id="iF3Su2JZwOF8EOcvVSauuI">汇总各阶段产出，输出最终报告</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout warn" data-page-node-id="0as3AfG4j4VsOyaZJluHwP">
+  <div class="ct" data-page-node-id="EXBLyEUmV83xABEjvs1w3J">调度硬性要求</div>
+  <p data-page-node-id="clHyA16w0WuIcwnXNBXnpv"><code data-page-node-id="5G60MI4AExsrJNGzCBfDjG">Agent</code> 工具的 <code data-page-node-id="xMqIhW3TDZw7cYjdMYvgcw">name</code> 参数传入成员的 <strong data-page-node-id="ar5iYGFnsmTHlBo2Atv5Lj">Agent ID</strong>（MD 文件名，不含 .md），<code data-page-node-id="3ONLyuz4KsEAzphlRJ4308">subagent_type</code> 也传相同值。<strong data-page-node-id="su5cD4vK0lgjPtqKbOEtx5">禁止</strong>使用中文名或自创名称。</p>
+</div>
+
+<figure data-page-node-id="tTi0zt4CFroYw3A2sNeHlf">
+<svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="专家团星型通信拓扑" data-page-node-id="3QwEBG2nlQaTG8tDI8UBc0">
+  <rect width="680" height="300" fill="#fcfcfd" data-page-node-id="qI9gCmbvEbL09pKDEQsIGc"/>
+  <defs data-page-node-id="7AhiRbJyxDqaNGHinReID1">
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" data-page-node-id="6sfH6mlgtfZF8QkmziWAbh">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#d4006a" data-page-node-id="CGH57lZRVfdsbc7EaYF2UB"/></marker>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" data-page-node-id="pi7qkPTTRnk8ne6cPEYmca">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#b8ddd6" data-page-node-id="Rue2CwFeNflBlxp5dGSpFR"/></marker>
+  </defs>
+  <!-- center lead -->
+  <circle cx="340" cy="150" r="52" fill="#fdf1f7" stroke="#d4006a" stroke-width="2" data-page-node-id="FIozsoTSVU4LznpXXLggjO"/>
+  <text x="340" y="143" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="700" fill="#171a1e" data-page-node-id="VONp2XiENCoWDdAL19gNUr">主理人</text>
+  <text x="340" y="161" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#d4006a" data-page-node-id="kC1CpdYk0fjACAOyMvVV8S">LEAD</text>
+  <!-- members -->
+  <g font-family="-apple-system,sans-serif" font-size="11.5" fill="#4a5159" data-page-node-id="5yqXihEqmrIvLQvL7QUcFj">
+    <rect x="40" y="40" width="112" height="42" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="fdXAEdfzeHRngditLrpW8m"/>
+    <text x="96" y="59" text-anchor="middle" font-weight="600" fill="#171a1e" data-page-node-id="GeqFp8hOmaGYk7byA66Gi9">成员 A</text>
+    <text x="96" y="74" text-anchor="middle" font-size="10" data-page-node-id="vPjMheX5Qy93TJRuCRoEeF">Phase 1</text>
+
+    <rect x="40" y="129" width="112" height="42" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="q8GVnwjWkhFG8Iw5HLP0DZ"/>
+    <text x="96" y="148" text-anchor="middle" font-weight="600" fill="#171a1e" data-page-node-id="Yjkq3kt9C28yyUDD10cCeM">成员 B</text>
+    <text x="96" y="163" text-anchor="middle" font-size="10" data-page-node-id="xU23rTHqpAw6CN9VzFtxcT">Phase 1</text>
+
+    <rect x="40" y="218" width="112" height="42" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="lCbJaHBbM5EFaZpl2xywCE"/>
+    <text x="96" y="237" text-anchor="middle" font-weight="600" fill="#171a1e" data-page-node-id="TQJGCfCjHnvMT1IKTVCNlT">成员 C</text>
+    <text x="96" y="252" text-anchor="middle" font-size="10" data-page-node-id="CjVvtbukeCgoSwZsmrWCV6">Phase 1</text>
+
+    <rect x="528" y="129" width="112" height="42" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="CwA5Dc3Fg3WENeHpHDpWYr"/>
+    <text x="584" y="148" text-anchor="middle" font-weight="600" fill="#171a1e" data-page-node-id="rmZPT6croNqX0HH0S5l94u">成员 D</text>
+    <text x="584" y="163" text-anchor="middle" font-size="10" data-page-node-id="ABf8F7rYaCgrkatz9JpeI0">Phase 2</text>
+  </g>
+  <!-- spokes: spawn out (magenta) -->
+  <path d="M152 61 C220 70, 270 100, 296 126" fill="none" stroke="#d4006a" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="V7HQCo9VL2mqvVocAuCSdK"/>
+  <path d="M152 150 L288 150" fill="none" stroke="#d4006a" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="g7dSGpJFkyrtJMVtubB5BK"/>
+  <path d="M152 239 C220 230, 270 200, 296 174" fill="none" stroke="#d4006a" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="zmenrJQAkiACEj1unsxscB"/>
+  <path d="M528 150 L392 150" fill="none" stroke="#d4006a" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="S8l9DcELZJYrM5sudRQ2Ce"/>
+  <!-- spokes: sendMessage back (teal) -->
+  <path d="M290 133 C260 108, 210 78, 156 70" fill="none" stroke="#9ccfc6" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arr2)" data-page-node-id="Sq9Ks7sKFOxf3Gw6FOeyqY"/>
+  <path d="M290 161 C260 186, 210 216, 156 226" fill="none" stroke="#9ccfc6" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arr2)" data-page-node-id="q5EIx606poVgrMbetF17ZB"/>
+  <!-- forbidden link -->
+  <path d="M100 82 L100 218" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.55" data-page-node-id="dyHOHQoXOoog2er0AtPdPH"/>
+  <circle cx="100" cy="150" r="12" fill="#fff" stroke="#c0392b" stroke-width="1.5" data-page-node-id="NHsdpueAl1hxsNz2EhRnh6"/>
+  <text x="100" y="155" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="700" fill="#c0392b" data-page-node-id="BnsBTxvR1rHPVbhJHXgCuB">✕</text>
+  <text x="118" y="150" font-family="-apple-system,sans-serif" font-size="11" fill="#c0392b" data-page-node-id="BOGdQ1xthnMu4s0mYOnrZR">成员间禁止直连</text>
+  <!-- legend -->
+  <g font-family="-apple-system,sans-serif" font-size="11" fill="#767e88" data-page-node-id="LpOcJvzCmeDTRQKKCp6hWk">
+    <line x1="480" y1="252" x2="506" y2="252" stroke="#d4006a" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="gx45JEICOE7cWr1ktXgoLb"/>
+    <text x="512" y="256" data-page-node-id="cyKS3lnmI6f2UgXx5CMZ38">spawn 下发</text>
+    <line x1="480" y1="272" x2="506" y2="272" stroke="#9ccfc6" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arr2)" data-page-node-id="9YiQuJI6csOTsIO4QQGsCo"/>
+    <text x="512" y="276" data-page-node-id="jJz1z1qpyLhf98tMP1L6oi">SendMessage 回传</text>
+  </g>
+</svg>
+<figcaption data-page-node-id="RnoJdX6kIpzrSWxXBZz9j6">图 2 · 专家团通信拓扑强制为<strong data-page-node-id="jzrNGIG1hmqkI7dulK07jW">星型</strong>：主理人居中，成员只与主理人通信，横向连接被显式禁止。</figcaption>
+</figure>
+
+<h3 id="s53" data-page-node-id="lSSw3ayLe6LtnExdfxk9qh">5.3 协作铁律</h3>
+<h4 data-page-node-id="JbeOFYwH7220MOkzJ0wR9x">4 条正则</h4>
+<ol class="rules" data-page-node-id="GCrAgA4CajDYVGJZT97ktz">
+  <li data-n="1" data-page-node-id="HzMRuvdf5JcFl890D74qVE"><strong data-page-node-id="ZeuQyiUNRhd5YGwqwyzc8R">建立团队</strong> —— 主理人亲自 TeamCreate，严禁委派</li>
+  <li data-n="2" data-page-node-id="ERew4KLJrYEr50jdI2U4yy"><strong data-page-node-id="xTUJzHoSh610xQD3q4ijCs">调度成员</strong> —— 按 SOP 阶段下发独立任务，主理人不得代写</li>
+  <li data-n="3" data-page-node-id="gpagV9zEzdi756BGU1nLF0"><strong data-page-node-id="FTEJP8XRYwWdWLkD0VlkvI">消息中转</strong> —— 所有跨成员信息流必须经主理人，不得互相直连</li>
+  <li data-n="4" data-page-node-id="VzwpyDVr1NhE8HhHD0mpCs"><strong data-page-node-id="o4mH5s13HPS7ptiqGcxpTi">成员结论为准</strong> —— 专业产出必须由对应成员输出后才采信</li>
+</ol>
+<h4 data-page-node-id="QONulziAam6EluKUjDlos8">5 条红线</h4>
+<ul class="rules bad" data-page-node-id="ax0BUFohUWdVfTvAF3IBdH">
+  <li data-page-node-id="DdlDNPVKwlgIqFrYAbuSzr">禁止跳过 TeamCreate，自己模拟成员发言</li>
+  <li data-page-node-id="4DP81evHSIRfHE1eUuyHcn">禁止代写任何成员的专业产出</li>
+  <li data-page-node-id="A8o6H4fWTGvM7G9TACdL6R">禁止未完成前序阶段就跳到后续阶段</li>
+  <li data-page-node-id="yAXtVOAGDZ4W9VIHY3SE1e">禁止成员互连通信</li>
+  <li data-page-node-id="5bnh00QeS2Q6GpbEOj4lKD">禁止 spawn 主理人自己</li>
+</ul>
+<div class="callout" data-page-node-id="bcheJKKAEFnVeEmhalzIAX">
+  <div class="ct" data-page-node-id="pQvvTWoqkW9WrQ8JtZL2Yl">为什么这么严</div>
+  <p data-page-node-id="YG3xL10VNYe63wtiDCSUGU">大模型天然的「一气呵成」倾向会跳过子角色直接给答案，导致多角色退化为单人分饰多角，专业性丧失。这 5 条红线本质上是<strong data-page-node-id="3pFaw94gGO5mEFCaPnPDr1">对抗模型的抄近道本能</strong>。</p>
+</div>
+
+<h3 id="s54" data-page-node-id="UiUM9AHDrrW1wuQErIm5uy">5.4 编排模式</h3>
+<div class="cards" data-page-node-id="0edx3j6CHku0SB03d93QLE">
+  <div class="card" data-page-node-id="lcTtffejB0uY2a8lGtxpZa">
+    <div class="ch" data-page-node-id="rJ1fDt3CaKV2VgEGI0BD9T">并行 Phase</div>
+    <p data-page-node-id="DmeJOtwi935TCJMkfzdNdg">同一条消息中 spawn 多个成员，适用于成员间<strong data-page-node-id="5fIpbFmkLVjNFRwYCSNvXO">无数据依赖</strong>的场景。</p>
+  </div>
+  <div class="card" data-page-node-id="buFDKblDspOZrVAxIF11wG">
+    <div class="ch" data-page-node-id="us0ygESieX4zIzm7GYolus">串行 Phase</div>
+    <p data-page-node-id="h8vCjBAe9XXzXiedMJyPnJ">等前一 Phase 全部回传，把<strong data-page-node-id="SJ4r2KyCXXVzU9F2jnH0ON">完整产出原文</strong>传入下一 Phase。</p>
+  </div>
+</div>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6" data-page-node-id="rHqhM8tWsvXRNFRtTjWAtk"><span class="num" data-page-node-id="0nzAfNO5QrAsM3WgAXdbR0">SECTION 06</span>配套机制</h2>
+
+<h3 id="s61" data-page-node-id="EggwVKBLo2GsvtxnwsbGqn">6.1 头像生成</h3>
+<p data-page-node-id="KkCSFtonlvxLefCQDFgfkr">来源：<code data-page-node-id="nML74oMkfldoWNXPF4K3gF">references/avatar-spec.md</code></p>
+<ul data-page-node-id="qRkZT4rmUjBr9nbgKDlxyv">
+<li data-page-node-id="AbKs3EpaJEmbx4HNld2DMm">512×512 PNG，≤500KB，用 <code data-page-node-id="la7Ew3y4YkZPMhUMXUzXJM">ImageGen</code> 以 <code data-page-node-id="gxkxXCIWVfVDPw3JeLsexb">1024x1024</code> 生成后缩放</li>
+<li data-page-node-id="G7ExMzmthUkuDOqJZt9Apw">Agent 型 1 张（<code data-page-node-id="YejT8jXZyOXY3NNdcTQFXh">avatars/expert.png</code>）；Team 型 N+1 张（团队 + 主理人 + 每个成员）</li>
+<li data-page-node-id="wSVA15xrGxO2ptHruHhnOs">Prompt 组装：<code data-page-node-id="SZJi3FLac83h3Om7MdDs9H">[风格前缀] + [角色身份] + [外观特征] + [表情气质] + [背景元素] + [质量后缀]</code></li>
+<li data-page-node-id="NsdMFDSoPbpCFTaRs2b7kl"><strong data-page-node-id="eB6TAynAaHdHC7nBTwhKv3">必须从 Agent MD 内容提取特征</strong>，禁止通用模板硬编码</li>
+<li data-page-node-id="GuosXxnplN5zygSHwwdePh">同一团队共用风格锚定词；背景色调由 <code data-page-node-id="TYbUBx6GYeVz18vhoyuyyZ">categoryId</code> 映射（如金融 = dark blue with gold accent）</li>
+</ul>
+
+<h3 id="s62" data-page-node-id="AwVIJENY75wCw7yLGW26H2">6.2 行业分类体系（12 类）</h3>
+<div class="tw" data-page-node-id="RXy7X8U3P7xCbzhnbZF78w">
+<table data-page-node-id="OFX46dLR0WBLkbo6yPn08W">
+<thead data-page-node-id="o1vUXAwZWebDOHUAjHgr5x"><tr data-page-node-id="EIbwWgUjNBg5sFV6aEhSaf"><th style="width:28%" data-page-node-id="74QBOeyPxW6LXFmonxhfHk">categoryId</th><th style="width:22%" data-page-node-id="fcxe92Pi8mFcvFn1JjhLrP">分类</th><th style="width:28%" data-page-node-id="HHCOEISrPh2S2CPXzqHN6r">categoryId</th><th data-page-node-id="UHBH2k7qkwENf2ewq24dWv">分类</th></tr></thead>
+<tbody data-page-node-id="BU5FKBNS9Kdu8jquy63hot">
+<tr data-page-node-id="kll5vW0FypHKBlyNDSf1R1"><td data-page-node-id="jgbh4QbApAwoeEe6Vt3h9E"><code data-page-node-id="i4yN6WBOzo9msPl30dApp0">01-ProductDesign</code></td><td data-page-node-id="blUFHusBR81F3gykRMqkcg">产品设计</td><td data-page-node-id="bN7aqtqFG4LY3i0IybmHUt"><code data-page-node-id="6avZlvqGHcA8D395AE1yeH">07-SalesCommerce</code></td><td data-page-node-id="FdhEN88MjZ06549pJbcmtC">销售商务</td></tr>
+<tr data-page-node-id="U2BDsYcSTpIDhtvVztJK66"><td data-page-node-id="0AhpfWxkuom542eB8V1Db5"><code data-page-node-id="OngGwfuBg6q9KT7naHCV9F">02-Engineering</code></td><td data-page-node-id="VQUEihToK7Snu5cajf683N">技术工程</td><td data-page-node-id="92IEBkBH72NUq79rFoXvvN"><code data-page-node-id="huqP4bgLdWPaVCfRzwzslZ">08-FinanceInvestment</code></td><td data-page-node-id="hgQBPkR0wKe7TKFfBdKS8z">金融投资</td></tr>
+<tr data-page-node-id="pCylVGfgtQgS6HAaTaLxqn"><td data-page-node-id="AYZSKWx8eDFuhyw0VtYFS2"><code data-page-node-id="WCskEj44d3WqHsqfHleTcA">03-GameSpatial</code></td><td data-page-node-id="yH4JT1CJzVt8sLEuUe7Qlk">游戏空间</td><td data-page-node-id="k5Q3B33nbmATsmUm0cUqva"><code data-page-node-id="YWK33UGus4UOAEQeaOEzEt">09-OperationsHR</code></td><td data-page-node-id="WwzOVi8n3aQjVnWSCPP0dh">运营人力</td></tr>
+<tr data-page-node-id="ikJS6GugFQoM5cOY8BF5tT"><td data-page-node-id="ZzdPX1ccRlzAET3NfHYnEe"><code data-page-node-id="xCJ8E6cttIR6cVmj4ez9ff">04-DataAI</code></td><td data-page-node-id="DTa0lTm24p9qnhdfBGroAh">数据智能</td><td data-page-node-id="0V6xzCgSDr8gX96D9lP2Oo"><code data-page-node-id="6ciBjCUsbdbkS9oj1zLAzf">10-ProjectQuality</code></td><td data-page-node-id="uBG2dCaro2IEcMFphA3S3M">项目质量</td></tr>
+<tr data-page-node-id="NPrl3lrKOX9yZnHGtaTXNe"><td data-page-node-id="O5oONZ35LjAX3AenIX2jnP"><code data-page-node-id="MapLmp4Ht5UWCxIz7jg20y">05-MarketingGrowth</code></td><td data-page-node-id="lQyhEAIsu9qBpIw6h8PSLU">营销增长</td><td data-page-node-id="7dQUGkWkqjICkx76p9w9dZ"><code data-page-node-id="wu3F1KU0s3O9hqGhhxVhJv">11-SecurityCompliance</code></td><td data-page-node-id="LGoxdOs23MK2KPwQc8fG1L">法务安全</td></tr>
+<tr data-page-node-id="HthGtF23p8ulwfFeOyYvbb"><td data-page-node-id="gp3OjSxavqS6Y96be6Ul3D"><code data-page-node-id="AMmqEOCO1sknSlZSZlPcMl">06-ContentCreative</code></td><td data-page-node-id="268hmqBoVBs0PoHk00mFV2">内容创作</td><td data-page-node-id="qgP9WVGAQJe5C4iJWYNBdG"><code data-page-node-id="IuYVrDgttEHtfq9bSV40Lk">12-IndustryConsultant</code></td><td data-page-node-id="axtkFrpSuJOEcxs03o6s43">行业顾问</td></tr>
+</tbody>
+</table>
+</div>
+<p data-page-node-id="WXAf7fTUUP5wOpBZdPf2P5">判定优先级：主要输出物 → 服务对象 → 跨领域时选最核心的一个。</p>
+<div class="callout note" data-page-node-id="Mr8NDFxh7m6eWwlrYbDyBo">
+  <div class="ct" data-page-node-id="S5dupJETjYO44xnoNS8fys">发现的不一致</div>
+  <p data-page-node-id="bpfDgG90arLbxBQWvK3lux"><code data-page-node-id="qZPHhF9xt3sxx4Cy0vlAol">validate_expert.py</code> 的 <code data-page-node-id="5jsMnFOCqiUF04CLi82fHn">VALID_CATEGORY_IDS</code> 只含上述 12 个，但本机 <code data-page-node-id="WQXWfSbGMVm9GqKoMCjxIo">andon-q-expert</code> 实际使用 <code data-page-node-id="bn9Y6lGFmHLDoBrcOQzhfv">13-TencentZone</code>，说明存在未公开的扩展分类。</p>
+</div>
+
+<h3 id="s63" data-page-node-id="qEQSmtyJhdivVVRMRCpqJy">6.3 内置推荐候选</h3>
+<p data-page-node-id="nDWzLCIxCI0F8VSgBHPYA4"><code data-page-node-id="qVkCQVRpBX51tTKVnlS74S">resources/builtin-expert-recommendations/curated-experts.json</code> 含 <strong data-page-node-id="R4fgnNuoqTVT0blzPpL5Wb">60 个候选</strong>（50 专家 + 10 专家团），用于「推荐专家」场景：</p>
+<pre data-page-node-id="qmJLGFpbDNWEQotkulARqg"><code data-page-node-id="BhJf0kAUHD8GJvlMEsWE9V">{
+  <span class="c-key" data-page-node-id="wM90ap52UvW9vIE7v0bTNh">"id"</span>: <span class="c-str" data-page-node-id="icLbvslG5ktzH3fVCPcdrz">"SeniorDeveloper"</span>,
+  <span class="c-key" data-page-node-id="AeIfFAOFmNOniRuOsWVOAO">"type"</span>: <span class="c-str" data-page-node-id="nSQSvDuMHLC1yo2rU71Qz3">"expert"</span>,
+  <span class="c-key" data-page-node-id="VcHswyYdsXAfZ6jPj8GLtK">"scenarios"</span>: [<span class="c-str" data-page-node-id="YJPJMFB80DrONpvb4vWxJy">"高级开发"</span>, <span class="c-str" data-page-node-id="keacAJAF1tDFYBf1p2bof7">"架构设计"</span>, <span class="c-str" data-page-node-id="GirwkqubHFRsis55JVUtQj">"代码质量"</span>],
+  <span class="c-key" data-page-node-id="b5vnAWmCQZxfDXLsoddEzk">"description"</span>: <span class="c-str" data-page-node-id="rlHnFu58iEJ0NKt7BIKB1x">"10年以上全栈经验，精通多种语言和框架，是团队的技术中坚"</span>,
+  <span class="c-key" data-page-node-id="9LkACESQEFgkejdbLbKWHd">"priority"</span>: <span class="c-key" data-page-node-id="GnBPuMbAfx1Zg8eijzjWtc">300</span>
+}</code></pre>
+<p data-page-node-id="HtjKDNggu9LLcGX89PsZ2O"><code data-page-node-id="70FVxrXnkcISk4W0FIkBeF">priority</code> 从 300 递减（步长 5），<code data-page-node-id="CLwNyqM2WbqNCfniFawgX6">scenarios</code> 用于意图匹配。这是<strong data-page-node-id="cvJEfB3a8v8tRmkvkDihko">轻量推荐索引</strong>，不是完整专家包。</p>
+
+<h3 id="s64" data-page-node-id="DeM5Dh0NILLn4jOKsrCjB9">6.4 团队成员命名规范</h3>
+<div class="tw" data-page-node-id="0NhMVqaZgnlH6lniblITyO">
+<table data-page-node-id="Rdbs56ububPkZAcQ1FKNwh">
+<thead data-page-node-id="0LWF1LRvqyGQeQKH98Uyhh"><tr data-page-node-id="OXm790ASyczSmGub1sWsYz"><th style="width:26%" data-page-node-id="y7DmfM9DZBSJqtvZhYn0Iy">规则</th><th data-page-node-id="XpkEaZr24khQ63qdRgBD0b">说明</th></tr></thead>
+<tbody data-page-node-id="LNWtYiwUBAyziQJUOvNm8T">
+<tr data-page-node-id="di33CHpbdzithyiNfFHrFS"><td data-page-node-id="hoav221BURY1LuuYV0r7Bl">建议三个字</td><td data-page-node-id="SKLJI8FYZa3wAxxjTJSSkq">姓+名结构，先是正常人名</td></tr>
+<tr data-page-node-id="vOritRhhnJybIhNk0FMELz"><td data-page-node-id="FNlW3W1TDhLFxuVh9COzfR">暗含职能巧思</td><td data-page-node-id="rAVOcWBTA74uz3qib9OVlG">谐音 / 拆字 / 典故，但不刻意</td></tr>
+<tr data-page-node-id="GjD58d7kLCx5QHv0bqRd9D"><td data-page-node-id="k9LgPvqz3hIxLTXVmn7ewl">不与 profession 重复</td><td data-page-node-id="dp5L7VlcZGsRq5sn13o4fA">name 是「谁」，profession 是「做什么」</td></tr>
+<tr data-page-node-id="ViCQo0lAXbOU48O8ETuWFT"><td data-page-node-id="XBmpHn147DoM2QGtUr9F56">中英文都自然</td><td data-page-node-id="9yGDh5Hl1NBVBemWdBLGS6">中文花名，英文拼音姓氏</td></tr>
+</tbody>
+</table>
+</div>
+<p data-page-node-id="vD0okILDIZ8WeGfl3zE97R"><strong data-page-node-id="EpQgtR4hZ4jDj472z5L0lM">示例</strong>：交付总监 → 齐活林（齐活了）、架构师 → 高见远（高见）、工程师 → 寇豆码（code）、QA → 严过关。</p>
+<p data-page-node-id="LoKkmfcy76wGMfiRxw4yuZ"><strong data-page-node-id="91ZAWF0kGB4oGKxnw56j2s">禁止</strong>：叠字谐音、纯职能词、无意义随机名（张三 / John Doe）、英文用 Agent ID。</p>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7" data-page-node-id="CzeUoWAJ5De3eMIu5V7Wzm"><span class="num" data-page-node-id="uMxQnbEnGohiNE5Zn8RNpc">SECTION 07</span>真实案例：trading-agent（13 角色 5 阶段）</h2>
+<p data-page-node-id="PSv3rM1v4IH7Eau4AI7D39">路径：<code data-page-node-id="fCGK0OtY0XVmc2bG0ZfHgE">~/.workbuddy/plugins/marketplaces/experts/plugins/trading-agent/</code></p>
+<p data-page-node-id="aGHJypf3zAIDcUu2WFIQRj"><strong data-page-node-id="VGgjz4A4DoFpU0CmDCIF1H">配置</strong>：<code data-page-node-id="YkwsQ4PKKI4b5FGMLc84GD">expertType: team</code>，<code data-page-node-id="3u5Pw4ziOGAyuYISuZIhZ7">agentName: trading-team-lead</code>，<code data-page-node-id="0CAwWvVrG3N3HOnN2dkIHr">categoryId: 08-FinanceInvestment</code></p>
+
+<figure data-page-node-id="WBJ7ECjcGnuxphAEam2LMi">
+<svg viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="交易分析团队五阶段流水线" data-page-node-id="WMjFfYSGaGmhU1hW56TANF">
+  <rect width="680" height="340" fill="#fcfcfd" data-page-node-id="1Y2acvhJirZ5P8iXJn5CcB"/>
+  <defs data-page-node-id="GTx6UqRBhSRgVl53OfmkPI"><marker id="dn" markerWidth="8" markerHeight="8" refX="3" refY="3" orient="auto" data-page-node-id="daeeSjl7GHmaYAfoSxYZ4W">
+    <path d="M0,0 L7,3 L0,6 Z" fill="#d0d4d9" data-page-node-id="VRKxPHqWEwD3fYe1905DVv"/></marker></defs>
+  <g font-family="-apple-system,sans-serif" data-page-node-id="iEgFAsQQCSBuGbPPK4NIW7">
+    <!-- P1 -->
+    <text x="24" y="28" font-size="11" font-weight="700" fill="#d4006a" data-page-node-id="tEpTOXJ3vC0wD84qIu6Zr6">PHASE 1 · 并行</text>
+    <g font-size="11.5" fill="#171a1e" data-page-node-id="P0fNjYGg2XEHN4GlRlSN7l">
+      <rect x="24" y="38" width="150" height="34" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="aqDme5xXsRSSnBwFwCERDU"/>
+      <text x="99" y="59" text-anchor="middle" data-page-node-id="6OyjGlilfOmWCERxlNk4O3">技术分析师</text>
+      <rect x="24" y="78" width="150" height="34" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="T0ps2CgbBfjMtIqI0EiCwz"/>
+      <text x="99" y="99" text-anchor="middle" data-page-node-id="wc1r5jg7SmzKAX6vxyjcIG">基本面分析师</text>
+      <rect x="24" y="118" width="150" height="34" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="0lKhplsDj1hegAyWCukpFQ"/>
+      <text x="99" y="139" text-anchor="middle" data-page-node-id="nBGHmCy9BHloymlVkqs8ZS">新闻分析师</text>
+      <rect x="24" y="158" width="150" height="34" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="7NVDAxv3ZVXBZRBInMvO9i"/>
+      <text x="99" y="179" text-anchor="middle" data-page-node-id="wJ33yDSyYciC1U7aprnfuw">情绪分析师</text>
+    </g>
+    <!-- P2 -->
+    <text x="232" y="28" font-size="11" font-weight="700" fill="#d4006a" data-page-node-id="yLXUy7z14Tp9ghm7CLYQbt">PHASE 2 · 串行</text>
+    <g font-size="11.5" fill="#171a1e" data-page-node-id="W4CCZuYYLnXsP7HD06JAjA">
+      <rect x="232" y="38" width="150" height="34" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="MVEFwCkvoAD9Aw5JHrI1bN"/>
+      <text x="307" y="59" text-anchor="middle" data-page-node-id="AclM1zGPH5T8IrQfwOnPmH">多头研究员</text>
+      <rect x="232" y="78" width="150" height="34" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="2teOAkZEoPcNdupniquEB7"/>
+      <text x="307" y="99" text-anchor="middle" data-page-node-id="D7T2NgO0CfKEId4lJu8uZf">空头研究员</text>
+      <rect x="232" y="118" width="150" height="34" rx="4" fill="#fdf1f7" stroke="#d4006a" stroke-width="1.5" data-page-node-id="iHIyd3HkV1pFdixSsncEHz"/>
+      <text x="307" y="139" text-anchor="middle" font-weight="650" data-page-node-id="04uCjyuavGjmUxGpOwQDGn">研究主管（裁决）</text>
+    </g>
+    <!-- P3 -->
+    <text x="440" y="28" font-size="11" font-weight="700" fill="#d4006a" data-page-node-id="iywoXhokUJhTpx7Zc7JEEh">PHASE 3</text>
+    <rect x="440" y="38" width="216" height="34" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="XQ1ZHNXlDxKM8z0dqRuArg"/>
+    <text x="548" y="59" text-anchor="middle" font-size="11.5" fill="#171a1e" data-page-node-id="6S1TKtCIN5u6xR04p9J1Ag">交易员 → 交易提案</text>
+    <!-- P4 -->
+    <text x="440" y="100" font-size="11" font-weight="700" fill="#d4006a" data-page-node-id="g52JDqHy8DAgBpVFsKfiYz">PHASE 4 · 并行 + 裁决</text>
+    <g font-size="11.5" fill="#171a1e" data-page-node-id="bRPrvUhjo0ilZL39LSdRXC">
+      <rect x="440" y="110" width="216" height="30" rx="4" fill="#fff" stroke="#d0d4d9" data-page-node-id="1uOFjwonLvlQF20jzXGZMh"/>
+      <text x="548" y="129" text-anchor="middle" data-page-node-id="V1xshaWQNBDVrmyJCp8QMw">激进 / 保守 / 中性 风险分析师</text>
+      <rect x="440" y="146" width="216" height="34" rx="4" fill="#fdf1f7" stroke="#d4006a" stroke-width="1.5" data-page-node-id="yLv0VstGNgZgYLWXYpgMWl"/>
+      <text x="548" y="167" text-anchor="middle" font-weight="650" data-page-node-id="LZHlyHZvMk7yAZaZnMNKy6">风险主管（最终决策）</text>
+    </g>
+    <!-- P5 -->
+    <text x="232" y="215" font-size="11" font-weight="700" fill="#0d7a6f" data-page-node-id="E5cHej21A0bQwBfF5pGptC">PHASE 5 · 汇编</text>
+    <rect x="232" y="225" width="424" height="40" rx="4" fill="#eef7f5" stroke="#0d7a6f" stroke-width="1.5" data-page-node-id="1ES8enBLTg0JrpCBCmAMeI"/>
+    <text x="444" y="249" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0d7a6f" data-page-node-id="SCWLh9kUCWQPDrRV6VHO6n">主理人汇总 → 最终投资分析报告</text>
+    <!-- arrows -->
+    <path d="M182 60 L228 55" stroke="#d0d4d9" stroke-width="1.5" marker-end="url(#dn)" data-page-node-id="nvP5Q6500w8RRog3Km2Vxg"/>
+    <path d="M390 55 L436 55" stroke="#d0d4d9" stroke-width="1.5" marker-end="url(#dn)" data-page-node-id="iv7UP9YMFbXAQu7Fb48eUe"/>
+    <path d="M548 78 L548 106" stroke="#d0d4d9" stroke-width="1.5" marker-end="url(#dn)" data-page-node-id="0oLacfkgLjEHmsYFxjs8Ru"/>
+    <path d="M548 184 C548 205, 500 235, 460 243" stroke="#d0d4d9" stroke-width="1.5" fill="none" marker-end="url(#dn)" data-page-node-id="vZ13AzKlt22yuZBhZiMuyd"/>
+    <path d="M232 243 C170 243, 120 230, 100 196" stroke="#d0d4d9" stroke-width="1.5" fill="none" stroke-dasharray="4 3" data-page-node-id="IZRe25jafCi7Xa4FI2KC64"/>
+    <!-- bottom note -->
+    <text x="24" y="300" font-size="11.5" fill="#4a5159" data-page-node-id="ZOLfCPW02LGSaZgK5WVmR3">设计要点：辩论式裁决（多空对立 → 主管拍板）</text>
+    <text x="24" y="320" font-size="11.5" fill="#4a5159" data-page-node-id="pqZCSrHOrf4gtFEK5YCXHt">三方风险视角（激进 / 保守 / 中性 → 风险主管定夺）</text>
+  </g>
+</svg>
+<figcaption data-page-node-id="yQEcamVsaApIcC00HHEGL7">图 3 · trading-agent 的 5 阶段 SOP。13 个角色，串并行混合编排。</figcaption>
+</figure>
+
+<h4 data-page-node-id="sQFnhK2erWNHMQwdQM4hin">设计亮点（可直接复用）</h4>
+<ol class="rules" data-page-node-id="r4ia9tv5JtCAPD4dKFQut0">
+  <li data-n="1" data-page-node-id="cTKkjMy2yO9BtfUfLDCVN7"><strong data-page-node-id="NB0qtUTcxxnbi2WSsUCW5s">辩论式裁决</strong> —— 多头 / 空头对立 → 研究主管裁决，强制输出明确结论不和稀泥</li>
+  <li data-n="2" data-page-node-id="iAPdbwKu8dXyCsHgr3yAun"><strong data-page-node-id="ek98SMO2s97B2Y1BBUuiq4">三方风险视角</strong> —— 激进 / 保守 / 中性并行 → 风险主管拍板</li>
+  <li data-n="3" data-page-node-id="0ZbBA06UBLCd4t1fWsQUa6"><strong data-page-node-id="8DdzZxdNQWJ4fzRG6W7r0L">单 agent 直调路由表</strong> —— 只问 K 线就直调 <code data-page-node-id="6ZIAgyJVSyyZjdDI5GyipY">market-analyst</code>，不跑完整 Workflow（省 token）</li>
+  <li data-n="4" data-page-node-id="NpmobaEwfA2Tpboa5BD1uO"><strong data-page-node-id="UzWjIIvB0DlsiIMMwiKu3j">数据源锁定</strong> —— 明令「禁止使用非 <code data-page-node-id="jglD0taouS1kq7RFc5JMAA">neodata-financial-search</code> 的数据源」，防止成员各查各的</li>
+  <li data-n="5" data-page-node-id="93suHsZZEonF8LrN13hhux"><strong data-page-node-id="HFU3861tSaYDWrkv9LTsP6">花名系统</strong> —— 何执舟（首席策略官）、涂一线、季本实、牛正阳 / 熊正寒（多空对偶）、严控风（风险主管）</li>
+</ol>
+
+<!-- ============ 8 ============ -->
+<h2 id="s8" data-page-node-id="YjjdivlQDPxf8JNbuWUnz8"><span class="num" data-page-node-id="LHc3x6BD29bYfP8EHquFAN">SECTION 08</span>移植到自建智能体的落地方案</h2>
+
+<h3 id="s81" data-page-node-id="DvmHII4onDUXyinCoRPYCC">8.1 最小数据模型</h3>
+<p data-page-node-id="2q8YEbyQBG6wyR2a7y137T">只需要三个概念即可复刻：</p>
+<pre data-page-node-id="YBYQqC3DU2QTHppDafYUTv"><code data-page-node-id="jpcJf31XQ6W60TB0edBvw3">ExpertPackage  = Meta(plugin.json) + Agents(MD[]) + Optional(Skills)
+ExpertRegistry = {name, source, description}[]      <span class="c-comment" data-page-node-id="wAFMhMS9tgDpNLCStCk1kH"># 即 marketplace.json</span>
+TeamRuntime    = TeamCreate / spawn / sendMessage / collect</code></pre>
+
+<h3 id="s82" data-page-node-id="SJKtrHdU5qwhYUDj4hfCHT">8.2 目录与注册表</h3>
+<pre class="tree" data-page-node-id="y0MutCOajjHwdLKAxx1B9n"><code data-page-node-id="s4gP6m2GM1gOk0E48omEWQ"><span class="dir" data-page-node-id="xJnIAz7JOS8ABYkZtlgbPB">experts/</span>
+├── registry.json                 <span class="cmt" data-page-node-id="9Pg5lI0Abi10RWrhk9EV3e"># 等价于 marketplace.json</span>
+└── <span class="dir" data-page-node-id="Onw13N99aJXZskyfEOEH72">packages/</span>
+    ├── <span class="dir" data-page-node-id="xZLH33kIOiUEsKFLkHvNMr">my-expert/</span>
+    │   ├── meta.json             <span class="cmt" data-page-node-id="yUNH0PeUgCk4KLLGEcm2RA"># 等价于 plugin.json</span>
+    │   ├── <span class="dir" data-page-node-id="rUyc7hphqPtcPcd7iPgq4I">agents/</span>{name}.md
+    │   └── <span class="dir" data-page-node-id="LVnimobsfzv4mX4Uo2nS6t">avatars/</span>
+    └── <span class="dir" data-page-node-id="E5ahOntWPTTvV082VPiS27">my-team/</span>
+        ├── meta.json
+        ├── settings.json         <span class="cmt" data-page-node-id="dKqX6lIAsKSzfF5HazF1N2"># {"agent": "xxx-team-lead"}</span>
+        └── <span class="dir" data-page-node-id="DUwgwKlAXXdXEBUh1WgMF5">agents/</span>*.md</code></pre>
+
+<h3 id="s83" data-page-node-id="ReoRADdHr6PXU0MrjJwZbd">8.3 加载器实现（核心逻辑）</h3>
+<pre data-page-node-id="Ri1dzM71Ac143p30U9rG9k"><code data-page-node-id="lJiPTWZjQHk5tOA4QRCxg3"><span class="c-key" data-page-node-id="y13ei2SmVNH9Lkqu3vK215">def</span> load_expert(pkg_dir) -&gt; SystemPrompt:
+    meta = json.load(open(f<span class="c-str" data-page-node-id="Up8jdQ1NGlARJ7lBUpWPst">"{pkg_dir}/meta.json"</span>))
+    agent_name = meta[<span class="c-str" data-page-node-id="YaeVMrgFVCYa7zVHwpEmHe">"agentName"</span>]
+    md = read(f<span class="c-str" data-page-node-id="CZstseoJALtd91Bn88Z4Bk">"{pkg_dir}/agents/{agent_name}.md"</span>)
+    frontmatter, body = split_frontmatter(md)
+
+    <span class="c-key" data-page-node-id="uyEy2DczH9MaeFkywleGPn">if</span> meta.get(<span class="c-str" data-page-node-id="vTMGFbMCSEMj7FhNziv3sz">"expertType"</span>) == <span class="c-str" data-page-node-id="GsppevwyodokNQ8Al9uH8C">"team"</span>:
+        <span class="c-comment" data-page-node-id="41s7ECQ1xEEGwHWTFhDX34"># 主理人 prompt + 成员能力清单 + 协作铁律</span>
+        members = [load_member(m) <span class="c-key" data-page-node-id="9sgP6hPHRY4IvCnBoXIFjA">for</span> m <span class="c-key" data-page-node-id="nZ96SkJWaf8M0hFuWelLcV">in</span> meta[<span class="c-str" data-page-node-id="U7CiUuBymVqmOLsFvy2Rvh">"teamInfo"</span>][<span class="c-str" data-page-node-id="Qrpqs11JKJB5nCtqbHevTD">"memberAgents"</span>]]
+        <span class="c-key" data-page-node-id="WImF34HB3P7dg7nSl15NKy">return</span> compose_lead_prompt(body, members, collab_rules)
+
+    <span class="c-comment" data-page-node-id="2NIP4cpd3Ss0x3ye9kQbBo"># agent 型：身份指令 + 正文，直接作为 system prompt</span>
+    <span class="c-key" data-page-node-id="Dn5MNjhhCuAEVIc392EmLU">return</span> body</code></pre>
+
+<h3 id="s84" data-page-node-id="pZy3vwEseXBdl6Z6y5YyXz">8.4 团队编排运行时（必须实现的 4 个原语）</h3>
+<pre data-page-node-id="pP2BhzHKD1WXCqTxgsD3mp"><code data-page-node-id="eYcA8d5OMrD7CVekBnvtmi">TeamCreate(team_name)                       <span class="c-comment" data-page-node-id="VtFNEEYobiEhRX6Nr73L4t"># 主理人独占</span>
+spawn(agent_id, task_prompt)                <span class="c-comment" data-page-node-id="1ELjZE5KXCF7XzXliVGD5H"># agent_id = MD 文件名</span>
+sendMessage(from_member, to_lead, result)   <span class="c-comment" data-page-node-id="sgCWrEwl9KkvUxNHLnuP3T"># 成员回传，禁止成员间直连</span>
+collect(phase_results) -&gt; next_phase_input  <span class="c-comment" data-page-node-id="9zUqeSFZKHLBHbRUHtXq3L"># 主理人汇编</span></code></pre>
+
+<div class="callout warn" data-page-node-id="iX3HaypSnbu7bPSyDb4EWN">
+  <div class="ct" data-page-node-id="OW4X0l7i0hKLbi2QBoZgIA">移植时必须保留的约束</div>
+  <p data-page-node-id="CodEruG7hZW81IQl3Fpev6">否则多角色会退化为单人分饰多角：</p>
+  <ol style="margin:8px 0 0 18px" data-page-node-id="Zh1Y7MlsGqOiYTlD10yd4a">
+    <li data-page-node-id="FIedKmR88wzy0NXcZ5PBcw">主理人不得代写成员产出 —— 主理人 prompt 里禁写 + 成员必须回传，双重约束</li>
+    <li data-page-node-id="RNXX4wL4fuzBYOSD5fomlT">跨成员信息流必须经主理人 —— 通信拓扑强制为星型，<strong data-page-node-id="pvXZkFQpnyZP7UkgVD9G2z">不提供成员间 channel</strong></li>
+    <li data-page-node-id="6POH2OqytPcZEh0Btb0xoG">阶段依赖强校验 —— 前一 Phase 未回传完，不允许 spawn 下一 Phase</li>
+    <li data-page-node-id="T0hxC7B01ctRrWEe3wDe85">身份双重锚定 —— 专家 MD 开头 + 结尾各一次身份指令</li>
+  </ol>
+</div>
+
+<h3 id="s85" data-page-node-id="0NSgEVXZl34ghRj6zdzfQJ">8.5 需要避开的坑</h3>
+<div class="tw" data-page-node-id="vIPOGSYLKJXjey2qhbxEjG">
+<table data-page-node-id="deIyYUrVBx4ZGras9fGHHJ">
+<thead data-page-node-id="tBggymUj30fTmAW1wsP5wk"><tr data-page-node-id="bmFeWgyB1k6okyvGRUvUpW"><th style="width:24%" data-page-node-id="CLjFKvAZDF71KVTcACn8Vf">坑</th><th data-page-node-id="w1REpcPVjTmBZ0RAIgqR7X">说明</th></tr></thead>
+<tbody data-page-node-id="a9Bk1P8PvkM70YmsZ1RAuG">
+<tr data-page-node-id="CchZZKozrJNPJa92J8RxPa"><td data-page-node-id="qTwCIo2j7KQg0EDsvehVdJ">规范与实现不一致</td><td data-page-node-id="tHivJCTohKEsTFlR5Hpuvl"><code data-page-node-id="rAjWKENV6co85NVNsu5pQN">plugin-json-spec.md</code> 的 Team 模板写 <code data-page-node-id="dAWlkfmdDj40yCyygPC5Us">displayName</code>，实际专家（trading-agent）用 <code data-page-node-id="H5QUbCOfD0l8WEBofseZNs">name</code>。以实际实现为准</td></tr>
+<tr data-page-node-id="udKW1qj7BwXRnNl6yITmgI"><td data-page-node-id="VfR7zGYt7YfK5jHeSchFFw">老专家不符合新规范</td><td data-page-node-id="mzijiPitLWunOubOeFKfZX">trading-agent 无 <code data-page-node-id="qr7bJ04rJQBpmMAqXX8ASu">tags</code> / <code data-page-node-id="QjiNNi4Kt1L8LNG3MkmsYQ">quickPrompts</code>，content-creator 无 <code data-page-node-id="Yf5mRzmv2sZmgozgiXDzJh">plugin</code> 字段。v2.0 规范是渐进演进的</td></tr>
+<tr data-page-node-id="ecV3wqgTK6QKC38lXYWXQ1"><td data-page-node-id="nvyDFxFqlpgpW9sxvV7rcR">分类 ID 校验过严</td><td data-page-node-id="7dDtgAkf2Xk7uuOx4mKQpP">校验器只认 12 类，但实际存在 <code data-page-node-id="VgKGa14KLSvqbA81IOzDdB">13-TencentZone</code> 等扩展</td></tr>
+<tr data-page-node-id="BlNnGyYMdL13VoNv4scb8y"><td data-page-node-id="hxDe0jOfBugWu7hK3RyYMD">改名即丢失</td><td data-page-node-id="VcQ6QpjrEdZYSF27GpE5yj">name / agentName / 目录名 / MD 文件名四者绑定，改任一都断裂</td></tr>
+<tr data-page-node-id="xpGChHCNh9qrcEVhLAaiPq"><td data-page-node-id="6ymItNNVAPlfO1lPB6l0Fa">头像必须基于 MD 生成</td><td data-page-node-id="Ejn5zR6FlbnSvFLZVvdQGb">用通用模板会导致同一团队画风分裂</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============ 9 ============ -->
+<h2 id="s9" data-page-node-id="x1QSuwdbopZBj6t6XRilJ8"><span class="num" data-page-node-id="NoJS6KXF4BMpmRqkxiktwJ">SECTION 09</span>源码路径索引</h2>
+<div class="tw" data-page-node-id="7utydRnv2rpDuZ9HKdEjll">
+<table data-page-node-id="inNUWN1Ziz550B999uLn7X">
+<thead data-page-node-id="pCnbEDAd5R3wW0IfpGdAVF"><tr data-page-node-id="xjR6hpQ7oIVKrT71BrxohW"><th style="width:30%" data-page-node-id="oSrnQEYsIbEdOP9Ee38eEP">内容</th><th data-page-node-id="vIBuXnjL2ZSBnHiEdBXTaC">路径</th></tr></thead>
+<tbody data-page-node-id="MntnEE2slKHU9BbhY9xz1Q">
+<tr data-page-node-id="tYjyQa3zya9VfBEA7Pn2Xt"><td data-page-node-id="yFTDRdT3gKA2gJT4PZu06r">专家包管理 Skill</td><td data-page-node-id="SW4jbC2ubqFToRLhsmsMOy"><code data-page-node-id="90tu14BMd0GTQ0Czj0sL1x">resources/plugins/workbuddy-builtin/skills/expert-manager/SKILL.md</code></td></tr>
+<tr data-page-node-id="CnCOALyslwY1TM56StHgGT"><td data-page-node-id="dNGByQerh356w7KUz8dJte">plugin.json 规范</td><td data-page-node-id="pEWH7eYotyZMhXDFjSRkYU"><code data-page-node-id="EfjHjbKRED1piWkAkXcIrH">.../expert-manager/references/plugin-json-spec.md</code></td></tr>
+<tr data-page-node-id="IgpDMp7CEg38Po5pH1eMdX"><td data-page-node-id="tfdf6B22QVgttpjykuYnE0">Agent MD 规范</td><td data-page-node-id="inOLG6hCCZCFF7zYHrPHKm"><code data-page-node-id="VvbymBTyMQ7ZlV2EGOoVNn">.../expert-manager/references/agent-md-spec.md</code></td></tr>
+<tr data-page-node-id="I1K36fLBsP4peb6BVxKhJ6"><td data-page-node-id="SExDZESYOiTEHlZ17WF4Nt">Team 协作规范</td><td data-page-node-id="ykUXn5RSkEnjIvAOeca6Bm"><code data-page-node-id="E82TCrHwMCaWlf50ODHnAL">.../expert-manager/references/team-spec.md</code></td></tr>
+<tr data-page-node-id="cDqEtjCfch4QHFkEvH0Hku"><td data-page-node-id="dT9boi0S6sNOTFgcoD0dxK">头像规范</td><td data-page-node-id="gV3oARVQgMWjJPfcMQP0B0"><code data-page-node-id="Neuusi8mRJmam1VgbUqbGx">.../expert-manager/references/avatar-spec.md</code></td></tr>
+<tr data-page-node-id="rEK4b0blI3ddutDHe89KiN"><td data-page-node-id="3uaeWqwcl5MOwTse8BdJUT">注册脚本</td><td data-page-node-id="OuIHhhKUwFt2StKd7ipU6Z"><code data-page-node-id="MuAc54OJyhiiNQvui9UHiO">.../expert-manager/scripts/register_expert.py</code></td></tr>
+<tr data-page-node-id="eS14uXtJKHOSXSm81G6vjG"><td data-page-node-id="DB3fXzQLWPc9pdGhiiofYA">校验脚本</td><td data-page-node-id="s706Z0WU10LH1XRVA4LBWC"><code data-page-node-id="2JNcLPJdSp4j0fHjYdbof6">.../expert-manager/scripts/validate_expert.py</code></td></tr>
+<tr data-page-node-id="0tSqceGEhnMfu1oD2w5Q8p"><td data-page-node-id="4X0Uh2DXvLKTAJutbBfcSl">初始化脚本</td><td data-page-node-id="8wBcQ9NWsB8j0TGpP6H1Mu"><code data-page-node-id="ouhHmbPFvbvM8cCUwZVg6K">.../expert-manager/scripts/init_expert.py</code></td></tr>
+<tr data-page-node-id="KIn0lCgLW7h2OwAvKSjGT4"><td data-page-node-id="5w35NTEfTmp6m2JS5uKxw1">专家模式系统提示词</td><td data-page-node-id="hrBt0Glnnqf8z8oHbuEtoi"><code data-page-node-id="rvu72HOJmDC4rBjviDP439">resources/templates/workbuddy-expert-prompt.tpl</code></td></tr>
+<tr data-page-node-id="H99k0QdQaLJV5BUruD2rir"><td data-page-node-id="wTJ76tp5Uir0DkARNrjEvk">专家模式身份注入</td><td data-page-node-id="6yqaqxGls9XDEj0SC9bUWh"><code data-page-node-id="wxVC2PBhFNerrPHIOfrsBb">resources/templates/user-context-expert-identity.tpl</code></td></tr>
+<tr data-page-node-id="LKDdGsEjI9cyuihQvRUzjj"><td data-page-node-id="KeEMNc95RYRwmlZb8asVQK">内置推荐候选</td><td data-page-node-id="lDlotjKEdIkuYLNO9DdKaA"><code data-page-node-id="kgCpF3LCgCQliq6vZgXBxY">resources/builtin-expert-recommendations/curated-experts.json</code></td></tr>
+<tr data-page-node-id="BqHsrnEvR1FN6m0CuCTnq5"><td data-page-node-id="kStEXm3hhJZTyTZ6sQMOQP">已安装专家实例</td><td data-page-node-id="5bDWm8pdLSLJHQ4l1W3SfO"><code data-page-node-id="MD5ITGy4tixdEh5yBCcdM4">~/.workbuddy/plugins/marketplaces/experts/plugins/</code></td></tr>
+</tbody>
+</table>
+</div>
+<p data-page-node-id="CYsbG2NcffWLnDz1ALg1Ib">以上相对路径基于 <code data-page-node-id="xQCQxftMbrLtm6TJLlchPk">/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/</code></p>
+
+<footer data-page-node-id="YDD0z050GH2XrZbDCats1A">
+  <p data-page-node-id="iyEn1jHx15390zewoIEWhi"><strong data-page-node-id="ZLEhJDdoAMEJhGiYXZmLRR">WorkBuddy 专家 / 专家团机制研究</strong> · 2026-09-08</p>
+  <p data-page-node-id="OC4HVRDpayExQRWaSELL5p">配套交付：<code data-page-node-id="XXs9L5y0KPYy0dgsHUJpWe">专家与专家团机制研究.md</code>（完整文档）· <code data-page-node-id="EBkIsIbnbAGGPFpWnHOXR9">skeleton/</code>（可运行最小骨架：registry.json + 2 个示例专家包 + loader.py）</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var toc = document.getElementById('toc');
+  var links = Array.prototype.slice.call(toc.querySelectorAll('a'));
+  var targets = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+
+  function onScroll(){
+    var idx = 0;
+    for (var i = 0; i < targets.length; i++){
+      if (targets[i] && targets[i].getBoundingClientRect().top <= 120) idx = i;
+    }
+    links.forEach(function(a, i){
+      a.classList.toggle('active', i === idx);
+    });
+    // keep active item visible in sidebar
+    var active = links[idx];
+    if (active && active.offsetParent){
+      var box = toc.parentElement;
+      var top = active.offsetTop - box.offsetTop;
+      if (top < box.scrollTop || top > box.scrollTop + box.clientHeight - 40){
+        box.scrollTop = top - box.clientHeight / 3;
+      }
+    }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>
