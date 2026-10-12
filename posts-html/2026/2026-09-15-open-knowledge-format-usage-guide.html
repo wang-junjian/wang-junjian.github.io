@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="Zt3lwnlgwmeDRV7F4QFmO6">
+<head data-page-node-id="GX5p4BXBHHkGNcPJcJ81MR">
+<meta charset="UTF-8" data-page-node-id="l35lRZF5hdEIt7xgJcjwVu">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="RN4AcXGm3n6ebAngBqpoV1">
+<meta name="description" content="全面解读 OKF v0.2 规范：目录树加 Markdown 构建 Agent 可读知识库，覆盖 Bundle 结构、信任与来源字段、Attested Computation、Reference Agent 双 pass 原理与六大使用场景。">
+<meta name="keywords" content="okf, open-knowledge-format, knowledge-base, markdown, reference-agent, attested-computation">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-09-15">
+<title>Open Knowledge Format (OKF) 全面使用指南</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --paper:#ffffff; --muted:#6b6b6b;
+    --line:#e4e4e0; --accent:#0b57d0; --accent-soft:#e8f0fe;
+    --green:#1a7f37; --amber:#9a6700; --red:#c62828;
+    --code-bg:#f6f8fa; --card:#fafaf8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--ink); background:var(--paper);
+    font-size:15px; line-height:1.75; max-width:880px; margin:0 auto; padding:48px 28px 96px;
+  }
+  h1{font-size:30px; line-height:1.3; letter-spacing:-.5px; margin-bottom:8px}
+  h2{font-size:21px; margin:56px 0 16px; padding-top:20px; border-top:1px solid var(--line); letter-spacing:-.3px}
+  h2 .no{color:var(--accent); font-variant-numeric:tabular-nums; margin-right:8px}
+  h3{font-size:16.5px; margin:28px 0 10px}
+  p{margin:10px 0}
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  ul,ol{padding-left:22px; margin:10px 0}
+  li{margin:4px 0}
+  strong{font-weight:600}
+  code{
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:12.8px; background:var(--code-bg); border:1px solid var(--line);
+    border-radius:4px; padding:1px 5px;
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--line); border-radius:8px;
+    padding:14px 16px; overflow-x:auto; margin:14px 0; line-height:1.55;
+  }
+  pre code{background:none; border:none; padding:0; font-size:12.8px}
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+  th{background:var(--card); text-align:left; font-weight:600; padding:8px 12px; border:1px solid var(--line); white-space:nowrap}
+  td{padding:8px 12px; border:1px solid var(--line); vertical-align:top}
+  blockquote{
+    border-left:3px solid var(--accent); background:var(--accent-soft);
+    padding:12px 18px; border-radius:0 8px 8px 0; margin:16px 0; color:#333;
+  }
+  .meta{color:var(--muted); font-size:13px; margin-bottom:24px}
+  .lede{font-size:16.5px; color:#333; margin:16px 0 8px}
+  .figure{margin:20px 0; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff}
+  .figure svg{display:block; width:100%; height:auto}
+  .figure figcaption{font-size:12.5px; color:var(--muted); padding:8px 14px; border-top:1px solid var(--line); background:var(--card)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 24px; margin:24px 0; columns:2; column-gap:36px}
+  .toc h3{margin:0 0 8px; column-span:all; font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--muted)}
+  .toc ol{padding-left:20px; margin:0}
+  .toc li{margin:3px 0; break-inside:avoid}
+  .tag{display:inline-block; font-size:11.5px; font-weight:600; border-radius:99px; padding:1px 9px; margin-left:6px; vertical-align:2px}
+  .tag.core{background:#e8f0fe; color:#0b57d0}
+  .tag.poc{background:#e6f4ea; color:#1a7f37}
+  .callout{border:1px solid var(--line); border-left-width:3px; border-radius:8px; padding:12px 16px; margin:14px 0; font-size:14px}
+  .callout.warn{border-left-color:var(--amber); background:#fffaf0}
+  .callout.tip{border-left-color:var(--green); background:#f0faf2}
+  .kicker{font-size:12px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent); margin-bottom:10px}
+  .scene{border:1px solid var(--line); border-radius:10px; padding:18px 22px; margin:18px 0; background:var(--card)}
+  .scene h3{margin-top:0}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:720px){.cols{grid-template-columns:1fr}.toc{columns:1}}
+  .pill{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body data-page-node-id="F7aqMyMa0J2wDBLpGSWTHJ">
+
+<div class="kicker" data-page-node-id="c81VA94AEEsLNNDaBGClmz">Usage Guide · v0.2</div>
+<h1 data-page-node-id="GVlvsuM9TWI3K2nvRuK4um">Open Knowledge Format (OKF) 全面使用指南</h1>
+<div class="meta" data-page-node-id="AhiNFRDeWh3ZfM1BbjQhsh">基于仓库源码（<code data-page-node-id="sGPN8pGp2R34ntHIHZUHdC">src/reference_agent/</code>）、规范（<code data-page-node-id="Inp2awIQkVbYQ6z1CtBLeP">SPEC.md</code>）、示例（<code data-page-node-id="WwFrHveFkRAh4yFFmKHdJa">samples/</code> · <code data-page-node-id="xQk5makUgQINjr7T5gGeCq">bundles/</code>）与连接器文档完整研读整理 · 2026-09</div>
+
+<blockquote data-page-node-id="Ym7Ecv14ZHBpo7PVEFIrmy"><strong data-page-node-id="WPtcpSPkGG8Au2W0IlSRD3">一句话：</strong>把「知识目录」变成一堆普通的 Markdown 文件，让人和 AI Agent 用完全相同的方式生产、审查、消费它。</blockquote>
+
+<nav class="toc" data-page-node-id="VtgDP0hz3Y60xcZ7ZdXDbK">
+<h3 data-page-node-id="hhDCIPlfEfa3Xs3QQHCCwy">目录</h3>
+<ol data-page-node-id="oBFf12FuxSL4YBhLVh7FDK">
+  <li data-page-node-id="nNYDElMqir6UF3KT2a1Iai"><a href="#s1" data-page-node-id="f9u79eg5Dgo9YuuYyINTSg">项目是什么</a></li>
+  <li data-page-node-id="V4pNGFldPO1vnumQDi8WB7"><a href="#s2" data-page-node-id="UKDpDRf0H6o9swPxAuwLCS">OKF 格式核心概念</a></li>
+  <li data-page-node-id="Pvt98vNDWMhi2G4RWBRnC5"><a href="#s3" data-page-node-id="iuKflpLgtJTs0rQmSiOoYY">Reference Agent 工作原理</a></li>
+  <li data-page-node-id="3CpwSHy4Zvt8g9osMtCSfQ"><a href="#s4" data-page-node-id="uLnMhP8RHKE4GVIy29q8Lo">快速上手</a></li>
+  <li data-page-node-id="BL88X9dYnNHSNTsej8ABNU"><a href="#s5" data-page-node-id="EBDNKlcUGVcbKO8JlsrHwG">六大使用场景与示例</a></li>
+  <li data-page-node-id="5MSrko5axcBLQRZQiAEeQQ"><a href="#s6" data-page-node-id="xp7GrJyaFUwqS4tqa9dBk7">CLI 完整参考</a></li>
+  <li data-page-node-id="Wx0gjh1Ee1e8J468FDpj0V"><a href="#s7" data-page-node-id="6oBEUV7PDgCfDWeyx2p0SV">文档的完整生命周期</a></li>
+  <li data-page-node-id="3bKaqZBGN7Dc4BsZpTlH8c"><a href="#s8" data-page-node-id="0zLGpW8e0ZYGDoGO7qgpKR">测试与开发</a></li>
+  <li data-page-node-id="0MhE9ItyhRDdbbjSmfksJk"><a href="#s9" data-page-node-id="hvxCBoBk8zMawkUEfo3s2m">设计决策与注意事项</a></li>
+</ol>
+</nav>
+
+<h2 id="s1" data-page-node-id="wI51LAazHegrgMdFVKC7GF"><span class="no" data-page-node-id="sEKTFXnynAFJB6FKKvMiiX">01</span>项目是什么</h2>
+<p class="lede" data-page-node-id="FqoTifZa05dKkm0LiO5SWs">仓库由三部分组成，重要性依次递减——<strong data-page-node-id="1hUlsof4YQNQqfauG6BWZ3">格式是贡献，Agent 和可视化只是让它摸得着的两端</strong>。</p>
+
+<table data-page-node-id="mR7FJV1EJSIo7oh5LZUHhO">
+<tr data-page-node-id="HWatvsek2r48EjYyUsUJym"><th data-page-node-id="AZBB2XqsFJqfU9LUQ7TL6g">组成部分</th><th data-page-node-id="CszuXwOuPje8cFQNClhRdL">位置</th><th data-page-node-id="VZEKqW1QRvKa8lwGXidCT0">角色</th></tr>
+<tr data-page-node-id="F2ZfG2ADaHGFxMQL7bDaQP"><td data-page-node-id="TYdadVv1ubwpjLEupOGs0v"><strong data-page-node-id="Vo7oGQ8gAQ5sZabAgqQBF9">OKF 格式规范 v0.2</strong><span class="tag core" data-page-node-id="AdZUdHKmF5I2Ivp0Nj6Yyc">核心</span></td><td data-page-node-id="QvvzLACYPwDxhBg2FNFvZp"><code data-page-node-id="EdfJBJf7d8jm77Yl0KavCQ">SPEC.md</code></td><td data-page-node-id="T9kk37KFSDqWRWzrgLM4v7">知识如何表示：目录树 + Markdown 文件 + YAML frontmatter。不绑定任何 agent、框架、厂商</td></tr>
+<tr data-page-node-id="UAiAc3pSqchqRsrlkHMFHm"><td data-page-node-id="vpFoEDXjz02JsOwKTzjawb"><strong data-page-node-id="DgUDuOLD9C4romBhHk6YJU">Reference Agent</strong><span class="tag poc" data-page-node-id="3JcZUgPK6lTspvq1Wo5CsO">生产者 PoC</span></td><td data-page-node-id="5fa5Fp7e3Z2gklQMS8oY6q"><code data-page-node-id="qy8lNZTzA8PvwF4ptdq8d0">src/reference_agent/</code></td><td data-page-node-id="dJmAWz2m07itndbaLGDliL">从 BigQuery 元数据 + 官方文档网页自动生成 OKF bundle</td></tr>
+<tr data-page-node-id="q7Z0hLhSroQ7jPgvKP8clG"><td data-page-node-id="Vdkh6p1g1ExHO9Zh4auJjf"><strong data-page-node-id="4OEwTghksqBlhoMpIpg5BS">可视化查看器</strong><span class="tag poc" data-page-node-id="vhOfjYuLaKpIXJ8ia0ePlC">消费者 PoC</span></td><td data-page-node-id="xmLCNAtTBGCvFgVsershJh"><code data-page-node-id="SBKrBU55UDaSl0S2JItkkt">viewer/</code> · <code data-page-node-id="EhF7L4wSGspHUxA1CNRzA4">bundles/*/viz.html</code></td><td data-page-node-id="haMoqTMMsQWa4kAJmOIeIR">把 bundle 渲染为单文件交互式知识图谱</td></tr>
+</table>
+
+<p data-page-node-id="IZDzyEEkzVx3ZcoZcHsnjm">仓库自带 4 个可直接浏览的成品 bundle：<code data-page-node-id="G1PUDcjRInpMrTlMWBENdb">bundles/ga4/</code>（GA4 电商）、<code data-page-node-id="aQ2AwCm6WkvqSg4E3dBIZT">bundles/stackoverflow/</code>、<code data-page-node-id="nNgE2LJpXvRBBEtdcTCYYv">bundles/crypto_bitcoin/</code>、<code data-page-node-id="kT5Gv10QSvAuJK5mz8VXoi">bundles/acme_retail/</code>（演示 Attested Computation 完整家族）。</p>
+
+<h3 data-page-node-id="1Fem97e7LwdxAm0rIegwW0">为什么用 Markdown 而不是元数据服务？</h3>
+<ul data-page-node-id="EyPMxiDOQvH5PXqgGpiJRz">
+  <li data-page-node-id="MpJnaTzPhyqcWlUSMmXYx6"><strong data-page-node-id="0wRWTufbk4eOhfQkvEFGjF">人和 Agent 都能直接读</strong>：<code data-page-node-id="iDRvQAEHNTFPt9ppqZmZF6">cat</code> 一下就能看；LLM 可以原样塞进上下文</li>
+  <li data-page-node-id="ES56LenSiK7feXRrGneCWf"><strong data-page-node-id="npx3X0uuWCyCVMWlKS1Y4z">天然进 git</strong>：PR、逐行 diff、blame、评审流程全部免费获得——知识运营变成普通软件工程活动</li>
+  <li data-page-node-id="5QIdvQ3AMFWQeDs6d4P5zj"><strong data-page-node-id="pfyjRIcPYbKyhyiAQ0K8Sw">零锁定</strong>：bundle 就是一个目录，tar 包、静态服务器、Obsidian/Notion/MkDocs 都能直接用</li>
+  <li data-page-node-id="iFVnEiJFztlIbu6gfopYFB"><strong data-page-node-id="XozNBOxHvXLhqnrpmIeAoa">结构化与非结构化刻意混合</strong>：frontmatter 放可查询的少数字段，正文放人和 LLM 真正读的散文、Schema、SQL</li>
+  <li data-page-node-id="sNOlGC6J3jkYPwGoKAUFC3"><strong data-page-node-id="NEnlVEkXVqcxHY4YhG4Pp5">信任、来源、新鲜度是一等公民</strong>（v0.2 新增）：机器维护的语料库也能回答「这从哪来、可不可信、还新鲜吗」</li>
+  <li data-page-node-id="EeLh9EaEqjaFgD9rf42V8i"><strong data-page-node-id="8zDckGlcGD7wXuIvG7Fjgw">渐进披露</strong>：自动生成的 <code data-page-node-id="sRp1GGckNccnjBi2Gu7XSf">index.md</code> 让 Agent 逐层浏览，而不是把整个 bundle 塞进上下文</li>
+</ul>
+
+<h2 id="s2" data-page-node-id="cTRvrMCKi8Bk2GLS1tEcX3"><span class="no" data-page-node-id="cDyd0KdMTJ40HIYfBGc2Ld">02</span>OKF 格式核心概念</h2>
+
+<h3 data-page-node-id="EGKm8Mm29SVRZfTp4Vpwtx">2.1 Bundle 结构</h3>
+<pre data-page-node-id="hvXKEDnyVEOwHGHaaszo2I"><code data-page-node-id="Cv5H6LK8buKEKDkO3xqyR2">bundle/
+  index.md                # 可选：目录清单（渐进披露）
+  log.md                  # 可选：按日期倒序的更新日志
+  &lt;concept&gt;.md            # 一个概念 = 一个 .md 文件
+  &lt;子目录&gt;/               # 按领域自由组织
+    index.md
+    &lt;concept&gt;.md</code></pre>
+<p data-page-node-id="PxsTcB6zCgjQdAFPOXZk3V">保留文件名只有两个：<code data-page-node-id="IABi7gI2tToeSkMoHzqb7w">index.md</code> 和 <code data-page-node-id="8qpJY5ACl7X6GmmovHROQ8">log.md</code>。分发方式：git 仓库（推荐）、tar/zip、或大仓库的子目录。</p>
+
+<h3 data-page-node-id="TO2ZQDIvlUrICWPY7gaUVC">2.2 概念文档 = frontmatter + 正文</h3>
+<p data-page-node-id="RNXjl4xAm9NAljkHgxzOYA"><strong data-page-node-id="MkCBc4mJzHVioPXSE7nQMZ">唯一必填字段是 <code data-page-node-id="NW3QS7D1jHi9cQZb9RGW3V">type</code></strong>，只带 <code data-page-node-id="M3Oc1dWOMBqwoKJ0JVLfxE">type</code> 的概念即完全合规。推荐字段：<code data-page-node-id="NMvMEtivkyamfwT4Dsf5FT">title</code>、<code data-page-node-id="i5ETjsbAGn2ds9OM2bdZv3">description</code>（一句话，会被 <code data-page-node-id="0mycjB9i1WYjSwHWeipqwg">index.md</code> 原样引用）、<code data-page-node-id="ObbsG3m3Qx3OAjlFju3VgA">resource</code>（底层资产 URI）、<code data-page-node-id="F7m9lrW76F0Hn0m0uiVSBt">tags</code>。</p>
+
+<pre data-page-node-id="GxL19lAL1edabtMPzC2KaN"><code data-page-node-id="WanabSPbwGmEgmQNHGzF92">---
+type: BigQuery Table
+title: Customer Orders
+description: One row per completed customer order across all channels.
+resource: https://console.cloud.google.com/bigquery?p=acme&amp;d=sales&amp;t=orders
+tags: [sales, orders, revenue]
+generated: { by: reference_agent/gemini-2.5-pro, at: 2026-05-28T14:30:00Z }
+---
+
+# Schema
+
+| Column        | Type      | Description                              |
+|---------------|-----------|------------------------------------------|
+| `order_id`    | STRING    | Globally unique order identifier.        |
+| `customer_id` | STRING    | Foreign key into [customers](customers.md). |
+
+# Common query patterns
+
+```sql
+SELECT * FROM orders WHERE total_usd &gt; 100
+```
+</code></pre>
+
+<p data-page-node-id="THDKF0eflgpp8KNI1Rhy8k">约定俗成的正文标题：<code data-page-node-id="4KpUmfggcUauV6wYsQyNl6"># Schema</code>（字段结构）、<code data-page-node-id="SinmfLMqWV2C4M0uFlXYAb"># Examples</code> / <code data-page-node-id="LjvJUOHFiXaN8dCJs49MO4"># Common query patterns</code>（示例）、<code data-page-node-id="aXTeQGt5phbTXAtInleqeU"># Computation</code>（见 2.5）。</p>
+
+<h3 data-page-node-id="Yw802NjGHgsBkYxamQFD6k">2.3 信任、来源、生命周期（v0.2 的重点）</h3>
+<table data-page-node-id="8uwZZVfasEuJJchY0DHk4d">
+<tr data-page-node-id="UH2lwX4B16DJmV0saW50pD"><th data-page-node-id="3MgOQAYkUxIs6U2UCzVy9l">字段</th><th data-page-node-id="1wDYrOi9yJtFJUHWPwiU2q">作用</th><th data-page-node-id="HAaL0tBOrAbavv886eyezS">示例</th></tr>
+<tr data-page-node-id="fxfetxpHbfV2LiPa1T1BSC"><td data-page-node-id="9DUcDdFsozrtU8FLa0bjL5"><code data-page-node-id="9TIPhwZGgyzFkuBtEhXAdE">sources</code></td><td data-page-node-id="ixdqBf5cDRTqq8f3CqbBLq"><strong data-page-node-id="ikQE42L8TzXz2TI0KFWHne">来源</strong>。每条含 <code data-page-node-id="txKhCIG6G1EokHqOeKNVaZ">resource</code>（必填）、<code data-page-node-id="ObVjNz86GkEm3eJAK5GVr0">id</code>（正文脚注关联键）、<code data-page-node-id="2EDmJAgU2USdzL21u83SUL">title</code>，及可选可信度信号 <code data-page-node-id="dzeKkUhyzv5TcHewOid7NV">author</code> / <code data-page-node-id="gyKjQdjjtTq6dYP2E3Simw">usage_count</code> / <code data-page-node-id="uMcYU3hBYsU63pcxyG5m0k">last_modified</code></td><td data-page-node-id="npVUlHb4DbtIuQHenO4zuT"><code data-page-node-id="xmEsCBZzDKb4XjpCxEBHZ0">{ id: ga4-schema, resource: https://... }</code></td></tr>
+<tr data-page-node-id="PuMudTcSgTEQSTsasWkRve"><td data-page-node-id="yW2tnr89tMqBgY0MgUcZrY"><code data-page-node-id="VELeyVfb26DTnNbCVJiqw3">usage_window</code></td><td data-page-node-id="6vg6hNTDjuDE4SS5JCgJFI">给所有 <code data-page-node-id="WrJoRDivHWMsA3W4IaoC0d">usage_count</code> 加 <code data-page-node-id="oBDdGWdHB4JEpSC3JM0Rrj">{from, to}</code> 时间窗</td><td data-page-node-id="4OkLCxmQzI0z6EhNPCmQxp"><code data-page-node-id="9HAlPahPxDTw8vA3efN1Ui">{ from: 2026-06-01, to: 2026-06-30 }</code></td></tr>
+<tr data-page-node-id="KuimAzAEiVmkZS2mQyhjXV"><td data-page-node-id="lvSnM6TZ3IZEOvKOMUhfZ4"><code data-page-node-id="XFC0JNUj3yfA6G2tjrEVEP">generated</code></td><td data-page-node-id="KTJU8rz9RK5rWZ7tcnfoIJ">内容怎么产生：<code data-page-node-id="y0pdihRi3rNzudI3daxAEd">{ by, at }</code></td><td data-page-node-id="dgAoTe8204RN4Czq4msMZM"><code data-page-node-id="gQJEmAH7SoWCmqAEdiADq0">{ by: reference_agent/gemini-2.5-pro }</code></td></tr>
+<tr data-page-node-id="c27oYhKZSCvxULbLzMKa29"><td data-page-node-id="s1IOdmmLt2591dPBQf0a8P"><code data-page-node-id="GZWrwh3rJzW50M9FUoEkkI">verified</code></td><td data-page-node-id="q7Ubwoe4yemF35w0xVbVtm">谁确认过内容：<code data-page-node-id="8F6YJ121Alf5GxaFxJgo35">{ by, at }</code> 列表</td><td data-page-node-id="eIXg1ILOKNlsfQ5tjwKQ5c"><code data-page-node-id="kDQkYRC5Wp1RBfgecqK0Fa">[{ by: human:ahormati, at: ... }]</code></td></tr>
+<tr data-page-node-id="dDlczpfk813XC3VouK3Lt3"><td data-page-node-id="587LtrrJsgQ10Adk9ZK49u"><code data-page-node-id="LXYEGyYqGwFp36bP2bSjUC">status</code></td><td data-page-node-id="lQyaeyKWhRMhraQiR25LCW"><code data-page-node-id="NoFtIStGjaRmNGJlD9Hmp3">draft</code> / <code data-page-node-id="cPGTTpmQqM5TyhRMC7oHGT">stable</code>（默认）/ <code data-page-node-id="WYMz80SlhKET0rpGllCnDt">deprecated</code></td><td data-page-node-id="daFKc7I6OO80mXlLfAztHX"><code data-page-node-id="NJje5IH4HdSNZPqIhIv3GT">status: draft</code></td></tr>
+<tr data-page-node-id="JHASVJSDZgFS7m4AbkOBLi"><td data-page-node-id="pmvGaSOCQy0AsPEI8vQjIZ"><code data-page-node-id="W8OtS1G6skI4JCKhB8zcQJ">stale_after</code></td><td data-page-node-id="g7GTgfcR187H52dQI5FRSZ">绝对时刻，<code data-page-node-id="mqSas9gJXGrJ5HEd9EnBGi">now ≥ stale_after</code> 即过期</td><td data-page-node-id="FnyAINw1v2ihXi9YNobl2E"><code data-page-node-id="isgJZkLYRTXbGlIpwDCRBf">2026-09-23T00:00:00Z</code></td></tr>
+</table>
+<div class="callout tip" data-page-node-id="vVnwSo8HcqFSSL6uDhJryk"><strong data-page-node-id="bSLn2cDF1WZmXugxYb3nSX">关键设计：OKF 记录客观信号，不记录主观评分。</strong>可信度由消费者从信号推断，同一信号在不同场景有不同权重。<code data-page-node-id="DtsAD4QDENASq8z49DHZbw">usage_count</code> 应读作「活跃度与趋势」，不是精确排名。</div>
+
+<p data-page-node-id="0JjM6gGY9zOG5drzGboaq0"><strong data-page-node-id="8qOzXoyQIY8aCtVrDcPeBf">信任层级</strong>由 <code data-page-node-id="CoJXrjUo9lB7SI7iyzWHtM">verified</code> 推导：无 <code data-page-node-id="FesxskWsYsdDelQH4wuyS8">verified</code> → <strong data-page-node-id="oJLfeWxZPBd1NAcL8lDN0Y">unverified</strong>；仅被 <code data-page-node-id="HHdVCZecWcv5as6IuR9voF">process:</code> / 工具确认 → <strong data-page-node-id="zIi5AUjj2dCH0dMzEPdRh0">machine-confirmed</strong>；被 <code data-page-node-id="cbNqSsMRjGgl0AD0ufHigL">human:&lt;id&gt;</code> 确认 → <strong data-page-node-id="6KHcFkheh84TUvHSaB0ur5">human-reviewed</strong>。Actor 命名约定：Agent 用 <code data-page-node-id="9jwT4zbRnZPwhNda5543yU">&lt;producer&gt;/&lt;version&gt;</code>、人用 <code data-page-node-id="hKO1R4gxldN0Hlg49wcH5Y">human:&lt;id&gt;</code>、自动流程用 <code data-page-node-id="yIODw61Uyw1HUCYQOdf9QD">process:&lt;id&gt;</code>——信任分级靠 <code data-page-node-id="wwcQKXIxJc46PJtTDWc7op">human:</code> 前缀判断，人工确认必须用这个前缀。</p>
+
+<p data-page-node-id="07GB0DoiZJpX4oOYxDHwr7"><strong data-page-node-id="vqGbx9gUASefIuONNphYMT">逐条断言溯源</strong>：正文论断用脚注关联 <code data-page-node-id="OHmVPdRwf591TVF5pDc2hq">sources[].id</code>。用稳定 <code data-page-node-id="amIWo5JFiiCLEHZ7MVVJ6E">id</code> 而非 <code data-page-node-id="2xEotLMbe1jpBZMb5GAv3E">sources[0]</code> 位置索引，因为 Agent 会不断重写文档，位置索引在重排后会静默错配：</p>
+<pre data-page-node-id="J9SSSDN0Y4Db1G4mcBXREi"><code data-page-node-id="cZ9YKXVpAoFuRJUbkDZj1e">The `events_` table is sharded daily as `events_YYYYMMDD`.[^ga4-schema]
+
+[^ga4-schema]: GA4 BigQuery Export schema</code></pre>
+
+<h3 data-page-node-id="zliaZ33dcqmrY48YQ4IVWY">2.4 链接与图状结构</h3>
+<p data-page-node-id="4tFs2b8kBHJfpn8pZdFrc8">概念之间用普通 Markdown 链接互指，构成超越目录树的<strong data-page-node-id="HE2SnFxVsnjTi0nDuHOEME">有向图</strong>。绝对形式（相对 bundle 根，移动文档时稳定）与相对形式均可；本仓库的 Agent 实际写<strong data-page-node-id="rdEvo1gfUg8mWUPFaQBI7t">文件相对路径</strong>（如 <code data-page-node-id="O3EIsUdURQ6dPJrQiK8agP">../references/metrics/daily_active_users.md</code>），保证 GitHub 直接渲染时链接可用。关系类型（joins-with、depends-on…）由周围散文表达，链接本身不携带类型。<strong data-page-node-id="uaBHxu8XCEqcyf2A2SuA3M">消费者必须容忍死链</strong>——死链可能只是「尚未写出的知识」。</p>
+<p data-page-node-id="3quA3qMDH9ctZV2zpHhi7Q"><code data-page-node-id="kooDbQSVbV6GEOxBxKiYqo">references/</code> 子目录是命名约定：把外部材料、运行说明、代码镜像为 bundle 内一等概念（如 <code data-page-node-id="Zq7p47e6Z7LOmzqI8RSAOX">references/attesters/revenue.py</code>）。</p>
+
+<h3 data-page-node-id="Ww7RxErlqaYGvTVDQEVjQq">2.5 Attested Computation（可证明计算）</h3>
+<p data-page-node-id="fEDATAmDpzwANuUXcQrVwf">v0.2 最有特色的类型：不只记录一个值<strong data-page-node-id="DuCkOHtOFepd8WK1d3lg0P">是什么</strong>，还记录<strong data-page-node-id="Y0uRoH79ISt4QOHE4TYYoe">官方认可的算它的方法</strong>，让消费者能机械地确认「Agent 跑的是被批准的计算，而不是即兴发挥」。</p>
+
+<div class="figure" data-page-node-id="AdMNqQF9bcZYdBrA7pCi2V">
+<svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,sans-serif" data-page-node-id="PQiAKylYhT19ASp3i7Tjfx">
+  <defs data-page-node-id="0Goab3njuc1RRFEZFv0Xeo">
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="BZ3QGTGs7N9gxuGBzthEcJ">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b6b6b" data-page-node-id="TVSOHIWfwDuJhbCOXuBlKw"/>
+    </marker>
+  </defs>
+  <!-- contract -->
+  <rect x="16" y="30" width="180" height="190" rx="10" fill="#e8f0fe" stroke="#0b57d0" stroke-width="1.5" data-page-node-id="U3SISnIiCZxQYegVKwO784"/>
+  <text x="106" y="56" text-anchor="middle" font-size="13" font-weight="700" fill="#0b57d0" data-page-node-id="PMUh4gm0MlWpvYdDMGRkjU">契约（frontmatter）</text>
+  <g font-size="11.5" fill="#1a1a1a" data-page-node-id="QNGtIkE5hQgooAdfYKlsKf">
+    <text x="32" y="86" data-page-node-id="usLS9LMnEEGhs5xkAC2eJe">runtime: bigquery</text>
+    <text x="32" y="108" data-page-node-id="JyUQ57ApnOOrZWEZJbzmEy">parameters: [{year}]</text>
+    <text x="32" y="130" data-page-node-id="xunIoVydcTnD8TrisvtZxw">executor + receipt</text>
+    <text x="32" y="152" data-page-node-id="4Gy9ErS9DltM6H7KPWrltr">attester: sql_equal.py</text>
+    <text x="32" y="174" data-page-node-id="PeGlendgubJv4dfutZ9nSs">verified / stale_after</text>
+    <text x="32" y="196" data-page-node-id="fj4NbSQBtC2FvBCzRoAUWH">sources（政策依据）</text>
+  </g>
+  <!-- computation -->
+  <rect x="246" y="52" width="180" height="86" rx="10" fill="#fafaf8" stroke="#c9c9c4" data-page-node-id="v6DEU0w3R7rC3TIs88q40U"/>
+  <text x="336" y="76" text-anchor="middle" font-size="12.5" font-weight="700" data-page-node-id="drE2AzeOgGUjMKmSAlwqyt"># Computation</text>
+  <text x="336" y="98" text-anchor="middle" font-size="11" fill="#6b6b6b" data-page-node-id="IJ77rij4ZEYCjYRFmF6eS9">官方认可的 SQL / 模型</text>
+  <text x="336" y="118" text-anchor="middle" font-size="11" fill="#6b6b6b" data-page-node-id="x9d1tz4cb8aYtCeQBeOCJ7">Agent 只准填参数</text>
+  <!-- runtime -->
+  <rect x="246" y="152" width="180" height="66" rx="10" fill="#fafaf8" stroke="#c9c9c4" data-page-node-id="bofcsydSqyVQTQwGVwPaBj"/>
+  <text x="336" y="178" text-anchor="middle" font-size="12.5" font-weight="700" data-page-node-id="rzrUsZeXOKFPnf5hoeJDnH">executor 运行</text>
+  <text x="336" y="200" text-anchor="middle" font-size="11" fill="#6b6b6b" data-page-node-id="Tt033cRGf7BgMa6yJk4TEy">返回 receipt：job_id,</text>
+  <text x="336" y="216" text-anchor="middle" font-size="11" fill="#6b6b6b" data-page-node-id="ZT9PGAyAwDMDHiUK5MUDgy">executed_sql, result</text>
+  <!-- verdict -->
+  <rect x="486" y="52" width="178" height="86" rx="10" fill="#e6f4ea" stroke="#1a7f37" stroke-width="1.5" data-page-node-id="IMfOkXwa088YpD2EOhQ8E3"/>
+  <text x="575" y="76" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7f37" data-page-node-id="kp8hq3fvlFYd2iI6qbGkiV">attester 校验</text>
+  <text x="575" y="98" text-anchor="middle" font-size="11" fill="#333" data-page-node-id="AvxG5w6ijJL8VmZRttkyyF">provenance：SQL 逐字一致</text>
+  <text x="575" y="118" text-anchor="middle" font-size="11" fill="#333" data-page-node-id="j2AeFY27NfbJziqPck4cyP">fidelity：值与 receipt 一致</text>
+  <rect x="486" y="152" width="178" height="66" rx="10" fill="#fffaf0" stroke="#9a6700" data-page-node-id="JSVANFuelvkWkvITuVpmRz"/>
+  <text x="575" y="178" text-anchor="middle" font-size="12.5" font-weight="700" fill="#9a6700" data-page-node-id="2U0SA0BkrEdsm6FOleeFBE">Gate：不过就拒展示</text>
+  <text x="575" y="200" text-anchor="middle" font-size="11" fill="#333" data-page-node-id="cUHJdzwFTTRG1iNW4Uyvt7">verdict 可见（如 job 日志链接）</text>
+  <!-- arrows -->
+  <line x1="196" y1="95" x2="242" y2="95" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="5ssaqzdIJgW77GaKjQhF6C"/>
+  <line x1="336" y1="138" x2="336" y2="148" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="h7GqOtNwmQmikpje2mjpgH"/>
+  <line x1="426" y1="185" x2="482" y2="140" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="YHiKNRokPrFInhLMziCfuk"/>
+  <line x1="575" y1="138" x2="575" y2="148" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr)" data-page-node-id="Koalj8V2iKylvnvCDhAuoR"/>
+</svg>
+<figcaption data-page-node-id="2nnIZX9EwSuqg9H8BahYAd">Attested Computation 消费流程：契约 → 参数化执行 → receipt → 确定性 attester → Gate。receipt 是运行时产物，不存进 bundle。</figcaption>
+</div>
+
+<p data-page-node-id="Nnel9VGKnSoXfTICd0Nbbm"><code data-page-node-id="1DfdmRJRUpSt7VbtwZ4xUL">verified</code> 与 attestation 的区别：前者确认<strong data-page-node-id="ppwksEpmTaloeic0NVhKEk">定义</strong>仍符合政策（文档级、慢、落盘）；后者确认<strong data-page-node-id="lT2GiL2F5pvPnpAR7CwTEn">某次运行</strong>按官方方式产生值（每次调用、运行时、不落盘）。定义过期也能干净通过 attestation；定义刚确认过也每次运行仍需 attestation——所以两者都要。</p>
+
+<h2 id="s3" data-page-node-id="8GFYEPNqY6Gcd7A9BCGRp7"><span class="no" data-page-node-id="ua9BAd59E0MN9sZPM94Adm">03</span>Reference Agent 工作原理</h2>
+<p class="lede" data-page-node-id="3iAbGKGieGyqvsDs2NKvW8">Agent 基于 <strong data-page-node-id="wW5MhIB1gWgCTgJxPDXN6z">Google ADK + Gemini</strong>（默认 <code data-page-node-id="vb7fJBMsVRjXM5s9pgd7LU">gemini-flash-latest</code>），分两个独立 pass 运行，最后统一重生成索引。</p>
+
+<div class="figure" data-page-node-id="eWfDStCjFqZEycJZUnIKa3">
+<svg viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,sans-serif" data-page-node-id="bw9AfUWtlbFybUedY6sO89">
+  <defs data-page-node-id="diLbKHUmjMNrxpqPbAOp0y">
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="2jyJhzm8DkBEQHfnSudyLZ">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b6b6b" data-page-node-id="FdYzCxLNdjlVXZbUNkQ9aZ"/>
+    </marker>
+  </defs>
+  <!-- inputs -->
+  <rect x="16" y="20" width="200" height="58" rx="10" fill="#fafaf8" stroke="#c9c9c4" data-page-node-id="ogVpqXeEa3kgYnHZUy3oiG"/>
+  <text x="116" y="44" text-anchor="middle" font-size="12.5" font-weight="700" data-page-node-id="LMkCi3Gbp5E1NwBPSqZlP3">BigQuery 数据集</text>
+  <text x="116" y="64" text-anchor="middle" font-size="11" fill="#6b6b6b" data-page-node-id="6NkwIj1VC1iVrruYTQofhr">元数据：Schema / 分区 / 类型</text>
+  <rect x="16" y="94" width="200" height="58" rx="10" fill="#fafaf8" stroke="#c9c9c4" data-page-node-id="KnbjsETmcK8fHOTkbfsdyb"/>
+  <text x="116" y="118" text-anchor="middle" font-size="12.5" font-weight="700" data-page-node-id="RxJtrgSItg6VBSRtN4iTTd">Seed URLs（seed 文件）</text>
+  <text x="116" y="138" text-anchor="middle" font-size="11" fill="#6b6b6b" data-page-node-id="SE1r6Ux4XumXVToegULv4q">官方文档 · 可选</text>
+  <!-- runner -->
+  <rect x="260" y="44" width="180" height="90" rx="10" fill="#e8f0fe" stroke="#0b57d0" stroke-width="1.5" data-page-node-id="BwSeaez8NfJjVsxkc3p6wY"/>
+  <text x="350" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="#0b57d0" data-page-node-id="qdhOOZIzo9Mx9BzhXCv7ND">ReferenceRunner</text>
+  <text x="350" y="98" text-anchor="middle" font-size="11" fill="#333" data-page-node-id="cfunhIBw9DeZEK8OoAstcd">Google ADK · Gemini</text>
+  <text x="350" y="116" text-anchor="middle" font-size="11" fill="#333" data-page-node-id="Qjpc6vu2JTgmyAZzcsSC2u">gemini-flash-latest</text>
+  <line x1="216" y1="49" x2="256" y2="70" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr2)" data-page-node-id="ivn4DA6GAQ3HDDLcsxvsgJ"/>
+  <line x1="216" y1="123" x2="256" y2="110" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr2)" data-page-node-id="Q6oFDOyWqpFN24yEqMer4Z"/>
+  <!-- pass 1 -->
+  <rect x="16" y="170" width="300" height="150" rx="10" fill="#ffffff" stroke="#0b57d0" stroke-width="1.5" data-page-node-id="gRkTBGtcXbeuiKEtVMVxIr"/>
+  <rect x="16" y="170" width="300" height="32" rx="10" fill="#0b57d0" data-page-node-id="G2Z9caS7Zo2WSxuZBsJeNb"/>
+  <rect x="16" y="186" width="300" height="16" fill="#0b57d0" data-page-node-id="2JTQ0SELZyCf8mMyuHtH9a"/>
+  <text x="166" y="191" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" data-page-node-id="OiiC694iMHCcESsN3AnUK4">Pass 1 · BQ pass（每概念一次 LLM 会话）</text>
+  <g font-size="11.5" fill="#1a1a1a" data-page-node-id="7tdTybAvF8V5VDDaVOejOe">
+    <text x="32" y="224" data-page-node-id="9SDUbn2f366Todx6WFAADz">① read_existing_doc → 有旧稿就精修</text>
+    <text x="32" y="246" data-page-node-id="pDavB8CCAo0ZZuWoHrG3Hc">② read_concept_raw → 真实 Schema</text>
+    <text x="32" y="268" data-page-node-id="gjp6BA4jZCMArBhtJHlzQL">③ sample_rows(3) → 元数据稀疏时采样</text>
+    <text x="32" y="290" data-page-node-id="qaQaCLZKFkp3Qo68BJvldg">④ list_concepts → 织入交叉链接</text>
+    <text x="32" y="312" data-page-node-id="IrHCulDa7syPYPPjGPGiXe">⑤ write_concept_doc → 恰好调用一次</text>
+  </g>
+  <!-- pass 2 -->
+  <rect x="356" y="170" width="308" height="150" rx="10" fill="#ffffff" stroke="#1a7f37" stroke-width="1.5" data-page-node-id="0pD7iG21T9l7lc55Z0tyQL"/>
+  <rect x="356" y="170" width="308" height="32" rx="10" fill="#1a7f37" data-page-node-id="xbrgbM4aUaZPOibbxwCRS3"/>
+  <rect x="356" y="186" width="308" height="16" fill="#1a7f37" data-page-node-id="4vrFvqBrBAjS6D6LSWCGV1"/>
+  <text x="510" y="191" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" data-page-node-id="5DVKXWsmBQ93qhmLJFWYuw">Pass 2 · Web pass（LLM 自己当爬虫）</text>
+  <g font-size="11.5" fill="#1a1a1a" data-page-node-id="cqH4Kq4osAWY2CCG13rATH">
+    <text x="372" y="224" data-page-node-id="IS93xDqh11F4Y8ZA1mu1px">从 seed 出发自主跟链；fetch_url 内置硬限制</text>
+    <text x="372" y="246" data-page-node-id="P5cF1Wptc3JyqAgTGoiG1U">每页三选一：(a) 增强已有概念</text>
+    <text x="372" y="268" data-page-node-id="AHTJDtOc0SGyLDQ8uNACe1">(b) 立 references/&lt;slug&gt;（四道门）</text>
+    <text x="372" y="290" data-page-node-id="bQNgYluNCcAHk7JLGWU6hA">(c) 跳过 · 指标/join 强制抽取 + 回链</text>
+    <text x="372" y="312" data-page-node-id="7982M3O8oENmPmtExLZsat">守卫：Schema/sources 只准增不准减</text>
+  </g>
+  <line x1="330" y1="89" x2="368" y2="166" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr2)" data-page-node-id="CTGzuN98SO30L0vstnw3zq"/>
+  <line x1="366" y1="89" x2="330" y2="166" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr2)" data-page-node-id="e9nIO6mbylPsRlNFiz97CM"/>
+  <!-- finalize -->
+  <rect x="200" y="352" width="280" height="52" rx="10" fill="#fafaf8" stroke="#c9c9c4" data-page-node-id="jNtDoTCkwGDnXXdXNC7yIH"/>
+  <text x="340" y="374" text-anchor="middle" font-size="12.5" font-weight="700" data-page-node-id="FNT4A1SkTjLB62tNCAUBWs">regenerate_indexes</text>
+  <text x="340" y="393" text-anchor="middle" font-size="11" fill="#6b6b6b" data-page-node-id="P39g3N4M0KW2SZ5DMpp4B2">自动重写各级 index.md（汇编 description）</text>
+  <line x1="166" y1="320" x2="300" y2="348" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr2)" data-page-node-id="Y9Tk0UWwXtmQgNaws8H7G3"/>
+  <line x1="510" y1="320" x2="380" y2="348" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arr2)" data-page-node-id="mld07CUmZe81wlXEz9TCGB"/>
+</svg>
+<figcaption data-page-node-id="euPviPYs5GNnUuJhR6U6ev">整体架构：两个 pass 各自独立运行（web pass 可整体跳过），最后统一重生成 index。</figcaption>
+</div>
+
+<h3 data-page-node-id="VvZeFtSN5yjAyJvHymHvz3">3.1 Web pass 的爬虫硬限制（工具内强制，Agent 无法逾越）</h3>
+<table data-page-node-id="E2IIqAI9fvQairhdwZ4rSO">
+<tr data-page-node-id="DvCFHgvx43rpJug2LUqxMb"><th data-page-node-id="39Si73p1v1MrvuhGPxy6LM">限制</th><th data-page-node-id="UoHXirXNHLzLq7VQrwulYP">默认</th><th data-page-node-id="CjTl3FQlQONHMXvok7ZUhs">说明</th></tr>
+<tr data-page-node-id="BcHUjA1IJVXIZ3UOf48Z2i"><td data-page-node-id="yrvpP57yVUgH15sCYgZIGm"><code data-page-node-id="GUoHeJitkHhQdcVYQgWj1r">--web-max-pages</code></td><td data-page-node-id="ziL9EvLVKqcxrRbBFREK3V">100</td><td data-page-node-id="xMFPARbgEBD6LVi4o9W2dI">页数硬上限</td></tr>
+<tr data-page-node-id="OhYH8GaHZHkiNWdJFStQ3C"><td data-page-node-id="vLToYExMSnEdhSBXuU9GGp"><code data-page-node-id="6HRa0E1jMs7EpiSHtQ9Hjm">--web-max-depth</code></td><td data-page-node-id="AIaJMbS8GuAT457AI4WiyT">2</td><td data-page-node-id="6BOdvLjILv40LWhwYWdpJZ">距任意 seed 的跳数上限</td></tr>
+<tr data-page-node-id="x9EIrqUAjqwTmIFudMDrt1"><td data-page-node-id="apIUcfnFHQZdGuwDqVdSmP">allowed-hosts</td><td data-page-node-id="6kPAh6oyF3mOEs2yJ0RN9C">仅 seed 主机名</td><td data-page-node-id="QlFu7P7pbsXvPqTIqJJFMh">同域过滤，<code data-page-node-id="koKD5K1OXVwwX3sg7DU8bn">--web-allowed-host</code> 可追加</td></tr>
+<tr data-page-node-id="QVAtk9ApGuoC63jKid2HUw"><td data-page-node-id="XNXDRylbpB3aGytaq0GrpU"><code data-page-node-id="ygJauNiB81eDPSIINAl5Qr">--web-allowed-path-prefix</code></td><td data-page-node-id="4YlPyuwCMoAEysDqAB7jqC">无限制</td><td data-page-node-id="t7T6R7W3Q6SGFYPdX3gL7E">路径前缀白名单</td></tr>
+<tr data-page-node-id="LWNNyEnmQVtpassl1P4Dcr"><td data-page-node-id="dm31flbdoCDLfFdjETVHe0"><code data-page-node-id="uOtmEbr2HeYwyJ4IlOcRLC">--web-denied-path-substring</code></td><td data-page-node-id="lFu1GatraZmwT95mDuvGbn">无</td><td data-page-node-id="dmUoKbZnFsCOjgV2hLC3ka">路径黑名单（如 <code data-page-node-id="X2A6wmSwtq7YpHEIaxnKrz">/login</code>）</td></tr>
+</table>
+<div class="callout tip" data-page-node-id="wSVA02tGXXAslEOAtCepNm"><strong data-page-node-id="NZQjBmQZIJobAE7jk5GDPA">安全设计：</strong>Agent 不能凭空造 URL——只有「被已抓取页面的链接返回过」的 URL 才有深度记录，直接输入图外 URL 会被 <code data-page-node-id="kE6fyxd9j6KnVCegVjXg0g">fetch_url</code> 拒绝。</div>
+
+<h3 data-page-node-id="NQHn2amA57jsHI51MUKSRK">3.2 立 reference 的四道门</h3>
+<p data-page-node-id="fY8iNjwJH4rjLtPTVOPF0L">页面要立为 <code data-page-node-id="sXDk2HR9jONCCs1V8o5yOE">references/&lt;slug&gt;</code> 新概念，须同时满足：①主题<strong data-page-node-id="FB4MavILTmzbJS9jumbIgt">可被主概念点名引用</strong>；②非 bundle 级元页面（slug 含 overview / quickstart / faq 等直接跳过）；③通过「引用测试」（能写出 <code data-page-node-id="E67QlxBZZ7BFFFjACHoCex">See the [X reference](…) for …</code>）；④复用测试（≥2 个概念会引用它）。</p>
+<p data-page-node-id="WnMTSUAOiNVLK91B8AFZbf"><strong data-page-node-id="AdHHl8AuokG1QOMaNRigxr">强制的结构化抽取</strong>则绕过四道门：页面上的聚合指标、维度、join 路径必须捕获——指标写 <code data-page-node-id="vgtFVt1Ka9Pd1klReiWVzz">references/metrics/&lt;slug&gt;.md</code>（拥有 SQL 公式），join 写 <code data-page-node-id="gLRCvZ6RwMaaULVuP2t47A">references/joins/&lt;a&gt;__&lt;b&gt;.md</code>（双下划线、按字母排序），且<strong data-page-node-id="WCzLcvNe2U5TUIqpYiFLp4">立了引用就必须回链</strong>：相关表的 <code data-page-node-id="605kccNG8uCDkGyZjocN6K"># Metrics</code> / <code data-page-node-id="jT81fvDiBI0C80P0wvYHnd"># Joins</code> 章节必须链接它，会话结束前校验无孤儿 reference。</p>
+
+<h3 data-page-node-id="tD1Lpq0hikwDdPgkMQLbDB">3.3 防幻觉守卫（代码级）</h3>
+<p data-page-node-id="QnW7pcfcPrr1ycKlCTg81D"><code data-page-node-id="VilGNuAgOXc0tmBwmKTXE2">tools/bundle_tools.py</code> 的 <code data-page-node-id="9DjoX1iYhfukd5fKDLb6Fn">write_concept_doc</code> 内置三层防御：缺 <code data-page-node-id="HNlpdC58MpTFuvAsBG2irc">type</code> 等必需键拒写；web pass 中新 <code data-page-node-id="7OLRdr601SoXtUDVKrTayw"># Schema</code> 丢失 BQ pass 从真实元数据填充的字段 → 拒写并列出缺失字段；新 <code data-page-node-id="TbMMsrFiboX54Uigm9LAln">sources</code> 条目数少于现存 → 拒写。提示词同时约定：「拒写不代表失败——读回旧文档、原样保留全部内容、只做增量，然后重试。」</p>
+
+<h2 id="s4" data-page-node-id="Nqd6dKNBe8eYmNrGGVUHK8"><span class="no" data-page-node-id="jj2yBVY2IVRbTJBLWaetqL">04</span>快速上手</h2>
+
+<div class="cols" data-page-node-id="uGJBrzgJcxgtsSWhtssObd">
+<div data-page-node-id="yiOGGMNxQnoAv1Z0rxUuCO">
+<h3 data-page-node-id="w1Y8BGSFLERheRZJ6kzvuN">安装</h3>
+<pre data-page-node-id="U0uQBQRUrbgWpTA04EkKLp"><code data-page-node-id="OHSmqMQO2N9DtgxeGsxLXI">python3.13 -m venv .venv
+.venv/bin/pip install \
+  --index-url https://pypi.org/simple/ \
+  -e .[dev]</code></pre>
+</div>
+<div data-page-node-id="1qEVPmIMFNIRGSdYSwz2U4">
+<h3 data-page-node-id="fDHFtCMkpRdlApl5K1LQQG">凭据</h3>
+<pre data-page-node-id="0VlDpMxuyz1ywgpJm9zHEj"><code data-page-node-id="ENkGgOE3QSCKHiNGREDCYR">gcloud auth application-default login
+gcloud config set project &lt;billing-project&gt;
+
+# Gemini 二选一：
+export GEMINI_API_KEY=...
+# 或 Vertex AI：
+export GOOGLE_GENAI_USE_VERTEXAI=true
+export GOOGLE_CLOUD_PROJECT=&lt;id&gt;
+export GOOGLE_CLOUD_LOCATION=&lt;region&gt;</code></pre>
+</div>
+</div>
+
+<h3 data-page-node-id="3HSqBi8iqlbGTEPHTZ509e">最小运行</h3>
+<pre data-page-node-id="nNlwQlMC1MnJDlxiR7q2yi"><code data-page-node-id="0iEgZYJnJmA2MoLhuBJpk9">.venv/bin/python -m reference_agent enrich \
+    --source bq \
+    --dataset &lt;project&gt;.&lt;dataset&gt; \
+    --web-seed-file &lt;path/to/seeds.txt&gt; \
+    --out ./bundles/&lt;name&gt;</code></pre>
+<p data-page-node-id="08agdXHXR2tobmRc1cJfkv">不提供 seed 或加 <code data-page-node-id="rwYxASkPD5cx4SRB92LH5v">--no-web</code> → 只跑 BQ pass。公共数据集可读，但查询按字节计费到你的项目。</p>
+
+<h2 id="s5" data-page-node-id="EnvscvlCnHAynXk2mDeGPr"><span class="no" data-page-node-id="jTplOEJHU99ComUgJmPln1">05</span>六大使用场景与示例</h2>
+
+<div class="scene" data-page-node-id="NSah3YMghfAXZcLuDVYnEf">
+<h3 data-page-node-id="dYiD2uhEKquAuVYVhTIIaH">场景 A · 为公共数据集建完整知识库（端到端）</h3>
+<p data-page-node-id="Ce1VCceqsBRZoCvMHegiqn">以 GA4 为例（<code data-page-node-id="VoBUyHQordy5RqxlPj5LLq">samples/ga4_merch_store/</code> 是完整配方）：</p>
+<pre data-page-node-id="Oj1J2rHV2fKKeq6Tnwj4hK"><code data-page-node-id="jlzVWToN4KQvMymBV6BI65">.venv/bin/python -m reference_agent enrich \
+    --source bq \
+    --dataset bigquery-public-data.ga4_obfuscated_sample_ecommerce \
+    --web-seed-file samples/ga4_merch_store/seeds.txt \
+    --out ./bundles/ga4</code></pre>
+<p data-page-node-id="CaOr76oXCAWqLJNSpNgi6I">seed 文件每行一个 URL（支持 <code data-page-node-id="dc4E5zRpjW0V57l8noV8jG">#</code> 注释），指向该数据集的官方文档。产出：每个 BQ 概念一个文档 + 从官方文档立出的 <code data-page-node-id="gHQmOhlh4hsTmXTmOIhY6Y">references/metrics/*</code>、增补的字段语义 + 各级自动 <code data-page-node-id="5cPrpegQV3JLhB0vPMGwt3">index.md</code>。三个官方样例覆盖三种形态：GA4（单张去规范化大表）、Stack Overflow（大量独立实体表）、Bitcoin（少数紧密关联的事实表，锻炼跨表外键的表达）。</p>
+</div>
+
+<div class="scene" data-page-node-id="IognGv2lWBhcCHDewc8UUf">
+<h3 data-page-node-id="utVxn2MvSweLEwZ5tG9h1M">场景 B · 内部数据集 / 不想爬网</h3>
+<pre data-page-node-id="3hTFUaUSrgd2gPaHzlUdw1"><code data-page-node-id="HwPBj7f7TLhgzSPAv77mci">.venv/bin/python -m reference_agent enrich \
+    --source bq --dataset my-company.sales \
+    --no-web --out ./bundles/sales</code></pre>
+<p data-page-node-id="AiKB6lUmWPBUBdAn1hr9Qf">只从 BigQuery 元数据生成（Schema、分区、字段类型），零网页依赖。适合内部敏感数据或不具备文档站的场景。</p>
+</div>
+
+<div class="scene" data-page-node-id="Fl5OX5n92C4jfRpToCHOwL">
+<h3 data-page-node-id="s4KAn2ANHJC1rSczEd2SO8">场景 C · 迭代单个概念（省钱省时的调试姿势）</h3>
+<pre data-page-node-id="Kr4LDNSaPxuFB5WLc3NrlE"><code data-page-node-id="ot7DY14SvcUqlGd53u1mC4">.venv/bin/python -m reference_agent enrich \
+    --source bq --dataset bigquery-public-data.crypto_bitcoin \
+    --concept tables/transactions \
+    --out ./bundles/crypto_bitcoin</code></pre>
+<p data-page-node-id="hzWMB0KlFZLVAL2vkWGECF"><code data-page-node-id="aAm17IDum5QjX9YDOmZ5D0">--concept</code> 可重复。<strong data-page-node-id="ZQgiBjyc1Fi4SBOXcde6Q1">注意：它依然会触发 web pass</strong>（除非同时 <code data-page-node-id="k6ELzFzr6FxDCxqMlkSZj6">--no-web</code>）。Bitcoin 的表动辄几百 GB，官方样例明确建议迭代期用 <code data-page-node-id="L3hx7fswS0mNH0e4rzdmxX">--concept</code> 做冒烟测试、控制 <code data-page-node-id="1EZGHrrZNDXRlPp06NyuLK">--web-max-pages</code>。</p>
+</div>
+
+<div class="scene" data-page-node-id="6vUHy3BlxqxAxTytalVtSs">
+<h3 data-page-node-id="MIX02f6dowaqr3CJkW0YTG">场景 D · 可视化与分享</h3>
+<pre data-page-node-id="DX2oaRLqpJuLG2QFwvdOzl"><code data-page-node-id="ysiqo4FNiN7WEgIMIxYf6s">.venv/bin/python -m reference_agent visualize --bundle ./bundles/crypto_bitcoin
+# 写出 bundles/crypto_bitcoin/viz.html
+
+# 自定义输出与标题：
+.venv/bin/python -m reference_agent visualize \
+    --bundle ./bundles/crypto_bitcoin --out /tmp/btc.html --name "Bitcoin OKF"</code></pre>
+<p data-page-node-id="9umQXm4VV0srnB8x4U7nsA">生成<strong data-page-node-id="xSYuNEnIjnFb4R4z3ou574">单文件自包含 HTML</strong>（bundle 解析后序列化为 JSON 内嵌；Cytoscape.js 画力导向图、marked 渲染 Markdown，均走 CDN）。功能：按类型着色的概念图谱、详情面板、反向链接（Cited by）、搜索框、类型过滤、5 种布局切换。直接发给同事、放静态服务器、或提交到 bundle 旁边。</p>
+</div>
+
+<div class="scene" data-page-node-id="xYJbsn8IRkBG4uTa5DN0jN">
+<h3 data-page-node-id="ftoiWFm5Vdj5aKNrha4nvb">场景 E · 发布到 GCP Knowledge Catalog</h3>
+<p data-page-node-id="dCZ8CLGiDyLOS1mDW1Iw0V"><code data-page-node-id="AzKaaKu8WbjqImf30kpzuw">connectors/gcp-knowledge-catalog.md</code> 提供与 Dataplex Knowledge Catalog 双向同步的完整教程：用 <code data-page-node-id="yp7xfgjCRe7guQ5ZszIetD">kcmd</code> CLI 把 bundle 推入 EntryGroup、拉回做 round-trip 校验。</p>
+<div class="callout warn" data-page-node-id="Ou5dZVUAe4yV0XrzLf8eW6"><strong data-page-node-id="BwUN3C4obSUWae4THcHZwd">重要限制：</strong>只携带 7 个 frontmatter 键 + 正文；只同步 <code data-page-node-id="5481SmlT5WlDAhe84fJcrZ">.md</code>；cross-links 原样存储不解析；<strong data-page-node-id="o4vYBng1jXCC55m1VU9tV0">以 git 为权威</strong>——合并后推送，不要反向 pull 进受 git 管理的 bundle。首拉会有一次 YAML 风格归一化 diff，提交一次后即字节稳定。</div>
+</div>
+
+<div class="scene" data-page-node-id="zt2VcLBMJ5kd8XlgxrCKPx">
+<h3 data-page-node-id="wA6j9LRwSwPLMwYoFDyawO">场景 F · 不用本仓库的 Agent，直接生产/消费 OKF</h3>
+<p data-page-node-id="5lRSG0HQblV5qiutJepru3">格式本身零工具依赖：<strong data-page-node-id="93YwlVWdirZoo47naYTsOw">手写</strong>——任何编辑器建 <code data-page-node-id="BOsYFiU4ZNHB8P67url5cQ">.md</code> 填 frontmatter，只带 <code data-page-node-id="DoDM26zTovRB5qZSRv1pSI">type</code> 也合规；<strong data-page-node-id="jimqVtsAfDxBLIyDpuZWbr">脚本生产</strong>——walk 数据库、导出 Dataplex / Unity Catalog / Collibra 目录后写 md；<strong data-page-node-id="AWY75oKrq1CONIEwTP8Yxd">消费</strong>——<code data-page-node-id="B6uaY71vvyPr5j0OFHNt9M">cat</code>、LLM 直接读进上下文、Obsidian/Notion/MkDocs/Hugo 原生浏览、自建搜索索引、仓库自带的 viz 图谱。</p>
+</div>
+
+<h2 id="s6" data-page-node-id="wb0L5majGgK7M4ElGbvlr9"><span class="no" data-page-node-id="hYwjaovcakIwFMcd36C0cY">06</span>CLI 完整参考</h2>
+
+<h3 data-page-node-id="F3xRWOzEE7cUzhTEa40tHH"><code data-page-node-id="SdkYA2S4SvISHyZ5RPH1lH">enrich</code></h3>
+<table data-page-node-id="rsbwH6QvPzg0Vm5AMZxrW1">
+<tr data-page-node-id="ntnfPmsUklTsPxy73hGYEB"><th data-page-node-id="pkO30z2B6Hu86kfjwk0Z0g">Flag</th><th data-page-node-id="4WBzgbCLVNG6YSjcoA2qcb">默认</th><th data-page-node-id="C3Lge6tYDEdiiNXyoG66HJ">说明</th></tr>
+<tr data-page-node-id="FFiDiCfEngvMEH3yf7tcna"><td data-page-node-id="qLaZ0RqJl2AS1YMOcxn3l5"><code data-page-node-id="AG6bxdeAtKDbEESBU9ploR">--source</code></td><td data-page-node-id="Rf5IRHlN3BnZIwd5AO5ltA">必填</td><td data-page-node-id="OJMBS4xJu3hDqx3Exgqso5">目前仅 <code data-page-node-id="SZaU0GOqBRtmBQCBYSO657">bq</code></td></tr>
+<tr data-page-node-id="EI7wWcrkJ8CIkQjt3k1tJZ"><td data-page-node-id="gaaMSaPHRSCGFB025YyQpD"><code data-page-node-id="Ge2lg5XDHc56OGhLoUgDrw">--dataset</code></td><td data-page-node-id="ikxqdLZnfddnvpicq0CYU4">必填（bq 时）</td><td data-page-node-id="SS1jYNEBD60HTALlw1OPB0"><code data-page-node-id="kTIcWGEelgrNgjsCYLgrFB">project.dataset</code></td></tr>
+<tr data-page-node-id="dDqzOpnGHTxUva97xukkYX"><td data-page-node-id="ky0RnmH5EhAs1wXAndFJtL"><code data-page-node-id="MXCCzgpgEsqvBumVZmQc1z">--out</code></td><td data-page-node-id="LIBrIhAGNuYbQzwWHapUQe">必填</td><td data-page-node-id="NE3CxSXvZQEyWis7cqfnlq">bundle 根目录（自动创建）</td></tr>
+<tr data-page-node-id="6WiHsWTS4zB77Dd7qdslzn"><td data-page-node-id="nC5gcuwLHmlaMAWl6R8emI"><code data-page-node-id="z7RTDZDx7sgtxuExOqAmmN">--billing-project</code></td><td data-page-node-id="MHgl9WWSprWOp8Hm6OQ1bg">ADC 默认</td><td data-page-node-id="O8APS3hDTBACHA6Mh0kIGl">查询计费项目</td></tr>
+<tr data-page-node-id="g1Qwu089v7nZ0FIgqTeBNy"><td data-page-node-id="2pizMCSg2tGdsWBwzLSOgi"><code data-page-node-id="moqdP5fvO8JOVgVhQIkaCx">--concept</code></td><td data-page-node-id="hXKaJ1nbmCCIlW3nWPWmjt">全部</td><td data-page-node-id="lp598ufCAGYFE0eLOrBnqn">只处理指定概念 id（如 <code data-page-node-id="kVVx2jvhEajFeYMLRftxOi">tables/events_</code>），可重复</td></tr>
+<tr data-page-node-id="l9yWJ2G8GgAfgD8dFJFV4X"><td data-page-node-id="oc4MasKLLLNbTTS5fFXLPL"><code data-page-node-id="P8HUgEylMr4MMCfCF7dKWq">--model</code></td><td data-page-node-id="rLLw3hOYfFuNVbBJPd53mr"><code data-page-node-id="90MCiJ5Ibuaq5xDJrC3V6Q">gemini-flash-latest</code></td><td data-page-node-id="5lyzKiKisdYP2lJpPI0qqh">Gemini 模型 id</td></tr>
+<tr data-page-node-id="oVbHcNwH6KPsAlF3RCLjWa"><td data-page-node-id="GlcBK0LAf152gPqbsRWNwc"><code data-page-node-id="t8v7OE3BeJhTsV4QXsvrEE">--web-seed</code> / <code data-page-node-id="BahEiapZngStOuHzSdYyvs">--web-seed-file</code></td><td data-page-node-id="AI1zHuVUsGyOeChJIH8OV2">无</td><td data-page-node-id="RYUx5qrNL7DtsEtr9lW1BC">seed URL / 每行一 URL 的文件，均可重复</td></tr>
+<tr data-page-node-id="DqmsCGagkslau6UCr0Xwk2"><td data-page-node-id="SW0VMx6G9VzOPcRjDcnCTA"><code data-page-node-id="39CXAcXbuudUyAqUA3BT8T">--web-max-pages</code> / <code data-page-node-id="G34zydviLG1hPgDoZIIL85">--web-max-depth</code></td><td data-page-node-id="Mx8VD00VjLVUQsFW7ipBpC">100 / 2</td><td data-page-node-id="UECMC6Motp9aZziwf2GfBT">爬取页数 / 跳数硬上限</td></tr>
+<tr data-page-node-id="VNkIwd4spoOpcyvRgJ0FkO"><td data-page-node-id="qZqCVGC2LvZB0E7uFYehrO"><code data-page-node-id="S1R7WWHngMPvhBrMYLK0yR">--web-allowed-host</code></td><td data-page-node-id="tiM1LEDEOngPOr6JOPDrgO">仅 seed 主机</td><td data-page-node-id="3BiC4HKbjzw1gXKkT26jZM">额外允许的主机名，可重复</td></tr>
+<tr data-page-node-id="sqjWN8WdvtcJg1Etjt9fZW"><td data-page-node-id="gzgvBYMNRovzJvpS0deHlG"><code data-page-node-id="AxkroWtICKeF8q73fhmWpN">--web-allowed-path-prefix</code> / <code data-page-node-id="v5GStbN1ns0QUTnG1mjY6b">--web-denied-path-substring</code></td><td data-page-node-id="HwJNXlUe77leA6MMhrm7yF">无 / 无</td><td data-page-node-id="94SpRS8lnukGI1QQymcLo4">路径白名单前缀 / 黑名单子串，可重复</td></tr>
+<tr data-page-node-id="8wvF9227UFTtuPynWHQBQu"><td data-page-node-id="vOCgxKSAHUyB640Z1ImYC6"><code data-page-node-id="3AG60sYBMoQhQdNT5NesHr">--no-web</code></td><td data-page-node-id="HOpOs6RazLHFe8e6KdnczK">—</td><td data-page-node-id="EB8BDqePFRACQiAcl4CHRi">完全跳过 web pass</td></tr>
+<tr data-page-node-id="kXSwBdVvhwxFRrV32D2Y6r"><td data-page-node-id="ePJgYjmuydc7jFCB2LZi2Y"><code data-page-node-id="ExO92njKywIoIZidC0Rvvx">-v</code></td><td data-page-node-id="INBr7NIHOIKNLDiOtSGy4z">—</td><td data-page-node-id="1cE52Dj7pkCwMUxfUTSk9B">详细日志（完整 JSON 工具调用）</td></tr>
+</table>
+
+<h3 data-page-node-id="1WQqKfuRT6YhbMgU2JKGZb"><code data-page-node-id="QRP1pSqp2bZgyYynKQrRPm">visualize</code></h3>
+<table data-page-node-id="JKXLgUVCbrXxEwjO5ebZM5">
+<tr data-page-node-id="iSQppMy9FcF7C2iRbAqe7O"><th data-page-node-id="4c9uGzAUC5T2NUaGYF1rVO">Flag</th><th data-page-node-id="KdtsvBCfn6GYY84078A5jt">默认</th><th data-page-node-id="JyboCMGskJtU5UID5BUX8c">说明</th></tr>
+<tr data-page-node-id="rRhrAoz71Pcx8BWxTdgvVZ"><td data-page-node-id="f4MQM38s7nCHCIkLh7JO69"><code data-page-node-id="GHi0YtTNhGVAFtyAnYACqa">--bundle</code></td><td data-page-node-id="SnYwJzhf2A3ROxifySgRct">必填</td><td data-page-node-id="r9p8wgokkF4j0chJMDi1LU">bundle 根目录</td></tr>
+<tr data-page-node-id="xc2gHewvJaRaJQDPLJUEvI"><td data-page-node-id="pHKHo47A2JyeJhBS1CQmU0"><code data-page-node-id="HiokBc67gLwYvY6Pw6zTGb">--out</code></td><td data-page-node-id="tNMQQUo5INWeeinSUga3WW"><code data-page-node-id="WArzyaiHEWTr8b6Cb5EGDh">&lt;bundle&gt;/viz.html</code></td><td data-page-node-id="9rbcLbaqCXqOCDA1TtU0Re">输出 HTML 路径</td></tr>
+<tr data-page-node-id="ZcwCEo65NdRGbhuIwCGEF2"><td data-page-node-id="a1fKYUB1GydhxcWHmX6e40"><code data-page-node-id="LUMdp7QofnpUeh67MHQQsa">--name</code></td><td data-page-node-id="BJAQZWuMnhSkuXGucttNci">目录名</td><td data-page-node-id="LSKjASUrjqq6v0JXDKt4S0">查看器标题栏显示名</td></tr>
+</table>
+
+<h2 id="s7" data-page-node-id="aJaE0XzOplklBndEXBEune"><span class="no" data-page-node-id="xtIp49eLOmqP3FA3KgwxF0">07</span>一份 OKF 文档的完整生命周期</h2>
+<ol data-page-node-id="xHzusjzPmkUBnyB7GUZ5s2">
+  <li data-page-node-id="gRAFW0mDq6A8O6KJjYm83G"><strong data-page-node-id="iE7cM3PtLyR5imP8WNe0fo">生产</strong>：BQ pass 用元数据写初稿（真实 Schema、SQL 模式、交叉链接）→ Web pass 用官方文档增补语义（指标公式、join 路径、枚举值），全程守卫防缩水</li>
+  <li data-page-node-id="4yHzD1IFU4uzeCXKOlN0ba"><strong data-page-node-id="OMHiUIycECmUx8OO9NxmuI">组织</strong>：<code data-page-node-id="xrL3BpleYw9ylfW0sICiCF">regenerate_indexes</code> 生成各级目录；可选手工维护 <code data-page-node-id="8U1x30WXOhc34TvYfDPei8">log.md</code></li>
+  <li data-page-node-id="DQtY2VpGVBZmwHE6pZWUde"><strong data-page-node-id="Q0nAmAlRK3Nj9Jbv5ZpxTc">审查</strong>：人用 <code data-page-node-id="5grXwSZGiu6A1CMvBCDyXs">human:&lt;id&gt;</code> 补 <code data-page-node-id="1DIjBo8H2NhAwNknsjs7be">verified</code>；信任层级从 unverified 升到 human-reviewed</li>
+  <li data-page-node-id="5wE34K2Xgofk8HdcjbN2aE"><strong data-page-node-id="H0MhLKAhdfu2gZp6q6UZkq">演进</strong>：内容变化时 <code data-page-node-id="Byxsx7wWTkTsPqE5phEu8o">generated.at</code> 刷新；过时定义设 <code data-page-node-id="bBvwUMyGDJQlwluAkL1yeH">status: deprecated</code>（保留供链接与历史）；有时效的知识设 <code data-page-node-id="LMSOG3LOoWeg5nxDlxUc8Y">stale_after</code></li>
+  <li data-page-node-id="UDUt9FNJBig1gW1cJTiVEK"><strong data-page-node-id="cnAKBEIXd8l4FfZAX5ZCpL">分发</strong>：git 推送 / tar 包 / 静态服务器 / <code data-page-node-id="CJ6OfUrnChfmzGa35Sv4IG">kcmd</code> 推到 Knowledge Catalog</li>
+  <li data-page-node-id="uhn4fMWW3ceaNZC2nIQ1Hc"><strong data-page-node-id="bEgjpkaB4xGYkttHaB4fAI">消费</strong>：LLM 逐层读 <code data-page-node-id="3A2BdJEGUsiXDXBxj8LM0Z">index.md</code> → 按需加载概念；或开 <code data-page-node-id="E5EjHY5xc3ktG3FRHL4RFj">viz.html</code> 交互探索；确定性代码扫 frontmatter 建索引；运行 Attested Computation 时由 attester 背书</li>
+</ol>
+
+<h2 id="s8" data-page-node-id="AFFDRAwkjtF7PfmKle6DOh"><span class="no" data-page-node-id="u5z9MRsbv9KuOvOVKPUmTu">08</span>测试与开发</h2>
+<pre data-page-node-id="9iUt3OxwCtNTlkn48I8kIr"><code data-page-node-id="wGKSliVhT5YnNnJNI2TUMn">.venv/bin/pytest    # 7 个测试文件：BQ source、bundle 工具、文档解析、
+                    # index、viewer、web fetcher、web 工具</code></pre>
+<table data-page-node-id="ENjdnuywNuiv3ej8kD984z">
+<tr data-page-node-id="tSZTsy4hN9URJ1Mdb712Jf"><th data-page-node-id="KwR5SDOWDjmA0KjULxRsRF">模块（src/reference_agent/）</th><th data-page-node-id="7yzM7VkEHrsYcet8pdRNlg">职责</th></tr>
+<tr data-page-node-id="DQDFnrsLbRT2zCYOnOpe74"><td data-page-node-id="OJ30yTczecrtGy4genPaB3"><code data-page-node-id="F1dvcppJ21ODGBG3HE2Nrc">cli.py</code></td><td data-page-node-id="5axoGTaDn3B1cL9YHszb4N">参数解析、seed 收集、组装 Runner</td></tr>
+<tr data-page-node-id="JJND8frjySJ4oIzELXs5R3"><td data-page-node-id="kfzqLIS5WKKE1dQOxLy0Z5"><code data-page-node-id="OMXefw5V4oEA5MtjoBmDGY">runner.py</code></td><td data-page-node-id="bbJuE6mC0eZDHB9BxxyxxD">两 pass 编排、事件日志（紧凑/详细两种格式）</td></tr>
+<tr data-page-node-id="CihfHnUrRHwXNKgmzAozGH"><td data-page-node-id="FmzoE0NNFEXzqVIaHcb4nH"><code data-page-node-id="srAzXuHyHo7URTbz1bgmGA">agent.py</code></td><td data-page-node-id="c2B6OcwzLDKR0p6OYq96Xj">构建 BQ agent 与 web agent（ADK Agent + FunctionTool）</td></tr>
+<tr data-page-node-id="j9ZsDETxaoEFJk3ontTjqy"><td data-page-node-id="7S8N2Az4so7uWTydJ3N16Q"><code data-page-node-id="wxl3qUXRGh1yhYDFOAgglz">prompts/</code></td><td data-page-node-id="g0YIeOjgV1Tqt9c3OgRUw3">两个 pass 的完整系统提示词</td></tr>
+<tr data-page-node-id="0wssWvGF22KB4wGbHibZfP"><td data-page-node-id="x0Fk7ofLKyeT0iik7DvtAE"><code data-page-node-id="AJKg2smHbHznhx0AUBMGEk">tools/bundle_tools.py</code></td><td data-page-node-id="v78mCTXqAW5NrP5Jl7Hq1N"><code data-page-node-id="6HwoNSisgcfpid74WGVB7X">read_existing_doc</code> / <code data-page-node-id="iExY3ZWXeVKJIlRLEF3351">write_concept_doc</code> + 守卫</td></tr>
+<tr data-page-node-id="ZYJMBRjzsylLk2tL80nUJ4"><td data-page-node-id="GAFxLbyuJQkPXRKyoAoacT"><code data-page-node-id="2kV6Rc0DysM8C2uMmYwlFQ">tools/source_tools.py</code></td><td data-page-node-id="O0OVHjgIxmM4x6hCrkBGRW">BQ 元数据读取、采样</td></tr>
+<tr data-page-node-id="O55Gx5UdIXXeCFK7QSve9n"><td data-page-node-id="amhG3cqpmkD7AKHlHTOgYB"><code data-page-node-id="0pU4jPr7IRG0051pDdE5WV">tools/web_tools.py</code></td><td data-page-node-id="EBuEAf37MHVc89ph8iCqli"><code data-page-node-id="aUaOjkChpppa6PUzvGOTIp">fetch_url</code>（预算/域/深度强制）</td></tr>
+<tr data-page-node-id="y2nNejyvigbmAuheqYZzaU"><td data-page-node-id="LAH68iw253uCl42WEgn8nn"><code data-page-node-id="z6FJYftSrHoa1heRAGGhyy">bundle/</code></td><td data-page-node-id="85fKWWDs3ysTbt5GnStA9H">OKF 文档解析、路径、index 重生成</td></tr>
+<tr data-page-node-id="II4nM4ymy02W5EL14liHAV"><td data-page-node-id="9Cn2bNBaMpPmt7aL2sPAqX"><code data-page-node-id="AmMSv6C1G78OcekYVwa5gi">viewer/</code></td><td data-page-node-id="WXDwUd5VlfdvTiWh4AapUA">单文件 viz.html 生成器</td></tr>
+</table>
+
+<h2 id="s9" data-page-node-id="jKtvxN2BzcxZDe9FQB3kvp"><span class="no" data-page-node-id="1YlEhhVaUhDWBl6FKGAqN1">09</span>设计决策与注意事项</h2>
+<ul data-page-node-id="j9PMk3IAyRCo2E8zpBR4gr">
+  <li data-page-node-id="BIaq7GE9UMlLHZOV22Rdse"><strong data-page-node-id="vcLqWXT4L4cJ9LKuyWgt6J">v0.1 → v0.2 两个刻意破坏性变更</strong>：<code data-page-node-id="iYo62JlQdVLZsOfb1OUKYy">timestamp</code> 被 <code data-page-node-id="Ex37whHAXrcGzFcA55FjYf">generated.at</code> 取代；正文 <code data-page-node-id="2E6xDLeQj2gaqgKyvFlwL7"># Citations</code> 列表被 frontmatter <code data-page-node-id="BDrU8l8j7YhIoN2wKk0iEI">sources</code> 取代。旧 bundle 可被 v0.2 消费者降级读取。</li>
+  <li data-page-node-id="2kBC04t3KoZLE4F0rsv8ju"><strong data-page-node-id="Hbb0xo57Cp6HIUcfe17xCJ">宽容是规范的一部分</strong>：<code data-page-node-id="H3cg2wMmDaXy0EOqtxGXRA">type</code> 值不注册；消费者必须容忍未知类型、未知键、缺任何可选家族、死链、缺 <code data-page-node-id="0UDK9xI38CuXJZpWeRxckq">index.md</code>——都不能拒绝 bundle。</li>
+  <li data-page-node-id="YbAttiBm5Fseo7TmhkpjXm"><strong data-page-node-id="pWggOSyVNxD8C1vYGpBujC">未来方向</strong>（规范 §12 列为 deferred）：receipt/verdict 完整运行时协议、attester ABI 与沙箱、attestation 缓存、语义层模板（Looker/dbt，届时比较从 SQL 等价转为模型+绑定等价）。</li>
+  <li data-page-node-id="EbKsAcN5F82vH9RdbFmtzq"><strong data-page-node-id="wBMeGn6oAb9Tz25mMkq2BZ">实践提示</strong>：<code data-page-node-id="cE3FrNdtPB4upLWH67gMqQ">description</code> 保持一句话——它会被原样进 <code data-page-node-id="MUXM2k7wGF1BnIO6OwFcGZ">index.md</code>；seed 文件选「权威文档页」而非营销页，Agent 会跟随 cookbook / metric / reference 类链接；大表数据集迭代期务必 <code data-page-node-id="b9tpWmCq7ePaswYZKya0pZ">--concept</code> + 适度 <code data-page-node-id="rMjiBRePjwAitex99dRfcj">--web-max-pages</code>。</li>
+</ul>
+
+</body>
+</html>
