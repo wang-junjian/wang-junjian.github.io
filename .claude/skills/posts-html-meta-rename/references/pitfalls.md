@@ -50,20 +50,60 @@
 
 早期目录里出现过 6 个片段文件（无 doctype/html/head，直接 `<title>` 开头）：`ai-native-design-pipeline`、`ai-native-sdlc-playbook-deep-dive`、`mattpocock-skills-workflow`、`openspec-workflow`、`sdd-tools-vs-ai-native-sdlc-stages`、`spec-kit-workflow`。`scan.py` 的 `is_fragment` 会自动识别，无需硬编码。
 
-## 7. 未被 git 跟踪的文件
+## 7. 未被 git 跟踪的文件（= 默认处理范围）
 
-`posts-html/` 下新放入的 HTML 通常**不在 git 索引里**。因此：
+`posts-html/` 下新放入的 HTML 通常**不在 git 索引里**，这正是技能的默认范围。因此：
 
 - 重命名用普通 `mv`（脚本 `os.rename`）即可，不要用 `git mv`；
 - 回滚靠 `/tmp` 备份，而非 `git checkout`；
 - 若要纳入版本管理，需主智能体另行 `git add`（本技能不代做提交）。
+
+判定实现：`git -C <dir> ls-files --others --exclude-standard --full-name`（尊重 `.gitignore`；staged/已提交不算）。非 git 仓库或命令失败时回退为全库并在 stderr 告警。
+
+### 7.1 「未追踪」窗口可能已被自动提交关闭（实测坑）
+
+**本仓库环境存在逐文件自动提交**：新文件放进来几分钟后就会以 `Create <文件名>.html` 的形式自动提交，状态从 `??` 变为已追踪。
+
+后果：用户说「我放了新 HTML」，但 `scan.py` 默认范围返回 `work_count = 0`，看上去「无事可做」。
+
+排查与处理：
+
+```bash
+# 找出最近几次提交里「新增」的 posts-html 文件
+git log --diff-filter=A --name-only --format=%h -10 -- posts-html
+
+# 用 --files 点名处理（范围仍受控）
+python3 scripts/scan.py --files posts-html/2026/xxx.html posts-html/2026/yyy.html --only-work
+python3 scripts/verify.py --files posts-html/2026/xxx.html posts-html/2026/yyy.html
+```
+
+> 不要因为「扫不到」就擅自切到 `--scope all`——那会把历史遗留项一并卷进来。
+
+### 7.2 macOS：/tmp 是 /private/tmp 的软链（脚本已内建修复）
+
+`git rev-parse --show-toplevel` 在 `/tmp/...` 路径下会返回 `/private/tmp/...`，若与 `os.path.abspath` 得到的 `/tmp/...` 直接比较，**所有未追踪文件都会被误判为「已追踪」**（表现为范围扫描恒为 0 个文件，且真实存在的未追踪新文件被列进「范围外」）。
+
+修复：`git_untracked()` 内对 root / repo / 每个文件路径统一走 `os.path.realpath`，比较与集合成员判断也一律用 realpath 值。隔离测试时若用 `/tmp` 造仓库，务必确认这一点。
 
 ## 8. 幂等性验证方法
 
 ```bash
 # 处理一遍后再跑一次，应零改动
 python3 scripts/scan.py --only-work     # 期望 work_count = 0
-python3 scripts/verify.py               # 期望「全部通过」
+python3 scripts/verify.py               # 期望「全部通过」（范围外提示不影响结果）
 python3 scripts/inject_meta.py --file <已处理文件> --json <同名 json> --rename
 # 期望：{"inserted": [], "content_changed": false, "renamed": null}
 ```
+
+## 9. 范围分区与退出码（verify.py）
+
+`verify.py` 输出分两区，**退出码只由范围内错误决定**：
+
+| 区域 | 含义 | 影响退出码 |
+| --- | --- | --- |
+| 范围内错误 | 本次范围（默认 = 未追踪新文件；或 `--files` / `--scope all`）内的问题 | 是（1） |
+| 范围外提示 | 已追踪文档的遗留问题（如旧 description 偏短、文件名日期 ≠ meta date） | 否 |
+
+例外：**basename 全库唯一性始终全库建索引**（与 scope 无关），所以「范围内新文件撞上范围外旧文件」也会被报出来，不会因为范围收窄而漏检。
+
+范围外提示应原样转述给用户，并说明「改动会变更 URL」等副作用，等用户明确要求后再用 `--scope all` / `--files` 处理。
