@@ -17,7 +17,7 @@ tags: [huawei-atlas, ascend-npu, mindie, vllm, qwen, modelscope, docker, 国产�
 
 ## 下载大模型
 ```shell
-cd /home/luruan/disk1/models
+cd /home/user/disk1/models
 ```
 
 ### 大型语言模型
@@ -61,7 +61,7 @@ git clone https://www.modelscope.cn/ZhipuAI/codegeex2-6b.git
 因为 MindIE 不支持 `bin` 格式的模型，需要将模型转换为 `safetensor` 格式，使用下面的命令进行转换：
 ```shell
 cd /home/disk1/models/deepseek-coder-6.7b-instruct/
-python /home/luruan/cann8.0.rc2/examples/convert/convert_weights.py \
+python /home/user/cann8.0.rc2/examples/convert/convert_weights.py \
     --model_path /home/disk1/models/deepseek-coder-6.7b-instruct/
 ```
 
@@ -168,7 +168,7 @@ sudo docker run --net=host --ipc=host -it \
     -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
     -v /usr/local/sbin:/usr/local/sbin:ro \
     -v /usr/local/dcmi:/usr/local/dcmi \
-    -v /home/luruan:/home/luruan \
+    -v /home/user:/home/user \
     -v /disk1/:/home/disk1 \
     mindie-service:1.0.RC2 /bin/bash
 ```
@@ -245,7 +245,7 @@ cd /usr/local/Ascend/mindie/latest/mindie-service/bin
             {
                 "modelInstanceType" : "Standard",
                 "modelName" : "qwen",
-                "modelWeightPath" : "/home/luruan/disk1/models/Qwen1.5-7B-Chat",
+                "modelWeightPath" : "/home/user/disk1/models/Qwen1.5-7B-Chat",
                 "worldSize" : 8,
                 "cpuMemSize" : 5,
                 "npuMemSize" : 8,

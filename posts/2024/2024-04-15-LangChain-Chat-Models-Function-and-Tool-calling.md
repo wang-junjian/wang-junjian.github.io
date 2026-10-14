@@ -232,7 +232,7 @@ class PowerSupplyStationEnum(str, Enum):
 
 
 class PowerSupplyStationLocation(BaseModel):
-    """电网供电所位置提取"""
+    """DW供电所位置提取"""
     province: ProvinceEnum = Field(description="省、直辖市、自治区")
     city: Optional[CityEnum] = Field(description="地级市")
     district: Optional[DistrictEnum] = Field(description="区县")

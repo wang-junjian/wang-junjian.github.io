@@ -68,7 +68,7 @@ class PowerSupplyStationEnum(str, Enum):
 
 
 class PowerSupplyStationLocation(BaseModel):
-    """电网供电所位置"""
+    """DW供电所位置"""
     province: ProvinceEnum = Field(description="省、直辖市、自治区")
     city: Optional[CityEnum] = Field(description="地级市")
     district: Optional[DistrictEnum] = Field(description="区县")
@@ -182,7 +182,7 @@ print(response)
     {
         'type': 'function',
         'function': {
-            'description': '电网供电所位置',
+            'description': 'DW供电所位置',
             'name': 'PowerSupplyStationLocation',
             'parameters': {
                 'properties': {
