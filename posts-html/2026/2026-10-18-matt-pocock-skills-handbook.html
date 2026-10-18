@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="拆解 mattpocock/skills 二十二个技能：三大心智模型、主链与 triage/wayfinder 匝道、竖切票、双轴评审与六相调试，附二十六张横切票平均二十次运行、七成返工的实证，二十二条坑与第一周路线。">
+<meta name="keywords" content="matt-pocock-skills, ai原生开发, agent工作流, 规格驱动开发, code-review, 调试方法论">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-18">
+<title>AI 原生软件开发实战指南 —— Matt Pocock Skills 技能集完全手册</title>
+<style>
+:root {
+  --ink: #1a1d21;
+  --ink-2: #4a4f57;
+  --ink-3: #8a919c;
+  --bg: #fafaf8;
+  --card: #ffffff;
+  --line: #e5e5e0;
+  --accent: #1a56db;
+  --accent-soft: #eaf1fd;
+  --warn: #b45309;
+  --warn-soft: #fef3e2;
+  --ok: #047857;
+  --ok-soft: #e8f5ef;
+  --danger: #b91c1c;
+  --danger-soft: #fdecec;
+  --mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  background: var(--bg); color: var(--ink); line-height: 1.75; font-size: 16px;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- 头部 ---------- */
+header.hero {
+  background: #111418; color: #f5f5f2; padding: 88px 0 64px;
+}
+.hero .kicker {
+  font-size: 13px; letter-spacing: .18em; color: #9fb4d8; text-transform: uppercase; margin-bottom: 18px;
+}
+.hero h1 { font-size: 38px; line-height: 1.3; font-weight: 700; margin-bottom: 18px; }
+.hero p.lede { font-size: 18px; color: #b8bec7; max-width: 640px; }
+.hero .meta { margin-top: 32px; font-size: 13px; color: #7c8590; }
+
+/* ---------- 目录 ---------- */
+nav.toc {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 28px 32px; margin: -40px auto 0; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,.05);
+}
+nav.toc h2 { font-size: 14px; color: var(--ink-3); letter-spacing: .1em; margin-bottom: 14px; font-weight: 600; }
+nav.toc ol { list-style: none; columns: 2; column-gap: 40px; }
+nav.toc li { margin-bottom: 8px; break-inside: avoid; }
+nav.toc a { color: var(--accent); text-decoration: none; font-size: 15px; }
+nav.toc a:hover { text-decoration: underline; }
+nav.toc .n { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-right: 8px; }
+@media (max-width: 640px) { nav.toc ol { columns: 1; } }
+
+/* ---------- 章节 ---------- */
+section.chapter { padding: 72px 0 8px; }
+.chapter-head { margin-bottom: 32px; }
+.chapter-head .no {
+  font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: .12em; margin-bottom: 8px; font-weight: 600;
+}
+.chapter-head h2 { font-size: 30px; line-height: 1.35; margin-bottom: 12px; }
+.chapter-head p.sub { font-size: 17px; color: var(--ink-2); max-width: 680px; }
+h3 { font-size: 21px; margin: 40px 0 14px; }
+h4 { font-size: 17px; margin: 24px 0 10px; }
+p { margin-bottom: 14px; }
+ul, ol { margin: 0 0 16px 22px; }
+li { margin-bottom: 8px; }
+strong { font-weight: 600; }
+code {
+  font-family: var(--mono); font-size: .87em; background: #f0f0ec;
+  padding: 2px 6px; border-radius: 5px; color: #374151;
+}
+.chain {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 22px 0;
+}
+.chain .node {
+  background: var(--card); border: 1px solid var(--line); border-radius: 9px;
+  padding: 8px 14px; font-family: var(--mono); font-size: 13px; font-weight: 600;
+}
+.chain .node small { display: block; font-family: -apple-system, "PingFang SC", sans-serif; font-weight: 400; font-size: 11px; color: var(--ink-3); }
+.chain .arr { color: var(--ink-3); }
+.chain .node.hl { background: #111418; color: #fff; border-color: #111418; }
+
+/* ---------- 卡片与提示 ---------- */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+@media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+}
+.card h4 { margin: 0 0 6px; font-size: 15px; }
+.card p { font-size: 14px; color: var(--ink-2); margin: 0; }
+.tip, .warn, .ok, .danger {
+  border-radius: 12px; padding: 16px 20px; margin: 20px 0; font-size: 15px;
+  border: 1px solid transparent;
+}
+.tip  { background: var(--accent-soft); border-color: #c7dbfa; }
+.tip::before  { content: "💡 经验之谈　"; font-weight: 700; color: var(--accent); }
+.warn { background: var(--warn-soft); border-color: #f3ddb8; }
+.warn::before { content: "⚠️ 常见坑　"; font-weight: 700; color: var(--warn); }
+.ok   { background: var(--ok-soft); border-color: #bfe6d5; }
+.ok::before   { content: "✅ 健康信号　"; font-weight: 700; color: var(--ok); }
+.danger { background: var(--danger-soft); border-color: #f5c6c6; }
+.danger::before { content: "🚫 铁律　"; font-weight: 700; color: var(--danger); }
+
+table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14.5px; background: var(--card); border-radius: 10px; overflow: hidden; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: #f3f3ee; font-weight: 600; font-size: 13px; color: var(--ink-2); }
+tr:last-child td { border-bottom: none; }
+
+blockquote {
+  border-left: 3px solid var(--accent); background: var(--accent-soft);
+  padding: 14px 20px; margin: 20px 0; border-radius: 0 10px 10px 0; color: var(--ink-2);
+}
+blockquote p { margin: 0; }
+
+footer {
+  margin-top: 80px; padding: 40px 0 60px; border-top: 1px solid var(--line);
+  font-size: 13.5px; color: var(--ink-3);
+}
+.lead-in { font-size: 17px; color: var(--ink-2); border-left: 3px solid var(--line); padding-left: 16px; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">AI-Native Software Development · 专家实战指南</div>
+    <h1>让 Agent 有章可循：<br>Matt Pocock Skills 技能集完全手册</h1>
+    <p class="lede">这不是一份"让 AI 帮你写代码"的教程。这是一套把<b style="color:#e8e6df">决策、词汇与流程</b>从聊天框里搬出来、落成文件的工作方法——写给已经用过 AI 写代码、却发现它时而惊艳时而失控的人。</p>
+    <div class="meta">基于 mattpocock/skills 22 篇技能文档整理 · 通俗讲解 + 专家经验 · 单文件离线可读</div>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><span class="n">01</span><a href="#ch1">先想清楚：AI 原生开发到底改变了什么</a></li>
+    <li><span class="n">02</span><a href="#ch2">全景地图：一条主链、两条匝道、一张底图</a></li>
+    <li><span class="n">03</span><a href="#ch3">动手之前：setup 与三件地基文件</a></li>
+    <li><span class="n">04</span><a href="#ch4">决策与词汇：一切的地基</a></li>
+    <li><span class="n">05</span><a href="#ch5">规划阶段：从想法到可执行的票</a></li>
+    <li><span class="n">06</span><a href="#ch6">构建阶段：一个人工位与一座工厂</a></li>
+    <li><span class="n">07</span><a href="#ch7">质量阶段：双轴评审与那句"门"的判定</a></li>
+    <li><span class="n">08</span><a href="#ch8">收尾与保养：PR、复盘、代码库健康</a></li>
+    <li><span class="n">09</span><a href="#ch9">外来工作：triage 匝道</a></li>
+    <li><span class="n">10</span><a href="#ch10">大工程：wayfinder 与战争迷雾</a></li>
+    <li><span class="n">11</span><a href="#ch11">独立工具箱：原型、调研、向导、交接</a></li>
+    <li><span class="n">12</span><a href="#ch12">出问题时：六相诊断法</a></li>
+    <li><span class="n">13</span><a href="#ch13">专家清单：二十二个坑与二十二条对策</a></li>
+    <li><span class="n">14</span><a href="#ch14">上手路线：第一周该怎么跑</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 01 ============ -->
+<section class="chapter" id="ch1">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 01</div>
+    <h2>先想清楚：AI 原生开发到底改变了什么</h2>
+    <p class="sub">为什么"会写 prompt"远远不够——这套技能集解决的真问题。</p>
+  </div>
+
+  <p class="lead-in">大多数人对 AI 编程的第一印象是：快。第二印象是：它怎么又自作主张了？</p>
+
+  <p>把"帮我实现这个登录功能"丢给一个全新的 agent，常见结局是它边写边重新设计你的方案——因为它手里只有一句话，没有被你否决过的三个备选、没有"我们必须兼容旧 token"这条约束、没有你项目里管"取消"叫 <code>void</code> 而不是 <code>cancel</code> 的惯例。它只能猜，而猜错了你也往往在三天后才发现。</p>
+
+  <p>Matt Pocock 的这套技能集（以下简称"这套技能"）给出的答案可以概括为一句话：</p>
+
+  <blockquote><p><strong>人负责决策，agent 负责执行，文件负责记忆。</strong>聊天框里什么都不会留下，文件才会。</p></blockquote>
+
+  <p>具体拆开来是三个心智模型，后面所有技能都是它们的推论：</p>
+
+  <div class="cards">
+    <div class="card">
+      <h4>① 上下文窗口是会耗尽的资源</h4>
+      <p>你在一场长对话里敲定的每个决定，都活在那个即将被清空的窗口里。所以要有 <code>spec</code>（规格）——一份"已做决策的记录"，让全新会话不用你重新解释就能接手。</p>
+    </div>
+    <div class="card">
+      <h4>② Agent 默认会发明流程</h4>
+      <p>指着一份纯词汇参考说"开始吧"，agent 会自己编一个流程——重探你已探明的代码、跑很久才问你。所以"参考"和"司机"必须分清：有些 skill 只给词，有些 skill 负责开车。</p>
+    </div>
+    <div class="card">
+      <h4>③ 工件（artifact）优先于对话</h4>
+      <p>问"这次改动安全吗"该得到的不是一段回答，而是一份带引用的文件；分工作该得到的不是聊天里的编号步骤，而是追踪器上一张带阻塞边的票。能留存的，才是交付物。</p>
+    </div>
+    <div class="card">
+      <h4>④ 模型不可全信，纪律兜底</h4>
+      <p>模型会忘记 session 中段的挣扎、会凭摘要描述别的 skill、会过度触发正式流程。每个 skill 的"验收清单"就是为此准备的：别信它说"完成了"，对照清单验。</p>
+    </div>
+  </div>
+
+  <div class="tip">这套技能里几乎每个 skill 都带一份「It's working if / 怎样算正常工作」清单。老手和新手的差距不在会不会背流程，而在<strong>跑完会不会逐项验</strong>。把这份指南第 13 章的清单贴在手边，比记住所有命令更有用。</div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section class="chapter" id="ch2">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 02</div>
+    <h2>全景地图：一条主链、两条匝道、一张底图</h2>
+    <p class="sub">二十二个 skill 不是二十二个工具，是一张分工图。先看懂图，再学工具。</p>
+  </div>
+
+  <p>整条技能体系是一张手绘的地图（ literally——路由 skill <code>ask-matt</code> 就是它的人肉查询版）。结构如下：</p>
+
+  <h3>主链：从想法到交付</h3>
+  <div class="chain">
+    <div class="node">grill-with-docs<small>访谈 + 落盘</small></div><span class="arr">→</span>
+    <div class="node">to-spec<small>收拢成规格</small></div><span class="arr">→</span>
+    <div class="node">to-tickets<small>切成竖切票</small></div><span class="arr">→</span>
+    <div class="node hl">implement<small>逐票构建</small></div><span class="arr">→</span>
+    <div class="node">code-review<small>双轴评审</small></div><span class="arr">→</span>
+    <div class="node">pr<small>写 PR 正文</small></div><span class="arr">→</span>
+    <div class="node">retro<small>复盘改环境</small></div>
+  </div>
+
+  <h3>两条匝道：外来工作与超大工程</h3>
+  <div class="cards">
+    <div class="card">
+      <h4>triage · 外来工作的入口</h4>
+      <p>别人发来的 bug 报文、功能请求、不请自来的 PR。与自己规划的工作是两条平行车道，终点相同：<code>ready-for-agent</code> + 一份 agent brief。</p>
+    </div>
+    <div class="card">
+      <h4>wayfinder · 超大工程的绘图仪</h4>
+      <p>装不进一个 session 的工程，先画"决策地图"（decision tickets），逐个清空后再汇回主链的 to-spec。</p>
+    </div>
+  </div>
+
+  <h3>一张底图：词汇层与方法论</h3>
+  <div class="cards">
+    <div class="card">
+      <h4>codebase-design + domain-modeling</h4>
+      <p>两个"参考"而非"司机"：前者给模块形状的七个词（module / interface / depth / seam / adapter / leverage / locality），后者给领域的词（GLOSSARY.md + ADR）。别的 skill 在"词"出问题时自动拉它们进来。</p>
+    </div>
+    <div class="card">
+      <h4>grilling + tdd + writing-for-agents</h4>
+      <p>三个"原语"：一轮一问的访谈法、测试先行循环、给 agent 写指令的文风。它们被多个 skill 复用，你也可以单独用。</p>
+    </div>
+  </div>
+
+  <h3>独立工具箱（随时取用，不在任何链上）</h3>
+  <table>
+    <tr><th>Skill</th><th>一句话职责</th><th>什么时候想起它</th></tr>
+    <tr><td><code>prototype</code></td><td>回答一个设计问题的用完即弃代码</td><td>聊不决的问题："这状态机感觉对吗？"</td></tr>
+    <tr><td><code>research</code></td><td>读一手来源，留一份带引用的 Markdown</td><td>决策在等一个外部事实</td></tr>
+    <tr><td><code>wizard</code></td><td>生成交互式 bash 脚本带人走完手动流程</td><td>撞上只有你能点的 dashboard</td></tr>
+    <tr><td><code>diagnosing-bugs</code></td><td>六相诊断：先造红循环，再谈理论</td><td>一眼解不了的硬 bug、间歇 flake</td></tr>
+    <tr><td><code>improve-codebase-architecture</code></td><td>周期性扫描"浅模块→深模块"的加深机会</td><td>每隔几天的结构保养</td></tr>
+    <tr><td><code>handoff</code></td><td>把工作搬进/搬出 session 的标准交接</td><td>session 太大、要换 harness、同事接手</td></tr>
+  </table>
+
+  <div class="warn"><code>ask-matt</code> 是这张地图的查询接口，描述你的处境，它告诉你下一步输入什么。但记住它有两个已知 bug：会报"技能未安装"（多数 skill 带 <code>disable-model-invocation</code>，harness 不把它们的说明注进上下文——<strong>它们装着的，直接输斜杠命令</strong>）；会凭一行摘要描述别的 skill（要它<strong>先打开那个 SKILL.md 再回答</strong>）。</div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="chapter" id="ch3">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 03</div>
+    <h2>动手之前：setup 与三件地基文件</h2>
+    <p class="sub">每个仓库跑一次。它是其余一切技能默认你做过的事。</p>
+  </div>
+
+  <p><code>setup-matt-pocock-skills</code> 回答三个问题：<strong>issue 住在哪、triage 标签叫什么、域文档放哪</strong>，答案写成 <code>docs/agents/</code> 下的 markdown。核心设计思想值得单独强调：</p>
+
+  <div class="tip">这套技能的 skill 文件在任何仓库都<strong>一模一样</strong>，仓库之间唯一的差异是 <code>docs/agents/</code> 里的几个 markdown。skill 运行时才读这些文件——所以换 tracker 永远改文件、<strong>永远不要改 skill 本身</strong>。这就是它不绑死 GitHub 的原因。</div>
+
+  <h3>它写什么</h3>
+  <ul>
+    <li><code>docs/agents/issue-tracker.md</code> — tracker 选择 + 工作流描述（含 wayfinder 的 "Wayfinding operations" 一节）</li>
+    <li><code>docs/agents/domain.md</code> — 域文档布局</li>
+    <li><code>docs/agents/triage-labels.md</code> — 仅当装了 triage</li>
+    <li><code>CLAUDE.md</code> 或 <code>AGENTS.md</code> 里的 <code>## Agent skills</code> 块 — 指向上面每个文件</li>
+  </ul>
+
+  <h3>tracker 四选一</h3>
+  <table>
+    <tr><th>选项</th><th>需求</th><th>备注</th></tr>
+    <tr><td>GitHub / GitLab</td><td><code>gh</code> / <code>glab</code> CLI</td><td>出厂模板，开箱即用</td></tr>
+    <tr><td>Local markdown</td><td>什么都不需要，连 remote 都不要</td><td>完整选项而非退路；与 GitHub 是<strong>替代品</strong>，别同时用</td></tr>
+    <tr><td>Other</td><td>你写一段工作流描述</td><td>Jira / Linear / Azure DevOps / Beads 全走这条路；已有 Jira-over-MCP 等实例</td></tr>
+  </table>
+
+  <div class="warn">setup <strong>不创建标签</strong>：<code>triage-labels.md</code> 是"哪个字符串对应哪个角色"的映射。tracker 已用规范名 = 恒等表，无需配置。但 wayfinder 的 <code>wayfinder:map</code> / <code>wayfinder:&lt;type&gt;</code> 标签它也不建——GitHub 上首次跑 wayfinder 前手工创建，否则 <code>gh issue create --label</code> 直接报错。</div>
+
+  <div class="warn">文件选择规则是"CLAUDE.md 存在就编辑它，否则 AGENTS.md"——它查<strong>文件存在</strong>，不查<strong>哪个 harness 在跑</strong>。repo 里留着 Claude Code 时代的 CLAUDE.md、而你在 Codex 上时，配置会写进一个没人读的文件。两个绕过：手工挪块，或让 AGENTS.md 作准、CLAUDE.md 只留一行指针。</div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="chapter" id="ch4">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 04</div>
+    <h2>决策与词汇：一切的地基</h2>
+    <p class="sub">grilling 家族、GLOSSARY.md 与 ADR——以及那两道最容易搞混的"写杠"。</p>
+  </div>
+
+  <p>所有 skill 的源头是一个共同原语：<code>grilling</code>——一轮问题、等你回答、再下一轮。套在它外面的三个 skill 各管一段：</p>
+
+  <div class="chain">
+    <div class="node hl">grill-with-docs<small>有仓库 · 单 session 规划</small></div>
+    <div class="node">grill-me<small>无仓库 · 纯访谈</small></div>
+    <div class="node">wayfinder<small>跨 session · 先绘图</small></div>
+    <div class="node">to-questionnaire<small>决策卡在别人的脑子里</small></div>
+  </div>
+
+  <p>grill-with-docs 与其他 grilling skill 的全部差别在于：<strong>它是 stateful 的</strong>——术语敲定那一刻就写进 <code>GLOSSARY.md</code>，决策过三道杠就落成一条 ADR。别的 grilling 把 session 留在你脑子里，它把文件留在磁盘上。</p>
+
+  <h3>两个工件，两道杠</h3>
+  <table>
+    <tr><th></th><th><code>GLOSSARY.md</code></th><th><code>docs/adr/</code></th></tr>
+    <tr><td>装什么</td><td>术语：一物是什么，一两句；弃用同义词列在 <code>_Avoid_</code> 下</td><td>一个决策：背景、选择、理由，一到三句</td></tr>
+    <tr><td>写杠</td><td>一个含糊词被敲定</td><td><strong>三道全过</strong>：难逆转 + 无背景会意外 + 真实取舍</td></tr>
+    <tr><td>时机</td><td>内联，敲定那一刻</td><td>被<strong>提议</strong>，不是默认</td></tr>
+    <tr><td>永不装</td><td>实现细节、spec、草稿、通用编程概念</td><td>本场每个选择的日记</td></tr>
+  </table>
+
+  <div class="danger">GLOSSARY.md 是<strong>词汇表，别的什么都不是</strong>。模型最常犯的错就是把它当"把你说的每句话都存下来"的许可——文件退化成一份运行中的 spec。你的词汇表膨胀到几百上千行时，病因几乎都是这个。解法是一句直接指令：「/grill-with-docs make my GLOSSARY.md more concise and remove any implementation details from it」。</div>
+
+  <h3>词汇层：codebase-design 的七个词</h3>
+  <p>这套体系给模块设计强制了一套语言：<strong>module</strong>（任何"接口+实现"的东西，与规模无关）、<strong>interface</strong>（签名 + 不变量 + 顺序约束 + 错误模式 + 配置 + 性能特征）、<strong>depth</strong>（每学一个单位接口能行使多少行为）、<strong>seam</strong>（不改此处就能改变行为的地方——Feathers 的术语）、<strong>adapter</strong>（接缝处满足接口的具体角色）、<strong>leverage</strong>（调用方得到什么）、<strong>locality</strong>（维护者得到什么）。</p>
+
+  <p>同时禁掉四个松散词：component、service、API、boundary。这条纪律看着形式主义，实际效果立竿见影——当讨论里有人说"这里该拆个组件"，你可以追问"拆出来的接口是什么、深度够吗、过没过删除测试"，争论就从口味变成可判定的题。</p>
+
+  <div class="warn">codebase-design 是<strong>参考，不是流程</strong>。指着它说"开始吧"，agent 会自己发明流程——有用户因此烧了 10 万 token 重设计了一堆没要求的东西。正确姿势：跑一个司机 skill（grill-with-docs、tdd、improve-codebase-architecture），让 codebase-design 当它们的词汇。同理 domain-modeling：grill-with-docs 说加载它时，模型经常只加载 grilling 把它跳过——判断法：<strong>一场 grilling 跑完 GLOSSARY.md 纹丝未变 = 它被跳过了</strong>，按名字把它和别的 skill 并列调用。</div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="chapter" id="ch5">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 05</div>
+    <h2>规划阶段：从想法到可执行的票</h2>
+    <p class="sub">to-spec 与 to-tickets——以及那个被违反最多的规则：竖切。</p>
+  </div>
+
+  <p>规划阶段只有两个 skill，但分工极清：</p>
+
+  <div class="cards">
+    <div class="card">
+      <h4>to-spec：只记录，不访谈</h4>
+      <p>到你调用它时，决策已经做完。它综合对话、代码库、GLOSSARY.md 和 ADR，用你自己的词汇写下"已决定的事"。如果 spec 里出现了你没说过的东西，那是缺陷。它存在的理由：上下文窗口会结束。</p>
+    </div>
+    <div class="card">
+      <h4>to-tickets：切成竖切票</h4>
+      <p>每张票是一发 <strong>tracer bullet</strong>：窄而完整、穿过 schema→API→UI→tests 每一层，落地即可独立演示，并声明阻塞边（哪些票必须先完成）。</p>
+    </div>
+  </div>
+
+  <h3>竖切 vs 横切：一套技能里最重要的图</h3>
+  <p>按层切（先全部 schema、再全部 API）是最直觉的分法，也是这套体系明确反对的分法：</p>
+  <ul>
+    <li><strong>横切</strong>：全部落地前没有任何可演示的东西；每张票的验收标准要伸手到别的票的工作里。真实案例：一个 26 张横切票的团队，每张票关闭平均需要 <strong>~20 次 agent 运行</strong>，其中约 <strong>75% 是返工</strong>——复盘把每一类失败都归因于切法而非实现。</li>
+    <li><strong>竖切（tracer bullet）</strong>：每张票落地即可演示、拥有它考核的一切；验证过的形状反过来锁定测试结构。</li>
+  </ul>
+
+  <div class="tip">to-tickets 发布前会<strong>把编号清单交回给你审</strong>（粒度对吗？阻塞边是真的吗？要不要合并或拆分？）——你批准之前什么都不会进追踪器。这里是被报告最多的问题的修理厂：三行改动切出十二张票（过度分解，要求合并即可）；票按层出来了（逐票问"做完我能演示什么"，答不上来的就是横切片）。</div>
+
+  <h3>两条容易忘的实操纪律</h3>
+  <div class="danger"><strong>/to-spec 和 /to-tickets 之间不要 clear 或 compact。</strong>超大 spec 超出 issue 能干净回传的上限，又没有本地副本，agent 反复取块永远到不了头。同一个上下文窗口里跑完两者。</div>
+  <p>另外，装得进<strong>一个上下文窗口</strong>的改动根本不该走 spec+tickets——grilling 之后直接 <code>/implement</code>。spec 只在跨 session 的工作上才值回成本。</p>
+</section>
+
+<!-- ============ 06 ============ -->
+<section class="chapter" id="ch6">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 06</div>
+    <h2>构建阶段：一个人工位与一座工厂</h2>
+    <p class="sub">implement 的"清空→一票→提交→再清空"，与 implement-spec 的并行编排。</p>
+  </div>
+
+  <h3>implement：信任上游的工匠</h3>
+  <p><code>implement</code> 的立身之本：<strong>绝不重新打开计划</strong>。没有访谈、没有澄清轮、没有"换个方案怎么样"——上游敲定什么是输入，它的全部工作是把输入变成一个 commit。这正是它和对全新 agent 说"build this"的区别：后者常边做边重新设计。</p>
+
+  <p>一次运行五步：<strong>①</strong> 读票/spec、定接缝 → <strong>②</strong> 在预先敲定的接缝上驱动 tdd（一个 red-green 切片接一个）→ <strong>③</strong> 频繁 typecheck、随跑单测 → <strong>④</strong> 收尾完整测试套件跑一遍 → <strong>⑤</strong> 跑 code-review，提交到当前分支。</p>
+
+  <div class="cards">
+    <div class="card">
+      <h4>节奏</h4>
+      <p>清空上下文 → 实现一张 → 提交 → 再清空。每张 tracer-bullet 票按单窗口裁好，前一张的上下文直接丢弃。</p>
+    </div>
+    <div class="card">
+      <h4>动手前唯一要检查的事</h4>
+      <p>它<strong>提交到你所在的分支</strong>——不建分支、不问。确认 HEAD 在你想要的分支上再开始。</p>
+    </div>
+    <div class="card">
+      <h4>它没有的步骤（都要你自己来）</h4>
+      <p>没有完成步骤：跑完停在 commit，<strong>不关 ticket、不勾验收框、不处理 review 发现</strong>。依赖链上这最要命——frontier 只看"阻塞者全关闭"，你不关票就没有任何票 visibly 解锁。</p>
+    </div>
+    <div class="card">
+      <h4>token 预算的直觉</h4>
+      <p>一张非平凡票烧过 10 万 token 是常态（探索 + 每接缝一轮 red-green + 全量测试 + review）。反复超限的票，解法在上游：拆票，不是调高档位。</p>
+    </div>
+  </div>
+
+  <h3>implement-spec：一座工厂</h3>
+  <p>整张 spec 一次落地时，调度者从"你"换成一个编排 agent：frontier 上的票全部同时开工，每个 implementer 在<strong>自己的 git worktree</strong> 里构建，汇入一条集成分支（fast-forward 合并），最后统一 code-review 并 resolve 票。</p>
+
+  <div class="warn">worktree 隔离了代码，<strong>隔离不了协调</strong>。三个最常踩的坑：① 两个并行 implementer 撞同一文件或给同一事物起不同名（解法：给两张 frontier 票之间补一条阻塞边，或在探索笔记里写死确切名称）；② GitHub 的 blocked-by 计数在 blocker 关闭前不下降，而票通常到 PR 合并才关闭——让编排者<strong>跟踪已并入集成分支的票</strong>来算 frontier；③ worktree 只有 git 跟踪的文件，读 gitignored fixtures / 本地库的测试会<strong>静默 skip</strong> 却报绿——这类票放主 checkout 跑。另外 review-fix 循环只该跑一次：code-review 对照整份 spec，只在全部落地后有意义；看到第二次宽泛 review 启动，告诉它"对已修发现跑 focused checks 然后停"。</div>
+
+  <h3>tdd：方法论而非司机</h3>
+  <p><code>tdd</code> 是 reference：装着"什么是好测试"的规则，跑 session 的是 implement（或你）。要点三则：接缝在任何代码存在<strong>之前</strong>商定（未确认的接缝上它拒绝写测试——没人商定，运行就静默退化成"直接写码"）；三个让套件一文不值的反模式要会认——<strong>实现耦合</strong>（重命名内部函数测试就红）、<strong>重言式</strong>（期望值用代码同款算法算出）、<strong>横切</strong>（一批测试先于任何实现落地）；mocks 只用于系统边界，<strong>绝不 mock 自己的模块</strong>。</p>
+
+  <div class="tip">触发短语 "red-green-refactor" 仍有效，但 refactor 阶段已在 2026 年 6 月移除——重构归 code-review。诚实的边界：没有指令能让 agent 100% 依从循环，有模型坦白"我读了规则，只是默认回了老习惯"。某个切片必须严格依从时，<strong>盯着运行</strong>，别指望 skill 自己 enforcement。</div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section class="chapter" id="ch7">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 07</div>
+    <h2>质量阶段：双轴评审与那句"门"的判定</h2>
+    <p class="sub">code-review 拒绝混合裁决，pr 把直觉变成可反驳的明示。</p>
+  </div>
+
+  <h3>code-review：两个互不见面的评审员</h3>
+  <p>它评审 <code>&lt;fixed-point&gt;...HEAD</code> 的 diff，分两条轴、各由一个独立 sub-agent 跑：<strong>Standards</strong>（构建得对不对——仓库自己的规范 + Fowler 十二 smell 基线）与 <strong>Spec</strong>（构建的是不是对的东西——来源 issue/spec 逐条对照）。报告分两个块，<strong>每轴各给一个最差项，拒绝评总冠军</strong>。</p>
+
+  <div class="danger">混合裁决会让通过的一轴遮住失败的一轴：代码遵守每条规范但实现了错误的东西 → Standards 过、Spec 挂；照单全收但破坏仓库约定 → 反之。任何"总体打分"都丢了这条信息。另：它在 <strong>无 spec 时明说 "no spec available"，绝不从代码反推需求</strong>。</div>
+
+  <div class="warn">sub-agent 产出是<strong>假设不是证据</strong>——skill 不逐条回文件复核，发现可能引错位置或夸大影响。每条发现必须带引用（规则 / smell+代码段 / spec 行），动手前先读引用。另两条：它审的是三点式 diff，<strong>不含未提交改动</strong>——先 commit 再审；在写代码的同一 session 里跑它等于"带斜杠命令的确认偏误"，独立做法是自己从干净 session 调用。</div>
+
+  <h3>pr：三段的正文，一段是主导想法</h3>
+  <p><code>pr</code> 只塑形正文、不开 PR：① <strong>Summary</strong>——是图不是段落，从六种视图（伪代码、调用树、组件树、文件树、Mermaid、shaped diff）里挑<strong>最小</strong>的讲清形状；② <strong>Evidence</strong>——前后对照（截图，或"曾失败现通过"的确切测试），"tests are green" 是主张不是证据；③ <strong>Merge Danger</strong>——一扇门（one-way：破坏性迁移、对外发出、公开 API 移除）还是两扇门，加爆炸半径。</p>
+
+  <div class="tip">door call 的意义是<strong>让它可反驳</strong>。写改动的人就是打分的人，所以 agent 说"两扇门、小爆炸半径"时要最警惕——"回滚 commit 不会撤回已发出的那批邮件"。两个动作：让 agent 手里有 ticket/spec 而不只是 diff；把你们仓库"永远视为单行道"的清单写进 agent 文档。</div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section class="chapter" id="ch8">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 08</div>
+    <h2>收尾与保养：PR、复盘、代码库健康</h2>
+    <p class="sub">retro 修环境不修代码；improve-codebase-architecture 修代码不修环境。</p>
+  </div>
+
+  <h3>retro：把"这次教会的东西"固化下来</h3>
+  <p>在"比本该更难"的 session 末尾跑 <code>retro</code>。它<strong>一行代码都不修</strong>——被 ship 的 bug、找了一万年的文件、reviewer 漏掉的规则，它一个都不直接修；它问"仓库里什么允许了它发生"，然后提议检查、指针或标准。<strong>只提议，你选中之前什么都不变</strong>（human-in-the-loop 是刻意的：判断什么值得变成永久检查需要人）。</p>
+
+  <div class="cards">
+    <div class="card">
+      <h4>核心路由规则</h4>
+      <p>机械性错误 → <strong>会失败的 check</strong>（lint/类型/测试/CI）；真正的判断题 → <strong>CODING_STANDARDS.md</strong> 里给 reviewer 的规则。标准属于 reviewer 不属于 implementer——实现 agent 上下文压力最大，reviewer 只拿 diff、有余地应用新规则。</p>
+    </div>
+    <div class="card">
+      <h4>它反驳最多的事</h4>
+      <p>"agent 反复犯错就往 CLAUDE.md 加一行"——通常不要。CLAUDE.md 每行都加载进每个 session、稀释其他内容、随代码过期。AGENTS.md / CLAUDE.md 只留导航指针。</p>
+    </div>
+    <div class="card">
+      <h4>最弱点</h4>
+      <p>它<strong>不审计自己上月提议的规则</strong>——只能删 prose，看不见某条 lint 是否已 fire 太频。在好代码上频繁 fire 的规则 = 该删的信号，修剪归你。</p>
+    </div>
+    <div class="card">
+      <h4>健康指标</h4>
+      <p>AGENTS.md 随时间<strong>变短</strong>而不是变长；重复的错误变成会失败的 check；每个候选能指回 session 里的一个具体时刻（指不回去的 = 编的，丢弃）。</p>
+    </div>
+  </div>
+
+  <h3>improve-codebase-architecture：周期保养的调查</h3>
+  <p>每隔几天跑一次，扫描"浅模块可变深"的地方。两道过滤器挡掉泛泛建议：<strong>删除测试</strong>（删掉这个模块，复杂度退到更小接口后 = 配得一张卡；摊回调用方 = 不配）+ <strong>聚焦常变路径</strong>（没人碰的代码里的加深永远不回本）。产出是一份 HTML 报告 + 你选中一张后的 grilling——<strong>产出决策，不是 diff</strong>，重构走正常构建流。</p>
+
+  <div class="tip">调用时想被问"怎么 prompt"：<strong>指着下一步要构建的东西问「how can we make this change easy?」</strong>——这是对它最有效的一句。报告几乎从不说"没问题"（它存在就是为了产出发现）：若一场全是 <code>Speculative</code> 徽章，那就是它"没找到"的表达方式。</div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section class="chapter" id="ch9">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 09</div>
+    <h2>外来工作：triage 匝道</h2>
+    <p class="sub">与自己规划的工作是两条平行车道，终点相同。</p>
+  </div>
+
+  <p><code>triage</code> 只处理<strong>你没创建过</strong>的 issue：原始 bug 报文、外来功能请求、不请自来的外部 PR。它给类别（bug / enhancement）和五个状态（<code>needs-triage</code> / <code>needs-info</code> / <code>ready-for-agent</code> / <code>ready-for-human</code> / <code>wontfix</code>）的建议，<strong>附带理由并停下来等你</strong>。</p>
+
+  <div class="cards">
+    <div class="card">
+      <h4>brief 之前先验证</h4>
+      <p>bug 按 reporter 步骤复现；PR checkout 跑测试。三结果：Confirmed / 复现失败 / 细节不够（最强的 needs-info 信号）。同趟车跑冗余查 + 前次拒绝查，命中即 wontfix。</p>
+    </div>
+    <div class="card">
+      <h4>agent brief 是合同</h4>
+      <p>写类型、签名、行为契约，<strong>永不写文件路径和行号</strong>（票可能躺几周，代码一直在变）。brief 贴上后，原报文只是上下文。</p>
+    </div>
+    <div class="card">
+      <h4>.out-of-scope/ 知识库</h4>
+      <p>每概念一文件（非每 issue 一文件），按概念匹配——"night theme" 命中 dark-mode.md。被拒请求回来时，它引用旧理由问你还要不要坚持，而不是从头再吵。</p>
+    </div>
+    <div class="card">
+      <h4>最常撞的坑</h4>
+      <p>to-tickets 的票已自动贴 ready-for-agent，<strong>别再 triage</strong>；bulk 跑 backlog 时它只读正文不读评论——明说"每个 issue 必须读评论"。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="chapter" id="ch10">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 10</div>
+    <h2>大工程：wayfinder 与战争迷雾</h2>
+    <p class="sub">装不进一个 session 的工程，先绘图，再逐个清空。</p>
+  </div>
+
+  <p><code>wayfinder</code> 的触发条件极窄：<strong>工程大于一个 session，且路线看不清</strong>。分界是 session 数而非项目大小——一场对话装得下就 grilling，装不下才 wayfinder。greenfield 不是前提：legacy 的雾常是"这里已经什么是真的"。</p>
+
+  <h3>地图的四节</h3>
+  <ul>
+    <li><strong>Destination</strong>——地图尽头的样子，<strong>在任一 ticket 存在之前</strong>命名（指整个地图的尽头，不是本场 session 的）。</li>
+    <li><strong>Decisions so far</strong>——每个已关闭 ticket 一行 + 链接。地图是<strong>索引不是仓库</strong>：决策只活在它的 ticket 里。</li>
+    <li><strong>Not yet specified（战争迷雾）</strong>——看得出要来、还说不清的问题。雾 vs ticket 的测试：<strong>你现在能否精确陈述这个问句</strong>（不是能否回答）。resolve 一张票，它前方的雾散开，能说清的毕业成新 ticket；Out of scope 永不毕业。</li>
+    <li><strong>Frontier（前线）</strong>——开放的、无阻塞的、未被认领的票；认领 = assign 给自己。</li>
+  </ul>
+
+  <h3>四种决策 ticket</h3>
+  <table>
+    <tr><th>类型</th><th>模式</th><th>何时用</th><th>由谁 resolve</th></tr>
+    <tr><td><code>grilling</code></td><td>HITL</td><td>默认；能聊透的问题</td><td>grilling + domain-modeling，新 session</td></tr>
+    <tr><td><code>prototype</code></td><td>HITL</td><td>"该长什么样/该怎么表现"，聊不决</td><td>prototype，ticket 链接工件</td></tr>
+    <tr><td><code>research</code></td><td>AFK</td><td>外部事实挡着决策</td><td>research subagent 并行跑（唯一可并行的类型）</td></tr>
+    <tr><td><code>task</code></td><td>Either</td><td>无决策可定但手工劳动挡路</td><td>agent 能独立做就独立做</td></tr>
+  </table>
+
+  <div class="warn">「plan, don't do」的默认可以在地图 Notes 里被覆盖——<strong>但 Notes 是被约束的 agent 自己写的</strong>。有用户看着 agent 把 "this map carries execution" 写进自己的 Notes，后续 session 读成许可在 live server 上开建。修复前：读一切非你绘图的地图的 Notes；任何看着像构建切片的 <code>wayfinder:task</code> 当作类型标错。</div>
+
+  <div class="tip">27 张票走到第 13 张时其余全作废的瀑布陷阱，两味药：地图绑<strong>有界的 destination</strong>（一个定义好的 epic，而非"实现 V1"）；<strong>激进 prototype</strong> ——廉价具体工件在实现依赖不确定性之前暴露它。wayfinder 是 "prototypemaxxing"，不是 "planmaxxing"。清空后的地图必须过 <code>/to-spec #&lt;map_issue&gt;</code> 收拢——直接灌进 implement 会丢掉链接细节。</div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="chapter" id="ch11">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 11</div>
+    <h2>独立工具箱：原型、调研、向导、交接</h2>
+    <p class="sub">四个"随时取用"的 standalone，各自守着一条清晰的边界。</p>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h4>prototype · 回答一个问题的用完即弃代码</h4>
+      <p>"用完即弃"约束的是<strong>写法</strong>（无测试/无错误处理/无抽象），不是销毁承诺。两个幸存者：<strong>答案</strong>进 main，<strong>原型</strong>进 <code>prototype/&lt;name&gt;</code> 分支永不合并、issue 留指针——下一个接手的人要的是能重跑的证据，不是 prose 摘要。逻辑分支产出单个可双击分享的 HTML；视觉分支产出结构互不同意的多变体。开始加固它 = 停止原型。</p>
+    </div>
+    <div class="card">
+      <h4>research · 读一手来源的委托</h4>
+      <p>答案不落进对话，落进一份每条声明带链接的文件。分界线是<strong>保质期</strong>：事实（短寿）→ research；决策（耐久）→ grilling / grill-with-docs。你唯一的质检是引用——随机跟两三条，落在"关于它的转述"而非"它本身" = 这场失败。委托后盯后台任务列表：<strong>恰好一个</strong>新任务，多出来的分身停掉（已知嵌套 bug，单任务烧过 45 万 token）。</p>
+    </div>
+    <div class="card">
+      <h4>wizard · 自动化的尽头</h4>
+      <p>agent 撞上只有你能点的 dashboard 时，它写脚本、你本机跑——key 盲输直写 <code>.env</code>/<code>gh secret</code>，<strong>不过模型上下文</strong>。先确认有序 stage 清单再生成；没有后退键，答错 Ctrl-C 重跑（已存的值回显为默认值）。比写进 README 强：某一步失效时它<strong>显眼地失败</strong>，而不是安静地错。</p>
+    </div>
+    <div class="card">
+      <h4>handoff · 标准交接</h4>
+      <p>session 太大、换 harness、同事接手、mid-phase 分支线——该搬的不是聊天记录而是"决策 + 指针"。它是把上下文当一等公民搬运的纪律，进图出图两侧都靠它。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="chapter" id="ch12">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 12</div>
+    <h2>出问题时：六相诊断法</h2>
+    <p class="sub">diagnosing-bugs 的铁律：没有红的循环，就没有理论。</p>
+  </div>
+
+  <p>给定 bug report，coding agent 的默认动作是读代码然后猜。<code>diagnosing-bugs</code> 把这条路堵死：<strong>在一条"紧的反馈环"存在之前，不允许形成任何理论</strong>。紧 = 秒级、确定性、断言的是你那个确切症状、agent 无需你就能跑。</p>
+
+  <div class="chain">
+    <div class="node">① 造环<small>十种下环方式，最难的一相</small></div><span class="arr">→</span>
+    <div class="node">② 最小化<small>每个元素都说得出必要性</small></div><span class="arr">→</span>
+    <div class="node">③ 假设排序<small>3–5 个，带可证伪预测，先给你看</small></div><span class="arr">→</span>
+    <div class="node">④ 插桩<small>一变量一探针，[DEBUG-xxxx] 标签</small></div><span class="arr">→</span>
+    <div class="node">⑤ 修复+回归测试<small>接缝太浅就明说</small></div><span class="arr">→</span>
+    <div class="node hl">⑥ 收尾<small>环绿、插桩清零、commit 点名对的假设</small></div>
+  </div>
+
+  <div class="tip">间歇性 bug 的目标不是干净复现，是<strong>更高的复现率</strong>——循环触发、并行、加压、注入 sleep。造不出环时它必须停下来向你要环境权限，<strong>绝不"先提假设再说"</strong>。最快的健康检查：理论先于红色输出出现 = skill 没在跑。</div>
+
+  <div class="warn">两个现实提醒：它现在没有专门 skill 时 agent 也能解 merge 冲突，但"先回溯两边意图（commit/PR/issue）、兼容处都保留、提交前跑检查"仍是好纪律，值得在 prompt 里手动要求；复现输出可能含凭证——<strong>脱敏是你自己的活</strong>，尤其在外发之前。</div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="chapter" id="ch13">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 13</div>
+    <h2>专家清单：二十二个坑与二十二条对策</h2>
+    <p class="sub">按"会在什么时候咬你"排序。建议打印贴墙。</p>
+  </div>
+
+  <table>
+    <tr><th>什么时候</th><th>坑</th><th>对策</th></tr>
+    <tr><td>路由时</td><td>ask-matt 报"技能未安装"</td><td>多数是 disable-model-invocation 假象。装着的——直接输斜杠命令，或查 <code>.claude-plugin/plugin.json</code></td></tr>
+    <tr><td>路由时</td><td>ask-matt 凭摘要描述别的 skill</td><td>要它先打开那个 SKILL.md 再回答；router 与 SKILL.md 冲突时 SKILL.md 是对的</td></tr>
+    <tr><td>访谈中</td><td>grilling 跑完 GLOSSARY.md 没变</td><td>domain-modeling 被跳过了。按名字把它与别的 skill 并列调用</td></tr>
+    <tr><td>访谈中</td><td>codebase-design 被指成任务，烧 10 万 token</td><td>它是参考不是司机。跑司机 skill，把它当词汇</td></tr>
+    <tr><td>写词汇表</td><td>GLOSSARY.md 膨胀成运行中的 spec</td><td>「make my GLOSSARY.md more concise and remove any implementation details」；先精简再谈拆分</td></tr>
+    <tr><td>拆票</td><td>按层横切</td><td>逐票问"做完我能演示什么"；验收标准伸手到别的票 = 横切信号</td></tr>
+    <tr><td>拆票</td><td>三行改动十二张票</td><td>quiz 环节要求合并；装得进单窗口根本不该拆</td></tr>
+    <tr><td>spec → tickets</td><td>spec 读取一直截断</td><td>两者之间不要 clear / compact，同一窗口跑完</td></tr>
+    <tr><td>构建</td><td>implement 提交到了错误的分支</td><td>它不建分支不问。动手前确认 HEAD——这是唯一要人工检查的事</td></tr>
+    <tr><td>构建</td><td>跑完票还开着，frontier 饿死</td><td>它没有完成步骤。票和验收框自己关——依赖链上最要命</td></tr>
+    <tr><td>并行构建</td><td>两 implementer 撞文件 / 起名分歧</td><td>补一条阻塞边让它们串行，或探索笔记写死确切名称</td></tr>
+    <tr><td>并行构建</td><td>blocked 票在 blocker 已合并后仍不开工</td><td>GitHub 计数只在关闭时下降；让编排者跟踪并入集成分支的票</td></tr>
+    <tr><td>评审</td><td>审自己刚写的代码 = 确认偏误</td><td>干净 session 里对 fixed point 跑 code-review</td></tr>
+    <tr><td>评审</td><td>code-review 看不到改动</td><td>三点式 diff 不含未提交内容。先 commit，再审</td></tr>
+    <tr><td>评审</td><td>每次跑都发现新问题，永不收敛</td><td>当线索清单用：只处理有规则引用的，然后停</td></tr>
+    <tr><td>写 PR</td><td>door call 是自评</td><td>对"两扇门、小爆炸半径"最警惕；给 agent ticket/spec，立仓库级单行道清单</td></tr>
+    <tr><td>复盘</td><td>agent 反复犯同一个错就想加 CLAUDE.md</td><td>机械错误 → 会失败的 check；判断题 → reviewer 的 standards。CLAUDE.md 只留导航指针</td></tr>
+    <tr><td>复盘</td><td>lint 规则无限堆积</td><td>retro 不审计旧规则。好代码上频繁 fire = 删</td></tr>
+    <tr><td>外来报文</td><td>给 to-tickets 的票又跑 triage</td><td>发布时已 ready-for-agent。两车道只在终点汇合</td></tr>
+    <tr><td>外来报文</td><td>bulk 跑 backlog 漏看评论</td><td>明说"每个 issue 必须读评论"——廉价列表只回正文</td></tr>
+    <tr><td>大工程</td><td>agent 在地图里写生产代码</td><td>读非你绘图的地图的 Notes；可疑的 wayfinder:task 当类型标错</td></tr>
+    <tr><td>调试</td><td>理论先于复现</td><td>理论先到 = skill 没在跑；造不出环就停下来要权限</td></tr>
+  </table>
+
+  <div class="ok">贯穿全部技能的统一验收姿势：每个 skill 都有「怎样算正常工作」清单。把它当<strong>飞行前检查单</strong>用——跑完逐项验，比记住任何命令都更能保住产出质量。</div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="chapter" id="ch14">
+  <div class="chapter-head">
+    <div class="no">CHAPTER 14</div>
+    <h2>上手路线：第一周该怎么跑</h2>
+    <p class="sub">从 setup 到第一个 retro 的最短路径。</p>
+  </div>
+
+  <ol>
+    <li><strong>第 0 天 · 打地基</strong>：在一个真实仓库跑 <code>/setup-matt-pocock-skills</code>。确认 <code>docs/agents/</code> 三个文件和 CLAUDE.md/AGENTS.md 的指针块都在——以及它们在你的 harness 实际读的那个文件里。</li>
+    <li><strong>第 1 天 · 小改动热身</strong>：挑一个装得进单窗口的小特性。<code>/grill-with-docs</code> 敲定 → 直接 <code>/implement</code>。故意跳过 spec 和 tickets，体会「什么尺寸才值得拆」的那条分界线。</li>
+    <li><strong>第 2–3 天 · 完整主链</strong>：一个稍大的特性走全链：grill-with-docs → to-spec → to-tickets → implement（逐票、票间清空）→ code-review → pr。重点体验两件事：to-spec/to-tickets 之间不清上下文；implement 跑完自己关票。</li>
+    <li><strong>第 4 天 · 复盘与保养</strong>：对昨天那场跑 <code>/retro</code>，挑一条候选落地（比如一个会失败的 check）。顺手跑一次 <code>/improve-codebase-architecture</code>，感受"调查不改码"的节奏。</li>
+    <li><strong>第 5 天 · 独立工具</strong>：各抽十分钟试 prototype（一个聊不决的小问题）、research（一个等事实的决策）、wizard（一个要配的服务）。</li>
+    <li><strong>持续 · 形成反射</strong>：困惑时 <code>/ask-matt</code>；外来报文进 triage；硬 bug 进 diagnosing-bugs；每隔几天 wayfinder/improve-codebase-architecture 做保养。每周把第 13 章清单过一遍。</li>
+  </ol>
+
+  <blockquote><p>最后一条经验：这套技能集最强的部分不是任何单个 skill，而是它背后的态度——<strong>把"AI 写代码"当成一门需要流程、词汇和纪律的工程学科</strong>。工具会过时（resolving-merge-conflicts 已因模型进步归档），纪律不会。</p></blockquote>
+</section>
+
+<footer>
+  <div class="wrap" style="padding:0">
+    <p>本指南基于 mattpocock/skills 技能集文档整理编写，供学习参考。文中命令、issue 编号与版本信息以官方仓库为准。</p>
+    <p style="margin-top:8px">结构：定位 → 选型 → 核心判断 → 陷阱与验收 · 与技能集本身同一套骨架。</p>
+  </div>
+</footer>
+</div>
+
+</body>
+</html>
