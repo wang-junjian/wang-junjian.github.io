@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="逆向 WorkBuddy 的 app.asar 与 CLI 内核，拆解专家包从 plugin.json、Agent MD 到会话激活与可 spawn 智能体的全链路，揭开「正文即系统提示词、团队没有编排引擎」的实情，附七步流水线、12 个坑与排错手册。">
+<meta name="keywords" content="workbuddy, expert-plugin, agent-markdown, plugin-runtime, reverse-engineering, subagent">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-20">
+<title>Buddy 应用（专家包）技术内幕 — 从创建到运行时全链路拆解</title>
+<style>
+:root{
+  --bg:#FFFFFF;
+  --bg-soft:#F7F8FA;
+  --bg-code:#F5F6F8;
+  --bg-tint:#F0F2FF;
+  --ink:#14161A;
+  --ink-2:#3D434E;
+  --ink-3:#5E666E;
+  --ink-4:#636A72;
+  --line:#E3E6EB;
+  --line-2:#D3D8DF;
+  --accent:#3B4EDE;
+  --accent-soft:#EEF1FE;
+  --accent-line:#C3CBF7;
+  --green:#0F7B4A;
+  --green-soft:#E8F5EE;
+  --amber:#9A6206;
+  --amber-soft:#FDF3E2;
+  --red:#B3261E;
+  --red-soft:#FCECEA;
+  --cyan:#0B6E7A;
+  --cyan-soft:#E5F4F5;
+  --purple:#6B3FA0;
+  --purple-soft:#F3EDFA;
+  --sp:8px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:"Inter","-apple-system",BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;
+  font-feature-settings:"tnum" 1,"cv11" 1;
+}
+/* ============ Layout ============ */
+.wrap{display:grid;grid-template-columns:264px minmax(0,1fr);gap:0;max-width:1560px;margin:0 auto;align-items:start}
+/* ============ Sidebar ============ */
+.side{
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  border-right:1px solid var(--line);background:var(--bg-soft);
+  padding:calc(var(--sp)*4) calc(var(--sp)*2.5) calc(var(--sp)*8);
+}
+.side-brand{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);font-weight:600;margin-bottom:calc(var(--sp)*3)}
+.side-title{font-size:17px;font-weight:680;line-height:1.4;letter-spacing:-.01em;margin-bottom:calc(var(--sp)*.5)}
+.side-sub{font-size:12.5px;color:var(--ink-3);line-height:1.6;margin-bottom:calc(var(--sp)*3)}
+.side-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:calc(var(--sp)*4)}
+.chip{font-size:11px;padding:3px 8px;border-radius:5px;background:#fff;border:1px solid var(--line-2);color:var(--ink-3);font-family:var(--mono)}
+.chip.a{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent)}
+.toc{list-style:none;border-top:1px solid var(--line);padding-top:calc(var(--sp)*2)}
+.toc-group{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);font-weight:640;margin:calc(var(--sp)*2.5) 0 calc(var(--sp)*1)}
+.toc a{
+  display:block;font-size:13px;color:var(--ink-2);text-decoration:none;
+  padding:5px 10px;border-radius:6px;line-height:1.5;border-left:2px solid transparent;
+}
+.toc a:hover{background:#fff;color:var(--accent);border-left-color:var(--accent)}
+.toc a.sub{padding-left:20px;font-size:12.5px;color:var(--ink-3)}
+/* ============ Main ============ */
+.main{padding:calc(var(--sp)*7) calc(var(--sp)*7) calc(var(--sp)*14);min-width:0}
+@media(max-width:1100px){.wrap{grid-template-columns:1fr}.side{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}.main{padding:calc(var(--sp)*4) calc(var(--sp)*3)}}
+/* ============ Typography ============ */
+h1{font-size:38px;font-weight:700;letter-spacing:-.025em;line-height:1.2;margin-bottom:calc(var(--sp)*2)}
+h2{font-size:26px;font-weight:680;letter-spacing:-.018em;line-height:1.3;margin:calc(var(--sp)*8) 0 calc(var(--sp)*2);padding-top:calc(var(--sp)*1);scroll-margin-top:calc(var(--sp)*3)}
+h3{font-size:19px;font-weight:650;letter-spacing:-.012em;line-height:1.4;margin:calc(var(--sp)*5) 0 calc(var(--sp)*1.5);scroll-margin-top:calc(var(--sp)*3)}
+h4{font-size:15.5px;font-weight:650;margin:calc(var(--sp)*3) 0 calc(var(--sp)*1);color:var(--ink)}
+p{margin-bottom:calc(var(--sp)*2);color:var(--ink-2)}
+.lead{font-size:17.5px;line-height:1.7;color:var(--ink-2);margin-bottom:calc(var(--sp)*3)}
+strong{color:var(--ink);font-weight:640}
+em{font-style:normal;background:linear-gradient(transparent 62%,#FFE9A8 62%);padding:0 1px}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-line)}
+a:hover{border-bottom-color:var(--accent)}
+ul,ol{margin:0 0 calc(var(--sp)*2.5) calc(var(--sp)*3);color:var(--ink-2)}
+li{margin-bottom:6px}
+li::marker{color:var(--ink-4)}
+code{font-family:var(--mono);font-size:.855em;background:var(--bg-code);border:1px solid var(--line);padding:1.5px 5px;border-radius:4px;color:#1F2430;overflow-wrap:break-word;word-break:break-word}
+hr{border:none;border-top:1px solid var(--line);margin:calc(var(--sp)*6) 0}
+/* ============ Numbered section head ============ */
+.sec{display:flex;gap:calc(var(--sp)*2);align-items:baseline;margin-bottom:calc(var(--sp)*1)}
+.sec-num{
+  font-family:var(--mono);font-size:12px;font-weight:600;color:#fff;background:var(--ink);
+  min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:5px;flex-shrink:0;position:relative;top:-2px;
+}
+h2 .sec-num{background:var(--accent)}
+/* ============ Blocks ============ */
+pre{
+  background:var(--bg-code);border:1px solid var(--line);border-radius:8px;
+  padding:calc(var(--sp)*2) calc(var(--sp)*2.5);overflow-x:auto;margin:0 0 calc(var(--sp)*2.5);
+  font-family:var(--mono);font-size:12.7px;line-height:1.68;color:#242A36;
+}
+pre code{background:none;border:none;padding:0;font-size:inherit;white-space:pre;color:inherit}
+.code-head{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-3);
+  background:#EFF1F4;border:1px solid var(--line);border-bottom:none;
+  border-radius:8px 8px 0 0;padding:6px 12px;
+}
+.code-head + pre{border-radius:0 0 8px 8px;margin-top:0}
+.path{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.hl{background:#FDF3E2;border-radius:3px;padding:0 3px}
+table{width:100%;border-collapse:collapse;margin:0 0 calc(var(--sp)*3);font-size:13.6px}
+th{
+  text-align:left;font-weight:640;color:var(--ink);background:var(--bg-soft);
+  border-bottom:1.5px solid var(--line-2);padding:9px 12px;font-size:12.5px;
+  letter-spacing:.02em;white-space:nowrap;
+}
+td{border-bottom:1px solid var(--line);padding:9px 12px;color:var(--ink-2);vertical-align:top;line-height:1.6}
+td code,th code{font-size:11.8px}
+tbody tr:hover{background:#FCFCFD}
+.tbl-wrap{overflow-x:auto;margin-bottom:calc(var(--sp)*3)}
+/* ============ Callouts ============ */
+.note{
+  border:1px solid var(--line-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;
+  background:var(--bg-soft);padding:calc(var(--sp)*2) calc(var(--sp)*2.5);margin-bottom:calc(var(--sp)*2.5);
+  font-size:14px;color:var(--ink-2);
+}
+.note .t{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:660;color:var(--accent);margin-bottom:6px}
+.note.w{border-left-color:var(--amber)}.note.w .t{color:var(--amber)}
+.note.d{border-left-color:var(--red)}.note.d .t{color:var(--red)}
+.note.g{border-left-color:var(--green)}.note.g .t{color:var(--green)}
+.note p:last-child{margin-bottom:0}
+/* ============ Pipeline / diagram ============ */
+.pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:0 0 calc(var(--sp)*3)}
+.pipe .node{
+  flex:1 1 128px;min-width:118px;background:#fff;border:1px solid var(--line-2);
+  border-radius:8px;padding:calc(var(--sp)*1.5);position:relative;text-align:left;
+}
+.pipe .node .k{font-family:var(--mono);font-size:10.5px;color:var(--ink-4);display:block;margin-bottom:3px}
+.pipe .node .n{font-size:13px;font-weight:640;color:var(--ink);line-height:1.35;display:block}
+.pipe .node .d{font-size:11.5px;color:var(--ink-3);line-height:1.5;display:block;margin-top:4px}
+.pipe .arw{flex:0 0 26px;display:flex;align-items:center;justify-content:center;color:var(--ink-4);font-size:15px;font-family:var(--mono)}
+.layer{
+  border:1px solid var(--line-2);border-radius:10px;padding:calc(var(--sp)*2.5);
+  margin-bottom:calc(var(--sp)*2);background:#fff;
+}
+.layer-h{display:flex;align-items:center;gap:10px;margin-bottom:calc(var(--sp)*2)}
+.layer-tag{
+  font-family:var(--mono);font-size:11px;font-weight:640;padding:3px 9px;border-radius:5px;
+  background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line);white-space:nowrap;
+}
+.layer-tag.o{background:var(--green-soft);color:var(--green);border-color:#BFE0CD}
+.layer-tag.p{background:var(--purple-soft);color:var(--purple);border-color:#DCCDF0}
+.layer-tag.c{background:var(--cyan-soft);color:var(--cyan);border-color:#C2E4E7}
+.layer-tag.a{background:var(--amber-soft);color:var(--amber);border-color:#F0DDBB}
+.layer-role{font-size:12.5px;color:var(--ink-3)}
+/* ============ Tree ============ */
+.tree{
+  font-family:var(--mono);font-size:12.6px;line-height:1.85;background:var(--bg-code);
+  border:1px solid var(--line);border-radius:8px;padding:calc(var(--sp)*2) calc(var(--sp)*2.5);
+  margin-bottom:calc(var(--sp)*2.5);overflow-x:auto;color:#242A36;white-space:pre;
+}
+.tree .c{color:var(--ink-4)}
+.tree .dir{color:var(--accent);font-weight:600}
+.tree .req{color:var(--red)}
+.tree .opt{color:var(--ink-4)}
+/* ============ Cards ============ */
+.grid{display:grid;gap:calc(var(--sp)*2);margin-bottom:calc(var(--sp)*3)}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1000px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:1fr}}
+@media(max-width:680px){.g2,.g3,.g4{grid-template-columns:minmax(0,1fr)}.kv{grid-template-columns:minmax(0,1fr)}.kv .k{border-bottom:none;padding-bottom:2px}.kv > div:nth-last-child(-n+2){border-bottom:1px solid var(--line)}.kv > div:last-child{border-bottom:none}}
+.card{border:1px solid var(--line-2);border-radius:9px;padding:calc(var(--sp)*2);background:#fff}
+.card .ct{font-size:13.5px;font-weight:660;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.card .cd{font-size:12.8px;color:var(--ink-3);line-height:1.62}
+.card.acc{background:var(--accent-soft);border-color:var(--accent-line)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--accent)}
+.dot.g{background:var(--green)}.dot.a{background:var(--amber)}.dot.r{background:var(--red)}.dot.p{background:var(--purple)}.dot.c{background:var(--cyan)}
+/* ============ KV ============ */
+.kv{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0;font-size:13.4px;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:calc(var(--sp)*2.5)}
+.kv > div{padding:8px 13px;border-bottom:1px solid var(--line)}
+.kv > div:nth-last-child(-n+2){border-bottom:none}
+.kv .k{background:var(--bg-soft);font-family:var(--mono);font-size:12px;color:var(--ink);font-weight:600}
+.kv .v{color:var(--ink-2);line-height:1.6}
+/* =========== Steps =========== */
+.steps{counter-reset:s;list-style:none;margin-left:0;margin-bottom:calc(var(--sp)*3)}
+.steps li{position:relative;padding-left:calc(var(--sp)*5);margin-bottom:calc(var(--sp)*2);counter-increment:s}
+.steps li::before{
+  content:counter(s);position:absolute;left:0;top:2px;width:22px;height:22px;border-radius:50%;
+  background:var(--ink);color:#fff;font-family:var(--mono);font-size:11.5px;font-weight:640;
+  display:flex;align-items:center;justify-content:center;
+}
+.steps li .st{font-weight:650;color:var(--ink);font-size:14.5px;display:block;margin-bottom:2px}
+.steps li .sc{font-size:13.2px;color:var(--ink-3);line-height:1.62}
+/* ============ Misc ============ */
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;vertical-align:middle}
+.badge.must{background:var(--red-soft);color:var(--red);border:1px solid #F0C9C5}
+.badge.shd{background:var(--amber-soft);color:var(--amber);border:1px solid #F0DDBB}
+.badge.opt{background:var(--bg-soft);color:var(--ink-3);border:1px solid var(--line-2)}
+.badge.yes{background:var(--green-soft);color:var(--green);border:1px solid #BFE0CD}
+.badge.no{background:var(--red-soft);color:var(--red);border:1px solid #F0C9C5}
+.badge.gray{background:#EFF1F4;color:var(--ink-3);border:1px solid var(--line-2)}
+.sec-div{display:flex;align-items:center;gap:14px;margin:calc(var(--sp)*9) 0 calc(var(--sp)*1)}
+.sec-div .ln{flex:1;height:1px;background:var(--line)}
+.sec-div .lb{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4);font-weight:600}
+.footnote{font-size:12.5px;color:var(--ink-4);line-height:1.7;border-top:1px solid var(--line);padding-top:calc(var(--sp)*2);margin-top:calc(var(--sp)*6)}
+.toc-progress{position:fixed;top:0;left:0;height:2px;background:var(--accent);z-index:99;width:0}
+.q{background:var(--bg-tint);border:1px solid var(--accent-line);border-radius:8px;padding:calc(var(--sp)*2) calc(var(--sp)*2.5);margin-bottom:calc(var(--sp)*2.5);font-size:13.4px;color:var(--ink-2)}
+.q .qt{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:660;color:var(--accent);margin-bottom:7px;display:block}
+.q p:last-child{margin-bottom:0}
+</style>
+</head>
+<body>
+<div class="toc-progress" id="prog"></div>
+<div class="wrap">
+
+<!-- ================= SIDEBAR ================= -->
+<aside class="side">
+  <div class="side-brand">WorkBuddy Internals</div>
+  <div class="side-title">Buddy 应用（专家包）技术内幕</div>
+  <div class="side-sub">从创建到运行时的全链路拆解 — 面向软件开发工程师</div>
+  <div class="side-meta">
+    <span class="chip a">v2.0 规范</span>
+    <span class="chip">零依赖</span>
+    <span class="chip">逆向实证</span>
+  </div>
+  <nav>
+  <ul class="toc">
+    <li class="toc-group">基础</li>
+    <li><a href="#s0">0 · 阅读前提与取证方法</a></li>
+    <li><a href="#s1">1 · 它到底是什么</a></li>
+    <li><a href="#s1" class="sub">1.1 四个易混概念</a></li>
+    <li><a href="#s1" class="sub">1.2 一句话总纲</a></li>
+    <li class="toc-group">静态结构</li>
+    <li><a href="#s2">2 · 包体解剖</a></li>
+    <li><a href="#s2-1" class="sub">2.1 目录树</a></li>
+    <li><a href="#s2-2" class="sub">2.2 plugin.json 字段</a></li>
+    <li><a href="#s2-3" class="sub">2.3 Agent MD 格式</a></li>
+    <li><a href="#s2-4" class="sub">2.4 Team 额外约定</a></li>
+    <li class="toc-group">生产链路</li>
+    <li><a href="#s3">3 · 创建流水线七步</a></li>
+    <li><a href="#s4">4 · 分发与版本</a></li>
+    <li class="toc-group">运行时</li>
+    <li><a href="#s5">5 · 激活：选择的瞬间</a></li>
+    <li><a href="#s6">6 · MD 变成智能体</a></li>
+    <li><a href="#s6" class="sub">6.1 加载器</a></li>
+    <li><a href="#s6" class="sub">6.2 frontmatter 解析</a></li>
+    <li><a href="#s6" class="sub">6.3 可被 spawn 的秘密</a></li>
+    <li><a href="#s7">7 · Team 的运行时保障</a></li>
+    <li><a href="#s8">8 · 技能、脚本与命名空间</a></li>
+    <li><a href="#s9">9 · 端到端时序图</a></li>
+    <li class="toc-group">实践</li>
+    <li><a href="#s10">10 · 动手：三种场景</a></li>
+    <li><a href="#s10" class="sub">10.1 选型决策</a></li>
+    <li><a href="#s10" class="sub">10.2 场景 A 单专家</a></li>
+    <li><a href="#s10" class="sub">10.3 场景 B 专家团</a></li>
+    <li><a href="#s10" class="sub">10.4 场景 C 带工具</a></li>
+    <li><a href="#s11">11 · 12 个反直觉的坑</a></li>
+    <li><a href="#s12">12 · 排错手册</a></li>
+    <li class="toc-group">附录</li>
+    <li><a href="#s13">A · 命令与字段速查</a></li>
+    <li><a href="#s14">B · 本机实证数据</a></li>
+    <li><a href="#s15">C · 心智模型总结</a></li>
+  </ul>
+  </nav>
+</aside>
+
+<!-- ================= MAIN ================= -->
+<main class="main">
+
+<h1>Buddy 应用（专家包）技术内幕</h1>
+<p class="lead">
+这不是一份「点这里、填那个」的操作手册。它要回答的是：<strong>一个 Buddy 应用（专家 / 专家团）在磁盘上是什么、在进程里变成什么、以及中间那段代码在干什么</strong>。
+读完你应当能独立于任何 UI，用文本编辑器从零造出一个能在 WorkBuddy 里真正跑起来的专家。
+</p>
+<p>
+本文所有结论均来自对本机 WorkBuddy 安装包的实证取证 —— 包括逆向主进程 <code>app.asar</code>、命令行内核
+<code>codebuddy-lite-wb.mjs</code>、创作脚本 <code>expert-manager/scripts/*.py</code>，以及对 16 个真实落盘专家包的统计。
+凡与官方文档口径不一致处，均以<span class="hl">代码证据</span>为准，并在文中明确标出。
+</p>
+
+<!-- ============ 0 ============ -->
+<div class="sec-div"><span class="lb">Section 00</span><span class="ln"></span></div>
+<h2 id="s0"><span class="sec-num">0</span> 阅读前提与取证方法</h2>
+
+<p>在往下读之前，先交代本文的三条取证路径，方便你自己复核：</p>
+
+<div class="grid g3">
+  <div class="card">
+    <div class="ct"><span class="dot"></span>静态规范</div>
+    <div class="cd">
+      <code>resources/plugins/workbuddy-builtin/skills/expert-manager/</code><br>
+      含 <code>SKILL.md</code> + 4 份 references + 7 个 Python 脚本。这是「应该长什么样」的权威来源。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot g"></span>运行时代码</div>
+    <div class="cd">
+      主进程在 <code>app.asar</code>（96 MB，未解包，需按字节偏移取证）；
+      插件 / 智能体内核在 <code>cli/dist/codebuddy-lite-wb.mjs</code>（9.5 MB）。这是「实际怎么跑」的来源。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot a"></span>落盘样本</div>
+    <div class="cd">
+      <code>~/.workbuddy/plugins/marketplaces/experts/plugins/</code> 下 16 个真实专家包，
+      共 45 个 Agent MD。这是「别人怎么写的」的来源。
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <span class="t">为什么需要逆向</span>
+  <p>
+  WorkBuddy 桌面端是 Electron 应用，业务代码经过打包压缩。<code>app.asar</code> 未解包且单行可达数十万字符，
+  无法按行号引用，只能按<strong>字节偏移</strong>定位。文中涉及主进程的代码片段均标注偏移值，
+  CLI 侧则可按行号（文件共 2678 行）+ 字符位置引用。
+  </p>
+</div>
+
+<div class="note g">
+  <span class="t">本文的取证纪律</span>
+  <p>凡文中出现的机制描述，均可追溯到具体文件与片段。查不到证据的，明确标注「未找到证据」，不做脑补。
+  第 11 节专门罗列了<strong>官方规范与代码实现相矛盾</strong>的 12 处，这些是踩坑高发区。</p>
+</div>
+
+<!-- ============ 1 ============ -->
+<div class="sec-div"><span class="lb">Section 01</span><span class="ln"></span></div>
+<h2 id="s1"><span class="sec-num">1</span> 它到底是什么</h2>
+
+<h3>1.1 四个容易混淆的概念</h3>
+<p>
+WorkBuddy 里有四套可插拔机制，它们共享「Markdown 定义 + 目录扫描」这一思路，但运行时待遇完全不同。
+分不清这四者，是绝大多数困惑的源头。
+</p>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>概念</th><th>物理位置</th><th>运行时载体</th><th>装载时机</th><th>能否被 spawn</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>Skill</strong><br><span class="path">技能</span></td>
+  <td><code>~/.workbuddy/skills/*/</code><br>或插件内 <code>skills/</code></td>
+  <td>指令文本注入上下文<br>（含 <code>scripts/</code> 可执行脚本）</td>
+  <td><span class="badge opt">按需</span> 命中描述才加载</td>
+  <td><span class="badge no">否</span> 是工具箱不是角色</td>
+</tr>
+<tr>
+  <td><strong>Custom Agent</strong><br><span class="path">用户级智能体</span></td>
+  <td><code>~/.workbuddy/agents/*.md</code><br>或项目 <code>.workbuddy/agents/</code></td>
+  <td>独立 agent 配置</td>
+  <td><span class="badge opt">启动时</span> 全部注册</td>
+  <td><span class="badge yes">是</span></td>
+</tr>
+<tr>
+  <td><strong>Expert</strong><br><span class="path">专家 / Buddy</span></td>
+  <td>插件包 <code>&lt;expert&gt;/agents/*.md</code></td>
+  <td>插件组件 → 装到<strong>默认主 agent</strong> 上</td>
+  <td><span class="badge must">选中时</span> 动态切换</td>
+  <td><span class="badge yes">是</span>（作为主会话人格）</td>
+</tr>
+<tr>
+  <td><strong>Team</strong><br><span class="path">专家团</span></td>
+  <td><code>expertType: "team"</code> 的专家包</td>
+  <td>主理人 agent + N 个团员 agent</td>
+  <td><span class="badge must">选中时</span> 另开 Agent Teams 开关</td>
+  <td><span class="badge yes">是</span>（成员被逐个 spawn）</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="note w">
+  <span class="t">关键区分：专家 ≠ 用户级 Agent</span>
+  <p>
+  两者都能产出「可 spawn 的智能体」，但机制是<strong>两套独立实现</strong>：
+  </p>
+  <ul>
+    <li>用户级 Agent 走 <code>CustomAgentsProductProvider</code>，直接扫 <code>&lt;home&gt;/agents</code> 目录，<strong>不读 plugin.json、不带 PLUGIN_TAG</strong>。</li>
+    <li>专家包走 <code>PluginsProductProvider</code> → <code>AgentExtensionLoader</code>，<strong>必须依附于一个插件包</strong>，带 <code>PLUGIN_TAG</code>，且受 marketplace 生命周期管理（可下载、可更新、可切换）。</li>
+  </ul>
+  <p>所以「专家」的附加价值不在 MD 本身，而在<strong>它是一等公民插件</strong>：有版本、有市场、能分发、能打命名空间。</p>
+</div>
+
+<h3>1.2 一句话总纲</h3>
+<div class="q">
+  <span class="qt">核心命题</span>
+  <p><strong>专家包 = 一个标准的 WorkBuddy 插件，只是额外带了一个 <code>expertType</code> 标记，并且把其中一个 Agent MD 提升为会话的默认人格。</strong></p>
+  <p>理解这一句，后面所有机制都是它的推论：为什么要注册进 marketplace（因为是插件）、
+  为什么 <code>bin/</code> 会进 PATH（因为是插件）、为什么技能有命名空间前缀（因为是插件）、
+  为什么 team 需要开关（因为是插件之上的额外标记）。</p>
+</div>
+
+<p>把这句话展开成三层管线，就是本文的骨架：</p>
+
+<div class="pipe">
+  <div class="node"><span class="k">PHASE 1</span><span class="n">创作期</span><span class="d">生成目录骨架、填内容、做头像</span></div>
+  <div class="arw">→</div>
+  <div class="node"><span class="k">PHASE 2</span><span class="n">注册期</span><span class="d">写 marketplace.json 条目</span></div>
+  <div class="arw">→</div>
+  <div class="node"><span class="k">PHASE 3</span><span class="n">分发期</span><span class="d">打包 zip / 上传市场 / 下载落盘</span></div>
+  <div class="arw">→</div>
+  <div class="node"><span class="k">PHASE 4</span><span class="n">激活期</span><span class="d">POST /plugins/switch</span></div>
+  <div class="arw">→</div>
+  <div class="node"><span class="k">PHASE 5</span><span class="n">装载期</span><span class="d">MD → 智能体注册</span></div>
+</div>
+
+<div class="note">
+  <span class="t">一个反直觉的事实</span>
+  <p>
+  对于<strong>本地自建</strong>的专家，PHASE 3（分发）是<strong>完全跳过</strong>的 —— 你的目录就在
+  <code>my-experts/plugins/</code> 里躺着，没有下载、没有解压、没有 <code>.downloaded_at</code>。
+  直接从 PHASE 2 跳到 PHASE 4。这也是为什么本地专家改完立刻生效。
+  </p>
+</div>
+
+<!-- ============ 2 ============ -->
+<div class="sec-div"><span class="lb">Section 02</span><span class="ln"></span></div>
+<h2 id="s2"><span class="sec-num">2</span> 包体解剖：磁盘上长什么样</h2>
+
+<h3 id="s2-1">2.1 目录树</h3>
+
+<div class="tree"><span class="dir">my-code-reviewer/</span>                    <span class="c">← 目录名 = kebab-case，是包的身份之一</span>
+├── <span class="dir">.codebuddy-plugin/</span>
+│   └── plugin.json                  <span class="req">【必需】唯一入口清单</span>
+│
+├── <span class="dir">agents/</span>                          <span class="req">【必需】智能体定义（.md）</span>
+│   ├── code-reviewer.md             <span class="c">← Agent 型：仅此一个</span>
+│   ├── review-team-lead.md          <span class="c">← Team 型：主理人（必须带团队前缀）</span>
+│   ├── security-reviewer.md         <span class="c">← Team 型：团员</span>
+│   └── perf-reviewer.md
+│
+├── <span class="dir">avatars/</span>                         <span class="opt">【可选】头像，PNG 512×512</span>
+│   ├── expert.png
+│   └── security-reviewer.png
+│
+├── <span class="dir">skills/</span>                          <span class="opt">【可选】随包技能</span>
+│   └── ast-scan/
+│       └── SKILL.md
+│
+├── <span class="dir">bin/</span>                             <span class="opt">【可选】可执行文件，自动入 PATH</span>
+│   └── crmetric
+│
+├── settings.json                    <span class="opt">【Team 型创作期必需，运行时会被移除】</span>
+├── README.md                        <span class="opt">【推荐】</span>
+└── .created-by-session              <span class="c">← 注册脚本自动写入的会话标记</span></div>
+
+<div class="note w">
+  <span class="t">目录位置是硬约束，不是建议</span>
+  <p>
+  自建专家<strong>必须</strong>放在 <code>$WORKBUDDY_CONFIG_DIR/plugins/marketplaces/my-experts/plugins/&lt;name&gt;/</code>
+  （默认即 <code>~/.workbuddy/plugins/marketplaces/my-experts/plugins/</code>）。
+  放在别处，扫描器根本不会去看它。<code>init_expert.py</code> 里对此做了硬检查，传错 <code>--path</code> 直接退出：
+  </p>
+<pre><code>expected_path = get_expert_plugins_dir()
+resolved_path = Path(output_path).expanduser().resolve()
+if resolved_path != expected_path.resolve():
+    print(f"❌ Error: --path 必须为专家目录: {expected_path}")
+    print(f"   非专家目录下创建的专家无法被检测到。")
+    sys.exit(1)</code></pre>
+</div>
+
+<h3 id="s2-2">2.2 plugin.json 字段全解</h3>
+
+<p>这是整个包的中枢。下面按<strong>运行时实际如何使用</strong>来分类，而非按文档顺序 —— 标注为「展示态」的字段不参与运行时行为。</p>
+
+<h4>身份与类型（运行时强依赖）</h4>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:150px">字段</th><th style="width:80px">必填</th><th>作用与运行时待遇</th></tr></thead>
+<tbody>
+<tr><td><code>name</code></td><td><span class="badge must">必需</span></td>
+<td>包唯一标识，<strong>kebab-case 正则 <code>^[a-z0-9][a-z0-9-]*[a-z0-9]$</code></strong>，至少 2 字符。用于拼 <code>"&lt;name&gt;@&lt;marketplace&gt;"</code> 这个插件 ID。</td></tr>
+<tr><td><code>version</code></td><td><span class="badge must">必需</span></td>
+<td>语义化版本。官方包用它比对本地落盘版本与 marketplace 条目版本，不一致则重新 materialize。</td></tr>
+<tr><td><code>description</code></td><td><span class="badge must">必需</span></td>
+<td>英文一句话。它是 <code>marketplace.json</code> 条目的 <code>description</code>，也是卡片兜底文案。</td></tr>
+<tr><td><code>expertType</code></td><td><span class="badge must">必需</span></td>
+<td><code>agent</code> 或 <code>team</code>。<strong>这是唯一的语义开关</strong>：决定卡片显示「专家」还是「专家团」，决定主进程是否注入 <code>CODEBUDDY_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code> 与 <code>X-Expert-Team-Task</code> 头。</td></tr>
+<tr><td><code>agentName</code></td><td><span class="badge must">必需</span></td>
+<td>主 Agent 名，<strong>必须等于 <code>agents/</code> 下某个 MD 的文件名（不含 .md）</strong>。激活时它随 <code>/plugins/switch</code> 请求送给 CLI。禁止用通用名 <code>team-lead</code>。</td></tr>
+<tr><td><code>teamInfo</code></td><td><span class="badge must">team 必需</span></td>
+<td><code>{leadAgent, memberAgents[]}</code>。<strong>运行时只认 <code>leadAgent</code></strong>；<code>memberAgents</code> 在整个 <code>app.asar</code> 中出现 <strong>0 次</strong>，是纯文档/市场字段（详见 §11 第 4 条）。</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>资源声明（决定加载什么）</h4>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:150px">字段</th><th style="width:80px">必填</th><th>作用与运行时待遇</th></tr></thead>
+<tbody>
+<tr><td><code>agents</code></td><td><span class="badge opt">可选</span></td>
+<td>路径数组，如 <code>["./agents/x.md"]</code>。<strong>可以不写</strong> —— 加载器读完此字段后还会<strong>兜底扫描 <code>&lt;plugin&gt;/agents/</code> 整个目录</strong>。实证：官方 <code>software-company</code> 包就没有这个字段，照样加载 5 个成员。</td></tr>
+<tr><td><code>skills</code></td><td><span class="badge opt">可选</span></td>
+<td>技能目录数组。同理，加载器也会兜底扫 <code>&lt;plugin&gt;/skills/</code>。</td></tr>
+<tr><td><code>bin</code></td><td><span class="badge gray">死字段</span></td>
+<td>规范里有，扫描器会归一化，但 <strong>CLI 侧无任何消费者</strong>。<code>bin/</code> 目录本身是<strong>约定自动探测</strong>的，不需要也不受此字段影响。</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>展示态字段（不参与运行时行为）</h4>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:150px">字段</th><th style="width:80px">约束</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td><code>displayName</code></td><td><span class="badge must">必需</span></td><td><code>{en, zh}</code>。卡片标题（花名）。<strong>Team 型必须与 <code>profession</code> 完全一致</strong>，校验器直接判 error。</td></tr>
+<tr><td><code>profession</code></td><td><span class="badge must">必需</span></td><td><code>{en, zh}</code>。职业头衔。</td></tr>
+<tr><td><code>displayDescription</code></td><td><span class="badge shd">40-50 字</span></td><td><code>{en, zh}</code>。中文超出 40–50 字区间校验器只给 warning，不阻断。</td></tr>
+<tr><td><code>categoryId</code></td><td><span class="badge must">必需</span></td><td>12 个分类之一；但实际还存在第 13 个 <code>13-TencentZone</code>（见 §14）。</td></tr>
+<tr><td><code>avatar</code></td><td><span class="badge opt">可选</span></td><td>相对路径。会被解析成 <code>file://</code> URL，超过 5 MB 丢弃。注意：<strong>官方落盘包普遍不含 avatars 目录</strong>（16 个包中 5 个无头像），说明市场包走远程 URL 分发。</td></tr>
+<tr><td><code>defaultInitPrompt</code></td><td><span class="badge must">必需</span></td><td><code>{en, zh}</code>。必须与 <code>quickPrompts[0]</code> 一致（不一致只 warning）。</td></tr>
+<tr><td><code>tags</code></td><td><span class="badge must">恰好 3</span></td><td>擅长领域标签。多于或少于 3 个 = error。</td></tr>
+<tr><td><code>quickPrompts</code></td><td><span class="badge must">恰好 3</span></td><td>推荐提示词。<strong>渲染层会用 <code>quickPrompts[0]</code> 覆盖 <code>defaultInitPrompt</code></strong>，所以两者写不一样时，界面上显示的是前者。</td></tr>
+<tr><td><code>plugin</code></td><td><span class="badge must">必需</span></td><td>必须等于 <code>name</code>。不一致 = error。</td></tr>
+<tr><td><code>members[]</code></td><td><span class="badge must">team 必需</span></td><td>每个含 <code>{id, name, profession, avatar, role}</code>，<code>role</code> 取 <code>lead</code>/<code>member</code>，<strong>主理人也必须在内且 <code>role: "lead"</code></strong>。仅用于渲染头像墙，运行时不消费。</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="s2-3">2.3 Agent MD 的格式</h3>
+
+<p>每个 <code>agents/*.md</code> 文件就是一个智能体定义。结构极简：<strong>YAML frontmatter 管元数据，正文就是 system prompt</strong>。</p>
+
+<div class="code-head"><span>agents/code-reviewer.md</span><span>.md</span></div>
+<pre><code>---
+name: code-reviewer                    # 【必需】必须等于文件名（不含 .md）
+description: Reviews code for bugs, security and performance issues.
+displayName:
+  en: "Code Review Expert"
+  zh: "代码审查专家"
+profession:
+  en: "Senior Code Reviewer"
+  zh: "资深代码审查师"
+maxTurns: 50                           # 可选，正整数
+skills: [ast-scan]                     # 可选，预加载的技能
+---
+
+# 代码审查专家 - 审稿人
+
+你是一名资深代码审查师……（这段就是 system prompt）
+
+## 核心能力
+1. **缺陷识别**：……
+2. **安全审计**：……
+
+## 工作流程
+1. 先通读 diff 全貌
+2. 逐文件审查
+3. 汇总输出
+
+## 输出规范
+- 按严重程度分级
+- 每条给出行号与修改建议
+
+## 注意事项
+- 不做主观风格争论</code></pre>
+
+<h4>frontmatter 字段的真实待遇</h4>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:150px">字段</th><th style="width:110px">是否生效</th><th>运行时处理</th></tr></thead>
+<tbody>
+<tr><td><code>name</code></td><td><span class="badge yes">生效</span></td><td>成为 <code>subagent_type</code> 的名字。缺失时<strong>回退用文件名</strong>（去掉 .md）。</td></tr>
+<tr><td><code>description</code></td><td><span class="badge yes">生效</span></td><td>缺失时回退用 <code>name</code>。<strong>加载器还会自动追加来源标签</strong>，例如 <code>"... (my-experts:agents)"</code>，用于在模型面前区分同名 agent。</td></tr>
+<tr><td><code>instructions</code>（正文）</td><td><span class="badge yes">生效</span></td><td><strong>核心</strong>：整段正文就是 system prompt。且会做变量替换（见下）。</td></tr>
+<tr><td><code>tools</code></td><td><span class="badge no">禁用</span></td><td>规范<strong>明令禁止在 frontmatter 声明</strong>。运行时虽会解析，但工具权限由系统统一分配。</td></tr>
+<tr><td><code>maxTurns</code></td><td><span class="badge yes">生效</span></td><td>必须正整数，否则丢弃。主理人建议 150–200（因为要编排多轮），普通成员 50。</td></tr>
+<tr><td><code>skills</code></td><td><span class="badge yes">生效</span></td><td>预加载技能，解析时会尝试加插件名前缀（见 §8）。</td></tr>
+<tr><td><code>effort</code></td><td><span class="badge yes">生效</span></td><td>推理强度，经 <code>normalizeReasoningEffort</code> 归一化。</td></tr>
+<tr><td><code>background</code></td><td><span class="badge yes">生效</span></td><td>布尔值，是否后台运行。</td></tr>
+<tr><td><code>isolation</code></td><td><span class="badge yes">生效</span></td><td>只有 <code>"worktree"</code> 值被接受，其它一律丢弃。</td></tr>
+<tr><td><code>initialPrompt</code></td><td><span class="badge yes">生效</span></td><td>智能体启动后的首条输入。</td></tr>
+<tr><td><code>memory</code></td><td><span class="badge yes">生效</span></td><td>记忆配置。</td></tr>
+<tr><td><code>color</code></td><td><span class="badge yes">生效</span></td><td>缺失时用 <code>generateColorFromName(name)</code> 按名字生成。</td></tr>
+<tr><td><code>permissionMode</code></td><td><span class="badge no">忽略</span></td><td rowspan="3">这三个字段即使写了也<strong>被静默忽略并打 warning</strong>：<br><code>[AgentExtensionLoader] plugin agent 'x' sets permissionMode, which is ignored for plugin agents.</code><br>这是有意设计 —— 插件不应越权改宿主权限模型。</td></tr>
+<tr><td><code>hooks</code></td><td><span class="badge no">忽略</span></td></tr>
+<tr><td><code>mcpServers</code></td><td><span class="badge no">忽略</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note g">
+  <span class="t">变量替换：${CODEBUDDY_PLUGIN_ROOT}</span>
+  <p>
+  正文里的 <code>${CODEBUDDY_PLUGIN_ROOT}</code>（以及兼容别名 <code>${CLAUDE_PLUGIN_ROOT}</code>）会被替换成<strong>插件根目录的绝对路径</strong>。
+  这是让 MD 能引用包内资源的关键 —— 比如 <code>请读取 ${CODEBUDDY_PLUGIN_ROOT}/references/rules.md</code>。
+  没有它，智能体无法定位自己的包在哪。
+  </p>
+</div>
+
+<h3 id="s2-4">2.4 Team 型的额外约定</h3>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>文件命名</div>
+    <div class="cd">
+      主理人文件必须<strong>带团队前缀</strong>：<code>{team}-team-lead.md</code>。
+      用通用的 <code>team-lead.md</code> 会被校验器判 error —— 因为同名会跨包冲突。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>members 包含主理人</div>
+    <div class="cd">
+      <code>members[]</code> 含主理人（<code>role: "lead"</code>），但 <code>teamInfo.memberAgents</code> <strong>不含</strong>主理人。校验器会检查「members 里至少有一个 lead」以及「memberAgents 不含 lead」。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>settings.json</div>
+    <div class="cd">
+      创作期必需，内容仅 <code>{"agent": "{team}-team-lead"}</code>。
+      但<strong>官方落盘包里一个都不存在</strong>（见 §11 第 5 条），它本质是过渡产物。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>SOP 写在 MD 里</div>
+    <div class="cd">
+      阶段编排、协作铁律、红线<strong>全部写在主理人 MD 正文中</strong>，没有任何运行时强制。这就是「代码 = SOP(团队)」的含义。
+    </div>
+  </div>
+</div>
+
+<!-- ============ 3 ============ -->
+<div class="sec-div"><span class="lb">Section 03</span><span class="ln"></span></div>
+<h2 id="s3"><span class="sec-num">3</span> 创建流水线：七个脚本</h2>
+
+<p>
+创作期由 <code>expert-manager</code> 这个技能驱动，共 5 个 Python 脚本（外加 2 个测试脚本）串成流水线。
+它们全部是<strong>纯 stdlib 实现</strong>，无第三方依赖。
+</p>
+
+<div class="code-head"><span>技能目录结构</span><span>expert-manager/</span></div>
+<pre><code>resources/plugins/workbuddy-builtin/skills/expert-manager/
+├── SKILL.md                     179 行   # 流程与铁律
+├── references/
+│   ├── plugin-json-spec.md      184 行   # plugin.json 字段规范 + 两套模板
+│   ├── agent-md-spec.md         179 行   # Agent MD 结构（普通 / 主理人）
+│   ├── team-spec.md             120 行   # 协作铁律、命名、SOP 编排
+│   └── avatar-spec.md           162 行   # 头像 prompt 构建策略
+└── scripts/
+    ├── init_expert.py           485 行   # ① 生成骨架
+    ├── validate_expert.py       381 行   # ② 校验
+    ├── register_expert.py       271 行   # ③ 注册
+    ├── package_expert.py        121 行   # ④ 打包
+    ├── batch_create.py          141 行   # 批量编排（模板）
+    ├── test_register_expert.py   78 行
+    └── test_package_expert.py    95 行</code></pre>
+
+<ol class="steps">
+<li>
+<span class="st">init_expert.py — 生成骨架</span>
+<span class="sc">
+按 <code>--type agent|team</code> 生成目录 + 带 <code>[TODO]</code> 占位符的 <code>plugin.json</code> 与 MD 模板。
+Agent 型产出 1 个 MD；Team 型产出 <code>{team}-team-lead.md</code> + 一个 <code>member-placeholder.md</code>（需自行改名）+ <code>settings.json</code>。
+同时校验 <code>--path</code> 必须是专家目录、<code>name</code> 必须是 kebab-case。
+</span>
+</li>
+<li>
+<span class="st">填充内容</span>
+<span class="sc">
+把 <code>[TODO]</code> 换成真实内容。这一步由 AI 或人完成，是唯一有创造力含量的环节。
+正文质量直接决定专家质量 —— 因为<strong>正文就是 system prompt</strong>，没有中间层。
+</span>
+</li>
+<li>
+<span class="st">ImageGen — 生成头像</span>
+<span class="sc">
+按 <code>avatar-spec.md</code> 从 MD 内容反推 prompt：读角色定义 → 提核心能力关键词 → 转视觉元素 → 拼装。
+Agent 型 1 张；Team 型 N+1 张（团队整体 + 主理人 + 每个团员）。同团队共用风格锚定词与背景色调。
+</span>
+</li>
+<li>
+<span class="st">validate_expert.py — 校验</span>
+<span class="sc">
+会做五大类检查：<strong>位置</strong>（必须在 my-experts 目录下）、<strong>结构</strong>（禁止 <code>hooks/</code>、<code>commands/</code>、<code>.lsp.json</code>，禁止资源目录藏在 <code>.codebuddy-plugin/</code> 内）、
+<strong>字段</strong>（必填项、kebab-case、tags/quickPrompts 恰好 3 个、team 的 profession ≡ displayName）、
+<strong>一致性</strong>（<code>agentName</code> 有对应 MD、frontmatter <code>name</code> ≡ 文件名）、
+<strong>禁用项</strong>（frontmatter 不得有 <code>tools</code>）。
+</span>
+</li>
+<li>
+<span class="st">register_expert.py — 注册</span>
+<span class="sc">
+二次校验（重点查 <code>[TODO]</code> 残留）后，向 <code>marketplace.json</code> 写入条目
+<code>{"name": ..., "source": "./plugins/&lt;dir&gt;", "description": ...}</code>，
+并向专家目录写入 <code>.created-by-session</code> 标记文件（值取自环境变量 <code>CODEBUDDY_SESSION_ID</code>）。
+</span>
+</li>
+<li>
+<span class="st">package_expert.py — 打包</span>
+<span class="sc">
+先跑一遍完整校验，通过后打 zip。会自动跳过隐藏文件（<code>.codebuddy-plugin</code> 除外）、
+<code>__pycache__</code>、<code>node_modules</code>、<code>.gitkeep</code>、<code>.DS_Store</code>。
+</span>
+</li>
+<li>
+<span class="st">批量（可选）</span>
+<span class="sc">
+<code>batch_create.py</code> 提供模板：对每个专家<strong>串行</strong>执行 init → 填充 → validate → register，
+任一步失败即停止。规范明令禁止「只写文件跳过校验注册」和「直接改 marketplace.json」。
+</span>
+</li>
+</ol>
+
+<div class="note d">
+  <span class="t">铁律：不注册 = 不存在</span>
+  <p>
+  第 ⑤ 步不是可选项。扫描器<strong>以 <code>marketplace.json</code> 为唯一入口</strong>，文件缺失直接返回空列表；
+  即使目录和 plugin.json 都完好，只要 <code>marketplace.json</code> 里没条目，专家在界面上就不存在。
+  跳过这一步直接手搓文件，是最常见的「我明明写了为什么看不见」的原因。
+  </p>
+</div>
+
+<h3>3.1 注册脚本的关键片段</h3>
+<div class="code-head"><span>register_expert.py</span><span>Python</span></div>
+<pre><code>def register_expert(expert_dir, marketplace_dir, session_id=None):
+    manifest_path = marketplace_dir / '.codebuddy-plugin' / 'marketplace.json'
+    ...
+    source = f"./plugins/{expert_dir.name}"
+
+    # 已存在则更新，否则追加 —— 保证幂等
+    for p in plugins:
+        if p.get('source') == source or p.get('name') == expert_name:
+            p['name'] = expert_name
+            p['source'] = source
+            p['description'] = expert_description
+            ...
+            return True
+
+    plugins.append({"name": expert_name,
+                    "source": source,
+                    "description": expert_description})
+
+    if session_id:
+        _write_session_marker(expert_dir, session_id)   # 写 .created-by-session</code></pre>
+
+<div class="note">
+  <span class="t">.created-by-session 是标记文件，不是 JSON 字段</span>
+  <p>
+  它是专家目录下的一个独立文件，内容就是会话 ID 字符串。
+  用途是「预览态」状态机：主进程在会话结束后会把它 rename 成 <code>.pending-preview-session</code> 或直接删除。
+  <strong>它不参与「我的专家 vs 市场专家」的判定</strong> —— 那个判定靠 <code>marketplace === 'my-experts'</code>。
+  </p>
+</div>
+
+<!-- ============ 4 ============ -->
+<div class="sec-div"><span class="lb">Section 04</span><span class="ln"></span></div>
+<h2 id="s4"><span class="sec-num">4</span> 分发与版本：市场包如何落到磁盘</h2>
+
+<p>本地自建专家跳过本节。但如果你要分发，或者想理解官方专家的行为，这一节解释它们从哪来。</p>
+
+<h3>4.1 两套落盘位置</h3>
+
+<div class="kv">
+<div class="k">官方市场包</div><div class="v"><code>~/.workbuddy/plugins/marketplaces/experts/plugins/&lt;bundleName&gt;/</code><br><span class="path">扁平结构，无 version 层级</span></div>
+<div class="k">本地自建</div><div class="v"><code>~/.workbuddy/plugins/marketplaces/my-experts/plugins/&lt;dirName&gt;/</code></div>
+<div class="k">市场元数据</div><div class="v"><code>~/.workbuddy/app/cache/experts/manifest.json</code>（1.2 MB 目录清单）</div>
+<div class="k">ID 映射表</div><div class="v"><code>~/.workbuddy/app/cache/experts/expert-bundle-map.json</code></div>
+</div>
+
+<div class="note w">
+  <span class="t">一个常见误解</span>
+  <p>
+  网上（以及早期版本）流传的缓存路径是 <code>plugins/cache/experts/&lt;name&gt;/&lt;version&gt;/</code>。
+  这个目录<strong>确实存在</strong>（本机有 4 个包），但它不是运行时主路径。
+  真正被扫描和使用的是 <code>marketplaces/experts/plugins/&lt;bundleName&gt;/</code> —— <strong>无版本层级</strong>，
+  一个包一份，更新时原地覆盖。想找当前生效的官方包，去后者。
+  </p>
+</div>
+
+<h3>4.2 下载与新鲜度判定</h3>
+
+<div class="code-head"><span>app.asar</span><span>偏移 ~84156000 · ExpertBundleRuntime</span></div>
+<pre><code>async ensureDownloaded(e, t, n){
+  let r = this.getPluginDir(e);
+  if (await this.deps.hasPluginManifestAsync(r)){
+    if (t && await this.isLocalStale(r, t))
+      console.log(`...Local cache stale, re-downloading: ${e}`);
+    else return await this.logBundleSnapshot(`cache`, e, r), r
+  }
+  let o = this.downloadAndExtract(e, r, n);
+  ...
+}
+
+async isLocalStale(e, t){
+  let n = x.join(e, `.downloaded_at`),
+      r = await O.readFile(n, `utf-8`),
+      i = new Date(r.trim()).getTime();
+  return new Date(t).getTime() > i        // 服务端 updatedAt > 本地时间戳 → 过期
+}</code></pre>
+
+<p>流程要点：</p>
+<ul>
+<li>命中缓存且未过期 → 直接用；过期 → 重新下载。</li>
+<li>下载 → <strong>先备份改名</strong> → 解压（支持 tar/zip，含 zip-slip 路径穿越防护）→ <code>normalizeExtractedPluginRoot</code>（若清单在子目录则提升一层）→ 校验 plugin.json 存在 → 删除备份 → <strong>写 <code>.downloaded_at</code>（ISO 时间戳）</strong>。</li>
+<li>下载失败且有旧缓存 → 告警并<strong>回落使用陈旧缓存</strong>，不阻断使用。</li>
+<li>URL 选择：企业网关（<code>operation-platform</code>，需通过 <code>isTrustedDownloadUrl</code> 校验）优先，失败回落 COS <code>/bundles/&lt;name&gt;.tar.gz</code>。</li>
+</ul>
+
+<div class="note">
+  <span class="t">bundle 名 ≠ 目录名</span>
+  <p>
+  <code>expert-bundle-map.json</code> 维护市场 ID 到目录名的映射，且<strong>可以多对一</strong>：
+  </p>
+<pre><code>{
+  "ex_XoPVlmyOgAY9": "fullstack-dev",
+  "SoftwareCompany": "software-company",
+  "ex_jPdPfIC04OKD": "software-company",      // ← 两个市场 ID 指向同一目录
+  "ex_NsJv0iGhmXQh": "up-stock-strategy-analyze"
+}</code></pre>
+  <p>说明市场侧存在 ID 迁移/别名机制，落盘后统一收敛到目录名。</p>
+</div>
+
+<!-- ============ 5 ============ -->
+<div class="sec-div"><span class="lb">Section 05</span><span class="ln"></span></div>
+<h2 id="s5"><span class="sec-num">5</span> 激活：点击专家的那一瞬间发生了什么</h2>
+
+<p>
+这是全链路最精妙的一环。很多人以为「选中专家」只是记了个 UI 状态，实际上它触发了一次
+<strong>跨进程的配置写入 + HTTP 调用</strong>。整个过程分四步。
+</p>
+
+<h3>5.1 第一步：主进程准备事实</h3>
+
+<p>点击后，主进程的 <code>createConversationExpertRuntimePreparer</code> 开始工作（app.asar 偏移 ~76308100）：</p>
+
+<div class="code-head"><span>app.asar</span><span>偏移 ~76308100 · 读取清单</span></div>
+<pre><code>async function readPluginManifestFromDir(e){
+  for (let t of Je){                    // Je = [".codebuddy-plugin", ".workbuddy-plugin", ...]
+    let n = T.join(e, t, Ye);           // Ye = "plugin.json"
+    try{
+      let e = await E.readFile(n, `utf8`), t = JSON.parse(e);
+      return {name:..., id:..., agentName:...,
+              expertType: optionalExpertType(t.expertType),   // ← 类型在此被读取
+              marketExpertId:..., sourceId:..., displayName:t.displayName}
+    }catch(e){ if(e.code === `ENOENT`) continue; return }
+  }
+}</code></pre>
+
+<div class="note w">
+  <span class="t">注意：这里只抽取 7 个字段</span>
+  <p>
+  主进程从这里只拿 <code>name / id / agentName / expertType / marketExpertId / sourceId / displayName</code>，
+  <strong><code>categoryId</code>、<code>tags</code>、<code>quickPrompts</code>、<code>members</code> 都不进这条记录</strong>。
+  它们只在面向 UI 的完整 DTO 构造（<code>readCustomExpertFromDir</code>）里才被读取。
+  这是两条独立的数据流：<strong>精简流走运行时，完整流走渲染</strong>。
+  </p>
+</div>
+
+<p>随后是落盘状态机，它定义了包的三态：</p>
+
+<div class="code-head"><span>app.asar</span><span>偏移 ~76308100 · inspectLandedBundle</span></div>
+<pre><code>if (!a || !o) return { status: `incomplete-names` };   // 缺 name 或 agentName
+
+return await hasMarketplaceBundleEntry(e, n)
+  ? { status: `complete`,      candidate: s }          // 目录在 + 已注册
+  : { status: `needs-register`, candidate: s };        // 目录在 + 未注册</code></pre>
+
+<p>同时，针对 team 型，主进程会先解析出<strong>主理人 MD 的路径</strong>用于提示词预览：</p>
+
+<div class="code-head"><span>app.asar</span><span>偏移 ~84206000 · 定位主理人 MD</span></div>
+<pre><code>// resolveExpertAgentPromptSource
+let o = a.expertType === `team`
+      ? a.teamInfo?.leadAgent                          // team → 直接用 leadAgent
+      : await this.resolveExpertAgentName(i, a, e);    // agent → 回退链
+
+let s = await resolveExpertAgentMarkdownPath(i, o);
+return s ? {agentName: o, filePath: s} : void 0
+
+// resolveExpertAgentName 的回退链
+async resolveExpertAgentName(e, t, n){
+  if (t.agentName) return t.agentName;                                   // ① plugin.json
+  if (t.expertType === `team` && t.teamInfo?.leadAgent) return t.teamInfo.leadAgent;  // ②
+  let r = this.toKebabCase(n); return await this.resolveAgentNameFromPluginFiles(e, t, r)  // ③ 猜
+}</code></pre>
+
+<div class="note">
+  <span class="t">这条路径只用于 UI 提醒，不是注入通道</span>
+  <p>
+  注意区分：主进程读 MD <strong>只是为了在界面上给用户看「这个专家的开场白/人设」</strong>
+  （<code>resolvePreparedExpertReminder</code>）。
+  真正把 MD 内容装进模型的是<strong>后面 CLI 那条链路</strong>。两条链路各自独立读盘，互不共享。
+  </p>
+</div>
+
+<h3>5.2 第二步：写入会话配置</h3>
+
+<div class="code-head"><span>app.asar</span><span>偏移 ~76323000 · applyPreparedExpertSettings</span></div>
+<pre><code>function applyPreparedExpertSettings(e, t, n){
+  let r = e ?? {},
+      i = asRecord(r.enabledPlugins),
+      a = asRecord(r.extraKnownMarketplaces),
+      o = asRecord(r.env),
+      s = ...(o.CODEBUDDY_CUSTOM_HEADERS),
+      c = [`X-Expert-Id: ${t.canonical.id}`,
+           ...t.expertType === `team` ? [`X-Expert-Team-Task: true`] : []],
+      l = t.canonical.marketplace;
+
+  return {...r,
+    enabledPlugins: d.w(i, `${t.pluginName}@${l}`),          // 启用 <name>@<marketplace>
+    extraKnownMarketplaces: {...a, [l]: {source: {source: `directory`,
+                              url: n.pluginService.getExpertMarketplacePath(l)}}},
+    env: {...o, CODEBUDDY_CUSTOM_HEADERS: [s, ...c].filter(Boolean).join(`\n`)}}
+}</code></pre>
+
+<p>三件事：</p>
+<ul>
+<li><strong>启用插件</strong>：把 <code>"&lt;pluginName&gt;@&lt;marketplace&gt;"</code> 加入 <code>enabledPlugins</code>。这就是插件 ID 的形式，也是后面 CLI 认它的凭据。</li>
+<li><strong>声明额外市场</strong>：把该 marketplace 的目录路径告诉 CLI，让它知道去哪找包。</li>
+<li><strong>注入 HTTP 头</strong>：<code>X-Expert-Id</code> 标识当前专家，team 额外加 <code>X-Expert-Team-Task: true</code>（供后端识别团队任务）。</li>
+</ul>
+
+<h3>5.3 第三步：HTTP 切换（真正的激活）</h3>
+
+<div class="code-head"><span>app.asar</span><span>偏移 ~84198000 · SessionPluginSwitcher</span></div>
+<pre><code>let _ = `${s}/api/v1/plugins/switch`, v = {persist: !1};
+
+g.length > 0 && (v.disable = g[0]);          // 关掉前一个
+n && (v.enable = `${n}@${d}`);               // 启用这个包
+r && (v.agentName = r);                      // ← 主理人 / 主 agent 名
+let y = n ? `${n}@${d}` : ...;
+y && (v.sourcePluginId = y);
+a !== void 0 && (v.internalModelRequestHeaders = a);
+
+await fetch(_, {method: `POST`, body: JSON.stringify(v)})</code></pre>
+
+<p>CLI 侧对应两个入口：</p>
+
+<div class="code-head"><span>cli/dist/codebuddy-lite-wb.mjs</span><span>line 964 · char ~3183020</span></div>
+<pre><code>async setVolatilePluginAgent(t, i = {}){
+  let n = this.normalizePluginAgentSetting(t), ...
+  this.volatilePluginAgentName = n;
+  this.volatilePluginSourcePluginId = s;
+  this.volatilePluginInternalModelRequestHeaders = c;
+  ...
+}</code></pre>
+
+<div class="note d">
+  <span class="t">为什么叫 volatile（易失）</span>
+  <p>
+  请求体里 <code>persist: false</code> 是关键：这次切换<strong>只作用于当前会话，不落盘</strong>。
+  这解释了一个常见现象：你在 A 会话选了专家，开个新会话又是默认助手。
+  专家是<strong>会话级</strong>的，不像技能那样全局常驻。
+  </p>
+</div>
+
+<h3>5.4 第四步：settings.json 的真相</h3>
+
+<p>规范说 team 型必须有 <code>settings.json</code>（内容 <code>{"agent": "xxx-team-lead"}</code>）。CLI 确实读它，但待遇微妙：</p>
+
+<div class="code-head"><span>cli/dist/codebuddy-lite-wb.mjs</span><span>line 2511 · char ~8030503</span></div>
+<pre><code>let L = t.settings;
+try{
+  let t = ed.join(i, "settings.json");
+  await ef.Sn.access(t);
+  let n = JSON.parse(await ef.Sn.readFile(t, "utf-8")),
+      s = {...n.agent ? {agent: n.agent} : {},
+           ...void 0 !== n.subagentStatusLine
+              ? {subagentStatusLine: n.subagentStatusLine} : {}};   // ← 只认这 2 个 key
+  Object.keys(s).length > 0 && (L = {...L, ...s})
+}catch{}
+return {..., settings: L}</code></pre>
+
+<div class="note w">
+  <span class="t">而且主进程会主动删掉它</span>
+  <p>
+  主进程启动时全盘扫描 <code>plugins/*/settings.json</code>，把这种「只有一个 <code>agent</code> key 的生成物」
+  视为<strong>遗留产物并删除</strong>（<code>readGeneratedAgentOverride</code> + <code>removePersistedGeneratedAgentOverrides</code>，
+  app.asar 偏移 ~84212259）。
+  </p>
+  <p>
+  这也解释了本机实测：<strong>16 个官方落盘包里，<code>settings.json</code> 一个都不存在</strong>。
+  结论：<code>settings.json</code> 是<strong>创作期的合规要求，运行时的过渡产物</strong>。
+  真正决定激活的是 volatile <code>agentName</code>（走 HTTP 切换）。
+  你写它是为了过校验，不必指望它生效。
+  </p>
+</div>
+
+<!-- ============ 6 ============ -->
+<div class="sec-div"><span class="lb">Section 06</span><span class="ln"></span></div>
+<h2 id="s6"><span class="sec-num">6</span> 核心：Markdown 如何变成活的智能体</h2>
+
+<p class="lead">
+这是整个机制的心脏。前面所有流程都是为这一刻铺路：把 <code>agents/*.md</code> 这个纯文本文件，
+变成模型可以 <code>Agent({subagent_type: "xxx"})</code> 调度的真实智能体。
+</p>
+
+<h3 id="s6-1">6.1 加载器：声明 + 兜底双通道</h3>
+
+<div class="code-head"><span>cli/dist/codebuddy-lite-wb.mjs</span><span>line 2511 · char ~8029341 · loadPluginComponents</span></div>
+<pre><code>async loadPluginComponents(t, i){
+  h.push(this.agentLoader.load(i, n, this.normalizePathConfig(t.agents), p) ...)
+  h.push(this.skillLoader.load(i, n, this.normalizePathConfig(t.skills), p) ...)
+  ...
+}
+
+// normalizePathConfig：string → [string]；Array → filter(string)；否则 undefined</code></pre>
+
+<p>进入 <code>AgentExtensionLoader</code> 后才是重点：</p>
+
+<div class="code-head"><span>cli/dist/codebuddy-lite-wb.mjs</span><span>line 2511 · char ~7992642 · AgentExtensionLoader.load</span></div>
+<pre><code>async load(t, i, n, s){                    // t=插件根目录, i="name@marketplace", n=agents路径列表
+  if (n && n.length > 0)
+    c.push(...await this.loadFromPaths(t, i, n, p, h));    // ① 按 plugin.json 声明加载
+
+  let s = ed.join(t, tK);                                   // tK = "agents"
+  if (await this.pathExists(s) && !p.has(s))
+    c.push(...await this.scanAgentsDirectory(s, i, p, t, h));  // ② 兜底扫整个目录
+}</code></pre>
+
+<div class="note g">
+  <span class="t">实证：官方包真的在依赖这个兜底</span>
+  <p>
+  本机 16 个官方包中，<code>software-company</code> 的 plugin.json <strong>完全没有 <code>agents</code> 字段</strong>，
+  但它的 <code>agents/</code> 目录里有 5 个 MD，运行时照常加载全部成员。
+  </p>
+  <p>
+  对工程师的意义：<strong>你可以不写 <code>agents</code> 声明，只管往 <code>agents/</code> 里扔 MD。</strong>
+  但反过来，声明了却不存在的路径会报 error。所以最省心的做法是——<strong>声明与目录保持一致</strong>，
+  或者干脆只放目录。
+  </p>
+</div>
+
+<h3 id="s6-2">6.2 解析：frontmatter → 配置对象</h3>
+
+<div class="code-head"><span>cli/dist/codebuddy-lite-wb.mjs</span><span>line 2511 · char ~7995000 · parseAgentFile（精简）</span></div>
+<pre><code>let n = await eu.MarkdownUtils.extractFrontMatterFull(i);      // 解析 YAML frontmatter
+n.parseError && this.logger.warn(`[AgentLoader] Malformed YAML frontmatter ...`);
+
+let E = n.data,
+    R = ed.basename(A).replace(/\.md$/, ""),
+    P = E.name || R,                          // name ← frontmatter，缺失回退文件名
+    I = this.generateSourceLabel(A, S),
+    O = E.description || P;
+O.includes(I) || (O = `${O} ${I}`);           // description 自动追加来源标签
+
+let M = eu.MarkdownUtils.parseListField(E.tools),
+    L = ...parseListField(E.disallowedTools),
+    $ = ...parseListField(E.skills),
+    F = normalizeReasoningEffort(E.effort),
+    U = "worktree" === E.isolation ? E.isolation : void 0,
+    B = eu.MarkdownUtils.parsePositiveIntField(E.maxTurns),   // 非正整数 → 丢弃
+    W = eu.MarkdownUtils.parseBooleanField(E.background),
+    q = E.initialPrompt, G = tG.Ic(E.memory), z = E.model?.trim();
+
+for (let t of ["permissionMode", "hooks", "mcpServers"]){     // 这三个被忽略
+  ...this.logger.warn(`[AgentExtensionLoader] plugin agent '${P}' sets ${t},
+      which is ignored for plugin agents.`)
+}
+
+let J = n.content.trim(),                     // ← MD 正文
+    Y = c ? await tV.C(J, p, V, c) : tV.r(J, p, V);   // ← 变量替换
+
+return {
+  name: P, description: O, instructions: Y,   // ★ 正文 → instructions（system prompt）
+  ...N && {tools: N}, ...L.length && {disallowedTools: L},
+  models: z ? [z] : [],
+  asTool: !0,                                // ★★ 关键开关
+  color: E.color || generateColorFromName(P),
+  tags: [ej.UxB, ej.HOt, tz.PLUGIN_TAG, S],  // ★ S = "pluginName@marketplace"
+  ...F && {effort: F}, ...void 0 !== B && {maxTurns: B}, ...W && {background: W},
+  ...q && {initialPrompt: q}, ...$.length && {skills: $},
+  ...G && {memory: G}, ...U && {isolation: U}
+}</code></pre>
+
+<p>变量替换紧跟其后：</p>
+<div class="code-head"><span>cli/dist/codebuddy-lite-wb.mjs</span><span>line 2337 · char ~6775537</span></div>
+<pre><code>E = E.replace(/\$\{CODEBUDDY_PLUGIN_ROOT\}/g, t)
+     .replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, t)</code></pre>
+
+<h3 id="s6-3">6.3 三个关键产物</h3>
+
+<div class="grid g3">
+  <div class="card acc">
+    <div class="ct"><span class="dot"></span>instructions</div>
+    <div class="cd">
+      <strong>MD 正文 = system prompt。</strong>没有包装、没有模板、没有中间层。
+      你写的每一个字都会原样进入模型上下文。<br><br>
+      这既是它的力量（完全可控），也是它的陷阱（废话会消耗 context 且稀释指令）。
+    </div>
+  </div>
+  <div class="card acc">
+    <div class="ct"><span class="dot"></span>asTool: true</div>
+    <div class="cd">
+      硬编码为 <code>true</code>，<strong>不可配置</strong>。这是该 agent 能否出现在
+      Agent 工具的可派生清单里的<strong>唯一开关</strong>。
+    </div>
+  </div>
+  <div class="card acc">
+    <div class="ct"><span class="dot"></span>tags 末位</div>
+    <div class="cd">
+      <code>tags</code> 数组第 4 项（末位）是 <code>"&lt;pluginName&gt;@&lt;marketplace&gt;"</code>。
+      它是<strong>技能命名空间解析的依据</strong>（见 §8），也是运行时识别来源的标记。
+    </div>
+  </div>
+</div>
+
+<h3>6.4 注册到 Agent 工具：可 spawn 的秘密</h3>
+
+<p>配置对象造出来后，还要过三关才能真正被模型调用。</p>
+
+<div class="layer">
+  <div class="layer-h"><span class="layer-tag">①</span><span class="layer-role">并入 product 组件</span></div>
+<div class="code-head"><span>line 984 · char ~3402304 · PluginsProductProvider.provide</span></div>
+<pre><code>let t = await this.pluginManager.getActivePlugins(); ...
+for (let {components: i} of t){
+  let {settings: t, ...n} = i;                      // ← settings 被剥离，其余并入
+  s = await this.productMerger.merge(s, {...n, mergeStrategy: SmartMerge})
+}</code></pre>
+</div>
+
+<div class="layer">
+  <div class="layer-h"><span class="layer-tag">②</span><span class="layer-role">注册进 agentConfigMap</span></div>
+<div class="code-head"><span>line 970 · char ~3232128 · AgentManager.registerPluginAgents</span></div>
+<pre><code>let c = s?.components.agents ?? [];
+for (let t of c){
+  let s = t?.name;
+  if (s && !this.agentConfigMap.has(s)){     // ← 先到先得，重名不覆盖
+    this.agentConfigMap.set(s, n);
+    i.push(n)
+  }
+}</code></pre>
+</div>
+
+<div class="layer">
+  <div class="layer-h"><span class="layer-tag">③</span><span class="layer-role">写进 Agent 工具描述</span></div>
+<div class="code-head"><span>line 1852 · char ~5581576 · 生成工具描述</span></div>
+<pre><code>A = [
+  "Launch a detached worker...",
+  "",
+  "Available agent types:",
+  ...q.filter(t => !0 === t.asTool || t.name === nI.QYL.GENERAL_PURPOSE)
+     .map(t => `- ${t.name}${i ? `: ${i}` : ""}${n}`),
+  ...
+].join("\n")</code></pre>
+  <div class="note" style="margin-bottom:0;margin-top:12px">
+    <span class="t">字符预算</span>
+    <p>清单超长时会被 <code>truncateAgentsByCharBudget</code>（line 1854）截断。
+    这解释了为什么<strong>插件开太多时，某些 agent 会从清单里消失</strong> —— 不是没加载，是被预算裁掉了。</p>
+  </div>
+</div>
+
+<p>至此，模型看到的 Agent 工具描述里就有了 <code>- security-reviewer: 安全审计专家</code> 这一行，
+于是它能发出 <code>Agent({subagent_type: "security-reviewer", name: "security-reviewer", prompt: "..."})</code>。</p>
+
+<div class="note g">
+  <span class="t">这就是为什么规范强调 name 和 subagent_type 必须传 Agent ID</span>
+  <p>
+  Team 型规范里反复强调「调度成员时 <code>name</code> 与 <code>subagent_type</code> 都要传 MD 文件名」，
+  根因就在这里：<strong>Agent 工具的清单是按 <code>name</code> 字段索引的</strong>，
+  传中文名或自创名会匹配不到，系统只能退化处理（可能生成无意义名称或退化成 general-purpose）。
+  </p>
+</div>
+
+<!-- ============ 7 ============ -->
+<div class="sec-div"><span class="lb">Section 07</span><span class="ln"></span></div>
+<h2 id="s7"><span class="sec-num">7</span> Team 的运行时保障：只有两个，都是硬编码</h2>
+
+<p>
+如果你以为专家团有什么精巧的编排引擎，会失望。运行时的全部贡献只有两点。
+</p>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>① 打开 Agent Teams 开关</div>
+    <div class="cd">
+<div class="code-head"><span>app.asar 偏移 ~75243300</span></div>
+<pre style="margin-bottom:0"><code>let l = `1`, u = `0`, d = `team`;
+function resolveAgentTeamsEnv(e = {}){
+  return e.expertType === d ? l : e.disableAgentTeams ?? !0 ? u : l
+}
+var f = `CODEBUDDY_CODE_EXPERIMENTAL_AGENT_TEAMS`;</code></pre>
+      <p style="margin:10px 0 0;font-size:12.8px">
+      CLI 侧判定：<code>isEnabled(){ return "0" !== process.env.CODEBUDDY_CODE_EXPERIMENTAL_AGENT_TEAMS }</code><br>
+      即 <code>expertType === "team"</code> → 环境变量置 1 → <code>TeamCreate / Agent / SendMessage</code> 三个工具可用。
+      </p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>② 打一个 HTTP 头</div>
+    <div class="cd">
+      <p style="margin-bottom:8px"><code>X-Expert-Team-Task: true</code>，随请求发往后端。</p>
+      <p style="margin-bottom:0;font-size:12.8px">
+      用途是让服务端知道当前会话是团队任务（可能用于计量、路由或后端侧的差异化处理），
+      <strong>不影响本地编排行为</strong>。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="note d">
+  <span class="t">仅此而已 —— SOP 没有任何运行时强制</span>
+  <p><strong>代码证据：</strong></p>
+  <ul>
+    <li><code>memberAgents</code> 在整个 <code>app.asar</code>（96 MB）中出现 <strong>0 次</strong>。唯一被读的是 <code>teamInfo.leadAgent</code>。</li>
+    <li><code>expertType</code> 在 CLI（9.5 MB）中<strong>出现 0 次</strong>。CLI 只认标准插件组件。</li>
+    <li><code>members[]</code> 只被归一化（<code>id</code> 从 <code>agent</code> 字段回填、avatar 转 URL）后<strong>透传给渲染层做头像墙</strong>，运行时不消费。</li>
+  </ul>
+  <p>
+  所以「4 条正则 + 5 条红线 + Phase 编排」<strong>全部是写在主理人 MD 正文里的自然语言约定</strong>，
+  靠模型的指令遵循能力实现。这就是官方文档那句 <em>代码 = SOP(团队)</em> 的真实含义 ——
+  <strong>它是 prompt，不是 code</strong>。
+  </p>
+</div>
+
+<h3>7.1 这带来什么工程后果</h3>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:180px">你写下的东西</th><th style="width:110px">谁来保证</th><th>失效时会怎样</th></tr></thead>
+<tbody>
+<tr><td>必须先 TeamCreate</td><td><span class="badge no">仅 prompt</span></td><td>模型可能跳过建团直接开写，输出变成「主理人一人分饰多角」的单人独白</td></tr>
+<tr><td>成员产出不得代写</td><td><span class="badge no">仅 prompt</span></td><td>模型为了「高效」直接替团员写出 PRD/架构/代码，团队形同虚设</td></tr>
+<tr><td>信息经主理人中转</td><td><span class="badge no">仅 prompt</span></td><td>成员间直连或被跳过，上下文断裂，产出对不上</td></tr>
+<tr><td>阶段顺序</td><td><span class="badge no">仅 prompt</span></td><td>跳阶段推进，下游拿到不完整输入</td></tr>
+<tr><td>阶段完成要通报用户</td><td><span class="badge no">仅 prompt</span></td><td>长时间静默，用户不知道进度</td></tr>
+<tr><td>TeamCreate/Agent/SendMessage 工具<strong>存在</strong></td><td><span class="badge yes">代码保障</span></td><td>这是唯一硬保障：环境变量置 1 后工具才出现在工具清单里</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note w">
+  <span class="t">因此：主理人 MD 的写法决定团队是否真的协作</span>
+  <p>
+  既然没有代码强制，那让团队真的跑起来的唯一手段就是<strong>把约束写得足够具体、足够强、足够不容绕过</strong>。
+  这也是为什么官方规范要塞进那么多 <code>❌ 禁止…</code> 条目，且要求把「Agent ID 清单」逐条列明 ——
+  这是在<strong>用 prompt 长度和具体性对抗模型的偷懒倾向</strong>。
+  写团队时删掉这些约束 = 团队退化。
+  </p>
+</div>
+
+<!-- ============ 8 ============ -->
+<div class="sec-div"><span class="lb">Section 08</span><span class="ln"></span></div>
+<h2 id="s8"><span class="sec-num">8</span> 技能、脚本与命名空间</h2>
+
+<h3>8.1 技能：同样有声明 + 兜底双通道</h3>
+
+<div class="code-head"><span>cli/dist/codebuddy-lite-wb.mjs</span><span>line 2511 · char ~8005324 · SkillExtensionLoader</span></div>
+<pre><code>async load(t, i, n, s){
+  ...
+  let s = ed.join(t, rr);                              // rr = "skills"
+  if (await this.pathExists(s) && !p.has(s))
+    n = await this.scanSkillsDirectory(s, i, p, void 0, 0, t, h);   // 兜底扫目录
+
+  let S = ed.join(t, "SKILL.md");                      // 单文件技能形式
+  if (!p.has(S) && await this.pathExists(S))
+    n = await this.parseSkillFile(S, i, void 0, t, h);
+}</code></pre>
+
+<h3>8.2 命名空间前缀：一个容易搞错的机制</h3>
+
+<p>官方文档说 <code>plugin.json</code> 的 <code>name</code> 是「技能命名空间前缀」。这话在效果上对，但<strong>机制不是那样</strong>。</p>
+
+<div class="code-head"><span>line 2337 · char ~6775537 · deriveSkillNameFromPath</span><span>真实来源</span></div>
+<pre><code>function relativeSkillDirSegments(t, i, n = s){
+  return i ? n.relative(i, t).split(n.sep).filter(Boolean) : []
+}
+
+function deriveSkillNameFromPath(t, i, n = s){
+  let c = n.dirname(t);
+  return relativeSkillDirSegments(c, i, n).join(":") || n.basename(c)
+}</code></pre>
+
+<p>技能名是<strong>相对插件根目录的路径段用 <code>:</code> 连接</strong>（如 <code>skills:ast-scan</code>）。而消费端解析时：</p>
+
+<div class="code-head"><span>line 19 · char ~1022821 · resolveSkillNameForPreload</span></div>
+<pre><code>resolveSkillNameForPreload(t, i, n){
+  let s = i.find(i => i.name === t); if (s) return s;                 // ① 原名直查
+
+  if (!t.includes(":") && n?.tags?.includes(ey.PLUGIN_TAG)){
+    let s = n.tags[n.tags.length - 1];      // ★ 取 tags 末位 = "pluginName@marketplace"
+    if (s && s !== ey.PLUGIN_TAG){
+      let n = s.split("@")[0], c = `${n}:${t}`;                       // ② 拼前缀
+      let p = i.find(t => t.name === c); if (p) return p
+    }
+  }
+  if (!t.includes(":")){                                              // ③ 唯一后缀匹配
+    let s = i.filter(i => i.name.endsWith(`:${t}`));
+    if (1 === s.length) return s[0];
+    ...
+  }
+}</code></pre>
+
+<div class="note">
+  <span class="t">实践结论</span>
+  <p>
+  当你在 Agent MD 的 frontmatter 写 <code>skills: [ast-scan]</code> 时，解析顺序是：
+  <strong>① 直接找名为 <code>ast-scan</code> 的 → ② 找 <code>&lt;插件名&gt;:ast-scan</code> → ③ 唯一后缀匹配</strong>。
+  </p>
+  <p>
+  所以前缀来自 <strong>agent 的 tags 末位</strong>，而非从 plugin.json 现读。
+  两者通常相等（因为规范强制 <code>plugin</code> 字段 = <code>name</code>），但机制独立。
+  工程含义：<strong>技能名在包内最好全局唯一</strong>，否则第 ③ 步的「唯一后缀匹配」会失效。
+  </p>
+</div>
+
+<h3>8.3 bin/：约定优于配置</h3>
+
+<div class="code-head"><span>line 2511 · char ~8177098 · getPluginBinPaths</span></div>
+<pre><code>async getPluginBinPaths(){
+  let t = await this.getActivePlugins(), i = [];
+  for (let {plugin: n} of t)
+    if (n.installedPath){
+      let t = ed.join(n.installedPath, "bin"),
+          s = await ec.stat(t).catch(() => void 0);
+      s?.isDirectory() && i.push(t)          // ← 目录存在就收，不看 plugin.json
+    }
+  return i
+}</code></pre>
+
+<div class="code-head"><span>line 1819 · char ~5448252 · 注入 Bash 环境</span></div>
+<pre><code>function buildPluginPathEnv(t){
+  let i = process.env.PATH || "";
+  if ("win32" !== process.platform)
+    return [...t, i].filter(Boolean).join(":")
+  ...
+}
+async function getBashPluginEnv(t){
+  let i = [];
+  if (t) try{ i.push(...await t.getPluginBinPaths()) }catch{}
+  i.push(...(process.env.WORKBUDDY_EXTRA_PATHS ?? "").split(...).filter(Boolean));
+  return i.length ? {PATH: buildPluginPathEnv(i)} : void 0
+}</code></pre>
+
+<div class="note w">
+  <span class="t">bin/ 不需要声明，且 plugin.json 的 bin 字段是死字段</span>
+  <p>
+  <code>bin/</code> 是纯<strong>约定目录自动探测</strong>，与 <code>agents/skills</code> 的「声明 + 兜底」不同。
+  只要插件根下有 <code>bin/</code> 目录，它就会被前置到 Bash 工具的 <code>PATH</code>。
+  而 <code>plugin.json</code> 里的 <code>bin</code> 字段虽然会被扫描器归一化，<strong>CLI 侧无任何消费者</strong> —— 写了也没用。
+  </p>
+  <p>注意 <code>PATH</code> 是<strong>前置</strong>的，意味着包内脚本可以<strong>遮蔽</strong>系统同名命令。命名要有前缀意识。</p>
+</div>
+
+<!-- ============ 9 ============ -->
+<div class="sec-div"><span class="lb">Section 09</span><span class="ln"></span></div>
+<h2 id="s9"><span class="sec-num">9</span> 端到端时序图</h2>
+
+<p>把前面所有环节串成一条完整链路。建议对照这条链路来定位问题。</p>
+
+<div class="code-head"><span>完整链路 · 从点击到可 spawn</span></div>
+<pre><code>【渲染层】用户点选专家
+   │  contexts-BNN7VV-R.js: setSelectedExpertForSession({expertId, expertMarketplace, runtimeIdentity})
+   ▼
+【主进程】createConversationExpertRuntimePreparer                    app.asar ~76308000
+   ├─ resolveExpertLocation      → 定位包目录
+   ├─ activateExpert / ensureDownloaded
+   │     └─ 缓存命中? → 检查 .downloaded_at 新鲜度 → 过期则重下
+   ├─ resolveExpertAgentMarkdownPath(&lt;root&gt;/agents/&lt;leadAgent|agentName&gt;.md)
+   └─ assemblePreparedFacts → {pluginName, agentName, expertType, promptText}
+   ▼
+【主进程】applyPreparedExpertSettings                               app.asar ~76323000
+   ├─ sessionSettings.enabledPlugins["&lt;plugin&gt;@&lt;marketplace&gt;"]
+   ├─ extraKnownMarketplaces[marketplace] = {source: directory, url: ...}
+   └─ env.CODEBUDDY_CUSTOM_HEADERS += "X-Expert-Id: ..."
+                                     += "X-Expert-Team-Task: true"   (仅 team)
+   ▼
+【主进程】ExpertPluginActivation                                     app.asar ~89018600
+   └─ POST &lt;acp&gt;/api/v1/plugins/switch
+        {persist:false, enable:"&lt;plugin&gt;@&lt;mk&gt;", agentName:"...",
+         sourcePluginId:"...", internalModelRequestHeaders:[...]}
+   ▼
+【CLI】switchPlugins + setVolatilePluginAgent                        mjs 964
+   ▼
+【CLI】loadPluginComponents                                          mjs 2511
+   ├─ AgentExtensionLoader.load
+   │    ├─ 读 plugin.json 的 agents[]                    ← 通道 ①
+   │    ├─ 兜底扫 &lt;plugin&gt;/agents/ 目录（深度≤16）        ← 通道 ②
+   │    └─ parseAgentFile
+   │         ├─ extractFrontMatterFull → {name, description, maxTurns, skills, ...}
+   │         ├─ 正文 → 变量替换 ${CODEBUDDY_PLUGIN_ROOT}
+   │         └─ 产出 {name, instructions, asTool:true, tags:[...,"&lt;plugin&gt;@&lt;mk&gt;"]}
+   ├─ SkillExtensionLoader.load（读 skills[] + 兜底扫 skills/）
+   └─ 读 &lt;plugin&gt;/settings.json（仅 agent / subagentStatusLine 两个 key）
+   ▼
+【CLI】PluginsProductProvider.provide → product.agents               mjs 984
+   ▼
+【CLI】AgentManager.registerPluginAgents → agentConfigMap            mjs 970
+   ▼
+【CLI】applyPluginAgentSetting                                       mjs 970
+   └─ 把该 agent 的 instructions 覆盖到 default agent（成为会话人格）
+   ▼
+【CLI】生成 Agent 工具描述                                            mjs 1852
+   └─ "Available agent types:\n- security-reviewer: ...\n- ..."
+   ▼
+【模型】Agent({subagent_type:"security-reviewer", name:"security-reviewer", prompt:"..."})</code></pre>
+
+<div class="note g">
+  <span class="t">两条独立的 MD 读取路径，别混淆</span>
+  <p>
+  注意链路里 MD 被读了<strong>两次</strong>，目的完全不同：
+  </p>
+  <ul>
+    <li><strong>主进程读</strong>（<code>resolveExpertAgentMarkdownPath</code>）→ 只给 UI 显示提示词预览。</li>
+    <li><strong>CLI 读</strong>（<code>AgentExtensionLoader</code>）→ 才是真正装进模型的通道。</li>
+  </ul>
+  <p>改了 MD 后界面没变化？可能是<strong>主进程的 DTO 有缓存</strong>（<code>customExpertDtoCache</code>）；
+  改了 MD 后行为没变化？那是 CLI 侧没重新加载（需要重新激活）。两者不是一回事。</p>
+</div>
+
+<!-- ============ 10 ============ -->
+<div class="sec-div"><span class="lb">Section 10</span><span class="ln"></span></div>
+<h2 id="s10"><span class="sec-num">10</span> 动手：三种典型场景</h2>
+
+<h3 id="s10-1">10.1 先做选型决策</h3>
+
+<p>动手前先回答三个问题，它们决定包的形态：</p>
+
+<div class="q">
+  <span class="qt">决策三问</span>
+  <p><strong>① 单角色还是多角色？</strong> —— 判断标准：<em>有没有用户会直接问它的问题？</em> 每个独立成 agent 的角色，
+  都应覆盖一个完整的「分析域」。域内多能力归并以一个 agent，跨域才拆。拆太细会导致主理人调度开销吃掉收益。</p>
+  <p><strong>② 要不要带专属工具？</strong> —— 需要确定性的、模型不擅长的计算（如 AST 解析、指标计算、格式校验）就放
+  <code>skills/</code> 或 <code>bin/</code>；只是文字工作则不需要。</p>
+  <p><strong>③ 输出是否需要稳定结构？</strong> —— 需要则在 MD 的「输出规范」里写死模板（表格/JSON schema/Mermaid），
+  不要依赖模型自由发挥。</p>
+</div>
+
+<div class="grid g3">
+  <div class="card">
+    <div class="ct"><span class="dot"></span>场景 A · 单领域专家</div>
+    <div class="cd">
+      <code>expertType: agent</code><br>
+      1 个 MD，零协作开销。<br><br>
+      <strong>适用</strong>：代码审查、合同审阅、SQL 优化、翻译润色、教案生成。<br>
+      <strong>典型规模</strong>：1 个 MD，100–300 行。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>场景 B · 多角色专家团</div>
+    <div class="cd">
+      <code>expertType: team</code><br>
+      主理人 + N 团员，SOP 编排。<br><br>
+      <strong>适用</strong>：软件开发全流程、交易分析、深度研究、营销战役。<br>
+      <strong>典型规模</strong>：5–13 个 MD，主理人 200 行 + 各团员 100 行。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot c"></span>场景 C · 带工具专家</div>
+    <div class="cd">
+      agent 或 team 皆可，外挂 <code>skills/</code> + <code>bin/</code>。<br><br>
+      <strong>适用</strong>：需要真实执行能力的场景 —— 静态分析、数据库巡检、报表生成、批量处理。<br>
+      <strong>关键</strong>：用 <code>${CODEBUDDY_PLUGIN_ROOT}</code> 定位包内资源。
+    </div>
+  </div>
+</div>
+
+<h3 id="s10-2">10.2 场景 A：单领域专家（代码审查专家）</h3>
+
+<h4>第一步：初始化</h4>
+<div class="code-head"><span>命令行</span><span>bash</span></div>
+<pre><code>cd &lt;技能目录&gt;/scripts
+
+python3 init_expert.py code-reviewer \
+  --type agent \
+  --path ~/.workbuddy/plugins/marketplaces/my-experts/plugins
+
+# 产出：
+#   ~/.workbuddy/plugins/marketplaces/my-experts/plugins/code-reviewer/
+#   ├── .codebuddy-plugin/plugin.json     （全是 [TODO]）
+#   ├── agents/code-reviewer.md           （全是 [TODO]）
+#   ├── avatars/.gitkeep
+#   └── README.md</code></pre>
+
+<h4>第二步：填 plugin.json</h4>
+<div class="code-head"><span>.codebuddy-plugin/plugin.json</span><span>JSON</span></div>
+<pre><code>{
+  "name": "code-reviewer",
+  "version": "1.0.0",
+  "description": "Senior code reviewer covering correctness, security, performance and maintainability.",
+  "author": { "name": "Your Name", "email": "you@example.com" },
+  "agents": ["./agents/code-reviewer.md"],
+
+  "expertType": "agent",
+  "agentName": "code-reviewer",
+
+  "displayName": {
+    "en": "Senior Reviewer",
+    "zh": "审稿人"
+  },
+  "profession": {
+    "en": "Senior Code Reviewer",
+    "zh": "资深代码审查师"
+  },
+  "displayDescription": {
+    "en": "Senior code reviewer skilled at correctness, security and performance across languages. Delivers severity-ranked findings with concrete fixes.",
+    "zh": "资深代码审查师，精通正确性与安全性能缺陷识别，按严重程度分级输出可直接落地的修改建议。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "02-Engineering",
+  "defaultInitPrompt": {
+    "en": "Review this diff and list issues by severity",
+    "zh": "审查这段代码，按严重程度列出问题"
+  },
+  "plugin": "code-reviewer",
+  "tags": [
+    { "en": "Code Review", "zh": "代码审查" },
+    { "en": "Security Audit", "zh": "安全审计" },
+    { "en": "Performance", "zh": "性能分析" }
+  ],
+  "quickPrompts": [
+    { "en": "Review this diff and list issues by severity",
+      "zh": "审查这段代码，按严重程度列出问题" },
+    { "en": "Check this code for security vulnerabilities like injection and XSS",
+      "zh": "检查这段代码是否存在注入、XSS 等安全漏洞" },
+    { "en": "Find performance bottlenecks in this hot path",
+      "zh": "找出这段热点代码的性能瓶颈" }
+  ]
+}</code></pre>
+
+<div class="note w">
+  <span class="t">逐条核对这 7 个易错点</span>
+  <ul style="margin-bottom:0">
+    <li><code>name</code> 与 <code>plugin</code> 必须<strong>完全相等</strong>，且 kebab-case。</li>
+    <li><code>agentName</code> 必须等于 <code>agents/</code> 下的<strong>文件名</strong>（不含 .md）。</li>
+    <li><code>tags</code> 与 <code>quickPrompts</code> <strong>恰好各 3 个</strong>，多一个少一个都是 error。</li>
+    <li><code>defaultInitPrompt</code> 与 <code>quickPrompts[0]</code> <strong>逐字相同</strong>（界面显示的是后者）。</li>
+    <li><code>displayDescription.zh</code> 控制在 <strong>40–50 字</strong>（上例 45 字）。</li>
+    <li><code>categoryId</code> 必须是 12 个合法值之一（见附录 A）。</li>
+    <li>所有 i18n 字段都要有 <code>en</code> 与 <code>zh</code>，缺一即 error。</li>
+  </ul>
+</div>
+
+<h4>第三步：写 Agent MD</h4>
+<div class="code-head"><span>agents/code-reviewer.md</span><span>Markdown</span></div>
+<pre><code>---
+name: code-reviewer
+description: Reviews code for correctness, security, performance and maintainability issues, output severity-ranked findings with concrete fixes.
+displayName:
+  en: "Senior Reviewer"
+  zh: "审稿人"
+profession:
+  en: "Senior Code Reviewer"
+  zh: "资深代码审查师"
+maxTurns: 50
+---
+
+# 资深代码审查师 - 审稿人
+
+你是一名资深代码审查师。你的职责是从正确性、安全性、性能和可维护性四个维度审查代码，
+输出<strong>可执行</strong>的修改建议，而不是主观风格评判。
+
+## 核心能力
+
+1. **正确性审查**：识别逻辑错误、边界条件缺失、空值处理不当、并发竞态、错误 swallowed。
+2. **安全审计**：识别注入（SQL/命令/模板）、XSS、越权、敏感信息泄漏、依赖漏洞。
+3. **性能分析**：识别 N+1 查询、循环内重复计算、不必要同步阻塞、内存泄漏风险。
+4. **可维护性**：识别重复代码、过深嵌套、命名失义、缺少错误处理。
+
+## 工作流程
+
+1. **通读全貌**：先读完整段代码或 diff，理解意图，不急于下结论。
+2. **逐项审查**：按上述四个维度各扫一遍，记录候选问题。
+3. **去伪存真**：剔除误报与纯风格问题。只保留能说清危害的问题。
+4. **定位与建议**：每条问题给出文件行号、危害说明、以及具体改法。
+5. **汇总输出**：按下列模板输出。
+
+## 输出规范
+
+严格按以下结构输出，不要省略任何一节：
+
+### 总体结论
+一句话：这段代码是否可以合并，以及最关键的阻塞问题是什么。
+
+### 问题清单
+| 严重程度 | 位置 | 类别 | 问题描述 | 建议改法 |
+|---------|------|------|---------|---------|
+| 阻塞 | `path/to/file.ts:42` | 安全 | 用户输入直接拼接进 SQL | 改用参数化查询 |
+
+严重程度只取四档：`阻塞` / `严重` / `一般` / `建议`。
+类别只取四档：`正确性` / `安全` / `性能` / `可维护性`。
+
+### 亮点
+列出 1-3 处写得好的地方。不要为了凑数而编造。
+
+## 注意事项
+
+- **不做主观风格争论**：缩进、引号、分号这类交给 linter，不出现在报告里。
+- **不确定的标注不确定**：疑似问题必须标注「待确认」，不得伪装成确定结论。
+- **给出行号**：没有行号的问题视为无效。
+- **代码必须通过工具读取**：不要凭印象推断代码内容。
+- 输出语言与用户提问语言保持一致。</code></pre>
+
+<div class="note g">
+  <span class="t">这段 MD 为什么这样写</span>
+  <ul style="margin-bottom:0">
+    <li><strong>frontmatter 没有 <code>tools</code></strong> —— 规范明令禁止（§2.3）。</li>
+    <li><strong>「工作流程」给了确定性步骤</strong> —— 模型不会跳过通读直接输出。</li>
+    <li><strong>「输出规范」写死了模板与枚举值</strong> —— 保证多次调用输出结构稳定，可被下游解析。</li>
+    <li><strong>「注意事项」明确列了禁止项</strong> —— 抑制模型的编造与废话倾向。</li>
+    <li><strong>没有废话</strong> —— 每句话都是指令，因为正文直进 context，无中间层压缩。</li>
+  </ul>
+</div>
+
+<h4>第四步：头像 → 校验 → 注册</h4>
+<div class="code-head"><span>命令行</span><span>bash</span></div>
+<pre><code># 4. 生成头像（用 ImageGen，size 设为 1024x1024）
+#    prompt 从 MD 内容反推，例：
+#    "Professional cartoon-style illustration avatar, a senior code reviewer,
+#     wearing glasses, focused and meticulous expression,
+#     code diff lines and warning badges floating in background.
+#     Bust shot, facing forward. Clean simple blue-purple-toned background.
+#     High quality, professional, natural."
+#    → 保存到 avatars/expert.png
+
+# 5. 校验
+python3 validate_expert.py ~/.workbuddy/plugins/marketplaces/my-experts/plugins/code-reviewer
+
+# 6. 注册（会二次校验 + 写 marketplace.json + 写 .created-by-session）
+python3 register_expert.py ~/.workbuddy/plugins/marketplaces/my-experts/plugins/code-reviewer
+
+# 7.（可选）打包分享
+python3 package_expert.py ~/.workbuddy/plugins/marketplaces/my-experts/plugins/code-reviewer ./dist</code></pre>
+
+<h3 id="s10-3">10.3 场景 B：专家团（代码质量攻坚团）</h3>
+
+<p>Team 型的关键在于<strong>主理人 MD 的 SOP 与约束写得够不够硬</strong> —— 因为这是唯一的保障。</p>
+
+<h4>目录结构</h4>
+<div class="tree"><span class="dir">code-quality-team/</span>
+├── <span class="dir">.codebuddy-plugin/</span>plugin.json
+├── <span class="dir">agents/</span>
+│   ├── code-quality-team-lead.md    <span class="req">主理人（前缀 = 团队名）</span>
+│   ├── cq-security-auditor.md       安全审计
+│   ├── cq-perf-analyst.md           性能分析
+│   ├── cq-maintain-reviewer.md      可维护性
+│   └── cq-fix-writer.md             修复实施
+├── <span class="dir">avatars/</span>                     5 张（团队 + 主理人 + 4 团员）
+└── settings.json                    <span class="opt">{"agent": "code-quality-team-lead"}</span></div>
+
+<h4>plugin.json 要点</h4>
+<div class="code-head"><span>.codebuddy-plugin/plugin.json（team 型差异部分）</span><span>JSON</span></div>
+<pre><code>{
+  "name": "code-quality-team",
+  "version": "1.0.0",
+  "description": "Multi-role team that audits and fixes code quality issues through a SOP pipeline.",
+  "agents": [
+    "./agents/code-quality-team-lead.md",
+    "./agents/cq-security-auditor.md",
+    "./agents/cq-perf-analyst.md",
+    "./agents/cq-maintain-reviewer.md",
+    "./agents/cq-fix-writer.md"
+  ],
+
+  "expertType": "team",
+  "agentName": "code-quality-team-lead",
+  "teamInfo": {
+    "leadAgent": "code-quality-team-lead",
+    "memberAgents": [
+      "cq-security-auditor",
+      "cq-perf-analyst",
+      "cq-maintain-reviewer",
+      "cq-fix-writer"
+    ]
+  },
+
+  "displayName": { "en": "Code Quality Team", "zh": "代码质量攻坚团" },
+  "profession":  { "en": "Code Quality Team", "zh": "代码质量攻坚团" },   <span class="c">← 必须与 displayName 一致</span>
+  ...
+  "members": [
+    { "id": "code-quality-team-lead", "name": {"en": "Shen", "zh": "沈把关"},
+      "profession": {"en": "Quality Director", "zh": "质量总监"},
+      "avatar": "avatars/code-quality-team-lead.png", "role": "lead" },
+    { "id": "cq-security-auditor", "name": {"en": "Yu", "zh": "于无隙"},
+      "profession": {"en": "Security Auditor", "zh": "安全审计师"},
+      "avatar": "avatars/cq-security-auditor.png", "role": "member" },
+    ...
+  ]
+}</code></pre>
+
+<div class="note d">
+  <span class="t">Team 型三个专属硬约束</span>
+  <ul style="margin-bottom:0">
+    <li><code>profession</code> 必须与 <code>displayName</code> <strong>逐字相等</strong>（校验器判 error，不是 warning）。</li>
+    <li><code>members[]</code> 必须<strong>包含主理人</strong>且 <code>role: "lead"</code>；<code>teamInfo.memberAgents</code> 必须<strong>不含</strong>主理人。</li>
+    <li>必须有 <code>settings.json</code>，且 <code>{"agent": ...}</code> 等于 <code>agentName</code>。</li>
+  </ul>
+</div>
+
+<h4>主理人 MD 骨架（这是团队的灵魂）</h4>
+<div class="code-head"><span>agents/code-quality-team-lead.md</span><span>Markdown</span></div>
+<pre><code>---
+name: code-quality-team-lead
+description: Lead that orchestrates a code quality pipeline across security, performance, maintainability and fix implementation.
+displayName:
+  en: "Shen"
+  zh: "沈把关"
+profession:
+  en: "Quality Director"
+  zh: "质量总监"
+maxTurns: 180
+---
+
+# 代码质量攻坚团 - 主理人
+
+你是代码质量攻坚团的主理人沈把关 · 质量总监。你负责按 SOP 编排团队完成代码质量攻坚，
+<strong>你是协调者，不是执行者</strong>。
+
+## 团队成员
+
+| Agent ID | 姓名 | 职责 | 什么时候调它 |
+|---------|------|------|------------|
+| cq-security-auditor | 于无隙 | 安全审计 | 需要找注入/XSS/越权/泄漏 |
+| cq-perf-analyst | 马立行 | 性能分析 | 需要找瓶颈/慢查询/内存问题 |
+| cq-maintain-reviewer | 易读通 | 可维护性 | 需要找重复/嵌套/命名问题 |
+| cq-fix-writer | 何补拙 | 修复实施 | 拿到问题清单后要落地修改 |
+
+## 工作流路由（收到请求时首先判断）
+
+| 场景 | 判定条件 | 走哪条 |
+|------|---------|--------|
+| 全量攻坚 | 用户要求完整审查 + 修复 | 标准 SOP |
+| 只查不改 | 用户只问「有什么问题」 | 并行审查，跳过 cq-fix-writer |
+| 单一维度 | 用户只问安全 / 只问性能 | 直调单一成员 |
+| 已知问题求修 | 用户已经列出问题清单 | 直调 cq-fix-writer |
+
+## 标准 SOP
+
+### Phase 1（并行，无数据依赖）
+同一条消息内同时 spawn：
+- cq-security-auditor → 安全问题清单
+- cq-perf-analyst → 性能问题清单
+- cq-maintain-reviewer → 可维护性问题清单
+
+**三个成员互不通信，全部回传给你。**
+
+### Phase 2（串行，依赖 Phase 1）
+你把 Phase 1 的<strong>完整产出原文</strong>合并成一份问题清单，交给 cq-fix-writer：
+- 按严重程度排序
+- 标注哪些需要修、哪些仅建议
+- 带上每个问题的原文位置信息
+
+cq-fix-writer 输出修改方案 + 具体代码。
+
+### Phase 3：最终报告
+你汇总所有产出，向用户输出交付总结。
+
+## 团队协作机制（铁律）
+
+你必须走正式的团队协作流程，严禁简化或跳过：
+
+1. **建立团队**：任务开始时由你亲自创建团队（TeamCreate），命名 `cq-&lt;项目简称&gt;`。
+   <strong>团队创建必须且只能由你执行，严禁委派任何成员创建团队。</strong>
+2. **调度成员**：按 SOP 阶段将成员拉入协作、下发独立任务。
+   成员作为独立协作方输出专业产出，<strong>不得由你代写</strong>。
+3. **消息中转**：成员产出回传给你，由你汇总、转交下一阶段。
+   所有跨成员信息流<strong>必须经你中转，不得互相直连</strong>。
+4. **成员结论为准**：任何专业产出必须由对应成员输出后再采信，你只做编排与汇编。
+
+### 严禁行为
+
+- ❌ 禁止跳过 TeamCreate，直接自己模拟成员发言或并行写出多角色内容
+- ❌ 禁止自己代写任何团队成员的专业产出
+- ❌ 禁止未完成前序阶段就跳到后续阶段
+- ❌ 禁止让成员互相直连通信
+- ❌ 禁止 spawn 主理人自己
+
+### 子任务命名（CRITICAL）
+
+调度每位成员时，<strong>必须</strong>在 Agent 工具的 `name` 参数传入该成员的 Agent ID，
+`subagent_type` 也传入<strong>相同的值</strong>。禁止省略 name，禁止用中文名或自创名称：
+
+- `name: "cq-security-auditor", subagent_type: "cq-security-auditor"`
+- `name: "cq-perf-analyst", subagent_type: "cq-perf-analyst"`
+- `name: "cq-maintain-reviewer", subagent_type: "cq-maintain-reviewer"`
+- `name: "cq-fix-writer", subagent_type: "cq-fix-writer"`
+
+## 协作规则
+
+1. 每阶段结束后，将<strong>完整产出原文</strong>传递给下一阶段成员，不要只传摘要。
+2. 每完成一个阶段向用户简要通报进度。
+3. 所有输出使用与用户原始需求相同的语言。
+4. 最终报告必须包含：TL;DR、问题清单、修改文件清单、遗留问题、用户下一步建议。</code></pre>
+
+<div class="note w">
+  <span class="t">团员 MD 的必备项</span>
+  <p>每个团员 MD 必须包含这 6 项，缺一项团队就会退化：</p>
+  <ol style="margin-bottom:0">
+    <li>角色定义（一句话说清你是谁）</li>
+    <li>擅长领域（3–5 个具体能力点）</li>
+    <li>分析框架（分步骤流程）</li>
+    <li>数据获取方式（具体工具调用）</li>
+    <li>结构化输出模板（表格/分段）</li>
+    <li><strong>SendMessage 回传要求</strong> —— 明文写「分析完成后必须通过 SendMessage 将完整结果回传给主理人」</li>
+  </ol>
+  <p style="margin:8px 0 0">第 6 项最容易被漏掉。没有它，团员产出可能不回传，主理人拿不到东西，整条链路断掉。</p>
+</div>
+
+<h3 id="s10-4">10.4 场景 C：带专属工具的专家</h3>
+
+<p>当任务里有<strong>确定性计算</strong>时，别让模型用自然语言硬算 —— 给它脚本。</p>
+
+<div class="tree"><span class="dir">db-guardian/</span>
+├── <span class="dir">.codebuddy-plugin/</span>plugin.json
+├── <span class="dir">agents/</span>db-guardian.md
+├── <span class="dir">skills/</span>
+│   └── slowlog-scan/
+│       ├── SKILL.md              <span class="c">← 技能入口</span>
+│       └── scripts/scan.py       <span class="c">← 真实脚本</span>
+├── <span class="dir">bin/</span>
+│   └── dbstat                    <span class="c">← 自动入 PATH，无需声明</span>
+├── <span class="dir">references/</span>
+│   └── rules.md                 <span class="c">← 大段参考资料放这里，别塞进 MD</span>
+└── <span class="dir">avatars/</span></div>
+
+<div class="code-head"><span>agents/db-guardian.md（关键片段）</span><span>Markdown</span></div>
+<pre><code>---
+name: db-guardian
+description: Database health guardian that diagnoses slow queries, index issues and connection pool saturation.
+displayName:
+  en: "Guardian"
+  zh: "守库人"
+profession:
+  en: "Database Reliability Engineer"
+  zh: "数据库可靠性工程师"
+maxTurns: 60
+skills: [slowlog-scan]              <span class="c"># 预加载本包技能，会自动解析为 db-guardian:slowlog-scan</span>
+---
+
+# 数据库可靠性工程师 - 守库人
+...
+
+## 数据获取方式
+
+扫描慢日志时，<strong>必须</strong>调用脚本而非自己推算：
+
+    ${CODEBUDDY_PLUGIN_ROOT}/skills/slowlog-scan/scripts/scan.py --top 20 --unit ms
+
+执行计划分析使用 PATH 中已就绪的工具：
+
+    dbstat --explain "&lt;sql&gt;"
+
+诊断规则参考：
+
+    ${CODEBUDDY_PLUGIN_ROOT}/references/rules.md</code></pre>
+
+<div class="note g">
+  <span class="t">三个关键机制在这里同时生效</span>
+  <ul style="margin-bottom:0">
+    <li><code>${CODEBUDDY_PLUGIN_ROOT}</code> → 被替换成包根目录绝对路径，让 MD 能引用包内任何资源。</li>
+    <li><code>skills: [slowlog-scan]</code> → 解析时自动尝试 <code>db-guardian:slowlog-scan</code> 前缀（§8.2）。</li>
+    <li><code>bin/dbstat</code> → 无需任何声明，插件激活时自动前置到 Bash 的 PATH（§8.3）。</li>
+  </ul>
+  <p style="margin:8px 0 0">把大段规则放 <code>references/</code> 而不是 MD 正文 —— 正文常驻 context，参考资料按需读取。</p>
+</div>
+
+<!-- ============ 11 ============ -->
+<div class="sec-div"><span class="lb">Section 11</span><span class="ln"></span></div>
+<h2 id="s11"><span class="sec-num">11</span> 12 个反直觉的坑</h2>
+
+<p class="lead">
+以下每一条都是<strong>官方文档口径与代码实现不一致</strong>，或者<strong>文档没写但会咬人</strong>的地方。按踩坑频率排序。
+</p>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:32px">#</th><th style="width:230px">直觉 / 文档说法</th><th>代码实证</th><th style="width:150px">后果</th></tr></thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>把专家目录放哪都行，注册了就能用</td>
+<td>扫描器<strong>硬编码</strong>只扫 <code>marketplaces/my-experts/plugins</code>；<code>init_expert.py</code> 对 <code>--path</code> 做硬检查直接 <code>sys.exit(1)</code>；<code>validate_expert.py</code> 也判定「不在专家目录下将无法被检测到」</td>
+<td><span class="badge no">专家根本不出现</span></td>
+</tr>
+<tr>
+<td>2</td>
+<td>写好 plugin.json 就够了</td>
+<td>注册是<strong>必经步骤</strong>。扫描以 <code>marketplace.json</code> 为唯一入口，<code>if (!await pathExists(marketplace.json)) return []</code></td>
+<td><span class="badge no">目录齐全但界面无此专家</span></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>agents</code> 字段必须写明每个 MD</td>
+<td><code>AgentExtensionLoader.load</code> 在读完声明后<strong>还会兜底扫 <code>&lt;plugin&gt;/agents/</code></strong>（深度≤16）。实证：官方 <code>software-company</code> 就<strong>没有</strong>此字段</td>
+<td><span class="badge yes">可省；但声明了不存在的路径反而报错</span></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>teamInfo.memberAgents</code> 是成员清单，运行时会照着调</td>
+<td>该字段在 96 MB 的 <code>app.asar</code> 中出现 <strong>0 次</strong>。运行时唯一读的是 <code>teamInfo.leadAgent</code>。<code>members[]</code> 只用于渲染头像墙</td>
+<td><span class="badge no">团队编排无任何运行时保障</span></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>settings.json</code> 是 team 生效的关键</td>
+<td>CLI 确实读（只认 <code>agent</code>/<code>subagentStatusLine</code> 两个 key），但<strong>主进程启动时主动删除</strong>这类单 key 文件。本机 16 个官方包<strong>一个都没有</strong>。真正生效的是 volatile <code>agentName</code></td>
+<td><span class="badge no">写了也不指望它生效</span></td>
+</tr>
+<tr>
+<td>6</td>
+<td>frontmatter 里写 <code>tools</code> 可以限制工具</td>
+<td>规范明令禁止。且 <code>permissionMode</code>/<code>hooks</code>/<code>mcpServers</code> 三个字段<strong>写了会被静默忽略并打 warning</strong>：「is ignored for plugin agents」</td>
+<td><span class="badge no">配置无效，且不易察觉</span></td>
+</tr>
+<tr>
+<td>7</td>
+<td>改了 MD 立刻生效</td>
+<td>有两套读取与缓存：主进程 DTO 有 <code>customExpertDtoCache</code>（影响界面），CLI 侧需重新激活（影响行为）。本地包<strong>无热重载</strong></td>
+<td><span class="badge no">改了没反应，需重新选择专家</span></td>
+</tr>
+<tr>
+<td>8</td>
+<td>选了专家会一直生效</td>
+<td><code>POST /plugins/switch</code> 带 <code>persist: false</code>，切换是 <strong>volatile（会话级）</strong></td>
+<td><span class="badge no">新会话回到默认助手</span></td>
+</tr>
+<tr>
+<td>9</td>
+<td>技能前缀来自 plugin.json 的 <code>name</code></td>
+<td>实际来自 <strong>agent tags 末位</strong>的 <code>"&lt;pluginName&gt;@&lt;marketplace&gt;"</code> 拆分；<code>deriveSkillNameFromPath</code> 用的是相对路径段 join(<code>:</code>)</td>
+<td><span class="badge yes">效果相同，机制不同</span></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>bin</code> 字段声明 <code>bin/</code> 目录</td>
+<td><code>bin/</code> 是<strong>约定目录自动探测</strong>（<code>getPluginBinPaths</code> 直接 join 不看清单）。<code>plugin.json</code> 的 <code>bin</code> 字段<strong>无任何消费者</strong></td>
+<td><span class="badge no">该字段是死字段</span></td>
+</tr>
+<tr>
+<td>11</td>
+<td>专家缓存路径是 <code>cache/experts/&lt;name&gt;/&lt;version&gt;/</code></td>
+<td>真实落盘是 <code>marketplaces/experts/plugins/&lt;bundleName&gt;/</code>，<strong>无 version 层级</strong>。<code>cache/experts/</code> 是历史遗留；<code>app/cache/experts/</code> 才存 <code>manifest.json</code> + <code>expert-bundle-map.json</code></td>
+<td><span class="badge no">改错地方，改了不生效</span></td>
+</tr>
+<tr>
+<td>12</td>
+<td>categoryId 只有 12 个分类</td>
+<td>本机实证存在第 13 个 <code>13-TencentZone</code>（<code>andon-q-expert</code>），官方文档未列出</td>
+<td><span class="badge no">照抄文档会漏掉合法值</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="note w">
+  <span class="t">还有一个隐性约束：插件数量与字符预算</span>
+  <p>
+  Agent 工具的「可派生类型清单」是<strong>拼进工具描述字符串</strong>的，且有字符预算上限
+  （<code>truncateAgentsByCharBudget</code>）。同时启用多个专家包时，
+  超出预算的 agent 会被<strong>静默截断</strong> —— 它们确实加载了，但模型看不到、也就无从调用。
+  </p>
+  <p style="margin-bottom:0">工程建议：<strong>一个团队控制在 5–7 个成员</strong>（官方 <code>software-company</code> 是 5 个，
+  <code>trading-agent</code> 是 13 个属于上限特例），并给每个 agent 起<strong>短而有区分度的名字</strong>，
+  因为名字本身也占预算。</p>
+</div>
+
+<!-- ============ 12 ============ -->
+<div class="sec-div"><span class="lb">Section 12</span><span class="ln"></span></div>
+<h2 id="s12"><span class="sec-num">12</span> 排错手册</h2>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:290px">现象</th><th>排查顺序</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>专家在界面里找不到</strong></td>
+<td>
+① 目录是否在 <code>my-experts/plugins/</code> 下 →
+② <code>marketplace.json</code> 是否存在且有该条目（<code>source</code> 形如 <code>./plugins/&lt;dir&gt;</code>）→
+③ 条目的 <code>source</code> 与目录名是否对得上 →
+④ <code>plugin.json</code> 是否合法 JSON 且 <code>name</code>/<code>agentName</code> 齐全
+</td>
+</tr>
+<tr>
+<td><strong>validate 报 name 相关错</strong></td>
+<td>
+① <code>name</code> 是否 kebab-case 且 ≥2 字符 →
+② <code>plugin</code> 是否等于 <code>name</code> →
+③ <code>agentName</code> 是否有对应 <code>agents/&lt;name&gt;.md</code> →
+④ MD 的 frontmatter <code>name</code> 是否等于文件名 →
+⑤ 文件名是否是 <code>team-lead.md</code>（需加前缀）
+</td>
+</tr>
+<tr>
+<td><strong>validate 报数量/长度错</strong></td>
+<td>
+<code>tags</code> 与 <code>quickPrompts</code> 必须<strong>恰好 3 个</strong>；
+<code>displayDescription.zh</code> 40–50 字（仅 warning）；
+team 型 <code>profession</code> ≡ <code>displayName</code>
+</td>
+</tr>
+<tr>
+<td><strong>专家存在，但行为不对</strong></td>
+<td>
+① 是否真的选中了该专家（切换是<strong>会话级 volatile</strong>）→
+② 改完 MD 后是否<strong>重新激活</strong>（无热重载）→
+③ 正文是否真的进了 context（确认 MD 路径被加载）→
+④ 正文里是否有<code>tools</code>/<code>hooks</code>/<code>mcpServers</code> 被忽略
+</td>
+</tr>
+<tr>
+<td><strong>团队退化成「主理人独白」</strong></td>
+<td>
+这是<strong>prompt 失效</strong>而非代码问题。检查主理人 MD 是否包含：
+TeamCreate 强制条款、代写禁令、消息中转条款、Agent ID 逐条列举、团员 MD 的 SendMessage 回传要求。
+删掉任一条都会显著提高退化概率
+</td>
+</tr>
+<tr>
+<td><strong>团员产出不回传 / 断链</strong></td>
+<td>
+① 团员 MD 是否明文写了 SendMessage 回传要求 →
+② 主理人调度时 <code>name</code> 与 <code>subagent_type</code> 是否都传了 Agent ID（<strong>不是中文名</strong>）→
+③ Agent ID 是否等于 MD 文件名
+</td>
+</tr>
+<tr>
+<td><strong>成员在 Agent 工具清单里消失</strong></td>
+<td>
+① Agent 工具描述被字符预算截断（成员过多或名字过长）→
+② <code>agentConfigMap</code> <strong>先到先得</strong>，与其它插件/用户级 agent 重名会被挤掉 →
+③ 名字是否被 <code>truncateAgentsByCharBudget</code> 裁掉
+</td>
+</tr>
+<tr>
+<td><strong>技能引用不上</strong></td>
+<td>
+① frontmatter 的 <code>skills</code> 名字 → 直查 → <code>&lt;插件名&gt;:&lt;技能名&gt;</code> → 唯一后缀匹配，三步都失败才落空 →
+② 包内技能名是否唯一（重名会让第三步失效）→
+③ <code>skills/</code> 目录是否存在（有兜底扫描）
+</td>
+</tr>
+<tr>
+<td><strong>bin 脚本执行不了</strong></td>
+<td>
+① <code>bin/</code> 是否真的在插件<strong>根目录</strong>（不是在 <code>.codebuddy-plugin/</code> 里）→
+② 脚本是否有执行权限 →
+③ 注意 PATH 是<strong>前置</strong>的，确认没有与系统命令冲突
+</td>
+</tr>
+<tr>
+<td><strong>注册脚本提示找不到会话 ID</strong></td>
+<td>
+环境变量 <code>CODEBUDDY_SESSION_ID</code> 未注入。这不影响 <code>marketplace.json</code> 写入，
+只是不生成 <code>.created-by-session</code>，专家仍可正常使用
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============ A ============ -->
+<div class="sec-div"><span class="lb">Appendix A</span><span class="ln"></span></div>
+<h2 id="s13"><span class="sec-num">A</span> 速查表</h2>
+
+<h3>A.1 命令速查</h3>
+<div class="code-head"><span>五条主命令</span><span>bash</span></div>
+<pre><code>SCRIPTS="&lt;技能目录&gt;/scripts"
+XP="~/.workbuddy/plugins/marketplaces/my-experts/plugins"
+
+# ① 初始化
+python3 $SCRIPTS/init_expert.py &lt;name&gt; --type agent|team --path $XP
+
+# ② 校验
+python3 $SCRIPTS/validate_expert.py $XP/&lt;name&gt;
+
+# ③ 注册（必经）
+python3 $SCRIPTS/register_expert.py $XP/&lt;name&gt;
+
+# ④ 打包
+python3 $SCRIPTS/package_expert.py $XP/&lt;name&gt; ./dist
+
+# ⑤ 批量
+python3 $SCRIPTS/batch_create.py</code></pre>
+
+<h3>A.2 关键路径速查</h3>
+<div class="kv">
+<div class="k">自建专家目录</div><div class="v"><code>~/.workbuddy/plugins/marketplaces/my-experts/plugins/&lt;name&gt;/</code></div>
+<div class="k">市场清单</div><div class="v"><code>~/.workbuddy/plugins/marketplaces/my-experts/.codebuddy-plugin/marketplace.json</code></div>
+<div class="k">官方包落盘</div><div class="v"><code>~/.workbuddy/plugins/marketplaces/experts/plugins/&lt;bundleName&gt;/</code></div>
+<div class="k">市场元数据</div><div class="v"><code>~/.workbuddy/app/cache/experts/{manifest.json, expert-bundle-map.json}</code></div>
+<div class="k">用户级 agent</div><div class="v"><code>~/.workbuddy/agents/*.md</code>（<strong>独立机制，不是专家包</strong>）</div>
+<div class="k">用户级技能</div><div class="v"><code>~/.workbuddy/skills/&lt;name&gt;/SKILL.md</code></div>
+<div class="k">团队环境变量</div><div class="v"><code>CODEBUDDY_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code>（team 型自动置 1）</div>
+<div class="k">包内变量</div><div class="v"><code>${CODEBUDDY_PLUGIN_ROOT}</code> → 插件根目录绝对路径</div>
+</div>
+
+<h3>A.3 行业分类（categoryId）</h3>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:230px">categoryId</th><th style="width:150px">分类</th><th>适用场景</th></tr></thead>
+<tbody>
+<tr><td><code>01-ProductDesign</code></td><td>产品设计</td><td>UI/UX 设计、产品规划、原型、交互设计</td></tr>
+<tr><td><code>02-Engineering</code></td><td>技术工程</td><td>编程开发、架构设计、DevOps、技术选型</td></tr>
+<tr><td><code>03-GameSpatial</code></td><td>游戏空间</td><td>游戏开发、3D 建模、虚拟现实、游戏设计</td></tr>
+<tr><td><code>04-DataAI</code></td><td>数据智能</td><td>数据分析、机器学习、大模型应用、BI</td></tr>
+<tr><td><code>05-MarketingGrowth</code></td><td>营销增长</td><td>品牌营销、用户增长、广告投放、SEO</td></tr>
+<tr><td><code>06-ContentCreative</code></td><td>内容创作</td><td>文案写作、视频脚本、创意策划、翻译</td></tr>
+<tr><td><code>07-SalesCommerce</code></td><td>销售商务</td><td>销售策略、商务谈判、客户管理、电商</td></tr>
+<tr><td><code>08-FinanceInvestment</code></td><td>金融投资</td><td>投资分析、财务管理、风控、量化交易</td></tr>
+<tr><td><code>09-OperationsHR</code></td><td>运营人力</td><td>项目运营、人力资源、组织管理、培训</td></tr>
+<tr><td><code>10-ProjectQuality</code></td><td>项目质量</td><td>项目管理、质量保障、测试、流程优化</td></tr>
+<tr><td><code>11-SecurityCompliance</code></td><td>法务安全</td><td>信息安全、合规审查、法务咨询、隐私保护</td></tr>
+<tr><td><code>12-IndustryConsultant</code></td><td>行业顾问</td><td>跨行业咨询、战略规划、不属于以上明确分类的</td></tr>
+<tr style="background:var(--amber-soft)"><td><code>13-TencentZone</code></td><td>（文档未列）</td><td><strong>实证存在</strong>于官方包 <code>andon-q-expert</code>，官方文档未收录</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>A.4 头像背景色调映射</h3>
+<p>同一团队的头像必须共用风格锚定词，背景色调由 categoryId 决定：</p>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:230px">categoryId</th><th>背景色调</th></tr></thead>
+<tbody>
+<tr><td>01 / 02 / 03</td><td><code>warm orange-coral</code> / <code>blue-purple</code> / <code>purple-red gradient</code></td></tr>
+<tr><td>04 / 05 / 06</td><td><code>cyan-teal</code> / <code>red-orange</code> / <code>pink-magenta</code></td></tr>
+<tr><td>07 / 08 / 09</td><td><code>golden-amber</code> / <code>dark blue with gold accent</code> / <code>navy slate-blue</code></td></tr>
+<tr><td>10 / 11 / 12</td><td><code>green-emerald</code> / <code>dark grey-blue</code> / <code>deep teal with silver accent</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============ B ============ -->
+<div class="sec-div"><span class="lb">Appendix B</span><span class="ln"></span></div>
+<h2 id="s14"><span class="sec-num">B</span> 本机实证数据</h2>
+
+<p>
+以下是对这台机器上 16 个真实落盘专家包的统计。它们是「别人怎么写」的一手参考，
+也可用来校准自己的包规模。
+</p>
+
+<h3>B.1 包清单</h3>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th style="width:250px">包名</th><th style="width:100px">类型</th><th style="width:130px">categoryId</th><th>结构特征</th></tr></thead>
+<tbody>
+<tr><td><code>software-company</code></td><td><span class="badge gray">team</span></td><td>（无）</td><td><strong>无 <code>agents</code> 字段</strong>、无 avatars —— 纯靠目录兜底 + 远程头像</td></tr>
+<tr><td><code>trading-agent</code></td><td><span class="badge gray">team</span></td><td>08</td><td>13 个 MD / 12 memberAgents / 13 members —— 规模上限</td></tr>
+<tr><td><code>stock-partner-team</code></td><td><span class="badge gray">team</span></td><td>08</td><td>7 个 MD / 7 members，8 张头像（唯一带全量头像的团队）</td></tr>
+<tr><td><code>fullstack-dev</code></td><td><span class="badge opt">agent</span></td><td>02</td><td>1 MD + 1 头像，字段最完整的范例</td></tr>
+<tr><td><code>andon-q-expert</code></td><td><span class="badge opt">agent</span></td><td><strong>13-TencentZone</strong></td><td>唯一使用文档外分类的包</td></tr>
+<tr><td><code>senior-developer</code></td><td><span class="badge opt">agent</span></td><td>02</td><td>1 MD + 1 头像</td></tr>
+<tr><td><code>up-stock-strategy-analyze</code></td><td><span class="badge opt">agent</span></td><td>—</td><td>1 MD + 1 头像 + 附带 skills 包</td></tr>
+<tr><td><code>workspace-builder</code></td><td><span class="badge opt">agent</span></td><td>—</td><td>1 MD + 1 头像</td></tr>
+<tr><td><code>content-creator</code></td><td><span class="badge opt">agent</span></td><td>06</td><td>1 MD + 1 头像</td></tr>
+<tr><td><code>news-buddy</code></td><td><span class="badge opt">agent</span></td><td>06</td><td>1 MD + 1 头像</td></tr>
+<tr><td><code>data-analytics-reporter</code></td><td><span class="badge opt">agent</span></td><td>04</td><td>1 MD + 1 头像</td></tr>
+<tr><td><code>ui-designer</code></td><td><span class="badge opt">agent</span></td><td>—</td><td>1 MD + 1 头像</td></tr>
+<tr><td><code>xiaohongshu-operations-expert</code></td><td><span class="badge opt">agent</span></td><td>—</td><td>1 MD + 1 头像</td></tr>
+<tr><td><code>meituan-living-assistant</code></td><td><span class="badge opt">agent</span></td><td>07</td><td>1 MD，<strong>无头像</strong></td></tr>
+<tr><td><code>data-analysis</code></td><td><span class="badge opt">agent</span></td><td>（无）</td><td>1 MD，<strong>无头像、无 categoryId</strong></td></tr>
+<tr><td><code>ppt-implement</code></td><td><span class="badge opt">agent</span></td><td>（无）</td><td>1 MD，<strong>无头像、无 categoryId</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="grid g4">
+  <div class="card acc"><div class="ct">16</div><div class="cd">落盘专家包总数</div></div>
+  <div class="card acc"><div class="ct">13 : 3</div><div class="cd">agent 型 : team 型</div></div>
+  <div class="card acc"><div class="ct">45</div><div class="cd">Agent MD 总数</div></div>
+  <div class="card acc"><div class="ct">16</div><div class="cd"><code>.downloaded_at</code> 标记（每包一个）</div></div>
+</div>
+
+<h3>B.2 从数据里读出的三条结论</h3>
+<ol>
+<li><strong>头像并非必需</strong> —— 16 个包中 5 个没有 avatars 目录，仍能正常工作。说明市场包的头像走远程 URL 分发，落盘可省。</li>
+<li><strong>categoryId 可有可无</strong> —— 至少 3 个包没写。它主要用于市场分类陈列，本地使用不影响功能。</li>
+<li><strong>团队规模差异极大</strong> —— 从 5 人到 13 人都有。结合 §11 的<strong>字符预算截断</strong>风险，5–7 人是更安全区间。</li>
+</ol>
+
+<!-- ============ C ============ -->
+<div class="sec-div"><span class="lb">Appendix C</span><span class="ln"></span></div>
+<h2 id="s15"><span class="sec-num">C</span> 心智模型总结</h2>
+
+<p class="lead">如果只记住六句话：</p>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="ct"><span class="dot"></span>① 专家就是一个插件</div>
+    <div class="cd">
+      所有行为都可从「插件基础设施」推导：为什么要注册 marketplace、为什么 bin 进 PATH、
+      为什么技能有命名空间。抓住这条，就不需要记忆零散规则。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot"></span>② MD 正文 = system prompt</div>
+    <div class="cd">
+      没有中间层、没有包装、没有优化。写进 <code>agents/*.md</code> 的每个字都直接进入模型上下文。
+      <strong>正文质量 = 专家质量</strong>，这是唯一的杠杆。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot p"></span>③ 团队没有编排引擎</div>
+    <div class="cd">
+      <code>expertType: team</code> 对运行时的全部贡献：开一个环境变量开关 + 打一个 HTTP 头。
+      SOP、铁律、红线<strong>全是 prompt</strong>。团队跑不跑得起来，取决于 MD 写得多硬。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot a"></span>④ 激活是会话级的</div>
+    <div class="cd">
+      <code>persist: false</code> 意味着切会话即失效。这不是缺陷而是设计 ——
+      专家是<strong>临时人格</strong>，不是常驻配置。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot c"></span>⑤ 注册是必经步骤</div>
+    <div class="cd">
+      扫描器以 <code>marketplace.json</code> 为唯一入口。目录、plugin.json、MD 都齐全，
+      只要清单里没条目，专家就等于不存在。
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct"><span class="dot g"></span>⑥ 三套可插拔机制别混用</div>
+    <div class="cd">
+      Skill（工具箱，按需加载）、Custom Agent（用户级角色）、Expert（插件级人格）。
+      三者的物理位置、加载时机、运行时载体各不相同。
+    </div>
+  </div>
+</div>
+
+<h3>C.1 给工程师的迁移建议</h3>
+<p>
+如果你要在<strong>自己</strong>的产品里实现类似机制，这套设计里最值得借鉴的三点：
+</p>
+<ol>
+<li><strong>文件即配置</strong>：整个包无需一行代码、无需构建、无需 schema 注册，纯文本即可分发。
+代价是没有编译期检查，所以才需要 <code>validate_expert.py</code> 这类外部校验来补位。</li>
+<li><strong>把插件系统当作底座</strong>：专家不自建加载器、不自建市场、不自建生命周期，
+而是复用插件基础设施换取版本、分发、命名空间、PATH 注入等能力。典型的<strong>复用优于新建</strong>。</li>
+<li><strong>把编排留给模型</strong>：团队 SOP 不写进代码而写进 prompt，换来<strong>零开发成本的领域适配</strong> ——
+换个 MD 就从交易团变成开发团。代价是<strong>没有确定性保障</strong>，需要在 prompt 里用冗余约束来补偿。
+这个取舍是这类系统的核心设计张力。</li>
+</ol>
+
+<div class="footnote">
+<p><strong>取证说明</strong>：本文结论基于对本机 WorkBuddy（macOS / darwin）安装包的静态分析，包含
+<code>app.asar</code>（96,506,567 字节，主进程，未解包）的按字节偏移取证、
+<code>cli/dist/codebuddy-lite-wb.mjs</code>（9,485,334 字节，2678 行）的行内定位、
+<code>resources/plugins/workbuddy-builtin/skills/expert-manager/</code> 下全部脚本与规范文档的通读，
+以及对 <code>~/.workbuddy/plugins/marketplaces/</code> 下 16 个真实专家包的统计。</p>
+<p>文中代码片段均经过精简（变量名保留压缩后的短名以保真，部分做了格式化以提高可读性）。
+标注「未找到证据」处为诚实留白，未做推测。若版本更新导致行为变化，请以实际代码为准 ——
+这也是本文反复提供取证路径、而非只给结论的原因。</p>
+</div>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var bar = document.getElementById('prog');
+  function upd(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop || document.body.scrollTop) / max : 0;
+    bar.style.width = (p * 100) + '%';
+  }
+  window.addEventListener('scroll', upd, {passive:true});
+  window.addEventListener('resize', upd);
+  upd();
+})();
+</script>
+</body>
+</html>
