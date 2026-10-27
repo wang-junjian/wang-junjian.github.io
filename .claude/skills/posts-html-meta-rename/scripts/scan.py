@@ -95,7 +95,8 @@ def git_untracked(root):
             return None
         repo = os.path.realpath(top.stdout.strip())
         out = subprocess.run(
-            ["git", "-C", root_abs, "ls-files", "--others", "--exclude-standard", "--full-name"],
+            ["git", "-C", root_abs, "-c", "core.quotePath=false",
+             "ls-files", "--others", "--exclude-standard", "--full-name"],
             capture_output=True, text=True, timeout=60,
         )
         if out.returncode != 0:
