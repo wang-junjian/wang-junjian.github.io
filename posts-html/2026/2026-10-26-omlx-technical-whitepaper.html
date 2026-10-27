@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="oMLX 是 Apple Silicon 上的本地推理服务，把 KV 缓存做成跨重启的内容寻址存储；三层缓存、4096 块粒度与连续批处理解掉智能体的 prefill 税，并附实测数据、反证据清单与四步验收方法。">
+<meta name="keywords" content="omlx, apple-silicon, kv-cache, prefix-caching, continuous-batching, local-inference">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-26">
+<title>oMLX 技术白皮书 · Apple Silicon 上的持久化 KV 缓存推理服务</title>
+<style>
+:root{
+  --paper:#FBFAF7;
+  --surface:#FFFFFF;
+  --ink:#16181D;
+  --ink2:#333941;
+  --ink3:#4A505A;
+  --line:#E2DED6;
+  --line2:#EFEBE3;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FDF6EC;
+  --blue:#2F6FB0;  --blue-t:#1F5288;  --blue-bg:#EFF5FC;
+  --teal:#0F766E;  --teal-t:#0A5750;  --teal-bg:#EDF7F5;
+  --purple:#6D3FB5;--purple-t:#5A3099;--purple-bg:#F4F0FC;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EFF7EF;
+  --red:#B3261E;   --red-t:#8E1D17;   --red-bg:#FCF0EE;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px;line-height:1.75;overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.875em;
+  background:var(--line2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere;color:var(--ink2)}
+pre{background:#F4F1EA;border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:18px 0}
+pre code{background:none;padding:0;font-size:13px;line-height:1.7;color:var(--ink2);white-space:pre}
+a{color:var(--blue-t);text-decoration:none;border-bottom:1px solid rgba(47,111,176,.28)}
+a:hover{border-bottom-color:var(--blue-t)}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:10px;height:52px;overflow-x:auto;scrollbar-width:none}
+nav .wrap::-webkit-scrollbar{display:none}
+nav .brand{font-weight:700;font-size:14px;letter-spacing:.02em;white-space:nowrap;color:var(--ink);margin-right:6px}
+nav .brand span{color:var(--amber-t)}
+nav a{font-size:12.5px;color:var(--ink3);white-space:nowrap;border:none;padding:3px 0}
+nav a:hover{color:var(--amber-t)}
+
+/* ---------- hero ---------- */
+header.hero{padding:76px 0 52px;border-bottom:1px solid var(--line)}
+.kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber-t);font-weight:700;margin:0 0 18px}
+h1{font-size:clamp(30px,4.2vw,46px);line-height:1.22;letter-spacing:-.02em;margin:0 0 18px;font-weight:800}
+h1 em{font-style:normal;color:var(--amber-t)}
+.lede{font-size:18px;line-height:1.72;color:var(--ink2);max-width:730px;margin:0 0 30px}
+.metabar{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.metabar span{font-size:12px;color:var(--ink3);border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:5px 13px}
+
+/* ---------- sections ---------- */
+section{padding:64px 0 8px;scroll-margin-top:24px}
+section+section{border-top:1px solid var(--line2)}
+h2{font-size:clamp(23px,2.6vw,30px);line-height:1.3;letter-spacing:-.015em;margin:0 0 8px;font-weight:750}
+h2 .num{display:inline-block;font-size:13px;font-weight:700;color:var(--amber-t);letter-spacing:.1em;
+  vertical-align:top;margin-right:12px;padding-top:8px;font-variant-numeric:tabular-nums}
+.dek{font-size:16.5px;color:var(--ink2);margin:0 0 30px;max-width:760px}
+h3{font-size:18px;margin:38px 0 12px;font-weight:700;letter-spacing:-.01em}
+h4{font-size:15px;margin:24px 0 8px;font-weight:700;color:var(--ink2)}
+p{margin:0 0 16px}
+ul,ol{margin:0 0 18px;padding-left:22px}
+li{margin:0 0 9px}
+strong{font-weight:700;color:var(--ink)}
+
+/* ---------- claim cards ---------- */
+.claims{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0 10px}
+.claim{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;min-width:0;
+  border-left:3px solid var(--amber)}
+.claim .n{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--amber-t);margin-bottom:6px}
+.claim p{margin:0;font-size:14.5px;line-height:1.66;color:var(--ink2)}
+.claim p b{color:var(--ink)}
+
+/* ---------- callouts ---------- */
+.callout{border-radius:12px;padding:18px 22px;margin:24px 0;border:1px solid var(--line);background:var(--surface);min-width:0}
+.callout .lab{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.callout p:last-child{margin-bottom:0}
+.callout.key{border-left:3px solid var(--blue);background:var(--blue-bg)} .callout.key .lab{color:var(--blue-t)}
+.callout.warn{border-left:3px solid var(--red);background:var(--red-bg)} .callout.warn .lab{color:var(--red-t)}
+.callout.ok{border-left:3px solid var(--green);background:var(--green-bg)} .callout.ok .lab{color:var(--green-t)}
+.callout.note{border-left:3px solid var(--purple);background:var(--purple-bg)} .callout.note .lab{color:var(--purple-t)}
+
+/* ---------- tables ---------- */
+.tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-width:0}
+table{border-collapse:collapse;width:100%;font-size:13.5px;line-height:1.55}
+th{background:#F6F3EC;text-align:left;padding:11px 14px;font-weight:700;color:var(--ink2);
+  border-bottom:1px solid var(--line);white-space:nowrap;font-size:12.5px;letter-spacing:.02em}
+td{padding:11px 14px;border-bottom:1px solid var(--line2);vertical-align:top;color:var(--ink2)}
+tr:last-child td{border-bottom:none}
+td b,td strong{color:var(--ink)}
+.num-cell{font-variant-numeric:tabular-nums;white-space:nowrap}
+caption{caption-side:bottom;text-align:left;font-size:12px;color:var(--ink3);padding:10px 14px}
+
+/* ---------- tags ---------- */
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;
+  letter-spacing:.02em;white-space:nowrap;line-height:1.6}
+.t-amber{background:var(--amber-bg);color:var(--amber-t)}
+.t-blue{background:var(--blue-bg);color:var(--blue-t)}
+.t-teal{background:var(--teal-bg);color:var(--teal-t)}
+.t-purple{background:var(--purple-bg);color:var(--purple-t)}
+.t-green{background:var(--green-bg);color:var(--green-t)}
+.t-red{background:var(--red-bg);color:var(--red-t)}
+.t-gray{background:var(--line2);color:var(--ink2)}
+
+/* ---------- figures ---------- */
+figure{margin:30px 0;min-width:0}
+.fig-box{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:20px 16px}
+.fig-box svg{display:block;min-width:600px;margin:0 auto;max-width:100%;height:auto}
+figcaption{font-size:12.5px;color:var(--ink3);margin-top:10px;line-height:1.6}
+figcaption b{color:var(--ink2)}
+
+/* ---------- grid ---------- */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:24px 0}
+.g2>*,.g3>*{min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;min-width:0}
+.card h4{margin:0 0 10px;font-size:14.5px}
+.card p{font-size:14px;margin:0 0 10px;color:var(--ink2)}
+.card p:last-child{margin-bottom:0}
+.card ul{margin:0;padding-left:18px;font-size:14px}
+.card li{margin-bottom:6px}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:28px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.stat .v{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.2;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:13px;font-weight:600;color:var(--ink3);margin-left:2px}
+.stat .k{font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.45}
+
+/* ---------- misc ---------- */
+.verdict{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:22px 0;min-width:0}
+.verdict h4{margin:0 0 10px;font-size:14px;color:var(--amber-t);letter-spacing:.02em;text-transform:uppercase}
+.verdict p{font-size:15px;margin:0}
+footer{margin-top:70px;padding:34px 0 60px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+footer p{margin:0 0 6px}
+
+@media(max-width:820px){
+  .claims,.g2,.g3,.stats{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .wrap{padding:0 18px}
+  section{padding:48px 0 8px}
+}
+@media(max-width:760px){
+  table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="brand">oMLX <span>技术白皮书</span></div>
+  <a href="#s00">摘要</a>
+  <a href="#s01">定位</a>
+  <a href="#s02">理论</a>
+  <a href="#s03">架构</a>
+  <a href="#s04">缓存</a>
+  <a href="#s05">调度</a>
+  <a href="#s06">实证</a>
+  <a href="#s07">生态</a>
+  <a href="#s08">部署</a>
+  <a href="#s09">边界</a>
+  <a href="#s10">反模式</a>
+  <a href="#s11">落地</a>
+  <a href="#s12">结论</a>
+  <a href="#s13">来源</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Technical Whitepaper · Apple Silicon Inference</p>
+  <h1>oMLX：把 <em>KV 缓存</em> 变成<br>可持久化的模型状态数据库</h1>
+  <p class="lede">
+    这不是一篇「Mac 上跑大模型」的入门介绍。它要回答一个更窄、更工程的问题：
+    当一个编码智能体每一轮都在重发两万多个 token 的、几乎不变的前缀时，
+    一台 Apple Silicon 机器上的推理服务应该长成什么形状？
+    oMLX 给出的答案是把 KV 缓存从进程内的易失状态，改造成跨请求、跨重启的内容寻址存储层——
+    其余所有设计（连续批处理、多模型池、Anthropic 原生端点、菜单栏应用）都是这个答案的配套。
+  </p>
+  <div class="metabar">
+    <span>对象：jundot/omlx · Apache 2.0</span>
+    <span>版本基线：0.6.x 系列实测 + 0.7.x 主干</span>
+    <span>资料截止：2026-10-26</span>
+    <span>证据分级：厂商自测 / 第三方受控 / 社区提交</span>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<!-- ============ 00 摘要 ============ -->
+<section id="s00">
+  <h2><span class="num">00</span>摘要：九条可证伪的判断</h2>
+  <p class="dek">如果只读一页，读这一页。每条判断都标注了它在本报告中的证据位置，也标注了它可能在什么条件下失效。</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">3.36<small>×</small></div><div class="k">8 路并发吞吐提升<br>Qwen3.5-122B-A10B-4bit，M3 Ultra</div></div>
+    <div class="stat"><div class="v">68.6<small>s → 2.5s</small></div><div class="k">同一 16.7K 请求的 TTFT<br>第 2 次命中 16384 块（第三方实测）</div></div>
+    <div class="stat"><div class="v">4096<small> tok</small></div><div class="k">前缀匹配的块粒度<br>不足一个块无法命中</div></div>
+    <div class="stat"><div class="v">20–22<small>s</small></div><div class="k">冷启动总预算<br>加载 + 首次推理预热</div></div>
+  </div>
+
+  <div class="claims">
+    <div class="claim"><div class="n">判断 01</div><p>oMLX 解决的<b>不是「Mac 上能不能跑」</b>，而是 Agent 工作负载的 <b>prefill 税</b>：把重复前缀的计算成本，用存储换掉。</p></div>
+    <div class="claim"><div class="n">判断 02</div><p>分层 KV 缓存的价值集中在<b>冷路径的恢复</b>，不在热路径的提速。与 mlx-lm 相比，热态几乎打平；差异只在重启之后才出现（7.2s vs 17s）。</p></div>
+    <div class="claim"><div class="n">判断 03</div><p>它的架构是 <b>vLLM 的调度思想在 MLX 统一内存上的再实现</b>（block / CoW / 前缀共享 / 内容寻址），而非 vllm-mlx 的封装。<code>vllm-mlx</code> 只是起点。</p></div>
+    <div class="claim"><div class="n">判断 04</div><p>连续批处理是 macOS 生态上<b>真正稀缺的能力</b>，但 3.36–4.14× 的 8 路加速比说明 decode 阶段被内存带宽锁死——并发是给多用户/多智能体的，不是给单用户提速的。</p></div>
+    <div class="claim"><div class="n">判断 05</div><p>在 oMLX 上，<b>缓存命中率就是 SLA</b>。命中率不由服务调优决定，而由客户端如何组装 prompt 决定：前缀顺序、tools 是否稳定、动态内容放在哪。</p></div>
+    <div class="claim"><div class="n">判断 06</div><p>在 Mac 推理栈里它<b>不替代 Ollama</b>。Ollama 卖易用性与模型库，oMLX 卖「智能体后端」这一格的工程属性，两者目标函数不同。</p></div>
+    <div class="claim"><div class="n">判断 07</div><p>能力上限由物理决定：它<b>只把 KV 溢出到 SSD，不溢出权重</b>。64GB 的机器买到的是「巨大上下文复用」，不是「更大的模型」。</p></div>
+    <div class="claim"><div class="n">判断 08</div><p>成熟度存在结构性矛盾：<b>3465 次提交、近每日发版</b>，修得快也破得快。生产使用必须锁版本 + 固定内核构建。</p></div>
+    <div class="claim"><div class="n">判断 09</div><p>正确的验收方式是 <b>「看第 2 次请求，不看第 1 次」</b>。任何用首轮 TTFT 做的评测，测到的都是冷启动税而不是缓存收益。</p></div>
+  </div>
+
+  <div class="callout key">
+    <div class="lab">一句话结论</div>
+    <p>如果你的负载是「同一段大前缀被反复重发」——编码智能体、长系统提示、固定工具集、多轮会话——oMLX 是目前 macOS 上唯一把这件事当第一性问题来解的服务；如果你的负载是「单轮问答」或「一次性脚本」，它给你的只有冷启动的账单。</p>
+  </div>
+</section>
+
+<!-- ============ 01 定位 ============ -->
+<section id="s01">
+  <h2><span class="num">01</span>定位判定：它是什么，以及它刻意不是什么</h2>
+  <p class="dek">同名分支在 GitHub 上至少有四个，营销站点也在抢注相似域名。先把项目边界钉死，后面的所有性能讨论才有对象。</p>
+
+  <p><strong>oMLX 是 jundot 维护的、Apache 2.0 授权的 Apple Silicon 本地推理服务。</strong>官方仓库的自我定位只有一句话：<em>「带连续批处理与 SSD 缓存的 Apple Silicon LLM 推理服务器，可从 macOS 菜单栏管理」</em>。支撑这一定位的是三层东西：一个 FastAPI 服务（暴露 OpenAI 与 Anthropic 兼容端点）、一套迁移自 vLLM 的分页缓存调度层、一个原生 SwiftUI 菜单栏应用。</p>
+
+  <p>它<strong>不是</strong>模型、不是微调框架、不是聊天客户端。它更接近于「把 vLLM 的工程模型搬到一个没有独立显存、没有 CUDA、没有多卡 NVLink 的硬件平台上」这一次移植尝试的产物。</p>
+
+  <h3>1.1 起点与演化速度</h3>
+
+  <p>项目于 2026 年 3 月在 Apple MLX 仓库的 GitHub Discussions 首次公开，起点是 <code>vllm-mlx</code> v0.1.0——一个把 vLLM 的 API 形状套在 MLX 后端上的薄封装。此后它长出了原创新实现：SSD 分层缓存、连续批处理、VLM 全分页缓存、Anthropic 兼容端点、原生 macOS 界面。仓库累计提交数已达 <strong>3,465</strong>，这个数字本身就是一条关于成熟度的重要证据（见 <a href="#s09">§09</a>）。</p>
+
+  <figure id="fig1">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 190" role="img" aria-label="oMLX 版本演化时间轴">
+        <line x1="50" y1="100" x2="912" y2="100" stroke="#E2DED6" stroke-width="2"/>
+        <g fill="#B45309">
+          <circle cx="60" cy="100" r="6"/>
+          <circle cx="230" cy="100" r="6"/>
+          <circle cx="400" cy="100" r="6"/>
+          <circle cx="560" cy="100" r="6"/>
+          <circle cx="720" cy="100" r="6"/>
+          <circle cx="890" cy="100" r="6"/>
+        </g>
+        <g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" text-anchor="middle">
+          <g fill="#16181D" font-size="12.5" font-weight="700">
+            <text x="60" y="78">v0.1.0</text>
+            <text x="230" y="78">v0.4.4</text>
+            <text x="400" y="78">v0.6.0</text>
+            <text x="560" y="78">v0.6.1</text>
+            <text x="720" y="78">v0.6.2</text>
+            <text x="890" y="78">v0.7.x</text>
+          </g>
+          <g fill="#333941" font-size="11">
+            <text x="60" y="126">2026-03</text>
+            <text x="230" y="126">06-16</text>
+            <text x="400" y="126">08-16</text>
+            <text x="560" y="126">08-17</text>
+            <text x="720" y="126">08-18</text>
+            <text x="890" y="126">10 月</text>
+          </g>
+          <g fill="#333941" font-size="11">
+            <text x="60" y="146">源自 vllm-mlx</text>
+            <text x="230" y="146">多模型 + 面板</text>
+            <text x="400" y="146">实验性分布式</text>
+            <text x="560" y="146">双 prefill，32K +18.9%</text>
+            <text x="720" y="146">稳定版基线</text>
+            <text x="890" y="146">0.7.3.dev2 开发中</text>
+          </g>
+        </g>
+        <text x="60" y="34" fill="#333941" font-size="11" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">2026-08 的 72 小时内连发三个版本，是理解该项目节奏的关键样本</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1</b> · 版本演化。0.6.0→0.6.2 三天内完成「实验性分布式 → 双 ANE/GPU prefill → 稳定版」三级跳；0.6.1 的双路径 prefill 在 Qwen3.8 上报告 32K 上下文 +18.9%、16K decode +34%（MTP 验证）。日期来自 Release 记录与第三方评测交叉核对。</figcaption>
+  </figure>
+
+  <h3>1.2 与相邻项目的概念分野</h3>
+
+  <p>最容易犯的错误，是把 oMLX 当作「Ollama 的 MLX 版」。两者共享的只有「本地 + OpenAI 兼容 API」这两点表面特征，目标函数完全不同：Ollama 优化的是<strong>首次可用时间</strong>（装完就能聊），oMLX 优化的是<strong>第 N 次请求的边际成本</strong>。</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>维度</th><th>Ollama</th><th>LM Studio</th><th>llama.cpp</th><th>mlx-lm</th><th>oMLX</th></tr></thead>
+    <tbody>
+      <tr><td><b>推理后端</b></td><td>llama.cpp；2026 起对支持模型默认走 MLX runtime（0.40+）</td><td>llama.cpp + MLX，按模型择优</td><td>GGUF / 自研 CPU+Metal kernel</td><td>MLX 原生</td><td>MLX + 可选原生 Metal 自定义内核</td></tr>
+      <tr><td><b>KV 缓存持久化</b></td><td>仅内存，重启丢失</td><td>仅内存</td><td>prompt cache 落盘（非块粒度）</td><td>内存 prompt cache</td><td><span class="tag t-green">三层：GPU / RAM / SSD</span></td></tr>
+      <tr><td><b>连续批处理</b></td><td>串行，无真并发</td><td>有限</td><td>slot 级并发</td><td>无调度器</td><td><span class="tag t-green">BatchGenerator + FCFS 调度</span></td></tr>
+      <tr><td><b>多模型同服</b></td><td>可同时常驻</td><td>可同时常驻</td><td>单进程单模型</td><td>单模型</td><td>EnginePool + LRU + pin + TTL</td></tr>
+      <tr><td><b>API 面</b></td><td>OpenAI</td><td>OpenAI</td><td>OpenAI-ish</td><td>OpenAI</td><td>OpenAI + Anthropic + Responses + MCP</td></tr>
+      <tr><td><b>平台</b></td><td>mac / Linux / Win</td><td>Apple Silicon only</td><td>几乎全平台</td><td>Apple Silicon</td><td><span class="tag t-red">macOS 15+ / Apple Silicon only</span></td></tr>
+      <tr><td><b>界面</b></td><td>CLI</td><td>成熟 GUI</td><td>CLI</td><td>CLI</td><td>原生菜单栏 App + Web 管理面板</td></tr>
+      <tr><td><b>许可</b></td><td>MIT</td><td>闭源免费</td><td>MIT</td><td>MIT</td><td>Apache 2.0</td></tr>
+    </tbody>
+    <caption>表 1 · Mac 生态推理栈分野。oMLX 唯一无法被替代的格子是「KV 持久化 + 连续批处理 + Anthropic 原生端点」三者的交集。</caption>
+  </table>
+  </div>
+
+  <div class="callout note">
+    <div class="lab">判别式</div>
+    <p>一个推理服务属于「oMLX 这一类」，当且仅当同时满足三条：<b>①</b> 目标负载是智能体后端（长前缀、多轮、工具调用），而非聊天；<b>②</b> KV 缓存具备跨进程生命周期的持久层，而不只是进程内 LRU；<b>③</b> 提供 Anthropic Messages 原生端点，使 Claude Code 一类客户端无需协议代理层。缺任一条，它解决的是另一个问题。</p>
+  </div>
+</section>
+
+<!-- ============ 02 理论 ============ -->
+<section id="s02">
+  <h2><span class="num">02</span>理论根基：prefill 税，以及它为什么可以被存储掉</h2>
+  <p class="dek">如果不理解 prefill 与 decode 的物理分野，就会把 oMLX 当成一个「更快的推理器」。它不是。它是一个「把已经算过的东西记住」的服务。</p>
+
+  <h3>2.1 两个阶段的物理性质不同</h3>
+
+  <p>Transformer 解码分两段，两段的瓶颈在硬件上是相反的：</p>
+
+  <ul>
+    <li><strong>Prefill（预填充）</strong>：把整段 prompt 一次性前向，产出每个位置的 KV。所有 token 可以并行，矩阵乘占主导——这是<strong>算力受限（compute-bound）</strong>。在 M4 Max 上，Qwen3.8-27B dense 的 prefill 速率稳定在约 <strong>250 tok/s</strong>，这个数字几乎不随工程优化变化，它是 GPU 算力的下限。</li>
+    <li><strong>Decode（解码）</strong>：逐 token 生成，每步都要把全部权重从内存搬到计算单元——这是<strong>带宽受限（memory-bandwidth-bound）</strong>。所以 decode 速度基本由「内存带宽 ÷ 权重字节数」决定，与提示长度无关（只受 attention 的 O(n²) 轻微拖累）。</li>
+  </ul>
+
+  <p>这个分野直接决定了一件事：<strong>你能优化的只有 prefill，decode 你优化不动。</strong>这也解释了后文所有数字的形状——为什么 oMLX 的 TTFT 能从 68.6s 降到 2.5s，而 tok/s 始终在 40–60 徘徊。</p>
+
+  <h3>2.2 智能体请求的真实形状</h3>
+
+  <p>一次普通聊天请求的 prompt 可能是几百 token。而一次编码智能体请求是这样的：</p>
+
+  <pre><code>[system prompt]        约 2k–8k tok   ← 几乎不变
+[tool definitions]     约 3k–12k tok  ← 几乎不变，但顺序敏感
+[项目上下文/RAG]       约 2k–20k tok  ← 会话内不变
+[对话历史]             逐轮增长
+[当前用户输入]         几百 tok       ← 唯一真正新增的部分</code></pre>
+
+  <p>第三方实测给了一个具体样本：把 GitHub Copilot CLI 指向本地 26B 模型，<strong>每次请求都发送 26,627 个 token 的 system + tool 定义</strong>。第一轮 0 命中，耗时 1 分 28 秒；第二轮命中 14,330（54%），耗时降到 33 秒。同一个「2+2」，同样的模型，差 2.7 倍。</p>
+
+  <p>这就是 <strong>prefill 税</strong>：用户为了一段从未改变的文本，每一轮都重新付一次全量计算的账。</p>
+
+  <h3>2.3 成本模型</h3>
+
+  <p>把首 token 延迟（TTFT）拆开，可以得到一个能指导调优的式子：</p>
+
+  <pre><code>T_ttft  =  T_load        # 模型权重进入统一内存（懒加载时发生）
+         +  T_warmup      # Metal kernel JIT / MLX 图优化，首次推理独有
+         +  N_uncached / R_prefill   # 未命中 token 数 ÷ prefill 速率
+         +  T_book   # 块哈希查找、元数据、调度开销</code></pre>
+
+  <p>四项里，只有第三项与缓存直接相关，而它的分子 <code>N_uncached</code> 完全由客户端的 prompt 组装策略决定。这是本报告最重要的一条推论：<strong>在 oMLX 上，性能调优的主战场不在服务端配置，而在调用方的 prompt 结构。</strong></p>
+
+  <div class="callout key">
+    <div class="lab">理论落地 · 四条可执行动作</div>
+    <p><b>① 静态在前，动态在后。</b>system → tools → 稳定上下文 → 历史 → 当前轮。任何把时间戳、随机 ID、变量内容塞进 system prompt 的做法，都会让缓存永久失配。</p>
+    <p><b>② tools 顺序必须冻结。</b>实测中仅交换两个 tool 的定义顺序，命中率从 16,384 块直接掉到 0，TTFT 从 2.5s 回到 81.4s。</p>
+    <p><b>③ 一次性调用主动放弃写缓存。</b>摘要器、标题生成、分类器这类不重复的调用，用请求头 <code>X-oMLX-Cache-Store: off</code> 跳过存储，避免挤掉多轮会话真正要复用的前缀。</p>
+    <p><b>④ 客户端超时必须大于冷 prefill。</b>如果客户端 30s 就断开，而冷 prefill 需要 68s，则缓存永远建不起来——每一轮都是冷启动，这是最隐蔽的死循环。</p>
+  </div>
+
+  <h3>2.4 为什么 KV 可以持久化：一个结构性红利</h3>
+
+  <p>因果注意力有一个性质：<strong>位置 i 的 KV 只依赖位置 0..i 的 token</strong>，与后面的内容无关。这意味着 KV 是「前缀的函数」——只要前缀相同，产出的 KV 就完全相同。</p>
+
+  <p>于是 KV 可以被当作<strong>内容寻址的数据</strong>来处理：给定前缀，算出它的哈希，去查有没有存过；存过就直接取回，没存过就算一遍再存。这一步跨过去，KV 就从「一次会话的临时产物」变成了「可索引、可去重、可落盘、可跨进程共享的模型状态数据库」。oMLX 的全部设计都是这句话的技术展开。</p>
+
+  <p>反过来说，这个红利有严格前提：<strong>前缀必须逐 token 完全一致</strong>。不是语义一致，不是「差不多」，是二进制一致。这个苛刻条件，就是后面所有工程细节（块大小 4096、链式哈希、tools 敏感）的来源。</p>
+</section>
+
+<!-- ============ 03 架构 ============ -->
+<section id="s03">
+  <h2><span class="num">03</span>系统架构：五层，以及一条被刻意保留的窄通道</h2>
+  <p class="dek">oMLX 的架构图不复杂，但每一层都对应一个 Apple Silicon 特有的约束。读这张图的正确方式，是问「这一层如果不这么设计，会死在哪里」。</p>
+
+  <figure id="fig2">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 560" role="img" aria-label="oMLX 五层系统架构">
+        <defs>
+          <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#4A505A"/>
+          </marker>
+        </defs>
+
+        <!-- L5 API -->
+        <text x="24" y="93" font-size="12.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">API 层</text>
+        <text x="24" y="110" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">FastAPI</text>
+        <g>
+          <rect x="164" y="56" width="184" height="66" rx="8" fill="#EFF5FC" stroke="#C9DCF0"/>
+          <rect x="360" y="56" width="184" height="66" rx="8" fill="#EFF5FC" stroke="#C9DCF0"/>
+          <rect x="556" y="56" width="184" height="66" rx="8" fill="#EFF5FC" stroke="#C9DCF0"/>
+          <rect x="752" y="56" width="184" height="66" rx="8" fill="#EFF5FC" stroke="#C9DCF0"/>
+        </g>
+        <g font-size="11" fill="#1F5288" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="256" y="83">OpenAI 兼容</text>
+          <text x="256" y="101" fill="#333941">/v1/chat/completions</text>
+          <text x="452" y="83">Anthropic 原生</text>
+          <text x="452" y="101" fill="#333941">/v1/messages</text>
+          <text x="648" y="83">Responses + MCP</text>
+          <text x="648" y="101" fill="#333941">/v1/responses</text>
+          <text x="844" y="83">分词 / 嵌入 / 重排</text>
+          <text x="844" y="101" fill="#333941">tokenize, embed, rerank</text>
+        </g>
+
+        <line x1="550" y1="122" x2="550" y2="132" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <!-- L4 EnginePool -->
+        <text x="24" y="173" font-size="12.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">引擎池</text>
+        <text x="24" y="190" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">EnginePool</text>
+        <text x="24" y="205" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">LRU · pin · TTL</text>
+        <g>
+          <rect x="164" y="136" width="144" height="66" rx="8" fill="#F4F0FC" stroke="#D9CDF0"/>
+          <rect x="320" y="136" width="144" height="66" rx="8" fill="#F4F0FC" stroke="#D9CDF0"/>
+          <rect x="476" y="136" width="144" height="66" rx="8" fill="#F4F0FC" stroke="#D9CDF0"/>
+          <rect x="632" y="136" width="144" height="66" rx="8" fill="#F4F0FC" stroke="#D9CDF0"/>
+          <rect x="788" y="136" width="144" height="66" rx="8" fill="#F4F0FC" stroke="#D9CDF0"/>
+        </g>
+        <g font-size="10.5" fill="#5A3099" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="236" y="163">BatchedEngine</text>
+          <text x="236" y="181" fill="#333941">文本 LLM</text>
+          <text x="392" y="163">VLMEngine</text>
+          <text x="392" y="181" fill="#333941">视觉 / OCR</text>
+          <text x="548" y="163">EmbeddingEngine</text>
+          <text x="548" y="181" fill="#333941">向量化</text>
+          <text x="704" y="163">RerankerEngine</text>
+          <text x="704" y="181" fill="#333941">重排序</text>
+          <text x="860" y="163">DecisionEngine</text>
+          <text x="860" y="181" fill="#333941">类型化决策</text>
+        </g>
+
+        <line x1="550" y1="202" x2="550" y2="212" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <!-- L3 Mem -->
+        <text x="24" y="253" font-size="12.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">内存治理</text>
+        <text x="24" y="270" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Enforcer</text>
+        <rect x="164" y="216" width="768" height="66" rx="8" fill="#FCF0EE" stroke="#F0CFCB"/>
+        <text x="548" y="243" font-size="11.5" fill="#8E1D17" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">ProcessMemoryEnforcer</text>
+        <text x="548" y="263" font-size="10.5" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">加载前预检总内存 · 默认上限 = 系统 RAM − 8GB · 内存守卫档位 safe / balanced</text>
+
+        <line x1="550" y1="282" x2="550" y2="292" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <!-- L2 Sched -->
+        <text x="24" y="333" font-size="12.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">调度</text>
+        <text x="24" y="350" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Scheduler</text>
+        <rect x="164" y="296" width="380" height="66" rx="8" fill="#EDF7F5" stroke="#C4E3DD"/>
+        <rect x="552" y="296" width="380" height="66" rx="8" fill="#EDF7F5" stroke="#C4E3DD"/>
+        <text x="354" y="323" font-size="11" fill="#0A5750" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">FCFS 队列</text>
+        <text x="354" y="343" font-size="10.5" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">可配置并发数（默认 8）</text>
+        <text x="742" y="323" font-size="11" fill="#0A5750" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">mlx-lm BatchGenerator</text>
+        <text x="742" y="343" font-size="10.5" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">连续批处理 · 请求完成即退出批</text>
+
+        <line x1="550" y1="362" x2="550" y2="372" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <!-- L1 Cache -->
+        <text x="24" y="413" font-size="12.5" font-weight="700" fill="#8F3F06" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">缓存栈</text>
+        <text x="24" y="430" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">核心差异点</text>
+        <rect x="164" y="376" width="768" height="66" rx="8" fill="#FDF6EC" stroke="#B45309" stroke-width="2"/>
+        <g font-size="10.5" fill="#8F3F06" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="256" y="403">PagedCacheManager</text>
+          <text x="452" y="403">BlockAwarePrefixCache</text>
+          <text x="648" y="403">Hot Cache（RAM）</text>
+          <text x="844" y="403">PagedSSDCacheManager</text>
+        </g>
+        <g font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="256" y="422">L1 · 块表 / 引用计数 / CoW</text>
+          <text x="452" y="422">链式哈希 · 前缀匹配</text>
+          <text x="648" y="422">L2 · OrderedDict LRU</text>
+          <text x="844" y="422">L3 · safetensors 落盘</text>
+        </g>
+        <line x1="357" y1="399" x2="370" y2="399" stroke="#E2DED6" stroke-width="1"/>
+        <line x1="553" y1="399" x2="566" y2="399" stroke="#E2DED6" stroke-width="1"/>
+        <line x1="749" y1="399" x2="762" y2="399" stroke="#E2DED6" stroke-width="1"/>
+
+        <line x1="550" y1="442" x2="550" y2="452" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <!-- base -->
+        <rect x="164" y="456" width="768" height="66" rx="8" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="548" y="483" font-size="11.5" fill="#16181D" text-anchor="middle" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">MLX · Metal · 统一内存</text>
+        <text x="548" y="503" font-size="10.5" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">可选原生自定义内核：GLM-5.2 融合 DSA prefill / MiniMax M3 / Qwen3.5 · TurboQuant 3–4bit KV</text>
+
+        <text x="24" y="500" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">硬件底座</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2</b> · 五层架构。从 API 到 Metal 之间没有中间商，但每一层都插入了一次决策：谁来决定模型是否加载（内存治理）、谁来分配请求（FCFS）、谁来复用计算结果（缓存栈）。<code>ProcessMemoryEnforcer</code> 不在最底部而在引擎池下方，是为了在加载发生前就拒绝，而不是加载失败后再回滚。</figcaption>
+  </figure>
+
+  <h3>3.1 五个层次各自的「不这么设计会死在哪里」</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>层</th><th>组件</th><th>如果缺省，故障形态</th></tr></thead>
+    <tbody>
+      <tr><td>API</td><td><code>/v1/chat/completions</code>、<code>/v1/messages</code>、<code>/v1/responses</code>、<code>/v1/mcp/tools</code></td><td>Claude Code / Codex 这类客户端强制走 Anthropic 或 Responses 协议，缺原生端点就得外挂代理（LiteLLM、claude-code-router），多一跳延迟与一处维护点。</td></tr>
+      <tr><td>引擎池</td><td>Batched / VLM / Embedding / Reranker / Decision 五类引擎</td><td>RAG 场景要同时跑 chat 与 embedding，单模型服务就得起两个进程、两份 Python 运行时、两次 Metal 上下文初始化，统一内存被重复占用。</td></tr>
+      <tr><td>内存治理</td><td><code>ProcessMemoryEnforcer</code></td><td>macOS 的统一内存被 GPU 与系统共用。加载一个超限模型不会优雅失败，而是把系统拖进 swap，整机卡死——这是 Apple Silicon 上最典型的「服务把机器搞崩」形态。</td></tr>
+      <tr><td>调度</td><td>FCFS + <code>BatchGenerator</code></td><td>无调度器时请求线性排队（Ollama 现状）。多智能体并发时总吞吐不增反降，因为每个请求都要独立跑完整 prefill。</td></tr>
+      <tr><td>缓存栈</td><td>Paged / Hot / SSD 三层 + 前缀匹配</td><td>进程重启即丢全部上下文。智能体重连一次，等于把整段历史重新 prefill 一遍。这是 oMLX 存在的唯一理由。</td></tr>
+    </tbody>
+    <caption>表 2 · 架构层的功能归因。注意「内存治理」的位置：它必须挡在加载之前，位置错误会让保护动作变成事后补救。</caption>
+  </table>
+  </div>
+
+  <h3>3.2 被刻意保留的窄通道：自定义 Metal 内核</h3>
+
+  <p>在对 Qwen3.5、GLM-5.2、MiniMax M3 这几族模型上，oMLX 提供可选的原生自定义内核（如 GLM-5.2 的融合 DSA prefill）。这不是通用优化，而是一条<strong>按模型手工开的窄通道</strong>，代价与收益都极端：</p>
+
+  <div class="g2">
+    <div class="card">
+      <h4>收益端</h4>
+      <p>GLM-5.2 在 M3 Ultra 上，融合 DSA prefill 实测 <strong>845 tok/s</strong>，通用回退路径约 <strong>29 tok/s</strong>——将近 30 倍。这不是调参能补的差距。</p>
+    </div>
+    <div class="card">
+      <h4>代价端</h4>
+      <p>需要完整 Xcode 与 Metal toolchain（<code>xcodebuild -downloadComponent MetalToolchain</code>）。只有 Command Line Tools 会报 <code>xcrun: unable to find utility "metal"</code>。<strong>缺失时不会报错，而是静默回退到慢路径</strong>，同时占用更多内存。</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="lab">最容易被忽略的部署陷阱</div>
+    <p>「静默回退」意味着你无法从服务日志判断自己跑在快路径还是慢路径上。部署后必须显式验证：<code>python -c "from omlx.custom_kernels import native_kernel_status; print(native_kernel_status())"</code>。DMG 安装包已预编译内核，源码安装则需 <code>make kernels</code>；<code>pip install -e .</code> 会跳过内核构建。</p>
+  </div>
+</section>
+
+<!-- ============ 04 缓存 ============ -->
+<section id="s04">
+  <h2><span class="num">04</span>三层 KV 缓存：一个内容寻址的状态数据库</h2>
+  <p class="dek">这是整份白皮书的技术核心。如果只能记住一句话：oMLX 把 KV 当作「前缀的哈希映射」来管理，而不是当作「这次请求的临时张量」。</p>
+
+  <h3>4.1 三级存储与各自的职责</h3>
+
+  <p>常见的误解是「三层缓存是三级速度」。实际上三层的分工并不对称——L1 管的是<strong>元数据与活跃性</strong>，L2 管的是<strong>避免重复读盘</strong>，L3 管的是<strong>跨重启的持久性</strong>：</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>层</th><th>物理位置</th><th>承载实体</th><th>实际职责</th><th>失效后果</th></tr></thead>
+    <tbody>
+      <tr><td><b>L1</b></td><td>GPU / 统一内存</td><td><code>PagedCacheManager</code></td><td>块表、引用计数、活跃请求映射、写时复制。在「纯 SSD」模式下只留元数据，数据全在盘上。</td><td>活跃批次无法生成</td></tr>
+      <tr><td><b>L2</b></td><td>宿主 RAM</td><td><code>PagedSSDCacheManager</code> 的 Hot Cache</td><td>一个 <code>OrderedDict</code> 实现的 LRU 旁路缓冲，防止最近用过的块反复读盘。</td><td>命中但延迟升高（每次命中都变成一次磁盘读）</td></tr>
+      <tr><td><b>L3</b></td><td>SSD</td><td><code>PagedSSDCacheManager</code></td><td>以 <code>.safetensors</code> 持久化块，哈希分桶子目录；后台写线程 + 原子 rename + 磁盘配额。</td><td>进程重启后全部重算（退化为普通服务器）</td></tr>
+    </tbody>
+    <caption>表 3 · 三层缓存的非对称分工。L2 的存在意义常被低估：没有它，SSD 命中的代价会逼近一次短 prefill。</caption>
+  </table>
+  </div>
+
+  <figure id="fig3">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 430" role="img" aria-label="三层缓存命中路径">
+        <defs>
+          <marker id="ar3" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#4A505A"/>
+          </marker>
+        </defs>
+        <rect x="320" y="26" width="320" height="42" rx="8" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="480" y="52" font-size="12" fill="#16181D" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">请求 prompt token 序列</text>
+        <line x1="480" y1="68" x2="480" y2="88" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+        <rect x="300" y="92" width="360" height="42" rx="8" fill="#FDF6EC" stroke="#B45309" stroke-width="1.5"/>
+        <text x="480" y="112" font-size="11.5" fill="#8F3F06" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">链式块哈希 · 每 4096 token 一块</text>
+        <text x="480" y="127" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">SHA-256(model, parent_hash, tokens, extra_keys)</text>
+        <line x1="480" y1="134" x2="480" y2="154" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+        <rect x="300" y="158" width="360" height="40" rx="8" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="480" y="183" font-size="11.5" fill="#16181D" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">BlockAwarePrefixCache 逐块查找</text>
+
+        <line x1="480" y1="198" x2="480" y2="216" stroke="#4A505A" stroke-width="1.5"/>
+        <line x1="175" y1="216" x2="805" y2="216" stroke="#4A505A" stroke-width="1.5"/>
+        <line x1="175" y1="216" x2="175" y2="238" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <line x1="385" y1="216" x2="385" y2="238" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <line x1="595" y1="216" x2="595" y2="238" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <line x1="805" y1="216" x2="805" y2="238" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+        <rect x="80" y="242" width="190" height="96" rx="8" fill="#EFF7EF" stroke="#C6E0C6"/>
+        <text x="175" y="266" font-size="11" fill="#1B5820" text-anchor="middle" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L1 活跃块</text>
+        <text x="175" y="286" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">引用计数 &gt; 0</text>
+        <text x="175" y="303" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">已在 GPU，零 I/O</text>
+        <text x="175" y="322" font-size="10" fill="#1B5820" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">→ 直接复用</text>
+
+        <rect x="290" y="242" width="190" height="96" rx="8" fill="#EFF7EF" stroke="#C6E0C6"/>
+        <text x="385" y="266" font-size="11" fill="#1B5820" text-anchor="middle" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L2 Hot Cache</text>
+        <text x="385" y="286" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">OrderedDict LRU</text>
+        <text x="385" y="303" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">内存命中</text>
+        <text x="385" y="322" font-size="10" fill="#1B5820" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">→ 拷回 + 提升 L1</text>
+
+        <rect x="500" y="242" width="190" height="96" rx="8" fill="#EFF5FC" stroke="#C9DCF0"/>
+        <text x="595" y="266" font-size="11" fill="#1F5288" text-anchor="middle" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L3 SSD</text>
+        <text x="595" y="286" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">.safetensors 读盘</text>
+        <text x="595" y="303" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">哈希分桶目录</text>
+        <text x="595" y="322" font-size="10" fill="#1F5288" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">→ 回填 L2 / L1</text>
+
+        <rect x="710" y="242" width="190" height="96" rx="8" fill="#FCF0EE" stroke="#F0CFCB"/>
+        <text x="805" y="266" font-size="11" fill="#8E1D17" text-anchor="middle" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">未命中</text>
+        <text x="805" y="286" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">重新 prefill 该块</text>
+        <text x="805" y="303" font-size="10" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">store_cache 落 L2</text>
+        <text x="805" y="322" font-size="10" fill="#8E1D17" text-anchor="middle" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">→ 后台异步写 L3</text>
+
+        <rect x="80" y="366" width="820" height="42" rx="8" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="490" y="392" font-size="11" fill="#16181D" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">命中块只重算「最后一个命中点之后的增量」；未命中块的写入走有界队列，不阻塞推理主循环</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3</b> · 命中路径。三条命中路径的代价量级完全不同：L1 是零 I/O，L2 是一次内存拷贝，L3 是一次随机读 + safetensors 解码。第 4 条路径（未命中）才是 prefill 成本真正发生的地方——也是唯一会写回存储的地方。</figcaption>
+  </figure>
+
+  <h3>4.2 链式哈希：为什么不能只用 token 前缀的简单哈希</h3>
+
+  <p><code>compute_block_hash(model_name, parent_hash, token_ids, extra_keys)</code> 返回 SHA-256，关键在于 <code>parent_hash</code> 这一项：每个块的哈希都把<strong>它前面所有块的哈希</strong>卷进去，形成一条加密链。</p>
+
+  <p>这不是为了安全，是为了正确性。若只对块内 token 求哈希，那么「块 A 后面接块 B」和「块 C 后面接块 B」会因为块 B 内容相同而共享同一份 KV——但它们的注意力上下文完全不同，KV 也不同，复用直接产出错误输出。链式结构从机制上排除了这种可能：前缀不同，哈希必然不同。</p>
+
+  <p>代价是<strong>级联失效</strong>：只要有一个块变了，它之后所有块的哈希全变，全部失效。这解释了实测中最刺眼的那个数字——仅仅交换两个 tool 定义的顺序，命中块数从 16,384 归零。改动发生在很前面，后面 12 个块跟着一起死。</p>
+
+  <h3>4.3 异构层：不是所有 KV 都能切块</h3>
+
+  <p>MLX 的缓存类型并不统一。标准注意力层产出可切的 <code>KVCache</code>，滑动窗口模型产出 <code>RotatingKVCache</code>，而 Mamba / Jamba 这类状态空间层用的是 <code>ArraysCache</code>——它<strong>没有序列维度的分块语义</strong>，无法按块切片存储。oMLX 用一套类型注册表分流：</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>类别</th><th>典型类名</th><th>存储策略</th></tr></thead>
+    <tbody>
+      <tr><td>可切片</td><td><code>KVCache</code>、<code>QuantizedKVCache</code></td><td>按块存为 4D slice，标准分页路径</td></tr>
+      <tr><td>旋转窗口</td><td><code>RotatingKVCache</code>、<code>PrefillReadyRotatingKVCache</code></td><td>专用 handler 处理窗口回绕，单独计算有效范围</td></tr>
+      <tr><td>不可切片</td><td><code>ArraysCache</code>（Mamba / Jamba）</td><td>走 <code>BoundarySnapshotSSDStore</code>：在块边界处做整状态快照，序列化为原始字节由后台线程 flush；快照完成后<strong>立即释放 GPU 内存</strong></td></tr>
+    </tbody>
+    <caption>表 4 · 缓存类型注册表。混合架构模型（注意力 + 状态空间）是这里最麻烦的一类，实测中 4096 的块粒度限制就来自这一类模型的架构约束。</caption>
+  </table>
+  </div>
+
+  <p><code>BoundarySnapshotSSDStore</code> 这个设计值得单独说一句：不可切片层的状态在长 prefill 期间会持续累积占用 GPU 内存，如果不做快照，128K 上下文的 prefill 会直接把统一内存吃穿。它选择「到边界就落盘、落完立刻释放」，本质是把内存压力换成了磁盘 I/O——又一次「用存储买空间」。</p>
+
+  <h3>4.4 工程细节：那些决定它能不能长期跑下去的东西</h3>
+
+  <div class="g3">
+    <div class="card">
+      <h4>异步写入</h4>
+      <p>磁盘序列化在后台线程完成，队列有界（<code>_MAX_PENDING_WRITES</code>）。队列满时<strong>丢弃写入而不是阻塞推理</strong>——这是正确的取舍：宁可少缓存一块，不能卡住生成。</p>
+    </div>
+    <div class="card">
+      <h4>原子落盘</h4>
+      <p>自定义的 <code>_write_safetensors_no_mx</code> 走原子 rename，避免半写文件被后续请求当作有效缓存读入。分桶子目录防止单目录文件数爆炸。</p>
+    </div>
+    <div class="card">
+      <h4>配额策略</h4>
+      <p>默认 <code>auto</code> = （空闲磁盘 + 已有缓存文件）的 50%，且<strong>预算只增不减</strong>，不会因缓存增长而反复收缩。也可用 <code>--paged-ssd-cache-max-size 20GB</code> 硬限。</p>
+    </div>
+    <div class="card">
+      <h4>损坏恢复</h4>
+      <p>校验和验证 + Metal command buffer 检查，失败自动重试并降级到重算路径。缓存坏掉不会让服务挂，只会让它变慢。</p>
+    </div>
+    <div class="card">
+      <h4>可观测性</h4>
+      <p><code>stats.py</code> 记录命中/未命中比、写丢弃数、恢复事件数。调优时这几个计数比 tok/s 更有诊断价值。</p>
+    </div>
+    <div class="card">
+      <h4>选择性写入</h4>
+      <p><code>X-oMLX-Cache-Store: off</code> 只跳过<i>存储</i>，不跳过<i>查找</i>。一次性调用仍能复用已有前缀，只是不再污染缓存。</p>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="lab">为什么这套设计值得认真对待</div>
+    <p>它把「进程重启」这个在本地推理里几乎每十分钟发生一次的事件，从<b>语义上的灾难</b>降级成了<b>性能上的小挫折</b>。对云端服务这是理所当然的，对个人机器上的推理服务，此前没人做过。这才是 oMLX 真正的原创点——不是更快的 kernel，而是让缓存活过进程生命周期。</p>
+  </div>
+</section>
+
+<!-- ============ 05 调度 ============ -->
+<section id="s05">
+  <h2><span class="num">05</span>调度与批处理：3.36× 背后的物理上限</h2>
+  <p class="dek">连续批处理常被讲成「并发让一切变快」。在 Apple Silicon 上这个说法只对一半——它对，但只在多请求场景对；而它之所以不更快，原因在内存带宽，不在调度器。</p>
+
+  <h3>5.1 连续批处理到底批了什么</h3>
+
+  <p>传统静态批处理（static batching）要求一批请求<strong>全部生成完</strong>才能释放批次。一个请求生成 20 token、另一个生成 2000 token，整批就被后者拖住，短请求的槽位在空转。</p>
+
+  <p>连续批处理（continuous batching）改为<strong>按迭代步调度</strong>：每生成一步，完成的请求立刻退出、新请求立刻补位。oMLX 通过 <code>Scheduler</code>（FCFS 队列，并发数可配，默认 8）驱动 mlx-lm 的 <code>BatchGenerator</code> 实现这一点。</p>
+
+  <p>这在云 GPU 上是标配，在 Mac 本地推理市场上不是。Ollama 的请求是串行的；mlx-lm 本身没有服务层调度器。oMLX 在 macOS 上是<strong>第一个提供真实并发的选项</strong>——这个「第一」有实际价值，但价值的上限由下面的数字决定。</p>
+
+  <figure id="fig4">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 390" role="img" aria-label="四个模型的单路与八路并发吞吐对比">
+        <!-- 刻度 -->
+        <g stroke="#E2DED6" stroke-width="1">
+          <line x1="250" y1="34" x2="250" y2="330"/>
+          <line x1="406" y1="34" x2="406" y2="330"/>
+          <line x1="562" y1="34" x2="562" y2="330"/>
+          <line x1="718" y1="34" x2="718" y2="330"/>
+          <line x1="874" y1="34" x2="874" y2="330"/>
+        </g>
+        <g font-size="10.5" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="250" y="26">0</text>
+          <text x="406" y="26">60</text>
+          <text x="562" y="26">120</text>
+          <text x="718" y="26">180</text>
+          <text x="874" y="26">240</text>
+        </g>
+        <text x="874" y="14" font-size="10" fill="#4A505A" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">生成吞吐 tok/s</text>
+
+        <!-- 模型 1 -->
+        <text x="20" y="66" font-size="11.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Qwen3.5-122B-A10B</text>
+        <text x="20" y="82" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">4bit · MoE · 8 路加速 3.36×</text>
+        <rect x="250" y="48" width="147" height="20" rx="4" fill="#B9D2EA"/>
+        <rect x="250" y="72" width="494" height="20" rx="4" fill="#2F6FB0"/>
+        <text x="405" y="63" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">56.6</text>
+        <text x="752" y="87" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">190.2</text>
+
+        <!-- 模型 2 -->
+        <text x="20" y="138" font-size="11.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Qwen3-Coder-Next</text>
+        <text x="20" y="154" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">8bit · 8 路加速 4.14×</text>
+        <rect x="250" y="120" width="153" height="20" rx="4" fill="#B9D2EA"/>
+        <rect x="250" y="144" width="632" height="20" rx="4" fill="#2F6FB0"/>
+        <text x="411" y="135" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">58.7</text>
+        <text x="890" y="159" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">243.3</text>
+
+        <!-- 模型 3 -->
+        <text x="20" y="210" font-size="11.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">MiniMax-M2.5</text>
+        <text x="20" y="226" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">8bit · 8 路加速 3.71×</text>
+        <rect x="250" y="192" width="88" height="20" rx="4" fill="#B9D2EA"/>
+        <rect x="250" y="216" width="328" height="20" rx="4" fill="#2F6FB0"/>
+        <text x="346" y="207" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">34.0</text>
+        <text x="586" y="231" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">126.3</text>
+
+        <!-- 模型 4 -->
+        <text x="20" y="282" font-size="11.5" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">GLM-5</text>
+        <text x="20" y="298" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">4bit · 8 路加速 3.61×</text>
+        <rect x="250" y="264" width="43" height="20" rx="4" fill="#B9D2EA"/>
+        <rect x="250" y="288" width="157" height="20" rx="4" fill="#2F6FB0"/>
+        <text x="301" y="279" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">16.7</text>
+        <text x="415" y="303" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">60.3</text>
+
+        <!-- 图例 -->
+        <rect x="250" y="348" width="13" height="13" rx="3" fill="#B9D2EA"/>
+        <text x="270" y="359" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">1 路并发</text>
+        <rect x="360" y="348" width="13" height="13" rx="3" fill="#2F6FB0"/>
+        <text x="380" y="359" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">8 路并发</text>
+        <text x="490" y="359" font-size="10.5" fill="#4A505A" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">4 个模型的加速比全部落在 3.36–4.14× 窄带内 —— 不是实现差异，是带宽上限</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4</b> · 连续批处理吞吐（M3 Ultra 512GB，厂商自测，pp1024 / tg128，<b>无缓存复用</b>）。四个模型参数量差一个数量级、量化位宽不同、架构不同（MoE 与 dense），但 8 路加速比全部收在 3.36–4.14× 这一段窄带里。这种「跨模型不变性」是判断瓶颈性质的最强证据：如果瓶颈在调度器实现，不同模型不该如此一致。</figcaption>
+  </figure>
+
+  <h3>5.2 为什么加速比是 3.4× 而不是 8×</h3>
+
+  <p>decode 阶段每生成一个 token，都要把<strong>全部模型权重</strong>从统一内存搬到 GPU 计算单元。8 个并发请求共享同一份权重搬运——这是批处理收益的来源。但共享之后，瓶颈就变成了<strong>带宽本身</strong>：每步的时间被「权重字节数 ÷ 带宽」锁死，与批里有几个请求无关。</p>
+
+  <p>所以在理想情况下，8 路并发的吞吐上限是单路的 8 倍（一次搬运服务 8 个 token），但实际上：注意力计算量随批增大而增加、KV 读取量线性增长、调度与同步开销上升。最终落在 3.4–4.1×，意味着<strong>带宽利用率从单路的约 12% 提到了约 45%</strong>——已经是很有价值的改善，但距离线性很远。</p>
+
+  <div class="callout key">
+    <div class="lab">工程推论</div>
+    <p>并发数是<b>多租户指标</b>，不是<b>单用户指标</b>。把 <code>--max-concurrent-requests</code> 从 8 调到 32，对单个用户自己的请求延迟没有帮助，只会让 32 个请求一起变慢、并抬高内存占用到可能触发模型驱逐。<b>正确的用法是：一个人跑一个智能体 → 保持默认；一台机器服务一个团队 → 才调高。</b></p>
+  </div>
+
+  <h3>5.3 FCFS 的代价：缺少优先级是设计选择，也是缺陷</h3>
+
+  <p><code>Scheduler</code> 用先来先服务，没有优先级、没有公平份额、没有抢占。这个选择的后果是典型的<strong>队头阻塞</strong>：</p>
+
+  <ul>
+    <li>一个 128K 上下文的慢请求排在前面，会把它后面所有请求的首 token 延迟一起拖长；</li>
+    <li>交互式请求（人打字等回复）与批处理请求（离线跑评测）竞争同一队列时，前者会被后者拖累；</li>
+    <li>没有 per-tenant 配额，一个失控的智能体外循环可以吃掉全部并发槽位。</li>
+  </ul>
+
+  <p>缓解手段只有工程侧的：把批处理任务指向独立的第二个实例、或通过模型别名 + Profile 把它们在引擎层面分开。这不是优雅方案，但对单机场景够用——真正需要优先级的场景，通常也已经在考虑多机了。</p>
+</section>
+
+<!-- ============ 06 实证 ============ -->
+<section id="s06">
+  <h2><span class="num">06</span>性能实证：把厂商数字与受控实验分开看</h2>
+  <p class="dek">这一节只做一件事：把不同来源的证据按强度排队，找出它们在哪些结论上一致、在哪些地方互相矛盾。因为 oMLX 的性能叙事里，最有价值的事实恰恰是一条「反直觉」的。</p>
+
+  <h3>6.1 证据分级</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>强度</th><th>来源类型</th><th>样本</th><th>可采信范围</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-green">受控实验</span></td><td>同机、同模型、同请求，改单一变量</td><td>oMLX 0.6.4 + Qwen3.8-27B-4bit，M4 Max</td><td>缓存机制的因果效应（命中/未命中差异）</td></tr>
+      <tr><td><span class="tag t-green">受控实验</span></td><td>同机对照 + 重启验证</td><td>mlx-lm vs oMLX，M4 Max 64GB</td><td>「持久化带来的差异」这一具体命题</td></tr>
+      <tr><td><span class="tag t-blue">第三方实测</span></td><td>单机单场景，参数公开</td><td>M1 Max 64GB（0.3.9.dev2）、M3 Max 128GB</td><td>冷启动税、Copilot CLI 命中率</td></tr>
+      <tr><td><span class="tag t-amber">厂商自测</span></td><td>官方基准表</td><td>M3 Ultra 512GB，四个模型</td><td>吞吐上限与批处理加速比</td></tr>
+      <tr><td><span class="tag t-gray">社区提交</span></td><td>用户上传，参数不完全可控</td><td>omlx.ai/benchmarks（M4 Max 40c 128GB 等）</td><td>硬件档位的量级参考</td></tr>
+    </tbody>
+    <caption>表 5 · 证据分级。注意「厂商自测」用的 M3 Ultra 512GB 是市售产品的天花板配置，直接外推到 MacBook 会系统性高估。</caption>
+  </table>
+  </div>
+
+  <h3>6.2 决定性实验：同一个请求，跑两遍</h3>
+
+  <p>最有说服力的一组数据来自一台 M4 Max 上的 0.6.4 版本 + Qwen3.8-27B-4bit。实验设计极简：<strong>同一个请求，连发两次</strong>，只观察变化。</p>
+
+  <figure id="fig5">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 350" role="img" aria-label="块级命中与失效示意">
+        <!-- 行 1 -->
+        <text x="90" y="52" font-size="11" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">① 首次请求（缓存全空）　命中 0 块 / 重算 5 块</text>
+        <g>
+          <rect x="90" y="64" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+          <rect x="250" y="64" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+          <rect x="410" y="64" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+          <rect x="570" y="64" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+          <rect x="730" y="64" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+        </g>
+        <g font-size="10.5" fill="#8E1D17" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="165" y="84" font-weight="700">block 0</text><text x="165" y="100" fill="#333941">system</text>
+          <text x="325" y="84" font-weight="700">block 1</text><text x="325" y="100" fill="#333941">tools</text>
+          <text x="485" y="84" font-weight="700">block 2</text><text x="485" y="100" fill="#333941">tools</text>
+          <text x="645" y="84" font-weight="700">block 3</text><text x="645" y="100" fill="#333941">context</text>
+          <text x="805" y="84" font-weight="700">block 4</text><text x="805" y="100" fill="#333941">query</text>
+        </g>
+
+        <!-- 行 2 -->
+        <text x="90" y="144" font-size="11" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">② 追加一轮历史　命中 4 块 / 只重算 1 块 → TTFT 68.6s → 2.5s</text>
+        <g>
+          <rect x="90" y="156" width="150" height="46" rx="6" fill="#EFF7EF" stroke="#C6E0C6"/>
+          <rect x="250" y="156" width="150" height="46" rx="6" fill="#EFF7EF" stroke="#C6E0C6"/>
+          <rect x="410" y="156" width="150" height="46" rx="6" fill="#EFF7EF" stroke="#C6E0C6"/>
+          <rect x="570" y="156" width="150" height="46" rx="6" fill="#EFF7EF" stroke="#C6E0C6"/>
+          <rect x="730" y="156" width="150" height="46" rx="6" fill="#FDF6EC" stroke="#EDD9BC"/>
+        </g>
+        <g font-size="10.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="165" y="176" font-weight="700" fill="#1B5820">block 0</text><text x="165" y="192" fill="#333941">命中</text>
+          <text x="325" y="176" font-weight="700" fill="#1B5820">block 1</text><text x="325" y="192" fill="#333941">命中</text>
+          <text x="485" y="176" font-weight="700" fill="#1B5820">block 2</text><text x="485" y="192" fill="#333941">命中</text>
+          <text x="645" y="176" font-weight="700" fill="#1B5820">block 3</text><text x="645" y="192" fill="#333941">命中</text>
+          <text x="805" y="176" font-weight="700" fill="#8F3F06">block 4</text><text x="805" y="192" fill="#333941">新增 322 tok</text>
+        </g>
+
+        <!-- 行 3 -->
+        <text x="90" y="236" font-size="11" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">③ 只交换两个 tool 的定义顺序　命中 0 块 → TTFT 回到 81.4s</text>
+        <g>
+          <rect x="90" y="248" width="150" height="46" rx="6" fill="#FDF6EC" stroke="#EDD9BC"/>
+          <rect x="250" y="248" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+          <rect x="410" y="248" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+          <rect x="570" y="248" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+          <rect x="730" y="248" width="150" height="46" rx="6" fill="#FCF0EE" stroke="#F0CFCB"/>
+        </g>
+        <g font-size="10.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="165" y="268" font-weight="700" fill="#8F3F06">block 0</text><text x="165" y="284" fill="#333941">仍命中</text>
+          <text x="325" y="268" font-weight="700" fill="#8E1D17">block 1</text><text x="325" y="284" fill="#333941">失配</text>
+          <text x="485" y="268" font-weight="700" fill="#8E1D17">block 2</text><text x="485" y="284" fill="#333941">级联失效</text>
+          <text x="645" y="268" font-weight="700" fill="#8E1D17">block 3</text><text x="645" y="284" fill="#333941">级联失效</text>
+          <text x="805" y="268" font-weight="700" fill="#8E1D17">block 4</text><text x="805" y="284" fill="#333941">级联失效</text>
+        </g>
+
+        <text x="90" y="326" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">链式哈希把「块 1 变了」放大成「块 1 之后全废」。这是 oMLX 命中率对 prompt 结构极其敏感的根本原因。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5</b> · 块级命中状态（示意结构 + 实测数字）。块内容为真实前缀的语义划分，实测数据来自 0.6.4 + Qwen3.8-27B-4bit / M4 Max，块粒度 4096 token。第 ③ 行是本报告最重要的工程警示：<b>只改顺序、不改内容，缓存全部作废。</b></figcaption>
+  </figure>
+
+  <p>这组数字的完整形态是：</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>场景</th><th class="num-cell">命中块数</th><th class="num-cell">重算 token</th><th class="num-cell">TTFT</th></tr></thead>
+    <tbody>
+      <tr><td>相同请求（冷，缓存空）</td><td class="num-cell">0</td><td class="num-cell">16,700</td><td class="num-cell"><span class="tag t-red">68.6 s</span></td></tr>
+      <tr><td>相同请求（第 2 次）</td><td class="num-cell">16,384</td><td class="num-cell">322</td><td class="num-cell"><span class="tag t-green">2.5 s</span></td></tr>
+      <tr><td>仅交换 tools 顺序</td><td class="num-cell">0</td><td class="num-cell">16,700</td><td class="num-cell"><span class="tag t-red">81.4 s</span></td></tr>
+      <tr><td>稳定前缀 + 逐轮增长（模拟智能体）</td><td class="num-cell">12,288</td><td class="num-cell">增量</td><td class="num-cell"><span class="tag t-amber">5–12 s</span></td></tr>
+    </tbody>
+    <caption>表 6 · 受控实验结果（第三方实测，oMLX 0.6.4 / Qwen3.8-27B-4bit / M4 Max）。注意「仅交换 tools 顺序」的 81.4s 比冷启动 68.6s 更高 —— 因为该次运行还叠加了其他会话干扰，属单次观测，不应解读为「交换顺序比冷启动更慢」。</caption>
+  </table>
+  </div>
+
+  <h3>6.3 反直觉的发现：热路径几乎打平，差异只在重启后</h3>
+
+  <p>一位评测者在 M4 Max 64GB 上做了 mlx-lm 与 oMLX 的对照，最初的假设是「分层缓存会在重复长前缀上碾压 mlx-lm」。结果<strong>假设被推翻</strong>：</p>
+
+  <div class="g3">
+    <div class="card">
+      <h4>热态 prefill</h4>
+      <p><strong>3.4s</strong>（mlx-lm）vs <strong>3.6s</strong>（oMLX）</p>
+      <p>基本平手。原因很简单：mlx-lm 在内存里也缓存 prompt。</p>
+    </div>
+    <div class="card">
+      <h4>decode 吞吐</h4>
+      <p><strong>22–25 tok/s</strong>（两者一致）</p>
+      <p>符合预期——decode 由带宽决定，与服务层无关。</p>
+    </div>
+    <div class="card">
+      <h4>重启后恢复</h4>
+      <p><strong>17s</strong>（mlx-lm）vs <strong>7.2s</strong>（oMLX）</p>
+      <p>这才是差异真正出现的地方。</p>
+    </div>
+  </div>
+
+  <div class="callout note">
+    <div class="lab">这条发现改变了整个评价框架</div>
+    <p>如果 oMLX 的价值主张是「更快的 prefill」，它在热路径上就输了——因为 mlx-lm 早就做到了。它真正独有的是<b>让缓存活过进程死亡</b>。所以正确的价值陈述不是「oMLX 更快」，而是<b>「oMLX 在重启后依然快」</b>。这两个说法指向完全不同的使用场景：前者是性能优化，后者是可用性工程。</p>
+  </div>
+
+  <h3>6.4 冷启动税：必须预付款的 20 秒</h3>
+
+  <p>oMLX 采用懒加载模型。这意味着服务启动后第一次请求要一次性付清三笔账：</p>
+
+  <figure id="fig6">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 350" role="img" aria-label="首 token 延迟的冷热对比">
+        <g stroke="#E2DED6" stroke-width="1">
+          <line x1="300" y1="34" x2="300" y2="290"/>
+          <line x1="490" y1="34" x2="490" y2="290"/>
+          <line x1="680" y1="34" x2="680" y2="290"/>
+          <line x1="870" y1="34" x2="870" y2="290"/>
+        </g>
+        <g font-size="10.5" fill="#333941" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+          <text x="300" y="26">0</text><text x="490" y="26">30</text><text x="680" y="26">60</text><text x="870" y="26">90</text>
+        </g>
+        <text x="870" y="14" font-size="10" fill="#4A505A" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">TTFT 秒</text>
+
+        <text x="20" y="52" font-size="11" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">首次请求（缓存全空）</text>
+        <rect x="300" y="44" width="435" height="26" rx="5" fill="#E9A9A2" stroke="#B3261E"/>
+        <text x="745" y="61" font-size="11" font-weight="700" fill="#8E1D17" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">68.6</text>
+
+        <text x="20" y="116" font-size="11" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">相同请求第 2 次</text>
+        <rect x="300" y="108" width="16" height="26" rx="5" fill="#8CBF8C" stroke="#2E7D32"/>
+        <text x="326" y="125" font-size="11" font-weight="700" fill="#1B5820" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">2.5</text>
+
+        <text x="20" y="180" font-size="11" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">仅交换 tools 顺序</text>
+        <rect x="300" y="172" width="516" height="26" rx="5" fill="#E9A9A2" stroke="#B3261E"/>
+        <text x="826" y="189" font-size="11" font-weight="700" fill="#8E1D17" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">81.4</text>
+
+        <text x="20" y="244" font-size="11" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">稳定前缀逐轮增长</text>
+        <rect x="300" y="236" width="51" height="26" rx="5" fill="#F0CE9E" stroke="#B45309"/>
+        <text x="361" y="253" font-size="11" font-weight="700" fill="#8F3F06" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">5–12</text>
+
+        <text x="20" y="322" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">另据 M1 Max 64GB 实测：卸载 0.9s + 加载 9.7–11.9s + 首次推理预热 9–10s ≈ 冷启动总预算 20–22s</text>
+        <text x="20" y="340" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">预热开销疑似来自 Metal 内核 JIT 编译与 MLX 图首次优化，属一次性成本</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6</b> · TTFT 冷热对比（受控实验，0.6.4 / M4 Max）。条形长度按左侧刻度线性换算。这里有一个必须提醒的读法：2.5s 与 68.6s 的差距是 27 倍，但它<b>不是</b>「oMLX 比别的服务快 27 倍」，而是「命中与不命中的差距」。把它当成产品性能指标是常见误读。</figcaption>
+  </figure>
+
+  <p>三笔账的构成是：<strong>模型加载</strong>（9.7–11.9s，权重进统一内存）、<strong>首次推理预热</strong>（9–10s，Metal 内核 JIT + MLX 图优化）、<strong>全量 prefill</strong>（取决于 prompt 长度）。前两笔与 prompt 无关，是纯固定成本；第三笔才是缓存能优化掉的部分。</p>
+
+  <div class="callout warn">
+    <div class="lab">CI 与自动化场景的隐性事故</div>
+    <p>如果你的自动化流程在服务启动后立刻发请求并设置 30s 超时，会稳定撞上「30 秒无响应」，然后被误判为「服务挂了」。正确做法：启动后先发一个 <b>1 token 的探针请求</b>（或从管理面板 pin 模型），把加载与预热成本前置支付，再进入真实负载。</p>
+  </div>
+
+  <h3>6.5 硬件档位的现实参考</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>机器</th><th>统一内存</th><th>实测模型</th><th class="num-cell">Prefill</th><th class="num-cell">Decode</th><th>适用判断</th></tr></thead>
+    <tbody>
+      <tr><td>M4 Max（40c）</td><td>128 GB</td><td>Qwen3.8-Flash-Next oQ4e + MTP，1k→128k 上下文</td><td class="num-cell">535 → 855</td><td class="num-cell">48.0 → 62.5</td><td>日常编码主力档，长上下文仍保 48+</td></tr>
+      <tr><td>M3 Ultra</td><td>512 GB</td><td>Qwen3.5-122B-A10B-4bit</td><td class="num-cell">768 → 941</td><td class="num-cell">42.4 → 56.6</td><td>厂商基准机，非典型用户配置</td></tr>
+      <tr><td>M4 Max</td><td>64 GB</td><td>Qwen3.8-27B-4bit</td><td class="num-cell">约 250（dense）</td><td class="num-cell">约 42</td><td>单智能体舒适的性价比档</td></tr>
+      <tr><td>M1 Max</td><td>64 GB</td><td>26B A4B / 31B dense</td><td class="num-cell">—</td><td class="num-cell">—</td><td>26B A4B 可用；31B dense 明显吃力</td></tr>
+    </tbody>
+    <caption>表 7 · 跨硬件档位的实测片段。注意 M4 Max 的 prefill 随上下文增长反而上升（1k 时 535，32k 时 846），这与直觉相反，可能源于测量口径（含预热）差异，<b>不建议</b>据此做容量规划。</caption>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 07 生态 ============ -->
+<section id="s07">
+  <h2><span class="num">07</span>生态位置：Who should not use this</h2>
+  <p class="dek">技术选型文档的价值，一半在「推荐什么」，另一半在「明确劝退谁」。oMLX 的适用面比它的星标数窄得多。</p>
+
+  <h3>7.1 判断路径</h3>
+
+  <figure id="fig7">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 470" role="img" aria-label="Mac 本地推理选型决策路径">
+        <defs>
+          <marker id="ar7" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#4A505A"/>
+          </marker>
+        </defs>
+
+        <rect x="40" y="38" width="430" height="52" rx="8" fill="#FFFFFF" stroke="#E2DED6"/>
+        <text x="60" y="62" font-size="11.5" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif"><tspan font-weight="700">①</tspan> 负载是智能体后端吗？长前缀被反复重发</text>
+        <text x="60" y="79" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Claude Code / Cursor / Codex / 自建 agent loop</text>
+        <line x1="470" y1="64" x2="556" y2="64" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="513" y="57" font-size="10.5" fill="#4A505A" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">否</text>
+        <rect x="560" y="38" width="360" height="52" rx="8" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="578" y="62" font-size="11" fill="#16181D" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Ollama / LM Studio</text>
+        <text x="578" y="79" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">为单轮聊天付冷启动税，收益为零</text>
+
+        <line x1="255" y1="90" x2="255" y2="136" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="266" y="118" font-size="10.5" fill="#4A505A" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">是</text>
+
+        <rect x="40" y="140" width="430" height="52" rx="8" fill="#FFFFFF" stroke="#E2DED6"/>
+        <text x="60" y="164" font-size="11.5" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif"><tspan font-weight="700">②</tspan> 需要跨平台，或依赖 GGUF 模型库吗？</text>
+        <text x="60" y="181" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Linux / Windows 部署，或只能用 GGUF 权重</text>
+        <line x1="470" y1="166" x2="556" y2="166" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="513" y="159" font-size="10.5" fill="#4A505A" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">是</text>
+        <rect x="560" y="140" width="360" height="52" rx="8" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="578" y="164" font-size="11" fill="#16181D" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">llama.cpp / Ollama</text>
+        <text x="578" y="181" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">接受无跨重启持久缓存</text>
+
+        <line x1="255" y1="192" x2="255" y2="238" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="266" y="220" font-size="10.5" fill="#4A505A" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">否</text>
+
+        <rect x="40" y="242" width="430" height="52" rx="8" fill="#FFFFFF" stroke="#E2DED6"/>
+        <text x="60" y="266" font-size="11.5" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif"><tspan font-weight="700">③</tspan> 模型权重能装进统一内存吗？</text>
+        <text x="60" y="283" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">注意：SSD 缓存只溢 KV，不溢权重</text>
+        <line x1="470" y1="268" x2="556" y2="268" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="513" y="261" font-size="10.5" fill="#B3261E" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">否</text>
+        <rect x="560" y="242" width="360" height="52" rx="8" fill="#FCF0EE" stroke="#F0CFCB"/>
+        <text x="578" y="266" font-size="11" fill="#8E1D17" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">软件无解</text>
+        <text x="578" y="283" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">换更大内存的机器，或按小时租云 GPU</text>
+
+        <line x1="255" y1="294" x2="255" y2="340" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="266" y="322" font-size="10.5" fill="#2E7D32" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">是</text>
+
+        <rect x="40" y="344" width="430" height="52" rx="8" fill="#FFFFFF" stroke="#E2DED6"/>
+        <text x="60" y="368" font-size="11.5" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif"><tspan font-weight="700">④</tspan> 会频繁重启服务，或需要真并发吗？</text>
+        <text x="60" y="385" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">多进程共享一台机、或一天重启多次</text>
+
+        <line x1="470" y1="356" x2="556" y2="356" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="513" y="349" font-size="10.5" fill="#2E7D32" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">是</text>
+        <rect x="560" y="330" width="360" height="52" rx="8" fill="#EFF7EF" stroke="#2E7D32" stroke-width="2"/>
+        <text x="578" y="354" font-size="11.5" fill="#1B5820" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">oMLX —— 收益最大</text>
+        <text x="578" y="371" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">持久缓存 + 连续批处理同时吃到</text>
+
+        <line x1="470" y1="390" x2="552" y2="416" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="486" y="382" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">否</text>
+        <rect x="560" y="394" width="360" height="52" rx="8" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="578" y="418" font-size="11" fill="#16181D" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">mlx-lm 够用</text>
+        <text x="578" y="435" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">oMLX 仍可用，但只多付部署复杂度</text>
+      </svg>
+    </div>
+    <figcaption><b>图 7</b> · 四问筛选。第 ④ 问是关键分水岭：仅当前三问都通过、且存在「重启」或「并发」需求时，oMLX 的独有收益（持久化 + 批处理）才会兑现。否则它在热路径上并不比 mlx-lm 更快（见 <a href="#s06">§06.3</a>）。</figcaption>
+  </figure>
+
+  <h3>7.2 应该劝退的四类用户</h3>
+
+  <div class="g2">
+    <div class="card">
+      <h4>「我就想在本机聊天」</h4>
+      <p>单轮问答、单模型、每轮 prompt 都不同——缓存命中率结构性地接近 0。你会付 20 秒冷启动、装一个 Python 环境、还要管一个后台服务，换回来的是零收益。用 Ollama 或 LM Studio。</p>
+    </div>
+    <div class="card">
+      <h4>「我要跑 70B 以上」</h4>
+      <p>SSD 缓存只存 KV，不存权重。64GB 机器上 70B 4bit 大约需要 40GB+ 权重，能装但没有余量给长上下文。这类需求不是换软件能解决的，是换机器或租云。</p>
+    </div>
+    <div class="card">
+      <h4>「我需要 Linux 服务器 / 团队共享集群」</h4>
+      <p>macOS 15+ 与 Apple Silicon 是硬约束（MLX 依赖 Metal，菜单栏用 PyObjC）。团队共享的正确形态是一台 Mac Studio 加反向代理，而不是「部署到 K8s」。</p>
+    </div>
+    <div class="card">
+      <h4>「我需要稳定不变的 API 契约」</h4>
+      <p>近每日发版意味着端点行为、默认参数、模型兼容性都可能在两次 patch 之间变化。如果你的下游有 SLA，锁版本比追新版更重要（见 <a href="#s09">§09</a>）。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 部署 ============ -->
+<section id="s08">
+  <h2><span class="num">08</span>部署：三种安装路径与四层配置优先级</h2>
+  <p class="dek">安装方式的选择不只影响便利性，它决定了你是否拥有那 30 倍的 prefill 内核。</p>
+
+  <h3>8.1 三条安装路径的实际差异</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>路径</th><th>命令</th><th>自定义内核</th><th>适用</th></tr></thead>
+    <tbody>
+      <tr><td><b>DMG（推荐）</b></td><td>Releases 下载 → 拖入 Applications</td><td><span class="tag t-green">已预编译</span></td><td>不想碰 Xcode 的日常使用者；自带更新、菜单栏、CLI shim</td></tr>
+      <tr><td>Homebrew</td><td><code>brew tap jundot/omlx https://github.com/jundot/omlx</code><br><code>brew install jundot/omlx/omlx --with-custom-kernel</code></td><td>需完整 Xcode；可用 <code>brew services start omlx</code> 托管</td><td>需要开机自启、崩溃自动重启的常驻服务</td></tr>
+      <tr><td>源码</td><td><code>git clone … &amp;&amp; make install</code></td><td><code>make install</code> 含内核；<code>make install-no-kernels</code> 不含</td><td>要改代码、跑测试、或打包自用 App</td></tr>
+    </tbody>
+    <caption>表 8 · 三条路径。最容易踩的坑：普通 <code>pip install -e .</code> 会<b>静默跳过</b>内核构建，服务仍能启动，但 GLM-5.2 一类模型会退到慢路径。</caption>
+  </table>
+  </div>
+
+  <h3>8.2 配置优先级：CLI &gt; 环境变量 &gt; settings.json &gt; 每模型设置</h3>
+
+  <p>四层覆盖关系清晰，但有一个容易误判的点：<strong>CLI 标志优先于持久化配置，且不写回</strong>。也就是说 <code>omlx serve --max-concurrent-requests 16</code> 只在本次运行生效，不会改变 <code>~/.omlx/settings.json</code>，下次用默认值启动就回到 8。要让修改持久，必须在 <code>/admin</code> 面板里改。</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>参数</th><th>默认</th><th>作用与误用后果</th></tr></thead>
+    <tbody>
+      <tr><td><code>--model-dir</code></td><td>必需</td><td>MLX 格式模型目录，支持两级组织。会同时读取 HuggingFace 缓存与 LM Studio 目录，无需重复下载。</td></tr>
+      <tr><td><code>--max-concurrent-requests</code></td><td><b>8</b></td><td>连续批处理并发上限。<b>调高的收益是团队吞吐，不是个人延迟</b>；超过内存带宽能支撑的量只会整体变慢。</td></tr>
+      <tr><td><code>--paged-ssd-cache-dir</code></td><td>未启用</td><td>SSD 冷层目录。必须放在内置 NVMe 上——外置盘的随机读延迟会吃掉大部分收益，而现有公开数据全部来自内置盘。</td></tr>
+      <tr><td><code>--hot-cache-max-size</code></td><td>auto</td><td>L2 内存热层占比。设太大挤压模型权重空间，反而触发 LRU 模型驱逐，得不偿失。</td></tr>
+      <tr><td><code>--paged-ssd-cache-max-size</code></td><td>auto（空闲盘 50%）</td><td>磁盘配额。auto 预算只增不减，不会因缓存增长反复收缩；有硬性磁盘约束时改固定值。</td></tr>
+      <tr><td><code>--memory-guard</code> / <code>--memory-guard-gb</code></td><td>balanced / RAM−8GB</td><td>进程内存上限。低内存机器上这是防「把整机拖进 swap」的唯一保险，不要为了跑大模型关掉。</td></tr>
+      <tr><td><code>--api-key</code></td><td>无</td><td>未设置时<b>拒绝在非 loopback 地址启动</b>。这是内置的安全底线。</td></tr>
+      <tr><td><code>--hf-endpoint</code></td><td>官方</td><td>受限网络环境改用镜像（如 <code>https://hf-mirror.com</code>）。</td></tr>
+      <tr><td><code>--headless</code></td><td>关</td><td>只跑推理与管理 API，不挂 Web UI。适合纯后端部署，且不写入设置。</td></tr>
+    </tbody>
+    <caption>表 9 · 关键参数。完整列表见仓库 README 的 CLI 段，<code>--mcp-config</code>、<code>--prefill-batch-size</code>、<code>--completion-batch-size</code> 等按需使用。</caption>
+  </table>
+  </div>
+
+  <h3>8.3 安全模型：一条不许绕过的规则</h3>
+
+  <p>oMLX 的安全设计有一条硬边界和若干软开关，理解这个分层很重要：</p>
+
+  <ul>
+    <li><strong>硬边界</strong>：未设置主 API key 时，服务拒绝在任何非 loopback 地址上启动。想监听 <code>0.0.0.0</code>，必须先有 key，或 key 与 host 一起保存。</li>
+    <li><strong>软开关 1</strong>：<code>skip_api_key_verification</code> 会同时关闭<i>推理</i>与<i>管理</i>鉴权，因此被强制限制在 loopback 绑定下。</li>
+    <li><strong>软开关 2</strong>：<code>auth.allow_unauthenticated_inference</code>（默认 false）允许网络绑定下的无密钥推理，但管理端点仍需主 key 或 admin 登录。这是为「局域网内多客户端调用、但管理面要锁」的场景准备的。</li>
+  </ul>
+
+  <div class="callout warn">
+    <div class="lab">反向代理场景的注意事项</div>
+    <p>如果你用 Pinggy、Cloudflare Tunnel 之类的隧道把 <code>localhost:8000</code> 暴露出去，oMLX 会认为自己在 loopback 上，安全底线因此<b>不生效</b>。此时必须自行在 <code>--api-key</code> 或隧道层加认证——不要把「服务端有保护」当成「隧道后也安全」。</p>
+  </div>
+
+  <h3>8.4 客户端接入</h3>
+
+  <p>管理面板会为选定模型生成现成的配置命令，覆盖 Claude Code、OpenClaw、OpenCode、Codex、Copilot CLI、Hermes Agent、Pi、Mistral Vibe、DeepSeek Harness 等。CLI 侧可用 <code>omlx launch list</code> 查看本机已安装的集成。</p>
+
+  <p>一个实测细节值得记下：<strong>Copilot CLI 走的是 <code>/v1/responses</code> 端点</strong>，仓库中有注释明确指出它对 completions 端点存在问题。这类客户端差异说明「OpenAI 兼容」是个光谱而非开关——真正决定兼容性的是客户端实际调用的端点与字段，不是宣传语。</p>
+</section>
+
+<!-- ============ 09 边界 ============ -->
+<section id="s09">
+  <h2><span class="num">09</span>能力边界：反证据清单</h2>
+  <p class="dek">一个只列优点的技术文档没有价值。下面每一条都是「它做不到」或「它做得不够好」，且都能在实测或源码里找到依据。</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>边界</th><th>具体表现</th><th>性质</th><th>缓解手段</th></tr></thead>
+    <tbody>
+      <tr><td><b>不扩大模型上限</b></td><td>SSD 只溢 KV，不进权重。64GB 机器仍是 64GB 的模型容量。</td><td><span class="tag t-red">物理约束</span></td><td>无。换硬件或量化到更低比特。</td></tr>
+      <tr><td><b>冷启动税更重</b></td><td>懒加载 + 内核 JIT，首请求 TTFT 约为 mlx-lm 的 2–3 倍；总预算 20–22s。</td><td><span class="tag t-amber">设计取舍</span></td><td>启动后打探针请求预热；管理面板 pin 模型。</td></tr>
+      <tr><td><b>平台锁死</b></td><td>macOS 15+ / Apple Silicon only。无 Linux、无 Intel、无 Windows。</td><td><span class="tag t-red">硬约束</span></td><td>无。跨平台需求请用 llama.cpp 系。</td></tr>
+      <tr><td><b>对 prompt 结构极度敏感</b></td><td>块粒度 4096；tools 顺序变化导致级联失效；动态内容插在 system 里则永不命中。</td><td><span class="tag t-amber">机制副作用</span></td><td>规范 prompt 组装顺序；把动态内容后置。</td></tr>
+      <tr><td><b>无优先级调度</b></td><td>FCFS，无抢占、无公平份额。长请求阻塞短请求（队头阻塞）。</td><td><span class="tag t-amber">实现简化</span></td><td>批处理任务用第二个实例或独立模型别名隔离。</td></tr>
+      <tr><td><b>版本节奏带来的稳定性风险</b></td><td>3,465 次提交、近每日发版；曾有 72 小时内连发三个版本。</td><td><span class="tag t-amber">项目阶段</span></td><td>锁版本；固定内核构建；上线前跑自己的回归负载。</td></tr>
+      <tr><td><b>分布式是实验特性</b></td><td>多 Mac pipeline 并行（Ring / Thunderbolt RDMA / JACCL）标注为 experimental。</td><td><span class="tag t-gray">成熟度</span></td><td>仅用于非关键扩容；生产依赖单机。</td></tr>
+      <tr><td><b>生态覆盖面</b></td><td>仅 MLX 格式权重（GGUF 需外部 Splash 引擎）；无 Gemini CLI 集成实现。</td><td><span class="tag t-gray">生态</span></td><td>主流模型有 mlx-community 版本；小众微调需自行转换。</td></tr>
+      <tr><td><b>基准数据自证为主</b></td><td>官方表格来自 M3 Ultra 512GB；SSD 恢复路径在慢速外置盘上缺第三方验证。</td><td><span class="tag t-gray">证据缺口</span></td><td>用自己的负载实测，别外推厂商数字。</td></tr>
+    </tbody>
+    <caption>表 10 · 反证据清单。前三条属于<b>不该尝试绕过</b>的约束；中间四条是可以用工程手段缓解的取舍；最后两条提醒你：目前所有公开性能数字都带有环境相关性。</caption>
+  </table>
+  </div>
+
+  <div class="callout note">
+    <div class="lab">一个值得警惕的叙事偏差</div>
+    <p>官方宣传语是「TTFT 从 90 秒降到 5 秒以下」。这个数字在特定配置下成立，但它描述的是<b>长上下文的重复前缀</b>这一种场景。把它理解成「oMLX 让本地推理快 18 倍」，会导致在三类场景上做出错误决策：单轮对话、短 prompt、以及需要最大单发速度的脚本——在这三类里，oMLX 与 mlx-lm 的差距在噪声范围内，而它多出来的部署复杂度是确定的。</p>
+  </div>
+</section>
+
+<!-- ============ 10 反模式 ============ -->
+<section id="s10">
+  <h2><span class="num">10</span>反模式清单：三类会白付成本的用法</h2>
+  <p class="dek">每一条都给出症状、成因、修正动作。症状部分写得具体，是为了让你能对着自己的日志认出来。</p>
+
+  <h3>10.1 架构层</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>反模式</th><th>症状</th><th>成因</th><th>修正</th></tr></thead>
+    <tbody>
+      <tr><td><b>把 oMLX 当加速器接单轮 API</b></td><td>命中率长期低于 5%；每次请求 8–70s；用户以为服务性能差</td><td>每个请求都是新前缀，缓存层只增加查找开销与写盘 I/O</td><td>单轮场景换 mlx-lm；或保留 oMLX 但显式关闭写入（<code>X-oMLX-Cache-Store: off</code>），只享受端点兼容</td></tr>
+      <tr><td><b>动态内容塞进 system prompt</b></td><td>改动一行代码后命中率归零；明明「prefix 没怎么变」却总在重算</td><td>时间戳、会话 ID、随机种子、当前文件内容插在 system 里 → 块 0 就变 → 链式哈希全链失效</td><td>静态在前、动态在后。system 只放真正不变的部分</td></tr>
+      <tr><td><b>每轮重新排序 tools</b></td><td>TTFT 在 2.5s 与 80s 之间来回跳</td><td>tools 渲染进前缀，顺序变化即内容变化（实测命中从 16384 归零）</td><td>tools 定义做确定性排序（如按 name 字典序）并固化在代码里</td></tr>
+      <tr><td><b>让一次性任务写缓存</b></td><td>多轮会话的命中率被「别的任务」挤掉；SSD 增长快但复用少</td><td>摘要器、标题生成、意图分类各自写入大量只出现一次的前缀块</td><td>这类调用加 <code>X-oMLX-Cache-Store: off</code>；或把它们路由到独立模型别名</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>10.2 调参层</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>反模式</th><th>症状</th><th>成因</th><th>修正</th></tr></thead>
+    <tbody>
+      <tr><td><b>并发数往大调</b></td><td>单请求延迟上升、总吞吐没涨、偶发模型驱逐</td><td>decode 是带宽瓶颈，8 路已把带宽利用率推到约 45%；再加只是分摊</td><td>个人用保持默认 8；团队按「并发用户数 × 1.5」估，且用真实负载压测确认</td></tr>
+      <tr><td><b>hot cache 占比设太大</b></td><td>模型频繁被驱逐又重载，出现规律性的 10s 卡顿</td><td>L2 吃掉统一内存 → 触发 EnginePool 的 LRU 驱逐 → 下次请求重新加载</td><td>让 hot cache 留在 auto；先保证模型权重与 KV 有空间</td></tr>
+      <tr><td><b>SSD 缓存放外置盘</b></td><td>命中却有 1–3s 甚至更高的额外延迟；「持久化好像没用」</td><td>外置 USB/网络盘的随机读延迟远高于内置 NVMe。所有公开数据均来自内置盘</td><td>缓存目录固定在内置 NVMe；外置盘只放模型权重（顺序读为主）</td></tr>
+      <tr><td><b>关掉 memory guard 跑大模型</b></td><td>整机卡死、风扇狂转、需要强制重启</td><td>统一内存被 GPU 与系统共用，超限不是优雅失败而是 swap 风暴</td><td>保留 <code>--memory-guard</code>；用 <code>--memory-guard-gb</code> 设定明确上限</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>10.3 运维层</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>反模式</th><th>症状</th><th>成因</th><th>修正</th></tr></thead>
+    <tbody>
+      <tr><td><b>客户端超时太短</b></td><td>缓存永远建不起来；每次都是冷启动；日志里全是「连接中断」</td><td>冷 prefill 需要 60s+，客户端 30s 就断开 → prefill 被打断 → 块从未写盘</td><td>把首个请求的 timeout 设到 120s+；启动后先打探针预热</td></tr>
+      <tr><td><b>不 pin 模型</b></td><td>每隔一段时间出现一次「莫名其妙很慢」</td><td>TTL 到期或内存压力触发卸载，下一次请求重新付加载成本</td><td>主力模型在管理面板 pin 住；其余模型设合理 TTL</td></tr>
+      <tr><td><b>跟着主干走</b></td><td>昨晚还好今天挂；两次重启行为不一致</td><td>近每日发版；0.7.3.dev2 这类 dev 版本出现在主干</td><td>锁定 release tag，升级走「起旁路实例 → 跑同一负载 → 比对命中率与 TTFT」</td></tr>
+      <tr><td><b>隧道后当内网用</b></td><td>公网可无认证调用推理接口，账单/数据双风险</td><td>服务看到 loopback 就跳过验证，安全底线不生效</td><td>隧道层加认证，或显式设 <code>--api-key</code></td></tr>
+      <tr><td><b>用首轮 TTFT 做验收</b></td><td>基准数字难看，误判「方案不可行」；或数字好看，上线后打脸</td><td>首轮包含加载 + 内核 JIT，与被测机制无关</td><td>跑三次，只取第 2、3 次；并把「重启后第一次」单列为一项指标</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 11 落地 ============ -->
+<section id="s11">
+  <h2><span class="num">11</span>落地路径：五级成熟度与验收清单</h2>
+  <p class="dek">从「装上试试」到「团队共享生产」，中间隔的不是配置项，而是四个具体的验证动作。</p>
+
+  <figure id="fig8">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 380" role="img" aria-label="oMLX 落地成熟度阶梯">
+        <!-- L0 -->
+        <rect x="50" y="180" width="162" height="120" rx="6" fill="#F4F1EA" stroke="#E2DED6"/>
+        <text x="62" y="202" font-size="11" font-weight="700" fill="#16181D" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L0 试用</text>
+        <text x="62" y="222" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">装 DMG，跑通一次对话</text>
+        <text x="62" y="238" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">确认端点能连</text>
+        <text x="62" y="254" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">不设性能预期</text>
+
+        <!-- L1 -->
+        <rect x="224" y="150" width="162" height="150" rx="6" fill="#FDF6EC" stroke="#EDD9BC"/>
+        <text x="236" y="172" font-size="11" font-weight="700" fill="#8F3F06" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L1 验证</text>
+        <text x="236" y="192" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">同一请求连发三次</text>
+        <text x="236" y="208" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">只取第 2、3 次</text>
+        <text x="236" y="224" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">记录命中块数</text>
+        <text x="236" y="240" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">重启后再测一次</text>
+
+        <!-- L2 -->
+        <rect x="398" y="120" width="162" height="180" rx="6" fill="#EDF7F5" stroke="#C4E3DD"/>
+        <text x="410" y="142" font-size="11" font-weight="700" fill="#0A5750" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L2 对齐</text>
+        <text x="410" y="162" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">prompt 顺序规范化</text>
+        <text x="410" y="178" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">tools 定义冻结排序</text>
+        <text x="410" y="194" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">动态内容全部后置</text>
+        <text x="410" y="210" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">一次性任务关写入</text>
+        <text x="410" y="226" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">复查命中率 ≥60%</text>
+
+        <!-- L3 -->
+        <rect x="572" y="90" width="162" height="210" rx="6" fill="#EFF5FC" stroke="#C9DCF0"/>
+        <text x="584" y="112" font-size="11" font-weight="700" fill="#1F5288" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L3 生产</text>
+        <text x="584" y="132" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">pin 主力模型</text>
+        <text x="584" y="148" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">启动探针预热</text>
+        <text x="584" y="164" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">客户端超时 ≥120s</text>
+        <text x="584" y="180" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">锁定 release tag</text>
+        <text x="584" y="196" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">缓存目录内置 NVMe</text>
+        <text x="584" y="212" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">验证内核已加载</text>
+        <text x="584" y="228" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">内存守卫档位定档</text>
+
+        <!-- L4 -->
+        <rect x="746" y="60" width="162" height="240" rx="6" fill="#F4F0FC" stroke="#D9CDF0"/>
+        <text x="758" y="82" font-size="11" font-weight="700" fill="#5A3099" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L4 多租</text>
+        <text x="758" y="102" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">按用户数算并发</text>
+        <text x="758" y="118" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">批处理实例隔离</text>
+        <text x="758" y="134" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">模型别名分租户</text>
+        <text x="758" y="150" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">监控命中率曲线</text>
+        <text x="758" y="166" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">磁盘配额告警</text>
+        <text x="758" y="182" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">Profile 拆分快慢档</text>
+        <text x="758" y="198" font-size="10" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">旁路实例做升级</text>
+
+        <!-- baseline -->
+        <line x1="40" y1="300" x2="918" y2="300" stroke="#4A505A" stroke-width="1.5"/>
+        <text x="50" y="322" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">每往上一级，都要回答同一个问题：命中率提高了吗？如果 L2 做完命中率仍低于 30%，说明负载本身不适合，应回退到 L0 换方案。</text>
+        <text x="50" y="342" font-size="10.5" fill="#333941" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">L1 与 L2 是纯客户端改动，零服务成本；L3 起才涉及部署与运维投入。先做完 L2 再谈扩容，是这个项目唯一正确的投资顺序。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 8</b> · 五级成熟度。注意阶梯的高度不是「投入量」，而是「需要变动的范围」：L1–L2 只改调用方代码，L3 改部署形态，L4 改系统拓扑。</figcaption>
+  </figure>
+
+  <h3>11.1 四个必须自己跑的验证</h3>
+
+  <p>以下四条不依赖任何第三方基准，二十分钟内可完成，但它们能决定方案是否成立：</p>
+
+  <div class="g2">
+    <div class="card">
+      <h4>验证 1 · 缓存真的生效了吗</h4>
+      <p>同一个请求连发三次，记录第 1、2、3 次的 TTFT。期望形态：第 1 次显著高，第 2、3 次接近且大幅下降。<strong>如果第 2 次没降</strong>，说明前缀里混进了动态内容。</p>
+    </div>
+    <div class="card">
+      <h4>验证 2 · 重启还活吗</h4>
+      <p>跑一轮让缓存建立，重启服务，再发同样的请求。这是 <strong>oMLX 与 mlx-lm 唯一的分水岭</strong>。若重启后退回到冷启动水平，说明 SSD 层没生效（目录配置错误或配额为 0）。</p>
+    </div>
+    <div class="card">
+      <h4>验证 3 · 顺序敏感度</h4>
+      <p>把 tools 数组顺序交换一次，再发同一请求。预期命中归零。这一步不是找 bug，是<strong>确认自己理解了机制</strong>——也顺便证明缓存判定确实在按内容工作。</p>
+    </div>
+    <div class="card">
+      <h4>验证 4 · 内核在不在</h4>
+      <p>跑 <code>native_kernel_status()</code>。如果你用的是 GLM-5.2 / MiniMax M3 / Qwen3.5，这一项决定你是 845 还是 29 tok/s 的 prefill。<strong>静默回退不会给你任何提示。</strong></p>
+    </div>
+  </div>
+
+  <h3>11.2 需要长期盯的三个指标</h3>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>指标</th><th>健康区间</th><th>告警含义</th></tr></thead>
+    <tbody>
+      <tr><td>前缀命中率（命中块 / 总块）</td><td>智能体负载 ≥ 60%</td><td>持续低于 30% → 负载类型不匹配，或 prompt 结构有动态污染</td></tr>
+      <tr><td>SSD 缓存写丢弃数</td><td>接近 0</td><td>持续上升 → 写入队列长期打满，磁盘 IO 跟不上，考虑换内置盘或降低并发</td></tr>
+      <tr><td>模型重载次数 / 天</td><td>≤ 1（pin 的主力模型应为 0）</td><td>频繁上升 → 内存治理在赶模型，需要下调并发或 hot cache 占比</td></tr>
+    </tbody>
+    <caption>表 11 · 三个比 tok/s 更有诊断价值的指标。<code>stats.py</code> 已内置这些计数器，接监控前先人工看一周。</caption>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 12 结论 ============ -->
+<section id="s12">
+  <h2><span class="num">12</span>结论：一次成功的「错位移植」</h2>
+
+  <p>oMLX 做的事情，用一句话概括是：<strong>把一个为数据中心设计的服务模型，硬塞进了一台个人电脑，而且塞对了。</strong></p>
+
+  <p>vLLM 的 PagedAttention 诞生于「显存稀缺、请求高并发、GPU 昂贵」的云环境，目的是让同一块 GPU 服务尽可能多的用户。把它搬到 Apple Silicon 上，前提全变了：没有独立显存（统一内存），没有多用户（通常一个人），GPU 不贵（已经买断了）。按常理，这套工程应该水土不服。</p>
+
+  <p>但它找到了一个在新环境里成立的对应物：<strong>云上稀缺的是显存，Mac 上稀缺的是「不被打断的连续计算时间」</strong>。智能体的存在制造了这个稀缺——每一轮都要求机器把两万个 token 重新算一遍，而这台机器同时还要跑 IDE、浏览器和 Docker。</p>
+
+  <p>于是那些在云上用来省显存的机制，在这里被用来省时间：分页是为了碎片化复用，这里是为了让不同会话共享同一段前缀；写时复制是为了并发安全，这里是为了让多个客户端读同一份缓存而不互相污染；LRU 驱逐是为了容量管理，这里是为了在 64GB 里同时放下模型、KV 和 IDE。连 SSD 落盘这个在云端几乎不存在的设计（云盘太慢），在 Mac 上反而成立——因为本地 NVMe 的随机读延迟，比重新跑一次 16K prefill 快了两个数量级。</p>
+
+  <div class="verdict">
+    <h4>判断（这是观点，不是共识）</h4>
+    <p>oMLX 的技术价值不在于它比谁快，而在于它证明了「<strong>本地推理服务的缓存可以是持久的</strong>」这件事值得做。一旦这个前提被接受，后续所有优化（KV 量化、跨进程共享、多机分片）都有了新的落点。目前它更接近「一个方向正确的早期实现」，而不是「一个可以无脑上生产的组件」——但这个方向本身，比它当下的完成度更重要。</p>
+  </div>
+
+  <h3>12.1 三句话行动建议</h3>
+
+  <ol>
+    <li><strong>如果你的日常是 Claude Code / Cursor / Codex 指向本地模型</strong>，现在就换，收益立刻可见，而且改造成本只有一次配置。做完 §11.1 的四个验证再决定是否长期使用。</li>
+    <li><strong>如果你只是在本机聊天或跑脚本</strong>，不要换。你付出的部署复杂度与冷启动税是确定的，换回的收益是零。</li>
+    <li><strong>无论哪种情况</strong>，先花半天把自己的 prompt 组装顺序规范化。这一步的收益不依赖 oMLX——它对任何带前缀缓存的推理服务都成立，而它恰好是绝大多数团队从未做过的事。</li>
+  </ol>
+
+  <h3>12.2 尚待观察的三个问题</h3>
+
+  <ul>
+    <li><strong>单维护者风险。</strong>项目由一位独立开发者维护，没有公司背书。3,465 次提交的活跃度是优点，也是单点依赖的放大器。团队采用前应评估「如果明天停更」的迁移成本——好消息是 MLX 生态本身在扩张，坏消息是这套 SSD 缓存没有等价替代。</li>
+    <li><strong>跨进程 / 跨模型共享尚未出现。</strong>当前缓存绑定在单个服务实例上。如果未来能做到多个本地进程共用一个缓存池（比如 IDE 插件与 CLI 共享），收益会再上一个量级。这是最值得期待的方向。</li>
+    <li><strong>基准数据的独立性。</strong>目前几乎所有性能数字都来自维护者自测或单篇第三方评测，缺少多环境、多负载的交叉验证。SSD 恢复路径在慢速盘、低内存机器上的表现尤其缺乏数据。</li>
+  </ul>
+</section>
+
+<!-- ============ 13 来源 ============ -->
+<section id="s13">
+  <h2><span class="num">13</span>参考来源</h2>
+  <p class="dek">按证据类型分组。项目自述与第三方实测严格分列，厂商基准单列，便于读者按需回溯。</p>
+
+  <h3>一手项目资料</h3>
+  <ul>
+    <li><strong>代码与文档</strong>：<code>github.com/jundot/omlx</code> —— README（架构段、CLI 段、模型支持表、致谢）、<code>docs/admin-api.md</code>。注意 GitHub 上存在多个同名 fork（<code>longfei12k/omlx</code>、<code>jgranie/omlx</code> 等），内容为镜像，非原始项目。</li>
+    <li><strong>源码级机制</strong>：DeepWiki 对 <code>jundot/omlx</code> 的索引页，关键文件 <code>omlx/cache/paged_cache.py</code>（块哈希 <code>compute_block_hash</code>）、<code>omlx/cache/prefix_cache.py</code>（<code>BlockAwarePrefixCache</code>）、<code>omlx/cache/paged_ssd_cache.py</code>（Hot Cache 与 <code>_write_safetensors_no_mx</code>）、<code>omlx/cache/boundary_snapshot_store.py</code>（<code>BoundarySnapshotSSDStore</code>）、<code>omlx/cache/type_registry.py</code>、<code>omlx/cache/stats.py</code>、<code>omlx/server.py</code>。本报告的三层缓存与类型注册表描述均据此。</li>
+    <li><strong>官方站点</strong>：<code>omlx.ai</code>（作者维护，含功能说明与 <code>/benchmarks</code> 社区提交页）。相关内容需与 README 交叉核对。</li>
+  </ul>
+
+  <h3>第三方受控实验（证据强度最高）</h3>
+  <ul>
+    <li><strong>缓存命中对照实验</strong>：EOGEE《Qwen3.8-27B 本地高速部署方案（Mac Studio M4 Max / oMLX）》，oMLX 0.6.4 + Qwen3.8-27B-4bit。提供 16.7K 请求的冷/热 TTFT、命中块数、tools 顺序敏感性、块粒度 4096 与 TTFT 三层根因分解。本报告 §06.2 全部数字与 §02.3 的成本模型据此。</li>
+    <li><strong>mlx-lm vs oMLX 对照</strong>：daily.dev《mlx-lm vs oMLX: I Was Wrong About the Winner》，Mac Studio M4 Max 64GB。提供热态 prefill 3.4/3.6s、decode 22–25 tok/s、重启后 17s/7.2s 三组关键对照，以及四个评测陷阱（mlx-lm 的 prompt 缓存、缓冲输出、oMLX 懒加载、SSD 缓存污染冷启动测量）。本报告 §06.3 据此。</li>
+    <li><strong>冷启动分解与客户端实测</strong>：lilting.ch《oMLX 0.3.9.dev2 tested on M1 Max 64GB》。提供卸载 0.9s、加载 9.7–11.9s、首次推理预热 9–10s 的分解，以及 Copilot CLI 26.6K token 请求 88s → 33s（54% 命中）的实测。§06.4 与 §08.4 据此。</li>
+    <li><strong>RAG 场景 TTFT 表</strong>：Stochastic Sandbox《omlx: Run Local LLMs on Apple Silicon with a RAG Customer Support App》，M3 Max 128GB + Qwen3-8B-4bit，三种 prompt 长度的冷/热 TTFT 与 tok/s。</li>
+  </ul>
+
+  <h3>厂商自测基准</h3>
+  <ul>
+    <li><strong>吞吐与批处理</strong>：官方基准表（M3 Ultra 512GB），Qwen3.5-122B-A10B-4bit、Qwen3-Coder-Next-8bit、MiniMax-M2.5-8bit、GLM-5-4bit 的单请求与 1×–8× 并发数据（pp1024 / tg128，无缓存复用）。本报告图 4 据此。</li>
+    <li><strong>社区提交基准</strong>：<code>omlx.ai/benchmarks</code>，含 M4 Max 40c 128GB 上 Qwen3.8-Flash-Next 各量化与各上下文的 PP/TG 数据（1k–128k）。表 7 部分行据此。</li>
+    <li><strong>内核性能</strong>：README 安装段注释，GLM-5.2 融合 DSA prefill 在 M3 Ultra 上 845 vs 约 29 tok/s（约 30×），需完整 Xcode 与 Metal toolchain。</li>
+  </ul>
+
+  <h3>背景资料</h3>
+  <ul>
+    <li><strong>MLX 框架机制</strong>：Apple MLX 的统一内存、惰性求值、动态图、Metal 后端与 <code>mx.compile</code> 融合机制（用于 §02.1 的 prefill/decode 物理性质分析）。</li>
+    <li><strong>Mac 推理栈全景</strong>：多篇 2026 年横评（Ollama 的 MLX runner 演进、LM Studio 双后端、llama.cpp 的 slot 并发、mlx-lm 的无服务层），用于表 1 的对比校准。</li>
+    <li><strong>项目评测与背景</strong>：PromptQuorum 的 oMLX 评测（项目起源、维护者背景、fork 泛滥情况）、RunAIHome 的 Apple Silicon 综述（边界判断、硬件档位建议）。</li>
+  </ul>
+
+  <div class="callout">
+    <div class="lab">阅读提示</div>
+    <p>本报告所有性能数字均保留原始来源的单位与量级，未做跨来源归一化。不同来源的硬件、版本、模型、prompt 长度、是否含预热均不相同，<strong>横向相减或相除会得到错误结论</strong>。表格内的对比只在同一来源内部有效，跨来源的并列仅用于展示量级。</p>
+  </div>
+</section>
+
+<!--END-->
+
+
+
+
+
+
+</main>
+
+<footer><div class="wrap">
+  <p><b>oMLX 技术白皮书</b> · 单文件离线文档 · 无外部依赖</p>
+  <p>资料截止 2026-10-26。所有性能数字均标注来源与证据强度，厂商自测与第三方实测严格区分。</p>
+</div></footer>
+
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="M2 Max 上跑 Qwen3.8-27B 只有 20 tok/s？实测 348 GB/s 带宽已被吃掉 96%，本文用 MLX 验证 3bit 量化提速 17%、批量并发吞吐 2.37 倍，并逐条拆解 MTP 与 KV 量化为何白费。">
+<meta name="keywords" content="mlx, quantization, m2-max, inference-throughput, qwen3, local-llm">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-26">
+<title>Qwen3.8-27B on M2 Max · 推理提速深度研究</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --ink:#1a1d23; --ink2:#4a5160; --ink3:#7b8494;
+    --line:#e3e7ee; --accent:#2f6feb; --up:#c0392b; --down:#1e8e5a;
+    --warn:#b8860b; --chip:#eef2f8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 24px 80px}
+  h1{font-size:30px;margin:0 0 8px;letter-spacing:-.4px}
+  .sub{color:var(--ink3);font-size:14px;margin-bottom:32px}
+  h2{font-size:20px;margin:44px 0 14px;padding-top:20px;border-top:1px solid var(--line)}
+  h3{font-size:16px;margin:26px 0 10px;color:var(--ink2)}
+  p{margin:10px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:16px 0}
+  .verdict{background:linear-gradient(180deg,#fff,#f4f8ff);border:1px solid #cfe0fb;border-left:4px solid var(--accent)}
+  .verdict .big{font-size:19px;font-weight:600;margin-bottom:6px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:#f2f5fa;font-weight:600;color:var(--ink2);font-size:13px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.hl td{background:#fffdf3}
+  .up{color:var(--up);font-weight:600}
+  .down{color:var(--down);font-weight:600}
+  .muted{color:var(--ink3)}
+  code{background:var(--chip);padding:2px 6px;border-radius:4px;font-size:13px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{background:#1e2229;color:#e6e9ef;padding:16px 18px;border-radius:10px;overflow-x:auto;
+    font-size:13px;line-height:1.6;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre code{background:none;color:inherit;padding:0}
+  .chip{display:inline-block;background:var(--chip);border-radius:6px;padding:2px 9px;
+    font-size:12px;color:var(--ink2);margin-right:6px}
+  .no{color:var(--ink3)} .yes{color:var(--down);font-weight:600}
+  ul{margin:8px 0;padding-left:22px} li{margin:5px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:16px 0}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .stat .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:12px;color:var(--ink3);margin-top:2px}
+  .bar{height:22px;background:var(--chip);border-radius:5px;overflow:hidden;position:relative;margin:4px 0}
+  .bar > span{display:block;height:100%;border-radius:5px}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);
+    font-size:13px;color:var(--ink3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Qwen3.8-27B on M2 Max：20 tok/s 还能不能再快？</h1>
+<div class="sub">oMLX 0.7.3.dev2 · Apple M2 Max（38 核 GPU / 64 GB / 实测带宽 348 GB/s）· 全部数据来自本机实测</div>
+
+<div class="card verdict">
+  <div class="big">结论：你的 20 tok/s 已经撞上内存带宽墙，剩下的空间不在「调参」里。</div>
+  <p>本机实测 M2 Max 可持续内存带宽 <b>348 GB/s</b>，模型权重 <b>15.13 GB</b>，由此算出的 decode 理论上限是
+  <b>23.0 tok/s</b>。绕过 oMLX 直接用 MLX 跑同一个模型，实测 <b>22.2 tok/s</b> —— 相当于已经吃掉了
+  <b>96%</b> 的可用带宽。oMLX 报的 17.5–20 tok/s 只是叠加了调度与采样开销。</p>
+  <p>所以真正的选择只有三个：<b>减小权重体积</b>、<b>一次读盘服务多个请求</b>、<b>一次读盘吐多个 token</b>。
+  第三条的 MTP 你已经验证过基本无效，本文给出原因和剩下两条的实测数字。</p>
+</div>
+
+<h2>1. 先把天花板算清楚</h2>
+
+<p>LLM 解码的本质非常朴素：<b>每生成一个 token，就要把全部权重从内存读一遍</b>。于是</p>
+<pre><code>decode 上限 (tok/s) = 内存带宽 (GB/s) ÷ 权重体积 (GB)</code></pre>
+
+<p>我用 MLX 在 GPU 上做了大矩阵 matvec 微基准，得到这台机器的真实带宽（不是标称值）：</p>
+
+<table>
+<tr><th>访存模式</th><th class="num">实测带宽</th><th>说明</th></tr>
+<tr><td>bf16 大矩阵 matvec</td><td class="num">348.8 GB/s</td><td>接近峰值，代表机器上限</td></tr>
+<tr><td>大数组归约（STREAM 式）</td><td class="num">337.8 GB/s</td><td>纯读带宽，互相印证</td></tr>
+<tr><td>4bit 量化 matvec（248320×5120）</td><td class="num">325.9 GB/s</td><td>decode 真实 kernel</td></tr>
+<tr class="hl"><td>4bit 量化 matvec（5120×5120）</td><td class="num">39.0 GB/s</td><td>小矩阵严重受 launch 开销限制</td></tr>
+</table>
+
+<p class="muted">注：M2 Max 标称 400 GB/s，实测可持续约 348 GB/s。上面最后一行也解释了为什么「层数多、每层小」的模型
+在 MLX 上跑不满带宽——小矩阵根本喂不饱 38 个 GPU 核。</p>
+
+<div class="grid">
+  <div class="stat"><div class="v">15.13 GB</div><div class="k">Qwen3.8-27B-4bit 实际权重</div></div>
+  <div class="stat"><div class="v">348 GB/s</div><div class="k">M2 Max 实测可持续带宽</div></div>
+  <div class="stat"><div class="v">23.0</div><div class="k">理论上限 tok/s</div></div>
+  <div class="stat"><div class="v">22.2</div><div class="k">MLX 裸跑实测 tok/s（96% 效率）</div></div>
+</div>
+
+<h2>2. 位宽是唯一能真正突破的杠杆（实测）</h2>
+
+<p>我把 4bit 模型<b>逐层重量化</b>成 3bit / 2bit，同模型同数据做对比。速度用 MLX 裸跑测，
+质量用同一段中英混合文本的困惑度（PPL，越低越好）衡量。</p>
+
+<table>
+<tr><th>位宽</th><th class="num">权重</th><th class="num">decode tok/s</th><th class="num">提速</th>
+    <th class="num">有效带宽</th><th class="num">PPL</th><th>质量代价</th></tr>
+<tr><td>4bit（官方现用）</td><td class="num">15.13 GB</td><td class="num">22.00</td><td class="num">1.00×</td>
+    <td class="num">333 GB/s (96%)</td><td class="num">4.813</td><td>基准</td></tr>
+<tr class="hl"><td>3bit（本次重量化）</td><td class="num">11.93 GB</td><td class="num">25.72</td>
+    <td class="num up">1.17×</td><td class="num">307 GB/s (88%)</td><td class="num">5.715</td>
+    <td class="up">PPL +19%</td></tr>
+<tr><td>2bit（本次重量化）</td><td class="num">8.73 GB</td><td class="num">31.73</td>
+    <td class="num up">1.44×</td><td class="num">277 GB/s (80%)</td><td class="num">16.871</td>
+    <td class="up">PPL +250%（崩坏）</td></tr>
+</table>
+
+<div style="margin:20px 0">
+  <div style="font-size:13px;color:var(--ink2);margin-bottom:6px">decode 速度（tok/s）</div>
+  <div class="bar"><span style="width:69%;background:linear-gradient(90deg,#5b8def,#2f6feb)">4bit · 22.0</span></div>
+  <div class="bar"><span style="width:81%;background:linear-gradient(90deg,#5b8def,#2f6feb)">3bit · 25.7</span></div>
+  <div class="bar"><span style="width:100%;background:linear-gradient(90deg,#e8a33d,#d97706)">2bit · 31.7（质量崩）</span></div>
+</div>
+
+<div class="card">
+<b>怎么读这张表</b>
+<ul>
+<li><b>3bit 是甜点</b>：+17% 速度换 +19% 困惑度，多数生成类任务感知不明显。</li>
+<li><b>2bit 速度很诱人但本次不可用</b>：+44% 速度，代价是 PPL 翻 3.5 倍。</li>
+<li><b>重要前提</b>：我这版是<b>二次量化</b>（4bit → bf16 → 2bit），误差会累积，
+属于「最坏情况」。社区用重要性矩阵 / AWQ / 混合精度做的正式 2bit 版本质量会明显好于这个数字，
+例如 Prism ML 的 Ternary-Bonsai-2（8.85 GB，官方称保留 98.2% 基准分）。</li>
+<li>位宽越低，kernel 带宽利用率也越低（96% → 88% → 80%），所以<b>提速小于体积压缩比</b>。</li>
+</ul>
+</div>
+
+<h2>3. 你的场景是「推荐」，批处理才是最大杠杆</h2>
+
+<p>降低位宽提升的是<b>单请求</b>延迟。但如果你的推荐任务是一次给多个候选项打分／批量生成，
+那么把请求并发起来，一次读盘服务多个序列，总吞吐可以数倍提升——而且<b>完全不损失质量</b>。</p>
+
+<table>
+<tr><th>并发数</th><th class="num">总生成吞吐</th><th class="num">相对 1×</th><th>说明</th></tr>
+<tr><td>1</td><td class="num">21.5 tok/s</td><td class="num">1.00×</td><td>基线</td></tr>
+<tr><td>2</td><td class="num">34.3 tok/s</td><td class="num up">1.59×</td><td></td></tr>
+<tr><td>4</td><td class="num">33.6 tok/s</td><td class="num up">1.56×</td><td></td></tr>
+<tr><td>16</td><td class="num">50.9 tok/s</td><td class="num up">2.37×</td><td>本次测得的最高吞吐</td></tr>
+</table>
+
+<p class="muted">上表用 mlx-lm 的静态 batch 测得，噪声偏大（8× 处有回退）。oMLX 自己用的是
+continuous batching + mlx-lm BatchGenerator，官方在 M3 Ultra 上给出 8× 并发 3.36–4.14× 的数字，
+实际效果应好于这里的静态 batch。<b>单请求延迟不会变快，但跑完一批的总时间会大幅缩短。</b></p>
+
+<h2>4. 为什么草稿模型（MTP）在你这里没用</h2>
+
+<p>你观察到「推测 4 个 token 和不用草稿一样快」，这不是你的错觉，源码层面有三条硬约束：</p>
+
+<ol>
+<li><b>你的 checkpoint 里根本没有 MTP 权重。</b>服务日志明确写着
+<code>config declares mtp heads but checkpoint ships no mtp.* weights</code>，
+所以 oMLX 原生的 Lightning MTP（<code>mtp_enabled</code>）永远无法启用，
+只能走外部草稿模型的 <code>vlm_mtp_enabled</code> 路径。</li>
+<li><b>草稿深度被自动夹回 3。</b>外部草稿 <code>Qwen3.8-27B-MTP-4bit</code> 的
+<code>block_size=3</code>，而 mlx-vlm 只有在最近若干轮接受率 ≥65% 时才允许放大，
+否则一律夹回 3 —— 每轮实际只多产出约 2.31 个 token。你手动设 4 / 5 基本不生效。</li>
+<li><b>验证阶段把省下的带宽又烧回去了。</b>草稿验证存在逐 token 回退路径，会让权重在一轮内被重复读取；
+且 qwen3_5_mtp 每轮都会触发一次全量 <code>synchronize + clear_cache</code>。
+反应到数字上：一轮耗时约为单步的 2.12 倍，却只多吐 2.31 个 token。</li>
+</ol>
+
+<p>用你自己的日志做同 prompt 严格对比：不开 MTP <b>19.0 tok/s</b>，开了 <b>20.7 tok/s</b>，
+<b>只有 +9%</b>。而且它在并发时会整条请求回退到普通 BatchGenerator。</p>
+
+<h2>5. oMLX 里那批「全部关闭」的开关，逐个诊断</h2>
+
+<p><code>~/.omlx/model_settings.json</code> 里针对该模型有一批开关，当前全是 <code>false</code>。
+我把它们都翻了一遍源码，结论是<b>大部分只作用于 prefill，对你的 decode 一点用没有</b>：</p>
+
+<table>
+<tr><th>开关</th><th>作用阶段</th><th>能提速 decode？</th><th>判定依据</th></tr>
+<tr class="hl"><td><code>turboquant_kv_enabled</code>（KV 4bit）</td><td>decode</td>
+    <td class="no">几乎不能</td><td>见下方上下文扫描：4k 上下文收益约 2%</td></tr>
+<tr class="hl"><td><code>vlm_mtp_enabled</code></td><td>decode</td><td class="yes">+9%</td>
+    <td>与 turboquant_kv 互斥，二选一</td></tr>
+<tr><td><code>qwen35_ane_prefill_enabled</code></td><td>prefill</td><td class="no">不能</td>
+    <td>准入要求输入恰好 2048 行，decode 是 1 行，永不命中</td></tr>
+<tr><td><code>qwen35_oq_a8_enabled</code></td><td>prefill</td><td class="no">不能</td>
+    <td>需要 M5+ 原生 INT8 张量单元，M2 Max 被 API 直接拒绝</td></tr>
+<tr><td><code>specprefill_enabled</code></td><td>prefill</td><td class="no">不能</td>
+    <td>需另配草稿模型；且会丢 token，掉质量</td></tr>
+<tr><td><code>dflash_enabled</code></td><td>decode</td><td class="no">无法启用</td>
+    <td>模型目录里没有 dflash 草稿权重</td></tr>
+<tr><td><code>qwen4_gdn_decode_wide_proj</code></td><td>decode</td><td class="no">不适用</td>
+    <td>只对 Qwen4-Exp 生效，你是 qwen3_5</td></tr>
+<tr><td><code>moe_expert_offload_enabled</code></td><td>—</td><td class="no">不适用</td>
+    <td>这是 dense 模型，没有专家层</td></tr>
+</table>
+
+<h3>上下文长度几乎不影响 decode（这就是 KV 量化没用的原因）</h3>
+
+<table>
+<tr><th>prompt 长度</th><th class="num">KV 体积</th><th class="num">decode tok/s</th><th class="num">ms/token</th></tr>
+<tr><td>32</td><td class="num">2.1 MB</td><td class="num">22.23</td><td class="num">45.0</td></tr>
+<tr><td>512</td><td class="num">33.6 MB</td><td class="num">22.18</td><td class="num">45.1</td></tr>
+<tr><td>2048</td><td class="num">134.2 MB</td><td class="num">21.46</td><td class="num">46.6</td></tr>
+<tr><td>4096</td><td class="num">268.4 MB</td><td class="num">21.53</td><td class="num">46.4</td></tr>
+</table>
+
+<p>上下文从 32 涨到 4096，decode 只掉了 <b>3%</b>。原因是这个模型是<b>混合架构</b>：
+64 层里 48 层是 GDN 线性注意力（状态大小固定，不随上下文增长），只有 16 层是 full attention。
+每 token 的 KV 仅 64 KiB，4k 上下文也才 268 MB，相对 15.13 GB 的权重读取完全可以忽略。
+你实际平均 prompt 约 1.7k token，<b>开 KV 量化的收益不到 2%，还要承担有损压缩的风险</b>——不建议。</p>
+
+<h2>6. 环境排查（都不是瓶颈）</h2>
+
+<table>
+<tr><th>检查项</th><th>结果</th></tr>
+<tr><td>Ollama 后台是否抢带宽</td><td>否，<code>/api/ps</code> 返回空，未加载任何模型</td></tr>
+<tr><td>内存压力</td><td>系统空闲 93%，无 swap 颠簸</td></tr>
+<tr><td>SSD KV 缓存</td><td>已启用，4.17 GB，只影响多轮前缀复用</td></tr>
+<tr><td>oMLX 相对裸跑的开销</td><td>22.2 → 17.5–20 tok/s，约 9–20%（调度 + 采样 + 流式）</td></tr>
+</table>
+
+<h2>7. 可执行清单（按性价比排序）</h2>
+
+<div class="card">
+<ol>
+<li><b>把推荐任务改成批量并发</b> <span class="chip">零质量损失</span> <span class="chip">吞吐 2–3×</span><br>
+一次灌入多个候选项而不是逐个请求。这是你「高效推荐」场景下唯一不牺牲质量的大幅提速手段。</li>
+
+<li><b>换 3bit 权重</b> <span class="chip">+17% 速度</span> <span class="chip">PPL +19%</span><br>
+优先找社区用重要性矩阵做的正式 3bit 版本（质量优于本次二次量化）。
+我已在本地生成了一版可直接加载的 3bit：<br>
+<code>~/.cache/huggingface/hub/local--Qwen3.8-27B-3bit-gs64</code>（11.93 GB，25.7 tok/s）</li>
+
+<li><b>想要更大突破就上 2bit / 三进制</b> <span class="chip">+44% 速度或更多</span><br>
+务必用社区正式版而非二次量化。参考 <code>prism-ml/Ternary-Bonsai-2-27B-mlx-2bit</code>
+（8.85 GB，官方称保留 98.2% 基准分），注意它可能需要配套 kernel 才能跑满。</li>
+
+<li><b>可以顺手关掉的开销</b>：若不需要推理链，把 <code>enable_thinking</code> 关掉，
+能减少大量无谓的生成 token（不改变 tok/s，但显著缩短端到端等待）。</li>
+
+<li><b>不建议做</b>：开 KV 量化（&lt;2% 收益且有损）、继续调 MTP 深度（被代码夹死）、
+指望 ANE / OptiQ A8（M2 Max 用不了且只管 prefill）。</li>
+</ol>
+</div>
+
+<h3>真实预期</h3>
+<p>把上面 1 + 2 组合起来：<b>单请求 25.7 tok/s，批量吞吐 60+ tok/s</b>。
+想要更高，只能换更小的模型或更高带宽的机器——M2 Max 的 348 GB/s 是硬约束，
+任何软件优化都不可能让它凭空变出带宽。</p>
+
+<footer>
+本机实测 · M2 Max / 64 GB / macOS 26.5.2 / oMLX 0.7.3.dev2 / MLX 0.32.4 · 2026-10-26<br>
+复现脚本位于 <code>omlx-perf/</code>：bandwidth.py（带宽微基准）、bench.py（速度与批处理）、
+requant.py（重量化）、quality.py（困惑度）、ctx_scan.py（上下文扫描）
+</footer>
+
+</div>
+</body>
+</html>

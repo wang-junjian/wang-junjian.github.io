@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html data-page-node-id="nltdGQ9ZBezD1lnoLWOwQn" lang="zh-CN">
+<head data-page-node-id="sCgem32J6LWscC6mNgRWs5">
+<script data-page-node-id="wh8kIC4bonXpZqPdMSHAwn" src="/page/page_comm/inject.js"></script>
+<meta data-page-node-id="bxYxSw7QDxJce40iPHXInM" charset="utf-8">
+<meta data-page-node-id="PvcgPWi86yrqpP0uqOmMqE" content="width=device-width, initial-scale=1" name="viewport">
+<meta name="description" content="在一个真实仓库里用五天五十次提交跑通整套 AI 原生开发：从访谈式追问出规格、曳光弹拆票、一票一窗口执行，到双轴评审与复盘收口，把每次踩坑固化成 lint、ADR 与术语表等护栏，并附反模式与启动清单。">
+<meta name="keywords" content="mattpocock-skills, ai-native-workflow, tracer-bullet-tickets, dual-axis-code-review, context-hygiene, retro-guardrails">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-26">
+<title data-page-node-id="1CGcN72C6jEs93dL5S1sRI" data-pnid-children="NTwWonah3OTUP6ypjBkVfz">基于 Matt Pocock Skills 的 AI 原生开发最佳实践</title>
+<style data-page-node-id="d979s2oIxVtjbyKVaaKlGe" data-pnid-children="hP8roEntcD8TDQXbBRNiHv">
+  :root{
+    --bg:#ffffff;
+    --bg-soft:#f7f8fa;
+    --bg-code:#f4f5f7;
+    --ink:#16181d;
+    --ink-2:#414750;
+    --ink-3:#6b7280;
+    --line:#e4e6ea;
+    --line-2:#d3d7de;
+    --blue:#2b4a7d;
+    --blue-soft:#eef2f8;
+    --blue-line:#c9d6e8;
+    --red:#a63d2f;
+    --red-soft:#fbf0ee;
+    --red-line:#e8cdc7;
+    --radius:6px;
+    --measure:74ch;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:16px;
+    line-height:1.78;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  ::selection{background:#dfe7f2}
+
+  /* progress */
+  .progress{position:fixed;top:0;left:0;right:0;height:3px;background:transparent;z-index:60}
+  .progress__bar{height:100%;width:0;background:var(--blue);transition:width .1s linear}
+
+  /* hero */
+  .hero{border-bottom:1px solid var(--line);padding:64px 0 48px;background:var(--bg-soft)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--blue);font-weight:600;margin:0 0 24px;
+  }
+  .kicker::before{content:"";width:24px;height:1px;background:var(--blue)}
+  .hero h1{
+    font-size:clamp(28px,4.2vw,48px);
+    line-height:1.22;
+    letter-spacing:-.02em;
+    font-weight:650;
+    margin:0 0 24px;
+    max-width:26ch;
+  }
+  .lede{
+    font-size:17px;line-height:1.8;color:var(--ink-2);
+    max-width:var(--measure);margin:0 0 40px;
+  }
+  .lede em{font-style:normal;color:var(--ink);font-weight:600}
+
+  .stats{
+    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:1px;background:var(--line);border:1px solid var(--line);
+    border-radius:var(--radius);overflow:hidden;
+  }
+  .stat{background:#fff;padding:16px 14px}
+  .stat dt{font-size:11px;letter-spacing:.06em;color:var(--ink-3);margin:0 0 6px;text-transform:uppercase}
+  .stat dd{margin:0;font-size:19px;font-weight:650;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;line-height:1.35}
+  .stat dd small{font-size:12px;font-weight:400;color:var(--ink-3);letter-spacing:0}
+
+  /* shell */
+  .shell{max-width:1120px;margin:0 auto;padding:0 32px;display:grid;grid-template-columns:216px minmax(0,1fr);gap:56px;align-items:start}
+
+  /* toc */
+  .toc{position:sticky;top:24px;padding:48px 0 64px;font-size:13px;line-height:1.6}
+  .toc__title{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 16px;font-weight:600}
+  .toc a{
+    display:block;color:var(--ink-3);text-decoration:none;
+    padding:5px 0 5px 12px;border-left:2px solid transparent;
+    transition:color .15s,border-color .15s;
+  }
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--blue);border-left-color:var(--blue);font-weight:600}
+  .toc a span{display:inline-block;width:20px;color:#b3b9c4;font-variant-numeric:tabular-nums}
+
+  /* main */
+  main{padding:48px 0 96px;min-width:0}
+  section{scroll-margin-top:24px}
+  .chapter{border-top:1px solid var(--line);padding-top:48px;margin-top:64px}
+  .chapter:first-of-type{border-top:none;margin-top:0;padding-top:0}
+  .num{
+    display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--blue);font-weight:600;margin-bottom:8px;font-variant-numeric:tabular-nums;
+  }
+  h2{
+    font-size:clamp(22px,2.6vw,30px);line-height:1.3;letter-spacing:-.015em;
+    font-weight:650;margin:0 0 24px;
+  }
+  h3{
+    font-size:18px;line-height:1.45;font-weight:650;letter-spacing:-.01em;
+    margin:40px 0 14px;padding-left:14px;border-left:3px solid var(--blue-line);
+  }
+  h4{font-size:15px;font-weight:650;margin:28px 0 10px;color:var(--ink)}
+  p{margin:0 0 18px;max-width:var(--measure)}
+  strong{font-weight:650}
+  a{color:var(--blue)}
+  hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+  ul,ol{margin:0 0 18px;padding-left:22px;max-width:var(--measure)}
+  li{margin:0 0 8px}
+  li::marker{color:var(--ink-3)}
+
+  blockquote{
+    margin:24px 0;padding:16px 20px;
+    background:var(--blue-soft);border-left:3px solid var(--blue);
+    border-radius:0 var(--radius) var(--radius) 0;
+    color:var(--ink-2);
+  }
+  blockquote p{margin:0;max-width:none}
+  blockquote p + p{margin-top:10px}
+  blockquote strong{color:var(--blue)}
+
+  code{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:.88em;
+    background:var(--bg-code);
+    padding:1px 5px;border-radius:3px;
+    color:#243044;
+    border:1px solid #e9ebef;
+    overflow-wrap:anywhere;
+  }
+  p,li,td,th,blockquote{overflow-wrap:break-word}
+  pre{
+    background:var(--bg-code);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px 18px;overflow-x:auto;
+    margin:0 0 20px;line-height:1.62;
+  }
+  pre code{background:none;border:none;padding:0;font-size:13px;white-space:pre;color:#243044}
+  pre code .c{color:var(--ink-3)}
+
+  /* tables */
+  .table-wrap{overflow-x:auto;margin:0 0 22px;border:1px solid var(--line);border-radius:var(--radius)}
+  table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.65;background:#fff}
+  th{
+    text-align:left;font-weight:650;font-size:12px;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--ink-2);
+    background:var(--bg-soft);padding:11px 14px;border-bottom:1px solid var(--line-2);
+    white-space:nowrap;
+  }
+  td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:#fafbfc}
+  td strong{color:var(--ink)}
+  td code{white-space:normal}
+
+  /* callout */
+  .callout{
+    margin:28px 0;padding:18px 20px;border-radius:var(--radius);
+    border:1px solid var(--blue-line);background:var(--blue-soft);
+  }
+  .callout p{margin:0;max-width:none;font-size:15px;color:var(--ink-2)}
+  .callout p + p{margin-top:10px}
+  .callout__label{
+    display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--blue);font-weight:700;margin-bottom:8px;
+  }
+  .callout--warn{border-color:var(--red-line);background:var(--red-soft)}
+  .callout--warn .callout__label{color:var(--red)}
+  .callout--warn p strong{color:var(--red)}
+
+  /* tag */
+  .tag{
+    display:inline-block;font-size:11px;line-height:1.6;padding:0 6px;border-radius:3px;
+    background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-line);
+    font-weight:600;letter-spacing:.02em;vertical-align:1px;white-space:nowrap;
+  }
+  .tag--sel{background:#f4f4f2;color:var(--ink-3);border-color:var(--line-2)}
+
+  /* figure */
+  figure{margin:28px 0;padding:0}
+  figure svg{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:var(--radius)}
+  figcaption{font-size:12.5px;color:var(--ink-3);margin-top:10px;line-height:1.6}
+
+  /* footer */
+  footer{border-top:1px solid var(--line);background:var(--bg-soft);padding:40px 0}
+  footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:13px;color:var(--ink-3)}
+  footer p{margin:0;max-width:var(--measure)}
+
+  /* back to top */
+  .top{
+    position:fixed;right:24px;bottom:24px;width:40px;height:40px;
+    border:1px solid var(--line-2);background:#fff;border-radius:50%;
+    display:grid;place-items:center;cursor:pointer;color:var(--ink-2);
+    opacity:0;pointer-events:none;transition:opacity .2s;z-index:40;
+    font-size:14px;
+  }
+  .top.show{opacity:1;pointer-events:auto}
+  .top:hover{border-color:var(--blue);color:var(--blue)}
+
+  @media (max-width:960px){
+    .shell{grid-template-columns:1fr;gap:0}
+    .toc{
+      position:static;padding:0;margin:24px 0 0;
+      border:1px solid var(--line);border-radius:var(--radius);background:#fff;
+    }
+    .toc__title{margin:0;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between}
+    .toc__title::after{content:"展开";color:var(--blue);font-weight:500;letter-spacing:0;text-transform:none}
+    .toc.open .toc__title::after{content:"收起"}
+    .toc__list{display:none;padding:4px 8px 12px}
+    .toc.open .toc__list{display:block}
+    .toc a{padding:7px 8px}
+    main{padding-top:32px}
+    .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .hero{padding:44px 0 36px}
+    .wrap,.shell{padding:0 20px}
+  }
+  @media (max-width:560px){
+    .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    body{font-size:15.5px}
+    h2{font-size:22px}
+    .chapter{padding-top:36px;margin-top:48px}
+    th{white-space:normal}
+    .stat dd{font-size:17px}
+  }
+  @media print{
+    .toc,.progress,.top{display:none}
+    .shell{grid-template-columns:1fr;max-width:none;padding:0}
+    .chapter{page-break-inside:avoid}
+    body{font-size:11pt}
+  }
+</style>
+</head>
+<body data-page-node-id="DGWGzTPHbMFbnLCR7O8Zwm">
+
+<div data-page-node-id="EiDo5W7ZfAmSzGTWydaq3C" class="progress"><div data-page-node-id="QHb0vYib5T3XiwVK2mxa6Z" class="progress__bar" id="bar"></div></div>
+
+<header data-page-node-id="rKz76xG1xV5p9uzkMdPxHT" class="hero">
+  <div data-page-node-id="KjR4f0Wci78wsoHhOhADpd" class="wrap">
+    <p data-page-node-id="huYnRnuXsjJqCmckBOIb7Q" class="kicker"><!--pnid:EEnahSFZDkKDIyIISY1mpj-->实战复盘 · research-share</p>
+    <h1 data-page-node-id="BaMFpH8wCSDLue0lYPrqes"><!--pnid:e1vyR3lSXhsPoVefpKjEE4-->基于 Matt Pocock Skills 的<br data-page-node-id="j7X1Nnadh8G4evrkdEsWCe"><!--pnid:aFi4BcqsxBSxxgpxp1CLxs-->AI 原生开发最佳实践</h1>
+    <p data-page-node-id="2hFKUOzGar3BUGHJ4xAseV" class="lede"><!--pnid:MSh717txn63of8rA9pEBCQ-->一个真实仓库、五天、五十个提交的全部做法。不含技能原文校订，不含判定徽章，不含「原文该怎么改」——<em data-page-node-id="ysbkGXnV8tlV5jFUAKcRdO"><!--pnid:gX2jsSu2rxycuABvpZacbc-->只有能直接照搬的动作，以及每个动作在实战里换来了什么。</em></p>
+    <dl data-page-node-id="64Mzd3Ka91tuslUcdpO828" class="stats">
+      <div data-page-node-id="jzlDZTt00VJDAJmaQJ2Nzu" class="stat"><dt data-page-node-id="QGpF9LTO44AHpy9YJzvCF5"><!--pnid:Tsk91icdBX2s0nGptpBxnc-->周期</dt><dd data-page-node-id="CInUkxcf5DpOYRAFdgg9vB"><!--pnid:6uC2x2CQLu5KwoYAbts0W1-->5 <small data-page-node-id="bOO9fcnbeBDWBUliSnW6FS"><!--pnid:KIBORakw6rzIU0enJcqa6k-->天</small></dd></div>
+      <div data-page-node-id="ZF9XymjHX19aLkolzcn3kQ" class="stat"><dt data-page-node-id="AlSvQu5eEppVOZj4Y7OxK8"><!--pnid:HBMPbG15zMSU6wJ5lHSlFs-->提交</dt><dd data-page-node-id="IEg99ttBjXsYKxH3YcGM5B"><!--pnid:sF6DgIL1k1o7OoqhmrpfjO-->50 <small data-page-node-id="aclv5vWd9oIFFJeVBpBoBp"><!--pnid:zBCCdADb8HnXRtIbtIAg8d-->+15,061 / −2,596</small></dd></div>
+      <div data-page-node-id="Dup8XoRoHqdEAiwwb0AEbA" class="stat"><dt data-page-node-id="fgrGWNq3qMLS4lQkJZV3Ae"><!--pnid:RF1pzPnYrxB41vy5GhH6BO-->工单</dt><dd data-page-node-id="CNxRwkzWLbafUSBL8tUvHj"><!--pnid:MHv3t3wJEf6knHguMxrcUy-->12 <small data-page-node-id="y7nMLRtI50S8QnZT6aU9a6"><!--pnid:TquQTq4Aw9bRQ2TfMhyOJE-->全部关闭</small></dd></div>
+      <div data-page-node-id="fnaWWpw0iJ65ACivfFk72T" class="stat"><dt data-page-node-id="UCY1heJ47c2xI1ybJ9I6aV"><!--pnid:JslI5FpckJfAAPgl52ZCgv-->测试</dt><dd data-page-node-id="6jTAPJfvSozG0LYgqw5JLR"><!--pnid:jZkmO149OlqOhpc5HCA6kF-->168 <small data-page-node-id="hM4DTVY8kXkO8tRqW3wBzB"><!--pnid:NE1fgxNBnpvcwLFQ0e27NK-->3.5 秒全绿</small></dd></div>
+      <div data-page-node-id="y5OhY13bE9QmUNtgaJVEHL" class="stat"><dt data-page-node-id="5hiQnKjwUSwbLAVrEhxQOF"><!--pnid:4KLNJzHNLMQ9ZJe94w7Z4T-->领域文档</dt><dd data-page-node-id="gRMfA4ninKqM6bmErHimCD"><!--pnid:buYycZGXm6ZmMGvl983FBU-->5 <small data-page-node-id="ftNh1Mmf3jem7fTbuEdyfJ"><!--pnid:mebEmonKBQZDXhzaadfdLK-->ADR + 24 术语</small></dd></div>
+      <div data-page-node-id="A5GhJts5a7ERORAOYxLtxd" class="stat"><dt data-page-node-id="xF3Wbf8UdbUavI4RL31Vzf"><!--pnid:3Bo8p67LKxFd3GuQYb0kv6-->人机交互</dt><dd data-page-node-id="5YpHMhvbeB8nnBW2zc2Kd6"><!--pnid:wm3Vu3MrXgvfkI9FOyBuCa-->179 <small data-page-node-id="6SRg93qdK5apHjeD3TwDvd"><!--pnid:V9gK3hLtG8sr1d8YJgniuG-->条人类指令</small></dd></div>
+    </dl>
+  </div>
+</header>
+
+<div data-page-node-id="yjHVYxJWQMIEOdtvUlj02J" class="shell">
+  <aside data-page-node-id="ywZjacZNprmepFn4gbX4ij" class="toc" id="toc">
+    <p data-page-node-id="yL1NlvVuAMC6WJ9dFhoGFX" class="toc__title" id="tocToggle"><!--pnid:1fXBHPcs4jQDgPANVeNWZB-->目录</p>
+    <nav data-page-node-id="nBPGVrtUHzOVPcYBS8cKfg" class="toc__list">
+      <a data-page-node-id="412Gn9SwAYokEN2dddc5DS" href="#s0"><span data-page-node-id="02cMHG7R8QbkfqKxROoClh"><!--pnid:bTBijh7LqN1J9FTAFjxBEf-->00</span><!--pnid:JNfXhgX2uAJ4lHG6NVXf4Z-->先记住一句话</a>
+      <a data-page-node-id="3WTnKaC7Y7aUs9jQrqJ0pd" href="#s1"><span data-page-node-id="abp8L8Kto0yGjHL8UhV0fD"><!--pnid:E0zNlshKfQ2d6r0lQFZ9fP-->01</span><!--pnid:2qzsAavokPmQLckfMQmnOv-->三条心法</a>
+      <a data-page-node-id="gsFKCD1ysimF3TftDherkV" href="#s2"><span data-page-node-id="ISpFVkihSqaIkGAmCx1eh4"><!--pnid:zR7CPZd2vpl0nT1b9yJXZA-->02</span><!--pnid:GBqk5Cg9Bfj5lweLpqoIzl-->准备</a>
+      <a data-page-node-id="kATvdpNDo6i5oqORKKCwXY" href="#s3"><span data-page-node-id="n8TR9uHSkB7cym4lwPpbjR"><!--pnid:s4haX0h7xPa0sDGH8svdWv-->03</span><!--pnid:LnPJtQqMjqJmep7b2KDTen-->规划</a>
+      <a data-page-node-id="SIuYdK9jXQkRVRgdLfNU0T" href="#s4"><span data-page-node-id="S4HxfCXBhAWX6EEdk0gTsR"><!--pnid:vIQAmUcsUCsa3O88B4MIIl-->04</span><!--pnid:6eYv2kD6ft2SBlTfiMtEP9-->执行</a>
+      <a data-page-node-id="NZBBe7f2u2czw9zXaQna2u" href="#s5"><span data-page-node-id="uglpJfjqWEYYkN0DvTBN0e"><!--pnid:vADKpDlxJ95VoIXUGKR9AR-->05</span><!--pnid:ZgOQw6WlAyTHiXhYHa1in8-->收口</a>
+      <a data-page-node-id="cnMtOZsZyBxx9W4RiRgq5d" href="#s6"><span data-page-node-id="T2134MdXDR9kv6Gc5LO2em"><!--pnid:1WwtkOfnmyMO6fZnBBMjuN-->06</span><!--pnid:KJ19qZsrzxxUbWfCBT727G-->常备武器</a>
+      <a data-page-node-id="gSHHLMTAObmQcHrBFw2Y0g" href="#s7"><span data-page-node-id="Ifb3cxaqj6CTKsx9LxOpWt"><!--pnid:6eS3lZ2zwfC6xa6wuQMEue-->07</span><!--pnid:R2fVgCT7WD4aTpPnU1zuOt-->上下文卫生</a>
+      <a data-page-node-id="7uMcIfGrSfL1gzuf17OvW2" href="#s8"><span data-page-node-id="RqbHROeKVPG9m6P54R8BxU"><!--pnid:NVTKhzgTOeIkwFuY0u1Ha7-->08</span><!--pnid:Dz6dLxDpzU4DQCaQqfwUgL-->人的角色</a>
+      <a data-page-node-id="HAC3OivmkXRuA69tg6vjTD" href="#s9"><span data-page-node-id="XPHvA0LiucUmao5OQ0Xtb4"><!--pnid:9996qlo72ZML6uecmEow5w-->09</span><!--pnid:sa2vztdNEnEr65AoNHiNc8-->反模式清单</a>
+      <a data-page-node-id="y5GwAtfOjwrH7nvbp9bZb1" href="#s10"><span data-page-node-id="aksToc9wqJFioLbLWMS6r4"><!--pnid:vz8uawSs80dkru8hliXGkz-->10</span><!--pnid:zg24DR7FJh5DMsZbS8WMYS-->适用边界</a>
+      <a data-page-node-id="QHHthN5a6LFlLV1iJsilAW" href="#s11"><span data-page-node-id="Dpd01tgqq1YZCqB0qWUwl9"><!--pnid:oUtEmkyGHjkC28ydHTJFWB-->11</span><!--pnid:pvnV1gQ7g37UfgPU0ZMBrS-->启动清单</a>
+      <a data-page-node-id="Pc16rK1970IJTwp3dWWyKl" href="#s12"><span data-page-node-id="wFxkVib60Qa0098ohiMEYK"><!--pnid:b4ZOPQ3Gcqp7hTDa7m1bqT-->—</span><!--pnid:4pi2KQYfFKSjl7KohNa04E-->可核实的东西</a>
+    </nav>
+  </aside>
+
+  <main data-page-node-id="TnNw36lDw4bh9cBgue2Eco">
+
+    <section data-page-node-id="QaIzEbPX1LFjoy8jteSRCP" id="s0">
+      <span data-page-node-id="6RMTiQcJx1ajvtjbHIkIHa" class="num"><!--pnid:EapGIwqJZXa1YmnT2rkENH-->00</span>
+      <h2 data-page-node-id="6OyqR26GxsJzoWJ32QkDLq"><!--pnid:uAt0SkH9jj8eUFoOs0B7q8-->先记住一句话</h2>
+      <blockquote data-page-node-id="hm9M9mA56QU0HHdOP0jmYM">
+        <p data-page-node-id="TlnnQjPXnpyjAiVqOnjm2i"><strong data-page-node-id="N7ujfwxREQFmyVTBVCNVcL"><!--pnid:Qi2bwH3BvBgjeOI4K3mPRt-->人负责把仓库变成一份智能体可执行的工程规范，智能体负责在这个规范内高速执行；技能体系是两者之间的协议。</strong></p>
+      </blockquote>
+      <p data-page-node-id="MMOxSY7EPvgwJkyoXD8FO5"><!--pnid:uOcLr5VykkosRG6FxYNtzW-->这句话有三个直接推论，它们撑起了后面全部内容：</p>
+      <ol data-page-node-id="ZEPjFTxPhi9OEOByeYvtm6">
+        <li data-page-node-id="hOdEX4Lu79NxOootYDex7g"><strong data-page-node-id="GXZQ8jISYmeDuAYDmTTdLk"><!--pnid:2tyfVTX1FVr0JYIYc0zaVv-->仓库不是代码仓库，是上下文仓库。</strong><!--pnid:fkw03ipWLO0lyWR1LNDPKY-->智能体每次开工都是从零建立心智模型，仓库里写清楚的东西它才不会再问你第二遍。</li>
+        <li data-page-node-id="U0IF49Ib9f3XB0N6IEFcLI"><strong data-page-node-id="HaJSghvD4AgoPefU6y1Dyw"><!--pnid:DejpWj5dy73oaV2VzXySSa-->规范越硬，授权可以越大。</strong><!--pnid:dzfQeEdmckmPPva8U7REsk-->这个项目里人对智能体的高频回复是「都按推荐的来」——之所以敢批量接受推荐，是因为规范、工单、验收标准都在仓库里，跑偏了评审会抓。</li>
+        <li data-page-node-id="JVYV4FbFvbpeZ5dgBfkQ5b"><strong data-page-node-id="KNzqE7YMZsiDM8JVDsyDoA"><!--pnid:1Xus9qE6IKLkRkldciCXbt-->流程的产出物是护栏，不是文档。</strong><!--pnid:SRisYLZEP7X6Up3URiWcpM-->每个阶段结束都要留下一个能约束下一次运行的东西：一行 CLAUDE.md、一条 lint 规则、一条测试、一篇 ADR。</li>
+      </ol>
+    </section>
+
+    <section data-page-node-id="uFRKgWuVmHj3WU628uUuO1" class="chapter" id="s1">
+      <span data-page-node-id="Gg3e5COLWHnsi7dDqX8sCo" class="num"><!--pnid:N03bcA1Yl5Lcs32pDhaBT1-->01</span>
+      <h2 data-page-node-id="AGEhDCOj0hnIPoR1x1gsEe"><!--pnid:bnIXSfauRMshlrFnu9eU9f-->三条心法</h2>
+
+      <h3 data-page-node-id="aM06sxmWod13OZ8osXXo5m"><!--pnid:4DJhs1fFft8IF3bzDRwiS8-->1.1 上下文即产能</h3>
+      <p data-page-node-id="hvmR2sUaH72ahRxMF7kgLI"><!--pnid:bAzJeZ9yWYGJdvsPKllQ8e-->智能体的产出质量上限，取决于它进入仓库时<strong data-page-node-id="ICX09vBFGqOzm2TqQPhMGC"><!--pnid:6aBztD3R2sJrObqH0qiZhA-->多快建立正确的心智模型</strong><!--pnid:XDylwd9xaJEWYyyFDAcSn2-->。同一句「加个文档分享功能」，在没有任何上下文的仓库里会产出平庸的猜测；在一个有术语表、ADR 和坑清单的仓库里会产出符合既有隔离模型的方案。</p>
+      <p data-page-node-id="qLWIcwxgYroAwk9mCQvIq4"><!--pnid:p7H36C1qGjEsCKE4rtb8ua-->所以准备阶段的投入回报率最高，而它发生在一行代码之前。</p>
+
+      <h3 data-page-node-id="Yze19m4p6YB7xrFVev7Asc"><!--pnid:3MdgedY3JiZc0LVndE0xl3-->1.2 规划与实现必须换窗口</h3>
+      <p data-page-node-id="MHelNereOqgo8TWoq0WAHd"><!--pnid:cXvEYXo9H1BhuRFzKimNm8-->规划（追问 → Spec → 拆票）要在一个<strong data-page-node-id="PxVsjoU7VwsN3PC28SHHkI"><!--pnid:5NxtyqBxZO3hOi5cU0QPlF-->未压缩</strong><!--pnid:KPHX5HUaWzdsYGBwTeoOI1-->的上下文里连续完成，因为后面所有执行都依赖这条推理链。而实现要在一张工单一个<strong data-page-node-id="Se7gGf39K1sjBVCdjSLFHD"><!--pnid:NRC2zvyXNkXsPQHS6Hd5br-->全新</strong><!--pnid:Plt71CePm63PBQbTFshX3h-->上下文里做，因为工单体自含全部验收标准，不需要历史记忆。</p>
+      <p data-page-node-id="tB4hUE0lHACopFLbSOL0vA"><!--pnid:fWHVG41nk8j6Q1LZOuuzgY-->这两件事混在一个窗口里，就会出现「越写到后面越糊涂」的典型症状：上下文里塞满了早先的调试噪声，模型开始用记忆代替读代码。</p>
+
+      <h3 data-page-node-id="ibTL4vljlgFJMfOUTRANa0"><!--pnid:1jhmVEkoMUFh7kNAi8kEhm-->1.3 经验要落成护栏，不能落成记忆</h3>
+      <p data-page-node-id="1PKOYLOxSTPjZ2CY8mhdjI"><!--pnid:NHdNTSJ7NSQJf6AUQCluXJ-->一次痛苦的调试如果只换来「下次注意」，那它下次一定复发。这个项目的判断标准很硬：</p>
+      <blockquote data-page-node-id="uNr7IYd1uey8Nv6CsTFkv6"><p data-page-node-id="SaAq7cv72tzYNqfNXvqjgb"><!--pnid:cfexF9DktzhNegyVAotesY-->没有测试，这次修的 bug 会重新活在测试真空里。</p></blockquote>
+      <p data-page-node-id="GhQlTr1Oi1KlFxnUUYZlmP"><!--pnid:rbsmTzXk5L5LtzUXYjURzP-->同样的逻辑适用于流程本身——评审发现的机械性违规，要变成 linter 规则或 pre-commit 钩子；判断题才写进标准文档。<strong data-page-node-id="lholc1e0hDtCJ4HJaFGSB4"><!--pnid:ehMLzrirX5UKRAYMThA6Xn-->默认建检查，而不是写规矩。</strong></p>
+    </section>
+
+    <section data-page-node-id="xZKNpIfEIgcUJkKHVPxs2n" class="chapter" id="s2">
+      <span data-page-node-id="Gi659kKnt0tnDqdv2BLXfU" class="num"><!--pnid:8ietR8zjpE8qZxJ3mzd24H-->02</span>
+      <h2 data-page-node-id="zO3JdQ7pf2a2b1lQojiAF0"><!--pnid:qAY3srMJ7iB3bvxZhCjxEO-->准备：让智能体第一次进仓库就拿到正确方法论</h2>
+      <p data-page-node-id="h0FNNDMlwJPti1WiUtBopl"><!--pnid:71xhNkrxU7i91FULKdgKfP-->目标不是「开始写」，而是让智能体第一次进入仓库时就拿到正确的工程方法论与事实。这个阶段有四个提交前的动作。</p>
+
+      <h3 data-page-node-id="Cl8vw5xJG1b6RRJ8gbQruy"><!--pnid:lMUwKYw7feE6hDOihGLtPB-->2.1 装方法论：插件 + setup 锚定</h3>
+      <p data-page-node-id="UnjRoALt1dsObKb8Ert6x9"><!--pnid:BDEo0ZYtje7pMEL3CNVpPy-->技能不是一段提示词，是一整套互相衔接的工程方法论：怎么把想法问穿、怎么写规格、怎么拆工单、怎么做 TDD、怎么评审、怎么沉淀领域知识。</p>
+      <p data-page-node-id="e7ixXsBTSZajkJpwseXDAp"><!--pnid:sWK7554yzDOhNuEiA2KRqH-->装完之后必须跑一次 <code data-page-node-id="b1xoGjyF43AHeLo7LHymZ4" data-pnid-children="xCJDbZbWkEkIanIVYVQsZp">/setup-matt-pocock-skills</code><!--pnid:o8VC2ARlEJvqgBwVDrXu4D-->。它做四件事：</p>
+      <div data-page-node-id="LzKRmNDpelyabV1HPkdQ8T" class="table-wrap">
+        <table data-page-node-id="Tqaq6PvmufNVsJZy0nPRZS">
+          <thead data-page-node-id="VwdBXAGxENg2F8TY7NOBju"><tr data-page-node-id="vTQeG5O5ueGKMc30jdsTM8"><th data-page-node-id="n4cgYIcXdKhXccjSY7zwnJ"><!--pnid:JqrZWjiWLxBfCeE4aEwEG0-->产物</th><th data-page-node-id="rmuD5bX2IsX96AtpPc2wB2"><!--pnid:97Bu5P3r15pWeQXqbAk4Up-->作用</th></tr></thead>
+          <tbody data-page-node-id="smH2R5aQgGKqxGRX2CCkPG">
+            <tr data-page-node-id="hk3AdsFiWjCFCEIx2VE6v4"><td data-page-node-id="L4Qw4Hw2tD2TOBLLJtZK8Y"><code data-page-node-id="lOHTShcLxjR1x2h9A8pk2w" data-pnid-children="O8RiRdu22UzP5qtklD2Y59">CLAUDE.md</code><!--pnid:MOzYQ8tPQybDjYSs0ek8oU--> 里的 <code data-page-node-id="l5EV5xgy21vKgrLqSWunVb" data-pnid-children="xLZqMVvJN3o0yKMbNuTWTF">## Agent skills</code><!--pnid:Y56VFiNMFMYwfaIf5C6VbY--> 区块</td><td data-page-node-id="VSomzSCnHcAsZvdXPD3dHR"><!--pnid:1bCxXx7xO85k3mUaUT3Skg-->所有技能的入口，没有它技能不知道去哪读配置</td></tr>
+            <tr data-page-node-id="gBJoPiUT4UHSYJ8HMqMGM9"><td data-page-node-id="hJ6qAJV0CoXhkMv5OVcxfl"><code data-page-node-id="g7xHl7gk413E2CKqQbVd7v" data-pnid-children="bXoIPcCvct4SNrkT6g4K5p">docs/agents/issue-tracker.md</code></td><td data-page-node-id="lVR2SJtG2MLtUrEJaaNsCW"><!--pnid:AmdHE1s2H5BMlRb7BkRGwn-->工单系统对接：本仓库用 GitHub Issues，全部操作走 <code data-page-node-id="nnzwNAoEgI0tLXTGGyKDjD" data-pnid-children="DgD7H4YOUALSef2JFrx4Jx">gh</code><!--pnid:LBA5CUoCyaGWjh9kmT1leM--> CLI</td></tr>
+            <tr data-page-node-id="QI41SmJ0estT12kOLiuIo4"><td data-page-node-id="YbKMiLcQSkHIxJ1eTpLjWb"><code data-page-node-id="3wxnDXUG9t1e93JWn9fvRC" data-pnid-children="kLO8snmxn5lYkmQ9YC5MeU">docs/agents/triage-labels.md</code></td><td data-page-node-id="RKAR6YxZkWSRMv72SJxRu9"><!--pnid:hs32ErHqyOeUMDDcxZqlUA-->五个标签的映射表（<strong data-page-node-id="lcNVKs31ipi0ksU3ca0YHM"><!--pnid:hP1iiPdQuq1UfjNy9bnCDt-->条件产物</strong><!--pnid:scmifrmWCQdfY2LTUIHA8C-->：只在装了 triage 技能时才生成）</td></tr>
+            <tr data-page-node-id="8ruVQMMHX0TeNF8H6tGkgh"><td data-page-node-id="lQmnh2S1CSp3P5OB6ffwps"><code data-page-node-id="pmpmxCb3edHHHeF1avedjB" data-pnid-children="Bd6TQCxINNZn8bX83rolhv">docs/agents/domain.md</code></td><td data-page-node-id="xKEtdKXeyugM7CdPDtlWrq"><!--pnid:Rg5UrqqR1yIAIbpCHOrp97-->领域文档消费规则：探索前必读哪些、命名必须用术语表的词、与 ADR 冲突必须显式声明</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="vqd7BooDYuXPaL6mJjtPvp"><!--pnid:lcAOqX9Nqwqd44ZM2cxmVu-->后三件的意义：<strong data-page-node-id="9yNFbVju2D69n0kNTdVNIi"><!--pnid:mN9tXLuQbgmFukiciOWEkT-->技能是通用的，配置把通用方法论锚定到本仓库的事实上。</strong><!--pnid:RXQrjUkrHmEYumyPGsUsBU-->此后每个会话、每个子智能体共享同一套工单语言、标签语言和术语语言。</p>
+      <p data-page-node-id="s2NT7SUvJamG2dPnIrwr4F"><!--pnid:O5ypSHYsBh4zotLec0RqqC-->工单系统不必是 GitHub——GitLab、本地 markdown 文件（<code data-page-node-id="KSSH1lVuLGlqx1zbxxJ5mi" data-pnid-children="RVsWhuKBmow3V7sgQc6hpK">.scratch/</code><!--pnid:RWRZ6rx6v5XZzTMlvMe4Zp-->）、甚至自由文本描述都行。个人项目没有远程仓库照样能跑全套流程。</p>
+      <p data-page-node-id="0rGT9l4v9zELVZ8nPgN5l5"><strong data-page-node-id="nwOf3MssgO1tbANY03lcNT"><!--pnid:Zv7kNOnrrOUS6oHeKd4d2S-->可直接手改。</strong><!--pnid:qxzrUF6oqbV5qSH1b4bXCA-->这三份配置生成后就是普通文档，把标签换成团队习惯的叫法、改改 CLI 命令都可以，只有换 issue tracker 时才需要重跑 setup。</p>
+
+      <h3 data-page-node-id="B0dUtb1B0oobCovaaI0x8a"><!--pnid:nKMg0uIOVt8Tkfh1Kt2SC0-->2.2 分清两种技能：哪些要你亲手敲，哪些会自己跑起来</h3>
+      <p data-page-node-id="sx7QFHgPDEeiQs202Bk3Vc"><!--pnid:Ce2s7fHzGkE4OSf0nMvlqJ-->新手最容易误解的一点：把全部技能当成斜杠命令，以为智能体会自动使用。事实上有条贯穿全局的规则——技能分两类，触发方式完全不同。</p>
+      <div data-page-node-id="yYuHZfGJOtzf71R4jOsRht" class="table-wrap">
+        <table data-page-node-id="IWSKmsQ3tj7DyiFhVfIb8e">
+          <thead data-page-node-id="a6FXl0IpEMXAGOzfIxe1yn"><tr data-page-node-id="xCbgMWimhmvoJMXKolcsXB"><th data-page-node-id="rDdBAPMOlQoWpiun1iqIZI"><!--pnid:9P6D9PmX1hLvHRYtD5mTTP-->类型</th><th data-page-node-id="LSKziXZ6UUjFhQDdfX5u3f"><!--pnid:xds2IT0jUIGskufyAYewzk-->谁能启动</th><th data-page-node-id="m2xcqwYUX9OuvbU2cXWxT3"><!--pnid:fNgkLiT7X41WiTECegUI3p-->成员</th></tr></thead>
+          <tbody data-page-node-id="7Ho9qiRLnFxPMTjA4j5QkL">
+            <tr data-page-node-id="LdqI5LSb3OBlfjntlLIW7y"><td data-page-node-id="j97Ntd3XSFn5fzUYaZUen8"><strong data-page-node-id="9WNZBHJ4i0woYIafKYhLLL"><!--pnid:9YHqOcJYUQGexupnCXw3i0-->用户触发</strong><br data-page-node-id="Xxy0b4QDqU3CkJwJuUd01z"><small data-page-node-id="Cz8MHKmJhtDDGNwtU1fOf6"><!--pnid:f2tOl00G7HEc5A0UTbccOj-->user-invoked</small></td><td data-page-node-id="V8lWS3eihzlU5WnOB9MFvi"><!--pnid:DnyMjOttkbvcV1gPjcJVtQ-->只有人亲手敲。其他技能无权调用，包括在文本里点名</td><td data-page-node-id="ZCbokrM2xwPsN7cYZiUmEu"><!--pnid:lm1cqwWUNFtvNZb6BqI4Y0-->setup、ask-matt、grill-with-docs、to-spec、to-tickets、implement、implement-spec、triage、wayfinder、retro、handoff、improve-codebase-architecture</td></tr>
+            <tr data-page-node-id="lKZLW3w2sVzNLYr1MmaAxF"><td data-page-node-id="LubL9FngPTm1AzcFiMn5yI"><strong data-page-node-id="hWMzu3CYfKoAeet1fFwdww"><!--pnid:wneRst9DmFNYIAnSNHiYq1-->模型触发</strong><br data-page-node-id="Axr9Xe7cxBbOhe4Wuw7ZJ0"><small data-page-node-id="wDKQjZIzKnRexIoh1GStyD"><!--pnid:6UB61awAwvEdJZjo82cIYR-->model-invoked</small></td><td data-page-node-id="sjoKDq9kQHxAlh1shc2PpB"><!--pnid:9UbiKfqxNFed9KksiXud9H-->智能体可自主调用，人也能手动敲</td><td data-page-node-id="eBW2FFH29CAFShiiLrfeoS"><!--pnid:IezaLcDQ7GncXR9DchTcej-->tdd、code-review、codebase-design、domain-modeling、grilling、diagnosing-bugs、research、pr、writing-for-agents</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="7mUgDjPHKKbpibUGzh1AL6"><!--pnid:M6zYOmx2WnsqCOb4qF49Ot-->更细一层的边界：<strong data-page-node-id="Y72hAcUZs5E7gXwYZ6JMrb"><!--pnid:5ExUfLYF5xCC14bQPfoXZH-->用户触发技能可以调用模型触发技能，但永远不能调用另一个用户触发技能。</strong><!--pnid:c3ZVGWKzeVEFjmiajbw97I-->所以当某步的前提是一个用户触发技能时，正确写法是「告诉用户去跑它」，而不是让技能去 call 它。</p>
+      <p data-page-node-id="B843jYo6R8zVtAA2qj3BRI"><!--pnid:pPLWOVqnGdeVjekRfuAKxi-->这条规则解释了实践里两个看起来像「魔法」的现象：</p>
+      <ul data-page-node-id="1R08LmcNnTsH0A7017WN9v">
+        <li data-page-node-id="N8sfgkzlleIeUEXV8340ro"><strong data-page-node-id="UXGDXFlHJ7cpXWmUynDZBe"><code data-page-node-id="5PSbzczXq6ziFYgzClrqfv" data-pnid-children="Oixiq67ZktMRa0z608zTjW">/implement</code><!--pnid:oPZTXjVyGbsJbBE6KrlrSd--> 内部自动串起 TDD 与评审</strong><!--pnid:0yhlDqjmjysVOxvpuoczOc-->，不是框架能力，是技能文本在指挥智能体（<code data-page-node-id="gjHPGfAhXV42A2M3p354i3" data-pnid-children="63Ou77VY3Gxd8rIPWnpG0K">Call the Skill tool with "tdd"</code><!--pnid:R905nPmmETFP9iA9eYBkwD-->）。</li>
+        <li data-page-node-id="arSXjwNH64BkWQrz7JlKFD"><strong data-page-node-id="bu29Db5IYJktyvCQnNoWPm"><!--pnid:LAqfUjHPDlxerqGeMXMDpp-->grilling 的决策会当场落进 GLOSSARY</strong><!--pnid:XNtRKj6doPxDFCixN3oIP3-->，因为 <code data-page-node-id="SiWmNq1DeZxvzDVv7UMO39" data-pnid-children="IYSh7IF3WhoXZkDwsjoLFa">/grill-with-docs</code><!--pnid:OPS743W4cufaoNp793i594--> 的全部定义就是一句话：先后调用 <code data-page-node-id="Ou35APK0J5yF6I8dyXP8hK" data-pnid-children="cSEJ2m9IUoBQE4rTBaii8q">grilling</code><!--pnid:aXBFzA2gMaC3cNHer02wof--> 和 <code data-page-node-id="4mIVkq9zLKz1lR1axwOD31" data-pnid-children="G92ZNxYvk1Wu3l8xaxhyY6">domain-modeling</code><!--pnid:RgDbfZtTc4V6VCapaGiu1O-->。写文档是 domain-modeling 干的活。</li>
+      </ul>
+      <p data-page-node-id="6NaSwRxSBt1EiZIfx4t1K2"><!--pnid:bIgvxqLANo3NwwF1lb0zEv-->还有一个常被忽略的边界：<strong data-page-node-id="o9lzugppPmbXDSTN5CCCjr"><!--pnid:ooQENdsnhojFulv1ZIVUAT-->读 GLOSSARY 查词汇 ≠ 使用 domain-modeling 技能</strong><!--pnid:6er4QtdifN7RI0pNWSAiqq-->。只有主动的「挑战术语、补边界情景、写 ADR、就地更新术语表」才算。</p>
+      <div data-page-node-id="3YFVzeEtfjP0u5Ez3neYRq" class="callout">
+        <span data-page-node-id="9HwbgnEzOU3hbFwoHlpd5s" class="callout__label"><!--pnid:PwuV1ACMPiwsrMpnSmZyVe-->实操含义</span>
+        <p data-page-node-id="XNgFiWrH7mEmC9C6xmvIH2"><!--pnid:Nn07glBAzLZMexvOk5KL1k-->主流程上每一步都得你自己敲，智能体不会替你启动 <code data-page-node-id="E57YZ9vBVqcR5eaWX1yH6g" data-pnid-children="xbUIMjpV9bl7FzAFCUSSXk">/to-spec</code><!--pnid:zsHAjhfe0if3jQR2EmjJ56--> 或 <code data-page-node-id="ddiht4uYTe1ohLnLfwFAdJ" data-pnid-children="QZCZtZfq5xNPdEtG7op1DE">/implement</code><!--pnid:qKEX2oQIjlKum1uI0SHgpn-->。而 tdd、code-review、grilling 这些会被上层自动调用，一般不用操心——<strong data-page-node-id="ncPjP94vCBZ86rqIYqhyGA"><!--pnid:0IvJ9hw7Ir4cBXDlFB5P5R-->除非它该调却没调，那时你要能说出被漏掉的是哪一个。</strong></p>
+      </div>
+
+      <h3 data-page-node-id="FWVHdP2RarQGXsu7lry1og"><!--pnid:CsPAsdMTgREly3pH6IVrCd-->2.3 仓库即上下文：四层「带路」结构</h3>
+      <p data-page-node-id="1vCPoYKbwDEk4bo5XDIG3q"><!--pnid:UwcQjXuRRf4bBzv8vAmAgT-->这个仓库把「让代码库自己能带路」做到了四层。每层的分工是硬边界，越界的部分会在评审时被抓住。</p>
+      <div data-page-node-id="Qk9XqZyabBGAkT2Te2ClxU" class="table-wrap">
+        <table data-page-node-id="IYVVMKMc09kQNmhsVfL1nz">
+          <thead data-page-node-id="0MZ58uHHSc4TDGPtKkMRrO"><tr data-page-node-id="PDmkgjF5eOqgfG2BUucMm0"><th data-page-node-id="BnjbtNK9KmksdMhmz9uPXf"><!--pnid:OXIvN7mYGepLwfMJAvmlts-->层</th><th data-page-node-id="qIosXZc9qyoGa74XDFw0su"><!--pnid:UPqgvHvzF8HQPd3djgvSQz-->文件</th><th data-page-node-id="HbRszfaSC5OZgssc7z7Oov"><!--pnid:XfEbmrVKxvgjcVU7Wxijkc-->写什么</th><th data-page-node-id="tF0yXLQKrODj1RY10qEpeG"><!--pnid:CVybjZkYemzO8Tiy7mgOfv-->绝不写什么</th></tr></thead>
+          <tbody data-page-node-id="8f4xXMnBaClsO0d7hiaTGu">
+            <tr data-page-node-id="aUty1xrjZVdM31EX8HIBiU"><td data-page-node-id="L0oEJfjwbmZLcnUgeZtQwY"><!--pnid:3Qx0MF9EGTkdn44dAEL7s6-->仓库指南</td><td data-page-node-id="73z9ZZwy8M6kPNBMTeciyC"><code data-page-node-id="65GX8q3ICbeJH92A0bwL2f" data-pnid-children="P0jf0mDouzhoGzOS1fuRVa">CLAUDE.md</code></td><td data-page-node-id="2U50YTbhHtvYMmN3DWVeTA"><!--pnid:J60Lj5ICT49EG7FFUbfSgF-->常用命令、架构要点、<strong data-page-node-id="yx9VMBBCKTrQulCh4gu6A9"><!--pnid:9wOIeqSnZqJ5pvmz5qzG56-->只有线上才暴露的坑</strong><!--pnid:yriWXt2bRw4CluRPByMcMN-->、部署约束</td><td data-page-node-id="iULs2ANApFs6OJn7bya2J2"><!--pnid:4z2NCmfDhIzleNeaHKntEa-->代码能推断出来的目录结构</td></tr>
+            <tr data-page-node-id="NRHmXUix3YNBndOJ1kTe4b"><td data-page-node-id="Ck23Ilz0XYjJTzSWJ0KI4z"><!--pnid:HLDyOsU5cIIe6NtNcPnG1v-->领域语言</td><td data-page-node-id="9rGBxfA1KBjRt5qvYvnBq5"><code data-page-node-id="boKtyctfA1UsGym17NzP5h" data-pnid-children="3B9OG328F0lIEp8I0haE33">GLOSSARY.md</code></td><td data-page-node-id="kTR4qIqVtZNW3uITy5FSRl"><!--pnid:tT1dZRYBxBd933aMO2C1S4-->概念是什么、不是什么、与邻近概念的分界</td><td data-page-node-id="aQceYxTuudC9J4mtvF5ukb"><!--pnid:m63XtuO2TodCDCIIwxkRGu-->interface 签名、实现决策、待办草稿</td></tr>
+            <tr data-page-node-id="4giFbY0xeeDpTeYIaRN5fg"><td data-page-node-id="00NekpeprcY22o7QV18fFE"><!--pnid:Ypv7cKZN6rsaEO3Q2kgbUY-->决策档案</td><td data-page-node-id="4tkJkH0e57vGDNidF9Uxje"><code data-page-node-id="TAaHj6lEx2VJjSe462dqtk" data-pnid-children="Jy5CfXaylqegIpv5HrsDZO">docs/adr/</code></td><td data-page-node-id="MUEEwbIl1ugtrK261riVa7"><!--pnid:RpVtbZiWRuiOJEUvItwWhp-->决策、被拒方案及理由、刻意接受的代价</td><td data-page-node-id="5lI4aVMxvkMd6KBAMtj0l8"><!--pnid:xUUiwx1JcmjUy7fv8xeYPk-->—</td></tr>
+            <tr data-page-node-id="7zB45Bjm7SiDSZk1Wnx2o0"><td data-page-node-id="XgUvyNHYgAyz30xuw1qur4"><!--pnid:C1YTKZtVKLuVgDH8vbuhGw-->技能配置</td><td data-page-node-id="J1DrL3NLr0JhcQF70uI2ru"><code data-page-node-id="fVNpFAiZMrRDDxkfZigVlQ" data-pnid-children="KVcmFLL40jNJb2XYpDotzu">docs/agents/</code></td><td data-page-node-id="tXhLUNqCHvWmdl54P602jE"><!--pnid:bPRVIkBAwcuWP1X5XPFgVw-->工单/标签/领域文档的消费规则</td><td data-page-node-id="baLcg4t4YWc2eHYswoZicg"><!--pnid:Fl8rwy9Xz18FMV5siPOvYo-->—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p data-page-node-id="jFwfMUxRNDZAL6ebGwZnGX"><strong data-page-node-id="TnAZjnMTDKc4eqwRKXJ1ty"><!--pnid:yzrg6UT1XyU9LeSht1ykys-->CLAUDE.md 的判据：只写代码推断不出来的东西。</strong><!--pnid:lQVMelKpcvbGFDVEqBS4ij-->这个项目的「容易踩的坑（线上才暴露）」专栏是最有含金量的部分，全是看代码看不出来的事实：</p>
+      <ul data-page-node-id="ph48oTmDpFY820R6TZgbvN">
+        <li data-page-node-id="Z3WD94aMIxfAv8kqUcCA24"><!--pnid:STa1pQn7TiOqXEN0M6qnAU-->不要用 <code data-page-node-id="QkTsECWcLfMRsw4whPnb4f" data-pnid-children="gCUKM1lXLkx0tWKbkZtf3S">Authorization: Bearer</code><!--pnid:lJjNOtqzZQ8FYpp0KPU3ov-->，平台边缘代理会吃掉这个头，线上 401——Agent API 用 <code data-page-node-id="bBN5aRc5ziStKbhgK2AsYy" data-pnid-children="PlPghAaUSZlgOfbwCKZVR2">X-Agent-Token</code><!--pnid:iAd9rW5rWL8Zj0wgewlmWc-->；</li>
+        <li data-page-node-id="wIFV9M5iIulUKiT2ue8uhO"><!--pnid:mVsnv1JiJVo0OkCt4thWHU-->文档型成果的请求体不能含 <code data-page-node-id="Z6AO4lErcHUORZHLGINeuw" data-pnid-children="WktlfmIlCx7WNiazA6JIcy">&lt;script</code><!--pnid:7eDoESlqVC1BhpisMJtaJ3--> 或内联事件属性，边缘 WAF 直接 403 拦截页，请求到不了应用；</li>
+        <li data-page-node-id="pq7sNQRBX9HsQVkuOoFapJ"><code data-page-node-id="854t3OrtJf1bLK2PTBY7G0" data-pnid-children="p3hnVlLipEanhcLkto1wKp">og:image</code><!--pnid:iaAzHOgZG6CtmDzMOk8a2i--> 必须是绝对 URL 且来自显式配置的 <code data-page-node-id="sPDcHsl48NocKu9ZevDqOH" data-pnid-children="WCpDCeddEijk0mWXGN3VFy">SITE_URL</code><!--pnid:Y1zidF34W3BMfAcWJ7bjT4-->，不能拼请求 <code data-page-node-id="jMd5VuCwBkDwtDwVR62EUF" data-pnid-children="Rylx6ENNLgqRWZrY3pK3hI">Host</code><!--pnid:Dgdyg9rjt9sd4Vy7JMABQo--> 头（反代后是内网地址）；</li>
+        <li data-page-node-id="JlAyH729phCHCoy8yK2UFV"><!--pnid:MRW1grpBL2VR810HxHz1qV-->服务端 <code data-page-node-id="lzhTJmBZ2qXZqpjGJeouaJ" data-pnid-children="mKqne2ozZ1RapEzHPb3mis">page_view</code><!--pnid:sTNp3WvEcxXIKPfQjvkGue--> 埋点刻意不带 <code data-page-node-id="Rrl97kFISNaQRpVrQ6uuRN" data-pnid-children="ITVX0Rc3nreXejfxoVjEdC">session_id</code><!--pnid:aNApIwWWYXDcFTkQDiua2A-->，否则会撞掉客户端那条的 3 秒去抖；</li>
+        <li data-page-node-id="bwJSWG1NMZ30ZNSy5kMpFc"><!--pnid:RSJ5v6l3HXGgjjdnA2SQAM-->演示模式是刻意的静默降级，所以「接口通了」必须验数据条数，不能只信返回码。</li>
+      </ul>
+      <p data-page-node-id="4UUvYjvpNldrOD8miWqnVo"><!--pnid:LqRin26L4rvrJFShnPCAc2-->这几条每一条都对应一次踩坑。注意它们的形式：<strong data-page-node-id="uwzjdUC28gQxXl8vzEYPsV"><!--pnid:pHmy6tfMeBCVTzv1I28w19-->不是「要小心 X」，而是「X 为什么在这里不成立，替代方案是什么」。</strong><!--pnid:E3IOpipwhTthgKOmZc99CB-->前者是口号，后者是可执行约束。</p>
+
+      <p data-page-node-id="VMdHcq0HmIfBXCXuxou84i"><!--pnid:emxI5a28j5NQ07ZRLnNaU2-->一个反直觉的补充：CLAUDE.md 要<strong data-page-node-id="wwgECVQzc7cbsPW2HJr0CC"><!--pnid:4VdPyytIia75CsdkmcgdHQ-->极其克制</strong><!--pnid:6NOsk85fbGyyQ98fKl9Vu0-->，多数情况下它应该只承担<strong data-page-node-id="RL6x4Xh1zF8ZQHFIHqhWXd"><!--pnid:2w05JYzpmwk7EuTXt9yJcC-->导航指针</strong><!--pnid:ZT1cLsPTA4geloFlXFEFlN-->的角色——指向 <code data-page-node-id="BHwbHUypKBp9rjuBcmQOtW" data-pnid-children="kzcEi9N73gOGm8lLngv9nv">GLOSSARY.md</code><!--pnid:NTuKfUMoiUVL6pq1ZOMFNQ-->、<code data-page-node-id="4Rm5GkBnlLP5YYBxnLPylv" data-pnid-children="6AKG3ufcY6SowpUG7hfgqN">docs/adr/</code><!--pnid:akE5dj2fEHQI94Bd5PHpdv-->、<code data-page-node-id="AaRGZ3ZizJFMYNQxNQSdmQ" data-pnid-children="UtXZUYfR4faOdo1w4ympky">docs/analytics.md</code><!--pnid:CcNvwHaXORZhrD671o8tI8-->。为什么？</p>
+      <ul data-page-node-id="m1XKy53SrKH3nXd98QvpSN">
+        <li data-page-node-id="802o9El5EGlKcUO9sSnrMx"><!--pnid:wA2M7SQwfhE02ilNHcapEj-->CLAUDE.md 会推进<strong data-page-node-id="EUu2ZbxnZg5N95HkYofcPt"><!--pnid:aoyHwZ2qT2kZF8UPdrqGfh-->每一个</strong><!--pnid:0DOO9Hb21WfOst7EalssJT-->智能体的上下文窗口，写得越厚，每次开工的固定成本越高；</li>
+        <li data-page-node-id="2ToK2mI8O4ixUd5PZ7mOCB"><!--pnid:ZivOqhaMHECwnn4qK7soXP-->它同时是<strong data-page-node-id="c9B7wjORdenxG0LWhfcZwW"><!--pnid:6PKuADgcG7wMdZa3h6YUSf-->实现侧</strong><!--pnid:0u4iihyaZnZtWYO9o2BsLz-->读的。而标准应该压在<strong data-page-node-id="pWC4tAJRuxb2H32Rj1mlq7"><!--pnid:ecR3KVmtXUOZhwlwpyuma8-->评审侧</strong><!--pnid:12hXDSrJLlRLLWrIZJ90IZ-->——评审智能体只拿一个 diff，上下文压力最小，最有余力逐条核对规范。</li>
+      </ul>
+      <p data-page-node-id="KV9sKcghyqECuLC4UrRHCV"><!--pnid:0ZCnEDOcZ7k4a9txtNu8xg-->所以分工是：CLAUDE.md 给方向（指针为主），<code data-page-node-id="xeIbuMLkNhOicl99lJ2Cwt" data-pnid-children="19q5PyT2wqz3eV4F8KKU5n">CODING_STANDARDS.md</code><!--pnid:GhMccM88SRQkNQaTgNu458--> 给尺子（评审期读）。</p>
+
+      <p data-page-node-id="X2Ai6qQhkY7tkvRlKDGFjj"><strong data-page-node-id="hAdQcQVUBU1YqKbmijBSAw"><!--pnid:0kcpWwT5JrqXeo40W3C1H6-->GLOSSARY 的写法</strong><!--pnid:PLWpOvZYS9o5vZjdB7Oh6P-->：每条只写三样——这个概念是什么、不是什么、与邻近概念的分界在哪。技能原文是明文禁令：GLOSSARY 必须完全不含实现细节，它不是规格、不是草稿纸、不是实现决策的存放处。</p>
+      <p data-page-node-id="hggbayRooPyI0uQ7PAVjKA"><!--pnid:YkNwC3xFbFe1UsfBHjbgV8-->为什么这条重要：签名写进词条后，代码一改文档就过期，而评审的 Standards 轴恰恰拿 GLOSSARY 当规范逐条核对——<strong data-page-node-id="FD9q7IcOQeE8EtuTYPzboN"><!--pnid:G59g7DNtiNA3bJGFNRd8oP-->过期词条会把评审带进沟里</strong><!--pnid:Jd59m4vB1xkclAHH7jsj5d-->。签名属于代码本身和 ADR。</p>
+      <p data-page-node-id="rA95sGCngka7L6kNNjJtMX"><strong data-page-node-id="YsFTafY75JDRpvbhxa0wwc"><!--pnid:CoZ9i0x4tbQEtDINpvrU6O-->双向效果</strong><!--pnid:siwXODWE7j1Abm2D2U2Jrf-->：人写文档给智能体读，智能体的产出也受文档约束。评审时 Standards 轴拿着这些文件逐条核对，「文档」从给人看的说明变成了给智能体执行的规范。这个项目的一次评审抓到 CLAUDE.md 模块清单漏登记 <code data-page-node-id="LxQlvtOUutdlzGCW2MisuM" data-pnid-children="0QVRBUMMM9FYbWhlnXZRK9">constants.js</code><!--pnid:HbH8dMufZMmH29fGJi6IEo-->，就是按硬违规修复的。</p>
+      <p data-page-node-id="gutH4wAIrUZexPr8tvMUOJ"><strong data-page-node-id="njJpIPaX0d6LsuxqC19asv"><!--pnid:apG7fFGiy3eFxF28WGFmJx-->单一事实来源要当场上收。</strong><!--pnid:uRCFTmBzfhY4LbIHZkoPfp-->智能体学到「发布必须由运行时执行」这个事实后，人的第一反应是追问「这个维护到 README 中了吗」——学到的教训当场回流，而不是留在会话记录里等它蒸发。</p>
+    </section>
+
+    <section data-page-node-id="AYVj2PImiDCiwPV3GWKbpx" class="chapter" id="s3">
+      <span data-page-node-id="RcSWMzup5Rhe976SD9TLZi" class="num"><!--pnid:vYG6NpzhdTH46YPzkERZN7-->03</span>
+      <h2 data-page-node-id="H8V6UKasp7v1PtbAcoQdJL"><!--pnid:wjgcg4NQ6K6GD2Qz40uKca-->规划：先把想法问穿</h2>
+      <p data-page-node-id="qwOjAi0uxOqde8plGXoOvE"><!--pnid:Hhg2SqB7jHTplsbqImKvR8-->三个步骤在<strong data-page-node-id="1QAEW9aQFwRGxAXdMWqkdN"><!--pnid:Vocs9iq2B2IlbUhpTrHfN9-->同一个未压缩的上下文</strong><!--pnid:eK4NBZ31WprkANI457bgb3-->里完成：判断 → 契约 → 切片。此时追问的思考链还在窗口里，是后面所有执行的前提。</p>
+
+      <h3 data-page-node-id="ej7s08UhudNQI1nReUDICy"><!--pnid:eHvawn7F1LxlxRjqGA21N8-->3.1 追问：无情的访谈，每问都带推荐答案</h3>
+      <p data-page-node-id="zvL5SkSsv8Oy6TUqSx0SUi"><code data-page-node-id="aNsMKf8JMwhpNOlM9SPzpD" data-pnid-children="Gaz3Cxyr8FKAcMNB6jcQqb">/grill-with-docs</code><!--pnid:Cp3EjsP3sRxdudg9xCfg58--> 是这个项目使用频率第三的技能（17 次）。形态是「无情的访谈」：智能体不急着给方案，而是按<strong data-page-node-id="YMPcgOBwnZSGlslw2BF4Od"><!--pnid:k3i4AXi7DuPivpu0w1rk3v-->设计树</strong><!--pnid:0skCEoTfcObs4q5puUNc2L-->逐层追问，每问都带一个推荐答案，用户回「是」即接受。</p>
+      <p data-page-node-id="Of3PrNLYTXCzitmnyX9ezR"><!--pnid:trLfHa052eScxefUbdZ8LQ-->这个设计同时解决了两个问题：把人从「想全所有细节」里解放出来，又保留了每个关键决策的拍板权。</p>
+      <p data-page-node-id="yA1QYOdfV7sOcmEI4klRkJ"><!--pnid:aF8Ylv87KtgyR6r06yVJtN-->Spec #2 的三轮 14 问覆盖了：文档定位与录入方式 → 托管呈现、安全隔离、存储模型、大小上限 → 幂等语义、演示样例、埋点口径、是否立 ADR。用户不懂 CSP 时直接反问「我对这个技术不了解」，智能体解释威胁模型后再拍板——<strong data-page-node-id="ewwFGaOaaX4pkG1ezCPOic"><!--pnid:B0MFvVv2oObkEwV2GewzDj-->追问也是教学</strong><!--pnid:KGOtoJXwavrCyKitLOQglU-->。</p>
+      <p data-page-node-id="i4pMIsNfpptCB11fhlcJwC"><!--pnid:pbyPsszHqY4CdauCdfze5J-->四个必须记住的行为准则：</p>
+      <div data-page-node-id="MLZ4Q3WGwBekdQrY3Vkxbo" class="table-wrap">
+        <table data-page-node-id="iJ3OjnTQDS7vd0KlzEeN4C">
+          <thead data-page-node-id="shezstQHSTsxzvMcohAAxt"><tr data-page-node-id="UXjtVfMovziUHyOmvA8RQR"><th data-page-node-id="9PuxobS2gfoYjR7wXmErKR"><!--pnid:OfoFagGSo6GflW9503kPKK-->准则</th><th data-page-node-id="406ZCH4gsCmFxPTuHlSVBV"><!--pnid:jK0ayLcQgTOR9ps5z0R3ed-->含义</th></tr></thead>
+          <tbody data-page-node-id="k7Yfj3Po7Wb9tn5tfdxB8z">
+            <tr data-page-node-id="g5ovVQzWRD6duV45Alm7uI"><td data-page-node-id="M3g6HSA2Py81cpU3gEYgYs"><!--pnid:gsgt5qRkegtmbYrJc2zb41-->事实归智能体，决策归人</td><td data-page-node-id="9q3tgHpKAxXcC83NYHRVjf"><!--pnid:EjhwAMDc4Em0UuFoFvRioW-->需要仓库里的事实（「数据库什么版本」）应派子智能体去查，而不是反过来问人。被人索要自己能查的事实，回答「自己查。」</td></tr>
+            <tr data-page-node-id="4AgjEae5xvmPMimVxzNryN"><td data-page-node-id="YOJUHLEBTtlrx1sN5v94q0"><!--pnid:cbhwhh1D395uYzqgiege5e-->未确认不动手</td><td data-page-node-id="CgZPbAuOTZf07lc7UyjPkr"><!--pnid:kIkPMLBXoJGeOHqwo1F6gs-->技能自带收尾条件：用户确认达成共识之前不许行动。这是内建行为，不需要你喊停</td></tr>
+            <tr data-page-node-id="PDGkYtXOgDcN0TtHlqyhwj"><td data-page-node-id="y4nJmdtqomQJeisKCTgdxF"><!--pnid:mbVrBk7di4MlCoklhOfhG0-->高价值问题是<strong data-page-node-id="B6Y6ymC1eHFH7I0AmyzKGY"><!--pnid:QDuaU3WSYBRtqY96ALydXa-->顺序</strong><!--pnid:yCTXilYGDGlxHnll8cBEEk-->决策</td><td data-page-node-id="pmm5mC9Mwlbb6ttmj8TqLn"><!--pnid:sG371BGLeaB5q2S5cEek5N-->不是「要不要做」，而是「先做哪个」</td></tr>
+            <tr data-page-node-id="cWx7qMLwMEUHUuXbIrX9vJ"><td data-page-node-id="0yNFCmIaHCLilMpUZJjfeB"><!--pnid:8vQMYlXRHpZJbwQnBviKyv-->追问结束 ≠ 可以开工</td><td data-page-node-id="XNHkrRebEPJ0q0hkW8xXpk"><!--pnid:p0mZ8MQCu8sRvyM1ciuF2n-->决策落盘、实现另起炉灶</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="uz8cktjRbwvmqIitdMpk5X"><!--pnid:CtFPFnRZAsddX4gF7FjNrL-->关于顺序决策，这个项目有两次典型收益：</p>
+      <ul data-page-node-id="TgqKG9brJpjgcPoZbgFbQV">
+        <li data-page-node-id="lVKd3m9uaxwyEpOONiI0VQ"><!--pnid:xI3JfpOYTbYlq14WluhR2w-->架构评审后的实施顺序定成「2→3→1，先补测试防线，再动结构」；</li>
+        <li data-page-node-id="7Uj1jvvT5Mvh3D3xv3aFbG"><!--pnid:9AWJmC1G543LbzClj36zDq-->Spec #3 的落地顺序被反转：事实核查子智能体发现数据面 publish 依赖门控填充的登录态，顺序从「常量→数据面→门控」改为「常量→门控→数据面」。<strong data-page-node-id="9AXqbrN6tVAF3g3klaGzkk"><!--pnid:bJut8YTifeDs6A08rvvm9c-->这个反转如果漏掉，第一张票就会建在还不存在的地基上。</strong></li>
+      </ul>
+
+      <h3 data-page-node-id="QpODiuYTrB4rpWs9he9EYh"><!--pnid:3LmWcNsh5paBb5Z33W1cg8-->3.2 Spec 即契约：七段，一段都不能少</h3>
+      <p data-page-node-id="a9puXV60XxNM8rtikv2iQ9"><code data-page-node-id="6ElAb06HkMLgg8fmU60Bes" data-pnid-children="KMOqpiHeynbGyiWfVPvaIx">/to-spec</code><!--pnid:23p2x55DMqMpXqgWnLpKja--> 把 grilling 的结论发布为 issue。模板是七段：</p>
+<pre data-page-node-id="T5HAnM3T9mzT9lOuQm6uDc"><code data-page-node-id="6cPG3amYGCBo4uvg94vRau"><!--pnid:x754C3HVgVyHfYZPc1Jp09-->Problem Statement        <span data-page-node-id="i8rst0hIq7DT1WYwDxiqFc" class="c"><!--pnid:CwMr278atL3sgnkftauEJv--># 用户视角的真实动机，不是功能描述</span><!--pnid:wXsfVvPxSjXrXSybNRpqPQ-->
+Solution                 <span data-page-node-id="nbU2vCNaZ4sSTBS2W05tvA" class="c"><!--pnid:wpe8xiBR39cNiKMI839HUq--># 用户视角的解法</span><!--pnid:nX0S4oXui3UMRNHDSo3yGJ-->
+User Stories             <span data-page-node-id="OYtg7cadzNcizAgslTBJXl" class="c"><!--pnid:KwIG2fb4gHKT9RFgNFWPnG--># 极长的编号列表，As a &lt;actor&gt;, I want &lt;feature&gt;, so that &lt;benefit&gt;</span><!--pnid:WRImkPyVTNGmKz5Bh9eBFE-->
+Implementation Decisions <span data-page-node-id="98VSeDIQCKbkxWRZf7JweO" class="c"><!--pnid:nl2oQkmHeLviHX9mlM8gpZ--># 模块、接口改动、schema、API 契约、具体交互（不写文件路径与代码）</span><!--pnid:yCtnNYKB8bgjzXJcZX3a1Z-->
+Testing Decisions        <span data-page-node-id="kqdZqkvitiiFkywsNWokpA" class="c"><!--pnid:c4ZAGDjCVe0FDn8JMPAooF--># 什么算好测试、测哪些模块、既有测试的 prior art</span><!--pnid:DXTe0iSX3UXEUzrENGIGSN-->
+Out of Scope             <span data-page-node-id="X3W0SYxS3FIGD3x8jgsrrl" class="c"><!--pnid:Ceuw15ilfmWUvLL26g3n01--># 这次不做什么</span><!--pnid:tQaW1CpLYpztdpOMGq8qrP-->
+Further Notes            <span data-page-node-id="D8eFPTWFpvEmSdJbks087x" class="c"><!--pnid:KmwKmLibE5gaLn3xzI22Dm--># 补充说明</span></code></pre>
+      <p data-page-node-id="pRcnVkJdxcAiKWPtzgvU4y"><!--pnid:VBoBR89YnDjpvo3QjMAbSd-->四条硬规则：</p>
+      <ol data-page-node-id="bopNRZuLNXrIFg9KKC9LYc">
+        <li data-page-node-id="WrJLL4NBul5GcOn9NePqM0"><strong data-page-node-id="YQjT0tmvlf7RZjTMu4kufn"><!--pnid:3vR5vYaZA08fzmloU5wT2i-->不采访，只综合。</strong><!--pnid:2ccwWqtd6OeHPwIB0s4oXL-->技能原文：<em data-page-node-id="rCDseLiYPdf610mF08mQB2"><!--pnid:BsvEs58bc21AB5acM5CsaN-->Do NOT interview the user; just synthesize.</em><!--pnid:DY0v55NjlIV9dAL2yOY9bz--> 如果 <code data-page-node-id="vdwfiudgiNdRJVptqS6UW7" data-pnid-children="OtNhLJUCPSwFmiIqMMnqJV">/to-spec</code><!--pnid:Qr8ms4Yg88RBMUuePyMRFO--> 开始采访你，说明 grilling 没做完，顺序反了。</li>
+        <li data-page-node-id="4d2dLplbYcpJNZo6ZCieo8"><strong data-page-node-id="Y7lroh6PadyL5IpcAn0xFp"><!--pnid:JZ9z9O8tY5UwKnbLvbOQ5w-->先定测试 seam 再写 Spec。</strong><!--pnid:Bb7AsSKVV4Pl2wP2Ly2MOO-->步骤 2 就是画出要测的 seam 并与用户确认，且要求「用尽可能高的 seam，能复用就不新增，理想数量是一个」。</li>
+        <li data-page-node-id="opaBxO6eK7ZROtITKNPVXV"><strong data-page-node-id="3l7frk181DxbHxHDTcTk1S"><!--pnid:1FrYET7J1VswnLT8KID6bd-->不写文件路径与代码片段</strong><!--pnid:g1rq9DjMNpSgpGyqenaXC4-->，理由是「它们很快会过期」。唯一例外：原型产出的、比散文更精确编码了某个决策的片段（状态机、schema、类型形状）。</li>
+        <li data-page-node-id="CmC5wrWdc493qObuLCGpHB"><strong data-page-node-id="IDnUC26lJunGfixVtmAjRT"><!--pnid:df9T5qDNejsqreX2pTBFaa-->发布即打 <code data-page-node-id="1Ub6EXBxwQ70dFfEYAopa7" data-pnid-children="8slCdDiziK5Wy64akJzHuB">ready-for-agent</code></strong><!--pnid:mntC91nKUj4HHniXUrf3rE-->，不再走 triage。</li>
+      </ol>
+      <p data-page-node-id="AyAIOXK0Tqr65XeT07drvi"><!--pnid:60zIqfjTLXED03gToZO3UU-->实战质量标尺——Spec #2 的实际内容：</p>
+      <ul data-page-node-id="011BuHTpy7w9PKQO1tlwAZ">
+        <li data-page-node-id="OdXJZCnWefWAV2Zf8bm0ab"><!--pnid:VOl6AYOmNsYRicxeHOEypy-->Problem Statement 写真实动机而非功能描述：「录入者手上有本地的 HTML 文档……但没有地方托管」；</li>
+        <li data-page-node-id="2oPoEcGnN4H8531IK9udLo"><!--pnid:V16ExijGPirUdtxiVFiDBW-->User Stories <strong data-page-node-id="yGkly4GfvG8vuysZ0Ynu1Q"><!--pnid:ruIMObI6c1soisvUMkGZhX-->20 条</strong><!--pnid:EsCz39pzxvCNf9odm3erFE-->，覆盖六类角色：录入者、读者、智能体、管理员、演示模式访客、站长/平台维护者；每条都是可验收句式；</li>
+        <li data-page-node-id="BBmxC6l6ISpu5BGkJbA0pD"><!--pnid:sDMDYYP96w5fqxG5roI5zd-->Implementation Decisions 细到「<code data-page-node-id="nFZRM3duQcrzF3jUbikW1E" data-pnid-children="G07GyN85kegdfWqrQ1aGFe">doc_html</code><!--pnid:EBlrcEkaIFUx7Wj2KEnYXI--> 不进列表查询（Postgres TOAST 下也不付序列化成本）」这种实现级约束；</li>
+        <li data-page-node-id="mIHrxoJmvhUn3HG5EQWx45"><!--pnid:fTZLpq4yWMHLNYoOHWmqRp-->Testing Decisions 在写代码前就定好测试哲学：「只经 interface 测外部行为，不测实现细节」「唯一 seam 沿用既有做法，不新增」。</li>
+      </ul>
+      <p data-page-node-id="6KySFh9R82ZgScsczEfK7e"><strong data-page-node-id="Carbvi1NI21wtxYIgNPgda"><!--pnid:uhXeu7oyVXD960wGuXtOum-->纯重构的 Spec 也要写用户故事，写的是「什么都不许变」。</strong><!--pnid:ADIfjjDygjAsxFIcUlOrH1-->Spec #3 里第 16–22 条整组是「行为不变」故事：「作为录入者，我用『＋ 分享』录入时，文档超限与含脚本的预检提示与之前一致」。这一组后来成了评审 Spec 轴的核对依据。</p>
+      <p data-page-node-id="XjMVyeMlqUMhBaHYXk1IsG"><strong data-page-node-id="b5MarZqzgh433UQxVxvVHa"><!--pnid:NN3FVzv8gW4m7dCqWCijUq-->Out of Scope 是日后最有用的一段。</strong><!--pnid:3KuaiSH0cYtU3xFH5feEho-->它是评审判断「范围蔓延」的尺子——漏了它，评审就失去了说「这超出了规格」的依据。</p>
+
+      <h3 data-page-node-id="f3q8nIJdBjSxdDdTViBdOm"><!--pnid:3jM5Vqe7WHs36g4U2kZtJG-->3.3 拆票：曳光弹、阻塞边，以及不存在的那道标签闸门</h3>
+      <p data-page-node-id="2b6PzmsKpvPZ2kLlCESzui"><code data-page-node-id="tIMdOGdSf7n1ie6AZfri76" data-pnid-children="FBAs0XiuSWfWiG5MRZyzPu">/to-tickets</code><!--pnid:j0tLvZt49cQ6kUHQF1cPvp--> 的输出不是任务清单，而是一组<strong data-page-node-id="RoKq33iDZgfg2bCfjNCrmS"><!--pnid:Y1LDaT4hf0ImkVRbE5xbEz-->曳光弹工单</strong><!--pnid:Kq94QQAb8uZTSNT68L3XQi-->：每张票纵贯全部层（schema → 存储 → 路由 → 渲染 → 测试），交付一个端到端可验证的行为切片。</p>
+      <p data-page-node-id="SUyo40zMVfbSv61Nx3okrV"><!--pnid:8FmSIIF0OSxMYJM5AQlmki-->Spec #2 的拆法：<code data-page-node-id="S0tMRIJCHmZfDvOX1lFA1p" data-pnid-children="Q8O6wJMWmAx3XhT33YDCvG">#3</code><!--pnid:82As1VFWIBd5En91yqTf6R--> 是「读者侧最小贯通」地基票（含迁移、派生、路由、渲染分支），<code data-page-node-id="aLFsULT5BPaFxFhMHuPVdl" data-pnid-children="jRqc5Kg3j7ynbHlktCpSuT">#4</code><!--pnid:SIzvLwu22X1ipP99BcccKP--> 录入模态 / <code data-page-node-id="yumHMNAn6J7q3xxN1VU2z1" data-pnid-children="iIxYpNZYY1fXZjjldR7QGZ">#5</code><!--pnid:XKHp2Re11FFAiEakJs3CVp--> Agent API / <code data-page-node-id="y7hF7dfVJ6iT7oQOQkcwZ2" data-pnid-children="FtEneJ4uHzIjpL6ZxnmBqH">#6</code><!--pnid:DYLpRPFsprQHchIQGVJGaQ--> admin+demo 三张并行票，全部建成 <code data-page-node-id="GuPw4h8eHHaEtLeaSuHqjE" data-pnid-children="m9tZuWMPwikQjNIzLPpfSi">#2</code><!--pnid:rCLQj0ytIk1H827A1ffBdt--> 的原生 sub-issue，并用 GitHub 原生依赖边声明阻塞关系。</p>
+      <p data-page-node-id="heNWRQ36kwYOzcEZbTsvzb"><!--pnid:TIvnHMEaK1qxU4WTqPefna-->工单是<strong data-page-node-id="AB0KKUc2BFhOHbZ6fRbCoS"><!--pnid:j6sFtIMMKvlCNx90E4QUfK-->任务图</strong><!--pnid:YVkuQSiWFMKWe2xStSMoPY-->，不是步骤列表。图上有阻塞边，就永远存在一个 <code data-page-node-id="8W2sctLSLhvfmzPYpcYjUt" data-pnid-children="P03CFumCXVhwnrv1jjP7wL">frontier</code><!--pnid:jtAU6mn9e3RnVHcmaBv0uk-->（可抓取的票的边界）——这是后面并行调度的基础。</p>
+      <p data-page-node-id="yMEM15HLFrAs9Ae5x2HgQK"><!--pnid:RRsJFszwfselBGQP11Tqmn-->每张票的固定三段（以 #3 为例）：</p>
+<pre data-page-node-id="708uCNWs9D1m7OHOeEuqkB"><code data-page-node-id="h2mROEDi8jkDR8Qy4XoQsB" data-pnid-children="0OqKYnr3DWnBGOrmeXgvpM">## Parent
+Spec：#2
+
+## What to build
+（含地基工作清单与明确的不变量：「链接型成果的列表、详情、OG 封面、分享海报完全不变」）
+
+## Acceptance criteria
+- [ ] 迁移幂等可反复执行；CHECK 强约束……
+- [ ] 请求托管地址时 page_view 计数为零；请求详情页时恰为一次
+- [ ] node --test 全绿</code></pre>
+      <p data-page-node-id="sqqRCX43pghrvLOAoBnWAA"><!--pnid:EUuUKSyi7PysoFMsoMhPs8-->验收标准要<strong data-page-node-id="MKW4sB3l86mkDaPgE8KrSJ"><!--pnid:W67RgdwTEkX7WUFmqRsSQo-->可机械核对</strong><!--pnid:TSNVAXM63H6zfknUxjECag-->。「页面看起来正常」不是验收标准；「请求托管地址时 page_view 计数为零；请求详情页时恰为一次」是。</p>
+      <p data-page-node-id="Jfbt6ni2q1jjCZHN5Yo2Dn"><strong data-page-node-id="D8Ongfy9qP7fJj7bIePJSF"><!--pnid:81Qt6aqVBCSGmY2oGdXSSt-->「红线」写法值得专门学。</strong><!--pnid:horI2FkS7KPlh5pS9qY0w4-->ticket #12 里有一句：对外行为完全不变，<code data-page-node-id="W4QFM7ikuhFFdNy1vrSANE" data-pnid-children="pioZk8F0RE0WWxDhwBZbga">fit</code><!--pnid:dQ3x3sSpyw1QtH7IdTX5bM--> 循环耗尽时返回字号偏小的现状用表征测试钉住，<strong data-page-node-id="venCpQNg6k73fwx8vTskIH"><!--pnid:QRaul1OynFSuM5MgTpXih8-->修复另起 commit 单独评审</strong><!--pnid:MsUJgBJmYJ7q0GsEwSTh9t-->。</p>
+      <p data-page-node-id="dnQRSlHntjU2zif66dKg52"><!--pnid:5FmjxiSsWrifePYA3MsZlp-->已知的 quirk 不顺手修——这是拆票阶段最容易被破坏的纪律。最终仓库里确实是两个 commit：一个表征测试 + 抽出，行为不变；一个修 quirk，口径翻转。<strong data-page-node-id="N1IE52C9GNE0g0WBphECqp"><!--pnid:JWCik7AWsD9mUpKbcNxXPD-->重构与修 bug 分离评审</strong><!--pnid:I1JD9DYVq5LRBIQkN6ikPg-->，评审者才能把注意力放在「行为是否真的没变」上。</p>
+      <p data-page-node-id="1Y1FeCQ73TznxMwiFIBRou"><strong data-page-node-id="KwFcWD1j1uaSBhdmB9RVJ1"><!--pnid:OAjdV8fxmMeCS5hTVQYf1H-->标签闸门不存在。</strong><code data-page-node-id="JRA096cusWz7iVY5EVRqG6" data-pnid-children="ufFVle8TQkPDiVeHubh917">/to-tickets</code><!--pnid:uErYgcz6egjE23f1HZaeiF--> 产出的票「天生就是智能体可以直接抓取的」（原文：agent-grabbable by construction），发布时自动打 <code data-page-node-id="cL89yBgpwxpRqNgZjmiuYN" data-pnid-children="700joYC2pEOQ09CEb8y1UO">ready-for-agent</code><!--pnid:f0nsYMEjThsJyEnAB6yXnX-->。不存在「等标签打完才许动工」这一道闸。</p>
+      <p data-page-node-id="89LfoljzXvHTIpjS0ioQax"><strong data-page-node-id="POJ5tNWQOmFRX0ZUy7SWJ6"><!--pnid:kGdgXBVO1y0rKqNwoaNpCC-->拆票粒度是人的决策。</strong><!--pnid:PEsctWl1OX4qTSymmZNT26-->智能体提 6 票方案，人按回滚与评审粒度收窄为 4 票——「还是 4/5/6 合并回『数据面一票』吧」。这类判断没有规则可循，只能人做。</p>
+      <p data-page-node-id="IkQeiY4PmbmbUQ4p6bEjmE"><strong data-page-node-id="6IMb8rYmVyZ9oezf4hLdc5"><!--pnid:n9UJ4cuPzmX81lA25wqYuv-->分支策略要不对称：</strong></p>
+      <div data-page-node-id="FhuGF5l4HeX5AOk4dy0EWG" class="table-wrap">
+        <table data-page-node-id="CqyqcJ0FUTLGsJXMqZaTxS">
+          <thead data-page-node-id="hqFqB3jnRmKEvac7AxEPdq"><tr data-page-node-id="AaSYCEHXVg23b2KAWKsOea"><th data-page-node-id="PfLbIUcyWp3XFMpcvyv6wB"><!--pnid:tgCdCWp9A7Xn8gcjK6ZPpA-->工作类型</th><th data-page-node-id="J9VxAJEyTvmVuZfM5e5WiS"><!--pnid:cFK3sqE55wo1HHPcM8Usen-->分支</th><th data-page-node-id="cp63eCYBSD7txfcNSSWYw9"><!--pnid:ADZsO3EpSKb6S9n6SKuapi-->理由</th></tr></thead>
+          <tbody data-page-node-id="o1tXhbKr1UIy6RWdM3UWYI">
+            <tr data-page-node-id="ereBkiPPoqtTDbg1bEeRqJ"><td data-page-node-id="bEztb1cY0muJMdWwOVfFbJ"><!--pnid:mm1rGyQgq4w9pWdHKW6T7X-->Spec 级工作</td><td data-page-node-id="O9sMzwiT5oCADdaaZDkhVH"><!--pnid:OwOMS3HYPEXYiL6yCnAQHg-->集成分支 <code data-page-node-id="lxcBvFc3nyJbthrqD2QKel" data-pnid-children="j81LrcB3Qp3LnypvTTP9GP">spec/N-xxx</code><!--pnid:hi7YVSldmt2xFQCF0vxhoS--> + 每票一个 <code data-page-node-id="cFb4DgDQADNzAbal0xDnhn" data-pnid-children="BWdpJegSjCMkEGaTUXAn86">ticket/N-xxx</code><!--pnid:hETh2Y3auBlsDqrleVVlGc--> + worktree 隔离</td><td data-page-node-id="kmSxuw2zfVBZXvVguH4u6O"><!--pnid:sKeh5ZgqG3uoBBEj6Q0tYO-->多票并行、需要统一收口点</td></tr>
+            <tr data-page-node-id="CujL3Y9DFaVnzd4KxHo5L2"><td data-page-node-id="SXg3Iuc6yNuRikTvxHdZSq"><!--pnid:ZAjghmSV3tqd02hSwu641N-->Spec 外小任务</td><td data-page-node-id="aT0ud8scOOTMkhjh5FYzre"><!--pnid:GVu8FmROnoLphwRqZb5m9e-->直提 <code data-page-node-id="xqGSJ7jpmNpzg7NJMiLn6H" data-pnid-children="vMZFsCRZwqNQuJgQQTnY3v">main</code></td><td data-page-node-id="pNmOvTGKlJhOf6dMVhWPmM"><!--pnid:eawC0PomJQ1akBepBZPvYE-->分支开销只花在 spec 级工作上，不为流程而流程</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="OxpyGGhgdMw4tjtPAof0jW"><!--pnid:svsywVenZkBC11pB9EOGyH-->favicon 统一、按钮配色、CLAUDE.md 更新这类改动全部直接提交 main。</p>
+    </section>
+
+    <section data-page-node-id="YuG4GtNlrnPx8H2MBOjAPx" class="chapter" id="s4">
+      <span data-page-node-id="ZAMZeEPL84e3dl8FV0uaZM" class="num"><!--pnid:ZC9zICVxUL0MpHrlsdqxVw-->04</span>
+      <h2 data-page-node-id="7tNjLBYjPynEp6wEhUv318"><!--pnid:ZpF6QDPuDEyuw6GJX5tMvL-->执行：一票一个干净窗口</h2>
+      <p data-page-node-id="CU7YA6HeHPXNsTJttlwyto"><!--pnid:t8Ff1k4B0AEhoNgvQUjCvm-->每张票从全新上下文开工，票体自含全部验收标准。TDD 与评审不是两个额外步骤，是 <code data-page-node-id="5ddPSkbuF6f5RAf4H8GrV8" data-pnid-children="BFozCmDpqg4Q4zIiVmDS1y">implement</code><!--pnid:cVYxVrJE3DYkzhFfjK2ruI--> 的组成部分。</p>
+
+      <h3 data-page-node-id="S5tnRbMq8n4hNCyQUPnkGb"><!--pnid:O0DQa3MLliqkQm6DKOmiPX-->4.1 测试打在缝上</h3>
+      <p data-page-node-id="YEud0zkDu4lXxMriz7ngLv"><code data-page-node-id="th37qpMNYC34frIxS1SQUW" data-pnid-children="W6yK4VEzWS1TWmeBtLvosu">/implement</code><!--pnid:XEm1jOB0z4ZSYgGnGJq8Ow--> 是执行主力（46 次）。TDD 由它内部自动驱动，节奏是<strong data-page-node-id="DRGGlbtxV6XPaGk4gr1my0"><!--pnid:kf1KCra5kgIAeBs7y5npfK-->逐垂直切片</strong><!--pnid:1MuYEMZ5L4Ssftf0ayZ1qP-->的红绿循环：「切片 1：<code data-page-node-id="Wr5G0EdfGO8akm88DJIVUz" data-pnid-children="QmvGtgcBXz2C3DOvHbVe09">list()</code><!--pnid:GtfWItiSRIOtrn8TmEA15R--> 物化派生字段——先写失败测试。红。写最小实现。绿。」</p>
+      <p data-page-node-id="rGPzSeAWsS20bo7lGQOw7P"><strong data-page-node-id="6jcdODQp0BuOnS7DQPqwi8"><!--pnid:W6siOZSRUxlEfso2PQyA0U-->最硬的一条规则是 seam 必须事先约定：</strong></p>
+      <blockquote data-page-node-id="dCcKGGkWZZ0NGQpfvv2GAf"><p data-page-node-id="WrikYjAFcY5zWdAEeoIbOO"><!--pnid:TzJF98DWm3nVjWogFTaffg-->Test only at pre-agreed seams. Before writing any test, write down the seams under test and confirm them with the user. No test is written at an unconfirmed seam.</p></blockquote>
+      <p data-page-node-id="mNNPirPHpS7NoJSxhJxACh"><!--pnid:PlKeaQlNOKgMHEv9gkobCa-->写任何测试之前，先把要测的 seam 写下来并和用户确认；未确认的 seam 上不许写测试。理由是「你不可能测完所有东西」——提前约定 seam，测试精力才会落在关键路径与复杂逻辑上，而不是每个边缘用例。</p>
+      <p data-page-node-id="ER4MiEZerz8Om7CVSoULHI"><!--pnid:okxGwkNJWGayraCu6nfFdg-->对应的提问句式：「这张票的测试打在哪些 seam 上？」这个问题本应由智能体主动问你（<code data-page-node-id="n9QgWs3ZgDYVGypClYdIzU" data-pnid-children="XaHIMgPFmoesoTeT5m2AZQ">implement</code><!--pnid:08ObY01BvAFQpTX4R5A8Pm--> 原文就是 <em data-page-node-id="gX845eYTmUgloSwapizdPk"><!--pnid:IPETpM9CJabQ5HKXkYXiNv-->at pre-agreed seams</em><!--pnid:Jdo44kCC3Gd9dXZRtCwveH-->），它不问，你来问。</p>
+      <p data-page-node-id="sVhuwRnU3zFudwESToIAgE"><!--pnid:9RmJBMixURHRQv6FpBqcQh-->三条反模式，评审时按这个识别：</p>
+      <div data-page-node-id="hPEkBQwtDqgOH4hEXzIlAN" class="table-wrap">
+        <table data-page-node-id="l4M1wN3XAhPNA7q771eY37">
+          <thead data-page-node-id="bpYNwaQqSM27A8L1mky61y"><tr data-page-node-id="eT2O29UNsCHyMnqfumtood"><th data-page-node-id="ZjkTAVMbmQ51zPhq30agSA"><!--pnid:yIdbQqhNY67oh5Nj6ZWqXx-->反模式</th><th data-page-node-id="9zuBpEf7pN0sCBhpIkU9rQ"><!--pnid:jAt8L91jvpVCoe6OvEzNm2-->症状</th><th data-page-node-id="9lqIGVIAi97U3LNoBmVtlR"><!--pnid:Qj17CwXBSnk81TqzLmC5BK-->判据</th></tr></thead>
+          <tbody data-page-node-id="IxWdO6WucUiwCCGd84Vfeq">
+            <tr data-page-node-id="7Hx6x2v4HI7rNWhINxsExf"><td data-page-node-id="EuTnvWBQn98zJ6ZrMDSBwB"><strong data-page-node-id="p5SI2s6pU5BhGPF0ujttJG"><!--pnid:V8sUHESA6eIJDJE9cjR6ex-->implementation-coupled</strong></td><td data-page-node-id="rjMfwBMIP3vXgr52oN3ZDK"><!--pnid:BjxNqb1wQsfcjISkSfDvop-->重构就碎，行为没变测试却红了</td><td data-page-node-id="hxIgziZf8cufUrGJP4Ybxf"><!--pnid:88eazLLzSkUwzFXosZ6BA8-->mock 内部协作者、测私有方法、走旁路验证（查数据库代替走 interface）</td></tr>
+            <tr data-page-node-id="VXdqaxvIs6OCNn53IUNzE7"><td data-page-node-id="frQZ6BHkH4y9JGVyYK4n9C"><strong data-page-node-id="65R6htASmLoBIxIXrWweou"><!--pnid:aepXp38bqa7Ft1QRyu68DO-->tautological</strong></td><td data-page-node-id="SgMJ2lZCSo3q7UK3ct6wXs"><!--pnid:qcRdT6gknETsCC5WcUn1YC-->断言永远通过</td><td data-page-node-id="MR7eZzl7S0sbWonSfziYkQ"><!--pnid:i0NgLvk6ixQHfnpKDtRBha-->用和被测代码相同的方式重算期望值（<code data-page-node-id="4xxV1Th2T5jGqnSKlLmmjb" data-pnid-children="aBT4gngWD6XZWBtMXCMbYo">expect(add(a,b)).toBe(a+b)</code><!--pnid:6qNrPnxbPVyNBkNkHIJSfT-->）</td></tr>
+            <tr data-page-node-id="MBRXEv6WgGW0yQxm0ATOYx"><td data-page-node-id="OFqrTyz0kPzQhSoWhmvyH2"><strong data-page-node-id="gBoBHaDrYjQwoLcAiuZQjc"><!--pnid:PXcYzpxfxcuUT8TlyynVY1-->horizontal slicing</strong></td><td data-page-node-id="25eUALG6ufAxpH80vP0Jwn"><!--pnid:j6TXUAvv8vPfxykDkF3SnI-->先写全部测试再写全部实现</td><td data-page-node-id="PV0i1mv4uRvzZH7CPHgRt7"><!--pnid:8Q2wCOOLgMQKb7HaiGsPZB-->验证的是<strong data-page-node-id="2vXL8hnzCsVmodjkCSw2uu"><!--pnid:NAsEtgCaMoFvphAQvvKMgy-->想象的行为</strong><!--pnid:ZyjDXlPUMl6Say4CwYRGUX-->，测的是形状不是行为</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="nqv3ITjSmBFNeDK6qpLgSG"><!--pnid:KzvFzdrtwnvOlDVAQpT8I0-->期望值必须来自独立的事实来源：已知正确的字面量、算过的例子、规格。</p>
+      <p data-page-node-id="jovkDhCFasHIB9CYRdolTg"><!--pnid:incoevpYlFfyUYpRVcXHJE-->还有一条边界：<strong data-page-node-id="vgxe9OobKR8amdFCXhsKZv"><!--pnid:q5NdsteeERG7gETCbhc3rl-->重构不属于红绿循环</strong><!--pnid:PHDBYSKbIRefrdFy64QkHV-->，它属于评审阶段。</p>
+      <p data-page-node-id="gRyF607cBiYS6mk4f1cVzb"><!--pnid:fEFzfQMoianfu4MLZCjNFc-->这个项目的三条测试选型（是选型，不是规定，可以换）：</p>
+      <ul data-page-node-id="GpJQfaWr5aagK0DwyyWylX">
+        <li data-page-node-id="F0nFUvOjqsFxl1U2rHqga8"><strong data-page-node-id="xJIocfQqpvQk67Kvk0rxpn"><!--pnid:3dy7n6EURIm07Wroa69PJe-->interface 即测试面</strong><!--pnid:mgsDL2ltIxQp8FHPj8TUq3-->：测试只打在预约定的缝上，不碰私有实现；</li>
+        <li data-page-node-id="hIq8RFTNhC9ojRfhpNFJc9"><strong data-page-node-id="FygXPW1o1S6m9542frE8Wo"><!--pnid:m0zBNCW2fSanExTSwzHJ66-->零框架依赖</strong><!--pnid:ebJcZQ9M5C2OhgEL92UuHI-->：<code data-page-node-id="ZQnxImNdnjXVJiLht6YX7E" data-pnid-children="FJkZBAdkKkrtx54nrjvlEM">node:test</code><!--pnid:nWiyyo2GilpSCG85ECijNr--> 内置 runner，无 Jest/Vitest；</li>
+        <li data-page-node-id="CulS966QNxsne4fGQr5VMc"><strong data-page-node-id="snZpXkXU1ODmKBXq41khRF"><!--pnid:6OZe7npCLMDXRzJDgD5JnW-->真实流而非 mock 对象</strong><!--pnid:NdioRP4nbURAX6SoIL8POl-->：路由测试用 <code data-page-node-id="I24aEZTy0zYdZ7rhxA9F5n" data-pnid-children="oS0mwOrRG8nKOAi9ks5Sxt">listen(0)</code><!--pnid:y2MdYdi9EFIVHnRPK8eMQo--> + 真实 <code data-page-node-id="2Sbscg9mcDiZOnqIhmzBuA" data-pnid-children="t0OLXx3F0Ieed2WqXVWUKg">fetch</code><!--pnid:qKdAE13p1q64Ue79xOtMta-->，因为 <code data-page-node-id="OV7g4An5UJAXQ9oDMrMTib" data-pnid-children="Zc5LBMkKa0aaRzk4nDEjcS">readJsonBody</code><!--pnid:z6h7VsVqwJdtBuvF7m9Bnv--> 需要真实流。</li>
+      </ul>
+      <p data-page-node-id="lEg6Msoe62FKEKuGZUAyGF"><!--pnid:bVP3fuLoi0go9ZX5zvW2di-->第三条尤其值得学：<strong data-page-node-id="HbCOKa29mDhfdYxef1uwJ3"><!--pnid:f3LLKCDPs2g7ux2nSDEXmb-->该用真东西的地方别用 mock。</strong><!--pnid:wGQA6RvvGEPZVmNNZLuvU3-->一旦被测代码的语义依赖真实流的行为，mock 掉的不是依赖，是被测对象本身。</p>
+
+      <h3 data-page-node-id="rrghQoFR6vVbOdaxtGl027"><!--pnid:N87N4Ebkre8lQLF2pEFtvh-->4.2 两个高价值技巧：表征测试与不变量断言</h3>
+      <p data-page-node-id="UvFA2HhlR5FPw1Y1CO17Rf"><!--pnid:Xv4l5HRpJ8SAxtdB6pRXpM-->这两个技巧是这个项目里最值得复用的方法论，都与「测试的价值不在覆盖率，而在它能否阻止下一次回归」有关。</p>
+      <p data-page-node-id="e5L2yOc38nVDWURlQ1mQgg"><strong data-page-node-id="iHpoBvHN0pWVyAP4AHQAef"><!--pnid:kGFiJojL3vrOzrnPLw9j0K-->技巧一：表征测试（characterization tests）</strong></p>
+      <p data-page-node-id="ZxtHrXViahVLVc0OBHmwlj"><!--pnid:ksW6wF6xRYiKMVwFP3Oa5l-->IIFE 里的遗留逻辑无法直接测，怎么办？先写 21 条测试<strong data-page-node-id="6LO5u3FhzUYxYVBe7dO75M"><!--pnid:zr7u4xXYZcaGHBuJFeytyF-->钉住现状行为</strong><!--pnid:tHSlNcXhpV9z9lG7TC1l2U-->——包括已知的 quirk——抽出重构后测试一行不改。在这类重构里，<strong data-page-node-id="ABS8G77E0XP88Sw4pAAnzr"><!--pnid:FrCH9tT3uuFeHZPYiuDdib-->「没变化恰恰是通过了」</strong><!--pnid:clxGM0e34Giu4z5ZmtrzjH-->。</p>
+      <p data-page-node-id="SEjsASQk3aYzmdE7NVliwT"><!--pnid:62XjO6Xak3fUUq8n46lImJ-->这也是它容易被人误解的地方。这个项目收尾时人直接问：「分析，我看了海报图和之前没变化吧，到底要干什么？」——得到的答案是：这次的目标就是零行为变化，把那块逻辑从 DOM/Canvas 里剥出来变成可测模块，为的是下一次改动不再靠肉眼验收。</p>
+      <p data-page-node-id="ojhKUAQ4bx3rHHb8d6tTn7"><!--pnid:rFvuFKAaaLTBKheadol3UU-->修 quirk 时再把测试口径翻转到修复后行为，测试与 GLOSSARY 同步改。<strong data-page-node-id="PMjqz1sxckokOMwaU5ivZe"><!--pnid:vv37RPHNzUCAEQxnLUis8e-->表征测试 → 重构 → 翻转口径</strong><!--pnid:MpA491bWNP5jB1nqZdb1f8-->，三步走完，遗留逻辑就变成了有护栏的模块。</p>
+      <p data-page-node-id="drZpWY6z2opEjdX2maLhjT"><strong data-page-node-id="NEb7VHPTQkDuezkdYevxl7"><!--pnid:0ru4nr0KcGY7SKtamzY1C7-->技巧二：不变量从注释变成断言</strong></p>
+      <p data-page-node-id="pX2PSZ2yogauT6e1takXiG"><!--pnid:4584NtBVGQHdJgG6nUpUyP-->SSR 埋点不带 <code data-page-node-id="ZTFdaHrERSY9cQ3vns7unY" data-pnid-children="bmuA50OoGR8HDxxTbF3tlj">session_id</code><!--pnid:jCtJTQDvakMcmJqAWVNhpK-->、串行落库、永远 204、20 条截断——这些原本只有注释保护的不变量，全部变成了会失败的测试。</p>
+      <p data-page-node-id="i1101PJy04twcuQI7GeZCW"><!--pnid:gk5yz2s8lEDKm00631fXa5-->判据很朴素：<strong data-page-node-id="8k3bMBAWz083LxBbf7ByDu"><!--pnid:M2r9CgEAXVs1hqupwG6qgr-->如果一个不变量只靠注释维持，它迟早会被一次「顺手优化」推翻。</strong></p>
+      <p data-page-node-id="futVyoDp9rhLfB6nfVkr8F"><strong data-page-node-id="Jktl5SBl4NYRCG0QSdbbkH"><!--pnid:ipCn3BnQf8JU0pMcRsPkEm-->浏览器侧的 seam 设计也值得抄</strong><!--pnid:8KVOdzeohXuodd7QNMx8j1-->：预设最小 <code data-page-node-id="IcBbuuBMhNiej0ikiUPQLl" data-pnid-children="eyBUPsIMVRLLnIavTA5AV6">window</code><!--pnid:K4fUUNIAriucKDnoNPzocM--> + 顶层 <code data-page-node-id="DmjarW0GzjGrAdj27Lij4l" data-pnid-children="pldDgy3avGEfyCxy0ZKmnE">import</code><!--pnid:tKooa3rgyL4XJLxIn8urvQ--> + <code data-page-node-id="yI8smRiYMx5ikUH9oLEunt" data-pnid-children="r3IPPbwp5VPi7vHoWBbt9q">fake-cloud</code><!--pnid:IsywklTUml55mPlBWCAy8N--> 适配器。</p>
+      <p data-page-node-id="OtmoD8owRJ82h2vJHZ6ACF"><code data-page-node-id="t2yB80rZyZPWWKLo29dBnR" data-pnid-children="d8FlIc7IXNl0tEZlsXXCWC">fake-cloud</code><!--pnid:DziOx6wzoyYsXba4yGSVFC--> 不是简单桩，而是一个带完整控制面的仿真：能断言 select 列清单与 payload 形状（reads/writes 记录）、注入 <code data-page-node-id="VEGatG5AeJnaFCglYz6qrc" data-pnid-children="iiBaBVxkeYzmzNcbMS9whk">res.error</code><!--pnid:rV14QyLCXE0YJlXlDjJJ9i--> 测错误翻译、注入整条链 reject 测网络失败，还能用 <code data-page-node-id="9ArDZqgnZBcyeULyVKtl2K" data-pnid-children="C3RAjr5KzaxH1PZ55Mopn0">silentBlock</code><!--pnid:yCQtd6IC4NXMlrCuvsr0OJ--> 模拟 RLS 静默拦截（写 0 行不报错）。</p>
+      <p data-page-node-id="3A42xoOcXI0q62sfPi7mf8"><!--pnid:xxUS3DamFsMafevaHfBQcI-->最后这个是真实环境里最阴险的失败模式——<strong data-page-node-id="M1NEPPt7untIwXKT3lxiAY"><!--pnid:5zIa0l6Lu257CjOlX0kTlJ-->错误的写入不报错，只是没生效</strong><!--pnid:Jiuv7PM70Cmv19pmJPw3oR-->。现在它成了一条可重复的测试路径。浏览器数据面 21 个测试全部经此缝直贴 interface。</p>
+
+      <h3 data-page-node-id="GGujTwdsdWTHQDgJGBj8dt"><!--pnid:jXWslRLFb5q5CjLISliYKa-->4.3 双轴评审：Standards 与 Spec 互不污染</h3>
+      <p data-page-node-id="YeohqJjWupIQ5kw7wMYUDn"><!--pnid:LPq89O4NbaUZtMiQQfU9HR-->每次实现后必跑 <code data-page-node-id="WCGFe3nPQuAwEX7eWB9DLw" data-pnid-children="UxgMwVUgaogGiD9vWL7F0u">/code-review</code><!--pnid:SlAjIh6YwDiuEMCwe9LZXa-->。两个子智能体<strong data-page-node-id="MQES7b4gyFNnBHbPhCTMMr"><!--pnid:m2yazOuuZg6dOGlL9MTCBE-->并行派出、互不污染</strong><!--pnid:UG9Qf0upZwZPBv2IYuvc2X-->，报告不合并、不重排。</p>
+      <p data-page-node-id="RoFJrRQ2vT7r6h6onXzlIQ"><strong data-page-node-id="UEqQukrSyS4wrh16NAGc2d"><!--pnid:Z2fStXZChgbHMOV3WZJdlf-->第一件事是钉住 fixed point。</strong><!--pnid:b1wYlIKFOqItsu0v9Y9l2S-->评审对象是一段 diff，不是整个仓库：</p>
+<pre data-page-node-id="ooxJoC9hwMV6kBb7DwX5A9"><code data-page-node-id="ZW2uwXbQybEwIxXdsARPM0"><!--pnid:EkFxe6mNFtGqfD50vJjp6z-->git diff &lt;fixed-point&gt;...HEAD     <span data-page-node-id="LD31rgV4IylcV5rQxvJVBE" class="c"><!--pnid:8a6kF6qnxu5IFVXKsHlwRg--># 三点，对比 merge-base</span><!--pnid:R7AIthYe3eWMwLhmjtRKPI-->
+git log &lt;fixed-point&gt;..HEAD --oneline</code></pre>
+      <p data-page-node-id="3O8cXOnPybWOhVWMETX7yc"><!--pnid:vyg6gXgvaub3f5sWVWxbWU-->固定点可以是 commit SHA、分支名、tag、<code data-page-node-id="Tvg5zmYaMaj54Fk9355ATM" data-pnid-children="wO2aJmdofHRG4FrSSvF1Yt">main</code><!--pnid:4RUXS3YLb1GE0wl9wVdxke-->、<code data-page-node-id="WQxYgK2cmnpqfv9xMZXrIJ" data-pnid-children="EWvIH3ahrIah1e0t0hYbmf">HEAD~5</code><!--pnid:0vWc0GI6lf1QS6IDvabqif-->。用户没给，技能会停下来问；坏 ref 或空 diff 会在这里失败，而不是等两个并行子智能体跑完才发现。</p>
+      <p data-page-node-id="AdJOpwenQA3AFIJ1bZIg1x"><!--pnid:EdGGIDV9d9zBDjwDKRGiNS-->手动复跑时一句话就够：「<code data-page-node-id="aep4NiJ2g1gjhkayHn34Vq" data-pnid-children="m4vs7b9K5B6TKIDr1US6nv">/code-review</code><!--pnid:xEtH5ihis8cB8R1R8D6KNG-->，fixed point 是 <code data-page-node-id="29A4neFjCzxOchsv7izBMF" data-pnid-children="S9nhqqBJbca55y74AAybwB">main</code><!--pnid:VN40PxWx1NV1bIxMLlSt88-->」。</p>
+      <div data-page-node-id="whbiZRfW070zmSjVUTERek" class="table-wrap">
+        <table data-page-node-id="SkuiE5NrUmbEBubO38cTRl">
+          <thead data-page-node-id="pQIkY2QbkvZcFr6HAi6Wsw"><tr data-page-node-id="AXHMXQR3haFWZqS8q4Y7JC"><th data-page-node-id="DSX7GjdWSPW9bMQL53GXGr"><!--pnid:IuoowlfLb8wjuWQcjg1JdO-->轴</th><th data-page-node-id="zGd3XJumSJ5MHWCQ2XVoLU"><!--pnid:2HKzTJO00QD4uYjcttNIFK-->对照什么</th><th data-page-node-id="ZAsrpyqBPxQj5VhDt6HbYy"><!--pnid:fxJ64VOg68osNOHM5wJOPy-->这个项目的实获</th></tr></thead>
+          <tbody data-page-node-id="nuAzxYEYiPcGgKLUo8NMiv">
+            <tr data-page-node-id="HN3RMEAcKOT05WQNPdxml9"><td data-page-node-id="o3EVSpbljXjzyse7MCvAc1"><strong data-page-node-id="Znh0NJ4K0RvPshBVF0hYFq"><!--pnid:2PsdtHBWXTrQ9CI5rmDOyZ-->Standards</strong></td><td data-page-node-id="WWq8zWPGJukcA2ae9kNf29"><!--pnid:71yJ6ydSsNQ7it8Pfuqfgn-->仓库里<strong data-page-node-id="hBn6ETr2copqkYnv4PsqLS"><!--pnid:ejqTCCFlNhaWiUd100vIB3-->所有</strong><!--pnid:DUELFtetOMPB4dovy6n8st-->记录「代码该怎么写」的文件 + Fowler 坏味道基线</td><td data-page-node-id="8ByDVf3cVNFTVNK1VJPqFI"><!--pnid:UUKjmS5ECXS4A1W2Q3Fedh-->store interface 回吐 <code data-page-node-id="qvuMFfnwQ39udjM9x5V8l6" data-pnid-children="cZJ3wEpbukooRK6ieQf3YN">siteUrl</code><!--pnid:IIS7veBzqTilkns5XV8iSf-->（Middle Man 残留）、<code data-page-node-id="XRUEfTtIPSn1PIriNq7E3i" data-pnid-children="hTkOOWyopQupcEsUdwNGPl">render</code><!--pnid:NRtbQ5QHIH9CXJXl25yrB7--> 用 <code data-page-node-id="lAyYGMBrQyy8q7yI06YtlA" data-pnid-children="sDFnivxPCYb9fun6CRHBVv">it.no.slice(3)</code><!--pnid:eSWd26a57zpUmYI24OVvc0--> 反向解析物化字段（推导回漏）、CLAUDE.md 模块清单漏登记 <code data-page-node-id="MIm6p4ki5HA6YNMoDvrEww" data-pnid-children="FuefwLysVIxo5Pe5vA3jdg">constants.js</code></td></tr>
+            <tr data-page-node-id="lvcf5SqRbEZGGloEbVVI8w"><td data-page-node-id="aumeb4oJGCFt0GrW19cTLG"><strong data-page-node-id="sGIZZXE34rA9xs6du4trFu"><!--pnid:f0Vs2kTdYy9gIT5BBjxe4a-->Spec</strong></td><td data-page-node-id="1RBmL6eBHbwQvpO36pppRH"><!--pnid:CoPZI6TV2zVFxYNFqf0mBU-->工单验收标准逐条核对 + 查 scope creep</td><td data-page-node-id="Z1DFsvaum7w7s2VA1TBnhb"><!--pnid:ttThME3unX50g1qsAEnlal-->PATCH 空值放行（契约漏洞，最严重项）、详情页缺「查看原文」按钮、GLOSSARY 术语超前于代码</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="OgkXDcC4UFwlydCUgjjoYX"><strong data-page-node-id="7qRBu1EpZg2skAzAcRpwTD"><!--pnid:5CUwRB2WbXZfPEVhbpzyPe-->Standards 轴的清单不是那几份领域文档。</strong><!--pnid:dPq9Gq09hd1IJp52obaxlx-->它搜索仓库里所有「记录代码该怎么写」的文件，<code data-page-node-id="JBLDG7aUEOtGEV6KJ8ZHD0" data-pnid-children="QsCsw1i80gadiKnG8E48oW">CODING_STANDARDS.md</code><!--pnid:uWpNVfV9Y8oPYnyKi8O3tP--> 与 <code data-page-node-id="FqlK4dkQxkWuZe1I6qxbxR" data-pnid-children="TdLEBE6OeZF4zC4Nam6EyL">CONTRIBUTING.md</code><!--pnid:AcFbO35Afvitmfvy9YSKK2--> 存在时必须在列；在此之上还有一套固定的 Fowler 坏味道基线（Mysterious Name、Duplicated Code、Feature Envy、Data Clumps、Primitive Obsession、Repeated Switches……），<strong data-page-node-id="OmUDa4GwUmaSTVEVqEOcei"><!--pnid:ri3Vnlz2elZZ7NRiqzS030-->仓库什么都没写也照样生效</strong><!--pnid:BQY7KtCXIRhos9C23kwGYb-->。</p>
+      <p data-page-node-id="1DiunTofvRTmauWlPGW3K6"><!--pnid:bfbzvCTB403MOzTJGHs1MA-->两条约束：仓库成文标准 &gt; 坏味道基线（文档认可的做法要压掉 smell 告警）；坏味道<strong data-page-node-id="3MHsk3NEoXdsUVdiwkLbEb"><!--pnid:Ir6HW4lgoS4OHgoI6F2RVo-->永远是判断题</strong><!--pnid:813dTl5zrx8YGRwGg1O92J-->，不算硬违规。</p>
+      <p data-page-node-id="jGpK3emTzJZiWNOiY43CkK"><strong data-page-node-id="Pa4NLJj02YeOEAIN80tU7U"><!--pnid:uMwDdW1h8f2dBag6qFQVLU-->发现分三级处置</strong><!--pnid:n0I6PVKzZgDumzoKOJDQ74-->（第三级是项目自加的台账习惯，很好用）：</p>
+      <div data-page-node-id="hPvLYWBjzlqa09HF1EDATS" class="table-wrap">
+        <table data-page-node-id="FeAF7rjsMtKcb0zJhcGJwU">
+          <thead data-page-node-id="RPdo6U6hGAEjLJON6tCVr3"><tr data-page-node-id="C3Iqe08w2KcWx4c9YRqA2O"><th data-page-node-id="HXmfiHjnk42O3SM5yGfqGy"><!--pnid:mRcWvyzXtsXA2Lo4X0LW0E-->级别</th><th data-page-node-id="PEhriBNyhLuWk8DAVC4j4B"><!--pnid:nNK3dDzBaGHaWwxCqUlujA-->处置</th></tr></thead>
+          <tbody data-page-node-id="6I7VwSgihx7bs7ojgwbp1r">
+            <tr data-page-node-id="LHsyTloKaYqRViK94IQu5m"><td data-page-node-id="ntJbFDdEuPmlDlZTANDcXk"><!--pnid:VbkiJlGc2lT4Dp2cs3W0xC-->硬违规</td><td data-page-node-id="V49CrfHEsh43We70eLfbir"><!--pnid:vTARkUo5NZLV43wJFdalKC-->必修，修完才准合并</td></tr>
+            <tr data-page-node-id="KljEOOYJL6PcWx28HuczE2"><td data-page-node-id="kUqmmoFjNLCiCD8borErJ3"><!--pnid:NBLntmFC1hHtYf5MREm3hP-->判断题</td><td data-page-node-id="NwD6rPYXiesYlXFZrir76L"><!--pnid:mk6mqzI5lod3m0YjcGkeqp-->列给人定夺</td></tr>
+            <tr data-page-node-id="sfX71eOtIJio6oUzhQgWTF"><td data-page-node-id="urX6tbqv7aJmwvXLxksxRR"><!--pnid:ScDxCQvpJU4vLtY3m5wcAc-->知悉即可</td><td data-page-node-id="c6gFv4gDVu1tebxoIIMeuG"><!--pnid:GGR7UOohTmSbn81LkrFUtu-->记入台账</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="QPxVydr1t3d1mfUfuMm0wL"><!--pnid:UdAxXg7AxosWQbtgYDRoHP-->台账真的有用。一次评审标注「quick-share 用 <code data-page-node-id="n1lEDDP7coOyAbYAv6j6Rb" data-pnid-children="VaLQPbKimLOqaZNdImpcVF">padStart</code><!--pnid:6y7L5yp7XOU7krnEySIBKu--> 自行推导编号，与公共身份单点派生有张力，未来评审留意」——两周后的 ticket #9/#11 会话里这个嗅觉被正式收口成一次重构。</p>
+      <p data-page-node-id="NELUgjSvvF5kgwHg4VMmO3"><strong data-page-node-id="eRC2EJwrNxmKJN7jzHKG2I"><!--pnid:UrVXdou2eCywaWuwKW11Ze-->评审还会抓到「规格之外」的发现。</strong><!--pnid:u1MlGGcpLZ2L84wu89McAU-->冒烟测试对真实云环境跑出了平台边缘 WAF 拦截含 <code data-page-node-id="aUCZJpxDdJnO2l9VxwI3qZ" data-pnid-children="fJzFI0Yw70yyQFl9CBRmKt">&lt;script</code><!--pnid:wmAHTj2cn4Q81G7DhVEcpL--> 请求体的事实——它不属于任何一张票，但改变了写入面的前提。这类发现的处置方式见 5.2：真实环境的约束必须逆流回 ADR。</p>
+
+      <h3 data-page-node-id="ux6GIMbUnR4OFrFvyXCmRs"><!--pnid:DkLDsRWf2QWLHeso1h9woI-->4.4 多子智能体编排：探索、并行实现、合并</h3>
+      <p data-page-node-id="lcGxIaC981U3xq9b5pUB4l"><code data-page-node-id="wahfr7YgheCw8vIZLSbsmD" data-pnid-children="3QG5BqcH7tUClgFEujSMsz">/implement-spec</code><!--pnid:Gt2Kg6FoHUSnTgEEspxf6i--> 展示了成熟的多智能体模式。五个要点：</p>
+      <figure data-page-node-id="Eze6Ve9jhJ0OiVjBFSwPgp">
+        <svg data-page-node-id="DTmZwbzZs2KfYDTS6QQm3z" aria-label="多子智能体编排流程图：探索子智能体产出代码地图，地基票实现后并行派发三个实现者子智能体，由 merger 统一合并到集成分支，最后整体评审" role="img" viewBox="0 0 800 350">
+          <defs data-page-node-id="u1iyvuCXEJGOURdlPn9kRv">
+            <marker data-page-node-id="uGmkmxgYzdmRV4fnHHR7dc" id="ar" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+              <path data-page-node-id="JxVN1uBYbIqjZszClky5iy" d="M0 0 L10 5 L0 10 z" fill="#8b93a1"/>
+            </marker>
+          </defs>
+          <!--pnid:Y0BjCiW5wocLzhu88tZDhT--><!-- connectors -->
+          <g data-page-node-id="wYnqj2KUtD2i6JBDo8bugI" fill="none" marker-end="url(#ar)" stroke="#8b93a1" stroke-width="1.4">
+            <path data-page-node-id="tV8KxA8Yruf3vjccCcCGNC" d="M230 58 H300"/>
+            <path data-page-node-id="TCeJrqbto6MiLfO52xpY6V" d="M400 88 V118 H170 V138"/>
+            <path data-page-node-id="4uNTGZn8IE6D8SIweX8PnP" d="M400 118 H400 V138"/>
+            <path data-page-node-id="vymuy1sISUu6aWvoWhyUVl" d="M400 118 H630 V138"/>
+            <path data-page-node-id="XssvTsXNuawCS4gOeG0s8W" d="M170 194 V228 H400"/>
+            <path data-page-node-id="8FpGhKI1hC6KHZRpNPaoDZ" d="M400 194 V228"/>
+            <path data-page-node-id="0LMpCt2iin3CAq31rGCNza" d="M630 194 V228 H400"/>
+            <path data-page-node-id="dbQRUZ7CeLGHD6dzx8dGWF" d="M490 258 H556"/>
+          </g>
+          <!--pnid:3dHlpcj9mDRtiJhbqObc0f--><!-- row 1 -->
+          <g data-page-node-id="paYrqd9zbwcNw849mcPFWJ">
+            <rect data-page-node-id="h6dKhAXYiCHAupAIzDEzhG" fill="#eef2f8" height="56" rx="5" stroke="#c9d6e8" width="180" x="50" y="30"/>
+            <text data-page-node-id="rXJWnEIIh5GszEqhur0wNq" fill="#2b4a7d" font-size="13" font-weight="600" text-anchor="middle" x="140" y="53"><!--pnid:rbXqb67BEQ69EbbQ6J1XfC-->探索子智能体</text>
+            <text data-page-node-id="kCqARFxwul9VIJ2giOi6b3" fill="#6b7280" font-size="11" text-anchor="middle" x="140" y="71"><!--pnid:ijyG5D06FWGUopgtYVT2RN-->产出代码地图（仓库外留档）</text>
+          </g>
+          <g data-page-node-id="tg2ui66XnrGn1lGLOUrCUX">
+            <rect data-page-node-id="1FnNfkpPEoPBfHhJCVAAdE" fill="#ffffff" height="56" rx="5" stroke="#d3d7de" width="200" x="300" y="30"/>
+            <text data-page-node-id="SMx8L0u45OVXSmBcWeV4Vn" fill="#16181d" font-size="13" font-weight="600" text-anchor="middle" x="400" y="53"><!--pnid:4w6ipcht2U0kIN0zp8wPD6-->地基票 #3</text>
+            <text data-page-node-id="z3aQtlzu1S2FRfGXoZuvkn" fill="#6b7280" font-size="11" text-anchor="middle" x="400" y="71"><!--pnid:GVdaO9IhsXpdcAa3MP0W7r-->端到端最小贯通</text>
+          </g>
+          <!--pnid:ORKkm0sFim3qjOm8OtczQa--><!-- row 2 -->
+          <g data-page-node-id="jaE0Z1JdBOrdVPnJlleyE8">
+            <rect data-page-node-id="LlI7j4I58ZOL571rVEx1Jt" fill="#ffffff" height="54" rx="5" stroke="#d3d7de" width="180" x="80" y="140"/>
+            <text data-page-node-id="1cLt53B22GkxNnO0hNa23u" fill="#16181d" font-size="13" font-weight="600" text-anchor="middle" x="170" y="162"><!--pnid:1XdpX5EDmqO2pscnigda3V-->实现者 #4</text>
+            <text data-page-node-id="sJW450QKYiK3EWwQ5fnB7x" fill="#6b7280" font-size="11" text-anchor="middle" x="170" y="180"><!--pnid:0S3pnhbeC3SB0b0k7hNEyM-->worktree + TDD</text>
+          </g>
+          <g data-page-node-id="2WSjI2oe5EFnN8LhA5xeD2">
+            <rect data-page-node-id="kgCcJwHDMZZyoZuNfoLtjb" fill="#ffffff" height="54" rx="5" stroke="#d3d7de" width="180" x="310" y="140"/>
+            <text data-page-node-id="4gWtOtoT0NJmFt4WAYhr6I" fill="#16181d" font-size="13" font-weight="600" text-anchor="middle" x="400" y="162"><!--pnid:Kl710WSUSsQ5yNCbQvPT9W-->实现者 #5</text>
+            <text data-page-node-id="0XoQNPiWEoXMSYPLVzmDH6" fill="#6b7280" font-size="11" text-anchor="middle" x="400" y="180"><!--pnid:uhMLHMZbeAb0AV8p7dIWNh-->worktree + TDD</text>
+          </g>
+          <g data-page-node-id="MgatQd0Qvl8TzlImTacwep">
+            <rect data-page-node-id="U07F19JUaNG110GpYRmYdt" fill="#ffffff" height="54" rx="5" stroke="#d3d7de" width="180" x="540" y="140"/>
+            <text data-page-node-id="fcItQnuiTZLKwikhtwFuoy" fill="#16181d" font-size="13" font-weight="600" text-anchor="middle" x="630" y="162"><!--pnid:zgRMzcvW1RFGa0WIi3mPRF-->实现者 #6</text>
+            <text data-page-node-id="x6A1nTD4UTV2fTsWWUgCzq" fill="#6b7280" font-size="11" text-anchor="middle" x="630" y="180"><!--pnid:Oj8CVUri3Lz7gVvnxV9HhK-->worktree + TDD</text>
+          </g>
+          <!--pnid:x6buDv2a2UgCJ47IjwbgM3--><!-- row 3 -->
+          <g data-page-node-id="rFmutdpDsFSZmCU5YlaY4D">
+            <rect data-page-node-id="f8mW2XyLoL2XhxeNZCbpAn" fill="#eef2f8" height="56" rx="5" stroke="#c9d6e8" width="180" x="310" y="230"/>
+            <text data-page-node-id="X4lgxLHroyd11lLiCv1d5M" fill="#2b4a7d" font-size="13" font-weight="600" text-anchor="middle" x="400" y="253"><!--pnid:TeMaR3YAqj81PHlnfCCOUN-->merger 子智能体</text>
+            <text data-page-node-id="pmLgU6rgXNUvYXZq92LDZl" fill="#6b7280" font-size="11" text-anchor="middle" x="400" y="271"><!--pnid:3PNld9ZXp0NQbtdunbUjAo-->统一合并，报告前先合回 tip</text>
+          </g>
+          <g data-page-node-id="gEYHRL2QDz3emWq9zo9jOJ">
+            <rect data-page-node-id="OHyqOPtKSYqqeU7B3VTzAM" fill="#ffffff" height="56" rx="5" stroke="#d3d7de" width="200" x="556" y="230"/>
+            <text data-page-node-id="DxNqR3VjxFO5kyx1rJ0F6w" fill="#16181d" font-size="13" font-weight="600" text-anchor="middle" x="656" y="253"><!--pnid:caGpVA7VqdOIK44idDhofa-->集成分支整体评审</text>
+            <text data-page-node-id="Z2cxBQsEMTegTteVWwen3X" fill="#6b7280" font-size="11" text-anchor="middle" x="656" y="271"><!--pnid:9ROtBMvNwAwL53KfMWacfa-->spec/N-xxx 一次 code-review</text>
+          </g>
+          <text data-page-node-id="4D5MDQv0J4AOh1nhckE1MY" fill="#8b93a1" font-size="11" x="50" y="316"><!--pnid:wmlZhJjoLDmAts8iA3jmgX-->冲突在实现侧消化，不在合并侧解决。</text>
+        </svg>
+        <figcaption data-page-node-id="O71ZfKKwnPUa6e4fKmFdcd"><!--pnid:Nx79KpbMMvbXw0tKDQGshm-->任务图按 frontier 推进：地基票解锁并行票 → worktree 隔离实现 → merger 收口 → 集成分支整体双轴评审。</figcaption>
+      </figure>
+      <ol data-page-node-id="6HIWrskUfgODtKt1BjCsr2">
+        <li data-page-node-id="HipaqeAUi0u9LFRMLJN6pJ"><strong data-page-node-id="lqnnxfFOy2gVC8v0dU1yaX"><!--pnid:OToQ7FMRLPDriwXlkeC4cN-->探索子智能体先行</strong><!--pnid:e2MKgcEryF3zunAzjSUw7G-->：产出代码地图（各 ticket 涉及的文件清单、「<code data-page-node-id="TPffOoVrM2ulT7OdDLrrGc" data-pnid-children="i3cqdkWzUrip8hdQUJKm7G">materialize</code><!--pnid:xF37X5cZRbj01jpaJzUGzA--> 是派生单点」等关键发现），<strong data-page-node-id="GnEk2bT3Xr4iJzR6g1z9uV"><!--pnid:Fal1HPwCtD97mR15dUKJj5-->存到仓库外的目录</strong><!--pnid:dEiNvg6atU6w8KEiLrOJ0e-->，供后续所有实现者共享。实现者因此不必重复探索。</li>
+        <li data-page-node-id="92somNHs3HOCVzlw0BoG6e"><strong data-page-node-id="98Ctiu15smlznc5ethkIeQ"><!--pnid:8LiYtCCIMpTjoOW6lnx5Cp-->frontier 驱动调度</strong><!--pnid:UYu5xrO8X2CRI4SQvhiZ8L-->：地基票 #3 先跑，它解锁后 #4/#5/#6 并行。每完成一张票就重算 frontier，能起几个起几个。</li>
+        <li data-page-node-id="fLQ5HuG8DziQC3prNP8Iw4"><strong data-page-node-id="nGQvH4KREMlqNczNahZK7s"><!--pnid:oUdpz2lmDI16gTBReL1IeY-->每个实现者一个 worktree</strong><!--pnid:GNwfPjdOWA4Pql1nL3VRCN-->：在 <code data-page-node-id="otBu6s32Zni9BPmMmLs5KA" data-pnid-children="jda0sWaKk8tQTT2wi4vb6a">.claude/worktrees/ticket-N</code><!--pnid:pyDD8dSZ3K6wt30jRF1fhS--> 里独立调 TDD 技能实现。开工前确认自己的 worktree 基于集成分支，不对就 reset 上去。</li>
+        <li data-page-node-id="tJj3wPhHlolfLVOisrpbRf"><strong data-page-node-id="4qQcdubwQpvhb8f4hWk07u"><!--pnid:BLieqLUeP0sBUJt8Qip1ly-->报告前先把集成分支最新 tip 合回自己的分支</strong><!--pnid:vqTMHukYN8UKGOxRVUOzso-->。这条是设计核心：<strong data-page-node-id="2sYdW05i9pQpMTH5Hgu0RQ"><!--pnid:LVWInDfb1Ferpxvj2Xhtop-->冲突在实现侧消化，不留给合并者</strong><!--pnid:Lq1MeLvxAHOtKUBrwetfXk-->。</li>
+        <li data-page-node-id="fhXyT3U7bnULasE5ycok9Q"><strong data-page-node-id="2oJbBlHw521jNVxA1vVuC5"><!--pnid:7VxxDh1bK7yYrlcklVehf9-->merger 子智能体统一合并</strong><!--pnid:DF0JnldHyE88hIZtvVVDf8-->，信息格式统一。</li>
+        <li data-page-node-id="atX3kOr4foVn3RV2ngNaT1"><strong data-page-node-id="NxNqarvrg4bPjxs6t1g9B3"><!--pnid:zfK2L6NSlHWFECc71tBmcr-->子智能体间稀疏通信</strong><!--pnid:9nmEKw0q3cPQmLQ8tFR5gt-->：靠 context pointer（探索报告路径、spec 编号、commit）传递上下文，不互相倒垃圾。</li>
+      </ol>
+      <p data-page-node-id="7Zk5VSGHykPuJvvt7ARxYG"><!--pnid:ET6xRDz0ez5zsmwU0GRtrT-->第 4 条的直接结果是：在 <code data-page-node-id="8MVzxYUJfBEbcoKyCJCjhZ" data-pnid-children="8rYF4WFC5eNkbFnyfoUliK">implement-spec</code><!--pnid:CKvtV6QH87nL6ywrZhne6h--> 流程里，<strong data-page-node-id="hE21T2mMxGooSAJnP0COzn"><!--pnid:x8cujw9pbcnTDgYRapQMU0-->合并本该是无冲突的 fast-forward</strong><!--pnid:zy7KTEqmyb2v2gS1yWjsJS-->。如果 merger 频繁撞冲突，说明实现者漏了「先合回 tip」这一步——该修流程，而不是改 <code data-page-node-id="R2tbX5UjPlVwuah2Qz8z7B" data-pnid-children="uEXx2ASShCJXhQffFp8HiT">git merge --no-ff</code><!--pnid:gsdVoPBBn5rWPPZa90bKEC-->。</p>
+      <p data-page-node-id="ybhimaLpkElgAMlVYeMSKI"><!--pnid:W8SlTisjPsw3lRZfOvgAQ6-->人也在这个循环里。看这句真实指令：</p>
+      <blockquote data-page-node-id="ScWiYHn9JLndq37Mxi2Mav"><p data-page-node-id="z26YJtkpRHz5dqz30Z3aUc"><!--pnid:TCZzdhYB9JIBkSKFu1FOsX-->检查探索子智能体是否完成（<code data-page-node-id="iMvfEZc8nWkpVRypAFVG6g" data-pnid-children="lAnCvJKAvNHFYfJv2Z4DKT">/tmp/research-share-spec2/exploration.md</code><!--pnid:GPR4X1fRGy2PDdxJkD5VAK--> 是否存在）；若完成则启动 ticket #3 的实现子智能体（implement-spec 工作流，集成分支 spec/2-doc-items）。</p></blockquote>
+      <p data-page-node-id="rc3woNKj6tG2CJLF6BMq95"><!--pnid:gwxb6S4dhsDOI8elNrmSdH-->注意措辞：人把工作流术语（frontier、集成分支、实现子智能体、探索报告路径）当<strong data-page-node-id="jeuWAnwNDasfyejXE1awfB"><!--pnid:WYXFk36tksxUt1xooWgR3A-->操作语言</strong><!--pnid:0GQawlXqhMlm7qKB0Pwjjz-->用，手动驱动编排循环。<strong data-page-node-id="KNRoEPRTGHSRQKoaGk6uot"><!--pnid:bpgqL3x1FmGgx55WvITVnd-->人是指挥，不是旁观者</strong><!--pnid:C8A7WHkUq0FvvUFlbal7KN-->——在自动化程度最高的环节，人反而要盯的是「哪张票该起来了」。</p>
+      <p data-page-node-id="tLlRnE2D8Ycc1Y5b5AwPzE"><!--pnid:zanKNszteEkGGO9x6PyVrT-->关于 PR：<code data-page-node-id="6z2t2GbfoEkgp3hzhEv8Jp" data-pnid-children="32WNuYUApUWLuBl2H2X6bf">implement-spec</code><!--pnid:0JpHjfrsJZXV2ApIXbOvCV--> 的目标产物是<strong data-page-node-id="DiJDA9QP3I5ijodkHxcRmK"><!--pnid:KALTFgh3oXn4p51Bzx65EI-->集成分支本身</strong><!--pnid:lim9F1R0ysC1Ebgux4yhho-->。只有当 issue tracker 以 PR 闭环、或用户主动要求时，才开草稿 PR（且要在第一次合并之后开，因为空分支开不了 PR）。</p>
+
+      <h3 data-page-node-id="qrdswpw0mDfYY48yUD3HJ8"><!--pnid:kWUCFlGLapjSnqCQHW2xj0-->4.5 一票一窗口</h3>
+      <p data-page-node-id="AWL7AaRfS6m4eScWudEmmG"><!--pnid:xjjOtcdeLfhR8hQ3e6XuSi-->每张票的完整节奏：</p>
+<pre data-page-node-id="BGoGvh8Hk2O5ryiNadSLkt"><code data-page-node-id="M9VPm48tYc05V7mYqyjTmL" data-pnid-children="9W1VgTjaqhZDAvT2kzl99C">/clear → /implement #N → （内部 tdd 红绿循环）→ （内部 code-review 双轴）
+        → 合并 → 关闭工单 → /retro</code></pre>
+      <p data-page-node-id="dw9mVp8akO1zc2WL3HWGUZ"><!--pnid:1hY3lL83HW6Ne8k7sHgDJF-->票体自含验收标准，所以新窗口不需要任何记忆。这条纪律的收益在长任务里最明显：第 12 张票开始时，上下文只包含第 12 张票。</p>
+    </section>
+
+    <section data-page-node-id="nxEKB46isdyAfQBcjRA4DT" class="chapter" id="s5">
+      <span data-page-node-id="ESpOZapeL5JsrjLUGFZtlc" class="num"><!--pnid:HzvgVwNYTEY6kqcAsKJ8oH-->05</span>
+      <h2 data-page-node-id="1tAReAATil2FjuzF4E8qBR"><!--pnid:D3YjTEE6VHwvQQAqIacMvS-->收口：把经验变成护栏</h2>
+      <p data-page-node-id="wXQmgVe9IVDjIl7MurpqFy"><!--pnid:2lV0jaogBmk1HzF0gFjU9W-->合并只是终点线，不是终点。决定第二个项目更快的是两件事：复盘产出的自动化检查，与持续演化的领域文档。</p>
+
+      <h3 data-page-node-id="HhNEd9NbLa6kYGBzYC2WTG"><!--pnid:71rSfVPxHdd0GPdLSunuhX-->5.1 复盘：不是感想清单，是环境改造清单</h3>
+      <p data-page-node-id="pss6ZOWcvqqAQZypknttr8"><code data-page-node-id="BLx03erki5nvWXGxhubgZQ" data-pnid-children="56D1PrDLIXtk7bt6huOGSb">/retro</code><!--pnid:wmNEfkD2RfqTI9PDbPiC4n--> 的对象是<strong data-page-node-id="VOYYmBjowJLQB0WReCKlgb"><!--pnid:nZAjZQPCGRbkxO1dv6lhZk-->一个会话</strong><!--pnid:k0KZJPczZGcixfBOJoaDnd-->（默认当前会话；<code data-page-node-id="8nSnbFrFo1MFywTitkqFlM" data-pnid-children="ynh9j3yvfzE4uXWyCknqCM">/clear</code><!--pnid:7R2lc3Hc2BcQNeTnuHB5fi--> 之后才指向历史日志），产物是<strong data-page-node-id="hd3NYtxW0A53a483zqSi69"><!--pnid:bW0IIQHt9FM8Dk6M5y6YJn-->智能体环境的改进</strong><!--pnid:ihs2zgvk2jvNAnSzW2exIU-->。这个项目跑了 7 次，其中一次派 4 个子智能体逐条解析约 25MB 历史会话日志——复盘本身也是多智能体工作流。</p>
+      <p data-page-node-id="nxSh3G5tdx3YZjHgDBnV14"><!--pnid:F0QyZaOMF6eZLD4RQTcV8p-->七个固定类别，每一类都对应一种「下次能省多少事」：</p>
+      <div data-page-node-id="1kYnjOt7skjCZ0tU2YAMPI" class="table-wrap">
+        <table data-page-node-id="XGIAFDneWEjq8Ju0zGx1CM">
+          <thead data-page-node-id="bkfO4ahaWw5r8VQFr2wktJ"><tr data-page-node-id="vI8URPld3AAhymBjeSHFAk"><th data-page-node-id="hUKN0NobERzrucYpHXmo59"><!--pnid:dvZjh33mOqdu9ZEVEOv6vD-->类别</th><th data-page-node-id="0OzD3l8HB7OI5lYF6gBrSe"><!--pnid:AnW2g1uXCItNVegwVE6X2n-->触发条件</th><th data-page-node-id="Fq0fguqZEGjFZJKZRPm3TP"><!--pnid:0u1AZ0C7LDc2BJJ22NQSNk-->典型产出</th></tr></thead>
+          <tbody data-page-node-id="lZsUTKp58keki3d3sW94L8">
+            <tr data-page-node-id="JxyEzMUXJx7cm4iCEbMmmg"><td data-page-node-id="49rjzg1EtCoJrCc1hK0mLn"><!--pnid:ejdakMz75xYrJyxgG0F9pc-->Navigation</td><td data-page-node-id="mLzAuEx94aKq5cRNsfDKGY"><!--pnid:9nJRYPS74AwhaceATj22oa-->找一个信息花了很久</td><td data-page-node-id="UoC0ZqB8piEHCAcV1AN75B"><!--pnid:GD2HQ3SnbtUuKjYnbrmwfo-->加一个导航指针</td></tr>
+            <tr data-page-node-id="D3KSgEyb8iT4qDwJTeP5PV"><td data-page-node-id="8qtGk4Bz7XDHl11SwoGU1x"><!--pnid:GGRyedCVvZDF1ChPLluhOK-->Automated checks</td><td data-page-node-id="7TGtwRo7prpCnfvApbBDiQ"><!--pnid:wzMvrOMkbLNm5MHkNysbtl-->智能体犯了检查能抓到的错</td><td data-page-node-id="aCekTcJJXbX2obHgnLnaas"><!--pnid:71KcVgCTXHdbnQoZeIlDeI-->lint 规则、pre-commit、CI job</td></tr>
+            <tr data-page-node-id="IW66cZs8FjOU5MiehZ2XnL"><td data-page-node-id="M4cS1lSgElLLbl5D7FJWbO"><!--pnid:qXEMHMAAEblngjqJML9goR-->Coding standards</td><td data-page-node-id="CG4mWElPvQEfsWc1IlPDpS"><!--pnid:JMY81ogVQu9wISoBZX6Xeu-->评审没抓到的错</td><td data-page-node-id="jxdfVQQEEuU4UNsEUpc4sd"><!--pnid:CaitW2vsrAYcoOwiCLuj4y-->分类后决定写检查还是写标准</td></tr>
+            <tr data-page-node-id="m4YJ9krmd9yG4Rj4MIiM8q"><td data-page-node-id="50N5YPQgU2cXOJvwnK6WCg"><!--pnid:AdHdvZX7qbPCdz1uuUIXvs-->Global AGENTS.md</td><td data-page-node-id="aXq4fOcEUznJ5eNEgWAiYu"><!--pnid:ZeSmNHYabiYtf614uSvaIf-->steering 文件过大</td><td data-page-node-id="DS8JDtGKSbRNq1o68HlIMR"><!--pnid:ugcZp0A46U1sbYyua7EbAy-->把指令搬去标准或检查</td></tr>
+            <tr data-page-node-id="cdRpizAlh7MRKibcwpZWiv"><td data-page-node-id="frKABGN9xXJvCbCbbM3YPH"><!--pnid:vKQEGfGgMXDJCY8IcWLnO2-->Tool economy</td><td data-page-node-id="BDH0lsYaKn9QCdGavnfJH4"><!--pnid:loxNYIqZPbDKJx6uwhOG6S-->有昂贵的工具调用</td><td data-page-node-id="FvkdHdXHQ7jNwoxpSp9tXP"><!--pnid:WMKJJ9QHv6m9IiiTMYWla9-->精简 CLI/MCP</td></tr>
+            <tr data-page-node-id="uOl0SQjJSgoZt0N6bb5z4U"><td data-page-node-id="MNPXIUFlCiUyrx60pthCK1"><!--pnid:u0lphm1mMVe7hMRMiAf9P2-->No-ops</td><td data-page-node-id="bIyKYx6a9ktj1R8XfViqIN"><!--pnid:MbmQcSQ7CjPxKyKHfP0mj8-->steering 文件里的空转指令</td><td data-page-node-id="PoMzcZubsfTEB4Jjfm8n9M"><!--pnid:gz7dFRshZoZWK24eECjUj9-->删掉</td></tr>
+            <tr data-page-node-id="Exfd1Ovp75Qc22tMunm8NW"><td data-page-node-id="RQHKdSAmaL5mEjiLVPsVja"><!--pnid:ByUc2Pk6a31sB2fXMiGsYF-->Information access</td><td data-page-node-id="1d1hdgN2NlajmvpQFwrKnV"><!--pnid:Bl4pawJ0pvuAAjJWRgQ3Ln-->关键信息拿不到</td><td data-page-node-id="iAGdEeNp0mptiCGsERwnlL"><!--pnid:1c4JkASpZfy7PqSJTESgPx-->tee 日志、只读访问第三方服务</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div data-page-node-id="xx7LOQYftZkmhuRqDmWRho" class="callout">
+        <span data-page-node-id="52OTDcfydC0W9ybrd2MyEd" class="callout__label"><!--pnid:X2IliwqZUns7S3NT9FRaLT-->最值得抄的一条</span>
+        <p data-page-node-id="DW3GzNxX2DUsaByEDP8yFe"><strong data-page-node-id="wtqxslnIcd5yi8r2E9w3X7"><!--pnid:5rXkmdXwvZbFvusZf2Stpf-->机械性违规 → 确定性检查</strong><!--pnid:FF1tWPCCHsccwpFjTF8C6c-->（linter 规则、pre-commit 钩子、CI 任务）；<strong data-page-node-id="I8HHT4BW2SZ1QiEgjfPpl5"><!--pnid:HpVJur1Qa1gSbFsQkCe1ya-->判断题 → 写进 <code data-page-node-id="VjkZ16gEJH51Y8IIqhv95T" data-pnid-children="hhaCla2iOJKFt5YzqJTVlx">CODING_STANDARDS.md</code></strong><!--pnid:tsIxH4eTOGoUcfIGEj4eNS-->。原文的态度很硬：默认建检查，而不是写规矩；标准文件只留给真正的判断题（跨文件一致性、「与周围风格相符」这种任何护栏都替代不了的）。</p>
+      </div>
+      <p data-page-node-id="zYXcNz2sn8KvncmnoSUvn5"><!--pnid:GUL1iSiKqWZUdpudhZN6Ve-->而且——<strong data-page-node-id="b1N5yL3gP1wHktxZebWLeE"><!--pnid:BxeCH5jU6MjvNY9h1R9SYL-->仓库连一道护栏都没有，本身就是一条发现</strong><!--pnid:4Vrcw1KdayAvDdFYtnL0Y2-->。没 lint 的仓库是一个长期错过的机会，不是中性的默认状态。</p>
+      <p data-page-node-id="7uXbXyh4hhXxZfLrnheJ4T"><!--pnid:6LaXOOFgZjiUterTLI3pnl-->使用时机：一次构建结束后（尤其是不顺的一次），在 <code data-page-node-id="zbYaUkrn9HcIbwcNQ195wK" data-pnid-children="BzHaagiIbea7NVB0FGdfdv">/clear</code><!--pnid:cJUuhqiElf9h8Q8GKp2dwF--> 之前直接敲 <code data-page-node-id="qOZRYVvFkTDROaGvsGHntl" data-pnid-children="timRgOsyZSXL8oN0l01AiJ">/retro</code><!--pnid:wIjfTdGQWY6VRkpvwawmSf-->。它先读写作规范，再读会话记录，按严重度给候选。</p>
+      <p data-page-node-id="hMxuxO4upH8CeOMadeOFfV"><!--pnid:i006B4PrLDoiqvSB2HH3WD-->期望的产物长这样：「给仓库加一条 lint 规则」「给 CLAUDE.md 加一个导航指针」「把这 30 行 steering 删掉」。不是「下次要加强沟通」。</p>
+
+      <h3 data-page-node-id="FC7QJFd596jihk4umjwCCD"><!--pnid:39KqFojKD4ZuCwQfzyzXZX-->5.2 领域文档持续沉淀</h3>
+      <p data-page-node-id="rzTuaASA2o3IUkIdTjJQ41"><code data-page-node-id="GmpYdFQgeLSOjY0Hpr9ytz" data-pnid-children="srdSmxmszWFhE0qCFTBGoz">domain-modeling</code><!--pnid:IuPejyvmTg2gG1i5Gq0Z3G--> 的纪律贯穿全程。三条实操规则：</p>
+
+      <h4 data-page-node-id="KNSnaan1IJ1wkdFVofat29"><!--pnid:Iu2cR41YeNCcuhrObtGxIt-->规则一：ADR 只在三条件齐备时立</h4>
+      <p data-page-node-id="sAHtIGxOfU2bn43ZMxrGRx"><!--pnid:gyz6PyXkMhtRazCJRiuBfe-->难逆转 + 无上下文会惊讶 + 真实权衡。5 篇全部满足：CSP sandbox 隔离（安全模型）、登录态只存浏览器（架构形态）、任命权收归初始管理员（权限模型）、条目存储（模块边界）、浏览器三模块深化。</p>
+      <p data-page-node-id="PV7bfYcQlbL2oU9jShtNft"><!--pnid:pt0f0u9ZTZwQiqJn74RAHW-->每篇都含完整的 <code data-page-node-id="ln12WWVVdX4sbzxcVvk2b0" data-pnid-children="J57D4h1oC05n097eDZCYqd">Considered Options</code><!--pnid:LKZrLJisBlQy2c0A1QyTMb-->——<strong data-page-node-id="bM9bUQ1ia9SkthYlJ3ivas"><!--pnid:gUjfnf5R2o153bIm9MBwFg-->被拒方案与理由同等重要</strong><!--pnid:hJBIzbArVFDx0Hf6DPm0Tb-->，它们是未来评审「不重复提议被否决方案」的依据。ADR-0004 里「为什么不用独立域名」「为什么只靠 iframe sandbox 不行」写得比结论还长，这是对的。</p>
+
+      <h4 data-page-node-id="82wigl54ht53qZp3zRA1U5"><!--pnid:jLkkopVXfoDwom2Sl0T2nR-->规则二：ADR 是活文档，修订要留痕</h4>
+      <p data-page-node-id="BrlbJdx2ALpBKhSRtTeZH2"><!--pnid:DIEpw4nvDxBiqvtp9CyPQ2-->ADR-0004 有两次修订，都是现实逆流回文档：</p>
+      <ul data-page-node-id="j5ngsw6BOklogCyYZNnO3p">
+        <li data-page-node-id="ehPvwvRiWLiirqBbBleMYS"><!--pnid:M79XC2QJy0hbLdFppjsCUg-->第一次：线上冒烟发现平台 WAF 拦截含脚本请求体，「不做消毒、JS 照跑」的写入前提在 API 通道上不成立，写入面收缩为无脚本静态 HTML；</li>
+        <li data-page-node-id="Qp7pKv40bZ8NVtHIpZcIZm"><!--pnid:qDdPVTqS3z2q3gqIVcHXAH-->第二次：产品决策变化（详情页去 iframe），隔离从双保险收口为 CSP 单保险，并论证「这没有削弱实际防护」。</li>
+      </ul>
+      <p data-page-node-id="YHuMLjQLGp2RegE6rjk0nV"><!--pnid:9do2vfefx9d5PMu3W2UcYW-->两次都是由一句人类指令启动的：「更新 ADR-0004 记录这个真实约束」。</p>
+      <p data-page-node-id="Clmwzmr2p2T1VGXj1fadqK"><strong data-page-node-id="TUBRTSPGUaTtOW3uX5m0yR"><!--pnid:FvpeUi0PhhBAGmjruQZNnP-->修订与「冲突必须显式声明」是同一件事的两面</strong><!--pnid:tnlCPopVbpYH5nttbP3GM4-->：产出与既有 ADR 冲突时，不许静默覆盖，要在提交与文档里说清改了什么、为什么改。</p>
+
+      <h4 data-page-node-id="MELEZ0uiPhiRePUjA5LNra"><!--pnid:TYE927Zie9JLzESSEbgRqM-->规则三：GLOSSARY 术语先行、逐票核对</h4>
+      <p data-page-node-id="Aj3VIjo8Yr5Spn0Hy9Tl5R"><!--pnid:xEIs826Hga0KaRoqRfuF8l-->grilling 阶段就新增词条（术语先行），但<strong data-page-node-id="tWeIFwyFm4aHz0bH5jPZzE"><!--pnid:101Nzs2DhWoozePEWJELNt-->每票评审都要核对「术语与代码一致」</strong><!--pnid:8jEutHw2umxYJSIPANxDYA-->。</p>
+      <ul data-page-node-id="XPiejdbuWG8RO53Q9SZNDp">
+        <li data-page-node-id="Yrjroa4R9MyR1Veb7inBxv"><!--pnid:t8pdEPmYHfacmUj65p3EoY-->#9 评审发现「登录态门控」预写语义与票面矛盾，随即修正；</li>
+        <li data-page-node-id="J0xzKyQ1zdacTbGL0DNOGr"><!--pnid:G56kW11MTFjeg0AckdqO9g-->#10 评审发现「浏览器数据面」超前于代码，标注过渡态；</li>
+        <li data-page-node-id="SoQS7d4gBWrnb21khe8ZrH"><!--pnid:u4lU1grchz1VGya993ogpH-->#11 收尾票的验收标准里专门有一条「GLOSSARY 三术语与代码核对一致」。</li>
+      </ul>
+      <p data-page-node-id="zjVhguu3hgalJl4t8hVLPW"><strong data-page-node-id="jbwSrzonFUK7z9OssOCez8"><!--pnid:Bhbx5djUi6lLw954U6uwbO-->术语表不是一次性产物，是与代码同步演化的活文档。</strong><!--pnid:x8f6xWjGBDUWUu19aJ8CIb-->而「超前于代码」是一个真实且高频的风险：术语先写、代码后到，中间那段时间它会把评审带偏，所以必须显式标注过渡态。</p>
+    </section>
+
+    <section data-page-node-id="smKKs7bvcnsBWKvNfwkvgh" class="chapter" id="s6">
+      <span data-page-node-id="QEwAWElHeA9kaEyeZhQxSp" class="num"><!--pnid:Ca72BtnHSVtpnjltAulLRl-->06</span>
+      <h2 data-page-node-id="fO00pbPXHiDPyRRMpGYNj6"><!--pnid:aeTPtfMuoe5Y0xT64Kb9FD-->常备武器：不在流水线上，但决定流水线的质量</h2>
+      <p data-page-node-id="XmNbVQvUE14tWvJ5CXbxOz"><!--pnid:ciJbyHuDTUy760xuLuNAKL-->主流程只用了技能体系的一半。以下这些几乎每个项目都会遇到。</p>
+
+      <h3 data-page-node-id="wig7ABjac6wRum6nZQys5l"><!--pnid:IZy5Xb14wyhXYli9sxGbmK-->6.1 bug 诊断：先造一条「会变红的命令」</h3>
+      <p data-page-node-id="O2wmJur2CH3rbyXJxJaxRQ"><!--pnid:9OBmSoffo5o6HMQR9Zr9bU-->这是最该补上、也最容易被跳过的一个。这个项目修过真 bug（详情页 404、海报 fit quirk），但诊断纪律没有成为默认动作——这是最大的遗憾。</p>
+      <p data-page-node-id="ar8kcFMueGP18rC4K0vppu"><!--pnid:KiIOF9KtLkjhGvNBisPLPB-->纪律一句话：<strong data-page-node-id="ndX86gi4b42UJZzZ7lY37m"><!--pnid:HK5qJgT0ID8CwTLITLzKkR-->先造一条会变红的命令，再谈原因。</strong></p>
+      <blockquote data-page-node-id="I1LTU1ODBge74hEXczRJxC"><p data-page-node-id="ia8Dl2ro2e1mSHN0DPoUXx"><!--pnid:02wxkA7PJSSZXbSF7sZXlE-->If you have a tight pass/fail signal for the bug, you will find the cause... If you don't have one, no amount of staring at code will save you.</p></blockquote>
+      <p data-page-node-id="oDlJLlBlC4yYuSI4yeTC87"><!--pnid:Bxalq9gU6JWp9ahCjAVbvj-->所谓紧反馈环：一个几秒内跑完、这个 bug 在就红、修了就绿的命令。</p>
+      <p data-page-node-id="fOoWHam2G0vC8RlrBHj3Hs"><!--pnid:TwrZ0EfUtWf1v1Orf2xeEK-->六阶段：造反馈环 → 复现并最小化 → 列 3 到 5 个<strong data-page-node-id="n3HaBU4iyEQhxnsB00wm87"><!--pnid:l7rQfHVFo1JErDJEHy05KN-->可证伪</strong><!--pnid:RMajdaqsGFLIllwqRfksD8-->的假设 → 逐一探查 → 先写回归测试再修 → 清理调试痕迹。</p>
+      <p data-page-node-id="7gFrKtEz9yikc27nAQJQRa"><!--pnid:iw0eGk2OW8gBJfwzGjUAtk-->反馈环的构造顺序也给了，从便宜到贵：失败测试 → curl/HTTP 脚本 → CLI + fixture 对比快照 → headless 浏览器 → 回放抓到的 trace → 一次性最小 harness → property/fuzz → bisect 自动化 → 新旧版本差分 → 人工脚本（最后手段）。</p>
+      <p data-page-node-id="BSfneq02aceoEqSEjHcvMC"><!--pnid:A0o6flk01wrnuyHaCqcFru-->造好之后还要<strong data-page-node-id="g0OPEJvlJrViqa5n47Bpmn"><!--pnid:DEMzHVoImbrHkIa03aG7i5-->把反馈环当产品打磨</strong><!--pnid:VTEf0COVN0a01lS2qreLy8-->：更快、信号更锐（断言具体症状，而不是「没崩」）、更确定（锁时间、固定随机种子、隔离文件系统、冻结网络）。</p>
+      <p data-page-node-id="wTCCZUstE9r0s6zc3NIkC5"><!--pnid:UfYQ98IUZxrOmZIDg8oZTS-->修完建议接一句 <code data-page-node-id="wLaklVRKrRddWFdg0paNIC" data-pnid-children="ch4RnLtN1C4vyr1B4uhYsj">/retro</code><!--pnid:UXou5H3v2epRsin7f07VKK-->：<strong data-page-node-id="ktWGe4zA2dizlRQVg4nq74"><!--pnid:E9h2g0zf7e0lIWDffSJme5-->什么能防止这个 bug？</strong></p>
+
+      <h3 data-page-node-id="YPi72sJfjCyPIKt3jpC6gO"><!--pnid:0JC43ICFFAefP6zX3vcIYt-->6.2 原型：不是用后即焚，而且有两个分支</h3>
+      <p data-page-node-id="4v2VCjhFij1t4TOzEG5i7F"><!--pnid:e3uzjXL9n62RvDM4ByGksA-->设计存疑时不动 main，在一次性分支上快速出多个变体。两次典型：</p>
+      <ul data-page-node-id="0tIE3ShQHZ2MRDYWDyW8CE">
+        <li data-page-node-id="a4lq1wRZ8geLvB4K4sayMF"><strong data-page-node-id="l4mYjmJUWy4CgqXALhopar"><!--pnid:QxvooqkTcAkTZ7825X0iG4-->公开页版式</strong><!--pnid:vxn31JP5aiqPVQuwSjQyqZ-->（<code data-page-node-id="b8NXzF0xFtDBvYuboBEtlP" data-pnid-children="qLOhK2anJU2k0GTot8AqZD">prototype/display-styles</code><!--pnid:GJ4ii7n539YzHGGaAX4hOM-->）：A「暗夜档案」/ B「杂志特稿」两版同屏对比，<code data-page-node-id="37dbDh6Dt32jilleZCre3e" data-pnid-children="IINHPkoI4n2KEmVUMjURLa">?variant=</code><!--pnid:ZoYj5k2yUbDY1wNcIyJ7oD--> 切换 + 底部胶囊条 + 方向键。选 B 后「折叠」回 main，原型分支留档不进主干。</li>
+        <li data-page-node-id="j5G5eN3JBCP5AqazovnzQz"><strong data-page-node-id="Gu22LJF0IWcmNgVZ0oHSKp"><!--pnid:yvv14d1314uPKaCPyXjiyN-->快速分享入口</strong><!--pnid:XLphYvQRQfdlG9XzWfLhOH-->（<code data-page-node-id="58jW9xwfTg8pkRiYFxsV7B" data-pnid-children="sisiWp75UIGfu1gbCXyPWm">proto/quick-share-entry</code><!--pnid:MdQ7lXLCKLlAH3v77IIp0m-->）：两轮对比——第一轮「入口放在哪」，第二轮「发布后如何一步分享」。结论与落选理由全部写进 issue #1 的变体对照表。</li>
+      </ul>
+      <p data-page-node-id="pJFaasIaha0Pj4GUM15QvN"><!--pnid:0GWuuHKMPIaAEt3TaB2lXE-->关键认知：<strong data-page-node-id="uJ4AmK81KVx4TFQhhNunfK"><!--pnid:B9PgKMCDvgFFHRBm7KfNRz-->原型的价值在于被比较和被否决。</strong><!--pnid:vRvcMZDD4FFKJlUkG1usQQ-->落选方案与理由留档，是因为三个月后一定有人问「为什么不用悬浮球」——issue 里那张表格就是答案。</p>
+      <p data-page-node-id="ZvkW1XWc0RJsp1zf5Ss3aY"><!--pnid:oe7eLVhAbUYMaNWeh5YXss-->技能原文有一句必须记住：throwaway 是<strong data-page-node-id="QfuiiigFtYqwHgRkxTumyY"><!--pnid:QIV6bmM7KSriaS96hpGSy4-->对写法的约束</strong><!--pnid:56kkEeHqgUFGEqmtDtF3KM-->，不是销毁的承诺。验证过的决策折回真代码，原型本身 commit 到 <code data-page-node-id="ej8Gt0VpjSJalXYhbOtz3W" data-pnid-children="SgAVNM1EwoKLioZYo0CRLH">prototype/&lt;name&gt;</code><!--pnid:l1pg5A1W0MUNRjH48PPMeJ--> 分支留档，并在实现 issue 上留指针。「用后即焚」这个说法是误导。</p>
+      <p data-page-node-id="DrxaXUvl5bW0oHVKn93YbM"><!--pnid:xBUtEY1RILTb9XpUdwNpmx-->两个分支别混：</p>
+      <div data-page-node-id="lSjatyfFgp0el6CNJKqDJr" class="table-wrap">
+        <table data-page-node-id="7SL6JXJmS2V29xOMcbnp2Y">
+          <thead data-page-node-id="NzArDVCcezArbBpMQVFPfZ"><tr data-page-node-id="2LgZVR2poQ9H7oUArpw9e7"><th data-page-node-id="HRerlahRAL2cE3adffpcna"><!--pnid:ExREgPdUQjedBNSk7QTVdC-->你的困惑</th><th data-page-node-id="UVYjBcsOchvLhTD8W2no21"><!--pnid:uxts1ealrtEHOuauHSH3XM-->产出</th></tr></thead>
+          <tbody data-page-node-id="j7hmyfwrl0ZXvDD8PoVKED">
+            <tr data-page-node-id="ZhhnatGf8GT6BpG92XiLpU"><td data-page-node-id="mhRZ4kGJdVAVDTqdiTMdFj"><!--pnid:BBr1mcCobC6eheIjGDpzA5-->「这个逻辑/状态模型对不对？」</td><td data-page-node-id="HANONgzfbJ8xDLVHfVtYdO"><!--pnid:TFwE09jxoE0KpAk4cri75G-->一个双击就能打开的单 HTML 文件，带自由操作按钮和分步 walkthrough，非开发人员也能上手点</td></tr>
+            <tr data-page-node-id="alm0d3t05Qk9MwhAeBHjEp"><td data-page-node-id="cikzpBdvMSb2eRl3qv37N6"><!--pnid:D32rOC3FltHVHOknQZRCfD-->「这东西该长什么样？」</td><td data-page-node-id="9yaO6no1vg0Q0HAqTWeleS"><!--pnid:YiJ8oMonWF0zbEBsgSYtkd-->同一路由上多个风格迥异的 UI 变体，URL 参数切换</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="JPVkBdyOdI0Wa2BYZw1HMT"><!--pnid:0TThGaQC4swycDrb888HON-->共同规则：不写测试、不做打磨、默认无持久化、一条命令起跑。</p>
+      <p data-page-node-id="yEWVqrmoyzVX60EtDeYoLa"><!--pnid:cwyJdQeEFM9BMnSOR3W4vg-->所以卡住时先问自己卡在哪：<strong data-page-node-id="HhTXwCTTvOdpSman8dtUiq"><!--pnid:OFmHHnT1T3259KP2olv0ps-->逻辑想不通，还是样子定不了？</strong><!--pnid:FkEQLjGDdZU7JpdTyOLB4S-->然后明说：「<code data-page-node-id="XpVPJCWGF5IrrXMFnvzsBQ" data-pnid-children="73IYz5Eo2JcD3GvNF4e1Jc">/prototype</code><!--pnid:O3q69xxFhbkDxNQSMJnE13-->，问题是〈状态模型在 X 情况下对不对〉。」问题越具体，原型越有用。</p>
+
+      <h3 data-page-node-id="6Kl1D2k1uR518xKof4Zp81"><!--pnid:8g47T971sNTAsslBVnFkix-->6.3 架构扫描：产物是一份 HTML 报告，grilling 是内置的</h3>
+      <p data-page-node-id="0tIFAzfjgxA2MJOoslppD7"><!--pnid:hbmqjQE1MeGHFkie5TQSvu-->Spec #3 的起点不是需求，而是扫描：浏览器侧约 2860 行代码是全仓改动最密的地方却几乎零测试。评审出 5 个深化候选，人选「候选 1 + 2 + 5」，随后 grilling 定顺序、拆票落地。</p>
+      <p data-page-node-id="XQhxP0lV8ye8HitSoQX1om"><strong data-page-node-id="drvYn9TKKwx74SGKKvkZMx"><!--pnid:cxayt32skWddRSBuGGSFdi-->扫描 → 人选 → 追问，这个节奏是对的。</strong></p>
+      <p data-page-node-id="jZYrTL2CSTOSRxOwZjCqWZ"><!--pnid:BiXUt3dbssipsBlou5hjcl-->技能行为：生成一份自包含 HTML 报告（写到系统临时目录并自动打开），每个候选有 before/after 可视化图、推荐强度徽章（Strong / Worth exploring / Speculative）和一个 Top recommendation。</p>
+      <p data-page-node-id="ivD3X3vd4BulSjp1ovM2aO"><!--pnid:XGN9x9sd0J7vWshhlaL3ra-->选定候选后，技能<strong data-page-node-id="dPpGLTvW05g2o6wJ13166J"><!--pnid:Hc3E5sVM7yHI3Nmv8My9bq-->自己进入 grilling 循环</strong><!--pnid:XIOFLCC8S9Vl9m4dIFSxYy-->，并内联调用 domain-modeling 落术语和 ADR。这三件事不是你要串起来的动作。</p>
+      <p data-page-node-id="7LfrVwnTCpjrTSjLCuACdc"><!--pnid:K6w8hBh6iIKe5h4NVY7pJr-->自查方法：如果它没给你 HTML 报告而只是发了一坨文字，说明它没按技能执行，可以要求重跑。</p>
+
+      <h3 data-page-node-id="ryOolj8QygRUbD4QKQLBbv"><!--pnid:oGzCRovNEfU9zQLUrFJRlH-->6.4 深模块词汇：人与智能体讨论架构的通用语言</h3>
+      <p data-page-node-id="ShErHGqwVuo6DHl2PleGOR"><code data-page-node-id="LLWKtzXPkX2ZpGet8Tfrdd" data-pnid-children="EEfzQ46oGD5HBrSWV2Rei0">codebase-design</code><!--pnid:AOn9HIwD5MgmOSfj4BbfCo--> 提供一套共享词汇：module、interface、depth、seam、adapter、leverage、locality，外加两个判定工具——「删除测试」（删掉这个 module，多少知识跟着消失？）与「interface 即测试面」。</p>
+      <p data-page-node-id="ueh3GLm0yXNddd2BmtSlQP"><!--pnid:CfVuuGYGbupjL6vsEfPRXN-->三种操作在这个仓库里反复出现，每一种都有可验证的收益：</p>
+      <p data-page-node-id="IQTAVkQMJOBF0t7v4TigW4"><strong data-page-node-id="geQo16sAdgr0pbP7IwsXMH"><!--pnid:NB8zDn7UEaxUvBIHK6prjI-->深化（deepening）：把散落的职责收进 interface 后面</strong></p>
+      <p data-page-node-id="s8VuRPYTJVkBrSEMgDlbew"><!--pnid:Y8BOTnwuiNIx1FSoeSaSA6-->起点是 <code data-page-node-id="2LTJO8fvJLnJuMfQ36x15T" data-pnid-children="pumBygBYSy9EwYbsc358yL">server.js</code><!--pnid:DpIMQ0OASormT4HXtm65Th--> 一个 1181 行的大杂烩。第一轮架构评审后，一个 commit 拆出 render / track / agent-api / http 四个模块（+1280/−967），<code data-page-node-id="FDBTyIoFs6yM44mAPz3eNA" data-pnid-children="ekceY9Wc7wozNaL8cw4mDJ">server.js</code><!--pnid:sBiT8L2hfjk15vJi8Tk15U--> 只剩 182 行装配层。</p>
+      <p data-page-node-id="S0Rdj1YNFP2QPDMCVMWZqS"><!--pnid:JnZ8iTP6wibOlbi2sOY6yT-->随后「条目存储」收编数据访问与身份派生——因为「miss 怎么办」的策略曾在两个路由里出现两种不一致实现，导致「后台写入后新条目首访详情页必 404」这个真 bug。<strong data-page-node-id="N11bHsPrmZHTq1R7kUNugj"><!--pnid:eOVW4eGhixhFSDgvqb25Iz-->职责散落不只是不好看，它会直接生产 bug。</strong></p>
+      <p data-page-node-id="78Vy7diodJg0kfYuSJ5JMH"><strong data-page-node-id="TAT3xOolTSLhczw3a5Q2os"><!--pnid:WBgJCefawWdSVQ78JFXgZc-->收窄（narrowing）：interface 只做最小并集</strong></p>
+      <p data-page-node-id="LfUPmpdVGUQC9aWIo8KOyd"><code data-page-node-id="VSfap4D23MoGQsUXgc4siA" data-pnid-children="MRwqIyIj9lwQGp5r6sTmwq">demo-cloud</code><!--pnid:bQJcId8vcHPea63GK6UJfk--> 从 55 行收窄到 13 行，只实现 seam 实际消费的子集；浏览器数据面的方法集是「现有调用点去重后的最小并集」，按<strong data-page-node-id="3f4PZSkPdzKm67IMJtALJ2"><!--pnid:SHWr0flQSo8x4bKd0OWEX7-->领域语义</strong><!--pnid:YYefpZrdjnbM2RN92vqADU-->命名（<code data-page-node-id="LZg9CLu0meTzP67j2PfUQR" data-pnid-children="IczHIbXsCQ17KR6lPhAZPS">publish</code><!--pnid:tPPXThTX17OtQqq0nD8gIA--> 而非 <code data-page-node-id="whsuNqXqDaiuXwZTMjwVA9" data-pnid-children="Vl2z0kO2qt8IxmM9UGzCZu">insert</code><!--pnid:7wDBA5NLwbAOlZ4FWhY9Na-->）。</p>
+      <p data-page-node-id="2LP6NjcJXr45J9Ubs1dssO"><!--pnid:B8gk9xEvUXHOSM3SOuLQ95-->ADR-0005 明确拒绝了「按 SDK 形状命名透传」：<strong data-page-node-id="ch3ym2f0cgyTpTAxPC2Bt4"><!--pnid:yxJDBjoTt4JNBQwFLqOPqo-->浅封装只搬不解耦。</strong></p>
+      <p data-page-node-id="QX0RhgpEZI6qNmClzfokzE"><strong data-page-node-id="LNCUnDzfVl5OgYGEB81Oth"><!--pnid:VAhNOzogpr27oTPCqlBf5l-->出 IIFE：浏览器纯逻辑变成可测模块</strong></p>
+      <p data-page-node-id="eZ0hD2s2t2mPGdpwLtZdZF"><!--pnid:p8SWKhcDpOXJMz6J3zUdZj-->把两个 IIFE 里锁着的纯逻辑抽成挂 window 命名空间的新模块，原文件退为「接线壳」——只剩页面守卫、adapter 装配注入、DOM 事件接线。存储/时钟/随机源/发送通道全部经参数注入，Node 测试因此第一次触达浏览器侧算法。</p>
+      <div data-page-node-id="FQNj7wx95yQqsxJSWvV0F6" class="callout">
+        <span data-page-node-id="1ofWyTJ5Yj1tqNgmNSebul" class="callout__label"><!--pnid:By6CL8gdJNAwqfov6Uv9f5-->关键洞察</span>
+        <p data-page-node-id="L7VvakXinrgGW5ykBSxRUB"><strong data-page-node-id="LdtOkDJhTf2vt9E6qW3p7A"><!--pnid:EsMFB3BwsE78xaUy16CW6g-->词汇统一之后，架构讨论的成本骤降。</strong><!--pnid:d9gVFZEYGordzaqa3Y3lAm-->人在 issue、commit、会话里说「深化」「收窄」「接线壳」「seam」，智能体一字不差地理解；反过来智能体报告里的「Middle Man 残留」「推导回漏」，人也立刻能定位问题性质。</p>
+      </div>
+      <p data-page-node-id="a4NCsgUOYwpuH2FRGmrXTn"><!--pnid:yjr4I0IxwUXCOB9nFkNdzU-->与 GLOSSARY 的分工不要混：<strong data-page-node-id="5x463ul8jqiRqs55Z0JoFq"><!--pnid:x1FpgxOowDIlFU9a7f7KZb-->GLOSSARY 定义「业务领域的词」</strong><!--pnid:VcqYlMjq6OQiVt1y2PE0k6-->（条目、托管页、登录态门控），随产品演化；<strong data-page-node-id="qEeBR8yoWnq4GNeqXgeSsL"><!--pnid:lRVeEfiZQipV3MERCpQw0c-->codebase-design 定义「讨论结构的词」</strong><!--pnid:0Ss0QDy8j2nkG3NX58OBRR-->（深度、seam、leverage），是整套技能体系的常量——所以它不需要写进仓库文档，装上技能就有了。</p>
+
+      <h3 data-page-node-id="JYkDsJ21CsuGR7Ij8HkQua"><!--pnid:hZBAkBhHcY8iIPz6x4cA94-->6.5 其余五个</h3>
+      <div data-page-node-id="864D0TpGgCCHqkNH4ksa6T" class="table-wrap">
+        <table data-page-node-id="p2P9IVLTNqKZWIThKnUdYH">
+          <thead data-page-node-id="rpQ0G9c0a1zekQCk7tT6yk"><tr data-page-node-id="wYI6X9mMmLQ1ywYu05jpSx"><th data-page-node-id="6XNav91SXeuZuwz8egBzsM"><!--pnid:icl9NSSpr0KbmxPNvCEJHY-->技能</th><th data-page-node-id="mQKMOBRdAmfPL7oy6sC7ye"><!--pnid:JiX5Do94WrNnc1A1KrtVXP-->什么时候用</th><th data-page-node-id="NK2F3gdujRHJgmt6nlckIy"><!--pnid:ZoHvJMbwIqFfAsjCrtYtfc-->关键动作</th></tr></thead>
+          <tbody data-page-node-id="p8cc8U4ml0fyEWom4RDukE">
+            <tr data-page-node-id="OwKAOzCx91yjLPhky88fbs"><td data-page-node-id="VlRcmz2XrOpoDePI0adPYK"><code data-page-node-id="i9QxcFJyGgKrBUabiOpREX" data-pnid-children="9dgQZEcHUIPZSVqblA7i2b">/triage</code></td><td data-page-node-id="YTw7ysJOb5BfFFwUrtHlzy"><strong data-page-node-id="LNj98beKj90HzTVKhU9Bw2"><!--pnid:VIEfMeSDgaNRz7JInBWDnq-->别人</strong><!--pnid:foaSWGvSART0g6u5xaXTtW-->往你仓库提了 raw 的 issue</td><td data-page-node-id="MRkWoShEe3btskw03QP6gq"><!--pnid:3F8AIDGd4x9bWQKrYAq6ew-->状态机 <code data-page-node-id="16wEUdB43qer3sFAUj2YSQ" data-pnid-children="YeItNuuf3YxlLNsUYxOwGM">needs-triage → needs-info / ready-for-agent / ready-for-human / wontfix</code><!--pnid:R40rC7nABrFZzsedIS6WTw-->，每个 issue 同时挂一个分类（bug/enhancement）和一个状态；评论必须带 AI 生成声明。<strong data-page-node-id="HzL5086QsMoCgwnRzHOy4O"><!--pnid:x56EgYvixLomuvpMQ1lYOD-->自己拆的票不要过 triage</strong></td></tr>
+            <tr data-page-node-id="dPzyglk1GyKAr94h1RtA4r"><td data-page-node-id="YYFAc5W7djNdai2yiEPRdL"><code data-page-node-id="ddtAK7gg3OJDPshOVvLQQD" data-pnid-children="HvuRqQzlvNUakrIuHmptAX">/wayfinder</code></td><td data-page-node-id="GtFQHRUCFwywwjKfPuTQlz"><!--pnid:XqC0IF5Ufvzf02cfBSSxVk-->大到看不清全貌</td><td data-page-node-id="sxWeJKWy8zTqph3dzsHfCn"><!--pnid:7rLY02kfvK7HVX0Gwpm3sk-->在 tracker 上建「决策地图」，每张票解决<strong data-page-node-id="lcWLQ7G3aFnEQyRH4rxAYy"><!--pnid:1YP3iKAIqpSFB9k9OcGuAp-->一个决策</strong><!--pnid:x5EQvLUobjp2fiuYIFRctw-->（不是交付物），推进到路线清晰后交接给 <code data-page-node-id="yyjiXwIDbfSPZwJ6SBFeCR" data-pnid-children="KRmrH7hAfJ3KVzecQkhylr">/to-spec</code><!--pnid:slkBw5UVSNv4qgSzxIYZ67-->。小而明确的功能别用它，它慢而重</td></tr>
+            <tr data-page-node-id="TZzJrZTwgJFYyeBDGneBu3"><td data-page-node-id="z5ntJBsTNQFfu0xlFMQyjl"><code data-page-node-id="C3y3VMNjgleUeUZlzjhyjD" data-pnid-children="RSiCouzNrlHFmoAEk34dkP">pr</code></td><td data-page-node-id="JLnOowE3yL5ZzkgY3qOslp"><!--pnid:oYyS1zqPQcDfhHAjLqcFPM-->智能体写 PR 时自动用</td><td data-page-node-id="2LInK2Eci670VI5jtRlcTv"><!--pnid:f3P4MGT8IMONFidQPT4kEH-->三段式：Summary（一张让改动一目了然的图）、Evidence（before/after 对照）、Merge Danger（单向门还是双向门 + 爆炸半径）。评审别人写的 PR 时，这三段就是验收标准</td></tr>
+            <tr data-page-node-id="mQYtlSSAldjij14paPP1m1"><td data-page-node-id="ZZvTce1eGaDC9FaB4O3dif"><code data-page-node-id="6OPBq2zMDRWpkuyrdmRmpW" data-pnid-children="OEUw1LmHDtua7D5wgPbheJ">handoff</code></td><td data-page-node-id="cAT4TByTLSfChfpGwI23Qj"><!--pnid:gaVK9xMmhLWPUOtHrklnUE-->跨会话/目录/人</td><td data-page-node-id="OJsHfvTdaTZ2yrLBC9gJkV"><!--pnid:1iGlL88FbFUsIZgIUTFt4u-->把当前会话浓缩成交接文档。四种场景：新 harness、新目录、给同事、阶段中途分叉侧任务。原型工作流常靠它桥接：<code data-page-node-id="XojET2YrWGQmU56oXOZpuz" data-pnid-children="vVFOK7lWNzjjQA81wVy8oG">/handoff</code><!--pnid:CSTV2kOXxDQ8T6oMCpBSwn--> 出去 → 新会话 <code data-page-node-id="BVyjQ5SgomQ6vDHRikMkcY" data-pnid-children="3posStpBokwesuwV9HdnOc">/prototype</code><!--pnid:7ltjQP5ip22Wc6sl2Zx9az--> → <code data-page-node-id="MGtNfeorFufY8PGTdVnZCT" data-pnid-children="SM2ACQuE64vspHKGAPXoOt">/handoff</code><!--pnid:XKv5P7JIVWjwJOF8HLVoqk--> 带结论回来</td></tr>
+            <tr data-page-node-id="dOCUO60eu7Vk1qSEcI9Fa6"><td data-page-node-id="wgh8BbQHRPiv6mPQzxeqRb"><code data-page-node-id="Dzrif6ICNoHrXHnp638ilY" data-pnid-children="vyshy3qXfHalBKJsTB8afS">research</code></td><td data-page-node-id="3MHqWsh7rFGnkBs7BlqltE"><!--pnid:VbdsIUQnQxkmKxDQAeaqWO-->需要一手资料结论</td><td data-page-node-id="cLIo1IZfEStIvjz0KHd6Me"><!--pnid:Pna3rrfemHEn0bP2WFRTJc-->派后台智能体对官方文档/源码/规范查证，结论写成带引用的 Markdown 留在仓库。研究成果是 <code data-page-node-id="xu0dob14iku9UjLQqNmJcQ" data-pnid-children="zR1GVMnFZdABJkLXA2XaVK">/grill-with-docs</code><!--pnid:pmGLP3uVtfWPHQ4V7Rfw6k--> 的输入材料</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div data-page-node-id="AQBQxH5DZksSdR8ZHYjaAr" class="callout callout--warn">
+        <span data-page-node-id="mLd8QnR6MRCnzHoy4SAplt" class="callout__label"><!--pnid:jfaiTpGbXevwicFkeZYkBC-->别混两种来源</span>
+        <p data-page-node-id="yGPhtSs4OLSAzpNayQnF84"><strong data-page-node-id="PUV9FoSSTXo5NPKD4zO6zQ"><!--pnid:gcOVvhuMk26XVQZxqdD3iz-->「自己拆的活」与「外面来的信」必须分开。</strong><!--pnid:pGFl16TlqqS3ihOXOOzlJQ-->混用会导致两种后果：自己拆的票被要求走 triage 流程（浪费），外部 issue 被直接当工单开工（失控）。</p>
+      </div>
+    </section>
+
+    <section data-page-node-id="7Jikitr1kDmgv5OpMSM8Wh" class="chapter" id="s7">
+      <span data-page-node-id="MTfY69lCYxBmvnHnCXcD3R" class="num"><!--pnid:V9GwqnxMCTqZcEHvnzeg2K-->07</span>
+      <h2 data-page-node-id="Q2h8RkA3HSSADcGT4Fe9k4"><!--pnid:FsPp7Wl70aOXivy5RuE2ZP-->上下文卫生：smart zone 与阶段边界</h2>
+      <p data-page-node-id="H77KMTGK8zFUycYPYwrwNK"><!--pnid:BECniO2ylsk8m8862KzS3V-->模型有一个 <strong data-page-node-id="kKadYqEudj0MQEnGYO2cfJ"><!--pnid:0j4xfhOGTPRJTZBXjXv0cA-->smart zone</strong><!--pnid:aH8puZQdvakoIC01CTgGtf-->——约 150k tokens（顶尖模型）。窗口内它还能敏锐推理，超出后质量下降。</p>
+      <p data-page-node-id="A5zisPbCLTYz3BEuKmoFx7"><!--pnid:AjqWCePEeKKnfKd3kskU2Z-->三条规则：</p>
+      <ol data-page-node-id="VwA3upwGjhiR5C4dNXTvU5">
+        <li data-page-node-id="4KFlXyD3JFdGXRALIrP12N"><!--pnid:D62Dyhep1D2nEuGI5YJEkp-->规划三步（grill → spec → 拆票）保持在<strong data-page-node-id="lJvFykVQ8RrfJfY2TLdGZc"><!--pnid:Q7LCEan3Ns06S787aPwyD8-->同一个未压缩</strong><!--pnid:jZHQpeej38S8DEHZXBoYX1-->的窗口里；</li>
+        <li data-page-node-id="t2s4B1RbRnumAydLl7ODaC"><!--pnid:lzlJBXIgfmfuBhnYLhqEPR-->接近 smart zone 就在阶段边界 <code data-page-node-id="X1Ge66baRP98CrHFGQJA8Y" data-pnid-children="7Vk8umxWa7eIqVtpAuyAP0">/compact</code><!--pnid:0GWLJRJTBrEG2unTZ5flGp-->，别硬撑；</li>
+        <li data-page-node-id="PDF3hf8eU4nfp2LApwHNNy"><!--pnid:HV10Tn0Y0Hh1ie30aCFetM-->每张工单 <code data-page-node-id="DtoFcabuVvDji0vp4ZTXwE" data-pnid-children="EYSehpAgVdAefYuAFA01zv">/clear</code><!--pnid:CLgJkioMzG0VDoiShyFy65--> 之后开新窗口。</li>
+      </ol>
+      <p data-page-node-id="ijIBZDBt3KFj8Q4TyycBcU"><!--pnid:j6SVbbIn8Fm19lXcS6uE0V-->阶段边界有五个选项，选择顺序值得记：</p>
+      <div data-page-node-id="8wcUok6VW0ONMtXfabt83I" class="table-wrap">
+        <table data-page-node-id="VCCGf5USBQ3BFqiCjZnCR1">
+          <thead data-page-node-id="Oapi1fvea3FizG1Txd9dLw"><tr data-page-node-id="heH6CATc7RAQjw9Pxoq5RO"><th data-page-node-id="1UoBg0gK3CI7YYfeLnHzcx"><!--pnid:sUQDcsSTCOmUKCnjXyXryt-->选项</th><th data-page-node-id="w13c9IZ5vN0ZPFldiP6dTY"><!--pnid:UDcOriiRPFuyvRLhINYkwQ-->什么时候用</th></tr></thead>
+          <tbody data-page-node-id="PgdsjCoClqUt9ECcOM9X3o">
+            <tr data-page-node-id="sxiuofK0YYweNeW44TEK0V"><td data-page-node-id="roQoCWSdW2RrG4b1bRwBXx"><strong data-page-node-id="DklabfLayaF04NVFARpYtO"><!--pnid:9eFAeRzTZGE9vlkJIOBiid-->Continue</strong><!--pnid:qqtpPAuHjkngAdnrhRZgyN-->（默认）</td><td data-page-node-id="wq2Z6tTqHAf27AK1arJt0C"><!--pnid:EdiGA1JHHnB2BJGYToIOyH-->下一阶段需要这一阶段作为 primary source。先问「能不能在这个会话继续」</td></tr>
+            <tr data-page-node-id="Vh4Tmx90oZu0nuWo9aElvh"><td data-page-node-id="cDcQvSeqNcDjQRQbT9wSW1"><code data-page-node-id="kC8ryKWyOOQqZ3r8VOAQca" data-pnid-children="YRjcV7VIP7H1JQTtlqrTcb">/clear</code></td><td data-page-node-id="AksXkCtayabrTp9lOcOvXf"><!--pnid:tM7Ubv683chnWu63ptxBZb-->后面用不到这里的上下文</td></tr>
+            <tr data-page-node-id="0t26j1GlN7tV7niISMkArp"><td data-page-node-id="s7pPtLG0GS5kWNo3y5MLlm"><code data-page-node-id="hTQkFPFedrq9SIiDBoG6Yo" data-pnid-children="Kl3BegsvjoXMkxBVc3Jcqb">/handoff</code></td><td data-page-node-id="XCmSvWkQ18mvjZHoJcoa3k"><!--pnid:uFNEEJJVD1Ib8MoB9TfR67-->要换目录或换人</td></tr>
+            <tr data-page-node-id="k6Qhyk7WSMTxJ8nfASQFIB"><td data-page-node-id="WaqRLHj9Fsf5yj0uhIiNn4"><!--pnid:dRayCq09IIbhYEBYcqi1gk-->子智能体</td><td data-page-node-id="oWVBfuFUxN37mMDj11mx4u"><!--pnid:n6e7f7JmjvxQIXPTKwiABB-->范围清晰的小任务</td></tr>
+            <tr data-page-node-id="Sr0vmnfPTgUeULPaCmfQ2S"><td data-page-node-id="TwdGbi9u2cmAqetlIoUZgL"><code data-page-node-id="9oyybNCm7TPACePK27RMXv" data-pnid-children="95lgw51hOpKjnZGEwtBNDl">/compact</code></td><td data-page-node-id="FKgjvTjafJxq0xzrG10uce"><!--pnid:t7E8y38Zh2YWQ6K9N1IYBM-->保底</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="UCbNzpjCpfuCWS5nk0a3I6"><code data-page-node-id="FS18BznLeX95LMOj7qYUVp" data-pnid-children="qPNLj22UA2yLjQwdVe2kie">grilling → implementation</code><!--pnid:kROpmJXKtboW0PcobyQYgP--> 是标准的「<strong data-page-node-id="76ps7dbcexFDsSOJJ5wHwg"><!--pnid:BVdQX8570oPqUflcMVKe82-->不该</strong><!--pnid:SFSX5Qf3L86xqHPqN06qY5-->继续」：实现想要的是<strong data-page-node-id="XGyqeVHbgMWciZDDkyvq6V"><!--pnid:8lxGfTl88dRcmSKKtmDqKd-->逐字的推理链</strong><!--pnid:XxZDx9vJfpBspwINxqNPRo-->，不是它的摘要。反过来，<code data-page-node-id="9kFoAf0aOfAg7ZOOHZTeDy" data-pnid-children="12eKlQqcyUfFAhh5eJaAL1">grilling → spec → 拆票</code><!--pnid:jTJqU6cReehA1VcjArXhGJ--> 必须继续，因为它们共用同一棵树。</p>
+    </section>
+
+    <section data-page-node-id="epGmePwyetRGI8M7uvUDul" class="chapter" id="s8">
+      <span data-page-node-id="l426SUt9rSWNCktR1BPHld" class="num"><!--pnid:Ufz1RoYzIZjq6z6sWXsO2v-->08</span>
+      <h2 data-page-node-id="eEd19dtpGbAb0TFwTrvokk"><!--pnid:U3YWqlfkrebMdLAMChcULI-->人的角色：极简指令、高度授权、亲自验收</h2>
+      <p data-page-node-id="l1h8tVPgX6GSLmpmAaZanc"><!--pnid:6GcGU4rm3LLxOa2hQjHHhA-->技能决定流程的形状，人决定流程的方向。这一节是整份实践里最不该改的部分。</p>
+      <p data-page-node-id="b8Bn6tG4OVb2LvAb5z7TKg"><!--pnid:RTeSoc6uwHA3fnU7zFRKIa-->约 179 条人类指令呈现高度一致的风格：</p>
+      <div data-page-node-id="L8LPsO1HlJ37kNWiX4o6nc" class="table-wrap">
+        <table data-page-node-id="PyGUe5jJ2ul6wvsI6VGEoG">
+          <thead data-page-node-id="pEKtF2z6rj5O2RFdlI8Ngh"><tr data-page-node-id="uJZQD52zVzkoZmnfDDhxqd"><th data-page-node-id="fY0XXCxDq24397KZG0GMPA"><!--pnid:m1k5MEG8Z78xyiCAdk3OCE-->模式</th><th data-page-node-id="JOz6mD4LQUWTZ4Z2q0fDLk"><!--pnid:toqQUnxPHcWE0WYzFrDVRQ-->实例</th><th data-page-node-id="9RiszWYM9fRWObQBraJoqc"><!--pnid:NiFkkiHjBGAyujQTwJvcxN-->频度</th></tr></thead>
+          <tbody data-page-node-id="FUfZCjhDVAnzlUTesafhlC">
+            <tr data-page-node-id="7QO69IC42BR2hGANPRO0NR"><td data-page-node-id="6shvTO9bQwvE8UwKMhyQ7R"><!--pnid:JBYLVNR6X361g3jhlpQwX8-->批量授权</td><td data-page-node-id="u9rQsSL1eLtjsbIRoGb0rN"><!--pnid:dONfAcyT86uTbI1Ju4wY8D-->「都按（你）推荐的来」「按推荐的来」等变体，共 9 次</td><td data-page-node-id="ATmdPYsH7M6NuthwyRaWyd"><!--pnid:I9vKjfBdDUDVUuQZLeCGXQ-->最高频</td></tr>
+            <tr data-page-node-id="WBu6DCro15fTZD4Y3Q84rf"><td data-page-node-id="EMs0xODNGCAexbRDfWq2Jq"><!--pnid:1oG0JGUddR10NlVKP9sIys-->编号式拍板</td><td data-page-node-id="bjS00Qpn57nxo7tIlCM0Jp"><!--pnid:dTeX6fQ8jAY9PLd84cF2Fn-->「候选 1 + 2 + 5」「候选 1+2」「先做候选 1」</td><td data-page-node-id="qH1It2R49sNbdsrmEfccKu"><!--pnid:E1byVRl4Y4DU8ww9hJKUyJ-->高频</td></tr>
+            <tr data-page-node-id="E4oIpall3L8hxN580Xq2bE"><td data-page-node-id="6jUuVbOKBkor5y5OpR6I0T"><!--pnid:Us4urSKXrQjuH1QmlIKFrG-->收尾指令</td><td data-page-node-id="PsFgw5Rrt7jt09dp8jGJof"><!--pnid:bgHjkonAx2lYUBIVOf9hD5-->「git commit」×6、「关闭 #10」「合并到 main 并推送」</td><td data-page-node-id="Rt6EW5JySR9gq55xZwEFah"><!--pnid:0bHN6VZP4eXa301XoVnGOl-->高频</td></tr>
+            <tr data-page-node-id="NM7OXbg7Hs0Bkdha7ENo8v"><td data-page-node-id="doO0MTL9rezFH2Ff9BTSAC"><!--pnid:wjJrWeza7WsqNcHM6kawTv-->短句硬约束</td><td data-page-node-id="kapAX41RiBd2QcMOXv4Prg"><!--pnid:UFceRAN9gKy35b00ouoPZ1-->「首页有『分享』按钮，详情页也应该有。复用首页分享按钮的组件和逻辑，不要新写一份。」</td><td data-page-node-id="aNGgVMrFlHVRFFs2PyJl49"><!--pnid:g9ZMzHCUtqgyrJlywgBdEP-->中频</td></tr>
+            <tr data-page-node-id="ZtALeukCbiyeIJKgcZIPs2"><td data-page-node-id="EfRVj4nfmjFQbbYA7cdhWv"><!--pnid:pSS0fmCgMRuklpAh0D1xKe-->事实追问</td><td data-page-node-id="3ivlqPBgvO2Z6dETbNy4qy"><!--pnid:9jNTC2dpvSKTT9sBoUcYCM-->「为什么之前实现 issue 时都没有创建 PR」「为什么出现 Tool interrupted」</td><td data-page-node-id="kfy72VY60XxhgvVPMr2mGK"><!--pnid:R9Ecja3IfoTjB4n427CTT8-->中频</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="6ssQLk1EDtU79rSb0zRcPK"><strong data-page-node-id="a8gOr3iiYF0Y8tveVz5nFB"><!--pnid:BqmInFMOhN1nXf3YlAOquB-->最关键的一条：人会读代码验收。</strong></p>
+      <blockquote data-page-node-id="1Tjc8X4VFrYxOWAeIaPoNI"><p data-page-node-id="zVsAac44vvp34404yTIYX0"><!--pnid:w5pvQ8j9a9lr0QtuIUf3wx-->我看了一下代码，你没有实现刚才的功能，只是修改了注释。</p></blockquote>
+      <p data-page-node-id="rbU2uGOnKosglzmCSTYEV8"><!--pnid:39eLiCsHU1ijRq5PeqyGbg-->这次抓包逼着智能体起真实服务器端到端自证。AI 原生开发里，「信任但验证」不是口号，是日常动作。</p>
+      <p data-page-node-id="KBpQrVWKS2nLzzOa3aWejr"><strong data-page-node-id="X78PVfTxbDZxe64ld8Myk3"><!--pnid:FauaZbRdwTwp9SRTLFX95p-->人还承担「工作流教师」的角色。</strong><!--pnid:fW6XO4wwEIGyH7xvowMX79-->ticket #12 收尾时智能体自发建了仓库史上第一个 PR（PR #13），人没有默默接受，而是追问：「为什么这里创建了 PR #13？要先合并 PR #13 才能关闭 #12？PR 与 issue 是什么关系？」——弄懂之后，PR 工作流才被纳入团队惯例。</p>
+      <p data-page-node-id="c4hB6IUtN8tmHUMZgutlCH"><strong data-page-node-id="4UbAQ4XNzK1d0wFCYKzKZz"><!--pnid:F2H8fNpq5DEenLkv8BvmA9-->必须区分两类「人的动作」：</strong></p>
+      <div data-page-node-id="QZjzspJj9FaLAnI6SBuccL" class="table-wrap">
+        <table data-page-node-id="46eNxd3GBEJr3G1kNSlWCi">
+          <thead data-page-node-id="aQAgyvkEhUSHztGHsFxXjg"><tr data-page-node-id="MWMZYDMywRJMci93GiJhMl"><th data-page-node-id="naSigeOWSPmyEGnkeoCtl9"><!--pnid:VF3PnMiXbOObqyyml7AtZ5-->必须由人做</th><th data-page-node-id="DRWR2nACQDWAJiwsxJoVwj"><!--pnid:mkhEqoqp199gv5wL0xHzqf-->本不该由人兜</th></tr></thead>
+          <tbody data-page-node-id="g6yhexbnMvHEByh4SFuxDZ">
+            <tr data-page-node-id="xfrR4g9IsGjEZywBuFu8d4"><td data-page-node-id="ZOZD7A5mZvGwnqRBk8gwEX"><!--pnid:Usu002POStQqjaOrOp7lsd-->拆票粒度、上线决策、读代码、「为什么」的追问、只有你知道的业务决策</td><td data-page-node-id="ukSe9gTM9N9NQK9Ho9K7qW"><!--pnid:0QFPw1TQBnV4CznmBswU2m-->防止智能体「没确认就动手」（grilling 内建）、提醒它「先定 seam」（tdd 与 implement 内建）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-page-node-id="uP6gA4U9FaX6HBzIl1ivTi"><!--pnid:wgMvFiIY6HxDzSwB0ya2ff-->右边这列如果频繁需要你出手，说明<strong data-page-node-id="GgVcusWWqxmeHTggTbvn3f"><!--pnid:54trGd8gvDkMQR8TMPHwIn-->技能没装好或没被正确调用，该修配置，而不是把人训练成监工。</strong></p>
+      <p data-page-node-id="mzyuTnqcFsslywmmt6jIYm"><!--pnid:5m5kwazUj9ToogUf5zY58X-->一句话总结人的定位：<strong data-page-node-id="H7u1xrCRYNtQUbq8ALhaRt"><!--pnid:ey11bLFSuseoW5Jxw1YVyQ-->人是编辑，不是作者。</strong><!--pnid:klZEOFC3GmhxOGHPvZtDre-->编辑不写段落，但决定写什么、砍什么、以及每一句是否站得住。</p>
+    </section>
+
+    <section data-page-node-id="2053uT5Rheyw1NoU3ATXc1" class="chapter" id="s9">
+      <span data-page-node-id="D6T1jgVJqnh9LgwTeO6ayo" class="num"><!--pnid:KCfJvGCOYxTrUHrVwFQ7Is-->09</span>
+      <h2 data-page-node-id="tZjls42gQvNqBrM8YjzG8m"><!--pnid:1MUHw3of4vsyegpt2IecOo-->反模式清单</h2>
+      <p data-page-node-id="y1k9FvN5li3MHNHWSRTeSq"><!--pnid:JY9TB9zzANKnXMYb2Vx8VY-->从这套实践的反面看，什么会毁掉整条流水线：</p>
+      <div data-page-node-id="Jc4l1oblYrpgSiLvK8l50V" class="table-wrap">
+        <table data-page-node-id="2XRb4xF49JKNn8rLHWaObp">
+          <thead data-page-node-id="h94sqqJAUH3TDqNaAG2FxN"><tr data-page-node-id="8p3ylQ2aQC64D0l0ClmsBn"><th data-page-node-id="6ORWzzLdw9mpVBihkxuk8J"><!--pnid:kaEp43tiXjDbkc4XbnwEjF-->症状</th><th data-page-node-id="OPy5QuBWxaMcoghieu5TTx"><!--pnid:TPlw3xkIcnIGoEOBSQj5Pl-->根因</th><th data-page-node-id="eqxqHDegVLfPGP7MfvkfHO"><!--pnid:e1IxNUIdj4Zj3yd9ZqkP0v-->对策</th></tr></thead>
+          <tbody data-page-node-id="7ZKiV0JURSi1jUYMo9Fllw">
+            <tr data-page-node-id="Y5tXTRAZYGq76O3euvDN5X"><td data-page-node-id="9R2aZAEnMrU8OYPVFGkixi"><!--pnid:ZFaFycZuKn2XGuu1tuuyVM-->智能体反复问仓库里已有的信息</td><td data-page-node-id="Ugz87xJJaEKy0t3YDGEvGu"><!--pnid:31Ql2TWri8CveQVX05XHhw-->上下文四层缺失或过期</td><td data-page-node-id="etSfEVGHaF5oigWux2Ae90"><!--pnid:WYp356hYST49ejXPRztVoV-->补 CLAUDE.md / GLOSSARY / ADR，而不是反复解释</td></tr>
+            <tr data-page-node-id="s7GHcVVj6VmfJ6iX5h5CKQ"><td data-page-node-id="nJhzzUFQhOabMlml7UabXu"><!--pnid:aKQClgvXjpJ93vMd0JDhA2-->术语表越写越像规格，评审老是被带偏</td><td data-page-node-id="5zjhy9tanoQN5SbcKivrxr"><!--pnid:71pB0fVgtIBYovVscyQu1x-->把 interface 签名、实现决策写进 GLOSSARY</td><td data-page-node-id="QwCRq8seLFCPyo7vKFysJ6"><!--pnid:9ka77444he0AZbjNbqyGE2-->词条只写「是什么/不是什么/分界」；签名归代码与 ADR</td></tr>
+            <tr data-page-node-id="cOI98Yiiv9oLecaj0x4f9N"><td data-page-node-id="ZlbcIjT0j0YrcT7qJUpBOm"><!--pnid:YNSJZG27OwckrSpCbyeB4P-->一个会话干到最后越来越糊涂</td><td data-page-node-id="dz9ptX9jqSW98fvMtjiSCu"><!--pnid:tnIUpBNpiu2AvFDLNfwO34-->规划与实现混在同一窗口</td><td data-page-node-id="U1P73u6UaoiFzbRSz8ScKy"><!--pnid:MFvUv5VltpAIi2ANElv0nd-->阶段边界 <code data-page-node-id="UN2DrbhLWNjvIJ4sA5qpus" data-pnid-children="32Qz0t5FF4sKUwkn9lvRs5">/clear</code><!--pnid:DskcqrbcmfS2jSTdX3qiIx-->，一票一窗口</td></tr>
+            <tr data-page-node-id="GNOnBHthargDE5IaQzszND"><td data-page-node-id="jaRo0KgpjUBN0d1vUuFRP9"><!--pnid:mUeryUh0cHgh9hAuNRJvWp-->测试很多，一重构全红</td><td data-page-node-id="zSk13Eriw608QQLVEsqoJO"><!--pnid:MASAV3LQOBepcgs4gGqZqt-->测试耦合实现细节</td><td data-page-node-id="4j9OflyjQCHElQvgsil1AQ"><!--pnid:Q8KXsJzNhHuA9Jhkt6ee3U-->只测 interface；seam 事先约定</td></tr>
+            <tr data-page-node-id="9n1RyV2UUtSwUBwPn6Fjqz"><td data-page-node-id="bDus0mNL6FZ9lNhtg7KacT"><!--pnid:cpoax1SIBKVCrdTUgnEAO3-->测试永远绿，bug 照旧</td><td data-page-node-id="LRQrf1NP6G7VNrMQ0zb6zK"><!--pnid:5KKzX7Jg2knbcPljUaxJ2w-->断言用和代码相同的方式重算期望值</td><td data-page-node-id="HcXduGSoAEkwB2C5mfcdLX"><!--pnid:RxSqRlyU8XsylzU0Mnpqnq-->期望值来自独立事实来源</td></tr>
+            <tr data-page-node-id="k3ab2ampF40dcrFW1RhkkJ"><td data-page-node-id="ptfWcSOxsPvckcGnb4Lilp"><!--pnid:r1ByWj3Z6RC7yPMDV7W9kM-->评审只挑格式，抓不到契约漏洞</td><td data-page-node-id="pGDbBWoo8zEL3CXu9mHqmE"><!--pnid:uZcsRCicVXS9z89webaT4y-->只有一条轴，或没有 fixed point</td><td data-page-node-id="d9e35lSiGg81vyUOhxtkLp"><!--pnid:dznDhwDFbBLEXztISfgxoc-->双轴并行；固定点先钉住；Standards 用成文标准 + 坏味道基线</td></tr>
+            <tr data-page-node-id="tFSdiifPc2e9J2tn2kDPtr"><td data-page-node-id="espIqEpfitXfRZAtWPwRO3"><!--pnid:na8O6C4v2DwrJDKtXeJ9U1-->合并老是撞冲突</td><td data-page-node-id="iTGaGBQXQPqRRnkxZjxnjl"><!--pnid:RuNVuncOoPLo4n9yeNy4qy-->实现者没有先合回集成分支 tip</td><td data-page-node-id="oJRofefGynZKHG8fwSMrg9"><!--pnid:qkCMO1fkt3i1XL6Wn38oIf-->修流程，不是加 <code data-page-node-id="pHuzym2xiLXMbhNf0xa4zC" data-pnid-children="Y7HM71EW3FCOyEbrfB3MIa">--no-ff</code></td></tr>
+            <tr data-page-node-id="sRaAZkpgJ7MreYtRT1BPXZ"><td data-page-node-id="dblELeX397JspXrxxWYtvW"><!--pnid:xuZzCwFaV17eAykDvOsxmK-->同一个 bug 修三次</td><td data-page-node-id="qTbg7swsVEAdUxBHg3CS91"><!--pnid:Ew1XdtRwo3rdESQjKRVQpf-->没有回归测试</td><td data-page-node-id="qrxoG7a204YPCjlZz0FFCM"><!--pnid:zdLbBz26gRtsvk78fdIdV1-->先造会变红的命令；修复必须带回归测试</td></tr>
+            <tr data-page-node-id="B2I3lnk0WesxvMWYzhrCBn"><td data-page-node-id="h9RFXFfPoUwseE6COGSlR8"><!--pnid:fPeCV0pGkHcufGe8IOrbBQ-->复盘产出「下次注意」</td><td data-page-node-id="0k67DtyhiHEOOdpMOn3jDu"><!--pnid:HkimmrWyfJEpYAtRflhUdk-->没有区分机械性违规与判断题</td><td data-page-node-id="TVBWuAck9Eo8rSuE4MOdvr"><!--pnid:htYMWTylU5LsTvJzqM8SEu-->机械性 → 确定性检查；判断题 → CODING_STANDARDS.md</td></tr>
+            <tr data-page-node-id="WghZWOtPWMjbqYjVqVxNqH"><td data-page-node-id="OQZRrle8YJOdU9d08mQaSB"><!--pnid:7GumeCreWzOwqaKhElEAyi-->顺手把 quirk 一起修了</td><td data-page-node-id="5SGflj4P91wQYLhZBVQgbI"><!--pnid:6YRWNjbcTh5xoQKP23x4fX-->重构与修 bug 没分离</td><td data-page-node-id="SAXcVrWPxPOcgg6gFXqKnk"><!--pnid:TC2e78MLSXD0WYwzurbDGr-->表征测试先钉现状，修复另起 commit 单独评审</td></tr>
+            <tr data-page-node-id="eZt8xjHyRjd9GzZYQV7rpL"><td data-page-node-id="TTxkDPf8EmQrX1sBNX7TMm"><!--pnid:I1gIez78mQveZUjr0zBx8O-->所有工单都等「打完标签」才动工</td><td data-page-node-id="EvOOSigKIRA0ci0wqnsjqN"><!--pnid:itZyyxP6yvMRkih45P5Tfw-->把 triage 当成开工闸门</td><td data-page-node-id="mCVwxd7dwN2SBO1v1O5O03"><!--pnid:zkAcfF1sVWQd8ZMukQOx2E-->自己拆的票发布即动工；triage 只处理外部 issue</td></tr>
+            <tr data-page-node-id="5fMI87BgxACnT8D0hbex3K"><td data-page-node-id="ee9VUGbyv53GX8OtPI20BT"><!--pnid:frwCWwlEb0T8O8lrfZAJNL-->CLAUDE.md 越写越长</td><td data-page-node-id="kCT6hHCPRteYmPa8uYtbZS"><!--pnid:kBtVTawCmqA8XA1YT41szc-->把所有规范都堆在会被每个智能体读到的文件里</td><td data-page-node-id="IqrEmJSt7NmMG3mP6NwQsm"><!--pnid:CVpq72BwT0TOS9p1SWqV8d-->CLAUDE.md 只留导航指针 + 推断不出的事实；标准压到评审侧</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section data-page-node-id="DQRbauKJrU7nnGsEYi2spD" class="chapter" id="s10">
+      <span data-page-node-id="QPvopUOoHZGDxl9hqossQA" class="num"><!--pnid:DJtKacznxdRIkJ4oDmjMFV-->10</span>
+      <h2 data-page-node-id="8ohTXFkcobRUIv1lYb9HDM"><!--pnid:ZkPT7gsYllF5hDKcv9Fc8N-->适用边界：这套实践是有土壤的</h2>
+      <p data-page-node-id="XAr3ieULo8rDg1i9fpWeH2"><!--pnid:EiH1Xtlf6T42dgTY90RDYA-->它在特定条件上长成：<strong data-page-node-id="Wkia2e25iPxPGZ6e4JtGov"><!--pnid:WevL0FavtwAZU9qaxcoqpT-->单人维护者 + 全栈小应用 + 零框架零构建 + 测试成本低</strong><!--pnid:aGRakDWxya0qJGsBl2T3Hs-->。移植前自查四项：</p>
+      <ol data-page-node-id="9f7OMk4nxBj7doQ9zyDcWw">
+        <li data-page-node-id="uSP4ry6bpQdHZvwCcaWwMG"><strong data-page-node-id="hqew8fln7R3G30cdcXzPJW"><!--pnid:B2m49jXI49eMmZ3Q75ZQsC-->维护者愿意当「编辑」而不是「作者」。</strong><!--pnid:ZY7INtJyNKvG8a08RlYxcH-->指令风格、验收习惯、「为什么」的追问，都是主动技能，不是装上插件就有。</li>
+        <li data-page-node-id="fgXi13ZcRzvX4fhcSjZIIM"><strong data-page-node-id="GdpXxftXWA2ayrOZ75yw4f"><!--pnid:VM85MCwjDYYzeK9JF2w6ve-->仓库本身简单。</strong><!--pnid:RO4aXy80lnICLl4HMl5z8J-->单进程、无构建、模块边界清晰，智能体一次能看全。大型多包仓库要先做到「仓库即上下文」——多 context 的 <code data-page-node-id="k8Yd6Bv8H87NmfO1a4z74x" data-pnid-children="ZjjcPdmdDcwYlyWZM1hl5T">GLOSSARY-MAP.md</code><!--pnid:wZZm5afZJo7eudaQ6i7a8x--> 布局就是为此准备的。</li>
+        <li data-page-node-id="GmuJ5QdTbfze0FW4EdAcQW"><strong data-page-node-id="Tszny7HdSQvhpxAUnGVjaA"><!--pnid:s5Pd9LwIANArLqc4wjLlwe-->反馈环足够快。</strong><!--pnid:NQAgsGn4p2LV6cSZgsD0DK-->168 个测试 3.5 秒跑完、preflight 一键自检，红绿循环和双轴评审的开销才低到「每次都做」。<strong data-page-node-id="ES2TdfuZfYQjWkKmpdSWv9"><!--pnid:l3nYM0hn0FdTq6xOghHbhA-->反馈环慢的项目，先投资测试基建</strong><!--pnid:P6idC0gSs91QYfaiG7lEYC-->，否则诊断技能的第一阶段就卡住。</li>
+        <li data-page-node-id="aCd0zgKgrJA7RGBgyd3SN3"><strong data-page-node-id="o7Pwi2rNSptV0amlxbxCDD"><!--pnid:6eYKKDKprJM8AkBN3GdKMz-->技能版本跟得上。</strong><code data-page-node-id="98lZ5Y2s6Ja7kdQb7tB851" data-pnid-children="QuU45t9ZThQ42i1UALNZUY">implement-spec</code><!--pnid:y7klage33l8eHurA5lc4Dl-->、<code data-page-node-id="teACjgIJ8kyHFctGNHvv3K" data-pnid-children="QnclxiaPXqZTmIIbTXwKgX">pr</code><!--pnid:S4CZgvvoQ1Yrts539vBulr-->、<code data-page-node-id="yAre6absRhlRTEb0o8I9cd" data-pnid-children="4oaMWsx7A3h79ioCCM1V3o">retro</code><!--pnid:ZTvD6jX5vJdCgTiMquyMyX--> 是 1.3.0 才加入的，版本太旧会缺技能。技能会随版本迭代，标签、模板、阶段边界都可能变。</li>
+      </ol>
+      <p data-page-node-id="qYRLagn6RirlDyngAnQpe2"><!--pnid:9FvRVUt6DmXiXH3fCIjUXW-->最后一条原则，比这份文档里任何一句都重要：</p>
+      <blockquote data-page-node-id="GpAaEQ606FL0n7qHy9Lq8r">
+        <p data-page-node-id="7E9xABYefQwh85RDBstux4"><strong data-page-node-id="7qFxqcIQsvCw6SYBVBJWnt"><!--pnid:3UmPMFn4ErvlSaXzUixQ1r-->技能原文只有几千字，就在插件的 SKILL.md 里。任何指南（包括本文）与 SKILL.md 冲突时，以 SKILL.md 为准。</strong></p>
+      </blockquote>
+      <p data-page-node-id="FCUOPsentRJTIBIO5ou3kY"><!--pnid:HSX8J9BfU2MfBj4YUaPWkF-->这不是免责声明，是使用方法。当你读到一段「最佳实践」觉得别扭时，最快的验证方式是打开对应技能的 SKILL.md——顺带还能分清哪些是规定、哪些只是某个项目的习惯。</p>
+    </section>
+
+    <section data-page-node-id="Gpmk3VOZ2RHGGayJr7z3mY" class="chapter" id="s11">
+      <span data-page-node-id="qmfXE6lWoW4gyUnoOL4Jno" class="num"><!--pnid:QDTcjtt6k6S5o2orfz32vi-->11</span>
+      <h2 data-page-node-id="5BtlJeLnsdafk8dKuMQ0sP"><!--pnid:fUk9jAZlLAVOM8guVMn75o-->启动清单</h2>
+      <p data-page-node-id="jpIYw1QnInRervdIywsWFq"><!--pnid:fCFA133LLnm6NpGgqWdyPA-->照着敲就行。前提：一个 git 仓库（有没有代码都行）和 Claude Code。</p>
+      <div data-page-node-id="jHWhdqeapceU9plxouGftW" class="table-wrap">
+        <table data-page-node-id="HDjbQ7T5blF3mVSXC6QLM6">
+          <thead data-page-node-id="K28QUZgZgmQpQzrhDSdnlZ"><tr data-page-node-id="HxMP44RsAwle1Xe1iVrdZM"><th data-page-node-id="4VP3mcWS0eoYapiEfpQxAH"><!--pnid:oYr3err1BQ9wSjKu7Z2ONQ-->#</th><th data-page-node-id="Z9HLqhpU7aKO5fz6ZMva6t"><!--pnid:n18o53fY6lWhIcRL6WLIX6-->动作</th><th data-page-node-id="Xz1bmF6xSP7YMV0YWpAmm4"><!--pnid:AK0I2mrlqCTzX3SSbmFUWZ-->命令 / 检查点</th></tr></thead>
+          <tbody data-page-node-id="yIu3ikrz6XCF75sMZeCw6v">
+            <tr data-page-node-id="gyZlek7WQkLzRilK6uMdRe"><td data-page-node-id="vKoHYPGLmFHid65eRz77wt"><!--pnid:YDpo4yy1EBZXKOuJZr8BJw-->0</td><td data-page-node-id="zqxMiYuZ2DfMxTBWbNxIYY"><!--pnid:edgn8D5b7TRh6tiTJhycFl-->安装插件并确认版本</td><td data-page-node-id="hZ0x5lZW4KbBsOxSy4O3rr"><code data-page-node-id="J409hjNotS9vKhzCcH0o28" data-pnid-children="9pDf5KcD1BtQRl4rLFGYBL">claude plugin install mattpocock-skills@claude-plugins-official</code></td></tr>
+            <tr data-page-node-id="Fdj5bwBTUGxL5HLggImrph"><td data-page-node-id="wrzFHK5Ul8oYuODoHoPy4S"><!--pnid:WEzaAdX0W0WuleBxP1yq2v-->1</td><td data-page-node-id="ptGGgWyhyPkg1Q4ageis9F"><!--pnid:FPrnHlyl9kRd235xIzaSjh-->仓库根目录跑 setup，全程接受推荐</td><td data-page-node-id="G1ycASmwFBJ92uANiHlK13"><code data-page-node-id="nK2UDXBsRwsAwwpZh1Skes" data-pnid-children="Mu1h5qM01uAjAtgGmfvRID">/setup-matt-pocock-skills</code><!--pnid:coAzIeigo35gQk1jt4lUBz-->。完事检查：CLAUDE.md 有 <code data-page-node-id="08tBTTyhMLMD33VP3AAn0S" data-pnid-children="kcptsObk8b6t7LUminx7Bh">## Agent skills</code><!--pnid:Ievml47KdAHUK6y82cT1S5--> 区块，<code data-page-node-id="CZzfuTTLmr6KXD59erIx3j" data-pnid-children="XWRy28WcMlOORyW2t6DZA3">docs/agents/</code><!--pnid:ztGYaD31KQP41aeUvTX6NV--> 下有 <code data-page-node-id="iRQWOq1wtRtV94BIsVCkad" data-pnid-children="LGNocrFYSLFW8UBLnEHQfm">issue-tracker.md</code><!--pnid:tpIOsTPLO8jmc7iM2sqTxQ--> 与 <code data-page-node-id="okNnM3raTStl2EHzSbDQDv" data-pnid-children="kaDZhlBpjHd8hyRWwvfTLu">domain.md</code><!--pnid:pFCDX2VC8yPGd3T63DOH8m-->。没 GitHub 就选本地 markdown</td></tr>
+            <tr data-page-node-id="XaEXGXq9APAAL4wupvCZo9"><td data-page-node-id="ibDQMEyVPvWyJIlftttPIx"><!--pnid:SouPvOTqBoIUbjg4BCTCul-->2</td><td data-page-node-id="H1XRND750Og105mIEDpCU0"><!--pnid:opFOIibEhjOKHh2X77YcFA-->写一份「智能体导向」的 CLAUDE.md</td><td data-page-node-id="9879tXgvZTIVx7GHRTkJcx"><!--pnid:AmDAWh8X8tSSewO7Qcl2gD-->常用命令、架构要点、<strong data-page-node-id="RuviIILY6AY3TYzMWpkb0k"><!--pnid:3DWxF8kPKCZrKrHxxCO2qP-->只有线上才暴露的坑</strong><!--pnid:86qMKtO6yXix3YLHJBJJTW-->、部署约束。不写代码能推断的东西。GLOSSARY 只写术语</td></tr>
+            <tr data-page-node-id="jMYuDGCZvwerCjSwlkK0js"><td data-page-node-id="fak37Vhc793dMUlQ3IzbF3"><!--pnid:odTAGlvuM4nQHlePfV3YdC-->3</td><td data-page-node-id="YuV1sCwXwcW6qwfcSUIkh6"><!--pnid:HA9ge2kh1Wz3tBpfkZwQcI-->想法先被追问，别先动手</td><td data-page-node-id="AlU7otDQnhwEliRrAoQKSP"><code data-page-node-id="pgLkY1XvXj3gzx3XE0ssua" data-pnid-children="Aa90k58uthnzYIwafEXBon">/grill-with-docs 我想做〈一句话想法〉</code><!--pnid:CryQXwDdgSVwCkrGknr4iz-->。每问带推荐答案，回「是」即接受；它问你能查的事实，让它自己查</td></tr>
+            <tr data-page-node-id="D0uF0amiIGJFbTC3MCU8k4"><td data-page-node-id="ADOTpMCNY1aG6kKU53LKQ9"><!--pnid:HvZP1gcOfWHrdJJ8M3IjrB-->4</td><td data-page-node-id="cznRVDx0MPQ5MpCnUQ1T25"><!--pnid:y0Rj2dV4SEu2VluIKp0ypD-->多会话工程：发 spec，再拆票</td><td data-page-node-id="dcaCe0OVSeXIMtqfYNtNaP"><code data-page-node-id="jpVTuhKwsqs8qL8j5mDQEJ" data-pnid-children="GTnLDlnnBQyTnwv7VeQWNc">/to-spec</code><!--pnid:lUWRRxtbWkQK9B4tQ5zFDl--> 然后 <code data-page-node-id="dCyDM2JBmmDtbYxiBF0wJQ" data-pnid-children="mYFJnFK5q6qtUhPpxZhFNT">/to-tickets</code><!--pnid:V9wNQcORC0Usx2ztaw6P56-->。检查七段齐全（重点看 Out of Scope）；嫌票碎就说「4/5/6 合并成一票」。小工程跳过这步</td></tr>
+            <tr data-page-node-id="SF3aCHWqm9k5GtDQxWyN4M"><td data-page-node-id="ira6VZ70Q9bgC9xdJBXAZA"><!--pnid:qoGVhLRKGrqTNOnppn61sI-->5</td><td data-page-node-id="S6XbE4xJdCbeiNlPpfixkE"><!--pnid:rev6LvPOufPSW5YEGvMgqn-->可选：让技能先摸一遍架构</td><td data-page-node-id="tQYUOYVJuCnWynrjjESu9a"><code data-page-node-id="euA8cY2rm0yZS9KIhUIjkb" data-pnid-children="7KFL5YLK38u2AJKdlGQjUy">/improve-codebase-architecture</code><!--pnid:IzreeyvhhAVMtDa9TRXxwE-->。等 HTML 报告，选一个候选，直接回答追问</td></tr>
+            <tr data-page-node-id="LkaihaXeZ4X7HoekoKQvol"><td data-page-node-id="j9BwGT2sTo2y4gJG8dda8V"><!--pnid:91bC7rNiKmSMI5JzTkXA4v-->6</td><td data-page-node-id="vuG90GC2MvsVO23GxFOt96"><code data-page-node-id="UWJ7Bjxs9NTirOgFbwf11X" data-pnid-children="w5KvLHy7QDZ4HDaxQY7p2x">/clear</code><!--pnid:eKjLDqeCgQsdEUQQ0JMeEV-->，每张票一个全新会话实现</td><td data-page-node-id="APlGVlhpTdaR43RYrcuipC"><code data-page-node-id="Iw6eJTPj17ftCt9tk6EA0U" data-pnid-children="5PqcMOBmePkYcPbizkCS5j">/implement #3</code><!--pnid:zqmKJrBX1DYcqslh3WoVqH-->。开工先对齐测试 seam</td></tr>
+            <tr data-page-node-id="qKkFtmBIT8v42P5ve8xWWW"><td data-page-node-id="1IQAiJ6d5JUxbCj9ypdBW9"><!--pnid:Caq08jrTd2BHsAgr0GQulG-->7</td><td data-page-node-id="5kJZVHxXUyBxlQ5e7iIA16"><!--pnid:tBZOmoJdE0d2MUc1ZCpOrF-->手动复跑评审要给固定点</td><td data-page-node-id="EeSaxnQBZ51Yl1d4VtAHWP"><code data-page-node-id="4TTKS5dfoeVR1XQ4mUttUP" data-pnid-children="ufNCZTchtarIKbbNOab4cR">/code-review，fixed point 是 main</code></td></tr>
+            <tr data-page-node-id="8RmroyjyrZHMWt1b3qxYLG"><td data-page-node-id="QxA6ngqp95RKFpZmDwsEO5"><!--pnid:pOEjMNa7kUvKynIppqjOgN-->8</td><td data-page-node-id="ClOflRl8kciOkcoi04uNGw"><!--pnid:ISuv3udE7CvPk5bh6o5hAq-->合并、关闭工单，收工前复盘</td><td data-page-node-id="UWWU5VQIziSHMgLKXXboPA"><code data-page-node-id="l5FbBMCXzdAy0obSDQQobw" data-pnid-children="4lbikBzrN7IEEcX6K71RhS">/retro</code><!--pnid:ie0jwENWPKgTXW8WTGPpLR-->。期待 lint 规则、导航指针、CI 护栏这类具体产物</td></tr>
+            <tr data-page-node-id="5EbdJQ3Alg9WMy9iwWFaAc"><td data-page-node-id="7BmU1NRAbWn9158Lp5WJlT"><!--pnid:uaMSBMyLlIffbIJ4l4hg1h-->9</td><td data-page-node-id="RD7cPJPB30OMLLTACfcQkl"><!--pnid:vi3eO8e8hHJWAFCgsSs1LE-->出 bug 别硬修</td><td data-page-node-id="nUfYNp4xb7cGLQlf27UiL9"><code data-page-node-id="iXiW26GgkrzQIX8hoyHHi4" data-pnid-children="ci5cAxygbyOKxVjZ1YwgXP">/diagnosing-bugs 〈症状〉</code><!--pnid:ChKatjcNdJgoQM2dMG5hqI-->。先要一条「会变红的命令」，修复必须带回归测试</td></tr>
+            <tr data-page-node-id="zY1QaPevM0dbsKwG2sb6Wu"><td data-page-node-id="Yq6V37JEx8XGBUeuh9F4sW"><!--pnid:x1GlcIF048iCAkaGATCMUA-->?</td><td data-page-node-id="muq5ACSwUpWhSrXwuGYzJw"><!--pnid:T4VgIyvNNsGceLd8BAjMfy-->不确定用哪个技能</td><td data-page-node-id="eHJFLvhErwxNO2XeFDDoR1"><code data-page-node-id="VJoSxjV06Xq7OovZ2spsJk" data-pnid-children="v7BDAxFnYmio7eJaTkRo29">/ask-matt 我现在〈处境〉，该用哪个技能？</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div data-page-node-id="AE24PNZ1ptCzkO2EHxHQko" class="callout">
+        <span data-page-node-id="KdbbvkieZpffrlco0espW6" class="callout__label"><!--pnid:SVIvm2ySuM66SbemZmJdx1-->人保留三件事</span>
+        <p data-page-node-id="5EShwDUEkoMgytuuCUtryU"><strong data-page-node-id="EysVMRAX59gJcsn35Wpa7j"><!--pnid:Sv1lmjS94IB1MAbtsymJvv-->拍板、验收、追问。</strong><!--pnid:0ECbtp3uGAYmE24s5IPcrV-->推荐答案可以批量接受；拆票粒度、上线决策由人定；代码要自己读，「为什么」要自己问。</p>
+      </div>
+    </section>
+
+    <section data-page-node-id="pV3trmMO9KxoArSxRyvQPN" class="chapter" id="s12">
+      <span data-page-node-id="MDRMKi01baGbI3m6ktoSLP" class="num"><!--pnid:ZUBtnZNsLOxq1j0wkfShvP-->—</span>
+      <h2 data-page-node-id="ZOdb8mCbSs66FLO3NGguqk"><!--pnid:E1joJoxrVzUbk2A2imASnh-->附：可核实的东西</h2>
+      <ul data-page-node-id="Mhqs8NG1xU9HuwsoXEXAdr">
+        <li data-page-node-id="OZIK1u9SUwF8yotSeIB6dk"><strong data-page-node-id="pKD6pdZ4I1GIs6KyzrYOtF"><!--pnid:QxyF5et1AYvajadaj6KNQO-->项目</strong><!--pnid:vl9JGQcMvmJ1yhvII5AG9r-->：<code data-page-node-id="RYXK2lK5XDYLPwGwb2mdAr" data-pnid-children="q53dhpGpiUPg7AuxUeevlz">wang-junjian/research-share</code><!--pnid:s4qFYzug5hIIl2I1U0sswg--> — 50 个 commit、12 个 issue（全部 CLOSED）、5 篇 ADR、24 条术语、168 个测试</li>
+        <li data-page-node-id="QDMA05F9kYhWyWOzEaGIUF"><strong data-page-node-id="lbfpFKShjZPAAHeCk0oTuP"><!--pnid:15YTIQXRMm86PfsqIOkPyx-->技能体系</strong><!--pnid:sErvAwUjpVIpEyxRAei08q-->：<code data-page-node-id="ydA1AS1P6QnlIwBioxJPmI" data-pnid-children="ezkT351aBpwGW9HorDJcRB">mattpocock/skills</code><!--pnid:lnmWaXQclQKOppKY2ArMTh--> v1.3.1，20 个工程技能 + 7 个生产力技能</li>
+        <li data-page-node-id="bLWpdAKQnQDmS4hIJ3uCe9"><strong data-page-node-id="7LT6GTlFgKScpEsafLzuuU"><!--pnid:cUSu6P9jNs2RrjU6u3jMyT-->关键规则出处</strong><!--pnid:FJ4a43jtLVCDvZqtSjB0qn-->：<code data-page-node-id="wMhm1NVL9NAuwfhmDZIzLS" data-pnid-children="RzAWI3q3WqSuJt23mmL46o">skills/engineering/to-spec/SKILL.md</code><!--pnid:QQO89yoReQRpT5StiuECFd-->（七段模板）、<code data-page-node-id="Dpww0jLG6uEOyP4sohh2fl" data-pnid-children="gN0eCgPBEWHllwYeYpGSjB">tdd/SKILL.md</code><!--pnid:jrrlRpz99M0KFj7pFsfMR2-->（pre-agreed seams）、<code data-page-node-id="ekr2zMq6JNpmmYXO8RGgTm" data-pnid-children="Vf4bDV6WAIRWhDkfSYXCXK">code-review/SKILL.md</code><!--pnid:kXcAyS7PgyC3DwEHieXQtZ-->（fixed point、坏味道基线）、<code data-page-node-id="vTYfA03bTVDLvH2vk419RU" data-pnid-children="OSj5yIb4NTd0kLDvkk8VXa">implement-spec/SKILL.md</code><!--pnid:LNWJeVZ9d55v9phXCJDYMx-->（frontier、先合回 tip）、<code data-page-node-id="C3OJkhDUTAkCVVLwLnzVZB" data-pnid-children="ZWHr1qRJWQbjURkCqPBi5R">retro/SKILL.md</code><!--pnid:G5SGB2s4uNFl9EwYS741uu-->（七类改进、机械性 → 确定性检查）、<code data-page-node-id="tvs8fud5TAJNkn0tcB2nl2" data-pnid-children="GbrEzwEOKeQMExWcBDlb6v">.agents/invocation.md</code><!--pnid:UeVGPhAIJlI6sXSh2T0DiU-->（两种技能与调用边界）</li>
+        <li data-page-node-id="PYOVOaU4BHnkalER7c39wo"><strong data-page-node-id="QqyJB6z0KShfbNiiUBMFuZ"><!--pnid:AeiTvrY3VM5mmgJWNXlv58-->会话证据</strong><!--pnid:WCBn32nPKiD0ZUfuGTt1Xg-->：<code data-page-node-id="OzjOagigYZXPt7th3yBb67" data-pnid-children="RNmprVPjD4HoQZVacO7euR">~/.claude/projects/-Users-junjian-GitHub-wang-junjian-research-share/*.jsonl</code><!--pnid:dgMsGy9cOVt0TPF58AObpN-->（30 份，69MB，约 179 条人类指令；本文引语均为原文）</li>
+      </ul>
+      <p data-page-node-id="pMY2cgIVbpW3AYyECulavv"><!--pnid:cPiUGtRedh5I7t8njeOqJW-->本文只保留实战做法与可复用判断，不包含对技能原文的逐条校订。</p>
+    </section>
+
+  </main>
+</div>
+
+<footer data-page-node-id="HhlWslLUWPlN6UHmEcy6Au">
+  <div data-page-node-id="MGEEyrMxSbFl1rvb1vaTvE" class="wrap">
+    <p data-page-node-id="4DuSsiVGGYh1kA5XBwrPGM"><!--pnid:NO0V1bap2popRmCW6UG8ef-->基于 <strong data-page-node-id="aIRPqnnf6If3jQjhBRDQb3"><!--pnid:d071vYc6xyYdMQbeBnBk5Z-->mattpocock/skills v1.3.1</strong><!--pnid:6w4sQSQEXry4UZqtHs1wt5--> 与 <strong data-page-node-id="LO1iccX7y5L7MKPrB1kAOu"><!--pnid:azodx5rNkhEIjC5jxscuNk-->wang-junjian/research-share</strong><!--pnid:1GaZmEyOozp2c7NTaIeeDw--> 的实战复盘。单文件、零依赖、离线可用。</p>
+    <p data-page-node-id="qv7qRmv3VL1JeUrviOTcq7"><!--pnid:KBE0OGMamtg5wejiqCFK3J-->2026-10-21</p>
+  </div>
+</footer>
+
+<button data-page-node-id="MZKKXObgIDFCUnWuVuwKNN" aria-label="回到顶部" class="top" id="top"><!--pnid:sA8A857nK4WBcwvCoiTpJz-->↑</button>
+
+<script data-page-node-id="7ALvmBorvnEOZpZFKeVBMz" data-pnid-children="KqaNjZ0zI68Y9h2kT49PkI">
+(function(){
+  var bar=document.getElementById('bar');
+  var top=document.getElementById('top');
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var sections=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  var toc=document.getElementById('toc');
+
+  function onScroll(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    var y=h.scrollTop||document.body.scrollTop;
+    bar.style.width=(max>0?(y/max*100):0)+'%';
+    if(y>600){top.classList.add('show');}else{top.classList.remove('show');}
+
+    var idx=0;
+    for(var i=0;i<sections.length;i++){
+      if(sections[i]&&sections[i].getBoundingClientRect().top<=120){idx=i;}
+    }
+    links.forEach(function(a,i){a.classList.toggle('active',i===idx);});
+  }
+
+  document.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+
+  top.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+  document.getElementById('tocToggle').addEventListener('click',function(){
+    toc.classList.toggle('open');
+  });
+  links.forEach(function(a){
+    a.addEventListener('click',function(){toc.classList.remove('open');});
+  });
+})();
+</script>
+</body>
+</html>
