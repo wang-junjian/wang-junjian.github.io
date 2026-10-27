@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="G3KiOC4BhkmASEZOQSNwBK"><head data-page-node-id="XxnDfWbmg57Tgn0fKuR1Cz">
+<meta charset="utf-8" data-page-node-id="x6GbuKKoqRI23mDeTIg9De">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="I152Wb2gGAin9fK4zIlYEc">
+<meta name="description" content="把找漏洞变成可复核的工程：六阶段流程、写权限隔离、覆盖账本与三档判决如何互相牵制。附对 research-share 的一次完整审计实测——53 格账本、9 条候选落成 4 条坐实结论、2 条被推翻，也讲清这套方法不能证明什么。">
+<meta name="keywords" content="security-audit, coverage-ledger, trust-boundary, sandbox-isolation, vulnerability-validation, independent-verification">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-25">
+<title>security-audit-skill · 机制与实战</title>
+<style>
+  :root{
+    --ink:#15181E; --ink2:#3B4250; --muted:#68707E; --faint:#98A0AE;
+    --paper:#FBFAF7; --card:#FFFFFF; --line:#E4E1D9; --line2:#EFEDE6; --wash:#F4F2EC;
+    --blue:#1F4E79; --blue2:#2E6EA6; --blue-soft:#EBF2F9;
+    --teal:#0E6E64; --teal-soft:#E4F1EF;
+    --amber:#9A5B08; --amber-soft:#FAF0DC;
+    --rust:#9C2B1B; --rust-soft:#F9E9E5;
+    --slate:#59626F; --slate-soft:#EEF0F3;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --serif:"Songti SC",STSong,Georgia,"Times New Roman",serif;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.78;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(46,110,166,.28)}
+  a:hover{border-bottom-color:var(--blue2)}
+  code,.mono{font-family:var(--mono);font-size:.86em;background:var(--wash);border:1px solid var(--line2);border-radius:5px;padding:.1em .38em;color:#23303F;word-break:break-word}
+  strong{font-weight:650;color:var(--ink)}
+  em{font-style:normal;background:linear-gradient(180deg,transparent 58%,#F6E7BE 58%);padding:0 .12em}
+
+  /* ---------- layout ---------- */
+  .shell{max-width:1180px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:206px minmax(0,1fr);gap:56px;align-items:start}
+  main{min-width:0;padding-bottom:40px}
+  nav.toc{position:sticky;top:34px;padding:26px 0 40px;font-size:13px;line-height:1.5}
+  nav.toc .brand{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+  nav.toc ol{list-style:none;margin:0 0 22px;padding:0}
+  nav.toc li{margin:0}
+  nav.toc a{display:block;padding:3px 0 3px 12px;border:0;border-left:2px solid transparent;color:var(--muted);border-radius:0}
+  nav.toc a:hover{color:var(--ink);border-left-color:var(--line)}
+  nav.toc a.on{color:var(--ink);font-weight:600;border-left-color:var(--blue)}
+  nav.toc .grp{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--faint);margin:16px 0 6px;padding-left:12px}
+  @media (max-width:1060px){
+    .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:0 20px}
+    nav.toc{display:none}
+  }
+
+  /* ---------- hero ---------- */
+  header.hero{position:relative;border-bottom:1px solid var(--line);background:
+    radial-gradient(1100px 420px at 78% -12%, #EDF3F9 0%, rgba(237,243,249,0) 62%),
+    radial-gradient(700px 300px at 6% 108%, #F6F2E6 0%, rgba(246,242,230,0) 70%);}
+  header.hero:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(var(--line2) 1px,transparent 1px),linear-gradient(90deg,var(--line2) 1px,transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.35),transparent 78%);
+    mask-image:linear-gradient(180deg,rgba(0,0,0,.35),transparent 78%);}
+  .hero-in{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:76px 28px 60px}  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--blue2);margin-bottom:22px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--blue2);display:inline-block}
+  h1{font-size:clamp(33px,4.4vw,52px);line-height:1.16;letter-spacing:-.02em;font-weight:700;margin:0 0 22px;max-width:15em}
+  h1 .thin{color:var(--muted);font-weight:400}
+  .hero p.lede{font-size:clamp(16px,1.5vw,19px);line-height:1.72;color:var(--ink2);max-width:44em;margin:0 0 34px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .hero-meta span{border:1px solid var(--line);background:rgba(255,255,255,.72);border-radius:100px;padding:5px 12px}
+  .hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:44px}
+  .hero-stats div{background:rgba(255,255,255,.86);padding:16px 18px}
+  .hero-rail{position:absolute;left:max(16px,calc((100% - 1180px)/2 + 28px));top:92px;bottom:64px;width:34px;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none}
+  .hero-rail .rv{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#A8AEB8;white-space:nowrap}
+  .hero-rail .rl{flex:1;width:1px;background:linear-gradient(180deg,var(--line),rgba(228,225,217,0))}
+  .hero-stats b{display:block;font-family:var(--mono);font-size:24px;line-height:1.2;letter-spacing:-.02em}
+  .hero-stats small{display:block;font-size:12px;color:var(--muted);margin-top:3px;letter-spacing:.02em}
+  @media (max-width:720px){.hero-stats{grid-template-columns:repeat(2,1fr)}.hero-in{padding:52px 20px 44px}}
+  @media (min-width:1061px){
+    .hero-in{padding-left:290px}
+  }
+  @media (max-width:1060px){.hero-rail{display:none}}
+
+  /* ---------- sections ---------- */
+  section{padding:64px 0 8px;border-top:1px solid var(--line2)}
+  section:first-of-type{border-top:0}
+  .sec-head{margin-bottom:26px}
+  .sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--faint);text-transform:uppercase;display:block;margin-bottom:12px}
+  h2{font-size:clamp(24px,2.6vw,31px);line-height:1.3;letter-spacing:-.015em;font-weight:680;margin:0 0 14px}
+  h2 .ash{color:var(--faint);font-weight:400}
+  h3{font-size:17.5px;line-height:1.45;margin:38px 0 12px;letter-spacing:-.005em;font-weight:650}
+  h4{font-size:14.5px;margin:22px 0 8px;font-weight:650;color:var(--ink2)}
+  p{margin:0 0 16px;max-width:46em}
+  .sub{color:var(--muted);font-size:14.5px;max-width:46em}
+  ul,ol.body-list{margin:0 0 18px;padding-left:1.25em;max-width:46em}
+  li{margin:0 0 8px}
+  li::marker{color:var(--faint)}
+  hr.soft{border:0;border-top:1px solid var(--line2);margin:34px 0}
+
+  /* ---------- components ---------- */
+  .part-band{margin:58px 0 6px;padding:20px 24px 19px;background:var(--ink);border-radius:14px;color:#F3F1EA;position:relative;overflow:hidden}
+  .part-band .inner{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
+  .part-band .num{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:#9FB4C9}
+  .part-band .t{font-size:20px;font-weight:650;letter-spacing:-.01em}
+  .part-band .d{font-size:13.5px;color:#B9B6AC;max-width:34em}
+
+  .grid{display:grid;gap:16px;margin:22px 0 26px}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:820px){.g3,.g2{grid-template-columns:minmax(0,1fr)}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 20px 18px;position:relative}
+  .card.flat{background:transparent;border-style:dashed}
+  .card .tag{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card h4.statb{font-family:var(--mono);font-size:27px;line-height:1.1;letter-spacing:-.03em;color:var(--ink);margin:2px 0 8px}
+  .card p{font-size:13.8px;line-height:1.68;color:var(--ink2);margin:0;max-width:none}
+  .card p + p{margin-top:8px}
+  .card .rule{height:3px;width:34px;border-radius:2px;background:var(--line);margin:0 0 12px}
+  .card.accent-blue .rule{background:var(--blue2)}
+  .card.accent-rust .rule{background:var(--rust)}
+  .card.accent-amber .rule{background:var(--amber)}
+  .card.accent-teal .rule{background:var(--teal)}
+  .card.accent-slate .rule{background:var(--slate)}
+
+  .quote{font-family:var(--serif);font-size:19px;line-height:1.72;color:#2A313C;border-left:3px solid var(--blue);padding:4px 0 4px 22px;margin:26px 0 22px;max-width:40em}
+  .quote .src{display:block;font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:10px;letter-spacing:.02em;font-style:normal}
+
+  .callout{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:16px 18px;margin:22px 0;font-size:14.4px;line-height:1.72}
+  .callout.warn{border-color:#EBD9C4;background:#FDF7EC}
+  .callout.note{border-color:#D5E2EF;background:#F4F8FC}
+  .callout .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);display:block;margin-bottom:5px}
+  .callout.note .lbl{color:var(--blue2)}
+  .callout p{margin:0;max-width:none}
+  .callout p + p{margin-top:8px}
+
+  /* timeline / steps */
+  .steps{list-style:none;margin:26px 0 8px;padding:0;position:relative}
+  .steps:before{content:"";position:absolute;left:15px;top:12px;bottom:16px;width:1px;background:var(--line)}
+  .steps li{position:relative;padding:0 0 22px 46px;margin:0}
+  .steps li .n{position:absolute;left:0;top:3px;width:31px;height:31px;border-radius:50%;background:var(--card);border:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;z-index:1}
+  .steps li.key .n{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .steps h4{margin:0 0 4px;font-size:15px}
+  .steps p{margin:0;font-size:13.8px;color:var(--ink2);line-height:1.66;max-width:42em}
+  .steps .out{display:inline-block;margin-top:7px;font-family:var(--mono);font-size:11.5px;color:var(--muted);background:var(--wash);border:1px solid var(--line2);border-radius:6px;padding:2px 8px}
+  .steps li.gate{margin:0 0 22px 34px;padding:13px 16px 14px;background:var(--wash);border:1px solid var(--line);border-left:2px solid var(--ink);border-radius:0 10px 10px 0}
+  .steps li.gate .gl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);margin-bottom:4px}
+  .steps li.gate h4{margin:0 0 5px}
+  .steps li.gate .out{background:#FFFFFF}
+
+  /* table */
+  .tablewrap{overflow-x:auto;margin:20px 0 26px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:560px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.6}
+  thead th{background:#FAF9F5;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.tight{white-space:nowrap}
+  td code{font-size:12px}
+
+  /* badges */
+  .tagpill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:2px 7px;border:1px solid;vertical-align:middle;white-space:nowrap}
+  .sev-high{color:#8A2415;background:#FBEAE6;border-color:#F0CFC7}
+  .sev-medium{color:#82510A;background:#FCF2DF;border-color:#EEDCBB}
+  .sev-low{color:#2F5D7C;background:#EEF5FA;border-color:#D3E3EF}
+  .sev-nv{color:#4B5563;background:#F1F2F4;border-color:#E0E2E6}
+  .sev-rej{color:#6B7280;background:#F5F4F1;border-color:#E2E0D9}
+
+  /* figure */
+  figure{margin:26px 0 30px;padding:0}
+  figure svg{display:block;width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+  figcaption{font-size:12.6px;color:var(--muted);line-height:1.65;margin-top:10px;max-width:44em}
+  figcaption b{color:var(--ink2);font-weight:600}
+
+  .kv{display:grid;grid-template-columns:9.5em minmax(0,1fr);gap:1px;background:var(--line2);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:20px 0;font-size:13.4px}
+  .kv > div{background:var(--card);padding:9px 12px;line-height:1.55}
+  .kv > div:nth-child(odd){color:var(--muted);font-family:var(--mono);font-size:11.8px;letter-spacing:.02em}
+  @media (max-width:620px){.kv{grid-template-columns:minmax(0,1fr)}.kv > div:nth-child(odd){padding-bottom:0;background:#FAF9F5}}
+
+  .chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:22px 0 26px}
+  .chain .node{flex:1 1 130px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:11px 12px}
+  .chain .node .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
+  .chain .node b{display:block;font-size:13.6px;margin:1px 0 2px}
+  .chain .node span{font-size:11.8px;color:var(--muted);line-height:1.45;display:block}
+  .chain .arrow{flex:0 0 22px;display:flex;align-items:center;justify-content:center;color:#BFC5CE;font-size:16px}
+  .chain .arrow .lab{display:none}
+  @media (max-width:700px){.chain .arrow{flex:0 0 100%;transform:rotate(90deg);height:16px}}
+
+  .checklist{list-style:none;margin:18px 0 22px;padding:0;display:grid;gap:8px;max-width:44em}
+  .checklist li{display:flex;gap:11px;align-items:flex-start;margin:0;font-size:14px;line-height:1.6}
+  .checklist .mk{flex:0 0 18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--mono);margin-top:2px;border:1px solid}
+  .mk.ok{background:#E8F2EE;border-color:#CBE0D7;color:#0E6E64}
+  .mk.req{background:#F5F3ED;border-color:#E4E1D9;color:var(--muted);font-size:9.4px;letter-spacing:.02em;line-height:1}
+  .mk.no{background:#FBEBE7;border-color:#F0D2C9;color:#9C2B1B}
+  .mk.half{background:#FCF3E1;border-color:#EEDCBB;color:#9A5B08}
+
+  /* finding card */
+  .finding{border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin:26px 0;overflow:hidden}
+  .finding > .fh{display:flex;gap:12px;align-items:flex-start;padding:17px 20px 14px;background:#FCFBF8;flex-wrap:wrap}
+  .finding .fh h3{margin:0;font-size:16.5px;flex:1 1 260px;line-height:1.4}
+  .finding .fp{font-family:var(--mono);font-size:11px;color:var(--faint);background:transparent;border:0;border-bottom:1px solid var(--line2);border-radius:0;padding:9px 20px 10px;margin:0;letter-spacing:.02em;word-break:break-all;display:block}
+  .finding .fb{padding:16px 20px 6px}
+  .finding .fb p{font-size:14px;line-height:1.72;margin:0 0 12px;max-width:none}
+  .finding dl{margin:0;padding:0 20px 18px;display:grid;grid-template-columns:6.2em minmax(0,1fr);gap:8px 16px;font-size:13.5px;line-height:1.65}
+  .finding dt{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);padding-top:3px;text-transform:uppercase}
+  .finding dd{margin:0;color:var(--ink2)}
+  @media (max-width:640px){.finding dl{grid-template-columns:minmax(0,1fr);gap:2px 0}.finding dt{padding-top:8px}}
+  .evidence{font-family:var(--mono);font-size:12.2px;line-height:1.75;background:#FAF9F5;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:13px 20px;margin:6px 0 0;color:#2A3542;overflow-x:auto}
+  .evidence b{color:var(--rust);font-weight:600}
+
+  .numrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line2);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0 4px}
+  .numrow div{background:var(--card);padding:11px 13px}
+  .numrow b{display:block;font-family:var(--mono);font-size:17px;letter-spacing:-.02em;line-height:1.3}
+  .numrow small{display:block;font-size:11.4px;color:var(--muted);line-height:1.4;margin-top:2px}
+  @media (max-width:600px){.numrow{grid-template-columns:minmax(0,1fr)}}
+
+  footer{border-top:1px solid var(--line);margin-top:70px;padding:32px 0 60px}
+  footer .fin{max-width:1180px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;font-size:12.8px;color:var(--muted);line-height:1.65}
+  @media (min-width:1061px){footer .fin{padding-left:290px}}
+  @media (max-width:820px){footer .fin{grid-template-columns:minmax(0,1fr);gap:18px}}
+  footer h5{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 7px;font-weight:600}
+  footer code{font-size:11.5px}
+  footer a{border:0;color:var(--ink2)}
+  .footnote{font-size:12.4px;color:var(--faint);line-height:1.7;margin-top:20px;max-width:46em}
+
+  ::selection{background:#F6E7BE}
+  :focus-visible{outline:2px solid var(--blue2);outline-offset:2px}
+</style>
+<style id="__dm_no_drag_style__">* { -webkit-user-drag: none !important; }</style><style id="__dm_bindable_badge_style__">[data-sp-bindable="database"]{outline:1px dashed #0088ff;outline-offset:2px;border-radius:4px;}[data-sp-bindable="database"] *{pointer-events:none !important;transition:none !important;animation:none !important;}[data-sp-bindable="database"]{transition:none !important;animation:none !important;}</style></head>
+<body data-page-node-id="dD3SuBcHCkxIDIzECCE6i8" style="">
+
+<header class="hero" data-page-node-id="iAR7QF7jfpHlYQfnvbJ245">
+  <div class="hero-in" data-page-node-id="7xivoYUxBCexyctRDlSh1Z">
+    <div class="hero-rail" aria-hidden="true" data-page-node-id="iPNBEuaCNtCjrmWxHbBRtx">
+      <span class="rv" data-page-node-id="98ZBpSpmaIZ5VdlYnUU5FF">cloudflare · security-audit-skill</span>
+      <span class="rl" data-page-node-id="UGHMKbANKu7bdMGalkEMnz"></span>
+      <span class="rv" data-page-node-id="fk3R9x4QTcSDLsROVvCneT">research-share · run-2</span>
+    </div>
+    <div class="eyebrow" data-page-node-id="br6UfcShndYMEFlsynYmB7"><span class="dot" data-page-node-id="QoFVWYPJuQTcNwHmDQN2jl"></span>cloudflare / security-audit-skill<span data-page-node-id="7sLfMGPIatH3Dxtkx5a5wN">·</span><span data-page-node-id="wgqXoRRcFamL8yr8mmHwoA">机制解读 + 一次完整实战</span></div>
+    <h1 data-page-node-id="3MwGpjqJ2mOk6iGBBfMPtV">把「找漏洞」<br data-page-node-id="dGCT9HRIjQL58tOBRf9H4x"><span class="thin" data-page-node-id="oxKCHPP4eaiDpGh1q8IZHr">变成一件</span>可复核的工程</h1>
+    <p class="lede" data-page-node-id="y6vHb3lMGRFlmpvCSP8IGD" style="">这份技能不产出漏洞清单，它产出的是<strong data-page-node-id="2N3OPRCUEvLdz1SgAbBCol">举证责任</strong>：每条结论必须指名一个更低信任的主体、一条源码路径、一个有界观测结果。本页分两部分——先把这套机制讲清楚，再用它在 <code data-page-node-id="5m3vv28vaPceOsD0JwoyZu">research-share</code> 上的一次完整审计（53 个覆盖单元、32 个子代理、9 条结论）说明它跑起来是什么样子。</p>
+    <div class="hero-meta" data-page-node-id="UNm99qCRYobPYY29epf2To">
+      <span data-page-node-id="L8InCVM1MXOx8gOGhw5Yja">6 个阶段</span><span data-page-node-id="WjZtcGg6j7BT2BHDHTe4C3">3 种运行画像</span><span data-page-node-id="eW3fxaEWB5IkmCRscpYMDv">8 种账本状态</span><span data-page-node-id="faYglBBBdXWXaxttmlpFWm">2 个机器校验器</span>
+    </div>
+    <div class="hero-stats" data-page-node-id="PELDwYdG3b2KxTMGR5ZQLx">
+      <div data-page-node-id="ZVjtmThyhEl6f38mlSXWVC"><b data-page-node-id="1pzXMOQUdEeZuhlTQGU5KK">53</b><small data-page-node-id="qqKqdESQEVCdCKB3bIh5LV">覆盖单元 / coverage units</small></div>
+      <div data-page-node-id="OAKQiWwlpExLUaZj9wXGOi"><b data-page-node-id="ReWItygVptBSMI8VeJ1zWL">32</b><small data-page-node-id="eWz64ZZ1eJMkMg8O8O84Au">子代理目录 / agent dirs</small></div>
+      <div data-page-node-id="Hx2QsWD7gepnow1KvF45v1"><b data-page-node-id="xFcacqhMRw30mjGlJ8R4mq">9</b><small data-page-node-id="t9p5kL6bOfZY334lRgWksg">去重后候选 / candidates</small></div>
+      <div data-page-node-id="IrzZ5MDwkU0K4pIW2uuSSc"><b data-page-node-id="6cXIxQHG7bogCMYRAywkqy">4</b><small data-page-node-id="cb4gFzQvM81AaHGydAmzsF">坐实结论 / confirmed</small></div>
+    </div>
+  </div>
+</header>
+
+<div class="shell" data-page-node-id="SdZnyjLN5n41N6lDmlHhdw">
+  <nav class="toc" aria-label="目录" data-page-node-id="rmSd1r5Qcnk8mZvMyAvhp9">
+    <div class="brand" data-page-node-id="DKH5uzdBKJIo393KPZfiAQ">Contents</div>
+    <div class="grp" data-page-node-id="jNlbG5J4QvVaiOiYCk7lCt">上篇 · 机制</div>
+    <ol data-page-node-id="aeBd16Kxr7gFILslQYWloi">
+      <li data-page-node-id="c2i2ogrtoHi87WjVyCnCgG"><a href="#p1" data-page-node-id="QwhnCPGUoKF7qAqWpYbPs5" class="on">它到底在解决什么问题</a></li>
+      <li data-page-node-id="2ttwB3NNyIIIuOD01Ge09O"><a href="#p2" data-page-node-id="vv9G7aRUeNlhvH3fXJgCgC">两种模式，两种代价</a></li>
+      <li data-page-node-id="wEtKxaolE5YAdsmKC90ZSu"><a href="#p3" data-page-node-id="T7YKGvjWr4HPBDM28HqDGg">六个阶段与批评门</a></li>
+      <li data-page-node-id="mFDTu39eTcQ8IBp4R8BCgb"><a href="#p4" data-page-node-id="VpBjJLt7Yn7cZIZpVl1gW0">写权限隔离</a></li>
+      <li data-page-node-id="DnFM6zHwLEF1LNrjPaNwZr"><a href="#p5" data-page-node-id="cwIkSiBC6xjV6nQuAJk2uL">覆盖账本</a></li>
+      <li data-page-node-id="wISx2th5SblEgEaFCb7K2N"><a href="#p6" data-page-node-id="MvTdgL0pX7oTaO0505zbdi">三档判决</a></li>
+      <li data-page-node-id="TukBAeP39xS55MmraG8A24"><a href="#p7" data-page-node-id="xqT3TOlstVSKOEwmg00CPC">独立性：谁不能审谁</a></li>
+      <li data-page-node-id="AAStHyjBZwSjQGkIkT3lFC"><a href="#p8" data-page-node-id="VC0ry3ZJXwqteX8NXyo8YW">沙箱纪律</a></li>
+      <li data-page-node-id="ddAHEch6TTDVF9OTFetl2E"><a href="#p9" data-page-node-id="PpQUXd80YvzdkTua0YY1gs">机器收尾</a></li>
+    </ol>
+    <div class="grp" data-page-node-id="ZoqAnFZNJcFcMRDx7O1xg0">下篇 · 实战</div>
+    <ol data-page-node-id="M31BTCzpCESqUHzLyKKqui">
+      <li data-page-node-id="QSTfDRLMLoAqAmM2RpP1sL"><a href="#q1" data-page-node-id="Klkf7samp4CjfE8zwZNxN2">被审对象的形状</a></li>
+      <li data-page-node-id="G66xOJ0kWiiBE6mQ42AnFL"><a href="#q2" data-page-node-id="Du4UhDL6y0jJFYev2TXkgJ">这次运行的开销</a></li>
+      <li data-page-node-id="rpAXZVDIoJkCfmWTqEX881"><a href="#q3" data-page-node-id="0cFPbV3p1FdkPyKGNWdPZt">覆盖账本实况</a></li>
+      <li data-page-node-id="YvxQBCXdcdFj8w7B5Jok2B"><a href="#q4" data-page-node-id="YoBDnRDWJOzKlKJpfGzP02">九条候选的去向</a></li>
+      <li data-page-node-id="7xZ1Ta2ifrXC640lcv4cli"><a href="#q5" data-page-node-id="l0lRsGp3WVG9zdeT5G5ICc">四条坐实结论</a></li>
+      <li data-page-node-id="0Wc6fXCBxNMI8IiAxs7UyV"><a href="#q6" data-page-node-id="bfGy7LfA9TxPKKXLYMiQjk">三条待验证线索</a></li>
+      <li data-page-node-id="ZH0IdYTF99BZ7CyTImebDr"><a href="#q7" data-page-node-id="32SEmllsClAVuyiOmIkDUC">两条被推翻的候选</a></li>
+      <li data-page-node-id="Mkw0Wyt2mWow553b4CHX0m"><a href="#q8" data-page-node-id="cHes6aYIIBjh9KAvLfkxKJ">最值得记住的一课</a></li>
+      <li data-page-node-id="QI5K0vuFtz6a0AgfLAqLjE"><a href="#q9" data-page-node-id="X1ny5GLPMlNtgemDbZQGVt">证明与未证明</a></li>
+    </ol>
+    <div class="grp" data-page-node-id="daLAtfcaES5aipvSqFdzV8">附录</div>
+    <ol data-page-node-id="JlDWDZs93HRNKtKa8oE9dm"><li data-page-node-id="NrW4sPitI6qzFN74kR0xqZ"><a href="#z" data-page-node-id="PgYmseOFQ9B74JXIiBOh8X">一页速查</a></li></ol>
+  </nav>
+
+  <main data-page-node-id="LUkOEez9ozEjDcVjbyGnR6">
+
+  <!-- ================= 上篇 ================= -->
+  <div class="part-band" data-page-node-id="61PY2MuudYKIrZW9XrO77v">
+    <div class="inner" data-page-node-id="69yY1AwgOiAiSQt9y46C7G">
+      <span class="num" data-page-node-id="IBFCWrZA3VzsiP27GELcKM">PART 01</span>
+      <span class="t" data-page-node-id="lfXCBGF6oXg1wFiIt5UmxQ">机制：它凭什么说自己的结论可信</span>
+      <span class="d" data-page-node-id="BMOPT33UuwNDkYb5mOdO0R">六个阶段、一本账、三档判决、一条独立性链。</span>
+    </div>
+  </div>
+
+  <section id="p1" data-page-node-id="ETOYSrQCUsdD6YO85OGkHl">
+    <div class="sec-head" data-page-node-id="MCsQYMWemzZUAe4G5CxrBg">
+      <span class="sec-no" data-page-node-id="VipiFxFQbeN4fGgCbD19JP">01 / 问题</span>
+      <h2 data-page-node-id="2SITy5Qfg9SqfAI5TajRio">它到底在解决什么问题</h2>
+      <p class="sub" data-page-node-id="FFqAuXMcc8oczi32uF9OoW">普通的「扫一遍」失败，通常不是漏了某个函数，而是三件更基础的事没做。</p>
+    </div>
+
+    <div class="grid g3" data-page-node-id="qAkCER0M0uJTA125swJOcI">
+      <div class="card accent-rust" data-page-node-id="bcOd07aJQYaGxvIFGqqJUA">
+        <div class="rule" data-page-node-id="3fdq3PDVMOfDpiNGvFOPbo"></div>
+        <span class="tag" data-page-node-id="gOxPHgH0rIYWfhd8sQmbcG">Failure 01</span>
+        <h4 data-page-node-id="3GYGpSFNXrNEkxxzAFFDAK">清单式体检</h4>
+        <p data-page-node-id="GG1v0Rk18DzxOGb2Mn4uvw">照着 CWE 一条条勾：有没有 <code data-page-node-id="9Xh6ZPzvoTniYk1otxCq8g">eval</code>、有没有字符串拼 SQL。可是真实漏洞长在两条<strong data-page-node-id="ggq3oYEhlqNnepiEEgIToP">各自正确</strong>的代码接缝处——授权在 A 层做，数据在 B 层取，中间没有人负责对齐。</p>
+      </div>
+      <div class="card accent-amber" data-page-node-id="pvAmwOJ8s3LuftALZAi2qY">
+        <div class="rule" data-page-node-id="SjGFw6KHvxwabYMg9UCMV7"></div>
+        <span class="tag" data-page-node-id="PDCWGktS0QYvpUtYUiij3X">Failure 02</span>
+        <h4 data-page-node-id="E8E28E7DDu9dnx1mXOc6cW">替部署环境猜答案</h4>
+        <p data-page-node-id="ZwivAHBpFWgCKogXZpJyr8">「应该前面有 WAF」「JWT 应该会被网关解析成 authenticated」。这些假设没有一条在源码里，可结论全押在上面——猜错一次，结论就反了。</p>
+      </div>
+      <div class="card accent-slate" data-page-node-id="8JXlWMHIoCkPc7uazCTPfe">
+        <div class="rule" data-page-node-id="WBIc8C1nR54IFBWgMCWXWl"></div>
+        <span class="tag" data-page-node-id="djXuG3rGymrnTJNWY9dQYL">Failure 03</span>
+        <h4 data-page-node-id="nOxu87gPzZMK2hS4qqbs3F">自证</h4>
+        <p data-page-node-id="stRlfothxkwwqr2IU2y0o7">找漏洞的人写报告，写报告的人评严重度。于是「严重」变成了自我感觉的量词，而报告里没有任何一处能被别人独立复算。</p>
+      </div>
+    </div>
+
+    <p data-page-node-id="xiJyhr4AutpEVHRstq8mKq">这套技能的反向定义非常硬——它把「什么不算 finding」写在了第一步：</p>
+
+    <div class="quote" data-page-node-id="LdfMFk35E1nv6HNDy0bBqa">
+      一个候选，如果没有具体的受影响主体、具体的资源、具体的安全后果，它就不是一条 confirmed finding。
+      <span class="src" data-page-node-id="uVJ4S6bvVBZ3RTjP9Hx0bW">A candidate without a concrete affected principal, resource, or security outcome is not a confirmed finding. —— SKILL.md</span>
+    </div>
+
+    <p data-page-node-id="H2kQrnG96FbE3xgfz6eThv">顺着这句话，整套设计都是它的推论。既然要指名主体和资源，就必须先把<strong data-page-node-id="YBxhZWWfU9qVlvixDW3kOR">信任边界</strong>画出来；既然要有具体后果，就必须<strong data-page-node-id="E4KrSVy3c6H0dfas8ngpKG">在有界范围内真的跑一次</strong>；既然结论要能被别人复算，就必须有一本<strong data-page-node-id="GENIDSlJ3u9BKoBY30oB0N">记录每个格子审到哪一步</strong>的账。</p>
+
+    <div class="tablewrap" data-page-node-id="myFjGCa428T4ArejhEQFgu">
+      <table data-page-node-id="f4KdF2LQ1JFR3sAnChBl67">
+        <thead data-page-node-id="zujEUbKeMzeLP2W8Zsq5GA"><tr data-page-node-id="04OyPJ3oz7JVb543agGTWA"><th data-page-node-id="ej93nQy5CCWUURbkSFXxb3">它要防的</th><th data-page-node-id="GXeS6wsE1gQ0EpVDYxYArD">对应的机制</th><th data-page-node-id="p5YFZZN4gr8heSBUsAoCsV">机器可查的落点</th></tr></thead>
+        <tbody data-page-node-id="PYcE3GL2vwQlpip5Ygc94t">
+          <tr data-page-node-id="etjLbvVqCmbabtlnyE9vAu"><td data-page-node-id="n64OYwPBh2hNuD7iWWqZGt">漏审，却宣称审完了</td><td data-page-node-id="a8a3lhIUNsDUxoL2ZryTeb">确定性覆盖账本，一个单元一格</td><td data-page-node-id="jAiTQBzv9BAjjBkZgSuGnu"><code data-page-node-id="PhErb3AbRjdg5VoQbIGHVR">coverage-ledger.json</code> + 校验器</td></tr>
+          <tr data-page-node-id="AjGO7tuUj2TjCplxRWWXhX"><td data-page-node-id="gyX3NCjfasOYzYNgfP6puo">把猜测写成结论</td><td data-page-node-id="JQbPeBzOlNmuKlNorHZqaX">三档判决互斥，缺证据只能进 needs_validation</td><td data-page-node-id="EPKIf9l7XoTOpvK6HHtNPk"><code data-page-node-id="rTvGtWNUorDk8ertLAHX3f">findings.json</code> 分支 schema</td></tr>
+          <tr data-page-node-id="DBlD0FEgDFEEsKviZaTyYH"><td data-page-node-id="nMjtScAp69fGWRoHZbQY4m">自己给自己打分</td><td data-page-node-id="6MTltNHj1rzY1jXvi9NHHv">验证者必须是没参与过的人</td><td data-page-node-id="P1BcXWjewlmG6DZhYIENrs">账本里每个 check 记 <code data-page-node-id="HeL7HJfqTZpuNMtERgH6zi">agent_id</code></td></tr>
+          <tr data-page-node-id="8egOeG9zaiLgiiv0SDPdPv"><td data-page-node-id="rYM4b7HarDEUpmRHU2kqNe">在真实环境里动手</td><td data-page-node-id="J6sltrQmYZg6jLkboV9SJu">缺一个沙箱控制就不执行</td><td data-page-node-id="T6kbrkxDp3eg6tGn7D2JLx"><code data-page-node-id="33B8ht63DH6HwxCOARAHxV">run-metadata.json</code> 的执行边界字段</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="p2" data-page-node-id="75neoROb8nD4H66ELHz7lv">
+    <div class="sec-head" data-page-node-id="mJ1tYvi2zsIbU3TqJ2MGuC">
+      <span class="sec-no" data-page-node-id="iIA13rFNvk1w2jYCNCNmIt">02 / 模式</span>
+      <h2 data-page-node-id="u2wceS6WOuGrl33YZCE1JA">两种模式，<span class="ash" data-page-node-id="vzjTZoOqj6izLoWF2kjNp1">两种代价</span></h2>
+      <p class="sub" data-page-node-id="BTQn6pHAjqOqUH2fipxAKA">加载这个技能<strong data-page-node-id="TohYgZntMKHvrgBPNamgNe">不等于</strong>授权跑完整审计。它默认只提供方法论。</p>
+    </div>
+
+    <div class="grid g2" data-page-node-id="wA7xaAaqGCSy6fHz7lHf9Q">
+      <div class="card accent-blue" data-page-node-id="ySOHBUK0YgLieTRPe84Kgm">
+        <div class="rule" data-page-node-id="ubk3BTHPRaESJ3mYQ2ZnYM"></div>
+        <span class="tag" data-page-node-id="qSxBp847vTpfQkqnfMjrmH">Guidance mode · 默认</span>
+        <h4 data-page-node-id="ti7mxFTRlpeuKQzOd7UtnO">只借方法，不动文件</h4>
+        <p data-page-node-id="ppI6aTBT3X9Hsok4XM6Zyr">回答「这段代码安全吗」「这条告警怎么判」「帮我 triage 一下」。只取相关章节，<strong data-page-node-id="OwOh91oIfo8AgFBkPJVJHf">不建输出目录、不写审计产物、不自动跑六阶段</strong>。</p>
+        <p class="sub" style="margin-top:10px;font-size:13px" data-page-node-id="7WpaUhA3oZAsfGgA8Bz8aT">代价：几轮对话。</p>
+      </div>
+      <div class="card accent-teal" data-page-node-id="GeBJOw6u3jQXitoTuZTXF8">
+        <div class="rule" data-page-node-id="U047WyYHeC63EDfTa4XsCp"></div>
+        <span class="tag" data-page-node-id="rpTpDuCo5krxLuI2s39KHQ">Full audit mode · 显式触发</span>
+        <h4 data-page-node-id="C8O1sMbPuWt0plcT17R62S">六阶段，七份产物</h4>
+        <p data-page-node-id="N5jO2nVaCk4MEUWzC4McfJ">用户明确说「审计 / 渗透 / 完整 / 端到端 / 出报告」才启动。要跑完六个阶段，产出七个共享文件，并通过两个校验器。</p>
+        <p class="sub" style="margin-top:10px;font-size:13px" data-page-node-id="Ct3lAe7mxD5irvokGKvVtS">代价：这次在 <code data-page-node-id="S4f9d4Aa0yVLLf1hpL53ag">research-share</code> 上花了 32 次子代理委派。</p>
+      </div>
+    </div>
+
+    <div class="callout note" data-page-node-id="TZHEbQtNgLzuQWox8sU3FJ">
+      <span class="lbl" data-page-node-id="5mJJ6NL3awSY2vDEULoWtv">如何选</span>
+      <p data-page-node-id="Ds5fyoFzMyPa4kFjuCXy60">如果一句话能被两种模式解释，技能要求<strong data-page-node-id="uUrfPYt2TvWmmq2FwOJ1RP">先问一句</strong>再动手。这条看似琐碎，实际很关键：完整审计会在磁盘上留下七份产物、几十个 agent 目录，跑错模式不是多花几分钟，而是多花一次完整预算。</p>
+    </div>
+
+    <p data-page-node-id="rz5egZiYHaXECVgdpDqxpZ">选进完整模式后，还要定一个<strong data-page-node-id="JhgOteIo7ChEsx1JeUJZ5X">运行画像</strong>。画像改变的是广度与冗余，<em data-page-node-id="KqSSzq5HrZeNc4WAk32U5j">不改变证据门槛</em>——不能因为选了快档就把候选门、执行边界、schema 校验或独立验证砍掉。</p>
+
+    <div class="tablewrap" data-page-node-id="p1qtC8QuC0XoUoRsmD8CWD">
+      <table data-page-node-id="Lx3kHnWRCyJbKCxvEKUiDo">
+        <thead data-page-node-id="KG0y2y8eJmiYJP0tZ6oHyA"><tr data-page-node-id="EwruK0PB41qW4FETqNhBZb"><th data-page-node-id="OOwrwL3iFoeJbW5f8TPd2X">画像</th><th data-page-node-id="DIAJXBQFsxQH2FHGhcEB8Z">覆盖粒度</th><th data-page-node-id="y3z6Im3l6BvBsEPDdqq6cu">猎杀 / 批评门</th><th data-page-node-id="GmcbddkzQQdtmh4sueTVav">验证</th></tr></thead>
+        <tbody data-page-node-id="e6r6xE0dGCPa9jtUvodIli">
+          <tr data-page-node-id="LQCbnfv9BwlSsErADo9eaD"><td class="tight" data-page-node-id="SEo4gJLOC5VppZsNXZuBE8"><code data-page-node-id="jmQ4rJFubuxaWeBLl97iVO">quick</code></td><td data-page-node-id="Zz0dVPCZJvHPlRMGBiy1pE">surface × boundary × 攻击类（子系统合并为一个固定标识）</td><td data-page-node-id="iFhfCzzC0we4sZAgoQ32Go">恰好 1 波；恰好 1 次终局批评门</td><td data-page-node-id="eMt0ycMIUU59GOgOvcdDbd">1 个验证者同时干 Phase 3 与 Phase 5</td></tr>
+          <tr data-page-node-id="7oqckpXUfdGzPh8cLLreQD"><td class="tight" data-page-node-id="PJzB4NbvBBx0aF2JiACRXX"><code data-page-node-id="NcFP8FXVHZ4HdEkdXB0w2h">standard</code></td><td data-page-node-id="9ZK7SPgYGZrBjIwWQUFRpF">四元组完整</td><td data-page-node-id="wV5ixDKzGM1F0vcsmRrrCN">多波；每波后 1 次 + 单独保留 1 次 final-clean</td><td data-page-node-id="jUeYaslOKMKzMlYi1mD8Ax">Phase 3 与 Phase 5 两道上，人不能复用</td></tr>
+          <tr data-page-node-id="4xTbRLiaLjwLtKQ0HusDEP"><td class="tight" data-page-node-id="5OM4oOnsF2jAPPsKMi9Oju"><code data-page-node-id="L4hWbexihlUhuH4KeIzodA">deep</code></td><td data-page-node-id="Z9qGfHJeyagJTsjbIT8pFT">再按子系统与生命周期模式拆细</td><td data-page-node-id="dtdrnwCVC5qCTTINDwN6r5">批评门跑到「干净」为止</td><td data-page-node-id="h4mXQQdkwdNvqhNGWzHxEI">同上，且同源旧覆盖也要独立第二遍</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote" data-page-node-id="0CfvE3VF73HxqYsWSAhFMK">另有一种「限定范围运行」：只审指定路径或两个 commit 之间的 diff。它必须把自己呈现为<strong data-page-node-id="EAFFcuqcEyTlFGadTPby3L">部分覆盖</strong>，范围外一律记 <code data-page-node-id="fKEQ73DDfF9DDYcG7lLyQU">out_of_scope</code>，绝不能记成「已覆盖」。</p>
+  </section>
+
+  <section id="p3" data-page-node-id="TryiPTEwDaPN7EmndOfv3k">
+    <div class="sec-head" data-page-node-id="4Nzdz8HGEKK203hCL9aIZF">
+      <span class="sec-no" data-page-node-id="Vdpzvyj7GRjCTKV3vp38H4">03 / 流程</span>
+      <h2 data-page-node-id="L5BIFSHJOIVLltC81jg3De">六个阶段，<span class="ash" data-page-node-id="gLSzsWliF6mloYilWxV5SK">和藏在第二阶段的闭环</span></h2>
+      <p class="sub" data-page-node-id="EpxsF5ntGXAiOl2nG4uk6k">阶段是单向的，但「猎杀」内部不是：每一波之后都有一道批评门，直到它连续交出空白。</p>
+    </div>
+
+    <ol class="steps" data-page-node-id="nzpYXdPKX1Y0tI59uousm8">
+      <li data-page-node-id="POT8pUCejEw2r0MnTl3ZyD"><span class="n" data-page-node-id="ZsFrhBNFBjuAxffcXQ0fqy">1</span>
+        <h4 data-page-node-id="miBBIng84pPPTRCuIjGrNe">侦察 · Reconnaissance</h4>
+        <p data-page-node-id="3LlPM6Fy5cK5HMWewsDe6R">并行四个只读 agent，各管一件事：产品与本地可运行性、主体与权限、入口与汇点、本地执行与部署可见性。产出的不是散文，是一份初始账本。<strong data-page-node-id="e8jaSedYfOuFSYovgbtTqf">本阶段不执行任何目标代码。</strong></p>
+        <span class="out" data-page-node-id="a6IR9TQrXOocWGnybZMEHx">architecture.md · coverage-ledger.json 初版 · run-metadata.json</span>
+      </li>
+      <li data-page-node-id="neXLpEVBgn4vwhiyNTa08t"><span class="n" data-page-node-id="2I6jhWlM26F4y3owQg7Dap">2</span>
+        <h4 data-page-node-id="dh5o8iIizy4Skl2uwP4QdE">覆盖化猎杀 · Hunting waves</h4>
+        <p data-page-node-id="i3ZvJZBIdjdqR6bGxLZWPw">按账本单元派猎手，一个猎手只碰自己那几个单元。返回值是一个结构化 JSON：每个单元给 <code data-page-node-id="6negCOUDoC6ZIrkjFP9yYB">covered / candidate / blocked</code> 之一，附上它读过的路径、做过的检查、以及发现的候选。<strong data-page-node-id="9u2M4v22M8Uh1lmRLRixqn">纯散文的结果没法去重、没法复核，直接不收。</strong></p>
+        <span class="out" data-page-node-id="j3StDp8lcVwHsORqnZHeg3">各单元 checks · candidate 列表 · hardening 备注 · uncovered 提案</span>
+      </li>
+      <li class="gate" data-page-node-id="cuTSCzaGejusEeFYuwNxJg">
+        <span class="gl" data-page-node-id="VGbgMDnJryBRoCHCOYOnkC">每波之后 · 不是阶段，是门</span>
+        <h4 data-page-node-id="vKZCzBgeM6TW68RPGdCgQ2">批评门 · Coverage critic</h4>
+        <p data-page-node-id="W8tu2q1iCLH3OmmPDosiZS">每一波猎杀之后，一个全新的、只读的批评者拿账本问四个问题：有没有整块入口没被映射？有没有并行路径没人走？我选进来的攻击类有没有漏配单元？有没有单元在没留下路径和检查的情况下被关掉？<strong data-page-node-id="BNsRe0SRkAogNkQg8Kh2ZD">它只提覆盖，不提漏洞。</strong></p>
+        <span class="out" data-page-node-id="dyYwk843mGovlCZJ3XBqLQ">missing_units · reassign_ids · stop</span>
+      </li>
+      <li data-page-node-id="8ftGBNIaUcFYqyNSvKCetl"><span class="n" data-page-node-id="gKc5HWUz89wKJLLGyFNsp4">3</span>
+        <h4 data-page-node-id="ZT7wIuhAGmX4xe6zgo3C8q">候选验证 · Candidate validation</h4>
+        <p data-page-node-id="HOItPmcY9SJ8FcRCx2g7Jh">每条去重后的候选交给一个<strong data-page-node-id="SUq7XDC76lVQV7CPTXm5wO">没有猎过它</strong>的验证者，任务是「试图反驳它」。可以用猎手的产物作参考，但必须重读每一处被引用的源码，并独立复现任何它能安全复现的决定性检查。</p>
+        <span class="out" data-page-node-id="zYnQQYKKnCeXeaSbhvAYBI">每条候选 → confirmed / needs_validation / rejected</span>
+      </li>
+      <li data-page-node-id="oXdo7xoJHeQMxsZzYoW0l8"><span class="n" data-page-node-id="KBFIJ5QZC9YgJNCxrJQrly">4</span>
+        <h4 data-page-node-id="rss6aUi8oaDCzD1W9DdE4R">结构化输出 · Structured output</h4>
+        <p data-page-node-id="T3F1Q9tSyZnzUnglkFIQIy">父进程把所有判决写进一个 JSON，按指纹排序。三档判决是三个互斥的 schema 分支，字段不许串味——比如 needs_validation 里出现 <code data-page-node-id="WA8c1cOQd7Jhns2QSZsaHM">severity</code> 就是硬错。</p>
+        <span class="out" data-page-node-id="xr4UGkP0kKqjdXqUvmhBvo">findings.json · 两个校验器 PASS</span>
+      </li>
+      <li data-page-node-id="YmkiDRitVAPkud8Ut8l6J9"><span class="n" data-page-node-id="IPbfvAtdat6C8rNPgjHlqU">5</span>
+        <h4 data-page-node-id="FGObopOwatwc1YKFM05OHG">记录复核 · Independent record verification</h4>
+        <p data-page-node-id="tVjVhcj5Kli1BON1GqmxwU">每一条留下来的结论，再交给一个全新的、只读的验证者。它检查的不是猎手的叙述，而是<em data-page-node-id="UCOFGkFZoqXcdffV8seYDa">结构化记录本身</em>：路径、行号、条件、观测结果、严重度与影响是否匹配、修复是否只是把信任挪了个位置。</p>
+        <span class="out" data-page-node-id="ZHFQe4eB39B05THcAIgQfQ">verified / replace（替换必须再验一次）</span>
+      </li>
+      <li data-page-node-id="1EXTMlLIBljth3UcrfbxLj"><span class="n" data-page-node-id="BDSC95GbWCEPBkbeKLj4ob">6</span>
+        <h4 data-page-node-id="Fd8GzE8KFmOLO10oEGqLFF">中立报告 · Target-neutral report</h4>
+        <p data-page-node-id="PGsGSATEf1niNvlF0rQUmc">只从最终记录派生三份 Markdown。报告里不能出现任何「去打这个端点试试」的指引；needs_validation 不得带严重度；被判 rejected 的候选不得被描述成发现。</p>
+        <span class="out" data-page-node-id="zDAT2wMCMeh363P8RuLmGu">REPORT.md · FINDINGS-DETAIL.md · NEEDS-VALIDATION.md</span>
+      </li>
+    </ol>
+
+    <div class="callout warn" data-page-node-id="k4rfTFRetf2mW4LqCilumk">
+      <span class="lbl" data-page-node-id="gBDllxno0hL2mDf8g5feHu">为什么批评门要跑到「干净」为止</span>
+      <p data-page-node-id="etvPnmO2nPQoTHTbWmT4aT">因为一次猎杀永远不完整，而<strong data-page-node-id="Bsx634WNTB7k4qA8fJc69q">「没找到」和「没审」在报告里长得一模一样</strong>。批评门是唯一能把这两者区分开的机制：它不产出发现，只产出「还欠哪一格」。这次实战里，前三次批评门分别抓出一块整文件没单元、一条浏览器直写路径没单元、一个每页都加载的渲染函数没单元——三次都是真缺口。</p>
+    </div>
+  </section>
+
+  <section id="p4" data-page-node-id="5MkXsM8qHrQAeK9kzjM2ed">
+    <div class="sec-head" data-page-node-id="gDURtqBvK3rTHHohck4nqo">
+      <span class="sec-no" data-page-node-id="qctyWicDkEfu623LA0QUmi">04 / 隔离</span>
+      <h2 data-page-node-id="NI4UDzjfbelt88rJlbUvhB">写权限隔离：<span class="ash" data-page-node-id="xzOUlyDWpdZn2KCkCjix1z">为什么连一条证据都不让 agent 自己保存</span></h2>
+      <p class="sub" data-page-node-id="nmDQAAIMO0vayqA0CNZWeC">核心假设很朴素：一个读过不可信代码的 agent，它的输出就是被污染的输入。</p>
+    </div>
+
+    <p data-page-node-id="DlMBUs1IkdECBak7xfNBq5">所以整套目录设计不是「整洁」，而是<strong data-page-node-id="ZD4SyDzJDtL7IAYBleRJNH">权限边界</strong>。父进程独占全部共享产物；每个子代理只有一个自己的 <code data-page-node-id="LcF2upFitBpQNvOp75mFb8">scratch/</code> 可写；<code data-page-node-id="GAPhazASYlGZu3oYMjCCKs">artifacts/</code> 虽然挂在 agent 名下，但<strong data-page-node-id="1gSly9IDhrtS0AEtHxFL2Z">agent 和目标代码都不许写</strong>——只有父进程侧的受信代码能把文件「提升」进去。</p>
+
+    <figure data-page-node-id="RdP42LjXPC4qp1BkJPEHZC">
+      <svg viewBox="0 0 720 300" role="img" aria-label="父进程独占共享文件，子代理只能写 scratch，artifacts 只能由父进程提升" data-page-node-id="tdHCPLnhKE80MC7dMMkzJi">
+        <rect x="0" y="0" width="720" height="300" fill="#FFFFFF" data-page-node-id="SUhD89ltV8UqmjyEDiG3UE"></rect>
+        <rect x="24" y="34" width="228" height="232" rx="10" fill="#F7F9FB" stroke="#D8E0E8" data-page-node-id="mDNi6No6KWuAfltUKGCszv"></rect>
+        <text x="40" y="58" font-family="ui-monospace,Menlo,monospace" font-size="11" letter-spacing="1.2" fill="#1F4E79" data-page-node-id="Z6PxZjuGd6N8q6EeABu1tz">PARENT · 唯一写者</text>
+        <text x="40" y="78" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#68707E" data-page-node-id="FHCMZF5HdpKdmEYnBYcYgD">七个共享产物，别人只读</text>
+        <g font-family="ui-monospace,Menlo,monospace" font-size="10.8" fill="#3B4250" data-page-node-id="V5FRPj6fTrson0MUzD27CV">
+          <text x="40" y="104" data-page-node-id="AWVxZuvjaGtl7oojNmNzPG">run-metadata.json</text>
+          <text x="40" y="122" data-page-node-id="HwfYFboKB0FUC6mZvEkxMI">architecture.md</text>
+          <text x="40" y="140" data-page-node-id="BrghShIxR102FMJwszFJ1n">coverage-ledger.json</text>
+          <text x="40" y="158" data-page-node-id="sRJXMVcuvKIpAGXf64sDuA">findings.json</text>
+          <text x="40" y="176" data-page-node-id="2m8ZGlaRgCgsprZvy89vAZ">REPORT.md</text>
+          <text x="40" y="194" data-page-node-id="fcOZGOAq8ysCstUE20WO6b">FINDINGS-DETAIL.md</text>
+          <text x="40" y="212" data-page-node-id="tfxc3LANyiMqR2y5DOYafR">NEEDS-VALIDATION.md</text>
+        </g>
+        <text x="40" y="244" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.8" fill="#98A0AE" data-page-node-id="w91Nl103l8PhPL8AdzYGYL">仅此一处可写共享状态</text>
+
+        <rect x="300" y="34" width="264" height="86" rx="10" fill="#FFFFFF" stroke="#D8E0E8" data-page-node-id="EfNTG39b0yILQHgCxoDqMu"></rect>
+        <text x="316" y="57" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0E6E64" data-page-node-id="aLTrizLpxgyCT1pKWiTNu2">agents/&lt;id&gt;/scratch/</text>
+        <text x="316" y="76" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#68707E" data-page-node-id="DMDjmZRUO3S2tLiRES5vbU">agent 与目标代码唯一可写区域</text>
+        <text x="316" y="95" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#68707E" data-page-node-id="BgVCzpdkhiGVfHBlR1pmRE">退出后即视为「受控内容」</text>
+
+        <rect x="300" y="188" width="264" height="86" rx="10" fill="#FDFAF2" stroke="#E8DCC0" data-page-node-id="ApMR8EHbZTbbvqitMyiNS2"></rect>
+        <text x="316" y="211" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#9A5B08" data-page-node-id="mUsujAenXZSqDMM21ETIFr">agents/&lt;id&gt;/artifacts/</text>
+        <text x="316" y="230" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#68707E" data-page-node-id="TavZJzouXQvhnXItQmWIWy">父进程持有目录句柄，agent 不可见</text>
+        <text x="316" y="249" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#68707E" data-page-node-id="BwrjWkIajJTig2VNmfChnD">本地证据只能从这里被引用</text>
+
+        <line x1="432" y1="120" x2="432" y2="180" stroke="#9A5B08" stroke-width="1.4" data-page-node-id="6yUO065PkAZm2TGQ2AMKFe"></line>
+        <polygon points="432,188 427,178 437,178" fill="#9A5B08" data-page-node-id="xgQCG2OXssIqGz6OV4dYfx"></polygon>
+        <text x="446" y="146" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#9A5B08" data-page-node-id="IuanzXbsma75lc0JT3bh4H">逐文件提升 · 11 步检查</text>
+        <text x="446" y="163" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#A08A5E" data-page-node-id="87PBZFBcF6i8Cn6HxN15xt">no-follow · nlink=1 · 尺寸稳定</text>
+
+        <line x1="300" y1="230" x2="262" y2="230" stroke="#8A94A3" stroke-width="1.2" stroke-dasharray="4 3" data-page-node-id="zmPofziA3VBUPclJEOh8z7"></line>
+        <polygon points="254,230 264,225 264,235" fill="#8A94A3" data-page-node-id="GFG8i7CzEr7FVgZmDwFi00"></polygon>
+        <text x="266" y="220" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#8A94A3" data-page-node-id="G2zRfqVkn9iqCvFbpqPAUb">只读引用</text>
+
+        <text x="596" y="60" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#98A0AE" data-page-node-id="BykLPE7cALclrGrouCxlfj">目标仓库</text>
+        <text x="596" y="78" font-family="-apple-system,PingFang SC,sans-serif" font-size="11" fill="#98A0AE" data-page-node-id="60B7vI2VlrLK2UzOGP1fyG">全程只读</text>
+        <line x1="586" y1="46" x2="586" y2="96" stroke="#E4E1D9" data-page-node-id="1sd8F8xEzu3VOVpIBzubHp"></line>
+      </svg>
+      <figcaption data-page-node-id="dKNlWsVAHkJz2VlK5CpQmf"><b data-page-node-id="Kt5mVm4HzMqzzqHO2eOsFF">三方写权限。</b>共享产物只有父进程能写；agent 只能在 <code data-page-node-id="lgU14MUpPSURLRNRXyu6Zi">scratch/</code> 里落下东西；能当证据的 <code data-page-node-id="gPUp7TqC6NxEmZO2KZSyrz">artifacts/</code> 必须由父进程在沙箱与全部子进程退出之后，逐文件走完提升流程。</figcaption>
+    </figure>
+
+    <p data-page-node-id="i0MDgJsyB9RQN9ckpbSVGw">「逐字节检查」听起来像洁癖，其实每一条都对着一种具体的伪造手法：</p>
+
+    <div class="grid g2" data-page-node-id="aiIQzluFmHmO3301MzIYRn">
+      <div class="card flat" data-page-node-id="ohOyozMfTN4aRTUdOJ7QBe"><h4 data-page-node-id="JV4KKElLfsz92Om85QpAXM">为什么是 no-follow</h4><p data-page-node-id="RSTP9C2AVJbC8OeDfFh2ys">否则 agent 可以在 scratch 里放一个符号链接指向 <code data-page-node-id="ZF8zPuydeN704EEeLr80Bj">/etc/passwd</code> 或别的 agent 的目录，提升时就把不该读的东西搬进了证据。</p></div>
+      <div class="card flat" data-page-node-id="iHwDeb1ydczJehtx6fioJx"><h4 data-page-node-id="8vkySCEgjFFEloZxJM455U">为什么查 <code data-page-node-id="7inMUm0qjV8fUwFB3ziGie">nlink === 1</code></h4><p data-page-node-id="jRjhQRB7huQGbrtQCgvZGk">硬链接可以让「你提升的这个文件」和「另一个正在被改写的地方」是同一份 inode。</p></div>
+      <div class="card flat" data-page-node-id="ZUPvhb6L1eryt2Qzu02YvH"><h4 data-page-node-id="vJi6xRwLPFXcSa8raKDah9">为什么读完要再 fstat 一次</h4><p data-page-node-id="Ru1If1OAISnLqJRrdpR0qN">CHECK 与 USE 之间有时间窗（TOCTOU）。只比对内容哈希与尺寸，才能确认复制过程中文件没被换过。</p></div>
+      <div class="card flat" data-page-node-id="t8scUbychYGGtCLSuwHPNE"><h4 data-page-node-id="X4ebSCPe1Sn4oMk70E8wgN">为什么有 256 KiB / 1 MiB 上限</h4><p data-page-node-id="4yYE6RnEzxccUh4ncZDLz1">证据只需要最小可判定片段。没有上限，一个 agent 就能用超大文件把父进程的读路径拖死。</p></div>
+    </div>
+
+    <div class="callout warn" data-page-node-id="xshXSE8P1ys96ED11iaFEE">
+      <span class="lbl" data-page-node-id="S7uo2gq8qa4OJL2A8wRcbr">最容易被忽略的一层</span>
+      <p data-page-node-id="B4Z1Xedu8EyK5N59Qz99b1">沙箱里没有「可信」这回事——目标代码一旦跑起来，<strong data-page-node-id="HYs1FWVRrt8As02AfSrrn8">它写下的任何字节都要当作攻击者可控</strong>。所以技能的措辞是「沙箱与全部进程退出<em data-page-node-id="1EOE0qFobdFw4KkGpmwlhp">之后</em>」，提升动作发生在进程树之外，用的是父进程事先保留的目录句柄，而不是路径。路径可以被替换，句柄不会。</p>
+    </div>
+  </section>
+
+  <section id="p5" data-page-node-id="djTPJIyOQzE9MwQ0lB1184">
+    <div class="sec-head" data-page-node-id="9fGqrFwttrAmKKwNSMD4r9">
+      <span class="sec-no" data-page-node-id="43F8xCIxK0oocDQBbeYESw">05 / 账本</span>
+      <h2 data-page-node-id="RdhlU5UBKrPDAVJg5RWBgT">覆盖账本：<span class="ash" data-page-node-id="6463UfMIssuaHr5I7wEpFj">把「我审过了」变成一串可以复算的 ID</span></h2>
+      <p class="sub" data-page-node-id="r0kMz6EAHOV8prxq6CAONh">这是整套技能里最不像安全、却最决定成败的部分。</p>
+    </div>
+
+    <p data-page-node-id="H8SHsMaKLGAKPXQLg2Ce7Q">账本的基本单位不是文件、不是函数，而是一个<strong data-page-node-id="6LZH5sfms85ESRmo7YhUit">四元组合</strong>：入口面 × 信任边界 × 子系统 × 攻击类。每个组合被编码成一个稳定的 <code data-page-node-id="a3jI5JzOtVevMwxTI3gICS">coverage_id</code>，规则是「百分号编码后拼起来」——不用 slug、不用小写化、不用行号，因为它必须跨运行时保持同一个身份。</p>
+
+    <figure data-page-node-id="Kj0GPsDsEWZcDIDoAFFqFA">
+      <svg viewBox="0 0 720 218" role="img" aria-label="coverage_id 由四个百分号编码的规范引用拼接而成" data-page-node-id="PcorvEUrIVP4sAzdECevAS">
+        <rect x="0" y="0" width="720" height="218" fill="#FFFFFF" data-page-node-id="gk6GjLfZg7LZLqxbk3uZZb"></rect>
+        <text x="24" y="26" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#98A0AE" data-page-node-id="MOeFV7hpKKvzo3HmMY42nw">四个维度，各取一个「源码派生的规范引用」</text>
+
+        <g font-family="ui-monospace,Menlo,monospace" font-size="9.6" fill="#98A0AE" letter-spacing="0.8" data-page-node-id="WZQFH8nqqlCKvEP2UvaDAH">
+          <text x="24" y="56" data-page-node-id="1mcvOFK88q5CS6sSe3oS7H">SURFACE</text>
+          <text x="24" y="86" data-page-node-id="GHjzDhCJ1IYDziE0KDHSub">BOUNDARY</text>
+          <text x="24" y="116" data-page-node-id="NMsqQvGFojvXt2s5xw4IPO">SUBSYSTEM</text>
+          <text x="24" y="146" data-page-node-id="HkFu2GXWCmiZ9nsK0Lmmsc">ATTACK_CLASS</text>
+        </g>
+        <g font-family="ui-monospace,Menlo,monospace" font-size="11.2" fill="#1F4E79" data-page-node-id="304qynzmVXGKmPxtDdcp6d">
+          <text x="140" y="56" data-page-node-id="JIC9fNcmyA33gUkDwp6Snh">lib/track.js#handleTrack</text>
+          <text x="140" y="86" data-page-node-id="GVCtzNnTBVoT2thvRGbkCJ">lib/track.js#clientIp</text>
+          <text x="140" y="116" data-page-node-id="ddJ3NEgehnDzdlFQlSPV2l">lib/track.js</text>
+          <text x="140" y="146" data-page-node-id="QtmKURWe937q9rfj14pEZN">ATTACK-CLASSES.md#Business logic</text>
+        </g>
+        <g stroke="#F1EFE8" stroke-width="1" data-page-node-id="FPETm4RvX6w6AVVRiReIv7">
+          <line x1="24" y1="66" x2="696" y2="66" data-page-node-id="UPu9NTBckNyOpQS7BOkQu0"></line>
+          <line x1="24" y1="96" x2="696" y2="96" data-page-node-id="RRsXxGziOYbG7VVZHXNUEb"></line>
+          <line x1="24" y1="126" x2="696" y2="126" data-page-node-id="6A8EvKHprjRKr63nHLNBgt"></line>
+          <line x1="24" y1="156" x2="696" y2="156" data-page-node-id="3jaqWbManQCyCSIScQZn0O"></line>
+        </g>
+
+        <text x="24" y="182" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.6" fill="#68707E" data-page-node-id="BdpZAdwwZWZLYD7sqzTTPW">RFC 3986 百分号编码（只保留 A-Z a-z 0-9 - . _ ~），再用 :: 拼接</text>
+        <text x="24" y="204" font-family="ui-monospace,Menlo,monospace" font-size="9.4" fill="#2A3542" data-page-node-id="bpYpX6A4HMgd978A2SLdaw">lib%2Ftrack.js%23handleTrack::lib%2Ftrack.js%23clientIp::lib%2Ftrack.js::ATTACK-CLASSES.md%23Business%20logic</text>
+      </svg>
+      <figcaption data-page-node-id="rwmTolXNfyxdGdERO2wMdS"><b data-page-node-id="iMAZpHuVZck9MrPa47aBo0">身份即坐标。</b>最后一行的字符串是这次真实账本里的一条：它不描述结论，只描述「这一格是哪一格」。所以同一格在下一轮、换个人跑，还是同一个 ID，可以直接对比。</figcaption>
+    </figure>
+
+    <h3 data-page-node-id="CRmNGm4v0t4DXAIHnl7EQf">八种状态，一个有意的漏洞</h3>
+
+    <p data-page-node-id="WN52pHUHllcaLYNQn750Xk">账本里每个单元只允许处在八种状态之一。看起来平平无奇，但它藏了一条很关键的设计：<strong data-page-node-id="IlRGAY4StNTVB5G4opTQmV">只有 <code data-page-node-id="ydS1A5DctlSO8T5fP6r4Oq">candidate</code> 能携带指纹和未决事实，<code data-page-node-id="6v18bLUPRYeuYHqgA5XqQA">covered</code> 必须两者都为空</strong>。校验器会强制这一点。</p>
+
+    <figure data-page-node-id="to5OI9k24ysTMY4B2hV35n">
+      <svg viewBox="0 0 720 340" role="img" aria-label="覆盖账本状态机：planned 到 in_progress，再分叉为 covered、candidate、blocked" data-page-node-id="kZA5piFs0BJrAszOCbL7mI">
+        <rect x="0" y="0" width="720" height="340" fill="#FFFFFF" data-page-node-id="PeuR7cvBqRxtjGFtG0rOxh"></rect>
+        <defs data-page-node-id="KH0JPc8FXAVLGgU4JJJBNn">
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="BaNeznJGV98VCTKWmDXYY3">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8A94A3" data-page-node-id="T3gMtCkG1C32tMZs3BOhWJ"></path>
+          </marker>
+          <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="754mqFWwg6rsc5ppDDQL0b">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1F4E79" data-page-node-id="eZHLR4t0RMdm5AAkAx46EF"></path>
+          </marker>
+        </defs>
+
+        <rect x="26" y="128" width="120" height="52" rx="9" fill="#F7F7F4" stroke="#DCDAD2" data-page-node-id="o3LM1e8mvNEbZHduyI1cyT"></rect>
+        <text x="86" y="151" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#3B4250" data-page-node-id="17GisUt6BybtJo9vGO6g1J">planned</text>
+        <text x="86" y="168" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#98A0AE" data-page-node-id="f7SoGeTfEjaiZh4un12iUt">已播种，未派工</text>
+
+        <rect x="206" y="128" width="130" height="52" rx="9" fill="#EBF2F9" stroke="#C9DAE9" data-page-node-id="VBc6yg1Adoiv0XwjIa2K1p"></rect>
+        <text x="271" y="151" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#1F4E79" data-page-node-id="ZmIPFhtaxOTzlWG92gegDK">in_progress</text>
+        <text x="271" y="168" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#6E8CA6" data-page-node-id="PN2KgZIZM6IYGppf9Ki6T9">已派给某个 owner</text>
+
+        <rect x="414" y="34" width="146" height="54" rx="9" fill="#E9F2EE" stroke="#C6DED3" data-page-node-id="qkZIemwWUoVjIb7HVBTE9j"></rect>
+        <text x="487" y="58" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#0E6E64" data-page-node-id="tY3KJKhIDfeMGu3DmyPxZM">covered</text>
+        <text x="487" y="75" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#5C8A81" data-page-node-id="AZm8rQi895HN7Mezp1qfZY">有路径、有检查、无遗留</text>
+
+        <rect x="414" y="128" width="146" height="54" rx="9" fill="#FDF5E6" stroke="#EBD9B8" data-page-node-id="aG8YMgywz37aEsYeCMc14z"></rect>
+        <text x="487" y="152" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#9A5B08" data-page-node-id="RMM9JJghdFNASvcI7BPyyb">candidate</text>
+        <text x="487" y="169" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#A0824B" data-page-node-id="2gzlbubDRETUWKG3YFSRkA">唯一可挂指纹的状态</text>
+
+        <rect x="414" y="222" width="146" height="54" rx="9" fill="#FBF0EC" stroke="#EFD3CA" data-page-node-id="Nn95jnx3dy4vaK1zMaZXUF"></rect>
+        <text x="487" y="246" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#9C2B1B" data-page-node-id="E5obZafn71TwLkjNKZ4LFJ">blocked</text>
+        <text x="487" y="263" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#AC7568" data-page-node-id="OuzgYlkQFWRSop1566MiwP">审了，但有决定性未知</text>
+
+        <rect x="180" y="248" width="182" height="54" rx="9" fill="#F7F7F4" stroke="#DCDAD2" data-page-node-id="IOf2wX94aik5kV8PFxbBno"></rect>
+        <text x="271" y="272" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#59626F" data-page-node-id="Pdc7wBlGmNB5f4nu7kO27d">deferred / out_of_scope</text>
+        <text x="271" y="289" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#98A0AE" data-page-node-id="FCcu4ZqJ2AeJG8wBrYDIiW">未派工，必须写明原因</text>
+
+        <line x1="146" y1="154" x2="198" y2="154" stroke="#8A94A3" stroke-width="1.3" marker-end="url(#ah)" data-page-node-id="hJ6V7axTiT8diCtN89mkdd"></line>
+        <path d="M336,142 L378,142 L378,66 L406,66" fill="none" stroke="#8A94A3" stroke-width="1.3" marker-end="url(#ah)" data-page-node-id="BlDtAGtLqDtt5xqXREEH8s"></path>
+        <line x1="336" y1="154" x2="406" y2="154" stroke="#8A94A3" stroke-width="1.3" marker-end="url(#ah)" data-page-node-id="PF4MIHycQhDiKK4kZeCNe0"></line>
+        <path d="M336,168 L378,168 L378,246 L406,246" fill="none" stroke="#8A94A3" stroke-width="1.3" marker-end="url(#ah)" data-page-node-id="D5PverybW4SjCZ8X8NrWy5"></path>
+
+        <path d="M487,128 L487,96" fill="none" stroke="#1F4E79" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#ahb)" data-page-node-id="wJ75py2KxRwmf5SyHXjQso"></path>
+        <text x="497" y="116" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#1F4E79" data-page-node-id="yxqehi2jgYBMon9OGe2hXO">候选被全部推翻后回收</text>
+
+        <path d="M86,180 L86,275 L172,275" fill="none" stroke="#8A94A3" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#ah)" data-page-node-id="pu0YHvFeAU2KF9xA7CW1Ct"></path>
+        <text x="96" y="320" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#98A0AE" data-page-node-id="aJA7n4mRx8yBBTxNHiVvx9">预算 / 画像不允许派工</text>
+      </svg>
+      <figcaption data-page-node-id="o2JvykTkId7sGpJjClVfER"><b data-page-node-id="KDWlrJCbMzlf4qkpMMnnbF">状态即证据等级。</b>虚线那一步是真的发生过的：这次有 1 个单元先成了 candidate，候选被验证者推翻之后，它才被回收成 covered。如果账本允许「candidate 同时算 covered」，这一步就会被悄悄抹掉。</figcaption>
+    </figure>
+
+    <div class="callout warn" data-page-node-id="8AEvrPMoC5SFz5nSAZlwTP">
+      <span class="lbl" data-page-node-id="VREAgmgapLITR3APYcvpMb">这条不变式挡住了什么</span>
+      <p data-page-node-id="UIIzbirG4CBB1zrvjGaJsj">如果允许 <code data-page-node-id="DQrGoxuMh97dMbm361XRAj">covered</code> 带着未决事实，报告就可以同时说「这一格审完了」和「这一格还有个问题没弄清」。听起来无害，但它把<strong data-page-node-id="WPj3VACdOoXGDD5yw8rU6K">完整性的定义稀释</strong>了：53 个格子全都「covered」，其中 7 个其实悬着。现在不行——要么把未决事实挪进 <code data-page-node-id="yrEFT1mvlsTUDqUk1GpOqa">hardening_notes</code> 当加固记录，要么这一格只能是 candidate 或 blocked。</p>
+    </div>
+
+    <h3 data-page-node-id="QyIh5W81I5AtFMbs2O9kBI">改派：旧证据必须归档，不能继承</h3>
+    <p data-page-node-id="LjCnD9jM5KVZpo42IOes9M">批评门可以要求重派一个已经关掉的单元。此时旧证据不是删掉，而是<strong data-page-node-id="Y8dCMPlHW2jF5DLIEqWSnr">整体归档进 <code data-page-node-id="N3bY336tFLtdIthHREhfYT">attempts</code></strong>：旧的波次、状态、owner、路径、检查、指纹、未决事实，连同批评者给出的理由一起封存。新的尝试从<strong data-page-node-id="HAFkOWdC3wLaS2CQsynxAY">空证据</strong>开始，owner 必须是新人。这条规矩针对的是一种很常见的退化：用上一轮的结论给这一轮背书。</p>
+
+    <div class="tablewrap" data-page-node-id="el7fM5vGDRqC5ChoeKbBif">
+      <table data-page-node-id="gV8ToJNzXqYRSm2BtPXdEh">
+        <thead data-page-node-id="JxLun3BmLNtnZOGa8Ew8La"><tr data-page-node-id="VtjsmDSq202T2mLjlAXrSB"><th data-page-node-id="25QfXLAiM72tzmaN0XywCo">状态</th><th data-page-node-id="Cu8KMimUQrddkbDqe0ze4M">owner</th><th data-page-node-id="sb21fpdk1APPdkaHOtLWhR">已读路径 / 检查</th><th data-page-node-id="ASKGxTtHq6hVrCt9EazaA9">指纹</th><th data-page-node-id="cD9xqExnsoIvVF44UQ75j3">未决事实</th></tr></thead>
+        <tbody data-page-node-id="FpVTWvJN5kWcmv27BznWoS">
+          <tr data-page-node-id="V6Y9etrsRxFBhsNfc95wJv"><td class="tight" data-page-node-id="hsICzg04TP3DCpFDuswFDz"><code data-page-node-id="AywMzL46qJuqlejF7T9lCv">planned</code></td><td data-page-node-id="2aZEISwrALArn8H2jTR5hY">空</td><td data-page-node-id="sUDzOQvta4HikrqoJz0zaQ">空</td><td data-page-node-id="7xEfIH6tCNC7MM53onvCyy">空</td><td data-page-node-id="Ez3lI3IDJkH82mMxWxMPBk">空</td></tr>
+          <tr data-page-node-id="Vzs7HAi5evCVDFHrPiIrw7"><td class="tight" data-page-node-id="q7lQHjaBPKRcIAFXkP0tAX"><code data-page-node-id="LyejOitjroD9GguI0BIqSb">in_progress</code></td><td data-page-node-id="iVKTrHTMX8FY9VRaejj7JE">有</td><td data-page-node-id="C1LHivbYYCCsdAQ00Zsjcs">空</td><td data-page-node-id="qEZCsvFuuppU0zvrEup6WE">空</td><td data-page-node-id="jC1YrcX6Ot9TbwaANIZ8di">空</td></tr>
+          <tr data-page-node-id="DDOd4R8aT8yFbHxx8bDUKo"><td class="tight" data-page-node-id="HfEcOEphcRbyHEtGxwQty2"><code data-page-node-id="UMLEjGDRkdisBUKse8obWV">covered</code></td><td data-page-node-id="vxLm55kDxMSQVwXPzipJxV">有</td><td data-page-node-id="T9dNRWKajM5NHm40gwzBB0">两者都非空</td><td data-page-node-id="rYCI4Xql6qptjvLtfGz8Pk"><b data-page-node-id="eqBWFwu0aYDGyAkkxRKjFA">必须为空</b></td><td data-page-node-id="l187dmeJUeCoEzJiZrYW0D"><b data-page-node-id="xpURDqcbmNJRHdJQNcOXUo">必须为空</b></td></tr>
+          <tr data-page-node-id="y1BGTRLm4KgI4axdeQ8JmG"><td class="tight" data-page-node-id="rjwPkEXjZ1iPbPdr4kBhgX"><code data-page-node-id="yua4sPGmUWyBc4weCdORHC">candidate</code></td><td data-page-node-id="opjFQfraykIOHpA8g7VVpU">有</td><td data-page-node-id="2Zmj46EdeWO8gkRXnnAtCR">两者都非空</td><td data-page-node-id="6iNar7vwacXKt31tBvbFLa">非空</td><td data-page-node-id="uytJkkYtbBsGJ171w6XTKy">可选</td></tr>
+          <tr data-page-node-id="Axa6ma3IkDq4apgVumvBjG"><td class="tight" data-page-node-id="J4ZgUjvL6ipnsLBpgCsmI1"><code data-page-node-id="OCdXadv70gZahFwbSxZTwa">blocked</code></td><td data-page-node-id="aXd8sdZqlGkcBGf4OVCf7p">有</td><td data-page-node-id="EjWAISLVX52BWCrRS74SxP">两者都非空（部分证据）</td><td data-page-node-id="TFPqCoUUDk5oqpM5dBHmPE">空</td><td data-page-node-id="hxOxuAz04y945VBPEh7PI6">非空</td></tr>
+          <tr data-page-node-id="94Wo6maxWm4ytSclCZMxHw"><td class="tight" data-page-node-id="TdIGJJTv4HxgEjB4PJ2brs"><code data-page-node-id="eW61kzgnYyuebF2FkjeHB1">deferred</code> 等</td><td data-page-node-id="qxwTt0X0nkWn439R3aJAFU">空</td><td data-page-node-id="M6QshGMAtrLPnoRbOlHsoQ">空</td><td data-page-node-id="ddvFGPAOw3lHYcS2WuqkGH">空</td><td data-page-node-id="VdBdJQSaIY7p4kDbm3WNST">非空原因</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="p6" data-page-node-id="o21YfyoIiWRiaX60NLuSSC">
+    <div class="sec-head" data-page-node-id="TVizpNvMiAEwSWZD6dKTd6">
+      <span class="sec-no" data-page-node-id="rJplLiUbz3RktUyOTygqTN">06 / 判决</span>
+      <h2 data-page-node-id="4vBW1dkdGBwDzCt3NACBw5">三档判决：<span class="ash" data-page-node-id="2SDPGTihoOSuUUkgMyRWQ9">互斥，不许骑墙</span></h2>
+      <p class="sub" data-page-node-id="1l1O5EuFVqDqma30AeAGxe">每一档要什么、不许有什么，都写在 schema 里，<code data-page-node-id="mRSU2AiLNPr75SaPVVueAR">additionalProperties: false</code>。</p>
+    </div>
+
+    <div class="tablewrap" data-page-node-id="ZXfzjpDdMIu2WPYUicMwWp">
+      <table data-page-node-id="8y5j1a94UNQhiV4UYpeaHL">
+        <thead data-page-node-id="hO8OBchyOlCCPQGfxAW1Fc"><tr data-page-node-id="9viwEth8G1jRxDgi7EMi5r"><th data-page-node-id="M2cX3tvL9ZGycDu4cHurSX">判决</th><th data-page-node-id="HNvyeEYFimYhS72N1zpVwu">必须提供</th><th data-page-node-id="vrPC2bq5NueMbN8rTWjzbO">绝对不许有</th><th data-page-node-id="BXMp0MBwfpEbaElHyXOu4y">严重度</th></tr></thead>
+        <tbody data-page-node-id="cJj2DnswLQgcCJHsf6TXPR">
+          <tr data-page-node-id="xig7TFQWOSElteYgMU6dgY">
+            <td class="tight" data-page-node-id="TZCDKANAMiHCLlAW7EjAXv"><span class="tagpill sev-high" data-page-node-id="3ib6OBgxUUAI8S568TB30p">confirmed</span></td>
+            <td data-page-node-id="RzavEhGx2HvXQ4MdbvgBMj">根因、应有行为、成立条件、<strong data-page-node-id="ym3gDE48fDaJ5OV98nlpLg">目标原生接口的有界执行</strong>与真实观测结果、修复、严重度、置信度</td>
+            <td data-page-node-id="6rzd0OxXVDsdflaQnCRuwu">blockers、validation_plan、reason</td>
+            <td data-page-node-id="9J9xvH0f1JMzRcjf36Lzz2">有</td>
+          </tr>
+          <tr data-page-node-id="IKCb1dDZCjpkcC3tZxBYb0">
+            <td class="tight" data-page-node-id="9HTmXkuueYKnr0uuGgLBAo"><span class="tagpill sev-nv" data-page-node-id="3VOUzMjjc8KL33MsEv6dhD">needs_validation</span></td>
+            <td data-page-node-id="ZcadVmexUwuVAa32sWdclr">声称的根因、完整 trace、证据、<strong data-page-node-id="xQtxDWKkGSp64KaaZED8lE">逐条决定性 blocker</strong>、至少一个可执行的本地或 owner 观测计划</td>
+            <td data-page-node-id="JBzuZiFIIciuBaHM16mqkP">severity、execution、remediation、已确认根因</td>
+            <td data-page-node-id="Gh8WEXSmxZkbjWNwzme5Rs"><b data-page-node-id="nWLuFncMPY15GvwpIHBcV4">无</b></td>
+          </tr>
+          <tr data-page-node-id="eO9Cai7uOSHpESd5dehgvx">
+            <td class="tight" data-page-node-id="JWRqVwkCjkSdGmog1aoj3r"><span class="tagpill sev-rej" data-page-node-id="LdkFZ2W9y2TP7Uaysl0BBG">rejected</span></td>
+            <td data-page-node-id="1vB5HAVQu8S8tiJIZn0Rx0">声称的根因、trace、证据、<strong data-page-node-id="Rp9AEg0jWFhq6FyT3Nj4vf">推翻它的理由</strong></td>
+            <td data-page-node-id="4tMCDvWbBpHY2tjQwJXe3C">severity、execution、remediation、blockers、计划</td>
+            <td data-page-node-id="X9sBNOz0DfnpXGrUC6wCAd">无</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p data-page-node-id="Mh3YWjsViaLHE21oUNvanZ">最容易搞错的是中间那一档。技能专门写了一句话来钉死它：</p>
+
+    <div class="quote" data-page-node-id="XGK9F9MCEcvw92QbWAANWN">
+      needs_validation 意味着一件具体、有源码依据的边界假设被卡住了，而不是一个「置信度较低的已确认漏洞」。
+      <span class="src" data-page-node-id="nHwovsBXKTYUf5dD852Cs3">needs_validation means a specific source-grounded boundary hypothesis is blocked, not a low-confidence confirmed vulnerability. —— SKILL.md</span>
+    </div>
+
+    <p data-page-node-id="wwBeCTOeHcN62uvXCA3Yx4">所以它<strong data-page-node-id="7HhPn2SI5cBPy20ic29x8h">不给严重度</strong>。不是「不方便给」，是逻辑上不能给：影响还没被证明，任何数字都是编的。它也<strong data-page-node-id="qzSoeU2mx1zsrBPGplHyeG">不能</strong>是「暂时想不明白先放这儿」的停车场——每条 blocker 必须是决定性的，且必须已经在源码与本地能力内试过、确实取不到。</p>
+
+    <h3 data-page-node-id="LOAWZqaykMpI0DMfVpSE1Z">严重度锚点</h3>
+    <p data-page-node-id="J07T50kBBQ9CL9DUMC5Gji">严重度只在 confirmed 上出现，且<strong data-page-node-id="rKZrvBDDg3XqvGqCphuXil">整体严重度不得超过已演示的影响</strong>。判断 high 与 medium 的分界线只有一句：</p>
+
+    <div class="tablewrap" data-page-node-id="dxpsFPqYz5EQvJMATbe094">
+      <table data-page-node-id="Xz27qpfkz2O3lNTi3llgXz">
+        <thead data-page-node-id="6YcSVC5RwaEY3f1E1iW5mt"><tr data-page-node-id="AH4iRXxcSlFtk1wRFPlYLz"><th data-page-node-id="vdpRhb9ZYoQssAVSWxE44T">档</th><th data-page-node-id="joHlDoYjT3JiX5GW9Cx1vJ">锚点</th></tr></thead>
+        <tbody data-page-node-id="RTtIl5uklWTwbLW8DDGKvu">
+          <tr data-page-node-id="8vDKo5Bq6LpN3xucPkP4V0"><td class="tight" data-page-node-id="1W79KurDveBcEjYD1AjC3G"><b data-page-node-id="tCaJeHVuIRVdnJOVvy4Jlb">critical</b></td><td data-page-node-id="wQ5aHLm7euIueHn0eNqrD8">未认证者拿到代码执行、整库访问或任意账号接管</td></tr>
+          <tr data-page-node-id="X8coGFz1cCNuEzPc9EofVH"><td class="tight" data-page-node-id="QoWpdyr5bfBcjYSvEBxZT1"><b data-page-node-id="psIQlJeCrcGWakHra0ACGY">high</b></td><td data-page-node-id="64uH3UiaPEeNFPnp5xJ4B9">完整击穿一个明示的安全控制且有真实后果：认证绕过、跨租户读写、存储型脚本影响他人、认证后代码执行</td></tr>
+          <tr data-page-node-id="wIt6j50kTNTp9jBkLLsPoV"><td class="tight" data-page-node-id="IyGzfO63tWzcUlcfLIRMGy"><b data-page-node-id="vXCMUVIWO4vb1wZZYhTMyU">medium</b></td><td data-page-node-id="DiHCGGZpwRPYqKAXHxC6Dn">真实的边界越界，但爆炸半径有限、前置条件不常见，或后果被限制在很窄的资源集合内</td></tr>
+          <tr data-page-node-id="5PFZCB5xzG28y9oYxrEPvo"><td class="tight" data-page-node-id="fk1TkfOcTPvesXoLonZNjr"><b data-page-node-id="vZG1pM3WEOes1AcGnCSlUf">low</b></td><td data-page-node-id="ntUZkrOeXb2SfVL67BWzob">非机密内部信息泄露，或需要持续投入才换来极小收益</td></tr>
+          <tr data-page-node-id="Mggj2gq91A2DWILfjuCG1v"><td class="tight" data-page-node-id="0fDLOkCnxyPgnZqDeBx5mR"><b data-page-node-id="APHIafnL0YXX0pA005h3ax">info</b></td><td data-page-node-id="jzfAwHy7PGZDK9mvfpdtRS">已确认但影响极小，主要作为更大发现的前置条件</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="sub" data-page-node-id="nyndcj4Or98UsWMrDSKA3l">分界线可以压缩成一句问话：<strong data-page-node-id="VdtIeTfMXNBI1IaAdwiNgL">你演示出来的结果，是完全击穿了这个控制，还是只是削弱了它？说不清具体损害，就该往下调一档。</strong></p>
+
+    <h3 data-page-node-id="k3W5AmFb6NDb4ZeCXphnnG">修复只要一个「最小有效改动」</h3>
+    <p data-page-node-id="HYzyl7cphTplDbETf6QgkE">每条 confirmed 都要指出「代码必须维持的那条不变式」，以及<strong data-page-node-id="KVm0DQCDwb0lYx0gK6mguX">在最后一个受信决策点上</strong>强制它的最窄改动。这里有一条隐含的否决线：如果建议的修复只是<strong data-page-node-id="uMpIv2SZdonwGAlOMuHa1U">把信任挪了个位置</strong>（比如把检查从服务端挪到界面、从这个函数挪到那个函数），那它反过来说明——原来提的可能只是纵深防御缺口，不是边界失效。这次实战里有两条候选就是因此被判 rejected。</p>
+  </section>
+
+  <section id="p7" data-page-node-id="Ugg0yAI8oTtltiuh6Ewc7l">
+    <div class="sec-head" data-page-node-id="O2ovRgS1lNhRjOvReOqGSD">
+      <span class="sec-no" data-page-node-id="4JelCVdzaQc8C18EmirBRU">07 / 独立性</span>
+      <h2 data-page-node-id="abadmN7q2oyH4eAH0Inb6s">独立性：<span class="ash" data-page-node-id="8vWCREDmOifDOIFLUilQT8">谁不能审谁</span></h2>
+      <p class="sub" data-page-node-id="qnlJCDDBnjaGxRXlJPZsgB">这是整套技能里最反人性、也最值钱的一条：结论的可信度不取决于审得多细，而取决于<strong data-page-node-id="AkHa6nzhvEWhQmSllItbeA">审的人有没有可能是同一个人</strong>。</p>
+    </div>
+
+    <div class="chain" data-page-node-id="I1x66a9GgR2BWv9KhTmKiR">
+      <div class="node" data-page-node-id="wTR9xGNBlyguA9ylJBsEkT"><span class="k" data-page-node-id="2KOFoIAwY4IlW7dnlvsGcc">Stage 2</span><b data-page-node-id="1L2H2IbeP8sCOBWfkAuqg2">猎手</b><span data-page-node-id="myqbPPMC1Lh3ml9QPV19rw">提出候选，不评严重度</span></div>
+      <div class="arrow" data-page-node-id="oeZXcCDRk4tEB0lHjcl6Iv">→</div>
+      <div class="node" data-page-node-id="1pADzRIkgWEcPls0WEvOt5"><span class="k" data-page-node-id="mNh4k8fHz1SQBVJ5jvfSDg">Stage 3</span><b data-page-node-id="YM4tsxejDeGDwNawfpmuf2">候选验证者</b><span data-page-node-id="6YepMpGFajp2nrLscvhtFs">没猎过这条候选的人</span></div>
+      <div class="arrow" data-page-node-id="IsDsWFjKpKZdzsYDqscjNp">→</div>
+      <div class="node" data-page-node-id="CoqiOxMHHsIXRXPqMNBVan"><span class="k" data-page-node-id="XBxHy3wDKOwujWxl5xFFQK">Stage 5</span><b data-page-node-id="raHUiMYyvELr8C70FbYTX8">记录复核者</b><span data-page-node-id="55AVRu4QOq2wWQbb3N6Mqt">又换一个人，只读记录</span></div>
+      <div class="arrow" data-page-node-id="2Eq5gEdrSO0NZkqlnAJQmT">→</div>
+      <div class="node" data-page-node-id="NJILbXFXaMcsz5FyuUidAG"><span class="k" data-page-node-id="t4ORQvJ6KFRlktl48Dy3v7">例外</span><b data-page-node-id="tHcs6YLg9H9ZfedFbcIvjw">第 4 位验证者</b><span data-page-node-id="7QAaDrhHnCXjMjL3nEiqRT">只在物质性替换时启用</span></div>
+    </div>
+
+    <p data-page-node-id="UcU8Ol57dVgwBoHITMDAlA">规则不是「尽量换人」，而是三条硬约束：</p>
+    <ul class="body-list" data-page-node-id="AyOFV9SylNAGqsHBgBOsOL">
+      <li data-page-node-id="YRAnh6D2y0a4rzptwszZpq"><b data-page-node-id="Kq6o1ssEULV5r1MPcLyAIt">猎手不能验证自己的候选。</b>验证者可以读猎手的产物，但必须自己重读每一处被引用的源码——因为「引用的行号对吗」本身就是最常见的第一类错误。</li>
+      <li data-page-node-id="BR7VPJizNKTIOZs7uOCCti"><b data-page-node-id="j1isfbe1tZjoaXgnCRGcRE">Phase 3 与 Phase 5 不能合并</b>（除 <code data-page-node-id="gIa5xk15U2YLUlP2wGzKXP">quick</code> 画像）。一个检查「这条路径成立吗」，一个检查「这条记录写得对吗」。同一双眼睛看两遍，第二遍会继承第一遍的盲区。</li>
+      <li data-page-node-id="D5CPT7TlRZjivjKqVbsSgC"><b data-page-node-id="gAf37LKoUXCA1nAedIAiFq">物质性替换必须再过一手。</b>如果 Phase 5 的复核者不只是改措辞，而是<strong data-page-node-id="CCmBoGzkKdpqEyotWmLY4N">升级判决、改根因、改 trace、改执行输入或观测结果、改影响或严重度</strong>，那么这个替换不许直接应用——要交给第四位，没猎过、没做过 Phase 3、也没提出这个替换的人，重读源码并独立复现。</li>
+    </ul>
+
+    <div class="callout note" data-page-node-id="0ofra2MvFpEYDz1dZdV9Ls">
+      <span class="lbl" data-page-node-id="cx3NCTLGJTnMFIY3RmWBlj">为什么「换个人」比「审得细」更重要</span>
+      <p data-page-node-id="ntuCL6AqCSr4VpB9Tp394v">因为审计里最贵的错误不是漏看，而是<strong data-page-node-id="EUt2yqLGO2ZJ7oYWSFM8Tg">共识性错误</strong>：一个错误的前提被写进 trace，后面所有环节都在这个前提上做得很认真。换人只能挡住一部分，但它是唯一能挡住的那部分——前提错了，只有没参与建立前提的人才会去查它。</p>
+    </div>
+
+    <p data-page-node-id="J7w6uEbZB0v59yV3VL1kyl">本轮实战里，这条规则真的触发了一次，也是整场最值得记录的一段（见 <a href="#q8" data-page-node-id="UpcRtHgqjfa4dDy5z4SIzN">下篇第 8 节</a>）：Phase 3 把「SDK 附令牌的行为源码不可见」写成了 blocker；Phase 5 的复核者去读源码，发现那份 SDK 就<strong data-page-node-id="pkAPynvfKHO2cYFpCd0odM">躺在仓库的 <code data-page-node-id="DGVzqQtQ96c3AEMUomH7ZM">node_modules</code> 里</strong>，行为完全可离线判定。于是它返回 <code data-page-node-id="PyNPmUHumuLfVlXgsYdsR7">replace</code>；按规矩，这个替换不能当场生效，必须交给第四位独立验证者再确认一遍。</p>
+  </section>
+
+  <section id="p8" data-page-node-id="Dx13Aagupaw1Bl9FAc2m5Z">
+    <div class="sec-head" data-page-node-id="kZcoyls5rsvy5UD5EtNZEL">
+      <span class="sec-no" data-page-node-id="8GfFeSqkyxc3tP741RNOnl">08 / 边界</span>
+      <h2 data-page-node-id="wQPihatWO90AQRQpeRYJPk">沙箱纪律：<span class="ash" data-page-node-id="eXjeFkJLSPE2bmhSAjz9VW">缺一个控制，就不执行</span></h2>
+      <p class="sub" data-page-node-id="R7w9GKqmHPrvOAbiu8J0gt">这条规则让报告变少，但也让它变成真的。</p>
+    </div>
+
+    <p data-page-node-id="vYUbrKLSGwJG7pZYrO1JUD">要跑目标代码，必须同时具备四个控制。注意是「同时」——不是「尽量」：</p>
+
+    <ul class="checklist" data-page-node-id="Bx8DTylNX7Z4Y7LjI3GC2z">
+      <li data-page-node-id="rsVkQjAALcx3qhc9IrvOAy"><span class="mk req" data-page-node-id="Go2xASpYWqpKHhhz5k1car">01</span><span data-page-node-id="niNL78zWxLNk6RMsYXBa91"><b data-page-node-id="lShKIwzJLmTbmi2oGpBIeM">无外网</b>：需要本地客户端/服务端对话时，只给一个隔离的回环命名空间。</span></li>
+      <li data-page-node-id="t53BXf5lViGeWaksYGEqyY"><span class="mk req" data-page-node-id="iTEWKQYlFdsTVwgfNj7GS9">02</span><span data-page-node-id="MMSofBpDqZTwjcfMNwQn4x"><b data-page-node-id="LocnQGkxv5icBVtE4pxJfc">空环境</b>：从白名单显式构造，scratch 内自带 HOME、临时目录与缓存，绝不继承宿主环境变量。</span></li>
+      <li data-page-node-id="lsoMS3DM3t3RLvASOqFOdm"><span class="mk req" data-page-node-id="DBAbghxbT0IhMWplZGxaJB">03</span><span data-page-node-id="FHfXWFv7LnXe1H67mEsVsM"><b data-page-node-id="plLbGxUPFSidhcrpMJMdj1">只读目标与工具链</b>：目标受控进程只能写自己那份 <code data-page-node-id="57egMrckyh4vu0lMQb2I54">scratch/</code>。</span></li>
+      <li data-page-node-id="FmiFt1gGx8B2QnK5FEBDFF"><span class="mk req" data-page-node-id="dS04SRiZegAZ0djhS8NCiU">04</span><span data-page-node-id="MFf5sWZNC2hbH0tGq2ZRw3"><b data-page-node-id="dJxPtll1Sq5G86L4Fwg1WL">显式低资源与墙钟上限</b>：CPU、内存、进程数、文件大小、磁盘、时间。</span></li>
+    </ul>
+
+    <p data-page-node-id="lc45PSEOI2I6nCGhXnHcEH">任何一项无法强制，结论都一样：<strong data-page-node-id="QecUTttbbLiE3XHTHN775N">不要执行</strong>，把缺失的能力写成 blocker，走 needs_validation。这条不是纸面规则——这次在 macOS 上实测，四项里三项直接落空：</p>
+
+    <div class="tablewrap" data-page-node-id="kluVRnTXkIacR7SawaJf0N">
+      <table data-page-node-id="EQZD4slm4vGEbUMze6PxGF">
+        <thead data-page-node-id="sOFLarompsRUlVq7z7IcF8"><tr data-page-node-id="jTplRNfjVe7z5fB7KpeV7p"><th data-page-node-id="mUULfHousDDXbdbN6C6Thy">控制</th><th data-page-node-id="8968Rnm4lh74hpgFZbuHqx">本机实测</th><th data-page-node-id="JlzS1kmTawLMu7iSGgZEzb">后果</th></tr></thead>
+        <tbody data-page-node-id="1AKjNqxgq8IFqVQ24c9oPs">
+          <tr data-page-node-id="bDUpgFZ7KiIvwT7OQBK8AT"><td class="tight" data-page-node-id="BP0BBUU2mL3w7pPqq7dUur">OS 强制沙箱</td><td data-page-node-id="QLB7X5zoJcLBQEVUj1eCNv"><code data-page-node-id="8je6cfGt3wWvWGGGtcpdcb">sandbox-exec</code> 存在，但每次调用都 <code data-page-node-id="Th4vrbECSHFqKh1bC7DDCj">sandbox_apply: Operation not permitted</code></td><td data-page-node-id="KTiZNc4hzhqz7mlbyhSXed">无法建立隔离根</td></tr>
+          <tr data-page-node-id="FpJVMSO8IkaDNjPqPfCJj9"><td class="tight" data-page-node-id="8I1fDzKVj3eDQ2KoBRvGI3">网络隔离</td><td data-page-node-id="ZIF5b5jkOiijtKydfjtfeP">不可强制</td><td data-page-node-id="EABruDcVhDCF073vFhuYEM">不能跑需要起服务的检查</td></tr>
+          <tr data-page-node-id="Do0pDey7FX2Km49QRf6dvJ"><td class="tight" data-page-node-id="mDHKEDRWYP2NDNxWfSr3tn">只读挂载</td><td data-page-node-id="DVi1YnHnirTCbcDWoSZsig">不可强制</td><td data-page-node-id="SvMmYddY9mFSIjt9zEGouf">目标代码理论上可写宿主路径</td></tr>
+          <tr data-page-node-id="3Gq89oNSt3JeBdaYoCrAdH"><td class="tight" data-page-node-id="cOeHv9P8EpEv8ueORdBGmA">磁盘 / 内存上限</td><td data-page-node-id="qZpnVzNy7QDCnwYgzSwIii">无 <code data-page-node-id="FqCDFYqRIgFkjIwBGpdGXy">ulimit -v</code>；可用 <code data-page-node-id="kgcX8OMMR44Zt7Rsk13ml8">env -i</code>、<code data-page-node-id="L0tLoZuynhOEPkc3ioSYQf">ulimit -t/-f/-c</code>、父进程墙钟</td><td data-page-node-id="tVwHNTvhpwVyxUWlaC7yeU">只能做到部分限制</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn" data-page-node-id="Nc0T0GyRpP8Qre9IFvPPCD">
+      <span class="lbl" data-page-node-id="DDBN2pn2ireqENAlpFYJVR">于是本轮的能力边界被这样收缩</span>
+      <p data-page-node-id="7QVq2KxurXHPugomSG0aA6">目标受控执行只剩两类：仓库自带的离线 <code data-page-node-id="4m6Ghz4PYtJOX4IFWbNkCE">node --test</code> 套件，以及<strong data-page-node-id="OVIEKUhNfdA2U5nk0M5twf">无 IO、无服务进程、无监听 socket</strong> 的纯函数 harness。凡是需要「本地已应用迁移的 Postgres」「真实浏览器」「真实电子表格求值」的检查，一律不执行，改记 needs_validation 并把缺失能力逐条写明。</p>
+    </div>
+
+    <p data-page-node-id="hVHFRo5yaox1PoES6G7bOQ">这里有个容易被误解的推论：<strong data-page-node-id="kccKrFtHv7Q1TzTrDuHvG5">沙箱缺件不等于放弃候选</strong>。源码路径依然成立，只是「结果」还证明不了——所以它不是被删掉，而是从 confirmed 降级成 needs_validation，并附上一份<em data-page-node-id="qRatOAQ2ETLDq0AZuMs5Ii">不会给目标环境添麻烦</em>的验证方案。这次三条待验证线索，就是这么来的。</p>
+  </section>
+
+  <section id="p9" data-page-node-id="RoELBPhDwvMSYqeH9DfcFO">
+    <div class="sec-head" data-page-node-id="fzwj1zjiGUolkfI3HpUjML">
+      <span class="sec-no" data-page-node-id="xPxYhKpex6nrVU0SiQe4MO">09 / 收尾</span>
+      <h2 data-page-node-id="WdDvLBRjuP8BZuso9p637A">机器收尾：<span class="ash" data-page-node-id="L4Z8JMEIM9HEO9uraHtEO0">两个校验器，与它们不能证明的事</span></h2>
+      <p class="sub" data-page-node-id="SrQYJKI6ObmmIRwHVmqZqF">审计不能靠「我读了一遍觉得没问题」结束。</p>
+    </div>
+
+    <p data-page-node-id="TYYwrBtwvTFmQ7kwGFhZeD">因为结论是 JSON，所以它可以被机器检查。技能自带两个校验器，在 Phase 4 之后、Phase 6 之前各跑一次，报错必须清零才能继续。</p>
+
+    <div class="grid g2" data-page-node-id="87DyscRCkEniTq70mllYD6">
+      <div class="card accent-blue" data-page-node-id="VJsJiHovsmAtIQ5AZtnyMp">
+        <div class="rule" data-page-node-id="s6yhGJOtXkSINGwt43TBMz"></div>
+        <span class="tag" data-page-node-id="jzS1lb0bRvwBGmRq1z7vK9">validate-findings.cjs</span>
+        <h4 data-page-node-id="kFgqo3voEyyvyzweXHHt7v">记录的结构与语义</h4>
+        <p data-page-node-id="jLHGGxB3zcY2DVwBbEQgOI">三档分支是否互斥、必填字段是否齐、trace 是否<strong data-page-node-id="fgBnsFzZNeMAXpDqC6J3H2">恰好一个 entrypoint、一个 sink</strong>、中间只能是 propagation、路径是否仓库相对、指纹是否合规、严重度是否越界。超 5 MiB / 1000 条 / 64 层直接拒。</p>
+      </div>
+      <div class="card accent-teal" data-page-node-id="X09Y0Cn8SRLifzZlNrbqmW">
+        <div class="rule" data-page-node-id="XcgqHxQLQKmgxLCw4px8XK"></div>
+        <span class="tag" data-page-node-id="KCmUHTZ1iK3vXyrn9RJBTm">validate-coverage-ledger.cjs</span>
+        <h4 data-page-node-id="2apLmdWfmkwo6KXtfy5KpQ">覆盖声明与记录是否对得上</h4>
+        <p data-page-node-id="0PDZ0761EXvfPOmJ8mwRVH">ID 是否重复、状态与字段组合是否合法、<code data-page-node-id="XpFAlEMY4G511QEI9igGyg">covered</code> 是否真的清空了指纹与未决事实、local 检查的 artifact 是否恰好落在<strong data-page-node-id="FfWVgqk6N0udKEr5VcfGWR">该检查自己 owner</strong> 的 artifacts 下、候选指纹是否都能在 findings 里找到归属。</p>
+      </div>
+    </div>
+
+    <p data-page-node-id="ESyQMvwHYnGqQaLubA934h">但要有清醒的认识，技能自己就说了：</p>
+
+    <div class="quote" data-page-node-id="YTd25PpW6HXbNFhuJLjVi3">
+      校验器通过，只证明格式与账本一致性。
+      <span class="src" data-page-node-id="LFe4VH2lf28aRt0ZDATkQr">Validator success proves format and ledger consistency only. —— VALIDATION-AND-REPORTING.md</span>
+    </div>
+
+    <p data-page-node-id="DDsk17LxDZT995mThbYhCx">它不证明代码安全，不证明没有遗漏，也不证明报告好读。它只保证一件事：<strong data-page-node-id="Vg8DDLuAmFJyNO3cH0QgwD">结论和覆盖声明之间没有自相矛盾</strong>。剩下的事，靠批评门、独立验证和人来判断。</p>
+
+    <p data-page-node-id="RMCEdNDpUXFpFkCKriiMCP">顺便说，这也是为什么整套流程有两个<strong data-page-node-id="ALJTmcu00nuGBmJiwFmA1B">互斥的终态</strong>——要么报告三件套写完且两个校验器都过，要么明确写 <code data-page-node-id="7lAQdRyhPGr2GCyEyLs7g8">run_status: incomplete</code> 加一条精确原因。不允许「差不多跑完了就停」。中途停下不算收尾，只能算中断。</p>
+  </section>
+
+  <!-- ================= 下篇 ================= -->
+  <div class="part-band" data-page-node-id="wWLlD1Ajl58XBOwCUdaob2">
+    <div class="inner" data-page-node-id="Hic3dJsHMRi0etnPhI77Ww">
+      <span class="num" data-page-node-id="PS3LpkHaypHTRAFyQEVCvx">PART 02</span>
+      <span class="t" data-page-node-id="ga5vMq7BHtHPUghqOmgsHf">实战：在 research-share 上跑一遍</span>
+      <span class="d" data-page-node-id="UuDMC5YixMu9FfgWZ4zCGG">53 个单元、32 个代理、9 条结论，以及一次被当场推翻的错误前提。</span>
+    </div>
+  </div>
+
+  <section id="q1" data-page-node-id="55outXz1HllyUCKibAHQal">
+    <div class="sec-head" data-page-node-id="uOoCMpVAcEH9wdTRrslHxN">
+      <span class="sec-no" data-page-node-id="VwPgTTKtgm1v0M829OyeZc">10 / 对象</span>
+      <h2 data-page-node-id="SczVVtVm00HqRamgfIvOaZ">被审对象的形状：<span class="ash" data-page-node-id="tlRO09tgqu1uscyFpqIo7s">两条写路径，两种授权强度</span></h2>
+      <p class="sub" data-page-node-id="F4CKocp8dlWFxJFAasBzLR">在看结论之前，先看这个系统把信任边界画在了哪。</p>
+    </div>
+
+    <p data-page-node-id="Zvpn88gRTAxccNCbIMAjY0"><code data-page-node-id="q6N4RzakEGZLsEtJE1Dtt9">research-share</code> 是一个 Node ESM 项目：用 <code data-page-node-id="bmjBhy8NFidTx4xCyKGM4l">node:http</code> 自己做 SSR，数据放在 Postgres，授权靠 RLS 加 <code data-page-node-id="4XIflCCziftCtuYftQCkth">SECURITY DEFINER</code> 函数。它的架构基线写得很清楚——<code data-page-node-id="h6ynFag6Yw9QU26HgtiGFF">db/03</code> 的文件头直白地说：<strong data-page-node-id="OIU72PNMNvcHHGYFUE5OEh">应用层可以被绕过，数据库层不能</strong>。</p>
+
+    <p data-page-node-id="UifRLgcERxWkn7cxHDb33e">这句话决定了整个审计的重心。因为一旦「授权只在库侧」，那就必须回答一个问题：<strong data-page-node-id="jALcF3MzPEnpMmX7VFkzCA">是不是所有写路径都真的走到了库侧的判定？</strong></p>
+
+    <figure data-page-node-id="EBGYp8WoHcnfT9D4Tb5kqu">
+      <svg viewBox="0 0 720 492" role="img" aria-label="research-share 的两条写入路径：浏览器直连数据面走 RLS，Agent RPC 以 SECURITY DEFINER 执行并绕过 RLS" data-page-node-id="NonrSebIheQIyAqcyJnkK9">
+        <rect x="0" y="0" width="720" height="492" fill="#FFFFFF" data-page-node-id="htUcZLuPR9ljPAu6jwOL5N"></rect>
+        <defs data-page-node-id="qW5vpb98u7ldsw3q8ZCNsG">
+          <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="MHEu8BlB8QZIPxqA3RYPJ2">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8A94A3" data-page-node-id="OW6SEAllRKPNBw2YRO2lNz"></path>
+          </marker>
+          <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="CxYFWBlyAzEtuSHBUImTXE">
+            <path d="M0,0 L10,5 L0,10 z" fill="#0E6E64" data-page-node-id="N5jchcTuQ2WRHTsT9QQOGy"></path>
+          </marker>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="JYjGEcfocBED5q6KaoHrsd">
+            <path d="M0,0 L10,5 L0,10 z" fill="#9C2B1B" data-page-node-id="nXJWu1CwizFHc1zCbivYXK"></path>
+          </marker>
+        </defs>
+
+        <rect x="40" y="24" width="180" height="78" rx="9" fill="#F7F9FB" stroke="#D8E0E8" data-page-node-id="dfdqMDBMgv9DCDGUAYAW1S"></rect>
+        <text x="58" y="48" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="600" fill="#15181E" data-page-node-id="BvALdLEaALiThlbJwEipdh">浏览器</text>
+        <text x="58" y="68" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#68707E" data-page-node-id="qG4SOHCXJJ1xrsW3wbrYxK">匿名访客 · 登录用户</text>
+        <text x="58" y="85" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#68707E" data-page-node-id="iEB4Vhmzmk7GDtBKYlEmpy">管理员</text>
+
+        <rect x="392" y="24" width="180" height="78" rx="9" fill="#F7F9FB" stroke="#D8E0E8" data-page-node-id="41ybMxtNVEem0FcxWVPriz"></rect>
+        <text x="410" y="48" font-family="-apple-system,PingFang SC,sans-serif" font-size="13" font-weight="600" fill="#15181E" data-page-node-id="CmhHEfTMb0aiDFTHVbKukE">Agent 调用方</text>
+        <text x="410" y="68" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#68707E" data-page-node-id="ABtheDwXcazvYRupArgnp2">持有一把 Bearer token</text>
+        <text x="410" y="85" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#68707E" data-page-node-id="LMoMEVrf2uPAeksZdCWvBZ">文档支持多把 token 并存</text>
+
+        <rect x="40" y="150" width="640" height="118" rx="9" fill="#FFFFFF" stroke="#D8E0E8" data-page-node-id="LLOriyrQCZ276M65S7Fxv4"></rect>
+        <text x="58" y="174" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#1F4E79" data-page-node-id="YY9S4kawOXBhWQFP9Xubtn">Node ESM · node:http · SSR</text>
+        <g font-family="-apple-system,PingFang SC,sans-serif" font-size="10.8" fill="#3B4250" data-page-node-id="69gogqgrQjKpbvdtaX4ubV">
+          <text x="58" y="198" data-page-node-id="EDg91nGmgqKdRLQrW44ZXj">GET /item/:id → SSR 详情页</text>
+          <text x="58" y="216" data-page-node-id="6Uopj4HVIOThL4HTv9iTAG">POST /api/track → 匿名埋点</text>
+          <text x="58" y="234" data-page-node-id="pd2M6lSRTQNzlctBN7IBZl">POST/PATCH/DELETE /api/items* → Agent RPC</text>
+          <text x="58" y="252" data-page-node-id="U9NEF5Nxp5UAnxy6HhyiqA">GET /admin → 管理看板</text>
+        </g>
+        <g font-family="-apple-system,PingFang SC,sans-serif" font-size="9.8" fill="#98A0AE" data-page-node-id="nyypKVIWMFZzmdAYaHAwLf">
+          <text x="420" y="216" data-page-node-id="dTaUmZmsDcyQqPX9bx0Y17">埋点是唯一的匿名写入口</text>
+          <text x="420" y="232" data-page-node-id="af6sEcb8YMXQlYYnABm1CD">其余写操作靠令牌或库侧策略</text>
+        </g>
+
+        <rect x="40" y="352" width="640" height="128" rx="9" fill="#F7F9FB" stroke="#D8E0E8" data-page-node-id="FZTyt64fZANmezbHFDQYtx"></rect>
+        <text x="58" y="376" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#1F4E79" data-page-node-id="c8a8v9eVTOZuMQ6FhLJ2C6">Postgres</text>
+        <g font-family="-apple-system,PingFang SC,sans-serif" font-size="10.6" fill="#3B4250" data-page-node-id="wSqRnZQczG6trG8AguA4E9">
+          <text x="58" y="398" data-page-node-id="MUsHFJpZKONBfrlkBX41b5">RLS 策略：research_items / admins / analytics_exclude</text>
+          <text x="58" y="415" data-page-node-id="LI5eNbTOGxdt5CBEKTpSLD">SECURITY DEFINER：is_admin / is_founder / agent_*</text>
+          <text x="58" y="432" data-page-node-id="7kxyr1miqfpQ9fPfaVNb9j">GRANT 层：anon 对 research_items 只有 SELECT</text>
+        </g>
+        <text x="58" y="462" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#9C2B1B" data-page-node-id="uA7cUSFwVPpKxCqX8FcNa6">两条写路径走到这里，授权强度不一样 —— 这是本轮所有结论的舞台</text>
+
+        <path d="M130,102 L130,142" fill="none" stroke="#8A94A3" stroke-width="1.3" marker-end="url(#ag)" data-page-node-id="wBjBVM2p3SWIsQOxZDQTNR"></path>
+        <text x="140" y="120" font-family="-apple-system,PingFang SC,sans-serif" font-size="9.8" fill="#68707E" data-page-node-id="6Bmra3r516Lirtly60Bxwr">读页面 / 触发 SSR / 埋点</text>
+
+        <path d="M482,102 L482,142" fill="none" stroke="#8A94A3" stroke-width="1.3" marker-end="url(#ag)" data-page-node-id="jmKQGlpKSIbhn3YOWhJGHi"></path>
+        <text x="492" y="120" font-family="-apple-system,PingFang SC,sans-serif" font-size="9.8" fill="#68707E" data-page-node-id="ZqaK3YwE7dabwep0fkzecm">POST /api/items · Bearer token</text>
+
+        <path d="M40,63 L16,63 L16,330 L120,330 L120,350" fill="none" stroke="#0E6E64" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#at)" data-page-node-id="bJjwR6PhQlKFaNlmvmu0EC"></path>
+        <text x="132" y="300" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#0E6E64" data-page-node-id="hkrfr2gAJJasdXjNcSVGzq">浏览器直连数据面</text>
+        <text x="132" y="316" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#0E6E64" data-page-node-id="tyhVjuBziNuvA1EreRmRuU">RLS 是唯一强制点</text>
+
+        <path d="M478,268 L478,350" fill="none" stroke="#9C2B1B" stroke-width="1.5" marker-end="url(#ar)" data-page-node-id="NVeEnrDr4rrph5DyGQWbrK"></path>
+        <text x="468" y="300" text-anchor="end" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#9C2B1B" data-page-node-id="YVzGzsSo7M1IzeywEswCGg">RPC 写函数</text>
+        <text x="468" y="316" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="9.2" fill="#B0695A" data-page-node-id="Tfc5bxsLjnBB0ta7OCFvrr">SECURITY DEFINER</text>
+        <text x="490" y="300" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#9C2B1B" data-page-node-id="ILe0AgsJMXoz1T5Bb1aOnf">RLS 不生效</text>
+        <text x="490" y="316" font-family="-apple-system,PingFang SC,sans-serif" font-size="9.2" fill="#B0695A" data-page-node-id="eMUaoyWlkJyMxkbiYEbKB0">全仓无 FORCE RLS</text>
+
+        <text x="310" y="340" font-family="-apple-system,PingFang SC,sans-serif" font-size="9.6" fill="#98A0AE" data-page-node-id="wn4FTr1qfRSB44p01zdp8i">SSR 读取 / 埋点写入</text>
+        <path d="M300,268 L300,344" fill="none" stroke="#C3C8D0" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#ag)" data-page-node-id="k6CC7ZjuAWc5V7QyWjpVPP"></path>
+      </svg>
+      <figcaption data-page-node-id="qcBcPlMH5oOqDZdDFD2PGH"><b data-page-node-id="R0qDIPxyOIMfG6Jq2nXqbp">一句话看懂这个系统的风险面。</b>浏览器写路径的授权强度是「属主或管理员」（RLS 双向同判）；而 Agent 的写函数是 <code data-page-node-id="1GkDBS3lWN75trGuVh3nPI">SECURITY DEFINER</code>，以表 owner 身份执行，RLS 对它整个不生效——浏览器路径的强度没有被带到 RPC 路径上。</figcaption>
+    </figure>
+
+    <div class="callout note" data-page-node-id="8xcH7yiA7puiSRIpdZK2qD">
+      <span class="lbl" data-page-node-id="q8tXG9CFHNcE4t8SfE9X4Z">为什么先画图而不是先读代码</span>
+      <p data-page-node-id="0E1VdMH84aPDxNz9G4dSLD">因为「两条路径对同一个资源做同一件事，但强度不同」这类缺陷，只在<strong data-page-node-id="ITJ07xcoGYGiOZqvmg15Vw">把两条路径并排画出来</strong>的时候才会显形。逐函数读代码永远读不出来：每个函数单看都是对的。</p>
+    </div>
+  </section>
+
+  <section id="q2" data-page-node-id="wEVyseb63CNt72BoFvEwMD">
+    <div class="sec-head" data-page-node-id="5WH4D9IdcuKbNy4rPLbTT6">
+      <span class="sec-no" data-page-node-id="8fdHs0lQd5VBkTIV7IISsF">11 / 开销</span>
+      <h2 data-page-node-id="HGxaMsnwqFvxG2a9zhQr6I">这次运行的开销：<span class="ash" data-page-node-id="EJGCNFonVctIuqTHz15Co9">钱花在哪</span></h2>
+      <p class="sub" data-page-node-id="rDtdSbQMBNjx6NtMgiTs00">说「完整审计很贵」没有意义，把它拆开看。</p>
+    </div>
+
+    <div class="kv" data-page-node-id="kjTMqWKAiiuP7qqMLwst1u">
+      <div data-page-node-id="2CaxWZbfTC0v75moMo9rDm">run id</div><div data-page-node-id="JGYVC8d4qPu7z81okPrNS8"><code data-page-node-id="kSokE2ZAo1AqL2WfvofyuZ">research-share-run-2-20261024</code></div>
+      <div data-page-node-id="z29mwUlAbB2CTNvWBrjPX4">画像 / 预算</div><div data-page-node-id="tbP0419P5Ew2qZBCAkTaTm"><code data-page-node-id="oSdjuLvMLSBC8SNnniPppG">standard</code>（完整 6 阶段）· 未设预算门 · 无因预算被迫中断的项</div>
+      <div data-page-node-id="98gE4Tpr7BPw5u4nNzNRSR">source ref</div><div data-page-node-id="xGhDLxxJrvdEE05aq0lY4f"><code data-page-node-id="EkDagXIHwgfVC2C28pcvG1">90deace3</code> @ <code data-page-node-id="SBa3RLc9aZToYLaFG8WDeE">main</code>，工作树<strong data-page-node-id="QLfvNuM3ljd5uaKvvPkFQP">脏</strong>（5 个未提交文件，按当前形态纳入范围）</div>
+      <div data-page-node-id="tVPWLdQ1yWEt9R54bj785M">执行边界</div><div data-page-node-id="LuXXDvhzkEOmXgIil9euQx"><code data-page-node-id="m70GF2cJtG9rzWyGLUiuKZ">sandboxed-source-and-local-only</code>：只读仓库 + 受限本地执行，禁止触任何已部署端点</div>
+      <div data-page-node-id="g3fi7uJnPa6DRrcuOnqxCG">前序 run</div><div data-page-node-id="LbTk4tiDfrRnYP1M8IIfRr">独立全量重跑。run-1 停在 Phase 2 之前（30 个单元全 <code data-page-node-id="EMxUU9Av0wex2ivhFWVrrG">planned</code>、无 findings.json），因此它的 18 个候选<strong data-page-node-id="JDJZ5C5Gslq6m6C71hov2J">没有被当作锚定样例</strong>传下去</div>
+      <div data-page-node-id="De1gvQqAVg9lukxiiOVaKt">终态</div><div data-page-node-id="ow6mX3U4Gm9rST4ETqPd87"><code data-page-node-id="qg06usCwouhnLDHc6qDuUm">run_status: complete</code> · <code data-page-node-id="jS8Jnqnh6L2wBhs6B6QZTc">coverage_complete: true</code></div>
+    </div>
+
+    <figure data-page-node-id="hAPFQCcADpfJLi61gtk40s">
+      <svg viewBox="0 0 720 168" role="img" aria-label="32 个子代理目录按角色拆分：猎手 11、批评门 4、Phase 3 验证 9、Phase 5 复核 8" data-page-node-id="REvBxRbW5hQoLdEjRxKZNq">
+        <rect x="0" y="0" width="720" height="168" fill="#FFFFFF" data-page-node-id="U7PquhuxqoNgbbJkuNB6Px"></rect>
+        <text x="40" y="26" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#68707E" data-page-node-id="gbW3A6QSIP1BQLR1x2SEBM">32 个子代理目录，每格 = 1 个 agent</text>
+
+        <rect x="40" y="38" width="220" height="52" fill="#2E6EA6" data-page-node-id="2PJAdaSJKIn2KO3MToBSPf"></rect>
+        <rect x="260" y="38" width="80" height="52" fill="#B77B1A" data-page-node-id="p5lm05ud2dwU0vMZQgDyAY"></rect>
+        <rect x="340" y="38" width="180" height="52" fill="#0E6E64" data-page-node-id="Sh9XSbnUBRT0CwIfV3QhFu"></rect>
+        <rect x="520" y="38" width="160" height="52" fill="#59626F" data-page-node-id="iHHxxgu6AoJUR9BJ5R5sKy"></rect>
+
+        <text x="52" y="70" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#FFFFFF" data-page-node-id="ExUK1Dc3JSANtsn5fXeBZ9">猎手 11</text>
+        <text x="272" y="70" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#FFFFFF" data-page-node-id="cTkn6cFMIt3G776y4EQagu">批评门 4</text>
+        <text x="352" y="70" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#FFFFFF" data-page-node-id="OO7yRSapWKOjghwazyv2Zb">Phase 3 验证 9</text>
+        <text x="532" y="70" font-family="-apple-system,PingFang SC,sans-serif" font-size="11.5" fill="#FFFFFF" data-page-node-id="LkjCxNXEWbBCvZBUetHpEy">Phase 5 复核 8</text>
+
+        <text x="40" y="112" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#68707E" data-page-node-id="rZMB2eEDzibclneKRpvD9Z">每个角色都是独立实例：同一条记录不会被同一个 agent 碰两次。</text>
+        <text x="40" y="130" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#98A0AE" data-page-node-id="8eFlXkdfD6Of4cktcGUcEt">Phase 5 的 8 个里，有 1 个是专为复核「物质性替换」而临时增加的第四位验证者。</text>
+        <text x="40" y="150" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#98A0AE" data-page-node-id="FIp0hrSNF7gGDFcofq4BHi">Phase 1 的侦察 agent 只回传事实、不写文件，因此没有目录，也不计入这个数字。</text>
+      </svg>
+      <figcaption data-page-node-id="vPJGsRFppQf2I1NQWb1hSI"><b data-page-node-id="nTdwxOjmOHNOtOAwRea4R7">消耗结构。</b>真正花时间的是「重复」：11 个猎手只读一遍代码，剩下的 21 个 agent 几乎都在<em data-page-node-id="bYrUIf6DiBp5ZvvRGoIXet">复查别人已经读过的代码</em>。这就是这类审计贵的原因，也是它敢下结论的原因。</figcaption>
+    </figure>
+  </section>
+
+  <section id="q3" data-page-node-id="0YA3Wt9uXPYCUqwNeF7ElI">
+    <div class="sec-head" data-page-node-id="w6QsKAdEEVErmLsn0dKdZR">
+      <span class="sec-no" data-page-node-id="POpzFaxOTYzrzK1lqMIyLL">12 / 覆盖</span>
+      <h2 data-page-node-id="W3vWtm3rP7LENxcE1TbSpA">覆盖账本实况：<span class="ash" data-page-node-id="CUmrACxeOVB0C6vQiuDQ1v">53 格分布在哪些攻击类上</span></h2>
+      <p class="sub" data-page-node-id="UFjeDmsMGYF4tML6vmWkxT">账本不是统计表，它是「这次到底审了什么」的唯一凭证。</p>
+    </div>
+
+    <figure data-page-node-id="wVrnxrBI7XlcctcXpDWcVp">
+      <svg viewBox="0 0 720 336" role="img" aria-label="53 个覆盖单元按攻击类分布：访问控制 13、注入 11、业务逻辑 6 等" data-page-node-id="gDELr5yyACS8HbukCDVTzr">
+        <rect x="0" y="0" width="720" height="336" fill="#FFFFFF" data-page-node-id="0jUld9PPFJTLYZPDdYrDok"></rect>
+        <g stroke="#EFEDE6" stroke-width="1" data-page-node-id="Cgo1OvItW5duER2Ip9RIrw">
+          <line x1="232" y1="34" x2="232" y2="304" data-page-node-id="KK0zXXS6J32FTakjVZBqFY"></line>
+          <line x1="355" y1="34" x2="355" y2="304" data-page-node-id="37iEo5Z63Iqg3R9fMDT6tg"></line>
+          <line x1="478" y1="34" x2="478" y2="304" data-page-node-id="faapu09jBawjDNcgJ2yvjl"></line>
+          <line x1="600" y1="34" x2="600" y2="304" data-page-node-id="QgZ8Ecl4WTrjbZi8GyY0pl"></line>
+        </g>
+        <g font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#98A0AE" data-page-node-id="KnoJGRR7a1CFOf96QJLA0T">
+          <text x="232" y="320" text-anchor="middle" data-page-node-id="xvkRNJZ69onu53PoawuNUZ">0</text>
+          <text x="355" y="320" text-anchor="middle" data-page-node-id="iFk2M83oEnbi5QhCemZkf0">4</text>
+          <text x="478" y="320" text-anchor="middle" data-page-node-id="39lGVQE1KB1QWQloOuTid7">8</text>
+          <text x="600" y="320" text-anchor="middle" data-page-node-id="w7LQtu5UIUjAorbgUoTNxs">12</text>
+        </g>
+
+        <g font-family="-apple-system,PingFang SC,sans-serif" font-size="11.8" fill="#3B4250" data-page-node-id="dBUmFNwxzznNQjjpTBfCE0">
+          <text x="16" y="60" data-page-node-id="ocSd5GrpGcd0yGkVrUu2ix">访问控制</text>
+          <text x="16" y="90" data-page-node-id="fLw2RGLx6aPuecAAxrTpdw">注入</text>
+          <text x="16" y="120" data-page-node-id="nHlufaN0vlSONXgvc3q53t">业务逻辑</text>
+          <text x="16" y="150" data-page-node-id="9VDF44OM6TSfKjhGpc6p8u">功能滥用与数据泄漏</text>
+          <text x="16" y="180" data-page-node-id="YsxANQacqsGObrLXfGSlpu">资源与文件处理</text>
+          <text x="16" y="210" data-page-node-id="eFqdlAY0T3rX17PHpwwew5">显见疏漏</text>
+          <text x="16" y="240" data-page-node-id="og7qgfJk1aFG0q7NQw4F8g">通配 / 兜底</text>
+          <text x="16" y="270" data-page-node-id="FTkIc8pxz6zDTNX1Hf9ZO8">链式与信任边界</text>
+          <text x="16" y="300" data-page-node-id="vXZgxvvTIKuwxCOPXWlzrO">密码学与密钥</text>
+        </g>
+
+        <g fill="#2E6EA6" data-page-node-id="bH8XAtHF7y0QTEu5LTDo7Y">
+          <rect x="232" y="48" width="400" height="16" rx="2" data-page-node-id="E7PteqErTGewUcQI4rwOOk"></rect>
+          <rect x="232" y="78" width="338" height="16" rx="2" data-page-node-id="bkjiyOq65D3yz7E8MYXzKa"></rect>
+          <rect x="232" y="108" width="185" height="16" rx="2" data-page-node-id="yh4amRX1tSdVO8EamiF8ta"></rect>
+          <rect x="232" y="138" width="154" height="16" rx="2" data-page-node-id="mEkwJxe40aud6NTxOMfc2f"></rect>
+          <rect x="232" y="168" width="154" height="16" rx="2" data-page-node-id="FRAnNY64dbvFcDUBizbgex"></rect>
+          <rect x="232" y="198" width="123" height="16" rx="2" data-page-node-id="75u92AH07DV7oCwfUzqur7"></rect>
+          <rect x="232" y="228" width="92" height="16" rx="2" data-page-node-id="LRz8VZnAm3nsl8XTofGylB"></rect>
+          <rect x="232" y="258" width="92" height="16" rx="2" data-page-node-id="uAXCNCefbRi2S4Uqgk2WpE"></rect>
+          <rect x="232" y="288" width="92" height="16" rx="2" data-page-node-id="qSGcbf4m6kUGdmX8BNl8k5"></rect>
+        </g>
+        <g font-family="ui-monospace,Menlo,monospace" font-size="10.6" fill="#68707E" data-page-node-id="UEZ2DQoKG2nOCmp7G7WjwR">
+          <text x="640" y="60" data-page-node-id="RyQjXNNSt5t3zpG2AL1U72">13</text>
+          <text x="578" y="90" data-page-node-id="BlauTzpl42UgofY8dqxiYx">11</text>
+          <text x="425" y="120" data-page-node-id="nhxexBvesptCqNhkvmm8aQ">6</text>
+          <text x="394" y="150" data-page-node-id="uev9VqtErF67Ly8he7vhIg">5</text>
+          <text x="394" y="180" data-page-node-id="c9aHZ1T1sIyAphcRaPEEch">5</text>
+          <text x="363" y="210" data-page-node-id="Q2rMdVO7nAV8E696BVFMrc">4</text>
+          <text x="332" y="240" data-page-node-id="ufJc7SxgDnr8Eim9rkQGBD">3</text>
+          <text x="332" y="270" data-page-node-id="h42Hj5t4sWOhxEJ1YbAyVK">3</text>
+          <text x="332" y="300" data-page-node-id="hiasq7P6yshurIwkFLDeL4">3</text>
+        </g>
+      </svg>
+      <figcaption data-page-node-id="sTExBbtbqAnB16qGnDrn3P"><b data-page-node-id="wU8taHnBYodVP7Yq4OTYPN">九类、53 格。</b>中文为本文译名，对应 <code data-page-node-id="Zvy6nExBoFmrmnR3S7Xokz">ATTACK-CLASSES.md</code> 的九个普通攻击类。访问控制和注入占了近一半，符合一个「有登录、有管理后台、有富文本展示」的 SSR 应用的形状。</figcaption>
+    </figure>
+
+    <p data-page-node-id="aJNK2WE7HofJndGkFDZHaL">格子不是凭空播种的。侦察阶段按「入口面 × 边界 × 子系统 × 攻击类」穷举，之后每一波都要过批评门。这次四道批评门抓到的缺口，全都是<strong data-page-node-id="sQG90rPC6PPTRTafBzpzTa">真的会漏东西</strong>的那种：</p>
+
+    <div class="tablewrap" data-page-node-id="5QuJRZjlSaCptqWsVlJdQB">
+      <table data-page-node-id="SUzxbWqzmJIPtferPiDXBR">
+        <thead data-page-node-id="oCMSEw9Gn0CtJzbVGjSVa6"><tr data-page-node-id="r7nNRt8HDxpPAYX00Eqdfz"><th data-page-node-id="s041FwdAY4uI36EDpBlf5h">批评门</th><th data-page-node-id="N0zjaiPxT4HSpXtGAcaQ7k">抓到了什么</th><th data-page-node-id="a6aELu5Alba3tuJouqrzOM">为什么必须补</th></tr></thead>
+        <tbody data-page-node-id="YikBENtX4DtmvDuJtd5RZv">
+          <tr data-page-node-id="z4ZDLOSLrUaU70ubMCpLTR"><td class="tight" data-page-node-id="CfQi6FeCVQVxPnbMuiLXbi">第 1 道</td><td data-page-node-id="OzIywPIaoJYHLpshCBPVYl"><code data-page-node-id="cuVja9urbkH8cCzxJSW9DF">assets/analytics.js</code> 整文件没有单元</td><td data-page-node-id="CgAwpe86ZzBGTHZvJPOao5">37 个 <code data-page-node-id="JcpwdKSp4T1UD2KNAaX3RF">innerHTML</code> 汇点，且由 <code data-page-node-id="9eWfsIzY2hcoCj9r6pNcTq">admin.html</code> 加载——整整一个渲染面没被审</td></tr>
+          <tr data-page-node-id="BGmzCA9CCJDFi5tHURcZZS"><td class="tight" data-page-node-id="JwadjWbuYNe3PqNOwOZ7Cp">第 1 道</td><td data-page-node-id="FOHu4GCJcMy1mIjl5IZtbj"><code data-page-node-id="Me8m7Ms5FBCn0MzRFSmp06">assets/admin.js#rowHtml</code> 被重派</td><td data-page-node-id="bWDchH1OIAgEe9Y08pHgp5">它的检查断言超出了自己声明的已读路径：证据撑不住结论</td></tr>
+          <tr data-page-node-id="hz9poVI4Vq8wFVLmAD7NOv"><td class="tight" data-page-node-id="ZzzqGWuy33J7otvppr6jsH">第 2 道</td><td data-page-node-id="YNn2KS0C34XTXD0o8Q357U"><code data-page-node-id="ha2WNgr6e6CJ3Mj21ikE0l">assets/data.js#excludeVisitor / includeVisitor</code> 没有单元</td><td data-page-node-id="MqeqlBp1G5AUKqGBuphtiv">这是浏览器<strong data-page-node-id="AIQBj6emALNUB3EyEDtBeE">直写</strong> <code data-page-node-id="M52VjWpVWayDNNdQPq5aTP">analytics_exclude</code> 的路径，整条没人走</td></tr>
+          <tr data-page-node-id="xK3AX8mwL50gUPJbWEGfuu"><td class="tight" data-page-node-id="95r1ZM5hEc0n0JQIMNpxdo">第 3 道</td><td data-page-node-id="MOqqwO02qhjt3arycSxF8N"><code data-page-node-id="O0iHCg3Gg6tLSRonyhUluI">assets/auth-chip.js#render</code> 没有单元</td><td data-page-node-id="sLpLWQ2qM2sWMz6H13NV13">它经 <code data-page-node-id="I3bDUbWKXn0HKaCO3ji2DW">lib/render.js:102</code> 出现在<strong data-page-node-id="2v6P5hEK1CZyVq4kSzYO9A">每个</strong>非 demo 公开页面上</td></tr>
+          <tr data-page-node-id="YPKJD6r92Uk1oKgqueNoPD"><td class="tight" data-page-node-id="n2MRAZwxYu4eJjHZ3rsEET">final-clean</td><td data-page-node-id="qryfpM7xWiHEdLqLFjEbiZ">无缺失单元</td><td data-page-node-id="CpN54QnbaSWN9c6cjcNAjE">独立入口清单无未映射组合；37 个 covered 单元的 <strong data-page-node-id="etvhAQFO01Q5Yw1sBD4zOv">333 项检查</strong>逐条与已读路径比对</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p data-page-node-id="6xyVr4D5nyzpqaDjWnICvJ">也有一次偏差值得记下来。第 1 道批评门提出一个标识符 <code data-page-node-id="XrKinGcDCbACPOV3I1qcL2">drawF</code>，父进程查证时没找到，判为工具假阴性并换成了真实导出名 <code data-page-node-id="eKy8lKf3O0TjVD2TLr4us3">window.AnDash</code>（<code data-page-node-id="YwaeVRloRAg1sOpaqUsL2c">assets/analytics.js:622</code>）。到 final-clean 时才发现：<code data-page-node-id="Ef8lgyGJGdJ7DF3QX1J5fg">drawF</code> 确实存在（<code data-page-node-id="5jtUwGSwGQhFqUQTdpDvKv">:417</code>），只是被同一文件里已经接受的 <code data-page-node-id="QaLjisqfBM0CkAv8wajQUG">AnDash</code> 覆盖住了，所以覆盖没有丢。</p>
+
+    <div class="callout note" data-page-node-id="8AnkKBz7pKuKwNoT4cK1Or">
+      <span class="lbl" data-page-node-id="HCFDE7roS5cRtIPO1HUkv1">这条小插曲的意义</span>
+      <p data-page-node-id="pQ9VI0fifin8CzKXkdiJl1">它说明<strong data-page-node-id="E2TMwOrLzptqb4UNeLbZ6z">两层检查的价值不在「都对」，而在「错的那一层会被另一层兜住」</strong>。如果只有批评门，一个不存在的标识符就会被写进账本；如果只有父进程，<code data-page-node-id="xJQDeeOFWAAo9hTZ7Cvuy8">drawF</code> 就永远不会被补上（虽然这次它恰好被覆盖了）。</p>
+    </div>
+
+    <div class="grid g3" style="margin-top:26px" data-page-node-id="7oW9XLAEwUorIMN2Hhr73h">
+      <div class="card accent-slate" data-page-node-id="lcyR5Quvw4hmSogJ3eXga3"><div class="rule" data-page-node-id="bbE8ilM1LQuBYyHYFTXUbk"></div><h4 class="statb" data-page-node-id="vxKz5PaJ69mCAO9xZKH8Gl">146</h4><p data-page-node-id="EJ04njGung4CLliCB271Os">账本里记录在案的检查项，每一项都带自己的 owner 与已读路径。</p></div>
+      <div class="card accent-slate" data-page-node-id="r6TkNsJpEglhmueNcEuyuu"><div class="rule" data-page-node-id="3tg75gKdhXHfrM9wq8udEQ"></div><h4 class="statb" data-page-node-id="MD5WDvyXdm5mrjeON9hyW1">47</h4><p data-page-node-id="Q6Ic2x4lvejveLe0hpNSYE">去重后被实际读过的仓库相对路径。</p></div>
+      <div class="card accent-slate" data-page-node-id="FZh96WmqjwzgnyFiCDDBoT"><div class="rule" data-page-node-id="NRpfiZ4kHwDCf1EWKu0BUz"></div><h4 class="statb" data-page-node-id="i0oRDLx3WETj88tqbNh9nA">11</h4><p data-page-node-id="D99w4m6NwqAT3t4sBTz3UE">不同的单元归属猎手——没有一个 agent 独占某个子系统。</p></div>
+    </div>
+  </section>
+
+  <section id="q4" data-page-node-id="8Unhk7BMhUhX7PLO8AGTvA">
+    <div class="sec-head" data-page-node-id="hq42b8nGsLZqQCFGkIJE1g">
+      <span class="sec-no" data-page-node-id="vKcT56gX0wYOyTn9Cb5UDa">13 / 漏斗</span>
+      <h2 data-page-node-id="58TCotGWZUzpAlHA2dIgVT">九条候选的去向：<span class="ash" data-page-node-id="vYzB7vPb8XzK45ljOJKXZO">4 / 3 / 2</span></h2>
+      <p class="sub" data-page-node-id="jTdA5WdT9D4VG2CGfCjHIM">从 53 个格子收窄到 9 张指纹，再分叉成三种命运。</p>
+    </div>
+
+    <figure data-page-node-id="syDn5ltDG7E7mocU7LFEa8">
+      <svg viewBox="0 0 720 372" role="img" aria-label="从 53 个覆盖单元收窄到 14 个候选单元、9 条去重候选，最终 4 条 confirmed、3 条 needs_validation、2 条 rejected" data-page-node-id="89Y1QHIoTQo5vubTtLsNI9">
+        <rect x="0" y="0" width="720" height="372" fill="#FFFFFF" data-page-node-id="evqiNC0kDFzvlKWrJPMTH9"></rect>
+        <defs data-page-node-id="B3QqpBgFItMgudwIjvUe7L">
+          <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="aMOsmzGDhbcvgo0WEUbCtA">
+            <path d="M0,0 L10,5 L0,10 z" fill="#C3C8D0" data-page-node-id="rAlBaKYmEyJVFbP9YVvklj"></path>
+          </marker>
+        </defs>
+
+        <rect x="80" y="26" width="560" height="50" rx="6" fill="#EBF2F9" stroke="#D3E0EC" data-page-node-id="m09yyEt6QwcUhFCwJNNr5O"></rect>
+        <text x="360" y="48" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="600" fill="#1F4E79" data-page-node-id="DeT0B6oLWKwGq6VTYHq4BT">53 个覆盖单元</text>
+        <text x="360" y="66" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#6E8CA6" data-page-node-id="LxLAbxWjHhnlNrHnOU3NeO">账簿里的全部格子，每格都有 owner、路径与检查</text>
+
+        <rect x="160" y="90" width="400" height="50" rx="6" fill="#EBF2F9" stroke="#D3E0EC" data-page-node-id="s1DCwBSOySCU3piCjRcQLG"></rect>
+        <text x="360" y="112" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="600" fill="#1F4E79" data-page-node-id="HkbXMgdZmugLg8dDajoGws">14 个单元挂上了候选</text>
+        <text x="360" y="130" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#6E8CA6" data-page-node-id="yW9CL8ckruBKTGVJRBISff">其余 38 格 covered、1 格 blocked</text>
+
+        <rect x="210" y="154" width="300" height="50" rx="6" fill="#FDF5E6" stroke="#EBD9B8" data-page-node-id="nVMCpNO8Fp5orLG3RHpQTG"></rect>
+        <text x="360" y="176" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="13.5" font-weight="600" fill="#9A5B08" data-page-node-id="Vd6zVgWxwJlcvMHQQtwBhq">9 条去重候选</text>
+        <text x="360" y="194" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#A0824B" data-page-node-id="FTAM6VrlLzJvY0OhwtKCPu">同一根因合并为同一枚指纹</text>
+
+        <line x1="360" y1="76" x2="360" y2="86" stroke="#C3C8D0" stroke-width="1.4" marker-end="url(#af)" data-page-node-id="B1N0tLaHHOllHmFK6YbWba"></line>
+        <line x1="360" y1="140" x2="360" y2="150" stroke="#C3C8D0" stroke-width="1.4" marker-end="url(#af)" data-page-node-id="plbvltJOS5v9N1hyVcN3SH"></line>
+
+        <path d="M360,204 L360,222 L150,222 L150,244" fill="none" stroke="#C3C8D0" stroke-width="1.3" marker-end="url(#af)" data-page-node-id="QIsS2CwlfEs84JwJSMGWcj"></path>
+        <path d="M360,204 L360,244" fill="none" stroke="#C3C8D0" stroke-width="1.3" marker-end="url(#af)" data-page-node-id="tEJ6rqAN0Nu0hTdc41DA3I"></path>
+        <path d="M360,204 L360,222 L570,222 L570,244" fill="none" stroke="#C3C8D0" stroke-width="1.3" marker-end="url(#af)" data-page-node-id="pBg4xgUtaRgI2ANrLLa4Dl"></path>
+
+        <rect x="52" y="248" width="196" height="76" rx="8" fill="#F9E9E5" stroke="#EFD3CA" data-page-node-id="zQdzevvcWNBibKn3S9Mwi2"></rect>
+        <text x="68" y="272" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#9C2B1B" data-page-node-id="yfVWG32DvW4ku9jXgFBbPy">4 confirmed</text>
+        <text x="68" y="291" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#8A4A3C" data-page-node-id="NzticBqKNtSdVrjCIIXvN6">有界复现 + 观测结果</text>
+        <text x="68" y="308" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#8A4A3C" data-page-node-id="u4XlKYKwZKIetHrA6nhh8r">带严重度 · 给修复方案</text>
+
+        <rect x="268" y="248" width="196" height="76" rx="8" fill="#FDF5E6" stroke="#EBD9B8" data-page-node-id="mm0kumZ553ziP3ru3co3mb"></rect>
+        <text x="284" y="272" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#9A5B08" data-page-node-id="JkUyUHnyYvTEmvJlzq2Nzu">3 needs_validation</text>
+        <text x="284" y="291" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#8A6C34" data-page-node-id="NUbCevcguWeTAPL1AXHJEX">卡在决定性未知</text>
+        <text x="284" y="308" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#8A6C34" data-page-node-id="iqwQ0OvONxmFrtXErmG3MK">无严重度 · 给观测方案</text>
+
+        <rect x="484" y="248" width="196" height="76" rx="8" fill="#F4F3EF" stroke="#DCDAD2" data-page-node-id="Lb3rzSgB2YO4jCiMexs4QD"></rect>
+        <text x="500" y="272" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#59626F" data-page-node-id="KxqHB9upFVc3HkwkK0W2xV">2 rejected</text>
+        <text x="500" y="291" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#6B7280" data-page-node-id="ZuD942bRmmS7ci69u7yUpI">被源码推翻</text>
+        <text x="500" y="308" font-family="-apple-system,PingFang SC,sans-serif" font-size="10.4" fill="#6B7280" data-page-node-id="jm1oN37WS0QCeeNIdsNCnZ">不是发现 · 但保留记录</text>
+
+        <text x="360" y="352" text-anchor="middle" font-family="-apple-system,PingFang SC,sans-serif" font-size="10" fill="#98A0AE" data-page-node-id="YdaC0SMEliTvztovOWjXqx">同一批候选，三种命运。被推翻也是一种产出。</text>
+      </svg>
+      <figcaption data-page-node-id="7N8hSnwU4zlK9PBoim20xO"><b data-page-node-id="8pXzov89KlmZYElToSz4VF">收窄是逐级的。</b>53 → 14 是「哪些格子发现了问题」，14 → 9 是「哪些问题其实是同一个根因」，9 → 4 是「哪些真的能演示出来」。每一级都会掉东西，每一级都必须留下记录。</figcaption>
+    </figure>
+  </section>
+
+  <section id="q5" data-page-node-id="mgV4z3YDK96AgorksQNWuE">
+    <div class="sec-head" data-page-node-id="DRrXDJnISGD4vJvoVRp7c1">
+      <span class="sec-no" data-page-node-id="2f1jOcVFwYGnMHTprEJSgO">14 / 结论</span>
+      <h2 data-page-node-id="uioUdVyvbDi4hEUXyCltrk">四条坐实结论</h2>
+      <p class="sub" data-page-node-id="5cEDwIn8Q3o2Get87e5Vna">全部来自源码 + 纯函数 harness + 仓库自带离线测试。没有一条依赖对部署环境的探测。</p>
+    </div>
+
+    <div class="finding" data-page-node-id="A7gj7kf9uLScbZRcRPQe2F">
+      <div class="fh" data-page-node-id="uWBew9d6WFlgxXyhUIo2Hd">
+        <span class="tagpill sev-high" data-page-node-id="OIA4PKN55LPuUiE4Yh8rwh">high</span>
+        <h3 data-page-node-id="wGwOfV1WElO3jz6mUdta61">Agent token 授权无资源范围绑定</h3>
+      </div>
+      <code class="fp" data-page-node-id="jzAqlN1hutXqylLRToVJ1P">agent-api:token-unbound-resource-scope</code>
+      <div class="fb" data-page-node-id="vZdx8gyHo7OFF6zcZlFja4">
+        <p data-page-node-id="ua9dal9PgNgTXVkZzTDHSD">一把有效 token 只能证明「你是谁」，完全不能约束「你能碰谁的资源」。四个写 RPC 都是 <code data-page-node-id="j3Eh2Y7JIvLCiqSWsDygZF">SECURITY DEFINER</code>，以表 owner 身份执行，而全仓没有 <code data-page-node-id="oGmMt6U5eNIESCf1eoV5wH">FORCE ROW LEVEL SECURITY</code>——于是浏览器路径那条「属主或管理员」的强度，在 RPC 路径上<strong data-page-node-id="QxMOfHdbjIJhnqMtSL9gGd">根本不存在</strong>。</p>
+      </div>
+      <div class="evidence" data-page-node-id="BxmkHyJVpNZ8SAZVOVOzjX">
+        同一条 socket、同一把 token（alpha）：<br data-page-node-id="pzR2z8QGDjd1qsKZQ0sRzc">
+        GET /api/items <b data-page-node-id="mDt6tVMIbPPz8BvE8yKcZo">无凭据也能 200</b>，列出全部 id/source_key/source_agent<br data-page-node-id="zFiXzj1MomlHqFXfBNn12y">
+        upsert → 200 <b data-page-node-id="hq36M1ypP6XbjYCBAzgZSr">updated id=102</b>（agent-beta 的行被改写，来源归属被改）<br data-page-node-id="U1bcRZzHeWYjG0oqetn5TM">
+        batch → 200 updated=1, created=1 &nbsp;·&nbsp; PATCH → 200 改写浏览器用户的行<br data-page-node-id="dT1uvO6CmSjdHNVxo6Rkh5">
+        DELETE → 200 <b data-page-node-id="CvZfzSqTosj0KiDX2GsW9s">硬删除</b>（无回收站）<br data-page-node-id="nbPoQSJVhhYs53Nt59hqzd">
+        负面对照：无效 token → 401 invalid_token；缺 token → 401 missing_token
+      </div>
+      <dl data-page-node-id="jl47YxVfBvSh8ZZ5ZK2Euo">
+        <dt data-page-node-id="Q7ZgpmCCUXKYGbGVUbWElo">边界</dt><dd data-page-node-id="WoEeEokOB4EKqQD1aDaGzZ"><code data-page-node-id="XlHAzu3xhnoX0PRKgDJ1IB">lib/agent-api.js</code> 的四个写 RPC → <code data-page-node-id="kBODTzMKOKBJmyjcIs76i5">db/02-agent-api.sql#agent_check_token</code> / <code data-page-node-id="joyvvh5JPmp9nr8uVKEABA">db/06-doc-items.sql</code></dd>
+        <dt data-page-node-id="zbuoX6pax8K203hIMONDwW">定级依据</dt><dd data-page-node-id="tbqWwHoMEg6M0pqkcPn3sf">完整击穿了一个明示的控制（按主体隔离数据），后果是全表可写、删除不可逆。没有评 critical，因为没有证明管理员越权、代码执行，也没有超出已公开的读范围</dd>
+        <dt data-page-node-id="C0U8rI4D0gcHYoeR732HcJ">最小修复</dt><dd data-page-node-id="xC3u3tfwphhYCks8QCsUw7">把 token 绑定到资源范围，并在 <b data-page-node-id="5anKhJ6GZvNpujN6snBELS">SQL 函数谓词里</b>强制（三处 <code data-page-node-id="dpDhy4NooRNaxTYMYB8UkZ">code_changes</code>）。只改 <code data-page-node-id="0WIJrfmUUePGQXWHv44oyo">lib/agent-api.js</code> 等于把信任挪了个位置；存量行要按 <code data-page-node-id="2iFqMJbVZiQ81soHe6PE0B">source_agent</code> 回填 <code data-page-node-id="PEBLhvoCfa4HqCFHQSvw56">owner_id</code> 后才能启用谓词</dd>
+      </dl>
+    </div>
+
+    <div class="finding" data-page-node-id="JdWTPAXDLRQGOsUkkjCBOt">
+      <div class="fh" data-page-node-id="7O3jSE1z0lGkaTQwIaf4UB">
+        <span class="tagpill sev-medium" data-page-node-id="fBY7KJgslgFFhIYP1A246E">medium</span>
+        <h3 data-page-node-id="1rKQAqaPV1kflRPyQSpvKE">匿名埋点配额以可伪造的 X-Forwarded-For 为键</h3>
+      </div>
+      <code class="fp" data-page-node-id="gaK3MK6tt4GjoRjHYAtBv3">track/anon-write-quota-keyed-on-spoofable-xff</code>
+      <div class="fb" data-page-node-id="mbhk2k40SX57m7CxnNDxJL">
+        <p data-page-node-id="eHCl1qVlhNfywENqy3eBDP">匿名写入唯一的量控是 <code data-page-node-id="iaepqGMTvFr2wgmQvwVYml">ipOverLimit</code>，它的键来自 <code data-page-node-id="CJtumgNcuGiGzX1NH8M8Af">clientIp()</code>，而 <code data-page-node-id="O2fxmF0cscg9wEfyxOSYx8">clientIp()</code> 信任请求头里的 XFF。攻击者不需要任何凭据，只要每次请求换一个 XFF，就等于每次都换一个「新配额」。</p>
+      </div>
+      <div class="evidence" data-page-node-id="TWDdKVrcaSnjHGE7wYINhi">
+        对照组：200 请求 / 单 socket / 无 XFF → rpc 写 <b data-page-node-id="nnBzu3btShl8Fvrd8jbDDO">300 次</b>（仅 60 个请求穿过，TRACK_RATE_MAX=60）<br data-page-node-id="FItH47j5oB7mqVTvb0qFZQ">
+        攻击组：同样 200 请求 / 同 socket / 200 个不同 XFF → rpc 写 <b data-page-node-id="cGSohxamPiFRklaBsg9FoP">1000 次</b>，<b data-page-node-id="PMas29Y175g1kCMcDGR8Gl">全部穿过</b><br data-page-node-id="3Y9yPUuHM7ywYSrzc4sQ50">
+        两组真实 socket 与请求数完全相同，唯一差别是 XFF；每请求无论超限与否都返回 204
+      </div>
+      <dl data-page-node-id="tvcdvU4btMPDBclj9Idhry">
+        <dt data-page-node-id="CpunJCPmagn7EwKoLWWavJ">边界</dt><dd data-page-node-id="sG6cbUM7XO1EjpVXEGh43k"><code data-page-node-id="9sq2heDMVNk898ve1K32Fg">lib/track.js#clientIp</code> / <code data-page-node-id="VGn1zMGJDz4rckeV70kPi2">ipOverLimit</code> → <code data-page-node-id="FkuwWzNUBmVY4pzNTiq6SF">server.js</code> 的匿名路由</dd>
+        <dt data-page-node-id="3AsIfYW6rt2LL3nUKrDdmp">定级依据</dt><dd data-page-node-id="6BIaptR4AGA41qWIDTuuXf">完全击穿了唯一的写量控制，但单请求仍有 20 事件 / 16KB 的上界，所以是「无上界地持续注入」而不是单点放大；对真实 Postgres 的库耗竭只是合理推断，未本地演示</dd>
+        <dt data-page-node-id="i1IOvvb4fEjG4gPi3ehNSk">最小修复</dt><dd data-page-node-id="JiB3oLVeZKNbB6z4jiwiWD">把代理信任显式化：默认取直连 socket 对端，确认位于受信代理之后才取该代理<b data-page-node-id="7o9UvoHGp9NUlVTOMSKpxO">从右侧追加</b>的那一跳，而不是攻击者能 prepend 的最左段</dd>
+      </dl>
+    </div>
+
+    <div class="finding" data-page-node-id="MKCzsr8g67a3qec111ERJQ">
+      <div class="fh" data-page-node-id="d5fZQQdRqMqFfIrCiBhTNT">
+        <span class="tagpill sev-medium" data-page-node-id="ePAX9x0AygzeWa8EB0vSAE">medium</span>
+        <h3 data-page-node-id="5kIF8B8KYalAFJB0pdRKBZ">埋点 <code data-page-node-id="VgyzsAF946pkHEAo7clb2G">ip_hash</code> 使用仓库里公开的默认盐</h3>
+      </div>
+      <code class="fp" data-page-node-id="9BlN6lmdZhhSad8fgfLGO4">track/ip-hash-reversible-default-salt</code>
+      <div class="fb" data-page-node-id="xGtMMp0qCEmG5bpgpYZyIW">
+        <p data-page-node-id="RmUPkioCWB8RyD3Hz4FnGr">访客 IP 经过 <code data-page-node-id="r5ElHQQjhzvtDebmOT1S3P">sha256(salt + ip)</code> 存成 <code data-page-node-id="6hB1pH8cRmul1gZ6WVo7I8">ip_hash</code>。可是默认盐是源码里的一个字面量 <code data-page-node-id="byIt6SA6Bc6exMR75K5mdl">'research-share/v1/ip'</code>，<code data-page-node-id="ZNog9ptEm65bdsnWa6al2t">.env.example</code> 里没有 <code data-page-node-id="ZTrT2xPxgdGXoaNrrfczap">ANALYTICS_SALT</code>，而 README 又教人 <code data-page-node-id="qLDQaythHKUEqlqmZW4rnp">cp .env.example .env</code>——于是「默认部署」几乎必然使用公开盐。</p>
+      </div>
+      <div class="evidence" data-page-node-id="8GJlJHYBxzLx757HBOKIsp">
+        203.0.113.42 → <b data-page-node-id="IyUSt9RggN2RVBbMVIfmIl">71e9cf913030c907371df85b6a78ce6e</b>（与猎手观测逐位一致）<br data-page-node-id="aExC4Jycycu3z7TwDaFuK8">
+        /24 内枚举 43 个候选即命中；同一张表反演第二行成功；错盐对照无命中<br data-page-node-id="RLOcXYFdeDnBxC92DNJ4ET">
+        实测 300,000 次哈希 0.151s ≈ <b data-page-node-id="WxaA6AVqV6V3pqTp2fB42x">1,990,101 sha256/s</b><br data-page-node-id="G6EETEZacsGwgDQreEXTKh">
+        算术外推：全量可路由 IPv4 ≈ <b data-page-node-id="2JlUSHhww97ZIiKwElBwtP">0.52 核小时</b>（未运行全量扫描）
+      </div>
+      <dl data-page-node-id="1QK9y5QkBwsrkDVlVdBflt">
+        <dt data-page-node-id="YueFf4fvcGNL9PHlvvcDH5">边界</dt><dd data-page-node-id="2A8KTuBUZwdjZX0CQQxQKd"><code data-page-node-id="fGqopQASLCf5DKv35XKRuy">server.js</code> 的默认盐 → <code data-page-node-id="P6uUNECXrEARLm4Ri973fW">lib/track.js#hashIp</code> → <code data-page-node-id="1Z8zpMCIUL89Wke2zc2Due">research_events.ip_hash</code></dd>
+        <dt data-page-node-id="1GLAoW47J0n0hFwTpKM7po">定级依据</dt><dd data-page-node-id="kNq9KTYLd6UorcPyYCOLzw">读取前提把它封顶在「已经能读原始事件表」的角色（运营方 / service_role / 备份）。不等于提权，但它把匿名哈希升级为 <b data-page-node-id="E2FFhV8dphKiGqHmBuPmkc">IPv4 明文</b>，并直接违反代码注释与文档里的法定性陈述</dd>
+        <dt data-page-node-id="MFa8I5BvlFup2swgjGNSmH">最小修复</dt><dd data-page-node-id="sHPL6EZPUMyy1movc4qrrH">盐改为强制显式配置的每部署秘密（缺失即拒绝启动）+ 输出 32 → 64 hex + 同步修正三处失实陈述。记录里也写明：同时掌握 <code data-page-node-id="8w6bjqBkReg7xMGNA3sBiI">.env</code> 的部署者仍可反演，若隐私承诺要对运营方成立，唯一彻底方案是停存可逆变换</dd>
+      </dl>
+    </div>
+
+    <div class="finding" data-page-node-id="SVJurqKFg51PNUT5YSm35S">
+      <div class="fh" data-page-node-id="zaz0O9C0zAXlPcsGoBVSQI">
+        <span class="tagpill sev-low" data-page-node-id="siRzHmea2ZsOIKAGzNZnOD">low</span>
+        <h3 data-page-node-id="ZXyJYTMGCz5BFCgFUPvzVU">SSR 兜底 page_view 不读退出统计开关</h3>
+      </div>
+      <code class="fp" data-page-node-id="m7natva14FJIxHmS8AJVim">research-share/ssr-pageview-ignores-optout-cookie</code>
+      <div class="fb" data-page-node-id="eyN2QDIklRDE4qzeGZ12oM">
+        <p data-page-node-id="APDNpXRkEsxykzKxZgrgB0">客户端埋点老老实实检查 <code data-page-node-id="cFRHiJZYqgA3CS8NFbM9kt">rs_optout</code>，服务端则完全没接线：<code data-page-node-id="k8hncRDCOkVXBQU6qwFCBX">trackServerPageView</code> 上来就写，不看 cookie。于是「退出统计」这个明示承诺，只在浏览器路径上成立。</p>
+      </div>
+      <div class="evidence" data-page-node-id="aH38VOuYH5ckk62W2GbSDA">
+        三组 dummy cookie（未退出 / 已退出带 visitor id / 已退出无 visitor id）<br data-page-node-id="didbHsRuzhOurLtX1l4daC">
+        服务端均<b data-page-node-id="r5I2ibsxzZT07f4pEblZ9Z">恰好发起 1 次</b> track_event：p_event=page_view、p_source=server<br data-page-node-id="2lJ5UlIbj0jAxEqcoau58f">
+        已退出两组与对照组字段完全一致；同一开关下客户端路径 <b data-page-node-id="Ev2GY8WAiPX5HYA6Uo7j5Z">0 次发送</b><br data-page-node-id="TOV8ic4MY1aFPladTa100C">
+        harness 25/25 断言通过；仓库自带 39 项埋点测试本环境全绿
+      </div>
+      <dl data-page-node-id="V47a0oQeEUsqi2283rQWae">
+        <dt data-page-node-id="DgyIcdFmD6OhBgVbyASqLZ">边界</dt><dd data-page-node-id="tBpFrfLJugvQYtq73EFRyr"><code data-page-node-id="eHBYsTIG71M1ZIia64zW58">lib/render.js</code> 写 <code data-page-node-id="3byLkiLAHqA3GWE58mCwBn">rs_optout</code> cookie → <code data-page-node-id="2adT7q88tAAHNmnUuvGSJ9">assets/track.js</code> 客户端守卫生效 → 服务端 <code data-page-node-id="tFocrlMDOv6MtbuhHcJQFn">trackServerPageView</code> 未接同一开关 → <code data-page-node-id="TY7rEUiiFHVd1HdMGz3EGj">db/03#track_event</code></dd>
+        <dt data-page-node-id="qbZoRQD5zMHDGIAq4LFZGu">定级依据</dt><dd data-page-node-id="kPFNBlVCx2L9kz59bnAiBR">受害主体是已行使退出权的访客本人，写入内容仍限于站方已披露的匿名统计口径（无原始 IP、无 UA 原文、不出域），读取方只有管理员看板——没有扩大数据类别，也没有引入新的读取方</dd>
+        <dt data-page-node-id="rqtpgUvXGzFKdfLzBIpZPx">最小修复</dt><dd data-page-node-id="08M3BRmLaKZZFboKYHgeiG">在 <code data-page-node-id="yaeDSaSo4KyoBJEBgNMyk4">trackServerPageView</code> 入口按同一键名跳过写库，键名继续从 <code data-page-node-id="AwaTzyLHhTvQPTYsg2ssCL">lib/constants.js</code> 单一来源 import（与客户端同源），避免两处字面量漂移</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section id="q6" data-page-node-id="v0W0z03J9tu7Vi7hT9aVUW">
+    <div class="sec-head" data-page-node-id="ObA1J33OPsHum4HpUdKgYE">
+      <span class="sec-no" data-page-node-id="eDGPtxTy50ixpGz9AX34Jp">15 / 待验证</span>
+      <h2 data-page-node-id="TueM0Ln7XO6eAWWFQzYVMb">三条待验证线索</h2>
+      <p class="sub" data-page-node-id="dq86nA4YCD3GlKZHDwbTOX">这一栏<strong data-page-node-id="VxUGV3HzYAc1BNnt7SdpBZ">不是</strong>「低置信度的漏洞」，也<strong data-page-node-id="88OTnjeE5ySqLgPeezJ0DR">没有</strong>严重度。它们是：源码路径成立、但决定性事实在本地取不到。</p>
+    </div>
+
+    <div class="tablewrap" data-page-node-id="2JkKRpl5T8jXZdMvrhek0W">
+      <table data-page-node-id="XU6cNqRUcxbYp7qogfdmR1">
+        <thead data-page-node-id="zJNrFDBkWjIKDrfYOnkBRE"><tr data-page-node-id="Lwm9aU7ta3mKueYNFH6fIJ"><th data-page-node-id="SgjbFdUBO0zCDhfohsCNYS">线索</th><th data-page-node-id="vKmAA54j4KYdWN83Fx2KTM">决定了什么</th><th data-page-node-id="4yBAmhAyBFjIyJeuXR201j">卡在哪</th></tr></thead>
+        <tbody data-page-node-id="aOO9brBOGIWvFlVJ8dPm3j">
+          <tr data-page-node-id="3sCv0b2des4dkZndWKf4UU">
+            <td data-page-node-id="ue9uTAbi0hH8Fix5qOMRZ9"><b data-page-node-id="P4IeiFF0GgKLmYZ89aEphq">N1</b> SSR 详情页的 <code data-page-node-id="buwf76SL7hVoC3bdjCHobU">url</code> 未中和 scheme<br data-page-node-id="vjIae9EzIMU0ERWrRHyTGp"><code class="fp" style="padding:0;font-size:10.5px" data-page-node-id="rqj8Mjf3yMuCBpPcKhnoo2">render.js-detailFoot-href-scheme-unvalidated</code></td>
+            <td data-page-node-id="7N4T9mYs0wZ4tZ2vrjPZzg">存储型 <code data-page-node-id="u3IzC5cKSmRSkm2EK8jAEm">javascript:</code> 链接是否会落进 <code data-page-node-id="qbn3ElkB2VYzlBTQUl1O7P">href</code> 并在点击时执行</td>
+            <td data-page-node-id="P1vMZbiWU21rb2qTme7iJh">① 本宿主禁用浏览器验证，无法观测点击行为；② 部署侧边缘 WAF 是否会 403 掉含 <code data-page-node-id="ddO61Cugsqvx36hWjCAOwY">javascript:</code> 的写入，属部署事实；③ 边缘是否另注入 CSP 未知</td>
+          </tr>
+          <tr data-page-node-id="kIJxBLkWZMDsPAeCYaF1Om">
+            <td data-page-node-id="AxDHdmtF8VPO9SRYYKx9jm"><b data-page-node-id="VEsa1mKNHy8ZFyJQCwvbrc">N2</b> 管理端 CSV 导出的公式注入<br data-page-node-id="KCUP5F9BOfWZFwq05Gp8p7"><code class="fp" style="padding:0;font-size:10.5px" data-page-node-id="1eAI1S7p9QROphNOTsNhmM">assets/admin.js:exportCsv/csvCell-formula-injection</code></td>
+            <td data-page-node-id="rXiwxZZ5EDRhyaUGlGjE3u">是「完整链可靠复现」「弱化版」还是「仅纵深防御缺口」</td>
+            <td data-page-node-id="AaT3CTeNHiuibMauf6NHH7">缺真实电子表格程序的求值行为观测（Protected View / DDE / Mark-of-the-Web 的默认态），源码与本地沙箱都判不了</td>
+          </tr>
+          <tr data-page-node-id="M2uXc27AWF3VP2vz0aYyzp">
+            <td data-page-node-id="uOIbCoMfSvT5MvV7iE69XL"><b data-page-node-id="5u4WtI4pJDWlcRtfONvJ9a">N3</b> 浏览器四条写路径的应用层零授权<br data-page-node-id="oCWOQo2ucWqyhXdENHq6CF"><code class="fp" style="padding:0;font-size:10.5px" data-page-node-id="2QpQyjYY0AXhoThRJxw5ue">research-share/browser-write-authorization-solely-rls-needs-live-attachment</code></td>
+            <td data-page-node-id="LJNJOcBYSO8Xl3iIvfSw2q">这条路径上 RLS 是不是真的唯一且有效的强制点</td>
+            <td data-page-node-id="RMSF6Ngkq8wqCuTnJr5dA1">① 没有可执行且已应用迁移的本地 Postgres；② 仓内实测只覆盖 anon 侧 GRANT 与非管理员 SELECT，从没有以「已认证非特权主体」打过这四条写路径；③ 服务端边缘的 JWT→角色映射不可观测</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn" data-page-node-id="C2024zXa47YBw1pIkEJEsB">
+      <span class="lbl" data-page-node-id="2PAQR1bwezuU2ZGIUl6A96">N3 里的一句话被改过</span>
+      <p data-page-node-id="an17aCo4Hthn99nJXXrgVa">这条记录最初把「SDK 附令牌的行为源码不可见」列为决定性 blocker。这句话<strong data-page-node-id="1ahRzknKshnn6ZwF0agmie">是错的</strong>——那份 SDK 就在仓库的 <code data-page-node-id="WOZmzZHcZyEsPh6fuCqO5D">node_modules</code> 里。它是怎么被发现的、以及为什么不能当场改，正是下一节要讲的事。</p>
+    </div>
+  </section>
+
+  <section id="q7" data-page-node-id="SzH2bIo06H8rgSJyN6YX1Q">
+    <div class="sec-head" data-page-node-id="MIiTIArCIBMDg1oxWoovJf">
+      <span class="sec-no" data-page-node-id="2p3fpaVlnA2TXnKpFVf2s6">16 / 推翻</span>
+      <h2 data-page-node-id="ZQQK3YQfZauYz7mD8Nxbl5">两条被推翻的候选：<span class="ash" data-page-node-id="YGn6FK3mUk4saTjoTmN9Rp">推翻也是产出</span></h2>
+      <p class="sub" data-page-node-id="ZBDxixEblwR95SBo6etKCg">按纪律，它们不得被描述成发现。但它们必须留在记录里，否则下一轮会重新提一遍同样不成立的指控。</p>
+    </div>
+
+    <div class="grid g2" data-page-node-id="uug3XbQ8ZIs3GPrZGXluXU">
+      <div class="card accent-slate" data-page-node-id="QF6Ilwm99z9uuUzFK9wMA7">
+        <div class="rule" data-page-node-id="O5wweu9DOIXbQ1OBXt3OrZ"></div>
+        <span class="tag" data-page-node-id="PLvoQE1N60o9pS6AIdhHDp">Rejected · 理由：没有实际影响</span>
+        <h4 data-page-node-id="HQ7P9TVsfzYcOIQgCmddeH">null session 可以绕过库层配额</h4>
+        <p class="mono" style="font-size:11px;color:#98A0AE;background:none;border:0;padding:0;margin-bottom:10px" data-page-node-id="UhxHsVzuPMoTyl85o4wEKs">db/03-analytics.sql:track_event:null-session-…</p>
+        <p data-page-node-id="DRoqWdPuUvUxDv1cIfKPVX">漏洞路径是真的：省略 <code data-page-node-id="XjEwJ4WDJsXW8scBoEiPkc">session</code> 字段时 <code data-page-node-id="aDk4BjjccP9n8AO1sJMgjJ">p_session = null</code>，库层的 session_cap 与 debounce 整体跳过。但攻击者本来就可以<strong data-page-node-id="VBKbVjW8FVUp4ZQXWbW75f">自己铸一个格式合法的 session_id 并逐请求轮换</strong>，效果完全一样——null session 没有给出任何额外能力，它是更弱、等价的冗余面。</p>
+        <p data-page-node-id="z6hAJ9KXS5whykA7KtsCDx">所以它按「无实际影响」判 rejected，而不是 needs_validation：它的三条 blocker 一个都不决定性。</p>
+      </div>
+      <div class="card accent-slate" data-page-node-id="gcCmtN8bD5lZQ5ZZm0MdGN">
+        <div class="rule" data-page-node-id="NqzMqA2q3EoZ9zgrfqBPTP"></div>
+        <span class="tag" data-page-node-id="VC6QJsc5CfHLwYiVuuIMdF">Rejected · 理由：没有跨主体受害者</span>
+        <h4 data-page-node-id="f4zZzN06EGMFKSeRfxSIvE">updateItem 的 doc_html 没有列白名单</h4>
+        <p class="mono" style="font-size:11px;color:#98A0AE;background:none;border:0;padding:0;margin-bottom:10px" data-page-node-id="Ijc8hA1UOZOBWWVehXYf1F">research-share/browser-updateItem-patch-…</p>
+        <p data-page-node-id="sHq7rrFU7VKKwkGhyntvva">trace 是准确的（唯一更正是 ADR 文件名）。但能改写这一行的只有该行 owner 或管理员——<strong data-page-node-id="7qwzaLSsjHZ5VRxV37xnRH">受影响的正是行为者本人</strong>。而「托管文档里的 HTML 可变」这件事，ADR-0004 已经明言接受，下游用 <code data-page-node-id="dkJJQtZI5bjV40oH5SMtly">CSP: sandbox allow-scripts</code>（不给 <code data-page-node-id="Zz7UIyJDR6voEoUA9Hr7fN">allow-same-origin</code>）把执行隔离在不透明源里。</p>
+        <p data-page-node-id="JjGuLq10N37uw6Dj7jcs5S">建议的修复（数据面加字段白名单）只是把信任从 UI 挪到数据面，属于纵深防御。</p>
+      </div>
+    </div>
+
+    <p style="margin-top:22px" data-page-node-id="xRu90BYHihqVtDzWQPgQd0">这两条被推翻，说明上游对它们的具体反驳是有效的。而下面这一段，是反过来发生的：<strong data-page-node-id="e4HOAjMDc6ZQ1lYwmPFd1T">上游写下的一个前提被推翻了</strong>。</p>
+  </section>
+
+  <section id="q8" data-page-node-id="N1Bv6SkKEZ31xqtbUrtI1v">
+    <div class="sec-head" data-page-node-id="GQEEJXkPH2p9ctHlCe83RQ">
+      <span class="sec-no" data-page-node-id="2kuDwrsNgnHH8jVaKKj3pT">17 / 一课</span>
+      <h2 data-page-node-id="yElw3QIKVYHDyUXOPti67x">最值得记住的一课：<span class="ash" data-page-node-id="fPYhVMDBzVf7bXqeftM7lC">连 blocker 本身也要被证伪</span></h2>
+      <p class="sub" data-page-node-id="UvVsmEYkd5R5CFC0cwG7zZ">这是这套流程最不像「自动化」、也最接近真实工程的一段。</p>
+    </div>
+
+    <p data-page-node-id="dzrR5KUghXa5tTcGgvlkuy">N3 这条线索的结论是「结论待定」，如果到此为止，它只是一条普通的待验证记录。真正有意思的是它被<strong data-page-node-id="qMKBPWqSg98x5xWA00bsoo">返工</strong>的过程。</p>
+
+    <ol class="steps" data-page-node-id="YPkVG3F8MDSAfkVxPLmOhv">
+      <li data-page-node-id="UEYSjsSbovO0MyEsl5gu36"><span class="n" data-page-node-id="SbyWUgFkF42hw8wDP6JA3j">1</span>
+        <h4 data-page-node-id="rqQE00sDVytZ7fzEGjQjJO">Phase 3 的验证者写下 blocker 3</h4>
+        <p data-page-node-id="cfny4lXlEsC4L9vYBdz3wv">「<code data-page-node-id="D6URENzdo2lTmYfI6VYnL0">workbuddy-cloud-sdk</code> 的令牌附着行为源码不可见」，因此在本地无法判定浏览器写请求到底带不带用户身份。</p>
+      </li>
+      <li class="key" data-page-node-id="2R3CHSfgTYwr1VYofLtZ8d"><span class="n" data-page-node-id="yvVdLiQmlvnkQWaG0HCjxm">2</span>
+        <h4 data-page-node-id="NsuWZ5ObuE4ZECK1wsfz5W">Phase 5 的复核者不同意，并给出了行号</h4>
+        <p data-page-node-id="1aljWG64N5F0PHHPfRp1Nn">它去读了 <code data-page-node-id="NPS5joG10S4jLQRU4O08ja">node_modules/@tencent-ai/workbuddy-cloud-sdk/lib/index.js:81-96</code>：<code data-page-node-id="SjGLZ3cEdULQnXf2exAkSg">createCloudFetch</code> 恒设发布键头，且当请求没有 <code data-page-node-id="ODLaiiJKuBpZOSwISzmFcv">Authorization</code> 时会取 access token 并以 <code data-page-node-id="1aUKJBKWCMMayAbBu3DldJ">Bearer</code> 附上；<code data-page-node-id="u8sGdNZg45trXrZHQ0CiqS">:8249-8251</code> 把 <code data-page-node-id="1eIHMQTN3sdE0kayEvrIXV">database</code> 装配成带同一取令牌函数的 fetch。浏览器侧还有一份同源孪生 <code data-page-node-id="P1q1Lh6DiH4RF1XaNcMU0k">assets/vendor/workbuddy-cloud-sdk.global.js</code>，由 <code data-page-node-id="WUXd9oihJH8Odzw7lRNJKq">admin.html</code> 引入，语义逐字等价。<strong data-page-node-id="L8Dtt3ueW5MYLEkq6LX3ty">于是它返回 replace。</strong></p>
+      </li>
+      <li data-page-node-id="OQID7v5AiEBtZbIwmFBPaG"><span class="n" data-page-node-id="HbvYKo532TpKCewxt5yjDc">3</span>
+        <h4 data-page-node-id="WiYVi6caUnzj3xRHdRObFQ">父进程独立复核同一处源码</h4>
+        <p data-page-node-id="hQKAyEyZB4F6Mu66WDOrmB">不带立场地把那段打印出来对照，确认 Phase 5 说得对：这份 SDK 就在仓库里，行为可以离线判定。</p>
+      </li>
+      <li class="key" data-page-node-id="O6K1GJtD539ueqSfM6dE1F"><span class="n" data-page-node-id="trwWwQZW9gTg7rBwpoX7bB">4</span>
+        <h4 data-page-node-id="EtQn8oTFG7Blx13D4Qc8uy">但按规则，不能直接应用</h4>
+        <p data-page-node-id="o84APb9e4vcjlwxnCp7yhZ">这不是改措辞——它改变了一条<b data-page-node-id="tC6NzfEdWSlFXDifusDHTa">决定性 blocker</b> 的成立与否，属于物质性改动。规则要求：交给第四位，既没猎过、没做过 Phase 3、也没提出这个替换的人。</p>
+      </li>
+      <li data-page-node-id="0g0bxVXurNC589vZtYcVk6"><span class="n" data-page-node-id="NrvVfrsjIK2KHRiLxs92H9">5</span>
+        <h4 data-page-node-id="y8NB9wvIiUAUguQT1dNWYu">第四位验证者重读源码，返回 verified</h4>
+        <p data-page-node-id="SVc9bGzWA2mM2eZmqpVxHU">它独立复现了那条结论，没有引用前两位的结论作为依据。</p>
+      </li>
+      <li data-page-node-id="4pbhHsjA4O7B1HePhsgExT"><span class="n" data-page-node-id="RNMZIpu2yre4kjbxAW8XzJ">6</span>
+        <h4 data-page-node-id="iGQgpbzryz5txwlao0YCB0">应用 → 重跑两个校验器 → 收窄 blocker</h4>
+        <p data-page-node-id="Y0ovHUbkGiAL207XjLdLqF">blocker 3 从「SDK 行为不可见」收窄为「<b data-page-node-id="yWjwDZTJr93ZzMgqFpQfwu">服务端边缘如何把 JWT 声明映射成 authenticated / anon 角色</b>」。这才是真正本地取不到的那件事。</p>
+      </li>
+    </ol>
+
+    <div class="callout note" data-page-node-id="K1eHEsc7FfY91OK6coK5jG">
+      <span class="lbl" data-page-node-id="DzjqSEhTy3yyOuBgA9EgTE">为什么这一段值得单独讲</span>
+      <p data-page-node-id="wD8pq5VhMkAf5X3jZQZthx">因为整套技能的默认怀疑方向是「猎手的结论可能夸大」，而这个案例里出错的是<strong data-page-node-id="hpjUVJyclTXahSphyFS6Va">过度保守</strong>的那一侧：验证者把一个本可离线判定的问题，写成了「不可观测」。如果没人去读那份 <code data-page-node-id="nbdxdlCYaEfoBv9pPBIBG4">node_modules</code>，这条线索会以一个<em data-page-node-id="GB0eABByngkx0231aPowQi">虚假的</em> blocker 交到 owner 手上——owner 会去查一个根本不需要查的东西。</p>
+      <p data-page-node-id="ga0XNuqjgMaQsDnPB3kDn7">而「换人复核」的价值也在这里显形：同一个人不会推翻自己写下的前提。</p>
+    </div>
+
+    <p data-page-node-id="JuoKPudYZ5uWRsELVFEgEp">同一轮还顺手改掉了 4 处<strong data-page-node-id="BAii486pj6Vb7MkRJpxPwT">非物质</strong>错误，它们不改变判决、根因、trace 或影响，所以允许直接应用：批量请求的载荷补上漏掉的第二条 item；两处测试文件名写错（<code data-page-node-id="kggT8uEprF7TCv9EGrMcCa">test/track.test.js</code> → <code data-page-node-id="Vq0p5y4K8j5oDMlPFsRr3I">test/track-handler.test.js</code>，后者才是那条 seam 所在，两个文件都存在所以证据本身不变）；CSV 载荷长度从含混的「约 50 字符」精确成 49（<code data-page-node-id="i6DsFOc7F5noLb2uZTwq1V">evil.example</code>）与 52（<code data-page-node-id="UXCP2D2Hi70nhkFhthI3hO">example.invalid</code>）。每次改完都重跑两个校验器，全部 PASS。</p>
+  </section>
+
+  <section id="q9" data-page-node-id="ja4AKPNd6blCdi2y2FUBk2">
+    <div class="sec-head" data-page-node-id="VCmgkCWLsQLZdpsmRJmToj">
+      <span class="sec-no" data-page-node-id="mHcCpbcHUfKTrRSH8inE2t">18 / 边界</span>
+      <h2 data-page-node-id="Csrul2T3Ua2tk9LrkzbykT">这一轮证明了什么，<span class="ash" data-page-node-id="U1Q81qGzNxzF3uMYrFbc3O">没证明什么</span></h2>
+    </div>
+
+    <div class="grid g2" data-page-node-id="lg3VYYolSdNHiJhnAYq6cl">
+      <div class="card accent-teal" data-page-node-id="HZ8u3l9vvuNqmscZxVpjv5">
+        <div class="rule" data-page-node-id="rVbiuIqSIhqCt1DTG2juC6"></div>
+        <h4 data-page-node-id="Cp00IHzISmqfZHEatq98uM">证明了</h4>
+        <p data-page-node-id="iXBoCkSIVptouaEdDDBHxd">四条边界失效真的存在，且能在源码 + 纯函数 harness 里复现；账本的 53 格确实都被指派过 owner 并留下了检查；报告的每一条结论都能被另一台机器用同样的源码复算。</p>
+      </div>
+      <div class="card accent-amber" data-page-node-id="vsh6shfm952Elfw62R1spF">
+        <div class="rule" data-page-node-id="GdD15KiwmbsXNSraQzelYW"></div>
+        <h4 data-page-node-id="F4k4FED8AhhwGwHnohkDUY">没证明</h4>
+        <p data-page-node-id="HlVf5RpEx1DN1cDp5UhfJ4">这个项目「没有别的漏洞」。一次运行永远不等于穷尽；三档判决里的 <code data-page-node-id="Ic0y8f9Yg48bbNWMBhkWSd">needs_validation</code> 恰恰是承认还欠着事实。</p>
+      </div>
+    </div>
+
+    <ol class="body-list" style="margin-top:20px" data-page-node-id="9yEYmWdqXUhfLWSmv7L3sv">
+      <li data-page-node-id="chiUBJF6rTAAlppmjUgj4f"><b data-page-node-id="gdWxZMr5EFundDLWFbE5sW">confirmed 全部来自离线证据。</b>源码 + 纯函数 harness + 仓库自带测试；<strong data-page-node-id="qZrilqU6d4omO5N5ca5sle">没有任何一条依赖对部署环境的探测</strong>。这既是优点（可复算）也是限制（库侧真实行为未验证）。</li>
+      <li data-page-node-id="FSobcP6T2VNFgkRLQtBDSK"><b data-page-node-id="ypkNKbkdGtFoDlXAY46bOt">需要本地 Postgres 的判断没做。</b>N3 与那个 <code data-page-node-id="Ak2HlHOUBkvANyR4EbAGHi">blocked</code> 单元的写放大量化，都卡在这里，已按 needs_validation / blocked 记录并给出 owner 侧只读观测方案。</li>
+      <li data-page-node-id="Vrwo0AHrhAM58LHyoyAgGJ"><b data-page-node-id="aA3BAJ4EazvESOBHtGUlB7">需要真实浏览器、真实电子表格的判断没做。</b>N1 与 N2 的观测方案都设计成 owner 在自己机器上用 dummy 数据完成，不含任何发往部署环境的审计流量。</li>
+      <li data-page-node-id="X0S2lj3I1l0yq5HIZnQEWl"><b data-page-node-id="hToigHz6mQcVh3giMBtRUB">全量 IPv4 反演没跑。</b>实测外推 0.52 核小时后按纪律停止，只用 /24 内的最小枚举证明「可反演」这件事本身。</li>
+    </ol>
+
+    <div class="callout warn" data-page-node-id="fBkxx6rc3Qf39f83l2C3CT">
+      <span class="lbl" data-page-node-id="UfAR0f0AS8E6jAeUqTOx7a">执行边界的一处自查</span>
+      <p data-page-node-id="nGW0ZeAKCjroJYJ6UK1XS5">元数据最初只记了 2 个脏文件，final-clean 批评门独立测得 5 个。父进程重跑 <code data-page-node-id="NdGayAx10IFSezd4D6ojUk">git status --porcelain</code> 确认，并对三个新增文件逐一 diff 复核：一个是 SQL 重载切换（安全相关，已纳入单元）、一个是新增的健康检查路由（安全相关）、三个是忽略规则 / 文档措辞 / CSS 特异性修复（无可执行面）。<strong data-page-node-id="F6LAMaza1SwHEiomo2vQro">审计报告自己的元数据也要被审。</strong></p>
+    </div>
+  </section>
+
+  <section id="z" data-page-node-id="PevRNwvslooKQpuOhqEg62">
+    <div class="sec-head" data-page-node-id="TTYkKvaVjRkO3AoKUoGbo0">
+      <span class="sec-no" data-page-node-id="rzjVOVbWjtl5RZGDCVwWVN">附录</span>
+      <h2 data-page-node-id="xCllCRA9csRMOiCI2kdHQd">一页速查</h2>
+    </div>
+
+    <div class="tablewrap" data-page-node-id="6wsMOSrlwv26C1j80KYU1O">
+      <table data-page-node-id="9tB9zOu6kJEBaQEoGQ3Y3X">
+        <thead data-page-node-id="qqM1B2F8EUcjMOBOZOOzJa"><tr data-page-node-id="lLgIHo0vD5WQAH7EdOSkn6"><th data-page-node-id="AX73l1wUjwBqbYUWiKcjFJ">你的处境</th><th data-page-node-id="Wx1BdEBVdgMcuaY7j1Odnd">该用哪种模式</th><th data-page-node-id="QMyFNL5u4S4QnY0DGPeaFC">预期代价</th></tr></thead>
+        <tbody data-page-node-id="AlnacQnmV8FZXuLk5uD7NH">
+          <tr data-page-node-id="Lws3cCQo6mx4eYEeNNpe1z"><td data-page-node-id="JzBcJkymp1d5UxGIgI9nFj">「这段代码有没有安全问题？」</td><td data-page-node-id="a060eOSsOSCGzK9CZ9UhyD">guidance，只取相关章节</td><td data-page-node-id="zKu8l2ED5i3SEooQJOVOY2">几轮对话，不落盘</td></tr>
+          <tr data-page-node-id="XBngUE8wpChuAiGvTHptYl"><td data-page-node-id="4Ma30TCYkoTzTXGH1C9ipu">「帮我把这个项目完整审一遍，要出报告」</td><td data-page-node-id="wMGGy2xL73wAxz6dy7Jnuq">full audit + <code data-page-node-id="uEXwClpaTX8CjFKpi6vLrE">standard</code></td><td data-page-node-id="2SftCiPCW1R7GwxDy8cUpU">几十次委派，七份产物</td></tr>
+          <tr data-page-node-id="ZIA0FeQ8z4wmvNwU0HenrS"><td data-page-node-id="cDavGy90rGp4C5TN8RlEbv">「只审这次 diff / 只审这个模块」</td><td data-page-node-id="k3ejZ1ibLJvrylzJyaSlxf">full audit + scoped</td><td data-page-node-id="GmefQKS2zTNsSrticvzij4">约为完整的一小部分；报告必须自称部分覆盖</td></tr>
+          <tr data-page-node-id="7pMWfVglfSJYfHaKCGHrbw"><td data-page-node-id="rFycSaVYpFDPLmsi6Gj0W3">「先快速看一眼值不值得深挖」</td><td data-page-node-id="yMIxnyKHexoMlAasnIca7r">full audit + <code data-page-node-id="erQsNAtv37UUz1CjA7XktZ">quick</code></td><td data-page-node-id="r82OhaoKeUWeH10xA1gr4r">1 波猎杀 + 1 次终局批评门</td></tr>
+          <tr data-page-node-id="B0Bn19MphnOiBauFy26qEl"><td data-page-node-id="T7yvYIrBkJHjhltRIR4t1Y">「高风险系统，别怕花时间」</td><td data-page-node-id="c4Ag3SvZrLwR2mJDu8ACE3">full audit + <code data-page-node-id="UI7YldS3qBorf2RYQ4J7KE">deep</code></td><td data-page-node-id="68Eqb86vbMkMIyXiiSPDkj">按子系统与生命周期拆细，批评门跑到干净</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="Oo8PZ1WfRt1pKF8v8pU9pv">最常见的四种误用</h3>
+    <div class="grid g2" data-page-node-id="UaywHF9XFbOueTsLaIqRI7">
+      <div class="card flat" data-page-node-id="3BzqIDO0QKOys1nb6l5EFS"><h4 data-page-node-id="7p6L7IfvxCnxNvAbO610Kp">把 needs_validation 当成「低危漏洞」</h4><p data-page-node-id="5kbqzCVrf9pDHM9CPVgC81">它没有严重度不是疏忽，是逻辑上不能给：影响尚未证明。把它写进漏洞清单会让 owner 按错误的优先级排期。</p></div>
+      <div class="card flat" data-page-node-id="HhabYjDQCete4uIc3kpYBA"><h4 data-page-node-id="suFLUwH9hYvjtqKQpJ0ZRi">没有沙箱却照样跑目标代码</h4><p data-page-node-id="kNMOJmJCMAa15sX9fV9dVK">技能要求四项控制同时具备。缺一项就跑，等于在一个可能写宿主、可能连外网的环境里执行不可信代码——这本身就是安全事故。</p></div>
+      <div class="card flat" data-page-node-id="PO7xvMHZum4xFbsisZDjeo"><h4 data-page-node-id="ZYYlk9R2Xp1pkBnjTSq5Hu">用「审了多少文件」当覆盖率</h4><p data-page-node-id="rIDqoCEmpqNv37H4B2Wy6P">覆盖的单位是四元组，不是文件。一个文件读完不等于它的每个边界 × 每个攻击类都被走过。</p></div>
+      <div class="card flat" data-page-node-id="buHAMDS3zddYNFCX4FZkX2"><h4 data-page-node-id="B0Pu2MHtRJqgwzu58T9bSv">让同一个人验证自己的发现</h4><p data-page-node-id="djFXHCQAkyiyhG6gZ7CZ3H">这是最省事、也最毁掉整份报告可信度的一步。报告的价值等于「有多少结论是别人独立确认过的」。</p></div>
+    </div>
+
+    <h3 data-page-node-id="feEmxFpN7OViACAwsNlmIl">产物与文件索引</h3>
+    <div class="kv" data-page-node-id="PCFF0iQ61KjXTljhtntTNz">
+      <div data-page-node-id="dnSFqQoQ1EhHsGLUYheyu2">技能本体</div><div data-page-node-id="hgSDCf5LwZPoCH1eQxQ4JK"><code data-page-node-id="8Edtb3ErQZzb9oWOJHYcTB">~/.workbuddy/skills/security-audit/</code>（SKILL.md + 11 个域伴读文件 + 2 个校验器）</div>
+      <div data-page-node-id="GyLBLpMG9uhhidGRBFrmED">本次运行</div><div data-page-node-id="E43pdYYVVHDCvNbVm17Cpv"><code data-page-node-id="2CnWGDhj5AvA14ItPjvVcu">~/security-audit-skill/research-share/run-2/</code></div>
+      <div data-page-node-id="q7VWHhsoCHm4f2cyaKIJo6">结论记录</div><div data-page-node-id="Ee6A5yHSpNXsmkuQMXzGnT"><code data-page-node-id="G2QWqC4k3nO19NxQD5IfRG">findings.json</code> — 9 条，双校验器 PASS</div>
+      <div data-page-node-id="bV2r9YEoBnHGx2p0y7LFAW">覆盖声明</div><div data-page-node-id="mwVtYSBOwKg5kxYeg5VKbu"><code data-page-node-id="e5hkADCoyCCjxNBqHuYvBd">coverage-ledger.json</code> — 53 个单元，PASS</div>
+      <div data-page-node-id="LEvwfd1wyEt5upC3wz2EBf">报告三件套</div><div data-page-node-id="HD4hzDliZ3zYENCFZKFYzX"><code data-page-node-id="3CojIiqHF1MAYymrybaDNN">REPORT.md</code> · <code data-page-node-id="fnpZJC6Q4pRTmRSYMwFn9w">FINDINGS-DETAIL.md</code> · <code data-page-node-id="gyLcU7xDFFinU44L42fcU4">NEEDS-VALIDATION.md</code></div>
+      <div data-page-node-id="H9f1cxOWjYCkVvkas7VD39">架构摘要</div><div data-page-node-id="JUtbRMTX8NrVrLddSBFUGp"><code data-page-node-id="qle1PTWXdZ7HgI72fMkaF2">architecture.md</code> — 供每个猎手逐字带进上下文</div>
+    </div>
+
+    <p class="footnote" data-page-node-id="q6M9Nkr7JzwRb1n8wREOz7">本页是上述产物与运行过程的二次叙述，不是审计结论本身。任何判决、严重度、blocker 的权威来源都是 <code data-page-node-id="VtOvuODFxa2kQqViCV8yy7">findings.json</code>；如果两者不一致，以 JSON 为准。页面为单文件、零外部依赖，可离线打开。</p>
+  </section>
+
+  </main>
+</div>
+
+  <footer data-page-node-id="e6mgVxGX24AdqAjTHCtANT">
+    <div class="fin" data-page-node-id="24BM47485IzHiQfMKJy1QM">
+      <div data-page-node-id="cSvoCaM0u9uIzKADBwEFEU">
+        <h5 data-page-node-id="D7ILL4yglWNHlsISqhwMav">关于本页</h5>
+        <p data-page-node-id="bXgeKF7TmUEeFvUH64LoZ2">机制部分依据 <code data-page-node-id="iOpr7UUxBTcgGrWBU5hlWv">security-audit</code> 技能的 SKILL.md、RECONNAISSANCE.md、HUNTING.md、VALIDATION-AND-REPORTING.md 与 ATTACK-CLASSES.md；实战部分依据 run-2 的七份产物。</p>
+      </div>
+      <div data-page-node-id="lRIsBx8D2XInPcs9YziwzC">
+        <h5 data-page-node-id="AFAIZw32GsIq8PD0SVkiwC">数字口径</h5>
+        <p data-page-node-id="zBhTljQTr2wYPGUPEYq3cL">53 单元 / 38 covered / 14 candidate / 1 blocked；32 次委派 = 11 猎手 + 4 批评门 + 9 Phase 3 验证 + 8 Phase 5 复核。均为账本与元数据的实测值。</p>
+      </div>
+      <div data-page-node-id="FgK3GBy4xAEz8AhEPZn2AU">
+        <h5 data-page-node-id="akbDpovrX7Sw3gVOJMeU6j">不变的部分</h5>
+        <p data-page-node-id="RfszXD6mrbTdfXj3gNbhSv">技能版本 <code data-page-node-id="XBZSDRh25NxrcAhUT6zP9l">c1c8a8c</code>；被审源码 <code data-page-node-id="nkSfOCA2NmQXGDOa5gIhBA">90deace3</code>。目标仓库在整轮审计中保持只读，HEAD 未动。</p>
+      </div>
+    </div>
+  </footer>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a[href^="#"]'));
+    if (!links.length) return;
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var targets = Object.keys(map).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    if (!targets.length) return;
+    function onScroll() {
+      var y = window.scrollY + 120, cur = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].offsetTop <= y) cur = targets[i];
+      }
+      links.forEach(function (a) { a.classList.remove('on'); });
+      if (map[cur.id]) map[cur.id].classList.add('on');
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+
+
+</body></html>

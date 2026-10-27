@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="基于 Hacker News 416 条评论与 13 万条 Discord 消息，用大白话讲清美国开发者本地跑什么开源模型：Qwen 系列是默认答案，27B 至 35B 是甜点档，本地能干七成活，其余仍归云端前沿模型。">
+<meta name="keywords" content="local-llm, open-weights, qwen, coding-agent, quantization, mac-inference">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-25">
+<title>美国开发者本地跑什么开源大模型？</title>
+<style>
+  :root{
+    --ink:#1f2329; --ink-2:#3c4350; --ink-3:#5e666e;
+    --line:#e5e7eb; --bg:#f6f7f9; --card:#ffffff;
+    --accent:#2563eb; --accent-soft:#e8eefc;
+    --amber:#f59e0b; --amber-soft:#fdf3e0;
+    --teal:#0e9f8a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.75; font-size:15px;
+  }
+  .wrap{max-width:1060px; margin:0 auto; padding:0 24px 64px;}
+
+  /* ---------- 头部 ---------- */
+  header.hero{
+    background:var(--card); border-bottom:1px solid var(--line);
+    padding:56px 0 40px; margin-bottom:36px;
+  }
+  header.hero .wrap{padding-bottom:0;}
+  .kicker{
+    display:inline-block; font-size:12.5px; color:var(--accent);
+    background:var(--accent-soft); border-radius:999px;
+    padding:3px 14px; margin-bottom:16px; font-weight:600;
+  }
+  h1{font-size:32px; line-height:1.35; letter-spacing:.5px; margin-bottom:14px;}
+  .lede{font-size:16.5px; color:var(--ink-2); max-width:760px;}
+  .lede b{color:var(--ink);}
+  .meta{margin-top:18px; font-size:12.5px; color:var(--ink-3);}
+
+  /* ---------- 卡片与章节 ---------- */
+  section.card{
+    background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:30px 34px; margin-bottom:28px;
+    box-shadow:0 1px 3px rgba(16,24,40,.05);
+  }
+  h2{font-size:20px; margin-bottom:6px; display:flex; align-items:center; gap:10px;}
+  h2 .no{
+    width:26px; height:26px; border-radius:8px; background:var(--accent);
+    color:#fff; font-size:13px; font-weight:700; flex:none;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .sub{font-size:13.5px; color:var(--ink-3); margin-bottom:20px;}
+  p{margin-bottom:12px;}
+  p:last-child{margin-bottom:0;}
+  b{color:var(--ink);}
+  .hl{color:var(--accent); font-weight:600;}
+
+  /* ---------- 结论网格 ---------- */
+  .tldr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(440px,100%),1fr)); gap:14px;}
+  .tldr-item{
+    border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    background:#fbfcfe; font-size:14px; color:var(--ink-2);
+  }
+  .tldr-item b{display:block; margin-bottom:4px; font-size:14.5px;}
+  .tldr-item .tag{
+    display:inline-block; font-size:11.5px; font-weight:700; color:var(--accent);
+    background:var(--accent-soft); border-radius:6px; padding:1px 8px; margin-bottom:8px;
+  }
+
+  /* ---------- 图 ---------- */
+  figure{margin:18px 0 6px;}
+  figure svg{width:100%; height:auto; display:block;}
+  figcaption{font-size:12.5px; color:var(--ink-3); margin-top:8px;}
+  .figtitle{font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px;}
+
+  /* ---------- 表格 ---------- */
+  .tbl-wrap{overflow-x:auto; margin:14px 0 6px; border:1px solid var(--line); border-radius:12px;}
+  table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.5px; background:#fff;}
+  th{
+    background:#f1f4f9; text-align:left; padding:10px 14px;
+    font-size:13px; color:var(--ink); border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink-2); vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td b{color:var(--ink);}
+
+  /* ---------- 三卡 ---------- */
+  .why-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr)); gap:14px; margin-bottom:8px;}
+  .why-item{border:1px solid var(--line); border-radius:12px; padding:18px 20px; background:#fbfcfe;}
+  .why-item .icon{font-size:22px; margin-bottom:8px;}
+  .why-item b{display:block; font-size:15px; margin-bottom:6px;}
+  .why-item p{font-size:13.5px; color:var(--ink-2); margin:0;}
+
+  /* ---------- 比喻块 ---------- */
+  .analogy{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr)); gap:14px; margin:16px 0;
+  }
+  .analogy > div{border-radius:12px; padding:16px 20px; font-size:14px;}
+  .analogy .local{background:var(--accent-soft); border:1px solid #cfdefc;}
+  .analogy .cloud{background:var(--amber-soft); border:1px solid #f3ddb4;}
+  .analogy b{display:block; margin-bottom:4px;}
+
+  /* ---------- 词典 ---------- */
+  .gloss{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr)); gap:12px;}
+  .gloss div{border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-size:13.5px; color:var(--ink-2); background:#fbfcfe;}
+  .gloss b{color:var(--ink); margin-right:6px;}
+
+  /* ---------- 页脚 ---------- */
+  footer{font-size:12.5px; color:var(--ink-3); line-height:1.9;}
+  footer .src{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 22px;}
+  footer b{color:var(--ink-2);}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">社交平台调研 · 2026 年 10 月</span>
+    <h1>美国开发者本地跑什么开源大模型？</h1>
+    <p class="lede">我们翻遍了 Hacker News、Reddit r/LocalLLaMA、X（推特）和本地 AI  Discord 的讨论，答案很集中：<b>主流是阿里巴巴的 Qwen 系列</b>——一张 24GB 显卡或一台 36GB 内存的 Mac 就能跑起来当"编程智能体"用。这份报告用大白话和图表讲清楚：谁在跑、跑什么、用什么跑、以及为什么。</p>
+    <p class="meta">调研方法：HN 热帖 416 条评论逐条统计 · Discord 一年 13 万条消息解析 · 官方数据交叉验证 ｜ 报告日期：2026-10-25</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ========== 1. 先说结论 ========== -->
+  <section class="card">
+    <h2><span class="no">1</span>先说结论</h2>
+    <p class="sub">如果你只有 30 秒，看这五句就够。</p>
+    <div class="tldr-grid">
+      <div class="tldr-item"><span class="tag">模型</span><b>Qwen 是社区"默认答案"</b>HN 热帖里 57 位报告一线使用的开发者跑 Qwen，超过其他所有模型之和；Discord 一年提及量中 Qwen 占 59%。</div>
+      <div class="tldr-item"><span class="tag">尺寸</span><b>甜点档位：27B ~ 35B</b>Qwen3.6-27B 和 35B-A3B（每次只唤醒 3B）是共识之选——单张 24GB 显卡或 36GB+ Mac 就能驱动编码智能体。</div>
+      <div class="tldr-item"><span class="tag">新事件</span><b>10 月新模型引爆社区</b>Qwen3.8-27B 发布 3 天拿下 300 万次 Hugging Face 下载，智能体指数反超发布仅 3 个月的 Claude Opus 4.8。</div>
+      <div class="tldr-item"><span class="tag">本土</span><b>美国开源模型存在感有限</b>仅 Google Gemma 4（提及占 12%）和 OpenAI gpt-oss 挤进前列；Meta 的 Llama 已基本退出编码讨论，10 月高调发布 816B 新模型 Muse Spark Open。</div>
+      <div class="tldr-item"><span class="tag">动机</span><b>推手是"订阅变贵"，不只是"模型变强"</b>2026 年 Claude 涨价风波 + 订阅禁令，把大量个人开发者推向本地；隐私、离线、不看供应商脸色是另一半理由。</div>
+      <div class="tldr-item"><span class="tag">边界</span><b>社区共识：本地干 70% 的活</b>函数生成、测试、单文件重构没问题；跨大代码库的多文件推理仍是云端前沿模型的主场。</div>
+    </div>
+  </section>
+
+  <!-- ========== 2. 术语词典 ========== -->
+  <section class="card">
+    <h2><span class="no">2</span>先认识几个词</h2>
+    <p class="sub">后面反复出现，花一分钟看完这张小词典。</p>
+    <div class="gloss">
+      <div><b>开源权重</b>模型的"大脑文件"可以免费下载到自己机器上跑；不等于训练代码和数据全公开。</div>
+      <div><b>量化（Quantization）</b>把模型压缩小、省显存的技术，掉一点质量。常见如"Q4"≈压到 1/4 体积。</div>
+      <div><b>MoE（混合专家）</b>模型很大，但每次只叫醒一小部分"专家"干活，所以大而不慢。</div>
+      <div><b>Token</b>模型读写字的最小单位，约等于英文半个词、中文一个字；API 按它计费。</div>
+      <div><b>Harness（外壳）</b>套在模型外面的程序，让模型能自己读文件、改代码、跑命令，从"聊天"变"干活"。</div>
+      <div><b>GGUF / MLX</b>两种本地模型文件格式：GGUF 通吃（llama.cpp/Ollama），MLX 专为苹果芯片优化。</div>
+    </div>
+  </section>
+
+  <!-- ========== 3. 四层栈 ========== -->
+  <section class="card">
+    <h2><span class="no">3</span>一图看懂：本地跑模型的四层</h2>
+    <p class="sub">本地 AI  Coding = 这四层叠在一起，全部跑在你自己机器上，代码不出门。</p>
+    <figure>
+      <svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="本地跑模型的四层结构图">
+        <!-- 层1：模型 -->
+        <rect x="40" y="14" width="600" height="42" rx="10" fill="#e8eefc" stroke="#cfdefc"/>
+        <text x="56" y="40" font-size="13" font-weight="700" fill="#2563eb">开源模型</text>
+        <text x="140" y="40" font-size="13" fill="#3c4350">Qwen 3.6 / 3.8 · Gemma 4 · DeepSeek · GLM · gpt-oss</text>
+        <text x="56" y="180" font-size="12" fill="#5e666e">↑ 就是这些"大脑文件"，从 Hugging Face 免费下载</text>
+        <!-- 箭头 -->
+        <path d="M340 60 L340 72" stroke="#9aa7bb" stroke-width="2" marker-end="url(#arr)"/>
+        <!-- 层2：harness -->
+        <rect x="40" y="78" width="600" height="42" rx="10" fill="#eef6f3" stroke="#cde7de"/>
+        <text x="56" y="104" font-size="13" font-weight="700" fill="#0e9f8a">智能体外壳</text>
+        <text x="140" y="104" font-size="13" fill="#3c4350">Pi · OpenCode · Cline · Aider（让模型自己读代码、改文件、跑测试）</text>
+        <path d="M340 124 L340 136" stroke="#9aa7bb" stroke-width="2" marker-end="url(#arr)"/>
+        <!-- 层3：runtime -->
+        <rect x="40" y="142" width="600" height="42" rx="10" fill="#f1f4f9" stroke="#dde3ec"/>
+        <text x="56" y="168" font-size="13" font-weight="700" fill="#3c4350">推理引擎</text>
+        <text x="140" y="168" font-size="13" fill="#3c4350">llama.cpp · MLX（苹果）· Ollama · LM Studio · vLLM</text>
+        <path d="M340 184 L340 196" stroke="#9aa7bb" stroke-width="2" marker-end="url(#arr)"/>
+        <!-- 层4：硬件 -->
+        <rect x="40" y="202" width="600" height="42" rx="10" fill="#fdf3e0" stroke="#f3ddb4"/>
+        <text x="56" y="228" font-size="13" font-weight="700" fill="#b45309">你的硬件</text>
+        <text x="140" y="228" font-size="13" fill="#3c4350">Mac（统一内存）· NVIDIA / AMD 显卡 · DGX Spark 小主机</text>
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <path d="M0 0 L8 4 L0 8 z" fill="#9aa7bb"/>
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>图 1 · 本地 AI 编程的四层结构。前三层都是开源免费软件；越往下越"硬件相关"。</figcaption>
+    </figure>
+  </section>
+
+  <!-- ========== 4. 模型格局 ========== -->
+  <section class="card">
+    <h2><span class="no">4</span>社区实际在跑什么模型</h2>
+    <p class="sub">HN 那条 906 分热帖下，有人逐条读了全部 416 条评论，统计"谁真的在自己机器上跑什么"。</p>
+    <figure>
+      <div class="figtitle">图 2 · HN 热帖：报告一线使用的评论者都在跑哪些模型</div>
+      <svg viewBox="0 0 680 288" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HN 评论者使用的本地模型条形图">
+        <text x="2" y="14" font-size="12" fill="#5e666e">单位：人数（一名评论者只计一次）</text>
+        <!-- Qwen -->
+        <text x="112" y="44" font-size="12.5" fill="#1f2329" text-anchor="end">Qwen 全系</text>
+        <rect x="120" y="30" width="440" height="18" rx="4" fill="#2563eb"/>
+        <text x="570" y="44" font-size="12.5" font-weight="700" fill="#1f2329">57</text>
+        <!-- Gemma -->
+        <text x="112" y="72" font-size="12.5" fill="#1f2329" text-anchor="end">Gemma 4</text>
+        <rect x="120" y="58" width="139" height="18" rx="4" fill="#f59e0b"/>
+        <text x="270" y="72" font-size="12.5" fill="#1f2329">18</text>
+        <!-- DeepSeek -->
+        <text x="112" y="100" font-size="12.5" fill="#1f2329" text-anchor="end">DeepSeek</text>
+        <rect x="120" y="86" width="46" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="176" y="100" font-size="12.5" fill="#1f2329">6</text>
+        <!-- Nemotron -->
+        <text x="112" y="128" font-size="12.5" fill="#1f2329" text-anchor="end">Nemotron</text>
+        <rect x="120" y="114" width="31" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="161" y="128" font-size="12.5" fill="#1f2329">4</text>
+        <!-- GLM -->
+        <text x="112" y="156" font-size="12.5" fill="#1f2329" text-anchor="end">GLM</text>
+        <rect x="120" y="142" width="23" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="153" y="156" font-size="12.5" fill="#1f2329">3</text>
+        <!-- MiniMax -->
+        <text x="112" y="184" font-size="12.5" fill="#1f2329" text-anchor="end">MiniMax</text>
+        <rect x="120" y="170" width="23" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="153" y="184" font-size="12.5" fill="#1f2329">3</text>
+        <!-- Kimi -->
+        <text x="112" y="212" font-size="12.5" fill="#1f2329" text-anchor="end">Kimi</text>
+        <rect x="120" y="198" width="15" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="145" y="212" font-size="12.5" fill="#1f2329">2</text>
+        <!-- gpt-oss -->
+        <text x="112" y="240" font-size="12.5" fill="#1f2329" text-anchor="end">gpt-oss</text>
+        <rect x="120" y="226" width="8" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="138" y="240" font-size="12.5" fill="#1f2329">1</text>
+        <text x="2" y="274" font-size="12" fill="#5e666e">DeepSeek / GLM / Kimi 名字常被提到，但几百亿量级参数大多"装不进个人机器"。</text>
+      </svg>
+      <figcaption>数据来源：Ask HN "Has anyone replaced Claude/GPT with a local model for daily coding?"（48542100），Tech Stackups 对 416 条评论的逐条拆解。</figcaption>
+    </figure>
+
+    <figure>
+      <div class="figtitle">图 3 · 一年 13 万条 Discord 消息：模型提及份额</div>
+      <svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Discord 模型提及份额环形图">
+        <!-- donut -->
+        <circle cx="150" cy="120" r="70" fill="none" stroke="#eef1f6" stroke-width="34"/>
+        <circle cx="150" cy="120" r="70" fill="none" stroke="#2563eb" stroke-width="34"
+                stroke-dasharray="259.5 180.3" transform="rotate(-90 150 120)"/>
+        <circle cx="150" cy="120" r="70" fill="none" stroke="#f59e0b" stroke-width="34"
+                stroke-dasharray="52.8 387" transform="rotate(122.4 150 120)"/>
+        <circle cx="150" cy="120" r="70" fill="none" stroke="#c9d4e6" stroke-width="34"
+                stroke-dasharray="127.5 312.3" transform="rotate(165.6 150 120)"/>
+        <text x="150" y="114" font-size="26" font-weight="700" fill="#1f2329" text-anchor="middle">59%</text>
+        <text x="150" y="136" font-size="12" fill="#5e666e" text-anchor="middle">Qwen 家族</text>
+        <!-- 图例 -->
+        <rect x="300" y="72" width="14" height="14" rx="3" fill="#2563eb"/>
+        <text x="322" y="84" font-size="13.5" fill="#1f2329">Qwen 59%</text>
+        <text x="322" y="102" font-size="12" fill="#5e666e">3.6-27B 和 35B-A3B 是绝对主力</text>
+        <rect x="300" y="122" width="14" height="14" rx="3" fill="#f59e0b"/>
+        <text x="322" y="134" font-size="13.5" fill="#1f2329">Gemma 4 · 12%</text>
+        <text x="322" y="152" font-size="12" fill="#5e666e">唯一挤进前列的美国模型</text>
+        <rect x="300" y="172" width="14" height="14" rx="3" fill="#c9d4e6"/>
+        <text x="322" y="184" font-size="13.5" fill="#1f2329">其他全部家族 · 29%</text>
+        <text x="322" y="202" font-size="12" fill="#5e666e">gpt-oss / DeepSeek / GLM / Kimi…</text>
+        <text x="300" y="230" font-size="12" fill="#5e666e">口径：Discord 一年 8,319 次提及</text>
+      </svg>
+      <figcaption>数据来源：benchmarklist.com《1 Year in Local LLM》。两个独立信源（HN 评论 + Discord 消息）指向同一结论。</figcaption>
+    </figure>
+  </section>
+
+  <!-- ========== 5. 按电脑选模型 ========== -->
+  <section class="card">
+    <h2><span class="no">5</span>按你的电脑选模型</h2>
+    <p class="sub">本地跑模型是"内存游戏"：模型文件能塞进多大显存/统一内存，决定你能跑什么。以下是社区按硬件档位的共识选型。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>你的机器</th><th>社区首选</th><th>能干什么</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>8–16GB 笔记本</b></td><td>Qwen3-Coder 14B · GLM-4.7-Flash（5–8GB）· Devstral Small 2</td><td>代码补全、单文件问答、写小工具</td></tr>
+          <tr><td><b>24GB 显卡 / 36GB+ Mac</b></td><td><b>Qwen3.6-35B-A3B 或 27B</b>（社区公认"甜点"）</td><td>驱动编码智能体：读仓库、改多文件、跑测试</td></tr>
+          <tr><td><b>48–96GB</b>（双 3090 / 工作站卡 / 大内存 Mac）</td><td>Qwen3.5-122B-A10B · 27B 高精度量化版</td><td>更稳的长任务，接近"小型高级工程师"</td></tr>
+          <tr><td><b>128GB</b>（DGX Spark / Strix Halo / Mac Studio）</td><td>Qwen3.5-122B · gpt-oss-120B · Qwen3.8-27B</td><td>服务器级体验，前沿开源模型随便跑</td></tr>
+          <tr><td><b>256GB+ / 多卡</b></td><td>Kimi K3 · DeepSeek V4-Pro · Muse Spark Open（816B）</td><td>开源能力天花板，基本是工作站/集群场景</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px; font-size:13.5px; color:var(--ink-3);">注：模型体积按 4-bit 量化估算；Qwen3.8-27B 约 17GB（Q4），是 2026 年 10 月社区新宠。Mac 用户优先看 MLX 格式，NVIDIA/AMD 用户看 GGUF。</p>
+  </section>
+
+  <!-- ========== 6. 工具链 ========== -->
+  <section class="card">
+    <h2><span class="no">6</span>用什么工具跑</h2>
+    <p class="sub">同一批 HN 评论里，大家报了自己用的"外壳"和"引擎"。注意：外壳和引擎都开源免费，模型可随时换。</p>
+    <figure>
+      <svg viewBox="0 0 680 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="本地 AI 编程工具链提及条形图">
+        <text x="2" y="14" font-size="13" font-weight="700" fill="#1f2329">智能体外壳（Harness）</text>
+        <text x="2" y="32" font-size="11.5" fill="#5e666e">套在模型外面，让模型自己干活</text>
+        <!-- harness bars -->
+        <text x="96" y="58" font-size="12.5" fill="#1f2329" text-anchor="end">Pi</text>
+        <rect x="104" y="44" width="160" height="18" rx="4" fill="#0e9f8a"/>
+        <text x="274" y="58" font-size="12.5" fill="#1f2329">20</text>
+        <text x="96" y="86" font-size="12.5" fill="#1f2329" text-anchor="end">OpenCode</text>
+        <rect x="104" y="72" width="88" height="18" rx="4" fill="#7fc8bd"/>
+        <text x="202" y="86" font-size="12.5" fill="#1f2329">11</text>
+        <text x="96" y="114" font-size="12.5" fill="#1f2329" text-anchor="end">Aider</text>
+        <rect x="104" y="100" width="16" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="130" y="114" font-size="12.5" fill="#1f2329">2</text>
+        <text x="96" y="142" font-size="12.5" fill="#1f2329" text-anchor="end">Crush</text>
+        <rect x="104" y="128" width="16" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="130" y="142" font-size="12.5" fill="#1f2329">2</text>
+        <text x="2" y="172" font-size="12" fill="#5e666e">Pi 是被提最多的外壳：极简、省 token。</text>
+        <text x="2" y="190" font-size="12" fill="#5e666e">OpenCode 是 2026 年增长最快的开源编码智能体。</text>
+        <!-- 分隔线 -->
+        <line x1="330" y1="8" x2="330" y2="200" stroke="#e5e7eb"/>
+        <!-- runtime -->
+        <text x="360" y="14" font-size="13" font-weight="700" fill="#1f2329">推理引擎（Runtime）</text>
+        <text x="360" y="32" font-size="11.5" fill="#5e666e">真正把模型跑起来的程序</text>
+        <text x="456" y="58" font-size="12.5" fill="#1f2329" text-anchor="end">llama.cpp</text>
+        <rect x="464" y="44" width="160" height="18" rx="4" fill="#2563eb"/>
+        <text x="634" y="58" font-size="12.5" fill="#1f2329">19</text>
+        <text x="456" y="86" font-size="12.5" fill="#1f2329" text-anchor="end">Ollama</text>
+        <rect x="464" y="72" width="51" height="18" rx="4" fill="#93a8c9"/>
+        <text x="525" y="86" font-size="12.5" fill="#1f2329">6</text>
+        <text x="456" y="114" font-size="12.5" fill="#1f2329" text-anchor="end">LM Studio</text>
+        <rect x="464" y="100" width="42" height="18" rx="4" fill="#93a8c9"/>
+        <text x="516" y="114" font-size="12.5" fill="#1f2329">5</text>
+        <text x="456" y="142" font-size="12.5" fill="#1f2329" text-anchor="end">vLLM / MLX / Hermes</text>
+        <rect x="464" y="128" width="34" height="18" rx="4" fill="#93a8c9"/>
+        <text x="508" y="142" font-size="12.5" fill="#1f2329">各 4</text>
+        <text x="360" y="172" font-size="12" fill="#5e666e">llama.cpp 是硬核玩家默认；MLX 是苹果官方路线。</text>
+        <text x="360" y="190" font-size="12" fill="#5e666e">Ollama 新手最爱，但 2026 年转向推云端后，</text>
+        <text x="360" y="208" font-size="12" fill="#5e666e">在硬核圈被多人"劝退"。</text>
+      </svg>
+      <figcaption>数据来源：同图 2 的 HN 帖评论统计。另有 Continue（IDE 补全）、OpenHands / Goose（自动化）等未列出。</figcaption>
+    </figure>
+  </section>
+
+  <!-- ========== 7. 硬件 ========== -->
+  <section class="card">
+    <h2><span class="no">7</span>用什么机器跑</h2>
+    <p class="sub">一个反直觉发现：Mac 是美国开发者的第一大本地推理平台——统一内存让 64GB 笔记本就能跑 70B 级模型。</p>
+    <figure>
+      <svg viewBox="0 0 680 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="本地推理硬件分布条形图">
+        <text x="2" y="14" font-size="12" fill="#5e666e">单位：人数（同图 2 口径）</text>
+        <text x="150" y="44" font-size="12.5" fill="#1f2329" text-anchor="end">Apple Silicon（Mac）</text>
+        <rect x="158" y="30" width="440" height="18" rx="4" fill="#2563eb"/>
+        <text x="608" y="44" font-size="12.5" font-weight="700" fill="#1f2329">21</text>
+        <text x="150" y="72" font-size="12.5" fill="#1f2329" text-anchor="end">Strix Halo 迷你主机</text>
+        <rect x="158" y="58" width="168" height="18" rx="4" fill="#93a8c9"/>
+        <text x="336" y="72" font-size="12.5" fill="#1f2329">8</text>
+        <text x="150" y="100" font-size="12.5" fill="#1f2329" text-anchor="end">AMD 显卡</text>
+        <rect x="158" y="86" width="147" height="18" rx="4" fill="#93a8c9"/>
+        <text x="315" y="100" font-size="12.5" fill="#1f2329">7</text>
+        <text x="150" y="128" font-size="12.5" fill="#1f2329" text-anchor="end">NVIDIA DGX Spark</text>
+        <rect x="158" y="114" width="147" height="18" rx="4" fill="#93a8c9"/>
+        <text x="315" y="128" font-size="12.5" fill="#1f2329">7</text>
+        <text x="150" y="156" font-size="12.5" fill="#1f2329" text-anchor="end">RTX 3090</text>
+        <rect x="158" y="142" width="105" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="273" y="156" font-size="12.5" fill="#1f2329">5</text>
+        <text x="150" y="184" font-size="12.5" fill="#1f2329" text-anchor="end">RTX Pro 6000</text>
+        <rect x="158" y="170" width="105" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="273" y="184" font-size="12.5" fill="#1f2329">5</text>
+        <text x="150" y="212" font-size="12.5" fill="#1f2329" text-anchor="end">RTX 5090</text>
+        <rect x="158" y="198" width="84" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="252" y="212" font-size="12.5" fill="#1f2329">4</text>
+        <text x="150" y="240" font-size="12.5" fill="#1f2329" text-anchor="end">RTX 4090</text>
+        <rect x="158" y="226" width="42" height="18" rx="4" fill="#c9d4e6"/>
+        <text x="210" y="240" font-size="12.5" fill="#1f2329">2</text>
+      </svg>
+      <figcaption>常见配置：Mac Studio / MacBook Pro（96–128GB 统一内存）；DGX Spark 与 128GB Mac Studio（均约 $4,700）是 2026 年两大"桌面 AI 工作站"；性价比之选仍是二手双 RTX 3090。</figcaption>
+    </figure>
+  </section>
+
+  <!-- ========== 8. 为什么 ========== -->
+  <section class="card">
+    <h2><span class="no">8</span>为什么大家往本地跑</h2>
+    <p class="sub">三个推手，按社区讨论热度排序。</p>
+    <div class="why-grid">
+      <div class="why-item">
+        <div class="icon">💸</div>
+        <b>1. 订阅变贵、说变就变</b>
+        <p>2026 年 API 涨价收紧（社区称"Great Token Reckoning"）；4 月 Claude Code 一度被移出 $20 档引发退订潮；第三方工具 OpenClaw（约 13.5 万实例）被禁用在 Claude 订阅上。r/LocalLLaMA 出现高赞帖：《Only LocalLLaMa can save us now》。</p>
+      </div>
+      <div class="why-item">
+        <div class="icon">🔒</div>
+        <b>2. 代码不能外传</b>
+        <p>客户 NDA 代码、医疗/金融数据、公司合规——本地模型"永远看不到计费仪表盘、服务条款更新、速率限制和 Prompt 政策变更"。美国政府设备已限制使用 DeepSeek 等中国模型，企业侧合规需求进一步放大。</p>
+      </div>
+      <div class="why-item">
+        <div class="icon">✈️</div>
+        <b>3. 离线 + 不看脸色</b>
+        <p>飞机上能干活、没有速率限制、没有"今天这个功能不让用了"。开发者原话："我再也不用想 token 价格、配额、时段，或者数据敏感不敏感。"反方观点同样在场：轻量用户买 GPU 其实回不了本。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 9. 边界 ========== -->
+  <section class="card">
+    <h2><span class="no">9</span>本地模型的边界：70% 问题</h2>
+    <p class="sub">社区最诚实的一条共识：本地模型能覆盖日常编码的约七成，剩下的三成仍归云端前沿模型。</p>
+    <figure>
+      <svg viewBox="0 0 680 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="本地与云端分工比例图">
+        <rect x="40" y="24" width="420" height="40" rx="10" fill="#2563eb"/>
+        <rect x="460" y="24" width="180" height="40" rx="10" fill="#f59e0b"/>
+        <text x="250" y="49" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">本地模型 · 约 70%</text>
+        <text x="550" y="49" font-size="14" font-weight="700" fill="#1f2329" text-anchor="middle">云端 · 约 30%</text>
+        <text x="40" y="88" font-size="12.5" fill="#3c4350">函数生成 · 写测试 · 解释代码 · 单文件重构 · 文档 · 补全</text>
+        <text x="452" y="88" font-size="12.5" fill="#3c4350">跨库推理 · 架构决策 · 模糊需求</text>
+        <text x="40" y="112" font-size="12" fill="#5e666e">高赞比喻：本地 Qwen = 需要带的初级工程师；Opus = 一起想架构的高级工程师。</text>
+      </svg>
+      <figcaption>图 4 · 本地与云端的能力分工。主流答案不是二选一，而是混合架构：本地干粗活，云端啃硬骨头。</figcaption>
+    </figure>
+    <div class="analogy">
+      <div class="local"><b>本地模型擅长（且免费）</b>写得快、不问配额、隐私全包；Opus 给 15 倍提速，本地 Qwen 给约 5 倍——但 0 成本。适合个人项目、离线工作、不能外传的代码。</div>
+      <div class="cloud"><b>本地模型吃亏的地方</b>多文件上下文任务独立测试仅 2.8/5（Claude 4.5/5）；工具调用稳定性、长程一致性、指令遵循这四项"不上榜单"的能力才是 agent 编码的全部。 benchmark 分数接近 ≠ 日常体感接近。</div>
+    </div>
+  </section>
+
+  <!-- ========== 10. 趋势 ========== -->
+  <section class="card">
+    <h2><span class="no">10</span>正在发生的三件事</h2>
+    <p class="sub">如果你现在入坑，这三个趋势值得知道。</p>
+    <div class="tldr-grid">
+      <div class="tldr-item"><span class="tag">2026-10</span><b>Qwen3.8-27B：本地摸到 frontier</b>3 天 300 万次 HF 下载，智能体指数反超 Claude Opus 4.8。代价是"想太多"——日常用记得把推理档位调低，否则画个简单 SVG 都能烧 2 万 token。</div>
+      <div class="tldr-item"><span class="tag">技术</span><b>MTP：一次猜多个 token</b>多 token 预测已并入 llama.cpp 主线，同等硬件生成速度提升 30–110%，直接缩小本地与云端的延迟体感。</div>
+      <div class="tldr-item"><span class="tag">格局</span><b>中国模型霸榜，美国模型讲"信任"</b>能力榜被 Qwen/DeepSeek/GLM/Kimi 占据，但地缘合规让 Gemma、gpt-oss、Nemotron 和 Meta 新发布的 Muse Spark Open（816B，需 2 台 M5 Ultra Mac Studio）拥有"可辩护"的身位。</div>
+    </div>
+  </section>
+
+  <!-- ========== 页脚 ========== -->
+  <footer>
+    <div class="src">
+      <b>数据来源与口径说明</b><br>
+      ① HN 帖 48542100《Ask HN: Has anyone replaced Claude/GPT with a local model for daily coding?》（906+ 分 / 416 评论）及 Tech Stackups 逐条统计、Tomasz Tunguz 独立统计；
+      ② LocalLLM Discord 一年 13 万条消息解析（benchmarklist.com）；
+      ③ r/LocalLLaMA 投票帖与事件帖（退订潮、OpenClaw 禁令、Qwen3.8 megathread）；
+      ④ X 平台 @sudoingX / @Xenova / @0xSero / Cline / Perplexity 等实测帖；
+      ⑤ Ollama 官网（月装机 900 万+ / 累计 10 亿次下载）、Apple MLX 研究博客、Meta 开发者博客（Muse Spark Open，2026-10-15）、Artificial Analysis、JetBrains 2026 开发者调查、Stack Overflow 2026 调查、Linux Foundation 生成式 AI 调查。<br>
+      <b>注意</b>：所有 SWE-bench / 智能体指数分数均为厂商或第三方自报，跨源口径（Verified / Pro / Terminal-Bench）不可直接对比；tok/s 数字随量化等级、上下文长度、驱动版本波动。本报告为通俗版，深度版见同目录《美国开发者社区本地开源大模型使用调研.md》。
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
