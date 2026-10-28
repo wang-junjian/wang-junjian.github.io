@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="面向工程师的 Unlimited OCR 2 上手指南：先按三条路线选型，再给出 Transformers 直跑与 SGLang 服务化的完整命令、参数速查表和症状排错表，最后用六类适用场景、五个别用场景与一天验收清单，帮你判断整本文档要不要上这套方案。">
+<meta name="keywords" content="unlimited-ocr2, sglang, transformers, document-parsing, deployment, ocr-troubleshooting">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-28">
+<title>Unlimited OCR 2 上手指南 · 是什么、怎么跑、什么时候用</title>
+<style>
+:root{
+  --paper:#FCFCFA; --card:#FFFFFF;
+  --ink:#14181F; --ink2:#333A44; --ink3:#464D58;
+  --line:#E4E2DA; --line2:#CFCCC1;
+  --accent:#2B4C7E; --accent-t:#1E3A63; --accent-bg:#EDF1F7;
+  --ok:#1E6F50; --ok-t:#185641; --ok-bg:#EAF4EF;
+  --no:#A8332B; --no-t:#8E2A23; --no-bg:#FBEDEB;
+  --warn:#8A5A0B; --warn-t:#6B4305; --warn-bg:#FBF2E3;
+  --code-bg:#F5F5F0;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.78; overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased;
+}
+.shell{max-width:1180px; margin:0 auto; padding:0 28px; display:grid; grid-template-columns:206px minmax(0,1fr); gap:48px; align-items:start}
+main{min-width:0}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky; top:0; z-index:60; background:rgba(252,252,250,.95); backdrop-filter:saturate(150%) blur(8px); border-bottom:1px solid var(--line)}
+.topbar .row{max-width:1180px; margin:0 auto; padding:11px 28px; display:flex; align-items:center; gap:14px; font-size:13px; color:var(--ink3)}
+.topbar b{color:var(--ink); font-size:13.5px; letter-spacing:.01em; white-space:nowrap}
+.topbar .row{flex-wrap:nowrap}
+.topbar .tag{font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--accent-t); background:var(--accent-bg); border:1px solid #D5DEEB; border-radius:999px; padding:1px 9px; white-space:nowrap}
+.topbar .sp{flex:1}
+
+/* ---------- toc ---------- */
+aside{position:sticky; top:64px; padding-top:44px}
+.toc-h{font-size:11px; letter-spacing:.16em; color:var(--ink3); font-weight:700; margin:0 0 12px}
+.toc{list-style:none; margin:0; padding:0; border-left:1px solid var(--line2)}
+.toc li{margin:0}
+.toc a{display:block; padding:5px 0 5px 13px; margin-left:-1px; border-left:2px solid transparent;
+  font-size:13.2px; color:var(--ink3); text-decoration:none; line-height:1.5}
+.toc a:hover{color:var(--accent-t)}
+.toc a.on{color:var(--accent-t); border-left-color:var(--accent); font-weight:600}
+.toc .sub2{padding-left:24px; font-size:12.4px}
+
+/* ---------- header ---------- */
+header{padding:56px 0 34px; border-bottom:1px solid var(--line)}
+.kicker{font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent-t); font-weight:700; margin:0 0 16px}
+h1{font-size:40px; line-height:1.2; margin:0 0 10px; letter-spacing:-.02em; font-weight:800}
+h1 small{display:block; font-size:19px; font-weight:500; color:var(--ink3); letter-spacing:0; margin-top:14px; line-height:1.55}
+.lede{font-size:17px; color:var(--ink2); max-width:760px; margin:20px 0 22px; line-height:1.72}
+.meta{display:flex; flex-wrap:wrap; gap:6px 20px; font-size:12.8px; color:var(--ink3)}
+.meta b{color:var(--ink2); font-weight:600}
+
+/* ---------- facts ---------- */
+.facts{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:30px 0 8px}
+.fact{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; min-width:0}
+.fact .k{font-size:11px; letter-spacing:.09em; color:var(--ink3); font-weight:650; margin:0 0 6px}
+.fact .v{font-size:19px; font-weight:750; color:var(--ink); line-height:1.3; font-variant-numeric:tabular-nums}
+.fact .d{font-size:12.3px; color:var(--ink3); margin-top:5px; line-height:1.5}
+@media(max-width:900px){.facts{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.facts{grid-template-columns:1fr}}
+
+/* ---------- sections ---------- */
+section{padding:56px 0 4px; scroll-margin-top:60px}
+h2{font-size:26px; line-height:1.32; margin:0 0 6px; letter-spacing:-.012em; font-weight:780}
+h2 .num{font-size:12px; color:var(--accent-t); font-weight:750; letter-spacing:.12em; display:block; margin-bottom:9px}
+h3{font-size:18.5px; margin:34px 0 8px; font-weight:720}
+h3[id]{scroll-margin-top:64px}
+h4{font-size:15px; margin:22px 0 4px; font-weight:700}
+p{margin:0 0 14px; color:var(--ink2)}
+p strong,li strong,td strong{color:var(--ink); font-weight:650}
+ul,ol{margin:0 0 16px; padding-left:21px; color:var(--ink2)}
+li{margin:5px 0}
+a{color:var(--accent-t)}
+hr{border:0; border-top:1px solid var(--line); margin:40px 0}
+.sub{font-size:15.5px; color:var(--ink3); margin:0 0 22px; max-width:780px}
+
+/* ---------- inline code + pre ---------- */
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  font-size:13.2px; background:var(--code-bg); border:1px solid var(--line);
+  border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; color:var(--ink)}
+pre{background:#FBFBF7; border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:8px; padding:15px 17px; overflow-x:auto; margin:16px 0;
+  font-size:12.8px; line-height:1.62; -moz-tab-size:2; tab-size:2}
+pre code{background:none; border:0; padding:0; font-size:12.8px; white-space:pre; overflow-wrap:normal}
+pre .c{color:#6B7280}
+pre .k{color:var(--accent-t); font-weight:600}
+pre .s{color:#8A4B18}
+.filename{font-size:11.5px; color:var(--ink3); letter-spacing:.03em; margin:16px 0 -8px; font-family:ui-monospace,Menlo,monospace}
+
+/* ---------- callouts ---------- */
+.box{border-radius:9px; padding:15px 18px; margin:20px 0; border:1px solid; font-size:14.6px}
+.box p:last-child{margin-bottom:0}
+.box .h{font-size:11.5px; letter-spacing:.1em; font-weight:750; margin:0 0 7px; text-transform:uppercase}
+.tip{background:var(--accent-bg); border-color:#D3DDEB; color:var(--ink2)}
+.tip .h{color:var(--accent-t)}
+.warn{background:var(--warn-bg); border-color:#EBDCBE; color:var(--ink2)}
+.warn .h{color:var(--warn-t)}
+.stop{background:var(--no-bg); border-color:#EFD3CF; color:var(--ink2)}
+.stop .h{color:var(--no-t)}
+.ok{background:var(--ok-bg); border-color:#CFE5DA; color:var(--ink2)}
+.ok .h{color:var(--ok-t)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; margin:18px 0}
+table{width:100%; border-collapse:collapse; font-size:13.6px; background:var(--card); min-width:520px}
+th,td{padding:8px 11px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-size:12.2px; color:var(--ink); background:#F4F4EF; font-weight:680; border-bottom:1px solid var(--line2); white-space:nowrap}
+td{color:var(--ink2); line-height:1.6}
+td code{font-size:12.4px}
+td:first-child code{white-space:nowrap}
+td.n,th.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tr.hi td{background:var(--accent-bg); color:var(--ink)}
+table caption{caption-side:top; text-align:left; font-size:12.4px; color:var(--ink3); padding-bottom:7px}
+table caption b{color:var(--ink2)}
+
+/* ---------- figures ---------- */
+figure{margin:24px 0; min-width:0}
+.figbox{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--card); padding:12px 10px 6px}
+svg{display:block; min-width:640px; width:100%; height:auto}
+figcaption{font-size:12.4px; color:var(--ink3); margin-top:9px; line-height:1.6}
+figcaption b{color:var(--ink2); font-weight:650}
+
+/* ---------- pills / tags ---------- */
+.pill{display:inline-block; font-size:11.2px; padding:1px 8px; border-radius:999px; font-weight:660;
+  letter-spacing:.02em; border:1px solid transparent; vertical-align:1px; white-space:nowrap}
+.p-a{background:var(--accent-bg); color:var(--accent-t); border-color:#D3DDEB}
+.p-ok{background:var(--ok-bg); color:var(--ok-t); border-color:#CFE5DA}
+.p-no{background:var(--no-bg); color:var(--no-t); border-color:#EFD3CF}
+.p-w{background:var(--warn-bg); color:var(--warn-t); border-color:#EBDCBE}
+
+/* ---------- scenario cards ---------- */
+.scn{border:1px solid var(--line); border-radius:10px; background:var(--card); padding:0; margin:16px 0; overflow:hidden}
+.scn .hd{display:flex; align-items:baseline; gap:10px; padding:13px 18px; border-bottom:1px solid var(--line); background:#FAFAF6}
+.scn .hd .t{font-size:15.5px; font-weight:720; color:var(--ink)}
+.scn .hd .m{font-size:12px; color:var(--ink3); margin-left:auto; text-align:right}
+.scn .bd{padding:13px 18px 6px; font-size:14.4px}
+.scn .bd p{margin:0 0 10px}
+.scn dl{display:grid; grid-template-columns:74px minmax(0,1fr); gap:3px 12px; margin:0 0 12px; font-size:13.8px}
+.scn dt{color:var(--ink3); font-size:12.3px; letter-spacing:.04em; padding-top:2px}
+.scn dd{margin:0; color:var(--ink2)}
+
+/* ---------- checklist ---------- */
+.chk{list-style:none; padding:0; margin:16px 0}
+.chk li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line); font-size:14.6px; margin:0}
+.chk li:last-child{border-bottom:1px solid var(--line)}
+.chk li::before{content:""; position:absolute; left:2px; top:15px; width:13px; height:13px; border:1.5px solid var(--line2); border-radius:3px}
+.chk li b{display:block; font-size:14.8px; color:var(--ink); margin-bottom:1px}
+.chk li span{color:var(--ink2); font-size:13.8px}
+
+/* ---------- footer ---------- */
+footer{margin-top:56px; padding:26px 0 60px; border-top:1px solid var(--line); font-size:12.6px; color:var(--ink3)}
+footer p{margin:0 0 6px; font-size:12.6px; color:var(--ink3)}
+@media(max-width:620px){
+  .topbar .row{padding:9px 16px; gap:10px}
+  .topbar .row > span:last-child{display:none}
+}
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr; gap:0}
+  aside{display:none}
+  h1{font-size:31px}
+  h2{font-size:22px}
+  section{padding:44px 0 4px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="row">
+    <b>Unlimited OCR 2</b>
+    <span class="tag">使用手册</span>
+    <span class="sp"></span>
+    <span>2026-10-27 发布 · 材料截至 2026-10-28</span>
+  </div>
+</div>
+
+<div class="shell">
+
+<aside>
+  <p class="toc-h">目录</p>
+  <ul class="toc">
+    <li><a href="#s1">01 它是什么</a></li>
+    <li><a href="#s1b" class="sub2">输出长什么样</a></li>
+    <li><a href="#s1c" class="sub2">和三条旧路的区别</a></li>
+    <li><a href="#s2">02 怎么跑</a></li>
+    <li><a href="#s2a" class="sub2">三条路线怎么选</a></li>
+    <li><a href="#s2b" class="sub2">Transformers</a></li>
+    <li><a href="#s2c" class="sub2">SGLang 服务化</a></li>
+    <li><a href="#s2d" class="sub2">请求与后处理</a></li>
+    <li><a href="#s2e" class="sub2">参数速查 / 排错</a></li>
+    <li><a href="#s3">03 什么时候用</a></li>
+    <li><a href="#s3a" class="sub2">该不该用</a></li>
+    <li><a href="#s3b" class="sub2">六个场景</a></li>
+    <li><a href="#s3c" class="sub2">五个别用</a></li>
+    <li><a href="#s3d" class="sub2">成本粗算</a></li>
+    <li><a href="#s4">04 边界与风险</a></li>
+    <li><a href="#s5">05 速查附录</a></li>
+  </ul>
+</aside>
+
+<main>
+
+<header>
+  <p class="kicker">Handbook · 给工程师和产品</p>
+  <h1>Unlimited OCR 2 上手指南
+    <small>三分钟知道它是什么，半小时把它跑起来，一张能贴在评审会上的「该不该用」判定表。</small>
+  </h1>
+  <p class="lede">市面上的 OCR 大多回答「这一页写了什么」。它回答的是另一件事：<b>这一本讲了什么，以及它怎么排的</b>——跨页断开的表格、跨页续写的段落、整本书的标题层级，都在一次请求里给你。代价是它比你想的更难跑通，而且单页精度并不占优。<b>这份文档只讲清楚三件事：它是什么、怎么把它跑起来、以及什么时候你不该用它。</b></p>
+  <div class="meta">
+    <span>发布 <b>2026-10-27</b>（百度）</span>
+    <span>规模 <b>3B 总参 / 约 0.5B 激活</b></span>
+    <span>代码许可 <b>MIT</b></span>
+    <span>一手材料 <b>README · 技术报告 · config.json · utils/README</b></span>
+  </div>
+
+  <div class="facts">
+    <div class="fact">
+      <p class="k">一句话</p>
+      <p class="v">整篇进，整篇出</p>
+      <p class="d">一叠页图 → 一份带版面结构的文档，不是逐页拼起来的</p>
+    </div>
+    <div class="fact">
+      <p class="k">单窗口容量</p>
+      <p class="v">≈ 480 页</p>
+      <p class="d">131,072 位置上限 ÷ 每页 273 视觉 token（推算）</p>
+    </div>
+    <div class="fact">
+      <p class="k">百页 KV 峰值</p>
+      <p class="v">1.77 GB</p>
+      <p class="d">分窗解码后；不分窗是 47 GB（官方实测）</p>
+    </div>
+    <div class="fact">
+      <p class="k">最短验证</p>
+      <p class="v">1 天</p>
+      <p class="d">Transformers 直跑 + 抽 6 处跨页结构人工核对</p>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 01 ============ -->
+<section id="s1">
+  <h2><span class="num">01</span>它是什么</h2>
+  <p class="sub">先把它从「又一个 OCR」里择出来：它不是把识别率做得更高的 OCR，而是把「一份文档」当成一次推理单位来处理的文档解析模型。</p>
+
+  <h3>一句话定义</h3>
+  <p>输入是<b>按页序排好的一组页面图像</b>（或由 PDF 转成的页图），输出是<b>整篇文档的版面块序列</b>：每个块带类型（标题/正文/表格/公式/图注）、标题层级、归一化位置框，以及跨页的延续标记。它返回的不是一段干净正文，而是一棵能还原成 Markdown 的结构。</p>
+
+  <div class="box tip">
+    <p class="h">先记住这一点，能省你半天</p>
+    <p><b>它不直接输出 Markdown。</b>模型吐的是 <code>&lt;PAGE&gt;&lt;BLOCK&gt;title&lt;LEVEL1&gt;[x1,y1,x2,y2]&lt;FORK&gt;…</code> 这种私有块语法，必须再跑官方脚本 <code>utils/process_unlimitedOCR2.py</code> 才能变成人看的 Markdown。所有「跑出来是乱码」的第一现场，八成是跳过了这一步。</p>
+  </div>
+
+  <h3>三个数字记住它的工作原理</h3>
+  <div class="tw">
+  <table>
+    <caption><b>表 1 ·</b> 三个数字各自回答一个问题。前两个来自 <code>config.json</code>，可自行复算；第三个是官方实测。</caption>
+    <thead><tr><th>数字</th><th>含义</th><th>它回答了什么</th></tr></thead>
+    <tbody>
+      <tr><td class="n"><b>273</b></td><td>每页压成多少个视觉 token</td><td>为什么百页能塞进 128K 上下文</td></tr>
+      <tr class="hi"><td class="n"><b>640</b></td><td>每个解码步最多看多少个 token<br><span class="pill p-a">4×32 本地 + 16×32 远端</span></td><td>为什么页数涨，单步算力不涨</td></tr>
+      <tr><td class="n"><b>1.77 GB</b></td><td>百页文档的 KV 峰值显存</td><td>为什么单卡能跑千页，而不是必须堆机器</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>这三件事由<b>两个不同机制</b>负责，官方叙述里常被并排讲，容易误当成一个机制：<b>640 是稀疏注意力（SR-SWA）</b>管算力，<b>1.77 GB 是分窗解码</b>管显存。二者独立可拆。<a href="baidu-unlimited-ocr2-report.html">深度技术分析见另一份报告</a>，这里不展开。</p>
+
+  <h3 id="s1b">它的输出长什么样</h3>
+  <p>下面这段是真实格式（取自官方 <code>utils/README.md</code>），一页一个 <code>&lt;PAGE&gt;</code>，块与块之间靠 <code>&lt;BLOCK&gt;</code> 分隔，块头与内容用 <code>&lt;FORK&gt;</code> 断开：</p>
+
+  <p class="filename">模型原始输出（未后处理）</p>
+<pre><code><span class="k">&lt;PAGE&gt;</span><span class="k">&lt;BLOCK&gt;</span>title<span class="k">&lt;LEVEL1&gt;</span>[120,88,880,142]<span class="k">&lt;FORK&gt;</span>第三章 资产减值
+<span class="k">&lt;BLOCK&gt;</span>text[120,160,880,268]<span class="k">&lt;FORK&gt;</span>本公司于每一资产负债表日对长期资产判断是否存在减值迹象……
+<span class="k">&lt;BLOCK&gt;</span>cross_table[120,300,880,610]<span class="k">&lt;FORK&gt;</span>&lt;table&gt;&lt;tr&gt;&lt;td&gt;项目&lt;/td&gt;&lt;td&gt;期末余额&lt;/td&gt;&lt;/tr&gt;……
+<span class="k">&lt;PAGE&gt;</span><span class="k">&lt;BLOCK&gt;</span>append_table[120,90,880,420]<span class="k">&lt;FORK&gt;</span>&lt;table&gt;&lt;tr&gt;&lt;td&gt;项目&lt;/td&gt;&lt;td&gt;期末余额&lt;/td&gt;&lt;/tr&gt;……</code></pre>
+
+  <p>跑一次 <code>process_unlimitedOCR2.py</code> 之后：</p>
+
+  <p class="filename">后处理输出（Markdown）</p>
+<pre><code><span class="c"># 第三章 资产减值</span>
+
+本公司于每一资产负债表日对长期资产判断是否存在减值迹象……
+
+<span class="c">&lt;!-- 两个 cross_table / append_table 片段已合并，重复的表头行已自动去重 --&gt;</span>
+&lt;table&gt;&lt;tr&gt;&lt;td&gt;项目&lt;/td&gt;&lt;td&gt;期末余额&lt;/td&gt;&lt;/tr&gt;……&lt;/table&gt;</code></pre>
+
+  <p>注意最后一段：<b>表格在 Markdown 里仍然是 HTML</b>，跨页片段被拼成一张表并干掉了重复表头。这正是它相对「逐页识别再拼接」的核心价值——合并逻辑是模型在原生长上下文里做出的，不是你在后处理里猜的。</p>
+
+  <div class="box warn">
+    <p class="h">后处理只做到「评测对齐」，不等于「生产可用」</p>
+    <p>那个脚本的默认行为是<b>为了对齐 MarathonDocBench 的标注格式</b>，不是为你的业务。四件事它会「做错」：① 页眉/页脚/页码<b>默认保留</b>进正文；② 公式<b>不做 <code>$$</code> 包裹</b>，和正文混在一起；③ 标题树被<b>强制压成单根</b>，多篇章合集会丢层级；④ 图片只给一个 <code>pageN_x1_y1_x2_y2.jpg</code> 的占位引用，<b>不会替你切图</b>。这四处都要你自己补。</p>
+  </div>
+
+  <h3 id="s1c">和你熟悉的三条路的分工</h3>
+  <p>它不是「更强的 OCR」，是一条不同的取舍线。放在一起看最清楚：</p>
+  <div class="tw">
+  <table>
+    <caption><b>表 2 ·</b> 四条路线的能力边界。「单页精度」一列参照 OmniDocBench v1.6 公开分数。</caption>
+    <thead><tr><th>做法</th><th>强项</th><th>弱项</th><th>什么时候选它</th></tr></thead>
+    <tbody>
+      <tr><td>传统 OCR<br><span class="pill p-w">PaddleOCR / Tesseract</span></td><td>字级准确、坐标齐全、快且便宜</td><td>版面结构弱；跨页完全没有概念</td><td>只要文字和坐标，不要结构</td></tr>
+      <tr><td>页面切块 + 云 OCR API</td><td>运维为零、按页计价</td><td>每页独立，跨页表格必然断；结构化靠模板</td><td>票据、单据、模板固定的单页场景</td></tr>
+      <tr><td>通用多模态大模型</td><td>能理解语义，可问答式抽取</td><td>百页级会崩：要么超上下文，要么分数断崖</td><td>少页 + 需要「理解」而非「还原」</td></tr>
+      <tr class="hi"><td><b>Unlimited OCR 2</b></td><td><b>整篇一次；跨页表格/段落/标题树天然连续</b></td><td><b>单页精度不如 1B 级专用模型；要自建、要后处理</b></td><td><b>整本要变成一份结构化文档</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>把它放进血统里看得更明白：<b>DeepSeek-OCR</b> 证明了「用视觉 token 压缩页面」这条路可行，<b>Unlimited OCR（一代）</b>把文本侧的长上下文问题解决了一半、卡在 40 页，<b>二代</b>把视觉侧也拆掉，才有了「页数不再是硬上限」。所以二代相对一代的<span class="pill p-a">唯一实质提升</span>就是长文档——单页几乎没动（OmniDocBench 93.92 → 94.02）。</p>
+
+  <h3>五个名词，知道结论就够</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>名词</th><th>一句话解释</th><th>你需要关心它吗</th></tr></thead>
+    <tbody>
+      <tr><td><b>SR-SWA</b><br><span class="pill p-a">稀疏参考滑窗</span></td><td>每步只看近处 128 个 token + 远端 16 个「相关块」（512），合计 640</td><td>只在调优时关心：它决定「20 页以下没用」这条阈值</td></tr>
+      <tr><td><b>分窗解码</b><br><span class="pill p-a">page window</span></td><td>文档切成重叠的页窗顺序处理，边界页的 KV 复用，窗外 KV 释放</td><td><b>必须关心</b>：页面窗口大小直接换「显存 ↔ 跨页质量」</td></tr>
+      <tr><td><b>base 模式</b></td><td>每页压成一张全局视图，约 273 token</td><td><b>必须关心</b>：多页整篇的默认，也是能塞进百页的前提</td></tr>
+      <tr><td><b>gundam 模式</b></td><td>单页动态切块，精度更高、token 更多</td><td><b>必须关心</b>：单页跑默认用这个；多页文档用它会撑爆上下文</td></tr>
+      <tr><td><b>&lt;PAGE&gt;</b></td><td>页分隔符，同时是页码对齐的唯一锚点</td><td><b>必须关心</b>：请求里必须原样保留，否则整篇页码错位</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="s2">
+  <h2><span class="num">02</span>怎么跑</h2>
+  <p class="sub">整条链路有四段，每段都会静默失败。先看清楚失败点在哪，再动手。</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 960 250" role="img" aria-label="从 PDF 到 Markdown 的四段流水线及各段失败模式">
+        <defs>
+          <marker id="ar1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 z" fill="#464D58"/>
+          </marker>
+        </defs>
+
+        <!-- stage 1 -->
+        <rect x="30" y="34" width="200" height="66" rx="8" fill="#EDF1F7" stroke="#2B4C7E"/>
+        <text x="130" y="58" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1E3A63">① 页图化</text>
+        <text x="130" y="78" text-anchor="middle" font-size="10.5" fill="#333A44">PDF / 扫描件 → PNG</text>
+        <text x="130" y="93" text-anchor="middle" font-size="10.5" fill="#333A44">PyMuPDF · 300 dpi</text>
+
+        <!-- stage 2 -->
+        <rect x="263" y="34" width="200" height="66" rx="8" fill="#EDF1F7" stroke="#2B4C7E"/>
+        <text x="363" y="58" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1E3A63">② 模型推理</text>
+        <text x="363" y="78" text-anchor="middle" font-size="10.5" fill="#333A44">SGLang · 分窗</text>
+        <text x="363" y="93" text-anchor="middle" font-size="10.5" fill="#333A44">整篇一次请求</text>
+
+        <!-- stage 3 -->
+        <rect x="496" y="34" width="200" height="66" rx="8" fill="#FBF2E3" stroke="#8A5A0B"/>
+        <text x="596" y="58" text-anchor="middle" font-size="13.5" font-weight="700" fill="#6B4305">③ 块串 → MD</text>
+        <text x="596" y="78" text-anchor="middle" font-size="10.5" fill="#333A44">process_unlimited</text>
+        <text x="596" y="93" text-anchor="middle" font-size="10.5" fill="#333A44">OCR2.py</text>
+
+        <!-- stage 4 -->
+        <rect x="729" y="34" width="200" height="66" rx="8" fill="#EAF4EF" stroke="#1E6F50"/>
+        <text x="829" y="58" text-anchor="middle" font-size="13.5" font-weight="700" fill="#185641">④ 入库 / 切块</text>
+        <text x="829" y="78" text-anchor="middle" font-size="10.5" fill="#333A44">按标题树切、生成</text>
+        <text x="829" y="93" text-anchor="middle" font-size="10.5" fill="#333A44">chunk、入向量库</text>
+
+        <!-- arrows -->
+        <line x1="230" y1="67" x2="257" y2="67" stroke="#464D58" stroke-width="1.6" marker-end="url(#ar1)"/>
+        <line x1="463" y1="67" x2="490" y2="67" stroke="#464D58" stroke-width="1.6" marker-end="url(#ar1)"/>
+        <line x1="696" y1="67" x2="723" y2="67" stroke="#464D58" stroke-width="1.6" marker-end="url(#ar1)"/>
+
+        <!-- failure notes -->
+        <line x1="30" y1="122" x2="929" y2="122" stroke="#E4E2DA" stroke-width="1"/>
+        <text x="30" y="141" font-size="10" fill="#464D58" letter-spacing="0.08em">这一段最常见的塌方</text>
+
+        <text x="30" y="163" font-size="10.5" fill="#8E2A23">dpi &lt; 300</text>
+        <text x="30" y="178" font-size="10.5" fill="#8E2A23">旋转页未校正</text>
+        <text x="30" y="193" font-size="10.5" fill="#8E2A23">双栏顺序错乱</text>
+
+        <text x="263" y="163" font-size="10.5" fill="#8E2A23">显存 OOM</text>
+        <text x="263" y="178" font-size="10.5" fill="#8E2A23">复读循环</text>
+        <text x="263" y="193" font-size="10.5" fill="#8E2A23">输出被截断</text>
+
+        <text x="496" y="163" font-size="10.5" fill="#8E2A23">页码整体错位</text>
+        <text x="496" y="178" font-size="10.5" fill="#8E2A23">跨页表格没合上</text>
+        <text x="496" y="193" font-size="10.5" fill="#8E2A23">公式是裸文本</text>
+
+        <text x="729" y="163" font-size="10.5" fill="#8E2A23">标题树被压平</text>
+        <text x="729" y="178" font-size="10.5" fill="#8E2A23">页眉页脚混入</text>
+        <text x="729" y="193" font-size="10.5" fill="#8E2A23">图片只有占位</text>
+
+        <text x="30" y="228" font-size="11" fill="#464D58">这四段失败都是静默的：不抛异常，不报错，只是结果悄悄变差。所以验收必须看内容，不能看“跑通了”。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1 ·</b> 端到端四段流水线。第 ② 段是唯一“官方帮你调好了”的一段，第 ③④ 段才是工程量真正所在。</figcaption>
+  </figure>
+
+  <h3 id="s2a">三条路线，先选一条</h3>
+  <p>不要一上来就部署 SGLang。先按你要验证的问题选路线——<b>80% 的人只需要路线 A 就能做完决策</b>。</p>
+  <div class="tw">
+  <table>
+    <caption><b>表 3 ·</b> 三条上手路线。耗时指“从零到看见第一份结果”。</caption>
+    <thead><tr><th>路线</th><th>适合谁</th><th>耗时</th><th>能回答什么</th><th>不能回答什么</th></tr></thead>
+    <tbody>
+      <tr><td><b>在线 Demo</b><br><code>hf.co/spaces/baidu/Unlimited-OCR-2</code></td><td>产品、想先看效果的人</td><td>1 分钟</td><td>输出风格、版面还原度肉眼判断</td><td>你的文档能不能跑、跑多快</td></tr>
+      <tr class="hi"><td><b>A · Transformers</b></td><td>做技术验证的工程师</td><td>15–40 分钟</td><td>长文档质量、跨页合并效果、显存下限</td><td>并发吞吐</td></tr>
+      <tr><td><b>B · SGLang</b></td><td>要上服务、要批处理的人</td><td>1–3 小时</td><td>吞吐、并发、长时间稳定性</td><td>（都要自己搭）</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s2b">路线 A · Transformers 直跑</h3>
+  <p>官方在 Python 3.10 / <code>torch==2.13.0</code> / <code>transformers==4.52.1</code> / A800-80GB 上验证过。依赖装法照抄：</p>
+<pre><code>pip install torch==2.13.0 torchvision pillow transformers==4.52.1 huggingface-hub==0.36.0 \
+  tokenizers==0.21.4 addict==2.4.0 einops==0.8.2 easydict==1.13</code></pre>
+
+  <p>加载一次，然后直接调两个方法：</p>
+<pre><code><span class="k">import</span> torch
+<span class="k">from</span> transformers <span class="k">import</span> AutoModel, AutoTokenizer
+
+model_name = <span class="s">"baidu/Unlimited-OCR-2"</span>
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=<span class="k">True</span>)
+model = AutoModel.from_pretrained(model_name, trust_remote_code=<span class="k">True</span>, use_safetensors=<span class="k">True</span>,
+                                  torch_dtype=torch.bfloat16).eval().cuda()
+
+<span class="c"># 多页：一次请求吃完整篇，跨页上下文才在</span>
+pages = [<span class="s">f"your_doc/page_</span>{i}<span class="s">.jpg"</span> <span class="k">for</span> i <span class="k">in</span> range(1, 8)]
+text, num_tokens = model.infer_multi(tokenizer, image_files=pages,
+                                     output_path=<span class="s">"output/multi"</span>, save_results=<span class="k">True</span>)
+
+<span class="c"># 单页：默认走 gundam（动态切块），精度更高</span>
+text = model.infer(tokenizer, image_file=<span class="s">"your_doc/page_1.jpg"</span>,
+                   output_path=<span class="s">"output/single"</span>, save_results=<span class="k">True</span>)</code></pre>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>接口</th><th>内部做了什么</th><th>你要知道的一件事</th></tr></thead>
+    <tbody>
+      <tr><td><code>infer_multi</code></td><td>自动拼 <code>&lt;PAGE&gt;&lt;image&gt; × N + "Multi page parsing."</code>，每页一张<b>全局视图</b>（base）</td><td>输出里每个输入页对应一个 <code>&lt;PAGE&gt;</code>，<b>顺序与入参一致</b>——这是你后续做页码映射的依据</td></tr>
+      <tr><td><code>infer</code></td><td>单页，默认<b>动态切块</b>（gundam）</td><td>同一张图，gundam 比 base 准，但 token 数高得多</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box stop">
+    <p class="h">两个必须正视的风险</p>
+    <p>① <code>trust_remote_code=True</code> 意味着<b>加载即执行仓库里的自定义代码</b>（<code>modeling_unlimitedocr.py</code>）。生产环境别直接 <code>from_pretrained</code>，先把这两个文件过一遍。<br>
+    ② 官方只在 <b>A800-80GB</b> 上验证。24GB / 40GB 卡能不能跑<b>属于未验证区</b>——权重本身约 6GB，能吃下，但页图预处理与分窗调度下的峰值取决于页数和并发，别拿“权重装得下”当结论。</p>
+  </div>
+
+  <h3 id="s2c">路线 B · SGLang 服务化</h3>
+  <p>SGLang 那条路有个隐藏门槛：<b>必须用仓库自带的定制 wheel</b>（<code>sglang-0.5.20.dev10+g8d62f5fb9c</code>），和你现有的环境大概率版本冲突。所以第一步永远是独立虚拟环境：</p>
+<pre><code>uv venv --python 3.10
+source .venv/bin/activate
+
+uv pip install wheel/sglang-0.5.20.dev10+g8d62f5fb9c-py3-none-any.whl
+uv pip install pymupdf==1.27.2.2
+uv pip install fastokens==0.3.2</code></pre>
+
+  <p>然后用一组环境变量把显存按住——<b>这一段是“不设就 OOM”的部分，不是调优</b>：</p>
+<pre><code><span class="c"># 分窗调度：1 = 开，0 = 整文档塞一个窗口（千页级必炸）</span>
+<span class="k">export</span> SGLANG_UOCR_EANABLE_DOC_LIMIT=1
+<span class="k">export</span> SGLANG_UOCR_DOC_GUNDAM_PAGE_WINDOW=10   <span class="c"># gundam 每窗页数</span>
+<span class="k">export</span> SGLANG_UOCR_DOC_BASE_PAGE_WINDOW=10     <span class="c"># base 每窗页数</span>
+<span class="k">export</span> SGLANG_UOCR_MAX_PAGE_TOKENS=20000        <span class="c"># 每页输出上限</span>
+
+<span class="c"># SAM 注意力偏置的分块上限：默认 512 会一次要 ~462 MiB 连续显存并可能 OOM</span>
+<span class="k">export</span> SGLANG_OPT_UOCR_SAM_REL_POS_BIAS_MB=64
+<span class="c"># 大 crop 张量走 /dev/shm，绕开 tokenizer → scheduler 的 pickle</span>
+<span class="k">export</span> SGLANG_UOCR_SHM_WRAP_MODEL_DATA=1
+<span class="k">export</span> SGLANG_UOCR_SHM_WRAP_MIN_MB=1
+<span class="k">export</span> SGLANG_VLM_CACHE_SIZE_MB=0
+<span class="k">export</span> PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True</code></pre>
+
+  <p>启动服务（关键参数已按官方建议调到保守值，尖括号内是场景相关）：</p>
+<pre><code>python -m sglang.launch_server \
+    --model-path baidu/Unlimited-OCR-2 \
+    --served-model-name Unlimited-OCR-2 \
+    --chat-template unlimited-ocr \
+    --tokenizer-backend fastokens \
+    --tokenizer-worker-num 8 \
+    --mem-fraction-static 0.7 \
+    --max-running-requests 64 \
+    --max-prefill-tokens 2048 \
+    --enable-custom-logit-processor \
+    --enable-streaming-session \
+    --allow-auto-truncate \
+    --disable-radix-cache \
+    --mm-preprocess-cache-size-mb 0 \
+    --cuda-graph-backend-decode full --cuda-graph-max-bs-decode 64 \
+    --cuda-graph-backend-prefill full \
+    --cuda-graph-max-bs-prefill 16384 \
+    --cuda-graph-bs-prefill 1024 2048 \
+    --cuda-graph-config '{"prefill": {"backend": "full", "full_prefill_max_req": 64}}' \
+    --host 0.0.0.0 --port 10000</code></pre>
+
+  <div class="box warn">
+    <p class="h">四个容易抄错的地方</p>
+    <p>① 环境变量官方<b>拼写就是 <code>EANABLE</code></b>（不是 ENABLE），照抄，别顺手改；<br>
+    ② <code>--cuda-graph-bs-prefill</code> 的<b>最大桶必须等于</b> <code>--max-prefill-tokens</code>：偏小会回退 eager 变慢，偏大纯粹浪费 capture 显存；<br>
+    ③ <code>--mem-fraction-static 0.75</code> 在 32+ 并发下余量不够，官方明确建议 0.7；<br>
+    ④ <code>full_prefill_max_req</code> 默认 8，不改的话 16/32 并发会静默回退到 eager。<b>这条最阴——服务能跑，但慢了你还以为是模型的问题。</b></p>
+  </div>
+
+  <h3 id="s2d">请求怎么拼</h3>
+  <p>服务起好后是 OpenAI 兼容接口。下面这段是从官方示例精简出的最小可用客户端，<b>带三处必须写对的地方</b>：</p>
+<pre><code><span class="k">import</span> base64, json, os, tempfile
+<span class="k">import</span> fitz, requests
+<span class="k">from</span> sglang.srt.sampling.custom_logit_processor <span class="k">import</span> DeepseekOCRNoRepeatNGramLogitProcessor
+
+server_url = <span class="s">"http://127.0.0.1:10000"</span>
+NGRAM = DeepseekOCRNoRepeatNGramLogitProcessor.to_str()
+session = requests.Session()
+session.trust_env = <span class="k">False</span>          <span class="c"># ① 绕开系统代理，否则本机 127.0.0.1 也会被代理吞掉</span>
+
+<span class="k">def</span> pdf_to_images(pdf_path, dpi=300):
+    doc = fitz.open(pdf_path)
+    tmp = tempfile.mkdtemp(prefix=<span class="s">"pdf_ocr_"</span>)
+    mat = fitz.Matrix(dpi / 72, dpi / 72)
+    out = []
+    <span class="k">for</span> i, page <span class="k">in</span> enumerate(doc):
+        p = os.path.join(tmp, <span class="s">f"page_</span>{i + 1:04d}<span class="s">.png"</span>)
+        page.get_pixmap(matrix=mat).save(p)
+        out.append(p)
+    <span class="k">return</span> out
+
+<span class="k">def</span> build_content(paths):
+    prompt = <span class="s">"&lt;PAGE&gt;&lt;image&gt;"</span> * len(paths) + <span class="s">"Multi page parsing."</span>   <span class="c"># ② 页数必须与图数严格相等</span>
+    parts = []
+    <span class="k">for</span> p <span class="k">in</span> paths:
+        b64 = base64.b64encode(open(p, <span class="s">"rb"</span>).read()).decode()
+        parts.append({<span class="s">"type"</span>: <span class="s">"image_url"</span>,
+                      <span class="s">"image_url"</span>: {<span class="s">"url"</span>: <span class="s">f"data:image/png;base64,</span>{b64}<span class="s">"</span>}})
+    <span class="k">return</span> parts + [{<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: prompt}]
+
+<span class="k">def</span> generate(paths, crop_mode=<span class="k">True</span>, tokens_per_page=8000):
+    payload = {
+        <span class="s">"model"</span>: <span class="s">"Unlimited-OCR-2"</span>,
+        <span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: build_content(paths)}],
+        <span class="s">"max_tokens"</span>: tokens_per_page * len(paths),   <span class="c"># ③ 全篇总预算，不是每页</span>
+        <span class="s">"temperature"</span>: 0,
+        <span class="s">"skip_special_tokens"</span>: <span class="k">False</span>,              <span class="c"># 关掉就丢 &lt;PAGE&gt;，页码全错</span>
+        <span class="s">"images_config"</span>: {<span class="s">"crop_mode"</span>: crop_mode},   <span class="c"># True=gundam  False=base</span>
+        <span class="s">"custom_logit_processor"</span>: NGRAM,
+        <span class="s">"custom_params"</span>: {
+            <span class="s">"ngram_size"</span>: 35,
+            <span class="s">"window_size"</span>: 1024 <span class="k">if</span> len(paths) &gt; 1 <span class="k">else</span> 128,  <span class="c"># 防复读</span>
+            <span class="s">"page_token_id"</span>: 128827,
+            <span class="s">"eos_token_id"</span>: 1,
+            <span class="s">"max_page_tokens"</span>: 20000,
+        },
+        <span class="s">"stream"</span>: <span class="k">True</span>,
+    }
+    r = session.post(<span class="s">f"</span>{server_url}<span class="s">/v1/chat/completions"</span>, json=payload,
+                     timeout=6000, stream=<span class="k">True</span>)
+    r.raise_for_status()
+    chunks = []
+    <span class="k">for</span> line <span class="k">in</span> r.iter_lines(decode_unicode=<span class="k">True</span>):
+        <span class="k">if</span> <span class="k">not</span> line <span class="k">or</span> <span class="k">not</span> line.startswith(<span class="s">"data:"</span>):
+            <span class="k">continue</span>
+        data = line[5:].strip()
+        <span class="k">if</span> data == <span class="s">"[DONE]"</span>:
+            <span class="k">break</span>
+        ev = json.loads(data)
+        <span class="k">for</span> c <span class="k">in</span> (ev.get(<span class="s">"choices"</span>) <span class="k">or</span> []):
+            chunks.append((c.get(<span class="s">"delta"</span>) <span class="k">or</span> {}).get(<span class="s">"content"</span>) <span class="k">or</span> <span class="s">""</span>)
+    <span class="k">return</span> <span class="s">""</span>.join(chunks)
+
+raw = generate(pdf_to_images(<span class="s">"your_doc.pdf"</span>, dpi=300))</code></pre>
+
+  <div class="box tip">
+    <p class="h">crop_mode 怎么选，这一条决定成败</p>
+    <p><b>多页整篇 → <code>False</code>（base）</b>：每页约 273 token，百页才塞得进单窗口，这是官方 <code>infer_multi</code> 的默认。<br>
+    <b>单页或十几页 → <code>True</code>（gundam）</b>：动态切块，精度明显更高，但每页 token 数会涨好几倍。<br>
+    想把百页文档强行用 gundam 跑，正确做法是<b>同时开分窗</b>（<code>DOC_GUNDAM_PAGE_WINDOW</code>），代价是跨窗的表格合并质量下降。<b>“又长又精”在这套机制里是有物理上限的，别信一键调优。</b></p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 960 340" role="img" aria-label="客户端与 SGLang 服务之间的请求时序">
+        <defs>
+          <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 z" fill="#2B4C7E"/>
+          </marker>
+          <marker id="ar2g" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 z" fill="#1E6F50"/>
+          </marker>
+        </defs>
+
+        <rect x="90" y="18" width="170" height="40" rx="7" fill="#EDF1F7" stroke="#2B4C7E"/>
+        <text x="175" y="43" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1E3A63">你的客户端</text>
+
+        <rect x="535" y="18" width="180" height="40" rx="7" fill="#EDF1F7" stroke="#2B4C7E"/>
+        <text x="625" y="43" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1E3A63">SGLang 服务</text>
+
+        <line x1="175" y1="58" x2="175" y2="322" stroke="#CFCCC1" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <line x1="625" y1="58" x2="625" y2="322" stroke="#CFCCC1" stroke-width="1.4" stroke-dasharray="5 4"/>
+
+        <text x="400" y="88" text-anchor="middle" font-size="11.5" fill="#333A44">POST /v1/chat/completions（stream=true，N 张页图 + &lt;PAGE&gt;×N）</text>
+        <line x1="175" y1="100" x2="622" y2="100" stroke="#2B4C7E" stroke-width="1.7" marker-end="url(#ar2)"/>
+
+        <circle cx="625" cy="146" r="3.5" fill="#2B4C7E"/>
+        <text x="641" y="142" font-size="11" fill="#333A44">第 1 窗 prefill（base 默认 10 页/窗）</text>
+        <text x="641" y="158" font-size="11" fill="#333A44">之后每窗复用上一窗尾页的 KV</text>
+
+        <line x1="622" y1="205" x2="178" y2="205" stroke="#1E6F50" stroke-width="1.7" marker-end="url(#ar2g)"/>
+        <text x="400" y="222" text-anchor="middle" font-size="11.5" fill="#185641">SSE 逐段吐字符流（每页约上千 token，所以要 stream）</text>
+
+        <circle cx="625" cy="262" r="3.5" fill="#2B4C7E"/>
+        <text x="641" y="258" font-size="11" fill="#333A44">窗外页的视觉 KV 已释放</text>
+        <text x="641" y="274" font-size="11" fill="#333A44">—— 这就是“显存不随页数增长”的落点</text>
+
+        <text x="400" y="300" text-anchor="middle" font-size="11.5" fill="#333A44">data: [DONE]</text>
+        <line x1="622" y1="310" x2="178" y2="310" stroke="#464D58" stroke-width="1.4" marker-end="url(#ar2)"/>
+      </svg>
+    </div>
+    <figcaption><b>图 2 ·</b> 一次请求的时序。三个工程后果：<b>必须 stream</b>（整篇输出远超普通 HTTP 超时）、<b>timeout 要按分钟到小时给</b>（官方示例 6000 秒）、<b>页码靠 <code>&lt;PAGE&gt;</code> 流式回传</b>，不能等最后一次性解析。</figcaption>
+  </figure>
+
+  <h3>后处理：把它变成能用的 Markdown</h3>
+  <p>两种用法，批量跑还是嵌进代码：</p>
+<pre><code><span class="c"># 批量：把一个目录下的原始输出（.txt/.md）全转成 Markdown</span>
+python utils/process_unlimitedOCR2.py --infer-dir raw --out-dir pred</code></pre>
+<pre><code><span class="c"># 嵌进流水线</span>
+<span class="k">from</span> process_unlimitedOCR2 <span class="k">import</span> convert
+markdown = convert(raw_output)</code></pre>
+
+  <p>它认得的块类型一共这些，看懂这张表你就知道能从输出里拿到什么：</p>
+  <div class="tw">
+  <table>
+    <caption><b>表 4 ·</b> 块类型已按用途分组。<code>cross_</code> / <code>append_</code> 前缀可加在任意类型前，表示“跨页延续”。</caption>
+    <thead><tr><th>分组</th><th>类型</th><th>转成 Markdown 后</th></tr></thead>
+    <tbody>
+      <tr><td>结构</td><td><code>title</code> <span class="pill p-a">带 &lt;LEVELn&gt;</span></td><td><code>#</code> × n 级标题</td></tr>
+      <tr><td>结构</td><td><code>text</code> / <code>ref_text</code> / <code>aside_text</code> / <code>algorithm</code></td><td>正文，直接拼接</td></tr>
+      <tr><td>结构</td><td><code>equation</code></td><td><b>裸文本</b>，不会自动包 <code>$$</code></td></tr>
+      <tr class="hi"><td>表格</td><td><code>table</code> / <code>cross_table</code> / <code>append_table</code></td><td><b>保留 HTML</b>；跨页片段自动合并并去掉重复表头</td></tr>
+      <tr><td>图</td><td><code>image</code> / <code>figure</code> / <code>chart</code> / <code>seal</code></td><td><code>![](pageN_x1_y1_x2_y2.jpg)</code> 占位，<b>不切图</b></td></tr>
+      <tr><td>图</td><td><code>image_caption</code> / <code>image_footnote</code></td><td>图注 / 图下注，跟图一起输出</td></tr>
+      <tr><td>页边</td><td><code>header</code> / <code>footer</code> / <code>page_number</code> / <code>page_footnote</code></td><td><b>默认保留进正文</b>，要自己清</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box tip">
+    <p class="h">坐标是归一化值，不是像素</p>
+    <p>块头里的 <code>[x1,y1,x2,y2]</code> 全部落在 <b>0–1000</b> 的归一化坐标系里（脚本里 <code>_scale()</code> 会钳到 0–1000）。要回原图像素，乘上页宽高再除 1000。<b>直接当像素用会得到一堆越界框</b>，这是接前端坐标系统时最常见的错。</p>
+  </div>
+
+  <h3 id="s2e">参数速查：每一个都写清楚“动了会怎样”</h3>
+  <div class="tw">
+  <table>
+    <caption><b>表 5 ·</b> 只列真正会影响结果的参数。其余保持默认。</caption>
+    <thead><tr><th>参数</th><th>建议</th><th>动了会怎样</th></tr></thead>
+    <tbody>
+      <tr><td><code>--mem-fraction-static</code></td><td>0.7</td><td>调到 0.75 在 32+ 并发下余量不足；调太低则 KV 空间不够、并发上不去</td></tr>
+      <tr><td><code>--max-prefill-tokens</code></td><td>2048</td><td>临时张量约 <code>[tokens, context/32]</code>，4096 时这块峰值翻倍</td></tr>
+      <tr><td><code>--cuda-graph-bs-prefill</code> 最大桶</td><td>＝ max-prefill-tokens</td><td>偏小 → 回退 eager（慢）；偏大 → 白占 capture 显存</td></tr>
+      <tr><td><code>full_prefill_max_req</code></td><td>64</td><td>默认 8，16/32 并发静默回退 eager</td></tr>
+      <tr class="hi"><td><code>SGLANG_UOCR_EANABLE_DOC_LIMIT</code></td><td>1</td><td>设 0 = 整文档单窗口：≤480 页更快，千页级必 OOM</td></tr>
+      <tr class="hi"><td><code>..._BASE_PAGE_WINDOW</code> / <code>..._GUNDAM_PAGE_WINDOW</code></td><td>10</td><td><b>调小省显存但伤跨页合并</b>（跨窗延续的块丢上下文）；调大反之</td></tr>
+      <tr><td><code>SGLANG_UOCR_MAX_PAGE_TOKENS</code></td><td>20000</td><td>每页输出守卫，防单页失控；太小会截断密排页</td></tr>
+      <tr><td><code>SGLANG_OPT_UOCR_SAM_REL_POS_BIAS_MB</code></td><td>64</td><td>默认 512 会一次要 ~462 MiB 连续显存，启动即 OOM 的元凶</td></tr>
+      <tr><td><code>images_config.crop_mode</code></td><td>多页 False<br>单页 True</td><td>True=gundam 切块更准、token 更多；False=base 每页 1 视图</td></tr>
+      <tr><td><code>max_tokens</code></td><td>页数 × 8000 起</td><td><b>全篇总预算</b>；按页算错会让你在第 30 页被整体截断</td></tr>
+      <tr><td><code>ngram_size</code> / <code>window_size</code></td><td>35 / 1024（多页）</td><td>不挂这个 logit processor 会复读；单页窗口 128 就够</td></tr>
+      <tr><td><code>skip_special_tokens</code></td><td><b>必须 False</b></td><td>设 True 会吃掉 <code>&lt;PAGE&gt;</code>，整篇页码错位且后处理无法恢复</td></tr>
+      <tr><td><code>dpi</code>（PDF→图）</td><td>300</td><td>低于 300 直接影响识别质量，尤其小字号与表格线</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>排错：症状 → 原因 → 处置</h3>
+  <div class="tw">
+  <table>
+    <caption><b>表 6 ·</b> 按“你看到什么”查，不要按“我猜哪里错了”查。</caption>
+    <thead><tr><th>症状</th><th>最可能的原因</th><th>处置</th></tr></thead>
+    <tbody>
+      <tr><td>服务刚起就 OOM</td><td>SAM 偏置默认 512 的一次性大分配</td><td><code>SGLANG_OPT_UOCR_SAM_REL_POS_BIAS_MB=64</code></td></tr>
+      <tr><td>跑到中途 OOM</td><td>没开分窗，或窗口太大</td><td><code>DOC_LIMIT=1</code>，窗口降到 10 甚至 6</td></tr>
+      <tr><td>输出反复念同一段</td><td>没挂 no-repeat-ngram processor，或窗口过小</td><td>补 <code>custom_logit_processor</code>；多页把 window 提到 1024</td></tr>
+      <tr><td>输出在某页戛然而止</td><td><code>max_tokens</code> 或 <code>MAX_PAGE_TOKENS</code> 撑到上限</td><td>按“页数 × 8000”重算总预算</td></tr>
+      <tr><td>整篇内容整体偏移一页</td><td><code>skip_special_tokens=true</code> 把 <code>&lt;PAGE&gt;</code> 吃了</td><td>改回 <code>False</code>，重跑（不可事后修复）</td></tr>
+      <tr><td>跨页表格被拆成两张</td><td>窗口太小，或每页用了 base 却靠后处理硬拼</td><td>窗口调到 10–15；确认请求里是<b>整篇一次</b>而不是逐页并发</td></tr>
+      <tr><td>跑通了但全是乱码块语法</td><td>跳过了后处理</td><td>跑 <code>process_unlimitedOCR2.py</code></td></tr>
+      <tr><td>正文里混进页码和页眉</td><td>脚本默认不删页边块</td><td>后处理后按 type 过滤，或改 <code>DROP_LABELS</code></td></tr>
+      <tr><td>所有请求都 500 / 超时</td><td>客户端走了系统代理，或 timeout 太短</td><td><code>session.trust_env = False</code>；timeout 给到 6000 秒</td></tr>
+      <tr><td>客户端 import 失败</td><td>客户端也要装同一个 sglang 包</td><td>在客户端环境里装定制 wheel</td></tr>
+      <tr><td>单页精度不如预期</td><td>用了 base（每页一视图）</td><td>单页改 gundam：<code>crop_mode=true</code></td></tr>
+      <tr><td>中文小字误识多</td><td>页图 dpi 不够</td><td>PDF→图改 300 dpi，并确认没有缩放</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>验收清单：一天走完，别省第 3 步</h3>
+  <ul class="chk">
+    <li><b>1 · 拿你自己最长的一份文档跑通</b><span>务必 &gt; 100 页。单页一次、多页一次，都要出结果。通过标准：结构肉眼可读，不是“没报错”。</span></li>
+    <li><b>2 · 抽 6 处跨页结构逐字核对</b><span>3 处跨页表格（表头去重、列对齐）+ 3 处跨页段落（有没有被截断/重复）。这是它唯一不可替代的能力，不过关就别往下走。</span></li>
+    <li><b>3 · 做「块边界 vs 块内部」的分层对比</b><span>官方材料<b>没做这一项</b>。按页位置抽边界页与内部页各 10 页，算编辑距离；差距 &lt; 2 个百分点可接受，明显偏大说明窗口要调大。这一步决定你敢不敢上生产。</span></li>
+    <li><b>4 · 压一次并发，记录 TPS 与峰值显存</b><span>B=16 下与官方 1,315 TPS / 1.77GB KV 同量级即可；差一个数量级说明参数没调对，不是模型不行。</span></li>
+    <li><b>5 · 跑一遍你的真实后处理</b><span>页眉页脚、公式包裹、标题树、图片切图——四件事各验一遍。这一步最容易被跳过，也最容易在上线后暴露。</span></li>
+  </ul>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="s3">
+  <h2><span class="num">03</span>什么时候用</h2>
+  <p class="sub">一句话：<b>页数够多、且文档的结构价值大于文字价值</b>时用它。这两条缺一条，它就不如你现有的方案。</p>
+
+  <h3 id="s3a">先过三个问题，再谈部署</h3>
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 960 440" role="img" aria-label="是否使用 Unlimited OCR 2 的三步判定决策树">
+        <defs>
+          <marker id="ar3" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 z" fill="#464D58"/>
+          </marker>
+        </defs>
+
+        <!-- Q1 -->
+        <rect x="40" y="36" width="440" height="64" rx="8" fill="#FFFFFF" stroke="#2B4C7E" stroke-width="1.5"/>
+        <text x="60" y="61" font-size="13.5" font-weight="700" fill="#14181F">① 单份文档通常 ≥ 20 页？</text>
+        <text x="60" y="80" font-size="11" fill="#464D58">20 页以下，稀疏化省不出东西，反而多一层路由开销</text>
+
+        <rect x="560" y="36" width="360" height="64" rx="8" fill="#FBEDEB" stroke="#A8332B"/>
+        <text x="580" y="61" font-size="13" font-weight="700" fill="#8E2A23">不必用它</text>
+        <text x="580" y="80" font-size="10.8" fill="#333A44">单页专用模型更准更省：0.8B 级已有更高分</text>
+
+        <line x1="480" y1="68" x2="552" y2="68" stroke="#464D58" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="512" y="60" font-size="11.5" font-weight="650" fill="#6B4305">否</text>
+
+        <!-- down to Q2 -->
+        <line x1="260" y1="100" x2="260" y2="134" stroke="#464D58" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="270" y="122" font-size="11.5" font-weight="650" fill="#185641">是</text>
+
+        <!-- Q2 -->
+        <rect x="40" y="142" width="440" height="64" rx="8" fill="#FFFFFF" stroke="#2B4C7E" stroke-width="1.5"/>
+        <text x="60" y="167" font-size="13.5" font-weight="700" fill="#14181F">② 有跨页表格、跨页段落，或需要整篇标题树？</text>
+        <text x="60" y="186" font-size="11" fill="#464D58">这是它唯一不可替代的地方；只是“字多”不构成理由</text>
+
+        <rect x="560" y="142" width="360" height="64" rx="8" fill="#FBF2E3" stroke="#8A5A0B"/>
+        <text x="580" y="167" font-size="13" font-weight="700" fill="#6B4305">用逐页流水线更划算</text>
+        <text x="580" y="186" font-size="10.8" fill="#333A44">单页更准、可并行、便宜；跨页合并自己写</text>
+
+        <line x1="480" y1="174" x2="552" y2="174" stroke="#464D58" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="512" y="166" font-size="11.5" font-weight="650" fill="#6B4305">否</text>
+
+        <!-- down to Q3 -->
+        <line x1="260" y1="206" x2="260" y2="240" stroke="#464D58" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="270" y="228" font-size="11.5" font-weight="650" fill="#185641">是</text>
+
+        <!-- Q3 -->
+        <rect x="40" y="248" width="440" height="64" rx="8" fill="#FFFFFF" stroke="#2B4C7E" stroke-width="1.5"/>
+        <text x="60" y="273" font-size="13.5" font-weight="700" fill="#14181F">③ 单份 ≤ 480 页，且单卡显存 ≥ 40GB？</text>
+        <text x="60" y="292" font-size="11" fill="#464D58">480 页 ≈ 13.1 万视觉 token，正好一整个位置上限</text>
+
+        <rect x="560" y="248" width="360" height="64" rx="8" fill="#EAF4EF" stroke="#1E6F50"/>
+        <text x="580" y="273" font-size="13" font-weight="700" fill="#185641">整文档单窗口，最省心</text>
+        <text x="580" y="292" font-size="10.8" fill="#333A44">Transformers 直跑，或 SGLang 关掉分窗</text>
+
+        <line x1="480" y1="280" x2="552" y2="280" stroke="#464D58" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="512" y="272" font-size="11.5" font-weight="650" fill="#185641">是</text>
+
+        <!-- down to V4 -->
+        <line x1="260" y1="312" x2="260" y2="346" stroke="#464D58" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="270" y="334" font-size="11.5" font-weight="650" fill="#6B4305">否</text>
+
+        <rect x="40" y="354" width="440" height="64" rx="8" fill="#EDF1F7" stroke="#2B4C7E"/>
+        <text x="60" y="379" font-size="13" font-weight="700" fill="#1E3A63">必须开分窗调度（窗口 10 页起）</text>
+        <text x="60" y="398" font-size="10.8" fill="#333A44">代价：跨窗的表格与段落会掉上下文，务必做边界页分层校验</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3 ·</b> 三步判定。第 ② 步是真正的分水岭——<b>只要你的批处理里没有跨页结构，就不该用它</b>。“20 页”阈值来自注意力范围推算（推算），“480 页”来自 131,072 ÷ 273（推算）。</figcaption>
+  </figure>
+
+  <h3 id="s3b">六个它确实值钱的场景</h3>
+
+  <div class="scn">
+    <div class="hd"><span class="t">① 年报 / 招股说明书 / 募集说明书整本结构化</span><span class="m">100–400 页 · 表格密集</span></div>
+    <div class="bd">
+      <dl>
+        <dt>为什么适合</dt><dd>资产负债表、现金流量表常年跨页，页眉重复、表头在下一页重印。逐页方案必须写合并逻辑，它原生就给合并结果。</dd>
+        <dt>怎么配</dt><dd>多页整篇一次请求，<code>crop_mode=False</code>（base），≤480 页不用开分窗。</dd>
+        <dt>预期</dt><dd>跨页表格拼成一张 HTML 表，重复表头自动去掉；标题树能直接给出“第 N 节 → 第 N.M 小节”。</dd>
+        <dt>主要坑</dt><dd>页脚的公司名与页码会进正文；表格转 DataFrame 要用 <code>pandas.read_html()</code> 吃那段 HTML，别自己写解析。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="scn">
+    <div class="hd"><span class="t">② 扫描书籍 / 地方志 / 档案长卷数字化</span><span class="m">300–3,600 页</span></div>
+    <div class="bd">
+      <dl>
+        <dt>为什么适合</dt><dd>这才是它名字里的“unlimited”。官方演示直接跑完了《哈利·波特》全七部与三体全集——注意这是<b>单次演示</b>，不是基准测试结果。</dd>
+        <dt>怎么配</dt><dd>必开 <code>DOC_LIMIT=1</code>，窗口 10 页；上千页的卷子建议按“卷/册”切成独立请求，别赌一个请求跑到底。</dd>
+        <dt>预期</dt><dd>正文与标题层级连续，跨页断开的句子能接上。</dd>
+        <dt>主要坑</dt><dd>书页的页眉页脚几乎全是噪声，必须清；竖排/繁体/异体字没有公开评测数据，<b>属于未知区，先小样本试</b>。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="scn">
+    <div class="hd"><span class="t">③ 学术论文集 / 标准规范 / 法规汇编</span><span class="m">跨页公式与图表编号</span></div>
+    <div class="bd">
+      <dl>
+        <dt>为什么适合</dt><dd>公式被页边切断、图表编号跨页续排、章节层级深（到四级标题）——这三件事逐页方案都做不好。</dd>
+        <dt>怎么配</dt><dd>页数不多（20–80）时可试 <code>crop_mode=True</code> 加分窗，公式识别会更好；纯速度优先就 base。</dd>
+        <dt>预期</dt><dd>公式以 LaTeX 文本给出，编号与引用关系保留在正文流里。</dd>
+        <dt>主要坑</dt><dd>后处理<b>不会</b>把 <code>equation</code> 包成 <code>$$…$$</code>，你得自己按块类型补；标题树被强制单根，多篇论文合成一本时要重排层级。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="scn">
+    <div class="hd"><span class="t">④ 招投标文件 / 诉讼卷宗</span><span class="m">扫描件 + 表格 + 附件</span></div>
+    <div class="bd">
+      <dl>
+        <dt>为什么适合</dt><dd>一份卷宗几十到几百页，资质表、报价表跨页是常态，且要保留“第几页第几张表”的可追溯性。</dd>
+        <dt>怎么配</dt><dd>base + 整篇；把 <code>&lt;PAGE&gt;</code> 位置映射回原 PDF 页码，作为引用锚点。</dd>
+        <dt>预期</dt><dd>结构与页码可对齐，能做“原文第 37 页”级别的溯源。</dd>
+        <dt>主要坑</dt><dd>手写批注、盖章遮挡、复印件底噪都是弱项——<b>训练数据以印刷文档为主，没有手写评测数据</b>。有手写就老实上“专用手写模型 + 人工复核”。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="scn">
+    <div class="hd"><span class="t">⑤ 财报批量入库（表格 → 结构化数据）</span><span class="m">重复性批处理</span></div>
+    <div class="bd">
+      <dl>
+        <dt>为什么适合</dt><dd>输出里表格是标准 HTML，跨页片段已合并。<code>pandas.read_html()</code> 直接吃，比任何自研表格解析都省事。</dd>
+        <dt>怎么配</dt><dd>SGLang + 并发；<code>max_tokens</code> 按“页数 × 8000”给足，避免长报表被截断。</dd>
+        <dt>预期</dt><dd>一张跨 3 页的资产负债表 → 一个 DataFrame，行不丢、表头不重。</dd>
+        <dt>主要坑</dt><dd>合并单元格（<code>rowspan/colspan</code>）在 HTML 里是合法的，但 <code>read_html</code> 默认不展开；要自己 forward-fill。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="scn">
+    <div class="hd"><span class="t">⑥ 长文档 RAG 的前置处理</span><span class="m">切块质量决定召回</span></div>
+    <div class="bd">
+      <dl>
+        <dt>为什么适合</dt><dd>RAG 切块最怕“表格被拦腰切开”“标题与正文分家”。它给的是带层级的结构，可以按标题树切而不是按字数切。</dd>
+        <dt>怎么配</dt><dd>整篇 → Markdown → 按 heading 切段，表格整块不切，图片用 bbox 回原图裁。</dd>
+        <dt>预期</dt><dd>chunk 自带章节路径（如“第三章 / 3.2 减值测试 / 表 3-1”），召回后能给出处。</dd>
+        <dt>主要坑</dt><dd>后处理默认保留页眉页脚，会污染 embedding；一定要先过滤再用。</dd>
+      </dl>
+    </div>
+  </div>
+
+  <h3 id="s3c">五个明确别用的场景</h3>
+  <div class="tw">
+  <table>
+    <caption><b>表 7 ·</b> 这些场景用了不会“差一点”，而是<b>又贵又差</b>。</caption>
+    <thead><tr><th>场景</th><th>为什么不该用</th><th>用什么</th></tr></thead>
+    <tbody>
+      <tr><td>单页票据、发票、证件、截图</td><td>OmniDocBench 94.02，<b>落后 0.8B 的 OvisOCR2（96.47）与 1.2B 的 TeleOCR（96.91）</b>，还更贵更慢</td><td>专用小模型 / 云 OCR API</td></tr>
+      <tr><td>实时高并发小图（每秒几十张）</td><td>3B MoE，每页要生成上千 token，单页延迟在秒级；稀疏化在短输入上不省反贵</td><td>轻量检测+识别流水线</td></tr>
+      <tr><td>需要字符级坐标或置信度的场景</td><td>它给的是<b>块级</b> bbox（0–1000 归一化），没有逐字框，也没有置信度分数</td><td>传统 OCR 引擎</td></tr>
+      <tr><td>有文本层的电子版 PDF</td><td>文本已经在文件里，OCR 只会引入误差，还要为它烧 GPU</td><td><code>pdfplumber</code> / <code>PyMuPDF</code> 直接抽</td></tr>
+      <tr><td>手写为主、或需要语义问答抽取</td><td>训练数据以印刷文档为主，手写无公开评测；它是解析模型，不是拿来聊天的</td><td>手写专用模型 / 通用 VLM + 抽取提示词</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s3d">成本粗算：先算清“每千页”再谈采购</h3>
+  <p>官方给的吞吐是 <b>1,315 TPS @ B=16</b>（A800-80GB）。按每页约 1,000 个输出 token 反推，单卡理论上限约 <b>4,700 页/小时</b>；扣掉 PDF→图（300 dpi 单页约 0.2–0.4 秒 CPU）、prefill、排队与重试，实际按 40–60% 折算更稳。<b>下面全部是算术推算，不是实测</b>。</p>
+  <div class="tw">
+  <table>
+    <caption><b>表 8 ·</b> 单卡（A800-80GB 级）耗时，<span class="pill p-w">推算</span>值。文档越“图多表多”，每页输出 token 越高，耗时按比例涨。</caption>
+    <thead><tr><th>规模</th><th class="n">页数</th><th class="n">单卡预计耗时</th><th>折算</th></tr></thead>
+    <tbody>
+      <tr><td>临时处理一份年报</td><td class="n">300</td><td class="n">8–15 分钟</td><td>不值得一提，随便一张卡</td></tr>
+      <tr><td>小批量归档</td><td class="n">5,000</td><td class="n">2–3.5 卡时</td><td>单卡跑一夜够用</td></tr>
+      <tr class="hi"><td>月度批量（图书馆/律所量级）</td><td class="n">50,000</td><td class="n">20–35 卡时</td><td>2–4 卡并行，一天内完成</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>把它换成钱只有一个公式：<b>每千页成本 ≈ (1000 ÷ 单卡小时页数) × 你的卡时单价</b>。按 2,500 页/卡时算，每千页约 0.4 卡时——<b>卡时单价你自己代入</b>，因为租用与自建、包月与按量的差别比模型本身的差别还大。</p>
+  <div class="box tip">
+    <p class="h">和按页计价的云 OCR 怎么比</p>
+    <p>云 OCR 按页收费、零运维，量小时（每月几千页）几乎总是更便宜；自建的优势要到<b>月处理量上万页</b>、且文档长到云 API 按页累计成本吃不住时才显现。另一条常被忽略的成本是<b>后处理与人工抽检</b>——那部分不随模型变，但会占掉项目一半的工期。</p>
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="s4">
+  <h2><span class="num">04</span>边界与风险</h2>
+  <p class="sub">这一节不是唱衰，是把“上线后才会发现”的事提前摆到桌面上。</p>
+
+  <div class="tw">
+  <table>
+    <caption><b>表 9 ·</b> 六条需要你在方案里写明的风险。</caption>
+    <thead><tr><th>风险</th><th>具体是什么</th><th>怎么应对</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>自建基准的可信度</td><td>“百页级领先 43 分”来自百度自建的 MarathonDocBench，标注由强逐页解析器初始化，训练伪标签也来自 MinerU2.5-Pro / PaddleOCR-VL——<b>同一批“老师”既出题又判卷</b></td><td>只看 MPDocBench（第三方，84.59）做横向对比；自己的文档必须自测</td></tr>
+      <tr><td>缺一条最该比的基线</td><td>对比里没有“通用模型 + 分段流水线”，也就是没有回答“我用逐段调用能不能更便宜地达到同样效果”</td><td>内部试点时自己补上这条基线，很可能是它最有力的竞争者</td></tr>
+      <tr><td>单页精度不占优</td><td>94.02 排第三，落后 1B 级模型 2.5–2.9 分；相对一代只 +0.1</td><td>混合路由：短文档走小模型，长文档才路由给它</td></tr>
+      <tr><td>跨页连续性未分层验证</td><td>官方只给了整篇的 T-TextEdit（0.123），<b>没有“块边界 vs 块内部”的对比</b>，无法判断 1 页重叠够不够</td><td>这就是验收清单第 3 步，必须自己做</td></tr>
+      <tr><td><code>trust_remote_code</code></td><td>加载权重即执行仓库内自定义建模代码，供应链风险实打实</td><td>把 <code>modeling_unlimitedocr.py</code> 等文件纳入代码审计；生产用固定 commit 的内网镜像</td></tr>
+      <tr><td>许可只覆盖代码</td><td>仓库 <code>LICENSE</code> 是 MIT（商用友好），但<b>模型权重的许可条款需以模型卡为准</b>；本次整理时 HF 模型卡不可达，未完成核验</td><td>法务按 HF / ModelScope 模型卡原文确认后再商用</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="box warn">
+    <p class="h">一句总结给决策者</p>
+    <p>它的价值不在“识别更准”，而在“<b>第一次让整本文档变成一个可查询的结构</b>”。如果你的业务里存在“跨页的表格或段落”，并且这件事今天靠人工补，那它值得一次试点；如果你的业务是单页、实时、要高并发，它<b>不是更贵的正确答案，而是错误答案</b>。</p>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="s5">
+  <h2><span class="num">05</span>速查附录</h2>
+
+  <h3>入口与一手材料</h3>
+  <div class="tw">
+  <table>
+    <caption><b>表 10 ·</b> 地址均取自官方 README 与仓库页面（2026-10-28 摘录）。</caption>
+    <thead><tr><th>用途</th><th>地址</th></tr></thead>
+    <tbody>
+      <tr><td>代码仓库（含 <code>infer.py</code>、<code>utils/</code>）</td><td><code>github.com/baidu/Unlimited-OCR</code></td></tr>
+      <tr><td>在线试玩（最快看效果）</td><td><code>huggingface.co/spaces/baidu/Unlimited-OCR-2</code></td></tr>
+      <tr><td>权重（HF）</td><td><code>huggingface.co/baidu/Unlimited-OCR-2</code></td></tr>
+      <tr><td>权重（国内镜像）</td><td><code>modelscope.cn/models/PaddlePaddle/Unlimited-OCR-2</code></td></tr>
+      <tr><td>不想自建：云 API</td><td><code>cloud.baidu.com/doc/OCR/s/fmr1p39gb</code></td></tr>
+      <tr><td>技术报告</td><td><code>arxiv.org/abs/2606.23050</code></td></tr>
+      <tr><td>自建基准数据集</td><td><code>huggingface.co/datasets/baidu/MarathonDocBench</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>关键常量（写死在代码里，别猜）</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>常量</th><th class="n">值</th><th>出处 / 用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>page_token_id</code></td><td class="n">128827</td><td><code>config.json</code> → 传给 ngram processor 的 <code>&lt;PAGE&gt;</code> id</td></tr>
+      <tr><td><code>image_token_id</code></td><td class="n">128815</td><td><code>config.json</code> → 视觉占位符</td></tr>
+      <tr><td><code>eos_token_id</code></td><td class="n">1</td><td>解码终止判断</td></tr>
+      <tr><td><code>per_page_image_tokens</code></td><td class="n">273</td><td>算容量、算成本的基准数</td></tr>
+      <tr><td><code>max_position_embeddings</code></td><td class="n">131072</td><td>单窗口页数上限 ≈ 131072 ÷ 273 ≈ <b>480</b></td></tr>
+      <tr><td><code>sparse_block_size</code> / <code>sparse_local_block</code> / <code>sparse_topk_blocks</code></td><td class="n">32 / 4 / 16</td><td>合起来决定每步 640 = (4+16) × 32</td></tr>
+      <tr><td><code>sliding_window_size</code></td><td class="n">128</td><td>本地窗口</td></tr>
+      <tr><td>层数 / 专家 / 每 token 激活</td><td class="n">12 / 64+2 / 6</td><td>MoE 结构，决定激活参数约 0.5B</td></tr>
+      <tr><td>视觉编码器</td><td class="n">deeplip_b_l</td><td>CLIP-L/14 + SAM-ViT-B 双塔，1024×1024 输入</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>最小可行代码骨架</h3>
+<pre><code><span class="c"># 1. PDF → 页图（300 dpi）           fitz.Matrix(300/72, 300/72)</span>
+<span class="c"># 2. 页图 → 原始块串                  POST /v1/chat/completions，stream=True</span>
+<span class="c"># 3. 块串 → Markdown                  convert(raw) 或 process_unlimitedOCR2.py</span>
+<span class="c"># 4. 你的业务                         按 # 标题切块 / pd.read_html 取表 / bbox 裁图</span>
+
+<span class="k">from</span> process_unlimitedOCR2 <span class="k">import</span> convert
+md = convert(raw)                      <span class="c"># 别忘了这一步，否则拿到的是块语法</span>
+open(<span class="s">"doc.md"</span>, <span class="s">"w"</span>).write(md)</code></pre>
+
+  <h3>一句话记忆卡</h3>
+  <div class="box ok">
+    <p class="h">带走这四句就够</p>
+    <p><b>它是</b>把“一整本”当一次推理的文档解析模型，卖点是跨页结构，不是识别率。<br>
+    <b>怎么跑</b>：页图 → 整篇一次请求 → 跑 <code>process_unlimitedOCR2.py</code> → 才得到 Markdown。<br>
+    <b>什么时候用</b>：≥20 页，且有跨页表格/段落/整篇标题树。<br>
+    <b>什么时候别用</b>：单页、实时、要高并发、或 PDF 本来就有文本层。</p>
+  </div>
+</section>
+
+<footer>
+  <p>本文所有命令、参数名、常量取自官方 README、<code>utils/README.md</code>、<code>config.json</code> 与技术报告（<code>Unlimited-OCR-2.pdf</code>，15 页），未做推测性改写。标注 <span class="pill p-w">推算</span> 的数值为按官方常量计算的推导值，非官方实测。</p>
+  <p>配套的技术深度分析（SR-SWA 机制、它与分窗解码的归因边界、评测可信度拆解）见同目录 <a href="baidu-unlimited-ocr2-report.html">baidu-unlimited-ocr2-report.html</a>。整理日期 2026-10-28。</p>
+</footer>
+
+<script>
+try {
+  var links = [].slice.call(document.querySelectorAll('.toc a'));
+  var secs = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  var onScroll = function () {
+    var y = window.scrollY + 120, cur = 0;
+    for (var i = 0; i < secs.length; i++) { if (secs[i] && secs[i].offsetTop <= y) cur = i; }
+    links.forEach(function (a, i) { a.classList.toggle('on', i === cur); });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+} catch (e) {}
+</script>
+
+</main>
+</div>
+
+</body>
+</html>

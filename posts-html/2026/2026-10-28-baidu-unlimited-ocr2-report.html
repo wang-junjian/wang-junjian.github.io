@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="百度 Unlimited OCR 2 深度拆解：SR-SWA 把每步视野钉在 640 token，分块解码让成本与页数解耦；逐项核对架构、评测分数、八个该打的折扣与部署配方，回答它到底是更强的 OCR，还是智能体的读档层。">
+<meta name="keywords" content="ocr, sr-swa, document-parsing, ernie, moe, long-context">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-28">
+<title>文心 Unlimited OCR 2 深度研究 · 从长视野到无限视野</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --line:#E3DFD6; --line2:#CFC9BD;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FDF3E7;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EDF3FA;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E9F4F2;
+  --red:#B3261E; --red-t:#B3261E; --red-bg:#FBECEA;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F2EDFB;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px; margin:0 auto; padding:0 28px}
+
+/* nav */
+nav{
+  position:sticky; top:0; z-index:50; background:rgba(251,250,247,.94);
+  backdrop-filter:saturate(150%) blur(8px); border-bottom:1px solid var(--line);
+}
+nav .inner{max-width:1060px; margin:0 auto; padding:10px 28px; display:flex; gap:18px; align-items:center; overflow-x:auto}
+nav .brand{font-weight:700; font-size:14px; letter-spacing:.02em; white-space:nowrap; color:var(--ink)}
+nav .brand span{color:var(--amber-t)}
+nav a{font-size:13px; color:var(--ink3); text-decoration:none; white-space:nowrap; padding:2px 0}
+nav a:hover{color:var(--amber-t)}
+
+/* header */
+header{padding:64px 0 36px; border-bottom:1px solid var(--line)}
+.kicker{font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--amber-t); font-weight:650; margin:0 0 14px}
+h1{font-size:42px; line-height:1.22; margin:0 0 18px; letter-spacing:-.015em; font-weight:800}
+h1 em{font-style:normal; color:var(--amber-t)}
+.lede{font-size:18px; color:var(--ink2); max-width:800px; margin:0 0 26px; line-height:1.7}
+.meta{display:flex; flex-wrap:wrap; gap:8px 22px; font-size:13px; color:var(--ink3)}
+.meta b{color:var(--ink2); font-weight:600}
+
+/* section */
+section{padding:64px 0 8px; scroll-margin-top:24px}
+h2{font-size:27px; line-height:1.32; margin:0 0 8px; letter-spacing:-.01em; font-weight:750}
+h2 .num{font-size:13px; color:var(--amber-t); font-weight:700; letter-spacing:.1em; display:block; margin-bottom:8px}
+h3{font-size:19px; margin:34px 0 10px; font-weight:700}
+h4{font-size:15.5px; margin:22px 0 6px; font-weight:700; color:var(--ink)}
+p{margin:0 0 14px; color:var(--ink2)}
+p strong,li strong{color:var(--ink); font-weight:650}
+ul,ol{margin:0 0 16px; padding-left:22px; color:var(--ink2)}
+li{margin:5px 0}
+a{color:var(--blue-t)}
+hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+
+.sub{font-size:16px; color:var(--ink3); margin:0 0 26px; max-width:820px}
+code{
+  font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  font-size:13.5px; background:#F2EFE8; border:1px solid var(--line);
+  border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; color:var(--ink);
+}
+
+/* cards */
+.card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px 24px; margin:20px 0; min-width:0}
+.card h4{margin-top:0}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:20px 0}
+.grid2>*,.grid3>*{min-width:0}
+@media(max-width:780px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* claims */
+.claims{counter-reset:c; margin:26px 0 6px}
+.claim{
+  display:grid; grid-template-columns:34px 1fr; gap:14px; padding:14px 0;
+  border-top:1px solid var(--line); align-items:start;
+}
+.claim:last-child{border-bottom:1px solid var(--line)}
+.claim .n{
+  counter-increment:c; font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:750; color:var(--amber-t);
+  border:1px solid var(--line2); border-radius:999px; width:26px; height:26px;
+  display:flex; align-items:center; justify-content:center; margin-top:3px; background:var(--amber-bg);
+}
+.claim .n::before{content:counter(c,decimal-leading-zero)}
+.claim b{display:block; font-size:16px; margin-bottom:2px; color:var(--ink)}
+.claim span{font-size:14.5px; color:var(--ink2); line-height:1.62}
+
+/* tables */
+table{width:100%; border-collapse:collapse; font-size:14px; margin:18px 0; background:var(--card)}
+th,td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-size:12.5px; text-transform:none; letter-spacing:.02em; color:var(--ink); background:#F5F2EB; font-weight:650; border-bottom:1px solid var(--line2)}
+td{color:var(--ink2)}
+td.n,th.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tr.hi td{background:var(--amber-bg); color:var(--ink); font-weight:600}
+table caption{caption-side:top; text-align:left; font-size:12.5px; color:var(--ink3); padding-bottom:8px}
+@media(max-width:900px){table{display:block; overflow-x:auto; white-space:nowrap}}
+
+/* figure */
+figure{margin:26px 0; min-width:0}
+.fig-box{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--card); padding:14px 10px 8px}
+svg{display:block; min-width:600px; width:100%; height:auto}
+figcaption{font-size:12.5px; color:var(--ink3); margin-top:9px; line-height:1.6}
+figcaption b{color:var(--ink2); font-weight:650}
+
+/* pills */
+.pill{display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:999px; font-weight:650; letter-spacing:.02em; border:1px solid transparent; vertical-align:1px}
+.p-a{background:var(--amber-bg); color:var(--amber-t); border-color:#EFD9BE}
+.p-b{background:var(--blue-bg); color:var(--blue-t); border-color:#D3E1F1}
+.p-t{background:var(--teal-bg); color:var(--teal-t); border-color:#C9E4DF}
+.p-r{background:var(--red-bg); color:var(--red-t); border-color:#F0D2CE}
+.p-p{background:var(--purple-bg); color:var(--purple-t); border-color:#DDD0F3}
+
+.verdict{border-left:3px solid var(--amber); background:var(--amber-bg); padding:16px 20px; border-radius:0 8px 8px 0; margin:22px 0}
+.verdict h4{margin:0 0 6px; font-size:14px; color:var(--amber-t); letter-spacing:.03em}
+.verdict p{margin:0; font-size:15px; color:var(--ink2)}
+.note{border-left:3px solid var(--line2); padding:12px 18px; margin:20px 0; background:#F7F4EE; border-radius:0 8px 8px 0}
+.note p{margin:0; font-size:14.5px; color:var(--ink2)}
+
+/* formula */
+.formula{background:#F5F2EB; border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:16px 0; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.5px; color:var(--ink); overflow-x:auto; line-height:1.9}
+.formula .cm{color:var(--ink3)}
+
+footer{margin-top:70px; padding:34px 0 60px; border-top:1px solid var(--line); font-size:13px; color:var(--ink3)}
+footer p{margin:4px 0; color:var(--ink3)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <div class="brand">Unlimited OCR <span>2</span> · 深度研究</div>
+    <a href="#s01">定位</a>
+    <a href="#s02">瓶颈</a>
+    <a href="#s03">架构</a>
+    <a href="#s04">SR-SWA</a>
+    <a href="#s05">无限解码</a>
+    <a href="#s06">训练</a>
+    <a href="#s07">评测</a>
+    <a href="#s09">反证据</a>
+    <a href="#s10">落地</a>
+    <a href="#s11">判断</a>
+  </div>
+</nav>
+
+<header class="wrap">
+  <p class="kicker">技术拆解 · 2026-10-28</p>
+  <h1>把「每步能看多少」钉成常数：<br><em>文心 Unlimited OCR 2</em> 是怎么做到无限页的</h1>
+  <p class="lede">
+    百度 10 月 27 日开源的 Unlimited OCR 2，宣传语是「任意页数」。真正值得研究的不是这句话，而是它把长文档解析的成本从「随页数增长」改写成「与页数无关」的两个具体动作——一个是注意力层的稀疏路由，一个是解码层的分块复用。本文基于技术报告 PDF、模型 <code>config.json</code> 与官方通稿逐项核对，并把官方口径里需要打折的地方标出来。
+  </p>
+  <div class="meta">
+    <span><b>发布</b> 2026-10-27</span>
+    <span><b>主体</b> 百度文心（ERNIE）团队</span>
+    <span><b>规模</b> 3B 总参 / 约 500M 激活</span>
+    <span><b>许可</b> MIT</span>
+    <span><b>一手来源</b> 技术报告 PDF · config.json · README</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="s00">
+  <h2><span class="num">00</span>摘要：十条可证伪的判断</h2>
+  <p class="sub">每一章都在展开其中某一条。若某条被后续证据推翻，对应章节会跟着塌。</p>
+
+  <div class="claims">
+    <div class="claim"><div class="n"></div><div>
+      <b>它解决的是第二重瓶颈，不是第一重。</b>
+      <span>第一代用 R-SWA 只压住了「越抄越长的文本历史」，视觉上下文仍随页数线性膨胀，所以官方承认上限卡在约 40 页。SR-SWA 才动的是视觉侧。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>核心机制是给每个解码步一个固定容量的「工作参考集」。</b>
+      <span>本地窗口 128 token（4 块 × 32）+ 远端 top-16 块 × 32 = 512 token，合计 640，与文档 10 页还是 300 页无关。这个数可以从 <code>config.json</code> 字段直接对上。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>「无限」必须两个机制叠加，不能单独归因。</b>
+      <span>SR-SWA 管的是<strong>单步算力</strong>（百页场景 7.0×/5.6× 加速），Unlimited-Horizon Decoding 管的是<strong>显存</strong>（峰值 KV 47GB → 1.77GB）。报告里的 Table 4 只对比了后者，把两者混为一谈会误读。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>页级 0/1 交替位置编码，比稀疏注意力本身更值得抄。</b>
+      <span>它把「第 287 页」这个训练时没见过的坐标从表示空间里消掉，让外推在结构上成立，而不是靠调 RoPE 参数硬撑。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>路由是端到端训的，不需要 KL 蒸馏。</b>
+      <span>路由概率被转成 mean-centered log-prior 直接加进 attention logits，梯度自然回传到路由器。<code>use_kl_loss: false</code> 与报告第 3.3.2 节的说法互相印证。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>代价是文档级全局结构。</b>
+      <span>稀疏注意力不保留全文信息，作者自陈标题层级理解受限，未来可能引入线性注意力补全局。MarathonDocBench 上 HeadingTEDS 只有 48.20，是各项里最低的一项。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>单页精度不是卖点。</b>
+      <span>OmniDocBench v1.6 得 94.02，只比一代高 0.1，且被 0.8B 的 OvisOCR2（96.47）和 1.2B 的 TeleOCR（96.91）超过。买它是买长度。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>百页级 77.06 分要打折看。</b>
+      <span>基准是百度自建、标注由「强逐页解析器初始化」；对比的通用大模型被要求一次性端到端吃下 100–300 页，本就不是它们的常规用法，且没有「通用模型 + 分段流水线」这一条基线。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>它的正确定位是智能体的「读档层」，不是理解层。</b>
+      <span>输出带 bbox、块类型、层级、阅读顺序的结构化文档，跨页表格合并（T-TableTEDS 71.11，通用模型不超过 26.3）才是它压过逐页方案的真实差异点。</span>
+    </div></div>
+    <div class="claim"><div class="n"></div><div>
+      <b>工程可用性有隐性成本。</b>
+      <span>必须 <code>trust_remote_code=True</code>、要用仓库自带定制 SGLang wheel（0.5.20.dev10）、page-window 与 block 大小要和文档类型匹配，块越小越省显存但跨块衔接越差。</span>
+    </div></div>
+  </div>
+
+  <div class="verdict">
+    <h4>一句话结论</h4>
+    <p>这是一次<strong>问题定义层面</strong>的进步：它把「长上下文」这个通用难题，塞进「输入很长、输出与输入局部对齐」这个边界清楚的任务里，用「每步最多看 640 个 token」换取与页数无关的开销。数字里，架构决定的效率提升可信度高；基准上的领先幅度，要等第三方用公开数据复现之后再下定论。</p>
+  </div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>定位：它自称开启「OCR 3.0」，这个说法站得住吗</h2>
+  <p class="sub">百度把这条线切成三段：1.0 是多阶段流水线，2.0 是端到端视觉语言模型，3.0 是无限视野。分段本身是营销动作，但分段的<strong>判据</strong>是实的——因为判据决定了你该不该换方案。</p>
+
+  <h3>三代的分野不在精度，在成本结构</h3>
+  <p>把三代放在一起看，会发现差异不在「识别得准不准」，而在<strong>成本随文档长度怎么变</strong>。1.0 的成本随页数线性增长（页数 × 单页流水线开销），但每页独立，误差会累积；2.0 把整页压成视觉 token 交给语言模型解码，误差不再累积，可代价是解码器的 KV 缓存随输出长度线性膨胀；3.0 要解决的就是这个膨胀。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 270" role="img" aria-label="OCR 三代范式演进时间轴">
+        <line x1="70" y1="150" x2="890" y2="150" stroke="#CFC9BD" stroke-width="2"/>
+        <polygon points="890,150 878,145 878,155" fill="#CFC9BD"/>
+
+        <!-- node 1 -->
+        <circle cx="150" cy="150" r="8" fill="#FFFFFF" stroke="#4A505A" stroke-width="2.5"/>
+        <text x="150" y="112" text-anchor="middle" font-size="13" font-weight="700" fill="#16181D">OCR 1.0</text>
+        <text x="150" y="130" text-anchor="middle" font-size="11.5" fill="#4A505A">约 2015–2022</text>
+        <text x="150" y="180" text-anchor="middle" font-size="12" fill="#333941">多阶段流水线</text>
+        <text x="150" y="198" text-anchor="middle" font-size="11.5" fill="#4A505A">检测 → 识别 → 版面重组</text>
+        <text x="150" y="216" text-anchor="middle" font-size="11.5" fill="#4A505A">误差逐级累积</text>
+
+        <!-- node 2 -->
+        <circle cx="400" cy="150" r="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="2.5"/>
+        <text x="400" y="112" text-anchor="middle" font-size="13" font-weight="700" fill="#16181D">OCR 2.0</text>
+        <text x="400" y="130" text-anchor="middle" font-size="11.5" fill="#4A505A">2025–2026</text>
+        <text x="400" y="180" text-anchor="middle" font-size="12" fill="#333941">端到端 VLM</text>
+        <text x="400" y="198" text-anchor="middle" font-size="11.5" fill="#4A505A">DeepSeek-OCR 等</text>
+        <text x="400" y="216" text-anchor="middle" font-size="11.5" fill="#4A505A">KV 随输出线性增长</text>
+
+        <!-- node 3 -->
+        <circle cx="640" cy="150" r="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="2.5"/>
+        <text x="640" y="112" text-anchor="middle" font-size="13" font-weight="700" fill="#16181D">Unlimited OCR</text>
+        <text x="640" y="130" text-anchor="middle" font-size="11.5" fill="#4A505A">2026-06-22</text>
+        <text x="640" y="180" text-anchor="middle" font-size="12" fill="#333941">R-SWA</text>
+        <text x="640" y="198" text-anchor="middle" font-size="11.5" fill="#4A505A">文本历史窗口化</text>
+        <text x="640" y="216" text-anchor="middle" font-size="11.5" fill="#4A505A">约 40 页封顶</text>
+
+        <!-- node 4 -->
+        <circle cx="850" cy="150" r="9" fill="#B45309"/>
+        <text x="850" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="#16181D">Unlimited OCR 2</text>
+        <text x="850" y="120" text-anchor="middle" font-size="11.5" fill="#8F3F06" font-weight="600">2026-10-27</text>
+        <text x="850" y="180" text-anchor="middle" font-size="12" fill="#333941">SR-SWA + 分块解码</text>
+        <text x="850" y="198" text-anchor="middle" font-size="11.5" fill="#4A505A">文本与视觉双侧有界</text>
+        <text x="850" y="216" text-anchor="middle" font-size="11.5" fill="#8F3F06" font-weight="600">任意页数</text>
+
+        <text x="70" y="246" font-size="11.5" fill="#4A505A">↑ 成本结构从「页数 × 单页」→「页数 × 输出」→「与页数解耦」，这是三代真正的分野</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1 ·</b> 三代文档解析范式的关键差异。注意 2.0 与 3.0 之间只隔了四个月，而 1.0 到 2.0 隔了三年——加速点在「把扫描件当序列抄」这个统一框架确立之后。</figcaption>
+  </figure>
+
+  <h3>判别式：什么才算 3.0</h3>
+  <p>把官方叙事翻译成可检验的条件，一个系统要配得上「无限视野」，得同时满足三条。缺任何一条，都只是「更长的 2.0」：</p>
+
+  <div class="grid3">
+    <div class="card">
+      <h4>① 单次前向</h4>
+      <p style="font-size:14.5px;margin:0">整份文档一次请求送入，不做「逐页解析 + 结果拼接」。跨页结构由模型自己判断，而不是靠后处理规则合并。</p>
+    </div>
+    <div class="card">
+      <h4>② 成本与页数解耦</h4>
+      <p style="font-size:14.5px;margin:0">单步延迟与显存占用不随页数增长。注意要<strong>两个维度都看</strong>：只压住其中一个，页数一过百就漏。</p>
+    </div>
+    <div class="card">
+      <h4>③ 跨页结构连贯</h4>
+      <p style="font-size:14.5px;margin:0">跨页的段落与表格由模型在语义层接续，输出顺序与阅读顺序一致，不丢字、不乱序、不重复。</p>
+    </div>
+  </div>
+
+  <p>按这三条对照，Unlimited OCR 2 是<strong>目前唯一公开可下载权重且三条都宣称满足</strong>的模型；通用大模型（Gemini、Qwen、Kimi）满足①但严重违反②，逐页流水线（MinerU、PaddleOCR-VL）满足②③里的一半，靠规则缝合跨页结构。这个对照关系后面第 07 章会用分数验证。</p>
+
+  <h3>版本事实核对</h3>
+  <table>
+    <caption>表 1 · 两代 Unlimited OCR 的公开事实（据 README、模型卡、官方通稿与报告正文）</caption>
+    <thead><tr><th>维度</th><th>Unlimited OCR（一代）</th><th>Unlimited OCR 2</th></tr></thead>
+    <tbody>
+      <tr><td>发布时间</td><td>2026-06-22</td><td>2026-10-27</td></tr>
+      <tr><td>核心机制</td><td>R-SWA（文本参考滑动窗口）</td><td>SR-SWA（稀疏参考滑动窗口）+ 无限视野解码</td></tr>
+      <tr><td>文档长度上限</td><td>约 40 页（报告 Table 2 脚注自述）</td><td>宣称任意页数；基准覆盖 103–300 页</td></tr>
+      <tr><td>基座</td><td colspan="2">DeepSeek-OCR：DeepEncoder（SAM-ViT-B + CLIP-L/14，1024² 输入）+ MoE 解码器</td></tr>
+      <tr><td>规模</td><td>3B 总参 / 约 500M 激活</td><td>同左（报告图 3 图注另标 A570M，口径不一，见 03 章）</td></tr>
+      <tr><td>训练方式</td><td>基于 DeepSeek-OCR 继续训练</td><td>从一代 checkpoint 初始化，后训练 1 个 epoch</td></tr>
+      <tr><td>许可</td><td colspan="2">MIT（权重与代码均开放）</td></tr>
+      <tr><td>获取渠道</td><td>GitHub / Hugging Face / ModelScope / 百度云</td><td>同左 + 百度 AI 开放平台（公测）</td></tr>
+      <tr class="hi"><td>社区数据</td><td colspan="2">一代：开源 5 天 GitHub Star 破万，四榜第一；截至 10 月 HF 累计下载超 1000 万次、GitHub 约 2.85 万 Star，获 Yann LeCun 转发</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <p><strong>一个容易忽略的信号：</strong>一代四个月就拿到 1000 万次下载与 2.85 万 Star，说明「长文档一次性解析」是真实需求，不是论文指标驱动的伪需求。二代的真正对手不是通用大模型，而是团队自己上一代已经占领的存量场景。</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>问题解剖：长文档解析卡在两个地方，而一代只修好了一个</h2>
+  <p class="sub">理解 SR-SWA 的前提，是先接受一个不太直观的事实——<strong>OCR 的成本大头不是「看」，是「回忆」</strong>。</p>
+
+  <h3>形式化：一个解码步到底要看多少东西</h3>
+  <p>报告把多页解析写成一个序列转录任务：给定有序文档 <code>D = (P1 … PN)</code>，在第 <code>t</code> 步，模型操作的输入是</p>
+  <div class="formula">
+    X<sub>t</sub> = Concat( V<sub>1</sub>, …, V<sub>N</sub>, y<sub>&lt;t</sub> )<br>
+    <span class="cm">V 是各页视觉 token，y 是已经生成的文本</span>
+  </div>
+  <p>两个求和项都会膨胀，但膨胀方式不同：</p>
+  <ul>
+    <li><strong>文本历史 <code>y&lt;t</code> 随输出变长。</strong>一页 OCR 的输出动辄上千 token，抄 100 页就是十万级 token 的历史。稠密注意力下每生成一个字都要回看全部历史，KV 缓存线性增长。</li>
+    <li><strong>视觉上下文 <code>V1:N</code> 随页数变长。</strong>多页一起喂进去，每一步都要对所有页的视觉 token 做注意力。页数翻倍，单步注意力开销就翻倍。</li>
+  </ul>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="一个解码步的注意力范围被两代机制分别切走一半">
+        <text x="70" y="46" font-size="13" font-weight="700" fill="#16181D">一个解码步的注意力范围</text>
+        <text x="70" y="66" font-size="12" fill="#4A505A">橙色括号标出的是被机制「钉死」的部分；仍带箭头的一侧会随文档长度继续膨胀</text>
+
+        <!-- bar -->
+        <rect x="70" y="100" width="420" height="72" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <rect x="490" y="100" width="400" height="72" fill="#FBECEA" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="280" y="128" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1F5288">文本历史 y&lt;t</text>
+        <text x="280" y="150" text-anchor="middle" font-size="11.5" fill="#333941">越抄越长（线性增长）</text>
+        <text x="690" y="128" text-anchor="middle" font-size="13.5" font-weight="700" fill="#B3261E">视觉上下文 V1:N</text>
+        <text x="690" y="150" text-anchor="middle" font-size="11.5" fill="#333941">页数越多越厚（线性增长）</text>
+
+        <!-- grow arrow right -->
+        <line x1="890" y1="136" x2="930" y2="136" stroke="#B3261E" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <polygon points="930,136 921,132 921,140" fill="#B3261E"/>
+
+        <!-- R-SWA brace -->
+        <path d="M70,186 L70,196 L480,196 L480,186" fill="none" stroke="#0F766E" stroke-width="1.6"/>
+        <text x="275" y="218" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0A5750">R-SWA（一代）：切成固定 128 窗口</text>
+        <text x="275" y="236" text-anchor="middle" font-size="11.5" fill="#4A505A">这一侧有界了 —— 但另一侧没有</text>
+
+        <!-- SR-SWA brace -->
+        <path d="M490,186 L490,196 L890,196 L890,186" fill="none" stroke="#B45309" stroke-width="1.6"/>
+        <text x="690" y="218" text-anchor="middle" font-size="12.5" font-weight="700" fill="#8F3F06">SR-SWA（二代）：稀疏到 16 块 × 32</text>
+        <text x="690" y="236" text-anchor="middle" font-size="11.5" fill="#4A505A">两侧都有界 —— 单步开销与页数无关</text>
+
+        <text x="70" y="272" font-size="11.5" fill="#4A505A">结果：一代仍要在每步稠密扫描全部页面的视觉 token，百页级时视觉侧成为主瓶颈，输入上限停在约 40 页。</text>
+        <text x="70" y="290" font-size="11.5" fill="#4A505A">二代的改动是把右半部分的「全量扫描」换成「按相关性挑固定块数」。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2 ·</b> 两重瓶颈与两代机制的作用点。一代修左、二代修右——这是理解两个版本关系的唯一关键。图中「128」来自 <code>config.json</code> 的 <code>sliding_window_size</code>。</figcaption>
+  </figure>
+
+  <h3>为什么不用线性注意力或 Mamba</h3>
+  <p>这是报告里最诚实的一段论证。线性注意力、状态空间模型（Mamba）也能做到每步恒定开销，但它们把历史压成一个<strong>紧凑状态</strong>。而文档解析的要求恰恰相反：要能精确看清某一页某个格子里的字。</p>
+  <p>细粒度的视觉证据一旦被压进状态向量，就很难原样取回——这不是精度调优能解决的问题，是表示能力的问题。所以 SR-SWA 选择了另一条路：<strong>保留对原始 KV 块的直接访问能力，只限制每步能访问多少块</strong>。稀疏化发生在「访问范围」，不发生在「表示压缩」。</p>
+
+  <div class="verdict">
+    <h4>这个取舍决定了它的边界</h4>
+    <p>「只限制访问范围、不压缩表示」意味着模型永远能看清被选中的那一块，但也意味着<strong>没被选中的块等于不存在</strong>。于是所有依赖全局统计的结构判断（标题层级、全文目录、第 3 页的脚注与第 80 页的呼应）都会变弱。第 09 章会看到这个代价在指标上的具体形状。</p>
+  </div>
+
+  <h3>稀疏注意力的两条路线，以及它站在哪一边</h3>
+  <p>报告的相关工作部分把已有方案分成两类，这个分类很实用：</p>
+  <table>
+    <thead><tr><th>路线</th><th>代表</th><th>怎么选块</th><th>代价</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>硬选择</strong></td>
+        <td>CSA（DeepSeek-V4）、MSA（MiniMax）</td>
+        <td>离散 top-k 路由，不可微</td>
+        <td>通常需要辅助监督或 warmup 才能训稳</td>
+      </tr>
+      <tr>
+        <td><strong>可微路由</strong></td>
+        <td>DashAttention、HiLS</td>
+        <td>路由分数可微或前向积分，直接进注意力</td>
+        <td>实现复杂度高，需要专门的 kernel 支持</td>
+      </tr>
+      <tr class="hi">
+        <td><strong>SR-SWA</strong></td>
+        <td>本文</td>
+        <td>α-entmax 产生稀疏分布 → top-k 块 → 概率转 log-prior 作注意力偏置</td>
+        <td>依赖 Triton 实现（<code>dash_use_triton: true</code>）</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>有个细节能佐证它确实建立在 DashAttention 之上：<code>config.json</code> 里这套机制的字段名全部以 <code>dash_</code> 开头（<code>dash_router</code>、<code>dash_topk_blocks</code>、<code>dash_stage0</code>、<code>dash_prior_floor</code>、<code>dash_scale_per_layer</code>），<code>training_stage</code> 的值就是 <code>dash</code>。也就是说，SR-SWA 是把 DashAttention 的路由思路搬到「页 × 块」这个二维结构上，并针对 OCR 的页级局部性做了门控。</p>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>架构：一个 3B 的 MoE，把视觉压到每页 273 个 token</h2>
+  <p class="sub">它不是从零训的多模态模型，而是站在 DeepSeek-OCR 肩上做的一次「注意力层手术」。理解这一点，才能理解为什么四个月就能迭代一代。</p>
+
+  <h3>三段式结构</h3>
+  <p>整个模型可以拆成三段：<strong>视觉编码器</strong>（DeepEncoder，SAM-ViT-B 与 CLIP-L/14 双塔）→ <strong>线性投影</strong>（2048 → 1280）→ <strong>MoE 解码器</strong>（12 层，全部注意力层替换为 SR-SWA）。这是一条单向管线，没有交叉注意力，也没有额外的版面检测分支——版面理解是解码器「顺手」学出来的，不是单独模块输出的。</p>
+
+  <table>
+    <caption>表 2 · 从 <code>config.json</code> 读出的硬事实（非官方叙述，可直接复核）</caption>
+    <thead><tr><th>模块</th><th>字段</th><th class="n">值</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="4">视觉编码</td><td><code>vision_config.model_name</code></td><td class="n">deeplip_b_l</td><td>SAM-ViT-B + CLIP-L/14 组合</td></tr>
+      <tr><td><code>vision_config.image_size</code></td><td class="n">1024</td><td>单页输入分辨率</td></tr>
+      <tr><td><code>per_page_image_tokens</code></td><td class="n">273</td><td>每页编码后的视觉 token 数</td></tr>
+      <tr><td>图 3 压缩标注</td><td class="n">16×</td><td>报告架构图中标注的压缩倍率</td></tr>
+      <tr><td rowspan="5">解码器</td><td><code>num_hidden_layers</code></td><td class="n">12</td><td>全部为 SR-SWA 层（<code>sparse_attention_freq</code> 全 1）</td></tr>
+      <tr><td><code>hidden_size</code></td><td class="n">1280</td><td>隐藏维；10 个注意力头 × 128</td></tr>
+      <tr><td><code>n_routed_experts / n_shared_experts</code></td><td class="n">64 / 2</td><td>路由专家 + 共享专家</td></tr>
+      <tr><td><code>num_experts_per_tok</code></td><td class="n">6</td><td>每 token 选 6 个路由专家</td></tr>
+      <tr><td><code>moe_intermediate_size</code></td><td class="n">896</td><td>专家中间维（很窄）</td></tr>
+      <tr><td rowspan="2">上下文</td><td><code>max_position_embeddings</code></td><td class="n">131072</td><td>位置编码上限 128K</td></tr>
+      <tr><td><code>rope_scaling</code></td><td class="n">yarn ×4</td><td>原始 32K → 扩展 128K</td></tr>
+      <tr><td>词表</td><td><code>vocab_size</code></td><td class="n">129280</td><td>沿用 DeepSeek 系词表</td></tr>
+    </tbody>
+  </table>
+
+  <h3>参数量：三个口径，差在哪</h3>
+  <p>同一份材料里出现了三个数：模型卡与报告正文写「3B 总参、每 token 激活 500M」，报告图 3 的架构图标「3B-MOE-A570M」，<code>config.json</code> 则不含参数总量字段。这不是笔误，而是<strong>「激活参数」到底算不算 embedding 查表</strong>的口径差异。</p>
+  <p>用 <code>config.json</code> 的字段可以自己算一遍（粗算，非官方）：</p>
+  <div class="formula">
+    单个专家 FFN = 3 × 1280 × 896 ≈ 3.44M<br>
+    66 个专家 × 12 层 × 3.44M ≈ 2.72B　<span class="cm">← 总参的绝对主体</span><br>
+    Attention（q/k/v/o）× 12 层 ≈ 78.6M<br>
+    Embedding（129280 × 1280）≈ 165M<br>
+    <span class="cm">合计 ≈ 2.96B　→ 与「3B」吻合</span><br><br>
+    每 token 激活 = (6 路由 + 2 共享) × 3.44M × 12 ≈ 330M + Attention 78.6M ≈ 409M<br>
+    加首层 dense FFN（6848 中间维）≈ 26M　→ 约 <strong>435M</strong><br>
+    <span class="cm">若把 Embedding 查表也算进激活：435M + 165M ≈ 600M　→ 接近图注的 A570M</span>
+  </div>
+  <p>结论：<strong>A500M ≈ 不含 embedding 的计算侧激活，A570M ≈ 含 embedding 的端到端激活</strong>。两者不矛盾，但官方在同一份报告里混用，说明这一版材料赶得比较急。对你我的实际影响是零，但它是一个有用的<strong>材料质量信号</strong>——第 09 章会再遇到几处类似情况。</p>
+
+  <h3>每页 273 个 token 意味着什么</h3>
+  <p>这个数字是整份报告里最容易被低估的。<code>per_page_image_tokens: 273</code> 意味着 1024×1024 的一页纸，被压成了不到三百个 token 的信息量。对比通用 VLM 处理一页文档动辄上千 token，这是<strong>一个数量级的压缩</strong>。</p>
+  <p>压缩带来两个后果，方向相反：</p>
+  <ul>
+    <li><strong>好的：</strong>视觉侧基数小。100 页 = 27,300 个视觉 token，300 页 = 81,900，都还在 128K 位置编码范围内。这是「单次前向吃整本书」在结构上可行的前提。</li>
+    <li><strong>坏的：</strong>信息密度有限。273 个 token 要承载文字、表格、公式、图片位置，必然丢掉细节。这也解释了为什么它在单页基准上打不过专门做单页的 0.8B 小模型——压缩率是为长度服务的，不是为极限精度服务的。</li>
+  </ul>
+
+  <div class="verdict">
+    <h4>一个反直觉的推论</h4>
+    <p>按每页 273 视觉 token、每页约 1024 输出 token 估算，300 页文档的输出序列就超过 30 万 token，远超 131K 的位置上限。<strong>所以「无限页」在数学上从来不是靠位置编码实现的，而是靠解码阶段的分块与 KV 释放。</strong>位置编码只负责让「页」这个维度不爆——这两件事常被混为一谈，下一章分开讲。</p>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>SR-SWA：把每步的视野钉成 640 个 token</h2>
+  <p class="sub">这一章是全文技术密度最高的部分。机制本身不复杂，复杂的是它怎么在「稀疏」与「可训练」之间同时成立。</p>
+
+  <h3>一个解码步能看见什么</h3>
+  <p>SR-SWA 把每个 query 可见的 token 分成两段，两段都是固定大小：</p>
+  <div class="formula">
+    R(q) = L(q) ∪ ⋃<sub>b ∈ S(q)</sub> B<sub>b</sub><br><br>
+    L(q) = 本地窗口，最近 128 个 token（<code>sparse_local_block: 4</code> × <code>sparse_block_size: 32</code>）<br>
+    S(q) = 远端被选中的块，top-16 块（<code>sparse_topk_blocks: 16</code>）× 每块 32 token = 512<br>
+    <span class="cm">合计 640 —— 与文档长度无关</span>
+  </div>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 330" role="img" aria-label="SR-SWA 单步可见 token 与完整视觉上下文的量级对比">
+        <text x="70" y="38" font-size="13" font-weight="700" fill="#16181D">SR-SWA 单步可见 token 的构成</text>
+
+        <!-- bar 1 -->
+        <rect x="70" y="56" width="152" height="46" fill="#EDF3FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <rect x="222" y="56" width="608" height="46" fill="#FDF3E7" stroke="#B45309" stroke-width="1.5"/>
+        <text x="146" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="#1F5288">128</text>
+        <text x="146" y="94" text-anchor="middle" font-size="11" fill="#333941">本地窗口</text>
+        <text x="526" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="#8F3F06">512</text>
+        <text x="526" y="94" text-anchor="middle" font-size="11" fill="#333941">远端选中 16 块 × 32 token</text>
+        <text x="838" y="84" font-size="13" font-weight="750" fill="#16181D">= 640</text>
+        <text x="70" y="126" font-size="11.5" fill="#4A505A">↑ 无论文档 10 页还是 300 页，这条总长不变</text>
+
+        <!-- bar 2 -->
+        <text x="70" y="172" font-size="13" font-weight="700" fill="#16181D">同一时刻，完整视觉上下文（以 100 页计）</text>
+        <rect x="70" y="188" width="734" height="46" fill="#FBECEA" stroke="#B3261E" stroke-width="1.5"/>
+        <line x1="804" y1="234" x2="818" y2="188" stroke="#B3261E" stroke-width="1.5"/>
+        <line x1="814" y1="234" x2="828" y2="188" stroke="#B3261E" stroke-width="1.5"/>
+        <line x1="824" y1="234" x2="838" y2="188" stroke="#B3261E" stroke-width="1.5"/>
+        <text x="437" y="210" text-anchor="middle" font-size="12.5" fill="#B3261E" font-weight="650">273 × 100 ≈ 27,300 个视觉 token</text>
+        <text x="437" y="228" text-anchor="middle" font-size="11" fill="#333941">条长被画布截断（锯齿处），实际是上一条的约 43 倍</text>
+
+        <text x="70" y="272" font-size="12.5" fill="#333941" font-weight="600">比例 ≈ 43 : 1，但实测单步延迟只快 7.0 倍</text>
+        <text x="70" y="292" font-size="11.5" fill="#4A505A">差额来自 MoE 权重读取、固定 kernel 开销等与注意力无关的部分 —— 注意力范围被压到 1/43，端到端只拿到 7 倍，</text>
+        <text x="70" y="310" font-size="11.5" fill="#4A505A">这正是「架构改进 ≠ 端到端收益」的典型样本，也是评估任何稀疏注意力方案时必须算的一笔账。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3 ·</b> 上条为 SR-SWA 单步可见 token 的精确构成（128 + 512，比例 1:4）；下条为 100 页文档的完整视觉上下文（按每页 273 token <b>推算</b>，非官方实测）。<b>两条不同尺度</b>：下条在锯齿处已被画布截断，真实长度是上条的约 43 倍，切勿按条长直接比长短。</figcaption>
+  </figure>
+
+  <h3>第一层：Page Gate，先把范围从「整本书」缩到「相关页」</h3>
+  <p>Page Gate 做的是页级门控：对属于第 <code>g(q)</code> 页的 query，只保留与该页相交的块。</p>
+  <div class="formula">
+    C<sub>page</sub>(q) = { b | B<sub>b</sub> ∩ V<sub>g(q)</sub> ≠ ∅ }<br>
+    <span class="cm">块边界与页边界不对齐，所以允许跨页块；这是它能处理跨页表格的前提</span>
+  </div>
+  <p>真正精巧的是<strong>位置编码怎么防止爆炸</strong>。几百页文档，视觉 + 文本的总位置号极大，RoPE 外推必然失准。SR-SWA 把每个 token 的位置拆成两段：</p>
+  <div class="formula">
+    p<sub>i,j</sub> = [ p<sub>i</sub><sup>page</sup> , p<sub>i,j</sub><sup>intra</sup> ]<br><br>
+    p<sup>page</sup> ∈ {0, 1}　<span class="cm">页级坐标按 0–1 交替（config: sparse_rope_page_mod = 2）</span><br>
+    p<sup>intra</sup> 单调递增　<span class="cm">页内坐标（config: sparse_rope_mode = page2d）</span>
+  </div>
+  <p>效果是：模型只需要分清「这一页」和「相邻那一页」，<strong>永远不会遇到「第 287 页」这种训练时没见过的绝对坐标</strong>。长度外推因此变成结构性的，而不是靠调 RoPE 的 <code>base</code> 或 <code>factor</code> 硬撑。这个设计比稀疏路由本身更容易被搬到别的长序列任务上。</p>
+
+  <h3>第二层：Token Sieve，按固定预算挑块</h3>
+  <p>在 Page Gate 给出的候选集里，Token Sieve 用三步完成选择：</p>
+  <ol>
+    <li><strong>块摘要。</strong>每个 32-token 块用一个 128 维的摘要 key 表示（<code>sparse_index_dim: 128</code>，<code>sparse_num_index_heads: 1</code>），与当前 query 算相关性得分。</li>
+    <li><strong>α-entmax 稀疏化。</strong>普通 softmax 会给所有候选非零概率，α-entmax 会把小概率直接压成 0，天然产生稀疏分布。</li>
+    <li><strong>取 top-k，概率转偏置。</strong>选中块的得分被转成<strong>去均值的对数先验</strong>，作为偏置直接加进注意力 logits。</li>
+  </ol>
+  <div class="formula">
+    α<sub>j</sub>(q) = Softmax( q<sup>⊤</sup>k<sub>j</sub> / √d + 𝟙[b(j) ∈ S(q)] · β<sub>b(j)</sub>(q) )<br>
+    β<sub>b</sub>(q) = log π<sub>b</sub>(q) − mean<sub>b′∈S(q)</sub> log π<sub>b′</sub>(q)<br>
+    <span class="cm">去均值是为了只保留「块之间的相对偏好」，不引入整体尺度漂移</span>
+  </div>
+  <p>这一步是全篇最关键的工程决策：因为路由偏置<strong>直接参与注意力 logits</strong>，解析任务的损失可以把梯度一路传回路由器，不需要另外用稠密注意力蒸馏一个 KL 损失来「教」路由器该看哪。<code>config.json</code> 里 <code>use_kl_loss: false</code>，与报告第 3.3.2 节的表述完全一致。</p>
+
+  <h3>参数对照：每个旋钮都在这张表里</h3>
+  <table>
+    <caption>表 3 · SR-SWA 的可调参数与默认值（取自 <code>config.json</code> 的 <code>sparse_attention_config</code>）</caption>
+    <thead><tr><th>字段</th><th class="n">默认</th><th>作用</th><th>调大的后果</th></tr></thead>
+    <tbody>
+      <tr><td><code>sparse_block_size</code></td><td class="n">32</td><td>块粒度</td><td>路由更省算力，但定位精度下降</td></tr>
+      <tr><td><code>sparse_local_block</code></td><td class="n">4</td><td>本地窗口（4×32=128）</td><td>近处上下文更完整，开销线性上升</td></tr>
+      <tr><td><code>sparse_topk_blocks</code></td><td class="n">16</td><td>远端块预算（16×32=512）</td><td>跨页检索更强，单步开销上升</td></tr>
+      <tr><td><code>dash_topk_blocks</code></td><td class="n">12</td><td>路由阶段候选块数</td><td>与上一行是两套预算，需实测确认生效关系</td></tr>
+      <tr><td><code>sparse_rope_page_mod</code></td><td class="n">2</td><td>页级坐标交替周期</td><td>页坐标不再只分「本页/邻页」，外推变难</td></tr>
+      <tr><td><code>dash_router</code></td><td class="n">entmax_topk_perlayer</td><td>逐层独立的 entmax 路由</td><td>固定值，改动需重训</td></tr>
+      <tr><td><code>dash_prior_floor</code></td><td class="n">0.0001</td><td>先验概率下限，防数值塌陷</td><td>路由更保守，长尾块更难被选中</td></tr>
+      <tr><td><code>use_kl_loss</code></td><td class="n">false</td><td>是否启用蒸馏辅助损失</td><td>打开需重新准备教师信号</td></tr>
+      <tr><td><code>dash_use_triton</code></td><td class="n">true</td><td>使用 Triton 实现的路由 kernel</td><td>关掉会显著变慢</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <p><strong>一处需要实测确认的地方：</strong><code>sparse_topk_blocks: 16</code> 与 <code>dash_topk_blocks: 12</code> 并存，字面上是两套块预算。合理推测是「路由阶段先粗选 12 块、主注意力阶段用 16 块」，也可能是训练与推理走不同分支。官方材料未说明这一关系，属可复核的灰色地带——真要调参，建议先跑一次 profiler 看实际生效值。</p>
+  </div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>无限视野解码：真正把显存按住的是这一半</h2>
+  <p class="sub">SR-SWA 限制的是「每步<strong>算</strong>多少」，KV 缓存「<strong>存</strong>多少」是另一回事。两者常被混为一谈，这也是官方宣传里最容易被误读的地方。</p>
+
+  <h3>问题：算得再省，也得先把所有页塞进显存</h3>
+  <p>如果一次性 prefill 整份文档，所有页的视觉 KV 都要常驻显存。按报告 Figure 4 的说法，显存随页数线性增长，最终必然溢出。SR-SWA 对此无能为力——它管的是解码时「看哪些」，不管「存哪些」。</p>
+
+  <h3>解法：重叠切块 + 边界页复用</h3>
+  <p>报告的 Algorithm 1 很短，但每一步都对应一个工程决策：</p>
+  <div class="formula">
+    1. 把 N 页切成 K 个<strong>带 1 页重叠</strong>的块　<span class="cm">← 重叠是跨块连续性的唯一来源</span><br>
+    2. 第一块 prefill，<strong>只有第一块携带指令 q</strong>　<span class="cm">← 指令不重复注入，避免语义漂移</span><br>
+    3. 解码第一块<br>
+    4. 循环 k = 2..K：<br>
+    　　新缓存 ← 边界页视觉 KV ⊕ 用旧缓存编码的新块 ⊕ 上一块的文本 KV 尾部<br>
+    　　解码第 k 块，释放其余缓存
+  </div>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 320" role="img" aria-label="无限视野解码的分块时序与边界页 KV 复用">
+        <text x="60" y="40" font-size="13" font-weight="700" fill="#16181D">把 300 页切成 30 个 10 页块，相邻块共享 1 页边界</text>
+
+        <!-- chunk rows -->
+        <text x="110" y="112" text-anchor="end" font-size="12" font-weight="650" fill="#333941">块 1</text>
+        <text x="110" y="182" text-anchor="end" font-size="12" font-weight="650" fill="#333941">块 2</text>
+        <text x="110" y="252" text-anchor="end" font-size="12" font-weight="650" fill="#333941">块 3</text>
+
+        <!-- chunk1 -->
+        <rect x="120" y="90" width="64" height="40" rx="4" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <rect x="192" y="90" width="64" height="40" rx="4" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <rect x="264" y="90" width="64" height="40" rx="4" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <rect x="336" y="90" width="64" height="40" rx="4" fill="#FDF3E7" stroke="#B45309" stroke-width="2"/>
+        <text x="152" y="115" text-anchor="middle" font-size="12" fill="#1F5288">P1</text>
+        <text x="224" y="115" text-anchor="middle" font-size="12" fill="#1F5288">P2</text>
+        <text x="296" y="115" text-anchor="middle" font-size="12" fill="#1F5288">P3</text>
+        <text x="368" y="115" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">P4</text>
+        <text x="410" y="115" font-size="11.5" fill="#4A505A">… P10</text>
+
+        <!-- chunk2 -->
+        <rect x="336" y="160" width="64" height="40" rx="4" fill="#FDF3E7" stroke="#B45309" stroke-width="2"/>
+        <rect x="408" y="160" width="64" height="40" rx="4" fill="#E9F4F2" stroke="#0F766E"/>
+        <rect x="480" y="160" width="64" height="40" rx="4" fill="#E9F4F2" stroke="#0F766E"/>
+        <rect x="552" y="160" width="64" height="40" rx="4" fill="#FDF3E7" stroke="#B45309" stroke-width="2"/>
+        <text x="368" y="185" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">P4</text>
+        <text x="440" y="185" text-anchor="middle" font-size="12" fill="#0A5750">P5</text>
+        <text x="512" y="185" text-anchor="middle" font-size="12" fill="#0A5750">P6</text>
+        <text x="584" y="185" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">P7</text>
+        <text x="626" y="185" font-size="11.5" fill="#4A505A">… P13</text>
+
+        <!-- chunk3 -->
+        <rect x="552" y="230" width="64" height="40" rx="4" fill="#FDF3E7" stroke="#B45309" stroke-width="2"/>
+        <rect x="624" y="230" width="64" height="40" rx="4" fill="#E9F4F2" stroke="#0F766E"/>
+        <rect x="696" y="230" width="64" height="40" rx="4" fill="#E9F4F2" stroke="#0F766E"/>
+        <rect x="768" y="230" width="64" height="40" rx="4" fill="#FFFFFF" stroke="#CFC9BD" stroke-dasharray="4 3"/>
+        <text x="584" y="255" text-anchor="middle" font-size="12" font-weight="700" fill="#8F3F06">P7</text>
+        <text x="656" y="255" text-anchor="middle" font-size="12" fill="#0A5750">P8</text>
+        <text x="728" y="255" text-anchor="middle" font-size="12" fill="#0A5750">P9</text>
+        <text x="800" y="255" text-anchor="middle" font-size="12" fill="#4A505A">…</text>
+        <text x="848" y="255" font-size="11.5" fill="#4A505A">P16</text>
+
+        <!-- reuse connectors -->
+        <line x1="368" y1="132" x2="368" y2="158" stroke="#B45309" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <polygon points="368,160 364,151 372,151" fill="#B45309"/>
+        <line x1="584" y1="202" x2="584" y2="228" stroke="#B45309" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <polygon points="584,230 580,221 588,221" fill="#B45309"/>
+
+        <text x="640" y="80" font-size="11.5" fill="#8F3F06" font-weight="650">橙色页 = 边界页，其视觉 KV 直接复用，不重算</text>
+        <text x="640" y="96" font-size="11.5" fill="#333941">上一块结束后，其余页的视觉 KV 全部释放</text>
+
+        <text x="60" y="296" font-size="11.5" fill="#4A505A">代价：块越小显存越省，但跨块可见的上下文越少。跨页段落与跨页表格若跨过块边界，就只能靠那 1 页重叠来衔接。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4 ·</b> 分块解码的时序。块大小由部署时环境变量控制（<code>SGLANG_UOCR_DOC_BASE_PAGE_WINDOW</code> / <code>..._GUNDAM_PAGE_WINDOW</code>，模型卡示例为 10 页）。图中页序为示意。</figcaption>
+  </figure>
+
+  <h3>效果与归因：别把两份功劳记在一个人头上</h3>
+  <table>
+    <caption>表 4 · 无限视野解码的可行性验证（报告 Table 4，MarathonDocBench 百页场景，官方实测）</caption>
+    <thead><tr><th>方案</th><th class="n">峰值 KV 显存（B=1）</th><th class="n">端到端吞吐（B=16）</th></tr></thead>
+    <tbody>
+      <tr><td>标准解码（全部页常驻）</td><td class="n">47.00 GB</td><td class="n">360 TPS</td></tr>
+      <tr class="hi"><td>无限视野解码（分块 + 边界页复用）</td><td class="n">1.77 GB</td><td class="n">1,315 TPS</td></tr>
+      <tr><td>变化</td><td class="n">↓ 96.2%</td><td class="n">↑ 3.65×</td></tr>
+    </tbody>
+  </table>
+  <p>这里有一个必须点明的<strong>归因陷阱</strong>：Table 4 对比的是「标准解码 vs 分块解码」，与 SR-SWA 无关。也就是说 47GB → 1.77GB 这 96% 的显存下降，功劳属于解码范式；而 7.0×/5.6× 的单步加速，功劳才属于 SR-SWA。官方通稿把两件事并列叙述，很容易让人以为是同一个机制带来的。</p>
+  <p>把两者拆开，整个方案的逻辑才清楚：</p>
+  <ul>
+    <li><strong>SR-SWA 管时间</strong>：让每步注意力范围恒定，所以页数增加时单步延迟不涨。</li>
+    <li><strong>分块解码管空间</strong>：让常驻显存只有一个块的大小，所以页数增加时显存放得下。</li>
+    <li><strong>页级位置编码管外推</strong>：让「第 N 页」不产生未见过的坐标，两者才有意义。</li>
+  </ul>
+
+  <div class="verdict">
+    <h4>这就是「无限」的真实含义</h4>
+    <p>不是某个机制做到了无限，而是三个机制分别拆掉了三个上限：算力上限、显存上限、位置编码上限。<strong>任何一环缺失，页数都会在某个数量级撞墙</strong>——一代缺第一环，所以停在 40 页。这个拆法也告诉你：想在自己的场景里放宽页数，先看是哪一环先撞墙，别盲目调 chunk size。</p>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>训练：用逐页工具当老师，教出一个会跨页的学生</h2>
+  <p class="sub">这一章解释了它为什么能在四个月内迭代：因为既没有重训视觉编码器，也没有重新造标注，而是把「已有的逐页能力」蒸馏成「跨页能力」。</p>
+
+  <h3>数据引擎：1200 万文档，标签来自两个老师</h3>
+  <table>
+    <thead><tr><th>环节</th><th>做法</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td>规模</td><td>200 万多页文档 + 1000 万单页文档</td><td>多页数据只占 1/6，但决定长文档能力</td></tr>
+      <tr><td>伪标签来源</td><td>MinerU2.5-Pro + PaddleOCR-VL-v1.6，按各自领域强项分工</td><td>两个逐页 SOTA 当老师</td></tr>
+      <tr><td>多样性补充</td><td>合成文档生成管线</td><td>补稀有版式，不补真实噪声</td></tr>
+      <tr><td>平衡过滤</td><td>用 VLM 做多维特征分析，按版式分布均衡采样</td><td>防止长尾版式被淹没</td></tr>
+      <tr><td>结构精修</td><td>MinerU-Popo + 启发式规则，专门调和相邻页的版面不一致</td><td><strong>跨页连贯性是人工规则注入的</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>最后一行值得多看一眼。跨页表格合并这种能力，不是模型自己「悟」出来的，而是<strong>先用后处理规则在标注层面把断开的表和段落缝好，再让模型学着复现这个缝合结果</strong>。这解释了为什么它在 T-TableTEDS 上能到 71.11 而通用模型全在 26 以下——不是通用模型看不见表，是没人告诉过它们「这两半是一张表」。</p>
+
+  <h3>训练配置：一次轻量后训练</h3>
+  <table>
+    <thead><tr><th>项目</th><th>设置</th><th>解读</th></tr></thead>
+    <tbody>
+      <tr><td>初始化</td><td>从 Unlimited OCR 一代 checkpoint 出发</td><td>不是从头训，视觉侧能力直接继承</td></tr>
+      <tr><td>训练量</td><td>1 个 epoch</td><td>典型的「换注意力结构后重新对齐」</td></tr>
+      <tr><td>算力</td><td>25 节点 × 8 卡 H800（共 200 卡）</td><td>相对基座训练是小规模</td></tr>
+      <tr><td>批次</td><td>global batch 1,600，最大序列 64K</td><td>64K 是训练长度，远小于推理时的「无限」</td></tr>
+      <tr><td>可训练部分</td><td><strong>冻结 DeepEncoder 与 aligner，只训 LLM</strong></td><td>视觉编码器完全不做域适配</td></tr>
+      <tr><td>优化器</td><td>AdamW + cosine 衰减，初始 lr 2.5e-4</td><td>—</td></tr>
+      <tr><td>框架</td><td>MS-Swift</td><td>官方称支持社区用 MS-Swift 自行微调</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <p><strong>「冻结视觉编码器」是个双刃剑。</strong>好处是训练便宜、视觉能力稳定；代价是<strong>遇到训练分布外的扫描质量（低分辨率传真、强透视的手机拍照、印章遮挡）时，编码器无法补偿</strong>。报告自己也承认训练数据多样性有限。如果你手上的文档以这类为主，先小样本验证，不要直接按宣传的「任意文档」预期铺开。</p>
+  </div>
+
+  <h3>这套方法的上限在哪</h3>
+  <p>把数据引擎画成一条链，上限就很清楚：</p>
+  <div class="formula">
+    真实文档 → MinerU2.5-Pro / PaddleOCR-VL-1.6 逐页解析 → MinerU-Popo 缝合跨页 → 人工/VLM 抽检 → 训练标签<br>
+    <span class="cm">学生的上限 ≤ 老师的单页能力 + 缝合规则能表达的跨页关系</span>
+  </div>
+  <p>也就是说，凡是<strong>缝合规则表达不了</strong>的跨页关系（比如「第 12 页的表格在第 47 页被引用并更新」这种语义级关联），都不会出现在训练信号里。这不是模型的缺陷，是监督信号的边界。</p>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>评测：三个基准，三种不同的可信度</h2>
+  <p class="sub">官方给了三张表。它们的信息量不一样，可信度也不一样——把三张表分开读，比看那个「84.6 / 77.1」的标题数字有用得多。</p>
+
+  <h3>三个基准的分工</h3>
+  <table>
+    <thead><tr><th>基准</th><th>文档长度</th><th>谁建的</th><th>能回答什么问题</th></tr></thead>
+    <tbody>
+      <tr><td>MPDocBench</td><td>最多 30 页</td><td>第三方（Zhou 等，2026）</td><td>多页能力是否真的比通用 VLM 强</td></tr>
+      <tr><td>MarathonDocBench</td><td>103–300 页，100 份文档，20.5 万标注元素</td><td><strong>百度自建</strong></td><td>百页级是否还能维持精度</td></tr>
+      <tr><td>OmniDocBench v1.6</td><td>单页</td><td>第三方</td><td>为长文档做的取舍有没有伤到单页精度</td></tr>
+    </tbody>
+  </table>
+
+  <p>指标含义先统一：<code>Edit</code> 类是<strong>越低越好</strong>的编辑距离，<code>TEDS / CDM / F1</code> 是<strong>越高越好</strong>的结构相似度；带 <code>T-</code> 前缀的（T-TextEdit、T-TableTEDS）专测<strong>跨页</strong>的文本与表格，不带的是页内。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 470" role="img" aria-label="MPDocBench 与 MarathonDocBench 总体得分对比">
+        <text x="60" y="30" font-size="13" font-weight="700" fill="#16181D">同一批模型，在「几十页」与「上百页」两个基准上的表现</text>
+
+        <!-- legend -->
+        <rect x="60" y="44" width="14" height="10" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="80" y="54" font-size="11.5" fill="#333941">MPDocBench（≤30 页，第三方）</text>
+        <rect x="290" y="44" width="14" height="10" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="310" y="54" font-size="11.5" fill="#333941">MarathonDocBench（103–300 页，自建）</text>
+
+        <!-- grid -->
+        <line x1="160" y1="66" x2="160" y2="428" stroke="#CFC9BD" stroke-width="1"/>
+        <line x1="520" y1="66" x2="520" y2="428" stroke="#E3DFD6" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="880" y1="66" x2="880" y2="428" stroke="#E3DFD6" stroke-width="1" stroke-dasharray="3 4"/>
+
+        <!-- group 0 : OCR2 -->
+        <text x="150" y="90" text-anchor="end" font-size="12" font-weight="700" fill="#16181D">Unlimited OCR 2</text>
+        <rect x="160" y="76" width="609" height="16" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="777" y="89" font-size="11.5" font-weight="700" fill="#1F5288">84.6</text>
+        <rect x="160" y="94" width="555" height="16" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="723" y="107" font-size="11.5" font-weight="700" fill="#8F3F06">77.1</text>
+
+        <!-- group 1 : Qwen3.8-Max -->
+        <text x="150" y="142" text-anchor="end" font-size="12" fill="#333941">Qwen3.8-Max</text>
+        <rect x="160" y="128" width="564" height="16" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="732" y="141" font-size="11.5" fill="#1F5288">78.3</text>
+        <rect x="160" y="146" width="165" height="16" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="333" y="159" font-size="11.5" fill="#8F3F06">22.9</text>
+
+        <!-- group 2 : Qwen-3.8-Flash-Next -->
+        <text x="150" y="194" text-anchor="end" font-size="12" fill="#333941">Qwen-3.8-Flash-Next</text>
+        <rect x="160" y="180" width="557" height="16" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="725" y="193" font-size="11.5" fill="#1F5288">77.4</text>
+        <rect x="160" y="198" width="200" height="16" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="368" y="211" font-size="11.5" fill="#8F3F06">27.8</text>
+
+        <!-- group 3 : Gemini-3.8-Flash -->
+        <text x="150" y="246" text-anchor="end" font-size="12" fill="#333941">Gemini-3.8-Flash</text>
+        <rect x="160" y="232" width="549" height="16" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="717" y="245" font-size="11.5" fill="#1F5288">76.2</text>
+        <rect x="160" y="250" width="206" height="16" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="374" y="263" font-size="11.5" fill="#8F3F06">28.6</text>
+
+        <!-- group 4 : Gemini-3.1-Pro -->
+        <text x="150" y="298" text-anchor="end" font-size="12" fill="#333941">Gemini-3.1-Pro Preview</text>
+        <rect x="160" y="284" width="517" height="16" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="685" y="297" font-size="11.5" fill="#1F5288">71.8</text>
+        <rect x="160" y="302" width="194" height="16" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="362" y="315" font-size="11.5" fill="#8F3F06">27.0</text>
+
+        <!-- group 5 : GLM-5.3-Flash -->
+        <text x="150" y="350" text-anchor="end" font-size="12" fill="#333941">GLM-5.3-Flash</text>
+        <rect x="160" y="336" width="490" height="16" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="658" y="349" font-size="11.5" fill="#1F5288">68.0</text>
+        <rect x="160" y="354" width="54" height="16" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="222" y="367" font-size="11.5" fill="#8F3F06">7.5</text>
+
+        <!-- group 6 : Kimi-K3 -->
+        <text x="150" y="402" text-anchor="end" font-size="12" fill="#333941">Kimi-K3</text>
+        <rect x="160" y="388" width="438" height="16" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="606" y="401" font-size="11.5" fill="#1F5288">60.8</text>
+        <rect x="160" y="406" width="243" height="16" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="411" y="419" font-size="11.5" fill="#8F3F06">33.7</text>
+
+        <!-- axis -->
+        <line x1="160" y1="428" x2="880" y2="428" stroke="#CFC9BD" stroke-width="1"/>
+        <text x="160" y="446" font-size="11" fill="#4A505A" text-anchor="middle">0</text>
+        <text x="520" y="446" font-size="11" fill="#4A505A" text-anchor="middle">50</text>
+        <text x="880" y="446" font-size="11" fill="#4A505A" text-anchor="middle">100</text>
+
+        <text x="60" y="464" font-size="11.5" fill="#4A505A">读法：注意每组的上下两条长度差。OCR 2 的差值只有 7.5 分，其余模型普遍掉 40–60 分。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5 ·</b> 两基准总体得分（Overall）对比。数据取自报告 Table 1 与 Table 2；条形长度按 0–100 线性换算，两基准共用同一刻度，可直接比长度。得分越高越好。</figcaption>
+  </figure>
+
+  <h3>MPDocBench：赢，但没赢太多</h3>
+  <table>
+    <caption>表 5 · MPDocBench（报告 Table 1）。Edit 类越低越好，其余越高越好。<span class="pill p-a">第三方基准</span></caption>
+    <thead><tr><th>模型</th><th class="n">Overall↑</th><th class="n">TextEdit↓</th><th class="n">T-TextEdit↓</th><th class="n">FormulaCDM↑</th><th class="n">TableTEDS↑</th><th class="n">T-TableTEDS↑</th><th class="n">HeadingTEDS↑</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>Unlimited OCR 2</td><td class="n">84.59</td><td class="n">0.052</td><td class="n">0.100</td><td class="n">89.39</td><td class="n">87.78</td><td class="n">89.54</td><td class="n">60.10</td></tr>
+      <tr><td>Qwen3.8-Max</td><td class="n">78.30</td><td class="n">0.057</td><td class="n">0.196</td><td class="n">89.24</td><td class="n">85.89</td><td class="n">67.18</td><td class="n">48.80</td></tr>
+      <tr><td>Qwen-3.8-Flash-Next</td><td class="n">77.36</td><td class="n">0.078</td><td class="n">0.163</td><td class="n">86.70</td><td class="n">86.24</td><td class="n">88.36</td><td class="n">45.09</td></tr>
+      <tr><td>Gemini-3.8-Flash</td><td class="n">76.25</td><td class="n">0.081</td><td class="n">0.122</td><td class="n">83.27</td><td class="n">83.15</td><td class="n">87.41</td><td class="n">43.05</td></tr>
+      <tr><td>Gemini-3.1-Pro Preview</td><td class="n">71.79</td><td class="n">0.070</td><td class="n">0.232</td><td class="n">88.37</td><td class="n">81.68</td><td class="n">61.26</td><td class="n">26.94</td></tr>
+      <tr><td>GLM-5.3-Flash</td><td class="n">68.02</td><td class="n">0.111</td><td class="n">0.344</td><td class="n">81.86</td><td class="n">83.70</td><td class="n">70.71</td><td class="n">39.09</td></tr>
+      <tr><td>DeepSeek-4.1-Flash</td><td class="n">66.25</td><td class="n">0.114</td><td class="n">0.451</td><td class="n">82.12</td><td class="n">80.14</td><td class="n">87.72</td><td class="n">32.10</td></tr>
+      <tr><td>Minimax-M3</td><td class="n">62.65</td><td class="n">0.167</td><td class="n">0.422</td><td class="n">81.30</td><td class="n">77.91</td><td class="n">76.51</td><td class="n">40.39</td></tr>
+      <tr><td>Kimi-K3</td><td class="n">60.77</td><td class="n">0.162</td><td class="n">0.551</td><td class="n">41.16</td><td class="n">75.45</td><td class="n">81.57</td><td class="n">39.30</td></tr>
+      <tr><td>Unlimited-OCR（一代）</td><td class="n">61.89</td><td class="n">0.167</td><td class="n">0.605</td><td class="n">73.71</td><td class="n">73.51</td><td class="n">60.76</td><td class="n">31.58</td></tr>
+    </tbody>
+  </table>
+  <p>三个观察：</p>
+  <ul>
+    <li><strong>领先幅度不大。</strong>84.59 对 78.30，差 6.3 分。在第三方基准上这是「明显领先」，但谈不上代际碾压。</li>
+    <li><strong>真正拉开的是跨页项。</strong>T-TextEdit 0.100 对 0.196（一半），T-TableTEDS 89.54 对 67.18。</li>
+    <li><strong>FormulaCDM 只赢一点。</strong>89.39 对 89.24，几乎打平。公式识别靠的是单页精度，不是长文档能力——这与它的设计取向一致。</li>
+  </ul>
+
+  <h3>MarathonDocBench：赢很多，但基准是自己建的</h3>
+  <table>
+    <caption>表 6 · MarathonDocBench（报告 Table 2）。一代因 40 页输入限制未参与。<span class="pill p-r">自建基准</span></caption>
+    <thead><tr><th>模型</th><th class="n">Overall↑</th><th class="n">TextEdit↓</th><th class="n">T-TextEdit↓</th><th class="n">FormulaCDM↑</th><th class="n">TableTEDS↑</th><th class="n">T-TableTEDS↑</th><th class="n">HeadingTEDS↑</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>Unlimited OCR 2</td><td class="n">77.06</td><td class="n">0.104</td><td class="n">0.123</td><td class="n">87.93</td><td class="n">74.81</td><td class="n">71.11</td><td class="n">48.20</td></tr>
+      <tr><td>Kimi-K3</td><td class="n">33.74</td><td class="n">0.475</td><td class="n">0.664</td><td class="n">40.50</td><td class="n">27.80</td><td class="n">26.30</td><td class="n">28.90</td></tr>
+      <tr><td>Gemini-3.8-Flash</td><td class="n">28.61</td><td class="n">0.519</td><td class="n">0.658</td><td class="n">26.35</td><td class="n">23.40</td><td class="n">19.56</td><td class="n">27.34</td></tr>
+      <tr><td>Qwen-3.8-Flash-Next</td><td class="n">27.83</td><td class="n">0.544</td><td class="n">0.753</td><td class="n">28.31</td><td class="n">25.38</td><td class="n">21.04</td><td class="n">21.50</td></tr>
+      <tr><td>Gemini-3.1-Pro Preview</td><td class="n">26.97</td><td class="n">0.516</td><td class="n">0.764</td><td class="n">30.44</td><td class="n">28.48</td><td class="n">21.71</td><td class="n">9.68</td></tr>
+      <tr><td>Qwen3.8-Max</td><td class="n">22.93</td><td class="n">0.600</td><td class="n">0.804</td><td class="n">18.82</td><td class="n">15.20</td><td class="n">13.71</td><td class="n">16.09</td></tr>
+      <tr><td>Minimax-M3</td><td class="n">17.97</td><td class="n">0.659</td><td class="n">0.818</td><td class="n">14.20</td><td class="n">17.79</td><td class="n">14.84</td><td class="n">17.16</td></tr>
+      <tr><td>DeepSeek-4.1-Flash</td><td class="n">12.34</td><td class="n">0.740</td><td class="n">0.933</td><td class="n">10.45</td><td class="n">12.74</td><td class="n">12.59</td><td class="n">7.62</td></tr>
+      <tr><td>GLM-5.3-Flash</td><td class="n">7.51</td><td class="n">0.860</td><td class="n">0.936</td><td class="n">4.50</td><td class="n">7.12</td><td class="n">6.65</td><td class="n">6.55</td></tr>
+    </tbody>
+  </table>
+  <p>43.3 分的差距是整份报告最大的数字，也是最需要打折的数字。三个理由放在第 09 章系统讲，这里先记一句：<strong>通用大模型在这个表里普遍掉到 30 分以下，掉的方式高度一致（文本编辑距离 0.47–0.86），说明它们不是「不会解析」，而是「吃到上百页就失控」</strong>。这个现象本身是真的，只是它衡量的不是「谁的解析能力强」，而是「谁能在超长输入下不崩」。</p>
+
+  <h3>OmniDocBench：单页上被小模型反超</h3>
+  <table>
+    <caption>表 7 · OmniDocBench v1.6 单页基准（报告 Table 3）。注意参数量一列。</caption>
+    <thead><tr><th>模型</th><th class="n">规模</th><th class="n">Overall↑</th><th class="n">TextEdit↓</th><th class="n">FormulaCDM↑</th><th class="n">TableTEDS↑</th></tr></thead>
+    <tbody>
+      <tr><td>TeleOCR</td><td class="n">1.2B</td><td class="n">96.91</td><td class="n">0.027</td><td class="n">96.60</td><td class="n">96.82</td></tr>
+      <tr><td>OvisOCR2</td><td class="n">0.8B</td><td class="n">96.47</td><td class="n">0.027</td><td class="n">97.49</td><td class="n">94.58</td></tr>
+      <tr><td>Qianfan-OCR</td><td class="n">4B</td><td class="n">93.90</td><td class="n">0.040</td><td class="n">95.08</td><td class="n">90.53</td></tr>
+      <tr><td>Logics-Parsing-v2</td><td class="n">4B</td><td class="n">93.33</td><td class="n">0.041</td><td class="n">95.65</td><td class="n">88.42</td></tr>
+      <tr><td>ABot-OCR</td><td class="n">2B</td><td class="n">93.30</td><td class="n">0.037</td><td class="n">94.86</td><td class="n">88.69</td></tr>
+      <tr><td>FireRed-OCR</td><td class="n">2B</td><td class="n">93.26</td><td class="n">0.037</td><td class="n">95.44</td><td class="n">88.04</td></tr>
+      <tr class="hi"><td>Unlimited-OCR 2</td><td class="n">3B-A0.5B</td><td class="n">94.02</td><td class="n">0.038</td><td class="n">96.29</td><td class="n">89.60</td></tr>
+      <tr><td>Unlimited-OCR（一代）</td><td class="n">3B-A0.5B</td><td class="n">93.92</td><td class="n">0.042</td><td class="n">95.79</td><td class="n">90.16</td></tr>
+      <tr><td>dots.ocr</td><td class="n">3B</td><td class="n">90.77</td><td class="n">0.048</td><td class="n">89.95</td><td class="n">87.18</td></tr>
+      <tr><td>DeepSeek-OCR 2</td><td class="n">3B-A0.5B</td><td class="n">90.25</td><td class="n">0.050</td><td class="n">91.84</td><td class="n">83.89</td></tr>
+      <tr><td>HunyuanOCR</td><td class="n">1B</td><td class="n">89.95</td><td class="n">0.088</td><td class="n">87.68</td><td class="n">91.01</td></tr>
+    </tbody>
+  </table>
+  <p>这张表最能说明它的定位：<strong>单页上它排第三，前两名是两个 1B 级别的小模型，比它高 2.5–2.9 分</strong>，而且它比一代只高 0.1 分。也就是说，从一代到二代，单页能力几乎没有变化——所有提升都发生在长文档维度。如果你只处理票据、截图、单页表单，这个模型没有任何理由比 0.8B 的 OvisOCR2 更值得选。</p>
+
+  <div class="verdict">
+    <h4>三张表合起来读出的结论</h4>
+    <p>它在「多页（≤30 页）」上领先但幅度有限，在「超长（100+ 页）」上领先幅度极大，在「单页」上落后于专用小模型。这条曲线不是「全面更强」，而是<strong>一条明确的能力置换</strong>：用单页精度的一点点让步，换长文档的可用性。采购时按这条曲线选场景，不要按标题数字选。</p>
+  </div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>效率：为什么「注意力少 43 倍」只换来「快 7 倍」</h2>
+  <p class="sub">这一章算一笔官方没算的账。算清楚了，你就知道在什么页数区间它才开始划算。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 400" role="img" aria-label="每步可见 token 数随页数变化：完整上下文线性增长，SR-SWA 恒定">
+        <text x="60" y="30" font-size="13" font-weight="700" fill="#16181D">每个解码步能看见多少 token（按每页 273 个视觉 token 推算）</text>
+
+        <!-- legend -->
+        <line x1="60" y1="52" x2="86" y2="52" stroke="#2F6FB0" stroke-width="2.5"/>
+        <text x="94" y="56" font-size="11.5" fill="#333941">完整上下文（一代 R-SWA / 标准解码）</text>
+        <line x1="330" y1="52" x2="356" y2="52" stroke="#B45309" stroke-width="3.5"/>
+        <text x="364" y="56" font-size="11.5" fill="#333941">SR-SWA（二代）＝ 640，恒定</text>
+
+        <!-- y axis -->
+        <line x1="110" y1="80" x2="110" y2="340" stroke="#CFC9BD" stroke-width="1"/>
+        <line x1="110" y1="340" x2="900" y2="340" stroke="#CFC9BD" stroke-width="1"/>
+        <line x1="110" y1="253" x2="900" y2="253" stroke="#E3DFD6" stroke-dasharray="3 4"/>
+        <line x1="110" y1="167" x2="900" y2="167" stroke="#E3DFD6" stroke-dasharray="3 4"/>
+        <line x1="110" y1="80" x2="900" y2="80" stroke="#E3DFD6" stroke-dasharray="3 4"/>
+        <text x="100" y="344" text-anchor="end" font-size="11" fill="#4A505A">0</text>
+        <text x="100" y="257" text-anchor="end" font-size="11" fill="#4A505A">10,000</text>
+        <text x="100" y="171" text-anchor="end" font-size="11" fill="#4A505A">20,000</text>
+        <text x="100" y="84" text-anchor="end" font-size="11" fill="#4A505A">30,000</text>
+
+        <!-- x ticks -->
+        <text x="110" y="360" text-anchor="middle" font-size="11" fill="#4A505A">2</text>
+        <text x="295" y="360" text-anchor="middle" font-size="11" fill="#4A505A">5</text>
+        <text x="435" y="360" text-anchor="middle" font-size="11" fill="#4A505A">10</text>
+        <text x="575" y="360" text-anchor="middle" font-size="11" fill="#4A505A">20</text>
+        <text x="760" y="360" text-anchor="middle" font-size="11" fill="#4A505A">50</text>
+        <text x="900" y="360" text-anchor="middle" font-size="11" fill="#4A505A">100</text>
+        <text x="505" y="378" text-anchor="middle" font-size="11.5" fill="#4A505A">文档页数（对数刻度）</text>
+
+        <!-- 40 page marker -->
+        <line x1="715" y1="80" x2="715" y2="290" stroke="#B3261E" stroke-width="1" stroke-dasharray="5 4"/>
+        <text x="709" y="98" text-anchor="end" font-size="11" fill="#B3261E" font-weight="650">一代上限 ≈ 40 页</text>
+
+        <!-- curve A -->
+        <polyline points="110,335 295,328 435,316 575,293 760,222 900,103"
+                  fill="none" stroke="#2F6FB0" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="900" cy="103" r="4" fill="#2F6FB0"/>
+        <text x="888" y="92" text-anchor="end" font-size="11.5" font-weight="650" fill="#1F5288">27,300</text>
+
+        <!-- line B -->
+        <line x1="110" y1="334" x2="900" y2="334" stroke="#B45309" stroke-width="3.5"/>
+        <circle cx="575" cy="334" r="4" fill="#B45309"/>
+        <text x="588" y="326" font-size="11.5" font-weight="700" fill="#8F3F06">640 —— 页数从 2 涨到 100，这条线不动</text>
+
+        <text x="60" y="396" font-size="11.5" fill="#4A505A">贴底不是画错：640 相对 27,300 只有 2.3%。也正因为它是常数（不是零），端到端加速被固定开销封在 7 倍，而不是 43 倍。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6 ·</b> 每步可见 token 数随页数变化。折线为<b>可精确推算的量</b>（<code>per_page_image_tokens: 273</code> × 页数），不是实测延迟；单步延迟的实测倍率见正文的 7.0×/5.6×。注意 2 页处两条线几乎重合（546 对 640）——<b>短文档上稀疏化没有收益，甚至略贵</b>，这解释了为什么它的优势要到 20 页以后才显现。</figcaption>
+  </figure>
+
+  <h3>一笔官方没算的账</h3>
+  <p>按 273 token/页推算，100 页文档的完整视觉上下文是 27,300 个 token，而 SR-SWA 每步只看 640 个——<strong>注意力范围压缩了约 43 倍</strong>。但官方实测的端到端加速是 7.0 倍（对 Full Attention）、5.6 倍（对一代 R-SWA）。差额去哪了？</p>
+  <p>答案是<strong>固定开销封顶</strong>。单步解码的成本大致可以拆成三块：</p>
+  <div class="formula">
+    单步成本 ≈ 注意力计算（∝ 可见 token 数） + MoE 权重读取（∝ 激活参数，固定） + kernel 启动与调度（固定）<br>
+    <span class="cm">把第一项压到接近 0，后两项还在，所以总成本有个地板</span>
+  </div>
+  <p>这也解释了图 6 里一个反直觉的现象：<strong>在 2–5 页这种短文档上，SR-SWA 并不占优势</strong>，因为那时完整上下文本来就只有几百到一千多个 token，稀疏化省不出什么，反而多了一层路由开销。优势要到 20 页以后才开始显现，50–100 页才拉开量级。换句话说，<strong>页数低于二十，用它没有意义</strong>。</p>
+
+  <table>
+    <caption>表 8 · 官方效率数据与测量条件</caption>
+    <thead><tr><th>指标</th><th class="n">数值</th><th>测量条件</th><th>可信度</th></tr></thead>
+    <tbody>
+      <tr><td>单步延迟 vs Full Attention</td><td class="n">7.0×</td><td rowspan="2">Gundam 模式，batch = 3，每页固定生成 1,024 token，百页文档</td><td><span class="pill p-a">官方实测</span></td></tr>
+      <tr><td>单步延迟 vs 一代 R-SWA</td><td class="n">5.6×</td><td><span class="pill p-a">官方实测</span></td></tr>
+      <tr><td>峰值 KV 显存</td><td class="n">47.0 → 1.77 GB</td><td>单序列（B=1），百页文档，仅统计 KV 不含权重</td><td><span class="pill p-a">官方实测</span></td></tr>
+      <tr><td>端到端吞吐</td><td class="n">360 → 1,315 TPS</td><td>16 并发（B=16）</td><td><span class="pill p-a">官方实测</span></td></tr>
+      <tr><td>精度随长度衰减</td><td class="n">基本平坦</td><td>2–30 / 100–149 / 150–199 / 200–249 / 250+ 分档</td><td><span class="pill p-b">官方自测</span></td></tr>
+      <tr><td>极端长度演示</td><td class="n">3,600+ 页</td><td>《哈利·波特》全七部、三体全集，非基准测试</td><td><span class="pill p-r">单次演示</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>长度不变性：这张图藏着一个「谁在崩」的信息</h3>
+  <p>报告 Figure 6(a) 把精度按长度分档画出来，基线模型的曲线在长文档端明显下坠，其中一条被标注为「fails 223p」——在 223 页处直接失败，不是分数低而是跑不出结果。Unlimited OCR 2 的曲线从 2 页到 250+ 页基本持平。</p>
+  <p>这个现象值得单独强调：<strong>长文档场景的真实门槛不是「准不准」，而是「能不能跑完」</strong>。绝大多数通用模型在百页级不是精度不够，是显存或上下文长度直接把它们挡在门外。这也是为什么第 07 章的 MarathonDocBench 分数会出现那种断崖——30 分以下的那些数字里，有相当一部分是「勉强跑完」的结果，不代表模型的解析水平。</p>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>反证据：八个该打的折扣</h2>
+  <p class="sub">这一节是全文最该被认真读的部分。官方材料没有问题，但<strong>读法</strong>会决定你得出什么结论。</p>
+
+  <h3>先给数字分级</h3>
+  <p>把全部数字按「是否可独立复算」分成三级，能省掉很多争论：</p>
+  <div class="grid3">
+    <div class="card">
+      <h4><span class="pill p-t">高可信</span></h4>
+      <p style="font-size:14.5px;margin:8px 0 0">由架构直接决定，可从 <code>config.json</code> 与报告公式复算：640 常数、页级位置编码、KV 复用逻辑、块级稀疏性。<strong>这些不依赖基准，换谁来测都成立。</strong></p>
+    </div>
+    <div class="card">
+      <h4><span class="pill p-a">中可信</span></h4>
+      <p style="font-size:14.5px;margin:8px 0 0">官方实测，但条件明确且可复现：47GB→1.77GB、1,315 TPS、7.0×/5.6×。<strong>换硬件数字会变，但量级关系站得住。</strong></p>
+    </div>
+    <div class="card">
+      <h4><span class="pill p-r">低可信</span></h4>
+      <p style="font-size:14.5px;margin:8px 0 0">依赖自建基准与非对等比较：77.06 分、+43.3 的领先幅度。<strong>方向可能对，幅度不可直接用。</strong></p>
+    </div>
+  </div>
+
+  <h3>八个具体的折扣</h3>
+  <table>
+    <caption>表 9 · 官方口径与需要打的折扣</caption>
+    <thead><tr><th>官方口径</th><th>为什么该打折</th><th>实际影响</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>「MarathonDocBench 77.06，领先第二名 43.3 分」</td>
+        <td>基准由百度自建；报告明说标注先用「一个强的逐页解析器」初始化再人工修订，而训练伪标签同样来自 MinerU2.5-Pro 与 PaddleOCR-VL-1.6——<strong>同一批老师既出题又判卷</strong></td>
+        <td>方向可信（它确实能跑完百页而别人不能），幅度不可直接用</td>
+      </tr>
+      <tr>
+        <td>「大幅领先 Qwen / Gemini / Kimi」</td>
+        <td>通用模型被要求一次性端到端吃下 103–300 页，这不是它们的常规用法；报告<strong>没有给「通用模型 + 分段流水线」这一条基线</strong></td>
+        <td>真实工程里大家会逐页调、再拼接，差距会显著缩小。缺的这条基线恰好是最该比的</td>
+      </tr>
+      <tr>
+        <td>「任意页数」「无限」</td>
+        <td>基准上限 300 页；训练最大序列 64K；3,600 页是单次演示（演示内容与硬件未完整披露）</td>
+        <td>「无限」是渐近性质，不是 SLA。千页级要自己压测</td>
+      </tr>
+      <tr>
+        <td>「精度与长度无关」</td>
+        <td>只在自建基准上分档验证，档位粗（50 页一档），且未给各档样本量</td>
+        <td>可作趋势参考，不能当精度承诺</td>
+      </tr>
+      <tr>
+        <td>规模「3B / A500M」</td>
+        <td>同一报告内出现 A500M 与 A570M 两种写法，模型卡只写 3B；差异来自是否计入 embedding（详见 03 章推算）</td>
+        <td>无实质影响，但是材料仓促的信号，提示其他细节也可能未对齐</td>
+      </tr>
+      <tr>
+        <td>「全面 SOTA」</td>
+        <td>单页 OmniDocBench 94.02 排第三，前两名是 0.8B 的 OvisOCR2（96.47）与 1.2B 的 TeleOCR（96.91）；比一代仅 +0.1</td>
+        <td>「SOTA」限定在长文档解析，不是全场景</td>
+      </tr>
+      <tr>
+        <td>跨页连续性「不丢字、不乱序、不重复」</td>
+        <td>报告只给了整篇的 T-TextEdit（0.123），<strong>没有做「块边界处 vs 块内部」的分层对比</strong>，因此无法判断 1 页重叠是否足够</td>
+        <td>这是最大的未知项。块边界恰是错误最可能聚集的地方，建议自己按边界位置抽样核对</td>
+      </tr>
+      <tr>
+        <td>「通用文档解析」</td>
+        <td>作者自陈训练数据多样性有限；且视觉编码器在训练中<strong>全程冻结</strong></td>
+        <td>域外扫描质量（低清传真、强透视手机拍、印章遮挡）无补偿机制，需先小样本验证</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>它自己承认的两个短板</h3>
+  <p>报告第 6 节写得比多数论文的 limitation 都直接，值得原样记住：</p>
+  <ul>
+    <li><strong>稀疏注意力不保留全局文档信息</strong>，导致对文档级结构（如标题层级）的理解受限。未来可能引入线性注意力来在恒定开销下保留全局信息。这个自陈在指标上有对应的形状——MarathonDocBench 的 HeadingTEDS 只有 48.20，是九项指标里最低的。</li>
+    <li><strong>训练数据多样性有限</strong>，进一步的数据精修会提升鲁棒性与泛化。</li>
+  </ul>
+
+  <div class="verdict">
+    <h4>这两条合起来意味着什么</h4>
+    <p>它的能力是「局部精确 + 全局模糊」。<strong>抄得准，但不知道自己在抄一本书的第几章。</strong>如果你的下游任务需要文档级结构（生成目录、按章节切分、判断某段属于哪个小节），现在这个版本不是终局方案——要么自己用版面规则补层级，要么等它把线性注意力加进来。如果你的下游只需要「把这几百页变成干净的 Markdown 再进向量库」，它当前就够用。</p>
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>落地：先回答「你的文档有多长」，再谈部署</h2>
+  <p class="sub">按第 08 章那笔账，页数低于二十时用它没有收益。所以选型的第一步不是比模型，是数页数。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 380" role="img" aria-label="Unlimited OCR 2 的选型决策树">
+        <text x="60" y="26" font-size="13" font-weight="700" fill="#16181D">选型决策树</text>
+
+        <!-- root -->
+        <rect x="340" y="44" width="240" height="44" rx="8" fill="#F5F2EB" stroke="#CFC9BD"/>
+        <text x="460" y="71" text-anchor="middle" font-size="12.5" font-weight="650" fill="#16181D">一份待解析文档</text>
+
+        <!-- q1 -->
+        <line x1="460" y1="88" x2="460" y2="112" stroke="#4A505A" stroke-width="1.5"/>
+        <polygon points="460,114 456,105 464,105" fill="#4A505A"/>
+        <rect x="340" y="114" width="240" height="44" rx="8" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="460" y="141" text-anchor="middle" font-size="12.5" font-weight="650" fill="#1F5288">单次是否 ≥ 20 页？</text>
+
+        <!-- no branch left -->
+        <path d="M340,136 L240,136 L240,190" fill="none" stroke="#4A505A" stroke-width="1.5"/>
+        <polygon points="240,192 236,183 244,183" fill="#4A505A"/>
+        <text x="230" y="130" text-anchor="end" font-size="11.5" fill="#8F3F06" font-weight="650">否</text>
+        <rect x="60" y="192" width="220" height="76" rx="8" fill="#FBECEA" stroke="#B3261E"/>
+        <text x="170" y="218" text-anchor="middle" font-size="12.5" font-weight="700" fill="#B3261E">不必用它</text>
+        <text x="170" y="238" text-anchor="middle" font-size="11.5" fill="#333941">单页专用模型更准、更省</text>
+        <text x="170" y="256" text-anchor="middle" font-size="11.5" fill="#333941">（0.8B–1.2B 级已有更高分）</text>
+
+        <!-- yes down -->
+        <line x1="460" y1="158" x2="460" y2="182" stroke="#4A505A" stroke-width="1.5"/>
+        <polygon points="460,184 456,175 464,175" fill="#4A505A"/>
+        <text x="472" y="176" font-size="11.5" fill="#0A5750" font-weight="650">是</text>
+
+        <!-- q2 -->
+        <rect x="340" y="184" width="240" height="60" rx="8" fill="#EDF3FA" stroke="#2F6FB0"/>
+        <text x="460" y="208" text-anchor="middle" font-size="12.5" font-weight="650" fill="#1F5288">页数 &gt; 300 或显存 &lt; 24GB？</text>
+        <text x="460" y="228" text-anchor="middle" font-size="11" fill="#4A505A">300 页≈8.2 万视觉 token，仍在 128K 内</text>
+
+        <!-- no branch right -->
+        <path d="M580,214 L780,214 L780,262" fill="none" stroke="#4A505A" stroke-width="1.5"/>
+        <polygon points="780,266 776,257 784,257" fill="#4A505A"/>
+        <text x="600" y="206" font-size="11.5" fill="#8F3F06" font-weight="650">否</text>
+        <rect x="640" y="268" width="280" height="72" rx="8" fill="#E9F4F2" stroke="#0F766E"/>
+        <text x="780" y="292" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0A5750">整文档单窗口即可</text>
+        <text x="780" y="311" text-anchor="middle" font-size="11.5" fill="#333941">Transformers 直跑，或 SGLang 默认配置</text>
+        <text x="780" y="329" text-anchor="middle" font-size="11.5" fill="#333941">先跑通再谈调优</text>
+
+        <!-- yes down -->
+        <line x1="460" y1="244" x2="460" y2="272" stroke="#4A505A" stroke-width="1.5"/>
+        <polygon points="460,274 456,265 464,265" fill="#4A505A"/>
+        <text x="472" y="266" font-size="11.5" fill="#0A5750" font-weight="650">是</text>
+
+        <rect x="300" y="274" width="320" height="80" rx="8" fill="#FDF3E7" stroke="#B45309"/>
+        <text x="460" y="298" text-anchor="middle" font-size="12.5" font-weight="700" fill="#8F3F06">必须开分窗调度</text>
+        <text x="460" y="317" text-anchor="middle" font-size="11.5" fill="#333941">SGLANG_UOCR_EANABLE_DOC_LIMIT=1</text>
+        <text x="460" y="335" text-anchor="middle" font-size="11.5" fill="#333941">窗口 10 页起，按显存下调</text>
+        <text x="460" y="351" text-anchor="middle" font-size="11.5" fill="#8F3F06" font-weight="600">并对块边界处抽样校验</text>
+      </svg>
+    </div>
+    <figcaption><b>图 7 ·</b> 选型决策树。「20 页」阈值来自第 08 章的注意力范围推算；「300 页」来自 273 × 300 ≈ 8.2 万视觉 token 仍在 131,072 位置上限内（<b>推算</b>）。</figcaption>
+  </figure>
+
+  <h3>部署配方：官方 README 里那些「不设就出事」的参数</h3>
+  <p>这些不是调优建议，是<strong>默认值会 OOM 或性能腰斩</strong>的项。原样抄下来：</p>
+  <table>
+    <caption>表 10 · SGLang 部署关键参数（据 README 与模型卡）</caption>
+    <thead><tr><th>参数 / 变量</th><th class="n">建议值</th><th>不设的后果</th></tr></thead>
+    <tbody>
+      <tr><td><code>--mem-fraction-static</code></td><td class="n">0.7</td><td>用 0.75 在 32+ 并发下余量不足</td></tr>
+      <tr><td><code>--max-prefill-tokens</code></td><td class="n">2048</td><td>临时张量约 <code>[tokens, context/32]</code>，4096 时显存翻倍</td></tr>
+      <tr><td><code>--cuda-graph-bs-prefill</code> 最大值</td><td class="n">＝ max-prefill-tokens</td><td>偏小回退 eager（变慢），偏大浪费 capture 显存</td></tr>
+      <tr><td><code>full_prefill_max_req</code></td><td class="n">64</td><td>默认 8，16/32 并发会回退 eager</td></tr>
+      <tr><td><code>SGLANG_OPT_UOCR_SAM_REL_POS_BIAS_MB</code></td><td class="n">64</td><td>默认 512，单次分配约 462 MiB 且可能 OOM</td></tr>
+      <tr><td><code>SGLANG_UOCR_MAX_PAGE_TOKENS</code></td><td class="n">20000</td><td>每页输出守卫；过小会截断长页</td></tr>
+      <tr><td><code>SGLANG_UOCR_EANABLE_DOC_LIMIT</code></td><td class="n">1</td><td>0 = 整文档单窗口，千页级必炸（注意官方变量名拼写就是 EANABLE）</td></tr>
+      <tr><td><code>SGLANG_UOCR_SHM_WRAP_MODEL_DATA</code></td><td class="n">1</td><td>大 crop 张量走 <code>/dev/shm</code>，否则 pickle 开销显著</td></tr>
+      <tr><td>no-repeat-ngram logit processor</td><td class="n">ngram 35</td><td>多页 window 1024 / 单页 128，不设容易复读</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <p><strong>三个环境层面的坑：</strong>① 必须用仓库自带的定制 SGLang wheel（<code>0.5.20.dev10</code>），与你现有环境大概率冲突，请单独建 venv；② <code>trust_remote_code=True</code> 意味着加载即执行仓库内自定义代码，生产环境要先过一遍 <code>modeling_unlimitedocr.py</code>；③ 模型卡示例的 PDF→图像是 PyMuPDF <code>dpi=300</code>，低于此分辨率会直接影响识别质量。</p>
+  </div>
+
+  <h3>最小验证路径：一天能跑完的四步</h3>
+  <table>
+    <thead><tr><th class="n">步</th><th>做什么</th><th>通过标准</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>拿你自己最长的一份文档（务必 &gt; 100 页），用 Transformers 直跑单页 + 多页各一次</td><td>能跑通，输出结构（标题/表格/顺序）肉眼可读</td></tr>
+      <tr><td class="n">2</td><td>抽 3 处<strong>跨页表格</strong>与 3 处<strong>跨页段落</strong>，逐字对照原文</td><td>这是它相对逐页方案的核心卖点，不过关就别继续</td></tr>
+      <tr><td class="n">3</td><td>按页码位置分层抽样：块边界页 vs 块内部页各 10 页，算编辑距离</td><td>两者差距 &lt; 2 个百分点可接受；明显偏大说明窗口要调大</td></tr>
+      <tr><td class="n">4</td><td>用 SGLang 起服务，压 B=16 并发，记录 TPS 与峰值显存</td><td>与官方 1,315 TPS / 1.77GB KV 同量级即可</td></tr>
+    </tbody>
+  </table>
+  <p>第 3 步是官方材料里缺的那一项，也是决定你敢不敢上生产的唯一一项。别省。</p>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>判断</h2>
+  <p class="sub">以下是观点，不是共识。依据都写在前面的章节里。</p>
+
+  <h3>值得记住的三件事</h3>
+  <ol>
+    <li><strong>把一个通用难题塞进边界清楚的任务里，是这次真正的贡献。</strong>「长上下文」是开放问题，但「抄书」不是——抄书天然局部，只有核对时才回看。SR-SWA 的全部合理性来自这个任务特性，而不是来自某个更强的注意力算子。这个方法论可以搬：语音转写、长视频字幕、长日志解析，都是「输入极长、输出与输入局部对齐」的同类问题。上一代论文就提过 R-SWA 适用于 ASR 与翻译。</li>
+    <li><strong>页级 0/1 交替位置编码，是被低估的工程技巧。</strong>它不提升任何指标，但让「外推」从调参问题变成结构问题。任何做超长序列的团队都值得抄这一手。</li>
+    <li><strong>它证明了「省算力」和「省显存」必须分开设计。</strong>SR-SWA 解决前者，分块解码解决后者，位置编码解决可表示性。三个上限，三把钥匙。只做其中一个，页数还是会在某个数量级撞墙——一代卡在 40 页就是活例子。</li>
+  </ol>
+
+  <h3>该用 / 不该用</h3>
+  <div class="grid2">
+    <div class="card" style="border-left:3px solid #0F766E">
+      <h4 style="color:#0A5750">现在就值得试</h4>
+      <ul style="font-size:14.5px;margin:8px 0 0">
+        <li>长篇 PDF 入库（教材、技术手册、财报、标书、论文合集），目标是转成干净 Markdown 再进向量库</li>
+        <li>跨页表格多的文档——这是它压过逐页流水线的真实差异点（T-TableTEDS 71.11 对 26 以下）</li>
+        <li>显存受限的批处理：KV 峰值 1.77GB + 约 3B 权重，单卡跑长文档的门槛低了很多</li>
+        <li>作为智能体的「读档」工具：主模型负责理解与问答，它负责把几百页扫描件转成结构化文本</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left:3px solid #B3261E">
+      <h4 style="color:#B3261E">现在不必试</h4>
+      <ul style="font-size:14.5px;margin:8px 0 0">
+        <li>单页票据、截图、身份证件——0.8B 级专用模型更准更省，它在 OmniDocBench 上落后两个小模型</li>
+        <li>需要文档级结构的任务：生成目录、按章节切分、判断段落所属小节——HeadingTEDS 48.20 是它最弱项</li>
+        <li>输入以低质扫描/手机拍照为主——视觉编码器冻结，无域适配能力</li>
+        <li>单次二十页以内的批量任务——稀疏化省不出收益，反而多一层路由开销</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>下一步会看到什么</h3>
+  <p>报告自己在 limitation 里给了路线：<strong>引入线性注意力保留全局信息，同时维持每 token 恒定开销</strong>。这句话翻译过来是「想把标题层级这一项补上」。如果这个方向落地，第三代（或 2.x）最可能的指标变化是 HeadingTEDS 从 48 跳到 60 以上，而其他项基本不动。</p>
+  <p>另一条更值得关注的线索是<strong>官方把 SR-SWA 表述为通用机制</strong>（「an unlimited-horizon parsing framework」），而不是 OCR 专用。结合一代论文里「R-SWA 适用于 ASR、翻译」的说法，可以预期这套注意力会被复用到语音转写与长文档翻译上。对整个长序列建模领域，这比 OCR 分数本身更有价值。</p>
+
+  <div class="verdict">
+    <h4>最后一句</h4>
+    <p>如果只能用一句话总结这份研究：<strong>它不是「更强的 OCR」，是「第一个能一口气读完的书童」。</strong>单页精度可以更好，全局结构还弱，基准也还需要第三方复现；但「把 3,600 页当一份文档处理，且成本不随页数涨」这件事，在此之前没有开箱可用的开源方案。价值在「能跑完」，不在「跑得最准」。</p>
+  </div>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span>参考来源</h2>
+  <p class="sub">按证据类型分组。一手材料全部可公开复核；媒体报道只用于确认发布时间与生态数据。</p>
+
+  <h3>一手材料</h3>
+  <ul>
+    <li><strong>技术报告</strong>：《Unlimited OCR Works 2 — Pioneering the OCR-3.0 Era: From Long- to Unlimited-Horizon Parsing》，Baidu ERNIE Team，15 页，仓库内 PDF。<span class="pill p-t">本文全部机制与分数来源</span></li>
+    <li><strong>模型配置</strong>：<code>baidu/Unlimited-OCR-2</code> 的 <code>config.json</code>（经 ModelScope 镜像获取）。<span class="pill p-t">本文所有架构字段、块大小、窗口、位置编码参数来源</span></li>
+    <li><strong>代码与权重</strong>：GitHub <code>baidu/Unlimited-OCR</code>（含 README、定制 SGLang wheel、技术报告 PDF），Hugging Face / ModelScope <code>baidu/Unlimited-OCR-2</code>，MIT 许可。<span class="pill p-t">部署参数与推理接口来源</span></li>
+    <li><strong>上一代论文</strong>：Yin et al., <em>Unlimited OCR Works</em>, arXiv:2606.23050（2026-06-22）。<span class="pill p-b">R-SWA 与 32K 单次前向的来源</span></li>
+    <li><strong>评测数据集</strong>：<code>baidu/MarathonDocBench</code>（Hugging Face，README 指向；完整标注的开放程度需自行确认）。</li>
+  </ul>
+
+  <h3>官方发布信息</h3>
+  <ul>
+    <li>百度 AI 开放平台公告《【开放公测】文心 Unlimited OCR 2 开源发布，超长文档解析迎来「页数自由」》（2026-10-27）。</li>
+    <li>百度千帆公众号同题文章（含完整评测图示，但图表为图片、无文字版数值）。</li>
+    <li>百度智能云文档：<code>cloud.baidu.com/doc/OCR/s/fmr1p39gb</code>。</li>
+  </ul>
+
+  <h3>媒体报道（仅用于确认发布时间与生态数据）</h3>
+  <ul>
+    <li>新华社《文心 Unlimited OCR 2 开源发布，超长文档解析迎来「页数自由」》，2026-10-27。</li>
+    <li>科技日报《一口气读完全套〈哈利·波特〉》，2026-10-27（含 11-12 百度世界大会信息）。</li>
+    <li>中国网科技、凤凰网、腾讯新闻等转载与拆解，2026-10-27。</li>
+  </ul>
+
+  <h3>本文的推算项（非官方数据）</h3>
+  <ul>
+    <li>参数量拆解（专家 FFN × 层数、激活参数含/不含 embedding 的差异）—— 第 03 章。</li>
+    <li>100 页 ≈ 27,300 视觉 token、300 页 ≈ 81,900 —— 由 <code>per_page_image_tokens: 273</code> 换算。</li>
+    <li>「注意力范围压缩约 43 倍」与「端到端只快 7 倍」的差额解释 —— 第 08 章。</li>
+    <li>「20 页以下无收益」的阈值判断 —— 基于固定开销的相对占比推断，非实测。</li>
+  </ul>
+</section>
+
+<hr>
+
+<div class="note" style="margin-top:0">
+  <p><strong>复核方式：</strong>文中所有 <code>config.json</code> 字段都可直接下载核对；技术报告 PDF 在仓库根目录（Git LFS，需从 <code>media.githubusercontent.com</code> 取实体）；两张基准表的原始数值见报告 Table 1 与 Table 2。若发现本文与一手材料不符，以一手材料为准。</p>
+</div>
+
+</main>
+
+<footer class="wrap">
+  <p>本报告基于百度公开发布的技术报告《Unlimited OCR Works 2》（仓库内 PDF，15 页）、Hugging Face / ModelScope 模型卡与 <code>config.json</code>、GitHub README，以及新华社、科技日报等公开报道整理。</p>
+  <p>文中标注「推算」「估算」的数值为作者本人据公开字段换算，非官方实测；官方自测数据已注明出处。</p>
+</footer>
+
+</body>
+</html>
