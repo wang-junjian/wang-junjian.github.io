@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="kfYmV9lAN559CCljDzQo7a"><head data-page-node-id="x8g6frJFqu9y4752qhdMDE">
+<meta charset="UTF-8" data-page-node-id="d7W5l5xArGiohTFJdr5bu1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="F92NBSohTVVBXAuBBy5BQG">
+<meta name="description" content="把 30B 的混元同传模型塞进 M2 Max 笔记本：绕开官方 CUDA 封装，给 llama-mtmd-cli 加 --stream 改流式，自建音频链路与账本，做到 255 ms 字幕、1150 ms 配音，并完整复盘五轮静默失败排查。">
+<meta name="keywords" content="simulmt, llama-cpp, apple-silicon, real-time-interpretation, tts, moe">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-28">
+<title>Hy-SimulMT-30B-A3B 本地实时同传 · 研究与实践</title>
+<style>
+:root{
+  --paper:#FCFCFA;
+  --card:#FFFFFF;
+  --ink:#17171B;
+  --ink-2:#3D3D46;
+  --ink-3:#6B6B76;
+  --ink-4:#96969F;
+  --line:#E2E2DC;
+  --line-2:#EFEFEA;
+  --accent:#2A3BE8;
+  --accent-soft:#EBEDFD;
+  --warm:#C2410C;
+  --warm-soft:#FBEDE6;
+  --good:#0F6B4F;
+  --good-soft:#E7F2EE;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro SC","SF Pro Text","PingFang SC","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.78;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* ---------- 顶部进度 ---------- */
+#prog{position:fixed;top:0;left:0;height:2px;width:0;background:var(--accent);z-index:100;transition:width .1s linear}
+
+/* ---------- 布局 ---------- */
+.wrap{display:flex;max-width:1280px;margin:0 auto;padding:0 32px}
+nav{
+  width:236px;flex:0 0 236px;position:sticky;top:0;align-self:flex-start;
+  height:100vh;overflow-y:auto;padding:48px 24px 48px 0;
+  border-right:1px solid var(--line-2);
+}
+nav::-webkit-scrollbar{width:0}
+nav .navtitle{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;font-weight:600}
+nav a{
+  display:block;font-size:12.5px;color:var(--ink-3);text-decoration:none;
+  padding:5px 0 5px 10px;border-left:2px solid transparent;line-height:1.45;
+  transition:color .15s,border-color .15s;
+}
+nav a:hover{color:var(--ink)}
+nav a.on{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+nav a.sub{padding-left:22px;font-size:12px;color:var(--ink-4)}
+nav a.sub.on{color:var(--accent);border-left-color:var(--accent-soft)}
+
+main{flex:1;min-width:0;padding:0 0 120px 56px;max-width:820px}
+
+/* ---------- 封面 ---------- */
+header.cover{padding:72px 0 44px;border-bottom:1px solid var(--line)}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-4);font-weight:600;margin-bottom:22px;
+}
+.eyebrow i{display:block;width:22px;height:1px;background:var(--ink-4)}
+h1{
+  font-size:44px;line-height:1.14;font-weight:700;letter-spacing:-.025em;
+  margin-bottom:8px;
+}
+h1 em{font-style:normal;color:var(--accent)}
+.sub{font-size:19px;color:var(--ink-2);font-weight:400;line-height:1.5;margin-bottom:30px;letter-spacing:-.01em}
+.meta{display:flex;flex-wrap:wrap;gap:0 40px;font-size:12.5px;color:var(--ink-3)}
+.meta div{margin-bottom:6px}
+.meta b{color:var(--ink);font-weight:600;font-family:var(--mono);font-size:12px}
+
+/* ---------- 关键数字 ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:36px 0 0}
+.kpi{background:var(--card);padding:18px 16px 16px}
+.kpi .v{font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.03em;line-height:1.1;color:var(--ink)}
+.kpi .v span{font-size:12px;font-weight:500;color:var(--ink-3);margin-left:2px;letter-spacing:0}
+.kpi .k{font-size:11px;color:var(--ink-3);margin-top:7px;letter-spacing:.02em}
+.kpi.acc .v{color:var(--accent)}
+
+/* ---------- 章节 ---------- */
+section{padding-top:56px}
+.secno{
+  font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600;
+  letter-spacing:.08em;margin-bottom:10px;
+}
+h2{
+  font-size:27px;line-height:1.28;font-weight:700;letter-spacing:-.02em;
+  margin-bottom:20px;padding-bottom:0;
+}
+h3{
+  font-size:17.5px;font-weight:650;letter-spacing:-.01em;margin:38px 0 12px;
+  color:var(--ink);line-height:1.4;
+}
+h3 .h3n{color:var(--ink-4);font-family:var(--mono);font-size:12px;font-weight:500;margin-right:8px}
+h4{font-size:14.5px;font-weight:650;margin:24px 0 8px;color:var(--ink-2)}
+p{margin-bottom:14px;color:var(--ink-2)}
+p.lead{font-size:16.5px;color:var(--ink);line-height:1.72;margin-bottom:20px}
+strong{color:var(--ink);font-weight:650}
+code{
+  font-family:var(--mono);font-size:.855em;background:#F2F2EE;color:#2B2B33;
+  padding:1.5px 5px;border-radius:3px;letter-spacing:-.01em;
+  white-space:pre-wrap;overflow-wrap:anywhere;
+}
+a.ref{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+a.ref:hover{border-bottom-color:var(--accent)}
+
+ul,ol{margin:0 0 16px 0;padding-left:22px}
+li{margin-bottom:7px;color:var(--ink-2)}
+li::marker{color:var(--ink-4)}
+
+/* ---------- 表格 ---------- */
+.twrap{overflow-x:auto;max-width:100%;margin:22px 0 26px;border:1px solid var(--line);background:var(--card);-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  text-align:left;font-weight:600;color:var(--ink-3);font-size:11px;
+  letter-spacing:.06em;text-transform:uppercase;
+  padding:10px 14px;border-bottom:1px solid var(--line);background:#FAFAF7;
+  white-space:nowrap;
+}
+td{padding:11px 14px;border-bottom:1px solid var(--line-2);color:var(--ink-2);vertical-align:top;line-height:1.6}
+tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);font-size:12.5px;color:var(--ink);white-space:nowrap}
+td b{color:var(--ink);font-weight:650}
+/* 高亮行：用于标出本文实际采用的方案 */
+tr.hl td{background:#F5F7FE;color:var(--ink)}
+tr.hl td:first-child{font-weight:650}
+.tag{
+  display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.03em;
+  padding:1px 6px;border-radius:3px;white-space:nowrap;line-height:1.6;
+}
+.t-ok{background:var(--good-soft);color:var(--good)}
+.t-no{background:var(--warm-soft);color:var(--warm)}
+.t-mid{background:#F1F1EC;color:var(--ink-3)}
+.t-acc{background:var(--accent-soft);color:var(--accent)}
+
+/* ---------- 代码块 ---------- */
+pre{
+  position:relative;background:#1B1B20;color:#D8D8DE;border-radius:4px;
+  padding:16px 18px;overflow-x:auto;margin:18px 0 22px;
+  font-family:var(--mono);font-size:12.4px;line-height:1.7;
+}
+pre .c{color:#71717F}
+pre .s{color:#9AC99A}
+pre .k{color:#8FA8F5}
+pre .hi{color:#F0C674}
+pre::before{
+  content:attr(data-lang);position:absolute;top:0;right:0;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:#5C5C68;padding:5px 10px;
+}
+code.inline-block{white-space:normal}
+
+/* ---------- 提示块 ---------- */
+.note{
+  border-left:2px solid var(--accent);background:var(--accent-soft);
+  padding:14px 18px;margin:22px 0;font-size:13.5px;color:var(--ink-2);
+  border-radius:0 3px 3px 0;
+}
+.note.warn{border-left-color:var(--warm);background:var(--warm-soft)}
+.note.good{border-left-color:var(--good);background:var(--good-soft)}
+.note b{color:var(--ink)}
+.note .lbl{
+  display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:700;color:var(--accent);margin-bottom:5px;
+}
+.note.warn .lbl{color:var(--warm)}
+.note.good .lbl{color:var(--good)}
+
+/* ---------- 图 ---------- */
+figure{margin:28px 0 30px}
+figure svg{display:block;width:100%;height:auto;background:var(--card);border:1px solid var(--line)}
+figcaption{
+  font-size:11.5px;color:var(--ink-4);margin-top:9px;line-height:1.55;
+  padding-left:2px;
+}
+figcaption b{color:var(--ink-3);font-weight:600}
+
+/* ---------- 案例块 ---------- */
+.case{border:1px solid var(--line);background:var(--card);margin:20px 0;border-radius:3px;overflow:hidden}
+.case-h{
+  display:flex;align-items:baseline;gap:12px;padding:12px 18px;
+  border-bottom:1px solid var(--line-2);background:#FAFAF7;
+}
+.case-h .id{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.05em}
+.case-h .ttl{font-size:14px;font-weight:650;color:var(--ink);flex:1}
+.case-h .tm{font-family:var(--mono);font-size:11px;color:var(--ink-4);white-space:nowrap}
+.case-b{padding:16px 18px 6px}
+.case-b p{font-size:13.5px;margin-bottom:12px}
+.case-b p:last-child{margin-bottom:8px}
+.sym{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);display:block;margin-bottom:5px;margin-top:2px}
+
+/* ---------- 指标条 ---------- */
+.bars{margin:22px 0 26px}
+.bar-row{display:grid;grid-template-columns:150px 1fr 88px;align-items:center;gap:14px;margin-bottom:9px}
+.bar-row .bl{font-size:12.5px;color:var(--ink-2);text-align:right}
+.bar-track{height:16px;background:#F1F1EC;position:relative;border-radius:1px;overflow:hidden}
+.bar-fill{height:100%;background:var(--ink);border-radius:1px}
+.bar-fill.a{background:var(--accent)}
+.bar-fill.w{background:var(--warm)}
+.bar-fill.g{background:var(--good)}
+.bar-row .bv{font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap}
+
+/* ---------- 结尾 ---------- */
+hr.sep{border:none;border-top:1px solid var(--line);margin:56px 0 0}
+footer{padding:36px 0 0;font-size:12px;color:var(--ink-4);line-height:1.7}
+footer b{color:var(--ink-3)}
+
+/* ---------- 响应式 ---------- */
+@media(max-width:1080px){
+  nav{display:none}
+  main{padding-left:0;max-width:none}
+  .wrap{padding:0 22px}
+  h1{font-size:34px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:640px){
+  h1{font-size:27px}
+  h2{font-size:22px}
+  .sub{font-size:16px}
+  .bar-row{grid-template-columns:78px 1fr auto;gap:8px}
+  .bar-row .bl{font-size:11.5px}
+  .bar-row .bv{font-size:11px;white-space:normal}
+  pre{font-size:11px}
+  body{font-size:14px}
+  /* 窄屏下表头与数字列不再强制单行，否则会把视口撑破 */
+  th{white-space:normal;font-size:10px;padding:8px 10px}
+  td{padding:9px 10px;font-size:12.5px}
+  td.n{white-space:normal}
+  table{font-size:12px}
+  /* 五列表在 390px 下仍差几十像素，单独收紧，避免必须横向拖动 */
+  .twrap.tight th{padding:8px 4px;font-size:9.5px;letter-spacing:.02em}
+  .twrap.tight td{padding:9px 4px}
+  .twrap.tight td.n{font-size:11.5px}
+  code{font-size:.82em}
+  .kpi{padding:14px 12px}
+  .kpi .v{font-size:21px}
+}
+</style>
+<style id="__dm_no_drag_style__">* { -webkit-user-drag: none !important; }</style><style id="__dm_bindable_badge_style__">[data-sp-bindable="database"]{outline:1px dashed #0088ff;outline-offset:2px;border-radius:4px;}[data-sp-bindable="database"] *{pointer-events:none !important;transition:none !important;animation:none !important;}[data-sp-bindable="database"]{transition:none !important;animation:none !important;}</style></head>
+<body data-page-node-id="0XSrrrWxYipwfBwKCNUCCp" style="">
+<div id="prog" data-page-node-id="pTFxtMrrBoJiIWO4Bq5Yny" style="width: 0%;"></div>
+
+<div class="wrap" data-page-node-id="wawjxOrgugh8DplmtrcjAU">
+<nav data-page-node-id="bp0SAOKwYLlKCO6PY82tXM">
+  <div class="navtitle" data-page-node-id="CvFHRM13uPu0roCGm3in2V">目录</div>
+  <a href="#s0" data-page-node-id="src5eQLLiG2Dn9O5MURP1D">摘要</a>
+  <a href="#s0b" data-page-node-id="wamTD3V0174HuYuyrUGY1D">1 · 模型介绍</a>
+  <a href="#s1" data-page-node-id="tQLpaeFymx5BBGULpipLI0">2 · 模型解剖</a>
+  <a href="#s2" data-page-node-id="cF75fcSsHhEg7ZnQ9oGCAG">3 · 部署路径的抉择</a>
+  <a href="#s3" data-page-node-id="iMiD5KWexjs2PgfceoeVWL">4 · 环境与模型获取</a>
+  <a href="#s4" data-page-node-id="EDiHH5EOcGVx4ViyaSZpA6">5 · 离线跑通</a>
+  <a href="#s5" data-page-node-id="mj8KGrLRIppVGBPWBidn45">6 · 语音合成两条路</a>
+  <a href="#s6" data-page-node-id="rq4SlsV0Xh7D2hBRvmG2Gw">7 · 实时化的三个突破</a>
+  <a href="#s7" data-page-node-id="d9WRg6fazJ3etPHi73kJhP">8 · 系统架构</a>
+  <a href="#s8" data-page-node-id="hMmwlXYRt7kmLyajrNfMMo">9 · 性能实测</a>
+  <a href="#s9" data-page-node-id="gUvdF4GlDzFiMfTxg1UYZI">10 · 故障排查实录</a>
+  <a href="#s10" data-page-node-id="g4T88MdAqJle9JMc5KFKmZ">11 · 方法论</a>
+  <a href="#s11" data-page-node-id="QeJErO4GkaJ08SbXRwQDnS">12 · 边界与去向</a>
+  <a href="#s12" data-page-node-id="OIBuXNFzURy4gksAB5Spmo">13 · 复现清单</a>
+</nav>
+
+<main data-page-node-id="HnnVqJSJycqzekelFxGcX3">
+
+<header class="cover" data-page-node-id="FDs49JzmpGCxzAn8gdsNRX">
+  <div class="eyebrow" data-page-node-id="RiASeoxhnt7qkj54MHhTRH"><i data-page-node-id="Hg5NqMAlaXUdUokmqz6udS"></i>技术实践报告 · 2026-10-28</div>
+  <h1 data-page-node-id="U4jhrsqimDsfuHJRq5Wpci" style="">同声传译模型 - Hy-SimulMT<br data-page-node-id="uo85f6CFtv35sB5WTQt3iF">Apple Silicon 上的实时同传实践</h1>
+  <p class="sub" data-page-node-id="tyuLBgpExDBH3mGYWCDHxG">Hy-SimulMT-30B-A3B 在 Apple Silicon 上的部署、流式改造、<br data-page-node-id="hrBWSNzL6XbAGr27UljdqB">端到端系统构建，以及五轮故障排查的完整记录。</p>
+  <div class="meta" data-page-node-id="KkxjQPrMfrwiF830jd5yFQ">
+    <div data-page-node-id="GMHlP8MoL8KufVm4bvwtZX">硬件 <b data-page-node-id="RIQIyx2MHYcaizaw0ROadq">M2 Max · 64GB</b></div>
+    <div data-page-node-id="XSLbBMcT76IXFpqPriZkTH">系统 <b data-page-node-id="EG5XedzfdIKngkdQSh0a2s">macOS (darwin)</b></div>
+    <div data-page-node-id="VBZkqXuDw7e9wDvtYdwtn7">量化 <b data-page-node-id="E12wGBBqDqjcNQnZPVx0EF">Q4_K_M · 18.39 GiB</b></div>
+    <div data-page-node-id="8hB4CVcHcQMCsR1EDQ7oXo">自研代码 <b data-page-node-id="9ENdzc1PGYl3NIM6gd8EHp">949 + 1036 + 260 行</b></div>
+  </div>
+
+  <div class="kpis" data-page-node-id="sSABB28X3xqkJPkx5a4nu2">
+    <div class="kpi acc" data-page-node-id="QuxwFoQbwpcXniZJDKoEoa"><div class="v" data-page-node-id="mCSI5hpt1Q1vu8DtcEjjCy">3.49<span data-page-node-id="wkViSr4U8gjyBqy8Q0Zv8K">×</span></div><div class="k" data-page-node-id="CRdHAkflPGuHOF9keDM3Mj">Metal 实时倍率</div></div>
+    <div class="kpi" data-page-node-id="V6jDvFLyt3nGRCVwMNLvL4"><div class="v" data-page-node-id="G7bpkO7hQFIupNAo64jOu2">255<span data-page-node-id="uAuXB6hyPlezW5eaS9zyYm">ms</span></div><div class="k" data-page-node-id="b5f3QMTbOesbGAAAoB2t3C">说话 → 字幕</div></div>
+    <div class="kpi" data-page-node-id="fwuT0VeJdyiab8qiw4oQn5"><div class="v" data-page-node-id="Dcm3EJAwAlSWgQkIf0PFFq">1150<span data-page-node-id="cMxweLUc4pRldcMKzjsyHj">ms</span></div><div class="k" data-page-node-id="tyXf72gxhqK12VcqNNafjD">说话 → 出声</div></div>
+    <div class="kpi" data-page-node-id="eirUbM1wW9KNmpgcGhPzK4"><div class="v" data-page-node-id="UCIfzct310my90njF2GB5G">0<span data-page-node-id="fMBxvWRxCfDbUgxkCs6dzI">ms</span></div><div class="k" data-page-node-id="4cRFf5nHbTXrfe2Bs1J1PS">音频自丢（对账后）</div></div>
+  </div>
+</header>
+
+<section id="s0" data-page-node-id="qqoljv6t3Xjyec5chXtEmX">
+  <div class="secno" data-page-node-id="ALt8XEFuHSgejYa0IRdoCt">SUMMARY</div>
+  <h2 data-page-node-id="UzLzvG7FUO0Fk8vOij0TO1">摘要</h2>
+  <p class="lead" data-page-node-id="NMOUpzweFoVaXQt4EqdrMg">这个模型的官方推荐路径在本机跑不起来：vLLM 要 CUDA，<code data-page-node-id="xDRv2cuuNwKyOMwDuxYAZC">llama-server</code> 的 chat 模板缺一个关键标记。但它底层的推理能力完全可用——只要绕开官方那两层封装，直接对着它对音频的假设来喂数据。</p>
+
+  <p data-page-node-id="59MfUQHFW3BHOpC7a80uZV">三件事构成了全篇的主干：</p>
+
+  <p data-page-node-id="P8HAi2O3Gvu0bL84jBBk8k"><strong data-page-node-id="h06ejq0Th4KY4AfIrbFBPZ">一、用同一条推理内核，换掉输入形态。</strong>官方 <code data-page-node-id="WbhMh4WYigYEVowjQ9yq2W">llama-mtmd-cli</code> 一次只能吃一个完整音频文件，每次都重载 18 GB 权重（约 8 秒），实时无从谈起。给它加一个 <code data-page-node-id="zZ1BUN4hpMA2MwiszhFVzF">--stream</code>：音频不从文件来，而是从 stdin 读裸 PCM，每凑满一轮就跑一次官方轮次逻辑。<strong data-page-node-id="UdGblxpEmnLIEdhl3SBOUH">分块 schedule 一个字都不能改</strong>——首轮 1600 ms、之后每轮 800 ms，这是训练时定死的。</p>
+
+  <p data-page-node-id="h9o1qEjzZfYrJug9JoC2ij"><strong data-page-node-id="cCdPOXFfeIybCI0OYJ57DC">二、承认 TTS 是独立的延迟问题。</strong>官方 Qwen3-TTS 音质好、能克隆音色，但 MPS 上 RTF ≈ 1.3，永远追不上说话的人；macOS <code data-page-node-id="1vJTs1ixnt2bvYSAJgzrY3">say</code> 的 RTF 是 0.11，却背着每轮 0.87 秒的进程启动固定开销。实时场景里选后者，是把"能不能用"和"好不好听"分开决策。</p>
+
+  <p data-page-node-id="BjzLC2sdUFCRCrmnFfvdME"><strong data-page-node-id="DdnZXi13bYs4Btfvdn2P6Z">三、真正的难点不在推理，而在音频链路。</strong>全篇最长的一章是故障排查，因为踩的坑几乎全部同构：<em data-page-node-id="s9BTk8Z2dciAbuFYQZWKaY">系统在静默地丢东西，而界面不报错</em>。独占锁没有租约、轮次编号跨会话重号、播放器死等一个永远不来的轮次、模型加载的 8 秒里音频被整段丢弃、尾部不满一块就永不结算——每一个都让程序"看起来在运行"，实际上已经聋了。</p>
+
+  <div class="note" data-page-node-id="5c5QlsH2LqdGL4E1ezdAkA">
+    <span class="lbl" data-page-node-id="8ugOMTzTNAkZcrVWtzGEPD">一句话结论</span>
+    30B MoE 的语音同传在 M2 Max 上完全可以本地实时运行，字幕延迟 255 ms、配音延迟 1150 ms，比专业同传的 2–3 秒更好。代价是：单向、约十分钟一换会话、以及一条必须自己建的、可观测的音频链路。
+  </div>
+</section>
+
+<section id="s0b" data-page-node-id="ysUYruBVR7wqmVHcSFVrkY">
+  <div class="secno" data-page-node-id="tGbow7dEbsuSY8dH3yKwrY">SECTION 01</div>
+  <h2 data-page-node-id="Ic9Ao8cbFxqXroSZW7wPNg">模型介绍：一个为同传而生的语音模型</h2>
+
+  <p class="lead" data-page-node-id="6L8ZUJzTUiwA3HaFavNYaQ">Hy-SimulMT 是腾讯混元于 2026 年 10 月 26 日发布的中英双向实时同传模型，Apache-2.0 开源——本文在它发布两天后开始在本机部署。这一节只交代四件事：它宣称能做到什么、这些数字用什么口径测出来、六个变体差在哪里、官方给了哪几条部署路径。后面每一个工程决策，最终都要落回这四件事。</p>
+
+  <h3 data-page-node-id="zMNWQmTzUSjp6Ay8l84WmZ"><span class="h3n" data-page-node-id="SYyvi3vwKxlVIvuDwNvszk">1.1</span>定位：语音、译文、音色一起交付</h3>
+
+  <p data-page-node-id="GVIbLwW2SZwXmuNzz9sDqo">说话人的音频可以持续输入，模型<strong data-page-node-id="ZZYzxWrrU7goOjQrXYq9Qv">边听边译</strong>，同步给出译文文字与译文语音，并支持<strong data-page-node-id="YvUC4Hh7VicKJUuJe6mgJz">实时音色克隆</strong>——在把一种语言换成另一种语言的同时，尽量保留原说话人的声音特点。面向的场景很明确：会议、演讲、访谈这类不能等你说完再翻译的实时交流。</p>
+
+  <p data-page-node-id="4U1rbg57yGITJwgsrdGPw9">官方仓库交付的不是单个权重文件，而是三件东西，理解这一点对部署很重要——因为"模型跑通了"和"服务跑通了"是两件事：</p>
+
+  <div class="twrap" data-page-node-id="D2CMc1IaJPC60F007p8fG4">
+    <table data-page-node-id="unJCBNfQ5jeG1CAEHvKI8Z">
+      <thead data-page-node-id="SOLHBFktbg9TpYzxvKUyUW"><tr data-page-node-id="LiGGEThFb5Gxhekd65o6t7"><th data-page-node-id="YFPnjBQO1kA1AsGZlBqxz5">交付物</th><th data-page-node-id="ghud0Jc5W1OZGMUpEcxmbs">内容</th><th data-page-node-id="KHox9RwuNUFflN8owhIh6i">与本文的关系</th></tr></thead>
+      <tbody data-page-node-id="fdw56WxMo6Hi9nPMMofIOk">
+        <tr data-page-node-id="7MGySAT96gJsyhLVL7HZsk"><td data-page-node-id="c8XzszShne0mQfl9sJjy0T">模型权重</td><td data-page-node-id="ZdVVnKJI9GRDugHcvlY6g3">30B-A3B 主干 + 音频塔，共 6 个变体（精度 × 输出形态）</td><td data-page-node-id="tH1EPXi0ggyApSrW3AG4uU">本机使用 <b data-page-node-id="Ye2YYr1SUN2tBThym4GhlY">Interleave-GGUF Q4_K_M</b></td></tr>
+        <tr data-page-node-id="VaMAsU2f0Mf8lhXIqZy1Aa"><td data-page-node-id="HroUHTBYXmz97CTn1TeWVR"><b data-page-node-id="GfC0thGPPI9WFSitEJlk2O">SimulInfer</b></td><td data-page-node-id="jHEWZNroHrm98rvWr70jRq">推理服务：网页、音频文件上传、实时 WebSocket，可选 TTS 与音色克隆</td><td data-page-node-id="cxlceCYsd4U986tXTxTAWJ">依赖 Linux + vLLM，本机不可用</td></tr>
+        <tr data-page-node-id="GYJAh4h0AM1qph0GQBg9DK"><td data-page-node-id="Qzx2VDWXPAddcOpDc1u02C"><b data-page-node-id="Ovc2O7gLoyeiVb1DqEt8XB">SimulTrain</b></td><td data-page-node-id="sWbv5NEPZ4LVGgrBwI8V0g">基于已发布 checkpoint 的继续训练工具</td><td data-page-node-id="ML3S8idvfIFGJbRi9ftEjR">本文未涉及</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note" data-page-node-id="6f5dI2fJCgCFDgFHtofpDQ">
+    <span class="lbl" data-page-node-id="M7DgZW53unQl8wAxCGm3iT">一句容易漏读的前提</span>
+    官方 README 明确写着：<b data-page-node-id="BvMogUKRiP4abu9yxuKwzA">语音输出与音色克隆需要另行配置 TTS 服务</b>。也就是说这个模型本身只负责"听懂并译出来"，<b data-page-node-id="CJi94mjZgQTev832DSFMcf">出声是另一个组件的事</b>。这不是实现细节，而是本机部署里第二重的工程量——第六章整章都在处理它。
+  </div>
+
+  <h3 data-page-node-id="dSpbbHve6YVlXwdZjl6sYa"><span class="h3n" data-page-node-id="ACmBcttusVt3x1Mhhpd6FG">1.2</span>官方评测：它被放在什么位置</h3>
+
+  <p data-page-node-id="nr3msasEJwk7XhmYpMKaz0">同传的难点不在于把语言 A 变成语言 B，而在于<strong data-page-node-id="93dje5rJz39qOGQw22SAWC">话还没说完就得开始翻译</strong>。多等一点，语义判断更准，但听众等待更久；早开口，则对增量理解和译文组织提出更高要求。官方所有评测都围绕这条 <strong data-page-node-id="ThyWPnJswG137CmsNGj7P9">质量与延迟的交换曲线</strong>展开。</p>
+
+  <p data-page-node-id="nnaPgh6fNcQRYGCNce8jWT"><strong data-page-node-id="QWeJR5ycK1My9nE7vOV49l">长音频（RealSI）。</strong>StreamLAAL 约 <strong data-page-node-id="Xe8OhxDtLm3vGNO8eKSjqC">3 秒</strong>，是全部参评系统里最低的值；GEMBA 翻译质量评分高于所对比的开源模型，并超过五个商业 API 中的四个。"低延迟不必以明显牺牲质量为代价"，是这份评测想说明的结论。</p>
+
+  <p data-page-node-id="KP8QQJwBnGIPyBoAKbfXya"><strong data-page-node-id="mh5pfpwh5RCGXOvnO6VSZb">短音频。</strong>FLEURS、CoVoST2、ACL6060、RealSI-Sentence 四个公开测试集上的得分如下（分数越高越好，<b data-page-node-id="XwFP5fTdVaQ1bMRl2XXK4U">加粗为该列最高分</b>，浅底行为本模型）：</p>
+
+  <div class="twrap tight" data-page-node-id="fPaXS1TTbiUzo2e7VRFFLq">
+    <table data-page-node-id="kV3BOxahnrQprRlL4DZNTn">
+      <thead data-page-node-id="QhBhlRXHmxvLJYrDhISNsS"><tr data-page-node-id="9bcEGT13ylh0T1HD5128gn"><th data-page-node-id="OGDcudBy5LAiJzHKJJK6ow">系统</th><th data-page-node-id="CqnpB7uKa8aGhFuIKtxawJ">FLEURS</th><th data-page-node-id="sFnFeeIFAGiz34pUSjDXCe">CoVoST2</th><th data-page-node-id="tVVgatSVDOKu9FpKuQB88d">ACL6060</th><th data-page-node-id="WxgTQ725AfzA3uGQVdhTWX">RealSI-Sent.</th></tr></thead>
+      <tbody data-page-node-id="xvLPacykTGkrzVsYk1BULt">
+        <tr class="hl" data-page-node-id="vdeBf7BrjuNHnEY238K4pq"><td data-page-node-id="zeGvxNWHLK8zPXX7lbNNIl">Hy-SimulMT</td><td class="n" data-page-node-id="H5P45BMUSbDMYT2lKHShA9">90.3</td><td class="n" data-page-node-id="4hsPFCA1vCjAqwv7fD9Rcp">75.5</td><td class="n" data-page-node-id="32buS55aMYpGGr3321Mzlf">81.2</td><td class="n" data-page-node-id="Z8VyjRgMGMn8uboNL53pNk"><b data-page-node-id="EvmBcXrJbbnWxmIYaPQMNf">84.7</b></td></tr>
+        <tr data-page-node-id="ImS106dlYYqsXyMxrM6rmh"><td data-page-node-id="FiLY7LlZLIfHBwsqGKI2yl">Gemini3.5-LiveTranslate</td><td class="n" data-page-node-id="dbfZaycfoTOD1D72EJyoa5"><b data-page-node-id="iC8sFBj7wepVEPTz80dBIx">92.4</b></td><td class="n" data-page-node-id="BxgFUgRfAv4WIYn3NQDDf9">74.4</td><td class="n" data-page-node-id="NDXWjVMMJ3yHyj370SSWqL"><b data-page-node-id="gfHaxAvAYVjAmj82ARU4AC">82.6</b></td><td class="n" data-page-node-id="JLUwj5IMP6Az7736mYHIkW">82.2</td></tr>
+        <tr data-page-node-id="wz2vpDBi0j0e6SQyLFrdkn"><td data-page-node-id="U7aUtxKsM5TWh1Fj3xGcvC">Qwen3.8-LiveTranslate</td><td class="n" data-page-node-id="B4IYcFqwXO2AvXXRyV1Vle">88.4</td><td class="n" data-page-node-id="sDbFAFAjttLHgnrG4EYWEC"><b data-page-node-id="uSuNXZ7KXlun6sFWcr8EpF">82.1</b></td><td class="n" data-page-node-id="jPsQOBbgQPMJZQSJDAYRGo">80.5</td><td class="n" data-page-node-id="FNWdK4I35wJbcSUFOY3P7V">84.4</td></tr>
+        <tr data-page-node-id="L290PCRU165SI9hFhmMVUz"><td data-page-node-id="iqcGQ0bwVAffJqJjO3IMal">Confucius4 R2T2 → T3PO</td><td class="n" data-page-node-id="WuiZp997zfFxpclOo7Jmuy">89.4</td><td class="n" data-page-node-id="wEuB6lfQLQLClnXddi2KjV">76.8</td><td class="n" data-page-node-id="3tVe6OwNRDzVh7m89KO8x7">76.1</td><td class="n" data-page-node-id="2iRoxidsvqr15lFr5vzaWh">77.7</td></tr>
+        <tr data-page-node-id="DglD8HIEDVE56szi4O72KV"><td data-page-node-id="O2rW7NMpyilxjFdgQ6agQ9">Seed-LiveInterpret2.0</td><td class="n" data-page-node-id="tQiboLMwWKiNnAhrAe9h1S">85.8</td><td class="n" data-page-node-id="kNfKO4xCglyCUD1lHMDBJn">67.7</td><td class="n" data-page-node-id="gthHGEOJnjFQokeZYPruC3">74.8</td><td class="n" data-page-node-id="gGFvv99aIGzoBROyqqveuA">80.0</td></tr>
+        <tr data-page-node-id="ZQ5Kg3kdVoNyH3hKIZEyDr"><td data-page-node-id="LfyGVepsAzVrA3pLzNsAxF">SimulS2ST-Omni</td><td class="n" data-page-node-id="rn8TqHD5FDFa8yDp8MLZvB">78.6</td><td class="n" data-page-node-id="t5YxRFm3K0iGzZWmoMLq66">66.6</td><td class="n" data-page-node-id="2E5fQ2KtyFUZbTfGuolmEX">73.1</td><td class="n" data-page-node-id="c3VAInyF1v5zWMczHS5Nvt">77.4</td></tr>
+        <tr data-page-node-id="ck0OFid8Y5OlX9jZgKXzn1"><td data-page-node-id="R4jiD3LuDepWQkdBqWhJ0t">GPT-Realtime-Translate</td><td class="n" data-page-node-id="XXCm9mQO8QXhSXWxpp7bkQ">77.7</td><td class="n" data-page-node-id="iXrlnGswR9pZ6NFwnOj85n">50.8</td><td class="n" data-page-node-id="7GJMnD2s9F7MOZz3LWksw1">76.4</td><td class="n" data-page-node-id="fcYKMrOQt1JCmU17fgtFRM">76.7</td></tr>
+        <tr data-page-node-id="CRcPQAmGN6TGleOkzx548O"><td data-page-node-id="oeS9QgV2hxFMSpMfgbamhq">XunFei-Simult-Interpretation</td><td class="n" data-page-node-id="EvIjfjWPHlpUxalOJUQXEa">73.4</td><td class="n" data-page-node-id="aJhTZWhKzxfI5KqlG4ctYD">57.0</td><td class="n" data-page-node-id="f0Amkqp3qv64OuPiPROdzn">57.5</td><td class="n" data-page-node-id="SfK1TOJam1s7CWUv7y3tVD">70.9</td></tr>
+        <tr data-page-node-id="vaTrbZ1nLOKJ17A0pN2TdS"><td data-page-node-id="6aegOstVYLRQty2iw31UtN">SeamlessStreaming</td><td class="n" data-page-node-id="AouFGH1zGipNvpSvYLg1b9">72.8</td><td class="n" data-page-node-id="QSZjuwyNKHmU2iFfxNr5u8">60.9</td><td class="n" data-page-node-id="CW49SC1rriyyGMHR40DD4I">49.8</td><td class="n" data-page-node-id="OmWWfU7ghuiWAY8N6VgLG4">56.9</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p data-page-node-id="sSYfJzMuNrBNinUBJacR7f">读这张表要留意一件事：<strong data-page-node-id="nGJcnqHdRMdhmtXim8CR7Y">CoVoST2 是它唯一的明显短板</strong>——75.5 分，比 Qwen3.8 的 82.1 低了 6.6 分，也是四列里唯一没有进入前二的列。官方文案说"三个测试集高于表中其他开源模型"，指的是 FLEURS、ACL6060 和 RealSI-Sentence，并不包括 CoVoST2。这类"结论覆盖到哪一列"的边界，比结论本身更值得记住。</p>
+
+  <p data-page-node-id="DMc28l4w9jTCxsIHHD5Bhg"><strong data-page-node-id="lU7z6bLKVdqxa3iT6m0BRa">与专业译员同场对照。</strong>官方另采集了 2026 年 9 月之后出现在互联网上的 18 段中英文音频（每段约 6 分钟，覆盖演讲、访谈、会议，横跨软件与 AI、医学、制造与能源、自然科学、农业与食品、商务管理、法律、教育、文化文旅、体育生活十个领域），并邀请六位有多年同传实战经验的译员分别处理——其中三位持 CATTI 一级口译证书、三位持二级，每个等级取三人中的最高分与模型对比。</p>
+
+  <div class="note good" data-page-node-id="OrQMdVkE8wtGnhlLjPo3AM">
+    <span class="lbl" data-page-node-id="cKvTMaSHtHPnTCc3C5g58C">官方的结论与它的适用范围</span>
+    在这场小范围能力定位测评中，模型<b data-page-node-id="EgW00EdTekZkilqAgxkBI1">翻译质量达到人类同传专家水平，而速度往往更快（时延更低）</b>。但该结论仅适用于本次样本、参测译员与评测设置，<b data-page-node-id="HP7vUbn4S6lb4CHb6S9qgr">不代表对播报音质、音色相似度等维度的综合评价</b>。
+  </div>
+
+  <div class="note warn" data-page-node-id="0BHRBKkEQzYwGzb6z5pMM2">
+    <span class="lbl" data-page-node-id="vKT2FY4I9EYnszcB2cuEco">口径提醒：3 秒和 255 毫秒不是一回事</span>
+    <b data-page-node-id="80jza5Ymfvy1MsHr8FUPib">StreamLAAL 衡量的是"译文相对源语的滞后程度"</b>，它把"等待更多上下文"的时间也算在里面，官方也明确说明它<b data-page-node-id="GUtljLV4bbtyZ0KjuqPLjH">不等同于首次开口延迟</b>。本文第九章测到的 255 ms 是另一件事：一个 800 ms 音频块送进模型后，首个 token 多久出来。<b data-page-node-id="UXow7npiTVBl5ArYoSC50i">两者不可直接比较</b>——不要拿 3 秒去减 255 毫秒。
+  </div>
+
+  <h3 data-page-node-id="yMlYgjKWkXSyEJxGhskRcP"><span class="h3n" data-page-node-id="BQtlvFWzitD0H4r5zQWT61">1.3</span>六个变体：为什么这里只能用 Interleave-GGUF</h3>
+
+  <p data-page-node-id="qn5bpKfXN5Sw7fQUz8iDpF">同一个 30B-A3B 主干被发布了六次，差别落在<strong data-page-node-id="lTGQlNBqCQORsKiftmJMbV">精度</strong>与<strong data-page-node-id="QcZCRdZoD4fI2CG8CmCuY0">输出形态</strong>两个维度上，刚好构成一张 3 × 2 的表。这两个维度里，第二个对本机的选择起决定作用。下表所有变体共享同一个前缀 <code data-page-node-id="GuesOkNpMnfWaERtDyEuiG">Hy-SimulMT-30B-A3B</code>，这里只写后缀：</p>
+
+  <div class="twrap" data-page-node-id="MQmRcfbMaiDUswkY4NYcCP">
+    <table data-page-node-id="Et9qeJJkI1TRAQwPoZSAMI">
+      <thead data-page-node-id="lfXTRRXQ56Y20Gyr7rVqRq"><tr data-page-node-id="cuBIWPDisun2Uiy8sKjq0e"><th data-page-node-id="OSueFQ3NecMk3ReOeHk8Zm">精度</th><th data-page-node-id="74PyPbCW6Keo1hQlIOftFk">仅译文</th><th data-page-node-id="TI6GAMCKxEPNfW6d0CGFlA">原文 + 译文</th><th data-page-node-id="nJn4esO2hzCqWhsu8QjHqy">可用推理栈</th></tr></thead>
+      <tbody data-page-node-id="tHGdpTZ6Ics7YGye8BUAqS">
+        <tr data-page-node-id="7QxBPNmIZA1javcATNuQW9"><td class="n" data-page-node-id="SGUM9AZwy2Gs7zvaDcRHFt">BF16</td><td data-page-node-id="KbIzm7ptjcc5SBLGJ6FkSd">（基础版）</td><td data-page-node-id="betG5zflZmX4KHFN5suC9D">-Interleave</td><td data-page-node-id="FVhhijHCWtcGpu7QbUac6z">vLLM / SGLang-Omni<br data-page-node-id="MxpuL1PRyIqoEvkVFXLmpV"><span class="tag t-mid" data-page-node-id="PE8fmxhDds5a2fkQntC49W">≈ 57 GiB</span></td></tr>
+        <tr data-page-node-id="lcRtxHDnk9SC9MA8l0eijh"><td class="n" data-page-node-id="QezyImPPBE1nvGeYyhUgsn">FP8</td><td data-page-node-id="Q3PqSUSgSP2HmFVJHYpWKK">-FP8</td><td data-page-node-id="E67Hp7B8NHc58SzmCnu9Ki">-Interleave-FP8</td><td data-page-node-id="dpnYKss0G85B9Q2XQwybot">vLLM <span class="tag t-mid" data-page-node-id="x2adly0i6LV32Nv4WckFl8">需 CUDA</span></td></tr>
+        <tr data-page-node-id="as5ee6pKpQApMXtZbbZlKM"><td class="n" data-page-node-id="a20QwLj7bSFzfFb25gwNDu">GGUF</td><td data-page-node-id="IAKTWyxkez0M18HQEYHKSB">-GGUF</td><td data-page-node-id="E1bsOsZBTmJ5dfixQvJzNm"><b data-page-node-id="azCMCkpZn2eHTgQE8aBxrt">-Interleave-GGUF</b><br data-page-node-id="7uHADp0fzM3ET1fy0gbgDC"><span class="tag t-ok" data-page-node-id="X92xe28DtXBjrX1v9625JS">本文选用</span></td><td data-page-node-id="2CuLG8n2rWv6KkKRF6LYGn">llama.cpp<br data-page-node-id="jE6tMlrqDoDhA7uRkzYGLn"><span class="tag t-mid" data-page-node-id="eKum0MDNiHxiDtCxJBfGz8">Q4_K_M · 18.39 GiB</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p data-page-node-id="K10JL4dl4BlOgpYfpe3rFg">也就是说，"能在 Mac 上跑"只在第三行，"能拿到原文"只在第三列，两者的交集<strong data-page-node-id="3GdzKE4cFhhAbmswGd4glQ">只有一个变体</strong>：<code data-page-node-id="aU9kpiUFTp2slIWDigKmNx">Hy-SimulMT-30B-A3B-Interleave-GGUF</code>，本文用的是它的 Q4_K_M 量化（18.39 GiB）。前两行在本机没有讨论价值——BF16 与 FP8 都是 CUDA 栈的游戏。</p>
+
+  <p data-page-node-id="CCuNFcp7x0JIzQJgyqfwki">"拿到原文"不是锦上添花，而是<strong data-page-node-id="NtGdMSk4kMXS0hxGgQGA3Z">排查能力的来源</strong>。Interleave 版每次推理会同时返回源文分支与译文分支；当某一轮输出为空时，只有源文字段能回答"是模型没听出来，还是翻译环节丢了"。本文第十章那条反复出现的关键日志——<code data-page-node-id="uAuttQRSPYxQs5cQpIiA8e">空轮：源文也为空，这段音频模型什么都没听出来</code>——就是靠这个字段把排查方向从"翻译质量"直接拨回到"音频链路"的。用 tgt_only 版，这个判断做不出来。</p>
+
+  <p data-page-node-id="ihir9QCaecRbnejO1RpoF6">反过来，精度维度是被硬件逼的：BF16 的 57 GiB 只能落在 H200 这一档机器上，Q4_K_M 的 18.39 GiB 才塞得进一台 64 GB 统一内存的笔记本——而且还要给 KV cache、macOS 本身和 TTS 留出余量（第九章会看到，内存恰是这套方案真正的天花板）。</p>
+
+  <h3 data-page-node-id="BQBL8dNgKcE0mJmSeTeDiY"><span class="h3n" data-page-node-id="Y9ykTe6pJPiWk3oSwnmNp5">1.4</span>三条官方推理路径，没有一条写着 macOS</h3>
+
+  <p data-page-node-id="ja1NPEN7AGLveAUyI2Y47q">官方给了三条部署路径，另有一个训练工具。它们的能力和前提差异很大，但有一个共同点：<strong data-page-node-id="HQqSFp2mEBs0IF84bdvvAX">全部假设 Linux + NVIDIA</strong>。</p>
+
+  <div class="twrap" data-page-node-id="O6LU4S1Xv0TF8kAKvCNSq0">
+    <table data-page-node-id="72OUqVZ2JXJbbhzLLCzqd8">
+      <thead data-page-node-id="J19mFunBwTsaQEmadyYvbg"><tr data-page-node-id="5fqtRbgO0eni6ZcE6SBXBI"><th data-page-node-id="7EOAzpT8ibhIcO2fYFYWct">路径</th><th data-page-node-id="0iQajTzJ0xOYEnDCk1Rgtn">形态与能力</th><th data-page-node-id="ixgbCsltwEGIMNU9GU5lZK">硬前提</th></tr></thead>
+      <tbody data-page-node-id="iOOKMh4qEFWYTcLzUdAHLR">
+        <tr data-page-node-id="pitcBq7bKYlYkBShgWsBGO"><td data-page-node-id="VUxuEIqtF2kkoDehIjFUfW"><b data-page-node-id="m1j0mwRoNeywcG90LoFmnR">SimulInfer</b> + vLLM</td><td data-page-node-id="WAPFtf4HqNRut4XEId8Q1T">网页、文件上传、实时 WebSocket，含 VAD 与断句恢复策略；支持 TTS 与音色克隆</td><td data-page-node-id="2AYXU2Ohez4q3GvriRo51Q">Linux、Python 3.12+、vLLM ≥ 0.31（需支持 <code data-page-node-id="HxgakndV0IYgTfw0bjiZ7e">HYV3ForCausalLM</code>）、NVIDIA GPU</td></tr>
+        <tr data-page-node-id="HXbBblDsDDluM80HW2BxTV"><td data-page-node-id="SvzaBlDqM9540SJFtFo3fZ"><b data-page-node-id="jDywPftRBf41wTBqOPAW6F">llama.cpp</b><br data-page-node-id="wSrkrCghzk7F2QYrraR93p"><span class="tag t-acc" data-page-node-id="WCo7xt0cVFAt696XuBL3nU">PR #31198</span></td><td data-page-node-id="pdsyuzk0ILU8HD1oBVZ8Sc">GGUF 推理；当前<b data-page-node-id="Bi4ZHBMPfww6E7T9tW1nxx">仅 <code data-page-node-id="pFOhVRz4Tzq9VqDIxY4Okt">llama-mtmd-cli</code> 支持</b>，<code data-page-node-id="KOZokSB3Y42YzC7WTearBg">llama-server</code> 尚待适配</td><td data-page-node-id="ZeKCp5rQE5kLlpxpbi5Hqr">该 PR 的分支；macOS 可编译</td></tr>
+        <tr data-page-node-id="D3v3KAFPwzxyhzsRMIzFBO"><td data-page-node-id="UTEeFZs3tp5VfnZL368orb"><b data-page-node-id="fAkOopJfpbEWEmYesTrV0d">SGLang-Omni</b></td><td data-page-node-id="FL6eoWOp4Fw3Efa8IBrQnz">OpenAI 兼容 HTTP + 实时 WebSocket；<b data-page-node-id="niaCwVvrWd92pRLvtnGlMM">只返回译文文本</b>，不含语音与克隆</td><td data-page-node-id="gCTa2b7X4FadSgAxyLmJE6">Linux + CUDA；BF16 约 57 GiB，单张 H200</td></tr>
+        <tr data-page-node-id="zelF6RXDnaIiMUbOPF5Zw5"><td data-page-node-id="W29cXHuOevZmnYxBVAHMlQ"><b data-page-node-id="FF0y9kpfSg7xr5MYbLJsin">SimulTrain</b></td><td data-page-node-id="tDowIDYyZ1DamACz1qHDUy">基于已发布 checkpoint 继续训练，需独立 Python 环境</td><td data-page-node-id="4Gkel3mVkcvWTDhmgH8hnn">训练级 GPU</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p data-page-node-id="WKJQTZ7gspvkbwBJ4lWD9G">三个细节值得记住，它们决定了本文后续的形态：</p>
+
+  <ul data-page-node-id="h1c7GrXR53nPKAfyBJxiGx">
+    <li data-page-node-id="RmBwi7AojkwsMyMJDxN3e9"><strong data-page-node-id="Z5rG5CSi3Uri77BUcTkc37">只有 llama.cpp 这条路沾得上 Apple Silicon。</strong>vLLM 和 SGLang-Omni 都是 CUDA 栈，本机连启动的机会都没有。</li>
+    <li data-page-node-id="ExqL4yPTybCvEHoovp98I2"><strong data-page-node-id="b9yDuCFqOAqtePT1Gyv7wd">而 llama.cpp 的支持只到"单文件推理"。</strong>PR 明确写着当前仅 <code data-page-node-id="d7rZhNsjKipSb5ZQ1PBFai">llama-mtmd-cli</code> 可用，<code data-page-node-id="nWIkEK8u1T8Db8ifEieXyu">llama-server</code> 待后续适配。这意味着官方那条"起个服务、推 WebSocket"的用法，在 GGUF 上并不存在——必须自己造。</li>
+    <li data-page-node-id="EWyJMrI5Oa2trw1sdZ2q3D"><strong data-page-node-id="qYynGoAXnXOVlWOPKogSar">SGLang-Omni 那条路反而提供了反证。</strong>官方注明该集成"未复现 SimulInfer 的 VAD 与恢复策略"——说明 VAD 与断句恢复并不在模型内部，而是服务层的工程。这也解释了本文为什么必须自己写一套音频链路（第八章）。</li>
+  </ul>
+
+  <p data-page-node-id="UUmkzrBLDRN3e2N3fchFGk">所以本机的处境可以一句话概括：<strong data-page-node-id="eE3OXZehrCQkth4Hre8zGG">能跑的路径功能不全，功能全的路径跑不了</strong>。剩下的事，就是把"能跑"的那条补到"功能全"。这是第二章的起点。</p>
+</section>
+
+<section id="s1" data-page-node-id="2pdefDfRx5JfA0AQ2TdHzj">
+  <div class="secno" data-page-node-id="dXlz0FtkTGiwWkqmeK7Xio">SECTION 02</div>
+  <h2 data-page-node-id="aNYlqmyw5fyySOMCgQVMC3">模型解剖：它到底是怎么"听"的</h2>
+
+  <p class="lead" data-page-node-id="wXYa4xzX6DHp1fHRyesGFq">不理解"按轮次喂"这件事，后面所有工程决策都会做错。这个模型不是"给一段录音、还一段翻译"的批处理模型，它的推理过程被训练成了一个固定的节拍。</p>
+
+  <h3 data-page-node-id="r9aoAz83GEjBYCMGUfvhJc"><span class="h3n" data-page-node-id="HlHZGsh5t1AjYXGGQv4VVP">2.1</span>架构与能力边界</h3>
+
+  <div class="twrap" data-page-node-id="ZuBfHG3exvne0mOoGuzf0w">
+    <table data-page-node-id="f0OZwJWQZfMANkz6nXcAS9">
+      <thead data-page-node-id="SX9DFKXMS1aO9SwNfEO1OK"><tr data-page-node-id="kyDHEw9GXOHkNcJP06siA6"><th data-page-node-id="T4MtNnxvUjoKstekXFolFu">维度</th><th data-page-node-id="SePARPxkrj9h3NJgt2LlqF">参数</th><th data-page-node-id="swKiRWKLcW0pSyq4pI5uBC">工程含义</th></tr></thead>
+      <tbody data-page-node-id="QjESOQ4FuQzZdDB7TY9TEv">
+        <tr data-page-node-id="HKalKBJS2BvMkVyVVAgeG9"><td data-page-node-id="zKSbaukf5B6mnTuCyOdQFv">主干</td><td class="n" data-page-node-id="YWRuqRIszrvUD0Agnw6ahF">HYV3 MoE<br data-page-node-id="DbppuCgvyJFwCb76UoGRvV">30B 总参 / 3B 激活</td><td data-page-node-id="FACkbO2OQvnwcGMjrDTT3H">每 token 只走 3B 的专家路径，所以 30B 的模型在消费级硬件上有实时可能</td></tr>
+        <tr data-page-node-id="9ohBwW5Bwd8v5ebqJGgwQ8"><td data-page-node-id="ByLX6RqGiRRsbPUnKnsOnS">音频塔</td><td class="n" data-page-node-id="kdJTxUMXqNBUTawmfxMazZ">Whisper 风格 encoder</td><td data-page-node-id="FBtxL8jLfp5hwJCz6AtAA4">与文本主干打包在同一个 GGUF 里，无需独立 <code data-page-node-id="CEwCB6LnthDo8ihqS6Fqcj">--mmproj</code></td></tr>
+        <tr data-page-node-id="LXLEkUJnBmIreBrFtAzDbK"><td data-page-node-id="OhsjN1tx93GJ3x2TTl0X42">任务</td><td class="n" data-page-node-id="bwik0dJeFMAM4avGBMJGaE">zh↔en 语音到语音同传</td><td data-page-node-id="pewLPPsli9hMFyCHQ5wznH">方向由<b data-page-node-id="VyXsYLXebhGDQDmvI4A7VA">指令语种</b>决定，指令进上下文后不可改</td></tr>
+        <tr data-page-node-id="AHAb2mk5sIoMzmCfF1NbW6"><td data-page-node-id="3BPtHrvY7J0F7XVtB7yAYH">上下文</td><td class="n" data-page-node-id="pyQjjhSIVJar2LTdtHtmhE">KV 96 KB/token</td><td data-page-node-id="crQHRTEysuwC99GpuHyOFh">16K 上下文 ≈ 1.5 GB；每 800 ms 涨一轮，约 9–11 分钟耗尽</td></tr>
+        <tr data-page-node-id="cvvbPsqRp0bGT5NzXbrmfb"><td data-page-node-id="UBlwJTweN9duLn8IkZrTmN">许可</td><td class="n" data-page-node-id="AStDfMiZIGJn8FGjdtD5Zi">Apache-2.0</td><td data-page-node-id="B4Fo0jvrdSx0rJ4eGl1Ih4">可商用，本机部署无授权障碍</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 data-page-node-id="gWpipI3xIu6r5UuVbsWLm8"><span class="h3n" data-page-node-id="W9kxaWvG0s0WEwUOYiXYfv">2.2</span>固定节拍：1600 + 800</h3>
+
+  <p data-page-node-id="MiakeHzwlW8MYAwOeydKZz">模型被训练成一个<strong data-page-node-id="200PeZq6IwZqxhmKHqENgQ">边听边译</strong>的 checkpoint 序列：先听 <code data-page-node-id="AQHzdhG6bk4aNIJ9oMLhcv">1600 ms</code> 建立上下文，之后每 <code data-page-node-id="pIZUBjVK56xTRQd32qM1aG">800 ms</code> 生成一次译文增量。每一轮结束都必须先把当前能确定的部分译出来，再去听下一段。这解释了它为什么能做到 255 ms 的字幕延迟——它压根不等你说完。</p>
+
+  <figure data-page-node-id="T5uPuoNRH53TnPVm3vCGGZ">
+    <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="轮次流水线时间轴" data-page-node-id="WORI6cUJJo89Ge9if10K9L">
+      <!-- 时间轴基线 -->
+      <line x1="96" y1="44" x2="716" y2="44" stroke="#D8D8D2" stroke-width="1" data-page-node-id="Xda95iUAYN0lFZkyH1W5k1"></line>
+      <text x="96" y="30" font-family="ui-monospace,monospace" font-size="10" fill="#96969F" data-page-node-id="XbfugdmhNB6iSD2dWf46QO">时间 →</text>
+      <text x="640" y="30" font-family="ui-monospace,monospace" font-size="10" fill="#96969F" data-page-node-id="q1VWMoxwPECXJK5PDEDPOe">音频流</text>
+
+      <!-- 音频块 -->
+      <rect x="96" y="38" width="120" height="12" fill="#2A3BE8" data-page-node-id="7DmPhcHkltInc2zpfLKuIk"></rect>
+      <rect x="216" y="38" width="60" height="12" fill="#8C97F2" data-page-node-id="A4cffSXsguEAMsv9bdUWy0"></rect>
+      <rect x="276" y="38" width="60" height="12" fill="#A9B2F5" data-page-node-id="MEyamwpqBI16PY2FuhIpQK"></rect>
+      <rect x="336" y="38" width="60" height="12" fill="#C3C9F8" data-page-node-id="t888zpQP385u8MUJw7Z4ZG"></rect>
+      <rect x="396" y="38" width="60" height="12" fill="#D6DAFA" data-page-node-id="Wusyr8GiwKd8yWjN8OOQhz"></rect>
+      <rect x="456" y="38" width="60" height="12" fill="#E3E6FC" data-page-node-id="PcNQX5qR2DpDfQ8hJ8zefY"></rect>
+
+      <text x="96" y="68" font-family="ui-monospace,monospace" font-size="10.5" fill="#2A3BE8" data-page-node-id="vXJ1Mgf0RWhIZKMiL5jGRs">1600ms</text>
+      <text x="219" y="68" font-family="ui-monospace,monospace" font-size="10.5" fill="#6B6B76" data-page-node-id="kkhyGayOyJe8aqDjsyJb9d">800</text>
+      <text x="279" y="68" font-family="ui-monospace,monospace" font-size="10.5" fill="#6B6B76" data-page-node-id="AHSaBZzafFHPygegXZlZsv">800</text>
+      <text x="339" y="68" font-family="ui-monospace,monospace" font-size="10.5" fill="#6B6B76" data-page-node-id="YwC0WWpt7eBz9iWjc8K0ij">800</text>
+      <text x="399" y="68" font-family="ui-monospace,monospace" font-size="10.5" fill="#6B6B76" data-page-node-id="nn0ifvsQvG8vwKR0DiTw9Q">800</text>
+      <text x="459" y="68" font-family="ui-monospace,monospace" font-size="10.5" fill="#6B6B76" data-page-node-id="4NFICKYGD7vV5iUX4SxUqL">800</text>
+
+      <!-- 箭头：块 → 推理 -->
+      <line x1="156" y1="52" x2="156" y2="96" stroke="#C4C4BE" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="zy15UBAlrsfk1FtOrATIJa"></line>
+      <line x1="246" y1="52" x2="246" y2="128" stroke="#C4C4BE" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="ftcx8gIFTYAkpWtPbtJiuH"></line>
+      <line x1="306" y1="52" x2="306" y2="160" stroke="#C4C4BE" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="2uQtKkoZDbUhTiiFOedr1X"></line>
+      <line x1="366" y1="52" x2="366" y2="192" stroke="#C4C4BE" stroke-width="1" stroke-dasharray="3 3" data-page-node-id="YE92rRNATAFggviToZ0BTE"></line>
+
+      <!-- 推理与产出 -->
+      <rect x="96" y="96" width="176" height="24" fill="#E7F2EE" stroke="#0F6B4F" stroke-width="1" data-page-node-id="Ne7XNw6brfRcDwSXbaACbC"></rect>
+      <text x="106" y="112" font-family="-apple-system,sans-serif" font-size="10.5" fill="#0F6B4F" data-page-node-id="B6WTw4BE0vcMUwdo8Slmgz">encode + decode → 输出第 0 轮</text>
+
+      <rect x="216" y="128" width="150" height="24" fill="#F3F3EF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="G5Ao5n3obyrblsh4TfXWWL"></rect>
+      <text x="226" y="144" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" data-page-node-id="Fj1gp2478IiPSb3z6rolUK">生成第 1 轮</text>
+
+      <rect x="276" y="160" width="150" height="24" fill="#F3F3EF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="EoSTZBlkxYm8QpFl9T2sjD"></rect>
+      <text x="286" y="176" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" data-page-node-id="ECBq0veh2OZflkkPPuObmT">生成第 2 轮</text>
+
+      <rect x="336" y="192" width="150" height="24" fill="#F3F3EF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="eGWx9JJ82PhxPKtZRUEZgG"></rect>
+      <text x="346" y="208" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" data-page-node-id="BXAK6K8lmpGhb5eHAaqvcd">生成第 3 轮</text>
+
+      <!-- 每轮的角色标记 -->
+      <text x="96" y="246" font-family="ui-monospace,monospace" font-size="10" fill="#6B6B76" data-page-node-id="7MXAJ5SUPJxfMayQbfsCTG">每轮前置：</text>
+      <rect x="172" y="234" width="392" height="18" fill="#FFFFFF" stroke="#E2E2DC" stroke-width="1" data-page-node-id="uRBRgwMRdBLMhguNW1FVer"></rect>
+      <text x="180" y="247" font-family="ui-monospace,monospace" font-size="9" fill="#3D3D46" data-page-node-id="08Pd7Z6TnF9RLILnjD23KT">&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;/think&gt;&lt;｜hy_place▁holder▁no▁790｜&gt;</text>
+      <text x="172" y="270" font-family="-apple-system,sans-serif" font-size="10.5" fill="#C2410C" data-page-node-id="5uxuaJAx3bBJSD6l07VyrD">↑ 缺了这个分支标记，源文分支会退化，输出变成重复片段</text>
+      <text x="96" y="290" font-family="-apple-system,sans-serif" font-size="10.5" fill="#96969F" data-page-node-id="a3woMt0b0IrNnGdqRMEAd9">首轮之后每轮还要补一个 &lt;｜hy_User｜&gt;，让每段音频成为独立 user message</text>
+    </svg>
+    <figcaption data-page-node-id="dFdoO8IMSama3g7GCkjcAw"><b data-page-node-id="O7YUgPbEuFJWRm44jyFKMF">图 1</b>　轮次流水线。首块 1600 ms 走完整 encode + decode，之后每 800 ms 一轮只做增量生成。分块边界是训练时定死的，自己改成 3.2 秒一刀会让模型退化。</figcaption>
+  </figure>
+
+  <h3 data-page-node-id="nqHBOl27qg30LA8mhPFgKw"><span class="h3n" data-page-node-id="aicijAGHVGv5ErB1rAQh2v">2.3</span>特殊 token：三个必须精确的地方</h3>
+
+  <p data-page-node-id="8DsfjoScYcfh9h0ZEEYssO">这个模型的自定义 token 不是装饰，它们直接决定输出是否可用。</p>
+
+  <div class="twrap" data-page-node-id="HEmTTs4gJ0yUUWZZaroOBX">
+    <table data-page-node-id="wcSp8D1v23TXPKwHFbQpnC">
+      <thead data-page-node-id="uWdD4EC0roz33r1m26F6q3"><tr data-page-node-id="Jhy1FjxtbBBXBjidZmVFV6"><th data-page-node-id="0B9R7y3Y7eV8Wy5xrFSBCL">Token</th><th data-page-node-id="9aJEvkB9tw7BfP6rEA1o1p">位置</th><th data-page-node-id="zoCPR2Qm7oAloEByYCvXfp">作用与后果</th></tr></thead>
+      <tbody data-page-node-id="O7apUkbQaDEayc4pvT5BjF">
+        <tr data-page-node-id="EXwDfPl0jgfw4o44G0qgD3"><td class="n" data-page-node-id="ADTechjR1WfkpZmPyyHB5e"><code data-page-node-id="omhqDOGw6eJQq99TK7MUKp">&lt;｜hy_begin▁of▁sentence｜&gt;</code></td><td data-page-node-id="eEAdDmPmuZthBtyZgqVpdC">序列开头</td><td data-page-node-id="C8JtCBUIExa8L8kiHA9MpN">BOS。缺了会走不寻常的起始路径。</td></tr>
+        <tr data-page-node-id="uOPPDyu68ywyvz3SYA6dOw"><td class="n" data-page-node-id="afaFkEzUlMWdfuNFBLyLS1"><code data-page-node-id="elwtjwQcmA7BSzDjIFgy0i">&lt;｜reasoning_mode｜&gt;</code><br data-page-node-id="H5H4SCHMTgDPawbgz3E5vH"><code data-page-node-id="hGsDjJf8JUS0qAqEQEtRxs">reasoning_effort:no_think</code></td><td data-page-node-id="mDGOeZ5uLwuhxC0uFdWVYg">BOS 之后</td><td data-page-node-id="nCEDwxBwtmVkGbG4cGt4EV">关掉思维链。同传要的是即时输出，让模型"想一想"就等于加几百毫秒延迟。</td></tr>
+        <tr data-page-node-id="lLIbr6QC1nQ4TpskB6RmYW"><td class="n" data-page-node-id="dSZ27yZCEwoN859lG6uzwH"><code data-page-node-id="0uOMvifsBiavODZr41LCsN">&lt;｜hy_User｜&gt;</code></td><td data-page-node-id="8sRGVDXFnCAMEgd6QNtAta">指令前、每轮音频前</td><td data-page-node-id="XgYEFAsXsQDFO3KXIJBa2B">user 角色。首轮在 prefix 里给，之后每轮重发。</td></tr>
+        <tr data-page-node-id="jVWkLeR7qn0Sbex92XX3QH"><td class="n" data-page-node-id="YOo8UC45fUldyaQXtqCRm5"><code data-page-node-id="ENAQumBLalQEPPDswwWsqp">&lt;__media__&gt;</code></td><td data-page-node-id="HkG6arFBj4QeTvtwyTjsFC">指令之后</td><td data-page-node-id="9256h2pE6Po3uNNriwhTSW">音频占位符，真正的 embedding 在这里被塞进序列。</td></tr>
+        <tr data-page-node-id="Jmzoi3uaYPgABq4GeMVwY7"><td class="n" data-page-node-id="iunarP1RIzDxi4dLDTTVoH"><code data-page-node-id="OPXXBfIVCDwPS2QtPhyEUW">&lt;｜hy_place▁holder▁no▁790｜&gt;</code></td><td data-page-node-id="bEjcgAwbCqBHUw5zVZUP2C">助手回合开头</td><td data-page-node-id="fz64mwAMpBJVe9ohllog23"><b data-page-node-id="iPcHDeiQGfKusob3IwERlA">Interleave 版必需</b>。branch 标记，告诉模型接下来走 src→tgt 双分支。缺了源文分支会退化。</td></tr>
+        <tr data-page-node-id="g07Vs6FHMiszlTTKIVPcsK"><td class="n" data-page-node-id="j9eKvA9qIPCqQZpW3iM3vB"><code data-page-node-id="sl9EDVrnogwKC73ZhMVgin">&lt;｜hy_place▁holder▁no▁791｜&gt;</code></td><td data-page-node-id="56RhygpIAZxGbOqVQGROKp">输出中间</td><td data-page-node-id="gHSidJnCgOXDck1LpppgfI">src / tgt 分隔符。解码时遇到它就从"源文"切到"译文"，是两个字段的唯一分界。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn" data-page-node-id="X5i6BdYzpwQSx6ZkP9Mj5k">
+    <span class="lbl" data-page-node-id="j2djpAOt1LTXpUhBIZmjPk">两个变体的差别是反的</span>
+    <b data-page-node-id="bsZDa2ixUx6PHH7lFPMfxG">Interleave（src_tgt）版必须带 790 分支标记；tgt_only 版必须去掉它</b>，否则返回空轮次。这两条正好相反，拿错一个就是"要么重复、要么空白"。
+  </div>
+
+  <h3 data-page-node-id="2lTuyxuoz6hbH3bqy5fKVK"><span class="h3n" data-page-node-id="oLIPve1BfTZ9rHJZpGNMCH">2.4</span>为什么"按轮次"这个约束是好事</h3>
+
+  <p data-page-node-id="TPGyLcrGN8NZF5PHAgQfMD">乍看这是个限制：你不能自己决定切块粒度。但它带来两个正好被工程利用的性质。</p>
+
+  <p data-page-node-id="8HbmMcXCfixxxyfaP0GCdu"><strong data-page-node-id="bQxT8U7GjQtaWkmWSAAZAr">第一，天然背压。</strong>既然每轮必须吃满 800 ms 才能进推理，那输入侧就不可能无限超前。上游只需要保证"按实时速率送"，模型自己会形成节拍，永远跑不到说话人前面。</p>
+
+  <p data-page-node-id="qRU68GA1flLAG0ZoRHjY4G"><strong data-page-node-id="VVGdlP7coBjOyGtQCtK0Kq">第二，延迟可预测。</strong>单轮生成实测 115–235 ms，稳定在一个很窄的区间。这意味着端到端延迟基本等于"块大小 + 生成时间"，是个可以算出来的常数，而不是需要反复试的玄学。</p>
+</section>
+
+<section id="s2" data-page-node-id="jqjH7dn9zTC2eUlctnBV0Q">
+  <div class="secno" data-page-node-id="bvGtrBp3UczWbDWCPdGBHJ">SECTION 03</div>
+  <h2 data-page-node-id="bKS7LvXm2o4h4lM4KLijak">部署路径的抉择</h2>
+
+  <p class="lead" data-page-node-id="uAyezvuGXak8Fljao9qcjQ">官方给了三条路，前两条在 macOS 上都断掉，但断的方式不同——一条是硬性不可用，一条是"能跑但结果是错的"。后者更危险。</p>
+
+  <figure data-page-node-id="XW5GRp74ZdGEcg740peAji">
+    <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三条部署路径的可行性" data-page-node-id="j4FfkoLWwcBRoIDO9FFjCw">
+      <!-- 起点 -->
+      <rect x="16" y="126" width="104" height="42" fill="#FCFCFA" stroke="#17171B" stroke-width="1.2" data-page-node-id="58epKKeJaeZrWwu1AZgwY9"></rect>
+      <text x="68" y="143" font-family="-apple-system,sans-serif" font-size="11" fill="#17171B" text-anchor="middle" data-page-node-id="HTDQK1ngfJG0JGR050DWyW">Hy-SimulMT</text>
+      <text x="68" y="158" font-family="-apple-system,sans-serif" font-size="11" fill="#17171B" text-anchor="middle" data-page-node-id="siwSGZxK9FThBiYIGw2x8X">在 M2 Max 上</text>
+
+      <!-- 分支线 -->
+      <path d="M120 147 L152 147 L152 56 L184 56" fill="none" stroke="#C4C4BE" stroke-width="1" data-page-node-id="Nct0HXzTDzSIETKQPVaE7Q"></path>
+      <path d="M120 147 L152 147 L152 160 L184 160" fill="none" stroke="#C4C4BE" stroke-width="1" data-page-node-id="uR7OjL0SvAzdpp8c10XiNO"></path>
+      <path d="M120 147 L152 147 L152 250 L184 250" fill="none" stroke="#C4C4BE" stroke-width="1" data-page-node-id="LgX8vn4p19v5RJ0VNEUId3"></path>
+
+      <!-- 路 1：vLLM -->
+      <rect x="184" y="34" width="150" height="44" fill="#FFFFFF" stroke="#E2E2DC" stroke-width="1" data-page-node-id="0AF5i6MOUaugjO3lCNkou3"></rect>
+      <text x="194" y="51" font-family="ui-monospace,monospace" font-size="10.5" fill="#3D3D46" data-page-node-id="f1DJEEwEMZW7yaej6ueqUx">vLLM / vLLM-Omni</text>
+      <text x="194" y="67" font-family="-apple-system,sans-serif" font-size="10" fill="#96969F" data-page-node-id="JYpfikbTRbp8Gi8QduM8Fc">官方主推路径</text>
+      <path d="M334 56 L366 56" fill="none" stroke="#C4C4BE" stroke-width="1" marker-end="url(#ar)" data-page-node-id="8QtWQLSMOecsQ0GsLICDR6"></path>
+      <rect x="366" y="34" width="376" height="44" fill="#FBEDE6" stroke="#C2410C" stroke-width="1" data-page-node-id="P9yezGI4tWY88LIHXSOFWt"></rect>
+      <text x="378" y="53" font-family="-apple-system,sans-serif" font-size="11.5" fill="#C2410C" font-weight="600" data-page-node-id="AwKnG56uHAPdgDJA56Spky">硬性不可用</text>
+      <text x="378" y="69" font-family="-apple-system,sans-serif" font-size="10.5" fill="#8A3A1C" data-page-node-id="mS1122uyYRjjZve6fYsQjT">需要 NVIDIA CUDA + 专用 kernel，Apple Silicon 无对应后端</text>
+
+      <!-- 路 2：llama-server -->
+      <rect x="184" y="138" width="150" height="44" fill="#FFFFFF" stroke="#E2E2DC" stroke-width="1" data-page-node-id="GxPG8ZBURoexHqCbJk2AD6"></rect>
+      <text x="194" y="155" font-family="ui-monospace,monospace" font-size="10.5" fill="#3D3D46" data-page-node-id="DF7VkdlRNXuRClt4NNsTjU">llama-server</text>
+      <text x="194" y="171" font-family="-apple-system,sans-serif" font-size="10" fill="#96969F" data-page-node-id="QjFfJhF6oHY103njR8e0Z6">SimulInfer Web UI</text>
+      <path d="M334 160 L366 160" fill="none" stroke="#C4C4BE" stroke-width="1" marker-end="url(#ar)" data-page-node-id="qxzY2T1MVEdZM7Y7gaeFLC"></path>
+      <rect x="366" y="132" width="376" height="58" fill="#FBEDE6" stroke="#C2410C" stroke-width="1" data-page-node-id="KP3YOJXJd4aZTeHA7lcs8n"></rect>
+      <text x="378" y="151" font-family="-apple-system,sans-serif" font-size="11.5" fill="#C2410C" font-weight="600" data-page-node-id="TiUpbuHzPgdOQ4zujr0DQ0">能跑，但结果是错的</text>
+      <text x="378" y="167" font-family="-apple-system,sans-serif" font-size="10.5" fill="#8A3A1C" data-page-node-id="8vtBRalrzAaXlIOgsbjcHt">chat 模板漏发分支标记 790 → 源文分支退化 → 输出变成重复片段</text>
+      <text x="378" y="182" font-family="ui-monospace,monospace" font-size="9.5" fill="#8A3A1C" data-page-node-id="25Q798wkfDbx2oY7FBLUjw">"下一季度我们将重点提升下一季度我们将重点提升"</text>
+
+      <!-- 路 3：mtmd-cli -->
+      <rect x="184" y="228" width="150" height="44" fill="#EBEDFD" stroke="#2A3BE8" stroke-width="1.2" data-page-node-id="U96bsuNBi5IBuduoqbWySO"></rect>
+      <text x="194" y="245" font-family="ui-monospace,monospace" font-size="10.5" fill="#2A3BE8" data-page-node-id="0LOjv6GTvlMRQl1daANz4A">llama-mtmd-cli</text>
+      <text x="194" y="261" font-family="-apple-system,sans-serif" font-size="10" fill="#5A63D8" data-page-node-id="GmoJyM6XR3MMIGVE3zMTXE">PR #31198 分支</text>
+      <path d="M334 250 L366 250" fill="none" stroke="#2A3BE8" stroke-width="1" marker-end="url(#ar2)" data-page-node-id="jA6BCdRrURwL6tN1Tr8C9r"></path>
+      <rect x="366" y="228" width="376" height="44" fill="#E7F2EE" stroke="#0F6B4F" stroke-width="1.2" data-page-node-id="ONkm0lmLaRprEHHK3KNKzP"></rect>
+      <text x="378" y="247" font-family="-apple-system,sans-serif" font-size="11.5" fill="#0F6B4F" font-weight="600" data-page-node-id="ouWR72gevLUKRUzn11H8kL">唯一可行：直接控制 prompt 与轮次循环</text>
+      <text x="378" y="263" font-family="-apple-system,sans-serif" font-size="10.5" fill="#0C5741" data-page-node-id="H0BpluaIz6N5YXbqcgd28D">Metal 3.49× 实时 / 纯 CPU 1.33×，可再加 --stream 改造</text>
+
+      <defs data-page-node-id="AKdLwtQoFfKMbJTQsuGfAj">
+        <marker id="ar" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto" data-page-node-id="3YJEW3YKW6CfFOqre2MOyH">
+          <path d="M0 0 L6 3 L0 6 z" fill="#C4C4BE" data-page-node-id="siED3rmMYibaXgszyVqeDX"></path>
+        </marker>
+        <marker id="ar2" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto" data-page-node-id="xoLAwQJ1GzzfsmzvmEAiZ3">
+          <path d="M0 0 L6 3 L0 6 z" fill="#2A3BE8" data-page-node-id="GOeugJQ0mAy9EhQiCf1KJC"></path>
+        </marker>
+      </defs>
+    </svg>
+    <figcaption data-page-node-id="fdSCXX4JdF24xcjodD74z4"><b data-page-node-id="zkBvzwJWLOq1bghay50RMd">图 2</b>　三条路径的实际结局。注意中间那条：它不是报错，而是<b data-page-node-id="GQEDtNCKlsae56drlRBISC">返回看似合理的错误输出</b>——这类失败比崩溃危险得多。</figcaption>
+  </figure>
+
+  <h3 data-page-node-id="1XBiIPjwb0cs2dlaeYQcGl"><span class="h3n" data-page-node-id="4cEZcBngdjCerVYiDcpoA3">3.1</span>为什么必须绕开 chat 模板</h3>
+
+  <p data-page-node-id="05Ax1uBJeZVdQd7t61kJDF"><code data-page-node-id="U88NKQ7VSi5zxa5OxqeRQM">llama-server</code> 走 OpenAI 消息协议，助手回合只发 <code data-page-node-id="A7eceDhHT4LDmmhKOty4qp">&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;/think&gt;</code>，漏掉了 <code data-page-node-id="DQwyg4RXkPihHpIuqkP2y0">790</code> 分支标记。更根本的是，模板体系里<strong data-page-node-id="9FZ3iN59BQdOf39rZBqio8">没有"每轮重放助手头"这个概念</strong>——它是一个"一次对话若干条消息"的抽象，而这个模型要的是"一次对话、几十轮、每轮都要重新宣告我是助手、我要走 src→tgt 分支"。</p>
+
+  <p data-page-node-id="nSTGRtLNarsOL0eQO2BrRa">硬套的结果不是报错，而是<strong data-page-node-id="QXZeHqh5VGIkmh8XGbrG5b">源文分支塌陷</strong>：模型只能走 tgt 分支，输出退化成把译文重复拼接。第一次看到 <code data-page-node-id="l3tOiCuW8L8kjMmoGSQjgv">"下一季度我们将重点提升下一季度我们将重点提升"</code> 这种输出时，很容易误以为是量化损失或者上下文污染，实际上是模板少了一个 token。</p>
+
+  <h3 data-page-node-id="fhKYcvDUPGJG8jgFiEA0zN"><span class="h3n" data-page-node-id="4U6SBsEB9HElpmPS2WH3TK">3.2</span>顺带解决的一个疑问：单文件 GGUF 的投影器</h3>
+
+  <p data-page-node-id="GDWsN9hyqAkHzi3zEs0nWx">这批 GGUF 是<b data-page-node-id="SRlN1bzTYO7nHZ5oiLw6TY">单文件打包</b>：音频塔的权重直接并在文本模型里。官方 <code data-page-node-id="QXKIESniGB9VINA2LteCzv">llama-mtmd-cli</code> 会检测到并自动 fallback（日志里那句 <code data-page-node-id="juiJrHC1CfQXHChWvZmRvM">--mmproj not given, using the projector packaged in ...</code>），但 <code data-page-node-id="CVORijUZa2fZc5f41uPl1R">llama-server</code> 只判断 <code data-page-node-id="Dn8Om9cWuwAld4U082QGdb">params.mmproj.path</code> 是否非空。</p>
+
+  <p data-page-node-id="HHF6tiUZV70Ws0JaJ2h9py">于是有个取巧但有效的做法：<strong data-page-node-id="3P5TubAw8NZ9qO2WeR1bEX">把 <code data-page-node-id="sFsGt9B7lpSu5JUXFscvsw">--mmproj</code> 指向模型自己</strong>。</p>
+
+  <pre data-lang="bash" data-page-node-id="sm3dOUFoAptC2gMJcJBmhL">llama-server -m models/Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf \
+             --mmproj models/Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf \
+             -c 4096 -ngl 99 --port 8899</pre>
+
+  <p data-page-node-id="afy8OUmXsn19CL1HQebE1c">之后 <code data-page-node-id="tITaHpDDah83LEypHEmWh1">/props</code> 里 <code data-page-node-id="6BAwbp8dGWg1VKzyYDIkcW">modalities.audio</code> 变成 <code data-page-node-id="M6Pj0JKZxduvGDhrqH9yLX">true</code>，整段音频一次跑通（14.16 s 音频 1.76 s，约 <b data-page-node-id="l7fRRJHoghlxVsmdPFtIKG">8×</b> 实时）。这条路验证了"模型在 Metal 上确实能跑"，但因为 2.1 的模板问题，它不能用来做同传——最终只是作为一条<b data-page-node-id="BOGN90KFKXGHthdpVTPh1G">性能上界</b>的参照系。</p>
+</section>
+
+<section id="s3" data-page-node-id="fOJlSLOtvBvh6hdSBsa1e0">
+  <div class="secno" data-page-node-id="dW19DmXLZo0J7bmdA2vR35">SECTION 04</div>
+  <h2 data-page-node-id="46d2JNCicGOxabg7iXcZSD">环境与模型获取</h2>
+
+  <h3 data-page-node-id="x3nznjdYmk5RmIOyGjHzno"><span class="h3n" data-page-node-id="TJgD2vMVisC7G2CZbYsKUM">4.1</span>下载通道：镜像不是备选，是唯一路</h3>
+
+  <p data-page-node-id="IkEhbUyKyhymDlcZsBSVLq">这是第一个"跟技术无关但卡住一切"的问题。HuggingFace 镜像在这台机器上<strong data-page-node-id="cHDYbOu6LLs4tJjicRHeEZ">完全不通</strong>——不是慢，是 HTTP 000（连接直接超时）。换成 ModelScope 直连后稳定在 10.3 MB/s。</p>
+
+  <pre data-lang="bash" data-page-node-id="61NgGlL2LvwAahvZWlFEr5"><span class="c" data-page-node-id="7xJiZOGaPUAGYfybOBWTRF"># HF 镜像：实测 http=000，全链路超时，不要浪费时间重试</span>
+curl -I https://hf-mirror.com/...
+
+<span class="c" data-page-node-id="MECduBrVFzfEhDl4E3o8YH"># ModelScope 直连：10.3 MB/s，18.39 GiB 约 30 分钟</span>
+curl -L -o Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf \
+  https://www.modelscope.cn/models/Tencent-Hunyuan/Hy-SimulMT-30B-A3B/resolve/master/\
+Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf</pre>
+
+  <div class="twrap" data-page-node-id="DFLkvdS476FabuDxDGnUxq">
+    <table data-page-node-id="aTnGnQ7GnY69WHG3IxfGCr">
+      <thead data-page-node-id="DfxWmUCodQH3ayxnJj2SYT"><tr data-page-node-id="tAUV9Djj1kIQlEo13CEJAC"><th data-page-node-id="t6CQo0m501BOfR9LwhFV1T">文件</th><th data-page-node-id="VhUvjgzDD13EsEJw4bzqfv">大小</th><th data-page-node-id="KhCyLunYMwPjzLFKXYVK8j">说明</th></tr></thead>
+      <tbody data-page-node-id="LkI3KIJN1dz2ciHf8mZCe5">
+        <tr data-page-node-id="VHr8st9yIlfwoHtCIXFy4m"><td class="n" data-page-node-id="NkYf6iBh9a840wBrV0awSY">Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf</td><td class="n" data-page-node-id="XlRngUbf2qxjARbdehrc3q">19,746,809,728 B<br data-page-node-id="5Eb7fPxPB48wpuI60OFPMw">18.39 GiB</td><td data-page-node-id="GqJulZ1Va8rdvtIAlu8Jrj">主干 + 音频塔单文件。Q4_K_M 是实时性与质量的平衡点</td></tr>
+        <tr data-page-node-id="KOjOvvFCfc4RmwyXiFg8z2"><td class="n" data-page-node-id="kOohN1Cry1G4z8GjExGbnI">Qwen3-TTS-12Hz-0.6B-Base</td><td class="n" data-page-node-id="lYKndVsCZC6oHKmcYvSFDC">2.3 GiB</td><td data-page-node-id="RtsS8xcIcP4F22tyWK1CW9">可选 TTS，音色克隆用</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 data-page-node-id="6MSBAoR3NtU8gcBG0DNlCH"><span class="h3n" data-page-node-id="GqZSc38pfTtGB26fgncRDF">4.2</span>编译：只要一个 target</h3>
+
+  <p data-page-node-id="mdNtMD2iUnBR7J6P2jU5oT">不需要编整个 llama.cpp。只要 <code data-page-node-id="MilglwEfELqkUsPIqIftHq">llama-mtmd-cli</code>，48 秒零错误。</p>
+
+  <pre data-lang="bash" data-page-node-id="RiqgjF0xWeM74ZPq4Ip7nA">git clone -b hyv3-speech https://github.com/lihy715/llama.cpp.Hyv3Speech.git llama.cpp-hyv3
+<span class="c" data-page-node-id="E5DdB626PuHhQecQPUyzde"># commit e41ca42 —— 这个 PR 至今未合入 master</span>
+cd llama.cpp-hyv3
+
+cmake -B build -DGGML_METAL=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release --target llama-mtmd-cli -j 10</pre>
+
+  <div class="note" data-page-node-id="BvyGkqbN3TsF8pf3JVjzzJ">
+    <span class="lbl" data-page-node-id="Gwp6fTdA7ZPCgiHO282zmH">为什么必须用这个分支</span>
+    master 上没有任何一个工具能加载这批 GGUF 的音频塔。PR #31198（作者 lihy715）不仅加了 <code data-page-node-id="Fzy6L4EO8hPMRXQQtJazAI">mtmd_audio_stream_*</code> 那套流式接口，还改了音频 tower 的实现细节。换分支不是选择，是前提。
+  </div>
+
+  <h3 data-page-node-id="HM4xsgYdykabpC8PrhyZq7"><span class="h3n" data-page-node-id="5MMMKIfIqosYIeCLFSlD7q">4.3</span>一个提前排除的风险</h3>
+
+  <p data-page-node-id="ZcRKtA1GYRnPsGbxnGiKsC">动手前担心过 <code data-page-node-id="wzCGJ5vmIVAkEqe2xs6Wl8">GGML_OP_CONV_2D</code> 在 Metal 上的实现约束：它要求 F32 输入输出 + F16/F32 权重，而音频塔第一层就是 conv2d。查过之后这条风险自然消解——<b data-page-node-id="GQ1FRAPkWTR5c6ACmnG3Tc">投影器张量本来就全是 F32，条件天然满足</b>。这类"看起来是坑其实不是"的验证，比事后 debug 便宜得多。</p>
+</section>
+
+<section id="s4" data-page-node-id="O8GsaOiLFyFhpWHT9eRQ6l">
+  <div class="secno" data-page-node-id="QcVVkvj94aMXaTIFiNBoma">SECTION 05</div>
+  <h2 data-page-node-id="36SWRSTpChUcbgNHKszKbX">离线跑通：先证明它能译</h2>
+
+  <p class="lead" data-page-node-id="FEZN8Wnt20AC8wm95leOE3">在动任何代码之前，先用官方工具跑一次完整音频。这一步的价值不是"跑通了"，而是拿到一条干净的基线命令，后面所有改造都以它为准。</p>
+
+  <pre data-lang="bash" data-page-node-id="2pih4lL3d93MFxzDwoWkic">./llama.cpp-hyv3/build/bin/llama-mtmd-cli \
+  -m models/Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf \
+  --audio audio/test_en.wav \
+  --temp 0 \
+  -p '&lt;｜hy_begin▁of▁sentence｜&gt;&lt;｜reasoning_mode｜&gt;reasoning_effort:no_think&lt;｜hy_User｜&gt;
+      请完成下面的同声传译任务，将陆续收到的语音翻译成中文。请结合上下文边听边译，
+      输出能够确定的译文，不必等待整句结束。&lt;__media__&gt;&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;/think&gt;
+      &lt;｜hy_place▁holder▁no▁790｜&gt;'</pre>
+
+  <p data-page-node-id="hTAk9eH6aOm5PEXcgFMSBY">真实输出（14.16 s 英文音频）：</p>
+
+  <pre data-lang="text" data-page-node-id="GzSdAwsHmqrdMLclz7zZbh">Good morning, everyone.&lt;｜hy_place▁holder▁no▁791｜&gt;大家早上好。
+Thank you for joining today's meeting. We are&lt;｜hy_place▁holder▁no▁791｜&gt;感谢大家参加今天的会议。
+going to discuss the new&lt;｜hy_place▁holder▁no▁791｜&gt;我们将讨论
+product roadmap for the next quarter. Our&lt;｜hy_place▁holder▁no▁791｜&gt;下一季度的新产品路线图。
+<span class="c" data-page-node-id="yvUXUW8cZz6XA5ymgAtMwA">...</span>
+run_turn_stream: 105 tokens, 9/17 turns emitted, 14.16 s audio in 4.06 s (3.49x realtime)</pre>
+
+  <h3 data-page-node-id="VMDUHU6ocHjmGzgEYsyvVy"><span class="h3n" data-page-node-id="1c9i2xxMh1GS3KFiUm4iWk">5.1</span>两条基线的意义</h3>
+
+  <div class="bars" data-page-node-id="ETLwyHpE2w64CBtP9Ffnl5">
+    <div class="bar-row" data-page-node-id="q79USPsZ5JgoIeF1SWpA1Y">
+      <div class="bl" data-page-node-id="JuPQRGvqmVHECh7h0ZjmDC">Metal（ngl=auto）</div>
+      <div class="bar-track" data-page-node-id="X6DVLO7X7AiHBgQ8LC9rFj"><div class="bar-fill a" style="width:87.3%" data-page-node-id="Hab4KzQQ8Y8Tkl3Ti9o2y8"></div></div>
+      <div class="bv" data-page-node-id="NLpxGj7Bt651dnGcLTAzBk">3.49× · 4.06s</div>
+    </div>
+    <div class="bar-row" data-page-node-id="cVxky6Jfc15pec23LdJasa">
+      <div class="bl" data-page-node-id="Fql5DRC7uVyHMNnz6Aonb6">纯 CPU（-ngl 0）</div>
+      <div class="bar-track" data-page-node-id="MlY2WNsJgMFyF9vsD6XtoB"><div class="bar-fill" style="width:33.3%" data-page-node-id="bHWDhG91SSd8xoFC1IXAoQ"></div></div>
+      <div class="bv" data-page-node-id="LoiIHBMXdxSQpmzdyFOVUz">1.33× · 10.68s</div>
+    </div>
+    <div class="bar-row" data-page-node-id="0uUeWpSeSrOb88rb7HLKj4">
+      <div class="bl" data-page-node-id="RTaTxnDLnPhpUs7dLgcDMb">llama-server 整段</div>
+      <div class="bar-track" data-page-node-id="DRXmkV36IU6KyKjEo6Df8g"><div class="bar-fill g" style="width:100%" data-page-node-id="LcDMQHbClGUA50wgvvCGQJ"></div></div>
+      <div class="bv" data-page-node-id="jPJEX2NnP1a25VMboySkVE">≈8× · 1.76s</div>
+    </div>
+  </div>
+
+  <p data-page-node-id="4XN3F8gfQvNqGnjK0ZcS6u">几个值得注意的点：</p>
+
+  <ul data-page-node-id="I0qDpUbCWt9zNKI1txN7Zd">
+    <li data-page-node-id="Ev4WwvVhbdH9zXjLcdimrj"><strong data-page-node-id="B434xnrZVmPVfzsQF2BdYW">GPU 比 CPU 快 2.6 倍</strong>，而且 CPU 那条 1.33× 与 PR 作者上报的 1.40× 吻合——这是一次便宜的外部交叉验证，说明测量方法没跑偏。</li>
+    <li data-page-node-id="noICb2mKc1zpmV0F7XttO4"><strong data-page-node-id="rF8UrEvZB2zbUf1CvejDAy">轮数不同不代表质量不同</strong>：Metal 出 9 轮、CPU 出 14 轮，是浮点后端差异导致切轮粒度不同，译文内容一致。</li>
+    <li data-page-node-id="keXZQ9bvCDjPsYKI94YD7b"><strong data-page-node-id="zttEU5XK9VNAsuEtGHdaVu">1.33× 是"能听"的下限</strong>。纯 CPU 能跑，但余量太薄——系统稍有负载就会掉到 1× 以下，而一旦低于 1× 就意味着延迟会无限累积。</li>
+  </ul>
+
+  <h3 data-page-node-id="8qBCxPmnTYLsNPj818yZLW"><span class="h3n" data-page-node-id="F5hmxQAYv6swBtMnLS482i">5.2</span>两个不影响结果但会误导人的告警</h3>
+
+  <div class="twrap" data-page-node-id="JdSSC4ATNhPWR41s0UDJvr">
+    <table data-page-node-id="L6NNBedY1RPPGQCCkRHyXf">
+      <thead data-page-node-id="kO9Na8gkMo3mNKHHoCBvwD"><tr data-page-node-id="0EOPGk3KaL9ksxAoMNHR5k"><th data-page-node-id="M3F1101GTWTXda51SbJQzA">日志</th><th data-page-node-id="mtRrg6YQcZGhCdF7zHMvMt">要不要管</th><th data-page-node-id="C3txvax4ewLh1Fjg7XHGNK">原因</th></tr></thead>
+      <tbody data-page-node-id="VF5f49LkQqq0dT4V73Wd5p">
+        <tr data-page-node-id="X6zADFj32qjVfUQGuDBiy6"><td class="n" data-page-node-id="9njxqFWm5obG5UqdiNTGvG">special_eos_id is not in special_eog_ids</td><td data-page-node-id="KyG4MmCljRa5VxEZlCDFOI"><span class="tag t-mid" data-page-node-id="STTiHNIGr248UuDX65S7aX">忽略</span></td><td data-page-node-id="NfpmmlMQuAKvAmeGGPz8Q7">tokenizer 配置告警。整段与流式两种模式下输出都验证过，不影响。</td></tr>
+        <tr data-page-node-id="EF67EJaNCYp7ZOdRGhTqt1"><td class="n" data-page-node-id="x15w9EfxtgqvI1SrThlcFd">audio input is in experimental stage</td><td data-page-node-id="HzejTHJnlW74mAFg3YrZNH"><span class="tag t-mid" data-page-node-id="MCght5yjDDBoeZVb0mAbFr">忽略</span></td><td data-page-node-id="pV8USusWO73b53CQPZsZox">llama.cpp 对多模态音频的通用提示。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s5" data-page-node-id="lOZGkAPXYTC6A7qH9efAYH">
+  <div class="secno" data-page-node-id="umUM2lPM1VkGcZIu8aPJ0J">SECTION 06</div>
+  <h2 data-page-node-id="nKjywuNe3muEtTaRaSbHCC">语音合成：音质与实时的交换</h2>
+
+  <p class="lead" data-page-node-id="d07IdxCeDUmuqxCdqmJUYk">同传的"传"如果只停在字幕，体验是不完整的。这里有两个 TTS 方案，结论是——<strong data-page-node-id="ivqngDhGAC4ceEBdcvlI1H">实时的那个不好听，好听的那个不实时</strong>。</p>
+
+  <h3 data-page-node-id="dUJD0c17IcML5YlGXW6Xek"><span class="h3n" data-page-node-id="CmQUcmKvSke7eIxeyG3n4Z">6.1</span>官方方案：Qwen3-TTS-0.6B 在 MPS 上跑通</h3>
+
+  <p data-page-node-id="AInpy6Je6AjujFGTEJDxQw">官方要求用 vLLM-Omni 部署（要 CUDA）。但 <code data-page-node-id="iCWOBN0pSb5CGkNIl3OGld">qwen-tts</code> 这个 pip 包本身<strong data-page-node-id="oLWGSmSWUdQDnhg2hBr2Kr">不依赖 CUDA</strong>，<code data-page-node-id="LT6OFJS9FQWUxUzF5JlCsh">device_map="mps"</code> 就能在 Apple Silicon 上跑。</p>
+
+  <pre data-lang="bash" data-page-node-id="nzEcTrr0MAM3nYnaKLsdbI">uv venv tts-env --python 3.11
+VIRTUAL_ENV=tts-env uv pip install qwen-tts modelscope
+<span class="c" data-page-node-id="uWB8Sd7ZaJ7KoCsP62BuDX"># torch 2.14.1 / transformers 4.57.3（严格 pin，新版会破）</span>
+
+./tts-env/bin/modelscope download --model Qwen/Qwen3-TTS-12Hz-0.6B-Base \
+  --local_dir models/Qwen3-TTS-0.6B-Base</pre>
+
+  <h4 data-page-node-id="2msILyXee7yDPThAa3yQti">关键突破：绕开 sox</h4>
+
+  <p data-page-node-id="KqPCcyJ3lPcOsY7xDOsSzu">这个包默认用 audioread / sox 读参考音频，而系统没装 sox（<code data-page-node-id="p3HrM0XgjBPYPQGjSS6OYs">brew install sox</code> 被沙箱拦）。解法不是装依赖，是<strong data-page-node-id="XKUGYXqWnc8u7C8K3YfNyx">走另一条分支</strong>：<code data-page-node-id="Dt021YFmWolnphj85zFMZ3">_normalize_audio_inputs</code> 接受 <code data-page-node-id="fu3Mvr42GMFvLJQvOCAyfI">(np.ndarray, sr)</code> 元组，走这条就完全跳过 <code data-page-node-id="rNVvp2lBZpELfTmgASxbCh">_load_audio_to_np</code>。</p>
+
+  <pre data-lang="python" data-page-node-id="UtZU3z4CSiBhygIHec3WgJ">import soundfile as sf
+
+wav, sr = sf.read("audio/test_en.wav")
+<span class="c" data-page-node-id="BgeUItZcmGXGnTwrRaYs3w"># 传元组，不传路径 → 不进 audioread / sox 那条路</span>
+prompt = tts.create_voice_clone_prompt((wav.astype("float32"), sr))</pre>
+
+  <h4 data-page-node-id="9M0w2mP2RlXfgy0LwMZdcD">精度选择的实测结论</h4>
+
+  <div class="twrap" data-page-node-id="mVMDaTCTaNA4IvvDC9avpd">
+    <table data-page-node-id="8ERG7ILs5u8z13LhdIGnko">
+      <thead data-page-node-id="WCUdoetKMEPolmu6StviiN"><tr data-page-node-id="S2PfzbfYi10jQihFQaBM3d"><th data-page-node-id="P2h8saN3r42QvOlPOMWLln">精度</th><th data-page-node-id="i4zwhkFyS9EEW6eR0qjt8D">结果</th><th data-page-node-id="TZw4jZRojDEMs4UfhLQy3X">判断</th></tr></thead>
+      <tbody data-page-node-id="zIYG1dEYYJwNig5Fkkzynh">
+        <tr data-page-node-id="5VdQPktvxN5JDpCMeuNy4p"><td class="n" data-page-node-id="kRiK4cqlXb96gEnZUT51Lk">fp16</td><td data-page-node-id="MX5B0kup4pitZS9wEVueRI"><code data-page-node-id="pZ2mHiEehwmU8RwdXGqAsF">probability tensor contains inf/nan</code></td><td data-page-node-id="Px4WMOzSA2EtJXsAXQ5lOd"><span class="tag t-no" data-page-node-id="tOLFhnZcDMrNseI1ImQAVk">不可用</span> logits 溢出</td></tr>
+        <tr data-page-node-id="GLj2zjdI1QCloy34N5Lik3"><td class="n" data-page-node-id="RiOPQ2K7I29Yr3MRk4b6Bh">bf16</td><td data-page-node-id="eDCsosY5B2SujPiYD3pn6q">RTF 1.39（fp32 是 1.38）</td><td data-page-node-id="uEVXnWj9s9taKUmQEt04OE"><span class="tag t-mid" data-page-node-id="ToEuBzGIbgqw77RkmnX1QW">不提速</span> 白折腾</td></tr>
+        <tr data-page-node-id="TGoUH1bvqalUNXSXp7Kw2i"><td class="n" data-page-node-id="Q3HDH1lq98VMWHYdILighE">fp32</td><td data-page-node-id="Y9OF7jDv3wA5BMW4B3JF8M">RTF 1.30–1.38 稳定态</td><td data-page-node-id="RVEguEHofPfayKxhra3XgQ"><span class="tag t-ok" data-page-node-id="d38YqNH5IjtVE48rEaogMX">采用</span> MPS 上的实际上限</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p data-page-node-id="zlmyvY38JsBfNt6BvLqZRD">逐轮实测（fp32 / MPS）：</p>
+
+  <pre data-lang="text" data-page-node-id="84qKnTfDlBGB3QGE8vLIDa">[prompt] 预编码耗时 5.77s
+[turn 1]  1.92s -&gt;  1.28s 音频  RTF=1.50
+[turn 2]  3.29s -&gt;  2.32s 音频  RTF=1.42
+[turn 3]  5.11s -&gt;  3.84s 音频  RTF=1.33
+[turn 4]  5.62s -&gt;  4.32s 音频  RTF=1.30
+[turn 5]  2.23s -&gt;  1.44s 音频  RTF=1.55
+[total] 生成 18.17s / 音频 13.20s  RTF=1.38</pre>
+
+  <h4 data-page-node-id="5011gFxEx17KGhyGB357ic">音色克隆的客观验证</h4>
+
+  <p data-page-node-id="0DO0m8eByACF59I5k6gGCi">"听起来像"不算验证。用 librosa 的 pyin 提基频（F0）：参考音频中位 <b data-page-node-id="gda1j4dbDUBtdTyV3kYjoL">166.8 Hz</b>，合成中文 <b data-page-node-id="yVrs0LczWIAtqRr7AQMdrd">157.9 Hz</b>，<strong data-page-node-id="zrOXmfva1aX7WreBRc4Byr">偏差 5.3%</strong>，P25–P75 区间几乎重叠。这才叫克隆成功。</p>
+
+  <div class="note good" data-page-node-id="M7tTzqkYqIbYDDinLhwL0f">
+    <span class="lbl" data-page-node-id="Fa6V5oMqSwUdcGJxuabyft">一个反直觉的工程收益</span>
+    <code data-page-node-id="JFh8bGPnildQ7X80ahJQzA">create_voice_clone_prompt()</code> 把参考音频<strong data-page-node-id="TvTzueTrsT7IGMwGWw4eos">预编码一次复用</strong>，避免每轮重新编码。这一步省下的是"每句都要听一遍参考音频"的固定成本。
+  </div>
+
+  <h3 data-page-node-id="6pdlR2GUATs4N4EKY8FNAs"><span class="h3n" data-page-node-id="IXuprjFQQatwwJnVRGrxXr">6.2</span>实时方案：macOS say 的固定开销之谜</h3>
+
+  <p data-page-node-id="P8O06dBUpnV67yQaztd0fE">Qwen3-TTS 的 RTF 1.3 意味着合成 1 秒语音要 1.3 秒——<strong data-page-node-id="VmnPCppYaD5SzchsM2ZYXz">它永远追不上说话的人</strong>。换成 <code data-page-node-id="I7x3iBBlmMMjiGuOKKxCJn">say</code>，RTF 降到 0.11，但它有个隐藏成本。</p>
+
+  <div class="case" data-page-node-id="U8fwGAEQZvl53i9SNPzmKn">
+    <div class="case-h" data-page-node-id="qVlQXNLRD2ViTlkx3ZnshO">
+      <span class="id" data-page-node-id="rmLEGFpc2D46V3qG1tI43m">OBS-01</span>
+      <span class="ttl" data-page-node-id="SxY3XLQ7uAIyllsftRqnwU">一个字和一段七秒长文，耗时几乎一样</span>
+      <span class="tm" data-page-node-id="usCEGJoHH15UwGnvH6kpil">0.868s vs 0.916s</span>
+    </div>
+    <div class="case-b" data-page-node-id="9SAiTQEg5D3bUlBGXKRvQN">
+      <p data-page-node-id="jTMSCgVU4YUvySVKDHfony"><span class="sym" data-page-node-id="S0PWXKOLfvqM15B1Kourc3">现象</span>配音延迟稳定在 1.15 秒左右，无论这句话多长。测一个字的文本：0.868 s；测 7.5 秒的文本：0.916 s。</p>
+      <p data-page-node-id="7SO2v4W1EBIGeibuo2UPgF"><span class="sym" data-page-node-id="0YbTt9eKycqYFzlVpUwkT0">解释</span>这 0.87 秒不是合成时间，是<strong data-page-node-id="R36NST3zTr7U8W0QwgsyWq">进程 fork + 语音资源加载</strong>的固定开销。合成本身只占几十毫秒（RTF 0.11）。</p>
+      <p data-page-node-id="IH1FLEVDeJw3oeVL1CAoyF"><span class="sym" data-page-node-id="NuO0gEmkrOh5KPBRltGKjW">对策</span>换 Eloquence 系语音只快 0.16 s，但音质差一档，不值得。真正的解法是<b data-page-node-id="4prPwsFlYIl1epzUFWG2cG">进程内合成</b>（<code data-page-node-id="RdESGLDKqbXaaxGP2jYVRT">AVSpeechSynthesizer</code>），那是另一件事，不在本次范围。所以 1.15 秒就是当前方案的延迟下限，接受它。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="RNvhQFrGIVo2xnZKvxFNsE"><span class="h3n" data-page-node-id="tthBDnb0DZsD8jxHB55Hlv">6.3</span>两个方案的取舍</h3>
+
+  <div class="twrap" data-page-node-id="FnoP2xIx3Aysx1XllPFzgF">
+    <table data-page-node-id="DKnHsWf5teBIBwb9aK4TXD">
+      <thead data-page-node-id="8Jt5jt4FAa2sPAyHAGQDqs"><tr data-page-node-id="GMDCQWgwgYbTXugIPtBtmp"><th data-page-node-id="o7nFR01hJ8m84EE0Ce8rds"></th><th data-page-node-id="aHQFyIZERAIuME1cRhsdKE">Qwen3-TTS-0.6B</th><th data-page-node-id="Lofe6Ma2lGSgOxfHpCfWoX">macOS say</th></tr></thead>
+      <tbody data-page-node-id="e6aZB0PbySIEGL3LGoHBLe">
+        <tr data-page-node-id="DLqqBjIdZRAzz7e95YIbqi"><td data-page-node-id="rxJT4HtDDaLBZNfqG5YIAp">RTF</td><td class="n" data-page-node-id="DMmnummlnennzC1QBO4SMZ">1.30 – 1.38</td><td class="n" data-page-node-id="pQOzLQO7YlKYHeOznymS1t">0.11（+ 0.87s 固定）</td></tr>
+        <tr data-page-node-id="mxfbxfGw9k1Xtz0AGEqnEV"><td data-page-node-id="MrxjkMfRHLdbsrUArBhsNb">实时可用</td><td data-page-node-id="pRXlEa6FkYFU1V367kRoXn"><span class="tag t-no" data-page-node-id="3I5ebCSvhjAqsCETNl5ptF">否</span> 持续落后，越听越迟</td><td data-page-node-id="mASTkW4eWWdjD5AGh9KcAG"><span class="tag t-ok" data-page-node-id="HjHyHAJOhjw2m97EBwDCzy">是</span></td></tr>
+        <tr data-page-node-id="OIb6NHqGZ4ahGsSMt09BxN"><td data-page-node-id="DuQ9o707V7r2PVLnMXNKQJ">音色克隆</td><td data-page-node-id="I0MHmF8pV1UYL9FIMcW1kd"><span class="tag t-ok" data-page-node-id="xFtmsoCDHcVoAs7HeTQvAi">支持</span> F0 偏差 5.3%</td><td data-page-node-id="JLhjsPPKVgUO5Aitn41Ssp"><span class="tag t-no" data-page-node-id="Erau5C0Ml1lQnOdcFWGnNc">不支持</span> 固定音色</td></tr>
+        <tr data-page-node-id="YhwOFYcyVj9zc0ArbljWyb"><td data-page-node-id="BC1GVtppvmxOTXd4DgxXAu">内存</td><td data-page-node-id="kvUdA9bE7RqtogxLs9aMs5">约 2.3 GiB 常驻</td><td data-page-node-id="ULvaFblh2LbclEdLZE02V2">无常驻</td></tr>
+        <tr data-page-node-id="7vo5ylePppUQTiVC34hqkC"><td data-page-node-id="HwVJGLuah6IoOR9bF8bA3b">适用</td><td data-page-node-id="v6C9QG9Kb9lVvb8PpU1VbQ">事后听、离线配音、录音转译</td><td data-page-node-id="YeZJT70ubxIzgPSOyhgSfX"><b data-page-node-id="5s1bXFkC6En6N2UtGC3AjZ">实时同传</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p data-page-node-id="UmRHvJOWqkOtAi75DX9T1x">所以工程上是<b data-page-node-id="BjMVoEXDXtYP93SJgZcDH9">两套并存</b>：<code data-page-node-id="2WZSx9C6JoSY5zbyBeztVE">./tts.sh</code> 走离线全链路（音色克隆 + 拼接导出），<code data-page-node-id="pBN0QUwOs8GEVHc1shDVCd">./live.sh</code> 走实时链路（<code data-page-node-id="AfDFYeJJIpTWsLA3Q49kMo">say</code>）。<code data-page-node-id="0SBB0Olcb5446UpDfc3ydW">./live.sh --qwen</code> 保留了切换能力，但文档里明确标注"只适合事后听"。</p>
+</section>
+
+<section id="s6" data-page-node-id="H27euz8woWRygoawUIBnmJ">
+  <div class="secno" data-page-node-id="zbGT2nYLXdpnv38CdXz2ra">SECTION 07</div>
+  <h2 data-page-node-id="3x1B16BrqqIK6Cb1aqZW7G">实时化的三个突破</h2>
+
+  <p class="lead" data-page-node-id="VU1laia0zx9gLV0mUn0JvN">从"能译一段录音"到"能跟着你说话译"，中间有三个必须依次解决的问题，顺序不能变。</p>
+
+  <h3 data-page-node-id="vf3MiK5Q2xWgJgmg8DiCnF"><span class="h3n" data-page-node-id="u3kOky6g7UDsNnUU9kevTx">7.1</span>突破一：让工具接受"音频从流里来"</h3>
+
+  <p data-page-node-id="kFNaHDEEyRFO5vIYo5vuUO">官方 <code data-page-node-id="XEFrEK4jR7klDirCfHtLCr">llama-mtmd-cli</code> 的输入是 <code data-page-node-id="dyXHs1MD4xmT586X4tFKf0">--audio &lt;file&gt;</code>。每次调用都要重新加载 18 GB 权重（约 8 秒）——实时无从谈起。而它内部的 <code data-page-node-id="c7E66DUc4tEews2vJaFSt8">run_turn_stream</code> 函数其实<b data-page-node-id="CSjm48VC5wUz042AGtNWgK">已经实现了完整的轮次循环</b>，只是音频从文件里读。</p>
+
+  <p data-page-node-id="F6Ugx0YD0kZ3wp7Xt0VjXu">所以改造的思路不是重写，是<b data-page-node-id="G4lGZczU2Ptf3gJcAOpGnJ">换掉数据源</b>：新增 <code data-page-node-id="yE2B2Zlhn7lbJoeWHMTflU">--stream</code>，音频从 stdin 读裸 PCM16LE 单声道 16 kHz，其余逻辑一行不动。</p>
+
+  <pre data-lang="diff" data-page-node-id="s40mX6fiODDRzH9wFCD4pK">+ static bool g_stream_stdin = false;
++ static int  g_stream_first = 1600;   // 首轮音频毫秒数
++ static int  g_stream_step  = 800;    // 之后每轮毫秒数
++
++ static int run_turn_stream_stdin(mtmd_cli_context &amp; ctx, ...) {
++     <span class="c" data-page-node-id="ZtGD9IAvtQ2iafJujEiN7e">// 与 run_turn_stream 完全相同的轮次逻辑，只把 fname 换成 stdin</span>
++ }</pre>
+
+  <p data-page-node-id="X9F3sHF22yXNjJtvZNPU6F">规模：<code data-page-node-id="PNZwCzt5oCkULjjsz9PlUT">tools/mtmd/mtmd-cli.cpp | 260 ++++++++++++++</code>，净增 260 行，没有改动任何既有函数。</p>
+
+  <h4 data-page-node-id="H4ebqf8xnhNDSz7wVOxFGc">核心循环</h4>
+
+  <pre data-lang="cpp" data-page-node-id="JJWCE4penUcQfC9JytjJbB">while (!g_is_interrupted) {
+    <span class="c" data-page-node-id="LuSE1mw19Dh0HXQymv241Z">// 本轮要吃的样本数：首轮 1600ms，之后 800ms</span>
+    const size_t want = (size_t) rate * (first ? first_ms : step_ms) / 1000;
+
+    <span class="c" data-page-node-id="O3gGhqmXUDfkb0zYAPhhtm">// 阻塞读，凑不满不进推理 —— 这就是节拍器</span>
+    while (pcm.size() &lt; want &amp;&amp; !eof) {
+        int16_t buf[4096];
+        size_t nmax = std::min&lt;size_t&gt;(want - pcm.size(), 2048);
+        size_t got  = fread(buf, sizeof(int16_t), nmax, stdin);
+        if (got == 0) { eof = true; break; }
+        for (size_t i = 0; i &lt; got; i++)
+            pcm.push_back((float) buf[i] / 32768.0f);
+    }
+
+    <span class="c" data-page-node-id="V1BbercqLznbCtTBUYWZlN">// 每段音频是独立 user message，第二论起要补角色 token</span>
+    if (turn &gt; 0) decode_tokens({ t_user });
+
+    <span class="c" data-page-node-id="BU0CaPYAVr5tPixTtLTQ3D">// 音频 → embedding → 塞进 KV</span>
+    mtmd_encode_chunk(ctx.ctx_vision.get(), c);
+    <span class="c" data-page-node-id="EPGrrhlDBRxndZ6ckclEEm">// ... add_embd 后 llama_process(DECODE)</span>
+
+    <span class="c" data-page-node-id="A4d7OQ6ZS7O7jm4oywjiZb">// 重放助手头 + 分支标记，然后逐 token 生成</span>
+    decode_tokens(post_toks);
+    <span class="c" data-page-node-id="sIQDwOt4AJjGwgGzsI8QcQ">// 遇到 791 切到 tgt 字段，遇到 EOG 结束本轮</span>
+}</pre>
+
+  <div class="note" data-page-node-id="xcrWt78hpQKI5bDu4dMxUL">
+    <span class="lbl" data-page-node-id="vmk3hGu9caREGi3eFeXbyp">设计上最省事也最正确的一点</span>
+    <b data-page-node-id="ZNpExGC5K7XCBu66jlNKYj">stdin 的阻塞读本身就是节拍器。</b>凑不满一轮就不进推理，所以模型永远不会跑到说话人前面，也不需要额外的流控。反过来，它天然构成背压：上游想灌更多数据，会先卡在 <code data-page-node-id="C4BZZHpylVO4CoVQVFr7Gw">fread</code> 上。
+  </div>
+
+  <h4 data-page-node-id="AZ34fS1gE3VeP8gUvnF3EO">输出协议：JSON Lines</h4>
+
+  <pre data-lang="json" data-page-node-id="FtvjPikRu82wlOVwBY6rPt">{"type":"ready"}
+{"type":"turn","i":0,"ms":1600,"src":"Good morning, everyone.","tgt":"大家早上好。","n_gen":11,"gen_ms":149.0,"pos":312}
+{"type":"turn","i":1,"ms":800,"src":"Thank you for joining today's meeting.","tgt":"感谢大家参加今天的会议。","n_gen":14,"gen_ms":187.3,"pos":389}
+{"type":"done","turns":17}</pre>
+
+  <p data-page-node-id="3R9l2TmAbsCdeXHBQTYSEZ">字段里 <code data-page-node-id="RlW0WfXdlMEusmtVQTbBrN">pos</code> 特别有用——它是当前上下文位置，进程靠它判断什么时候该换一个干净会话。<code data-page-node-id="XEAJihexDjCfssQLLPAAbn">gen_ms</code> 则直接给出单轮生成耗时，是延迟分解的原始数据。</p>
+
+  <h3 data-page-node-id="5gilwuhzxmTFQLLjM4h2m8"><span class="h3n" data-page-node-id="DtD3BXS93GzULgyWBANPxL">7.2</span>突破二：一个必须拒绝的诱惑</h3>
+
+  <p data-page-node-id="wQvzQEwn8L9VjaM91ZiTiv">改造过程中最大的诱惑是"自己决定块大小"。既然要边听边译，那切 3.2 秒不是更省算力、上下文也更连贯吗？</p>
+
+  <p data-page-node-id="n5pxyNl2pMdNlAGhBqMZxF"><strong data-page-node-id="dDzRYr8Zr9XuLQUGC7h3x9">不行。</strong>这个 schedule 是训练时定死的。自己切 3.2 秒的实测结果是译文重复、轮次错位——模型在训练中见到的永远是"1600 之后每 800 一小步"，换粒度就等于让它做一件没学过的事。</p>
+
+  <p data-page-node-id="IE4tv78yf1flHlUvb4Zz9P">这条约束一直延伸到服务端：<b data-page-node-id="gsYZI94pbpJdRcuBFqQ3Hn">Python 侧的切块粒度也必须是 800 ms</b>，因为 C++ 首轮吃 1600（= 2 块），只有 1600 是 800 的整数倍，块边界才天然对齐。对齐之后才敢做整块丢弃——丢半块会让后面所有音频错位一格。</p>
+
+  <h3 data-page-node-id="gxFq0uhjA9sPdZv0HhFseG"><span class="h3n" data-page-node-id="tHk4LsRUBnbDi3sFvjR1KH">7.3</span>突破三：让它常驻</h3>
+
+  <p data-page-node-id="UVlZUm7676nPNE6vcy2j9z">前两个突破解决"能不能流式",第三个解决"能不能一直流式"。做法是把 <code data-page-node-id="6m1vdgNfHdAN7AHZHtrEn4">llama-mtmd-cli</code> 作为子进程常驻，stdin 接音频、stdout 读 JSON、stderr 归日志，外面套一层 Python 服务管生命周期。</p>
+
+  <p data-page-node-id="BlcENa3O8A5NvHpL8eUv16">这带来一组必须处理的新问题，全部落在服务端：进程崩溃怎么恢复、上下文满了怎么换会话、两个浏览器同时开怎么仲裁、TTS 跟不上怎么不堵住字幕。这些是第 8 章的内容。</p>
+</section>
+
+<section id="s7" data-page-node-id="FgozFohpGDPO0U6k0Bzhbn">
+  <div class="secno" data-page-node-id="VaIsqjBB2ZZAql5yKX9SFC">SECTION 08</div>
+  <h2 data-page-node-id="gQ9AASx4gsE37zhyKM2pKY">系统架构</h2>
+
+  <p class="lead" data-page-node-id="EoefjdPFYWBCW5OWvkr3w8">整条链路有四个进程/线程组，边界很清楚：浏览器负责采集与播放，Python 负责编排与账本，C++ 负责推理，<code data-page-node-id="sMyAgS3G8RINBqJBEbetyk">say</code> 负责发声。</p>
+
+  <figure data-page-node-id="BBMPnspgpe3yk58CFi2RsV">
+    <svg viewBox="0 0 760 486" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="系统架构分层" data-page-node-id="dQfxorr02sw41iLV6kx6Vn">
+      <!-- 泳道背景 -->
+      <rect x="0" y="0" width="760" height="96" fill="#FAFAF7" data-page-node-id="6NKB6TpSlaYCyV3VBEhtRV"></rect>
+      <rect x="0" y="96" width="760" height="40" fill="#F5F5F0" data-page-node-id="1IDF4ZqFdHn1ApYxQh2gHo"></rect>
+      <rect x="0" y="136" width="760" height="126" fill="#FFFFFF" data-page-node-id="JUKfL3Zu3nFM0DFo8Bf76k"></rect>
+      <rect x="0" y="262" width="760" height="124" fill="#FAFAF7" data-page-node-id="Kfm2ADBazA40WcHz1YVo77"></rect>
+      <rect x="0" y="386" width="760" height="94" fill="#FFFFFF" data-page-node-id="RwUJ9AG3P6yiwsRZdvFI8H"></rect>
+
+      <text x="14" y="18" font-family="ui-monospace,monospace" font-size="9.5" fill="#96969F" letter-spacing="1" data-page-node-id="8jdF8atGYSXjScOAnSSY2T">浏览器</text>
+      <text x="14" y="158" font-family="ui-monospace,monospace" font-size="9.5" fill="#96969F" letter-spacing="1" data-page-node-id="lCOeoahGy7NffvF9YFKpKN">PYTHON 服务</text>
+      <text x="14" y="284" font-family="ui-monospace,monospace" font-size="9.5" fill="#96969F" letter-spacing="1" data-page-node-id="05g21uWWluOZo0JRzEh8wo">C++ 推理</text>
+      <text x="14" y="408" font-family="ui-monospace,monospace" font-size="9.5" fill="#96969F" letter-spacing="1" data-page-node-id="vROBRHryelmllBTAcWIr2B">TTS</text>
+
+      <!-- 浏览器内部 -->
+      <rect x="90" y="34" width="112" height="44" fill="#EBEDFD" stroke="#2A3BE8" stroke-width="1" data-page-node-id="McviyNddZ2O16X2CL3LuNr"></rect>
+      <text x="146" y="52" font-family="-apple-system,sans-serif" font-size="10.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="X2erO6mH0Rq8KEsLjNxqsT">麦克风采集</text>
+      <text x="146" y="67" font-family="ui-monospace,monospace" font-size="9" fill="#5A63D8" text-anchor="middle" data-page-node-id="AjMAdN3HD0Zs581mNDiT76">AudioWorklet</text>
+
+      <rect x="218" y="34" width="112" height="44" fill="#EBEDFD" stroke="#2A3BE8" stroke-width="1" data-page-node-id="NrQYyu3pIZHxdACTurK8Zt"></rect>
+      <text x="274" y="52" font-family="-apple-system,sans-serif" font-size="10.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="kTUwFV8hcC72IRkmrNnfBl">重采样 → Int16</text>
+      <text x="274" y="67" font-family="ui-monospace,monospace" font-size="9" fill="#5A63D8" text-anchor="middle" data-page-node-id="wZf8HsHpd2NcFoe5KQFWAm">48k → 16k</text>
+
+      <rect x="346" y="34" width="112" height="44" fill="#EBEDFD" stroke="#2A3BE8" stroke-width="1" data-page-node-id="pjAGzuu6bg91qUHWftYFsJ"></rect>
+      <text x="402" y="52" font-family="-apple-system,sans-serif" font-size="10.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="GUlZygi9RDtni1LL2UI3St">逐句字幕</text>
+      <text x="402" y="67" font-family="ui-monospace,monospace" font-size="9" fill="#5A63D8" text-anchor="middle" data-page-node-id="G4SyfHovtuFgcksJkWLzUN">DOM 追加</text>
+
+      <rect x="474" y="34" width="112" height="44" fill="#EBEDFD" stroke="#2A3BE8" stroke-width="1" data-page-node-id="IERCa7z37kucuqEtNimuxj"></rect>
+      <text x="530" y="52" font-family="-apple-system,sans-serif" font-size="10.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="m5ST2DwZxQiqJTe9lFAh3U">按序排队播放</text>
+      <text x="530" y="67" font-family="ui-monospace,monospace" font-size="9" fill="#5A63D8" text-anchor="middle" data-page-node-id="Ds8EksvZaZLsVijLBb72xH">Web Audio</text>
+
+      <!-- 传输注释条 -->
+      <line x1="274" y1="80" x2="274" y2="146" stroke="#2A3BE8" stroke-width="1.2" data-page-node-id="tIpHy8nX9NGKE61zfBVQ7C"></line>
+      <path d="M268 146 L268 136 L282 146 L268 156 Z" fill="#2A3BE8" data-page-node-id="nvzyhqNQRZ7pCKiTq6Fpqy"></path>
+      <text x="262" y="122" font-family="ui-monospace,monospace" font-size="9" fill="#2A3BE8" text-anchor="end" data-page-node-id="J4BOPhB8IDNPfHZr51FCAw">PCM16 音频 ↓</text>
+
+      <line x1="420" y1="148" x2="420" y2="82" stroke="#0F6B4F" stroke-width="1.2" data-page-node-id="5rCSsmkI2dXeEZaTcTYApT"></line>
+      <path d="M414 80 L414 90 L400 80 L414 70 Z" fill="#0F6B4F" data-page-node-id="DqgpAmjTIlL4tvMlUTvrZk"></path>
+      <text x="432" y="122" font-family="ui-monospace,monospace" font-size="9" fill="#0F6B4F" data-page-node-id="jD7jkL5vXjaGXrvhHvoHVB">JSON：turn / audio / status ↑</text>
+
+      <!-- Python 内部 -->
+      <rect x="90" y="148" width="132" height="44" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="2iyeE4JEAS4xEJ6O1Hf2pc"></rect>
+      <text x="156" y="166" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="BRBw7XUD9A7OparSyVypJm">WebSocket 握手</text>
+      <text x="156" y="181" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="oXAmB9Lr7NXUjsCZGJMzNh">自己实现 · 零依赖</text>
+
+      <rect x="238" y="148" width="132" height="44" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="o6tkqvLpPMcuX9LNkHmEJs"></rect>
+      <text x="304" y="166" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="dB3LUd1UPWkPhadwVqWXiG">stage 缓冲 + 切块</text>
+      <text x="304" y="181" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="GxaDTkS1mVvElLdDEEZlcL">800ms 对齐</text>
+
+      <rect x="386" y="148" width="132" height="44" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="0fX4dq9F7izGdPUFamnUD9"></rect>
+      <text x="452" y="166" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="Jz99jXKTmwWt42c4kGSPr3">TTS 队列</text>
+      <text x="452" y="181" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="NUMQ1yyPEjLKbix78tsgB4">2 worker + emitter</text>
+
+      <rect x="534" y="148" width="132" height="44" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="CiZJMOO0iBMVpsGQgsBYHl"></rect>
+      <text x="600" y="166" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="rEHr5OSZjI6ALPA6X1N8SK">watchdog / 账本</text>
+      <text x="600" y="181" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="bbKgYMpD9SmaNlCfQGSHAo">1.5s 采样</text>
+
+      <!-- 并发约束（左右两段，避开中间管道） -->
+      <text x="96" y="228" font-family="-apple-system,sans-serif" font-size="9.5" fill="#8A3A1C" data-page-node-id="eGjWA7h0I9vphWIbnSqqs6">pcm_owner 独占锁（4s 租约）</text>
+      <text x="334" y="228" font-family="-apple-system,sans-serif" font-size="9.5" fill="#8A3A1C" data-page-node-id="ABcKFMjUiKiumDGtivtCRS">turn_seq 全局唯一 · 加载期音频攒进 stage 后补送</text>
+      <text x="96" y="246" font-family="-apple-system,sans-serif" font-size="9" fill="#B08878" data-page-node-id="yUrckJM4iUmjqWtvXuiUjc">↑ 两者都只表现为「突然没反应」</text>
+
+      <!-- 管道到 C++ -->
+      <line x1="304" y1="194" x2="304" y2="282" stroke="#17171B" stroke-width="1.2" data-page-node-id="l4tKqhZKHbCw2c0o2qhH94"></line>
+      <path d="M298 282 L298 272 L312 282 L298 292 Z" fill="#17171B" data-page-node-id="IWo4O3NuFbenjI9htGqY6x"></path>
+      <text x="294" y="214" font-family="ui-monospace,monospace" font-size="8.5" fill="#6B6B76" text-anchor="end" data-page-node-id="7KKie3G0GUQ4E5iACHgQ9Y">stdin</text>
+
+      <!-- C++ 内部 -->
+      <rect x="90" y="288" width="200" height="76" fill="#F3F3EF" stroke="#17171B" stroke-width="1.2" data-page-node-id="V7UdPHFxzVXZICR6R5EzUy"></rect>
+      <text x="190" y="308" font-family="-apple-system,sans-serif" font-size="11" fill="#17171B" text-anchor="middle" font-weight="600" data-page-node-id="ntLWHRzqTr3jjS8FCpP4bb">llama-mtmd-cli --stream</text>
+      <text x="190" y="325" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="paDhMiMEBOSwCDIuoL86fH">常驻进程 · 首轮 1600 + 每轮 800</text>
+      <text x="190" y="340" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="3IK8zE6UHHrseU4ejhKlOW">18.39 GiB Q4_K_M · Metal</text>
+      <text x="190" y="355" font-family="ui-monospace,monospace" font-size="9" fill="#0F6B4F" text-anchor="middle" data-page-node-id="MMoOs4uRpnbYf2eVWoIviL">stdout：JSON Lines</text>
+
+      <rect x="306" y="288" width="180" height="76" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="LKEyo6WhDdhrXaSIZZNEFF"></rect>
+      <text x="396" y="310" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="ZEQg2HhnuAXSEaiJynpSR1">KV 缓存</text>
+      <text x="396" y="327" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="ufpIwfUiCDl3Qpmy5ZIDZI">96 KB/token</text>
+      <text x="396" y="342" font-family="ui-monospace,monospace" font-size="9" fill="#C2410C" text-anchor="middle" data-page-node-id="hqmYiorOCR2Ol3dJZpMX8e">16K ≈ 1.5 GB</text>
+      <text x="396" y="357" font-family="ui-monospace,monospace" font-size="9" fill="#96969F" text-anchor="middle" data-page-node-id="qaC3hZcVwdg9hr71F8M6cm">head_count_kv = 4</text>
+
+      <rect x="502" y="288" width="164" height="76" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="cI7YEEOW952rfv2OEQ8IC6"></rect>
+      <text x="584" y="310" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="qKMENAUhDMAA3LBmWE1uPN">会话轮换</text>
+      <text x="584" y="327" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="fpx7j2HFLcU4NK69FqAdWj">pos 接近上限</text>
+      <text x="584" y="342" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="noz4gDNbUhw5TIGPfWxIxL">9–11 分钟 / 次</text>
+      <text x="584" y="357" font-family="ui-monospace,monospace" font-size="9" fill="#96969F" text-anchor="middle" data-page-node-id="FhrHFyTQbXY1X2ACWvacLG">界面插一条分隔线</text>
+
+      <!-- TTS：由队列顺序派发，用文字说明避免连线穿过其他泳道 -->
+      <text x="96" y="415" font-family="-apple-system,sans-serif" font-size="10" fill="#96969F" data-page-node-id="zU7XrBXHAvOx3NDABEXwz5">↑ 队列按轮次顺序派发</text>
+      <text x="96" y="432" font-family="ui-monospace,monospace" font-size="9" fill="#B8B8B0" data-page-node-id="W0BYs7kFPkyv5NfVdSaDp1">emitter 最多等 3 秒，超时跳过</text>
+
+      <rect x="386" y="402" width="132" height="38" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="Q4h6lxhvuJ4U3njbaOkvQQ"></rect>
+      <text x="452" y="419" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="ZaL0UyEv4S6R0vrdkjB2TP">say -v Tingting</text>
+      <text x="452" y="433" font-family="ui-monospace,monospace" font-size="9" fill="#6B6B76" text-anchor="middle" data-page-node-id="9dNmOq2O64GNAF5EBl0IfA">LEI16@24000</text>
+
+      <rect x="534" y="402" width="132" height="38" fill="#FFFFFF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="GkeUt1amU5b6dQY38aGFa8"></rect>
+      <text x="600" y="419" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="k4fJkZsViBudAS1FonEE3H">live-cache/*.wav</text>
+      <text x="600" y="433" font-family="ui-monospace,monospace" font-size="9" fill="#96969F" text-anchor="middle" data-page-node-id="Gvz3nnSOBv73Pg1Ois846X">超 400 条淘汰最旧</text>
+
+      <text x="14" y="470" font-family="-apple-system,sans-serif" font-size="9.5" fill="#96969F" data-page-node-id="L7Pw3Doy2pFpCEuvaCX1CH">音频走下行、译文走上行、配音再下推 —— 三条流互不阻塞；C++ 进程只做一件事：按节拍吃音频、吐 JSON</text>
+    </svg>
+    <figcaption data-page-node-id="YcDtR0oFP8FClLEdMkHbxu"><b data-page-node-id="md9fk0n2GnAexbfcs5C91x">图 3</b>　四层架构。Python 服务是唯一有状态的一层：它持锁、记账、仲裁、看门。C++ 进程只做一件事——按节拍吃音频、吐 JSON。</figcaption>
+  </figure>
+
+  <h3 data-page-node-id="ASOraB6thPGqdl9WMDkKZa"><span class="h3n" data-page-node-id="rKU7m3UVBLEbvJUiIME1F0">8.1</span>线程模型</h3>
+
+  <div class="twrap" data-page-node-id="eE2k44Hmpu2KjLb3bKm8In">
+    <table data-page-node-id="SKCRedIwjq4AZFD2sD5Tae">
+      <thead data-page-node-id="b4eOm890hA16oGtTwbXsM6"><tr data-page-node-id="Wmj8zZHYHsm35uSyD7gMOg"><th data-page-node-id="uAWm29zh9HP1EvElLqh98K">线程</th><th data-page-node-id="glNdzUiawi18ePuGRMta3C">职责</th><th data-page-node-id="KbZJ641Hps8zRQ5dqaHUq0">关键约束</th></tr></thead>
+      <tbody data-page-node-id="g5WCSZBUzvGQUBG0SbbbdF">
+        <tr data-page-node-id="VhSGbmdf76MxNrhGsK0bdf"><td class="n" data-page-node-id="62pEBYMJpIGqM1HljzJP9g">writer</td><td data-page-node-id="Tt5eJii8hws6TqBsbkcurB">每个客户端一条，串行推送出去的帧</td><td data-page-node-id="HFLLyFd1gRMJrlBS2wX32b">队列满则丢弃，绝不阻塞生产者</td></tr>
+        <tr data-page-node-id="gfRAIofDqrN9RRzLcslIR8"><td class="n" data-page-node-id="feQjcZdETcbqeD5AuLjDFG">_reader</td><td data-page-node-id="e1UzcKHby78Lnq9o0QpvTk">读模型 stdout，解析 JSON 行</td><td data-page-node-id="c8AGHVyMpNgsRiBoOFUuMJ"><b data-page-node-id="6kkPwfxK31a3cA3GdE1JIr">此处绝不能写 stdin</b>，会与模型互锁</td></tr>
+        <tr data-page-node-id="QERAw3F07xcYJPPDbqbvdz"><td class="n" data-page-node-id="ugoA8TUC3kbChjCwPTPbEE">_drain</td><td data-page-node-id="4DyGwHJWjDTpv7aBGw3EOn">把 stage 里的音频切块写进 stdin</td><td data-page-node-id="SNOxVbNKbW5i6TvxA3kcYi">独立线程。写满管道会阻塞，不能跑在 reader 里</td></tr>
+        <tr data-page-node-id="AVaMttOG4zkcs0baNSbsOQ"><td class="n" data-page-node-id="nDhXlyyxjwzZOxIJfpgKUh">tts_worker ×2</td><td data-page-node-id="5oYlY4E2B4gsNFpC1tFcZB">调用 <code data-page-node-id="wLHmWYcmnyVrcx2wQGglzJ">say</code> 合成单轮</td><td data-page-node-id="bUy7m7vlarBgfOXhDj9tfH">并发数 2 是上限，再多会各自加载语音资源互拖</td></tr>
+        <tr data-page-node-id="MpsfIgJ9J7cCdzbcJ0otbx"><td class="n" data-page-node-id="ZyJorIfW5bIpic93vMTHB7">tts_emitter</td><td data-page-node-id="6ijHOcbXtsBwN7XRB6cpc9">按轮次 id 顺序广播音频</td><td data-page-node-id="XMDsoT9PHqr3R8EtXriiws">等一轮最多 3 秒，超时跳过而不是死等</td></tr>
+        <tr data-page-node-id="rNP8xFVTO7qpJ1s4ab2akV"><td class="n" data-page-node-id="dUsC1gjyrWwvKimHrwmOMm">watchdog</td><td data-page-node-id="hxJVHIwLYN6sbWQEJ1SCZt">1.5 秒采样，判链路是否还活着</td><td data-page-node-id="7iYGNBdn5Cq9GmS6xH7aCl">6 秒无增长才告警</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn" data-page-node-id="FDQU5F5FEphtsE0M3EBKSR">
+    <span class="lbl" data-page-node-id="lGTtqX3QaywBCBsQGb0FGe">一个真实存在的死锁</span>
+    <code data-page-node-id="8IqExn7lHUwyIIIxB2C0AY">_drain</code> 向 stdin 写入，管道写满就会阻塞；如果它跑在读 stdout 的线程里，模型输出没人消费，两边就互相卡死。<br data-page-node-id="FFxFtNCAFLEeLqpvpHkrB5">
+    正确做法是<b data-page-node-id="TfPwU3D0uSWCrloVhsfuWX">加载完成后由独立线程补送</b>，reader 线程只负责读。日志里那句「补送加载期间积压的 2206ms 音频」就是这条路径。
+  </div>
+
+  <h3 data-page-node-id="sWcl1AUHfeZ6FDF0I1DGrt"><span class="h3n" data-page-node-id="3EVbE6fnNvZLZWbaNFeoOB">8.2</span>关键参数与它们的理由</h3>
+
+  <div class="twrap" data-page-node-id="sl0tdO3CzVh5UvnKCxpqMC">
+    <table data-page-node-id="hd75DMJnJxhhfIIchwfx8H">
+      <thead data-page-node-id="RbhTAQVJ2PXlpg0rFEqyVm"><tr data-page-node-id="Qw5iZyNz1AVWFXnreHUeUE"><th data-page-node-id="3Nu1NTbzDYsET6RbcubszU">参数</th><th data-page-node-id="LZzCJJybh3Irp96wRDNtGS">值</th><th data-page-node-id="rWPGWiWVkusjTfF4XBwt0u">为什么是这个值</th></tr></thead>
+      <tbody data-page-node-id="aXznDn1zXPCd4Dg1TnOEFx">
+        <tr data-page-node-id="tA1Z70BeADBf8CvTEFabJH"><td class="n" data-page-node-id="GhIQiCzbygvXzlOmEbgPD4">CTX</td><td class="n" data-page-node-id="5l1PC57SulA5baD4IxJa6e">16384</td><td data-page-node-id="XY7hWwEXIhJ18GADU8D675">16K ≈ 1.5 GB KV。本机 swap 长期 15 GB+，开 32K 会让模型页被换出，推理直接失去实时性。<b data-page-node-id="RCnSIf2At3k19coV3BVxsh">省内存比拉长会话值</b>。</td></tr>
+        <tr data-page-node-id="BQwNDYMxKZLIxvDNZpc2BV"><td class="n" data-page-node-id="NkFkE2NQMmBAUdvAnweIgi">BLOCK_MS</td><td class="n" data-page-node-id="UEVzaGJ7CEaT34PiDKnJii">800</td><td data-page-node-id="M9FFzPEOvxfOW46CZ7mUR0">与 C++ 的 1600（=2×800）严格对齐，才敢整块丢弃。</td></tr>
+        <tr data-page-node-id="SQ0wlPBMA3aR2lwpSR3vqV"><td class="n" data-page-node-id="fZgkF3wTL7PEc8oeuwM366">MAX_BACKLOG_MS</td><td class="n" data-page-node-id="ye8cCvljEfIXBU6A49ZUT2">10000</td><td data-page-node-id="dIzyQlseDeHgFKkDsAnVFi">允许落后 10 秒。定得比"还能听"宽得多——<b data-page-node-id="CRVOjSkGK4KizLICN4HSUQ">宁可暴露延迟，不能偷吞内容</b>。</td></tr>
+        <tr data-page-node-id="kKWex3B7DjGKswLMKjwOTX"><td class="n" data-page-node-id="FG0cxbEoH3vhySgiCRsOj2">PCM_LEASE</td><td class="n" data-page-node-id="NHYiGeho7UA1t9iOmMUJ7L">4.0 s</td><td data-page-node-id="HZ1d6MiHDdSeW8arnZb3jK">独占锁必须有租约。客户端断开时 <code data-page-node-id="c116E2jzPKmiZxkKeeSYgT">drop_client</code> 不一定被调用，没租约就永久锁死。</td></tr>
+        <tr data-page-node-id="vJ6WEmwRxf7vyCrcJc0YSI"><td class="n" data-page-node-id="MmhGsjJgGjmFZ9bK7YCEa8">N_PREDICT</td><td class="n" data-page-node-id="S9nSdBt6FSt7LdxHTbbeA4">160</td><td data-page-node-id="vEpDzWhmzGeJAQBJRDKdJD">单轮生成上限。800 ms 音频实测远用不完。</td></tr>
+        <tr data-page-node-id="drCwp7CihPu0Zm4FeGqtoa"><td class="n" data-page-node-id="Q8oHU8KqAgcFFqXilbVEJP">SILENT_RMS</td><td class="n" data-page-node-id="vZjbjjP3Y4TN3u4Lm7ihNt">1e-3</td><td data-page-node-id="ga42nNQLPYzX4foD4A93Vs">低于此值算静音。连续 4 秒触发界面告警。</td></tr>
+        <tr data-page-node-id="DtNCcrnYMaQKfHMfpRgWkH"><td class="n" data-page-node-id="8gl4ahuo4gPKqGY8IHfjff">TTS_WORKERS</td><td class="n" data-page-node-id="EuqEqjy6qrG22Im0Hw9oZ2">2</td><td data-page-node-id="EsSuOl84hpuWHdWaS7P8WU">从 3 降下来。并发 <code data-page-node-id="BHvQoF1HndBHJGYgQmjpC0">say</code> 各加载一份语音资源，内存紧张时互相拖死。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 data-page-node-id="TFHI3zyTqYqqlu6lrAgraX"><span class="h3n" data-page-node-id="RHtyFQoy2eocN08p3EuQcm">8.3</span>独占锁：一个必须存在的粗暴机制</h3>
+
+  <p data-page-node-id="2sjKaFu8JZlSeHJBoe2G7s">两路 PCM 写进同一个 stdin 会<b data-page-node-id="lgbnTsEdfGdOu75s65XjpL">互相插帧</b>——字节数对得上，但样本交错，模型听到的是两段音频按位混合的噪声，结果就是"什么都听不出来"。这个 bug 是在"Chrome 假麦克风还在推流、同时用 <code data-page-node-id="xVhrU2eYgKiuiSUXWdofqJ">/api/simulate</code> 灌测试音频"的场景下暴露的。</p>
+
+  <p data-page-node-id="SL2gF9bixFDtDfHRewDrCS">解法是第一个开口的客户端独占，但它必须带租约：</p>
+
+  <pre data-lang="python" data-page-node-id="1mEiG368t9OzbQF2qDaAzs">now = time.time()
+if self.pcm_owner is not None and self.pcm_owner is not owner:
+    if now - self.pcm_lease &lt; self.PCM_LEASE:      <span class="c" data-page-node-id="TCm1kkaRIEF91HyldwoaCp"># 4 秒内</span>
+        self.rejected_bytes += len(data)           <span class="c" data-page-node-id="jyPf8dzZLwhO3Uz6wq43uG"># 记账，不静默</span>
+        return
+    log("音源独占已过期，交由新音源接管")
+self.pcm_owner = owner
+self.pcm_lease = now</pre>
+
+  <p data-page-node-id="s6fpTHCcF2oxbxJs3QbTk7">注意 <code data-page-node-id="NCe0qzNBOPj9HEdptpBRyz">rejected_bytes</code> 这个字段——<b data-page-node-id="mMEDKUbxdkl3UfjJC7QSZp">被拒绝也要记账</b>。否则调试时会看到"收到的字节数怎么比送进模型的少"，误判成丢包。</p>
+</section>
+
+<section id="s8" data-page-node-id="VgMYIo0oDGP7ZEhL4OzODq">
+  <div class="secno" data-page-node-id="0HjlF3pe3IYxww2wM5Cjg5">SECTION 09</div>
+  <h2 data-page-node-id="nMrddBvFv92lgJzj9IsLSB">性能实测</h2>
+
+  <p class="lead" data-page-node-id="EROsIsXhSFUDUE0n5snorc">延迟不是一个数字，是一条分解链。把每一段拆开，才知道优化该往哪打。</p>
+
+  <figure data-page-node-id="8poPGFHNZoyUu6IzC1eXpe">
+    <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="端到端延迟分解" data-page-node-id="FxXvtKtR8cNdwaoB1VqIGb">
+      <!-- 字幕路径 -->
+      <text x="16" y="30" font-family="-apple-system,sans-serif" font-size="11.5" fill="#17171B" font-weight="600" data-page-node-id="uLZBuRibmlianhBnIYQzIU">说话 → 字幕　255 ms</text>
+
+      <rect x="60" y="42" width="80" height="26" fill="#EBEDFD" stroke="#2A3BE8" stroke-width="1" data-page-node-id="WlzhPynwiFwdq8PAOXXe4N"></rect>
+      <text x="100" y="59" font-family="ui-monospace,monospace" font-size="9.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="cPNLXC5p11pvBwZjNXeKaT">采集 100ms</text>
+      <rect x="140" y="42" width="96" height="26" fill="#C3C9F8" stroke="#2A3BE8" stroke-width="1" data-page-node-id="DjfPcvBXee7a75DYUQxs10"></rect>
+      <text x="188" y="59" font-family="ui-monospace,monospace" font-size="9.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="KaLkqsVPtDi9ApEO6G8xVv">传输 ~40ms</text>
+      <rect x="236" y="42" width="190" height="26" fill="#8C97F2" stroke="#2A3BE8" stroke-width="1" data-page-node-id="LdIdRC6aruBCEt48nrMnMD"></rect>
+      <text x="331" y="59" font-family="ui-monospace,monospace" font-size="9.5" fill="#FFFFFF" text-anchor="middle" data-page-node-id="W8NFQ9x2GMthzSzayrEgOG">生成 115–235ms</text>
+      <rect x="426" y="42" width="80" height="26" fill="#C3C9F8" stroke="#2A3BE8" stroke-width="1" data-page-node-id="X1x6uwpn1AUTA6cKEd81PC"></rect>
+      <text x="466" y="59" font-family="ui-monospace,monospace" font-size="9.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="SkbAdit7dyd8oGqeUpGWyf">回推 ~20ms</text>
+
+      <line x1="506" y1="55" x2="540" y2="55" stroke="#17171B" stroke-width="1" data-page-node-id="AfmLkx0O7Knpz9TKCHLvFf"></line>
+      <text x="548" y="59" font-family="ui-monospace,monospace" font-size="11" fill="#17171B" font-weight="600" data-page-node-id="n45bQPFALlWEE4HE7uzv7A">255 ms</text>
+
+      <!-- 配音路径 -->
+      <text x="16" y="118" font-family="-apple-system,sans-serif" font-size="11.5" fill="#17171B" font-weight="600" data-page-node-id="vU3S4I70jkOMD9THVH08HM">说话 → 出声　1150 ms</text>
+
+      <rect x="60" y="130" width="80" height="26" fill="#EDEDE8" stroke="#C4C4BE" stroke-width="1" data-page-node-id="oGQMXmMVSr5PRMTU4ZmrzE"></rect>
+      <text x="100" y="147" font-family="ui-monospace,monospace" font-size="9.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="vNmxOPoYWAzyVPjrw3bDZN">采集 100</text>
+      <rect x="140" y="130" width="96" height="26" fill="#EDEDE8" stroke="#C4C4BE" stroke-width="1" data-page-node-id="vrR5cXTLFtMZHp49paywGx"></rect>
+      <text x="188" y="147" font-family="ui-monospace,monospace" font-size="9.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="aLum3Tt0XGperZHCdK9oOb">传输 40</text>
+      <rect x="236" y="130" width="190" height="26" fill="#DEDED7" stroke="#C4C4BE" stroke-width="1" data-page-node-id="VfiVFlDXVG0hzUfyOHpnTG"></rect>
+      <text x="331" y="147" font-family="ui-monospace,monospace" font-size="9.5" fill="#3D3D46" text-anchor="middle" data-page-node-id="ZrC1cqhcn9WEfCtaBD1MtB">生成 115–235</text>
+
+      <!-- 关键：say 固定开销 -->
+      <rect x="426" y="126" width="266" height="34" fill="#FBEDE6" stroke="#C2410C" stroke-width="1.4" data-page-node-id="jxlNCM4MvIDdsdg9ApDJhm"></rect>
+      <text x="559" y="141" font-family="-apple-system,sans-serif" font-size="10.5" fill="#C2410C" text-anchor="middle" font-weight="600" data-page-node-id="BsH1rC6vs35gAF2G4jPrkK">say 进程固定开销 ≈ 870 ms</text>
+      <text x="559" y="154" font-family="-apple-system,sans-serif" font-size="9" fill="#8A3A1C" text-anchor="middle" data-page-node-id="WXCmAsYAnRuOlb8uNBmZEv">一个字与七秒长文耗时几乎相同</text>
+
+      <!-- 对比参照 -->
+      <text x="16" y="212" font-family="-apple-system,sans-serif" font-size="11.5" fill="#17171B" font-weight="600" data-page-node-id="yhrgRcY1BpaS3c6EamqpCl">参照系</text>
+
+      <rect x="60" y="224" width="140" height="22" fill="#E7F2EE" stroke="#0F6B4F" stroke-width="1" data-page-node-id="vk7EXEdBKPY0AFDAbLeGZ2"></rect>
+      <text x="130" y="239" font-family="-apple-system,sans-serif" font-size="10" fill="#0F6B4F" text-anchor="middle" data-page-node-id="KEPN4eS68VeqFMtxUWFhZZ">本机字幕 255ms</text>
+
+      <rect x="60" y="252" width="260" height="22" fill="#F3F3EF" stroke="#C4C4BE" stroke-width="1" data-page-node-id="Ukp80TwJyWY8rIUE6OsZQy"></rect>
+      <text x="190" y="267" font-family="-apple-system,sans-serif" font-size="10" fill="#3D3D46" text-anchor="middle" data-page-node-id="UkEClxLoQTsDBnhE989A4H">本机配音 1150ms</text>
+
+      <rect x="60" y="280" width="560" height="22" fill="#FBEDE6" stroke="#C2410C" stroke-width="1" data-page-node-id="zK4Bk2orzt56LKtbH4wDAy"></rect>
+      <text x="340" y="295" font-family="-apple-system,sans-serif" font-size="10" fill="#C2410C" text-anchor="middle" data-page-node-id="BgaSGXlw4QASIAzUHM6t4H">专业同传滞后 2000–3000ms</text>
+
+      <line x1="46" y1="36" x2="46" y2="306" stroke="#E2E2DC" stroke-width="1" data-page-node-id="MhjgTMJmpoD7qkqupZxVTJ"></line>
+    </svg>
+    <figcaption data-page-node-id="ocgOyJmp7j56lEX8F8IkXX"><b data-page-node-id="awNEKhJrCiqJ2YxUdK4DBu">图 4</b>　延迟分解。字幕路径（255 ms）几乎全部来自生成；配音路径（1150 ms）里 870 ms 是 <code data-page-node-id="uRA2dwEfjxvl2UML5wsK6G">say</code> 的进程启动固定成本，与文本长度无关。<b data-page-node-id="BqAsjZ2HvqpTOZZNI71zzm">这就是当前方案的下限。</b></figcaption>
+  </figure>
+
+  <h3 data-page-node-id="qaFQeA1nheHyBLFBBExb57"><span class="h3n" data-page-node-id="Bq1dgDH6LbogqkPNwJd6FW">9.1</span>全量数据</h3>
+
+  <div class="twrap" data-page-node-id="ljXhUntiJOYmYPnQqQSHK9">
+    <table data-page-node-id="NiLtU4UvKQWyeWED2LC8oa">
+      <thead data-page-node-id="hY4mfsubzRFU1SrXXs94GM"><tr data-page-node-id="AMTmNHzxLt9mEWFqwjtsR2"><th data-page-node-id="yuSPDypNoaitd3plbmISr6">指标</th><th data-page-node-id="IEmTUayjXUU9cjrlOZfW2z">数值</th><th data-page-node-id="fY1RvOr4MeulfsOMVAGmWD">备注</th></tr></thead>
+      <tbody data-page-node-id="Yjf29jrv5oRDCGBUt8KxwH">
+        <tr data-page-node-id="wFMp6BtkntCJlVRCcNGBqJ"><td data-page-node-id="g4D0K2qCyHZ6mAZDPJP9Kt">模型加载（冷启）</td><td class="n" data-page-node-id="CzQBmHBqxLoprgMp2q8k9Y">约 8 s</td><td data-page-node-id="Hm1No3hgwzPudiUSFOZTBm">页缓存热后 2 s</td></tr>
+        <tr data-page-node-id="cMuHcHWmfAxlWgm1XBOT3f"><td data-page-node-id="n7uI9DQyccMvh8xeH7XviJ">单轮生成（800 ms 音频）</td><td class="n" data-page-node-id="VxSWPr7yqGCFXaTacWVphL">115 – 235 ms</td><td data-page-node-id="iycsPdFVbfD2VM1I1RwuwG">非常稳定，可直接当常数用</td></tr>
+        <tr data-page-node-id="OEsjz9mKA6JfrHB9fM92C8"><td data-page-node-id="tILwsHuE1hHfLnqwvpnIeL">说话 → 字幕</td><td class="n" data-page-node-id="Elnm4zLrikEk6Ahgikr8DV">平均 255 ms</td><td data-page-node-id="ntlCwSt1lwhcYkt2TryMmR">比专业同传好一个数量级</td></tr>
+        <tr data-page-node-id="LDrJXWtOIQJRbHpNO6qkPJ"><td data-page-node-id="z7iYJRPZS8udyA8hpRflsD">说话 → 出声</td><td class="n" data-page-node-id="a2zM8wk4yovRBqNOREXvOa">平均 1150 ms</td><td data-page-node-id="VtWIAorIy1CEo4QEGmHfHI">其中 870 ms 是 <code data-page-node-id="c9Ecvp5139q683sf40qCru">say</code> 固定开销</td></tr>
+        <tr data-page-node-id="hMpvky7jk2aD2uvXdqvNm0"><td data-page-node-id="1hmjMsiKSrC3tWtByvxWeN">连续压测（66 s 音频）</td><td class="n" data-page-node-id="DuDNb3kmV6zNGc3VJDicNd">82 轮</td><td data-page-node-id="tvbpBaKIuvYBnWJksJoXkH">积压恒定 0–800 ms，丢弃 0</td></tr>
+        <tr data-page-node-id="rjT4HG4D4RcBBzCpgWKeQB"><td data-page-node-id="1lVMdOXtC9c4F6J6t6jDyE">浏览器全链路（96 s）</td><td class="n" data-page-node-id="vJkMx2MUKeDFGFncMuMzpA">87 行字幕 / 86 段配音</td><td data-page-node-id="odVvwIJ6LCOfnLyI2DCFJz">无中断、无告警</td></tr>
+        <tr data-page-node-id="f58o5IwHDZQJDB1a4aw5sF"><td data-page-node-id="uYuo7LlX9PG3wld0HysaHO">KV 缓存</td><td class="n" data-page-node-id="rSEm0qJSFOi9kE9NBqquLQ">96 KB/token</td><td data-page-node-id="WQFxK8H12AsGPaujkiahWn">16K 上下文约 1.5 GB</td></tr>
+        <tr data-page-node-id="xi3BrRfkLg9yVC20EVrw2v"><td data-page-node-id="zEhl919iPLnLR9QUUbnYCT">整段批处理（14.16 s）</td><td class="n" data-page-node-id="A2kbT2Ugs8BbUO2N0l2ZCe">3.49× 实时</td><td data-page-node-id="jn2gVqsh2FsHQERFwc4Gqi">Metal；纯 CPU 1.33×</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 data-page-node-id="SaUExpiw2f9lOwmTZCgVZf"><span class="h3n" data-page-node-id="rWBCY9KpQViBQe2H5sPP2i">9.2</span>内存是这个方案的真正天花板</h3>
+
+  <p data-page-node-id="XIHHwU6b7cjVufrkr69mP1">所有性能问题里，最反复出现的一个不是算法，是<b data-page-node-id="UIFrwrFDeFRSvk94aEktw4">swap</b>。</p>
+
+  <div class="case" data-page-node-id="Az6tCBrn7EkUxkZ3mfd6mH">
+    <div class="case-h" data-page-node-id="9G7pNyc1C5X6zfqIP48deQ">
+      <span class="id" data-page-node-id="GPoTEBfPwgxGwgxjhszDol">OBS-02</span>
+      <span class="ttl" data-page-node-id="icKKo80pRzUYRYWVUDVdTS">连续压测把 swap 打爆，RTF 从 1.38 退化到 6.97</span>
+      <span class="tm" data-page-node-id="rmfiK91fGmYsxbKyw7XXkq">17.4 GB / 18.4 GB</span>
+    </div>
+    <div class="case-b" data-page-node-id="arOFB3Ii8thltArZixQLde">
+      <p data-page-node-id="BFtvaBGpRlUNI0ghZ5lpC1"><span class="sym" data-page-node-id="XF4ddlEEUpqyL2txdg34KV">事件</span>连跑 5–6 个批处理任务（每个都加载一次 18 GB GGUF）后，swap 用到 17.4 GB / 18.4 GB，TTS 的 RTF 从 1.38 掉到 <b data-page-node-id="7V2xX97gGtx2g9nDFhNCRk">6.97</b>，翻译加载从 1.9 s 涨到 15 s。</p>
+      <p data-page-node-id="vRq9k6Gd8eEOc8pJ9Cd58N"><span class="sym" data-page-node-id="ICQmG6IF4iivh4IWWNAXOj">性质</span>不是代码 bug。模型权重页被换出到磁盘，每次推理都要从 SSD 读回来。</p>
+      <p data-page-node-id="VQEDoQE4MKA2dmVLqvmBPn"><span class="sym" data-page-node-id="5Xg0PwpnpoPc49vHsoy6Ib">处置</span>等系统回收后自然恢复。但这件事促使把 <code data-page-node-id="Pd2icy778vO59Vv1wkdmWk">CTX</code> 从 32768 降到 16384，省下 1.6 GB KV——<b data-page-node-id="TOBpVqJHcpxsJomCVlmrCA">在内存紧张的机器上，"少花 1.6 GB"比"多撑十分钟"值钱得多</b>。</p>
+      <p data-page-node-id="gT5Vbf5PSyRgvxsHFQrVM1"><span class="sym" data-page-node-id="iEBaFleCvnr7uZedx9vDsM">延伸</span>这个现象还解释了另一类"说不清"的故障：<code data-page-node-id="ZYnV9bzoBXoPx854JFb1d9">say</code> 在 swap 已满时启动会被无限拉长，3 个 worker 同时卡住，emitter 按序死等 → <b data-page-node-id="vAvSZAuuTnVlggk9QVXswl">所有音频广播中断</b>，但字幕还在出。看起来是"半死不活"，其实是内存。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s9" data-page-node-id="WsdkpP96jyy4QLJpHmTYTL">
+  <div class="secno" data-page-node-id="g5UhUhk6V8SuziWUVvAPDN">SECTION 10</div>
+  <h2 data-page-node-id="o3YBLzeC9QXjWDBWbG3FBI">故障排查实录</h2>
+
+  <p class="lead" data-page-node-id="v41Loymv3PFk1PnqEVGGCe">这一章是全篇最长的，因为真正的成本都在这里。五轮排查，每一种故障都长得像"程序没反应"，但根因分布在完全不同的层——从 C++ 的分块边界，到浏览器的 AudioContext 拓扑，再到 macOS 的 TCC 权限。</p>
+
+  <h3 data-page-node-id="RVisDQ7PLKPq1yNTIWJ1Xk"><span class="h3n" data-page-node-id="anJxtCkZ6Cbh36fqJI671i">10.1</span>第一类：静默失败的模式</h3>
+
+  <p data-page-node-id="96nJH13fLktRI07FRBGrDi">把五轮里所有 bug 摆在一起看，会发现它们共享同一个形状：</p>
+
+  <div class="twrap" data-page-node-id="nRTDbqPkYBsUtPBrJMGDQH">
+    <table data-page-node-id="tuyZJwVzrqcjakpMCGuz1w">
+      <thead data-page-node-id="j7jh9jjATssMMBfHqBonbl"><tr data-page-node-id="o2AhKFMI6tit3QDbyykiq3"><th data-page-node-id="w5Wx8N5fHfdbAWMDVGyVHd">共同特征</th><th data-page-node-id="wHQp4mkqPplooq8pQm4Z6A">后果</th><th data-page-node-id="V2qIrjlYHTldbnq7eBsE4r">为什么难查</th></tr></thead>
+      <tbody data-page-node-id="I8a8Z7UpPjj0UgaWvydSTD">
+        <tr data-page-node-id="TRVv7XLzBnJBxa0mXK63P0"><td data-page-node-id="hJ3b7iH5ICZvfWEWSkgD8t">进程活着、计时在走、界面无报错</td><td data-page-node-id="Btl1GXASa1CjwNBPU3yQbx">用户以为"卡了"</td><td data-page-node-id="PltICEaCLhZwDwBbiS7Zdm">没有任何异常可抓</td></tr>
+        <tr data-page-node-id="LEHzE7DFdLw9hTcOQfmMli"><td data-page-node-id="bf6PxZ0xLWiOTVqICPXMKh">字节数一直在涨</td><td data-page-node-id="GghuDjxZiND1oQunu5Dbdb">账本看起来完全对平</td><td data-page-node-id="Ie6SlJyhHkPZoHlaxVyF4M"><b data-page-node-id="6fQe8Pd6q3jbAWzlrgqWBP">全零样本也能让账本完美对平</b></td></tr>
+        <tr data-page-node-id="Mksz8dFqAelAeTc72CI2op"><td data-page-node-id="GHG2QjZk3SUIHFNehgccd4">日志被节流</td><td data-page-node-id="H8eTrdRrOijphxVzZvIlyb"><code data-page-node-id="ouvxJD1HraKj8BAxD5ZDCP">i % 15 == 0</code> 让 50 轮空轮只打 4 行</td><td data-page-node-id="4bFZAyulIFxdtwU2Ri6OQr">抽样掩盖了连续性</td></tr>
+        <tr data-page-node-id="Mg9w28a1cJMXjsB9g0lMz1"><td data-page-node-id="VIK5hd1MaYZEuKGGBO1TKW">错误提示被样式隐藏</td><td data-page-node-id="UMobKFHvPQSz1g2GmAm42t">运行时给状态条加 <code data-page-node-id="9FaDhG2CdkXlQkHjp99UCi">hide</code></td><td data-page-node-id="x0JsGpkhO3Tg07R02k3Muw">"连接断开"四个字压根没显示过</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p data-page-node-id="Ya4u6MHajlhKLONWParX1M">所以第一轮修复的重点不是某个具体 bug，而是<b data-page-node-id="bguKaNBp3PDjSnjfTlD9wl">让失败显形</b>：心跳、租约、账本、落盘、告警。后面几轮的定位速度能快起来，全靠这一轮铺的可观测性。</p>
+
+  <h3 data-page-node-id="8cdArxJWSkAC2TqnlkP5ws"><span class="h3n" data-page-node-id="mMDcFPiw2cGleKNoyKHyNj">10.2</span>五轮排查</h3>
+
+  <div class="case" data-page-node-id="gi3URHfcz3C3rgXXXcOIHe">
+    <div class="case-h" data-page-node-id="BI6YJwUqscaBQox73E2AM0">
+      <span class="id" data-page-node-id="gThLPUID6PSFvjLIO2ui6s">R1</span>
+      <span class="ttl" data-page-node-id="FKTL7vAJ5zdA1hxacydgJW">说了几句，接着就完全没反应</span>
+      <span class="tm" data-page-node-id="ActtNNB3hKrkyxwKzXkfKv">10:12 · 四个叠加</span>
+    </div>
+    <div class="case-b" data-page-node-id="rwU5BLekKCN0JfuNf70KNV">
+      <p data-page-node-id="hEkGJVNHiFhLW1O0xtfUnp"><span class="sym" data-page-node-id="ZsEo2eTJCqgFlOLPGgFOhN">现场</span>模型进程存活，<code data-page-node-id="oQW6QjKCYJPJPGIs5zliB4">pos</code> 冻结在 757 不再变化，TTS 有最后一条成功日志，没有"进程结束"。</p>
+      <p data-page-node-id="bocr3g3VeNN1eIROPVSPGq"><span class="sym" data-page-node-id="jVrNGil2jWkC0dja6EklZv">根因</span>四个独立缺陷叠加，任一都足以致命：</p>
+      <ul data-page-node-id="ut3GOPMEcCYvh6EvrSQXj5">
+        <li data-page-node-id="v6gHuMVaBHreE32O563bjw"><b data-page-node-id="nc6dCQeC2LJgXLZzAsWuuQ">TTS emitter 死等 30 秒</b>。swap 满时 <code data-page-node-id="xnPYGJBlTNNMhWZokHwzbP">say</code> 启动被无限拉长，3 个 worker 同时卡死；emitter 按序等第 67 轮，<code data-page-node-id="SUD8wVV1r5qES8XKxBCQit">waited &gt; 30</code> 才跳过，<b data-page-node-id="Mc1vqjMVKHEL7EIwBA84Gz">期间所有 audio 广播全断</b>。复现日志：<code data-page-node-id="nDCqYnbD3NwtFNgMz8GsJh">TTS 第 67 轮超时，跳过</code>。</li>
+        <li data-page-node-id="Lo1l6w2ZM2shMBdfd0e15O"><b data-page-node-id="T4dWBnjluQZGo9rH6Pq3Si">轮次编号跨会话重号</b>。<code data-page-node-id="JpvM0AReBumcPrQi9mQ75H">turn_seq</code> 在 <code data-page-node-id="OIsiptMa4kTyA3B4JVznME">start()</code> 里归零，但 <code data-page-node-id="AY5dvf7pcM7IgjYhGIiJRd">tts_order</code>/<code data-page-node-id="BMqLas36jknPAU73fYKF1k">tts_done</code> 没清 → 新会话的 0/1/2 与上一会话残留同号，播放器等一个永远不来的轮次。</li>
+        <li data-page-node-id="BsKbPJnehRT22N1r1NGNET"><b data-page-node-id="OkfIYiQVmf2jU5mT7syDcE">独占锁无租约</b>。连接断了但 <code data-page-node-id="WY0KbFeLwPzGTzCtiq406L">drop_client</code> 没被调用，锁永久指向死客户端 → 之后所有音频被静默 <code data-page-node-id="OCnaAApJ2oXULErKIKF7KC">return</code>。</li>
+        <li data-page-node-id="WmUUibSfd4iPXlbkD5ayKh"><b data-page-node-id="zSU1mcZrhFvJBZXTRCD9d5">尾部不结算</b>。不足 800 ms 的尾巴永远躺在 <code data-page-node-id="oIOr33EYv16etoq7mAsraK">fread</code> 缓冲里等下一块。</li>
+      </ul>
+      <p data-page-node-id="wAVaBoHNz6IIYRvk3uLgmh"><span class="sym" data-page-node-id="s6lln1AZcvsAgZS0Qvdteg">修复</span>emitter 等待 30 s→3 s；<code data-page-node-id="EA0XzAxoaR1JwNVEcB2gfH">say</code> 超时 60 s→8 s；worker 3→2；<code data-page-node-id="DsfPlLztrzNQiiapczl2ib">turn_seq</code> 改为全局唯一；独占锁加 4 s 租约；静音 1.2 s 后补零结算；前端加心跳 + 退避重连。</p>
+      <p data-page-node-id="fxlJvrrq3LV3DGIWMuPgbD"><span class="sym" data-page-node-id="8gjFeVnQSRbcVKw7QcXZDc">验证</span>66 s 音频 → 82 轮，积压恒定 0–800 ms、丢弃 0、TTS 超时 0；尾部那句「把推理延迟降下来」正常结算（修复前停在 [78]）。</p>
+    </div>
+  </div>
+
+  <div class="case" data-page-node-id="BLQki4l3l8qqalOdoVkpBD">
+    <div class="case-h" data-page-node-id="hlc0mPrDEqI4UZizZoEBjy">
+      <span class="id" data-page-node-id="tx9zkYGDYQsR5Z4SYyJ81q">R2</span>
+      <span class="ttl" data-page-node-id="CswQ5aS8YFYXd5IWh09gAF">中间有遗漏，尾部也没了</span>
+      <span class="tm" data-page-node-id="BHg8lhs9vNx2jQm0DORCt1">10:50 · 五个丢点</span>
+    </div>
+    <div class="case-b" data-page-node-id="CiN2UNc9BMxGiG3p0eHkfo">
+      <p data-page-node-id="TofVRt5meFlmOe4BA3sDGd"><span class="sym" data-page-node-id="okI8rLs0oxit9ewiML6iZH">质疑</span>是输入语音处理有问题，还是模型本身？（这个问题问得对，我之前一直没分清。）</p>
+      <p data-page-node-id="ebqFYVLz7Swosz0gPQyPdp"><span class="sym" data-page-node-id="Lp8aXF1zDPO95GsHbAJYH6">先排除模型</span>原生 16 kHz 与原生 48 kHz（<code data-page-node-id="WbBD9DBNgf6loqixd62j9H">say --data-format=LEI16@48000</code> 合成，自带齿音高频）分别灌入，模型都完整译出，一句不落。<b data-page-node-id="1s80C6GRtATaTs1wXtbxPD">结论：模型和字节链路都没问题，是链路里有五个点会把音频"删掉"。</b></p>
+      <ul data-page-node-id="H2QbwuzPChgDwbb5pmPmsc">
+        <li data-page-node-id="dz5oabXTDe1w0znLZIfMcx"><b data-page-node-id="vB14PNGTAHGGCiAf1PO6cU">前端 <code data-page-node-id="WqFO9DLFwHqOcnHwKenJy5">sendPCM</code> 先清空缓冲再判断能否发送</b> → WS 短暂不 ready 就永久丢 100 ms。</li>
+        <li data-page-node-id="XCTMA8g8xKfibHctBFB6Rv"><b data-page-node-id="orPlnMA6JFZDmtOlIgAJqD">模型加载那 8 秒 <code data-page-node-id="KwH3a2xVS049U90vfCmlZK">push_pcm</code> 直接 return</b> → 切方向/重置期间说的话整段消失，<b data-page-node-id="PEemTAlfYOh6wyVwTiyHi8">且不计入任何统计</b>。</li>
+        <li data-page-node-id="PIi7VaK02FE9nj0tTqt29S"><b data-page-node-id="f7h5jx2WjsLjZAt4Kso3MH">尾部 &lt; block/3（266 ms）不结算</b> → 说一停顿，最后半句原地等。</li>
+        <li data-page-node-id="eoFBY5yBTiN0b5g0GJmAxN"><b data-page-node-id="VYQv8hgoWH7qbdLtEitGZw">积压 &gt; 2400 ms 就整块丢弃</b> → 为追平实时而偷吞内容。</li>
+        <li data-page-node-id="r9K6NkadKbys6Xa9vRQrG5"><b data-page-node-id="BKMLL9OITk78MrFa6kLx3u">多窗口抢占静默丢弃</b> → 后开的页面完全没反应且无提示。</li>
+      </ul>
+      <p data-page-node-id="mQxECWD0f6X7mqhz24UAJO"><span class="sym" data-page-node-id="Ut6EB1PzdYOCMVFNtxpLUk">修复</span>发不出去就攒着（上限 12 s）；加载期音频攒进 stage、ready 后由<b data-page-node-id="5xCVWub1CV2wKr29t1GTRv">独立线程</b>补送；尾部门限降到 50 ms；丢弃阈值提到 10 s 且必打日志；新增 <code data-page-node-id="aA5qB372cTSk3R2oLetC2a">busy</code> 消息提示"另一个窗口正在占用麦克风"。</p>
+      <p data-page-node-id="o0f16WAdwQDgD7GJcuQUon"><span class="sym" data-page-node-id="D8CluBzw0yAYCHd63mCYzI">重大收获</span>同口径音频账本（见 11.1）。11 秒 48k 音频实测 <code data-page-node-id="GRQBhGL3poQQoTRoWlqsnx">recv 39186 / model 38400 / done 38400 / stage 786 / discard 0</code>，差额 786 ms 与 <code data-page-node-id="NnZ1HChgeRYe9XmczjmRgu">stage_ms</code> 精确吻合。</p>
+    </div>
+  </div>
+
+  <div class="case" data-page-node-id="iS7n0nyYIf4IQCsLvfCybp">
+    <div class="case-h" data-page-node-id="OsPNL7Ck1VwudHMPL2JLba">
+      <span class="id" data-page-node-id="xDflyaQkHWaNeaN8gUVKqS">R3</span>
+      <span class="ttl" data-page-node-id="to3oKQp4IPIamd5YDaFLbp">上来就不起作用，还弹「麦克风没有声音」</span>
+      <span class="tm" data-page-node-id="LVgkacivi5VlAzqXHFibMj">15:15 · 电平问题</span>
+    </div>
+    <div class="case-b" data-page-node-id="XndWMkhNlaOY43zEOA4hJn">
+      <p data-page-node-id="3WosHAaUZ4A0vpgDaTGbIT"><span class="sym" data-page-node-id="Itt4muMIcm8ntfjw6zpCH7">先解释提示</span>那句话不是程序坏了，是程序在汇报事实：页面每秒上报一次能量，连续 4 秒低于 -60 dBFS 就判定"没有声音进来"。</p>
+      <p data-page-node-id="SxA4R3gTJobnBgW74VeKqv"><span class="sym" data-page-node-id="six7aykkg26tQo0v6RoA31">客观数据</span>落盘的 1005 秒原始采样里，<b data-page-node-id="eNB2JL4W26kU0UeKaT7Efq">每秒 RMS 最高只有 50</b>，正常说话是 300–3000；969 秒的 RMS &lt; 10。当前会话 180 秒 / 224 轮全部空轮。</p>
+      <p data-page-node-id="EyTtAt8bxtCxtZicIayFR6"><span class="sym" data-page-node-id="FVf4quYyxOVF6dbRwqJnfH">对照</span>同一会话里灌入已知音频，模型立刻完整译出 → 模型完好，问题在"送进去的是什么"。</p>
+      <p data-page-node-id="ea5BDdWXp87KIhaHjF67po"><span class="sym" data-page-node-id="g9lzUqFi56nPYiGjJ1TkGE">改动</span>输入设备下拉（本机有 <code data-page-node-id="B2ABAHiO4ny8ZdnYIH4TaT">tranScreen Audio</code> 虚拟声卡和 iPhone 连续互通麦克风，默认很容易落错）；实时 dBFS 数字；软件增益兜底（包络归一到 0.22，上限 150×，门限 8e-5 防放大底噪）；<b data-page-node-id="UI9tUuPkF4vWHqp0DHB5qE">"测一下麦克风"按钮</b>——录 4 秒、报电平、原样回放。</p>
+      <p data-page-node-id="IEeimCBx5gD92aDuCXHGW6"><span class="sym" data-page-node-id="dDvxrBDhMpqlKRrNo39dnk">教训</span>「没有声音」这句话无法行动，必须给数字。「原样回放」是唯一能让用户自己判定"到底收没收到"的手段。</p>
+    </div>
+  </div>
+
+  <div class="case" data-page-node-id="s473NPYY4HDbWB3SnLnQ8z">
+    <div class="case-h" data-page-node-id="7Ehttm6c81BhWgKADlVaBP">
+      <span class="id" data-page-node-id="pWjeeSrS76nAvjJMyRp7K5">R4</span>
+      <span class="ttl" data-page-node-id="bgUOHrXQcBNqh8JHkSVXaT">刚开始正常，静默一分钟后再说就没反应</span>
+      <span class="tm" data-page-node-id="PcRjGSxI0KmwXG2V87rbrx">16:30 · AudioContext 拓扑</span>
+    </div>
+    <div class="case-b" data-page-node-id="B5goBcnsQZHjNuv4nAZ1Cv">
+      <p data-page-node-id="JEA3Fj7LGyanfP2PP3y93d"><span class="sym" data-page-node-id="YJ77dUnXjQNkcylcqbMK5u">关键新信息</span>"开头正常"这一条推翻了上一轮"全程静音"的判断——信号是好的，是<b data-page-node-id="WxS0WTNNoUxvOB8fmoxzUb">运行中失效</b>。</p>
+      <p data-page-node-id="hrrmQ6NUEHYrcjHy7inxbK"><span class="sym" data-page-node-id="2N4Zc8eWj3NjIFeIxUNGiV">落盘分析</span>最后 90 秒：非零采样占 76.4%（不是断流，设备在采），但 RMS 只有 2–5，峰值 1386。也就是<b data-page-node-id="ikezDoVqfwz7y5zrxuW8ae">麦克风还开着，但采到的是近乎寂静的底噪</b>。</p>
+      <p data-page-node-id="uhgRSBwFuPfYsVZpIIwQSu"><span class="sym" data-page-node-id="6jRCRhn8V8Rr0g6EEC0PEY">时间线咬合</span></p>
+      <pre data-lang="text" data-page-node-id="S9WBA2lcf7S53P0OinhUvH">14:50:32  [76] '你好，今天你在干啥？'  → 识别正常   ✅
+14:50:33  触发配音 TTS（1.24s 音频）
+14:51:07  之后 197 秒全部空轮，level 卡在 0.0001</pre>
+      <p data-page-node-id="1uVt9ZHQ3S5FAlJIUYuTc9"><span class="sym" data-page-node-id="7Ew5D5nlcbPIYJVFcO8Os9">根因</span>采集和播放共用一个 <code data-page-node-id="fxeOFisDgMGDzSEBywzONo">AudioContext</code>，而播放链路必须接 <code data-page-node-id="73Lbix3yqipuyNpUG9BxiV">destination</code>（硬件输出）。macOS 上内置麦克风与扬声器挂在<b data-page-node-id="N7k601jXkEjnX6I3rrHxmO">同一个 AudioUnit</b>——一旦有声音开始播放，AudioUnit 从"纯输入"切到"双向"，采集流在切换中被拆掉，Chrome 补不回来。<b data-page-node-id="xrVtJNb9KrJxQFS6PUpHMs">配音一响，麦克风就哑了。</b></p>
+      <p data-page-node-id="YXO2Qu7ecSvVdo4yDlLZpa"><span class="sym" data-page-node-id="kA0zjKcRF2VMgpOO6eH5hv">修复</span>采集独立成自己的上下文，终点改为<b data-page-node-id="lNVrLcAFYAz8FMnKx2uDst">内存里的</b> <code data-page-node-id="rxxBINjP7WklCjBsBUyJ8d">MediaStreamDestination</code>，彻底不碰硬件输出；去掉原来那条"0 增益 Gain → destination"（就是它让采集上下文也占了一路硬件输出）；轨道 mute/ended 立刻重建；连续 25 秒数字静音且距上次重建超 30 秒则自动重连一次。</p>
+      <p data-page-node-id="S5PnEDgIMVcAdpZ0HAE4Zl"><span class="sym" data-page-node-id="plPWlIbuKCzVB4fonN9KnR">为什么之前测不出来</span>假麦克风不绑物理输出设备，<b data-page-node-id="Ewe9TROSf0KN4cyq3qKF8P">永远不触发这个切换</b>。用 <code data-page-node-id="k8Gm2ac1JBMI64XQmg4StG">--use-file-for-fake-audio-capture</code> 跑通的 96 秒 / 87 行字幕，恰好绕过了故障路径。这是本轮最重要的方法论教训。</p>
+    </div>
+  </div>
+
+  <div class="case" data-page-node-id="3aWTuD6fod7MMsBPWIvNfK">
+    <div class="case-h" data-page-node-id="BfNilWUeY0KiaAhJAYZVHR">
+      <span class="id" data-page-node-id="99IWWxvA8mO2KUAsjCm57M">R5</span>
+      <span class="ttl" data-page-node-id="AI0Sd549yEBccIvpgeRZys">自动化测不到真实麦克风</span>
+      <span class="tm" data-page-node-id="wdSw4QoABFCrEJHmfDVcQJ">末轮 · TCC 权限陷阱</span>
+    </div>
+    <div class="case-b" data-page-node-id="negTAB3Ygyw9qarToesjoN">
+      <p data-page-node-id="WNAIBpGFGNbUZ9aRnGxjHC"><span class="sym" data-page-node-id="HfAQrSbb1kKkwIHqKpn0g2">尝试</span>用 puppeteer 拉起 Chrome，四种接法（硬件输出 / 内存 sink × APM 开 / 关）、三个通道逐项拆分，全部拿到<b data-page-node-id="z5sfQ69Vnw9mAFGBz0Vh4R">精确的 0.000000</b>。同时在扬声器放 1 kHz 测试音也收不到。</p>
+      <p data-page-node-id="2BrO2QcNmswUuBsJRGNqYx"><span class="sym" data-page-node-id="9pfyAohQ56DAQQIonOHmXb">解释</span>macOS 把麦克风权限（TCC）判给<b data-page-node-id="TOJKykTaGQcQJ5eRuCAeRw">启动 Chrome 的那个进程</b>。子进程拿到的是<b data-page-node-id="w0jL0zSOEOJg5Sfosut7KL">静音流，而不是报错</b>——所以既不能当"设备坏了"的证据，也不能当"代码对了"的验证。</p>
+      <p data-page-node-id="kAnWraXuANJsxT99PUiCGT"><span class="sym" data-page-node-id="DhXpf0soO1kqhyuYWrGhbB">结论</span>真实麦克风这条路径只能由用户亲自点。自动化能验证的只有两件事：代码在 fake device 下是否正确，以及服务端逻辑是否自洽。</p>
+      <p data-page-node-id="rRGUiGhtGLj7EXRmmFskko"><span class="sym" data-page-node-id="aL5o3tz7v5Gpma5dnqUo04">附带发现</span><code data-page-node-id="xKE7QG5MDRTBaIHDA2evFY">/live.html</code> 是 404，正确路径是根路径 <code data-page-node-id="H7EHJDA1FYW7gr94dpsfPD">/</code>。前几次探针全打在一个 404 JSON 页上——虽然不影响 <code data-page-node-id="E46IdBRuOjtatFABZmD56r">getUserMedia</code>，但干扰了判断。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="CFJiV3x3LjcG05vKVN5SBz"><span class="h3n" data-page-node-id="55ZNaLpqXSrWLnDXYk1kiH">10.3</span>其余工程坑（速查）</h3>
+
+  <div class="twrap" data-page-node-id="hGTvN7z0q2Sa6ughUOwY9c">
+    <table data-page-node-id="Ekoc91kwRih3Tq3szICeW7">
+      <thead data-page-node-id="hKX6CMtODSgeVBopcDempk"><tr data-page-node-id="eiUOP4DCDVZ1Td2I5Y7A6z"><th data-page-node-id="SYo6UyMS7afAfcsEzFFPaC">坑</th><th data-page-node-id="brYLPAEuVKIABVWO2iQt01">现象</th><th data-page-node-id="3nZuqdHPGMPhaDAYC8WoI2">解</th></tr></thead>
+      <tbody data-page-node-id="4TFMHTc5fcukYOCqz9smar">
+        <tr data-page-node-id="lsanoPoR8Xc6s26mc6Tm3S"><td data-page-node-id="gbsnWAHqOQt33L0JONxfud">numba 缓存清理被安全钩子杀进程</td><td data-page-node-id="k6XQeUaPeZok2R5jSEGt5a">服务启动即消失，无 traceback</td><td data-page-node-id="kN8OMp7bNkKk4JOl6oToso">设 <code data-page-node-id="pOKAssoYmX1jA1Ypvr3Oe6">NUMBA_CACHE_DIR=/tmp/...</code>，必须在 import 前</td></tr>
+        <tr data-page-node-id="SWAdqBpAvXOSv0OxDcyb6z"><td data-page-node-id="sZn0YsCNvZDqq0q7OSCtU3">预热是陷阱</td><td data-page-node-id="8Nd46r3ovrXKbBQNk52SCT">持推理锁跑不受控推理，卡住后拖死全部任务（实测 300 s）</td><td data-page-node-id="xOe6dSRryvK2R69OZuG7Ua">去掉预热，让首个任务自然承担 kernel 编译开销</td></tr>
+        <tr data-page-node-id="d0BjbQAxvtIsAxzubAuRRL"><td data-page-node-id="agWibgluTUjuWUddpXrR3G">macOS 没有 <code data-page-node-id="HczxdHH0c9NYJ08ZQZ2W1G">timeout</code> 命令</td><td data-page-node-id="QyRJiHsONzufB4ffix9ho6">用错得到假的 exit 0，误判脚本正常</td><td data-page-node-id="XN62tpyfuTCzmTQ3feuJGG">用 Python 侧超时或 <code data-page-node-id="E0Kg7u1FHvQ8oazSEwDNCf">gtimeout</code></td></tr>
+        <tr data-page-node-id="s4LFCubNaAdBcWzU3QJHyY"><td data-page-node-id="4phrzWVc1M4nSV5tFVQQBb">mtmd-cli 译文走 stdout、日志走 stderr</td><td data-page-node-id="M4bAEvA0BAB6WciGfDLVyE">解析器等 stdout 里的日志，0 轮命中</td><td data-page-node-id="FAt6LcGFDvOFg6uYDGR3Nt">只解析 stdout 的 JSON 行</td></tr>
+        <tr data-page-node-id="QfDgtCCLdYdrMsXyfUfgSg"><td data-page-node-id="ZRt6x5n54A4s06hHTsTDq9"><code data-page-node-id="MKxhhKXPeLJoM10ShmHnLP">0 % 12 == 0</code> 恒真</td><td data-page-node-id="ao7txLZKUXsVy1ts2mtt5n">秒推「已 0 秒没收到声音」</td><td data-page-node-id="cdVuGj7GfmGAdrQGJ5zNZG">守卫必须加 <code data-page-node-id="Mu6OS8RJYM19OLeEEPCrhS">stall_sec &gt;= 6</code></td></tr>
+        <tr data-page-node-id="sKqiLS9HvoKCofqjQtJAMp"><td data-page-node-id="jQ5vZPXQGt5RoZ1FO1nulS"><code data-page-node-id="7miV3knbExOVhqJ5bKZGPf">html,body{height:100%}</code></td><td data-page-node-id="7sitOwvtvCivFgCDJ4nH4C">破坏 sticky 顶栏（flex 容器限高）</td><td data-page-node-id="XtHHnmQJkgttc2cHV31ZFM">改 <code data-page-node-id="fuXd20H17Ci6BkeC7GbCRk">html{height:100%}</code> + <code data-page-node-id="u0xUT5okxec3hgznEiLFS8">body{min-height:100%}</code></td></tr>
+        <tr data-page-node-id="uq2duhI4FCiOtYho68zPAZ"><td data-page-node-id="WvX4vHc0D5HsP9YOG3mYV0">回放历史字幕自动滚到底</td><td data-page-node-id="33uR7IEQFuIYo5fZ72MGIp">首屏被顶栏遮住</td><td data-page-node-id="GMRis4RTlG0gNHTAV8uoOz"><code data-page-node-id="OFfgTphNfwWZtlIWwXHmI0">autoScroll</code> 加 <code data-page-node-id="aSq09Tt8GnYHyUnurZ2qpl">if (!S.running) return</code></td></tr>
+        <tr data-page-node-id="GeDUpdYMICXMFHaUq62VUs"><td data-page-node-id="iZWz0nG2ZRw1BLIairp6um">运行中控件放在滚动区</td><td data-page-node-id="EEWrYc3biuEdiPmcMLBjnZ">一滚就找不到"结束"按钮</td><td data-page-node-id="ktAmoc929VWh9ihSJ93bqD">红点/计时/音量条全部移到顶栏</td></tr>
+        <tr data-page-node-id="wVCDmbAemO1gx48A9aLS6J"><td data-page-node-id="wMI4J7AcjcbGdljF2jYpR6"><code data-page-node-id="SYbsbGFZGLLOMcWlkcxfYL">/api/simulate</code> 用 <code data-page-node-id="xTqE0JcWZfV8PGQcqTZC3i">sleep(0.1)</code> 累加</td><td data-page-node-id="L3PCPHmHjLfqXDeq5LFYew">节奏漂移，延迟测量从 255 ms 虚高到 500 ms</td><td data-page-node-id="Yh7k7NgbWgal5A6Lz45xuC">按绝对时钟对齐</td></tr>
+        <tr data-page-node-id="Cp5bDQhW2BLMRRBG7YFYiM"><td data-page-node-id="aftieKGH4BDZd6Gqc7bEhG">Chrome headless 起 remote debugging</td><td data-page-node-id="HVDSmIlm25pGSqxxaV0ypU">必须加特定 flag</td><td data-page-node-id="rPHfdfWiiMnRPxcXDVVUJP"><code data-page-node-id="CDo9mXO55zGxoZlpGw86pc">--no-sandbox --user-data-dir=&lt;独立目录&gt;</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s10" data-page-node-id="gXSAK9itLEfVPnRRc9Zh3a">
+  <div class="secno" data-page-node-id="hGIGX6NAmBVarEbOlW0ZtE">SECTION 11</div>
+  <h2 data-page-node-id="gIwN1KbDVxm1R0mLXihZSO">方法论：从"猜"到"量"</h2>
+
+  <p class="lead" data-page-node-id="5EDHeabFyJUkAgHNa84Koy">这一章不是技术细节，是这次真正学到的东西。前两轮我判断错了两次，原因都不是不懂技术，而是<b data-page-node-id="bDKNddKn3DAFJlYllRWRGR">把"看起来一致"当成了"证明了"</b>。</p>
+
+  <h3 data-page-node-id="h21W5fI0xm10MZgLj4UYrZ"><span class="h3n" data-page-node-id="jjQXMnVVOAMZaRJHo2DFWX">11.1</span>音频账本：一条能定位丢在哪的尺子</h3>
+
+  <p data-page-node-id="BNNp8nWAaBQqwEQCecwk3d">核心思路：<b data-page-node-id="CxYMQwr0RE1SPR8imLwarE">把音频在链路上的每一步都换算成毫秒，用同一个口径记账</b>。这样任何一处丢失都会变成两个数字之间的差，而不是靠听感猜。</p>
+
+  <figure data-page-node-id="kDRySgCQ2q8YSG0dEGzIMF">
+    <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="音频账本口径" data-page-node-id="vxRhtQqDjLVF6XH2tg8Sg0">
+      <!-- 阶段框 -->
+      <rect x="14" y="46" width="126" height="52" fill="#EBEDFD" stroke="#2A3BE8" stroke-width="1" data-page-node-id="wXUZBofxG8EHNNPsBfqSQz"></rect>
+      <text x="77" y="66" font-family="ui-monospace,monospace" font-size="10" fill="#1E2CB8" text-anchor="middle" data-page-node-id="EIYbCb8TC8NXjiLOp9MV1F">gen_ms</text>
+      <text x="77" y="82" font-family="-apple-system,sans-serif" font-size="9.5" fill="#5A63D8" text-anchor="middle" data-page-node-id="rmFunBkkwZRixjQy8Jjbh5">浏览器采集</text>
+
+      <rect x="158" y="46" width="126" height="52" fill="#C3C9F8" stroke="#2A3BE8" stroke-width="1" data-page-node-id="fx5W91mgW0GuRnAHvkB9FU"></rect>
+      <text x="221" y="66" font-family="ui-monospace,monospace" font-size="10" fill="#1E2CB8" text-anchor="middle" data-page-node-id="EIPHPpPzPJ5kIRT1ASbBcR">sent_ms</text>
+      <text x="221" y="82" font-family="-apple-system,sans-serif" font-size="9.5" fill="#1E2CB8" text-anchor="middle" data-page-node-id="uGjIvZCObzN8ZMBZMI861d">实际发出</text>
+
+      <rect x="302" y="46" width="126" height="52" fill="#8C97F2" stroke="#2A3BE8" stroke-width="1" data-page-node-id="eOAM8QLWA7ijhJG91pUZBg"></rect>
+      <text x="365" y="66" font-family="ui-monospace,monospace" font-size="10" fill="#FFFFFF" text-anchor="middle" data-page-node-id="pWpa70SW6MnZUxz9JIY1dR">recv_ms</text>
+      <text x="365" y="82" font-family="-apple-system,sans-serif" font-size="9.5" fill="#FFFFFF" text-anchor="middle" data-page-node-id="YS0XNDOhW0YhPuANoWEFAy">服务端收到</text>
+
+      <rect x="446" y="46" width="126" height="52" fill="#5A63D8" stroke="#2A3BE8" stroke-width="1" data-page-node-id="Urr0KiNFl5iGarltaaS1iU"></rect>
+      <text x="509" y="66" font-family="ui-monospace,monospace" font-size="10" fill="#FFFFFF" text-anchor="middle" data-page-node-id="e4lOAI6rC6VOdzwkLqJ2Qt">model_ms</text>
+      <text x="509" y="82" font-family="-apple-system,sans-serif" font-size="9.5" fill="#E3E6FC" text-anchor="middle" data-page-node-id="NapfRXwUzCrR1WYMWx2Brr">写进 stdin</text>
+
+      <rect x="590" y="46" width="126" height="52" fill="#0F6B4F" stroke="#0F6B4F" stroke-width="1" data-page-node-id="jAgln1mUbU3cimqwNGP5Fo"></rect>
+      <text x="653" y="66" font-family="ui-monospace,monospace" font-size="10" fill="#FFFFFF" text-anchor="middle" data-page-node-id="pAZDDf9dPGNpCo7SrgJG1M">done_ms</text>
+      <text x="653" y="82" font-family="-apple-system,sans-serif" font-size="9.5" fill="#C8E2D8" text-anchor="middle" data-page-node-id="KwTn2G4nujSZjlki38nrrc">模型处理完</text>
+
+      <!-- 箭头 -->
+      <path d="M140 72 L154 72" stroke="#96969F" stroke-width="1" marker-end="url(#a3)" data-page-node-id="CSQ4ZKOOq0jKdGrJ3w3BrL"></path>
+      <path d="M284 72 L298 72" stroke="#96969F" stroke-width="1" marker-end="url(#a3)" data-page-node-id="RrAZXCXD0qpcAPProUEufm"></path>
+      <path d="M428 72 L442 72" stroke="#96969F" stroke-width="1" marker-end="url(#a3)" data-page-node-id="5M7gu6xIoK6rq4ca2ZiHbD"></path>
+      <path d="M572 72 L586 72" stroke="#96969F" stroke-width="1" marker-end="url(#a3)" data-page-node-id="tOB3Ay5tFacaCxe9XVXkMp"></path>
+
+      <!-- 判据 -->
+      <text x="14" y="130" font-family="-apple-system,sans-serif" font-size="11" fill="#17171B" font-weight="600" data-page-node-id="Hz3qCkjy22TCWGwaWcd63X">判据</text>
+      <rect x="14" y="140" width="702" height="34" fill="#E7F2EE" stroke="#0F6B4F" stroke-width="1" data-page-node-id="IHsCuCsRNk0PLeUatH1Ghc"></rect>
+      <text x="26" y="155" font-family="ui-monospace,monospace" font-size="10.5" fill="#0C5741" data-page-node-id="HPGTr4azpZ6xnkTnlvK2D7">recv_ms ≈ model_ms ≈ done_ms　且　discard_ms = 0</text>
+      <text x="26" y="168" font-family="-apple-system,sans-serif" font-size="9.5" fill="#0C5741" data-page-node-id="O9xcaSJ39nDPkMubV7lm9C">并且 recv_ms − model_ms 必须恰好等于 stage_ms（未满一块的尾巴）</text>
+
+      <!-- 实测 -->
+      <text x="14" y="204" font-family="-apple-system,sans-serif" font-size="11" fill="#17171B" font-weight="600" data-page-node-id="RNRmtx5HPBXFKHZFSKjkXP">实测（11 秒原生 48 kHz 语音）</text>
+      <text x="14" y="224" font-family="ui-monospace,monospace" font-size="10.5" fill="#3D3D46" data-page-node-id="3EpYADZVMgGaCFkX5vbhbp">recv 39186 ms</text>
+      <text x="150" y="224" font-family="ui-monospace,monospace" font-size="10.5" fill="#3D3D46" data-page-node-id="kJlpp7qYee0xAPmE4Wqy0q">/ model 38400</text>
+      <text x="286" y="224" font-family="ui-monospace,monospace" font-size="10.5" fill="#3D3D46" data-page-node-id="EM2Nx8maGpTbvKJSK4UOXI">/ done 38400</text>
+      <text x="410" y="224" font-family="ui-monospace,monospace" font-size="10.5" fill="#3D3D46" data-page-node-id="A3gUBgLFuxJGfuA59fyHqM">/ stage 786</text>
+      <text x="520" y="224" font-family="ui-monospace,monospace" font-size="10.5" fill="#0F6B4F" data-page-node-id="jeH5WvBaIj412mzTOw7Amn">/ discard 0</text>
+      <text x="612" y="224" font-family="-apple-system,sans-serif" font-size="10" fill="#0F6B4F" data-page-node-id="U9fDyDWiortQgyui3fDQUS">← 精确对平</text>
+
+      <defs data-page-node-id="RcV6qYuI4Ed6ss4IBXYF9D">
+        <marker id="a3" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto" data-page-node-id="oAzgNwNAcUbwPk8dVm7ct4">
+          <path d="M0 0 L5 2.5 L0 5 z" fill="#96969F" data-page-node-id="8MLmCzOZ1edIaLKoB0lC3C"></path>
+        </marker>
+      </defs>
+    </svg>
+    <figcaption data-page-node-id="0pXCQGZ5AZu8PGn5SRRDDg"><b data-page-node-id="4s7jfyzlcDE8VFOFlfIIpD">图 5</b>　音频账本。五段同口径时长 + 两个异常计数（<code data-page-node-id="3WjJDKsVG1Y0C3hXtr8zHe">discard_ms</code> 自己丢的、<code data-page-node-id="WZoKBcQ6EWdlios40yk35x">rejected_ms</code> 被别人占锁拒收的），任何一处丢失都会在差值里显形。</figcaption>
+  </figure>
+
+  <div class="note warn" data-page-node-id="yl0mTwmQzoNgS19HPhrOY9">
+    <span class="lbl" data-page-node-id="GX67Pxp3g5u6Jck4Jnx4Cn">这条尺子差点骗了我</span>
+    第一轮我把"账本对平"当成了链路健康的证据。但<b data-page-node-id="2kHPoV8N9Asi3FRVB5EvkJ">全零样本同样能让账本完美对平</b>——字节数一秒不差，只是内容是静音。<br data-page-node-id="aSWYhEo529HdX5tWKSXpnL">
+    账本能证明"没丢"，不能证明"有内容"。要证明后者，必须看<b data-page-node-id="jocsH5aG4RhMaALPbywwOy">电平</b>（RMS / dBFS）或<b data-page-node-id="gytIafmZOAjZmJX9jvlbur">落盘回放</b>。
+  </div>
+
+  <h3 data-page-node-id="mezFiPDbxdrNA462Z3dstA"><span class="h3n" data-page-node-id="PJ9BE6IZ3ACOYxEpVEIzbu">11.2</span>落盘取证：把"猜"变成"看"</h3>
+
+  <p data-page-node-id="FUbxKNOf7JAt4BK8RAjAs0">一旦把收到的原始 PCM 落到 <code data-page-node-id="2IzjwGltSSRneEhQIp0UG3">live-cache/recv.pcm</code>，很多争论就消失了。可以直接算每秒 RMS、画包络、截取片段重放：</p>
+
+  <pre data-lang="text" data-page-node-id="2FqigQkTKAxkxLmkB9ZyNx">落盘总时长 1005.0s  文件 30.2 MB
+全文件最高峰值 1386   最高每秒 RMS 50
+RMS 分布:  &lt;10: 969 秒   10–50: 31 秒   50–200: 5 秒   &gt;200: 0 秒
+                                        ↑ 正常说话应该在 300–3000</pre>
+
+  <p data-page-node-id="I0ER7LbshwitBDm7TPaAiZ">这组数字一次性回答了三个问题：<b data-page-node-id="A5RNIxKYIQRxCRWqZNrr6J">设备在采吗</b>（在，非零占 76%）、<b data-page-node-id="4ZrzW4ShjT2G5NDFGJ1IHH">有声音吗</b>（几乎没有）、<b data-page-node-id="shy2OkdYvkJk3eLIJXHzey">是代码问题吗</b>（不是，采到的东西本身就没能量）。</p>
+
+  <h3 data-page-node-id="eH7vywL0ejLDyynwOsB52G"><span class="h3n" data-page-node-id="pT1DmPEbYmYkCwdUDFKhTy">11.3</span>三条被实践否定的"验证方式"</h3>
+
+  <div class="twrap" data-page-node-id="AUPh7myZfPZc0irEGnTPYD">
+    <table data-page-node-id="90dzEBLOaSYT13jz4oBCw1">
+      <thead data-page-node-id="feCesknqxCfCgOwUrYoD4e"><tr data-page-node-id="TknCmNAwWPBECWt7iHqWaZ"><th data-page-node-id="CY8ZUkb0Ew5Cs8QOBzrIl7">看起来合理的验证</th><th data-page-node-id="S7O9gB6dAV8W2AqcKls8uq">为什么无效</th><th data-page-node-id="Mgv3pbMAu4CIzau2HJaCun">正确做法</th></tr></thead>
+      <tbody data-page-node-id="XcS1DlnB50d3NfiOaluFjK">
+        <tr data-page-node-id="0Es55eDoDCk9deOmVPHy5b">
+          <td data-page-node-id="BOmWWHKMvVo9J4Cf1d0Y78"><b data-page-node-id="U5dqdnEYxWevc9jiBLECh3">用假麦克风跑通全链路</b></td>
+          <td data-page-node-id="uBnrygogRyJvA4qT6J0JfJ">假设备不绑物理输出，<b data-page-node-id="ii3caerF73UalM5pKlfTgm">永远不触发 AudioUnit 的模式切换</b>。96 秒 / 87 行字幕全部通过，真实设备一秒就哑。</td>
+          <td data-page-node-id="tNUOcznjvxdy8rR2OGGHNh">假设备只用于验证代码逻辑；真实设备的问题必须真实设备验。</td>
+        </tr>
+        <tr data-page-node-id="IHPLHiEYVe6JEWAFTMS8dz">
+          <td data-page-node-id="UwiBlqG13vNhUyeE5zSNYc"><b data-page-node-id="3KvSduElWH0cG2aYGUb0Zi">把 16k 上采样到 48k 做重采样对照</b></td>
+          <td data-page-node-id="osv88YMXoliFBc3hLgaiSP">上采样不会造出 8 kHz 以上的能量，降回去必然无损——<b data-page-node-id="oNFfseWXJQnVp9yqtZIm3E">实验设计本身没有信息量</b>。</td>
+          <td data-page-node-id="C9lIFlxsfmWvXRRmi0bzmV">要造真实条件，必须用原生 48k 合成/录音（自带齿音高频）。</td>
+        </tr>
+        <tr data-page-node-id="SFxYoQrUOzf5346Jh6UjI9">
+          <td data-page-node-id="KHXpPjbEBjoHMcgrEBYz03"><b data-page-node-id="yVnBJEEUVwvpmFZ1WMYCjT">用 puppeteer 测真实麦克风</b></td>
+          <td data-page-node-id="mtyxX4ul3DDo6k1UHeECwd">macOS 把 TCC 判给父进程，子进程拿到<b data-page-node-id="mFWLFgQVgFKCgsbxYIqynh">静音流而不是报错</b>。</td>
+          <td data-page-node-id="cxaU7eFgftpkqRE4Ljf2Ux">让用户自己点「测一下麦克风」；自动化只测 fake device 路径。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 data-page-node-id="uoE6RUfz0gII8o9GWqpyyk"><span class="h3n" data-page-node-id="ACdrRknmYYduTHNaHyEAoj">11.4</span>排查期间的自伤要如实说明</h3>
+
+  <p data-page-node-id="XgVxcsJTpA1OVxeFCFaW0M">排查过程中我重启了三次服务，每次模型重载 8 秒。<b data-page-node-id="49TfJitKKWeV87cL3xaISN">如果用户正好在说话，那几句必然丢</b>——这也在他感知的"尾部没了"里。这类由排查动作本身引入的噪声，必须主动告知，否则会把用户推向错误结论。</p>
+
+  <div class="note" data-page-node-id="HxOqa9kimwxqcfNmp13Va2">
+    <span class="lbl" data-page-node-id="lsa160F1ujeIUJkIOoRucr">一条可以推广的规则</span>
+    当一个系统有很多"静默失败"点时，<b data-page-node-id="LtaAMxDerBClQFXUVgCuwz">先建可观测性，再改代码</b>。R1 铺的心跳、租约、账本、落盘，让 R2–R5 的定位速度提升了数倍。反过来，先改代码再补观测，只会积累更多"不知道有没有修好"的改动。
+  </div>
+</section>
+
+<section id="s11" data-page-node-id="ui4HY8C5D0nh9FBFafnFcu">
+  <div class="secno" data-page-node-id="GSTeIfWeXQ3OFdw4TfEuyH">SECTION 12</div>
+  <h2 data-page-node-id="7Vz9g1nIRkYhqdtylhHcAH">边界与去向</h2>
+
+  <h3 data-page-node-id="U1NKbzf5jcaADoA74joQLi"><span class="h3n" data-page-node-id="nbcdFwv4zyldvatv3dGhbp">12.1</span>当前方案的硬边界</h3>
+
+  <div class="twrap" data-page-node-id="88LUuBGanhoEm24ECSfwMc">
+    <table data-page-node-id="7ziscbipWjHbo6iV3yfMso">
+      <thead data-page-node-id="6NfKg2NaQeuRQBiK3Jj5V5"><tr data-page-node-id="qVeYlpweYGABE2MfzN0MEo"><th data-page-node-id="bGq4S9PxqvMiaQsEPpyYD2">限制</th><th data-page-node-id="ip8Dt3KLERZG8vCifgw5SX">原因</th><th data-page-node-id="hDxoDwcX9kDV6L9jziZjCh">能否绕过</th></tr></thead>
+      <tbody data-page-node-id="hEFlN8wH1heZHGORvEekah">
+        <tr data-page-node-id="EkySHkeNBFk7g3xFc4J1nM"><td data-page-node-id="ADL53cZNq8h5m2J6uM1Xsh"><b data-page-node-id="w3h9npycn4BuHJMsh0p9dG">只能单向</b></td><td data-page-node-id="BaAHX2c94vGkcd49yxMggz">方向由指令语种决定，指令在首轮就进了上下文</td><td data-page-node-id="VlwvyaZpjKuNB1CwwwhcNw">换方向要重启模型（约 8 s）。可以预启两个进程并存，代价是内存翻倍</td></tr>
+        <tr data-page-node-id="4dEll4pMtPgLJB1Or8Vq7V"><td data-page-node-id="py7ap9QIckavVBpDJ9G9qV"><b data-page-node-id="6IL5z1CKKSVSmpc5ChoVY0">约 9–11 分钟换会话</b></td><td data-page-node-id="fhaZnOn0WR9ENNSTo0qUkc">16K 上下文，每 800 ms 涨一轮</td><td data-page-node-id="UppLv7HjLHBPzy5llnAwpM">开更大上下文，但内存紧张的机器上会失去实时性</td></tr>
+        <tr data-page-node-id="oxQODNgx6kEAzC2l9acDBP"><td data-page-node-id="UwudAp01NhxFsqWvh6UXyT"><b data-page-node-id="hqGcIqAYUNz3cbYdpGa4eL">同一时刻只接受一个音源</b></td><td data-page-node-id="bQCnloGs02hGkLiIfdXeHA">两路 PCM 写同一 stdin 会互相插帧</td><td data-page-node-id="x2ULMQcu1CihTL1QKjgCy5">不解。这是物理约束，只能仲裁</td></tr>
+        <tr data-page-node-id="zJJbmLXsGbigvKriLh2z2l"><td data-page-node-id="uFBExHGAlJkhZ622MwNVLZ"><b data-page-node-id="oCe8vV4pUjJdLAS2beIVPC">AI 配音不实时</b></td><td data-page-node-id="uqoWyWoECZXOnQRLARV5ly">Qwen3-TTS RTF 1.3；<code data-page-node-id="v8aFtlzBic4n6xOfSpgkHm">say</code> 有 870 ms 固定开销</td><td data-page-node-id="egrsMaFadkwEIcJnmsHa4j">进程内合成（<code data-page-node-id="wYJ4G5VWPPh6eaYBDIWtpc">AVSpeechSynthesizer</code>）可以消掉 870 ms，但要写 ObjC/Swift 桥</td></tr>
+        <tr data-page-node-id="cJVC45MsHHrkU3ZJt6L0jv"><td data-page-node-id="8m0ZOtP6sBPfuQ8J4rYwlF"><b data-page-node-id="jY1CxwgkGokFt9zUfhOtmA">外放会自激</b></td><td data-page-node-id="7wqcxW0Gh4T7bvBIQCLrSn">模型听到自己的译文，当成新输入再译一遍</td><td data-page-node-id="fcVJKr3HxIUs6EPwXANHbg">戴耳机，或启用 AEC（但 AEC 又会压近端语音，是个权衡）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 data-page-node-id="hRM96UTHDBuvM2NlQyFHK5"><span class="h3n" data-page-node-id="OQPYmliASQ53nEQWwlNiBu">12.2</span>如果继续做，优先级排序</h3>
+
+  <ol data-page-node-id="ZKtZ8PsTpF0TrcXMB2sIEn">
+    <li data-page-node-id="QzIVYhhibgtaTsIBvJ9wy7"><strong data-page-node-id="hDGrdtw3kAd3kBC5Dbb1EA">进程内 TTS</strong>。870 ms 是当前配音延迟的 76%，用 <code data-page-node-id="XwtOK6itUDsu5UuGpGdIA9">AVSpeechSynthesizer</code> 可以直接砍掉。这比换模型、调参数都划算。</li>
+    <li data-page-node-id="ukkMZsQHCiWEEiZSYjwaaZ"><strong data-page-node-id="MYX10L4MYhQA0oMJycx2jl">双向常驻</strong>。预启 zh→en 与 en→zh 两个进程，按方向切换路由。内存不够就在切换时懒加载。</li>
+    <li data-page-node-id="bUjL2tvLotrjuDpd4GuKcy"><strong data-page-node-id="NH4kAt6GdztzBKWkMsWfmP">音频链路的形式化</strong>。把账本从"事后 curl"变成界面上的常显数字，让用户自己就能判断丢在哪一环。</li>
+    <li data-page-node-id="g9zvA1RqGM27KFofG0FLyD"><strong data-page-node-id="JMIHFvp8DEekVUflrrzdd3">向上游反馈 mmproj 与模板的修复</strong>。PR #31198 若合入 master，并且 <code data-page-node-id="pOGeJrsKPZIvMYCxH8O55S">llama-server</code> 的模板支持"每轮重放助手头"，这套自研服务就可以简化掉一大半。这是最该做的事——把临时方案变成上游能力。</li>
+  </ol>
+
+  <h3 data-page-node-id="nnoZIAgNfxkHOscPB27UO6"><span class="h3n" data-page-node-id="mMXBbZEEGcQo4WN4BUNttu">12.3</span>这个实践最后证明了什么</h3>
+
+  <p class="lead" data-page-node-id="pr948lNSSdcQIXQNqGFZqC">30B 的 MoE 语音模型在消费级笔记本上做实时同传，不是"理论上可行"，是<strong data-page-node-id="t9EsFDPanqGUgG6TG7yTkw">现在就能用</strong>——255 ms 的字幕延迟已经优于人类同传。</p>
+
+  <p data-page-node-id="naFWLOnwISHAZoDTkKa8kc">真正的门槛不在模型。模型很配合：它只要按训练时的节拍被喂数据，就会稳定地吐出高质量译文。门槛在<b data-page-node-id="F6D8rcu9aH9ZWyCd5xkJrQ">那条把自己和它连起来的链路</b>：浏览器的音频拓扑、操作系统的权限与时钟域、进程间的管道与锁、以及内存这张永远不够大的桌子。</p>
+
+  <p data-page-node-id="2Tn7xh7k2tkeYkipwRGmxK">这次最大的教训是：当系统"看起来在运行"时，最该怀疑的不是逻辑，而是<b data-page-node-id="t3Y77X8bcKaxzpqBRAMsUJ">有没有东西在静默地消失</b>。而对抗静默的唯一手段，是让每一步都能被量出来。</p>
+</section>
+
+<section id="s12" data-page-node-id="6cuE1e9WYhSPGyAWtTPm3A">
+  <div class="secno" data-page-node-id="D1V9NAlV1MabfvQhijG1T1">SECTION 13</div>
+  <h2 data-page-node-id="n9cnDhw3POmKdhvPlg7ttx">复现清单</h2>
+
+  <h3 data-page-node-id="JI57GZLYPgb74m2Ia6MFb5"><span class="h3n" data-page-node-id="7DInOrvj6qMmp8anR4PUfa">13.1</span>文件</h3>
+
+  <div class="twrap" data-page-node-id="4gE5f1OhecIXmq4or2btWN">
+    <table data-page-node-id="0srQzF1es9ZOkIBurAGfBX">
+      <thead data-page-node-id="ds98Wgq6sRgp8wzkctkH8w"><tr data-page-node-id="RDYG0iAGdAPzGvG9wD8YQr"><th data-page-node-id="NlC1yQCBWwBLRor1MiHIR7">文件</th><th data-page-node-id="vtUQOGRlj1hoLWyJvbmDDK">行数</th><th data-page-node-id="Rjvy5gFxHrTIdjgu1NS12A">作用</th></tr></thead>
+      <tbody data-page-node-id="11hmTPvew2rwq7EH3FuvMS">
+        <tr data-page-node-id="ufAmEa1XIrnCgDK4igqRgA"><td class="n" data-page-node-id="KQ4YfEFAOr9F2rxvKAAbXZ">live.py</td><td class="n" data-page-node-id="arpCEeIfkZ912OON2tbA4Z">949</td><td data-page-node-id="YnY4z8cQN33cILLWUg4yAL">同传服务：进程管理、WebSocket、TTS、HTTP、账本、看门狗。零第三方依赖</td></tr>
+        <tr data-page-node-id="pIuRiC2p1kgJ7dUI7rkBoW"><td class="n" data-page-node-id="gCxUMFJxLTe7jHciBrOfrp">web/live.html</td><td class="n" data-page-node-id="TjZ2AmU0cCtPaq7lqqhaD0">1036</td><td data-page-node-id="rroBe733tK0xRklKirePFQ">界面。单文件、零外部依赖，采集/播放/告警全在里面</td></tr>
+        <tr data-page-node-id="yID2U86tPGrh1poWbKP8Wl"><td class="n" data-page-node-id="MuA3xMbDzlcCnHE8WvHOch">mtmd-cli.cpp</td><td class="n" data-page-node-id="eqajGBxOp9PcaNe46oByCR">1192</td><td data-page-node-id="jfcgZsH3r82f8GItsXnb8A">官方文件 + <code data-page-node-id="9Kfc7LzA9jIZyr3678SX5q">--stream</code> 改造（+260 行）</td></tr>
+        <tr data-page-node-id="my7Ls64SI9ubrtvC010aLH"><td class="n" data-page-node-id="hlFeUgJ2OxwHiQZpqvbkVF">live.sh / run.sh / tts.sh / ui.sh</td><td class="n" data-page-node-id="IabXLYi7NMkwjiCanj7oYV">—</td><td data-page-node-id="o3FxXSZY0mhqMc7Dx0yuGE">实时 / 离线字幕 / 离线配音 / 批量 UI 四个入口</td></tr>
+        <tr data-page-node-id="pLrEwjlqosixs8cUvjb01X"><td class="n" data-page-node-id="SEuHALnwSEdNBYsRbkeChq">pipeline.py · server.py</td><td class="n" data-page-node-id="tJDn6EBN3IyPNQgpfFHevw">—</td><td data-page-node-id="mdCmzRr3hKy0WRb2C2SgvG">离线全链路、批量 Web UI（端口 8765）</td></tr>
+        <tr data-page-node-id="z9He09xA4YS9SwwvPTilhM"><td class="n" data-page-node-id="PSagFj1ExV80c7MXXQbjZq">LIVE.md</td><td class="n" data-page-node-id="fC8roiy4XlInYGzOY7S8Pq">189</td><td data-page-node-id="d6lXHcV912M743bpYS0XhP">运行手册与判据速查</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 data-page-node-id="eKXrODnrV78wIzgR3C4lNs"><span class="h3n" data-page-node-id="IomiFdMdkU5MpN8kepzBCV">13.2</span>三步启动</h3>
+
+  <pre data-lang="bash" data-page-node-id="h26iiQHEiGQEfBJlnbNRjT"><span class="c" data-page-node-id="UL3AQxXLn7ZY5eo5WYKMDg"># 1. 实时同传（推荐：先戴耳机）</span>
+./live.sh                    <span class="c" data-page-node-id="bmEdl17W4tIaN0E8hBP2jQ"># → http://127.0.0.1:8770</span>
+
+<span class="c" data-page-node-id="YigJ7J5qRZS5tUtu3RNjVJ"># 2. 没麦克风也能验证链路：把 wav 当麦克风灌进去</span>
+curl -X POST --data-binary @audio/test_zh.wav \
+  "http://127.0.0.1:8770/api/simulate?realtime=1"
+
+<span class="c" data-page-node-id="DpxKFzGDwZpKezDkumet9j"># 3. 怀疑漏句时，看账本</span>
+curl -s http://127.0.0.1:8770/api/status | python3 -m json.tool</pre>
+
+  <h3 data-page-node-id="ZBt8DXDAIbWTlvGeyT1pAL"><span class="h3n" data-page-node-id="i7WW8Ff0ci8t2Dw0O5lutD">13.3</span>故障速查</h3>
+
+  <div class="twrap" data-page-node-id="RfxI28Kb1cMIn0cWJFi51b">
+    <table data-page-node-id="t8cHnkW0iFwdYotpzACvqI">
+      <thead data-page-node-id="kMgIstl2bNSNdBdfCnXneO"><tr data-page-node-id="sXLtAFXwW7cBf1UEWLqfLM"><th data-page-node-id="P0yWJTILxEBGlOufYDoEB8">界面提示</th><th data-page-node-id="tdccGy9ETQR702kA5EbU5W">含义</th><th data-page-node-id="Oi5psfQMKsTNhbZFNmf0BP">是否自愈</th></tr></thead>
+      <tbody data-page-node-id="VsY70nwM9CLCrbwdWEQQgL">
+        <tr data-page-node-id="ONLVU5uU57e8C1pkdQRkAG"><td data-page-node-id="PX1RIzb1Czf93ny3N0skiQ"><code data-page-node-id="5s32QwoEhvJVMkPu86kap8">已 N 秒没收到声音</code></td><td data-page-node-id="8s7nam7loOdDCsq5ITnkxF">服务端确认字节数不再增长，链路真断了</td><td data-page-node-id="L9Nv3L0Nnnkvw0gphWOMM8">前端随后判死重连</td></tr>
+        <tr data-page-node-id="PffMMDf74HwBMYcnanwlp9"><td data-page-node-id="GDPzoawv50HC9CC1uUxklA"><code data-page-node-id="BBXgpGxpSDh4xkjKQCDiXi">连接中断，正在重连…</code></td><td data-page-node-id="IZoi29sau2P9MUTzYUja5o">心跳 9 秒无回执（TCP 半开）</td><td data-page-node-id="rt9s6mQNY8JJwFqM3W7P0L">是，退避重试最多 30 次</td></tr>
+        <tr data-page-node-id="H3GV83T90czdoYdXzyD3hu"><td data-page-node-id="G1ZEJtprnjFOnLuvFbuBlm"><code data-page-node-id="SLbpyDh9dbePjYBwYMtIkC">麦克风听不到声音（-83 dB）</code></td><td data-page-node-id="yJRR2e9pCJ9uGhpP7kV7LA">设备在采，但能量接近 0</td><td data-page-node-id="bVKJKLmZHAqqUW25uygxKH">否，要查设备/权限/电平</td></tr>
+        <tr data-page-node-id="O67NGTX4J6MAJiWVdthEEq"><td data-page-node-id="z3oFK8GPNMzeJgenNixVel"><code data-page-node-id="6hkZKm28AOi3RETiF72P34">另一个窗口正在占用麦克风</code></td><td data-page-node-id="8nsF8mw7XZkxPELARNynWb">多页面同时打开，只认第一个开口的</td><td data-page-node-id="5AFRQSBZqegEui6AzUHNra">是，4 秒租约后自动接管</td></tr>
+        <tr data-page-node-id="uThc8S4AdsYVy4BkEBTGSJ"><td data-page-node-id="NbAhChucxGRqsEwOdvWJJY">计时在走、无提示、无新字幕</td><td data-page-node-id="zDT6kk1VNaW8SvdFiEPeeg">模型在推理，或音频不足一块</td><td data-page-node-id="x7coUDYu7mfKxzHNjCtmms">正常，等尾部结算（1.2 s）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn" data-page-node-id="E5oSNY0YOi0HjzDzGICZLY">
+    <span class="lbl" data-page-node-id="40TD2CmLulEjf0F7hHWxxO">一个必须先确认的前提</span>
+    改动前端之后<b data-page-node-id="xcUZQN8rgLRiKvrrRHVI4A">务必强刷</b>（<code data-page-node-id="DaD8Y1IcK6io7Svs8fBEpF">Cmd + Shift + R</code>）。服务端已发 <code data-page-node-id="Ir2xElJxaK8uiW2q9BFdp8">no-store</code>，但普通刷新仍可能命中旧脚本——这一点在排查中实际误导过判断。
+  </div>
+</section>
+
+<hr class="sep" data-page-node-id="lsklPYU7xAfu1cjgODdzQH">
+<footer data-page-node-id="IAjrWpqiyHuXTfsEgR1BDR">
+  <p data-page-node-id="eqCaGsDlelJXh4qUPaVjda"><b data-page-node-id="mDY7ZUYY9GAcp2Mu9xVKty">Hy-SimulMT 本地实时同传 · 研究与实践</b><br data-page-node-id="l5vd8NjdOJNSVyb0XoP2OQ">
+  记录于 2026-10-27 至 2026-10-28，M2 Max / 64GB / macOS。<br data-page-node-id="cZaCYcNT9n31fDDT0cq3Nc">
+  所有性能数字来自本机实测日志（<code data-page-node-id="8SojQmWvEuP1qFLZjjZ0NB">run1.log</code>、<code data-page-node-id="2plWXkkbFFuLAkzCYDpWY7">run_cpu.log</code>、<code data-page-node-id="DloESuTnfBSDwOlMJkER9H">tts_bench.log</code>、<code data-page-node-id="bCMCxW8WdG3Gb7sOKVEizJ">live.log</code>），未做理论推算。</p>
+  <p style="margin-top:12px" data-page-node-id="gVY5TArCnTqBYkWmNSBQNo">模型：Tencent-Hunyuan/Hy-SimulMT-30B-A3B（Apache-2.0）· 推理：llama.cpp PR #31198 分支 <code data-page-node-id="KxgejJoNnRyuqfyLxDSemF">hyv3-speech</code> @ <code data-page-node-id="ovccDpbLp3bwSfrZRVKLHJ">e41ca42</code></p>
+</footer>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var prog = document.getElementById('prog');
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav a'));
+  var secs = links.map(function(a){
+    var el = document.querySelector(a.getAttribute('href'));
+    return { a: a, el: el };
+  }).filter(function(o){ return o.el; });
+
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    prog.style.width = pct + '%';
+
+    var cur = null;
+    for (var i = 0; i < secs.length; i++){
+      var top = secs[i].el.getBoundingClientRect().top;
+      if (top <= 120) cur = secs[i];
+    }
+    for (var j = 0; j < secs.length; j++){
+      secs[j].a.classList.toggle('on', cur === secs[j]);
+    }
+  }
+
+  var ticking = false;
+  window.addEventListener('scroll', function(){
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){ onScroll(); ticking = false; });
+  }, { passive: true });
+
+  onScroll();
+})();
+</script>
+
+
+
+</body></html>
