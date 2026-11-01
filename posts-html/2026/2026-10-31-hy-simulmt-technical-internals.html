@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="拆解 30B 语音同传模型如何在本机跑成常驻流式服务：改 260 行 C++ 打通 --stream，用 800ms 分轮与 stdin 节拍，配音频账本、双 AudioContext 与六类故障分诊，字幕延迟压到 255ms，也坦白单向与轮换的边界。">
+<meta name="keywords" content="simulmt, llama-cpp, streaming-inference, low-latency, websocket, text-to-speech">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-31">
+<title>Hy-SimulMT 本地实时同传 · 技术实现原理解析</title>
+<style>
+:root{
+  --bg:#FBFAF8;
+  --surface:#FFFFFF;
+  --surface-2:#F6F5F1;
+  --ink:#16161A;
+  --ink-2:#55595F;
+  --ink-3:#8E9298;
+  --line:#E4E2DC;
+  --line-2:#EFEDE8;
+  --blue:#2F5FD0;
+  --blue-bg:#EDF2FC;
+  --amber:#B45309;
+  --amber-bg:#FDF2E4;
+  --red:#B3291F;
+  --red-bg:#FBEBE9;
+  --green:#1B7048;
+  --green-bg:#E8F4ED;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,"Roboto Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB",sans-serif;
+  font-size:15px;line-height:1.68;
+  font-feature-settings:"tnum" 1;
+}
+.wrap{max-width:960px;margin:0 auto;padding:0 28px 100px}
+
+/* ---------- 封面 ---------- */
+.masthead{padding:64px 0 0;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.masthead h1{font-size:clamp(30px,4.4vw,44px);font-weight:600;letter-spacing:-.03em;line-height:1.12;margin:14px 0 0}
+.masthead .lede{margin-top:16px;font-size:16.5px;color:var(--ink-2);max-width:62ch;line-height:1.7}
+.meta{display:flex;flex-wrap:wrap;gap:0;margin:30px 0 26px;border-top:1px solid var(--line-2);padding-top:18px}
+.meta div{flex:1 1 150px;padding-right:20px}
+.meta .k{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.meta .v{font-size:13.5px;margin-top:3px;color:var(--ink)}
+.meta .v code{font-family:var(--mono);font-size:12px}
+
+/* ---------- 摘要条 ---------- */
+.tldr{
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--blue);
+  padding:20px 24px;margin:32px 0 0;
+}
+.tldr .lbl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:700}
+.tldr p{margin-top:8px;font-size:15px;line-height:1.72}
+.tldr p + p{margin-top:10px}
+
+/* ---------- 目录 ---------- */
+.toc{margin:44px 0 0;padding:22px 24px;background:var(--surface-2);border:1px solid var(--line-2)}
+.toc h2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:12px}
+.toc ol{list-style:none;counter-reset:t;columns:2;column-gap:32px}
+.toc li{counter-increment:t;font-size:13.5px;padding:3px 0;break-inside:avoid}
+.toc li a{color:var(--ink-2);text-decoration:none;display:block;border-bottom:1px solid transparent;transition:.14s}
+.toc li a:hover{color:var(--ink);border-color:var(--line)}
+.toc li a::before{content:counter(t,decimal-leading-zero);font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:10px}
+
+/* ---------- 章节 ---------- */
+section{margin-top:60px;scroll-margin-top:20px}
+h2{
+  font-size:23px;font-weight:600;letter-spacing:-.022em;line-height:1.3;
+  padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:22px;
+}
+h2 .num{font-family:var(--mono);font-size:13px;color:var(--ink-3);font-weight:500;margin-right:12px;letter-spacing:0}
+h3{font-size:16.5px;font-weight:600;letter-spacing:-.012em;margin:32px 0 12px}
+h4{font-size:14px;font-weight:600;margin:22px 0 8px;color:var(--ink)}
+p{margin:12px 0;max-width:76ch}
+p + p{margin-top:12px}
+strong{font-weight:600}
+a{color:var(--blue)}
+em{font-style:normal;background:linear-gradient(transparent 62%,#FBE9A8 62%);padding:0 1px}
+
+/* 列表 */
+ul,ol{margin:12px 0 12px 22px;max-width:76ch}
+li{margin:6px 0}
+li::marker{color:var(--ink-3)}
+ul.tight li{margin:3px 0}
+
+/* 代码 */
+code{font-family:var(--mono);font-size:12.6px;background:var(--surface-2);border:1px solid var(--line-2);padding:1px 5px;border-radius:3px}
+pre{
+  background:#FBFBF9;border:1px solid var(--line);border-top:2px solid var(--ink);
+  padding:16px 18px;overflow-x:auto;margin:16px 0;font-size:12.4px;line-height:1.62;
+}
+pre code{background:none;border:0;padding:0;font-size:12.4px;color:#24242A}
+.src{
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-3);
+  display:block;margin:18px 0 -8px;letter-spacing:.01em;
+}
+.src::before{content:"▸ ";color:var(--ink-3)}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px;background:var(--surface)}
+caption{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600;padding-bottom:8px}
+th{
+  text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);border-bottom:1px solid var(--ink);padding:9px 12px 9px 0;white-space:nowrap;
+}
+td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line-2);vertical-align:top;line-height:1.55}
+tbody tr:hover{background:var(--surface-2)}
+td code,th code{font-size:12px;white-space:nowrap}
+.num-cell{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* 徽标 */
+.tag{
+  display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.05em;
+  padding:2px 8px;border-radius:3px;vertical-align:middle;text-transform:uppercase;
+}
+.tag.b{background:var(--blue-bg);color:var(--blue)}
+.tag.a{background:var(--amber-bg);color:var(--amber)}
+.tag.r{background:var(--red-bg);color:var(--red)}
+.tag.g{background:var(--green-bg);color:var(--green)}
+.tag.n{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+
+/* 图 */
+figure{margin:26px 0;background:var(--surface);border:1px solid var(--line);padding:20px 20px 14px}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font-size:12.5px;color:var(--ink-2);margin-top:14px;padding-top:12px;border-top:1px solid var(--line-2);line-height:1.6}
+figcaption b{color:var(--ink);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-right:8px}
+
+/* 提示块 */
+.note{
+  border:1px solid var(--line);background:var(--surface-2);padding:14px 18px;margin:18px 0;
+  font-size:13.5px;line-height:1.62;
+}
+.note .h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px}
+.note.warn{border-left:3px solid var(--amber);background:var(--amber-bg)}
+.note.warn .h{color:var(--amber)}
+.note.key{border-left:3px solid var(--blue);background:var(--blue-bg)}
+.note.key .h{color:var(--blue)}
+.note.gotcha{border-left:3px solid var(--red);background:var(--red-bg)}
+.note.gotcha .h{color:var(--red)}
+
+/* 两栏 */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0}
+.card{background:var(--surface);border:1px solid var(--line);padding:16px 18px}
+.card h4{margin:0 0 8px;font-size:13.5px}
+.card p{font-size:13px;color:var(--ink-2);margin:0;max-width:none}
+
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+@media (max-width:760px){
+  .wrap{padding:0 18px 70px}
+  .toc ol{columns:1}
+  .cols{grid-template-columns:1fr}
+  .meta div{flex:1 1 50%}
+  table{font-size:12.5px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">源码级技术分析</div>
+  <h1>Hy-SimulMT 本地实时同传<br>是怎么跑起来的</h1>
+  <p class="lede">
+    一个 30B-A3B 的语音同传模型，官方工具只能吃「一个完整音频文件」，每次调用重新加载 18GB 权重。
+    这个项目改了 llama.cpp 的 260 行 C++，把它变成一个常驻的流式进程，再配一层零依赖的 Python 服务和一个
+    双 AudioContext 隔离的浏览器前端，把端到端字幕延迟压到 255ms —— 全部在本机，不联网。
+  </p>
+  <div class="meta">
+    <div><div class="k">分析对象</div><div class="v"><code>hy-simulmt/</code></div></div>
+    <div><div class="k">前端</div><div class="v"><code>web/live.html</code> · <code>web/video.html</code></div></div>
+    <div><div class="k">服务</div><div class="v"><code>live.py</code> · 1238 行</div></div>
+    <div><div class="k">模型</div><div class="v">Hy-SimulMT-30B-A3B · Q4_K_M</div></div>
+    <div><div class="k">平台</div><div class="v">macOS · M2 Max / 64GB · Metal</div></div>
+  </div>
+</header>
+
+<div class="tldr">
+  <div class="lbl">一句话原理</div>
+  <p>
+    <strong>模型进程常驻 + stdin 当节拍器 + 800ms 固定分轮。</strong>
+    Python 服务把浏览器送来的 PCM 按 800ms 切成块，写进一个长跑的
+    <code>llama-mtmd-cli --stream</code> 进程的 stdin；这个进程凑满一块就跑一轮推理，
+    把「源文 + 译文」以 JSON 行打回 stdout。stdin 的阻塞读天然保证了模型不会跑到说话人前面，
+    而分轮 schedule（1600ms 首轮 + 800ms 每轮）完全复用官方实现 —— 因为它是训练时定死的，自己切块模型就会退化。
+  </p>
+  <p>
+    剩下的工程量几乎全在<strong>可观测性与自愈</strong>上：音频账本、六类故障的独立信号、
+    麦克风断流自动重建、空轮自动重启会话。因为「界面没反应」这一个症状，背后有六种完全不同的原因。
+  </p>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">全链路数据流</a></li>
+    <li><a href="#s2">模型层：三处改动打通实时</a></li>
+    <li><a href="#s3">分轮 schedule 与 prompt 结构</a></li>
+    <li><a href="#s4">服务层：零依赖 live.py</a></li>
+    <li><a href="#s5">音频账本：一把尺子量全链路</a></li>
+    <li><a href="#s6">实时性的四道闸门</a></li>
+    <li><a href="#s7">浏览器层：双 AudioContext</a></li>
+    <li><a href="#s8">TTS：并行合成 + 顺序回传</a></li>
+    <li><a href="#s9">视频同传：系统声音与自激</a></li>
+    <li><a href="#s10">故障分诊：六种「没反应」</a></li>
+    <li><a href="#s11">实测数据</a></li>
+    <li><a href="#s12">已知边界与设计取舍</a></li>
+  </ol>
+</nav>
+
+<!-- ============================ 1 ============================ -->
+<section id="s1">
+  <h2><span class="num">01</span>全链路数据流</h2>
+  <p>
+    整条链路上只有<strong>一个模型进程</strong>，启动时加载一次（约 8 秒），之后全程常驻。
+    音频以 16kHz / 单声道 / PCM16LE 这个统一格式贯穿始终 —— 浏览器、网络、Python、C++、Swift 原生进程
+    都认这一种格式，所以中间不需要任何转码环节。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, 'PingFang SC', sans-serif">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <path d="M0,0 L9,3.5 L0,7 z" fill="#8C9095"/>
+        </marker>
+        <marker id="arb" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <path d="M0,0 L9,3.5 L0,7 z" fill="#2F5FD0"/>
+        </marker>
+        <marker id="arg" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <path d="M0,0 L9,3.5 L0,7 z" fill="#1B7048"/>
+        </marker>
+      </defs>
+
+      <!-- 去程标签 -->
+      <text x="12" y="26" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#8E9298">去程 · 音频</text>
+
+      <!-- 去程节点 -->
+      <g>
+        <rect x="12" y="42" width="128" height="58" rx="4" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="76" y="66" font-size="12.5" font-weight="600" fill="#16161A" text-anchor="middle">麦克风</text>
+        <text x="76" y="84" font-size="10.5" fill="#55595F" text-anchor="middle">getUserMedia</text>
+      </g>
+      <path d="M144,71 L166,71" stroke="#8C9095" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <g>
+        <rect x="170" y="42" width="128" height="58" rx="4" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="234" y="66" font-size="12.5" font-weight="600" fill="#16161A" text-anchor="middle">AudioWorklet</text>
+        <text x="234" y="84" font-size="10.5" fill="#55595F" text-anchor="middle">1024 帧 → 16k Int16</text>
+      </g>
+      <path d="M302,71 L324,71" stroke="#8C9095" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <g>
+        <rect x="328" y="42" width="128" height="58" rx="4" fill="#EDF2FC" stroke="#2F5FD0"/>
+        <text x="392" y="66" font-size="12.5" font-weight="600" fill="#2F5FD0" text-anchor="middle">WebSocket</text>
+        <text x="392" y="84" font-size="10.5" fill="#2F5FD0" text-anchor="middle">二进制帧 · 100ms/包</text>
+      </g>
+      <path d="M460,71 L482,71" stroke="#2F5FD0" stroke-width="1.4" marker-end="url(#arb)"/>
+
+      <g>
+        <rect x="486" y="42" width="128" height="58" rx="4" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="550" y="66" font-size="12.5" font-weight="600" fill="#16161A" text-anchor="middle">live.py</text>
+        <text x="550" y="84" font-size="10.5" fill="#55595F" text-anchor="middle">stage 缓冲 · 800ms 切块</text>
+      </g>
+      <path d="M618,71 L640,71" stroke="#8C9095" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <g>
+        <rect x="644" y="42" width="128" height="58" rx="4" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="708" y="66" font-size="12.5" font-weight="600" fill="#16161A" text-anchor="middle">stdin</text>
+        <text x="708" y="84" font-size="10.5" fill="#55595F" text-anchor="middle">裸 PCM 写入</text>
+      </g>
+      <path d="M776,71 L798,71" stroke="#8C9095" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <!-- 模型盒 -->
+      <g>
+        <rect x="348" y="126" width="204" height="72" rx="5" fill="#FDF2E4" stroke="#B45309" stroke-width="1.5"/>
+        <text x="450" y="152" font-size="13.5" font-weight="700" fill="#B45309" text-anchor="middle">llama-mtmd-cli --stream</text>
+        <text x="450" y="172" font-size="10.5" fill="#B45309" text-anchor="middle">常驻进程 · 模型只加载一次</text>
+        <text x="450" y="188" font-size="10.5" fill="#B45309" text-anchor="middle">凑满一块才推理（stdin 阻塞）</text>
+      </g>
+      <path d="M708,104 L708,126 L456,126" stroke="#8C9095" stroke-width="1.4" fill="none" marker-end="url(#ar)"/>
+
+      <!-- 回程 -->
+      <text x="12" y="240" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#8E9298">回程 · 译文</text>
+      <path d="M348,162 L216,162 L216,216" stroke="#1B7048" stroke-width="1.4" fill="none" marker-end="url(#arg)"/>
+      <path d="M552,162 L684,162 L684,216" stroke="#1B7048" stroke-width="1.4" fill="none" marker-end="url(#arg)"/>
+
+      <g>
+        <rect x="132" y="220" width="168" height="62" rx="4" fill="#E8F4ED" stroke="#1B7048"/>
+        <text x="216" y="244" font-size="12.5" font-weight="600" fill="#1B7048" text-anchor="middle">字幕（JSON turn）</text>
+        <text x="216" y="262" font-size="10.5" fill="#1B7048" text-anchor="middle">WebSocket → 立刻显示</text>
+        <text x="216" y="276" font-size="10.5" fill="#1B7048" text-anchor="middle">延迟 ≈ 255ms</text>
+      </g>
+
+      <g>
+        <rect x="600" y="220" width="168" height="62" rx="4" fill="#E8F4ED" stroke="#1B7048"/>
+        <text x="684" y="244" font-size="12.5" font-weight="600" fill="#1B7048" text-anchor="middle">配音（WAV）</text>
+        <text x="684" y="262" font-size="10.5" fill="#1B7048" text-anchor="middle">2×say 并行 → 顺序排队</text>
+        <text x="684" y="276" font-size="10.5" fill="#1B7048" text-anchor="middle">出声 ≈ 1150ms</text>
+      </g>
+
+      <!-- 底部注记 -->
+      <line x1="12" y1="308" x2="888" y2="308" stroke="#EFEDE8" stroke-width="1"/>
+      <text x="12" y="324" font-size="10.5" fill="#8E9298">统一格式：16 kHz · 单声道 · PCM16LE · 32 字节/毫秒 —— 全链路无转码</text>
+    </svg>
+    <figcaption><b>图 1</b>去程与回程。模型进程是唯一的重资产，音频格式在全链路保持一致，这是能做到低延迟的前提之一。</figcaption>
+  </figure>
+
+  <p>
+    系统一共有三种运行形态，共用同一套切块 / 账本 / 丢块逻辑，区别只在<strong>音源是谁</strong>：
+  </p>
+  <table>
+    <thead><tr><th>形态</th><th>音源</th><th>入口</th><th>配音播放方</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td>麦克风同传</td><td>浏览器 <code>getUserMedia</code></td><td><code>/</code> → <code>live.html</code></td><td>浏览器 Web Audio</td><td>自己说话，实时译出</td></tr>
+      <tr><td>视频同传</td><td><code>sys-tap</code> 抓系统声音</td><td><code>/video</code></td><td><code>ttsplay</code> 常驻进程</td><td>看任意播放器里的外语视频</td></tr>
+      <tr><td>离线灌文件</td><td>wav 文件按实时节奏喂</td><td><code>POST /api/simulate</code></td><td>同上</td><td>没麦克风时验证整条链路</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================ 2 ============================ -->
+<section id="s2">
+  <h2><span class="num">02</span>模型层：三处改动打通实时</h2>
+
+  <p>
+    Hy-SimulMT-30B-A3B 是<strong>按轮次</strong>工作的模型：先听 1600ms，之后每 800ms 一轮，
+    每轮都要在听下一轮之前先作答。而官方 <code>llama-mtmd-cli</code> 只能读一个完整音频文件，
+    跑完就退出 —— 每次重新加载 18GB 权重约 8 秒，实时无从谈起。官方文档还明确写了
+    <code>llama-server</code> 跑不了这批 GGUF。
+  </p>
+  <p>项目用三步把这件事打通，每一步都踩了一个具体的坑：</p>
+
+  <h3>改动一：让 <code>llama-server</code> 认内嵌投影器</h3>
+  <p>
+    这批 GGUF 是单文件，音频塔（audio tower）已经打包进文本模型，所以正常情况下不需要
+    <code>--mmproj</code>。但 <code>llama-server</code> 判断"有没有多模态能力"只看
+    <code>--mmproj</code> 是否非空。把参数直接指向模型自己，投影器就装上了：
+  </p>
+<pre><code>llama-server -m models/Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf \
+             --mmproj models/Hy-SimulMT-30B-A3B-Interleave-Q4_K_M.gguf</code></pre>
+  <p>
+    <code>/props</code> 里 <code>modalities.audio</code> 变成 <code>true</code>，
+    一次能跑通整段音频（14.16s 音频 1.76s，约 8 倍实时）。<strong>但这条路最终没被采用</strong>——
+    原因就是改动二。
+  </p>
+
+  <h3>改动二：不走 server 的 chat 模板</h3>
+  <p>
+    <code>llama-server</code> 走 OpenAI 消息协议，模板里给助手回合只发了
+    <code>&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;&gt;</code>，
+    漏掉了 <code>src_tgt</code> checkpoint 必需的分支标记
+    <code>溯源</code>。少了它，源文分支会退化，实测输出直接变成重复片段：
+  </p>
+<pre><code>"下一季度我们将重点提升下一季度我们将重点提升下一季度我们将重点提升…"</code></pre>
+  <p>
+    而且模板里根本没有"每轮重放助手头"这个概念 —— 硬套一定会失真。所以最终方案是<strong>绕开 server，
+    直接改造 CLI</strong>。
+  </p>
+
+  <h3>改动三：给 <code>llama-mtmd-cli</code> 加 <code>--stream</code>（+260 行）</h3>
+  <p>
+    这是本次最核心的改动。音频不再来自 <code>--audio</code> 文件，而是从 <strong>stdin 读裸 PCM16LE
+    单声道 16kHz</strong>，每凑满一轮就跑官方那套轮次逻辑，把结果按 JSON 行打到 stdout：
+  </p>
+
+<span class="src">llama.cpp-hyv3/tools/mtmd/mtmd-cli.cpp（本地 diff，+260 行）</span>
+<pre><code>// live streaming variant: the same turn logic as run_turn_stream, but the audio
+// arrives as raw PCM16LE mono 16 kHz on stdin instead of a file on disk, and
+// every answered turn is reported as one JSON line on stdout.
+//
+// stdin blocking is what paces the pipeline: the loop will not start a turn
+// until a full step of audio has been buffered, so the model never runs ahead
+// of the speaker.
+
+static int  g_stream_first = 1600; // ms of audio in the opening turn
+static int  g_stream_step  = 800;  // ms of audio per following turn</code></pre>
+
+  <div class="note key">
+    <div class="h">关键点</div>
+    <strong>完全复用官方分块逻辑</strong>：1600ms 首轮 + 800ms 每轮、每轮之间补 <code>&lt;｜hy_User｜&gt;</code>、
+    每轮重放 <code>&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;/think&gt;溯源</code>。
+    这个 schedule 是训练时定死的，自己切块（比如 3.2 秒一刀）模型就会退化。
+    <strong>stdin 的阻塞读正好充当节拍器</strong>：凑不满一轮就不进推理，模型不会跑到说话人前面。
+  </div>
+
+  <p>协议极简，三种消息：</p>
+<pre><code>{"type":"ready"}
+{"type":"turn","i":0,"ms":1600,"src":"Good morning, everyone.","tgt":"大家早上好。","n_gen":11,"gen_ms":149.0,"pos":312}
+{"type":"done","turns":17}</code></pre>
+  <p><code>pos</code> 是当前的上下文位置，Python 侧用它判断何时该换一个干净会话。</p>
+
+  <div class="note gotcha">
+    <div class="h">一个隐藏的死锁</div>
+    模型就绪时需要补送加载期间积压的音频，但补送要往 stdin 写（可能阻塞），
+    而当前线程正在读 stdout —— 卡在这里就没人消费模型输出，直接互锁。
+    源码里的解法是<strong>必须换线程</strong>做补送：
+    <code>threading.Thread(target=self._drain_sync, daemon=True).start()</code>
+  </div>
+</section>
+
+<!-- ============================ 3 ============================ -->
+<section id="s3">
+  <h2><span class="num">03</span>分轮 schedule 与 prompt 结构</h2>
+
+  <p>
+    理解这个项目，关键是理解<strong>一次 decode 同时产出源文和译文</strong>。
+    模型不是先 ASR 再 MT 的两级流水线，而是在同一个生成序列里用
+    <code>溯源</code> 这个特殊 token 做分界：出现之前的部分是源文，之后是译文。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, 'PingFang SC', sans-serif">
+      <defs>
+        <marker id="a2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#8C9095"/></marker>
+      </defs>
+      <text x="12" y="20" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#8E9298">模型侧分轮节奏</text>
+
+      <!-- 时间轴 -->
+      <line x1="40" y1="46" x2="880" y2="46" stroke="#DAD7D0" stroke-width="1"/>
+
+      <!-- 首轮 1600 -->
+      <rect x="40" y="58" width="150" height="34" rx="3" fill="#FDF2E4" stroke="#B45309"/>
+      <text x="115" y="80" font-size="12" font-weight="600" fill="#B45309" text-anchor="middle">turn 0 · 1600ms</text>
+      <!-- 后续 800 -->
+      <g>
+        <rect x="196" y="58" width="80" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="236" y="80" font-size="11.5" fill="#16161A" text-anchor="middle">800ms</text>
+      </g>
+      <g>
+        <rect x="282" y="58" width="80" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="322" y="80" font-size="11.5" fill="#16161A" text-anchor="middle">800ms</text>
+      </g>
+      <g>
+        <rect x="368" y="58" width="80" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="408" y="80" font-size="11.5" fill="#16161A" text-anchor="middle">800ms</text>
+      </g>
+      <g>
+        <rect x="454" y="58" width="80" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+        <text x="494" y="80" font-size="11.5" fill="#16161A" text-anchor="middle">800ms</text>
+      </g>
+      <text x="560" y="80" font-size="16" fill="#8E9298">… 直到 stdin EOF</text>
+
+      <!-- 刻度 -->
+      <g font-size="9.5" fill="#8E9298">
+        <text x="40" y="42">0</text>
+        <text x="186" y="42">1.6s</text>
+        <text x="272" y="42">2.4s</text>
+        <text x="358" y="42">3.2s</text>
+        <text x="444" y="42">4.0s</text>
+      </g>
+      <g stroke="#DAD7D0" stroke-width="1">
+        <line x1="190" y1="46" x2="190" y2="52"/><line x1="276" y1="46" x2="276" y2="52"/>
+        <line x1="362" y1="46" x2="362" y2="52"/><line x1="448" y1="46" x2="448" y2="52"/>
+      </g>
+
+      <!-- 生成条 -->
+      <text x="12" y="122" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#8E9298">每轮的生成（115–235ms，远小于 800ms）</text>
+      <rect x="40" y="132" width="26" height="20" rx="2" fill="#1B7048"/>
+      <rect x="196" y="132" width="18" height="20" rx="2" fill="#1B7048"/>
+      <rect x="282" y="132" width="18" height="20" rx="2" fill="#1B7048"/>
+      <rect x="368" y="132" width="18" height="20" rx="2" fill="#1B7048"/>
+      <rect x="454" y="132" width="18" height="20" rx="2" fill="#1B7048"/>
+      <path d="M66,142 L190,142" stroke="#C9C6BE" stroke-dasharray="3 3" stroke-width="1"/>
+      <path d="M214,142 L276,142" stroke="#C9C6BE" stroke-dasharray="3 3" stroke-width="1"/>
+      <path d="M300,142 L362,142" stroke="#C9C6BE" stroke-dasharray="3 3" stroke-width="1"/>
+      <text x="486" y="147" font-size="10.5" fill="#1B7048">生成完立刻回 JSON，然后等下一块</text>
+
+      <!-- prompt 结构 -->
+      <text x="12" y="182" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#8E9298">每轮送进上下文的 token 序列</text>
+      <g font-family="ui-monospace, Menlo, monospace" font-size="11">
+        <rect x="40" y="192" width="150" height="30" rx="3" fill="#F6F5F1" stroke="#DAD7D0"/>
+        <text x="115" y="211" fill="#55595F" text-anchor="middle">pre（指令 + 用户头）</text>
+
+        <rect x="196" y="192" width="120" height="30" rx="3" fill="#EDF2FC" stroke="#2F5FD0"/>
+        <text x="256" y="211" fill="#2F5FD0" text-anchor="middle">音频 chunk</text>
+
+        <rect x="322" y="192" width="200" height="30" rx="3" fill="#F6F5F1" stroke="#DAD7D0"/>
+        <text x="422" y="211" fill="#55595F" text-anchor="middle">post（助手头 + 溯源）</text>
+
+        <rect x="528" y="192" width="150" height="30" rx="3" fill="#E8F4ED" stroke="#1B7048"/>
+        <text x="603" y="211" fill="#1B7048" text-anchor="middle">src → 溯源 → tgt</text>
+      </g>
+      <path d="M164,207 L192,207" stroke="#8C9095" stroke-width="1.2" marker-end="url(#a2)"/>
+      <text x="700" y="211" font-size="10.5" fill="#8E9298">turn&gt;0 时前面还要补一个 &lt;｜hy_User｜&gt;</text>
+    </svg>
+    <figcaption><b>图 2</b>分轮节奏与 token 拼装。首轮 1600ms 是官方 schedule 定死的，之后每 800ms 一轮；1600 是 800 的整数倍，所以 Python 与 C++ 两侧的块边界天然对齐。</figcaption>
+  </figure>
+
+  <p>对应的常量定义在 <code>live.py</code> 顶部：</p>
+
+<span class="src">live.py:73-79</span>
+<pre><code>HEAD = "&lt;｜hy_begin▁of▁sentence｜&gt;&lt;｜reasoning_mode｜&gt;reasoning_effort:no_think&lt;｜hy_User｜&gt;"
+TAIL = "&lt;__media__&gt;&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;/think&gt;溯源"
+INSTR = {
+    "en-zh": "请完成下面的同声传译任务，将陆续收到的语音翻译成中文。"
+             "请结合上下文边听边译，输出能够确定的译文，不必等待整句结束。",
+    "zh-en": "Please act as a simultaneous interpreter. Translate the incoming speech "
+             "into English as you listen. Output what you are confident about instead of "
+             "waiting for the whole sentence to finish.",
+}</code></pre>
+
+  <p>
+    注意 <strong>指令语种决定翻译方向</strong>。指令在首轮就被解码进上下文了，所以换方向必须重启模型进程
+    （约 8 秒）—— 这是"只能单向"这个边界的根因。
+  </p>
+
+  <p>生成阶段的分流逻辑就一行判断：</p>
+<span class="src">llama.cpp-hyv3/tools/mtmd/mtmd-cli.cpp（--stream 新增）</span>
+<pre><code>if (tok == t_tgt) {
+    in_tgt = true;
+} else if (!llama_vocab_is_control(ctx.vocab, tok)) {
+    const std::string piece = common_token_to_piece(ctx.lctx, tok);
+    (in_tgt ? tgt : src) += piece;      // 溯源 之前归源文，之后归译文
+}</code></pre>
+
+  <div class="note">
+    <div class="h">空轮的含义</div>
+    如果一段音频模型一个字都没吐（<code>src</code> 和 <code>tgt</code> 都空），
+    服务端会记一个 <code>blank_turns</code>。但"空"有两种：根本没听到（<code>src</code> 也空），
+    还是听到了没译出来（<code>src</code> 有内容）。源码对这两种分别打了不同的日志 ——
+    因为"中间少了半句"这个现象，只有区分开才能查。
+  </div>
+</section>
+
+<!-- ============================ 4 ============================ -->
+<section id="s4">
+  <h2><span class="num">04</span>服务层：零依赖 live.py</h2>
+
+  <p>
+    <code>live.py</code> 有 1238 行，<strong>只用 Python 标准库</strong> ——
+    连 WebSocket 的握手和帧编解码都是自己实现的（<code>ws_accept_key</code> / <code>ws_frame</code> /
+    <code>ws_read</code>，共 50 行）。这样整条链路不需要 pip install 任何东西。
+  </p>
+
+  <h3>进程与线程模型</h3>
+  <table>
+    <thead><tr><th>角色</th><th>形态</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td>HTTP 服务</td><td><code>ThreadingHTTPServer</code> 主线程</td><td>发页面、<code>/api/*</code>、升级 WebSocket</td></tr>
+      <tr><td>模型进程</td><td>子进程 <code>llama-mtmd-cli</code></td><td>唯一重资产，stdin 收音频 / stdout 吐 JSON</td></tr>
+      <tr><td><code>_reader</code></td><td>线程</td><td>唯一解析译文的地方，逐行读 stdout</td></tr>
+      <tr><td><code>Client.writer</code></td><td>每客户端一个线程</td><td>异步写 WebSocket，避免慢客户端阻塞广播</td></tr>
+      <tr><td><code>watchdog</code></td><td>线程 · 1.5s</td><td>判链路静默、触发尾部结算</td></tr>
+      <tr><td><code>tts_worker</code> ×2</td><td>线程</td><td>并行调用 <code>say</code> 合成</td></tr>
+      <tr><td><code>tts_emitter</code></td><td>线程</td><td>严格按轮次顺序回传，保播放次序</td></tr>
+      <tr><td><code>_tap_reader</code></td><td>线程（视频模式）</td><td>读 <code>sys-tap</code> stdout，当第三个音源</td></tr>
+    </tbody>
+  </table>
+
+  <h3>切块：Python 与 C++ 的边界对齐</h3>
+  <p>
+    Python 侧按 800ms 切块送进 stdin。C++ 首轮吃 1600ms（= 2 块）、之后每轮 1 块，
+    而 1600 是 800 的整数倍 —— 所以<strong>两边块边界天然对齐</strong>。这一点很重要：
+    只有对齐了，才敢整块丢弃；丢半块会让后面所有音频错位一格。
+  </p>
+
+<span class="src">live.py · _drain()</span>
+<pre><code>block = SAMPLE_RATE * BLOCK_MS // 1000 * 2        # 16000 * 800 / 1000 * 2 = 25600 字节
+while len(self.stage) >= block:
+    chunk = bytes(self.stage[:block])
+    del self.stage[:block]
+    if self.sent_ms - self.done_ms &gt; MAX_BACKLOG_MS:   # 积压超限 → 整块丢掉追平
+        self.dropped_ms += BLOCK_MS
+        self.sent_ms += BLOCK_MS
+        continue
+    p.stdin.write(chunk); p.stdin.flush()
+    self.sent_ms += BLOCK_MS</code></pre>
+
+  <h3>WebSocket：只实现服务端需要的最小子集</h3>
+  <p>
+    三个 opcode 就够了：<code>0x1</code> 文本（控制指令）、<code>0x2</code> 二进制（PCM16）、
+    <code>0x8</code> 关闭，外加 <code>0x9</code> ping 回 <code>0xA</code> pong。
+    客户端发来的控制指令很薄：<code>ping</code>（带字节账）、<code>direction</code>、
+    <code>tts</code>、<code>source</code>、<code>interrupt</code>、<code>level</code>、
+    <code>device</code>、<code>rebuild</code>。
+  </p>
+
+  <div class="note key">
+    <div class="h">为什么需要应用层心跳</div>
+    TCP 半开连接浏览器自己是发现不了的：连接没断，<code>send()</code> 也不报错，
+    只是数据发进了黑洞。所以前端每 3 秒发一次 <code>ping</code>，
+    超过 9 秒没收到任何回执就判死重建，退避重试最多 30 次 ——
+    断网几秒就放弃的话，网络恢复了页面也还是死的。
+  </div>
+</section>
+
+<!-- ============================ 5 ============================ -->
+<section id="s5">
+  <h2><span class="num">05</span>音频账本：一把尺子量全链路</h2>
+
+  <p>
+    这是整个项目最有工程价值的设计。<strong>"漏了一句"这种问题，靠听是查不出来的</strong> ——
+    必须有一把统一的尺子，把浏览器采集、网络发送、服务端接收、模型处理四个环节放在同一个单位（毫秒）下对账。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 236" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, 'PingFang SC', sans-serif">
+      <defs>
+        <marker id="a3" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#8C9095"/></marker>
+      </defs>
+      <text x="12" y="20" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#8E9298">同一把尺子 · 单位毫秒 · 同一会话口径</text>
+
+      <!-- client.gen -->
+      <rect x="24" y="36" width="150" height="44" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="99" y="56" font-size="12" font-weight="600" fill="#16161A" text-anchor="middle">client.gen_ms</text>
+      <text x="99" y="72" font-size="10" fill="#8E9298" text-anchor="middle">麦克风采到的</text>
+      <path d="M178,58 L204,58" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a3)"/>
+
+      <!-- client.sent -->
+      <rect x="208" y="36" width="150" height="44" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="283" y="56" font-size="12" font-weight="600" fill="#16161A" text-anchor="middle">client.sent_ms</text>
+      <text x="283" y="72" font-size="10" fill="#8E9298" text-anchor="middle">真的发出去的</text>
+      <path d="M362,58 L388,58" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a3)"/>
+
+      <!-- recv -->
+      <rect x="392" y="36" width="130" height="44" rx="3" fill="#EDF2FC" stroke="#2F5FD0"/>
+      <text x="457" y="56" font-size="12" font-weight="600" fill="#2F5FD0" text-anchor="middle">recv_ms</text>
+      <text x="457" y="72" font-size="10" fill="#2F5FD0" text-anchor="middle">服务端收到</text>
+      <path d="M526,58 L552,58" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a3)"/>
+
+      <!-- model -->
+      <rect x="556" y="36" width="130" height="44" rx="3" fill="#EDF2FC" stroke="#2F5FD0"/>
+      <text x="621" y="56" font-size="12" font-weight="600" fill="#2F5FD0" text-anchor="middle">model_ms</text>
+      <text x="621" y="72" font-size="10" fill="#2F5FD0" text-anchor="middle">写进 stdin</text>
+      <path d="M690,58 L716,58" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a3)"/>
+
+      <!-- done -->
+      <rect x="720" y="36" width="150" height="44" rx="3" fill="#E8F4ED" stroke="#1B7048"/>
+      <text x="795" y="56" font-size="12" font-weight="600" fill="#1B7048" text-anchor="middle">done_ms</text>
+      <text x="795" y="72" font-size="10" fill="#1B7048" text-anchor="middle">模型回报处理完</text>
+
+      <!-- stage 支流 -->
+      <path d="M457,84 L457,120 L330,120" stroke="#B45309" stroke-width="1.3" fill="none" marker-end="url(#a3)"/>
+      <rect x="176" y="100" width="150" height="40" rx="3" fill="#FDF2E4" stroke="#B45309"/>
+      <text x="251" y="118" font-size="12" font-weight="600" fill="#B45309" text-anchor="middle">stage_ms</text>
+      <text x="251" y="133" font-size="10" fill="#B45309" text-anchor="middle">还不足一块的尾巴</text>
+
+      <!-- 两个旁路 -->
+      <rect x="392" y="152" width="190" height="40" rx="3" fill="#FBEBE9" stroke="#B3291F"/>
+      <text x="487" y="170" font-size="12" font-weight="600" fill="#B3291F" text-anchor="middle">discard_ms</text>
+      <text x="487" y="185" font-size="10" fill="#B3291F" text-anchor="middle">缓冲超限，本会话自己丢的</text>
+
+      <rect x="604" y="152" width="190" height="40" rx="3" fill="#F6F5F1" stroke="#C9C6BE"/>
+      <text x="699" y="170" font-size="12" font-weight="600" fill="#55595F" text-anchor="middle">rejected_ms</text>
+      <text x="699" y="185" font-size="10" fill="#8E9298" text-anchor="middle">被别的窗口占用而拒收</text>
+
+      <path d="M457,84 L457,150" stroke="#B3291F" stroke-width="1.2" marker-end="url(#a3)"/>
+      <path d="M699,66 L699,150" stroke="#C9C6BE" stroke-width="1.2" marker-end="url(#a3)"/>
+
+      <!-- 判据 -->
+      <rect x="24" y="204" width="852" height="26" rx="3" fill="#F6F5F1" stroke="#E4E2DC"/>
+      <text x="40" y="222" font-size="11.5" fill="#16161A">判据：<tspan font-weight="700">recv ≈ model ≈ done</tspan>，且 <tspan font-weight="700">discard_ms = 0</tspan>；<tspan fill="#55595F">recv − model 应当正好等于 stage_ms</tspan></text>
+    </svg>
+    <figcaption><b>图 3</b>音频账本。实测（48kHz 原生语音，11 秒）：recv 39186 / model 38400 / done 38400 / stage 786 / discard 0 —— 差额 786ms 与 stage_ms 完全吻合。</figcaption>
+  </figure>
+
+  <p>换算关系固定：<code>16kHz × 2 字节 = 32000 字节/秒 = 32 字节/毫秒</code>，所以账本里到处是 <code>// 32</code>。</p>
+
+  <table>
+    <caption>GET /api/status 里的账本字段</caption>
+    <thead><tr><th>字段</th><th>含义</th><th>异常判据</th></tr></thead>
+    <tbody>
+      <tr><td><code>client.gen_ms</code></td><td>浏览器从麦克风采到的时长</td><td>不涨 → 采集侧断了</td></tr>
+      <tr><td><code>client.sent_ms</code></td><td>浏览器真的发出去的时长</td><td>小于 gen → 发送缓冲在涨</td></tr>
+      <tr><td><code>recv_ms</code></td><td>服务端收到的时长</td><td>不涨 → 网络 / 浏览器问题</td></tr>
+      <tr><td><code>model_ms</code></td><td>已写进模型 stdin 的时长</td><td>recv − model 应等于 stage</td></tr>
+      <tr><td><code>done_ms</code></td><td>模型已回报处理完的时长</td><td>model − done 大 → 模型跟不上</td></tr>
+      <tr><td><code>stage_ms</code></td><td>不足一块、卡在缓冲里的尾巴</td><td>停下 1.2 秒后自动结算</td></tr>
+      <tr><td><code>discard_ms</code></td><td>本会话自己丢的（缓冲超 30 秒）</td><td>应为 0</td></tr>
+      <tr><td><code>rejected_ms</code></td><td>被别的窗口占用而拒收</td><td>不算本会话的账</td></tr>
+      <tr><td><code>backlog_ms</code></td><td><code>model_ms − done_ms</code> 积压</td><td>持续 &gt;2000 → 正在丢块追平</td></tr>
+      <tr><td><code>pos</code></td><td>上下文位置</td><td>接近 13435 → 即将轮换会话</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================ 6 ============================ -->
+<section id="s6">
+  <h2><span class="num">06</span>实时性的四道闸门</h2>
+  <p>
+    "实时"不是自然产生的，是四个机制共同兜出来的。每一个都对应一个具体会发生的失败。
+  </p>
+
+  <div class="cols">
+    <div class="card">
+      <h4>① 丢块追平 <span class="tag a">宁可漏译</span></h4>
+      <p>积压 <code>model_ms − done_ms</code> 超过 10 秒，整块（800ms）丢掉追平实时。
+      宁可漏译一句，不能让延迟越滚越大 —— 这是"说几句就不动了"的直接原因之一。</p>
+    </div>
+    <div class="card">
+      <h4>② 尾部结算 <span class="tag b">补齐半句</span></h4>
+      <p>停止说话 1.2 秒后，不足 800ms 的尾巴补静音凑成整块送出。
+      不补的话最后半句永远躺在缓冲区里等下一句，看着像卡住。</p>
+    </div>
+    <div class="card">
+      <h4>③ 上下文轮换 <span class="tag b">避免静默截断</span></h4>
+      <p><code>pos &gt; CTX × 0.82</code>（≈13435）时换一个干净进程，页面插一条分隔线。
+      16K 上下文按每 800ms 一涨，约 9–11 分钟轮换一次。</p>
+    </div>
+    <div class="card">
+      <h4>④ 音源租约 <span class="tag n">防永久锁死</span></h4>
+      <p>同一时刻只接受一个音源（两路写同一个 stdin 会互相插帧）。
+      第一个开口的独占，租约 4 秒 —— 占用者 4 秒没送数据就自动让出。</p>
+    </div>
+  </div>
+
+  <h3>还有两处自动自愈</h3>
+  <ul>
+    <li>
+      <strong>空轮自动重启会话</strong>：连续 30 轮空轮，且最近 25 块的平均 RMS 确实有声
+      （&gt;400，说明不是真的静音）→ 判定会话已废，自动重启，8 秒自愈。
+      纯静音（视频暂停）不触发 —— 靠 <code>block_rms</code> 区分"真没声"和"有声但不译"。
+    </li>
+    <li>
+      <strong>麦克风能量上报</strong>：浏览器每秒把 RMS 报给服务端。
+      这一项是判断"没声音"的唯一硬证据 —— 因为<strong>数字静音的字节数照样在涨</strong>，
+      账本照样完美对平，模型照样吐空轮，界面上完全看不出来。
+    </li>
+  </ul>
+
+  <div class="note warn">
+    <div class="h">RMS 阈值是怎么定的</div>
+    正常人说话 RMS 在 0.01~0.3 量级，而数字静音（设备被拆掉、轨道被 mute）是精确的 0，
+    两者差着几个数量级。所以 <code>SILENT_RMS = 1e-3</code> 这个阈值几乎不会误判，
+    并且要连静音 4 秒才提醒 —— 正常停顿不会被误报。
+  </div>
+</section>
+
+<!-- ============================ 7 ============================ -->
+<section id="s7">
+  <h2><span class="num">07</span>浏览器层：双 AudioContext</h2>
+
+  <p>
+    前端 <code>live.html</code> 是单文件、零外部依赖。它最要紧的一条设计是：
+    <strong>采集和播放必须是两个独立的 AudioContext</strong>。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 268" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, 'PingFang SC', sans-serif">
+      <defs>
+        <marker id="a4" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#8C9095"/></marker>
+      </defs>
+      <!-- 采集侧 -->
+      <rect x="20" y="34" width="400" height="150" rx="5" fill="#F6F5F1" stroke="#DAD7D0"/>
+      <text x="40" y="58" font-size="12" font-weight="700" fill="#16161A">S.micAc · 采集上下文</text>
+      <text x="40" y="76" font-size="10.5" fill="#8E9298">终点是内存哑终端，绝不碰硬件输出</text>
+
+      <rect x="44" y="92" width="110" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="99" y="113" font-size="11" fill="#16161A" text-anchor="middle">MediaStream</text>
+      <path d="M158,109 L182,109" stroke="#8C9095" stroke-width="1.2" marker-end="url(#a4)"/>
+      <rect x="186" y="92" width="110" height="34" rx="3" fill="#EDF2FC" stroke="#2F5FD0"/>
+      <text x="241" y="113" font-size="11" fill="#2F5FD0" text-anchor="middle">AudioWorklet</text>
+      <path d="M300,109 L324,109" stroke="#8C9095" stroke-width="1.2" marker-end="url(#a4)"/>
+      <rect x="328" y="92" width="76" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="366" y="113" font-size="11" fill="#16161A" text-anchor="middle">tap</text>
+
+      <rect x="44" y="140" width="360" height="30" rx="3" fill="#E8F4ED" stroke="#1B7048"/>
+      <text x="224" y="159" font-size="10.5" fill="#1B7048" text-anchor="middle">MediaStreamDestination（哑终端，只活在内存里）</text>
+      <path d="M366,130 L366,136" stroke="#8C9095" stroke-width="1.2" marker-end="url(#a4)"/>
+
+      <!-- 播放侧 -->
+      <rect x="480" y="34" width="400" height="150" rx="5" fill="#F6F5F1" stroke="#DAD7D0"/>
+      <text x="500" y="58" font-size="12" font-weight="700" fill="#16161A">S.ac · 播放上下文</text>
+      <text x="500" y="76" font-size="10.5" fill="#8E9298">接 destination，负责译音排队播放</text>
+
+      <rect x="504" y="92" width="110" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="559" y="113" font-size="11" fill="#16161A" text-anchor="middle">fetch WAV</text>
+      <path d="M618,109 L642,109" stroke="#8C9095" stroke-width="1.2" marker-end="url(#a4)"/>
+      <rect x="646" y="92" width="110" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="701" y="113" font-size="11" fill="#16161A" text-anchor="middle">decode</text>
+      <path d="M760,109 L784,109" stroke="#8C9095" stroke-width="1.2" marker-end="url(#a4)"/>
+      <rect x="788" y="92" width="72" height="34" rx="3" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="824" y="113" font-size="11" fill="#16161A" text-anchor="middle">gain</text>
+
+      <rect x="504" y="140" width="356" height="30" rx="3" fill="#FDF2E4" stroke="#B45309"/>
+      <text x="682" y="159" font-size="10.5" fill="#B45309" text-anchor="middle">S.ac.destination（真实扬声器输出）</text>
+
+      <!-- 中间隔离 -->
+      <rect x="424" y="34" width="52" height="150" rx="4" fill="#FBEBE9" stroke="#B3291F" stroke-dasharray="4 3"/>
+      <text x="450" y="106" font-size="10.5" font-weight="700" fill="#B3291F" text-anchor="middle">隔</text>
+      <text x="450" y="122" font-size="10.5" font-weight="700" fill="#B3291F" text-anchor="middle">离</text>
+
+      <!-- 说明 -->
+      <rect x="20" y="200" width="860" height="54" rx="4" fill="#FFFFFF" stroke="#E4E2DC"/>
+      <text x="40" y="222" font-size="11.5" fill="#16161A">macOS 上麦克风和扬声器通常挂在同一个 AudioUnit 里。只要这个 AudioUnit 上有输出开始播，</text>
+      <text x="40" y="240" font-size="11.5" fill="#16161A">它就从「纯输入」切到「双向」模式，采集流会被拆掉而 Chrome 往往补不回来 —— 表现就是「第一句译得挺好，配音一响，此后彻底聋掉」。</text>
+    </svg>
+    <figcaption><b>图 4</b>两个 AudioContext 时钟各自独立、互不牵连。这是整个前端最关键的一条架构决定。</figcaption>
+  </figure>
+
+  <h3>AudioWorklet：为什么不用 ScriptProcessor</h3>
+  <p>
+    采集用 <code>AudioWorkletNode</code>（处理器名 <code>tap</code>），源码以字符串形式内联、用 Blob URL 注册，
+    因此保持单文件零依赖。它每攒满 1024 帧就 <code>postMessage</code> 一次：
+  </p>
+<span class="src">web/live.html · WORKLET</span>
+<pre><code>class Tap extends AudioWorkletProcessor{
+  constructor(){ super(); this.buf=new Float32Array(1024); this.n=0; }
+  process(inputs){
+    var ch=inputs[0]&amp;&amp;inputs[0][0];
+    if(ch){ for(var i=0;i&lt;ch.length;i++){
+        this.buf[this.n++]=ch[i];
+        if(this.n===1024){ this.port.postMessage(this.buf); this.buf=new Float32Array(1024); this.n=0; }
+    }}
+    return true;
+  }
+}</code></pre>
+
+  <h3>重采样与软件 AGC</h3>
+  <p>
+    优先让浏览器自己的重采样器去做（它有抗混叠滤波）；代码里保留了一份纯线性插值的
+    <code>Resampler</code> 作为 fallback，并明确注释了代价：
+    <em>44.1k→16k 会把 8k 以上的能量折叠进语音频段，听起来没差，但模型的识别率会明显下降</em>。
+  </p>
+  <p>
+    关闭 Chrome 的 AGC 后，内置麦克风阵列送来的电平可能低到 −60 dBFS —— 人耳觉得"我明明在说话"，
+    模型那边几乎是静音。所以自己实现了慢速包络归一化：
+  </p>
+<ul class="tight">
+  <li>包络 <code>agcEnv = max(peak, agcEnv × 0.995)</code>，门限 <code>8e-5</code>（刚好在数字静音之上）</li>
+  <li>目标增益 <code>min(150, 0.22 / agcEnv)</code>，用 <code>+(want−gain) × 0.08</code> 平滑跟随</li>
+  <li>软限幅 ±0.95 兜住瞬时过冲；<strong>增益只在包络高于噪声底时才提升</strong>，所以纯底噪不会被放大成"人声"</li>
+</ul>
+
+  <h3>发送缓冲：决不静默吞掉半句话</h3>
+  <div class="note gotcha">
+    <div class="h">一个真实的 bug</div>
+    以前 <code>sendPCM()</code> 先清空缓冲再判断有没有送出去，等于把这 100ms 的话直接删了 ——
+    连接抖一下、切个方向，用户听到的就是"中间少了一句"。
+    现在的顺序是<strong>真的送出去了才清空</strong>，送不出去就攒着（最多 12 秒），
+    恢复后一次性补发。代价远小于凭空吞掉半句话。
+  </div>
+
+  <h3>播放排队与高亮</h3>
+  <p>
+    译音不是"来一段播一段"，而是用 <code>S.nextTime</code> 单调递增地在 Web Audio 时间轴上排队，
+    段间留 15ms 间隙，落后超过 0.5 秒就重新对齐。同时用一个
+    <code>requestAnimationFrame</code> 循环把当前时间段对应的字幕行标为 <code>.playing</code> ——
+    <strong>播放高亮是跟着 AudioContext 时钟走的，不是跟着"刚收到哪条"走的</strong>。
+  </p>
+</section>
+
+<!-- ============================ 8 ============================ -->
+<section id="s8">
+  <h2><span class="num">08</span>TTS：并行合成 + 顺序回传</h2>
+
+  <p>
+    TTS 用 macOS 原生 <code>say</code>（中文 Tingting / 英文 Ava Enhanced），
+    实测 RTF≈0.11。但它有个要命的特点：<strong>每次调用有约 0.85 秒的固定启动开销，
+    跟文本长度几乎无关</strong> —— 一个字 0.868s，七秒长的文本 0.916s。
+  </p>
+  <p>
+    而一轮音频才 800ms。串行合成会刚好卡在临界点上，说话人一旦不停就会越积越多。
+    解法是 <strong>2 个 worker 并行合成 + 1 个 emitter 严格按序回传</strong>：
+  </p>
+
+<span class="src">live.py · tts_emitter()</span>
+<pre><code># 严格按轮次顺序把音频推给页面，避免并行合成打乱播放次序
+while True:
+    with self.tts_cv:
+        while not self.tts_order: self.tts_cv.wait(1.0)
+        i = self.tts_order[0]
+        waited = 0.0
+        while i not in self.tts_done:
+            self.tts_cv.wait(0.3); waited += 0.3
+            if waited &gt; 3.0:                     # 音频晚 3 秒就没意义了
+                self.tts_done[i] = (None, 0)     # 超时跳过，不能堵死后面所有轮次
+        path, dur = self.tts_done.pop(i)
+        self.tts_order.pop(0)</code></pre>
+
+  <div class="note">
+    <div class="h">为什么是 2 个 worker 而不是 3 个</div>
+    3 个并发 <code>say</code> 会把语音资源加载三份，本机 swap 紧张时反而互相拖死。
+    2 个已经能跑在到达速度之上：<code>0.85s / 2 ≈ 0.43s</code> 每轮，小于 800ms 的到达间隔。
+  </div>
+
+  <table>
+    <caption>TTS 方案对比</caption>
+    <thead><tr><th>方案</th><th>RTF</th><th>音质</th><th>适用性</th></tr></thead>
+    <tbody>
+      <tr><td><code>say</code>（默认）</td><td class="num-cell">≈0.11</td><td>系统合成音，音色固定</td><td><span class="tag g">实时可用</span></td></tr>
+      <tr><td>Qwen3-TTS-0.6B 克隆</td><td class="num-cell">≈1.3</td><td>复刻原说话人音色</td><td><span class="tag a">只适合事后听</span></td></tr>
+      <tr><td>Eloquence 系</td><td class="num-cell">快 0.16s</td><td>音质差一档</td><td><span class="tag n">压不下固定开销</span></td></tr>
+    </tbody>
+  </table>
+  <p>
+    那 1.15 秒的"说话→出声"里，约 0.9 秒是 <code>say</code> 的固定启动开销。
+    换语音压不下来，要做到更低必须用进程内合成（<code>AVSpeechSynthesizer</code>），那是另一件事。
+  </p>
+</section>
+
+<!-- ============================ 9 ============================ -->
+<section id="s9">
+  <h2><span class="num">09</span>视频同传：系统声音与自激</h2>
+
+  <p>
+    看视频场景不需要麦克风 —— 用 <code>native/sys-tap</code> 直接抓
+    <strong>系统里正在播放的任何声音</strong>（浏览器视频、QuickTime 都行），
+    翻译后由 <code>native/ttsplay</code> 常驻进程念出来。前提：macOS 14.4+，
+    且运行本服务的终端已在「隐私与安全性 → 屏幕与系统音频录制」里授权。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 272" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, 'PingFang SC', sans-serif">
+      <defs>
+        <marker id="a5" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#8C9095"/></marker>
+        <marker id="a5r" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 z" fill="#B3291F"/></marker>
+      </defs>
+      <text x="12" y="20" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#8E9298">系统声音模式 · 自激环路必须被切断</text>
+
+      <!-- 播放器 -->
+      <rect x="20" y="40" width="150" height="52" rx="4" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="95" y="62" font-size="12" font-weight="600" fill="#16161A" text-anchor="middle">任意播放器</text>
+      <text x="95" y="80" font-size="10" fill="#8E9298" text-anchor="middle">浏览器 / QuickTime</text>
+      <path d="M174,66 L206,66" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a5)"/>
+
+      <!-- tap -->
+      <rect x="210" y="40" width="160" height="52" rx="4" fill="#EDF2FC" stroke="#2F5FD0"/>
+      <text x="290" y="62" font-size="12" font-weight="600" fill="#2F5FD0" text-anchor="middle">sys-tap</text>
+      <text x="290" y="80" font-size="10" fill="#2F5FD0" text-anchor="middle">CoreAudio 进程 tap</text>
+      <path d="M374,66 L406,66" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a5)"/>
+
+      <!-- 模型 -->
+      <rect x="410" y="40" width="160" height="52" rx="4" fill="#FDF2E4" stroke="#B45309"/>
+      <text x="490" y="62" font-size="12" font-weight="600" fill="#B45309" text-anchor="middle">模型 → 译文</text>
+      <text x="490" y="80" font-size="10" fill="#B45309" text-anchor="middle">经 live.py 中转</text>
+      <path d="M574,66 L606,66" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a5)"/>
+
+      <!-- ttsplay -->
+      <rect x="610" y="40" width="150" height="52" rx="4" fill="#E8F4ED" stroke="#1B7048"/>
+      <text x="685" y="62" font-size="12" font-weight="600" fill="#1B7048" text-anchor="middle">ttsplay</text>
+      <text x="685" y="80" font-size="10" fill="#1B7048" text-anchor="middle">PID 固定，已被排除</text>
+      <path d="M764,66 L796,66" stroke="#8C9095" stroke-width="1.3" marker-end="url(#a5)"/>
+
+      <rect x="800" y="40" width="80" height="52" rx="4" fill="#FFFFFF" stroke="#DAD7D0"/>
+      <text x="840" y="70" font-size="11.5" font-weight="600" fill="#16161A" text-anchor="middle">扬声器</text>
+
+      <!-- 自激回路（被切断） -->
+      <path d="M840,96 L840,150 L290,150 L290,96" stroke="#B3291F" stroke-width="1.6" fill="none" stroke-dasharray="6 4" marker-end="url(#a5r)"/>
+      <text x="565" y="168" font-size="11" font-weight="600" fill="#B3291F" text-anchor="middle">若不排除：译文被 tap 抓回去再译一遍 → 自激啸叫</text>
+
+      <!-- 切断标记 -->
+      <circle cx="290" cy="150" r="11" fill="#FFFFFF" stroke="#B3291F" stroke-width="2"/>
+      <path d="M284,144 L296,156 M296,144 L284,156" stroke="#B3291F" stroke-width="2.2" stroke-linecap="round"/>
+      <text x="312" y="154" font-size="10.5" fill="#B3291F">--exclude-pid</text>
+
+      <!-- 页面 -->
+      <rect x="20" y="196" width="860" height="30" rx="3" fill="#FBEBE9" stroke="#B3291F"/>
+      <text x="450" y="216" font-size="11.5" fill="#B3291F" text-anchor="middle">监控页 video.html 绝不播放任何声音 —— 浏览器也在 tap 范围里，播了就自激</text>
+
+      <!-- 底部说明 -->
+      <text x="20" y="252" font-size="10.5" fill="#8E9298">启动顺序不能反：先起 ttsplay 拿到固定 PID → 再创建 tap 并 --exclude-pid 排除它</text>
+      <text x="20" y="266" font-size="10.5" fill="#8E9298">原声：mutedWhenTapped 让 tap 激活期间原声自动静音，停止接管后系统自动恢复，不会把电脑搞哑</text>
+    </svg>
+    <figcaption><b>图 5</b>自激环路与切断点。这是视频模式唯一真正困难的地方。</figcaption>
+  </figure>
+
+  <h3>sys-tap 的实现路径</h3>
+  <p>Swift 直接调 CoreAudio 私有 API，四步：</p>
+  <ol>
+    <li><strong>建 tap</strong>：<code>CATapDescription</code> 用 <code>stereoGlobalTapButExcludeProcesses</code>，
+        <code>AudioHardwareCreateProcessTap</code>；<code>muteBehavior = .mutedWhenTapped</code></li>
+    <li><strong>建私有聚合设备</strong>：<code>AudioHardwareCreateAggregateDevice</code>，UUID 随机，不污染系统设备列表</li>
+    <li><strong>IOProc 回调</strong>：多缓冲/多声道统一混成 mono → 线性插值重采样 48k→16k（跨块保持相位）→ s16le</li>
+    <li><strong>写 stdout</strong>：<code>write()</code> 失败就丢，不在实时线程里死等</li>
+  </ol>
+
+  <h3>ttsplay 的管道协议</h3>
+<pre><code>stdin : [4 字节大端长度 N][N 字节 WAV]        N = 0 → 清空队列并停止当前播放
+stdout: 每播完一条打印一行 "done"             供服务端对账（player_done）
+EOF   : 播完队列里剩下的再退出</code></pre>
+
+  <div class="note warn">
+    <div class="h">一个"未出声就不会被排除"的坑</div>
+    没发过声的进程<strong>不在系统音频进程列表里</strong>，创建 tap 时
+    <code>--exclude-pid</code> 会落空（实测每次都"未排除"）。后果有二：
+    ① 译文被 <code>mutedWhenTapped</code> 一起静音，用户什么都听不到；
+    ② 译文被 tap 抓回去喂模型（自激）。
+    解法是 <code>_prime_player()</code>：先喂 2 秒 440Hz、振幅 80/32767 的近静音（人耳不可闻），
+    等它注册成音频进程后再创建 tap。
+  </div>
+
+  <h3>打断语义</h3>
+  <p>
+    模型每 800ms 吐一轮译文，<strong>连续轮次顺序连播才是完整句子</strong>，所以平时
+    <em>不</em>逐轮打断 —— 只在积压 ≥4 轮（明显跟不上）时自动清队，或手动点「打断播报」
+    （给 ttsplay 写一个 <code>len=0</code> 帧）。
+  </p>
+</section>
+
+<!-- ============================ 10 ============================ -->
+<section id="s10">
+  <h2><span class="num">10</span>故障分诊：六种「没反应」</h2>
+
+  <p>
+    「说了几句就没反应」有几种完全不同的原因，过去都表现为<strong>界面无任何提示</strong>，
+    只能靠猜。现在每种都有自己的信号 —— 这是这个项目在工程上最见功力的部分。
+  </p>
+
+  <table>
+    <caption>症状 → 含义 → 是否自动恢复</caption>
+    <thead><tr><th>界面提示</th><th>含义</th><th>触发来源</th><th>自动恢复</th></tr></thead>
+    <tbody>
+      <tr><td><code>已 N 秒没收到声音</code></td><td>服务端确认音频字节数不再增长，链路真的断了</td><td><code>watchdog</code> · <code>stall_sec ≥ 6</code></td><td><span class="tag g">是</span> 前端随后判死重连</td></tr>
+      <tr><td><code>连接中断，正在重连…</code></td><td>心跳超 9 秒没收到任何回执（TCP 半开）</td><td>前端 <code>heartbeat</code></td><td><span class="tag g">是</span> 退避重试最多 30 次</td></tr>
+      <tr><td><code>麦克风没有声音输入</code></td><td>页面 4 秒没收到 AudioWorklet 的帧</td><td>前端 <code>lastPcmAt</code></td><td><span class="tag g">是</span> <code>resume()</code> / 重建</td></tr>
+      <tr><td><code>麦克风听不到声音</code></td><td>字节在涨但能量接近 0 —— 设备还在跑，只是没声音进来</td><td>服务端 <code>silent_sec ≥ 4</code></td><td><span class="tag a">需人工</span> 查设备/权限</td></tr>
+      <tr><td><code>另一个窗口正在占用麦克风</code></td><td>同时开了多个同传页面，服务端只认第一个开口的</td><td>服务端租约拒绝</td><td><span class="tag g">是</span> 4 秒后自动接管</td></tr>
+      <tr><td>计时在走、无提示、无新字幕</td><td>模型在推理，或音频不足一块</td><td>—</td><td><span class="tag n">正常等待</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="note key">
+    <div class="h">设计原则</div>
+    <strong>每一种失败都必须有自己的信号，而不是统一显示"没反应"。</strong>
+    为此额外做了几件事：把浏览器采集侧的能量（<code>level</code>）和轨道状态
+    （<code>muted</code> / <code>readyState</code> / <code>context.state</code>）上报到服务端；
+    把实际使用的输入设备名显式回显（macOS 上极容易选到虚拟声卡，送来的是数字静音而界面看不出来）；
+    甚至提供「测一下麦克风」按钮 —— 录 4 秒、报告电平、然后原样放给你听。
+  </div>
+
+  <p>另外还有一个诊断钩子，供自动化验证与排障使用：</p>
+<span class="src">web/live.html</span>
+<pre><code>window.__diag()  // → running / ws / audioCtx / rows / withAudio / scheduled /
+                 //   playing / sampleRate / micRate / genMs / sentMs / dropMs /
+                 //   sendFail / recvAge / warn</code></pre>
+</section>
+
+<!-- ============================ 11 ============================ -->
+<section id="s11">
+  <h2><span class="num">11</span>实测数据</h2>
+  <p>环境：M2 Max / 64GB / macOS，模型 Q4_K_M，Metal 后端。</p>
+
+  <table>
+    <caption>性能实测</caption>
+    <thead><tr><th>指标</th><th class="num-cell">数值</th><th>备注</th></tr></thead>
+    <tbody>
+      <tr><td>模型加载（冷启）</td><td class="num-cell">≈ 8 s</td><td>页缓存热后 2 s</td></tr>
+      <tr><td>单轮生成（800ms 音频）</td><td class="num-cell">115 – 235 ms</td><td>远小于到达间隔</td></tr>
+      <tr><td><strong>端到端：说话 → 字幕</strong></td><td class="num-cell">平均 255 ms</td><td>≈ 生成时间 + 传输开销</td></tr>
+      <tr><td><strong>端到端：说话 → 出声</strong></td><td class="num-cell">平均 1150 ms</td><td>其中约 900ms 是 <code>say</code> 固定开销</td></tr>
+      <tr><td>14.16s 英文音频</td><td class="num-cell">8 轮字幕 + 8 段配音</td><td>字幕总延迟平均 255ms</td></tr>
+      <tr><td>连续同传压测</td><td class="num-cell">66s → 82 轮</td><td>积压恒定 0–800ms，丢弃 0</td></tr>
+      <tr><td>浏览器全链路</td><td class="num-cell">96s 连续</td><td>87 行字幕 / 86 段配音，无中断</td></tr>
+      <tr><td>KV 缓存</td><td class="num-cell">96 KB/token</td><td>16K 上下文约 1.5 GB</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <div class="h">参照系</div>
+    专业同传的滞后通常在 <strong>2–3 秒</strong>。这套系统的字幕延迟是 255ms，
+    出声延迟 1.15 秒 —— 已经落在同数量级甚至更快。
+  </div>
+
+  <p>
+    服务启动时还会把麦克风原始音频默认落盘（<code>HY_DUMP</code>，16k 单声道 16bit ≈ 115MB/小时）。
+    出事时能把"用户到底说了什么"直接放出来听，不用再靠猜 —— 注意只落盘<strong>真的进了模型</strong>的音频，
+    以前连被拒的也一起落，排查时听到的是模型根本没听过的东西，反而被带偏。
+  </p>
+</section>
+
+<!-- ============================ 12 ============================ -->
+<section id="s12">
+  <h2><span class="num">12</span>已知边界与设计取舍</h2>
+
+  <table>
+    <caption>边界与背后的取舍</caption>
+    <thead><tr><th>边界</th><th>根因 / 取舍</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>只能单向，换方向要重启（≈8s）</td>
+        <td>翻译方向由<strong>指令语种</strong>决定，而指令在首轮就被解码进上下文。改不了，只能重启。</td>
+      </tr>
+      <tr>
+        <td>会话约 9–11 分钟后自动轮换</td>
+        <td>上下文固定 16K。开 32K 多占 1.6GB，本机 swap 已吃 15GB+，模型页一旦被换出推理就失去实时性 —— <strong>省内存比拉长会话更值</strong>。</td>
+      </tr>
+      <tr>
+        <td>同一时刻只接受一个音源</td>
+        <td>两路音频写进同一个 stdin 会互相插帧，模型就听不懂了。用 4 秒租约防止断掉的连接永久锁死。</td>
+      </tr>
+      <tr>
+        <td>落后超过 10 秒会整块丢弃</td>
+        <td>刻意定得比"还能听"的界限宽：丢块会让译文凭空少一句，而用户要的是"把我说的都译出来"。<strong>真跟不上就让延迟暴露出来，别偷偷吞内容</strong>。</td>
+      </tr>
+      <tr>
+        <td>TTS 音色固定</td>
+        <td><code>say</code> 方案，中文 Tingting / 英文 Ava Enhanced。改 <code>TTS_VOICE</code> 即可。</td>
+      </tr>
+      <tr>
+        <td><code>--tts qwen</code> 跟不上</td>
+        <td>RTF≈1.3，配音会持续落后于说话人，只适合事后听。</td>
+      </tr>
+      <tr>
+        <td>外放时可能自译自</td>
+        <td>模型会听到自己念出的译文然后把这句译文当新输入再译一遍。建议戴耳机；浏览器侧开了 AEC 缓解。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>文件清单</h3>
+  <table>
+    <thead><tr><th>文件</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>live.py</code></td><td>同传服务：模型进程管理、WebSocket、TTS、HTTP、系统声音模式</td></tr>
+      <tr><td><code>live.sh</code></td><td>启动入口（<code>--qwen</code> 切音色克隆，<code>PORT=</code> 换端口）</td></tr>
+      <tr><td><code>web/live.html</code></td><td>麦克风同传界面（单文件，零外部依赖）</td></tr>
+      <tr><td><code>web/video.html</code></td><td>视频同传监控台（系统声音模式，单文件）</td></tr>
+      <tr><td><code>web/index.html</code></td><td>早期版本：上传音频文件 / 录音后离线处理（配 <code>server.py</code> + Qwen3-TTS 克隆）</td></tr>
+      <tr><td><code>native/sys-tap.swift</code></td><td>全局系统音频采集（CoreAudio 进程 tap → stdout 裸 PCM）</td></tr>
+      <tr><td><code>native/ttsplay.swift</code></td><td>常驻译文播放器（stdin 喂 WAV，len=0 打断，可按 PID 排除）</td></tr>
+      <tr><td><code>llama.cpp-hyv3/</code></td><td>已编译的 <code>llama-mtmd-cli</code>（含 <code>--stream</code> 改动，<code>tools/mtmd/mtmd-cli.cpp</code> +260 行）</td></tr>
+      <tr><td><code>live-cache/</code></td><td>合成出的 WAV，超过 400 条按批淘汰最旧的</td></tr>
+      <tr><td><code>live-model.log</code></td><td>模型进程的 stderr</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note key">
+    <div class="h">调试接口</div>
+    <code>POST /api/simulate?realtime=1</code> —— 把一段 wav 当作麦克风输入灌进去，用于没有麦克风时验证整条链路；
+    <code>POST /api/restart</code> —— 重启模型进程；
+    <code>GET /api/status</code> —— 看当前状态（含完整音频账本）。
+  </div>
+</section>
+
+<footer>
+  <span>技术分析 · Hy-SimulMT 本地实时同传</span>
+  <span>基于源码实证：live.py / web/*.html / native/*.swift / mtmd-cli.cpp diff / LIVE.md</span>
+</footer>
+
+</div>
+</body>
+</html>
