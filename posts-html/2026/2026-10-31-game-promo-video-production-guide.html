@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="复盘《绯夜对决》90 秒 1080p 宣传片的七阶段无人值守管线：从源码事实基线、Playwright CDP 逐帧采集、数值与视觉双重验证，到旁白自动配速、ffmpeg 合成混音与成品质检，附陷阱速查表与命令清单，全程可复现、可审计、可单段重跑。">
+<meta name="keywords" content="game-promo-video, video-production-pipeline, playwright-screencast, ffmpeg, threejs, automation">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-31">
+<title>游戏宣传视频自动化制作 · 最佳实践指南</title>
+<style>
+:root{
+  --bg:#FAFAFB; --surface:#FFFFFF; --surface-2:#F7F8FA;
+  --border:#E4E6ED; --border-soft:#EEF0F4;
+  --text:#1B1F2A; --text-2:#4A5162; --muted:#7A8296;
+  --blue:#2F5BEA; --blue-soft:#EEF2FE;
+  --teal:#0E8F8C; --teal-soft:#E6F5F4;
+  --amber:#B45309; --amber-soft:#FDF4E7;
+  --red:#C0392B;  --red-soft:#FCEDEB;
+  --green:#1F7A4C; --green-soft:#E8F5EE;
+  --radius:10px;
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--sans); font-size:15px; line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:0 32px 96px; display:grid; grid-template-columns:216px 1fr; gap:44px}
+@media(max-width:940px){.wrap{grid-template-columns:1fr; padding:0 20px 64px} nav.toc{display:none}}
+
+/* ---------- header ---------- */
+header.hero{background:var(--surface); border-bottom:1px solid var(--border)}
+.hero-in{max-width:1180px; margin:0 auto; padding:52px 32px 40px}
+@media(max-width:940px){.hero-in{padding:36px 20px 30px}}
+.eyebrow{font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--blue); font-weight:600; margin-bottom:14px}
+h1{font-size:34px; line-height:1.28; margin:0 0 14px; letter-spacing:-.5px; font-weight:680}
+h1 small{display:block; font-size:17px; font-weight:400; color:var(--muted); margin-top:10px; letter-spacing:0}
+.badges{display:flex; flex-wrap:wrap; gap:8px; margin-top:20px}
+.badge{font-size:12px; padding:4px 11px; border-radius:20px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-2); font-family:var(--mono)}
+.badge.b{background:var(--blue-soft); border-color:#D6E0FB; color:var(--blue)}
+.badge.g{background:var(--green-soft); border-color:#CFE8DA; color:var(--green)}
+
+/* ---------- toc ---------- */
+nav.toc{position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow-y:auto; padding:24px 0}
+nav.toc .t{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:12px}
+nav.toc a{display:block; padding:5px 12px; margin:1px 0; border-left:2px solid transparent;
+  color:var(--text-2); text-decoration:none; font-size:13px; line-height:1.5; border-radius:0 4px 4px 0; transition:.15s}
+nav.toc a:hover{color:var(--blue); background:var(--blue-soft)}
+nav.toc a.on{color:var(--blue); border-left-color:var(--blue); font-weight:600; background:var(--blue-soft)}
+nav.toc a.sub{padding-left:24px; font-size:12.5px; color:var(--muted)}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:24px; padding-top:14px}
+h2{font-size:23px; margin:52px 0 6px; letter-spacing:-.3px; font-weight:660; padding-bottom:12px; border-bottom:2px solid var(--text)}
+h2 .num{font-family:var(--mono); font-size:14px; color:var(--blue); margin-right:12px; vertical-align:3px}
+h3{font-size:17px; margin:30px 0 10px; font-weight:640}
+h4{font-size:14.5px; margin:20px 0 8px; font-weight:620; color:var(--text-2)}
+p{margin:12px 0}
+main > p{max-width:76ch}
+ul,ol{padding-left:22px; margin:12px 0}
+li{margin:6px 0}
+code{font-family:var(--mono); font-size:.875em; background:var(--surface-2); border:1px solid var(--border-soft);
+  border-radius:4px; padding:1.5px 5px; color:#1F3A93; white-space:nowrap}
+a.ref{color:var(--blue); text-decoration:none; border-bottom:1px solid #C6D3F8}
+a.ref:hover{background:var(--blue-soft)}
+hr{border:0; border-top:1px solid var(--border); margin:36px 0}
+
+/* ---------- blocks ---------- */
+pre{background:#FCFDFE; border:1px solid var(--border); border-left:3px solid var(--blue);
+  border-radius:var(--radius); padding:14px 16px; overflow-x:auto; margin:14px 0; position:relative}
+pre.cmd{border-left-color:var(--teal)}
+pre.warn{border-left-color:var(--amber)}
+pre code{background:none; border:0; padding:0; color:var(--text); font-size:12.7px; line-height:1.62; white-space:pre}
+pre .lbl{display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:9px; user-select:none}
+
+.callout{border-radius:var(--radius); padding:14px 18px; margin:16px 0; border:1px solid; font-size:14.2px}
+.callout p{margin:8px 0}
+.callout p:first-child{margin-top:0} .callout p:last-child{margin-bottom:0}
+.callout .head{font-weight:640; display:flex; align-items:center; gap:8px; margin-bottom:6px}
+.callout.key{background:var(--blue-soft); border-color:#D6E0FB}
+.callout.key .head{color:var(--blue)}
+.callout.warn{background:var(--amber-soft); border-color:#F3E0BE}
+.callout.warn .head{color:var(--amber)}
+.callout.bad{background:var(--red-soft); border-color:#F3D6D2}
+.callout.bad .head{color:var(--red)}
+.callout.ok{background:var(--green-soft); border-color:#CFE8DA}
+.callout.ok .head{color:var(--green)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+
+table{width:100%; border-collapse:collapse; margin:16px 0; font-size:13.6px; background:var(--surface);
+  border:1px solid var(--border); border-radius:var(--radius); overflow:hidden}
+th{background:var(--surface-2); text-align:left; padding:10px 13px; font-weight:620; font-size:12.5px;
+  color:var(--text-2); border-bottom:1px solid var(--border); white-space:nowrap}
+td{padding:9px 13px; border-bottom:1px solid var(--border-soft); vertical-align:top}
+tr:last-child td{border-bottom:0}
+td code,th code{font-size:12.3px}
+tbody tr:hover{background:#FCFCFE}
+
+.grid{display:grid; gap:14px; margin:16px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px}
+.card h4{margin:0 0 8px; font-size:14px; font-weight:640}
+.card p{margin:6px 0; font-size:13.6px; color:var(--text-2)}
+.card .big{font-family:var(--mono); font-size:22px; font-weight:600; color:var(--blue); display:block; margin-bottom:2px}
+.card ul{margin:8px 0 0; font-size:13.4px; color:var(--text-2)}
+.card li{margin:4px 0}
+
+.tag{display:inline-block; font-family:var(--mono); font-size:10.5px; padding:1.5px 7px; border-radius:4px;
+  font-weight:600; letter-spacing:.03em; vertical-align:1px}
+.tag.must{background:var(--red-soft); color:var(--red)}
+.tag.opt{background:var(--surface-2); color:var(--muted)}
+.tag.ver{background:var(--blue-soft); color:var(--blue)}
+
+figure{margin:20px 0}
+figure svg{display:block; width:100%; height:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface)}
+figcaption{font-size:12.5px; color:var(--muted); margin-top:9px; line-height:1.6}
+
+.qc{list-style:none; padding:0}
+.qc li{padding:9px 12px 9px 38px; border:1px solid var(--border); border-radius:8px; margin:7px 0;
+  position:relative; background:var(--surface); font-size:13.8px}
+.qc li::before{content:""; position:absolute; left:13px; top:12px; width:14px; height:14px;
+  border:1.5px solid var(--muted); border-radius:3px}
+.qc li:hover::before{border-color:var(--green); background:var(--green-soft)}
+
+footer{border-top:1px solid var(--border); margin-top:64px; padding-top:22px; font-size:13px; color:var(--muted)}
+footer code{font-size:12px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="eyebrow">Best Practice · Game Promo Video Pipeline</div>
+    <h1>游戏宣传视频自动化制作最佳实践
+      <small>从源码事实到 1080p 成片：一条无人值守、可复现、可审计的制作管线</small>
+    </h1>
+    <p style="color:var(--text-2); max-width:74ch; margin:16px 0 0">
+      本文档复盘 <strong>绯夜对决 / VELVET FIGHT</strong>（Three.js 3D 格斗游戏）90 秒宣传片的完整制作过程。
+      它不是清单，而是<strong>一套已被验证的管线</strong>：所有实机画面由脚本自动采集、每一招都经数值与视觉双重验证、
+      音频与非实机素材全程可再生成。附带的命令与代码取自真实产出定向 firing，可直接复用。
+    </p>
+    <div class="badges">
+      <span class="badge b">90s · 1920×1080 · 30fps</span>
+      <span class="badge">H.264 + AAC · 19.8MB</span>
+      <span class="badge g">实机画面占比 74%</span>
+      <span class="badge">20 个片段 / 19 段旁白 / 38 条字幕</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <div class="t">目录</div>
+  <a href="#overview">00 · 管线总览</a>
+  <a href="#why">01 · 三条核心原则</a>
+  <a href="#script">02 · 脚本阶段</a>
+  <a href="#sub-fact" class="sub">事实基线</a>
+  <a href="#sub-struct" class="sub">四段式结构</a>
+  <a href="#env">03 · 工具链体检</a>
+  <a href="#capture">04 · 画面采集</a>
+  <a href="#sub-screencast" class="sub">CDP Screencast</a>
+  <a href="#drive">05 · 驱动被测对象</a>
+  <a href="#sub-defects" class="sub">七个必修缺陷</a>
+  <a href="#verify">06 · 双重验证</a>
+  <a href="#still">07 · 非实机素材</a>
+  <a href="#audio">08 · 旁白与音效</a>
+  <a href="#assemble">09 · 合成</a>
+  <a href="#qc">10 · 成品质检</a>
+  <a href="#pitfalls">11 · 陷阱速查表</a>
+  <a href="#cheatsheet">12 · 命令速查</a>
+</nav>
+
+<main>
+
+<!-- ============ 00 ============ -->
+<section id="overview">
+<h2><span class="num">00</span>管线总览</h2>
+<p>整条链路由七个阶段串成，每个阶段的产物都是<strong>磁盘上的具体文件</strong>，因此可以单独重跑任意一段而不影响前后——这一点决定了返工成本。<code>approach</code> 逻辑改了只用重采集战斗镜头，不用重录旁白。</p>
+
+<figure>
+<svg viewBox="0 0 1100 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="制作管线流程图">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 z" fill="#9AA2B4"/>
+    </marker>
+    <marker id="ab" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 z" fill="#2F5BEA"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="300" fill="#FFFFFF"/>
+
+  <!-- row labels -->
+  <text x="46" y="72" font-family="-apple-system,sans-serif" font-size="11" fill="#7A8296" font-weight="600">采集层</text>
+  <text x="46" y="196" font-family="-apple-system,sans-serif" font-size="11" fill="#7A8296" font-weight="600">合成层</text>
+
+  <!-- stage boxes (capture) -->
+  <g font-family="-apple-system,sans-serif">
+    <rect x="120" y="42" width="150" height="60" rx="8" fill="#EEF2FE" stroke="#C6D3F8"/>
+    <text x="195" y="66" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">① 事实基线</text>
+    <text x="195" y="85" font-size="11" fill="#4A5162" text-anchor="middle">读源码，核数值</text>
+
+    <rect x="300" y="42" width="150" height="60" rx="8" fill="#EEF2FE" stroke="#C6D3F8"/>
+    <text x="375" y="66" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">② 脚本 + 采集表</text>
+    <text x="375" y="85" font-size="11" fill="#4A5162" text-anchor="middle">分镜 / 演示步骤</text>
+
+    <rect x="480" y="42" width="150" height="60" rx="8" fill="#E6F5F4" stroke="#B8E0DE"/>
+    <text x="555" y="66" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">③ CDP 抓帧</text>
+    <text x="555" y="85" font-size="11" fill="#4A5162" text-anchor="middle">JPEG 序列 + meta</text>
+
+    <rect x="660" y="42" width="150" height="60" rx="8" fill="#FDF4E7" stroke="#F0DCB4"/>
+    <text x="735" y="66" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">④ 双重验证</text>
+    <text x="735" y="85" font-size="11" fill="#4A5162" text-anchor="middle">数值 + 看图</text>
+
+    <rect x="840" y="42" width="150" height="60" rx="8" fill="#EEF2FE" stroke="#C6D3F8"/>
+    <text x="915" y="66" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">⑤ 代码卡渲染</text>
+    <text x="915" y="85" font-size="11" fill="#4A5162" text-anchor="middle">HTML → 帧序列</text>
+
+    <!-- row 2 -->
+    <rect x="480" y="166" width="150" height="60" rx="8" fill="#EEF2FE" stroke="#C6D3F8"/>
+    <text x="555" y="190" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">⑥ 旁白合成</text>
+    <text x="555" y="209" font-size="11" fill="#4A5162" text-anchor="middle">say + 自动提速</text>
+
+    <rect x="660" y="166" width="150" height="60" rx="8" fill="#EEF2FE" stroke="#C6D3F8"/>
+    <text x="735" y="190" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">⑦ 剪辑 + 混音</text>
+    <text x="735" y="209" font-size="11" fill="#4A5162" text-anchor="middle">慢放 / 烧字幕</text>
+
+    <rect x="840" y="166" width="150" height="60" rx="8" fill="#E8F5EE" stroke="#C6E5D3"/>
+    <text x="915" y="190" font-size="13.5" fill="#1B1F2A" font-weight="600" text-anchor="middle">⑧ 质检交付</text>
+    <text x="915" y="209" font-size="11" fill="#4A5162" text-anchor="middle">抽帧 / 电平 / ffprobe</text>
+  </g>
+
+  <!-- arrows row1 -->
+  <g stroke="#9AA2B4" stroke-width="1.4" fill="none" marker-end="url(#ar)">
+    <path d="M270,72 L298,72"/>
+    <path d="M450,72 L478,72"/>
+    <path d="M630,72 L658,72"/>
+    <path d="M810,72 L838,72"/>
+  </g>
+  <!-- feedback loop: verify -> capture -->
+  <path d="M735,102 L735,130 Q735,138 727,138 L390,138 Q382,138 382,146 L382,104"
+        stroke="#C0392B" stroke-width="1.4" fill="none" stroke-dasharray="4 3" marker-end="url(#ab)"/>
+  <text x="556" y="152" font-family="-apple-system,sans-serif" font-size="10.5" fill="#C0392B" text-anchor="middle">MISS / 穿帮 → 调参数重采</text>
+
+  <!-- down + arrows row2 -->
+  <path d="M915,102 L915,140 L915,164" stroke="#9AA2B4" stroke-width="1.4" fill="none" marker-end="url(#ar)"/>
+  <g stroke="#9AA2B4" stroke-width="1.4" fill="none" marker-end="url(#ar)">
+    <path d="M628,196 L658,196"/>
+    <path d="M808,196 L838,196"/>
+  </g>
+  <path d="M555,166 L555,120" stroke="#9AA2B4" stroke-width="1.4" fill="none" marker-end="url(#ar)"/>
+
+  <!-- artifacts -->
+  <g font-family="ui-monospace,monospace" font-size="10" fill="#9AA2B4">
+    <text x="120" y="118">→ PROMO_VIDEO_SCRIPT.md</text>
+    <text x="480" y="118">→ clips/&lt;场次&gt;/%06d.jpg</text>
+    <text x="840" y="118">→ clips/F_code*/</text>
+    <text x="480" y="242">→ audio/n*.wav + manifest.json</text>
+    <text x="660" y="242">→ final/nosub.mp4</text>
+    <text x="840" y="242">→ velvet-fight-promo-90s.mp4</text>
+  </g>
+</svg>
+<figcaption>八阶段管线。红色虚线是本次改进最多的一环——前四次失败都发生在「以为采集成功、实际是假动作」上。</figcaption>
+</figure>
+
+<div class="grid g3">
+  <div class="card"><span class="big">74%</span><p>实机画面占比（67s / 90s）。格斗游戏的说服力来自连续对抗，切碎会摧毁打击感的可信度。</p></div>
+  <div class="card"><span class="big">4×</span><p>战斗镜头平均返工次数。全部由自动化驱动缺陷导致，无一是渲染问题。</p></div>
+  <div class="card"><span class="big">0</span><p>外部付费素材与 CDN 依赖。画面、音频、字幕全部由本机合成。</p></div>
+</div>
+</section>
+
+<!-- ============ 01 ============ -->
+<section id="why">
+<h2><span class="num">01</span>三条贯穿始终的原则</h2>
+
+<div class="callout key">
+  <div class="head"><span class="dot"></span>原则一：脚本必须建立在源码事实上，不是 README 上</div>
+  <p>本次一开始就发现四处文档与实现不符（见 <a class="ref" href="#sub-fact">02.1</a>）。若照 README 写宣传口径，会在片中出现错误按键提示——而演示类视频的观众最容易当场跟着试。</p>
+  <p><strong>做法：</strong>先读完被测系统的核心模块，建立一张「事实基线表」，每个对外宣称的数字都标注出处行号。这一步花的时间会在后期避免彻底返工。</p>
+</div>
+
+<div class="callout key">
+  <div class="head"><span class="dot"></span>原则二：数值验证之外，必须做视觉验证</div>
+  <p>只看 <code>debug()</code> 返回的血量会漏掉最关键的一类错误：<strong>动作打空但碰巧也有数值变化</strong>，以及<strong>角色背对对手出招</strong>。本次 D2 镜头就是靠逐帧看图才发现「尹世琳的踢腿朝左打空」——此时 <code>combo=2</code> 依然成立，因为计数来自另一段命中。</p>
+  <p><strong>做法：</strong>每个关键动作抽 4–6 帧拼成一张图，交给视觉模型或人眼判读。<strong>「看起来对」和「数据对」是两个独立条件。</strong></p>
+</div>
+
+<div class="callout key">
+  <div class="head"><span class="dot"></span>原则三：每个阶段的产物落到磁盘，并且能单独重跑</div>
+  <p>帧序列、meta.json、每段 wav、manifest、nosub.mp4 全部保留。改一句旁白只需重跑 ⑥⑦⑧，不必重启浏览器；改一个按键时序只需重采那一场。</p>
+  <p><strong>做法：</strong>拒绝「一条命令跑到底」的脚本。把管线切成带明确文件边界的步骤，用 <code>if os.path.exists()</code> 或显式 <code>skip</code> 开关控制重跑范围。</p>
+</div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="script">
+<h2><span class="num">02</span>脚本阶段：先把事实钉死</h2>
+
+<h3 id="sub-fact">2.1 建立事实基线表</h3>
+<p>开工前通读被测系统的核心源码模块（本次是 <code>app/src/game/</code> 下 17 个文件，约 1700 行），产出一张可直接被脚本、字幕、旁白引用的表。</p>
+
+<table>
+<thead><tr><th style="width:88px">维度</th><th>核对到的事实</th><th style="width:150px">出处</th></tr></thead>
+<tbody>
+<tr><td>技术栈</td><td>Vite + React 19 + TS + Three.js 0.180，纯前端零后端</td><td><code>package.json</code></td></tr>
+<tr><td>帧数据</td><td>六类招式，伤害 5 / 10 / 14 / 8 / 12 / 28，每段含 startup · active · recovery</td><td><code>combat.ts:13-20</code></td></tr>
+<tr><td>连段规则</td><td>递减系数 <code>max(0.48, 1-combo*0.075)</code>；<strong>仅轻击命中可取消</strong>接重击/特殊技</td><td><code>combat.ts</code></td></tr>
+<tr><td>连段计数</td><td>两次命中间隔 &lt;1.15s（comboTimer）即累计 —— <strong>不依赖取消窗口</strong></td><td><code>combat.ts:213</code></td></tr>
+<tr><td>特殊效果</td><td>投技不可防御；格挡削血（超必杀 3 / 伤害&gt;10 则 1）；hitstop .045/.085/.14s</td><td><code>combat.ts</code></td></tr>
+<tr><td>输入缓冲</td><td>0.2s 缓冲窗口</td><td><code>input.ts</code></td></tr>
+<tr><td>渲染</td><td>实例化城市/雨/粒子；GLB 无骨骼 → 自动计算 12 骨骼蒙皮权重</td><td><code>articulated-character.ts</code></td></tr>
+<tr><td>音频</td><td>Web Audio 全实时合成，<strong>零音频文件</strong></td><td><code>audio.ts</code></td></tr>
+<tr><td>调试接口</td><td><code>debug()</code> / <code>debugWin()</code> / <code>debugMeter()</code></td><td><code>game.ts:198-202</code></td></tr>
+</tbody>
+</table>
+
+<div class="callout bad">
+  <div class="head"><span class="dot"></span>本次核对出的四处「文档 ≠ 实现」</div>
+  <ul>
+    <li><strong>Docker 端口</strong>：README 写 80，<code>Dockerfile</code> 实际 <code>EXPOSE 3000</code>。</li>
+    <li><strong>冲刺键</strong>：README 只写「双击 A/D」，HUD 只写「Shift+方向」，实际两者都支持，且 README 完全没提 P2 冲刺键。</li>
+    <li><strong>触屏支持</strong>：<code>info.md</code> 声称支持 touch，实际 <code>input.ts</code> 只有键盘，无触屏也无手柄 —— 因此脚本里明确排除了移动端演示。</li>
+    <li><strong>资料可信度</strong>：<code>app/info.md</code> 是上游模板说明，不是本项目设计文档。<strong>判断项目能力要看源码。</strong></li>
+  </ul>
+</div>
+
+<h3 id="sub-struct">2.2 四段式脚本结构</h3>
+<p>脚本按四个正交维度组织，缺一维后期就会卡顿。这个顺序也是执行顺序。</p>
+
+<div class="grid g2">
+  <div class="card">
+    <h4>① 脚本分镜</h4>
+    <ul><li>时间码精确到帧</li><li>画面描述 + 景别 + 运镜</li><li>7 段落 / 20 个镜头</li></ul>
+  </div>
+  <div class="card">
+    <h4>② 画面素材</h4>
+    <ul><li>来源：实机采集 / 渲染生成</li><li>获取方式（哪一场、哪个开窗）</li><li>含免录屏的静态素材备选</li></ul>
+  </div>
+  <div class="card">
+    <h4>③ 演示步骤</h4>
+    <ul><li>逐镜精确到按键</li><li>每个动作标注预期数值</li><li>写明「怎么算成功」</li></ul>
+  </div>
+  <div class="card">
+    <h4>④ 字幕与旁白</h4>
+    <ul><li>逐句对照时间码</li><li>约 4.5 字/秒语速</li><li>主行 + 副行两层信息</li></ul>
+  </div>
+</div>
+
+<p>时长定为 <strong>90 秒 / 1080p / 60fps 采集 · 30fps 交付</strong>。结构分配：</p>
+<table>
+<thead><tr><th style="width:52px">段</th><th style="width:70px">时长</th><th>内容</th><th style="width:96px">画面来源</th></tr></thead>
+<tbody>
+<tr><td>A 钩子</td><td>5s</td><td>雨夜天台，气氛先立住</td><td>实机</td></tr>
+<tr><td>B 简介</td><td>11s</td><td>一句话说清是什么、怎么玩</td><td>实机</td></tr>
+<tr><td>C 角色</td><td>11s</td><td>双姝定位与招式性格</td><td>实机（选人界面）</td></tr>
+<tr><td>D 战斗</td><td>20s</td><td>走位 / 连段 / 防御 / 对空 / 投技</td><td>实机</td></tr>
+<tr><td>E 必杀</td><td>15s</td><td>攒气 → 运镜 → K.O.</td><td>实机</td></tr>
+<tr><td>F 技术</td><td>16s</td><td>三张代码卡讲架构亮点</td><td>渲染生成</td></tr>
+<tr><td>G 场景</td><td>12s</td><td>玩法场景 + 收尾</td><td>实机</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+  <div class="head"><span class="dot"></span>受众分层决定了镜头取舍</div>
+  <p><strong>核心：</strong>格斗 / 独立游戏玩家 → 看手感与连段深度，所以 D 段占 20s 且允许慢放。<br>
+  <strong>次级：</strong>Three.js / WebGL 开发者 → 看架构可读性，所以 F 段给 16s 代码卡。<br>
+  <strong>泛受众：</strong>星标猎手 / 二次元美术受众 → 看画面与能否一键跑，所以 B/G 段强调「无下载、无后端」。</p>
+</div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="env">
+<h2><span class="num">03</span>工具链体检：动手前先把环境问清楚</h2>
+<p>下面这组检查在本次省下了至少两次「跑到一半才发现不可行」。建议固化成项目里的 <code>make check-tools</code>。</p>
+
+<pre class="cmd"><span class="lbl">环境体检</span><code>echo "=== ffmpeg ==="      &amp;&amp; (which ffmpeg &amp;&amp; ffmpeg -version 2&gt;/dev/null | head -1) || echo "NO FFMPEG"
+echo "=== 中文语音 ==="    &amp;&amp; say -v '?' 2&gt;/dev/null | grep -iE 'zh_CN|zh-CN|Chinese'
+echo "=== pw browsers ===" &amp;&amp; ls ~/Library/Caches/ms-playwright/
+echo "=== 屏幕刷新率 ==="  &amp;&amp; system_profiler SPDisplaysDataType | grep -E 'Resolution|UI Looks'</code></pre>
+
+<h4>ffmpeg 能力探测（决定字幕方案）</h4>
+<p>本机是 ffmpeg 4.2.2，<strong>没有编译 libass</strong>，且 <code>amix</code> 缺少较新的 <code>normalize</code> 选项。这两点分别影响字幕滤镜选型与混音写法，必须先探测。</p>
+
+<pre class="cmd"><span class="lbl">能力矩阵</span><code>ffmpeg -hide_banner -filters  2&gt;/dev/null | grep -E ' (drawtext|subtitles|ass|concat) '
+ffmpeg -hide_banner -encoders 2&gt;/dev/null | grep -E ' (libx264|aac|h264_videotoolbox) '
+ffmpeg -hide_banner -version  2&gt;/dev/null | grep -oE '\-\-enable-(libass|libfreetype|libfontconfig)'</code></pre>
+
+<div class="callout warn">
+  <div class="head"><span class="dot"></span>中文字体必须实测，不能想当然</div>
+  <p>macOS 上 <code>/System/Library/Fonts/PingFang.ttc</code> 被 ffmpeg 打开失败，可用的是 <code>Hiragino Sans GB.ttc</code>。逐个试：</p>
+  <pre class="cmd" style="margin:10px 0 0"><code>for f in "/System/Library/Fonts/Hiragino Sans GB.ttc" \
+         "/System/Library/Fonts/PingFang.ttc" \
+         "/System/Library/Fonts/Supplemental/Songti.ttc"; do
+  [ -f "$f" ] || continue
+  ffmpeg -y -loglevel error -f lavfi -i color=c=black:s=400x100:d=0.1 \
+    -vf "drawtext=fontfile='$f':text='绯夜对决':fontsize=36:fontcolor=white:x=20:y=20" \
+    -frames:v 1 /tmp/ft.jpg 2&gt;/dev/null &amp;&amp; echo "OK   $f" || echo "FAIL $f"
+done</code></pre>
+</div>
+
+<h4>常驻预览服务</h4>
+<p>Vite preview 用 <code>&amp;</code> 挂后台会被会话回收。<strong>交给任务管理器常驻</strong>，或 <code>nohup</code> + 显式 pid 管理：</p>
+<pre class="cmd"><span class="lbl">启动并验证</span><code>cd app &amp;&amp; npm run build
+npm run preview -- --port 4173 --host 127.0.0.1     # 用后台任务方式常驻，勿用 shell &amp;
+sleep 3 &amp;&amp; curl -s -o /dev/null -w "HTTP %{http_code}\n" http://127.0.0.1:4173/</code></pre>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="capture">
+<h2><span class="num">04</span>画面采集：为什么放弃 recordVideo</h2>
+
+<h3 id="sub-screencast">4.1 方案对比</h3>
+<table>
+<thead><tr><th style="width:150px">方案</th><th>本次结果</th><th style="width:74px">结论</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>Playwright <code>recordVideo</code></strong></td>
+  <td>失败。要求 chromium-1248，本地缓存只有 1247；且它依赖一份专用 ffmpeg 二进制（本次缺 1013，需 symlink 到已有的 1011）。即使补齐，录制逻辑本身会与渲染抢主线程。</td>
+  <td><span class="tag opt">弃用</span></td>
+</tr>
+<tr>
+  <td><strong>CDP <code>Page.startScreencast</code></strong></td>
+  <td>成功。1920×1080，JPEG quality 92，<strong>实测 91–97fps</strong>。帧通过事件异步推送，Node 只负责存盘，<strong>不阻塞渲染</strong>；自带时间戳可用于精确裁剪。</td>
+  <td><span class="tag ver">采用</span></td>
+</tr>
+<tr>
+  <td><strong>macOS 屏幕录制</strong></td>
+  <td>可用但不可控：分辨率受显示器缩放影响，窗口可能被遮挡，无法做到无人值守。</td>
+  <td><span class="tag opt">兜底</span></td>
+</tr>
+</tbody>
+</table>
+
+<p>核心采集器 <code>lib.mjs</code>—— 它同时承担 three 件事：定位项目内的 playwright 依赖、跑 screencast、提供在墙钟上精确执行动作的 <code>Timeline</code>。</p>
+
+<pre><span class="lbl">lib.mjs · 采集核心</span><code>import { createRequire } from "node:module";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+// 关键 1：脚本放在 /tmp 时找不到项目的 playwright，用 createRequire 锚定到项目目录
+export const require = createRequire("/path/to/project/app/");
+export const { chromium } = require("playwright");
+
+// 关键 2： playwright 版本与缓存中的 chromium 版本不匹配时，显式指定可执行文件
+export const EXEC = "~/Library/Caches/ms-playwright/chromium-1247/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
+
+export const sleep = (ms) =&gt; new Promise((r) =&gt; setTimeout(r, ms));
+
+/** 基于 CDP 的时间戳索引录屏器 */
+export class Screencast {
+  constructor(cdp, dir, { quality = 92 } = {}) {
+    this.cdp = cdp; this.dir = dir; this.quality = quality;
+    this.n = 0; this.t0 = 0; this.timestamps = [];
+    mkdirSync(dir, { recursive: true });
+  }
+  async start() {
+    this.t0 = Date.now();
+    this.cdp.on("Page.screencastFrame", async ({ data, sessionId, metadata }) =&gt; {
+      this.timestamps.push(Date.now() - this.t0);
+      writeFileSync(join(this.dir, `${String(this.n++).padStart(6, "0")}.jpg`),
+                    Buffer.from(data, "base64"));
+      try { await this.cdp.send("Page.screencastFrameAck", { sessionId }); }
+      catch { /* 页面被销毁时的正常竞态 */ }
+    });
+    await this.cdp.send("Page.startScreencast", {
+      format: "jpeg", quality: this.quality,
+      maxWidth: 1920, maxHeight: 1080, everyNthFrame: 1,
+    });
+  }
+  async stop() {
+    await this.cdp.send("Page.stopScreencast");
+    const ms = Date.now() - this.t0;
+    const fps = ms &gt; 0 ? this.n / (ms / 1000) : 0;
+    writeFileSync(join(this.dir, "meta.json"),
+      JSON.stringify({ frames: this.n, ms, fps: +fps.toFixed(2) }, null, 1));
+    return { frames: this.n, ms, fps };
+  }
+}
+
+export async function launch() {
+  return chromium.launch({
+    headless: false,                 // headless 下 WebGL 表现与 headed 不同，必须 headed
+    executablePath: EXEC,
+    args: ["--force-device-scale-factor=1", "--hide-scrollbars", "--mute-audio"],
+  });
+}
+
+export async function openPage(browser) {
+  const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) =&gt; console.log("  [page error]", e.message));
+  await page.goto(URL, { waitUntil: "load" });
+  await page.waitForFunction(() =&gt; window.__GAME_READY__ === true, null, { timeout: 30000 });
+  const cdp = await ctx.newCDPSession(page);
+  return { ctx, page, cdp };
+}
+
+export const debug = (page) =&gt; page.evaluate(() =&gt; window.__velvetDebug?.());</code></pre>
+
+<div class="callout warn">
+  <div class="head"><span class="dot"></span>开录前必须做的三件事</div>
+  <ol style="margin:6px 0">
+    <li><strong>点击页面一次</strong> —— 浏览器的 AudioContext 需用户交互解锁，否则整段实机音效缺席。</li>
+    <li><strong>静置 7–10 秒</strong>等异步资源 —— 本项目两个高精 GLB 各 10–11MB，加载未完成时画面上是程序化<strong>备用模型</strong>，一旦录进去就是穿帮。</li>
+    <li><strong>确认 fps 余量</strong> —— 本项目 <code>fps &lt; 42</code> 持续 3 秒会<strong>自动降画质</strong>（雨粒子 380→140、像素比 1.5→1.0）。录屏本身吃性能，很容易把 fps 打下去，导致同一项目前后画质不一致。实测本环境稳定 120+，安全。</li>
+  </ol>
+</div>
+
+<h4>先把帧率测出来，再决定裁切策略</h4>
+<pre class="cmd"><span class="lbl">帧率探针（先跑 3 秒）</span><code>node probe-fps.mjs   # → frames=274 ms=3002 fps=91.27</code></pre>
+<p><code>meta.json</code> 里记录的实际 fps 是后续从「帧号」换算「秒」的唯一依据 —— <strong>scereencast 的帧率不是恒定的</strong>（本次各场次在 60–97fps 间波动），所以每个场次单独存一份 meta，裁剪时按各自 fps 换算，切勿全局假设 30 或 60。</p>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="drive">
+<h2><span class="num">05</span>驱动被测对象：本次 80% 的返工都在这里</h2>
+<p>采集本身一次成功，难的是<strong>让游戏在镜头前把动作做对</strong>。以下七个缺陷按发现顺序列出，都经过复现与修复验证。</p>
+
+<h3 id="sub-defects">5.1 七个必修缺陷</h3>
+
+<h4>缺陷 1 · 组合键跨游戏帧 <span class="tag must">必现</span></h4>
+<p><strong>现象：</strong>对空技应为 <code>W + L</code> 同时按下，实际录出来 P1 先起跳，L 在空中被判定为空中技。<strong>根因：</strong>游戏以 16.7ms 固定步长读输入，而 <code>keyboard.down('w')</code> 与 <code>press('l')</code> 是两次独立 CDP 调用，间隔可能跨过一帧。</p>
+<pre><span class="lbl">修复 · 在 page.evaluate 内同帧派发</span><code>await page.evaluate(() =&gt; {
+  const ev = (type, key) =&gt; window.dispatchEvent(
+    new KeyboardEvent(type, { code: key, key, bubbles: true }));
+  ev("keydown", "KeyL");   // 两个键在同一个 JS 任务内到达
+  ev("keydown", "KeyW");
+  setTimeout(() =&gt; { ev("keyup", "KeyL"); ev("keyup", "KeyW"); }, 140);
+});</code></pre>
+<p class="tag ver">验证</p><code>before=100 after=85 → 差值 15，正好等于「升月踢」的伤害值，命中。</code>
+
+<h4>缺陷 2 · 命中时刻被延迟演出推迟 <span class="tag must">必现</span></h4>
+<p><strong>现象：</strong>超必杀按下 I 后立即查血量，<code>p2.hp</code> 无变化，一度误判为「脱靶」。<strong>根因：</strong>超必杀触发后有 <strong>1.05 秒运镜</strong>，期间 <code>combat.update</code> 完全暂停，真正的命中结算在按键后 <strong>1.4–1.8 秒</strong>。</p>
+<div class="callout warn">
+  <div class="head"><span class="dot"></span>判据应选「能量清零」而非「血量下降」</div>
+  <p>本次是靠发现 <code>p1meter === 0</code>（能量被消耗）反推出「技能确实触发了」，才回头把验证时点推后到 1.4s。<strong>教训：验证一个迟滞事件时，先找一个「立即变化」的中间量作为触发标志。</strong></p>
+</div>
+
+<h4>缺陷 3 · 击倒后的起身无敌帧 <span class="tag must">必现</span></h4>
+<p>倒地 <code>0.75s</code> + 起身无敌 <code>0.35s</code>。连拍多段攻击时，紧跟着的一招会被无敌帧吞掉，表现为「莫名其妙 MISS」。连续演示必须在两段攻击之间留出 &gt;1.1s 空档。</p>
+
+<h4>缺陷 4 · 突进把自己送到对手背后 <span class="tag must">必现</span></h4>
+<p>special / super 自带 lunge（特殊技 0.9、超必杀 1.8），位移会把攻击方推<strong>过</strong>对手，此时朝向向量变负，攻击判定落空。<strong>站位距离要按最后一招的 lunge 预留</strong>，而不是按起手距离。</p>
+
+<h4>缺陷 5 · 绝对距离导致走反方向 <span class="tag must">必现</span></h4>
+<p><strong>现象：</strong>某帧里尹世琳明明贴近了对手，踢腿却朝左打空 —— 因为 D1 的冲刺跳跃让两人<strong>换了边</strong>，而 <code>approach</code> 用绝对距离判断，方向丢失。</p>
+<pre><span class="lbl">修复 · 位置闭环必须带符号 + 比例收敛</span><code>async function approach(page, want) {
+  for (let i = 0; i &lt; 25; i++) {
+    const d = await debug(page);
+    const gap = d.p2.x - d.p1.x;                      // 带符号！用 Math.abs 会丢失方向
+    if (Math.abs(gap - want) &lt; 0.13) return gap;
+    const ms = Math.min(380, Math.max(60, Math.abs(gap - want) * 130));  // 比例步长：大gap长按
+    await hold(page, gap &gt; want ? "d" : "a", ms);
+  }
+  return -99;                                          // 明确失败，别静默继续
+}</code></pre>
+
+<h4>缺陷 6 · 连段其实不必踩取消窗口 <span class="tag opt">优化</span></h4>
+<p>代码里连段计数只要求<strong>两次命中间隔 &lt; 1.15s</strong>，与取消窗口无关。原本脚本花大量重采去精确踩 0.1–0.28s 的取消窗口，改成「轻击 → 320ms → 重击」后一次成功。<strong>先看统计口径，再设计动作时序。</strong></p>
+
+<h4>缺陷 7 · 墙钟调度被不可控耗时挤乱 <span class="tag must">必现</span></h4>
+<p><strong>现象：</strong>一次采集里 <code>approach</code> 循环耗时失控到 36.7 秒，把 <code>Timeline.at(6000)</code> 之后的全部事件瞬间洪水执行，三个镜头全废。</p>
+<div class="callout ok">
+  <div class="head"><span class="dot"></span>改法：事件顺序 + 相对 sleep，用 mark 记录镜头边界</div>
+  <p>不要用「绝对时间轴」调度依赖异步收敛的动作。改为<strong>按事件顺序 await 执行</strong>，同时用 <code>shot(name, fn)</code> 记录每个镜头的<strong>实际</strong>起止时刻，导出到 <code>marks.json</code>。剪辑阶段按 mark 而非预想的时间码取窗口 —— 这样动作做慢了也不会错位。</p>
+  <pre style="margin:10px 0 0"><code>const marks = {};
+const shot = async (name, fn) =&gt; {
+  marks[name] = { start: Date.now() - t0 };
+  await fn();                                  // 动作按顺序执行，不等墙钟
+  marks[name].end = Date.now() - t0;
+  console.log(`${name}: ${(marks[name].start/1000).toFixed(1)}s - ${(marks[name].end/1000).toFixed(1)}s`);
+};
+await shot("D2", async () =&gt; {
+  await page.keyboard.press("j"); await sleep(320); await page.keyboard.press("k");
+  await sleep(700);
+  const d = await debug(page);
+  console.log(`  combo=${d.p1.combo} p2hp=${d.p2.hp}`);   // 每步都留证据
+});</code></pre>
+</div>
+
+<h3>5.2 善用被测系统的调试后门</h3>
+<p>本项目在 <code>boot.ts</code> 把三个辅助函数挂到了 window，这是<strong>把镜头从运气里解放出来</strong>的关键：超必杀不必反复攒气，K.O. 镜头不必真的打完一局。</p>
+<pre><span class="lbl">boot.ts 暴露的取景接口</span><code>await meter(page);   // 能量灌满 → 直接进超必杀镜头
+await win(page);     // 直接触发 K.O. 演出
+await debug(page);   // 读取 p1/p2 的 hp / x / combo / phase，作为断言依据</code></pre>
+<div class="callout warn">
+  <div class="head"><span class="dot"></span>给被测系统预留后门，是演示工程的一部分</div>
+  <p>如果你同时是开发者：把这类 debug 钩子做成正式能力（用 <code>import.meta.env.DEV</code> 或 URL 参数开关）。本次若无这三个接口，超必杀与 K.O. 两段的取景需要反复重试数十轮。</p>
+</div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="verify">
+<h2><span class="num">06</span>双重验证：让「假动作」无处藏身</h2>
+<p>本次最有价值的实践。每个关键动作<strong>同时</strong>过两道关：</p>
+
+<div class="grid g2">
+  <div class="card">
+    <h4>① 数值验证（机器）</h4>
+    <p>调用 <code>debug()</code> 读前后血量，差值必须<strong>精确等于</strong>该招式的表定伤害。不是「变少了」就算过。</p>
+    <ul>
+      <li>轻击 + 重击 = <strong>14</strong></li>
+      <li>对空 · 升月踢 = <strong>15</strong></li>
+      <li>投技 = <strong>12</strong></li>
+      <li>超必杀 = <strong>28</strong></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>② 视觉验证（看图）</h4>
+    <p>抽 4–6 帧拼成一张图判读：<strong>角色朝向、特效是否出现、字幕位置、有没有缺失模型</strong>。数值对但画面错的情况，只有这一步能发现。</p>
+  </div>
+</div>
+
+<pre class="cmd"><span class="lbl">抽帧拼图 —— 低成本视觉验证的标准手法</span><code>rm -rf seq &amp;&amp; mkdir -p seq &amp;&amp; I=0
+for f in 690 700 710 720 730 745; do
+  I=$((I+1)); cp clips/B_battle/$(printf %06d $f).jpg seq/$(printf %03d $I).jpg
+done
+ffmpeg -y -loglevel error -i seq/%03d.jpg \
+  -filter_complex "tile=3x2:padding=6:margin=6:color=0x111111" \
+  -frames:v 1 shots/sheet-d2.jpg</code></pre>
+
+<div class="callout bad">
+  <div class="head"><span class="dot"></span>视觉验证抓到的三个「数值合格」假动作</div>
+  <ul>
+    <li><strong>D2 连段</strong>：<code>combo=2</code> 数值达标，但帧 690 显示<strong>踢腿朝左打空</strong>（两人换边导致朝向反了）。</li>
+    <li><strong>D4 对空</strong>：血量差值 15 完全正确，画面却显示<strong>跳起来的是 P1 自己</strong>。</li>
+    <li><strong>E2 超必杀</strong>：因 lunge 把 P1 推过对手，<strong>目标其实不在攻击范围内</strong>，只是当时误读了数值时机。</li>
+  </ul>
+</div>
+
+<p>另外两个 ffmpeg 预览操作曾经翻车，记下来避免重复踩：</p>
+<table>
+<thead><tr><th style="width:200px">操作</th><th>结果</th></tr></thead>
+<tbody>
+<tr><td><code>vstack=2:padding=8</code></td><td>ffmpeg 4.2 的 <code>vstack</code> 不支持 <code>padding</code> 选项，命令直接失败。</td></tr>
+<tr><td><code>drawbox=c=0x111111:t=fill</code></td><td><code>t=fill</code> 会把<strong>整张图</strong>填满颜色 —— 预览一度全黑，误以为是素材坏了。</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="still">
+<h2><span class="num">07</span>非实机素材：把代码卡也变成「可重跑的产物」</h2>
+<p>技术段的三张代码卡不是图片文件，而是<strong>一个 HTML 页面被 screencast 录下来</strong>。好处是：代码一改重录即可，动效（逐行高亮）免费获得，且风格与实机画面可由同一套 CSS 变量协调。</p>
+
+<pre><span class="lbl">codecard.mjs · 要点</span><code>// 同一套 Screencast 录制任意 URL —— 采集层与渲染目标是解耦的
+await page.goto("file:///tmp/mf-promo/code/f1.html");
+const sc = new Screencast(cdp, join(CLIPS, "F_code1"));
+await sc.start();
+await sleep(6000);           // 让高亮动画走完一轮
+await sc.stop();</code></pre>
+
+<div class="callout warn">
+  <div class="head"><span class="dot"></span>代码卡文字溢出：这块返工了两次</div>
+  <p>第一次长行被裁切（<code>damage</code> 切成 <code>da</code>），缩小字号后仍有两行溢出。<strong>最终解法：不要用 CSS 缩再去迁就长行，而是把代码按显示宽度重新拆行</strong> —— 既保住了「这是真实代码」的观感，又彻底消除溢出。</p>
+  <p>调整项：<code>font-size 23→19px</code>、<code>line-height 1.75→1.85</code>、行号宽度 <code>34→28px</code>、注释条 <code>21→20px</code>。</p>
+</div>
+
+<h4>代码卡设计约束</h4>
+<ul>
+  <li><strong>内容取自真实源码</strong>，不要为了好看编 API —— 技术受众会照着搜。</li>
+  <li>每张卡一个主题（帧数据 / 自动蒙皮 / 合成音频 + Docker），底部一条<strong>蓝色中文注释条</strong>点明价值。</li>
+  <li>交付前逐张<strong>单独看图</strong>检查：文字清晰度、行尾截断、中文是否出现豆腐块。</li>
+</ul>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="audio">
+<h2><span class="num">08</span>旁白与音效：让每句话都卡进它的窗口</h2>
+
+<h3>8.1 自动生成 + 自动配速</h3>
+<p>共 19 段旁白，用 macOS 内置的婷婷中文语音。核心技巧是<strong>循环重试：先合成 → 测时长 → 超窗口就按比例提速再合成</strong>，全程无需人工试听。</p>
+
+<pre><span class="lbl">build_audio.py · 自动配速循环</span><code>VOICE, BASE_RATE = "Tingting", 188      # 中文约 4 字/秒
+
+for i, (start, wend, text, subs) in enumerate(LINES):
+    window = wend - start
+    rate = BASE_RATE
+    for _ in range(4):
+        subprocess.run(["say", "-v", VOICE, "-r", str(rate), "-o", f"{DIR}/n{i:02d}.aiff", text], check=True)
+        subprocess.run(["ffmpeg","-y","-loglevel","error","-i", f"{DIR}/n{i:02d}.aiff",
+                        "-ar","44100","-ac","2", f"{DIR}/n{i:02d}.wav"], check=True)
+        dur = float(subprocess.run(["ffprobe","-v","error","-show_entries","format=duration",
+                                    "-of","csv=p=0", f"{DIR}/n{i:02d}.wav"],
+                                    capture_output=True, text=True).stdout.strip())
+        if dur &lt;= window - 0.35:
+            break
+        rate = int(rate * dur / (window - 0.45)) + 4     # 按缺口比例提速
+    manifest.append({"idx": i, "start": start, "dur": round(dur,3), "wav": out_wav, "subs": subs})</code></pre>
+
+<div class="callout ok">
+  <div class="head"><span class="dot"></span>manifest.json 是整个音频层的唯一真相</div>
+  <p>每段旁白落地一个 <code>nNN.wav</code>，并在 manifest 里记录 <code>idx / start / dur / subs</code>。<strong>下游的合成、字幕烧录全部读它</strong> —— 改一句台词只影响那一行，不必同步维护三份时间码。</p>
+</div>
+
+<h3>8.2 雨声底噪：零素材生成</h3>
+<pre class="cmd"><span class="lbl">粉红噪声 + 带通 + 颤音 = 雨声</span><code>ffmpeg -y -loglevel error -f lavfi \
+  -i "anoisesrc=color=pink:r=44100:a=0.55:d=91" \
+  -af "highpass=f=500,lowpass=f=2000,volume=0.16,tremolo=f=0.31:d=0.42" \
+  audio/rain.wav</code></pre>
+<p>关键点：<strong>雨声要与画面上的雨同调</strong>（画面是雨夜），同时用 <code>tremolo</code> 制造起伏避免听感疲劳；音量压到 0.16，只做垫底。</p>
+
+<div class="callout warn">
+  <div class="head"><span class="dot"></span>ffmpeg 4.2 的 amix 没有 normalize</div>
+  <p>19 路旁白用 <code>amix</code> 合并时，默认是按输入数归一化的，结果音量被压得极低。老版本的替代写法是叠加 <code>volume=N</code>（N = 输入路数）补偿，不要去找 <code>normalize=0</code>（本机不支持，会直接报错）。</p>
+  <pre class="cmd" style="margin:10px 0 0"><code># 错误写法（本机 ffmpeg 4.2.2 不支持）：  amix=inputs=19:normalize=0
+# 正确写法（见 §9.2 完整命令）：           amix=inputs=19:... ,volume=19.0,volume=1.6</code></pre>
+</div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="assemble">
+<h2><span class="num">09</span>合成：裁剪 → 拼接 → 混音 → 烧字幕</h2>
+
+<h3>9.1 用 PLA表 描述镜头而不是写命令</h3>
+<p>把 20 个片段的来源、入出点、慢放倍数、目标时长集中成一张表。它是<strong>剪辑意图的可读版本</strong>，微调时改表不改代码。</p>
+
+<pre><span class="lbl">PLAN · (名称, 源场次, 入点, 出点, 慢放, 目标时长)</span><code>PLAN = [
+    ("A1", "T_title",    0.0,  3.0, 1.0, 3.0),
+    ("D1", "B_battle",   3.2,  5.7, 1.6, 4.0),   # 走位：轻慢放，保持流畅
+    ("D2", "B_battle",   8.0, 10.0, 2.0, 4.0),   # 连段：2x 慢放看清取消
+    ("D3", "B_battle",   9.8, 11.8, 2.0, 4.0),   # 格挡特效极短，必须慢放
+    ("D4", "D4_antiair", 2.2,  6.2, 1.0, 4.0),   # 单独采集的一场
+    ("F1", "F_code1",    0.5,  5.5, 1.0, 5.0),
+    ...
+]</code></pre>
+
+<h4>逐片段裁切（注意每场用自己的 fps）</h4>
+<pre class="cmd"><span class="lbl">关键：fps_of(src) 从各场次自己的 meta.json 取帧率</span><code>fps = json.load(open(f"{CLIPS}/{src}/meta.json"))["fps"]
+f0   = round(s * fps)          # 入点帧号
+vf   = f"setpts=PTS*{slow},fps=30,scale=1920:1080,setsar=1"
+ffmpeg -y -loglevel error \
+  -start_number $f0 -i "$CLIPS/$src/%06d.jpg" \
+  -vf "$vf" -frames:v $n_out \
+  -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p "$SEG/${i}_${name}.mp4"</code></pre>
+<p><code>setpts=PTS*2</code> 实现慢放 —— 先慢放再统一 <code>fps=30</code>，可以让不同慢放倍数的片段拥有一致的时间基，为下一步 <code>concat -c copy</code> 创造条件。</p>
+
+<pre class="cmd"><span class="lbl">统一规格后可无损快拼</span><code>ffmpeg -y -loglevel error -f concat -safe 0 -i seg/list.txt -c copy final/nosub.mp4
+ffprobe -v error -show_entries format=duration -of csv=p=0 final/nosub.mp4   # → 90.03</code></pre>
+
+<h3>9.2 音频汇聚</h3>
+<pre class="cmd"><span class="lbl">19 段旁白按 manifest 的时间码延迟摆放</span><code>ins, chains, labels = [], [], []
+for m in manifest:
+    ins    += ["-i", m["wav"]]
+    ms      = int(m["start"] * 1000)
+    chains.append(f"[{m['idx']}:a]adelay={ms}|{ms}[a{m['idx']}]")
+    labels .append(f"[a{m['idx']}]")
+chains.append("".join(labels) +
+    f"amix=inputs={len(manifest)}:duration=longest:dropout_transition=0,"
+    f"volume={len(manifest)}.0,volume=1.6[nar]")   # 双 volume：先补 amix 衰减，再抬增益
+ffmpeg -y -loglevel error *ins -filter_complex ";".join(chains) -map "[nar]" audio/narration.wav</code></pre>
+
+<h3>9.3 烧字幕（drawtext）</h3>
+<p>本机无 libass，所以用 <code>drawtext</code>。两个要害：<strong>文本写进临时文件</strong>（避免命令行转义地狱），以及<strong>显示窗口用下一句的起点夹逼</strong>（避免相邻两句字幕重叠）。</p>
+
+<pre><span class="lbl">字幕窗口夹逼 + textfile 传参</span><code>for m in manifest:
+    start, dur_n, subs = m["start"], m["dur"], m["subs"]
+    st = start + 0.15
+    en = min(start + dur_n + 0.75,
+             (manifest[m["idx"]+1]["start"] - 0.15) if m["idx"]+1 &lt; len(manifest) else 90.0)
+    main_txt, sub_txt = (subs + ["", ""])[:2]
+    for tag, txt, size, color, y in (("m", main_txt, 44, "white",    "h-192"),
+                                     ("s", sub_txt,  29, "0xC7D2F0", "h-124")):
+        if not txt: continue
+        p = f"{AUDIO}/s{m['idx']:02d}{tag}.txt"
+        open(p, "w").write(txt)                      # 关键：文本落文件，绕开转义
+        sub_filters.append(
+            f"drawtext=fontfile={FONT}:textfile={p}:fontsize={size}:fontcolor={color}"
+            f":borderw=3:bordercolor=black@0.55:x=(w-text_w)/2:y={y}"
+            f":enable='between(t,{st:.2f},{en:.2f})'")
+</code></pre>
+
+<div class="callout bad">
+  <div class="head"><span class="dot"></span>filtergraph 最容易犯的两个错（都踩过）</div>
+  <ol style="margin:6px 0">
+    <li><strong>滤镜链开头没接输入标签</strong>：必须写成 <code>"[0:v]" + ",".join(...)</code>，否则报 <em>Filter has an unconnected output</em>。</li>
+    <li><strong>滤镜链结尾没给输出标签</strong>：视频分支要以 <code>[vout]</code> 收尾，然后 <code>-map "[vout]"</code>；写 <code>-map "[v]"</code> 而链里没定义会直接失败。</li>
+  </ol>
+</div>
+
+<pre class="cmd"><span class="lbl">最终成片（正确版完整命令）</span><code>fc="[0:v]"+",".join(sub_filters)+"[vout];"\
+   "[1:a]volume=0.82[n1];[2:a]volume=0.85[n2];"\
+   "[n1][n2]amix=inputs=2:duration=longest:dropout_transition=0,"\
+   "volume=1.85,alimiter=limit=0.94:level=false[aout]"
+
+ffmpeg -y -loglevel error \
+  -i final/nosub.mp4 -i audio/narration.wav -i audio/rain.wav \
+  -filter_complex "$fc" -map "[vout]" -map "[aout]" \
+  -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p \
+  -c:a aac -b:a 192k -movflags +faststart \
+  final/velvet-fight-promo-90s.mp4</code></pre>
+<p><code>-movflags +faststart</code> 把 moov box 前移，网页端可边下边播 —— 宣传视频默认要加。<code>alimiter=limit=0.94</code> 留住安全边际。</p>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="qc">
+<h2><span class="num">10</span>成品质检：上线前必过的六项</h2>
+
+<pre class="cmd"><span class="lbl">① 规格核对</span><code>ffprobe -v error -show_entries format=duration,size,bit_rate \
+  -show_entries stream=codec_name,width,height,r_frame_rate,channels \
+  -of default=noprint_wrappers=1 velvet-fight-promo-90s.mp4</code></pre>
+
+<pre class="cmd"><span class="lbl">② 电平检查（避免削波 / 过小）</span><code>ffmpeg -i velvet-fight-promo-90s.mp4 -map 0:a -af volumedetect -f null - 2&gt;&amp;1 \
+  | grep -E 'mean_volume|max_volume'
+# mean_volume: -20.6 dB   max_volume: 0.0 dB</code></pre>
+<div class="callout warn">
+  <div class="head"><span class="dot"></span>0.0 dB 意味着安全边际为零</div>
+  <p>第一版混音峰值顶到 0.0dB。虽然 AAC 编码的 <code>max_volume</code> 有一定过冲成分、听感未必削波，但<strong>交付前应留出余量</strong>。修复：旁白 <code>volume 1.0→0.82</code>、雨声 <code>1.0→0.85</code>、总线 <code>2.0→1.85</code>，末端加 <code>alimiter=limit=0.94</code>。若目标是 B 站 / YouTube，建议再压 -1dB。</p>
+</div>
+
+<pre class="cmd"><span class="lbl">③ 抽帧人眼/模型复核（抽 8 个时间点，注意覆盖每段）</span><code>V=final/velvet-fight-promo-90s.mp4; rm -rf seq &amp;&amp; mkdir -p seq &amp;&amp; I=0
+for t in 1.5 12 24 33 41 55 76 88; do
+  I=$((I+1)); ffmpeg -y -loglevel error -ss $t -i $V -frames:v 1 -vf scale=880:495 seq/$(printf %02d $I).jpg
+done
+ffmpeg -y -loglevel error -i seq/%02d.jpg \
+  -filter_complex "tile=4x2:padding=5:margin=5:color=0x222222" -frames:v 1 shots/final-check.jpg</code></pre>
+
+<ul class="qc">
+  <li><strong>字幕可读性</strong>：无乱码、无豆腐块、深色体系下对比度足够（本片主行白色 + 3px 半黑描边）</li>
+  <li><strong>时间对齐</strong>：旁白首字与字幕出现基本同步，相邻字幕不叠压</li>
+  <li><strong>画面连续性</strong>：段落交界处无黑场、无跳帧、无分辨率突变</li>
+  <li><strong>音量一致性</strong>：mean 落在 -18 ~ -23 dB，max 留出 ≥ 0.5dB 余量</li>
+  <li><strong>数值真实性</strong>：片中每个宣称的数字都能回溯到源码或被验证过的运行结果</li>
+  <li><strong>播放兼容</strong>：<code>faststart</code> 已开，浏览器拖动进度条能立即起播</li>
+</ul>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="pitfalls">
+<h2><span class="num">11</span>陷阱速查表</h2>
+<p>按阶段归类，左列为症状，右列为处置。<strong>带 ● 的在本次真实发生过。</strong></p>
+
+<table>
+<thead><tr><th style="width:120px">阶段</th><th>症状与处置</th></tr></thead>
+<tbody>
+<tr><td><span class="tag ver">环境</span></td><td><strong>● 后台任务被回收</strong>：shell <code>&amp;</code> 起的 preview 服务会被会话回收 → 交给任务管理器常驻，启动后 curl 验证 HTTP 200。</td></tr>
+<tr><td><span class="tag ver">环境</span></td><td><strong>● Playwright 版本不匹配</strong>：报 <em>Executable doesn't exist at .../chromium-1248</em> → 显式传 <code>executablePath</code> 指向缓存里已有的版本。</td></tr>
+<tr><td><span class="tag ver">环境</span></td><td><strong>● 缺专用 ffmpeg 二进制</strong>：Playwright 录屏依赖 <code>ffmpeg-1013</code> → symlink 到已有版本可绕过，但更推荐直接改用 CDP screencast。</td></tr>
+<tr><td><span class="tag ver">环境</span></td><td><strong>● 字体打不开</strong>：<code>PingFang.ttc</code> 在 ffmpeg 中失败 → 逐个实测，本机可用 <code>Hiragino Sans GB.ttc</code>。</td></tr>
+<tr><td><span class="tag ver">渲染</span></td><td><strong>● 自动降画质</strong>：fps 阈值以下持续数秒会偷偷降粒子/像素比 → 录前确认 fps 余量（目标 &gt;2× 交付帧率）。</td></tr>
+<tr><td><span class="tag ver">渲染</span></td><td><strong>● 资源未加载完就开录</strong>：高精模型异步加载中，前几秒是低模备用 → 开录前静置并断言资源到位标志。</td></tr>
+<tr><td><span class="tag ver">渲染</span></td><td><strong>● AudioContext 未解锁</strong>：无用户交互则无声音 → 录制前 <code>page.mouse.click()</code> 一次。</td></tr>
+<tr><td><span class="tag ver">驱动</span></td><td><strong>● 组合键跨帧</strong> → 在单个 <code>page.evaluate</code> 内同帧派发 KeyboardEvent。</td></tr>
+<tr><td><span class="tag ver">驱动</span></td><td><strong>● 迟滞事件提前判定</strong> → 找一个立即变化的中间量（如能量清零）作为触发标志，再推迟验证时点。</td></tr>
+<tr><td><span class="tag ver">驱动</span></td><td><strong>● 位移推过目标</strong> → 站位按最后一招的位移量预留。</td></tr>
+<tr><td><span class="tag ver">驱动</span></td><td><strong>● 绝对距离走反方向</strong> → 位置闭环用带符号差值。</td></tr>
+<tr><td><span class="tag ver">驱动</span></td><td><strong>● 墙钟调度被异步耗时挤乱</strong> → 事件顺序执行 + <code>marks.json</code> 记录实际边界。</td></tr>
+<tr><td><span class="tag ver">驱动</span></td><td><strong>● 无敌帧吞攻击</strong> → 两段攻击间留足空档（本项目 &gt;1.1s）。</td></tr>
+<tr><td><span class="tag ver">验证</span></td><td><strong>● 数值对但画面错</strong>（打空 / 朝向反）→ 必须抽帧拼图做视觉验证。</td></tr>
+<tr><td><span class="tag ver">合成</span></td><td><strong>● filtergraph 缺输入/输出标签</strong> → 链首 <code>[0:v]</code>、链尾 <code>[vout]</code> + <code>-map "[vout]"</code>。</td></tr>
+<tr><td><span class="tag ver">合成</span></td><td><strong>● <code>amix</code> 缺 <code>normalize</code></strong>（ffmpeg 4.2）→ 用 <code>volume=N</code> 补偿。</td></tr>
+<tr><td><span class="tag ver">合成</span></td><td><strong>● <code>vstack</code> 无 padding / <code>drawbox t=fill</code> 填满整图</strong> → 预览造图时注意版本差异。</td></tr>
+<tr><td><span class="tag ver">输出</span></td><td><strong>● 峰值顶到 0.0dB</strong> → 降各路增益 + 末端 <code>alimiter</code>。</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="cheatsheet">
+<h2><span class="num">12</span>命令速查</h2>
+
+<pre class="cmd"><span class="lbl">完整复现顺序</span><code>cd app &amp;&amp; npm run build
+npm run preview -- --port 4173 --host 127.0.0.1      # 常驻
+
+node smoke.mjs          # ① 渲染冒烟：断言模型加载 / fps / 画质档位
+node probe-fps.mjs      # ② 帧率探针：→ fps(60~97)、分辨率正常才可继续
+node capture-game.mjs   # ③ 全场次采集（可拆成单场脚本单独重跑）
+node capture-b3.mjs     #    战斗镜头：事件驱动版，含 combo/HIT 断言
+node capture-d4.mjs     #    对空：同帧按键版
+node codecard.mjs       # ④ 代码卡渲染并录制
+
+python3 build_audio.py  # ⑤ 旁白生成 + 自动配速 → audio/manifest.json
+python3 build_video.py  # ⑥ 裁剪 → 拼接 → 雨声 → 混音 → 烧字幕 → 成片
+python3 qc.py           # ⑦ 抽 8 帧拼图 + volumedetect + ffprobe</code></pre>
+
+<pre class="cmd"><span class="lbl">高频诊断</span><code># 某场次到底录到了多少帧 / 实际帧率     → cat clips/&lt;场次&gt;/meta.json
+# 这一段 “\ 每镜实际起止时刻 ” 从哪来        → cat clips/_marksB.json
+# 抽单帧                                → ffmpeg -ss T -i v.mp4 -frames:v 1 -vf scale=880:495 f.jpg
+# 拼图（给模型 / 人眼看）                → ffmpeg -i seq/%03d.jpg -filter_complex "tile=3x2:padding=6:margin=6:color=0x111111" -frames:v 1 sheet.jpg
+# 音量                                  → ffmpeg -i v.mp4 -map 0:a -af volumedetect -f null -
+# 读取时长 / 体积 / 码率                 → ffprobe -v error -show_entries format=duration,size -of csv=p=0 v.mp4</code></pre>
+
+<h3>交付物清单</h3>
+<table>
+<thead><tr><th style="width:260px">文件</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td><code>PROMO_VIDEO_SCRIPT.md</code></td><td>制作脚本：分镜 / 素材 / 演示步骤 / 字幕旁白四段</td></tr>
+<tr><td><code>promo/velvet-fight-promo-90s.mp4</code></td><td>成片 · 90s · 1920×1080 · 30fps · H.264+AAC · 19.8MB</td></tr>
+<tr><td><code>promo/VIDEO_PRODUCTION_GUIDE.html</code></td><td>本文档</td></tr>
+<tr><td><code>lib.mjs</code></td><td>采集核心：Screencast / Timeline / launch / openPage</td></tr>
+<tr><td><code>capture-*.mjs</code></td><td>各场次驱动脚本，内含 HIT/MISS 断言</td></tr>
+<tr><td><code>codecard.mjs</code></td><td>代码卡 HTML 生成 + 录制</td></tr>
+<tr><td><code>build_audio.py</code></td><td>旁白生成、自动配速、manifest 输出</td></tr>
+<tr><td><code>build_video.py</code></td><td>PLAN 驱动的裁剪/拼接/混音/烧字幕</td></tr>
+</tbody>
+</table>
+
+<h3>可继续的方向</h3>
+<ul>
+  <li><strong>30 秒竖版</strong>：重排 PLAN 表即可（裁剪.<code>scale=1080:1920</code> + 画面 crop），无需重采。</li>
+  <li><strong>15 秒预告</strong>：只取钩子 + 超必杀 + 收尾三段。</li>
+  <li><strong>上架平台</strong>：补 <code>-af "alimiter=limit=0.89"</code> 压 -1dB，并按平台要求重封装。</li>
+  <li><strong>CI 化</strong>：把 smoke + assert HIT 做成 GitHub Action，游戏改动后自动验证演示脚本仍然有效 —— <strong>演示脚本本身也是一种回归测试。</strong></li>
+</ul>
+</section>
+
+<footer>
+  <p>本指南由 绯夜对决 / VELVET FIGHT 90 秒宣传片的实际制作过程复盘而成。所有命令、参数与数值均取自真实产出过程，未经修饰。<br>
+  <code>2026-10-31 · moonlight-fighter · Three.js / Playwright / ffmpeg</code></p>
+</footer>
+
+</main>
+</div>
+
+<script>
+// TOC 滚动高亮
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var secs  = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  var tick = function(){
+    var y = window.scrollY + 140, idx = 0;
+    for (var i = 0; i < secs.length; i++) { if (secs[i] && secs[i].offsetTop <= y) idx = i; }
+    links.forEach(function(a, i){ a.classList.toggle('on', i === idx); });
+  };
+  window.addEventListener('scroll', tick, { passive: true });
+  window.addEventListener('resize', tick);
+  tick();
+})();
+</script>
+</body>
+</html>

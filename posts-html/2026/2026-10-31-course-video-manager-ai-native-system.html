@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="通读 3534 次提交与 56 篇 ADR，拆解 course-video-manager 的三层智能体契约金字塔、GitHub 标签驱动的 AFK 流水线、19 个「只减不增」的守卫，以及可照搬的工程治理经验。">
+<meta name="keywords" content="ai-native, engineering-governance, agent-contracts, github-actions, architecture-decision-record, code-guards">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-31">
+<title>course-video-manager · AI 原生开发实践复盘</title>
+<style>
+  :root{
+    --bg:#F7F8FC; --card:#FFFFFF; --border:#E5E7F2; --soft:#FBFCFE;
+    --title:#1B1F3B; --body:#40456A; --muted:#6B7194; --accent:#3B5BFD;
+    --c2:#14B8A6; --c3:#8B5CF6; --c4:#F59E0B; --ok:#059669; --warn:#D97706; --danger:#DC2626;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--body);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px; line-height:1.78; -webkit-font-smoothing:antialiased;
+  }
+  code,pre,.mono,kbd{font-family:var(--mono)}
+  code{
+    font-size:.87em; background:#EEF1FA; color:#2A3270; padding:.12em .42em;
+    border-radius:5px; border:1px solid #E1E6F5; word-break:break-word;
+  }
+  pre{
+    background:#FBFBFE; border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; overflow-x:auto; font-size:12.8px; line-height:1.7; color:#333A63;
+  }
+  pre code{background:none;border:none;padding:0;font-size:inherit;color:inherit}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- 顶部导航 ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:50; background:rgba(255,255,255,.94);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--border);
+  }
+  .topbar-inner{
+    max-width:1360px; margin:0 auto; padding:10px 20px;
+    display:flex; align-items:center; gap:16px;
+  }
+  .brand{font-weight:700; color:var(--title); font-size:14px; white-space:nowrap}
+  .brand span{color:var(--accent)}
+  .topnav{
+    display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; flex:1;
+  }
+  .topnav::-webkit-scrollbar{display:none}
+  .topnav a{
+    flex:0 0 auto; font-size:12.5px; color:var(--muted); padding:5px 10px;
+    border-radius:7px; white-space:nowrap;
+  }
+  .topnav a:hover{background:#EEF1FA; color:var(--accent); text-decoration:none}
+
+  /* ---------- 布局 ---------- */
+  .wrap{max-width:1360px; margin:0 auto; padding:0 20px 80px; display:flex; gap:32px; align-items:flex-start}
+  aside{
+    width:216px; flex:0 0 216px; position:sticky; top:64px; max-height:calc(100vh - 84px);
+    overflow-y:auto; padding:26px 0 40px;
+  }
+  aside h4{
+    margin:0 0 10px; font-size:11px; letter-spacing:.12em; color:var(--muted);
+    text-transform:uppercase; font-weight:700;
+  }
+  aside a{
+    display:block; font-size:13px; color:var(--body); padding:5px 10px; border-radius:7px;
+    border-left:2px solid transparent; margin:1px 0;
+  }
+  aside a:hover{background:#EEF1FA; color:var(--accent); text-decoration:none}
+  main{flex:1; min-width:0; padding-top:26px}
+
+  /* ---------- 头部 ---------- */
+  .hero{
+    background:linear-gradient(135deg,#FFFFFF 0%,#F4F6FF 100%);
+    border:1px solid var(--border); border-radius:16px; padding:32px 34px; margin-bottom:26px;
+  }
+  .eyebrow{
+    display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.1em;
+    color:var(--accent); background:#E8ECFF; padding:4px 11px; border-radius:999px; margin-bottom:14px;
+  }
+  h1{font-size:29px; line-height:1.35; margin:0 0 12px; color:var(--title); letter-spacing:-.01em}
+  .sub{font-size:15px; color:var(--muted); margin:0 0 18px; max-width:74ch}
+  .meta{display:flex; flex-wrap:wrap; gap:8px; font-size:12.5px}
+  .meta span{
+    background:#fff; border:1px solid var(--border); border-radius:999px; padding:4px 12px; color:var(--muted);
+  }
+
+  /* ---------- 通用块 ---------- */
+  section{margin:0 0 34px; scroll-margin-top:74px}
+  h2{
+    font-size:21px; color:var(--title); margin:0 0 6px; letter-spacing:-.01em;
+    padding-bottom:10px; border-bottom:2px solid var(--border);
+  }
+  h2 .num{
+    display:inline-block; min-width:30px; font-family:var(--mono); font-size:13px;
+    color:#fff; background:var(--accent); border-radius:6px; padding:1px 7px; margin-right:10px;
+    vertical-align:2px;
+  }
+  h3{font-size:16.5px; color:var(--title); margin:26px 0 8px}
+  h4{font-size:14.5px; color:var(--title); margin:18px 0 6px}
+  p{margin:0 0 12px}
+  ul,ol{margin:0 0 12px; padding-left:22px}
+  li{margin:5px 0}
+  hr{border:none;border-top:1px solid var(--border);margin:26px 0}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:13px;
+    padding:20px 22px; margin:14px 0;
+  }
+  .grid{display:grid; gap:14px}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+  .kpi{background:var(--card); border:1px solid var(--border); border-radius:13px; padding:16px 18px}
+  .kpi .v{font-family:var(--mono); font-size:25px; font-weight:700; color:var(--accent); line-height:1.2}
+  .kpi .v.c2{color:var(--c2)} .kpi .v.c3{color:var(--c3)} .kpi .v.c4{color:var(--c4)}
+  .kpi .l{font-size:12.5px; color:var(--muted); margin-top:4px}
+
+  blockquote{
+    margin:12px 0; padding:12px 16px; background:#F9FAFF; border-left:3px solid var(--accent);
+    border-radius:0 8px 8px 0; color:#3A4068; font-size:13.8px;
+  }
+  blockquote p{margin:0 0 8px}
+  blockquote p:last-child{margin:0}
+  .src{font-family:var(--mono); font-size:11.8px; color:var(--muted); margin-top:7px; display:block}
+
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13.2px; background:#fff}
+  th,td{border:1px solid var(--border); padding:8px 11px; text-align:left; vertical-align:top}
+  th{background:#F5F7FD; color:var(--title); font-weight:700; font-size:12.5px}
+  tbody tr:nth-child(even){background:#FCFDFF}
+  td.mono,th.mono{font-family:var(--mono); font-size:12px}
+
+  .tag{
+    display:inline-block; font-size:11.5px; padding:2px 9px; border-radius:999px;
+    font-weight:600; white-space:nowrap;
+  }
+  .t-blue{background:#E8ECFF;color:#2B3EA8}
+  .t-teal{background:#D9F5F0;color:#0B6C5C}
+  .t-purple{background:#EFE7FF;color:#5B32B8}
+  .t-amber{background:#FDF0D7;color:#8A5A05}
+  .t-green{background:#DCF6E9;color:#04714F}
+  .t-red{background:#FDE8E8;color:#B01F2E}
+
+  .callout{border-radius:11px; padding:14px 18px; margin:14px 0; border:1px solid}
+  .c-ok{background:#F3FCF8; border-color:#BFE9D6}
+  .c-warn{background:#FFFAF0; border-color:#F5DFAE}
+  .c-danger{background:#FFF5F5; border-color:#F6CFCF}
+  .c-info{background:#F6F8FF; border-color:#D6DFFA}
+  .callout b.t{display:block; color:var(--title); margin-bottom:5px; font-size:14px}
+
+  figure{margin:16px 0; background:#fff; border:1px solid var(--border); border-radius:13px; padding:16px}
+  figure svg{display:block; width:100%; height:auto}
+  figcaption{font-size:12.3px; color:var(--muted); margin-top:10px; text-align:center}
+
+  .step{display:flex; gap:12px; margin:0 0 12px}
+  .step .n{
+    flex:0 0 26px; height:26px; border-radius:50%; background:var(--accent); color:#fff;
+    font-family:var(--mono); font-size:12.5px; display:flex; align-items:center; justify-content:center;
+  }
+  .step .b{flex:1; min-width:0}
+
+  details{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin:10px 0}
+  summary{cursor:pointer;font-weight:600;color:var(--title);font-size:13.5px}
+  details .d{margin-top:10px}
+
+  footer{
+    border-top:1px solid var(--border); margin-top:40px; padding-top:20px;
+    font-size:12.5px; color:var(--muted);
+  }
+  .mtop{display:none}
+
+  @media (max-width:1080px){
+    aside{display:none}
+    .wrap{padding:0 16px 60px}
+    .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .g3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:680px){
+    body{font-size:14.5px}
+    .hero{padding:22px 18px}
+    h1{font-size:23px}
+    .g2,.g3,.g4{grid-template-columns:1fr}
+    .topbar-inner{padding:8px 14px; gap:10px}
+    .brand{display:none}
+    .mtop{display:inline-block;font-weight:700;color:var(--title);font-size:13px;white-space:nowrap}
+    .card{padding:15px 16px}
+    table{font-size:12.2px}
+    th,td{padding:6px 8px}
+    figure{padding:10px}
+    /* 窄屏：宽表格与代码块自身横向滚动，不撑破页面 */
+    table{display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%}
+    pre{max-width:100%}
+    .callout,.step .b,blockquote{min-width:0}
+    h2{font-size:18.5px}
+    h2 .num{min-width:26px;font-size:12px;padding:1px 6px}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">CVM · <span>AI 原生复盘</span></span>
+    <span class="mtop">目录</span>
+    <nav class="topnav">
+      <a href="#overview">一页看懂</a>
+      <a href="#method">方法与口径</a>
+      <a href="#contract">契约分层</a>
+      <a href="#pipeline">AFK 流水线</a>
+      <a href="#boundary">人机边界</a>
+      <a href="#guards">机器守卫</a>
+      <a href="#tests">类型与测试</a>
+      <a href="#sandbox">沙箱验证</a>
+      <a href="#outputs">输出契约</a>
+      <a href="#failure">失败设计</a>
+      <a href="#decisions">决策留痕</a>
+      <a href="#metrics">量化复盘</a>
+      <a href="#risks">代价与风险</a>
+      <a href="#checklist">最佳实践清单</a>
+      <a href="#evidence">证据索引</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+<aside>
+  <h4>导航</h4>
+  <a href="#overview">一页看懂</a>
+  <a href="#method">方法与口径</a>
+  <a href="#contract">① 契约分层</a>
+  <a href="#pipeline">② AFK 流水线</a>
+  <a href="#boundary">③ 人机分工边界</a>
+  <a href="#guards">④ 机器守卫</a>
+  <a href="#tests">⑤ 类型与测试</a>
+  <a href="#sandbox">⑥ 沙箱与证据</a>
+  <a href="#outputs">⑦ 输出契约化</a>
+  <a href="#failure">⑧ 失败设计</a>
+  <a href="#decisions">⑨ 决策留痕</a>
+  <a href="#metrics">⑩ 量化复盘</a>
+  <a href="#risks">⑪ 代价与风险</a>
+  <a href="#checklist">⑫ 最佳实践清单</a>
+  <a href="#evidence">⑬ 证据索引</a>
+</aside>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <span class="eyebrow">只读取证 · 单文件报告</span>
+  <h1>course-video-manager：一套已经跑到生产里的 AI 原生工程体系</h1>
+  <p class="sub">
+    作者 Matt Pocock 把一个 34 万行的视频课程管理单体，改造成了「贴标签 → GitHub Actions 编排 → 沙箱里的 Claude Code 动手 → 人只审批合并」的自治流水线。
+    这份报告通读全仓 <code>2506</code> 个文件、<code>3534</code> 次提交与 <code>56</code> 篇 ADR，把它做了什么、为什么这么做、以及哪些可以照搬到你的项目里，逐条落到文件路径上。
+  </p>
+  <div class="meta">
+    <span>仓库 <code class="mono">mattpocock/course-video-manager</code></span>
+    <span>取证方式：本地克隆 + 只读分析</span>
+    <span>证据：全部标注文件路径</span>
+  </div>
+</div>
+
+<!-- ============ 1 一页看懂 ============ -->
+<section id="overview">
+  <h2><span class="num">01</span>一页看懂</h2>
+
+  <div class="grid g4" style="margin-top:16px">
+    <div class="kpi"><div class="v">3,534</div><div class="l">总提交（2025-07-23 → 2026-10-30）</div></div>
+    <div class="kpi"><div class="v c2">62%</div><div class="l">携带 Claude 协作署名的提交占比<br><span class="mono" style="font-size:11px">2200 / 3534</span></div></div>
+    <div class="kpi"><div class="v c3">100%</div><div class="l">2026-10 非合并提交的 AI 参与率<br><span class="mono" style="font-size:11px">573 / 573</span></div></div>
+    <div class="kpi"><div class="v c4">19</div><div class="l">静态守卫脚本（13 sh + 6 ts）</div></div>
+  </div>
+  <div class="grid g4" style="margin-top:14px">
+    <div class="kpi"><div class="v">56</div><div class="l">篇 ADR（Architecture Decision Record）</div></div>
+    <div class="kpi"><div class="v c2">134</div><div class="l">GLOSSARY.md 术语条目</div></div>
+    <div class="kpi"><div class="v c3">8</div><div class="l">个智能体 workflow（标签驱动）</div></div>
+    <div class="kpi"><div class="v c4">170</div><div class="l">份白名单里的放行命中（只减不增）</div></div>
+  </div>
+
+  <h3>这套体系到底在跑什么</h3>
+  <p>一句话：<strong>人负责选题、定规范、审批合并；机器负责实现、自我审查、修冲突；二者之间用「文件」而不是「对话」交接。</strong></p>
+
+  <figure>
+    <svg viewBox="0 0 680 430" role="img" aria-label="端到端自治流水线全景图">
+      <text x="16" y="20" font-size="12" fill="#6B7194" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">端到端自治流水线 · 箭头上的数字 = workflow 编号</text>
+
+      <!-- row1 -->
+      <rect x="30" y="34" width="120" height="46" rx="8" fill="#FFFFFF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="90" y="55" font-size="12.5" fill="#1B1F3B" text-anchor="middle">人类 / 定时</text>
+      <text x="90" y="71" font-size="11" fill="#6B7194" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">label agent:*</text>
+
+      <polygon points="152,57 168,52 168,62" fill="#3B5BFD"/>
+      <line x1="150" y1="57" x2="168" y2="57" stroke="#3B5BFD" stroke-width="1.4"/>
+
+      <rect x="172" y="34" width="120" height="46" rx="8" fill="#EEF1FF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="232" y="55" font-size="12.5" fill="#1B1F3B" text-anchor="middle">① To Issues</text>
+      <text x="232" y="71" font-size="11" fill="#3B5BFD" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">PRD → 子 issue</text>
+
+      <polygon points="294,57 310,52 310,62" fill="#3B5BFD"/>
+      <line x1="292" y1="57" x2="310" y2="57" stroke="#3B5BFD" stroke-width="1.4"/>
+
+      <rect x="314" y="34" width="120" height="46" rx="8" fill="#EEF1FF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="374" y="55" font-size="12.5" fill="#1B1F3B" text-anchor="middle">②③ Implement</text>
+      <text x="374" y="71" font-size="11" fill="#3B5BFD" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">沙箱内写代码</text>
+
+      <polygon points="436,57 452,52 452,62" fill="#3B5BFD"/>
+      <line x1="434" y1="57" x2="452" y2="57" stroke="#3B5BFD" stroke-width="1.4"/>
+
+      <rect x="456" y="34" width="130" height="46" rx="8" fill="#FDF0D7" stroke="#E8C77A" stroke-width="1.2"/>
+      <text x="521" y="55" font-size="12.5" fill="#1B1F3B" text-anchor="middle">Draft PR</text>
+      <text x="521" y="71" font-size="11" fill="#8A5A05" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">永远不会自动合并</text>
+
+      <!-- arrow down -->
+      <polygon points="521,88 516,104 526,104" fill="#8B5CF6"/>
+      <line x1="521" y1="80" x2="521" y2="104" stroke="#8B5CF6" stroke-width="1.4"/>
+
+      <!-- row2 -->
+      <rect x="314" y="108" width="200" height="46" rx="8" fill="#F3EEFF" stroke="#CDBBFA" stroke-width="1.2"/>
+      <text x="414" y="129" font-size="12.5" fill="#1B1F3B" text-anchor="middle">④ Review（智能体自审改进）</text>
+      <text x="414" y="145" font-size="11" fill="#5B32B8" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">event: COMMENT，永不 APPROVE</text>
+
+      <polygon points="312,131 296,126 296,136" fill="#8B5CF6"/>
+      <line x1="312" y1="131" x2="296" y2="131" stroke="#8B5CF6" stroke-width="1.4"/>
+
+      <rect x="70" y="108" width="222" height="46" rx="8" fill="#F3EEFF" stroke="#CDBBFA" stroke-width="1.2"/>
+      <text x="181" y="129" font-size="12.5" fill="#1B1F3B" text-anchor="middle">⑤ Implement PR · ⑥ Update Branch</text>
+      <text x="181" y="145" font-size="11" fill="#5B32B8" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">按人的评论返工 / 解冲突</text>
+
+      <!-- human -->
+      <rect x="172" y="182" width="342" height="44" rx="9" fill="#DCF6E9" stroke="#9BDEC2" stroke-width="1.4"/>
+      <text x="343" y="202" font-size="13" fill="#04714F" text-anchor="middle">ⓗ 人类读 review → 审批 → 手动 merge（唯一入口）</text>
+      <text x="343" y="218" font-size="11" fill="#04714F" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">--admin / 规则集绕过 / 直推 main 均为人类专属</text>
+
+      <line x1="343" y1="154" x2="343" y2="182" stroke="#059669" stroke-width="1.4"/>
+      <polygon points="343,182 338,166 348,166" fill="#059669"/>
+
+      <!-- row3 -->
+      <line x1="181" y1="182" x2="181" y2="204" stroke="#059669" stroke-width="1.2"/>
+      <polygon points="181,204 176,188 186,188" fill="#059669"/>
+
+      <rect x="30" y="252" width="150" height="46" rx="8" fill="#D9F5F0" stroke="#8FE0CE" stroke-width="1.2"/>
+      <text x="105" y="273" font-size="12.5" fill="#0B6C5C" text-anchor="middle">merge 到 main</text>
+      <text x="105" y="289" font-size="11" fill="#0B6C5C" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">check 绿 + 分支最新</text>
+
+      <polygon points="182,275 198,270 198,280" fill="#14B8A6"/>
+      <line x1="180" y1="275" x2="198" y2="275" stroke="#14B8A6" stroke-width="1.4"/>
+
+      <rect x="202" y="252" width="130" height="46" rx="8" fill="#D9F5F0" stroke="#8FE0CE" stroke-width="1.2"/>
+      <text x="267" y="273" font-size="12.5" fill="#0B6C5C" text-anchor="middle">Closes #N 触发</text>
+      <text x="267" y="289" font-size="11" fill="#0B6C5C" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">issue closed 事件</text>
+
+      <polygon points="334,275 350,270 350,280" fill="#14B8A6"/>
+      <line x1="332" y1="275" x2="350" y2="275" stroke="#14B8A6" stroke-width="1.4"/>
+
+      <rect x="354" y="252" width="150" height="46" rx="8" fill="#D9F5F0" stroke="#8FE0CE" stroke-width="1.2"/>
+      <text x="429" y="273" font-size="12.5" fill="#0B6C5C" text-anchor="middle">⑦ Promote Queued</text>
+      <text x="429" y="289" font-size="11" fill="#0B6C5C" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">阻塞清零 → 自动开工</text>
+
+      <polygon points="506,275 522,270 522,280" fill="#14B8A6"/>
+      <line x1="504" y1="275" x2="522" y2="275" stroke="#14B8A6" stroke-width="1.4"/>
+
+      <rect x="526" y="252" width="120" height="46" rx="8" fill="#EEF1FF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="586" y="273" font-size="12.5" fill="#1B1F3B" text-anchor="middle">回到 ② 循环</text>
+      <text x="586" y="289" font-size="11" fill="#3B5BFD" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">闭环</text>
+
+      <!-- boundary box -->
+      <rect x="30" y="326" width="616" height="86" rx="10" fill="#FFF5F5" stroke="#F6CFCF" stroke-width="1.2"/>
+      <text x="46" y="347" font-size="12.5" fill="#B01F2E">硬不变量（写在规范 §3.9，不是建议而是必须）</text>
+      <text x="46" y="367" font-size="12" fill="#7F2430" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">1. 智能体从不持有 GitHub token，也不调用 API 改状态</text>
+      <text x="46" y="385" font-size="12" fill="#7F2430" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">2. 任何东西都不会自动合并到 main</text>
+      <text x="46" y="403" font-size="12" fill="#7F2430" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">3. 智能体不能关闭自己的 review 线程；一个 issue 一条分支一个 PR</text>
+    </svg>
+    <figcaption>图 1　端到端自治流水线。依据 <code class="mono">docs/agents/afk-agent-platform-spec.md</code> §2 的 mermaid 图与 §3.9 重绘制。</figcaption>
+  </figure>
+
+  <h3>三个反直觉的事实</h3>
+  <div class="grid g3">
+    <div class="card">
+      <span class="tag t-amber">反直觉 1</span>
+      <h4>「AI 没写一行代码」也可能是成功</h4>
+      <p>ADR 0008 明确把「<strong>零提交</strong>的智能体运行」从失败改判为成功：PRD 的子 issue 之间不独立，第 4 个子 issue 描述的活儿往往已经被第 2 个子 issue 那次提交做掉了。旧启发式 <code class="mono">result.commits.length === 0 → fail</code> 曾真的炸过（PRD #853 / run 26230340854）。</p>
+      <span class="src">docs/adr/0008-agent-implement-zero-commit-runs.md</span>
+    </div>
+    <div class="card">
+      <span class="tag t-purple">反直觉 2</span>
+      <h4>「manual」不等于「人来敲」</h4>
+      <p>ADR 0022 把 Deliverables 日历从「人工」重新定义为「<strong>非派生</strong>（underived）」：智能体通过 <code class="mono">cvm deliverable create/update/archive</code> 写日历，与人在 UI 里编辑是同一种刻意创作行为。它甚至明知 <code class="mono">archive</code> 不可逆（全产品无任何入口能撤销），仍然开放给智能体——因为不给的话，智能体会用 <code class="mono">cancelled</code> 当软删除，从而污染状态语义。</p>
+      <span class="src">docs/adr/0022-deliverables-are-agent-writable.md</span>
+    </div>
+    <div class="card">
+      <span class="tag t-red">反直觉 3</span>
+      <h4>侵入式禁掉的恰恰是「聪明做法」</h4>
+      <p>写给智能体的测试文档里明令：<strong>不许</strong>用 <code class="mono">turbo --affected</code> 或 <code class="mono">vitest --changed</code> 去猜「这个 diff 可能破坏了哪些测试」。理由：这种 git-diff 启发式会退化成跑整个包，比手动指定路径更慢。</p>
+      <span class="src">docs/agents/testing.md:19</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 方法与口径 ============ -->
+<section id="method">
+  <h2><span class="num">02</span>方法与口径</h2>
+  <p>本报告对 <code class="mono">/Users/junjian/WorkBuddy/2026-10-31-07-17-08/course-video-manager</code> 做<strong>只读分析</strong>，未在被分析仓库中写入或修改任何文件。</p>
+  <div class="grid g2">
+    <div class="card">
+      <h4>取证来源</h4>
+      <ul>
+        <li>仓库全量文本通读：<code class="mono">2506</code> 个非 git 文件</li>
+        <li>git 历史：<code class="mono">3534</code> 次提交（<code class="mono">git fetch --unshallow</code> 后）</li>
+        <li>核心约定文件、ADR、CI workflow、沙箱脚本、守卫脚本逐句精读</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>几个声明</h4>
+      <ul>
+        <li><strong>「AI 参与率」= 提交 trailers 含 <code class="mono">Co-Authored-By: Claude …</code> 的比例</strong>，这是下限而非上限（人工润色过的 AI 提交可能不带 trailer）。</li>
+        <li>代码行数口径：<code class="mono">find apps packages -name "*.ts*"</code>（不含 <code class="mono">node_modules</code>/<code class="mono">dist</code>）= <strong>341,650</strong> 行。</li>
+        <li>仓库中所有作者信息都是 <code class="mono">Matt Pocock</code>，署名分布无法区分人机，因此只用 trailer 作代理指标。</li>
+      </ul>
+    </div>
+  </div>
+  <details>
+    <summary>复算命令（可自行验证本报告的每一个数字）</summary>
+    <div class="d">
+<pre><code>cd course-video-manager
+git fetch --unshallow            # 浅克隆默认只有 50 个 commit
+
+# 总量与时间跨度
+git log --oneline | wc -l
+git log --reverse --pretty=format:'%ad' --date=short | head -1
+
+# AI 署名提交数
+git log --format='%(trailers:key=Co-Authored-By,valueonly)' | grep -c Claude
+
+# 按月占比（去掉合并提交）
+for m in 2026-03 2026-10; do
+  tot=$(git log --no-merges --date=format:'%Y-%m' --pretty=format:'%ad' | grep -c "^$m$")
+  cl=$(git log --no-merges --date=format:'%Y-%m' \
+        --pretty=format:'%ad|%(trailers:key=Co-Authored-By,valueonly)' | grep "^$m|" | grep -c Claude)
+  echo "$m $cl/$tot"
+done
+
+# 代码行数 / 测试数 / ADR 数 / 守卫数
+find apps packages -name '*.ts' -o -name '*.tsx' | grep -vE 'node_modules|dist' | xargs cat | wc -l
+find . -name '*.test.ts'      -not -path '*/node_modules/*' | wc -l
+find . -name '*.browser.test.tsx' -not -path '*/node_modules/*' | wc -l
+ls docs/adr | wc -l
+ls scripts | grep -c '^check-'                       # 19
+ls scripts | grep '^check-' | grep -c '\.sh$'        # 13
+ls scripts | grep '^check-' | grep -c '\.ts$'        # 6
+
+# 白名单放行命中数
+node -e "const j=require('./scripts/effect-guards-allowlist.json');\
+  let c=0;for(const k of Object.keys(j)){const v=j[k];\
+  c += Array.isArray(v)?v.length:(typeof v==='object'?Object.keys(v).length:v);}console.log(c)"   # 25</code></pre>
+    </div>
+  </details>
+</section>
+
+<!-- ============ 3 契约分层 ============ -->
+<section id="contract">
+  <h2><span class="num">03</span>实践一：把「智能体契约」做成三层金字塔，顶层只留 81 行</h2>
+  <p>
+    这个仓库<strong>没有</strong> <code class="mono">AGENTS.md</code>，也<strong>没有</strong>任何 <code class="mono">cursorrules</code> / <code class="mono">.windsurfrules</code> / Copilot 配置文件——全仓搜索无结果。
+    它对「多份约定文件互相漂移」这一现象的答案不是「同步它们」，而是<strong>只承认一份</strong>：<code class="mono">CLAUDE.md</code>。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 680 300" role="img" aria-label="智能体契约三层金字塔">
+      <polygon points="340,24 596,110 84,110" fill="#EEF1FF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="340" y="58" font-size="13.5" fill="#1B1F3B" text-anchor="middle">L1 · 常驻上下文（每次会话都在）</text>
+      <text x="340" y="80" font-size="12.5" fill="#3B5BFD" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">CLAUDE.md — 81 行 / 11.4 KB</text>
+      <text x="340" y="99" font-size="11.5" fill="#6B7194" text-anchor="middle">只放指针与硬约束，正文一律下推</text>
+
+      <polygon points="84,118 596,118 636,196 44,196" fill="#D9F5F0" stroke="#8FE0CE" stroke-width="1.2"/>
+      <text x="340" y="144" font-size="13.5" fill="#0B6C5C" text-anchor="middle">L2 · 按需加载（干活前被告知去读）</text>
+      <text x="340" y="166" font-size="12.5" fill="#0B6C5C" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">docs/agents/*.md · CODING_STANDARDS.md</text>
+      <text x="340" y="185" font-size="11.5" fill="#0B6C5C" text-anchor="middle">merging / testing / domain / triage-labels / queued-promotion / backlog</text>
+
+      <polygon points="44,204 636,204 664,272 16,272" fill="#F3EEFF" stroke="#CDBBFA" stroke-width="1.2"/>
+      <text x="340" y="228" font-size="13.5" fill="#5B32B8" text-anchor="middle">L3 · 领域世界模型（写任何代码前必读）</text>
+      <text x="340" y="248" font-size="12.5" fill="#5B32B8" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">GLOSSARY.md 578 行 / 134 条 · docs/adr/ 56 篇</text>
+      <text x="340" y="266" font-size="11.5" fill="#5B32B8" text-anchor="middle">统一词汇 + 被冻结的决策；缺失则静默继续，不要求补写</text>
+    </svg>
+    <figcaption>图 2　契约分层。顶层是唯一必读文件，其余全部通过显式指针按需加载。</figcaption>
+  </figure>
+
+  <h3>L1：<code>CLAUDE.md</code> 是一份「指针清单」而不是「百科全书」</h3>
+  <p>81 行里没有一行在教怎么写代码，全是在说「去读哪」和「绝对不能做什么」。几个典型的两句式：</p>
+  <table>
+    <thead><tr><th style="width:32%">章节</th><th>原文要点（依据 <code class="mono">CLAUDE.md</code>）</th></tr></thead>
+    <tbody>
+      <tr><td>Agent skills / Backlog</td><td>Issue 与 PRD 就是 GitHub issue，通过 <code class="mono">gh</code> CLI 管理，详见 <code class="mono">docs/agents/backlog.md</code></td></tr>
+      <tr><td>Landing a change</td><td>「每次改动都必须从<strong>干净的 worktree</strong> 出发，PR 只有在分支与 main 同步且 <code class="mono">check</code> 绿时才合并。<strong>开工前和合并前各读一遍</strong> <code class="mono">docs/agents/merging.md</code>」</td></tr>
+      <tr><td>Verifying a change</td><td>「任何在 UI 上看得见的改动，<strong>在开 PR 之前必须在浏览器里用 verify-cvm 跑一遍</strong>。测试通过和 <code class="mono">check</code> 变绿都不能替代它。没有 UI 变化的改动就写一行 <code class="mono">No UI change</code>」</td></tr>
+      <tr><td>Coding standards</td><td>「<strong>写代码时读，不是只在评审时读</strong>——『每个 any 都是一处泄漏』这句话约束的是写那个 cast 的手。它放在仓库根目录而不是 <code class="mono">.sandcastle/</code>，正是为此」</td></tr>
+      <tr><td>cvm CLI</td><td>「<strong>只有一种传输</strong>，作者调用和智能体调用共用；不许加进程内 fallback。所有 import []的检查一个都逃不掉」</td></tr>
+    </tbody>
+  </table>
+  <span class="src">证据：CLAUDE.md（81 行，仓库根目录）</span>
+
+  <div class="callout c-info">
+    <b class="t">可迁移要点</b>
+    <code>CLAUDE.md</code> 的价值不在「写得多全」，而在<strong>「把长文档变成按需查阅的指针」</strong>。81 行意味着它每次都会完整地挂在上下文里，而 <code>CODING_STANDARDS.md</code> 的 410 行只在真的写字时才被拉进来。把体积最大的内容放在<strong>最不需要常驻</strong>的层级，是这个三层结构的全部秘密。
+  </div>
+
+  <h3>L2：<code>docs/agents/</code> 是「给机器的操作规程」，和给人看的 README 完全分离</h3>
+  <p>注意这个目录的命名：不是 <code class="mono">docs/dev/</code>，而是 <code class="mono">docs/agents/</code>。七份文件，每份讲一件事，最大的一份是 1092 行的 AFK 平台规范。</p>
+  <table>
+    <thead><tr><th class="mono" style="width:34%">文件</th><th style="width:8%">行数</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">afk-agent-platform-spec.md</td><td>1092</td><td>整个自治平台的<strong>可实现规范</strong>，自称 source of truth</td></tr>
+      <tr><td class="mono">merging.md</td><td>23</td><td>五步落地法 + 轮询纪律 + 「永不使用 <code class="mono">--no-verify</code>」</td></tr>
+      <tr><td class="mono">testing.md</td><td>36</td><td>本地定向 / CI 全量两档制</td></tr>
+      <tr><td class="mono">domain.md</td><td>51</td><td>动工前先读哪些领域文档；<strong>文件不存在就静默继续</strong></td></tr>
+      <tr><td class="mono">triage-labels.md</td><td>28</td><td>技能里的规范标签 ↔ 本仓库真实标签的映射表</td></tr>
+      <tr><td class="mono">queued-promotion.md</td><td>40</td><td>依赖解除后自动晋升的状态迁移规则</td></tr>
+      <tr><td class="mono">backlog.md</td><td>22</td><td><code class="mono">gh</code> CLI 的调用约定</td></tr>
+      <tr><td class="mono">prompts/*.prompt.md</td><td>8 份</td><td>各 workflow 注入智能体的提示词模板</td></tr>
+    </tbody>
+  </table>
+
+  <p>其中最见功力的是 <code class="mono">triage-labels.md</code>：技能（skill）里说的是「打上 <code class="mono">ready-for-agent</code> 标签」，本仓库里这个标签拼作 <code class="mono">Sandcastle</code>。它不要求改技能、也不要求改仓库，而是用一张 6 行的映射表在中间翻译：</p>
+  <table>
+    <thead><tr><th>技能里的规范名</th><th>本仓库真实标签</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">needs-triage</td><td class="mono">needs-triage</td><td>维护者需评估</td></tr>
+      <tr><td class="mono">needs-info</td><td class="mono">needs-info</td><td>等信息</td></tr>
+      <tr><td class="mono">ready-for-agent</td><td class="mono">Sandcastle</td><td>规格完备，可以交给离线智能体</td></tr>
+      <tr><td class="mono">ready-for-human</td><td class="mono">ready-for-human</td><td>必须人来做</td></tr>
+      <tr><td class="mono">wontfix</td><td class="mono">wontfix</td><td>不做</td></tr>
+    </tbody>
+  </table>
+  <span class="src">证据：docs/agents/triage-labels.md（「Edit the right-hand column to match whatever vocabulary you actually use.」）</span>
+
+  <h3>L3：先有统一词汇，才有能交流的智能体</h3>
+  <p><code class="mono">GLOSSARY.md</code> 不是文档，是<strong>给人和机器共享的概念表</strong>：578 行、134 个术语条目，每个条目除了定义还明确列出要<strong>避开</strong>的同义词。摘一条：</p>
+  <blockquote>
+    <p><strong>Lesson</strong>: A single learning unit within a Section. A Lesson is known by its title, which is unique among its siblings.</p>
+    <p><em>Avoid</em>: Exercise, Tutorial, Step</p>
+    <span class="src">GLOSSARY.md · Course structure 一节</span>
+  </blockquote>
+  <p>这条约束被直接写进了<strong>智能体干活时的执行层</strong>：<code class="mono">improve-codebase-architecture-project</code> 技能要求「领域语言必须用 <code class="mono">GLOSSARY.md</code> 的词汇」，而 <code class="mono">domain.md</code> 更进一步规定——当你的输出（issue 标题、重构提案、<strong>测试名称</strong>）里出现某概念时，必须用术语表的叫法。</p>
+
+  <div class="callout c-ok">
+    <b class="t">这里有一个被很多团队忽略的细节</b>
+    <code class="mono">docs/agents/domain.md</code> 第 11 行写着：如果 <code class="mono">GLOSSARY.md</code> / <code class="mono">docs/adr/</code> <strong>不存在，就静默继续</strong>，不要报错、不要建议创建。<br>
+    理由：术语和决策是<strong>被实际解决的问题催生出来的</strong>，不是预先设计出来的。让智能体在缺文件时不啰嗦，是这套体系能长期不被文档债拖垮的前提。
+  </div>
+</section>
+
+<!-- ============ 4 AFK 流水线 ============ -->
+<section id="pipeline">
+  <h2><span class="num">04</span>实践二：一条由 GitHub 标签驱动的 AFK 流水线</h2>
+  <p>
+    AFK = Away From Keyboard。作者写的不是「一个 Claude Code 用法 tips」，而是一份能<strong>在全新仓库里照着重建整套系统</strong>的规范：
+  </p>
+  <blockquote>
+    <p>This document is the source of truth. You should be able to re-implement the whole system in a fresh repository from this spec alone, without reading the original workflow YAML.</p>
+    <span class="src">docs/agents/afk-agent-platform-spec.md:9-11</span>
+  </blockquote>
+
+  <h3>四大支柱，只留「一个可插拔轴」</h3>
+  <table>
+    <thead><tr><th style="width:22%">支柱</th><th style="width:20%">状态</th><th>承担什么</th></tr></thead>
+    <tbody>
+      <tr><td>编排器 Orchestrator</td><td><span class="tag t-blue">固定 GitHub Actions</span></td><td>触发、权限、并发组、token</td></tr>
+      <tr><td>追踪器 Tracker</td><td><span class="tag t-blue">固定 Issues + PRs</span></td><td>标签即状态、原生子 issue、原生依赖阻塞关系</td></tr>
+      <tr><td>版本控制 VCS</td><td><span class="tag t-blue">固定 git + GitHub</span></td><td>分支、<code class="mono">force-with-lease</code>、draft PR、<code class="mono">Closes #N</code></td></tr>
+      <tr><td>智能体运行器 Runner</td><td><span class="tag t-teal">可插拔</span></td><td>吃 env 变量 + 上下文 → 在 checkout 里干活 → <strong>往目录里写文件</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>八个 workflow：标签即状态机，没有外部数据库</h3>
+  <figure>
+    <svg viewBox="0 0 680 250" role="img" aria-label="智能体标签状态机">
+      <rect x="14" y="18" width="150" height="38" rx="8" fill="#FFFFFF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="89" y="36" font-size="12" fill="#1B1F3B" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">agent:to-issues</text>
+      <text x="89" y="50" font-size="11" fill="#6B7194" text-anchor="middle">人类贴（PRD）</text>
+
+      <rect x="210" y="18" width="150" height="38" rx="8" fill="#FFFFFF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="285" y="36" font-size="12" fill="#1B1F3B" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">agent:queued</text>
+      <text x="285" y="50" font-size="11" fill="#6B7194" text-anchor="middle">人类贴（有阻塞）</text>
+
+      <rect x="406" y="18" width="150" height="38" rx="8" fill="#FFFFFF" stroke="#C9D2F5" stroke-width="1.2"/>
+      <text x="481" y="36" font-size="12" fill="#1B1F3B" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">agent:implement</text>
+      <text x="481" y="50" font-size="11" fill="#6B7194" text-anchor="middle">「开始干活」</text>
+
+      <rect x="210" y="92" width="150" height="40" rx="9" fill="#EEF1FF" stroke="#8FA3F0" stroke-width="1.6"/>
+      <text x="285" y="110" font-size="12" fill="#1B1F3B" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">agent:in-progress</text>
+      <text x="285" y="125" font-size="11" fill="#3B5BFD" text-anchor="middle">既是状态也是分布式锁</text>
+
+      <rect x="406" y="92" width="150" height="40" rx="9" fill="#F3EEFF" stroke="#CDBBFA" stroke-width="1.4"/>
+      <text x="481" y="110" font-size="12" fill="#1B1F3B" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">agent:review</text>
+      <text x="481" y="125" font-size="11" fill="#5B32B8" text-anchor="middle">PR 等待自审</text>
+
+      <rect x="602" y="92" width="72" height="40" rx="9" fill="#FDE8E8" stroke="#F0B4B4" stroke-width="1.4"/>
+      <text x="638" y="110" font-size="12" fill="#B01F2E" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">blocked</text>
+      <text x="638" y="125" font-size="11" fill="#B01F2E" text-anchor="middle">需人处理</text>
+
+      <rect x="14" y="168" width="150" height="40" rx="9" fill="#DCF6E9" stroke="#9BDEC2" stroke-width="1.4"/>
+      <text x="89" y="186" font-size="12" fill="#04714F" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">人类 merge</text>
+      <text x="89" y="201" font-size="11" fill="#04714F" text-anchor="middle">PR ready → 审批</text>
+
+      <rect x="406" y="168" width="150" height="40" rx="9" fill="#FDF0D7" stroke="#E8C77A" stroke-width="1.2"/>
+      <text x="481" y="186" font-size="12" fill="#8A5A05" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">agent:update-branch</text>
+      <text x="481" y="201" font-size="11" fill="#8A5A05" text-anchor="middle">合并主干 / 解冲突</text>
+
+      <!-- edges -->
+      <line x1="164" y1="37" x2="206" y2="52" stroke="#9AA3C7" stroke-width="1.2"/>
+      <polygon points="206,56 201,46 211,48" fill="#9AA3C7"/>
+      <line x1="360" y1="37" x2="402" y2="37" stroke="#9AA3C7" stroke-width="1.2"/>
+      <polygon points="406,37 398,33 398,41" fill="#9AA3C7"/>
+      <line x1="481" y1="56" x2="285" y2="88" stroke="#3B5BFD" stroke-width="1.3"/>
+      <polygon points="285,92 281,82 289,82" fill="#3B5BFD"/>
+      <line x1="285" y1="56" x2="285" y2="88" stroke="#9AA3C7" stroke-width="1.2"/>
+      <polygon points="285,92 281,82 289,82" fill="#9AA3C7"/>
+      <line x1="360" y1="112" x2="402" y2="112" stroke="#9AA3C7" stroke-width="1.2"/>
+      <polygon points="406,112 398,108 398,116" fill="#9AA3C7"/>
+      <line x1="556" y1="112" x2="598" y2="112" stroke="#DC2626" stroke-width="1.2"/>
+      <polygon points="602,112 594,108 594,116" fill="#DC2626"/>
+      <line x1="481" y1="132" x2="481" y2="164" stroke="#9AA3C7" stroke-width="1.2"/>
+      <polygon points="481,168 477,158 485,158" fill="#9AA3C7"/>
+      <line x1="164" y1="188" x2="402" y2="112" stroke="#D4DAF0" stroke-width="1"/>
+      <text x="30" y="236" font-size="11.5" fill="#6B7194" text-anchor="start">主链：to-issues → implement → PR → review → 人 merge → Closes #N → 下一个 queued 自动开工</text>
+    </svg>
+    <figcaption>图 3　<code class="mono">agent:*</code> 标签状态机（本体可有）。依据 afk-agent-platform-spec.md §3.2 与 §2 的 stateDiagram 重绘制。</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th style="width:26%">Workflow</th><th style="width:30%">触发</th><th style="width:18%">并发组</th><th>权限</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">agent-implement.yml</td><td>issue 贴 <code class="mono">agent:implement</code></td><td class="mono">按 issue</td><td>contents/issues/PR write</td></tr>
+      <tr><td class="mono">agent-implement-prd.yml</td><td>同上（有子 issue 时走这条）</td><td class="mono">按 issue</td><td>contents/issues/PR write</td></tr>
+      <tr><td class="mono">agent-implement-pr.yml</td><td>PR 贴 label</td><td class="mono">按 PR</td><td>contents/PR write（<strong>无 issues</strong>）</td></tr>
+      <tr><td class="mono">agent-review.yml</td><td>PR 贴 <code class="mono">agent:review</code></td><td class="mono">按 PR</td><td>contents/PR write</td></tr>
+      <tr><td class="mono">agent-update-branch.yml</td><td>PR 贴 label</td><td class="mono">按 PR</td><td>contents/PR write</td></tr>
+      <tr><td class="mono">agent-to-issues-prd.yml</td><td>issue 贴 <code class="mono">agent:to-issues</code></td><td class="mono">按 issue</td><td><strong>contents: read</strong> + issues write</td></tr>
+      <tr><td class="mono">agent-promote-queued.yml</td><td>任意 issue 关闭</td><td class="mono">— 刻意不设</td><td>issues write</td></tr>
+      <tr><td class="mono">architecture-review.yml</td><td>工作日定时 <code class="mono">0 9 * * 1-5</code></td><td class="mono">architecture-review</td><td>contents read + issues write</td></tr>
+    </tbody>
+  </table>
+
+  <h4>三个值得抄走的机制细节</h4>
+  <div class="step"><div class="n">1</div><div class="b"><strong>所有并发组都设 <code class="mono">cancel-in-progress: false</code></strong>——一次智能体运行很贵，绝不能因为来了个新事件就被取消；后来的排队等着。<span class="src">afk-agent-platform-spec.md §3.5（唯一定时任务和 <code class="mono">test.yml</code> 是 <code class="mono">cancel-in-progress: true</code>）</span></div></div>
+  <div class="step"><div class="n">2</div><div class="b"><strong>三种 push 策略按场景区分</strong>：单 issue 用 <code class="mono">--force</code>（分支名由 issue 号决定，残留必是孤儿）；PRD 用普通 <code class="mono">push</code>（「NOT force-push: the branch accumulates commits across sub-issue runs」）；review/改 PR 用 <code class="mono">--force-with-lease="refs/heads/$BRANCH:$BRANCH_HEAD_SHA"</code> 做租约检测。<span class="src">afk-agent-platform-spec.md §3.6</span></div></div>
+  <div class="step"><div class="n">3</div><div class="b"><strong><code class="mono">pull_request_target</code> 而不是 <code class="mono">pull_request</code></strong>：后者依赖 GitHub 生成的 merge commit，PR 落后或有冲突时根本生成不出来，labeled 事件就不会触发；前者在 base context 里跑，不需要 merge commit。<span class="src">.github/workflows/agent-review.yml:3-8 注释</span></div></div>
+
+  <div class="callout c-warn">
+    <b class="t">本地还有另一条线：RALPH 循环</b>
+    CI 之外，仓库里保留了<code class="mono">plans/ralph.sh</code> 与 <code class="mono">plans/backlog/{affk,once,setup,cleanup}.sh</code>，跑的是 Docker sandbox 版 Claude Code，最多 10 轮 × 4 并发，配合 <code class="mono">plans/backlog/prompt.md</code>。<br>
+    这条「土味」循环留下了一个很实用的提示词约束：<strong>提交信息必须以 <code class="mono">RALPH:</code> 前缀</strong>，并在 commit message 里写清「完成的任务 + PRD 引用 + 关键决策 + 改动文件 + 给下一轮的阻塞提示」。而 CI 侧的 <code class="mono">.sandcastle/implement/prompt.md</code> 则明确写着 <strong>「Do NOT use a <code class="mono">RALPH:</code> prefix — that prefix is reserved for the RALPH loop」</strong>。两条流水线共用一套仓库，但提交历史必须能分辨来自哪条线。
+    <span class="src">plans/ralph.sh · plans/backlog/prompt.md:33-50 · .sandcastle/implement/prompt.md:29</span>
+  </div>
+</section>
+
+<!-- ============ 5 人机边界 ============ -->
+<section id="boundary">
+  <h2><span class="num">05</span>实践三：人机分工边界是用「权限」而不是「礼貌」划定的</h2>
+  <p>大部分团队写「人机协作」时说的是态度；这个仓库说的是<strong>谁拿什么 token、能调用哪个动词</strong>。</p>
+
+  <h3>3.1 中央设计法则：编排器持有所有写权限，运行器只产出文件</h3>
+  <blockquote>
+    <p><strong>The central design rule:</strong> the <strong>orchestrator owns every tracker/VCS mutation</strong> (labels, comments, pushes, PR creation, issue closing). The <strong>agent runner only emits files.</strong> This seam is what makes the runner swappable and the system testable — the agent never holds a GitHub token and never calls the GitHub API to mutate state.</p>
+    <span class="src">docs/agents/afk-agent-platform-spec.md:27-30</span>
+  </blockquote>
+  <p>这条被划得有多干净？看实施提示词：<code class="mono">.sandcastle/implement/prompt.md</code> 最后一行是 <strong>「Do not close the issue yourself.」</strong>——连关闭自己刚做完的 issue 都不行，因为那是一次 tracker 变更。</p>
+
+  <h3>3.2 一张边界总账</h3>
+  <table>
+    <thead><tr><th style="width:24%">动作</th><th style="width:16%">智能体</th><th style="width:16%">编排器</th><th style="width:16%">人类</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><td>写代码 / 跑测试 / 本地提交</td><td><span class="tag t-green">✅</span></td><td>—</td><td>—</td><td class="mono">implement/prompt.md</td></tr>
+      <tr><td>git push 到分支</td><td>—</td><td><span class="tag t-green">✅</span></td><td>—</td><td class="mono">§3.6 / agent-implement.yml:166</td></tr>
+      <tr><td>创建 PR</td><td>—</td><td><span class="tag t-green">✅</span> draft</td><td>—</td><td class="mono">agent-implement.yml:184-189</td></tr>
+      <tr><td>给 PR 写 review</td><td><span class="tag t-green">✅</span></td><td><span class="tag t-green">✅</span> 投递</td><td><span class="tag t-green">✅</span></td><td class="mono">review.ts:223</td></tr>
+      <tr><td>review 结论为 APPROVE</td><td><span class="tag t-red">❌ 永不</span></td><td>—</td><td><span class="tag t-green">✅</span></td><td class="mono">§3.9 non-goals</td></tr>
+      <tr><td>关闭自己的 review 线程</td><td><span class="tag t-red">❌</span> 只能回复</td><td>—</td><td><span class="tag t-green">✅</span></td><td class="mono">§3.9 hard invariant</td></tr>
+      <tr><td>合并到 main</td><td><span class="tag t-red">❌</span></td><td><span class="tag t-red">❌</span></td><td><span class="tag t-green">✅ 唯一</span></td><td class="mono">merging.md:17</td></tr>
+      <tr><td>改写 <code class="mono">.github/workflows/</code></td><td>需 PAT</td><td><span class="tag t-green">✅</span></td><td>—</td><td class="mono">agent-implement.yml:104-108</td></tr>
+      <tr><td>对<strong>生产库</strong>做 <code class="mono">db:migrate</code></td><td><span class="tag t-red">❌</span></td><td>—</td><td><span class="tag t-green">✅ Matt</span></td><td class="mono">ADR 0026 · README.md:68</td></tr>
+      <tr><td>跑 <code class="mono">db:verify-snapshot</code>（唯一读生产的快照）</td><td><span class="tag t-red">❌ 脚本拒绝</span></td><td>—</td><td><span class="tag t-green">✅ Matt</span></td><td class="mono">verify-cvm/SKILL.md:82-87</td></tr>
+      <tr><td>Matt 录制时启动重进程（ffmpeg / OBS 争抢）</td><td><span class="tag t-red">❌ 自动暂停</span></td><td>—</td><td>—</td><td class="mono">verify-cvm/SKILL.md:12-20</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 三个 token 的分工与「降级契约」</h3>
+  <pre><code># Use AGENT_PAT so pushes can include changes to files under
+# .github/workflows/ (GITHUB_TOKEN lacks the `workflows` scope).
+# Falls back to GITHUB_TOKEN if AGENT_PAT is unset; in that case
+# workflow-file changes will be rejected on push.
+token: ${{ secrets.AGENT_PAT || secrets.GITHUB_TOKEN }}</code></pre>
+  <span class="src">.github/workflows/agent-implement.yml:104-108</span>
+  <p>降级路径也很明确：先试 PAT，失败打印 <code class="mono">AGENT_PAT label add failed …; falling back to GITHUB_TOKEN.</code>——此时标签会落地，但下游 workflow <strong>不会自动触发</strong>，得人手动再贴一次。这是被规范（§3.4 Degradation contract）承认并写死的行为，不是意外。</p>
+
+  <div class="callout c-info">
+    <b class="t">最有意思的一条边界：智能体不能妨碍真人干活</b>
+    <code class="mono">verify-cvm</code> 会在每个步骤前检查 <code class="mono">scripts/is-filming.sh</code>——如果 Matt 正在录制视频，所有会启动浏览器的动词都会打印 <code class="mono">PAUSED</code> 并每 60 秒重查一次，<strong>不允许绕过</strong>。这是一台真机器上跑的和真 GPU、真摄像头共享资源的项目，人机边界不只是一条代码规则，还是一条<strong>物理资源规则</strong>。<br>
+    同一思路下还有 <code class="mono">CODING_STANDARDS.md</code> 的 Windows 进程守卫：启动任何 <code class="mono">.exe</code> 前必须过 <code class="mono">guardWindows()</code>，而它在作者的录制软件运行时会<strong>直接拒绝</strong>，并把进程强制跑在 Idle 优先级 + 6-9 号核上。
+    <span class="src">.claude/skills/verify-cvm/SKILL.md:12-20 · CLAUDE.md §Windows processes</span>
+  </div>
+</section>
+
+<!-- ============ 6 机器守卫 ============ -->
+<section id="guards">
+  <h2><span class="num">06</span>实践四：类型系统抓不到的，就写一个脚本去抓</h2>
+  <p>
+    这套体系里最锋利的一句话，藏在一个 30 行的 shell 脚本注释里：
+  </p>
+  <blockquote>
+    <p>Eight routes had this, each one copied from the last. <strong>No type could catch it, because the cast is what turned the type off. So it is caught here.</strong></p>
+    <span class="src">scripts/check-response-body.sh:14-15（背景：issue #1722，8 个路由照抄同一个把 ReadStream 塞进 Response 的模式，整个 server 崩溃）</span>
+  </blockquote>
+  <p>翻译成 workings：当 AI（或人）用 <code class="mono">as any</code> 绕过类型系统时，类型检查就失效了——于是他们<strong>为每一次失效打一个补丁脚本</strong>。</p>
+
+  <h3>19 个守卫，每个都拦一件具体的事</h3>
+  <table>
+    <thead><tr><th class="mono" style="width:33%">脚本</th><th>拦什么</th><th style="width:16%">白名单</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">check-response-body.sh</td><td><code class="mono">createReadStream</code> 直接进 <code class="mono">new Response()</code>，以及 Response 内的 <code class="mono">as any</code> 转换</td><td>—</td></tr>
+      <tr><td class="mono">check-effect-guards.ts</td><td>Effect 三种逃逸：边界外 <code class="mono">runPromise</code> / 吞错误的 <code class="mono">catchAll</code> / 产品码里 <code class="mono">Effect.promise</code></td><td>25 命中</td></tr>
+      <tr><td class="mono">check-frontend-state.ts</td><td>单文件 <code class="mono">useState</code> &gt; 4，或 effect 回调里引用本文件 setter &gt; 1 次（藏在 <code class="mono">useEffect</code> 里的状态机）</td><td>6 命中</td></tr>
+      <tr><td class="mono">check-background-jobs.ts</td><td>4 类「后台活儿跑进请求里」：SSE 路由、浏览器驱动、<code class="mono">spawn</code>、出网调用（<code class="mono">fetch</code>/AI SDK/OpenAI…）</td><td>39 命中</td></tr>
+      <tr><td class="mono">check-complexity.ts</td><td>圈复杂度 &gt; 15；且白名单<strong>不得比 origin/main 更高</strong></td><td>100 文件 / 110 命中</td></tr>
+      <tr><td class="mono">check-file-tokens.sh</td><td>单文件超过 <strong>5500 token</strong>（按字节/4 估算），逼迫拆模块</td><td>12 排除</td></tr>
+      <tr><td class="mono">check-fs-writes.sh</td><td>对「应用自己没拼出来的路径」做写/删/改/拷——必须先过 <code class="mono">assertUnder</code></td><td>9 文件</td></tr>
+      <tr><td class="mono">check-db-clients.sh</td><td>绕过连接守卫自己造 <code class="mono">Pool</code>/<code class="mono">Client</code>/<code class="mono">drizzle()</code>，或自己读 <code class="mono">DATABASE_URL</code></td><td>10</td></tr>
+      <tr><td class="mono">check-clip-inserts.sh</td><td>绕过 COPY_PATHS 手写 Clip 行插入（会漏带 Transcript Words / Overlays）</td><td>7</td></tr>
+      <tr><td class="mono">check-no-gitlinks.sh</td><td>index 里的 gitlink（<code class="mono">mode 160000</code>）——智能体 worktree 被 <code class="mono">git add -A</code> 卷进来的经典事故</td><td>—</td></tr>
+      <tr><td class="mono">check-routes-folder.sh</td><td>把 <code class="mono">*.test.ts</code>/<code class="mono">__tests__/</code> 放进 <code class="mono">app/routes</code>（那里每个文件都是公网路由）</td><td>—</td></tr>
+      <tr><td class="mono">check-env-example.sh</td><td>代码读了某个 env，但 <code class="mono">.env.example</code> 里没写（注释：<code class="mono">Do not add one.</code>）</td><td>4 known gaps</td></tr>
+      <tr><td class="mono">check-no-dirname.sh</td><td>ESM 项目里的 <code class="mono">__dirname</code> / <code class="mono">__filename</code></td><td>—</td></tr>
+      <tr><td class="mono">check-script-db-url.sh</td><td>脚本自己读 <code class="mono">DATABASE_URL</code>，强制走 <code class="mono">scriptDatabaseUrl()</code></td><td>—</td></tr>
+      <tr><td class="mono">check-effect-tsc.ts</td><td><strong>tsc 补丁丢失</strong>——用金丝雀文件断言 <code class="mono">effect(floatingEffect)</code> 确实被报出来，否则 Effect 规则已静默失效</td><td>—</td></tr>
+      <tr><td class="mono">check-entity-links.sh</td><td>手写 deep link（<code class="mono">clipboard.writeText(id)</code>、拼 URL），强制走 <code class="mono">entityDeepLink</code></td><td>—</td></tr>
+      <tr><td class="mono">check-duration-format.sh</td><td>手写时长格式化（同文件同时出现 <code class="mono">% 60</code> 和 <code class="mono">padStart(2</code>）</td><td>—</td></tr>
+      <tr><td class="mono">check-toast-import.sh</td><td>除 3 个 wrapper 外任何文件 <code class="mono">from "sonner"</code></td><td>3</td></tr>
+      <tr><td class="mono">lint:boundaries（dep-cruise）</td><td><code class="mono">packages/core</code> 触碰文件系统/子进程/git（<code class="mono">core-is-filesystem-free</code>，23 个模块模式）</td><td>仅测试文件</td></tr>
+    </tbody>
+  </table>
+
+  <h3>关键机制：所有技术债都用「只减不增」的白名单编码</h3>
+  <p>这是我认为整个仓库<strong>最值得照搬</strong>的一条。守卫落地时，先把历史欠债记进白名单；之后用「1+1+1=3」条机器校验逼债：</p>
+  <pre><code>// 2. The list may not grow against the base branch: no new file, no higher
+//    count than `origin/main` has.
+// 3. The `.oxlintrc.json` override names exactly the allowlisted files.
+// 4. No `eslint-disable` / `oxlint-disable` comment names `complexity`.</code></pre>
+  <span class="src">scripts/check-complexity.ts:9-15</span>
+  <blockquote>
+    <p>The count must match exactly: one more is a new unguarded write (guard it, never raise the count); one fewer means the entry is stale (lower it, or delete it at 0). <strong>The list only ever shrinks</strong></p>
+    <span class="src">scripts/check-fs-writes.sh:25-27</span>
+  </blockquote>
+  <p><strong>双向校验</strong>是重点：多一处命中失败，少一处命中<strong>也失败</strong>（说明白名单条目过期了，必须下调或删除）。这同时堵住了人的惰性和 AI 的「注释掉这条规则」冲动。</p>
+  <div class="grid g4">
+    <div class="kpi"><div class="v">25</div><div class="l">effect-guards 放行命中<br><span class="mono" style="font-size:11px">3 个类别</span></div></div>
+    <div class="kpi"><div class="v c2">6</div><div class="l">frontend-state 放行命中<br><span class="mono" style="font-size:11px">2 个类别</span></div></div>
+    <div class="kpi"><div class="v c3">39</div><div class="l">background-jobs 放行命中<br><span class="mono" style="font-size:11px">4 个类别</span></div></div>
+    <div class="kpi"><div class="v c4">110</div><div class="l">complexity 放行命中<br><span class="mono" style="font-size:11px">100 个文件</span></div></div>
+  </div>
+  <span class="src">口径：4 份 JSON 白名单合计 170 处放行命中，由本报告实际执行 <code class="mono">node -e</code> 统计；另有 5 处内嵌于 shell 脚本（fs-writes 9 / db-clients 10 / clip-inserts 7 / file-tokens 12 / env-example 4）。</span>
+
+  <h3>有意区分「提交前」与「CI」</h3>
+  <p><code class="mono">.husky/pre-commit</code> 跑 20 项，但<strong>刻意漏掉三样</strong>，且每样都写了理由：</p>
+  <table>
+    <thead><tr><th style="width:28%">被留给 CI 的</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">pnpm run test（全量）</td><td>「{@code @cvm/local} 的 suite 分四片全跑，因此本地定向是安全的」<span class="src">docs/agents/testing.md:21「The full suite: CI, not you」</span></td></tr>
+      <tr><td class="mono">check:response-body</td><td>「CI ONLY … 它跑起来只要 0.2 秒，但提交 hook 是个热循环；而这个 pattern 影响的是路由里的 Response，CI 早就能看到」<span class="src">scripts/check-response-body.sh:21-26</span></td></tr>
+      <tr><td class="mono">oxlint 全量</td><td>「Oxlint runs advisory, not as a gate … 只有<strong>把成文标准编码进去的规则</strong>才是 error，而且这批现在是绿的、必须保持绿」<span class="src">.oxlintrc.json:4-9</span></td></tr>
+    </tbody>
+  </table>
+  <p>结论很清楚：<strong>快的、能立刻止血的进 hook；慢的、和提交频率无关的留给 CI。</strong> 而且 oxlint 只把 7 条规则设为 error——每条都带 <code class="mono">// CODING STANDARD: "…"</code> 注释指回文档章节名。</p>
+</section>
+
+<!-- ============ 7 类型与测试 ============ -->
+<section id="tests">
+  <h2><span class="num">07</span>实践五：类型纪律与测试纪律，都是对着「AI 会怎么写」下手的</h2>
+
+  <h3>7.1 「每个 any 都是一处泄漏」——一条<strong>刻意没有脚本</strong>的规则</h3>
+  <blockquote>
+    <p>An <code>any</code> switches the type checker off for every value that flows through it. Write the type you mean: …<br>
+    <strong>The cost, from this repo:</strong> <code>makeLoader</code> took <code>ManagedRuntime&lt;any, any&gt;</code> with an unconstrained <code>R</code>, so a route asking for an unprovided service type-checked across <strong>all 111 route modules</strong> and the Animatic page 500ed on every load.<br>
+    A new <code>any</code> needs a reason in the PR; a file you touch should leave review with fewer of them than it had.</p>
+    <span class="src">CODING_STANDARDS.md:117-133</span>
+  </blockquote>
+  <div class="callout c-info">
+    <b class="t">为什么这条偏偏不设脚本？</b>
+    因为它是<strong>一条流程约束</strong>：「新的 <code class="mono">any</code> 要在 PR 里说明理由」。规则能否被机器执行，和它是否被<strong>人真正读到</strong>，是两件事。作者的做法是把估算不了的交给流程、把能量化的交给脚本——而不是让所有规则都假装是硬的。
+  </div>
+  <p>相比之下，能机器化的就毫不含糊。例如目录结构冶 `${packages}/core` 的边界：<code class="mono">packages/core/.dependency-cruiser.cjs</code> 直接写了为什么这不能是「建议」：</p>
+  <blockquote>
+    <p>That API runs on a machine with no finished videos directory, no Video Files directory, no ffmpeg, no OBS and no git checkout. So the rule is not "please avoid the filesystem" — <strong>it is that a filesystem import here is a build failure</strong>, caught before anything is deployed, rather than a runtime error on a box nobody is watching.</p>
+    <span class="src">packages/core/.dependency-cruiser.cjs:3-13（FILESYSTEM_BOUND 共 23 个模块模式）</span>
+  </blockquote>
+
+  <h3>7.2 测试：两档制 + 只在系统边界 mock + 一张「不值得测」清单</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4><span class="tag t-blue">本地</span> 定向跑</div>
+      <p><code class="mono">pnpm --filter &lt;pkg&gt; test -- path/to/thing.test.ts</code>，跑你改的文件对应的那一个测试文件。全量 suite 交给 CI。</p>
+      <p>还留了个坑的记录：仓库根目录必须用 <code class="mono">pnpm run test:root &lt;path&gt;</code>（<strong>不带 <code class="mono">--</code></strong>），因为 pnpm 9.12.3 会把字面 <code class="mono">--</code> 透传给 vitest，导致静默跑全量。</p>
+      <span class="src">docs/agents/testing.md:17</span>
+    </div>
+    <div class="card">
+      <h4><span class="tag t-teal">CI</span> 全量跑</div>
+      <p><code class="mono">test.yml</code> 拆成 5 个并行 job（static / rest / local 四分片 / browser / client-build），最后汇成一个名为 <code class="mono">check</code> 的聚合 context——<strong>这是 GitHub 规则集唯一要求的状态检查</strong>。</p>
+      <p>文件顶部写着：<em>"Do not rename it, and do not give any other job that name."</em></p>
+      <span class="src">.github/workflows/test.yml:26-27</span>
+    </div>
+  </div>
+
+  <h4>mock 策略：只在系统边界 mock</h4>
+  <blockquote>
+    <p>Mock at <strong>system boundaries</strong> only — external APIs, time and randomness, and the file system or a database when a real instance isn't practical. Everything inside the boundary goes in real: <strong>never mock your own classes, modules or internal collaborators.</strong> When something is hard to test without mocking an internal, redesign the interface.<br>
+    Every test must be able to fail for a plausible real bug a user or caller would see; <strong>if you can't name the bug, don't write it.</strong></p>
+    <span class="src">CODING_STANDARDS.md:397-409</span>
+  </blockquote>
+  <p>为什么这条对 AI 特别重要？因为「我该 mock 什么」对 AI 来说是一道极易产生分歧的题。<code class="mono">docs/TESTING_STANDARDS.md:128-132</code> 把答案收敛到了接口形态层面：</p>
+  <blockquote>
+    <p>Prefer <strong>SDK-style interfaces over generic fetchers</strong> at boundaries — each function is independently mockable with a single return shape, <strong>no conditional logic in test setup</strong>.</p>
+    <span class="src">docs/TESTING_STANDARDS.md:128-132</span>
+  </blockquote>
+
+  <h4>明确列出了「不值得写测试」的五类东西</h4>
+  <table>
+    <thead><tr><th style="width:22%">类别</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>Tautologies</td><td>mock 返回它被要求返回的东西、复述常量/配置/查表、静态 markup 快照、「类型是个类型」</td></tr>
+      <tr><td>Implementation details</td><td>调用次数、调用顺序、私有 helper、内部状态形状——任何「无害重构就会碎」的断言</td></tr>
+      <tr><td>Near-duplicates</td><td>同一个接缝上换一个字面量再写一遍</td></tr>
+      <tr><td>Glue</td><td>透传、一行映射、解析后转发的路由——去测它转发到的那个</td></tr>
+      <tr><td>Someone else's code</td><td>「zod 能解析」「React 能渲染」「drizzle 能插入」</td></tr>
+    </tbody>
+  </table>
+  <span class="src">docs/TESTING_STANDARDS.md:18-27</span>
+  <p>还有一条<strong>用未来时态封死</strong>的绝对禁令：</p>
+  <blockquote>
+    <p><strong>Never</strong> write an automated test against a Remotion renderer package's actual render output — <strong>not for the packages that exist today, not for any added later.</strong> A real render boots Chromium, takes minutes … and asserts on pixels that a deliberate branding change is supposed to move; the test then fails for the one reason that is not a bug.</p>
+    <span class="src">docs/TESTING_STANDARDS.md:136-140</span>
+  </blockquote>
+
+  <h4>浏览器测试的门槛被写得极低，但需要时却能回得到<anyplace>真机</h4>
+  <p>全仓只有 <strong>9 个</strong> <code class="mono">*.browser.test.tsx</code>（对比 622 个 node 测试）。规范划定只有两种情形值得写：</p>
+  <ul>
+    <li><strong>接线</strong>：哪个按键/点击/blur 具体触发什么；</li>
+    <li><strong>浏览器独有的行为</strong>：focus/blur 顺序、键盘处理、媒体元素、Web Audio、effect 生命周期（挂载/卸载/Strict Mode 重挂）。</li>
+  </ul>
+  <p>其余一律抽出纯函数用 node 测。测试数据库用「一个共享 Postgres 容器 + 每个测试文件一个独立库」（ADR 0046，端口 54329，数据在 tmpfs），并对 AI 最容易踩的坑做了预告：</p>
+  <blockquote>
+    <p>A test that passed on PGlite and fails here is usually <strong>an order the query never promised</strong> (<code class="mono">IN (…)</code> or a join without <code class="mono">ORDER BY</code>), or a race the in-process database used to win. <strong>Fix the query or the race, not the database.</strong></p>
+    <span class="src">docs/agents/testing.md:32</span>
+  </blockquote>
+
+  <h3>7.3 React 两条规则，直指 AI 最爱写的模式</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>「从 action 里重定向，不要从 effect 里」</h4>
+      <p>The <code class="mono">useEffect</code> pattern is fragile: if any dep (e.g. an inline <code class="mono">onOpenChange</code> prop) changes between renders, the effect re-fires and re-issues <code class="mono">navigate(...)</code>, <strong>cancelling and restarting the in-flight navigation in a loop</strong>.</p>
+      <span class="src">CODING_STANDARDS.md:316-335</span>
+    </div>
+    <div class="card">
+      <h4>「乐观 UI 从 <code class="mono">fetcher.formData</code> 派生」</h4>
+      <p>This eliminates state-sync bugs and <strong>removes the need for <code class="mono">useEffect</code> entirely</strong>.<br>配套：每个界面一个纯 reducer，事件是事实、effect 是 reducer 返回的数据，测试直接喂事件序列而不渲染 —「No decision lives in <code class="mono">useState</code> + <code class="mono">useEffect</code>」。</p>
+      <span class="src">CODING_STANDARDS.md:349-356</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8 沙箱 ============ -->
+<section id="sandbox">
+  <h2><span class="num">08</span>实践六：给智能体一个「能撒野但追得到账」的真沙箱</h2>
+  <p>
+    大部分 AI 编码实践的验证环节是「跑一遍测试」。这个仓库的答案是：<strong>起一个真的应用、连一份真的（克隆的）数据库、用真的浏览器点一遍，并且把每一次写库都记进账本。</strong>
+  </p>
+
+  <h3>verify-cvm：417 行的技能 + 2964 行的配套脚本</h3>
+  <table>
+    <thead><tr><th style="width:30%">机制</th><th>怎么做的</th></tr></thead>
+    <tbody>
+      <tr><td>数据克隆</td><td>每次 run 从模板库 <code class="mono">cvm_verify_template</code> 克隆一份专属库 <code class="mono">cvm_verify_&lt;id&gt;</code>，<strong>允许写，cleanup 时丢弃</strong>；并自动补 apply 本 worktree 的迁徙</td></tr>
+      <tr><td>端口隔离</td><td>验证专用 5200-5299 段；CVM 自己占 5170-5199（5173 是 Matt 的 dev server）。<code class="mono">doctor</code> 会断言「端口的占有者是本次 run 记录的 pid 或其<strong>直接</strong>子进程」</td></tr>
+      <tr><td>外部服务封印</td><td>所有凭证换成废品；<code class="mono">YOUTUBE_API_URL</code>/<code class="mono">BUFFER_API_URL</code>/<code class="mono">S3_ENDPOINT</code>/<code class="mono">ANTHROPIC_BASE_URL</code>/<code class="mono">DROPBOX_*</code>/<code class="mono">CLOUDINARY_*</code> 一律指向注销端口 <code class="mono">127.0.0.1:9</code>，<strong>失败是朝关闭方向失败</strong></td></tr>
+      <tr><td>Write Ledger</td><td>在克隆库上装 statement 级触发器，把每次提交的 insert/update/delete/truncate（含 <code class="mono">application_name</code>）记进 <code class="mono">verify_ledger.write</code>；再叠加服务端 <code class="mono">CVM_LOG_SQL=1</code> 的语句日志</td></tr>
+      <tr><td>run id 是唯一句柄</td><td>没有「默认 run」「latest」，没有环境变量：不带 id 的动词直接失败，不是本 worktree 起的 run 也拒绝</td></tr>
+      <tr><td colspan="2" style="background:#FFF5F5"><strong>三条边界（脚本级别的拒绝）</strong>：① 永不在录制时启动（自动 PAUSED 轮询）；② 永不由智能体执行 <code class="mono">db:verify-snapshot</code>（唯一读生产的步骤，脚本本身会拒绝非 Matt 的 shell）；③ 生产模式即使被指名也只有只读连接。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout c-ok">
+    <b class="t">Write Ledger 是全 repo 最值得抄的一个设计</b>
+    它明确拒绝三种「蒙」「蒙」：<br>
+    · <strong>不用 <code class="mono">pg_stat_user_tables</code> 计数</strong>——那些计数器有滞后，「曾把一次真实的 UI 保存判成 clean」；<br>
+    · 三态判词：<code class="mono">PENDING</code>（5 秒后仍有未提交写）、<code class="mono">UNKNOWN</code>（表没有触发器 / 服务端没打日志）、命中就<strong>永远不许说 clean</strong>；<br>
+    · 把「点了什么 → 落到哪张表 → 哪一行」变成<strong>可复Directory的账单</strong>：「一个本应写一张表的按钮写了三张表，这就是这次运行发现的一个 bug」。<br>
+    <span class="src">.claude/skills/verify-cvm/SKILL.md:290-356</span>
+  </div>
+
+  <h3>由此推出的一条硬纪律</h3>
+  <blockquote>
+    <p><strong>Any change with a visible effect in the UI is checked in the browser with verify-cvm before you open the PR.</strong> Passing tests and a green <code class="mono">check</code> do not replace it. … A change with no UI effect says so in one line — <code class="mono">No UI change</code> — instead.</p>
+    <span class="src">CLAUDE.md:23</span>
+  </blockquote>
+  <p>并且 Pr body 必须写明「你点了什么、看到了什么」，附截图或证据路径。<code class="mono">merging.md:3</code> 甚至要求：「记得在 worktree 被删之前把 <code class="mono">.verify/</code> 里的证据目录拷出来」——因为 <code class="mono">.verify/</code> 随 worktree 一起消失。</p>
+</section>
+
+<!-- ============ 9 输出契约化 ============ -->
+<section id="outputs">
+  <h2><span class="num">09</span>实践七：把 LLM 输出当成一台不可靠的机器来设计接口</h2>
+  <p>仓库把「让模型吐 JSON」这件事拆成了四个工程决策，每个都值得单独讲。</p>
+
+  <h3>9.1 有副作用 → 两遍；无副作用 → 一遍</h3>
+  <blockquote>
+    <p>The brittle part of structured output is asking the agent to <strong>both do the work and emit rigid JSON in a single turn</strong> — it frequently returns malformed JSON or omits the <code class="mono">&lt;output&gt;</code> tag, and a single failure aborts the whole run. This wrapper splits the two concerns, <strong>which matters when the produce phase has side effects we must not repeat</strong> (commits, issue creation):</p>
+    <span class="src">.sandcastle/run-with-extraction.ts:32-62</span>
+  </blockquote>
+  <table>
+    <thead><tr><th style="width:24%">策略</th><th style="width:26%">用在哪</th><th>行为</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">runWithExtraction<br><span class="tag t-purple">两遍</span></td><td>review / implement-pr / update-branch / architecture-review</td><td>第一遍<strong>不带 schema</strong> 干活（commit 落在这里）；第二遍 resume 同一会话，用 <code class="mono">extraction.md</code> 让它「只吐 JSON、不许改任何东西」</td></tr>
+      <tr><td class="mono">runWithRetry<br><span class="tag t-blue">一遍</span></td><td>write-pr / write-prd-pr / to-issues-prd</td><td>输出本身就是产出（写 PR 标题、拆 slice），失败则 resume 重试，最多 3 次</td></tr>
+    </tbody>
+  </table>
+  <p>两遍什么东西一一对应：仓库里<strong>恰好 4 个目录有 <code class="mono">extraction.md</code></strong>，也恰好 4 个脚本用 <code class="mono">runWithExtraction</code>。</p>
+
+  <h3>9.2 重试不是重跑，而是 resume 同一个会话 + 精确反馈</h3>
+  <pre><code>// Retry: resume the failed session and feed back what went wrong. The
+// session still holds everything the agent did, so it only re-emits.</code></pre>
+  <span class="src">.sandcastle/run-with-retry.ts:63-72（默认 maxAttempts = 3，由 run-with-retry.test.ts 固化为 3 次调用）</span>
+  <p>反馈文本由 <code class="mono">retry-feedback.ts</code> 生成，分两种情形，且明确 <strong>「Do not change any code — only the output.」</strong>：</p>
+  <ul>
+    <li>压根没吐 <code class="mono">&lt;output&gt;</code> 块 → 告诉它<strong>你上次连块都没有</strong>；</li>
+    <li>吐了但校验失败 → 把原文贴回去 + 用 <code class="mono">describeCause()</code> 把 schema issue 渲染成 <code class="mono">- &lt;path&gt;: &lt;message&gt;</code>。</li>
+  </ul>
+
+  <h3>9.3 宽进：schema 主动容忍模型的漂移</h3>
+  <p>这是最容易被忽略、却最能提高成功率的一点。<code class="mono">review-output.ts</code> 不要求模型用对字段名：</p>
+  <ul>
+    <li><code class="mono">path</code> 或 <code class="mono">file</code> 都收；<code class="mono">body</code> 或 <code class="mono">comment</code> 都收；</li>
+    <li>行号可以是整数 <code class="mono">line</code>，也可以是字符串 <code class="mono">lineRange</code>（从 <code class="mono">"42-50"</code> 里正则抽出首整数）；</li>
+    <li><code class="mono">side</code> 默认 <code class="mono">RIGHT</code>；<code class="mono">z.coerce.number()</code> 接受字符串数字。</li>
+  </ul>
+  <h3>9.4 严出：幻想锚点在编排层被丢弃</h3>
+  <pre><code>const fileLines = diffLines.get(c.path);
+if (!fileLines) {
+  console.warn(`Dropping inline comment for ${c.path}:${c.line} — file not in diff.`);
+  return false;
+}</code></pre>
+  <span class="src">.sandcastle/review/review.ts:190-206（diffLines 来自 parse-diff-lines.ts 对 git diff main...HEAD 的解析）</span>
+  <p>同理，回复评论时的 <code class="mono">commentId</code> 也要经过真实拉取到的 thread id 白名单过滤。<strong>「schema 宽进，语义严出」</strong>——接受模型说得不标准，但不接受它指着一个不存在的 md 行。</p>
+
+  <div class="callout c-info">
+    <b class="t">定期跑的任务如何不把 backlog 变成垃圾场</b>
+    <code class="mono">improve-codebase-architecture-project</code> 技能定义了极严格的「已提议」判据：一条候选只要满足<strong>任一</strong>条件就算重复——① 触及与历史提案实质相同的模块；② 针对同一处摩擦，<strong>哪怕换了个角度</strong>（原文：<em>"it addresses the same underlying friction, even with a different angle"</em>）。存疑时判为重复，理由是 <em>"duplicates spam the backlog"</em>。<br>
+    更进一步：<strong>被关闭且留下实质性理由的历史提案，其理由对新提案具有约束力</strong>，不得重新提出符合该理由的方案。<br>
+    实现方式是强制先读取全部历史提案（<code class="mono">gh issue list --label source:architecture-review --limit 200</code>）——这是让「每天 cron 上跑 LLM 产出提案」不至于熵增成垃圾场的唯一办法。
+    <span class="src">.claude/skills/improve-codebase-architecture-project/SKILL.md:31-76</span>
+  </div>
+</section>
+
+<!-- ============ 10 失败设计 ============ -->
+<section id="failure">
+  <h2><span class="num">10</span>实践八：把「拒绝」设计成默认动作，而不是失败后的补丁</h2>
+  <p>八个 workflow 的共同结构是：<strong>Preconditions &amp; refusals</strong> 排在 <strong>Step sequence</strong> 前面。也就是说「我凭什么不该跑」是第一步，不是异常分支。</p>
+  <table>
+    <thead><tr><th style="width:26%">拒绝情形</th><th>行为</th></tr></thead>
+    <tbody>
+      <tr><td>已有 open PR 引用了 <code class="mono">Closes #N</code></td><td>拒绝，<strong>不进入 <code class="mono">agent:in-progress</code></strong>，comment 说明原因</td></tr>
+      <tr><td>嵌套 PRD（PRD 自己是子 issue，或子 issue 又有子 issue）</td><td>拒绝 + <code class="mono">agent:blocked</code></td></tr>
+      <tr><td><code class="mono">agent:queued</code> 被贴到子 issue 上</td><td>移除 queued、加 blocked、comment 说明「queued 对子 issue 无意义」</td></tr>
+      <tr><td>还有别的阻塞没关</td><td>静默跳过（GitHub UI 已经显示了剩余阻塞），<strong>不留 comment</strong></td></tr>
+      <tr><td>push 被拒绝且判定为租约冲突</td><td>写入 <code class="mono">failure_reason.txt</code>「Branch advanced during review run.」，<code class="mono">race=true</code></td></tr>
+      <tr><td>任何失败</td><td><code class="mono">failure()</code> 步加 <code class="mono">agent:blocked</code> + comment；<code class="mono">always()</code> 步移除 <code class="mono">agent:in-progress</code></td></tr>
+    </tbody>
+  </table>
+  <p>最后一条很关键：<code class="mono">agent:in-progress</code> 既是状态标签也是<strong>分布式锁</strong>——「加锁是『接受』的一部分，解锁必须是 <code class="mono">always()</code>」，否则一次崩溃就把这个 issue 永久焊死了。</p>
+
+  <h3>失败信息必须能被拿到</h3>
+  <p>失败处理的第一步是读 <code class="mono">${RUNNER_TEMP}/failure_reason.txt</code>，缺失时<strong>不是假装没事</strong>，而是回落到字面说明：</p>
+  <pre><code>"(no reason file written — check workflow logs)"</code></pre>
+  <span class="src">afk-agent-platform-spec.md §3.7</span>
+  <p>恢复路径也写得毫不含糊——comment 永远以这句结尾：<code class="mono">Re-add \`agent:implement\` to retry.</code>。<strong>失败要给出一条明确的人工恢复动作，而不是一句「something went wrong」。</strong></p>
+</section>
+
+<!-- ============ 11 决策留痕 ============ -->
+<section id="decisions">
+  <h2><span class="num">11</span>实践九：56 篇 ADR，把「为什么」变成可检索的第一类资产</h2>
+  <p><code class="mono">docs/adr/</code> 下 56 篇，编号到 0053。它们不只是给人类看的架构记录，更是<strong>给下一次智能体运行准备的「抗重复护栏」</strong>。</p>
+  <blockquote>
+    <p>If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:<br>
+    <em>_Contradicts ADR-0007 (event-sourced orders) — but worth reopening because…_</em></p>
+    <span class="src">docs/agents/domain.md:47-51</span>
+  </blockquote>
+  <p>ADR 的命名本身就在说人话，例如 <code class="mono">0026-migrations-applied-by-hand.md</code>、「0038-recording-is-gated-on-an-av-calibration.md」、「0041-storage-moves-keep-originals-and-never-delete-footage.md」——文件名就是决策。</p>
+
+  <h3>典型示范：ADR 0022 如何精确划定人机边界</h3>
+  <p>作者要给智能体开 Deliverables 日历的写权限，但 ADR 0007 说过这个日历是「manual」。于是他没有绕过，也没有含糊，而是<strong>把这个词拆成两个意思</strong>：</p>
+  <table>
+    <thead><tr><th style="width:24%">含义</th><th>要不要保</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td>manual = <strong>not derived</strong>（非派生）</td><td><span class="tag t-green">保留</span></td><td>条目可以先于它所描述的实体存在、可以被推测性地挪动 —— 这是 0007 真正的决定</td></tr>
+      <tr><td>manual = <strong>hand-typed by a human</strong></td><td><span class="tag t-red">放弃</span></td><td>「an incidental fact about the only write surface that existed when 0007 was written」</td></tr>
+    </tbody>
+  </table>
+  <p>最后甚至考虑并否决了「不写 ADR」这个选项，理由写得极好：</p>
+  <blockquote>
+    <p><strong>Treat this as a plain implementation detail and write no ADR.</strong> Tempting — no decision in ADR-0007 is being reversed. Rejected because <strong>a future reader who finds an agent writing the "manual" calendar would reasonably think 0007 had been violated</strong>; the cheap fix is to say once, here, that it hasn't.</p>
+    <span class="src">docs/adr/0022-deliverables-are-agent-writable.md · Considered alternatives</span>
+  </blockquote>
+  <div class="callout c-ok">
+    <b class="t">顺带解决了「作用域蠕变」</b>
+    这篇 ADR 还明确划出了本决策<strong>不覆盖</strong>的东西：如果将来需要让智能体<strong>提议</strong>而不是<strong>设定</strong>日期，那是<strong>一个全新的决策</strong>（需要在 Deliverable 上新增「提议态」），不在本 ADR 范围内。<br>
+    同样被写死的还有：「这里完全没有增加任何方向的<strong>传播</strong>」——设置 <code class="mono">--status done</code> 不会去改任何关联 Pitch 的存储状态（ADR-0009 已经删掉了它），它只改变派生出来的 Pitch State，与 UI 里人工点击的行为完全一致。
+  </div>
+</section>
+
+<!-- ============ 12 量化复盘 ============ -->
+<section id="metrics">
+  <h2><span class="num">12</span>量化复盘</h2>
+
+  <figure>
+    <svg viewBox="0 0 680 300" role="img" aria-label="按月 AI 协作提交占比柱状图">
+      <line x1="52" y1="26" x2="52" y2="216" stroke="#C9D2F5" stroke-width="1"/>
+      <line x1="52" y1="216" x2="668" y2="216" stroke="#C9D2F5" stroke-width="1"/>
+      <text x="46" y="30" font-size="10" fill="#6B7194" text-anchor="end">100%</text>
+      <text x="46" y="121" font-size="10" fill="#6B7194" text-anchor="end">50%</text>
+      <text x="46" y="220" font-size="10" fill="#6B7194" text-anchor="end">0</text>
+      <!-- 16 slots each 37.5 wide starting x=56 -->
+      <rect x="60" y="216" width="24" height="0" fill="#9AA3C7"/>
+      <text x="72" y="232" font-size="9" fill="#6B7194" text-anchor="middle">25</text><text x="72" y="243" font-size="9" fill="#6B7194" text-anchor="middle">07</text>
+      <rect x="97" y="216" width="24" height="0" fill="#9AA3C7"/>
+      <text x="109" y="232" font-size="9" fill="#6B7194" text-anchor="middle">25</text><text x="109" y="243" font-size="9" fill="#6B7194" text-anchor="middle">08</text>
+      <rect x="134" y="216" width="24" height="0" fill="#9AA3C7"/>
+      <text x="146" y="232" font-size="9" fill="#6B7194" text-anchor="middle">25</text><text x="146" y="243" font-size="9" fill="#6B7194" text-anchor="middle">09</text>
+      <rect x="171" y="174" width="24" height="42" fill="#3B5BFD"/>
+      <text x="183" y="232" font-size="9" fill="#6B7194" text-anchor="middle">25</text><text x="183" y="243" font-size="9" fill="#6B7194" text-anchor="middle">10</text>
+      <rect x="208" y="216" width="24" height="0" fill="#9AA3C7"/>
+      <text x="220" y="232" font-size="9" fill="#6B7194" text-anchor="middle">25</text><text x="220" y="243" font-size="9" fill="#6B7194" text-anchor="middle">11</text>
+      <rect x="245" y="216" width="24" height="0" fill="#9AA3C7"/>
+      <text x="257" y="232" font-size="9" fill="#6B7194" text-anchor="middle">25</text><text x="257" y="243" font-size="9" fill="#6B7194" text-anchor="middle">12</text>
+      <rect x="282" y="52" width="24" height="164" fill="#3B5BFD"/>
+      <text x="294" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="294" y="243" font-size="9" fill="#6B7194" text-anchor="middle">01</text>
+      <rect x="319" y="48" width="24" height="168" fill="#3B5BFD"/>
+      <text x="331" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="331" y="243" font-size="9" fill="#6B7194" text-anchor="middle">02</text>
+      <rect x="356" y="55" width="24" height="161" fill="#3B5BFD"/>
+      <text x="368" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="368" y="243" font-size="9" fill="#6B7194" text-anchor="middle">03</text>
+      <rect x="393" y="124" width="24" height="92" fill="#14B8A6"/>
+      <text x="405" y="118" font-size="9" fill="#0B6C5C" text-anchor="middle">58%</text>
+      <text x="405" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="405" y="243" font-size="9" fill="#6B7194" text-anchor="middle">04</text>
+      <rect x="430" y="128" width="24" height="88" fill="#14B8A6"/>
+      <text x="442" y="122" font-size="9" fill="#0B6C5C" text-anchor="middle">56%</text>
+      <text x="442" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="442" y="243" font-size="9" fill="#6B7194" text-anchor="middle">05</text>
+      <rect x="467" y="159" width="24" height="57" fill="#F59E0B"/>
+      <text x="479" y="153" font-size="9" fill="#8A5A05" text-anchor="middle">35%</text>
+      <text x="479" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="479" y="243" font-size="9" fill="#6B7194" text-anchor="middle">06</text>
+      <rect x="504" y="134" width="24" height="82" fill="#14B8A6"/>
+      <text x="516" y="128" font-size="9" fill="#0B6C5C" text-anchor="middle">53%</text>
+      <text x="516" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="516" y="243" font-size="9" fill="#6B7194" text-anchor="middle">07</text>
+      <rect x="541" y="152" width="24" height="64" fill="#F59E0B"/>
+      <text x="553" y="146" font-size="9" fill="#8A5A05" text-anchor="middle">44%</text>
+      <text x="553" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="553" y="243" font-size="9" fill="#6B7194" text-anchor="middle">08</text>
+      <rect x="578" y="63" width="24" height="153" fill="#3B5BFD"/>
+      <text x="590" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="590" y="243" font-size="9" fill="#6B7194" text-anchor="middle">09</text>
+      <rect x="615" y="130" width="24" height="86" fill="#8B5CF6"/>
+      <text x="627" y="232" font-size="9" fill="#6B7194" text-anchor="middle">26</text><text x="627" y="243" font-size="9" fill="#6B7194" text-anchor="middle">10</text>
+
+      <text x="183" y="168" font-size="9" fill="#3B5BFD" text-anchor="middle">22%</text>
+      <text x="294" y="46" font-size="9" fill="#3B5BFD" text-anchor="middle">86%</text>
+      <text x="331" y="42" font-size="9" fill="#3B5BFD" text-anchor="middle">89%</text>
+      <text x="368" y="49" font-size="9" fill="#3B5BFD" text-anchor="middle">85%</text>
+      <text x="590" y="57" font-size="9" fill="#3B5BFD" text-anchor="middle">77%</text>
+      <text x="627" y="124" font-size="9" fill="#8B5CF6" text-anchor="middle">44%</text>
+      <text x="52" y="262" font-size="11" fill="#6B7194">柱高 = 该月带 Co-Authored-By: Claude 的提交占比；2026-10 若只看非合并提交则为 100%（573/573）</text>
+      <text x="52" y="280" font-size="11" fill="#6B7194">口径：git log --no-merges + %(trailers:key=Co-Authored-By,valueonly)</text>
+    </svg>
+    <figcaption>图 4　16 个月的 AI 协作渗透曲线。2025-12 之前基本为 0；2026-01 至 03 维持 85%–89%，此后在 35%–77% 之间波动——人工休假或出差时曲线就塌下去。</figcaption>
+  </figure>
+
+  <h3>AI 原生能力的引入节奏</h3>
+  <table>
+    <thead><tr><th style="width:14%">日期</th><th style="width:34%">文件</th><th>意义</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">2025-10-21</td><td class="mono">CLAUDE.md</td><td>第一份智能体契约文件（引入当天就有 4 个 Claude 署名提交）</td></tr>
+      <tr><td class="mono">2026-03-25</td><td class="mono">.sandcastle/main.ts</td><td>本地版 Plan→Implement→Review→Merge 编排器（10 轮 × 4 并发）</td></tr>
+      <tr><td class="mono">2026-03-26</td><td class="mono">.github/workflows/agent-implement.yml<br>docs/agents/afk-agent-platform-spec.md</td><td>把编排搬到 GitHub Actions，并同步写下 1092 行规范</td></tr>
+      <tr><td class="mono">2026-09-26</td><td class="mono">CODING_STANDARDS.md</td><td>把散落的标准收敛成一份「写代码时读」的总纲</td></tr>
+      <tr><td class="mono">2026-10-07</td><td class="mono">GLOSSARY.md</td><td>领域语言定稿——有了它，智能体才有了统一的词表</td></tr>
+    </tbody>
+  </table>
+  <p><strong>注意这个顺序</strong>：先有 workflow（能跑）→ 再有规范文档（能复现）→ 再有编码总纲（质量）→ 最后有术语表（语义一致）。<strong>不是先写文档再照着做，而是跑起来之后把做对了的部分固化成文档。</strong></p>
+
+  <h3>模型迭代史：一次可以直读其协作革命的时间线</h3>
+  <p>提交 trailer 里留下了 16 种不同模型的署名，等于一份免费的「作者换模型史」：</p>
+  <figure>
+    <svg viewBox="0 0 680 224" role="img" aria-label="参与提交的 Claude 模型分布">
+      <text x="16" y="18" font-size="11.5" fill="#6B7194" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Co-Authored-By 署名分布（前 8，共 2200 份 trailer）</text>
+      <rect x="16" y="28" width="292" height="18" rx="4" fill="#3B5BFD"/>
+      <text x="22" y="41" font-size="11" fill="#FFFFFF" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Claude Opus 4.6 · 858</text>
+      <rect x="16" y="52" width="209" height="18" rx="4" fill="#3B5BFD"/>
+      <text x="22" y="65" font-size="11" fill="#FFFFFF" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Claude Opus 5.5 · 614</text>
+      <rect x="16" y="76" width="81" height="18" rx="4" fill="#8B5CF6"/>
+      <text x="22" y="89" font-size="11" fill="#FFFFFF" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Opus 4.5 · 238</text>
+      <rect x="16" y="100" width="36" height="18" rx="4" fill="#14B8A6"/>
+      <text x="22" y="113" font-size="11" fill="#04453B" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Opus 5 (1M) · 107</text>
+      <rect x="16" y="124" width="32" height="18" rx="4" fill="#F59E0B"/>
+      <text x="22" y="137" font-size="11" fill="#5A3B02" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Sonnet 4.5 · 95</text>
+      <rect x="16" y="148" width="29" height="18" rx="4" fill="#F59E0B"/>
+      <text x="22" y="161" font-size="11" fill="#5A3B02" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Opus 4.8 (1M) · 85</text>
+      <rect x="16" y="172" width="20" height="18" rx="4" fill="#C9D2F5"/>
+      <text x="22" y="185" font-size="11" fill="#253063" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Sonnet 4.6 · 60</text>
+      <rect x="16" y="196" width="14" height="18" rx="4" fill="#C9D2F5"/>
+      <text x="22" y="209" font-size="11" fill="#253063" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Opus 4.7 (1M) · 40</text>
+      <text x="316" y="41" font-size="11" fill="#6B7194">注：这只是 trailer 中的模型名，不等于实际执行的全部模型；</text>
+      <text x="316" y="58" font-size="11" fill="#6B7194">但仍可作为「半年内跨代模型在同一个仓库共存协作」的证据。</text>
+      <text x="316" y="80" font-size="11" fill="#6B7194">同一套约定文件要同时对 16 种模型版本生效，</text>
+      <text x="316" y="97" font-size="11" fill="#6B7194">这本身是对「约定是否写得够清楚」的长期压力测试。</text>
+    </svg>
+    <figcaption>图 5　模型署名分布。条形宽度按 max 858 归一化。</figcaption>
+  </figure>
+
+  <h3>一次性看的规模表</h3>
+  <table>
+    <thead><tr><th style="width:44%">指标</th><th style="width:20%">数值</th><th>口径</th></tr></thead>
+    <tbody>
+      <tr><td>应用代码行数</td><td class="mono">341,650</td><td><code class="mono">find apps packages -name "*.ts*"</code> 排除 node_modules/dist</td></tr>
+      <tr><td>非 git 文件数</td><td class="mono">2,506</td><td><code class="mono">find . -type f -not -path './.git/*'</code></td></tr>
+      <tr><td>node 测试 / 浏览器测试</td><td class="mono">622 / 9</td><td>浏览器测试刻意保持极低</td></tr>
+      <tr><td>ADR</td><td class="mono">56</td><td><code class="mono">docs/adr/</code>，编号至 0053</td></tr>
+      <tr><td>Claude 技能</td><td class="mono">9</td><td><code class="mono">.claude/skills/</code>，合计 1,030 行 SKILL.md</td></tr>
+      <tr><td>verify-cvm 技能包</td><td class="mono">2,964 行</td><td>1 个 SKILL.md + 9 个 shell 脚本 + 8 份 feature/验收文档</td></tr>
+      <tr><td>提示词文件</td><td class="mono">26</td><td><code class="mono">.sandcastle/</code> + <code class="mono">docs/agents/prompts/</code></td></tr>
+      <tr><td>静态守卫</td><td class="mono">19</td><td>13 个 shell + 6 个 TS</td></tr>
+      <tr><td>CI 并行 job</td><td class="mono">5 → 1</td><td>汇聚成单一必需的 <code class="mono">check</code> context</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 13 代价与风险 ============ -->
+<section id="risks">
+  <h2><span class="num">13</span>代价、文档漂移与风险｜这个体系里已经出现裂缝的地方</h2>
+  <p>复盘如果不写代价就是广告。以下是实际在仓库里能核对出的问题。</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag t-red">风险 1</span>
+      <h4>文档与代码已经漂移（至少 3 处）</h4>
+      <ul>
+        <li><strong>ADR 0008 落后于代码</strong>：它的第 5 行说单 issue 流程「follows the same rule by omission: it has no commit check」，但 <code class="mono">.sandcastle/implement/implement.ts:29-34</code> 里<strong>有</strong> <code class="mono">git rev-list --count main..HEAD == 0 → fail</code>。规范 §4.2 已经跟上了，ADR 没有。</li>
+        <li><strong>模型名漂移</strong>：附录 A 写 <code class="mono">claudeCode("claude-opus-4-6")</code>，8 个脚本里实际全是 <code class="mono">claude-opus-5</code>。</li>
+        <li><strong>CI 复用缺失</strong>：8 个 agent workflow 各自内联重复了 <code class="mono">.github/actions/setup</code> 的三步。</li>
+      </ul>
+      <p><strong>对策</strong>：把这三处做成 CI 里的断言脚本（就像 <code class="mono">check-effect-tsc.ts</code> 对 tsc 补丁做的那样）——「文档是否还能描述现实」本身也应该是机器可验证的。</p>
+    </div>
+    <div class="card">
+      <span class="tag t-amber">风险 2</span>
+      <h4>自证式测试：AI 写实现，也写「证明它对」的测试</h4>
+      <p>规范写得再严，<code class="mono">TESTING_STANDARDS.md</code> 拦不住「一个只可能由于当前实现才会失败的测试」。这正是 <code class="mono">verify-cvm</code> 存在的理由——<strong>它是一条不经过被测代码作者的路</strong>：真浏览器、真数据库、账单式的 Write Ledger。</p>
+      <p><strong>已经做到的</strong>：把「UI 有可见改动必须在浏览器验证」写进 <code class="mono">CLAUDE.md</code> 硬约束 + PR 模板要求。<br><strong>还没做到的</strong>：这条约束目前依赖诚实 reporting——<code class="mono">No UI change</code> 是一行自我声明，没有机器校验。</p>
+    </div>
+    <div class="card">
+      <span class="tag t-purple">风险 3</span>
+      <h4>白名单可能变成「合法性外壳」</h4>
+      <p>170 处放行命中 + 至少 42 处 shell 内嵌条目，合计超过 200 个例外。虽然「只减不增」堵住了增长，但它<strong>不能阻止人们在一个已有条目范围内继续堆代码</strong>（例如 complexity 白名单某个文件的计数上限是某个数字，在那个范围内还可以加）。</p>
+      <p><strong>对策</strong>：给白名单条目加过期日期，或让 CI 定期生成「最老的 10 条债务」报告。</p>
+    </div>
+    <div class="card">
+      <span class="tag t-red">风险 4</span>
+      <h4>人类审批是吞吐瓶颈，而且是单点</h4>
+      <p>全流程唯一的 merge 出口是 Matt 本人；连<strong>快照生产数据</strong>（<code class="mono">db:verify-snapshot</code>）也只有他能跑。这对一个单人项目是合理的，但它意味着这套系统的<strong>吞吐上限被一个人的注意力钉死</strong>——2026-04、2026-06 的 AI 占比跌到 58%/35%，很可能就是这种「人不在」的直接结果。</p>
+      <p><strong>对策（已在路上）</strong>：<code class="mono">agent:queued</code> + 原生依赖关系的自动晋升，正是为了减少「等人想起来」的损耗。</p>
+    </div>
+  </div>
+
+  <div class="callout c-danger">
+    <b class="t">最需要诚实对待的一条</b>
+    这套体系的<strong>可靠性来自「人类仍然审查每一个 merge」</strong>。它不是「AI 全自动写代码」，而是「AI 全自动准备一个人类只需要花 3 分钟就能有信心批准的东西」。<br>
+    如果你打算把这套搬到自己的项目上、并<strong>顺手拿掉人的审批环节</strong>，那么前面所有的机制——1092 行规范、19 个静态守卫、Write Ledger、强制的浏览器验证——都会失去意义。它们存在的价值是<strong>降低审批成本</strong>，而不是<strong>消除审批</strong>。
+  </div>
+</section>
+
+<!-- ============ 14 最佳实践清单 ============ -->
+<section id="checklist">
+  <h2><span class="num">14</span>可复用最佳实践清单</h2>
+  <p>按「<strong>投入产出比</strong>」从高到低排序。前 5 条一周内可以落地，后 5 条需要投入工程时间。</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:5%">#</th><th style="width:26%">实践</th><th style="width:38%">怎么做</th><th style="width:8%">成本</th><th>证据</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1</strong></td>
+        <td><strong>单一智能体契约入口</strong></td>
+        <td>只维护<strong>一份</strong> <code class="mono">CLAUDE.md</code>（或 AGENTS.md），不要同时存在多份工具专属约定文件。它只放「去读哪」+「绝对不能做什么」，正文全部下推到 <code class="mono">docs/</code></td>
+        <td><span class="tag t-green">极低</span></td>
+        <td class="mono">CLAUDE.md（81 行）</td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td>
+        <td><strong>区分 give-me 与 read-me 的文档</strong></td>
+        <td>给人看的 README 和给智能体看的 <code class="mono">docs/agents/</code> 分开。操作规程像写 API 文档一样写：命令、分支命名、失败恢复动作都要可执行</td>
+        <td><span class="tag t-green">极低</span></td>
+        <td class="mono">docs/agents/{merging,testing,backlog}.md</td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td>
+        <td><strong>把 AI 常踩的坑写成一句话禁令</strong></td>
+        <td>把 AI 最常撒野的点写成一句话禁令，配上真事故：「新的 <code class="mono">any</code> 要在 PR 里写理由」「不许在 ↑ <code class="mono">useEffect</code> 里做重定向」</td>
+        <td><span class="tag t-green">低</span></td>
+        <td class="mono">CODING_STANDARDS.md:117-133, 316-335</td>
+      </tr>
+      <tr>
+        <td><strong>4</strong></td>
+        <td><strong>先有领域词表，再写代码</strong></td>
+        <td>一份术语表 + 「要避开的同义词」列。 pit进一步要求：智能体输出（issue 标题、重构提案、<strong>测试名</strong>）必须用术语表的叫法</td>
+        <td><span class="tag t-green">低</span></td>
+        <td class="mono">GLOSSARY.md · docs/agents/domain.md:41-45</td>
+      </tr>
+      <tr>
+        <td><strong>5</strong></td>
+        <td><strong>列出「不值得做的事」清单</strong></td>
+        <td>不满足系统边界的「哪些东西不许 mock」、五类「不值得写测试」的东西、以及一条针对性的绝对禁令。AI 的毛病通常不是不会做，而是<strong>做得太多</strong></td>
+        <td><span class="tag t-green">低</span></td>
+        <td class="mono">docs/TESTING_STANDARDS.md:18-27</td>
+      </tr>
+      <tr>
+        <td><strong>6</strong></td>
+        <td><strong>为每一次「类型失效」写一个守卫脚本</strong></td>
+        <td>凡是有 Leak（<code class="mono">as any</code>、反射、字符串拼装）绕过类型系统的地方，配一个 <code class="mono">scripts/check-*.sh</code>，并在注释里写明「庄名哪一个 bug」</td>
+        <td><span class="tag t-amber">中</span></td>
+        <td class="mono">scripts/check-response-body.sh:14-15</td>
+      </tr>
+      <tr>
+        <td><strong>7</strong></td>
+        <td><strong>技术债用「只减不增」白名单编码</strong></td>
+        <td>引入新规则时把历史债记进 allowlist；守卫要<strong>双向校验</strong>：多一处失败，少一处也失败（条目过期需下调）。且禁止用 disable 注释绕过这条规则</td>
+        <td><span class="tag t-amber">中</span></td>
+        <td class="mono">scripts/{effect-guards,complexity,fs-writes}*</td>
+      </tr>
+      <tr>
+        <td><strong>8</strong></td>
+        <td><strong>编排器与执行器之间只通过「文件」通信</strong></td>
+        <td>env 变量 + 上下文进，产出文件出。编排器（CI）负责所有远端变更，执行器（智能体）不持 token。这让 runner 可替换、可单测</td>
+        <td><span class="tag t-amber">中</span></td>
+        <td class="mono">afk-agent-platform-spec.md:27-30, §3.8</td>
+      </tr>
+      <tr>
+        <td><strong>9</strong></td>
+        <td><strong>结构化输出：两遍 + 宽进严出 + resume 重试</strong></td>
+        <td>有副作用（commit/comment）→ 干活一遍不带 schema，提取一遍带 schema；schema 容忍别名与类型转换；语义层面的幻想（不存在的行号/评论 id）由编排层按真实 diff 丢弃；重试是 resume 会话而非重跑</td>
+        <td><span class="tag t-amber">中</span></td>
+        <td class="mono">.sandcastle/{run-with-extraction,run-with-retry,retry-feedback}.ts</td>
+      </tr>
+      <tr>
+        <td><strong>10</strong></td>
+        <td><strong>把决策写成 ADR，并写出「本决策不覆盖什么」</strong></td>
+        <td>每个 ADR 必须答两件事：<strong>被否决的替代方案为什么被否</strong>，以及<strong>本决策不覆盖什么</strong>。后者比前者更能防止后来的误读——一个未来的读者（包括 LLM）能据此判断边界在哪</td>
+        <td><span class="tag t-amber">中</span></td>
+        <td class="mono">docs/adr/0022 · 0008</td>
+      </tr>
+      <tr>
+        <td><strong>11</strong></td>
+        <td><strong>拒绝优先于重试</strong></td>
+        <td>把「我凭什么不该跑」写成第一步；拒绝时不进入进行中状态。锁标签的加锁是「接受」的一部分，解锁必须是 <code class="mono">always()</code>。失败 comment 永远以「重新贴某标签即可重试」结尾</td>
+        <td><span class="tag t-red">较高</span></td>
+        <td class="mono">afk-agent-platform-spec.md §3.7, §3.9</td>
+      </tr>
+      <tr>
+        <td><strong>12</strong></td>
+        <td><strong>给智能体一个「能撒野但追得到账」的沙箱</strong></td>
+        <td>真应用 + 数据克隆 + 允许写 + Write Ledger 记账 + 外部服务全部指向注销端口 + 「不得低于 clean 判断」。把「UI 有可见改动必须在浏览器验证」写进 PR 硬要求</td>
+        <td><span class="tag t-red">高</span></td>
+        <td class="mono">.claude/skills/verify-cvm/</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout c-ok">
+    <b class="t">如果只抄一条</b>
+    抄 <strong>第 7 条</strong>——「只减不增的白名单」。它是唯一能用<strong>一个文件</strong>同时堵住「人的惰性」「AI 的绕过冲动」和「技术债只增不减」三件事的机制，而且<strong>不需要任何 LLM 基础设施</strong>：一个 JSON、一个 <code class="mono">check</code> 脚本、一条 CI 规则就够了。
+  </div>
+</section>
+
+<!-- ============ 15 证据索引 ============ -->
+<section id="evidence">
+  <h2><span class="num">15</span>证据索引</h2>
+  <p>按本报告论述顺序排列。所有路径相对于仓库根目录。</p>
+  <table>
+    <thead><tr><th style="width:46%">路径</th><th style="width:12%">体量</th><th>支撑的结论</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">CLAUDE.md</td><td class="mono">81 行</td><td>唯一的智能体契约；指针式组织；浏览器验证硬要求；cvm CLI 的单一传输约束</td></tr>
+      <tr><td class="mono">CODING_STANDARDS.md</td><td class="mono">410 行</td><td>every any is a leak（附 111 个路由模块事故）；React 两条规则；背景作业；援助手段</td></tr>
+      <tr><td class="mono">GLOSSARY.md</td><td class="mono">578 行 / 134 条</td><td>领域语言 + 要避开的同义词</td></tr>
+      <tr><td class="mono">docs/agents/afk-agent-platform-spec.md</td><td class="mono">1092 行</td><td>四大支柱；§3.5 并发；§3.6 push；§3.7 失败；§3.8 运行器契约；§3.9 不变量</td></tr>
+      <tr><td class="mono">docs/agents/merging.md</td><td class="mono">23 行</td><td>五步落地法；禁止 <code class="mono">--no-verify</code>；管理员专属ॉ操作</td></tr>
+      <tr><td class="mono">docs/agents/testing.md</td><td class="mono">36 行</td><td>本地定向 / CI 全量；反 diff 启发式；ADR 0046 测试库；PGlite 迁移坑</td></tr>
+      <tr><td class="mono">docs/agents/domain.md</td><td class="mono">51 行</td><td>先读 GLOSSARY + ADR；缺失则静默继续；ADR 冲突要明说</td></tr>
+      <tr><td class="mono">docs/agents/triage-labels.md</td><td class="mono">28 行</td><td>规范标签 ↔ 真实标签映射；<code class="mono">agent:*</code> 状态标签</td></tr>
+      <tr><td class="mono">docs/agents/queued-promotion.md</td><td class="mono">40 行</td><td>依赖解除后的自动晋升；幂等翻牌；<code class="mono">AGENT_PAT</code> 与降级</td></tr>
+      <tr><td class="mono">docs/agents/prompts/*.prompt.md</td><td class="mono">8 份</td><td>CI 注入智能体的提示词模板</td></tr>
+      <tr><td class="mono">docs/TESTING_STANDARDS.md</td><td class="mono">140 行</td><td>边界 mock；五类不值得测；浏览器测试门槛；Remotion 禁令</td></tr>
+      <tr><td class="mono">docs/EFFECT_STANDARDS.md</td><td class="mono">96 行</td><td>CODING_STANDARDS 的推理层 + 强制手段</td></tr>
+      <tr><td class="mono">docs/adr/0008-agent-implement-zero-commit-runs.md</td><td class="mono">~22 行</td><td>零提交 = 成功的改判 + 实证事故编号</td></tr>
+      <tr><td class="mono">docs/adr/0022-deliverables-are-agent-writable.md</td><td class="mono">—</td><td>「manual」→「underived」的边界重划；考虑并否决的三种方案</td></tr>
+      <tr><td class="mono">docs/adr/0026-migrations-applied-by-hand.md</td><td class="mono">—</td><td>生产迁移只由人执行；智能体永不做</td></tr>
+      <tr><td class="mono">docs/adr/0046-tests-share-one-postgres-container-*.md</td><td class="mono">—</td><td>一容器一测试库；ADR 0046（与 0043 同号，注意编号复用）</td></tr>
+      <tr><td class="mono">.github/workflows/agent-*.yml</td><td class="mono">8 份</td><td>触发、并发、权限、push 策略、失败处理</td></tr>
+      <tr><td class="mono">.github/workflows/test.yml</td><td class="mono">170 行</td><td>5 个并行 job 汇聚成单一 <code class="mono">check</code> context；文档快路径</td></tr>
+      <tr><td class="mono">.sandcastle/main.ts</td><td class="mono">174 行</td><td>本地编排器：10 轮 × 4 并发的 Plan/Implement/Review/Merge</td></tr>
+      <tr><td class="mono">.sandcastle/run-with-extraction.ts</td><td class="mono">97 行</td><td>两遍提取的设计理由（有副作用时不可重跑）</td></tr>
+      <tr><td class="mono">.sandcastle/run-with-retry.ts</td><td class="mono">100 行</td><td>resume 重试，最多 3 次</td></tr>
+      <tr><td class="mono">.sandcastle/retry-feedback.ts</td><td class="mono">82 行</td><td>把 schema 校验错误渲染成人话反馈</td></tr>
+      <tr><td class="mono">.sandcastle/review/review-output.ts</td><td class="mono">—</td><td>宽进：path/file、body/comment、line/lineRange 别名</td></tr>
+      <tr><td class="mono">.sandcastle/review/review.ts:190-206</td><td class="mono">—</td><td>严出：不在 diff 里的行号评论被丢弃</td></tr>
+      <tr><td class="mono">.sandcastle/no-recent-commits.test.ts</td><td class="mono">27 行</td><td>用测试冻结 prompt 反模式（禁止 <code class="mono">&lt;recent-commits&gt;</code>）</td></tr>
+      <tr><td class="mono">.sandcastle/implement/prompt.md</td><td class="mono">32 行</td><td>TDD 三段；不得自行关 issue；不得用 RALPH 前缀</td></tr>
+      <tr><td class="mono">.claude/settings.json</td><td class="mono">15 行</td><td>PreToolUse 钩子：拦 <code class="mono">npx tsc</code>，引导到 <code class="mono">pnpm run typecheck</code></td></tr>
+      <tr><td class="mono">.claude/hooks/block-npx-tsc.sh</td><td class="mono">14 行</td><td>仅在 <code class="mono">npx</code> 是首个词时拦，避免误伤提交信息</td></tr>
+      <tr><td class="mono">.claude/skills/verify-cvm/SKILL.md</td><td class="mono">417 行</td><td>数据克隆 / 端口隔离 / 外部服务封印 / Write Ledger / 录制期间暂停</td></tr>
+      <tr><td class="mono">.claude/skills/do-work/SKILL.md</td><td class="mono">29 行</td><td>本地四阶段：探索→实现→反馈环→提交</td></tr>
+      <tr><td class="mono">.claude/skills/improve-codebase-architecture-project/SKILL.md</td><td class="mono">132 行</td><td>cron 架构评审；删除测试；防止重复提案</td></tr>
+      <tr><td class="mono">.claude/skills/to-prd-project/SKILL.md</td><td class="mono">86 行</td><td>PRD 模板；「别写具体路径和代码，它们会过期」</td></tr>
+      <tr><td class="mono">scripts/check-*（19 个）</td><td class="mono">—</td><td>机器守卫总目录</td></tr>
+      <tr><td class="mono">scripts/*-allowlist.json（4 份）</td><td class="mono">170 命中</td><td>只减不增的技术债账本</td></tr>
+      <tr><td class="mono">packages/core/.dependency-cruiser.cjs</td><td class="mono">—</td><td><code class="mono">core-is-filesystem-free</code>；「不是请避免而是构建失败」</td></tr>
+      <tr><td class="mono">packages/core/db/connection-guard.ts</td><td class="mono">~145 行</td><td>worktree 内禁止可写远程连接</td></tr>
+      <tr><td class="mono">.husky/pre-commit</td><td class="mono">20 行</td><td>提交前的 20 项（刻意不含三项）</td></tr>
+      <tr><td class="mono">.oxlintrc.json</td><td class="mono">314 行</td><td>advisory 而非门禁；只有 7 条 error 且指回文档章节</td></tr>
+      <tr><td class="mono">package.json:59-61</td><td class="mono">—</td><td><code class="mono">check:static</code> / <code class="mono">check</code> 的完整定义</td></tr>
+      <tr><td class="mono">plans/ralph.sh · plans/backlog/{once,afk,setup,cleanup}.sh</td><td class="mono">—</td><td>本地 Docker sandbox 版自治循环</td></tr>
+      <tr><td class="mono">plans/backlog/prompt.md</td><td class="mono">52 行</td><td>tracer bullet 优先级；RALPH 提交信息五要素；一次只做一个任务</td></tr>
+      <tr><td class="mono">docs/plans/test-pruning.md:238</td><td class="mono">—</td><td>把「约定守卫测试」列为「keep · high」</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    <p><strong>只读声明</strong>：本报告对 <code class="mono">/Users/junjian/WorkBuddy/2026-10-31-07-17-08/course-video-manager</code> 全程只读分析，未在该仓库内创建、修改或删除任何文件。</p>
+    <p><strong>可证伪性</strong>：正文每个数字都配有一条可自行执行的 <code class="mono">git</code> / shell 命令；凡引用的英文条款均给出文件路径（必要时带行号），可直接核对。</p>
+    <p style="color:var(--muted);font-size:12px">报告生成时间：2026-10-31　·　取证 commit：165c6ae（2026-10-30）　·　本文件为单文件 HTML，无任何外部依赖，可离线查看。</p>
+  </footer>
+</section>
+
+</main>
+</div>
+
+</body>
+</html>

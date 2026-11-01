@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Jev 开源生态追踪第 6 期：五周内 20 多家厂商把决策模型做成独立品类，接口归一、Jev 退为参考实现；但 10 月 24 日 TypeSafe 泄露全部客户判断，论文亦证伪级联复核。附品类地图、855 个 build 账本与 13 条落地纪律。">
+<meta name="keywords" content="jev, decision-models, api-standardization, data-leak, cascade-verification, model-selection">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-10-29">
+<title>Jev 开源生态追踪（第 6 期）：接口赢了，信任输了</title>
+<style>
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --border: #e5e7eb;
+    --text: #1f2937; --text-2: #6b7280;
+    --accent: #2563eb; --accent-soft: #eff6ff;
+    --green: #059669; --green-soft: #ecfdf5;
+    --amber: #d97706; --amber-soft: #fffbeb;
+    --red: #dc2626; --red-soft: #fef2f2;
+    --purple: #7c3aed; --purple-soft: #f5f3ff;
+    --mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  header.hero { border-bottom: 3px solid var(--text); padding-bottom: 24px; margin-bottom: 40px; }
+  .hero-kicker { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+  h1 { font-size: 33px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
+  .hero-sub { color: var(--text-2); margin-top: 12px; font-size: 15px; }
+  .hero-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; font-size: 13px; color: var(--text-2); }
+  .hero-meta span::before { content: "·"; margin-right: 8px; color: var(--accent); }
+  h2 { font-size: 22px; font-weight: 800; margin: 48px 0 8px; letter-spacing: -0.01em; padding-top: 8px; }
+  h2 .no { color: var(--accent); font-family: var(--mono); font-size: 15px; font-weight: 700; margin-right: 8px; }
+  h3 { font-size: 16px; font-weight: 700; margin: 24px 0 8px; }
+  p { margin: 10px 0; }
+  .lead { font-size: 15.5px; color: #374151; }
+  section { margin-bottom: 16px; }
+  section + section { border-top: 1px solid var(--border); padding-top: 8px; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 20px 0; }
+  .fact { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .fact .k { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+  .fact .v { font-size: 17px; font-weight: 700; }
+  .fact .v small { font-size: 12px; font-weight: 500; color: var(--text-2); }
+  .fact.bad { border-color: #fecaca; background: var(--red-soft); }
+  .fact.bad .v { color: var(--red); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; position: relative; transition: box-shadow .15s; }
+  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+  .card .rank { position: absolute; top: 14px; right: 16px; font-family: var(--mono); font-size: 12px; color: var(--text-2); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; }
+  .card h4 { font-size: 15.5px; font-weight: 700; margin-bottom: 2px; padding-right: 72px; }
+  .card .repo { font-family: var(--mono); font-size: 12px; color: var(--accent); margin-bottom: 8px; word-break: break-all; }
+  .card p { font-size: 13.5px; color: #4b5563; margin: 6px 0; }
+  .card .hl { margin-top: 8px; font-size: 12.5px; padding: 6px 10px; border-radius: 6px; background: var(--accent-soft); color: #1e40af; }
+  .card .hl.warn { background: var(--amber-soft); color: #92400e; }
+  .card .hl.new { background: var(--green-soft); color: #065f46; }
+  .stars { display: inline-block; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--amber); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; margin-left: 6px; vertical-align: 2px; }
+  .tag.blue { background: var(--accent-soft); color: var(--accent); }
+  .tag.green { background: var(--green-soft); color: var(--green); }
+  .tag.purple { background: var(--purple-soft); color: var(--purple); }
+  .tag.red { background: var(--red-soft); color: var(--red); }
+  .fig { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .fig figcaption { font-size: 12.5px; color: var(--text-2); margin-top: 12px; text-align: center; }
+  .fig svg { width: 100%; height: auto; display: block; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  th { background: #f3f4f6; text-align: left; font-weight: 700; padding: 10px 14px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code { font-family: var(--mono); font-size: 12.5px; color: var(--accent); }
+  tr:hover td { background: #f9fafb; }
+  .wrap { overflow-x: auto; }
+  td.nw, th.nw { white-space: nowrap; }
+  .note { border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 16px 0; font-size: 14px; }
+  .note.warn { border-color: var(--red); background: var(--red-soft); }
+  .note.good { border-color: var(--green); background: var(--green-soft); }
+  .note b { font-weight: 700; }
+  .note p { margin: 4px 0; }
+  code.inline { font-family: var(--mono); font-size: 13px; background: #f3f4f6; padding: 1px 6px; border-radius: 4px; color: #1e40af; }
+  ul, ol { margin: 10px 0 10px 22px; }
+  li { margin: 6px 0; font-size: 14px; }
+  .tl { list-style: none; margin: 18px 0 0 0; border-left: 2px solid var(--border); padding-left: 20px; }
+  .tl li { position: relative; margin: 0 0 14px 0; font-size: 14px; }
+  .tl li::before { content: ""; position: absolute; left: -26px; top: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+  .tl li.hot::before { border-color: var(--red); background: var(--red); }
+  .tl .d { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 700; margin-right: 8px; }
+  .tl li.hot .d { color: var(--red); }
+  .chk { list-style: none; margin-left: 0; }
+  .chk li { padding-left: 26px; position: relative; }
+  .chk li::before { content: "✓"; position: absolute; left: 4px; color: var(--green); font-weight: 800; }
+  .chk li.no::before { content: "✕"; color: var(--red); }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 3px solid var(--text); font-size: 12.5px; color: var(--text-2); }
+  footer p { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div class="hero-kicker">开源生态追踪 · 第 6 期 · 2026-10-29</div>
+  <h1>Jev 生态第 44 天：接口赢了，信任输了</h1>
+  <p class="hero-sub">距上期 23 天，这是本系列跨度最长的一期，也是第一次出现<b>「好消息与坏消息指向相反结论」</b>的一期。一方面，<b>「决策模型」作为一个独立品类已经定型</b>——五周内 20 多家厂商入场，绝大多数兼容同一套 <code class="inline">/v1/systemone</code> 接口，Jev 从「唯一答案」退成了「参考实现」。另一方面，<b>10 月 24 日 TypeSafe 自曝：所有客户的 noul（是/否概率）输出全部泄露</b>，发生在 8.7 亿美元 A 轮之后第 24 天。而学术侧第一次给出了对「级联验证」这个主流架构的硬证伪：<b>Jev 高置信错误中，96% 的 LLM 复核会重复同一个错误。</b></p>
+  <div class="hero-meta">
+    <span>调研日期 2026-10-29</span>
+    <span>上期报告 2026-10-06</span>
+    <span>间隔 23 天</span>
+    <span>星数快照 10-15 ~ 10-28（口径见注）</span>
+  </div>
+</header>
+
+<!-- ============ 0. 修正 ============ -->
+<section>
+  <h2><span class="no">00</span>先修正上期：三条需要改口径的结论</h2>
+  <p class="lead">追踪类报告的价值在于敢改自己。上期（10-06）的四个判断，本期有两条要修正、一条要加限定、一条被证实。</p>
+
+  <div class="note warn">
+    <p><b>修正 1｜「品类被巨头接盘」这个说法不对，应该是「品类独立，Jev 变成参考实现」。</b>上期的叙事是巨头抢走了 Jev 的地盘。实际情况是：五周内 20 多家厂商入场，<b>多数主动兼容 Jev 的 <code class="inline">/v1/systemone</code> 请求格式</b>（Cloudflare Clef、AWS Strands Decider、Kev、Laya、Microsoft-Decision-1、Solar Decide、Decider 1、Drex、Kai……）。这意味着 Jev 保住了「定义者」的位置，却失去了「唯一供应商」的位置——对使用者的含义完全相反：<b>你不是在选一家厂商，你是在选一个接口</b>。</p>
+  </div>
+
+  <div class="note warn">
+    <p><b>修正 2｜「25% 的世界 500 强在用」需要与花费份额并列阅读。</b>上期引用了阿尔梅达对《华尔街日报》的说法（日处理 1 万亿 token、约 25% 的世界 500 强）。本期 Vercel 的一手数据给出了同一件事的另一面：Jev 在 AI Gateway 上触达 35.3% 的付费团队（历史第一），但只占 9 月 <b>0.15% 的花费</b>、1% 的 token。<b>「很多公司在用」和「很多钱在它身上」是两个不同的事实</b>，上期只写了前者。</p>
+  </div>
+
+  <div class="note">
+    <p><b>加限定｜「中位 7× 提速」还要再降一档——跟最便宜的小模型比，价格优势基本消失。</b>上期用 OpenChamber 的 12,759 条推文统计把 193.6× 修正成 7×。本期多份独立对比显示：那个倍数是对<b>前沿模型</b>而言；对 GPT-6 Luna 这类低推理档的小模型，<b>意图路由每百万次决策 Jev 是 $98、Luna 是 $116；内容审核 Jev 是 $19、Luna 是 $16</b>——后者甚至更便宜。选型理由必须从「便宜」换成「有可设阈值的概率 + 更快」。</p>
+  </div>
+
+  <div class="note good">
+    <p><b>被证实｜「价值在接口不在权重」。</b>上期 HN 的共识，本期成了既成事实：llama.cpp 合并了 systemone 端点，Ollaya 把 7 个开源决策模型塞进一个兼容端点，Vercel 的 decisions endpoint 同时支持 Jev、Liquid d1 和 Laya。<b>业务代码建在契约上、Provider 可替换</b>这条纪律，现在有工具层支撑了。</p>
+  </div>
+</section>
+
+<!-- ============ 1. 头条 ============ -->
+<section>
+  <h2><span class="no">01</span>头条：10 月 24 日，每一份决策都被公开了</h2>
+  <p class="lead">10 月 24 日（周五）傍晚约 18:49，TypeSafe CEO Diogo Almeida 在 X 上自己发了公告：<b>一次未授权的大规模泄露，暴露了全部客户的 noul 输出</b>，并且<b>公司自己贴出了泄露数据的链接</b>，理由是「尽量透明」。他没有等记者来问。</p>
+
+  <div class="facts">
+    <div class="fact bad"><div class="k">泄露内容</div><div class="v">所有客户的 noul 输出</div></div>
+    <div class="fact bad"><div class="k">推测成因</div><div class="v">IDOR <small>（未确认）</small></div></div>
+    <div class="fact"><div class="k">距 8.7 亿美元 A 轮</div><div class="v">24 天</div></div>
+    <div class="fact"><div class="k">技术复盘报告</div><div class="v">尚未发布</div></div>
+  </div>
+
+  <p><b>为什么这件事比一般的数据泄露更严重：</b>noul 不是「一段对话」，它是<b>一条带概率的商业判断记录</b>——「这笔转账是否欺诈、0.93」「这条内容是否违规、0.81」「这个候选人是否进入下一轮、0.27」。泄露的不是数据，是<b>你的业务在问什么问题、按什么标准判断</b>。对做风控、内容审核、招聘筛选的团队，这等于公开了决策规则本身。开发者 Wes Bos 已公开确认自己的输出在泄露集合内。</p>
+
+  <p><b>成因目前只是推断。</b>Startup Fortune 认为形态符合 <b>IDOR（不安全的直接对象引用）</b>——记录用可预测的递增 ID 寻址、没有校验「请求者是否拥有这条记录」。这是最古老、最基础的 API 漏洞之一，但<b>没有独立安全机构确认，TypeSafe 也没有发布命名该缺陷的技术复盘</b>。另有报道称，TypeSafe 自己的数据处理附录承诺 72 小时内通知客户，这次比承诺更快。</p>
+
+  <div class="note warn">
+    <p><b>与你直接相关的处置建议：</b>如果你曾在任何真实用户数据上调用过托管版 Jev（不只是 toy 项目），<b>请把那些 noul 视为已公开</b>。要做的三件事：① 查一遍调用日志，列出涉及个人数据的判断；② 按你所在地区的告知义务评估是否需要通知下游；③ 后续敏感场景改用本地部署（Laya / Ollaya）或自建分类器——<b>你之前部署 Laya 的那条路，在这一刻从「技术验证」变成了「合规选项」</b>。</p>
+  </div>
+
+  <p>更要紧的是时间线：10 月 15 日 HiddenLayer 的安全研究已经指出，<b>Jev 这种精简架构在某些方面比常规大模型更容易被攻击</b>——被移除的正是常规 LLM 里那些「检查与拒绝」的环节。其测试中，一个浏览器智能体在被明确要求「不要相信页面内容」的前提下，仍然点击了恶意广告；毒性分类器也被针对性的文本微调骗过。公允地说，同一测试里 <b>Jev 被操纵的频率低于对照模型 Qwen3.8-27B</b>。但九天后，泄露的恰恰是这些分类器产出的判断本身。</p>
+
+  <p>学术侧同期还有两条更细的发现，值得所有把 Jev 当护栏的人读：<b>「决策劫持」</b>（510 条重建的 InjecAgent 用例）——恶意内容会推动 Jev 的动作概率，但很少能让它选中攻击者指定的动作；而 <b>「JevOut」</b>——<b>完全无害、只是「看起来合理」的补充上下文，即使正确答案不变，也能翻转决策模型的选择，而且针对一个模型构造的上下文可以迁移到其他决策模型</b>。结论很硬：<b>一个廉价的概率护栏不是安全边界。</b></p>
+</section>
+
+<!-- ============ 2. 账本 ============ -->
+<section>
+  <h2><span class="no">02</span>账本：Vercel 纪录的另一半是留存与花费</h2>
+  <p class="lead">10 月中旬 Vercel 发布了 AI Gateway 生产指数，Jev 拿下了一项历史纪录。但同一张表里还有两个数字，讲的是另一个故事。</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" font-family="Inter, 'PingFang SC', sans-serif">
+      <text x="30" y="26" font-size="14" font-weight="800" fill="#1f2937">同一份 Vercel 报告里的三个数字（9 月，付费团队口径）</text>
+      <text x="30" y="46" font-size="11.5" fill="#6b7280">触达是历史第一，留存是第五，花费占比接近零。三个百分比的分母都不同，不能相乘。</text>
+
+      <!-- row 1 -->
+      <text x="30" y="86" font-size="12.5" font-weight="700" fill="#1f2937">14 天触达率</text>
+      <rect x="150" y="72" width="640" height="20" rx="4" fill="#f3f4f6"/>
+      <rect x="150" y="72" width="226" height="20" rx="4" fill="#2563eb"/>
+      <text x="392" y="87" font-size="13" font-weight="800" fill="#2563eb">35.3%　<tspan font-size="11.5" font-weight="600" fill="#6b7280">历史第一（第二名 Sonnet 5.5 为 18.1%）</tspan></text>
+
+      <!-- row 2 -->
+      <text x="30" y="132" font-size="12.5" font-weight="700" fill="#1f2937">次周留存</text>
+      <rect x="150" y="118" width="640" height="20" rx="4" fill="#f3f4f6"/>
+      <rect x="150" y="118" width="356" height="20" rx="4" fill="#d97706"/>
+      <text x="522" y="133" font-size="13" font-weight="800" fill="#d97706">55.6%　<tspan font-size="11.5" font-weight="600" fill="#6b7280">第 5 名（Luna 64.8%、Sonnet 5.5 60.5%）</tspan></text>
+
+      <!-- row 3 -->
+      <text x="30" y="178" font-size="12.5" font-weight="700" fill="#1f2937">9 月花费份额</text>
+      <rect x="150" y="164" width="640" height="20" rx="4" fill="#f3f4f6"/>
+      <rect x="150" y="164" width="7" height="20" rx="2" fill="#dc2626"/>
+      <text x="173" y="179" font-size="13" font-weight="800" fill="#dc2626">0.15%　<tspan font-size="11.5" font-weight="600" fill="#6b7280">token 份额 1%；首两周花费份额约 0.27%</tspan></text>
+
+      <!-- divider -->
+      <line x1="30" y1="212" x2="870" y2="212" stroke="#e5e7eb" stroke-width="1"/>
+
+      <text x="30" y="240" font-size="12.5" font-weight="800" fill="#1f2937">怎么读：</text>
+      <text x="30" y="262" font-size="12" fill="#4b5563">一次 Jev 请求比一次 LLM 请求便宜两三个数量级，所以「请求数第一」+「花费接近零」并不矛盾——</text>
+      <text x="30" y="282" font-size="12" fill="#4b5563">它说明 Jev 被放进了<tspan font-weight="800" fill="#1f2937">高频、低风险</tspan>的位置，而不是替代主模型的预算项。这正是决策层该有的位置。</text>
+      <text x="30" y="304" font-size="11.5" fill="#6b7280">数据来源：Vercel《AI Gateway Production Index》2026 年 10 月；花费按公开标价估算，不含各实验室自有 API 直连流量。</text>
+    </svg>
+    <figcaption>触达讲「有多少团队愿意试」，留存讲「试完还回来」，花费讲「值多少钱」。三个指标一起看，才叫采纳。</figcaption>
+  </figure>
+
+  <p><b>最值得注意的落地案例不是社区项目，而是 Vercel 自己：</b>它用 Jev 替换了 GPT-6 Luna 来做<b>有害命令分类</b>——这恰好是一个「答案空间封闭、调用频率极高、误判代价可控」的教科书位置。另一家公开案例是招聘平台 Jack &amp; Jill：从 Gemini 3.1 Flash Lite 切到 Jev 做候选人评分，<b>成本降 88%、中位处理时间约减半，测得质量无统计显著下降</b>（厂商口径）。</p>
+
+  <div class="note">
+    <p><b>一个定义陷阱，必须写清楚：</b>TypeSafe 宣传的 <b>「0% 幻觉率」指的是「输出是否落在预定义 schema 内」，不是「判断是否正确」。</b>Jev 永远不会给你一个格式错误的答案，但它完全可能给你一个格式完美、内容错误的答案。HN 上那句总结很准：<b>它不会输出无效类型，但会输出完全错误的有效值。</b></p>
+  </div>
+</section>
+
+<!-- ============ 3. 证伪 ============ -->
+<section>
+  <h2><span class="no">03</span>本期最重要的一篇论文：级联验证救不了自信错误</h2>
+  <p class="lead">过去一个月，社区里最流行的架构叫「级联」：<b>Jev 先判，置信度低的再交给大模型复核。</b>直觉上这完美利用了校准概率。arXiv 2609.29769v2《JEV vs. LLMs as Rubric Judges》把这个直觉打穿了。</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" font-family="Inter, 'PingFang SC', sans-serif">
+      <text x="30" y="26" font-size="14" font-weight="800" fill="#1f2937">级联的失效点：两个裁判错在同一个地方</text>
+
+      <!-- flow boxes -->
+      <rect x="30" y="52" width="170" height="62" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+      <text x="115" y="76" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">Jev 全量判一遍</text>
+      <text x="115" y="96" font-size="11" fill="#3b82f6" text-anchor="middle">84 个「高置信错误」</text>
+
+      <path d="M200 83 L240 83" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ar)"/>
+      <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#9ca3af"/></marker></defs>
+
+      <rect x="245" y="52" width="190" height="62" rx="8" fill="#fffbeb" stroke="#fde68a"/>
+      <text x="340" y="76" font-size="12" font-weight="700" fill="#92400e" text-anchor="middle">低置信 → 升级 LLM 复核</text>
+      <text x="340" y="96" font-size="11" fill="#b45309" text-anchor="middle">252 次裁判投票</text>
+
+      <path d="M435 83 L475 83" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ar)"/>
+
+      <rect x="480" y="46" width="390" height="74" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+      <text x="500" y="70" font-size="12.5" font-weight="800" fill="#b91c1c">242 / 252 = 96.0% 重复了同一个错误</text>
+      <text x="500" y="90" font-size="11.5" fill="#7f1d1d">如果两个裁判独立犯错，预期只有 50.3%。</text>
+      <text x="500" y="108" font-size="11.5" fill="#7f1d1d">→ 复核没有引入新信息，只是投了一次「同意票」。</text>
+
+      <!-- bar chart -->
+      <text x="30" y="168" font-size="12.5" font-weight="700" fill="#1f2937">LLM 复核在 Jev「最自信的错误」上的表现</text>
+
+      <text x="30" y="204" font-size="12" fill="#4b5563">实测重复率</text>
+      <rect x="150" y="190" width="620" height="22" rx="3" fill="#f3f4f6"/>
+      <rect x="150" y="190" width="595" height="22" rx="3" fill="#dc2626"/>
+      <text x="757" y="206" font-size="12.5" font-weight="800" fill="#dc2626">96.0%</text>
+
+      <text x="30" y="244" font-size="12" fill="#4b5563">独立犯错预期</text>
+      <rect x="150" y="230" width="620" height="22" rx="3" fill="#f3f4f6"/>
+      <rect x="150" y="230" width="312" height="22" rx="3" fill="#9ca3af"/>
+      <text x="474" y="246" font-size="12.5" font-weight="800" fill="#6b7280">50.3%</text>
+
+      <line x1="30" y1="272" x2="870" y2="272" stroke="#e5e7eb"/>
+
+      <text x="30" y="296" font-size="12" font-weight="700" fill="#1f2937">即便给到「上帝阈值」（oracle threshold），没有任何一种级联</text>
+      <text x="30" y="316" font-size="12" font-weight="700" fill="#1f2937">能比最好的单裁判高出 2.7 个百分点以上。</text>
+      <text x="560" y="296" font-size="11.5" fill="#6b7280">论文的结论不是「别用 Jev」，</text>
+      <text x="560" y="316" font-size="11.5" fill="#6b7280">而是「级联需要<tspan font-weight="800" fill="#1f2937">错在不同地方</tspan>的 fallback」。</text>
+    </svg>
+    <figcaption>论文覆盖 7 个基准、9 个评委面板、与人工评分对齐；Jev 与三个 flash 级 LLM 裁判相比，成本低 16–325 倍、耗时低 28–350 倍，准确率在 27 组配对中最多 8 组有显著差异（二值清单题占优，序数评分题落后）。</figcaption>
+  </figure>
+
+  <p>这个结论和另外两份独立研究咬得很紧：<b>CMU 的预印本</b>发现「Jev → GPT-6」级联在 <b>41% 成本</b>下打赢了单用 GPT-6；而另一份 <b>JEV-as-a-Judge</b>（510 对偏好样本）显示：0.90 阈值下 Jev 处理 53.7% 样本，级联准确率 <b>92.5%</b>，单用 GPT-6 Astra 是 <b>93.1%</b>，成本为后者的 57–62%。<b>三份研究合起来给的判断是：级联能省钱，但基本不能提准确率。</b></p>
+
+  <div class="note warn">
+    <p><b>所以「用大模型兜底」这个默认做法要改。真正的 fallback 必须与 Jev 的失败模式不相关：</b></p>
+    <p>① <b>可执行验证器</b>——跑测试、比 schema、查数据库、算数（Jev 明确不会算数）；② <b>人工抽检</b>——尤其针对「高置信 + 高代价」那一格；③ <b>另一个模型家族的裁判</b>，且配人工标注的攻击集；④ <b>随机切片审计</b>——只在低置信区间抽检是错的，因为自信错误全在「被接受」那一堆里。</p>
+  </div>
+
+  <p>另外一条纪律是从论文里长出来的，很多团队会踩：<b>绝不要用同一个模型既当闸门又当裁判。</b>如果 Jev 在生产里拦截工具调用，同时又用它给自己打分，那么一个能翻转闸门的输入，同时也能翻转评估——你的看板会对「恰好通过了的那批流量」显示一切正常。</p>
+</section>
+
+<!-- ============ 4. 版本 ============ -->
+<section>
+  <h2><span class="no">04</span>1.14：三个新能力，全在「危险区」</h2>
+  <p class="lead">10 月 14 日（官方玩梗：10.14 的 1:14 PM PT）发布 Jev 1.14。中文媒体标题写的是「Jev 会看图做决策了」。读官方公告会发现另一层信息：<b>三项新能力全部默认关闭、全部要求手动打开实验性请求头、官方明说「未达生产标准，风险自负」</b>，而且被统一命名为 <b>Danger Zone（危险区）</b>。</p>
+
+  <div class="wrap">
+  <table>
+    <thead><tr><th>能力</th><th>请求头</th><th>可用版本</th><th>关键限制</th></tr></thead>
+    <tbody>
+      <tr><td><b>图像输入</b></td><td><code>TypeSafe-Danger-Zone-Images: true</code></td><td>1.13.0 / 1.14.0</td><td>仅 PNG / JPEG；单图 ≤16 MiB；每边 280–1568 px；<b>超限直接拒绝、不缩放</b>，一个坏文件整请求失败</td></tr>
+      <tr><td><b>Box 问题类型</b></td><td>同上（需图像头）</td><td><b>仅 1.14.0</b>（1.13 返回 400）</td><td>返回一个归一化边界框 + 置信度；<b>目标不存在时依然会返回一个框</b>，必须配一个 noul 问「在不在」</td></tr>
+      <tr><td><b>262K 长上下文</b></td><td><code>TypeSafe-Danger-Zone-Long-Context: true</code></td><td>1.13.0 / 1.14.0</td><td>默认仍是 64K/请求、32K/问题；开启后<b>更慢、更不准</b>；无价格加成</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note warn">
+    <p><b>两个媒体没写、但会咬人的细节：</b></p>
+    <p>① <b>图像支持其实在 1.13 就有了</b>，1.14 只是把它继续留在实验头后面——「会看图」不是新能力，是<b>被承认的实验能力</b>。</p>
+    <p>② <b>别名在约 10 月 21 日从 <code class="inline">jev-preview</code> 切到 <code class="inline">jev-latest</code></b>。任何写着 <code class="inline">model: "jev-latest"</code>、或 Python SDK 没显式设模型、或照 JS 快速开始抄了 <code class="inline">defaultModel</code> 的代码，<b>会在你不改一行代码的情况下换模型</b>。概率和置信度会漂移，<b>跨过你阈值的那部分决策比例会变</b>——如果 10 月 21 日前后你的回测结果变了，先怀疑模型，不要怀疑市场。</p>
+  </div>
+
+  <p>官方说 1.14 最大的提升是<b>多语言</b>，但文档同时明确：<b>包括中文在内的非英语仍不如英语</b>，建议上线前用自己的内容测。<b>这条对中文场景是硬约束</b>：如果要做中文工单分流、中文内容审核，必须先建一份几百条的中文标注集跑一遍，不能拿英文 benchmark 的成绩推断。</p>
+
+  <p>另有一个容易被忽视的「负向更新」：<b>TypeSafe 的「已知短板页」（jaggedness）至今只覆盖 1.13，最后审核日期是 10 月 2 日</b>，所以 1.14 的短板只能假定与 1.13 相同——不擅长算术与计数、日期当文本读、Choice 倾向选第一个选项、长输入会被无关内容干扰（官方原话 「Jev suffers from context rot」）、<b>不把 state 当作敌意输入</b>、是/否问题与其否定式<b>不保证概率和为 1</b>。</p>
+</section>
+
+<!-- ============ 5. 品类 ============ -->
+<section>
+  <h2><span class="no">05</span>品类地图：五周，从 1 家到 20 多家</h2>
+  <p class="lead">这是本期最容易被误读的一张表。它不是「Jev 的竞品清单」，而是<b>一个品类在五周内完成标准化的证据</b>——注意「接口」那一列，绝大多数都写着兼容。</p>
+
+  <div class="wrap">
+  <table>
+    <thead><tr><th>厂商</th><th>产品</th><th>形态</th><th>接口</th><th>值得注意的点</th></tr></thead>
+    <tbody>
+      <tr><td><b>TypeSafe AI</b></td><td>Jev 1.14</td><td class="nw">托管</td><td class="nw">原生</td><td>$0.042/M 输入、输出免费；1.14 图像与长上下文均在危险区</td></tr>
+      <tr><td><b>OpenAI</b></td><td>Decisions API</td><td class="nw">托管</td><td class="nw">自有</td><td>DevDay 预览（9-29），10-06 公测；底层是 GPT-6 Luna 套决策接口</td></tr>
+      <tr><td><b>Microsoft</b></td><td>Microsoft-Decision-1</td><td class="nw">托管</td><td class="nw"><b>兼容</b></td><td>10-09 上 Foundry + OpenRouter；Qwen3.5-9B 后训练；<b>定价与 Jev 对齐到同一分钱</b></td></tr>
+      <tr><td><b>Cloudflare</b></td><td>Clef 27B / Clef-flash 9B / Clef-omni</td><td class="nw"><b>开源</b></td><td class="nw"><b>兼容</b></td><td>10-01 发布（Apache-2.0），八天后补 Clef-omni（音视频图文本）；带 Workers AI 上的 RL 微调平台</td></tr>
+      <tr><td><b>AWS</b></td><td>Strands Decider 2B</td><td class="nw"><b>开源</b></td><td class="nw"><b>兼容</b></td><td>Apache-2.0；权重 + 训练数据 + 脚本全开，消费级 GPU 可跑</td></tr>
+      <tr><td><b>Perplexity</b></td><td>pplx-decider 27B / Decider for Mac</td><td class="nw">开源 + 托管</td><td class="nw">自有</td><td>Mac 版是 4B 本地模型，<b>无需 API Key</b>——对隐私敏感场景意义大</td></tr>
+      <tr><td><b>Liquid AI</b></td><td>d1 / d1-3B / d1-omni-600M</td><td class="nw">托管 + 开源</td><td class="nw">自有</td><td>首个宣称在 Decision Index 上赢 Jev；Jetson 上 16ms；<b>许可限制：年营收 &lt;$10M 才可免费商用</b></td></tr>
+      <tr><td><b>Snowflake</b></td><td>Decision</td><td class="nw">托管</td><td class="nw">SQL 内</td><td>通过 <code>AI_COMPLETE</code> 直调，同一套 choice / score / 是非 schema</td></tr>
+      <tr><td><b>Fastino</b></td><td>GLiDE v1.2</td><td class="nw">开源</td><td class="nw">自有</td><td>10-22 宣称 Decision Index <b>71.5 第一</b>；权重很大且<b>非标准许可</b></td></tr>
+      <tr><td><b>Base Labs</b>（Baseten）</td><td>mammoth-1 27B / elephant-1 9B</td><td class="nw">开源</td><td class="nw">自有</td><td>10-22 发布，含技术报告，自称登顶 Jev Decision Index</td></tr>
+      <tr><td><b>Upstage</b></td><td>Solar Decide</td><td class="nw">托管</td><td class="nw"><b>兼容</b></td><td>512K 上下文——目前最长的决策模型窗口</td></tr>
+      <tr><td><b>Superagent</b></td><td>Security-One 27B</td><td class="nw">—</td><td>—</td><td>只做安全类判断：提示注入、工具调用、代码变更、告警</td></tr>
+      <tr><td><b>其他</b></td><td>meraGPT Decider 1、Together Tev1、Nace.AI Drex、Hanzo Kai、Respan Span-01、Surogate Rune 26B-A4B、GLiNER2.5-Decide、InternLM Intern-Decision、H2O.ai、PostHog Jeeves</td><td class="nw">混合</td><td class="nw">多数兼容</td><td>价格带已从 $0.021 到 $0.06/M；最小的决策模型只有 1.44 亿参数、纯 CPU 可跑</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>这张表最重要的不是谁强，而是<b>「接口归一、产品不归一」</b>：同一套请求格式下，各家在「托管 vs 开权、上下文长度、是否多模态、许可是否限制商用、校准质量」上差异巨大。所以选型问题已经从「用不用决策模型」变成<b>「这六个维度里哪几个对我致命」</b>。</p>
+</section>
+
+<!-- ============ 6. 项目 ============ -->
+<section>
+  <h2><span class="no">06</span>开源项目：模型层降温，运行时与「判断型应用」升温</h2>
+  <p class="lead">星数口径先说明：本节的数字来自 GitHub 榜单快照（10-15 与 10-28 两个时点），同一项目在不同榜单可差数千星，<b>请按趋势读，不要按绝对值排名读</b>。</p>
+
+  <h3>6.1 模型层：头部稳定，但增速已经放缓</h3>
+  <div class="grid">
+    <div class="card">
+      <div class="rank">★34.6k</div>
+      <h4>Laya <span class="tag blue">开源克隆</span></h4>
+      <div class="repo">NandhaKishorM/laya</div>
+      <p>非自回归决策引擎，100+ 语言，内置语种路由按请求选 checkpoint。自上期 30,404 涨到现在，<b>日增已降到几十星量级</b>（10-27 为 +86）。</p>
+      <div class="hl warn">上上期已修正：零样本 0.362 &lt; 多数类基线 0.461，定位是「可微调快底座」，不是开箱替代品。这条修正至今有效。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★7k</div>
+      <h4>laya-mlx <span class="tag green">运行时装</span></h4>
+      <div class="repo">mizorewww/laya-mlx</div>
+      <p>Laya 的原生 MLX 运行时，在 Apple Silicon 上本地跑，毫秒级返回 choice / rubric score / 概率。</p>
+      <div class="hl new">对你这台机器最实用的一项：本地决策 + 无网络 + 无泄露面。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★3.1k</div>
+      <h4>DeepOpen <span class="tag blue">开源克隆</span></h4>
+      <div class="repo">deepopen-com/deepopen</div>
+      <p>同类非自回归决策引擎，强调 33ms 与 100+ 语言，覆盖文本 / 邮件 / 工单 / JSON。</p>
+      <div class="hl">克隆层的同质化已经很严重：功能描述几乎可以互换，差异只剩语言覆盖与部署形态。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★1.4k</div>
+      <h4>Ollaya <span class="tag purple">运行时</span> <span class="tag green">本期推荐</span></h4>
+      <div class="repo">ollaya-dev/ollaya</div>
+      <p>Rust 单二进制，「决策模型界的 Ollama」：<code>pull / run / list / ps</code> 一把梭，HTTP 层与 <code>/v1/systemone</code> 线级一致，<b>改一个环境变量就能把现有 Jev 客户端切过来</b>。只分发 ~3MB ONNX 图，权重从作者 HF 仓库按 commit + sha256 直读，不重托管。</p>
+      <div class="hl new">自曝的短板很诚实：类型化决策准确率 0.722，托管 Jev 是 0.738。4090 上 laya:en 五问 8–10ms。</div>
+    </div>
+  </div>
+
+  <h3>6.2 应用层：新热点全在「让判断发生在生成之前」</h3>
+  <div class="grid">
+    <div class="card">
+      <div class="rank">★3.5k</div>
+      <h4>Open Intelligent UI <span class="tag green">新</span></h4>
+      <div class="repo">（jevfast 目录收录，10-10）</div>
+      <p>先让 Jev 决定这段回答该用<b>文本、表格还是交互图</b>，再让聊天模型去生成。把「呈现形式」从生成模型的随机选择变成一次显式决策。</p>
+      <div class="hl new">思路上最干净的一个：判断在生成之前，而不是生成之后再修。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★5.1k</div>
+      <h4>AutoRAG Jev Decisions</h4>
+      <div class="repo">（10-06 收录）</div>
+      <p>给本地文档智能体加一层可选 Jev 工具，做类型化分类、路由、打分；<b>阈值与执行策略始终留在调用方</b>。</p>
+      <div class="hl">「模型只给判断，策略留在代码」——这是本月所有成熟项目的共同签名。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★2.3k</div>
+      <h4>Bespoke Nimble <span class="tag green">新</span></h4>
+      <div class="repo">bespokelabsai/nimble</div>
+      <p>把「文本 + 问题 schema」变成类型化决策，一次前向返回每个选项的概率。<b>公开了配方和训练好的 Bespoke-Nimble-9B</b>。</p>
+      <div class="hl new">这是「自己训一个」从论文走向可复现工程的分水岭项目。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★2.8k</div>
+      <h4>typesafe-ai/skills <span class="tag blue">官方</span></h4>
+      <div class="repo">typesafe-ai/skills</div>
+      <p>官方出的智能体技能包：让你的编码智能体去拿类型化决策和概率。取代了此前社区各自维护的 skills 包，成为这一层的标准入口。</p>
+      <div class="hl">官方亲自做 skills，说明「给智能体装判断能力」已是主战场，不只是社区玩法。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★310</div>
+      <h4>Astra-Ares <span class="tag purple">有想法</span></h4>
+      <div class="repo">miuuyy/Astra-Ares</div>
+      <p>让 Jev 在 Codex 任务<b>运行过程中动态调整 GPT-6 的推理力度</b>——每一步匹配不同的思考深度来省 token。</p>
+      <div class="hl new">把决策模型从「选动作」推进到「选算力预算」，这是本期看到的最新颖的一种用法。</div>
+    </div>
+    <div class="card">
+      <div class="rank">★431</div>
+      <h4>Jeeves（PostHog）</h4>
+      <div class="repo">PostHog/jeeves</div>
+      <p>Jev 风格但<b>先想一下再选</b>：Qwen3.5-9B + LoRA，输出前走一段推理链，再给校准后的是/否、多选或评分，还带 diffusion drafter 加速。</p>
+      <div class="hl warn">方向上与大厂「会思考的决策模型」一致（GLiDE 也走这条），代价是延迟。是否值得看你的场景。</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <p><b>一条需要防的统计假象：</b>目录里排在最前的 <b>ekko-studio（★11.6k）</b> 是一个通用的本地优先多智能体工作台，只是「可选地」用 Jev 做记忆筛选和技能选择。<b>它的星数不是 Jev 带来的</b>，把它当成「Jev 生态第一项目」会得出完全错误的结论。同理，<b>awesome-jev 这类索引仓库（★2.5k）的增速快于被索引内容的质量</b>，高星不等于高收录质量。</p>
+  </div>
+
+  <p><b>本期其他值得知道的新项目</b>（按用途归类，星数从数十到数百，均未生产验证）：<b>判断型护栏</b> JEV Shield（★202，给提示注入和待执行 shell 命令打分）、jev-guard、Jev Guards（不可逆操作前的语义护栏）；<b>记忆治理</b> Zerikai Memory、Invalidate（判断已存事实是否还成立）、Jev-Mem；<b>代码与检索</b> Jev Codebase Search、sys1grep、jev-test-filter（只跑受本次 diff 影响的测试）；<b>消费级玩法</b> Jev Cards（10-20 上 HN 的看图答题游戏，模型约 0.25 秒作答，也是第一次把视觉能力放到公众面前做非正式 benchmark）、Slop Filter（识别 AI 味文字）、Jeved；<b>交易</b> beebots（★330，OKX 永续，三只「蜂」竞赛，<b>默认纸面交易</b>）。</p>
+</section>
+
+<!-- ============ 7. 统计 ============ -->
+<section>
+  <h2><span class="no">07</span>一手统计更新：855 个 build，作者留存仍是零</h2>
+  <p class="lead">《Jev Build Report》在 10-15 更新了第二版（覆盖发布后 31 天）。相比上期引用的 10-04 版，样本从 755 增至 855，结构性判断没变，但几个数字更锋利了。</p>
+
+  <div class="facts">
+    <div class="fact"><div class="k">31 天公开 build</div><div class="v">855 <small>个</small></div></div>
+    <div class="fact"><div class="k">中位单次决策成本</div><div class="v">$0.000065 <small>≈ $1 买 15,291 次</small></div></div>
+    <div class="fact"><div class="k">中位延迟</div><div class="v">300 <small>ms（19 个中 18 个 &lt;1s）</small></div></div>
+    <div class="fact"><div class="k">新仓库 TS/JS 占比</div><div class="v">42.5% <small>vs Python 39.1%</small></div></div>
+    <div class="fact bad"><div class="k">只发过 1 个 build 的作者</div><div class="v">729 / 781</div></div>
+    <div class="fact bad"><div class="k">公布了任何数字的 build</div><div class="v">424 / 855</div></div>
+  </div>
+
+  <p><b>最该记住的两句：</b>「<b>注意力集中，工作不集中</b>」——前 5 个仓库吃掉 59.7% 的星，中位仓库只有 22 星，229 个不到 50 星；「<b>一周的 crowd，不是 community</b>」——781 个作者里 729 个只做过一件事，只有 52 个做过两件以上。</p>
+
+  <p>把这条和上期的「755 个 build / 20 天」并起来看，<b>增速从每天约 38 个降到约 8 个</b>（10-06 后单日新增明显变稀）。同时外部注意力也在转移：10 月中旬另一个叫 REA 的项目三天冲到近 7 万星，把 GitHub 趋势榜的注意力整块吸走（单一来源，仅作背景参考，与 Jev 无技术关系）。<b>这不是衰退，而是从「发布事件」回到「常态使用」</b>——恰好也是判断真实价值的时点。</p>
+
+  <div class="note">
+    <p><b>报告自己列出的三个不能说的：</b>① 所有数字都是<b>作者自报、未经复现</b>；② <b>准确率基本缺失</b>——成本和延迟好贴，留出集不好贴，所以任何用这页数字做的「Jev vs 大模型」比较，比的只是价格和延迟，不是质量；③ <b>目录是个人策展的，不是全量普查</b>，且星数是快照。</p>
+  </div>
+</section>
+
+<!-- ============ 8. 落地 ============ -->
+<section>
+  <h2><span class="no">08</span>落地纪律（第 6 期修订版）</h2>
+  <p class="lead">上期 8 条，本期新增 5 条、修订 2 条。带 <span class="tag red">新</span> 的是本期因事故或论文而加的。</p>
+
+  <ul class="chk">
+    <li><b>业务代码建在接口契约上，Provider 可替换。</b>现在有工具层支撑了：Ollaya、llama.cpp 的 systemone 端点、Vercel decisions endpoint 都能在同一契约下换实现。</li>
+    <li><b>pin 具体版本。</b>注意 <code class="inline">jev-latest</code> 已在 10 月 21 日前后指向 1.14.0；<code class="inline">jev-preview</code> 不再等同稳定版。每个响应里的 <code class="inline">model</code> 字段要记录并校验，回测缓存键必须含版本号。</li>
+    <li class="no"><b>【新】敏感数据不要只走托管 API。</b>10-24 泄露证明：noul 本身是商业判断记录。涉及真实个人或交易数据的判断，走本地（laya-mlx / Ollaya）或自建 encoder，托管侧只放低风险判断。</li>
+    <li class="no"><b>【新】不要把同一个模型既当闸门又当裁判。</b>攻击者只要能翻转闸门，就能让评估看板一起变绿。裁判要换模型家族，攻击集要人工标注。</li>
+    <li class="no"><b>【新】级联的 fallback 必须「错在别处」。</b>96% 的重复率说明同族 LLM 复核约等于没复核。可用的 fallback：可执行验证器、数据库查询、算数代码、人工抽检。</li>
+    <li class="no"><b>【新】审计要抽「被接受」那一堆。</b>自信错误全在高置信区间，只查低置信样本会让你 100% 漏掉它们。建议：低置信全查 + 接受侧 1–5% 随机切片。</li>
+    <li class="no"><b>【新】图像 / Box / 262K 一律不进生产。</b>三项都在 Danger Zone，官方明说未达生产标准；Box 在目标缺失时仍会返回框，必须配 noul 兜底。</li>
+    <li><b>算术、计数、日期比较留在代码里。</b>官方短板页至今只覆盖 1.13，且明确说「不是计算器」、日期按文本读、是/否与否定式概率和不保证为 1。</li>
+    <li><b>Choice 压到 20 个选项以内。</b>官方上限 255，开源克隆 20 以上退化，且模型有「偏向第一个选项」的已知倾向。</li>
+    <li><b>置信度阈值必须在自己数据上重拟合。</b>原始 ECE 可高到 0.466；1.14 换版后要重跑一次。</li>
+    <li><b>做预算按最便宜的小模型对比，不按前沿模型。</b>对 GPT-6 Luna 低推理档，意图路由 $98 vs $116/M、审核 $19 vs $16/M——真正买的是「概率可设阈值 + 快」，不是价差。</li>
+    <li><b>中文场景先建自己的评测集。</b>官方承认非英语弱于英语，多语言提升无第三方分数。几百条标注 + 生产长度输入，是唯一可信依据。</li>
+    <li><b>选型看「最后提交日 + issue 响应」，不看星数。</b>生态留存率极低（729/781 作者只做过一次），星数高但停更的项目很多。</li>
+  </ul>
+</section>
+
+<!-- ============ 9. 结论 ============ -->
+<section>
+  <h2><span class="no">09</span>结论：品类成立，供应商未定，信任待补</h2>
+  <p class="lead">44 天，这个生态讲完了三段故事，而且每一段的结论都不同。</p>
+
+  <p><b>第一段（1–14 天）：一个模型。</b>结论是「快得离谱、便宜得离谱」。这段的多数数字来自厂商自测，后来被逐级修正。</p>
+  <p><b>第二段（15–30 天）：一个品类。</b>结论是「接口标准化、实现多样化」。这段的收获是真实且持久的——<b>把判断从生成里拆出来</b>这个架构想法，不会因为谁家模型好坏而消失。</p>
+  <p><b>第三段（31–44 天）：一笔账和一次事故。</b>结论是「省下的钱是真的，省下的验证不是」。Vercel 的 35.3% 触达是真的，0.15% 花费也是真的；级联能省钱是真的，<b>级联不能提准确率也是真的</b>；「0% 幻觉」是格式承诺，不是正确率承诺。</p>
+
+  <div class="note good">
+    <p><b>如果要给一个可执行的判断：</b>2026 年 10 月底，「决策模型」已经是一个可以放心押注的<b>架构位置</b>，但还不是一个可以放心押注的<b>单一供应商</b>。合理姿势是三件事同时做——</p>
+    <p>① <b>把接口抽象出来</b>（state + 类型化问题 → 一次往返），代码只依赖契约；<br>
+       ② <b>把一个真正高频的判断搬上去</b>（工单分流、内容审核、工具调用前检查），用自有标注集量出准确率与校准；<br>
+       ③ <b>敏感的那条链路留在本地</b>，托管只放低风险判断。</p>
+  </div>
+
+  <p>最后一句提醒，给所有准备把「判断」外包出去的人：<b>决策模型降低的是每次决策的成本，不是决策本身的责任。</b>它会给你一个漂亮的概率，但阈值设在哪里、错了谁承担、什么情况下必须有人看——这三件事，模型永远替你决定不了。</p>
+</section>
+
+<footer>
+  <p><b>数据口径与免责</b>：本报告中的星数、成本、延迟、准确率均为<b>来源快照或作者/厂商自报</b>，未经独立审计；同一项目在不同榜单的星数可差数千，引用请带日期。Vercel 数据为其自有网关的匿名流量统计，不含各实验室 API 直连流量，花费按公开标价估算。<b>泄露事件的成因（IDOR）为媒体推断，TypeSafe 尚未发布技术复盘。</b>Laya / Kev 等克隆模型的分数含「微调后」口径，与零样本不可直接比较。交易类项目默认多为纸面/模拟模式，<b>本报告不构成任何投资建议</b>。</p>
+  <p><b>主要来源</b>：TypeSafe 官方公告与文档（1.14、danger zone、jaggedness 页）· Vercel《AI Gateway Production Index》2026-10 · 《Jev Build Report》2026-10-15 版（madewithjev）· arXiv 2609.29769v2《JEV vs. LLMs as Rubric Judges》· Startup Fortune / InfoQ / AIToolsRecap（10-24 泄露）· HiddenLayer 安全研究（10-15）· Kai Waehner 品类时间线（10-20）· systemonemodels.org 与 dataaihub 决策模型目录 · machinebrief（JEV-as-a-Judge、CMU 级联预印本）· GitHub 榜单快照（10-15、10-28）· preuve.ai 与 analyticsindiamag（Will Kelly 独立评测，9 项实验 / 123,805 请求 / $12.69）。</p>
+  <p>Jev 生态追踪 · 第 6 期 · 生成于 2026-10-29 · 前五期见同目录 0922 / 0926 / 0929 / 1002 / 1006</p>
+</footer>
+
+</div>
+</body>
+</html>
