@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="拆解 macOS 菜单栏工具 Clamshell 的实现：用 pmset disablesleep 关掉睡眠总闸，让合盖后的 Mac 继续下载、编译与渲染，再用低电量保护、退出拦截等兜底设计解决「忘了关」这个真正危险的缺口。">
+<meta name="keywords" content="macos, clamshell, pmset, disablesleep, prevent-sleep, swiftui">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-02">
+<title>Clamshell · 合盖之后，为什么它还醒着</title>
+<style>
+  :root{
+    --bg:#F7F6F3;
+    --surface:#FFFFFF;
+    --ink:#16161A;
+    --ink2:#4A4A54;
+    --ink3:#7C7C88;
+    --line:#E4E3DD;
+    --line2:#EEEDE8;
+    --amber:#B8650A;
+    --amber2:#E08A22;
+    --amber-soft:#FBF1E1;
+    --amber-line:#EBCFA6;
+    --code:#F3F2ED;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Helvetica Neue",sans-serif;
+    font-size:16px;line-height:1.78;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:.005em;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+  .layout{display:grid;grid-template-columns:196px minmax(0,1fr);gap:72px;align-items:start}
+  .col{min-width:0;max-width:820px}
+
+  /* ---------- hero ---------- */
+  .hero{padding:88px 0 0}
+  .mark{display:flex;align-items:center;gap:11px;margin-bottom:44px}
+  .mark svg{display:block}
+  .mark .name{font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+  h1{
+    margin:0;font-size:clamp(38px,4.6vw,58px);line-height:1.14;
+    font-weight:640;letter-spacing:-.022em;
+  }
+  h1 .accent{color:var(--amber)}
+  .lede{
+    margin:26px 0 0;font-size:19px;line-height:1.72;color:var(--ink2);
+    max-width:660px;font-weight:380;
+  }
+  .meta{
+    display:flex;flex-wrap:wrap;gap:0;margin:44px 0 0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .meta div{flex:1 1 auto;min-width:130px;padding:16px 22px 16px 0}
+  .meta dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+  .meta dd{margin:0;font-size:14px;color:var(--ink);font-weight:480}
+  .meta a{color:var(--amber);text-decoration:none;border-bottom:1px solid var(--amber-line)}
+  .meta a:hover{border-color:var(--amber)}
+
+  /* ---------- toc ---------- */
+  nav.toc{position:sticky;top:56px;padding-top:96px}
+  nav.toc .h{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:16px}
+  nav.toc a{
+    display:block;padding:5px 0 5px 12px;font-size:13px;color:var(--ink2);
+    text-decoration:none;border-left:1.5px solid var(--line2);line-height:1.5;
+  }
+  nav.toc a:hover{color:var(--amber);border-left-color:var(--amber)}
+  nav.toc a span{display:inline-block;width:22px;color:var(--ink3);font-variant-numeric:tabular-nums;font-size:11px}
+
+  /* ---------- sections ---------- */
+  main{padding:92px 0 0}
+  section{margin:0 0 92px;scroll-margin-top:40px}
+  .num{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--amber);
+    display:block;margin-bottom:14px;
+  }
+  h2{
+    margin:0 0 22px;font-size:29px;line-height:1.32;font-weight:620;letter-spacing:-.015em;
+  }
+  h3{margin:44px 0 14px;font-size:18.5px;font-weight:600;letter-spacing:-.005em}
+  h4{margin:30px 0 10px;font-size:15px;font-weight:600;color:var(--ink2)}
+  p{margin:0 0 18px}
+  strong{font-weight:600}
+  em{font-style:normal;background:linear-gradient(180deg,transparent 62%,var(--amber-soft) 62%);padding:0 2px}
+  a{color:var(--amber)}
+
+  code{
+    font-family:var(--mono);font-size:.875em;
+    background:var(--code);padding:2px 6px;border-radius:4px;
+    border:1px solid var(--line2);white-space:nowrap;
+  }
+  pre{
+    margin:22px 0;padding:20px 22px;background:var(--surface);
+    border:1px solid var(--line);border-radius:10px;overflow-x:auto;
+    font-size:13px;line-height:1.85;
+  }
+  pre code{background:none;border:none;padding:0;white-space:pre;font-size:13px}
+  .cmt{color:var(--ink3)}
+  .kw{color:var(--amber);font-weight:500}
+  .src{
+    display:inline-block;font-family:var(--mono);font-size:11px;color:var(--ink3);
+    background:var(--code);border-radius:3px;padding:1px 5px;vertical-align:1px;
+  }
+
+  /* ---------- callout ---------- */
+  .note{
+    margin:28px 0;padding:20px 24px;background:var(--surface);
+    border:1px solid var(--line);border-left:2.5px solid var(--amber);
+    border-radius:0 8px 8px 0;
+  }
+  .note .t{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;font-weight:600}
+  .note p{margin:0;font-size:15px;color:var(--ink2)}
+  .note p + p{margin-top:10px}
+
+  /* ---------- cards ---------- */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;
+  }
+  .card .tag{
+    display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;
+    color:var(--ink3);margin-bottom:10px;
+  }
+  .card h4{margin:0 0 10px;font-size:16.5px;color:var(--ink);font-weight:600}
+  .card p{margin:0;font-size:14.5px;line-height:1.7;color:var(--ink2)}
+  .card.warn{border-color:var(--amber-line);background:linear-gradient(180deg,#FFFCF7,#FFFFFF)}
+  .card.warn .tag{color:var(--amber)}
+  .card .k{font-size:30px;font-weight:600;color:var(--ink);letter-spacing:-.02em;line-height:1.1;display:block;margin-bottom:6px}
+
+  /* ---------- figure ---------- */
+  figure{margin:36px 0}
+  figure svg{display:block;width:100%;height:auto}
+  figcaption{
+    margin-top:14px;font-size:13px;color:var(--ink3);line-height:1.65;
+    padding-left:14px;border-left:2px solid var(--line);
+  }
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:26px 0;font-size:14px}
+  .tbl th{
+    text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink3);padding:0 16px 10px 0;border-bottom:1px solid var(--line);
+  }
+  .tbl td{padding:14px 16px 14px 0;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.65}
+  .tbl td:last-child,.tbl th:last-child{padding-right:0}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl .m{font-family:var(--mono);font-size:12.5px}
+  .tbl code{white-space:normal}
+  .yes{color:var(--amber);font-weight:600}
+  .no{color:var(--ink3)}
+
+  /* ---------- flow list ---------- */
+  ol.steps{list-style:none;padding:0;margin:24px 0;counter-reset:s}
+  ol.steps li{
+    counter-increment:s;position:relative;padding:0 0 22px 42px;
+    font-size:15px;color:var(--ink2);
+  }
+  ol.steps li::before{
+    content:counter(s);position:absolute;left:0;top:2px;
+    width:24px;height:24px;border-radius:50%;background:var(--surface);
+    border:1px solid var(--line);color:var(--ink3);
+    font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;
+  }
+  ol.steps li::after{
+    content:'';position:absolute;left:12px;top:28px;bottom:0;width:1px;background:var(--line2);
+  }
+  ol.steps li:last-child::after{display:none}
+  ol.steps li strong{color:var(--ink);display:block;margin-bottom:3px;font-weight:600}
+
+  ul.plain{margin:18px 0;padding-left:0;list-style:none}
+  ul.plain li{position:relative;padding-left:20px;margin-bottom:10px;font-size:15px;color:var(--ink2)}
+  ul.plain li::before{content:'';position:absolute;left:2px;top:.72em;width:5px;height:5px;border-radius:50%;background:var(--amber2)}
+
+  footer{
+    margin-top:110px;padding:40px 0 80px;border-top:1px solid var(--line);
+    font-size:13px;color:var(--ink3);
+  }
+  footer .r{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+
+  @media (max-width:900px){
+    .wrap{padding:0 22px}
+    .layout{grid-template-columns:1fr;gap:0}
+    nav.toc{display:none}
+    .hero{padding-top:56px}
+    main{padding-top:64px}
+    .duo{grid-template-columns:1fr}
+    section{margin-bottom:68px}
+    .meta div{flex:1 1 45%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="mark">
+      <svg width="30" height="24" viewBox="0 0 30 24" aria-hidden="true">
+        <rect x="3" y="2.5" width="24" height="15" rx="2.6" fill="#2A2A31"/>
+        <rect x="3" y="15.5" width="24" height="2.4" fill="#B8650A"/>
+        <rect x="1" y="18.4" width="28" height="3.2" rx="1.6" fill="#3A3A44"/>
+      </svg>
+      <span class="name">Clamshell</span>
+    </div>
+
+    <h1>合盖之后，<br><span class="accent">为什么它还醒着</span></h1>
+
+    <p class="lede">
+      一台 MacBook 合上盖子就该睡。想让它别睡，整个系统只有一个开关——<code>sudo pmset -a disablesleep 1</code>。
+      Clamshell 把这个开关搬进菜单栏，并且补上了它唯一真正危险的漏洞：<strong>你会忘了关</strong>。
+    </p>
+
+    <dl class="meta">
+      <div><dt>版本</dt><dd>1.0</dd></div>
+      <div><dt>平台</dt><dd>macOS 13+</dd></div>
+      <div><dt>构建</dt><dd>Swift 6 · SwiftUI</dd></div>
+      <div><dt>依赖</dt><dd>无</dd></div>
+      <div><dt>许可</dt><dd>MIT</dd></div>
+      <div><dt>仓库</dt><dd><a href="https://github.com/wang-junjian/clamshell">wang-junjian/clamshell</a></dd></div>
+    </dl>
+  </header>
+
+  <div class="layout">
+    <nav class="toc">
+      <div class="h">目录</div>
+      <a href="#s1"><span>01</span>合盖不是闲着</a>
+      <a href="#s2"><span>02</span>一条命令的两个坑</a>
+      <a href="#s3"><span>03</span>形态</a>
+      <a href="#s4"><span>04</span>四层结构</a>
+      <a href="#s5"><span>05</span>三条流水线</a>
+      <a href="#s6"><span>06</span>兜底</a>
+      <a href="#s7"><span>07</span>关键决策</a>
+      <a href="#s8"><span>08</span>边界</a>
+    </nav>
+
+    <div class="col">
+    <main>
+
+    <!-- ============ 01 ============ -->
+    <section id="s1">
+      <span class="num">01 —— 问题</span>
+      <h2>合盖不是"闲着"，所以拦不住</h2>
+
+      <p>
+        大部分人第一次尝试解决这个问题，用的都是 <code>caffeinate</code>：
+      </p>
+
+      <pre><code><span class="cmt"># 常见的三种写法，全部无效</span>
+caffeinate -i make          <span class="cmt"># 防止空闲睡眠</span>
+caffeinate -d make          <span class="cmt"># 连显示器一起防</span>
+caffeinate -s make          <span class="cmt"># 接电源时防止系统睡眠</span></code></pre>
+
+      <p>
+        合上盖子，这些进程照样被冻住。原因不是命令写错了，而是<strong>它们拦的东西不对</strong>。
+      </p>
+
+      <p>
+        系统有两个互相独立的睡眠入口。一个是"闲着太久"：计时器到点，系统问一遍所有进程「谁还需要我醒着」，此时任何一方持有的
+        <code>IOPMAssertion</code> 断言都能投一张否决票，<code>caffeinate</code> 干的就是这件事。
+        另一个是"盖子合上了"：转轴传感器把信号交给 SMC，走的是硬件路径，<em>这条路上没有任何用户态投票环节</em>。
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 900 512" role="img" aria-label="两种睡眠入口与唯一有效开关的关系图">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#8C8C96"/>
+            </marker>
+            <marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#B8650A"/>
+            </marker>
+          </defs>
+
+          <!-- 入口层 -->
+          <rect x="64" y="46" width="350" height="58" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+          <text x="239" y="72" text-anchor="middle" font-size="16" font-weight="600" fill="#16161A" font-family="-apple-system,PingFang SC">入口 A · 系统空闲</text>
+          <text x="239" y="91" text-anchor="middle" font-size="13.5" fill="#7C7C88" font-family="-apple-system,PingFang SC">空闲计时器到点</text>
+
+          <rect x="486" y="46" width="350" height="58" rx="9" fill="#FBF1E1" stroke="#E0B478"/>
+          <text x="661" y="72" text-anchor="middle" font-size="16" font-weight="600" fill="#8A4C06" font-family="-apple-system,PingFang SC">入口 B · 合盖</text>
+          <text x="661" y="91" text-anchor="middle" font-size="13.5" fill="#8A4C06" font-family="-apple-system,PingFang SC">转轴传感器 → SMC</text>
+
+          <!-- 箭头 入口→闸门 -->
+          <line x1="239" y1="104" x2="239" y2="172" stroke="#8C8C96" stroke-width="1.4" marker-end="url(#ar)"/>
+          <line x1="661" y1="104" x2="661" y2="300" stroke="#B8650A" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#ard)"/>
+
+          <!-- 闸门层 -->
+          <rect x="64" y="176" width="350" height="58" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+          <text x="239" y="202" text-anchor="middle" font-size="15.5" font-weight="600" fill="#16161A" font-family="-apple-system,PingFang SC">IOPMAssertion 投票</text>
+          <text x="239" y="221" text-anchor="middle" font-size="13.5" fill="#7C7C88" font-family="-apple-system,PingFang SC">有断言 → 不睡</text>
+
+          <rect x="500" y="180" width="322" height="50" rx="9" fill="#F7F6F3" stroke="#CFCEC7" stroke-dasharray="4 4"/>
+          <text x="661" y="200" text-anchor="middle" font-size="14" fill="#6B6B78" font-family="-apple-system,PingFang SC">这个环节被整段跳过</text>
+          <text x="661" y="218" text-anchor="middle" font-size="13" fill="#8A8A96" font-family="-apple-system,PingFang SC">断言在这里没有投票权</text>
+
+          <!-- 闸门→总闸 -->
+          <line x1="239" y1="234" x2="239" y2="296" stroke="#8C8C96" stroke-width="1.4" marker-end="url(#ar)"/>
+
+          <!-- 总闸 -->
+          <rect x="140" y="300" width="620" height="62" rx="10" fill="#16161A"/>
+          <text x="450" y="326" text-anchor="middle" font-size="16.5" font-weight="600" fill="#FFFFFF" font-family="-apple-system,PingFang SC">SleepDisabled = 1</text>
+          <text x="450" y="346" text-anchor="middle" font-size="13" fill="#B9B9C4" font-family="-apple-system,PingFang SC">由 pmset -a disablesleep 写入 · 唯一能拦住入口 B 的闸</text>
+
+          <!-- 总闸→结果 -->
+          <line x1="330" y1="362" x2="310" y2="420" stroke="#B8650A" stroke-width="1.4" marker-end="url(#ard)"/>
+          <line x1="570" y1="362" x2="594" y2="420" stroke="#8C8C96" stroke-width="1.4" marker-end="url(#ar)"/>
+
+          <rect x="150" y="424" width="290" height="52" rx="9" fill="#FBF1E1" stroke="#E0B478"/>
+          <text x="295" y="456" text-anchor="middle" font-size="15" font-weight="600" fill="#8A4C06" font-family="-apple-system,PingFang SC">= 1 → 不睡，继续跑</text>
+
+          <rect x="470" y="424" width="290" height="52" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+          <text x="615" y="456" text-anchor="middle" font-size="15" fill="#4A4A54" font-family="-apple-system,PingFang SC">= 0 → clamshell sleep</text>
+        </svg>
+        <figcaption>
+          两条路径最终都要经过 <code>SleepDisabled</code>。区别在于：入口 A 在中途多一道可被投票的闸门，入口 B 直接穿过去。
+          这就是为什么 <code>caffeinate</code> 对合盖无效，而 <code>disablesleep</code> 有效——它站在两条路的<b>下游</b>。
+        </figcaption>
+      </figure>
+
+      <p>
+        所以这个问题的解法不在"如何让进程别被冻住"，而在"如何关掉那个总闸"。整个 macOS 只暴露了一个入口：<code>pmset</code> 的
+        <code>disablesleep</code> 设置项。
+      </p>
+
+      <div class="note">
+        <div class="t">这个开关的三个属性</div>
+        <p><strong>全局</strong>——它不属于任何进程，改的是系统级设置，App 退出后依然生效。</p>
+        <p><strong>持久</strong>——重启之后仍然是 1，不会自动恢复。它不跟着任何进程的生命周期走。</p>
+        <p><strong>需要 root</strong>——写入要管理员权限，这就是所有麻烦的起点。</p>
+      </div>
+
+      <p>
+        顺带说清楚一件事：合盖睡眠<strong>不会杀死进程</strong>。它把进程冻结在原地，CPU 时间暂停、内存继续供电，
+        开盖后解冻继续跑。如果你的需求只是"回来时程序还在、不用重启"，其实什么都不用做。
+        真正需要 <code>disablesleep</code> 的，是"任务必须在我离开的这几个小时里持续推进"——下载、编译、训练、渲染。
+      </p>
+    </section>
+
+    <!-- ============ 02 ============ -->
+    <section id="s2">
+      <span class="num">02 —— 动机</span>
+      <h2>一条命令的两个坑，第二个更危险</h2>
+
+      <p>
+        既然只要一行命令，为什么还要写一个 App？因为这条命令在实际使用中有两个坑，而且它们严重程度不对等。
+      </p>
+
+      <div class="duo">
+        <div class="card">
+          <span class="tag">坑一</span>
+          <h4>记不住</h4>
+          <p>
+            <code>sudo pmset -a disablesleep 1</code> 里有三个词都是低频词。不常用的人每次都要去搜，搜到了还要确认拼写。
+            这是摩擦，但只是摩擦——多花两分钟而已。
+          </p>
+        </div>
+        <div class="card warn">
+          <span class="tag">坑二 · 更麻烦</span>
+          <h4>忘了关</h4>
+          <p>
+            合盖不睡意味着出风口被挡住、机器还在满载。放进包里它会持续发热；靠电池跑，电量耗尽会直接关机，
+            进行中的任务一起没。这是<strong>数据丢失</strong>级别的后果。
+          </p>
+        </div>
+      </div>
+
+      <p>
+        这个不对称决定了产品该做什么。如果只是"记不住"，一个 Shell 别名或一段 AppleScript 就够了，做成 App 是过度设计。
+        真正值得做成 App 的理由是：<em>需要有一个东西替你记着"现在还开着"</em>。
+      </p>
+
+      <p>
+        所以 Clamshell 的定位不是"更短的命令"，而是<strong>一个不会让你忘了关的开关</strong>。
+        功能清单里的低电量保护、退出前询问、未接电源警告，全部服务于这一件事。
+      </p>
+    </section>
+
+    <!-- ============ 03 ============ -->
+    <section id="s3">
+      <span class="num">03 —— 形态</span>
+      <h2>菜单栏，不是窗口</h2>
+
+      <p>
+        它是一个开关，不是一个"应用"。所以没有 Dock 图标、没有主窗口、没有欢迎页，点开只有一张 320pt 宽的面板。
+      </p>
+
+      <p>
+        Info.plist 里 <code>LSUIElement</code> 设为 <code>true</code>，进程就不会出现在 Dock 和 Cmd-Tab 里；
+        <code>main.swift</code> 里再显式设置 <code>setActivationPolicy(.accessory)</code>。
+        这两步有先后顺序要求——<strong>激活策略必须在 <code>app.run()</code> 之前设定，事后修改不会生效</strong>。
+        这是开发过程中真实踩到的坑：窗口迟迟不出现，原因就是策略设晚了。
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 940 560" role="img" aria-label="面板结构解剖图">
+          <defs>
+            <marker id="ld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#9A9AA4"/>
+            </marker>
+            <filter id="ps" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.10"/>
+            </filter>
+          </defs>
+
+          <!-- 面板本体 640x486 -->
+          <rect x="50" y="24" width="640" height="486" rx="14" fill="#FFFFFF" stroke="#DCDBD5" filter="url(#ps)"/>
+
+          <!-- header -->
+          <circle cx="82" cy="53" r="6" fill="#C9C8C2"/>
+          <text x="97" y="58" font-size="25" font-weight="600" fill="#16161A" font-family="-apple-system,PingFang SC">Clamshell</text>
+          <text x="658" y="58" text-anchor="end" font-size="22" fill="#6B6B78" font-family="-apple-system,PingFang SC">已关闭</text>
+
+          <!-- master card -->
+          <rect x="82" y="78" width="576" height="124" rx="24" fill="#F6F5F2" stroke="#E4E3DD"/>
+          <rect x="106" y="102" width="76" height="76" rx="18" fill="#EAE9E4"/>
+          <path d="M152 122 A18 18 0 1 0 152 158 A14.5 14.5 0 1 1 152 122 Z" fill="#8C8C98"/>
+          <text x="206" y="134" font-size="27" font-weight="600" fill="#16161A" font-family="-apple-system,PingFang SC">合盖进入睡眠</text>
+          <text x="206" y="162" font-size="22" fill="#6B6B78" font-family="-apple-system,PingFang SC">点按即可启用</text>
+          <!-- pill -->
+          <rect x="578" y="126" width="72" height="42" rx="21" fill="#E6E5E0"/>
+          <circle cx="600" cy="147" r="17" fill="#FFFFFF"/>
+          <circle cx="600" cy="147" r="17" fill="none" stroke="#000" stroke-opacity="0.08"/>
+
+          <!-- battery -->
+          <rect x="78" y="228" width="22" height="13" rx="3.5" fill="none" stroke="#8C8C98" stroke-width="1.7"/><rect x="101.5" y="232" width="2.6" height="5" rx="1.1" fill="#8C8C98"/><rect x="81" y="231" width="9" height="7" rx="1.5" fill="#8C8C98"/>
+          <text x="106" y="241" font-size="22" fill="#6B6B78" font-family="-apple-system,PingFang SC">电池 100% · 已接电源</text>
+
+          <!-- divider -->
+          <line x1="82" y1="272" x2="658" y2="272" stroke="#E9E8E3" stroke-width="1.4"/>
+
+          <!-- options -->
+          <path d="M91 294 L100 297.6 V303.6 C100 309.6 96 313.2 91 315.2 C86 313.2 82 309.6 82 303.6 V297.6 Z" fill="none" stroke="#8C8C98" stroke-width="1.7" stroke-linejoin="round"/>
+          <text x="106" y="309" font-size="23" fill="#4A4A54" font-family="-apple-system,PingFang SC">低电量保护</text>
+          <rect x="578" y="288" width="72" height="42" rx="21" fill="#B8650A"/>
+          <circle cx="630" cy="309" r="17" fill="#FFFFFF"/>
+
+          <text x="82" y="368" font-size="22" fill="#6B6B78" font-family="-apple-system,PingFang SC">⌘</text>
+          <text x="106" y="369" font-size="23" fill="#4A4A54" font-family="-apple-system,PingFang SC">全局快捷键</text>
+          <rect x="524" y="348" width="126" height="40" rx="8" fill="#F2F1EC" stroke="#E4E3DD"/>
+          <text x="587" y="374" text-anchor="middle" font-size="21" fill="#4A4A54" font-family="-apple-system,PingFang SC">⌃⌥L ⌄</text>
+
+          <!-- divider -->
+          <line x1="82" y1="418" x2="658" y2="418" stroke="#E9E8E3" stroke-width="1.4"/>
+
+          <!-- footer -->
+          <text x="82" y="452" font-size="20" fill="#9A9AA4" font-family="-apple-system,PingFang SC">v1.0</text>
+          <text x="658" y="452" text-anchor="end" font-size="22" fill="#6B6B78" font-family="-apple-system,PingFang SC">退出</text>
+
+          <!-- 标注 -->
+          <g font-family="-apple-system,PingFang SC">
+            <line x1="740" y1="52" x2="700" y2="52" stroke="#9A9AA4" stroke-width="1" marker-end="url(#ld)"/>
+            <text x="748" y="48" font-size="14" fill="#4A4A54" font-weight="600">状态点 + 状态词</text>
+            <text x="748" y="65" font-size="13" fill="#6B6B78">从 pmset -g 读回</text>
+
+            <line x1="740" y1="140" x2="668" y2="140" stroke="#9A9AA4" stroke-width="1" marker-end="url(#ld)"/>
+            <text x="748" y="136" font-size="14" fill="#4A4A54" font-weight="600">整卡 = 点击区域</text>
+            <text x="748" y="153" font-size="13" fill="#6B6B78">胶囊是绘制出来的</text>
+            <text x="748" y="169" font-size="13" fill="#6B6B78">不是 Toggle 控件</text>
+
+            <line x1="740" y1="240" x2="432" y2="240" stroke="#9A9AA4" stroke-width="1" marker-end="url(#ld)"/>
+            <text x="748" y="236" font-size="14" fill="#4A4A54" font-weight="600">供电状态</text>
+            <text x="748" y="253" font-size="13" fill="#6B6B78">IOKit.ps 实时读取</text>
+
+            <line x1="740" y1="309" x2="668" y2="309" stroke="#9A9AA4" stroke-width="1" marker-end="url(#ld)"/>
+            <text x="748" y="305" font-size="14" fill="#4A4A54" font-weight="600">兜底开关</text>
+            <text x="748" y="322" font-size="13" fill="#6B6B78">阈值固定 20%</text>
+
+            <line x1="740" y1="369" x2="668" y2="369" stroke="#9A9AA4" stroke-width="1" marker-end="url(#ld)"/>
+            <text x="748" y="365" font-size="14" fill="#4A4A54" font-weight="600">Carbon 热键</text>
+            <text x="748" y="382" font-size="13" fill="#6B6B78">无需辅助功能授权</text>
+
+            <line x1="740" y1="452" x2="668" y2="452" stroke="#9A9AA4" stroke-width="1" marker-end="url(#ld)"/>
+            <text x="748" y="448" font-size="14" fill="#4A4A54" font-weight="600">退出前拦截</text>
+            <text x="748" y="465" font-size="13" fill="#6B6B78">会先问要不要还原</text>
+          </g>
+        </svg>
+        <figcaption>
+          面板按 2× 重绘。高度由 SwiftUI 的固有尺寸驱动，不写死——<code>sizingOptions = [.preferredContentSize]</code>
+          让系统自己算出 245pt 或 280pt（含警告行时）。
+        </figcaption>
+      </figure>
+
+      <p>
+        面板里的开关<strong>不是 <code>Toggle</code> 控件</strong>，而是一个用
+        <code>Capsule</code> 加 <code>Circle</code> 画出来的形状，用手势挂在整个卡片上。原因很实际：
+        这个开关的点击目标应该是整张卡（包含图标、标题、副标题），而不是右上角那个 36×21pt 的小胶囊。
+        原生 <code>Toggle</code> 做不到这件事，硬套反而要把点击区域拆散。
+      </p>
+
+      <p>
+        配色也有一处刻意的选择：<strong>开启态用琥珀，不用绿色</strong>。绿色传达的是"一切正常"，而"合盖还在满载"恰恰是需要留意的状态。
+        给它一个像警示灯的琥珀色，动画里也只有一个颜色从 20% 到 100% 的明度变化。
+      </p>
+    </section>
+
+    <!-- ============ 04 ============ -->
+    <section id="s4">
+      <span class="num">04 —— 结构</span>
+      <h2>四层，权限只在一层上出问题</h2>
+
+      <p>
+        整个 App 的作用就是"把用户的意图翻译成一次 <code>pmset</code> 调用"，但中间要穿过权限边界。
+        拆开看是四层，只有最底两层跟 root 有关。
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 900 430" role="img" aria-label="Clamshell 四层结构图">
+          <defs>
+            <marker id="dn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#8C8C96"/>
+            </marker>
+          </defs>
+
+          <!-- 左侧层名 / 中间框 / 右侧权限 -->
+          <g font-family="-apple-system,PingFang SC">
+            <text x="118" y="70" text-anchor="end" font-size="13.5" fill="#5E5E6A" letter-spacing="0.5">UI 层</text>
+            <rect x="140" y="40" width="540" height="58" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="164" y="66" font-size="13.5" font-weight="600" fill="#16161A">NSStatusItem · NSPopover · PanelView</text>
+            <text x="164" y="85" font-size="13" fill="#6B6B78">SwiftUI 声明式界面，320pt 固定宽</text>
+            <text x="700" y="74" font-size="13.5" fill="#6B6B78">无需权限</text>
+
+            <line x1="410" y1="98" x2="410" y2="120" stroke="#8C8C96" stroke-width="1.3" marker-end="url(#dn)"/>
+
+            <text x="118" y="150" text-anchor="end" font-size="13.5" fill="#5E5E6A" letter-spacing="0.5">状态层</text>
+            <rect x="140" y="120" width="540" height="58" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="164" y="146" font-size="15" font-weight="600" fill="#16161A">AppModel · @MainActor</text>
+            <text x="164" y="165" font-size="13" fill="#6B6B78">状态机 · 30s 轮询 · 兜底判定 · 持久化偏好</text>
+            <text x="700" y="154" font-size="13.5" fill="#6B6B78">无需权限</text>
+
+            <line x1="410" y1="178" x2="410" y2="200" stroke="#8C8C96" stroke-width="1.3" marker-end="url(#dn)"/>
+
+            <text x="118" y="230" text-anchor="end" font-size="13.5" fill="#5E5E6A" letter-spacing="0.5">执行层</text>
+            <rect x="140" y="200" width="540" height="58" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="164" y="226" font-size="13.5" font-weight="600" fill="#16161A">PowerService · BatteryService · SudoersService</text>
+            <text x="164" y="245" font-size="13" fill="#6B6B78">封装全部进程调用，同步执行，由调用方调度线程</text>
+            <text x="700" y="234" font-size="13.5" fill="#B8650A" font-weight="600">视命令而定</text>
+
+            <line x1="410" y1="258" x2="410" y2="280" stroke="#8C8C96" stroke-width="1.3" marker-end="url(#dn)"/>
+
+            <text x="118" y="310" text-anchor="end" font-size="13.5" fill="#5E5E6A" letter-spacing="0.5">权限层</text>
+            <rect x="140" y="280" width="540" height="58" rx="9" fill="#FBF1E1" stroke="#E0B478"/>
+            <text x="164" y="306" font-size="15" font-weight="600" fill="#8A4C06">/etc/sudoers.d/clamshell</text>
+            <text x="164" y="325" font-size="13" fill="#8A4C06">两条精确匹配的 NOPASSWD 规则，仅此而已</text>
+            <text x="700" y="314" font-size="13.5" fill="#B8650A" font-weight="600">写入需 root</text>
+
+            <line x1="410" y1="338" x2="410" y2="360" stroke="#8C8C96" stroke-width="1.3" marker-end="url(#dn)"/>
+
+            <text x="118" y="390" text-anchor="end" font-size="13.5" fill="#5E5E6A" letter-spacing="0.5">系统层</text>
+            <rect x="140" y="360" width="540" height="50" rx="9" fill="#16161A"/>
+            <text x="164" y="391" font-size="14.5" font-weight="600" fill="#FFFFFF">pmset · IOKit.ps · SMC</text>
+            <text x="700" y="390" font-size="13.5" fill="#6B6B78">macOS 本体</text>
+          </g>
+        </svg>
+        <figcaption>
+          四层之间没有循环依赖，也没有观察者回写：下层永远不通知上层，上层靠重新读取来同步。这个方向性是后面所有状态一致性保证的来源。
+        </figcaption>
+      </figure>
+
+      <p>
+        这里有个刻意的设计约束：<strong>下层不做任何缓存</strong>。状态层要什么，每次都往下问一遍。
+        代价是每次刷新要 fork 一个 <code>pmset</code> 进程（几十毫秒），收益是永远不可能出现"界面说开着、系统其实在睡"。
+      </p>
+    </section>
+
+    <!-- ============ 05 ============ -->
+    <section id="s5">
+      <span class="num">05 —— 机制</span>
+      <h2>三条流水线</h2>
+
+      <p>
+        这个 App 真正干的事只有三件：读状态、写状态、以及为了写状态而获得权限。三件事对应三条完全不同的实现路径。
+      </p>
+
+      <h3>5.1 读：永远以 <code>pmset -g</code> 为准</h3>
+
+      <p>
+        读取不需要任何权限，只要解析 <code>pmset -g</code> 的输出。输出里有一行形如 <code>SleepDisabled&nbsp;&nbsp;&nbsp;&nbsp;1</code>，
+        按空白切分后取最后一段判断即可。
+      </p>
+
+      <pre><code><span class="kw">static func</span> readSleepDisabled() -&gt; Bool {
+    <span class="kw">let</span> output = Shell.run(pmsetPath, [<span class="str">"-g"</span>])
+    <span class="kw">guard</span> output.ok <span class="kw">else</span> { <span class="kw">return</span> false }
+
+    <span class="kw">for</span> line <span class="kw">in</span> output.stdout.split(separator: <span class="str">"\n"</span>) {
+        <span class="kw">let</span> parts = line.split(whereSeparator: { $0 == <span class="str">" "</span> || $0 == <span class="str">"\t"</span> })
+        <span class="kw">guard let</span> first = parts.first, first.lowercased() == <span class="str">"sleepdisabled"</span> <span class="kw">else</span> { <span class="kw">continue</span> }
+        <span class="kw">return</span> parts.last.map { $0 == <span class="str">"1"</span> } ?? false
+    }
+    <span class="kw">return</span> false
+}</code></pre>
+
+      <p>
+        注意两处细节。<code>pmset -g</code> 的输出<strong>不是稳定的键值格式</strong>，缩进用的是不定长空白，所以必须按空白切分而不是按冒号。
+        另外这是逐行扫描，遇到第一行匹配就返回——因为不同系统版本里这一行可能出现多次，取第一个就够了。
+        <span class="src">Sources/Clamshell/PowerService.swift:13</span>
+      </p>
+
+      <p>
+        注释里写得很直白：<em>"命令行、其他工具、甚至重启都可能改变它，本地缓存不可信"</em>。
+        这不是过度谨慎——<code>disablesleep</code> 是持久化设置，它在 App 之外随时可能被改。
+      </p>
+
+      <h3>5.2 写：<code>-n</code> 是关键的那一个字母</h3>
+
+      <p>
+        写入走的是 <code>sudo -n pmset -a disablesleep 0|1</code>。<code>-n</code> 是 <code>--non-interactive</code>：
+        <strong>禁止提示输入密码</strong>。有免密规则就直接执行，没有就立刻失败退出，绝不挂在那里等输入。
+      </p>
+
+      <p>
+        这个字母是整套设计的支点。它让"缺少权限"变成一个<em>可以立即捕获的错误</em>，而不是一个卡住的进程。
+        App 因此可以先无条件尝试一次，失败了再决定要不要弹授权框——这就是 5.4 那个流程的前提。
+      </p>
+
+      <p>
+        失败时的错误文本会被分类：输出里含 <code>password is required</code> 或
+        <code>a terminal is required</code> 就归为 <code>.needsAuthorization</code>，
+        其他情况归为普通命令错误。这两种情况的 UI 处理完全不同：前者引导授权，后者直接报错。
+        <span class="src">Sources/Clamshell/PowerService.swift:28</span>
+      </p>
+
+      <h3>5.3 授权：一条 shell 脚本，三个动作</h3>
+
+      <p>
+        授权只需要做一次。它写入 <code>/etc/sudoers.d/clamshell</code>，内容只有两行，精确到命令参数：
+      </p>
+
+      <pre><code><span class="cmt"># 仅授权下面这一条命令的两个取值，可安全删除本文件以撤销授权</span>
+你的用户名 ALL=(root) NOPASSWD: /usr/bin/pmset -a disablesleep 0, /usr/bin/pmset -a disablesleep 1</code></pre>
+
+      <p>
+        注意它<strong>没有</strong>写成 <code>/usr/bin/pmset</code> 通配。授权范围是"这一个命令的这两个确切参数"，
+        而不是"这一个命令"。用户没法借这条规则去执行 <code>pmset sleepnow</code> 或别的什么。
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 900 452" role="img" aria-label="授权流程时序图">
+          <defs>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#6E6E7A"/>
+            </marker>
+            <marker id="a2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#B8650A"/>
+            </marker>
+          </defs>
+
+          <g font-family="-apple-system,PingFang SC">
+            <!-- 参与者 -->
+            <rect x="48" y="30" width="150" height="40" rx="8" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="123" y="55" text-anchor="middle" font-size="14" font-weight="600" fill="#16161A">App</text>
+
+            <rect x="268" y="30" width="170" height="40" rx="8" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="353" y="55" text-anchor="middle" font-size="14" font-weight="600" fill="#16161A">osascript</text>
+
+            <rect x="508" y="30" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="588" y="48" text-anchor="middle" font-size="14" font-weight="600" fill="#16161A">系统密码框</text>
+            <text x="588" y="63" text-anchor="middle" font-size="12" fill="#6B6B78">securityd</text>
+
+            <rect x="738" y="30" width="130" height="40" rx="8" fill="#FFF6E8" stroke="#E0B478"/>
+            <text x="803" y="55" text-anchor="middle" font-size="14" font-weight="600" fill="#8A4C06">root shell</text>
+
+            <!-- 生命线 -->
+            <line x1="123" y1="70" x2="123" y2="440" stroke="#E4E3DD" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="353" y1="70" x2="353" y2="440" stroke="#E4E3DD" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="588" y1="70" x2="588" y2="440" stroke="#E4E3DD" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="803" y1="70" x2="803" y2="440" stroke="#E4E3DD" stroke-width="1" stroke-dasharray="3 4"/>
+
+            <!-- 1 -->
+            <line x1="123" y1="104" x2="347" y2="104" stroke="#6E6E7A" stroke-width="1.3" marker-end="url(#a2)"/>
+            <text x="235" y="94" text-anchor="middle" font-size="13" fill="#4A4A54">do shell script "…" with admin privileges</text>
+
+            <!-- 2 -->
+            <line x1="353" y1="146" x2="582" y2="146" stroke="#6E6E7A" stroke-width="1.3" marker-end="url(#a2)"/>
+            <text x="467" y="139" text-anchor="middle" font-size="13" fill="#4A4A54">请求提权</text>
+
+            <!-- 3 -->
+            <line x1="588" y1="188" x2="359" y2="188" stroke="#B8650A" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#a2r)"/>
+            <text x="473" y="181" text-anchor="middle" font-size="13" fill="#8A4C06">用户输入密码 · 或取消</text>
+
+            <!-- 4 -->
+            <line x1="353" y1="236" x2="797" y2="236" stroke="#6E6E7A" stroke-width="1.3" marker-end="url(#a2)"/>
+            <text x="575" y="220" text-anchor="middle" font-size="13" fill="#4A4A54">以 root 执行整段脚本</text>
+
+            <!-- 5 -->
+            <path d="M803 248 L803 264 L803 264" stroke="none"/>
+            <rect x="612" y="244" width="272" height="34" rx="6" fill="#FFF6E8" stroke="#E0B478"/>
+            <text x="748" y="266" text-anchor="middle" font-size="12.5" fill="#8A4C06" font-family="Menlo,ui-monospace,monospace">install -m 0440</text>
+
+            <!-- 6 -->
+            <rect x="612" y="292" width="272" height="34" rx="6" fill="#FFF6E8" stroke="#E0B478"/>
+            <text x="748" y="314" text-anchor="middle" font-size="12.5" fill="#8A4C06" font-family="Menlo,ui-monospace,monospace">visudo -c -f &lt;规则文件&gt;</text>
+
+            <!-- 回滚分支 -->
+            <line x1="803" y1="336" x2="803" y2="362" stroke="#B8650A" stroke-width="1.2" stroke-dasharray="4 3"/>
+            <rect x="612" y="366" width="272" height="34" rx="6" fill="#FDF0E4" stroke="#E0B478" stroke-dasharray="4 3"/>
+            <text x="748" y="388" text-anchor="middle" font-size="12.5" fill="#8A4C06" font-family="ui-monospace,Menlo">校验失败 → rm -f 回滚</text>
+
+            <!-- 完成 -->
+            <line x1="803" y1="422" x2="129" y2="422" stroke="#B8650A" stroke-width="1.3" marker-end="url(#a2r)"/>
+            <text x="466" y="404" text-anchor="middle" font-size="13" fill="#8A4C06" font-weight="600">此后 sudo -n 直接成功，切换零弹窗</text>
+          </g>
+        </svg>
+        <figcaption>
+          三个动作串在同一条 shell 脚本里执行，用 <code>&amp;&amp;</code> 和 <code>||</code> 连成原子操作。
+          完整命令是 <code>install -m 0440 -o root -g wheel</code> 写入、<code>visudo -c -f</code> 校验语法、失败则
+          <code>rm -f</code> 回滚。中间没有"文件已写入但内容有误"的窗口。
+          <span class="src">Sources/Clamshell/SudoersService.swift:50</span>
+        </figcaption>
+      </figure>
+
+      <p>
+        这段脚本被包在一个 <code>osascript</code> 调用里执行，用的是
+        <code>do shell script "…" with administrator privileges</code>。这是 macOS 提供的标准提权通道，
+        会弹出系统原生的密码框，不需要自己实现任何 UI。用户取消时 AppleScript 返回 <code>-128</code>，被映射成
+        <code>.cancelled</code> 而不是错误——取消不是失败。
+      </p>
+
+      <div class="note">
+        <div class="t">为什么不用特权 helper</div>
+        <p>
+          苹果官方的现代做法是 <code>SMAppService</code> 加 XPC 注册一个 root 守护进程。它确实是"更正确"的方案，
+          但它要求<strong>有效的 Developer ID 签名身份</strong>。这台机器上没有任何代码签名证书，ad-hoc 签名下注册成功率无法保证。
+        </p>
+        <p>
+          选了 sudoers 是因为它零签名依赖、内容可审计、一行命令即可撤销。代价是它动了系统配置文件——所以写入前后都做了校验和回滚。
+        </p>
+      </div>
+
+      <h4>一个不容易发现的假阳性</h4>
+
+      <p>
+        判断"规则是否已生效"看似简单：<code>sudo -n -l &lt;命令&gt;</code> 返回 0 就是有权限。实际上这个判断是<strong>错的</strong>。
+      </p>
+
+      <p>
+        管理员账户本身带有 <code>(ALL) ALL</code> 规则，所以即使 <code>/etc/sudoers.d/</code> 是空的，
+        <code>sudo -n -l</code> 也会返回成功——它列出的是"你有权做什么"，而不是"你现在不需要密码"。
+        这个假阳性在开发中真的出现过：诊断输出报告"免密已生效"，但目标文件根本不存在。
+      </p>
+
+      <pre><code><span class="cmt">// 错误写法：只看退出码</span>
+<span class="kw">return</span> Shell.run(sudoPath, [<span class="str">"-n"</span>, <span class="str">"-l"</span>, pmsetPath, <span class="str">"disablesleep"</span>]).ok
+
+<span class="cmt">// 正确写法：输出里必须同时出现 NOPASSWD 和目标命令</span>
+<span class="kw">let</span> text = Shell.run(sudoPath, [<span class="str">"-n"</span>, <span class="str">"-l"</span>]).stdout
+<span class="kw">return</span> text.contains(<span class="str">"NOPASSWD"</span>) &amp;&amp; text.contains(<span class="str">"disablesleep"</span>)</code></pre>
+
+      <h3>5.4 切换：先真跑一遍，被拒了才授权</h3>
+
+      <p>
+        这是全项目最重要的一个流程决策。直觉做法是"先检查有没有权限，没有就授权，有就直接切换"，
+        但代码选择了相反的顺序：<em>直接尝试切换，只有真的被拒了才去要权限</em>。
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 900 400" role="img" aria-label="切换状态机">
+          <defs>
+            <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#6E6E7A"/>
+            </marker>
+            <marker id="a3r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#B8650A"/>
+            </marker>
+          </defs>
+          <g font-family="-apple-system,PingFang SC">
+            <rect x="330" y="24" width="240" height="46" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="450" y="52" text-anchor="middle" font-size="14.5" font-weight="600" fill="#16161A">点击卡片</text>
+
+            <line x1="450" y1="70" x2="450" y2="92" stroke="#6E6E7A" stroke-width="1.3" marker-end="url(#a3)"/>
+
+            <rect x="330" y="96" width="240" height="46" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="450" y="124" text-anchor="middle" font-size="14.5" fill="#16161A">target = !sleepDisabled</text>
+
+            <line x1="450" y1="142" x2="450" y2="164" stroke="#6E6E7A" stroke-width="1.3" marker-end="url(#a3)"/>
+
+            <rect x="240" y="168" width="420" height="46" rx="9" fill="#16161A"/>
+            <text x="450" y="196" text-anchor="middle" font-size="13.5" fill="#FFFFFF" font-family="Menlo,ui-monospace,monospace">sudo -n pmset -a disablesleep target</text>
+
+            <line x1="450" y1="214" x2="450" y2="236" stroke="#6E6E7A" stroke-width="1.3"/>
+
+            <polygon points="450,238 520,272 450,306 380,272" fill="#FFF6E8" stroke="#E0B478"/>
+            <text x="450" y="277" text-anchor="middle" font-size="14" fill="#8A4C06" font-weight="600">返回？</text>
+
+            <!-- 左支 -->
+            <path d="M380 272 L200 272 L200 330" fill="none" stroke="#B8650A" stroke-width="1.3" marker-end="url(#a3r)"/>
+            <rect x="40" y="336" width="330" height="52" rx="9" fill="#FBF1E1" stroke="#E0B478"/>
+            <text x="205" y="358" text-anchor="middle" font-size="14" font-weight="600" fill="#8A4C06">成功 → refresh()</text>
+            <text x="205" y="375" text-anchor="middle" font-size="12.5" fill="#8A4C06">不信任返回值，重新从系统读一遍</text>
+
+            <!-- 中支 -->
+            <path d="M450 306 L450 318" fill="none" stroke="#6E6E7A" stroke-width="1.3"/>
+            <rect x="310" y="336" width="280" height="52" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="450" y="358" text-anchor="middle" font-size="14" font-weight="600" fill="#16161A">needsAuthorization</text>
+            <text x="450" y="375" text-anchor="middle" font-size="12.5" fill="#6B6B78">弹密码框 → 装规则 → 重试一次</text>
+            <path d="M450 318 L450 336" fill="none" stroke="#6E6E7A" stroke-width="1.3" marker-end="url(#a3)"/>
+
+            <!-- 右支 -->
+            <path d="M520 272 L700 272 L700 330" fill="none" stroke="#6E6E7A" stroke-width="1.3" marker-end="url(#a3)"/>
+            <rect x="530" y="336" width="330" height="52" rx="9" fill="#FFFFFF" stroke="#DAD9D3"/>
+            <text x="695" y="358" text-anchor="middle" font-size="14" font-weight="600" fill="#16161A">其他错误</text>
+            <text x="695" y="375" text-anchor="middle" font-size="12.5" fill="#6B6B78">面板底部显示提示，3.2 秒后消失</text>
+          </g>
+        </svg>
+        <figcaption>
+          注意左侧那条分支：成功后<b>不</b>直接把内存里的值改掉，而是调用 <code>refresh()</code> 重新执行 <code>pmset -g</code>。
+          一次成功写入不代表下一次读到的就是它——中间可能有人改过。
+        </figcaption>
+      </figure>
+
+      <p>
+        为什么先尝试？代码注释给了答案：<em>"探测命令在无终端环境下的返回并不可靠，真实尝试才是唯一可信的信号"</em>。
+        这句话是被实战验证过的——前面那个 <code>sudo -n -l</code> 的假阳性就是"探测不可信"的具体案例。
+      </p>
+
+      <p>
+        先尝试还有第二个好处：<strong>绝大多数点击都不需要经过探测</strong>。授权装好之后，每次切换只是一次
+        <code>sudo -n</code> 调用，没有任何额外开销和判断分支。只有在新机器或规则被删的情况下，才会落到授权分支。
+      </p>
+    </section>
+
+    <!-- ============ 06 ============ -->
+    <section id="s6">
+      <span class="num">06 —— 兜底</span>
+      <h2>三条保证，都针对"忘了关"</h2>
+
+      <table class="tbl">
+        <thead>
+          <tr><th style="width:23%">机制</th><th style="width:32%">触发条件</th><th>动作</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>低电量保护</strong></td>
+            <td class="m">电量 &lt; 20%<br>且 未接电源<br>且 开关开启<br>且 该功能启用</td>
+            <td>自动写回 <code>0</code>，面板提示"电量低于 20%，已自动还原睡眠"</td>
+          </tr>
+          <tr>
+            <td><strong>未接电源警告</strong></td>
+            <td class="m">开关开启<br>且 未接电源</td>
+            <td>纯 UI：面板里多出一行琥珀色警示，不执行任何动作</td>
+          </tr>
+          <tr>
+            <td><strong>退出前拦截</strong></td>
+            <td class="m">退出 App 时<br>系统仍为 1</td>
+            <td>三按钮对话框：还原并退出 / 保持现状退出 / 取消</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        第一条的判定写成一条 <code>guard</code>，五个条件用逗号连着，任一不满足就直接返回。这种写法比嵌套
+        <code>if</code> 更不容易漏条件，也让"什么情况下不触发"一眼可读：
+      </p>
+
+      <pre><code><span class="kw">guard</span> lowBatteryGuard,          <span class="cmt">// 用户开着这个功能</span>
+      sleepDisabled,            <span class="cmt">// 系统确实处于合盖不睡</span>
+      battery.hasBattery,       <span class="cmt">// 排除台式机</span>
+      !battery.onAC,            <span class="cmt">// 接着电源就没风险</span>
+      battery.level &lt; <span class="kw">Self</span>.lowBatteryThreshold  <span class="cmt">// 20%</span>
+<span class="kw">else</span> { <span class="kw">return</span> }</code></pre>
+
+      <p>
+        有一个必须说清楚的细节：<strong>这个判定只在 <code>refresh()</code> 里跑</strong>，而 <code>refresh()</code> 由三个事件驱动——
+        30 秒定时器、打开面板、切换成功后。所以低电量保护的最坏响应延迟是 30 秒，不是即时。
+        对于"防止电池耗尽"这个目标，30 秒的窗口远远够用；但如果有人期待它是秒级的，那是误解。
+      </p>
+
+      <p>
+        第三条用的是 <code>NSApplicationDelegate</code> 的终止钩子，返回
+        <code>.terminateNow</code> 或 <code>.terminateCancel</code>。这里有个容易忽略的点：
+        在弹出 <code>NSAlert</code> 之前必须先把 App 激活（<code>NSApp.activate()</code>），
+        否则在 <code>LSUIElement</code> 的进程里对话框可能弹在后台，用户根本看不见。
+      </p>
+    </section>
+
+    <!-- ============ 07 ============ -->
+    <section id="s7">
+      <span class="num">07 —— 决策</span>
+      <h2>几个选型，以及被放弃的那一边</h2>
+
+      <p>
+        这个项目只有一千多行 Swift，但每个技术选择背后都有一次明确的取舍。把被放弃的选项一并写下来，比只写结论有用。
+      </p>
+
+      <table class="tbl">
+        <thead>
+          <tr><th style="width:18%">决策点</th><th style="width:22%">选择</th><th style="width:30%">理由</th><th>代价</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>提权方式</td>
+            <td>sudoers 白名单</td>
+            <td>零签名依赖，内容可审计，一行可撤销</td>
+            <td class="no">修改系统配置文件；比 helper 方案安全性弱一个层级</td>
+          </tr>
+          <tr>
+            <td>全局快捷键</td>
+            <td>Carbon <code>RegisterEventHotKey</code></td>
+            <td>不需要"辅助功能"授权，不监听事件流</td>
+            <td class="no">用了一套老 API，Carbon 已停止演进</td>
+          </tr>
+          <tr>
+            <td>工程组织</td>
+            <td>SwiftPM + 脚本组 bundle</td>
+            <td>构建可复现，没有 pbxproj 合并冲突</td>
+            <td class="no">要自己写 Info.plist、生成 icns、做 ad-hoc 签名</td>
+          </tr>
+          <tr>
+            <td>面板尺寸</td>
+            <td>SwiftUI 固有尺寸驱动</td>
+            <td>不写死高度，增删行不会裁切</td>
+            <td class="no">首次显示后要延迟 50ms 再校正一次</td>
+          </tr>
+          <tr>
+            <td>开启态配色</td>
+            <td>琥珀色，不用绿色</td>
+            <td>"合盖满载"是需要留意的状态，绿色会给出错误的安心感</td>
+            <td class="no">与系统"开关=绿色"的惯例不一致，需要用户重新学习</td>
+          </tr>
+          <tr>
+            <td>定时自动还原</td>
+            <td class="no">不做</td>
+            <td>产品线保持干净，只留"不会忘"这一条主线</td>
+            <td class="no">长任务仍需自己估时间</td>
+          </tr>
+          <tr>
+            <td>开机自启</td>
+            <td class="no">不做</td>
+            <td><code>SMAppService</code> 在 ad-hoc 签名下注册成功率不保证</td>
+            <td class="no">重启后要手动打开一次</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        最后两行值得单独说。它们不是"没做完"，而是<strong>主动砍掉</strong>的。
+        开机自启这条尤其典型：技术上可以加一行 <code>SMAppService.mainApp.register()</code>，
+        在没有开发者证书的环境下它可能成功也可能静默失败。<em>一个看起来存在、实际不生效的开关，比没有这个开关更糟</em>——
+        用户会以为自己已经配好了，然后在下一次重启后失去这个功能却不自知。
+      </p>
+
+      <p>
+        同类判断还出现在开发过程的另一处：面板高度。最初用 <code>view.fittingSize</code> 手动计算，
+        结果在 popover 显示之前拿不到正确布局，面板被裁成 200×130。改成让 SwiftUI 自己上报固有尺寸
+        （<code>hosting.sizingOptions = [.preferredContentSize]</code>）之后才稳定。
+        这类"看起来能用、边界情况下崩掉"的实现，比明确的缺失更值得警惕。
+      </p>
+    </section>
+
+    <!-- ============ 08 ============ -->
+    <section id="s8">
+      <span class="num">08 —— 边界</span>
+      <h2>它做不到什么</h2>
+
+      <h4>散热不是软件能解决的</h4>
+      <p>
+        合盖之后出风口被机身挡住，14 寸机型长时间满载必然降频、发烫。这不是 Clamshell 的缺陷，是物理限制。
+        短时任务（几十分钟的下载、编译）没问题；几小时的重负载应该放在桌面上不合盖，或者迁到常开的机器上跑。
+      </p>
+
+      <h4>签名是 ad-hoc 的</h4>
+      <p>
+        没有 Apple 开发者证书，所以没有公证。首次打开可能被 Gatekeeper 拦下，需要在 Finder 里右键 → 打开，只需一次。
+        这也是为什么没做自动更新——更新机制同样依赖签名身份。
+      </p>
+
+      <h4>状态是全局的，不跟着 App 走</h4>
+      <p>
+        <code>disablesleep</code> 不属于任何进程。App 被强杀、崩溃、或者你直接 <code>kill -9</code>，
+        系统仍然停在"合盖不睡"。App 下一次启动会读回真实状态并如实显示，但这中间的空窗期它管不了。
+        这是这个开关本身的性质，任何封装都无法改变。
+      </p>
+
+      <h4>授权是持久的系统改动</h4>
+      <p>
+        <code>/etc/sudoers.d/clamshell</code> 会一直待在那里，直到你手动删除。规则本身只放行了一条命令的两个取值，
+        风险可控，但它确实是一个 App 在你系统里留下的、超出自身生命周期的痕迹。
+        撤销方式：<code>sudo rm /etc/sudoers.d/clamshell</code>。
+      </p>
+    </section>
+
+    <!-- ============ 附录 ============ -->
+    <section id="s9">
+      <span class="num">附录</span>
+      <h2>构建与安装</h2>
+
+      <pre><code>git clone https://github.com/wang-junjian/clamshell.git
+<span class="kw">cd</span> clamshell &amp;&amp; ./build.sh
+open dist/Clamshell.app</code></pre>
+
+      <p>
+        <code>build.sh</code> 做四件事：<code>swift build -c release --arch arm64</code> 编译、
+        从 <code>Resources/</code> 拷 Info.plist、用脚本生成 10 个尺寸的 icns、再 <code>codesign -s -</code> 做 ad-hoc 签名。
+        整个 bundle 由脚本组装，没有 Xcode 工程文件。
+      </p>
+
+      <p>
+        需要本机已装 Xcode 命令行工具，没装会提示 <code>xcode-select --install</code>。
+        另外在受限环境（比如外层已有沙箱）里编译时，SwiftPM 的 manifest 编译会失败，
+        需要给 <code>swift build</code> 加 <code>--disable-sandbox</code>——这也是构建脚本里默认带上的参数。
+      </p>
+
+      <h4>自检模式</h4>
+      <p>
+        二进制支持三个开发期参数：<code>--diagnose</code> 打印状态/电池/授权探测结果，
+        <code>--toggle-test</code> 走一遍真实切换（设 1 → 读回 → 还原 0 → 读回），
+        <code>--snapshot</code> 把面板三态离屏渲染成 PNG。
+        后两个用于在无人值守环境下验证真实行为，不必手动点。
+      </p>
+    </section>
+
+    </main>
+
+    <footer>
+      <div class="r">
+        <span>Clamshell 1.0 · MIT License</span>
+        <span>为 macOS 13+ 构建，在 macOS 26 / M2 Max 上验证</span>
+      </div>
+    </footer>
+    </div>
+  </div>
+</div>
+</body>
+</html>
