@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Playwright 中 recordVideo 与 CDP 直采本是同一条 Chromium 供帧管道的两个出口：本手册拆开安装对账、源码机制与实测帧率，指出 fps 只是配额而非产能，并给出慢放选型的判据、五条工程硬约束与故障对照表。">
+<meta name="keywords" content="playwright, recordvideo, chrome-devtools-protocol, screen-capture, frame-rate, video-encoding">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-02">
+<title>画面采集技术选型 · recordVideo 与 CDP 的工作原理</title>
+<style>
+:root{
+  --bg:#f6f7fb;
+  --paper:#ffffff;
+  --ink:#0e1726;
+  --body:#334155;
+  --muted:#64748b;
+  --faint:#94a3b8;
+  --line:#e5e9f2;
+  --line2:#cfd7e6;
+  --blue:#2563eb;
+  --blue-bg:#eff4ff;
+  --blue-line:#c3d4f8;
+  --cyan:#0e7490;
+  --green:#047857;
+  --green-bg:#e9f7f1;
+  --amber:#b45309;
+  --amber-bg:#fdf5e7;
+  --red:#be123c;
+  --red-bg:#fdf0f3;
+  --navy:#0f172a;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -18px rgba(15,23,42,.22);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--body);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.78;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* ---------- 布局 ---------- */
+.wrap{max-width:1220px;margin:0 auto;padding:0 28px 96px}
+.shell{display:grid;grid-template-columns:236px minmax(0,1fr);gap:44px;align-items:start}
+
+/* ---------- 页头 ---------- */
+header.top{
+  background:
+    radial-gradient(1200px 320px at 12% -40%, #e8efff 0%, rgba(232,239,255,0) 70%),
+    radial-gradient(900px 280px at 88% -60%, #e6f7f9 0%, rgba(230,247,249,0) 72%),
+    linear-gradient(180deg,#fdfefe 0%,#f6f7fb 100%);
+  border-bottom:1px solid var(--line);
+  padding:58px 0 40px;
+  margin-bottom:40px;
+}
+header.top .wrap{padding-bottom:0}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--blue);background:rgba(37,99,235,.07);
+  border:1px solid rgba(37,99,235,.16);
+  padding:4px 11px;border-radius:999px;margin-bottom:20px;
+}
+h1{
+  font-size:clamp(30px,3.6vw,44px);line-height:1.22;letter-spacing:-.02em;
+  color:var(--ink);margin:0 0 14px;font-weight:700;
+}
+h1 .thin{color:var(--muted);font-weight:600}
+.lede{font-size:17px;max-width:760px;color:#3f4e63;margin:0 0 26px}
+.meta-chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  font-size:12.5px;color:#475569;background:#fff;border:1px solid var(--line);
+  padding:5px 11px;border-radius:8px;font-family:var(--mono);
+}
+.chip b{font-family:var(--sans);color:var(--ink);font-weight:600}
+
+/* ---------- 侧栏 ---------- */
+aside.toc{position:sticky;top:26px;font-size:13.5px}
+aside.toc .t-title{
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 12px;padding-left:11px;
+}
+aside.toc a{
+  display:flex;gap:9px;align-items:baseline;
+  color:#5a6b82;text-decoration:none;padding:5px 11px;
+  border-left:2px solid transparent;line-height:1.5;
+  transition:color .15s,border-color .15s,background .15s;
+  border-radius:0 6px 6px 0;
+}
+aside.toc a .n{font-family:var(--mono);font-size:11px;color:#a8b3c4;flex:0 0 18px}
+aside.toc a:hover{color:var(--ink);background:#eef2f9}
+aside.toc a.on{color:var(--blue);border-left-color:var(--blue);background:#eef4ff;font-weight:600}
+aside.toc a.on .n{color:var(--blue)}
+.toc-foot{
+  margin-top:20px;padding:12px 12px 14px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--faint);line-height:1.7;
+}
+
+/* ---------- 章节 ---------- */
+main{min-width:0}
+section{margin:0 0 62px;scroll-margin-top:24px}
+h2{
+  display:flex;align-items:center;gap:13px;
+  font-size:24px;line-height:1.35;color:var(--ink);letter-spacing:-.01em;
+  margin:0 0 20px;padding-bottom:14px;border-bottom:1px solid var(--line);
+  font-weight:700;
+}
+h2 .num{
+  font-family:var(--mono);font-size:12px;font-weight:600;color:var(--blue);
+  background:var(--blue-bg);border:1px solid var(--blue-line);
+  padding:3px 8px;border-radius:6px;letter-spacing:.04em;
+}
+h3{
+  font-size:17.5px;color:var(--ink);margin:34px 0 12px;font-weight:650;
+  letter-spacing:-.005em;
+}
+h3 .dot{color:var(--blue);margin-right:7px;font-weight:700}
+h4{font-size:15px;color:var(--ink);margin:22px 0 8px;font-weight:650}
+p{margin:0 0 14px}
+a{color:var(--blue)}
+strong{color:var(--ink);font-weight:650}
+em{font-style:normal;background:linear-gradient(180deg,transparent 62%,#dbe7ff 62%);padding:0 1px}
+code{
+  font-family:var(--mono);font-size:.885em;
+  background:#eef1f7;border:1px solid #e2e7f0;
+  padding:1px 5px;border-radius:4px;color:#164e63;white-space:nowrap;
+}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin:5px 0}
+li::marker{color:var(--faint)}
+hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+
+/* ---------- 组件 ---------- */
+.pill{
+  display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  padding:1.5px 7px;border-radius:999px;vertical-align:1px;white-space:nowrap;
+  font-family:var(--sans);
+}
+.pill.m{background:var(--green-bg);color:var(--green)}
+.pill.s{background:var(--blue-bg);color:#1d4ed8}
+.pill.i{background:var(--amber-bg);color:var(--amber)}
+.pill.n{background:#eef1f7;color:var(--muted)}
+
+.call{
+  border:1px solid var(--line);border-left:3px solid var(--blue);
+  background:#fbfcff;border-radius:0 10px 10px 0;
+  padding:14px 18px;margin:0 0 18px;font-size:14.5px;
+}
+.call p:last-child{margin-bottom:0}
+.call .ct{display:block;font-weight:700;color:var(--ink);font-size:13px;letter-spacing:.02em;margin-bottom:4px}
+.call.warn{border-left-color:#d97706;background:#fffdf8}
+.call.ok{border-left-color:#059669;background:#fbfefc}
+.call.warn .ct{color:#b45309}
+.call.ok .ct{color:#047857}
+
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin:0 0 22px}
+.kv .cell{
+  background:var(--paper);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;box-shadow:var(--shadow);
+}
+.kv .k{font-size:11px;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;font-weight:700}
+.kv .v{font-family:var(--mono);font-size:21px;color:var(--ink);font-weight:600;line-height:1.3;margin-top:2px}
+.kv .u{font-size:12px;color:var(--muted);font-family:var(--sans)}
+
+/* ---------- 表格 ---------- */
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{
+  background:#f8fafd;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#fafcff}
+td.num,th.num{font-family:var(--mono);text-align:right;white-space:nowrap}
+td code{white-space:normal;overflow-wrap:anywhere}
+
+/* ---------- 图 ---------- */
+figure{
+  margin:0 0 20px;background:var(--paper);border:1px solid var(--line);
+  border-radius:14px;padding:18px 18px 12px;box-shadow:var(--shadow);
+}
+figure svg{display:block;width:100%;height:auto}
+figure svg text{font-family:var(--sans)}
+figcaption{
+  font-size:12.5px;color:var(--muted);padding:10px 4px 2px;border-top:1px dashed var(--line);
+  margin-top:12px;line-height:1.65;
+}
+figcaption b{color:var(--ink);font-weight:650}
+
+/* ---------- 步骤 ---------- */
+ol.steps{list-style:none;padding:0;counter-reset:s;margin:0 0 20px}
+ol.steps li{
+  position:relative;padding:0 0 16px 42px;margin:0;counter-increment:s;
+  border-left:1px solid var(--line);margin-left:13px;
+}
+ol.steps li:last-child{border-left-color:transparent;padding-bottom:4px}
+ol.steps li::before{
+  content:counter(s,decimal-leading-zero);
+  position:absolute;left:-13px;top:-2px;width:26px;height:26px;
+  background:var(--paper);border:1px solid var(--blue-line);color:var(--blue);
+  border-radius:50%;font-family:var(--mono);font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+ol.steps li b{display:block;color:var(--ink);font-weight:650;margin-bottom:2px}
+ol.steps li p{margin:0 0 6px;font-size:14.5px}
+
+/* ---------- 代码 ---------- */
+pre{
+  background:#0f172a;color:#dbe4f3;border-radius:10px;
+  padding:16px 18px;overflow-x:auto;margin:0 0 18px;
+  font-family:var(--mono);font-size:12.6px;line-height:1.72;
+  border:1px solid #1e293b;
+}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:#64748b}
+pre .k{color:#93c5fd}
+pre .s{color:#86efac}
+pre .f{color:#fcd34d}
+pre .t{color:#c4b5fd}
+pre .tag{
+  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  color:#64748b;margin:-4px 0 8px;
+}
+pre .tag::before{content:"// "}
+
+/* ---------- 结尾 ---------- */
+footer{
+  border-top:1px solid var(--line);margin-top:20px;padding-top:22px;
+  font-size:13px;color:var(--faint);
+}
+footer b{color:var(--muted)}
+
+@media (max-width:960px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  aside.toc{display:none}
+  .wrap{padding:0 18px 72px}
+  body{font-size:15px}
+}
+@media print{
+  body{background:#fff}
+  aside.toc{display:none}
+  .shell{display:block}
+  figure,pre{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="eyebrow">Capture Pipeline · 技术选型手册</span>
+    <h1>recordVideo 与 CDP<br><span class="thin">两条画面采集链路的工作原理</span></h1>
+    <p class="lede">
+      它们不是两套技术，而是同一个 Chromium 供帧管道的两个下游出口。这份文档把安装链路、源码机制、
+      实测帧率和选型判断拆成可核对的步骤 —— 每一步都标注了证据来源：是实测出来的、读源码读出来的，还是推断。
+    </p>
+    <div class="meta-chips">
+      <span class="chip"><b>Playwright</b> 1.64.1</span>
+      <span class="chip"><b>Chromium</b> 1248 · CFT 156.0.8078.4</span>
+      <span class="chip"><b>ffmpeg</b> 1013 · n7.0.1</span>
+      <span class="chip"><b>采集</b> 1920×1080</span>
+      <span class="chip"><b>9 张</b> 手绘 SVG</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="shell">
+
+  <aside class="toc">
+    <p class="t-title">目录</p>
+    <nav id="toc">
+      <a href="#s0"><span class="n">00</span><span>三十秒结论</span></a>
+      <a href="#s1"><span class="n">01</span><span>同源，在第四步分叉</span></a>
+      <a href="#s2"><span class="n">02</span><span>安装：三个二进制</span></a>
+      <a href="#s3"><span class="n">03</span><span>recordVideo 原理</span></a>
+      <a href="#s4"><span class="n">04</span><span>CDP 原理</span></a>
+      <a href="#s5"><span class="n">05</span><span>fps 是配额不是产能</span></a>
+      <a href="#s6"><span class="n">06</span><span>选型决策</span></a>
+      <a href="#s7"><span class="n">07</span><span>工程约束</span></a>
+      <a href="#s8"><span class="n">08</span><span>故障对照表</span></a>
+      <a href="#s9"><span class="n">09</span><span>速查与复跑</span></a>
+    </nav>
+    <div class="toc-foot">
+      证据标记：<br>
+      <span class="pill m">实测</span> 本机跑出来的数<br>
+      <span class="pill s">源码</span> 读 1.64.1 实现所得<br>
+      <span class="pill i">推断</span> 合理但未直接验证
+    </div>
+  </aside>
+
+  <main>
+
+  <!-- ============ 00 ============ -->
+  <section id="s0">
+    <h2><span class="num">00</span>三十秒结论</h2>
+
+    <p>
+      如果你的问题是「这两个该怎么选」，答案往往被包装成性能对比。但读完 Playwright 的实现会发现：
+      <strong>两者调用的是同一个 CDP 命令</strong>，连 <code>quality</code> 默认值都一样（90）。
+      真正的差别只有一个 —— <em>帧拿到手之后，谁来把它变成文件</em>。
+    </p>
+
+    <div class="kv">
+      <div class="cell">
+        <div class="k">CDP 直采</div>
+        <div class="v">97.85 <span class="u">帧/秒</span></div>
+      </div>
+      <div class="cell">
+        <div class="k">recordVideo @90</div>
+        <div class="v">58.8 <span class="u">唯一帧/秒</span></div>
+      </div>
+      <div class="cell">
+        <div class="k">默认录制尺寸</div>
+        <div class="v">800×450</div>
+      </div>
+      <div class="cell">
+        <div class="k">默认帧率</div>
+        <div class="v">25 <span class="u">fps</span></div>
+      </div>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th style="width:132px">判断</th><th>依据</th><th style="width:74px">证据</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>采集端同源</strong></td>
+            <td>recordVideo 内部就是 <code>ScreencastClient</code> 的一个客户端，调用 <code>Page.startScreencast</code>；<code>format: "jpeg"</code>、<code>quality ?? 90</code>。</td>
+            <td><span class="pill s">源码</span></td>
+          </tr>
+          <tr>
+            <td><strong>fps 只是配额</strong></td>
+            <td>传 <code>fps</code> 只改两处：<code>maxFramesInFlight</code>（5 或 10）和 ffmpeg 的 <code>-r</code>。声明 90 时，90 帧里有 31 帧是 ffmpeg 复制出来的。</td>
+            <td><span class="pill s">源码</span> <span class="pill m">实测</span></td>
+          </tr>
+          <tr>
+            <td><strong>不抢主线程</strong></td>
+            <td>注入 rAF 探针测真实渲染帧率：不录制 116.85 / 录 60fps 116.45 / 录 90fps 116.67 / CDP 116.80，差异 &lt; 0.5%。</td>
+            <td><span class="pill m">实测</span></td>
+          </tr>
+          <tr>
+            <td><strong>按镜头分工</strong></td>
+            <td>1× 常规镜头用 <code>fps:60</code>（唯一 47.8，降到 30fps 交付够用）；2× 以上慢放用 CDP（慢放后 27.8 vs 25.0）。</td>
+            <td><span class="pill m">实测</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="call">
+      <span class="ct">为什么先讲结论</span>
+      <p>
+        因为选型的成本差在「工程」而不在「性能」：recordVideo 是 20 行配置换一个 webm，CDP 是 20 行协议换 900 张 JPEG + 一份 meta.json。
+        性能上 CDP 全面占优，但它要求你自己管帧号、时间戳和后续编码 —— 这部分的代价，只有在你真的需要慢放或逐帧对齐时才值得付。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 01 ============ -->
+  <section id="s1">
+    <h2><span class="num">01</span>同源，在第四步分叉</h2>
+
+    <p>
+      把两条链路画在一起，交叉点非常清楚：上半和下半在 <strong>Chromium 出帧</strong> 之前完全重叠。
+      这个结构决定了后面所有结论 —— 既然是同一个水源，那产能上限就由水源决定，下游只能决定「怎么装瓶」。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 432" role="img" aria-label="recordVideo 与 CDP 的链路对比图">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/>
+          </marker>
+        </defs>
+
+        <text x="20" y="30" font-size="12" font-weight="700" fill="#94a3b8">① 采集端 · 两条链路共用</text>
+        <text x="440" y="30" font-size="12" font-weight="700" fill="#94a3b8">② 下游 · 在这里分叉</text>
+
+        <!-- Chromium -->
+        <rect x="20" y="170" width="160" height="86" rx="11" fill="#f8fafd" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="100" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#0e1726">Chromium 合成器</text>
+        <text x="100" y="226" text-anchor="middle" font-size="11" fill="#64748b">每合成一帧就推一次</text>
+
+        <line x1="182" y1="213" x2="210" y2="213" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <!-- startScreencast -->
+        <rect x="212" y="170" width="200" height="86" rx="11" fill="#eff4ff" stroke="#c3d4f8" stroke-width="1.5"/>
+        <text x="312" y="198" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1d4ed8" font-family="ui-monospace,Menlo,monospace">Page.startScreencast</text>
+        <text x="312" y="219" text-anchor="middle" font-size="11" fill="#475569">jpeg · quality 90</text>
+        <text x="312" y="238" text-anchor="middle" font-size="11" fill="#475569">maxFramesInFlight 5 / 10</text>
+
+        <!-- fork -->
+        <line x1="414" y1="213" x2="426" y2="213" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="426" y1="112" x2="426" y2="312" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="426" y1="112" x2="438" y2="112" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="426" y1="312" x2="438" y2="312" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
+        <circle cx="426" cy="213" r="3.5" fill="#94a3b8"/>
+
+        <!-- A branch -->
+        <rect x="440" y="72" width="190" height="80" rx="11" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="535" y="104" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">recordVideo 内置客户端</text>
+        <text x="535" y="126" text-anchor="middle" font-size="11" fill="#64748b">Playwright 自己写盘 + 编码</text>
+
+        <rect x="670" y="72" width="160" height="80" rx="11" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="750" y="104" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">Matroska 封装</text>
+        <text x="750" y="126" text-anchor="middle" font-size="11" fill="#64748b">EBML 头 + JPEG 帧</text>
+
+        <rect x="855" y="72" width="125" height="80" rx="11" fill="#fdf5e7" stroke="#f0c987" stroke-width="1.5"/>
+        <text x="917" y="102" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">ffmpeg</text>
+        <text x="917" y="123" text-anchor="middle" font-size="11" fill="#b45309">VP9 实时编码</text>
+
+        <line x1="632" y1="112" x2="666" y2="112" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="832" y1="112" x2="851" y2="112" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
+        <text x="917" y="175" text-anchor="middle" font-size="11" fill="#64748b">app.webm（VP9）</text>
+
+        <!-- B branch -->
+        <rect x="440" y="272" width="190" height="80" rx="11" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="535" y="304" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">自建 CDP 客户端</text>
+        <text x="535" y="326" text-anchor="middle" font-size="11" fill="#64748b">你写 onFrame + ack</text>
+
+        <rect x="670" y="272" width="160" height="80" rx="11" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="750" y="304" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">JPEG 序列</text>
+        <text x="750" y="326" text-anchor="middle" font-size="11" fill="#64748b" font-family="ui-monospace,Menlo,monospace">000123.jpg</text>
+
+        <rect x="855" y="272" width="125" height="80" rx="11" fill="#e9f7f1" stroke="#a7dcc4" stroke-width="1.5"/>
+        <text x="917" y="302" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">ffmpeg</text>
+        <text x="917" y="323" text-anchor="middle" font-size="11" fill="#047857">离线编码</text>
+
+        <line x1="632" y1="312" x2="666" y2="312" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="832" y1="312" x2="851" y2="312" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
+        <text x="917" y="375" text-anchor="middle" font-size="11" fill="#64748b">成片 mp4（H.264）</text>
+
+        <text x="535" y="58" text-anchor="middle" font-size="11" font-weight="700" fill="#b45309">边录边压 · 实时</text>
+        <text x="535" y="396" text-anchor="middle" font-size="11" font-weight="700" fill="#047857">先落盘 · 录完再压</text>
+
+        <text x="20" y="416" font-size="12" fill="#64748b">上游代码完全相同，差别只在第 4 步之后 —— 谁负责把帧变成文件。</text>
+      </svg>
+      <figcaption>
+        <b>图 1 · 链路全景。</b>上半（橙）是 recordVideo：帧一进 Node 就被封进 Matroska 管道喂给 ffmpeg，边录边编码。
+        下半（绿）是 CDP 直采：Node 只负责把 JPEG 写进磁盘，编码推迟到录制结束后。同一台机器、同一场景，上半实测 58.8 唯一帧/秒，下半 77.9。
+      </figcaption>
+    </figure>
+
+    <p>
+      这个分叉在源码里只有一个入口可以确认 —— <code>ScreencastClient.addClient()</code>。
+      Playwright 的 <code>VideoRecorder</code> 把 <code>onFrame</code> 回调注册进去，从此每一帧都被同步转交给 ffmpeg 的 stdin。
+      也就是说，<strong>recordVideo 并不是「另一个采集实现」，它是 CDP 采集的一个消费者</strong>。
+    </p>
+
+    <pre><code><span class="c">// playwright-core/src/server/videoRecorder.ts（1.64.1，压缩后变量名已还原）</span>
+<span class="k">const</span> ffmpegPath = registry.findExecutable(<span class="s">"ffmpeg"</span>).executablePathOrDie();
+<span class="k">this</span>._client = {
+  onFrame: (frame) =&gt; <span class="k">this</span>._videoRecorder.writeFrame(frame.buffer, frame.frameSwapWallTime),
+  size: options.size,
+  fps: options.fps            <span class="c">// ← 只被用于 maxFramesInFlight 与 ffmpeg 的 -r</span>
+};
+<span class="k">const</span> { size } = <span class="k">this</span>._screencast.addClient(<span class="k">this</span>._client);
+<span class="k">this</span>._videoRecorder = <span class="k">new</span> FfmpegVideoRecorder(ffmpegPath, videoSize, options.fps ?? <span class="f">kDefaultFps</span>, outputFile);
+<span class="c">// kDefaultFps = 25 —— 这就是那个「不报错、只是默默给你 25fps」的默认值</span></code></pre>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section id="s2">
+    <h2><span class="num">02</span>安装：三个二进制，一个被钉死的版本</h2>
+
+    <p>
+      这一步最容易出问题的原因，是它<strong>不由你决定</strong>。你在 <code>package.json</code> 里写的是
+      <code>playwright@1.64.1</code>，但这个版本要配哪个 Chromium、哪个 ffmpeg，是
+      <code>playwright-core/browsers.json</code> 里钉死的 revision。升级 Playwright 而没重跑安装，
+      就会出现「代码是新的、二进制是旧的」—— 报错信息还只说文件不存在，不说版本不匹配。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 400" role="img" aria-label="安装链路与缓存目录结构">
+        <defs>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/>
+          </marker>
+        </defs>
+
+        <rect x="350" y="14" width="300" height="54" rx="10" fill="#f8fafd" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="500" y="37" text-anchor="middle" font-size="11.5" font-family="ui-monospace,Menlo,monospace" fill="#475569">package.json</text>
+        <text x="500" y="56" text-anchor="middle" font-size="13" font-weight="650" fill="#0e1726">playwright@1.64.1</text>
+
+        <line x1="500" y1="70" x2="500" y2="92" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <rect x="300" y="94" width="400" height="54" rx="10" fill="#eff4ff" stroke="#c3d4f8" stroke-width="1.5"/>
+        <text x="500" y="117" text-anchor="middle" font-size="11.5" font-family="ui-monospace,Menlo,monospace" fill="#1d4ed8">playwright-core/browsers.json</text>
+        <text x="500" y="136" text-anchor="middle" font-size="11" fill="#475569">钉死每个二进制的 revision</text>
+        <text x="716" y="120" font-size="11" font-weight="700" fill="#b45309">不由你决定 ↑</text>
+
+        <line x1="500" y1="148" x2="500" y2="172" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="155" y1="172" x2="845" y2="172" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="155" y1="172" x2="155" y2="196" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="500" y1="172" x2="500" y2="196" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="845" y1="172" x2="845" y2="196" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <rect x="25" y="198" width="260" height="86" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="155" y="224" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace,Menlo,monospace" fill="#0e1726">chromium-1248</text>
+        <text x="155" y="245" text-anchor="middle" font-size="11" fill="#64748b">headed 采集用它</text>
+        <text x="155" y="266" text-anchor="middle" font-size="10.5" fill="#94a3b8">366 MB</text>
+
+        <rect x="370" y="198" width="260" height="86" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="500" y="224" text-anchor="middle" font-size="11" font-weight="700" font-family="ui-monospace,Menlo,monospace" fill="#0e1726">chromium_headless_shell-1248</text>
+        <text x="500" y="245" text-anchor="middle" font-size="11" fill="#64748b">headless 默认用它</text>
+        <text x="500" y="266" text-anchor="middle" font-size="10.5" fill="#94a3b8">203 MB</text>
+
+        <rect x="715" y="198" width="260" height="86" rx="10" fill="#fdf5e7" stroke="#f0c987" stroke-width="1.5"/>
+        <text x="845" y="224" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace,Menlo,monospace" fill="#0e1726">ffmpeg-1013</text>
+        <text x="845" y="245" text-anchor="middle" font-size="11" fill="#b45309">recordVideo 的编码器</text>
+        <text x="845" y="266" text-anchor="middle" font-size="10.5" fill="#94a3b8">2.9 MB</text>
+
+        <text x="25" y="322" font-size="11.5" fill="#475569">缓存根目录（macOS）：</text>
+        <text x="176" y="322" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#1d4ed8">~/Library/Caches/ms-playwright</text>
+        <text x="25" y="346" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#475569">PLAYWRIGHT_BROWSERS_PATH=0</text>
+        <text x="253" y="346" font-size="11" fill="#475569">→ 改装到</text>
+        <text x="318" y="346" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#1d4ed8">node_modules/.local-browsers</text>
+        <text x="25" y="370" font-size="11" fill="#475569">每个目录里的</text>
+        <text x="96" y="370" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#1d4ed8">INSTALLATION_COMPLETE</text>
+        <text x="268" y="370" font-size="11" fill="#475569">是「真的装完」的唯一凭据</text>
+
+        <text x="640" y="322" font-size="11.5" font-weight="700" fill="#0e1726">默认清单 = 5 项</text>
+        <text x="640" y="346" font-size="11" fill="#475569">chromium + shell + firefox + webkit + ffmpeg</text>
+        <text x="640" y="370" font-size="11" fill="#475569">（dry-run 可原样打印这份清单）</text>
+      </svg>
+      <figcaption>
+        <b>图 2 · 安装链路。</b>revision 由 <code>browsers.json</code> 决定；三个二进制各自独立下载、独立打完成标记。
+        注意 ffmpeg 只有 2.9 MB —— 它不是完整版 ffmpeg，只带 image2pipe → VP9 这条最窄的能力。
+      </figcaption>
+    </figure>
+
+    <h3><span class="dot">·</span>三条命令，差别在「装了哪些」</h3>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th style="width:270px">命令</th><th>实际下载</th><th style="width:100px">够不够录</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>npm i -D playwright@1.64.1</code></td>
+            <td>只有 JS 包。<strong>不下载任何浏览器</strong>（1.64.1 的 package.json 已无 install 脚本）。</td>
+            <td><span class="pill n">不能</span></td>
+          </tr>
+          <tr>
+            <td><code>npx playwright install chromium</code></td>
+            <td>Chromium 1248 + headless shell + <strong>ffmpeg 1013</strong>（实测 dry-run：这个组合里 ffmpeg 是连带项）。</td>
+            <td><span class="pill m">能</span></td>
+          </tr>
+          <tr>
+            <td><code>npx playwright install</code></td>
+            <td>5 项全装：chromium、shell、firefox、webkit、ffmpeg。约 1.2 GB。</td>
+            <td><span class="pill m">能</span></td>
+          </tr>
+          <tr>
+            <td><code>npx playwright install ffmpeg</code></td>
+            <td>只补 ffmpeg（2.9 MB）。已有 Chromium 时最省的一刀。</td>
+            <td><span class="pill n">仅补齐</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="call warn">
+      <span class="ct">一个真实的踩坑，结论与直觉相反</span>
+      <p>
+        我一度以为原因是「<code>install chromium</code> 不含 ffmpeg」。实测 <code>--dry-run</code> 后否掉了这个假设：
+        <strong>1.64.1 里 ffmpeg 是 chromium 安装组的连带项</strong>，会一起下。<br>
+        真正的失败原因是：升级 Playwright 时只跑完了 Chromium 那一段，ffmpeg 的下载被中断，
+        目录存在但没有 <code>INSTALLATION_COMPLETE</code>，于是 recordVideo 在启动 ffmpeg 时才炸。
+        <em>教训不是「记得装 ffmpeg」，而是「装完必须对账」</em>。
+      </p>
+    </div>
+
+    <h3><span class="dot">·</span>装完的对账三件事</h3>
+
+    <pre><code><span class="tag">对账</span><span class="c"># 1. 这个版本到底要哪些二进制、装在哪</span>
+npx playwright install --dry-run
+
+<span class="c"># 2. 每个目录是否真的装完了（缺这个文件 = 半成品）</span>
+ls ~/Library/Caches/ms-playwright/*/INSTALLATION_COMPLETE
+
+<span class="c"># 3. ffmpeg 能否执行（它是 recordVideo 的硬依赖）</span>
+~/Library/Caches/ms-playwright/ffmpeg-1013/ffmpeg-mac -version
+<span class="c"># → ffmpeg version n7.0.1-playwright-build-1013</span></code></pre>
+
+    <p>
+      第 3 步有个容易忽略的细节：这个 ffmpeg 是 Playwright 自己编译的裁剪版，
+      只保留 VP9 编码这一条链路，所以其他机器上 <code>which ffmpeg</code> 找到的系统版<strong>不能替代它</strong>。
+      反过来说，走 CDP 路线时采集端完全不需要它 —— 这是两个方案在部署上的实质差异。
+    </p>
+
+    <div class="call">
+      <span class="ct">磁盘会悄悄长大</span>
+      <p>
+        这次检查发现缓存里同时躺着 <strong>7 代 Chromium</strong>（1055 到 1248，单代 330–366 MB），
+        而当前版本只需要 1248 —— 升级过程并没有顺手清掉旧代际。
+        只跑 <code>install chromium</code> 时，其他代际也不在它的处理范围里，于是越攒越多。
+        回收空间：<code>npx playwright uninstall</code>（清掉本安装用到的）或加 <code>--all</code>（清所有版本），
+        也可以手工删掉带旧 revision 的目录。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section id="s3">
+    <h2><span class="num">03</span>recordVideo 的工作原理</h2>
+
+    <p>
+      它做的事可以一句话说完：<strong>把一个内置的 screencast 客户端接上，把每帧 JPEG 连同自己写的时间戳封进
+      Matroska 管道，喂给一个常驻的 ffmpeg 进程实时压成 VP9。</strong>
+      下面按时序拆开，编号与图 3 对应。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 620" role="img" aria-label="recordVideo 的时序图">
+        <defs>
+          <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+          </marker>
+        </defs>
+
+        <!-- lanes -->
+        <rect x="30" y="14" width="180" height="46" rx="9" fill="#eff4ff" stroke="#c3d4f8" stroke-width="1.5"/>
+        <text x="120" y="34" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">Node / Playwright</text>
+        <text x="120" y="51" text-anchor="middle" font-size="10.5" fill="#64748b">VideoRecorder</text>
+
+        <rect x="310" y="14" width="180" height="46" rx="9" fill="#f8fafd" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="400" y="34" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">Chromium</text>
+        <text x="400" y="51" text-anchor="middle" font-size="10.5" fill="#64748b">合成器 + JPEG 编码</text>
+
+        <rect x="590" y="14" width="180" height="46" rx="9" fill="#fdf5e7" stroke="#f0c987" stroke-width="1.5"/>
+        <text x="680" y="34" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">ffmpeg 子进程</text>
+        <text x="680" y="51" text-anchor="middle" font-size="10.5" fill="#64748b">常驻，等 stdin</text>
+
+        <rect x="845" y="14" width="130" height="46" rx="9" fill="#f8fafd" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="910" y="41" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">磁盘</text>
+
+        <line x1="120" y1="60" x2="120" y2="592" stroke="#d5dce8" stroke-width="1" stroke-dasharray="4 5"/>
+        <line x1="400" y1="60" x2="400" y2="592" stroke="#d5dce8" stroke-width="1" stroke-dasharray="4 5"/>
+        <line x1="680" y1="60" x2="680" y2="592" stroke="#d5dce8" stroke-width="1" stroke-dasharray="4 5"/>
+        <line x1="910" y1="60" x2="910" y2="592" stroke="#d5dce8" stroke-width="1" stroke-dasharray="4 5"/>
+
+        <!-- loop box -->
+        <rect x="64" y="184" width="372" height="206" rx="12" fill="none" stroke="#f0b429" stroke-width="1.3" stroke-dasharray="5 4"/>
+        <rect x="64" y="176" width="118" height="18" rx="9" fill="#fdf5e7"/>
+        <text x="72" y="189" font-size="10.5" font-weight="700" fill="#b45309">循环 · 每帧执行一次</text>
+
+        <!-- ① -->
+        <circle cx="132" cy="86" r="9" fill="#2563eb"/>
+        <text x="132" y="90" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">1</text>
+        <line x1="120" y1="96" x2="396" y2="96" stroke="#64748b" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="260" y="88" text-anchor="middle" font-size="11" fill="#334155">startScreencast {quality:90, in-flight:10}</text>
+
+        <!-- ② -->
+        <circle cx="132" cy="142" r="9" fill="#2563eb"/>
+        <text x="132" y="146" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">2</text>
+        <line x1="120" y1="152" x2="676" y2="152" stroke="#64748b" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="400" y="144" text-anchor="middle" font-size="11" fill="#334155">spawn ffmpeg -f matroska -i pipe:0</text>
+
+        <!-- ③ -->
+        <circle cx="388" cy="208" r="9" fill="#2563eb"/>
+        <text x="388" y="212" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">3</text>
+        <line x1="400" y1="218" x2="124" y2="218" stroke="#64748b" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="260" y="210" text-anchor="middle" font-size="11" fill="#334155">screencastFrame（JPEG base64）</text>
+
+        <!-- ④ -->
+        <circle cx="132" cy="264" r="9" fill="#2563eb"/>
+        <text x="132" y="268" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">4</text>
+        <line x1="120" y1="274" x2="676" y2="274" stroke="#64748b" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="400" y="266" text-anchor="middle" font-size="11" fill="#334155">EBML 集群头 + JPEG 字节 → stdin</text>
+
+        <!-- ⑤ -->
+        <circle cx="692" cy="330" r="9" fill="#2563eb"/>
+        <text x="692" y="334" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">5</text>
+        <line x1="680" y1="340" x2="906" y2="340" stroke="#64748b" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="795" y="332" text-anchor="middle" font-size="11" fill="#334155">VP9 → app.webm</text>
+
+        <!-- ⑥ -->
+        <circle cx="388" cy="386" r="9" fill="#2563eb"/>
+        <text x="388" y="390" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">6</text>
+        <line x1="400" y1="396" x2="124" y2="396" stroke="#64748b" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="260" y="388" text-anchor="middle" font-size="11" fill="#334155">screencastFrameAck（回执）</text>
+
+        <!-- ⑦ -->
+        <circle cx="132" cy="464" r="9" fill="#0f172a"/>
+        <text x="132" y="468" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">7</text>
+        <line x1="120" y1="474" x2="676" y2="474" stroke="#0f172a" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="400" y="466" text-anchor="middle" font-size="11" font-weight="600" fill="#0e1726">ctx.close() → stdin.end() → 编码收尾</text>
+
+        <!-- ⑧ -->
+        <circle cx="132" cy="520" r="9" fill="#0f172a"/>
+        <text x="132" y="524" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">8</text>
+        <line x1="120" y1="530" x2="906" y2="530" stroke="#0f172a" stroke-width="1.5" marker-end="url(#a3)"/>
+        <text x="500" y="522" text-anchor="middle" font-size="11" font-weight="600" fill="#0e1726">video.saveAs(path)</text>
+
+        <text x="64" y="576" font-size="11.5" fill="#64748b">录制起点 = context 创建时刻，早于 goto：成片开头必然含加载期，必须裁掉。</text>
+      </svg>
+      <figcaption>
+        <b>图 3 · recordVideo 时序。</b>① 启动 screencast；② 拉起常驻 ffmpeg；③–⑥ 每帧走一遍
+        「收帧 → 封 Matroska → 回执」；⑦ 关闭时才结束管道；⑧ 才把临时文件交给你。
+        注意 <b>编码是串在录制过程中的</b>，这是它和 CDP 的根本区别。
+      </figcaption>
+    </figure>
+
+    <ol class="steps">
+      <li>
+        <b>建 context 就开始录</b>
+        <p>
+          <code>newContext({ recordVideo })</code> 一返回，<code>VideoRecorder.start()</code> 就已经
+          <code>addClient</code> 并 <code>startScreencast</code> 了。所以录制起点早于 <code>goto</code>，
+          <strong>片头一定带着加载画面</strong> —— 实测两次相同操作，成片时长分别是 1.68s 和 1.96s，差的就是这段。
+        </p>
+      </li>
+      <li>
+        <b>拉起一个常驻 ffmpeg</b>
+        <p>
+          输入是 <code>pipe:0</code>（stdin），容器声明为 <code>matroska</code>，输出 <code>libvpx-vp9</code>。
+          它不是「录完再压」，而是<strong>页面动一下它就收到一帧</strong>。
+        </p>
+      </li>
+      <li>
+        <b>收帧：base64 解码后的原始 JPEG</b>
+        <p>
+          CDP 事件里的 <code>data</code> 是 base64，Playwright 解成 Buffer 后<em>不做任何转码</em>，
+          原样往下传。所以 quality 90 的 JPEG 压缩痕迹会一路留到 VP9 里。
+        </p>
+      </li>
+      <li>
+        <b>自己封 Matroska：先写集群头，再写 JPEG</b>
+        <p>
+          这一步很反直觉 —— ffmpeg 的输入不是裸 JPEG 流，而是 Playwright 手工拼的 EBML 结构。
+          <code>writeClusterHeader(timestamp, length)</code> 写入时间戳和长度，紧跟原始 JPEG 字节。
+          用绝对时间戳（不是等间隔）意味着<strong>容器里保留了真实的采集节奏</strong>，后面才有「重采样」的空间。
+        </p>
+      </li>
+      <li>
+        <b>实时 VP9 编码，参数全为「快」让路</b>
+        <p>
+          <code>-deadline realtime</code>、<code>-cpu-used 8</code>、<code>-lag-in-frames 0</code>：
+          不做前瞻缓存、用最快的预设。代价是压缩效率，收益是不堵管道。
+        </p>
+      </li>
+      <li>
+        <b>回执，释放一个在途名额</b>
+        <p>
+          Chromium 只有在收到 <code>screencastFrameAck</code> 之后才会继续推后续帧，
+          在途上限是 <code>maxFramesInFlight</code>。这是整条链路真正的限速器（见 §5）。
+        </p>
+      </li>
+      <li>
+        <b><code>ctx.close()</code> 才收尾</b>
+        <p>
+          关闭 context 会触发 <code>stdin.end()</code>，ffmpeg 才会 flush 出完整的 WebM 索引（Cues）。
+          <strong>先 <code>saveAs</code> 再关 context，会拿到半截文件或报 <code>Target closed</code></strong>。
+        </p>
+      </li>
+      <li>
+        <b>交付一个 webm</b>
+        <p>
+          VP9 + WebM，没有音轨（参数里写死了 <code>-an</code>）。要 mp4 得自己转封装。
+        </p>
+      </li>
+    </ol>
+
+    <h3><span class="dot">·</span>那串 ffmpeg 参数，逐行看</h3>
+
+    <pre><code><span class="tag">1.64.1 实际下发的参数</span>-loglevel error
+-f matroska            <span class="c"># 输入容器：Playwright 手工拼的 EBML</span>
+-fpsprobesize 0 -probesize 32 -analyzeduration 0
+                       <span class="c"># 放弃探测：这三行是「别浪费时间分析流」</span>
+-i pipe:0 -y -an
+-r {fps}               <span class="c"># 输出时间基 —— 关键：不足就复制帧补齐</span>
+-c:v libvpx-vp9 -qmin 0 -qmax 50 -crf 8
+-deadline realtime -cpu-used 8 -lag-in-frames 0
+                       <span class="c"># 实时优先：无前瞻、最快预设</span>
+-b:v {bitrate}k -threads {threads} -tile-columns {tile}
+-row-mt 1
+-vf pad={w}:{h}:0:0:gray,crop={w}:{h}:0:0
+                       <span class="c"># 补到偶数尺寸（yuv420 要求）</span>
+-metadata creation_time=...
+{output}.webm</code></pre>
+
+    <p>
+      其中 <code>-r</code> 是理解后面一切的钥匙：它声明「输出必须是这个帧率」。
+      当实际进来的帧少于这个数，ffmpeg 的默认行为是<strong>重复上一帧</strong>，而不是丢时间。
+      所以文件看起来是 90fps，画面信息量却只有 59fps —— 这就是 §5 要展开的核心。
+    </p>
+
+    <h3><span class="dot">·</span>位率、线程、切片：三个自动算出来的数</h3>
+
+    <p>
+      你没法直接传码率，只能传 <code>fps</code> 和 <code>size</code>，剩下三个值由公式推导
+      （<code>w·h·fps / (800·450·25)</code> 得到一个「像素率倍数」）：
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th style="width:120px">1920×1080</th><th class="num">像素率倍数</th><th class="num">码率</th><th class="num">threads</th><th class="num">tile-columns</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>fps 25</td><td class="num">5.760</td><td class="num">5.76 Mbps</td><td class="num">2</td><td class="num">1</td></tr>
+          <tr><td>fps 60</td><td class="num">13.824</td><td class="num">13.82 Mbps</td><td class="num">4</td><td class="num">2</td></tr>
+          <tr><td>fps 90</td><td class="num">20.736</td><td class="num">20.74 Mbps</td><td class="num">6</td><td class="num">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      这个设计很聪明也很坑：<strong>码率随 fps 同比放大，每帧分到的比特数恒定</strong>。
+      所以提高 fps 不会让画面更清楚，只会让文件更大、编码更吃力，而你多拿到的那些帧里有一半是重复的。
+      实测体积也吻合：同样 22 秒，25fps 10 MB、60fps 23 MB、90fps 34 MB。
+    </p>
+
+    <div class="call warn">
+      <span class="ct">两个默认值，都会静默毁掉素材</span>
+      <p>
+        <strong>① 不传 <code>size</code> → 录出来是 800×450。</strong>
+        源码里 screencast 尺寸在缺省时按「最长边不超过 800」等比缩小（1920×1080 → 800×450）。
+        实测对照：不传 size 得 800×450 / 20 KB，传 <code>size:{1920,1080}</code> 得 1920×1080 / 85 KB。<br>
+        <strong>② 不传 <code>fps</code> → 恒定 25fps。</strong>
+        两次实测都稳定输出 <code>r_frame_rate=25/1</code>，不报错、不警告。
+      </p>
+    </div>
+
+    <pre><code><span class="tag">可用的最小配置</span><span class="k">const</span> browser = <span class="k">await</span> chromium.launch();
+<span class="k">const</span> ctx = <span class="k">await</span> browser.newContext({
+  viewport: { width: <span class="f">1920</span>, height: <span class="f">1080</span> },
+  deviceScaleFactor: <span class="f">1</span>,
+  recordVideo: {
+    dir: <span class="s">"raw"</span>,
+    size: { width: <span class="f">1920</span>, height: <span class="f">1080</span> },  <span class="c">// 不传 = 800×450</span>
+    fps: <span class="f">60</span>                                     <span class="c">// 不传 = 25</span>
+  },
+});
+<span class="k">const</span> page = <span class="k">await</span> ctx.newPage();
+<span class="c">// ... 操作 ...</span>
+
+<span class="k">const</span> video = page.video();
+<span class="k">await</span> ctx.close();                  <span class="c">// 必须先关，录制才收尾</span>
+<span class="k">await</span> video.saveAs(<span class="s">"raw/shot-b.webm"</span>);
+<span class="k">await</span> browser.close();</code></pre>
+  </section>
+
+  <!-- ============ 04 ============ -->
+  <section id="s4">
+    <h2><span class="num">04</span>CDP 的工作原理</h2>
+
+    <p>
+      把 Playwright 那层客户端拆掉，直接对着协议说话，就得到 CDP 路线：
+      <strong>发一条命令开始，每来一帧存一张 JPEG，存完回执，循环到你说停。</strong>
+      没有任何编码，没有任何容器，因此也没有任何隐藏的帧率换算。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 520" role="img" aria-label="CDP 直采的时序图">
+        <defs>
+          <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+          </marker>
+        </defs>
+
+        <rect x="110" y="14" width="180" height="46" rx="9" fill="#e9f7f1" stroke="#a7dcc4" stroke-width="1.5"/>
+        <text x="200" y="34" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">你的采集脚本</text>
+        <text x="200" y="51" text-anchor="middle" font-size="10.5" fill="#64748b">onFrame + 回执</text>
+
+        <rect x="450" y="14" width="180" height="46" rx="9" fill="#f8fafd" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="540" y="34" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">Chromium</text>
+        <text x="540" y="51" text-anchor="middle" font-size="10.5" fill="#64748b">合成器 + JPEG 编码</text>
+
+        <rect x="775" y="14" width="150" height="46" rx="9" fill="#f8fafd" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="850" y="41" text-anchor="middle" font-size="12.5" font-weight="650" fill="#0e1726">磁盘</text>
+
+        <line x1="200" y1="60" x2="200" y2="492" stroke="#d5dce8" stroke-width="1" stroke-dasharray="4 5"/>
+        <line x1="540" y1="60" x2="540" y2="492" stroke="#d5dce8" stroke-width="1" stroke-dasharray="4 5"/>
+        <line x1="850" y1="60" x2="850" y2="492" stroke="#d5dce8" stroke-width="1" stroke-dasharray="4 5"/>
+
+        <rect x="140" y="196" width="470" height="196" rx="12" fill="none" stroke="#f0b429" stroke-width="1.3" stroke-dasharray="5 4"/>
+        <rect x="140" y="188" width="150" height="18" rx="9" fill="#fdf5e7"/>
+        <text x="148" y="201" font-size="10.5" font-weight="700" fill="#b45309">闭环 · 每帧打一个来回</text>
+
+        <!-- ① -->
+        <circle cx="212" cy="90" r="9" fill="#047857"/>
+        <text x="212" y="94" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">1</text>
+        <line x1="200" y1="100" x2="536" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#a4)"/>
+        <text x="370" y="92" text-anchor="middle" font-size="11" fill="#334155">startScreencast（jpeg / q92 / 1:1）</text>
+
+        <!-- ② -->
+        <circle cx="528" cy="164" r="9" fill="#047857"/>
+        <text x="528" y="168" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">2</text>
+        <line x1="540" y1="174" x2="204" y2="174" stroke="#64748b" stroke-width="1.5" marker-end="url(#a4)"/>
+        <text x="370" y="166" text-anchor="middle" font-size="11" fill="#334155">screencastFrame {data, sessionId, timestamp}</text>
+
+        <!-- ③ -->
+        <circle cx="212" cy="242" r="9" fill="#047857"/>
+        <text x="212" y="246" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">3</text>
+        <line x1="200" y1="252" x2="846" y2="252" stroke="#64748b" stroke-width="1.5" marker-end="url(#a4)"/>
+        <text x="520" y="244" text-anchor="middle" font-size="11" fill="#334155">writeFileSync(000123.jpg)</text>
+
+        <!-- ④ -->
+        <circle cx="528" cy="330" r="9" fill="#047857"/>
+        <text x="528" y="334" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">4</text>
+        <line x1="540" y1="340" x2="204" y2="340" stroke="#64748b" stroke-width="1.5" marker-end="url(#a4)"/>
+        <text x="370" y="332" text-anchor="middle" font-size="11" fill="#334155">screencastFrameAck {sessionId}</text>
+
+        <!-- ⑤ -->
+        <circle cx="212" cy="416" r="9" fill="#0f172a"/>
+        <text x="212" y="420" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">5</text>
+        <line x1="200" y1="426" x2="846" y2="426" stroke="#0f172a" stroke-width="1.5" marker-end="url(#a4)"/>
+        <text x="520" y="418" text-anchor="middle" font-size="11" font-weight="600" fill="#0e1726">录制结束 → ffmpeg 离线编码（可选）</text>
+
+        <text x="140" y="472" font-size="11.5" fill="#64748b">你控制三个旋钮：quality（画质/带宽）、maxWidth·maxHeight（尺寸）、回执节奏（供帧速度）。</text>
+      </svg>
+      <figcaption>
+        <b>图 4 · CDP 时序。</b>① 一条命令启动；② 帧事件带着 base64 JPEG 抵达；③ 你决定怎么落盘；
+        ④ 回执才允许下一帧；⑤ 录制结束后另行编码。<b>采集与编码彻底解耦</b>，这是它能跑满 97.85 帧/秒的原因。
+      </figcaption>
+    </figure>
+
+    <pre><code><span class="tag">最小可用采集器</span><span class="k">const</span> cdp = <span class="k">await</span> ctx.newCDPSession(page);
+<span class="k">let</span> n = <span class="f">0</span>;
+
+cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</span> ({ data, sessionId, timestamp }) =&gt; {
+  writeFileSync(<span class="s">`${dir}/${String(n++).padStart(6, "0")}.jpg`</span>, Buffer.from(data, <span class="s">"base64"</span>));
+  <span class="k">await</span> cdp.send(<span class="s">"Page.screencastFrameAck"</span>, { sessionId });   <span class="c">// 不回执 = 停在 maxFramesInFlight</span>
+});
+
+<span class="k">await</span> cdp.send(<span class="s">"Page.startScreencast"</span>, {
+  format: <span class="s">"jpeg"</span>, quality: <span class="f">92</span>,
+  maxWidth: <span class="f">1920</span>, maxHeight: <span class="f">1080</span>,
+  everyNthFrame: <span class="f">1</span>,
+});
+<span class="c">// ... 操作 ...</span>
+<span class="k">await</span> cdp.send(<span class="s">"Page.stopScreencast"</span>);
+<span class="c">// 帧数 / 耗时 → 写进 meta.json，后面裁剪靠它换算</span></code></pre>
+
+    <h3><span class="dot">·</span>三个必须自己兜住的细节</h3>
+
+    <p>
+      <strong>一、base64 有 33% 的体积税。</strong>
+      协议传的是 base64 字符串，解回来才是 JPEG。1080p / quality 92 下，903 帧实测占了 <strong>165 MB</strong>
+      （平均 183 KB/帧），而同样 9 秒的 recordVideo 成片是 23 MB —— <em>约 7 倍的磁盘差</em>。
+      长时间录制要盯着磁盘，或者边录边转。
+    </p>
+
+    <p>
+      <strong>二、<code>timestamp</code> 是唯一可信的时间基准。</strong>
+      帧不是等间隔到达的（合成器忙就慢），所以「第 N 帧 = 第 N/fps 秒」这个假设在 CDP 路线上完全不成立。
+      每场采完必须存一份 <code>meta.json</code>，记录总帧数、总耗时、实测 fps —— 本次各场 fps 在 60–98 之间波动，
+      没有这份元数据就没法把帧号映射回时间。
+    </p>
+
+    <p>
+      <strong>三、没有 ffmpeg 也能采。</strong>
+      CDP 采集端不依赖任何二进制，JPEG 落盘就结束了。编码是之后的事，
+      所以内网、CI、装不上 Playwright ffmpeg 的环境里，这条路线仍然可用。
+    </p>
+  </section>
+
+  <!-- ============ 05 ============ -->
+  <section id="s5">
+    <h2><span class="num">05</span>fps 是配额，不是产能</h2>
+
+    <p>
+      这是整份文档最值得记住的一节。把 <code>fps</code> 当成「我要每秒 90 张不同画面」是错的 ——
+      它实际的含义是「<strong>我要求输出流每秒有 90 个时间槽</strong>」。槽位空着怎么办？ffmpeg 复制上一帧填进去。
+    </p>
+
+    <p>
+      而真正决定槽位能不能填满的，是两处限制：一处写在源码里，一处来自 Chromium 本身。
+    </p>
+
+    <ul>
+      <li><code>maxFramesInFlight</code>：<code>fps &gt; 30 ? 10 : 5</code>。在途帧满了，Chromium 就暂停推。</li>
+      <li>Chromium 自己的 JPEG 编码：1080p 一帧要几毫秒，它跟合成器抢同一个进程的时间片。</li>
+    </ul>
+
+    <p>
+      注意 <code>fps</code> 参数在这两处<strong>只影响第一处</strong>，而且只是把窗口从 5 放到 10。
+      它没有任何办法让 Chromium 更快地产生画面 —— 于是第二个限制成了真正的天花板。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 270" role="img" aria-label="maxFramesInFlight 在途窗口示意">
+        <text x="60" y="42" font-size="12.5" font-weight="700" fill="#0e1726">maxFramesInFlight：同时在途的帧数上限</text>
+        <text x="60" y="64" font-size="11" fill="#64748b">图示：10 个槽位里，3 个已发出、正等回执</text>
+
+        <rect x="100" y="76" width="48" height="48" rx="6" fill="#f59e0b" stroke="#d97706" stroke-width="1.2"/>
+        <rect x="162" y="76" width="48" height="48" rx="6" fill="#f59e0b" stroke="#d97706" stroke-width="1.2"/>
+        <rect x="224" y="76" width="48" height="48" rx="6" fill="#f59e0b" stroke="#d97706" stroke-width="1.2"/>
+        <rect x="286" y="76" width="48" height="48" rx="6" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.4"/>
+        <rect x="348" y="76" width="48" height="48" rx="6" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.4"/>
+        <rect x="410" y="76" width="48" height="48" rx="6" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.4"/>
+        <rect x="472" y="76" width="48" height="48" rx="6" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.4"/>
+        <rect x="534" y="76" width="48" height="48" rx="6" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.4"/>
+        <rect x="596" y="76" width="48" height="48" rx="6" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.4"/>
+        <rect x="658" y="76" width="48" height="48" rx="6" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.4"/>
+
+        <text x="124" y="105" text-anchor="middle" font-size="10.5" font-weight="700" fill="#7c2d12">在途</text>
+        <text x="186" y="105" text-anchor="middle" font-size="10.5" font-weight="700" fill="#7c2d12">在途</text>
+        <text x="248" y="105" text-anchor="middle" font-size="10.5" font-weight="700" fill="#7c2d12">在途</text>
+        <text x="682" y="105" text-anchor="middle" font-size="10.5" fill="#94a3b8">空闲</text>
+
+        <line x1="100" y1="146" x2="396" y2="146" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="100" y1="140" x2="100" y2="152" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="396" y1="140" x2="396" y2="152" stroke="#94a3b8" stroke-width="1.2"/>
+        <text x="100" y="170" font-size="11" fill="#475569">fps ≤ 30 → 只有 5 个槽</text>
+
+        <line x1="100" y1="192" x2="706" y2="192" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="100" y1="186" x2="100" y2="198" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="706" y1="186" x2="706" y2="198" stroke="#94a3b8" stroke-width="1.2"/>
+        <text x="100" y="216" font-size="11" fill="#475569">fps &gt; 30 → 放宽到 10 个槽</text>
+
+        <text x="742" y="94" font-size="11" fill="#334155">帧到 → 占一个槽</text>
+        <text x="742" y="116" font-size="11" fill="#334155">回执 → 释放一个槽</text>
+        <text x="742" y="138" font-size="11" font-weight="700" fill="#b45309">槽满 → 停止推帧</text>
+        <text x="742" y="168" font-size="11" fill="#64748b">这是唯一的限速阀，</text>
+        <text x="742" y="186" font-size="11" fill="#64748b">也是 fps 参数唯一碰到的地方。</text>
+
+        <text x="60" y="250" font-size="11.5" fill="#475569">放宽窗口只能减少「等回执」的空转，不能让 Chromium 更快合成 —— 产能上限在编码侧，不在槽位数。</text>
+      </svg>
+      <figcaption>
+        <b>图 5 · 在途窗口。</b>槽位是「已发出但未确认」的帧。窗口越大，流水线越不容易空转；
+        但它不能突破上游产帧速度，所以把 <code>fps</code> 从 30 提到 90，只是把窗口从 5 放到 10 而已。
+      </figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 1000 300" role="img" aria-label="90 个时间槽中只有 59 帧是唯一画面">
+        <text x="60" y="42" font-size="12.5" font-weight="700" fill="#0e1726">声明 fps:90 → 一秒有 90 个时间槽</text>
+
+        <text x="60" y="74" font-size="11.5" fill="#475569">Chromium 实际交付　<tspan font-weight="700" fill="#1d4ed8">59 帧</tspan>　（每个蓝格 = 一个不同的画面）</text>
+        <g>
+          <rect x="60" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="70" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="80" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="90" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="100" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="110" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="120" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="130" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="140" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="150" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="160" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="170" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="180" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="190" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="200" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="210" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="220" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="230" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="240" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="250" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="260" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="270" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="280" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="290" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="300" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="310" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="320" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="330" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="340" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="350" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="360" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="370" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="380" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="390" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="400" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="410" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="420" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="430" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="440" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="450" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="460" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="470" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="480" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="490" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="500" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="510" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="520" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="530" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="540" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="550" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="560" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="570" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="580" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="590" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="600" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="610" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="620" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="630" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="640" y="84" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="650" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="660" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="670" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="680" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="690" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="700" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="710" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="720" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="730" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="740" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/>
+          <rect x="750" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="760" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="770" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="780" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="790" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="800" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="810" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="820" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="830" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="840" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/>
+          <rect x="850" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="860" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="870" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="880" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="890" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="900" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="910" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="920" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="930" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/><rect x="940" y="84" width="9" height="30" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/>
+        </g>
+
+        <text x="60" y="196" font-size="11.5" fill="#475569">ffmpeg 输出　<tspan font-weight="700" fill="#b45309">90 帧</tspan>　（-r 90 把空槽填满：<tspan font-weight="700" fill="#b45309">31 帧是复制品</tspan>）</text>
+        <g>
+          <rect x="60" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="70" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="80" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="90" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="100" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="110" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="120" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="130" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="140" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="150" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="160" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="170" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="180" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="190" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="200" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="210" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="220" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="230" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="240" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="250" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="260" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="270" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="280" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="290" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="300" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="310" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="320" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="330" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="340" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="350" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="360" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="370" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="380" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="390" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="400" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="410" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="420" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="430" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="440" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="450" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="460" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="470" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="480" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="490" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="500" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="510" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="520" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="530" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="540" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="550" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="560" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="570" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="580" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="590" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="600" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="610" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="620" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="630" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/><rect x="640" y="206" width="9" height="30" rx="1.5" fill="#2563eb"/>
+          <rect x="650" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="660" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="670" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="680" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="690" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="700" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="710" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="720" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="730" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="740" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/>
+          <rect x="750" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="760" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="770" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="780" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="790" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="800" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="810" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="820" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="830" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="840" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/>
+          <rect x="850" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="860" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="870" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="880" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="890" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="900" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="910" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="920" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="930" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/><rect x="940" y="206" width="9" height="30" rx="1.5" fill="#f59e0b"/>
+        </g>
+
+        <rect x="60" y="262" width="9" height="9" rx="1.5" fill="#2563eb"/>
+        <text x="76" y="271" font-size="11" fill="#475569">唯一画面</text>
+        <rect x="150" y="262" width="9" height="9" rx="1.5" fill="#f59e0b"/>
+        <text x="166" y="271" font-size="11" fill="#475569">复制帧（信息量为零）</text>
+        <rect x="316" y="262" width="9" height="9" rx="1.5" fill="#edf1f7" stroke="#d8e0eb"/>
+        <text x="332" y="271" font-size="11" fill="#475569">未交付的槽位</text>
+        <text x="480" y="271" font-size="11" fill="#64748b">同一秒，同一场景：声明 90，得到 59 种画面，文件里写着 90fps。</text>
+      </svg>
+      <figcaption>
+        <b>图 6 · 一秒的解剖。</b>上排是 Chromium 真实交付的帧，下排是 ffmpeg 按 <code>-r 90</code> 输出的流。
+        橙色那 31 格不是「补间动画」，而是<em>把第 59 帧原样重复了 31 次</em> —— 播放器会如实显示，观感就是卡顿。
+      </figcaption>
+    </figure>
+
+    <h3><span class="dot">·</span>三档实测：提高标称只增加重复</h3>
+
+    <figure>
+      <svg viewBox="0 0 1000 384" role="img" aria-label="标称帧率与唯一帧率的对比条形图">
+        <text x="60" y="30" font-size="12" font-weight="700" fill="#0e1726">同一 9 秒动作段 · 1920×1080 · mpdecimate 去重</text>
+
+        <rect x="60" y="46" width="16" height="10" rx="2" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 2"/>
+        <text x="82" y="56" font-size="10.5" fill="#64748b">标称 fps（配额）</text>
+        <rect x="200" y="46" width="16" height="10" rx="2" fill="#2563eb"/>
+        <text x="222" y="56" font-size="10.5" fill="#64748b">唯一帧率（产能）</text>
+
+        <line x1="466" y1="88" x2="466" y2="318" stroke="#059669" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <text x="466" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#047857">30 交付线</text>
+        <line x1="682" y1="88" x2="682" y2="318" stroke="#b45309" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <text x="682" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#b45309">60 慢放门槛</text>
+
+        <rect x="250" y="96" width="180" height="30" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 2"/>
+        <rect x="250" y="101" width="159" height="20" rx="3" fill="#2563eb"/>
+        <text x="238" y="115" text-anchor="end" font-size="12" fill="#0e1726">recordVideo 25</text>
+        <text x="417" y="115" font-size="12" font-weight="700" fill="#0e1726">22.1</text>
+
+        <rect x="250" y="156" width="432" height="30" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 2"/>
+        <rect x="250" y="161" width="344" height="20" rx="3" fill="#2563eb"/>
+        <text x="238" y="175" text-anchor="end" font-size="12" fill="#0e1726">recordVideo 60</text>
+        <text x="602" y="175" font-size="12" font-weight="700" fill="#0e1726">47.8</text>
+
+        <rect x="250" y="216" width="648" height="30" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 2"/>
+        <rect x="250" y="221" width="423" height="20" rx="3" fill="#2563eb"/>
+        <text x="238" y="235" text-anchor="end" font-size="12" fill="#0e1726">recordVideo 90</text>
+        <text x="700" y="235" font-size="12" font-weight="700" fill="#0e1726">58.8</text>
+
+        <rect x="250" y="276" width="704" height="30" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 2"/>
+        <rect x="250" y="281" width="561" height="20" rx="3" fill="#047857"/>
+        <text x="238" y="295" text-anchor="end" font-size="12" fill="#0e1726">CDP 直采</text>
+        <text x="819" y="295" font-size="12" font-weight="700" fill="#0e1726">77.9</text>
+
+        <line x1="250" y1="320" x2="960" y2="320" stroke="#cbd5e1" stroke-width="1.2"/>
+        <text x="250" y="340" text-anchor="middle" font-size="10.5" fill="#94a3b8">0</text>
+        <text x="394" y="340" text-anchor="middle" font-size="10.5" fill="#94a3b8">20</text>
+        <text x="538" y="340" text-anchor="middle" font-size="10.5" fill="#94a3b8">40</text>
+        <text x="682" y="340" text-anchor="middle" font-size="10.5" fill="#94a3b8">60</text>
+        <text x="826" y="340" text-anchor="middle" font-size="10.5" fill="#94a3b8">80</text>
+        <text x="960" y="340" text-anchor="middle" font-size="10.5" fill="#94a3b8">fps</text>
+
+        <text x="60" y="368" font-size="11" fill="#64748b">虚线是标称值、实条是真实产能：两者的落差就是「被复制出来的帧」。</text>
+      </svg>
+      <figcaption>
+        <b>图 7 · 配额 vs 产能。</b>虚线是声明的标称帧率，蓝条是实际不同的画面数。
+        25 → 60 有明显改善（22.1 → 47.8），但 60 → 90 只从 47.8 涨到 58.8 —— 说明天花板已经不在参数上了。
+      </figcaption>
+    </figure>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>方案</th><th class="num">标称</th><th class="num">9s 输出帧</th><th class="num">唯一帧</th><th class="num">唯一帧率</th><th class="num">重复率</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>recordVideo</td><td class="num">25</td><td class="num">225</td><td class="num">199</td><td class="num">22.1</td><td class="num">11.6%</td></tr>
+          <tr><td>recordVideo</td><td class="num">60</td><td class="num">540</td><td class="num">430</td><td class="num">47.8</td><td class="num">20.4%</td></tr>
+          <tr><td>recordVideo</td><td class="num">90</td><td class="num">810</td><td class="num">529</td><td class="num">58.8</td><td class="num">34.7%</td></tr>
+          <tr><td>CDP 直采</td><td class="num">—</td><td class="num">903</td><td class="num">719</td><td class="num">77.9</td><td class="num">20.4%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      最后一行还有一个值得注意的细节：CDP 的采集侧是 97.85 帧/秒，去重后 77.9。
+      这条链路根本没有编码环节，所以差的这 20 帧不可能是「编码丢帧」，而是场景里变化较慢的部分被去重算法判成了重复。
+      <em>不同场景的数字不能直接横比，同一台机器上的相对关系才有意义。</em>
+    </p>
+
+    <p>
+      recordVideo 这一侧的趋势更明确：<strong>标称值从 60 提到 90，重复率从 20% 涨到 35%</strong>。
+      多出来的帧全是填充物 —— 文件更大、编码更慢、画面并不会更顺。
+    </p>
+
+    <h3><span class="dot">·</span>慢放把这个问题放大</h3>
+
+    <p>
+      慢放的本质是「用更少的时间采样换更长的时间展示」。2 倍慢放意味着每个源帧要撑 2 个输出帧，
+      所以<strong>源唯一帧率至少要翻倍</strong>。目标 30fps 交付时，2× 慢放需要 ≥ 60 唯一帧/秒的源：
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 340" role="img" aria-label="2 倍慢放后的有效帧率对比">
+        <text x="60" y="56" font-size="12" font-weight="700" fill="#0e1726">2× 慢放 → 输出 30fps 后的有效帧率</text>
+
+        <rect x="810" y="70" width="40" height="180" fill="#e9f7f1"/>
+        <line x1="850" y1="70" x2="850" y2="250" stroke="#059669" stroke-width="1.4" stroke-dasharray="4 4"/>
+        <text x="850" y="64" text-anchor="middle" font-size="10.5" font-weight="700" fill="#047857">30</text>
+
+        <rect x="250" y="96" width="500" height="22" rx="3" fill="#f59e0b"/>
+        <text x="238" y="113" text-anchor="end" font-size="12" fill="#0e1726">recordVideo 60</text>
+        <text x="762" y="113" font-size="12" font-weight="700" fill="#b45309">25.0</text>
+
+        <rect x="250" y="156" width="440" height="22" rx="3" fill="#ef7c3a"/>
+        <text x="238" y="173" text-anchor="end" font-size="12" fill="#0e1726">recordVideo 90</text>
+        <text x="702" y="173" font-size="12" font-weight="700" fill="#b45309">22.0</text>
+
+        <rect x="250" y="216" width="556" height="22" rx="3" fill="#047857"/>
+        <text x="238" y="233" text-anchor="end" font-size="12" fill="#0e1726">CDP 直采</text>
+        <text x="818" y="233" font-size="12" font-weight="700" fill="#047857">27.8</text>
+
+        <line x1="250" y1="262" x2="960" y2="262" stroke="#cbd5e1" stroke-width="1.2"/>
+        <text x="250" y="282" text-anchor="middle" font-size="10.5" fill="#94a3b8">0</text>
+        <text x="450" y="282" text-anchor="middle" font-size="10.5" fill="#94a3b8">10</text>
+        <text x="650" y="282" text-anchor="middle" font-size="10.5" fill="#94a3b8">20</text>
+        <text x="850" y="282" text-anchor="middle" font-size="10.5" fill="#94a3b8">30 fps</text>
+
+        <text x="60" y="316" font-size="11.5" fill="#475569">判据：源唯一帧率 ≥ 慢放倍率 × 30。2× 需要 ≥ 60 —— 只有 CDP（77.9）满足，fps:90 反而比 fps:60 更差。</text>
+      </svg>
+      <figcaption>
+        <b>图 8 · 慢放的预算。</b>为什么 fps:90 反而比 60 差？因为它多出的帧本来就是重复的，
+        慢放后重复帧被拉长成两帧完全一样的画面，去重统计自然更低。这条反直觉的结论，是选型时最容易踩的坑。
+      </figcaption>
+    </figure>
+
+    <div class="call ok">
+      <span class="ct">一句话判据</span>
+      <p>
+        要判断「这个方案够不够」，别看标称 fps，算这个：<strong>源唯一帧率 ÷ 慢放倍率 ≥ 输出帧率</strong>。
+        本次实测：recordVideo@60 是 47.8 ÷ 2 = 23.9，不够 30；CDP 是 77.9 ÷ 2 = 39，够。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 06 ============ -->
+  <section id="s6">
+    <h2><span class="num">06</span>选型决策</h2>
+
+    <p>
+      前面的数据可以压缩成一棵三岔树。注意分支依据不是「哪个更快」，而是<strong>这批镜头要怎么用</strong> ——
+      慢放和逐帧对齐是 CDP 唯一不可替代的两个场景。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 480" role="img" aria-label="采集方案选型决策树">
+        <defs>
+          <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/>
+          </marker>
+        </defs>
+
+        <rect x="330" y="16" width="340" height="66" rx="12" fill="#0f172a"/>
+        <text x="500" y="44" text-anchor="middle" font-size="15" font-weight="650" fill="#ffffff">这批镜头怎么用？</text>
+        <text x="500" y="66" text-anchor="middle" font-size="11" fill="#94a3b8">先问用途，再问参数</text>
+
+        <line x1="500" y1="82" x2="500" y2="118" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="165" y1="118" x2="835" y2="118" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="165" y1="118" x2="165" y2="164" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a6)"/>
+        <line x1="500" y1="118" x2="500" y2="164" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a6)"/>
+        <line x1="835" y1="118" x2="835" y2="164" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a6)"/>
+
+        <rect x="30" y="168" width="270" height="78" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="165" y="198" text-anchor="middle" font-size="13" font-weight="650" fill="#0e1726">常规 1× 播放</text>
+        <text x="165" y="220" text-anchor="middle" font-size="11" fill="#64748b">动作不需要放慢细看</text>
+
+        <rect x="365" y="168" width="270" height="78" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="500" y="198" text-anchor="middle" font-size="13" font-weight="650" fill="#0e1726">2× 及以上慢放</text>
+        <text x="500" y="220" text-anchor="middle" font-size="11" fill="#64748b">要看清每一帧的姿态</text>
+
+        <rect x="700" y="168" width="270" height="78" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="835" y="198" text-anchor="middle" font-size="13" font-weight="650" fill="#0e1726">逐帧对齐 / 超长时段</text>
+        <text x="835" y="220" text-anchor="middle" font-size="11" fill="#64748b">时间码要精确到帧</text>
+
+        <line x1="165" y1="246" x2="165" y2="292" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a6)"/>
+        <line x1="500" y1="246" x2="500" y2="292" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a6)"/>
+        <line x1="835" y1="246" x2="835" y2="292" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a6)"/>
+
+        <rect x="30" y="296" width="270" height="86" rx="10" fill="#eff4ff" stroke="#c3d4f8" stroke-width="1.5"/>
+        <text x="165" y="324" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1d4ed8" font-family="ui-monospace,Menlo,monospace">recordVideo fps:60</text>
+        <text x="165" y="346" text-anchor="middle" font-size="11" fill="#475569">唯一 47.8 → 交付 30fps 够用</text>
+        <text x="165" y="366" text-anchor="middle" font-size="11" fill="#64748b">时间码直接用 -ss 裁</text>
+
+        <rect x="365" y="296" width="270" height="86" rx="10" fill="#e9f7f1" stroke="#a7dcc4" stroke-width="1.5"/>
+        <text x="500" y="324" text-anchor="middle" font-size="12.5" font-weight="700" fill="#047857" font-family="ui-monospace,Menlo,monospace">CDP 直采</text>
+        <text x="500" y="346" text-anchor="middle" font-size="11" fill="#475569">唯一 77.9，慢放后 27.8</text>
+        <text x="500" y="366" text-anchor="middle" font-size="11" fill="#64748b">fps:90 也救不了 → 见 §5</text>
+
+        <rect x="700" y="296" width="270" height="86" rx="10" fill="#e9f7f1" stroke="#a7dcc4" stroke-width="1.5"/>
+        <text x="835" y="324" text-anchor="middle" font-size="12.5" font-weight="700" fill="#047857" font-family="ui-monospace,Menlo,monospace">CDP 直采</text>
+        <text x="835" y="346" text-anchor="middle" font-size="11" fill="#475569">JPEG 序列 + 每帧时间戳</text>
+        <text x="835" y="366" text-anchor="middle" font-size="11" fill="#64748b">帧号可精确映射回时刻</text>
+
+        <text x="60" y="428" font-size="12" fill="#64748b">两条链路的上游完全相同，切换成本 = 换一个采集函数，不用改页面驱动逻辑。</text>
+        <text x="60" y="452" font-size="12" fill="#64748b">但下游成本不同：CDP 要自己管 meta.json、磁盘和批量编码，这是它的「税」。</text>
+      </svg>
+      <figcaption>
+        <b>图 9 · 决策树。</b>三岔树里只有两个叶子指向 CDP，判断依据都是「对单帧信息量的需求」，
+        与录多久、分辨率多高无关。
+      </figcaption>
+    </figure>
+
+    <h3><span class="dot">·</span>成本对照：性能之外的那一半</h3>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th style="width:150px">维度</th><th style="text-transform:none">recordVideo</th><th style="text-transform:none">CDP 直采</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>产物</td>
+            <td>1 个 webm（VP9，无音轨）</td>
+            <td>N 张 JPEG + <code>meta.json</code>，编码另行</td>
+          </tr>
+          <tr>
+            <td>磁盘（9 秒 1080p）</td>
+            <td>23 MB（fps:60）</td>
+            <td><strong>165 MB</strong>（903 张，均 183 KB）</td>
+          </tr>
+          <tr>
+            <td>时间码</td>
+            <td>直接可用：<code>-ss 12.4</code> 就够</td>
+            <td>需 <code>帧号 ÷ 实测fps</code>；各场 fps 在 60–98 漂移</td>
+          </tr>
+          <tr>
+            <td>分段录制</td>
+            <td>每个 page 一个文件，同一页不能中途分段</td>
+            <td>天然按场次起停，帧号从 0 开始</td>
+          </tr>
+          <tr>
+            <td>依赖</td>
+            <td>需要 Playwright 专用 ffmpeg 二进制</td>
+            <td>采集端零依赖（<code>writeFileSync</code> 而已）</td>
+          </tr>
+          <tr>
+            <td>最大唯一帧率</td>
+            <td>实测 58.8</td>
+            <td>实测 77.9（采集 97.85）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="call">
+      <span class="ct">混合使用才是常态</span>
+      <p>
+        本次成片 22 个镜头里，常规动作走 recordVideo，三处 2× 慢放走 CDP —— 两条链路同时存在不冲突，
+        因为它们只是同一个 page 上的两个消费者。真正的成本是「维护两套采集脚本」，代价约 40 行。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 07 ============ -->
+  <section id="s7">
+    <h2><span class="num">07</span>工程约束：五条会咬人的规则</h2>
+
+    <p>
+      这些都不是「最佳实践」，而是踩过之后总结的<strong>硬约束</strong> —— 违反任何一条，产物就是废的。
+    </p>
+
+    <h3><span class="dot">·</span>一、关闭顺序决定文件是否完整</h3>
+    <p>
+      <code>ctx.close()</code> → <code>video.saveAs()</code> → <code>browser.close()</code>。
+      顺序颠倒会报 <code>Target closed</code>，或者拿到一个没有索引的 webm（能播，但时长显示为 0）。
+    </p>
+
+    <h3><span class="dot">·</span>二、一个 page 只出一个文件</h3>
+    <p>
+      <code>recordVideo</code> 配在 context 上，但产物是<strong>每个 page 一个 webm</strong>（文件名取 page 的 guid）。
+      公开 API 没有分段录制；内部虽有重启录制的私有方法，但不要依赖。
+      正确做法是<strong>一次录一整场，后期按 marks 裁切</strong>：脚本记录每段动作的起止时刻，剪辑时按时间码切。
+      这样反而比中途起停更稳，因为不用担心文件碎片。
+    </p>
+
+    <h3><span class="dot">·</span>三、尺寸会被强制取偶</h3>
+    <p>
+      源码里 <code>width &amp; ~1</code>、<code>height &amp; ~1</code> —— yuv420 要求偶数边长。
+      传 1919 会静默变成 1918。<em>不要用奇数分辨率设计分镜</em>。
+    </p>
+
+    <h3><span class="dot">·</span>四、录制从 context 创建开始，不是从 goto 结束开始</h3>
+    <p>
+      所以每段成片开头都带着页面加载期（本次约 7–9 秒，因为要等 10 MB 的 GLB 模型）。
+      两个处理方式：剪辑时按 marks 裁掉；或者干脆<strong>录前先静置到画面稳定</strong>，把「加载期」压到最短。
+    </p>
+
+    <h3><span class="dot">·</span>五、headless 完全可以录</h3>
+    <p>
+      不需要虚拟显示器、不需要 headed 模式。CDP screencast 走的是合成器输出，与窗口是否可见无关。
+      这也是它在 CI 里能用的原因 —— 顺带一提，<code>--mute-audio</code> 要自己加，音频不会进 webm（<code>-an</code>）。
+    </p>
+  </section>
+
+  <!-- ============ 08 ============ -->
+  <section id="s8">
+    <h2><span class="num">08</span>故障对照表</h2>
+
+    <p>
+      按「症状 → 先查什么 → 根因 → 修法」排列。这些症状的共同点是：<strong>都不报错，或者报错信息指向错误的方向</strong>。
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th style="width:200px">症状</th><th style="width:230px">先查什么</th><th>根因与修法</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Executable doesn't exist at …/ffmpeg-1013/ffmpeg-mac</code></td>
+            <td><code>ls ~/Library/Caches/ms-playwright/ffmpeg-1013/</code> 有没有 <code>INSTALLATION_COMPLETE</code></td>
+            <td>组件下载中断。跑 <code>npx playwright install ffmpeg</code>（2.9 MB，最快）。</td>
+          </tr>
+          <tr>
+            <td><code>Executable doesn't exist at …/chromium-1248/…</code></td>
+            <td><code>npx playwright --version</code> 与 <code>install --dry-run</code> 对比 revision</td>
+            <td>升级了 JS 包但没重装浏览器（缓存里还是旧 revision）。<code>npx playwright install chromium</code>。</td>
+          </tr>
+          <tr>
+            <td>成片糊、只有 800×450</td>
+            <td><code>ffprobe -show_entries stream=width,height</code></td>
+            <td>没传 <code>recordVideo.size</code>，被按 800 上限缩放。显式传 1920×1080。</td>
+          </tr>
+          <tr>
+            <td>帧率恒定 25，怎么调都不变</td>
+            <td><code>ffprobe -show_entries stream=r_frame_rate</code></td>
+            <td>没传 <code>fps</code>，落到 <code>kDefaultFps=25</code>。传 <code>fps: 60</code>。</td>
+          </tr>
+          <tr>
+            <td>设了 90fps 还是很卡</td>
+            <td>去重：<code>mpdecimate</code> 后数唯一帧</td>
+            <td>标称是配额不是产能。要么接受 60，要么换 CDP。</td>
+          </tr>
+          <tr>
+            <td><code>Target closed</code></td>
+            <td>三个关闭调用的顺序</td>
+            <td>先 <code>ctx.close()</code>，再 <code>saveAs</code>，最后 <code>browser.close()</code>。</td>
+          </tr>
+          <tr>
+            <td>录到一半画面冻结</td>
+            <td>采集回调里是否 <code>await</code> 了耗时操作</td>
+            <td>没回执 = 在途窗口塞满 = Chromium 停止推帧。回执要早于重活，或把重活挪到队列。</td>
+          </tr>
+          <tr>
+            <td>CDP 采集成片时间对不上</td>
+            <td>有没有存 <code>meta.json</code></td>
+            <td>帧间隔不均匀，不能用固定 fps 换算。每场记录总帧数/总耗时。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><span class="dot">·</span>验证「帧率是否真实」的标准动作</h3>
+    <p>
+      两个数都要看：<strong>容器声明的帧率</strong>（<code>r_frame_rate</code>）和<strong>去重后的唯一帧数</strong>。
+      只看前者会被骗，只看后者不知道时间轴对不对。
+    </p>
+
+    <pre><code><span class="tag">去重检测</span><span class="c"># 声明帧率 + 总帧数</span>
+ffprobe -v error -count_frames -select_streams v:0 \
+  -show_entries stream=r_frame_rate,nb_read_frames -of csv=p=0 app.webm
+
+<span class="c"># 唯一帧：mpdecimate 丢掉近似重复帧，剩下的才是真信息量</span>
+ffmpeg -i app.webm -vf "mpdecimate=hi=768:lo=320:frac=0.33" \
+  -vsync 0 -f null - 2&gt;&amp;1 | tail -1
+<span class="c"># frame= 529  ← 与声明的 810 相差 281，就是重复帧</span></code></pre>
+  </section>
+
+  <!-- ============ 09 ============ -->
+  <section id="s9">
+    <h2><span class="num">09</span>速查与复跑</h2>
+
+    <p>
+      本节是可以直接抄走的部分。所有数字都来自 <code>promo/recordvideo-benchmark.json</code>，
+      换了机器想重新对比，改路径重跑即可。
+    </p>
+
+    <h3><span class="dot">·</span>两套采集器的最小骨架</h3>
+
+    <pre><code><span class="tag">A · recordVideo</span><span class="k">const</span> ctx = <span class="k">await</span> browser.newContext({
+  viewport: { width: <span class="f">1920</span>, height: <span class="f">1080</span> },
+  recordVideo: { dir: <span class="s">"raw"</span>, size: { width: <span class="f">1920</span>, height: <span class="f">1080</span> }, fps: <span class="f">60</span> },
+});
+<span class="c">// 一场一录；动作起止用 marks 记录，剪辑按 marks 裁</span>
+<span class="k">const</span> v = page.video();
+<span class="k">await</span> ctx.close();
+<span class="k">await</span> v.saveAs(<span class="s">"raw/scene-b.webm"</span>);</code></pre>
+
+    <pre><code><span class="tag">B · CDP 直采</span><span class="k">const</span> cdp = <span class="k">await</span> ctx.newCDPSession(page);
+<span class="k">let</span> n = <span class="f">0</span>, t0 = Date.now();
+cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</span> ({ data, sessionId }) =&gt; {
+  writeFileSync(<span class="s">`${dir}/${String(n++).padStart(6,"0")}.jpg`</span>, Buffer.from(data, <span class="s">"base64"</span>));
+  <span class="k">await</span> cdp.send(<span class="s">"Page.screencastFrameAck"</span>, { sessionId });
+});
+<span class="k">await</span> cdp.send(<span class="s">"Page.startScreencast"</span>, {
+  format: <span class="s">"jpeg"</span>, quality: <span class="f">92</span>, maxWidth: <span class="f">1920</span>, maxHeight: <span class="f">1080</span>,
+});
+<span class="c">// ... 动作 ...</span>
+<span class="k">await</span> cdp.send(<span class="s">"Page.stopScreencast"</span>);
+writeFileSync(<span class="s">`${dir}/meta.json`</span>, JSON.stringify({ frames: n, ms: Date.now() - t0 }));</code></pre>
+
+    <h3><span class="dot">·</span>参数怎么定：从交付目标倒推</h3>
+
+    <ol class="steps">
+      <li><b>先定输出帧率</b><p>平台通常 30fps 足够。定 30，别再往上加。</p></li>
+      <li><b>再定慢放倍率</b><p>有 2× 慢放就要源 ≥ 60 唯一帧/秒；没有就只需 ≥ 30。</p></li>
+      <li><b>反查方案产能</b><p>recordVideo@60 是 47.8，@90 是 58.8；CDP 是 77.9。都不够就降倍率，不要提 fps。</p></li>
+      <li><b>最后才选方案</b><p>1× 且 ≥30 唯一帧 → recordVideo；需要 ≥60 → CDP。</p></li>
+      <li><b>录完必须验证</b><p><code>mpdecimate</code> 去重数唯一帧，与预期对账。</p></li>
+    </ol>
+
+    <div class="call ok">
+      <span class="ct">这次真正学到的</span>
+      <p>
+        「参数能不能调」和「调了有没有用」是两件事。1.64.1 确实支持 <code>recordVideo.fps</code>，
+        但它的作用被两处硬限制夹住了 —— 只查文档会以为 90 就是 90，只有去数唯一帧才知道不是。
+        <strong>以后遇到任何「帧率/采样率」类参数，默认它描述的是配额，然后用去重验证产能。</strong>
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      <b>数据来源</b>　<code>promo/recordvideo-benchmark.json</code>（2026-11-02，本机实测）·
+      <code>playwright-core@1.64.1</code> 源码（<code>videoRecorder.ts</code> / <code>crPage.ts</code>）·
+      <code>browsers.json</code> revision 表。
+    </p>
+    <p>
+      <b>复跑提示</b>　换机器后先跑 <code>npx playwright install --dry-run</code> 对账，再重测唯一帧率；
+      唯一帧率随场景变化，绝对值不必对齐，<b>同一台机器上四条链路的相对关系</b>才是结论。
+    </p>
+  </footer>
+
+  </main>
+</div>
+</div>
+
+<script>
+(function () {
+  var links = [].slice.call(document.querySelectorAll('#toc a'));
+  var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+
+  function sync() {
+    var y = window.scrollY + window.innerHeight * 0.28;
+    var idx = 0;
+    for (var i = 0; i < secs.length; i++) {
+      if (secs[i] && secs[i].offsetTop <= y) idx = i;
+    }
+    links.forEach(function (a, i) { a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', sync, { passive: true });
+  window.addEventListener('resize', sync);
+  sync();
+})();
+</script>
+</body>
+</html>

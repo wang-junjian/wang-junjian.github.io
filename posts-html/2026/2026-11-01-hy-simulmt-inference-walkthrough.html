@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="用八张图拆解 Hy-SimulMT 同声传译推理：1.6 秒切块、VAD 跳过静音、全量历史续写、1600 毫秒音频压成 11 个语音词元、模型自判说与不说、ST 补偿重译与上下文切断，并给出延迟来源、8 秒时序与代码地图。">
+<meta name="keywords" content="simultaneous-translation, speech-llm, streaming-inference, vad, kv-context-budget, vllm">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-01">
+<title>Hy-SimulMT 推理工作原理 · 图文拆解</title>
+<style>
+  :root{
+    --bg:#F6F7F9; --card:#FFFFFF; --line:#E4E8EF; --line2:#EDF0F5;
+    --ink:#151A23; --ink2:#4C5566; --ink3:#6B7280;
+    --blue:#2563EB; --blue-bg:#EFF4FF; --blue-line:#C7D8FB;
+    --teal:#0A7A6E; --teal-bg:#ECFBF6; --teal-line:#BFEDE2;
+    --amber:#9A5C06; --amber-bg:#FFF7E8; --amber-line:#F5DCA9;
+    --violet:#6446D6; --violet-bg:#F3F0FF; --violet-line:#D8CEFB;
+    --green:#0F7A56; --green-bg:#EAF8F1; --green-line:#BFE9D6;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15.5px; line-height:1.78;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px 120px}
+  /* ---------- header ---------- */
+  header.top{padding:64px 0 8px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+  h1{font-size:40px;line-height:1.24;letter-spacing:-.022em;margin:14px 0 12px;font-weight:680}
+  h1 .accent{color:var(--blue)}
+  .sub{font-size:17px;color:var(--ink2);max-width:760px;margin:0 0 22px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 26px}
+  .chip{font-size:12px;color:var(--ink2);background:#fff;border:1px solid var(--line);
+        border-radius:999px;padding:3px 11px;font-family:var(--mono)}
+  /* ---------- type ---------- */
+  h2{font-size:25px;line-height:1.4;letter-spacing:-.015em;margin:68px 0 6px;font-weight:660}
+  h2 .num{color:var(--ink3);font-family:var(--mono);font-size:16px;margin-right:12px;font-weight:500}
+  h3{font-size:17.5px;margin:34px 0 8px;font-weight:640;letter-spacing:-.008em}
+  p{margin:13px 0;color:var(--ink2)}
+  p.lead{font-size:16.5px;color:var(--ink);margin:10px 0 4px}
+  strong{color:var(--ink);font-weight:620}
+  .kbd,code{font-family:var(--mono);font-size:.86em;background:#EFF2F7;border-radius:5px;padding:1.5px 5px;color:#2B3446}
+  a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-line)}
+  ul,ol{color:var(--ink2);padding-left:22px;margin:12px 0}
+  li{margin:6px 0}
+  li::marker{color:var(--ink3)}
+  /* ---------- kpi ---------- */
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin:26px 0 8px}
+  .kpi div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .kpi .v{font-size:23px;font-weight:660;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .kpi .v small{font-size:12px;font-weight:500;color:var(--ink3);margin-left:3px}
+  .kpi .k{font-size:12px;color:var(--ink3);margin-top:3px;line-height:1.5}
+  /* ---------- callout ---------- */
+  .call{border-left:3px solid var(--blue);background:var(--blue-bg);border-radius:0 10px 10px 0;
+        padding:14px 18px;margin:22px 0;font-size:14.5px;color:#243049}
+  .call.warn{border-color:var(--amber);background:var(--amber-bg);color:#4A3410}
+  .call.ok{border-color:var(--green);background:var(--green-bg);color:#123A2C}
+  .call.violet{border-color:var(--violet);background:var(--violet-bg);color:#2C2352}
+  .call b{display:block;font-size:13px;letter-spacing:.02em;margin-bottom:4px;font-weight:660}
+  /* ---------- figure ---------- */
+  figure{margin:30px 0 8px}
+  .svgbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;overflow-x:auto}
+  .svgbox svg{display:block;width:100%;min-width:880px;height:auto}
+  figcaption{font-size:12.8px;color:var(--ink3);margin-top:10px;line-height:1.65;padding-left:2px}
+  figcaption b{color:var(--ink2);font-weight:600}
+  /* ---------- table ---------- */
+  .tblwrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);
+           border-radius:12px;margin:20px 0;-webkit-overflow-scrolling:touch}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--card);min-width:560px}
+  .tbl th{text-align:left;font-weight:600;color:var(--ink2);font-size:12.5px;letter-spacing:.02em;
+          background:#FAFBFD;padding:11px 14px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:10px 14px;border-bottom:1px solid var(--line2);color:var(--ink2);vertical-align:top}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl td.mono,.tbl th.mono{font-family:var(--mono);font-size:12.4px;word-break:break-word}
+  .tbl td strong{color:var(--ink)}
+  .tbl .nb{white-space:nowrap}
+  /* ---------- code ---------- */
+  pre{background:#FAFBFD;border:1px solid var(--line);border-radius:11px;padding:14px 16px;
+      overflow-x:auto;font-family:var(--mono);font-size:12.6px;line-height:1.72;color:#26303F;margin:18px 0}
+  pre .c{color:#8A94A6}
+  pre .s{color:#0F7A56}
+  pre .k{color:#6446D6}
+  /* ---------- misc ---------- */
+  .steps{counter-reset:s;margin:24px 0;padding:0;list-style:none}
+  .steps li{counter-increment:s;position:relative;padding:0 0 0 42px;margin:0 0 18px}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;
+    border-radius:50%;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-line);
+    font-size:12.5px;font-weight:660;display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+  .steps li b{color:var(--ink);font-weight:620}
+  .steps li p{margin:2px 0 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .box h4{margin:0 0 6px;font-size:14px;font-weight:640}
+  .box p{margin:4px 0;font-size:13.5px}
+  .tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:2px 7px;border-radius:5px;
+       background:#F1F3F7;color:var(--ink2);margin-right:5px}
+  .tag.b{background:var(--blue-bg);color:var(--blue)}
+  .tag.t{background:var(--teal-bg);color:var(--teal)}
+  .tag.a{background:var(--amber-bg);color:var(--amber)}
+  .tag.g{background:var(--green-bg);color:var(--green)}
+  .tag.v{background:var(--violet-bg);color:var(--violet)}
+  .foot{margin-top:80px;padding-top:26px;border-top:1px solid var(--line);font-size:12.8px;color:var(--ink3)}
+  @media (max-width:720px){
+    .wrap{padding:0 18px 80px}
+    h1{font-size:29px} h2{font-size:21px} .grid2{grid-template-columns:1fr}
+    .sub{font-size:15.5px}
+  }
+  @media print{
+    body{background:#fff} .svgbox{break-inside:avoid} figure{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">Hy-SimulMT · Inference Walkthrough</div>
+  <h1>边听边译，究竟是怎么算出来的<br><span class="accent">一次 1.6 秒音频的完整推理旅程</span></h1>
+  <p class="sub">
+    这份文档把仓库里的推理代码路径拆成八张图：音频怎么切、请求怎么长、模型内部怎么压缩、
+    什么时候该说、说漏了怎么补、上下文什么时候撑爆。每一步都给出可回查的代码位置与可复算的数字。
+  </p>
+  <div class="meta">
+    <span class="chip">SimulInfer / simulinfer</span>
+    <span class="chip">vLLM + HYV3SpeechForCausalLM</span>
+    <span class="chip">代码依据：translation.py · budget.py · simulst.jinja</span>
+    <span class="chip">分析日期 2026-11-01</span>
+  </div>
+</header>
+
+<h2><span class="num">00</span>先给结论</h2>
+<p class="lead">
+  这套推理的本质不是"流式 ASR + 流式 MT"的级联，而是<strong>把同声传译当成一场多轮对话</strong>：
+  每 1.6 秒音频就是用户发来的一条新消息，模型回答"这一块我现在能确定的那部分译文"，说完就停。
+</p>
+
+<div class="kpi">
+  <div><div class="v">1.6<small>s</small></div><div class="k">首块长度，后续块可降到 0.8 s</div></div>
+  <div><div class="v">11<small>token</small></div><div class="k">1.6 s 音频压缩成的语音词元数</div></div>
+  <div><div class="v">145<small>ms</small></div><div class="k">每个语音词元代表的真实时长</div></div>
+  <div><div class="v">64<small>token</small></div><div class="k">单轮生成上限（贪心，遇 EOT 即停）</div></div>
+  <div><div class="v">4<small>块</small></div><div class="k">连续空输出后触发整段重译补偿</div></div>
+  <div><div class="v">2.4<small>s</small></div><div class="k">连续静音达到此值判定句末</div></div>
+</div>
+
+<ol class="steps">
+  <li><b>切块。</b>音频按 1.6 s 一段滑进缓冲，首块严格 1.6 s；VAD 判定为静音的块直接跳过，根本不发请求。</li>
+  <li><b>长上下文。</b>每一轮请求都把<em>之前所有音频块 + 之前所有译文</em>重新发一遍，新的一块音频追加在最后。</li>
+  <li><b>模型续写。</b>模板让模型永远停在"接着我上一句话往下说"的位置，于是术语、语气、句法自然连贯。</li>
+  <li><b>自己决定说不说。</b>有把握就吐字（EMIT），没把握就输出空串（WAIT）——"什么时候开口"由模型判断，不是外部 wait-k 策略。</li>
+  <li><b>兜底追平。</b>连续 4 块都没出字、或 2.4 s 静音、或音频结束，就把积压音频整段重译一次，一口气补上。</li>
+  <li><b>防爆。</b>上下文随对话线性增长，所以有三条切断线：输出被截断、token 预算逼近、定时切窗。</li>
+</ol>
+
+<div class="call">
+  <b>一句话记住区别</b>
+  传统同传系统问的是"我该等几个词再翻"；Hy-SimulMT 问的是"这段音频我现在能译出多少，剩下的先不说"。
+  前者是外部调度问题，后者是模型自己的能力，推理层只负责把音频一块块喂进去、把空回答翻译成"再等等"。
+</div>
+
+<h2><span class="num">01</span>整体路径：从麦克风到耳朵</h2>
+<p>
+  一次请求要穿过五个阶段。左侧三段的职责是<strong>把连续音频整理成模型能吃的离散输入</strong>，
+  右侧两段负责<strong>把模型的稀疏输出还原成连续的说话节奏</strong>。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 400" role="img" aria-label="端到端推理管线：采集分块、语音活动检测、构造请求、模型推理、输出回流">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#9AA4B5"/>
+      </marker>
+      <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#2563EB"/>
+      </marker>
+    </defs>
+
+    <!-- cards -->
+    <g>
+      <rect x="27" y="36" width="190" height="246" rx="11" fill="#FFFFFF" stroke="#DDE3EC"/>
+      <rect x="27" y="36" width="190" height="4" rx="2" fill="#2563EB"/>
+      <circle cx="53" cy="66" r="13" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <text x="53" y="70.5" font-size="11.5" font-weight="700" fill="#2563EB" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">1</text>
+      <text x="75" y="71" font-size="13.5" font-weight="650" fill="#151A23">采集与分块</text>
+      <text x="45" y="110" font-size="11.5" fill="#5A6478">16 kHz 单声道</text>
+      <text x="45" y="132" font-size="11.5" fill="#5A6478">float32 裸流</text>
+      <text x="45" y="154" font-size="11.5" fill="#5A6478">首块 1.6 s</text>
+      <text x="45" y="176" font-size="11.5" fill="#5A6478">后续 1.6 / 0.8 s</text>
+      <line x1="45" y1="200" x2="199" y2="200" stroke="#EDF0F5"/>
+      <text x="45" y="222" font-size="10.5" fill="#6B7280">不落盘，只在</text>
+      <text x="45" y="240" font-size="10.5" fill="#6B7280">内存里攒够一块</text>
+    </g>
+
+    <g>
+      <rect x="241" y="36" width="190" height="246" rx="11" fill="#FFFFFF" stroke="#DDE3EC"/>
+      <rect x="241" y="36" width="190" height="4" rx="2" fill="#2563EB"/>
+      <circle cx="267" cy="66" r="13" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <text x="267" y="70.5" font-size="11.5" font-weight="700" fill="#2563EB" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">2</text>
+      <text x="289" y="71" font-size="13.5" font-weight="650" fill="#151A23">语音活动检测</text>
+      <text x="259" y="110" font-size="11.5" fill="#5A6478">FireRed / Silero</text>
+      <text x="259" y="132" font-size="11.5" fill="#5A6478">在 CPU 上跑</text>
+      <text x="259" y="154" font-size="11.5" fill="#5A6478">静音块不进模型</text>
+      <text x="259" y="176" font-size="11.5" fill="#5A6478">给出人声区间</text>
+      <line x1="259" y1="200" x2="413" y2="200" stroke="#EDF0F5"/>
+      <text x="259" y="222" font-size="10.5" fill="#6B7280">时间轴只随真实</text>
+      <text x="259" y="240" font-size="10.5" fill="#6B7280">音频前进</text>
+    </g>
+
+    <g>
+      <rect x="455" y="36" width="190" height="246" rx="11" fill="#FFFFFF" stroke="#DDE3EC"/>
+      <rect x="455" y="36" width="190" height="4" rx="2" fill="#0D8B80"/>
+      <circle cx="481" cy="66" r="13" fill="#ECFBF6" stroke="#BFEDE2"/>
+      <text x="481" y="70.5" font-size="11.5" font-weight="700" fill="#0A7A6E" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">3</text>
+      <text x="503" y="71" font-size="13.5" font-weight="650" fill="#151A23">构造请求</text>
+      <text x="473" y="110" font-size="11.5" fill="#5A6478">chat 模板渲染</text>
+      <text x="473" y="132" font-size="11.5" fill="#5A6478">历史全部重发</text>
+      <text x="473" y="154" font-size="11.5" fill="#5A6478">音频占位符展开</text>
+      <text x="473" y="176" font-size="11.5" fill="#5A6478">预检上下文预算</text>
+      <line x1="473" y1="200" x2="627" y2="200" stroke="#EDF0F5"/>
+      <text x="473" y="222" font-size="10.5" fill="#6B7280">1 个音频标记</text>
+      <text x="473" y="240" font-size="10.5" fill="#6B7280">展开成 11 个向量</text>
+    </g>
+
+    <g>
+      <rect x="669" y="36" width="190" height="246" rx="11" fill="#FFFFFF" stroke="#DDE3EC"/>
+      <rect x="669" y="36" width="190" height="4" rx="2" fill="#0D8B80"/>
+      <circle cx="695" cy="66" r="13" fill="#ECFBF6" stroke="#BFEDE2"/>
+      <text x="695" y="70.5" font-size="11.5" font-weight="700" fill="#0A7A6E" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">4</text>
+      <text x="717" y="71" font-size="13.5" font-weight="650" fill="#151A23">模型推理</text>
+      <text x="687" y="110" font-size="11.5" fill="#5A6478">mel → 声学编码器</text>
+      <text x="687" y="132" font-size="11.5" fill="#5A6478">→ FSK 适配器</text>
+      <text x="687" y="154" font-size="11.5" fill="#5A6478">→ LLM 自回归</text>
+      <text x="687" y="176" font-size="11.5" fill="#5A6478">贪心，遇 EOT 停</text>
+      <line x1="687" y1="200" x2="841" y2="200" stroke="#EDF0F5"/>
+      <text x="687" y="222" font-size="10.5" fill="#6B7280">temperature = 0</text>
+      <text x="687" y="240" font-size="10.5" fill="#6B7280">max_tokens = 64</text>
+    </g>
+
+    <g>
+      <rect x="883" y="36" width="190" height="246" rx="11" fill="#FFFFFF" stroke="#DDE3EC"/>
+      <rect x="883" y="36" width="190" height="4" rx="2" fill="#B06A08"/>
+      <circle cx="909" cy="66" r="13" fill="#FFF7E8" stroke="#F5DCA9"/>
+      <text x="909" y="70.5" font-size="11.5" font-weight="700" fill="#9A5C06" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">5</text>
+      <text x="931" y="71" font-size="13.5" font-weight="650" fill="#151A23">输出与回流</text>
+      <text x="901" y="110" font-size="11.5" fill="#5A6478">空 → WAIT</text>
+      <text x="901" y="132" font-size="11.5" fill="#5A6478">有字 → EMIT</text>
+      <text x="901" y="154" font-size="11.5" fill="#5A6478">增量立刻下发</text>
+      <text x="901" y="176" font-size="11.5" fill="#5A6478">可选 TTS 克隆</text>
+      <line x1="901" y1="200" x2="1055" y2="200" stroke="#EDF0F5"/>
+      <text x="901" y="222" font-size="10.5" fill="#6B7280">事件里带 token</text>
+      <text x="901" y="240" font-size="10.5" fill="#6B7280">计数与停止原因</text>
+    </g>
+
+    <!-- arrows -->
+    <line x1="220" y1="159" x2="237" y2="159" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+    <line x1="434" y1="159" x2="451" y2="159" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+    <line x1="648" y1="159" x2="665" y2="159" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+    <line x1="862" y1="159" x2="879" y2="159" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <!-- return band -->
+    <rect x="27" y="316" width="1046" height="62" rx="11" fill="#EFF4FF" stroke="#C7D8FB"/>
+    <text x="48" y="341" font-size="12.5" font-weight="640" fill="#1E3A6E">事件回流：每个块返回一个 chunk 事件</text>
+    <text x="48" y="362" font-size="11.5" fill="#3A4E75">action（WAIT / EMIT）· text 增量 · prompt_tokens / completion_tokens · stop_reason · generated_token_ids</text>
+    <line x1="978" y1="282" x2="978" y2="312" stroke="#2563EB" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+    <text x="990" y="300" font-size="10.5" fill="#2563EB">回传</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 1 ·</b> 端到端五阶段。注意第 2 段与第 4 段是<em>两个不同的模型</em>：VAD 是几 MB 的 CPU 小模型，只做二元判断；
+    翻译模型是 30B-A3B 的多模态 LLM。前者的输出决定后者是否被调用。
+  </figcaption>
+</figure>
+
+<h3>为什么第 1 段必须固定 1600 ms</h3>
+<p>
+  首块长度在代码里被硬校验：<code>first_chunk_ms</code> 必须等于 1600，后续块只能是 800 或 1600
+  （<span class="tag">config.py</span> <code>__post_init__</code>）。这不是随意取的数——1.6 秒大约是一个短句的最小完整单元，
+  首块太短模型无从下手，太长则开场就要等两秒。
+</p>
+<pre><span class="c"># simulinfer/translation.py:376  —— 按首块/后续块不同长度切流</span>
+size = (<span class="k">self</span>.settings.first_chunk_ms <span class="k">if</span> self.index == 0 <span class="k">else</span> self.settings.chunk_ms) * 16
+<span class="k">if</span> len(self.buffer) &lt; size: <span class="k">break</span>
+chunk, self.buffer = self.buffer[:size], self.buffer[size:]
+<span class="k">yield</span> <span class="k">await</span> self.step(chunk, size)</pre>
+
+<h2><span class="num">02</span>切块与静音：什么时候根本不叫模型</h2>
+<p>
+  切块之后并非每块都会触发推理。VAD 会给每一块打上"是否静音"的标签，
+  静音块<strong>直接被丢弃</strong>而不产生任何模型调用（<code>skip_initial_silence</code> 默认开启）。
+  这次省下的不只是一次前向，而是一整个往返。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 290" role="img" aria-label="分块时间轴：五个块的动作序列，其中一块因静音被跳过">
+    <defs>
+      <marker id="tick" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="3" markerHeight="3"><circle cx="3" cy="3" r="2" fill="#B6BFCC"/></marker>
+    </defs>
+    <text x="24" y="24" font-size="11.5" fill="#6B7280">源时间轴（8 秒示例，每格 1.6 s）</text>
+
+    <!-- block backgrounds -->
+    <rect x="70"  y="34" width="196" height="140" rx="8" fill="#F1F5FD" stroke="#DDE3EC"/>
+    <rect x="266" y="34" width="196" height="140" rx="8" fill="#FFFFFF" stroke="#DDE3EC"/>
+    <rect x="462" y="34" width="196" height="140" rx="8" fill="#F1F5FD" stroke="#DDE3EC"/>
+    <rect x="658" y="34" width="196" height="140" rx="8" fill="#FFFFFF" stroke="#DDE3EC"/>
+    <rect x="854" y="34" width="196" height="140" rx="8" fill="#F1F5FD" stroke="#DDE3EC"/>
+
+    <!-- labels -->
+    <text x="168" y="56" font-size="12" font-weight="640" fill="#2563EB" text-anchor="middle">块 1</text>
+    <text x="364" y="56" font-size="12" font-weight="640" fill="#4C5566" text-anchor="middle">块 2</text>
+    <text x="560" y="56" font-size="12" font-weight="640" fill="#2563EB" text-anchor="middle">块 3</text>
+    <text x="756" y="56" font-size="12" font-weight="640" fill="#6B7280" text-anchor="middle">块 4</text>
+    <text x="952" y="56" font-size="12" font-weight="640" fill="#2563EB" text-anchor="middle">块 5</text>
+
+    <text x="168" y="74" font-size="10.5" fill="#6B7280" text-anchor="middle">0.0 – 1.6 s</text>
+    <text x="364" y="74" font-size="10.5" fill="#6B7280" text-anchor="middle">1.6 – 3.2 s</text>
+    <text x="560" y="74" font-size="10.5" fill="#6B7280" text-anchor="middle">3.2 – 4.8 s</text>
+    <text x="756" y="74" font-size="10.5" fill="#6B7280" text-anchor="middle">4.8 – 6.4 s</text>
+    <text x="952" y="74" font-size="10.5" fill="#6B7280" text-anchor="middle">6.4 – 8.0 s</text>
+
+    <!-- waveform: voiced blocks, bars symmetric about mid-line y=112 -->
+    <g fill="#AFC6F2">
+      <rect x="90"  y="98"  width="4" height="28" rx="2"/><rect x="106" y="90"  width="4" height="44" rx="2"/><rect x="122" y="104" width="4" height="16" rx="2"/><rect x="138" y="94"  width="4" height="36" rx="2"/><rect x="154" y="108" width="4" height="8"  rx="2"/><rect x="170" y="92"  width="4" height="40" rx="2"/><rect x="186" y="102" width="4" height="20" rx="2"/><rect x="202" y="96"  width="4" height="32" rx="2"/><rect x="218" y="106" width="4" height="12" rx="2"/><rect x="234" y="88"  width="4" height="48" rx="2"/>
+    </g>
+    <g fill="#BCD0F0">
+      <rect x="286" y="96"  width="4" height="32" rx="2"/><rect x="302" y="106" width="4" height="12" rx="2"/><rect x="318" y="92"  width="4" height="40" rx="2"/><rect x="334" y="88"  width="4" height="48" rx="2"/><rect x="350" y="104" width="4" height="16" rx="2"/><rect x="366" y="98"  width="4" height="28" rx="2"/><rect x="382" y="108" width="4" height="8"  rx="2"/><rect x="398" y="90"  width="4" height="44" rx="2"/><rect x="414" y="102" width="4" height="20" rx="2"/><rect x="430" y="94"  width="4" height="36" rx="2"/>
+    </g>
+    <g fill="#AFC6F2">
+      <rect x="482" y="98"  width="4" height="28" rx="2"/><rect x="498" y="90"  width="4" height="44" rx="2"/><rect x="514" y="106" width="4" height="12" rx="2"/><rect x="530" y="94"  width="4" height="36" rx="2"/><rect x="546" y="102" width="4" height="20" rx="2"/><rect x="562" y="108" width="4" height="8"  rx="2"/><rect x="578" y="92"  width="4" height="40" rx="2"/><rect x="594" y="104" width="4" height="16" rx="2"/><rect x="610" y="96"  width="4" height="32" rx="2"/><rect x="626" y="100" width="4" height="24" rx="2"/>
+    </g>
+    <!-- silent block: flat line only -->
+    <line x1="678" y1="112" x2="834" y2="112" stroke="#D3D9E3" stroke-width="2" stroke-linecap="round"/>
+    <text x="756" y="132" font-size="10" fill="#6B7280" text-anchor="middle">无人声</text>
+    <g fill="#AFC6F2">
+      <rect x="874" y="96"  width="4" height="32" rx="2"/><rect x="890" y="90"  width="4" height="44" rx="2"/><rect x="906" y="104" width="4" height="16" rx="2"/><rect x="922" y="94"  width="4" height="36" rx="2"/><rect x="938" y="102" width="4" height="20" rx="2"/><rect x="954" y="108" width="4" height="8"  rx="2"/><rect x="970" y="92"  width="4" height="40" rx="2"/><rect x="986" y="106" width="4" height="12" rx="2"/><rect x="1002" y="98" width="4" height="28" rx="2"/><rect x="1018" y="88" width="4" height="48" rx="2"/>
+    </g>
+
+    <!-- actions -->
+    <rect x="124" y="188" width="88" height="26" rx="7" fill="#EAF8F1" stroke="#BFE9D6"/>
+    <text x="168" y="205.5" font-size="11.5" font-weight="660" fill="#0F7A56" text-anchor="middle">EMIT</text>
+
+    <rect x="320" y="188" width="88" height="26" rx="7" fill="#FFF7E8" stroke="#F5DCA9"/>
+    <text x="364" y="205.5" font-size="11.5" font-weight="660" fill="#9A5C06" text-anchor="middle">WAIT</text>
+
+    <rect x="516" y="188" width="88" height="26" rx="7" fill="#EAF8F1" stroke="#BFE9D6"/>
+    <text x="560" y="205.5" font-size="11.5" font-weight="660" fill="#0F7A56" text-anchor="middle">EMIT</text>
+
+    <rect x="704" y="188" width="104" height="26" rx="7" fill="#EDEFF3" stroke="#DDE3EC"/>
+    <text x="756" y="205.5" font-size="11" font-weight="640" fill="#6B7280" text-anchor="middle">静音 · 跳过</text>
+
+    <rect x="908" y="188" width="88" height="26" rx="7" fill="#EAF8F1" stroke="#BFE9D6"/>
+    <text x="952" y="205.5" font-size="11.5" font-weight="660" fill="#0F7A56" text-anchor="middle">EMIT</text>
+
+    <!-- note -->
+    <text x="24" y="244" font-size="11.5" fill="#6B7280">块 4 无人声 → 不发请求，静音检测与裁剪状态照常推进；下一次模型调用看到的上下文里也不会有这一块。</text>
+    <text x="24" y="266" font-size="11.5" fill="#6B7280">EMIT / WAIT 是上层会话的动作，由模型"这一步是否吐字"直接决定，见第 5 节。</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 2 ·</b> 分块与动作序列。灰色块是被 VAD 吃掉的静音块。注意 WAIT 与"静音跳过"是两件不同的事：
+    前者调用了模型但模型不说话，后者压根没调模型。
+  </figcaption>
+</figure>
+
+<div class="call warn">
+  <b>易混点：WAIT 不是失败</b>
+  模型返回空字符串是一次<strong>成功</strong>的推理，只是结论为"信息还不够"。它消耗的算力极小——
+  解码到第一个 token 就是 EOT（结束符），实际只走了 1 步。真正的问题在连续多次都这样时才出现，见第 6 节的补偿机制。
+</div>
+
+<h3>VAD 只做三件事，但每件都影响正确性</h3>
+<div class="tblwrap"><table class="tbl">
+  <tr><th style="width:170px">职责</th><th>具体行为</th><th style="width:150px">配置项</th></tr>
+  <tr><td><strong>门控</strong></td><td>判静音的块不送模型，省一次往返</td><td class="mono">skip_initial_silence</td></tr>
+  <tr><td><strong>给 ST 提供人声区间</strong></td><td>补偿重译时按人声区间裁剪，前后各补 240 ms，避免切掉字头字尾</td><td class="mono">st_crop_speech · st_segment_pad_ms</td></tr>
+  <tr><td><strong>判句末</strong></td><td>连续静音达 2.4 s 视为一句说完，触发未决音频的收尾翻译</td><td class="mono">trailing_silence_seconds</td></tr>
+</table></div>
+<p>
+  两个细节值得注意。第一，<strong>VAD 的状态不随对话窗口重置而重置</strong>——
+  代码注释写得很直白："only real source samples advance VAD and the progress cursor"，
+  源时间轴与模型对话轮次是两套独立的时钟。第二，人声区间裁剪只影响<em>送给模型的音频</em>，
+  不影响源时间轴上的记账，所以被裁掉的静音不会被误算成"漏译"。
+</p>
+
+<p>
+  到这里，输入已经变成"每 1.6 秒一个、带静音标记的音频块"。接下来的问题是：
+  这些块怎么变成模型能读的上下文？
+</p>
+
+<h2><span class="num">03</span>请求是怎么"长"出来的</h2>
+<p>
+  这是整套机制最反直觉的地方：<strong>没有增量状态，每一轮都把全部历史重发一次。</strong>
+  会话里维护一个 <code>messages</code> 列表，每处理一块音频就往后追加两条——一条 user（音频块）、
+  一条 assistant（这一块的译文）。下一轮把这个列表原样再发一遍，末尾再加上新的一块音频。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 400" role="img" aria-label="三次请求的上下文堆叠：每轮把历史全部重发，末尾追加新音频块">
+    <!-- row labels -->
+    <text x="24" y="66" font-size="12" font-weight="640" fill="#151A23">请求 #1</text>
+    <text x="24" y="85" font-size="10.5" fill="#6B7280">t = 1.6 s</text>
+    <text x="24" y="162" font-size="12" font-weight="640" fill="#151A23">请求 #2</text>
+    <text x="24" y="181" font-size="10.5" fill="#6B7280">t = 3.2 s</text>
+    <text x="24" y="258" font-size="12" font-weight="640" fill="#151A23">请求 #3</text>
+    <text x="24" y="277" font-size="10.5" fill="#6B7280">t = 4.8 s</text>
+
+    <!-- row 1 -->
+    <rect x="150" y="46" width="140" height="44" rx="8" fill="#F1F3F7" stroke="#DDE3EC"/>
+    <text x="220" y="73" font-size="11" fill="#4C5566" text-anchor="middle">同声传译指令</text>
+    <rect x="290" y="46" width="96" height="44" rx="8" fill="#EFF4FF" stroke="#93B4F5" stroke-width="1.4"/>
+    <text x="338" y="73" font-size="10.5" fill="#2563EB" text-anchor="middle">音频₁ · 11 tok</text>
+    <line x1="396" y1="68" x2="424" y2="68" stroke="#9AA4B5" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="434" y="64" font-size="10.5" fill="#6B7280">模型回答</text>
+    <text x="434" y="80" font-size="11.5" fill="#0F7A56" font-family="ui-monospace,Menlo,monospace">"所以关键的想法是"</text>
+
+    <!-- row 2 -->
+    <rect x="150" y="142" width="140" height="44" rx="8" fill="#F1F3F7" stroke="#DDE3EC"/>
+    <text x="220" y="169" font-size="11" fill="#4C5566" text-anchor="middle">同声传译指令</text>
+    <rect x="290" y="142" width="96" height="44" rx="8" fill="#EFF4FF" stroke="#C7D8FB"/>
+    <text x="338" y="169" font-size="10.5" fill="#2563EB" text-anchor="middle">音频₁ · 11 tok</text>
+    <rect x="386" y="142" width="130" height="44" rx="8" fill="#ECFBF6" stroke="#BFEDE2"/>
+    <text x="451" y="169" font-size="10.5" fill="#0A7A6E" text-anchor="middle">译文₁ · 原样入历史</text>
+    <rect x="516" y="142" width="96" height="44" rx="8" fill="#EFF4FF" stroke="#93B4F5" stroke-width="1.4"/>
+    <text x="564" y="169" font-size="10.5" fill="#2563EB" text-anchor="middle">音频₂ · 11 tok</text>
+    <line x1="622" y1="164" x2="650" y2="164" stroke="#9AA4B5" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="660" y="160" font-size="10.5" fill="#6B7280">模型回答</text>
+    <text x="660" y="176" font-size="11.5" fill="#0F7A56" font-family="ui-monospace,Menlo,monospace">"我们要翻译"</text>
+
+    <!-- row 3 -->
+    <rect x="150" y="238" width="140" height="44" rx="8" fill="#F1F3F7" stroke="#DDE3EC"/>
+    <text x="220" y="265" font-size="11" fill="#4C5566" text-anchor="middle">同声传译指令</text>
+    <rect x="290" y="238" width="96" height="44" rx="8" fill="#EFF4FF" stroke="#C7D8FB"/>
+    <text x="338" y="265" font-size="10.5" fill="#2563EB" text-anchor="middle">音频₁ · 11 tok</text>
+    <rect x="386" y="238" width="130" height="44" rx="8" fill="#ECFBF6" stroke="#BFEDE2"/>
+    <text x="451" y="265" font-size="10.5" fill="#0A7A6E" text-anchor="middle">译文₁</text>
+    <rect x="516" y="238" width="96" height="44" rx="8" fill="#EFF4FF" stroke="#C7D8FB"/>
+    <text x="564" y="265" font-size="10.5" fill="#2563EB" text-anchor="middle">音频₂ · 11 tok</text>
+    <rect x="612" y="238" width="130" height="44" rx="8" fill="#ECFBF6" stroke="#BFEDE2"/>
+    <text x="677" y="265" font-size="10.5" fill="#0A7A6E" text-anchor="middle">译文₂</text>
+    <rect x="742" y="238" width="96" height="44" rx="8" fill="#EFF4FF" stroke="#93B4F5" stroke-width="1.4"/>
+    <text x="790" y="265" font-size="10.5" fill="#2563EB" text-anchor="middle">音频₃ · 11 tok</text>
+    <line x1="848" y1="260" x2="876" y2="260" stroke="#9AA4B5" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="886" y="256" font-size="10.5" fill="#6B7280">模型回答</text>
+    <text x="886" y="272" font-size="11.5" fill="#9A5C06" text-anchor="start">（空）→ WAIT</text>
+
+    <!-- bottom legend -->
+    <rect x="24" y="312" width="1046" height="26" rx="6" fill="#F1F3F7"/>
+    <rect x="34" y="319" width="10" height="10" rx="2" fill="#EFF4FF" stroke="#93B4F5"/>
+    <text x="52" y="330" font-size="11" fill="#4C5566">音频块（user 角色，粗边框为本轮新增）</text>
+    <rect x="300" y="319" width="10" height="10" rx="2" fill="#ECFBF6" stroke="#BFEDE2"/>
+    <text x="318" y="330" font-size="11" fill="#4C5566">已出译文（assistant 角色）</text>
+    <rect x="500" y="319" width="10" height="10" rx="2" fill="#F1F3F7" stroke="#DDE3EC"/>
+    <text x="518" y="330" font-size="11" fill="#4C5566">指令，只在第一轮出现</text>
+
+    <text x="24" y="366" font-size="11.5" fill="#6B7280">已出的译文会以 assistant 身份留在历史里，所以模型下一轮看得到自己刚说过什么，术语与语气因此连贯。</text>
+    <text x="24" y="388" font-size="11.5" fill="#6B7280">代价：第 n 轮的请求里要带上前 n−1 轮的全部 token。收益：不需要任何增量状态，天然支持拒绝、回退与重启。</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 3 ·</b> 三轮请求的 diff 关系。指令只在第一轮出现（<code>user_turn()</code> 里的 <code>if not self.messages</code> 分支），
+    后两轮的 user 消息里只有音频。这也是为什么历史被清空后，第一句话必须重新带上指令。
+  </figcaption>
+</figure>
+
+<h3>模板把"对话"翻译成"续写"</h3>
+<p>
+  光有 messages 还不够，关键在 chat 模板怎么渲染。模板给每个音频 part 展开成三个特殊标记，
+  给每条 assistant 历史补上角色头与结束符，最后让模型<strong>停在"接着说"的位置</strong>：
+</p>
+<pre><span class="c">&lt;｜hy_begin▁of▁sentence｜&gt;&lt;｜reasoning_mode｜&gt;reasoning_effort:no_think</span>
+<span class="c">&lt;｜hy_User｜&gt;</span>请完成下面的同声传译任务……不必等待整句结束。
+   <span class="c">&lt;｜hy_place▁holder▁no▁6｜&gt;&lt;｜hy_place▁holder▁no▁5｜&gt;&lt;｜hy_place▁holder▁no▁8｜&gt;</span>   <span class="c">← 音频占位，中间那个会展开成 11 个语音词元</span>
+<span class="c">&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;/think&gt;</span>所以关键的想法是<span class="c">&lt;｜hy_EOT｜&gt;</span>
+<span class="c">&lt;｜hy_User｜&gt;</span>   <span class="c">&lt;｜hy_place▁holder▁no▁6｜&gt;&lt;｜hy_place▁holder▁no▁5｜&gt;&lt;｜hy_place▁holder▁no▁8｜&gt;</span>
+<span class="c">&lt;｜hy_Assistant｜&gt;&lt;think&gt;&lt;/think&gt;</span>  ← 模型从这里继续往下写</pre>
+<p>
+  请求侧怎么把它接上？分两种情形。只出译文的模式走标准生成提示——模板在末尾补一个空的 assistant 角色头，
+  模型从空白处开始写。需要<strong>续写已有内容</strong>时（Interleave 模式要先写源文、ST 补偿时要接上旧译文），
+  改用 <code>continue_final_message</code>：把一段 assistant 前缀塞进 messages，让模板不补生成提示，
+  模型从这段前缀的末尾继续往下写。
+</p>
+<pre><span class="c"># simulinfer/translation.py:61-83  —— 极简版</span>
+continuation = prefix <span class="k">if</span> prefix <span class="k">is not</span> <span class="k">None</span> <span class="k">else</span> (SRC <span class="k">if</span> mode == <span class="s">'source_target'</span> <span class="k">else</span> <span class="k">None</span>)
+fields = {<span class="s">'messages'</span>: wire,
+          <span class="s">'add_generation_prompt'</span>: continuation <span class="k">is</span> <span class="k">None</span>,
+          <span class="s">'continue_final_message'</span>: continuation <span class="k">is not</span> <span class="k">None</span>,
+          <span class="s">'add_special_tokens'</span>: <span class="k">False</span>}
+<span class="k">if</span> continuation <span class="k">is not</span> <span class="k">None</span>:
+    wire.append({<span class="s">'role'</span>: <span class="s">'assistant'</span>, <span class="s">'content'</span>: [{<span class="s">'type'</span>: <span class="s">'text'</span>, <span class="s">'text'</span>: continuation}]})</pre>
+
+<div class="call ok">
+  <b>为什么这个设计值得学</b>
+  模型并没有被要求"输出 JSON 增量"或"输出对齐时间戳"。它只是在做最擅长的事——接着上文续写。
+  于是"同传"这个任务被降维成"给定这部分音频和已有译文，下一句该写什么"。
+  编译期不需要流式解码器，运行时也不需要维护任何增量状态机。
+</div>
+
+<h3>两种输出模式</h3>
+<div class="grid2">
+  <div class="box">
+    <h4><span class="tag t">target_only</span>只出译文</h4>
+    <p>标准 <code>add_generation_prompt</code> 路径，模型直接写译文。前端看不到源文转写。</p>
+    <p style="color:var(--ink3)">用于 Hy-SimulMT-30B-A3B 系列。</p>
+  </div>
+  <div class="box">
+    <h4><span class="tag b">source_target</span>源文 + 译文</h4>
+    <p>强制以 <code>place▁holder▁no▁790</code> 起头，先写源文，遇到 <code>place▁holder▁no▁791</code> 再写译文，上层用 <code>split_reply()</code> 拆开。</p>
+    <p style="color:var(--ink3)">用于 Interleave 系列，可以同时显示双语字幕。</p>
+  </div>
+</div>
+
+<h2><span class="num">04</span>模型内部：1600 ms 如何变成 11 个词元</h2>
+<p>
+  音频不是以"文本转写"的形式进入 LLM 的。它先被压成一条很短的离散序列，
+  再从词嵌入表旁边"借道"插进语言模型里。整条链上有两次压缩，合起来把 160 个 mel 帧压成 11 个词元，
+  时间轴上每个词元代表约 145 ms。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 372" role="img" aria-label="模型内部压缩链：波形到 Mel 到声学编码器到 FSK 适配器到 LLM">
+    <!-- nodes -->
+    <g>
+      <rect x="40" y="60" width="160" height="118" rx="10" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <text x="120" y="86" font-size="12.5" font-weight="640" fill="#1E3A6E" text-anchor="middle">波形</text>
+      <text x="120" y="120" font-size="19" font-weight="660" fill="#2563EB" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">1600 ms</text>
+      <text x="120" y="144" font-size="10.5" fill="#5A6B8A" text-anchor="middle">25 600 采样 · 16 kHz</text>
+      <text x="120" y="162" font-size="10" fill="#6B7280" text-anchor="middle">pcm16 或 float32</text>
+    </g>
+
+    <g>
+      <rect x="240" y="60" width="150" height="118" rx="10" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <text x="315" y="86" font-size="12.5" font-weight="640" fill="#1E3A6E" text-anchor="middle">Mel 频谱</text>
+      <text x="315" y="120" font-size="19" font-weight="660" fill="#2563EB" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">160 帧</text>
+      <text x="315" y="144" font-size="10.5" fill="#5A6B8A" text-anchor="middle">128 bin · hop 160</text>
+      <text x="315" y="162" font-size="10" fill="#6B7280" text-anchor="middle">每帧 10 ms</text>
+    </g>
+
+    <g>
+      <rect x="430" y="60" width="150" height="118" rx="10" fill="#ECFBF6" stroke="#BFEDE2"/>
+      <text x="505" y="86" font-size="12.5" font-weight="640" fill="#0B4F49" text-anchor="middle">声学编码器</text>
+      <text x="505" y="120" font-size="19" font-weight="660" fill="#0A7A6E" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">21 帧</text>
+      <text x="505" y="144" font-size="10.5" fill="#3F6E69" text-anchor="middle">× 2048 维</text>
+      <text x="505" y="162" font-size="10" fill="#6B7280" text-anchor="middle">约 7.6 倍压缩</text>
+    </g>
+
+    <g>
+      <rect x="620" y="60" width="160" height="118" rx="10" fill="#ECFBF6" stroke="#BFEDE2"/>
+      <text x="700" y="86" font-size="12.5" font-weight="640" fill="#0B4F49" text-anchor="middle">FSK 适配器</text>
+      <text x="700" y="120" font-size="19" font-weight="660" fill="#0A7A6E" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">11 词元</text>
+      <text x="700" y="144" font-size="10.5" fill="#3F6E69" text-anchor="middle">相邻 2 帧拼接 → MLP</text>
+      <text x="700" y="162" font-size="10" fill="#6B7280" text-anchor="middle">2 倍压缩 · 长度可变</text>
+    </g>
+
+    <g>
+      <rect x="820" y="60" width="200" height="118" rx="10" fill="#F3F0FF" stroke="#D8CEFB"/>
+      <text x="920" y="86" font-size="12.5" font-weight="640" fill="#2C2352" text-anchor="middle">LLM 自回归</text>
+      <text x="920" y="120" font-size="19" font-weight="660" fill="#6446D6" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">→ 文本</text>
+      <text x="920" y="144" font-size="10.5" fill="#4B3F7A" text-anchor="middle">30B 总参 / 3B 激活</text>
+      <text x="920" y="162" font-size="10" fill="#6B7280" text-anchor="middle">与 11 个向量同处一条序列</text>
+    </g>
+
+    <!-- arrows -->
+    <line x1="200" y1="119" x2="232" y2="119" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+    <line x1="390" y1="119" x2="422" y2="119" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+    <line x1="580" y1="119" x2="612" y2="119" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+    <line x1="780" y1="119" x2="812" y2="119" stroke="#9AA4B5" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <!-- ruler -->
+    <text x="40" y="222" font-size="11.5" fill="#4C5566">同一个 1600 ms，在时间轴上就是下面这 11 段，每段约 145 ms：</text>
+    <rect x="40" y="234" width="980" height="26" rx="5" fill="#F1F5FD" stroke="#C7D8FB"/>
+    <g stroke="#FFFFFF" stroke-width="1">
+      <line x1="129" y1="234" x2="129" y2="260"/><line x1="218" y1="234" x2="218" y2="260"/>
+      <line x1="307" y1="234" x2="307" y2="260"/><line x1="396" y1="234" x2="396" y2="260"/>
+      <line x1="485" y1="234" x2="485" y2="260"/><line x1="574" y1="234" x2="574" y2="260"/>
+      <line x1="663" y1="234" x2="663" y2="260"/><line x1="752" y1="234" x2="752" y2="260"/>
+      <line x1="841" y1="234" x2="841" y2="260"/><line x1="930" y1="234" x2="930" y2="260"/>
+    </g>
+    <text x="84" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">1</text>
+    <text x="173" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">2</text>
+    <text x="262" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">3</text>
+    <text x="351" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">4</text>
+    <text x="440" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">5</text>
+    <text x="529" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">6</text>
+    <text x="618" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">7</text>
+    <text x="707" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">8</text>
+    <text x="796" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">9</text>
+    <text x="885" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">10</text>
+    <text x="974" y="252" font-size="9.5" fill="#5A6B8A" text-anchor="middle">11</text>
+
+    <!-- bottom notes -->
+    <text x="40" y="296" font-size="11.2" fill="#4C5566">复算：25 600 采样 ÷ 160 = 160 mel 帧 → 每 100 帧出 13 帧、尾部每 8 帧出 1 帧 = 21 帧 → 相邻 2 帧拼接向上取整 = 11 词元。</text>
+    <text x="40" y="320" font-size="11.2" fill="#6B7280">speech_tokens() 在请求前算占位符数量、在模型侧生成同等个数的 embedding，两边必须严格一致，否则请求直接被拒。</text>
+    <text x="40" y="344" font-size="11.2" fill="#6B7280">块长 800 ms 时是另一组数：80 mel 帧 → 10 帧 → 5 词元（每词元 160 ms）。</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 4 ·</b> 两次压缩的分解。声学编码器理解"声音里有什么"，适配器负责把维度对齐到 LLM 的词嵌入空间，
+    长度由音频时长决定（FSK 是变长适配器，不是固定的 150 个 query）。
+  </figcaption>
+</figure>
+
+<h3>把数字验一遍</h3>
+<p>
+  这几个数字不是估的，是 <code>budget.py</code> 里三行算术算出来的，可以直接复跑：
+</p>
+<pre><span class="c"># simulinfer/budget.py:27-34</span>
+<span class="k">def</span> speech_tokens(num_samples):
+    frames = (num_samples + 159) // 160          <span class="c"># 16 kHz / hop 160 → mel 帧</span>
+    tail   = (frames % 100 + 7) // 8             <span class="c"># 尾块每 8 帧出 1 帧</span>
+    <span class="k">return</span> (frames // 100 * 13 + tail + 1) // 2  <span class="c"># 每满百帧出 13 帧，再按 FSK k=2 折半</span></pre>
+<div class="tblwrap"><table class="tbl">
+  <tr><th>音频块</th><th class="mono">采样数</th><th class="mono">Mel 帧</th><th class="mono">编码器帧</th><th class="mono">语音词元</th><th class="mono">每词元时长</th></tr>
+  <tr><td><strong>首块 / 标准块</strong> 1600 ms</td><td class="mono">25 600</td><td class="mono">160</td><td class="mono">21</td><td class="mono"><strong>11</strong></td><td class="mono">145 ms</td></tr>
+  <tr><td><strong>短分块</strong> 800 ms</td><td class="mono">12 800</td><td class="mono">80</td><td class="mono">10</td><td class="mono"><strong>5</strong></td><td class="mono">160 ms</td></tr>
+  <tr><td><strong>单条音频上限</strong> 30 s</td><td class="mono">480 000</td><td class="mono">3000</td><td class="mono">390</td><td class="mono"><strong>195</strong></td><td class="mono">154 ms</td></tr>
+</table></div>
+
+<div class="call">
+  <b>为什么这个压缩比决定了延迟</b>
+  如果走"先转写再翻译"的级联路线，1.6 秒语音要先变成 20–30 个汉字 token，
+  再让第二个模型读这些 token 去翻——两次前向、两份上下文。这里 1.6 秒只占 11 个位置，
+  而且和文本 token 混在同一条序列里一次算完。序列短，prefill 就便宜，首字延迟才压得住。
+</div>
+
+<h3>占位符是怎么被"撑开"的</h3>
+<p>
+  请求里音频只体现为一个占位符，但服务端算出的 prompt token 数必须把 11 个位置算进去。
+  <code>render()</code> 在渲染模板之后做了一个偏移修正：每出现一个音频 part，就加上
+  <code>speech_tokens(n) − 1</code>，因为占位符本身已经被计过一次。
+  这个数在生成后还会被核对一遍——如果 <code>usage.prompt_tokens</code> 不等于预算值，
+  说明模型侧的音频模板与推理层不匹配，直接抛错而不是"带病继续译"。
+</p>
+<pre><span class="c"># 真实响应里的计数校验（translation.py:263）</span>
+<span class="k">if</span> budget <span class="k">is not</span> <span class="k">None</span> <span class="k">and</span> actual != budget.prompt_tokens:
+    <span class="k">raise</span> RuntimeError(<span class="s">'模型音频token计数与SimulInfer模板不一致'</span>)</pre>
+
+<h2><span class="num">05</span>说不说：一步决策的全部逻辑</h2>
+<p>
+  模型返回之后，会话层只做一件事——看这段文本是不是空的。这个判断看着太简单，
+  但它是整条链路里唯一决定"用户什么时候听到声音"的地方。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 664" role="img" aria-label="单步决策流程：从收到一块音频到 EMIT 或 WAIT，再到补偿触发">
+    <defs>
+      <marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#8E99AB"/>
+      </marker>
+    </defs>
+
+    <!-- 1 -->
+    <rect x="320" y="28" width="460" height="56" rx="10" fill="#FFFFFF" stroke="#C7D8FB"/>
+    <text x="550" y="50" font-size="13" font-weight="640" fill="#151A23" text-anchor="middle">① 收到一块音频（1600 ms）</text>
+    <text x="550" y="70" font-size="10.8" fill="#6B7280" text-anchor="middle">已过 VAD 门控：静音块不会走到这里</text>
+
+    <!-- 2 -->
+    <rect x="320" y="120" width="460" height="56" rx="10" fill="#FFFFFF" stroke="#C7D8FB"/>
+    <text x="550" y="142" font-size="13" font-weight="640" fill="#151A23" text-anchor="middle">② 组装 messages 并预检 token 预算</text>
+    <text x="550" y="162" font-size="10.8" fill="#6B7280" text-anchor="middle">历史音频 + 历史译文全部重发；不够就先切窗再发</text>
+
+    <!-- 3 -->
+    <rect x="320" y="212" width="460" height="56" rx="10" fill="#FFFFFF" stroke="#BFEDE2"/>
+    <text x="550" y="234" font-size="13" font-weight="640" fill="#151A23" text-anchor="middle">③ vLLM 贪心解码</text>
+    <text x="550" y="254" font-size="10.8" fill="#6B7280" text-anchor="middle">temperature = 0 · max_tokens = 64 · 遇 EOT / EOS 即停</text>
+
+    <!-- 4 decision -->
+    <rect x="320" y="304" width="460" height="58" rx="10" fill="#FFF7E8" stroke="#F5DCA9"/>
+    <text x="550" y="327" font-size="13" font-weight="640" fill="#5A3B08" text-anchor="middle">④ 这一步有可输出的译文吗？</text>
+    <text x="550" y="347" font-size="10.8" fill="#7A5620" text-anchor="middle">判断依据只有一条：reply.text 去空白后是否为空</text>
+
+    <!-- arrows -->
+    <line x1="550" y1="84" x2="550" y2="116" stroke="#8E99AB" stroke-width="1.4" marker-end="url(#ar3)"/>
+    <line x1="550" y1="176" x2="550" y2="208" stroke="#8E99AB" stroke-width="1.4" marker-end="url(#ar3)"/>
+    <line x1="550" y1="268" x2="550" y2="300" stroke="#8E99AB" stroke-width="1.4" marker-end="url(#ar3)"/>
+    <line x1="430" y1="362" x2="360" y2="398" stroke="#8E99AB" stroke-width="1.4" marker-end="url(#ar3)"/>
+    <line x1="670" y1="362" x2="750" y2="398" stroke="#8E99AB" stroke-width="1.4" marker-end="url(#ar3)"/>
+    <text x="360" y="378" font-size="11" font-weight="620" fill="#0F7A56">非空</text>
+    <text x="700" y="378" font-size="11" font-weight="620" fill="#9A5C06">空串</text>
+
+    <!-- EMIT -->
+    <rect x="200" y="400" width="300" height="60" rx="10" fill="#EAF8F1" stroke="#BFE9D6"/>
+    <text x="350" y="424" font-size="13" font-weight="660" fill="#0B5340" text-anchor="middle">EMIT · 提交本块译文</text>
+    <text x="350" y="444" font-size="10.8" fill="#3D7F68" text-anchor="middle">追加进 full_text 与 messages，等待计数归零</text>
+
+    <!-- WAIT -->
+    <rect x="600" y="400" width="300" height="60" rx="10" fill="#FFF7E8" stroke="#F5DCA9"/>
+    <text x="750" y="424" font-size="13" font-weight="660" fill="#6B4208" text-anchor="middle">WAIT · 等待计数 +1</text>
+    <text x="750" y="444" font-size="10.8" fill="#7A5620" text-anchor="middle">模型认为信息还不够，本轮不产生输出</text>
+
+    <!-- trigger -->
+    <rect x="600" y="500" width="300" height="62" rx="10" fill="#FFFFFF" stroke="#D8CEFB"/>
+    <text x="750" y="523" font-size="12.5" font-weight="650" fill="#2C2352" text-anchor="middle">达到补偿触发条件？</text>
+    <text x="750" y="541" font-size="10.5" fill="#6A5F96" text-anchor="middle">连续 4 块 WAIT · 静音 2.4 s · 音频结束</text>
+
+    <line x1="750" y1="460" x2="750" y2="496" stroke="#8E99AB" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+    <!-- ST -->
+    <rect x="600" y="584" width="300" height="62" rx="10" fill="#F3F0FF" stroke="#D8CEFB"/>
+    <text x="750" y="607" font-size="12.5" font-weight="660" fill="#2C2352" text-anchor="middle">ST · 积压音频整段重译</text>
+    <text x="750" y="626" font-size="10.5" fill="#6A5F96" text-anchor="middle">见第 6 节；通常一次吐出，把进度追平</text>
+    <line x1="750" y1="562" x2="750" y2="580" stroke="#8E99AB" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+    <!-- note under EMIT -->
+    <text x="200" y="482" font-size="10.5" fill="#6B7280">这一步音频随即出队，不再参与后续补偿</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 5 ·</b> 单步决策。整条链路只有一个真正影响用户感知的分支点（④），
+    而这个分支的判据是一行 <code>if reply.text.strip():</code>。
+  </figcaption>
+</figure>
+
+<h3>用一段话跟到底</h3>
+<p>
+  下面用一句 8 秒的英文口语走一遍，假设方向是英译中。每条译文都是<strong>示意</strong>，
+  用来展示节奏，不是模型实测输出。
+</p>
+<div class="tblwrap"><table class="tbl">
+  <tr><th style="width:116px">块</th><th style="width:196px">源音频（示意）</th><th style="width:144px">模型输出</th><th style="width:88px">动作</th><th>此刻的上下文里有什么</th></tr>
+  <tr>
+    <td class="mono nb">#1 · 0–1.6 s</td>
+    <td>So the key idea here</td>
+    <td>所以关键的想法是</td>
+    <td><span class="tag g">EMIT</span></td>
+    <td>只有指令 + 音频₁</td>
+  </tr>
+  <tr>
+    <td class="mono nb">#2 · 1.6–3.2 s</td>
+    <td>is that we translate</td>
+    <td>我们要翻译</td>
+    <td><span class="tag g">EMIT</span></td>
+    <td>指令 + 音频₁ + 译文₁ + 音频₂</td>
+  </tr>
+  <tr>
+    <td class="mono nb">#3 · 3.2–4.8 s</td>
+    <td>while the speaker</td>
+    <td>（空）</td>
+    <td><span class="tag a">WAIT</span></td>
+    <td>从句还没说完，先说会拧；模型选择等</td>
+  </tr>
+  <tr>
+    <td class="mono nb">#4 · 4.8–6.4 s</td>
+    <td>is still talking</td>
+    <td>在说话人还在讲话的时候</td>
+    <td><span class="tag g">EMIT</span></td>
+    <td>块 3 的音频仍在上下文里，只是当时没产出文字</td>
+  </tr>
+  <tr>
+    <td class="mono nb">#5 · 6.4–8.0 s</td>
+    <td>and that's why</td>
+    <td>这就是为什么</td>
+    <td><span class="tag g">EMIT</span></td>
+    <td>五块音频 + 四段译文</td>
+  </tr>
+</table></div>
+
+<div class="call ok">
+  <b>块 3 是整套设计的灵魂</b>
+  如果第 3 块强行输出"在说话人"，中文会变成一个悬空的状语，听众要等两秒才知道它在修饰什么。
+  模型选择沉默，等到第 4 块听全了"while the speaker is still talking"再一次性说出来。
+  <strong>这个"忍一下"的判断没有写在任何策略代码里，它来自模型本身。</strong>
+</div>
+
+<h3>四道输出约束</h3>
+<p>
+  "让模型自己决定"不等于放任。采样端挂了四个约束，防止它在长上下文里跑偏：
+</p>
+<div class="grid2">
+  <div class="box">
+    <h4>禁止 3-gram 重复</h4>
+    <p><code>no_repeat_ngram_size = 3</code>。同一轮里重复过的三词组合被置为 −∞。同传模式下<em>只看当前块</em>，历史译文不参与统计——否则模型会因为"上一轮说过"而不敢复用常用搭配。</p>
+  </div>
+  <div class="box">
+    <h4>重复惩罚</h4>
+    <p><code>repetition_penalty</code> 同传 1.0、整段重译 1.05。整段重译更容易陷入"这句我译过"的死循环，所以略微加压。</p>
+  </div>
+  <div class="box">
+    <h4>硬停止符</h4>
+    <p><code>stop = [EOT, EOS]</code>，且 <code>skip_special_tokens = false</code>——保留结束符字面，方便上层核对到底是"正常收尾"还是"被截断"。</p>
+  </div>
+  <div class="box">
+    <h4>目标语言遮罩（可选）</h4>
+    <p>中译英时打开 <code>no_chinese_target</code>，把中文 token 全部屏蔽。用于压制"听着英文说着中文"的串语。</p>
+  </div>
+</div>
+
+<h2><span class="num">06</span>说漏了怎么办：ST 整段重译</h2>
+<p>
+  模型"忍一下"是有代价的。如果演讲者进入一个很长的从句、或者环境噪声让模型持续不敢下判断，
+  就会连续多块空输出。这时听众已经七八秒没听到任何东西，必须有人介入——这套机制叫 <strong>ST 补偿</strong>。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 340" role="img" aria-label="ST 补偿：积压音频整段重译后一次吐出">
+    <!-- trigger timeline -->
+    <text x="24" y="26" font-size="11.5" fill="#6B7280">前两块正常出字之后，连续四块空输出，第四块返回时触发补偿</text>
+
+    <!-- wait band -->
+    <rect x="60" y="42" width="145" height="38" rx="7" fill="#FFF7E8" stroke="#F5DCA9"/>
+    <rect x="205" y="42" width="145" height="38" rx="7" fill="#FFF7E8" stroke="#F5DCA9"/>
+    <rect x="350" y="42" width="145" height="38" rx="7" fill="#FFF7E8" stroke="#F5DCA9"/>
+    <rect x="495" y="42" width="145" height="38" rx="7" fill="#FFF7E8" stroke="#F5DCA9"/>
+    <text x="132" y="66" font-size="11" font-weight="620" fill="#8A5A0E" text-anchor="middle">WAIT 1</text>
+    <text x="277" y="66" font-size="11" font-weight="620" fill="#8A5A0E" text-anchor="middle">WAIT 2</text>
+    <text x="422" y="66" font-size="11" font-weight="620" fill="#8A5A0E" text-anchor="middle">WAIT 3</text>
+    <text x="567" y="66" font-size="11" font-weight="620" fill="#8A5A0E" text-anchor="middle">WAIT 4</text>
+
+    <!-- flush marker -->
+    <line x1="640" y1="32" x2="640" y2="92" stroke="#6446D6" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <circle cx="640" cy="61" r="4" fill="#6446D6"/>
+
+    <!-- result band -->
+    <rect x="645" y="42" width="399" height="38" rx="7" fill="#EAF8F1" stroke="#BFE9D6"/>
+    <text x="844" y="60" font-size="11" font-weight="620" fill="#0B5340" text-anchor="middle">一次 EMIT 大面积文本</text>
+    <text x="844" y="74" font-size="9.8" fill="#3D7F68" text-anchor="middle">覆盖前四块积压的全部音频</text>
+
+    <!-- time ticks -->
+    <g stroke="#C3CCD9">
+      <line x1="60" y1="82" x2="60" y2="96"/><line x1="205" y1="82" x2="205" y2="96"/>
+      <line x1="350" y1="82" x2="350" y2="96"/><line x1="495" y1="82" x2="495" y2="96"/>
+      <line x1="640" y1="82" x2="640" y2="96"/>
+    </g>
+    <g font-size="10" fill="#8A94A6" text-anchor="middle">
+      <text x="60" y="110">0 s</text><text x="205" y="110">1.6</text><text x="350" y="110">3.2</text>
+      <text x="495" y="110">4.8</text><text x="640" y="110">6.4 触发</text>
+    </g>
+    <text x="844" y="110" font-size="10" fill="#6B7280" text-anchor="middle">用户在这里才重新听到声音</text>
+
+    <!-- steps -->
+    <text x="60" y="152" font-size="12" font-weight="640" fill="#151A23">补偿做了什么</text>
+
+    <g font-size="10.8" fill="#4C5566">
+      <circle cx="70" cy="176" r="3" fill="#6446D6"/>
+      <text x="84" y="180">取出 pending 队列里所有未成句的块，它们可能夹着静音块</text>
+      <circle cx="70" cy="200" r="3" fill="#6446D6"/>
+      <text x="84" y="204">按人声区间重新裁剪，前后各留 240 ms——直接拼原始波形会带上大段空白</text>
+      <circle cx="70" cy="224" r="3" fill="#6446D6"/>
+      <text x="84" y="228">换成整段翻译指令（"要全部输出，不要分块"），并把已出译文作为前缀喂进去</text>
+      <circle cx="70" cy="248" r="3" fill="#6446D6"/>
+      <text x="84" y="252">短语音守卫：若人声不足 1.5 s，限制输出词数，防止模型对着半句话脑补出一整段</text>
+      <circle cx="70" cy="272" r="3" fill="#6446D6"/>
+      <text x="84" y="276">按配置决定是否清空对话重来；不清空时把这次结果写回历史，下一块接着用</text>
+    </g>
+
+    <rect x="640" y="150" width="404" height="132" rx="10" fill="#F3F0FF" stroke="#D8CEFB"/>
+    <text x="660" y="174" font-size="11.5" font-weight="640" fill="#2C2352">为什么是"重译"而不是"补齐"</text>
+    <text x="660" y="198" font-size="10.6" fill="#5B5090">积压音频之所以没被译出，通常是因为前半段听不全。</text>
+    <text x="660" y="218" font-size="10.6" fill="#5B5090">一旦后文到了，前半段的语法角色才明确。所以必须</text>
+    <text x="660" y="238" font-size="10.6" fill="#5B5090">把它当作一整段重新看一遍，而不是在旧译文末尾补字。</text>
+    <text x="660" y="264" font-size="10.6" fill="#5B5090">代价：这次调用的输入比普通轮长得多，也更慢。</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 6 ·</b> 补偿的时间结构。注意它是<em>滞后</em>的：第 4 块返回后才知道要触发，
+    所以用户会先经历一段沉默，然后收到一大段文本。这种"憋一口气再说完"的节奏，正是真人同传也会有的。
+  </figcaption>
+</figure>
+
+<h3>三个触发口</h3>
+<div class="tblwrap"><table class="tbl">
+  <tr><th style="width:190px">触发</th><th>含义</th><th style="width:190px">参数</th></tr>
+  <tr><td><strong>连续空输出</strong></td><td>连着 N 块都没吐字，说明模型一直在忍</td><td class="mono">st_wait_chunks = 4</td></tr>
+  <tr><td><strong>句末静音</strong></td><td>连续静音 2.4 秒，说话人停了，该收尾</td><td class="mono">trailing_silence_seconds = 2.4</td></tr>
+  <tr><td><strong>音频结束</strong></td><td>用户点了停止或文件读完，剩下的一次性译完</td><td class="mono">finish() → flush(force=True)</td></tr>
+</table></div>
+<p>
+  这三个口子最终都进同一个函数 <code>flush()</code>。它内部还有几道防重复的闸：
+  同一段音频不重复尝试（用起止采样点做 key）、超过 <code>st_fallback_max_seconds</code> 就裁掉头部并记一笔"漏译"、
+  结果为空则丢弃并可选重置。这些细节不影响理解主链路，但决定了长时间运行的稳定性。
+</p>
+
+<div class="call violet">
+  <b>一个容易忽略的工程细节</b>
+  补偿结果写回历史时，代码会把最后一条 assistant 消息<strong>整段替换</strong>成本次重译的结果
+  （<code>messages[-1]['content'] = ...</code>），而不是追加。因为这次重译覆盖了之前几块的时间范围，
+  追加会造成重复。这一步做错，后面每一轮都会读到一份重复的译文。
+</div>
+
+<h2><span class="num">07</span>上下文什么时候撑爆</h2>
+<p>
+  第 3 节说过每轮重发全部历史。这个设计的成本是线性的：<strong>说得越久，每次请求越长。</strong>
+  按默认参数估算，音频本身每分钟贡献约 412 个 token，译文再贡献约 190 个。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 330" role="img" aria-label="上下文长度随通话时长线性增长，约 13 分钟触及 8192 上限">
+    <!-- axes -->
+    <line x1="90" y1="270" x2="1044" y2="270" stroke="#C3CCD9"/>
+    <line x1="90" y1="60" x2="90" y2="270" stroke="#C3CCD9"/>
+
+    <!-- grid -->
+    <g stroke="#EDF0F5">
+      <line x1="90" y1="228" x2="1030" y2="228"/>
+      <line x1="90" y1="186" x2="1030" y2="186"/>
+      <line x1="90" y1="144" x2="1030" y2="144"/>
+      <line x1="90" y1="102" x2="1030" y2="102"/>
+      <line x1="90" y1="60"  x2="1030" y2="60"/>
+    </g>
+    <g font-size="10" fill="#8A94A6" text-anchor="end">
+      <text x="80" y="274">0</text>
+      <text x="80" y="232">2 000</text>
+      <text x="80" y="190">4 000</text>
+      <text x="80" y="148">6 000</text>
+      <text x="80" y="106">8 000</text>
+      <text x="80" y="64">10 000</text>
+    </g>
+    <g font-size="10" fill="#8A94A6" text-anchor="middle">
+      <text x="90" y="290">0</text>
+      <text x="325" y="290">4</text>
+      <text x="560" y="290">8</text>
+      <text x="795" y="290">12</text>
+      <text x="1030" y="290">16 分钟</text>
+    </g>
+    <text x="24" y="48" font-size="10.5" fill="#6B7280">token</text>
+
+    <!-- limit line -->
+    <line x1="90" y1="98" x2="1030" y2="98" stroke="#D9534F" stroke-width="1.3" stroke-dasharray="5 4"/>
+    <text x="98" y="90" font-size="10.5" fill="#B33A36">max_model_len = 8 192</text>
+
+    <!-- audio series -->
+    <line x1="90" y1="270" x2="1030" y2="131.4" stroke="#2563EB" stroke-width="2"/>
+    <circle cx="1030" cy="131.4" r="3.5" fill="#2563EB"/>
+    <text x="1024" y="126" font-size="10.5" fill="#2563EB" text-anchor="end">音频累计 ≈ 6 600</text>
+
+    <!-- total series -->
+    <line x1="90" y1="270" x2="1030" y2="68.4" stroke="#0D8B80" stroke-width="2"/>
+    <circle cx="1030" cy="68.4" r="3.5" fill="#0D8B80"/>
+    <text x="1024" y="62" font-size="10.5" fill="#0A7A6E" text-anchor="end">含译文总计 ≈ 9 600</text>
+
+    <!-- crossing -->
+    <line x1="861" y1="98" x2="861" y2="270" stroke="#D9534F" stroke-width="1" stroke-dasharray="3 4"/>
+    <circle cx="861" cy="98" r="4.5" fill="#FFFFFF" stroke="#D9534F" stroke-width="2"/>
+    <text x="852" y="86" font-size="10.5" fill="#B33A36" text-anchor="end">≈ 13 分钟触顶</text>
+
+    <!-- legend -->
+    <line x1="104" y1="316" x2="130" y2="316" stroke="#2563EB" stroke-width="2"/>
+    <text x="136" y="320" font-size="10.5" fill="#4C5566">音频 token</text>
+    <line x1="214" y1="316" x2="240" y2="316" stroke="#0D8B80" stroke-width="2"/>
+    <text x="246" y="320" font-size="10.5" fill="#4C5566">音频 + 译文</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 7 ·</b> 按默认参数（1.6 s 块、每块 11 个音频词元、译语速约 3 字/秒）估算的增长曲线。
+    实际斜率取决于语速与译文长度，但量级不会差太多：<b>十分钟是一道坎</b>。
+  </figcaption>
+</figure>
+
+<h3>三条切断线</h3>
+<p>
+  上下文逼近上限时的处理不是"报错"，而是<strong>主动断开对话、从零开始</strong>。
+  切断点有三处，都汇总到 <code>cut()</code>：
+</p>
+<ol class="steps">
+  <li><b>输出被截断（<code>finish_reason == 'length'</code>）。</b>这一轮已经写满 64 个 token 还没说完，说明模型在"补一大段"，
+  而 prompt 也快满了。默认先抛错（<code>reset_on_max_tokens = false</code>），可配置成保留部分输出后重置。</li>
+  <li><b>token 预算逼近。</b><code>prompt + completion + 256 ≥ max_model_len</code> 时切断。256 是留给下一轮的余量。</li>
+  <li><b>定时切窗。</b><code>window_seconds</code> 默认 0（关闭），开启后按固定时长重置，用于超长会议。</li>
+</ol>
+<p>
+  切断前一定先 <code>flush()</code>：把未成句的音频译完再清空，避免"切断瞬间丢掉半句话"。
+  清空只清对话（<code>messages</code>、等待计数），<strong>不清 VAD 状态，也不回退源时间轴</strong>——
+  这两套时钟是分开的，第 2 节提过。
+</p>
+
+<pre><span class="c"># simulinfer/translation.py:549-566  —— 切断的顺序很重要</span>
+<span class="k">async def</span> cut(self, event, reason):
+    <span class="k">if</span> any(<span class="k">not</span> b[3] <span class="k">for</span> b <span class="k">in</span> self.pending):
+        <span class="k">await</span> self.flush(event, force=<span class="k">True</span>, trigger=reason)   <span class="c"># 先译完</span>
+    ...
+    <span class="k">if</span> self.run == run:
+        self.reset(event, reason)                                    <span class="c"># 再清空</span></pre>
+
+<h2><span class="num">08</span>把节奏摊平：一段 8 秒的完整时序</h2>
+<p>
+  前面几节拆的是零件。这里把第 5 节的例子摊到时间轴上，特别注意<strong>第三行的积压</strong>——
+  它解释了为什么"块 3 没说出话，块 4 却能把它一起译出来"。
+</p>
+
+<figure>
+  <div class="svgbox">
+  <svg viewBox="0 0 1100 386" role="img" aria-label="8 秒时序：音频到达、模型调用、待译积压的变化">
+    <defs>
+      <marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#B06A08"/>
+      </marker>
+    </defs>
+
+    <!-- row labels -->
+    <text x="24" y="74" font-size="11.5" font-weight="620" fill="#4C5566">源音频</text>
+    <text x="24" y="144" font-size="11.5" font-weight="620" fill="#4C5566">模型调用</text>
+    <text x="24" y="258" font-size="11.5" font-weight="620" fill="#4C5566">待译积压</text>
+
+    <!-- row A: audio blocks -->
+    <g>
+      <rect x="150" y="50" width="157" height="40" rx="6" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <rect x="307" y="50" width="157" height="40" rx="6" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <rect x="464" y="50" width="156" height="40" rx="6" fill="#FFF7E8" stroke="#F5DCA9"/>
+      <rect x="620" y="50" width="157" height="40" rx="6" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <rect x="777" y="50" width="157" height="40" rx="6" fill="#EFF4FF" stroke="#C7D8FB"/>
+      <text x="228" y="75" font-size="10.5" fill="#3A5FA8" text-anchor="middle">块 1 · 1.6 s</text>
+      <text x="385" y="75" font-size="10.5" fill="#3A5FA8" text-anchor="middle">块 2 · 1.6 s</text>
+      <text x="542" y="75" font-size="10.5" fill="#8A5A0E" text-anchor="middle">块 3 · 1.6 s</text>
+      <text x="698" y="75" font-size="10.5" fill="#3A5FA8" text-anchor="middle">块 4 · 1.6 s</text>
+      <text x="855" y="75" font-size="10.5" fill="#3A5FA8" text-anchor="middle">块 5 · 1.6 s</text>
+    </g>
+
+    <!-- row B: calls -->
+    <g>
+      <rect x="158" y="120" width="34" height="40" rx="5" fill="#0D8B80"/>
+      <rect x="315" y="120" width="34" height="40" rx="5" fill="#0D8B80"/>
+      <rect x="472" y="120" width="35" height="40" rx="5" fill="#B06A08"/>
+      <rect x="628" y="120" width="35" height="40" rx="5" fill="#0D8B80"/>
+      <rect x="785" y="120" width="34" height="40" rx="5" fill="#0D8B80"/>
+
+      <text x="198" y="139" font-size="10" fill="#0B5340">「所以关键的想法是」</text>
+      <text x="198" y="154" font-size="9.5" fill="#6B7280">EMIT</text>
+
+      <text x="355" y="139" font-size="10" fill="#0B5340">「我们要翻译」</text>
+      <text x="355" y="154" font-size="9.5" fill="#6B7280">EMIT</text>
+
+      <text x="513" y="139" font-size="10" fill="#8A5A0E">（空）</text>
+      <text x="513" y="154" font-size="9.5" fill="#6B7280">WAIT · 只出 EOT</text>
+
+      <text x="669" y="139" font-size="10" fill="#0B5340">「说话人还在讲话时」</text>
+      <text x="669" y="154" font-size="9.5" fill="#6B7280">EMIT · 合并两块</text>
+
+      <text x="825" y="139" font-size="10" fill="#0B5340">「这就是为什么」</text>
+      <text x="825" y="154" font-size="9.5" fill="#6B7280">EMIT</text>
+    </g>
+
+    <!-- row C: pending backlog -->
+    <line x1="150" y1="270" x2="934" y2="270" stroke="#E4E8EF"/>
+    <g fill="#FBD79B">
+      <rect x="150" y="256" width="44" height="14" rx="3"/>
+      <rect x="307" y="256" width="44" height="14" rx="3"/>
+      <rect x="464" y="256" width="156" height="14" rx="3"/>
+      <rect x="620" y="242" width="45" height="28" rx="3"/>
+      <rect x="777" y="256" width="44" height="14" rx="3"/>
+    </g>
+    <g stroke="#D9A64E" stroke-width="1" fill="none">
+      <rect x="150" y="256" width="44" height="14" rx="3"/>
+      <rect x="307" y="256" width="44" height="14" rx="3"/>
+      <rect x="464" y="256" width="156" height="14" rx="3"/>
+      <rect x="620" y="242" width="45" height="28" rx="3"/>
+      <rect x="777" y="256" width="44" height="14" rx="3"/>
+    </g>
+    <text x="470" y="290" font-size="9.5" fill="#7A5620">块 3 的音频一直留在队列里，块 4 到达后两块合并送进模型</text>
+
+    <!-- timeline -->
+    <line x1="150" y1="316" x2="1030" y2="316" stroke="#C3CCD9"/>
+    <g stroke="#C3CCD9">
+      <line x1="150" y1="316" x2="150" y2="322"/><line x1="307" y1="316" x2="307" y2="322"/>
+      <line x1="464" y1="316" x2="464" y2="322"/><line x1="620" y1="316" x2="620" y2="322"/>
+      <line x1="777" y1="316" x2="777" y2="322"/><line x1="934" y1="316" x2="934" y2="322"/>
+    </g>
+    <g font-size="10" fill="#8A94A6" text-anchor="middle">
+      <text x="150" y="338">0 s</text><text x="307" y="338">1.6</text><text x="464" y="338">3.2</text>
+      <text x="620" y="338">4.8</text><text x="777" y="338">6.4</text><text x="934" y="338">8.0</text>
+    </g>
+    <text x="960" y="338" font-size="10" fill="#6B7280">源时间</text>
+
+    <text x="24" y="368" font-size="10.5" fill="#6B7280">深色小方块 = 一次模型调用（宽度仅为示意，真实耗时取决于 GPU 与批内并发）。橙色音频块 = 这一步模型选择等待；浅色条越高表示积压的音频块越多。</text>
+  </svg>
+  </div>
+  <figcaption>
+    <b>图 8 ·</b> 8 秒内的四次调用与一次空转。关键在读第三行：<b>积压不是浪费</b>——
+    块 3 的音频在块 4 的请求里被原样重发，所以模型在 5.25 秒那一刻同时看到两块音频，
+    才有条件把"While the speaker is still talking"这个完整从句译出来。
+  </figcaption>
+</figure>
+
+<h3>延迟到底由什么决定</h3>
+<p>
+  从这张图能直接读出这条关系：
+</p>
+<pre>用户听到第一个字的时间 ≈ 首块长度 + 一次推理往返
+                       ≈ 1.6 s + (prefill + decode)
+
+句子被完整译出的时间 ≈ 句子结束时刻 + 一次推理往返 + 可能的补偿
+                       （如果模型中途 WAIT 过，就要等见证后续音频的那一轮）</pre>
+<p>
+  第一行是硬下限，1.6 秒无法绕过——要译一句话，至少得先听完这么大一块。
+  第二行才是质量与延迟的真实权衡点：模型越敢"提前说"，第二行越短、但改口概率越高；
+  越保守，质量越稳、但听众等得越久。README 里 StreamLAAL ≈ 3 秒，本质上就是这个权衡的产物。
+</p>
+
+<h2><span class="num">09</span>代码地图</h2>
+<p>想把某个环节落到具体文件时查这张表。行号对应当前仓库版本。</p>
+<div class="tblwrap"><table class="tbl">
+  <tr><th style="width:230px">环节</th><th style="width:300px">文件</th><th>关键内容</th></tr>
+  <tr><td>切块与单步驱动</td><td class="mono">simulinfer/translation.py:371</td><td><code>push()</code> 攒够一块就调 <code>step()</code></td></tr>
+  <tr><td>单步主逻辑</td><td class="mono">simulinfer/translation.py:386</td><td><code>step()</code>：VAD → 组装 → 调模型 → 决策 → 记账</td></tr>
+  <tr><td>请求构造</td><td class="mono">simulinfer/translation.py:61</td><td><code>chat_request()</code>：前缀续写 + 消息拼装</td></tr>
+  <tr><td>模型调用与解析</td><td class="mono">simulinfer/translation.py:224</td><td><code>generate()</code>：采样参数、停止符、token 计数校验</td></tr>
+  <tr><td>源文/译文拆分</td><td class="mono">simulinfer/translation.py:39</td><td><code>split_reply()</code>：按 790 / 791 两个分隔符切分</td></tr>
+  <tr><td>补偿重译</td><td class="mono">simulinfer/translation.py:610</td><td><code>flush()</code>：裁剪、拼接、短语音守卫、写回历史</td></tr>
+  <tr><td>切窗与重置</td><td class="mono">simulinfer/translation.py:549</td><td><code>cut()</code>：先 flush 再 reset</td></tr>
+  <tr><td>chat 模板</td><td class="mono">simulinfer/templates/simulst.jinja</td><td>音频占位符、角色头、生成提示的位置</td></tr>
+  <tr><td>语音词元计数</td><td class="mono">simulinfer/budget.py:27</td><td><code>speech_tokens()</code>：mel → 编码器帧 → 词元</td></tr>
+  <tr><td>上下文预算</td><td class="mono">simulinfer/budget.py:43</td><td><code>render()</code>：渲染模板并修正音频占位偏移</td></tr>
+  <tr><td>VAD</td><td class="mono">simulinfer/vad.py</td><td>Silero / FireRed 流式与非流式检测</td></tr>
+  <tr><td>人声裁剪</td><td class="mono">simulinfer/noise.py:21</td><td><code>padded_st_audio()</code>：按人声区间裁剪并补边</td></tr>
+  <tr><td>输出约束（模型侧）</td><td class="mono">simulinfer/repetition.py</td><td>请求级 n-gram 去重处理器</td></tr>
+  <tr><td>音频编码</td><td class="mono">simulinfer/audio.py:121</td><td><code>AudioPart</code>：波形 → base64 WAV + 采样数元数据</td></tr>
+  <tr><td>模型结构（训练侧）</td><td class="mono">SimulTrain/s2s_train/common/</td><td><code>modeling_speech_llm.py</code> 与 <code>modeling_speech_adapter.py</code></td></tr>
+</table></div>
+
+<div class="call">
+  <b>一个设计上的取舍</b>
+  推理层<strong>完全不碰模型权重，全部通过 HTTP 调用 vLLM</strong>。好处是模型可以换、可以扩、可以多实例；
+  代价是每一轮都要序列化一次完整历史（音频要重新编码成 base64）。这也是为什么仓库提供了
+  <code>binary</code> 传输选项——WebSocket 上直接发裸 PCM，省掉 base64 的 1.33 倍膨胀。
+</div>
+
+<h2><span class="num">10</span>自己验证这些数字</h2>
+<p>三个不需要 GPU 的复算，直接对着仓库跑就能对上：</p>
+<pre><span class="c"># 1. 语音词元数（纯算术，不依赖 torch）</span>
+python3 -c <span class="s">"from simulinfer.budget import speech_tokens; \
+print([speech_tokens(n) for n in (25600, 12800, 480000)])"</span>
+<span class="c"># → [11, 5, 195]</span>
+
+<span class="c"># 2. 模板渲染后长什么样（看占位符与角色头的位置）</span>
+python3 -c <span class="s">"from simulinfer.budget import render; \
+print(render([{'role':'user','content':[{'type':'text','text':'probe'}]}], 'target_only')[0])"</span>
+
+<span class="c"># 3. 真实跑一遍，观察每个 chunk 的事件字段</span>
+curl -N http://127.0.0.1:8080/translate/stream -F direction=en-zh -F file=@audio.wav</pre>
+<p>
+  第 3 条会流式吐出 JSON 事件，每块一个，看 <code>action</code>（WAIT/EMIT）、
+  <code>prompt_tokens</code>（是否随轮次线性增长）、<code>stop_reason</code>（是否正常收尾）、
+  <code>st_attempted</code>（有没有触发补偿）。这四个字段基本能还原每一次决策的来龙去脉。
+</p>
+
+<div class="call ok">
+  <b>读代码时的三个锚点</b>
+  <ol style="margin:8px 0 0;padding-left:20px">
+    <li>看到 <code>self.messages</code> 就知道上下文在哪、什么时候被清空。</li>
+    <li>看到 <code>reply.text.strip()</code> 就知道分支走向。</li>
+    <li>看到 <code>pending</code> 就知道哪些音频还没变成文字——它是补偿机制的唯一输入。</li>
+  </ol>
+</div>
+
+<div class="foot">
+  <p style="margin:0 0 6px">
+    本文基于 Hy-SimulMT 仓库当前代码静态分析，所有结构结论均可回查上表所列文件。
+    文中译文示例仅用于说明节奏，不作为质量评测依据；时序图中的推理耗时宽度为示意值。
+  </p>
+  <p style="margin:0">分析对象：<code>SimulInfer/simulinfer</code> · <code>SimulTrain/s2s_train</code> · 2026-11-01</p>
+</div>
+
+</div>
+</body>
+</html>
