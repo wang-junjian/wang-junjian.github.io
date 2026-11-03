@@ -262,13 +262,14 @@ footer b{color:var(--muted)}
     <p class="lede">
       它们不是两套技术，而是同一个 Chromium 供帧管道的两个下游出口。这份文档把安装链路、源码机制、
       实测帧率和选型判断拆成可核对的步骤 —— 每一步都标注了证据来源：是实测出来的、读源码读出来的，还是推断。
+      最后还落到一个更实际的问题：<strong>怎么让整条链路在用户看不见的窗口里跑完</strong>。
     </p>
     <div class="meta-chips">
       <span class="chip"><b>Playwright</b> 1.64.1</span>
       <span class="chip"><b>Chromium</b> 1248 · CFT 156.0.8078.4</span>
       <span class="chip"><b>ffmpeg</b> 1013 · n7.0.1</span>
       <span class="chip"><b>采集</b> 1920×1080</span>
-      <span class="chip"><b>9 张</b> 手绘 SVG</span>
+      <span class="chip"><b>11 张</b> 手绘 SVG</span>
     </div>
   </div>
 </header>
@@ -286,9 +287,10 @@ footer b{color:var(--muted)}
       <a href="#s4"><span class="n">04</span><span>CDP 原理</span></a>
       <a href="#s5"><span class="n">05</span><span>fps 是配额不是产能</span></a>
       <a href="#s6"><span class="n">06</span><span>选型决策</span></a>
-      <a href="#s7"><span class="n">07</span><span>工程约束</span></a>
-      <a href="#s8"><span class="n">08</span><span>故障对照表</span></a>
-      <a href="#s9"><span class="n">09</span><span>速查与复跑</span></a>
+      <a href="#s7"><span class="n">07</span><span>无人值守 headless</span></a>
+      <a href="#s8"><span class="n">08</span><span>工程约束</span></a>
+      <a href="#s9"><span class="n">09</span><span>故障对照表</span></a>
+      <a href="#s10"><span class="n">10</span><span>速查与复跑</span></a>
     </nav>
     <div class="toc-foot">
       证据标记：<br>
@@ -349,6 +351,11 @@ footer b{color:var(--muted)}
             <td><strong>不抢主线程</strong></td>
             <td>注入 rAF 探针测真实渲染帧率：不录制 116.85 / 录 60fps 116.45 / 录 90fps 116.67 / CDP 116.80，差异 &lt; 0.5%。</td>
             <td><span class="pill m">实测</span></td>
+          </tr>
+          <tr>
+            <td><strong>无窗口也能录</strong></td>
+            <td>默认 <code>headless: true</code> 会换成 <code>chrome-headless-shell</code>，WebGL 落到 SwiftShader：实测 7.4 fps；加 <code>channel:"chromium"</code> 走 Metal：60.0 fps。</td>
+            <td><span class="pill m">实测</span> <span class="pill s">源码</span></td>
           </tr>
           <tr>
             <td><strong>按镜头分工</strong></td>
@@ -947,6 +954,12 @@ cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</spa
 <span class="k">await</span> cdp.send(<span class="s">"Page.stopScreencast"</span>);
 <span class="c">// 帧数 / 耗时 → 写进 meta.json，后面裁剪靠它换算</span></code></pre>
 
+    <p>
+      <em>这段最小实现是「先落盘、再回执」</em>，为的是让代码顺序和上图一一对应，能跑通。
+      但它每帧都要多等一次磁盘 I/O；真要跑满帧率，得把回执提前到写盘之前 ——
+      这一处调整连同实测数据在 <a href="#s7">§7 的第二点</a>。
+    </p>
+
     <h3><span class="dot">·</span>三个必须自己兜住的细节</h3>
 
     <p>
@@ -1327,9 +1340,303 @@ cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</spa
     </div>
   </section>
 
-  <!-- ============ 07 ============ -->
+    <!-- ============ 07 ============ -->
   <section id="s7">
-    <h2><span class="num">07</span>工程约束：五条会咬人的规则</h2>
+    <h2><span class="num">07</span>无人值守：把窗口从等式里拿掉</h2>
+
+    <p>
+      前六节讨论的都是「帧拿到手之后谁负责编码」。还有一个与编码完全无关的维度：
+      <strong>窗口要不要出现在用户的屏幕上</strong>。它决定的是能不能批量跑、能不能不打扰人，
+      与画面质量、帧率上限是三件不同的事。这一节把三者拆开。
+    </p>
+
+    <h3><span class="dot">·</span>一、窗口可见性本来就不该影响采集</h3>
+    <p>
+      原因在采集层的位置：CDP 的 <code>Page.screencastFrame</code> 交付的是
+      <strong>renderer 合成后的 surface 帧</strong>（GPU 进程里贴好的一块位图），
+      而系统录屏抓的是<strong>显示器的 framebuffer</strong>。前者与窗口是否被遮挡、是否最小化、
+      是否在前台完全无关 —— 它根本不知道「屏幕」长什么样。
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th style="width:210px">运行状态</th><th class="num" style="width:120px">CDP 抓帧</th>
+              <th class="num" style="width:150px">recordVideo 唯一帧</th><th>合成按键是否仍生效</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>窗口在前台</td><td class="num">98.8 fps</td><td class="num">45.2 fps</td><td>是</td></tr>
+          <tr><td>最小化到 Dock</td><td class="num">98.8 fps</td><td class="num">44.2 fps</td><td>是（P1 血量 100→53）</td></tr>
+          <tr><td>8 个进程占满 CPU</td><td class="num">98.4 fps</td><td class="num">—</td><td>是</td></tr>
+          <tr><td>最小化 + 满载</td><td class="num">99.0 fps</td><td class="num">—</td><td>是</td></tr>
+          <tr><td>headless（无窗口）</td><td class="num">60.0 fps</td><td class="num">—</td><td>是</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      最后一行和其他行不是一个量级，这是本节唯一真正的坑，下面单独讲。
+      先看一个反直觉的细节：<strong>页面在最小化时 rAF 仍然跑满 120fps</strong>。
+      不是因为游戏勤快，而是 screencast 在持续请求帧 —— 没有采集时，Chrome 会把最小化页面的
+      渲染节奏降到几乎停摆。<em>是采集让页面保持活跃，而不是反过来。</em>
+      <span class="pill m">实测</span>
+    </p>
+
+    <h3><span class="dot">·</span>二、真正的门槛不在窗口，在内核</h3>
+    <p>
+      <code>headless: true</code> 看起来只是「不显示窗口」的一个布尔值，但 Playwright 1.64
+      会据此选一个<strong>不同的浏览器二进制</strong>。两个二进制版本号一模一样，
+      能力却差一个数量级。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 520" role="img" aria-label="headless 启动路径分叉：默认落到 chrome-headless-shell，GPU 走 SwiftShader">
+        <defs>
+          <marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/>
+          </marker>
+        </defs>
+
+        <rect x="290" y="14" width="420" height="62" rx="12" fill="#0f172a"/>
+        <text x="500" y="40" text-anchor="middle" font-size="13.5" font-weight="650" fill="#ffffff" font-family="ui-monospace,Menlo,monospace">chromium.launch({ headless: true })</text>
+        <text x="500" y="61" text-anchor="middle" font-size="11" fill="#94a3b8">一个布尔值，却决定了用哪个二进制</text>
+
+        <line x1="500" y1="76" x2="500" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="265" y1="96" x2="735" y2="96" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="265" y1="96" x2="265" y2="140" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a7)"/>
+        <line x1="735" y1="96" x2="735" y2="140" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a7)"/>
+
+        <text x="265" y="118" text-anchor="middle" font-size="10.5" fill="#be123c" font-weight="650">没有 channel</text>
+        <text x="735" y="118" text-anchor="middle" font-size="10.5" fill="#047857" font-weight="650">channel: "chromium"</text>
+
+        <rect x="50" y="144" width="430" height="82" rx="10" fill="#fdf0f3" stroke="#f3c4d0" stroke-width="1.5"/>
+        <text x="265" y="170" text-anchor="middle" font-size="12.5" font-weight="700" fill="#9f1239" font-family="ui-monospace,Menlo,monospace">chrome-headless-shell</text>
+        <text x="265" y="192" text-anchor="middle" font-size="10.5" fill="#64748b">独立下载 · 203 MB · 没有 .app 外壳</text>
+        <text x="265" y="211" text-anchor="middle" font-size="10" fill="#b45309" font-family="ui-monospace,Menlo,monospace">libEGL.dylib / libGLESv2.dylib = 736 B（占位）</text>
+
+        <rect x="520" y="144" width="430" height="82" rx="10" fill="#e9f7f1" stroke="#a7dcc4" stroke-width="1.5"/>
+        <text x="735" y="170" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065f46" font-family="ui-monospace,Menlo,monospace">Google Chrome for Testing</text>
+        <text x="735" y="192" text-anchor="middle" font-size="10.5" fill="#64748b">与 headed 同一个二进制 · 366 MB</text>
+        <text x="735" y="211" text-anchor="middle" font-size="10" fill="#047857" font-family="ui-monospace,Menlo,monospace">完整 ANGLE + Metal 后端</text>
+
+        <line x1="265" y1="226" x2="265" y2="262" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a7)"/>
+        <line x1="735" y1="226" x2="735" y2="262" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a7)"/>
+
+        <rect x="50" y="266" width="430" height="88" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="66" y="288" font-size="10.5" fill="#94a3b8" font-weight="650">WebGL 渲染器返回</text>
+        <text x="66" y="311" font-size="10" fill="#9f1239" font-family="ui-monospace,Menlo,monospace">ANGLE (Google, Vulkan 1.3.0</text>
+        <text x="66" y="327" font-size="10" fill="#9f1239" font-family="ui-monospace,Menlo,monospace">(SwiftShader Device (LLVM 10.0.0)),</text>
+        <text x="66" y="343" font-size="10" fill="#9f1239" font-family="ui-monospace,Menlo,monospace">SwiftShader driver)</text>
+
+        <rect x="520" y="266" width="430" height="88" rx="10" fill="#ffffff" stroke="#cfd7e6" stroke-width="1.5"/>
+        <text x="536" y="288" font-size="10.5" fill="#94a3b8" font-weight="650">WebGL 渲染器返回</text>
+        <text x="536" y="311" font-size="10" fill="#065f46" font-family="ui-monospace,Menlo,monospace">ANGLE (Apple, ANGLE Metal Renderer:</text>
+        <text x="536" y="327" font-size="10" fill="#065f46" font-family="ui-monospace,Menlo,monospace">Apple M2 Max, Unspecified Version)</text>
+
+        <line x1="265" y1="354" x2="265" y2="390" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a7)"/>
+        <line x1="735" y1="354" x2="735" y2="390" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a7)"/>
+
+        <rect x="50" y="394" width="430" height="58" rx="10" fill="#fdf0f3" stroke="#f3c4d0" stroke-width="1.5"/>
+        <text x="265" y="418" text-anchor="middle" font-size="12.5" font-weight="700" fill="#9f1239">CPU 光栅化 → 实测 7.4 fps</text>
+        <text x="265" y="438" text-anchor="middle" font-size="10.5" fill="#64748b">不报错、不警告，只是变慢</text>
+
+        <rect x="520" y="394" width="430" height="58" rx="10" fill="#e9f7f1" stroke="#a7dcc4" stroke-width="1.5"/>
+        <text x="735" y="418" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065f46">GPU 光栅化 → 实测 60.0 fps</text>
+        <text x="735" y="438" text-anchor="middle" font-size="10.5" fill="#64748b">受虚拟 vsync 限制，见下一节</text>
+
+        <text x="50" y="484" font-size="11.5" fill="#b45309">两者的 browser.version() 都是 156.0.8078.4 —— 版本号分辨不出来，只能读 WebGL 的 renderer 字符串。</text>
+        <text x="50" y="504" font-size="11.5" fill="#64748b">这就是问题最隐蔽的地方：代码没变、API 没变、日志干净，只有帧率悄悄掉到七分之一。</text>
+      </svg>
+      <figcaption>
+        <b>图 10 · headless 的启动分叉。</b>左右两侧的差异不在「显示不显示窗口」，
+        而在被选中的那个二进制里<strong>有没有真正的 GL 实现</strong>。左侧的 EGL/GLES 库是 736 字节的占位文件，
+        GL 一路退到随包附带的 SwiftShader。
+      </figcaption>
+    </figure>
+
+    <div class="call warn">
+      <span class="ct">这个坑不会报错，只会变慢</span>
+      <p>
+        第一次写采集器时用的是默认 <code>headless: true</code>，跑出来 4.6 fps。
+        我先后怀疑过三件事：写盘阻塞回调、JPEG 编码太重、页面没进战斗。
+        做了三组隔离实验（只计数不写盘、同步写、异步写）才发现<strong>三组都是 6–7 fps</strong> ——
+        问题在启动那一刻就已经定了，与采集循环无关。
+        <span class="pill m">实测</span>
+      </p>
+    </div>
+
+    <h3><span class="dot">·</span>三、60fps 是虚拟 vsync，不是性能极限</h3>
+    <p>
+      换成完整内核后，headless 稳定在 60.0fps，而 headed 是 98.8。这个差距<strong>不是性能差</strong>：
+      headless 挂的是一块虚拟显示器，合成器按它 60Hz 的刷新率出帧；headed 用的是这块 120Hz 的屏幕，
+      所以能给到近百帧。换句话说，<strong>60 是节拍器，不是天花板</strong>。
+    </p>
+    <p>
+      验证这个判断的办法是解掉 vsync 看会不会更快。结果是<strong>更慢</strong>：加上
+      <code>--disable-frame-rate-limit</code> + <code>--disable-gpu-vsync</code> 后，
+      rAF 失去节拍，合成器满载而 screencast 的在途窗口被打满（回到 §5 的
+      <code>maxFramesInFlight</code>），有效帧率反而崩到 13fps。
+      <span class="pill m">实测</span> 这从反面印证了「配额 ≠ 产能」：限速器从来不在
+      <code>fps</code> 参数上，而在合成器真正能产出多少帧。
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 396" role="img" aria-label="四种运行形态的实测采集帧率与用户感知对比">
+        <text x="50" y="30" font-size="12" font-weight="700" fill="#0e1726">同一游戏场景 · 1920×1080 · CDP 采集 9 秒动作段</text>
+
+        <text x="50" y="52" font-size="10.5" fill="#94a3b8" font-weight="650">运行形态 / 内核</text>
+        <text x="812" y="52" font-size="10.5" fill="#94a3b8" font-weight="650">用户是否看得见</text>
+        <line x1="800" y1="60" x2="800" y2="296" stroke="#e5e9f2" stroke-width="1"/>
+
+        <!-- row1 -->
+        <rect x="280" y="76" width="36" height="26" rx="3" fill="#be123c"/>
+        <text x="270" y="94" text-anchor="end" font-size="12" font-weight="650" fill="#0e1726">headless 默认</text>
+        <text x="324" y="94" font-size="11" font-weight="700" fill="#be123c">7.4</text>
+        <text x="812" y="86" font-size="10.5" fill="#047857" font-weight="650">完全看不见 ✓</text>
+        <text x="812" y="101" font-size="10" fill="#94a3b8">但帧率不可用</text>
+
+        <!-- row2 -->
+        <rect x="280" y="128" width="294" height="26" rx="3" fill="#047857"/>
+        <text x="270" y="146" text-anchor="end" font-size="12" font-weight="650" fill="#0e1726">headless + channel</text>
+        <text x="582" y="146" font-size="11" font-weight="700" fill="#047857">60.0</text>
+        <text x="620" y="146" font-size="10" fill="#94a3b8">← 2× 慢放的安全边界</text>
+        <text x="812" y="138" font-size="10.5" fill="#047857" font-weight="650">完全看不见 ✓</text>
+        <text x="812" y="153" font-size="10" fill="#94a3b8">2× 慢放刚够 30fps</text>
+
+        <!-- row3 -->
+        <rect x="280" y="180" width="484" height="26" rx="3" fill="#b45309"/>
+        <text x="270" y="198" text-anchor="end" font-size="12" font-weight="650" fill="#0e1726">窗口最小化</text>
+        <text x="748" y="198" text-anchor="end" font-size="11" font-weight="700" fill="#ffffff">98.8</text>
+        <text x="812" y="190" font-size="10.5" fill="#b45309" font-weight="650">Dock 多一个图标</text>
+        <text x="812" y="205" font-size="10" fill="#94a3b8">启动瞬间还会闪一下</text>
+
+        <!-- row4 -->
+        <rect x="280" y="232" width="484" height="26" rx="3" fill="#2563eb"/>
+        <text x="270" y="250" text-anchor="end" font-size="12" font-weight="650" fill="#0e1726">窗口在前台</text>
+        <text x="748" y="250" text-anchor="end" font-size="11" font-weight="700" fill="#ffffff">98.8</text>
+        <text x="812" y="242" font-size="10.5" fill="#be123c" font-weight="650">占满屏幕</text>
+        <text x="812" y="257" font-size="10" fill="#94a3b8">等于把电脑借出去</text>
+
+        <!-- axis -->
+        <line x1="280" y1="296" x2="770" y2="296" stroke="#cbd5e1" stroke-width="1.2"/>
+        <text x="280" y="316" text-anchor="middle" font-size="10.5" fill="#94a3b8">0</text>
+        <text x="402" y="316" text-anchor="middle" font-size="10.5" fill="#94a3b8">25</text>
+        <text x="525" y="316" text-anchor="middle" font-size="10.5" fill="#94a3b8">50</text>
+        <text x="647" y="316" text-anchor="middle" font-size="10.5" fill="#94a3b8">75</text>
+        <text x="770" y="316" text-anchor="middle" font-size="10.5" fill="#94a3b8">fps</text>
+
+        <text x="50" y="352" font-size="11.5" fill="#64748b">第二行留了 2:1 的余量：60 ÷ 2 = 30，正好是 2× 慢放后要交付的帧率 —— 实测 266 个唯一帧 / 8.87 秒 = 30.0fps，无重复帧。</text>
+        <text x="50" y="374" font-size="11.5" fill="#b45309">红色的 7.4 不是抖动，是软件光栅化的稳定产能 —— 同一配置多次运行落在 4.6–7.4 之间。</text>
+      </svg>
+      <figcaption>
+        <b>图 11 · 四种形态的取舍。</b>帧率最高的一列恰恰是最打扰人的一列。
+        真正的可用区间是第二行：<strong>用户零感知，同时守住 60fps</strong> —— 它需要的只是一个参数。
+      </figcaption>
+    </figure>
+
+    <h3><span class="dot">·</span>四、两条「把窗口藏起来」的路，被系统堵死了</h3>
+    <p>
+      在想到 headless 之前，我先试了两个更省事的办法，都被操作系统挡回来了：
+    </p>
+    <ul>
+      <li>
+        <strong>把窗口移到屏幕外</strong>：<code>--window-position=-4000,-4000</code> 在 macOS 上被忽略，
+        回读窗口 bounds 是 <code>left=0 top=33</code>，被夹回了主屏左上角。
+        <span class="pill m">实测</span>
+      </li>
+      <li>
+        <strong>最小化窗口</strong>：帧率不掉（98.8），但 Dock 会多出一个图标，启动瞬间还会闪一下。
+        用户明确要求「无感知」，这就不算。
+      </li>
+    </ul>
+    <p>
+      结论是：<strong>只有 headless 是真正的零窗口</strong>。而且它顺带解决了一个原本很别扭的约束 ——
+      有窗口时「不能去点那个浏览器窗口」，因为合成事件和真实事件走同一条输入管线；
+      headless 没有窗口可点，这条约束自动消失。
+    </p>
+
+    <h3><span class="dot">·</span>五、落地实现：四个关键点</h3>
+    <p>
+      这些都已经收进 <code>promo/capture/record.mjs</code>，一条命令从头到成片。四个地方值得单独说明：
+    </p>
+
+    <ol class="steps">
+      <li>
+        <b>channel 优先，失败自动回退</b>
+        <p>
+          先按 <code>channel: "chromium"</code> 启动；如果本机没装完整内核再退回默认值，
+          并<strong>打印警告</strong>告诉使用者帧率会崩。宁可吵，也不要静默降级。
+        </p>
+        <pre><code><span class="c">// 关键：headless 默认会落到 chromium-headless-shell（SwiftShader，实测 7 fps）</span>
+<span class="c">// channel:"chromium" 才是完整 Chrome，headless 下仍走 Metal，实测 60 fps</span>
+<span class="k">try</span> {
+  browser = <span class="k">await</span> chromium.launch({ ...launchArgs, <span class="f">channel</span>: <span class="s">"chromium"</span> });
+} <span class="k">catch</span> {
+  browser = <span class="k">await</span> chromium.launch(launchArgs);
+  console.warn(<span class="s">"警告：回退到默认 headless 内核，GPU 可能不可用，帧率会大幅下降"</span>);
+}</code></pre>
+      </li>
+      <li>
+        <b>先 ack，再异步写盘</b>
+        <p>
+          screencast 有在途窗口（§5），浏览器等你的 ack 才发下一帧。
+          同步写一张 1080p JPEG 会让回调阻塞约 40ms，直接压低采集节奏。
+          正确顺序是：<strong>ack 立刻发，写盘丢给 promise</strong>。
+        </p>
+        <pre><code>cdp.on(<span class="s">"Page.screencastFrame"</span>, (e) =&gt; {
+  <span class="k">const</span> seq = ++index;
+  <span class="c">// 先 ack 再写盘：同步写 1080p 帧会让回调阻塞 40ms，直接压掉采集帧率</span>
+  cdp.send(<span class="s">"Page.screencastFrameAck"</span>, { sessionId: e.sessionId }).catch(() =&gt; {});
+  writes.push(writeFile(<span class="s">`${dir}/${seq}.jpg`</span>, Buffer.from(e.data, <span class="s">"base64"</span>)));
+});</code></pre>
+      </li>
+      <li>
+        <b>内置静态服务器，随机端口</b>
+        <p>
+          不再依赖一个常驻的 <code>npm run preview</code>：脚本自己起一个只监听
+          <code>127.0.0.1</code> 的服务，端口交给系统分配，跑完就关。
+          这消掉了「预览服务被回收导致 502」这类与采集无关的失败。
+        </p>
+      </li>
+      <li>
+        <b>开录前断言真的进了战斗</b>
+        <p>
+          这次踩过：脚本按了键、K 线一样跑完，但页面停在标题界面，录出来是一段静止画面。
+          现在开录前读一次 <code>__velvetDebug()</code>，<strong>phase 不是 fight 就直接抛错</strong>，
+          而不是等剪辑时才发现素材废了。
+        </p>
+        <pre><code><span class="k">const</span> d = <span class="k">await</span> page.evaluate(() =&gt; window.__velvetDebug());
+<span class="k">if</span> (d?.phase !== <span class="s">"fight"</span>) <span class="k">throw new</span> Error(<span class="s">`未能进入对战，phase=${d?.phase}`</span>);</code></pre>
+      </li>
+    </ol>
+
+    <pre><code><span class="tag">一条命令，默认零窗口</span>node promo/capture/record.mjs --out promo/clips/demo.mp4 --seconds 10 --demo
+
+<span class="c"># 实测输出：1920×1080 · 59.98fps · 531 帧 · 8.87s · 7.6MB</span>
+<span class="c"># --mode window  退回到有窗口的高帧率模式（98.8fps）</span></code></pre>
+
+    <h3><span class="dot">·</span>六、无感的边界：还有三件事会打断你</h3>
+    <ul>
+      <li><strong>休眠 / 锁屏 / 合盖</strong>：进程被杀，采集中断。无人值守≠可以不插电。</li>
+      <li><strong>改分辨率或屏幕缩放</strong>：viewport 一变，前后片段尺寸不一致，拼接会跳。</li>
+      <li>
+        <strong>本机必须有 GPU</strong>：这条是硬前提。如果以后把它搬到 GitHub Actions
+        之类的无 GPU 环境，会退化成 SwiftShader 的 7fps —— 对 3D 场景来说这条路不成立。
+      </li>
+    </ul>
+
+    <div class="call ok">
+      <span class="ct">一句话</span>
+      <p>
+        无感的代价不是帧率，而是<strong>一个参数</strong>：把 <code>channel: "chromium"</code> 写上去，
+        headless 就从 7.4fps 变成 60fps。忘记写它，你会得到一段又慢又看不出来哪里错的素材。
+      </p>
+    </div>
+  </section>
+
+<!-- ============ 08 ============ -->
+  <section id="s8">
+    <h2><span class="num">08</span>工程约束：五条会咬人的规则</h2>
 
     <p>
       这些都不是「最佳实践」，而是踩过之后总结的<strong>硬约束</strong> —— 违反任何一条，产物就是废的。
@@ -1361,16 +1668,20 @@ cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</spa
       两个处理方式：剪辑时按 marks 裁掉；或者干脆<strong>录前先静置到画面稳定</strong>，把「加载期」压到最短。
     </p>
 
-    <h3><span class="dot">·</span>五、headless 完全可以录</h3>
+    <h3><span class="dot">·</span>五、headless 能录，但不是「开了就行」</h3>
     <p>
-      不需要虚拟显示器、不需要 headed 模式。CDP screencast 走的是合成器输出，与窗口是否可见无关。
-      这也是它在 CI 里能用的原因 —— 顺带一提，<code>--mute-audio</code> 要自己加，音频不会进 webm（<code>-an</code>）。
+      不需要虚拟显示器、不需要 headed 模式，CDP screencast 走的是合成器输出，与窗口是否可见无关。
+      但<strong>默认 <code>headless: true</code> 启动的不是完整 Chrome</strong>：它会换成
+      <code>chrome-headless-shell</code>，WebGL 退到 SwiftShader，实测只剩 7.4fps 且不报错。
+      必须显式写 <code>channel: "chromium"</code> 才拿回 60fps —— 详见
+      <a href="#s7">§7 无人值守</a>。
+      顺带一提，<code>--mute-audio</code> 要自己加，音频不会进 webm（<code>-an</code>）。
     </p>
   </section>
 
-  <!-- ============ 08 ============ -->
-  <section id="s8">
-    <h2><span class="num">08</span>故障对照表</h2>
+  <!-- ============ 09 ============ -->
+  <section id="s9">
+    <h2><span class="num">09</span>故障对照表</h2>
 
     <p>
       按「症状 → 先查什么 → 根因 → 修法」排列。这些症状的共同点是：<strong>都不报错，或者报错信息指向错误的方向</strong>。
@@ -1408,6 +1719,11 @@ cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</spa
             <td>标称是配额不是产能。要么接受 60，要么换 CDP。</td>
           </tr>
           <tr>
+            <td>headless 下只有 5–7fps，不报错</td>
+            <td>读 WebGL 的 <code>UNMASKED_RENDERER_WEBGL</code>，看有没有 <code>SwiftShader</code></td>
+            <td>默认 <code>headless: true</code> 落到 <code>chrome-headless-shell</code>，无 GPU 合成。加 <code>channel: "chromium"</code> → 60fps（见 §7）。</td>
+          </tr>
+          <tr>
             <td><code>Target closed</code></td>
             <td>三个关闭调用的顺序</td>
             <td>先 <code>ctx.close()</code>，再 <code>saveAs</code>，最后 <code>browser.close()</code>。</td>
@@ -1442,16 +1758,16 @@ ffmpeg -i app.webm -vf "mpdecimate=hi=768:lo=320:frac=0.33" \
 <span class="c"># frame= 529  ← 与声明的 810 相差 281，就是重复帧</span></code></pre>
   </section>
 
-  <!-- ============ 09 ============ -->
-  <section id="s9">
-    <h2><span class="num">09</span>速查与复跑</h2>
+  <!-- ============ 10 ============ -->
+  <section id="s10">
+    <h2><span class="num">10</span>速查与复跑</h2>
 
     <p>
       本节是可以直接抄走的部分。所有数字都来自 <code>promo/recordvideo-benchmark.json</code>，
       换了机器想重新对比，改路径重跑即可。
     </p>
 
-    <h3><span class="dot">·</span>两套采集器的最小骨架</h3>
+    <h3><span class="dot">·</span>两套采集器，外加一条命令</h3>
 
     <pre><code><span class="tag">A · recordVideo</span><span class="k">const</span> ctx = <span class="k">await</span> browser.newContext({
   viewport: { width: <span class="f">1920</span>, height: <span class="f">1080</span> },
@@ -1464,9 +1780,10 @@ ffmpeg -i app.webm -vf "mpdecimate=hi=768:lo=320:frac=0.33" \
 
     <pre><code><span class="tag">B · CDP 直采</span><span class="k">const</span> cdp = <span class="k">await</span> ctx.newCDPSession(page);
 <span class="k">let</span> n = <span class="f">0</span>, t0 = Date.now();
-cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</span> ({ data, sessionId }) =&gt; {
-  writeFileSync(<span class="s">`${dir}/${String(n++).padStart(6,"0")}.jpg`</span>, Buffer.from(data, <span class="s">"base64"</span>));
-  <span class="k">await</span> cdp.send(<span class="s">"Page.screencastFrameAck"</span>, { sessionId });
+cdp.on(<span class="s">"Page.screencastFrame"</span>, ({ data, sessionId }) =&gt; {
+  <span class="c">// 回执先发（不 await），写盘丢给 promise —— 顺序反了会压掉采集帧率</span>
+  cdp.send(<span class="s">"Page.screencastFrameAck"</span>, { sessionId }).catch(() =&gt; {});
+  writeFile(<span class="s">`${dir}/${String(n++).padStart(6,"0")}.jpg`</span>, Buffer.from(data, <span class="s">"base64"</span>));
 });
 <span class="k">await</span> cdp.send(<span class="s">"Page.startScreencast"</span>, {
   format: <span class="s">"jpeg"</span>, quality: <span class="f">92</span>, maxWidth: <span class="f">1920</span>, maxHeight: <span class="f">1080</span>,
@@ -1474,6 +1791,12 @@ cdp.on(<span class="s">"Page.screencastFrame"</span>, <span class="k">async</spa
 <span class="c">// ... 动作 ...</span>
 <span class="k">await</span> cdp.send(<span class="s">"Page.stopScreencast"</span>);
 writeFileSync(<span class="s">`${dir}/meta.json`</span>, JSON.stringify({ frames: n, ms: Date.now() - t0 }));</code></pre>
+
+    <pre><code><span class="tag">C · 无窗口跑批</span><span class="c">// 关键是 channel：不加它，headless 会掉到 SwiftShader 的 7fps</span>
+<span class="k">const</span> browser = <span class="k">await</span> chromium.launch({ headless: <span class="k">true</span>, channel: <span class="s">"chromium"</span> });
+
+<span class="c">// 现成脚本：自带静态服务器，跑完直接出 mp4</span>
+<span class="c">// node promo/capture/record.mjs --out clips/demo.mp4 --seconds 10 --demo</span></code></pre>
 
     <h3><span class="dot">·</span>参数怎么定：从交付目标倒推</h3>
 
