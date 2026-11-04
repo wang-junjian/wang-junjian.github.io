@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="基于三份一线访谈，拆解 AI 接管九成编码后交付仍未提速的真相：三个开发者三种方法、四层瓶颈栈、三处等待，指出局部提效不等于整体提效，并给出规约驱动、测试自动化的九十天 AI 原生转型路径与北极星指标。">
+<meta name="keywords" content="ai-native-sdlc, amdahl-law, spec-driven-development, delivery-bottleneck, agents-md, 90-day-roadmap">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-04">
+<title>AI 原生 SDLC 转型诊断与蓝图</title>
+<style>
+  :root{
+    --paper:#F7F4EE;
+    --paper-deep:#F0EBE0;
+    --ink:#191A1E;
+    --ink-soft:#3C3E45;
+    --muted:#8B867B;
+    --line:#E2DCCC;
+    --accent:#C13A2E;
+    --accent-deep:#9E2B21;
+    --accent-soft:#F5E3DF;
+    --gold:#A8842C;
+    --slate:#5E6B7A;
+    --sand:#B4AC9C;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+    --sans:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:120px 120px;
+    background-attachment:fixed;
+    opacity:.999;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(ellipse 90% 70% at 50% 0%, rgba(247,244,238,.94), rgba(247,244,238,.86) 60%, rgba(247,244,238,.8));
+  }
+  main,header.topbar,footer{position:relative;z-index:1;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px;}
+
+  /* ---------- top bar ---------- */
+  header.topbar{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(10px);
+    background:rgba(247,244,238,.82);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{display:flex;align-items:center;justify-content:space-between;height:54px;max-width:1120px;margin:0 auto;padding:0 28px;}
+  .brand{font-family:var(--serif);font-weight:700;font-size:15px;letter-spacing:.12em;}
+  .brand em{color:var(--accent);font-style:normal;}
+  nav.toc{display:flex;gap:22px;}
+  nav.toc a{font-size:12.5px;color:var(--muted);text-decoration:none;letter-spacing:.08em;transition:color .2s;}
+  nav.toc a:hover{color:var(--accent);}
+  .progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .1s linear;}
+  @media(max-width:820px){nav.toc{display:none;}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:96px 0 72px;border-bottom:1px solid var(--line);}
+  .kicker{display:flex;align-items:center;gap:14px;font-size:12.5px;letter-spacing:.28em;color:var(--accent);font-weight:600;text-transform:uppercase;margin-bottom:34px;}
+  .kicker::before{content:"";width:42px;height:1px;background:var(--accent);}
+  h1{
+    font-family:var(--serif);
+    font-size:clamp(40px,6.4vw,86px);
+    line-height:1.18;font-weight:900;letter-spacing:.01em;
+    max-width:15em;
+  }
+  h1 .q{color:var(--accent);}
+  .lede{margin-top:36px;max-width:640px;font-size:clamp(16px,1.6vw,19px);color:var(--ink-soft);line-height:2;}
+  .lede strong{color:var(--ink);border-bottom:2px solid var(--accent);font-weight:700;}
+  .stats{
+    margin-top:64px;display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--line);
+  }
+  .stat{padding:26px 22px 6px;border-right:1px solid var(--line);}
+  .stat:last-child{border-right:none;}
+  .stat .num{font-family:var(--serif);font-size:clamp(30px,3.4vw,46px);font-weight:900;line-height:1.1;color:var(--ink);}
+  .stat .num small{font-size:.42em;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-left:2px;}
+  .stat .lab{margin-top:8px;font-size:12.5px;color:var(--muted);letter-spacing:.06em;line-height:1.6;}
+  @media(max-width:820px){.stats{grid-template-columns:repeat(2,1fr);}.stat:nth-child(2){border-right:none;}.stat{border-bottom:1px solid var(--line);}}
+
+  /* ---------- chapters ---------- */
+  section.chapter{padding:96px 0;border-bottom:1px solid var(--line);}
+  .ch-head{display:flex;align-items:baseline;gap:26px;margin-bottom:18px;}
+  .ch-no{font-family:var(--serif);font-size:clamp(48px,6vw,76px);font-weight:900;color:transparent;-webkit-text-stroke:1.5px var(--sand);line-height:1;}
+  h2{font-family:var(--serif);font-size:clamp(28px,3.6vw,44px);font-weight:900;letter-spacing:.01em;}
+  .ch-sub{max-width:680px;color:var(--ink-soft);font-size:16.5px;margin-bottom:56px;line-height:2;}
+  .ch-sub strong{color:var(--accent);font-weight:700;}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1);}
+  .rv.on{opacity:1;transform:none;}
+
+  /* ---------- ch1 personas ---------- */
+  .persona{border-top:1px solid var(--line);padding:30px 0;display:grid;grid-template-columns:210px 1fr;gap:34px;align-items:start;}
+  .persona:last-of-type{border-bottom:1px solid var(--line);}
+  .p-level{display:inline-block;font-family:var(--serif);font-size:21px;letter-spacing:.04em;padding:8px 18px;border-radius:999px;font-weight:900;line-height:1.4;}
+  .lv1{background:var(--paper-deep);color:var(--muted);}
+  .lv2{background:#EFE7D2;color:var(--gold);}
+  .lv3{background:var(--accent-soft);color:var(--accent-deep);}
+  .p-desc{font-size:15px;color:var(--ink-soft);max-width:560px;}
+  .p-bar{margin-top:16px;height:8px;background:var(--paper-deep);border-radius:99px;position:relative;overflow:hidden;}
+  .p-fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:99px;transition:width 1.4s cubic-bezier(.22,1,.36,1);}
+  .f1{background:var(--sand);}.f2{background:var(--gold);}.f3{background:var(--accent);}
+  .p-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.1em;}
+  .p-quote{margin-top:18px;padding-left:16px;border-left:3px solid var(--accent);font-family:var(--serif);font-size:15.5px;color:var(--ink);line-height:1.9;}
+  .p-quote span{display:block;margin-top:4px;font-family:var(--sans);font-size:12px;color:var(--muted);}
+  @media(max-width:820px){.persona{grid-template-columns:1fr;gap:12px;}}
+  .insight-band{margin-top:52px;background:var(--ink);color:var(--paper);padding:38px 42px;border-radius:6px;position:relative;overflow:hidden;}
+  .insight-band::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(193,58,46,.35);filter:blur(2px);}
+  .insight-band .tag{font-size:12px;letter-spacing:.3em;color:#E8A79F;font-weight:600;}
+  .insight-band p{position:relative;margin-top:12px;font-family:var(--serif);font-size:clamp(19px,2.2vw,25px);line-height:1.8;font-weight:700;max-width:22em;z-index:1;}
+
+  /* ---------- ch2 waterfall ---------- */
+  .wf{margin-top:8px;}
+  .wf-row{display:grid;grid-template-columns:118px 1fr 74px;gap:16px;align-items:center;margin-bottom:22px;}
+  .wf-label{font-family:var(--serif);font-weight:700;font-size:15px;text-align:right;}
+  .wf-label small{display:block;font-family:var(--sans);font-weight:400;font-size:11px;color:var(--muted);letter-spacing:.04em;}
+  .wf-bar{display:flex;height:58px;border-radius:4px;overflow:hidden;background:var(--paper-deep);}
+  .wf-seg{height:100%;width:0;transition:width 1.2s cubic-bezier(.22,1,.36,1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;white-space:nowrap;opacity:.92;}
+  .wf-total{font-family:var(--serif);font-size:30px;font-weight:900;}
+  .wf-total small{font-size:12px;font-family:var(--sans);font-weight:400;color:var(--muted);display:block;letter-spacing:.05em;}
+  .wf-legend{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:34px;font-size:12.5px;color:var(--ink-soft);}
+  .wf-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:0;}
+  .s-clarify{background:var(--accent);}.s-code{background:var(--ink);}.s-link{background:var(--gold);}.s-test{background:var(--slate);}.s-deploy{background:var(--sand);}
+  .wf-note{margin-top:12px;font-size:12px;color:var(--muted);}
+  @media(max-width:820px){.wf-row{grid-template-columns:86px 1fr 60px;}.wf-seg{font-size:10px;}}
+  .amdahl{
+    margin-top:64px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;
+  }
+  .amdahl .formula{background:var(--paper-deep);padding:40px 38px;display:flex;flex-direction:column;justify-content:center;}
+  .amdahl .formula .eq{font-family:var(--serif);font-size:clamp(20px,2.4vw,28px);font-weight:900;line-height:1.9;}
+  .amdahl .formula .eq b{color:var(--accent);}
+  .amdahl .formula .sub{margin-top:14px;font-size:13px;color:var(--muted);line-height:1.9;}
+  .amdahl .words{padding:40px 38px;}
+  .amdahl .words .tag{font-size:12px;letter-spacing:.3em;color:var(--accent);font-weight:600;}
+  .amdahl .words p{margin-top:12px;font-family:var(--serif);font-size:clamp(17px,2vw,21px);font-weight:700;line-height:1.9;}
+  @media(max-width:820px){.amdahl{grid-template-columns:1fr;}}
+
+  /* ---------- ch3 layer stack ---------- */
+  .stack{display:flex;flex-direction:column;gap:14px;position:relative;}
+  .layer{
+    display:grid;grid-template-columns:64px 200px 1fr;gap:26px;align-items:center;
+    border:1px solid var(--line);border-radius:6px;padding:24px 28px;background:rgba(255,255,255,.5);
+    transition:transform .3s,box-shadow .3s;
+  }
+  .layer:hover{transform:translateX(6px);box-shadow:0 8px 28px rgba(25,26,30,.07);}
+  .layer .no{font-family:var(--serif);font-size:34px;font-weight:900;color:transparent;-webkit-text-stroke:1.2px var(--sand);}
+  .layer h3{font-family:var(--serif);font-size:20px;font-weight:900;}
+  .layer h3 small{display:block;font-family:var(--sans);font-weight:400;font-size:11.5px;color:var(--muted);letter-spacing:.14em;margin-top:3px;}
+  .layer ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;}
+  .layer ul li{
+    font-size:12.5px;color:var(--ink-soft);background:var(--paper-deep);
+    border:1px solid var(--line);border-radius:999px;padding:5px 14px;line-height:1.5;
+  }
+  .layer ul li.hot{background:var(--accent-soft);border-color:#E7C4BD;color:var(--accent-deep);font-weight:600;}
+  .layer.base{border-left:4px solid var(--accent);}
+  .layer.foundation-note{margin-top:26px;text-align:center;font-family:var(--serif);font-size:17px;color:var(--ink-soft);}
+  .layer.foundation-note b{color:var(--accent);}
+  @media(max-width:820px){.layer{grid-template-columns:44px 1fr;}.layer ul{grid-column:1/-1;}}
+
+  /* ---------- ch4 wait cards ---------- */
+  .waits{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .wait{
+    border:1px solid var(--line);border-radius:6px;padding:30px 26px;background:rgba(255,255,255,.55);
+    border-top:4px solid var(--accent);display:flex;flex-direction:column;
+  }
+  .wait .w-no{font-family:var(--serif);font-size:15px;font-weight:900;color:var(--accent);letter-spacing:.1em;}
+  .wait h4{margin-top:10px;font-family:var(--serif);font-size:19px;font-weight:900;line-height:1.5;}
+  .wait p{margin-top:12px;font-size:13.5px;color:var(--ink-soft);line-height:1.9;flex:1;}
+  .wait .w-quote{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted);font-style:italic;line-height:1.8;}
+  @media(max-width:820px){.waits{grid-template-columns:1fr;}}
+  .flowline{margin-top:52px;padding:34px 38px;border-radius:6px;background:var(--paper-deep);text-align:center;}
+  .flowline .fl-title{font-size:12px;letter-spacing:.3em;color:var(--muted);font-weight:600;}
+  .flowline .fl-chain{margin-top:18px;font-family:var(--serif);font-size:clamp(15px,1.9vw,19px);font-weight:700;line-height:2.1;}
+  .flowline .fl-chain s{color:var(--muted);text-decoration-color:var(--accent);text-decoration-thickness:2px;}
+  .flowline .fl-chain b{color:var(--accent);}
+  .flowline .fl-arrow{color:var(--sand);margin:0 6px;font-weight:400;}
+</style>
+<style>
+  /* ---------- ch5 blueprint ---------- */
+  .roles{display:grid;grid-template-columns:1fr 60px 1fr;gap:0;align-items:stretch;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:60px;}
+  .role{padding:34px 34px;}
+  .role.now{background:rgba(255,255,255,.5);}
+  .role.next{background:var(--ink);color:var(--paper);}
+  .role .r-tag{font-size:12px;letter-spacing:.26em;font-weight:600;}
+  .role.now .r-tag{color:var(--muted);}
+  .role.next .r-tag{color:#E8A79F;}
+  .role h4{margin-top:10px;font-family:var(--serif);font-size:clamp(19px,2.2vw,24px);font-weight:900;}
+  .role ul{list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+  .role ul li{font-size:13.5px;line-height:1.8;padding-left:18px;position:relative;}
+  .role.now ul li{color:var(--ink-soft);}
+  .role.now ul li::before{content:"";position:absolute;left:0;top:.72em;width:8px;height:1.5px;background:var(--sand);}
+  .role.next ul li::before{content:"";position:absolute;left:0;top:.72em;width:8px;height:1.5px;background:var(--accent);}
+  .role-mid{display:flex;align-items:center;justify-content:center;background:var(--paper-deep);}
+  .role-mid svg{width:26px;height:26px;stroke:var(--accent);stroke-width:2;fill:none;}
+  @media(max-width:820px){.roles{grid-template-columns:1fr;}.role-mid{padding:10px 0;transform:rotate(90deg);}}
+
+  .loop-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:44px;align-items:center;margin-top:10px;}
+  .loop-svg{width:100%;max-width:460px;margin:0 auto;display:block;}
+  .loop-svg .node-c{fill:#fff;stroke:var(--ink);stroke-width:1.5;}
+  .loop-svg .node-hot{stroke:var(--accent);stroke-width:2;}
+  .loop-svg .nt{font-family:var(--serif);font-weight:900;fill:var(--ink);}
+  .loop-svg .ns{font-family:var(--sans);fill:var(--muted);}
+  .loop-svg .arc{fill:none;stroke:var(--sand);stroke-width:1.5;}
+  .loop-svg .arc-h{fill:none;stroke:var(--accent);stroke-width:1.8;}
+  .loop-svg .ctr{font-family:var(--serif);font-weight:900;fill:var(--ink);}
+  .loop-svg .ctr2{font-family:var(--sans);fill:var(--muted);letter-spacing:.2em;}
+  .loop-side h3{font-family:var(--serif);font-size:clamp(21px,2.4vw,27px);font-weight:900;line-height:1.6;}
+  .loop-side h3 b{color:var(--accent);}
+  .loop-side .steps{margin-top:24px;display:flex;flex-direction:column;gap:0;}
+  .loop-side .step{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:13px 0;border-top:1px dashed var(--line);font-size:14px;color:var(--ink-soft);line-height:1.8;}
+  .loop-side .step:last-child{border-bottom:1px dashed var(--line);}
+  .loop-side .step i{font-style:normal;font-family:var(--serif);font-weight:900;color:var(--accent);font-size:16px;}
+  .loop-side .step b{color:var(--ink);}
+  @media(max-width:900px){.loop-wrap{grid-template-columns:1fr;}}
+
+  .tri{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:56px;}
+  .tri-card{border:1px solid var(--line);border-radius:6px;padding:28px 26px;background:rgba(255,255,255,.55);}
+  .tri-card .t-no{font-size:12px;letter-spacing:.24em;color:var(--gold);font-weight:700;}
+  .tri-card h5{margin-top:8px;font-family:var(--serif);font-size:18px;font-weight:900;}
+  .tri-card ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:9px;}
+  .tri-card ul li{font-size:13px;color:var(--ink-soft);line-height:1.75;padding-left:15px;position:relative;}
+  .tri-card ul li::before{content:"";position:absolute;left:0;top:.7em;width:7px;height:1.5px;background:var(--accent);}
+  @media(max-width:900px){.tri{grid-template-columns:1fr;}}
+
+  /* ---------- ch6 roadmap ---------- */
+  .roadmap{position:relative;margin-top:20px;}
+  .roadmap::before{content:"";position:absolute;left:0;right:0;top:26px;height:1px;background:var(--line);}
+  .phases{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  .phase{position:relative;padding-top:60px;}
+  .phase .dot{
+    position:absolute;top:14px;left:0;width:25px;height:25px;border-radius:50%;
+    background:var(--paper);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-weight:900;font-size:12px;color:var(--accent);
+  }
+  .phase .ph-lab{font-size:11.5px;letter-spacing:.2em;color:var(--muted);font-weight:600;}
+  .phase h4{margin-top:6px;font-family:var(--serif);font-size:21px;font-weight:900;}
+  .phase .aim{margin-top:8px;font-size:13px;color:var(--accent-deep);background:var(--accent-soft);display:inline-block;padding:3px 12px;border-radius:99px;font-weight:600;}
+  .phase ul{list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+  .phase ul li{font-size:13.5px;color:var(--ink-soft);line-height:1.8;padding-left:16px;position:relative;}
+  .phase ul li::before{content:"";position:absolute;left:0;top:.68em;width:7px;height:7px;border:1.5px solid var(--gold);border-radius:2px;}
+  @media(max-width:900px){.phases{grid-template-columns:1fr;}.roadmap::before{display:none;}}
+  .kpi{margin-top:52px;background:var(--ink);color:var(--paper);border-radius:6px;padding:34px 40px;display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:center;}
+  .kpi .k-tag{font-size:12px;letter-spacing:.3em;color:#E8A79F;font-weight:600;white-space:nowrap;}
+  .kpi p{font-family:var(--serif);font-size:clamp(16px,1.9vw,20px);font-weight:700;line-height:1.9;}
+  .kpi p b{color:#F0B9B1;}
+  @media(max-width:820px){.kpi{grid-template-columns:1fr;gap:12px;}}
+
+  /* ---------- footer ---------- */
+  footer{padding:96px 0 64px;}
+  .fin{max-width:760px;}
+  .fin .tag{font-size:12px;letter-spacing:.3em;color:var(--accent);font-weight:600;}
+  .fin blockquote{margin-top:22px;font-family:var(--serif);font-size:clamp(24px,3.4vw,40px);font-weight:900;line-height:1.7;}
+  .fin .src{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);line-height:2;}
+  .fin .src b{color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">AI 原生<em>·</em>SDLC 转型诊断与蓝图</div>
+    <nav class="toc">
+      <a href="#ch1">01 三种世界</a>
+      <a href="#ch2">02 效率幻觉</a>
+      <a href="#ch3">03 四层瓶颈</a>
+      <a href="#ch4">04 代码之外</a>
+      <a href="#ch5">05 转型蓝图</a>
+      <a href="#ch6">06 九十天</a>
+    </nav>
+  </div>
+  <div class="progress" id="progress"></div>
+</header>
+
+<main>
+<!-- ================= HERO ================= -->
+<div class="wrap">
+  <section class="hero">
+    <div class="kicker">AI 原生 SDLC 转型诊断与蓝图 · 基于三份一线访谈的瓶颈诊断与落地路径</div>
+    <h1>代码已经交给 AI，<br><span class="q">然后呢？</span></h1>
+    <p class="lede">AI 接管了 <strong>90% 的编码</strong>，却没有接管交付。三个人、四种瓶颈、一条被忽略的定律：<strong>局部提效 ≠ 整体提效</strong>。当键盘不再是瓶颈，真正的瓶颈才第一次显形——本文用一次诊断和一张蓝图，回答"转向 AI 原生开发，我们需要怎么做"。</p>
+    <div class="stats">
+      <div class="stat"><div class="num" data-count="90" data-suffix="%">0</div><div class="lab">团队最高效开发者自评：代码由 AI 生成</div></div>
+      <div class="stat"><div class="num"><span data-count="27" data-suffix="B">0</span></div><div class="lab">本地模型参数规模，外网常用模型约为其 10 倍</div></div>
+      <div class="stat"><div class="num"><span data-count="70" data-suffix="万+">0</span></div><div class="lab">行存量代码，三代技术栈并存</div></div>
+      <div class="stat"><div class="num" data-count="3" data-suffix=" 层">0</div><div class="lab">同一团队内 AI 使用能力的落差层级</div></div>
+    </div>
+  </section>
+
+<!-- ================= CH1 ================= -->
+<section class="chapter" id="ch1">
+  <div class="ch-head rv"><div class="ch-no">01</div><h2>三个开发者，三种世界</h2></div>
+  <p class="ch-sub rv">三份访谈里最刺眼的不是工具差异，而是<strong>方法差异</strong>。同一把刀，有人用来削铅笔，有人用来做手术。</p>
+
+  <div class="persona rv">
+    <div>
+      <span class="p-level lv1">LV.1 资料员</span>
+    </div>
+    <div>
+      <div class="p-desc">用豆包类工具查资料、理解概念，然后<strong>亲手</strong>把答案填进代码。AI 是搜索引擎，不是同事。</div>
+      <div class="p-bar"><div class="p-fill f1" data-w="15%"></div></div>
+      <div class="p-scale"><span>手动为主</span><span>人机共编</span><span>规约驱动</span></div>
+      <div class="p-quote">"查查资料，了解了，然后自己编辑代码。"<span>—— 两三年前使用豆包的经验路径</span></div>
+    </div>
+  </div>
+
+  <div class="persona rv">
+    <div>
+      <span class="p-level lv2">LV.2 精准指挥官</span>
+    </div>
+    <div>
+      <div class="p-desc">拿到需求先自己拆成小块，指定参照文档，<strong>一块一块</strong>喂给编码智能体，全程精准控制。</div>
+      <div class="p-bar"><div class="p-fill f2" data-w="52%"></div></div>
+      <div class="p-scale"><span>手动为主</span><span>人机共编</span><span>规约驱动</span></div>
+      <div class="p-quote">"分析好需求，然后一块一块地塞给编码智能体，告诉他参照哪个文档、实现哪个功能。"</div>
+    </div>
+  </div>
+
+  <div class="persona rv">
+    <div>
+      <span class="p-level lv3">LV.3 规划共创者</span>
+    </div>
+    <div>
+      <div class="p-desc">把<strong>整个需求</strong>交给 AI 分析，让其产出规划：建什么表、写什么接口、改哪些代码。与 AI 充分对话澄清后评审规划，再让它生成代码与接口测试，脚本直接导入 Postman 自动跑通。<strong>八九成工作由 AI 完成。</strong></div>
+      <div class="p-bar"><div class="p-fill f3" data-w="90%"></div></div>
+      <div class="p-scale"><span>手动为主</span><span>人机共编</span><span>规约驱动</span></div>
+      <div class="p-quote">"先让它出规划，把需求澄清好，评审通过再开始编码——这实际上就是规约的初级形态，只是没有沉淀存储而已。"</div>
+    </div>
+  </div>
+
+  <div class="insight-band rv">
+    <div class="tag">诊断 INSIGHT</div>
+    <p>三人差距的本质不是能力差距，是<b>「放弃亲自写代码」的时间点</b>不同。最高效的人，代码写得不一定最好，但一定最早开始审规约、做决策。</p>
+  </div>
+</section>
+
+<!-- ================= CH2 ================= -->
+<section class="chapter" id="ch2">
+  <div class="ch-head rv"><div class="ch-no">02</div><h2>效率的幻觉</h2></div>
+  <p class="ch-sub rv">领导看到的是："需求一天就实现了，为什么规划要三天？" 没人看到的是：编码只占交付链路的一小段。<strong>把最快的一段提速，不等于把整条路提速。</strong></p>
+
+  <div class="wf rv">
+    <div class="wf-row">
+      <div class="wf-label">今天<small>AI 只用于编码</small></div>
+      <div class="wf-bar">
+        <div class="wf-seg s-clarify" data-w="30%">澄清 30</div>
+        <div class="wf-seg s-code" data-w="25%">编码 25</div>
+        <div class="wf-seg s-link" data-w="20%">联调 20</div>
+        <div class="wf-seg s-test" data-w="15%">测试 15</div>
+        <div class="wf-seg s-deploy" data-w="10%"></div>
+      </div>
+      <div class="wf-total">100<small>端到端周期</small></div>
+    </div>
+    <div class="wf-row">
+      <div class="wf-label">+AI 编码<small>编码提速 84%</small></div>
+      <div class="wf-bar">
+        <div class="wf-seg s-clarify" data-w="30%">澄清 30</div>
+        <div class="wf-seg s-code" data-w="4%"></div>
+        <div class="wf-seg s-link" data-w="20%">联调 20</div>
+        <div class="wf-seg s-test" data-w="15%">测试 15</div>
+        <div class="wf-seg s-deploy" data-w="10%"></div>
+      </div>
+      <div class="wf-total" style="color:var(--accent)">79<small>仅 −21%</small></div>
+    </div>
+    <div class="wf-row">
+      <div class="wf-label">AI 原生<small>瓶颈全部重构</small></div>
+      <div class="wf-bar">
+        <div class="wf-seg s-clarify" data-w="10%">澄清 10</div>
+        <div class="wf-seg s-code" data-w="4%"></div>
+        <div class="wf-seg s-link" data-w="5%"></div>
+        <div class="wf-seg s-test" data-w="6%"></div>
+        <div class="wf-seg s-deploy" data-w="5%"></div>
+      </div>
+      <div class="wf-total" style="color:var(--accent)">30<small>−70%</small></div>
+    </div>
+    <div class="wf-legend rv">
+      <span><i style="background:var(--accent)"></i>需求澄清与等待</span>
+      <span><i style="background:var(--ink)"></i>编码</span>
+      <span><i style="background:var(--gold)"></i>前后端联调</span>
+      <span><i style="background:var(--slate)"></i>测试</span>
+      <span><i style="background:var(--sand)"></i>部署与其他</span>
+    </div>
+    <div class="wf-note">※ 各阶段占比为访谈信息示意估算，用于揭示结构，非实测工时。单位：相对指数。</div>
+  </div>
+
+  <div class="amdahl rv">
+    <div class="formula">
+      <div class="eq">整体加速比 = 1 / [ (1 − p) + p / s ]<br>当 p = 25%，s = 6 → <b>仅 1.27×</b></div>
+      <div class="sub">p：被加速环节占比 ／ s：该环节加速倍数（Amdahl 定律）。编码提速再快，也无法穿透其余 75% 的串行等待。</div>
+    </div>
+    <div class="words">
+      <div class="tag">一图胜千言</div>
+      <p>"每个人提效了，整体没提效。" 编码变快之后，需求澄清、人工联调、人肉点击测试——这些原本隐藏在编码阴影下的环节，第一次成为了交付周期的全部。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CH3 ================= -->
+<section class="chapter" id="ch3">
+  <div class="ch-head rv"><div class="ch-no">03</div><h2>四层瓶颈栈</h2></div>
+  <p class="ch-sub rv">现状不是一个问题，而是一座<strong>四层栈</strong>：上层的一切提效，都被下层死死锁住。</p>
+
+  <div class="stack rv">
+    <div class="layer">
+      <div class="no">L4</div>
+      <h3>人的能力<small>HUMAN CAPITAL</small></h3>
+      <ul>
+        <li>同一团队三种成熟度，落差 3 层</li>
+        <li class="hot">审代码而非审规约，验收对象错位</li>
+        <li>测试人员基本未使用 AI</li>
+        <li class="hot">团队资产未沉淀（无 AGENTS.md 规约）</li>
+        <li>无 git 小步提交习惯，改坏难回退</li>
+      </ul>
+    </div>
+    <div class="layer">
+      <div class="no">L3</div>
+      <h3>组织与流程<small>ORGANIZATION</small></h3>
+      <ul>
+        <li class="hot">需求人员仅 1 人，澄清是唯一瓶颈点</li>
+        <li>前后端分离 + 人工连调，串行等待</li>
+        <li>后端接口参数后到，联调时才发现</li>
+        <li class="hot">流程未变：编码提效 ≠ 交付提效</li>
+        <li>70 万行三代技术并存，AI 难以驾驭</li>
+      </ul>
+    </div>
+    <div class="layer">
+      <div class="no">L2</div>
+      <h3>智能体工具链<small>AGENT TOOLING</small></h3>
+      <ul>
+        <li class="hot">无 checkpoint 回退，多轮修改无法撤销</li>
+        <li>单任务串行，无并行子智能体</li>
+        <li>版本落后主线半年，修复合不进来</li>
+        <li>MCP 生态断层：Postman / DB / E2E 未打通</li>
+        <li>上下文 128K，长文后段智力衰减</li>
+      </ul>
+    </div>
+    <div class="layer base">
+      <div class="no">L1</div>
+      <h3>基础设施<small>INFRASTRUCTURE</small></h3>
+      <ul>
+        <li class="hot">4–5 台服务器落后市面 2–3 年，数百用户共用</li>
+        <li>27B 本地模型，外网常用模型参数约 10 倍</li>
+        <li class="hot">输出 24–28 tokens/s，高峰排队"逐字蹦"</li>
+        <li>同一提示词第一次成功、第二次失败</li>
+        <li class="hot">智力不稳定，五个澄清问题只接住一个</li>
+      </ul>
+    </div>
+  </div>
+  <p class="foundation-note rv">L1 的算力与模型智力，决定了你敢不敢把任务<strong>放手</strong>交给 AI；<br>智力越低，人就越被迫回到"手把手逐行管控"——这正是 LV.3 无法普及的底层原因。</p>
+</section>
+<!-- ================= CH4 ================= -->
+<section class="chapter" id="ch4">
+  <div class="ch-head rv"><div class="ch-no">04</div><h2>最贵的环节，在代码之外</h2></div>
+  <p class="ch-sub rv">访谈里出现频率最高的词不是"模型"，而是<strong>"等"</strong>。三处等待，构成交付周期里真正的成本中心。</p>
+
+  <div class="waits">
+    <div class="wait rv">
+      <div class="w-no">等待 · 01</div>
+      <h4>等需求澄清</h4>
+      <p>全公司需求人员只有 1 人。开发遇到理解不了的问题必须找人澄清，而对方在开会——整个任务就卡在这里。规划写得再快，也快不过"没人回答问题"。</p>
+      <div class="w-quote">"有时候需求人员开会或者有事没时间，他们就被卡住了——这就是瓶颈。"</div>
+    </div>
+    <div class="wait rv">
+      <div class="w-no">等待 · 02</div>
+      <h4>等接口与联调</h4>
+      <p>后端接口的字段、参数细节不写进需求，联调时才逐一暴露。前端"5 分钟改完的事，跟 AI 描述要 10 分钟"，但人不描述、机器更无从知晓——信息只存在于后端个人的经验里。</p>
+      <div class="w-quote">"具体的参数名叫什么还不知道……需求没有详细到那种程度，这就是为什么做了之后还要返工。"</div>
+    </div>
+    <div class="wait rv">
+      <div class="w-no">等待 · 03</div>
+      <h4>等人工点击测试</h4>
+      <p>测试人员未用 AI，验证靠人肉点页面；后端自测只跑通核心路径，接口测试脚本缺失。单元测试本应覆盖边界，却存在"测试失败改测试"的陷阱。测试成为吞吐量的天花板。</p>
+      <div class="w-quote">"他一发现单元测试错了，咔，把单元测试改了，结果代码没改——这就是个大问题。"</div>
+    </div>
+  </div>
+
+  <div class="flowline rv">
+    <div class="fl-title">流程没变，一切都没变</div>
+    <div class="fl-chain">
+      <s>需求澄清</s> → 编码（AI，已提速）→ <s>人工联调</s> → <s>人肉测试</s> → 部署
+      <br>编码越快，<b>后面的等待越刺眼</b>。
+    </div>
+  </div>
+</section>
+
+<!-- ================= CH5 ================= -->
+<section class="chapter" id="ch5">
+  <div class="ch-head rv"><div class="ch-no">05</div><h2>蓝图：成为 AI 原生组织</h2></div>
+  <p class="ch-sub rv">AI 原生不是"用 AI 写代码"，而是一次<strong>角色迁移</strong>：人从"写代码的人"变成"写规约、审规划、做决策的人"；AI 从"补全工具"变成"端到端交付的执行者"。</p>
+
+  <div class="roles rv">
+    <div class="role now">
+      <div class="r-tag">今天的开发者</div>
+      <h4>写手 · 逐行管控</h4>
+      <ul>
+        <li>审每一行 AI 生成的代码</li>
+        <li>把任务拆成小块、一步步喂给 AI</li>
+        <li>手动改代码比描述给 AI 更快——所以亲手改</li>
+        <li>交付质量依赖个人经验</li>
+      </ul>
+    </div>
+    <div class="role-mid"><svg viewBox="0 0 24 24"><path d="M3 12h16M13 5l7 7-7 7"/></svg></div>
+    <div class="role next">
+      <div class="r-tag">AI 原生的开发者</div>
+      <h4>导演 · 规约与决策</h4>
+      <ul>
+        <li>审规划与规约，不审代码——测试替你审</li>
+        <li>给 AI 完整需求，让它先出规划、先列待澄清问题</li>
+        <li>把验证交给测试金字塔，人只做业务验收</li>
+        <li>每一次纠错都沉淀为团队的 AGENTS.md 资产</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="loop-wrap rv">
+    <svg class="loop-svg" viewBox="0 0 440 400" id="loopSvg">
+      <defs>
+        <marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8" fill="none" stroke="#A8842C" stroke-width="1.4"/>
+        </marker>
+        <marker id="ah2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8" fill="none" stroke="#C13A2E" stroke-width="1.8"/>
+        </marker>
+      </defs>
+      <!-- arcs: 1需求→2AI分析→3人评审→4AI生成自测→5人验收沉淀 -->
+      <path class="arc"    d="M 262 62 Q 320 84 348 130" marker-end="url(#ah)"/>
+      <path class="arc"    d="M 350 182 Q 344 242 312 288" marker-end="url(#ah)"/>
+      <path class="arc"    d="M 268 330 Q 220 352 172 330" marker-end="url(#ah)"/>
+      <path class="arc"    d="M 128 288 Q 96 242 90 182" marker-end="url(#ah)"/>
+      <path class="arc-h"  d="M 92 130 Q 120 84 178 62" marker-end="url(#ah2)"/>
+      <!-- nodes -->
+      <circle class="node-c" cx="220" cy="60" r="44"/>
+      <circle class="node-c node-hot" cx="352" cy="156" r="44"/>
+      <circle class="node-c node-hot" cx="288" cy="316" r="44"/>
+      <circle class="node-c" cx="152" cy="316" r="44"/>
+      <circle class="node-c" cx="88" cy="156" r="44"/>
+      <!-- node labels -->
+      <text class="nt" x="220" y="56" text-anchor="middle" font-size="15">需求</text>
+      <text class="ns" x="220" y="76" text-anchor="middle" font-size="10">完整的业务语言</text>
+      <text class="nt" x="352" y="148" text-anchor="middle" font-size="14">AI 分析</text>
+      <text class="ns" x="352" y="166" text-anchor="middle" font-size="10">出规划·列疑点</text>
+      <text class="nt" x="288" y="308" text-anchor="middle" font-size="14">人评审</text>
+      <text class="ns" x="288" y="326" text-anchor="middle" font-size="10">审规约·做决策</text>
+      <text class="nt" x="152" y="308" text-anchor="middle" font-size="13">AI 生成+自测</text>
+      <text class="ns" x="152" y="326" text-anchor="middle" font-size="10">代码·单测·接口测</text>
+      <text class="nt" x="88" y="148" text-anchor="middle" font-size="14">人验收</text>
+      <text class="ns" x="88" y="166" text-anchor="middle" font-size="10">业务走通·沉淀</text>
+      <!-- center -->
+      <text class="ctr" x="220" y="192" text-anchor="middle" font-size="19">规约驱动</text>
+      <text class="ctr2" x="220" y="214" text-anchor="middle" font-size="10">SPEC-DRIVEN LOOP</text>
+      <text class="ctr2" x="220" y="232" text-anchor="middle" font-size="10" fill="#C13A2E">每一轮沉淀进 AGENTS.md</text>
+    </svg>
+    <div class="loop-side">
+      <h3>规约是唯一的契约：<br>人不再读代码，<b>人读意图</b>。</h3>
+      <div class="steps">
+        <div class="step"><i>1</i><span><b>把完整需求丢给 AI</b>，要求它先分析、出规划：建什么表、写什么接口、改哪些文件，并主动列出「待澄清问题清单」——澄清成本在动笔前就暴露。</span></div>
+        <div class="step"><i>2</i><span><b>人只做一件事：评审规约。</b>业务流程对不对、表关联对不对。代码交给测试去验证，人回归业务专家角色。</span></div>
+        <div class="step"><i>3</i><span><b>AI 生成代码的同时生成测试</b>：单元测试覆盖边界、OpenAPI 脚本直接导入 Postman、Playwright 驱动浏览器端到端——包括用多模态模型自动识别验证码登录。</span></div>
+        <div class="step"><i>4</i><span><b>每次纠错都写回 AGENTS.md。</b>命名规范、分层约定、公共组件、部署环境描述——团队资产随项目生长，新人与 AI 同时受益。</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tri rv">
+    <div class="tri-card">
+      <div class="t-no">测试金字塔 · AUTO</div>
+      <h5>让机器验证机器</h5>
+      <ul>
+        <li>单元测试 AI 生成，门禁规则：只许改代码，不许改测试</li>
+        <li>接口测试：AI 基于实现生成 OpenAPI 脚本 → 导入 Postman 自动回归</li>
+        <li>E2E：智能体 + Playwright 驱动浏览器，模拟真实操作路径</li>
+        <li>测试数据由 AI 生成，跨表关联、贴近真实业务</li>
+      </ul>
+    </div>
+    <div class="tri-card">
+      <div class="t-no">组织重构 · ORG</div>
+      <h5>让流程围绕 AI 重排</h5>
+      <ul>
+        <li>前后端一体化试点：AI 天然全栈，一次任务覆盖前端+接口+数据库</li>
+        <li>需求模板升级：字段、约束、参数前置写明，消灭联调往返</li>
+        <li>AI 预澄清：需求文档先过 AI，产出问题清单再约需求人员一次对齐</li>
+        <li>测试人员从"点页面"转为"审测试资产、管质量门禁"</li>
+      </ul>
+    </div>
+    <div class="tri-card">
+      <div class="t-no">基础设施 · INFRA</div>
+      <h5>算力是最优先的投资</h5>
+      <ul>
+        <li>扩容算力：排队与龟速输出是当前最大单点损耗</li>
+        <li>跟进模型迭代：3.0→3.5→3.8 的演进证明智力是最大杠杆</li>
+        <li>要求工具补齐 checkpoint 回退与并行子智能体</li>
+        <li>打通 MCP 工具链：数据库只读查询、Postman、浏览器</li>
+        <li>数据访问按公司/部门/项目三级权限收敛到智能体层</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CH6 ================= -->
+<section class="chapter" id="ch6" style="border-bottom:none;">
+  <div class="ch-head rv"><div class="ch-no">06</div><h2>九十天，从幻觉到原生</h2></div>
+  <p class="ch-sub rv">不需要一步到位。访谈给出的共识是：<strong>小步快跑、持续验证</strong>——但每一步都要踩在正确的层上。</p>
+
+  <div class="roadmap rv">
+    <div class="phases">
+      <div class="phase">
+        <div class="dot">Ⅰ</div>
+        <div class="ph-lab">DAY 0 – 30</div>
+        <h4>止血与沉淀</h4>
+        <div class="aim">目标：人人都能跑通一轮</div>
+        <ul>
+          <li>建立 AGENTS.md 团队规约：命名、分层、公共组件、环境描述</li>
+          <li>全员上智能体，测试人员优先；按 LV.1→LV.3 分层培训</li>
+          <li>立 git 小步提交纪律：每次 AI 修改前后提交，弥补 checkpoint 缺失</li>
+          <li>装通 Postman MCP，接口测试从手工导入到一键生成</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="dot">Ⅱ</div>
+        <div class="ph-lab">DAY 31 – 60</div>
+        <h4>自动化验证</h4>
+        <div class="aim">目标：测试不再靠人点</div>
+        <ul>
+          <li>单元测试 AI 生成 + CI 门禁：杜绝"改测试不改码"</li>
+          <li>接口自动化回归常态化，脚本资产入版本库</li>
+          <li>Playwright E2E 试点：多模态识别验证码，打通自动登录</li>
+          <li>AI 预澄清需求模板上线：问题清单先产出，再约需求人员</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="dot">Ⅲ</div>
+        <div class="ph-lab">DAY 61 – 90</div>
+        <h4>原生试点</h4>
+        <div class="aim">目标：一个模块全流程 AI 原生</div>
+        <ul>
+          <li>选 1 个新模块做规约驱动试点：一人全栈 + AI 闭环</li>
+          <li>端到端交付周期纳入度量（北极星），取代"编码时长"</li>
+          <li>试点复盘，提炼可复制的规约模板与工作流</li>
+          <li>向公司层提交基础设施升级清单：算力、模型、checkpoint、并行</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi rv">
+    <div class="k-tag">北极星指标</div>
+    <p>不再考核"写了多少行、花了多少小时编码"，只考核<b>需求受理到上线的端到端周期</b>与<b>一次通过率</b>。编码早已不是成本中心——别再为它庆功。</p>
+  </div>
+</section>
+</div>
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="fin">
+      <div class="tag">结语</div>
+      <blockquote>"先让每个人成为 AI 专家，组织才能变成 AI 的组织——先从人开始，再转向组织。"</blockquote>
+      <div class="src">
+        <b>素材来源</b> · 本报告基于 2026-11 公司开发现状三份一线访谈整理：访谈1（方法论探讨）、访谈2（后端实践现场）、访谈3（前端实践现场）及访谈1和2总结。<br>
+        <b>方法声明</b> · 文中交付链路各阶段占比、端到端周期指数为访谈信息示意估算，用于揭示结构关系，非精确工时统计；AI 生成代码占比 90% 为访谈中最高效开发者的自评口径。<br>
+        <b>诊断结论</b> · 效率的瓶颈不在键盘上，在澄清、联调与验证里；AI 原生的本质是把人从"写代码"迁移到"写规约、做决策"。
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // progress bar
+  var p = document.getElementById('progress');
+  function onScroll(){
+    var h = document.documentElement;
+    var pct = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+    p.style.width = pct + '%';
+  }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  // reveal on scroll
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('on');
+        // animate fills
+        e.target.querySelectorAll('.p-fill').forEach(function(el){ el.style.width = el.dataset.w; });
+        e.target.querySelectorAll('.wf-seg').forEach(function(el, i){
+          setTimeout(function(){ el.style.width = el.dataset.w; }, i*90);
+        });
+        // counters
+        e.target.querySelectorAll('[data-count]').forEach(function(el){
+          var target = +el.dataset.count, suf = el.dataset.suffix || '';
+          var t0 = null;
+          function tick(t){
+            if(!t0) t0 = t;
+            var k = Math.min((t - t0)/1200, 1);
+            var eased = 1 - Math.pow(1-k, 3);
+            el.textContent = Math.round(target * eased) + suf;
+            if(k < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        });
+        io.unobserve(e.target);
+      }
+    });
+  }, {threshold: .18});
+  document.querySelectorAll('.rv, .stats').forEach(function(el){ io.observe(el); });
+})();
+</script>
+</body>
+</html>

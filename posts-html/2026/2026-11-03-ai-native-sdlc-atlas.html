@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="以 mattpocock/skills 的 37 个技能为蓝本，把 AI 原生开发生命周期拆成六个阶段：想法对齐、规格化、拆票、实现与双轴评审，逐段讲清输入、操作与产出，并用四种失败模式的修复映射、上下文卫生规则与真实项目证据，说明为何编排要薄、纪律要厚。">
+<meta name="keywords" content="ai-native-sdlc, agentic-engineering, mattpocock-skills, spec-driven-development, tdd, context-engineering">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-03">
+<title>AI 原生软件开发生命周期 · 全景图</title>
+<style>
+  :root{
+    --paper:#f6f4ef; --card:#ffffff; --ink:#1a1d24; --muted:#5c6470;
+    --line:#ddd7cb; --orange:#e0531f; --orange-soft:#fdeee6;
+    --blue:#2456c8; --blue-soft:#e8eefc; --green:#1f7a4d; --green-soft:#e6f4ec;
+    --purple:#7a3ec8; --purple-soft:#f1eafc; --red:#c92a2a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;
+    line-height:1.65;-webkit-font-smoothing:antialiased}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  section{padding:64px 0 24px}
+  .kicker{font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--orange);font-weight:700;margin-bottom:14px}
+  h1{font-size:clamp(30px,4.6vw,52px);line-height:1.15;letter-spacing:-.02em;font-weight:800}
+  h2{font-size:clamp(22px,3vw,32px);letter-spacing:-.01em;font-weight:800;margin-bottom:6px}
+  .sub{color:var(--muted);font-size:15px;max-width:760px;margin-top:10px}
+  .rule{height:2px;background:var(--ink);width:64px;margin:22px 0 30px;border-radius:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;box-shadow:0 1px 2px rgba(20,20,30,.04)}
+  .chip{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:12px;
+    padding:2px 10px;border-radius:999px;border:1.5px solid;font-weight:700;white-space:nowrap}
+  .chip.u{color:var(--orange);border-color:var(--orange);background:var(--orange-soft)}
+  .chip.m{color:var(--blue);border-color:var(--blue);background:var(--blue-soft)}
+  .fig{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:26px 18px 14px;overflow-x:auto}
+  .fig svg{display:block;min-width:900px;width:100%;height:auto}
+  .fig .cap{font-size:12.5px;color:var(--muted);padding:10px 8px 6px;text-align:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:26px}
+  @media(max-width:880px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+  .num{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1}
+  .fm .sym{font-size:13.5px;color:var(--muted);margin:10px 0 14px}
+  .fm .fix{font-size:13px}
+  .fm .fix b{color:var(--ink)}
+  .lbl{font-size:11px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);font-weight:700}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#efeadf;font-size:12px;letter-spacing:.06em}
+  td .mono{font-size:12.5px}
+  .phase{display:grid;grid-template-columns:170px 1fr 1.25fr 1fr 1.15fr;gap:0;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    margin-top:14px;overflow:hidden}
+  .phase>div{padding:16px 18px;border-left:1px dashed var(--line)}
+  .phase>div:first-child{border-left:none;background:#fbf9f4}
+  .phase .pname{font-weight:800;font-size:15px;margin:6px 0 2px}
+  .phase .tag{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+  .phase .celllbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;margin-bottom:5px;font-family:ui-monospace,Menlo,monospace}
+  .phase p{font-size:13.5px}
+  .whybox{background:var(--blue-soft)!important}
+  .whybox p{font-size:13px}
+  @media(max-width:980px){.phase{grid-template-columns:1fr}.phase>div{border-left:none;border-top:1px dashed var(--line)}}
+  .takeaway{display:flex;gap:14px;align-items:flex-start}
+  .takeaway .n{min-width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+  .quote{border-left:3px solid var(--orange);padding:2px 0 2px 14px;font-size:13.5px;color:var(--ink)}
+  footer{border-top:1px solid var(--line);margin-top:70px;padding:28px 0 60px;
+    font-size:12.5px;color:var(--muted)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px;font-size:13px;align-items:center}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header style="padding:78px 0 30px">
+  <div class="wrap">
+    <div class="kicker">AI-NATIVE SDLC · FIELD ATLAS · MATT POCOCK</div>
+    <h1>AI 原生软件开发<br>生命周期全貌</h1>
+    <p class="sub" style="font-size:17px">不是框架，是一箱可以拆开改造的工具。37 个技能只做一件事：把软件工程的基本功，压缩成智能体每次都能重复执行的动作。本图集以 mattpocock/skills 为蓝本、course-video-manager 为实战证据，讲清每个阶段<strong>做什么、输入什么、输出什么、为什么</strong>。</p>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--orange)"></span>用户调用技能：你掌舵，只做编排</span>
+      <span><span class="dot" style="background:var(--blue)"></span>模型调用技能：自动触发，承载纪律</span>
+      <span><span class="dot" style="background:var(--purple)"></span>分支：一次性原型，验证后折回</span>
+      <span><span class="dot" style="background:var(--ink)"></span>产物文件：跨会话的唯一真相</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 1. 设计哲学 ============ -->
+<section>
+  <div class="wrap">
+    <div class="kicker">01 · DESIGN PHILOSOPHY</div>
+    <h2>先理解它反对什么</h2>
+    <p class="sub">GSD、BMAD、Spec-Kit 试图<strong>接管</strong>开发过程，代价是你失去控制权，流程出了 bug 也难修。这套技能反其道而行：<strong>小、易改、可组合</strong>。四个最常见的失败模式，每个对应一组修复技能。看懂这张映射，就看懂了每个环节为什么存在。</p>
+    <div class="grid4">
+      <div class="card fm">
+        <div class="num" style="color:var(--orange)">#1</div>
+        <div style="font-weight:800;margin-top:8px">智能体没做我想要的</div>
+        <p class="sym">"没人确切知道自己想要什么。"对齐失败，看到产出才发现理解错了，而鸿沟最大的成本在实现之后才暴露。</p>
+        <p class="fix"><b>修复：</b><span class="mono">grill-with-docs · grill-me</span><br>一轮轮追问，把模糊想法逼成清晰设计，发现点前移到第一行代码之前。</p>
+      </div>
+      <div class="card fm">
+        <div class="num" style="color:var(--blue)">#2</div>
+        <div style="font-weight:800;margin-top:8px">智能体太啰嗦</div>
+        <p class="sym">智能体被扔进项目自己猜行话，20 个词说 1 个词的事，命名不一致，代码库难导航。</p>
+        <p class="fix"><b>修复：</b><span class="mono">domain-modeling · writing-for-agents</span><br>把共享语言物化成 GLOSSARY 词汇表 + ADR，让每个后续会话持续受益。</p>
+      </div>
+      <div class="card fm">
+        <div class="num" style="color:var(--green)">#3</div>
+        <div style="font-weight:800;margin-top:8px">代码跑不起来</div>
+        <p class="sym">没有反馈就没有纠偏，智能体在盲飞。"反馈速率就是你的速度上限。"</p>
+        <p class="fix"><b>修复：</b><span class="mono">tdd · diagnosing-bugs</span><br>红绿循环给智能体恒定反馈信号；调试先造"红命令"，再谈假设。</p>
+      </div>
+      <div class="card fm">
+        <div class="num" style="color:var(--red)">#4</div>
+        <div style="font-weight:800;margin-top:8px">造出一团泥球</div>
+        <p class="sym">智能体写码太快，软件熵也加速积累。"最好的模块是深的：简单接口后面藏大量功能。"</p>
+        <p class="fix"><b>修复：</b><span class="mono">codebase-design · to-spec · improve-codebase-architecture</span><br>先问模块再写规格，深模块词汇，定期巡检深化候选。</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <span class="lbl">贯穿全程的机制设计 · 编排薄，纪律厚</span>
+      <svg viewBox="0 0 1080 150" style="width:100%;height:auto;margin-top:12px">
+        <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5c6470"/></marker></defs>
+        <!-- 用户调用层 -->
+        <rect x="8" y="14" width="230" height="52" rx="10" fill="#fdeee6" stroke="#e0531f" stroke-width="1.5"/>
+        <text x="123" y="37" text-anchor="middle" font-size="13" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">用户调用 · 编排层</text>
+        <text x="123" y="56" text-anchor="middle" font-size="11.5" fill="#5c6470">只决定下一步做什么，极薄</text>
+        <path d="M240,40 H300" stroke="#5c6470" stroke-width="1.5" marker-end="url(#a2)"/>
+        <text x="270" y="30" text-anchor="middle" font-size="10.5" fill="#5c6470">调用</text>
+        <!-- 模型调用层 -->
+        <rect x="305" y="14" width="530" height="52" rx="10" fill="#e8eefc" stroke="#2456c8" stroke-width="1.5"/>
+        <text x="570" y="37" text-anchor="middle" font-size="13" font-weight="800" fill="#2456c8" font-family="ui-monospace,Menlo,monospace">模型调用 · 纪律层（可复用方法论）</text>
+        <text x="570" y="56" text-anchor="middle" font-size="11.5" fill="#5c6470">grilling · domain-modeling · tdd · code-review · diagnosing-bugs · prototype</text>
+        <path d="M835,40 H895" stroke="#5c6470" stroke-width="1.5" marker-end="url(#a2)"/>
+        <!-- 产物层 -->
+        <rect x="900" y="14" width="172" height="52" rx="10" fill="#1a1d24"/>
+        <text x="986" y="37" text-anchor="middle" font-size="12.5" font-weight="800" fill="#fff">产物物化</text>
+        <text x="986" y="56" text-anchor="middle" font-size="10.5" fill="#c8c2b4">票 · 规格 · GLOSSARY · ADR</text>
+        <!-- 铁律 -->
+        <text x="8" y="106" font-size="12.5" fill="#1a1d24" font-weight="700">铁律：用户调用技能可以调用模型调用技能，但永远不会调用另一个用户调用技能。</text>
+        <text x="8" y="128" font-size="12.5" fill="#5c6470">例：grill-with-docs 的 SKILL.md 本体只有一句话"调用 grilling 和 domain-modeling"。方向盘始终在你手里。</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. 全景图 ============ -->
+<section>
+  <div class="wrap">
+    <div class="kicker">02 · THE FULL MAP</div>
+    <h2>一张图看懂全局</h2>
+    <p class="sub">主流程六个环节串联；原型是环节 1 到 3 之间的可选分支；三条汇入通道处理"不从想法开始"的工作；词汇层垫在最底下，代码库健康巡检在顶上闭环。</p>
+    <div class="fig">
+      <svg viewBox="0 0 1240 720">
+        <defs>
+          <marker id="arr" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1a1d24"/></marker>
+          <marker id="arrO" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#e0531f"/></marker>
+          <marker id="arrB" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2456c8"/></marker>
+          <marker id="arrG" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1f7a4d"/></marker>
+        </defs>
+
+        <!-- 健康巡检回路 -->
+        <path d="M1208,256 V44 H360 V234" fill="none" stroke="#1f7a4d" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrG)"/>
+        <text x="784" y="36" text-anchor="middle" font-size="12" fill="#1f7a4d" font-weight="700">代码库健康巡检 improve-codebase-architecture · 选中的深化候选作为新想法回到环节 ①</text>
+
+        <!-- 上下文窗口分组 -->
+        <rect x="336" y="200" width="482" height="152" rx="14" fill="none" stroke="#e0531f" stroke-width="1.4" stroke-dasharray="5 4" opacity=".55"/>
+        <text x="577" y="192" text-anchor="middle" font-size="11.5" fill="#e0531f" font-weight="700">①→④ 同一个不中断的上下文窗口 · 真满了在阶段边界 compact</text>
+        <rect x="851" y="200" width="138" height="152" rx="14" fill="none" stroke="#2456c8" stroke-width="1.4" stroke-dasharray="5 4" opacity=".55"/>
+        <text x="920" y="372" text-anchor="middle" font-size="11.5" fill="#2456c8" font-weight="700">⑤ 每票新会话 · 结束即 /clear</text>
+
+        <!-- 主流程节点 -->
+        <!-- 0 setup -->
+        <g>
+          <rect x="175" y="236" width="130" height="92" rx="12" fill="#fff" stroke="#1a1d24" stroke-width="1.6"/>
+          <text x="240" y="258" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6470">0 · 初始化</text>
+          <text x="240" y="278" text-anchor="middle" font-size="11.5" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">setup-matt-pocock-skills</text>
+          <text x="240" y="298" text-anchor="middle" font-size="10.5" fill="#5c6470">每仓库一次</text>
+          <text x="240" y="314" text-anchor="middle" font-size="10.5" fill="#5c6470">追踪器 · 标签 · 文档布局</text>
+        </g>
+        <!-- 1 grill -->
+        <g>
+          <rect x="345" y="236" width="130" height="92" rx="12" fill="#fff" stroke="#e0531f" stroke-width="2"/>
+          <text x="410" y="258" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6470">1 · 对齐</text>
+          <text x="410" y="278" text-anchor="middle" font-size="12" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">grill-with-docs</text>
+          <text x="410" y="297" text-anchor="middle" font-size="10.5" fill="#5c6470">设计树拷问 · 前沿轮次</text>
+          <text x="410" y="313" text-anchor="middle" font-size="10" fill="#2456c8" font-family="ui-monospace,Menlo,monospace">+ grilling + domain-modeling</text>
+        </g>
+        <!-- 3 spec -->
+        <g>
+          <rect x="515" y="236" width="130" height="92" rx="12" fill="#fff" stroke="#e0531f" stroke-width="2"/>
+          <text x="580" y="258" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6470">3 · 规格化</text>
+          <text x="580" y="278" text-anchor="middle" font-size="12" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">to-spec</text>
+          <text x="580" y="297" text-anchor="middle" font-size="10.5" fill="#5c6470">对话结晶 · 接缝先行</text>
+          <text x="580" y="313" text-anchor="middle" font-size="10.5" fill="#5c6470">禁文件路径 · 超长用户故事</text>
+        </g>
+        <!-- 4 tickets -->
+        <g>
+          <rect x="685" y="236" width="130" height="92" rx="12" fill="#fff" stroke="#e0531f" stroke-width="2"/>
+          <text x="750" y="258" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6470">4 · 拆票</text>
+          <text x="750" y="278" text-anchor="middle" font-size="12" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">to-tickets</text>
+          <text x="750" y="297" text-anchor="middle" font-size="10.5" fill="#5c6470">曳光弹垂直切片</text>
+          <text x="750" y="313" text-anchor="middle" font-size="10.5" fill="#5c6470">每张票声明阻塞边</text>
+        </g>
+        <!-- 5 implement -->
+        <g>
+          <rect x="855" y="236" width="130" height="92" rx="12" fill="#fff" stroke="#e0531f" stroke-width="2"/>
+          <text x="920" y="258" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6470">5 · 实现</text>
+          <text x="920" y="278" text-anchor="middle" font-size="12" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">implement</text>
+          <text x="920" y="297" text-anchor="middle" font-size="10" fill="#2456c8" font-family="ui-monospace,Menlo,monospace">+ tdd（红→绿）</text>
+          <text x="920" y="313" text-anchor="middle" font-size="10.5" fill="#5c6470">类型检查 · 单测 · 全量测试</text>
+        </g>
+        <!-- 6 review -->
+        <g>
+          <rect x="1025" y="236" width="130" height="92" rx="12" fill="#fff" stroke="#2456c8" stroke-width="2"/>
+          <text x="1090" y="258" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6470">6 · 评审</text>
+          <text x="1090" y="278" text-anchor="middle" font-size="12" font-weight="800" fill="#2456c8" font-family="ui-monospace,Menlo,monospace">code-review</text>
+          <text x="1090" y="297" text-anchor="middle" font-size="10.5" fill="#5c6470">Standards 与 Spec</text>
+          <text x="1090" y="313" text-anchor="middle" font-size="10.5" fill="#5c6470">双轴并行子智能体</text>
+        </g>
+        <!-- ship -->
+        <g>
+          <circle cx="1208" cy="282" r="26" fill="#1a1d24"/>
+          <text x="1208" y="287" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">SHIP</text>
+        </g>
+
+        <!-- 主流程箭头 -->
+        <path d="M307,282 H341" stroke="#1a1d24" stroke-width="1.6" marker-end="url(#arr)"/>
+        <path d="M477,282 H511" stroke="#1a1d24" stroke-width="1.6" marker-end="url(#arr)"/>
+        <text x="494" y="272" text-anchor="middle" font-size="10" fill="#5c6470">共识 + 词汇表</text>
+        <path d="M647,282 H681" stroke="#1a1d24" stroke-width="1.6" marker-end="url(#arr)"/>
+        <text x="664" y="272" text-anchor="middle" font-size="10" fill="#5c6470">规格</text>
+        <path d="M817,282 H851" stroke="#1a1d24" stroke-width="1.6" marker-end="url(#arr)"/>
+        <text x="834" y="272" text-anchor="middle" font-size="10" fill="#5c6470">票（自包含）</text>
+        <path d="M987,282 H1021" stroke="#1a1d24" stroke-width="1.6" marker-end="url(#arr)"/>
+        <text x="1004" y="272" text-anchor="middle" font-size="10" fill="#5c6470">diff</text>
+        <path d="M1157,282 H1180" stroke="#1a1d24" stroke-width="1.6" marker-end="url(#arr)"/>
+
+        <!-- 原型分支 -->
+        <g>
+          <rect x="425" y="100" width="170" height="70" rx="12" fill="#f1eafc" stroke="#7a3ec8" stroke-width="1.8" stroke-dasharray="6 4"/>
+          <text x="510" y="124" text-anchor="middle" font-size="11" font-weight="800" fill="#7a3ec8">2 · 分支 · 原型</text>
+          <text x="510" y="143" text-anchor="middle" font-size="11.5" font-weight="800" fill="#7a3ec8" font-family="ui-monospace,Menlo,monospace">prototype（模型调用）</text>
+          <text x="510" y="160" text-anchor="middle" font-size="10" fill="#5c6470">一次性代码 · 决策折回真码</text>
+        </g>
+        <path d="M410,236 V208 H510 V172" fill="none" stroke="#7a3ec8" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+        <text x="448" y="202" font-size="9.5" fill="#7a3ec8">纸上谈不清 → handoff 出去</text>
+        <path d="M595,133 H612 V234" fill="none" stroke="#7a3ec8" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+        <text x="660" y="128" font-size="9.5" fill="#7a3ec8">带着结论 handoff 回来</text>
+
+        <!-- 汇入通道 -->
+        <text x="104" y="392" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6470" letter-spacing="2">汇入通道</text>
+        <g>
+          <rect x="20" y="406" width="168" height="58" rx="10" fill="#fff" stroke="#e0531f" stroke-width="1.6"/>
+          <text x="104" y="429" text-anchor="middle" font-size="11.5" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">triage</text>
+          <text x="104" y="449" text-anchor="middle" font-size="10" fill="#5c6470">bug 与外部需求 → 五态分诊</text>
+        </g>
+        <g>
+          <rect x="20" y="494" width="168" height="58" rx="10" fill="#fff" stroke="#2456c8" stroke-width="1.6"/>
+          <text x="104" y="517" text-anchor="middle" font-size="11.5" font-weight="800" fill="#2456c8" font-family="ui-monospace,Menlo,monospace">diagnosing-bugs</text>
+          <text x="104" y="537" text-anchor="middle" font-size="10" fill="#5c6470">先造红命令 · 再提假设</text>
+        </g>
+        <g>
+          <rect x="20" y="582" width="168" height="58" rx="10" fill="#fff" stroke="#e0531f" stroke-width="1.6"/>
+          <text x="104" y="605" text-anchor="middle" font-size="11.5" font-weight="800" fill="#e0531f" font-family="ui-monospace,Menlo,monospace">wayfinder</text>
+          <text x="104" y="625" text-anchor="middle" font-size="10" fill="#5c6470">巨型雾团 → 决策票地图</text>
+        </g>
+        <path d="M188,435 C 250,435 290,345 341,306" fill="none" stroke="#e0531f" stroke-width="1.4" marker-end="url(#arrO)"/>
+        <text x="252" y="356" font-size="9.5" fill="#e0531f">agent-ready 票</text>
+        <path d="M188,523 C 370,523 430,400 511,322" fill="none" stroke="#2456c8" stroke-width="1.4" marker-end="url(#arrB)"/>
+        <text x="330" y="428" font-size="9.5" fill="#2456c8">修复 + 回归测试</text>
+        <path d="M188,611 C 500,611 565,430 617,332" fill="none" stroke="#e0531f" stroke-width="1.4" marker-end="url(#arrO)"/>
+        <text x="392" y="530" font-size="9.5" fill="#e0531f">地图收口 → 移交 to-spec</text>
+
+        <!-- 词汇层 -->
+        <text x="24" y="647" font-size="11" font-weight="800" fill="#5c6470" letter-spacing="2">词汇层 · 垫在所有环节下面</text>
+        <rect x="20" y="656" width="566" height="52" rx="10" fill="#efeadf" stroke="#1a1d24" stroke-width="1.2"/>
+        <text x="303" y="678" text-anchor="middle" font-size="11.5" font-weight="800" fill="#1a1d24" font-family="ui-monospace,Menlo,monospace">domain-modeling（模型调用）</text>
+        <text x="303" y="697" text-anchor="middle" font-size="10.5" fill="#5c6470">GLOSSARY 词汇表当场更新 · ADR 三条件才立档</text>
+        <rect x="596" y="656" width="612" height="52" rx="10" fill="#efeadf" stroke="#1a1d24" stroke-width="1.2"/>
+        <text x="902" y="678" text-anchor="middle" font-size="11.5" font-weight="800" fill="#1a1d24" font-family="ui-monospace,Menlo,monospace">codebase-design（模型调用）</text>
+        <text x="902" y="697" text-anchor="middle" font-size="10.5" fill="#5c6470">module · interface · depth · seam · leverage · locality · 删除测试</text>
+      </svg>
+      <div class="cap">主流程 IDEA → SHIP · 分支与汇入通道 · 词汇层与巡检闭环 · 颜色区分"谁调用"与"产物落在哪"</div>
+    </div>
+
+    <div class="grid3" style="margin-top:16px">
+      <div class="card"><span class="lbl">为什么对齐最重</span><p style="font-size:13.5px;margin-top:6px">改一张规格远比改一堆代码便宜。对齐失败的发现点必须前移到写码之前，所以环节 1 成本最高、最该每次都用。</p></div>
+      <div class="card"><span class="lbl">为什么票自包含</span><p style="font-size:13.5px;margin-top:6px">实现者是没有会话记忆的智能体。票 + 规格是它重建上下文的全部材料，所以环节 5 每票冷启动、结束即弃，多会话并行抓"前沿"上的票。</p></div>
+      <div class="card"><span class="lbl">为什么巨型任务不硬拆</span><p style="font-size:13.5px;margin-top:6px">雾还没散时假装能写规格是谎言。wayfinder 只产决策不产代码，把不可知留在雾里，雾散到哪票才具体化到哪。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. 每个阶段 ============ -->
+<section>
+  <div class="wrap">
+    <div class="kicker">03 · STAGE BY STAGE</div>
+    <h2>每个阶段：输入 → 操作 → 输出 → 为什么</h2>
+    <p class="sub">六张卡片对应主流程。每张只留骨架：左边是谁在做，中间是物质如何流转，右边是存在的理由。</p>
+
+    <!-- 环节 0 -->
+    <div class="phase">
+      <div><span class="chip u">用户调用</span><div class="pname">0 · 初始化</div><div class="tag">setup-matt-pocock-skills</div></div>
+      <div><div class="celllbl">输入</div><p>一个还没配置过的仓库：git remote、已有 AGENTS.md / CLAUDE.md、是否 monorepo</p></div>
+      <div><div class="celllbl">操作</div><p>每仓库跑一次，确认三件事：问题追踪器用哪个、分诊标签叫什么、领域文档放哪。先探索、再确认、后写入，绝不覆盖已有编辑</p></div>
+      <div><div class="celllbl">输出</div><p><span class="mono">docs/agents/*.md</span> 约定文件 + AGENTS.md 里的 Agent skills 块</p></div>
+      <div class="whybox"><div class="celllbl">为什么</div><p>后面所有编排技能都要回答"票发哪、标签叫什么、词汇表在哪"。把答案物化成文件，是整套体系能跨会话运转的前提</p></div>
+    </div>
+
+    <!-- 环节 1 -->
+    <div class="phase">
+      <div><span class="chip u">用户调用</span><div class="pname">1 · 想法对齐</div><div class="tag">grill-with-docs</div></div>
+      <div><div class="celllbl">输入</div><p>一个模糊想法 + 仓库现状（需要事实时派子智能体去查，不拿来烦你）</p></div>
+      <div><div class="celllbl">操作</div><p>把想法画成设计树，按"前沿"逐轮提问：每轮把前置已定的问题一次全问出，每题附推荐答案。结束前不动手，直到你确认共识</p></div>
+      <div><div class="celllbl">输出</div><p>共识 + <span class="mono">GLOSSARY.md</span> 当场新增术语 + 满足三条件的 <span class="mono">docs/adr/</span> 决策档</p></div>
+      <div class="whybox"><div class="celllbl">为什么</div><p>对齐失败的根源是沟通鸿沟，最大成本在实现后暴露。"前沿 + 轮次"保证你永不被问前提未定的问题；推荐答案把访谈成本压到回一个"同意"</p></div>
+    </div>
+
+    <!-- 环节 2 -->
+    <div class="phase" style="border-color:#7a3ec8">
+      <div><span class="chip m">模型调用 · 分支</span><div class="pname">2 · 原型验证</div><div class="tag">prototype · handoff 桥接</div></div>
+      <div><div class="celllbl">输入</div><p>拷问中对话无法裁决的问题：状态机对不对、UI 该长什么样</p></div>
+      <div><div class="celllbl">操作</div><p>逻辑问题 → 单个可玩 HTML；UI 问题 → 同路由若干 radically different 变体。铁律：第一天就是一次性的、一条命令能跑、不持久化、不抛光</p></div>
+      <div><div class="celllbl">输出</div><p>一个决策（不是代码）：折进真实代码；原型留在 <span class="mono">prototype/&lt;name&gt;</span> 分支作一手证据</p></div>
+      <div class="whybox"><div class="celllbl">为什么</div><p>"一次性"是约束写法：不必维护，所以敢半天试三种方案。handoff 双向桥让分支不污染主对话；规格模板专门留例外条款收纳原型产出的状态机片段</p></div>
+    </div>
+
+    <!-- 环节 3 -->
+    <div class="phase">
+      <div><span class="chip u">用户调用</span><div class="pname">3 · 规格化</div><div class="tag">to-spec</div></div>
+      <div><div class="celllbl">输入</div><p>同一窗口里已讨论清楚的一切（不再访谈，职责分离防震荡）</p></div>
+      <div><div class="celllbl">操作</div><p>先定测试接缝并与你确认（越少越好，理想是一个），再按六段模板合成：问题 → 方案 → 超长用户故事清单 → 实现决策 → 测试决策 → 范围外</p></div>
+      <div><div class="celllbl">输出</div><p>发布到追踪器、打 ready-for-agent 的规格文档（禁写文件路径与代码片段，原型决策密集片段除外）</p></div>
+      <div class="whybox"><div class="celllbl">为什么</div><p>实现者没有记忆，故事清单是它重建"功能服务谁"的唯一材料。禁路径因为 AI 时代文档半衰期极短：规格只承载决策，不承载定位</p></div>
+    </div>
+
+    <!-- 环节 4 -->
+    <div class="phase">
+      <div><span class="chip u">用户调用</span><div class="pname">4 · 拆票</div><div class="tag">to-tickets</div></div>
+      <div><div class="celllbl">输入</div><p>已发布的规格</p></div>
+      <div><div class="celllbl">操作</div><p>切成曳光弹垂直切片：窄但穿全层、完成即可演示、大小正好装进一个新上下文。每票声明阻塞边。先给你过目粒度，批准后才发布</p></div>
+      <div><div class="celllbl">输出</div><p>按依赖序编号的票（本地模式一票一文件），宽重构走 expand-contract 批次</p></div>
+      <div class="whybox"><div class="celllbl">为什么</div><p>水平切片每步不可演示，错误最后才暴露；垂直切片让每张票都是一次曳光弹试射。阻塞边让追踪器直接渲染"现在能拿哪些票"，并行成为可能</p></div>
+    </div>
+
+    <!-- 环节 5 -->
+    <div class="phase">
+      <div><span class="chip u">用户调用</span><div class="pname">5 · 实现</div><div class="tag">implement + tdd</div></div>
+      <div><div class="celllbl">输入</div><p>一张自包含的票（+ 规格 + GLOSSARY，动手前读词汇对齐命名）</p></div>
+      <div><div class="celllbl">操作</div><p>在预约定接缝上红→绿：先失败测试，再最小实现；一次一片；定期类型检查与单测，最后全量。指令刻意极简，这是特性</p></div>
+      <div><div class="celllbl">输出</div><p>绿测试 + 提交到当前分支；会话结束 /clear，上下文可丢弃</p></div>
+      <div class="whybox"><div class="celllbl">为什么</div><p>TDD 对智能体比对人更关键：红绿是它唯一的恒定反馈信号，不再盲飞。"接缝预先确认"让有限的测试落在关键路径而非摊薄到每个边缘</p></div>
+    </div>
+
+    <!-- 环节 6 -->
+    <div class="phase">
+      <div><span class="chip m">模型调用</span><div class="pname">6 · 双轴评审</div><div class="tag">code-review</div></div>
+      <div><div class="celllbl">输入</div><p><span class="mono">git diff 固定点...HEAD</span> + 来源规格</p></div>
+      <div><div class="celllbl">操作</div><p>Standards 轴（仓库规范 + 12 条坏味道基线）与 Spec 轴（缺失 / 越界 / 错实现）各派一个并行子智能体，互不污染</p></div>
+      <div><div class="celllbl">输出</div><p>两节并列的报告：不合并、不重排序，各轴给出最严重问题</p></div>
+      <div class="whybox"><div class="celllbl">为什么</div><p>一个变更可能一轴过另一轴挂。混评时 Spec 的发现会被 Standards 的细节淹没；"不重排"防止聚合层替你决定哪轴更重要，那是人的判断</p></div>
+    </div>
+
+    <!-- 汇入通道 -->
+    <div class="card" style="margin-top:22px">
+      <span class="lbl">三条汇入通道 · 不是所有工作都从想法开始</span>
+      <div class="grid3" style="margin-top:14px">
+        <div>
+          <span class="chip u">triage</span>
+          <p style="font-size:13px;margin-top:8px"><b>输入</b>：堆积的 issue 与外部 PR。<b>操作</b>：复现验证声称 → 五态状态机分诊 → 拷问补全，先查重复实现与 .out-of-scope 拒绝档案。<b>输出</b>：附 agent brief 的 ready-for-agent 票。它产出的票不要再分诊。</p>
+        </div>
+        <div>
+          <span class="chip m">diagnosing-bugs</span>
+          <p style="font-size:13px;margin-top:8px"><b>输入</b>：疑难 bug。<b>操作</b>：六阶段纪律环，核心是阶段 1 造反馈回路（十种手段，验收为红 capable、秒级、可无人值守的命令）；没有红命令禁止进入假设阶段。<b>输出</b>：修复 + 写在正确接缝上的回归测试。</p>
+        </div>
+        <div>
+          <span class="chip u">wayfinder</span>
+          <p style="font-size:13px;margin-top:8px"><b>输入</b>：一个会话装不下的巨型雾团。<b>操作</b>：先拷问出目的地，再铺开四类决策票（research / prototype / grilling / task），雾散到哪票才具体化到哪；认领防撞，一次一票。<b>输出</b>：地图收口后移交 to-spec，不直接跳实现。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. 三个机制放大 ============ -->
+<section>
+  <div class="wrap">
+    <div class="kicker">04 · ZOOM IN</div>
+    <h2>三个值得放大的机制</h2>
+    <p class="sub">拷问的前沿推进、TDD 的红绿信号、评审的双轴隔离。这三个机制分别是失败模式 #1、#3 与评审可信度的解。</p>
+    <div class="grid3">
+      <div class="card">
+        <span class="lbl">机制一 · 前沿轮次（grilling）</span>
+        <svg viewBox="0 0 360 250" style="width:100%;height:auto;margin-top:10px">
+          <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5c6470"/></marker></defs>
+          <rect x="120" y="10" width="120" height="36" rx="8" fill="#fdeee6" stroke="#e0531f" stroke-width="1.5"/>
+          <text x="180" y="33" text-anchor="middle" font-size="11" font-weight="800" fill="#e0531f">根决策：做不做这个</text>
+          <rect x="20" y="96" width="100" height="34" rx="8" fill="#fff" stroke="#1a1d24" stroke-width="1.4"/>
+          <text x="70" y="117" text-anchor="middle" font-size="10.5">子决策 A（已定）</text>
+          <rect x="132" y="96" width="100" height="34" rx="8" fill="#e8eefc" stroke="#2456c8" stroke-width="1.8"/>
+          <text x="182" y="112" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2456c8">子决策 B</text>
+          <text x="182" y="125" text-anchor="middle" font-size="9" fill="#5c6470">附推荐答案</text>
+          <rect x="244" y="96" width="100" height="34" rx="8" fill="#e8eefc" stroke="#2456c8" stroke-width="1.8"/>
+          <text x="294" y="112" text-anchor="middle" font-size="10.5" font-weight="800" fill="#2456c8">子决策 C</text>
+          <text x="294" y="125" text-anchor="middle" font-size="9" fill="#5c6470">附推荐答案</text>
+          <rect x="76" y="168" width="100" height="34" rx="8" fill="#fff" stroke="#1a1d24" stroke-width="1.4"/>
+          <text x="126" y="189" text-anchor="middle" font-size="10.5">孙决策 B1</text>
+          <rect x="188" y="168" width="100" height="34" rx="8" fill="#ddd7cb" stroke="#5c6470" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <text x="238" y="189" text-anchor="middle" font-size="10" fill="#5c6470">孙决策 C1（待 B）</text>
+          <path d="M160,46 L80,94 M180,46 V94 M200,46 L280,94" stroke="#5c6470" stroke-width="1.2" marker-end="url(#a3)"/>
+          <path d="M170,130 L130,166 M200,130 L230,166" stroke="#5c6470" stroke-width="1.2" marker-end="url(#a3)"/>
+          <path d="M20,148 H344" stroke="#e0531f" stroke-width="1.4" stroke-dasharray="6 4"/>
+          <text x="182" y="142" text-anchor="middle" font-size="9.5" font-weight="700" fill="#e0531f">本轮前沿：把前置已定的问题一次全问出</text>
+          <text x="180" y="228" text-anchor="middle" font-size="10.5" fill="#5c6470">事实智能体查 · 决策你拍板 · 一轮一计算</text>
+          <text x="180" y="243" text-anchor="middle" font-size="10.5" fill="#5c6470">前沿为空 = 共识达成，才许动手</text>
+        </svg>
+      </div>
+      <div class="card">
+        <span class="lbl">机制二 · 红绿信号（tdd）</span>
+        <svg viewBox="0 0 360 250" style="width:100%;height:auto;margin-top:10px">
+          <defs><marker id="a4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5c6470"/></marker></defs>
+          <rect x="20" y="30" width="150" height="52" rx="10" fill="#c92a2a"/>
+          <text x="95" y="52" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">红：先写失败测试</text>
+          <text x="95" y="70" text-anchor="middle" font-size="9.5" fill="#ffd9d9">不预写未来测试</text>
+          <rect x="196" y="30" width="150" height="52" rx="10" fill="#1f7a4d"/>
+          <text x="271" y="52" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">绿：最小实现</text>
+          <text x="271" y="70" text-anchor="middle" font-size="9.5" fill="#d3f0e0">恰好通过 · 不加投机功能</text>
+          <path d="M172,46 H192" stroke="#5c6470" stroke-width="1.6" marker-end="url(#a4)"/>
+          <path d="M271,86 C 271,140 95,140 95,86" fill="none" stroke="#5c6470" stroke-width="1.4" marker-end="url(#a4)"/>
+          <text x="183" y="134" text-anchor="middle" font-size="10" fill="#5c6470" font-weight="700">一次一片：一个接缝 · 一个测试</text>
+          <rect x="30" y="168" width="300" height="62" rx="10" fill="#fbf9f4" stroke="#ddd7cb"/>
+          <text x="180" y="190" text-anchor="middle" font-size="10.5" font-weight="800" fill="#1a1d24">三大测试反模式（永不允许）</text>
+          <text x="180" y="208" text-anchor="middle" font-size="10" fill="#5c6470">实现耦合：mock 内部 · 测私有 · 绕过接口</text>
+          <text x="180" y="223" text-anchor="middle" font-size="10" fill="#5c6470">同义反复：按实现复算期望值 · 水平切片一次全写</text>
+        </svg>
+      </div>
+      <div class="card">
+        <span class="lbl">机制三 · 双轴隔离（code-review）</span>
+        <svg viewBox="0 0 360 250" style="width:100%;height:auto;margin-top:10px">
+          <defs><marker id="a5" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5c6470"/></marker></defs>
+          <rect x="10" y="96" width="86" height="52" rx="10" fill="#1a1d24"/>
+          <text x="53" y="118" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">git diff</text>
+          <text x="53" y="134" text-anchor="middle" font-size="9" fill="#c8c2b4">固定点...HEAD</text>
+          <rect x="150" y="24" width="150" height="64" rx="10" fill="#e8eefc" stroke="#2456c8" stroke-width="1.6"/>
+          <text x="225" y="46" text-anchor="middle" font-size="11" font-weight="800" fill="#2456c8">Standards 轴 · 子智能体 A</text>
+          <text x="225" y="62" text-anchor="middle" font-size="9.5" fill="#5c6470">仓库书面规范</text>
+          <text x="225" y="76" text-anchor="middle" font-size="9.5" fill="#5c6470">+ 12 条坏味道基线</text>
+          <rect x="150" y="156" width="150" height="64" rx="10" fill="#fdeee6" stroke="#e0531f" stroke-width="1.6"/>
+          <text x="225" y="178" text-anchor="middle" font-size="11" font-weight="800" fill="#e0531f">Spec 轴 · 子智能体 B</text>
+          <text x="225" y="194" text-anchor="middle" font-size="9.5" fill="#5c6470">缺了什么 · 多了什么</text>
+          <text x="225" y="208" text-anchor="middle" font-size="9.5" fill="#5c6470">实现了但不对</text>
+          <path d="M98,110 C 120,110 125,70 146,62" fill="none" stroke="#2456c8" stroke-width="1.4" marker-end="url(#a5)"/>
+          <path d="M98,134 C 120,134 125,176 146,182" fill="none" stroke="#e0531f" stroke-width="1.4" marker-end="url(#a5)"/>
+          <rect x="310" y="82" width="46" height="80" rx="8" fill="#fbf9f4" stroke="#ddd7cb"/>
+          <text x="333" y="118" text-anchor="middle" font-size="9.5" font-weight="800" fill="#1a1d24">聚合</text>
+          <text x="333" y="134" text-anchor="middle" font-size="8.5" fill="#5c6470">不重排</text>
+          <path d="M302,56 C 312,62 315,80 320,92" fill="none" stroke="#5c6470" stroke-width="1.2" marker-end="url(#a5)"/>
+          <path d="M302,188 C 312,182 315,164 320,152" fill="none" stroke="#5c6470" stroke-width="1.2" marker-end="url(#a5)"/>
+          <text x="180" y="240" text-anchor="middle" font-size="10" fill="#5c6470">可能一轴过、一轴挂：混评会互相淹没，所以物理隔离</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. 上下文卫生 ============ -->
+<section>
+  <div class="wrap">
+    <div class="kicker">05 · CONTEXT HYGIENE</div>
+    <h2>上下文卫生：流程形状的真正成因</h2>
+    <p class="sub">LLM 的物理约束决定了流程形状：约 150k token 以内模型推理敏锐，超过就开始劣化（smart zone）。两条规则由此派生，前面全景图里的两个虚线框就是它。</p>
+    <div class="fig">
+      <svg viewBox="0 0 1000 330">
+        <defs><marker id="a6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5c6470"/></marker></defs>
+        <!-- smart zone 阴影 -->
+        <rect x="60" y="20" width="280" height="190" fill="#fdeee6" opacity=".7"/>
+        <path d="M60,40 C 180,42 240,50 300,70 C 400,100 520,170 640,196 L640,210 L60,210 Z" fill="#1a1d24" opacity=".08"/>
+        <path d="M60,40 C 180,42 240,50 300,70 C 400,100 520,170 640,196" fill="none" stroke="#1a1d24" stroke-width="2.2"/>
+        <line x1="340" y1="20" x2="340" y2="210" stroke="#e0531f" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="340" y="14" text-anchor="middle" font-size="11" font-weight="800" fill="#e0531f">smart zone ≈ 150k</text>
+        <text x="200" y="120" text-anchor="middle" font-size="12" font-weight="800" fill="#e0531f">推理敏锐区</text>
+        <text x="490" y="150" text-anchor="middle" font-size="11" fill="#5c6470" transform="rotate(18 490 150)">劣化：开始漏约束、乱改无关文件</text>
+        <text x="66" y="232" font-size="10" fill="#5c6470">0</text>
+        <text x="330" y="232" font-size="10" fill="#5c6470">150k</text>
+        <text x="630" y="232" font-size="10" fill="#5c6470">300k+</text>
+        <text x="350" y="252" font-size="11" font-weight="700" fill="#1a1d24">上下文累计量 →</text>
+        <!-- 规则一 -->
+        <rect x="60" y="268" width="400" height="26" rx="7" fill="#e0531f"/>
+        <text x="260" y="285" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">规则一：环节 ①→④ 留在同一窗口（慢填，边界处才 compact）</text>
+        <!-- 规则二 -->
+        <g>
+          <rect x="500" y="268" width="52" height="26" rx="7" fill="#2456c8"/>
+          <rect x="560" y="268" width="52" height="26" rx="7" fill="#2456c8"/>
+          <rect x="620" y="268" width="52" height="26" rx="7" fill="#2456c8"/>
+          <text x="500" y="316" font-size="10.5" fill="#2456c8" font-weight="700">规则二：环节 ⑤ 每票冷启动 /clear，票自包含所以上下文可丢弃</text>
+          <text x="526" y="285" text-anchor="middle" font-size="9" fill="#fff">票1</text>
+          <text x="586" y="285" text-anchor="middle" font-size="9" fill="#fff">票2</text>
+          <text x="646" y="285" text-anchor="middle" font-size="9" fill="#fff">票3</text>
+        </g>
+        <text x="700" y="285" font-size="10.5" fill="#5c6470">→ 多会话沿"前沿"并行</text>
+        <!-- 阶段边界五选项 -->
+        <rect x="700" y="30" width="280" height="180" rx="12" fill="#fbf9f4" stroke="#ddd7cb"/>
+        <text x="840" y="54" text-anchor="middle" font-size="11.5" font-weight="800" fill="#1a1d24">阶段边界的五个选项</text>
+        <text x="716" y="80" font-size="10.5" fill="#1a1d24"><tspan font-weight="800">继续</tspan>（默认）：一手信息最贵，先排除其他</text>
+        <text x="716" y="104" font-size="10.5" fill="#1a1d24"><tspan font-weight="800">/clear</tspan>：当前内容对下一步毫无价值</text>
+        <text x="716" y="128" font-size="10.5" fill="#1a1d24"><tspan font-weight="800">/handoff</tspan>：换 harness/目录/同事，买可移植性</text>
+        <text x="716" y="152" font-size="10.5" fill="#1a1d24"><tspan font-weight="800">子智能体</tspan>：范围收紧的独立任务，要报告回来</text>
+        <text x="716" y="176" font-size="10.5" fill="#1a1d24"><tspan font-weight="800">/compact</tspan>：树底默认，不是第一反应用</text>
+        <text x="840" y="198" text-anchor="middle" font-size="9.5" fill="#5c6470">决策只发生在边界上；阶段中途只允许"继续"或拆子智能体</text>
+      </svg>
+      <div class="cap">为什么前半段不中断、后半段每票重置：不是风格偏好，是 smart zone 约束下的最优形状</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. 实战证据 ============ -->
+<section>
+  <div class="wrap">
+    <div class="kicker">06 · EVIDENCE FROM course-video-manager</div>
+    <h2>这套方法在真实项目里长什么样</h2>
+    <p class="sub">course-video-manager 是 Matt 用这套技能开发的真实应用（课程视频 authoring 与发布系统）。三个证据：词汇表、编排技能、可执行验证。</p>
+    <div class="grid3">
+      <div class="card">
+        <span class="lbl">证据一 · 共享语言真的物化了</span>
+        <p class="quote" style="margin-top:10px">BEFORE："课程章节里的课被'实化'时出问题"（20 个词）<br><br>AFTER："materialization cascade 出问题"（4 个词）</p>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:12px">GLOSSARY.md 653 行，每个术语带精确定义 + Avoid 禁词表（CourseVersion 禁用 Version、Revision）；docs/adr/ 下 50+ 份 ADR。每个术语都是一次拷问的产物。</p>
+      </div>
+      <div class="card">
+        <span class="lbl">证据二 · 编排薄、纪律厚被复刻</span>
+        <p style="font-size:12.5px;margin-top:10px">项目自己的 <span class="mono">.claude/skills/do-work</span> 就是 implement 的同款形状：Phase 1 探索计划 → Phase 2 实现（按 DB-TDD / FRONTEND-TDD 分流，正是"模型调用承载纪律"）→ Phase 3 反馈回路（typecheck → test 顺序执行，失败不许前进）→ Phase 4 提交。</p>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:10px">7 个项目级技能（verify-cvm、to-prd-project、optimize-loader）全部是"仓库自己的词汇"，不是通用模板。</p>
+      </div>
+      <div class="card">
+        <span class="lbl">证据三 · 反馈回路写成代码</span>
+        <p style="font-size:12.5px;margin-top:10px"><span class="mono">verify-cvm</span> 技能带 10 个可执行验证脚本（verify.sh / verify-db / verify-guard / verify-ledger / verify-clones...），把"系统确实工作"变成一条命令；tests/ 下有 effect-guards、complexity-guard、is-filming 等守卫测试，防止熵倒退。</p>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:10px">反馈回路不靠自觉，靠脚本和红测试常驻。这正是失败模式 #3 的工程化解法。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. 带走三件事 ============ -->
+<section>
+  <div class="wrap">
+    <div class="kicker">07 · TAKE AWAYS</div>
+    <h2>如果只带走三件事</h2>
+    <div class="grid3">
+      <div class="card takeaway"><div class="n">1</div><p style="font-size:14px"><b>编排薄、纪律厚。</b>用户调用技能只做路由串联，可复用方法论下沉为模型调用技能；用户调用永不让渡方向盘。</p></div>
+      <div class="card takeaway"><div class="n">2</div><p style="font-size:14px"><b>产物物化。</b>共识、语言、决策、任务全部落成文件（票、规格、GLOSSARY、ADR），跨会话不丢失，上下文因此可丢弃。</p></div>
+      <div class="card takeaway"><div class="n">3</div><p style="font-size:14px"><b>反馈回路优先。</b>测试先行、红绿循环、调试先造红命令，让智能体永远不在盲区里飞。反馈速率就是速度上限。</p></div>
+    </div>
+
+    <div class="card" style="margin-top:26px">
+      <span class="lbl">落地检查清单 · 首次使用按序勾</span>
+      <table style="margin-top:12px">
+        <tr><th style="width:180px">时机</th><th>动作</th></tr>
+        <tr><td><b>每仓库一次</b></td><td>装技能 → 跑 <span class="mono">/setup-matt-pocock-skills</span> → 确认追踪器、标签、文档布局约定生效</td></tr>
+        <tr><td><b>每个新想法</b></td><td>先 <span class="mono">/grill-with-docs</span> 到前沿为空 → 对话裁决不了就原型分支 → 同窗口 <span class="mono">/to-spec</span>（接缝先行）→ <span class="mono">/to-tickets</span> 批准粒度后才发布 → 每票 <span class="mono">/implement</span> 结束即 /clear → 提交前 <span class="mono">/code-review</span></td></tr>
+        <tr><td><b>日常</b></td><td>外部堆积走 <span class="mono">/triage</span>；疑难 bug 走 <span class="mono">/diagnosing-bugs</span>（先红命令后假设）；每隔几天 <span class="mono">/improve-codebase-architecture</span> 巡检</td></tr>
+        <tr><td><b>反模式自查</b></td><td>别让智能体拷问未完就动手；别分诊 to-tickets 的票；别在规格里写文件路径；别写同义反复测试；别从 wayfinder 直接跳实现；别把 GLOSSARY 当便签</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    蓝本：mattpocock/skills（"Skills For Real Engineers"，37 个技能 · 5 个分类桶）· 实战：mattpocock/course-video-manager · 本文基于 2026-11 仓库快照整理<br>
+    核心理念引自 The Pragmatic Programmer、Domain-Driven Design、A Philosophy of Software Design。少即是多：本页全部图示为手写 SVG，零依赖，单文件。
+  </div>
+</footer>
+
+</body>
+</html>
