@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="以 Anthropic 的 AI-Native SDLC 为参照，把「代码不再是瓶颈」落成一套可日常执行的技能集：瓶颈迁移、工件链、拷问对齐、示踪弹票图、红绿循环与双轴评审，附真实仓库证据、八条原则与 30 天落地清单。">
+<meta name="keywords" content="ai-native-sdlc, spec-driven-development, tracer-bullet, tdd, code-review, agent-workflow">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-03">
+<title>AI-Native SDLC 深度解析与落地指南 · Matt Pocock</title>
+<style>
+  :root{
+    --paper:#faf7f2;
+    --card:#ffffff;
+    --ink:#1c1917;
+    --ink-soft:#44403c;
+    --muted:#78716c;
+    --line:#e7e0d5;
+    --accent:#c2410c;
+    --accent-soft:#fbe9df;
+    --accent-ink:#9a3412;
+    --green:#3f6212;
+    --green-soft:#eef4e3;
+    --blue:#1d4ed8;
+    --blue-soft:#e6edfb;
+    --violet:#6d28d9;
+    --violet-soft:#efe9fb;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --serif:"Songti SC","Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Segoe UI",Roboto,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent);color:#fff}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px;display:grid;grid-template-columns:220px 1fr;gap:64px}
+  @media(max-width:960px){.wrap{grid-template-columns:1fr;gap:0}}
+
+  nav.toc{position:sticky;top:40px;align-self:start;padding:48px 0;font-size:13px}
+  nav.toc .toc-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
+  nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 14px;border-left:2px solid transparent;line-height:1.5}
+  nav.toc a:hover{color:var(--accent-ink)}
+  nav.toc a .n{font-family:var(--mono);font-size:11px;margin-right:8px;color:#a8a29e}
+  @media(max-width:960px){nav.toc{display:none}}
+
+  main{padding:0 0 96px;min-width:0}
+
+  /* ---------- hero ---------- */
+  header.hero{padding:96px 0 64px;border-bottom:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:22px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5vw,56px);line-height:1.2;letter-spacing:.01em}
+  h1 .en{display:block;font-family:var(--mono);font-size:13px;font-weight:400;letter-spacing:.3em;color:var(--muted);margin-top:16px;text-transform:uppercase}
+  .lede{max-width:640px;margin-top:28px;font-size:18px;color:var(--ink-soft)}
+  .lede strong{color:var(--accent-ink)}
+  .chips{margin-top:32px;display:flex;flex-wrap:wrap;gap:10px}
+  .chip{font-family:var(--mono);font-size:12px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink-soft)}
+  .chip b{color:var(--accent-ink);font-weight:600}
+
+  /* ---------- sections ---------- */
+  section{padding:72px 0 8px;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  .sec-head{display:flex;align-items:baseline;gap:18px;margin-bottom:12px}
+  .sec-num{font-family:var(--mono);font-size:14px;color:var(--accent);letter-spacing:.1em;flex:none}
+  h2{font-family:var(--serif);font-size:clamp(24px,3vw,32px);font-weight:700;line-height:1.3}
+  .sec-sub{color:var(--muted);font-size:15px;max-width:640px;margin-bottom:36px}
+
+  h3{font-family:var(--serif);font-size:19px;margin:40px 0 12px}
+  p{margin:14px 0;max-width:680px}
+  p.small, .small{font-size:13.5px;color:var(--muted)}
+  a{color:var(--accent-ink)}
+  code{font-family:var(--mono);font-size:.86em;background:#f1ece4;padding:2px 6px;border-radius:5px;color:var(--accent-ink)}
+  pre{background:#201d1a;color:#e7e2d9;border-radius:12px;padding:20px 24px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.7;margin:20px 0;max-width:760px}
+  pre code{background:none;padding:0;color:inherit}
+  em.vocab{font-style:normal;font-weight:600;color:var(--accent-ink)}
+
+  blockquote{border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin:28px 0;font-family:var(--serif);font-size:18px;color:var(--ink-soft);max-width:620px}
+  blockquote footer{font-family:var(--sans);font-size:13px;color:var(--muted);margin-top:8px}
+
+  /* ---------- cards & grids ---------- */
+  .grid{display:grid;gap:16px;margin:28px 0;max-width:900px}
+  .grid.c2{grid-template-columns:repeat(2,1fr)}
+  .grid.c3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:760px){.grid.c2,.grid.c3{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px}
+  .card h4{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600}
+  .card .big{font-family:var(--serif);font-size:20px;font-weight:700;margin-bottom:8px}
+  .card p{font-size:14px;color:var(--ink-soft);margin:8px 0}
+  .card ul{margin:8px 0 0 18px;font-size:14px;color:var(--ink-soft)}
+  .card ul li{margin:5px 0}
+  .card ul li code{font-size:.85em}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--card);border-radius:0 14px 14px 0;padding:20px 26px;margin:28px 0;max-width:760px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.blue{border-left-color:var(--blue)}
+  .callout h4{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;color:var(--muted)}
+  .callout p{font-size:14.5px;margin:6px 0}
+
+  /* ---------- figures ---------- */
+  figure{margin:36px 0;max-width:920px}
+  figure svg{width:100%;height:auto;display:block}
+  figcaption{font-size:13px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+  figcaption b{color:var(--ink-soft)}
+
+  /* ---------- table ---------- */
+  .tbl{overflow-x:auto;margin:28px 0;max-width:920px}
+  table{border-collapse:collapse;width:100%;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:14px 18px;background:#f3eee6;color:var(--muted);font-weight:600}
+  td{padding:14px 18px;border-top:1px solid var(--line);vertical-align:top;color:var(--ink-soft)}
+  td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+  td code{font-size:.84em}
+
+  /* ---------- flow list (numbered principles) ---------- */
+  ol.flow{list-style:none;counter-reset:step;margin:28px 0;max-width:760px}
+  ol.flow li{counter-increment:step;position:relative;padding:0 0 26px 58px;font-size:15px;color:var(--ink-soft)}
+  ol.flow li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;font-family:var(--mono);font-size:12px;color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);border-radius:8px;padding:3px 8px}
+  ol.flow li::after{content:"";position:absolute;left:19px;top:34px;bottom:4px;width:1px;background:var(--line)}
+  ol.flow li:last-child::after{display:none}
+  ol.flow li b{color:var(--ink);font-weight:600}
+
+  footer.colophon{padding:64px 0 80px;color:var(--muted);font-size:13.5px}
+  footer.colophon a{color:var(--accent-ink)}
+  .sig{font-family:var(--serif);font-size:22px;color:var(--ink);margin-top:16px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap" style="display:block">
+    <div class="kicker">Matt Pocock · AI Hero</div>
+    <h1>AI-Native SDLC 深度解析与落地指南
+      <span class="en">The Loop, The Skills, The Evidence</span>
+    </h1>
+    <p class="lede">Anthropic 的 playbook 说<strong>代码不再是瓶颈</strong>。我在自己的两个仓库里把这句话翻译成了日常实践：一套小而可组合的技能集 <code>mattpocock/skills</code>，和一个用它开发的真实项目 <code>course-video-manager</code>。这份指南不讲理论框架，只讲我怎么工作、为什么这样工作，以及哪些东西真的有效。</p>
+    <div class="chips">
+      <span class="chip">参考 <b>The AI-Native SDLC Playbook</b> · Anthropic, 2026.08</span>
+      <span class="chip">技能集 <b>mattpocock/skills</b> · 27 个技能</span>
+      <span class="chip">实践项目 <b>course-video-manager</b> · Turborepo 单仓</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <a href="#s1"><span class="n">01</span>瓶颈搬家了</a>
+    <a href="#s2"><span class="n">02</span>从流水线到环</a>
+    <a href="#s3"><span class="n">03</span>六阶段技能总图</a>
+    <a href="#s4"><span class="n">04</span>对齐:拷问原语</a>
+    <a href="#s5"><span class="n">05</span>设计即分解</a>
+    <a href="#s6"><span class="n">06</span>构建:红绿循环</a>
+    <a href="#s7"><span class="n">07</span>测试:自见反馈</a>
+    <a href="#s8"><span class="n">08</span>评审与门禁</a>
+    <a href="#s9"><span class="n">09</span>维护:闭环</a>
+    <a href="#s10"><span class="n">10</span>我的原则</a>
+    <a href="#s11"><span class="n">11</span>30 天落地</a>
+  </nav>
+
+  <main>
+
+  <!-- ================= 01 ================= -->
+  <section id="s1">
+    <div class="sec-head"><span class="sec-num">01</span><h2>瓶颈搬家了</h2></div>
+    <p class="sec-sub">Playbook 的核心判断，也是我这两年最深刻的体感。</p>
+
+    <p>传统 SDLC 的每一道闸门、每一次评审、每一个交接，都是为了一个前提设计的：<strong>写代码最贵</strong>。当代理把构建阶段压到几小时，这个前提塌了。瓶颈不会消失，它只会搬家：搬到构建的左边（计划、设计）和右边（评审、部署）。</p>
+    <p>我看到的失败模式与此完全同构：代理写得飞快，然后卡在我还没想清楚需求、卡在我没空评审、卡在 CI 红了没人看。<strong>加速代理而不改造流程，只是把等待换了个地方。</strong></p>
+
+    <figure>
+      <svg viewBox="0 0 920 300" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">
+        <text x="0" y="24" font-size="13" fill="#78716c" letter-spacing="2">传统 SDLC · 各阶段以人类速度推进</text>
+        <g>
+          <rect x="0"   y="44" width="150" height="34" rx="7" fill="#e7e0d5"/><text x="16" y="66" font-size="12" fill="#44403c">Plan 计划</text>
+          <rect x="160" y="44" width="150" height="34" rx="7" fill="#e7e0d5"/><text x="176" y="66" font-size="12" fill="#44403c">Design 设计</text>
+          <rect x="320" y="44" width="270" height="34" rx="7" fill="#d6cdbd"/><text x="336" y="66" font-size="12" fill="#44403c">Build 构建 · 数周到数月</text>
+          <rect x="600" y="44" width="150" height="34" rx="7" fill="#e7e0d5"/><text x="616" y="66" font-size="12" fill="#44403c">Test 测试</text>
+          <rect x="760" y="44" width="150" height="34" rx="7" fill="#e7e0d5"/><text x="770" y="66" font-size="12" fill="#44403c">Deploy 部署</text>
+        </g>
+        <text x="0" y="140" font-size="13" fill="#78716c" letter-spacing="2">AI-Native SDLC · 构建坍缩，两端不变</text>
+        <g>
+          <rect x="0"   y="160" width="240" height="34" rx="7" fill="#c2410c" opacity="0.16"/><rect x="0"   y="160" width="240" height="34" rx="7" fill="none" stroke="#c2410c" stroke-dasharray="4 4"/><text x="16" y="182" font-size="12" fill="#9a3412">Plan · 仍按人类速度 ← 新瓶颈</text>
+          <rect x="250" y="160" width="240" height="34" rx="7" fill="#c2410c" opacity="0.16"/><rect x="250" y="160" width="240" height="34" rx="7" fill="none" stroke="#c2410c" stroke-dasharray="4 4"/><text x="266" y="182" font-size="12" fill="#9a3412">Design · 仍按人类速度 ← 新瓶颈</text>
+          <rect x="500" y="160" width="90"  height="34" rx="7" fill="#c2410c"/><text x="514" y="182" font-size="12" fill="#ffffff">Build · 小时</text>
+          <rect x="600" y="160" width="150" height="34" rx="7" fill="#e7e0d5"/><text x="616" y="182" font-size="12" fill="#44403c">Test · 连续评估</text>
+          <rect x="760" y="160" width="150" height="34" rx="7" fill="#e7e0d5"/><text x="770" y="182" font-size="12" fill="#44403c">Deploy · 代理到门口</text>
+        </g>
+        <g font-size="12" fill="#44403c">
+          <text x="0" y="250">推论一：人类注意力应该集中在</text>
+          <text x="0" y="272" font-weight="bold" fill="#9a3412">闸门（gate）上：评审代理标记的东西，而不是从零启动每个阶段。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 1 · 瓶颈的迁移。</b>重绘自 Anthropic playbook 的核心论点：人类速度的阶段保持原长，构建坍缩为小时级。改造流程时优先改造两端。</figcaption>
+    </figure>
+
+    <blockquote>
+      没有⼈确切知道⾃⼰想要什么。
+      <footer>David Thomas &amp; Andrew Hunt,《The Pragmatic Programmer》。我把这句话写进了 skills 仓库的 README，它是我所有技能的出发点。</footer>
+    </blockquote>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section id="s2">
+    <div class="sec-head"><span class="sec-num">02</span><h2>从流水线到环：工件链即审计轨迹</h2></div>
+    <p class="sec-sub">Playbook 里最重要的一个概念：每个阶段结束时提交一个工件，下一个阶段从读它开始。链条本身就是审计轨迹。</p>
+
+    <p>Playbook 的名字是 <code>intent.md → spec.md → plan.md → diff + tests → PR review → incident record</code>。我不使用完全相同的文件名，但我的链条是同构的，而且我在每一环上都挂了一个具体的技能：</p>
+
+    <figure>
+      <svg viewBox="0 0 920 340" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a8a29e"/></marker>
+          <marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c2410c"/></marker>
+        </defs>
+        <!-- loop-back arc -->
+        <path d="M 830 268 C 830 330, 90 330, 90 268" fill="none" stroke="#c2410c" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#arrA)"/>
+        <text x="460" y="322" font-size="12" fill="#9a3412" text-anchor="middle">维护阶段的学习写回 GLOSSARY / ADR / steering files，成为下一轮计划的上下文</text>
+        <!-- chain -->
+        <g font-size="12">
+          <g>
+            <rect x="20" y="120" width="140" height="66" rx="10" fill="#ffffff" stroke="#e7e0d5"/>
+            <text x="36" y="146" font-weight="bold" fill="#1c1917">① 对话与拷问</text>
+            <text x="36" y="166" fill="#78716c">grill-me / grill-with-docs</text>
+          </g>
+          <line x1="160" y1="153" x2="188" y2="153" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arr)"/>
+          <g>
+            <rect x="192" y="120" width="150" height="66" rx="10" fill="#ffffff" stroke="#e7e0d5"/>
+            <text x="208" y="146" font-weight="bold" fill="#1c1917">② 共享语言</text>
+            <text x="208" y="166" fill="#78716c">GLOSSARY.md + ADR</text>
+          </g>
+          <line x1="342" y1="153" x2="370" y2="153" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arr)"/>
+          <g>
+            <rect x="374" y="120" width="120" height="66" rx="10" fill="#ffffff" stroke="#e7e0d5"/>
+            <text x="390" y="146" font-weight="bold" fill="#1c1917">③ 规格</text>
+            <text x="390" y="166" fill="#78716c">to-spec</text>
+          </g>
+          <line x1="494" y1="153" x2="522" y2="153" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arr)"/>
+          <g>
+            <rect x="526" y="120" width="130" height="66" rx="10" fill="#ffffff" stroke="#e7e0d5"/>
+            <text x="542" y="146" font-weight="bold" fill="#1c1917">④ 票图</text>
+            <text x="542" y="166" fill="#78716c">to-tickets · 依赖边</text>
+          </g>
+          <line x1="656" y1="153" x2="684" y2="153" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arr)"/>
+          <g>
+            <rect x="688" y="120" width="110" height="66" rx="10" fill="#c2410c"/>
+            <text x="704" y="146" font-weight="bold" fill="#ffffff">⑤ 构建</text>
+            <text x="704" y="166" fill="#fbd9c8">implement + tdd</text>
+          </g>
+          <line x1="798" y1="153" x2="826" y2="153" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arr)"/>
+          <g>
+            <rect x="830" y="120" width="72" height="66" rx="10" fill="#ffffff" stroke="#e7e0d5"/>
+            <text x="842" y="146" font-weight="bold" fill="#1c1917">⑥ 评审</text>
+            <text x="842" y="166" fill="#78716c">code-review</text>
+          </g>
+        </g>
+        <text x="20" y="80" font-size="13" fill="#78716c" letter-spacing="2">我的工件链（与 playbook 同构，名字不同）</text>
+        <text x="20" y="100" font-size="12" fill="#44403c">每一环都由一个技能产出、提交、被下一环读取。⑥ 评审通过后以 PR 落地，retro 的产出回流到 ①。</text>
+      </svg>
+      <figcaption><b>图 2 · 工件链。</b>Playbook 的 intent→spec→plan→diff→review→incident，在我的仓库里对应为 对话→GLOSSARY/ADR→spec→票图→分支diff→双轴评审。形状相同，审计轨迹相同。</figcaption>
+    </figure>
+
+    <div class="grid c3">
+      <div class="card">
+        <h4>工件是交接协议</h4>
+        <p>代理会话的上下文会满、会断。工件是唯一可靠的跨会话记忆。<code>handoff</code> 技能专门负责把一次对话压缩成下一个代理能接着干的文档。</p>
+      </div>
+      <div class="card">
+        <h4>工件在 git 里</h4>
+        <p>每个工件带作者和时间戳，评审记录、修订历史天然可追溯。我在 <code>course-video-manager</code> 里存了 近 60 份 ADR，每份记录一个曾经难以解释的决定。</p>
+      </div>
+      <div class="card">
+        <h4>人类在闸门处</h4>
+        <p>人类不对每个阶段亲力亲为，而是在工件被接受的那一刻做决定：接受拷问的结果、接受规格、批准票图、合并 PR。判断留给人类，执行交给代理。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section id="s3">
+    <div class="sec-head"><span class="sec-num">03</span><h2>六阶段 × 我的技能：一张总图</h2></div>
+    <p class="sec-sub">Playbook 把实践分成六个非线性阶段。我的技能集不是按阶段组织的，它按「谁来调用」组织。把两张地图叠在一起，就得到我的完整工作方式。</p>
+
+    <figure>
+      <svg viewBox="0 0 920 560" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">
+        <defs><marker id="arr2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c2410c"/></marker></defs>
+        <text x="0" y="20" font-size="13" fill="#78716c" letter-spacing="2">代理循环 · 六阶段（外圈）与技能映射（内圈）</text>
+        <!-- center -->
+        <circle cx="460" cy="290" r="86" fill="#1c1917"/>
+        <text x="460" y="278" font-size="13" fill="#faf7f2" text-anchor="middle">共享语言</text>
+        <text x="460" y="298" font-size="13" fill="#faf7f2" text-anchor="middle">GLOSSARY + ADR</text>
+        <text x="460" y="318" font-size="11" fill="#a8a29e" text-anchor="middle">一切的上下文锚点</text>
+        <!-- six stage nodes around -->
+        <g font-size="12">
+          <g><rect x="370" y="60" width="180" height="58" rx="12" fill="#ffffff" stroke="#c2410c"/><text x="460" y="85" text-anchor="middle" font-weight="bold" fill="#9a3412">PLAN · 计划</text><text x="460" y="104" text-anchor="middle" fill="#78716c">grill-me · grill-with-docs</text></g>
+          <g><rect x="660" y="150" width="200" height="58" rx="12" fill="#ffffff" stroke="#e7e0d5"/><text x="760" y="175" text-anchor="middle" font-weight="bold" fill="#1c1917">DESIGN · 设计</text><text x="760" y="194" text-anchor="middle" fill="#78716c">to-spec · domain-modeling</text></g>
+          <g><rect x="660" y="380" width="200" height="58" rx="12" fill="#ffffff" stroke="#e7e0d5"/><text x="760" y="405" text-anchor="middle" font-weight="bold" fill="#1c1917">BUILD · 构建</text><text x="760" y="424" text-anchor="middle" fill="#78716c">implement · tdd · prototype · research</text></g>
+          <g><rect x="370" y="462" width="180" height="58" rx="12" fill="#ffffff" stroke="#e7e0d5"/><text x="460" y="487" text-anchor="middle" font-weight="bold" fill="#1c1917">TEST · 测试</text><text x="460" y="506" text-anchor="middle" fill="#78716c">diagnosing-bugs · 反馈环</text></g>
+          <g><rect x="60" y="380" width="200" height="58" rx="12" fill="#ffffff" stroke="#e7e0d5"/><text x="160" y="405" text-anchor="middle" font-weight="bold" fill="#1c1917">DEPLOY · 部署</text><text x="160" y="424" text-anchor="middle" fill="#78716c">code-review · pr · 浏览器验证</text></g>
+          <g><rect x="60" y="150" width="200" height="58" rx="12" fill="#ffffff" stroke="#e7e0d5"/><text x="160" y="175" text-anchor="middle" font-weight="bold" fill="#1c1917">MAINTAIN · 维护</text><text x="160" y="194" text-anchor="middle" fill="#78716c">retro · triage · improve-architecture</text></g>
+        </g>
+        <!-- arrows clockwise -->
+        <path d="M 552 96 C 620 100, 660 120, 690 148" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr2)"/>
+        <path d="M 760 212 C 760 280, 760 320, 760 378" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr2)"/>
+        <path d="M 690 442 C 620 462, 570 470, 554 478" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr2)"/>
+        <path d="M 368 496 C 300 492, 270 470, 262 444" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr2)"/>
+        <path d="M 158 378 C 158 310, 158 270, 158 212" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr2)"/>
+        <path d="M 262 178 C 300 130, 330 112, 368 98" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr2)"/>
+        <!-- cross-stage skills -->
+        <g font-size="11.5" fill="#78716c">
+          <text x="460" y="556" text-anchor="middle">横切:ask-matt(路由)· wayfinder(大地图)· to-tickets(分解)· grilling(拷问原语)· writing-for-agents(写作规范)· handoff(交接)· wait-what(消歧)</text>
+        </g>
+      </svg>
+      <figcaption><b>图 3 · 技能总图。</b>外圈是 playbook 的六阶段，内圈是我的技能落点。中心的共享语言是全部阶段的上下文锚点：tdd 用它命名测试，to-tickets 用它写票，code-review 用它评审。</figcaption>
+    </figure>
+
+    <div class="callout">
+      <h4>关键设计：谁调用谁</h4>
+      <p>我的技能沿一条轴切分：<strong>用户调用（user-invoked）</strong>的只做编排，比如 <code>/grill-with-docs</code>、<code>/implement</code>；<strong>模型调用（model-invoked）</strong>的装的是可复用的纪律，比如 <code>tdd</code>、<code>code-review</code>、<code>grilling</code>。编排技能可以唤起纪律技能，但两个编排技能永不相调。这个约束让每条流程都保持浅而清晰，技能之间可以自由组合而不互相纠缠。</p>
+    </div>
+  </section>
+
+  <!-- ================= 04 ================= -->
+  <section id="s4">
+    <div class="sec-head"><span class="sec-num">04</span><h2>计划与设计：拷问是最小对齐原语</h2></div>
+    <p class="sec-sub">Playbook 的 Plan 阶段是「用代理 brainstorm 出 intent.md」。我做的比它更狠一点：我让代理拷问我。</p>
+
+    <p>最常见的失败模式是对齐失败。你以为代理知道你要什么，直到它把东西做出来，你才发现它完全理解偏了。修复办法不是写更长的提示词，而是一次<strong>拷问（grilling）</strong>：<code>grilling</code> 技能让代理对你进行 relentless 的访谈，直到设计树的每个分支都有答案。它背后没有魔法，就是把「分析师会问的问题」变成纪律：范围、用户、约束、成功长什么样。</p>
+
+    <h3>grill-with-docs：拷问的同时把语言留下来</h3>
+    <p>我的招牌技能 <code>grill-with-docs</code> 在拷问之上加了两样东西。第一是<strong>共享语言</strong>：访谈中敲定的术语当场写进 <code>GLOSSARY.md</code>，每条带「避免使用」的反义词表。第二是<strong>ADR</strong>：难以口头解释的决定当场落成架构决策记录。</p>
+
+    <figure>
+      <svg viewBox="0 0 920 260" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">
+        <text x="0" y="22" font-size="13" fill="#78716c" letter-spacing="2"> course-video-manager 的真实收益 · 同一句话的两种说法</text>
+        <g>
+          <rect x="0" y="44" width="440" height="84" rx="12" fill="#f1ece4"/>
+          <text x="20" y="74" font-size="12" fill="#78716c">BEFORE · 共享语言之前</text>
+          <text x="20" y="100" font-size="13.5" fill="#44403c">"There's a problem when a lesson inside a section</text>
+          <text x="20" y="120" font-size="13.5" fill="#44403c">of a course is made 'real' (given a spot in the fs)"</text>
+          <text x="20" y="146" font-size="11.5" fill="#a8a29e">28 词 · 每个会话重新解释一遍</text>
+        </g>
+        <g>
+          <rect x="480" y="44" width="440" height="84" rx="12" fill="#fbe9df" stroke="#c2410c"/>
+          <text x="500" y="74" font-size="12" fill="#9a3412">AFTER · 有了 GLOSSARY 之后</text>
+          <text x="500" y="100" font-size="13.5" fill="#1c1917" font-weight="bold">"There's a problem with the materialization cascade"</text>
+          <text x="500" y="146" font-size="11.5" fill="#9a3412">6 词 · 变量、函数、文件同名 · 代理思考更省 token</text>
+        </g>
+        <g font-size="12.5" fill="#44403c">
+          <text x="0" y="186">这个项目 glossary 里的术语不是装饰:Submit / Promote / Discard 描述版本生命周期,Lineage 解决跨版本身份,</text>
+          <text x="0" y="208">Draft Version 明确「全场唯一可写」。每个词都有反义词表(Avoid: Repo, Freeze, Dirty),代理想偷懒都没有借口。</text>
+          <text x="0" y="236" fill="#9a3412" font-weight="bold">效果:一次写进 GLOSSARY,此后每个会话、每个子代理、每段代码都自动说同一种话。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 4 · 一图胜千言的共享语言。</b>例子来自 skills 仓库 README 引用的 <code>course-video-manager</code> GLOSSARY。Eric Evans 的 ubiquitous language，在 AI 时代多了一层含义：它是压缩代理上下文开销的编码。</figcaption>
+    </figure>
+
+    <div class="grid c2">
+      <div class="card">
+        <h4>与 playbook 的对照</h4>
+        <p>playbook 的 Plan 是「发起人和 Claude brainstorm，产出 intent.md」。我的 <code>to-spec</code> 对应它之后那步：不做访谈，直接把已讨论的对话综合成规格并发布到 issue tracker。</p>
+        <p>差别在默认方向：playbook 让代理问发起人，我用 <code>grill-me</code> / <code>grill-with-docs</code> 把访谈做成强制入口。<strong>先对齐，后成文。</strong></p>
+      </div>
+      <div class="card">
+        <h4>为什么拷问值得每次都做</h4>
+        <ul>
+          <li>你想不清楚的分支，会在构建阶段以最贵的方式暴露</li>
+          <li>被代理追问逼出来的答案，比你自己写下来的更完整</li>
+          <li>访谈记录直接成为规格的第一稿，零转写损耗</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 05 ================= -->
+  <section id="s5">
+    <div class="sec-head"><span class="sec-num">05</span><h2>设计即分解：示踪弹票与依赖图</h2></div>
+    <p class="sec-sub">规格被接受之后，我不让代理直接开工。先切成票，每张票声明自己被谁阻塞。</p>
+
+    <p><code>to-tickets</code> 把规格拆成<strong>示踪弹（tracer bullet）式的垂直切片</strong>：每张票切一条窄但完整的路径，贯穿 schema、API、UI、测试每一层；完成即可独立验证；大小恰好装进一个新鲜上下文窗口。每张票显式声明它的<strong>阻塞边</strong>，票集天然构成一张有向无环图。</p>
+
+    <figure>
+      <svg viewBox="0 0 920 300" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">
+        <defs><marker id="arr3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#78716c"/></marker></defs>
+        <text x="0" y="22" font-size="13" fill="#78716c" letter-spacing="2">示踪弹票图 · 例:给课程编辑器加「Learning Goal」功能</text>
+        <g font-size="12">
+          <g><rect x="40" y="60" width="200" height="56" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="58" y="84" font-weight="bold" fill="#1c1917">T1 · schema + 领域服务</text><text x="58" y="103" fill="#78716c">core 包:表、类型、db 操作</text></g>
+          <g><rect x="300" y="60" width="200" height="56" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="318" y="84" font-weight="bold" fill="#1c1917">T2 · CLI 全链路</text><text x="318" y="103" fill="#78716c">cvm 命令可增删改查 → 可演示</text></g>
+          <g><rect x="560" y="60" width="200" height="56" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="578" y="84" font-weight="bold" fill="#1c1917">T3 · 编辑器 UI 切片</text><text x="578" y="103" fill="#78716c">列表 + 创建表单,接真数据</text></g>
+          <g><rect x="300" y="190" width="200" height="56" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="318" y="214" font-weight="bold" fill="#1c1917">T4 · Beat 关联 + 警告</text><text x="318" y="233" fill="#78716c">Learning Goal Warning 亮灯</text></g>
+          <g><rect x="560" y="190" width="200" height="56" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="578" y="214" font-weight="bold" fill="#1c1917">T5 · 归档级联</text><text x="578" y="233" fill="#78716c">Archive 解除 Beat 链接</text></g>
+        </g>
+        <g stroke="#78716c" stroke-width="1.5" fill="none">
+          <line x1="240" y1="88" x2="298" y2="88" marker-end="url(#arr3)"/>
+          <line x1="500" y1="88" x2="558" y2="88" marker-end="url(#arr3)"/>
+          <line x1="400" y1="116" x2="400" y2="188" marker-end="url(#arr3)"/>
+          <line x1="500" y1="218" x2="558" y2="218" marker-end="url(#arr3)"/>
+          <line x1="660" y1="116" x2="660" y2="188" marker-end="url(#arr3)"/>
+        </g>
+        <text x="40" y="288" font-size="12" fill="#44403c">无阻塞边的票 (T1) 立即开工;并发上限不是票的数量,是你评审的能力。跨层宽重构例外,走 expand-contract 序列。</text>
+      </svg>
+      <figcaption><b>图 5 · 票图。</b>T2、T3 是示踪弹:各自完成即可演示。与 playbook 的 plan.md 不同，票图显式编码了<strong>并发结构</strong>，这是 implement-spec 做多代理并排的输入。</figcaption>
+    </figure>
+
+    <div class="callout blue">
+      <h4>Playbook 的 plan mode，我的 to-tickets</h4>
+      <p>playbook 让工程师在 plan mode 里和 Claude 迭代出 <code>plan.md</code>（列文件、顺序、风险、证明方式）。我得到的东西等价但更进一步：每张票自带依赖边，于是「计划」不仅是给人看的文档，还是给调度器看的图。<code>wayfinder</code> 把同样的思路放大到「一个会话装不下的大块工作」：先建一张决策票地图，逐张消解，直到通往目的地的路清晰可见。</p>
+    </div>
+  </section>
+
+  <!-- ================= 06 ================= -->
+  <section id="s6">
+    <div class="sec-head"><span class="sec-num">06</span><h2>构建：红绿循环与新鲜上下文</h2></div>
+    <p class="sec-sub">对齐和分解都完成之后，构建反而最简单。但前提是你给代理装好了两样东西：反馈环和纪律。</p>
+
+    <h3>TDD：代理时代的反馈放大器</h3>
+    <p>没有反馈，代理就是盲飞。<code>tdd</code> 技能把红-绿-重构循环变成可注入任何项目的纪律，而且它比人类 TDD 更严格地执行两条规则：<strong>先写失败的测试</strong>，<strong>一次只切一片</strong>。测试只写在<strong>预先确认的接缝（seam）</strong>上：公共接口，而非内部实现。</p>
+
+    <div class="grid c3">
+      <div class="card">
+        <h4>反模式 · 同义反复</h4>
+        <p>断言用代码同样的方式重算期望值，测试凭构造通过，永远不可能与代码意见相左。期望值必须来自独立的真值：规格里的字面量、演算过的例子。</p>
+      </div>
+      <div class="card">
+        <h4>反模式 · 实现耦合</h4>
+        <p>mock 内部协作者、测私有方法、绕过接口直查数据库。破绽：行为没变但重构时测试碎了。好测试读起来像规格，且能活过重构。</p>
+      </div>
+      <div class="card">
+        <h4>反模式 · 水平切片</h4>
+        <p>先写完全部测试再写完全部实现。批量测试验证的是想象中的行为，对真实变化麻木。替代：垂直切片，一个测试配一个实现，循环往复。</p>
+      </div>
+    </div>
+
+    <h3>implement 与 implement-spec：编排的艺术</h3>
+    <ol class="flow">
+      <li><b>单线工作：</b><code>implement</code> 读票，在约定接缝上唤起 <code>tdd</code>，跑类型检查，收尾时唤起 <code>code-review</code>，然后提交。</li>
+      <li><b>并行工作：</b><code>implement-spec</code> 把票图当成任务图，在<strong>就绪前沿（ready frontier）</strong>上同时跑多个实现者子代理，最后统一 code-review。</li>
+      <li><b>每个子代理都从冷上下文启动，这是特性不是妥协。</b>子代理的意义就是逃离父会话的假设污染。我在 AGENTS.md 里明文要求派发子代理时必须开新鲜上下文，因为某些 harness 默认 fork 父对话，而 fork 恰恰继承了要逃离的东西。</li>
+      <li><b>并发的真正上限：</b>不是能开多少会话，而是你能评审多少。playbook 说 two or three 是合理起点，我的答案一样：加会话的速度以评审跟得上为限。</li>
+    </ol>
+
+    <blockquote>
+      永远小步前进。反馈的频率就是你的速度上限。永远不要接手太大的任务。
+      <footer>《The Pragmatic Programmer》。代理把「写代码」变便宜之后，这句话没有失效，反而更尖锐：瓶颈换成了反馈的质量。</footer>
+    </blockquote>
+  </section>
+
+  <!-- ================= 07 ================= -->
+  <section id="s7">
+    <div class="sec-head"><span class="sec-num">07</span><h2>测试：让代理亲眼看见结果</h2></div>
+    <p class="sec-sub">Playbook 说「给 Claude 一个反馈环」。在 course-video-manager 里，我把这句话推到了它逻辑的终点。</p>
+
+    <p>规则很朴素：<strong>任何命令序列 + 领域知识才能完成的验证，都要包装成一条命令</strong>。<code>pnpm typecheck</code>、<code>pnpm test</code>、<code>pnpm lint:boundaries</code>，从根目录一键可达，健康输出写进 CLAUDE.md。UI 工作再进一步：必须有浏览器。</p>
+
+    <div class="callout green">
+      <h4>实践证据 · verify-cvm 与写账本（Write Ledger）</h4>
+      <p><code>course-video-manager</code> 的 CLAUDE.md 里有一条硬规矩:<strong>「任何在 UI 有可见效果的改动，开 PR 之前必须在浏览器里用 verify-cvm 验证。」</strong>测试全绿、check 全绿都不能替代它。</p>
+      <p>verify-cvm 是一个项目级技能：它把应用指向<strong>每轮运行单独克隆的数据</strong>（允许写，永不碰生产），代理由它驱动浏览器，最后留下一份<strong>写账本</strong>：我点了什么、看见了什么、改了哪些数据。PR 描述里附上截图或证据路径。无 UI 效果的改动也要写一行 <code>No UI change</code> 说明，不许省略。</p>
+    </div>
+
+    <h3>保护反馈环本身</h3>
+    <p>代理修代码时绝不能 weaken 检查它的东西。我的做法与 playbook 的 hook 建议同效但更朴素：<strong>修 bug 时不许改测试</strong>，测试在修复之前存在且代理无权重写，修复通过才是 bug 消失的证据。<code>diagnosing-bugs</code> 技能把整条调试路径分阶段设卡：先造一个对这只 bug 变红的反馈环，再最小化、假设、插桩、修复、回归测试，一步不跨阶段。</p>
+
+    <figure>
+      <svg viewBox="0 0 920 200" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">
+        <defs><marker id="arr4" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#c2410c"/></marker></defs>
+        <text x="0" y="22" font-size="13" fill="#78716c" letter-spacing="2">反馈环的层次 · 越靠右越接近「用户使用软件」</text>
+        <g font-size="12">
+          <rect x="0"   y="50" width="170" height="60" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="18" y="76" font-weight="bold" fill="#1c1917">类型检查</text><text x="18" y="96" fill="#78716c">秒级 · 每次编辑</text>
+          <rect x="190" y="50" width="170" height="60" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="208" y="76" font-weight="bold" fill="#1c1917">单元 / 集成测试</text><text x="208" y="96" fill="#78716c">红绿循环 · 接缝处</text>
+          <rect x="380" y="50" width="170" height="60" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="398" y="76" font-weight="bold" fill="#1c1917">全量 check</text><text x="398" y="96" fill="#78716c">提交前 · 一次通过</text>
+          <rect x="570" y="50" width="170" height="60" rx="10" fill="#fbe9df" stroke="#c2410c"/><text x="588" y="76" font-weight="bold" fill="#9a3412">浏览器验证 + 写账本</text><text x="588" y="96" fill="#9a3412">UI 改动 · 开 PR 前必须</text>
+          <rect x="760" y="50" width="150" height="60" rx="10" fill="#ffffff" stroke="#e7e0d5"/><text x="778" y="76" font-weight="bold" fill="#1c1917">真用户</text><text x="778" y="96" fill="#78716c">你再也听不到抱怨</text>
+        </g>
+        <line x1="171" y1="80" x2="188" y2="80" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr4)"/>
+        <line x1="361" y1="80" x2="378" y2="80" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr4)"/>
+        <line x1="551" y1="80" x2="568" y2="80" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr4)"/>
+        <line x1="741" y1="80" x2="758" y2="80" stroke="#c2410c" stroke-width="1.6" marker-end="url(#arr4)"/>
+        <text x="0" y="150" font-size="12" fill="#44403c">原则:信号到达得越晚，检查它的人就越成为瓶颈。每一层都内建代理自检，到达人类手里的东西已经通过全部检查。</text>
+        <text x="0" y="176" font-size="12" fill="#78716c">等价于 playbook 的「first-pass CI success rate」领先指标：代理写的改动一次过 CI 的比例应该持续走高。</text>
+      </svg>
+      <figcaption><b>图 6 · 五层反馈环。</b>course-video-manager 的实际配置。playbook 的 Stage 4 讲同一回事：session 在被人看到之前先自检并自我修正。</figcaption>
+    </figure>
+  </section>
+
+  <!-- ================= 08 ================= -->
+  <section id="s8">
+    <div class="sec-head"><span class="sec-num">08</span><h2>评审与门禁：建议与强制的分层</h2></div>
+    <p class="sec-sub">这里是我和 playbook 分歧最值得说的地方。</p>
+
+    <p>playbook 把控制分两层：<strong>技能是 advisory control</strong>（让代理在写代码时应用策略），<strong>hook 是 deterministic layer</strong>（每次动作都执行，可 allow/ask/block）。这个分层是对的。但我的落地更轻：我没有重度使用 hook，我的确定性层由三样东西构成：<strong>不可篡改的测试、verify-cvm 的浏览器证据、分支保护</strong>。这是诚实的取舍：hook 适合受监管行业，我的项目用更少的机械换来同等的关键约束。</p>
+
+    <h3>code-review：双轴评审，两个互不相见的评审员</h3>
+    <p><code>code-review</code> 对固定基点以来的 diff 做两轴评审，并且<strong>用两个并行的子代理各管一轴</strong>，互相不污染：</p>
+
+    <div class="grid c2">
+      <div class="card">
+        <h4>轴一 · Standards</h4>
+        <p>仓库的编码标准（course-video-manager 里有 <code>CODING_STANDARDS.md</code>、<code>EFFECT_STANDARDS.md</code>、<code>TESTING_STANDARDS.md</code>）加上 Fowler 坏味道基线。回答：代码是不是以这个仓库的方式写的。</p>
+      </div>
+      <div class="card">
+        <h4>轴二 · Spec</h4>
+        <p>diff 是否忠实实现了来源工单或规格。回答：做的是不是被批准的那件事。这正是 playbook 里「review 对照 spec.md 和 plan.md」的合规轴。</p>
+      </div>
+    </div>
+
+    <p>评审结果进 <code>pr</code> 技能的固定形态：<strong>让改动清晰的最小可视化摘要 → 前后对照的证据 → 合并危险判断</strong>（单行道还是双行道，爆炸半径多大）。人类评审者拿到 PR 时，机械证据已经附在上面，注意力可以全部留给意图与风险。这就是 playbook 说的「human attention moves up a level」。</p>
+
+    <div class="callout">
+      <h4>门禁处的人性化</h4>
+      <p>playbook 建议把「需要人类批准」的 hook 放在部署阶段，因为构建期的批准弹窗会把人重新塞回所有并行会话的关键路径。我的 <code>wizard</code> 技能是同一件事的正面版本：当人真的必须在场时（配基础设施、设凭证、走第三方后台），代理生成一个交互式 bash 向导，把人该做的步骤变成一条可以跟着走的路。</p>
+    </div>
+  </section>
+
+  <!-- ================= 09 ================= -->
+  <section id="s9">
+    <div class="sec-head"><span class="sec-num">09</span><h2>维护：闭环与自主学习</h2></div>
+    <p class="sec-sub">Playbook 的最后一章是「闭环」：触发器在没有人的路径上唤起代理，诊断结果作为 intent.md 重新进入流水线。我有一套野路子的原型。</p>
+
+    <h3>retro：每次会话结束后的环境自检</h3>
+    <p><code>retro</code> 是我在会话末尾跑的最后一个技能：让代理回顾刚才的工作，对<strong>它自己的工作环境</strong>提出改进建议，按严重度排序。导航不顺？检查命令缺了？steering file 里少了规矩？这些改进写回 CLAUDE.md、GLOSSARY、测试设施。错误犯第二次，纠正就进 steering file。这条规则与 playbook 的 CLAUDE.md 建议逐字同构。</p>
+
+    <h3>ralph.sh：我的自治闭环实验</h3>
+    <p>course-video-manager 的 <code>plans/ralph.sh</code> 是我在 playbook 发布前就写下的自治循环原型，结构和 Stage 6 惊人地一致：</p>
+
+    <pre><code>docker sandbox run claude -p "@plans/task.md @progress.txt
+1. Find the highest-priority feature and work only on that feature
+2. Check pnpm typecheck and pnpm test
+3. Update the PRD with the work done
+4. Append progress to progress.txt (a note for the next person)
+5. git commit. ONLY WORK ON A SINGLE FEATURE.
+If the PRD is complete, output &lt;promise&gt;COMPLETE&lt;/promise&gt;"</code></pre>
+
+    <ol class="flow">
+      <li><b>确定性触发层：</b>一个 bash for 循环，与 playbook 的 detection script 同角色。检测保持确定性，不掺模型。</li>
+      <li><b>沙箱执行：</b>整轮跑在 docker sandbox 里，与 playbook 的 sandbox + scoped credentials 要求一致。</li>
+      <li><b>跨迭代记忆：</b><code>progress.txt</code> 是给「下一个接手的人」的留言板，等价于工件链，只不过粒度是一轮迭代。</li>
+      <li><b>自检门槛：</b>typecheck + test 每轮必过，等价于 confidence gate。</li>
+      <li><b>完成信号：</b><code>&lt;promise&gt;COMPLETE&lt;/promise&gt;</code> 让循环自己停。完成时给我发一条通知。</li>
+    </ol>
+
+    <p>这是「loop runs itself」的最小可行形态。playbook 用监控指标 breach 作为触发，我用一张 PRD 作为任务清单；playbook 的代理把诊断写成 intent.md 进评审闸门，ralph 的产出直接是带绿色 check 的提交。成熟度不同，骨架相同。</p>
+
+    <h3>对抗熵增</h3>
+    <p>代理加速编码，也加速软件熵。<code>improve-codebase-architecture</code> 定期扫描仓库里的「加深机会」（deep module：大行为量藏在小接口后），以视觉化 HTML 报告呈现，然后我挑一个，grill 透它。Kent Beck 说每天都要投资系统设计，这个技能是我给这句话做的闹钟。course-video-manager 的边界 lint（<code>pnpm lint:boundaries</code> 强制 core 包无文件系统、无子进程、无 git 耦合）是同一原则的结构化表达：复杂度想渗入，CI 先说不。</p>
+  </section>
+
+  <!-- ================= 10 ================= -->
+  <section id="s10">
+    <div class="sec-head"><span class="sec-num">10</span><h2>我的原则</h2></div>
+    <p class="sec-sub">八条。每条背后都有一次具体的失败。</p>
+
+    <div class="grid c2">
+      <div class="card"><h4>01 · 技能要小，流程不归它管</h4><p>GSD、BMAD、Spec-Kit 试图拥有整个流程，代价是你失去控制，流程本身的 bug 无解。我的技能小、可改、可组合，适配任何模型。这是我对 playbook「plays 是模块化的」最激进的诠释。</p></div>
+      <div class="card"><h4>02 · 先对齐，后成文</h4><p>拷问是每次改动前的强制入口。没有 grill 过的规格，不许进 to-tickets。</p></div>
+      <div class="card"><h4>03 · 语言就是架构</h4><p>GLOSSARY 不是文档，是代码的命名来源、测试的词汇表、评审的度量衡。它的回报是每次会话复利。</p></div>
+      <div class="card"><h4>04 · 新鲜上下文是特性</h4><p>子代理从冷启动开始，不是为了省 token，是为了逃离父会话的假设。fork 继承父上下文，恰恰杀死了子代理存在的意义。</p></div>
+      <div class="card"><h4>05 · 测试在接缝上，期望来自独立真值</h4><p>同义反复式测试比没有测试更糟，它给你虚假的绿色。</p></div>
+      <div class="card"><h4>06 · 建议与强制分层</h4><p>技能管「应该」，测试、证据、分支保护管「必须」。别把 advisory 当 deterministic，也别为每条规矩上 hook。</p></div>
+      <div class="card"><h4>07 · 评审能力是并发上限</h4><p>开第四个会话之前，先问自己的评审跟不跟得上。代理放大产出，也放大评审债务。</p></div>
+      <div class="card"><h4>08 · 人类的判断留在循环之上</h4><p>playbook 的收尾句，也是我的：循环不停地转，人类的判断悬于其上。闸门处做决定的人，永远是人。</p></div>
+    </div>
+  </section>
+
+  <!-- ================= 11 ================= -->
+  <section id="s11">
+    <div class="sec-head"><span class="sec-num">11</span><h2>30 天落地清单</h2></div>
+    <p class="sec-sub">不用一次全做。从任何一块「黏土」开始：不需要任何前置条件的那个。</p>
+
+    <div class="tbl">
+      <table>
+        <thead><tr><th>周</th><th>动作</th><th>对应 playbook 阶段</th><th>领先指标</th></tr></thead>
+        <tbody>
+          <tr><td>第 1 周</td><td>给仓库写 <code>GLOSSARY.md</code>（哪怕只有 10 个词）；把 typecheck / test / lint 收敛成单命令并写进 CLAUDE.md 的「验证你的工作」块</td><td>Build + Test</td><td>首过 CI 率；代理重复犯错次数</td></tr>
+          <tr><td>第 2 周</td><td>引入拷问入口：每次改动前先 grill；访谈中敲定的术语当场进 GLOSSARY，难解释的决定落 ADR</td><td>Plan + Design</td><td>首次对话到可执行规格的耗时；规格返工率</td></tr>
+          <tr><td>第 3 周</td><td>规格一律先过 <code>to-tickets</code>：示踪弹切片 + 显式阻塞边；实现走 <code>implement</code>（tdd 接缝 + 收尾 code-review）</td><td>Design + Build + Deploy</td><td>计划到合并的时长；每改动返工轮数</td></tr>
+          <tr><td>第 4 周</td><td>会话末尾跑 <code>retro</code>，把环境改进写回 steering files；挑一个指标试一个自治循环（ralph 式），产出只走 PR 闸门</td><td>Maintain</td><td>band breach 到 intent 的耗时；同类事故重复率</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="small">度量哲学直接继承 playbook：每个阶段配一个领先指标（下一次就能读到）和一个滞后指标（季度后才显现）。不要代理输出的虚荣指标，读 git 历史、PR 元数据和 CI 日志就够了。</p>
+  </section>
+
+  <footer class="colophon">
+    <p>本指南是 Matt Pocock 视角的独立解读，工作流骨架参考 Anthropic《The AI-Native SDLC Playbook》，全部实践证据来自 <a href="https://github.com/mattpocock/skills">mattpocock/skills</a> 与 <a href="https://github.com/mattpocock/course-video-manager">mattpocock/course-video-manager</a> 两个公开仓库。技能集可通过 Claude Code、Codex、Copilot、Gemini CLI 及任意 agent 安装，详见 skills 仓库 README。</p>
+    <p class="sig">少即是多。去改造你的流程，而不只是你的提示词。</p>
+  </footer>
+
+  </main>
+</div>
+</body>
+</html>
