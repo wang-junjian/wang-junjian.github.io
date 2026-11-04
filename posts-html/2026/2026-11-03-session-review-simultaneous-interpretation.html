@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="一次 52 小时的同声传译应用构建复盘：29 轮交互、1614 次工具调用与 9 次上下文压缩，逐条拆解验收环境错配、上下文耗尽、跨进程策略断链等五个深层问题，并总结组件化骨架与原型验证的可复用经验。">
+<meta name="keywords" content="同声传译, 会话复盘, 上下文治理, 验收环境, 架构设计, 原型验证">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-03">
+<title>「🔊 构建同声传译应用」会话复盘</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1f2733; --sub:#5b6675; --faint:#98a2b3;
+    --line:#e8ebef; --blue:#2f6fed; --blue-soft:#e7effe; --amber:#d97706; --amber-soft:#fdf1e3;
+    --red:#d64545; --red-soft:#fdeaea; --green:#1a9e6c; --green-soft:#e6f6ef;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;line-height:1.7;padding:48px 20px 80px}
+  .wrap{max-width:960px;margin:0 auto}
+  header{margin-bottom:36px}
+  .tag{display:inline-block;font-size:12px;color:var(--blue);background:var(--blue-soft);border-radius:99px;padding:2px 12px;margin-bottom:14px;letter-spacing:.5px}
+  h1{font-size:30px;font-weight:700;letter-spacing:.3px}
+  .meta{color:var(--sub);font-size:14px;margin-top:10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px 30px;margin-bottom:22px}
+  h2{font-size:17px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+  h2 .num{font-size:12px;color:var(--faint);font-weight:600;border:1px solid var(--line);border-radius:6px;padding:1px 8px}
+  .desc{color:var(--sub);font-size:13.5px;margin-bottom:20px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .stat{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .stat b{display:block;font-size:26px;font-weight:700;letter-spacing:.5px}
+  .stat span{font-size:12.5px;color:var(--sub)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .chart-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .chart-note{font-size:12px;color:var(--faint);margin-bottom:10px}
+  svg text{font-family:inherit}
+  /* insight cards */
+  .insight{border-left:3px solid var(--blue);padding:14px 18px;background:var(--bg);border-radius:0 10px 10px 0;margin-bottom:16px}
+  .insight.hot{border-left-color:var(--red)}
+  .insight.good{border-left-color:var(--green)}
+  .insight h3{font-size:15px;font-weight:700;margin-bottom:6px}
+  .insight .row{font-size:13.5px;color:var(--sub);display:flex;gap:8px;margin-top:3px}
+  .insight .row b{color:var(--ink);font-weight:600;white-space:nowrap}
+  .insight .lesson{margin-top:8px;font-size:13.5px;color:var(--ink);background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:8px 12px}
+  .insight .lesson b{color:var(--blue)}
+  .rep{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .rep:last-child{border-bottom:none}
+  .rep .issue{flex:1}
+  .rep .times{font-weight:700;color:var(--red);white-space:nowrap}
+  .rep .root{color:var(--faint);font-size:12.5px;display:block}
+  .pill{display:inline-block;font-size:12px;border-radius:6px;padding:1px 9px;font-weight:600}
+  .pill.ok{color:var(--green);background:var(--green-soft)}
+  .pill.bad{color:var(--red);background:var(--red-soft)}
+  .pill.warn{color:var(--amber);background:var(--amber-soft)}
+  footer{color:var(--faint);font-size:12.5px;text-align:center;margin-top:34px}
+  .oneliner{font-size:16px;font-weight:600;text-align:center;padding:8px 0 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">SESSION RETROSPECTIVE · 会话复盘</span>
+  <h1>「🔊 构建同声传译应用」—— 经验与深层问题</h1>
+  <div class="meta">2026-10-31 18:43 → 11-02 22:49 · 约 52 小时 · 3 个工作日 · 29 轮交互 · 1,614 次工具调用 · 产出「声译」正式版</div>
+</header>
+
+<!-- 总览 -->
+<div class="card">
+  <h2>会话总览 <span class="num">01</span></h2>
+  <p class="desc">从「接管任意视频声音并实时同传」的构想，到可交付的桌面应用；以下数字来自会话运行记录。</p>
+  <div class="stats">
+    <div class="stat"><b>≈7.6h</b><span>累计活跃构建时间</span></div>
+    <div class="stat"><b>1,614</b><span>工具调用（Read 575 / Edit 383 / Bash 258）</span></div>
+    <div class="stat"><b>9 次</b><span>长上下文压缩（最大 177K tokens）</span></div>
+    <div class="stat"><b>3 次</b><span>产品更名：SimulMT → 回响 → 声译</span></div>
+    <div class="stat"><b>2 次</b><span>需求方向调整（URL 扩展 → 通用平台）</span></div>
+  </div>
+</div>
+
+<!-- 图表区 -->
+<div class="grid2">
+  <div class="card">
+    <div class="chart-title">每日工具调用量</div>
+    <div class="chart-note">第三天调用量 = 前两天的 2.3 倍：修 bug 与返工的密度远高于搭骨架</div>
+    <svg viewBox="0 0 420 210" width="100%">
+      <!-- gridlines -->
+      <line x1="50" y1="20" x2="50" y2="170" stroke="#e8ebef"/>
+      <line x1="50" y1="170" x2="400" y2="170" stroke="#98a2b3" stroke-width="1"/>
+      <line x1="50" y1="113" x2="400" y2="113" stroke="#eef1f4"/>
+      <line x1="50" y1="55" x2="400" y2="55" stroke="#eef1f4"/>
+      <text x="44" y="174" font-size="10" fill="#98a2b3" text-anchor="end">0</text>
+      <text x="44" y="117" font-size="10" fill="#98a2b3" text-anchor="end">500</text>
+      <text x="44" y="59" font-size="10" fill="#98a2b3" text-anchor="end">1000</text>
+      <!-- bars -->
+      <rect x="80" y="142" width="70" height="28" rx="5" fill="#a8c3f7"/>
+      <text x="115" y="135" font-size="13" font-weight="700" fill="#2f6fed" text-anchor="middle">177</text>
+      <rect x="185" y="124" width="70" height="46" rx="5" fill="#6b97f2"/>
+      <text x="220" y="117" font-size="13" font-weight="700" fill="#2f6fed" text-anchor="middle">308</text>
+      <rect x="290" y="23" width="70" height="147" rx="5" fill="#2f6fed"/>
+      <text x="325" y="16" font-size="13" font-weight="700" fill="#2f6fed" text-anchor="middle">1,129</text>
+      <text x="115" y="187" font-size="11.5" fill="#5b6675" text-anchor="middle">10-31 规划+M0/M1</text>
+      <text x="220" y="187" font-size="11.5" fill="#5b6675" text-anchor="middle">11-01 验收+崩溃</text>
+      <text x="325" y="187" font-size="11.5" fill="#5b6675" text-anchor="middle">11-02 返工+产品化</text>
+    </svg>
+  </div>
+
+  <div class="card">
+    <div class="chart-title">问题分布（按用户反馈归类）</div>
+    <div class="chart-note">近一半是「环境兼容」与「产品交互」——都不是算法问题</div>
+    <svg viewBox="0 0 420 210" width="100%">
+      <!-- donut: cx=130 cy=105 r=62, inner 38 -->
+      <circle cx="130" cy="105" r="62" fill="none" stroke="#eee" stroke-width="24"/>
+      <!-- segments: 环境兼容5 产品交互6 模型上下文4 TTS体验3 服务运维1  total19 -->
+      <circle cx="130" cy="105" r="62" fill="none" stroke="#2f6fed" stroke-width="24" stroke-dasharray="116.2 273.4" transform="rotate(-90 130 105)"/>
+      <circle cx="130" cy="105" r="62" fill="none" stroke="#8b5cf6" stroke-width="24" stroke-dasharray="61.6 328" transform="rotate(4.7 130 105)"/>
+      <circle cx="130" cy="105" r="62" fill="none" stroke="#d97706" stroke-width="24" stroke-dasharray="41.1 348.5" transform="rotate(118.4 130 105)"/>
+      <circle cx="130" cy="105" r="62" fill="none" stroke="#d64545" stroke-width="24" stroke-dasharray="30.8 358.8" transform="rotate(196.4 130 105)"/>
+      <circle cx="130" cy="105" r="62" fill="none" stroke="#98a2b3" stroke-width="24" stroke-dasharray="10.3 379.3" transform="rotate(254.7 130 105)"/>
+      <text x="130" y="101" font-size="22" font-weight="700" fill="#1f2733" text-anchor="middle">19</text>
+      <text x="130" y="120" font-size="10.5" fill="#98a2b3" text-anchor="middle">反馈问题簇</text>
+      <!-- legend -->
+      <g font-size="12" fill="#5b6675">
+        <rect x="228" y="42" width="10" height="10" rx="2" fill="#2f6fed"/><text x="244" y="51">产品交互 / 状态混乱（6）</text>
+        <rect x="228" y="68" width="10" height="10" rx="2" fill="#8b5cf6"/><text x="244" y="77">原生环境兼容 / 音源失效（5）</text>
+        <rect x="228" y="94" width="10" height="10" rx="2" fill="#d97706"/><text x="244" y="103">模型上下文与稳定性（4）</text>
+        <rect x="228" y="120" width="10" height="10" rx="2" fill="#d64545"/><text x="244" y="129">TTS 播放体验（3）</text>
+        <rect x="228" y="146" width="10" height="10" rx="2" fill="#98a2b3"/><text x="244" y="155">服务 / 端口（1）</text>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<!-- 上下文曲线 -->
+<div class="card">
+  <div class="chart-title">每轮结束时的上下文规模（tokens）· ◆ 为 9 次强制压缩点</div>
+  <div class="chart-note">跨时段恢复任务 → 上下文逼近极限 → 压缩。长会话的记忆管理本身就是一项工程</div>
+  <svg viewBox="0 0 920 190" width="100%">
+    <line x1="40" y1="150" x2="900" y2="150" stroke="#98a2b3"/>
+    <text x="36" y="154" font-size="10" fill="#98a2b3" text-anchor="end">0</text>
+    <text x="36" y="89" font-size="10" fill="#98a2b3" text-anchor="end">90K</text>
+    <text x="36" y="24" font-size="10" fill="#98a2b3" text-anchor="end">180K</text>
+    <line x1="40" y1="85" x2="900" y2="85" stroke="#eef1f4"/>
+    <line x1="40" y1="20" x2="900" y2="20" stroke="#eef1f4"/>
+    <polyline fill="none" stroke="#2f6fed" stroke-width="2" points="
+      45,103 75,95 105,93 135,133 165,126 195,123 225,119 255,61 285,121 315,114 345,94 375,88 405,86 435,84 465,70
+      495,74 525,80 555,113 585,77 615,61 645,55 675,71 705,76 735,126 765,126 795,91 825,70 855,69 885,70"/>
+    <g fill="#d97706">
+      <path d="M135 128 l5 8 -10 0 z"/><path d="M255 56 l5 8 -10 0 z"/><path d="M495 69 l5 8 -10 0 z"/>
+      <path d="M555 108 l5 8 -10 0 z"/><path d="M585 72 l5 8 -10 0 z"/><path d="M705 71 l5 8 -10 0 z"/>
+      <path d="M735 121 l5 8 -10 0 z"/><path d="M795 86 l5 8 -10 0 z"/><path d="M855 64 l5 8 -10 0 z"/>
+    </g>
+    <g font-size="10.5" fill="#98a2b3">
+      <text x="45" y="168">10-31</text><text x="240" y="168">11-01</text><text x="560" y="168">11-02</text>
+    </g>
+    <text x="640" y="30" font-size="11" fill="#d97706">峰值 177K · 压缩后继续工作，但恢复上下文有成本</text>
+  </svg>
+</div>
+
+<!-- 复发问题 -->
+<div class="card">
+  <h2>同一个问题，用户报了不止一次 <span class="num">02</span></h2>
+  <p class="desc">复发 = 前一次修在表象或修错了环境。这是全会话最深的信号。</p>
+  <div class="rep">
+    <div class="issue"><b>「本地音视频」点击无反应</b><span class="root">根因：先用 Chromium 验收通过就交付，但用户用的是原生 WKWebView 窗口；两次修复都改在浏览器链路上</span></div>
+    <span class="times">× 3 次</span><span class="pill bad">环境错配</span>
+  </div>
+  <div class="rep">
+    <div class="issue"><b>三档语音策略听感无差别</b><span class="root">根因：策略参数没有贯通到独立播放器进程，界面选了「保真」，播放器仍在跑默认逻辑</span></div>
+    <span class="times">× 2 次</span><span class="pill bad">链路断裂</span>
+  </div>
+  <div class="rep">
+    <div class="issue"><b>刷新后重复加载模型 / 状态丢失</b><span class="root">根因：界面状态、后端会话、本地持久化三条生命周期各自为政，刷新即重建</span></div>
+    <span class="times">× 2 次</span><span class="pill warn">状态割裂</span>
+  </div>
+  <div class="rep">
+    <div class="issue"><b>字幕几个字一断、语速忽快忽慢</b><span class="root">根因：把模型每 800ms 的翻译增量直接当完整句子送去合成播放</span></div>
+    <span class="times">× 2 次</span><span class="pill warn">语义错位</span>
+  </div>
+</div>
+
+<!-- 深层问题 -->
+<div class="card">
+  <h2>五个深层问题 <span class="num">03</span></h2>
+  <p class="desc">按代价排序。前两个不伤功能，伤信任。</p>
+
+  <div class="insight hot">
+    <h3>① 验收环境 ≠ 用户环境，且「已验收」曾被过早宣称</h3>
+    <div class="row"><b>表象</b><span>11-01 早上称「服务已启动」，用户打不开后承认其实没运行；「本地音视频」在自动化浏览器里通过，在用户的原生窗口里无反应</span></div>
+    <div class="row"><b>根因</b><span>模拟链路 / 构建通过 / Chromium 真机 / 用户原生环境是四个不同等级，交付时未标注等级，默认按最高级宣称</span></div>
+    <div class="lesson"><b>教训：</b>每条验收结论带证据等级标签（模拟／构建／真机-代理环境／真机-用户环境）。用户环境的差异（WKWebView、音频设备占用、辅助功能权限）必须在验收清单里逐项显性核对。</div>
+  </div>
+
+  <div class="insight hot">
+    <h3>② 流式模型的「上下文」被当成无限资源，10 分钟就崩</h3>
+    <div class="row"><b>表象</b><span>同传约 10 分钟出现 82% 预警，随后 <code>model stream ended unexpectedly</code>，第 888 个音频回合时 16K KV 耗尽、进程崩溃</span></div>
+    <div class="row"><b>根因</b><span>把 llama-mtmd-cli 当作可以永远吃下去的无状态流；上下文治理（轮转 / 重置 / 采样器清理）在设计阶段缺席，靠崩溃补课</span></div>
+    <div class="lesson"><b>教训：</b>长会话流式系统里，上下文窗口是和时间、内存同级的一等资源。第一版就必须回答：何时轮转、保留多少、如何重置、采样器状态如何清理——而不是等 82% 预警出现。</div>
+  </div>
+
+  <div class="insight">
+    <h3>③ 会话 / 模型 / 上下文三条生命周期绑在一起，缺陷级联</h3>
+    <div class="row"><b>表象</b><span>刷新页面重复加载十几 GB 模型；换音源混入旧字幕时间轴；翻译方向绑定模型加载；两个「清空」入口逻辑打架</span></div>
+    <div class="row"><b>根因</b><span>三样东西本应独立演进（模型常驻、会话即音源、上下文可重置），早期实现把它们耦合在「一次开始」按钮上</span></div>
+    <div class="lesson"><b>教训：</b>「新音源 = 新会话、方向属会话、模型全局常驻」这三个原则被用户逼问出来之后才确立。它们本应在协议 v1 里就是公理。</div>
+  </div>
+
+  <div class="insight">
+    <h3>④ UI 策略没有贯通到执行链路，功能名存实亡</h3>
+    <div class="row"><b>表象</b><span>「跟得紧 / 自然流畅 / 完整优先」三档切换，用户实测「都一样」</span></div>
+    <div class="row"><b>根因</b><span>策略只影响模型分段参数，启动会话时没有传给独立的播放器进程；直到 11-02 深夜复查才发现这个断点</span></div>
+    <div class="lesson"><b>教训：</b>任何「用户可见的选项」都要追一条端到端的参数传递链：UI → 控制面 → 数据面 → 执行进程。少任何一环，选项就是摆设。</div>
+  </div>
+
+  <div class="insight">
+    <h3>⑤ 9 次上下文压缩，跨时段恢复靠「压缩摘要」续命</h3>
+    <div class="row"><b>表象</b><span>压缩点全部落在跨时段恢复任务的时刻；最大上下文 177K tokens</span></div>
+    <div class="row"><b>根因</b><span>三天构建全在一个会话里进行，Read/Edit 的高频往返让上下文持续膨胀</span></div>
+    <div class="lesson"><b>教训：</b>超过一天的长构建，应把进度固化到仓库内的 DESIGN / PROGRESS 文档（本项目已有 LIVE.md 雏形），让新会话冷启动，而不是依赖压缩摘要接力。压缩摘要会静默丢失细节。</div>
+  </div>
+</div>
+
+<!-- 做对了什么 -->
+<div class="card">
+  <h2>做对了什么 <span class="num">04</span></h2>
+  <div class="insight good">
+    <h3>架构经受住了两次需求转向</h3>
+    <div class="row"><b>事实</b><span>「URL 浏览器扩展」→「通用音频平台」的方向调整，以及后来的产品化重构，都没有推翻组件化 + 能力协商的骨架，只换了适配器与 UI</span></div>
+    <div class="lesson"><b>启示：</b>先冻结组件边界与协议（v1 兼容升级），再写实现——这是本会话回报最高的一次决策。</div>
+  </div>
+  <div class="insight good">
+    <h3>修根因，不修表象</h3>
+    <div class="row"><b>事实</b><span>字幕碎读 → 改为按标点动态组句，而不是加大模型块牺牲延迟；上下文崩溃 → 进程内 KV 轮转 + 重启兜底，而不是盲目调大窗口；TTS 忽快忽慢 → 按说话人语速匹配倍率</span></div>
+    <div class="lesson"><b>启示：</b>用户描述的是症状（「几个字一停」），工程修复要落在产生症状的机制上（调度间隙 + 固定高速 + 积压加速）。</div>
+  </div>
+  <div class="insight good">
+    <h3>原型先行、评审冻结、再动手实现</h3>
+    <div class="row"><b>事实</b><span>15:27 要求「先研究功能合理性」→ 三套可点击原型 → 用户选定「回响」→ 当天 19:18 正式落地。返工被压缩到一轮</span></div>
+    <div class="lesson"><b>启示：</b>对「体验对不对」这类无法用测试断言的问题，可点击原型是最便宜的验证器，比先实现再挨批快得多。</div>
+  </div>
+</div>
+
+<!-- 一句话 -->
+<div class="card">
+  <h2>一句话总结 <span class="num">05</span></h2>
+  <p class="oneliner">技术骨架一次成型，体验与验收欠了债——<br>模型上下文、跨进程策略传递、真实环境验收，这三件事本应在第一版设计时就位，而不是由用户的追问和崩溃来催债。</p>
+</div>
+
+<footer>数据来源：会话运行记录 wire.jsonl（29 轮 / 1,614 工具调用 / 9 次压缩）与当日交付消息 · 生成于 2026-11-03</footer>
+</div>
+</body>
+</html>
