@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="复盘 kof-3d 三维格斗垂直切片：人锁定目标、审美与范围，AI 只在可断言可回滚的闭环里实现与自检，用纯逻辑单测、浏览器断言与人工看图三重收口，把不变量固化为硬约束，沉淀可复用的分工边界与验收链。">
+<meta name="keywords" content="ai-game-dev, 3d-fighting-game, threejs, vertical-slice, team-practices, automated-verification">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-05">
+<title>AI 参与 3D 游戏开发的最佳实践 · 团队总结</title>
+<style>
+  :root{
+    --bg:#f3f6fa;
+    --surface:#ffffff;
+    --ink:#172130;
+    --ink2:#3b4859;
+    --ink3:#5e6a78;
+    --line:#e3e9f0;
+    --line2:#eef1f6;
+    --accent:#2b55b8;
+    --accent-soft:#eef3fd;
+    --note:#f7f9fc;
+    --warn:#a4600a;
+    --warn-soft:#fff5e6;
+    --ok:#1c7250;
+    --ok-soft:#edf7f1;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15.5px;
+    line-height:1.85;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:48px 28px 88px;}
+  .doc{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:56px 64px 64px;
+    box-shadow:0 10px 36px rgba(23,33,48,.055);
+  }
+  .kicker{
+    font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);font-weight:700;margin:0 0 14px;
+  }
+  h1{
+    font-size:31px;line-height:1.4;letter-spacing:-.01em;
+    margin:0 0 12px;font-weight:700;color:var(--ink);
+  }
+  .subtitle{margin:0;color:var(--ink2);font-size:16px;}
+  .meta{
+    margin:26px 0 0;padding:16px 20px;background:var(--note);
+    border:1px solid var(--line2);border-radius:9px;
+    font-size:13px;color:var(--ink3);line-height:1.9;
+  }
+  .meta strong{color:var(--ink2);font-weight:600;}
+  .toc{
+    margin:30px 0 0;padding:16px 20px;border:1px dashed var(--line);
+    border-radius:9px;background:#fcfdff;
+    font-size:13px;color:var(--ink3);
+  }
+  .toc a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--line);}
+  .toc a:hover{color:var(--accent);border-bottom-color:var(--accent);}
+  .toc span{color:var(--ink3);}
+  h2{
+    font-size:21px;line-height:1.5;margin:52px 0 6px;font-weight:700;
+    padding-bottom:12px;border-bottom:1px solid var(--line);
+    scroll-margin-top:24px;
+  }
+  h2 .no{
+    display:inline-block;margin-right:12px;color:var(--accent);
+    font-size:13px;font-weight:700;letter-spacing:.08em;vertical-align:2px;
+  }
+  h3{font-size:16px;margin:30px 0 8px;font-weight:700;color:var(--ink);}
+  p{margin:12px 0;}
+  .lead{
+    margin:16px 0 20px;padding:14px 18px;background:var(--accent-soft);
+    border-left:3px solid var(--accent);border-radius:0 8px 8px 0;
+    color:var(--ink2);font-size:15px;
+  }
+  .lead strong{color:var(--ink);}
+  ul.bullets{list-style:none;padding:0;margin:14px 0;}
+  ul.bullets li{
+    position:relative;padding:0 0 0 20px;margin:0 0 12px;color:var(--ink2);
+  }
+  ul.bullets li:before{
+    content:"";position:absolute;left:2px;top:.78em;
+    width:6px;height:6px;border-radius:2px;background:var(--accent);
+  }
+  ul.bullets li strong{color:var(--ink);font-weight:650;}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.88em;background:var(--note);border:1px solid var(--line2);
+    border-radius:4px;padding:1px 5px;color:#2c3b52;
+  }
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0 8px;}
+  .card{
+    border:1px solid var(--line);border-radius:10px;padding:18px 20px;
+    background:#fcfdff;
+  }
+  .card .num{
+    display:inline-block;font-size:12px;font-weight:700;color:var(--accent);
+    letter-spacing:.08em;margin-bottom:6px;
+  }
+  .card h4{margin:0 0 8px;font-size:15.5px;font-weight:700;color:var(--ink);line-height:1.6;}
+  .card p{margin:0 0 10px;font-size:14px;color:var(--ink2);line-height:1.8;}
+  .evi{
+    display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+    margin:12px 0 0;font-size:12.5px;color:var(--ink3);line-height:1.7;
+  }
+  .tag{
+    display:inline-block;font-size:12px;line-height:1.65;padding:1px 9px;
+    border-radius:5px;white-space:nowrap;
+  }
+  .tag-phase{background:var(--accent-soft);color:#234a9f;}
+  .tag-evi{background:#f0f2f7;color:#5c6979;}
+  .tag-ok{background:var(--ok-soft);color:var(--ok);}
+  .tag-warn{background:var(--warn-soft);color:var(--warn);}
+  .evi-bar{
+    margin:22px 0 0;padding:10px 14px;background:var(--note);
+    border:1px solid var(--line2);border-radius:8px;
+    font-size:12.5px;color:var(--ink3);line-height:1.9;
+  }
+  .evi-bar b{color:var(--ink2);font-weight:600;}
+  .tablewrap{overflow-x:auto;margin:18px 0 8px;}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;line-height:1.75;}
+  th,td{text-align:left;vertical-align:top;padding:11px 13px;border-bottom:1px solid var(--line2);}
+  th{
+    background:var(--note);color:var(--ink2);font-weight:650;
+    border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  td{color:var(--ink2);}
+  td strong{color:var(--ink);font-weight:650;}
+  tbody tr:hover{background:#fcfdff;}
+  .risk tr td:first-child{color:var(--ink);font-weight:600;}
+  .conclusion{
+    margin:52px 0 0;padding:26px 28px;border-radius:11px;
+    background:var(--accent-soft);border:1px solid #dbe6fb;
+  }
+  .conclusion h2{margin:0 0 12px;border:0;padding:0;font-size:21px;}
+  .conclusion p{color:var(--ink2);margin:10px 0;}
+  .conclusion ul{margin:12px 0 0;padding-left:20px;color:var(--ink2);}
+  .conclusion li{margin:6px 0;}
+  .appendix{margin-top:48px;padding-top:6px;}
+  .foot{
+    margin:34px 0 0;padding-top:18px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--ink3);line-height:1.8;
+  }
+  @media (max-width:760px){
+    .wrap{padding:20px 12px 48px;}
+    .doc{padding:30px 22px 38px;border-radius:10px;}
+    h1{font-size:25px;}
+    .cards{grid-template-columns:1fr;}
+    h2{font-size:19px;}
+    body{font-size:15px;}
+  }
+  @media print{
+    body{background:#fff;font-size:11pt;}
+    .wrap{padding:0;max-width:none;}
+    .doc{border:0;box-shadow:none;padding:0;}
+    .toc{display:none;}
+    h2{page-break-after:avoid;}
+    table,.card,.conclusion{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="doc">
+
+  <p class="kicker">Engineering Retrospective · 团队实践总结</p>
+  <h1>AI 参与 3D 游戏开发的最佳实践</h1>
+  <p class="subtitle">基于 kof-3d 垂直切片工程的协作复盘：边界、闭环与可复用的验收契约</p>
+
+  <div class="meta">
+    <strong>实践项目</strong>　kof-3d：原创角色的 1v1 单机 3D 格斗网页垂直切片（Three.js + Vite + TypeScript），范围为 M0 + M1。<br>
+    <strong>文档定位</strong>　面向开发团队的结论式总结，梳理 AI 与人工的分工边界、关键环节做法、常见风险与改进建议。<br>
+    <strong>依据来源</strong>　项目 <code>README.md</code>、<code>package.json</code>、<code>scripts/verify.mjs</code>、<code>shots/report.json</code>、构建产物，以及 2026-11-04 / 2026-11-05 的开发日志。文末附依据索引。<br>
+    <strong>整理日期</strong>　2026-11-05
+  </div>
+
+  <nav class="toc" aria-label="目录">
+    <span>目录　</span>
+    <a href="#s0">摘要</a>　·　<a href="#s1">01 协作边界</a>　·　<a href="#s2">02 需求拆解</a>　·　<a href="#s3">03 内容生成与校验</a>　·　<a href="#s4">04 逻辑实现</a>　·　<a href="#s5">05 调试迭代</a>　·　<a href="#s6">06 性能与质量</a>　·　<a href="#s7">07 原则速查</a>　·　<a href="#s8">08 风险与建议</a>　·　<a href="#s9">结论</a>　·　<a href="#s10">附录</a>
+  </nav>
+
+  <!-- 摘要 -->
+  <section id="s0">
+    <h2><span class="no">摘要</span>结论先行</h2>
+    <p class="lead"><strong>本次实践最有效的做法，不是让 AI 一次性「写完游戏」，而是把 AI 放进一个「可断言、可回滚、可看图」的闭环。</strong>人负责目标、审美、范围与对外动作；AI 负责调研、实现、自检与诊断；每一轮改动都由两层自动化断言加人工视觉验收收口。</p>
+
+    <div class="cards">
+      <div class="card">
+        <span class="num">结论 01</span>
+        <h4>先锁定决策与范围，再让 AI 动手</h4>
+        <p>技术栈、交付形态、玩法范围由人拍板并写入 README；明确「不做的事」比列出待办更能防止 AI 擅自扩范围。</p>
+        <div class="evi"><span class="tag tag-phase">适用环节 · 需求拆解</span><span class="tag tag-evi">依据 · 四项决策先于实现；M2/M3 不解禁</span></div>
+      </div>
+      <div class="card">
+        <span class="num">结论 02</span>
+        <h4>把不可回归项写成硬断言</h4>
+        <p>骨架指纹、零贴图、单文件体积、chunk 数量、离线零请求都固化为断言，约束不靠口头约定或文档自觉。</p>
+        <div class="evi"><span class="tag tag-phase">适用环节 · 质量把控</span><span class="tag tag-evi">依据 · 493 字符指纹、texturedMeshes=0</span></div>
+      </div>
+      <div class="card">
+        <span class="num">结论 03</span>
+        <h4>数值全绿不等于视觉成立</h4>
+        <p>多轮质感、姿态、裁切问题都只在人工看图时发现；截图位与拼图是验收资产，不是调试临时产物。</p>
+        <div class="evi"><span class="tag tag-phase">适用环节 · 内容校验</span><span class="tag tag-evi">依据 · 九格拼图 / 演出图 / 近景图</span></div>
+      </div>
+      <div class="card">
+        <span class="num">结论 04</span>
+        <h4>逻辑与表现分离是可测性的前提</h4>
+        <p>固定 60Hz 逻辑步进加渲染插值，纯逻辑层可离线单测；表现层由真实浏览器断言覆盖，两层改动各自收口。</p>
+        <div class="evi"><span class="tag tag-phase">适用环节 · 逻辑实现</span><span class="tag tag-evi">依据 · 38 条纯逻辑单测 / 77 条浏览器断言</span></div>
+      </div>
+      <div class="card">
+        <span class="num">结论 05</span>
+        <h4>口径与时序假设是自检假失败的主因</h4>
+        <p>headless 帧率波动使固定等待时间不可靠；计数口径错误会完全掩盖掉帧。断言应轮询收敛、按增量判断。</p>
+        <div class="evi"><span class="tag tag-phase">适用环节 · 调试迭代</span><span class="tag tag-evi">依据 · fps / renderFps 双口径；15~60fps 波动</span></div>
+      </div>
+      <div class="card">
+        <span class="num">结论 06</span>
+        <h4>审美否决与对外动作由人拍板</h4>
+        <p>贴图路线被否决后整条链路彻底回退并固化为断言；依赖升级、素材处置、开源参数均不由 AI 擅自决定。</p>
+        <div class="evi"><span class="tag tag-phase">适用环节 · 协作边界</span><span class="tag tag-evi">依据 · 9 个 high 未擅自升级；发布四项决策</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 01 -->
+  <section id="s1">
+    <h2><span class="no">01</span>AI 与人工的协作边界</h2>
+    <p class="lead"><strong>边界不按「技术难度」划分，而按「可逆性与后果」划分。</strong>可回滚、可断言、不改契约的实现工作交给 AI；涉及审美判定、范围变更、资产处置、依赖升级与对外发布的动作由人确认。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>决策类型</th><th>归属</th><th>本次实践中的具体体现</th><th>划分理由</th></tr></thead>
+        <tbody>
+          <tr><td>目标、技术栈、交付形态</td><td><strong>人</strong></td><td>先聊方案，拍板「网页可玩切片 / VRM + Mixamo 资产路线 / 1v1 单机对 AI / Three.js + Vite + TypeScript」后才实现</td><td>决定后续全部架构与验收口径，改错代价最高</td></tr>
+          <tr><td>审美与手感</td><td><strong>人判定</strong>，AI 提供方案与量化证据</td><td>「贴图不自然」→ 彻底回退；「7 头身升级版不如上一版」→ 改路线；AI 用截图与坐标探针说明动作方向</td><td>主观体验无法被数值断言替代</td></tr>
+          <tr><td>范围解禁</td><td><strong>人</strong></td><td>M2（236 必杀 / 能量消费 / 连段 / 第二角色 / 选人界面）、M3（美术打磨 / 联机）明确不解禁，POW 槽保持展示属性</td><td>防止 AI 以「顺手完善」名义扩大未完成面</td></tr>
+          <tr><td>代码实现、自检脚本、探针、诊断</td><td><strong>AI</strong></td><td>状态机与帧表、演出与几何实现、浏览器自检、<code>__kof</code> 调试 API、染色诊断定位描边问题</td><td>可由断言与 diff 完整验证，出错可回滚</td></tr>
+          <tr><td>硬约束与验收标准</td><td><strong>共同固化</strong></td><td>人确认约束，AI 写成断言并写入中英双语 README 的「工程约定」</td><td>让人的决策变成机器可执行的检查</td></tr>
+          <tr><td>不可逆 / 对外动作</td><td><strong>人</strong></td><td>新建 git 仓库、联网安装依赖、素材只忽略不删除、依赖安全告警处置、开源仓库名 / MIT / 单提交 / 只提交源码</td><td>影响账户、许可、资产与公开事实</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>三条边界原则</h3>
+    <ul class="bullets">
+      <li><strong>可回滚、可断言、不改契约 → AI 自主推进。</strong>纯逻辑规则、演出效果、几何外形等改动，只要两层断言全绿且不触碰硬约束，可连续迭代多轮。</li>
+      <li><strong>触及资产、账户、许可、范围、审美 → 先确认再动。</strong>只读代码审查列出的三处边界（新建仓库、联网安装依赖、素材处置）在实施前单独征求意见；依赖审计发现的 9 个 high 因修复涉及破坏性升级，未擅自处理。</li>
+      <li><strong>否决即彻底回退，并升级为断言。</strong>2D 脸部贴图链路被否决后，删除数据注入与相关断言、保留历史素材但不入库，并把 <code>texturedMeshes === 0</code> 与「产物不含贴图链路」写进验收，避免路线反复。</li>
+    </ul>
+    <div class="evi-bar"><b>适用环节</b>　<span class="tag tag-phase">需求拆解</span> <span class="tag tag-phase">内容生成</span> <span class="tag tag-phase">发布治理</span>　　<b>实践依据</b>　开发日志中与用户确认的边界清单；README「工程约定」；「2D 贴图路线已被彻底删除且不再恢复」。</div>
+  </section>
+
+  <!-- 02 -->
+  <section id="s2">
+    <h2><span class="no">02</span>需求拆解与范围控制</h2>
+    <p class="lead"><strong>把大目标切成能独立验收的垂直切片，并把「不做什么」写成显式约束。</strong>本次的可交付定义是「能打完一局」，而非完整格斗游戏。</p>
+    <ul class="bullets">
+      <li><strong>决策前置：</strong>先完成方案交流并锁定四项基础决策，再进入实现；方案未定时不动代码。这使后续所有技术选择都有可追溯的出处。</li>
+      <li><strong>范围双清单：</strong>M0 + M1 为在范围内；M2、M3 明确标注未解禁，POW 槽只作展示。README 同步写明「已知差距」，把未完成项公开化而不是隐藏。</li>
+      <li><strong>按层分轮：</strong>后续迭代依次是「规则与手感 → 打击演出与镜头 → 纯 3D 几何精修 → 工程化硬化与零风险修复」。每轮开头都声明「本轮不动哪些层」，例如几何精修只改外形网格、判定与姿态一行未动。</li>
+      <li><strong>先审查后动手：</strong>一次全量只读代码审查把改进项分为 P0 工程化、P1 零风险修复、P2 规则细节、P3 已排期四层，且每条带 <code>文件:行</code> 证据；由人选定「P0 + P1」后，AI 给出精确清单并等待确认再实施。</li>
+      <li><strong>改进建议：</strong>把「本轮允许改动的文件 / 层」与「禁止触碰的契约」写进每轮任务描述，比事后 review 更容易控制扩散；路线图只保留下一轮，避免 AI 提前实现未解禁内容。</li>
+    </ul>
+    <div class="evi-bar"><b>适用环节</b>　<span class="tag tag-phase">需求拆解</span> <span class="tag tag-phase">迭代规划</span>　　<b>实践依据</b>　README「范围」「已知差距」；开发日志的分轮记录与四层只读审查。</div>
+  </section>
+
+  <!-- 03 -->
+  <section id="s3">
+    <h2><span class="no">03</span>内容生成与校验</h2>
+    <p class="lead"><strong>瓶颈不在「能否生成」，而在「生成物能否被验收、被否决、被替换」。</strong>AI 生成的资产与代码必须带许可证据、可替换接口和视觉验收位。</p>
+
+    <h3>资产：先做许可与可得性实证</h3>
+    <ul class="bullets">
+      <li>对候选 VRM 资产逐个做 glb header 与许可元数据审计：某候选的自定义条款明文禁止暴力表现，直接排除；功能测试模型视觉不符，排除；CC0 候选许可最干净但为低模卡通风，仅用于插槽验证。结论是「免费 + 可商用 + 可再分发 + 允许暴力表现 + 好看的动漫美少女」这一交集里公开可下载资产基本为空。</li>
+      <li>工具链可行性同样需要核实：VRoid Studio 为纯 GUI、本机辅助功能未授权，无法无人值守导出；Blender 已安装但缺 VRM 导出插件；网络单次响应约 10 MiB 截断，是靠 glb header 声明长度比对才发现的，而非「看着像下完了」。</li>
+      <li>能力核实先于投入：AI 可绘制 2D 立绘；文生 3D 可产出 GLB 但<strong>无骨骼</strong>，接进格斗游戏只能整体平移，需额外绑骨，因此未列为主线。把能力边界与代价讲清楚，比先做再返工更省。</li>
+    </ul>
+
+    <h3>生成物：可替换、可否决</h3>
+    <ul class="bullets">
+      <li><strong>可替换契约：</strong>抽出 <code>CharacterView</code> 接口与与骨架无关的 <code>Pose</code> 类型，程序化骨架与 VRM 共用同一套动作系统；替换资产只需覆盖输入文件后重跑构建，逻辑层与帧表完全未动。</li>
+      <li><strong>可否决：</strong>2D 脸部贴图被判「不自然」后删除整条链路（脸板、数据注入、相关断言），几何五官升为唯一实现；默认产物从 957 KB 回到 752 KB。历史素材保留但构建不再引用、不入库。</li>
+      <li><strong>外形与骨架解耦：</strong>纯 3D 几何精修只换外形网格，禁止改动关节层级、骨骼长度与末端局部坐标；指纹逐字节未变，网格从 86 → 111、方块件 31 → 4、三角面 8528 → 18858。</li>
+    </ul>
+
+    <h3>校验：人工看图不可省略</h3>
+    <ul class="bullets">
+      <li>固定的视觉验收资产包括九格动作拼图、单人近景 2 倍图、打击演出图、静止对峙图与竖屏图。验收顺序固定为纯逻辑单测 → 构建 → 浏览器自检连跑两次全绿 → <strong>人工看图</strong>。</li>
+      <li>断言全绿时仍靠看图发现过：站防/蹲防剪影几乎一样、跳攻摆拍裁掉头顶、柔光像「脏玻璃」、速度线像背景横线、残影与本体重合发虚、挑染刘海变成「皇冠」与三角耳、上衣下摆黑半圆。</li>
+      <li>诊断手法同样可复用：把描边壳临时染色再设透明，区分「描边问题」还是「几何本身问题」，最终定位为四肢旋转体两端留平口、BackSide 壳从斜下方露出黑色内壁，用首尾半径 0 收口解决。</li>
+    </ul>
+    <div class="evi-bar"><b>适用环节</b>　<span class="tag tag-phase">内容生成</span> <span class="tag tag-phase">视觉校验</span>　　<b>实践依据</b>　README「验收顺序」「已知差距」；<code>RIG_BASELINE</code> 与 <code>shots/report.json</code>；开发日志中的资产审计与四轮看图收敛记录。</div>
+  </section>
+
+  <!-- 04 -->
+  <section id="s4">
+    <h2><span class="no">04</span>逻辑实现</h2>
+    <p class="lead"><strong>把「能被离线断言覆盖的部分」与「必须靠浏览器观察的部分」切干净。</strong>确定性是格斗玩法可复现、可测试、可调试的共同基础。</p>
+    <ul class="bullets">
+      <li><strong>确定性步进：</strong>逻辑固定 60Hz 步进 + 渲染插值，<code>rAF</code> 不直接驱动逻辑；招式帧表分 startup / active / recovery，判定为自研状态机 + AABB（hitbox / hurtbox / pushbox），不引入物理引擎。帧数据与步进方式一旦改动会破坏可复现性。</li>
+      <li><strong>纯逻辑层离线可测：</strong>用 esbuild 把纯逻辑层打包为 <code>tests/.build/logic.mjs</code>，<code>node --test</code> 覆盖帧表、判定、防御、输入、AI、Match 共 38 条单测，不需要浏览器。</li>
+      <li><strong>契约显式化：</strong><code>Match.step()</code> 返回「本帧是否被 hitstop 冻结」，消除「step 前读 hitstop、step 内递减」的隐式耦合；受击打断的旧招式在全部配对结算完之后统一清理，避免改变互击的先手结算顺序。</li>
+      <li><strong>逻辑时间与视觉时间分离：</strong>hitstop 冻结逻辑帧时同时冻结视觉时间，但 FX 仍按渲染 dt 推进，于是定格画面上火花继续炸开；玩法与帧表一行未改。</li>
+      <li><strong>改动收口：</strong>纯逻辑规则改动同步更新 <code>tests/*.test.mjs</code>，渲染与演出改动同步更新浏览器自检脚本，两层断言必须同时全绿。</li>
+    </ul>
+    <div class="evi-bar"><b>适用环节</b>　<span class="tag tag-phase">逻辑实现</span> <span class="tag tag-phase">质量把控</span>　　<b>实践依据</b>　README「工程约定」第 4、5、6 条；<code>package.json</code> 的 test / build / verify 脚本；38 条单测与 77 条浏览器断言。</div>
+  </section>
+
+  <!-- 05 -->
+  <section id="s5">
+    <h2><span class="no">05</span>调试迭代</h2>
+    <p class="lead"><strong>把 AI 的调试能力沉淀为「可复跑的探针 + 可收敛的断言」，而不是一次性的手工排查。</strong>可观测性做得越细，越能把「看起来不对」变成可验证的数值。</p>
+    <ul class="bullets">
+      <li><strong>运行时状态可观测：</strong><code>window.__kof</code> 暴露 <code>snapshot / setPose / clearPose / limbs / setJoint / setDebug / showImpact / sampleAttackTags</code>；snapshot 含镜头、FX 计数、视觉时间、骨架指纹与双口径帧率。冻结逻辑摆拍使关键帧截图可复现。</li>
+      <li><strong>用坐标而非描述判断动作：</strong>通过 <code>limbs()</code> 读拳套与脚的世界坐标扫描标定，发现「绕 X 轴旋转只让肢体朝 ±Z、屏幕投影几乎不变」，据此把主伸展改到 Z 分量并统一 R 侧主动肢体；又把判定已生效但姿态仍停在 windup 的 active 首帧改为 strike 混合。</li>
+      <li><strong>断言要抗时序波动：</strong>headless 帧率在 15~60fps 区间波动，按固定等待时间读落地缓冲会偶发假失败。改法是轮询到姿态收敛（标签为 idle 且位移阈值达标）再采样、以「下一个 rAF 立刻读 + 稍后再读」验证触发与递减、以及确定性两段采样。</li>
+      <li><strong>效果生命周期可断言：</strong>FX 同时维护存活计数与累计计数，效果淡出后仍能断言触发过；调试线框直接读取与结算同源的世界 AABB；KO 特写改挂回合结束事件而非整场结束事件，因为自检只打完第一回合就会发现特写未触发。</li>
+      <li><strong>改进建议：</strong>断言失败时先区分「产品回归」与「时序假失败」，后者应修断言而非放宽阈值；探针应随功能一起交付，避免下次重新造轮子。</li>
+    </ul>
+    <div class="evi-bar"><b>适用环节</b>　<span class="tag tag-phase">调试迭代</span> <span class="tag tag-phase">自动化自检</span>　　<b>实践依据</b>　README「<code>__kof</code> 调试 API」；开发日志中「测试脆弱性修复」「测试时序脆弱修正」多处记录；<code>shots/report.json</code> 的探针字段。</div>
+  </section>
+
+  <!-- 06 -->
+  <section id="s6">
+    <h2><span class="no">06</span>性能与质量把控</h2>
+    <p class="lead"><strong>性能结论必须来自正确的口径，质量结论必须来自可移植、可复跑的验收链。</strong>本次把「换台机器也能跑通」当作交付能力的一部分。</p>
+    <ul class="bullets">
+      <li><strong>双口径计数：</strong><code>fps</code> 统计逻辑步/秒，<code>renderFps</code> 才统计真实渲染帧/秒。实测 headless 下逻辑 60 / 渲染 29，高负载时 34 / 15；旧口径会完全掩盖掉帧。</li>
+      <li><strong>零风险优化优先：</strong>HUD 加入脏检查（此前每渲染帧无条件写 14 处 DOM 属性并重建 2 次 <code>innerHTML</code>）；残影先判断容量再克隆整套 111 meshes 骨架；复用临时对象与模块级几何缓存。均为不改玩法、不改视觉的改动。</li>
+      <li><strong>交付契约可断言：</strong>默认产物 <code>kof-3d.html</code> 为 790,806 字节（约 772 KB），<code>file://</code> 下零外部请求、零贴图材质网格、产物不含内联图片数据；单文件内联脚本要求构建产物恰好 1 个 JS chunk、至多 1 个 CSS chunk，多 chunk 直接报错而非静默覆盖出坏文件。</li>
+      <li><strong>自检链可移植：</strong>浏览器自检改为本地 <code>require('puppeteer-core')</code> 加 <code>CHROME_PATH</code> / 常见路径探测，九格拼图用浏览器 Canvas 合成、近景图用 <code>deviceScaleFactor:2</code> 裁切，移除对 ImageMagick 与绝对路径的依赖；相关工具显式声明在 devDependencies，换机器安装依赖即可跑全套。</li>
+      <li><strong>风险不擅自处置：</strong><code>npm audit</code> 报 9 个 high，全部来自本地开发依赖的传递链、不进入单文件产物；修复需破坏性升级，因此评估后交人决策。只读审查发现工程未纳入版本管理、缺 README、素材体积大等问题时，采用「新建仓库、补文档、只加忽略规则<strong>绝不删除</strong>」的处置方式。</li>
+      <li><strong>发布治理：</strong>开源时由人拍板仓库名、MIT、干净单提交与「只提交源码」；补 <code>LICENSE</code> 与 <code>CREDITS.md</code> 标注 CC0 资产来源；发布后按「clone 后能否复现」实测安装、单测、构建、浏览器自检，并核对远端文件与本地一致、产物与历史素材未公开。</li>
+    </ul>
+    <div class="evi-bar"><b>适用环节</b>　<span class="tag tag-phase">性能把控</span> <span class="tag tag-phase">质量把控</span> <span class="tag tag-phase">发布治理</span>　　<b>实践依据</b>　<code>shots/report.json</code>（<code>htmlBytes</code> / 77 条结果 / 零页面错误 / 零失败请求）；README「快速开始」「工程约定」；开发日志 P0/P1 验收与开源发布记录。</div>
+  </section>
+
+  <!-- 07 -->
+  <section id="s7">
+    <h2><span class="no">07</span>可复用原则速查</h2>
+    <p class="lead">以下原则均可直接迁移到下一个 3D / 交互项目；每条标注适用环节与本次实践中的出处，便于复核。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>原则</th><th>适用环节</th><th>实践依据</th></tr></thead>
+        <tbody>
+          <tr><td><strong>决策与范围由人锁定，AI 在边界内自主</strong></td><td>需求拆解</td><td>四项拍板决策后实现；M2/M3 不解禁</td></tr>
+          <tr><td><strong>约束写成断言，不写成口头约定</strong></td><td>质量把控</td><td>骨架指纹、零贴图、单文件体积、chunk 数量硬校验</td></tr>
+          <tr><td><strong>每轮先声明「不动哪些层」</strong></td><td>迭代规划</td><td>几何精修只改外形网格；演出轮不动判定与姿态</td></tr>
+          <tr><td><strong>生成资产先审许可与完整性，再看效果</strong></td><td>内容生成</td><td>许可元数据审计、glb header 长度比对发现下载截断</td></tr>
+          <tr><td><strong>生成物必须有可替换接口与可回退路径</strong></td><td>内容生成</td><td><code>CharacterView</code> / <code>Pose</code> 插槽；贴图链路被彻底删除</td></tr>
+          <tr><td><strong>数值全绿之后必须人工看图</strong></td><td>内容校验</td><td>拼图、近景、演出、竖屏固定截图位；多轮视觉问题靠看图发现</td></tr>
+          <tr><td><strong>逻辑确定性优先于表现自由度</strong></td><td>逻辑实现</td><td>固定 60Hz + 插值；hitstop 同时冻结视觉时间</td></tr>
+          <tr><td><strong>纯逻辑层离线可测，表现层真实浏览器可测</strong></td><td>调试迭代</td><td>38 条单测 + 77 条浏览器断言，改动各自收口</td></tr>
+          <tr><td><strong>断言用相对增量与轮询收敛，不用绝对等待</strong></td><td>调试迭代</td><td>headless 帧率波动导致的多次假失败及修正</td></tr>
+          <tr><td><strong>性能看真实渲染口径，优化先做零风险项</strong></td><td>性能把控</td><td><code>renderFps</code>；HUD 脏检查、残影容量前置判断</td></tr>
+          <tr><td><strong>自检工具本身要可移植、可复跑</strong></td><td>质量把控</td><td>去绝对路径与 ImageMagick，依赖显式声明</td></tr>
+          <tr><td><strong>不可逆与对外动作交人决策，并留复核记录</strong></td><td>发布治理</td><td>素材只忽略不删除、依赖告警不擅自升级、发布四项决策与 clone 复现实测</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 08 -->
+  <section id="s8">
+    <h2><span class="no">08</span>常见风险与改进建议</h2>
+    <p class="lead">下列风险均在本次实践中真实出现过，改进建议来自已采取的处置或事后审查结论。</p>
+    <div class="tablewrap">
+      <table class="risk">
+        <thead><tr><th>风险</th><th>本次表现</th><th>改进建议</th><th>适用环节</th></tr></thead>
+        <tbody>
+          <tr><td>数值全绿但视觉不成立</td><td>站防/蹲防剪影相似、跳攻裁头、柔光像脏玻璃、装饰件变「皇冠」、描边黑半圆</td><td>固定截图位并纳入验收；用染色 / 透明诊断分离「描边」与「几何」问题；姿态差异尽量量化为阈值断言</td><td>内容校验</td></tr>
+          <tr><td>断言依赖绝对时间</td><td>固定等待后读落地缓冲偶发归零；姿态未收敛导致前伸量假失败</td><td>改为轮询收敛、两段采样与相对增量判断；区分产品回归与时序假失败</td><td>调试迭代</td></tr>
+          <tr><td>统计口径掩盖真实问题</td><td><code>fps</code> 统计逻辑步，掉帧时仍显示 60</td><td>逻辑与渲染分开计数并同时断言；性能结论以真实渲染帧为准</td><td>性能把控</td></tr>
+          <tr><td>生成物风格不适配且难以回退</td><td>2D 脸板与 3D 身体侧视有纸片感；用户判定「不自然」</td><td>能力核实与代价说明先行；生成物经可替换接口接入；否决时整链路删除并固化为断言</td><td>内容生成</td></tr>
+          <tr><td>第三方资产许可与下载完整性</td><td>许可条款禁止暴力表现；GUI 工具无法无人值守；响应约 10 MiB 截断</td><td>许可元数据逐项审计；用文件头声明长度校验下载；把「无可用资产」作为结论而非硬凑</td><td>内容生成</td></tr>
+          <tr><td>骨架改动引发断言集体失效</td><td>坐标探针与全部动作断言依赖关节局部坐标</td><td>改动前先冻结指纹基线；外形与骨架解耦，只允许替换网格</td><td>逻辑实现</td></tr>
+          <tr><td>自检脚本不可移植</td><td>曾硬编码三个绝对路径、依赖未声明、拼图依赖外部图像工具</td><td>本地依赖 + 路径探测 + 浏览器 Canvas；换机器按固定顺序复跑全套</td><td>质量把控</td></tr>
+          <tr><td>构建静默产出坏文件</td><td>遍历 dist 时多个 chunk 会互相覆盖</td><td>对 chunk 数量做硬校验并直接报错，避免生成看似成功的坏产物</td><td>质量把控</td></tr>
+          <tr><td>过度 DOM 写与重复克隆</td><td>每帧 14 处属性写与 2 次子树重建；残影满额后仍克隆整套骨架再丢弃</td><td>脏检查、容量前置判断、临时对象与几何复用；先做不改行为的零风险优化</td><td>性能把控</td></tr>
+          <tr><td>依赖告警与素材清理的次生风险</td><td>9 个 high 来自开发依赖传递链；36 MB 历史素材若按「清理」处理可能误删</td><td>分级评估、破坏性升级交人决策；只加忽略规则不删除，并抽样校验文件内容一致</td><td>发布治理</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 结论 -->
+  <section class="conclusion" id="s9">
+    <h2>结论</h2>
+    <p><strong>AI 在 3D 游戏开发中真正的产出，不是代码量，而是「可复验的闭环」。</strong>本次实践里，人用少量关键决策界定目标、审美与范围，AI 在其内完成多轮实现、自检与诊断；每次改动都由纯逻辑单测、真实浏览器断言与人工看图三重收口，因此能在不改判定、不动骨架的前提下连续迭代规则、演出、几何与工程化四轮。</p>
+    <p>值得沿用的三条做法：</p>
+    <ul>
+      <li>把不变量（骨架、零贴图、单文件、离线、chunk 数量）固化为硬断言，让约束自动生效。</li>
+      <li>把「看图」写进验收顺序，承认数值断言无法覆盖姿态、裁切与特效质感。</li>
+      <li>把可逆性作为分工依据：可断言可回滚的交给 AI，审美、范围、资产与对外动作由人确认。</li>
+    </ul>
+    <p>同时应保持克制：本次仍有明确未解禁范围、低模角色精度上限、VRM 插槽无残影、移动端只能看不能玩等已知差距，安全告警与下一步路线均留待人决策。总结的价值在于复用方法与边界，而非把一次垂直切片说成完整产品能力。</p>
+  </section>
+
+  <!-- 附录 -->
+  <section class="appendix" id="s10">
+    <h2><span class="no">附录</span>实践依据索引</h2>
+    <p>为便于复核，下列事实与数据均取自项目内可查文件与记录；本文未引入外部案例、推测数据或未提供的工作量统计。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>事实 / 数据</th><th>出处</th></tr></thead>
+        <tbody>
+          <tr><td>范围 M0 + M1；M2 / M3 未解禁；POW 槽为展示属性</td><td><code>README.md</code>「范围」「已知差距」</td></tr>
+          <tr><td>固定 60Hz 逻辑步进 + 渲染插值；自研状态机 + AABB；改动收口规则</td><td><code>README.md</code>「工程约定」</td></tr>
+          <tr><td>38 条纯逻辑单测；77 条浏览器断言；验收顺序与人工看图要求</td><td><code>package.json</code>、<code>README.md</code>、<code>shots/report.json</code></td></tr>
+          <tr><td>骨架指纹 493 字符；基线 86 meshes / 31 boxes / 8528 tris；精修后 111 / 4 / 18858 / 9 materials</td><td><code>scripts/verify.mjs</code> 的 <code>RIG_BASELINE</code>、<code>shots/report.json</code> 的 <code>rigProbe</code></td></tr>
+          <tr><td>产物 790,806 字节；零页面错误 / 零控制台错误 / 零失败请求；<code>texturedMeshes === 0</code></td><td><code>kof-3d.html</code>、<code>shots/report.json</code>、<code>scripts/verify.mjs</code></td></tr>
+          <tr><td><code>fps</code> 为逻辑步口径、<code>renderFps</code> 为渲染帧口径；实测 60/29 与 34/15</td><td><code>README.md</code>「已知差距」；2026-11-05 开发日志（P1）</td></tr>
+          <tr><td>资产许可审计、GUI / 下载截断限制、能力核实、贴图路线否决与回退</td><td>2026-11-04 开发日志（资产调研、贴图与回退各轮）</td></tr>
+          <tr><td>看图发现的问题、诊断手法、时序脆弱性修正</td><td>2026-11-04 开发日志（规则 / 演出 / 几何各轮）</td></tr>
+          <tr><td>P0 工程化硬化、P1 零风险修复、9 个 high 处置、开源发布决策与复现实测</td><td>2026-11-05 开发日志；<code>LICENSE</code>、<code>CREDITS.md</code>（公开副本）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="foot">本文仅依据 kof-3d 项目已有实践与记录整理，用于团队内部方法复盘。所述「最佳」指在该项目约束下被验证有效的做法，不构成对其他项目形态的通用性能或效果承诺。</p>
+  </section>
+
+</article>
+</div>
+</body>
+</html>
