@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="回响 EchoNote 架构剖析：Rust Core 负责会话编排与常驻模型互斥，Swift 子进程接管 macOS 音频采集与译文播放，八大模块逐层拆解，并给出代际隔离、上下文轮换等六个让同传可靠的时间机制。">
+<meta name="keywords" content="local-speech-translation, architecture-breakdown, rust, swift, macos-audio-capture, llm-inference">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-05">
+<title>回响 EchoNote · 架构剖析</title>
+<style>
+:root{
+  --bg:#0c0e11; --bg2:#101318; --panel:#14181f; --panel2:#181d26;
+  --line:#232a35; --line2:#2c3542;
+  --ink:#e8eaee; --ink2:#9aa3b0; --ink3:#5d6673;
+  --accent:#e8b04b; --accent2:#5ec4b8; --accent3:#e2725b; --accent4:#7fa8e8;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.hero{padding:110px 0 70px;border-bottom:1px solid var(--line)}
+.hero .kicker{color:var(--accent);font:600 12px/1 var(--mono);letter-spacing:.35em}
+.hero h1{margin:22px 0 18px;font-family:ui-serif,"Songti SC",Georgia,serif;font-size:clamp(34px,5vw,54px);font-weight:600;letter-spacing:-.01em}
+.hero p{max-width:640px;color:var(--ink2);font-size:16px}
+.hero .stats{display:flex;flex-wrap:wrap;gap:44px;margin-top:52px}
+.stat .n{font:600 30px/1.1 var(--mono);color:var(--ink)}
+.stat .n em{font-style:normal;color:var(--accent)}
+.stat .l{margin-top:7px;color:var(--ink3);font-size:12px;letter-spacing:.1em}
+section{padding:76px 0}
+.sec-head{margin-bottom:44px}
+.sec-head .no{color:var(--ink3);font:600 12px/1 var(--mono);letter-spacing:.3em}
+.sec-head h2{margin:14px 0 10px;font-family:ui-serif,"Songti SC",Georgia,serif;font-size:30px;font-weight:600}
+.sec-head p{color:var(--ink2);max-width:680px;font-size:14px}
+.diagram{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:26px;overflow-x:auto}
+.diagram svg{display:block;width:100%;height:auto}
+.diagram.wide svg{min-width:1060px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 26px 22px;transition:border-color .2s}
+.card:hover{border-color:var(--line2)}
+.card .tag{display:inline-block;padding:3px 10px;border-radius:99px;font:600 10px/1.6 var(--mono);letter-spacing:.12em}
+.t-rust{background:rgba(232,176,75,.12);color:var(--accent)}
+.t-swift{background:rgba(94,196,184,.12);color:var(--accent2)}
+.t-web{background:rgba(127,168,232,.12);color:var(--accent4)}
+.t-proto{background:rgba(226,114,91,.12);color:var(--accent3)}
+.card h3{margin:16px 0 4px;font-size:17px;font-weight:650}
+.card .path{color:var(--ink3);font:11px/1.5 var(--mono)}
+.card .lines{margin-top:10px;color:var(--ink3);font:600 11px var(--mono)}
+.card .lines b{color:var(--accent);font-weight:600}
+.card p.desc{margin-top:14px;color:var(--ink2);font-size:13px;line-height:1.8}
+.card ul{margin:14px 0 0;list-style:none}
+.card li{position:relative;padding-left:16px;color:var(--ink2);font-size:12.5px;line-height:1.9}
+.card li:before{content:"";position:absolute;left:0;top:.72em;width:6px;height:1px;background:var(--accent)}
+.card li b{color:var(--ink);font-weight:600}
+.code{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--accent2);white-space:nowrap}
+.mechanisms{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px}
+.mech{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px 26px}
+.mech h3{font-size:15px;font-weight:650;display:flex;align-items:center;gap:10px}
+.mech h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.mech p{margin-top:12px;color:var(--ink2);font-size:13px;line-height:1.85}
+.mech p b{color:var(--ink)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:820px){.two-col{grid-template-columns:1fr}}
+.note{border:1px dashed var(--line2);border-radius:12px;padding:20px 24px;color:var(--ink2);font-size:13px;line-height:1.85}
+.note b{color:var(--ink)}
+.foot{padding:60px 0 90px;border-top:1px solid var(--line);color:var(--ink3);font-size:12px}
+.foot .mono{font-family:var(--mono)}
+/* svg text styles */
+svg text{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+svg .mono{font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <div class="kicker">ARCHITECTURE DEEP-DIVE · 2026</div>
+  <h1>回响 EchoNote<br>本地实时语音同传的解剖报告</h1>
+  <p>把系统声音、麦克风或本地音视频，变成一条可回读、可导出的双语会话时间线。Rust Core 负责会话与编排，Swift 原生进程接管 macOS 音频，常驻 Hy-SimulMT 模型做同传翻译。</p>
+  <div class="stats">
+    <div class="stat"><div class="n"><em>1</em> 个常驻模型</div><div class="l">全局互斥 · attach / adopt</div></div>
+    <div class="stat"><div class="n">100ms <em>→</em> 800ms</div><div class="l">传输帧 → 模型块对齐</div></div>
+    <div class="stat"><div class="n"><em>3</em> 条隔离键</div><div class="l">session_id + epoch + sequence</div></div>
+    <div class="stat"><div class="n">65% / 80%</div><div class="l">上下文轮换双阈值</div></div>
+  </div>
+</div></header>
+
+<!-- ══════════ 01 一图总览 ══════════ -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="no">01 — THE BIG PICTURE</div>
+    <h2>一张图看懂全系统</h2>
+    <p>依赖方向自上而下：<span class="code">simulmt-app</span> → <span class="code">simulmt-core</span> → <span class="code">simulmt-policy</span> / <span class="code">simulmt-api</span>。Core 通过 trait 与子进程隔离音源、翻译器、播放器，HTTP 层不感知任何 macOS 或模型细节。</p>
+  </div>
+  <div class="diagram wide">
+  <svg viewBox="0 0 1120 700">
+    <defs>
+      <marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3d4757"/></marker>
+      <marker id="ara" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#e8b04b"/></marker>
+      <marker id="arb" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5ec4b8"/></marker>
+    </defs>
+
+    <!-- 呈现层 -->
+    <g>
+      <rect x="60" y="24" width="470" height="76" rx="12" fill="#14181f" stroke="#232a35"/>
+      <text x="82" y="55" fill="#e8eaee" font-size="15" font-weight="600">web/index.html — 浏览器控制台</text>
+      <text x="82" y="80" fill="#5d6673" font-size="11">单文件 · 原生 HTML/CSS/JS · 零构建 · localStorage 仅存界面偏好</text>
+      <rect x="590" y="24" width="470" height="76" rx="12" fill="#14181f" stroke="#232a35"/>
+      <text x="612" y="55" fill="#e8eaee" font-size="15" font-weight="600">apps/desktop — WKWebView 桌面壳</text>
+      <text x="612" y="80" fill="#5d6673" font-size="11">Swift · 仅加载本地 URL + 原生媒体选择桥接</text>
+    </g>
+
+    <!-- HTTP -->
+    <line x1="560" y1="100" x2="560" y2="132" stroke="#3d4757" stroke-width="1.5" marker-end="url(#ar)"/>
+    <rect x="60" y="136" width="1000" height="70" rx="12" fill="#181d26" stroke="#e8b04b" stroke-opacity=".35"/>
+    <text x="82" y="166" fill="#e8b04b" font-size="14" font-weight="600">apps/core — Axum HTTP 入口（651 行）</text>
+    <text x="82" y="190" fill="#5d6673" font-size="11">REST 会话控制 · 每会话 WebSocket 事件流 · 媒体导入(afconvert) · SRT/VTT/WAV 导出 · 静态托管 · 仅监听本机</text>
+
+    <!-- Core -->
+    <line x1="560" y1="206" x2="560" y2="238" stroke="#3d4757" stroke-width="1.5" marker-end="url(#ar)"/>
+    <rect x="60" y="242" width="1000" height="88" rx="12" fill="#14181f" stroke="#5ec4b8" stroke-opacity=".4"/>
+    <text x="82" y="272" fill="#5ec4b8" font-size="14" font-weight="600">crates/core — SessionManager / Session（编排中心，session.rs 3065 行）</text>
+    <text x="82" y="296" fill="#5d6673" font-size="11">生命周期门控 · 全局模型互斥 detach/adopt · 事件广播 · 指标 · JSONL 字幕持久化 · epoch 隔离</text>
+    <text x="82" y="316" fill="#9aa3b0" font-size="11">Idle → Preparing → Ready → Running ↔ Paused → Stopping　·　Ready = 模型常驻未采集</text>
+
+    <!-- 管线 -->
+    <g font-size="12" fill="#e8eaee" text-anchor="middle">
+      <!-- Source -->
+      <line x1="145" y1="330" x2="145" y2="362" stroke="#3d4757" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="60" y="366" width="170" height="66" rx="10" fill="#181d26" stroke="#232a35"/>
+      <text x="145" y="392" fill="#e8eaee">RunningSource</text>
+      <text x="145" y="412" fill="#5d6673" font-size="10">100ms 帧 · 16kHz PCM16</text>
+      <line x1="230" y1="399" x2="272" y2="399" stroke="#e8b04b" stroke-width="1.5" marker-end="url(#ara)"/>
+      <!-- Chunker -->
+      <rect x="276" y="366" width="150" height="66" rx="10" fill="#181d26" stroke="#e8b04b" stroke-opacity=".5"/>
+      <text x="351" y="392" fill="#e8b04b">AudioChunker</text>
+      <text x="351" y="412" fill="#5d6673" font-size="10">拼帧 → 800ms 块</text>
+      <line x1="426" y1="399" x2="468" y2="399" stroke="#e8b04b" stroke-width="1.5" marker-end="url(#ara)"/>
+      <!-- Translator -->
+      <rect x="472" y="366" width="170" height="66" rx="10" fill="#181d26" stroke="#e2725b" stroke-opacity=".5"/>
+      <text x="557" y="392" fill="#e2725b">RunningTranslator</text>
+      <text x="557" y="412" fill="#5d6673" font-size="10">llama-mtmd-cli --stream-v2</text>
+    </g>
+    <!-- fork -->
+    <path d="M557,432 L557,470" stroke="#3d4757" stroke-width="1.5" fill="none"/>
+    <path d="M557,470 L557,470" fill="none"/>
+    <path d="M557,470 L270,470 L270,470" stroke="none"/>
+    <path d="M557,432 L557,458" stroke="#3d4757" stroke-width="1.5" fill="none"/>
+    <path d="M270,470 L845,470" stroke="#3d4757" stroke-width="1.5" fill="none"/>
+    <line x1="270" y1="470" x2="270" y2="486" stroke="#3d4757" stroke-width="1.5" marker-end="url(#ar)"/>
+    <line x1="845" y1="470" x2="845" y2="486" stroke="#3d4757" stroke-width="1.5" marker-end="url(#ar)"/>
+    <g font-size="12" fill="#e8eaee" text-anchor="middle">
+      <rect x="150" y="490" width="240" height="60" rx="10" fill="#181d26" stroke="#232a35"/>
+      <text x="270" y="514" fill="#e8eaee">SubtitleAssembler</text>
+      <text x="270" y="534" fill="#5d6673" font-size="10">字幕组句 → 历史 / 导出 / WebSocket</text>
+      <rect x="705" y="490" width="280" height="60" rx="10" fill="#181d26" stroke="#232a35"/>
+      <text x="845" y="514" fill="#e8eaee">SpeechAssembler（TTS 组句，独立阈值）</text>
+      <text x="845" y="534" fill="#5d6673" font-size="10">合成 → 播放队列 → 播放事件 / 指标</text>
+    </g>
+
+    <!-- 子进程适配器 -->
+    <g>
+      <line x1="145" y1="432" x2="145" y2="560" stroke="#3d4757" stroke-width="1" stroke-dasharray="4 4"/>
+      <rect x="60" y="566" width="300" height="108" rx="12" fill="#101318" stroke="#5ec4b8" stroke-opacity=".45" stroke-dasharray="5 4"/>
+      <text x="80" y="596" fill="#5ec4b8" font-size="13" font-weight="600">audio_host.swift（子进程）</text>
+      <text x="80" y="618" fill="#5d6673" font-size="11">Core Audio 进程/全局 Tap · mutedWhenTapped 原声静音</text>
+      <text x="80" y="637" fill="#5d6673" font-size="11">AVAudioEngine 麦克风 · 排除播放器 PID 防回采</text>
+      <text x="80" y="656" fill="#5d6673" font-size="11">stdout 输出 3200 字节 PCM · discontinuity 标记断点</text>
+
+      <line x1="557" y1="432" x2="557" y2="620" stroke="#3d4757" stroke-width="1" stroke-dasharray="4 4"/>
+      <rect x="410" y="566" width="300" height="108" rx="12" fill="#101318" stroke="#5ec4b8" stroke-opacity=".45" stroke-dasharray="5 4"/>
+      <text x="430" y="596" fill="#5ec4b8" font-size="13" font-weight="600">llama-mtmd-cli（常驻模型）</text>
+      <text x="430" y="618" fill="#5d6673" font-size="11">stdin：SMT2 头二进制音频帧</text>
+      <text x="430" y="637" fill="#5d6673" font-size="11">stdout：逐行 JSON 翻译事件</text>
+      <text x="430" y="656" fill="#5d6673" font-size="11">上下文 65% 轮换 / 80% 强制 · 未确认音频重放</text>
+
+      <line x1="845" y1="550" x2="845" y2="620" stroke="#3d4757" stroke-width="1" stroke-dasharray="4 4"/>
+      <rect x="760" y="566" width="300" height="108" rx="12" fill="#101318" stroke="#5ec4b8" stroke-opacity=".45" stroke-dasharray="5 4"/>
+      <text x="780" y="596" fill="#5ec4b8" font-size="13" font-weight="600">tts_host.swift（子进程）</text>
+      <text x="780" y="618" fill="#5d6673" font-size="11">AVSpeechSynthesizer 合成 24kHz PCM16 WAV</text>
+      <text x="780" y="637" fill="#5d6673" font-size="11">AVAudioPlayer 精确时刻接续播放 · rate 变速</text>
+      <text x="780" y="656" fill="#5d6673" font-size="11">stdin/stdout 逐行 JSON 命令与真实播放事件</text>
+    </g>
+
+    <!-- 底部基座 -->
+    <rect x="60" y="694" width="1000" height="1" fill="none"/>
+  </svg>
+  </div>
+
+  <div style="height:18px"></div>
+  <div class="diagram">
+  <svg viewBox="0 0 1120 96">
+    <rect x="60" y="18" width="1000" height="60" rx="12" fill="#101318" stroke="#232a35"/>
+    <text x="82" y="44" fill="#9aa3b0" font-size="13" font-weight="600">基座：crates/api（simulmt.api.v1 契约 · serde 共享类型 · Proto 版本化）</text>
+    <text x="82" y="64" fill="#5d6673" font-size="11">crates/policy（AudioChunker · BoundedQueue · 字幕组句）　｜　runtime/（sessions/ · subtitles/ · media/ · 模型日志 · TTS 缓存，均不入库）</text>
+    <text x="1020" y="54" fill="#e8b04b" font-size="12" text-anchor="end" font-weight="600">vendor/ llama.cpp-hyv3 + Hy-SimulMT-30B GGUF（18.4 GiB）</text>
+  </svg>
+  </div>
+</div></section>
+
+<!-- ══════════ 02 模块拆解 ══════════ -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="no">02 — MODULE ANATOMY</div>
+    <h2>每个模块：职责 · 技术 · 原理</h2>
+    <p>全仓约 8.4k 行源码，Rust 为骨架，Swift 做 macOS 原语，前端单文件零依赖。</p>
+  </div>
+  <div class="cards">
+
+    <div class="card"><span class="tag t-rust">RUST · 契约层</span>
+      <h3>crates/api — 共享类型契约</h3>
+      <div class="path">crates/api/src/lib.rs</div>
+      <div class="lines"><b>344</b> 行 · 被所有 crate 依赖</div>
+      <p class="desc">系统的“通用语言”。会话状态机、音频帧、翻译/字幕/播放事件、指标、快照全部在此定义一次，serde 双向序列化，并同步维护 <span class="code">api/proto/simulmt/v1</span> 六份 Proto 契约供外部 Worker 使用。</p>
+      <ul>
+        <li><b>隔离键</b>：session_id + epoch + sequence，旧代际数据一律丢弃</li>
+        <li><b>音频归一</b>：16 kHz / 单声道 / PCM S16LE，单调时钟纳秒、微秒时长</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-rust">RUST · 策略层</span>
+      <h3>crates/policy — 帧对齐与背压</h3>
+      <div class="path">crates/policy/src/lib.rs + subtitle.rs</div>
+      <div class="lines"><b>620</b> 行 · 无 IO 纯逻辑</div>
+      <p class="desc">把音源吐出的 100ms 传输帧拼成模型要求的 800ms 块；<span class="code">BoundedQueue</span> 实现有界队列与溢出策略（拒绝 / 丢最旧），积压统计直接喂给三档语音策略的“跳句”决策。</p>
+      <ul>
+        <li><b>AudioChunker</b>：缓冲拼帧，finish() 冲刷尾块</li>
+        <li><b>字幕组句</b>在 policy，<b>TTS 组句</b>在 core/output.rs，两者阈值独立</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-rust">RUST · 编排核心</span>
+      <h3>crates/core — SessionManager</h3>
+      <div class="path">crates/core/src/session.rs</div>
+      <div class="lines"><b>3065</b> 行 · 全仓最大文件</div>
+      <p class="desc">编排中心。管理多会话与全局模型互斥：prepare 时把其他会话的常驻模型 <b>detach/adopt</b> 过来（reattach 重定向事件、清音频与语言上下文），权重零重复加载。每次 start/resume 创建新运行代际（epoch）。</p>
+      <ul>
+        <li><b>生命周期</b>：模型启停与采集启停完全分离</li>
+        <li><b>字幕 JSONL</b>：追加写、按 cue_id 折叠修订，内存 512 条 / 磁盘全量</li>
+        <li><b>崩溃语义</b>：重启只恢复配置+元数据+字幕，运行态一律回 Idle</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-rust">RUST · 会话编排</span>
+      <h3>crates/core — 数据面四件套</h3>
+      <div class="path">source.rs · translator.rs · output.rs · lifecycle.rs</div>
+      <div class="lines"><b>483 + 1150 + 790 + 103</b> 行</div>
+      <p class="desc">数据通路：<span class="code">Source → Chunker → Translator → 字幕/TTS 双组句</span>。lifecycle.rs 用 Mutex + CancellationToken 串行化生命周期操作，stop 可取消当前持有门的操作，高频音频路径绝不经过它。</p>
+      <ul>
+        <li><b>source.rs</b>：mock / WAV 文件 / macOS 子进程音源，宿主掉线自动重连</li>
+        <li><b>translator.rs</b>：跟踪未确认音频，恢复时<b>重放</b>；片段 ID 连续</li>
+        <li><b>output.rs</b>：SpeechAssembler 组句后驱动 tts_host，收真实播放事件</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-rust">RUST · HTTP 层</span>
+      <h3>apps/core — Axum 应用入口</h3>
+      <div class="path">apps/core/src/main.rs</div>
+      <div class="lines"><b>651</b> 行 · REST + WS + 静态托管</div>
+      <p class="desc">薄薄一层胶水：16 条会话路由（prepare/start/pause/resume/stop/stop-model…）、每会话 WebSocket 事件流、媒体上传经 <span class="code">afconvert</span> 解码为 16kHz WAV、SRT/VTT/WAV 导出。默认只监听 127.0.0.1:8780。</p>
+      <ul>
+        <li><b>路由即文档</b>：新增能力 = API 类型 + Core 方法 + 路由 + 前端事件</li>
+        <li><b>媒体上限</b> 1 GiB，可解码范围受 macOS 解码器限制</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-swift">SWIFT · 音频采集</span>
+      <h3>adapters/audio — audio_host</h3>
+      <div class="path">adapters/audio/macos/audio_host.swift</div>
+      <div class="lines"><b>471</b> 行 · 常驻子进程</div>
+      <p class="desc">macOS 音频原语封装。<span class="code">CATapDescription</span> 建进程 Tap 或全局立体声 Tap（可排除指定 PID），<span class="code">muteBehavior = .mutedWhenTapped</span> 实现“接管即静音原声”；麦克风走 AVAudioEngine。stdout 只写裸 PCM，日志一律 stderr。</p>
+      <ul>
+        <li><b>3200 字节/帧</b> PCM 上行 · 异常退出 Core 重连 + discontinuity</li>
+        <li><b>独立播放器排除</b>：译文播放不进采集，杜绝回采循环</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-swift">SWIFT · 语音输出</span>
+      <h3>adapters/sinks — tts_host</h3>
+      <div class="path">adapters/sinks/native-player/tts_host.swift</div>
+      <div class="lines"><b>473</b> 行 · 常驻子进程</div>
+      <p class="desc">“可预合成、按精确时刻接续”的原生播放器。AVSpeechSynthesizer 生成 24kHz PCM16 WAV 缓存；多 AVAudioPlayer 用 <span class="code">play(atTime:)</span> 设备时钟无缝排播，支持 rate 变速与三档策略联动。</p>
+      <ul>
+        <li><b>命令协议</b>：stdin/stdout 逐行 JSON（合成/播放/暂停/flush/策略）</li>
+        <li><b>真实事件回传</b>：Core 据播放事件高亮当前句、算指标</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-web">WEB · 前端</span>
+      <h3>web/index.html — 单文件控制台</h3>
+      <div class="path">web/index.html</div>
+      <div class="lines"><b>57 KB</b> 单文件 · 零 npm 依赖 · 零构建</div>
+      <p class="desc">纸感设计的多会话工作台：左侧会话列表、中间双语时间线（真实 TTS 播放事件高亮当前句）、底部控制条（音源/方向/三档策略/模型）。localStorage 只存界面偏好，权威数据全在后端。</p>
+      <ul>
+        <li><b>窗口不滚动</b>：仅会话列表与时间线局部滚动</li>
+        <li><b>刷新即恢复</b>：能发现已启动模型，绝不重复加载</li>
+      </ul>
+    </div>
+
+    <div class="card"><span class="tag t-proto">PROTO · 外部契约</span>
+      <h3>api/proto — 版本化契约</h3>
+      <div class="path">api/proto/simulmt/v1/*.proto</div>
+      <div class="lines"><b>6</b> 份：common · session · audio · translation · playback · catalog</div>
+      <p class="desc">为外部 Worker 准备的版本化 Protobuf 契约，与 Rust serde 类型一一对应。改任一侧必须同步另一侧——这是跨语言协作的防漂移锁。</p>
+    </div>
+
+  </div>
+</div></section>
+
+<!-- ══════════ 03 运行机制 ══════════ -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="no">03 — RUNTIME MECHANICS</div>
+    <h2>让同传可靠起来的六个机制</h2>
+    <p>同传系统的难点不是翻译，而是<b>时间</b>：旧数据要丢弃、积压要泄洪、长会话不爆上下文、崩溃要能接上。</p>
+  </div>
+
+  <div class="mechanisms">
+    <div class="mech"><h3><span class="dot"></span>代际隔离 — epoch + source_generation</h3>
+      <p>每次 start/resume 递增 epoch，每次音源重置递增 source_generation。管线中所有帧与结果都携带三元组 <span class="code">session_id + epoch + sequence</span>，旧代际的翻译与播放结果到达即丢弃——<b>晚到的旧数据不会污染新会话</b>。</p></div>
+
+    <div class="mech"><h3><span class="dot" style="background:#5ec4b8"></span>双上下文轮换 — 65% / 80%</h3>
+      <p>上下文占用到 65% 时在空白回合轮换、80% 强制轮换，只携带最近 <b>4 轮</b>双语短上下文。优先进程内轮换（片段 ID 连续），不支持才重启进程；轮换与异常恢复都会<b>重放已写入未确认的音频</b>，一个音节不丢。</p></div>
+
+    <div class="mech"><h3><span class="dot" style="background:#e2725b"></span>三档语音策略</h3>
+      <p><b>跟得紧</b>：短组句、低缓冲、积极追平，严重积压丢最旧语音（字幕保留）。<b>自然流畅</b>：连续调度、温和追平。<b>完整优先</b>：充分组句、原速播放、不跳句。策略同时作用于组句阈值与播放队列，运行中可切。</p></div>
+
+    <div class="mech"><h3><span class="dot" style="background:#7fa8e8"></span>模型全局互斥 — 一个常驻进程</h3>
+      <p>全局只保一个常驻 <span class="code">llama-mtmd-cli --stream-v2</span>。会话切换时不杀进程，而是 reattach：重定向 stdout 事件流、清空音频缓冲与语言上下文。18 GiB 权重秒级“搬家”。翻译方向切换才重启进程。</p></div>
+
+    <div class="mech"><h3><span class="dot"></span>防回采闭环</h3>
+      <p>系统/应用 Tap 创建时把 <b>TTS 播放器 PID 加入排除列表</b>，译文的合成与播放声音永远不会被采回去再翻译一次；暂停/停止即销毁 Tap、恢复原声，模型保持常驻待命。</p></div>
+
+    <div class="mech"><h3><span class="dot" style="background:#5ec4b8"></span>诚实持久化</h3>
+      <p>字幕 JSONL 追加写、读时按 cue_id 折叠修订；会话清单原子写入。重启后恢复配置、名称、时间与完整字幕，<b>所有运行状态回到 Idle</b>——不伪造仍在采集，也不假装模型还在。</p></div>
+  </div>
+
+  <div style="height:32px"></div>
+
+  <!-- 状态机 -->
+  <div class="two-col">
+    <div class="diagram">
+      <svg viewBox="0 0 520 300">
+        <defs><marker id="sm" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#5d6673"/></marker></defs>
+        <g text-anchor="middle">
+          <circle cx="70" cy="80" r="34" fill="#14181f" stroke="#5d6673" stroke-width="1.5"/>
+          <text x="70" y="76" fill="#e8eaee" font-size="13" font-weight="600">Idle</text>
+          <text x="70" y="92" fill="#5d6673" font-size="9">无模型</text>
+
+          <circle cx="195" cy="80" r="38" fill="#181d26" stroke="#e8b04b" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="195" y="76" fill="#e8eaee" font-size="12" font-weight="600">Preparing</text>
+          <text x="195" y="92" fill="#5d6673" font-size="9">加载权重</text>
+
+          <circle cx="330" cy="80" r="34" fill="#181d26" stroke="#5ec4b8" stroke-width="1.5"/>
+          <text x="330" y="76" fill="#e8eaee" font-size="13" font-weight="600">Ready</text>
+          <text x="330" y="92" fill="#5d6673" font-size="9">模型常驻</text>
+
+          <circle cx="452" cy="80" r="34" fill="#181d26" stroke="#e2725b" stroke-width="1.5"/>
+          <text x="452" y="76" fill="#e8eaee" font-size="13" font-weight="600">Running</text>
+          <text x="452" y="92" fill="#5d6673" font-size="9">采集+翻译</text>
+
+          <circle cx="452" cy="200" r="32" fill="#14181f" stroke="#232a35" stroke-width="1.5"/>
+          <text x="452" y="196" fill="#e8eaee" font-size="13" font-weight="600">Paused</text>
+          <text x="452" y="212" fill="#5d6673" font-size="9">资源释放</text>
+        </g>
+        <g stroke="#5d6673" stroke-width="1.3" fill="none">
+          <line x1="104" y1="80" x2="153" y2="80" marker-end="url(#sm)"/>
+          <line x1="233" y1="80" x2="292" y2="80" marker-end="url(#sm)"/>
+          <line x1="364" y1="80" x2="414" y2="80" marker-end="url(#sm)"/>
+          <line x1="452" y1="112" x2="452" y2="164" marker-end="url(#sm)"/>
+          <line x1="424" y1="206" x2="424" y2="100" marker-end="url(#sm)" stroke-dasharray="4 3"/>
+          <path d="M70,114 C70,230 320,260 420,215" stroke-dasharray="4 3" marker-end="url(#sm)"/>
+        </g>
+        <g fill="#9aa3b0" font-size="10">
+          <text x="128" y="70">prepare</text>
+          <text x="262" y="70">模型就绪</text>
+          <text x="389" y="70">start·新epoch</text>
+          <text x="462" y="140">pause</text>
+          <text x="436" y="150">resume</text>
+          <text x="168" y="228">stop / stop_model（回 Idle）</text>
+        </g>
+        <text x="260" y="282" fill="#5d6673" font-size="11" text-anchor="middle">停止 = 释放采集与播放、恢复原声；模型常驻不退出 —— 启停分离</text>
+      </svg>
+    </div>
+    <div class="diagram">
+      <svg viewBox="0 0 520 300">
+        <g font-size="11">
+          <text x="20" y="30" fill="#e8b04b" font-size="12" font-weight="600">数据通路时序（一帧的旅程）</text>
+          <!-- timeline rows -->
+          <g class="mono">
+            <text x="20" y="66" fill="#5d6673">source</text>
+            <g fill="#2c3542">
+              <rect x="90" y="52" width="30" height="22" rx="3"/><rect x="126" y="52" width="30" height="22" rx="3"/><rect x="162" y="52" width="30" height="22" rx="3"/><rect x="198" y="52" width="30" height="22" rx="3"/><rect x="234" y="52" width="30" height="22" rx="3"/><rect x="270" y="52" width="30" height="22" rx="3"/><rect x="306" y="52" width="30" height="22" rx="3"/><rect x="342" y="52" width="30" height="22" rx="3"/>
+            </g>
+            <text x="20" y="116" fill="#5d6673">chunker</text>
+            <g fill="#3a3320" stroke="#e8b04b" stroke-opacity=".6">
+              <rect x="90" y="102" width="252" height="22" rx="3"/>
+              <rect x="342" y="102" width="126" height="22" rx="3" stroke-dasharray="4 3"/>
+            </g>
+            <text x="20" y="166" fill="#5d6673">translator</text>
+            <g fill="#3a2a24" stroke="#e2725b" stroke-opacity=".6">
+              <rect x="90" y="152" width="252" height="22" rx="3"/>
+            </g>
+            <text x="20" y="216" fill="#5d6673">subtitle</text>
+            <rect x="90" y="202" width="126" height="22" rx="3" fill="#22303a"/>
+            <text x="20" y="266" fill="#5d6673">speech</text>
+            <rect x="90" y="252" width="168" height="22" rx="3" fill="#22303a"/>
+          </g>
+          <text x="470" y="68" fill="#5d6673" font-size="9" class="mono">100ms × 8</text>
+          <text x="350" y="118" fill="#e8b04b" font-size="9" class="mono">800ms 块 → 模型</text>
+          <text x="350" y="168" fill="#e2725b" font-size="9" class="mono">SMT2 帧进 / JSON 行出</text>
+          <text x="224" y="218" fill="#7fa8e8" font-size="9" class="mono">组句 → JSONL / WS</text>
+          <text x="266" y="268" fill="#5ec4b8" font-size="9" class="mono">组句 → 合成 → 排播</text>
+        </g>
+        <text x="20" y="296" fill="#5d6673" font-size="10">字幕组句与 TTS 组句阈值独立：字幕边界不隐式决定播放边界</text>
+      </svg>
+    </div>
+  </div>
+</div></section>
+
+<!-- ══════════ 04 边界 ══════════ -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="no">04 — BOUNDARIES</div>
+    <h2>刻意保留的边界</h2>
+  </div>
+  <div class="mechanisms">
+    <div class="mech"><h3><span class="dot" style="background:#e2725b"></span>平台边界</h3>
+      <p>完整音源与播放器仅 macOS；Windows / Linux / 浏览器扩展只保留 trait 适配器边界，Rust Core 无需改动即可移植。</p></div>
+    <div class="mech"><h3><span class="dot" style="background:#e2725b"></span>进程边界</h3>
+      <p>音频、模型、TTS 三者都是独立子进程：各自崩溃可恢复（重连 / 重放 / 重启），Core 与 macOS 细节完全解耦。代价是协议必须双侧同步维护。</p></div>
+    <div class="mech"><h3><span class="dot" style="background:#e2725b"></span>安全边界</h3>
+      <p>HTTP 仅监听本机且无认证；真实音频接管只在用户显式点击“开始同传”后发生；模拟链路不加载真实模型、不创建音频 Tap。</p></div>
+  </div>
+</div></section>
+
+<footer class="foot"><div class="wrap">
+  <span class="mono">回响 EchoNote</span> · 本地实时语音同传工作台 · Rust + Swift + 单文件 Web<br>
+  分析基于仓库当前 HEAD：crates / apps / adapters / api / web · 约 8.4k 行源码
+</div></footer>
+
+</body>
+</html>
