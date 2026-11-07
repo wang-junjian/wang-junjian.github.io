@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="拆解 kof-3d 在线试玩页的三层机制：自定义域 301 路由、单文件构建发布与 60Hz 固定步进输入；用实测数据对比 github.io 与自定义域两条链接，说明各自收益与寿命代价，并给出主备并存、可复跑的落地清单。">
+<meta name="keywords" content="kof-3d, github-pages, 301-redirect, single-file-build, custom-domain, web-game-deploy">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-06">
+<title>kof-3d 在线试玩页 · 技术原理与链接选型对比</title>
+<style>
+:root{
+  --paper:#FBFAF7; --surface:#FFFFFF;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --line:#E3E1DA; --line2:#CFCBC0;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EAF2FB;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E5F4F1;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FBEFDC;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#E9F3E9;
+  --red:#B3261E; --red-t:#8F211B; --red-bg:#FBECEA;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F0EAFA;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px;line-height:1.75;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px 96px}
+nav{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line)}
+nav .inner{max-width:1060px;margin:0 auto;padding:10px 28px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+nav .brand{font-size:13px;font-weight:500;color:var(--ink);margin-right:8px}
+nav a{font-size:12px;color:var(--ink2);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover{border-bottom-color:var(--blue)}
+header{padding:56px 0 24px;border-bottom:1px solid var(--line)}
+h1{font-size:32px;line-height:1.3;font-weight:500;margin:0 0 12px;letter-spacing:-.01em}
+.sub{font-size:17px;color:var(--ink2);margin:0 0 20px;line-height:1.6}
+.meta{font-size:12px;color:var(--ink3);display:flex;flex-wrap:wrap;gap:6px 20px}
+h2{font-size:22px;font-weight:500;margin:0 0 6px;line-height:1.4}
+h2 .num{font-size:13px;color:var(--blue-t);font-weight:500;margin-right:10px;letter-spacing:.08em}
+h3{font-size:17px;font-weight:500;margin:28px 0 8px}
+p{margin:12px 0}
+section{padding-top:56px;scroll-margin-top:72px}
+section>.lead{color:var(--ink2);margin:0 0 20px;font-size:15px}
+a{color:var(--blue-t)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;
+  background:#F1EFE8;padding:1px 5px;border-radius:4px;color:var(--ink);overflow-wrap:anywhere}
+pre{background:#F4F2EC;border:1px solid var(--line);border-radius:10px;padding:16px 18px;
+  overflow-x:auto;font-size:13px;line-height:1.7;margin:16px 0}
+pre code{background:none;padding:0;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;line-height:1.6}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--ink2);font-weight:500;background:var(--surface);white-space:nowrap}
+td{color:var(--ink)}
+tbody tr:hover{background:#F7F5F0}
+figure{margin:24px 0;min-width:0}
+.fig-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:16px;min-width:0}
+svg{display:block;width:100%;min-width:600px;height:auto}
+figcaption{font-size:13px;color:var(--ink3);margin-top:10px;line-height:1.65}
+figcaption b{color:var(--ink2);font-weight:500}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 24px;margin:18px 0;min-width:0}
+.card h3{margin:0 0 8px}
+.claims{counter-reset:c;list-style:none;padding:0;margin:20px 0;display:grid;gap:10px}
+.claims li{counter-increment:c;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:12px 16px 12px 52px;position:relative;font-size:15px;line-height:1.65;min-width:0}
+.claims li::before{content:counter(c,decimal-leading-zero);position:absolute;left:16px;top:12px;
+  font-size:13px;color:var(--blue-t);font-weight:500;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:6px;line-height:1.6;white-space:nowrap}
+.t-blue{background:var(--blue-bg);color:var(--blue-t)}
+.t-teal{background:var(--teal-bg);color:var(--teal-t)}
+.t-amber{background:var(--amber-bg);color:var(--amber-t)}
+.t-green{background:var(--green-bg);color:var(--green-t)}
+.t-red{background:var(--red-bg);color:var(--red-t)}
+.t-purple{background:var(--purple-bg);color:var(--purple-t)}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:18px 0}
+.g2>*,.g3>*{min-width:0}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px;min-width:0}
+.kpi .u{display:block;font-size:12px;color:var(--ink3);margin-bottom:4px}
+.kpi .v{display:block;font-size:24px;font-weight:500;line-height:1.3;font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--ink3);line-height:1.7}
+.verdict{background:var(--teal-bg);border:1px solid var(--teal);border-radius:10px;padding:20px 24px;margin:20px 0}
+.verdict h3{margin:0 0 8px;color:var(--teal-t)}
+.warn{background:var(--amber-bg);border:1px solid var(--amber);border-radius:10px;padding:16px 20px;margin:18px 0}
+.warn strong{color:var(--amber-t)}
+ul,ol{padding-left:22px;margin:12px 0}
+li{margin:6px 0}
+.checklist{list-style:none;padding:0}
+.checklist li{padding-left:26px;position:relative}
+.checklist li::before{content:"";position:absolute;left:2px;top:9px;width:10px;height:10px;
+  border:1.5px solid var(--blue);border-radius:2px}
+footer{border-top:1px solid var(--line);margin-top:56px;padding-top:20px;font-size:13px;color:var(--ink3)}
+@media(max-width:760px){
+  .wrap{padding:0 18px 64px}
+  nav .inner{padding:10px 18px}
+  h1{font-size:26px}
+  table{display:block;overflow-x:auto;white-space:normal}
+  th{white-space:nowrap}
+}
+</style>
+</head>
+<body>
+<nav><div class="inner">
+<span class="brand">kof-3d · 技术原理与链接选型</span>
+<a href="#s01">总览</a><a href="#s02">域名层</a><a href="#s03">构建层</a>
+<a href="#s04">运行层</a><a href="#s05">验证</a><a href="#s06">方案对比</a><a href="#s07">判断与落地</a>
+</div></nav>
+
+<div class="wrap">
+<header>
+<h1>一个 URL 背后的三层机制，以及该把哪个链接写进 README</h1>
+<p class="sub">kof-3d 在线试玩页的实现方法、工作原理，与「保留 github.io 多一跳 301」/「改成自定义域主链接」的实证对比</p>
+<div class="meta"><span>2026-11-06</span><span>对象：<code>https://wangjunjian.com/kof-3d/</code></span>
+<span>仓库：<code>wang-junjian/kof-3d</code> @ <code>25b3a86</code></span><span>零外部依赖 · 手写 SVG 图表</span></div>
+</header>
+
+<section id="s00">
+<h2><span class="num">00</span>摘要 · 八条可证伪的核心论断</h2>
+<p class="lead">只读这一页也能拿走结论；后续每一节都是其中某条论断的展开与举证。</p>
+<ol class="claims">
+<li>这个 URL 能打开，是<strong>域名路由、构建发布、浏览器运行</strong>三层机制叠加的结果，三层分别由不同的仓库与脚本负责，互不耦合。</li>
+<li>域名层不是本项目配置的：自定义域 <code>wangjunjian.com</code> 归用户站点仓库所有，本仓库 <code>cname=null</code>；项目站点因此被 301 到自定义域子路径，全程<strong>零 DNS 改动</strong>。</li>
+<li>发布层由 <code>.github/workflows/pages.yml</code> 驱动，每次 push 到 <code>main</code> 重建并部署；仓库<strong>只提交源码</strong>，可玩的单文件产物不入库。</li>
+<li>单文件不是「把文件拼起来」那么简单：<code>vite.config.ts</code> 强制单 chunk，<code>scripts/inline.mjs</code> 做防御式内联，两者共同保证线上与 <code>file://</code> 双击是<strong>同一个字节</strong>。</li>
+<li>浏览器内以固定 60Hz 逻辑步进运行；键盘、触屏、手柄先归约成 8 个 <code>InputRole</code> 并按来源分桶，再进入与设备无关的纯逻辑层。</li>
+<li>「一键 236」不是第二套规则：它把 <code>↓ / ↘ / →+攻击</code> 排成 3 个逻辑帧，复用与键盘手摇完全相同的 <code>detectQcf()</code> 判定链。</li>
+<li>保留 <code>github.io</code> 的代价可量化：本机 8 次采样中，跨主机重定向使 <code>num_connects</code> 从 1 变 2，<code>time_redirect</code> 中位数 <strong>0.980s</strong>。</li>
+<li><strong>这不是二选一</strong>：自定义域更体面也更快，但链接寿命受制于另一个仓库的 cname 配置；<code>github.io</code> 是 GitHub 官方兜底的永久地址。建议主链接换域名、备链保留。</li>
+</ol>
+<div class="g2">
+<div class="kpi"><span class="u">线上单文件</span><span class="v">801 938 B</span><span class="note">约 783 KB，与本地产物 SHA256 一致</span></div>
+<div class="kpi"><span class="u">两层断言</span><span class="v">67 + 97</span><span class="note">纯逻辑单测 / 浏览器端到端断言</span></div>
+<div class="kpi"><span class="u">A 方案额外连接</span><span class="v">2 vs 1</span><span class="note">curl <code>num_connects</code>，跨主机必须新建连接</span></div>
+<div class="kpi"><span class="u">A 方案重定向净开销</span><span class="v">0.980 s</span><span class="note">curl <code>time_redirect</code> 中位数，n=8</span></div>
+</div>
+</section>
+
+<section id="s01">
+<h2><span class="num">01</span>三层机制总览</h2>
+<p class="lead">把「打开一个链接」拆到底，会看到三个彼此独立的责任层。分层是理解后面所有实现细节的前提，也是排查线上问题时的定位顺序。</p>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 348" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>kof-3d 在线试玩页的三层机制</title>
+<desc>域名与路由层由主站仓库的自定义域和本仓库 Pages 构成；构建与部署层由 Actions 与单文件内联脚本构成；浏览器运行层由固定步进循环与设备归约输入构成。</desc>
+<defs><marker id="ar1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text x="40" y="26" font-size="12" fill="#4A505A">一个 URL 能打开，是三层机制叠加的结果；每层由不同的仓库 / 脚本负责</text>
+
+<rect x="40" y="44" width="880" height="76" rx="12" fill="#E5F4F1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="64" y="78" font-size="16" font-weight="500" fill="#0A5750">① 域名与路由</text>
+<text x="64" y="100" font-size="12" fill="#0A5750">主站仓库持有 cname，本仓库只启用 Pages</text>
+<rect x="380" y="62" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="0.5"/>
+<text x="460" y="82" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0A5750">主站仓库 cname</text>
+<rect x="560" y="62" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="0.5"/>
+<text x="640" y="82" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0A5750">本仓库 Pages 站点</text>
+<rect x="740" y="62" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="0.5"/>
+<text x="820" y="82" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0A5750">301 → 子路径</text>
+<path d="M480 120 V144" fill="none" stroke="#0F766E" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+<rect x="40" y="148" width="880" height="76" rx="12" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="64" y="182" font-size="16" font-weight="500" fill="#1F5288">② 构建与部署</text>
+<text x="64" y="204" font-size="12" fill="#1F5288">push main 自动重建，构建产物不入库</text>
+<rect x="380" y="166" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="460" y="186" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">强制单 chunk</text>
+<rect x="560" y="166" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="640" y="186" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">内联与校验</text>
+<rect x="740" y="166" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="820" y="186" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">deploy-pages</text>
+<path d="M480 224 V248" fill="none" stroke="#2F6FB0" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+<rect x="40" y="252" width="880" height="76" rx="12" fill="#FBEFDC" stroke="#B45309" stroke-width="0.5"/>
+<text x="64" y="286" font-size="16" font-weight="500" fill="#8F3F06">③ 浏览器运行</text>
+<text x="64" y="308" font-size="12" fill="#8F3F06">固定 60Hz 逻辑步进 + 渲染插值</text>
+<rect x="380" y="270" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="0.5"/>
+<text x="460" y="290" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#8F3F06">FixedLoop 60Hz</text>
+<rect x="560" y="270" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="0.5"/>
+<text x="640" y="290" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#8F3F06">InputRole × 8</text>
+<rect x="740" y="270" width="160" height="40" rx="8" fill="#FFFFFF" stroke="#B45309" stroke-width="0.5"/>
+<text x="820" y="290" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#8F3F06">detectQcf()</text>
+</svg>
+</div>
+<figcaption><b>图 1</b> · 三层机制与各自的责任主体。排查线上问题时按此顺序定位：先确认 301 与 Pages 配置，再看构建产物，最后才怀疑游戏逻辑。</figcaption>
+</figure>
+<table>
+<thead><tr><th>层</th><th>责任主体</th><th>关键文件 / 配置</th><th>失效时的典型症状</th></tr></thead>
+<tbody>
+<tr><td><span class="tag t-teal">域名路由</span></td><td>用户站点仓库 + GitHub Pages 规则</td><td><code>wang-junjian.github.io/pages</code> 的 <code>cname</code></td><td>301 消失或目标域名变化，链接整体失效</td></tr>
+<tr><td><span class="tag t-blue">构建发布</span></td><td>本仓库 Actions 工作流</td><td><code>.github/workflows/pages.yml</code>、<code>vite.config.ts</code>、<code>scripts/inline.mjs</code></td><td>页面 404、白屏、脚本被截断</td></tr>
+<tr><td><span class="tag t-amber">浏览器运行</span></td><td>内联在单文件里的游戏代码</td><td><code>src/main.ts</code>、<code>src/core/*</code>、<code>src/view/Controls.ts</code></td><td>能打开但不能操作、设备按键无响应</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="s02">
+<h2><span class="num">02</span>第一层 · 域名路由：为什么链接落在自己的域名下</h2>
+<p class="lead">这是最反直觉的一层，也是最容易被误认为「改了 DNS」的一层。事实是：本项目一行域名配置都没写。</p>
+<p>GitHub Pages 有一条账户级规则：当用户站点仓库（<code>wang-junjian/wang-junjian.github.io</code>）绑定了自定义域，该账户下<strong>所有项目站点</strong>都会自动挂到这个自定义域的 <code>/&lt;仓库名&gt;/</code> 路径下，同时从 <code>&lt;username&gt;.github.io/&lt;repo&gt;/</code> 发出 301。所以只要在 <code>kof-3d</code> 仓库启用 Pages，内容就自动出现在 <code>wangjunjian.com/kof-3d/</code>。</p>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 308" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>自定义域下的 301 请求时序</title>
+<desc>访客先请求 github.io 项目路径，得到 301 跳转到自定义域；因跨主机需新建连接并完成第二次 TLS 握手，最终由 kof-3d 仓库的 Pages 返回 200 与单文件页面。</desc>
+<defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="40" y="40" width="200" height="48" rx="10" fill="#F1EFE8" stroke="#4A505A" stroke-width="0.5"/>
+<text x="140" y="60" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#16181D">访客浏览器</text>
+<text x="140" y="78" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#4A505A">发起请求</text>
+<rect x="380" y="40" width="200" height="48" rx="10" fill="#E5F4F1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="480" y="60" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0A5750">wang-junjian.github.io</text>
+<text x="480" y="78" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0A5750">只负责 301 跳转</text>
+<rect x="720" y="40" width="200" height="48" rx="10" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="820" y="60" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#1F5288">wangjunjian.com</text>
+<text x="820" y="78" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#1F5288">内容来自 kof-3d Pages</text>
+
+<circle cx="144" cy="120" r="3" fill="#4A505A"/><circle cx="470" cy="120" r="3" fill="#0F766E"/>
+<path d="M144 120 H468" fill="none" stroke="#4A505A" stroke-width="1.5" marker-end="url(#ar2)"/>
+<text x="306" y="108" text-anchor="middle" font-size="12" fill="#333941">① GET /kof-3d/</text>
+
+<circle cx="476" cy="166" r="3" fill="#0F766E"/><circle cx="150" cy="166" r="3" fill="#4A505A"/>
+<path d="M476 166 H152" fill="none" stroke="#0F766E" stroke-width="1.5" marker-end="url(#ar2)"/>
+<text x="313" y="154" text-anchor="middle" font-size="12" fill="#0A5750">② 301 Location: wangjunjian.com/kof-3d/</text>
+
+<circle cx="144" cy="212" r="3" fill="#4A505A"/><circle cx="810" cy="212" r="3" fill="#2F6FB0"/>
+<path d="M144 212 H808" fill="none" stroke="#2F6FB0" stroke-width="1.5" marker-end="url(#ar2)"/>
+<text x="476" y="200" text-anchor="middle" font-size="12" fill="#1F5288">③ 跨主机新建连接 + 第二次 TLS 握手</text>
+
+<circle cx="816" cy="258" r="3" fill="#2F6FB0"/><circle cx="150" cy="258" r="3" fill="#4A505A"/>
+<path d="M816 258 H152" fill="none" stroke="#2F6FB0" stroke-width="1.5" marker-end="url(#ar2)"/>
+<text x="483" y="246" text-anchor="middle" font-size="12" fill="#1F5288">④ 200 · index.html · 801938 B</text>
+
+<text x="40" y="292" font-size="12" fill="#4A505A">num_connects = 2　·　time_redirect 中位数 0.980s　·　本仓库 cname = null　·　未改 DNS / 主站仓库</text>
+</svg>
+</div>
+<figcaption><b>图 2</b> · 301 的四步时序。关键在第 ③ 步：<code>github.io</code> 与 <code>wangjunjian.com</code> 是不同主机，连接无法复用，因此多一次 DNS / TCP / TLS 往返。</figcaption>
+</figure>
+<h3>可复核的配置事实</h3>
+<table>
+<thead><tr><th>观测项</th><th>实际值</th><th>说明</th><th>证据强度</th></tr></thead>
+<tbody>
+<tr><td>主站仓库 Pages</td><td><code>cname: wangjunjian.com</code>, <code>status: built</code></td><td>自定义域归属在这里，不在 kof-3d 仓库</td><td><span class="tag t-blue">配置事实</span></td></tr>
+<tr><td>kof-3d 仓库 Pages</td><td><code>cname: null</code>, <code>build_type: workflow</code></td><td>只启用 Actions 部署模式，未绑定任何域名</td><td><span class="tag t-blue">配置事实</span></td></tr>
+<tr><td>重定向响应</td><td><code>HTTP/2 301</code> → <code>https://wangjunjian.com/kof-3d/</code></td><td><code>server: GitHub.com</code></td><td><span class="tag t-green">实测</span></td></tr>
+<tr><td>目标响应</td><td><code>HTTP/2 200</code>, <code>content-length: 801938</code></td><td>内容仍由本仓库的 Pages artifact 提供</td><td><span class="tag t-green">实测</span></td></tr>
+</tbody>
+</table>
+<div class="warn"><strong>边界提醒：</strong>正因为自定义域配置在<em>另一个仓库</em>，这个链接的寿命并不完全由本项目控制。若主站仓库更换域名、取消自定义域或 Pages 自定义域验证失效，<code>wangjunjian.com/kof-3d/</code> 会直接失效，而 <code>github.io/kof-3d/</code> 仍由 GitHub 兜底。这是第 06 节对比里最容易被忽略的一项。</div>
+</section>
+
+<section id="s03">
+<h2><span class="num">03</span>第二层 · 构建发布：从源码到 783 KB 单文件</h2>
+<p class="lead">发布链路解决「内容从哪来」，构建链路解决「为什么内容可以只有一个文件」。后者是这套方案能同时支持在线试玩与离线双击的关键。</p>
+<p><code>npm run build</code> 展开是三步：<code>tsc --noEmit</code> → <code>vite build</code> → <code>node scripts/inline.mjs</code>。<code>vite.config.ts</code> 用 <code>inlineDynamicImports: true</code>、<code>cssCodeSplit: false</code>、<code>assetsInlineLimit: 100_000_000</code> 和固定 <code>entryFileNames: 'game.js'</code>，把 Three.js 与全部业务代码压成<strong>恰好一个 JS chunk 与最多一个 CSS chunk</strong>；<code>base: './'</code> 保证产物里不出现绝对路径。</p>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 310" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>单文件 HTML 的构建与内联管线</title>
+<desc>源码经 vite build 强制产出一个 JS 与一个 CSS chunk，再由 inline.mjs 内联进 HTML，最终得到零外部引用的 kof-3d.html，线上与本地双击是同一个字节。</desc>
+<defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="40" y="50" width="190" height="64" rx="10" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="135" y="76" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#1F5288">源码与依赖</text>
+<text x="135" y="96" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">TS + Three.js + CSS</text>
+<rect x="270" y="50" width="190" height="64" rx="10" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="365" y="76" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#1F5288">vite build</text>
+<text x="365" y="96" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">强制 1 JS + 1 CSS</text>
+<rect x="500" y="50" width="190" height="64" rx="10" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="595" y="76" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#1F5288">inline.mjs</text>
+<text x="595" y="96" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">内联 + 防御式校验</text>
+<rect x="730" y="50" width="190" height="64" rx="10" fill="#E9F3E9" stroke="#2E7D32" stroke-width="0.5"/>
+<text x="825" y="76" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#1B5820">kof-3d.html</text>
+<text x="825" y="96" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1B5820">783 KB · 零外链</text>
+<path d="M230 82 H266" fill="none" stroke="#2F6FB0" stroke-width="1.5" marker-end="url(#ar3)"/>
+<path d="M460 82 H496" fill="none" stroke="#2F6FB0" stroke-width="1.5" marker-end="url(#ar3)"/>
+<path d="M690 82 H726" fill="none" stroke="#2E7D32" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+<rect x="40" y="160" width="880" height="100" rx="16" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="64" y="186" font-size="14" font-weight="500" fill="#1F5288">同一个字节：线上 Pages / file:// 双击 / 下载附件</text>
+<rect x="64" y="202" width="248" height="44" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="188" y="224" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">&lt;style&gt; 全部 CSS</text>
+<rect x="356" y="202" width="248" height="44" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="480" y="224" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">Three.js + 游戏逻辑</text>
+<rect x="648" y="202" width="248" height="44" rx="8" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="772" y="224" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">DOM 骨架 + HUD</text>
+<text x="40" y="288" font-size="12" fill="#4A505A">校验：JS chunk 恰好 1 个 · 转义 &lt;/script 与 import.meta · 剥 modulepreload · 普通 script 放 body 末尾</text>
+</svg>
+</div>
+<figcaption><b>图 3</b> · 构建管线的产物形态。默认版角色是纯 3D 几何、零贴图；只有 VRM 插槽演示版才把 <code>assets/character.vrm</code> 以 base64 内联，因此体积约 3.8 MB，不占 <code>&lt; 1 MB</code> 的默认版约束。</figcaption>
+</figure>
+<h3>四个决定成败的细节</h3>
+<table>
+<thead><tr><th>细节</th><th>做法</th><th>不这么做的后果</th></tr></thead>
+<tbody>
+<tr><td>脚本类型</td><td>内联为<strong>普通</strong> <code>&lt;script&gt;</code>，不是 module</td><td><code>file://</code> 下 module 触发 CORS，离线双击直接白屏</td></tr>
+<tr><td>插入位置</td><td>放在 <code>&lt;/body&gt;</code> 之前</td><td>普通 script 没有 module 的 defer 语义，DOM 尚未解析完就取不到 HUD 节点</td></tr>
+<tr><td>转义与剥离</td><td>转义 <code>&lt;/script</code> / <code>&lt;/style</code>、替换 <code>import.meta</code>、删除 preload / modulepreload</td><td>压缩产物里的字符串会提前闭合标签，或残留对 <code>./game.js</code> 的请求</td></tr>
+<tr><td>多 chunk 防御</td><td>JS chunk ≠ 1 时<strong>直接抛错</strong></td><td>旧实现会静默用最后一个 chunk 覆盖前面的，产出「能打开但脚本残缺」的坏文件</td></tr>
+</tbody>
+</table>
+<h3>发布工作流</h3>
+<p><code>.github/workflows/pages.yml</code> 在 push 到 <code>main</code>（或手动 <code>workflow_dispatch</code>）时触发两个 job：<code>build</code> 跑 <code>npm ci → test → typecheck → build</code>，再组装 <code>site/</code>——把单文件复制成 <code>index.html</code> 与 <code>kof-3d.html</code>，加 <code>.nojekyll</code> 阻止 Jekyll 处理，用 <code>build.txt</code> 记录 <code>$GITHUB_SHA</code> 供线上溯源；<code>deploy</code> 调官方 <code>deploy-pages@v4</code>。<code>permissions</code> 只授 <code>contents: read / pages: write / id-token: write</code>，<code>concurrency</code> 用 <code>cancel-in-progress: false</code> 避免两次部署互相踩出站点空档。</p>
+<p class="note">CI 只跑纯逻辑层，因为 <code>npm run verify</code> 依赖本机 Chrome；浏览器端到端断言留在本地验收。这是有意的能力边界，不是遗漏。</p>
+</section>
+
+<section id="s04">
+<h2><span class="num">04</span>第三层 · 浏览器运行：固定步进与设备归约</h2>
+<p class="lead">单文件加载后，<code>window.__kof.ready</code> 置位即代表 Three.js 场景、帧表与 HUD 都已就绪。之后所有玩法都跑在一个与设备无关的纯逻辑层上。</p>
+<p><code>src/main.ts:245</code> 的 <code>FixedLoop</code> 把逻辑固定在 60Hz：每个逻辑帧先 <code>controls.sync()</code>（Gamepad 是轮询设备，没有 DOM 事件，必须在采样前汇入），再 <code>match.step(input.sample())</code>；渲染回调按 <code>alpha</code> 插值更新姿态、特效与镜头。因此浏览器帧率波动不会改变判定结果，顿帧（hitstop）冻结逻辑时视觉时间也一起冻结。</p>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 300" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>输入归约与 236 判定链路</title>
+<desc>键盘、触屏虚拟键与 Gamepad 归约为 8 个 InputRole 汇入 InputBuffer；每逻辑帧 sample 出 InputFrame，由 Match 维护 20 帧历史并调用 detectQcf，最终由 Fighter 比对面向并消费 50 POW。</desc>
+<defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text x="330" y="28" font-size="12" fill="#4A505A">设备层　·　三种物理设备归约成同一套输入角色</text>
+<rect x="40" y="50" width="260" height="64" rx="10" fill="#FBEFDC" stroke="#B45309" stroke-width="0.5"/>
+<text x="170" y="76" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#8F3F06">键盘 / 触屏 / 手柄</text>
+<text x="170" y="96" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#8F3F06">三种物理设备</text>
+<rect x="350" y="50" width="260" height="64" rx="10" fill="#FBEFDC" stroke="#B45309" stroke-width="0.5"/>
+<text x="480" y="76" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#8F3F06">InputRole × 8</text>
+<text x="480" y="96" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#8F3F06">按 source 分桶持有</text>
+<rect x="660" y="50" width="260" height="64" rx="10" fill="#FBEFDC" stroke="#B45309" stroke-width="0.5"/>
+<text x="790" y="76" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#8F3F06">InputBuffer.sample()</text>
+<text x="790" y="96" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#8F3F06">产出 InputFrame</text>
+<path d="M300 82 H346" fill="none" stroke="#B45309" stroke-width="1.5" marker-end="url(#ar4)"/>
+<path d="M610 82 H656" fill="none" stroke="#B45309" stroke-width="1.5" marker-end="url(#ar4)"/>
+<path d="M790 114 V142 H170 V172" fill="none" stroke="#4A505A" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#ar4)"/>
+<text x="480" y="132" text-anchor="middle" font-size="12" fill="#333941">match.step(input.sample())</text>
+
+<text x="330" y="160" font-size="12" fill="#4A505A">逻辑层　·　纯函数，设备无关，可在 Node 里单测</text>
+<rect x="40" y="176" width="260" height="64" rx="10" fill="#E5F4F1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="170" y="202" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#0A5750">Match 20 帧历史</text>
+<text x="170" y="222" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0A5750">只记可推进对局的帧</text>
+<rect x="350" y="176" width="260" height="64" rx="10" fill="#E5F4F1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="480" y="202" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#0A5750">detectQcf()</text>
+<text x="480" y="222" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0A5750">返回绝对方向</text>
+<rect x="660" y="176" width="260" height="64" rx="10" fill="#E5F4F1" stroke="#0F766E" stroke-width="0.5"/>
+<text x="790" y="202" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#0A5750">Fighter 起招</text>
+<text x="790" y="222" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0A5750">比对 facing + 扣 50 POW</text>
+<path d="M300 208 H346" fill="none" stroke="#0F766E" stroke-width="1.5" marker-end="url(#ar4)"/>
+<path d="M610 208 H656" fill="none" stroke="#0F766E" stroke-width="1.5" marker-end="url(#ar4)"/>
+<text x="40" y="272" font-size="12" fill="#4A505A">queueQcf() 把 ↓ / ↘ / →+攻击 排成 3 个逻辑帧，与键盘手摇复用同一判定链</text>
+</svg>
+</div>
+<figcaption><b>图 4</b> · 两阶段输入链路。分界线以下全部是纯逻辑，可以在 Node 里用假手柄、假输入帧做单测，这也是 CI 不需要浏览器的原因。</figcaption>
+</figure>
+<h3>三个不显眼但决定手感的设计</h3>
+<ul>
+<li><strong>按来源分桶持有。</strong><code>core/input.ts</code> 用 <code>Map&lt;InputSource, Set&lt;InputRole&gt;&gt;</code> 保存按住状态，<code>roleHeld()</code> 只要任一来源持有即为真。手柄每帧 <code>press/release</code> 才不会误清键盘按住的方向。</li>
+<li><strong>触屏不卡键。</strong><code>view/Controls.ts</code> 用 <code>setPointerCapture</code> 配合 <code>pointerup / pointercancel / lostpointercapture</code> 三处抬键，手指滑出按钮也不会留下一个永远按着的攻击键。</li>
+<li><strong>宏指令不另立规则。</strong><code>queueQcf()</code> 排出的三帧依次进出 <code>Match</code> 的 20 帧历史，第三帧触发 <code>detectQcf()</code>；返回的<strong>绝对方向</strong>由 <code>Fighter</code> 与 <code>facing</code> 比对，输入层完全不掺角色状态。</li>
+</ul>
+</section>
+
+<section id="s05">
+<h2><span class="num">05</span>可复核的验证：每个结论都有一条命令能复跑</h2>
+<p class="lead">这一节把前面所有断言压成可执行的观测。证据强度按「配置事实 / 实测 / 代码事实 / 推断」标注，实测数据注明样本量与口径。</p>
+<table>
+<thead><tr><th>结论</th><th>复跑命令</th><th>观测值</th><th>强度</th></tr></thead>
+<tbody>
+<tr><td>产物只提交源码</td><td><code>git ls-files kof-3d.html</code></td><td>无输出；<code>.gitignore</code> 忽略两份单文件与 <code>shots/</code></td><td><span class="tag t-blue">配置事实</span></td></tr>
+<tr><td>单文件零外部引用</td><td><code>grep -oE '(src|href)="[^"]*"' kof-3d.html</code></td><td>无外部资源；<code>&lt;script&gt;</code> 与 <code>&lt;style&gt;</code> 各 1 个</td><td><span class="tag t-green">实测</span></td></tr>
+<tr><td>线上与本地同一字节</td><td><code>shasum -a 256 kof-3d.html</code> 对比 <code>curl -sSL …/index.html | shasum -a 256</code></td><td>两者均为 <code>0c9183d2…0fd16</code></td><td><span class="tag t-green">实测</span></td></tr>
+<tr><td>部署溯源</td><td><code>curl -sSL https://wangjunjian.com/kof-3d/build.txt</code></td><td><code>Playable build of commit 25b3a86c…</code></td><td><span class="tag t-green">实测</span></td></tr>
+<tr><td>两层断言全绿</td><td><code>npm test</code> / <code>npm run verify</code></td><td>67 / 67 单测、97 / 97 浏览器断言，连跑 5 次</td><td><span class="tag t-green">实测</span></td></tr>
+<tr><td>线上零报错、零外部请求</td><td>本地 Chrome 打开线上 URL 抓 <code>pageerror</code> / <code>console.error</code> / <code>requestfailed</code></td><td>三项均为 0，<code>__kof.ready</code> 正常</td><td><span class="tag t-green">实测</span></td></tr>
+<tr><td>Actions 部署成功</td><td><code>gh run view 42140549807</code></td><td>success，build 15s、deploy 9s</td><td><span class="tag t-green">实测</span></td></tr>
+<tr><td>指令识别窗口单一来源</td><td>读 <code>src/core/input.ts</code> / <code>src/core/match.ts</code></td><td><code>QCF_WINDOW = 20</code>，仅 <code>Match</code> 维护历史</td><td><span class="tag t-blue">代码事实</span></td></tr>
+</tbody>
+</table>
+<div class="warn"><strong>数据口径：</strong>本机 macOS、家庭网络、2026-11-06 单次会话采集。延迟类数字是<strong>单一案例</strong>，不是受控实验，不能外推到其他地区与网络；但 <code>num_connects</code>、<code>content-length</code>、SHA256 这类计数与内容类观测不受网络抖动影响。</div>
+</section>
+
+<section id="s06">
+<h2><span class="num">06</span>两个方案的正面对比</h2>
+<p class="lead">问题收窄成一句话：README 与仓库 homepage 继续写 <code>github.io</code>（方案 A，现状），还是改成 <code>wangjunjian.com/kof-3d/</code>（方案 B）。两者<strong>页面内容完全相同</strong>，差别只在访客抵达内容之前的那段路。</p>
+<div class="g2">
+<div class="card"><h3>方案 A · 保留 github.io</h3><p class="note">现状。README 顶部与 homepage 都指向 <code>https://wang-junjian.github.io/kof-3d/</code>，浏览器收到 301 后跳到自定义域。<strong>可用，但每次首访多一次跨主机往返。</strong></p></div>
+<div class="card"><h3>方案 B · 改成主链接</h3><p class="note">把这两处文本改成 <code>https://wangjunjian.com/kof-3d/</code>，访客一步直达 200。<strong>不改 DNS、不动主站仓库、不碰构建脚本。</strong></p></div>
+</div>
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 960 330" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>方案 A 与方案 B 的首访耗时对比</title>
+<desc>本机 8 次采样中位数：A 经 301 重定向总耗时 3.279 秒，其中重定向阶段 0.980 秒；B 直达总耗时 2.788 秒，连接数 1 次而非 2 次。</desc>
+<text x="40" y="26" font-size="12" fill="#4A505A">n = 8 次采样取中位数　·　curl time_total / time_redirect　·　本机网络，单一案例</text>
+
+<text x="40" y="88" font-size="14" font-weight="500" fill="#16181D">A · github.io</text>
+<text x="40" y="108" font-size="12" fill="#4A505A">多一跳 301</text>
+<rect x="220" y="76" width="190" height="44" rx="6" fill="#FBECEA" stroke="#B3261E" stroke-width="0.5"/>
+<text x="315" y="98" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#8F211B">301 · 0.980s</text>
+<rect x="410" y="76" width="447" height="44" rx="6" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="633" y="98" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F5288">正文传输 · 2.299s</text>
+<text x="865" y="98" dominant-baseline="central" font-size="13" font-weight="500" fill="#8F211B">3.279s</text>
+
+<text x="40" y="188" font-size="14" font-weight="500" fill="#16181D">B · 自定义域</text>
+<text x="40" y="208" font-size="12" fill="#4A505A">零重定向</text>
+<rect x="220" y="176" width="542" height="44" rx="6" fill="#E9F3E9" stroke="#2E7D32" stroke-width="0.5"/>
+<text x="491" y="198" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1B5820">直达 200 · 2.788s</text>
+<text x="770" y="198" dominant-baseline="central" font-size="13" font-weight="500" fill="#1B5820">2.788s</text>
+
+<path d="M220 250 H900" fill="none" stroke="#CFCBC0" stroke-width="1"/>
+<path d="M220 250 V256" fill="none" stroke="#CFCBC0" stroke-width="1"/>
+<path d="M414 250 V256" fill="none" stroke="#CFCBC0" stroke-width="1"/>
+<path d="M609 250 V256" fill="none" stroke="#CFCBC0" stroke-width="1"/>
+<path d="M803 250 V256" fill="none" stroke="#CFCBC0" stroke-width="1"/>
+<text x="220" y="272" text-anchor="middle" font-size="11" fill="#4A505A">0s</text>
+<text x="414" y="272" text-anchor="middle" font-size="11" fill="#4A505A">1.0s</text>
+<text x="609" y="272" text-anchor="middle" font-size="11" fill="#4A505A">2.0s</text>
+<text x="803" y="272" text-anchor="middle" font-size="11" fill="#4A505A">3.0s</text>
+<text x="40" y="306" font-size="12" fill="#4A505A">num_connects：A = 2，B = 1　·　TLS 中位数：A = 0.945s，B = 0.567s　·　total 差值 0.491s 受正文波动影响，勿单独解读</text>
+</svg>
+</div>
+<figcaption><b>图 5</b> · 首访耗时分解。条形按同一线性刻度换算（<code>x = 220 + 194.3 × 秒数</code>），两行共用刻度，可直接比长度。<code>time_redirect = 0.980s</code> 是 curl 直接给出的重定向阶段耗时，比两次独立采样的 total 差值更纯粹。</figcaption>
+</figure>
+<h3>实测数据</h3>
+<table>
+<thead><tr><th>指标</th><th>A · github.io（跟随 301）</th><th>B · 自定义域直达</th><th>口径与强度</th></tr></thead>
+<tbody>
+<tr><td><code>num_redirects</code></td><td>1</td><td>0</td><td><span class="tag t-green">计数实测</span></td></tr>
+<tr><td><code>num_connects</code></td><td><strong>2</strong></td><td><strong>1</strong></td><td><span class="tag t-green">计数实测</span></td></tr>
+<tr><td><code>time_appconnect</code> 中位数</td><td>0.945s</td><td>0.567s</td><td><span class="tag t-amber">n=8，本机</span></td></tr>
+<tr><td><code>time_redirect</code> 中位数</td><td><strong>0.980s</strong></td><td>不适用</td><td><span class="tag t-amber">n=8，本机</span></td></tr>
+<tr><td><code>time_total</code> 中位数</td><td>3.279s</td><td>2.788s</td><td><span class="tag t-amber">n=8，波动大</span></td></tr>
+<tr><td>响应内容</td><td colspan="2">同一份 <code>index.html</code>，801938 B，SHA256 <code>0c9183d2…</code></td><td><span class="tag t-green">内容实测</span></td></tr>
+</tbody>
+</table>
+<p class="note">采样区间：A 的 total 最小 2.339s / 最大 4.056s，B 的最小 1.844s / 最大 5.274s。<strong>两组分布明显重叠</strong>，因此「B 一定更快」这个说法证据不足；能站得住的结论是「B 少一次连接、少一次 TLS、少一段确定的重定向阶段耗时」。</p>
+<h3>对比矩阵</h3>
+<table>
+<thead><tr><th>维度</th><th>A · 保留 github.io</th><th>B · 改成主链接</th><th>谁更好</th></tr></thead>
+<tbody>
+<tr><td>首访往返</td><td>1 次 301 + 跨主机新连接 + 第二次 TLS</td><td>直接 200，单连接</td><td><span class="tag t-green">B</span></td></tr>
+<tr><td>回访差异</td><td colspan="2">301 可被浏览器缓存，但跨主机连接仍无法复用；差距缩小但不归零</td><td><span class="tag t-blue">B 略优</span></td></tr>
+<tr><td>品牌与信任</td><td>显示 <code>github.io</code> 子域，像演示页</td><td>自有域名，像正式产品</td><td><span class="tag t-green">B</span></td></tr>
+<tr><td>分享预览 / SEO</td><td>301 权重传递基本无损，但预览卡片可能展示原始 <code>github.io</code> 地址</td><td>预览即最终地址</td><td><span class="tag t-green">B</span></td></tr>
+<tr><td>链接寿命与依赖</td><td>GitHub 官方地址，本项目自己可控</td><td><strong>依赖主站仓库的 cname 配置</strong>，域名一变全断</td><td><span class="tag t-red">A</span></td></tr>
+<tr><td>fork / 迁移友好度</td><td>改用户名即可推导新地址</td><td>硬编码个人域名，fork 后指向原站</td><td><span class="tag t-red">A</span></td></tr>
+<tr><td>改动成本</td><td>零改动（现状）</td><td>2 处文本：README 第 5 行 + <code>gh repo edit --homepage</code></td><td><span class="tag t-blue">A 略优</span></td></tr>
+<tr><td>失效模式</td><td>Pages 关闭才失效，与域名无关</td><td>主站换域 / 自定义域验证失效 / Pages 关闭，任一即断</td><td><span class="tag t-red">A</span></td></tr>
+</tbody>
+</table>
+<div class="warn"><strong>反证据必须同列：</strong>上表第 5、6、8 行是方案 B 的真实代价，也是「多一跳 301」之所以能被容忍的理由。<code>wangjunjian.com</code> 的 cname 配置<strong>不在本仓库</strong>，把所有对外链接都押在它上面，等于把项目的可访问性外包给另一个仓库的长期维护状态。</div>
+</section>
+
+<section id="s07">
+<h2><span class="num">07</span>判断与落地</h2>
+<p class="lead">先明确标注：<strong>以下是观点，不是共识</strong>。数据与配置事实在前一节，判断建立在这些事实与你的使用场景之上。</p>
+<div class="verdict">
+<h3>建议：把自定义域写成主链接，同时保留 github.io 作为备用地址</h3>
+<p>不是二选一。对外只主推 <code>https://wangjunjian.com/kof-3d/</code>（更快、更体面、少一跳），但在 README 里以「备用地址 / permalink」的形式留一行 <code>github.io</code> 链接。这样既拿到 B 的体验与观感，又保留 A 的永久性与 fork 友好度；万一主站域名变更，读者仍能顺着备用地址找到内容。</p>
+<p style="margin-bottom:0">如果更看重「链接十年后还能打开」而不是首访那不到一秒，反过来把 <code>github.io</code> 留作主链接也完全站得住——它是 GitHub 官方兜底，且 301 会被缓存，代价主要在首次访问。</p>
+</div>
+<h3>落地清单</h3>
+<ul class="checklist">
+<li>把 <code>README.md</code> 第 5 行「在线试玩 / Play online」的 URL 改成 <code>https://wangjunjian.com/kof-3d/</code>。</li>
+<li>执行 <code>gh repo edit wang-junjian/kof-3d --homepage "https://wangjunjian.com/kof-3d/"</code> 更新仓库主页链接。</li>
+<li>在同一段补一行备用地址：<code>https://wang-junjian.github.io/kof-3d/</code>，注明会自动跳转。</li>
+<li>中英摘要里若出现「published to GitHub Pages」这类措辞，无需改动——部署方式没有变。</li>
+</ul>
+<div class="warn"><strong>一个容易被漏掉的副作用：</strong>工作流监听的是 <code>push: branches: [main]</code>，没有路径过滤。改 README 并 push 会触发一次完整构建与部署，产物内容不变但 <code>build.txt</code> 的 commit 会更新。这是预期行为，不是故障；若不想触发，可在工作流加 <code>paths-ignore: ['**.md']</code>，但那样又会让文档变更失去一次 CI 校验，需自行权衡。</div>
+<h3>复跑命令</h3>
+<pre><code># 1) 量 301 的净开销（8 次采样，比较 num_connects 与 time_redirect）
+for i in $(seq 1 8); do
+  curl -sSL -o /dev/null -w '%{num_connects} %{time_redirect} %{time_total}\n' \
+    https://wang-junjian.github.io/kof-3d/
+done
+
+# 2) 直达对照
+for i in $(seq 1 8); do
+  curl -sS  -o /dev/null -w '%{num_connects} %{time_total}\n' \
+    https://wangjunjian.com/kof-3d/
+done
+
+# 3) 确认两种入口拿到同一份产物
+shasum -a 256 kof-3d.html
+curl -sSL https://wang-junjian.github.io/kof-3d/index.html | shasum -a 256
+curl -sSL https://wangjunjian.com/kof-3d/build.txt
+
+# 4) 本地两层验收（按 README 固定顺序）
+npm test &amp;&amp; npm run typecheck &amp;&amp; npm run build &amp;&amp; npm run verify</code></pre>
+<h3>仍然存在的差距</h3>
+<p class="note">竖屏手机目前只给提示、不提供完整竖屏布局；手柄键位写死、无重绑定与振动；AI 不放必杀；无选人界面；M3 的美术打磨与联机未解禁。这些与链接选型无关，列在这里避免把「能打开」误读成「已完工」。</p>
+</section>
+
+<footer>
+<p>本文件为单文件 HTML，零外部依赖、无 CDN、图表全部手写 SVG，可直接双击离线打开。所有命令与数值来自 <code>wang-junjian/kof-3d</code> @ <code>25b3a86</code> 的本地代码、仓库配置与 2026-11-06 的本机实测。</p>
+<p>文件位置：<code>.workbuddy/reports/kof-3d-deploy-explainer.html</code>（该目录已被 <code>.gitignore</code> 忽略，不进开源仓库）。</p>
+</footer>
+</div>
+</body>
+</html>
