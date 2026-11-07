@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="从 git push 到 OIDC 令牌、从 Anycast 到 Fastly 缓存，拆解 GitHub Pages 的双平面架构：控制面如何用 API 登记不可变产物，数据面如何靠缓存与目录映射作答，以及 ETag、SPA 深链 404 与子域接管的取舍。">
+<meta name="keywords" content="github-pages, static-hosting, oidc, cdn-cache, etag, subdomain-takeover">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-06">
+<title>GitHub Pages 背后的技术 · 深度研究报告</title>
+<style>
+:root{
+--bg:#FBFAF7;--surface:#FFFFFF;--ink:#16181D;--ink2:#333941;--ink3:#454B55;
+--amber:#B45309;--amber-t:#8F3F06;--amber-bg:#FBF1E3;
+--blue:#2F6FB0;--blue-t:#1F5288;--blue-bg:#EAF2FB;
+--teal:#0F766E;--teal-t:#0A5750;--teal-bg:#E4F3F0;
+--purple:#6D3FB5;--purple-t:#5A3099;--purple-bg:#F0EAFA;
+--red:#B3261E;--red-t:#8C1D18;--red-bg:#FBEAE8;
+--green:#2E7D32;--green-t:#1B5820;--green-bg:#E9F4E9;
+--border:rgba(22,24,29,.14);--border2:rgba(22,24,29,.26);
+--font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.75;overflow-wrap:break-word}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+header.hero{padding:72px 0 36px;border-bottom:1px solid var(--border)}
+.kicker{font-size:12.5px;color:var(--amber-t);letter-spacing:.12em;margin:0 0 14px}
+h1{font-size:38px;line-height:1.25;font-weight:600;letter-spacing:-.02em;margin:0 0 18px}
+h2{font-size:25px;line-height:1.35;font-weight:600;margin:0 0 10px;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:600;margin:30px 0 10px}
+h4{font-size:15px;font-weight:600;margin:0 0 8px}
+p{margin:0 0 15px}
+a{color:var(--blue-t);text-decoration:none;border-bottom:1px solid var(--border2)}
+a:hover{border-bottom-color:var(--blue-t)}
+.lead{font-size:17px;color:var(--ink2);line-height:1.8;max-width:820px}
+.meta{font-size:13px;color:var(--ink3);margin-top:22px;line-height:1.9}
+.verdict{background:var(--amber-bg);border-left:4px solid var(--amber);border-radius:0 10px 10px 0;padding:18px 22px;margin:26px 0}
+.verdict p:last-child{margin-bottom:0}
+.verdict h4{color:var(--amber-t)}
+nav{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap}
+nav .wrap{display:flex;gap:22px;padding-top:12px;padding-bottom:12px;font-size:13px}
+nav a{color:var(--ink2);border:0;flex:none}
+nav a:hover{color:var(--amber-t)}
+section{padding-top:64px;scroll-margin-top:24px}
+section>.num{display:block;font-size:12.5px;color:var(--amber-t);letter-spacing:.1em;margin-bottom:8px}
+section>h2{margin-bottom:18px}
+.card,.g2>*,.g3>*,figure{min-width:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:18px 0}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:18px 0;line-height:1.6}
+th{text-align:left;background:#F2F0EB;color:var(--ink2);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border2)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.tag{display:inline-block;font-size:11px;line-height:1.5;padding:2px 9px;border-radius:999px;font-weight:500;white-space:nowrap}
+.t-a{background:var(--blue-bg);color:var(--blue-t)}
+.t-b{background:var(--teal-bg);color:var(--teal-t)}
+.t-c{background:var(--amber-bg);color:var(--amber-t)}
+.t-r{background:var(--red-bg);color:var(--red-t)}
+.t-g{background:var(--green-bg);color:var(--green-t)}
+.src{font-size:12.5px;color:var(--ink3);line-height:1.7}
+code{font-family:var(--mono);font-size:.88em;background:#F2F0EB;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+pre{background:#F2F0EB;border:1px solid var(--border);border-radius:10px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.7;color:var(--ink2)}
+pre code{background:none;padding:0;font-size:1em}
+figure{margin:24px 0}
+.fig-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;overflow-x:auto}
+.fig-box svg{display:block;width:100%;height:auto;min-width:600px}
+figcaption{font-size:13px;color:var(--ink3);margin-top:10px;line-height:1.7}
+ul,ol{padding-left:22px;margin:0 0 16px}
+li{margin-bottom:8px}
+.callout{background:var(--blue-bg);border-radius:10px;padding:16px 20px;margin:18px 0;font-size:14.5px}
+.callout p:last-child{margin-bottom:0}
+.warn{background:var(--red-bg);border-radius:10px;padding:16px 20px;margin:18px 0;font-size:14.5px}
+.warn h4{color:var(--red-t)}
+.ok{background:var(--green-bg);border-radius:10px;padding:16px 20px;margin:18px 0;font-size:14.5px}
+.ok h4{color:var(--green-t)}
+hr{border:0;border-top:1px solid var(--border);margin:48px 0}
+footer{border-top:1px solid var(--border);margin-top:80px;padding:32px 0 60px;font-size:13px;color:var(--ink3)}
+.ref{font-size:13.5px;line-height:1.8}
+.ref li{margin-bottom:10px}
+@media(max-width:760px){
+.wrap{padding:0 16px}
+h1{font-size:30px}
+h2{font-size:22px}
+.g2,.g3{grid-template-columns:minmax(0,1fr)}
+table{display:block;overflow-x:auto}
+header.hero{padding-top:44px}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+<div class="wrap">
+<p class="kicker">工程原理 · 深度研究报告</p>
+<h1>GitHub Pages 背后的技术</h1>
+<p class="lead">不是"怎么部署"，而是"为什么它必须是这个形状"：从 <code>git push</code> 到 OIDC 签发的部署令牌，从 Anycast DNS 到 Fastly 边缘的 <code>x-timer</code>，从 <code>max-age=600</code> 到 ETag 里藏着的文件大小。全部结论配一条可复跑命令或一份官方规范。</p>
+<div class="verdict">
+<h4>一句话论断</h4>
+<p>GitHub Pages 不是 Web 服务器，而是<strong>控制面与数据面完全分离的静态发布系统</strong>：写路径把源码编译成一个不可变的文件包并通过带 OIDC 身份断言的 API 登记为"当前版本"；读路径只做 DNS、TLS、缓存与目录查找，<strong>服务器上永远不执行用户代码</strong>。所谓技术栈的形状、缓存的陈旧窗口、SPA 深链 404、以及"免费"这件事本身，都是这一条设计决定的推论。</p>
+</div>
+<p class="meta">实测对象：<code>wang-junjian.github.io/kof-3d/</code> 与其自定义域 <code>wangjunjian.com/kof-3d/</code>（2026-11-06，法兰克福边缘节点 <code>fra</code>）<br>证据口径：A 官方规范 / B 一手实测 / C 第三方线索；共 10 条核心论断、13 节（00—12）、6 张手写图。<br>本报告零外部依赖、单文件、可离线打开；不重复既有《一个 URL 背后的三层机制》一文的链接选型讨论。</p>
+</div>
+</header>
+<nav><div class="wrap">
+<a href="#s00">00 摘要</a><a href="#s01">01 范式</a><a href="#s02">02 理论根基</a><a href="#s03">03 控制面</a><a href="#s04">04 数据面</a><a href="#s05">05 缓存</a><a href="#s06">06 URL 语义</a><a href="#s07">07 域名与 TLS</a><a href="#s08">08 安全</a><a href="#s09">09 配额与选型</a><a href="#s10">10 证据全景</a><a href="#s11">11 可执行物</a><a href="#s12">12 结论与参考</a>
+</div></nav>
+<main class="wrap">
+
+<section id="s00">
+<span class="num">00 / 摘要</span>
+<h2>十条可证伪的核心论断</h2>
+<p>先看结论。每一条都写了它服务的章节与证据强度；如果某条被推翻，对应章节的结论就要改写。证据强度标记：<span class="tag t-a">A 官方规范</span> <span class="tag t-b">B 一手实测</span> <span class="tag t-c">C 第三方线索</span>，实测均为单次观测，不代表全局分位数。</p>
+<table>
+<thead><tr><th style="width:6%">#</th><th style="width:62%">论断</th><th style="width:14%">章节</th><th style="width:18%">证据强度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>GitHub Pages 是双平面系统：写路径（Git → Actions → artifact → Pages Deployments API）与读路径（DNS → CDN → 源站 → 文件）几乎不相交；线上没有常驻应用进程。</td><td>02 / 03 / 04</td><td><span class="tag t-a">A</span> <span class="tag t-b">B</span></td></tr>
+<tr><td>2</td><td>请求时计算能力为零是安全与成本的主动取舍，不是功能缺失；所有"动态"只能前移到构建时、下放浏览器或外包给第三方。</td><td>02</td><td><span class="tag t-a">A</span> <span class="tag t-c">C</span></td></tr>
+<tr><td>3</td><td>2022 年换代后，"发布"的语义变成调用 API 登记一个 gzip 包裹的 tar 文件，而不是往分支塞 HTML；连分支发布底层也跑 Actions。</td><td>01 / 03</td><td><span class="tag t-a">A</span></td></tr>
+<tr><td>4</td><td><code>pages: write</code> 与 <code>id-token: write</code> 分立的根因是"授权"与"身份证明"分属两个机制：前者给 <code>GITHUB_TOKEN</code> 调 API 的权限，后者换取含 ref claim 的 OIDC JWT 供服务端校验分支保护。</td><td>03 / 08</td><td><span class="tag t-a">A</span></td></tr>
+<tr><td>5</td><td>读路径是三层缓存；<code>cache-control: max-age=600</code> 约束的主要是浏览器，边缘可以缓存更久。实测 <code>age=1537</code> 仍 <code>x-cache: HIT</code>，且命中与回源耗时差约两个数量级。</td><td>05</td><td><span class="tag t-b">B</span></td></tr>
+<tr><td>6</td><td>Pages 的 ETag 是"mtime 十六进制 - 文件字节数十六进制"，不是内容哈希；实测可逐字段反推并与 <code>last-modified</code>、<code>content-length</code> 完全对齐。因此不可变部署必须由构建工具用文件名哈希提供。</td><td>05</td><td><span class="tag t-b">B</span></td></tr>
+<tr><td>7</td><td>URL 到文件是纯目录映射加少量规范化，没有 rewrite 规则；无尾斜杠 301、目录取 <code>index.html</code>、路径大小写敏感、缺失落到 <code>404.html</code>。SPA 深链 404 是这条规则的必然后果。</td><td>06</td><td><span class="tag t-b">B</span> <span class="tag t-c">C</span></td></tr>
+<tr><td>8</td><td>站点身份由 <code>Host</code> 加路径首段二级路由决定；自定义域绑在用户站点后会自动覆盖同账号所有项目站点，实测 <code>github.io/kof-3d/</code> 返回 301 证实。</td><td>07</td><td><span class="tag t-a">A</span> <span class="tag t-b">B</span></td></tr>
+<tr><td>9</td><td>"免费、能扛流量"与"部署后陈旧、配额受限"是同一枚硬币：以写延迟换读扩展性；1 GB / 100 GB 月 / 10 分钟部署超时都是这个交换的边界条件。</td><td>05 / 09</td><td><span class="tag t-a">A</span></td></tr>
+<tr><td>10</td><td>安全边界不在代码执行（服务器根本不跑用户代码），而在身份与域名：站点永远公开、密钥不可进前端、悬空 DNS 会导致子域接管，域名验证是唯一硬闸。</td><td>08</td><td><span class="tag t-a">A</span> <span class="tag t-c">C</span></td></tr>
+</tbody>
+</table>
+<div class="callout"><p><strong>怎么读这份报告。</strong>想理解"为什么"读 01、02、09；想排查线上问题读 04、05、06、07；想要可直接抄的配置与检查清单跳到 11；想复核每个数字去 10，那里给了全部可复跑命令与反证据。</p></div>
+</section>
+<section id="s01">
+<span class="num">01 / 范式判定</span>
+<h2>先确认它到底是什么：静态托管，不是 Web 服务器</h2>
+<p>官方文档的定义很克制：「GitHub Pages 是一个<strong>静态站点托管服务</strong>，直接取用仓库里的 HTML、CSS、JavaScript 文件，可选择性地让这些文件经过一次构建过程，然后发布成网站。」注意三个动词——取用、经过构建、发布。没有"运行"，也没有"请求时处理"。</p>
+<p>由此可以给出一条判别式，用来判断任意平台是不是同一类东西：</p>
+<div class="card">
+<h4>静态发布系统的三条充要特征</h4>
+<ol>
+<li><strong>无请求时代码执行</strong>：服务器上不运行仓库里的任何语言运行时；一次 GET 的结果不依赖函数被调用。</li>
+<li><strong>无服务端状态</strong>：没有会话、没有数据库连接、没有跨请求的写入；响应是「URL × 当前已发布文件集合」的纯函数。</li>
+<li><strong>产物先于请求存在</strong>：所有昂贵计算必须在发布之前完成，且产物通常是一个整体替换的不可变版本。</li>
+</ol>
+</div>
+<p>这条判别式能立刻解释很多现象：为什么 <code>cache-control</code> 敢给 600 秒（响应只随版本变化）、为什么不能有 <code>/api/*</code>（没有路由到函数的机制）、为什么"部署"其实是一次版本指针切换（换的是整个文件集合）。</p>
+
+<h3>架构换代：不是一直长这样</h3>
+<p>今天看到的 Actions 部署链路是 2022 年之后才成为主线的。GitHub 在 2022 年 7 月发布自定义 Actions 工作流 beta，同年 8 月 Actions 成为 Pages 构建与部署的默认方式；2024 年 6 月 30 日彻底关停遗留的 <code>pagesworker</code> 架构。这一步的意义常被低估：<strong>构建能力从平台内置的一个受限 Jekyll 沙箱，迁移到了通用的 CI 运行时</strong>，才使得 Hugo、Astro、Vite、Next.js 静态导出等任意工具链成为可能。</p>
+<figure id="fig-1">
+<div class="fig-box">
+<svg viewBox="0 0 960 220" width="100%" role="img" aria-label="GitHub Pages 架构换代时间轴：2022 年 7 月自定义 Actions 工作流 beta，2022 年 8 月 Actions 成为默认，2024 年 6 月关停遗留 pagesworker，2026 年 11 月为实测状态">
+<title>GitHub Pages 架构换代时间轴</title>
+<desc>四个时间点展示构建能力从平台内置 Jekyll 沙箱迁移到通用 GitHub Actions 运行时的过程。</desc>
+<line x1="90" y1="105" x2="890" y2="105" stroke="#B4B2A9" stroke-width="1.5"/>
+<circle cx="150" cy="105" r="9" fill="#2F6FB0" stroke="#1F5288" stroke-width="0.5"/>
+<circle cx="385" cy="105" r="9" fill="#2F6FB0" stroke="#1F5288" stroke-width="0.5"/>
+<circle cx="620" cy="105" r="9" fill="#B45309" stroke="#8F3F06" stroke-width="0.5"/>
+<circle cx="855" cy="105" r="9" fill="#0F766E" stroke="#0A5750" stroke-width="0.5"/>
+<text x="150" y="72" text-anchor="middle" font-size="14" font-weight="500" fill="#1F5288">2022 · 07</text>
+<text x="385" y="72" text-anchor="middle" font-size="14" font-weight="500" fill="#1F5288">2022 · 08</text>
+<text x="620" y="72" text-anchor="middle" font-size="14" font-weight="500" fill="#8F3F06">2024 · 06</text>
+<text x="855" y="72" text-anchor="middle" font-size="14" font-weight="500" fill="#0A5750">2026 · 11</text>
+<text x="150" y="140" text-anchor="middle" font-size="13" font-weight="500" fill="#16181D">自定义工作流 beta</text>
+<text x="150" y="162" text-anchor="middle" font-size="12" fill="#454B55">可自带任意构建框架</text>
+<text x="385" y="140" text-anchor="middle" font-size="13" font-weight="500" fill="#16181D">Actions 成为默认</text>
+<text x="385" y="162" text-anchor="middle" font-size="12" fill="#454B55">构建与部署改走 CI</text>
+<text x="620" y="140" text-anchor="middle" font-size="13" font-weight="500" fill="#16181D">遗留 worker 关停</text>
+<text x="620" y="162" text-anchor="middle" font-size="12" fill="#454B55">分支发布仍依赖 Actions</text>
+<text x="855" y="140" text-anchor="middle" font-size="13" font-weight="500" fill="#16181D">本报告实测状态</text>
+<text x="855" y="162" text-anchor="middle" font-size="12" fill="#454B55">Fastly 边缘与 Pages API</text>
+<text x="480" y="200" text-anchor="middle" font-size="12" fill="#454B55">「发布」的语义从「推送分支上的文件」变成「登记一个经过校验的构建产物」</text>
+</svg>
+</div>
+<figcaption>图 1 · 架构换代时间轴。时间点均取自 GitHub 官方 changelog 与官方博客回顾；2026-11 为本报告的实测截面，非产品事件。</figcaption>
+</figure>
+
+<h3>四种容易混在一起的"发布方式"</h3>
+<table>
+<thead><tr><th style="width:22%">方式</th><th style="width:32%">实际发生什么</th><th style="width:26%">构建在哪跑</th><th style="width:20%">需要 .nojekyll 吗</th></tr></thead>
+<tbody>
+<tr><td>分支发布 + Jekyll</td><td>推送 <code>main</code> 或 <code>/docs</code>，平台用内置 Jekyll 构建后发布</td><td>GitHub Actions（2024 后）</td><td>不需要；它触发的是构建</td></tr>
+<tr><td>分支发布 + 预构建产物</td><td>外部 CI 把 <code>dist/</code> 推到 <code>gh-pages</code> 分支，平台跳过构建只部署</td><td>外部 CI</td><td><strong>需要</strong>，用来跳过 Jekyll</td></tr>
+<tr><td>自定义 Actions 工作流</td><td>工作流自己构建，上传 artifact，调 Pages Deployments API 登记</td><td>自己的 workflow</td><td>不需要（artifact 不经过 Jekyll）</td></tr>
+<tr><td>纯静态站点（Static 模板）</td><td>无构建步骤，直接把仓库文件打包上传</td><td>无</td><td>不需要</td></tr>
+</tbody>
+</table>
+<div class="warn">
+<h4>三个反常识点，都有官方原文</h4>
+<p>① <strong>分支发布底层也跑 Actions</strong>：官方明确写「你的 Pages 站点<em>总是</em>通过一次 GitHub Actions workflow run 部署」，即使你配置的是别的 CI；外部 CI 推的产物只是让 workflow 检测到"无需构建"从而只执行部署步骤。<br>② <strong>仓库里的 <code>CNAME</code> 文件不会自动添加或移除自定义域</strong>，必须通过仓库设置或 API 配置——这与大量教程的写法相反。<br>③ <strong>用 <code>GITHUB_TOKEN</code> 推送的提交不会触发 Pages 构建</strong>，这是 CI 里"构建成功但站点没更新"的常见根因之一。</p>
+<p class="src">来源：<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site">Configuring a publishing source</a> · <a href="https://github.blog/changelog/2024-07-08-pages-legacy-worker-sunset">Sunsetting GitHub Pages' legacy worker</a> · <a href="https://github.blog/changelog/2022-07-27-github-pages-custom-github-actions-workflows-beta">Custom GitHub Actions Workflows (beta)</a>　<span class="tag t-a">A 官方规范</span></p>
+</div>
+</section>
+
+<section id="s02">
+<span class="num">02 / 理论根基</span>
+<h2>为什么必须是这个形状：三条约束推出整个技术栈</h2>
+<p>"只发文件"不是功能没做完，而是在一个托管数千万个仓库、且仓库内容完全不可信的平台上，唯一可规模化的选择。把三条约束写清楚，前面那些工程细节就都能推出来。</p>
+<table>
+<thead><tr><th style="width:18%">约束</th><th style="width:38%">推导</th><th style="width:44%">落到工程上的具体动作</th></tr></thead>
+<tbody>
+<tr><td><strong>安全：多租户 + 不可信代码</strong></td><td>若每个请求都能触发仓库内代码执行，等于把任意代码执行能力免费开放给数千万个账号；隔离、密钥、逃逸防护的成本无法收敛。唯一安全解是<strong>把执行从请求路径移到隔离的构建沙箱</strong>。</td><td>所有计算进 CI；产物只含 HTML/CSS/JS/资源；OIDC 校验部署来源；仓库内容永不进入线上运行时。</td></tr>
+<tr><td><strong>成本：读写比极端悬殊</strong></td><td>一个开源项目可能每天被读几万次、每周只发布几次。为读请求常驻进程是浪费；把写路径做重（构建、校验、打包）、读路径做到极致轻（缓存命中即返回），单位成本最低。</td><td>CDN 前置、整体替换式部署、文件名哈希做长期缓存、<code>max-age</code> 与 ETag 协商、不提供自定义 HTTP 头。</td></tr>
+<tr><td><strong>可复现：产物不可变</strong></td><td>若响应依赖运行时环境，同一 commit 在不同时刻可能给出不同结果，回滚与审计都失去意义。让「commit → 唯一产物 → 唯一版本指针」成为函数关系，回滚就是指针回退。</td><td>仓库不提交构建产物；CI 从源码重建；artifact 整体替换；<code>pages_build_version</code> 绑定 commit SHA。</td></tr>
+</tbody>
+</table>
+<div class="callout"><p><strong>一个可以验证的推论：</strong>既然读路径被刻意做轻，那么"部署后不是立刻全量生效"就不是 bug，而是代价。缓存 TTL、边缘节点差异、浏览器私有缓存三者叠加，构成一个有限但非零的陈旧窗口。第 05 章用 <code>age</code>、<code>x-cache</code>、<code>304</code> 把它量化出来。</p></div>
+
+<h3>双平面：写路径与读路径几乎不相交</h3>
+<p>这是理解整套系统最有用的一张图。控制面在几秒到几分钟内执行一次，结束后 CI 容器即销毁；数据面在之后的所有时间里被反复读取，两者唯一的接触面就是那个不可变的产物。</p>
+<figure id="fig-2">
+<div class="fig-box">
+<svg viewBox="0 0 960 410" width="100%" role="img" aria-label="GitHub Pages 双平面架构：控制面从 Git push 经 Actions 构建、artifact 打包、Pages API 登记；数据面从 DNS 经 TLS、Fastly 边缘到源站目录查找">
+<title>GitHub Pages 双平面架构</title>
+<desc>上半部为控制面写路径四步，下半部为数据面读路径四步，两步之间只有不可变产物这一处接触。</desc>
+<rect x="40" y="36" width="880" height="154" rx="18" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="64" y="66" font-size="14" font-weight="500" fill="#1F5288">控制面 · 写路径</text>
+<text x="896" y="66" text-anchor="end" font-size="12" fill="#1F5288">每次 push 执行一次，结束即销毁</text>
+<rect x="64" y="88" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.5"/>
+<text x="154" y="110" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">git push</text>
+<text x="154" y="130" text-anchor="middle" font-size="12" fill="#454B55">源码与 workflow</text>
+<rect x="281" y="88" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.5"/>
+<text x="371" y="110" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">Actions 构建</text>
+<text x="371" y="130" text-anchor="middle" font-size="12" fill="#454B55">测试 / 类型检查 / 打包</text>
+<rect x="498" y="88" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.5"/>
+<text x="588" y="110" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">artifact</text>
+<text x="588" y="130" text-anchor="middle" font-size="12" fill="#454B55">单个 gzip 包内含 tar</text>
+<rect x="715" y="88" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.5"/>
+<text x="805" y="110" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">Pages API 登记</text>
+<text x="805" y="130" text-anchor="middle" font-size="12" fill="#454B55">OIDC 校验来源分支</text>
+<line x1="246" y1="118" x2="279" y2="118" stroke="#1F5288" stroke-width="1.5"/>
+<line x1="463" y1="118" x2="496" y2="118" stroke="#1F5288" stroke-width="1.5"/>
+<line x1="680" y1="118" x2="713" y2="118" stroke="#1F5288" stroke-width="1.5"/>
+<text x="64" y="174" font-size="12" fill="#1F5288">产物：整体替换的不可变文件集合，绑定 pages_build_version</text>
+
+<text x="480" y="209" text-anchor="middle" font-size="12" fill="#454B55">两个平面唯一的接触面：已发布的文件集合</text>
+
+<rect x="40" y="224" width="880" height="154" rx="18" fill="#E4F3F0" stroke="#0F766E" stroke-width="0.5"/>
+<text x="64" y="254" font-size="14" font-weight="500" fill="#0A5750">数据面 · 读路径</text>
+<text x="896" y="254" text-anchor="end" font-size="12" fill="#0A5750">每次 GET 执行，无进程无数据库</text>
+<rect x="64" y="276" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.5"/>
+<text x="154" y="298" text-anchor="middle" font-size="13" font-weight="500" fill="#0A5750">DNS + Anycast</text>
+<text x="154" y="318" text-anchor="middle" font-size="12" fill="#454B55">四个官方 A 记录</text>
+<rect x="281" y="276" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.5"/>
+<text x="371" y="298" text-anchor="middle" font-size="13" font-weight="500" fill="#0A5750">TLS / SNI</text>
+<text x="371" y="318" text-anchor="middle" font-size="12" fill="#454B55">按域名选证书</text>
+<rect x="498" y="276" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.5"/>
+<text x="588" y="298" text-anchor="middle" font-size="13" font-weight="500" fill="#0A5750">Fastly 边缘缓存</text>
+<text x="588" y="318" text-anchor="middle" font-size="12" fill="#454B55">命中即返回</text>
+<rect x="715" y="276" width="180" height="60" rx="9" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.5"/>
+<text x="805" y="298" text-anchor="middle" font-size="13" font-weight="500" fill="#0A5750">源站目录查找</text>
+<text x="805" y="318" text-anchor="middle" font-size="12" fill="#454B55">未命中才回源</text>
+<line x1="246" y1="306" x2="279" y2="306" stroke="#0A5750" stroke-width="1.5"/>
+<line x1="463" y1="306" x2="496" y2="306" stroke="#0A5750" stroke-width="1.5"/>
+<line x1="680" y1="306" x2="713" y2="306" stroke="#0A5750" stroke-width="1.5"/>
+<text x="64" y="362" font-size="12" fill="#0A5750">响应：文件字节 + 缓存头；服务器上没有用户代码执行</text>
+</svg>
+</div>
+<figcaption>图 2 · 双平面架构。控制面产物是一次性生成、整体替换的；数据面只读这个产物。图中"OIDC 校验"与"Fastly 边缘"分别在第 03、04 章展开。</figcaption>
+</figure>
+
+<h3>"动态"去哪了：只有三个去处</h3>
+<table>
+<thead><tr><th style="width:18%">去处</th><th style="width:36%">典型手段</th><th style="width:46%">代价</th></tr></thead>
+<tbody>
+<tr><td><strong>前移到构建时</strong></td><td>SSG 预渲染每条路由、CI 里抓数据生成 JSON 快照、把 JS/CSS 内联进单个 HTML</td><td>写延迟高：内容变更必须重新构建；数据新鲜度取决于构建频率</td></tr>
+<tr><td><strong>下放到浏览器</strong></td><td>客户端路由、<code>localStorage</code> / IndexedDB、Canvas / WebGL / WASM、直接调用第三方 API</td><td>首屏体积变大、SEO 变难、密钥无处安放</td></tr>
+<tr><td><strong>外包给第三方</strong></td><td>表单后端、鉴权、评论、搜索、Serverless 函数放在别的平台</td><td>需要处理 CORS、多一个供应商与一份账单</td></tr>
+</tbody>
+</table>
+<p class="src"><strong>观点标注：</strong>"以写延迟换读扩展性"是本报告对架构取舍的归纳，属于工程判断而非官方表述；但 <code>max-age=600</code>、整体替换式 artifact、1 GB 与 100 GB/月配额这些可观测事实与它一致。第 10 章列出了不能证实或存在相反解释的项。</p>
+</section>
+<section id="s03">
+<span class="num">03 / 控制面</span>
+<h2>从一次 push 到"当前版本"：部署其实是一次 API 登记</h2>
+<p>把 <code>.github/workflows/pages.yml</code> 当成标本逐段读，能看清控制面的全部零件。这不是某个框架的约定，而是 Pages Deployments API 的使用范式。</p>
+<pre><code># .github/workflows/pages.yml（节选，行号对应仓库实际文件）
+10  permissions:
+11    contents: read      # 读源码
+12    pages: write        # ① 允许 GITHUB_TOKEN 创建 Pages deployment
+13    id-token: write     # ② 允许请求 OIDC JWT
+16  concurrency:
+17    group: pages
+18    cancel-in-progress: false   # 不打断进行中的部署，避免站点短暂空档
+29  - run: npm ci
+30  - run: npm test
+31  - run: npm run typecheck
+32  - run: npm run build
+35-39  # 组装 site/：index.html + 同名下载副本 + .nojekyll + build.txt
+40  - uses: actions/configure-pages@v5
+41  - uses: actions/upload-pages-artifact@v3   # 打包上传
+45-53  # 独立 deploy job：needs: build + actions/deploy-pages@v4</code></pre>
+<p>关键在第 41 与第 53 行：<code>upload-pages-artifact</code> 并不"发布"，它只是把目录打包成一个 Actions artifact；真正改变线上状态的是 <code>deploy-pages</code> 调用 <code>POST /repos/{owner}/{repo}/pages/deployments</code>。构建与部署被拆成两个 job，用 <code>needs: build</code> 串起来， artifact 是两者之间唯一的交接物。</p>
+
+<h3>artifact 是一份有严格契约的压缩包</h3>
+<p>官方对 <code>upload-pages-artifact</code> 的约束写得非常具体，这些约束的存在本身就在说明服务端要做什么：它必须能安全解压一个来自不可信仓库的文件包。</p>
+<table>
+<thead><tr><th style="width:26%">约束</th><th style="width:38%">官方要求</th><th style="width:36%">为什么</th></tr></thead>
+<tbody>
+<tr><td>命名</td><td>artifact 必须叫 <code>github-pages</code></td><td>部署端按名定位，不依赖 workflow 传参</td></tr>
+<tr><td>格式</td><td>单个 gzip 压缩包，内部只含一个 tar 文件</td><td>格式固定才能流式解压、避免压缩包套娃</td></tr>
+<tr><td>体积</td><td>tar 必须小于 10 GB（官方推荐 &lt; 1 GB），站点硬上限 1 GB</td><td>超过后极易触发 10 分钟部署超时</td></tr>
+<tr><td>内容</td><td>只含普通文件与目录，<strong>不含符号链接与硬链接</strong></td><td>防止解压时逃出目标目录或指向源站敏感路径</td></tr>
+<tr><td>隐藏文件</td><td><code>include-hidden-files</code> 默认 <code>false</code>；<code>.git</code> 与 <code>.github</code> 恒排除</td><td>避免把仓库元数据发布到公网</td></tr>
+</tbody>
+</table>
+<div class="callout"><p><strong>本仓库的一个细节：</strong>workflow 第 38 行 <code>touch site/.nojekyll</code>，但 Actions 发布根本不经过 Jekyll，且隐藏文件默认被排除——它实际不会进入 artifact。这是"防御性冗余"：万一将来把发布源切回分支模式，站点不会因为 <code>_</code> 开头目录被吞掉而残废。属于好习惯，但不是必需。</p></div>
+
+<h3>OIDC：为什么必须同时给两个权限</h3>
+<p>这是整条链路里最容易被当作"照抄配置"的地方。<code>actions/deploy-pages</code> 的官方 README 给了机制解释：</p>
+<table>
+<thead><tr><th style="width:24%">权限</th><th style="width:38%">作用对象</th><th style="width:38%">服务端拿它做什么</th></tr></thead>
+<tbody>
+<tr><td><code>pages: write</code></td><td><code>GITHUB_TOKEN</code></td><td>让这个 token 有资格调用"创建 Pages deployment"的 API。它是<strong>授权</strong>。</td></tr>
+<tr><td><code>id-token: write</code></td><td>Actions OIDC provider 签发的 JWT</td><td>每个 job 一个唯一 JWT，含 <strong>ref / 分支 claim</strong>；随请求体一起交给 Pages API，服务端解码后校验这次工作流是否被允许部署（分支保护规则）。它是<strong>身份证明</strong>。</td></tr>
+</tbody>
+</table>
+<p>换句话说：只给 <code>pages: write</code>，API 知道"有人想部署"却无法可靠判断"来自哪个分支、是否绕过保护"；只给 <code>id-token: write</code>，连创建 deployment 的资格都没有。两者分立不是冗余，而是把"能调用"与"能证明来源"拆开。</p>
+<h3>API 请求体与确定性</h3>
+<table>
+<thead><tr><th style="width:24%">字段</th><th style="width:18%">必填</th><th style="width:58%">含义</th></tr></thead>
+<tbody>
+<tr><td><code>artifact_id</code> / <code>artifact_url</code></td><td>二选一</td><td>指向包含 <code>.zip</code> 或 <code>.tar</code> 静态资源的仓库 artifact</td></tr>
+<tr><td><code>pages_build_version</code></td><td>是</td><td>本次构建版本的唯一字符串；默认值是 <code>GITHUB_SHA</code>，因此天然把线上版本与 commit 绑定</td></tr>
+<tr><td><code>oidc_token</code></td><td>是</td><td>证明部署来源的 JWT</td></tr>
+<tr><td><code>environment</code></td><td>否</td><td>默认 <code>github-pages</code>，对应环境保规则</td></tr>
+</tbody>
+</table>
+<p class="src">成功返回 <code>200</code>，另有 <code>400</code> / <code>404</code> / <code>422</code>（校验失败或请求过频）。来源：<a href="https://docs.github.com/en/rest/pages/pages">REST API · Pages</a>、<a href="https://github.com/actions/deploy-pages">actions/deploy-pages README</a>、<a href="https://github.com/actions/upload-pages-artifact">actions/upload-pages-artifact README</a>　<span class="tag t-a">A 官方规范</span></p>
+<div class="warn"><h4>控制面的三个反模式</h4><p>① 把 <code>dist/</code> 或构建后的 HTML 提交进仓库：破坏"commit → 唯一产物"的函数关系，也让审计失去意义。② 在 Actions 部署里把 <code>.nojekyll</code> 当成必需配置：它只作用于 Jekyll 路径。③ <code>cancel-in-progress: true</code>：新部署打断旧部署，可能造成站点短暂无内容；本仓库显式设为 <code>false</code> 是对的。</p></div>
+</section>
+
+<section id="s04">
+<span class="num">04 / 数据面</span>
+<h2>一次 GET 的完整旅程：响应头把每一层都暴露了</h2>
+<p>控制面结束后，CI 容器已经消失。剩下的所有时间里，系统只需要回答一个问题：把某个 URL 映射成某个文件的字节。以下是 2026-11-06 对 <code>wangjunjian.com/kof-3d/</code> 的真实请求路径。</p>
+<figure id="fig-3">
+<div class="fig-box">
+<svg viewBox="0 0 960 360" width="100%" role="img" aria-label="一次 GET 的四个阶段：浏览器发起请求、DNS 与 TLS、Fastly 边缘缓存，然后分叉为命中直接返回或回源到源站目录查找">
+<title>一次 GET 的请求流水线与缓存分叉</title>
+<desc>请求依次经过浏览器、DNS 与 TLS、Fastly 边缘；边缘命中直接返回，未命中则回源到 Pages 源站做目录查找。</desc>
+<rect x="330" y="40" width="300" height="52" rx="9" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="480" y="60" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">浏览器发起 GET /kof-3d/</text>
+<text x="480" y="79" text-anchor="middle" font-size="12" fill="#454B55">HTTP/2 · Accept-Encoding: gzip, br</text>
+<line x1="480" y1="92" x2="480" y2="116" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="330" y="120" width="300" height="52" rx="9" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="480" y="140" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">DNS → Anycast → TLS / SNI</text>
+<text x="480" y="159" text-anchor="middle" font-size="12" fill="#454B55">四个官方 A 记录 · 按域名选证书</text>
+<line x1="480" y1="172" x2="480" y2="196" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="330" y="200" width="300" height="52" rx="9" fill="#E4F3F0" stroke="#0F766E" stroke-width="0.5"/>
+<text x="480" y="220" text-anchor="middle" font-size="13" font-weight="500" fill="#0A5750">Fastly 边缘节点 fra</text>
+<text x="480" y="239" text-anchor="middle" font-size="12" fill="#454B55">via: 1.1 varnish · x-served-by</text>
+<path d="M480 252 L480 266 L260 266 L260 276" fill="none" stroke="#5F5E5A" stroke-width="1.5"/>
+<path d="M480 252 L480 266 L700 266 L700 276" fill="none" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="100" y="280" width="320" height="56" rx="9" fill="#E9F4E9" stroke="#2E7D32" stroke-width="0.5"/>
+<text x="260" y="301" text-anchor="middle" font-size="13" font-weight="500" fill="#1B5820">命中：直接返回 200</text>
+<text x="260" y="320" text-anchor="middle" font-size="12" fill="#454B55">x-cache: HIT · age 递增 · VE5</text>
+<rect x="540" y="280" width="320" height="56" rx="9" fill="#FBF1E3" stroke="#B45309" stroke-width="0.5"/>
+<text x="700" y="301" text-anchor="middle" font-size="13" font-weight="500" fill="#8F3F06">未命中：回源目录查找</text>
+<text x="700" y="320" text-anchor="middle" font-size="12" fill="#454B55">server: GitHub.com · VE313</text>
+</svg>
+</div>
+<figcaption>图 3 · 请求流水线与缓存分叉。<code>VE5</code> 与 <code>VE313</code> 取自两次真实响应的 <code>x-timer</code> 尾段，属单次观测，只用于说明量级差异，不是性能基准。</figcaption>
+</figure>
+
+<h3>把响应头当成分层探针</h3>
+<p>静态托管的好处是：链路上的每一层都会诚实地留下自己的名字。下面全部是本次实测抓到的原值，可用第 10 章的命令复跑。</p>
+<table>
+<thead><tr><th style="width:27%">响应头</th><th style="width:32%">实测值</th><th style="width:41%">揭示了什么</th></tr></thead>
+<tbody>
+<tr><td><code>server</code></td><td><code>GitHub.com</code></td><td>源站标识；不是 nginx / Apache，是 GitHub 自己的 Pages 服务层</td></tr>
+<tr><td><code>via</code></td><td><code>1.1 varnish</code></td><td>边缘缓存软件；Varnish 是 Fastly 的技术底座</td></tr>
+<tr><td><code>x-fastly-request-id</code></td><td><code>359b5d82…54375b6</code></td><td>CDN 侧请求追踪 ID，向支持方报障时用它</td></tr>
+<tr><td><code>x-served-by</code></td><td><code>cache-fra-etou8220191-FRA</code></td><td>具体边缘节点；<code>fra</code> = 法兰克福，同一 URL 两次请求落在不同机器</td></tr>
+<tr><td><code>x-github-edge-region</code></td><td><code>fra</code></td><td>边缘区域，与 <code>x-served-by</code> 相互印证</td></tr>
+<tr><td><code>x-cache</code> / <code>x-cache-hits</code></td><td><code>HIT</code> / <code>1</code>；<code>MISS</code> / <code>0</code></td><td>是否命中，以及该对象在边缘被命中过几次</td></tr>
+<tr><td><code>age</code></td><td><code>0</code>、<code>55</code>、<code>210</code>、<code>1537</code></td><td>对象在缓存中已存活的秒数；注意它可以是 <code>max-age</code> 的两倍以上</td></tr>
+<tr><td><code>x-timer</code></td><td><code>S…,VS0,VE5</code> / <code>VE313</code></td><td>边缘侧耗时；命中 5、回源 313，量级差约 60 倍</td></tr>
+<tr><td><code>cache-control</code> / <code>expires</code></td><td><code>max-age=600</code></td><td>浏览器与共享缓存的新鲜期 10 分钟</td></tr>
+<tr><td><code>etag</code> / <code>last-modified</code></td><td><code>"6aed7e66-c3c92"</code> / <code>07:14:46 GMT</code></td><td>协商缓存的版本指纹；第 05 章会把它逐字节拆开</td></tr>
+<tr><td><code>content-encoding</code> / <code>vary</code></td><td><code>gzip</code> / <code>Accept-Encoding</code></td><td>按扩展名与协商做压缩：801938 B → 211412 B，3.79 倍，省 73.6%</td></tr>
+<tr><td><code>access-control-allow-origin</code></td><td><code>*</code></td><td>静态资源默认开放跨域；也再次说明站点内容对全网公开</td></tr>
+<tr><td><code>content-type</code></td><td><code>text/html; charset=utf-8</code>、<code>text/plain</code></td><td>MIME 由扩展名决定，官方支持 750+ 种，不能按文件自定义</td></tr>
+<tr><td><code>x-github-request-id</code></td><td><code>E834:240945:…:6AED849C</code></td><td>源站侧排障 ID，与 Fastly 的 ID 分属两层</td></tr>
+</tbody>
+</table>
+
+<h3>接入层：DNS、Anycast 与 TLS</h3>
+<div class="g2">
+<div class="card"><h4>DNS 是四个固定 A 记录</h4><p class="src"><code>dig +noall +answer wang-junjian.github.io</code> 返回 <code>185.199.108.153</code> / <code>.109</code> / <code>.110</code> / <code>.111</code> 四个地址。它们不是四台机器，而是通过 Anycast 在多个 PoP 广播的同一组地址，因此北京与纽约的请求会落到不同边缘节点。<span class="tag t-b">B 一手实测</span></p></div>
+<div class="card"><h4>证书由 SNI 决定</h4><p class="src"><code>openssl s_client</code> 实测：issuer <code>Let's Encrypt CN=YR1</code>，subject <code>CN=wangjunjian.com</code>，有效期 2026-10-30 至 2027-01-28（约 90 天自动续期）。同一 IP 托管无数域名，靠 TLS 握手的 SNI 选择对应证书。<span class="tag t-b">B 一手实测</span></p></div>
+</div>
+<p>把这些拼起来，数据面的全部"智慧"只有两处：<strong>按 Host 与路径首段定位到某个站点的文件集合</strong>，以及<strong>在这堆文件里做目录查找</strong>。没有模板引擎、没有路由表、没有数据库查询。第 06 章会把这套查找规则用实测逐条验出来。</p>
+</section>
+<section id="s05">
+<span class="num">05 / 缓存与一致性</span>
+<h2>三层缓存、一个可解码的 ETag，以及"部署后没更新"的真相</h2>
+<p>静态托管的性能几乎全部来自缓存，而它的一致性成本也全部来自缓存。把三层拆开，很多"玄学问题"就变成可以计算的窗口。</p>
+<table>
+<thead><tr><th style="width:18%">层</th><th style="width:30%">依据</th><th style="width:26%">失效方式</th><th style="width:26%">实测信号</th></tr></thead>
+<tbody>
+<tr><td>浏览器私有缓存</td><td><code>cache-control: max-age=600</code> + <code>expires</code></td><td>等 TTL 过期，或带 <code>If-None-Match</code> 协商</td><td>第二次请求收到 <code>304</code></td></tr>
+<tr><td>Fastly 边缘缓存</td><td>服务端自有策略，<strong>不等于</strong>浏览器的 600 秒</td><td>部署触发的版本切换与边缘策略</td><td><code>age</code>、<code>x-cache</code>、<code>x-cache-hits</code></td></tr>
+<tr><td>Pages 源站</td><td>不可变文件集合，整体替换</td><td>新 deployment 登记为新版本</td><td><code>etag</code>、<code>last-modified</code></td></tr>
+</tbody>
+</table>
+<div class="callout"><p><strong>一个值得注意的观测：</strong>某次响应 <code>age: 1537</code>、<code>x-cache: HIT</code>，但 <code>cache-control</code> 仍是 <code>max-age=600</code>。也就是说对象在缓存体系里已经存活超过 25 分钟，浏览器侧却被明确告知 10 分钟后要重新验证。合理解释是边缘/中间层缓存时长长于面向浏览器的 TTL，或 <code>age</code> 累计了多层缓存的停留时间——<strong>这是推断，不是官方说明</strong>；但它足以否定"改完立刻全量生效"的直觉。</p></div>
+
+<h3>把 ETag 逐字节拆开</h3>
+<p>本次响应的 ETag 是 <code>"6aed7e66-c3c92"</code>。它看起来像内容哈希，其实不是。用一行 Python 就能反推：</p>
+<pre><code>python3 -c "print(int('6aed7e66',16), int('c3c92',16))"
+# 1793949286  801938
+# 1793949286 → 2026-11-06T07:14:46+00:00  == last-modified
+# 801938                                    == content-length（未压缩字节数）</code></pre>
+<p>即格式为 <code>"&lt;mtime 十六进制&gt;-&lt;文件字节数十六进制&gt;"</code>，与 <code>last-modified</code> 及 <code>content-length</code> 三者完全自洽。这个结论有明确的工程含义：</p>
+<div class="warn"><h4>推论：Pages 不提供内容寻址</h4><p>ETag 反映的是<strong>时间与长度</strong>，不是内容的密码学摘要。同一个 URL 重新部署后，即使内容相同，只要 mtime 变了 ETag 就会变；反过来也不能靠 ETag 判断"字节是否完全一致"。因此要做真正的不变式部署（immutable deployment），必须由构建工具给资源文件名加内容哈希，再对 HTML 保留短 TTL。<strong>Pages 不会替你做这件事</strong>——本仓库的单文件 HTML 恰好绕开了多资源场景，但换成分 chunk 的 Vite 项目就必须处理。</p></div>
+<p>条件请求实测：带 <code>If-None-Match: "6aed7e66-c3c92"</code> 再请求，返回 <code>HTTP/2 304</code>、无响应体，仅保留 <code>cache-control</code> 与 <code>etag</code>。这就是 801938 字节的页面在回访时几乎不耗带宽的原因。<span class="tag t-b">B 一手实测</span></p>
+
+<figure id="fig-4">
+<div class="fig-box">
+<svg viewBox="0 0 960 420" width="100%" role="img" aria-label="上半部为浏览器、Fastly 边缘、源站三层缓存及其失效方式；下半部为共用 0 到 350 毫秒刻度的耗时对比，命中 5 毫秒、回源 313 毫秒">
+<title>三层缓存与共用刻度下的命中回源耗时</title>
+<desc>三层缓存自上而下依次为浏览器私有缓存、Fastly 边缘、Pages 源站；下方条形图统一使用 0 到 350 毫秒刻度对比两次观测的边缘处理耗时。</desc>
+<rect x="60" y="44" width="840" height="44" rx="9" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="80" y="66" font-size="13" font-weight="500" fill="#1F5288">浏览器私有缓存</text>
+<text x="880" y="66" text-anchor="end" font-size="12" fill="#1F5288">max-age=600 · 命中则不发请求 · 过期走 304 协商</text>
+<rect x="60" y="100" width="840" height="44" rx="9" fill="#E4F3F0" stroke="#0F766E" stroke-width="0.5"/>
+<text x="80" y="122" font-size="13" font-weight="500" fill="#0A5750">Fastly 边缘缓存</text>
+<text x="880" y="122" text-anchor="end" font-size="12" fill="#0A5750">age 可超 600 · x-cache: HIT / MISS · 命中即终结请求</text>
+<rect x="60" y="156" width="840" height="44" rx="9" fill="#FBF1E3" stroke="#B45309" stroke-width="0.5"/>
+<text x="80" y="178" font-size="13" font-weight="500" fill="#8F3F06">Pages 源站文件集合</text>
+<text x="880" y="178" text-anchor="end" font-size="12" fill="#8F3F06">整体替换 · etag 与 last-modified · 未命中才回源</text>
+<text x="480" y="226" text-anchor="middle" font-size="12" fill="#454B55">边缘处理耗时（毫秒，统一刻度 0—350，单次观测）</text>
+<line x1="200" y1="280" x2="200" y2="372" stroke="#B4B2A9" stroke-width="0.5"/>
+<line x1="530" y1="280" x2="530" y2="372" stroke="#B4B2A9" stroke-width="0.5"/>
+<line x1="860" y1="280" x2="860" y2="372" stroke="#B4B2A9" stroke-width="0.5"/>
+<text x="200" y="268" text-anchor="middle" font-size="12" fill="#454B55">0</text>
+<text x="530" y="268" text-anchor="middle" font-size="12" fill="#454B55">175</text>
+<text x="860" y="268" text-anchor="middle" font-size="12" fill="#454B55">350</text>
+<text x="60" y="310" font-size="13" fill="#16181D">边缘命中</text>
+<rect x="200" y="294" width="9.4" height="28" rx="3" fill="#2E7D32"/>
+<text x="220" y="312" font-size="12" fill="#1B5820">5 ms</text>
+<text x="60" y="352" font-size="13" fill="#16181D">回源查找</text>
+<rect x="200" y="336" width="590.7" height="28" rx="3" fill="#B45309"/>
+<text x="800" y="354" font-size="12" fill="#8F3F06">313 ms</text>
+<text x="480" y="398" text-anchor="middle" font-size="12" fill="#454B55">两图共用同一刻度；命中柱子极矮正是要传达的信息，没有为了观感放大</text>
+</svg>
+</div>
+<figcaption>图 4 · 三层缓存与命中/回源耗时。数值来自 <code>x-timer</code> 的 <code>VE</code> 段，属单次观测；统一刻度 0—350 ms，不做截断或视觉放大。</figcaption>
+</figure>
+
+<h3>一致性是"有界陈旧"，不是"瞬时生效"</h3>
+<p>把发布后的可见性拆成四段：CI 构建 → API 登记版本 → 边缘节点拿到新版本 → 浏览器私有缓存过期。任何一段没走完，用户都可能看到旧页。由此得到三条可操作规则：HTML 保持短 TTL（平台已固定 600 秒）、静态资源用内容哈希文件名做长缓存、发布验证不要只看 Actions 绿灯，还要用 <code>curl -I</code> 看 <code>etag</code> / <code>last-modified</code> 是否变化，必要时用无痕窗口或带随机查询串排除浏览器缓存。</p>
+<p class="src"><strong>反证据与边界：</strong>本次没有做跨地域、跨节点的传播延迟测量，因此"部署后最长多久生效"只有一个理论窗口，没有实测分布；第 10 章把它列为待验证项。部分二手资料称 Pages 对带哈希资源给一年长缓存，本次未在官方规范中找到对应表述，故不采信。</p>
+</section>
+
+<section id="s06">
+<span class="num">06 / URL 语义</span>
+<h2>URL 到文件是纯目录映射：SPA 深链 404 的根因</h2>
+<p>平台没有 rewrite 规则，也没有前端控制器。请求路径被当作文件系统路径处理，加上少量规范化。这一章的结论全部来自一组可复跑的 <code>curl</code>。</p>
+<table>
+<thead><tr><th style="width:30%">请求路径</th><th style="width:12%">状态</th><th style="width:16%">长度 / 类型</th><th style="width:42%">说明</th></tr></thead>
+<tbody>
+<tr><td><code>/kof-3d</code></td><td>301</td><td>162 B</td><td><code>location: …/kof-3d/</code>，目录缺尾斜杠自动补</td></tr>
+<tr><td><code>/kof-3d/</code></td><td>200</td><td>801938 B · html</td><td>目录映射到 <code>index.html</code></td></tr>
+<tr><td><code>/kof-3d/index.html</code></td><td>200</td><td>801938 B · html</td><td><strong>直接返回，不 301 到目录</strong>；与部分二手教程说法相反</td></tr>
+<tr><td><code>/kof-3d/kof-3d.html</code></td><td>200</td><td>801938 B · html</td><td>CI 复制的同名下载副本，与首页字节数一致</td></tr>
+<tr><td><code>/kof-3d/build.txt</code></td><td>200</td><td>66 B · text/plain</td><td>MIME 由扩展名查表得到</td></tr>
+<tr><td><code>/kof-3d/NO-SUCH.js</code></td><td>404</td><td>9379 B · html</td><td>落到平台默认 404 页</td></tr>
+<tr><td><code>/kof-3d/KOF-3D.html</code></td><td>404</td><td>9379 B · html</td><td>路径<strong>大小写敏感</strong>，换大小写即找不到文件</td></tr>
+</tbody>
+</table>
+<p>那个 9379 字节的 404 页标题是 <code>Page not found · GitHub Pages</code>，来自平台而不是仓库——因为本项目的 <code>site/</code> 里没有 <code>404.html</code>。这恰好演示了回退规则：有自定义 <code>404.html</code> 就返回它，没有则返回平台默认页，<strong>但 HTTP 状态码始终是 404</strong>。</p>
+
+<figure id="fig-5">
+<div class="fig-box">
+<svg viewBox="0 0 960 370" width="100%" role="img" aria-label="URL 到文件的决策树：先精确匹配文件，再判断目录补斜杠，再取目录内 index.html，最后回退 404.html 或平台默认 404 页">
+<title>URL 到文件的映射决策树</title>
+<desc>四步判定依次为精确文件匹配、目录缺尾斜杠 301、目录内 index.html、以及 404 回退。</desc>
+<rect x="330" y="36" width="300" height="46" rx="9" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="480" y="59" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">请求路径 P</text>
+<line x1="480" y1="82" x2="480" y2="104" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="270" y="106" width="340" height="44" rx="9" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.5"/>
+<text x="440" y="128" text-anchor="middle" font-size="13" fill="#16181D">P 精确命中一个文件？</text>
+<line x1="610" y1="128" x2="688" y2="128" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="690" y="106" width="230" height="44" rx="9" fill="#E9F4E9" stroke="#2E7D32" stroke-width="0.5"/>
+<text x="805" y="128" text-anchor="middle" font-size="12" fill="#1B5820">200 · 按扩展名定 MIME</text>
+<line x1="440" y1="150" x2="440" y2="174" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="270" y="176" width="340" height="44" rx="9" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.5"/>
+<text x="440" y="198" text-anchor="middle" font-size="13" fill="#16181D">P 无尾斜杠且是目录？</text>
+<line x1="610" y1="198" x2="688" y2="198" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="690" y="176" width="230" height="44" rx="9" fill="#FBF1E3" stroke="#B45309" stroke-width="0.5"/>
+<text x="805" y="198" text-anchor="middle" font-size="12" fill="#8F3F06">301 · 补斜杠重定向</text>
+<line x1="440" y1="220" x2="440" y2="244" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="270" y="246" width="340" height="44" rx="9" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.5"/>
+<text x="440" y="268" text-anchor="middle" font-size="13" fill="#16181D">目录内有 index.html？</text>
+<line x1="610" y1="268" x2="688" y2="268" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="690" y="246" width="230" height="44" rx="9" fill="#E9F4E9" stroke="#2E7D32" stroke-width="0.5"/>
+<text x="805" y="268" text-anchor="middle" font-size="12" fill="#1B5820">200 · 返回 index.html</text>
+<line x1="440" y1="290" x2="440" y2="312" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="270" y="314" width="650" height="44" rx="9" fill="#FBEAE8" stroke="#B3261E" stroke-width="0.5"/>
+<text x="595" y="336" text-anchor="middle" font-size="12.5" fill="#8C1D18">全否 → 404.html（有则用）或平台默认 404 页 · 状态码始终是 404</text>
+</svg>
+</div>
+<figcaption>图 5 · URL 映射决策树，规则顺序与第 06 章实测表一致。注意链路里没有任何"把未知路径交给前端路由"的环节。</figcaption>
+</figure>
+
+<h3>SPA 深链为什么必然 404，以及三种解法</h3>
+<p>客户端路由器（History API）产生的 <code>/orders/42</code> 在服务器上并不存在对应文件。Pages 不会把它重写到 <code>index.html</code>，于是直接落到 404 分支。三种解法各自有代价：</p>
+<table>
+<thead><tr><th style="width:20%">解法</th><th style="width:40%">做法</th><th style="width:40%">代价</th></tr></thead>
+<tbody>
+<tr><td><strong>预渲染每路由</strong></td><td>构建时为每条路由生成目录 + <code>index.html</code>（SSG 默认形态）</td><td>内容必须构建时已知；首屏与 SEO 最好</td></tr>
+<tr><td><strong>复制 404.html</strong></td><td>把 <code>index.html</code> 复制成 <code>404.html</code>，让客户端路由接管</td><td>HTTP 状态仍是 404，爬虫可能跳过；仅适合内部工具</td></tr>
+<tr><td><strong>Hash 路由</strong></td><td>改用 <code>/#/orders/42</code>，井号后不发给服务器</td><td>URL 观感差，没有服务端语义</td></tr>
+</tbody>
+</table>
+<p>另外别忘了 <code>base</code>：项目站点挂在 <code>/&lt;repo&gt;/</code> 下，绝对路径资源会指向域名根。Vite 需设 <code>base: '/&lt;repo&gt;/'</code>，或像本仓库那样用 <code>base: './'</code> 相对路径并把 JS/CSS 全部内联，从根上消除路径依赖。</p>
+</section>
+<section id="s07">
+<span class="num">07 / 域名与身份路由</span>
+<h2>一个 IP 托管无数站点：Host 加路径首段的二级路由</h2>
+<p>同一组 Anycast IP 后面是数千万个站点，源站如何知道该取谁的文件？答案是两级：<code>Host</code> 头定位账号/站点，URL 路径首段定位仓库。官方文档把站点分成用户/组织站点（仓库名必须是 <code>&lt;owner&gt;.github.io</code>，挂在域名根）与项目站点（挂在该仓库同名的子路径下），每个账号只能有一个用户站点，每个仓库只能有一个项目站点。</p>
+<div class="g2">
+<div class="card"><h4>用户 / 组织站点</h4><p class="src">仓库 <code>wang-junjian/wang-junjian.github.io</code> → <code>wang-junjian.github.io/</code>。这个仓库绑定的自定义域，会成为整个账号的域名基线。</p></div>
+<div class="card"><h4>项目站点</h4><p class="src">仓库 <code>kof-3d</code> → <code>wang-junjian.github.io/kof-3d/</code>。没有单独配置域名时，会自动继承账号级自定义域，落到 <code>wangjunjian.com/kof-3d/</code>。</p></div>
+</div>
+<p>官方原文说得很直白：如果用户站点设置了自定义域，<strong>该账号下所有项目站点默认都会使用同一个自定义域</strong>，除非给单个仓库单独指定。这正是本次实测的 301 来源：</p>
+<pre><code>curl -sSI https://wang-junjian.github.io/kof-3d/
+HTTP/2 301
+location: https://wangjunjian.com/kof-3d/
+server: GitHub.com
+age: 1537 · x-cache: HIT
+
+# 连不存在的深链也先 301，说明域名规范化发生在文件查找之前
+curl -sSI https://wang-junjian.github.io/kof-3d/does-not-exist
+HTTP/2 301 → https://wangjunjian.com/kof-3d/does-not-exist
+# 到自定义域上才真正判 404</code></pre>
+<table>
+<thead><tr><th style="width:22%">域名层级</th><th style="width:32%">DNS 配置</th><th style="width:46%">要点</th></tr></thead>
+<tbody>
+<tr><td>子域 <code>docs.example.com</code></td><td>CNAME 指向 <code>&lt;owner&gt;.github.io</code></td><td>官方称 <code>www</code> 子域最稳定，不受 GitHub 服务器 IP 变更影响</td></tr>
+<tr><td>Apex <code>example.com</code></td><td>A / ALIAS / ANAME 指向四个官方地址</td><td><code>185.199.108.153</code> 等四个 Anycast 地址，固定不变</td></tr>
+<tr><td>HTTPS 证书</td><td>平台自动签发与续期</td><td>实测 Let's Encrypt、约 90 天有效期；TLS 握手的 SNI 决定用哪张证书</td></tr>
+<tr><td>域名验证</td><td><code>_github-pages-challenge</code> TXT 记录</td><td>官方建议在绑定仓库前先验证，防止他人抢注你的子域</td></tr>
+</tbody>
+</table>
+<div class="warn"><h4>关于 CNAME 文件的一个流行误解</h4><p>很多教程说"在发布目录放一个 <code>CNAME</code> 文件就能绑定域名"。官方文档明确否定：「仓库中的 <code>CNAME</code> 文件<strong>不会</strong>自动添加或移除自定义域，必须通过仓库设置或 API 配置」。分支发布时代它曾被构建流程读取，但在 Actions 部署链路上，域名配置存在于站点设置里，与产物文件无关。<span class="tag t-a">A 官方规范</span></p></div>
+</section>
+
+<section id="s08">
+<span class="num">08 / 安全模型</span>
+<h2>边界不在代码执行，而在身份与域名</h2>
+<p>因为服务器上根本不跑用户代码，Pages 天然免疫一整类服务端漏洞（命令注入、模板注入、反序列化）。代价是安全重心整体转移到另外三处。</p>
+<h3>一、公开性是默认值</h3>
+<p>官方在发布源文档里用 Warning 强调：<strong>即使仓库是私有的，Pages 站点依然对全网公开</strong>。叠加实测的 <code>access-control-allow-origin: *</code>，可以推出两条硬规则：产物里不能有任何秘密；前端 JS 里写死的 API key 等于已泄露。需要鉴权的场景只能把后端放到别处，且要自己处理 CORS。</p>
+<h3>二、部署身份由 OIDC 与环境规则把关</h3>
+<p>第 03 章的 OIDC JWT 含 ref claim，服务端解码后校验工作流是否来自允许的分支；官方还建议给 <code>github-pages</code> 环境加部署保护规则，只允许默认分支部署。这构成"谁能改线上版本"的完整链条：<code>pages: write</code>（授权）→ OIDC ref claim（来源证明）→ 环境保护规则（策略）→ <code>pages_build_version</code>（版本与 commit 绑定，可审计可回滚）。</p>
+<h3>三、悬空 DNS 与子域接管</h3>
+<p>这是 Pages 相关最常见、也最容易被忽略的真实漏洞。OWASP WSTG-CONF-10 描述的模式是：某个子域的 DNS 记录仍指向 Pages，但对应站点已被删除或禁用；由于平台按 <code>Host</code> 认领域名，攻击者可以在自己的仓库里配置同一域名把内容"接管"过去。检测指纹之一正是页面里的 <code>There isn't a GitHub Pages site here.</code>。接管后浏览器把这个子域当作你的站点：作用域为父域的 Cookie、<code>*.example.com</code> 的 CORS 与 CSP 允许列表、OAuth 回调白名单都会连带失守。</p>
+<div class="ok"><h4>可执行的防御顺序</h4><p>① 先在账号设置里<strong>验证域名</strong>（TXT 记录），再绑定到仓库；② 不要用通配 <code>*.example.com</code> 指向 Pages，它会让验证形同虚设；③ 下线站点时<strong>先删 DNS 记录、等 TTL 过期，再释放资源</strong>，顺序反了就留下悬空窗口；④ 定期用证书透明日志与 DNS 导出核对子域清单；⑤ 会话 Cookie 尽量 host-only（<code>__Host-</code> 前缀）。</p></div>
+<h3>四、使用条款也是边界</h3>
+<p>官方限制页明确：Pages 不得用作在线业务、电商网站或以促成商业交易 / 提供 SaaS 为主的免费托管，也不应用于传递密码、信用卡号等敏感事务。这不是技术限制，而是产品定位——它解释了这个平台为什么长期保持极简，也解释了什么时候必须迁移。<span class="tag t-a">A 官方规范</span></p>
+<p class="src">来源：<a href="https://owasp.github.io/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management/10-Subdomain_Takeover">OWASP WSTG-CONF-10</a>、<a href="https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages">About custom domains and GitHub Pages</a>、<a href="https://docs.github.com/zh/pages/getting-started-with-github-pages/github-pages-limits">GitHub Pages 限制</a></p>
+</section>
+
+<section id="s09">
+<span class="num">09 / 配额与选型</span>
+<h2>为什么能免费，以及什么时候该走</h2>
+<p>把配额表和第 02 章的约束并排看，会发现它们不是"抠门"，而是同一套设计的边界条件：写路径被限量、产物被限体积、读路径被软限流量，换来的是不需要为每个站点常驻进程。</p>
+<table>
+<thead><tr><th style="width:32%">限制</th><th style="width:20%">官方数值</th><th style="width:48%">工程含义</th></tr></thead>
+<tbody>
+<tr><td>源仓库 / 已发布站点体积</td><td>建议 ≤ 1 GB / 硬上限 1 GB</td><td>大素材应走 Release 或外部对象存储，不要塞进产物</td></tr>
+<tr><td>带宽</td><td>软限 100 GB / 月</td><td>超限可能收到建议迁移的邮件或被限速（HTTP 429）</td></tr>
+<tr><td>部署超时</td><td>10 分钟</td><td>artifact 越大越容易超时；这是"推荐 &lt; 1 GB"的直接原因</td></tr>
+<tr><td>构建频率</td><td>软限 10 次 / 小时</td><td><strong>自定义 Actions 工作流不受此限</strong>——又一条支持用 Actions 部署的理由</td></tr>
+<tr><td>MIME / HTTP 头</td><td>不可自定义</td><td>没有 <code>_headers</code>、没有重定向规则、没有按路径设缓存</td></tr>
+</tbody>
+</table>
+<p class="src">全部取自 <a href="https://docs.github.com/zh/pages/getting-started-with-github-pages/github-pages-limits">官方限制页</a>　<span class="tag t-a">A 官方规范</span></p>
+
+<h3>和其他静态平台比，差的是"能力"不是"速度"</h3>
+<p>下表只列结构性差异。具体的免费额度、构建分钟数、计费模型变化很快，第三方汇总仅作线索，<strong>决策前请以各家官方 limits 页为准</strong>。</p>
+<table>
+<thead><tr><th style="width:26%">能力</th><th style="width:24%">GitHub Pages</th><th style="width:26%">Netlify / Vercel</th><th style="width:24%">Cloudflare Pages / Workers</th></tr></thead>
+<tbody>
+<tr><td>请求时运行时</td><td><strong>无</strong></td><td>Serverless 函数、SSR</td><td>Workers / V8 isolate</td></tr>
+<tr><td>PR 预览环境</td><td>需自行搭</td><td>内建、自动</td><td>内建、自动</td></tr>
+<tr><td>自定义 HTTP 头 / 重定向</td><td>不支持</td><td><code>_headers</code> / 配置文件</td><td>配置文件或 Worker</td></tr>
+<tr><td>与代码仓库的距离</td><td><strong>最近</strong>：同一仓库、同一权限模型</td><td>Git 集成</td><td>Git 集成</td></tr>
+<tr><td>运维与凭据</td><td><strong>最少</strong>：平台账号即全部</td><td>多一个供应商</td><td>多一个供应商</td></tr>
+</tbody>
+</table>
+<p class="src"><span class="tag t-c">C 第三方线索</span> 结构性对比参考 2026 年多篇平台横评；表中不含任何可能过期的具体数字。</p>
+
+<figure id="fig-6">
+<div class="fig-box">
+<svg viewBox="0 0 960 380" width="100%" role="img" aria-label="选型决策树：先判断是否需要请求时服务端计算或状态，再判断是否涉及官方禁止的用途，两项都否则适合 GitHub Pages">
+<title>GitHub Pages 适用性决策树</title>
+<desc>两道判定依次为是否需要服务端计算或状态、是否涉及官方禁止的商用或敏感交易用途；两项都否则适合 Pages。</desc>
+<rect x="300" y="40" width="360" height="48" rx="9" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="480" y="64" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">请求时需要服务端计算或状态？</text>
+<line x1="300" y1="64" x2="272" y2="64" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="40" y="40" width="230" height="48" rx="9" fill="#FBEAE8" stroke="#B3261E" stroke-width="0.5"/>
+<text x="155" y="64" text-anchor="middle" font-size="12" fill="#8C1D18">是：选带运行时的平台</text>
+<line x1="480" y1="88" x2="480" y2="146" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="496" y="120" font-size="12" fill="#454B55">否</text>
+<rect x="300" y="150" width="360" height="48" rx="9" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="0.5"/>
+<text x="480" y="174" text-anchor="middle" font-size="13" font-weight="500" fill="#1F5288">涉及电商、SaaS 或敏感交易？</text>
+<line x1="660" y1="174" x2="688" y2="174" stroke="#5F5E5A" stroke-width="1.5"/>
+<rect x="690" y="150" width="230" height="48" rx="9" fill="#FBEAE8" stroke="#B3261E" stroke-width="0.5"/>
+<text x="805" y="174" text-anchor="middle" font-size="12" fill="#8C1D18">是：官方明确禁止</text>
+<line x1="480" y1="198" x2="480" y2="254" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="496" y="230" font-size="12" fill="#454B55">否</text>
+<rect x="200" y="258" width="560" height="80" rx="9" fill="#E9F4E9" stroke="#2E7D32" stroke-width="0.5"/>
+<text x="480" y="282" text-anchor="middle" font-size="13" font-weight="500" fill="#1B5820">适合 Pages：文档 / 开源 Demo / 博客 / 作品集</text>
+<text x="480" y="303" text-anchor="middle" font-size="12" fill="#454B55">前提：产物不超过 1 GB、流量在软限内、内容与代码同仓</text>
+<text x="480" y="322" text-anchor="middle" font-size="12" fill="#454B55">落地：Vite / Astro / Hugo + Actions artifact + 资源内容哈希</text>
+<text x="480" y="362" text-anchor="middle" font-size="12" fill="#454B55">判据不是「框架是什么」，而是「计算发生在哪一侧」</text>
+</svg>
+</div>
+<figcaption>图 6 · 适用性决策树。注意判定依据是计算发生的位置，而不是前端框架的名字：同一个 Next.js 项目，静态导出可以上，用了 SSR 就不行。</figcaption>
+</figure>
+<p><strong>迁移信号</strong>：开始需要自定义响应头、需要 PR 预览、需要服务端鉴权、产物逼近 1 GB、或流量接近软限时，就该换平台了。这些都不是"Pages 变差了"，而是需求越过了第 01 章那条判别式。</p>
+</section>
+<section id="s10">
+<span class="num">10 / 证据全景</span>
+<h2>每条数据怎么来的，以及哪些结论其实还不确定</h2>
+<h3>证据口径</h3>
+<table>
+<thead><tr><th style="width:14%">级别</th><th style="width:36%">定义</th><th style="width:50%">本报告中的用途</th></tr></thead>
+<tbody>
+<tr><td><span class="tag t-a">A 官方规范</span></td><td>GitHub Docs、REST API 文档、官方 Action README、官方 changelog</td><td>发布源、artifact 契约、OIDC、配额、站点类型、自定义域、公开性</td></tr>
+<tr><td><span class="tag t-b">B 一手实测</span></td><td>2026-11-06 对线上站点的 curl / dig / openssl 观测，可复跑</td><td>全部响应头、缓存行为、ETag 解码、URL 映射、DNS、证书</td></tr>
+<tr><td><span class="tag t-c">C 第三方线索</span></td><td>技术博客、平台横评、OWASP 指南</td><td>只用于发现线索与交叉验证，<strong>不采信其中的具体数字</strong></td></tr>
+</tbody>
+</table>
+<p>所有 B 级数据都是<strong>单次观测</strong>，来自单一客户端与 <code>fra</code> 边缘区域；它们证明"存在这种行为"，不证明分位数或全局一致性。建模值（如压缩比 3.79 倍）与实测值在本章分开列出。</p>
+
+<h3>可复跑命令集</h3>
+<pre><code># 1. 响应头全貌（分层探针）
+curl -sSD - -o /dev/null https://wangjunjian.com/kof-3d/
+
+# 2. 连续两次请求，看 age 递增与 x-cache 命中
+for i in 1 2; do curl -sSI https://wangjunjian.com/kof-3d/ | grep -Ei 'age:|x-cache:|x-timer:'; done
+
+# 3. 条件请求 → 304
+curl -sSD - -o /dev/null -H 'If-None-Match: "6aed7e66-c3c92"' https://wangjunjian.com/kof-3d/
+
+# 4. ETag 解码：mtime 与文件字节数
+python3 -c "import datetime; t=int('6aed7e66',16); s=int('c3c92',16); print(s, datetime.datetime.fromtimestamp(t, datetime.timezone.utc).isoformat())"
+
+# 5. DNS：四个官方 Anycast 地址
+dig +noall +answer wang-junjian.github.io
+
+# 6. TLS 证书签发者与有效期
+echo | openssl s_client -connect wangjunjian.com:443 -servername wangjunjian.com 2>/dev/null | openssl x509 -noout -issuer -subject -dates
+
+# 7. 压缩协商
+curl -sSD - -o /dev/null -H 'Accept-Encoding: gzip, br' https://wangjunjian.com/kof-3d/
+
+# 8. URL 映射规则（注意基准域名不要重复拼路径）
+for p in /kof-3d /kof-3d/ /kof-3d/index.html /kof-3d/build.txt /kof-3d/NO-SUCH.js /kof-3d/KOF-3D.html; do
+  printf '%-30s ' "$p"; curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' "https://wangjunjian.com$p"
+done
+
+# 9. 账号级自定义域导致的 301
+curl -sSI https://wang-junjian.github.io/kof-3d/</code></pre>
+
+<h3>数量级自洽性反推</h3>
+<table>
+<thead><tr><th style="width:34%">观测</th><th style="width:33%">独立复核</th><th style="width:33%">结论</th></tr></thead>
+<tbody>
+<tr><td><code>etag</code> 尾段 <code>c3c92</code></td><td><code>0xc3c92 = 801938</code> = <code>content-length</code></td><td>自洽 ✓ 尾段是文件字节数</td></tr>
+<tr><td><code>etag</code> 首段 <code>6aed7e66</code></td><td><code>0x6aed7e66 = 1793949286</code> = 2026-11-06 07:14:46 UTC = <code>last-modified</code></td><td>自洽 ✓ 首段是 mtime</td></tr>
+<tr><td>gzip 后 211412 B</td><td>801938 / 211412 = 3.79；节省 73.6%</td><td>HTML 内联 JS 的压缩比合理 ✓</td></tr>
+<tr><td><code>VE5</code> 对 <code>VE313</code></td><td>同一 URL 命中与回源两次观测，比值约 60</td><td>量级合理 ✓ 但不作为基准</td></tr>
+<tr><td><code>age: 1537</code> 与 <code>max-age=600</code></td><td>1537 &gt; 600，却仍 <code>x-cache: HIT</code></td><td><strong>不矛盾</strong>：边缘 TTL 与浏览器 TTL 不是同一个值</td></tr>
+</tbody>
+</table>
+
+<h3>反证据、被推翻的说法与待验证项</h3>
+<table>
+<thead><tr><th style="width:38%">条目</th><th style="width:20%">处置</th><th style="width:42%">说明</th></tr></thead>
+<tbody>
+<tr><td>二手教程称访问 <code>/index.html</code> 会 301 回目录</td><td><span class="tag t-r">实测推翻</span></td><td>本次返回 200 且字节数与首页一致，故未采信</td></tr>
+<tr><td>二手资料称 Pages 对带哈希资源给一年长缓存</td><td><span class="tag t-c">未采信</span></td><td>官方规范中未找到依据，报告只写可实测的 <code>max-age=600</code></td></tr>
+<tr><td><code>age</code> 超过 <code>max-age</code> 的确切机制</td><td><span class="tag t-c">推断</span></td><td>可能是多层缓存累计或边缘策略更长，官方未公开，已明确标注为推断</td></tr>
+<tr><td><code>x-timer</code> 的 <code>VE</code> 段单位</td><td><span class="tag t-c">按惯例</span></td><td>按 Fastly 通行读法当作毫秒处理，仅用于量级对比</td></tr>
+<tr><td>部署后的跨地域传播延迟分布</td><td><span class="tag t-c">待验证</span></td><td>本次只在单一边缘区域观测，没有分位数数据</td></tr>
+<tr><td>Fastly 内部缓存层级与 purge 策略</td><td><span class="tag t-c">黑盒</span></td><td>只能从响应头反推，报告中一律写成"观测到"而非"平台实现是"</td></tr>
+</tbody>
+</table>
+<div class="callout"><p><strong>为什么专门留一节写不确定性。</strong>静态托管最容易出错的地方，就是把一次观测当成平台契约。把"官方明说的"、"实测看到的"、"自己推的"分开，读者才知道哪些能直接照抄，哪些换台机器可能不一样。</p></div>
+</section>
+
+<section id="s11">
+<span class="num">11 / 可执行物</span>
+<h2>检查清单、排障表与一份最小可用工作流</h2>
+<h3>发布前检查清单</h3>
+<table>
+<thead><tr><th style="width:8%">✓</th><th style="width:52%">检查项</th><th style="width:40%">依据</th></tr></thead>
+<tbody>
+<tr><td>□</td><td>仓库不提交任何构建产物，线上页面由 CI 从源码重建</td><td>第 02 章可复现约束；本仓库 <code>.gitignore</code> 与 README 硬约定</td></tr>
+<tr><td>□</td><td>构建工具设置了正确的 <code>base</code>（项目站点子路径）或改用相对路径</td><td>第 06 章路径规则</td></tr>
+<tr><td>□</td><td>SPA 已处理深链：预渲染 / <code>404.html</code> / hash 路由三选一</td><td>第 06 章；平台无 rewrite</td></tr>
+<tr><td>□</td><td>资源文件名带内容哈希，HTML 保持短 TTL</td><td>第 05 章；ETag 不是内容摘要</td></tr>
+<tr><td>□</td><td><code>permissions</code> 同时含 <code>pages: write</code> 与 <code>id-token: write</code></td><td>第 03 章 OIDC 双权限</td></tr>
+<tr><td>□</td><td>产物里没有任何密钥、私有数据或仓库元数据</td><td>第 08 章；站点永远公开</td></tr>
+<tr><td>□</td><td>产物体积远小于 1 GB；<code>concurrency</code> 不打断进行中部署</td><td>第 09 章配额、第 03 章 workflow</td></tr>
+<tr><td>□</td><td>自定义域已先在账号级验证，DNS 台账有记录，未使用通配解析</td><td>第 07、08 章域名接管</td></tr>
+</tbody>
+</table>
+
+<h3>排障：先按信号定位层，再改东西</h3>
+<table>
+<thead><tr><th style="width:40%">观测信号</th><th style="width:24%">定位层</th><th style="width:36%">下一步</th></tr></thead>
+<tbody>
+<tr><td><code>etag</code> 与 <code>last-modified</code> 没变</td><td>控制面</td><td>查 Actions 是否真的执行了 deploy job、是否被环境规则拦下</td></tr>
+<tr><td><code>etag</code> 变了但浏览器仍是旧页</td><td>浏览器缓存</td><td>无痕窗口、带随机查询串、检查 Service Worker</td></tr>
+<tr><td><code>x-cache: MISS</code> 且 <code>VE</code> 偏大</td><td>边缘冷缓存</td><td>再请求一次看是否转 HIT；新部署后短暂 MISS 属正常</td></tr>
+<tr><td>返回 301</td><td>域名 / 路径规范化</td><td>用 <code>curl -L</code> 跟随，检查自定义域与尾斜杠</td></tr>
+<tr><td>404 且响应体约 9 KB、标题为平台默认页</td><td>文件查找</td><td>确认产物里确有该文件、路径大小写、是否需要 <code>404.html</code></td></tr>
+<tr><td>样式与脚本全 404，本地却正常</td><td>构建配置</td><td>十有八九是 <code>base</code> 写成根路径</td></tr>
+</tbody>
+</table>
+
+<h3>反模式速查</h3>
+<table>
+<thead><tr><th style="width:34%">反模式</th><th style="width:33%">症状</th><th style="width:33%">修正</th></tr></thead>
+<tbody>
+<tr><td>手工往仓库或 <code>gh-pages</code> 分支塞 HTML</td><td>版本与 commit 脱钩，无法回滚</td><td>删掉产物，改由 Actions 从源码重建</td></tr>
+<tr><td>把 <code>.nojekyll</code> 当 Actions 部署的必需品</td><td>配置越来越多却没人说得清作用</td><td>只在分支发布且需跳过 Jekyll 时使用</td></tr>
+<tr><td>只靠 <code>CNAME</code> 文件绑定域名</td><td>域名配置不生效或漂移</td><td>在仓库设置或 API 配置并验证域名</td></tr>
+<tr><td>用 <code>GITHUB_TOKEN</code> 推送静态产物触发构建</td><td>CI 显示成功但站点不更新</td><td>改用 <code>upload-pages-artifact</code> + <code>deploy-pages</code></td></tr>
+<tr><td>把 API key 放进前端环境变量</td><td>构建产物里明文可见</td><td>密钥留在外部服务，前端只拿公开令牌</td></tr>
+</tbody>
+</table>
+
+<h3>最小可用工作流骨架</h3>
+<pre><code>name: Deploy to Pages
+on:
+  push: { branches: [main] }
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: dist }
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4</code></pre>
+<p class="src">骨架与 <code>.github/workflows/pages.yml</code> 的差别：本项目额外加了单测、类型检查、单文件组装与 <code>build.txt</code> 版本标记，并在站点目录放了 <code>.nojekyll</code> 作防御性冗余。</p>
+
+<h3>成熟度阶梯</h3>
+<table>
+<thead><tr><th style="width:14%">层级</th><th style="width:38%">特征</th><th style="width:48%">典型缺口</th></tr></thead>
+<tbody>
+<tr><td><strong>L1 能跑</strong></td><td>分支发布或 Static 模板，页面能打开</td><td>产物来源不清、改了什么无法追溯</td></tr>
+<tr><td><strong>L2 可复现</strong></td><td>Actions 从源码重建、测试门禁、产物不入库</td><td>缓存策略、发布后验证、域名治理仍缺</td></tr>
+<tr><td><strong>L3 可运维</strong></td><td>环境保规则 + OIDC、资源内容哈希、发布后 <code>curl -I</code> 校验 etag、域名验证与 DNS 台账</td><td>跨地域传播监控、配额告警</td></tr>
+</tbody>
+</table>
+<p>本仓库的 <code>pages.yml</code> 已具备 L2 与 L3 的大部分要素；最明显的剩余缺口是资源内容哈希（因采用单文件内联而不适用）与发布后的自动 etag 校验。</p>
+</section>
+
+<section id="s12">
+<span class="num">12 / 结论与参考</span>
+<h2>结论</h2>
+<p><strong>属于共识、可直接引用的部分：</strong>GitHub Pages 是静态站点托管；2022 年后构建与部署统一走 GitHub Actions；部署通过 Pages Deployments API 登记 artifact，需要 <code>pages: write</code> 与 <code>id-token: write</code> 双权限；站点即使来自私有仓库也公开；配额为 1 GB / 100 GB 月 / 10 分钟部署超时；URL 到文件是目录映射，没有 rewrite；自定义域必须在设置或 API 中配置。</p>
+<p><strong>属于本报告观点、不是官方表述的部分：</strong>把系统归纳为"控制面 / 数据面双平面"；把配额与缓存陈旧统一解释为"以写延迟换读扩展性"；由 ETag 的非哈希结构推出"不可变部署必须由构建工具提供"；以及用判别式而不是框架名称来做选型判断。这些观点与全部实测数据相容，但换一种叙事也成立。</p>
+<div class="verdict"><h4>收束成一句话</h4><p>GitHub Pages 把"运行一个网站"这件事，彻底改写成了"编译一个版本，然后让全世界的缓存替你分发它"。理解这一点之后，<code>base</code> 路径、SPA 深链、10 分钟缓存、OIDC 双权限、1 GB 上限、以及"为什么它免费"，就不再是六条互不相干的知识点，而是同一条设计决定的六个投影。</p></div>
+
+<h3>参考来源</h3>
+<p class="src"><strong>一手 · 官方规范与 API 文档</strong>（A 级）</p>
+<ol class="ref">
+<li><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages">What is GitHub Pages?</a> — 静态托管定义、用户站点与项目站点类型</li>
+<li><a href="https://docs.github.com/zh/pages/getting-started-with-github-pages/github-pages-limits">GitHub Pages 限制</a> — 1 GB / 100 GB 月 / 10 分钟 / 10 次每小时及 Actions 豁免、禁止用途</li>
+<li><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site">Configuring a publishing source</a> — 分支发布与自定义工作流、Jekyll、CNAME 文件说明、公开性警告</li>
+<li><a href="https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages">About custom domains and GitHub Pages</a> — 站点类型、域名继承、DNS 类型、验证与接管风险</li>
+<li><a href="https://docs.github.com/en/rest/pages/pages">REST API endpoints for Pages</a> — Create a GitHub Pages deployment 的请求体与状态码</li>
+<li><a href="https://github.com/actions/deploy-pages">actions/deploy-pages README</a> — OIDC 机制、双权限解释、环境与超时默认值</li>
+<li><a href="https://github.com/actions/upload-pages-artifact">actions/upload-pages-artifact README</a> — artifact 命名、gzip 包 tar、体积与链接约束、隐藏文件默认值</li>
+</ol>
+<p class="src"><strong>一手 · 官方变更记录</strong>（A 级）</p>
+<ol class="ref" start="8">
+<li><a href="https://github.blog/changelog/2022-07-27-github-pages-custom-github-actions-workflows-beta">Custom GitHub Actions Workflows (beta)</a>，2022-07-27 — 可自带任意构建框架</li>
+<li><a href="https://github.blog/changelog/2024-07-08-pages-legacy-worker-sunset">Sunsetting GitHub Pages' legacy worker</a>，2024-07-08 — 2022-08 起 Actions 成为默认、2024-06-30 关停遗留架构</li>
+<li><a href="https://owasp.github.io/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management/10-Subdomain_Takeover">OWASP WSTG-CONF-10 · Subdomain Takeover</a> — 接管原理、GitHub Pages 检测指纹、验证与修复顺序</li>
+</ol>
+<p class="src"><strong>一手 · 本地实证材料</strong>（B 级）</p>
+<ol class="ref" start="11">
+<li><code>.github/workflows/pages.yml</code>、<code>vite.config.ts</code>、<code>scripts/inline.mjs</code>、<code>.gitignore</code>、<code>README.md</code>（工作区 <code>kof-3d</code>）</li>
+<li>2026-11-06 线上站点 curl / dig / openssl 原始观测，命令见第 10 章</li>
+</ol>
+<p class="src"><strong>第三方 · 仅作线索，未采信其数据</strong>（C 级）：Fastly/Varnish 分层解读、静态托管平台横评、部署缓存问题讨论。凡涉及具体 TTL、额度与内部实现，本报告一律以官方文档或本次实测为准。</p>
+</section>
+
+<footer><div class="wrap">
+<p>生成于 2026-11-06 · 单文件、零外部依赖、可离线打开 · 所有图表为手写 SVG，无 CDN 脚本与远程字体。</p>
+<p>方法：先立 10 条可证伪论断，再逐章用官方规范与一手实测支撑；正反证据同列，推断与观测显式区分。</p>
+</div></footer>
+
+</main>
+</body>
+</html>
+
+
+
+
+
