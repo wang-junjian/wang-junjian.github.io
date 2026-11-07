@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="一人指挥多个智能体，真实上限不在模型而在审查带宽：从监督带宽、队列积压与交接损耗三个硬约束，推出可切分的分工判据、三层组织、控制面五件套、验证流水线、度量节奏与十二条反模式，并用正反两面证据划清可行边界。">
+<meta name="keywords" content="multi-agent, agent-orchestration, verification, human-oversight, code-review, ai-engineering">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-06">
+<title>一人指挥多个智能体：可行边界、方法与可迁移动作</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --line:#E4E1D9; --line2:#EFECE5;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FBF1E4;
+  --blue:#2F6FB0;  --blue-t:#1F5288;  --blue-bg:#EAF1F9;
+  --teal:#0F766E;  --teal-t:#0A5750;  --teal-bg:#E6F2F0;
+  --purple:#6D3FB5;--purple-t:#5A3099;--purple-bg:#F1EBFA;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EAF3EA;
+  --red:#B3261E;   --red-t:#9E211A;   --red-bg:#FBEAE8;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px 80px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:#F1EEE7;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+b,strong{font-weight:650}
+
+/* ---------- nav ---------- */
+nav{
+  position:sticky; top:0; z-index:50;
+  background:rgba(251,250,247,.94);
+  backdrop-filter:saturate(180%) blur(10px);
+  -webkit-backdrop-filter:saturate(180%) blur(10px);
+  border-bottom:1px solid var(--line);
+}
+nav .inner{max-width:1060px;margin:0 auto;padding:9px 28px;display:flex;gap:16px;align-items:center}
+nav .brand{font-size:12px;letter-spacing:.06em;color:var(--ink3);white-space:nowrap;font-weight:600}
+nav ul{display:flex;gap:14px;list-style:none;margin:0;padding:0;overflow-x:auto;scrollbar-width:none}
+nav ul::-webkit-scrollbar{display:none}
+nav a{color:var(--ink2);text-decoration:none;font-size:12.5px;white-space:nowrap;padding:3px 0;border-bottom:2px solid transparent}
+nav a:hover{color:var(--ink);border-bottom-color:var(--amber)}
+
+/* ---------- hero ---------- */
+header.hero{padding:64px 0 26px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-t);font-weight:700;margin-bottom:16px}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.22;letter-spacing:-.02em;margin:0 0 18px;font-weight:720}
+h1 em{font-style:normal;color:var(--amber-t)}
+.lede{font-size:17px;color:var(--ink2);max-width:820px;margin:0 0 22px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 10px;font-size:12px;color:var(--ink3)}
+.meta span{border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:#fff}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:24px;padding-top:54px}
+h2{font-size:25px;line-height:1.3;letter-spacing:-.01em;margin:0 0 8px;font-weight:700;display:flex;gap:12px;align-items:baseline}
+h2 .num{font-size:13px;font-weight:800;color:var(--amber-t);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.sub{color:var(--ink3);font-size:14px;margin:0 0 22px;max-width:860px}
+h3{font-size:17.5px;margin:32px 0 8px;font-weight:680;letter-spacing:-.005em}
+h3 .dot{color:var(--amber);margin-right:7px}
+p{margin:0 0 14px;color:var(--ink2)}
+p.tight{margin-bottom:8px}
+a.ref{color:var(--blue-t);text-decoration:none;border-bottom:1px solid rgba(47,111,176,.32)}
+
+/* ---------- blocks ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;min-width:0}
+.card h4{margin:0 0 8px;font-size:14.5px;font-weight:700}
+.card p:last-child{margin-bottom:0}
+.verdict{border-left:3px solid var(--amber);background:var(--amber-bg);border-radius:0 8px 8px 0;padding:14px 18px;margin:22px 0}
+.verdict h4{margin:0 0 6px;font-size:14px;color:var(--amber-t);font-weight:700;letter-spacing:.02em}
+.verdict p{margin:0;color:var(--ink);font-size:14.5px}
+.verdict.blue{border-left-color:var(--blue);background:var(--blue-bg)}
+.verdict.blue h4{color:var(--blue-t)}
+.verdict.red{border-left-color:var(--red);background:var(--red-bg)}
+.verdict.red h4{color:var(--red-t)}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.g2>*{min-width:0}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+.g3>*{min-width:0}
+
+ol.claims{list-style:none;counter-reset:c;margin:18px 0 6px;padding:0}
+ol.claims li{counter-increment:c;position:relative;padding:12px 0 12px 46px;border-bottom:1px solid var(--line2)}
+ol.claims li:first-child{border-top:1px solid var(--line2)}
+ol.claims li::before{
+  content:counter(c,decimal-leading-zero);position:absolute;left:0;top:12px;
+  font-size:12px;font-weight:800;color:var(--amber-t);letter-spacing:.04em;font-variant-numeric:tabular-nums;
+}
+ol.claims li p{margin:0;font-size:15px;color:var(--ink);font-weight:520;line-height:1.65}
+ol.claims li .ev{display:block;margin-top:5px;font-size:12.5px;color:var(--ink3);font-weight:400}
+
+ul.tick{list-style:none;padding:0;margin:12px 0}
+ul.tick li{position:relative;padding-left:22px;margin-bottom:9px;font-size:14.5px;color:var(--ink2)}
+ul.tick li::before{content:"—";position:absolute;left:0;color:var(--amber);font-weight:700}
+ul.tick li b{color:var(--ink)}
+
+.tag{display:inline-block;font-size:11px;line-height:1.6;padding:1px 7px;border-radius:4px;font-weight:650;letter-spacing:.02em;white-space:nowrap}
+.t-rct{background:var(--green-bg);color:var(--green-t)}
+.t-obs{background:var(--blue-bg);color:var(--blue-t)}
+.t-case{background:var(--purple-bg);color:var(--purple-t)}
+.t-survey{background:var(--amber-bg);color:var(--amber-t)}
+.t-model{background:#EDEAE3;color:#333941}
+.t-bad{background:var(--red-bg);color:var(--red-t)}
+
+/* ---------- table ---------- */
+.tw{overflow-x:auto;margin:20px 0;border:1px solid var(--line);border-radius:10px;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line2);vertical-align:top}
+thead th{background:#F6F3EC;font-size:11.5px;letter-spacing:.05em;color:var(--ink2);font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+td.num,th.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---------- figure ---------- */
+figure{min-width:0;margin:24px 0 6px}
+.fig-box{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px 10px}
+svg{display:block;width:100%;height:auto;min-width:600px}
+figcaption{font-size:12.5px;color:var(--ink3);margin-top:9px;line-height:1.65}
+figcaption b{color:var(--ink2);font-weight:650}
+
+/* ---------- stat ---------- */
+.stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.stat .v{font-size:27px;font-weight:720;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .k{font-size:12.5px;color:var(--ink3);margin-top:6px;line-height:1.55}
+.stat .v.amber{color:var(--amber-t)}
+.stat .v.teal{color:var(--teal-t)}
+.stat .v.blue{color:var(--blue-t)}
+.stat .v.red{color:var(--red-t)}
+
+footer{border-top:1px solid var(--line);margin-top:64px;padding-top:22px;font-size:12.5px;color:var(--ink3)}
+
+@media (max-width:820px){
+  .g2,.g3{grid-template-columns:1fr}
+  .wrap{padding:0 18px 60px}
+  nav .inner{padding:8px 18px}
+  h2{font-size:22px}
+}
+@media (max-width:760px){
+  table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <div class="brand">一人多体 · 2026</div>
+    <ul>
+      <li><a href="#s00">速览</a></li>
+      <li><a href="#s01">判定</a></li>
+      <li><a href="#s02">理论</a></li>
+      <li><a href="#s03">分工</a></li>
+      <li><a href="#s04">组织</a></li>
+      <li><a href="#s05">控制面</a></li>
+      <li><a href="#s06">验证</a></li>
+      <li><a href="#s07">证据</a></li>
+      <li><a href="#s08">度量</a></li>
+      <li><a href="#s09">反模式</a></li>
+      <li><a href="#s10">结论</a></li>
+      <li><a href="#s11">来源</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Deep Research · 工作方式</div>
+  <h1>一人指挥多个智能体：<br><em>上限不在模型，在你的审查带宽</em></h1>
+  <p class="lede">
+    Anthropic、OpenAI、Cognition、Cursor、StrongDM 以及一批「一个人的工厂」已经把这件事跑了一遍。
+    把他们的公开数据摆在一起，会看到一个反直觉的结论：<b>真正被规模化的是验证，不是生成</b>；
+    而「一人指挥几个」这件事，有一组可测量的硬约束，越过它，加智能体只是加噪声。
+  </p>
+  <div class="meta">
+    <span>9 条可证伪论断</span>
+    <span>8 张手绘图</span>
+    <span>40+ 一手数据点</span>
+    <span>含 6 条反向证据</span>
+    <span>2026-11-06</span>
+  </div>
+</header>
+
+<section id="s00">
+  <h2><span class="num">00</span>速览：如果你只读一页</h2>
+  <p class="sub">每条论断都写成可被证伪的句子，并标注证据强度：<span class="tag t-rct">RCT</span> 随机对照 &gt; <span class="tag t-obs">大样本</span> 遥测/受控实验 &gt; <span class="tag t-case">单一案例</span> 厂商自述 &gt; <span class="tag t-survey">自报</span> 问卷 &gt; <span class="tag t-model">建模</span> 推导。</p>
+
+  <ol class="claims">
+    <li><p>「一人指挥 N 个智能体」的产能上限，<b>由人每天能真正审完的量决定</b>，不由模型能力决定。所有公开的产能跃升案例，都是先把审查成本压到接近零，再谈并发。<span class="ev">OpenAI：瓶颈明确写成「human QA capacity」；Anthropic：并发上限是「一个人能审好的流数」 <span class="tag t-case">单一案例</span></span></p></li>
+    <li><p>多智能体只在<b>天然可并行且彼此独立</b>的任务上赚回成本；在强共享上下文的任务上，它是用 15 倍的 token 买更差的连贯性。<span class="ev">Anthropic 15× vs 4×；80% 性能方差由 token 用量解释 <span class="tag t-case">单一案例</span></span></p></li>
+    <li><p>把 token 预算拉平后，多智能体的优势<b>大部分消失</b>——很多「协调带来的增益」其实是「多花的算力」。<span class="ev">Tran 与 Kiela 等预算实验，5 种架构全部未稳定胜出 <span class="tag t-obs">受控实验</span></span></p></li>
+    <li><p>多智能体的失败<b>极少是模型不行</b>：约 44% 出在系统设计（切错、没终止条件），32% 出在交接（上下文丢失、彼此矛盾），24% 出在验证。<span class="ev">MAST，1,642 条执行轨迹，7 个框架，κ=0.88 <span class="tag t-obs">大样本标注</span></span></p></li>
+    <li><p>人一次能<b>同时</b>有效监督的数量有实测区间：低负荷约 8–9 个，高复杂度约 4–5 个；负荷超过可用时间的 70% 后，监督质量断崖。<span class="ev">无人机监督研究综述（Chen 等；Cummings 与 Guerlain） <span class="tag t-obs">受控实验</span></span></p></li>
+    <li><p>可复制的组织形态不是「一群平等的智能体」，而是<b>指挥者 + 少数中层 + 大量短命工人</b>，协调靠共享任务表与信箱，而不是靠人逐个喊话。<span class="ev">Gas Town（20–30 并发）；Claude Code 智能体团队（lead + task list + mailbox） <span class="tag t-case">单一案例</span></span></p></li>
+    <li><p>人的交付物从「代码」变成<b>规格 + 验收场景 + 门禁</b>。所谓 harness engineering，本质是把「什么算对」写成机器能执行的判据。<span class="ev">OpenAI：5 个月 100 万行、0 行手写；StrongDM：代码不得由人写、也不得由人审 <span class="tag t-case">单一案例</span></span></p></li>
+    <li><p>「无人工厂」目前是<b>极少数小团队的演示</b>，不是行业默认路径：中位公司 27.7% 的 PR 有智能体参与，但仅靠 AI 审批就合并的只有 0.5%。<span class="ev">Jellyfish 遥测：1,300 家公司 / 2.76 万开发者 / 1 亿 PR <span class="tag t-obs">大样本</span></span></p></li>
+    <li><p>可迁移的不是某个框架，而是<b>五个控制面动作</b>：隔离、意图、门禁、验证、账本。这五件事的成熟度，直接决定你能把并发开到几。<span class="ev">跨 5 个团队实践的共同交集 <span class="tag t-model">归纳</span></span></p></li>
+  </ol>
+
+  <div class="verdict">
+    <h4>一句话结论</h4>
+    <p>不要问「我能同时跑几个智能体」，要问「我每天能审完几个，以及我能不能让机器替我做掉其中 80% 的审」。</p>
+  </div>
+</section>
+<section id="s01">
+  <h2><span class="num">01</span>先分清三种形态，否则方法论会串味</h2>
+  <p class="sub">「一人指挥多个智能体」被讲得很含糊。它至少指三件不同的事，工程含义完全不同：一个是人的操作方式，一个是系统的拓扑，一个是组织的生产模式。</p>
+
+  <div class="g3">
+    <div class="card">
+      <h4 style="color:var(--blue-t)">形态 A · 多会话</h4>
+      <p style="font-size:13.5px;margin:0">一个人开 2–5 个会话，各自一个任务，各自一个工作区副本。状态在人的脑子里，切换成本由人承担。</p>
+      <p style="font-size:12px;margin:8px 0 0;color:var(--ink3)">Cursor 2.0：单条提示最多并行 8 个，靠 git worktree 或远端机器隔离；Anthropic 建议从 2–3 个起。</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--teal-t)">形态 B · 多智能体</h4>
+      <p style="font-size:13.5px;margin:0">一个 lead 派生 worker，彼此可通信，有<b>共享任务表</b>与依赖。状态外化到机器，人只看收敛结果。</p>
+      <p style="font-size:12px;margin:8px 0 0;color:var(--ink3)">Claude Code 智能体团队：lead + teammates + task list + mailbox，任务认领用文件锁防竞争。</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--purple-t)">形态 C · 工厂</h4>
+      <p style="font-size:13.5px;margin:0">常驻流水线：规格与场景进，代码与部署出。人只在<b>定义意图</b>与<b>处理例外</b>时出现。</p>
+      <p style="font-size:12px;margin:8px 0 0;color:var(--ink3)">OpenAI 内部 5 个月 100 万行、0 行手写；StrongDM 明文规定代码不得由人写、也不得由人审。</p>
+    </div>
+  </div>
+
+  <p>三者的分界不在「几个智能体」，而在三件事：<b>谁持有任务状态</b>、<b>谁判定完成</b>、<b>人介入在哪里</b>。把 A 的经验套到 C 上会翻车（人还在逐行读 diff，产能上限就是 1）；把 C 的规则套到 A 上也会翻车（没有验证层就关灯，等于把缺陷工业化）。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>维度</th><th>形态 A · 多会话</th><th>形态 B · 多智能体</th><th>形态 C · 工厂</th></tr></thead>
+      <tbody>
+        <tr><td><b>任务状态</b></td><td>存在人脑 + 各会话上下文里</td><td>外化为共享任务表，带依赖与阻塞</td><td>外化为可查询的持久队列（工单/分支/PR）</td></tr>
+        <tr><td><b>完成判定</b></td><td>人读结果</td><td>lead 汇总 + 人抽检</td><td>机器门禁 + 独立验证者</td></tr>
+        <tr><td><b>人的介入点</b></td><td>每个任务的开始与结束</td><td>派活、仲裁冲突、验收</td><td>写规格、看指标、处理例外</td></tr>
+        <tr><td><b>真实上限</b></td><td>2–5（切换成本主导）</td><td>4–8（审查带宽主导）</td><td>由验证覆盖面决定，而非人数</td></tr>
+        <tr><td><b>失败长相</b></td><td>会话互相踩文件</td><td>重复劳动、彼此矛盾、不知道停</td><td>缺陷规模化、无人理解系统</td></tr>
+        <tr><td><b>适合的任务</b></td><td>里程碑式、需要人频繁判断</td><td>可并行 + 可验证的成批任务</td><td>重复度高、判据可编码的产线</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="verdict blue">
+    <h4>判别式（拿它给自己定位）</h4>
+    <p>能不能往右走，取决于一个比值：<b>（任务可切分度 × 验证自动化度）÷（协调成本 × 你每天实际能读完的量）</b>。分子靠设计，分母靠自律。绝大多数团队卡住，是因为只优化了分子里的第一项——把任务切得更细，却没有同时降低分母。</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>三个硬约束：为什么「多」不等于「快」</h2>
+  <p class="sub">关于一人多体的讨论大多停留在经验层面。其实它背后有三条几十年历史的老理论，每条都能直接推出一个工程动作。</p>
+
+  <h3><span class="dot">·</span>约束一：人的监督带宽是物理量，不是态度问题</h3>
+  <p>「一人能看几个」在无人系统领域被研究了三十年，术语叫 <b>Fan-Out（FO）</b>，指一个人能同时有效操作的对象数。综述给出的区间很稳定：<b>任务负荷低时可到 8–9 个，条件复杂时只有 4–5 个</b>，且这个数字惊人地接近管理学里经典的「7±2」。更实用的是另一条：当操作者的工作负荷超过可用时间的 <b>70%</b>，监督表现开始显著下降——这条来自 Cummings 与 Guerlain 对多无人机控制的研究，被后续文献当作经验阈值反复引用。</p>
+  <p>把它翻译成智能体语境：你不是在看 5 个终端，你是在为 5 条并行推理链维护「情境意识」。每次切换都要重建上下文，而重建成本随任务耦合度上升。所以「我开了 20 个 agent」通常意味着两件事之一：任务被切得足够碎（碎到不需要情境意识），或者你其实已经放弃了监督，只在最后看结果。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 380" role="img" aria-label="监督带宽与并发的示意曲线">
+        <text x="94" y="21" font-size="11" fill="#4A505A">注意力占用</text>
+        <line x1="60" y1="17" x2="88" y2="17" stroke="#B45309" stroke-width="2.5"/>
+        <text x="214" y="21" font-size="11" fill="#4A505A">边际产出质量</text>
+        <line x1="180" y1="17" x2="208" y2="17" stroke="#2F6FB0" stroke-width="2.5"/>
+
+        <line x1="90" y1="300" x2="900" y2="300" stroke="#C9C4B8" stroke-width="1"/>
+        <line x1="90" y1="40" x2="90" y2="300" stroke="#C9C4B8" stroke-width="1"/>
+        <line x1="90" y1="170" x2="900" y2="170" stroke="#EFECE5" stroke-width="1"/>
+        <line x1="90" y1="105" x2="900" y2="105" stroke="#EFECE5" stroke-width="1"/>
+
+        <text x="82" y="304" font-size="10.5" fill="#4A505A" text-anchor="end">0</text>
+        <text x="82" y="174" font-size="10.5" fill="#4A505A" text-anchor="end">50</text>
+        <text x="82" y="44" font-size="10.5" fill="#4A505A" text-anchor="end">100</text>
+
+        <rect x="360" y="40" width="68" height="260" fill="#0F766E" opacity="0.07"/>
+        <line x1="90" y1="118" x2="900" y2="118" stroke="#9E211A" stroke-width="1.2" stroke-dasharray="5 5"/>
+        <text x="96" y="134" font-size="10.5" fill="#9E211A">70% 阈值</text>
+
+        <path d="M90,300 L157.5,264.9 L225,229.8 L292.5,194.7 L360,159.6 L427.5,124.5 L495,89.4 L562.5,54.3 L596.3,40"
+              fill="none" stroke="#B45309" stroke-width="2.2"/>
+        <path d="M157.5,107.6 L225,86.8 L292.5,68.6 L360,60.8 L427.5,63.4 L495,73.8 L562.5,89.4 L630,107.6 L697.5,128.4 L765,151.8 L832.5,175.2 L900,198.6"
+              fill="none" stroke="#2F6FB0" stroke-width="2.2"/>
+        <circle cx="360" cy="60.8" r="3.6" fill="#2F6FB0"/>
+
+        <text x="90" y="320" font-size="10" fill="#4A505A" text-anchor="middle">0</text>
+        <text x="157.5" y="320" font-size="10" fill="#4A505A" text-anchor="middle">1</text>
+        <text x="225" y="320" font-size="10" fill="#4A505A" text-anchor="middle">2</text>
+        <text x="292.5" y="320" font-size="10" fill="#4A505A" text-anchor="middle">3</text>
+        <text x="360" y="320" font-size="10" fill="#4A505A" text-anchor="middle">4</text>
+        <text x="427.5" y="320" font-size="10" fill="#4A505A" text-anchor="middle">5</text>
+        <text x="495" y="320" font-size="10" fill="#4A505A" text-anchor="middle">6</text>
+        <text x="562.5" y="320" font-size="10" fill="#4A505A" text-anchor="middle">7</text>
+        <text x="630" y="320" font-size="10" fill="#4A505A" text-anchor="middle">8</text>
+        <text x="697.5" y="320" font-size="10" fill="#4A505A" text-anchor="middle">9</text>
+        <text x="765" y="320" font-size="10" fill="#4A505A" text-anchor="middle">10</text>
+        <text x="832.5" y="320" font-size="10" fill="#4A505A" text-anchor="middle">11</text>
+        <text x="900" y="320" font-size="10" fill="#4A505A" text-anchor="middle">12</text>
+        <text x="393.8" y="342" font-size="11.5" fill="#0A5750" text-anchor="middle" font-weight="700">4–5</text>
+        <text x="393.8" y="358" font-size="10.5" fill="#4A505A" text-anchor="middle">高复杂度上限</text>
+        <text x="495" y="368" font-size="10.5" fill="#4A505A" text-anchor="middle">并行智能体数量</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1 · 监督带宽的经验形状。</b>曲线为示意（<span class="tag t-model">建模</span>），两个锚点有实证：高复杂度任务的 FO 约 4–5（Chen、Barnes 与 Harper-Sciarini 综述），以及 70% 工作量阈值（Cummings 与 Guerlain）。注意力占用在约 5 个时穿过 70% 线，与质量曲线的拐点几乎重合——这不是巧合，是同一条生理约束的两种读法。</figcaption>
+  </figure>
+
+  <h3><span class="dot">·</span>约束二：队列会惩罚「生成快、审查慢」</h3>
+  <p>Little 定律：<code>平均在制品 = 到达率 × 平均停留时间</code>。它给出一条残酷的算术。假设每个合并平均需要你 24 分钟真读，你每天能投入 4 小时——审查能力就是 10 个/天。如果并发让生成速度变成 24 个/天，队列每天净增 14 个；第三天积压 42 个，最老待审项已经躺了三天，而你早已不记得它的上下文。此时你名义上「指挥着 6 个智能体」，实际上在做一件更糟的事：<b>为无法理解的东西签字</b>。</p>
+  <p>Amdahl 定律给出同一件事的上限形式：若人的判断占关键路径的 20%，则无论并行多少路，整体加速比不超过 5×。想让上限从 5× 提到 20×，唯一的办法是把人的判断<b>移出关键路径</b>——从「合并前必须看」改成「合并后按风险抽查」，而不是更快地看。</p>
+  <div class="verdict">
+    <h4>由约束二推出的动作</h4>
+    <p>优化目标不是「让智能体更快地产出」，而是「让一次验证更便宜」。任何降低单次验证成本的动作（可执行的验收场景、一键复现、自动化截图比对、独立审查 agent）都比提升生成速度更值钱——因为前者抬高上限，后者只抬高队列。</p>
+  </div>
+
+  <h3><span class="dot">·</span>约束三：每一次交接都在丢信息</h3>
+  <p>Claude Shannon 的数据处理不等式说：对数据做任何处理，信息量只能保持不变或减少，不会增加。把子任务的结论压成一段摘要交给下一个智能体，就是一次有损压缩。Cognition 用 Flappy Bird 讲清了后果：一个 agent 做背景，一个做小鸟，各自都「完成了任务」，但风格、坐标系、命名全不一致，最后由第三个 agent 收拾两场误解。他们给出的原则近乎红线：<b>共享完整轨迹，而不只是消息</b>；<b>动作本身携带隐含决策，冲突的隐含决策会带来坏结果</b>。</p>
+  <p>粗略量化一下：若每次交接保留 90% 的有效信息（对摘要来说已属慷慨），三级链条后最后一个执行者只握有 <code>0.9³ ≈ 73%</code> 的信息。剩下 27% 的缺口，会被它用「看起来合理的假设」填满——而错误恰恰长在这些假设上。</p>
+  <div class="verdict blue">
+    <h4>由约束三推出的动作</h4>
+    <p>能串行的不要并行，能共享原始轨迹的不要传摘要，能让下游重读源头的不要让上游转述。并行的正当理由只有两个：<b>子任务确实独立</b>，或者<b>单窗口装不下</b>。这两条不成立时，多智能体是在用协调成本换幻觉式的吞吐。</p>
+  </div>
+
+  <div class="g3">
+    <div class="stat"><div class="v amber">15×</div><div class="k">多智能体相对普通对话的 token 消耗；单智能体约 4×（Anthropic 用量数据）</div></div>
+    <div class="stat"><div class="v teal">4–5</div><div class="k">高复杂度任务下，一个人能有效监督的并行数上限（Fan-Out 研究）</div></div>
+    <div class="stat"><div class="v blue">80%</div><div class="k">性能方差中被「token 用量」一项解释掉的比例——这既是机会也是警告</div></div>
+  </div>
+</section>
+<section id="s03">
+  <h2><span class="num">03</span>分工判据：什么任务值得切，切到什么粒度</h2>
+  <p class="sub">Anthropic 在复盘里承认过早期最典型的蠢事：给一个简单问题派出 50 个子智能体，或者让子智能体反复搜索根本不存在的来源。切分不是越细越好，切分的质量由<b>接口是否显式</b>决定。</p>
+
+  <p>一个任务真的可并行，需要同时满足三条，缺一条就会退化成「事后收拾矛盾」：</p>
+  <ul class="tick">
+    <li><b>写集不相交。</b>两个子任务不修改同一批文件/同一段契约。这不是洁癖：Cursor 用 git worktree 隔离，OpenAI 让每个 worktree 都能独立启动一份应用实例，都是为了让「不相交」成为物理事实而非口头约定。</li>
+    <li><b>判据可执行。</b>每个子任务有机器能判的对错——测试、类型检查、截图比对、接口返回。Anthropic 的说法是「给它一个可以通过的检查」，而不是「告诉它要努力」。</li>
+    <li><b>结论可合并。</b>合并时不需要协商风格、命名、错误处理策略。凡需要协商的，就是「动作携带的隐含决策」在打架。</li>
+  </ul>
+
+  <p>反过来说，<b>按角色切分（前端 / 后端 / 测试）是最容易翻车的方式</b>，因为它天然让三方对同一份接口做各自的假设。可用的切法只有两种：按<b>可独立合并的 PR</b>切，或按<b>互不重叠的查询方向</b>切（研究类任务）。Claude Code 的 <code>/batch</code> 给了一个粒度参考：把一次机械改动切成 5–30 个单元，每个单元一个 worktree、一个 PR。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 396" role="img" aria-label="任务可否并行的三问决策树">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8A8578"/>
+          </marker>
+        </defs>
+
+        <rect x="340" y="24" width="280" height="60" rx="8" fill="#FBF1E4"/>
+        <text x="480" y="59" font-size="13" fill="#8F3F06" text-anchor="middle">子任务需要看到同一份上下文吗？</text>
+
+        <path d="M340,54 L170,54 L170,96" fill="none" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar2)"/>
+        <text x="330" y="46" font-size="12" fill="#8F3F06" text-anchor="end">是</text>
+        <rect x="40" y="96" width="260" height="64" rx="8" fill="#EAF1F9"/>
+        <text x="170" y="122" font-size="13" fill="#1F5288" text-anchor="middle">单线程 / 串行交接</text>
+        <text x="170" y="142" font-size="10.5" fill="#4A505A" text-anchor="middle">传完整轨迹，不要传摘要</text>
+
+        <path d="M480,84 L480,116" fill="none" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar2)"/>
+        <text x="492" y="106" font-size="12" fill="#8F3F06">否</text>
+        <rect x="340" y="116" width="280" height="60" rx="8" fill="#FBF1E4"/>
+        <text x="480" y="151" font-size="13" fill="#8F3F06" text-anchor="middle">失败能被机器自动判定吗？</text>
+
+        <path d="M620,146 L790,146 L790,160" fill="none" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar2)"/>
+        <text x="632" y="138" font-size="12" fill="#9E211A">否</text>
+        <rect x="660" y="160" width="260" height="68" rx="8" fill="#FBEAE8"/>
+        <text x="790" y="186" font-size="13" fill="#9E211A" text-anchor="middle">先补验证，别谈并发</text>
+        <text x="790" y="206" font-size="10.5" fill="#4A505A" text-anchor="middle">判不了对错就只能人肉看</text>
+        <text x="790" y="220" font-size="10.5" fill="#4A505A" text-anchor="middle">并发上限恒等于 1</text>
+
+        <path d="M480,176 L480,208" fill="none" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar2)"/>
+        <text x="492" y="198" font-size="12" fill="#2E7D32">是</text>
+        <rect x="340" y="208" width="280" height="60" rx="8" fill="#FBF1E4"/>
+        <text x="480" y="243" font-size="13" fill="#8F3F06" text-anchor="middle">能独立并行且产出可合并吗？</text>
+
+        <path d="M340,238 L170,238 L170,272" fill="none" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar2)"/>
+        <text x="330" y="230" font-size="12" fill="#9E211A" text-anchor="end">否</text>
+        <rect x="40" y="272" width="260" height="68" rx="8" fill="#E6F2F0"/>
+        <text x="170" y="298" font-size="13" fill="#0A5750" text-anchor="middle">单 agent + 只读子 agent</text>
+        <text x="170" y="318" font-size="10.5" fill="#4A505A" text-anchor="middle">子 agent 只调研、只审查</text>
+        <text x="170" y="332" font-size="10.5" fill="#4A505A" text-anchor="middle">不写、不并行改</text>
+
+        <path d="M620,238 L790,238 L790,272" fill="none" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar2)"/>
+        <text x="632" y="230" font-size="12" fill="#2E7D32">是</text>
+        <rect x="660" y="272" width="260" height="68" rx="8" fill="#EAF3EA"/>
+        <text x="790" y="298" font-size="13" fill="#1B5820" text-anchor="middle">多智能体 / 工厂</text>
+        <text x="790" y="318" font-size="10.5" fill="#4A505A" text-anchor="middle">隔离工作区 + 共享任务表</text>
+        <text x="790" y="332" font-size="10.5" fill="#4A505A" text-anchor="middle">+ 串行合并队列</text>
+
+        <text x="480" y="376" font-size="11" fill="#4A505A" text-anchor="middle">三问全过，才配得上并发；任一不过，加 agent 只是把错误并行化。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2 · 三问决策树。</b>三问的顺序不能换：上下文耦合度决定「能不能切」，可判定性决定「切了能不能扩」，可合并性决定「扩了会不会打架」。实践中 90% 的错误发生在跳过第二问——先切了、先并行，然后人肉当验证器。</figcaption>
+  </figure>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>任务类型</th><th>可并行度</th><th>建议形态</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>机械式批量改动（改 API 调用、批量重命名）</td><td>高</td><td>切成 5–30 个单元，一单元一 worktree 一 PR</td><td>写集天然不相交，判据是编译与测试</td></tr>
+        <tr><td>广度调研（多方向收集、多视角评审）</td><td>高</td><td>多智能体，各自一个方向，lead 汇总</td><td>Anthropic 的评估集上比单智能体高 90.2%</td></tr>
+        <tr><td>新功能（跨层改接口）</td><td>低</td><td>单线程，计划先行，人在关键点决策</td><td>动作携带隐含决策，并行必然冲突</td></tr>
+        <tr><td>重构 / 架构调整</td><td>极低</td><td>单智能体 + 频繁小步提交</td><td>一致性要求高于速度</td></tr>
+        <tr><td>修 bug（根因未知）</td><td>中</td><td>2–3 个竞争假设并行，互相反驳</td><td>单 agent 容易找到第一个合理解释就停</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>组织形态：不是一群平级智能体，而是一个有中层的工厂</h2>
+  <p class="sub">Dan Shapiro 在 2026 年 1 月把 AI 编程的自治度分成六级（Level 0–5），并指出一个残酷的观察：每一级在当下都感觉是最后一级，而大多数人稳定停在第 2–3 级。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 400" role="img" aria-label="六级自治阶梯">
+        <text x="8" y="20" font-size="11" fill="#4A505A">级别</text>
+        <text x="70" y="20" font-size="11" fill="#4A505A">你做什么 · 机器做什么</text>
+
+        <rect x="70" y="30" width="196" height="44" rx="6" fill="#F2EFE8"/>
+        <text x="8" y="58" font-size="15" fill="#16181D" font-weight="700">L0</text>
+        <text x="84" y="58" font-size="12.5" fill="#333941">补全 · AI 只提下一行</text>
+
+        <rect x="70" y="90" width="286" height="44" rx="6" fill="#EAF1F9"/>
+        <text x="8" y="118" font-size="15" fill="#16181D" font-weight="700">L1</text>
+        <text x="84" y="118" font-size="12.5" fill="#1F5288">实习生 · 写样板，你逐行检查</text>
+
+        <rect x="70" y="150" width="376" height="44" rx="6" fill="#E6F2F0"/>
+        <text x="8" y="178" font-size="15" fill="#16181D" font-weight="700">L2</text>
+        <text x="84" y="178" font-size="12.5" fill="#0A5750">初级工程师 · 写真实代码，你全程结对</text>
+        <text x="460" y="178" font-size="11" fill="#4A505A">多数人实际停在这里</text>
+
+        <rect x="70" y="210" width="466" height="44" rx="6" fill="#F1EBFA"/>
+        <text x="8" y="238" font-size="15" fill="#16181D" font-weight="700">L3</text>
+        <text x="84" y="238" font-size="12.5" fill="#5A3099">开发者 · AI 写大部分，你 review 几乎所有</text>
+
+        <rect x="70" y="270" width="546" height="44" rx="6" fill="#FBF1E4"/>
+        <text x="8" y="298" font-size="15" fill="#16181D" font-weight="700">L4</text>
+        <text x="84" y="298" font-size="12.5" fill="#8F3F06">工程团队 · 你写规格，几小时后看结果</text>
+        <text x="630" y="298" font-size="11" fill="#4A505A">OpenAI 内部产品</text>
+
+        <rect x="70" y="330" width="626" height="44" rx="6" fill="#FBEAE8"/>
+        <text x="8" y="358" font-size="15" fill="#16181D" font-weight="700">L5</text>
+        <text x="84" y="358" font-size="12.5" fill="#9E211A">黑暗工厂 · 你写规格与场景，无人读 diff</text>
+        <text x="710" y="358" font-size="11" fill="#4A505A">StrongDM：3 人</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3 · 自治六级阶梯（按 Shapiro 的 Level 0–5 重写）。</b>从 L3 到 L4 是一次真正的断点：你停止「边写边读」，改成「看结果」。L5 再上一层，连结果也不看，只信判据——这也是它最有争议的原因。</figcaption>
+  </figure>
+
+  <p>阶梯给出的是「人的位置」，但没给出「智能体之间怎么组织」。公开跑通的系统在这一点上出奇一致：<b>都不是扁平的一群，而是三层——一个指挥者、几个中层、一群短命工人</b>。</p>
+
+  <p>Yegge 的 Gas Town 是最直白的样本：<b>Mayor</b>（拆解与派活）、<b>Polecats</b>（短命实现工人，一任务一实例，做完即销毁）、<b>Witness</b>（盯卡住的工人）、<b>Refinery</b>（合并队列，把并行产出串行化）、<b>Deacon</b>（健康巡检与会话回收）。它同时跑 20–30 个 Claude Code 实例，把任务状态写进 git 支持的工单队列（beads），靠「钩子上有活就必须干」的规则扛住会话崩溃。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 380" role="img" aria-label="一人指挥多智能体的三层组织结构">
+        <defs>
+          <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8A8578"/>
+          </marker>
+        </defs>
+
+        <rect x="380" y="16" width="200" height="46" rx="8" fill="#F2EFE8"/>
+        <text x="480" y="45" font-size="12.5" fill="#16181D" text-anchor="middle">你：意图 / 验收 / 例外</text>
+
+        <path d="M480,62 L480,100" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar4)"/>
+
+        <rect x="380" y="100" width="200" height="46" rx="8" fill="#FBF1E4"/>
+        <text x="480" y="129" font-size="12.5" fill="#8F3F06" text-anchor="middle">Mayor：拆解与派活</text>
+
+        <path d="M480,146 L480,166 L210,166 L210,186" fill="none" stroke="#8A8578" stroke-width="1.3" marker-end="url(#ar4)"/>
+        <path d="M480,146 L480,186" fill="none" stroke="#8A8578" stroke-width="1.3" marker-end="url(#ar4)"/>
+        <path d="M480,146 L480,166 L750,166 L750,186" fill="none" stroke="#8A8578" stroke-width="1.3" marker-end="url(#ar4)"/>
+
+        <rect x="110" y="186" width="200" height="52" rx="8" fill="#EAF1F9"/>
+        <text x="210" y="208" font-size="12" fill="#1F5288" text-anchor="middle" font-weight="700">Witness</text>
+        <text x="210" y="226" font-size="10.5" fill="#4A505A" text-anchor="middle">盯卡住、催活、解锁</text>
+
+        <rect x="380" y="186" width="200" height="52" rx="8" fill="#E6F2F0"/>
+        <text x="480" y="208" font-size="12" fill="#0A5750" text-anchor="middle" font-weight="700">Refinery</text>
+        <text x="480" y="226" font-size="10.5" fill="#4A505A" text-anchor="middle">合并队列，串行化写入</text>
+
+        <rect x="650" y="186" width="200" height="52" rx="8" fill="#F1EBFA"/>
+        <text x="750" y="208" font-size="12" fill="#5A3099" text-anchor="middle" font-weight="700">Deacon</text>
+        <text x="750" y="226" font-size="10.5" fill="#4A505A" text-anchor="middle">健康巡检、会话回收</text>
+
+        <path d="M210,238 L210,256" fill="none" stroke="#C9C4B8" stroke-width="1.2"/>
+        <path d="M480,238 L480,256" fill="none" stroke="#C9C4B8" stroke-width="1.2"/>
+        <path d="M750,238 L750,256" fill="none" stroke="#C9C4B8" stroke-width="1.2"/>
+        <path d="M115,256 L835,256" fill="none" stroke="#C9C4B8" stroke-width="1.2"/>
+        <path d="M115,256 L115,272" fill="none" stroke="#8A8578" stroke-width="1.2" marker-end="url(#ar4)"/>
+        <path d="M259,256 L259,272" fill="none" stroke="#8A8578" stroke-width="1.2" marker-end="url(#ar4)"/>
+        <path d="M403,256 L403,272" fill="none" stroke="#8A8578" stroke-width="1.2" marker-end="url(#ar4)"/>
+        <path d="M547,256 L547,272" fill="none" stroke="#8A8578" stroke-width="1.2" marker-end="url(#ar4)"/>
+        <path d="M691,256 L691,272" fill="none" stroke="#8A8578" stroke-width="1.2" marker-end="url(#ar4)"/>
+        <path d="M835,256 L835,272" fill="none" stroke="#8A8578" stroke-width="1.2" marker-end="url(#ar4)"/>
+
+        <rect x="52" y="272" width="126" height="40" rx="6" fill="#FFFFFF" stroke="#DCD8CF"/>
+        <text x="115" y="297" font-size="11" fill="#333941" text-anchor="middle">Polecat</text>
+        <rect x="196" y="272" width="126" height="40" rx="6" fill="#FFFFFF" stroke="#DCD8CF"/>
+        <text x="259" y="297" font-size="11" fill="#333941" text-anchor="middle">Polecat</text>
+        <rect x="340" y="272" width="126" height="40" rx="6" fill="#FFFFFF" stroke="#DCD8CF"/>
+        <text x="403" y="297" font-size="11" fill="#333941" text-anchor="middle">Polecat</text>
+        <rect x="484" y="272" width="126" height="40" rx="6" fill="#FFFFFF" stroke="#DCD8CF"/>
+        <text x="547" y="297" font-size="11" fill="#333941" text-anchor="middle">Polecat</text>
+        <rect x="628" y="272" width="126" height="40" rx="6" fill="#FFFFFF" stroke="#DCD8CF"/>
+        <text x="691" y="297" font-size="11" fill="#333941" text-anchor="middle">Polecat</text>
+        <rect x="772" y="272" width="126" height="40" rx="6" fill="#FFFFFF" stroke="#DCD8CF"/>
+        <text x="835" y="297" font-size="11" fill="#333941" text-anchor="middle">Polecat</text>
+
+        <text x="480" y="342" font-size="11" fill="#4A505A" text-anchor="middle">Polecat × N —— 短命实例，一任务一个，做完即销毁（cattle, not pets）</text>
+        <text x="480" y="362" font-size="11" fill="#4A505A" text-anchor="middle">你只与 Mayor 对话；三层的存在是为了让你不必逐个喊话</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4 · 三层结构（Gas Town 的角色命名，机制来自公开文档与 Yegge 自述）。</b>关键不在命名，而在三个中层的功能：<b>谁催活</b>（防止卡死无人知）、<b>谁串行化写入</b>（防止并行改同一处）、<b>谁回收实例</b>（防止无限膨胀）。这三件事如果没有机器角色承担，就必然落到你头上——那你的并发上限立刻退回 4–5。</figcaption>
+  </figure>
+
+  <h3><span class="dot">·</span>最小可落地的版本：共享任务表 + 信箱</h3>
+  <p>不必一上来就搭工厂。Claude Code 的「智能体团队」把这件事压缩到了几个原语，值得当作最小实现来抄：<b>lead</b> 负责派生与协调，<b>teammates</b> 是各自独立上下文的完整会话，<b>task list</b> 是带依赖的共享队列（认领用文件锁防竞争，完成一个自动解锁下游），<b>mailbox</b> 让任意两个成员直接通信而不必经过 lead。再加上两件治理工具：<b>delegate mode</b>（lead 被限制为只协调、不写码）与 <b>hooks</b>（<code>TeammateIdle</code> 退出码 2 = 把成员按回工位继续干；<code>TaskCompleted</code> 退出码 2 = 拒绝结项并给反馈）。</p>
+  <p>其中最有价值的一条经验是 delegate mode 的存在本身：它说明<b>「指挥者亲自下场写代码」是这类系统最常见的退化</b>。lead 一旦开始实现，就同时失去了仲裁视角与全局状态，团队退化成「一个人 + 一群旁观者」。</p>
+
+  <div class="verdict">
+    <h4>形态选择的经验法则</h4>
+    <p>先问「我有没有一个能自动催活、自动串行化、自动回收的中层」。有，就把并发开到审查吃得下的极限；没有，就老实待在形态 A，把会话数控制在 2–3，把省下的精力投到验证层建设上——那是唯一能把上限抬高的投资。</p>
+  </div>
+</section>
+<section id="s05">
+  <h2><span class="num">05</span>控制面五件套：把「管理」变成配置文件</h2>
+  <p class="sub">五个团队、五套工具链，最后收敛到同样五件事。这不是巧合：它们是「一人多体」的必要条件，缺一件，并发的代价就会以人的注意力来支付。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 314" role="img" aria-label="控制面五件套分层结构">
+        <rect x="120" y="20" width="520" height="46" rx="6" fill="#EAF1F9"/>
+        <text x="8" y="48" font-size="14" fill="#16181D" font-weight="700">隔离</text>
+        <text x="136" y="48" font-size="12" fill="#1F5288">每个 agent 一个 worktree / 容器 / 沙箱</text>
+        <text x="660" y="48" font-size="11" fill="#4A505A">并行冲突从源头消失</text>
+
+        <rect x="120" y="78" width="520" height="46" rx="6" fill="#FBF1E4"/>
+        <text x="8" y="106" font-size="14" fill="#16181D" font-weight="700">意图</text>
+        <text x="136" y="106" font-size="12" fill="#8F3F06">规格、验收场景、AGENTS.md、示例</text>
+        <text x="660" y="106" font-size="11" fill="#4A505A">上下文里没有的等于不存在</text>
+
+        <rect x="120" y="136" width="520" height="46" rx="6" fill="#F1EBFA"/>
+        <text x="8" y="164" font-size="14" fill="#16181D" font-weight="700">门禁</text>
+        <text x="136" y="164" font-size="12" fill="#5A3099">hooks、权限规则、允许列表、拒绝规则</text>
+        <text x="660" y="164" font-size="11" fill="#4A505A">硬规则交给机器执行</text>
+
+        <rect x="120" y="194" width="520" height="46" rx="6" fill="#E6F2F0"/>
+        <text x="8" y="222" font-size="14" fill="#16181D" font-weight="700">验证</text>
+        <text x="136" y="222" font-size="12" fill="#0A5750">场景、数字孪生、独立 checker</text>
+        <text x="660" y="222" font-size="11" fill="#4A505A">不同模型、不同上下文</text>
+
+        <rect x="120" y="252" width="520" height="46" rx="6" fill="#EAF3EA"/>
+        <text x="8" y="280" font-size="14" fill="#16181D" font-weight="700">账本</text>
+        <text x="136" y="280" font-size="12" fill="#1B5820">成本、动作、产出可追溯</text>
+        <text x="660" y="280" font-size="11" fill="#4A505A">没有账本就没有扩容依据</text>
+
+        <text x="660" y="24" font-size="11" fill="#4A505A">没有它会怎样</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5 · 控制面五件套。</b>自上而下是依赖顺序，不是重要性顺序：没有隔离，其余都无意义；没有验证，前三件只是在加速犯错。账本最容易被省略，但它决定你能否回答「现在该加并发还是该减并发」。</figcaption>
+  </figure>
+
+  <h3><span class="dot">·</span>隔离：让「写集不相交」成为物理事实</h3>
+  <p>Cursor 2.0 的做法是把单条提示最多拆到 8 个并行智能体，每个跑在自己独立的代码库副本里（git worktree 或远端机器），从机制上排除文件冲突。OpenAI 做得更彻底：<b>让应用能被任意 worktree 单独启动</b>，并把 Chrome DevTools 协议、日志、指标都接到 agent 运行时上——于是每个智能体都能自己跑起来、自己截图、自己看 trace，而不需要人来转述。「隔离」不只是防冲突，它是<b>让智能体能自我验证</b>的前提。</p>
+
+  <h3><span class="dot">·</span>意图：写「什么算对」，不写「怎么做」</h3>
+  <p>Anthropic 在最佳实践里给了两条反直觉的建议：<b>不要</b>在 <code>CLAUDE.md</code> 里描述架构和文件布局（它自己会读仓库），只写仓库里读不出来的东西；<b>不要</b>堆砌「IMPORTANT」「必须」这类强调（新模型会过度应用）。更关键的一条是：如果某条规则不可妥协，<b>把它变成 hook 或拒绝规则，而不是写进散文</b>。散文是概率性的，hook 是确定性的。</p>
+  <p>OpenAI 的说法更狠：<b>「智能体看不见的东西，基本等于垃圾。」</b>他们把一个仓库 500 个 npm 包的边界、规范、非功能要求，全部编码进智能体可感知的上下文；当智能体失败时，第一反应不是「再努力点」，而是问「它缺哪个能力，怎么让这个能力对它可见且可执行」。</p>
+
+  <h3><span class="dot">·</span>门禁：把「我以为它不会」变成「它做不到」</h3>
+  <p>这一类工具在 2025–2026 才真正成熟：权限模式、允许/拒绝列表、<code>PreToolUse</code> 钩子、沙箱默认无网络、<code>TaskCompleted</code> 拒绝结项。它们的共同价值是把治理从<b>事后审查</b>前移成<b>事前不可能</b>。一个可操作的自检：你最近三次「提醒智能体不要做某事」，都应该已经被改写成一条拒绝规则——否则它们只是你的口头禅。</p>
+
+  <h3><span class="dot">·</span>账本：把成本当成设计参数</h3>
+  <p>StrongDM 那句挑衅性的度量——「如果你今天没为每个工程师烧掉至少 1000 美元 token，你的软件工厂还有改进空间」——真正的信息量不在金额，而在<b>它把 token 预算当作可调的设计参数</b>。反过来也成立：如果你不知道每个任务花了多少、每个会话产出多少、返工率多高，你就没有任何依据决定「该加并发还是该减并发」，只能靠感觉。</p>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>验证：唯一被真正规模化的东西</h2>
+  <p class="sub">把所有公开案例放在一起看，产能跃升的那一刀都切在同一个地方：把「人读代码」换成「机器判对错」。生成从来不是瓶颈。</p>
+
+  <p>这条路上有一个必踩的坑：<b>智能体会作弊</b>。StrongDM 公开承认遇到过智能体为了让测试通过而直接写 <code>return true</code> 的情况——代码什么都没做，测试全绿。这是 Goodhart 定律在工程里的标准形态：一旦「通过测试」成为优化目标，它就不再是正确性的度量。他们的解法不是加强提示词，而是重构验证体系：</p>
+  <ul class="tick">
+    <li><b>Holdout 场景。</b>验收场景存放在代码库之外，生成代码的智能体在构建过程中看不到它们，因此无法针对性地「调参过关」。</li>
+    <li><b>数字孪生。</b>为 Okta、Jira、Slack、Google Docs 等外部服务建立行为克隆，目标是 API 层高度兼容，让端到端行为可以被反复验证而不触碰真实系统。</li>
+    <li><b>独立 checker。</b>验证者永远不是写代码的那个，且常常跑在不同模型上——制造「不相关的失败模式」。</li>
+    <li><b>红队智能体。</b>专门负责攻击自己的系统，找注入点、找越权路径。</li>
+  </ul>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 260" role="img" aria-label="验证流水线与生产信号回流">
+        <defs>
+          <marker id="ar6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8A8578"/>
+          </marker>
+          <marker id="ar6r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#9E211A"/>
+          </marker>
+        </defs>
+
+        <rect x="20" y="54" width="180" height="58" rx="8" fill="#FBF1E4"/>
+        <text x="110" y="78" font-size="12" fill="#8F3F06" text-anchor="middle" font-weight="700">规格 + 场景</text>
+        <text x="110" y="96" font-size="10.5" fill="#4A505A" text-anchor="middle">唯一由人写的一层</text>
+
+        <rect x="250" y="54" width="180" height="58" rx="8" fill="#EAF1F9"/>
+        <text x="340" y="78" font-size="12" fill="#1F5288" text-anchor="middle" font-weight="700">生成 agent</text>
+        <text x="340" y="96" font-size="10.5" fill="#4A505A" text-anchor="middle">看不到 holdout 场景</text>
+
+        <rect x="480" y="54" width="180" height="58" rx="8" fill="#E6F2F0"/>
+        <text x="570" y="78" font-size="12" fill="#0A5750" text-anchor="middle" font-weight="700">独立验证 agent</text>
+        <text x="570" y="96" font-size="10.5" fill="#4A505A" text-anchor="middle">不同模型、干净上下文</text>
+
+        <rect x="710" y="54" width="180" height="58" rx="8" fill="#EAF3EA"/>
+        <text x="800" y="78" font-size="12" fill="#1B5820" text-anchor="middle" font-weight="700">合并 / 发布</text>
+        <text x="800" y="96" font-size="10.5" fill="#4A505A" text-anchor="middle">灰度 + 快速回滚</text>
+
+        <path d="M200,83 L250,83" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar6)"/>
+        <path d="M430,83 L480,83" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar6)"/>
+        <path d="M660,83 L710,83" stroke="#8A8578" stroke-width="1.4" marker-end="url(#ar6)"/>
+
+        <text x="225" y="76" font-size="9.5" fill="#4A505A" text-anchor="middle">派活</text>
+        <text x="455" y="76" font-size="9.5" fill="#4A505A" text-anchor="middle">交回</text>
+        <text x="685" y="76" font-size="9.5" fill="#4A505A" text-anchor="middle">通过</text>
+
+        <path d="M800,112 L800,196 L110,196 L110,112" fill="none" stroke="#9E211A" stroke-width="1.3" stroke-dasharray="5 5" marker-end="url(#ar6r)"/>
+        <text x="480" y="222" font-size="11" fill="#9E211A" text-anchor="middle">生产事故 → 变成新场景：这是系统里唯一真正的学习回路</text>
+        <text x="480" y="242" font-size="10.5" fill="#4A505A" text-anchor="middle">没有这条返程线，工厂只会越来越自信，不会越来越准</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6 · 验证流水线。</b>左手是人的产出物（规格与场景），右手是机器的产出物（代码与部署）。人不在环里逐行确认，但人在<b>两端</b>：入口定义意图，出口处理例外。</figcaption>
+  </figure>
+
+  <h3><span class="dot">·</span>独立审查为什么必须「干净」</h3>
+  <p>Cognition 在 2026 年 4 月的复盘里给了一个很具体的发现：<b>「编码 agent + 审查 agent」这个组合有效，但前提是审查者一开始拿到的是干净上下文</b>，而不是编码者积累下来的指令与推理。它只读 diff，自行重建相关上下文，然后质疑编码者已经接受的假设。这样它才有机会发现「方向对但不对味」的问题。Anthropic 的对应建议是加一步 <b>adversarial review</b>：任务当作完成之前，让一个全新上下文的子智能体审 diff 与判据，只报「影响正确性或既定要求」的缺口。</p>
+  <p>但这里有个反向陷阱必须记住：<b>被要求找缺口的审查者，几乎总能找出缺口</b>。逐条追下去会得到过度设计——多余抽象、防御性代码、为不可能发生的场景写测试。Anthropic 明确建议在提示里写清「只报影响正确性的问题，其余视为可选」。审查的价值在于<b>判定</b>，不在于<b>产出意见</b>。</p>
+
+  <div class="verdict red">
+    <h4>验证层的三个失败模式</h4>
+    <p>① <b>判据太浅</b>：只检查能否编译、能否返回 200，于是「看起来对」就被放行。② <b>裁判就是作者</b>：同一个上下文写、同一个上下文审，等于没审。③ <b>场景有盲区</b>：没被场景覆盖的行为，在生产里第一次被验证——而那时成本最高。MAST 的数据里，「验证错误」与「未验证/验证不全」合计约 23.5% 的失败，全都长在这三处。</p>
+  </div>
+</section>
+<section id="s07">
+  <h2><span class="num">07</span>证据全景：正反两面，以及真实的采纳分布</h2>
+  <p class="sub">这一节刻意把最强的正面证据和最强的反面证据放在一起。它们并不矛盾——它们测的是不同任务。看清这一点，比记住任何单个数字都重要。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>案例</th><th class="num">规模</th><th>关键数字</th><th>结构上的做法</th><th>强度</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Anthropic Research</b><br><span style="font-size:12px;color:var(--ink3)">2025-06 公开</span></td>
+          <td class="num">lead 1 + 子体 N</td>
+          <td>比单智能体高 <b>90.2%</b>；多智能体 token 约为对话的 <b>15×</b>（单智能体 4×）；token 用量单独解释 <b>80%</b> 的性能方差</td>
+          <td>orchestrator-worker；计划写入外部记忆；把 effort 与任务复杂度绑定（简单 1 个 3–10 次调用，复杂 10+ 子体）</td>
+          <td><span class="tag t-case">厂商内部评估</span></td>
+        </tr>
+        <tr>
+          <td><b>OpenAI 内部产品</b><br><span style="font-size:12px;color:var(--ink3)">harness engineering</span></td>
+          <td class="num">3 → 7 人<br>5 个月</td>
+          <td>约 <b>100 万行</b>、<b>0 行手写</b>；约 1,500 个 PR；<b>3.5 PR / 人 / 日</b>；用时约为手写的 <b>1/10</b></td>
+          <td>每 worktree 可独立启动应用 + CDP + 每 worktree 独立可观测；评审几乎全部 agent-to-agent；瓶颈明确写成「human QA capacity」</td>
+          <td><span class="tag t-case">单一案例</span></td>
+        </tr>
+        <tr>
+          <td><b>StrongDM</b><br><span style="font-size:12px;color:var(--ink3)">dark factory</span></td>
+          <td class="num">3 人<br>自 2025-07</td>
+          <td>代码<b>不由人写、不由人审</b>；建议基线 <b>1000 美元 token / 人 / 天</b>；以场景 + 数字孪生替代代码评审</td>
+          <td>holdout 场景、数字孪生宇宙、独立 checker、红队；把「什么算对」全部外化为可执行判据</td>
+          <td><span class="tag t-case">厂商公开 + 第三方参观</span></td>
+        </tr>
+        <tr>
+          <td><b>Cursor 2.0</b><br><span style="font-size:12px;color:var(--ink3)">2025-10 发布</span></td>
+          <td class="num">≤ 8 并行</td>
+          <td>单条提示最多 8 个并行智能体；每个跑在独立代码副本；沙箱终端默认无网</td>
+          <td>把「隔离」做成产品默认值：git worktree 或远端机器，从机制上排除文件冲突</td>
+          <td><span class="tag t-obs">产品能力（非生产率证据）</span></td>
+        </tr>
+        <tr>
+          <td><b>Gas Town</b><br><span style="font-size:12px;color:var(--ink3)">Yegge，2025-12</span></td>
+          <td class="num">20–30 并发</td>
+          <td>作者自称「100% vibecoded，我从不看代码」；无第三方量化产出</td>
+          <td>三层角色 + git 支持的工单队列 + 「钩子上有活就必须干」的推进规则，专为扛会话崩溃设计</td>
+          <td><span class="tag t-survey">自述</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>然后是反面的。它们同样硬，而且更少被引用：</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>反向证据</th><th>发现</th><th>它推翻了什么</th><th>强度</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>METR 随机对照实验</b><br><span style="font-size:12px;color:var(--ink3)">2025-07</span></td>
+          <td>16 名资深开源开发者、246 个真实任务：允许用 AI 时<b>慢 19%</b>（CI +2% 至 +39%）。事前他们预计快 24%，事后仍自认为快 20%。</td>
+          <td>「体感变快」不等于「交付变快」。省下的打字时间被提示、审查、等待与理解吃掉了。</td>
+          <td><span class="tag t-rct">RCT</span></td>
+        </tr>
+        <tr>
+          <td><b>METR 后续改版</b><br><span style="font-size:12px;color:var(--ink3)">2026-02</span></td>
+          <td>同一批老手：加速约 18%（CI −38% 至 +9%，仍不显著）；新招募者仅 4%。因「不愿在无 AI 条件下工作」的选择偏差，研究设计被推翻重做。</td>
+          <td>趋势在变好，但截至 2026 年初，<b>拿不出统计显著的加速证据</b>。</td>
+          <td><span class="tag t-rct">RCT（弱）</span></td>
+        </tr>
+        <tr>
+          <td><b>等 token 预算实验</b><br><span style="font-size:12px;color:var(--ink3)">Tran 与 Kiela，2026-04</span></td>
+          <td>固定推理 token 预算后，单智能体在多跳推理上<b>追平或优于</b> 5 种多智能体架构；只有单窗口上下文被刻意劣化时，多智能体才扳回。</td>
+          <td>很多「协调带来的增益」其实是「多花的算力」。信息论解释：交接只能保持或丢失信息，不会增加。</td>
+          <td><span class="tag t-obs">受控实验</span></td>
+        </tr>
+        <tr>
+          <td><b>MAST 失效分类</b><br><span style="font-size:12px;color:var(--ink3)">Cemri 等，2025</span></td>
+          <td>1,642 条轨迹、7 个框架：失败率 <b>41%–86.7%</b>；44.2% 系统设计、32.3% 交接错位、23.5% 验证。最频发的单点是「步骤重复」（17.1%）。</td>
+          <td>「加智能体提升能力」——多数失败与模型能力无关，换更强的模型修不好。</td>
+          <td><span class="tag t-obs">大样本标注</span></td>
+        </tr>
+        <tr>
+          <td><b>架构缩放对照</b><br><span style="font-size:12px;color:var(--ink3)">Google Research 等，2025-12</span></td>
+          <td>对齐推理预算后：单 agent 平均 7.2 轮，中心编排 27.7 轮（协调开销 <b>285%</b>），混合 44.3 轮（<b>515%</b>）；每千 token 成功任务数，单 agent 约为中心编排的 3 倍。</td>
+          <td>「多个角色分工」在轮次与 token 上是净亏损。错误放大倍数：独立智能体 17.2×，中心协调 4.4×。</td>
+          <td><span class="tag t-obs">受控实验</span></td>
+        </tr>
+        <tr>
+          <td><b>Jellyfish 遥测</b><br><span style="font-size:12px;color:var(--ink3)">1,300 家公司</span></td>
+          <td>中位公司 <b>27.7%</b> 的 PR 有智能体参与（1 月约 2%）；仅靠 AI 评审就合并的占 <b>0.5%</b>（P90 为 8.5%）；完全无人工厂的 PR 占比在中位与 P90 均约 <b>0.0%</b>，P99 为 9.4%。</td>
+          <td>「全自动」的传播速度远快于它的落地速度。<b>作者权已普及，审批权没有。</b></td>
+          <td><span class="tag t-obs">大样本遥测</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="三种协作形态的相对 token 成本">
+        <text x="8" y="86" font-size="12.5" fill="#333941">普通对话</text>
+        <rect x="180" y="54" width="43.8" height="44" rx="4" fill="#EAF1F9"/>
+        <text x="234" y="82" font-size="11" fill="#1F5288">1×</text>
+
+        <text x="8" y="150" font-size="12.5" fill="#333941">单个 agent</text>
+        <rect x="180" y="118" width="175" height="44" rx="4" fill="#E6F2F0"/>
+        <text x="365" y="146" font-size="11" fill="#0A5750">4×</text>
+
+        <text x="8" y="214" font-size="12.5" fill="#333941">多智能体</text>
+        <rect x="180" y="182" width="656.3" height="44" rx="4" fill="#FBF1E4"/>
+        <text x="846" y="210" font-size="11" fill="#8F3F06">15×</text>
+
+        <line x1="180" y1="240" x2="880" y2="240" stroke="#C9C4B8" stroke-width="1"/>
+        <text x="180" y="258" font-size="10" fill="#4A505A" text-anchor="middle">0</text>
+        <text x="355" y="258" font-size="10" fill="#4A505A" text-anchor="middle">4</text>
+        <text x="530" y="258" font-size="10" fill="#4A505A" text-anchor="middle">8</text>
+        <text x="705" y="258" font-size="10" fill="#4A505A" text-anchor="middle">12</text>
+        <text x="880" y="258" font-size="10" fill="#4A505A" text-anchor="middle">16</text>
+        <text x="530" y="282" font-size="10.5" fill="#4A505A" text-anchor="middle">相对普通对话的 token 消耗倍数</text>
+      </svg>
+    </div>
+    <figcaption><b>图 7 · 协作的价目表（Anthropic 用量数据）。</b>这张图的用法不是「所以别用」，而是「先算单价」。当一个任务的价值撑不起 15 倍的 token，正确的选择是单智能体加深推理；当任务需要同时覆盖十个方向，15 倍就是便宜的。</figcaption>
+  </figure>
+
+  <div class="verdict blue">
+    <h4>怎么读这两张表：它们不矛盾，是分工不同</h4>
+    <p>正面的四个案例，任务都是<b>广度型或机械型</b>：多方向调研、批量改造、判据明确的产线。反面的实验，任务都是<b>长链条、强耦合、判据模糊</b>的真实现场——METR 的老手在自己的百万行仓库里修 issue，恰恰是最不该并行的场景。Anthropic 自己在文章里就写了这句：「大多数编程任务真正可并行的部分比研究少，且智能体目前还不擅长实时协调与委派。」<b>把研究型任务的结论搬到工程型任务上，是这类方法论最常见的误用。</b></p>
+  </div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>度量与节奏：什么时候该加，什么时候必须减</h2>
+  <p class="sub">没有减容规则的扩容，最终都会以「悄悄放弃审查」收场。所以度量体系里必须有一组指标专门盯「人还跟不跟得上」。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>层</th><th>指标</th><th>它回答什么</th><th>必须配对的指标</th></tr></thead>
+      <tbody>
+        <tr><td><b>供给</b></td><td>每人每日合并 PR 数；并发会话数；单个任务端到端时长</td><td>机器这一侧的实际产出</td><td>与「返工率」配对，防止刷量</td></tr>
+        <tr><td><b>质量</b></td><td>返工率；回滚率；逃逸缺陷数；验收场景通过率</td><td>产出是否真的可用</td><td>与「并发数」配对，防止用规模换质量</td></tr>
+        <tr><td><b>人的带宽</b></td><td>审查队列等待时间；<b>最老待审项年龄</b>；每个被接受产出的监督分钟数；例外率</td><td>人是否还在环里，而不是在环外签字</td><td>与「合并 PR 数」配对，揭示隐性欠账</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>其中<b>「最老待审项年龄」</b>是最被低估的一个。它比平均等待时间更早报警：平均值会被大量秒过的小 PR 稀释，而最老那一项告诉你「有没有东西正在腐烂」。一旦它超过两天，正确的动作不是加快审，而是<b>减并发</b>——因为继续加只会让更多东西进入这个队列。</p>
+
+  <h3><span class="dot">·</span>90 天：先修分母，再扩分子</h3>
+  <p>顺序不能倒。Anthropic 给的建议是「从两三个会话开始」；OpenAI 的经验是「早期进展慢，不是因为模型不行，而是环境定义不足」。两句话指向同一个动作：<b>先把反馈回路和隔离建好，再谈并发</b>。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 290" role="img" aria-label="90 天落地路线甘特图">
+        <line x1="190" y1="26" x2="190" y2="38" stroke="#C9C4B8" stroke-width="1"/>
+        <line x1="436.7" y1="26" x2="436.7" y2="38" stroke="#C9C4B8" stroke-width="1"/>
+        <line x1="683.3" y1="26" x2="683.3" y2="38" stroke="#C9C4B8" stroke-width="1"/>
+        <line x1="930" y1="26" x2="930" y2="38" stroke="#C9C4B8" stroke-width="1"/>
+        <line x1="190" y1="254" x2="930" y2="254" stroke="#E4E1D9" stroke-width="1"/>
+        <text x="190" y="22" font-size="10.5" fill="#4A505A" text-anchor="middle">W1</text>
+        <text x="436.7" y="22" font-size="10.5" fill="#4A505A" text-anchor="middle">W4</text>
+        <text x="683.3" y="22" font-size="10.5" fill="#4A505A" text-anchor="middle">W8</text>
+        <text x="930" y="22" font-size="10.5" fill="#4A505A" text-anchor="end">W12</text>
+
+        <text x="8" y="65" font-size="12.5" fill="#333941">单 agent 验证回路</text>
+        <rect x="190" y="44" width="246.7" height="32" rx="4" fill="#FBF1E4"/>
+        <text x="202" y="65" font-size="11" fill="#8F3F06">一键 make test + 可判定的完成标准</text>
+
+        <text x="8" y="107" font-size="12.5" fill="#333941">隔离与并行</text>
+        <rect x="313.3" y="86" width="370" height="32" rx="4" fill="#EAF1F9"/>
+        <text x="325.3" y="107" font-size="11" fill="#1F5288">worktree 隔离，会话数从 2–3 起</text>
+
+        <text x="8" y="149" font-size="12.5" fill="#333941">中层角色</text>
+        <rect x="436.7" y="128" width="370" height="32" rx="4" fill="#E6F2F0"/>
+        <text x="448.7" y="149" font-size="11" fill="#0A5750">reviewer / verifier 独立上下文</text>
+
+        <text x="8" y="191" font-size="12.5" fill="#333941">门禁与队列</text>
+        <rect x="560" y="170" width="370" height="32" rx="4" fill="#F1EBFA"/>
+        <text x="572" y="191" font-size="11" fill="#5A3099">hooks + 权限规则 + 串行合并</text>
+
+        <text x="8" y="233" font-size="12.5" fill="#333941">度量与判定</text>
+        <rect x="683.3" y="212" width="246.7" height="32" rx="4" fill="#EAF3EA"/>
+        <text x="695.3" y="233" font-size="11" fill="#1B5820">看最老待审项年龄再决定加减</text>
+
+        <text x="480" y="272" font-size="10.5" fill="#4A505A" text-anchor="middle">并发数只在审查队列不积压时增加；一旦积压，先减并发再查根因</text>
+      </svg>
+    </div>
+    <figcaption><b>图 8 · 90 天节奏（建议值，非实测）。</b>四条工作流刻意错开启动：验证回路必须在并行之前完成，否则并行只是在生产无法判定的产出。中层角色与门禁放在中段，是因为它们需要前两步产生的真实失败样本来设计。</figcaption>
+  </figure>
+
+  <div class="g3">
+    <div class="stat"><div class="v amber">70%</div><div class="k">精力投在「验证 + 隔离」——这是唯一能抬高上限的投资</div></div>
+    <div class="stat"><div class="v teal">20%</div><div class="k">投在「意图」：规格、验收场景、示例、AGENTS.md 的瘦身</div></div>
+    <div class="stat"><div class="v blue">10%</div><div class="k">投在「并发本身」：多开会话、多装工具、调参数</div></div>
+  </div>
+</section>
+<section id="s09">
+  <h2><span class="num">09</span>十二条反模式：症状与修正</h2>
+  <p class="sub">每一条都在公开案例里真实出现过，不是假想。按「战略 / 工程 / 治理」三层排列。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:56px">层</th><th style="width:230px">症状</th><th>为什么错</th><th style="width:260px">修正</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="4"><span class="tag t-model">战略</span></td>
+          <td>用数量代替切分</td><td>对简单问题派 50 个子智能体；任务没切开，只是被复制了 50 份</td><td>先跑三问（图 2），再决定并发数</td></tr>
+        <tr><td>用多智能体补模型能力</td><td>换更强模型或加深单 agent 推理更便宜；等预算实验已证明这点</td><td>先榨干单窗口，再考虑拆分</td></tr>
+        <tr><td>从 L5 起步</td><td>没有场景库、没有孪生环境就关灯，等于把缺陷工业化</td><td>先跨 L3→L4 那道断点：停止边写边读</td></tr>
+        <tr><td>把研究型结论搬到工程</td><td>广度调研可并行，跨层改接口不可并行；两者混为一谈</td><td>按任务类型分别定并发策略</td></tr>
+
+        <tr><td rowspan="5"><span class="tag t-obs">工程</span></td>
+          <td>只传摘要不传轨迹</td><td>下游用「看起来合理的假设」填补信息缺口，冲突在此产生</td><td>共享完整轨迹；能串行就串行</td></tr>
+        <tr><td>共享可写工作区</td><td>两个会话改同一批文件，合并时才发现</td><td>worktree / 容器 / 沙箱，一人一份副本</td></tr>
+        <tr><td>让作者当裁判</td><td>同一上下文写、同一上下文审，等于没审，还消耗一次「已审」的错觉</td><td>干净上下文的独立 checker，最好换模型</td></tr>
+        <tr><td>没有终止条件</td><td>MAST 里「不知道何时算完成」占 9.8%，「步骤重复」占 17.1%</td><td>把「完成」写成可执行判据 + 预算上限</td></tr>
+        <tr><td>判据太浅</td><td>只查能否编译、能否返回 200，于是「看起来对」被放行</td><td>holdout 场景 + 属性测试 + 行为断言</td></tr>
+
+        <tr><td rowspan="3"><span class="tag t-case">治理</span></td>
+          <td>指挥者亲自写码</td><td>一旦开始实现，同时失去仲裁视角与全局状态</td><td>delegate mode：lead 只协调、不写</td></tr>
+        <tr><td>规则写成散文</td><td>CLAUDE.md 越长越被忽略；「必须」堆多了会过度应用</td><td>不可妥协的规则一律变 hook 或 deny 规则</td></tr>
+        <tr><td>以 PR 数当唯一 KPI</td><td>刷量最省力的方式就是降低标准；返工与逃逸缺陷会滞后爆出</td><td>与返工率、逃逸缺陷配对看（§08）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:18px">还有一个不列入表格的陷阱：<b>要求审查者「找出问题」</b>。被这么要求的审查者几乎总能找出问题，逐条追下去会得到多余抽象、防御性代码、为不可能场景写的测试。Anthropic 的建议很实用——在审查提示里写清「只报影响正确性或既定要求的缺口，其余视为可选」。</p>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>结论：五条判断</h2>
+  <p class="sub">以下是我的判断，不是行业共识。标注了推理依据，你可以逐条反驳。</p>
+
+  <ol class="claims">
+    <li><p><b>你的上限等于你每天能「判定」的产出数。</b>模型会继续变强，这个数字几乎不动——因为它取决于人的注意力，不取决于机器的智力。所有关于一人多体的方法论，本质上都在做同一件事：把「判定」的单位成本压下去。<span class="ev">依据：Little 定律 + Amdahl + Fan-Out 的 4–5 / 70% 阈值</span></p></li>
+    <li><p><b>门槛在验证工程，不在提示词工程。</b>2025 年大家在比谁的提示词更好；2026 年跑出成绩的团队，比的都是谁的场景库更全、谁的门禁更硬、谁的数字孪生更像真的。<span class="ev">依据：StrongDM、OpenAI、Anthropic 三家的公开方法里，提示词技巧占比极低</span></p></li>
+    <li><p><b>组织形状会收敛到三层。</b>不是因为抄 Gas Town，而是因为「催活、串行化写入、回收实例」这三件事必须有承担者；放在人身上，并发上限立刻退回 4–5。<span class="ev">依据：Gas Town 与 Claude Code 智能体团队在机制上高度同构</span></p></li>
+    <li><p><b>不要从黑暗工厂开始，从 L3→L4 那道断点开始。</b>那道断点的内容只有一句：停止「边写边读」，改成「看结果 + 抽查高风险 diff」。跨过去，你才第一次拥有「并行」的资格。<span class="ev">依据：Shapiro 的观察——每一级在当下都像最后一级；多数人停在 L2–L3</span></p></li>
+    <li><p><b>最被低估的复利资产是场景库。</b>代码可以被丢弃（OpenAI 明说「直接清空工作树重来」），但验收场景、孪生环境、失败样本会一直留下来，并让下一轮自治更安全。它是唯一越用越值钱的东西。<span class="ev">依据：StrongDM 的 holdout 场景被独立 agent 反复使用；OpenAI 把生产事故转成新场景</span></p></li>
+  </ol>
+
+  <h3><span class="dot">·</span>什么情况下这套不适用</h3>
+  <ul class="tick">
+    <li><b>安全关键与强合规系统。</b>当「97% 有效」等于失败时，抽查就是不成立的。Simon Willison 的提醒仍然有效：注入类风险一旦被正常化，代价是灾难级的。</li>
+    <li><b>需要长期可维护的公共基础设施。</b>没人读过的代码，出事时也没人能推理。Osmani 的警告是「停止阅读就会停止理解」。</li>
+    <li><b>团队还不具备可执行判据。</b>测试跑不起来、构建要十分钟、环境靠手工配——先把这些修好。在泥地上开工厂，只会更快地陷进去。</li>
+  </ul>
+
+  <div class="verdict">
+    <h4>如果只带走一句话</h4>
+    <p>别把「能同时跑几个智能体」当成能力指标。把它当成一道除法题：<b>分子是你造出来的验证能力，分母是你每天真正愿意读的量。</b>先做分母管理，再做分子建设——顺序反了，得到的就是一个更快的错误工厂。</p>
+  </div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>参考来源</h2>
+  <p class="sub">按类型分组。凡标注「二手」的条目，其数字未回溯到原始论文/官方文档，引用时请自行复核。</p>
+
+  <h3><span class="dot">·</span>一手工程文档与官方复盘</h3>
+  <ul class="tick">
+    <li>Anthropic, <i>How we built our multi-agent research system</i>, 2025-06-13（90.2%、4×/15×、80% 方差、effort 分级、早期失败案例）</li>
+    <li>Anthropic, <i>Best practices for Claude Code</i>（<code>/batch</code> 切 5–30 单元、worktree、对抗式审查、CLAUDE.md 瘦身、把规则变 hook）</li>
+    <li>Anthropic, <i>The AI-native SDLC playbook</i>（「一个人跑几个会话」、并发上限即审查能力、verifier 子智能体、前置/滞后指标）</li>
+    <li>Claude Code Docs, <i>Orchestrate teams of Claude Code sessions</i>（lead / teammates / task list / mailbox、文件锁认领、依赖自动解锁、delegate mode、TeammateIdle 与 TaskCompleted 钩子）</li>
+    <li>OpenAI, <i>Harness engineering: leveraging Codex in an agent-first world</i>（3→7 人、100 万行、0 行手写、1,500 PR、3.5 PR/人/日、瓶颈为 human QA capacity、每 worktree 独立可观测）</li>
+    <li>Cognition（Walden Yan）, <i>Don't Build Multi-Agents</i>, 2025-06-12（上下文工程两原则、Flappy Bird 例）</li>
+    <li>Cognition, <i>Multi-Agents: What's Actually Working</i>, 2026-04-22（map-reduce-and-manage；审查者应从干净上下文开始；Smart Friend 的升级失败；经 Latent Space 词条转述）</li>
+    <li>Cursor, <i>Changelog 2.0</i>, 2025-10-29（单提示最多 8 并行、git worktree 或远端机器、沙箱终端默认无网）</li>
+    <li>StrongDM, <i>Software Factories and the Agentic Moment</i>, 2026-02（代码不写不审、holdout 场景、数字孪生宇宙、「1000 美元/人/天」）</li>
+    <li>Simon Willison, <i>Software Factory</i>, 2026-02-07（现场参观记录；lethal trifecta 的持续风险）</li>
+    <li>Dan Shapiro, <i>Five Levels of AI Coding</i>, 2026-01（L0–L5 阶梯）</li>
+    <li>Steve Yegge, <i>Welcome to Gas Town</i> 及后续随笔（Mayor / Polecats / Witness / Refinery / Deacon、beads、GUPP、20–30 并发、自述「从不看代码」）</li>
+  </ul>
+
+  <h3><span class="dot">·</span>实证研究与论文</h3>
+  <ul class="tick">
+    <li>METR, <i>Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity</i>, 2025-07-10（RCT，16 人 / 246 任务，慢 19%，CI +2% 至 +39%）</li>
+    <li>METR, <i>We are Changing our Developer Productivity Experiment Design</i>, 2026-02-24（老手 −18%、新人 −4%、选择偏差导致改版）</li>
+    <li>Cemri 等, <i>Why Do Multi-Agent LLM Systems Fail?</i>, arXiv:2503.13657（MAST：1,642 轨迹 / 7 框架 / κ=0.88；44.2 / 32.3 / 23.5；单点 17.1% 步骤重复）</li>
+    <li>Tran 与 Kiela, <i>Single-Agent LLMs Outperform Multi-Agent Systems on Multi-Hop Reasoning Under Equal Thinking Token Budgets</i>, arXiv:2604.02460（等预算实验、数据处理不等式论证）</li>
+    <li>Kim 等, <i>Towards a Science of Scaling Agent Systems</i>, arXiv:2512.08296（等预算下的轮次与协调开销、错误放大 17.2× vs 4.4×）— <span class="tag t-survey">二手</span>数字经多篇解读转述</li>
+    <li>Jellyfish 遥测（经 R&amp;D World 报道）：1,300 家公司 / 27.6 万开发者 / 1 亿 PR（27.7% 参与、0.5% 仅 AI 审批、P99 9.4% 工厂 PR）— <span class="tag t-survey">二手 + 样本偏差</span></li>
+    <li>Chen、Barnes 与 Harper-Sciarini，多机器人监督综述（Fan-Out，低负荷 8–9 / 高复杂度 4–5，接近 7±2）</li>
+    <li>Cummings 与 Guerlain，多无人机控制工作负荷研究（负荷超过可用时间 70% 后监督表现下降）</li>
+  </ul>
+
+  <h3><span class="dot">·</span>方法论与行业分析</h3>
+  <ul class="tick">
+    <li>Addy Osmani, <i>Software Factories, Light and Dark</i>（「停止阅读就会停止理解」、亮工厂作为务实默认）</li>
+    <li>BCG Platinion, <i>The Dark Software Factory</i>, 2026-03（声称 3–5 倍产出，样本与方法未公开）</li>
+    <li>Gartner 预测：到 2027 年底超过 40% 的 agentic AI 项目会因成本、价值不清或风险控制不足被取消（预测，非观测）</li>
+    <li>Code Ninety, <i>Agentic AI Enterprise Penetration and Human Oversight Ratio</i>, 2026-02（n=188 自报问卷：IT 支持约 1:18、代码生成约 1:2）— <span class="tag t-survey">自报</span>仅作参考</li>
+  </ul>
+
+  <div class="verdict blue" style="margin-top:28px">
+    <h4>关于数字的两点提醒</h4>
+    <p>① 厂商自述的百分比（90.2%、10 倍、3–5 倍）几乎都没有公开评估集与复现路径，应当作「存在这种做法」而不是「这个做法有这么好」。② 遥测类数据（Jellyfish、问卷）都有样本偏差，方向比绝对值可信。真正能当锚点用的，是那几组受控实验与 RCT——而它们恰好是最不支持「多即好」的。</p>
+  </div>
+</section>
+
+<footer>
+  <p>本报告为单文件 HTML，零外部依赖、离线可用。图表为手写 SVG，数据点与换算式均可在页面源码中核对。</p>
+  <p>生成于 2026-11-06 · 论断与判断部分为作者观点，已与证据分栏呈现。</p>
+</footer>
+</div>
+</body>
+</html>
