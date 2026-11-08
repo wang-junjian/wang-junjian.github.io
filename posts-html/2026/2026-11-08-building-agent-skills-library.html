@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="把四十多个技能整理成一个能被真正触发的技能库：以 SKILL.md 的 name 与 description 为唯一硬契约，用三段式描述补足触发信号，靠分层披露与双跑评测压住上下文税，最后用可复跑的 lint 与索引脚本当闸门。">
+<meta name="keywords" content="agent-skills, skill-library, description-engineering, progressive-disclosure, context-budget, lint-toolchain">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-08">
+<title>从四十个技能到一个技能库 · Agent Skills 建库方法论</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --line:#E3E0D8; --line2:#D3D1C7;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FAEEDA;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#E6F1FB;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EAF3DE;
+  --red:#B3261E; --red-t:#8C1D18; --red-bg:#FCEBEB;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E1F5EE;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#EEEDFE;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased;
+}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.88em;
+  background:var(--amber-bg); color:var(--amber-t); padding:1px 5px; border-radius:4px; overflow-wrap:anywhere}
+pre{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px;
+  overflow-x:auto; font-size:13px; line-height:1.7}
+pre code{background:none; color:var(--ink2); padding:0}
+.wrap{max-width:1060px; margin:0 auto; padding:0 32px}
+
+nav.top{position:sticky; top:0; z-index:20; background:rgba(251,250,247,.94);
+  border-bottom:1px solid var(--line); backdrop-filter:saturate(180%) blur(8px)}
+nav.top .wrap{display:flex; gap:4px; align-items:center; height:52px; overflow-x:auto}
+nav.top a{font-size:13px; color:var(--ink3); text-decoration:none; padding:6px 10px; border-radius:6px; white-space:nowrap}
+nav.top a:hover{background:var(--amber-bg); color:var(--amber-t)}
+nav.top .brand{font-weight:500; color:var(--ink); margin-right:12px; font-size:13px; white-space:nowrap}
+
+header.cover{padding:88px 0 56px; border-bottom:1px solid var(--line)}
+.kicker{font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--amber-t); font-weight:500}
+h1{font-size:46px; line-height:1.2; font-weight:500; margin:16px 0 20px; letter-spacing:-.02em}
+.lede{font-size:19px; line-height:1.7; color:var(--ink2); max-width:760px; margin:0}
+.meta{margin-top:28px; display:flex; flex-wrap:wrap; gap:8px 24px; font-size:13px; color:var(--ink3)}
+
+section{padding:64px 0 8px; scroll-margin-top:24px}
+h2{font-size:30px; font-weight:500; margin:0 0 10px; letter-spacing:-.01em; display:flex; gap:14px; align-items:baseline}
+h2 .num{font-size:14px; color:var(--amber-t); font-variant-numeric:tabular-nums; letter-spacing:.06em}
+h3{font-size:19px; font-weight:500; margin:36px 0 10px}
+h4{font-size:15px; font-weight:500; margin:24px 0 6px; color:var(--ink2)}
+p{margin:0 0 14px; color:var(--ink2)}
+.sec-lede{font-size:17px; color:var(--ink2); max-width:800px; margin:0 0 28px; padding-bottom:20px; border-bottom:1px solid var(--line)}
+ul,ol{margin:0 0 16px; padding-left:22px; color:var(--ink2)}
+li{margin-bottom:7px}
+strong{font-weight:500; color:var(--ink)}
+em{font-style:normal; background:linear-gradient(transparent 62%, var(--amber-bg) 62%); padding:0 2px}
+
+.grid2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px}
+.grid3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px}
+.grid2>*,.grid3>*,.card,.fig-box,.fig-box>*{min-width:0}
+
+.card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px 22px}
+.card h4{margin-top:0}
+.claim{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px; position:relative}
+.claim .no{font-size:12px; color:var(--amber-t); font-weight:500; letter-spacing:.06em}
+.claim p{font-size:15px; margin:6px 0 0; color:var(--ink)}
+.claim .ev{font-size:13px; color:var(--ink3); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line)}
+
+table{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0 20px}
+th,td{text-align:left; padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-weight:500; color:var(--ink); font-size:13px; letter-spacing:.02em; border-bottom:1px solid var(--line2)}
+td{color:var(--ink2)}
+tbody tr:hover{background:#FDFCF9}
+.tag{display:inline-block; font-size:11.5px; padding:2px 8px; border-radius:20px; font-weight:500; line-height:1.5}
+.tag.a{background:var(--amber-bg); color:var(--amber-t)}
+.tag.b{background:var(--blue-bg); color:var(--blue-t)}
+.tag.g{background:var(--green-bg); color:var(--green-t)}
+.tag.r{background:var(--red-bg); color:var(--red-t)}
+.tag.t{background:var(--teal-bg); color:var(--teal-t)}
+.tag.p{background:var(--purple-bg); color:var(--purple-t)}
+
+figure{margin:32px 0; min-width:0}
+.fig-box{overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px 16px}
+svg{min-width:600px; display:block; width:100%; height:auto}
+figcaption{font-size:13px; color:var(--ink3); margin-top:10px; padding-left:2px}
+figcaption b{color:var(--ink2); font-weight:500}
+
+.verdict{border-left:3px solid var(--amber); background:var(--card); border-radius:0 8px 8px 0;
+  padding:18px 22px; margin:24px 0}
+.verdict h4{margin:0 0 6px; color:var(--amber-t); font-size:14px; letter-spacing:.04em; text-transform:uppercase}
+.verdict p{margin:0; font-size:16px; color:var(--ink)}
+
+.stat-row{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:24px 0}
+.stat{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px}
+.stat .n{font-size:30px; font-weight:500; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.stat .u{font-size:12.5px; color:var(--ink3); margin-top:4px}
+.stat.hot .n{color:var(--amber-t)}
+
+footer{margin-top:80px; padding:40px 0 64px; border-top:1px solid var(--line); font-size:13px; color:var(--ink3)}
+footer p{margin:0 0 6px; color:var(--ink3)}
+
+@media(max-width:760px){
+  .wrap{padding:0 20px}
+  h1{font-size:32px}
+  h2{font-size:24px}
+  .grid2,.grid3,.stat-row{grid-template-columns:minmax(0,1fr)}
+  table{display:block; overflow-x:auto; white-space:nowrap}
+  table td,table th{white-space:normal; min-width:120px}
+  section{padding-top:44px}
+}
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <span class="brand">技能库建设</span>
+    <a href="#s01">判定</a>
+    <a href="#s02">三层契约</a>
+    <a href="#s03">五仓库</a>
+    <a href="#s04">六步法</a>
+    <a href="#s05">描述工程</a>
+    <a href="#s06">上下文预算</a>
+    <a href="#s07">审计实测</a>
+    <a href="#s08">工具链</a>
+    <a href="#s09">反模式</a>
+    <a href="#s10">路线图</a>
+    <a href="#s11">结论</a>
+    <a href="#s12">参考</a>
+  </div>
+</nav>
+
+<header class="cover">
+  <div class="wrap">
+    <div class="kicker">Agent Skills · 建库方法论</div>
+    <h1>从四十个技能<br>到一个技能库</h1>
+    <p class="lede">
+      写了四十多个技能之后，问题不再是「怎么写」，而是「为什么它们不生效」。
+      这份报告对比了 Anthropic、Google、OpenAI、MiniMax、Vercel 五家的官方技能仓库，
+      提炼出唯一跨生态的硬契约，并用一套可复跑的检查器审计了一个真实的 45 个技能库。
+    </p>
+    <div class="meta">
+      <span>2026 年 11 月</span>
+      <span>证据基础：5 个官方仓库源码 + 45 个技能实测</span>
+      <span>全部结论附可复跑命令</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="s00">
+  <h2><span class="num">00</span>摘要：九条论断</h2>
+  <p class="sec-lede">
+    下面每一条都可以被证伪，也可以被一条命令复核。如果只读这一页，你应该记住第 1 条和第 2 条——
+    它们解释了为什么大多数技能库建完之后毫无动静。
+  </p>
+
+  <div class="grid3" style="margin-bottom:8px">
+    <div class="claim">
+      <div class="no">论断 01</div>
+      <p>真正跨生态的硬契约只有一层：<code>SKILL.md</code> 的 <code>name</code> 与 <code>description</code>。清单和索引都是包装层。</p>
+      <div class="ev">证据：五个仓库的清单格式各不相同，但 SKILL.md 结构完全一致</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 02</div>
+      <p>技能库的主要失败模式不是「写得太少」，而是「写了不触发」。<code>description</code> 是唯一常驻上下文的字段。</p>
+      <div class="ev">证据：Anthropic 官方自述模型存在「触发不足」倾向</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 03</div>
+      <p>技能数量不线性带来帮助，但线性带来上下文税。每个技能约 100 tokens 常驻，无论是否触发。</p>
+      <div class="ev">证据：渐进披露规范的 metadata 预算；占用率为建模估算</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 04</div>
+      <p>存量技能的问题高度集中：描述缺触发信号、许可证缺失。这两类占了实测问题的七成。</p>
+      <div class="ev">证据：45 个技能实测，64 错误 / 48 警告</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 05</div>
+      <p>命名与目录约定不是审美问题，是可移植性问题。违反即任何生态都不认。</p>
+      <div class="ev">证据：规范硬约束 + Anthropic 因保留词改名的提交记录</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 06</div>
+      <p>索引必须是构建产物，不能是手写文件。手写索引的必然结局是漂移。</p>
+      <div class="ev">证据：Google 在 index.json 首字段写明「禁止手改」</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 07</div>
+      <p>技能库能扩展的唯一原因是分层披露。所以 500 行是硬预算，不是建议。</p>
+      <div class="ev">证据：三级加载模型，正文超预算即与任务争抢上下文</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 08</div>
+      <p>护城河是评测集，不是技能数量。没有对照实验，无法判断技能是改进还是干扰。</p>
+      <div class="ev">证据：官方 skill-creator 的核心循环是「带技能 / 不带技能」双跑</div>
+    </div>
+    <div class="claim">
+      <div class="no">论断 09</div>
+      <p>公开分发前必须过脱敏闸门。个人技能天然含绝对路径、内部主机名、合规红线词。</p>
+      <div class="ev">证据：45 个技能中 6 个含硬编码家目录路径</div>
+    </div>
+  </div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>判定：什么才该做成技能</h2>
+  <p class="sec-lede">
+    技能库最常见的浪费不是写错了，是写了一批本来不该写成技能的东西。
+    一个技能封装的是「这件事该怎么做才对」的判断；如果它是固定操作、是一次性任务、
+    或者需要实时数据，做成技能只是让简单的事情多绕一圈。
+  </p>
+
+  <h3>四类产物的分野</h3>
+  <p>
+    「让模型做某事」有四种载体，它们的适用边界比多数人以为的窄。选错载体的代价不是效率降低，
+    而是后续维护成本被永久抬高——因为技能会进入每一次会话的上下文，脚本不会。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:16%">载体</th><th style="width:26%">适合封装什么</th><th style="width:24%">失效场景</th><th style="width:16%">上下文成本</th><th style="width:18%">典型误用</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>技能</strong><br><span class="tag a">SKILL.md</span></td>
+        <td>需要判断的做法：选型、审查、成稿规范、领域惯例</td>
+        <td>结论依赖实时数据；做法每次都要改</td>
+        <td>常驻约 100 tokens</td>
+        <td>把一段命令行操作写成技能</td>
+      </tr>
+      <tr>
+        <td><strong>脚本</strong><br><span class="tag b">scripts/</span></td>
+        <td>确定性步骤：转换、提取、批量重命名、格式校验</td>
+        <td>需要理解意图才能决定分支</td>
+        <td>零（执行时不进上下文）</td>
+        <td>把脚本逻辑写进正文让模型照着做</td>
+      </tr>
+      <tr>
+        <td><strong>MCP / CLI</strong><br><span class="tag t">外部服务</span></td>
+        <td>实时数据、需要鉴权的系统、有状态的远端操作</td>
+        <td>数据是静态的、可以随仓库附带</td>
+        <td>工具定义常驻</td>
+        <td>把查询接口写成技能，指望它能取数</td>
+      </tr>
+      <tr>
+        <td><strong>什么都不做</strong><br><span class="tag">—</span></td>
+        <td>模型已经会的东西，或只做一次的事</td>
+        <td>确实存在反复出现的偏差</td>
+        <td>—</td>
+        <td>把产品手册复述一遍当作技能</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 496" role="img" aria-labelledby="f1t">
+        <title id="f1t">技能适用性判别流程</title>
+        <desc>三个依次判断的问题：是否需要实时外部数据、是否会重复发生、做法是稳定判断还是固定步骤。</desc>
+        <defs>
+          <marker id="ar1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <rect x="60" y="80" width="380" height="56" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="250" y="108" text-anchor="middle" dominant-baseline="central" font-size="15" fill="#16181D" font-family="-apple-system,sans-serif">Q1　需要实时外部数据吗？</text>
+        <line x1="440" y1="108" x2="612" y2="108" stroke="#888780" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <text x="526" y="98" text-anchor="middle" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">是</text>
+        <rect x="620" y="80" width="280" height="56" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="760" y="108" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#333941" font-family="-apple-system,sans-serif">用 MCP 或 CLI，不做技能</text>
+
+        <line x1="250" y1="136" x2="250" y2="182" stroke="#888780" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <text x="262" y="163" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">否</text>
+
+        <rect x="60" y="190" width="380" height="56" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="250" y="218" text-anchor="middle" dominant-baseline="central" font-size="15" fill="#16181D" font-family="-apple-system,sans-serif">Q2　这类任务会做第二次吗？</text>
+        <line x1="440" y1="218" x2="612" y2="218" stroke="#888780" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <text x="526" y="208" text-anchor="middle" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">否</text>
+        <rect x="620" y="190" width="280" height="56" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="760" y="218" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#333941" font-family="-apple-system,sans-serif">写完就扔，不要沉淀</text>
+
+        <line x1="250" y1="246" x2="250" y2="292" stroke="#888780" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <text x="262" y="273" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">是</text>
+
+        <rect x="60" y="300" width="380" height="56" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="250" y="328" text-anchor="middle" dominant-baseline="central" font-size="15" fill="#16181D" font-family="-apple-system,sans-serif">Q3　答案是稳定判断，还是固定步骤？</text>
+        <line x1="440" y1="328" x2="612" y2="328" stroke="#888780" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <text x="526" y="318" text-anchor="middle" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">固定步骤</text>
+        <rect x="620" y="300" width="280" height="56" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="760" y="328" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#333941" font-family="-apple-system,sans-serif">写成脚本，正文只调用</text>
+
+        <line x1="250" y1="356" x2="250" y2="402" stroke="#888780" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <text x="262" y="383" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">稳定判断</text>
+
+        <rect x="60" y="410" width="380" height="56" rx="8" fill="#EAF3DE" stroke="#1B5820" stroke-width="1"/>
+        <text x="250" y="438" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="500" fill="#1B5820" font-family="-apple-system,sans-serif">做成技能，值得一次沉淀</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1</b>　技能适用性判别。三个问题依次排除：实时数据交给外部服务，一次性任务不必沉淀，固定步骤应该固化成脚本而不是散文。只有「会重复出现的稳定判断」才配得上一个技能。</figcaption>
+  </figure>
+
+  <div class="verdict">
+    <h4>判别式</h4>
+    <p>如果一个技能文档删掉之后，模型的表现完全不变，那它从写下第一天起就是负资产——它占用上下文，却没改变任何输出。</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>三层契约：哪一层才是承重墙</h2>
+  <p class="sec-lede">
+    五个官方仓库看起来完全不同：目录层级不同、清单格式不同、索引结构不同。
+    但把它们拆成「技能 / 分发包 / 展示索引」三层之后，会发现只有一个层被全部五家共享，
+    而另外两层各自只在自家生态内有效。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 420" role="img" aria-labelledby="f2t">
+        <title id="f2t">技能元数据的三层契约与采用度</title>
+        <desc>第一层 SKILL.md frontmatter 被五个仓库全部采用；第二层分发包清单三家采用；第三层展示索引两家采用。右侧五个方块代表五个仓库。</desc>
+
+        <rect x="40" y="52" width="880" height="92" rx="10" fill="#E6F1FB" stroke="#1F5288" stroke-width="1"/>
+        <text x="62" y="86" font-size="26" font-weight="500" fill="#1F5288" font-family="-apple-system,sans-serif">L1</text>
+        <text x="62" y="112" font-size="12" fill="#1F5288" font-family="-apple-system,sans-serif">硬契约</text>
+        <text x="128" y="84" font-size="15" font-weight="500" fill="#16181D" font-family="-apple-system,sans-serif">SKILL.md frontmatter</text>
+        <text x="128" y="108" font-size="13" fill="#333941" font-family="ui-monospace,monospace">name ≤64 · description ≤1024 · 目录名必须等于 name</text>
+        <text x="128" y="130" font-size="13" fill="#4A505A" font-family="-apple-system,sans-serif">这一层不合规，技能在任何生态里都不存在</text>
+        <rect x="828" y="84" width="14" height="14" rx="3" fill="#2F6FB0"/><rect x="846" y="84" width="14" height="14" rx="3" fill="#2F6FB0"/><rect x="864" y="84" width="14" height="14" rx="3" fill="#2F6FB0"/><rect x="882" y="84" width="14" height="14" rx="3" fill="#2F6FB0"/><rect x="900" y="84" width="14" height="14" rx="3" fill="#2F6FB0"/>
+
+        <rect x="40" y="168" width="880" height="92" rx="10" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+        <text x="62" y="202" font-size="26" font-weight="500" fill="#444441" font-family="-apple-system,sans-serif">L2</text>
+        <text x="62" y="228" font-size="12" fill="#444441" font-family="-apple-system,sans-serif">分发包</text>
+        <text x="128" y="200" font-size="15" font-weight="500" fill="#16181D" font-family="-apple-system,sans-serif">.claude-plugin / marketplace.json</text>
+        <text x="128" y="224" font-size="13" fill="#333941" font-family="ui-monospace,monospace">plugins[].skills[] 决定「装哪个主题包」</text>
+        <text x="128" y="246" font-size="13" fill="#4A505A" font-family="-apple-system,sans-serif">只影响 Claude Code 系的安装路径，不影响技能本身</text>
+        <rect x="828" y="200" width="14" height="14" rx="3" fill="#5F5E5A"/><rect x="846" y="200" width="14" height="14" rx="3" fill="#5F5E5A"/><rect x="864" y="200" width="14" height="14" rx="3" fill="#5F5E5A"/><rect x="882" y="200" width="14" height="14" rx="3" fill="#E3E0D8"/><rect x="900" y="200" width="14" height="14" rx="3" fill="#E3E0D8"/>
+
+        <rect x="40" y="284" width="880" height="92" rx="10" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+        <text x="62" y="318" font-size="26" font-weight="500" fill="#444441" font-family="-apple-system,sans-serif">L3</text>
+        <text x="62" y="344" font-size="12" fill="#444441" font-family="-apple-system,sans-serif">展示索引</text>
+        <text x="128" y="316" font-size="15" font-weight="500" fill="#16181D" font-family="-apple-system,sans-serif">index.json / skills.sh.json</text>
+        <text x="128" y="340" font-size="13" fill="#333941" font-family="ui-monospace,monospace">分组、摘要、入口 URL，供站点搜索与展示</text>
+        <text x="128" y="362" font-size="13" fill="#4A505A" font-family="-apple-system,sans-serif">必须由脚本生成——Google 在文件首字段写明禁止手改</text>
+        <rect x="828" y="316" width="14" height="14" rx="3" fill="#5F5E5A"/><rect x="846" y="316" width="14" height="14" rx="3" fill="#5F5E5A"/><rect x="864" y="316" width="14" height="14" rx="3" fill="#E3E0D8"/><rect x="882" y="316" width="14" height="14" rx="3" fill="#E3E0D8"/><rect x="900" y="316" width="14" height="14" rx="3" fill="#E3E0D8"/>
+
+        <text x="836" y="72" font-size="11" fill="#4A505A" font-family="-apple-system,sans-serif">五个仓库采用度</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2</b>　三层契约。每层右侧五个方块对应 anthropics / google / openai / MiniMax / vercel 五家。只有 L1 是满格的——因此只有 L1 值得在规范上较真。</figcaption>
+  </figure>
+
+  <h3>为什么 L1 是承重墙</h3>
+  <p>
+    因为 <code>name</code> 和 <code>description</code> 同时承担两个职责：<strong>发现</strong>（机器解析出这是什么）
+    和 <strong>触发</strong>（模型判断此刻该不该用）。这两个职责被压进同一段文本，
+    于是格式约束与写作质量必须同时满足——这是技能格式最不寻常的地方。
+  </p>
+  <p>
+    对比之下，一张 REST API 的 <code>servers</code> 字段只影响路由，不影响语义。
+    技能没有这种奢侈：它的元数据既是索引键，又是提示词。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:22%">字段</th><th style="width:20%">谁在读</th><th style="width:26%">什么时候读</th><th style="width:32%">写错的后果</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>发现器、安装器、调用方</td><td>每次启动，全量技能</td><td>装不上、扫不到、与目录不匹配直接判废</td></tr>
+      <tr><td><code>description</code></td><td>模型本身</td><td>每次启动，全量技能</td><td>永不触发——技能存在但等于不存在</td></tr>
+      <tr><td><code>license</code></td><td>使用者、合规审查</td><td>安装前、分发时</td><td>公开后无人可合法复用</td></tr>
+      <tr><td><code>metadata.internal</code></td><td>发现器</td><td>扫描时</td><td>半成品被搜到、被装走</td></tr>
+    </tbody>
+  </table>
+
+  <div class="verdict">
+    <h4>推论</h4>
+    <p>不要让 L2 或 L3 的要求反向污染 L1。技能是可移植的，打包是不可移植的——把这两件事混在一份文件里，是这个生态里最常见的架构错误。</p>
+  </div>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>五仓库对照：差异都发生在包装层</h2>
+  <p class="sec-lede">
+    把五家官方仓库摊开对比，会发现它们真正的分歧只有一个：<strong>用什么维度把技能分组</strong>。
+    主题、品类、信任等级、品牌、展示标签——五种不同的分组哲学，但每个 <code class="x">SKILL.md</code>
+    的内部结构一模一样。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:17%">仓库</th><th style="width:20%">技能落位</th><th style="width:15%">清单 / 索引</th><th style="width:12%">多端适配</th><th style="width:36%">核心取舍</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>anthropics</strong><br><span class="tag b">Claude</span></td>
+        <td><code>skills/&lt;name&gt;/</code></td>
+        <td>marketplace.json</td>
+        <td>Claude 系</td>
+        <td>用<strong>主题包</strong>聚合：一个 <code>document-skills</code> 打包 docx + pdf + pptx + xlsx 四个技能</td>
+      </tr>
+      <tr>
+        <td><strong>google</strong><br><span class="tag t">Gemini</span></td>
+        <td><code>skills/&lt;品类&gt;/&lt;name&gt;/</code></td>
+        <td>marketplace.json<br>+ index.json</td>
+        <td>.agents/</td>
+        <td>用<strong>产品品类</strong>分层：<code>cloud/</code> 下就有 60 多个技能，索引交给脚本生成</td>
+      </tr>
+      <tr>
+        <td><strong>openai</strong><br><span class="tag g">Codex</span></td>
+        <td><code>skills/.curated/</code><br><code>.system/</code> <code>.experimental/</code></td>
+        <td>无清单<br>靠 installer</td>
+        <td>.codex</td>
+        <td>用<strong>目录名表达信任等级</strong>：<code>.system</code> 随客户端自动安装，<code>.experimental</code> 需显式指定路径</td>
+      </tr>
+      <tr>
+        <td><strong>MiniMax</strong><br><span class="tag p">多端</span></td>
+        <td><code>skills/&lt;name&gt;/</code></td>
+        <td>单个 plugin<br>全量打包</td>
+        <td>三端各一份<br>INSTALL.md</td>
+        <td>用<strong>品牌整体</strong>分发：一个 plugin 装全部，多端适配写成文档而不是结构</td>
+      </tr>
+      <tr>
+        <td><strong>vercel-labs</strong><br><span class="tag a">75+ 智能体</span></td>
+        <td><code>skills/&lt;name&gt;/</code></td>
+        <td>skills.sh.json</td>
+        <td>交给 CLI</td>
+        <td>清单只管<strong>展示分组</strong>（groupings 数组），安装路径完全交给 CLI 自己探测</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    五种分组哲学没有优劣，因为它们的约束不同：Anthropic 要解决「一次装一组相关能力」，
+    Google 要解决「几百个技能怎么浏览」，OpenAI 要解决「哪些能自动装、哪些必须用户确认」。
+    <em>你的约束决定你的分组维度，而分组维度只影响 L2。</em>
+  </p>
+
+  <h3>发现机制有两条路</h3>
+  <p>
+    vercel 的文档把发现规则写得很直白，值得抄：CLI 会在约 60 个「容器目录」
+    （<code>skills/</code>、<code>.claude/skills/</code>、<code>.codebuddy/skills/</code> 等）里找 <code>SKILL.md</code>，
+    往下最多走三层；更浅的位置会遮蔽更深的位置。
+  </p>
+  <p>
+    但还有第二条路：如果根目录存在 <code>.claude-plugin/marketplace.json</code>，
+    清单里声明的技能路径会被直接采用，<strong>不受三层限制</strong>。
+    两条路殊途同归——所以清单里写的必须是真实路径，否则等于给所有人埋了一个安装失败。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-labelledby="f3t">
+        <title id="f3t">技能发现的两条路径</title>
+        <desc>路径 A 是目录扫描，最多下探三层；路径 B 是清单声明，直接指向 SKILL.md 且不受深度限制。</desc>
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <text x="40" y="46" font-size="13" font-weight="500" fill="#1F5288" font-family="-apple-system,sans-serif">路径 A　目录扫描 · 最多三层</text>
+        <rect x="40" y="62" width="150" height="52" rx="8" fill="#E6F1FB" stroke="#2F6FB0" stroke-width="1"/>
+        <text x="115" y="88" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#16181D" font-family="ui-monospace,monospace">skills/</text>
+        <line x1="190" y1="88" x2="212" y2="88" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <rect x="220" y="62" width="150" height="52" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="295" y="88" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#333941" font-family="-apple-system,sans-serif">一级目录</text>
+        <line x1="370" y1="88" x2="392" y2="88" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <rect x="400" y="62" width="150" height="52" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="475" y="88" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#333941" font-family="-apple-system,sans-serif">二级目录（可选）</text>
+        <line x1="550" y1="88" x2="572" y2="88" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <rect x="580" y="62" width="150" height="52" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="655" y="88" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#333941" font-family="-apple-system,sans-serif">三级（上限）</text>
+        <line x1="730" y1="88" x2="752" y2="88" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <rect x="760" y="62" width="150" height="52" rx="8" fill="#EAF3DE" stroke="#1B5820" stroke-width="1"/>
+        <text x="835" y="88" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#1B5820" font-family="ui-monospace,monospace">SKILL.md</text>
+
+        <text x="40" y="166" font-size="13" font-weight="500" fill="#0A5750" font-family="-apple-system,sans-serif">路径 B　清单声明 · 不受深度限制</text>
+        <rect x="40" y="182" width="230" height="52" rx="8" fill="#E1F5EE" stroke="#0F766E" stroke-width="1"/>
+        <text x="155" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#16181D" font-family="ui-monospace,monospace">marketplace.json</text>
+        <line x1="270" y1="208" x2="302" y2="208" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <rect x="310" y="182" width="230" height="52" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="425" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#333941" font-family="ui-monospace,monospace">plugins[].skills[]</text>
+        <line x1="540" y1="208" x2="572" y2="208" stroke="#888780" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <rect x="580" y="182" width="330" height="52" rx="8" fill="#EAF3DE" stroke="#1B5820" stroke-width="1"/>
+        <text x="745" y="208" text-anchor="middle" dominant-baseline="central" font-size="14" fill="#1B5820" font-family="-apple-system,sans-serif">直接指向 SKILL.md，路径必须真实</text>
+
+        <text x="40" y="272" font-size="12.5" fill="#4A505A" font-family="-apple-system,sans-serif">两条路殊途同归：更浅位置的 SKILL.md 会遮蔽更深位置的同名技能；清单里的路径写错，等于给所有人埋一个安装失败。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3</b>　发现的两条路径。左侧靠遍历目录，右侧靠清单声明；前者约束结构，后者约束路径准确性。多数仓库两条都配，互为保险。</figcaption>
+  </figure>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>六步法：从意图到可安装</h2>
+  <p class="sec-lede">
+    这套流程不是五个仓库里任何一家的原文，而是从它们的共同约束反推出来的最小完备集。
+    每一步都有可检验的完成判据——没有判据的步骤，等于没有这一步。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:9%">步骤</th><th style="width:30%">动作</th><th style="width:23%">产出物</th><th style="width:38%">完成判据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>S1</strong></td><td>判定该不该做成技能</td><td>一个决定，可能是否定</td><td>能说出「删掉它，模型会丢掉哪一条判断」</td></tr>
+      <tr><td><strong>S2</strong></td><td>先写 description，再写正文</td><td>frontmatter</td><td>含触发词、含反例、长度落在 150–600 字符</td></tr>
+      <tr><td><strong>S3</strong></td><td>分层：正文 / 引用 / 脚本 / 素材</td><td>目录结构</td><td>正文 ≤500 行，且每段都是「怎么做」而非「是什么」</td></tr>
+      <tr><td><strong>S4</strong></td><td>双跑验证：带技能 vs 不带</td><td><code>evals/evals.json</code></td><td>带技能的输出明显更好；相同则说明是装饰</td></tr>
+      <tr><td><strong>S5</strong></td><td>按主题分组打包</td><td><code>marketplace.json</code></td><td>5–8 个 plugin，每个含 2 个以上技能</td></tr>
+      <tr><td><strong>S6</strong></td><td>版本、许可、废弃、脱敏</td><td><code>metadata</code> + LICENSE</td><td>能说出每一个技能的存活理由</td></tr>
+    </tbody>
+  </table>
+
+  <h3>S3　分层披露：技能库能扩展的唯一原因</h3>
+  <p>
+    规范把加载拆成三级：<strong>元数据</strong>（约 100 tokens，全量技能常驻）、
+    <strong>正文</strong>（建议 &lt;5000 tokens，触发时才载入）、<strong>资源</strong>（按需读取，可无限）。
+    这不是性能优化，而是技能库规模的物理上限——如果所有内容都必须常驻，
+    你的库就不可能超过十几个技能。
+  </p>
+  <p>
+    因此「500 行」不是风格建议，是预算。正文里最该被移出去的是这三类：
+  </p>
+  <ul>
+    <li><strong>参考数据</strong>——字段表、枚举值、术语表。它们不是每次都需要，但每次都在占位置。</li>
+    <li><strong>分支说明</strong>——同一技能支持多个变体（如三家云厂商），按变体拆成独立引用文件，模型只读需要的那一个。</li>
+    <li><strong>可执行的东西</strong>——任何你会在每次任务里重新写一遍的小脚本。它在 <code>scripts/</code> 里执行时<strong>不进上下文</strong>，写进正文则每次都要读。</li>
+  </ul>
+
+  <div class="card">
+    <h4>引用必须带「何时读」</h4>
+    <p style="margin:0">
+      一个只写「详见 <code>references/spec.md</code>」的指针，等于没有指针——模型不知道该不该打开它，
+      于是要么全读要么不读。正确写法是把触发条件写在前头：
+    </p>
+    <pre><code>- [字段规范](references/spec.md) — 需要核对长度、字符集、
+  保留词时读；正常写作流程不需要</code></pre>
+  </div>
+
+  <h3>S4　评测：没有对照，就无法判断技能是帮忙还是添乱</h3>
+  <p>
+    官方 <code>skill-creator</code> 的核心循环只有一句话：在测试提示上跑「带技能」和「不带技能」两个版本，
+    然后对比。这不是学术洁癖——技能最典型的失败不是「不生效」，而是<strong>生效了但把结果带偏</strong>，
+    而后者只有在对照下才看得见。
+  </p>
+  <p>
+    测试集要写成真实用户会说的话，不是需求文档的措辞。这是我自己那份的写法：
+  </p>
+
+  <pre><code>{
+  "skill_name": "skill-authoring",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我写了个技能，但装了之后基本不触发，怎么改？",
+      "expected_output": "先诊断 description：长度是否在 150-600、
+                        是否有 Use when 子句、是否只讲了 what 没讲 when。
+                        给出改写版本。不要一上来就改正文。"
+    },
+    {
+      "id": 3,
+      "prompt": "这个 SKILL.md 有 900 行，要不要拆",
+      "expected_output": "建议拆分：正文超 500 行会与任务争抢上下文。
+                        提出 references/ 分解方案，每个文件带「何时读」，
+                        命令式步骤留在正文。"
+    }
+  ]
+}</code></pre>
+
+  <p>
+    <code>expected_output</code> 写的是「应该发生什么」，不是「应该输出什么文本」——
+    前者能容纳不同的合理表达，后者会把评测变成字符串比对。
+  </p>
+
+  <div class="grid2" style="margin-top:24px">
+    <div class="card">
+      <h4>必须测的技能</h4>
+      <p style="margin:0;font-size:14.5px">输出可客观判定：文件转换、数据提取、代码生成、固定流程。这类技能如果没有提升，就是纯负债。</p>
+    </div>
+    <div class="card">
+      <h4>可以跳过评测的技能</h4>
+      <p style="margin:0;font-size:14.5px">输出主观：写作口吻、视觉风格、艺术生成。此时「更好」本身没有共识，评测容易变成自我确认。</p>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h4>一个高信号</h4>
+    <p>如果每次运行都独立写出了同一个辅助脚本，那个脚本就该进 <code>scripts/</code>。评测的副产品往往比结论本身更值钱。</p>
+  </div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>描述工程：唯一常驻的那个字段</h2>
+  <p class="sec-lede">
+    如果只能改一个地方来提高技能库的命中率，改 <code>description</code>。
+    它既是索引键又是提示词，在每次会话开始时就进入上下文——技能是否被想起，全看这几十个字。
+  </p>
+
+  <h3>为什么「做什么」不够</h3>
+  <p>
+    模型在选择技能时做的不是「能力匹配」，而是「场景匹配」。
+    一个写着「简历评估与岗位匹配技能」的描述，只回答了「这个工具能干什么」，
+    却没有回答「我现在这个处境该不该用它」。前者是产品说明书，后者才是触发器。
+  </p>
+  <p>
+    Anthropic 在官方的技能创作指南里直接承认了这件事：模型存在<strong>触发不足</strong>的倾向，
+    所以描述应当写得比你觉得自然的样子更主动一点。Google 则用另一种方式解决同一个问题——
+    在描述末尾固定加一句 <code>Don't use for …</code>，用排除法划定边界。
+  </p>
+
+  <h3>三段式</h3>
+  <div class="grid3">
+    <div class="card">
+      <h4 style="color:var(--blue-t)">① 做什么</h4>
+      <p style="margin:0;font-size:14.5px">一句动宾短语，说清产物。<br>「从 PDF 提取文本与表格，填写表单，合并多个 PDF。」</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--green-t)">② 何时用</h4>
+      <p style="margin:0;font-size:14.5px">列出用户真的会说出口的词。<br>「用户提到 PDF、表单、文档提取时使用。」</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--red-t)">③ 何时不用</h4>
+      <p style="margin:0;font-size:14.5px">与兄弟技能划界，防止错配。<br>「不用于编辑 PDF 版式，那属于排版任务。」</p>
+    </div>
+  </div>
+
+  <h3>长度区间与后果</h3>
+  <table>
+    <thead>
+      <tr><th style="width:18%">长度</th><th style="width:40%">实际内容</th><th style="width:42%">后果</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>&lt; 45 字符</td><td>一个名词短语，等于标签</td><td>几乎无法触发；只能靠用户恰好说出那一个词</td></tr>
+      <tr><td>45–150 字符</td><td>讲清了做什么，没讲何时用</td><td><strong>最常见的失败区间</strong>——技能写得不错，但从不被想起</td></tr>
+      <tr><td>150–600 字符</td><td>三要素齐全，含同义词与反例</td><td>推荐区间，触发与边界都清楚</td></tr>
+      <tr><td>600–1024 字符</td><td>接近上限，信息密度下降</td><td>可用，但开始出现冗余从句</td></tr>
+      <tr><td>&gt; 1024 字符</td><td>超限</td><td><strong>直接失效</strong>——上传校验器会拒绝，不是警告</td></tr>
+    </tbody>
+  </table>
+
+  <h3>四个真实改法</h3>
+  <p>
+    下面四组都来自实测审计，左列是原文，右列是同一技能的改写。
+    注意改写没有增加任何新能力，只是把「何时用」补回去。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:36%">原文（弱）</th><th style="width:64%">改写（强）</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag r">45 字符</span><br>「生成 PPTX 文件。」</td>
+        <td>「用 python-pptx 从大纲、数据表或参考文档生成可编辑的 PPTX。用户提到做 PPT、生成演示文稿、把报告转成幻灯片，或给出大纲要求成稿时使用。不用于单页图像海报。」</td>
+      </tr>
+      <tr>
+        <td><span class="tag r">57 字符</span><br>「把 PPT 做出来。」</td>
+        <td>「基于 Markdown 大纲生成结构化演示文稿，支持主题、图表与备注。用户说做汇报、做路演材料、把文档改成 PPT 时使用；也用于改写已有 PPT 的版式。」</td>
+      </tr>
+      <tr>
+        <td><span class="tag r">61 字符</span><br>「高考志愿推荐。」</td>
+        <td>「按省份与位次为考生推荐院校专业，输出冲稳保三档清单与录取概率估计。用户提到高考志愿、报考、位次、分数线、平行志愿时使用。不用于留学申请。」</td>
+      </tr>
+      <tr>
+        <td><span class="tag r">1596 字符</span><br>（超限，被校验器拒绝）</td>
+        <td>压到 400 字符以内：只保留核心动作 + 触发词 + 一句反例，把设计原则移到正文与引用文件。描述不是设计文档。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>中文作者特有的坑</h3>
+  <p>
+    官方示例清一色英文，直接照抄会漏掉一件事：<strong>触发是按字面匹配的</strong>。
+    如果描述只有英文 <code>Use when the user mentions dashboards</code>，
+    而用户用中文说「做个看板」，这个技能就不会被想起。
+  </p>
+  <p>
+    解法是把中英两套说法都塞进描述，且中文要写<em>用户真的会打的字</em>，不是术语：
+    「看板 / 仪表盘 / 数据大屏」三个词都要出现，因为用户会用其中任意一个。
+    这一条无法从任何官方文档里学到——它只在中文语境下暴露。
+  </p>
+
+  <div class="verdict">
+    <h4>自检一句话</h4>
+    <p>把你的 description 单独拿出来给一个不了解你的人看，他能不能说出「我在什么情况下会用它」？说不出，就还没写完。</p>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>上下文税：技能库真正的成本</h2>
+  <p class="sec-lede">
+    每个技能的元数据都会进入每一次会话，无论它是否被触发。这是一笔固定支出，
+    而多数人建库时只算「我多了什么能力」，不算「我每天为此付出什么」。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 400" role="img" aria-labelledby="f4t">
+        <title id="f4t">技能数量与常驻上下文占用</title>
+        <desc>按每技能约 100 tokens 估算：20 个技能占 32k 窗口 6%，45 个占 14%，100 个占 31%，200 个占 61%。</desc>
+
+        <text x="60" y="52" font-size="13" fill="#4A505A" font-family="-apple-system,sans-serif">占 32k 上下文窗口的比例（建模估算）</text>
+
+        <line x1="105" y1="340" x2="900" y2="340" stroke="#D3D1C7" stroke-width="1"/>
+        <line x1="105" y1="265.7" x2="900" y2="265.7" stroke="#E3E0D8" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="105" y1="191.4" x2="900" y2="191.4" stroke="#E3E0D8" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="105" y1="117.1" x2="900" y2="117.1" stroke="#E3E0D8" stroke-width="1" stroke-dasharray="3 4"/>
+
+        <text x="96" y="344" text-anchor="end" font-size="12" fill="#4A505A" font-family="ui-monospace,monospace">0</text>
+        <text x="96" y="269.7" text-anchor="end" font-size="12" fill="#4A505A" font-family="ui-monospace,monospace">20%</text>
+        <text x="96" y="195.4" text-anchor="end" font-size="12" fill="#4A505A" font-family="ui-monospace,monospace">40%</text>
+        <text x="96" y="121.1" text-anchor="end" font-size="12" fill="#4A505A" font-family="ui-monospace,monospace">60%</text>
+
+        <rect x="170" y="317.3" width="100" height="22.7" fill="#E6F1FB" stroke="#2F6FB0" stroke-width="1"/>
+        <text x="220" y="305.3" text-anchor="middle" font-size="13" fill="#1F5288" font-family="ui-monospace,monospace">6%</text>
+
+        <rect x="350" y="289.1" width="100" height="50.9" fill="#E6F1FB" stroke="#2F6FB0" stroke-width="1"/>
+        <text x="400" y="277.1" text-anchor="middle" font-size="13" fill="#1F5288" font-family="ui-monospace,monospace">14%</text>
+
+        <rect x="530" y="226.7" width="100" height="113.3" fill="#E6F1FB" stroke="#2F6FB0" stroke-width="1"/>
+        <text x="580" y="214.7" text-anchor="middle" font-size="13" fill="#1F5288" font-family="ui-monospace,monospace">31%</text>
+
+        <rect x="710" y="113.4" width="100" height="226.6" fill="#FAEEDA" stroke="#8F3F06" stroke-width="1"/>
+        <text x="760" y="101.4" text-anchor="middle" font-size="13" fill="#8F3F06" font-family="ui-monospace,monospace">61%</text>
+
+        <text x="220" y="362" text-anchor="middle" font-size="13" fill="#333941" font-family="-apple-system,sans-serif">20 个</text>
+        <text x="400" y="362" text-anchor="middle" font-size="13" fill="#333941" font-family="-apple-system,sans-serif">45 个</text>
+        <text x="580" y="362" text-anchor="middle" font-size="13" fill="#333941" font-family="-apple-system,sans-serif">100 个</text>
+        <text x="760" y="362" text-anchor="middle" font-size="13" fill="#333941" font-family="-apple-system,sans-serif">200 个</text>
+        <text x="760" y="380" text-anchor="middle" font-size="11.5" fill="#8F3F06" font-family="-apple-system,sans-serif">窗口过半被占用</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4</b>　技能数量与常驻占用的关系。按规范给的单技能约 100 tokens 估算，45 个技能约 4500 tokens，200 个则超过 32k 窗口的六成。<b>这是建模估算，不是实测</b>，实际值随描述长度浮动。</figcaption>
+  </figure>
+
+  <h3>三层预算，三种付费方</h3>
+  <table>
+    <thead>
+      <tr><th style="width:16%">层</th><th style="width:22%">预算</th><th style="width:26%">谁在付费</th><th style="width:36%">超支的表现</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>元数据</strong></td>
+        <td>约 100 tokens / 技能</td>
+        <td>每一次会话，无条件</td>
+        <td>技能越多，留给任务的空间越少；描述越长，模型越难比较</td>
+      </tr>
+      <tr>
+        <td><strong>正文</strong></td>
+        <td>建议 &lt;5000 tokens</td>
+        <td>仅在该技能触发时</td>
+        <td>一次触发吃掉大半窗口，模型开始跳读、漏步骤</td>
+      </tr>
+      <tr>
+        <td><strong>资源</strong></td>
+        <td>无上限</td>
+        <td>仅在模型主动读取时</td>
+        <td>写得太碎会读不完；写得太粗会读不到</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    这个结构的副产品是一个反直觉的结论：<strong>技能库的质量由「删掉了多少」决定，而不是「收进了多少」</strong>。
+    一个有 20 个精准触发技能的库，比一个有 200 个模糊技能的库更能帮上忙——
+    不仅因为噪声少，还因为前者给任务留了 94% 的上下文。
+  </p>
+
+  <h3>修剪判据</h3>
+  <p>每隔一段时间对着技能库问三个问题，答案是否定就删：</p>
+  <ul>
+    <li>过去一个月，它被调用过吗？（没有 → 它不是技能，是一个愿望）</li>
+    <li>它解决的问题，模型自己已经会了吗？（会 → 它只是复述）</li>
+    <li>它的输出，和不用它时真的有区别吗？（没区别 → 参见论断 08）</li>
+  </ul>
+
+  <div class="verdict">
+    <h4>反 Goodhart</h4>
+    <p>不要用「技能数量」当进度指标。一旦数量成为目标，它就不再是能力的度量——你会开始写那些删掉也不影响任何输出的技能。</p>
+  </div>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>审计实测：四十五个技能的真实病灶</h2>
+  <p class="sec-lede">
+    方法论讲完之后，需要一次真实的体检。下面是拿一套 18 条规则的检查器，
+    对一个真实技能库（45 个技能）跑出的结果——每条结论都可以用一条命令复现。
+  </p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">45</div><div class="u">被扫描的技能</div></div>
+    <div class="stat hot"><div class="n">64</div><div class="u">错误（阻断）</div></div>
+    <div class="stat"><div class="n">48</div><div class="u">警告（改进项）</div></div>
+    <div class="stat hot"><div class="n">14</div><div class="u">命中任一问题的技能数</div></div>
+  </div>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 500" role="img" aria-labelledby="f5t">
+        <title id="f5t">技能库审计问题分布</title>
+        <desc>按规则统计命中次数：license 缺失 37 次最多，其次 version 缺失 33 次、描述无触发信号 14 次、描述过短 13 次。</desc>
+
+        <rect x="40" y="46" width="12" height="12" rx="2" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="58" y="56" dominant-baseline="central" font-size="12" fill="#333941" font-family="-apple-system,sans-serif">错误 · 阻断分发或触发</text>
+        <rect x="210" y="46" width="12" height="12" rx="2" fill="#FAEEDA" stroke="#8F3F06" stroke-width="1"/>
+        <text x="228" y="56" dominant-baseline="central" font-size="12" fill="#333941" font-family="-apple-system,sans-serif">警告 · 影响长期可维护性</text>
+
+        <text x="240" y="86" text-anchor="end" font-size="12" fill="#4A505A" font-family="ui-monospace,monospace">规则</text>
+        <text x="260" y="86" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">含义</text>
+
+        <rect x="260" y="100" width="560" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="110" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E009</text>
+        <text x="76" y="110" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">license 缺失</text>
+        <text x="828" y="110" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">37</text>
+
+        <rect x="260" y="134" width="499.6" height="20" fill="#FAEEDA" stroke="#8F3F06" stroke-width="1"/>
+        <text x="40" y="144" dominant-baseline="central" font-size="12" fill="#8F3F06" font-family="ui-monospace,monospace">W023</text>
+        <text x="76" y="144" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">version 缺失</text>
+        <text x="767.6" y="144" dominant-baseline="central" font-size="12.5" fill="#8F3F06" font-family="ui-monospace,monospace">33</text>
+
+        <rect x="260" y="168" width="211.9" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="178" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E012</text>
+        <text x="76" y="178" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">描述无触发信号</text>
+        <text x="479.9" y="178" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">14</text>
+
+        <rect x="260" y="202" width="196.8" height="20" fill="#FAEEDA" stroke="#8F3F06" stroke-width="1"/>
+        <text x="40" y="212" dominant-baseline="central" font-size="12" fill="#8F3F06" font-family="ui-monospace,monospace">W020</text>
+        <text x="76" y="212" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">描述短于 150</text>
+        <text x="464.8" y="212" dominant-baseline="central" font-size="12.5" fill="#8F3F06" font-family="ui-monospace,monospace">13</text>
+
+        <rect x="260" y="236" width="90.8" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="246" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E013</text>
+        <text x="76" y="246" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">硬编码家目录路径</text>
+        <text x="358.8" y="246" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">6</text>
+
+        <rect x="260" y="270" width="45.4" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="280" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E011</text>
+        <text x="76" y="280" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">嵌套超过三层</text>
+        <text x="313.4" y="280" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">3</text>
+
+        <rect x="260" y="304" width="30.3" height="20" fill="#FAEEDA" stroke="#8F3F06" stroke-width="1"/>
+        <text x="40" y="314" dominant-baseline="central" font-size="12" fill="#8F3F06" font-family="ui-monospace,monospace">W021</text>
+        <text x="76" y="314" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">正文超过 500 行</text>
+        <text x="298.3" y="314" dominant-baseline="central" font-size="12.5" fill="#8F3F06" font-family="ui-monospace,monospace">2</text>
+
+        <rect x="260" y="338" width="15.1" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="348" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E003</text>
+        <text x="76" y="348" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">name 字段缺失</text>
+        <text x="283.1" y="348" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">1</text>
+
+        <rect x="260" y="372" width="15.1" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="382" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E007</text>
+        <text x="76" y="382" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">description 缺失</text>
+        <text x="283.1" y="382" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">1</text>
+
+        <rect x="260" y="406" width="15.1" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="416" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E008</text>
+        <text x="76" y="416" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">描述超过 1024</text>
+        <text x="283.1" y="416" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">1</text>
+
+        <rect x="260" y="440" width="15.1" height="20" fill="#FCEBEB" stroke="#B3261E" stroke-width="1"/>
+        <text x="40" y="450" dominant-baseline="central" font-size="12" fill="#8C1D18" font-family="ui-monospace,monospace">E010</text>
+        <text x="76" y="450" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">引用文件不存在</text>
+        <text x="283.1" y="450" dominant-baseline="central" font-size="12.5" fill="#8C1D18" font-family="ui-monospace,monospace">1</text>
+
+        <text x="40" y="482" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">横轴为命中技能的个数；一个技能可同时命中多条规则，故总数大于技能数。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5</b>　45 个技能的问题分布。两条长条（37 与 33）都关于「元数据完整性」，两条次长条（14 与 13）都关于「描述质量」——这正是论断 04 说的问题集中。</figcaption>
+  </figure>
+
+  <h3>三个读得出来的结论</h3>
+
+  <h4>一、公开分发的门槛被低估了</h4>
+  <p>
+    37 个技能没有 <code>license</code> 字段。这是最容易补、也最容易被忽略的一项：
+    缺了它，别人即使拿到代码也无法合法复用。对个人库无所谓，对公开仓库是硬伤——
+    而且它是<strong>一次性决定</strong>，补一次永久有效，性价比在所有规则里最高。
+  </p>
+
+  <h4>二、真正影响生效的是描述，不是正文</h4>
+  <p>
+    14 个描述完全不含触发信号，13 个短于 150 字符，合计 27 次命中——覆盖了近六成技能。
+    这些技能的正文可能写得很好，但它们<strong>从不在正确的时刻被想起</strong>。
+    这也解释了为什么「加了很多技能但感觉没变化」：不是技能没用，是它们没被调用。
+  </p>
+
+  <h4>三、手工清点必然漏</h4>
+  <p>
+    最初我用一级目录遍历数出 44 个技能。换成递归扫描后发现是 45 个——
+    多出来的三个藏在三层嵌套里（<code>playwright-cli</code> 及其两个兄弟技能）。
+    它们不报错、不显眼、也从未被算进任何统计。
+    <em>这就是为什么审计必须是工具而不是人工：漏掉的从来不是最显眼的那个。</em>
+  </p>
+
+  <div class="card">
+    <h4>复跑方式</h4>
+    <pre style="margin:0"><code>python3 tools/lint.py --path ~/.workbuddy/skills --json</code></pre>
+  </div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>工具链：把规范变成闸门</h2>
+  <p class="sec-lede">
+    规范写在网页上，就只是建议；写进检查器，才成为约束。这一章给出四个零依赖工具的设计与规则集，
+    它们的作用不是替代判断，而是让「低级的、机械的、必然反复犯的」错误不再需要判断。
+  </p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4><code>lint.py</code>　合规校验</h4>
+      <p style="margin:0;font-size:14.5px">18 条规则，分阻断与警告两级。支持 <code>--path</code> 指向任意技能库，因此既能校验待发布的仓库，也能体检本地存量。</p>
+    </div>
+    <div class="card">
+      <h4><code>build_index.py</code>　索引生成</h4>
+      <p style="margin:0;font-size:14.5px">从 <code>skills/</code> 树生成 <code>index.json</code>。<code>--check</code> 模式下索引过期即返回非零退出码，可直接当 CI 闸门。</p>
+    </div>
+  </div>
+
+  <h3>为什么坚持零依赖</h3>
+  <p>
+    三个理由，按重要性排：<strong>CI 上能跑</strong>（GitHub runner 只有裸 python3，装 PyYAML 要多一步且可能失败）；
+    <strong>别人的机器上能跑</strong>（你的技能库要被别人 clone，不该先要求他配环境）；
+    <strong>十年后还能跑</strong>（依赖会腐烂，标准库不会）。
+  </p>
+  <p>
+    代价是要自己写一个 YAML frontmatter 解析器。好在技能格式的 frontmatter 只用到极小的 YAML 子集：
+    顶层标量、块标量（<code>|</code> 与 <code>&gt;</code>）、一层嵌套（<code>metadata</code>）。
+    约 60 行代码就够，而且永远不会因为上游库改 API 而失效。
+  </p>
+
+  <h3>规则集</h3>
+  <table>
+    <thead>
+      <tr><th style="width:10%">编号</th><th style="width:38%">检查内容</th><th style="width:14%">级别</th><th style="width:38%">依据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>E001</code></td><td>SKILL.md 是否存在</td><td><span class="tag r">阻断</span></td><td>规范：目录的最小要求</td></tr>
+      <tr><td><code>E002</code></td><td>文件是否有可解析的 frontmatter</td><td><span class="tag r">阻断</span></td><td>规范：必须 YAML 头 + Markdown 体</td></tr>
+      <tr><td><code>E003</code></td><td><code>name</code> 缺失</td><td><span class="tag r">阻断</span></td><td>规范：必填</td></tr>
+      <tr><td><code>E004</code></td><td><code>name</code> 格式：1–64 字符、仅 <code>[a-z0-9-]</code>、无首尾连字符、无连续连字符</td><td><span class="tag r">阻断</span></td><td>规范硬约束</td></tr>
+      <tr><td><code>E005</code></td><td><code>name</code> 与目录名不一致</td><td><span class="tag r">阻断</span></td><td>规范：必须等于父目录名</td></tr>
+      <tr><td><code>E006</code></td><td><code>name</code> 含保留词 <code>claude</code> / <code>anthropic</code></td><td><span class="tag r">阻断</span></td><td>Anthropic 曾因保留词重命名技能</td></tr>
+      <tr><td><code>E007</code></td><td><code>description</code> 缺失</td><td><span class="tag r">阻断</span></td><td>规范：必填</td></tr>
+      <tr><td><code>E008</code></td><td><code>description</code> 超过 1024 字符</td><td><span class="tag r">阻断</span></td><td>规范：上传校验会拒绝</td></tr>
+      <tr><td><code>E009</code></td><td><code>license</code> 缺失</td><td><span class="tag r">阻断</span></td><td>公开分发前提，可用开关关闭</td></tr>
+      <tr><td><code>E010</code></td><td>正文引用的 <code>references/</code> <code>scripts/</code> 文件不存在</td><td><span class="tag r">阻断</span></td><td>死链会让模型空读一次</td></tr>
+      <tr><td><code>E011</code></td><td>技能目录嵌套超过三层</td><td><span class="tag r">阻断</span></td><td>vercel：发现深度上限</td></tr>
+      <tr><td><code>E012</code></td><td>描述不含任何触发信号（Use when / 用于 / 当…时 / 触发）</td><td><span class="tag r">阻断</span></td><td>论断 02 的直接落地</td></tr>
+      <tr><td><code>E013</code></td><td>硬编码 <code>/Users/…</code> 或 <code>/home/…</code> 绝对路径</td><td><span class="tag r">阻断</span></td><td>可移植性；公开前须脱敏</td></tr>
+      <tr><td><code>E014</code></td><td>疑似密钥（API key、GitHub token、AWS key、私网 IP）</td><td><span class="tag r">阻断</span></td><td>分发前的脱敏闸门</td></tr>
+      <tr><td><code>W020</code></td><td><code>description</code> 短于 150 字符</td><td><span class="tag a">警告</span></td><td>实测最常见的失败区间</td></tr>
+      <tr><td><code>W021</code></td><td>正文超过 500 行</td><td><span class="tag a">警告</span></td><td>规范：建议值，非硬限</td></tr>
+      <tr><td><code>W022</code></td><td>正文超过 800 行</td><td><span class="tag a">警告</span></td><td>已明显超出预算</td></tr>
+      <tr><td><code>W023</code></td><td><code>metadata.version</code> 缺失</td><td><span class="tag a">警告</span></td><td>治理需要，不影响运行</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    刻意区分「阻断」与「警告」是这套规则集的关键设计。如果 18 条全部阻断，人们会开始加
+    <code>--no-verify</code>；如果全部警告，等于什么都没说。
+  </p>
+
+  <h3>CI 闸门</h3>
+  <p>两道就够了，都很便宜：契约仍然成立，索引没有过期。</p>
+  <pre><code>name: skills
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/lint.py --quiet
+      - run: python3 tools/build_index.py --check</code></pre>
+
+  <div class="verdict">
+    <h4>一个真实收益</h4>
+    <p>这套检查器第一次运行就抓出了自身的问题：新写的 SKILL.md 引用了不存在的 <code>evals/evals.json</code>。规则的价值不在于它多聪明，而在于它不会疲劳。</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>反模式清单</h2>
+  <p class="sec-lede">
+    按「内容 / 结构 / 治理」三层归拢十四条。每条都给出症状、成因和修正动作——
+    症状是你能观察到的现象，成因才是需要改的地方。
+  </p>
+
+  <h3>内容层：技能本身写得不对</h3>
+  <table>
+    <thead>
+      <tr><th style="width:24%">症状</th><th style="width:36%">成因</th><th style="width:40%">修正</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>装了但从没被调用</td><td>描述只讲「能做什么」，没讲「何时用」</td><td>补三段式：做什么 / 何时用（含同义词）/ 何时不用</td></tr>
+      <tr><td>什么任务都被它抢走</td><td>描述过宽，与兄弟技能无边界</td><td>加 <code>Don't use for …</code>，点名不该用的场景</td></tr>
+      <tr><td>触发了但不按要求做</td><td>正文前半段是背景与原理，指令埋在后面</td><td>命令式步骤前置，原理移到引用文件</td></tr>
+      <tr><td>每次运行都重写同一个助手脚本</td><td>可执行逻辑写成了散文</td><td>抽到 <code>scripts/</code>，正文只说「运行它」</td></tr>
+      <tr><td>模型只读了技能的一半</td><td>正文超过上下文预算</td><td>拆到 <code>references/</code>，每个文件标注何时读</td></tr>
+      <tr><td>你的机器能跑，别人装了报错</td><td>硬编码绝对路径、依赖本机环境</td><td>一律相对技能根目录；环境要求写进 <code>compatibility</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>结构层：库的形状不对</h3>
+  <table>
+    <thead>
+      <tr><th style="width:24%">症状</th><th style="width:36%">成因</th><th style="width:40%">修正</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>市场里每个条目都只有一个技能</td><td>把「一个技能」当成了「一个包」</td><td>按主题收敛到 5–8 个 plugin，每个含 2 个以上技能</td></tr>
+      <tr><td>索引和实际技能对不上</td><td>把索引当配置文件手写</td><td>改为脚本生成，CI 里加 <code>--check</code></td></tr>
+      <tr><td>深处有几个技能从来没被扫到</td><td>目录层级超过三层的发现上限</td><td>压平到 <code>skills/&lt;name&gt;/</code> 或 <code>skills/&lt;品类&gt;/&lt;name&gt;/</code></td></tr>
+      <tr><td>上传被拒，提示名称非法</td><td>用了 <code>claude</code> / <code>anthropic</code> 等保留词，或大写、下划线</td><td>改为小写连字符，且与目录名完全一致</td></tr>
+    </tbody>
+  </table>
+
+  <h3>治理层：库的生命周期没人管</h3>
+  <table>
+    <thead>
+      <tr><th style="width:24%">症状</th><th style="width:36%">成因</th><th style="width:40%">修正</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>库越建越大，但感觉没变强</td><td>把技能数量当进度指标</td><td>按论断 03 的「修剪三问」定期删；宁少勿滥</td></tr>
+      <tr><td>半成品被别人装走了</td><td>未标记内部状态</td><td><code>metadata.internal: true</code>，从发现中隐藏</td></tr>
+      <tr><td>公开了但没人能合法复用</td><td>缺 <code>license</code></td><td>补字段；一次性决定，永久有效</td></tr>
+      <tr><td>不知道改完之后是变好还是变坏</td><td>没有评测集，改动全凭感觉</td><td>写 2–3 条真实话术，做带 / 不带双跑</td></tr>
+    </tbody>
+  </table>
+
+  <div class="verdict">
+    <h4>最贵的一条</h4>
+    <p>「库越建越大但没变强」是最贵的一条反模式——它不会报错，不会有人抱怨，只会在某一天让你发现：过去半年的投入，全部变成了上下文里的噪声。</p>
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>路线图：先修哪一处</h2>
+  <p class="sec-lede">
+    存量改造不应该按「文件顺序」推进，而应该按「收益 / 成本比」排。
+    下面五步的顺序是刻意打乱的——不是从易到难，而是从最能改变生效率的开始。
+  </p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 210" role="img" aria-labelledby="f6t">
+        <title id="f6t">存量技能库改造的五步顺序</title>
+        <desc>五步依次为修致命项、重写描述、补许可、拆长正文、分组打包，其中重写描述收益最高。</desc>
+        <defs>
+          <marker id="ar6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <rect x="40" y="58" width="160" height="76" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="120" y="86" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#16181D" font-family="-apple-system,sans-serif">① 修致命项</text>
+        <text x="120" y="110" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#4A505A" font-family="-apple-system,sans-serif">缺字段 / 超限</text>
+        <text x="120" y="160" text-anchor="middle" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">影响 3 个技能</text>
+
+        <line x1="200" y1="96" x2="222" y2="96" stroke="#888780" stroke-width="1.5" marker-end="url(#ar6)"/>
+
+        <rect x="225" y="58" width="160" height="76" rx="8" fill="#FAEEDA" stroke="#8F3F06" stroke-width="1.5"/>
+        <text x="305" y="86" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#8F3F06" font-family="-apple-system,sans-serif">② 重写描述</text>
+        <text x="305" y="110" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">补触发词与反例</text>
+        <text x="305" y="160" text-anchor="middle" font-size="12" fill="#8F3F06" font-family="-apple-system,sans-serif">影响 27 个 · 收益最高</text>
+
+        <line x1="385" y1="96" x2="407" y2="96" stroke="#888780" stroke-width="1.5" marker-end="url(#ar6)"/>
+
+        <rect x="410" y="58" width="160" height="76" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="490" y="86" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#16181D" font-family="-apple-system,sans-serif">③ 补许可</text>
+        <text x="490" y="110" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#4A505A" font-family="-apple-system,sans-serif">一次决定，永久有效</text>
+        <text x="490" y="160" text-anchor="middle" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">影响 37 个技能</text>
+
+        <line x1="570" y1="96" x2="592" y2="96" stroke="#888780" stroke-width="1.5" marker-end="url(#ar6)"/>
+
+        <rect x="595" y="58" width="160" height="76" rx="8" fill="#FFFFFF" stroke="#D3D1C7" stroke-width="1"/>
+        <text x="675" y="86" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#16181D" font-family="-apple-system,sans-serif">④ 拆长正文</text>
+        <text x="675" y="110" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#4A505A" font-family="-apple-system,sans-serif">移入引用文件</text>
+        <text x="675" y="160" text-anchor="middle" font-size="12" fill="#4A505A" font-family="-apple-system,sans-serif">影响 2 个技能</text>
+
+        <line x1="755" y1="96" x2="777" y2="96" stroke="#888780" stroke-width="1.5" marker-end="url(#ar6)"/>
+
+        <rect x="780" y="58" width="160" height="76" rx="8" fill="#EAF3DE" stroke="#1B5820" stroke-width="1"/>
+        <text x="860" y="86" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#1B5820" font-family="-apple-system,sans-serif">⑤ 分组打包</text>
+        <text x="860" y="110" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#333941" font-family="-apple-system,sans-serif">5–8 个主题</text>
+        <text x="860" y="160" text-anchor="middle" font-size="12" fill="#1B5820" font-family="-apple-system,sans-serif">影响全部</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6</b>　改造顺序。② 之所以排在 ③ 前面，是因为它改变的是「技能会不会被调用」；③ 虽然影响面最大，但只影响「能不能被别人复用」——两者不在同一个量级上。</figcaption>
+  </figure>
+
+  <h3>每步的验收标准</h3>
+  <table>
+    <thead>
+      <tr><th style="width:9%">步骤</th><th style="width:44%">做什么</th><th style="width:47%">做完能观察到什么</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>①</strong></td><td>补 <code>name</code> / <code>description</code>，把超 1024 的描述压到限内</td><td><code>lint.py</code> 不再有 E003 / E007 / E008 类阻断</td></tr>
+      <tr><td><strong>②</strong></td><td>逐个重写描述：三段式 + 触发词（中英双语）+ 反例</td><td>随手说一句真实需求，原先不响应的技能开始被调用</td></tr>
+      <tr><td><strong>③</strong></td><td>给每个技能补 <code>license</code>，删掉不该公开的内部信息</td><td>可以放心执行 <code>gh repo create --public</code></td></tr>
+      <tr><td><strong>④</strong></td><td>把超 500 行的正文按主题拆进 <code>references/</code></td><td>所有正文回到 500 行内，且引用都有「何时读」</td></tr>
+      <tr><td><strong>⑤</strong></td><td>写 <code>marketplace.json</code>，按主题聚成 5–8 个 plugin</td><td><code>npx skills add &lt;owner&gt;/&lt;repo&gt;</code> 可以正常安装</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    不建议一次性打包全库。迁移的价值在于逐步暴露问题——把 45 个技能一次全搬进新仓库，
+    等于把 45 个未知状态一次性冻结，之后每一次改动都要先搞清楚「这个是当初为什么这么写的」。
+    搬一个，验一个。
+  </p>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>结论</h2>
+  <p class="sec-lede">
+    以下是我的判断，不是共识。它们建立在前面可复跑的证据上，但推论本身包含取舍。
+  </p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>技能库不是知识库</h4>
+      <p style="margin:0;font-size:15px">
+        知识库的直觉是「越多越好，反正能搜到」。技能库相反：每一条都常驻上下文，
+        所以它的经济学是「每多一条，所有其他条的可读性都下降一点」。
+        用知识库的直觉建技能库，必然走向臃肿。
+      </p>
+    </div>
+    <div class="card">
+      <h4>先有评测，再谈规模</h4>
+      <p style="margin:0;font-size:15px">
+        没有评测集的技能库，规模扩张等于盲飞。你会同时收获「有用的」和「有害的」，
+        而无法区分。20 个经过验证的技能，胜过 200 个没有验证的。
+      </p>
+    </div>
+    <div class="card">
+      <h4>格式会收敛，判断不会</h4>
+      <p style="margin:0;font-size:15px">
+        五家仓库现在就已经在 SKILL.md 上达成一致，未来只会更一致。
+        所以值得投入的是「这个判断值不值得沉淀」，而不是「清单字段该怎么写」——
+        后者随时会被生态替你决定。
+      </p>
+    </div>
+    <div class="card">
+      <h4>写给人看的文档会过时，写给模型的不会</h4>
+      <p style="margin:0;font-size:15px">
+        产品文档描述「系统能做什么」，系统变了文档就错了。
+        技能描述的是「这类任务该怎么做才对」，这个判断变化得慢得多——
+        这正是技能比文档更耐久的根本原因。
+      </p>
+    </div>
+  </div>
+
+  <div class="verdict" style="margin-top:28px">
+    <h4>如果只做一件事</h4>
+    <p>把现有技能的 <code>description</code> 全部重写一遍。它不需要新建任何基础设施，不需要改任何代码，但它决定了你已有的全部投入是否真的在工作。</p>
+  </div>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span>参考来源</h2>
+  <p class="sec-lede">按证据类型分组。所有一手来源均在 2026 年 11 月实际抓取核对。</p>
+
+  <h3>规范与一手文档</h3>
+  <ul>
+    <li>Agent Skills Specification — <code>agentskills.io/specification</code>：字段定义、长度限制、渐进披露、命名规则</li>
+    <li>anthropics/skills — 仓库结构、<code>.claude-plugin/marketplace.json</code> 实例、<code>skill-creator</code> 的方法论原文</li>
+    <li>google/skills — <code>index.json</code> 生成式索引、<code>skills/&lt;品类&gt;/&lt;name&gt;</code> 两级布局、描述中的排除式子句</li>
+    <li>openai/skills — <code>.curated/.system/.experimental</code> 信任分层；该仓库已标注 deprecated，官方指向 openai/plugins</li>
+    <li>MiniMax-AI/skills — 单 plugin 全量打包、三端 INSTALL.md 适配</li>
+    <li>vercel-labs/agent-skills — 发现规则（容器目录、三层上限、浅覆盖深）、<code>skills.sh.json</code> 展示分组</li>
+  </ul>
+
+  <h3>一手实测（可复跑）</h3>
+  <ul>
+    <li>45 个技能的全量审计：<code>python3 tools/lint.py --path &lt;技能库&gt; --json</code>，得 64 错误 / 48 警告</li>
+    <li>目录深度差异：一级遍历得 44 个，递归扫描得 45 个，差额来自三层嵌套</li>
+    <li>检查器自检：首次运行抓出自身引用缺失</li>
+  </ul>
+
+  <h3>推导与建模（非实测，需谨慎引用）</h3>
+  <ul>
+    <li>图 4 的上下文占用率为<strong>建模估算</strong>：以规范建议的单技能约 100 tokens 乘技能数，除以 32k 窗口。实际值随描述长度与分词器浮动，不同模型窗口也不同。</li>
+    <li>「500 行」来自规范的建议值（&lt;5000 tokens），折算关系随语言与排版变化，中文正文的 token 密度通常高于英文。</li>
+    <li>图 5 的「影响 27 个技能」为去重后的粗略口径，一个技能可同时命中多条规则。</li>
+  </ul>
+
+  <h3>本文档自身</h3>
+  <ul>
+    <li>单文件 HTML，零外部依赖，不引任何 CDN</li>
+    <li>全部图表为手写 SVG，无图表库</li>
+    <li>配色遵循三级文字色阶（对比度均 ≥3.0）与语义色分层（色块用原色、文字用深色版）</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p>《从四十个技能到一个技能库》· Agent Skills 建库方法论</p>
+  <p>证据基础：五个官方仓库源码 + 45 个技能实测 · 2026 年 11 月</p>
+  <p>文中所有数量均可通过仓库内的 lint 工具复现；标注为「建模估算」的数值不可作为实测引用。</p>
+</footer>
+
+</body>
+</html>
