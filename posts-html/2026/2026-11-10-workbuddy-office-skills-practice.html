@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="先过路由，再谈技能：拆解 WorkBuddy 四项办公技能的触发说法、执行流水线与能力边界，配四段可交互演示、一页速查表与八条避坑清单，串起从 PDF 取材、Excel 结构化到 Word 成文、PPT 汇报的完整链路。">
+<meta name="keywords" content="workbuddy, office-skills, docx-generation, excel-workbook, ppt-pptx, pdf-extraction">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-10">
+<title>WorkBuddy 办公技能使用及实践</title>
+<style>
+:root{
+  --bg:#F5F7FB; --surface:#FFFFFF; --surface2:#FAFBFE; --surface3:#F1F4FA;
+  --ink:#17212F; --ink2:#41506A; --ink3:#78869C; --ink4:#A2AEC0;
+  --line:#E2E7F0; --line2:#EDF0F6;
+  --brand:#3457D5; --brand2:#5B7BEC; --brand-soft:#EDF2FF;
+  --doc:#2E5BEA; --doc-soft:#EDF3FF;
+  --sheet:#0F8A63; --sheet-soft:#E9F7F1;
+  --ppt:#C8552B; --ppt-soft:#FDF0EA;
+  --pdf:#C9433F; --pdf-soft:#FDEDED;
+  --warn:#B6761A; --warn-soft:#FFF6E5;
+  --ok:#0F8A63;
+  --radius:14px; --radius-s:9px;
+  --shadow:0 1px 2px rgba(23,33,47,.04), 0 8px 28px rgba(23,33,47,.06);
+  --shadow-s:0 1px 3px rgba(23,33,47,.06);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.72;-webkit-font-smoothing:antialiased}
+::selection{background:#D9E3FF;color:var(--ink)}
+h1,h2,h3,h4,p,ul,ol,table{margin-top:0}
+a{color:var(--brand);text-decoration:none}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface3);padding:2px 6px;border-radius:5px;color:#2A3C66}
+
+/* ---------- 顶栏 ---------- */
+.progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--brand),#7D9BFF);z-index:60;transition:width .1s linear}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line);}
+.topbar-in{max-width:1180px;margin:0 auto;height:62px;display:flex;align-items:center;gap:28px;padding:0 28px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:750;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.logo-mark{width:28px;height:28px;border-radius:8px;background:var(--brand);display:grid;place-items:center;color:#fff;font-size:13px;font-weight:800;box-shadow:0 3px 10px rgba(52,87,213,.28)}
+.nav{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{padding:7px 11px;border-radius:7px;color:var(--ink2);font-size:13.5px;white-space:nowrap;transition:.18s;font-weight:500}
+.nav a:hover{background:var(--surface3);color:var(--ink)}
+.nav a.active{background:var(--brand-soft);color:var(--brand);font-weight:650}
+.top-tag{font-size:12px;color:var(--ink3);border:1px solid var(--line);padding:4px 10px;border-radius:20px;white-space:nowrap}
+
+/* ---------- 布局 ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+section{scroll-margin-top:80px}
+.hero{padding:74px 0 62px;background:
+   radial-gradient(900px 460px at 82% -12%,rgba(52,87,213,.10),transparent 62%),
+   radial-gradient(700px 380px at 8% 6%,rgba(15,138,99,.07),transparent 60%),
+   linear-gradient(180deg,#FFFFFF 0%,var(--bg) 100%);
+   border-bottom:1px solid var(--line)}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:650;color:var(--brand);background:var(--brand-soft);border:1px solid #DCE5FF;padding:6px 13px;border-radius:20px;letter-spacing:.02em}
+.hero h1{font-size:clamp(34px,4.4vw,52px);line-height:1.18;letter-spacing:-.035em;margin:22px 0 16px;font-weight:780}
+.hero h1 em{font-style:normal;color:var(--brand)}
+.hero-sub{font-size:17px;color:var(--ink2);max-width:760px;line-height:1.85;margin-bottom:30px}
+.hero-chips{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:38px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-s)}
+.chip i{width:8px;height:8px;border-radius:50%;display:block}
+.chip small{font-family:var(--mono);font-size:11px;color:var(--ink4);font-weight:500}
+.hero-stats{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;max-width:820px}
+.hero-stat{flex:1;min-width:170px;padding:20px 24px;border-right:1px solid var(--line2)}
+.hero-stat:last-child{border-right:0}
+.hero-stat b{display:block;font-size:27px;letter-spacing:-.03em;line-height:1.2}
+.hero-stat span{font-size:12.5px;color:var(--ink3)}
+
+.sec{padding:66px 0 10px}
+.sec-head{margin-bottom:30px}
+.sec-kicker{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--ink3);text-transform:uppercase;margin-bottom:12px}
+.sec-kicker .no{background:var(--ink);color:#fff;border-radius:6px;padding:3px 8px;font-family:var(--mono);font-size:11.5px;letter-spacing:0}
+.sec h2{font-size:clamp(25px,2.6vw,33px);letter-spacing:-.028em;line-height:1.3;margin:0 0 10px;font-weight:740}
+.sec-lead{font-size:15.5px;color:var(--ink2);max-width:850px;line-height:1.85}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-s)}
+.pad{padding:24px 26px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+.tbl{width:100%;border-collapse:collapse;font-size:13.6px;background:var(--surface);border-radius:var(--radius-s);overflow:hidden;border:1px solid var(--line)}
+.tbl th{background:var(--surface3);color:var(--ink2);font-weight:650;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:12.5px;letter-spacing:.01em;white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--line2);vertical-align:top;color:var(--ink2);line-height:1.65}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover{background:#FAFCFF}
+.tbl td strong{color:var(--ink);font-weight:650}
+.tbl .mono{font-family:var(--mono);font-size:12.2px}
+
+.tag{display:inline-block;font-size:11.5px;font-weight:650;padding:3px 9px;border-radius:6px;white-space:nowrap}
+.t-doc{background:var(--doc-soft);color:var(--doc)}
+.t-sheet{background:var(--sheet-soft);color:var(--sheet)}
+.t-ppt{background:var(--ppt-soft);color:var(--ppt)}
+.t-pdf{background:var(--pdf-soft);color:var(--pdf)}
+.t-brand{background:var(--brand-soft);color:var(--brand)}
+.t-warn{background:var(--warn-soft);color:var(--warn)}
+.t-gray{background:var(--surface3);color:var(--ink3)}
+
+.note{border-left:3px solid var(--brand);background:var(--brand-soft);padding:13px 17px;border-radius:0 var(--radius-s) var(--radius-s) 0;font-size:13.6px;color:var(--ink2);line-height:1.75}
+.note.warn{border-color:var(--warn);background:var(--warn-soft)}
+.note.ok{border-color:var(--ok);background:var(--sheet-soft)}
+
+.code{background:#F7F9FD;border:1px solid var(--line);border-left:3px solid var(--brand2);border-radius:var(--radius-s);padding:14px 16px;font-family:var(--mono);font-size:12.4px;line-height:1.75;color:#2A3C66;overflow-x:auto;white-space:pre}
+.code .c{color:#8A97AE}
+
+.mini-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.01em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.mini-title::before{content:"";width:3px;height:14px;border-radius:2px;background:var(--brand)}
+
+/* 路由图 */
+.route-map{display:grid;grid-template-columns:1fr;gap:9px}
+.route-item{display:flex;gap:12px;align-items:center;padding:11px 15px;border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface2)}
+.route-item .cond{font-size:13.2px;color:var(--ink);font-weight:600;min-width:0;flex:1}
+.route-item .cond small{display:block;font-weight:400;color:var(--ink3);font-size:11.8px;margin-top:2px;line-height:1.55}
+.route-item .tag{flex:none}
+.route-arrow{color:var(--ink4);font-size:13px;align-self:center;flex:none}
+
+/* 技能节 */
+.skill-head{display:flex;align-items:flex-start;gap:16px;padding:22px 26px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow-s);margin-bottom:18px}
+.skill-ico{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:19px;font-weight:800;flex:none;color:#fff}
+.skill-head h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em;font-weight:730}
+.skill-head .sid{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+.skill-head p{margin:8px 0 0;color:var(--ink2);font-size:14px;line-height:1.75;max-width:860px}
+.skill-head .head-tags{margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:none}
+
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.fact{padding:16px 18px}
+.fact .lbl{font-size:11.5px;font-weight:700;letter-spacing:.08em;color:var(--ink3);text-transform:uppercase;margin-bottom:9px}
+.fact .val{font-size:13.6px;color:var(--ink2);line-height:1.8}
+.fact .val b{color:var(--ink);font-weight:650}
+
+.flow{display:flex;gap:0;align-items:stretch;overflow-x:auto;padding:2px 0 6px;margin-bottom:18px}
+.flow-step{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--line);padding:14px 15px;position:relative}
+.flow-step:first-child{border-radius:var(--radius-s) 0 0 var(--radius-s)}
+.flow-step:last-child{border-radius:0 var(--radius-s) var(--radius-s) 0}
+.flow-step+.flow-step{border-left:0}
+.flow-step .n{font-family:var(--mono);font-size:11px;color:var(--brand);font-weight:700}
+.flow-step b{display:block;font-size:13.4px;margin:5px 0 4px;color:var(--ink)}
+.flow-step span{font-size:12.2px;color:var(--ink3);line-height:1.6;display:block}
+.flow-step::after{content:"›";position:absolute;right:-9px;top:50%;transform:translateY(-50%);z-index:2;color:var(--ink4);font-size:19px;background:var(--bg);width:18px;text-align:center;line-height:18px}
+.flow-step:last-child::after{display:none}
+
+.case{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.bubble{padding:13px 16px;border-radius:12px;font-size:13.5px;line-height:1.75;margin-bottom:10px;position:relative}
+.bubble .who{font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:5px;letter-spacing:.04em}
+.bubble-user{background:var(--brand-soft);border:1px solid #DDE6FF;color:#2A3C66;border-bottom-right-radius:4px}
+.bubble-bot{background:var(--surface);border:1px solid var(--line);color:var(--ink2);border-bottom-left-radius:4px}
+.deliver{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border:1px dashed var(--line);border-radius:8px;font-size:12.8px;color:var(--ink2);margin-top:7px}
+.deliver .ext{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--ink);color:#fff}
+
+/* Demo 外框 */
+.demo{margin:6px 0 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.demo-bar{display:flex;align-items:center;gap:12px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line)}
+.dots{display:flex;gap:5px}
+.dots i{width:9px;height:9px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:#F0B4AE}.dots i:nth-child(2){background:#F2D49A}.dots i:nth-child(3){background:#AFDDBC}
+.demo-bar .ttl{font-size:12.8px;font-weight:650;color:var(--ink2)}
+.demo-bar .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.demo-body{padding:22px}
+.demo-cap{font-size:12.2px;color:var(--ink3);padding:10px 16px;border-top:1px solid var(--line2);background:#FCFDFE;line-height:1.6}
+
+/* ---- Word Demo ---- */
+.word-layout{display:grid;grid-template-columns:1fr 236px;gap:22px}
+.word-stage{background:#EDF1F7;border-radius:8px;padding:22px;display:flex;justify-content:center;max-height:780px;overflow:auto}
+.paper{width:100%;max-width:430px;min-height:620px;background:#fff;box-shadow:0 3px 18px rgba(23,33,47,.14);padding:26px 30px 48px;position:relative;font-size:11.6px;line-height:1.85;color:#2A3444}
+.paper-head{font-size:9px;color:#9AA5B5;letter-spacing:.08em;padding-bottom:7px;border-bottom:1px solid #E6EAF0;display:flex;justify-content:space-between}
+.paper-body{padding:16px 0 10px}
+.paper .doc-kicker{font-size:9px;letter-spacing:.14em;color:var(--doc);font-weight:700;margin-bottom:14px}
+.paper h4{font-size:19px;line-height:1.42;letter-spacing:-.02em;margin:0 0 9px;color:#17212F;font-weight:750}
+.paper .doc-meta{font-size:9.5px;color:#8B96A7;border-bottom:1px solid #E6EAF0;padding-bottom:12px;margin-bottom:14px}
+.paper h5{font-size:12.3px;margin:15px 0 6px;font-weight:700;color:#17212F}
+.paper p{margin:0 0 8px;text-indent:2em;color:#4A5568;text-align:justify}
+.doc-table{width:100%;border-collapse:collapse;font-size:9.6px;margin:9px 0 6px}
+.doc-table th{border-top:1.5px solid #3A4658;border-bottom:1px solid #9AA5B5;padding:5px 4px;text-align:left;font-weight:700;color:#2A3444}
+.doc-table td{border-bottom:1px solid #E6EAF0;padding:5px 4px;color:#4A5568}
+.doc-table tr:last-child td{border-bottom:1.5px solid #3A4658;font-weight:700}
+.paper-foot{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:9px;color:#A2AEC0}
+.paper [data-hl]{transition:.2s;border-radius:3px}
+.paper [data-hl].hl{outline:2px solid var(--doc);outline-offset:3px;background:#F2F6FF}
+.word-aside h6{font-size:12.5px;font-weight:700;margin:0 0 4px}
+.word-aside .sub{font-size:11.5px;color:var(--ink3);margin-bottom:14px;line-height:1.6}
+.hl-btn{display:block;width:100%;text-align:left;padding:9px 11px;margin-bottom:7px;border:1px solid var(--line);background:var(--surface2);border-radius:8px;font-size:12.3px;color:var(--ink2);cursor:pointer;transition:.16s;font-family:inherit}
+.hl-btn:hover{border-color:var(--doc);color:var(--doc)}
+.hl-btn.on{background:var(--doc-soft);border-color:var(--doc);color:var(--doc);font-weight:650}
+.hl-result{margin-top:12px;padding:11px 12px;background:var(--surface2);border:1px dashed var(--line);border-radius:8px;font-size:11.8px;color:var(--ink2);line-height:1.7;min-height:64px}
+
+/* ---- Excel Demo ---- */
+.xl-window{border:1px solid #D5DBE5;border-radius:9px;overflow:hidden;background:#fff;font-size:12px}
+.xl-ribbon{display:flex;align-items:center;gap:5px;padding:8px 11px;background:#F8FAFD;border-bottom:1px solid #E3E8F0;flex-wrap:wrap}
+.xl-ribbon .rb{padding:4px 9px;border:1px solid #DDE3ED;border-radius:6px;background:#fff;font-size:11px;color:var(--ink2);cursor:default;min-width:28px;text-align:center}
+.xl-ribbon .rb.b{font-weight:800}.xl-ribbon .rb.i{font-style:italic}.xl-ribbon .rb.u{text-decoration:underline}
+.xl-ribbon .sep{width:1px;height:19px;background:#DDE3ED;margin:0 4px}
+.xl-ribbon .rb.act{background:var(--sheet-soft);border-color:#B9E3D1;color:var(--sheet)}
+.xl-formula{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #E3E8F0;background:#fff}
+.xl-name{width:58px;padding:4px 7px;border:1px solid #DDE3ED;border-radius:5px;font-family:var(--mono);font-size:11px;color:var(--ink);background:#F8FAFD;outline:none}
+.xl-fx{font-family:Georgia,serif;font-style:italic;color:var(--ink3);font-size:12px;width:16px;text-align:center}
+.xl-fx-input{flex:1;border:1px solid #DDE3ED;border-radius:5px;padding:4px 9px;font-family:var(--mono);font-size:11.3px;color:#2A3C66;background:#FCFDFE;min-width:0}
+.xl-scroll{max-height:330px;overflow:auto}
+.xl-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:11.5px}
+.xl-table th,.xl-table td{border-right:1px solid #E7EBF2;border-bottom:1px solid #E7EBF2;height:29px;padding:0 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xl-table thead th{background:#F3F6FA;color:#6B788C;font-weight:600;text-align:center;font-size:11px;position:sticky;top:0;z-index:2}
+.xl-table .rownum{width:36px;background:#F3F6FA;color:#8793A6;text-align:center;font-weight:500;font-size:10.8px;position:sticky;left:0;z-index:1}
+.xl-table td{color:#2F3B4E;cursor:cell}
+.xl-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.xl-table td:hover{background:#F3F8FF}
+.xl-table td.sel{outline:2px solid var(--sheet);outline-offset:-2px;background:#EAF7F1}
+.xl-table .title-row td{background:#F7FAFF;text-align:center;font-weight:700;color:#24406E;font-size:13px;letter-spacing:.03em}
+.xl-table .head-row td{background:var(--sheet);color:#fff;font-weight:650;text-align:center;font-size:11.3px}
+.xl-table .total-row td{background:#EAF2FF;font-weight:700;color:#24406E;border-top:1.5px solid #9DBAF5}
+.xl-table td.good{background:#E7F7EF;color:#0B7A55;font-weight:650}
+.xl-table td.mid{background:#FFF4DE;color:#9A6410;font-weight:650}
+.xl-table td.formula{color:#1B5FA8;font-weight:600}
+.xl-tabs{display:flex;align-items:center;gap:3px;padding:7px 10px;background:#F8FAFD;border-top:1px solid #E3E8F0}
+.xl-tab{padding:5px 13px;border:1px solid transparent;border-radius:6px 6px 0 0;font-size:11.6px;color:var(--ink3);cursor:pointer;font-family:inherit;background:transparent}
+.xl-tab.on{background:#fff;border-color:#DDE3ED;border-bottom-color:#fff;color:var(--sheet);font-weight:700}
+.xl-hint{margin-left:auto;font-size:11px;color:var(--ink4)}
+
+/* ---- PPT Demo ---- */
+.ppt-window{background:#F0F3F8;border-radius:9px;padding:16px;display:grid;grid-template-columns:116px 1fr;gap:16px}
+.ppt-thumbs{display:flex;flex-direction:column;gap:9px}
+.ppt-thumb{width:100%;aspect-ratio:16/9;border:2px solid transparent;border-radius:6px;overflow:hidden;background:#fff;cursor:pointer;padding:0;position:relative;transition:.16s}
+.ppt-thumb.on{border-color:var(--ppt);box-shadow:0 0 0 3px rgba(200,85,43,.13)}
+.ppt-thumb .scaler{position:absolute;top:0;left:0;width:640px;height:360px;transform-origin:top left;pointer-events:none}
+.ppt-thumb .num{position:absolute;bottom:3px;right:5px;font-size:9px;color:#fff;background:rgba(0,0,0,.42);border-radius:3px;padding:0 4px;z-index:3}
+.ppt-main{min-width:0}
+.ppt-stage{position:relative;width:100%;aspect-ratio:16/9;background:#fff;border-radius:7px;overflow:hidden;box-shadow:0 5px 20px rgba(23,33,47,.13)}
+.slide-view{position:absolute;inset:0;width:640px;height:360px;transform-origin:top left;display:none}
+.slide-view.on{display:block}
+.ppt-controls{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--ink3)}
+.ppt-btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 12px;cursor:pointer;font-family:inherit;font-size:12px;color:var(--ink2)}
+.ppt-btn:hover{border-color:var(--ppt);color:var(--ppt)}
+.ppt-page{font-family:var(--mono);font-weight:700;color:var(--ink)}
+/* 幻灯片内部（640x360 坐标系） */
+.sv{width:640px;height:360px;position:relative;padding:38px 46px;font-family:var(--sans);overflow:hidden}
+.sv .kicker{font-size:12px;letter-spacing:.14em;font-weight:700;color:var(--ppt)}
+.sv .big{font-size:38px;line-height:1.22;font-weight:780;letter-spacing:-.03em;color:#17212F;margin:14px 0 10px}
+.sv .sub{font-size:15px;color:#5B6780}
+.sv .rule{position:absolute;left:0;top:0;bottom:0;width:9px;background:var(--ppt)}
+.sv .foot{position:absolute;left:46px;bottom:26px;font-size:11px;color:#9AA5B5;letter-spacing:.05em}
+.sv .deco{position:absolute;right:-60px;bottom:-90px;width:250px;height:250px;border-radius:50%;background:#FDF0EA}
+.sv.cover{background:linear-gradient(135deg,#FFFFFF 0%,#FDF7F4 100%)}
+.sv .h2{font-size:27px;font-weight:760;letter-spacing:-.02em;color:#17212F;margin:0 0 4px}
+.sv .underline{width:46px;height:3px;background:var(--ppt);border-radius:2px;margin:12px 0 22px}
+.toc-row{display:flex;align-items:center;gap:18px;padding:11px 0;border-bottom:1px solid #EDF0F5;font-size:15px;color:#3A4658}
+.toc-row b{font-family:var(--mono);font-size:15px;color:var(--ppt);width:34px}
+.bars{display:flex;align-items:flex-end;gap:16px;height:170px;padding:10px 0 0 6px;border-bottom:1px solid #D9DFE9}
+.bar{flex:1;background:linear-gradient(180deg,#E98A62,var(--ppt));border-radius:4px 4px 0 0;position:relative}
+.bar span{position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:var(--ppt);font-family:var(--mono)}
+.bar-lbl{display:flex;gap:16px;padding:7px 0 0 6px;font-size:10px;color:#8A97A8;text-align:center}
+.bar-lbl i{flex:1;font-style:normal}
+.sv .pt{font-size:13px;color:#4A5568;line-height:1.9;padding-left:14px;position:relative}
+.sv .pt::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--ppt)}
+.concl{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+.concl-card{background:#FBF7F5;border:1px solid #F0DFD7;border-radius:10px;padding:18px 15px}
+.concl-card b{display:block;font-size:26px;color:var(--ppt);font-family:var(--mono);letter-spacing:-.03em}
+.concl-card span{font-size:11.5px;color:#5B6780;line-height:1.6;display:block;margin-top:6px}
+
+/* ---- PDF Demo ---- */
+.pdf-window{border:1px solid #D5DBE5;border-radius:9px;overflow:hidden;background:#fff}
+.pdf-toolbar{display:flex;align-items:center;gap:10px;padding:9px 13px;background:#F8FAFD;border-bottom:1px solid #E3E8F0;flex-wrap:wrap;font-size:12px}
+.pdf-file{display:flex;align-items:center;gap:7px;font-weight:650;color:var(--ink)}
+.pdf-file .ic{background:var(--pdf-soft);color:var(--pdf);border-radius:5px;padding:2px 6px;font-size:10px;font-weight:800}
+.pdf-page-ind{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.pdf-zoom{border:1px solid #DDE3ED;border-radius:6px;background:#fff;padding:3px 9px;font-size:11.5px;color:var(--ink2)}
+.pdf-body{display:grid;grid-template-columns:150px 1fr 224px;min-height:350px}
+.pdf-side{border-right:1px solid var(--line2);background:#FBFCFE;padding:14px 11px}
+.pdf-side .st{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--ink4);margin-bottom:10px}
+.pdf-side .toc-i{font-size:11.3px;color:var(--ink2);padding:7px 8px;border-radius:6px;line-height:1.5;cursor:default}
+.pdf-side .toc-i.on{background:var(--pdf-soft);color:var(--pdf);font-weight:650}
+.pdf-page-wrap{background:#E9EDF4;padding:18px;display:flex;justify-content:center;overflow:auto}
+.pdf-page{width:100%;max-width:330px;min-height:312px;background:#fff;box-shadow:0 2px 12px rgba(23,33,47,.12);padding:22px 24px;font-size:10.6px;line-height:1.85;color:#3A4658}
+.pdf-page h6{font-size:13px;color:#17212F;margin:0 0 10px;font-weight:730}
+.pdf-page p{margin:0 0 9px;text-align:justify}
+.pdf-page .ptable{width:100%;border-collapse:collapse;font-size:9.6px;margin:8px 0 10px}
+.pdf-page .ptable th,.pdf-page .ptable td{border:1px solid #D9DFE8;padding:4px 5px;text-align:left}
+.pdf-page .ptable th{background:#F3F6FA;font-weight:700;color:#2A3444}
+mark{background:#FFE9A8;color:#5A4300;padding:1px 2px;border-radius:2px;cursor:pointer;transition:.15s}
+mark:hover,mark.on{background:#FFC94A;box-shadow:0 0 0 2px rgba(255,201,74,.45)}
+.pdf-extract{border-left:1px solid var(--line2);background:#FBFCFE;padding:14px}
+.pdf-extract .et{font-size:11.5px;font-weight:700;margin-bottom:4px;color:var(--ink)}
+.pdf-extract .ed{font-size:11px;color:var(--ink3);line-height:1.65;margin-bottom:11px}
+.fmt-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:13px}
+.fmt{font-family:var(--mono);font-size:10.6px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink2);cursor:pointer}
+.fmt:hover{border-color:var(--pdf);color:var(--pdf)}
+.fmt.on{background:var(--pdf);border-color:var(--pdf);color:#fff;font-weight:700}
+.ext-box{background:#fff;border:1px solid var(--line);border-radius:7px;padding:10px 11px;font-family:var(--mono);font-size:10.5px;line-height:1.75;color:#3A4658;white-space:pre-wrap;word-break:break-word;min-height:96px}
+.ext-loc{margin-top:11px;font-size:11px;color:var(--ink2);line-height:1.7;padding:9px 10px;background:var(--warn-soft);border-radius:7px}
+
+/* 组合链路 */
+.chain{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin:8px 0 20px}
+.chain-step{background:var(--surface);border:1px solid var(--line);padding:16px 15px;position:relative}
+.chain-step:first-child{border-radius:var(--radius-s) 0 0 var(--radius-s)}
+.chain-step:last-child{border-radius:0 var(--radius-s) var(--radius-s) 0}
+.chain-step+.chain-step{border-left:0}
+.chain-step .ci{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;margin-bottom:10px}
+.chain-step b{display:block;font-size:13.2px;margin-bottom:5px}
+.chain-step p{font-size:11.8px;color:var(--ink3);line-height:1.65;margin:0}
+.chain-step .out{margin-top:10px;font-family:var(--mono);font-size:10.5px;color:var(--ink2);background:var(--surface3);padding:4px 7px;border-radius:5px;display:inline-block}
+.chain-step::after{content:"→";position:absolute;right:-8px;top:22px;z-index:2;color:var(--ink4);background:var(--bg);width:16px;text-align:center;font-size:13px}
+.chain-step:last-child::after{display:none}
+
+/* 指令生成器 */
+.composer{display:grid;grid-template-columns:340px 1fr;gap:20px}
+.form-row{margin-bottom:15px}
+.form-row label{display:block;font-size:12px;font-weight:650;color:var(--ink2);margin-bottom:7px}
+.form-row select,.form-row input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-family:inherit;font-size:13.5px;outline:none;transition:.16s}
+.form-row select:focus,.form-row input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(52,87,213,.10)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border:0;border-radius:8px;background:var(--brand);color:#fff;font-family:inherit;font-size:13.5px;font-weight:650;cursor:pointer;transition:.16s;width:100%}
+.btn:hover{background:#2A48B8;transform:translateY(-1px)}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink2);width:auto}
+.btn.ghost:hover{border-color:var(--brand);color:var(--brand);transform:none}
+.out-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.out-head b{font-size:13px}
+.copy{margin-left:auto}
+.expect{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.expect div{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:11px 12px}
+.expect .k{font-size:10.5px;font-weight:700;letter-spacing:.07em;color:var(--ink3);margin-bottom:5px;text-transform:uppercase}
+.expect .v{font-size:12.2px;color:var(--ink2);line-height:1.65}
+
+/* 避坑 / 清单 */
+.pitfalls{counter-reset:pit}
+.pitfall{display:flex;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface);margin-bottom:9px}
+.pitfall::before{counter-increment:pit;content:counter(pit,decimal-leading-zero);font-family:var(--mono);font-size:12px;font-weight:800;color:var(--brand);background:var(--brand-soft);padding:4px 7px;border-radius:6px;height:fit-content;flex:none}
+.pitfall b{font-size:13.3px;display:block;margin-bottom:3px}
+.pitfall span{font-size:12.6px;color:var(--ink3);line-height:1.7}
+
+footer{margin-top:70px;border-top:1px solid var(--line);background:#fff;padding:32px 0 40px}
+.foot-in{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:12.5px;color:var(--ink3);line-height:1.8}
+.foot-in b{color:var(--ink2)}
+
+@media (max-width:1000px){
+  .grid4{grid-template-columns:repeat(2,1fr)}
+  .chain{grid-template-columns:1fr;gap:8px}
+  .chain-step,.chain-step:first-child,.chain-step:last-child{border-radius:var(--radius-s);border-left:1px solid var(--line)}
+  .chain-step::after{display:none}
+  .composer{grid-template-columns:1fr}
+  .pdf-body{grid-template-columns:1fr}
+  .pdf-side,.pdf-extract{border:0;border-top:1px solid var(--line2)}
+  .word-layout{grid-template-columns:1fr}
+  .word-aside{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .word-aside h6,.word-aside .sub,.hl-result{grid-column:1/-1}
+}
+@media (max-width:720px){
+  .wrap,.topbar-in{padding:0 18px}
+  .grid2,.grid3,.facts,.case,.route-map{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+  .hero{padding:52px 0 44px}
+  .sec{padding:48px 0 6px}
+  .skill-head{flex-wrap:wrap}
+  .skill-head .head-tags{margin-left:0;flex-direction:row}
+  .flow{flex-direction:column}
+  .flow-step,.flow-step:first-child,.flow-step:last-child{border-radius:var(--radius-s);border-left:1px solid var(--line);min-width:0}
+  .flow-step+.flow-step{border-left:1px solid var(--line);border-top:0}
+  .flow-step::after{display:none}
+  .expect{grid-template-columns:1fr}
+  .ppt-window{grid-template-columns:1fr}
+  .ppt-thumbs{flex-direction:row}
+  .ppt-thumb{width:80px;flex:none}
+  .nav{display:none}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="logo"><span class="logo-mark">W</span> WorkBuddy · 办公技能实践</div>
+    <nav class="nav" id="nav">
+      <a href="#overview">全景认知</a>
+      <a href="#docx">Word 文档</a>
+      <a href="#sheet">Excel 新表</a>
+      <a href="#pptx">PPT 演示</a>
+      <a href="#pdf">PDF 阅读</a>
+      <a href="#pipeline">组合实战</a>
+      <a href="#composer">指令生成器</a>
+      <a href="#cheatsheet">速查与避坑</a>
+    </nav>
+    <span class="top-tag">单文件 · 离线可用</span>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<div class="hero">
+  <div class="wrap">
+    <span class="hero-eyebrow">◆ 基于四项官方办公技能的实操指南 · 含交互效果展示</span>
+    <h1>WorkBuddy <em>办公技能</em><br>使用及实践</h1>
+    <p class="hero-sub">不是「让模型写一段像模像样的文字」，而是把意图路由到专用流水线，产出可打开、可编辑、可复核的本地 Office 文件。本页拆解四个技能的触发方式、真实工作流与能力边界，并用页面内的高保真交互 Demo 直接展示交付效果。</p>
+    <div class="hero-chips">
+      <span class="chip"><i style="background:var(--doc)"></i>workbuddy-docx <small>DOCX 创作 / 美化</small></span>
+      <span class="chip"><i style="background:var(--sheet)"></i>workbuddy-sheet-generation <small>新建 XLSX</small></span>
+      <span class="chip"><i style="background:var(--ppt)"></i>workbuddy-pptx <small>PPT 生成 / 理解 / 编辑</small></span>
+      <span class="chip"><i style="background:var(--pdf)"></i>workbuddy-pdf <small>PDF 只读理解</small></span>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><b>4</b><span>专业办公技能</span></div>
+      <div class="hero-stat"><b>1</b><span>统一路由入口</span></div>
+      <div class="hero-stat"><b>3</b><span>类任务性质：新建 / 理解 / 编辑</span></div>
+      <div class="hero-stat"><b>4</b><span>段可交互效果演示</span></div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ================= 01 全景 ================= -->
+<section class="sec" id="overview">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">01</span> PANORAMA / 全景认知</div>
+    <h2>先过路由，再谈技能</h2>
+    <p class="sec-lead">四个技能不是四个并列按钮。任何涉及本地 Office / PDF 文件的请求，都会先经过 <code>workbuddy-office-routing</code>：按<strong>文件类型 × 任务性质</strong>判定，再分派到对应技能。理解这张表，比记住四个名字更重要——大多数「用错了」的问题都出在这一步。</p>
+  </div>
+
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="card pad">
+      <div class="mini-title">路由决策表（节选）</div>
+      <div class="route-map">
+        <div class="route-item"><span class="cond">新建 DOCX：写 / 起草 / 撰写 / 重写<small>纯意图，无源材料</small></span><span class="route-arrow">→</span><span class="tag t-doc">docx · full_pipeline</span></div>
+        <div class="route-item"><span class="cond">整篇抽象美化：美化一下 / 更专业<small>需 AI 做设计决策，无具体样式值</small></span><span class="route-arrow">→</span><span class="tag t-doc">docx · beautify_only</span></div>
+        <div class="route-item"><span class="cond">既有 DOCX 改动 / 润色<small>「把标题改成 XX」「字体改宋体五号」</small></span><span class="route-arrow">→</span><span class="tag t-gray">local-office-edit</span></div>
+        <div class="route-item"><span class="cond">生成一份全新 XLSX<small>「另做一份汇总表」，源表只读</small></span><span class="route-arrow">→</span><span class="tag t-sheet">sheet-generation</span></div>
+        <div class="route-item"><span class="cond">改 / 分析 / 透视 / 清洗既有表<small>源文件本身就是交付物</small></span><span class="route-arrow">→</span><span class="tag t-gray">sheetagent / 编辑链路</span></div>
+        <div class="route-item"><span class="cond">PPT 生成 / 看懂 / 改稿<small>三条路由全归一个技能</small></span><span class="route-arrow">→</span><span class="tag t-ppt">pptx</span></div>
+        <div class="route-item"><span class="cond">读 PDF、总结、找事实、查表格<small>只读理解</small></span><span class="route-arrow">→</span><span class="tag t-pdf">pdf</span></div>
+        <div class="route-item"><span class="cond">生成 / 编辑 PDF<small>当前不支持</small></span><span class="route-arrow">→</span><span class="tag t-warn">改投 DOCX / Markdown</span></div>
+      </div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">一个容易被忽略的默认规则</div>
+      <p style="font-size:14px;color:var(--ink2);line-height:1.85">当用户要的是<strong>结构化文本内容</strong>——讲稿、要点、文案、摘要、报告、会议纪要——路由层会<strong>先归类为 doc</strong>，再走本地 DOCX 创建路径；只有用户明确说「输出 Markdown / 纯文本」时才改用别的格式。</p>
+      <div class="note" style="margin:14px 0 18px">换句话说：<strong>「帮我写一份季度复盘」默认给你 .docx，而不是聊天窗口里的一段长文本。</strong>这是通用对话与办公技能最直观的区别。</div>
+      <div class="mini-title">任务性质的三分法</div>
+      <div class="grid3" style="gap:9px">
+        <div style="background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px"><b style="font-size:13px">新建</b><div style="font-size:11.8px;color:var(--ink3);line-height:1.6;margin-top:4px">产出独立新文件，路径与源文件不同</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px"><b style="font-size:13px">理解</b><div style="font-size:11.8px;color:var(--ink3);line-height:1.6;margin-top:4px">只读，不改源文件，结论可定位</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px"><b style="font-size:13px">编辑</b><div style="font-size:11.8px;color:var(--ink3);line-height:1.6;margin-top:4px">在既有文件上原位改动，源文件即交付物</div></div>
+      </div>
+      <div class="note warn" style="margin-top:16px">「在这个工作簿里<strong>加一个汇总 sheet</strong>」属于<strong>编辑</strong>，不是新建——这是 Excel 路由里最常判错的一条。</div>
+    </div>
+  </div>
+
+  <div class="mini-title" style="margin-top:26px">能力矩阵</div>
+  <table class="tbl" style="margin-bottom:18px">
+    <thead><tr><th style="width:16%">技能</th><th>产出物</th><th>关键机制</th><th>读 / 写</th><th>最需要注意的边界</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-doc">docx</span><br><span class="mono" style="font-size:11px;color:var(--ink3)">Word</span></td><td><strong>本地 .docx</strong>，自动封面 + 目录 + 专业排版</td><td>三段流水线 <span class="mono">md → html → docx</span>，每个阶段真委派</td><td>写</td><td>不接收源材料；具体样式修改属编辑，会转交别的技能</td></tr>
+      <tr><td><span class="tag t-sheet">sheet-generation</span><br><span class="mono" style="font-size:11px;color:var(--ink3)">Excel</span></td><td><strong>全新 .xlsx</strong>，公式可联动、带合规标识</td><td>openpyxl 直写 + 设计准则 + 场景范式 + 公式重算</td><td>写</td><td>只做「新文件」；源文件只读，绝不写回</td></tr>
+      <tr><td><span class="tag t-ppt">pptx</span><br><span class="mono" style="font-size:11px;color:var(--ink3)">PPT</span></td><td><strong>.pptx</strong>，逐页生成、实时预览</td><td>需求对齐 → 风格路由 → 逐页闭环（写页 → 校验 → 提交）</td><td>读 + 写</td><td>理解链路只读；编辑链路须先查工具 schema</td></tr>
+      <tr><td><span class="tag t-pdf">pdf</span><br><span class="mono" style="font-size:11px;color:var(--ink3)">PDF</span></td><td><strong>结论 / 摘录 / 结构化数据</strong>，而非新文件</td><td>6 种提取格式，必要时渲染页图核对版面</td><td>只读</td><td><strong>不支持生成或编辑 PDF</strong>；扫描页需本机 OCR</td></tr>
+    </tbody>
+  </table>
+  <div class="note ok">共性：四个技能都强调<strong>「可复核」</strong>——Word 有溯源记录，Excel 公式重算零错误，PPT 逐页校验，PDF 结论要能定位到原页。这是「办公级交付」与「生成一段文字」的分水岭。</div>
+</section>
+
+<!-- ================= 02 DOCX ================= -->
+<section class="sec" id="docx">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">02</span> WORD / 文档创作与美化</div>
+    <h2>workbuddy-docx：把意图变成一份能发出去的文档</h2>
+  </div>
+
+  <div class="skill-head">
+    <div class="skill-ico" style="background:var(--doc)">W</div>
+    <div>
+      <h3>专业 Word 文档智能体</h3>
+      <div class="sid">workbuddy-docx → tdoc-orchestrator → doc-writer / doc-formatter / doc-converter</div>
+      <p>端到端覆盖研报、年报、论文、公文、合同、商务报告、会议纪要等垂类文档；从零创作、整篇美化、导出 .docx。核心不是「写得好」，而是<strong>三段流水线类型严格衔接</strong>，且每个阶段由独立角色执行。</p>
+    </div>
+    <div class="head-tags"><span class="tag t-doc">创作</span><span class="tag t-doc">美化</span><span class="tag t-gray">不承接编辑</span></div>
+  </div>
+
+  <div class="facts">
+    <div class="card fact"><div class="lbl">触发说法</div><div class="val">「起草 / 撰写 / 生成 / 重写一份…」<br>「<b>美化一下</b>」「重新排版」「做得更专业」<br><span style="color:var(--ink3)">短篇创作（&lt;1000 字）走轻量入口</span></div></div>
+    <div class="card fact"><div class="lbl">输入</div><div class="val"><b>纯意图</b>，不接收 DOCX / XLSX / PDF 等源材料；带源材料的文档生成走编辑链路</div></div>
+    <div class="card fact"><div class="lbl">输出</div><div class="val">本地 <b>.docx</b>；含封面、目录、层级标题、规范表格与图片、页眉页脚；转换成功后<b>自动打开预览</b></div></div>
+  </div>
+
+  <div class="mini-title">三段流水线（类型衔接不可跳级）</div>
+  <div class="flow">
+    <div class="flow-step"><span class="n">STAGE 0</span><b>意图识别</b><span>判定 full_pipeline / beautify_only / 转交编辑；不可跳过</span></div>
+    <div class="flow-step"><span class="n">S1 · doc-writer</span><b>内容创作</b><span>意图 → Markdown 初稿</span></div>
+    <div class="flow-step"><span class="n">S2 · doc-formatter</span><b>版式生成</b><span>Markdown → HTML（恒为 HTML），按体裁自选风格</span></div>
+    <div class="flow-step"><span class="n">S3 · doc-converter</span><b>格式转换</b><span>HTML → DOCX，present_files 打开成品预览，链路终止</span></div>
+  </div>
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="card pad">
+      <div class="mini-title">两条合法入口</div>
+      <table class="tbl" style="border:0">
+        <thead><tr><th>入口</th><th>链路</th><th>触发场景</th></tr></thead>
+        <tbody>
+          <tr><td><span class="mono">full_pipeline</span></td><td>S1 → S2 → S3</td><td>无文档 + 创作动词（写 / 起草 / 生成 / 重写）</td></tr>
+          <tr><td><span class="mono">beautify_only</span></td><td>S2 → S3</td><td>已有文档 + <strong>抽象</strong>整篇美化（需 AI 做设计决策）</td></tr>
+          <tr><td>转交</td><td>—</td><td>具体样式值 / 局部修改 / 润色 → <code>workbuddy-office-routing</code></td></tr>
+        </tbody>
+      </table>
+      <div class="note" style="margin-top:14px">判别关键：<strong>是否需要 AI 做设计决策</strong>。「专业一点」是美化；「宋体五号、1.5 倍行距」是编辑。</div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">六条铁律（提炼）</div>
+      <ol style="margin:0;padding-left:19px;font-size:13.3px;color:var(--ink2);line-height:2">
+        <li><strong>弹性入口</strong>：每次请求都从 Stage 0 判意图，不默认走全长链路</li>
+        <li><strong>链路不可中断</strong>：组合后必须顺序执行到 S3，中途不交付、不脱轨</li>
+        <li><strong>真委派</strong>：每个阶段读对应角色定义后执行，禁止「顺手自己做」</li>
+        <li><strong>只管路由与衔接</strong>：编排层不干预子角色内部决策</li>
+        <li><strong>中间产物不展示</strong>：md / html 只给路径，唯一成品是 .docx</li>
+        <li><strong>溯源必写</strong>：<span class="mono">pipeline-state.yaml</span> 每阶段先更新再声明检查点</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="case">
+    <div class="card pad">
+      <div class="mini-title">实践案例 · 一次真实对话</div>
+      <div class="bubble bubble-user"><div class="who">用户</div>帮我起草一份《2026 年度研发效能复盘》研报，要有封面、目录，中间放一张关键指标表。</div>
+      <div class="bubble bubble-bot"><div class="who">智能体</div>Stage 0 识别：<span class="mono">full_pipeline</span>（无文档 + 创作动词）→ S1 产出 Markdown 初稿 → S2 按研报体裁生成 HTML 版式 → S3 转换并打开预览。</div>
+      <div class="deliver"><span class="ext">DOCX</span> 2026年度研发效能复盘.docx <span style="margin-left:auto;color:var(--ink4)">自动预览</span></div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">效果展示 · 版式要素定位</div>
+      <p style="font-size:13.3px;color:var(--ink2);line-height:1.8">右侧 Demo 是 S2 产出的 HTML 版式经 S3 转成 .docx 后的视觉结果。点击右侧清单，可在页面上定位对应版式要素——这正是「美化」技能实际负责的部分。</p>
+      <div class="note warn" style="margin-top:12px"><strong>边界提醒</strong>：S3 是本轮链路终点。生成完成后再说「顺便把标题改一下」属于<strong>下一轮请求</strong>，会重新路由到编辑链路，而不是在流水线里续做。</div>
+      <div class="deliver" style="margin-top:14px"><span class="ext">TIP</span> 想要版式稳定，第一轮就把「封面 / 目录 / 表格 / 页眉页脚」一次说清</div>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="demo-bar"><span class="dots"><i></i><i></i><i></i></span><span class="ttl">效果展示 · Word 研报版式</span><div class="right"><span class="tag t-doc">S2 → S3</span><span class="tag t-brand">可交互</span></div></div>
+    <div class="demo-body">
+      <div class="word-layout">
+        <div class="word-stage">
+          <div class="paper" id="wordPaper">
+            <div class="paper-head"><span>研发中心 · 技术复盘系列</span><span>INTERNAL</span></div>
+            <div class="paper-body">
+              <div class="doc-kicker" data-hl="kicker">内部资料 · 请勿外传</div>
+              <h4 data-hl="title">AI 原生研发工作流<br>落地实践与效能评估</h4>
+              <div class="doc-meta" data-hl="meta">编制：研发中心　|　版本 V1.2　|　2026-11-10</div>
+              <h5 data-hl="h">一、背景与目标</h5>
+              <p data-hl="para">本报告面向 2026 年度研发效能复盘，覆盖需求交付周期、代码生成采纳率与缺陷回归率三类指标。数据口径统一为季度汇总，剔除试验性项目，以保证同比可比性。</p>
+              <h5>二、关键指标</h5>
+              <table class="doc-table" data-hl="table">
+                <thead><tr><th>指标</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th></tr></thead>
+                <tbody>
+                  <tr><td>需求交付周期（天）</td><td>12.4</td><td>10.8</td><td>9.1</td><td>7.6</td></tr>
+                  <tr><td>生成代码采纳率</td><td>41%</td><td>56%</td><td>68%</td><td>74%</td></tr>
+                  <tr><td>缺陷回归率</td><td>6.2%</td><td>4.8%</td><td>3.9%</td><td>3.1%</td></tr>
+                  <tr><td>综合效能指数</td><td>100</td><td>118</td><td>136</td><td>152</td></tr>
+                </tbody>
+              </table>
+              <h5>三、结论与建议</h5>
+              <p>效能提升主要来自结构化编辑与语义索引的引入，而非单纯增加生成量。建议下一阶段把重点放在跨仓库上下文复用与回归验证自动化。</p>
+            </div>
+            <div class="paper-foot" data-hl="foot">— 1 —</div>
+          </div>
+        </div>
+        <aside class="word-aside">
+          <h6>版式要素清单</h6>
+          <div class="sub">点击任一项，在左侧文档中高亮定位</div>
+          <button class="hl-btn on" data-target="kicker" data-desc="密级 / 封面标识：由 formatter 按体裁推断，研报类文档自动带内部资料标记与竖排装饰。">封面与密级标识</button>
+          <button class="hl-btn" data-target="title" data-desc="主标题层级：字号、字重、行距与折行由 design token 统一控制，避免手工调格式造成的层级漂移。">标题层级</button>
+          <button class="hl-btn" data-target="meta" data-desc="元信息区：编制单位 / 版本 / 日期，用细分隔线与正文断开，属于研报体裁的固定区块。">元信息区</button>
+          <button class="hl-btn" data-target="h" data-desc="章节标题：统一编号与间距，后续转 DOCX 时可映射为大纲级别，用于自动生成目录。">章节标题与目录锚点</button>
+          <button class="hl-btn" data-target="para" data-desc="正文段落：首行缩进、两端对齐、统一行距；这些是「美化」与「编辑」的分界线——抽象诉求交给 formatter。">正文排版</button>
+          <button class="hl-btn" data-target="table" data-desc="三线表：仅保留顶线、表头线与底线，数字右对齐；表格规范是专业文档最容易被忽略的细节。">规范表格（三线表）</button>
+          <button class="hl-btn" data-target="foot" data-desc="页眉页脚：页眉含文档系列名，页脚居中页码；由 HTML 版式转换时写入 OOXML 节属性。">页眉与页脚</button>
+          <div class="hl-result" id="hlResult">密级 / 封面标识：由 formatter 按体裁推断，研报类文档自动带内部资料标记与竖排装饰。</div>
+        </aside>
+      </div>
+    </div>
+    <div class="demo-cap">说明：此处为页面内高保真版式示意（纯 HTML/CSS 绘制），用于展示技能产出的视觉结构与设计决策点，非实际 .docx 文件。</div>
+  </div>
+</section>
+
+<!-- ================= 03 SHEET ================= -->
+<section class="sec" id="sheet">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">03</span> EXCEL / 全新工作簿生成</div>
+    <h2>workbuddy-sheet-generation：生成一份「能直接用」的表</h2>
+  </div>
+
+  <div class="skill-head">
+    <div class="skill-ico" style="background:var(--sheet)">X</div>
+    <div>
+      <h3>新表生成链路</h3>
+      <div class="sid">workbuddy-sheet-generation · openpyxl 直写范式</div>
+      <p>判定条件只有一个：<strong>用户要的是一份位于新路径的全新 .xlsx</strong>。参考材料可以是纯文字、PDF / DOCX / PPTX，也可以是只读的源表 (.xlsx/.xls/.csv/.tsv) 或在线文档——源文件绝不写回。主智能体读设计准则后直接编写 openpyxl 脚本一次成表，不委派子智能体。</p>
+    </div>
+    <div class="head-tags"><span class="tag t-sheet">仅新建</span><span class="tag t-gray">不做原地编辑</span></div>
+  </div>
+
+  <div class="facts">
+    <div class="card fact"><div class="lbl">触发说法</div><div class="val">「<b>生成 / 新建 / 做一份 / 整理成一份新表 / 汇总成新表</b>」<br><span style="color:var(--ink3)">反例：改这份表 / 加一列 / 排序 / 透视 / 清洗 → 不属于本技能</span></div></div>
+    <div class="card fact"><div class="lbl">输入</div><div class="val">纯文字需求；<b>pdf / docx / pptx</b> 参考；<b>xlsx / xls / csv / tsv</b> 只读参考；在线文档（docs.qq.com / file_id）</div></div>
+    <div class="card fact"><div class="lbl">输出</div><div class="val">本地 <b>.xlsx</b>；公式可联动、带条件格式与冻结表头；写入 OOXML 标题 + <b>AIGC 隐式标识</b></div></div>
+  </div>
+
+  <div class="mini-title">五步执行流程</div>
+  <div class="flow">
+    <div class="flow-step"><span class="n">STEP 1</span><b>推断与命名</b><span>推断展示标题与绝对路径，不反问；同名文件加时间戳不覆盖</span></div>
+    <div class="flow-step"><span class="n">STEP 2</span><b>附件预处理</b><span>extract.py 统一抽取为 Markdown，图片另出缩略图</span></div>
+    <div class="flow-step"><span class="n">STEP 3</span><b>读设计准则</b><span>必读 schema_principle.md，识别场景原型并读对应范式</span></div>
+    <div class="flow-step"><span class="n">STEP 4</span><b>编写并执行脚本</b><span>openpyxl 一次成表，公式写字符串、坐标由锚点推导</span></div>
+    <div class="flow-step"><span class="n">STEP 5</span><b>校验与交付</b><span>recalc 公式零错误 → 写 AIGC 标识 → 交付</span></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="card pad">
+      <div class="mini-title">八种场景原型：按工作方式组合，不按行业套模板</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        <span class="tag t-sheet">记录型</span><span class="tag t-sheet">计划型</span><span class="tag t-sheet">打卡 / 进度型</span><span class="tag t-sheet">统计型</span>
+        <span class="tag t-sheet">表单 / 打印型</span><span class="tag t-sheet">看板型</span><span class="tag t-sheet">日历 / 排程型</span><span class="tag t-sheet">计算模型型</span>
+      </div>
+      <p style="font-size:13px;color:var(--ink2);line-height:1.8;margin:14px 0 0">一个需求可命中多个原型，按<strong>核心交付目标</strong>定主原型，其余作补充区块。例如「项目预算跟踪表」＝ 计划型 + 统计型 + 计算模型型。<br>用户只说「做个表」且无线索时，默认按<strong>记录型轻量模板</strong>处理，不主动复杂化。</p>
+      <div class="note" style="margin-top:14px">设计目标只有一句：<strong>能直接用、结构清楚、公式联动、视觉克制、便于维护、不过度设计</strong>。</div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">四条最容易踩的工程约束</div>
+      <ol style="margin:0;padding-left:19px;font-size:13.1px;color:var(--ink2);line-height:1.95">
+        <li><strong>坐标锚点优先</strong>：先定标题 / 表头 / 数据 / 合计的真实行号，所有公式、填充、条件格式范围都由锚点推导，禁止先写默认第 2 行再改布局。</li>
+        <li><strong>公式写 Excel 字符串</strong>：<span class="mono">ws['B6'] = '=SUM(B3:B5)'</span>，不在 Python 里算好写死；除法 / 比率当场带分母空值与除零保护。</li>
+        <li><strong>类型系统落地</strong>：日期用 <span class="mono">date</span> 对象、金额用数值 + <span class="mono">¥#,##0.00</span>、百分比存小数比例，避免全写成字符串导致公式无法求值。</li>
+        <li><strong>颜色转换</strong>：CSS <span class="mono">#RRGGBB</span> 统一经 <span class="mono">xl_color()</span> 加 Alpha，图表颜色则传不带 # 的六位 RGB。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="note warn" style="margin-bottom:18px"><strong>交付前的两道硬校验</strong>：① 含公式的工作簿必须跑 <code>recalc.py</code>——openpyxl 写入的公式不带缓存值，不重算就在多数预览器里显示空白；判定只看返回 JSON 的 <code>status=success / total_errors=0</code>，<strong>不能把 exit=0 当通过</strong>（<code>errors_found</code> 的退出码也是 0）。② 重算之后才能写 AIGC 隐式标识（GB 45438-2025），先打标会被重序列化覆盖。</div>
+
+  <div class="case">
+    <div class="card pad">
+      <div class="mini-title">实践案例 · 多源参考成表</div>
+      <div class="bubble bubble-user"><div class="who">用户</div>基于这份 Q3 季报 PDF 和明细 CSV，<strong>另做一份</strong>《2026 效能汇总》新表，要有汇总看板、明细和达成率。</div>
+      <div class="bubble bubble-bot"><div class="who">智能体</div>命中「统计型 + 看板型」原型 → 拆为 <span class="mono">汇总看板 / 明细 / 说明</span> 三个 sheet，汇总引用明细；公式列写 Excel 公式并带保护；重算零错误后写标识。</div>
+      <div class="deliver"><span class="ext">XLSX</span> 2026效能汇总.xlsx <span style="margin-left:auto;color:var(--ink4)">3 个 sheet</span></div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">效果展示 · 点击单元格看公式</div>
+      <p style="font-size:13.3px;color:var(--ink2);line-height:1.8">右侧工作簿是技能产出的视觉还原。点击任意单元格，公式栏会显示它的<strong>原始内容</strong>——公式单元格显示公式本身而非算好的值，这正是「公式联动」的含义。底部可切换 sheet。</p>
+      <div class="note ok" style="margin-top:12px">源文件只是<strong>只读参考</strong>：CSV 里的数据被读进新表，但源文件一个字节都不会被改动。</div>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="demo-bar"><span class="dots"><i></i><i></i><i></i></span><span class="ttl">效果展示 · Excel 工作簿（3 个 sheet）</span><div class="right"><span class="tag t-sheet">公式可联动</span><span class="tag t-brand">可交互</span></div></div>
+    <div class="demo-body">
+      <div class="xl-window">
+        <div class="xl-ribbon">
+          <span class="rb">等线</span><span class="rb">11</span><span class="sep"></span>
+          <span class="rb b">B</span><span class="rb i">I</span><span class="rb u">U</span><span class="sep"></span>
+          <span class="rb act">≡ 左对齐</span><span class="rb">▤ 边框</span><span class="rb">◧ 填充</span><span class="sep"></span>
+          <span class="rb">Σ 自动求和</span><span class="rb">⇅ 筛选</span><span class="rb">▣ 冻结</span>
+        </div>
+        <div class="xl-formula">
+          <input class="xl-name" id="xlName" readonly value="D9"><span class="xl-fx">fx</span>
+          <input class="xl-fx-input" id="xlFx" readonly value="=AVERAGE(B9:E9)/100">
+        </div>
+        <div class="xl-scroll"><table class="xl-table" id="xlTable"></table></div>
+        <div class="xl-tabs">
+          <button class="xl-tab on" data-sheet="汇总看板">汇总看板</button>
+          <button class="xl-tab" data-sheet="明细">明细</button>
+          <button class="xl-tab" data-sheet="说明">说明</button>
+          <span class="xl-hint" id="xlHint">点击单元格查看公式 · 切换 sheet 查看不同区块</span>
+        </div>
+      </div>
+    </div>
+    <div class="demo-cap">说明：页面内高保真工作簿示意。表头冻结、条件格式、合计行、公式栏与 sheet 切换均为可交互还原，用于展示「结构清楚 + 公式联动 + 视觉克制」的设计准则。</div>
+  </div>
+</section>
+
+<!-- ================= 04 PPTX ================= -->
+<section class="sec" id="pptx">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">04</span> PPT / 演示文稿</div>
+    <h2>workbuddy-pptx：一个技能，三条路由</h2>
+  </div>
+
+  <div class="skill-head">
+    <div class="skill-ico" style="background:var(--ppt)">P</div>
+    <div>
+      <h3>PPT 生成 / 理解 / 编辑</h3>
+      <div class="sid">workbuddy-pptx → create-from-scratch / understand / edit-existing</div>
+      <p>所有本地 PPT 的内容工作都归这一个技能，再按任务类型分三条路径：<strong>从零或从材料生成</strong>、<strong>只读理解与问答</strong>、<strong>在既有 pptx 上改稿</strong>。生成链路会在创建空白文件后立刻打开预览，随后逐页制作，用户能实时看到进度。</p>
+    </div>
+    <div class="head-tags"><span class="tag t-ppt">生成</span><span class="tag t-ppt">理解</span><span class="tag t-ppt">编辑</span></div>
+  </div>
+
+  <div class="grid3" style="margin-bottom:18px">
+    <div class="card pad"><span class="tag t-ppt">路由 A</span><div class="mini-title" style="margin-top:10px">从零 / 从材料生成</div><p style="font-size:13px;color:var(--ink2);line-height:1.75;margin:0">6 步：需求对齐 → 素材收集（必要时联网）→ 风格路由与 DESIGN.md → 创建空白 pptx 并预览 → 逐页生成 → 结束。材料由技能自行解析，不另起一套提取。</p></div>
+    <div class="card pad"><span class="tag t-ppt">路由 B</span><div class="mini-title" style="margin-top:10px">理解已有 PPT / 问答</div><p style="font-size:13px;color:var(--ink2);line-height:1.75;margin:0">只读，不修改源文件。按页给出文字、表格、图表数据与形状坐标；无法从结构确认的关系（连线方向、视觉布局）会如实说明信息不足，不靠位置或颜色猜。</p></div>
+    <div class="card pad"><span class="tag t-ppt">路由 C</span><div class="mini-title" style="margin-top:10px">编辑既有 pptx</div><p style="font-size:13px;color:var(--ink2);line-height:1.75;margin:0">实时可视编辑：先打开预览 → 取真实 file_id → <strong>用到一个工具就先查一个 schema</strong> → 调用 → 保存。页码 / 形状索引 0-based，坐标单位 pt；保存后不主动关闭文件。</p></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="card pad">
+      <div class="mini-title">生成链路的逐页闭环</div>
+      <div class="flow" style="margin-bottom:12px">
+        <div class="flow-step"><span class="n">01</span><b>需求对齐</b><span>主题 / 目标 / 受众 / 页数；只问缺失项，一轮 ≤3 问</span></div>
+        <div class="flow-step"><span class="n">02</span><b>风格路由</b><span>通用 / 学术 / 投研 / 红金政务 / 个人介绍</span></div>
+        <div class="flow-step"><span class="n">03</span><b>逐页制作</b><span>配图 → 写页 → 校验 → 提交，未通过则修同一页</span></div>
+        <div class="flow-step"><span class="n">04</span><b>交付</b><span>全部页完成即结束，不额外复检</span></div>
+      </div>
+      <div class="note">逐页校验的硬约束：<strong>先把页面写入 pptx，再做布局检查</strong>；页下标由智能体自行维护（首页 0），不按文件名或目录排序猜测。</div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">风格路由：先看场合，再谈配色</div>
+      <table class="tbl" style="border:0">
+        <thead><tr><th>风格</th><th>核心调性</th><th>适用</th></tr></thead>
+        <tbody>
+          <tr><td><strong>通用</strong></td><td>自由设计、按需推导</td><td>产品介绍、工作总结、技术分享</td></tr>
+          <tr><td>学术风</td><td>可信、证据驱动、蓝白克制</td><td>开题 / 答辩 / 科研结题</td></tr>
+          <tr><td>投资分析</td><td>严谨、证据留痕、假设透明</td><td>行业研究、投委会、尽调</td></tr>
+          <tr><td>红金政务风</td><td>庄重、中文优先</td><td>机关 / 国企汇报、党课</td></tr>
+          <tr><td>个人介绍</td><td>具体优于形容、有节奏</td><td>面试、破冰、人物分享</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn" style="margin-top:12px">判断标准是<strong>是否明确属于某垂直领域</strong>；工作总结、技术分享等大多数场景走通用路线，不硬套风格。</div>
+    </div>
+  </div>
+
+  <div class="case">
+    <div class="card pad">
+      <div class="mini-title">实践案例 · 从表格到汇报</div>
+      <div class="bubble bubble-user"><div class="who">用户</div>把刚生成的《2026 效能汇总.xlsx》做成 12 页季度汇报，面向管理层，重点讲趋势和结论。</div>
+      <div class="bubble bubble-bot"><div class="who">智能体</div>走「从材料生成」：读取 xlsx → 通用风格（工作总结类）→ 对齐页数与受众 → 创建空白 pptx 并打开预览 → 逐页制作（封面 / 目录 / 趋势 / 结论…），每页写完即校验。</div>
+      <div class="deliver"><span class="ext">PPTX</span> 2026季度效能汇报.pptx <span style="margin-left:auto;color:var(--ink4)">逐页实时预览</span></div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">效果展示 · 幻灯片预览</div>
+      <p style="font-size:13.3px;color:var(--ink2);line-height:1.8">右侧是逐页生成的视觉示意：点击左侧缩略图或下方按钮切换页面。缩略图由页面本体等比缩放而来，与实际页面一致。</p>
+      <div class="note" style="margin-top:12px">对客沟通只用<strong>用户术语</strong>（内容大纲 / 风格设计 / 创建演示文稿 / 逐页制作 / 交付），内部实现细节不出现在进度汇报里——这是本技能明确的协作约定。</div>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="demo-bar"><span class="dots"><i></i><i></i><i></i></span><span class="ttl">效果展示 · 12 页汇报中的 4 页节选</span><div class="right"><span class="tag t-ppt">通用风格</span><span class="tag t-brand">可交互</span></div></div>
+    <div class="demo-body">
+      <div class="ppt-window">
+        <div class="ppt-thumbs" id="pptThumbs"></div>
+        <div class="ppt-main">
+          <div class="ppt-stage" id="pptStage">
+            <div class="slide-view on">
+              <div class="sv cover"><div class="rule"></div><div class="deco"></div>
+                <div class="kicker">QUARTERLY REVIEW · 2026</div>
+                <div class="big">研发效能<br>季度复盘</div>
+                <div class="sub">从工具引入到工作流重构 · 面向管理层</div>
+                <div class="foot">研发中心　|　2026 Q4</div>
+              </div>
+            </div>
+            <div class="slide-view">
+              <div class="sv"><div class="h2">本次汇报提纲</div><div class="underline"></div>
+                <div class="toc-row"><b>01</b> 季度关键指标与趋势</div>
+                <div class="toc-row"><b>02</b> 效能提升的归因分析</div>
+                <div class="toc-row"><b>03</b> 下一阶段建议与资源</div>
+                <div class="foot">02 / 12</div>
+              </div>
+            </div>
+            <div class="slide-view">
+              <div class="sv" style="display:grid;grid-template-columns:1.35fr 1fr;gap:26px">
+                <div>
+                  <div class="h2">综合效能指数持续上行</div><div class="underline"></div>
+                  <div class="bars">
+                    <div class="bar" style="height:58%"><span>100</span></div>
+                    <div class="bar" style="height:69%"><span>118</span></div>
+                    <div class="bar" style="height:80%"><span>136</span></div>
+                    <div class="bar" style="height:92%"><span>152</span></div>
+                    <div class="bar" style="height:47%;background:#E4E9F2"><span style="color:#8A97A8">目标</span></div>
+                  </div>
+                  <div class="bar-lbl"><i>Q1</i><i>Q2</i><i>Q3</i><i>Q4</i><i>基线</i></div>
+                </div>
+                <div style="padding-top:14px">
+                  <div class="pt" style="margin-bottom:12px">Q4 综合指数 152，较 Q1 提升 52%</div>
+                  <div class="pt" style="margin-bottom:12px">需求交付周期由 12.4 天压缩至 7.6 天</div>
+                  <div class="pt">生成代码采纳率突破 74%，且缺陷回归率同步下行</div>
+                </div>
+                <div class="foot" style="grid-column:1/-1">05 / 12</div>
+              </div>
+            </div>
+            <div class="slide-view">
+              <div class="sv"><div class="h2">结论与下一阶段</div><div class="underline"></div>
+                <div class="concl">
+                  <div class="concl-card"><b>+52%</b><span>综合效能指数<br>较年初提升</span></div>
+                  <div class="concl-card"><b>−39%</b><span>需求交付周期<br>12.4 → 7.6 天</span></div>
+                  <div class="concl-card"><b>3</b><span>下阶段重点<br>上下文复用 / 回归自动化 / 度量口径</span></div>
+                </div>
+                <div class="pt" style="margin-top:22px;font-size:14px">建议：把投入从「增加生成量」转向「提升上下文质量与验证自动化」。</div>
+                <div class="foot">12 / 12</div>
+              </div>
+            </div>
+          </div>
+          <div class="ppt-controls">
+            <button class="ppt-btn" id="pptPrev">← 上一页</button>
+            <span class="ppt-page" id="pptPage">1 / 4</span>
+            <button class="ppt-btn" id="pptNext">下一页 →</button>
+            <span style="margin-left:auto" class="tag t-gray">点击缩略图或使用 ← → 键</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-cap">说明：页面内高保真幻灯片示意（CSS 绘制 + 等比缩放缩略图），用于展示逐页生成的版式与叙事结构，非实际 .pptx 文件。</div>
+  </div>
+</section>
+
+<!-- ================= 05 PDF ================= -->
+<section class="sec" id="pdf">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">05</span> PDF / 只读理解</div>
+    <h2>workbuddy-pdf：读完能定位到原页，才算读懂</h2>
+  </div>
+
+  <div class="skill-head">
+    <div class="skill-ico" style="background:var(--pdf)">A</div>
+    <div>
+      <h3>PDF 阅读与结构化提取</h3>
+      <div class="sid">workbuddy-pdf · 本地 CLI（run.sh / run.ps1）</div>
+      <p><strong>只读，不做生成或编辑。</strong>覆盖总结、问答、查事实、提表格、看版面与核对图表。当前版本不支持产出 PDF 文件，也不允许用浏览器打印或第三方库自行拼一条生成链路；遇到这类需求会直接说明，并建议改投 DOCX / Markdown / 表格。</p>
+    </div>
+    <div class="head-tags"><span class="tag t-pdf">只读</span><span class="tag t-warn">不生成 PDF</span></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="card pad">
+      <div class="mini-title">六种提取方式：先选路径，再读全文</div>
+      <table class="tbl" style="border:0">
+        <thead><tr><th>目标</th><th>参数</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>总结 / 问答 / 查事实</td><td><span class="mono">-f md</span></td><td>较快的文字提取，<strong>默认首选</strong></td></tr>
+          <tr><td>只要纯文字</td><td><span class="mono">-f txt</span></td><td>最轻量</td></tr>
+          <tr><td>版面归组后的正文与表格</td><td><span class="mono">-f md-plain</span></td><td>走完整版面识别</td></tr>
+          <tr><td>段落 / 表格 / 图片结构</td><td><span class="mono">-f structure</span></td><td>完整版面识别</td></tr>
+          <tr><td>提取表格单元格</td><td><span class="mono">-f table --table-format json</span></td><td>输出目录；CSV 不保留合并跨度</td></tr>
+          <tr><td>扫描页 / 图表 / 公式核对</td><td><span class="mono">-f png --dpi 150</span></td><td>渲染页图，看图核对版面</td></tr>
+        </tbody>
+      </table>
+      <div class="note" style="margin-top:13px">重要结论要能<strong>定位到原 PDF</strong>；引用页码用文件页序，印刷页码不同时注明。<span class="mono">structure</span> 的 <span class="mono">source.page</span> 从 <strong>0</strong> 开始，Markdown 页注释与 <span class="mono">page-0001.png</span> 从 <strong>1</strong> 开始。</div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">调用与排错</div>
+      <div class="code">sh "&lt;skill_dir&gt;/scripts/run.sh" --help
+<span class="c"># 每份 PDF 用独立工作目录，输出路径明确指定</span>
+workdir=$(mktemp -d /tmp/pdf-read.XXXXXX)
+sh "&lt;skill_dir&gt;/scripts/run.sh" "/abs/input.pdf" \
+   "$workdir/content.md" -f md -q 2&gt;"$workdir/extract.log"
+<span class="c"># 需要图片时追加 --image-dir "$workdir/images"</span>
+<span class="c"># 加密 PDF 用 -p &lt;password&gt;（回复中不复述密码）</span></div>
+      <table class="tbl" style="border:0;margin-top:14px">
+        <thead><tr><th>退出码</th><th>含义与处置</th></tr></thead>
+        <tbody>
+          <tr><td><strong>69</strong></td><td>组件尚未就绪，后台下载中。隔几秒<strong>重试同一条命令</strong>；不要自行 pip / brew 安装同名工具替代</td></tr>
+          <tr><td><strong>127</strong></td><td>本机确实无此能力，才考虑说明限制或换读取方式</td></tr>
+          <tr><td>0 / 2 / 3 / 4 / 5 / 6</td><td>CLI 自身：成功 / 用法 / 输入输出 / PDF 无法读取 / 转换失败 / 其他异常</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn" style="margin-top:13px">扫描页会被自动检测，但<strong>发布包不自带 OCR</strong>，需本机装 PaddleOCR 或 Tesseract。遇到扫描页报错不等于空白页；扫描表格的行列与合并跨度是近似识别，须核对原页。</div>
+    </div>
+  </div>
+
+  <div class="case">
+    <div class="card pad">
+      <div class="mini-title">实践案例 · 带出处的结论</div>
+      <div class="bubble bubble-user"><div class="who">用户</div>这份 42 页研报里，效能提升的关键结论在哪几页？把相关数据表也给我。</div>
+      <div class="bubble bubble-bot"><div class="who">智能体</div>先用 <span class="mono">-f md</span> 看篇幅与章节 → 搜关键词命中处读上下文 → 表格用 <span class="mono">-f table</span> 提取 → 影响结论的趋势图再用 <span class="mono">-f png</span> 看原页核对 → 给出结论 + 页码 + 数据。</div>
+      <div class="deliver"><span class="ext">OUT</span> 结论摘录 + 表格数据 + 页码定位 <span style="margin-left:auto;color:var(--ink4)">源文件不变</span></div>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">效果展示 · 提取格式切换</div>
+      <p style="font-size:13.3px;color:var(--ink2);line-height:1.8">右侧模拟阅读器：切换提取格式看不同结果，点击黄色高亮看「这段结论定位到哪一页」。</p>
+      <div class="note warn" style="margin-top:12px"><strong>最关键的一条边界</strong>：不要问「帮我导出一份 PDF」。当前不支持 PDF 生成 / 编辑，正确做法是让它把内容整理成 DOCX 或表格，再由你自行导出。</div>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="demo-bar"><span class="dots"><i></i><i></i><i></i></span><span class="ttl">效果展示 · PDF 阅读器与结构化提取</span><div class="right"><span class="tag t-pdf">只读</span><span class="tag t-brand">可交互</span></div></div>
+    <div class="demo-body">
+      <div class="pdf-window">
+        <div class="pdf-toolbar">
+          <span class="pdf-file"><span class="ic">PDF</span> 2026研发效能白皮书.pdf</span>
+          <span class="pdf-zoom">−　100%　+</span>
+          <span class="pdf-page-ind">3 / 42</span>
+        </div>
+        <div class="pdf-body">
+          <div class="pdf-side">
+            <div class="st">文档目录</div>
+            <div class="toc-i">1　研究背景与方法</div>
+            <div class="toc-i">2　指标口径定义</div>
+            <div class="toc-i on">3　实验结果</div>
+            <div class="toc-i" style="padding-left:18px">3.1　样本与分组</div>
+            <div class="toc-i" style="padding-left:18px">3.2　效能对比</div>
+            <div class="toc-i" style="padding-left:18px">3.3　归因分析</div>
+            <div class="toc-i">4　讨论与局限</div>
+            <div class="toc-i">5　结论与建议</div>
+          </div>
+          <div class="pdf-page-wrap">
+            <div class="pdf-page">
+              <h6>3.2　效能对比</h6>
+              <p>在统一口径下，四个季度的综合效能指数呈单调上升趋势。<mark data-loc="第 3 页 · 3.2 节 · 结论句" class="on">Q4 综合效能指数达到 152，较 Q1 提升 52%，且缺陷回归率同步下降至 3.1%</mark>，说明效率提升并未以质量下降为代价。</p>
+              <table class="ptable"><thead><tr><th>指标</th><th>Q1</th><th>Q4</th></tr></thead>
+                <tbody><tr><td>交付周期（天）</td><td>12.4</td><td>7.6</td></tr>
+                <tr><td>采纳率</td><td>41%</td><td>74%</td></tr>
+                <tr><td>缺陷回归率</td><td>6.2%</td><td>3.1%</td></tr></tbody></table>
+              <p>进一步的分项回归显示，<mark data-loc="第 3 页 · 3.2 节末段 · 归因句">贡献主要来自结构化编辑与语义索引的引入，而非单纯增加代码生成量</mark>。该结论在第 5 章以不同样本重复验证。</p>
+              <p style="color:#9AA5B5;font-size:9.5px">— 3 —</p>
+            </div>
+          </div>
+          <div class="pdf-extract">
+            <div class="et">提取结果</div>
+            <div class="ed">选择格式，查看该路径下的产出形态</div>
+            <div class="fmt-grid" id="fmtGrid">
+              <button class="fmt on" data-fmt="md">md</button>
+              <button class="fmt" data-fmt="txt">txt</button>
+              <button class="fmt" data-fmt="md-plain">md-plain</button>
+              <button class="fmt" data-fmt="structure">structure</button>
+              <button class="fmt" data-fmt="table">table</button>
+              <button class="fmt" data-fmt="png">png</button>
+            </div>
+            <div class="ext-box" id="extBox"></div>
+            <div class="ext-loc" id="extLoc">点击页面中的黄色高亮，查看定位信息。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-cap">说明：页面内阅读器示意。格式按钮对应技能真实的 6 种提取路径；黄色高亮演示「结论 → 原页定位」的复核要求。本技能只读，不产出 PDF 文件。</div>
+  </div>
+</section>
+
+<!-- ================= 06 组合实战 ================= -->
+<section class="sec" id="pipeline">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">06</span> END-TO-END / 组合实战</div>
+    <h2>一次任务，串起四个技能</h2>
+    <p class="sec-lead">真实工作很少只用一种格式。下面是一条典型链路：<strong>PDF 取材 → Excel 结构化 → Word 成文 → PPT 表达</strong>。关键在于每一步的输出恰好是下一步能消费的输入，且每一步都停在正确的技能边界内。</p>
+  </div>
+
+  <div class="chain">
+    <div class="chain-step"><div class="ci" style="background:var(--pdf)">1</div><b>读：PDF 取材</b><p>42 页行业研报，提取关键结论与数据表，逐条记录页码</p><span class="out">workbuddy-pdf</span></div>
+    <div class="chain-step"><div class="ci" style="background:var(--sheet)">2</div><b>算：生成新表</b><p>把摘录的数据做成全新 .xlsx，汇总引用明细，公式联动</p><span class="out">sheet-generation</span></div>
+    <div class="chain-step"><div class="ci" style="background:var(--doc)">3</div><b>写：正式报告</b><p>起草复盘报告 .docx，带封面、目录与指标表</p><span class="out">workbuddy-docx</span></div>
+    <div class="chain-step"><div class="ci" style="background:var(--ppt)">4</div><b>讲：汇报 deck</b><p>以 xlsx 与报告为材料，逐页生成管理层汇报</p><span class="out">workbuddy-pptx</span></div>
+    <div class="chain-step"><div class="ci" style="background:var(--brand)">5</div><b>验：可复核闭环</b><p>数字能回到原页，公式能重算，文档与幻灯片口径一致</p><span class="out">全链路</span></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="card pad">
+      <div class="mini-title">逐轮说法示例</div>
+      <div class="code">① 读这份研报，把「效能」相关的结论和数据表摘出来，
+   每条标上页码。
+② 基于刚才的数据，另做一份《效能汇总.xlsx》，
+   要汇总看板和明细两个 sheet。
+③ 起草一份《2026 研发效能复盘》报告，带封面和目录。
+④ 用汇总表和报告做一份 12 页的管理层汇报 PPT。</div>
+      <p style="font-size:12.8px;color:var(--ink3);line-height:1.75;margin:12px 0 0">四句话分四轮，每轮都是独立的意图识别与路由。第 ② 句的「<strong>另做一份</strong>」是命中新建工作簿技能的关键信号；若改成「在这个表里加个汇总 sheet」，就会落到编辑链路。</p>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">为什么这样排</div>
+      <table class="tbl" style="border:0">
+        <thead><tr><th>环节</th><th>角色</th><th>不越界的地方</th></tr></thead>
+        <tbody>
+          <tr><td>PDF</td><td>只读取材</td><td>不要求它导出 PDF；结论保留页码便于回溯</td></tr>
+          <tr><td>Excel</td><td>结构化中间态</td><td>数字进公式而非写死，后续改口径可联动</td></tr>
+          <tr><td>Word</td><td>正式文本</td><td>纯意图创作，不塞源材料给 docx 技能</td></tr>
+          <tr><td>PPT</td><td>表达层</td><td>材料交给 pptx 技能自行解析，不预先拆成碎片</td></tr>
+        </tbody>
+      </table>
+      <div class="note ok" style="margin-top:13px">一条反例：让 PDF 技能「把结果生成一份 PDF 报告」——当前明确不支持，也不允许绕道浏览器打印或第三方库。正确做法是让它整理成 DOCX / Markdown，再由你导出。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 指令生成器 ================= -->
+<section class="sec" id="composer">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">07</span> PLAYGROUND / 指令生成器</div>
+    <h2>把「想做什么」翻成「该怎么说」</h2>
+    <p class="sec-lead">选目标与场景，生成一段可直接粘进 WorkBuddy 的指令，同时给出它会走哪条链路、交付什么、以及要避开的说法。全部在页面内本地计算，不联网。</p>
+  </div>
+
+  <div class="card pad composer">
+    <div>
+      <div class="form-row"><label for="goal">目标产物</label>
+        <select id="goal">
+          <option value="docx">Word 文档（.docx）</option>
+          <option value="sheet">Excel 新表（.xlsx）</option>
+          <option value="pptx">PPT 演示（.pptx）</option>
+          <option value="pdf">PDF 阅读理解</option>
+          <option value="chain">组合链路</option>
+        </select>
+      </div>
+      <div class="form-row"><label for="scene">使用场景</label><select id="scene"></select></div>
+      <div class="form-row"><label for="topic">主题 / 文件名（可改）</label><input id="topic" value="2026 年度研发效能复盘"></div>
+      <button class="btn" id="genBtn">◆ 生成推荐指令</button>
+      <div class="note" style="margin-top:14px;font-size:12.6px">小提示：措辞里带上<strong>「新建 / 另做一份 / 起草 / 基于这份材料」</strong>这类动词，能显著提升路由命中率；含糊的「帮我处理一下」会触发反问。</div>
+    </div>
+    <div>
+      <div class="out-head"><b>推荐指令</b><span class="tag t-brand">可直接复制</span><button class="btn ghost copy" id="copyBtn" style="padding:5px 12px;font-size:12px">复制</button></div>
+      <div class="code" id="promptOut" style="min-height:118px;white-space:pre-wrap"></div>
+      <div class="expect">
+        <div><div class="k">走的链路</div><div class="v" id="outRoute">—</div></div>
+        <div><div class="k">预期交付</div><div class="v" id="outDeliver">—</div></div>
+        <div><div class="k">避坑提醒</div><div class="v" id="outWarn">—</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 速查 ================= -->
+<section class="sec" id="cheatsheet">
+  <div class="sec-head">
+    <div class="sec-kicker"><span class="no">08</span> CHEAT SHEET / 速查与避坑</div>
+    <h2>一页速查，八条避坑</h2>
+  </div>
+
+  <table class="tbl" style="margin-bottom:22px">
+    <thead><tr><th style="width:15%">我想…</th><th style="width:22%">就这么说</th><th>会走哪</th><th>拿到什么</th></tr></thead>
+    <tbody>
+      <tr><td><strong>写一份新 Word</strong></td><td>「起草一份《…》报告，带封面和目录」</td><td><span class="tag t-doc">docx · S1→S2→S3</span></td><td>本地 .docx，自动预览</td></tr>
+      <tr><td><strong>让旧文档更好看</strong></td><td>「把这份文档美化一下，做得更专业」</td><td><span class="tag t-doc">docx · beautify_only</span></td><td>重排后的 .docx</td></tr>
+      <tr><td><strong>改某个具体样式</strong></td><td>「把标题改成宋体三号」</td><td><span class="tag t-gray">编辑链路</span></td><td>原文件原位改动</td></tr>
+      <tr><td><strong>做一张新表</strong></td><td>「基于这份 CSV <strong>另做一份</strong>汇总表」</td><td><span class="tag t-sheet">sheet-generation</span></td><td>新路径 .xlsx，源 CSV 不变</td></tr>
+      <tr><td><strong>改现有工作簿</strong></td><td>「在这个表里加一列达成率」</td><td><span class="tag t-gray">sheetagent / 编辑链路</span></td><td>源文件本身被更新</td></tr>
+      <tr><td><strong>做 / 看 / 改 PPT</strong></td><td>「做一份汇报」「第 3 页讲了什么」「把封面标题换了」</td><td><span class="tag t-ppt">pptx 三条路由</span></td><td>.pptx / 只读回答 / 原位改稿</td></tr>
+      <tr><td><strong>读 PDF 找结论</strong></td><td>「这份研报的关键结论在哪几页」</td><td><span class="tag t-pdf">pdf · -f md / table / png</span></td><td>结论 + 数据 + 页码</td></tr>
+      <tr><td><strong>导出 PDF</strong></td><td class="mono">（不支持）</td><td><span class="tag t-warn">改投 DOCX / Markdown</span></td><td>由你自行导出</td></tr>
+    </tbody>
+  </table>
+
+  <div class="mini-title" style="margin-top:26px">八条避坑清单</div>
+  <div class="pitfalls">
+    <div class="pitfall"><div><b>把「编辑」说成「美化」</b><span>「字体改宋体五号」「把第二段润色一下」有明确目标值，属编辑，会转交别的技能；只有「更专业 / 更好看」这类需 AI 做设计决策的抽象诉求才进美化链路。</span></div></div>
+    <div class="pitfall"><div><b>给 docx 技能塞源材料</b><span>从零创作链路不接收 DOCX / XLSX / PDF 附件。带材料生成文档要走编辑链路，否则会被判定为不承接并重新路由。</span></div></div>
+    <div class="pitfall"><div><b>S3 之后还想在同一轮继续改</b><span>转换完成即链路终点。后续「顺便改个标题」是下一轮请求，会重新识别意图；需要连续修改请分轮明确提出。</span></div></div>
+    <div class="pitfall"><div><b>把「加一个 sheet」当成新建工作簿</b><span>在既有工作簿内增删 / 重命名 sheet 属于原地编辑，源文件即交付物。只有产出位于<strong>新路径</strong>的独立 .xlsx 才走生成技能。</span></div></div>
+    <div class="pitfall"><div><b>公式写完不重算就交付</b><span>openpyxl 写入的公式没有缓存值，微信 / 邮件 / 多数预览器会显示空白。必须重算到 <span class="mono">status=success, total_errors=0</span>；且判定看 JSON，不看退出码。</span></div></div>
+    <div class="pitfall"><div><b>先打 AIGC 标识再重算</b><span>重算会整包重新序列化，先写的元数据标识会被覆盖。顺序永远是：重算 → 打标 → 交付。</span></div></div>
+    <div class="pitfall"><div><b>编辑 PPT 时凭记忆拼参数</b><span>用到一个工具就先查一个 schema，确认必填项、0-based 索引与 pt 单位；保存后不要主动 close_file，会关掉用户正在看的预览。</span></div></div>
+    <div class="pitfall"><div><b>把扫描页报错当成空白页</b><span>发布包不自带 OCR，扫描页会报错而非留白。需本机 PaddleOCR / Tesseract；扫描表格的合并跨度是近似识别，影响结论的图表务必看原页核对。</span></div></div>
+  </div>
+
+  <div class="grid2" style="margin-top:22px">
+    <div class="card pad">
+      <div class="mini-title">五条最佳实践</div>
+      <ol style="margin:0;padding-left:19px;font-size:13.3px;color:var(--ink2);line-height:2">
+        <li>一句话里说清<strong>产物格式 + 用途 + 必要结构</strong>（封面 / 目录 / 表格 / 页数）</li>
+        <li>区分「新文件」与「改原文件」，用「另做一份」「新建」显式表达</li>
+        <li>多源材料交给目标技能自行解析，不要预先拆成零散片段</li>
+        <li>关键数字保留来源：PDF 给页码，Excel 给公式，PPT 给数据出处</li>
+        <li>交付后先打开预览核对，再做下一轮的局部修改</li>
+      </ol>
+    </div>
+    <div class="card pad">
+      <div class="mini-title">本页是怎么做出来的</div>
+      <p style="font-size:13.3px;color:var(--ink2);line-height:1.85">内容依据四个技能的 <span class="mono">SKILL.md</span> 及其子链路原文整理（Word 编排器、Excel 设计准则、PPT 三条路由、PDF 读取规范、统一路由入口）。页面为<strong>单文件 HTML</strong>：零外部依赖、无 CDN、离线可用；四段效果展示均为原生 HTML/CSS 绘制的可交互示意，不加载任何真实 Office 二进制文件。</p>
+      <div class="note ok" style="margin-top:12px">这也是一种实践示范：当交付物需要「能看、能点、能带走」时，一份自包含的浅色 HTML 往往比一堆附件更省心。</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <div><b>WorkBuddy 办公技能使用及实践</b><br>workbuddy-docx · workbuddy-sheet-generation · workbuddy-pptx · workbuddy-pdf</div>
+    <div style="text-align:right">单文件 HTML · 浅色主题 · 离线可用<br>整理于 2026-11-10 · 内容依据各技能定义原文</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 阅读进度 + 导航高亮 ---------- */
+  var progress = document.getElementById('progress');
+  var links = Array.prototype.slice.call(document.querySelectorAll('#nav a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  function onScroll(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    var cur = -1;
+    sections.forEach(function(s,i){ if(s.getBoundingClientRect().top <= 130) cur = i; });
+    links.forEach(function(a,i){ a.classList.toggle('active', i === cur); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* ---------- 复制 ---------- */
+  function copyText(text, btn){
+    function done(){
+      var old = btn.textContent; btn.textContent = '✓ 已复制';
+      setTimeout(function(){ btn.textContent = old; }, 1600);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
+    } else { fallback(text, done); }
+  }
+  function fallback(text, done){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ /* 静默 */ }
+    document.body.removeChild(ta);
+  }
+
+  /* ---------- Word Demo：版式要素高亮 ---------- */
+  var hlBtns = Array.prototype.slice.call(document.querySelectorAll('.hl-btn'));
+  var hlResult = document.getElementById('hlResult');
+  hlBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#wordPaper [data-hl]').forEach(function(el){ el.classList.remove('hl'); });
+      hlBtns.forEach(function(b){ b.classList.remove('on'); });
+      btn.classList.add('on');
+      var target = document.querySelector('#wordPaper [data-hl="' + btn.dataset.target + '"]');
+      if(target) target.classList.add('hl');
+      hlResult.textContent = btn.dataset.desc;
+    });
+  });
+  if(hlBtns.length){
+    var first = document.querySelector('#wordPaper [data-hl="' + hlBtns[0].dataset.target + '"]');
+    if(first) first.classList.add('hl');
+  }
+
+  /* ---------- Excel Demo：可切换工作簿 ---------- */
+  var sheets = {
+    '汇总看板': {
+      cols:['A','B','C','D','E','F'],
+      rows:[
+        {type:'title', cells:['2026 年度研发效能汇总（自动汇总自「明细」）']},
+        {type:'head', cells:['业务线','Q1','Q2','Q3','Q4','全年达成率']},
+        {type:'data', cells:['代码生成','86','91','94','97','=AVERAGE(B3:E3)/100']},
+        {type:'data', cells:['代码审查','78','84','89','93','=AVERAGE(B4:E4)/100']},
+        {type:'data', cells:['测试回归','72','80','88','96','=AVERAGE(B5:E5)/100']},
+        {type:'data', cells:['文档与知识','88','90','92','95','=AVERAGE(B6:E6)/100']},
+        {type:'total', cells:['合计','=SUM(B3:B6)','=SUM(C3:C6)','=SUM(D3:D6)','=SUM(E3:E6)','=AVERAGE(F3:F6)']}
+      ],
+      formulas:{'F3':'=AVERAGE(B3:E3)/100','F4':'=AVERAGE(B4:E4)/100','F5':'=AVERAGE(B5:E5)/100','F6':'=AVERAGE(B6:E6)/100','B7':'=SUM(B3:B6)','C7':'=SUM(C3:C6)','D7':'=SUM(D3:D6)','E7':'=SUM(E3:E6)','F7':'=AVERAGE(F3:F6)'},
+      display:{'F3':'92.0%','F4':'86.0%','F5':'84.0%','F6':'91.3%','B7':'324','C7':'345','D7':'363','E7':'381','F7':'88.3%'},
+      rates:{'F3':'good','F4':'mid','F5':'mid','F6':'good','F7':'good'}
+    },
+    '明细': {
+      cols:['A','B','C','D','E','F'],
+      rows:[
+        {type:'title', cells:['季度指标明细（源数据 · 只读参考区）']},
+        {type:'head', cells:['序号','季度','业务线','指标值','目标值','达成状态']},
+        {type:'data', cells:['1','Q1','代码生成','86','90','未达成']},
+        {type:'data', cells:['2','Q2','代码生成','91','90','达成']},
+        {type:'data', cells:['3','Q3','代码生成','94','92','达成']},
+        {type:'data', cells:['4','Q4','代码生成','97','95','达成']},
+        {type:'data', cells:['5','Q1','测试回归','72','80','未达成']},
+        {type:'data', cells:['6','Q4','测试回归','96','92','达成']},
+        {type:'total', cells:['—','—','—','=SUM(D3:D8)','=SUM(E3:E8)','—']}
+      ],
+      formulas:{'D9':'=SUM(D3:D8)','E9':'=SUM(E3:E8)'},
+      display:{'D9':'536','E9':'539'},
+      rates:{}
+    },
+    '说明': {
+      cols:['A','B','C','D','E','F'],
+      rows:[
+        {type:'title', cells:['口径说明与字段字典']},
+        {type:'head', cells:['字段','类型','来源','口径','单位','备注']},
+        {type:'data', cells:['指标值','数字','源 CSV','季度实测','分','不含试验性项目']},
+        {type:'data', cells:['目标值','数字','推断','季度目标','分','按年初基线设定']},
+        {type:'data', cells:['达成率','百分比','计算列','均值 / 目标','%','分母为空返回空白']},
+        {type:'data', cells:['达成状态','枚举','计算列','阈值判定','—','达成 / 未达成']},
+        {type:'data', cells:['合计','数字（0 位）','计算列','SUM','分','引用明细区']},
+        {type:'data', cells:['备注','文本','用户填写','—','—','宽列 + 自动换行']},
+        {type:'total', cells:['生成时间','2026-11-10','—','—','—','公式已重算零错误']}
+      ],
+      formulas:{}, display:{}, rates:{}
+    }
+  };
+  var xlTable = document.getElementById('xlTable');
+  var xlName = document.getElementById('xlName');
+  var xlFx = document.getElementById('xlFx');
+  var xlHint = document.getElementById('xlHint');
+  var curSheet = '汇总看板';
+  var colLetters = ['A','B','C','D','E','F'];
+
+  function renderSheet(name){
+    curSheet = name;
+    var s = sheets[name];
+    var html = '<thead><tr><th class="rownum"></th>';
+    s.cols.forEach(function(c){ html += '<th>' + c + '</th>'; });
+    html += '</tr></thead><tbody>';
+    s.rows.forEach(function(row, ri){
+      var rnum = ri + 1;
+      var cls = row.type === 'title' ? 'title-row' : (row.type === 'head' ? 'head-row' : (row.type === 'total' ? 'total-row' : ''));
+      html += '<tr class="' + cls + '"><th class="rownum">' + rnum + '</th>';
+      if(row.type === 'title'){
+        html += '<td colspan="' + s.cols.length + '">' + row.cells[0] + '</td>';
+      } else {
+        row.cells.forEach(function(cell, ci){
+          var ref = colLetters[ci] + rnum;
+          var isFormula = !!s.formulas[ref];
+          var text = isFormula ? (s.display[ref] || cell) : cell;
+          var extra = '';
+          if(isFormula) extra += ' formula';
+          if(s.rates[ref]) extra += ' ' + s.rates[ref];
+          if(row.type !== 'head' && ci > 0 && !isFormula && /^[-+]?[\d.]+%?$/.test(String(cell))) extra += ' num';
+          html += '<td class="' + extra.trim() + '" data-ref="' + ref + '" data-raw="' + String(isFormula ? s.formulas[ref] : cell).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '">' + String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</td>';
+        });
+      }
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    xlTable.innerHTML = html;
+    document.querySelectorAll('.xl-tab').forEach(function(t){ t.classList.toggle('on', t.dataset.sheet === name); });
+    xlName.value = 'A1';
+    xlFx.value = '2026 年度研发效能汇总';
+    xlHint.textContent = name + ' · 点击单元格查看原始内容（公式单元格显示公式本身）';
+    var cells = xlTable.querySelectorAll('td[data-ref]');
+    cells.forEach(function(td){
+      td.addEventListener('click', function(){
+        cells.forEach(function(c){ c.classList.remove('sel'); });
+        td.classList.add('sel');
+        xlName.value = td.dataset.ref;
+        xlFx.value = td.dataset.raw;
+      });
+    });
+  }
+  document.querySelectorAll('.xl-tab').forEach(function(t){
+    t.addEventListener('click', function(){ renderSheet(t.dataset.sheet); });
+  });
+  renderSheet('汇总看板');
+  /* 默认选中一个公式单元格，直观展示「公式可联动」 */
+  var d9 = xlTable.querySelector('td[data-ref="F7"]');
+  if(d9){ d9.classList.add('sel'); xlName.value = 'F7'; xlFx.value = '=AVERAGE(F3:F6)'; }
+
+  /* ---------- PPT Demo：缩略图 + 切换 ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide-view'));
+  var thumbsWrap = document.getElementById('pptThumbs');
+  var pptPage = document.getElementById('pptPage');
+  var pptStage = document.getElementById('pptStage');
+  var cur = 0;
+  function scaleSlides(){
+    var stageW = pptStage.clientWidth;
+    var sc = stageW / 640;
+    slides.forEach(function(s){ s.style.transform = 'scale(' + sc + ')'; });
+    var thumbW = thumbsWrap.clientWidth || 116;
+    var tsc = thumbW / 640;
+    thumbsWrap.querySelectorAll('.scaler').forEach(function(el){
+      el.style.transform = 'scale(' + tsc + ')';
+      el.style.width = '640px'; el.style.height = (360 * tsc) + 'px';
+    });
+    pptStage.style.height = (360 * sc) + 'px';
+  }
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.className = 'ppt-thumb' + (i === 0 ? ' on' : '');
+    b.type = 'button';
+    var scaler = document.createElement('div');
+    scaler.className = 'scaler';
+    scaler.appendChild(s.cloneNode(true));
+    scaler.querySelector('.slide-view').classList.add('on');
+    b.appendChild(scaler);
+    var num = document.createElement('span'); num.className = 'num'; num.textContent = (i + 1);
+    b.appendChild(num);
+    b.addEventListener('click', function(){ show(i); });
+    thumbsWrap.appendChild(b);
+  });
+  function show(i){
+    cur = (i + slides.length) % slides.length;
+    slides.forEach(function(s, j){ s.classList.toggle('on', j === cur); });
+    thumbsWrap.querySelectorAll('.ppt-thumb').forEach(function(t, j){ t.classList.toggle('on', j === cur); });
+    pptPage.textContent = (cur + 1) + ' / ' + slides.length;
+    scaleSlides();
+  }
+  document.getElementById('pptPrev').addEventListener('click', function(){ show(cur - 1); });
+  document.getElementById('pptNext').addEventListener('click', function(){ show(cur + 1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowLeft') show(cur - 1);
+    if(e.key === 'ArrowRight') show(cur + 1);
+  });
+  window.addEventListener('resize', scaleSlides);
+  scaleSlides();
+
+  /* ---------- PDF Demo：格式切换 + 高亮定位 ---------- */
+  var fmtData = {
+    'md': {t:'Text · 较快的文字提取，问答 / 总结首选', c:'# 3.2 效能对比\n\nQ4 综合效能指数达到 152，较 Q1 提升 52%……\n\n| 指标 | Q1 | Q4 |\n| 交付周期 | 12.4 | 7.6 |'},
+    'txt': {t:'Text · 只要纯文字，最轻量', c:'3.2 效能对比\nQ4 综合效能指数达到 152，较 Q1 提升 52%，\n且缺陷回归率同步下降至 3.1%。\n交付周期 12.4 → 7.6'},
+    'md-plain': {t:'Layout · 版面归组后的正文与表格', c:'[section] 3.2 效能对比\n[paragraph] 在统一口径下，四个季度的……\n[table 3x3]\n  指标 | Q1 | Q4\n  交付周期 | 12.4 | 7.6'},
+    'structure': {t:'JSON · 段落 / 表格 / 图片结构', c:'{\n  "type": "table",\n  "source": { "page": 2 },\n  "cells": ["指标","Q1","Q4"],\n  "bbox": [72, 318, 520, 402]\n}\n// source.page 从 0 开始'},
+    'table': {t:'JSON · 单元格提取（输出为目录）', c:'[\n  {"指标":"交付周期（天）","Q1":"12.4","Q4":"7.6"},\n  {"指标":"采纳率","Q1":"41%","Q4":"74%"},\n  {"指标":"缺陷回归率","Q1":"6.2%","Q4":"3.1%"}\n]'},
+    'png': {t:'Image · 渲染页图，用于核对版面 / 图表 / 公式', c:'page-0003.png  (150 dpi)\n\n用于核对：柱状图趋势方向、\n合并表头跨度、公式上下标。\n\n页图文件名从 1 开始。'}
+  };
+  var extBox = document.getElementById('extBox');
+  var extLoc = document.getElementById('extLoc');
+  function setFmt(f){
+    document.querySelectorAll('.fmt').forEach(function(b){ b.classList.toggle('on', b.dataset.fmt === f); });
+    extBox.textContent = fmtData[f].c;
+    extLoc.textContent = fmtData[f].t;
+  }
+  document.querySelectorAll('.fmt').forEach(function(b){
+    b.addEventListener('click', function(){ setFmt(b.dataset.fmt); });
+  });
+  setFmt('md');
+  document.querySelectorAll('.pdf-page mark').forEach(function(m){
+    m.addEventListener('click', function(){
+      document.querySelectorAll('.pdf-page mark').forEach(function(x){ x.classList.remove('on'); });
+      m.classList.add('on');
+      extLoc.textContent = '定位：' + m.dataset.loc + '　|　已核对原页表述';
+    });
+  });
+
+  /* ---------- 指令生成器 ---------- */
+  var scenes = {
+    docx:[
+      {k:'report', n:'研报 / 复盘报告', p:'起草一份《{T}》研报，面向管理层，需要封面、目录，正文包含一张关键指标表和结论建议。', r:'full_pipeline：S1 创作 → S2 版式 → S3 转换', d:'本地 .docx，自动打开预览', w:'不要说「把某份 PDF 做成 Word」——从零创作链路不接收源材料。'},
+      {k:'beauty', n:'整篇排版美化', p:'把这份文档整体美化一下，做得更专业、层级更清晰。', r:'beautify_only：S2 版式 → S3 转换', d:'重排后的 .docx', w:'给出具体样式值（宋体五号 / 1.5 倍行距）会改判为编辑。'},
+      {k:'contract', n:'合同 / 公文', p:'起草一份《{T}》合同，条款完整、编号规范，含签署栏与日期。', r:'full_pipeline · 按体裁自动选版式', d:'本地 .docx', w:'合同属于垂类专业文档，务必写清主体、标的与生效条件。'}
+    ],
+    sheet:[
+      {k:'stats', n:'多源汇总表', p:'基于我上传的 PDF 季报和 CSV 明细，另做一份《{T}》新表，要「汇总看板 + 明细」两个 sheet，汇总引用明细，加达成率。', r:'sheet-generation · 统计型 + 看板型原型', d:'新路径 .xlsx（源文件只读）', w:'「另做一份 / 新表」是关键；说成「在这个表里加个 sheet」会落到编辑链路。'},
+      {k:'plan', n:'项目计划表', p:'新建一份《{T}》项目计划表，含任务、负责人、起止日期、阶段、优先级、状态与交付物，表头冻结并加筛选。', r:'sheet-generation · 计划型原型', d:'新路径 .xlsx', w:'长文本备注列放最后并自动换行；不要过度合并单元格。'},
+      {k:'model', n:'预算测算模型', p:'做一份《{T}》预算测算表，拆成输入假设、计算明细和结果汇总三块，公式可追踪，比率列带除零保护。', r:'sheet-generation · 计算模型型原型', d:'新路径 .xlsx（含公式重算）', w:'公式必须重算到 total_errors=0，否则预览器里是空白。'}
+    ],
+    pptx:[
+      {k:'deck', n:'从零做汇报', p:'做一份关于「{T}」的 12 页管理层汇报 PPT，重点讲趋势和结论，风格稳重克制。', r:'create-from-scratch · 通用风格', d:'.pptx（创建后逐页实时预览）', w:'主题涉及市场数字时可让它联网补充最新数据；页数给逐页大纲则按其页数对齐。'},
+      {k:'fromfile', n:'基于材料生成', p:'用这份《{T}》汇总表做一份 10 页汇报，材料里的数据直接用，保持口径一致。', r:'create-from-scratch · 内置材料解析', d:'.pptx', w:'材料交给技能自行解析，不要预先拆成零散片段。'},
+      {k:'ask', n:'看懂已有 PPT', p:'这份 PPT 第 5 页讲了什么？整体叙事结构是怎样的？', r:'understand · 只读', d:'按页回答，源文件不变', w:'无法从结构确认的连线方向 / 空间关系会如实说明信息不足。'}
+    ],
+    pdf:[
+      {k:'qa', n:'带页码的结论', p:'读这份 PDF，把与「{T}」相关的结论和数据表摘出来，每条标注文件页码；关键趋势图请核对原页。', r:'pdf · -f md → -f table → -f png', d:'结论摘录 + 表格数据 + 页码', w:'扫描页需本机 OCR；提取失败不等于空白页。'},
+      {k:'table', n:'批量提表格', p:'把这份文档里的表格全部提取成结构化数据，注明各表所在页码与合并表头。', r:'pdf · -f table --table-format json', d:'结构化表格数据', w:'CSV 输出不保留合并跨度；扫描表格识别为近似值，须核对。'},
+      {k:'scan', n:'扫描件 / 图表核对', p:'这份扫描版 PDF 第 8 页的图表趋势是什么？请渲染该页图核对后再回答。', r:'pdf · -f png --dpi 150', d:'页图 + 核对后的结论', w:'发布包不自带 OCR，未装引擎时文字提取会在扫描页报错。'}
+    ],
+    chain:[
+      {k:'full', n:'研报 → 汇总 → 报告 → 汇报', p:'第一步：读这份研报，把「{T}」相关结论和数据表摘出来并标页码。\n第二步：基于刚摘出的数据，另做一份《汇总.xlsx》，含汇总看板与明细。\n第三步：起草一份《复盘报告.docx》，带封面和目录。\n第四步：用汇总表和报告做一份 12 页管理层汇报 PPT。', r:'pdf → sheet-generation → docx → pptx', d:'结论 + .xlsx + .docx + .pptx', w:'分四轮提出，每轮独立路由；别要求 PDF 技能「导出一份 PDF」。'},
+      {k:'datachain', n:'数据 → 表格 → 图表页', p:'先把附件里的历史数据整理成一份新的 .xlsx 汇总表，再用这份表做一份 8 页数据汇报 PPT，图表口径保持一致。', r:'sheet-generation → pptx', d:'.xlsx + .pptx', w:'表格里用公式而非写死数字，后续改口径可联动到汇报。'}
+    ]
+  };
+  var goal = document.getElementById('goal');
+  var scene = document.getElementById('scene');
+  var topic = document.getElementById('topic');
+  var promptOut = document.getElementById('promptOut');
+  var outRoute = document.getElementById('outRoute');
+  var outDeliver = document.getElementById('outDeliver');
+  var outWarn = document.getElementById('outWarn');
+  function fillScenes(){
+    scene.innerHTML = '';
+    scenes[goal.value].forEach(function(s){
+      var o = document.createElement('option'); o.value = s.k; o.textContent = s.n; scene.appendChild(o);
+    });
+  }
+  function generate(){
+    var list = scenes[goal.value];
+    var item = list.filter(function(s){ return s.k === scene.value; })[0] || list[0];
+    var t = topic.value.trim() || '未命名主题';
+    promptOut.textContent = item.p.replace(/\{T\}/g, t);
+    outRoute.textContent = item.r;
+    outDeliver.textContent = item.d;
+    outWarn.textContent = item.w;
+  }
+  goal.addEventListener('change', function(){ fillScenes(); generate(); });
+  scene.addEventListener('change', generate);
+  topic.addEventListener('input', generate);
+  document.getElementById('genBtn').addEventListener('click', generate);
+  document.getElementById('copyBtn').addEventListener('click', function(){ copyText(promptOut.textContent, this); });
+  fillScenes(); generate();
+})();
+</script>
+</body>
+</html>
