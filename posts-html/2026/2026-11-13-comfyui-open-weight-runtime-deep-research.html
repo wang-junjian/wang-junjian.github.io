@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ComfyUI 不是画图软件，而是开放权重模型的事实运行时：以图即程序、图即请求体、图即配方三条判别式，拆解 DAG 执行、VRAMState 六态、4GB 声明审查、CVE 攻击链、GPL-3.0 边界，并给出选型决策树与 90 天落地路线。">
+<meta name="keywords" content="comfyui, open-weight-models, dag-runtime, vram-management, supply-chain-security, model-serving">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-13">
+<title>ComfyUI 深度研究：一张计算图如何成为开放权重模型的事实运行时</title>
+<style>
+:root{
+  --bg:#FBFAF7; --paper:#FFFFFF; --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --border:#E3DFD6; --border2:#CFC9BC;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FBF0E2;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EAF1FA;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E5F2F0;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F0EAF9;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#E8F4E9;
+  --red:#B3261E; --red-t:#9A1F18; --red-bg:#FBECEA;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;
+  background:#F2F0EA;border:1px solid var(--border);border-radius:4px;padding:1px 5px;
+  overflow-wrap:anywhere}
+a{color:var(--blue-t)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+/* ---------- nav ---------- */
+nav.top{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.96);
+  backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--border)}
+nav.top .inner{max-width:1060px;margin:0 auto;padding:10px 28px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+nav.top .brand{font-weight:700;font-size:14px;letter-spacing:.02em;color:var(--ink);white-space:nowrap}
+nav.top .links{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
+nav.top .links a{font-size:12px;color:var(--ink3);text-decoration:none;padding:3px 7px;border-radius:5px;white-space:nowrap}
+nav.top .links a:hover{background:var(--amber-bg);color:var(--amber-t)}
+nav.top .stamp{font-size:11px;color:var(--ink3);white-space:nowrap}
+/* ---------- cover ---------- */
+header.cover{padding:64px 0 40px;border-bottom:1px solid var(--border)}
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-t);font-weight:700}
+h1{font-size:40px;line-height:1.22;margin:16px 0 14px;letter-spacing:-.02em;font-weight:800}
+.sub{font-size:19px;color:var(--ink2);line-height:1.65;max-width:820px;margin:0 0 24px}
+.meta{font-size:13px;color:var(--ink3);display:flex;gap:18px;flex-wrap:wrap}
+/* ---------- sections ---------- */
+section{padding-top:60px;scroll-margin-top:24px}
+section h2{font-size:27px;line-height:1.35;margin:0 0 8px;letter-spacing:-.01em;font-weight:750}
+section h2 .num{color:var(--amber-t);font-size:15px;font-weight:700;display:block;margin-bottom:6px;letter-spacing:.08em}
+section h3{font-size:19px;margin:34px 0 10px;line-height:1.45}
+section h4{font-size:16px;margin:22px 0 6px}
+p{margin:12px 0}
+.lede{font-size:17px;color:var(--ink2)}
+hr.soft{border:0;border-top:1px solid var(--border);margin:40px 0}
+/* ---------- stat cards ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0}
+.stats>*{min-width:0}
+.stat{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:16px 14px}
+.stat .n{font-size:26px;font-weight:800;line-height:1.2;color:var(--ink);letter-spacing:-.02em}
+.stat .l{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.5}
+.stat .u{font-size:11px;color:var(--ink3);margin-top:7px;line-height:1.45}
+/* ---------- generic cards & grids ---------- */
+.card{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:18px 0;min-width:0}
+.g2,.g3{display:grid;gap:14px;margin:18px 0}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2>*,.g3>*{min-width:0}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;line-height:1.6;white-space:nowrap}
+.t-amber{background:var(--amber-bg);color:var(--amber-t)}
+.t-blue{background:var(--blue-bg);color:var(--blue-t)}
+.t-teal{background:var(--teal-bg);color:var(--teal-t)}
+.t-purple{background:var(--purple-bg);color:var(--purple-t)}
+.t-green{background:var(--green-bg);color:var(--green-t)}
+.t-red{background:var(--red-bg);color:var(--red-t)}
+.t-gray{background:#EFEDE7;color:var(--ink2)}
+/* ---------- claim ---------- */
+.claims{counter-reset:cl;list-style:none;padding:0;margin:24px 0}
+.claims li{counter-increment:cl;position:relative;padding:14px 16px 14px 54px;background:var(--paper);
+  border:1px solid var(--border);border-radius:10px;margin-bottom:10px}
+.claims li::before{content:"C" counter(cl);position:absolute;left:14px;top:14px;font-size:12px;font-weight:800;
+  color:var(--amber-t);background:var(--amber-bg);border-radius:6px;padding:2px 6px}
+.claims li b{color:var(--ink)}
+.claims li .rv{display:block;font-size:13px;color:var(--ink3);margin-top:5px;line-height:1.6}
+/* ---------- verdict / note ---------- */
+.verdict{background:var(--amber-bg);border:1px solid #E8D3B4;border-left:4px solid var(--amber);
+  border-radius:8px;padding:16px 20px;margin:20px 0}
+.verdict h4{margin:0 0 6px;color:var(--amber-t);font-size:15px}
+.verdict p{margin:6px 0;font-size:15px}
+.note{background:var(--blue-bg);border:1px solid #CFDFF0;border-left:4px solid var(--blue);
+  border-radius:8px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.note b{color:var(--blue-t)}
+.warn{background:var(--red-bg);border:1px solid #EFCFCB;border-left:4px solid var(--red);
+  border-radius:8px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.warn b{color:var(--red-t)}
+.opinion{background:var(--purple-bg);border:1px solid #DCCDF2;border-left:4px solid var(--purple);
+  border-radius:8px;padding:14px 18px;margin:18px 0;font-size:14.5px}
+.opinion b{color:var(--purple-t)}
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;background:var(--paper)}
+th,td{border:1px solid var(--border);padding:9px 11px;text-align:left;vertical-align:top;line-height:1.6}
+th{background:#F4F2EC;font-weight:700;color:var(--ink2);font-size:13px}
+td small{color:var(--ink3);font-size:12px}
+tr:nth-child(even) td{background:#FCFBF8}
+/* ---------- figures ---------- */
+figure{margin:26px 0;min-width:0}
+.fig-box{background:var(--paper);border:1px solid var(--border);border-radius:10px;
+  padding:14px 12px 6px;overflow-x:auto;min-width:0}
+.fig-box svg{display:block;width:100%;height:auto;min-width:600px}
+figcaption{font-size:13px;color:var(--ink3);margin-top:10px;line-height:1.65}
+figcaption b{color:var(--ink2)}
+.src{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.6}
+/* ---------- source refs ---------- */
+.refs{font-size:13.5px;color:var(--ink2)}
+.refs ol{padding-left:22px}
+.refs li{margin:7px 0;line-height:1.6}
+.refs .grp{font-weight:700;color:var(--ink);margin-top:20px;font-size:14px}
+footer{margin-top:70px;padding:28px 0 50px;border-top:1px solid var(--border);font-size:13px;color:var(--ink3)}
+/* ---------- responsive ---------- */
+@media(max-width:760px){
+  .wrap{padding:0 18px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .g2,.g3{grid-template-columns:1fr}
+  h1{font-size:30px}
+  .sub{font-size:17px}
+  table{display:block;overflow-x:auto}
+  nav.top .links{display:none}
+}
+</style>
+</head>
+<body>
+<nav class="top"><div class="inner">
+  <span class="brand">ComfyUI · 深度研究</span>
+  <div class="links">
+    <a href="#s00">摘要</a><a href="#s01">范式</a><a href="#s02">理论</a><a href="#s03">执行链路</a>
+    <a href="#s04">选型</a><a href="#s05">模型覆盖</a><a href="#s06">显存</a><a href="#s07">证据</a>
+    <a href="#s08">安全</a><a href="#s09">治理</a><a href="#s10">度量</a><a href="#s11">落地</a><a href="#s12">结论</a>
+  </div>
+  <span class="stamp">2026-11-13</span>
+</div></nav>
+
+<div class="wrap">
+<header class="cover">
+  <div class="kicker">深度研究 · 开放权重生成式 AI 基础设施</div>
+  <h1>一张计算图，如何成为<br>开放权重模型的事实运行时</h1>
+  <p class="sub">ComfyUI 的全景拆解：从 DAG 执行引擎、预算式显存调度到 60,000 节点生态；从 CVE-2025-67303 未授权 RCE 到 GPL-3.0 与 Partner Nodes 的治理张力。论点驱动，正反证据同列，每条关键数据标注来源与证据强度。</p>
+  <div class="meta">
+    <span>研究日期：2026-11-13</span>
+    <span>一手数据：GitHub API / README / SECURITY.md / Releases / docs.comfy.org / arXiv / NVD</span>
+    <span>版本基准：v0.45.0（2026-11-10）</span>
+  </div>
+</header>
+
+<main>
+
+<section id="s00">
+  <h2><span class="num">00 / 摘要</span>十条核心论断，一页读完</h2>
+  <p class="lede">这十条论断均可证伪。报告后续每一章都是其中某条的展开，而不是资料的平行堆砌。每条后面附「反证据/边界」，避免只引一边。</p>
+
+  <div class="stats">
+    <div class="stat"><div class="n">146,557</div><div class="l">GitHub stars</div><div class="u">一手：GitHub API，2026-11-13 实测</div></div>
+    <div class="stat"><div class="n">17,466</div><div class="l">forks</div><div class="u">同上；open issues 5,526</div></div>
+    <div class="stat"><div class="n">$500M</div><div class="l">Comfy Org 估值</div><div class="u">2026-04-24，B 轮 $30M，累计 $47M</div></div>
+    <div class="stat"><div class="n">v0.45.0</div><div class="l">最新稳定版</div><div class="u">2026-11-10；近 24 天内 5 个 release</div></div>
+  </div>
+
+  <ol class="claims">
+    <li><b>胜出的是「可序列化、可缓存、可 API 化的计算图」这一抽象，不是节点 UI 好看。</b>工作流 JSON 既能被人编辑，也能直接 POST 到 <code>/prompt</code> 执行、被版本控制 diff、被嵌入产出图片元数据——同一份表示同时服务创作者、研究者与工程系统。
+      <span class="rv">反证据：表单式 UI（A1111/Fooocus）与画布式产品（InvokeAI）在上手速度上明显更优；ComfyUI 学习曲线陡是公认短板。</span></li>
+    <li><b>扩散推理天然是一张 DAG，不是一个表单。</b>模型、CLIP 编码、采样、VAE 解码、ControlNet、放大本就是带类型端口的异构算子；表单 UI 把一种管线形状焊死在界面里，每来一个新架构就要改 UI，而节点图只需加节点。
+      <span class="rv">反证据：Diffusers 用代码优先同样能表达任意组合，且类型检查更强；图并非唯一解，只是把「组合」暴露给了非程序员。</span></li>
+    <li><b>增量重执行（输入指纹 + 拓扑排序）把迭代成本从「重跑全图」降到「只跑变更子图」。</b>改一个提示词不必重载模型与重算上游，这是它相对朴素脚本的真实效率来源，也让工作流成为可实验对象。
+      <span class="rv">边界：缓存以节点输入哈希为键，自定义节点若有隐藏状态或非确定性副作用，缓存正确性即失效。</span></li>
+    <li><b>预算式显存调度把「跑不动就 OOM」变成连续可调的降级曲线。</b>VRAMState 六态、<code>lowvram_model_memory</code> 部分常驻、异步权重流，共同支撑官方「4GB VRAM + 8GB RAM 跑最大开源模型」的声明。
+      <span class="rv">反证据：该声明是 README 厂商自述，未见独立第三方复现基准；第三方单测显示 Forge 在 6GB 卡上反而更稳、RTX 3090 单图更快。</span></li>
+    <li><b>它是开放权重模型的事实运行时：模型实验室把「day-0 ComfyUI 支持」写进发布清单。</b>FLUX 首发日支持（2024-08）、Wan / LTX / HunyuanVideo / Seedance 等均如此；权重放在 Hugging Face，真正跑起来常在 ComfyUI。
+      <span class="rv">边界：这一地位依赖社区义务劳动与周更节奏，且正被 Partner Nodes（闭源付费 API 节点）稀释。</span></li>
+    <li><b>护城河与攻击面是同一份开放性。</b>60,000+ 社区节点 ↔ CVE-2024-21574 / CVE-2025-67303 未授权 RCE、官方 Registry 里的 Akira Stealer 投毒、千台级挖矿僵尸网络。自定义节点是任意 Python，无沙箱。
+      <span class="rv">反证据：官方已落地 eval/exec 限制、禁止运行时 pip 安装、远程禁用机制与 Registry 审核标准；不能把 2024 年的漏洞直接外推到 2026 年的版本。</span></li>
+    <li><b>默认部署假设「可信内网」，生产化能力靠外挂补齐。</b>官方 SECURITY.md 明确：默认绑定 127.0.0.1、任何能访问 URL 的人都被信任、<code>--listen</code> 造成的暴露不算漏洞；单进程单队列无鉴权。
+      <span class="rv">反证据：官方文档同时给出反向代理鉴权方案，App Mode / API / Enterprise 正在补多租户；但「默认安全边界由部署者负责」这一条没变。</span></li>
+    <li><b>商业化张力真实存在，且被社区公开点名。</b>Partner Nodes 把闭源模型付费调用塞进同一张图；<code>--disable-api-nodes</code> 曾连带破坏节点管理器，GitHub issue #14887 中出现「enshittification」措辞，直至 v0.39.0 拆出 <code>--offline</code> / <code>--disable-partner-nodes</code>。
+      <span class="rv">反证据：核心仍 GPL-3.0、README 明确「core does not download anything unless you request it」、可完全离线；v0.39.0 的修复说明反馈通道有效。</span></li>
+    <li><b>「最快」「最强」是厂商自述，不是独立结论。</b>README 的 “by far the most optimized inference engine in the world” 无对照实验；第三方单一基准（RTX 3090，SDXL 30 步）反而测得 Forge 3.2s < ComfyUI 3.8s。
+      <span class="rv">正确表述：它的优势在模型覆盖广度、day-0 速度、可组合性与生态规模，而非单图绝对吞吐。</span></li>
+    <li><b>它正从「工具」变成「平台/协议」，但补的是编程语言早就有的东西。</b>Subgraph（函数）、V3 类型化 schema（类型系统）、jobs API（可观测作业）、App Mode（面向终端用户的界面）、Comfy Agent（自然语言生成图）——这是运行时成熟为平台的典型路径。
+      <span class="rv">边界：ComfyGen / ComfyGen-RL 等学术工作已把「工作流」当作可优化对象，说明图抽象具备研究价值；但也意味着图会越来越多地由智能体生成，人工可读性与可审计性成为新风险。</span></li>
+  </ol>
+
+  <div class="verdict">
+    <h4>一句话判断（这是观点，不是共识）</h4>
+    <p>ComfyUI 最值得研究的不是「怎么画节点」，而是它把<b>生成流程变成了一种可执行、可交换、可计价的中间表示</b>。谁掌握了这层表示，谁就掌握了开放权重模型到实际产出之间的调度权。它的最大风险也来自同一处：当这层表示同时允许任意 Python 扩展、任意远程模型调用与任意自动生成的图时，信任边界必须由部署者自己重新画一遍。</p>
+  </div>
+  <div class="note"><b>阅读约定：</b>凡标注「一手」的数据来自官方仓库、官方文档、官方公告、arXiv 论文、NVD/CVE 或安全研究报告原文；「二手」为中文/英文转述与媒体分析，仅用于线索发现与交叉印证；「自报」为厂商营销口径，不作为结论依据；「推测」会显式标注。数字打架时以时间戳最新的一手来源为准，并在第 07 章展示核对过程。</div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01 / 范式判定</span>它到底是什么：不是 GUI，是一层运行时</h2>
+  <p class="lede">把 ComfyUI 归类为「AI 绘画软件」是绝大多数误判的起点。它更接近一个带可视化编辑器的<b>生成式模型运行时</b>：前端只是它的一个客户端，节点图才是它的程序表示。理解这一点，后面所有的商业、安全与工程结论才立得住。</p>
+
+  <h3>1.1 三条判别式</h3>
+  <p>判断一个系统是否属于「ComfyUI 范式」，看三条充要特征，而不是看它有没有画布：</p>
+  <table>
+    <thead><tr><th style="width:22%">判别式</th><th>含义</th><th>为什么是分水岭</th></tr></thead>
+    <tbody>
+      <tr><td><b>图即程序</b></td><td>执行单元是带类型端口的节点，连线定义数据流；工作流以结构化 JSON 保存。</td><td>工作流可以被 diff、被版本控制、被程序生成，也可以被当作数据集（ComfyGen 正是这么做）。表单式 UI 的状态无法这样复用。</td></tr>
+      <tr><td><b>图即请求体</b></td><td>导出的 <code>workflow_api.json</code> 可直接 POST 到 <code>/prompt</code>，无需 SDK。</td><td>编辑界面与生产接口共用同一份表示，消除了「UI 状态 → API 参数」的翻译层。<small>来源：docs.comfy.org 自托管文档，一手</small></td></tr>
+      <tr><td><b>图即配方</b></td><td>完整工作流与 seed 写入产出 PNG / WebP / FLAC 元数据，拖回画布可复原。</td><td>可复现性内建于产物本身，而非依赖外部实验记录。<small>来源：README「recover complete workflows and seeds from supported generated media」，一手</small></td></tr>
+    </tbody>
+  </table>
+  <p>三条同时成立，才解释了一个反常识现象：一个「画画的工具」会被 VFX 工作室塞进渲染农场、被学术论文当作可优化搜索空间、被云厂商当作 API 商品。<b>它们用的不是它的界面，是它的中间表示。</b></p>
+
+  <h3>1.2 概念分野：四种东西别混为一谈</h3>
+  <table>
+    <thead><tr><th style="width:16%">层</th><th style="width:26%">代表</th><th>职责</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-purple">模型权重</span></td><td>SDXL、FLUX、Wan、Qwen Image</td><td>提供生成能力，自带独立许可证</td><td>第三方，ComfyUI 不拥有</td></tr>
+      <tr><td><span class="tag t-blue">推理库</span></td><td>PyTorch、Diffusers、comfy-aimdo、comfy-kitchen</td><td>张量运算、注意力、低比特算子、权重流</td><td>可替换；Diffusers 是库，ComfyUI 是运行时</td></tr>
+      <tr><td><span class="tag t-teal">图运行时</span></td><td><b>ComfyUI Core</b>（GPL-3.0）</td><td>校验、拓扑排序、缓存、显存预算、作业队列、WebSocket</td><td>本报告主体</td></tr>
+      <tr><td><span class="tag t-amber">产品层</span></td><td>Desktop、Cloud、API、Enterprise、Partner Nodes、Comfy Agent</td><td>分发、计费、托管、商业化</td><td>Comfy Org 经营，与开源核心目标函数不完全一致</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>关键区分：</b>「ComfyUI」（GPL-3.0 开源核心）与「Comfy」（Comfy Org 的商业产品族）不是同一个东西。混合两者讨论，会既高估也低估它的开放性：核心确实永久开源且可完全离线，但产品层的账单、账号与闭源节点也确实进入了同一张图。</div>
+
+  <h3>1.3 演化时间轴：从个人实验到基础设施</h3>
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ComfyUI 2023 至 2026 演化时间轴">
+      <rect x="0" y="0" width="960" height="268" fill="#FFFFFF"/>
+      <line x1="60" y1="152" x2="900" y2="152" stroke="#CFC9BC" stroke-width="2"/>
+      <line x1="60" y1="152" x2="900" y2="152" stroke="#B45309" stroke-width="2" stroke-dasharray="1 0" opacity="0"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <!-- node 0 -->
+        <circle cx="88" cy="152" r="7" fill="#B45309"/>
+        <line x1="88" y1="145" x2="88" y2="118" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="88" y="106" font-size="13" font-weight="700" text-anchor="middle" fill="#8F3F06">首个公开版</text>
+        <text x="88" y="90" font-size="11" text-anchor="middle" fill="#4A505A">2023-01</text>
+        <!-- node 1 -->
+        <circle cx="204" cy="152" r="7" fill="#2F6FB0"/>
+        <line x1="204" y1="159" x2="204" y2="186" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="204" y="202" font-size="13" font-weight="700" text-anchor="middle" fill="#1F5288">SDXL 双模型链</text>
+        <text x="204" y="220" font-size="11" text-anchor="middle" fill="#4A505A">2023-06</text>
+        <!-- node 2 -->
+        <circle cx="320" cy="152" r="7" fill="#B45309"/>
+        <line x1="320" y1="145" x2="320" y2="118" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="320" y="106" font-size="13" font-weight="700" text-anchor="middle" fill="#8F3F06">Comfy Org 成立</text>
+        <text x="320" y="90" font-size="11" text-anchor="middle" fill="#4A505A">2024-06</text>
+        <!-- node 3 -->
+        <circle cx="436" cy="152" r="7" fill="#0F766E"/>
+        <line x1="436" y1="159" x2="436" y2="186" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="436" y="202" font-size="13" font-weight="700" text-anchor="middle" fill="#0A5750">FLUX 首发即支持</text>
+        <text x="436" y="220" font-size="11" text-anchor="middle" fill="#4A505A">2024-08</text>
+        <!-- node 4 -->
+        <circle cx="552" cy="152" r="7" fill="#B45309"/>
+        <line x1="552" y1="145" x2="552" y2="118" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="552" y="106" font-size="13" font-weight="700" text-anchor="middle" fill="#8F3F06">V1 桌面版</text>
+        <text x="552" y="90" font-size="11" text-anchor="middle" fill="#4A505A">2024-10</text>
+        <!-- node 5 -->
+        <circle cx="668" cy="152" r="7" fill="#6D3FB5"/>
+        <line x1="668" y1="159" x2="668" y2="186" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="668" y="202" font-size="13" font-weight="700" text-anchor="middle" fill="#5A3099">A 轮 1700 万</text>
+        <text x="668" y="220" font-size="11" text-anchor="middle" fill="#4A505A">2025-09</text>
+        <!-- node 6 -->
+        <circle cx="784" cy="152" r="7" fill="#6D3FB5"/>
+        <line x1="784" y1="145" x2="784" y2="118" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="784" y="106" font-size="13" font-weight="700" text-anchor="middle" fill="#5A3099">B 轮 3000 万</text>
+        <text x="784" y="90" font-size="11" text-anchor="middle" fill="#4A505A">2026-04</text>
+        <!-- node 7 -->
+        <circle cx="892" cy="152" r="7" fill="#2E7D32"/>
+        <line x1="892" y1="159" x2="892" y2="186" stroke="#CFC9BC" stroke-width="1"/>
+        <text x="892" y="202" font-size="13" font-weight="700" text-anchor="middle" fill="#1B5820">v0.45.0</text>
+        <text x="892" y="220" font-size="11" text-anchor="middle" fill="#4A505A">2026-11</text>
+        <!-- band labels -->
+        <rect x="60" y="238" width="14" height="10" rx="2" fill="#B45309"/>
+        <text x="80" y="248" font-size="11" text-anchor="start" fill="#4A505A">产品/组织</text>
+        <rect x="170" y="238" width="14" height="10" rx="2" fill="#2F6FB0"/>
+        <text x="190" y="248" font-size="11" text-anchor="start" fill="#4A505A">模型能力</text>
+        <rect x="280" y="238" width="14" height="10" rx="2" fill="#0F766E"/>
+        <text x="300" y="248" font-size="11" text-anchor="start" fill="#4A505A">生态事件</text>
+        <rect x="390" y="238" width="14" height="10" rx="2" fill="#6D3FB5"/>
+        <text x="410" y="248" font-size="11" text-anchor="start" fill="#4A505A">资本</text>
+        <rect x="470" y="238" width="14" height="10" rx="2" fill="#2E7D32"/>
+        <text x="490" y="248" font-size="11" text-anchor="start" fill="#4A505A">当前版本</text>
+        <text x="900" y="248" font-size="11" text-anchor="end" fill="#4A505A">时间不按比例</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 1</b>　ComfyUI 关键节点时间轴。起点是 2023-01-16 首个 GitHub 版本（GitHub API 显示仓库创建于 2023-01-17）与 2023-06 因 SDXL 的 base+refiner 链式结构被 Stability AI 雇用；2024-06-18 创始人离职并组建 Comfy Org；2024-08 FLUX 发布当日支持、前端拆为独立 TypeScript/Vue 仓库；2024-10-21 宣布 V1 桌面版；2025-09-16 A 轮 $17M；2026-04-24 B 轮 $30M / 估值 $500M；2026-11-10 发布 v0.45.0。</figcaption>
+    <div class="src">来源：GitHub API（仓库创建时间、release 时间，一手）／README Release Process（一手）／Comfy Org 融资公告（一手）／Latent Space 创始人访谈 2025-01（转述一手访谈）／AI Wiki 版本史（二手，仅用于交叉核对日期）。</div>
+  </figure>
+
+  <h3>1.4 一个被反复误读的起点</h3>
+  <p>创始人（GitHub 名 <code>comfyanonymous</code>，2026 融资公告中具名为 Yannik Marek）的自述动机不是「做一个更好用的绘画 UI」，而是想做<b>链式扩散实验</b>：低分辨率生成 → 放大 → 用另一个模型再跑一遍扩散，且第二遍想换采样器、换模型。在 A1111 里实现这个实验比自己重写一个界面更麻烦。其被反复引用的设计原话是「大家都想做易用的界面，我想做一个强大但不那么易用的界面」。</p>
+  <p>这解释了两个后来的结构性事实：<b>第一</b>，SDXL 的 base+refiner 双模型链式结构恰好是节点图天然能表达、表单 UI 需要专门适配的形状，成为 2023 年采纳率跃升的拐点；<b>第二</b>，「把内部机制全部暴露出来」从一开始就是设计目标，而不是后期为了可解释性补的装饰。2026 年 arXiv 上把 ComfyUI 节点图当作 XAI 界面做层级干预（model bending）的工作，其实是回到了这个原点。<small>来源：Latent Space 访谈、arXiv:2607.22428，一手/二手交叉</small></p>
+  <div class="verdict"><h4>范式判定的结论</h4><p>ComfyUI 与 A1111 / Fooocus / Midjourney 不是同一赛道的竞品，而是<b>不同抽象层</b>：前者是可编程的运行时，后者是面向终端用户的产品。真正与它竞争的是「直接写 Diffusers 脚本」和「自己搭调度服务」这两个选项。第 04 章的选型矩阵按这个层次重排，而不是按 UI 好不好看排。</p></div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02 / 理论根基</span>为什么必须是这个形状：五条能推出工程动作的理论</h2>
+  <p class="lede">好的理论章节能推导出具体动作，而不只是打比方。下面每条理论都给出「若成立则应观察到什么」与「因此工程上该怎么做」，并标注它是否被源码或文献支持。</p>
+
+  <table>
+    <thead><tr><th style="width:18%">理论</th><th style="width:30%">核心陈述</th><th style="width:26%">可证伪的预测</th><th>推导出的工程动作</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>数据流 / 异构算子图</b></td>
+        <td>生成管线是有类型端口的 DAG：<code>MODEL</code>、<code>CLIP</code>、<code>CONDITIONING</code>、<code>LATENT</code>、<code>IMAGE</code> 沿边流动。</td>
+        <td>执行前必须能做静态类型与文件存在性校验；若不能，错误应集中出现在运行期而非提交期。</td>
+        <td>把 <code>validate_prompt</code> 放在队列之前；先拓扑排序生成 ExecutionList 再执行；新模型架构只加节点，不改执行器。<small>源码：execution.py / comfy_execution，二手技术拆解 + 官方文档交叉</small></td>
+      </tr>
+      <tr>
+        <td><b>记忆化 / 增量计算</b></td>
+        <td>节点输出是 <code>f(节点类型, 输入值)</code>；输入不变则输出可复用，改一个节点只需重跑它与其下游。</td>
+        <td>修改末端提示词时，模型权重与上游编码不应被重算；关闭缓存后耗时显著上升。</td>
+        <td>以输入指纹为缓存键；提供 <code>--cache-none</code> 做干净重跑以排查缓存污染；<b>禁止自定义节点持有隐藏状态</b>，否则增量正确性失效。<small>来源：docs.comfy.org 启动参数，一手</small></td>
+      </tr>
+      <tr>
+        <td><b>工作集 / 分页预算</b></td>
+        <td>显存不是「够/不够」的开关，而是可分页的工作集：模型权重可部分常驻，缺的部分在 forward 时按层搬入。</td>
+        <td>显存下降应导致耗时<b>连续变慢</b>而非突然 OOM；权重搬运与计算应能重叠。</td>
+        <td>VRAMState 分态 + <code>lowvram_model_memory</code> 预算计算 + 按剩余显存自动选 fp16/bf16/fp8 + 异步权重流与 pin 分级驱逐。<small>来源：model_management.py 相关源码解读、comfy-aimdo，二手但可复核</small></td>
+      </tr>
+      <tr>
+        <td><b>程序即数据 / IR</b></td>
+        <td>当图被序列化为 JSON，它就同时是源码、请求体与产物元数据，可被程序生成、diff、评分与搜索。</td>
+        <td>应能观察到「以工作流为输入/输出的研究」出现，且能用 LLM 预测工作流以提升画质。</td>
+        <td>把 <code>workflow_api.json</code> 当作部署制品纳入 CI；把 workflow JSON 嵌进产出文件；对外只暴露 <code>/prompt</code> 与 WebSocket，不另造 SDK。<small>实证：ComfyGen arXiv:2410.01731、ComfyGen-RL arXiv:2505.21478，一手</small></td>
+      </tr>
+      <tr>
+        <td><b>可检查性 / 认知卸载</b></td>
+        <td>把中间张量与每一步参数显式暴露，使创作者能定位「哪一层造成伪影」，把黑盒变成可干预的材料。</td>
+        <td>应能观察到针对特定层的干预产生<b>成族的、可预期</b>的视觉变化，而非随机噪声。</td>
+        <td>提供中间预览（TAESD 快速潜图解码）、节点级单步与层选择控件；把复杂图用 App Mode / Subgraph 折叠以降低认知负荷。<small>来源：arXiv:2607.22428 在 SD1.5 上的定性与定量层干预实验，一手</small></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.1 从理论推出一个不显然的判断</h3>
+  <p>把前两条叠起来可得：既然图是程序、且节点输出可被记忆化，那么<b>「工作流」本身就是一种可优化的对象</b>，而不只是人写给机器的指令。这不是比喻——NVIDIA Research 的 ComfyGen 把 33 个人类工作流增强为 310 个工作流，用 500 条提示词各生成图像，以 LAION Aesthetic / ImageReward / HPS v2.1 / PickScore 集成打分，得到 (prompt, workflow, score) 三元组，再训练 LLM 按提示词预测工作流；其微调版在 GenEval 上取得 0.61（最佳基线 0.59），对 SDXL 的 HPS v2.0 胜率 93%、用户研究胜率 72%，并在 500 条提示词上产生 79 种不同工作流（in-context 版仅 41 种）。</p>
+  <p>2025 年的后续工作（arXiv:2505.21478，Technion + NVIDIA Research）直接指出 ComfyGen 的局限：它本质上是在<b>已有流程集合上做分类</b>，不能生成新拓扑；于是改用代理奖励模型 + GRPO + 逐 token 奖励归因来搜索新图结构。学术上的这条自我修正，恰好印证了「图即程序」——一旦流程变成可序列化数据，流程设计就变成了一个可学习的搜索问题。</p>
+  <div class="opinion"><b>观点（非共识）：</b>这条推理链也预示了 Comfy Agent 这类产品的必然性，以及它的主要风险。当图可由智能体自动生成，人类审查的对象从「一张自己连的图」变成「一段自己没读过的程序」；第 08 章的供应链问题因此会从「安装节点」扩展到「导入工作流与接受生成的图」。可审计性将取代易用性，成为下一阶段的核心指标。</div>
+  <div class="warn"><b>反证与边界：</b>ComfyGen 的实验全部基于 SDXL 级模型（论文明确标注 “no FLUX!”），且在空间定位类提示上表现偏弱；其结论不能直接外推到 2026 年的视频/多模态工作流。增量计算的正确性还依赖节点纯度假设，而 60,000 个社区节点里大量存在 <code>git clone</code> 装依赖、monkeypatch 核心、带全局状态的实现——理论与生态现实之间有明显裂缝。</div>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03 / 主框架</span>一次生成的完整链路：从画布到显存再到 WebSocket</h2>
+  <p class="lede">ComfyUI 是前后端一体的 Python 单体服务：浏览器画布只负责编辑与序列化，全部推理发生在本地服务端。下面这条链路是理解后面所有章节（缓存、显存、API、安全）的共用骨架。</p>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 452" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ComfyUI 一次生成的七步执行链路">
+      <rect x="0" y="0" width="960" height="452" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <!-- step 1 -->
+        <rect x="40" y="20" width="880" height="52" rx="8" fill="#EAF1FA" stroke="#CFDFF0" stroke-width="1"/>
+        <rect x="40" y="20" width="6" height="52" rx="3" fill="#2F6FB0"/>
+        <circle cx="76" cy="46" r="15" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="2"/>
+        <text x="76" y="51" font-size="13" font-weight="700" text-anchor="middle" fill="#1F5288">1</text>
+        <text x="106" y="42" font-size="14" font-weight="700" fill="#1F5288">画布编辑与序列化</text>
+        <text x="400" y="52" font-size="12.5" fill="#4A505A">LiteGraph 画布导出 prompt JSON：节点 id → class_type + inputs</text>
+        <!-- connector -->
+        <line x1="76" y1="72" x2="76" y2="80" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- step 2 -->
+        <rect x="40" y="80" width="880" height="52" rx="8" fill="#EAF1FA" stroke="#CFDFF0" stroke-width="1"/>
+        <rect x="40" y="80" width="6" height="52" rx="3" fill="#2F6FB0"/>
+        <circle cx="76" cy="106" r="15" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="2"/>
+        <text x="76" y="111" font-size="13" font-weight="700" text-anchor="middle" fill="#1F5288">2</text>
+        <text x="106" y="102" font-size="14" font-weight="700" fill="#1F5288">POST /prompt</text>
+        <text x="400" y="112" font-size="12.5" fill="#4A505A">aiohttp 接收；同一份 JSON 也是无头 API 的请求体，无需 SDK</text>
+        <line x1="76" y1="132" x2="76" y2="140" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- step 3 -->
+        <rect x="40" y="140" width="880" height="52" rx="8" fill="#E5F2F0" stroke="#C6E2DE" stroke-width="1"/>
+        <rect x="40" y="140" width="6" height="52" rx="3" fill="#0F766E"/>
+        <circle cx="76" cy="166" r="15" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/>
+        <text x="76" y="171" font-size="13" font-weight="700" text-anchor="middle" fill="#0A5750">3</text>
+        <text x="106" y="162" font-size="14" font-weight="700" fill="#0A5750">validate_prompt</text>
+        <text x="400" y="172" font-size="12.5" fill="#4A505A">按 object_info 的 schema 做类型、必填项、文件存在性校验</text>
+        <line x1="76" y1="192" x2="76" y2="200" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- step 4 -->
+        <rect x="40" y="200" width="880" height="52" rx="8" fill="#E5F2F0" stroke="#C6E2DE" stroke-width="1"/>
+        <rect x="40" y="200" width="6" height="52" rx="3" fill="#0F766E"/>
+        <circle cx="76" cy="226" r="15" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/>
+        <text x="76" y="231" font-size="13" font-weight="700" text-anchor="middle" fill="#0A5750">4</text>
+        <text x="106" y="222" font-size="14" font-weight="700" fill="#0A5750">拓扑排序与缓存决策</text>
+        <text x="400" y="232" font-size="12.5" fill="#4A505A">DynamicPrompt → TopologicalSort → ExecutionList；输入指纹命中则跳过</text>
+        <line x1="76" y1="252" x2="76" y2="260" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- step 5 -->
+        <rect x="40" y="260" width="880" height="52" rx="8" fill="#FBF0E2" stroke="#EBD6B6" stroke-width="1"/>
+        <rect x="40" y="260" width="6" height="52" rx="3" fill="#B45309"/>
+        <circle cx="76" cy="286" r="15" fill="#FFFFFF" stroke="#B45309" stroke-width="2"/>
+        <text x="76" y="291" font-size="13" font-weight="700" text-anchor="middle" fill="#8F3F06">5</text>
+        <text x="106" y="282" font-size="14" font-weight="700" fill="#8F3F06">模型装载与权重挂载</text>
+        <text x="400" y="292" font-size="12.5" fill="#4A505A">ModelPatcher 以 copy-on-write 挂 LoRA / ControlNet；共享权重不互相污染</text>
+        <line x1="76" y1="312" x2="76" y2="320" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- step 6 -->
+        <rect x="40" y="320" width="880" height="52" rx="8" fill="#FBF0E2" stroke="#EBD6B6" stroke-width="1"/>
+        <rect x="40" y="320" width="6" height="52" rx="3" fill="#B45309"/>
+        <circle cx="76" cy="346" r="15" fill="#FFFFFF" stroke="#B45309" stroke-width="2"/>
+        <text x="76" y="351" font-size="13" font-weight="700" text-anchor="middle" fill="#8F3F06">6</text>
+        <text x="106" y="342" font-size="14" font-weight="700" fill="#8F3F06">显存预算与去噪执行</text>
+        <text x="400" y="352" font-size="12.5" fill="#4A505A">VRAMState 分态调度、部分权重常驻、异步流式搬运，逐节点执行采样</text>
+        <line x1="76" y1="372" x2="76" y2="380" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- step 7 -->
+        <rect x="40" y="380" width="880" height="52" rx="8" fill="#E8F4E9" stroke="#CDE4CE" stroke-width="1"/>
+        <rect x="40" y="380" width="6" height="52" rx="3" fill="#2E7D32"/>
+        <circle cx="76" cy="406" r="15" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+        <text x="76" y="411" font-size="13" font-weight="700" text-anchor="middle" fill="#1B5820">7</text>
+        <text x="106" y="402" font-size="14" font-weight="700" fill="#1B5820">推送进度与落盘</text>
+        <text x="400" y="412" font-size="12.5" fill="#4A505A">WebSocket 回传进度/预览；产出经 /view 取回，工作流元数据写入媒体文件</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 2</b>　一次生成的七步链路。注意第 2 步与第 4 步的两个「结构红利」：请求体直接复用画布导出的 JSON；拓扑排序阶段即可依据输入指纹决定哪些节点根本不必执行。前者让它天然是 API，后者让它天然适合反复调参。</figcaption>
+    <div class="src">来源：docs.comfy.org 自托管与启动参数文档（一手）／README Features 段（一手）／execution.py、comfy_execution、model_patcher.py、model_management.py 的公开源码解读（二手技术拆解，可复核）／社区架构综述（二手，用于交叉印证）。</div>
+  </figure>
+
+  <h3>3.1 三仓库联动与发布节奏</h3>
+  <p>README 的 Release Process 明确写了三个互锁仓库：<b>Core</b>（约每两周一个稳定版，每周一目标发一个周版）、<b>Desktop</b>（基于最新稳定核心构建）、<b>Frontend</b>（TypeScript/Vue，每两周以上合并进核心，以 <code>comfyui-frontend-package</code> 作为 PyPI 依赖）。补丁版本用于向当前稳定版回填修复，次版本用于 master 分支发布。</p>
+  <p>同一份 README 也自己承认了代价：「稳定 release 标签之外的提交可能非常不稳定并破坏许多自定义节点」。这不是外部批评，是官方写的。实测印证：GitHub Releases 一手数据显示近 24 天内有 5 个发布（v0.42.0 / v0.42.1 / v0.43.0 / v0.44.0 / v0.45.0，2026-10-18 至 2026-11-10）。</p>
+  <table>
+    <thead><tr><th style="width:22%">环节</th><th style="width:26%">实现位置</th><th>工程含义</th><th style="width:14%">证据强度</th></tr></thead>
+    <tbody>
+      <tr><td>HTTP / WebSocket 服务</td><td><code>server.py</code>（aiohttp）</td><td>REST 端点 <code>/prompt</code> <code>/history</code> <code>/view</code> <code>/object_info</code>；前端只是一个客户端</td><td><span class="tag t-green">一手文档</span></td></tr>
+      <tr><td>模型路径注册</td><td><code>folder_paths.py</code> + <code>extra_model_paths.yaml</code></td><td>可挂载其他 UI 已下载的模型目录，避免数十 GB 重复权重</td><td><span class="tag t-green">一手文档</span></td></tr>
+      <tr><td>执行与缓存</td><td><code>execution.py</code> / <code>comfy_execution</code></td><td>校验先行、可中断、作业状态可观测</td><td><span class="tag t-blue">源码解读</span></td></tr>
+      <tr><td>权重挂载</td><td><code>comfy/model_patcher.py</code></td><td>LoRA / hook 作为 copy-on-write patch，多工作流共享一份权重</td><td><span class="tag t-blue">源码解读</span></td></tr>
+      <tr><td>显存预算</td><td><code>comfy/model_management.py</code></td><td>六态 VRAMState、按需装载/驱逐、自动精度选择</td><td><span class="tag t-blue">源码解读</span></td></tr>
+      <tr><td>异步权重流</td><td><code>comfy-aimdo</code>（独立 PyPI 包）</td><td>把权重搬运从同步阻塞改成流水线，官方称支持 4GB 显存场景</td><td><span class="tag t-amber">厂商自报</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>可直接复用的工程结论：</b>因为「前端只是一个客户端」，任何能说 HTTP + WebSocket 的系统都能驱动 ComfyUI。这解释了 SwarmUI 直接用它做后端、Krita 插件接入、以及 Imaj Future Lab 把工作流提交进 CGRU/Afanasy 渲染农场——它们没有调用任何专有 SDK，只是把 <code>workflow_api.json</code> 当作作业描述丢给 <code>/prompt</code>。</div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04 / 生态位与选型</span>决策树：什么时候不该用 ComfyUI</h2>
+  <p class="lede">选型章最容易写成软文。这里先把反证据摆出来：多个第三方对比都指出，ComfyUI 的学习曲线最陡，且在「单张 SDXL 出图速度」和「极低显存稳定性」上并非第一。</p>
+
+  <div class="warn"><b>必须先说的反证据：</b>一份 2026 年的第三方对比在 RTX 3090 24GB、1024×1024 SDXL、30 步条件下测得 Forge 3.2s、ComfyUI 3.8s、SwarmUI 4.0s、InvokeAI 4.5s，并称 6GB 卡上只有 Forge 能在 1024×1024 不 OOM。<b>证据强度：单一测评、未公开完整硬件/版本/采样器配置，属「单一案例」，不能上升为通用结论</b>，但足以否定「ComfyUI 在所有维度最快」这一说法。README 的 “by far the most optimized inference engine in the world” 是厂商自述，未见公开对照实验支撑。</div>
+
+  <h3>4.1 按抽象层重排的对比矩阵</h3>
+  <table>
+    <thead><tr><th style="width:15%">方案</th><th style="width:13%">抽象层</th><th style="width:20%">最强项</th><th style="width:22%">主要代价</th><th>适合谁</th></tr></thead>
+    <tbody>
+      <tr><td><b>ComfyUI</b></td><td>图运行时</td><td>模型覆盖最广、day-0 支持、复杂/视频管线、可 API 化与复现</td><td>学习曲线陡；周更易破坏自定义节点；默认无鉴权单租户</td><td>需要可复现、可部署、可扩展流程的技术美术与工程团队</td></tr>
+      <tr><td><b>Diffusers</b></td><td>Python 库</td><td>代码优先、类型与调试体验、Hugging Face 生态最深</td><td>无 UI、无队列、无显存调度，生产化要自建</td><td>写服务、做研究、需要精确控制的研究者与后端</td></tr>
+      <tr><td><b>Forge / A1111</b></td><td>表单式 WebUI</td><td>上手最快、教程与老插件最多、低显存优化激进</td><td>新模型跟进慢（Forge 主线 2025-07 后停更）；管线形状固定</td><td>只想快速出图、沿用 A1111 习惯的用户</td></tr>
+      <tr><td><b>SwarmUI</b></td><td>产品化前端</td><td>以 ComfyUI 为后端，表单易用 + 节点图底座两全；多用户/多 GPU 更友好</td><td>依赖 ComfyUI 主线；多一层抽象成本</td><td>小团队共享 GPU、希望降低培训成本</td></tr>
+      <tr><td><b>InvokeAI</b></td><td>画布式产品</td><td>资产管理、版本/检索/元数据、商用许可选项清晰</td><td>自定义节点生态与模型覆盖不及节点图路线</td><td>工作室/代理商做客户项目与资产治理</td></tr>
+      <tr><td><b>Midjourney / Runway 等</b></td><td>闭源托管产品</td><td>零运维、开箱即用、无需 GPU</td><td>不可控中间步骤、数据出本地、按量付费、模型锁定</td><td>对可控性与数据本地化无硬要求的个人创作者</td></tr>
+    </tbody>
+  </table>
+  <div class="src">来源：README 模型清单（一手）／local-llm.net 2026 对比测评（第三方单一案例）／SwarmUI 官方文档（说明以 ComfyUI 为后端，一手）／invokeai 与 Forge 仓库状态（二手交叉）／中文技术博客横向对比（二手，仅作线索）。星数口径见第 07 章。</div>
+
+  <h3>4.2 选型决策树</h3>
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 344" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="生成式 AI 工具选型决策树">
+      <rect x="0" y="0" width="960" height="344" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <rect x="300" y="16" width="360" height="52" rx="10" fill="#FBF0E2" stroke="#B45309" stroke-width="2"/>
+        <text x="480" y="40" font-size="15" font-weight="700" text-anchor="middle" fill="#8F3F06">首要问题：流程要被复用和部署吗</text>
+        <text x="480" y="59" font-size="11.5" text-anchor="middle" fill="#4A505A">一次性的图，与要交付给别人的产线，是两种需求</text>
+        <!-- connectors, all outside text -->
+        <line x1="480" y1="68" x2="480" y2="100" stroke="#CFC9BC" stroke-width="2"/>
+        <line x1="155" y1="100" x2="805" y2="100" stroke="#CFC9BC" stroke-width="2"/>
+        <line x1="155" y1="100" x2="155" y2="130" stroke="#CFC9BC" stroke-width="2"/>
+        <line x1="480" y1="100" x2="480" y2="130" stroke="#CFC9BC" stroke-width="2"/>
+        <line x1="805" y1="100" x2="805" y2="130" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- branch A -->
+        <rect x="20" y="130" width="270" height="186" rx="10" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="36" y="157" font-size="14" font-weight="700" fill="#1B5820">否：只要出图</text>
+        <text x="36" y="182" font-size="12" fill="#333941">选 Fooocus / A1111 / Forge</text>
+        <text x="36" y="205" font-size="12" fill="#333941">或直接用 Midjourney 类托管</text>
+        <text x="36" y="232" font-size="11.5" fill="#4A505A">判据：不分享工作流、不做版本</text>
+        <text x="36" y="252" font-size="11.5" fill="#4A505A">控制、不接生产系统、无需本地</text>
+        <text x="36" y="272" font-size="11.5" fill="#4A505A">化。上手速度优先于天花板。</text>
+        <text x="36" y="298" font-size="11.5" fill="#1B5820">风险：模型迭代后工具可能掉队</text>
+        <!-- branch B -->
+        <rect x="345" y="130" width="270" height="186" rx="10" fill="#EAF1FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="361" y="157" font-size="14" font-weight="700" fill="#1F5288">是：要复用与部署</text>
+        <text x="361" y="182" font-size="12" fill="#333941">选 ComfyUI（或 SwarmUI 壳）</text>
+        <text x="361" y="205" font-size="12" fill="#333941">视频 / 多模型 / 复杂链路必选</text>
+        <text x="361" y="232" font-size="11.5" fill="#4A505A">判据：工作流要进 Git、要被</text>
+        <text x="361" y="252" font-size="11.5" fill="#4A505A">POST 调用、要能复现与审计、</text>
+        <text x="361" y="272" font-size="11.5" fill="#4A505A">或需 day-0 接入新模型。</text>
+        <text x="361" y="298" font-size="11.5" fill="#1F5288">代价：必须自己补安全边界</text>
+        <!-- branch C -->
+        <rect x="670" y="130" width="270" height="186" rx="10" fill="#F0EAF9" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="686" y="157" font-size="14" font-weight="700" fill="#5A3099">是：但要写服务</text>
+        <text x="686" y="182" font-size="12" fill="#333941">选 Diffusers / 自建调度</text>
+        <text x="686" y="205" font-size="12" fill="#333941">或 ComfyUI 作为无头后端</text>
+        <text x="686" y="232" font-size="11.5" fill="#4A505A">判据：流程由代码而非人来定、</text>
+        <text x="686" y="252" font-size="11.5" fill="#4A505A">需要强类型与单元测试、已有</text>
+        <text x="686" y="272" font-size="11.5" fill="#4A505A">自己的队列与显存管理。</text>
+        <text x="686" y="298" font-size="11.5" fill="#5A3099">代价：编排与运维全部自建</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 3</b>　按「流程是否需要被复用与部署」分叉的选型决策树。分叉点刻意不放在「会不会画节点」上——那是学习成本，不是架构判据。右侧两支并非互斥：把 ComfyUI 当作无头后端、由自己的服务提交工作流，正是第 03 章 Imaj Future Lab 渲染农场的做法。</figcaption>
+    <div class="src">来源：作者基于本文档第 01–03 章判别式与第 04 章对比矩阵的综合判断（属观点，非共识）；分支内的工具能力描述回溯各项目官方文档与第三方对比。</div>
+  </figure>
+
+  <div class="opinion"><b>观点：</b>最值得注意的不是「谁赢了」，而是 <b>SwarmUI 直接把 ComfyUI 当后端</b>。当竞争者选择复用你的执行引擎、只在上面做一层更友好的壳，这比任何星数都更能说明抽象层已经稳固。同理，国内 RunningHub、LiblibAI 等平台把「云端 ComfyUI 工作流」作为核心商品，本质也是在同一层运行时之上做分发与计费。</div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05 / 关键能力一</span>模型覆盖与 day-0 机制：为什么模型实验室愿意适配它</h2>
+  <p class="lede">一个运行时的护城河，取决于「新模型发布当天能不能跑」。ComfyUI 在这方面形成了正循环：模型实验室把它列入发布清单 → 用户不必等 → 更多用户留在这层运行时 → 实验室更有动力优先适配。</p>
+
+  <h3>5.1 README 一手清单：从扩散 GUI 到全模态引擎</h3>
+  <p>2026-11 版 README 的自述已不是「Stable Diffusion GUI」，而是 “the AI creation engine for visual professionals”，Features 段列出的原生支持跨越七类模态。这张清单本身就是论据——它说明节点图抽象没有被绑定在某一种模型架构上。</p>
+  <table>
+    <thead><tr><th style="width:16%">模态</th><th style="width:52%">README 列举的代表模型</th><th>结构性含义</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-blue">图像生成</span></td><td>SD1.5 / SDXL / SD3.5 / Flux.1 / Flux.2 / Qwen Image / Z-Image / Hunyuan Image 2.1 / HiDream / Lumina 2.0 / Chroma / Kandinsky 5 / Ernie Image / Moss Image 等</td><td>单一种类即十余个架构，每种的 CLIP/VAE/采样配置都不同</td></tr>
+      <tr><td><span class="tag t-blue">图像编辑</span></td><td>Flux Kontext / Flux.2 Klein / Qwen Image Edit / HiDream E1.1、O1 / OmniGen2 / Fibo 2.0 等</td><td>引入参考图条件与多输入，管线形状与文生图不同</td></tr>
+      <tr><td><span class="tag t-teal">视频生成</span></td><td>Wan 2.1 / 2.2、LTX-Video 2 / 2.3、HunyuanVideo 1.5、Kandinsky 5 Video、CogVideoX、Cosmos Predict2、Mochi 等</td><td>时序潜变量与帧处理，是表单 UI 最难吸收的一类</td></tr>
+      <tr><td><span class="tag t-teal">音视频 / 音频</span></td><td>MiniMax H3、LTX-AV、ACE-Step 1.5、Stable Audio 3、MiniMax Music 3、Yue 2</td><td>已超出「视觉」，产出元数据也扩展到 FLAC</td></tr>
+      <tr><td><span class="tag t-purple">3D 与视觉</span></td><td>Hunyuan3D 2.1、TripoSplat、SeedVR2、SUPIR、Depth Anything 3、SAM 3 / 3.1、BiRefNet 等</td><td>条件/分割/超分作为一等节点参与构图</td></tr>
+      <tr><td><span class="tag t-amber">文本生成</span></td><td>Gemma 3 / 4、Qwen3 / Qwen3.5、Qwen3-VL（含多模态输入）</td><td><b>最关键的一行</b>：节点图引擎同时装下 LLM 与扩散两条技术栈</td></tr>
+    </tbody>
+  </table>
+  <div class="src">来源：<code>https://raw.githubusercontent.com/Comfy-Org/ComfyUI/master/README.md</code> Features 段，2026-11-13 抓取，一手。README 自带限定：「This is a representative list」，即非穷举。</div>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 366" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ComfyUI 分层栈：模型层、运行时层、接口层、产品层">
+      <rect x="0" y="0" width="960" height="366" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <!-- L4 product -->
+        <rect x="60" y="20" width="840" height="66" rx="9" fill="#FBF0E2" stroke="#B45309" stroke-width="1.5"/>
+        <text x="84" y="46" font-size="14" font-weight="700" fill="#8F3F06">产品 / 分发层</text>
+        <text x="84" y="68" font-size="12" fill="#4A505A">Comfy Desktop · Comfy Cloud · Developer Platform / API · Enterprise · Partner Nodes · Comfy Agent</text>
+        <text x="888" y="58" font-size="11.5" text-anchor="end" fill="#8F3F06">计费与账号</text>
+        <!-- L3 interface -->
+        <rect x="60" y="94" width="840" height="66" rx="9" fill="#EAF1FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="84" y="120" font-size="14" font-weight="700" fill="#1F5288">表示 / 接口层</text>
+        <text x="84" y="142" font-size="12" fill="#4A505A">workflow.json · workflow_api.json · Subgraph · App Mode · /prompt + WebSocket · PNG 元数据</text>
+        <text x="888" y="132" font-size="11.5" text-anchor="end" fill="#1F5288">图即程序</text>
+        <!-- L2 runtime -->
+        <rect x="60" y="168" width="840" height="76" rx="9" fill="#E5F2F0" stroke="#0F766E" stroke-width="2"/>
+        <text x="84" y="196" font-size="14" font-weight="700" fill="#0A5750">ComfyUI Core 运行时（GPL-3.0）</text>
+        <text x="84" y="218" font-size="12" fill="#4A505A">validate · TopologicalSort · ExecutionList · 输入指纹缓存 · ModelPatcher · VRAMState</text>
+        <text x="84" y="236" font-size="12" fill="#4A505A">comfy-aimdo 异步权重流 · comfy-kitchen 低比特算子 · jobs API</text>
+        <text x="888" y="210" font-size="11.5" text-anchor="end" fill="#0A5750">调度权</text>
+        <!-- L1 model -->
+        <rect x="60" y="252" width="840" height="76" rx="9" fill="#F0EAF9" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="84" y="280" font-size="14" font-weight="700" fill="#5A3099">模型 / 权重层（各自的许可证）</text>
+        <text x="84" y="302" font-size="12" fill="#4A505A">图像 · 编辑 · 视频 · 音频 · 3D · 文本；开放权重本地加载 + Partner Nodes 远程闭源调用</text>
+        <text x="84" y="320" font-size="12" fill="#4A505A">PyTorch / CUDA / ROCm / XPU / MPS / Ascend CANN</text>
+        <text x="888" y="294" font-size="11.5" text-anchor="end" fill="#5A3099">ComfyUI 不拥有</text>
+        <!-- side annotation -->
+        <text x="480" y="352" font-size="11.5" text-anchor="middle" fill="#4A505A">分层要点：ComfyUI 的护城河在第二层，而收入在第四层——两者的目标函数并不天然一致</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 4</b>　四层栈。GPL-3.0 只覆盖 Core 运行时；模型权重各带独立许可证；Partner Nodes 按 Comfy 积分计费且需登录、不能离线。把「开源核心」与「产品层」分开看，才能同时解释「永久开源」的承诺与社区对付费节点的抵触。</figcaption>
+    <div class="src">来源：README、docs.comfy.org 账户/自托管文档、Comfy Org 官网产品页（均一手）；comfy-aimdo / comfy-kitchen 的模块归属来自公开源码技术拆解（二手，可复核）。</div>
+  </figure>
+
+  <h3>5.2 day-0 为什么在技术上可行</h3>
+  <p>「首发即支持」常被当作商务关系的结果，其实主要由三个工程机制支撑：<b>其一</b>，模型检测器按权重名前缀匹配已注册架构，新 checkpoint 格式能被同一套装载路径吸收；<b>其二</b>，新架构的差异被封装成新增节点与 <code>comfy_extras</code> 模块，不需要改动执行器、缓存或 UI 的表单布局；<b>其三</b>，核心、前端、桌面三仓库解耦，前端可独立发版。官方发布节奏（周版 + 双周稳定版）则是把这种技术可行性变成时间上的确定性。</p>
+  <p>可核验的时间点：FLUX 于 2024-08 发布当日获得支持；LTX-2.5 发布时即带 ComfyUI 模板；2026 年 Seedance 2.5、MiniMax H3、Wan Animate 2、Nano Banana 2.1 等在官网首页以「新模型发布」形式出现，且分别标注开放权重或 Partner Nodes。国内侧，RunningHub 在通义万相 Wan2.6 发布当日完成工作流环境集成，阿里云 2025-03 上线 Serverless ComfyUI 应用模板。</p>
+  <div class="note"><b>反证据要一起看：</b>这种速度是以稳定性换来的。README 明确警告稳定标签外的提交「可能非常不稳定并破坏许多自定义节点」；第三方工程综述把「依赖冲突每周发生、节点 monkeypatch 核心导致下个版本就坏」列为其生产可用性的首要痛点。对模型覆盖的追逐与对生态可靠性的承诺，是同一笔预算的两个方向——Comfy Org 2026 年 B 轮公告把「生态系统可靠性」列为资金用途之一，正是对这一矛盾的承认。</div>
+
+  <h3>5.3 中文生态：运行时之上的第二层商业</h3>
+  <p>国内形成了一个值得单独观察的现象：ComfyUI 本身是开源核心，但围绕它长出了规模可观的<b>托管工作流平台</b>。RunningHub（海马云）以云端 ComfyUI 环境与工作流 API 为核心，公开资料称已积累 1.3 万+ 节点、10 万+ 模型、8 万+ 工作流、10 万+ AI 应用，并在 2026 WAIC 披露月服务用户 2600 万、API 月调用 30 亿次（<b>厂商自报，未经独立审计</b>）；LiblibAI 提供云端 ComfyUI 与中文模型社区；此外还有影视节黑客松用 ComfyUI + 本地工作站集群完成 72 小时创作、国产显卡以 ComfyUI 工作流做出图性能演示等。</p>
+  <div class="opinion"><b>观点：</b>这印证了第 01 章的范式判定——当运行时足够稳固，竞争就上移到「谁把工作流变成可分发、可计费的商品」。同时也提示一个容易被忽略的风险：这些平台预装了大量第三方节点，等于把第 08 章要讨论的供应链信任问题整体接管了过去。选用托管平台时，「节点谁审核过」比「节点有多少」更重要。</div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06 / 关键能力二</span>显存预算与增量执行：4GB 声明的机制解释与证据审查</h2>
+  <p class="lede">「4GB 显存跑最大开源模型」是 ComfyUI 最广为流传也最需要审慎对待的声明。这一章先解释它在机制上怎么成立，再审查它的证据强度与反例。</p>
+
+  <h3>6.1 VRAMState 六态：把 OOM 变成连续曲线</h3>
+  <p>启动时探测设备显存并归入六态，状态决定后续所有装载策略的激进程度。一次执行前由 <code>load_models_gpu</code> 统一调度：去重本次所需模型 → 标记已驻留模型 → 计算「所需显存 × 系数 + 推理预留」→ <code>free_memory</code> 驱逐旧权重 → 逐模型算 <code>lowvram_model_memory</code>，放得下就全量进卡，放不下就部分常驻、forward 时按层搬入。v0.40 之后又加入 pin（钉住常用权重）与按优先级分级驱逐。</p>
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VRAMState 六态阶梯与对应策略">
+      <rect x="0" y="0" width="960" height="330" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <!-- baseline -->
+        <line x1="40" y1="270" x2="920" y2="270" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- step 1 -->
+        <rect x="46" y="212" width="136" height="58" rx="6" fill="#FBECEA" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="114" y="234" font-size="12" font-weight="700" text-anchor="middle" fill="#9A1F18">DISABLED</text>
+        <text x="114" y="252" font-size="10.5" text-anchor="middle" fill="#4A505A">纯 CPU</text>
+        <text x="114" y="264" font-size="10.5" text-anchor="middle" fill="#4A505A">分钟级每张</text>
+        <!-- step 2 -->
+        <rect x="192" y="188" width="136" height="82" rx="6" fill="#FBECEA" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="260" y="210" font-size="12" font-weight="700" text-anchor="middle" fill="#9A1F18">NO_VRAM</text>
+        <text x="260" y="228" font-size="10.5" text-anchor="middle" fill="#4A505A">模型留 CPU</text>
+        <text x="260" y="244" font-size="10.5" text-anchor="middle" fill="#4A505A">GPU 只做计算</text>
+        <text x="260" y="262" font-size="10.5" text-anchor="middle" fill="#4A505A">极慢</text>
+        <!-- step 3 -->
+        <rect x="338" y="160" width="136" height="110" rx="6" fill="#FBF0E2" stroke="#B45309" stroke-width="1.2"/>
+        <text x="406" y="182" font-size="12" font-weight="700" text-anchor="middle" fill="#8F3F06">LOW_VRAM</text>
+        <text x="406" y="200" font-size="10.5" text-anchor="middle" fill="#4A505A">4–6GB 档</text>
+        <text x="406" y="216" font-size="10.5" text-anchor="middle" fill="#4A505A">LowVramPatch</text>
+        <text x="406" y="232" font-size="10.5" text-anchor="middle" fill="#4A505A">权重按层即时搬入</text>
+        <text x="406" y="252" font-size="10.5" text-anchor="middle" fill="#4A505A">配合 fp16 / GGUF</text>
+        <text x="406" y="266" font-size="10.5" text-anchor="middle" fill="#8F3F06">慢但能跑</text>
+        <!-- step 4 -->
+        <rect x="484" y="130" width="136" height="140" rx="6" fill="#EAF1FA" stroke="#2F6FB0" stroke-width="1.2"/>
+        <text x="552" y="152" font-size="12" font-weight="700" text-anchor="middle" fill="#1F5288">NORMAL_VRAM</text>
+        <text x="552" y="170" font-size="10.5" text-anchor="middle" fill="#4A505A">6–12GB 档</text>
+        <text x="552" y="190" font-size="10.5" text-anchor="middle" fill="#4A505A">按需装载与驱逐</text>
+        <text x="552" y="210" font-size="10.5" text-anchor="middle" fill="#4A505A">保留有用权重</text>
+        <text x="552" y="230" font-size="10.5" text-anchor="middle" fill="#4A505A">自动选 fp16/bf16/fp8</text>
+        <text x="552" y="254" font-size="10.5" text-anchor="middle" fill="#1F5288">默认策略</text>
+        <!-- step 5 -->
+        <rect x="630" y="100" width="136" height="170" rx="6" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.2"/>
+        <text x="698" y="122" font-size="12" font-weight="700" text-anchor="middle" fill="#1B5820">HIGH_VRAM</text>
+        <text x="698" y="140" font-size="10.5" text-anchor="middle" fill="#4A505A">12GB 以上</text>
+        <text x="698" y="162" font-size="10.5" text-anchor="middle" fill="#4A505A">整模型常驻显存</text>
+        <text x="698" y="182" font-size="10.5" text-anchor="middle" fill="#4A505A">几乎不卸载</text>
+        <text x="698" y="204" font-size="10.5" text-anchor="middle" fill="#4A505A">--highvram 可强制</text>
+        <text x="698" y="230" font-size="10.5" text-anchor="middle" fill="#4A505A">显存换吞吐</text>
+        <text x="698" y="254" font-size="10.5" text-anchor="middle" fill="#1B5820">最快</text>
+        <!-- step 6 -->
+        <rect x="776" y="160" width="136" height="110" rx="6" fill="#F0EAF9" stroke="#6D3FB5" stroke-width="1.2"/>
+        <text x="844" y="182" font-size="12" font-weight="700" text-anchor="middle" fill="#5A3099">SHARED</text>
+        <text x="844" y="200" font-size="10.5" text-anchor="middle" fill="#4A505A">统一内存架构</text>
+        <text x="844" y="216" font-size="10.5" text-anchor="middle" fill="#4A505A">Apple Silicon MPS</text>
+        <text x="844" y="236" font-size="10.5" text-anchor="middle" fill="#4A505A">CPU/GPU 共享</text>
+        <text x="844" y="260" font-size="10.5" text-anchor="middle" fill="#4A505A">单独判定</text>
+        <!-- axis labels -->
+        <text x="46" y="292" font-size="11" text-anchor="start" fill="#4A505A">显存越少 → 搬运越频繁、耗时越长（连续降级，而非二值 OOM）</text>
+        <text x="920" y="292" font-size="11" text-anchor="end" fill="#4A505A">状态由启动探测决定，可用命令行覆盖</text>
+        <text x="480" y="316" font-size="11" text-anchor="middle" fill="#4A505A">六态并非同一维度的六个刻度：SHARED 是架构分支，DISABLED 是显式开关</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 5</b>　VRAMState 六态与对应策略。高度仅示意「可用资源与性能上限的相对关系」，不是实测量化刻度；右端的 SHARED 因此画成独立柱而非最高阶。这一区分很重要：把六种状态误读成一条线性刻度，会得出「统一内存比 24GB 独显更快」的错误推论。</figcaption>
+    <div class="src">来源：<code>comfy/model_management.py</code> 与 <code>cli_args.py</code> 的公开源码解读（DeepWiki，二手但可复核）／docs.comfy.org 启动参数文档（一手）／README 关于异步权重流的说明（一手，厂商自述）。</div>
+  </figure>
+
+  <h3>6.2 4GB 声明的证据审查</h3>
+  <table>
+    <thead><tr><th style="width:20%">检查项</th><th>结果</th><th style="width:16%">判定</th></tr></thead>
+    <tbody>
+      <tr><td>原文</td><td>“Can run even the biggest open source models on as low as 4GB vram + 8GB ram relatively quickly ... using our state of the art asynchronous weight streaming technology.”</td><td><span class="tag t-amber">厂商自报</span></td></tr>
+      <tr><td>机制是否可解释</td><td>是。部分常驻 + 按层搬入 + 异步流 + 自动降精度 + 低显存态，机制链完整且与源码结构一致</td><td><span class="tag t-green">成立</span></td></tr>
+      <tr><td>有无独立复现基准</td><td>本轮检索未找到公开的第三方对照实验；「relatively quickly」无量化定义，未说明模型、分辨率、步数、耗时</td><td><span class="tag t-red">缺失</span></td></tr>
+      <tr><td>数量级自洽性</td><td>5.6B 级模型 fp8 权重约 5–6GB，叠加文本编码器与激活，4GB 显存 + 8GB 内存需持续换入换出，属「可运行但极慢」区间；第三方配置矩阵把 4–6GB 标为 “Very slow”，与之一致</td><td><span class="tag t-green">不矛盾</span></td></tr>
+      <tr><td>方向相反的证据</td><td>第三方单测称 6GB 卡上 Forge 是唯一能 1024×1024 SDXL 不 OOM 的方案；另一份来源称 ComfyUI 可在 1GB 显存运行（不同来源口径冲突，说明该数字高度依赖模型与量化）</td><td><span class="tag t-red">存在反例</span></td></tr>
+    </tbody>
+  </table>
+  <div class="verdict"><h4>结论：机制可信，数字不可当采购依据</h4><p>把 4GB 理解为「降级曲线的下端存在」是对的，理解为「4GB 卡能舒服地生产」是错的。正确的工程动作是：按目标模型与分辨率<b>自己跑一遍</b>基准，记录 <code>--lowvram</code> / <code>--novram</code> / fp8 / GGUF 各组合的实测耗时与 OOM 率，再决定硬件；不要引用 README 的营销句做容量规划。</p></div>
+
+  <h3>6.3 增量执行：缓存是最被低估的能力</h3>
+  <p>官方文档明确：「ComfyUI 会在同一会话中复用已缓存的节点结果，这正是重复运行更快的原因」，并提供 <code>--cache-none</code> 「每个节点都会重新执行，生成时间会更长」，专供调试或排除缓存复用。把它与第 02 章的记忆化理论对上，可得三条实践：</p>
+  <table>
+    <thead><tr><th style="width:26%">实践</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td>调参时只改末端节点</td><td>改提示词只重跑 CLIP 编码及其下游，模型权重与已缓存分支不重算；在 50 节点图上收益显著</td></tr>
+      <tr><td>结果异常先用 <code>--cache-none</code> 复跑</td><td>区分「工作流逻辑错误」与「缓存污染/节点隐藏状态」两类问题</td></tr>
+      <tr><td>自定义节点必须保持纯函数语义</td><td>读取全局状态、写随机文件、依赖时间戳的节点会破坏指纹缓存的正确性；这也是 60,000 节点生态里最常见的隐性缺陷</td></tr>
+    </tbody>
+  </table>
+  <div class="warn"><b>边界：</b>缓存以输入指纹为键，不等于严格可复现。随机种子、第三方 API 节点、模型权重文件被原位替换、GPU 非确定性算子，都可能让「同输入不同输出」。生产系统若需要审计级复现，应额外固定：核心版本 tag、节点 commit、权重哈希、seed 与采样器参数，并把这些写进作业记录。</div>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07 / 证据全景</span>数字打架时怎么办：证据分级与数量级反推</h2>
+  <p class="lede">这一章把本报告用到的证据摊开，包括互相矛盾的数字与方向相反的结论。研究类交付物的可信度不取决于引用了多少条，而取决于敢不敢把不利于自己论断的证据也列出来并说明如何处理。</p>
+
+  <h3>7.1 证据分级光谱</h3>
+  <p>原始技能分级（RCT &gt; 受控实验 &gt; 大样本观察 &gt; 自报/调查 &gt; 单一案例 &gt; 建模）来自医学语境，直接套到软件工程研究会失真。本报告按「可复核性」映射为四级：</p>
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 258" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="本报告使用的四级证据强度光谱">
+      <rect x="0" y="0" width="960" height="258" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <rect x="30" y="24" width="216" height="184" rx="9" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="46" y="50" font-size="14" font-weight="700" fill="#1B5820">A · 一手可复核</text>
+        <text x="46" y="76" font-size="11.5" fill="#333941">判定：有原始出处、可重跑</text>
+        <text x="46" y="98" font-size="11.5" fill="#4A505A">GitHub API / README / Releases</text>
+        <text x="46" y="116" font-size="11.5" fill="#4A505A">SECURITY.md / docs.comfy.org</text>
+        <text x="46" y="134" font-size="11.5" fill="#4A505A">arXiv 论文 / NVD / CVE</text>
+        <text x="46" y="152" font-size="11.5" fill="#4A505A">官方融资公告 / 客户案例</text>
+        <text x="46" y="180" font-size="11.5" fill="#1B5820">用法：直接作为事实陈述</text>
+        <text x="46" y="198" font-size="11.5" fill="#1B5820">仍需注意厂商利益立场</text>
+        <rect x="258" y="24" width="216" height="184" rx="9" fill="#EAF1FA" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="274" y="50" font-size="14" font-weight="700" fill="#1F5288">B · 独立第三方研究</text>
+        <text x="274" y="76" font-size="11.5" fill="#333941">判定：有方法论与署名机构</text>
+        <text x="274" y="98" font-size="11.5" fill="#4A505A">CSA Labs 安全研究报告</text>
+        <text x="274" y="116" font-size="11.5" fill="#4A505A">SentinelOne CVE 数据库</text>
+        <text x="274" y="134" font-size="11.5" fill="#4A505A">DeepWiki 源码结构化解读</text>
+        <text x="274" y="152" font-size="11.5" fill="#4A505A">ADWEEK 等署名媒体报道</text>
+        <text x="274" y="180" font-size="11.5" fill="#1F5288">用法：作为事实，标注机构</text>
+        <text x="274" y="198" font-size="11.5" fill="#1F5288">与年份、样本范围</text>
+        <rect x="486" y="24" width="216" height="184" rx="9" fill="#FBF0E2" stroke="#B45309" stroke-width="1.5"/>
+        <text x="502" y="50" font-size="14" font-weight="700" fill="#8F3F06">C · 厂商自报 / 单一案例</text>
+        <text x="502" y="76" font-size="11.5" fill="#333941">判定：无对照、无独立审计</text>
+        <text x="502" y="98" font-size="11.5" fill="#4A505A">4GB 显存 / 最快引擎</text>
+        <text x="502" y="116" font-size="11.5" fill="#4A505A">400 万用户 / 15 万日下载</text>
+        <text x="502" y="134" font-size="11.5" fill="#4A505A">60,000+ 节点 / 平台规模</text>
+        <text x="502" y="152" font-size="11.5" fill="#4A505A">第三方单次性能测评</text>
+        <text x="502" y="180" font-size="11.5" fill="#8F3F06">用法：只作线索或反例</text>
+        <text x="502" y="198" font-size="11.5" fill="#8F3F06">绝不单独支撑结论</text>
+        <rect x="714" y="24" width="216" height="184" rx="9" fill="#F0EAF9" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="730" y="50" font-size="14" font-weight="700" fill="#5A3099">D · 推测 / 建模 / 观点</text>
+        <text x="730" y="76" font-size="11.5" fill="#333941">判定：不可直接验证</text>
+        <text x="730" y="98" font-size="11.5" fill="#4A505A">「ARR 几乎为零」分析</text>
+        <text x="730" y="116" font-size="11.5" fill="#4A505A">选型决策树与成熟度阶梯</text>
+        <text x="730" y="134" font-size="11.5" fill="#4A505A">四层栈抽象、范式判定</text>
+        <text x="730" y="152" font-size="11.5" fill="#4A505A">本报告所有「观点」框</text>
+        <text x="730" y="180" font-size="11.5" fill="#5A3099">用法：显式标注为观点</text>
+        <text x="730" y="198" font-size="11.5" fill="#5A3099">并给出可证伪条件</text>
+        <text x="480" y="238" font-size="11.5" text-anchor="middle" fill="#4A505A">越靠右越需要交叉印证；同一结论若只有 C/D 级证据，本报告一律降级为「待验证」而非写成事实</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 6</b>　四级证据强度光谱。注意 A 级内部还有差别：GitHub API 的 stars 数是机器可复核的观测值，而官方融资公告里的「400 万用户」虽属一手，却是无审计的自报值——两者不能同等对待，故第 7.3 节单独做数字核对。</figcaption>
+    <div class="src">分级方法为本报告基于 deep-research-html-report 技能原始分级做的工程语境映射，属方法论观点（D 级）。</div>
+  </figure>
+
+  <h3>7.2 完整证据表（含反证据列）</h3>
+  <table>
+    <thead><tr><th style="width:22%">结论 / 数据</th><th style="width:24%">来源与年份</th><th style="width:11%">强度</th><th style="width:20%">支持方向</th><th>反证据 / 边界</th></tr></thead>
+    <tbody>
+      <tr><td>146,557 stars / 17,466 forks / 5,526 open issues / GPL-3.0 / 创建于 2023-01-17</td><td>GitHub REST API，2026-11-13 实测</td><td><span class="tag t-green">A</span></td><td>生态规模与许可证事实</td><td>观测瞬时值；stars 不等于活跃用户</td></tr>
+      <tr><td>最新 v0.45.0（2026-11-10），24 天内 5 个 release</td><td>GitHub Releases API，2026-11-13</td><td><span class="tag t-green">A</span></td><td>周更节奏的技术可行性</td><td>反面：官方自承稳定标签外提交可能破坏大量自定义节点</td></tr>
+      <tr><td>七类模态、数十个模型家族原生支持；可完全离线</td><td>README master，2026-11-13 抓取</td><td><span class="tag t-green">A</span></td><td>C2 / C5 论断</td><td>清单自称 representative，非穷举；离线需 <code>--offline</code> 关闭可选 API 节点</td></tr>
+      <tr><td>默认绑定 127.0.0.1、无鉴权；<code>--listen</code> 暴露不算漏洞</td><td>SECURITY.md（v0.44.0 引入）+ 自托管文档，2026</td><td><span class="tag t-green">A</span></td><td>C6 / C7 论断</td><td>反证据：官方给出反代鉴权方案；App Mode / Enterprise 在补多租户</td></tr>
+      <tr><td>CVE-2025-67303，CVSS 7.5，Manager &lt;3.38 未鉴权 RCE；需 Core ≥v0.3.76</td><td>NVD 2026-01-05 / DailyCVE / CSA Labs 2026-04</td><td><span class="tag t-green">A</span></td><td>C6 论断</td><td>补丁已发布；不能外推到当前版本</td></tr>
+      <tr><td>CVE-2024-21574，<code>/customnode/install</code> pip 字段未校验导致 RCE</td><td>NVD 2024-12-12 / SentinelOne 漏洞库</td><td><span class="tag t-green">A</span></td><td>C6 论断</td><td>修复于 Manager V2.51.1；历史漏洞</td></tr>
+      <tr><td>千台级公开实例被植入挖矿僵尸网络（XMRig + lolMiner + Hysteria2）</td><td>CSA Labs 研究简报，2026-04-08</td><td><span class="tag t-blue">B</span></td><td>C6 / C7 论断</td><td>同类问题也见于 OpenWebUI 15,000+ / Ollama 175,000+ 暴露实例，非 ComfyUI 独有</td></tr>
+      <tr><td>官方 Registry 曾出现投递 Akira Stealer 的恶意包</td><td>CSA Labs 2026-04 引述 / 安全厂商博客</td><td><span class="tag t-blue">B</span></td><td>C6 论断</td><td>已下架并加审核标准；「下架后换名重现」的说法来自二手博客，未独立核实</td></tr>
+      <tr><td>B 轮 $30M、估值 $500M、累计 $47M，2026-04-24</td><td>Comfy Org 官方公告（中英双版）</td><td><span class="tag t-green">A</span></td><td>C8 论断</td><td>媒体写「约 $48M / Series A $17–19M」，与官方 $47M 有 1M 口径差</td></tr>
+      <tr><td>400 万+ 用户、60,000+ 节点、15 万+ 日下载</td><td>同上官方公告 / comfy.org 首页</td><td><span class="tag t-amber">C</span></td><td>生态规模</td><td>无审计；「60,000 节点」与第三方「千余个扩展包」口径不同，疑为节点类数量而非包数</td></tr>
+      <tr><td>4GB VRAM + 8GB RAM 跑最大开源模型、世界最快推理引擎</td><td>README，2026</td><td><span class="tag t-amber">C</span></td><td>C4 论断（仅机制部分）</td><td>无独立基准；第三方单测 Forge 3.2s &lt; ComfyUI 3.8s；6GB 卡反例</td></tr>
+      <tr><td>ComfyGen：310 工作流 / 500 提示词，GenEval 0.61 vs 0.59，HPS 胜率 93%、用户研究 72%</td><td>arXiv:2410.01731，NVIDIA Research + TAU，2024</td><td><span class="tag t-green">A</span></td><td>C1 / C10 论断（图即程序）</td><td>仅 SDXL 级模型、无 FLUX；空间定位类提示偏弱；后续工作指其只是「在已有流程上分类」</td></tr>
+      <tr><td>ComfyGen-RL 用 GRPO + 代理奖励模型生成新拓扑</td><td>arXiv:2505.21478，Technion + NVIDIA，2025</td><td><span class="tag t-green">A</span></td><td>C10 论断</td><td>预印本，标注 under review；未大规模落地验证</td></tr>
+      <tr><td>节点图作为 XAI 界面，层干预产生成族可预期视觉变化</td><td>arXiv:2607.22428，2026-07</td><td><span class="tag t-green">A</span></td><td>第 02 章可检查性理论</td><td>SD1.5 上的定性与定量分析，未覆盖新架构</td></tr>
+      <tr><td>SVEDKA 超级碗广告：周期由约半年压到不足一个月</td><td>comfy.org 官方客户案例，2026-02-08</td><td><span class="tag t-blue">B</span></td><td>生产可用性</td><td>厂商精选案例，有幸存者偏差；中文转述的「效率提升 180 倍」等数字无出处，不采信</td></tr>
+      <tr><td>把 ComfyUI 工作流提交进 CGRU/Afanasy 渲染农场，数据不出内网</td><td>Imaj Future Lab 工程博客，2026</td><td><span class="tag t-blue">B</span></td><td>C7 / 图即请求体</td><td>单一团队实践；自建框架，非开箱能力</td></tr>
+      <tr><td><code>--disable-api-nodes</code> 破坏 Manager，社区指「enshittification」，v0.39.0 拆分修复</td><td>GitHub issue #14887，2026-07 至 10</td><td><span class="tag t-green">A</span></td><td>C8 论断</td><td>反证据：核心开发者亲自回应，且三个月内落地拆分 flag，说明反馈通道有效</td></tr>
+      <tr><td>节点/模型许可证地域与商用限制造成工作室合规困难</td><td>GitHub discussion #14346，2026-06</td><td><span class="tag t-blue">B</span></td><td>第 09 章治理风险</td><td>社区讨论中的法律理解非专业法律意见</td></tr>
+      <tr><td>「ARR 几乎为零 / pre-revenue」</td><td>中文商业分析站，2026</td><td><span class="tag t-purple">D</span></td><td>治理张力背景</td><td>无财务披露、无数据来源；仅作为待验证假设，不作结论</td></tr>
+      <tr><td>60,000 节点生态与 day-0 支持构成护城河</td><td>综合本报告第 05 章证据</td><td><span class="tag t-purple">D</span></td><td>C5 论断</td><td>「护城河」是判断不是观测；可被模型 API 化或浏览器原生推理绕过</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.3 数字打架：同一指标六个数字</h3>
+  <p>研究中最常见的错误，是把不同时间点、不同口径的数字并列当作「矛盾」。以 GitHub stars 为例，本轮检索一共遇到六个值：</p>
+  <table>
+    <thead><tr><th style="width:16%">数值</th><th style="width:18%">采样时间</th><th style="width:26%">来源</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td>122k</td><td>2026-07</td><td>开源图片生成器对比站</td><td>二手快照，时间最早，不采信为当前值</td></tr>
+      <tr><td>129k</td><td>2026-08（文中语境）</td><td>英文技术分析</td><td>二手，与前后值单调一致，可作趋势点</td></tr>
+      <tr><td>132,542</td><td>2026-09-11</td><td>Repocloud 页面</td><td>同页正文又写「126,000+」，<b>自相矛盾</b>，降权</td></tr>
+      <tr><td>139,381</td><td>2026-10-20</td><td>中文技术拆解</td><td>二手但与一手序列吻合</td></tr>
+      <tr><td>142,520</td><td>2026-10-24</td><td>英文资料站</td><td>二手，附精确日期，可信度较高</td></tr>
+      <tr><td><b>146,557</b></td><td><b>2026-11-13</b></td><td><b>GitHub REST API 实测</b></td><td><b>一手、时间最新，作为报告基准值</b></td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>数量级反推自洽性检查：</b>从 2026-07 的 122k 到 2026-11-13 的 146,557，约 4.4 个月增长 24.5k，月均约 5.6k stars；从 10-24 的 142,520 到 11-13 的 146,557，20 天增长 4,037，日均约 202，折算月均约 6.1k——两条独立路径算出的量级一致，说明这六个数字主要是<b>采样时间差</b>，而非数据造假或口径冲突。同理可反推 forks（16,803 @10-24 → 17,466 @11-13，20 天 +663）也自洽。这一步是「中文二手转述只用于线索发现」原则的具体落地。</div>
+  <div class="warn"><b>反而真正需要警惕的口径冲突：</b>官方称「60,000+ 社区节点」，安全研究报告称「流通中的自定义节点扩展包远超一千个」。两者差约一个数量级，最合理的解释是<b>前者数的是节点类（一个包注册多个节点），后者数的是包/仓库</b>，但官方没有公开统计口径。因此本报告只把 60,000 当作「生态规模的量级指示」，绝不拿它做人均产出、漏洞率等任何除法运算。</div>
+
+  <h3>7.4 方向相反的证据如何改变结论</h3>
+  <table>
+    <thead><tr><th style="width:26%">如果只看支持证据会写成</th><th>反证据</th><th style="width:30%">修正后的表述</th></tr></thead>
+    <tbody>
+      <tr><td>「ComfyUI 是最快的推理引擎」</td><td>第三方单测 Forge 3.2s &lt; ComfyUI 3.8s；6GB 卡 Forge 更稳</td><td>优势在模型覆盖、day-0 与可组合性，不在单图绝对吞吐</td></tr>
+      <tr><td>「ComfyUI 赢了所有竞品」</td><td>SwarmUI 复用其后端；Diffusers 在代码优先场景更合适</td><td>它赢的是「运行时」这一层，产品层与库层各有胜者</td></tr>
+      <tr><td>「开放性让生态无限繁荣」</td><td>同一开放性导致 RCE、Registry 投毒、僵尸网络</td><td>护城河与攻击面同源，须由部署者补信任边界</td></tr>
+      <tr><td>「公司在把开源闭源化」</td><td>核心仍 GPL-3.0、README 承诺离线、v0.39.0 按社区反馈拆分 flag</td><td>治理张力真实但未越界；应持续观察而非下定性结论</td></tr>
+      <tr><td>「4GB 显存即可生产」</td><td>无独立基准，第三方矩阵标为 Very slow</td><td>降级曲线下端成立，不适合作为容量规划依据</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08 / 安全与供应链</span>当「节点」就是任意 Python，信任边界必须重画</h2>
+  <p class="lede">这是整份报告里最需要工程动作的一章。核心判断不是「ComfyUI 有几个漏洞」，而是：<b>它的扩展契约把「安装节点」等价于「安装任意软件」，而默认威胁模型又假设所有能访问服务的人都是可信的</b>。两者叠加，一旦把服务暴露到公网，后果不是报错而是主机失陷。</p>
+
+  <h3>8.1 官方威胁模型（一手，必须原样理解）</h3>
+  <p>SECURITY.md 写得很直白：ComfyUI 被设计为本地运行，默认绑定 <code>127.0.0.1</code>；威胁模型假设用户从受支持渠道安装、<b>没有安装不可信自定义节点</b>、<b>任何能访问 ComfyUI URL 的人都是可信的</b>。更关键的是「不视为漏洞」清单第一条：需要 <code>--listen</code> 或非默认网络暴露的问题，「用户选择了暴露它并负责保护该部署……这些是 bug，不是漏洞」；依赖特定自定义节点的问题也明确排除，理由是「自定义节点是第三方代码」。</p>
+  <p>自托管文档给出对应的操作建议：「ComfyUI 服务器默认没有任何身份验证。请仅在可信网络中绑定非回环地址，或在其前端部署带身份验证的反向代理。」以及：社区 Docker 模板由社区维护、非官方发布，「在向模板中放入凭据或私有模型之前，请先了解该模板会安装哪些内容」。</p>
+  <div class="verdict"><h4>这个威胁模型对本地单用户是合理的，对生产部署是不完整的</h4><p>它没有错，但它把一整类风险<b>显式移交给了部署者</b>。因此任何「ComfyUI 上生产」的方案，安全边界都不能指望核心提供，必须由部署架构补齐。把本地工具的默认假设直接带进工作室或企业环境，是这类事故最常见的根因。</p></div>
+
+  <h3>8.2 已公开的事件与漏洞</h3>
+  <table>
+    <thead><tr><th style="width:19%">时间 / 编号</th><th style="width:30%">问题</th><th>影响与修复</th></tr></thead>
+    <tbody>
+      <tr><td>2024-12-12<br>CVE-2024-21574</td><td>ComfyUI-Manager <code>/customnode/install</code> 的 pip 字段未做白名单校验（CWE-94 代码注入）</td><td>未认证远程代码执行，权限同服务进程；修复于 Manager V2.51.1，引入 <code>block</code> 安全级别与 <code>is_allowed_security_level</code> 校验</td></tr>
+      <tr><td>2025 年初<br>供应链事件</td><td><code>ultralytics</code> 库被投毒、ComfyUI_LLMVISION 节点发现漏洞</td><td>促使官方对自定义节点生态做一系列加固：限制 <code>eval</code>/<code>exec</code>、禁止 Registry 包运行时 pip 安装、Manager 增加远程禁用机制</td></tr>
+      <tr><td>2025<br>Registry 投毒</td><td>官方 Comfy Registry 中某发布者的包被识别为 Akira Stealer 投递载体；伪装成放大节点，图像原样通过、后台窃取浏览器凭据与钱包</td><td>包已下架；Registry 标准新增禁止代码混淆与运行时子进程安装。<b>「换名重现」的说法来自二手安全博客，本报告未独立核实</b></td></tr>
+      <tr><td>2026-01-05<br>CVE-2025-67303</td><td>ComfyUI-Manager &lt;3.38 的未保护备用通道（CWE-420），CVSS 3.1 = 7.5 HIGH；<code>user/default/</code> 经 <code>/userdata</code> 无鉴权可读写</td><td>可篡改配置/快照 → 重启后 clone 攻击者仓库并执行 <code>install.py</code> → RCE。修复：Manager 3.38+ 且 Core v0.3.76+（System User Protection API），配置迁至 <code>user/__manager/</code>，旧数据备份并提醒清理</td></tr>
+      <tr><td>2026-04-08<br>CSA Labs 简报</td><td>面向公网的 ComfyUI 挖矿僵尸网络：扫描暴露实例 → 探测可执行 shell/任意 Python 的社区节点，或直接利用 CVE-2025-67303 安装恶意节点</td><td>XMRig 挖 Monero（CPU）+ lolMiner 挖 Conflux（GPU）；Hysteria V2 把流量伪装成 bing.com TLS 并作代理节点；Flask C2 集中管理；<code>LD_PRELOAD</code> 与 <code>chattr +i</code> 持久化。研究者称超过一千台公开实例受影响</td></tr>
+    </tbody>
+  </table>
+  <div class="src">来源：NVD / DailyCVE / SentinelOne 漏洞库（一手漏洞记录）／CSA Labs《AI Inference Under Siege》研究简报 2026-04-08 及 PDF 原文（B 级独立研究）／ComfyUI-Manager 修复提交（一手）。CSA 简报同时给出横向对照：Cybernews 2026-01 发现 15,000+ 公开 OpenWebUI 实例、TechRadar 报道 175,000+ 暴露 Ollama 实例，说明这是 AI 推理服务器的共性暴露面。</div>
+
+  <h3>8.3 攻击链与对应门禁</h3>
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 296" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ComfyUI 攻击链五步与对应防御门禁">
+      <rect x="0" y="0" width="960" height="296" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <text x="30" y="20" font-size="12" font-weight="700" fill="#9A1F18">攻击链</text>
+        <text x="30" y="184" font-size="12" font-weight="700" fill="#1B5820">对应门禁</text>
+        <!-- attack boxes -->
+        <rect x="30" y="30" width="168" height="98" rx="8" fill="#FBECEA" stroke="#B3261E" stroke-width="1.3"/>
+        <text x="42" y="52" font-size="12" font-weight="700" fill="#9A1F18">1 公网暴露</text>
+        <text x="42" y="74" font-size="11" fill="#333941">--listen 0.0.0.0</text>
+        <text x="42" y="92" font-size="11" fill="#333941">服务默认无鉴权</text>
+        <text x="42" y="112" font-size="11" fill="#4A505A">单进程单队列</text>
+        <rect x="222" y="30" width="168" height="98" rx="8" fill="#FBECEA" stroke="#B3261E" stroke-width="1.3"/>
+        <text x="234" y="52" font-size="12" font-weight="700" fill="#9A1F18">2 节点探测</text>
+        <text x="234" y="74" font-size="11" fill="#333941">查询已装节点清单</text>
+        <text x="234" y="92" font-size="11" fill="#333941">寻找可执行端点</text>
+        <text x="234" y="112" font-size="11" fill="#4A505A">或转入漏洞路径</text>
+        <rect x="414" y="30" width="168" height="98" rx="8" fill="#FBECEA" stroke="#B3261E" stroke-width="1.3"/>
+        <text x="426" y="52" font-size="12" font-weight="700" fill="#9A1F18">3 配置写入</text>
+        <text x="426" y="74" font-size="11" fill="#333941">CVE-2025-67303</text>
+        <text x="426" y="92" font-size="11" fill="#333941">未鉴权改 config</text>
+        <text x="426" y="112" font-size="11" fill="#4A505A">或上传恶意快照</text>
+        <rect x="606" y="30" width="168" height="98" rx="8" fill="#FBECEA" stroke="#B3261E" stroke-width="1.3"/>
+        <text x="618" y="52" font-size="12" font-weight="700" fill="#9A1F18">4 重启触发</text>
+        <text x="618" y="74" font-size="11" fill="#333941">clone 攻击者仓库</text>
+        <text x="618" y="92" font-size="11" fill="#333941">执行 install.py</text>
+        <text x="618" y="112" font-size="11" fill="#4A505A">获得 RCE</text>
+        <rect x="798" y="30" width="132" height="98" rx="8" fill="#FBECEA" stroke="#B3261E" stroke-width="1.3"/>
+        <text x="810" y="52" font-size="12" font-weight="700" fill="#9A1F18">5 驻留</text>
+        <text x="810" y="74" font-size="11" fill="#333941">双币挖矿</text>
+        <text x="810" y="92" font-size="11" fill="#333941">代理与 C2</text>
+        <text x="810" y="112" font-size="11" fill="#4A505A">LD_PRELOAD</text>
+        <!-- arrows between attack boxes (in gaps, no text there) -->
+        <line x1="198" y1="79" x2="220" y2="79" stroke="#B3261E" stroke-width="2"/>
+        <line x1="390" y1="79" x2="412" y2="79" stroke="#B3261E" stroke-width="2"/>
+        <line x1="582" y1="79" x2="604" y2="79" stroke="#B3261E" stroke-width="2"/>
+        <line x1="774" y1="79" x2="796" y2="79" stroke="#B3261E" stroke-width="2"/>
+        <!-- vertical connectors in empty band y=128..194 -->
+        <line x1="114" y1="128" x2="114" y2="194" stroke="#CFC9BC" stroke-width="1.5"/>
+        <line x1="306" y1="128" x2="306" y2="194" stroke="#CFC9BC" stroke-width="1.5"/>
+        <line x1="498" y1="128" x2="498" y2="194" stroke="#CFC9BC" stroke-width="1.5"/>
+        <line x1="690" y1="128" x2="690" y2="194" stroke="#CFC9BC" stroke-width="1.5"/>
+        <line x1="864" y1="128" x2="864" y2="194" stroke="#CFC9BC" stroke-width="1.5"/>
+        <!-- gate boxes -->
+        <rect x="30" y="196" width="168" height="76" rx="8" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.3"/>
+        <text x="42" y="218" font-size="11.5" font-weight="700" fill="#1B5820">回环绑定</text>
+        <text x="42" y="238" font-size="11" fill="#333941">反代 + TLS + 鉴权</text>
+        <text x="42" y="258" font-size="11" fill="#333941">网络分段与 IP 白名单</text>
+        <rect x="222" y="196" width="168" height="76" rx="8" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.3"/>
+        <text x="234" y="218" font-size="11.5" font-weight="700" fill="#1B5820">节点准入白名单</text>
+        <text x="234" y="238" font-size="11" fill="#333941">移除 shell / eval 类</text>
+        <text x="234" y="258" font-size="11" fill="#333941">审查仓库与提交历史</text>
+        <rect x="414" y="196" width="168" height="76" rx="8" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.3"/>
+        <text x="426" y="218" font-size="11.5" font-weight="700" fill="#1B5820">版本基线</text>
+        <text x="426" y="238" font-size="11" fill="#333941">Manager 3.38+ /</text>
+        <text x="426" y="258" font-size="11" fill="#333941">Core 0.3.76+ 起</text>
+        <rect x="606" y="196" width="168" height="76" rx="8" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.3"/>
+        <text x="618" y="218" font-size="11.5" font-weight="700" fill="#1B5820">构建期固化</text>
+        <text x="618" y="238" font-size="11" fill="#333941">镜像内锁版本与哈希</text>
+        <text x="618" y="258" font-size="11" fill="#333941">禁运行时 pip / eval</text>
+        <rect x="798" y="196" width="132" height="76" rx="8" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.3"/>
+        <text x="810" y="218" font-size="11.5" font-weight="700" fill="#1B5820">出网管控</text>
+        <text x="810" y="238" font-size="11" fill="#333941">矿池 / 代理告警</text>
+        <text x="810" y="258" font-size="11" fill="#333941">GPU 异常监控</text>
+        <text x="480" y="288" font-size="11" text-anchor="middle" fill="#4A505A">门禁原则：把信任边界放在「受治理的节点注册表 + 不暴露的实例」，而不是每个美术的机器上</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 7</b>　攻击链与逐环节门禁。第 2 步存在两条路径：已安装节点自带可执行端点则直接利用，否则通过 CVE-2025-67303 远程安装攻击者选定的恶意节点。这也是为什么「只打补丁」不足以覆盖全部暴露面——节点清单本身就是攻击面。</figcaption>
+    <div class="src">来源：CSA Labs 2026-04 研究简报（攻击链与载荷，一手研究）／DailyCVE 对 CVE-2025-67303 的复现步骤（一手）／官方 SECURITY.md 与自托管文档（一手）／门禁措施为综合两家安全机构建议后的整理（本报告观点）。</div>
+  </figure>
+
+  <h3>8.4 一个常被忽略的第三类入口：工作流文件</h3>
+  <p>除节点包之外，<b>JSON 工作流本身</b>也是不可信输入。工作流可引用任意节点类型，导入后若本机装有存在漏洞的节点，即可能触发其危险路径；而社区习惯是「下载别人分享的工作流直接用」，几乎不做安全审查。对签有 NDA 的工作室，一台能接触未发布客户素材的工作站被植入凭据窃取器，后果是合同责任而非重装一下午。因此门禁清单应包含「工作流来源审查」与「离线实例处理敏感素材」两条。</p>
+  <div class="opinion"><b>观点：</b>第 02 章末尾的判断在这里得到印证。随着 Comfy Agent 一类能力普及，工作流会越来越多地由智能体生成或修改，「导入的工作流是谁写的、改了什么」将变得难以回答。可审计性（diff、签名、最小权限执行）应当在设计阶段就进入架构，而不是等第一起事故后再补。</div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09 / 治理与商业化</span>GPL、Partner Nodes 与「永久开源」承诺之间的张力</h2>
+  <p class="lede">这一章不下道德判断，只做事实梳理：把公司做了什么、社区反对什么、官方怎么回应、核心的许可证保证了什么，按时间摆在一起。</p>
+
+  <h3>9.1 公司与资本的时间线</h3>
+  <table>
+    <thead><tr><th style="width:18%">时间</th><th style="width:32%">事件</th><th>对开源核心的影响</th></tr></thead>
+    <tbody>
+      <tr><td>2023-01 / 06</td><td>个人项目开源；创始人因 SDXL 链式实验加入 Stability AI</td><td>核心由个人维护</td></tr>
+      <tr><td>2024-06-18</td><td>创始人宣布从 Stability AI 离职，Comfy Org 成立；创始团队含 ComfyUI-Manager、SwarmUI、Comfy Registry 等生态关键项目的作者</td><td>生态关键基础设施的维护者被纳入同一组织，治理集中度上升</td></tr>
+      <tr><td>2024-08</td><td>与 Invoke、Civitai 共同发起 Open Model Initiative 并加入 Linux Foundation；FLUX 首发日支持</td><td>「开放模型」成为公开立场</td></tr>
+      <tr><td>2025-09-16</td><td>A 轮 $17M（Pace Capital、Chemistry、Abstract、Essence VC 等）</td><td>资金用途含「稳定自定义节点生态」</td></tr>
+      <tr><td>2025-11 / 2026-03</td><td>Comfy Cloud 公测 / 正式版（Blackwell RTX PRO 6000，96GB VRAM）；2026-03-10 上线 App Mode、App Builder 与 URL 分享</td><td>开始出现需要账号的托管产品</td></tr>
+      <tr><td>2026-04-24</td><td>B 轮 $30M，估值 $500M，累计 $47M；宣称 400 万+ 用户、60,000+ 节点、15 万+ 日下载</td><td>公告明确承诺「ComfyUI 永久开放」「始终可自托管并完全掌控自己的创作」</td></tr>
+      <tr><td>2026-07 → 10</td><td>GitHub issue #14887：关闭 API 节点会连带破坏节点管理器，社区措辞激烈；核心开发者亲自回应；v0.39.0 拆分为 <code>--offline</code> 与 <code>--disable-partner-nodes</code></td><td>反馈通道在约三个月内闭环，README 同步更新离线说明</td></tr>
+      <tr><td>2026-11-13</td><td>Core 仍为 GPL-3.0；v0.45.0；近 24 天 5 个 release 中多个条目为 Partner Nodes 新增</td><td>产品层迭代在发布日志中占比可观，与社区关注点形成对比</td></tr>
+    </tbody>
+  </table>
+  <div class="src">来源：GitHub API（许可证与 releases，一手）／Comfy Org 融资公告中英双版（一手）／GitHub issue #14887 全线程（一手）／README Release Process 与离线说明（一手）／AI Wiki 与 Latent Space 的版本史与访谈（二手交叉）。</div>
+
+  <h3>9.2 争议的结构，而不是情绪</h3>
+  <p>把 issue #14887 里最尖锐的几句翻译成结构问题，会得到三条清晰的产品缺陷，而不是「用户不喜欢广告」这么简单：</p>
+  <table>
+    <thead><tr><th style="width:26%">社区诉求</th><th style="width:30%">当时的实际情况</th><th>正确的产品解法（后来是否落地）</th></tr></thead>
+    <tbody>
+      <tr><td>「离线」与「别在我自托管 UI 里显示付费内容」应是两个开关</td><td><code>--disable-api-nodes</code> 语义是「核心与前端完全不与在线服务器通信」，因此连带禁用了依赖在线 Registry 的 ComfyUI-Manager</td><td>拆成 <code>--offline</code>（彻底断网）与 <code>--disable-partner-nodes</code>（仅隐藏付费节点）；<b>v0.39.0 落地</b></td></tr>
+      <tr><td>flag 命名应能预测副作用</td><td>名字听起来只关 API 节点，用户花三小时排查 Manager 为何失效</td><td>README 现明确写出两个 flag 各自作用；旧 flag 弃用</td></tr>
+      <tr><td>PR 长期无人处理会削弱信任</td><td>有贡献者称半年前就提交过修复 PR 未获关注</td><td>无公开结论；属治理吞吐问题，仍应观察</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>为什么这条 issue 值得单独分析：</b>它是少见的、可完整追溯的「社区质疑 → 核心开发者亲自解释 → 版本修复 → 文档同步」闭环。既证明商业化确实侵入了默认体验（不能替官方洗掉），也证明治理通道并未失灵（不能据此断言「正在闭源化」）。两种简化说法都与一手记录不符。</div>
+
+  <h3>9.3 GPL-3.0 的真实边界</h3>
+  <p>GitHub API 确认核心许可证为 <b>GPL-3.0</b>。这一选择有两面：一方面它保证了核心与其衍生分发必须保持开源，构成对「永久开放」承诺的法律支撑；另一方面，把修改后的核心<b>分发</b>进自有产品会触发同源开源义务，让不少企业内部工具的合规边界变模糊。社区讨论 #14346 提出了更细的问题：内置节点与模型可能带地域或商用限制（例如某厂商节点排除特定地区），工作室希望在节点里做许可证检查。</p>
+  <p>需要区分三类对象，社区讨论中的答复（非专业法律意见）与通行理解一致：</p>
+  <table>
+    <thead><tr><th style="width:22%">对象</th><th style="width:30%">适用许可</th><th>工程含义</th></tr></thead>
+    <tbody>
+      <tr><td>本地代码 / custom_nodes</td><td>直接扩展或修改核心，通常视为衍生作品，受 GPL-3.0 约束</td><td>若要分发，需按 GPL 开源相应部分</td></tr>
+      <tr><td>远程 API 服务</td><td>独立进程通过 HTTP 调用，一般不受 GPL 传染</td><td><b>把 ComfyUI 当独立服务驱动</b>是多数生产部署的选择，也是规避合规灰区的实用做法</td></tr>
+      <tr><td>模型权重 / LoRA / 产出</td><td>各自独立许可（如 FLUX 系 Kommunity License 对年收入超阈值组织要求商业授权）</td><td>「工具开源」不等于「模型可商用」；上线前须逐模型核对，且 Partner Nodes 走的是按量付费 API</td></tr>
+    </tbody>
+  </table>
+  <div class="warn"><b>不构成法律意见：</b>以上是公开社区讨论与通行工程实践的整理，具体产品的合规判断应由法务按实际分发方式给出。可确定的是：GPL 保护的是核心代码的开放性，不解决模型权重、地域限制与商业授权的合规问题——把三者混为一谈是工作室最常见的合规误判。</div>
+
+  <h3>9.4 商业模式：待验证的假设</h3>
+  <p>官方产品矩阵已覆盖 Desktop（免费本地）、Cloud（订阅/按 GPU 时长）、Developer Platform / API（工作流部署为生产端点）、Enterprise（企业基础设施）、Partner Nodes（按积分调用闭源模型）与 MiniMax 商业许可转售。有中文分析称公司目前近乎 pre-revenue、ARR 可忽略，估值主要反映生态位而非收入——<b>该说法无财务披露支撑，本报告标为 D 级推测，不作为结论</b>。</p>
+  <div class="opinion"><b>观点：</b>更值得关注的不是「它能不能赚到钱」，而是<b>账单层与开源层的目标函数是否会持续分离</b>。核心的价值来自「任意模型、任意节点、完全离线」，而产品层的价值来自「更省心、更多模型、按量付费」。这两者在多数时候互补，但在「默认体验里该出现什么」「新模型优先开放权重还是优先 Partner Nodes」「flag 的默认行为」这类细节上会持续产生摩擦。可观察的先行指标是发布日志中 Partner Nodes 条目的占比，以及离线 flag 是否始终可用。</div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10 / 度量体系</span>三层指标与反 Goodhart 原则</h2>
+  <p class="lede">如果用 stars 和「支持多少模型」来考核 ComfyUI 的采用效果，几乎必然做出错误决策。下面给出一套分层指标，并刻意包含「不该被优化」的指标。</p>
+
+  <table>
+    <thead><tr><th style="width:16%">层</th><th style="width:28%">指标</th><th style="width:24%">怎么测</th><th>常见失真</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3"><span class="tag t-teal">运行时健康</span></td><td>单工作流端到端耗时 / OOM 率</td><td>固定权重哈希、版本 tag、seed、分辨率、步数，跑 N 次取分布</td><td>缓存命中会让首次与后续差异巨大，须显式区分冷/热缓存</td></tr>
+      <tr><td>缓存命中率与增量收益</td><td>对比 <code>--cache-none</code> 与默认配置的耗时比</td><td>只报「快了多少倍」而不报图规模与改动位置，无意义</td></tr>
+      <tr><td>版本升级后的节点存活率</td><td>锁定的节点包清单，升级后逐一导入并跑冒烟工作流</td><td>只看「能否启动」会漏掉静默行为变化</td></tr>
+      <tr><td rowspan="3"><span class="tag t-blue">生产可用性</span></td><td>作业成功率 / 排队时延 / GPU 利用率</td><td>从 jobs API 或自建队列采集，按 GPU 池分组</td><td>单租户单队列下，一个长视频作业会污染全部指标</td></tr>
+      <tr><td>结果可复现率</td><td>固定全部输入与权重哈希后比对输出哈希或感知指标</td><td>把「同 seed 出同图」当复现，忽略 GPU 非确定性与远程节点</td></tr>
+      <tr><td>安全门禁覆盖率</td><td>已审查节点包 / 已安装节点包；公网暴露实例数应为 0</td><td>只统计「有没有补丁」，不统计「有没有暴露」与「装了什么」</td></tr>
+      <tr><td rowspan="2"><span class="tag t-amber">组织价值</span></td><td>工作流复用率</td><td>共享库中被实际调用的工作流数 / 总工作流数</td><td>囤积几百个 JSON 无人使用，看起来像资产其实是负债</td></tr>
+      <tr><td>人工返工率 / 交付周期</td><td>每个项目记录从需求到过审的轮次与工时</td><td>用「生成张数」代替「过审张数」，等于奖励废片</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.1 三条反 Goodhart 原则</h3>
+  <div class="g3">
+    <div class="card"><span class="tag t-red">原则一</span><h4>凡是被当 KPI 的计数，都会被灌水</h4><p style="font-size:14px">「节点数」「工作流数」「模型数」都是可无限堆砌的存量指标。一旦用于考核，团队会批量导入低质量包，反而抬高供应链风险。用<b>被调用率</b>与<b>过审率</b>替代存量计数。</p></div>
+    <div class="card"><span class="tag t-red">原则二</span><h4>速度指标必须与质量成对出现</h4><p style="font-size:14px">单图秒数可以被降步数、降分辨率、换快采样器轻易刷低。任何提速宣称都要同时报告质量指标与完整的模型/参数配置，否则不可比。</p></div>
+    <div class="card"><span class="tag t-red">原则三</span><h4>「零事故」要拆成暴露面与事件数</h4><p style="font-size:14px">没有事故可能只是没暴露到公网、没人审计。把「公网暴露实例数 = 0」「未审查节点包数 = 0」这类<b>前置可控量</b>作为安全指标，比统计事故数更有预警价值。</p></div>
+  </div>
+  <div class="note"><b>本报告自身的度量诚实性：</b>全文未使用「效率提升 180 倍」「成本下降 60%」这类在中文二手转述中流传但无出处、无法反推的数字；对官方自报的 400 万用户 / 60,000 节点，只作量级指示，不参与任何比率计算；对第三方单次性能测评，明确标为单一案例而非通用结论。</div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11 / 落地</span>成熟度阶梯、90 天路线与检查清单</h2>
+  <p class="lede">从「一台机器上画图」到「组织级生产能力」，缺的不是更多节点，而是版本固化、准入治理、调度与可复现这四件基础设施。下面给出可执行的阶梯与路线。</p>
+
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ComfyUI 组织落地五级成熟度阶梯">
+      <rect x="0" y="0" width="960" height="320" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <line x1="36" y1="266" x2="924" y2="266" stroke="#CFC9BC" stroke-width="2"/>
+        <!-- L1 -->
+        <rect x="46" y="196" width="164" height="70" rx="7" fill="#F0EAF9" stroke="#6D3FB5" stroke-width="1.3"/>
+        <text x="128" y="216" font-size="12.5" font-weight="700" text-anchor="middle" fill="#5A3099">L1 探索</text>
+        <text x="128" y="236" font-size="10.5" text-anchor="middle" fill="#4A505A">单机桌面版</text>
+        <text x="128" y="252" font-size="10.5" text-anchor="middle" fill="#4A505A">社区模板试跑</text>
+        <text x="128" y="286" font-size="10.5" text-anchor="middle" fill="#4A505A">风险：随意装节点</text>
+        <!-- L2 -->
+        <rect x="222" y="168" width="164" height="98" rx="7" fill="#EAF1FA" stroke="#2F6FB0" stroke-width="1.3"/>
+        <text x="304" y="188" font-size="12.5" font-weight="700" text-anchor="middle" fill="#1F5288">L2 可复现</text>
+        <text x="304" y="208" font-size="10.5" text-anchor="middle" fill="#4A505A">工作流入 Git</text>
+        <text x="304" y="224" font-size="10.5" text-anchor="middle" fill="#4A505A">锁定核心 tag</text>
+        <text x="304" y="240" font-size="10.5" text-anchor="middle" fill="#4A505A">记录权重哈希</text>
+        <text x="304" y="256" font-size="10.5" text-anchor="middle" fill="#4A505A">固定 seed 与参数</text>
+        <text x="304" y="286" font-size="10.5" text-anchor="middle" fill="#4A505A">收益：结果能复跑</text>
+        <!-- L3 -->
+        <rect x="398" y="136" width="164" height="130" rx="7" fill="#E5F2F0" stroke="#0F766E" stroke-width="1.3"/>
+        <text x="480" y="156" font-size="12.5" font-weight="700" text-anchor="middle" fill="#0A5750">L3 受治理</text>
+        <text x="480" y="176" font-size="10.5" text-anchor="middle" fill="#4A505A">节点准入白名单</text>
+        <text x="480" y="192" font-size="10.5" text-anchor="middle" fill="#4A505A">镜像固化依赖</text>
+        <text x="480" y="208" font-size="10.5" text-anchor="middle" fill="#4A505A">回环绑定 + 鉴权</text>
+        <text x="480" y="224" font-size="10.5" text-anchor="middle" fill="#4A505A">工作流来源审查</text>
+        <text x="480" y="240" font-size="10.5" text-anchor="middle" fill="#4A505A">升级前冒烟测试</text>
+        <text x="480" y="256" font-size="10.5" text-anchor="middle" fill="#4A505A">敏感素材离线跑</text>
+        <text x="480" y="286" font-size="10.5" text-anchor="middle" fill="#4A505A">门槛：安全边界自画</text>
+        <!-- L4 -->
+        <rect x="574" y="104" width="164" height="162" rx="7" fill="#FBF0E2" stroke="#B45309" stroke-width="1.3"/>
+        <text x="656" y="124" font-size="12.5" font-weight="700" text-anchor="middle" fill="#8F3F06">L4 服务化</text>
+        <text x="656" y="144" font-size="10.5" text-anchor="middle" fill="#4A505A">无头实例 + /prompt</text>
+        <text x="656" y="160" font-size="10.5" text-anchor="middle" fill="#4A505A">自建队列与调度</text>
+        <text x="656" y="176" font-size="10.5" text-anchor="middle" fill="#4A505A">按 GPU 池分组</text>
+        <text x="656" y="192" font-size="10.5" text-anchor="middle" fill="#4A505A">作业隔离与审计</text>
+        <text x="656" y="208" font-size="10.5" text-anchor="middle" fill="#4A505A">作业级指标采集</text>
+        <text x="656" y="224" font-size="10.5" text-anchor="middle" fill="#4A505A">出网管控与告警</text>
+        <text x="656" y="240" font-size="10.5" text-anchor="middle" fill="#4A505A">工作流 API 版本化</text>
+        <text x="656" y="256" font-size="10.5" text-anchor="middle" fill="#4A505A">参考渲染农场方案</text>
+        <text x="656" y="286" font-size="10.5" text-anchor="middle" fill="#4A505A">门槛：调度要自建</text>
+        <!-- L5 -->
+        <rect x="750" y="72" width="164" height="194" rx="7" fill="#E8F4E9" stroke="#2E7D32" stroke-width="2"/>
+        <text x="832" y="92" font-size="12.5" font-weight="700" text-anchor="middle" fill="#1B5820">L5 组织能力</text>
+        <text x="832" y="112" font-size="10.5" text-anchor="middle" fill="#4A505A">共享工作流库</text>
+        <text x="832" y="128" font-size="10.5" text-anchor="middle" fill="#4A505A">Subgraph 复用</text>
+        <text x="832" y="144" font-size="10.5" text-anchor="middle" fill="#4A505A">复用率 / 返工率</text>
+        <text x="832" y="160" font-size="10.5" text-anchor="middle" fill="#4A505A">纳入 CI 回归</text>
+        <text x="832" y="176" font-size="10.5" text-anchor="middle" fill="#4A505A">模型许可证台账</text>
+        <text x="832" y="192" font-size="10.5" text-anchor="middle" fill="#4A505A">新人培训路径</text>
+        <text x="832" y="208" font-size="10.5" text-anchor="middle" fill="#4A505A">App Mode 交付</text>
+        <text x="832" y="224" font-size="10.5" text-anchor="middle" fill="#4A505A">敏感数据零外流</text>
+        <text x="832" y="240" font-size="10.5" text-anchor="middle" fill="#4A505A">定期复审节点</text>
+        <text x="832" y="256" font-size="10.5" text-anchor="middle" fill="#4A505A">容量按实测规划</text>
+        <text x="832" y="286" font-size="10.5" text-anchor="middle" fill="#4A505A">判据：别人也能交付</text>
+        <text x="480" y="310" font-size="11" text-anchor="middle" fill="#4A505A">高度仅表示能力累积，不是量化评分；跳级到 L4 而跳过 L3，等于把第 08 章的风险直接搬上生产</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 8</b>　五级成熟度阶梯。每一级的「门槛」写的都是官方不提供、必须由部署者补的能力：L2 的复现记录、L3 的信任边界、L4 的队列与调度、L5 的组织流程。这也是「生产可用」与「生产级开箱即用」的区别。</figcaption>
+    <div class="src">来源：本报告综合第 06–10 章证据整理的落地框架（D 级观点）；L4 的具体做法参考 Imaj Future Lab 把工作流提交进 CGRU/Afanasy 渲染农场的公开工程实践（B 级）。</div>
+  </figure>
+
+  <h3>11.1 90 天路线</h3>
+  <figure>
+    <div class="fig-box">
+    <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ComfyUI 生产落地 90 天甘特图">
+      <rect x="0" y="0" width="960" height="300" fill="#FFFFFF"/>
+      <g font-family="-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif">
+        <!-- header weeks -->
+        <text x="20" y="24" font-size="11" fill="#4A505A">阶段</text>
+        <text x="170" y="24" font-size="11" text-anchor="middle" fill="#4A505A">第 1–2 周</text>
+        <text x="310" y="24" font-size="11" text-anchor="middle" fill="#4A505A">第 3–4 周</text>
+        <text x="450" y="24" font-size="11" text-anchor="middle" fill="#4A505A">第 5–6 周</text>
+        <text x="590" y="24" font-size="11" text-anchor="middle" fill="#4A505A">第 7–8 周</text>
+        <text x="730" y="24" font-size="11" text-anchor="middle" fill="#4A505A">第 9–10 周</text>
+        <text x="870" y="24" font-size="11" text-anchor="middle" fill="#4A505A">第 11–13 周</text>
+        <!-- grid: short ticks + horizontal baselines only, never crossing text -->
+        <line x1="100" y1="34" x2="940" y2="34" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="100" y1="272" x2="940" y2="272" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="240" y1="34" x2="240" y2="40" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="380" y1="34" x2="380" y2="40" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="520" y1="34" x2="520" y2="40" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="660" y1="34" x2="660" y2="40" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="800" y1="34" x2="800" y2="40" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="240" y1="266" x2="240" y2="272" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="380" y1="266" x2="380" y2="272" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="520" y1="266" x2="520" y2="272" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="660" y1="266" x2="660" y2="272" stroke="#E3DFD6" stroke-width="1"/>
+        <line x1="800" y1="266" x2="800" y2="272" stroke="#E3DFD6" stroke-width="1"/>
+        <!-- row 1 -->
+        <text x="20" y="58" font-size="11.5" fill="#333941">版本与权重基线</text>
+        <rect x="100" y="44" width="140" height="22" rx="5" fill="#E8F4E9" stroke="#2E7D32" stroke-width="1.2"/>
+        <text x="170" y="59" font-size="10.5" text-anchor="middle" fill="#1B5820">锁 tag 与哈希</text>
+        <!-- row 2 -->
+        <text x="20" y="90" font-size="11.5" fill="#333941">节点准入清单</text>
+        <rect x="100" y="76" width="280" height="22" rx="5" fill="#EAF1FA" stroke="#2F6FB0" stroke-width="1.2"/>
+        <text x="240" y="91" font-size="10.5" text-anchor="middle" fill="#1F5288">清点 / 审查 / 移除高危端点 / 建立白名单</text>
+        <!-- row 3 -->
+        <text x="20" y="122" font-size="11.5" fill="#333941">安全边界</text>
+        <rect x="170" y="108" width="280" height="22" rx="5" fill="#FBECEA" stroke="#B3261E" stroke-width="1.2"/>
+        <text x="310" y="123" font-size="10.5" text-anchor="middle" fill="#9A1F18">回环绑定 / 反代鉴权 / 版本基线 / 出网管控</text>
+        <!-- row 4 -->
+        <text x="20" y="154" font-size="11.5" fill="#333941">基准与冒烟</text>
+        <rect x="310" y="140" width="280" height="22" rx="5" fill="#FBF0E2" stroke="#B45309" stroke-width="1.2"/>
+        <text x="450" y="155" font-size="10.5" text-anchor="middle" fill="#8F3F06">显存实测 / 冷热缓存 / 升级冒烟用例</text>
+        <!-- row 5 -->
+        <text x="20" y="186" font-size="11.5" fill="#333941">无头 API 与队列</text>
+        <rect x="450" y="172" width="290" height="22" rx="5" fill="#E5F2F0" stroke="#0F766E" stroke-width="1.2"/>
+        <text x="595" y="187" font-size="10.5" text-anchor="middle" fill="#0A5750">/prompt 接入 / 作业隔离 / GPU 池 / 指标采集</text>
+        <!-- row 6 -->
+        <text x="20" y="218" font-size="11.5" fill="#333941">共享库与复用</text>
+        <rect x="590" y="204" width="280" height="22" rx="5" fill="#F0EAF9" stroke="#6D3FB5" stroke-width="1.2"/>
+        <text x="730" y="219" font-size="10.5" text-anchor="middle" fill="#5A3099">Subgraph / 工作流评审 / App Mode 交付</text>
+        <!-- row 7 -->
+        <text x="20" y="250" font-size="11.5" fill="#333941">治理与复盘</text>
+        <rect x="730" y="236" width="210" height="22" rx="5" fill="#EAF1FA" stroke="#2F6FB0" stroke-width="1.2"/>
+        <text x="835" y="251" font-size="10.5" text-anchor="middle" fill="#1F5288">许可台账 / 复用率复盘</text>
+        <text x="480" y="290" font-size="11" text-anchor="middle" fill="#4A505A">顺序约束：安全边界必须在无头 API 之前；基准数据必须在容量采购之前；共享库必须在工作流稳定之后</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><b>图 9</b>　90 天路线。刻意把「安全边界」排在「无头 API」之前——一旦 <code>/prompt</code> 对外开放而鉴权与节点准入尚未就绪，就等于把第 08 章的攻击链主动接上。时间格为两周一段，非精确工期估算。</figcaption>
+    <div class="src">来源：本报告综合整理（D 级观点）；顺序约束的根据是官方 SECURITY.md 威胁模型、CSA Labs 攻击链与第 06 章显存证据审查。</div>
+  </figure>
+
+  <h3>11.2 上线前检查清单</h3>
+  <div class="g2">
+    <div class="card"><span class="tag t-red">安全（一票否决）</span>
+      <p style="font-size:14px;margin:10px 0">□ 公网暴露实例数是否为 0<br>□ 是否部署反向代理 + TLS + 鉴权<br>□ ComfyUI-Manager ≥ 3.38 且 Core ≥ v0.3.76<br>□ 已安装节点是否全部在准入白名单内<br>□ 是否移除可执行 shell / 任意 Python 的节点<br>□ 是否禁止运行时 pip 与 eval/exec<br>□ 敏感素材是否只在离线实例处理<br>□ 出站流量是否阻断矿池并告警</p>
+    </div>
+    <div class="card"><span class="tag t-blue">可复现与工程</span>
+      <p style="font-size:14px;margin:10px 0">□ 核心版本 tag、节点 commit、权重哈希是否固定<br>□ 工作流是否入 Git 并做 code review<br>□ 是否区分冷/热缓存记录基准耗时<br>□ 是否有升级前冒烟用例<br>□ 作业记录是否含 seed、采样器与参数<br>□ 是否按目标模型实测显存曲线（不引用 4GB 声明）<br>□ 第三方 API 节点是否有失败与计费兜底<br>□ 是否有回滚到上一稳定 tag 的镜像</p>
+    </div>
+  </div>
+
+  <h3>11.3 反模式清单</h3>
+  <table>
+    <thead><tr><th style="width:14%">层</th><th style="width:30%">反模式与症状</th><th>修正</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-red">战略</span></td><td>把「支持多少模型/节点」当北极星，持续导入新包；症状是环境越来越脆、每次升级都报红</td><td>以「被调用工作流数」与「过审率」为指标，节点包按季度复审并淘汰</td></tr>
+      <tr><td><span class="tag t-red">战略</span></td><td>用 README 的「4GB / 世界最快」做硬件采购与 SLA 承诺；症状是上线后频繁 OOM 与超时</td><td>按真实模型、分辨率、并发跑实测基准，容量规划留余量</td></tr>
+      <tr><td><span class="tag t-amber">工程</span></td><td>跟踪 master 分支追新模型；症状是某个周一后大量自定义节点失效</td><td>锁定稳定 tag，新版本先在隔离实例跑冒烟再灰度</td></tr>
+      <tr><td><span class="tag t-amber">工程</span></td><td>把 ComfyUI 当多租户 SaaS 直接对外；症状是单队列互相阻塞、无认证、作业无法审计</td><td>每 GPU 一实例 + 自建队列/调度，或采用有隔离与配额的托管方案</td></tr>
+      <tr><td><span class="tag t-amber">工程</span></td><td>依赖「同 seed 出同图」当复现；症状是跨实例/跨版本结果对不上</td><td>固定权重哈希、节点 commit、参数与版本；对远程 API 节点单独记账</td></tr>
+      <tr><td><span class="tag t-purple">治理</span></td><td>认为「工具 GPL-3.0」等于「模型可商用」；症状是客户交付后被追责</td><td>建立模型许可证台账，逐个核对商用与地域限制，Partner Nodes 单独按 API 条款处理</td></tr>
+      <tr><td><span class="tag t-purple">治理</span></td><td>把社区工作流 JSON 当无害素材随意导入；症状是引用了本机存在漏洞的节点</td><td>工作流纳入与节点包同级的来源审查，敏感项目使用离线实例</td></tr>
+      <tr><td><span class="tag t-purple">治理</span></td><td>让智能体直接生成并执行工作流却不做 diff；症状是产出异常但无人能解释改了什么</td><td>生成结果先入评审与 diff，最小权限执行，保留完整作业记录</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12 / 结论</span>判断、失效条件与参考来源</h2>
+
+  <h3>12.1 明确标注：以下是观点，不是共识</h3>
+  <div class="verdict">
+    <h4>三条判断</h4>
+    <p><b>一、ComfyUI 的历史意义在于把生成流程变成了一种中间表示。</b>「图即程序、图即请求体、图即配方」这三条性质，让它同时被创作者、研究者与工程系统采用。这不是 UI 偏好之争，而是抽象层之争；也解释了为什么模型实验室会把 day-0 支持写进发布清单。</p>
+    <p><b>二、它的最大风险与最大优势来自同一个设计决策。</b>任意 Python 节点 + 开放注册表 + 默认信任内网，既造就 60,000 节点生态，也造就未授权 RCE 与供应链投毒。补丁能修具体 CVE，修不了这个信任模型；边界必须由部署者重画。</p>
+    <p><b>三、它现在最像的是「正在补齐语言特性的运行时」。</b>Subgraph、V3 类型化 schema、jobs API、App Mode、Comfy Agent，分别对应函数、类型系统、可观测作业、用户界面与自动编程。这条路径若走通，ComfyUI 会从工具变成基础设施；若走偏，最可能的失败方式不是被竞品打败，而是生态复杂度与商业化摩擦共同抬高使用成本。</p>
+  </div>
+
+  <h3>12.2 本报告的失效条件</h3>
+  <table>
+    <thead><tr><th style="width:34%">若观察到</th><th>则哪条论断失效</th></tr></thead>
+    <tbody>
+      <tr><td>主流模型发布不再优先提供 ComfyUI 工作流，或改用其他 IR 作为部署格式</td><td>C5（事实运行时）与 C1（图即请求体）失效，整个护城河论证需重写</td></tr>
+      <tr><td>核心引入默认多租户鉴权与沙箱化节点执行，且未牺牲模型覆盖速度</td><td>C6/C7 中「开放性 = 攻击面同源」的判断被削弱，第 08 章门禁建议需简化</td></tr>
+      <tr><td>出现设计良好的独立第三方对照基准，证明 4GB 声明在指定模型/分辨率下可稳定复现</td><td>第 06 章对 4GB 的降级处理应升级为 A/B 级事实</td></tr>
+      <tr><td>Partner Nodes 在发布日志占比持续过半，或离线 flag 被移除</td><td>C8 的「张力未越界」判断失效，第 09 章结论需转向</td></tr>
+      <tr><td>ComfyGen 类方法在视频/多模态工作流上被证伪（工作流结构对画质无显著影响）</td><td>C10 与第 02 章「工作流是可优化对象」的推理链需收回</td></tr>
+    </tbody>
+  </table>
+
+  <h3>12.3 参考来源（按证据类型分组）</h3>
+  <div class="refs">
+    <div class="grp">A · 一手：官方仓库、文档与公告</div>
+    <ol>
+      <li>Comfy-Org/ComfyUI GitHub REST API（仓库元数据：146,557 stars / 17,466 forks / 5,526 issues / GPL-3.0 / created 2023-01-17），2026-11-13 实测。</li>
+      <li>Comfy-Org/ComfyUI Releases API（v0.42.0 至 v0.45.0，2026-10-18 至 2026-11-10），2026-11-13 实测。</li>
+      <li><code>Comfy-Org/ComfyUI</code> README.md @master：Features、Release Process、离线与启动说明、4GB 声明，2026-11-13 抓取。</li>
+      <li><code>Comfy-Org/ComfyUI</code> SECURITY.md（v0.44.0 引入，commit ed78da0）：威胁模型与漏洞范围界定。</li>
+      <li>docs.comfy.org：自托管选项、启动参数（缓存与 VRAM 模式）、V3 Migration、开发者与 API 文档；docs.comfy.ac.cn 账户管理（中文镜像）。</li>
+      <li>Comfy Org 融资公告中英双版：《ComfyUI raises $30M to scale open-source AI for creative production》，2026-04-24；A 轮 $17M，2025-09-16。</li>
+      <li>comfy.org 官网与中文站：产品矩阵、Partner Nodes、模型发布页、客户案例《Shake Your Bots Off: how Svedka and Silverside AI made the first AI-generated Super Bowl ad with ComfyUI》，2026-02-08。</li>
+      <li>GitHub issue #14887（<code>--disable-api-nodes</code> 争议，2026-07-11 至 10-09）与 discussion #14346（节点/模型许可证合规，2026-06）。</li>
+    </ol>
+    <div class="grp">A · 一手：学术论文与漏洞记录</div>
+    <ol start="9">
+      <li>Gal et al., <i>ComfyGen: Prompt-Adaptive Workflows for Text-to-Image Generation</i>, arXiv:2410.01731, 2024（NVIDIA Research / Tel Aviv University）；项目页 comfygen-paper.github.io。</li>
+      <li>Gadot et al., <i>Policy Optimized Text-to-Image Pipeline Design</i>（ComfyGen-RL / FlowRL）, arXiv:2505.21478, 2025（Technion / NVIDIA Research，预印本）。</li>
+      <li><i>Unboxing Diffusion Models for the Arts: Interactive Model Bending and Practice-Based Explainability</i>, arXiv:2607.22428, 2026-07（cs.HC）。</li>
+      <li>NVD / DailyCVE / SentinelOne Vulnerability Database：CVE-2024-21574（2024-12-12）、CVE-2025-67303（2026-01-05，CVSS 7.5，CWE-420）。</li>
+      <li>Cloud Security Alliance Labs, <i>AI Inference Under Siege: The ComfyUI Cryptomining Botnet</i>, 研究简报及 PDF，2026-04-08。</li>
+    </ol>
+    <div class="grp">B · 独立第三方研究与工程实践</div>
+    <ol start="14">
+      <li>DeepWiki：<code>model_management.py</code> 显存与性能配置矩阵、Low VRAM Strategies、Memory and Performance Issues（源码结构化解读，可复核）。</li>
+      <li>Imaj Future Lab, <i>Our Local AI Cloud: How We Brought ComfyUI to the Render Farm</i>（CGRU/Afanasy 集成），2026。</li>
+      <li>Latent Space，comfyanonymous 访谈与 ComfyUI 词条，2025-01-04（转述一手访谈，含起源与设计原话）。</li>
+      <li>AI Wiki：ComfyUI Architecture and Technical Design / Version History and Milestones / History and Origins（二手，用于交叉核对日期）。</li>
+      <li>local-llm.net《ComfyUI vs Forge vs SwarmUI vs InvokeAI in 2026》（第三方单次性能对比，证据强度：单一案例）。</li>
+      <li>RenderBob《The Malware Is Inside the Workflow: ComfyUI's Custom-Node Supply-Chain Problem》，2026（安全分析博客）。</li>
+    </ol>
+    <div class="grp">C/D · 二手转述、厂商自报与分析推测（仅作线索）</div>
+    <ol start="20">
+      <li>中文技术拆解与 GitCode 博客：架构图、模块归属、竞品星数快照（2026-10-20）——用于线索发现与数字打架核对，未单独支撑结论。</li>
+      <li>RunningHub / LiblibAI 官网与百度百科 RunningHub 词条：国内云端 ComfyUI 平台规模数据（厂商自报，未经独立审计）。</li>
+      <li>AI 邮报《400 万用户、估值 5 亿、目前几乎零收入》及 getaibook 融资报道：商业模式与估值分析（含推测成分，标为 D 级）。</li>
+      <li>CSDN《ComfyUI 商用落地真实案例》等中文转述：其中「效率提升 180 倍」「成本下降 60%」等数字无出处，本报告明确不采信。</li>
+    </ol>
+  </div>
+  <div class="note"><b>检索方法说明：</b>本报告按「理论/学术、一手实证、行业现状 2026、落地实践」四象限做了 7 轮并行检索，并对关键数字回溯一手来源（GitHub API、README、SECURITY.md、Releases、arXiv、NVD）。所有引用数据标注来源与年份；中文二手转述仅用于线索发现，未经一手回溯者不作为结论依据；建模值与实测值在第 06 章显式区分。</div>
+</section>
+
+
+</main>
+<footer>
+  <p><b>ComfyUI 深度研究</b> · 生成于 2026-11-13 · 单文件、零外部依赖、离线可用。</p>
+  <p>本报告为技术研究成果，不构成投资建议或安全合规认证。所有商标与模型名称归各自权利人所有。数据中「厂商自报」部分未经独立审计。</p>
+</footer>
+</div>
+</body>
+</html>
