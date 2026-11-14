@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Apple Silicon Mac 上用 ComfyUI 部署 HyperFlow H3 Flash：8 步装齐 33 GB 权重并修补 Qwen3-VL 编码器，6 步蒸馏直出 24 fps 带配乐 1344×768 视频，附 28 GB 内存峰值与排错表。">
+<meta name="keywords" content="hyperflow, text-to-video, comfyui, apple-silicon, gguf, local-deploy">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-14">
+<title>HyperFlow H3 Flash 本地文生视频部署 · 使用指南</title>
+<style>
+  :root{
+    --bg:#13171c; --panel:#1b2129; --panel2:#212932; --line:#2c3540;
+    --ink:#e9e5dc; --sub:#9aa3ad; --faint:#6b7480;
+    --amber:#e8862e; --amber-soft:#f0a95e; --red:#c0453a; --green:#5da875;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--amber);color:#131313}
+  a{color:var(--amber-soft)} a:hover{color:var(--amber)}
+  a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:2px}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  @media (max-width:640px){.wrap{padding:0 16px}}
+
+  /* Hero */
+  header.hero{padding:64px 0 36px;border-bottom:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:13px;letter-spacing:.18em;color:var(--amber);margin-bottom:16px}
+  h1{font-size:clamp(26px,4vw,40px);font-weight:700;line-height:1.25;max-width:28ch}
+  .lede{margin-top:16px;color:var(--sub);max-width:64ch}
+  .audience{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px}
+  .chip{font-size:13px;color:var(--sub);border:1px solid var(--line);border-radius:999px;padding:5px 13px;background:var(--panel)}
+  .chip b{color:var(--amber-soft);font-weight:600}
+
+  /* 如何使用本手册 */
+  .howto{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:26px 0 8px}
+  @media (max-width:760px){.howto{grid-template-columns:1fr}}
+
+  section{padding:52px 0 4px;scroll-margin-top:20px}
+  h2{font-size:24px;font-weight:700;margin-bottom:4px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  h2 .stepno{font-family:var(--mono);font-size:13px;color:#131313;background:var(--amber);border-radius:5px;padding:3px 10px;letter-spacing:.08em;flex:none}
+  .sec-sub{color:var(--sub);font-size:15px;margin:8px 0 24px;max-width:66ch}
+  h3{font-size:16.5px;font-weight:600;margin:26px 0 10px}
+  p{margin-bottom:12px;max-width:72ch}
+  p.small,li{color:var(--sub)}
+  ul,ol{margin:0 0 14px 22px}
+  li{margin-bottom:6px}
+  strong{color:var(--ink);font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:16px;min-width:0}
+  @media (max-width:860px){table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}}
+
+  /* 期望输出 / 完成判定 */
+  .expect{border-left:3px solid var(--green);background:#15201a;border-radius:0 8px 8px 0;
+          padding:12px 16px;margin:12px 0 18px}
+  .expect .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--green);margin-bottom:6px}
+  .expect pre{background:#0d1310;border-color:#24402f;margin:6px 0 0}
+  .dod{border-left:3px solid var(--amber);background:#221a12;border-radius:0 8px 8px 0;
+       padding:12px 16px;margin:14px 0 20px}
+  .dod .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--amber);margin-bottom:6px}
+  .dod p{margin-bottom:4px;font-size:14.5px}
+  .warn{border-left:3px solid var(--red);background:#241413;border-radius:0 8px 8px 0;
+        padding:12px 16px;margin:14px 0 18px}
+  .warn .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--red);margin-bottom:6px}
+
+  /* 代码块 + 复制 */
+  .codebox{position:relative;margin:12px 0 18px}
+  pre{background:#0d1116;border:1px solid var(--line);border-radius:8px;padding:16px 18px;overflow-x:auto}
+  code{font-family:var(--mono);font-size:13px;line-height:1.65;color:#d8d2c4}
+  .copy{position:absolute;top:8px;right:8px;font-family:var(--mono);font-size:11.5px;color:var(--sub);
+        background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 10px;
+        cursor:pointer;transition:color .2s,border-color .2s}
+  .copy:hover{color:var(--amber-soft);border-color:var(--amber)}
+  .copy.ok{color:var(--green);border-color:var(--green)}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:var(--faint);font-weight:500;text-transform:uppercase}
+  td{color:var(--sub)} td:first-child{color:var(--ink)}
+  tr:last-child td{border-bottom:none}
+  .mono{font-family:var(--mono);font-size:12.5px;color:var(--amber-soft)}
+  .num{font-family:var(--mono);color:var(--ink);white-space:nowrap}
+
+  /* 背景导读：组成关系链 */
+  .chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:20px 0 24px}
+  .chain .node{flex:1 1 210px;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .chain .node .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--amber);margin-bottom:7px}
+  .chain .node .n{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px}
+  .chain .node .d{font-size:13px;color:var(--sub);line-height:1.55}
+  .chain .arrow{display:flex;align-items:center;justify-content:center;color:var(--faint);font-family:var(--mono);font-size:18px;flex:none}
+  @media (max-width:760px){.chain .arrow{width:100%;transform:rotate(90deg)}}
+
+  /* 步骤总览流水线 */
+  .flow{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+  .flow a{font-family:var(--mono);font-size:12px;color:var(--sub);border:1px solid var(--line);
+          border-radius:6px;padding:6px 12px;background:var(--panel);transition:border-color .2s,color .2s}
+  .flow a:hover{color:var(--amber-soft);border-color:var(--amber)}
+  .flow a b{color:var(--amber);margin-right:6px}
+
+  details{border:1px solid var(--line);border-radius:8px;background:#0d1116;margin:12px 0}
+  summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:12.5px;color:var(--amber-soft);list-style:none;user-select:none}
+  summary::before{content:"+ ";color:var(--amber)}
+  details[open] summary::before{content:"– "}
+
+  footer{border-top:1px solid var(--line);margin-top:60px;padding:26px 0 46px;color:var(--faint);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">OPERATIONS MANUAL · 2026-11-13 · v1.0</div>
+  <h1>HyperFlow H3 Flash 本地文生视频部署 · 使用指南</h1>
+  <p class="lede">在 Apple Silicon Mac 上从零部署 HyperFlow H3 Flash（MiniMax H3 14B 加速版，文生视频 + 原生配乐）的完整操作手册。每一步都给出<strong>确切命令、可机器校验的期望输出、失败处理分支</strong>，人类和智能体都可以照此执行到底。</p>
+  <div class="audience">
+    <span class="chip">对象 <b>人类工程师 / AI 智能体</b></span>
+    <span class="chip">平台 <b>macOS · Apple Silicon (MPS)</b></span>
+    <span class="chip">验证环境 <b>M 系芯片 · 36 GB 统一内存</b></span>
+    <span class="chip">全量耗时 <b>下载 ~1 h + 安装 ~20 min</b></span>
+  </div>
+  <div class="howto">
+    <div class="card">
+      <h3 style="margin-top:0">人类怎么用</h3>
+      <p class="small">按步骤 1→8 顺序执行。每步先跑"检查"命令确认前置条件，再跑主命令，最后对照<strong>完成判定</strong>。遇到报错先查第 10 节故障排查表。</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">智能体怎么用</h3>
+      <p class="small">本文所有命令以 <span class="mono">$ROOT</span>（项目根目录，含 <span class="mono">venv/</span> <span class="mono">ComfyUI/</span> <span class="mono">models/</span>）为基准；每步的<strong>期望输出均可 grep 校验</strong>，未通过不得进入下一步。各步有锚点（<span class="mono">#step-N</span>）便于引用与回退。</p>
+    </div>
+  </div>
+</header>
+
+<section id="intro">
+  <h2><span class="stepno">INTRO</span>先认识两样东西：模型 与 ComfyUI</h2>
+  <p class="sec-sub">这套部署 = 一组模型权重 + 一个把它们跑起来的执行引擎。先看懂两者各自是什么、为什么长成下面这样，后面的 8 个步骤就不再是一串要死记的命令。</p>
+  <div class="chain">
+    <div class="node">
+      <div class="t">01 · WEIGHTS</div>
+      <div class="n">模型权重（4 个文件，约 33 GB）</div>
+      <div class="d">主干、文本编码器与双 VAE：模型的全部能力都装在这里。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="t">02 · ENGINE</div>
+      <div class="n">ComfyUI（节点图 + 2 个自定义节点）</div>
+      <div class="d">把权重连成工作流，在 MPS 上完成加载、采样与解码。</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="t">03 · OUTPUT</div>
+      <div class="n">一条带原生音轨的 mp4</div>
+      <div class="d">h264 画面 + aac 立体声，由同一轮采样联合生成。</div>
+    </div>
+  </div>
+
+  <div class="howto">
+    <div class="card">
+      <h3 style="margin-top:0">模型 · HyperFlow H3 Flash</h3>
+      <p class="small">Video Rebirth 于 2026 年 11 月开源的 <strong>MiniMax-H3 压缩加速版</strong>（并非 MiniMax 官方产品）。它把原约 31B 的视频生成主干经剪块与低秩分解压到约 13.7B（<span class="mono">fl2va</span> 路线，即本手册所用），再用少步蒸馏把采样压到 4 / 6 / 8 步：默认 6 步、CFG = 1，因此<strong>没有 negative prompt</strong>，采样器固定 <span class="mono">euler</span>。</p>
+      <ul>
+        <li><strong>音画同生</strong>：一次前向同时产出画面与同步的 32 kHz 立体声音轨，不是后期配音；官方规格为 5.2–15 s、24 fps、默认 1344×768。</li>
+        <li><strong>为什么取 GGUF</strong>：官方提供 GGUF 与 INT8 两套量化路线，本手册选 Q4_K_M（约 9 GB），靠 Apple Silicon 统一内存 + MPS 才装得进 32 GB 的机器。</li>
+        <li><strong>许可有地域限制</strong>：MiniMax H3 社区许可排除美国、欧盟、英国、韩国，详见<a href="#license">许可与合规</a>。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">引擎 · ComfyUI</h3>
+      <p class="small">开源的<strong>节点式生成工作流引擎</strong>：把“加载权重 → 编码 prompt → 采样去噪 → VAE 解码 → 封装输出”拆成可连线的节点，整张图存成一个 JSON 文件。权重按 <span class="mono">diffusion_models / text_encoders / vae</span> 的目录约定放置。</p>
+      <ul>
+        <li><strong>为什么是它</strong>：ComfyUI 0.43+ 起原生支持 MiniMax H3 系列节点（<span class="mono">MiniMaxH3ImageToVideo</span> 等），本手册固定在实测可用的 <span class="mono">c1eece6</span>。</li>
+        <li><strong>两个自定义节点补齐这一版</strong>：<span class="mono">city96/ComfyUI-GGUF</span> 提供 GGUF 量化加载器，<span class="mono">Video-Rebirth/ComfyUI-HyperFlow-Flash</span> 提供 <span class="mono">HyperFlowLoader</span> 与 <span class="mono">HyperFlowSigmas</span> 少步调度。</li>
+        <li><strong>可无头、可脚本化</strong>：提供 <span class="mono">/prompt</span>、<span class="mono">/history</span> 等 REST API，第 7 步全程不打开图形界面——这也是智能体能照本手册执行到底的前提。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>为什么下载的是 4 个文件</h3>
+  <p class="small">官方仓库<strong>只发布压缩后的主干权重</strong>，文本编码器与两个 VAE 仍来自上游仓库，所以步骤 4 要从 3 个仓库取 4 个文件。它们在流水线里各管一段：</p>
+  <div class="card">
+    <table>
+      <tr><th>组成部分</th><th>挂到 ComfyUI</th><th>职责</th><th>体积</th></tr>
+      <tr><td>主权重 · Q4_K_M GGUF</td><td><span class="mono">diffusion_models/</span></td><td>13.7B 压缩主干，执行 6 步去噪采样</td><td class="num">9.05 GB</td></tr>
+      <tr><td>文本编码器 · Qwen3-VL 32B GGUF</td><td><span class="mono">text_encoders/</span></td><td>把 prompt 编码成条件；缺架构元数据、张量布局需修正，见步骤 5</td><td class="num">18.22 GB</td></tr>
+      <tr><td>视频 VAE · fp16</td><td><span class="mono">vae/</span></td><td>视频 latent → 图像帧</td><td class="num">5.21 GB</td></tr>
+      <tr><td>音频 VAE · fp32</td><td><span class="mono">vae/</span></td><td>音频 latent → 立体声音轨</td><td class="num">0.61 GB</td></tr>
+    </table>
+  </div>
+  <p class="small">合计约 <strong>33 GB</strong>，推理峰值内存约 <strong>28 GB</strong>——这正是步骤 1 要求 Apple Silicon + ≥ 32 GB 统一内存的原因。步骤 7 那份 14 节点工作流，就是「1–4 加载这 4 个文件 → 5 编码条件 → 6–10 采样 → 11–12 双 VAE 解码 → 13–14 合成并保存」这条链。</p>
+  <p class="small" style="font-size:13px">注：本节的模型规格（参数量、帧率、采样步数等）来自官方模型卡与公开资料；命令、版本号、文件字节数与性能数据均为本手册实测。</p>
+  <div class="dod"><div class="lbl">本节要点</div>
+    <p>模型是“知道怎么生成”的权重，ComfyUI 是“把权重跑起来”的引擎。步骤 1–2 备环境，3–6 装引擎与权重并接好线，7–8 提交工作流并验收。理解这层关系，再看下面的步骤总览即可。</p>
+  </div>
+</section>
+
+<section id="overview">
+  <h2><span class="stepno">MAP</span>步骤总览</h2>
+  <p class="sec-sub">8 个步骤，全部通过即部署完成。下载耗时取决于网络，其余各步以分钟计。</p>
+  <div class="flow">
+    <a href="#step-1"><b>1</b>前置检查</a>
+    <a href="#step-2"><b>2</b>目录与 venv</a>
+    <a href="#step-3"><b>3</b>ComfyUI 与节点</a>
+    <a href="#step-4"><b>4</b>下载模型</a>
+    <a href="#step-5"><b>5</b>修补编码器</a>
+    <a href="#step-6"><b>6</b>链接模型</a>
+    <a href="#step-7"><b>7</b>运行生成</a>
+    <a href="#step-8"><b>8</b>验收</a>
+  </div>
+  <div class="card">
+    <table>
+      <tr><th>步骤</th><th>内容</th><th>预计耗时</th><th>失败重入</th></tr>
+      <tr><td>1</td><td>硬件 / 系统 / 网络检查</td><td>1 min</td><td>修复环境后重跑本步</td></tr>
+      <tr><td>2</td><td>建目录、Python venv、装 torch 等依赖</td><td>5–10 min</td><td>删 venv 重建</td></tr>
+      <tr><td>3</td><td>克隆 ComfyUI 与两个自定义节点</td><td>3–5 min</td><td>删目录重克隆</td></tr>
+      <tr><td>4</td><td>下载 4 个模型文件（约 33 GB）</td><td>30–90 min</td><td>断点续传，重跑即可</td></tr>
+      <tr><td>5</td><td>修补文本编码器 GGUF（本手册含完整脚本）</td><td>5–10 min</td><td>重跑脚本，幂等</td></tr>
+      <tr><td>6</td><td>软链接模型到 ComfyUI 目录</td><td>&lt;1 min</td><td>重跑即可</td></tr>
+      <tr><td>7</td><td>首次生成视频</td><td>4–15 min</td><td>查第 10 节</td></tr>
+      <tr><td>8</td><td>验收输出规格</td><td>1 min</td><td>—</td></tr>
+    </table>
+  </div>
+  <div class="warn"><div class="lbl">统一约定</div>
+    <p style="font-size:14.5px">下文 <span class="mono">$ROOT</span> 指项目根目录（本部署中为任意你选定的目录，例如 <span class="mono">~/hyperflow</span>）。复制命令时把 <span class="mono">$ROOT</span> 替换为实际绝对路径，或先执行 <span class="mono">export ROOT=~/hyperflow</span>。所有命令默认在 macOS（zsh/bash）下执行。</p>
+  </div>
+</section>
+
+<section id="step-1">
+  <h2><span class="stepno">STEP 1</span>前置条件检查</h2>
+  <p class="sec-sub">逐项检查，任何一项不通过都先修复再继续。</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code># 1a. 芯片与内存（需 Apple Silicon，建议 ≥ 32 GB 统一内存）
+sysctl -n machdep.cpu.brand_string
+sysctl -n hw.memsize   # 期望 ≥ 34359738368 (32 GB)
+
+# 1b. 系统与工具
+sw_vers
+python3 --version      # 期望 ≥ 3.10
+git --version
+curl --version | head -1
+export PATH=/opt/homebrew/bin:$PATH
+ffmpeg -version 2>/dev/null | head -1 || echo "ffmpeg 未装（仅验收需要，可后补）"
+
+# 1c. 磁盘空间（模型 33 GB + 运行峰值，建议 ≥ 80 GB 可用）
+df -h .</code></pre></div>
+  <div class="expect"><div class="lbl">期望输出（可机器校验）</div>
+  <pre><code>cpu.brand_string 含 "Apple"（如 Apple M3 Pro / M4 等）
+hw.memsize ≥ 34359738368
+python3 ≥ 3.10；git、curl 存在</code></pre></div>
+  <div class="warn"><div class="lbl">硬性要求</div>
+  <p style="font-size:14.5px">推理峰值内存约 <strong>28 GB</strong>（文本编码器 18.9 GB + 主权重 8.9 GB + 双 VAE）。统一内存不足 32 GB 的机器会在加载阶段被系统杀进程，无解，请换机器或改用云端。</p></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p>芯片为 Apple Silicon，内存 ≥ 32 GB，磁盘可用 ≥ 80 GB，python3 / git / curl 可用。</p></div>
+</section>
+
+<section id="step-2">
+  <h2><span class="stepno">STEP 2</span>目录结构与 Python 环境</h2>
+  <p class="sec-sub">创建独立 venv，安装 PyTorch（MPS 版）与 GGUF 依赖。版本号为本部署实测可用组合。</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code>export ROOT=~/hyperflow          # ← 改成你的目标目录
+mkdir -p "$ROOT/models" && cd "$ROOT"
+
+python3 -m venv venv
+./venv/bin/pip install --upgrade pip
+
+# PyTorch（macOS 原生 MPS 构建）与核心依赖
+./venv/bin/pip install torch==2.15.0 torchvision==0.29.2
+./venv/bin/pip install gguf==0.19.0 safetensors==0.8.0 einops==0.8.2 \
+    numpy==2.5.4 pillow==13.0.0 scipy==1.18.1 sentencepiece==0.2.3 transformers==5.22.2</code></pre></div>
+  <div class="expect"><div class="lbl">期望输出（可机器校验）</div>
+  <pre><code>./venv/bin/python -c "import torch; print(torch.__version__, torch.backends.mps.is_available())"
+# → 2.15.0 True</code></pre></div>
+  <div class="warn"><div class="lbl">失败处理</div>
+  <p style="font-size:14.5px">MPS 不可用：确认装的是 macOS 原生 torch（不是 ROCm/CUDA 版），重跑 pip install torch。Python 版本过低：换 python3.11+ 重建 venv。</p></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p><span class="mono">torch.backends.mps.is_available()</span> 返回 <span class="mono">True</span>。</p></div>
+</section>
+
+<section id="step-3">
+  <h2><span class="stepno">STEP 3</span>安装 ComfyUI 与自定义节点</h2>
+  <p class="sec-sub">ComfyUI 主体 + 两个必需节点：GGUF 量化内核与 HyperFlow H3 节点包。</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code>cd "$ROOT"
+
+git clone https://github.com/Comfy-Org/ComfyUI.git
+cd ComfyUI
+git checkout c1eece6            # 实测可用版本（v0.45 代）
+../venv/bin/pip install -r requirements.txt
+cd ..
+
+git clone https://github.com/city96/ComfyUI-GGUF.git \
+    ComfyUI/custom_nodes/ComfyUI-GGUF
+git clone https://github.com/Video-Rebirth/ComfyUI-HyperFlow-Flash.git \
+    ComfyUI/custom_nodes/ComfyUI-HyperFlow-Flash</code></pre></div>
+  <div class="expect"><div class="lbl">期望输出（可机器校验）</div>
+  <pre><code>ls ComfyUI/custom_nodes
+# → ComfyUI-GGUF  ComfyUI-HyperFlow-Flash  ...
+ls ComfyUI/main.py
+# → ComfyUI/main.py</code></pre></div>
+  <div class="warn"><div class="lbl">失败处理</div>
+  <p style="font-size:14.5px">GitHub 克隆失败：先配置可用的网络（本部署环境 huggingface.co 被 DNS 污染，GitHub 正常；若 GitHub 也不通，用镜像站或代理）。requirements 安装失败：多半是网络，重跑。</p></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p>两个自定义节点目录与 <span class="mono">ComfyUI/main.py</span> 存在。</p></div>
+</section>
+
+<section id="step-4">
+  <h2><span class="stepno">STEP 4</span>下载模型权重（约 33 GB）</h2>
+  <p class="sec-sub">4 个文件，分属 3 个仓库。主通道 ModelScope（国内直连满速），下载后<strong>逐字节校验</strong>。</p>
+  <div class="card">
+    <table>
+      <tr><th>文件</th><th>来源仓库</th><th>字节数（校验基准）</th></tr>
+      <tr><td><span class="mono">minimax_h3_fl2va_hyperflow_flash_14b-Q4_K_M.gguf</span></td><td>VideoRebirthAI/hyperflow-h3-flash<br><span class="mono">fl2va_gguf/</span></td><td class="num">9,053,456,480</td></tr>
+      <tr><td><span class="mono">qwen3vl_32b_minimax_h3-Q4_K_M.gguf</span></td><td>unsloth/MiniMax-H3-GGUF</td><td class="num">18,218,065,024</td></tr>
+      <tr><td><span class="mono">minimax_h3_video_vae_fp16.safetensors</span></td><td>Comfy-Org/MiniMax-H3<br><span class="mono">vae/</span></td><td class="num">5,207,808,496</td></tr>
+      <tr><td><span class="mono">minimax_h3_audio_vae_fp32.safetensors</span></td><td>Comfy-Org/MiniMax-H3<br><span class="mono">vae/</span></td><td class="num">605,254,808</td></tr>
+    </table>
+  </div>
+  <div class="codebox"><button class="copy">复制</button><pre><code>cd "$ROOT/models"
+
+curl -fL -C - -o minimax_h3_fl2va_hyperflow_flash_14b-Q4_K_M.gguf \
+  "https://modelscope.cn/api/v1/models/VideoRebirthAI/hyperflow-h3-flash/repo?FilePath=fl2va_gguf/minimax_h3_fl2va_hyperflow_flash_14b-Q4_K_M.gguf"
+
+curl -fL -C - -o qwen3vl_32b_minimax_h3-Q4_K_M.gguf \
+  "https://modelscope.cn/api/v1/models/unsloth/MiniMax-H3-GGUF/repo?FilePath=qwen3vl_32b_minimax_h3-Q4_K_M.gguf"
+
+curl -fL -C - -o minimax_h3_video_vae_fp16.safetensors \
+  "https://modelscope.cn/api/v1/models/Comfy-Org/MiniMax-H3/repo?FilePath=vae/minimax_h3_video_vae_fp16.safetensors"
+
+curl -fL -C - -o minimax_h3_audio_vae_fp32.safetensors \
+  "https://modelscope.cn/api/v1/models/Comfy-Org/MiniMax-H3/repo?FilePath=vae/minimax_h3_audio_vae_fp32.safetensors"</code></pre></div>
+  <div class="expect"><div class="lbl">期望输出（可机器校验）</div>
+  <pre><code>cd "$ROOT/models" &amp;&amp; stat -f%z *.gguf *.safetensors | sort
+# → 605254808
+# → 5207808496
+# → 9053456480
+# → 18218065024</code></pre></div>
+  <div class="warn"><div class="lbl">备选通道与断点续传</div>
+  <p style="font-size:14.5px">ModelScope 不可用时改用 HF 镜像（需指定可用 IP）：<span class="mono">curl --resolve hf-mirror.com:443:104.250.143.18 -fL -C - -o ...</span>，URL 换成 <span class="mono">https://hf-mirror.com/仓库名/resolve/main/文件路径</span>。<span class="mono">-C -</span> 支持断点续传，中断后重跑同一命令即可。网络不稳定时可按 32 MB 分块并行下载后拼接（Range 请求），校验标准不变。</p></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p>4 个文件字节数与上表<strong>完全一致</strong>。字节不符 = 下载损坏，续传重跑直到一致。</p></div>
+</section>
+
+<section id="step-5">
+  <h2><span class="stepno">STEP 5</span>修补文本编码器 GGUF（关键步骤）</h2>
+  <p class="sec-sub">原始文本编码器 GGUF 有两个问题：缺 <span class="mono">general.architecture</span> 元数据；<span class="mono">visual.patch_embed.proj.weight</span> 张量被 llama.cpp 存成了反量化布局，形状不符合 Qwen3-VL 的卷积定义。必须修补后才能加载。</p>
+  <div class="warn"><div class="lbl">不要删原始文件</div>
+    <p style="font-size:14.5px">补丁版由脚本从原始文件确定性生成，原始 <span class="mono">qwen3vl_32b_minimax_h3-Q4_K_M.gguf</span> 务必保留。</p></div>
+  <p>在 <span class="mono">$ROOT</span> 下创建 <span class="mono">patch_gguf.py</span>，内容如下：</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code>import importlib.util
+import torch
+import gguf
+
+def _load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+dequant = _load("gguf_dequant", "ComfyUI/custom_nodes/ComfyUI-GGUF/dequant.py")
+
+SRC = "models/qwen3vl_32b_minimax_h3-Q4_K_M.gguf"
+DST = "models/qwen3vl_32b_minimax_h3-Q4_K_M.patched.gguf"
+TARGET = "visual.patch_embed.proj.weight"
+
+r = gguf.GGUFReader(SRC)
+w = gguf.GGUFWriter(path=None, arch="qwen3vl")
+w.add_name("qwen3vl_32b_minimax_h3")
+w.add_quantization_version(gguf.GGML_QUANT_VERSION)
+
+for i, t in enumerate(r.tensors):
+    if t.name == TARGET:
+        # dequantize, reshape conv layout [out*in, kt, kh, kw] -> [out, in, kt, kh, kw]
+        raw = torch.from_numpy(t.data)
+        raw.tensor_type = t.tensor_type
+        raw.tensor_shape = torch.Size((3456, 2, 16, 16))
+        q = dequant.dequantize_tensor(raw, dtype=torch.float32)
+        q = q.reshape(1152, 3, 2, 16, 16).to(torch.float16).contiguous()
+        w.add_tensor(t.name, q.numpy())
+        print("reshaped patch_embed:", tuple(q.shape), flush=True)
+    else:
+        w.add_tensor(t.name, t.data, raw_dtype=t.tensor_type)
+    if i % 200 == 0:
+        print(f"{i}/{len(r.tensors)}", flush=True)
+
+w.write_header_to_file(path=DST)
+w.write_kv_data_to_file()
+w.write_tensors_to_file(progress=False)
+w.close()
+print("patched OK")</code></pre></div>
+  <div class="codebox"><button class="copy">复制</button><pre><code>cd "$ROOT" && ./venv/bin/python patch_gguf.py</code></pre></div>
+  <div class="expect"><div class="lbl">期望输出（可机器校验）</div>
+  <pre><code>reshaped patch_embed: (1152, 3, 2, 16, 16)
+...
+patched OK
+
+stat -f%z models/qwen3vl_32b_minimax_h3-Q4_K_M.patched.gguf
+# → 18218065184（略大于原始文件属正常：元数据 + F16 张量）</code></pre></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p>输出 <span class="mono">patched OK</span>，且 <span class="mono">models/qwen3vl_32b_minimax_h3-Q4_K_M.patched.gguf</span> 存在。</p></div>
+</section>
+
+<section id="step-6">
+  <h2><span class="stepno">STEP 6</span>链接模型到 ComfyUI</h2>
+  <p class="sec-sub">用软链接把 4 个文件挂进 ComfyUI 的模型目录。注意文本编码器链接指向<strong>补丁版</strong>，且链接名不含 <span class="mono">.patched</span>。</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code>cd "$ROOT/ComfyUI/models"
+
+ln -sf "$ROOT/models/minimax_h3_fl2va_hyperflow_flash_14b-Q4_K_M.gguf" \
+    diffusion_models/minimax_h3_fl2va_hyperflow_flash_14b-Q4_K_M.gguf
+
+ln -sf "$ROOT/models/qwen3vl_32b_minimax_h3-Q4_K_M.patched.gguf" \
+    text_encoders/qwen3vl_32b_minimax_h3-Q4_K_M.gguf
+
+ln -sf "$ROOT/models/minimax_h3_video_vae_fp16.safetensors" \
+    vae/minimax_h3_video_vae_fp16.safetensors
+
+ln -sf "$ROOT/models/minimax_h3_audio_vae_fp32.safetensors" \
+    vae/minimax_h3_audio_vae_fp32.safetensors</code></pre></div>
+  <div class="expect"><div class="lbl">期望输出（可机器校验）</div>
+  <pre><code>ls -l diffusion_models/text_encoders/vae/ | grep -c "\-> $ROOT"
+# → 4（四个链接全部指向 $ROOT/models 下的真实文件）</code></pre></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p>4 个软链接就位且目标文件存在（<span class="mono">test -e</span> 每个链接均真）。</p></div>
+</section>
+
+<section id="step-7">
+  <h2><span class="stepno">STEP 7</span>运行生成</h2>
+  <p class="sec-sub">一键脚本：启动无头 ComfyUI → 提交工作流 → 轮询 → 保存 → 关闭服务。工作流文件决定分辨率、prompt、seed。</p>
+  <p>在 <span class="mono">$ROOT</span> 下创建 <span class="mono">run_gen.sh</span>：</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code>#!/bin/bash
+# End-to-end generation runner: server boot -> submit t2v workflow -> poll -> save -> shutdown
+cd "$(dirname "$0")/ComfyUI"
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+WF="${1:-../workflow_t2v_mac.json}"
+
+../venv/bin/python main.py --listen 127.0.0.1 --port 8188 > /tmp/comfy_run.log 2>&1 &
+SRV=$!
+
+# wait for server
+READY=0
+for i in $(seq 1 120); do
+  if curl -s -o /dev/null --max-time 2 http://127.0.0.1:8188/system_stats; then READY=1; break; fi
+  if ! kill -0 $SRV 2>/dev/null; then echo "SERVER DIED"; tail -30 /tmp/comfy_run.log; exit 1; fi
+  sleep 5
+done
+[ "$READY" = 1 ] || { echo "SERVER TIMEOUT"; exit 1; }
+echo "server ready, submitting workflow"
+
+RESP=$(curl -s --max-time 60 http://127.0.0.1:8188/prompt -H "Content-Type: application/json" \
+  -d "{\"prompt\": $(cat "$WF")}")
+PID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('prompt_id',''))" 2>/dev/null)
+if [ -z "$PID" ]; then echo "SUBMIT FAILED: $RESP"; kill $SRV; exit 1; fi
+echo "prompt_id=$PID"
+
+# poll until done (up to 6h)
+DONE=0
+for i in $(seq 1 720); do
+  H=$(curl -s --max-time 10 "http://127.0.0.1:8188/history/$PID")
+  if echo "$H" | python3 -c "import sys,json; d=json.load(sys.stdin); sys.exit(0 if '$PID' in d else 1)" 2>/dev/null; then DONE=1; break; fi
+  sleep 30
+done
+
+if [ "$DONE" = 1 ]; then
+  echo "GENERATION DONE"
+  echo "$H" > /tmp/gen_history.json
+  echo "$H" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)['$PID']
+outs=d.get('outputs',{})
+for nid,out in outs.items():
+    if 'videos' in out:
+        for v in out['videos']: print('VIDEO:', v.get('filename'), v.get('subfolder'))
+    if 'images' in out:
+        for im in out['images']: print('IMAGE:', im.get('filename'))
+st=d.get('status',{})
+print('status:', st.get('status_str'), 'messages:', len(st.get('messages',[])))
+"
+else
+  echo "TIMEOUT waiting for generation"
+fi
+
+echo "=== last 40 log lines ==="
+tail -40 /tmp/comfy_run.log
+kill $SRV 2>/dev/null; sleep 2; kill -9 $SRV 2>/dev/null
+echo "RUNNER EXIT"</code></pre></div>
+  <p>首次生成用一个 448×256 的烟测工作流验证全链路（约 4 分钟）：</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code>cd "$ROOT"
+chmod +x run_gen.sh
+mkdir -p ComfyUI/output/hyperflow
+
+# 最小烟测工作流（448×256，seed 42；烟测用 4 步加速，标准生成用 6 步）
+cat > workflow_t2v_smoke.json << 'EOF'
+{
+ "1": {
+  "class_type": "HyperFlowLoader",
+  "inputs": {
+   "unet_name": "minimax_h3_fl2va_hyperflow_flash_14b-Q4_K_M.gguf",
+   "weights_in": "auto"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoaderGGUF",
+  "inputs": {
+   "clip_name": "qwen3vl_32b_minimax_h3-Q4_K_M.gguf",
+   "type": "minimax"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+  }
+ },
+ "4": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+  }
+ },
+ "5": {
+  "class_type": "MiniMaxH3ImageToVideo",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ],
+   "prompt": "A street musician plays a weathered acoustic guitar on a cobblestone corner at golden hour. The camera slowly pushes in from a wide shot to a medium close-up as passers-by drift through the warm backlight. Soft strumming, distant chatter and a passing tram bell fill the soundtrack.",
+   "width": 448,
+   "height": 256,
+   "length": 124
+  }
+ },
+ "6": {
+  "class_type": "HyperFlowSigmas",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "steps": 4
+  }
+ },
+ "7": {
+  "class_type": "KSamplerSelect",
+  "inputs": {
+   "sampler_name": "euler"
+  }
+ },
+ "8": {
+  "class_type": "RandomNoise",
+  "inputs": {
+   "noise_seed": 42
+  }
+ },
+ "9": {
+  "class_type": "BasicGuider",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "conditioning": [
+    "5",
+    0
+   ]
+  }
+ },
+ "10": {
+  "class_type": "SamplerCustomAdvanced",
+  "inputs": {
+   "noise": [
+    "8",
+    0
+   ],
+   "guider": [
+    "9",
+    0
+   ],
+   "sampler": [
+    "7",
+    0
+   ],
+   "sigmas": [
+    "6",
+    0
+   ],
+   "latent_image": [
+    "5",
+    1
+   ]
+  }
+ },
+ "11": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "10",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "12": {
+  "class_type": "VAEDecodeAudio",
+  "inputs": {
+   "samples": [
+    "10",
+    0
+   ],
+   "vae": [
+    "4",
+    0
+   ]
+  }
+ },
+ "13": {
+  "class_type": "CreateVideo",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "audio": [
+    "12",
+    0
+   ],
+   "fps": 24
+  }
+ },
+ "14": {
+  "class_type": "SaveVideo",
+  "inputs": {
+   "video": [
+    "13",
+    0
+   ],
+   "filename_prefix": "hyperflow/t2v",
+   "format": "mp4"
+  }
+ }
+}
+EOF
+
+# 防系统休眠 + 不限时执行；首次运行需加载模型（约 50 s 热缓存 / 数分钟冷启动）
+caffeinate -i bash run_gen.sh "$ROOT/workflow_t2v_smoke.json"</code></pre></div>
+  <div class="expect"><div class="lbl">期望输出（可机器校验）</div>
+  <pre><code>server ready, submitting workflow
+prompt_id=xxxx
+GENERATION DONE
+VIDEO: t2v_00001_.mp4 hyperflow
+status: success messages: 3
+RUNNER EXIT
+
+# 日志中段应出现（进度条，448×256 约 31 s/步 × 6）：
+# HyperFlow: 18 factorized blocks, two-time=True, 6-step schedule</code></pre></div>
+  <div class="warn"><div class="lbl">长时间任务必看</div>
+    <p style="font-size:14.5px">1344×768 全尺寸约需 <strong>80 分钟</strong>。在带执行时限的自动化环境里，务必为任务显式设置"不限时"，否则前台超时转后台 + 默认后台时限会把它杀掉（表现：进程消失、无输出文件、日志中断）。人工终端运行无此问题。</p></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p>输出 <span class="mono">status: success</span>，且 <span class="mono">ComfyUI/output/hyperflow/t2v_00001_.mp4</span> 存在。</p></div>
+</section>
+
+<section id="step-8">
+  <h2><span class="stepno">STEP 8</span>验收</h2>
+  <p class="sec-sub">校验容器规格，并抽帧确认画面与 prompt 吻合。</p>
+  <div class="codebox"><button class="copy">复制</button><pre><code>export PATH=/opt/homebrew/bin:$PATH
+V="$ROOT/ComfyUI/output/hyperflow/t2v_00001_.mp4"
+
+# 8a. 容器规格
+ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate:format=duration -of csv=p=0 "$V"
+# 期望（448 烟测）：h264,448,256,24/1 / aac / 5.166688
+
+# 8b. 抽 4 帧拼图，人工/视觉检查
+ffmpeg -y -v error -i "$V" \
+  -vf "select='eq(n\,8)+eq(n\,40)+eq(n\,75)+eq(n\,110)',tile=4x1" -frames:v 1 /tmp/tile.png
+
+# 8c. 音轨波形（确认原生配乐存在）
+ffmpeg -y -v error -i "$V" -filter_complex "showwavespic=s=800x160" -frames:v 1 /tmp/wave.png</code></pre></div>
+  <div class="dod"><div class="lbl">完成判定</div>
+  <p>视频为 h264 + aac 双轨，时长约 5.17 s，帧率 24；抽帧画面主体与 prompt 描述一致，波形非静音。至此部署完成。</p></div>
+</section>
+
+<section id="usage">
+  <h2><span class="stepno">USE</span>日常使用：改 prompt / seed / 分辨率</h2>
+  <p class="sec-sub">复制烟测工作流，按需修改三个节点即可。建议流程：<strong>448 预览选 seed → 768/1344 定稿</strong>。</p>
+  <div class="card">
+    <table>
+      <tr><th>要改什么</th><th>改哪个节点</th><th>字段</th><th>取值建议</th></tr>
+      <tr><td>画面内容</td><td class="num">5 · MiniMaxH3ImageToVideo</td><td><span class="mono">prompt</span></td><td><strong>用英文</strong>；主体单一、动作明确、光线充足，命中率最高</td></tr>
+      <tr><td>分辨率</td><td class="num">5</td><td><span class="mono">width / height</span></td><td>预览 448×256；日常 768×432；成片 1344×768（80 min/条）</td></tr>
+      <tr><td>时长</td><td class="num">5</td><td><span class="mono">length</span></td><td>帧数，124 ≈ 5.2 s @ 24fps；改后 fps 节点同步</td></tr>
+      <tr><td>随机种子</td><td class="num">8 · RandomNoise</td><td><span class="mono">noise_seed</span></td><td>同 prompt 不同 seed 构图差异大，先低清筛 seed</td></tr>
+      <tr><td>输出路径</td><td class="num">14 · SaveVideo</td><td><span class="mono">filename_prefix</span></td><td><span class="mono">hyperflow/xxx</span> → 落在 <span class="mono">output/hyperflow/</span></td></tr>
+      <tr><td>采样设置</td><td class="num">6 / 7</td><td><span class="mono">steps=6</span> · <span class="mono">euler</span></td><td><strong>不建议改</strong>：6 步是蒸馏调度的一部分</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">性能基线（实测，6 步 + 解码，单条 5.2 s 成片）</h3>
+    <table>
+      <tr><th>分辨率</th><th>单步</th><th>端到端</th><th>定位</th></tr>
+      <tr><td>448×256</td><td class="num">≈ 31 s</td><td class="num">≈ 4 min</td><td>烟测 / 选 seed</td></tr>
+      <tr><td>768×432</td><td class="num">≈ 127 s</td><td class="num">≈ 15 min</td><td>日常甜点</td></tr>
+      <tr><td>1344×768</td><td class="num">≈ 695–800 s</td><td class="num">≈ 80 min</td><td>成片级</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="trouble">
+  <h2><span class="stepno">FIX</span>故障排查表</h2>
+  <p class="sec-sub">按症状定位，全部来自真实部署记录。</p>
+  <div class="card">
+    <table>
+      <tr><th>症状</th><th>根因</th><th>解法</th></tr>
+      <tr><td>SERVER DIED，日志有 OOM / killed</td><td>统一内存不足 28 GB 峰值</td><td>关掉占内存的应用重试；仍失败则硬件不达标</td></tr>
+      <tr><td>TE 加载报错 / shape mismatch（visual.patch_embed）</td><td>忘了步骤 5 修补，或链接指向原始 GGUF</td><td>重跑 patch_gguf.py；检查步骤 6 链接指向 <span class="mono">.patched.gguf</span></td></tr>
+      <tr><td>SUBMIT FAILED: 500 或 cat: 文件不存在</td><td>run_gen.sh 内 cd 到 ComfyUI，相对路径失效</td><td><strong>永远传绝对路径</strong>给 run_gen.sh</td></tr>
+      <tr><td>生成中途进程消失、无输出</td><td>执行环境的任务时限（前台超时+后台默认时限组合）</td><td>任务显式不限时；终端直接跑不受影响</td></tr>
+      <tr><td>ffprobe / ffmpeg: command not found</td><td>PATH 不含 Homebrew</td><td><span class="mono">export PATH=/opt/homebrew/bin:$PATH</span></td></tr>
+      <tr><td>下载极慢或失败</td><td>HF 被 DNS 污染</td><td>主通道 ModelScope；备选 hf-mirror + <span class="mono">--resolve</span> 指定 IP</td></tr>
+      <tr><td>画面发糊</td><td>分辨率过低</td><td>按用途升到 768×432 / 1344×768；先 448 选 seed 再定稿</td></tr>
+      <tr><td>主体畸形 / 结构错乱</td><td>prompt 元素过多或光线不足</td><td>主体单一、动作明确、光线充足；换 seed</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="cheatsheet">
+  <h2><span class="stepno">CARD</span>一页速查</h2>
+  <div class="card">
+    <div class="codebox"><button class="copy">复制</button><pre><code># 环境
+export ROOT=~/hyperflow
+export PATH=/opt/homebrew/bin:$PATH
+
+# 日常生成（预览 → 定稿）
+cd "$ROOT" &amp;&amp; bash run_gen.sh "$ROOT/workflow_preview.json"   # 448×256 选 seed
+cd "$ROOT" &amp;&amp; bash run_gen.sh "$ROOT/workflow_final.json"     # 768×432 或 1344×768
+
+# 产物
+"$ROOT/ComfyUI/output/hyperflow/"     # 成片目录
+tail -40 /tmp/comfy_run.log           # 运行日志
+cat /tmp/gen_history.json             # 最近一次执行历史（含 prompt_id / 状态）
+
+# 校验
+stat -f%z "$ROOT/models/"*.gguf "$ROOT/models/"*.safetensors
+./venv/bin/python -c "import torch;print(torch.backends.mps.is_available())"</code></pre></div>
+  </div>
+</section>
+
+<section id="license">
+  <h2><span class="stepno">LAW</span>许可与合规</h2>
+  <div class="card">
+    <ul>
+      <li><strong>地域限制</strong>：MiniMax H3 社区许可排除美国、欧盟、英国、韩国的用户与使用；中国大陆可用。</li>
+      <li><strong>内容标注</strong>：对外发布生成内容需按当地法规标注"AI 生成"。</li>
+      <li><strong>模型来源</strong>：<a href="https://huggingface.co/VideoRebirthAI/hyperflow-h3-flash">huggingface.co/VideoRebirthAI/hyperflow-h3-flash</a>（国内经 <a href="https://www.modelscope.cn/">ModelScope</a> 镜像下载）。</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>HyperFlow H3 Flash 本地文生视频部署 · 使用指南 · v1.0 · 2026-11-13</p>
+  <p style="font-family:var(--mono);font-size:12px;margin-top:6px">所有命令、版本号、字节数、性能数据均来自一次真实成功的本机部署（Apple Silicon / macOS / torch 2.15.0 MPS / ComfyUI c1eece6）。</p>
+</footer>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var code=btn.parentElement.querySelector('pre code').innerText;
+      function ok(){btn.textContent='已复制';btn.classList.add('ok');setTimeout(function(){btn.textContent='复制';btn.classList.remove('ok')},1600)}
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(ok,ok)}
+      else{
+        var ta=document.createElement('textarea');ta.value=code;document.body.appendChild(ta);
+        ta.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(ta);ok();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
