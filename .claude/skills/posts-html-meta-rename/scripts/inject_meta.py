@@ -73,6 +73,23 @@ def build_block(missing_fields, values):
     return lines
 
 
+def remove_meta(raw, name):
+    """删除指定 name 的全部 meta 标签（独占一行时连整行与换行一起删）。"""
+    pat = meta_re(name)
+    while True:
+        m = pat.search(raw)
+        if not m:
+            return raw
+        start, end = m.start(), m.end()
+        line_start = raw.rfind("\n", 0, start) + 1
+        if raw[line_start:start].strip() == "":
+            line_end = raw.find("\n", end)
+            line_end = len(raw) if line_end == -1 else line_end + 1
+            raw = raw[:line_start] + raw[line_end:]
+        else:
+            raw = raw[:start] + raw[end:]
+
+
 def insert_block(raw, lines):
     """锚点安全地插入 meta 行，返回新文本。"""
     if not lines:
@@ -134,8 +151,15 @@ def main():
     raw = open(full, encoding="utf-8").read()
 
     to_insert = [k for k in FIELDS if args.force or not has_meta(raw, k)]
-    lines = build_block(to_insert, values)
-    new_raw = insert_block(raw, lines)
+    if args.force:
+        # 先整体移除旧的四项，再按规范顺序重插，避免「重复插入 / 顺序错乱」
+        base = raw
+        for k in FIELDS:
+            base = remove_meta(base, k)
+        new_raw = insert_block(base, build_block(FIELDS, values))
+        to_insert = list(FIELDS)
+    else:
+        new_raw = insert_block(raw, build_block(to_insert, values))
 
     changed = new_raw != raw
     if changed and not args.dry_run:
