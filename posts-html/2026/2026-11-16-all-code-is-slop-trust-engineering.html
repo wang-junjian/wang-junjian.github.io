@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="拆解「所有代码都是垃圾」演讲：11,000 个 PR、0.47% 回滚率究竟证明了什么。以五层信任金字塔说明如何把智能体错误转成会失败的机器约束，顺序是先清代码库、再建验证层，最后才谈软件工厂，并对每个数字标注证据强度。">
+<meta name="keywords" content="all-code-is-slop, trust-engineering, ai-code-review, machine-enforced-constraints, verification-economics, codebase-garden">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-16">
+<title>所有代码都是垃圾，除了我的 —— 一场关于「信任工程」的实证拆解</title>
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --ink:#16181D; --ink2:#333941; --ink3:#454B54;
+  --line:#E6E3DC; --line2:#D4D0C7; --soft:#F4F2ED;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FBF1E4;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EAF2FA;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E7F4F2;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#F2ECFA;
+  --red:#B3261E; --red-t:#9C1F19; --red-bg:#FBEAE8;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EAF4EA;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);overflow-wrap:break-word;
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+a{color:var(--blue-t);text-decoration:none;border-bottom:1px solid rgba(31,82,136,.28)}
+a:hover{border-bottom-color:var(--blue-t)}
+nav{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.96);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+nav .brand{font-weight:700;font-size:13px;color:var(--ink);margin-right:12px;letter-spacing:.02em;border:0}
+nav a{font-size:12.5px;color:var(--ink2);padding:3px 9px;border-radius:6px;border:0;white-space:nowrap}
+nav a:hover{background:var(--soft);color:var(--ink)}
+.hero{padding:60px 0 44px}
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-t);font-weight:700;margin-bottom:14px}
+h1{font-size:40px;line-height:1.24;letter-spacing:-.02em;margin:0 0 18px;font-weight:750}
+h1 small{display:block;font-size:19px;line-height:1.5;font-weight:500;color:var(--ink2);margin-top:12px;letter-spacing:0}
+.lead{font-size:18px;line-height:1.8;color:var(--ink2);max-width:820px;margin:0 0 22px}
+.meta{font-size:13px;color:var(--ink3);line-height:1.9}
+.meta b{color:var(--ink2);font-weight:600}
+section{padding-top:56px;margin-top:44px;border-top:1px solid var(--line);scroll-margin-top:24px}
+h2{font-size:26px;line-height:1.35;letter-spacing:-.01em;margin:0 0 8px;font-weight:730}
+h2 .num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;color:var(--blue-t);
+  display:block;margin-bottom:6px;letter-spacing:.08em;font-weight:600}
+h3{font-size:18px;line-height:1.5;margin:30px 0 10px;font-weight:680}
+h4{font-size:15px;margin:0 0 8px;font-weight:680}
+p{margin:0 0 15px}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin-bottom:7px}
+strong{font-weight:680}
+code{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;overflow-wrap:anywhere}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin:18px 0;min-width:0}
+.grid2,.grid3,.grid4{display:grid;gap:14px;margin:18px 0}
+.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.grid2>*,.grid3>*,.grid4>*,.card{min-width:0}
+.card h4{color:var(--ink)}
+.card p:last-child,.card ul:last-child,.card ol:last-child{margin-bottom:0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.stat .n{font-size:30px;line-height:1.1;font-weight:760;letter-spacing:-.02em;color:var(--ink)}
+.stat .n small{font-size:15px;font-weight:600}
+.stat .u{font-size:12.5px;color:var(--ink3);margin-top:6px;line-height:1.6}
+.stat.amber{background:var(--amber-bg);border-color:#EAD6B8}
+.stat.blue{background:var(--blue-bg);border-color:#CFDFEF}
+.stat.teal{background:var(--teal-bg);border-color:#C6E3DF}
+.stat.red{background:var(--red-bg);border-color:#EFCFCC}
+.tag{display:inline-block;font-size:11px;line-height:1.5;padding:2px 8px;border-radius:999px;
+  background:var(--blue-bg);color:var(--blue-t);font-weight:650;vertical-align:middle;white-space:nowrap}
+.tag.a{background:var(--amber-bg);color:var(--amber-t)}
+.tag.t{background:var(--teal-bg);color:var(--teal-t)}
+.tag.p{background:var(--purple-bg);color:var(--purple-t)}
+.tag.r{background:var(--red-bg);color:var(--red-t)}
+.tag.g{background:var(--green-bg);color:var(--green-t)}
+.tag.gray{background:var(--soft);color:var(--ink3)}
+figure{margin:26px 0 30px;min-width:0}
+.fig-box{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:14px 12px 6px;min-width:0}
+.fig-box svg{min-width:600px;width:100%;height:auto;display:block}
+figcaption{font-size:13px;line-height:1.7;color:var(--ink3);margin-top:9px;padding:0 2px}
+figcaption b{color:var(--ink2)}
+table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.65;background:var(--card);margin:16px 0}
+th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+th{background:var(--blue-bg);color:var(--blue-t);font-weight:650;font-size:13px}
+td code{font-size:.85em}
+tbody tr:nth-child(even){background:#FCFBF9}
+.verdict{border-left:3px solid var(--amber);background:var(--amber-bg);border-radius:0 8px 8px 0;
+  padding:15px 20px;margin:20px 0}
+.verdict h4{color:var(--amber-t);font-size:13px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+.verdict p:last-child{margin-bottom:0}
+.warn{border-left:3px solid var(--red);background:var(--red-bg);border-radius:0 8px 8px 0;padding:15px 20px;margin:20px 0}
+.warn h4{color:var(--red-t);font-size:13px;letter-spacing:.04em;margin-bottom:6px}
+.warn p:last-child{margin-bottom:0}
+.good{border-left:3px solid var(--teal);background:var(--teal-bg);border-radius:0 8px 8px 0;padding:15px 20px;margin:20px 0}
+.good h4{color:var(--teal-t);font-size:13px;letter-spacing:.04em;margin-bottom:6px}
+.good p:last-child{margin-bottom:0}
+.claim{display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.claim:last-child{border-bottom:0}
+.claim .c{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;font-weight:700;color:var(--purple-t);padding-top:2px}
+.claim .t{font-weight:640;line-height:1.6}
+.claim .d{font-size:14px;color:var(--ink2);margin-top:4px;line-height:1.7}
+.small{font-size:13.5px;color:var(--ink3);line-height:1.75}
+.rule{height:1px;background:var(--line);margin:28px 0}
+footer{margin-top:76px;padding:30px 0 60px;border-top:1px solid var(--line);color:var(--ink3);font-size:13px}
+footer b{color:var(--ink2)}
+@media(max-width:860px){
+  .grid3,.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  nav .brand{width:100%;margin-bottom:2px}
+}
+@media(max-width:720px){
+  h1{font-size:31px}
+  .grid2,.grid3,.grid4{grid-template-columns:minmax(0,1fr)}
+  table{display:block;overflow-x:auto}
+  .lead{font-size:16.5px}
+  .fig-box{padding:10px 6px 4px}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <span class="brand">信任工程 · 深度拆解</span>
+    <a href="#s00">摘要</a><a href="#s01">来源核验</a><a href="#s02">范式</a><a href="#s03">理论</a>
+    <a href="#s04">金字塔</a><a href="#s05">花园</a><a href="#s06">消除</a><a href="#s07">注释</a>
+    <a href="#s08">验证</a><a href="#s09">经济学</a><a href="#s10">回报</a><a href="#s11">落地</a>
+    <a href="#s12">边界</a><a href="#s13">结论</a>
+  </div>
+</nav>
+
+<div class="wrap">
+<header class="hero">
+  <div class="kicker">深度研究报告 · 基于演讲原文与交叉证据</div>
+  <h1>所有代码都是垃圾，除了我的
+    <small>Lauren Tan（poteto）在 AI Engineer Code Summit 2026 的演讲，以及它背后的「信任工程」方法论 —— 一场把 11,000 个 PR 变成可复核命题的拆解。</small>
+  </h1>
+  <p class="lead">这不是一篇转述演讲的读书笔记。核心问题是：一个团队月合并约一万一千个 PR、回滚率却只有约 0.5%，这件事究竟证明了什么、不证明什么，以及你能否复制它。答案是：证明的不是 智能体 更聪明，而是「环境比提示词重要」；复制的门槛不在工具清单，而在顺序。</p>
+  <div class="meta">
+    <b>基准文档</b>：赛文视点译稿《Lauren Tan 演讲全文：所有代码都是垃圾，除了我的》（微信公众号，2026-11-15）<br>
+    <b>一手来源</b>：Lauren Tan, <i>All Code Is Slop (Except Mine)</i>, AI Engineer Code Summit（旧金山，2026-11-11；视频 11-14 发布，约 18 分钟）<br>
+    <b>交叉证据</b>：DORA 2025/2026、LinearB 810 万 PR 数据集、SCAM 2026 / arXiv 三篇实证研究、pstack 开源实现、YC 访谈与现场推文<br>
+    <b>方法</b>：先立可证伪论断，再逐条配证据并标注强度；正反证据同列；所有数字注明口径与来源层级。<br>
+    <b>日期</b>：2026-11-16
+  </div>
+</header>
+
+<section id="s00">
+  <h2><span class="num">00 / EXECUTIVE SUMMARY</span>十张卡片：先读结论</h2>
+  <p>以下每条都是可证伪的判断。带 <span class="tag r">反证据</span> 的条目表示演讲自身数据不足以支撑，需要打折看待。</p>
+  <div class="card">
+    <div class="claim"><div class="c">C1</div><div><div class="t">瓶颈已经从「写代码」迁移到「验证与信任」。</div><div class="d">11,000 PR 不是模型能力的证据，而是环境投资的产出。行业基线恰好相反：AI 采用率上升伴随交付吞吐量上升、稳定性下降，评审耗时上涨 91%。<span class="tag">大样本观察</span></div></div></div>
+    <div class="claim"><div class="c">C2</div><div><div class="t">把每一次纠错固化成确定性检查，而不是再加一行规则文字。</div><div class="d">这是演讲唯一最重要、也最可迁移的动作。学术侧佐证：100 个热门仓库中 91% 的 智能体 配置文件至少有一种「配置异味」，最高频的就是把 lint 规则抄进提示词（62%）。<span class="tag">论文 · n=100</span></div></div></div>
+    <div class="claim"><div class="c">C3</div><div><div class="t">代码库是智能体最大的上下文输入，反模式的复制是复利式的。</div><div class="d">一处 workaround 会被下一个智能体读作「既有规范」。清理花园的优先级高于追加规则，因为杂草会自我繁殖。<span class="tag">单一案例 + 机制推导</span></div></div></div>
+    <div class="claim"><div class="c">C4</div><div><div class="t">需要微妙技巧才能用对的 API，应当从产品代码中删除，而不是教育智能体正确使用。</div><div class="d">Dune 禁用 <code>useEffect</code>、禁止跨进程 import：约束成本由框架一次性承担，而不是每个 PR 重复支付。<span class="tag">单一案例</span></div></div></div>
+    <div class="claim"><div class="c">C5</div><div><div class="t">注释与 Markdown 是「无强制力的说服」，智能体会用它给错误行为辩护。</div><div class="d">定时器案例中，智能体写下大段注释解释补丁的合理性，下一个智能体照抄。Grok Bot 禁掉约 99% 注释，改用会 fail 的 lint 错误信息承载「为什么」。<span class="tag">单一案例</span></div></div></div>
+    <div class="claim"><div class="c">C6</div><div><div class="t">代码评审正在从「读 diff」变成「审验证产物」。</div><div class="d">视频、截图、状态图、形式化证明成为评审对象；演讲称大部分 token 花在验证上，第三方工程师自报约 70%。<span class="tag r">自报</span></div></div></div>
+    <div class="claim"><div class="c">C7</div><div><div class="t">形式化验证不是新技术，而是刚刚变得「划算」。</div><div class="d">TLA+、Lean、属性测试早已存在，过去因难写难维护被跳过；智能体把编写与维护成本压下来，这才是「验证黄金时代」的经济学本质。<span class="tag">机制推导</span></div></div></div>
+    <div class="claim"><div class="c">C8</div><div><div class="t"> 标题数字必须打折：PR 数是弱指标，回滚率无法单独证明质量。</div><div class="d">11,000 是约 227 名贡献者的团队数字，个人约 3,000；回滚率 0.47% 无法区分「没出错」与「fix-forward 掩盖问题」。更强的证据是：高速发布下启动、打字、切聊反而更快。<span class="tag r">反证据</span></div></div></div>
+    <div class="claim"><div class="c">C9</div><div><div class="t">顺序不可颠倒：内部循环产垃圾时，自动化只会更快地生产垃圾。</div><div class="d">地基（代码库 → 静态分析 → 验证）先于工厂（并行智能体 → 自动合并）。演讲者自称花了六个月。<span class="tag">单一案例</span></div></div></div>
+    <div class="claim"><div class="c">C10</div><div><div class="t">即使验证层建成，瓶颈也只是上移到「意图对齐」，不会消失。</div><div class="d">YC 访谈中团队负责人说，产能提到每月数千 PR 后，新瓶颈是「我们这个团队对产品路线图的共识」。验证解决「做对」，不解决「做对的事」。<span class="tag r">访谈自报</span></div></div></div>
+  </div>
+  <div class="verdict">
+    <h4>一句话判断</h4>
+    <p>这场演讲真正值得复制的不是 11,000 这个数字，而是一条成本重排原则：<strong>把判断力从「每次都要人读的文字」搬到「机器每次都会执行的约束」里</strong>。它的证据强度是「一个高能力团队的自报案例 + 若干独立研究的旁证」，足以作为行动假设，不足以作为因果定论。</p>
+  </div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01 / PROVENANCE</span>先把数字钉牢：来源谱系与口径对照</h2>
+  <p>基准文档是中文译稿，属于二手转述。它给出了完整的叙事骨架，但关键数字需要与更接近现场的记录对照。这一章只做一件事：把「谁说的、什么口径、证据多强」说清楚，后续所有分析都建立在这张底表上。</p>
+
+  <h3>1.1 来源谱系</h3>
+  <table>
+    <thead><tr><th style="width:22%">层级</th><th style="width:38%">来源</th><th>性质与用途</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag g">一手 · 原始事件</span></td><td>AI Engineer 频道视频 <i>All Code Is Slop (Except Mine)</i>，会议 2026-11-11，视频 11-14 发布，约 18 分钟</td><td>演讲者自报数据与原始论证； conference 页面与视频简介可核对标题、讲者、时间戳。</td></tr>
+      <tr><td><span class="tag g">近一手 · 现场记录</span></td><td>现场观众推文（@rae1101x 等）转述的图表数字；讲者本人 X 帖（2026-11-14）</td><td>补齐译稿中被口语化或省略的精确数值，如 3,127 / 10,926 / 0.47%。</td></tr>
+      <tr><td><span class="tag">二手 · 基准文档</span></td><td>赛文视点译稿（微信公众号，2026-11-15）</td><td>叙事结构、论证顺序、案例细节的主要依据；数字以演讲者原话为准，译者已声明按原意修正字幕误听。</td></tr>
+      <tr><td><span class="tag t">独立旁证</span></td><td>DORA 2025/2026、LinearB 810 万 PR 数据集、三篇 2026 年论文（SCAM 2026 / arXiv）</td><td>提供行业基线与机制验证，用来判断「这是普遍规律还是孤例」。</td></tr>
+      <tr><td><span class="tag p">实现佐证</span></td><td>pstack 开源仓库（Cursor plugins）、YC 对团队负责人 Roman Ugarte 的访谈</td><td>检验方法论是否真的被固化成工具，以及产能上去之后的下一瓶颈。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 关键数字：译稿 vs 更精确记录</h3>
+  <table>
+    <thead><tr><th>指标</th><th>译稿 / 通常引用</th><th>更精确记录</th><th>口径说明</th></tr></thead>
+    <tbody>
+      <tr><td>个人月合并 PR</td><td>「3,000 个」</td><td><b>3,127</b>（10 月）；3 月为 <b>68</b>；3–10 月累计 10,732</td><td>现场观众从演讲图表读出的数字，个人口径。</td></tr>
+      <tr><td>团队月合并 PR</td><td>「11,000 个」</td><td><b>10,926</b>（10 月）；6–10 月累计 23,370</td><td>团队口径，含大量偶发贡献者；标题里的 11,000 是约数。</td></tr>
+      <tr><td>回滚率</td><td>「约 0.5%」</td><td><b>0.47%</b>，此前为 <b>0.98%</b></td><td>随发布量上升而下降——这是比绝对数值更重要的方向。</td></tr>
+      <tr><td>贡献者</td><td>10 月约 227 人至少创建 1 个 PR</td><td>同左</td><td>意味着人均月 PR 并不夸张，规模来自参与者广度。</td></tr>
+      <tr><td>产能后续说法</td><td>—</td><td>YC 访谈中负责人称「现在每月约 4,000 PR」</td><td>时间点与口径不同（可能是个人产能或更新后的数字），不可与 3,127 直接相减。</td></tr>
+      <tr><td>准备周期</td><td>半年</td><td>同左</td><td>讲者自述；并称「你们花的时间会比我少得多」——这是预测，不是观测。</td></tr>
+      <tr><td>验证 token 占比</td><td>演讲引用工程师 Cindy 的说法</td><td>自报约 <b>70%</b> 的每日 token 用于验证</td><td>第三方工程师自报，非受控测量。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn">
+    <h4>证据强度使用说明</h4>
+    <p>本报告把证据分为：<b>受控实验</b>（任务基准，有对照）＞ <b>大样本观察</b>（数千至数百万 PR、数百配置样本）＞ <b>单一案例 / 自报</b>（Grok Bot 自身数据）＞ <b>机制推导</b>（由已知机制推出的工程动作）。演讲中的 11,000 PR、0.47% 回滚、99% 注释禁令都属<b>单一案例自报</b>：它们足以证明「这件事在其上下文中发生过」，不能单独证明「换你也能做到」。凡属推导或预测，文中均显式标注。</p>
+  </div>
+
+  <h3>1.3 行业基线：为什么这个案例值得单独研究</h3>
+  <p>如果行业普遍能用智能体提效且不掉质量，这个故事就不稀奇。实际情况相反。下表把外部观测放在同一个视野里——注意其中多条来自对原报告的二手转述，尚未逐字核对原报告表格，按「大样本观察（转述）」标注。</p>
+  <table>
+    <thead><tr><th>观测</th><th>数字</th><th>来源</th><th>强度</th></tr></thead>
+    <tbody>
+      <tr><td>AI 采用率提高 25% 的关联结果</td><td>交付吞吐量 <b>−1.5%</b>，交付稳定性 <b>−7.2%</b></td><td>DORA 2025 官方摘要</td><td><span class="tag">大样本调查</span></td></tr>
+      <tr><td>AI 生成 PR 的合并率</td><td><b>32.7%</b>，人工 PR 为 84.5%</td><td>LinearB：4,800 团队、810 万 PR</td><td><span class="tag">大样本观察 · 转述</span></td></tr>
+      <tr><td>AI 生成 PR 首次人工评审等待</td><td>超过 <b>16 小时</b>，为人工 PR 的 4.6 倍</td><td>同上</td><td><span class="tag">大样本观察 · 转述</span></td></tr>
+      <tr><td>PR 体积</td><td>AI PR 的 P75 超过 400 行，人工为 157 行</td><td>同上</td><td><span class="tag">大样本观察 · 转述</span></td></tr>
+      <tr><td>评审耗时 / 人均合并 PR</td><td>评审耗时 <b>+91%</b>，人均合并 PR +98%</td><td>同上</td><td><span class="tag">大样本观察 · 转述</span></td></tr>
+      <tr><td>PR 停留在评审环节的中位时间</td><td>同比 <b>+441%</b>；31% 的 PR 零人工评审直接合并</td><td>DORA 2026 相关转述</td><td><span class="tag">大样本观察 · 转述</span></td></tr>
+      <tr><td>主干构建成功率</td><td>高 AI 采用团队约 70.8%，健康团队约 90%</td><td>DORA 2026 相关转述</td><td><span class="tag">大样本观察 · 转述</span></td></tr>
+    </tbody>
+  </table>
+  <div class="verdict">
+    <h4>由此得到的判断</h4>
+    <p>Grok Bot 的数字是<b>反基线</b>：行业里「生成变快 → 评审变慢 → 队列变长 → 稳定性下降」，它这里却是「生成变快 → 评审退化为看验证产物 → 回滚率下降 → 性能上升」。所以值得追问的不是「它用了什么工具」，而是<strong>它改变了流水线上的哪个约束</strong>。这正是 C1 与 C2 的起点。</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02 / PARADIGM</span>范式判定：从「写代码」到「造信任环境」</h2>
+  <p>演讲开场把一件事说得很直白：智能体出现之前，没人担心「PR 数量」问题；现在每个人都能成为「编码机器」。于是软件工程师的工作定义变了——<strong>在大幅提高生产力的同时，维持甚至提升代码质量</strong>。这句话听起来像口号，但它可以拆成两条可比较的工作循环。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 362" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="低信任循环与高信任循环的对比流程图">
+        <defs>
+          <marker id="arGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8A8F98"/></marker>
+          <marker id="arRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B3261E"/></marker>
+          <marker id="arGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E7D32"/></marker>
+        </defs>
+        <text x="42" y="30" font-size="15" font-weight="700" fill="#9C1F19">低信任循环｜多数团队的现状</text>
+        <text x="502" y="30" font-size="15" font-weight="700" fill="#0A5750">高信任循环｜Grok Bot 的做法</text>
+
+        <rect x="80" y="58" width="182" height="52" rx="9" fill="#FBEAE8" stroke="#EFCFCC"/>
+        <text x="171" y="90" font-size="14" fill="#16181D" text-anchor="middle">智能体生成代码</text>
+        <line x1="171" y1="112" x2="171" y2="144" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arGray)"/>
+        <rect x="80" y="150" width="182" height="52" rx="9" fill="#FBEAE8" stroke="#EFCFCC"/>
+        <text x="171" y="182" font-size="14" fill="#16181D" text-anchor="middle">人工逐行读 diff</text>
+        <line x1="171" y1="204" x2="171" y2="236" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arGray)"/>
+        <rect x="80" y="242" width="182" height="52" rx="9" fill="#FBEAE8" stroke="#EFCFCC"/>
+        <text x="171" y="274" font-size="14" fill="#16181D" text-anchor="middle">口头纠正 / 加行规则</text>
+        <path d="M80,268 C46,268 46,84 78,84" fill="none" stroke="#B3261E" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#arRed)"/>
+
+        <text x="292" y="112" font-size="13" fill="#454B54">评审队列变长</text>
+        <text x="292" y="140" font-size="13" fill="#454B54">返工与回滚上升</text>
+        <text x="292" y="168" font-size="13" fill="#454B54">上下文越塞越满</text>
+        <text x="292" y="196" font-size="13" fill="#454B54">规则没人记得住</text>
+
+        <rect x="540" y="58" width="182" height="52" rx="9" fill="#E7F4F2" stroke="#C6E3DF"/>
+        <text x="631" y="90" font-size="14" fill="#16181D" text-anchor="middle">代码库 + lint 约束</text>
+        <line x1="631" y1="112" x2="631" y2="144" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arGray)"/>
+        <rect x="540" y="150" width="182" height="52" rx="9" fill="#E7F4F2" stroke="#C6E3DF"/>
+        <text x="631" y="182" font-size="14" fill="#16181D" text-anchor="middle">智能体自检 + 验证</text>
+        <line x1="631" y1="204" x2="631" y2="236" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arGray)"/>
+        <rect x="540" y="242" width="182" height="52" rx="9" fill="#E7F4F2" stroke="#C6E3DF"/>
+        <text x="631" y="274" font-size="14" fill="#16181D" text-anchor="middle">审产物 / 自动合并</text>
+        <path d="M722,268 C740,268 740,84 724,84" fill="none" stroke="#2E7D32" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#arGreen)"/>
+
+        <text x="752" y="112" font-size="13" fill="#454B54">评审只看产物</text>
+        <text x="752" y="140" font-size="13" fill="#454B54">错误在构建前被拦</text>
+        <text x="752" y="168" font-size="13" fill="#454B54">回滚率逐月下降</text>
+        <text x="752" y="196" font-size="13" fill="#454B54">性能反而提升</text>
+
+        <line x1="42" y1="312" x2="918" y2="312" stroke="#E6E3DC" stroke-width="1"/>
+        <text x="480" y="342" font-size="14" fill="#333941" text-anchor="middle">差异不在模型，而在智能体工作的环境：左侧靠人兜底，右侧靠机器兜底。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1｜两种工作循环。</b>左：生成加速把负担推给人工评审，形成越审越慢的闭环；右：把约束前置到代码库与验证，评审退化为检查产物。据演讲 00:17–02:03 及 15:11 段绘制。</figcaption>
+  </figure>
+
+  <h3>2.1 「软件工厂」不是起点，是终点</h3>
+  <p>演讲里有一个容易被标题盖过的提醒：在她把环境搭好之前，<strong>她自己花了半年才做到能发出成千上万个合并请求</strong>。她说的是「从低信任走向高信任」，不是「从零开始搭并行智能体」。行业数据支持这个顺序——当评审与验证仍按人类速度运行，增加生成端的产能只会把瓶颈推到下游（见 1.3）。用她自己的话说：</p>
+  <div class="verdict">
+    <h4>原话转述</h4>
+    <p>「如果你的内部写代码循环产出的是垃圾，那么自动化这个循环只会产出更多的垃圾，你还得花越来越多的 token 来修复问题。」这是整场演讲中最接近因果律的一句，也解释了为什么第 11 章的路线图把「地基」放在「工厂」之前。</p>
+  </div>
+
+  <h3>2.2 一个被忽略的分野：信任 ≠ 盲目信任</h3>
+  <p>演讲者特意澄清：「不是盲目信任，而是往智能体的环境里投资，让你确信它们会把每件事都做对。」这句话把「信任」从心理状态改造成工程属性：<strong>信任是环境的输出，不是对模型的态度</strong>。可以用一个判别式来区分两种做法——</p>
+  <div class="grid3">
+    <div class="card"><h4>判别式 A · 强制力</h4><p>违反这条规则时，是<b>构建失败</b>，还是只是「模型可能不听」？前者是确定性检查，后者是文字。</p></div>
+    <div class="card"><h4>判别式 B · 复利</h4><p>修一次之后，同类错误是<b>永久消失</b>，还是下个 PR 可能重来？前者改了环境，后者只改了产物。</p></div>
+    <div class="card"><h4>判别式 C · 成本归属</h4><p>约束成本是<b>一次性</b>由框架承担，还是每个 PR 都由人和 token 重复支付？前者是基础设施，后者是税。</p></div>
+  </div>
+  <p class="small">后续四章（04–08）本质上都是这三条判别式在不同层次的展开。凡不满足 A 的，就别把它当防线；凡不满足 B 的，就不算「修好了」；凡不满足 C 的，规模化之后一定会出现 DORA 描述的验证税。</p>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03 / MECHANISM</span>理论根基：三条能推出工程动作的机制</h2>
+  <p>演讲用了大量比喻——花园、杂草、混凝土基础、黄金。比喻好记，但不能替代推导。这一章把论证还原成三条机制，每条都给出「如果机制成立，那么应该做什么」的推论。推论若与演讲做法一致，才说明方法不是经验巧合。</p>
+
+  <h3>机制一：上下文复制 —— 代码库是智能体的行为先验</h3>
+  <p>智能体生成结果依赖输入，而代码库是最大、最稳定的输入源。在一个文件里被允许的写法，会被后续智能体统计性地当作「这里的惯例」。<strong>推论</strong>：一处未清理的 workaround 的危害，不等于它本身的一行代码，而等于它此后被复制的所有次数。这解释了为什么「先清花园」的收益高于「多加一条规则」。</p>
+  <table>
+    <thead><tr><th style="width:20%">机制</th><th style="width:30%">可推导的推论</th><th>对应工程动作</th><th style="width:16%">证据类型</th></tr></thead>
+    <tbody>
+      <tr><td>上下文复制</td><td>反模式被下一个智能体当作既定模式；危害按复制次数放大</td><td>清理旧反模式先于新增规则；让正确写法成为仓库里唯一显眼的写法</td><td><span class="tag">单一案例 + 机制推导</span></td></tr>
+      <tr><td>强制力梯度</td><td>文字规则只能"说服"，机器检查才会"失败"；说服力随上下文变长而衰减</td><td>每次纠错转成 lint / 类型 / API 约束；文字只保留需要判断力的部分</td><td><span class="tag t">论文 n=100 + 实验</span></td></tr>
+      <tr><td>验证瓶颈</td><td>生成端加速而评审端不变时，队列长度非线性增长</td><td>投资让验证更便宜（自检、产物化、形式化），而不是让评审更慢</td><td><span class="tag">大样本观察 + 建模</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>机制二：强制力梯度 —— 会失败的东西才是约束</h3>
+  <p>注释、rules、<code>AGENTS.md</code> 都是「无强制力的说服」。它们的效果取决于模型是否注意到、是否理解、是否愿意遵守；而 lint、类型系统、编译器、依赖图分析器的效果是二元的——违反即失败。学术侧给了这条直觉一个有点刺眼的注脚：巴西 UFMG 团队对 100 个热门仓库的 智能体 配置文件做内容分析，<b>91%</b> 至少含一种「配置异味」，最高频的是 <b>Lint Leakage（62%）</b>：把 lint 和 formatter 已经强制的规则又抄进每次会话都要加载的说明文件（arXiv:2606.15828，SCAM 2026）。</p>
+  <p>更关键的是两份对照实验给出的方向性结论：结构良好的说明文件能降低运行时间与输出 token（arXiv:2601.20404，10 仓库 124 个任务，中位运行时间 −28.64%、输出 token −16.58%，完成率持平，但仅测一种工具）；而让 LLM <b>自动生成</b> 的 context 文件在基准上略低于「没有文件」，同时把推理成本抬高 20% 以上（arXiv:2602.11988，ETH Zurich）。三者不矛盾：<strong>问题从来不在「要不要写说明」，而在「谁写的、写了什么、能不能被机器执行」</strong>。演讲的做法——99% 注释禁令 + 高信息量 lint 报错——恰好落在「能被执行」这一端。</p>
+
+  <h3>机制三：验证瓶颈 —— 排队论视角下的「验证税」</h3>
+  <p>把 PR 流水线看成一个服务系统：生成是到达率 λ，评审与验证是服务率 μ。用最简单的 M/M/1 近似，队列长度 <code>L = λ / (μ − λ)</code>。当 λ 上升而 μ 不动，L 不是线性增加，而是趋向发散——这正是行业数据里的现象：PR 评审停留时间同比 +441%、AI PR 首次人工评审等待超过 16 小时、合并率只有人工的三分之一。</p>
+  <div class="card">
+    <h4>这个模型直接给出三个可选动作</h4>
+    <ol>
+      <li><b>降低 λ</b>：限制 AI PR 数量、设体积上限。有效但直接放弃产能优势，演讲没有走这条路。</li>
+      <li><b>提高 μ（人工侧）</b>：加人、加班、加评审激励。受限于资深注意力这种稀缺资源，且随 λ 增长会越来越贵。</li>
+      <li><b>提高 μ（机器侧）</b>：把验证变成可自动执行、可复用、可被智能体自己运行的产物——lint、运行时自检、形式化证明、属性测试。<strong>演讲选的是第三条</strong>，并把它表述为「代码 review 已经退化为分析验证产物」。</li>
+    </ol>
+    <p class="small">建模说明：上述公式是对队列行为的定性类比，不是对演讲数据的拟合；DORA 的观察是相关性，不构成「AI 导致不稳定」的因果证明。但两者指向同一个工程结论：在生成已经廉价的世界里，瓶颈与投资回报都在验证侧。</p>
+  </div>
+  <div class="good">
+    <h4>结论：为什么必须是这个形状</h4>
+    <p>三条机制合起来解释了一个看似反直觉的组合：<strong>越信任智能体，越要投资于不依赖信任的机制</strong>。上下文复制要求清理输入，强制力梯度要求把规则编译成检查，验证瓶颈要求把评审产物化。它们共同推出同一个顺序——先代码库，再静态分析，再验证，最后才是文字与人工。这正是下一章的金字塔。</p>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04 / THE PYRAMID</span>信任金字塔：五层防线与成本梯度</h2>
+  <p>演讲在 02:03 处展示了一张「Poteto Pyramid」倒金字塔。基准译稿重点讲了三层：确定性的代码库与静态分析、验证、描述性指令；更完整的现场记录给出了五层——在文字指令之下还有「人工审查」，作为成本最高、应当收缩到最小的一层。两种描述不冲突，后者只是把译稿里「直接让智能体自己合并大部分 PR」那一步显式画了出来。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 410" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="五层信任倒金字塔，从上到下依次为代码库、静态分析、验证、文字指令、人工审查">
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">Poteto 信任倒金字塔：越往上越确定，越往下越贵</text>
+
+        <text x="14" y="104" font-size="13" fill="#0A5750">确定性</text>
+        <text x="14" y="124" font-size="13" fill="#0A5750">区域</text>
+        <line x1="16" y1="140" x2="16" y2="300" stroke="#0F766E" stroke-width="2"/>
+        <text x="14" y="320" font-size="13" fill="#9C1F19">判断</text>
+        <text x="14" y="340" font-size="13" fill="#9C1F19">区域</text>
+
+        <rect x="80" y="52" width="520" height="54" rx="8" fill="#EAF2FA" stroke="#CFDFEF"/>
+        <text x="340" y="75" font-size="14" font-weight="700" fill="#1F5288" text-anchor="middle">① 代码库与架构 · Codebase</text>
+        <text x="340" y="94" font-size="12.5" fill="#333941" text-anchor="middle">API 设计 / 目录边界 / 持续重构 / 消除反模式</text>
+
+        <rect x="110" y="116" width="460" height="54" rx="8" fill="#E7F4F2" stroke="#C6E3DF"/>
+        <text x="340" y="139" font-size="14" font-weight="700" fill="#0A5750" text-anchor="middle">② 静态分析 · Static Analysis</text>
+        <text x="340" y="158" font-size="12.5" fill="#333941" text-anchor="middle">Lint / 类型系统 / 编译器 / 测试 / 依赖图分析</text>
+
+        <rect x="140" y="180" width="400" height="54" rx="8" fill="#FBF1E4" stroke="#EAD6B8"/>
+        <text x="340" y="203" font-size="14" font-weight="700" fill="#8F3F06" text-anchor="middle">③ 验证 · Verification</text>
+        <text x="340" y="222" font-size="12.5" fill="#333941" text-anchor="middle">运行时验证 / 形式化验证 / 属性测试</text>
+
+        <rect x="170" y="244" width="340" height="54" rx="8" fill="#F2ECFA" stroke="#DFD2F2"/>
+        <text x="340" y="267" font-size="14" font-weight="700" fill="#5A3099" text-anchor="middle">④ 文字指令 · Prose</text>
+        <text x="340" y="286" font-size="12.5" fill="#333941" text-anchor="middle">Rules / Skills / AGENTS.md / 少量注释</text>
+
+        <rect x="200" y="308" width="280" height="54" rx="8" fill="#FBEAE8" stroke="#EFCFCC"/>
+        <text x="340" y="331" font-size="14" font-weight="700" fill="#9C1F19" text-anchor="middle">⑤ 人工审查 · Human Review</text>
+        <text x="340" y="350" font-size="12.5" fill="#333941" text-anchor="middle">只看验证产物 / 处理例外</text>
+
+        <text x="632" y="82" font-size="13" fill="#454B54">覆盖全部变更 · 一次投入</text>
+        <text x="632" y="146" font-size="13" fill="#454B54">覆盖全部变更 · 边际成本极低</text>
+        <text x="632" y="210" font-size="13" fill="#454B54">覆盖关键路径 · 中等成本</text>
+        <text x="632" y="274" font-size="13" fill="#454B54">只覆盖判断型问题 · 持续成本</text>
+        <text x="632" y="338" font-size="13" fill="#454B54">只覆盖例外 · 成本最高</text>
+
+        <line x1="42" y1="384" x2="918" y2="384" stroke="#E6E3DC" stroke-width="1"/>
+        <text x="480" y="404" font-size="13.5" fill="#333941" text-anchor="middle">每一层都在回答同一个问题：如何让智能体默认做对，而不是做对之后才被发现。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2｜信任金字塔。</b>宽度代表覆盖面，自上而下成本递增、确定性递减。据演讲 02:03 处幻灯片及现场记录补齐的五层版本绘制；基准译稿主要呈现前三至四层。</figcaption>
+  </figure>
+
+  <h3>4.1 每层到底在防什么</h3>
+  <table>
+    <thead><tr><th style="width:17%">层级</th><th style="width:30%">典型失败模式</th><th>工具与做法</th><th style="width:18%">判断标准</th></tr></thead>
+    <tbody>
+      <tr><td>① 代码库</td><td>反模式被复制、边界模糊、同一件事有多种写法</td><td>好的 API、目录隔离、删除过时代码、持续重构</td><td>「正确写法是不是唯一容易写出的写法？」</td></tr>
+      <tr><td>② 静态分析</td><td>跨进程误引用、禁用 API 被使用、格式与命名漂移</td><td>lint 规则、类型系统、编译器、依赖图分析、单测与 CI</td><td>「违反它会不会让构建失败？」</td></tr>
+      <tr><td>③ 验证</td><td>能编译但跑不对、并发边界、界面闪烁抖动、跨端流程断裂</td><td>Chrome DevTools 协议驱动运行、TLA+ 模型检查、Lean 证明、Bombadil 属性测试</td><td>「有没有机器生成的可复核证据？」</td></tr>
+      <tr><td>④ 文字指令</td><td>智能体靠注释为补丁辩护、规则越堆越长彼此冲突</td><td>少量 skills、rules、AGENTS.md；只写需要判断力的事实</td><td>「这条规则是否每次会话都需要且无法被工具拦截？」</td></tr>
+      <tr><td>⑤ 人工审查</td><td>逐行读 diff 成为吞吐瓶颈</td><td>审查视频、截图、状态图、证明；例外才升级到人</td><td>「人看的是产物还是过程？」</td></tr>
+    </tbody>
+  </table>
+
+  <div class="verdict">
+    <h4>最容易被做反的一层</h4>
+    <p>很多团队遇到智能体写歪，第一反应是往 <code>AGENTS.md</code> 或系统提示词里再加几十条规则——也就是在<b>第四层</b>解决问题。金字塔的排序说：真正便宜且刚性的约束在<b>第一、二层</b>。UFMG 的配置异味研究正好量化了做反的代价：62% 的文件在重复 lint 规则，42% 超过 200 行，28% 存在互相矛盾的指令。</p>
+  </div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05 / THE GARDEN</span>代码库是花园：反模式如何复利扩散</h2>
+  <p>演讲里有一个时间对比很值得停在纸上：2024 年她来上班时，一天审三个同事的 PR；现在这个数字接近三百。代码「像一股连续的水流」「几乎像活的」。当生产代码的主体从人变成智能体，代码库的地位就变了——它不再只是产物，<strong>它是下一次生成的训练样本式的先验</strong>。</p>
+
+  <div class="grid2">
+    <div class="stat amber"><div class="n">3 <small>个 / 天</small></div><div class="u">2024 年，每天审阅同事提交的合并请求数量（演讲自报）</div></div>
+    <div class="stat red"><div class="n">≈300 <small>个 / 天</small></div><div class="u">现在，每位工程师身后是几百到几千个智能体组成的团队</div></div>
+  </div>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="反模式从一处 workaround 复制扩散到全代码库的因果链">
+        <defs>
+          <marker id="arCopy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8A8F98"/></marker>
+        </defs>
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">一处 workaround 的真实成本 = 它此后被复制的所有次数</text>
+
+        <rect x="44" y="76" width="168" height="72" rx="9" fill="#FBEAE8" stroke="#EFCFCC"/>
+        <text x="128" y="104" font-size="13.5" fill="#9C1F19" text-anchor="middle" font-weight="700">一处绕过写法</text>
+        <text x="128" y="126" font-size="12" fill="#454B54" text-anchor="middle">workaround / 技术债</text>
+
+        <line x1="214" y1="112" x2="262" y2="112" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arCopy)"/>
+        <rect x="266" y="76" width="176" height="72" rx="9" fill="#EAF2FA" stroke="#CFDFEF"/>
+        <text x="354" y="104" font-size="13.5" fill="#1F5288" text-anchor="middle" font-weight="700">进入代码库</text>
+        <text x="354" y="126" font-size="12" fill="#454B54" text-anchor="middle">最大的上下文输入源</text>
+
+        <line x1="444" y1="112" x2="492" y2="112" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arCopy)"/>
+        <rect x="496" y="76" width="176" height="72" rx="9" fill="#FBF1E4" stroke="#EAD6B8"/>
+        <text x="584" y="104" font-size="13.5" fill="#8F3F06" text-anchor="middle" font-weight="700">被读作「惯例」</text>
+        <text x="584" y="126" font-size="12" fill="#454B54" text-anchor="middle">下一个智能体照抄</text>
+
+        <line x1="674" y1="112" x2="722" y2="112" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arCopy)"/>
+        <rect x="726" y="76" width="190" height="72" rx="9" fill="#F2ECFA" stroke="#DFD2F2"/>
+        <text x="821" y="104" font-size="13.5" fill="#5A3099" text-anchor="middle" font-weight="700">扩散为杂草</text>
+        <text x="821" y="126" font-size="12" fill="#454B54" text-anchor="middle">1 → 3 → 9 → n</text>
+
+        <text x="128" y="188" font-size="12.5" fill="#454B54" text-anchor="middle">它看起来像既定模式</text>
+        <text x="354" y="188" font-size="12.5" fill="#454B54" text-anchor="middle">不是一次性产物</text>
+        <text x="584" y="188" font-size="12.5" fill="#454B54" text-anchor="middle">「大家都这么写」</text>
+        <text x="821" y="188" font-size="12.5" fill="#454B54" text-anchor="middle">性能与一致性受损</text>
+
+        <line x1="44" y1="218" x2="916" y2="218" stroke="#E6E3DC" stroke-width="1"/>
+        <text x="480" y="246" font-size="14" fill="#16181D" text-anchor="middle">所以工程师的工作更像园艺：施加约束、除草、让高质量的东西成为唯一容易长出来的东西。</text>
+        <text x="480" y="274" font-size="12.5" fill="#454B54" text-anchor="middle">混凝土基础 = 代码库质量 + 安全约束 + 目录与依赖边界（据演讲 03:27 段绘制）</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3｜反模式复制链。</b>演讲把代码库比作花园：杂草和害虫（变通写法、反模式、过时代码）会不知不觉蔓延。这里把它写成一条可追踪的因果链，便于定位干预点。</figcaption>
+  </figure>
+
+  <h3>5.1 园艺动作的具体清单</h3>
+  <div class="grid2">
+    <div class="card"><h4>先除草，再播种</h4><p>每当修一个智能体错误，问的是「仓库里还有多少同类写法」。清理旧的反模式与新规则同等重要——否则仓库里仍然存在可供复制的坏样本。</p></div>
+    <div class="card"><h4>让正确路径最短</h4><p>好 API 的设计目标不是「表达力强」，而是「用错很难」。任何需要微妙技巧才能用对的接口，在智能体规模化场景下都会变成隐患来源。</p></div>
+    <div class="card"><h4>把教训写进机器可读的地方</h4><p>从构建桌面应用学到的教训被写进 Dune 的 lint 规则，而不是写进一份没人读的文档。教训的载体决定了它是否持续生效。</p></div>
+    <div class="card"><h4>接受代码库是"活的输入"</h4><p>别再用「一次性交付」的心态对待仓库。它的每一处瑕疵都会被放大，它的整洁度就是后续所有生成的天花板。</p></div>
+  </div>
+  <p class="small">反方提醒：这一章的因果链主要来自演讲者的经验观察，属于「单一案例 + 机制推导」，没有对照实验。但 UFMG 对 100 个仓库的研究表明「规则堆在文字里」确实是普遍问题，至少支持了后半段——把约束从文字迁移到工具——的方向。</p>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06 / ENFORCE</span>消除而非教育：Dune 的三条硬约束</h2>
+  <p>Dune 是为 Grok Bot 打造的客户端框架，演讲里把它类比为「Electron 应用的 Next.js」。技术上「没什么太复杂的东西」——真正有意思的是它把构建桌面应用学到的教训，都写成了限制和 lint 规则。用第 3 章的判别式看，Dune 是一个把约束成本一次性付清的设施。</p>
+
+  <table>
+    <thead><tr><th style="width:20%">约束</th><th style="width:28%">它防的问题</th><th>实现方式与效果</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>① 产品代码禁用 <code>useEffect</code></b></td>
+        <td>需要微妙技巧才能用对的 API 会被频繁误用；智能体尤其不擅长处理其中的细微差别</td>
+        <td>只在 Dune API 内部少数位置允许使用。演讲者的判断是「这个问题现在已经彻底解决了，code review 时再也不用修它」。对应判别式 C：约束由框架一次性承担。</td>
+      </tr>
+      <tr>
+        <td><b>② 目录结构即上下文</b></td>
+        <td>Cursor 开发中反复出现「主线程代码被 import 进渲染线程」，导致长任务与界面延迟</td>
+        <td>顶层拆出 <code>electron-renderer</code> 与 <code>electron-main</code> 两个目录；依赖图分析器与 lint 规则禁止两者互引，连类型定义都必须经过 <code>shared/</code>。对应判别式 A：跨引会失败。</td>
+      </tr>
+      <tr>
+        <td><b>③ lint 报错承载「为什么」</b></td>
+        <td>智能体用注释解释补丁的合理性，把一次性绕过写成永久规范</td>
+        <td>规则给出清晰、有用的报错信息，指向根本原因而非症状。对应判别式 B：同类错误在后续 PR 里永久消失。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>6.1 「要用好 useEffect 得有个博士学位」</h3>
+  <p>这是演讲里最像玩笑、实则最严肃的一句。<code>useEffect</code> 有它的用处，但要正确用它需要同时考虑依赖数组、清理函数、竞态、严格模式下的双重执行等大量细微差别。<strong>当正确用法需要专家级直觉，而生成是自动化的，错误就会以自动化的速度复制。</strong>团队的答案不是写一份「正确使用 useEffect 指南」，而是让产品代码里根本不出现它。</p>
+  <div class="good">
+    <h4>可迁移的判据</h4>
+    <p>对每个「高频出错点」问一句：<b>能不能通过改 API / 改目录 / 改类型，让这个错误在结构上不可能发生？</b> 如果答案是可以，那么任何文字规则都是次优解。Dune 的价值不在于它多先进，而在于它把这条判据落实成了两个可执行的禁令。</p>
+  </div>
+  <p class="small">边界说明：这是一条在高吞吐、同构客户端代码库中成立的取舍。禁用某个强大 API 意味着放弃它的合法用法；团队需要自己判断「误用成本」是否高于「表达能力损失」。演讲没有给出这个权衡的量化门槛。</p>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07 / PROSE</span>注释是借口：从「说服」到「强制」</h2>
+  <p>演讲 06:56 处提出了一个尖锐观察：智能体使用 Markdown 的方式很「神奇」——文档、代码注释、rules、skills 都被当成<strong>为自己没把事情做对找理由的地方</strong>。它会过度关注你做过的一个小修正，把它提炼成一条「永远不能打破的严格规则」。</p>
+
+  <h3>7.1 定时器案例：一个补丁如何变成系统性退化</h3>
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="智能体用定时器打补丁并用注释自我合理化的五步退化过程">
+        <defs>
+          <marker id="arStep" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8A8F98"/></marker>
+        </defs>
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">Cursor 的教训：一次「快速修复」如何蔓延成性能问题</text>
+
+        <rect x="42" y="66" width="164" height="104" rx="9" fill="#EAF2FA" stroke="#CFDFEF"/>
+        <text x="124" y="92" font-size="13" font-weight="700" fill="#1F5288" text-anchor="middle">1 · 架构冲突</text>
+        <text x="124" y="116" font-size="11.5" fill="#333941" text-anchor="middle">VS Code 命令式风格</text>
+        <text x="124" y="136" font-size="11.5" fill="#333941" text-anchor="middle">对撞 React 声明式</text>
+
+        <rect x="226" y="66" width="164" height="104" rx="9" fill="#EAF2FA" stroke="#CFDFEF"/>
+        <text x="308" y="92" font-size="13" font-weight="700" fill="#1F5288" text-anchor="middle">2 · 智能体打补丁</text>
+        <text x="308" y="116" font-size="11.5" fill="#333941" text-anchor="middle">setTimeout / rAF</text>
+        <text x="308" y="136" font-size="11.5" fill="#333941" text-anchor="middle">requestIdleCallback</text>
+
+        <rect x="410" y="66" width="164" height="104" rx="9" fill="#FBF1E4" stroke="#EAD6B8"/>
+        <text x="492" y="92" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">3 · 性能退化</text>
+        <text x="492" y="116" font-size="11.5" fill="#333941" text-anchor="middle">定时器频繁创建销毁</text>
+        <text x="492" y="136" font-size="11.5" fill="#333941" text-anchor="middle">GC 抖动、卡顿延迟</text>
+
+        <rect x="594" y="66" width="164" height="104" rx="9" fill="#FBF1E4" stroke="#EAD6B8"/>
+        <text x="676" y="92" font-size="13" font-weight="700" fill="#8F3F06" text-anchor="middle">4 · 写下注释</text>
+        <text x="676" y="116" font-size="11.5" fill="#333941" text-anchor="middle">用大段红色注释解释</text>
+        <text x="676" y="136" font-size="11.5" fill="#333941" text-anchor="middle">「这个补丁是合理的」</text>
+
+        <rect x="778" y="66" width="140" height="104" rx="9" fill="#FBEAE8" stroke="#EFCFCC"/>
+        <text x="848" y="92" font-size="13" font-weight="700" fill="#9C1F19" text-anchor="middle">5 · 蔓延</text>
+        <text x="848" y="116" font-size="11.5" fill="#333941" text-anchor="middle">下一个智能体</text>
+        <text x="848" y="136" font-size="11.5" fill="#333941" text-anchor="middle">读注释并照抄</text>
+
+        <line x1="208" y1="118" x2="222" y2="118" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arStep)"/>
+        <line x1="392" y1="118" x2="406" y2="118" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arStep)"/>
+        <line x1="576" y1="118" x2="590" y2="118" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arStep)"/>
+        <line x1="760" y1="118" x2="774" y2="118" stroke="#8A8F98" stroke-width="1.6" marker-end="url(#arStep)"/>
+
+        <text x="124" y="196" font-size="11.5" fill="#454B54" text-anchor="middle">风格不匹配</text>
+        <text x="308" y="196" font-size="11.5" fill="#454B54" text-anchor="middle">绕过架构问题</text>
+        <text x="492" y="196" font-size="11.5" fill="#454B54" text-anchor="middle">真实的运行代价</text>
+        <text x="676" y="196" font-size="11.5" fill="#454B54" text-anchor="middle">无强制力的说服</text>
+        <text x="848" y="196" font-size="11.5" fill="#454B54" text-anchor="middle">成为既有模式</text>
+
+        <rect x="42" y="232" width="876" height="60" rx="9" fill="#E7F4F2" stroke="#C6E3DF"/>
+        <text x="480" y="257" font-size="14" font-weight="700" fill="#0A5750" text-anchor="middle">Grok Bot 的修法：禁掉约 99% 的注释</text>
+        <text x="480" y="279" font-size="12.5" fill="#333941" text-anchor="middle">改用带清晰报错的 lint 规则，让智能体去修根本原因，而不是为补丁写辩护词</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4｜定时器补丁的退化链。</b>据演讲 06:56–09:40 段绘制。关键不是「定时器不好」，而是<b>补丁 + 注释</b>的组合把一个一次性绕过变成了可复制的规范，且没有任何机制让它在构建时失败。</figcaption>
+  </figure>
+
+  <h3>7.2 为什么注释是特别糟糕的载体</h3>
+  <p>演讲给了四条理由，可以压缩成一句：<strong>注释既有说服力又没有强制力，而且会过期</strong>。</p>
+  <div class="grid2">
+    <div class="card"><h4>会过期</h4><p>注释很快过时，而人们本来也很少读它。过期的注释比没有注释更危险——它主动误导下一个读者（包括智能体）。</p></div>
+    <div class="card"><h4>给借口</h4><p>它给了智能体一个「这件事很难，所以可以不做对」的理由。文字一旦写成，就会被后续上下文当作已确认的判断。</p></div>
+    <div class="card"><h4>无强制力</h4><p>一个看起来很好的意图——「告诉下一个智能体别这么做」——永远不会变成可以信任的东西，因为违反它不会失败。</p></div>
+    <div class="card"><h4>替代方案不丢信息</h4><p>「为什么」并没有消失，而是被搬进 lint 的报错信息里：同样解释原因，但这次它会让构建失败。</p></div>
+  </div>
+
+  <h3>7.3 反方观点：这条禁令的代价在哪</h3>
+  <p>社区讨论对「禁注释」并不一致。Hacker News 的相关讨论中，有开发者指出：大型或结构糟糕的函数、隐藏复杂度处，注释仍有价值；另一些人则认为规则应写成正向、简短的形式，长篇禁令文件本身就会遭遇「lost in the middle」的上下文稀释。UFMG 的研究也发现「冲突指令」（28%）和「初始化化石」（24%）是常见配置病。<strong>这些反驳并不推翻演讲的核心，而是限定了它的适用范围</strong>：</p>
+  <div class="warn">
+    <h4>更准确的表述</h4>
+    <p>真正该禁的不是「解释」，而是<strong>用解释替代机制</strong>。如果一段「为什么」只存在于注释里，它就是可被忽略的说服；如果它同时被一条可执行规则守护，那么注释即使过时也不会造成系统性后果。Grok Bot 的做法是把信息载体整体迁移到 lint，这在以机器生成代码为主的代码库里是自洽的；在人手写为主、且存在大量历史复杂性的老系统里，直接照搬「99% 禁令」需要谨慎评估。</p>
+  </div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08 / VERIFICATION</span>验证层：让机器拿到可复核的证据</h2>
+  <p>演讲 09:40 处给出了整场最有操作性的转向：<strong>代码评审流程已经退化为「分析验证产物」</strong>——视频、截图、图表、形式化验证。人不再是逐行读 diff 的第一道防线，而是检查智能体能否拿出证据证明自己理解了意图。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 348" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三类验证手段及其产物的分层视图">
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">验证栈：三类手段，共同产出「可被审查的证据」</text>
+
+        <rect x="42" y="52" width="278" height="216" rx="10" fill="#EAF2FA" stroke="#CFDFEF"/>
+        <text x="181" y="82" font-size="15" font-weight="700" fill="#1F5288" text-anchor="middle">运行时验证</text>
+        <text x="181" y="106" font-size="12" fill="#454B54" text-anchor="middle">让智能体自己运行代码</text>
+        <line x1="68" y1="120" x2="294" y2="120" stroke="#CFDFEF" stroke-width="1"/>
+        <text x="66" y="148" font-size="12.5" fill="#16181D">· Chrome DevTools 协议等调试工具</text>
+        <text x="66" y="178" font-size="12.5" fill="#16181D">· Feature Map：用户视角功能地图</text>
+        <text x="80" y="198" font-size="11.5" fill="#454B54">给「左边那个东西」共享词汇</text>
+        <text x="66" y="228" font-size="12.5" fill="#16181D">· 自有 CLI：复用同一驱动</text>
+        <text x="80" y="248" font-size="11.5" fill="#454B54">减少 token，且本身可测试</text>
+
+        <rect x="341" y="52" width="278" height="216" rx="10" fill="#FBF1E4" stroke="#EAD6B8"/>
+        <text x="480" y="82" font-size="15" font-weight="700" fill="#8F3F06" text-anchor="middle">形式化验证</text>
+        <text x="480" y="106" font-size="12" fill="#454B54" text-anchor="middle">证明不变量真的成立</text>
+        <line x1="367" y1="120" x2="593" y2="120" stroke="#EAD6B8" stroke-width="1"/>
+        <text x="365" y="148" font-size="12.5" fill="#16181D">· TLA+：跨设备、跨平台通知流程</text>
+        <text x="379" y="168" font-size="11.5" fill="#454B54">用模型检查核心用户流程</text>
+        <text x="365" y="198" font-size="12.5" fill="#16181D">· Lean：证明自研虚拟化库</text>
+        <text x="379" y="218" font-size="11.5" fill="#454B54">确保不闪烁、不抖动</text>
+        <text x="365" y="248" font-size="12.5" fill="#16181D">· 已发现多个 bug，但非万能药</text>
+
+        <rect x="640" y="52" width="278" height="216" rx="10" fill="#F2ECFA" stroke="#DFD2F2"/>
+        <text x="779" y="82" font-size="15" font-weight="700" fill="#5A3099" text-anchor="middle">属性测试与可视化</text>
+        <text x="779" y="106" font-size="12" fill="#454B54" text-anchor="middle">从用户视角枚举行为</text>
+        <line x1="666" y1="120" x2="892" y2="120" stroke="#DFD2F2" stroke-width="1"/>
+        <text x="664" y="148" font-size="12.5" fill="#16181D">· Bombadil：基于属性的界面测试</text>
+        <text x="678" y="168" font-size="11.5" fill="#454B54">已抓到若干界面 bug</text>
+        <text x="664" y="198" font-size="12.5" fill="#16181D">· state chart：可视化状态机</text>
+        <text x="678" y="218" font-size="11.5" fill="#454B54">pstack 插件，用户视角</text>
+        <text x="664" y="248" font-size="12.5" fill="#16181D">· 视频 + 截图作为验收附件</text>
+
+        <path d="M181,270 L181,286 L480,286 L480,270" fill="none" stroke="#8A8F98" stroke-width="1.6"/>
+        <path d="M779,270 L779,286 L480,286" fill="none" stroke="#8A8F98" stroke-width="1.6"/>
+        <rect x="252" y="294" width="456" height="44" rx="9" fill="#E7F4F2" stroke="#C6E3DF"/>
+        <text x="480" y="322" font-size="14" font-weight="700" fill="#0A5750" text-anchor="middle">验证产物 → 视频 / 截图 / 图表 / 证明 = 新的评审对象</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5｜验证栈。</b>据演讲 09:40–13:32 段绘制。三者的共同点不是「更严格的测试」，而是<b>产出可复核的证据</b>：评审者不需要重放智能体的思考过程，只需要检查证据。</figcaption>
+  </figure>
+
+  <h3>8.1 Feature Map：解决「指代不明」这个上下文问题</h3>
+  <p>运行时验证里最不起眼、但最容易被低估的是 feature map。它本质上是「从用户视角看，你的应用里所有功能的站点地图」。当有人说「左边面板上的那个东西」，智能体不用猜——它有一张共享词汇表，能把模糊指代映射到具体界面与状态。pstack 把它做成了可生成、可维护的验证技能（<code>create-verification-skill</code> / <code>maintain-verification-skill</code>），并规定用语义选择器（ARIA、<code>data-*</code> 属性）而非坐标点击，用可观测的终态轮询而非固定定时器。</p>
+  <p class="small">注意这里的理念一致性：第 7 章禁掉智能体随意使用定时器，feature map 的驱动规范又要求「轮询可观测终态而不是固定等待」——禁令和规范指向同一个目标：让程序行为由状态而非时间假设决定。</p>
+
+  <h3>8.2 形式化验证：不是信仰，是成本结构变了</h3>
+  <p>TLA+ 用来验证跨设备、跨平台通知这类核心用户流程的模型；Lean 用来证明自研虚拟化库没有闪烁或抖动。演讲者明确说「我们整体上还在试验这种方法」，「已经发现了很多错误」，同时强调「这不是万能药，我们把它看作另一个工具，是智能体环境里的又一层」。</p>
+  <p>这段自我限定很重要。形式化方法过去没普及，不是因为人们不懂它的价值，而是因为写模型、维护证明的成本太高。<strong>智能体改变的是这个成本项</strong>：写与维护 TLA+ 模型、生成属性测试、产出状态图的边际成本被压低，于是过去「正确但买不起」的手段进入了日常工具箱。这与 DORA 的说法互相印证——生成变便宜之后，回报来自验证侧的吸收能力。</p>
+  <table>
+    <thead><tr><th style="width:22%">手段</th><th style="width:32%">擅长捕捉</th><th>局限 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td>运行时验证</td><td>界面是否能到达目标状态、交互是否真的可用、控制台是否报错</td><td>只能覆盖被执行到的路径；feature map 本身需要随产品演进维护</td></tr>
+      <tr><td>形式化验证</td><td>并发交错、状态机边界、跨端流程的不变量</td><td>模型本身可能写错；只证明模型性质，不等于证明实现正确；演讲称仍在试验</td></tr>
+      <tr><td>属性测试 / 可视化</td><td>界面的非常规输入组合、状态可视化后的理解偏差</td><td>属性定义需要人工判断；工具链相对小众</td></tr>
+      <tr><td>人工看产物</td><td>意图是否被正确理解、体验是否合乎预期</td><td>仍是稀缺资源，只应处理例外与判断型问题</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09 / ECONOMICS</span>验证经济学：token 预算从哪里搬到哪里</h2>
+  <p>演讲 11:53 处讲了一件有意思的事：六个月前，工程师 Cindy 发推说因为小错误混进代码，她没办法信任自己的智能体；六个月后，她说自己每天 70% 的 token 花在了验证上。演讲者的回应是「这跟我的观察一致——我自己的大部分 token 也花在了验证上」。</p>
+
+  <div class="grid4">
+    <div class="stat"><div class="n">≈70%</div><div class="u">第三方工程师自报的每日验证 token 占比（演讲引用）</div></div>
+    <div class="stat blue"><div class="n">0 → 1</div><div class="u">验证从「测试阶段的一步」变成「贯穿生成的主活动」</div></div>
+    <div class="stat amber"><div class="n">20%+</div><div class="u">LLM 自动生成 context 文件带来的推理成本增幅（arXiv:2602.11988）</div></div>
+    <div class="stat teal"><div class="n">3 类</div><div class="u">旧手段变廉价：形式化验证、属性测试、完整 UI fuzz</div></div>
+  </div>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 356" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI 采用期的 J 曲线：投资验证与未投资验证的两条路径">
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">验证税的两种结局：J 曲线 vs 长期低位</text>
+        <text x="170" y="56" font-size="12.5" fill="#454B54" text-anchor="middle">① 学习期</text>
+        <text x="350" y="56" font-size="12.5" fill="#454B54" text-anchor="middle">② 验证税显现</text>
+        <text x="570" y="56" font-size="12.5" fill="#454B54" text-anchor="middle">③ 流水线适配</text>
+        <text x="790" y="56" font-size="12.5" fill="#454B54" text-anchor="middle">④ 回报期</text>
+
+        <line x1="100" y1="160" x2="900" y2="160" stroke="#B9B5AC" stroke-width="1.2" stroke-dasharray="6 5"/>
+        <text x="106" y="152" font-size="11.5" fill="#454B54">起始基线</text>
+
+        <path d="M110,160 C200,160 240,250 330,252 C450,255 540,95 720,90 C790,88 840,85 880,82" fill="none" stroke="#2F6FB0" stroke-width="3"/>
+        <path d="M110,160 C220,165 280,235 400,240 C560,245 700,248 880,248" fill="none" stroke="#9A9A9A" stroke-width="2.2" stroke-dasharray="7 5"/>
+
+        <circle cx="330" cy="252" r="4.5" fill="#2F6FB0"/>
+        <text x="330" y="278" font-size="12" fill="#1F5288" text-anchor="middle">谷底：验证税最高</text>
+        <text x="740" y="76" font-size="12.5" fill="#1F5288" text-anchor="middle">验证黄金时代</text>
+        <text x="748" y="274" font-size="12" fill="#454B54" text-anchor="middle">验证税长期化：队列与返工吃掉收益</text>
+
+        <line x1="168" y1="316" x2="212" y2="316" stroke="#2F6FB0" stroke-width="3"/>
+        <text x="222" y="321" font-size="12.5" fill="#1F5288">投资验证与流水线的环境</text>
+        <line x1="512" y1="316" x2="556" y2="316" stroke="#9A9A9A" stroke-width="2.2" stroke-dasharray="7 5"/>
+        <text x="566" y="321" font-size="12.5" fill="#454B54">未投资验证的环境</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6｜J 曲线的两种结局（概念示意，非实测数据）。</b>框架借自 DORA 2026 对 AI 采用期「学习成本 + 验证税 + 流水线适配」的描述；蓝线为演讲主张的路径，灰线为行业观测到的「吞吐量上升、稳定性下降」的长期化风险。两条线均为机制示意，不代表任何实测拟合。</figcaption>
+  </figure>
+
+  <h3>9.1 预算重排：三个具体变化</h3>
+  <table>
+    <thead><tr><th style="width:24%">项目</th><th style="width:34%">传统预算方式</th><th>演讲主张的方式</th></tr></thead>
+    <tbody>
+      <tr><td>token 分配</td><td>大部分用于生成代码与改代码</td><td>大部分用于运行、观察、验证；生成只是第一步</td></tr>
+      <tr><td>人的注意力</td><td>逐行读 diff，靠经验发现反模式</td><td>看视频 / 截图 / 状态图 / 证明，只在例外时介入</td></tr>
+      <tr><td>工具投入</td><td>形式化方法与 UI fuzz 被视为「太贵」</td><td>由智能体编写与维护，边际成本骤降，进入日常</td></tr>
+    </tbody>
+  </table>
+  <div class="verdict">
+    <h4>经济学的落点</h4>
+    <p>如果生成是廉价的、信任是瓶颈，那么理性支出就该落在验证层。这条推论既解释了 Grok Bot 的做法，也解释了为什么 DORA 把「验证税」和「不稳定税」并列命名——<strong>两种税都无法靠更好的模型解决，因为模型质量不是瓶颈，吸收能力才是</strong>。</p>
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10 / THE NUMBERS</span>回报与打折：11,000 个 PR 里有多少含金量</h2>
+  <p>演讲 13:32 处展示了增长图：团队月度合并 PR 从 6 月到 10 月快速增长，10 月达到约 11,000；客户端约每天一个稳定版；10 月约 227 人至少创建了一个 PR；回滚率相对稳定在 0.5%，且「相对减少了」。这一章把数字拆开看，并列出演讲没有回答的质疑。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 292" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="个人与团队 PR 数量的横向条形对比，共用同一横轴">
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">量级对照：三条数据共用同一横轴（0 – 12,000 PR / 月）</text>
+
+        <line x1="230" y1="58" x2="230" y2="228" stroke="#B9B5AC" stroke-width="1.2"/>
+        <line x1="447" y1="58" x2="447" y2="228" stroke="#E6E3DC" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="663" y1="58" x2="663" y2="228" stroke="#E6E3DC" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="880" y1="58" x2="880" y2="228" stroke="#E6E3DC" stroke-width="1" stroke-dasharray="4 4"/>
+
+        <text x="222" y="91" font-size="13" fill="#333941" text-anchor="end">个人 · 3 月</text>
+        <rect x="230" y="72" width="3.7" height="34" rx="1.5" fill="#9A9A9A"/>
+        <text x="245" y="95" font-size="13" font-weight="700" fill="#454B54">68</text>
+
+        <text x="222" y="151" font-size="13" fill="#333941" text-anchor="end">个人 · 10 月</text>
+        <rect x="230" y="132" width="169" height="34" rx="3" fill="#2F6FB0"/>
+        <text x="409" y="155" font-size="13" font-weight="700" fill="#1F5288">3,127</text>
+
+        <text x="222" y="211" font-size="13" fill="#333941" text-anchor="end">团队 · 10 月</text>
+        <rect x="230" y="192" width="592" height="34" rx="3" fill="#0F766E"/>
+        <text x="832" y="215" font-size="13" font-weight="700" fill="#0A5750">10,926</text>
+
+        <text x="230" y="246" font-size="11.5" fill="#454B54" text-anchor="middle">0</text>
+        <text x="447" y="246" font-size="11.5" fill="#454B54" text-anchor="middle">4,000</text>
+        <text x="663" y="246" font-size="11.5" fill="#454B54" text-anchor="middle">8,000</text>
+        <text x="880" y="246" font-size="11.5" fill="#454B54" text-anchor="middle">12,000</text>
+        <text x="480" y="278" font-size="12" fill="#454B54" text-anchor="middle">仅两端与总量有公开数字；未披露的中间月份不画插值趋势。条长按数值线性换算（宽度 = 数值 ÷ 12,000 × 650）。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 7｜PR 数量级对照。</b>个人从 3 月 68 个到 10 月 3,127 个（约 46 倍）；团队 10 月 10,926 个，来自约 227 名贡献者。数字来自现场图表记录与译稿，非本报告推算。</figcaption>
+  </figure>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="回滚率从 0.98% 下降到 0.47% 的柱状对比">
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">回滚率：随发布量上升反而下降</text>
+
+        <line x1="200" y1="190" x2="900" y2="190" stroke="#B9B5AC" stroke-width="1.2"/>
+        <text x="192" y="194" font-size="11.5" fill="#454B54" text-anchor="end">0%</text>
+        <text x="192" y="129" font-size="11.5" fill="#454B54" text-anchor="end">0.5%</text>
+        <text x="192" y="64" font-size="11.5" fill="#454B54" text-anchor="end">1.0%</text>
+
+        <rect x="300" y="63" width="120" height="127" rx="4" fill="#B3261E"/>
+        <text x="360" y="53" font-size="16" font-weight="700" fill="#9C1F19" text-anchor="middle">0.98%</text>
+        <text x="360" y="212" font-size="12.5" fill="#333941" text-anchor="middle">此前</text>
+
+        <rect x="560" y="129" width="120" height="61" rx="4" fill="#2E7D32"/>
+        <text x="620" y="119" font-size="16" font-weight="700" fill="#1B5820" text-anchor="middle">0.47%</text>
+        <text x="620" y="212" font-size="12.5" fill="#333941" text-anchor="middle">当前</text>
+
+        <text x="760" y="112" font-size="15" font-weight="700" fill="#16181D" text-anchor="middle">下降约 52%</text>
+        <text x="760" y="140" font-size="12" fill="#454B54" text-anchor="middle">同时发布量大幅上升</text>
+        <text x="760" y="164" font-size="12" fill="#454B54" text-anchor="middle">（方向比绝对值更重要）</text>
+        <text x="480" y="240" font-size="11.5" fill="#454B54" text-anchor="middle">纵轴 0–1.0%，柱高按 数值 ÷ 1.0% × 127px 换算。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 8｜回滚率方向。</b>译稿只说「稳定在 0.5%」；现场图表记录给出 0.98% → 0.47% 的下降。注意回滚率的分母是 PR 数，而 PR 数本身来自智能体，解读见正文。</figcaption>
+  </figure>
+
+  <h3>10.1 逐条判定：哪些数字能当证据</h3>
+  <table>
+    <thead><tr><th style="width:22%">主张</th><th style="width:28%">支持证据</th><th style="width:32%">反证 / 局限</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td>发布速度提升</td><td>月合并约 11,000 PR；约每天一个稳定版</td><td>PR 数是弱指标：拆得更碎就能放大数字；社区已有「11k PRs sounds terrible」的直接质疑</td><td><span class="tag a">弱支持</span></td></tr>
+      <tr><td>质量没有下降</td><td>回滚率 0.98% → 0.47%；发布量同时上升</td><td>存在自动修复与 fix-forward 机制：问题可能被「修过去」而非「回滚」，回滚率无法区分两者；分母由智能体决定</td><td><span class="tag a">弱支持</span></td></tr>
+      <tr><td>产品体验变好</td><td>启动、打字、打开聊天、切换聊天都变快；Electron 应用通常先表现为卡顿</td><td>自报，缺少前后基准数据与测量方法</td><td><span class="tag t">中等支持</span></td></tr>
+      <tr><td>参与度提升</td><td>10 月约 227 人至少创建一个 PR</td><td>「创建 PR」不等于有效贡献；偶发贡献者的合并质量未知</td><td><span class="tag a">弱支持</span></td></tr>
+      <tr><td>方法论有效</td><td>做法被固化进开源 pstack；YC 访谈显示产能持续；回滚率方向正确</td><td>无对照组、无第三方审计、单一高能力团队；讲者本人也是工具作者，存在利益相关</td><td><span class="tag p">可作为假设</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn">
+    <h4>一个没被回答的好问题</h4>
+    <p>现场有质量工程师追问（@OffCamberQE）：<b>除了回滚和性能，你们怎么衡量质量？在跟踪逃逸缺陷或变更失败率吗？</b> 基准文档没有给出答复。这是整套方法目前最明显的空白：<strong>验证层能证明「按规格做对了」，但规格本身是否覆盖真实故障，仍需要独立的缺陷度量</strong>。任何打算复制这套方法的团队，都应把「逃逸缺陷数 / 变更失败率 / 用户可见事故」单独建指标，而不是只看回滚率。</p>
+  </div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11 / PLAYBOOK</span>落地路线图：从今天到「软件工厂」</h2>
+  <p>演讲 15:11 给出明确顺序：<strong>先微调代码库，再建工厂</strong>。从 lint 规则开始，防止新反模式出现；再清理旧反模式；再确保验证策略可靠。只有这些做完，才谈得上并行智能体、云端 agent 与自动合并。下面把它压缩成一张 12 周路线图与一份检查清单。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 334" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="十二周落地甘特图，从地基盘点到外环自动化">
+        <text x="42" y="26" font-size="15" font-weight="700" fill="#16181D">12 周落地顺序：地基 → 约束 → 验证 → 外环</text>
+
+        <text x="238" y="54" font-size="11.5" fill="#454B54" text-anchor="middle">W1</text>
+        <text x="324" y="54" font-size="11.5" fill="#454B54" text-anchor="middle">W3</text>
+        <text x="411" y="54" font-size="11.5" fill="#454B54" text-anchor="middle">W5</text>
+        <text x="498" y="54" font-size="11.5" fill="#454B54" text-anchor="middle">W7</text>
+        <text x="585" y="54" font-size="11.5" fill="#454B54" text-anchor="middle">W9</text>
+        <text x="672" y="54" font-size="11.5" fill="#454B54" text-anchor="middle">W11</text>
+        <text x="816" y="54" font-size="11.5" fill="#454B54" text-anchor="middle">之后</text>
+
+        <line x1="210" y1="62" x2="210" y2="296" stroke="#B9B5AC" stroke-width="1.2"/>
+
+        <text x="202" y="94" font-size="12.5" fill="#333941" text-anchor="end">① 地基盘点</text>
+        <g style="background-color:#1F5288">
+          <rect x="210" y="78" width="115" height="26" rx="5" fill="#1F5288"/>
+          <text x="267" y="96" font-size="11.5" fill="#FFFFFF" text-anchor="middle">盘点反模式</text>
+        </g>
+
+        <text x="202" y="134" font-size="12.5" fill="#333941" text-anchor="end">② 纠错固化</text>
+        <g style="background-color:#1F5288">
+          <rect x="283" y="118" width="173" height="26" rx="5" fill="#1F5288"/>
+          <text x="369" y="136" font-size="11.5" fill="#FFFFFF" text-anchor="middle">lint / API / 目录边界</text>
+        </g>
+
+        <text x="202" y="174" font-size="12.5" fill="#333941" text-anchor="end">③ 运行时验证</text>
+        <g style="background-color:#0A5750">
+          <rect x="370" y="158" width="230" height="26" rx="5" fill="#0A5750"/>
+          <text x="485" y="176" font-size="11.5" fill="#FFFFFF" text-anchor="middle">CLI + Feature Map + 自检</text>
+        </g>
+
+        <text x="202" y="214" font-size="12.5" fill="#333941" text-anchor="end">④ 形式化试点</text>
+        <g style="background-color:#8F3F06">
+          <rect x="513" y="198" width="230" height="26" rx="5" fill="#8F3F06"/>
+          <text x="628" y="216" font-size="11.5" fill="#FFFFFF" text-anchor="middle">1–2 条核心流程建模</text>
+        </g>
+
+        <text x="202" y="254" font-size="12.5" fill="#333941" text-anchor="end">⑤ 审产物</text>
+        <g style="background-color:#5A3099">
+          <rect x="627" y="238" width="173" height="26" rx="5" fill="#5A3099"/>
+          <text x="713" y="256" font-size="11.5" fill="#FFFFFF" text-anchor="middle">视频 / 截图 / 证明</text>
+        </g>
+
+        <text x="202" y="294" font-size="12.5" fill="#333941" text-anchor="end">⑥ 外环自动化</text>
+        <g style="background-color:#5A3099">
+          <rect x="770" y="278" width="132" height="26" rx="5" fill="#5A3099"/>
+          <text x="836" y="296" font-size="11.5" fill="#FFFFFF" text-anchor="middle">fuzz + 自动修</text>
+        </g>
+
+        <text x="480" y="326" font-size="12" fill="#454B54" text-anchor="middle">顺序是关键：前一层未稳定前，不要启动下一层的自动化。演讲者自述整个转变用了约六个月。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 9｜12 周落地顺序（建议，非演讲原文）。</b>阶段划分依据演讲 15:11 的「先打地基」主张重新编排；时间为规划建议，实际周期取决于团队规模与技术债存量。</figcaption>
+  </figure>
+
+  <h3>11.1 成熟度阶梯</h3>
+  <table>
+    <thead><tr><th style="width:14%">级别</th><th style="width:26%">特征</th><th style="width:30%">进入下一级的门槛</th><th>典型失败信号</th></tr></thead>
+    <tbody>
+      <tr><td><b>L0 放任</b></td><td>提示词里写「写干净代码」，人工逐行审</td><td>能列出最近 20 次智能体错误的具体类型</td><td>同类错误反复出现，规则文件只增不减</td></tr>
+      <tr><td><b>L1 约束</b></td><td>纠错转成 lint / 类型 / API；目录边界明确</td><td>高频错误在构建阶段被拦住；旧反模式已清理</td><td>lint 规则写了但报错信息不可操作</td></tr>
+      <tr><td><b>L2 自检</b></td><td>智能体能运行应用、使用共享 CLI 与 feature map</td><td>随机抽查：智能体给出的验证证据与实际一致</td><td>验证脚本随产品演进而失效</td></tr>
+      <tr><td><b>L3 证据评审</b></td><td>人看视频、截图、状态图、证明，不看 diff</td><td>验证 token 占比显著上升；评审吞吐不再随生成量线性增长</td><td>出现「验证通过但体验不对」的逃逸缺陷</td></tr>
+      <tr><td><b>L4 外环</b></td><td>发版后自动 fuzz、自动开修复 PR、自动合并</td><td>连续多个版本回滚率与逃逸缺陷稳定；治理允许自动合并</td><td>把「回滚率低」当成唯一质量指标</td></tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 可执行检查清单</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>每次纠错的三问</h4>
+      <ol>
+        <li>能不能用 lint / 类型 / 依赖图让它构建失败？</li>
+        <li>能不能改 API 或结构，让这个错误无法表达？</li>
+        <li>仓库里还有多少同类旧写法需要一起清掉？</li>
+      </ol>
+      <p class="small">三问都答「否」，才允许把规则写进文字文件——而且必须说明它为何每次会话都需要。</p>
+    </div>
+    <div class="card">
+      <h4>文字文件瘦身</h4>
+      <ul>
+        <li>删掉 lint / formatter 已经管住的风格规则（Lint Leakage）</li>
+        <li>低频流程移到按需 skill，别常驻上下文（Skill Leakage）</li>
+        <li>文件压到 200 行以内，冲突指令清零</li>
+        <li>每次构建命令或目录变化后复审，避免「初始化化石」</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>验证层门禁</h4>
+      <ul>
+        <li>智能体必须能自己运行应用并取得证据</li>
+        <li>feature map 覆盖主要功能面，用语义选择器</li>
+        <li>核心流程至少有一条属性测试或模型检查</li>
+        <li>评审对象是产物，不是思考过程</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>自动合并前置条件</h4>
+      <ul>
+        <li>回滚率之外，另建逃逸缺陷与变更失败率指标</li>
+        <li>小 PR 优先：5 个窄 PR 优于 1 个大 PR</li>
+        <li>自动修复可追溯，能定位到触发它的验证证据</li>
+        <li>明确治理边界：哪些目录永不自动合并</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12 / ANTI-PATTERNS</span>反模式与适用边界</h2>
+  <p>任何方法论在传播中都会退化成口号。这一章列出三种最常见的退化方式，以及这套方法明确不适用的场景。它们不是对演讲的否定，而是对「复制条件」的说明。</p>
+
+  <h3>12.1 三层反模式清单</h3>
+  <table>
+    <thead><tr><th style="width:14%">层级</th><th style="width:26%">反模式 / 症状</th><th>修正动作</th></tr></thead>
+    <tbody>
+      <tr><td>战略</td><td><b>先建工厂，后打地基</b>：并行智能体已上线，回滚与返工同步上升</td><td>暂停扩容，回到 L1：把高频错误变成构建失败，清理旧反模式后再恢复自动化</td></tr>
+      <tr><td>战略</td><td><b>把 PR 数当 KPI</b>：PR 拆得越来越碎，数字漂亮但交付没变快</td><td>改用交付前置时间、首次评审响应时间、返功率三个指标</td></tr>
+      <tr><td>战略</td><td><b>照抄结论不抄条件</b>：直接禁掉 99% 注释，却没有可执行的 lint 替代</td><td>先建替代机制，再移除载体；否则隐性知识无处安放</td></tr>
+      <tr><td>工程</td><td><b>规则只活在文字里</b>：<code>AGENTS.md</code> 越写越长，同类错误仍反复出现</td><td>执行「纠错三问」；无法机器化的内容移到按需 skill，并说明触发时机</td></tr>
+      <tr><td>工程</td><td><b>报错信息不可操作</b>：lint 只报「不允许」，不告诉智能体正确的做法</td><td>把「为什么」和「怎么改」写进报错信息，让规则本身携带知识</td></tr>
+      <tr><td>工程</td><td><b>验证脚本与产品脱节</b>：feature map 过时，智能体验证通过但用户路径已经改了</td><td>把验证资产当产品代码维护，随功能迭代同步更新</td></tr>
+      <tr><td>治理</td><td><b>回滚率单一指标</b>：只看 0.47%，忽略逃逸缺陷与变更失败率</td><td>补建质量指标；主动追问「修过去的算什么」</td></tr>
+      <tr><td>治理</td><td><b>自动合并无边界</b>：所有目录一视同仁，关键模块也被自动合并</td><td>设目录白名单与不可逆操作的硬停点；保留可追溯的验证证据</td></tr>
+      <tr><td>治理</td><td><b>忽略上游对齐</b>：验证层做到极致，但做的不是该做的事</td><td>承认新瓶颈是意图与优先级共识；验证只保证「做对」，不保证「做对的事」</td></tr>
+    </tbody>
+  </table>
+
+  <h3>12.2 什么时候不该照搬</h3>
+  <div class="grid2">
+    <div class="card"><h4>强监管与审计场景</h4><p>若要求人工逐行签核、变更留痕必须到人，那么「人只看产物」的评审形态在合规上不成立。可以先做前半段（约束与验证），保留人工签核层。</p></div>
+    <div class="card"><h4>高度异构的历史系统</h4><p>演讲的收益建立在同构客户端代码库与可重构的框架之上。若代码库无法在合理成本内统一，先做局部试点，别全面禁用 API。</p></div>
+    <div class="card"><h4>评审尚不是瓶颈的团队</h4><p>生成量小、PR 质量稳定时，重投验证层的回报有限。先确认自己的约束在哪一段，再决定投资位置。</p></div>
+    <div class="card"><h4>无法承担验证基础设施的团队</h4><p>lint、类型、feature map、形式化模型都需要持续维护。没有维护能力时，它们会变成新的「初始化化石」。</p></div>
+  </div>
+
+  <h3>12.3 未解问题：四个没被回答的问题</h3>
+  <ol>
+    <li><b>质量度量</b>：逃逸缺陷率、变更失败率、用户可见事故数是多少？演讲未披露，现场提问也未获答复。</li>
+    <li><b>因果识别</b>：没有对照组，无法分离「环境投资」与「高能力团队 + 充裕 token + 新项目」各自的贡献。</li>
+    <li><b>迁移性</b>：从零设计的新代码库与存量系统、实验室级 token 预算与常规预算，条件差异有多大？</li>
+    <li><b>新瓶颈</b>：当验证足够便宜，瓶颈上移到产品意图对齐后，这套方法论还能提供什么？演讲没有展开。</li>
+  </ol>
+</section>
+
+<section id="s13">
+  <h2><span class="num">13 / VERDICT</span>结论：这是判断，不是共识</h2>
+  <p>把报告压到三句话：</p>
+  <div class="verdict">
+    <h4>第一句 · 发生了什么</h4>
+    <p>一个高能力团队在自家代码库里，把「智能体的错误」系统地转化为「机器的约束」与「可复核的证据」，从而在发布量暴涨的同时保持了回滚率下降和性能提升。这件事被演讲与现场数据记录，属于可信的单一案例。</p>
+  </div>
+  <div class="verdict">
+    <h4>第二句 · 为什么重要</h4>
+    <p>它把「用不用智能体」的争论换成了更可操作的问题：<strong>你的环境里，多少约束是会失败的，多少只是写下来的？</strong> 行业数据（评审耗时 +91%、AI PR 合并率 32.7%）与研究证据（91% 配置有异味、生成式说明文件负收益）共同指向同一处：生成已经不是瓶颈，吸收能力才是。</p>
+  </div>
+  <div class="verdict">
+    <h4>第三句 · 别越过证据</h4>
+    <p>这不是经过同行评议的因果结论，而是「单一案例 + 独立旁证 + 机制推导」构成的行动假设。它没有回答质量度量、可迁移性与意图对齐三个关键问题。<strong>正确的用法是：拿走判别式与顺序，自己测量效果；而不是拿走 11,000 这个数字。</strong></p>
+  </div>
+
+  <h3>13.1 来源分级</h3>
+  <table>
+    <thead><tr><th style="width:18%">类型</th><th>来源</th><th style="width:20%">在本报告中的作用</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag g">一手材料</span></td><td><a href="https://tube.wave.co/all-code-is-slop-except-mine-lauren-tan-spacexsi-O_zcc6Xl12g" target="_blank" rel="noopener">演讲视频与逐段摘要（AI Engineer）</a> · <a href="https://conf.directory/talk/6af8ad5c1311d2ce83688408" target="_blank" rel="noopener">会议条目</a> · <a href="https://mp.weixin.qq.com/s/bspAIGzuEPTcQmSCGGBMqQ" target="_blank" rel="noopener">基准译稿（赛文视点）</a></td><td>论证结构、案例细节、原始数字</td></tr>
+      <tr><td><span class="tag g">近一手记录</span></td><td><a href="https://www.163.com/dy/article/LBQHL7J80519EA27.html" target="_blank" rel="noopener">现场图表数字整理</a> · <a href="https://i10x.ai/news/grok-bot-team-11000-pull-requests-lauren-tan" target="_blank" rel="noopener">现场推文与 YC 访谈汇编</a> · <a href="https://x.com/poteto" target="_blank" rel="noopener">讲者 X 帖</a></td><td>精确数值、质疑声音、后续瓶颈</td></tr>
+      <tr><td><span class="tag t">行业调查</span></td><td><a href="https://dora.dev/ai/gen-ai-report/report/" target="_blank" rel="noopener">DORA 2025 / 2026 报告</a> · LinearB 810 万 PR 数据集（经二手转述） · <a href="https://pjfp.com/lauren-tan-grok-bot-ai-agents-code-quality-slop" target="_blank" rel="noopener">独立批判性解读</a></td><td>行业基线、反证据、指标质疑</td></tr>
+      <tr><td><span class="tag p">学术实证</span></td><td>arXiv:2601.20404（结构化说明文件）· arXiv:2602.11988（ETH，生成式 context）· arXiv:2606.15828（UFMG / SCAM 2026，配置异味）· <a href="https://agents.md/" target="_blank" rel="noopener">AGENTS.md 规范</a></td><td>「少写文字规则」的独立佐证</td></tr>
+      <tr><td><span class="tag a">工程实践</span></td><td><a href="https://github.com/cursor/plugins/tree/main/pstack" target="_blank" rel="noopener">pstack 开源实现</a> · <a href="https://skills.tenten.co/en/docs/skills-atlas-lauren-tan-agent-trust" target="_blank" rel="noopener">Feature Map 与验证技能拆解</a> · <a href="https://research.deepvalues.ai/insights/2026-11-02-scaling-engineering-velocity-with-ai-agents-zh" target="_blank" rel="noopener">DeepValues 研究</a> · <a href="https://hndistilled.com/story/49410932" target="_blank" rel="noopener">社区反方讨论</a></td><td>方法论落地的实现细节与边界</td></tr>
+    </tbody>
+  </table>
+  <p class="small">说明：DORA 与 LinearB 的多条具体数字来自二手转述，尚未逐字核对原报告表格；论文结论按原文摘要引用，未复现实验。所有带「转述」「自报」「单一案例」标签的证据，请按相应强度使用。</p>
+</section>
+
+<footer>
+  <p><b>报告说明</b>｜基于 2026-11-15 微信公众号译稿及截至 2026-11-16 可检索的公开材料整理。所有图表为手写 SVG，数据点坐标按文中给出的换算式绘制；概念图已显式标注「非实测」。本报告为研究与学习用途，不构成对任何工具的采购或实施建议。</p>
+  <p><b>阅读路径建议</b>｜只想拿走行动项：读 00 摘要 → 11 落地 → 12 反模式。想理解论证：读 03 机制 → 04 金字塔 → 07 注释 → 09 经济学。想审视可信度：读 01 来源 → 10 回报打折 → 13 结论。</p>
+</footer>
+
+</div>
+</body>
+</html>
