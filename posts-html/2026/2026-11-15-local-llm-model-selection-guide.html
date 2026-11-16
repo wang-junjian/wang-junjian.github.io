@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="2026年11月本地大模型选型手册：先算清内存容量、带宽与上下文预算，再按档位与许可证筛出14个模型；用正反两列证据拆解量化方差、运行时陷阱与跑分水分，给出27B主力的可执行起点与上手验收清单，并附全部来源分级。">
+<meta name="keywords" content="local-llm, model-selection, quantization, kv-cache, gguf, inference-runtime">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-15">
+<title>本地大模型选型参考 · 2026 年 11 月</title>
+<style>
+:root{
+  --paper:#FBFAF7; --surface:#FFFFFF; --surface2:#F4F2EC; --surface3:#EFEDE5;
+  --ink:#16181D; --ink2:#333941; --ink3:#454B54;
+  --line:#D8D4C8; --line2:#E8E4DA;
+  --amber:#B45309; --amber-t:#7A3405; --amber-bg:#FAEEDA;
+  --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#E6F1FB;
+  --green:#2E7D32; --green-t:#1B5820; --green-bg:#EAF3DE;
+  --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E1F5EE;
+  --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#EEEDFE;
+  --red:#B3261E; --red-t:#A32D2D; --red-bg:#FCEBEB;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.75; overflow-wrap:break-word;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 32px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--surface3);padding:2px 6px;border-radius:5px;overflow-wrap:anywhere}
+pre{background:var(--surface3);border:0.5px solid var(--line);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-size:13.5px;line-height:1.65}
+pre code{background:none;padding:0}
+a{color:var(--blue-t);text-underline-offset:3px}
+h1,h2,h3,h4{line-height:1.35;margin:0}
+h1{font-size:34px;letter-spacing:-.02em}
+h2{font-size:23px;letter-spacing:-.01em;margin-bottom:18px}
+h3{font-size:18px;margin-bottom:10px}
+h4{font-size:15px}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin-bottom:6px}
+small,.meta,.src{color:var(--ink3);font-size:13px}
+section{padding-top:64px;scroll-margin-top:80px;min-width:0}
+section h2 .num{color:var(--amber-t);font-size:14px;font-weight:500;margin-right:10px;letter-spacing:.06em}
+.lead{font-size:17px;color:var(--ink2);line-height:1.8}
+.kicker{color:var(--amber-t);font-size:12.5px;font-weight:500;letter-spacing:.1em;text-transform:none}
+.card{background:var(--surface);border:0.5px solid var(--line);border-radius:var(--radius);padding:20px 22px;min-width:0}
+.g2,.g3{display:grid;gap:14px;min-width:0}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(430px,100%),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
+.g2>*,.g3>*,.card,figure,.fig-box,.tbl-wrap{min-width:0}
+.tbl-wrap{overflow-x:auto;margin:0 0 16px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:0}
+th,td{border-bottom:0.5px solid var(--line2);padding:9px 11px;text-align:left;vertical-align:top}
+th{color:var(--ink2);font-weight:500;background:var(--surface2);font-size:13px}
+td{color:var(--ink)}
+tr:last-child td{border-bottom:none}
+figure{margin:0 0 22px}
+.fig-box{background:var(--surface);border:0.5px solid var(--line);border-radius:var(--radius);padding:16px 12px;overflow-x:auto}
+.fig-box svg{display:block;width:100%;min-width:600px;height:auto}
+figcaption{color:var(--ink3);font-size:13px;line-height:1.65;margin-top:9px}
+figcaption b{color:var(--ink2);font-weight:500}
+.tag{display:inline-block;font-size:12px;line-height:1.5;padding:2px 9px;border-radius:999px;margin:0 5px 5px 0;white-space:normal}
+.t-blue{background:var(--blue-bg);color:var(--blue-t)}
+.t-teal{background:var(--teal-bg);color:var(--teal-t)}
+.t-amber{background:var(--amber-bg);color:var(--amber-t)}
+.t-green{background:var(--green-bg);color:var(--green-t)}
+.t-purple{background:var(--purple-bg);color:var(--purple-t)}
+.t-red{background:var(--red-bg);color:var(--red-t)}
+.t-gray{background:var(--surface3);color:var(--ink2)}
+.topbar{position:sticky;top:0;z-index:30;background:rgba(251,250,247,.97);border-bottom:0.5px solid var(--line);max-width:100vw;overflow-x:hidden}
+.topbar .wrap{display:flex;align-items:center;gap:18px;padding-top:11px;padding-bottom:11px;flex-wrap:wrap}
+.brand{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap}
+.brand span{color:var(--amber-t)}
+nav{display:flex;gap:14px;flex-wrap:wrap;min-width:0}
+nav a{color:var(--ink2);font-size:12.5px;text-decoration:none;white-space:nowrap}
+nav a:hover{color:var(--amber-t);text-decoration:underline}
+.hero{padding-top:52px;padding-bottom:8px}
+.hero .kicker{margin-bottom:12px}
+.hero h1{margin-bottom:14px}
+.hero .lead{max-width:820px}
+.hero .stamp{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+.callout{background:var(--amber-bg);border-left:3px solid var(--amber);border-radius:0 var(--radius) var(--radius) 0;padding:16px 20px;margin:0 0 20px}
+.callout p:last-child{margin-bottom:0}
+.callout strong{color:var(--amber-t)}
+.verdict{border-left:3px solid var(--teal);background:var(--surface);padding:14px 18px;margin:14px 0;border-radius:0 var(--radius) var(--radius) 0}
+.verdict h4{color:var(--teal-t);margin-bottom:5px}
+.claims{counter-reset:claim;list-style:none;padding:0;margin:0}
+.claims li{counter-increment:claim;position:relative;padding:12px 0 12px 46px;border-bottom:0.5px solid var(--line2);color:var(--ink2)}
+.claims li:last-child{border-bottom:none}
+.claims li::before{content:counter(claim,decimal-leading-zero);position:absolute;left:0;top:12px;color:var(--amber-t);font-size:13px;font-weight:500}
+.claims li b{color:var(--ink);font-weight:500}
+.toolbar{background:var(--surface);border:0.5px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:0 0 18px}
+.frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.frow:last-child{margin-bottom:0}
+.flabel{font-size:12.5px;color:var(--ink3);min-width:64px}
+.chip{border:0.5px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:999px;font-size:12.5px;padding:5px 13px;cursor:pointer;font-family:inherit;line-height:1.5}
+.chip:hover{border-color:var(--ink3)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}
+.srch{flex:1;min-width:180px;border:0.5px solid var(--line);border-radius:8px;padding:7px 11px;font-size:14px;font-family:inherit;background:var(--paper);color:var(--ink)}
+.srch:focus{outline:2px solid var(--blue);outline-offset:1px}
+.btn{border:0.5px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:8px;padding:7px 13px;font-size:13px;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:var(--ink3);color:var(--ink)}
+.hit{font-size:13px;color:var(--ink3)}
+.hit b{color:var(--amber-t);font-weight:500}
+.model{background:var(--surface);border:0.5px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin:0 0 16px;min-width:0}
+.model.picked{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal)}
+.model[hidden]{display:none}
+.mhead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.mhead h3{font-size:20px;margin-bottom:4px}
+.mhead .by{font-size:13px;color:var(--ink3)}
+.pick{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);white-space:nowrap;cursor:pointer}
+.pick input{accent-color:var(--teal);cursor:pointer}
+.mrole{color:var(--ink2);font-size:15px;margin:12px 0 14px}
+.spec{width:100%;font-size:13.5px;margin-bottom:14px}
+.spec th{width:132px;background:var(--surface2);font-size:12.5px}
+.spec td{padding:7px 11px}
+.mbody{font-size:14.5px;color:var(--ink2)}
+.mbody h4{color:var(--ink);margin:16px 0 6px;font-size:14px}
+.mbody p{margin-bottom:9px}
+.mbody ul{padding-left:20px;margin-bottom:9px}
+.mbody li{margin-bottom:4px}
+.procon{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px;margin:14px 0}
+.procon>div{padding:12px 14px;border-radius:8px;font-size:13.5px;line-height:1.65;min-width:0}
+.pro{background:var(--green-bg);color:var(--green-t)}
+.con{background:var(--red-bg);color:var(--red-t)}
+.procon b{display:block;margin-bottom:4px;font-weight:500}
+.evidence{font-size:12.5px;color:var(--ink3);border-top:0.5px solid var(--line2);padding-top:11px;margin-top:12px}
+.evidence b{color:var(--ink2);font-weight:500}
+.empty{display:none;text-align:center;padding:44px 20px;color:var(--ink3);background:var(--surface);border:0.5px dashed var(--line);border-radius:var(--radius)}
+.empty.on{display:block}
+.cmpbar{position:sticky;bottom:0;z-index:25;background:var(--ink);color:#FFFFFF;border-radius:var(--radius) var(--radius) 0 0;padding:12px 18px;display:none;align-items:center;gap:14px;flex-wrap:wrap;margin-top:24px}
+.cmpbar.on{display:flex}
+.cmpbar span{font-size:13.5px;flex:1;min-width:160px}
+.cmpbar .btn{background:transparent;color:#FFFFFF;border-color:rgba(255,255,255,.45)}
+.cmpbar .btn:hover{background:rgba(255,255,255,.12);color:#FFFFFF}
+.cmptbl{display:none;margin-top:16px}
+.cmptbl.on{display:block}
+.cmptbl th{background:var(--surface2)}
+.cmptbl td{font-size:13px}
+.note{background:var(--blue-bg);border-radius:var(--radius);padding:14px 18px;font-size:14px;color:var(--blue-t);margin:16px 0}
+.note b{font-weight:500}
+footer{margin-top:72px;border-top:0.5px solid var(--line);padding:26px 0 60px;color:var(--ink3);font-size:13px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:760px){
+  .wrap{padding:0 18px}
+  h1{font-size:27px}
+  h2{font-size:20px}
+  section{padding-top:48px}
+  .model{padding:18px 16px}
+  .spec th{width:104px}
+  .fig-box svg{min-width:600px}
+  .topbar .wrap{gap:10px}
+  nav{gap:10px}
+}
+</style>
+</head>
+<body>
+<h2 class="sr-only">2026 年 11 月本地大模型选型参考手册，含 14 个模型的详细介绍、筛选与对比工具</h2>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="brand">本地大模型选型参考 <span>· 2026.11</span></div>
+    <nav aria-label="章节导航">
+      <a href="#s00">论断</a>
+      <a href="#s01">用法</a>
+      <a href="#s02">约束</a>
+      <a href="#s03">模型详解</a>
+      <a href="#s04">量化</a>
+      <a href="#s05">运行时</a>
+      <a href="#s06">反模式</a>
+      <a href="#s07">证据</a>
+      <a href="#s08">结论</a>
+    </nav>
+  </div>
+</div>
+
+<header class="wrap hero">
+  <div class="kicker">单文件 · 离线可用 · 数据截至 2026 年 11 月 15 日</div>
+  <h1>本地大模型选型参考</h1>
+  <p class="lead">这份文档不回答「哪个模型跑分最高」，而是回答「在你这台机器上、你要做的那件事上，应该装哪一个」。榜单名次和下载量在 2026 年已经是两张几乎不重叠的表——前者衡量能力上限，后者衡量可部署性，选型应当以后者为准。</p>
+  <div class="stamp">
+    <span class="tag t-gray">14 个模型详解</span>
+    <span class="tag t-gray">8 条核心论断</span>
+    <span class="tag t-gray">正反证据同列</span>
+    <span class="tag t-gray">证据强度分级</span>
+    <span class="tag t-teal">可筛选 · 可对比</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="s00">
+  <h2><span class="num">00</span>八条核心论断</h2>
+  <p class="lead">先给骨架。下面每条都可以被证伪，后面所有章节都是其中一条的展开。只读这一页，也足够做出第一轮判断。</p>
+  <div class="callout">
+    <p><strong>一句话结论：</strong>2026 年 11 月，本地部署的事实标准是 <strong>27B 稠密模型 / 30–35B-A3B MoE</strong>，对应 16–24 GB 权重；旗舰开源模型（1T 以上）已经和「本地」解耦，它们的作用是前沿参照系，不是装机目标。</p>
+  </div>
+  <ol class="claims">
+    <li><b>第一约束是内存，不是跑分。</b>「装得下」看容量，「跑得快」看带宽，两个独立问题；4-bit 权重约每 10 亿参数 0.6 GB，但静态权重不等于运行时显存，KV cache 常常才是击穿上限的那一项。</li>
+    <li><b>榜单和下载量是两张表。</b>Kimi K3.1 Pro 在 Artificial Analysis 上是开源第一（46.5），Q4 约 1.4 TB；Qwen3.8-27B 月下载 801 万、18 GB 就能跑。做选型看后者。</li>
+    <li><b>27B 这一档是社区主战场。</b>量化实验、去审查衍生、harness 调优、A/B 评测几乎全部集中在 24–32 GB 档，因为它是「单人单卡能反复迭代」的最大模型。</li>
+    <li><b>许可证比几个点的跑分更重要。</b>Qwen3.8-27B 是 Apache 2.0、DeepSeek V4.1 Flash 与 GLM-5.3 Flash 是 MIT，而 Kimi K3.1 Pro 是自定义许可、MiniMax 是 Community License；商用边界差异远大于榜单差距。</li>
+    <li><b>量化是真正的「第二个模型」。</b>同一权重、同一 harness、同一 4-bit 量化，两次 DeepSWE 1.1 跑出 38.94% 与 31.86%，113 个任务里 32 个结果不同。损伤先表现为方差，而不是平均分下滑。</li>
+    <li><b>厂商跑分普遍缺独立复现。</b>Qwen3.8-27B 模型卡上每一项 benchmark 都由阿里自测，其中 SWE-bench Pro 用的是阿里自行修正并重跑基线的版本，与公开榜单不可比。</li>
+    <li><b>harness 才是产品。</b>Docker 的 3,570 场景评测里 Qwen3 14B Q4_K_M 工具调用 F1 达 0.971，但社区在 Open WebUI / Ollama 上仍频繁失败；xLAM-2 8B 因 chat template 不兼容从榜单第一掉到 15%。</li>
+    <li><b>小模型的价值在分工，不在聊天。</b>2B 级做端侧语音与工具输出解析、5B 分类器做事实校验门、27B 做生成——这是本地多智能体里更稳的结构，也和「电子宠物」这类低延迟陪伴场景直接相关。</li>
+  </ol>
+  <div class="verdict">
+    <h4>这份文档的立场</h4>
+    <p style="margin:0">所有「厂商自报」「社区自报」的数字都按原样标注，不冒充独立实测。选型建议给的是<b>起始点</b>，不是结论；最终判断必须来自你自己的任务集 A/B。这是观点，不是社区共识。</p>
+  </div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>怎么用这份文档</h2>
+  <div class="g3">
+    <div class="card">
+      <h3>第一步 · 定约束</h3>
+      <p class="mbody">先去 <a href="#s02">约束章节</a> 算清楚可用内存、带宽和上下文预算。跳过这一步直接挑模型，是这个社区最常见的返工来源。</p>
+    </div>
+    <div class="card">
+      <h3>第二步 · 筛与比</h3>
+      <p class="mbody">在 <a href="#s03">模型详解</a> 用档位、用途、许可证和关键词筛选，勾选最多 3 个模型生成横向对比表。按 <code>/</code> 可直接聚焦搜索框。</p>
+    </div>
+    <div class="card">
+      <h3>第三步 · 自建评测</h3>
+      <p class="mbody">拿 <a href="#s06">检查清单</a> 固定 seed、量化档与 chat template，在自己的真实任务上重复 5–10 次并报方差，再决定是否留下。</p>
+    </div>
+  </div>
+  <div class="note">
+    <b>读卡片时注意三个标记：</b>「证据」一行说明这个数字的来源等级；绿色框是支持证据，红色框是反对证据或已知风险；「上手」给的是可直接复制的命令，但版本标签会随时间变化，执行前回查官方仓库。
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>先定约束：容量、带宽、上下文</h2>
+  <p class="lead">所有选型错误里，最贵的一类是「按参数量挑模型」。正确的顺序是先算三个预算，再看模型卡片。</p>
+  <div class="g2">
+    <div class="card">
+      <h3>容量决定「装不装得下」</h3>
+      <p class="mbody">Q4 量化约 <code>0.6 GB / 十亿参数</code>，Q8 约 1.1 GB，BF16 约 2 GB。但这是<b>磁盘上的静态权重</b>，不是运行时占用。真实占用 = 权重 + KV cache + 视觉投影 + 运行时开销，工程上建议再留 15–25% 余量。</p>
+    </div>
+    <div class="card">
+      <h3>带宽决定「跑得多快」</h3>
+      <p class="mbody">自回归解码每生成一个 token 都要把激活权重读一遍，所以 <code>tok/s ≈ 内存带宽 ÷ 每 token 读取量</code>。MoE 每 token 只激活部分专家，在同一台低带宽机器上可能比稠密模型快 5–8 倍，这正是 Strix Halo 这类统一内存设备的存在理由。</p>
+    </div>
+  </div>
+  <p>把「7.89 GB 权重能在 8 GB 卡上跑 27B 智能体」当作真实用例，是 2026 年 10 月社区讨论里最典型的误读：Saluki 27B 的 2-bit 权重文件确实只有 7.89 GB，但加上约 0.9 GB 视觉模块和随上下文膨胀的 KV cache，标准 8 GB 卡加载即溢出，随后退回系统内存、速度断崖下跌。该发布方未公开评测 harness、校准流程与 llama.cpp 固定 commit，也没有第三方复现。</p>
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 330" width="100%" role="img" aria-label="按内存档位划分的本地大模型可跑范围">
+        <title>按内存档位划分的本地大模型可跑范围</title>
+        <desc>四档内存从 8 到 256GB 以上，对应不同规模的模型，24 到 32GB 是社区主战场</desc>
+        <rect x="20" y="20" width="190" height="60" rx="8" fill="#E6F1FB" stroke="#2F6FB0" stroke-width="0.5"/>
+        <text x="36" y="45" font-size="14" font-weight="500" fill="#1F5288">8–16 GB</text>
+        <text x="36" y="66" font-size="12" fill="#1F5288">笔记本与端侧</text>
+        <rect x="222" y="20" width="718" height="60" rx="8" fill="#FFFFFF" stroke="#D8D4C8" stroke-width="0.5"/>
+        <text x="238" y="45" font-size="13" font-weight="500" fill="#16181D">Gemma 4 12B · LFM3-Omni-2B · Granite 4.2 8B · Decider 5B</text>
+        <text x="238" y="66" font-size="12" fill="#454B54">语音前端、事实校验门、工具输出解析等小模型分工</text>
+
+        <rect x="20" y="88" width="190" height="60" rx="8" fill="#E1F5EE" stroke="#0F766E" stroke-width="0.5"/>
+        <text x="36" y="113" font-size="14" font-weight="500" fill="#0A5750">24–32 GB</text>
+        <text x="36" y="134" font-size="12" fill="#0A5750">单卡甜点 · 主战场</text>
+        <rect x="222" y="88" width="718" height="60" rx="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="0.5"/>
+        <text x="238" y="113" font-size="13" font-weight="500" fill="#16181D">Qwen3.8-27B · Qwen3.6-35B-A3B · Gemma 4 31B · Qwen3-Coder-30B-A3B</text>
+        <text x="238" y="134" font-size="12" fill="#454B54">量化实验、harness 调优与 A/B 评测几乎全部集中在这一档</text>
+
+        <rect x="20" y="156" width="190" height="60" rx="8" fill="#E6F1FB" stroke="#2F6FB0" stroke-width="0.5"/>
+        <text x="36" y="181" font-size="14" font-weight="500" fill="#1F5288">64–128 GB</text>
+        <text x="36" y="202" font-size="12" fill="#1F5288">统一内存设备</text>
+        <rect x="222" y="156" width="718" height="60" rx="8" fill="#FFFFFF" stroke="#D8D4C8" stroke-width="0.5"/>
+        <text x="238" y="181" font-size="13" font-weight="500" fill="#16181D">Qwen3.8-Flash-Next · gpt-oss-120b · GLM-5.3-Flash</text>
+        <text x="238" y="202" font-size="12" fill="#454B54">百亿到千亿级 MoE，长上下文；速度受内存带宽强约束</text>
+
+        <rect x="20" y="224" width="190" height="60" rx="8" fill="#EEEDFE" stroke="#6D3FB5" stroke-width="0.5"/>
+        <text x="36" y="249" font-size="14" font-weight="500" fill="#5A3099">256 GB 以上</text>
+        <text x="36" y="270" font-size="12" fill="#5A3099">工作站或租算力</text>
+        <rect x="222" y="224" width="718" height="60" rx="8" fill="#FFFFFF" stroke="#D8D4C8" stroke-width="0.5"/>
+        <text x="238" y="249" font-size="13" font-weight="500" fill="#16181D">DeepSeek V4.1 Flash-1017 · Kimi K3.1 Pro</text>
+        <text x="238" y="270" font-size="12" fill="#454B54">需 1-bit 量化、专家剪枝或多机；多为能力参照而非装机目标</text>
+
+        <text x="20" y="310" font-size="12" fill="#454B54">绿色行是社区讨论与下载最集中的档位；档位按权重体积加 KV cache 余量估算，非硬性边界</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1</b> · 按内存档位划分的可跑范围。注意「能装下」和「跑得动」是两条不同的线：同一档里稠密模型与 MoE 的速度可能差一个数量级。</figcaption>
+  </figure>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 310" width="100%" role="img" aria-label="静态权重与运行时显存占用的对比">
+        <title>静态权重与运行时显存占用的对比</title>
+        <desc>7.89GB 的静态权重加上视觉模块与 KV cache 后超出 8GB 显卡上限</desc>
+        <rect x="200" y="34" width="700" height="170" rx="6" fill="#F4F2EC"/>
+        <rect x="665" y="34" width="2" height="170" fill="#B3261E"/>
+        <text x="672" y="28" font-size="12" fill="#A32D2D">8 GB 显卡物理上限</text>
+
+        <text x="20" y="82" font-size="13" font-weight="500" fill="#16181D">宣称的体积</text>
+        <rect x="200" y="60" width="460" height="34" rx="4" fill="#B5D4F4"/>
+        <text x="212" y="82" font-size="12.5" fill="#1F5288">静态权重 7.89 GB</text>
+
+        <text x="20" y="162" font-size="13" font-weight="500" fill="#16181D">真实运行时</text>
+        <rect x="200" y="140" width="460" height="34" rx="4" fill="#B5D4F4"/>
+        <rect x="660" y="140" width="53" height="34" rx="4" fill="#9FE1CB"/>
+        <rect x="713" y="140" width="175" height="34" rx="4" fill="#F5C4B3"/>
+        <text x="212" y="162" font-size="12.5" fill="#1F5288">权重 7.89 GB</text>
+        <text x="722" y="162" font-size="12" fill="#993C1D">KV cache 随上下文膨胀</text>
+
+        <rect x="200" y="204" width="700" height="1" fill="#D8D4C8"/>
+        <rect x="200" y="204" width="1" height="8" fill="#B4B2A9"/>
+        <rect x="433" y="204" width="1" height="8" fill="#B4B2A9"/>
+        <rect x="666" y="204" width="1" height="8" fill="#B4B2A9"/>
+        <rect x="900" y="204" width="1" height="8" fill="#B4B2A9"/>
+        <text x="200" y="230" font-size="12" text-anchor="middle" fill="#454B54">0 GB</text>
+        <text x="433" y="230" font-size="12" text-anchor="middle" fill="#454B54">4 GB</text>
+        <text x="666" y="230" font-size="12" text-anchor="middle" fill="#454B54">8 GB</text>
+        <text x="900" y="230" font-size="12" text-anchor="middle" fill="#454B54">12 GB</text>
+        <text x="20" y="252" font-size="12" fill="#454B54">浅蓝为权重，绿色为视觉模块，橙色为 KV cache</text>
+        <text x="20" y="282" font-size="12" fill="#454B54">橙色段按 32K 量级上下文示意，实际长度随层数、KV 头数、精度与并发线性变化</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2</b> · 静态权重与运行时显存的落差。8 GB 卡不是「跑得慢」，而是加载即溢出并退回系统内存；这是所有「极小体积跑大模型」宣传里最需要先核实的数字。</figcaption>
+  </figure>
+
+  <h3>常见硬件的实测坐标</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>设备</th><th>可用内存</th><th>带宽</th><th>实测表现（社区与第三方汇总）</th></tr></thead>
+      <tbody>
+        <tr><td>RTX 3090 / 4090</td><td>24 GB</td><td>约 936 GB/s</td><td>27B Q4 高速；35B-A3B 在 4090 上以 IQ4_XS + KV q8_0、65K 上下文占 24.2 GB，报告约 180 tok/s</td></tr>
+        <tr><td>AMD Ryzen AI Max+ 395（Strix Halo）</td><td>96–120 GB 可分配给 GPU</td><td>约 256 GB/s</td><td>MoE 类 30–50 tok/s；稠密 70B 仅 5–7 tok/s，BIOS 里需先调高显存分配</td></tr>
+        <tr><td>Mac Studio M4 Max 128 GB</td><td>128 GB 统一内存</td><td>约 546 GB/s</td><td>70B Q4 约 11–12 tok/s，静音低功耗，适合 24 小时常驻</td></tr>
+        <tr><td>Mac Studio M3 Ultra 512 GB</td><td>512 GB 统一内存</td><td>约 819 GB/s</td><td>可整装 405B / 671B 的 Q4，但降到 5–7 tok/s，属「能用」而非好用</td></tr>
+        <tr><td>NVIDIA DGX Spark</td><td>128 GB 统一内存</td><td>约 273 GB/s</td><td>单用户解码偏慢，价值在 CUDA 全栈、微调与多用户并发</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src">证据等级：硬件带宽为厂商规格；tok/s 为第三方汇总与社区自报，不同量化档、上下文与运行时差异极大，仅作量级参考。</p>
+  <div class="note">
+    <b>一条可执行的算式：</b>先按 <code>权重 GB = 参数 B × 每参数字节</code> 算出权重，再预留 20% 给 KV cache 与运行时，最后拿「可用带宽 ÷ 每 token 激活读取量」估算速度。任何只报体积不报上下文长度与 KV 精度的宣传，都先按图 2 复核。
+  </div>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>十四个模型的详细介绍</h2>
+  <p class="lead">下面按「能不能装进你的机器」分四组。每张卡片都回答同一个问题：它特别在哪、什么情况下不该选它、以及这个说法的证据有多硬。</p>
+
+  <div class="toolbar">
+    <div class="frow">
+      <span class="flabel">内存档位</span>
+      <button class="chip" data-f="tier" data-v="all" aria-pressed="true">全部</button>
+      <button class="chip" data-f="tier" data-v="t1" aria-pressed="false">8–16 GB</button>
+      <button class="chip" data-f="tier" data-v="t2" aria-pressed="false">24–32 GB</button>
+      <button class="chip" data-f="tier" data-v="t3" aria-pressed="false">64–128 GB</button>
+      <button class="chip" data-f="tier" data-v="t4" aria-pressed="false">256 GB+</button>
+    </div>
+    <div class="frow">
+      <span class="flabel">主要用途</span>
+      <button class="chip" data-f="use" data-v="all" aria-pressed="true">全部</button>
+      <button class="chip" data-f="use" data-v="general" aria-pressed="false">通用主力</button>
+      <button class="chip" data-f="use" data-v="code" aria-pressed="false">代码</button>
+      <button class="chip" data-f="use" data-v="agent" aria-pressed="false">长上下文与智能体</button>
+      <button class="chip" data-f="use" data-v="edge" aria-pressed="false">端侧与语音</button>
+      <button class="chip" data-f="use" data-v="speed" aria-pressed="false">低延迟</button>
+      <button class="chip" data-f="use" data-v="reference" aria-pressed="false">前沿参照</button>
+    </div>
+    <div class="frow">
+      <span class="flabel">许可证</span>
+      <button class="chip" data-f="license" data-v="all" aria-pressed="true">全部</button>
+      <button class="chip" data-f="license" data-v="permissive" aria-pressed="false">宽松（MIT / Apache）</button>
+      <button class="chip" data-f="license" data-v="restricted" aria-pressed="false">自定义或社区许可</button>
+    </div>
+    <div class="frow">
+      <input id="q" class="srch" type="search" placeholder="搜索模型名、厂商、许可、命令或正文关键词（按 / 聚焦）" aria-label="搜索模型">
+      <button class="btn" id="reset" type="button">重置</button>
+      <span class="hit" id="hit" aria-live="polite">显示 <b>14</b> / 14 个模型</span>
+    </div>
+  </div>
+
+  <h3 style="margin-top:30px">A 组 · 消费级主力（16–32 GB）</h3>
+  <p class="src" style="margin-bottom:14px">这一组是 2026 年 11 月社区真正的日常主力：单人单卡可反复迭代的最大模型规模。</p>
+
+  <article class="model" id="m-qwen38" data-tier="t2" data-use="general code agent vision" data-license="permissive" data-size="约 18 GB（Q4_K_M）" data-ctx="262,144 原生，YaRN 扩至 1M" data-lic="Apache 2.0" data-speed="Q6 约 75 tok/s（社区自报）" data-risk="全部跑分为厂商自测，无第三方独立复现">
+    <div class="mhead">
+      <div><h3>Qwen3.8-27B</h3><div class="by">Alibaba Qwen · 2026-08-14 · 消费级主力</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-qwen38">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-teal">社区事实标准</span><span class="tag t-blue">Apache 2.0</span><span class="tag t-purple">原生多模态</span><span class="tag t-gray">27B dense</span>
+    </div>
+    <p class="mrole">如果你只装一个模型，装这个。它是目前唯一同时具备干净许可、原生视觉输入、长上下文、消费级体积与最完整社区生态的选择。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>架构</th><td>27B 稠密，原生多模态（文本 / 图像 / 视频 → 文本），Gated DeltaNet 与 Gated Attention 混合，64 层</td></tr>
+      <tr><th>上下文</th><td>262,144 token 原生；用 YaRN 可扩展到 1,000,000，但<b>不是</b>原生 1M</td></tr>
+      <tr><th>许可证</th><td>Apache 2.0，无访问门槛，权重在 Hugging Face <code>Qwen/Qwen3.8-27B</code></td></tr>
+      <tr><th>体积</th><td>BF16 约 55.6 GB；Ollama 4-bit 构建约 18 GB；FP8 官方版本另提供</td></tr>
+      <tr><th>热度</th><td>近一个月 Hugging Face 下载 801 万、1.9 万 likes（2026-11 初）</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它不是跑分最高的开源模型，却是生态最厚的一个。2026 年 11 月的量化实验（Unsloth Dynamic、Nace、Hessian-Refined）、去审查衍生、GGUF 供应链、MCP 与浏览器 agent 实验，几乎都以 27B 这一档为基准。选它意味着你能直接复用别人已经踩过的坑：现成的 chat template、现成的 KV cache 预算、现成的评测脚本。</p>
+      <p>另一个被低估的点是许可。Apache 2.0 没有月活或营收阈值，而同期若干旗舰开源模型带自定义条款；对要放进产品里的团队，这一条比榜单上几个点更硬。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run qwen3.8:27b-q4_K_M
+mlx_lm.generate --model mlx-community/Qwen3.8-27B-4bit --prompt "..."</code></pre>
+      <p class="src">模型标签名随运行时版本变化，执行前回查 Ollama library 或 mlx-community 仓库。官方模型卡建议用 SGLang、vLLM 或 TokenSpeed 服务，并提醒常见框架静态启用 YaRN 会损害短输入精度。</p>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>官方规格与许可可查；801 万月下载是最强的可部署性信号；社区报告 Q6 量化在 oMLX + MCP 下约 75 tok/s 并能驱动浏览器完成网页任务；Docker 早期 3,570 场景评测中同族 Qwen3 14B Q4_K_M 工具调用 F1 达 0.971。</div>
+      <div class="con"><b>反对证据与风险</b>模型卡上<b>每一项</b> benchmark 都由阿里自测：SWE-bench Pro 61.7 建立在阿里自行修正题目并重跑基线的版本上，与公开榜单不可比；QwenSWEBench、CoWorkBench 两项自研测试未公开题集与样本量；对比对象是较旧的 Opus 4.6 Max；无第三方独立复现。另有 892 楼的社区长帖称同款模型在 3090 + 128K 上下文下做编程「完全不可用」。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>规格 / 许可 / 上下文 = 一手官方模型卡；下载量 = 平台可查；跑分 = 厂商自测（弱）；tok/s 与可用性争议 = 社区自报（弱，且方向相反）。<b>建议动作：</b>拿自己的代码或检索任务做 A/B，不要引用模型卡上的 SWE-bench 数字做验收。</div>
+  </article>
+
+  <article class="model" id="m-qwen36" data-tier="t2" data-use="general speed agent" data-license="permissive" data-size="Q4 约 23 GB" data-ctx="以官方模型卡为准" data-lic="Qwen 系列许可，部署前回查" data-speed="3090 约 130+ tok/s；4090 约 180 tok/s（社区汇总）" data-risk="速度数字来自不同 harness，未统一量化档与上下文">
+    <div class="mhead">
+      <div><h3>Qwen3.6-35B-A3B</h3><div class="by">Alibaba Qwen · 消费级速度甜点</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-qwen36">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-teal">速度优先</span><span class="tag t-gray">35B 总 / 3B 激活</span><span class="tag t-blue">官方 GGUF</span>
+    </div>
+    <p class="mrole">当 27B 稠密模型的交互速度不够、但你还不想碰统一内存设备时，MoE 只激活 3B 参数是更划算的路线。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>架构</th><td>MoE，约 35B 总参数 / 3B 激活，每 token 读取量远小于同规模稠密模型</td></tr>
+      <tr><th>体积</th><td>Unsloth 4-bit 约 23 GB（128 GB 档指南口径）</td></tr>
+      <tr><th>官方 GGUF</th><td><code>ggml-org/Qwen3.6-35B-A3B-GGUF</code>，2026-11-12 记录 220,506 次下载</td></tr>
+      <tr><th>社区测速</th><td>3090 上 Q4 报告 130+ tok/s；4090 上 IQ4_XS + KV q8_0、65K 上下文占 24.2 GB，报告约 180 tok/s</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它把「27B 级质量」和「接近小模型的响应速度」放在同一张卡上。对需要常驻的智能体、自动补全、多轮工具调用这类延迟敏感任务，激活参数量比总参数量更能预测体验——这正是图 1 里把 MoE 与稠密模型分开看的理由。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run qwen3.6:35b-a3b
+llama-server -hf ggml-org/Qwen3.6-35B-A3B-GGUF -ngl 999 -c 32768 --jinja</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>官方 ggml GGUF 仓库可查且下载量高（22 万）；MoE 低激活量的物理优势在低带宽设备上尤其明显；多个独立来源都把它列为「最快全能型」候选。</div>
+      <div class="con"><b>反对证据与风险</b>130 / 180 tok/s 来自不同硬件、不同量化档、不同上下文长度与不同运行时，属二手汇总，不能直接横向比较；MoE 对内存容量仍按总参数计，KV cache 预算不因激活小而减少。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>仓库与下载量 = 一手；架构优势 = 可推导的物理事实；速度 = 社区自报汇总（弱）。<b>建议动作：</b>固定量化档与上下文长度后自测首 token 延迟与稳态 tok/s 两个指标。</div>
+  </article>
+
+  <article class="model" id="m-gemma4" data-tier="t1 t2" data-use="general code agent vision edge" data-license="permissive" data-size="12B / 31B 按 4-bit 约 8–20 GB" data-ctx="按尺寸不同，社区报告 260K 级" data-lic="Apache 2.0" data-speed="3090 + LM Studio 报 80–110 tok/s（社区自报）" data-risk="小尺寸在 3–4 bit 量化下最易退化">
+    <div class="mhead">
+      <div><h3>Gemma 4 系列（E2B / 12B / 31B）</h3><div class="by">Google · 多尺寸阶梯 · 企业友好</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-gemma4">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-blue">Apache 2.0</span><span class="tag t-purple">多模态</span><span class="tag t-teal">工具调用稳定</span><span class="tag t-gray">尺寸阶梯完整</span>
+    </div>
+    <p class="mrole">如果你要在同一套 harness 下覆盖从手机到 24 GB 显卡的多种设备，Gemma 4 的尺寸阶梯和干净许可让迁移成本最低。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>尺寸</th><td>E2B、12B、26B-A4B、31B 等多个档位，覆盖端侧到单卡</td></tr>
+      <tr><th>许可证</th><td>Apache 2.0</td></tr>
+      <tr><th>官方 GGUF 下载</th><td>2026-11-12：E2B 247,860；12B 105,209；31B 54,854</td></tr>
+      <tr><th>社区表现</th><td>26B A3B 在 3090 + LM Studio 上被报告工具调用稳定，80–110 tok/s、260K 上下文；8 GB 显存用户仍靠 26B QAT 约 26 tok/s</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它是「同一家族跨档位」做得最完整的一支。对做产品而非做实验的团队，这比单点性能更值钱：prompt 模板、工具调用 schema、量化档位可以在不同设备上复用，升级硬件时不必重调整个 harness。</p>
+      <p>社区多份报告把 LM Studio 上的 Gemma 4 列为结构化输出与工具调用较稳的选择，而同期 Open WebUI / Ollama 上多个模型出现「把原始 JSON 打印到聊天窗口而不执行工具」的问题。这再次说明运行时层常比权重更致命。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run gemma4:12b
+mlx_lm.generate --model mlx-community/gemma-4-12b-it-4bit --prompt "..."</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>三个尺寸的官方 GGUF 下载量均可查且位居前列；Apache 2.0 无附加商业条款；社区报告的低显存可用性与工具调用稳定性来自多个独立帖子。</div>
+      <div class="con"><b>反对证据与风险</b>2026 年关于 FP4 推理引擎刷分的社区反弹指出，1–10B 小模型在 3–4 bit 下的精度损失远大于 70B 级，而 Gemma 4 的主战场恰好在小尺寸；「把量化精度写进标题，别放脚注」是这一档最需要注意的读法。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>许可与下载量 = 一手；工具调用稳定性 = 社区自报（弱）；量化损伤方向 = 多篇量化研究一致（中）。<b>建议动作：</b>小尺寸优先 Q6/Q8 起步，别默认 Q4。</div>
+  </article>
+
+  <article class="model" id="m-coder" data-tier="t2 t3" data-use="code agent" data-license="permissive" data-size="30B-A3B 约 18–20 GB；Coder-Next 4-bit 约 46 GB" data-ctx="长上下文，按具体版本回查" data-lic="Apache 2.0 系（按仓库回查）" data-speed="依量化档，代码任务建议 Q5/Q6 以上" data-risk="代码与数学是量化损伤最敏感的领域">
+    <div class="mhead">
+      <div><h3>Qwen3-Coder-30B-A3B / Coder-Next</h3><div class="by">Alibaba Qwen · 本地代码助手专用</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-coder">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-blue">代码专用</span><span class="tag t-gray">Aider + Ollama 组合</span><span class="tag t-amber">量化要保守</span>
+    </div>
+    <p class="mrole">源码不能出内网的场景里，它是「本地版 Cursor」最常被验证的一条路线；代价是对量化档位比通用聊天敏感得多。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>定位</th><td>面向长程软件工程与 agentic coding 的后训练模型</td></tr>
+      <tr><th>官方 GGUF</th><td><code>ggml-org/Qwen3-Coder-30B-A3B-Instruct-GGUF</code>，2026-11-12 记录 61,790 次下载</td></tr>
+      <tr><th>体积</th><td>30B-A3B Q4 约 18–20 GB；Coder-Next 在 128 GB 指南里 4-bit 约 46 GB</td></tr>
+      <tr><th>典型组合</th><td>Aider + Ollama（终端编码、Git 感知、自动提交），或指向本地端点的 IDE 插件</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>通用模型做代码补全尚可，做「读仓库 → 改多文件 → 跑测试 → 修回归」这类长链条任务时，专用后训练的差异会放大。Coder 系列也是少数在官方 GGUF 仓库里有独立条目的代码模型，说明它被真实下载使用，而不只是榜单上的名字。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run qwen3-coder:30b
+aider --model ollama/qwen3-coder:30b</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>官方 GGUF 仓库可查；Aider + Ollama 被多份第三方指南列为成熟的本地编码栈；专用后训练在 agentic coding 上的优势有厂商与社区两条独立线索。</div>
+      <div class="con"><b>反对证据与风险</b>社区同模型对比显示 HumanEval 从 BF16 56.10% 降到 Q4_K_M 50.61%、Q8_0 52.44%（164 题小样本）；vLLM 研究里 4-bit 选项把 HumanEval 拉到 45.7–51.8%。Q4 对代码任务可能不是省显存，而是买返工。此外 3090 + 128K 上下文下「本地 27B 编程不可用」的长帖也是真实反例。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>仓库 = 一手；量化对代码的影响 = 小样本社区评测 + 量化研究（中，方向一致）；「可用 / 不可用」两极体验 = 社区自报（弱）。<b>建议动作：</b>从 Q5/Q6 起步，用自己的仓库跑固定任务集，别用通用 HumanEval 代理。</div>
+  </article>
+
+  <article class="model" id="m-nemotron" data-tier="t1 t2" data-use="speed general agent" data-license="permissive" data-size="按 4-bit 约 18 GB（12 GB 卡需更低比特或卸载）" data-ctx="以官方模型卡为准" data-lic="NVIDIA 开源许可，按仓库回查" data-speed="12 GB 档推荐（第三方榜单）" data-risk="优化偏向 NVIDIA 生态，跨平台需另验">
+    <div class="mhead">
+      <div><h3>Nemotron 3.5 Lightning 30B-A3B</h3><div class="by">NVIDIA · 12 GB 档的速度候选</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-nemotron">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-teal">低显存最优候选</span><span class="tag t-gray">MoE</span><span class="tag t-blue">官方 GGUF</span>
+    </div>
+    <p class="mrole">当显存只有 12 GB 又想要接近 30B 级能力时，第三方按 VRAM 分档的榜单把它列在该档最强位置。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>架构</th><td>MoE 30B 级 / 约 3B 激活，Lightning 变体面向低延迟</td></tr>
+      <tr><th>官方 GGUF</th><td><code>ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF</code>，2026-11-12 记录 218,656 次下载</td></tr>
+      <tr><th>第三方定位</th><td>Every Local AI 按显存分档把 Nemotron 3.5 Lightning 17.8B 列为 12 GB 档最优、Nemotron 3 Super 67.2B 列为 48 GB 档最优</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它代表了另一条思路：不是把大模型压小，而是让厂商直接针对推理成本设计 MoE 结构。对 12 GB 卡用户，这比「把 27B 硬塞进 8 GB」的 2-bit 极限量化更可靠，因为不需要牺牲到表达冗余崩塌的程度。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run nemotron3.5-lightning:30b
+llama-server -hf ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF -ngl 999</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>官方 GGUF 下载量 21.9 万可查；第三方按 VRAM 分档榜单给出明确档位定位；NVIDIA 对自家 kernel 的优化路径完整。</div>
+      <div class="con"><b>反对证据与风险</b>「12 GB 档最强」来自单一聚合榜单的评分口径，未见独立复现；厂商优化明显偏向 CUDA，Mac MLX 与 AMD ROCm 上的表现需另测；Lightning 与 Super 是不同规模，别把两者数据混用。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>仓库与下载量 = 一手；档位排名 = 第三方榜单（中）；跨平台表现 = 未验证。<b>建议动作：</b>先确认你的运行时有没有该架构的 kernel 支持，再谈速度。</div>
+  </article>
+
+  <h3 style="margin-top:36px">B 组 · 轻量与端侧（≤16 GB）</h3>
+  <p class="src" style="margin-bottom:14px">这一组不该拿来做主聊天模型。它们的价值是在多智能体里承担低延迟的专门角色——语音前端、解析、校验、判定——这也正是情感陪伴硬件与端侧交互最需要的形态。</p>
+
+  <article class="model" id="m-lfm3" data-tier="t1" data-use="edge speed vision" data-license="permissive" data-size="2B 级，Q4 约 1–2 GB" data-ctx="长上下文效率为架构设计目标" data-lic="Liquid AI 许可，按仓库回查" data-speed="iPhone 18 Pro Max WebGPU 约 80 tok/s（社区自报）" data-risk="去审查衍生版无可复现评测，供应链来源混杂">
+    <div class="mhead">
+      <div><h3>LFM3-Omni-2B / LFM3-1.7B</h3><div class="by">Liquid AI · 端侧 any-to-any</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-lfm3">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-teal">端侧</span><span class="tag t-purple">混合卷积架构</span><span class="tag t-amber">去审查版霸榜</span>
+    </div>
+    <p class="mrole">不是全参数 Transformer：卷积块与分组查询注意力混合，用更低功耗换可用质量，是「小模型做专门角色」的最佳样本。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>架构</th><td>LFM3 家族（约 700M–9B），混合 Liquid 的 LIV 卷积算子与 GQA，主打延迟功耗比与长上下文效率</td></tr>
+      <tr><th>形态</th><td>Omni-2B 为 any-to-any 多模态；1.7B 为纯文本兄弟版本</td></tr>
+      <tr><th>热度</th><td>HF trending 记录 1.43 万 stars；官方 1.7B GGUF 15 万下载，社区去审查 GGUF 4.6 万下载且多次登顶趋势榜</td></tr>
+      <tr><th>社区实测</th><td>有报告称在 iPhone 18 Pro Max 上通过自写 WebGPU kernel 跑出约 80 tok/s 全离线推理</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它同时是两件事的样本：技术上，非纯 Transformer 架构在端侧还有明显空间；生态上，它是「社区供应链」最清晰的例子——官方发布后几小时内，第三方就产出整条量化梯度与去审查衍生，而后者的下载热度常常反超原版。</p>
+      <p>对做本地语音交互或桌面陪伴设备的人，2B 级别的合理用法不是让它聊天，而是让它解析工具输出、抽取错误行、做意图分类，把 27B 主力从高频小任务里解放出来。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run lfm3:1.7b
+llama-server -hf LiquidAI/LFM3-1.7B-GGUF -ngl 999 -c 8192</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>官方 GGUF 仓库与 HF trending 数据可查；端侧 80 tok/s 有具体设备与运行时描述；混合架构的长上下文效率有厂商论文支撑方向。</div>
+      <div class="con"><b>反对证据与风险</b>80 tok/s 是单人自报、依赖自写 WebGPU kernel，不可外推；去审查衍生（abliterated / heretic）没有可复现评测，且这类仓库的命名常把不同 lineage 拼在一起，实际底盘可能并非标称模型。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>仓库 / 下载量 / stars = 一手平台数据；端侧速度 = 单一案例（弱）；架构优势 = 厂商声称（弱）。<b>建议动作：</b>只从官方或可信量化组织取权重，把去审查版当作研究对象而非生产依赖。</div>
+  </article>
+
+  <article class="model" id="m-granite" data-tier="t1" data-use="general edge" data-license="permissive" data-size="8B Q4 约 5 GB" data-ctx="以官方模型卡为准" data-lic="Apache 2.0 系，按仓库回查" data-speed="CPU 上可用，GPU 上低延迟" data-risk="8 GB 档综合质量有限，不适合复杂智能体">
+    <div class="mhead">
+      <div><h3>Granite 4.2 8B</h3><div class="by">IBM · 8 GB 档的企业级基线</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-granite">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-blue">企业友好</span><span class="tag t-gray">8.8B</span><span class="tag t-teal">CPU 可跑</span>
+    </div>
+    <p class="mrole">第三方按显存分档的榜单把 8.8B 的 Granite 4.2 列为 8 GB 档最优解，适合离线摘要、批量分类这类不追求智能上限的任务。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>规模</th><td>约 8.8B 稠密</td></tr>
+      <tr><th>定位</th><td>Every Local AI 的 8 GB 档（RTX 4060 / 笔记本）推荐项</td></tr>
+      <tr><th>适用</th><td>离线摘要、文档预处理、嵌入之外的轻量生成、纯 CPU 兜底</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>IBM 的企业定位让它在这份偏社区热闹的清单里显得朴素，但「许可干净、供应链可追溯、不追榜单」恰恰是内网部署最需要的三件事。当你需要给不联网的环境配一个稳定而非最强的模型时，它比任何去审查衍生版都合适。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run granite4.2:8b</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>第三方按显存分档榜单明确列入 8 GB 档；厂商供应链与许可可追溯；小模型在 CPU 上也有可用吞吐（约 5–12 tok/s 量级）。</div>
+      <div class="con"><b>反对证据与风险</b>「档内最优」来自单一榜单评分；8B 级在长链条工具调用与多文件代码任务上能力有限；FP4/INT4 对小模型的损伤在这一档最明显，别用极限量化再压体积。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>档位推荐 = 第三方榜单（中）；CPU 吞吐 = 社区经验值（弱）。<b>建议动作：</b>只把它用在定义清晰的窄任务上。</div>
+  </article>
+
+  <article class="model" id="m-decider" data-tier="t1" data-use="agent edge speed" data-license="permissive" data-size="BF16 约 8.5 GB，Q4 约 5 GB" data-ctx="短输入为主" data-lic="Apache 2.0" data-speed="毫秒级判定（相对生成模型）" data-risk="不是聊天模型，用途被误解会得出错误结论">
+    <div class="mhead">
+      <div><h3>Perplexity Decider Flash v1.3（5B）</h3><div class="by">Perplexity · 校验门，不是聊天模型</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-decider">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-purple">分类器</span><span class="tag t-blue">Apache 2.0</span><span class="tag t-teal">事实校验回路</span>
+    </div>
+    <p class="mrole">这张卡是整份文档里最容易被误读的一个：它输出的是概率，不是段落。放进多智能体里当验证门，比再堆一个生成模型便宜得多。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>类型</th><td>判别 / 分类器，非生成式聊天模型</td></tr>
+      <tr><th>体积</th><td>BF16 约 8.5 GB，Q4 约 5 GB；另有 2.6B 版本</td></tr>
+      <tr><th>许可证</th><td>Apache 2.0</td></tr>
+      <tr><th>典型用法</th><td>把「生成结果 + 源段落」喂进去，问「答案是否与来源一致」，拿一个概率做门禁</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它代表 2026 年本地多智能体最实用的一条结构性原则：<b>让验证比生成便宜</b>。27B 负责产出，5B 负责否决，整个回路不需要第二次长推理。对做私有 RAG、代码审查或文档问答的人，这比换更大的生成模型更能压低幻觉率。</p>
+      <p>这个思路可以一路推到工程动作：把「答案是否自洽」「工具参数是否符合 schema」「检索片段是否支持结论」都做成小模型判定门，主模型只处理通过不了的部分。</p>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>Apache 2.0 与体积数据可查；「小模型做校验门」是社区多份实践里反复出现的结构；判定任务比生成任务对量化更不敏感。</div>
+      <div class="con"><b>反对证据与风险</b>发布仍较新，缺独立第三方精度评测；概率阈值需要在你自己的数据上标定，直接照搬默认阈值会产生大量误杀或漏放。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>许可 / 体积 = 一手；用法与结构优势 = 可推导 + 社区实践（中）；精度 = 未独立验证。<b>建议动作：</b>先攒 100–200 条标注样本标定阈值。</div>
+  </article>
+
+  <article class="model" id="m-sensenova" data-tier="t1" data-use="agent speed reference" data-license="restricted" data-size="9B，推理参数约 15B，Q4 约 6 GB" data-ctx="长上下文，循环架构" data-lic="按官方仓库回查" data-speed="带 MTP 头做投机解码" data-risk="9B 对标 27B 为社区未验证说法，Preview 阶段">
+    <div class="mhead">
+      <div><h3>SenseNova-Loop-9B-Preview</h3><div class="by">商汤 · 观察项，不建议生产</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-sensenova">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-purple">循环 Transformer</span><span class="tag t-teal">MTP 投机解码</span><span class="tag t-amber">Preview</span>
+    </div>
+    <p class="mrole">架构上最值得关注的一张卡：循环结构 + mHC 残差流 + 多 token 预测头，用 9B 的体积换低延迟。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>架构</th><td>循环 Transformer，mHC 残差流，面向超长序列与多轮交互</td></tr>
+      <tr><th>投机解码</th><td>带 MTP（multi-token prediction）头；同期 JetBrains Mellum2.1-Thinking-MTP 报告 1.4–1.8× 解码加速、约 90% 提议接受率</td></tr>
+      <tr><th>推理规模</th><td>标称 9B，因循环结构实际计算量约相当于 15B 参数</td></tr>
+      <tr><th>社区说法</th><td>有评论称「整体对标 Qwen3.5 27B」，未附可复现评测</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>对研究投机解码与 draft / target 架构的人，这类带原生 MTP 头的小模型比纯量化实验更有信息量：它把加速做进权重而不是推理框架，且能被 vLLM 0.33、transformers 5.20、llama.cpp 直接消费。llama.cpp 在 2026-05-16 已把 MTP 投机解码合入主线。</p>
+      <h4>上手</h4>
+      <pre><code>llama-server -hf sensenova/SenseNova-Loop-9B-Preview -ngl 999 -c 32768</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>HF 仓库可查并进入 trending；MTP 头的加速效果有同期同类模型（Mellum2.1）的具体数字与框架支持列表佐证。</div>
+      <div class="con"><b>反对证据与风险</b>「9B 对标 27B」是论坛评论、无评测；Preview 阶段权重与 chat template 可能变动；循环架构在主流运行时的 kernel 支持不如标准 Transformer 完整。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>仓库与架构 = 一手；MTP 加速 = 同类模型自报（中）；质量对标 = 未验证（弱）。<b>建议动作：</b>作为研究样本跟踪，别进生产管线。</div>
+  </article>
+
+  <h3 style="margin-top:36px">C 组 · 统一内存级 MoE（64–128 GB）</h3>
+  <p class="src" style="margin-bottom:14px">Strix Halo、Mac Studio、DGX Spark 这一档设备的共同点是容量够、带宽紧。MoE 是这里的正确形态，稠密大模型会慢到失去交互性。</p>
+
+  <article class="model" id="m-flashnext" data-tier="t3" data-use="agent code general" data-license="permissive" data-size="4-bit 约 96–114 GB" data-ctx="长上下文，动态量化版本建议 256K" data-lic="Qwen 系，按仓库回查" data-speed="Strix Halo 上可驱动完整项目（社区案例）" data-risk="10–15% 提升为量化作者自报，需自建评测">
+    <div class="mhead">
+      <div><h3>Qwen3.8-Flash-Next</h3><div class="by">Alibaba Qwen · 量化战争的主战场</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-flashnext">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-teal">动态量化标杆</span><span class="tag t-gray">ggml 官方 GGUF 13 万下载</span><span class="tag t-amber">评测条件严格</span>
+    </div>
+    <p class="mrole">如果你关心「同一个模型换个 GGUF 能差多少」，这是 2026 年 11 月最值得研究的样本：Unsloth、ISTA-DASLab、社区个人量化者全都围着它做实验。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>体积</th><td>4-bit 约 96–114 GB，正好卡在 128 GB 统一内存设备的上沿</td></tr>
+      <tr><th>官方 GGUF</th><td><code>ggml-org/Qwen3.8-Flash-Next-GGUF</code>，2026-11-12 记录 131,285 次下载</td></tr>
+      <tr><th>动态量化</th><td>Unsloth Dynamic v3.1 声称在 DeepSWE、Terminal Bench、Aider Polyglot 上比 GSQ-RCO 量化高 10–15%；新增 engram switching，支持 BF16 / Q8_0 / Q5_1 / IQ4_NL 混合精度</td></tr>
+      <tr><th>评测条件</th><td>agentic 基准用 256K 上下文、其余 128K；temperature 1.0、top_p 0.95、top_k 20、min_p 0；preserve_thinking + xhigh 推理；约 26.2B token 基准量以降低噪声</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它的意义不在模型本身，而在把「量化」从搬运工作变成了一个有方法论的研究方向：按层分配不同比特、用重要性矩阵校准、公开完整采样参数与基准 token 量。这套做法可以直接迁移到你自己微调过的权重上。</p>
+      <p>社区也给出了真实落地案例：有人在 Strix Halo（Ryzen AI 395+）上用 UD_Q4_XL 量化 + Gufo 分支的 llama.cpp，用约一个月完成一个完整的游戏开发项目，全程不调用前沿 API。这是「消费级硬件能跑端到端项目」目前较硬的一个数据点。</p>
+      <h4>上手</h4>
+      <pre><code>llama-server -hf unsloth/Qwen3.8-Flash-Next-GGUF:UD_Q4_XL -ngl 999 -c 131072 --jinja</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>官方 GGUF 下载量可查；Unsloth 公开了详细采样参数与 26.2B token 的基准量，方法透明度在社区里属上乘；SC117 的 GSQ-RCO-abliterated 衍生在某日 HF 日报记录 350 万下载，说明分发链路成熟。</div>
+      <div class="con"><b>反对证据与风险</b>10–15% 是量化作者自报，无独立复现；社区对 ngram 配置调整的讨论显示同一版本改一个 flag 就会明显影响速度与质量；96–114 GB 的 4-bit 体积几乎吃满 128 GB，几乎没有留给 KV cache 的余量。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>仓库 / 下载量 / 评测配置 = 一手；提升幅度 = 作者自报（弱）；游戏项目案例 = 单一案例（弱）。<b>建议动作：</b>先算 KV cache 再选量化档，长上下文场景可能需要降到 IQ4_NL。</div>
+  </article>
+
+  <article class="model" id="m-gptoss" data-tier="t3" data-use="general agent speed" data-license="permissive" data-size="约 64–66 GB（4-bit / MXFP4）" data-ctx="以官方模型卡为准" data-lic="Apache 2.0" data-speed="Strix Halo 128 GB 上约 31–34 tok/s" data-risk="单用户解码受 256 GB/s 带宽限制">
+    <div class="mhead">
+      <div><h3>gpt-oss-120b</h3><div class="by">OpenAI · 统一内存设备的性价比基准</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-gptoss">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-blue">Apache 2.0</span><span class="tag t-teal">MoE 标杆</span><span class="tag t-gray">MXFP4 原生</span>
+    </div>
+    <p class="mrole">几乎所有 128 GB 迷你主机的评测都拿它当标尺，因此它的 tok/s 是这一档设备之间最可比的一个数字。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>架构</th><td>约 120B 级 MoE，原生 MXFP4 量化路径</td></tr>
+      <tr><th>体积</th><td>4-bit 约 64–66 GB，在 128 GB 设备上还有充足 KV cache 余量</td></tr>
+      <tr><th>许可证</th><td>Apache 2.0</td></tr>
+      <tr><th>第三方实测</th><td>Strix Halo 128 GB 上约 31–34 tok/s；DGX Spark 单用户解码速度相近但并发更强</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它是「MoE 在低带宽统一内存上远快于稠密模型」这条论断最常被引用的实证：同一台 Strix Halo 跑 gpt-oss-120b 能到 30+ tok/s，跑稠密 70B 只有 5–7 tok/s。选硬件时如果目标是交互体验，这组对比比任何理论带宽表都直观。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run gpt-oss:120b
+llama-server -hf ggml-org/gpt-oss-120b-GGUF -ngl 999 -c 32768 --jinja</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>许可与权重可查；多个独立硬件评测给出 31–34 tok/s 的接近数值，交叉验证较好；体积留有余量，适合长上下文。</div>
+      <div class="con"><b>反对证据与风险</b>tok/s 数字依赖 BIOS 里把 GPU 显存分配到 96–120 GB，默认配置常只有 16–32 GB；MXFP4 属 4-bit 浮点路径，正是社区「只报速度不报精度」批评所针对的格式。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>许可 / 权重 = 一手；速度 = 多个第三方硬件评测一致（中偏强）；精度 = 需自测。<b>建议动作：</b>装好先跑 <code>ollama ps</code> 确认没有静默回退到 CPU。</div>
+  </article>
+
+  <article class="model" id="m-glm53f" data-tier="t3" data-use="agent code general" data-license="permissive" data-size="约 18B 激活，4-bit 依实现差异大" data-ctx="1M token" data-lic="Flash 版聚合站标 MIT；GLM-5.3 本体为自定义许可" data-speed="Kyojin 引擎预填充约 580 tok/s（作者自报）" data-risk="许可证口径在不同来源不一致，必须回查官方卡">
+    <div class="mhead">
+      <div><h3>GLM-5.3-Flash</h3><div class="by">Z.ai · 长程智能体任务</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-glm53f">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-teal">1M 上下文</span><span class="tag t-blue">长 agent 任务</span><span class="tag t-amber">许可口径需核实</span>
+    </div>
+    <p class="mrole">面向长时间跨度的编码与工具链任务；也是「把 300B 级 MoE 塞进单台 128 GB 迷你主机」这类极限实验最常出现的模型。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>规模</th><td>Flash 版约 321B 总 / 18B 激活（部分来源写 320B）；本体 GLM-5.3 为 753B</td></tr>
+      <tr><th>上下文</th><td>1M token</td></tr>
+      <tr><th>极限部署</th><td>Kyojin 引擎（基于 ExLlamaV3、针对 ROCm 优化）让 300B 级 MoE 各跑在一台 128 GB 迷你 PC 上；GLM-5.3-Flash 预填充约 580 tok/s、MiMo-V2.6-Flash 解码最高 44 tok/s</td></tr>
+      <tr><th>社区实验</th><td>有人用 40 台迷你主机经 USB 3 互联组集群跑该模型，14 tok/s</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它是「本地」边界被撑得最开的一支：一头是长程 agent 所需的 1M 上下文，另一头是社区用剪枝、分页、自定义引擎把它压进消费级硬件的各种尝试。对研究分布式推理与专家分页的人，这些实验比模型本身更有参考价值。</p>
+      <h4>上手</h4>
+      <pre><code>ollama run glm-5.3-flash
+llama-server -hf unsloth/GLM-5.3-Flash-GGUF -ngl 999 -c 32768 --jinja</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>Kyojin 项目给出了与官方 FP8 的 KLD 及 Top-1 一致率对比，方法透明度较高；多个独立聚合站把 GLM-5.3 系列列为长 agent 任务首选。</div>
+      <div class="con"><b>反对证据与风险</b>许可证口径冲突：有来源把 Flash 标为 MIT，而 GLM-5.3 本体是自定义许可（对 MaaS 营收超阈值者要求安全审查），部署前必须回查官方 model card；40 台迷你机集群 14 tok/s 说明多机互联的性价比很差，别把「能跑」当成「值得跑」。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>规模 / 上下文 = 聚合站（中）；Kyojin 数据 = 作者自报（中偏弱）；许可证 = 来源冲突，需一手核实。<b>建议动作：</b>商用前先把 license 原文存档。</div>
+  </article>
+
+  <h3 style="margin-top:36px">D 组 · 前沿参照系（256 GB+ 或租算力）</h3>
+  <p class="src" style="margin-bottom:14px">把这两张卡放进文档，是为了让你知道天花板和它的代价。它们不适合装机，但适合在租来的算力上验证 harness，再把模式迁回本地主力。</p>
+
+  <article class="model" id="m-dsv41" data-tier="t4" data-use="reference agent code" data-license="permissive" data-size="原版数百 GB；剪枝 1-bit 版 transformer 权重 72.1 GB" data-ctx="1M token" data-lic="MIT" data-speed="取决于专家分页与多层卸载" data-risk="激活参数口径不一；1-bit 质量无独立复现">
+    <div class="mhead">
+      <div><h3>DeepSeek V4.1 Flash-1017</h3><div class="by">DeepSeek · MIT 许可里的最强模型</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-dsv41">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-blue">MIT</span><span class="tag t-teal">AA v5 开源第二</span><span class="tag t-purple">1-bit 专家剪枝</span>
+    </div>
+    <p class="mrole">「开源 + 最强 + 最宽松许可」三者交集里的那一个，也是 2026 年 11 月被下载最多的量化实验对象。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>规模</th><td>约 552B 总参数；激活参数各来源写 8B 或 16B，<b>口径不一致</b>，引用前须核实</td></tr>
+      <tr><th>上下文 / 许可</th><td>1M token；MIT</td></tr>
+      <tr><th>第三方评分</th><td>Artificial Analysis Intelligence Index v5.0.1 得 32.6（最高分 MIT 模型）；Epoch Open-Weights Index 77.6，排名第 2</td></tr>
+      <tr><th>量化热度</th><td>ISTA-DASLab 的 GSQ-RCO-GGUF 在 2026-11-02 周榜记录 2,294,642 次下载；Unsloth 版本在某日 HF 日报记录 59.6 万下载</td></tr>
+      <tr><th>极限压缩</th><td>ISTA 的 Coder 版剪掉每层 384 个路由专家中的 192 个，再压到约 1 bit/参数，transformer 权重从 138.2 GB 降到 72.1 GB</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它是「把旗舰模型挤进 prosumer 硬件」这条路线最完整的实验场：专家剪枝、混合比特分配（GSQ + RCO 搜索）、imatrix 校准、分层精度切换全部有公开配方。对研究投机解码、draft / target 权重结构或 MoE 专家路由的人，这些剪枝与量化产物本身就是很好的分析素材。</p>
+      <h4>上手</h4>
+      <pre><code>llama-server -hf ISTA-DASLab/DeepSeek-V4.1-Flash-1017-GSQ-RCO-GGUF -ngl 999 -c 32768 --jinja</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>MIT 许可与权重可查；AA 与 Epoch 两个独立指数给出高位评分；GSQ-RCO 量化包 230 万下载是社区用脚投票；剪枝前后体积对比有明确数字。</div>
+      <div class="con"><b>反对证据与风险</b>激活参数在 8B 与 16B 之间口径冲突，说明聚合站数据不可直接引用；1-bit 与专家剪枝后的质量只有作者自报、无独立复现；GSQ/RCO 这类混合精度量化在 vLLM 上支持不完整，社区还在自行 hack，llama.cpp 分支与主线行为也不一致。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>许可 / 权重 = 一手；指数评分 = 第三方榜单（中）；压缩收益 = 作者自报（弱）。<b>建议动作：</b>在租算力上用 FP8 原版建立基线，再逐档对比剪枝与量化版本。</div>
+  </article>
+
+  <article class="model" id="m-kimi" data-tier="t4" data-use="reference agent vision" data-license="restricted" data-size="Q4 约 1.4 TB" data-ctx="1M token" data-lic="自定义许可（Kimi K3.1-Pro）" data-speed="个人设备无实用量化" data-risk="benchmaxxed 质疑；跨版本指数不可比">
+    <div class="mhead">
+      <div><h3>Kimi K3.1 Pro</h3><div class="by">Moonshot AI · 开源能力天花板</div></div>
+      <label class="pick"><input type="checkbox" class="cmpbox" value="m-kimi">加入对比</label>
+    </div>
+    <div style="margin-top:10px">
+      <span class="tag t-purple">AA v5 开源第一</span><span class="tag t-gray">2.78T / 104B 激活</span><span class="tag t-red">个人设备不可跑</span>
+    </div>
+    <p class="mrole">知道它存在很重要，把它列进装机清单是错的。它的正确用途是：在租来的算力上验证你的 agent harness 能不能吃下前沿能力，再把结论迁回 27B 主力。</p>
+    <div class="tbl-wrap"><table class="spec"><tbody>
+      <tr><th>规模</th><td>约 2.78 万亿参数 MoE / 104B 激活；同期 Kimi K3 是首个开放的 3T 级模型，原生支持文本、图像、视频</td></tr>
+      <tr><th>上下文</th><td>1M token</td></tr>
+      <tr><th>评分</th><td>AA Intelligence Index v5.0.1 得 46.5，开源权重最高，领先第二名 13.9 分；Terminal-Bench 4.0 报告 67.2%</td></tr>
+      <tr><th>体积 / 许可</th><td>Q4 约 1.4 TB；自定义 Kimi K3.1-Pro 许可，非 MIT / Apache</td></tr>
+      <tr><th>时间线</th><td>权重于 2026 年 11 月初开放，Ollama tag 已上线；但 11 月 2 日仍有第三方核查称 HF 上只有较早的 K3</td></tr>
+    </tbody></table></div>
+    <div class="mbody">
+      <h4>为什么特别</h4>
+      <p>它把「开源权重」和「本地可跑」彻底切成了两件事。Ollama 上线的意义不在于谁能在家用机上跑它，而在于 serving stack（KV cache、工具调用协议、上下文窗口处理）已经标准化，你的 harness 可以先用它测上限，再把同样的接口模式平移到 27B 本地主力。</p>
+      <h4>上手</h4>
+      <pre><code>先在租用的多卡实例上验证 FP8 原版，不要尝试在 32 GB 卡上找「有用的量化」</code></pre>
+    </div>
+    <div class="procon">
+      <div class="pro"><b>支持证据</b>AA v5 与 Terminal-Bench 4.0 两个独立口径都给出开源第一；权重与 Ollama tag 可查；1M 上下文与原生多模态有一手模型卡支撑。</div>
+      <div class="con"><b>反对证据与风险</b>r/LocalLLaMA 有详细帖子举证其跑分可能针对评测分布过拟合（benchmaxxed）；Artificial Analysis 在 2026-10-27 把指数换成 v5，同一模型从旧版 55.1 变成 46.5，<b>跨版本分数不可比</b>；Q4 约 1.4 TB，任何 32 GB 卡都找不到有用量化；自定义许可有商业约束。</div>
+    </div>
+    <div class="evidence"><b>证据强度：</b>规格 / 权重 = 一手；指数评分 = 第三方（中，但版本口径需注意）；过拟合质疑 = 社区分析（弱）；商业条款 = 需读原文。<b>建议动作：</b>只作为能力上限参照，不进入选型对比的最终候选。</div>
+  </article>
+
+  <div class="empty" id="empty">
+    <p style="font-size:16px;color:var(--ink2);margin-bottom:8px">没有匹配的模型</p>
+    <p style="margin-bottom:14px">试试放宽档位或许可证条件，或换一个更短的关键词。</p>
+    <button class="btn" id="emptyReset" type="button">清除全部筛选</button>
+  </div>
+
+  <div class="cmpbar" id="cmpbar">
+    <span id="cmptext">已选 0 个模型</span>
+    <button class="btn" id="cmpgo" type="button">查看对比</button>
+    <button class="btn" id="cmpclear" type="button">清空</button>
+  </div>
+  <div class="cmptbl" id="cmptbl">
+    <h3 style="margin-top:8px">横向对比</h3>
+    <div class="tbl-wrap"><table id="cmpTable"></table></div>
+    <p class="src">对比数据来自各卡片标注的口径，部分为社区自报或厂商自测；体积与速度不可跨不同量化档直接比较。</p>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>量化：真正的第二个模型</h2>
+  <p class="lead">选完模型只走了一半。同一份权重、不同 GGUF，在你自己的任务上可能差出几个百分点，而且这个差距<b>先以方差的形式出现，而不是平均分下滑</b>。</p>
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 280" width="100%" role="img" aria-label="同一 4-bit 量化两次运行与 BF16 基线的得分对比">
+        <title>同一 4-bit 量化两次运行与 BF16 基线的得分对比</title>
+        <desc>BF16 得 43.36%，同一 4-bit AWQ 量化两次分别得 38.94% 与 31.86%，三根条共用 0 到 50% 刻度</desc>
+        <rect x="320" y="30" width="500" height="170" fill="#EFEDE5"/>
+        <rect x="320" y="30" width="1" height="170" fill="#D3D1C7"/>
+        <rect x="570" y="30" width="1" height="170" fill="#D3D1C7"/>
+        <rect x="820" y="30" width="1" height="170" fill="#D3D1C7"/>
+
+        <text x="20" y="63" font-size="13" font-weight="500" fill="#16181D">BF16 基线</text>
+        <rect x="320" y="40" width="434" height="36" rx="4" fill="#9FE1CB"/>
+        <text x="766" y="63" font-size="13" font-weight="500" fill="#0A5750">43.36%</text>
+
+        <text x="20" y="123" font-size="13" font-weight="500" fill="#16181D">同一 4-bit · 运行 A</text>
+        <rect x="320" y="100" width="389" height="36" rx="4" fill="#F5C4B3"/>
+        <text x="721" y="123" font-size="13" font-weight="500" fill="#993C1D">38.94%</text>
+
+        <text x="20" y="183" font-size="13" font-weight="500" fill="#16181D">同一 4-bit · 运行 B</text>
+        <rect x="320" y="160" width="319" height="36" rx="4" fill="#F5C4B3"/>
+        <text x="651" y="183" font-size="13" font-weight="500" fill="#993C1D">31.86%</text>
+
+        <rect x="320" y="204" width="500" height="1" fill="#B4B2A9"/>
+        <text x="320" y="230" font-size="12" text-anchor="middle" fill="#454B54">0%</text>
+        <text x="570" y="230" font-size="12" text-anchor="middle" fill="#454B54">25%</text>
+        <text x="820" y="230" font-size="12" text-anchor="middle" fill="#454B54">50%</text>
+        <text x="20" y="258" font-size="12" fill="#454B54">DeepSWE 1.1 Reward，同一 Qwen3.8-27B、同一 4-bit AWQ、同一 harness；两次运行各 113 个任务</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3</b> · 量化损伤藏在方差里。两次运行的平均分差约 7 分，但更关键的是 113 个任务中有 32 个结果不同：智能体任务里一个 token 的差异会改变一次编辑，进而改变后续工具看到的状态。三根条共用 0–50% 刻度，未分别缩放。</figcaption>
+  </figure>
+  <div class="note">
+    <b>从这张图能推出的工程动作：</b>任何单一量化跑分都应视为「某个分布里的一次采样」，而不是一次测量。验收必须固定 seed、量化档、上下文长度与运行时 commit，重复 5–10 次并报告 spread；否则你优化的可能只是噪声。
+  </div>
+
+  <h3>正反证据对照表</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>现象</th><th>关键数字</th><th>证据强度</th><th>对选型的含义</th></tr></thead>
+      <tbody>
+        <tr><td>同量化两次跑分摆动</td><td>DeepSWE 1.1 上两次相同 4-bit AWQ 得 38.94% / 31.86%，113 任务中 32 个结果分歧；BF16 为 43.36%</td><td>单一受控实验（中）</td><td>量化损伤先表现为方差与任务集分歧，平均分看不出来</td></tr>
+        <tr><td>代码能力对量化敏感</td><td>HumanEval（164 题）BF16 56.10%、Q4_K_M 50.61%、Q8_0 52.44%</td><td>社区小样本评测（弱）</td><td>3 道题的差距在噪声内；Q8 多花约 50% 内存未必划算</td></tr>
+        <tr><td>工具调用反而稳定</td><td>BFCL（400 样本）BF16 63.25%、Q4 63.00%、Q8 63.00%</td><td>社区小样本评测（弱）</td><td>不同能力退化不同步，happy-path 测试会漏掉 schema 细节错误</td></tr>
+        <tr><td>KV cache 比权重更敏感</td><td>有报告称 DeepSeek V4 Flash 把 KV cache 压到 8-bit 后在 DeepSWE 子集大幅下降</td><td>社区自报（弱）</td><td>先固定权重量化，再单独动 KV；长上下文尤其如此</td></tr>
+        <tr><td>极端量化的体积神话</td><td>Saluki 27B 的 2-bit 权重 7.89 GB，加上视觉与 KV cache 即击穿 8 GB 卡</td><td>技术分析与案例（中）</td><td>静态权重不等于运行时显存，见 <a href="#s02">约束章节</a></td></tr>
+        <tr><td>FP4 引擎只报速度</td><td>高赞社区帖指出多个引擎把 NVFP4 / MXFP4 限制藏在脚注，小模型输出明显退化</td><td>社区意见 + 一致的量化研究（中）</td><td>要求「精度与吞吐同时报告」，小尺寸别默认 4-bit</td></tr>
+        <tr><td>Q4 并不总是错的</td><td>Docker 3,570 场景评测里 Qwen3 14B Q4_K_M 工具调用 F1 0.971，几乎与 GPT-4 的 0.974 持平</td><td>厂商发布的受控评测（中）</td><td>反方向证据：窄任务上 Q4 完全够用，别一刀切升 Q8</td></tr>
+        <tr><td>厂商跑分缺复现</td><td>Qwen3.8-27B 模型卡全部 benchmark 自测；SWE-bench Pro 用自行修正版本并重跑基线</td><td>一手模型卡 + 独立核查（强）</td><td>不要用模型卡数字做验收依据</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>量化档位怎么选</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>档位</th><th>适用场景</th><th>代价与提醒</th></tr></thead>
+      <tbody>
+        <tr><td>FP8 / Q8_0</td><td>代码、数学、建立验收基线、商用前回归</td><td>体积约为 Q4 的 1.7 倍；社区小样本里收益常落在噪声内，但它是唯一的诚实基线</td></tr>
+        <tr><td>Q6_K / Q5_K_M</td><td>24 GB 卡上的 27B 通用与智能体任务</td><td>速度与质量的稳妥折中；代码任务比通用聊天更值得升档</td></tr>
+        <tr><td>Q4_K_M / UD_Q4_XL</td><td>日常聊天、显存吃紧、快速试模型</td><td>事实上的默认起点，但必须按自己的任务验证；动态量化版本优先于朴素均一量化</td></tr>
+        <tr><td>IQ4_NL / Q3 / 2-bit</td><td>把模型硬塞进小卡的实验</td><td>1–10B 小模型损失最大；静态体积小但 KV cache 仍在，且几乎都缺独立复现</td></tr>
+        <tr><td>NVFP4 / MXFP4</td><td>Blackwell 或 MI355X 上追求吞吐</td><td>硬件加速收益真实，但必须同时报告任务精度；别把 tok/s 当成模型变强了</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>另有一条容易被忽略的顺序问题：GSQ / RCO 这类混合比特量化在 llama.cpp 分支上跑得通，在 vLLM 上支持却不完整，社区还在自行打补丁。所以「换了量化包」往往同时意味着「换了运行时」，这两个变量必须分开测，否则你无法判断提升来自权重还是引擎。</p>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>运行时与工具栈</h2>
+  <p class="lead">同一份权重，在 LM Studio 里工具调用稳定、在 Ollama 里可能打印原始 JSON；榜单第一的 xLAM-2 8B 因 chat template 不兼容，在另一套评测里只有 15% 通过率。<b>决定体验的常常是 serving 层，不是权重。</b></p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>层</th><th>工具</th><th>适合谁</th><th>关键事实（2026-11）</th></tr></thead>
+      <tbody>
+        <tr><td>推理引擎</td><td>llama.cpp</td><td>要完全控制、CPU 或异构硬件</td><td>MIT；GGUF 生态底座；2026-05-16 主线合入 MTP 投机解码；2026-05 曾披露 6 个 GGUF parser 漏洞，影响所有下游封装</td></tr>
+        <tr><td>推理引擎</td><td>MLX-LM</td><td>Apple Silicon</td><td>MIT；Mac 原生速度与 Python 控制，高内存 Mac 可做 LoRA；离开 Apple Silicon 只是移植</td></tr>
+        <tr><td>服务引擎</td><td>vLLM</td><td>5 人以上并发、GPU 服务器</td><td>Apache 2.0；continuous batching 优势明显，但对量化权重的灵活性弱于 llama.cpp</td></tr>
+        <tr><td>服务引擎</td><td>SGLang</td><td>智能体循环、RAG、共享长前缀</td><td>Apache 2.0；RadixAttention 前缀复用命中率报告 75–90%；硬件列表含 Ascend，国产卡路径比 vLLM 插件更直接</td></tr>
+        <tr><td>桌面 / 本地 API</td><td>Ollama</td><td>绝大多数人起步</td><td>MIT，约 18.7 万 stars；0.30 起按权重格式自动路由 MLX 或 llama.cpp Metal；默认 4K 上下文、单请求，别当生产服务器</td></tr>
+        <tr><td>桌面</td><td>LM Studio</td><td>想用 GUI 试模型</td><td>免费闭源；llama.cpp + MLX，Mac 上另有 M3 以上专属 Splash 引擎；社区多份报告认为其工具调用格式化更稳</td></tr>
+        <tr><td>桌面 / API</td><td>Jan、LocalAI</td><td>完全离线、多后端统一接口</td><td>Apache 2.0 / MIT；LocalAI 聚合 60+ 后端</td></tr>
+        <tr><td>语音</td><td>audio.cpp</td><td>本地语音全栈</td><td>Apache 2.0；发布四个月已支持 110+ 语音模型家族，用一个原生运行时和 HTTP API 取代「每个模型一个 Python 环境」</td></tr>
+        <tr><td>微调 / 量化</td><td>Unsloth</td><td>做动态 GGUF、LoRA</td><td>核心 Apache 2.0（Studio UI 为 AGPL）；Dynamic v3.1 是当前 27B 档最常被引用的量化包</td></tr>
+        <tr><td>前端</td><td>Open WebUI、AnythingLLM</td><td>聊天界面、私有知识库</td><td>与 Ollama 组成最常见的十分钟起步栈；但工具调用失败案例也多来自这一层</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="g2" style="margin-top:18px">
+    <div class="card">
+      <h3>给 Mac 用户的路径</h3>
+      <p class="mbody">优先 MLX-LM 或 LM Studio 的 MLX 引擎；GGUF 走 Ollama 时会自动切到 llama.cpp Metal。统一内存决定容量上限，但带宽决定体感，别只看「能装下」。</p>
+    </div>
+    <div class="card">
+      <h3>给国产卡与多智能体的路径</h3>
+      <p class="mbody">SGLang 已把 Ascend 列入硬件支持，agent 循环里共享长 system prompt 时 RadixAttention 比 vLLM 更对路；但 GGUF 生态仍围绕 llama.cpp / CUDA / Metal，国产软件栈要单独做 POC 实测。</p>
+    </div>
+  </div>
+  <div class="verdict" style="margin-top:18px">
+    <h4>把 harness 纳入版本管理</h4>
+    <p style="margin:0">固定运行时 commit、chat template、采样参数、上下文长度和工具 schema，把它们和模型权重一起存档。社区里「同一个 Qwen3.8-27B 有人说替代了 Cursor、有人说完全不可用」的两极体验，绝大多数能归因到这一层。</p>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>反模式与上手检查清单</h2>
+  <p class="lead">下面十条都来自 2026 年真实讨论里的高频返工。按「症状 → 根因 → 修正」排列，可以直接当评审清单用。</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>反模式</th><th>根因</th><th>修正动作</th></tr></thead>
+      <tbody>
+        <tr><td>按跑分榜挑装机模型</td><td>榜单衡量能力上限，不衡量可部署性；Kimi K3.1 Pro 开源第一但 Q4 约 1.4 TB</td><td>先定内存与带宽，再看下载量与量化生态</td></tr>
+        <tr><td>把静态权重当运行时显存</td><td>忽略 KV cache、视觉投影与运行时开销</td><td>按图 2 预留 20% 以上，用真实上下文长度压测</td></tr>
+        <tr><td>把趋势榜去审查 GGUF 直接拉进生产</td><td>第三方合并 / 量化 / 去审查链条没有可复现评测，命名里的 lineage 常常是营销</td><td>只用官方或可信组织权重，固定 commit，本地复跑评测</td></tr>
+        <tr><td>用一次跑分验收量化</td><td>损伤先表现为方差与任务集分歧（图 3）</td><td>固定 seed 与配置，重复 5–10 次并报 spread</td></tr>
+        <tr><td>只报 tok/s 不报精度</td><td>NVFP4 / MXFP4 硬件加速让吞吐好看，小模型输出已退化</td><td>速度表旁边必须附任务精度与量化格式</td></tr>
+        <tr><td>用通用 benchmark 代理私有任务</td><td>评测分布与真实输入不匹配，代码与智能体任务尤其明显</td><td>从真实输入攒私有 holdout，含失败案例</td></tr>
+        <tr><td>忽略 chat template 与工具 schema</td><td>运行时层格式化错误会让模型打印原始 JSON 而不执行工具</td><td>单独测 tool_calls 线格式合规率，固定运行时版本</td></tr>
+        <tr><td>把 harness 当临时脚本</td><td>同一个 27B 出现「替代 Cursor」与「完全不可用」两种结论</td><td>把采样参数、上下文、模板与运行时 commit 纳入版本管理</td></tr>
+        <tr><td>用多机集群硬追大模型</td><td>互联带宽成瓶颈：40 台迷你机 USB3 跑 GLM-5.3-Flash 只有 14 tok/s</td><td>优先单节点；只有学习或实验目的才组集群</td></tr>
+        <tr><td>忽略许可证差异</td><td>自定义 / 社区许可常带月活、营收或 MaaS 条款</td><td>商用前把 license 原文存档，别信聚合站的标签</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top:26px">上手检查清单</h3>
+  <div class="g2">
+    <div class="card">
+      <h4>环境与可复现</h4>
+      <ul class="mbody">
+        <li>固定推理运行时与 commit（llama.cpp / Ollama / MLX 版本）</li>
+        <li>固定 seed、temperature、top_p、top_k 与 min_p</li>
+        <li>记录量化档、imatrix 校准与 KV cache 精度</li>
+        <li>记录 chat template 与工具 schema 版本</li>
+        <li>保留一个 FP8 / BF16 基线用于对照</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>评测与验收</h4>
+      <ul class="mbody">
+        <li>任务集来自真实输入，至少含 100 条与典型失败案例</li>
+        <li>重复 5–10 次，报告均值与 spread，不报单次最佳</li>
+        <li>同时测首 token 延迟与稳态 tok/s</li>
+        <li>工具调用单独测 schema 合规率，不看 happy-path 通过率</li>
+        <li>长上下文按真实长度测，不从 4K 外推到 128K</li>
+        <li>商用前核实许可证原文并存档</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:18px">
+    <b>一条最小可行路径：</b>装 Qwen3.8-27B 的 Q6 量化当主力，配一个 2B 级端侧模型做解析与校验；用 Ollama 或 LM Studio 起步，攒 100 条真实任务，固定配置后把 Q6、Q4_K_M、动态量化三份 GGUF 各跑 5 次。这一轮做完，比读十篇榜单更接近你自己的答案。
+  </div>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>证据强度与来源</h2>
+  <p class="lead">这份文档刻意不把「厂商自测」「社区自报」和「独立实测」混在一起。下面说明分级规则，并给出全部可回溯线索。</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>等级</th><th>定义</th><th>本文档中的典型例子</th></tr></thead>
+      <tbody>
+        <tr><td>一手</td><td>官方 model card、官方仓库、平台可直接查到的计数</td><td>Qwen3.8-27B 的 262K 上下文与 Apache 2.0；ggml-org 各 GGUF 下载量；权重仓库路径</td></tr>
+        <tr><td>第三方榜单</td><td>独立聚合或评测机构，方法公开但口径会变</td><td>Artificial Analysis Intelligence Index v5.0.1；Epoch Open-Weights Index；Every Local AI 显存分档</td></tr>
+        <tr><td>厂商自测</td><td>发布方自己跑的 benchmark，未独立复现</td><td>Qwen3.8-27B 模型卡全部跑分；Kimi K3.1 Pro 的 Terminal-Bench 4.0 报告</td></tr>
+        <tr><td>社区实测</td><td>有具体硬件、配置与数字的个人测量</td><td>Strix Halo 上 31–34 tok/s；DeepSWE 两次 4-bit 运行；iPhone 上约 80 tok/s</td></tr>
+        <tr><td>单一案例 / 自报</td><td>无法复现的个例或作者声称</td><td>40 台迷你机集群；一个月完成的游戏项目；Unsloth 提升 10–15%；「9B 对标 27B」</td></tr>
+        <tr><td>二手聚合</td><td>中文转述、日报与汇总站，只用于线索发现</td><td>Hugging Face 模型日报；公众号硬件选型长文；各类「2026 最佳模型」排名页</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src">注意：Artificial Analysis 于 2026-10-27 把 Intelligence Index 升级为 v5，同一模型在旧版 v4.3.2 与新版 v5.0.1 上的分数不可比较（Kimi K3.1 Pro 从 55.1 变为 46.5）。跨版本引用分数是本轮检索里最容易犯的错误。</p>
+
+  <h3 style="margin-top:24px">一手规格与官方仓库</h3>
+  <ul class="src">
+    <li><a href="https://qcode.cc/en/qwen3-8-27b-guide">Qwen3.8-27B 官方模型卡要点汇总</a>（2026-08-14 更新：27B dense 多模态、262,144 原生、YaRN 到 1M、Apache 2.0）</li>
+    <li><a href="https://convly.ai/model/qwen3-8-27b">Qwen3.8-27B 规格与本地体积</a>（BF16 约 55.6 GB、Ollama 4-bit 约 18 GB）</li>
+    <li><a href="https://kanerika.com/blogs/mistral-vs-llama-3">2026-11 开源权重与许可证核查</a>（逐个官方 HF 仓库核对权重与许可）</li>
+    <li><a href="https://theworldofai.org/ai-ecosystem/technology-and-core-infrastructure/86d7e525/">ggml-org 官方 GGUF 下载量记录（2026-11-12）</a></li>
+  </ul>
+
+  <h3 style="margin-top:20px">第三方榜单与指数</h3>
+  <ul class="src">
+    <li><a href="https://alpha.cognitivecoefficient.com/index/open-models">Epoch AI Open-Weights Index</a>（2026-11-14 更新，含能力、采纳、生态、许可四项权重）</li>
+    <li><a href="https://felloai.com/ko/best-open-source-ai-models/">Fello AI 2026 开源模型排名</a>（AA v5.0.1 分数、参数与许可证对照）</li>
+    <li><a href="http://everylocalai.com/">Every Local AI</a>（按显存分档推荐、本地与闭源能力对照）</li>
+    <li><a href="https://www.runtm.com/open-source-models">Runtime 开源模型对比</a>（2026-11-11 更新，按 agent 任务排名）</li>
+  </ul>
+
+  <h3 style="margin-top:20px">反证据与方法论</h3>
+  <ul class="src">
+    <li><a href="https://theterminal.space/ai/qwen3-8-27b-8-million-downloads-vendor-benchmarks">801 万下载与「只有阿里自己的跑分」核查</a></li>
+    <li><a href="https://news.agentcommunity.org/issues/2026-09-28-the-harness-is">The Harness Is the Product</a>（两次 4-bit AWQ 跑分摆动、KV cache 敏感性、GSQ/RCO 的 vLLM 支持缺口）</li>
+    <li><a href="https://vertexfrontier.com/llm-quantization-explained">生产环境量化：格式、kernel 与硬件规格</a>（BF16 / Q4 / Q8 任务对比与「不该量化」的五种场景）</li>
+    <li><a href="https://honoz.com/?p=2649">FP4 推理引擎刷分争议</a>（速度宣称隐去精度格式，小模型退化）</li>
+    <li><a href="https://www.ic.work/article/conwayresearch-saluki-27b-2bit-qwen3-8-analysis">Saluki 27B 极端量化的隐藏代价</a>（静态权重与运行时显存断层、复现真空）</li>
+    <li><a href="https://theagenttimes.com/agents/article/local-tool-calling-divides-our-community-breakthrough-or-col-a0eff21e">本地工具调用之争</a>（Docker 3,570 场景评测 vs 社区失败案例、chat template 问题）</li>
+  </ul>
+
+  <h3 style="margin-top:20px">社区动态与工具栈</h3>
+  <ul class="src">
+    <li><a href="https://dauntless.systems/work/vision-scraper/digest/2026-11-14">r/LocalLLaMA 2026-11-14 讨论摘要</a>（Nace / Hessian-Refined 量化、游戏项目、Decider 5B）</li>
+    <li><a href="https://dauntless.systems/work/vision-scraper/digest/2026-11-05">r/LocalLLaMA 2026-11-05 讨论摘要</a>（Kimi K3.1 Pro 过拟合质疑、Unsloth v3.1、LFM3 端侧）</li>
+    <li><a href="https://ai-signal.ericblue.com/posts/ai-signal-2026-11-03">AI Signal 2026-11-03</a>（1-bit 专家剪枝、Qwen4 泄露、27B 可用性的正反帖）</li>
+    <li><a href="https://github.com/duanyytop/agents-radar/issues/4080">Hugging Face Trending 周报 2026-11-02</a>（GSQ-RCO 量化包 230 万下载）</li>
+    <li><a href="https://www.eesel.ai/blog/llama-cpp-alternatives">本地推理引擎横向对比（2026-11-15）</a>（vLLM / SGLang / MLX-LM / Ollama 的硬件、格式与 star 数）</li>
+    <li><a href="https://sesamedisk.com/best-local-ai-inference-tools/">推理引擎决策矩阵与 GGUF parser 漏洞披露</a></li>
+    <li><a href="https://pinggy.io/amp/blog/top_5_local_llm_tools_and_models">128 GB 内存下可跑的工具与模型清单</a></li>
+    <li><a href="https://freakyjolly.com/ryzen-ai-max-395-strix-halo-local-ai">Strix Halo 128 GB 实测与价格</a></li>
+  </ul>
+  <p class="src">中文二手转述（含公众号硬件选型长文与 HF 模型日报）在本报告中仅用于线索发现，所有被写入卡片的数字均已回溯到上列来源或标注为未验证。检索时间：2026-11-15。</p>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>结论与判断</h2>
+  <div class="callout">
+    <p><strong>三句话版本：</strong>先在 <a href="#s02">约束章节</a> 算出你的容量、带宽与上下文预算；在 24–32 GB 档装一个 Qwen3.8-27B 级别的宽松许可主力，再配一个 2B 级小模型做解析与校验；然后用 <a href="#s06">检查清单</a> 在自己的任务上做 A/B，而不是相信任何榜单。</p>
+  </div>
+  <div class="g3">
+    <div class="card">
+      <h3>如果只有 8–16 GB</h3>
+      <p class="mbody">Gemma 4 12B 或 Granite 4.2 8B 起步，小模型优先 Q6/Q8；别被 2-bit「7.89 GB 跑 27B」的宣传带偏，KV cache 会先击穿显存。</p>
+    </div>
+    <div class="card">
+      <h3>如果有 24–32 GB</h3>
+      <p class="mbody">这一档是本文档的主推荐：Qwen3.8-27B 求均衡、Qwen3.6-35B-A3B 求速度、Coder 系列求代码。先固定 harness，再比量化档。</p>
+    </div>
+    <div class="card">
+      <h3>如果有 128 GB 统一内存</h3>
+      <p class="mbody">优先 MoE（gpt-oss-120b、GLM-5.3-Flash、Qwen3.8-Flash-Next），并在 BIOS 里调高 GPU 显存分配；稠密 70B 在这类设备上通常慢到失去交互性。</p>
+    </div>
+  </div>
+  <div class="verdict" style="margin-top:20px">
+    <h4>这是观点，不是社区共识</h4>
+    <p>「27B 是当前主力」「量化损伤优先表现为方差」「榜单与下载量应当分开看」这三条是本文档基于 2026-11 证据给出的判断，社区里存在明确相反的声音——既有 27B 驱动浏览器替代商业订阅的案例，也有 892 楼声称同款模型完全不可用的长帖。分歧本身说明：harness 与任务分布比模型名更决定结果。</p>
+    <p style="margin:0">时效性提醒：模型约半年一代，推理引擎逐月升级；Qwen4 系列（qwen4-max / coder-plus / omni-120b）已从 Qwen Code 仓库 PR 泄露，近期可能发布。若在大额采购设备，建议先复核当月榜单再决策。</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>本地大模型选型参考 · 数据截至 2026 年 11 月 15 日 · 单文件、零外部依赖、可离线打开与保存。</p>
+    <p>所有跑分、速度与下载量均标注了来源等级；厂商自测与社区自报未被当作独立实测。本文档不构成采购或投资建议。</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.model'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.cmpbox'));
+  var q = document.getElementById('q');
+  var hit = document.getElementById('hit');
+  var empty = document.getElementById('empty');
+  var cmpbar = document.getElementById('cmpbar');
+  var cmptext = document.getElementById('cmptext');
+  var cmptbl = document.getElementById('cmptbl');
+  var cmpTable = document.getElementById('cmpTable');
+  var state = {tier:'all', use:'all', license:'all', q:''};
+  var picked = [];
+  var TIER = {t1:'8–16 GB', t2:'24–32 GB', t3:'64–128 GB', t4:'256 GB+'};
+
+  function apply(){
+    var n = 0;
+    cards.forEach(function(c){
+      var okTier = state.tier === 'all' || c.getAttribute('data-tier').split(' ').indexOf(state.tier) >= 0;
+      var okUse = state.use === 'all' || c.getAttribute('data-use').split(' ').indexOf(state.use) >= 0;
+      var okLic = state.license === 'all' || c.getAttribute('data-license') === state.license;
+      var okQ = !state.q || c.innerText.toLowerCase().indexOf(state.q) >= 0;
+      var show = okTier && okUse && okLic && okQ;
+      c.hidden = !show;
+      if(show){ n++; }
+    });
+    hit.innerHTML = '显示 <b>' + n + '</b> / ' + cards.length + ' 个模型';
+    empty.classList.toggle('on', n === 0);
+  }
+
+  chips.forEach(function(b){
+    b.addEventListener('click', function(){
+      var f = b.getAttribute('data-f');
+      state[f] = b.getAttribute('data-v');
+      chips.forEach(function(x){
+        if(x.getAttribute('data-f') === f){
+          x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+        }
+      });
+      apply();
+    });
+  });
+
+  q.addEventListener('input', function(){
+    state.q = q.value.trim().toLowerCase();
+    apply();
+  });
+
+  function reset(){
+    state = {tier:'all', use:'all', license:'all', q:''};
+    q.value = '';
+    chips.forEach(function(x){
+      x.setAttribute('aria-pressed', x.getAttribute('data-v') === 'all' ? 'true' : 'false');
+    });
+    apply();
+  }
+  document.getElementById('reset').addEventListener('click', reset);
+  document.getElementById('emptyReset').addEventListener('click', reset);
+
+  document.addEventListener('keydown', function(e){
+    var t = document.activeElement;
+    var typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+    if(e.key === '/' && !typing){ e.preventDefault(); q.focus(); }
+    if(e.key === 'Escape' && t === q){ q.blur(); }
+  });
+
+  function syncPick(warn){
+    boxes.forEach(function(b){
+      var c = document.getElementById(b.value);
+      if(c){ c.classList.toggle('picked', b.checked); }
+    });
+    picked = boxes.filter(function(b){ return b.checked; }).map(function(b){ return b.value; });
+    cmpbar.classList.toggle('on', picked.length > 0);
+    cmptext.textContent = warn || (picked.length ? '已选 ' + picked.length + ' 个模型（最多 3 个）' : '已选 0 个模型');
+    if(picked.length === 0){ cmptbl.classList.remove('on'); }
+  }
+
+  boxes.forEach(function(b){
+    b.addEventListener('change', function(){
+      var warn = '';
+      if(b.checked && boxes.filter(function(x){ return x.checked; }).length > 3){
+        b.checked = false;
+        warn = '最多只能对比 3 个模型，请先取消一个';
+      }
+      syncPick(warn);
+    });
+  });
+
+  var ROWS = [
+    ['内存档位', function(c){ return c.getAttribute('data-tier').split(' ').map(function(t){ return TIER[t]; }).join(' / '); }],
+    ['许可证', function(c){ return c.getAttribute('data-lic'); }],
+    ['上下文', function(c){ return c.getAttribute('data-ctx'); }],
+    ['量化后体积', function(c){ return c.getAttribute('data-size'); }],
+    ['速度参考', function(c){ return c.getAttribute('data-speed'); }],
+    ['主要风险', function(c){ return c.getAttribute('data-risk'); }]
+  ];
+
+  function buildTable(){
+    if(!picked.length){ return; }
+    var names = picked.map(function(id){ return document.getElementById(id).querySelector('h3').textContent; });
+    var html = '<thead><tr><th>对比项</th>';
+    names.forEach(function(n){ html += '<th>' + n + '</th>'; });
+    html += '</tr></thead><tbody>';
+    ROWS.forEach(function(r){
+      html += '<tr><th>' + r[0] + '</th>';
+      picked.forEach(function(id){ html += '<td>' + r[1](document.getElementById(id)) + '</td>'; });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    cmpTable.innerHTML = html;
+    cmptbl.classList.add('on');
+  }
+
+  document.getElementById('cmpgo').addEventListener('click', buildTable);
+  document.getElementById('cmpclear').addEventListener('click', function(){
+    boxes.forEach(function(b){ b.checked = false; });
+    syncPick('');
+    cmptbl.classList.remove('on');
+  });
+
+  apply();
+  syncPick('');
+})();
+</script>
+
+</body>
+</html>
