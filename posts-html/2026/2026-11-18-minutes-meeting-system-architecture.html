@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="深入 Minutes 这款 macOS 原生会议转写与纪要应用的真实架构：应用进程与两个本地推理进程之间的 HTTP 契约、三重身份校验、闸门与代次计数器，以及把不确定性关进笼子的工程取舍、诚实的性能基线与技术债清单。">
+<meta name="keywords" content="minutes, meeting-minutes, macos-native, local-inference, swift-concurrency, architecture-review">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-18">
+<title>纪要（Minutes）架构设计</title>
+<style>
+:root{
+  --paper:#FBFAF7;
+  --card:#FFFFFF;
+  --surface:#F3F1EC;
+  --border:#DFDBD2;
+  --border-strong:#C9C4B8;
+  --ink:#16181D;
+  --ink2:#333941;
+  --ink3:#424852;
+  --amber:#B45309;
+  --amber-t:#8F3F06;
+  --amber-bg:#FBF0E2;
+  --blue:#2F6FB0;
+  --blue-t:#1F5288;
+  --blue-bg:#EAF1F9;
+  --teal:#0F766E;
+  --teal-t:#0A5750;
+  --teal-bg:#E6F2F0;
+  --purple:#6D3FB5;
+  --purple-t:#5A3099;
+  --purple-bg:#F0EBF9;
+  --green:#2E7D32;
+  --green-t:#1B5820;
+  --green-bg:#E9F2E9;
+  --red:#B3261E;
+  --red-t:#8C1D17;
+  --red-bg:#FAEBE9;
+  --slate:#6B7280;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 32px}
+
+/* ---------- header ---------- */
+header{padding:72px 0 40px;border-bottom:1px solid var(--border)}
+.kicker{
+  font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber-t);font-weight:700;margin:0 0 18px
+}
+h1{font-size:44px;line-height:1.2;letter-spacing:-.02em;margin:0 0 8px;font-weight:800}
+h1 .sub{display:block;font-size:19px;font-weight:500;color:var(--ink2);letter-spacing:0;margin-top:14px;line-height:1.6}
+.meta{
+  display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:26px;
+  font-size:13.5px;color:var(--ink3)
+}
+.meta b{color:var(--ink);font-weight:600}
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));
+  gap:1px;background:var(--border);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;margin:36px 0 0
+}
+.stats>div{background:var(--card);padding:18px 20px;min-width:0}
+.stats .n{font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+.stats .n small{font-size:13px;font-weight:600;color:var(--ink3);margin-left:3px}
+.stats .l{font-size:12.5px;color:var(--ink3);margin-top:3px}
+
+/* ---------- nav ---------- */
+nav{
+  position:sticky;top:0;z-index:20;
+  background:rgba(251,250,247,.94);
+  backdrop-filter:saturate(180%) blur(12px);
+  border-bottom:1px solid var(--border)
+}
+nav .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:10px;padding-bottom:10px;scrollbar-width:none}
+nav .wrap::-webkit-scrollbar{display:none}
+nav a{
+  flex:0 0 auto;font-size:13px;color:var(--ink3);text-decoration:none;
+  padding:5px 11px;border-radius:7px;white-space:nowrap
+}
+nav a:hover{background:var(--surface);color:var(--ink)}
+nav a .i{color:var(--amber-t);font-weight:700;font-variant-numeric:tabular-nums;margin-right:5px}
+
+/* ---------- sections ---------- */
+main{padding-bottom:20px}
+section{
+  padding:64px 0 8px;
+  scroll-margin-top:64px;
+  border-bottom:1px solid var(--border)
+}
+section:last-of-type{border-bottom:0}
+h2{
+  font-size:29px;line-height:1.3;letter-spacing:-.015em;margin:0 0 6px;font-weight:800;
+  display:flex;align-items:baseline;gap:14px
+}
+h2 .num{
+  font-size:13px;font-weight:800;color:var(--amber-t);
+  font-variant-numeric:tabular-nums;letter-spacing:.06em;
+  border:1px solid var(--border-strong);background:var(--card);
+  border-radius:6px;padding:3px 7px;flex:0 0 auto
+}
+.lede{font-size:17.5px;color:var(--ink2);margin:14px 0 28px;max-width:84ch}
+h3{font-size:19px;line-height:1.5;margin:38px 0 10px;font-weight:700;letter-spacing:-.005em}
+h4{font-size:15px;margin:24px 0 8px;font-weight:700}
+p{margin:0 0 15px;max-width:82ch}
+ul,ol{margin:0 0 16px;padding-left:22px;max-width:82ch}
+li{margin:6px 0}
+a{color:var(--blue-t)}
+strong{font-weight:650;color:var(--ink)}
+code{
+  font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  font-size:.87em;background:var(--surface);
+  border:1px solid var(--border);border-radius:4px;
+  padding:1px 5px;overflow-wrap:anywhere
+}
+
+/* ---------- callouts ---------- */
+.box{
+  border:1px solid var(--border);border-left:3px solid var(--amber);
+  background:var(--card);border-radius:0 10px 10px 0;
+  padding:16px 20px;margin:22px 0
+}
+.box.blue{border-left-color:var(--blue)}
+.box.teal{border-left-color:var(--teal)}
+.box.red{border-left-color:var(--red)}
+.box .t{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-t);margin-bottom:6px}
+.box.blue .t{color:var(--blue-t)}
+.box.teal .t{color:var(--teal-t)}
+.box.red .t{color:var(--red-t)}
+.box p:last-child,.box ul:last-child{margin-bottom:0}
+
+/* ---------- claims ---------- */
+.claims{display:grid;gap:14px;margin:26px 0}
+.claim{
+  display:grid;grid-template-columns:34px 1fr;gap:16px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;min-width:0
+}
+.claim .k{
+  font-size:15px;font-weight:800;color:var(--amber-t);
+  font-variant-numeric:tabular-nums;padding-top:1px
+}
+.claim h4{margin:0 0 5px;font-size:16.5px}
+.claim p{margin:0;font-size:14.5px;color:var(--ink2);max-width:none}
+.claim .ev{
+  display:block;margin-top:8px;font-family:"SF Mono",ui-monospace,Menlo,monospace;
+  font-size:12px;color:var(--ink3)
+}
+
+/* ---------- tables ---------- */
+.tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--border);border-radius:10px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th{
+  text-align:left;font-weight:700;font-size:12.5px;letter-spacing:.04em;
+  color:var(--ink2);background:var(--surface);
+  padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap
+}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--ink2)}
+td:first-child{color:var(--ink);font-weight:600}
+tr:last-child td{border-bottom:0}
+table code{font-size:12.5px}
+
+/* ---------- code blocks ---------- */
+pre{
+  background:#1B1D21;color:#E8E6E1;border-radius:10px;
+  padding:18px 20px;overflow-x:auto;margin:20px 0;
+  font-size:13px;line-height:1.65
+}
+pre code{
+  background:none;border:0;padding:0;color:inherit;
+  font-size:inherit;overflow-wrap:normal;white-space:pre
+}
+pre .c{color:#8A9199}
+pre .k{color:#E0A76B}
+pre .s{color:#9BC98F}
+
+/* ---------- figures ---------- */
+figure{margin:30px 0;min-width:0}
+.fig-box{
+  overflow-x:auto;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;padding:20px 18px
+}
+.fig-box svg{display:block;min-width:600px;width:100%;height:auto}
+figcaption{
+  font-size:13px;color:var(--ink3);margin-top:10px;
+  padding-left:2px;line-height:1.6
+}
+figcaption b{color:var(--ink2);font-weight:650}
+
+/* ---------- misc ---------- */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.tag{
+  font-size:11.5px;font-weight:650;padding:2px 9px;border-radius:999px;
+  border:1px solid var(--border-strong);color:var(--ink2);background:var(--card)
+}
+.tag.ok{background:var(--green-bg);border-color:#BFD8BF;color:var(--green-t)}
+.tag.warn{background:var(--amber-bg);border-color:#E8CFA9;color:var(--amber-t)}
+.tag.info{background:var(--blue-bg);border-color:#C3D6EA;color:var(--blue-t)}
+
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:16px;margin:22px 0}
+.g2>*{min-width:0}
+.mini{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.mini h4{margin:0 0 6px;font-size:14.5px}
+.mini p{font-size:13.5px;color:var(--ink2);margin:0;max-width:none}
+
+footer{
+  padding:44px 0 64px;border-top:1px solid var(--border);
+  font-size:13px;color:var(--ink3)
+}
+footer p{max-width:78ch}
+
+@media (max-width:760px){
+  .wrap{padding:0 20px}
+  header{padding:48px 0 32px}
+  h1{font-size:32px}
+  section{padding:48px 0 8px}
+  h2{font-size:23px;gap:10px;flex-wrap:wrap}
+  table{display:block;overflow-x:auto}
+  .claim{grid-template-columns:26px 1fr;gap:12px;padding:15px 16px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="kicker">Architecture Review · Source-Verified</p>
+    <h1>纪要（Minutes）
+      <span class="sub">macOS 原生会议转写与纪要应用。它真正的架构不在 SwiftUI 界面里，而在「应用进程」与「两个本地推理进程」之间的那条契约上。</span>
+    </h1>
+    <div class="meta">
+      <span>仓库 <b>wang-junjian/Minutes</b></span>
+      <span>分支 <b>main @ 4676637</b></span>
+      <span>Swift 6 · macOS 14+</span>
+      <span>应用源码 <b>2,893 行 / 22 文件</b></span>
+      <span>核对方式 <b>源码逐行 + 实测数据</b></span>
+    </div>
+    <div class="stats">
+      <div><div class="n">2</div><div class="l">独立推理进程</div></div>
+      <div><div class="n">4.86<small>GiB</small></div><div class="l">本地 GGUF 权重</div></div>
+      <div><div class="n">0</div><div class="l">Python / 云端依赖</div></div>
+      <div><div class="n">3,331<small>行</small></div><div class="l">Swift（含测试与基准）</div></div>
+      <div><div class="n">7</div><div class="l">自动化验证入口</div></div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#s01"><span class="i">01</span>论断</a>
+    <a href="#s02"><span class="i">02</span>全景</a>
+    <a href="#s03"><span class="i">03</span>进程契约</a>
+    <a href="#s04"><span class="i">04</span>流水线</a>
+    <a href="#s05"><span class="i">05</span>分层</a>
+    <a href="#s06"><span class="i">06</span>生命周期</a>
+    <a href="#s07"><span class="i">07</span>并发</a>
+    <a href="#s08"><span class="i">08</span>数据</a>
+    <a href="#s09"><span class="i">09</span>供应链</a>
+    <a href="#s10"><span class="i">10</span>验证</a>
+    <a href="#s11"><span class="i">11</span>性能</a>
+    <a href="#s12"><span class="i">12</span>边界</a>
+    <a href="#s13"><span class="i">13</span>索引</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="s01">
+  <h2><span class="num">01</span>七条论断</h2>
+  <p class="lede">如果只读一页，读这里。每一条都能在源码里被证伪——这是本文唯一的写作标准。</p>
+
+  <div class="claims">
+    <div class="claim">
+      <div class="k">01</div>
+      <div>
+        <h4>耦合点是协议，不是框架</h4>
+        <p>应用只依赖两件事：一个接受 <code>multipart WAV</code> 的 transcription 端点，一个说 <code>OpenAI Chat Completions SSE</code> 的对话端点。换掉 audio.cpp 或 llama.cpp，只要新引擎说这两句话，Swift 侧一行都不用改。反过来说，这也是它敢在上一版把整套 Python worker 整体删除的底气。</p>
+        <span class="ev">README.md:27 · EngineClient.swift:29,84</span>
+      </div>
+    </div>
+    <div class="claim">
+      <div class="k">02</div>
+      <div>
+        <h4>稳定性来自「把不可靠的东西挪到进程外」</h4>
+        <p>模型推理是最可能崩的一段代码，也是内存占用最大的一段。它被放进两个独立进程：崩了只影响那一个引擎，UI 存活并展示失败原因；应用重启也不会去杀端口上归属不明的进程。代价是跨进程通信与状态同步，收益是崩溃半径被压到最小。</p>
+        <span class="ev">EngineWorker.swift:111 · MinutesApp.swift:62</span>
+      </div>
+    </div>
+    <div class="claim">
+      <div class="k">03</div>
+      <div>
+        <h4>正确性由三个计数器守住：闸门、代次、序号</h4>
+        <p>并发送识别会压垮引擎（闸门），在飞的旧结果会覆盖新分段（代次），识别完成顺序与音频顺序不一致会让转写串行（序号）。三个问题各配一个极小机制，加起来不到 80 行，但缺任何一个都会出现「文字乱序」「重复句」「丢句」这类难复现的诡异 bug。</p>
+        <span class="ev">MeetingSession.swift:7,117,306</span>
+      </div>
+    </div>
+    <div class="claim">
+      <div class="k">04</div>
+      <div>
+        <h4>「就绪」不是布尔值，是一个待证明的身份</h4>
+        <p>端口上有人应答 HTTP 200 不等于「我的模型加载好了」。健康检查同时校验运行时特征、模型路径（符号链接归一后逐字符比对）和加载状态；三者任一不符就判 <code>incompatible</code> 而不是 <code>ready</code>。这让「旧进程还没退干净」「端口被别的服务占了」从玄学变成一句明确报错。</p>
+        <span class="ev">EngineHealth.swift:11,28 · EngineWorker.swift:320</span>
+      </div>
+    </div>
+    <div class="claim">
+      <div class="k">05</div>
+      <div>
+        <h4>断句问题被从声学搬到了文本</h4>
+        <p>没有 VAD。音频按固定 1.5 秒节奏整段送识别，切段的条件是「识别文本以句末标点收尾且音频够长」，或「段长触顶 15 秒」。复杂声学环境下的能量阈值不可靠（噪声爬升漏检、切句点断词），而标点由模型给，稳定得多。</p>
+        <span class="ev">MeetingSession.swift:89-97,137</span>
+      </div>
+    </div>
+    <div class="claim">
+      <div class="k">06</div>
+      <div>
+        <h4>供应链是代码的一部分，不是 README 的一句话</h4>
+        <p>上游 commit、模型 revision、字节数、SHA256 全部锁进 <code>dependencies.lock</code>；构建脚本还会用 <code>otool</code> 检查产物没有偷偷链上 Python.framework、Torch、MLX、ffmpeg 或 Homebrew。镜像只影响传输，不影响最终校验。</p>
+        <span class="ev">Engine/dependencies.lock:3 · scripts/bootstrap.sh:121</span>
+      </div>
+    </div>
+    <div class="claim">
+      <div class="k">07</div>
+      <div>
+        <h4>「原生」不等于「全面更快」，文档自己也承认</h4>
+        <p>迁移到 Metal 原生服务后，ASR 耗时降到约一半、内存 footprint 降 36–51%，LLM 总耗时降 8%——但纯生成速度从 85.30 掉到 80.76 token/s。这个倒退被写进了基准文档而不是藏起来，是这套工程里最值得学的一处诚实。</p>
+        <span class="ev">Benchmarks/README.md:原生版本小节</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>系统全景</h2>
+  <p class="lede">一句话：一个 SwiftUI 应用进程，加两个由它拉起、只监听回环地址的原生推理进程。三者之间没有共享内存、没有私有 RPC、没有 Python。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 500" role="img" aria-label="系统分层与运行时拓扑图">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"></path>
+          </marker>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#2F6FB0"></path>
+          </marker>
+        </defs>
+
+        <rect x="18" y="14" width="586" height="446" rx="14" fill="#FFFFFF" stroke="#C9C4B8" stroke-width="1.2" stroke-dasharray="6 5"></rect>
+        <text x="40" y="42" font-size="12.5" font-weight="700" fill="#16181D">macOS 应用进程 · Swift 6 / SwiftUI</text>
+
+        <rect x="40" y="56" width="542" height="70" rx="9" fill="#EAF1F9" stroke="#C3D6EA"></rect>
+        <text x="56" y="78" font-size="11.5" font-weight="700" fill="#1F5288">表现层</text>
+        <text x="56" y="97" font-size="11" fill="#333941">ContentView · SidebarView · LiveMeetingView · TranscriptView</text>
+        <text x="56" y="114" font-size="11" fill="#333941">MinutesView · SettingsView · EngineStatusControl</text>
+
+        <rect x="40" y="142" width="300" height="70" rx="9" fill="#FFFFFF" stroke="#DFDBD2"></rect>
+        <text x="56" y="164" font-size="11.5" font-weight="700" fill="#16181D">MeetingSession</text>
+        <text x="56" y="181" font-size="10.5" fill="#4A505A">@MainActor @Observable · 状态机</text>
+        <text x="56" y="197" font-size="10.5" fill="#4A505A">采集 → 节奏识别 → 纪要 的编排者</text>
+
+        <rect x="352" y="142" width="230" height="70" rx="9" fill="#FFFFFF" stroke="#DFDBD2"></rect>
+        <text x="368" y="164" font-size="11.5" font-weight="700" fill="#16181D">MeetingsStore</text>
+        <text x="368" y="181" font-size="10.5" fill="#4A505A">一会议一 JSON</text>
+        <text x="368" y="197" font-size="10.5" fill="#4A505A">可直接人读、可 diff</text>
+
+        <rect x="40" y="228" width="264" height="68" rx="9" fill="#FFFFFF" stroke="#DFDBD2"></rect>
+        <text x="56" y="250" font-size="11.5" font-weight="700" fill="#16181D">EngineSupervisor</text>
+        <text x="56" y="267" font-size="10.5" fill="#4A505A">聚合两个 worker 的状态与日志</text>
+        <text x="56" y="283" font-size="10.5" fill="#4A505A">UI 唯一需要打交道的引擎入口</text>
+
+        <rect x="316" y="228" width="266" height="68" rx="9" fill="#FFFFFF" stroke="#C3D6EA" stroke-width="1.6"></rect>
+        <text x="332" y="250" font-size="11.5" font-weight="700" fill="#1F5288">EngineClient · actor</text>
+        <text x="332" y="267" font-size="10.5" fill="#4A505A">WAV multipart / OpenAI SSE</text>
+        <text x="332" y="283" font-size="10.5" fill="#4A505A">唯一发 HTTP 的地方</text>
+
+        <rect x="40" y="312" width="126" height="84" rx="9" fill="#F3F1EC" stroke="#DFDBD2"></rect>
+        <text x="52" y="333" font-size="10.5" font-weight="700" fill="#16181D">AudioCapture</text>
+        <text x="52" y="350" font-size="10" fill="#4A505A">AVAudioEngine</text>
+        <text x="52" y="365" font-size="10" fill="#4A505A">逐缓冲重采样</text>
+        <text x="52" y="380" font-size="10" fill="#4A505A">16k / mono</text>
+
+        <rect x="174" y="312" width="126" height="84" rx="9" fill="#F3F1EC" stroke="#DFDBD2"></rect>
+        <text x="186" y="333" font-size="10.5" font-weight="700" fill="#16181D">WAVEncoder</text>
+        <text x="186" y="350" font-size="10" fill="#4A505A">float32 → PCM16</text>
+        <text x="186" y="365" font-size="10" fill="#4A505A">手写 44 字节头</text>
+        <text x="186" y="380" font-size="10" fill="#4A505A">零依赖</text>
+
+        <rect x="308" y="312" width="126" height="84" rx="9" fill="#F3F1EC" stroke="#DFDBD2"></rect>
+        <text x="320" y="333" font-size="10.5" font-weight="700" fill="#16181D">SSEParser</text>
+        <text x="320" y="350" font-size="10" fill="#4A505A">逐字节状态机</text>
+        <text x="320" y="365" font-size="10" fill="#4A505A">完整事件才解码</text>
+        <text x="320" y="380" font-size="10" fill="#4A505A">中文不被拆坏</text>
+
+        <rect x="442" y="312" width="140" height="84" rx="9" fill="#F3F1EC" stroke="#DFDBD2"></rect>
+        <text x="454" y="333" font-size="10.5" font-weight="700" fill="#16181D">EngineConfig</text>
+        <text x="454" y="350" font-size="10" fill="#4A505A">UserDefaults</text>
+        <text x="454" y="365" font-size="10" fill="#4A505A">端口 / 模型 / Prompt</text>
+        <text x="454" y="380" font-size="10" fill="#4A505A">配置版本迁移</text>
+
+        <text x="40" y="428" font-size="10.5" fill="#4A505A">全部中间数据落在 ~/Library/Application Support/Minutes</text>
+        <text x="40" y="445" font-size="10.5" fill="#4A505A">应用沙箱未启用（需访问任意路径 GGUF 与本机端口）</text>
+
+        <line x1="190" y1="126" x2="190" y2="140" stroke="#C9C4B8" stroke-width="1.2" marker-end="url(#ar)"></line>
+        <line x1="467" y1="126" x2="467" y2="140" stroke="#C9C4B8" stroke-width="1.2" marker-end="url(#ar)"></line>
+        <line x1="172" y1="212" x2="172" y2="226" stroke="#C9C4B8" stroke-width="1.2" marker-end="url(#ar)"></line>
+        <line x1="449" y1="212" x2="449" y2="226" stroke="#C9C4B8" stroke-width="1.2" marker-end="url(#ar)"></line>
+        <line x1="172" y1="296" x2="172" y2="310" stroke="#C9C4B8" stroke-width="1.2" marker-end="url(#ar)"></line>
+        <line x1="449" y1="296" x2="449" y2="310" stroke="#C9C4B8" stroke-width="1.2" marker-end="url(#ar)"></line>
+
+        <text x="646" y="42" font-size="12.5" font-weight="700" fill="#16181D">本机推理进程 · Metal / arm64</text>
+
+        <rect x="646" y="56" width="292" height="150" rx="10" fill="#E6F2F0" stroke="#A9CFC9"></rect>
+        <text x="664" y="82" font-size="13" font-weight="700" fill="#0A5750">audiocpp_server</text>
+        <text x="664" y="102" font-size="10.5" fill="#333941">audio.cpp @ 6f71a3b</text>
+        <text x="664" y="120" font-size="10.5" fill="#333941">Qwen3-ASR-1.7B Q8_0 · 2.47 GB</text>
+        <text x="664" y="140" font-size="10.5" font-weight="700" fill="#0A5750">127.0.0.1:8797</text>
+        <text x="664" y="160" font-size="10" fill="#333941">POST /v1/audio/transcriptions</text>
+        <text x="664" y="178" font-size="10" fill="#333941">GET /health · /v1/models</text>
+        <text x="664" y="196" font-size="10" fill="#333941">model=minutes-asr · 离线模式</text>
+
+        <rect x="646" y="234" width="292" height="150" rx="10" fill="#F0EBF9" stroke="#C9B8E4"></rect>
+        <text x="664" y="260" font-size="13" font-weight="700" fill="#5A3099">llama-server</text>
+        <text x="664" y="280" font-size="10.5" fill="#333941">llama.cpp @ 513ad7a</text>
+        <text x="664" y="298" font-size="10.5" fill="#333941">Qwen3.5-4B Q4_K_M · 2.74 GB</text>
+        <text x="664" y="318" font-size="10.5" font-weight="700" fill="#5A3099">127.0.0.1:8788</text>
+        <text x="664" y="338" font-size="10" fill="#333941">POST /v1/chat/completions（SSE）</text>
+        <text x="664" y="356" font-size="10" fill="#333941">GET /health · /props</text>
+        <text x="664" y="374" font-size="10" fill="#333941">ctx 32768 · parallel 1 · 全量 GPU 层</text>
+
+        <path d="M582,254 L612,254 L612,131 L644,131" fill="none" stroke="#2F6FB0" stroke-width="1.5" marker-end="url(#ar2)"></path>
+        <path d="M582,272 L612,272 L612,309 L644,309" fill="none" stroke="#2F6FB0" stroke-width="1.5" marker-end="url(#ar2)"></path>
+
+        <text x="646" y="412" font-size="10.5" fill="#4A505A">由应用拉起，退出时由应用终止</text>
+        <text x="646" y="429" font-size="10.5" fill="#4A505A">仅监听回环地址，全程无出网请求</text>
+        <text x="646" y="446" font-size="10.5" fill="#4A505A">两个进程互相无感知，可独立崩溃恢复</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1</b>　分层与运行时拓扑。虚线框内是应用进程；右侧两个原生服务是独立进程，通过 HTTP 与 actor 通信。注意 <code>EngineClient</code> 是唯一发网络请求的组件——<code>EngineSupervisor</code> 只做进程与状态的聚合，不碰数据面。</figcaption>
+  </figure>
+
+  <h3>运行时契约</h3>
+  <p>把「进程边界」当作架构里一等公民，代价与收益都要写清楚。下面这张表是两侧实际约定，不是设计意图的转述。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>维度</th><th>ASR 侧</th><th>LLM 侧</th></tr></thead>
+      <tbody>
+        <tr><td>可执行文件</td><td><code>engine/bin/audiocpp_server</code></td><td><code>engine/bin/llama-server</code></td></tr>
+        <tr><td>默认端口</td><td>8797（避开常被占用的 8787）</td><td>8788</td></tr>
+        <tr><td>模型别名</td><td><code>minutes-asr</code></td><td><code>minutes-llm</code></td></tr>
+        <tr><td>启动参数</td><td>由应用生成 <code>runtime/asr-&lt;port&gt;.json</code></td><td>纯命令行参数，无配置文件</td></tr>
+        <tr><td>数据面</td><td><code>multipart/form-data</code> + PCM16 WAV</td><td>JSON + <code>text/event-stream</code></td></tr>
+        <tr><td>身份证明</td><td><code>backend=metal</code> + 模型 <code>family=qwen3_asr</code> + <code>loaded</code> + 路径一致</td><td><code>build_info</code> 非空 + <code>model_path</code> 一致 + 非 sleeping</td></tr>
+        <tr><td>就绪判据</td><td>HTTP 200 且模型已加载</td><td>HTTP 200；<code>503</code> 且 message 含 <code>loading</code> 视为启动中</td></tr>
+        <tr><td>超时策略</td><td>单请求 600s，资源 3600s</td><td>启动探测 1.5s，总等待 180s</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box blue">
+    <div class="t">设计取舍</div>
+    <p>两个引擎都不接受「应用内嵌」。嵌入式调用能省掉 HTTP 与进程管理，但会让模型崩溃等于应用崩溃、模型内存常驻不可回收、也无法在应用重启时保留已加载的权重。当前形态的代价是每次识别多一次回环 HTTP（&lt;1ms 量级），收益是崩溃隔离与可独立观测。对「一次会议要跑一两个小时」的场景，这个交换是划算的。</p>
+  </div>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>进程契约：什么时候必须重启，凭什么算就绪</h2>
+  <p class="lede">进程管理的难点不在「拉起来」，在「判断该不该拉」和「判断拉起来的到底是谁」。前者用启动签名，后者用三重身份校验。</p>
+
+  <h3>启动签名：一个字符串取代一堆布尔标记</h3>
+  <p><code>EngineWorker</code> 没有为端口、模型、路径各存一个 <code>didChange</code> 标记，而是把它们拼成一个签名。每次 <code>start()</code> 先算当前签名，与正在运行的那个比对：一致且已 ready 就什么都不做；不一致就先把旧进程停掉。这让「改完端口点启动」这种操作不会出现两个进程抢同一个端口。</p>
+
+  <pre><code><span class="c">// EngineWorker.swift:89 — 任一变化都必须重启</span>
+<span class="k">private func</span> launchSignature() -&gt; String {
+    [
+        configuration.engineRoot,
+        configuration.modelPath(<span class="k">for</span>: kind),
+        String(configuration.port(<span class="k">for</span>: kind)),
+        kind == .llm ? String(configuration.llmContextSize) : <span class="s">"offline"</span>,
+    ].joined(separator: <span class="s">"|"</span>)
+}</code></pre>
+
+  <p>签名还被用来做<strong>竞态护栏</strong>：所有状态跃迁函数（<code>becomeReady</code> / <code>failIfStarting</code>）都要求「当前签名等于当初传入的签名」才生效。用户在中途改了端口，那个还在跑的旧 <code>Task</code> 就无法把新会话误标成 failed。</p>
+
+  <h3>三重身份校验：把「端口上有人」变成「端口上是我的人」</h3>
+  <p>只查 <code>GET /health</code> 是否 200 是不够的——上一版遗留的 Python worker 也会返回 200。当前实现要求同时满足三个条件，任一不符即判 <code>incompatible</code> 并给出可读原因：</p>
+
+  <div class="g2">
+    <div class="mini">
+      <h4>① 运行时特征</h4>
+      <p>LLM 要求 <code>/props</code> 返回非空 <code>build_info</code>；ASR 要求 <code>health.backend == "metal"</code> 且有 <code>version</code>。旧 Python 服务没有这些字段。</p>
+    </div>
+    <div class="mini">
+      <h4>② 模型路径一致</h4>
+      <p>取服务自报的模型路径，与设置里的期望路径各自做 <code>expandingTildeInPath → standardizedFileURL → resolvingSymlinksInPath</code> 归一后逐字符比对。</p>
+    </div>
+    <div class="mini">
+      <h4>③ 加载完成</h4>
+      <p>LLM 要求 <code>is_sleeping</code> 为假；ASR 要求模型条目 <code>configured</code> 且 <code>loaded</code> 为真。否则返回 <code>starting</code>，继续等。</p>
+    </div>
+  </div>
+
+  <pre><code><span class="c">// EngineHealth.swift:11 — 返回三态而非布尔</span>
+<span class="k">static func</span> validateLLM(health: [String: Any], props: [String: Any],
+                       expectedModelPath: String) -&gt; Status {
+    <span class="k">guard</span> health[<span class="s">"status"</span>] <span class="k">as?</span> String == <span class="s">"ok"</span>,
+          <span class="k">let</span> build = props[<span class="s">"build_info"</span>] <span class="k">as?</span> String, !build.isEmpty
+    <span class="k">else</span> { <span class="k">return</span> .incompatible(<span class="s">"端口上的服务不是受支持的 llama.cpp"</span>) }
+
+    <span class="k">guard let</span> modelPath = props[<span class="s">"model_path"</span>] <span class="k">as?</span> String
+    <span class="k">else</span> { <span class="k">return</span> .incompatible(<span class="s">"llama.cpp 未返回模型路径"</span>) }
+    <span class="k">guard</span> pathsEqual(modelPath, expectedModelPath)
+    <span class="k">else</span> { <span class="k">return</span> .incompatible(<span class="s">"加载的模型与当前设置不一致"</span>) }
+
+    <span class="k">if</span> props[<span class="s">"is_sleeping"</span>] <span class="k">as?</span> Bool == <span class="k">true</span> { <span class="k">return</span> .starting }
+    <span class="k">return</span> .ready(detail: <span class="s">"llama.cpp \(build)"</span>)
+}</code></pre>
+
+  <h3>端口被占用时，代码分得清三种情况</h3>
+  <p>这是「本地服务」类应用最常见的支持工单来源。当前实现不猜，直接探测后分流：</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>探测结果</th><th>含义</th><th>动作</th></tr></thead>
+      <tbody>
+        <tr><td><code>unavailable</code></td><td>端口无人应答</td><td>自己拉起进程，等它健康（180s 上限）</td></tr>
+        <tr><td><code>starting</code></td><td>有服务在，但模型还在加载</td><td>不重复拉起，只轮询等它 ready，之后转为外部存活监测（每 5s）</td></tr>
+        <tr><td><code>incompatible</code></td><td>有服务在，但不是我要的那个</td><td>立即失败并提示「端口被占用：…。请停止旧服务或修改端口」</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>注意第二行的细节：外部启动的服务没有 <code>Process</code> 终止回调，所以 ready 之后要切到另一条代码路径继续盯它，否则用户手动 <code>kill</code> 了引擎，应用会一直以为它还活着。<code>monitorExternalHealth</code> 就是那条路径。</p>
+
+  <div class="box teal">
+    <div class="t">一处容易被忽略的卫生</div>
+    <p>拉起子进程前，代码主动从环境里删掉 <code>DYLD_LIBRARY_PATH</code> 与 <code>DYLD_FALLBACK_LIBRARY_PATH</code>（<code>EngineWorker.swift:142</code>）。否则在 Xcode 里启动应用时，继承来的这两个变量会让 <code>llama-server</code> 加载到错误版本的动态库——表现是启动即崩溃，日志里看不出原因。</p>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>数据流水线：从麦克风到可读纪要</h2>
+  <p class="lede">一条主线，九个环节，没有任何环节把音频或文本送出本机。整条链上只有三处异步：音频回调、识别请求、SSE 流。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 400" role="img" aria-label="音频到纪要的数据流水线">
+        <defs>
+          <marker id="p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"></path>
+          </marker>
+        </defs>
+
+        <rect x="30" y="66" width="195" height="80" rx="9" fill="#EAF1F9" stroke="#C3D6EA"></rect>
+        <text x="44" y="88" font-size="11" font-weight="700" fill="#1F5288">① 采集</text>
+        <text x="44" y="106" font-size="10" fill="#333941">AVAudioEngine tap</text>
+        <text x="44" y="122" font-size="10" fill="#333941">按总线原生格式收</text>
+        <text x="44" y="138" font-size="10" fill="#333941">4096 frame / 次</text>
+
+        <rect x="265" y="66" width="195" height="80" rx="9" fill="#EAF1F9" stroke="#C3D6EA"></rect>
+        <text x="279" y="88" font-size="11" font-weight="700" fill="#1F5288">② 重采样</text>
+        <text x="279" y="106" font-size="10" fill="#333941">每缓冲新建 converter</text>
+        <text x="279" y="122" font-size="10" fill="#333941">→ 16 kHz / 单声道</text>
+        <text x="279" y="138" font-size="10" fill="#333941">float32，附 RMS</text>
+
+        <rect x="500" y="66" width="195" height="80" rx="9" fill="#EAF1F9" stroke="#C3D6EA"></rect>
+        <text x="514" y="88" font-size="11" font-weight="700" fill="#1F5288">③ 累积缓冲</text>
+        <text x="514" y="106" font-size="10" fill="#333941">AsyncStream 最新 64 块</text>
+        <text x="514" y="122" font-size="10" fill="#333941">按 60 s 上限裁旧</text>
+        <text x="514" y="138" font-size="10" fill="#333941">记录首尾偏移秒数</text>
+
+        <rect x="735" y="66" width="195" height="80" rx="9" fill="#EAF1F9" stroke="#C3D6EA"></rect>
+        <text x="749" y="88" font-size="11" font-weight="700" fill="#1F5288">④ 节奏识别 1.5 s</text>
+        <text x="749" y="106" font-size="10" fill="#333941">快照缓冲 → WAV 上传</text>
+        <text x="749" y="122" font-size="10" fill="#333941">非阻塞取名额</text>
+        <text x="749" y="138" font-size="10" fill="#333941">interim 文本灰色上屏</text>
+
+        <rect x="735" y="228" width="195" height="80" rx="9" fill="#E6F2F0" stroke="#A9CFC9"></rect>
+        <text x="749" y="250" font-size="11" font-weight="700" fill="#0A5750">⑤ 切段判定</text>
+        <text x="749" y="268" font-size="10" fill="#333941">句末标点 且 音频 ≥5 s</text>
+        <text x="749" y="284" font-size="10" fill="#333941">或段长 ≥15 s 强制切</text>
+        <text x="749" y="300" font-size="10" fill="#333941">否则只更新 interim</text>
+
+        <rect x="500" y="228" width="195" height="80" rx="9" fill="#E6F2F0" stroke="#A9CFC9"></rect>
+        <text x="514" y="250" font-size="11" font-weight="700" fill="#0A5750">⑥ 落定分段</text>
+        <text x="514" y="268" font-size="10" fill="#333941">分配 sequence 序号</text>
+        <text x="514" y="284" font-size="10" fill="#333941">代次 +1，清空缓冲</text>
+        <text x="514" y="300" font-size="10" fill="#333941">空文本不产生空段</text>
+
+        <rect x="265" y="228" width="195" height="80" rx="9" fill="#E6F2F0" stroke="#A9CFC9"></rect>
+        <text x="279" y="250" font-size="11" font-weight="700" fill="#0A5750">⑦ 按序归位</text>
+        <text x="279" y="268" font-size="10" fill="#333941">暂存 pending</text>
+        <text x="279" y="284" font-size="10" fill="#333941">只按 expect 顺序出队</text>
+        <text x="279" y="300" font-size="10" fill="#333941">保证转写不串行</text>
+
+        <rect x="30" y="228" width="195" height="80" rx="9" fill="#FBF0E2" stroke="#E8CFA9"></rect>
+        <text x="44" y="250" font-size="11" font-weight="700" fill="#8F3F06">⑧ 纪要生成</text>
+        <text x="44" y="268" font-size="10" fill="#333941">冲刷残余音频</text>
+        <text x="44" y="284" font-size="10" fill="#333941">12000 字符分块 map</text>
+        <text x="44" y="300" font-size="10" fill="#333941">reduce 成四节结构</text>
+
+        <line x1="225" y1="106" x2="259" y2="106" stroke="#6B7280" stroke-width="1.4" marker-end="url(#p1)"></line>
+        <line x1="460" y1="106" x2="494" y2="106" stroke="#6B7280" stroke-width="1.4" marker-end="url(#p1)"></line>
+        <line x1="695" y1="106" x2="729" y2="106" stroke="#6B7280" stroke-width="1.4" marker-end="url(#p1)"></line>
+        <line x1="832" y1="146" x2="832" y2="222" stroke="#6B7280" stroke-width="1.4" marker-end="url(#p1)"></line>
+        <line x1="735" y1="268" x2="701" y2="268" stroke="#6B7280" stroke-width="1.4" marker-end="url(#p1)"></line>
+        <line x1="500" y1="268" x2="466" y2="268" stroke="#6B7280" stroke-width="1.4" marker-end="url(#p1)"></line>
+        <line x1="265" y1="268" x2="231" y2="268" stroke="#6B7280" stroke-width="1.4" marker-end="url(#p1)"></line>
+
+        <text x="30" y="342" font-size="10.5" fill="#4A505A">① 的关键约束：tap 必须传总线原生格式，请求别的采样率会直接 SIGSEGV；converter 不能跨缓冲复用，所以每个缓冲新建一个（约零点几毫秒开销）。</text>
+        <text x="30" y="362" font-size="10.5" fill="#4A505A">③ 的 60 s 上限用于引擎崩溃自愈窗口：引擎不可用时识别请求会被跳过，缓冲若无限增长就是内存泄漏。</text>
+        <text x="30" y="382" font-size="10.5" fill="#4A505A">⑧ 在单块（≤12000 字符）时直接一次调用；多块时才走 map-reduce，会议长达两小时也不会撑爆 32768 的上下文。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2</b>　主数据流水线。上半段（蓝）是音频侧，下半段（青）是文本侧。注意 ④ 与 ⑤ 之间不是「一问一答」——缓冲在识别期间继续增长，回来的是对旧快照的判断，这正是需要代次机制的根因。</figcaption>
+  </figure>
+
+  <h3>节奏参数：全部集中在 MeetingSession 顶部</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>参数</th><th>值</th><th>为什么是这个值</th></tr></thead>
+      <tbody>
+        <tr><td><code>pollInterval</code></td><td>1.5 s</td><td>离线识别 25 s 音频耗 0.96 s，1.5 s 的节奏留有 1.5 倍余量；再密就是空转</td></tr>
+        <tr><td><code>minCloseSeconds</code></td><td>5 s</td><td>防止「嗯。」「好。」这类极短句被切成独立段，导致分段碎片化</td></tr>
+        <tr><td><code>maxSegmentSeconds</code></td><td>15 s</td><td>无标点（连续讲述）时的兜底切分，保证时间戳密度</td></tr>
+        <tr><td><code>bufferCapSeconds</code></td><td>60 s</td><td>覆盖引擎重启窗口；超出丢最旧，防止内存无界</td></tr>
+        <tr><td><code>TranscriptionGate.limit</code></td><td>2</td><td>让「正在进行的识别」与「刚完成的识别」有重叠，又不至于排队雪崩</td></tr>
+        <tr><td>最短音频</td><td>0.5 s</td><td><code>samples &lt; 8000</code> 直接返回空文本，不触发模型推理</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>三个计数器：整条链的正确性支点</h3>
+
+  <h4>闸门 · TranscriptionGate</h4>
+  <p>一个 <code>actor</code> 实现的计数信号量，但它提供两种取法，语义完全不同：</p>
+  <ul>
+    <li><code>tryAcquire()</code>——<strong>宁可丢，不可堵</strong>。用于 1.5 s 节奏的中间结果识别：拿不到名额就跳过这一轮，下一轮 1.5 s 后还有机会。</li>
+    <li><code>acquire()</code>——<strong>必须拿到</strong>。用于会议结束时的冲刷：最后一段音频丢了就永久丢了，值得等。</li>
+  </ul>
+  <p>这个区分很关键。如果全用阻塞版，引擎变慢时请求会堆积，越堆越慢，最后超时丢一片；如果全用非阻塞版，收尾那段音频可能永远等不到名额。</p>
+
+  <h4>代次 · interimGeneration</h4>
+  <p>发出识别请求时记下当前代次，结果回来后比对：不等就整个丢弃。因为在此期间缓冲可能已经被切段（<code>closeSegment</code> 里 <code>interimGeneration += 1</code>）或冲刷（<code>flushBuffer</code> 同样 +1）。没有这一层，一个慢回来的识别结果会把已经落定的分段又写成 interim 文本，用户看到「刚说过的字又退回去」。</p>
+
+  <h4>序号 · sequence + pendingSequences</h4>
+  <p>识别是并发的（limit=2），完成顺序天然不等于音频顺序。落定时分配递增序号，先进 <code>pendingSequences</code> 字典，只有当 <code>nextExpectedSequence</code> 存在时才出队追加到 <code>meeting.segments</code>。一个晚到的 5 号会等在字典里，直到 0–4 都到齐。</p>
+
+  <div class="box">
+    <div class="t">为什么没有 VAD</div>
+    <p>代码注释写得很直白：<em>能量阈值在复杂声学环境下不可靠（噪声爬升漏检、切句点断词）</em>。VAD 的误判会直接变成「漏字」或「断词」，而这类错误用户无法自行修正。改用固定节奏 + 文本标点后，最坏情况只是分段粒度不理想，文本本身仍完整——<strong>把不可恢复的错误降级为可恢复的瑕疵</strong>，这是整条流水线里最值得抄的一个决策。</p>
+  </div>
+</section>
+<section id="s05">
+  <h2><span class="num">05</span>分层与职责边界</h2>
+  <p class="lede">22 个 Swift 文件、2,893 行。分层不是按「MVC」切的，而是按「谁依赖谁的隔离域」切的——读依赖方向比读目录名有用。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>层 / 文件</th><th>行</th><th>职责</th><th>边界约束</th></tr></thead>
+      <tbody>
+        <tr><td>入口 MinutesApp</td><td>65</td><td>窗口、设置场景、启动与退出钩子</td><td>测试宿主下不启动模型（检测 <code>XCTestCase</code> 是否存在）</td></tr>
+        <tr><td colspan="4" style="background:#F8F6F1;font-size:12px;letter-spacing:.06em;color:#333941;font-weight:700">表现层 · 913 行</td></tr>
+        <tr><td>ContentView</td><td>106</td><td>三栏骨架、工具栏、空状态</td><td>只读 supervisor 状态决定按钮可用性，不发起引擎操作</td></tr>
+        <tr><td>SidebarView</td><td>92</td><td>会议列表、删除确认</td><td>删除按钮常驻占位、只切透明度，避免布局跳动</td></tr>
+        <tr><td>LiveMeetingView</td><td>105</td><td>状态条、波形、暂停/继续/结束</td><td>只调 <code>session</code> 的方法，不直接碰 client</td></tr>
+        <tr><td>TranscriptView</td><td>93</td><td>分段列表、interim 灰字、自动滚底</td><td>按 <code>sequence</code> 排序后再渲染，双保险</td></tr>
+        <tr><td>MinutesView</td><td>228</td><td>纪要四节、转写原文、重生成、标题编辑</td><td>长转写按行 <code>LazyVStack</code>；<code>DateFormatter</code> 静态缓存</td></tr>
+        <tr><td>SettingsView</td><td>183</td><td>模型路径、端口、Prompt、诊断日志</td><td>路径即时校验并给出可读错误</td></tr>
+        <tr><td>EngineStatusControl</td><td>106</td><td>工具栏状态灯 + 启停菜单</td><td>把两个 worker 的多态折叠成一个总体状态</td></tr>
+        <tr><td colspan="4" style="background:#F8F6F1;font-size:12px;letter-spacing:.06em;color:#333941;font-weight:700">领域与会话 · 713 行</td></tr>
+        <tr><td>MeetingSession</td><td>421</td><td>状态机、节奏识别、切段、纪要编排</td><td><code>@MainActor</code>；不 import SwiftUI，状态靠 <code>@Observable</code> 投影</td></tr>
+        <tr><td>MinutesComposer</td><td>145</td><td>提示词、分块、map-reduce、四节解析</td><td>纯函数集合，无副作用，可单独单测</td></tr>
+        <tr><td>MeetingsStore</td><td>63</td><td>会议列表加载、保存、删除</td><td>文件名只由会议 id 决定，反复保存不产生重复文件</td></tr>
+        <tr><td>Models</td><td>84</td><td>Meeting / TranscriptSegment / MinutesDocument / 错误类型</td><td>全部 <code>Codable + Sendable</code>，无行为</td></tr>
+        <tr><td colspan="4" style="background:#F8F6F1;font-size:12px;letter-spacing:.06em;color:#333941;font-weight:700">引擎接入 · 891 行</td></tr>
+        <tr><td>EngineWorker</td><td>415</td><td>单进程生命周期、健康探测、日志泵、退避重启</td><td><code>@unchecked Sendable</code> + <code>NSLock</code>；健康探测跑在 detached Task</td></tr>
+        <tr><td>EngineConfiguration</td><td>177</td><td>路径、端口、Prompt、配置迁移</td><td><code>@unchecked Sendable</code>（UserDefaults 本身线程安全）</td></tr>
+        <tr><td>EngineClient</td><td>168</td><td>WAV 上传、SSE 流式对话</td><td><code>actor</code>；全应用唯一发网络请求处</td></tr>
+        <tr><td>EngineSupervisor</td><td>66</td><td>两个 worker 的状态与日志聚合</td><td><code>@MainActor @Observable</code>；日志环形上限 2000 行</td></tr>
+        <tr><td>EngineHealth</td><td>65</td><td>把两种上游健康响应归一为三态</td><td>无状态纯函数，路径比较前做符号链接归一</td></tr>
+        <tr><td colspan="4" style="background:#F8F6F1;font-size:12px;letter-spacing:.06em;color:#333941;font-weight:700">传输与编码 · 194 行</td></tr>
+        <tr><td>OpenAIStreamParser</td><td>105</td><td>逐字节 SSE 状态机</td><td>值类型 <code>struct</code>；<code>[DONE]</code> 缺失即抛错，不保存半篇</td></tr>
+        <tr><td>WAVEncoder</td><td>50</td><td>float32 → PCM16 WAV</td><td>拒绝 NaN/Inf；超长直接抛错而不是静默截断</td></tr>
+        <tr><td>ASRServerConfiguration</td><td>39</td><td>按当前配置生成 audio.cpp 的 JSON</td><td>每次启动重写；请求体上限 8 MiB</td></tr>
+        <tr><td colspan="4" style="background:#F8F6F1;font-size:12px;letter-spacing:.06em;color:#333941;font-weight:700">采集与基础设施 · 117 行</td></tr>
+        <tr><td>AudioCaptureService</td><td>98</td><td>麦克风采集、重采样、RMS</td><td>实时音频线程只做转换与 yield，不做任何 IO</td></tr>
+        <tr><td>Log</td><td>19</td><td>os.Logger 分四个 category</td><td>无自定义日志框架，接系统 Console</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>依赖方向</h3>
+  <p>依赖是一条单向链，没有回边：<code>Views → MeetingSession → EngineClient → HTTP</code>，而 <code>EngineSupervisor</code> 与 <code>MeetingSession</code> 之间是<strong>平级注入</strong>而非包含。这点在代码里体现得很具体——<code>MeetingSession</code> 持有 <code>engineSupervisor</code> 的引用是为了读 <code>states</code> 和 <code>baseURL</code>，它并不命令 supervisor 去启动引擎；启停是用户在工具栏或设置里做的独立操作。</p>
+  <p>好处是「引擎没就绪」这个条件可以优雅降级：<code>start()</code> 检查不到 ASR ready 就设 <code>errorMessage</code> 返回，<code>composeMinutes()</code> 检查不到 LLM ready 就只保留转写原文并写一句提示。整条链路没有一处假设引擎一定可用。</p>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>引擎生命周期与自愈</h2>
+  <p class="lede">四个状态、五条转移。真正值得看的是两条边上的策略差：为什么一种退出要重试，另一种绝对不重试。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 470" role="img" aria-label="EngineWorker 状态机">
+        <defs>
+          <marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"></path>
+          </marker>
+          <marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#B45309"></path>
+          </marker>
+        </defs>
+
+        <rect x="330" y="40" width="180" height="60" rx="9" fill="#F3F1EC" stroke="#C9C4B8"></rect>
+        <text x="420" y="64" font-size="13" font-weight="700" fill="#16181D" text-anchor="middle">stopped</text>
+        <text x="420" y="84" font-size="10" fill="#4A505A" text-anchor="middle">无进程 · 不占端口</text>
+
+        <rect x="330" y="140" width="180" height="60" rx="9" fill="#EAF1F9" stroke="#C3D6EA"></rect>
+        <text x="420" y="164" font-size="13" font-weight="700" fill="#1F5288" text-anchor="middle">starting</text>
+        <text x="420" y="184" font-size="10" fill="#4A505A" text-anchor="middle">拉起中 / 等外部服务</text>
+
+        <rect x="330" y="240" width="180" height="60" rx="9" fill="#E9F2E9" stroke="#BFD8BF"></rect>
+        <text x="420" y="264" font-size="13" font-weight="700" fill="#1B5820" text-anchor="middle">ready</text>
+        <text x="420" y="284" font-size="10" fill="#4A505A" text-anchor="middle">身份校验通过 · 可服务</text>
+
+        <rect x="300" y="350" width="240" height="74" rx="9" fill="#FAEBE9" stroke="#E3BBB6"></rect>
+        <text x="420" y="376" font-size="13" font-weight="700" fill="#8C1D17" text-anchor="middle">failed(message)</text>
+        <text x="420" y="396" font-size="10" fill="#4A505A" text-anchor="middle">保存可读原因</text>
+        <text x="420" y="412" font-size="10" fill="#4A505A" text-anchor="middle">UI 直接展示，不吞异常</text>
+
+        <line x1="420" y1="100" x2="420" y2="134" stroke="#6B7280" stroke-width="1.4" marker-end="url(#f1)"></line>
+        <text x="436" y="122" font-size="10.5" fill="#333941">start() · 校验通过</text>
+
+        <line x1="420" y1="200" x2="420" y2="234" stroke="#6B7280" stroke-width="1.4" marker-end="url(#f1)"></line>
+        <text x="436" y="222" font-size="10.5" fill="#333941">探测到健康且身份匹配</text>
+
+        <line x1="420" y1="300" x2="420" y2="344" stroke="#6B7280" stroke-width="1.4" marker-end="url(#f1)"></line>
+        <text x="436" y="322" font-size="10.5" fill="#333941">进程意外退出 / 外部服务消失</text>
+
+        <path d="M420,424 L420,442 L170,442 L170,170 L324,170" fill="none" stroke="#B45309" stroke-width="1.4" marker-end="url(#f2)"></path>
+        <text x="182" y="424" font-size="10.5" font-weight="700" fill="#8F3F06">退避后重试</text>
+        <text x="182" y="406" font-size="10" fill="#4A505A">ready 态退出才走这条边</text>
+
+        <text x="520" y="150" font-size="10" fill="#4A505A">环境变量已清理 DYLD_*</text>
+        <text x="520" y="252" font-size="10" fill="#4A505A">外部服务转 5 s 存活监测</text>
+        <text x="520" y="360" font-size="10" fill="#4A505A">无进程句柄时只报错不重试</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3</b>　<code>EngineWorker</code> 的状态机。注意 <code>starting → failed</code> 与 <code>ready → failed</code> 落进同一个状态，但后续行为完全不同：前者不重试，后者退避重试。区分逻辑在 <code>handleTermination</code> 里。</figcaption>
+  </figure>
+
+  <h3>为什么「启动即退出」不重试</h3>
+  <p>如果 <code>starting</code> 阶段进程就退出了，几乎一定是配置问题：模型文件不存在、端口被占、GGUF 与二进制不匹配。这类错误重试一万次也是同样的结果，只会把 CPU 吃满、把日志刷爆、且用户看不到真正原因。所以代码在这里<strong>直接返回</strong>，把日志留给用户看：</p>
+
+  <pre><code><span class="c">// EngineWorker.swift:243 — 两种退出，两种待遇</span>
+<span class="k">if case</span> .ready = state {
+    state = .failed(<span class="s">"\(kind.runtimeName) 意外退出，正在自动重启…"</span>)
+} <span class="k">else if case</span> .starting = state {
+    <span class="c">// 启动即退出通常是模型、端口或配置错误，先展示日志，不做崩溃循环</span>
+    state = .failed(<span class="s">"\(kind.runtimeName) 启动即退出，详见日志"</span>)
+    <span class="k">return</span>
+} <span class="k">else</span> { <span class="k">return</span> }
+
+failureCount += 1
+<span class="k">let</span> backoffNanos = UInt64(3 * min(1 &lt;&lt; min(failureCount, 4), 16)) * 1_000_000_000</code></pre>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>连续失败次数</th><th>1</th><th>2</th><th>3</th><th>4</th><th>≥5</th></tr></thead>
+      <tbody>
+        <tr><td>退避等待</td><td>6 s</td><td>12 s</td><td>24 s</td><td>48 s</td><td>48 s（封顶）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>封顶 48 秒而非无限增长，是因为本地推理进程的典型故障（显存不足、模型被外部删除）恢复后重试就能成功，长退避只会让用户以为「卡住了」。成功进入 <code>ready</code> 时 <code>failureCount</code> 归零，下次崩溃仍从 6 秒起步。</p>
+
+  <h3>应用级启动编排</h3>
+  <p><code>AppDelegate</code> 做了一件不太显眼但很实用的事：启动 3 秒后，对仍处于 <code>failed</code> 的 worker 再试一次。</p>
+  <p>原因是<strong>上一个应用实例的模型进程可能还在退出过程中</strong>——用户按 <code>Cmd+Q</code> 后立刻重开，旧进程还占着 8797/8788，新实例的健康探测会判 <code>incompatible</code>（「端口被占用」）。等 3 秒后旧进程通常已释放端口，重试即成功。这比「无条件重试」克制，也比「让用户自己点重试」友好。</p>
+  <p>只重试 <code>failed</code> 的、不重试 <code>ready</code> 的，也不会打断正在正常加载的引擎。</p>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>并发模型：五个隔离域，各管一件事</h2>
+  <p class="lede">Swift 6 的严格并发检查会逼着人做选择。这个项目没有「一刀切全上 actor」，而是按「这段代码能不能阻塞」分成五类——这是全文技术含量最高的一节。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>隔离域</th><th>承载者</th><th>为什么是它</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>主 actor</td>
+          <td><code>Views</code>、<code>MeetingSession</code>、<code>EngineSupervisor</code></td>
+          <td><code>@Observable</code> 的变更通知与 SwiftUI 渲染必须在主线程；状态机的相位推进也只在这里发生，天然串行</td>
+        </tr>
+        <tr>
+          <td>自定义 actor</td>
+          <td><code>EngineClient</code>、<code>TranscriptionGate</code></td>
+          <td>保护 <code>URLSession</code> 的调用与信号量计数。两者都<strong>不做阻塞操作</strong>，纯 async/await，适合 actor</td>
+        </tr>
+        <tr>
+          <td>detached Task</td>
+          <td>健康探测、退避重启、外部服务监测</td>
+          <td>健康探测内部用 <code>DispatchSemaphore</code> 同步等 HTTP 返回。<strong>如果继承 MainActor，就会把 UI 冻住 1.5 秒</strong></td>
+        </tr>
+        <tr>
+          <td><code>NSLock</code></td>
+          <td><code>EngineWorker</code> 的进程句柄与状态、<code>HealthResponseBox</code></td>
+          <td>这些读操作需要<strong>同步返回</strong>（如 <code>isStarting(signature)</code> 在 <code>guard</code> 里用），改成 async 会污染整条调用链</td>
+        </tr>
+        <tr>
+          <td>实时音频线程</td>
+          <td><code>AudioCaptureService.handleInput</code></td>
+          <td>CoreAudio 回调线程，<strong>不能 await、不能分配锁</strong>。只做格式转换、算 RMS、<code>continuation.yield</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>关键一处：为什么 EngineWorker 不是 actor</h3>
+  <p>直觉上「进程管理器」最像 actor。但它的健康探测是这样写的：</p>
+
+  <pre><code><span class="c">// EngineWorker.swift:372 — 同步等待，不能放进 actor</span>
+<span class="k">private func</span> fetch(_ path: String) -&gt; (data: Data?, response: HTTPURLResponse?) {
+    <span class="k">let</span> semaphore = DispatchSemaphore(value: 0)
+    <span class="k">let</span> result = HealthResponseBox()
+    URLSession.shared.dataTask(with: request) { data, response, _ <span class="k">in</span>
+        result.store(data: data, response: response <span class="k">as?</span> HTTPURLResponse)
+        semaphore.signal()
+    }.resume()
+    semaphore.wait()          <span class="c">// ← 阻塞当前线程直到超时（1.5 s）</span>
+    <span class="k">return</span> result.load()
+}</code></pre>
+
+  <p>在 actor 里 <code>semaphore.wait()</code> 会独占该 actor 的执行器线程，而回调 <code>store(...)</code> 又要进同一个 actor——直接死锁。所以这里是 <code>@unchecked Sendable</code> + <code>NSLock</code> + 在 <code>Task.detached</code> 里跑的经典组合。代码里那句注释就是结论：<em>健康探测内部有信号量等待，不能继承 MainActor</em>。</p>
+
+  <div class="box red">
+    <div class="t">反直觉但正确</div>
+    <p>这里用同步阻塞 HTTP 换取的是「状态判断的原子性」：探测结果、签名比对、状态跃迁在一个不可打断的片段里完成。如果改成 async，就会多出若干个 <code>await</code> 挂起点，每个挂起点都可能让用户改配置、让旧 Task 完成——那才是真正的竞态温床。代价是 1.5 秒的线程占用，但它在 detached 线程上，不影响 UI。</p>
+  </div>
+
+  <h3>主线程为什么不会被网络请求堵住</h3>
+  <p><code>MeetingSession</code> 标了 <code>@MainActor</code>，整条流水线看起来都在主线程跑。实际上不会阻塞，因为：</p>
+  <ol>
+    <li><code>pipelineTask</code> 虽然继承 <code>@MainActor</code> 隔离，但它在 <code>for await chunk in stream</code> 处<strong>挂起</strong>，把主线程交还出去；每块音频回来只做几十微秒的数组追加。</li>
+    <li><code>client.transcribe(...)</code> 是跨 actor 调用，<code>await</code> 期间主 actor 完全空闲，SwiftUI 正常渲染。</li>
+    <li>SSE 逐字节解析（<code>streamChat</code>）跑在 <code>EngineClient</code> 的 Task 里，只有解析出的文本块才 <code>yield</code> 回主 actor 追加到 <code>composedText</code>。</li>
+  </ol>
+  <p>换句话说，主线程承担的是「状态变更」，不是「数据传输」。这是 <code>@MainActor</code> 用得对不对的分水岭：把<em>状态</em>放主线程是必须的，把<em>等待</em>放主线程才是错的。</p>
+
+  <h3>日志的跨域投递</h3>
+  <p>worker 的 stdout/stderr 由 <code>readabilityHandler</code> 在任意线程上泵出，要进 <code>@MainActor</code> 的 <code>EngineSupervisor.logs</code>。做法是 <code>Task { @MainActor in ... }</code>，并在每行带上 <code>Date()</code> 时间戳——因为经过调度后到达顺序不保证严格等于产生顺序，靠时间戳而不是数组位置来表达真实次序。日志环形上限 2000 行，超出丢最旧，长时间挂机不会吃内存。</p>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>数据模型与持久化</h2>
+  <p class="lede">没有任何数据库。一场会议一个 JSON 文件，键名有序输出，可以直接 <code>cat</code>、可以 diff、可以手工修。</p>
+
+  <h3>三层结构</h3>
+  <p><code>Meeting</code> 是根，包含元信息、分段数组、可选纪要和一份冗余的纯文本转写：</p>
+
+  <pre><code>Meeting
+├── id: UUID                 <span class="c">// 同时是文件名</span>
+├── title: String            <span class="c">// 空则由 LLM 生成，失败回退「M月d日 HH:mm 会议」</span>
+├── createdAt: Date          <span class="c">// ISO8601 编码</span>
+├── duration: TimeInterval
+├── segments: [TranscriptSegment]
+│     ├── start / end        <span class="c">// 相对会议开始的秒数</span>
+│     ├── text
+│     ├── language           <span class="c">// 引擎自报，可能为 nil</span>
+│     └── sequence           <span class="c">// 落定顺序，用于归位与排序</span>
+├── minutes: MinutesDocument?
+│     ├── summary            <span class="c">// 摘要正文</span>
+│     ├── decisions[]        <span class="c">// 决议条目</span>
+│     ├── actionItems[]      <span class="c">// 行动项条目</span>
+│     └── keywords[]         <span class="c">// 关键词</span>
+└── transcriptText: String   <span class="c">// 冗余：所有分段用 \n 拼起来</span></code></pre>
+
+  <p><code>transcriptText</code> 是刻意的冗余。它让「重新生成纪要」不必遍历分段重拼，也让旧版本数据（只有分段、没有该字段）能靠 <code>segments.map(\.text).joined()</code> 平滑兼容——<code>MinutesView</code> 里就是这个兜底写法。</p>
+
+  <h3>文件名策略里的一次事故</h3>
+  <div class="box">
+    <div class="t">代码注释里的真实 bug</div>
+    <p><code>fileURL(for:)</code> 上面写着：<em>文件名只由会议 id 决定：同一次会议反复保存只落一个文件，反复 save 不会产生带不同时间戳前缀的重复文件。</em> 而在 <code>MeetingSession.init</code> 里还有另一段注释，记录了更严重的问题：</p>
+    <p><em>曾共用 store.draft 的副本，所有新会议 id 相同，后一个会把前一个在列表和磁盘上整体覆盖——「新建会议把上一个会议整没了」的元凶。</em></p>
+    <p>两处注释合起来说明一件事：<strong>标识符策略必须与持久化策略一起设计</strong>。id 复用会让「保存」变成「覆盖」，而这类 bug 在 UI 上表现为「数据莫名其妙消失」，极难归因。</p>
+  </div>
+
+  <h3>写入的原子性</h3>
+  <p><code>data.write(to:options: .atomic)</code> + <code>JSONEncoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]</code>。三个选项各有明确目的：</p>
+  <ul>
+    <li><strong>atomic</strong>：先写临时文件再替换，进程在写入中途被杀不会留下半截 JSON（否则下次启动解码失败，整场会议丢失）</li>
+    <li><strong>prettyPrinted + sortedKeys</strong>：让人读、让 diff 稳定。同一份数据两次保存产生完全相同的字节，git 里不会出现假变更</li>
+    <li><strong>withoutEscapingSlashes</strong>：路径和 URL 里的 <code>/</code> 不被转义成 <code>\/</code>，可读性</li>
+  </ul>
+  <p>加载侧是「宽松解析」：<code>compactMap { try? decoder.decode(...) }</code>，单个文件损坏只会少一场会议，不会导致列表整体加载失败。这是本地文件存储的正确姿势——<strong>一份坏数据不该拖垮全部</strong>。</p>
+
+  <h3>配置迁移</h3>
+  <p><code>EngineConfiguration</code> 维护 <code>engineConfigurationVersion</code>（当前为 2）。迁移逻辑只处理一件具体的事：把两个旧硬编码默认路径（MLX 的 HF 缓存目录、旧 qwenasr-studio 的模型目录）一次性改写成新的 GGUF 默认路径，自定义路径原样保留。</p>
+  <p>这里有个细节值得注意：<code>testEmptyDefaultsDoNotFreezeEnvironmentDrivenModelRoot</code> 这个测试在断言——空配置时不要往 UserDefaults 里写值。因为一旦写了，后续 <code>MINUTES_MODELS_ROOT</code> 环境变量就再也不会生效（getter 优先返回已存的值）。<strong>「默认值不应该被固化成显式配置」</strong>，这是配置系统里最容易踩的一脚。</p>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>供应链：把「可复现」写成脚本</h2>
+  <p class="lede">从「git clone 一下」到「一条命令得到字节级可验证的引擎」，中间隔着一份锁文件、两个脚本和一道 <code>otool</code> 门禁。</p>
+
+  <h3>锁文件：所有不确定性收敛到一处</h3>
+  <p><code>Engine/dependencies.lock</code> 是个 19 行的 Bash 片段，被两个脚本 <code>source</code> 进去。它同时锁住了源码版本与模型版本：</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>锁定项</th><th>值</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td>audio.cpp commit</td><td><code>6f71a3b87105b974…</code></td><td>ASR 服务源码</td></tr>
+        <tr><td>llama.cpp commit</td><td><code>513ad7ae0770cdd7…</code></td><td>LLM 服务源码</td></tr>
+        <tr><td>ASR 模型 revision</td><td><code>7a103b33f0412053…</code></td><td>Qwen3-ASR-1.7B Q8_0</td></tr>
+        <tr><td>ASR 字节数 / SHA256</td><td>2,473,017,600 / <code>3bc2462e…</code></td><td>完整性校验</td></tr>
+        <tr><td>LLM 模型 revision</td><td><code>e87f176479d0855a…</code></td><td>Qwen3.5-4B Q4_K_M</td></tr>
+        <tr><td>LLM 字节数 / SHA256</td><td>2,740,937,888 / <code>00fe7986…</code></td><td>完整性校验</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>关键在于<strong>镜像只影响传输路径，不影响验收标准</strong>。下载脚本列了三个来源（ModelScope 镜像 → hf-mirror → Hugging Face 官方），逐个尝试；无论从哪个来源拿到，最终都必须通过锁文件里的字节数与 SHA256。这解决了国内网络环境下的真实痛点，又没有牺牲可验证性。</p>
+
+  <h3>构建脚本的四道门</h3>
+  <div class="g2">
+    <div class="mini">
+      <h4>① 工具存在性</h4>
+      <p>逐个检查 <code>git cmake clang++ xcrun curl install otool codesign tar</code>，以及 <code>metal</code> 编译器。缺任何一个都在第 0 秒失败，而不是编译到一半。</p>
+    </div>
+    <div class="mini">
+      <h4>② 源码获取三路</h4>
+      <p><code>git fetch --depth 1</code> 优先；失败则下载同提交的 tarball；再失败则用已经验证过的本地归档。每路都写 <code>.minutes-source-commit</code> 印记。</p>
+    </div>
+    <div class="mini">
+      <h4>③ 二进制卫生</h4>
+      <p><code>otool -L</code> 扫产物，出现 <code>Python.framework</code>、<code>Torch</code>、<code>MLX</code>、<code>ffmpeg</code>、<code>/opt/homebrew</code> 即报错退出。确保「零 Python」不是口号。</p>
+    </div>
+    <div class="mini">
+      <h4>④ 原子安装</h4>
+      <p>先 <code>install -m 755</code> 到 <code>.name.installing</code>，再 <code>mv</code> 覆盖，最后 ad-hoc <code>codesign</code>。应用运行中升级不会读到半个可执行文件。</p>
+    </div>
+  </div>
+
+  <p>构建配置本身也是「够用就好」的取向：关掉 tests、examples、UI、CURL、OpenSSL，只留 server；<code>BUILD_SHARED_LIBS=OFF</code> 生成静态链接，避免 <code>dyld</code> 找库问题；<code>GGML_METAL_EMBED_LIBRARY=ON</code> 把 metallib 嵌进二进制，省掉运行时定位资源目录的麻烦。</p>
+
+  <h3>下载脚本：把「断点续传」做对</h3>
+  <p>没有用 <code>huggingface-cli</code>，也没有 pip。只用 <code>curl</code>、<code>shasum</code>、<code>stat</code>、<code>xargs</code>，代价是要自己处理分块。几个细节说明作者踩过坑：</p>
+  <ul>
+    <li>每块用 <code>--range start-end</code>，并<strong>校验 HTTP 状态必须为 206</strong>——服务器若不支持 Range 会返回 200 和整个文件，不校验就会拼出 4 倍大小的垃圾</li>
+    <li>先写 <code>.download</code> 临时文件，长度正确才 <code>mv</code>。失败的块不会污染已完成块</li>
+    <li>分块文件名零填充序号（<code>.chunk.00007</code>），<code>cat target.chunk.*</code> 的展开顺序即字节顺序——不需要额外排序</li>
+    <li><code>.chunk-layout</code> 记录「总字节数:块大小」，块大小变了就清掉旧块重下，避免新旧布局混拼</li>
+    <li>某来源失败时<strong>保留已完成块</strong>，换下一个来源只补缺的块</li>
+  </ul>
+  <p>拼装后做一次全文件 SHA256，不符则清理全部分块并报错。宁可让用户重下 2.5 GB，也不让一个损坏的 GGUF 进入推理路径——后者会导致难查的乱码输出。</p>
+
+  <div class="box teal">
+    <div class="t">脚本里的安全习惯</div>
+    <p>两个脚本开头都检查 <code>id -u</code>，发现是 root 立刻退出并说明原因：引擎装在<strong>当前用户</strong>的 <code>~/Library/Application Support/Minutes</code>，用 <code>sudo</code> 跑会改为查 root 的目录，结果是应用找不到文件。这条提示同时出现在 README 里，属于「一定会有人踩」的坑。</p>
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>验证体系：三层，从纯逻辑到真实推理</h2>
+  <p class="lede">6 个单元测试文件、359 行，一个 XCTest 宿主之外的冒烟程序。三层各自负责一种失败模式，谁都不越界。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>层</th><th>手段</th><th>守住什么</th></tr></thead>
+      <tbody>
+        <tr><td>纯逻辑单测</td><td><code>WAVEncoderTests</code>、<code>OpenAIStreamParserTests</code>、<code>MinutesComposer</code> 解析</td><td>字节级正确性：WAV 头 44 字节、−32767 的位模式、UTF-8 跨字节不破、CRLF 与多行 data</td></tr>
+        <tr><td>契约单测</td><td><code>EngineClientTests</code>（<code>URLProtocol</code> 打桩）、<code>EngineHealthTests</code>、<code>EngineConfigurationTests</code></td><td>请求形状（multipart 头、<code>model=minutes-llm</code>、<code>stream=true</code>）、身份校验拒绝旧服务、配置迁移不冻结默认值</td></tr>
+        <tr><td>真实闭环</td><td><code>scripts/verify_native.sh</code> + <code>Benchmarks/NativeWorkerSmoke</code></td><td>真进程、真模型、真音频：两个 worker 就绪、ASR 关键词命中、LLM 四节格式、map-reduce 产出摘要</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>为什么闭环验证要绕开 XCTest</h3>
+  <p><code>verify_native.sh</code> 用 <code>swiftc</code> 直接把 9 个源文件和一个 <code>main.swift</code> 编成一个独立可执行文件，<strong>不经过 XCTest 宿主</strong>。理由写在脚本注释和 README 里：XCTest 宿主下环境变量常常传不进去，导致依赖 <code>MINUTES_SMOKE_ASR</code> 的断言<strong>静默跳过</strong>——测试显示「全部通过」，实际什么也没验。</p>
+  <p>这是一类容易被忽视的假绿：<code>XCTSkip</code> 和「条件不满足就 return」都会让 CI 显示绿灯，但覆盖面为零。绕开宿主是最彻底的修法。</p>
+
+  <p>三道断言都是内容级的，不是「有没有返回」级的：</p>
+  <ul>
+    <li>ASR：识别结果必须包含「<strong>虚拟电厂</strong>」——防止引擎「成功返回了但输出是空的/乱码」</li>
+    <li>LLM：输出必须同时包含 <code>## 摘要</code> 与 <code>## 行动项</code>，且<strong>不得包含 <code>&lt;think&gt;</code></strong>——后者验证 <code>--reasoning off</code> 真的生效了</li>
+    <li>map-reduce：把一个 700 行重复段落（远超 12000 字符）喂进去，必须产出非空 summary</li>
+  </ul>
+
+  <div class="box blue">
+    <div class="t">测试里的巧思</div>
+    <p><code>EngineWorkerTests</code> 要验证「启动即退出应立刻 failed，而不是等 180 秒超时」。它把 <code>/usr/bin/false</code> 复制成假的 <code>audiocpp_server</code>——一个必定以非零码退出的可执行文件——然后断言 5 秒内进入 <code>failed</code>。用系统自带二进制构造失败场景，不需要 mock 框架，也不需要真的模型。</p>
+  </div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>性能基线：一次诚实的迁移复盘</h2>
+  <p class="lede">从「PyTorch/MPS + MLX」换到「audio.cpp + llama.cpp 原生 Metal」，六个指标里五个变好、一个变差。这个变差被写进了文档，而不是从表里删掉。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 440" role="img" aria-label="旧版与原生版的六项指标对比">
+        <rect x="300" y="18" width="11" height="11" rx="2" fill="#C9CDD4"></rect>
+        <text x="317" y="28" font-size="10.5" fill="#333941">旧版</text>
+        <rect x="360" y="18" width="11" height="11" rx="2" fill="#2F6FB0"></rect>
+        <text x="377" y="28" font-size="10.5" fill="#333941">原生</text>
+        <text x="440" y="28" font-size="10.5" fill="#4A505A">每行以旧版 = 100% 归一化</text>
+
+        <text x="300" y="50" font-size="10" fill="#4A505A" text-anchor="middle">0</text>
+        <text x="410" y="50" font-size="10" fill="#4A505A" text-anchor="middle">50%</text>
+        <text x="520" y="50" font-size="10" fill="#4A505A" text-anchor="middle">100%</text>
+        <text x="564" y="50" font-size="10" fill="#4A505A" text-anchor="middle">120%</text>
+
+        <line x1="520" y1="58" x2="520" y2="386" stroke="#DFDBD2" stroke-width="1" stroke-dasharray="4 4"></line>
+
+        <text x="290" y="87" font-size="11" fill="#16181D" text-anchor="end">ASR · 11.4 秒音频</text>
+        <rect x="300" y="76" width="220" height="14" rx="3" fill="#C9CDD4"></rect>
+        <text x="536" y="87" font-size="10.5" fill="#4A505A">1.061 s</text>
+        <rect x="300" y="96" width="112" height="14" rx="3" fill="#2F6FB0"></rect>
+        <text x="536" y="107" font-size="10.5" fill="#4A505A">0.545 s</text>
+
+        <text x="290" y="139" font-size="11" fill="#16181D" text-anchor="end">ASR · 25 秒音频</text>
+        <rect x="300" y="128" width="220" height="14" rx="3" fill="#C9CDD4"></rect>
+        <text x="536" y="139" font-size="10.5" fill="#4A505A">1.909 s</text>
+        <rect x="300" y="148" width="110" height="14" rx="3" fill="#2F6FB0"></rect>
+        <text x="536" y="159" font-size="10.5" fill="#4A505A">0.957 s</text>
+
+        <text x="290" y="191" font-size="11" fill="#16181D" text-anchor="end">LLM · 单次纪要总耗时</text>
+        <rect x="300" y="180" width="220" height="14" rx="3" fill="#C9CDD4"></rect>
+        <text x="536" y="191" font-size="10.5" fill="#4A505A">2.996 s</text>
+        <rect x="300" y="200" width="202" height="14" rx="3" fill="#2F6FB0"></rect>
+        <text x="536" y="211" font-size="10.5" fill="#4A505A">2.755 s</text>
+
+        <text x="290" y="243" font-size="11" fill="#16181D" text-anchor="end">LLM · 生成速度</text>
+        <rect x="300" y="232" width="220" height="14" rx="3" fill="#C9CDD4"></rect>
+        <text x="536" y="243" font-size="10.5" fill="#4A505A">85.30 tok/s</text>
+        <rect x="300" y="252" width="209" height="14" rx="3" fill="#B45309"></rect>
+        <text x="536" y="263" font-size="10.5" fill="#8F3F06">80.76 tok/s</text>
+
+        <text x="290" y="295" font-size="11" fill="#16181D" text-anchor="end">ASR · phys_footprint</text>
+        <rect x="300" y="284" width="220" height="14" rx="3" fill="#C9CDD4"></rect>
+        <text x="536" y="295" font-size="10.5" fill="#4A505A">6,245 MB</text>
+        <rect x="300" y="304" width="108" height="14" rx="3" fill="#2F6FB0"></rect>
+        <text x="536" y="315" font-size="10.5" fill="#4A505A">3,065 MB</text>
+
+        <text x="290" y="347" font-size="11" fill="#16181D" text-anchor="end">LLM · phys_footprint</text>
+        <rect x="300" y="336" width="220" height="14" rx="3" fill="#C9CDD4"></rect>
+        <text x="536" y="347" font-size="10.5" fill="#4A505A">3,543 MB</text>
+        <rect x="300" y="356" width="79" height="14" rx="3" fill="#2F6FB0"></rect>
+        <text x="536" y="367" font-size="10.5" fill="#4A505A">1,284 MB</text>
+
+        <text x="300" y="404" font-size="10.5" fill="#8F3F06">琥珀色这一行是唯一的退步：纯生成速度下降约 5%，不能宣称「原生全面更快」。</text>
+        <text x="300" y="422" font-size="10.5" fill="#4A505A">ASR 与 LLM 的内存取 phys_footprint 口径；两者的 RSS 反而上升，所以要并列看。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4</b>　六项指标的归一化对比（旧版 = 100%）。ASR 是这次迁移的最大受益者：两种音频长度下耗时都降到约一半，footprint 降 51%。LLM 则是「总耗时小幅改善、纯生成速度小幅退步」的混合结果。</figcaption>
+  </figure>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>指标</th><th>旧版</th><th>原生</th><th>变化</th><th>判读</th></tr></thead>
+      <tbody>
+        <tr><td>ASR 11.4 s 音频</td><td>1.061 s（RTF 0.093）</td><td>0.545 s（RTF 0.048）</td><td>−49%</td><td>明显改善</td></tr>
+        <tr><td>ASR 25 s 音频</td><td>1.909 s（RTF 0.076）</td><td>0.957 s（RTF 0.038）</td><td>−50%</td><td>长音频优势稳定</td></tr>
+        <tr><td>LLM 首 token（TTFT）</td><td>0.366 s</td><td>0.024 s</td><td>−93%</td><td>含 prompt cache 命中，不能直接比</td></tr>
+        <tr><td>LLM 总耗时</td><td>2.996 s</td><td>2.755 s</td><td>−8%</td><td>小幅改善</td></tr>
+        <tr><td>LLM 生成速度</td><td>85.30 tok/s</td><td>80.76 tok/s</td><td><strong>−5%</strong></td><td><strong>退步</strong></td></tr>
+        <tr><td>ASR footprint</td><td>6,245 MB</td><td>3,065 MB</td><td>−51%</td><td>显著改善</td></tr>
+        <tr><td>LLM footprint</td><td>3,543 MB</td><td>1,284 MB</td><td>−64%</td><td>显著改善</td></tr>
+        <tr><td>ASR RSS</td><td>约 1.02 GiB</td><td>约 3.09 GiB</td><td><strong>+202%</strong></td><td>口径相反，需并列看</td></tr>
+        <tr><td>LLM RSS</td><td>约 3.37 GiB</td><td>约 3.87 GiB</td><td>+15%</td><td>同上</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>为什么不能只报一个内存数字</h3>
+  <p>文档里同时保留 <code>ps RSS</code> 与 <code>phys_footprint</code>，并明确写出「两种口径均保留，避免把 mmap/统一内存差异误写成单一的内存结论」。这是很专业的克制：</p>
+  <ul>
+    <li><code>llama.cpp</code> 用 <code>mmap</code> 映射 GGUF，RSS 会把映射页也算进去，因此看起来更大；而 <code>phys_footprint</code> 更接近系统实际承压</li>
+    <li>「原生内存降低 51%」和「原生 RSS 上升 203%」两句同时为真。只引用一半，就是选择性陈述</li>
+  </ul>
+
+  <h3>量化带来的质量差异，也被写下来了</h3>
+  <p>同一个 25 秒样本，旧版开头识别为「数据合在一起…总出力…」，新版为「时聚合在一起…总处理…」，新版还多出「核电状态」。文档的结论是：</p>
+  <div class="box">
+    <div class="t">原文结论</div>
+    <p><em>主体内容一致，但个别词错误说明 Q8 不能视为与 FP16 完全等价，后续仍应使用带人工校对文本的会议集评估 CER。</em></p>
+  </div>
+  <p>同时它也明确写了「当前样本没有人工校对参考文本，因此本表不虚构 CER/WER」。在一个很容易吹指标的领域里，这两句比任何数字都更能说明工程素养。</p>
+
+  <h3>方法学</h3>
+  <p>为了可复现，基准测试本身是代码：<code>Benchmarks/NativeWorkerSmoke/main.swift</code> 在真实进程上跑，TTFT 用服务器返回的 <code>prompt_ms</code>、生成速度用服务器 token 计数（不拿字符数换算 token）。每个样本预热 1 次、测 5 次取中位数并给出范围。RSS 是采样值不是峰值监控，文档也如实标注了这一点。</p>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span>边界与技术债</h2>
+  <p class="lede">这一节按「多久会开始咬人」排序，而不是按好修程度排。第一条是读代码时发现的真实缺陷，建议优先实机复现。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>#</th><th>问题</th><th>位置</th><th>表现</th><th>严重度</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>暂停/继续的时间基准不一致</td>
+          <td><code>MeetingSession.swift:99,203,243</code></td>
+          <td>恢复后长时间不再出字；分段时间戳回退到 00:00 附近</td>
+          <td><span class="tag warn">高</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>分块不拆超长单行</td>
+          <td><code>MinutesComposer.swift:43</code></td>
+          <td>单行超过 12000 字符时块预算失效，可能撑爆上下文</td>
+          <td><span class="tag warn">中</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>写盘失败被静默吞掉</td>
+          <td><code>MeetingsStore.swift:49</code></td>
+          <td>磁盘满或权限异常时会议未落盘，UI 无任何提示</td>
+          <td><span class="tag warn">中</span></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>长会议 map 阶段串行</td>
+          <td><code>EngineWorker.swift:131</code></td>
+          <td><code>--parallel 1</code>，两小时会议要跑 N 次串行压缩</td>
+          <td><span class="tag warn">中</span></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>无 CI</td>
+          <td>仓库根</td>
+          <td>6 个测试文件靠本机 Xcode 手跑，回归全凭自觉</td>
+          <td><span class="tag warn">中</span></td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>旧路径常量含开发者绝对路径</td>
+          <td><code>EngineConfiguration.swift:53</code></td>
+          <td>迁移逻辑只在作者本机命中；开源仓库暴露用户名</td>
+          <td><span class="tag info">低</span></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>默认端口写死</td>
+          <td><code>EngineConfiguration.swift:17</code></td>
+          <td>8797/8788 被占需手动改，改完要重启对应 worker</td>
+          <td><span class="tag info">低</span></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>沙箱未启用</td>
+          <td><code>project.pbxproj</code></td>
+          <td><code>CODE_SIGN_ENTITLEMENTS</code> 为空；无法上架 App Store</td>
+          <td><span class="tag info">设计选择</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>第一条展开：为什么暂停会打断识别</h3>
+  <p>这不是风格问题，是一条能推出具体症状的路径。三个事实串起来：</p>
+  <ol>
+    <li><code>pause()</code> 只是取消采集任务并停止引擎，<strong>既不清空 <code>buffer</code>，也不冲刷它</strong>；</li>
+    <li><code>resume()</code> 走 <code>start()</code>，音频 offset 的基准被重新设为 <code>startTime = Date()</code>，即<strong>从 0 重新计</strong>；</li>
+    <li><code>appendToBuffer</code> 只在 <code>buffer.isEmpty</code> 时才更新 <code>bufferStart</code>。</li>
+  </ol>
+  <p>于是恢复后的第一块音频会让 <code>bufferStart</code> 保持暂停前的旧值（例如 1234.5 秒），而 <code>bufferEnd</code> 变成 0.28 秒，<code>bufferLength</code> 直接成为负数。轮询条件是 <code>bufferLength - lastPollAt &gt;= 1.5</code>，负值永远不满足，<strong>识别就此静默停止</strong>，直到 offset 重新长过暂停前的累计时长。</p>
+
+  <pre><code><span class="c">// MeetingSession.swift:99 — 只有 buffer 为空才重置起点</span>
+<span class="k">private func</span> appendToBuffer(_ chunk: CapturedChunk, offset: TimeInterval) {
+    <span class="k">if</span> buffer.isEmpty { bufferStart = offset }   <span class="c">// ← 恢复后 buffer 仍非空，这里不执行</span>
+    buffer.append(contentsOf: chunk.samples)
+    bufferEnd = offset + Double(chunk.samples.count) / 16000.0
+    <span class="k">var</span> bufferLength = bufferEnd - bufferStart   <span class="c">// ← 0.28 - 1234.5 &lt; 0</span>
+    <span class="k">if</span> bufferLength - lastPollAt &gt;= pollInterval { ... }   <span class="c">// ← 永不成立</span>
+}</code></pre>
+
+  <div class="box red">
+    <div class="t">建议的复现与修法</div>
+    <p><strong>复现</strong>：开一场会议，说 2–3 分钟让 <code>bufferStart</code> 累积到较大值，点暂停，10 秒后点继续，然后持续说话——正常情况下应每 1.5 秒更新一次灰色 interim 文本，实际会长时间没有任何新字。</p>
+    <p><strong>修法</strong>：<code>pause()</code> 里把缓冲一并处理掉（要么 <code>await flushBuffer()</code> 落定，要么直接清空并重置 <code>bufferStart</code>/<code>lastPollAt</code>）。后者更简单，代价是最多丢 1.5 秒音频；前者更完整，但 pause 目前是同步方法，需要改成 async 或起一个 Task。</p>
+    <p><em>说明：以上由静态代码路径推断，未做运行时复现。同一根因还会让恢复后的分段时间戳从 00:00 重新开始，与顶部的会议计时脱节。</em></p>
+  </div>
+
+  <h3>第二条展开：分块函数的隐含前提</h3>
+  <p><code>makeBlocks</code> 按行累加，块间不拆行——这个设计的理由是「保证每块语义完整」，本身是对的。但它隐含假设「单行不会超过预算」。转写文本是 ASR 输出，正常情况下每段几十字，不会触发；但如果将来接入「粘贴一份完整会议记录」或「导入字幕文件」，一行一万多字的情况立刻会让 <code>current</code> 单块超预算，进而在 32768 上下文里挤掉输出空间。</p>
+  <p>修法很轻：在 <code>line.count &gt; maxChars</code> 时把该行按字符切开，或直接把 <code>maxChars</code> 作为硬上限做二次切分。</p>
+
+  <h3>这些是边界，不是缺陷</h3>
+  <ul>
+    <li><strong>ASR 是 1.5 秒轮询，不是服务端增量流式</strong>。README 自己写明了这一点。用户感知是「说完一句话，半秒到一秒后上屏」，不是逐字浮现。</li>
+    <li><strong>没有说话人分离、没有词级时间戳</strong>。片段时间戳由 Swift 采集时钟生成，精度是「段」而不是「词」。要做得靠引入 diarization 模型，那是另一个量级的工程量。</li>
+    <li><strong>LLM 单请求槽、上下文 32768</strong>。这是为了在 4B 模型上控制内存与首 token 延迟。长会议靠 map-reduce 绕开，而不是靠更大的窗口。</li>
+    <li><strong>TTS 已移除</strong>。随旧 Python worker 一起删掉了，主流程不再有朗读能力。这是有意识的减法。</li>
+  </ul>
+</section>
+
+<section id="s13">
+  <h2><span class="num">13</span>结论与文件索引</h2>
+
+  <h3>三条判断</h3>
+  <p><strong>第一，这套架构的价值在于「把不确定性关进笼子」。</strong>模型会崩、端口会被占、识别结果会乱序、用户会在会议中途改配置——每一件都被一个具体机制接住了：进程隔离、三重身份校验、序号归位、启动签名。没有一处用「正常情况下不会发生」来搪塞。</p>
+  <p><strong>第二，它的复杂度花在了正确的地方。</strong>2,893 行里，接近 900 行在引擎接入与进程管理，只有 913 行在界面。对一个「本地推理应用」来说这个比例是对的——难的不是画界面，是让一个会崩溃的模型在用户机器上表现得像一个稳定功能。</p>
+  <p><strong>第三，它最值得学习的是文档纪律。</strong>README 写「当前边界」，基准文档写「这一项退步了」，代码注释写「这里曾经有个 bug 导致新建会议把上一个整没了」。这些不是装饰，它们让下一个人（或下一次的自己）不必重新踩一遍。</p>
+
+  <div class="box teal">
+    <div class="t">如果要继续演进</div>
+    <p>优先级建议：先修暂停/继续的时间基准（用户可感知的功能缺陷），再补 CI（防止回归），然后考虑下载脚本的断点续传可观测性（目前分块进度只在 stdout）。至于换更大模型、加说话人分离、开沙箱上架——这些都是产品决策，不是架构债。</p>
+  </div>
+
+  <h3>文件索引</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>想改什么</th><th>看这里</th><th>行数</th></tr></thead>
+      <tbody>
+        <tr><td>采集参数、重采样</td><td><code>Minutes/Audio/AudioCaptureService.swift</code></td><td>98</td></tr>
+        <tr><td>识别节奏、切段规则、分段归位</td><td><code>Minutes/Meeting/MeetingSession.swift</code></td><td>421</td></tr>
+        <tr><td>纪要提示词、分块、四节解析</td><td><code>Minutes/Meeting/MinutesComposer.swift</code></td><td>145</td></tr>
+        <tr><td>会话列表与 JSON 读写</td><td><code>Minutes/Meeting/MeetingsStore.swift</code></td><td>63</td></tr>
+        <tr><td>进程拉起、健康探测、退避重启</td><td><code>Minutes/Engine/EngineWorker.swift</code></td><td>415</td></tr>
+        <tr><td>身份校验规则</td><td><code>Minutes/Engine/EngineHealth.swift</code></td><td>65</td></tr>
+        <tr><td>HTTP 请求形状</td><td><code>Minutes/Engine/EngineClient.swift</code></td><td>168</td></tr>
+        <tr><td>SSE 逐字节解析</td><td><code>Minutes/Engine/OpenAIStreamParser.swift</code></td><td>105</td></tr>
+        <tr><td>WAV 头与 PCM16</td><td><code>Minutes/Engine/WAVEncoder.swift</code></td><td>50</td></tr>
+        <tr><td>端口、模型路径、Prompt、迁移</td><td><code>Minutes/Engine/EngineConfiguration.swift</code></td><td>177</td></tr>
+        <tr><td>audio.cpp 的 JSON 配置</td><td><code>Minutes/Engine/ASRServerConfiguration.swift</code></td><td>39</td></tr>
+        <tr><td>数据模型与错误类型</td><td><code>Minutes/Core/Models.swift</code></td><td>84</td></tr>
+        <tr><td>原生引擎构建</td><td><code>scripts/bootstrap.sh</code></td><td>134</td></tr>
+        <tr><td>模型下载与校验</td><td><code>scripts/download_models.sh</code></td><td>145</td></tr>
+        <tr><td>真进程闭环验证</td><td><code>scripts/verify_native.sh</code> + <code>Benchmarks/NativeWorkerSmoke/main.swift</code></td><td>28 + 79</td></tr>
+        <tr><td>版本与校验和锁定</td><td><code>Engine/dependencies.lock</code></td><td>19</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>说明</b>：本文所有结论都可回溯到仓库中的具体文件与行号，未使用任何外部资料。性能数字来自 <code>Benchmarks/README.md</code> 记录的实测（Apple M2 Max，arm64），不包含外推估算。第 12 章第一条为静态代码路径推断，已在文中明确标注并给出复现步骤。</p>
+    <p>文档生成于 2026-11-18，对应提交 <code>4676637</code>（feat: add ready status and Chinese app branding）。</p>
+  </div>
+</footer>
+
+</body>
+</html>
