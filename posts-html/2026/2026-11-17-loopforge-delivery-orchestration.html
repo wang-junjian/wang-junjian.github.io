@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="拆解腾讯轻量云 LoopForge：这款自托管编码智能体编排层用运行快照冻结环境，以退出码、人签字与 PR 状态三道异构门禁替代 Agent 自述，把自进化关进四种动作的白名单，并直言沙箱等同 host root 的边界与运维代价。">
+<meta name="keywords" content="loopforge, coding-agent, agent-orchestration, workflow-snapshot, human-in-the-loop, verifiable-delivery">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-17">
+<title>LoopForge 深度研究：把编码智能体收进交付流程</title>
+<style>
+  :root{
+    --paper:#FBFAF7; --card:#FFFFFF; --line:#E4E1D9; --line2:#D3CFC4;
+    --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+    --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FBF0E2;
+    --blue:#2F6FB0; --blue-t:#1F5288; --blue-bg:#EAF1F8;
+    --teal:#0F766E; --teal-t:#0A5750; --teal-bg:#E6F2F0;
+    --purple:#6D3FB5; --purple-t:#5A3099; --purple-bg:#EFEAF8;
+    --green:#2E7D32; --green-t:#1B5820; --green-bg:#E8F1E8;
+    --red:#B3261E; --red-t:#9A2019; --red-bg:#FAE9E7;
+    --mono:"SF Mono","Menlo","Consolas",monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:16px; line-height:1.78; overflow-wrap:break-word;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px; margin:0 auto; padding:0 28px}
+  code{
+    font-family:var(--mono); font-size:.86em; background:#F1EEE7;
+    padding:1px 5px; border-radius:4px; overflow-wrap:anywhere; color:var(--ink2);
+  }
+  a{color:var(--blue-t); text-decoration:none; border-bottom:1px solid rgba(31,82,136,.28)}
+  a:hover{border-bottom-color:var(--blue-t)}
+
+  /* ---------- header ---------- */
+  header.top{padding:64px 0 40px; border-bottom:1px solid var(--line)}
+  .kicker{
+    font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--amber-t); font-weight:700; margin-bottom:18px;
+  }
+  h1{
+    font-size:clamp(30px,4.2vw,46px); line-height:1.24; margin:0 0 18px;
+    letter-spacing:-.02em; font-weight:800;
+  }
+  h1 em{font-style:normal; color:var(--amber-t)}
+  .lede{font-size:18px; line-height:1.7; color:var(--ink2); max-width:820px; margin:0 0 26px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px 10px; font-size:13px; color:var(--ink3)}
+  .meta span{background:var(--card); border:1px solid var(--line); padding:4px 11px; border-radius:999px}
+  .meta b{color:var(--ink2); font-weight:600}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky; top:0; z-index:20; background:rgba(251,250,247,.94);
+      backdrop-filter:saturate(180%) blur(8px); border-bottom:1px solid var(--line)}
+  nav .inner{max-width:1060px; margin:0 auto; padding:9px 28px; display:flex; gap:4px;
+      overflow-x:auto; scrollbar-width:none; font-size:13px; white-space:nowrap}
+  nav .inner::-webkit-scrollbar{display:none}
+  nav a{color:var(--ink3); padding:4px 8px; border-radius:6px; border:0}
+  nav a:hover{background:#F1EEE7; color:var(--ink)}
+
+  /* ---------- sections ---------- */
+  section{padding:52px 0 8px; scroll-margin-top:56px}
+  section+section{border-top:1px solid var(--line)}
+  h2{
+    font-size:clamp(22px,2.6vw,29px); line-height:1.34; margin:0 0 10px;
+    letter-spacing:-.015em; font-weight:750;
+  }
+  h2 .num{
+    display:inline-block; min-width:44px; color:var(--amber-t);
+    font-variant-numeric:tabular-nums; font-weight:800;
+  }
+  .sub{color:var(--ink3); font-size:14.5px; margin:0 0 26px; max-width:800px}
+  h3{font-size:18px; margin:34px 0 10px; font-weight:700; letter-spacing:-.01em}
+  h4{font-size:15.5px; margin:22px 0 6px; font-weight:700; color:var(--ink2)}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 16px; padding-left:22px}
+  li{margin:0 0 7px}
+  li::marker{color:var(--ink3)}
+
+  /* ---------- claim block ---------- */
+  .claim{
+    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--amber);
+    border-radius:10px; padding:16px 20px; margin:18px 0; box-shadow:0 1px 2px rgba(22,24,29,.04);
+  }
+  .claim .tag{
+    display:inline-block; font-size:11px; font-weight:700; letter-spacing:.1em;
+    color:var(--amber-t); background:var(--amber-bg); padding:2px 8px; border-radius:4px; margin-bottom:8px;
+  }
+  .claim p{margin:0; font-size:15.5px; color:var(--ink)}
+  .claim p+p{margin-top:8px}
+
+  /* ---------- verdict / callout ---------- */
+  .verdict{
+    background:var(--blue-bg); border:1px solid #CBDCEB; border-radius:10px;
+    padding:18px 22px; margin:22px 0;
+  }
+  .verdict h4{margin:0 0 6px; color:var(--blue-t); font-size:14px; letter-spacing:.04em; text-transform:uppercase}
+  .verdict p{margin:0; font-size:15.5px; color:var(--ink)}
+  .verdict p+p{margin-top:8px}
+
+  .warn{
+    background:var(--red-bg); border:1px solid #EFD3CF; border-radius:10px;
+    padding:18px 22px; margin:22px 0;
+  }
+  .warn h4{margin:0 0 6px; color:var(--red-t); font-size:14px; letter-spacing:.04em; text-transform:uppercase}
+  .warn p{margin:0; font-size:15.5px; color:var(--ink)}
+  .warn p+p{margin-top:8px}
+
+  .note{
+    background:#F6F4EE; border:1px solid var(--line); border-radius:10px;
+    padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink2);
+  }
+  .note b{color:var(--ink)}
+
+  /* ---------- tables ---------- */
+  .tblwrap{margin:18px 0 22px; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--card)}
+  table{border-collapse:collapse; width:100%; font-size:14px; line-height:1.62}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:#F5F2EB; font-weight:700; font-size:12.5px; letter-spacing:.03em; color:var(--ink2); white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  td.mono,th.mono{font-family:var(--mono); font-size:12.5px}
+  td.num{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+  caption{caption-side:bottom; text-align:left; font-size:12.5px; color:var(--ink3); padding:10px 14px}
+
+  /* ---------- pills ---------- */
+  .pill{display:inline-block; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:999px; white-space:nowrap}
+  .p-ok{background:var(--green-bg); color:var(--green-t)}
+  .p-no{background:var(--red-bg); color:var(--red-t)}
+  .p-part{background:var(--amber-bg); color:var(--amber-t)}
+  .p-info{background:var(--blue-bg); color:var(--blue-t)}
+  .p-neutral{background:#EFECE4; color:var(--ink3)}
+
+  /* ---------- figures ---------- */
+  figure{margin:26px 0 30px; min-width:0}
+  .fig-box{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--card); padding:8px; min-width:0}
+  svg{display:block; width:100%; min-width:600px; height:auto}
+  figcaption{font-size:12.5px; color:var(--ink3); margin-top:10px; line-height:1.6}
+  figcaption b{color:var(--ink2)}
+
+  /* ---------- stat row ---------- */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:24px 0}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; min-width:0}
+  .stat .v{font-size:26px; font-weight:800; letter-spacing:-.02em; line-height:1.1; font-variant-numeric:tabular-nums}
+  .stat .k{font-size:12px; color:var(--ink3); margin-top:5px; line-height:1.45}
+  .stat .u{font-size:13px; font-weight:600; color:var(--ink2)}
+
+  /* ---------- grid cards ---------- */
+  .g2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0}
+  .g3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; min-width:0}
+  .card h4{margin:0 0 6px; font-size:14.5px}
+  .card p{margin:0; font-size:14px; color:var(--ink2)}
+  .card ul{margin:6px 0 0; font-size:14px; color:var(--ink2)}
+
+  /* ---------- refs ---------- */
+  .refs{font-size:13.5px; line-height:1.72; color:var(--ink2)}
+  .refs ol{padding-left:24px}
+  .refs li{margin-bottom:8px}
+  .refs .src{color:var(--ink3); font-size:12.5px}
+
+  footer{margin-top:56px; border-top:1px solid var(--line); padding:26px 0 60px; font-size:13px; color:var(--ink3)}
+  footer p{margin:0 0 6px}
+
+  @media(max-width:760px){
+    .wrap{padding:0 18px}
+    nav .inner{padding:9px 18px}
+    header.top{padding:44px 0 32px}
+    .stats{grid-template-columns:1fr 1fr}
+    .g2,.g3{grid-template-columns:1fr}
+    table{display:block; overflow-x:auto; white-space:normal}
+    th{white-space:nowrap}
+    section{padding:40px 0 4px}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">深度研究 · 编码智能体编排层</div>
+    <h1>LoopForge：把编码智能体<br>收进<em>可冻结的交付流程</em></h1>
+    <p class="lede">
+      腾讯轻量云团队开源的自托管平台，把 CodeBuddy、Codex、Claude Code 等十余种编码 CLI 变成可替换的执行器，
+      用 SOP 图、确定性脚本和人工关口把「一次运行看运气」变成「每次运行同一套检查」。
+      这份报告不复述它的功能清单，而是回答三个问题：它究竟在什么坐标系里、它的「自进化」到底能改什么、
+      以及一个团队在什么条件下不该用它。
+    </p>
+    <div class="meta">
+      <span>研究日期 <b>2026-11-17</b></span>
+      <span>对象 <b>Tencent/LoopForge</b></span>
+      <span>当时状态 <b>v0.4.0 · 2,902 ★</b></span>
+      <span>一手证据 <b>源码 + 仓库内文档</b></span>
+      <span>代码量 <b>3,412 文件</b></span>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="inner">
+    <a href="#s00">摘要</a>
+    <a href="#s01">范式定位</a>
+    <a href="#s02">演进动机</a>
+    <a href="#s03">架构</a>
+    <a href="#s04">执行模型</a>
+    <a href="#s05">沙箱边界</a>
+    <a href="#s06">自进化</a>
+    <a href="#s07">Local</a>
+    <a href="#s08">开源工程</a>
+    <a href="#s09">证据全景</a>
+    <a href="#s10">代价</a>
+    <a href="#s11">反模式</a>
+    <a href="#s12">结论</a>
+    <a href="#s13">来源</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="s00">
+  <h2><span class="num">00</span>摘要：八条可证伪的判断</h2>
+  <p class="sub">每条判断后面都跟着它的证据位置。读不完正文，只读这一页也能拿走结论。</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">2,902</div><div class="k">GitHub Stars（2026-11-17）<br>420 forks · 175 open issues</div></div>
+    <div class="stat"><div class="v">10</div><div class="k">可替换的编码 Agent CLI<br>默认执行器是 CodeBuddy</div></div>
+    <div class="stat"><div class="v">1,718</div><div class="k">开源前审计的源文件数<br>其中 178 个做了改写</div></div>
+    <div class="stat"><div class="v">4</div><div class="k">自进化允许的动作类型<br>图拓扑不在其中</div></div>
+  </div>
+
+  <div class="claim"><span class="tag">判断 01</span>
+    <p><b>它不是 Agent 框架，是交付编排层。</b>整个 Go 后端不依赖任何 LLM SDK——<code>go.mod</code> 里只有 gin、gorm、websocket、pty 这类基础库，模型能力全部来自被当作子进程调起的 CLI。所以它的技术护城河不在「怎么调用模型」，而在「谁在什么沙箱里按什么顺序做、由谁签字」。</p>
+  </div>
+
+  <div class="claim"><span class="tag">判断 02</span>
+    <p><b>核心抽象不是工作流图，是「冻结」。</b>SOP 版本不可变、运行快照冻结沙箱定义、检查点写进 run JSON 而不是模板库、沙箱 profile 随运行冻结。改一次 SOP 不会影响在跑的交付，重试能重建当时的确定环境——这是「可复现交付」真正的地基，也是绝大多数 Agent 产品缺的那一层。</p>
+  </div>
+
+  <div class="claim"><span class="tag">判断 03</span>
+    <p><b>「自进化」被刻意关进了笼子。</b>复盘引擎让模型对 6 个维度打分、开「处方」，但可应用的动作只有四种：改节点的 4 个标量字段、增门禁、删门禁、往角色提示词末尾追加文本。提示词里明令禁止「整份重写 SOP 或角色、不要改边或删节点」，总分还由服务端按权重重算、不采信模型自报。这是「受限自我修改」，不是自主重写。</p>
+  </div>
+
+  <div class="claim"><span class="tag">判断 04</span>
+    <p><b>它最硬的设计是「不信任 Agent 的自述」。</b>三种门禁正交：<code>command</code>（退出码说了算）、<code>manual</code>（人说了算）、<code>mr</code>（平台去代码托管方查 PR 是否真的指向推送的那个 commit）。0.4.0 新增的 MR 门禁会拒绝「声称已提 PR 但没提」「提到错分支」「只留了一个早先合过的旧 MR」三种情况。</p>
+  </div>
+
+  <div class="claim"><span class="tag">判断 05</span>
+    <p><b>护城河是「多宿主投影」，代价也是它。</b>同一套契约投影到平台 5 类节点与 Local 版 7 个宿主适配器；10 种 CLI 的凭据按责任人隔离、每个运行有私有 HOME、MCP 配置互不污染。代价是永无止境的适配长尾——公开 changelog 里大量条目是单个 CLI 的截断、装不上、能力被 drop 后 tar 改不了属主这类具体坑。</p>
+  </div>
+
+  <div class="claim"><span class="tag">判断 06</span>
+    <p><b>安全模型是「内网可信团队」，不是多租户 SaaS。</b>平台通过宿主机 Docker socket 起沙箱，官方文档自己写明这等于 host root；默认监听 <code>0.0.0.0:8090</code> 且开放自助注册；绑定的仓库里如果有 agent 配置或 hook，那段代码会被执行。第三方评测把这三条列为首要风险，这与官方「可信团队、不构成不可信多租户隔离边界」的表述一致。</p>
+  </div>
+
+  <div class="claim"><span class="tag">判断 07</span>
+    <p><b>这是一次「主干分叉出口」，不是从零起步的社区项目。</b>它保留了上游 Go 模块名 <code>agentflow</code>、包边界和 <code>AGENTFLOW_</code> 环境变量前缀，公开说明是为了「减少持续的合并冲突」；1,718 个源文件里 1,466 原样、178 适配、74 排除、58 新增。维护者的同步记录留在私有侧——这意味着长期供给节奏取决于内部主干，而非社区 PR。</p>
+  </div>
+
+  <div class="claim"><span class="tag">判断 08</span>
+    <p><b>它的可持续性风险不在技术，在治理与运维。</b>16 位贡献者、175 个未关闭议题、11 天发 9 个版本的节奏，加上「升级必须手工执行 SQL 迁移」「对话工作台仅中文」「需求澄清/评测/通知汇总锁死 CodeBuddy 模型」这几条，共同决定了它当前适合「有平台工程能力、能接受粗糙边缘的内部团队」，而不是「装上就用的产品」。</p>
+  </div>
+
+  <div class="verdict">
+    <h4>一句话判断</h4>
+    <p>LoopForge 值得研究的地方不是它支持十个 CLI，而是它把「Agent 说自己做完了」这件事拆成了三道可外部验证的证据：退出码、人去签字、托管方的 PR 状态。这三道证据串起来，才是「团队级 Agent 交付」和「个人 Vibe Coding」的真实分界线。</p>
+  </div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>范式定位：它在哪个坐标系里</h2>
+  <p class="sub">「AI 工作流平台」是一个被用滥的标签。要判断 LoopForge 是什么，先得给出这一类系统的判别条件，再看谁真的满足。</p>
+
+  <h3>四条判别式：什么才算「团队级 Agent 交付系统」</h3>
+  <p>把「能让 Agent 写代码」当成一个品类，会把 Copilot 补全、Claude Code 终端、Devin 云端工单、n8n 流程编排全部塞进同一个抽屉。它们解决的问题完全不同。真正构成一个新品类的，是同时满足下面四条的系统：</p>
+  <ol>
+    <li><b>独立执行环境。</b>任务不寄生在人正在用的终端里，而是跑在平台管理的容器/工作区里，可以跨设备、跨时段续跑。</li>
+    <li><b>角色上下文分离。</b>写代码的和评代码的不是同一段上下文——否则就是「自己改、自己批、自己宣称通过」。</li>
+    <li><b>确定性门禁。</b>「做完了」由退出码、托管方状态或人签字来判定，而不是由模型自述判定。</li>
+    <li><b>可查留痕。</b>任意一次交付都能回溯：谁在什么 SOP 版本下、由哪个角色、在哪个沙箱、经过哪几次打回、由谁放行。</li>
+  </ol>
+  <p>这四条缺一条，系统就退回成「更花哨的聊天框」或「更贵的 CI」。以此为尺，各派产品的落位就清楚了。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 480" role="img" aria-label="LoopForge 在「通用/专用」与「自托管/托管」两轴上的定位，以及与 Dify、Devin、单机 CLI 的相对位置">
+        <defs>
+          <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#4A505A"></path>
+          </marker>
+        </defs>
+
+        <!-- 象限分割 -->
+        <line x1="490" y1="88" x2="490" y2="412" stroke="#D3CFC4" stroke-width="1" stroke-dasharray="5 5"></line>
+        <line x1="66" y1="250" x2="892" y2="250" stroke="#D3CFC4" stroke-width="1" stroke-dasharray="5 5"></line>
+
+        <!-- 轴标签 -->
+        <text x="490" y="72" text-anchor="middle" font-size="12" fill="#4A505A">↑ 完全自托管（跑在自己的机器上）</text>
+        <text x="490" y="434" text-anchor="middle" font-size="12" fill="#4A505A">↓ 托管服务 / 个人终端</text>
+        <text x="66" y="272" text-anchor="start" font-size="12" fill="#4A505A">通用自动化 →</text>
+        <text x="892" y="272" text-anchor="end" font-size="12" fill="#4A505A">← 编码交付专用</text>
+
+        <!-- 左上：通用工作流平台 -->
+        <circle cx="240" cy="150" r="34" fill="#EAF1F8" stroke="#2F6FB0" stroke-width="1.5"></circle>
+        <text x="240" y="155" text-anchor="middle" font-size="12.5" fill="#1F5288">工作流</text>
+        <text x="240" y="202" text-anchor="middle" font-size="12.5" fill="#333941">Dify · n8n · Flowise</text>
+        <text x="240" y="220" text-anchor="middle" font-size="11" fill="#4A505A">节点是 HTTP/LLM 调用，无编码语义</text>
+
+        <!-- 右上：LoopForge -->
+        <circle cx="760" cy="145" r="46" fill="#FBF0E2" stroke="#B45309" stroke-width="2"></circle>
+        <text x="760" y="150" text-anchor="middle" font-size="14" font-weight="700" fill="#8F3F06">交付编排</text>
+        <text x="760" y="214" text-anchor="middle" font-size="14" font-weight="700" fill="#16181D">LoopForge</text>
+        <text x="760" y="232" text-anchor="middle" font-size="11" fill="#4A505A">角色分离 + 三类门禁 + 运行留痕</text>
+
+        <!-- 右下：托管编码智能体 -->
+        <circle cx="740" cy="332" r="34" fill="#EFEAF8" stroke="#6D3FB5" stroke-width="1.5"></circle>
+        <text x="740" y="337" text-anchor="middle" font-size="12" fill="#5A3099">云 Agent</text>
+        <text x="740" y="384" text-anchor="middle" font-size="12.5" fill="#333941">Devin · Codex Cloud · Copilot agent</text>
+        <text x="740" y="402" text-anchor="middle" font-size="11" fill="#4A505A">单租户黑盒：给需求、收 PR</text>
+
+        <!-- 左下：单机 CLI -->
+        <circle cx="196" cy="330" r="30" fill="#E6F2F0" stroke="#0F766E" stroke-width="1.5"></circle>
+        <text x="196" y="335" text-anchor="middle" font-size="12" fill="#0A5750">CLI</text>
+        <text x="196" y="380" text-anchor="middle" font-size="12.5" fill="#333941">Claude Code · Codex · CodeBuddy</text>
+        <text x="196" y="398" text-anchor="middle" font-size="11" fill="#4A505A">不满足四条判别式的任何一条</text>
+
+        <!-- 左下偏右：并行 agent 面板 -->
+        <circle cx="404" cy="330" r="25" fill="#E8F1E8" stroke="#2E7D32" stroke-width="1.5"></circle>
+        <text x="404" y="335" text-anchor="middle" font-size="12" fill="#1B5820">面板</text>
+        <text x="404" y="374" text-anchor="middle" font-size="12" fill="#333941">Conductor 类</text>
+        <text x="404" y="391" text-anchor="middle" font-size="11" fill="#4A505A">并行起多个 CLI，编排较浅</text>
+
+        <!-- 编码交付方向箭头 -->
+        <path d="M612,250 L640,250" stroke="#4A505A" stroke-width="1.2" marker-end="url(#ar1)" fill="none" opacity="0"></path>
+      </svg>
+    </div>
+    <figcaption><b>图 1｜两类坐标轴下的落位。</b>横轴区分「通用自动化」与「编码交付专用」，纵轴区分「自托管」与「托管/单机」。气泡面积大致对应编排深度——角色是否分离、门禁是否异构、留痕是否可回溯。LoopForge 的位置是右上：它把「专用」和「自托管」同时推到极端，因此既不能靠通用工作流平台替代，也不能被托管编码服务覆盖。<span class="pill p-info">分析者绘制</span></figcaption>
+  </figure>
+
+  <h3>与五类邻居的实质差异</h3>
+  <div class="tblwrap">
+    <table>
+      <thead>
+        <tr><th>对比对象</th><th>它擅长的事</th><th>LoopForge 的差异点</th><th>实质差距</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Dify / n8n / Flowise</b></td>
+          <td>通用 AI 与自动化流程搭建，节点是 HTTP 调用、模型调用、条件分支</td>
+          <td>节点语义直接是「岗位角色 / 确定性脚本 / 人工签字 / 子 SOP」，并绑定真实仓库与沙箱</td>
+          <td>通用平台能拼出「跑一次 Claude Code」，但拼不出「角色上下文隔离 + 打回上游 + PR 状态校验」</td>
+        </tr>
+        <tr>
+          <td><b>Devin / Codex Cloud / Copilot coding agent</b></td>
+          <td>把一个工单交给自家 Agent，产出 PR；体验顺滑、零运维</td>
+          <td>执行器中立（十种 CLI 可换）、流程可改、留痕在自己库里</td>
+          <td>托管服务不让你改「谁来做、按什么顺序、谁签字」，也不给你换模型供应商</td>
+        </tr>
+        <tr>
+          <td><b>单机 CLI（Claude Code 等）</b></td>
+          <td>单人单任务的极致效率</td>
+          <td>把它降格为「执行器」，外面套沙箱、队列、审批、指标</td>
+          <td>官方定位是「不替代它们，而是编排它们」——这是它的自我克制，也是它的天花板</td>
+        </tr>
+        <tr>
+          <td><b>Conductor / 并行 agent 面板类</b></td>
+          <td>一个界面里并行跑多个 worktree / 多个会话，人肉当调度器</td>
+          <td>调度器从人变成图执行引擎，并引入客观门禁</td>
+          <td>面板的并行是「同时开很多个」，LoopForge 的并行是「同一张图里的可执行分支一起跑，取消后重跑能恢复被取消的兄弟分支」</td>
+        </tr>
+        <tr>
+          <td><b>Jenkins + 一堆 Claude 脚本</b></td>
+          <td>完全可控、团队已有肌肉记忆</td>
+          <td>把「Agent 节点」做成一等公民：有独立上下文、产物契约、失败四态路由</td>
+          <td>自建脚本通常没有角色定义版本化、没有运行快照、没有把「打回到哪一步」建模</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="verdict">
+    <h4>一处坐标系错位</h4>
+    <p>README 的 FAQ 主动把自己与 Dify / n8n / Flowise 对比，但这个对比其实削弱了它：通用工作流平台根本不是它的替代品（没有编码语义），真正的替代品是「托管编码智能体」和「团队自建的 CI + CLI 脚本」。前者赢在零运维，后者赢在完全掌控——LoopForge 的全部设计张力，都在这两者之间。</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>演进动机：五个阶段，五次把「依赖人」换成「机制」</h2>
+  <p class="sub">官方叙事是一条五级阶梯。这一节把叙事与代码证据对齐：哪些阶段有实现支撑，哪些说法需要打折扣。</p>
+
+  <p>腾讯轻量云团队在发布文章中把自己的演进拆成五步，并明确说「不是第一天就设计了一套庞大架构，而是顺着团队真实落地的痛点，一步步跨过五道坎」。这个自述值得认真对待，因为它解释了产品为什么长成这样——每一层能力都对应一个具体的失败模式，而不是功能清单上的一个勾。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 190 960 320" role="img" aria-label="LoopForge 五阶段能力阶梯与 2026 年 7 月至 11 月的版本发布时间轴">
+        <!-- 阶梯 -->
+        <rect x="58" y="296" width="156" height="76" rx="8" fill="#EAF1F8" stroke="#2F6FB0" stroke-width="1.2"></rect>
+        <text x="136" y="322" text-anchor="middle" font-size="13" font-weight="700" fill="#1F5288">① 云端工作区</text>
+        <text x="136" y="342" text-anchor="middle" font-size="10.5" fill="#333941">痛点：合盖就断流</text>
+        <text x="136" y="358" text-anchor="middle" font-size="10.5" fill="#333941">执行搬进容器</text>
+
+        <rect x="224" y="272" width="156" height="100" rx="8" fill="#E6F2F0" stroke="#0F766E" stroke-width="1.2"></rect>
+        <text x="302" y="298" text-anchor="middle" font-size="13" font-weight="700" fill="#0A5750">② 共享会话</text>
+        <text x="302" y="318" text-anchor="middle" font-size="10.5" fill="#333941">痛点：上下文靠人搬</text>
+        <text x="302" y="334" text-anchor="middle" font-size="10.5" fill="#333941">一个 Bot 一个现场</text>
+        <text x="302" y="350" text-anchor="middle" font-size="10.5" fill="#333941">三挡写入权限</text>
+
+        <rect x="390" y="248" width="156" height="124" rx="8" fill="#FBF0E2" stroke="#B45309" stroke-width="1.5"></rect>
+        <text x="468" y="274" text-anchor="middle" font-size="13" font-weight="700" fill="#8F3F06">③ 工程级 SOP</text>
+        <text x="468" y="294" text-anchor="middle" font-size="10.5" fill="#333941">痛点：假装已完成</text>
+        <text x="468" y="310" text-anchor="middle" font-size="10.5" fill="#333941">脚本门禁 + 审批</text>
+        <text x="468" y="326" text-anchor="middle" font-size="10.5" fill="#333941">角色上下文隔离</text>
+        <text x="468" y="342" text-anchor="middle" font-size="10.5" fill="#333941">失败可打回上游</text>
+
+        <rect x="556" y="224" width="156" height="148" rx="8" fill="#EFEAF8" stroke="#6D3FB5" stroke-width="1.2"></rect>
+        <text x="634" y="250" text-anchor="middle" font-size="13" font-weight="700" fill="#5A3099">④ 无人值守</text>
+        <text x="634" y="270" text-anchor="middle" font-size="10.5" fill="#333941">痛点：天天人工盯单</text>
+        <text x="634" y="286" text-anchor="middle" font-size="10.5" fill="#333941">定时扫描需求池</text>
+        <text x="634" y="302" text-anchor="middle" font-size="10.5" fill="#333941">并发上限 + 跳过已处理</text>
+        <text x="634" y="318" text-anchor="middle" font-size="10.5" fill="#333941">集成分支冲突处理</text>
+
+        <rect x="722" y="200" width="156" height="172" rx="8" fill="#E8F1E8" stroke="#2E7D32" stroke-width="1.2"></rect>
+        <text x="800" y="226" text-anchor="middle" font-size="13" font-weight="700" fill="#1B5820">⑤ 工程级 RSI</text>
+        <text x="800" y="246" text-anchor="middle" font-size="10.5" fill="#333941">痛点：同类坑反复踩</text>
+        <text x="800" y="262" text-anchor="middle" font-size="10.5" fill="#333941">复盘打分 + 开处方</text>
+        <text x="800" y="278" text-anchor="middle" font-size="10.5" fill="#333941">人审后回写资产</text>
+        <text x="800" y="294" text-anchor="middle" font-size="10.5" fill="#333941">只允许受限改写</text>
+
+        <!-- 底边基准线 -->
+        <line x1="58" y1="372" x2="878" y2="372" stroke="#D3CFC4" stroke-width="1.5"></line>
+        <text x="58" y="392" text-anchor="start" font-size="11" fill="#4A505A">能力累积（越右越依赖前面的层）</text>
+
+        <!-- 时间轴 -->
+        <line x1="58" y1="440" x2="878" y2="440" stroke="#333941" stroke-width="1.5"></line>
+        <text x="58" y="422" text-anchor="start" font-size="11" font-weight="700" fill="#333941">版本事实（非等比例）</text>
+
+        <circle cx="92" cy="440" r="4" fill="#B45309"></circle>
+        <text x="92" y="464" text-anchor="middle" font-size="11" fill="#333941">07-28</text>
+        <text x="92" y="480" text-anchor="middle" font-size="10.5" fill="#4A505A">仓库公开</text>
+
+        <circle cx="204" cy="440" r="4" fill="#B45309"></circle>
+        <text x="204" y="464" text-anchor="middle" font-size="11" fill="#333941">08-07</text>
+        <text x="204" y="480" text-anchor="middle" font-size="10.5" fill="#4A505A">v0.1.0</text>
+
+        <circle cx="392" cy="440" r="4" fill="#B45309"></circle>
+        <text x="392" y="464" text-anchor="middle" font-size="11" fill="#333941">09-16</text>
+        <text x="392" y="480" text-anchor="middle" font-size="10.5" fill="#4A505A">v0.2.x</text>
+
+        <circle cx="566" cy="440" r="4" fill="#B45309"></circle>
+        <text x="566" y="464" text-anchor="middle" font-size="11" fill="#333941">11-06</text>
+        <text x="566" y="480" text-anchor="middle" font-size="10.5" fill="#4A505A">v0.3.0 平台版</text>
+
+        <circle cx="706" cy="440" r="4" fill="#B45309"></circle>
+        <text x="706" y="464" text-anchor="middle" font-size="11" fill="#333941">11-12</text>
+        <text x="706" y="480" text-anchor="middle" font-size="10.5" fill="#4A505A">v0.3.8</text>
+
+        <circle cx="848" cy="440" r="4" fill="#B45309"></circle>
+        <text x="848" y="464" text-anchor="middle" font-size="11" fill="#333941">11-17</text>
+        <text x="848" y="480" text-anchor="middle" font-size="10.5" fill="#4A505A">v0.4.0</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2｜能力阶梯与版本事实并列。</b>上半是官方叙事中的五道坎，每一格都标了它要解决的失败模式；下半是真实的发布节奏。11-06 到 11-17 的 11 天里发了 9 个 release（含 1 个 rc），密集程度说明这不是「设计完成后开源」，而是「边开源边补产品化」。时间轴为等距示意，非真实比例。<span class="pill p-info">源码 + Releases API</span></figcaption>
+  </figure>
+
+  <h3>逐阶段核对：哪些有实现支撑</h3>
+  <div class="tblwrap">
+    <table>
+      <thead>
+        <tr><th>官方阶段</th><th>代码层的支撑证据</th><th>证据强度</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>① 云端 7×24 工作区</td>
+          <td><code>internal/runtime</code> 180 个文件；<code>internal/engine</code> 里 workspace 相关源文件超过 20 个（制备、恢复、检查点、清理、租约、所有权），加上 <code>workspace_checkpoint_stream.go</code> 的流式快照传输</td>
+          <td><span class="pill p-ok">一手源码</span></td>
+        </tr>
+        <tr>
+          <td>② 共享会话 + Main Bot</td>
+          <td><code>conversation_workspace.go</code>（17.6 KB）负责会话与工作区绑定，<code>conversation_push.go</code> 处理打断/引导；三挡权限对应「待确认草稿 / 独立审查模型代批 / 全自动」，其中代批用的是无工具、无凭证的独立模型调用</td>
+          <td><span class="pill p-ok">一手源码</span></td>
+        </tr>
+        <tr>
+          <td>③ 工程级 SOP</td>
+          <td><code>internal/domain/workflow.go</code> 定义节点、边、产物契约、门禁；<code>node_execute.go</code> 45 KB 是执行核心；失败四态 <code>loop / reject / fail / human</code> 在 <code>runeval/apply.go</code> 的白名单里可查</td>
+          <td><span class="pill p-ok">一手源码</span></td>
+        </tr>
+        <tr>
+          <td>④ 无人值守自动化</td>
+          <td><code>internal/schedule</code>（6 文件）+ <code>internal/tracker</code>（31 文件，远程 issue/PR 适配器）+ <code>migrations/034_schedule_job_executions.sql</code>；0.4.0 加入「定时任务保留执行历史、按任务保留会话」</td>
+          <td><span class="pill p-ok">一手源码 + 变更日志</span></td>
+        </tr>
+        <tr>
+          <td>⑤ 工程级 RSI</td>
+          <td><code>internal/runeval</code>（facts / prompt / apply 三件套）+ <code>internal/domain/run_eval.go</code>（六维策略、加权算法、处方白名单）</td>
+          <td><span class="pill p-part">实现存在，能力边界小于宣传</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warn">
+    <h4>需要打折扣的两处说法</h4>
+    <p><b>「已服务内部 20+ 业务、单月自动完成 200+ 需求与单据」</b>——这个数字来自官方公众号，没有任何第三方审计或可复现口径（是「自动完成」还是「自动跑到人工关口」也没有区分）。按证据分级属于<b>厂商自报</b>，可以作为量级参考，不能当作已证实的生产能力。</p>
+    <p><b>「自动改写 SOP 节点 / 进化流程拓扑」</b>——发布文章的表述容易读成「系统能自己重写流程图」。但 <code>runeval/apply.go</code> 的 <code>update_node</code> 只允许改 <code>maxAttempts</code>、<code>maxReworks</code>、<code>onFailure</code>、<code>retryStrategy</code> 四个标量字段，且提示词明确写「不要改边或删节点」。两者不是同一个东西，详见第 06 章。</p>
+  </div>
+
+  <p>把这两处折扣打完，剩下的部分反而是更硬的结论：<b>这个系统真正的创新点集中在第 ③ 层</b>——把「角色、门禁、产物契约」做成可版本化的资产，并让失败有结构化的去处。第 ① ② ④ 层是必要的产品化外壳，第 ⑤ 层目前是参数层面的微调器。</p>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>架构：五层分离，以及「冻结」这条暗线</h2>
+  <p class="sub">从目录职责能读出一个系统真正的切分方式。LoopForge 的切分很规整，但它真正的设计意图藏在数据结构的注释里。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 540" role="img" aria-label="LoopForge 五层架构：界面层、接口层、数据层、引擎层、执行层及其规模">
+        <defs><marker id="ar9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#B45309"></path></marker></defs>
+        <path d="M78,74 L78,462" stroke="#B45309" stroke-width="1.5" fill="none" marker-end="url(#ar9)"></path>
+        <path d="M862,462 L862,74" stroke="#0F766E" stroke-width="1.5" fill="none" marker-end="url(#ar9)"></path>
+        <text x="78" y="492" text-anchor="middle" font-size="10.5" fill="#8F3F06">下发意图</text>
+        <text x="862" y="492" text-anchor="middle" font-size="10.5" fill="#0A5750">上行证据</text>
+
+        <rect x="110" y="74" width="720" height="66" rx="8" fill="#EAF1F8" stroke="#2F6FB0" stroke-width="1"></rect>
+        <text x="128" y="114" text-anchor="start" font-size="13" font-weight="700" fill="#1F5288">界面层</text>
+        <text x="212" y="114" text-anchor="start" font-size="11.5" fill="#333941">Web 工作台 · 流程设计器 · 待我确认 · 统计与成本 · 内嵌 IDE</text>
+        <text x="812" y="114" text-anchor="end" font-size="10.5" fill="#4A505A">vscode-web 722 文件</text>
+
+        <rect x="110" y="152" width="720" height="66" rx="8" fill="#E6F2F0" stroke="#0F766E" stroke-width="1"></rect>
+        <text x="128" y="192" text-anchor="start" font-size="13" font-weight="700" fill="#0A5750">接口层</text>
+        <text x="212" y="192" text-anchor="start" font-size="11.5" fill="#333941">HTTP API · MCP 服务 · SSE 流式 · 定时任务 API · 协作接口</text>
+        <text x="812" y="192" text-anchor="end" font-size="10.5" fill="#4A505A">httpapi 430 文件</text>
+
+        <rect x="110" y="230" width="720" height="66" rx="8" fill="#F5F2EB" stroke="#D3CFC4" stroke-width="1"></rect>
+        <text x="128" y="270" text-anchor="start" font-size="13" font-weight="700" fill="#333941">数据层</text>
+        <text x="212" y="270" text-anchor="start" font-size="11.5" fill="#333941">MySQL + GORM · 显式 SQL 迁移 · 运行快照与检查点 · 产物归档</text>
+        <text x="812" y="270" text-anchor="end" font-size="10.5" fill="#4A505A">35 个迁移脚本</text>
+
+        <rect x="110" y="308" width="720" height="66" rx="8" fill="#FBF0E2" stroke="#B45309" stroke-width="1.5"></rect>
+        <text x="128" y="348" text-anchor="start" font-size="13" font-weight="700" fill="#8F3F06">引擎层</text>
+        <text x="212" y="348" text-anchor="start" font-size="11.5" fill="#333941">SOP 图执行 · 租约与心跳 · 并行分支 · 门禁判定 · 取消与恢复</text>
+        <text x="812" y="348" text-anchor="end" font-size="10.5" fill="#4A505A">engine 136 文件</text>
+
+        <rect x="110" y="386" width="720" height="66" rx="8" fill="#EFEAF8" stroke="#6D3FB5" stroke-width="1"></rect>
+        <text x="128" y="426" text-anchor="start" font-size="13" font-weight="700" fill="#5A3099">执行层</text>
+        <text x="212" y="426" text-anchor="start" font-size="11.5" fill="#333941">10 种编码 CLI · Docker 沙箱 · 执行机器 runner · 私有 HOME 与凭据</text>
+        <text x="812" y="426" text-anchor="end" font-size="10.5" fill="#4A505A">runtime + runner 245 文件</text>
+
+        <text x="110" y="506" text-anchor="start" font-size="10.5" fill="#4A505A">左箭头：谁来做、在哪做、按什么顺序　　右箭头：产物、日志、指标、门禁结论</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3｜五层职责与代码体量。</b>体量分布本身就是一个判断：接口层（430 文件）比引擎层（136 文件）大三倍，说明这是一个「产品化成本远高于核心算法」的系统——编排逻辑本身不复杂，复杂的是把它接进真实的账号、凭据、仓库、沙箱与界面。<span class="pill p-info">仓库文件树统计</span></figcaption>
+  </figure>
+
+  <h3>为什么切得这么规整</h3>
+  <p><code>docs/architecture.md</code> 给出一张极短的职责表，值得整段引用它的切分逻辑：<code>cmd/</code> 下四个二进制（API/worker 合体、runner、公开 MCP、结构化门禁 MCP）；<code>internal/engine</code> 管图、租约、调度、沙箱生命周期与交付；<code>internal/repo</code> 管持久化且「一个业务域一个仓储」；<code>internal/httpapi</code> 同样「一个业务域一个 handler」；<code>internal/runtime</code>+<code>internal/runner</code> 管执行器协议、凭据、隔离与产物；<code>internal/tracker</code> 管远程 issue/PR 适配。</p>
+  <p>这套切法的直接后果是：<b>「换一个编码 CLI」和「改一条 SOP」互不影响</b>。前者只碰 runtime/runner，后者只碰 domain/engine。这也是它能同时支持十个 CLI 的结构性原因——不是适配做得多，是适配被关在了一个足够小的盒子里。</p>
+
+  <div class="note">
+    <b>一个反直觉的数字：</b>整个 Go 后端 <code>go.mod</code> 的直接依赖只有 12 个（gin、gorm、mysql、sqlite、websocket、pty、yaml、compress、crypto 等），<b>没有任何 LLM SDK</b>。模型能力百分之百通过子进程调用 CLI 获得。这意味着它不处理 token 流、不实现 function calling、不管采样参数——这些全在执行器黑盒里。
+  </div>
+
+  <h3>「冻结」：读注释才能看见的设计意图</h3>
+  <p>如果只看功能列表，会以为核心抽象是「工作流图」。但 <code>internal/domain/workflow.go</code> 的注释反复指向另一件事：<b>把「当时的样子」冻住</b>。</p>
+  <ul>
+    <li><code>SOPCheckpoint</code> 的注释是「frozen in the run JSON, never in a catalog definition」——检查点属于那次运行，不属于模板。</li>
+    <li><code>SandboxSnapshot</code> 只在 <code>Run.WorkflowSnapshot</code> 上填充，冻结解析后的 profile 与 Dockerfile/环境载荷，「so retries can reconstruct the original environment after catalog definitions change」——模板改了，重试仍重建原来的环境。</li>
+    <li><code>Preview</code> 契约「frozen into the run snapshot so later SOP edits cannot change an in-flight archive」——正在跑的归档不会被编辑影响。</li>
+    <li><code>DefinitionRevision</code> 是 workflow/agent 的不可变快照，用于 diff 与回滚。</li>
+    <li><code>MetricCategory</code> 在 Run 创建时随 <code>WorkflowSnapshot</code> 冻结，「历史执行不受后续编辑影响」。</li>
+  </ul>
+  <p>这五处指向同一条原则：<b>运行中的一切以快照为准，模板只影响下一次</b>。多数「AI 工作流」产品做不到这点——它们把流程存在一张会变的表里，于是「三个月前那次交付到底按什么流程跑的」永远说不清。对需要审计的团队交付来说，这条比任何 Agent 能力都重要。</p>
+
+  <div class="claim"><span class="tag">证据强度说明</span>
+    <p>上面五处「冻结」全部来自源码注释与结构体字段，属于<b>一手实现证据</b>；「多数产品做不到」属于分析者判断，未做竞品逐一核验，标注为<b>观点</b>。</p>
+  </div>
+
+  <h3>快速迭代留下的痕迹</h3>
+  <p>工程卫生上有几处值得记录的粗糙边缘，它们不影响正确性，但能反映节奏：<code>migrations/</code> 里 <code>016</code> 和 <code>024</code> 各出现了两个不同内容的文件（<code>016_mr_delivery_merged_at</code> 与 <code>016_public_optional_repositories</code> 并存），说明并行开发时编号撞车；而 <code>033_generic_sop_mr_node.sql</code>（22 KB）要在升级时<b>手工执行</b>才能给已有安装补上「发起 MR」节点——因为 gorm 的 AutoMigrate 建不出生成列，这类迁移只能显式写 SQL。这个约束在 0.4.0 的变更日志里被反复提及，也成了自托管运维的主要摩擦点之一。</p>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>执行模型：门禁是三种异构证据，不是一个「通过」按钮</h2>
+  <p class="sub">这一章是 LoopForge 最值得抄的部分。它把「做完了」拆成三种互不替代的判定，并给失败设计了四个有区别的出口。</p>
+
+  <h3>五类节点，各管一件事</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>节点类型</th><th>谁来执行</th><th>成功的判据</th><th>典型用途</th></tr></thead>
+      <tbody>
+        <tr><td><b>Agent</b></td><td>一个角色：提示词 + 执行器 + 模型 + 规则 + Skills + MCP 工具</td><td>产出声明的产物，并通过该角色的门禁</td><td>澄清、设计、实现、评审、测试</td></tr>
+        <tr><td><b>Script</b></td><td>确定性 Shell / Python</td><td>退出码</td><td>构建、单测、Lint、生成报告</td></tr>
+        <tr><td><b>Approval</b></td><td>人</td><td>点通过，或打回到指定节点</td><td>验收、上线前签字</td></tr>
+        <tr><td><b>Sub-SOP</b></td><td>另一条 SOP 作为子流程</td><td>子流程终态</td><td>复用一套既定流程</td></tr>
+        <tr><td><b>Preview build</b></td><td>平台</td><td>静态站点构建并归档</td><td>前端交付物供人评审</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>值得单独说的是 <b>Script 节点</b>。它在宣传里最不起眼，却是设计上最清醒的一处：<b>不需要推理的地方就不放模型</b>。测试要么过要么不过，这件事交给退出码比交给模型便宜三个数量级，也可靠三个数量级。多数「Agent 工作流」产品的失败，恰恰是把「跑测试」也做成了一次模型调用，然后收获一段「我已经运行了测试，看起来都没问题」。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 520" role="img" aria-label="节点执行的门禁判定与四种失败出口，以及三类门禁判定来源">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#333941"></path>
+          </marker>
+        </defs>
+
+        <rect x="60" y="76" width="160" height="68" rx="8" fill="#EFEAF8" stroke="#6D3FB5" stroke-width="1.2"></rect>
+        <text x="140" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#5A3099">节点执行</text>
+        <text x="140" y="124" text-anchor="middle" font-size="11" fill="#333941">Agent 或脚本</text>
+
+        <path d="M220,110 L288,110" stroke="#333941" stroke-width="1.4" fill="none" marker-end="url(#ar2)"></path>
+
+        <rect x="288" y="76" width="168" height="68" rx="8" fill="#FBF0E2" stroke="#B45309" stroke-width="1.8"></rect>
+        <text x="372" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#8F3F06">门禁判定</text>
+        <text x="372" y="124" text-anchor="middle" font-size="11" fill="#333941">不采信节点自述</text>
+
+        <path d="M456,110 L524,110" stroke="#333941" stroke-width="1.4" fill="none" marker-end="url(#ar2)"></path>
+        <text x="490" y="100" text-anchor="middle" font-size="10.5" fill="#1B5820">通过</text>
+
+        <rect x="524" y="76" width="160" height="68" rx="8" fill="#E8F1E8" stroke="#2E7D32" stroke-width="1.2"></rect>
+        <text x="604" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#1B5820">推进下游</text>
+        <text x="604" y="124" text-anchor="middle" font-size="11" fill="#333941">依赖完成后自动</text>
+
+        <!-- 分支结构 -->
+        <path d="M372,144 L372,196" stroke="#B3261E" stroke-width="1.3" fill="none"></path>
+        <text x="382" y="176" text-anchor="start" font-size="10.5" fill="#9A2019">未通过</text>
+        <line x1="210" y1="196" x2="825" y2="196" stroke="#B3261E" stroke-width="1.3"></line>
+        <path d="M210,196 L210,232" stroke="#B3261E" stroke-width="1.3" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M415,196 L415,232" stroke="#B3261E" stroke-width="1.3" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M620,196 L620,232" stroke="#B3261E" stroke-width="1.3" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M825,196 L825,232" stroke="#B3261E" stroke-width="1.3" fill="none" marker-end="url(#ar2)"></path>
+
+        <rect x="120" y="238" width="180" height="96" rx="8" fill="#FBF0E2" stroke="#B45309" stroke-width="1.2"></rect>
+        <text x="210" y="262" text-anchor="middle" font-size="12.5" font-weight="700" fill="#8F3F06">loop · 回环</text>
+        <text x="210" y="284" text-anchor="middle" font-size="10.5" fill="#333941">失败原因回灌当前节点</text>
+        <text x="210" y="302" text-anchor="middle" font-size="10.5" fill="#333941">Agent 拿着真实报错自愈</text>
+        <text x="210" y="320" text-anchor="middle" font-size="10.5" fill="#333941">上限 maxAttempts</text>
+
+        <rect x="325" y="238" width="180" height="96" rx="8" fill="#FAE9E7" stroke="#B3261E" stroke-width="1.2"></rect>
+        <text x="415" y="262" text-anchor="middle" font-size="12.5" font-weight="700" fill="#9A2019">reject · 打回</text>
+        <text x="415" y="284" text-anchor="middle" font-size="10.5" fill="#333941">退到图中指定的上游节点</text>
+        <text x="415" y="302" text-anchor="middle" font-size="10.5" fill="#333941">逐级返工，不在原地转</text>
+        <text x="415" y="320" text-anchor="middle" font-size="10.5" fill="#333941">上限 maxReworks</text>
+
+        <rect x="530" y="238" width="180" height="96" rx="8" fill="#FAE9E7" stroke="#B3261E" stroke-width="1.2"></rect>
+        <text x="620" y="262" text-anchor="middle" font-size="12.5" font-weight="700" fill="#9A2019">fail · 终止</text>
+        <text x="620" y="284" text-anchor="middle" font-size="10.5" fill="#333941">本次运行直接失败</text>
+        <text x="620" y="302" text-anchor="middle" font-size="10.5" fill="#333941">日志与产物全部保留</text>
+        <text x="620" y="320" text-anchor="middle" font-size="10.5" fill="#333941">不静默吞掉错误</text>
+
+        <rect x="735" y="238" width="180" height="96" rx="8" fill="#EAF1F8" stroke="#2F6FB0" stroke-width="1.2"></rect>
+        <text x="825" y="262" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1F5288">human · 转人</text>
+        <text x="825" y="284" text-anchor="middle" font-size="10.5" fill="#333941">查不到 PR、仓库走 SSH</text>
+        <text x="825" y="302" text-anchor="middle" font-size="10.5" fill="#333941">等一个人来判</text>
+        <text x="825" y="320" text-anchor="middle" font-size="10.5" fill="#333941">不猜测、不放行</text>
+
+        <!-- 三类判定源 -->
+        <text x="60" y="382" text-anchor="start" font-size="12" font-weight="700" fill="#333941">三类判定源（正交，按节点需要选）</text>
+
+        <rect x="60" y="398" width="240" height="80" rx="8" fill="#F5F2EB" stroke="#D3CFC4" stroke-width="1"></rect>
+        <text x="180" y="422" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">command</text>
+        <text x="180" y="442" text-anchor="middle" font-size="10.5" fill="#333941">命令退出码，执行域可选</text>
+        <text x="180" y="458" text-anchor="middle" font-size="10.5" fill="#333941">run 或 repositories</text>
+
+        <rect x="316" y="398" width="240" height="80" rx="8" fill="#F5F2EB" stroke="#D3CFC4" stroke-width="1"></rect>
+        <text x="436" y="422" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">manual</text>
+        <text x="436" y="442" text-anchor="middle" font-size="10.5" fill="#333941">人看产物后签字</text>
+        <text x="436" y="458" text-anchor="middle" font-size="10.5" fill="#333941">可打回到任意上游节点</text>
+
+        <rect x="572" y="398" width="240" height="80" rx="8" fill="#F5F2EB" stroke="#D3CFC4" stroke-width="1"></rect>
+        <text x="692" y="422" text-anchor="middle" font-size="12.5" font-weight="700" fill="#333941">mr</text>
+        <text x="692" y="442" text-anchor="middle" font-size="10.5" fill="#333941">平台去托管方查 PR 真实状态</text>
+        <text x="692" y="458" text-anchor="middle" font-size="10.5" fill="#333941">不依赖节点的自我汇报</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4｜门禁判定与四态失败路由。</b>四态的关键差别在「返工的落点」：loop 回到自己、reject 退到指定上游、fail 终止、human 交人。没有第五个「假装通过」的出口。下方三种判定源相互正交，同一个节点可以叠加。<span class="pill p-info">源码 + 变更日志</span></figcaption>
+  </figure>
+
+  <h3>MR 门禁：把「我真的提了 PR」变成可外部验证的断言</h3>
+  <p>v0.4.0 新增的 <code>mr</code> 门禁是全系统最锋利的一处设计。它的判定条件写得非常具体（以下为变更日志的实质内容）：</p>
+  <ul>
+    <li>对运行中每一个<b>可写</b>仓库：如果它的工作分支在 origin 上已超出目标分支，就必须存在一条<b>从该工作分支指向该目标分支</b>、且 head 为已推送 tip 的 MR/PR；</li>
+    <li>「开放且 head 是这次 tip」可以，「已合并且 head 是这次 tip」也可以；</li>
+    <li>「Agent 报告通过但其实没提」「提到错的分支」「复用旧工作分支从而只留了一个早先合过的 MR」——三种都到不了交付汇总；</li>
+    <li>查询以<b>运行的身份</b>执行：GitHub 用运行推送时的 Git Token（责任人的），退化到项目 Owner；工蜂走项目 MCP 作为责任人；</li>
+    <li>平台查不到的主机（SSH 仓库、查询失败）直接转 <code>human</code>，不猜。</li>
+  </ul>
+  <p>这段逻辑的价值不在复杂度，而在<b>它承认了「Agent 会谎报」这个前提</b>。绝大多数 Agent 编排系统把「请提交 PR」写在提示词里，然后相信模型的复述。LoopForge 选择再花一次网络请求去托管方核实——这是把可信度建立在协议而不是模型品格上。</p>
+
+  <div class="claim"><span class="tag">可迁移的设计</span>
+    <p>「门禁必须在系统外部找到证据」这条原则可以套到任何场景：不是问 Agent「你跑测试了吗」，而是看 CI 的 job id；不是问 Agent「你改了几个文件」，而是 <code>git diff --stat</code>；不是问 Agent「需求理解对了吗」，而是让人在一张结构化报告上签字。每一条都可以照抄。</p>
+  </div>
+
+  <h3>并行、取消与恢复：并发语义写得很细</h3>
+  <p>架构文档里有一句容易被忽略的话：「Ready branches execute together in the run workspace; rerunning one branch after a cancel restores cancelled siblings」。翻成工程语言是：同一张图里互不依赖的分支并发执行，共享同一个运行工作区；取消后再重跑其中一条，<b>被取消的兄弟分支会被恢复</b>，而不是留下半截状态。</p>
+  <p>配合执行侧的租约设计——默认 TTL 30 秒、会话心跳 45 秒、且「心跳年龄按写它的数据库时钟计算，所以 API 主机与 MySQL 的时钟偏移既不会误杀活着的轮次，也不会让死掉的轮次赖着不走」——可以看出这套东西是在多副本、可崩溃的环境里被真实打磨过的，不是单机 demo 的延伸。</p>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>沙箱与凭据：三次被自己的编排层咬到</h2>
+  <p class="sub">编排层的安全风险不在模型，在「它必须同时掌握宿主机、仓库和密钥」这件事本身。LoopForge 的公开记录里有三处真实的踩坑与修复，比任何架构图都更有说服力。</p>
+
+  <h3>边界声明写得很直白</h3>
+  <p>官方部署文档的原话是：默认 Compose 安装下，SOP 运行与对话工作区都使用 Docker 沙箱容器，<b>由平台通过宿主机 Docker socket 启动</b>；而 Docker socket 赋予平台控制宿主机 Docker 的权限，因此「只适用于可信团队，不构成不可信多租户隔离边界」。同一处还写明新安装默认监听所有网卡、已登录用户可以读取实例内各项目数据、团队成员可自助注册。</p>
+  <p>第三方评测在独立读过代码后得出同样结论，并额外指出两点：容器内的 Agent 以完全权限运行（包括 Claude Code 的 permission-bypass 模式）；<b>绑定的仓库如果自带 agent 配置或 hooks，那段代码会被执行</b>——所以只能接可信仓库。这三点加在一起，画出的边界很清楚：<b>它是一台放在内网里的团队工具，不是一个可以直接暴露到公网的 SaaS。</b></p>
+
+  <div class="verdict">
+    <h4>这种「主动写清边界」的做法本身值得记一笔</h4>
+    <p>大多数自托管项目会把「Docker socket 等于 host root」这类事实藏在脚注里。LoopForge 把它写进 README 的部署边界段，并在 0.3.8 专门加固了 header 身份认证（带转发头的请求默认忽略身份头，除非网关同时提供共享密钥）。这是一种「先承认攻击面，再逐条收窄」的工程态度。</p>
+  </div>
+
+  <h3>踩坑一：加固把沙箱自己锁在门外</h3>
+  <p>公开验证记录里有一个非常具体的故障：宿主上的平台服务以非 root 用户运行，工作区目录权限是 <code>0700</code>；而沙箱镜像以 root 启动并丢弃全部能力（all capabilities dropped），结果连 <code>cd /workspace</code> 都失败——因为 root 在无 <code>DAC_OVERRIDE</code> 能力时，并不能越过权限位进入别人的目录。</p>
+  <p>修复方式不是放宽权限，而是<b>让默认/root 镜像在宿主服务为非 root 时改用该服务的 UID/GID</b>，同时保留显式指定非 root 用户的情形。回归测试以 UID 1001 真实复现了原始失败，并验证了修复后「宿主可读输出、<code>0700</code> 权限不变、有效能力为零、<code>NoNewPrivs=1</code>」四条同时成立。</p>
+  <p>这个小故事的技术含金量在于：<b>它证明了加固是真的，不是文档里的一句形容词</b>。零能力 + <code>NoNewPrivs</code> + 属主严格匹配，代价是几乎所有「先跑起来再说」的脚本都会在这里翻车。</p>
+
+  <h3>踩坑二：密钥出现在自己的运行日志里</h3>
+  <p>v0.4.0 的变更日志里有一条自我披露：运行日志与遥测此前会打印完整的 <code>docker exec</code> 命令行，里面包含 <code>DEEPSEEK_API_KEY</code>、以及配自定义 Base URL 时用的 <code>AGENTFLOW_CLI_API_KEY</code>，<b>明文，且项目成员可读</b>。修复是把所有以 <code>_API_KEY</code>、<code>_TOKEN</code>、<code>_SECRET</code>、<code>_PASSWORD</code> 结尾的环境变量统一脱敏，并明确建议「在此版本之前跑过 SOP 角色的密钥请轮换」。</p>
+  <p>同一版本还修了另一条同源问题：仓库的 <code>cloneUrl</code> 里如果带用户名密码（形如 <code>https://user:token@github.com/...</code>），此前会被接受并落进每个工作区的 <code>.git/config</code>，Agent 可以读到；现在保存时直接拒绝并提示改用个人 Git Token，而历史数据在 API 返回时也会被剥离。</p>
+
+  <div class="warn">
+    <h4>这两条值得所有做编排层的人抄在墙上</h4>
+    <p><b>编排层是密钥的必经之路。</b>它必须把凭据交给子进程，所以「命令行的完整展开」天然就是一条泄漏通道——而这条通道恰好最容易被日志、遥测、错误上报三件事同时捕获。默认策略应该是：任何进入 exec 参数的东西，先过一遍脱敏白名单，再考虑要不要记。</p>
+  </div>
+
+  <h3>踩坑三：每个会话一个 HOME，磁盘被自己吃光</h3>
+  <p>为了让十个 CLI 的凭据与 MCP 配置互不污染，每次运行都跑在<b>私有 HOME</b> 里。这带来一个直接的副作用：CodeBuddy 会在每个 HOME 里下载内置插件市场，一个会话约 72 MB；删除会话时，它的共享原生根目录没被清掉，每个约 73 MB，于是「一个定时任务每轮替换上一次运行」就变成每轮涨一个目录。修复后新会话占用降到 1 MB 以下，并加了每日 janitor 清理已删会话遗留的根目录。</p>
+  <p>这三个坑有一个共同结构：<b>它们都不是算法问题，而是「编排层同时拥有太多权限」的必然副作用</b>。这也解释了为什么第 03 章那张图里接口层会有 430 个文件——产品化的成本几乎全部花在处理这类「耦合产生的长尾」上。</p>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>「自进化」到底能改什么：一份白名单的完整解读</h2>
+  <p class="sub">官方称之为「工程级 RSI」。这一章把它的实现完整拆开——包括那些它明确不允许自己做的事。</p>
+
+  <h3>闭环的形状</h3>
+  <p>每次 SOP 运行结束后，复盘引擎会把这次运行压缩成一组<b>结构化事实</b>（不是原始日志），交给模型按固定维度打分并开处方，处方以「待批准」状态入库，人审后由 <code>runeval.ApplyRecommendation</code> 写回 SOP 或角色定义，产生新版本。下一轮运行用新版本。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 520" role="img" aria-label="LoopForge 复盘闭环：运行、采集事实、六维打分、开处方、人审、回写资产">
+        <circle cx="480" cy="250" r="150" fill="none" stroke="#D3CFC4" stroke-width="1.5"></circle>
+
+        <!-- 节点 -->
+        <circle cx="480" cy="100" r="34" fill="#EAF1F8" stroke="#2F6FB0" stroke-width="1.6"></circle>
+        <circle cx="610" cy="175" r="34" fill="#E6F2F0" stroke="#0F766E" stroke-width="1.6"></circle>
+        <circle cx="610" cy="325" r="34" fill="#FBF0E2" stroke="#B45309" stroke-width="1.6"></circle>
+        <circle cx="480" cy="400" r="34" fill="#FAE9E7" stroke="#B3261E" stroke-width="1.6"></circle>
+        <circle cx="350" cy="325" r="34" fill="#EFEAF8" stroke="#6D3FB5" stroke-width="1.6"></circle>
+        <circle cx="350" cy="175" r="34" fill="#E8F1E8" stroke="#2E7D32" stroke-width="1.6"></circle>
+
+        <!-- 方向箭头 -->
+        <path d="M0,-6 L11,0 L0,6 z" fill="#4A505A" transform="translate(555,120) rotate(30)"></path>
+        <path d="M0,-6 L11,0 L0,6 z" fill="#4A505A" transform="translate(630,250) rotate(90)"></path>
+        <path d="M0,-6 L11,0 L0,6 z" fill="#4A505A" transform="translate(555,380) rotate(150)"></path>
+        <path d="M0,-6 L11,0 L0,6 z" fill="#4A505A" transform="translate(405,380) rotate(210)"></path>
+        <path d="M0,-6 L11,0 L0,6 z" fill="#4A505A" transform="translate(330,250) rotate(270)"></path>
+        <path d="M0,-6 L11,0 L0,6 z" fill="#4A505A" transform="translate(405,120) rotate(330)"></path>
+
+        <!-- 中心 -->
+        <text x="480" y="240" text-anchor="middle" font-size="15" font-weight="700" fill="#16181D">准入线 70 分</text>
+        <text x="480" y="264" text-anchor="middle" font-size="11.5" fill="#4A505A">六维加权，服务端重算</text>
+        <text x="480" y="285" text-anchor="middle" font-size="11" fill="#4A505A">模型只打维度分</text>
+
+        <!-- 标签 -->
+        <text x="480" y="49" text-anchor="middle" font-size="13" font-weight="700" fill="#1F5288">① 运行结束</text>
+        <text x="480" y="66" text-anchor="middle" font-size="10.5" fill="#4A505A">冻结的快照</text>
+
+        <text x="660" y="146" text-anchor="start" font-size="13" font-weight="700" fill="#0A5750">② 采集事实</text>
+        <text x="660" y="163" text-anchor="start" font-size="10.5" fill="#4A505A">节点耗时 · 工具重复</text>
+        <text x="660" y="179" text-anchor="start" font-size="10.5" fill="#4A505A">错误计数 · 打回环路</text>
+
+        <text x="660" y="352" text-anchor="start" font-size="13" font-weight="700" fill="#8F3F06">③ 六维打分</text>
+        <text x="660" y="369" text-anchor="start" font-size="10.5" fill="#4A505A">控制流 / 耗时 / 工具</text>
+        <text x="660" y="385" text-anchor="start" font-size="10.5" fill="#4A505A">Token / 恢复 / 交付</text>
+
+        <text x="480" y="457" text-anchor="middle" font-size="13" font-weight="700" fill="#9A2019">④ 开处方</text>
+        <text x="480" y="474" text-anchor="middle" font-size="10.5" fill="#4A505A">只允许四类动作</text>
+
+        <text x="300" y="352" text-anchor="end" font-size="13" font-weight="700" fill="#5A3099">⑤ 人审</text>
+        <text x="300" y="369" text-anchor="end" font-size="10.5" fill="#4A505A">pending → applied</text>
+        <text x="300" y="385" text-anchor="end" font-size="10.5" fill="#4A505A">可逐条采纳或丢弃</text>
+
+        <text x="300" y="146" text-anchor="end" font-size="13" font-weight="700" fill="#1B5820">⑥ 回写资产</text>
+        <text x="300" y="163" text-anchor="end" font-size="10.5" fill="#4A505A">生成新版本，可回滚</text>
+        <text x="300" y="179" text-anchor="end" font-size="10.5" fill="#4A505A">下一轮按新版跑</text>
+
+        <text x="480" y="504" text-anchor="middle" font-size="10.5" fill="#4A505A">任何一环都可以被人为中断：不批准，闭环就停在这里</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5｜复盘闭环与它的刹车片。</b>闭环有六个环节，但真正决定「自进化」性质的是第 ④ 和第 ⑤：处方只能落在白名单里，且必须经人批准才生效。顺带一个工程细节——总分不由模型给出，模型只给六个维度分，加权与准入判断在服务端用整数算法重算，模型自报的 <code>score</code> 字段被忽略。<span class="pill p-info">源码</span></figcaption>
+  </figure>
+
+  <h3>六维评分：评的是「流程健康」，不是「代码质量」</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>维度</th><th>权重</th><th>它问的问题（策略原文）</th><th>它不评什么</th></tr></thead>
+      <tbody>
+        <tr><td><code>control</code> 控制流健康</td><td class="num">25</td><td>节点是否多次循环、返工或 A→B→A 打回？attempt/rework 是否超过节点上限？</td><td>业务逻辑对错</td></tr>
+        <tr><td><code>latency</code> 耗时与等待</td><td class="num">20</td><td>单节点是否占了大部分执行时间？墙钟是否远大于实际执行（空转/排队）？</td><td>模型推理速度</td></tr>
+        <tr><td><code>tools</code> 工具浪费</td><td class="num">20</td><td>是否有同工具连续失败、重复 Read/Grep 无进展、无产物的空转调用？</td><td>工具选型是否最优</td></tr>
+        <tr><td><code>tokens</code> Token 效率</td><td class="num">15</td><td>Token 是否集中在单一节点？缓存命中是否过低且输入很大？</td><td>账单真实折扣价</td></tr>
+        <tr><td><code>recovery</code> 错误恢复</td><td class="num">10</td><td>相同错误是否反复出现？门禁是否多次失败才过？失败后有没有有效变化？</td><td>错误根因分析</td></tr>
+        <tr><td><code>delivery</code> 交付完整</td><td class="num">10</td><td>终态是否成功？预期产物与 verification/delivery 信号是否齐全？</td><td>交付物本身好不好</td></tr>
+      </tbody>
+      <caption>准入线 70 分。权重合计 100，服务端按 <code>(Σ分×权重 + 总权重/2) / 总权重</code> 四舍五入取整，缺维度或越界直接报错而不是猜。</caption>
+    </table>
+  </div>
+  <p>把维度名称读一遍会发现一件事：<b>这六个维度全部可以被埋点直接测出来</b>，模型在这里的作用是「把数字讲成原因」，而不是「凭感觉打分」。<code>control</code> 对应 <code>attempt</code>/<code>reworkCount</code> 与 <code>pingPong</code> 列表；<code>tools</code> 对应 <code>toolRepeats</code>（同工具调用次数与失败数）；<code>latency</code> 对应墙钟与执行时长之差；<code>delivery</code> 对应产物数与门禁事件数。这是一个「先用埋点把事实结构化，再让模型做归因」的正确顺序——反过来（先让模型读日志自由发挥）几乎必然产出无法验证的空话。</p>
+
+  <h3>白名单：它拒绝改什么，比它能改什么更重要</h3>
+  <p><code>ApplyRecommendation</code> 的 <code>switch</code> 一共就四个分支。把 <code>update_node</code> 内部的字段校验展开，就是这张表：</p>
+
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>动作</th><th>允许改的内容</th><th>校验</th><th>实际含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>workflow.update_node</code></td><td><code>maxAttempts</code>（≥1）、<code>maxReworks</code>（≥0）、<code>onFailure</code>（<code>fail</code>/<code>reject</code>）、<code>retryStrategy</code>（<code>targeted_fix</code>/<code>full_redo</code>）</td><td>枚举值硬校验，非法值直接报错</td><td>四个标量旋钮：多试几次、允许退几次、失败往哪走、怎么重做</td></tr>
+        <tr><td><code>agent.upsert_gate</code></td><td>给角色新增或替换一条门禁</td><td><code>gateId</code> 必填；<code>onFailure</code> 限于 <code>loop</code>/<code>reject</code>/<code>fail</code>/<code>human</code></td><td>「针对漏网的缺陷类型收紧卡点」</td></tr>
+        <tr><td><code>agent.remove_gate</code></td><td>删掉一条门禁</td><td>必须存在</td><td>清理无效或过严的检查</td></tr>
+        <tr><td><code>agent.append_instructions</code><br><code>agent.append_task_prompt</code></td><td>往角色提示词<b>末尾追加</b>一段文本</td><td>已包含则不重复追加</td><td>把踩坑经验沉淀成常驻约束</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>提示词侧的约束写得更死，原文是：</p>
+  <div class="note">
+    「不要整份重写 SOP 或角色，不要改边或删节点。」<br>
+    「门禁只属于角色；改门禁用 target=agent + upsert_gate/remove_gate。」<br>
+    「recommendations 可为空。可应用时 action 只能是：update_node、upsert_gate、remove_gate、append_task_prompt。」
+  </div>
+
+  <div class="claim"><span class="tag">判断</span>
+    <p>这就是「受限自我修改」（bounded self-modification）：<b>系统可以调整自己的参数、增加自己的检查、延长自己的经验，但不能重画自己的流程图</b>。所有结构性问题——少了一个评审环节、两个节点该并行、某个角色该拆成两个——都必须由人改。这个边界选得很准：<b>能自动化的部分恰好是「可枚举、可校验、可回滚」的那部分</b>，而拓扑改动最容易引发不可预期的连锁反应，成本也最高，留给人最划算。</p>
+  </div>
+
+  <h3>它的两处真实局限</h3>
+  <ul>
+    <li><b>不能做结构性优化。</b>如果一次交付的根因是「需求澄清和方案设计之间缺一个接口评审」，复盘只能说「control 维度低、建议加一条门禁」——它无法在图上插入一个节点。官方文章举的例子（缺权限校验 → 加一条「必须写数据权限」的规则 + 加一条「越权检查」门禁）刚好落在能力边界之内，所以效果看起来很好；一旦问题真出在拓扑上，这套机制就会退化成「加更多检查」。</li>
+    <li><b>评分口径与账单真值有距离。</b>Token 成本按公开标准价核算，官方文档自己说明这不等于发票金额（企业折扣不同）。因此 <code>tokens</code> 维度只能用于相对比较（同一 SOP 的两个版本谁更省），不能用来做预算承诺。</li>
+  </ul>
+
+  <div class="verdict">
+    <h4>一句话总结这一章</h4>
+    <p>LoopForge 的 RSI 不是「AI 自己改进自己」的科幻叙事，而是一套<b>「把人肉复盘固化成可审计补丁」的流水线</b>：埋点负责给事实，模型负责写归因和补丁，人负责批准，版本系统负责回滚。它真正的贡献是把「复盘」从一次会议变成一条有数据结构的流程——这比它能自动改多少东西重要得多。</p>
+  </div>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Local 版：把同一套语义压进一个文件状态机</h2>
+  <p class="sub">平台版需要 Docker、MySQL、账号体系；Local 版只需要 Node 20+、Python 3.8+ 和一个已经装好的编程助手。它的设计取舍比平台版更值得学。</p>
+
+  <h3>两条产品线，一个发布合同</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th></th><th>Classic（默认）</th><th>Portable</th></tr></thead>
+      <tbody>
+        <tr><td>事实源</td><td><code>.codebuddy/</code> 是参考行为，<code>.codex/</code> 原生适配，<code>.cursor/</code> 与 <code>.claude/</code> 由 <code>build-classic-hosts.py</code> 生成</td><td><code>skills/</code> 是唯一事实源，<code>manifest.json</code> 管跨宿主清单</td></tr>
+        <tr><td>入口</td><td><code>/start-devflow</code>（CodeBuddy/Cursor/Claude）、<code>$devflow-codex</code>（Codex）</td><td><code>/devflow</code>（多数）、<code>$devflow</code>（Codex）、<code>/skill:devflow</code>（Pi）</td></tr>
+        <tr><td>维护方式</td><td>改参考实现，再用生成器同步到其它宿主</td><td>改 canonical Skill 与 adapter manifest</td></tr>
+        <tr><td>互斥规则</td><td colspan="2">同一项目里同一宿主只允许启用一种 edition；切换必须 <code>install --force</code>。这是<b>发布合同</b>，不是运行期开关——因为两套工作流同时加载会争抢状态与产物目录。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>「生成器 + 单一事实源」这个选择看起来平常，但它解决了一个真实痛点：同一套工作流要装进 Claude Code 的 <code>commands/</code>、Codex 的 skill 目录、Cursor 的规则目录、CodeBuddy 的 agent 目录，四者的文件格式与发现机制都不同。<b>如果每个宿主各维护一份，三个月后它们一定会分叉。</b>LoopForge 的做法是把「逻辑」留在唯一事实源，把「格式」交给生成器与 adapter。</p>
+
+  <h3>路由：先定规模，再定阶段</h3>
+  <p>Local 版的状态机写死了两条路由，规模判定按<b>影响范围</b>而非代码行数：</p>
+  <div class="g2">
+    <div class="card">
+      <h4>small</h4>
+      <p><code>PHASE-0 → SOLO → SUMMARY</code></p>
+      <p>单模块、预计不超过 3 个文件、无接口/数据/架构影响。SOLO 内部仍须完成计划、实现、自审与针对性测试，只是合并为一个阶段。</p>
+    </div>
+    <div class="card">
+      <h4>medium / large</h4>
+      <p><code>PHASE-0 → REQUIREMENT → DESIGN → IMPLEMENT → REVIEW → TEST → [KNOWLEDGE] → SUMMARY</code></p>
+      <p>跨模块或 4–10 个文件为 medium；涉及接口、数据模型、迁移、架构或高风险发布为 large。<code>KNOWLEDGE</code> 是条件阶段，没有可复用知识时须显式写「跳过 + 理由」。</p>
+    </div>
+  </div>
+
+  <div class="claim"><span class="tag">三处值得抄的细节</span>
+    <p><b>① 越界必须显式升档。</b>SOLO 阶段一旦发现超出 small 的边界，状态机要求以 <code>overflow</code> 结果结束并升级到 medium 路由，而不是「先做完再说」。范围蔓延被建模成一个状态转移，不是一次心照不宣的妥协。</p>
+    <p><b>② 不支持的能力不许伪造。</b>medium/large 默认用 <code>isolated</code> 模式（每个阶段一个独立子 Agent）。宿主不给 <code>subagent</code> 工具时，adapter 必须<b>记录具体原因并把流程降级为 <code>single-context</code></b>；Hermes 缺 <code>delegate_task</code> 时同理。文档原话是「不会伪造 isolated 执行器」。</p>
+    <p><b>③ 只有拿到真实执行器 ID 才允许登记。</b><code>assign</code> 的前置条件是宿主<b>真的返回了</b> executor ID。这条防的是「提示词里写了要开子 Agent，实际上还是同一个上下文在硬干」——而这恰好是单 Agent 冒充多 Agent 最常见的失败模式。</p>
+  </div>
+
+  <h3>产物契约比流程更硬</h3>
+  <p>一次 Local 流程会在项目里固定生成一棵产物树：<code>artifacts/&lt;task-slug&gt;/</code> 下按阶段分目录，需求报告、技术设计、执行计划、变更报告、审查报告、测试报告、知识报告、总摘要各就各位。<b>每个阶段只接收 manifest 声明的精确产物</b>，提示生成器从已验证产物里确定性抽取当前角色需要的章节作为交接，默认不再打开上游全文。</p>
+  <p>这条规则解决的是长链路 Agent 最常见的退化：<b>上下文越滚越长，上游对齐的边界条件被淹没在几十轮对话里</b>。用文件做交接，等于给每个阶段划了一条「你只能看这几份已冻结的结论」的边界——既压缩了 token，也让「下游漏改」有了可归因的对象（是交接物没写清，还是下游没读）。</p>
+
+  <div class="note">
+    <b>实现规模：</b>核心状态机 <code>workflow_state.py</code> 约 57 KB，<b>只依赖 Python 3.8+ 标准库</b>。连 PyYAML 都没有时，Classic 的 hook 仍保留人工门禁而不是静默放行。这种「零依赖 + 缺依赖时降级但不放水」的组合，是它能塞进任意仓库的前提。
+  </div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>开源工程：一次带哈希的对账，而不是一次代码搬运</h2>
+  <p class="sub">这个仓库最不寻常的地方不是代码，是它把「从内部系统开源」当成一次可审计的迁移来做，并把过程记录一并交出来。</p>
+
+  <figure>
+    <div class="fig-box">
+      <svg viewBox="0 0 960 420" role="img" aria-label="内部主干与公版之间的双轨同步机制，以及 1,718 个源文件的构成比例">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#4A505A"></path>
+          </marker>
+        </defs>
+
+        <rect x="80" y="56" width="330" height="128" rx="10" fill="#F5F2EB" stroke="#D3CFC4" stroke-width="1.2"></rect>
+        <text x="100" y="82" text-anchor="start" font-size="13" font-weight="700" fill="#333941">内部主干（私有）</text>
+        <text x="100" y="106" text-anchor="start" font-size="11" fill="#4A505A">Go module：agentflow</text>
+        <text x="100" y="126" text-anchor="start" font-size="11" fill="#4A505A">环境变量前缀：AGENTFLOW_</text>
+        <text x="100" y="146" text-anchor="start" font-size="11" fill="#4A505A">企业 tracker 适配 · 部署数据 · 凭据</text>
+        <text x="100" y="166" text-anchor="start" font-size="11" fill="#4A505A">同步审计清单（不入公开库）</text>
+
+        <rect x="550" y="56" width="330" height="128" rx="10" fill="#FBF0E2" stroke="#B45309" stroke-width="1.5"></rect>
+        <text x="570" y="82" text-anchor="start" font-size="13" font-weight="700" fill="#8F3F06">公版（GitHub）</text>
+        <text x="570" y="106" text-anchor="start" font-size="11" fill="#4A505A">GitHub 适配 · 密码账号登录</text>
+        <text x="570" y="126" text-anchor="start" font-size="11" fill="#4A505A">公开 SOP catalog · 翻译字典</text>
+        <text x="570" y="146" text-anchor="start" font-size="11" fill="#4A505A">LoopForge Local（独立发布节奏）</text>
+        <text x="570" y="166" text-anchor="start" font-size="11" fill="#4A505A">保留上游模块名以降低合并冲突</text>
+
+        <path d="M416,106 L544,106" stroke="#4A505A" stroke-width="1.4" fill="none" marker-end="url(#ar3)"></path>
+        <path d="M544,146 L416,146" stroke="#4A505A" stroke-width="1.4" fill="none" marker-end="url(#ar3)"></path>
+        <text x="480" y="98" text-anchor="middle" font-size="10.5" fill="#333941">按记录哈希导出</text>
+        <text x="480" y="166" text-anchor="middle" font-size="10.5" fill="#333941">共享修复回灌</text>
+
+        <text x="80" y="224" text-anchor="start" font-size="12" font-weight="700" fill="#333941">1,718 个源文件的处置构成（另有 58 个公开新增，不计入分母）</text>
+
+        <rect x="80" y="240" width="660" height="44" rx="4" fill="#E8F1E8" stroke="#2E7D32" stroke-width="1"></rect>
+        <rect x="740" y="240" width="80" height="44" rx="4" fill="#FBF0E2" stroke="#B45309" stroke-width="1"></rect>
+        <rect x="820" y="240" width="33" height="44" rx="4" fill="#FAE9E7" stroke="#B3261E" stroke-width="1"></rect>
+        <rect x="853" y="240" width="27" height="44" rx="4" fill="#EAF1F8" stroke="#1F5288" stroke-width="1"></rect>
+
+        <text x="410" y="267" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1B5820">原样保留 1,466</text>
+
+        <rect x="80" y="306" width="10" height="10" fill="#2E7D32"></rect>
+        <text x="96" y="316" text-anchor="start" font-size="11.5" fill="#333941">原样保留 1,466 · 82.5%</text>
+
+        <rect x="330" y="306" width="10" height="10" fill="#B45309"></rect>
+        <text x="346" y="316" text-anchor="start" font-size="11.5" fill="#333941">适配改写 178 · 10.0%</text>
+
+        <rect x="560" y="306" width="10" height="10" fill="#B3261E"></rect>
+        <text x="576" y="316" text-anchor="start" font-size="11.5" fill="#333941">公开排除 74 · 4.2%</text>
+
+        <rect x="770" y="306" width="10" height="10" fill="#1F5288"></rect>
+        <text x="786" y="316" text-anchor="start" font-size="11.5" fill="#333941">新增 58 · 3.3%</text>
+
+        <text x="80" y="356" text-anchor="start" font-size="10.5" fill="#4A505A">比例条按 1,776 个文件计算（1,718 导出范围 + 58 公开新增）；分段宽度按比例绘制，未做最小宽度补偿。</text>
+        <text x="80" y="380" text-anchor="start" font-size="10.5" fill="#4A505A">核对方式：check-upstream.py 比对记录哈希与实际 Git blob，并确认记录 commit 与 origin/master 一致。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6｜双轨结构与出处审计的构成。</b>左侧内部主干与右侧公版之间不是「代码拷贝」关系，而是「按哈希逐步导出 + 修复回灌」。82.5% 的文件原样带出，说明这次开源的目标是<b>让公版尽量接近主干</b>——因为差异越小，后续同步的合并成本越低。<span class="pill p-info">仓库内文档</span></figcaption>
+  </figure>
+
+  <h3>三个决策，每个都能省下未来几百小时</h3>
+  <ol>
+    <li><b>不改模块名。</b><code>go.mod</code> 第一行是 <code>module agentflow</code>，环境变量全是 <code>AGENTFLOW_</code> 前缀，架构文档明说这是为了「reduce ongoing merge conflicts」。放弃品牌一致性换同步成本，这个取舍在企业开源里经常被做反（改名很爽，之后每次同步每个文件都是冲突）。</li>
+    <li><b>把审计做成工具链。</b><code>check-upstream.py</code> 会拿记录里的 1,715 个源文件哈希去比对真实 Git blob，并确认记录的 commit 与 <code>origin/master</code> 一致；公开内容检查器另跑一遍。审计不是一份文档，是一条能复跑的命令。</li>
+    <li><b>把「不公开的部分」也讲清楚。</b>部署密钥、生产数据、私有基础设施被排除；企业 tracker 的 Web 入口默认隐藏但兼容代码保留；公开的 SOP 定义是<b>显式的 catalog 数据</b>（<code>migrations/seed/001_public_catalog.sql</code> 约 44 KB），官方明确说明「不是对包含私有生产项目或提示词的声明」。</li>
+  </ol>
+
+  <div class="verdict">
+    <h4>代价与它的必然结果</h4>
+    <p>这套机制的直接后果是：<b>最核心的演进发生在私有侧</b>。社区可以提 PR、可以修 bug、可以加执行器适配，但「下一次同步把哪些上游变更带过来」由维护者私有清单决定。所以它更像「一条长期主干的公开出口」，而不是「一个由社区共同演进的项目」。这不是缺陷，是选择——但它决定了你不能把自己的产品路线押在它的社区节奏上。</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>证据全景：哪些话可以当真，当到什么程度</h2>
+  <p class="sub">把全文用到的关键数字集中在一起，标注来源类型与可复核性。方向相反的证据同样列出。</p>
+
+  <h3>支持性证据</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>主张</th><th>数字 / 事实</th><th>来源</th><th>强度</th></tr></thead>
+      <tbody>
+        <tr><td>代码规模与结构真实</td><td>3,412 个文件；Go 为主要语言；引擎 136 文件、接口层 430 文件、domain 105 文件</td><td>GitHub tree API 统计</td><td><span class="pill p-ok">一手可复现</span></td></tr>
+        <tr><td>不含 LLM SDK</td><td><code>go.mod</code> 直接依赖 12 个，无任何模型 SDK</td><td>仓库 <code>go.mod</code></td><td><span class="pill p-ok">一手可复现</span></td></tr>
+        <tr><td>多执行器支持</td><td>10 种 CLI，各自凭据与安装方式在 README 表格中逐项列出</td><td>README + runtime 源码</td><td><span class="pill p-ok">一手</span></td></tr>
+        <tr><td>真实交付链路跑通过</td><td>4 个 CodeBuddy 角色完成规划/实现/独立评审/汇总，3 个真实测试通过，人工批准后复验代码与验收时一致</td><td><code>docs/validation.md</code> + <code>e2e/api/45-delivery-model.test.mjs</code></td><td><span class="pill p-part">自测，可复跑</span></td></tr>
+        <tr><td>端到端前端交付跑通过</td><td>内置前端 SOP 7 个阶段 47 分钟完成，沙箱构建、仓库检出、分支推送均成功</td><td><code>docs/validation.md</code></td><td><span class="pill p-part">自测，单例</span></td></tr>
+        <tr><td>供应链有检查</td><td>86 个依赖模块许可证核验通过；<code>govulncheck</code> 0 个可达漏洞；npm audit 0 高危；gitleaks 通过</td><td><code>docs/validation.md</code></td><td><span class="pill p-part">自测记录</span></td></tr>
+        <tr><td>发布节奏快</td><td>14 个 release；11-06 至 11-17 共 9 个版本；抽样 100 次提交中单日最高 46 次</td><td>GitHub Releases / Commits API</td><td><span class="pill p-ok">一手可复现</span></td></tr>
+        <tr><td>社区有一定规模</td><td>2,902 ★ / 420 forks / 16 位贡献者</td><td>GitHub API（2026-11-17）</td><td><span class="pill p-ok">一手可复现</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>需要打折或方向相反的证据</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>说法</th><th>问题所在</th><th>处理建议</th></tr></thead>
+      <tbody>
+        <tr><td>「服务内部 20+ 业务，单月自动完成 200+ 需求与单据」</td><td>厂商自报，无第三方审计，未区分「自动跑到人工关口」与「真正合入」</td><td>当量级参考，不作产能承诺</td></tr>
+        <tr><td>「自动改写 SOP 节点 / 进化流程拓扑」</td><td>实现只允许改 4 个标量字段、增删门禁、追加指令，且明令禁止改边删节点</td><td>按「受限自我修改」理解，不是自主重写</td></tr>
+        <tr><td>「MIT 开源」</td><td>GitHub license 字段显示 <code>Other / NOASSERTION</code>，因为 LICENSE 里加了腾讯版权声明头与第三方组件清单</td><td>正文条款确为 MIT；企业合规工具可能误报，需人工确认 <code>LICENSE</code> 文件</td></tr>
+        <tr><td>「可替换的模型供应商」</td><td>需求澄清、通知 AI 汇总、Bot 回复、运行评测四个入口的服务端<b>只接受 CodeBuddy 模型</b>，传其它 CLI 的模型直接 400</td><td>核心链路仍与 CodeBuddy 强绑定，需按实际使用面评估</td></tr>
+        <tr><td>「面向团队协作」</td><td>对话工作台目前仅中文界面；英文化只覆盖管理页与部分界面</td><td>非中文团队的实际可用度受限</td></tr>
+        <tr><td>「开箱即用」</td><td>已有安装升级需手工执行 SQL 迁移（如 <code>033</code> 补 MR 节点）；GHCR 拉取在国内常中断，需配镜像并核对 digest</td><td>按「需要平台工程能力」评估人力</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim"><span class="tag">一条元证据</span>
+    <p>这个仓库最有说服力的一件事，是它<b>自己披露了自己的事故</b>：API Key 出现在运行日志、clone URL 里的凭据落进 <code>.git/config</code>、非 root 宿主的 <code>0700</code> 目录让沙箱进不去、删除会话残留 73 MB。这些细节只有真正跑过生产的人才会写进 changelog。对评估者来说，这种自我披露的密度，比任何「生产级」形容词都更有信息量。</p>
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>代价：它把复杂度从「模型」搬到了「运维」</h2>
+  <p class="sub">任何编排层都不是免费的。LoopForge 的成本几乎全部落在部署、升级和人身上，而不是算力上。</p>
+
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>成本项</th><th>具体表现</th><th>谁来承担</th></tr></thead>
+      <tbody>
+        <tr><td>部署门槛</td><td>需要 Docker + Compose + Python 3 + curl；<code>./start.sh</code> 拉取 pin 住的 GHCR 镜像，不在本地构建。国内拉取常中断，需设 <code>MIRROR</code>——而设 <code>MIRROR</code> 等于信任该主机，因为镜像会被标回官方名，只能靠核对 digest 兜底</td><td>平台 owner</td></tr>
+        <tr><td>升级摩擦</td><td>gorm 的 AutoMigrate 建不出生成列，部分迁移必须手工执行 SQL；已有安装要补「发起 MR」节点得跑 <code>033</code>，且该脚本只在模板「仍是出厂原样且未被编辑」时改写</td><td>平台 owner</td></tr>
+        <tr><td>镜像与磁盘</td><td>平台镜像内置 CodeBuddy / Codex / Claude / DeepSeek Harness，加 <code>dsh</code> 后下载体积增加约 180 MB；为无 Node 的自定义镜像准备的 toolchain 目录每构建一份约 200 MB，旧构建目录不会自动清理</td><td>运维</td></tr>
+        <tr><td>对话可用性</td><td>对话工作台目前仅中文；需求澄清、通知汇总、Bot 回复、运行评测四个入口只接受 CodeBuddy 模型（服务端对其它 CLI 的模型返回 400 而不是静默替换）</td><td>使用者</td></tr>
+        <tr><td>组织成本</td><td>十条 SOP 谁维护、角色提示词谁审、处方谁批准——这些不是技术问题，是需要指派的岗位职责</td><td>团队负责人</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>一条 90 天的落地路径（可执行物）</h3>
+  <div class="g3">
+    <div class="card">
+      <h4>第 1–2 周 · 只验证一件事</h4>
+      <p>不配任何 Key，先跑内置「脚本 + 审批」体验 SOP，确认三件事成立：产物能生成、关口能拦住、批准后能继续。再配一个 Key 让 Main Bot 修一个小 bug。</p>
+      <p><b>退出条件：</b>你能指着运行详情页说清「哪个节点花了多久、哪一步在等谁」。</p>
+    </div>
+    <div class="card">
+      <h4>第 3–6 周 · 把你自己的 DoD 变成脚本</h4>
+      <p>拿团队现有的「完成定义」清单，逐条映射成 Script 节点（lint / 单测 / 构建 / SBOM）。先只建 4 个节点的 SOP：澄清 → 实现 → 脚本门禁 → 人工验收。</p>
+      <p><b>退出条件：</b>同一条 SOP 连跑 3 次，第 2 次起不再需要人解释「该做什么」。</p>
+    </div>
+    <div class="card">
+      <h4>第 7–10 周 · 接真实仓库，跑够「打回」</h4>
+      <p>绑一个低风险仓库，开 MR 门禁，按责任人配各自凭据。刻意制造一次评审不通过，观察 reject 是否真的退到指定上游而不是原地打转。</p>
+      <p><b>退出条件：</b>至少一次真实打回、一次从中间节点重跑、一次从快照恢复。</p>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="card">
+      <h4>第 11–13 周 · 只采纳一类处方</h4>
+      <p>开启复盘，但<b>只采纳「加/改门禁」类处方</b>，暂不采纳改重试次数与追加提示词——后者需要更长时间才能判断是改善还是过拟合。</p>
+    </div>
+    <div class="card">
+      <h4>人力配比</h4>
+      <p>0.5 个平台 owner（部署、升级、迁移、镜像）；每条在用 SOP 配 0.2 个评审人（审角色提示词与门禁变更）。合计约 1 人日常维护。</p>
+    </div>
+    <div class="card">
+      <h4>停止条件</h4>
+      <p>如果第 6 周你还没能稳定跑通一条 4 节点 SOP，或者团队里没人愿意当门禁的签字人——问题不在工具，先回去修流程与责任人。</p>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>上线前必须做的四件事</h4>
+    <p><b>①</b> 不暴露公网，或至少 <code>AGENTFLOW_ALLOW_SIGNUP=false</code> 并只放行固定 IP；<b>②</b> 只连可信仓库（仓库内的 agent 配置与 hooks 会被执行）；<b>③</b> 若曾在 0.4.0 之前跑过 SOP 角色，轮换当时用过的所有 CLI 密钥；<b>④</b> 拉镜像后核对 <code>RepoDigests</code> 与 release 记录一致。</p>
+  </div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>反模式：三层各四条，附症状与修正</h2>
+  <p class="sub">这些不是 LoopForge 独有的毛病，而是「引入 Agent 交付流水线」这件事本身的高频翻车点。它的设计已经防住了一部分，剩下的要靠使用者。</p>
+
+  <h3>战略层</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>反模式</th><th>症状</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td><b>把 SOP 当收藏品</b></td><td>三个月建了二十条模板，实际每月只跑两条；模板越建越复杂，没人敢改</td><td>只留「本月跑过 ≥3 次」的 SOP，其余归档。SOP 的价值在复用次数，不在数量</td></tr>
+        <tr><td><b>用复盘分数当 KPI</b></td><td>为了 90 分而砍掉必要的人工关口，或让 Agent 把检查项写得更容易通过</td><td>分数只用于<b>同一 SOP 的两个版本之间</b>比较；对外汇报用「一次通过率 + 返工率 + 人工介入次数」三个原始量</td></tr>
+        <tr><td><b>指望工具替代评审文化</b></td><td>上了平台，但没人愿意当签字人；关口永远秒过</td><td>先把「谁有权放行」写进制度，再上工具。工具只能固化已有的责任，不能创造它</td></tr>
+        <tr><td><b>一上来就全自动</b></td><td>把权限模式设成「完全自动」，第一次事故后全团队退回手工</td><td>按「每次确认 → 智能代批 → 完全自动」三挡逐步放开，每一挡至少跑两周</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>工程层</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>反模式</th><th>症状</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td><b>门禁写成祈使句</b></td><td>门禁内容写「请确认所有测试通过」——这仍然是一次模型调用，不是门禁</td><td>凡是能用退出码判定的，一律用 <code>command</code> 门禁；不能判定的，转 <code>manual</code> 让人签字</td></tr>
+        <tr><td><b>同一个角色自审</b></td><td>实现与评审用同一个角色定义、同一个模型、同一段上下文</td><td>评审角色必须换上下文，最好换模型或换执行器——同模型自查的漏检率显著更高</td></tr>
+        <tr><td><b>能脚本的也上模型</b></td><td>每个节点都是 Agent，包括「跑测试」「生成变更列表」</td><td>先问「这一步有没有确定答案」。有，就用脚本；成本差三个数量级，可靠性更是</td></tr>
+        <tr><td><b>直接改线上模板</b></td><td>运行还在跑，就编辑了它用的 SOP；重试时环境或流程变了</td><td>依赖快照语义：改模板只影响新运行；重试与恢复必须走运行快照，不要「顺手修一下」</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>治理层</h3>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>反模式</th><th>症状</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td><b>把 Docker socket 当沙箱边界</b></td><td>平台暴露在公网，任何人注册后都能通过 SOP 在宿主机上跑代码</td><td>内网部署 + 固定 IP 白名单；把平台主机当作「可被完全攻陷」的资产来隔离</td></tr>
+        <tr><td><b>接不可信仓库</b></td><td>接了外部仓库，其 hooks 或 agent 配置在沙箱内被执行</td><td>只接团队自控的仓库；对外部代码用只读检出、禁用 hooks</td></tr>
+        <tr><td><b>密钥经过日志</b></td><td>为了排查问题打开全量日志，密钥随 <code>docker exec</code> 命令行落盘</td><td>默认脱敏；排查期间也保持脱敏，需要复现时用占位符替换</td></tr>
+        <tr><td><b>无人认领的 Runner</b></td><td>为扩容量接了多台执行机器，但凭据归属混乱，出事查不到是谁的 key 跑的</td><td>凭据一律按<b>责任人</b>绑定，执行机器只提供算力不提供身份</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span>结论：值得抄的三件事，不该照搬的三件事</h2>
+  <p class="sub">以下为分析者判断，不是社区共识。判断依据已在前面各章给出。</p>
+
+  <div class="g2">
+    <div class="card">
+      <h4>值得抄 ①　门禁必须去系统外取证</h4>
+      <p>MR 门禁的精髓不是「查 PR」，而是「不信任 Agent 的自我汇报」。任何「Agent 声称做完了」的地方，都该问一句：<b>这个「完了」能不能在系统外部找到一条记录？</b> 找不到，就还不是门禁。</p>
+    </div>
+    <div class="card">
+      <h4>值得抄 ②　运行快照 vs 模板的两分</h4>
+      <p>模板会变，运行不能变。把「这次运行实际用的流程、环境、角色定义」冻进运行记录，是「三个月后还能解释那次交付」的唯一办法。这条对任何长链路 Agent 系统都成立。</p>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <h4>值得抄 ③　让模型只打维度分</h4>
+      <p>总分由服务端按权重重算、忽略模型自报的 <code>score</code>、缺维度直接报错——这三个小动作把「模型打分」从主观印象变成了可校验的仪表。做任何 LLM 评审/评分系统都可以直接照搬。</p>
+    </div>
+    <div class="card">
+      <h4>不该照搬 ①　十种执行器的适配长尾</h4>
+      <p>十个 CLI 意味着十套凭据模型、十种输出格式、十类安装失败。除非你有专职人力吃这条长尾，两到三个执行器是更合理的起点。</p>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <h4>不该照搬 ②　「自进化」的叙事强度</h4>
+      <p>受限自我修改已经很有用，但把它讲成「系统自己会变聪明」会误导使用者，也会让团队把结构性问题当成参数问题——结果是不断加门禁，而不去修流程。</p>
+    </div>
+    <div class="card">
+      <h4>不该照搬 ③　公版/私版双轨</h4>
+      <p>这个模式对「已有内部系统、要开源」的团队是最优解，但对从零起步的项目是纯负担：它要求你维护两套同步工具与一份私有审计清单，而收益只有在大规模存量代码时才显现。</p>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h4>最终判断</h4>
+    <p>LoopForge 解决的是一个真实且昂贵的问题：<b>当团队里有十个 Agent 会话同时在改代码，谁来保证每一次交付都经过同样的检查、留下同样的证据。</b>它的答案——角色分离、异构门禁、运行快照、受限自进化——在工程上是站得住的，而且难得地诚实披露了自己的边界与事故。</p>
+    <p>但它不是「装上就提效」的工具。它把复杂度从「让模型写对代码」搬到了「维护一套交付基础设施」，因此<b>只有当你的团队已经在为「Agent 交付质量不稳定」付出可观测的成本时，它才开始划算</b>。在那之前，先把完成定义写成脚本，比先装平台更有价值。</p>
+  </div>
+</section>
+
+<section id="s13">
+  <h2><span class="num">13</span>参考来源</h2>
+  <p class="sub">按证据类型分组。一手来源可直接在仓库中复核；厂商材料仅用于理解其自我叙述。</p>
+
+  <div class="refs">
+    <h4>一手：源码与仓库内文档（可逐条复核）</h4>
+    <ol>
+      <li><code>README.zh-CN.md</code>、<code>README.md</code>：两种工作方式、执行器矩阵、SOP 节点类型、Local 版对照。<span class="src">Tencent/LoopForge @ main</span></li>
+      <li><code>docs/architecture.md</code>：目录职责、保留上游模块名与 <code>AGENTFLOW_</code> 前缀的原因。<span class="src">同上</span></li>
+      <li><code>internal/domain/workflow.go</code>：<code>WorkflowNode</code>、<code>VerificationGate</code>、<code>WorkflowRequirement</code>、<code>SOPCheckpoint</code>、<code>DefinitionRevision</code> 及全部「冻结」注释。<span class="src">同上</span></li>
+      <li><code>internal/domain/run_eval.go</code>：六维评分策略、默认权重与准入线 70、<code>ScoreRunEvalDimensions</code> 加权算法、处方动作白名单。<span class="src">同上</span></li>
+      <li><code>internal/runeval/apply.go</code>、<code>internal/runeval/prompt.go</code>：可应用动作的 <code>switch</code> 分支、字段枚举校验、提示词中「不要改边或删节点」的原文。<span class="src">同上</span></li>
+      <li><code>docs/open-source-scope.md</code>、<code>docs/upstream-sync.md</code>：公版适配范围、维护者私有记录、同步检查项。<span class="src">同上</span></li>
+      <li><code>docs/validation.md</code>：1,718 个源文件处置（1,466/178/74/58）、真实交付链路、Docker 属主回归、依赖许可证与漏洞检查。<span class="src">同上</span></li>
+      <li><code>docs/local/architecture.md</code>、<code>docs/local/editions.md</code>、<code>local/skills/devflow/references/workflow-contract.md</code>：Classic/Portable 分工、生成器、固定路由、产物合同、<code>assign</code> 前置条件。<span class="src">同上</span></li>
+      <li><code>CHANGELOG.md</code>、<code>go.mod</code>、<code>migrations/</code>：版本演进、真实事故与修复、依赖构成、迁移编号。<span class="src">同上</span></li>
+    </ol>
+
+    <h4>一手：可复现的 API 数据</h4>
+    <ol start="10">
+      <li>GitHub REST API：仓库元信息（2,902 ★ / 420 forks / 175 open issues / 创建于 2026-07-28）、14 个 release 及时间、16 位贡献者及提交数、抽样 100 次提交的日分布。<span class="src">查询于 2026-11-17</span></li>
+      <li>Git tree API 递归清单：3,412 个文件，用于各目录体量统计（<code>web/vscode-web</code> 722 文件、<code>internal/httpapi</code> 430 文件等）。<span class="src">同上</span></li>
+    </ol>
+
+    <h4>厂商材料（用于理解自我叙述，不作为独立证据）</h4>
+    <ol start="12">
+      <li>腾讯轻量云团队发布文章《登上 GitHub Trending 腾讯开源 LoopForge》：五阶段演进叙事、「服务内部 20+ 业务、单月自动完成 200+ 需求」、与 DeepSeek Super-agent 原型的能力对照表。<span class="src">微信公众号 / 腾讯新闻转载，2026-11-17</span></li>
+      <li>项目官网 <code>loopforge.cn</code> 与仓库内 80 秒产品导览视频。<span class="src">官方</span></li>
+    </ol>
+
+    <h4>二手评测（提供交叉验证与安全视角）</h4>
+    <ol start="14">
+      <li>The Hype：《Tencent LoopForge runs coding agents as a team》——Docker socket 等同 host root、默认全接口监听、老版本 API Key 出现在运行日志、对话仅中文、存在「成功运行后删未提交改动」的未修复问题。<span class="src">2026-11-16</span></li>
+      <li>Tessera Press：《Tencent's LoopForge puts human gates around Codex and Claude Code》——「SOP 就是产品」的判断、脚本节点的设计意义、默认角色用 CodeBuddy 的意图解读。<span class="src">2026-11</span></li>
+      <li>BestHub / ExplainX / zendot：功能综述、内置 SOP 的定位（模板而非成品）、升级与运维清单。<span class="src">2026-10 至 11</span></li>
+    </ol>
+  </div>
+
+  <div class="note">
+    <b>方法与局限：</b>本报告以源码与仓库内文档为主要证据，辅以 API 可复现数据；未做实际部署与运行验证，因此「运行期行为」类结论依赖仓库自述与第三方评测的交叉印证。「判断」「观点」段落已在文中显式标注，与事实陈述分开。所有数字均标注查询时点（2026-11-17），仓库处于高速迭代期（v0.4.0 当日发布），后续版本可能改变本文描述的具体行为。
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>LoopForge 深度研究</b> · 2026-11-17 · 基于 Tencent/LoopForge v0.4.0 公开源码、仓库内文档与第三方评测</p>
+    <p>本报告为独立技术分析，非腾讯官方材料。所有数字均标注来源与证据强度；「判断」类段落是分析者观点，已在文中显式标记。</p>
+  </div>
+</footer>
+
+</body>
+</html>
