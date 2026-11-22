@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="深读 mattpocock/skills 27 个技能，先给地形图，再挑 10 个深讲：从 grill-with-docs 钉词义、tdd 先看红到双轴审查与 handoff；附主线七步、其余 17 个何时想起、五个坑与装改法，说明轻量技能为何胜过重型流程。">
+<meta name="keywords" content="mattpocock-skills, ai-coding, skill-orchestration, tdd, code-review, ai-agent-workflow">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-21">
+<title>轻量技能的胜利 · mattpocock/skills 的 10 个技能与 27 张地图</title>
+<style>
+  :root{
+    --bg:#faf8f4;
+    --surface:#ffffff;
+    --surface-2:#f4f1ea;
+    --ink:#15181c;
+    --ink-2:#4b5158;
+    --ink-3:#5e666e;
+    --line:#e4e0d7;
+    --line-2:#d3cec3;
+    --accent:#1a4d3c;
+    --accent-soft:#e8efe9;
+    --warm:#b4441f;
+    --warm-soft:#fbeee7;
+    --blue:#2c4a7c;
+    --blue-soft:#eaeff7;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",Inter,sans-serif;
+    --max:744px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);
+    font-size:16.5px;line-height:1.78;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  ::selection{background:#dfe9e2;color:var(--ink)}
+
+  /* ---------- progress ---------- */
+  #progress{position:fixed;top:0;left:0;height:2px;width:0;background:var(--accent);z-index:100;transition:width .08s linear}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    background:rgba(250,248,244,.86);
+    backdrop-filter:saturate(160%) blur(12px);
+    -webkit-backdrop-filter:saturate(160%) blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-in{
+    max-width:1050px;margin:0 auto;padding:0 28px;height:56px;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+  }
+  .brand{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:650;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+  .brand .dot{width:9px;height:9px;background:var(--accent);border-radius:2px;display:inline-block}
+  .brand span.sub{color:var(--ink-3);font-weight:450}
+  .topnav{display:flex;gap:22px;font-size:13px}
+  .topnav a{color:var(--ink-2);text-decoration:none;transition:color .15s}
+  .topnav a:hover{color:var(--accent)}
+  @media(max-width:820px){.topnav{display:none}.topbar-in{padding:0 20px}}
+
+  /* ---------- hero ---------- */
+  .hero{
+    max-width:1050px;margin:0 auto;padding:76px 28px 20px;
+  }
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);border:1px solid #cdddd4;background:var(--accent-soft);
+    padding:5px 11px;border-radius:100px;margin-bottom:26px;
+  }
+  h1{
+    font-size:clamp(34px,5.1vw,58px);line-height:1.09;letter-spacing:-.032em;
+    font-weight:750;margin:0 0 22px;max-width:900px;
+  }
+  h1 em{font-style:normal;color:var(--accent);position:relative}
+  .lede{
+    font-size:clamp(17px,1.9vw,20px);line-height:1.65;color:var(--ink-2);
+    max-width:720px;margin:0 0 34px;font-weight:400;
+  }
+  .meta{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
+    font-size:13px;color:var(--ink-3);padding-bottom:36px;border-bottom:1px solid var(--line);
+  }
+  .meta b{color:var(--ink-2);font-weight:550}
+  .meta .sep{width:3px;height:3px;border-radius:50%;background:var(--line-2)}
+
+  .hero-visual{
+    margin-top:44px;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:26px 26px 18px;overflow-x:auto;
+    box-shadow:0 1px 2px rgba(20,20,20,.03),0 12px 32px -18px rgba(20,20,20,.14);
+  }
+  .hero-visual svg{width:100%;height:auto;display:block}
+  .hero-visual::-webkit-scrollbar,.fig-box::-webkit-scrollbar{height:6px}
+  .hero-visual::-webkit-scrollbar-thumb,.fig-box::-webkit-scrollbar-thumb{background:#ddd8cb;border-radius:3px}
+
+  /* ---------- layout ---------- */
+  .layout{
+    max-width:1050px;margin:0 auto;padding:0 28px;
+    display:grid;grid-template-columns:190px minmax(0,1fr);gap:60px;
+    align-items:start;
+  }
+  .toc{
+    position:sticky;top:86px;padding:52px 0 40px;
+    font-size:12.5px;line-height:1.5;
+  }
+  .toc .toc-h{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px;font-weight:650}
+  .toc a{
+    display:block;color:var(--ink-3);text-decoration:none;
+    padding:5px 0 5px 11px;border-left:1.5px solid var(--line);
+    transition:color .15s,border-color .15s;
+  }
+  .toc a:hover{color:var(--ink)}
+  .toc a.on{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+  @media(max-width:1080px){
+    .layout{grid-template-columns:minmax(0,1fr);gap:0;max-width:820px}
+    .toc{display:none}
+  }
+  main article{max-width:var(--max);padding:52px 0 90px}
+  @media(max-width:1080px){main article{max-width:none;margin:0 auto;padding-top:34px}}
+  @media(max-width:820px){.hero{padding:52px 20px 12px}.layout{padding:0 20px}}
+
+  /* ---------- typography ---------- */
+  article p{margin:0 0 22px;color:var(--ink-2)}
+  article p strong{color:var(--ink);font-weight:640}
+  article p em{font-style:normal;background:linear-gradient(transparent 62%,#dfe9e2 62%);padding:0 2px}
+
+  h2{
+    font-size:clamp(25px,3.2vw,33px);line-height:1.24;letter-spacing:-.025em;
+    font-weight:720;margin:76px 0 10px;color:var(--ink);
+    display:flex;align-items:baseline;gap:14px;
+  }
+  h2 .num{
+    font-family:var(--mono);font-size:12px;font-weight:500;color:var(--warm);
+    letter-spacing:.06em;flex-shrink:0;transform:translateY(-6px);
+  }
+  h2 + .h2-sub{color:var(--ink-3);font-size:15px;margin:0 0 30px;line-height:1.6}
+  h3{font-size:18px;line-height:1.45;letter-spacing:-.012em;font-weight:680;margin:40px 0 12px}
+  h2:first-of-type{margin-top:8px}
+
+  a.inline{color:var(--accent);text-decoration:none;border-bottom:1px solid #b9cfc3}
+  a.inline:hover{border-bottom-color:var(--accent)}
+
+  code{
+    font-family:var(--mono);font-size:.86em;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:4px;padding:1.5px 5px;color:#2b302e;
+    white-space:nowrap;
+  }
+  pre{
+    background:#1c211f;color:#e6e9e4;border-radius:10px;padding:18px 20px;
+    overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.72;
+    margin:0 0 26px;border:1px solid #2b302c;
+  }
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit;white-space:pre}
+  pre .cm{color:#9aa79e}
+  pre .kw{color:#8fc7a8}
+
+  blockquote{
+    margin:0 0 26px;padding:2px 0 2px 20px;border-left:2px solid var(--line-2);
+    color:var(--ink-2);font-size:16px;
+  }
+  blockquote p{margin:0 0 8px}
+  blockquote cite{font-size:12.5px;color:var(--ink-3);font-style:normal;display:block}
+
+  ul,ol{margin:0 0 24px;padding-left:22px;color:var(--ink-2)}
+  li{margin:0 0 9px}
+  li strong{color:var(--ink);font-weight:620}
+  ul.tight li{margin-bottom:5px}
+
+  /* ---------- figure ---------- */
+  figure{margin:34px 0;padding:0}
+  .fig-box{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:24px 22px 18px;overflow-x:auto;
+  }
+  .fig-box svg{width:100%;height:auto;display:block}
+  @media(max-width:720px){
+    .fig-box svg,.hero-visual svg{min-width:600px}
+    .fig-box{padding:16px 14px 10px}
+    .meta .sep{display:none}
+    figcaption::before{content:"（图表可左右滑动）";color:var(--ink-3)}
+  }
+  .hero-hint{display:none}
+  @media(max-width:720px){
+    .hero-hint{display:block;font-size:11.5px;color:var(--ink-3);margin:8px 2px 0}
+  }
+  figcaption{
+    font-size:12.5px;color:var(--ink-3);margin-top:12px;line-height:1.55;
+    padding-left:2px;
+  }
+  figcaption b{color:var(--ink-2);font-weight:600}
+
+  /* ---------- callout ---------- */
+  .note{
+    border:1px solid var(--line);border-left:3px solid var(--accent);
+    background:var(--surface);border-radius:0 8px 8px 0;
+    padding:16px 20px;margin:28px 0;font-size:15px;color:var(--ink-2);
+  }
+  .note .n-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:6px}
+  .note p{margin:0 0 8px}
+  .note p:last-child{margin:0}
+  .note.warm{border-left-color:var(--warm)}
+  .note.warm .n-h{color:var(--warm)}
+
+  /* ---------- skill card ---------- */
+  .skill{
+    margin:44px 0 0;padding:0 0 34px;border-bottom:1px solid var(--line);
+  }
+  .skill:last-of-type{border-bottom:none}
+  .skill-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:6px}
+  .skill-idx{
+    font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;
+    background:var(--accent);border-radius:4px;width:24px;height:24px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:5px;
+  }
+  .skill-head h3{margin:0;font-size:21px;line-height:1.3;flex:1}
+  .skill-head h3 code{font-size:.82em;background:none;border:none;padding:0;color:var(--ink);font-weight:680}
+  .verdict{
+    font-size:14.5px;color:var(--accent);font-weight:600;margin:0 0 18px;
+    padding-left:38px;line-height:1.55;
+  }
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}
+  .tag{
+    font-size:11px;letter-spacing:.02em;font-family:var(--mono);
+    background:var(--surface-2);border:1px solid var(--line);color:var(--ink-3);
+    padding:2px 7px;border-radius:3px;
+  }
+  .tag.u{background:var(--warm-soft);border-color:#f0d5c8;color:#8c3a1c}
+  .tag.m{background:var(--blue-soft);border-color:#d3ddec;color:#2c4a7c}
+
+  /* ---------- comparison ---------- */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0}
+  @media(max-width:640px){.split{grid-template-columns:1fr}}
+  .split .col{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px;
+  }
+  .split .col h4{margin:0 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
+  .split .col p{margin:0 0 8px;font-size:14.5px;line-height:1.62}
+  .split .col .res{font-size:13px;color:var(--accent);font-weight:600;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+
+  /* ---------- table ---------- */
+  .table-wrap{overflow-x:auto;margin:28px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+  th{
+    text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-3);font-weight:650;border-bottom:1px solid var(--line);background:#fbfaf7;white-space:nowrap;
+  }
+  td{padding:11px 14px;border-bottom:1px solid #f0ede6;color:var(--ink-2);vertical-align:top;line-height:1.55}
+  tr:last-child td{border-bottom:none}
+  td code{font-size:12.5px;background:none;border:none;padding:0;color:var(--ink);font-weight:600;white-space:nowrap}
+  td .role{font-size:11px;font-family:var(--mono);color:var(--ink-3)}
+
+  /* ---------- pipeline cards ---------- */
+  .pipe{display:flex;flex-direction:column;gap:0;margin:30px 0}
+  .pipe-row{
+    display:grid;grid-template-columns:26px minmax(0,1fr);gap:14px;position:relative;
+  }
+  .pipe-row .rail{position:relative;display:flex;justify-content:center}
+  .pipe-row .rail::before{
+    content:"";position:absolute;top:22px;bottom:-4px;width:1.5px;background:var(--line-2);
+  }
+  .pipe-row:last-child .rail::before{display:none}
+  .pipe-row .rail .b{
+    width:26px;height:26px;border-radius:50%;background:var(--surface);
+    border:1.5px solid var(--line-2);display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:11px;color:var(--ink-3);flex-shrink:0;z-index:1;
+  }
+  .pipe-row.on .rail .b{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .pipe-body{padding:0 0 26px}
+  .pipe-body .t{font-weight:650;font-size:15.5px;color:var(--ink);margin-bottom:2px}
+  .pipe-body .d{font-size:14.5px;color:var(--ink-2);line-height:1.6}
+  .pipe-body code{font-size:12.5px}
+
+  /* ---------- grid of skill map ---------- */
+  .map-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0}
+  @media(max-width:640px){.map-grid{grid-template-columns:1fr}}
+  .map-col{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .map-col h4{margin:0 0 4px;font-size:14px;font-weight:680;display:flex;align-items:baseline;gap:8px}
+  .map-col h4 .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-weight:500}
+  .map-col .desc{font-size:12.5px;color:var(--ink-3);margin:0 0 12px;line-height:1.5}
+  .map-col ul{list-style:none;padding:0;margin:0;font-size:13.5px}
+  .map-col li{
+    padding:5px 0;border-top:1px solid #f2efe9;display:flex;gap:8px;align-items:baseline;color:var(--ink-2);
+  }
+  .map-col li:first-child{border-top:none}
+  .map-col li .m{font-family:var(--mono);font-size:10px;color:var(--ink-3);flex-shrink:0;width:12px}
+  .map-col li code{font-size:12.5px;background:none;border:none;padding:0;color:var(--ink)}
+  .map-col li .zh{color:var(--ink-3);font-size:12px}
+
+  /* ---------- pitfalls ---------- */
+  .pit{display:grid;gap:10px;margin:28px 0}
+  .pit .item{
+    display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:13px 16px;
+  }
+  .pit .item .x{color:var(--warm);font-family:var(--mono);font-size:13px;font-weight:700;line-height:1.6}
+  .pit .item .k{font-weight:640;color:var(--ink);font-size:14.5px}
+  .pit .item .v{font-size:14px;color:var(--ink-2);line-height:1.6}
+
+  /* ---------- end ---------- */
+  .end{
+    margin-top:70px;padding:34px 0 0;border-top:1px solid var(--line);
+  }
+  .end p{font-size:16.5px}
+  .sig{font-size:13px;color:var(--ink-3);margin-top:36px;padding-top:18px;border-top:1px dashed var(--line)}
+
+  footer{
+    border-top:1px solid var(--line);background:#f6f3ed;
+  }
+  .foot-in{
+    max-width:1050px;margin:0 auto;padding:26px 28px;
+    display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
+    font-size:12.5px;color:var(--ink-3);
+  }
+  @media(max-width:820px){.foot-in{padding:22px 20px}}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="#top"><i class="dot"></i>轻量技能的胜利<span class="sub">/ 技能拆解</span></a>
+    <nav class="topnav">
+      <a href="#map">技能地图</a>
+      <a href="#line">主流水线</a>
+      <a href="#ten">十个技能</a>
+      <a href="#pitfalls">踩坑</a>
+      <a href="#install">装法</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <span class="kicker">AI 工程实践 · 技能选型</span>
+  <h1>AI 写代码卡住的地方，<br>往往不是模型<em>不够强</em></h1>
+  <p class="lede">
+    我把这套 27 个技能从头读了一遍。它最有价值的部分不是"让 AI 更聪明"，
+    而是在四个具体的失败点上，各插了一根很细的钉子。下面是我认为真正改变工作流的 10 个，
+    以及其余 17 个该在什么时候被想起来。
+  </p>
+  <div class="meta">
+    <span><b>技能拆解</b> · 第 04 期</span>
+    <i class="sep"></i>
+    <span>约 24 分钟</span>
+    <i class="sep"></i>
+    <span>27 个技能 / 10 个深讲</span>
+    <i class="sep"></i>
+    <span>含 9 张示意图</span>
+  </div>
+
+  <div class="hero-visual">
+    <svg viewBox="0 0 1000 190" role="img" aria-label="从模糊想法到合并的五个阶段">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+          <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#c9c4b9"/>
+        </marker>
+      </defs>
+      <text x="0" y="16" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#5e666e" letter-spacing="1.4">THE LOOP</text>
+      <line x1="0" y1="86" x2="1000" y2="86" stroke="#eee9df" stroke-width="1"/>
+
+      <!-- nodes -->
+      <g>
+        <circle cx="42" cy="86" r="5" fill="#1a4d3c"/>
+        <text x="42" y="122" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="#15181c" font-weight="600">模糊想法</text>
+        <text x="42" y="140" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#5e666e">你脑子里那团</text>
+      </g>
+      <line x1="60" y1="86" x2="218" y2="86" stroke="#c9c4b9" stroke-width="1.4" marker-end="url(#ah)"/>
+      <g>
+        <rect x="228" y="66" width="132" height="40" rx="6" fill="#e8efe9" stroke="#cdddd4"/>
+        <text x="294" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#1a4d3c" font-weight="600">grill-*</text>
+        <text x="294" y="98" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3d6d58">对齐</text>
+      </g>
+      <line x1="372" y1="86" x2="438" y2="86" stroke="#c9c4b9" stroke-width="1.4" marker-end="url(#ah)"/>
+      <g>
+        <rect x="448" y="66" width="132" height="40" rx="6" fill="#f4f1ea" stroke="#e0dbcf"/>
+        <text x="514" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#4b5158" font-weight="600">to-spec</text>
+        <text x="514" y="98" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">落成文字</text>
+      </g>
+      <line x1="592" y1="86" x2="658" y2="86" stroke="#c9c4b9" stroke-width="1.4" marker-end="url(#ah)"/>
+      <g>
+        <rect x="668" y="66" width="132" height="40" rx="6" fill="#f4f1ea" stroke="#e0dbcf"/>
+        <text x="734" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#4b5158" font-weight="600">to-tickets</text>
+        <text x="734" y="98" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">切成可验收</text>
+      </g>
+      <line x1="812" y1="86" x2="878" y2="86" stroke="#c9c4b9" stroke-width="1.4" marker-end="url(#ah)"/>
+      <g>
+        <rect x="888" y="66" width="108" height="40" rx="6" fill="#fbeee7" stroke="#f0d5c8"/>
+        <text x="942" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#b4441f" font-weight="600">implement</text>
+        <text x="942" y="98" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#a8562f">tdd + review</text>
+      </g>
+
+      <!-- feedback arc -->
+      <path d="M942 118 C 942 168, 294 168, 294 118" fill="none" stroke="#d8d2c5" stroke-width="1.3" stroke-dasharray="4 4"/>
+      <text x="618" y="180" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">反例落回规格，而不是直接改代码</text>
+    </svg>
+  </div>
+  <p class="hero-hint">左右滑动查看完整流程 →</p>
+</section>
+
+<div class="layout">
+  <aside class="toc">
+    <div class="toc-h">目录</div>
+    <a href="#why">01 为什么放弃重型流程</a>
+    <a href="#map">02 27 个技能的地形</a>
+    <a href="#line">03 一条主线串起来</a>
+    <a href="#ten">04 十个值得深用的</a>
+    <a href="#rest">05 其余 17 个</a>
+    <a href="#pitfalls">06 五个必踩的坑</a>
+    <a href="#install">07 装与改</a>
+  </aside>
+
+  <main>
+  <article>
+
+    <!-- ============ 01 ============ -->
+    <h2 id="why"><span class="num">01</span>为什么放弃重型流程</h2>
+    <p class="h2-sub">先说结论：不是流程错了，是流程的粒度错了。</p>
+
+    <p>
+      前两年很流行"给 AI 一套完整研发流程"：需求访谈、方案设计、计划拆解、逐条实现、测试、审查，
+      每个环节都有模板和门禁。第一次用会觉得踏实，用了一周就会开始烦。
+    </p>
+    <p>
+      原因很朴素。<strong>模型能力在涨，而这些流程是照着"模型很笨所以要管住它"设计的。</strong>
+      一个本来三步就能问清的需求，被塞进一张二十项的检查表，你要读它写出来的每一段，
+      确认它没有在第三步就跑偏。时间成本翻倍，Token 成本翻三倍。
+    </p>
+    <p>
+      我自己的体感是：一次中型需求的会话，重型流程能吃掉 <em>三到五倍的额度</em>，
+      而真正提升质量的只有其中两三个环节。剩下的是仪式感。
+    </p>
+
+    <p>
+      这套技能走的是反方向。<strong>它不拥有流程，只在四个地方各插一根钉子</strong>：
+      对齐、语言、反馈回路、设计。这四个点对应四种最常见的失败：
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:32%">失败长什么样</th><th style="width:26%">根因</th><th>对应技能</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>做出来的不是我想要的</td><td>它没问，你没说</td><td><code>grill-me</code> / <code>grill-with-docs</code></td></tr>
+          <tr><td>一屏能说清的事写了三段</td><td>没有共同词汇</td><td><code>domain-modeling</code> + <code>GLOSSARY.md</code></td></tr>
+          <tr><td>代码跑不通，它开始瞎猜</td><td>没有反馈回路</td><td><code>tdd</code> / <code>diagnosing-bugs</code></td></tr>
+          <tr><td>三个月后没人敢改</td><td>没人管设计</td><td><code>codebase-design</code> / <code>improve-codebase-architecture</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <div class="n-h">一个判断标准</div>
+      <p>
+        好技能和坏技能的区别，不在于它覆盖多少步骤，而在于
+        <strong>你能不能在某一步停下来，自己接手</strong>。重型流程的毛病是每一环都依赖上一环的产物，
+        中间断了就得从头再来。这套技能每个都短到你可以读完、改掉、甚至扔掉。
+      </p>
+    </div>
+
+    <!-- ============ 02 ============ -->
+    <h2 id="map"><span class="num">02</span>27 个技能的地形</h2>
+    <p class="h2-sub">先看全局，再决定读哪几个。大部分人的问题不是技能不够，是不知道有哪个。</p>
+
+    <p>
+      仓库按用途分了五个桶，但真正在维护、会随插件一起发出去的是前两个：
+      <code>engineering</code> 20 个，<code>productivity</code> 7 个。
+      剩下三个桶（<code>misc</code>、<code>in-progress</code>、<code>deprecated</code>）分别是边角料、内测和坟场，不用花时间。
+    </p>
+
+    <p>
+      比分类更有用的是另一个切分维度：<strong>谁能调它</strong>。
+    </p>
+
+    <div class="split">
+      <div class="col">
+        <h4>User-invoked</h4>
+        <p>只有你打斜杠才会跑。它的职责是<strong>编排</strong>：把几个技能按顺序串起来，管住节奏。</p>
+        <p class="res">你按下的按钮</p>
+      </div>
+      <div class="col">
+        <h4>Model-invoked</h4>
+        <p>你可以打，模型也能在任务匹配时自己伸手去拿。它装的是<strong>可复用的纪律</strong>。</p>
+        <p class="res">它知道的规矩</p>
+      </div>
+    </div>
+
+    <p>
+      这条规则还有一条硬约束：<strong>User-invoked 可以调用 Model-invoked，但绝不能调用另一个 User-invoked。</strong>
+      所以你不会出现"斜杠套斜杠"的递归，也就不会出现那种点一下触发二十步的失控感。
+    </p>
+
+    <figure>
+      <div class="fig-box">
+        <div class="map-grid">
+          <div class="map-col">
+            <h4>engineering <span class="cnt">20</span></h4>
+            <p class="desc">日常写代码用。斜杠 11 个，自动 9 个。</p>
+            <ul>
+              <li><span class="m">/</span><code>ask-matt</code><span class="zh">技能路由</span></li>
+              <li><span class="m">/</span><code>grill-with-docs</code><span class="zh">访谈 + 建模</span></li>
+              <li><span class="m">/</span><code>to-spec</code><span class="zh">对话转规格</span></li>
+              <li><span class="m">/</span><code>to-tickets</code><span class="zh">拆可验收卡</span></li>
+              <li><span class="m">/</span><code>implement</code><span class="zh">做一件事</span></li>
+              <li><span class="m">/</span><code>implement-spec</code><span class="zh">做整份规格</span></li>
+              <li><span class="m">/</span><code>wayfinder</code><span class="zh">超大块规划</span></li>
+              <li><span class="m">/</span><code>triage</code><span class="zh">issue 状态机</span></li>
+              <li><span class="m">/</span><code>improve-codebase-architecture</code><span class="zh">找重构点</span></li>
+              <li><span class="m">/</span><code>retro</code><span class="zh">复盘环境</span></li>
+              <li><span class="m">/</span><code>setup-…</code><span class="zh">一次性初始化</span></li>
+              <li><span class="m">·</span><code>tdd</code><span class="zh">红绿循环</span></li>
+              <li><span class="m">·</span><code>diagnosing-bugs</code><span class="zh">诊断纪律</span></li>
+              <li><span class="m">·</span><code>code-review</code><span class="zh">双轴审查</span></li>
+              <li><span class="m">·</span><code>prototype</code><span class="zh">一次性原型</span></li>
+              <li><span class="m">·</span><code>research</code><span class="zh">后台调研</span></li>
+              <li><span class="m">·</span><code>domain-modeling</code><span class="zh">领域建模</span></li>
+              <li><span class="m">·</span><code>codebase-design</code><span class="zh">深模块词汇</span></li>
+              <li><span class="m">·</span><code>pr</code><span class="zh">PR 写法</span></li>
+              <li><span class="m">·</span><code>wizard</code><span class="zh">生成向导</span></li>
+            </ul>
+          </div>
+          <div class="map-col">
+            <h4>productivity <span class="cnt">7</span></h4>
+            <p class="desc">跟代码无关的工作流工具。斜杠 5 个，自动 2 个。</p>
+            <ul>
+              <li><span class="m">/</span><code>grill-me</code><span class="zh">拷问计划</span></li>
+              <li><span class="m">/</span><code>handoff</code><span class="zh">会话交接</span></li>
+              <li><span class="m">/</span><code>teach</code><span class="zh">跨会话教学</span></li>
+              <li><span class="m">/</span><code>to-questionnaire</code><span class="zh">转问卷</span></li>
+              <li><span class="m">/</span><code>wait-what</code><span class="zh">没听懂重讲</span></li>
+              <li><span class="m">·</span><code>grilling</code><span class="zh">访谈原语</span></li>
+              <li><span class="m">·</span><code>writing-for-agents</code><span class="zh">写给 AI 的文档</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>图 1</b>　27 个正式技能。斜杠代表只有你能触发，圆点代表模型也能自己拿。数量来自仓库当前版本。</figcaption>
+    </figure>
+
+    <p>
+      还有一层容易被忽略的关系：<strong>好几个斜杠技能其实是同一块积木的组合</strong>。
+      <code>grilling</code> 是访谈原语，<code>grill-me</code> 只是它的一层壳；
+      <code>grill-with-docs</code> 是 <code>grilling</code> 加 <code>domain-modeling</code>；
+      <code>implement</code> 驱动 <code>tdd</code> 并收尾于 <code>code-review</code>；
+      <code>implement-spec</code> 是同一个动作的并行版。
+    </p>
+
+    <div class="note warm">
+      <div class="n-h">读法建议</div>
+      <p>
+        不要一次装全、全部试用。先装，然后只记三个：一个负责问清（<code>grill-me</code>），
+        一个负责写清（<code>to-spec</code>），一个负责做对（<code>tdd</code>）。
+        等你在这三步上稳定了，剩下的自然会缺什么补什么。
+      </p>
+    </div>
+
+    <!-- ============ 03 ============ -->
+    <h2 id="line"><span class="num">03</span>一条主线串起来</h2>
+    <p class="h2-sub">这十个技能不是并列的清单，是一条可以顺次走完的路。</p>
+
+    <p>
+      下面这条线是我实际用的顺序。它不是强制的，但如果你不确定从哪开始，
+      按这个走至少不会在第二步就迷路。
+    </p>
+
+    <div class="pipe">
+      <div class="pipe-row on">
+        <div class="rail"><div class="b">1</div></div>
+        <div class="pipe-body">
+          <div class="t">先被问清楚</div>
+          <div class="d"><code>grill-me</code> 或 <code>grill-with-docs</code>。它会一轮一轮地问，直到设计的每个分支都有答案。</div>
+        </div>
+      </div>
+      <div class="pipe-row on">
+        <div class="rail"><div class="b">2</div></div>
+        <div class="pipe-body">
+          <div class="t">看不清就先做个能点的东西</div>
+          <div class="d"><code>prototype</code>。状态模型不确定就做逻辑原型，界面不确定就做几套差异极大的界面。</div>
+        </div>
+      </div>
+      <div class="pipe-row on">
+        <div class="rail"><div class="b">3</div></div>
+        <div class="pipe-body">
+          <div class="t">把聊定的事落成文字</div>
+          <div class="d"><code>to-spec</code>。它不访谈，只综合。产出发到你的 issue tracker。</div>
+        </div>
+      </div>
+      <div class="pipe-row on">
+        <div class="rail"><div class="b">4</div></div>
+        <div class="pipe-body">
+          <div class="t">切成能单独验收的卡</div>
+          <div class="d"><code>to-tickets</code>。每张卡说清交什么、怎么验、被谁挡住。</div>
+        </div>
+      </div>
+      <div class="pipe-row on">
+        <div class="rail"><div class="b">5</div></div>
+        <div class="pipe-body">
+          <div class="t">按依赖关系做掉</div>
+          <div class="d"><code>implement</code> 单线做，<code>implement-spec</code> 并行做。内部都跑 <code>tdd</code>。</div>
+        </div>
+      </div>
+      <div class="pipe-row on">
+        <div class="rail"><div class="b">6</div></div>
+        <div class="pipe-body">
+          <div class="t">两条轴分开审</div>
+          <div class="d"><code>code-review</code>。规范一条线，需求一条线，互不污染。</div>
+        </div>
+      </div>
+      <div class="pipe-row on">
+        <div class="rail"><div class="b">7</div></div>
+        <div class="pipe-body">
+          <div class="t">换会话前留一份交接</div>
+          <div class="d"><code>handoff</code>。把定下的事、做到哪、下一步写成一份临时文档。</div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      中间还有两个随时可以插进来的：卡住不动时用 <code>diagnosing-bugs</code>，
+      每隔几天用 <code>improve-codebase-architecture</code> 扫一遍代码库看哪里在变浅。
+      这两个不在主线上，但缺了它们，前面六步的成果会在两个月内被磨平。
+    </p>
+
+    <!-- ============ 04 ============ -->
+    <h2 id="ten"><span class="num">04</span>十个值得深用的</h2>
+    <p class="h2-sub">每个都写：它解决哪个具体问题、实际怎么用、以及一句判断它有没有起效的标准。</p>
+
+    <!-- 1 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">01</div>
+        <h3><code>grill-with-docs</code>：顺手把词义和取舍记下来</h3>
+      </div>
+      <p class="verdict">一个词有两种读法的时候，先别写代码，先把它钉死。</p>
+
+      <p>
+        我拿一个面试产品举例。"知识库面试"这五个字，可以指两件完全不同的事：
+      </p>
+      <ul class="tight">
+        <li>照着用户上传的资料出题，考的是资料；</li>
+        <li>照常做技术面试，只在需要补上下文的时候翻一下知识库。</li>
+      </ul>
+      <p>
+        叫法一样，做出来的东西差着一个量级。这种歧义如果不当场消掉，
+        它会一路带到数据库表结构里，等你发现的时候已经改不动了。
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 200" role="img" aria-label="同一个词分叉成两种产品">
+            <rect x="250" y="16" width="200" height="42" rx="6" fill="#f4f1ea" stroke="#ddd8cb"/>
+            <text x="350" y="35" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="#15181c" font-weight="600">"知识库面试"</text>
+            <text x="350" y="50" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">一个词，两种读法</text>
+
+            <path d="M300 58 L150 108" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <path d="M400 58 L550 108" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+
+            <rect x="30" y="108" width="240" height="66" rx="6" fill="#fff" stroke="#e4e0d7"/>
+            <text x="46" y="130" font-family="-apple-system,sans-serif" font-size="12.5" fill="#15181c" font-weight="600">读法 A：以资料为准</text>
+            <text x="46" y="148" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">出题范围来自上传文档</text>
+            <text x="46" y="163" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">要解析、切片、检索链路</text>
+
+            <rect x="430" y="108" width="240" height="66" rx="6" fill="#fff" stroke="#e4e0d7"/>
+            <text x="446" y="130" font-family="-apple-system,sans-serif" font-size="12.5" fill="#15181c" font-weight="600">读法 B：以题库为准</text>
+            <text x="446" y="148" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">面试照常进行，资料只做补充</text>
+            <text x="446" y="163" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">只要一个可选的知识入口</text>
+          </svg>
+        </div>
+        <figcaption><b>图 2</b>　同一个术语的两次分叉。写进 <code>GLOSSARY.md</code> 的价值，是把这次分叉的结论留给下一个会话。</figcaption>
+      </figure>
+
+      <p>
+        这个技能做的事，是<strong>在访谈的同时做领域建模</strong>。它内部其实调了两个模型侧技能：
+        <code>grilling</code> 负责 relentless 地追问，<code>domain-modeling</code> 负责把定下来的词写进
+        <code>GLOSSARY.md</code>。碰到那种"改起来代价很大、但光看代码又想不明白为什么这么选"的取舍，
+        它会再写一份 ADR。
+      </p>
+
+      <p>
+        我最喜欢的其实是它对<strong>表达长度</strong>的影响。有了共同词汇之后，同一件事的表述会缩短一个数量级：
+      </p>
+      <blockquote>
+        <p>改之前：「课程里某一节被『实体化』（也就是在文件系统里给它一个位置）的时候会出问题。」</p>
+        <p>改之后：「实体化级联有问题。」</p>
+        <cite>这个例子来自作者自己的项目文档，缩写掉的每个词在 GLOSSARY 里都有定义</cite>
+      </blockquote>
+      <p>
+        这不只是省字。变量名、函数名、文件名会跟着用同一套词，代码库对模型来说变得更好导航，
+        思考时消耗的 Token 也变少。这是这套技能里最被低估的一环。
+      </p>
+      <div class="tags"><span class="tag u">user-invoked</span><span class="tag">= grilling + domain-modeling</span><span class="tag">产出 GLOSSARY.md / ADR</span></div>
+    </div>
+
+    <!-- 2 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">02</div>
+        <h3><code>prototype</code>：先点几下，再决定</h3>
+      </div>
+      <p class="verdict">能用鼠标回答的问题，不要用文字讨论。</p>
+
+      <p>
+        一个审批单被驳回了，用户能不能改金额？改完再提交，之前那条审批意见挂在哪？
+        这种问题我在文档里写过三次，每次写出来的理解都不一样。后来我改成让它直接做一个页面，
+        驳回、改金额、重新提交三个按钮摆在那里，每点一次把当前状态打在屏幕上。三分钟就有了答案。
+      </p>
+
+      <p>
+        这个技能的关键设计是<strong>按问题类型分两条完全不同的路</strong>，走错就白做：
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 230" role="img" aria-label="原型的两条分支">
+            <rect x="270" y="12" width="160" height="34" rx="5" fill="#1a4d3c"/>
+            <text x="350" y="34" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12.5" fill="#fff" font-weight="600">要先回答哪个问题</text>
+
+            <path d="M310 46 L170 84" stroke="#c9c4b9" stroke-width="1.3" fill="none"/>
+            <path d="M390 46 L530 84" stroke="#c9c4b9" stroke-width="1.3" fill="none"/>
+
+            <text x="120" y="102" font-family="-apple-system,sans-serif" font-size="12" fill="#b4441f" font-weight="600">"这套逻辑 / 状态对不对"</text>
+            <text x="470" y="102" font-family="-apple-system,sans-serif" font-size="12" fill="#2c4a7c" font-weight="600">"它应该长什么样"</text>
+
+            <rect x="34" y="114" width="264" height="96" rx="6" fill="#fbeee7" stroke="#f0d5c8"/>
+            <text x="50" y="134" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8c3a1c">LOGIC.md</text>
+            <text x="50" y="154" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">一个可以双击打开的 HTML 文件</text>
+            <text x="50" y="171" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">自由试玩的按钮 + 分步引导</text>
+            <text x="50" y="188" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">每次都把完整状态打出来</text>
+            <text x="50" y="204" font-family="-apple-system,sans-serif" font-size="11" fill="#5e666e">非开发同事也能自己点</text>
+
+            <rect x="402" y="114" width="264" height="96" rx="6" fill="#eaeff7" stroke="#d3ddec"/>
+            <text x="418" y="134" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2c4a7c">UI.md</text>
+            <text x="418" y="154" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">同一路由下几套差异极大的界面</text>
+            <text x="418" y="171" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">URL 参数切换，底部浮条点选</text>
+            <text x="418" y="188" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">刻意不做得"差不多好看"</text>
+            <text x="418" y="204" font-family="-apple-system,sans-serif" font-size="11" fill="#5e666e">避免在细节上纠结，先比方向</text>
+          </svg>
+        </div>
+        <figcaption><b>图 3</b>　两条分支产出的东西差别很大。问错类型，整个原型就白做了。</figcaption>
+      </figure>
+
+      <p>
+        它的规则写得很硬，我照抄几条：<strong>一次性、从第一天就标注清楚、默认不持久化、跳过打磨</strong>。
+        最有用的是最后一条处理方式：结论验证完，把那条规则折回真实代码，
+        然后把原型本身提交到一个临时分支（不要进主分支），在需求票里留一个指针指向它。
+        主分支只保留被验证的结论。
+      </p>
+      <div class="tags"><span class="tag m">model-invoked</span><span class="tag">throwaway</span><span class="tag">捕获为一手资料</span></div>
+    </div>
+
+    <!-- 3 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">03</div>
+        <h3><code>to-spec</code>：把昨天聊定的写成明天找得到的</h3>
+      </div>
+      <p class="verdict">它不访谈你。这是设计，不是缺陷。</p>
+
+      <p>
+        举个再普通不过的例子：订单导出。今天聊定了 CSV 有哪几列、谁能导、日期最多查多久。
+        明天换个会话，这些要求就散了。你总得有个地方能翻到它们。
+      </p>
+      <p>
+        很多人第一次用会失望，因为它上来就开始写，不问你任何问题。原因在它的定义里：
+        <strong>综合（synthesize），不是访谈（interview）</strong>。访谈是 <code>grill-*</code> 的活。
+        这两个技能的边界切得很干净，我一开始也搞混过。
+      </p>
+      <p>它真正有价值的动作在写之前，一共三步：</p>
+      <ol>
+        <li><strong>先翻仓库</strong>，理解现状，全文使用 <code>GLOSSARY.md</code> 里的词，尊重相关区域的 ADR。</li>
+        <li><strong>先定验收的接缝（seam）</strong>。优先用已有的接缝，能用高的就不用低的，接缝越少越好，理想数量是一个。定完要跟你确认。</li>
+        <li>再按模板写，发到 tracker，打上 <code>ready-for-agent</code> 标签，跳过额外分诊。</li>
+      </ol>
+      <p>
+        第二步是精髓。大部分规格写不清楚，是因为<strong>没定从哪个公开接口验收</strong>。
+        "只导本租户的数据"这种话，只有绑定到一个具体的接口和一条具体的断言上，才是可执行的要求。
+      </p>
+      <div class="tags"><span class="tag u">user-invoked</span><span class="tag">无访谈</span><span class="tag">seam 优先</span><span class="tag">ready-for-agent</span></div>
+    </div>
+
+    <!-- 4 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">04</div>
+        <h3><code>to-tickets</code>：一张卡只验一件事</h3>
+      </div>
+      <p class="verdict">卡不是任务的切片，是验收的切片。</p>
+
+      <p>
+        我给第一张卡写的验收条件通常只有一句：拿 A 租户的账号导一次，把 CSV 打开，里面只应该有 A 的订单。
+        这句话跑通之前，不考虑下一张卡上的日期筛选。<strong>一张卡必须能独立变成一个"红变绿"的动作</strong>，
+        这是它叫 tracer bullet 的原因：先打穿一条完整但极细的路。
+      </p>
+      <p>
+        它会把规格、计划或者刚才那段对话吃进去，然后列出三件事：每张卡交什么、怎么验、等哪张先做完。
+        你确认拆得对，它才真正发到任务系统。在本地文件模式下，依赖关系写成纯文本；
+        在真实 tracker 上，用原生的 blocking 链接。
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 250" role="img" aria-label="任务图与可执行边界">
+            <text x="0" y="14" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#5e666e" letter-spacing="1.2">TASK GRAPH</text>
+
+            <!-- edges -->
+            <path d="M150 118 L214 76" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <path d="M150 130 L214 176" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <path d="M330 64 L418 108" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <path d="M330 188 L418 128" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <path d="M534 118 L604 118" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+
+            <!-- nodes -->
+            <rect x="28" y="102" width="122" height="44" rx="6" fill="#1a4d3c"/>
+            <text x="89" y="120" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11.5" fill="#fff" font-weight="600">T1 基础链路</text>
+            <text x="89" y="136" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#cfdfd4">已完成</text>
+
+            <rect x="222" y="42" width="108" height="44" rx="6" fill="#fff" stroke="#b4441f" stroke-width="1.6"/>
+            <text x="276" y="60" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11.5" fill="#15181c" font-weight="600">T2 租户隔离</text>
+            <text x="276" y="76" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#b4441f">frontier</text>
+
+            <rect x="222" y="164" width="108" height="44" rx="6" fill="#fff" stroke="#b4441f" stroke-width="1.6"/>
+            <text x="276" y="182" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11.5" fill="#15181c" font-weight="600">T3 日期上限</text>
+            <text x="276" y="198" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#b4441f">frontier</text>
+
+            <rect x="426" y="96" width="108" height="44" rx="6" fill="#fff" stroke="#e4e0d7"/>
+            <text x="480" y="114" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">T4 列自定义</text>
+            <text x="480" y="130" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#5e666e">等待</text>
+
+            <rect x="604" y="96" width="92" height="44" rx="6" fill="#f4f1ea" stroke="#e0dbcf"/>
+            <text x="650" y="114" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">T5 收尾</text>
+            <text x="650" y="130" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#5e666e">等待</text>
+
+            <text x="28" y="238" font-family="-apple-system,sans-serif" font-size="11" fill="#5e666e">红框 = 前置已满足、现在就能抓的卡。这张图的形状每次做完一张卡都会变。</text>
+          </svg>
+        </div>
+        <figcaption><b>图 4</b>　任务图的意义在于：任何时刻都有一圈"现在就能做"的卡。并行度不是拍脑袋定的，是图算出来的。</figcaption>
+      </figure>
+
+      <p>
+        还有一个细节我很喜欢：动手拆之前，它会先找 <strong>prefactor</strong> 的机会。
+        "先把改动变简单，再做简单的改动。" 这句话听着像鸡汤，但落在具体代码上往往很实在：
+        先抽一个函数、先补一条测试、先把那个 if 挪走，后面三张卡都能省一半力气。
+      </p>
+      <div class="tags"><span class="tag u">user-invoked</span><span class="tag">tracer bullet</span><span class="tag">blocking edges</span></div>
+    </div>
+
+    <!-- 5 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">05</div>
+        <h3><code>implement-spec</code>：把任务图当成调度问题</h3>
+      </div>
+      <p class="verdict">并行不难，难的是并行之后还能收敛成一份可审的改动。</p>
+
+      <p>
+        如果只有两张有依赖的卡，塞进一个会话按顺序做就完了，用不着这个技能。
+        它的价值在另一种情况：项目里另有两三张互不阻挡的卡。
+      </p>
+      <p>
+        这时它会做四件普通实现流程不会做的事：
+      </p>
+      <ul>
+        <li>为整个规格开<strong>一条集成分支</strong>，所有工作最终汇到这一条线上；</li>
+        <li>把票当成<strong>任务图</strong>而不是步骤列表，算出 readiness frontier，让实现子智能体在 frontier 上并发跑；</li>
+        <li>每个子智能体都<strong>从全新的上下文窗口开始</strong>，并各自在自己的 Git worktree 里动手；</li>
+        <li>子智能体之间<strong>少说话，多给指针</strong>。指向规格、票、笔记、之前的提交，不复制内容。</li>
+      </ul>
+      <p>
+        第三点是硬要求，不是优化。有些运行环境默认把父会话 fork 给子智能体，
+        那样等于把父会话的上下文原封不动搬过去，而子智能体存在的意义恰恰是<strong>逃离那份上下文</strong>。
+      </p>
+      <p>
+        第一点也值得说：它会在第一次合并之后再开 draft PR，因为一个还没有提交的分支没法开 PR。
+        整份规格做完，才一起审。
+      </p>
+      <div class="note">
+        <div class="n-h">前置条件</div>
+        <p>用之前先确认你手里的工具能不能开子智能体和 worktree。不能的话，退回 <code>implement</code> 顺序做，别硬上。</p>
+      </div>
+      <div class="tags"><span class="tag u">user-invoked</span><span class="tag">integration branch</span><span class="tag">fresh context</span><span class="tag">worktree</span></div>
+    </div>
+
+    <!-- 6 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">06</div>
+        <h3><code>tdd</code>：先让一条测试红给你看</h3>
+      </div>
+      <p class="verdict">测试一上来就绿，我第一反应不是"真好"，而是"它到底有没有走到那个接口"。</p>
+
+      <p>
+        给导出接口补一条 31 天的限制，我会让它先发一条查 32 天的请求，断言应该被拒绝，跑一遍给我看。
+        旧实现要是照样吐了个 CSV 出来，这条测试就应该是红的。红的看到了，再补校验，再跑一遍转绿。
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 180" role="img" aria-label="红绿重构循环">
+            <defs>
+              <marker id="ah2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#c9c4b9"/>
+              </marker>
+            </defs>
+            <circle cx="200" cy="90" r="58" fill="none" stroke="#f0d5c8" stroke-width="18"/>
+            <path d="M 200 32 A 58 58 0 0 1 200 148" fill="none" stroke="#b4441f" stroke-width="0" />
+            <text x="200" y="84" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="#b4441f" font-weight="700">RED</text>
+            <text x="200" y="102" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#a8562f">先写一条会失败的</text>
+
+            <line x1="266" y1="90" x2="322" y2="90" stroke="#c9c4b9" stroke-width="1.4" marker-end="url(#ah2)"/>
+
+            <circle cx="392" cy="90" r="58" fill="none" stroke="#cdddd4" stroke-width="18"/>
+            <text x="392" y="84" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="#1a4d3c" font-weight="700">GREEN</text>
+            <text x="392" y="102" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3d6d58">最小改动让它转绿</text>
+
+            <line x1="458" y1="90" x2="514" y2="90" stroke="#c9c4b9" stroke-width="1.4" marker-end="url(#ah2)"/>
+
+            <rect x="524" y="62" width="150" height="56" rx="6" fill="#f4f1ea" stroke="#e0dbcf"/>
+            <text x="599" y="84" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="#4b5158" font-weight="600">REFACTOR</text>
+            <text x="599" y="101" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">绿着改结构</text>
+
+            <path d="M599 118 C 599 158, 200 158, 200 148" fill="none" stroke="#d8d2c5" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#ah2)"/>
+            <text x="392" y="172" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">下一个垂直切片</text>
+          </svg>
+        </div>
+        <figcaption><b>图 5</b>　红绿重构不是三个阶段，是一个收敛的循环。每次循环只推进一个垂直切片。</figcaption>
+      </figure>
+
+      <p>
+        这个技能真正的内容不是"先写测试"这句口号，而是<strong>什么算好测试</strong>、<strong>测试写在哪</strong>、
+        <strong>哪些写法是反模式</strong>。几条我常引用的：
+      </p>
+      <ul>
+        <li>测试通过<strong>公开接口</strong>验行为，不碰实现细节。代码可以整个重写，测试不该动。</li>
+        <li>好测试读起来像一份规格：<code>用户可以带着有效购物车结账</code>，一眼知道有什么能力存在。</li>
+        <li><strong>只在预先约定的接缝上写测试</strong>，没确认过的接缝一条都不写。你测不完所有东西，先约定接缝才能把力气花在关键路径上。</li>
+      </ul>
+      <p>
+        最新那版加了一条我很受用的规则：提议测试接缝时，顺手说明<strong>从这里测能抓到什么、哪类问题还得去别处查</strong>。
+        一句话逼它承认测试的边界，而不是给你一个"全覆盖"的错觉。
+      </p>
+      <div class="tags"><span class="tag m">model-invoked</span><span class="tag">red-green-refactor</span><span class="tag">seam 优先</span></div>
+    </div>
+
+    <!-- 7 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">07</div>
+        <h3><code>diagnosing-bugs</code>：先让 Bug 自己跑出来</h3>
+      </div>
+      <p class="verdict">第一阶段花的时间应该比后面所有阶段加起来都多。</p>
+
+      <p>
+        偶发超时。它看了几眼代码，说是 SQL 的问题。我会追问一句：
+        <strong>能不能先给我一条能跑出超时的请求？</strong>
+      </p>
+      <p>
+        这就是这个技能的全部重心。它把"建一条能红的反馈回路"当成第一优先，其它都是机械动作。
+        顺序是有讲究的：先试失败测试，其次 curl / HTTP 脚本打本地服务，再其次用固定输入跑 CLI 并 diff 输出，
+        最后才是"一次能把问题点出来的页面操作"。
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 240" role="img" aria-label="诊断收敛漏斗">
+            <path d="M60 30 L640 30 L520 92 L180 92 Z" fill="#fbeee7" stroke="#f0d5c8"/>
+            <text x="350" y="58" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="#8c3a1c" font-weight="600">1 · 建一条能红的回路</text>
+            <text x="350" y="76" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#a8562f">测试 / HTTP 脚本 / CLI 快照 / 页面操作</text>
+
+            <path d="M180 98 L520 98 L450 148 L250 148 Z" fill="#f4f1ea" stroke="#e0dbcf"/>
+            <text x="350" y="120" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12.5" fill="#4b5158" font-weight="600">2 · 最小化</text>
+            <text x="350" y="137" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">一点点减参数，看少了什么以后超时消失</text>
+
+            <path d="M250 154 L450 154 L410 192 L290 192 Z" fill="#f4f1ea" stroke="#e0dbcf"/>
+            <text x="350" y="176" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12.5" fill="#4b5158" font-weight="600">3 · 假设 + 插桩</text>
+
+            <rect x="290" y="198" width="120" height="30" rx="4" fill="#e8efe9" stroke="#cdddd4"/>
+            <text x="350" y="217" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11.5" fill="#1a4d3c" font-weight="600">4 · 修复 + 回归</text>
+
+            <path d="M600 40 C 690 90, 690 176, 420 212" fill="none" stroke="#d8d2c5" stroke-width="1.2" stroke-dasharray="4 4"/>
+            <text x="648" y="132" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#5e666e" transform="rotate(90 648 132)">原输入再跑一次</text>
+          </svg>
+        </div>
+        <figcaption><b>图 6</b>　诊断是收敛过程，不是搜索过程。每往下一层，假设的候选就少一批。</figcaption>
+      </figure>
+
+      <p>
+        它还有几条很"工程"的规矩，值得直接抄进自己的提示词里：
+      </p>
+      <ul>
+        <li><strong>能跳阶段，但要说明理由。</strong>不允许默默跳过。</li>
+        <li><strong>先脱敏。</strong>所有命令、输出、抓下来的报文，密钥一律写成 <code>&lt;REDACTED&gt;</code>；凭据用环境变量传，不进展示内容。</li>
+        <li>修完拿原来的输入再跑一遍，合适的话把复现直接转成回归用例。</li>
+      </ul>
+      <div class="tags"><span class="tag m">model-invoked</span><span class="tag">feedback loop first</span><span class="tag">redact</span></div>
+    </div>
+
+    <!-- 8 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">08</div>
+        <h3><code>code-review</code>：规范和需求必须分开看</h3>
+      </div>
+      <p class="verdict">少查了一次租户权限，命名和异常处理写得再规整也没用。</p>
+
+      <p>
+        看 Diff 的时候我会把原始 Issue 一起给过去，并且给一个比较基点，比如 <code>main</code>。
+        然后它把 Diff 拆给两个子智能体：
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 220" role="img" aria-label="双轴并行审查">
+            <rect x="24" y="86" width="118" height="48" rx="6" fill="#f4f1ea" stroke="#e0dbcf"/>
+            <text x="83" y="106" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11.5" fill="#4b5158">git diff</text>
+            <text x="83" y="122" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#5e666e">main...HEAD</text>
+
+            <path d="M146 102 C 190 102, 190 54, 232 54" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <path d="M146 118 C 190 118, 190 166, 232 166" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+
+            <rect x="236" y="26" width="240" height="58" rx="6" fill="#fff" stroke="#2c4a7c"/>
+            <text x="252" y="46" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#2c4a7c">STANDARDS</text>
+            <text x="252" y="64" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">读 CONTRIBUTING.md 与仓库约定</text>
+            <text x="252" y="78" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">外加一份 Fowler 坏味道基线</text>
+
+            <rect x="236" y="138" width="240" height="58" rx="6" fill="#fff" stroke="#b4441f"/>
+            <text x="252" y="158" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#b4441f">SPEC</text>
+            <text x="252" y="176" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">读原始 Issue，逐句对 Diff</text>
+            <text x="252" y="190" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">漏做的、顺手多做的，都记下</text>
+
+            <path d="M480 55 C 528 55, 528 96, 560 96" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <path d="M480 167 C 528 167, 528 126, 560 126" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+
+            <rect x="564" y="84" width="112" height="54" rx="6" fill="#e8efe9" stroke="#cdddd4"/>
+            <text x="620" y="106" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11.5" fill="#1a4d3c" font-weight="600">并排报告</text>
+            <text x="620" y="122" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#3d6d58">互不污染</text>
+
+            <text x="24" y="212" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">两个子智能体各自从空上下文开始，避免一方的结论带上另一方的偏见。</text>
+          </svg>
+        </div>
+        <figcaption><b>图 7</b>　双轴审查。规范看"写得对不对"，规格看"做的是不是这件事"。</figcaption>
+      </figure>
+
+      <p>
+        为什么非要拆成两个子智能体？因为这两件事会互相干扰。一个负责规范的审查者，
+        看到代码风格整齐，容易默认"这活儿干得不错"，从而放过"少查了一次权限"这种致命缺陷。
+        反过来也一样。
+      </p>
+      <p>
+        它还做了两件很实用的工程化动作：<strong>开工前先校验</strong>比较基点能不能解析（<code>git rev-parse</code>）、
+        Diff 是不是空的。<strong>错的 ref 和空的 diff 应该在这里失败，而不是在两个并行子智能体里面失败。</strong>
+        另外三点 diff（<code>...HEAD</code>）而不是两点，所以比较的是 merge-base，不会被主干上的无关提交干扰。
+      </p>
+      <p>
+        如果项目里压根没有规格可查，它会退回只审代码约定。这时候你就知道，
+        前面的 <code>to-spec</code> 那一步是省不掉的。
+      </p>
+      <div class="tags"><span class="tag m">model-invoked</span><span class="tag">two-axis</span><span class="tag">parallel sub-agents</span></div>
+    </div>
+
+    <!-- 9 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">09</div>
+        <h3><code>improve-codebase-architecture</code>：找哪里正在变浅</h3>
+      </div>
+      <p class="verdict">它是普查，不是抢救。老代码库上它找得出真问题，但它不会替你解开那团乱麻。</p>
+
+      <p>
+        给 CSV 加一列，接口、文件生成、后台任务三处都得跟着改。碰到这种设计，我会想知道：
+        前几次改导出字段，是不是也动了这三个地方？
+      </p>
+      <p>
+        它会从最近常改的代码里找线索，产出一份 HTML 报告，里面列清楚：哪些文件老是一起动、
+        有没有办法把规则收进一个深模块、收进去之后从哪儿测。报告给几个候选，
+        你挑一处最想动的，它再跟你逐条讨论怎么拆。
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 210" role="img" aria-label="架构普查报告的结构">
+            <text x="20" y="20" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#5e666e" letter-spacing="1.2">DEEPENING REPORT</text>
+
+            <rect x="20" y="36" width="660" height="1" fill="#eee9df"/>
+
+            <text x="20" y="62" font-family="-apple-system,sans-serif" font-size="11" fill="#5e666e">最近 30 天热点</text>
+            <rect x="132" y="48" width="90" height="8" rx="2" fill="#e8efe9"/>
+            <rect x="132" y="48" width="90" height="8" rx="2" fill="#b4441f" opacity=".55"/>
+            <text x="232" y="56" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4b5158">export/*</text>
+
+            <rect x="20" y="74" width="660" height="1" fill="#eee9df"/>
+
+            <rect x="20" y="90" width="320" height="98" rx="6" fill="#fff" stroke="#e4e0d7"/>
+            <text x="36" y="110" font-family="-apple-system,sans-serif" font-size="12" fill="#15181c" font-weight="600">候选 1 · 导出编排收口</text>
+            <text x="36" y="130" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">3 个文件总是一起变，规则散在 5 处</text>
+            <text x="36" y="148" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">建议 interface：buildExport(request)</text>
+            <text x="36" y="170" font-family="-apple-system,sans-serif" font-size="10.5" fill="#1a4d3c">从这里测：一个接口覆盖三种导出</text>
+
+            <rect x="360" y="90" width="320" height="98" rx="6" fill="#fff" stroke="#e4e0d7"/>
+            <text x="376" y="110" font-family="-apple-system,sans-serif" font-size="12" fill="#15181c" font-weight="600">候选 2 · 权限判断重复</text>
+            <text x="376" y="130" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">租户校验在 4 个入口各写了一遍</text>
+            <text x="376" y="148" font-family="-apple-system,sans-serif" font-size="11" fill="#4b5158">建议：收进 seam，做一个 adapter</text>
+            <text x="376" y="170" font-family="-apple-system,sans-serif" font-size="10.5" fill="#1a4d3c">一个 adapter 是假想 seam，两个才算真的</text>
+          </svg>
+        </div>
+        <figcaption><b>图 8</b>　报告长这样：热点先定范围，再给几个可以挑的加深候选，每个都带"从哪儿测"。</figcaption>
+      </figure>
+
+      <p>
+        它的方法论有两个我很认同的点。第一是<strong>先划范围再看</strong>，不搞全库扫描：
+        加深一个模块的收益来自"以后改它更容易"，所以权重应该压在最近改过的地方。
+        如果用户已经指名了方向，就直接用，不做推断。
+      </p>
+      <p>
+        第二是<strong>词汇统一</strong>。它只允许用 module、interface、depth、seam、adapter、leverage、locality 这几个词，
+        明确禁止滑向 "component"、"service"、"API"、"boundary"。听着像吹毛求疵，
+        但这几个词一混用，"把服务拆一拆"和"把接口做深"就会变成同一句话，讨论就没法收敛了。
+      </p>
+      <p>
+        用法上我建议把它当体检：<strong>每隔几天跑一次</strong>，一次只看一个候选，做完就停。
+        想靠它一次性还清历史债，一定会失望。
+      </p>
+      <div class="tags"><span class="tag u">user-invoked</span><span class="tag">deepening</span><span class="tag">HTML 报告</span><span class="tag">survey ≠ rescue</span></div>
+    </div>
+
+    <!-- 10 -->
+    <div class="skill">
+      <div class="skill-head">
+        <div class="skill-idx">10</div>
+        <h3><code>handoff</code>：给下一个会话留一份能接手的</h3>
+      </div>
+      <p class="verdict">好的交接不是总结，是几个指针加一句"下一步"。</p>
+
+      <p>
+        还是那个面试产品。聊完要换会话，我想留下的其实就一句话：
+        首期只绑一个知识库，两个入口保留，底下还是同一个 <code>InterviewSession</code>。
+      </p>
+      <p>
+        它会把这句连同"已经定的事""现在做到哪""下一步"写成一份文档，存到系统的临时目录
+        （<code>$TMPDIR</code>，没有就 <code>/tmp</code>）<strong>而不是当前工作区</strong>。
+        这个细节有道理：交接文档是一次性的，放进仓库只会变成又一份过期文档。
+      </p>
+
+      <figure>
+        <div class="fig-box">
+          <svg viewBox="0 0 700 190" role="img" aria-label="会话交接">
+            <rect x="20" y="34" width="230" height="120" rx="8" fill="#fff" stroke="#e4e0d7"/>
+            <text x="36" y="56" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#5e666e">SESSION A · 已结束</text>
+            <text x="36" y="80" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">长对话，上下文快满了</text>
+            <text x="36" y="100" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">定下 7 条决策，改到第 3 步</text>
+            <text x="36" y="120" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">有两个没解决的岔路</text>
+            <text x="36" y="140" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">直接复制粘贴给下一位 = 灾难</text>
+
+            <path d="M254 94 L316 94" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+            <text x="285" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#b4441f">handoff</text>
+
+            <rect x="320" y="46" width="150" height="96" rx="6" fill="#e8efe9" stroke="#cdddd4"/>
+            <text x="336" y="66" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#1a4d3c">$TMPDIR/handoff.md</text>
+            <text x="336" y="86" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3d6d58">已定 / 进度 / 下一步</text>
+            <text x="336" y="102" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3d6d58">相关指针（不复制内容）</text>
+            <text x="336" y="118" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3d6d58">建议使用的技能</text>
+            <text x="336" y="134" font-family="-apple-system,sans-serif" font-size="10.5" fill="#3d6d58">敏感信息已脱敏</text>
+
+            <path d="M474 94 L536 94" stroke="#c9c4b9" stroke-width="1.4" fill="none"/>
+
+            <rect x="540" y="34" width="140" height="120" rx="8" fill="#fff" stroke="#b4441f" stroke-dasharray="4 3"/>
+            <text x="556" y="56" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#b4441f">SESSION B · 全新</text>
+            <text x="556" y="80" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">空上下文</text>
+            <text x="556" y="100" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">先读交接文档</text>
+            <text x="556" y="120" font-family="-apple-system,sans-serif" font-size="11.5" fill="#4b5158">顺着指针去读原文</text>
+            <text x="556" y="140" font-family="-apple-system,sans-serif" font-size="10.5" fill="#5e666e">不重复消耗已定的事</text>
+          </svg>
+        </div>
+        <figcaption><b>图 9</b>　交接的本质是压缩加索引：结论留下，过程用指针指过去。</figcaption>
+      </figure>
+
+      <p>
+        三条规则决定了它好不好用：
+      </p>
+      <ul>
+        <li><strong>不重复已有产物。</strong>规格、计划、ADR、issue、提交、diff 都只写路径或链接。</li>
+        <li><strong>带一节"建议使用的技能"</strong>，直接点名下一个智能体该调哪几个。</li>
+        <li><strong>先脱敏。</strong>密钥、密码、可识别个人的信息一律不留。</li>
+      </ul>
+      <p>
+        它还能接一个参数，用来描述下个会话要做什么，文档会据此调整重点。
+        这个功能小，但用起来差别很大：不给参数，它写的是"发生了什么"；给了参数，它写的是"你要接着做什么"。
+      </p>
+      <div class="tags"><span class="tag u">user-invoked</span><span class="tag">$TMPDIR</span><span class="tag">context pointer</span></div>
+    </div>
+
+    <!-- ============ 05 ============ -->
+    <h2 id="rest"><span class="num">05</span>其余 17 个：什么时候该想起它们</h2>
+    <p class="h2-sub">不用全记。记住"什么情况下该想起它"就够了。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:27%">技能</th><th style="width:16%">类型</th><th>什么时候想起它</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>grill-me</code></td>
+            <td><span class="role">user</span></td>
+            <td>计划还没成型、你心里有数但说不清的时候。它是 <code>grilling</code> 的一层最薄的壳，不建文档，只要答案。</td>
+          </tr>
+          <tr>
+            <td><code>grilling</code></td>
+            <td><span class="role">model</span></td>
+            <td>被别的技能内部调用。核心机制是<strong>设计树 + 轮次</strong>：一轮只问"前置条件都已确定"的那批问题，每个问题都带一个推荐答案，措辞让"是"就等于接受推荐。事实查询它自己派子智能体去找，不问你。</td>
+          </tr>
+          <tr>
+            <td><code>wayfinder</code></td>
+            <td><span class="role">user</span></td>
+            <td>一整块活儿装不进一个会话的时候。它把这块活做成一张决策票地图，一次只解一张，直到通往终点的路清晰。</td>
+          </tr>
+          <tr>
+            <td><code>triage</code></td>
+            <td><span class="role">user</span></td>
+            <td>issue 堆积、外部 PR 一堆的时候。它用一个小状态机推着走：分类、验证、必要时开一轮访谈，最后写出 agent-ready 的简报。</td>
+          </tr>
+          <tr>
+            <td><code>implement</code></td>
+            <td><span class="role">user</span></td>
+            <td>只有一张票或一份小规格的时候。它驱动 <code>tdd</code> 在约定的接缝上推进，提交前用 <code>code-review</code> 收尾。</td>
+          </tr>
+          <tr>
+            <td><code>research</code></td>
+            <td><span class="role">model</span></td>
+            <td>需要查一手资料、查 API 事实、或者只是想把读文档的体力活外包出去。它跑在后台，产出带引用的 Markdown 落进仓库。</td>
+          </tr>
+          <tr>
+            <td><code>retro</code></td>
+            <td><span class="role">user</span></td>
+            <td>一次会话结束、感觉哪里一直不顺的时候。它不改代码，改的是<strong>智能体的工作环境</strong>：导航、自动检查、编码标准、steering 文件、工具链，最严重的排最前。</td>
+          </tr>
+          <tr>
+            <td><code>codebase-design</code></td>
+            <td><span class="role">model</span></td>
+            <td>要讨论模块该多深、接缝放哪、接口暴露什么的时候。它是一本词典，不是一次会话：module / interface / depth / seam / adapter / leverage / locality，外加删除测试、"接口就是测试面"、"一个 adapter 是假想，两个才是真的"。</td>
+          </tr>
+          <tr>
+            <td><code>domain-modeling</code></td>
+            <td><span class="role">model</span></td>
+            <td>在讨论术语、写 <code>GLOSSARY.md</code>、记 ADR 的时候。它做的事是主动拿边界场景去压测现有词义，压不住就改词或加词。</td>
+          </tr>
+          <tr>
+            <td><code>pr</code></td>
+            <td><span class="role">model</span></td>
+            <td>写 PR 描述的时候。三件事：摘要用最小的可视化讲清改动、before/after 证据证明它真的跑得通、以及一句合并风险判断（单向门还是双向门，爆炸半径多大）。</td>
+          </tr>
+          <tr>
+            <td><code>wizard</code></td>
+            <td><span class="role">model</span></td>
+            <td>有些步骤只有人能执行：开云资源、配 CI 密钥、走一个没见过的第三方后台、做一次性切换。它生成一个交互式 bash 向导，一步一步带着人走。</td>
+          </tr>
+          <tr>
+            <td><code>ask-matt</code></td>
+            <td><span class="role">user</span></td>
+            <td>你忘了有哪个技能、或者不知道下一步该干嘛的时候。它是整个仓库的路由表。有意思的是它被明确要求：在说某个技能做什么之前，先去读那个技能的 SKILL.md。</td>
+          </tr>
+          <tr>
+            <td><code>wait-what</code></td>
+            <td><span class="role">user</span></td>
+            <td>它上一段话你完全没接住的时候。一句话：打住，重讲，给我上下文，用平实英语，用 <code>GLOSSARY.md</code> 里的词。</td>
+          </tr>
+          <tr>
+            <td><code>teach</code></td>
+            <td><span class="role">user</span></td>
+            <td>要跨多次会话学一个东西的时候。当前目录就是有状态的工作区，进度存在那儿，不靠会话记忆。</td>
+          </tr>
+          <tr>
+            <td><code>to-questionnaire</code></td>
+            <td><span class="role">user</span></td>
+            <td>有个决定你一个人答不了，得问某个具体的人。它把这个决定变成一份 Markdown 问卷，可以异步填，也可以开会一起填。注意它拷问的是"怎么发出去"（给谁、要什么回来），不是主题本身。</td>
+          </tr>
+          <tr>
+            <td><code>writing-for-agents</code></td>
+            <td><span class="role">model</span></td>
+            <td>写 skill、改 <code>AGENTS.md</code> / <code>CLAUDE.md</code>、或者写任何"靠指针被智能体读到的文档"的时候。这套仓库自己的文档规范就来自它。</td>
+          </tr>
+          <tr>
+            <td><code>setup-…</code></td>
+            <td><span class="role">user</span></td>
+            <td>每个仓库跑一次。问你三件事：用哪个 issue tracker、分诊时打什么标签、生成的文档存哪。不跑它，前面一半技能会拒绝工作。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      表格里"类型"那一栏值得再看一眼。<strong>model 那一半几乎都是"纪律"和"词典"，user 那一半几乎都是"动作"和"节奏"。</strong>
+      这个划分不是分类癖，它决定了你该怎么改：动作型技能可以随便重排顺序，纪律型技能最好别动，
+      因为它被好几个地方引用着。
+    </p>
+
+    <!-- ============ 06 ============ -->
+    <h2 id="pitfalls"><span class="num">06</span>五个我踩过或差点踩的坑</h2>
+    <p class="h2-sub">都写在技能文件本身里，但不读进去就会中招。</p>
+
+    <div class="pit">
+      <div class="item">
+        <div class="x">01</div>
+        <div>
+          <div class="k">装了两遍，每个技能都有两份</div>
+          <div class="v">插件安装和 <code>npx skills add</code> 二选一。前者自动更新、只读；后者把可编辑的文件拷进项目、要手动更新。两个都装，模型会看到两份同名技能，行为开始飘。</div>
+        </div>
+      </div>
+      <div class="item">
+        <div class="x">02</div>
+        <div>
+          <div class="k">没跑初始化，然后怪技能不好用</div>
+          <div class="v">差不多一半的工程技能第一句就是"tracker 和标签词汇应该已经给你了，没有的话去跑 setup"。跳过这一步，它会停下来让你先去跑，看起来像坏了，其实是在守规矩。</div>
+        </div>
+      </div>
+      <div class="item">
+        <div class="x">03</div>
+        <div>
+          <div class="k">指望 <code>to-spec</code> 访谈你</div>
+          <div class="v">它明确写了不做访谈，只综合已有内容。对话里什么都没有的时候用它，会得到一份空洞的规格，还带着 <code>ready-for-agent</code> 标签，比没有规格更危险。</div>
+        </div>
+      </div>
+      <div class="item">
+        <div class="x">04</div>
+        <div>
+          <div class="k">用 tdd 但没先约接缝</div>
+          <div class="v">规则是"没确认过的接缝上一条测试都不写"。直接让它开干，它会先反问你"公开接口是什么、测哪几个接缝"。省掉这段对话，后面测试会写在你不想维护的地方。</div>
+        </div>
+      </div>
+      <div class="item">
+        <div class="x">05</div>
+        <div>
+          <div class="k">在诊断时催它给结论</div>
+          <div class="v">它第一阶段就是要建一条能红的回路，会显得很慢。这时候催一句"你直接看代码说是哪儿的问题"，整个技能的价值就归零了，你会得到一个自信的猜测。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 07 ============ -->
+    <h2 id="install"><span class="num">07</span>装，然后改</h2>
+    <p class="h2-sub">这套东西最大的优点是可以直接改，别把它当黑盒。</p>
+
+    <p>
+      装法不止一种，按你的智能体选一条就行。插件方式会自己更新，适合只想用不想改的；
+      把文件拷进项目的方式适合要动刀子的。
+    </p>
+
+    <pre><code><span class="cm"># 插件方式（自动更新，推荐先用这个）</span>
+claude plugin install mattpocock-skills@claude-plugins-official
+
+<span class="cm"># Codex</span>
+codex plugin marketplace add mattpocock/skills
+codex plugin add mattpocock-skills@mattpocock
+
+<span class="cm"># 其他智能体，或想要可编辑副本</span>
+npx skills@latest add mattpocock/skills -a cursor
+npx skills@latest update</code></pre>
+
+    <p>
+      装完第一件事不是马上用，是在仓库里跑一次初始化。它会问你三件很具体的事：
+      用哪个 issue tracker（GitHub、GitLab、本地文件，或者你描述的任何东西）、
+      分诊时打什么标签、生成的文档放哪。这三个答案会写进项目里，后面所有技能都靠它。
+    </p>
+
+    <h3>值得改的地方</h3>
+    <p>
+      我在自己项目里改过三处，都很有价值：
+    </p>
+    <ul>
+      <li><strong><code>tdd</code> 的接缝清单</strong>。把项目里那几条真正的公开接口名字直接写进去，它就不会每次重新猜。</li>
+      <li><strong><code>code-review</code> 的规范来源</strong>。默认读 <code>CONTRIBUTING.md</code>，我改成了指向团队那份更细的规范，外加上几条只有我们知道的红线。</li>
+      <li><strong><code>grilling</code> 的提问轮次上限</strong>。默认会一直问到设计树收敛，小需求上有点过。加一条"三轮内必须收口"的约束，体验好很多。</li>
+    </ul>
+
+    <div class="note">
+      <div class="n-h">改之前先看一眼</div>
+      <p>
+        纪律型（model-invoked）的技能被好几个地方引用。<code>grilling</code> 被 <code>grill-me</code>、
+        <code>grill-with-docs</code>、<code>triage</code>、<code>wayfinder</code>、<code>improve-codebase-architecture</code>
+        同时依赖；<code>codebase-design</code> 被 <code>tdd</code>、<code>to-spec</code>、架构普查依赖。
+        改它们的输出格式，等于同时改五个技能的行为。
+      </p>
+    </div>
+
+    <!-- ============ end ============ -->
+    <div class="end" id="end">
+      <h2 style="margin-top:0"><span class="num">08</span>最后</h2>
+      <p>
+        这套技能最不像"AI 工具"的地方，是它反复在讲<strong>人的工程判断</strong>：
+        接缝该放哪、这张卡能不能独立验收、这个测试是不是在测实现细节。
+        它没有替你做这些判断，只是把每个判断都变成了一个必须回答的问题。
+      </p>
+      <p>
+        所以我不建议一次装全。挑三个，用两周，把不满意的部分改掉。
+        等你发现自己在某一步开始主动想"这里应该先约个接缝"，
+        那说明工具已经退到背景里了，剩下的才是你自己的。
+      </p>
+      <div class="sig">
+        以上内容基于对这套技能全部 SKILL.md 与实际使用经验的整理。示例场景为便于说明做过简化，
+        技能的具体规则以其自身文件为准。
+      </div>
+    </div>
+
+  </article>
+  </main>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <span>轻量技能的胜利 · 技能拆解系列</span>
+    <span>27 个技能 / 10 个深讲 / 9 张示意图</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function onScroll(){
+    var h = document.documentElement;
+    var sc = h.scrollTop || document.body.scrollTop;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (sc / max) * 100 : 0) + '%';
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var targets = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+
+  function highlight(){
+    var pos = window.scrollY + 120, idx = 0;
+    for (var i = 0; i < targets.length; i++){
+      if (targets[i] && targets[i].offsetTop <= pos) idx = i;
+    }
+    links.forEach(function(a, i){ a.classList.toggle('on', i === idx); });
+  }
+  document.addEventListener('scroll', highlight, {passive:true});
+  highlight();
+})();
+</script>
+</body>
+</html>
