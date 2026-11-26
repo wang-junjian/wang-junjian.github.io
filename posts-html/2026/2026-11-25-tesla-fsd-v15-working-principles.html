@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html data-page-node-id="6Mv4gQ1tbUrOTtmerZBWlM" lang="zh-CN">
+<head data-page-node-id="HvgZfRP6R1ndtNJeYBLsug">
+<script data-page-node-id="nx5a5p5ryy5ivy6AWFOVpB" src="/page/page_comm/inject.js"></script>
+<meta data-page-node-id="6VfUAu9cReckcvPWW1X5Gc" charset="UTF-8">
+<meta data-page-node-id="qus13P3ELOZC1V03p26RMO" content="width=device-width, initial-scale=1.0" name="viewport">
+<meta name="description" content="特斯拉 FSD V15 于 2026 年 11 月推送：讲透 20 亿视觉 token 压成 2 个输出的端到端原理、UVE 编码器与世界模型等五大部件、训练飞轮、Reality View 生成式渲染与四代演进，点明官方 25 倍改善的边界。">
+<meta name="keywords" content="tesla-fsd-v15, end-to-end-driving, world-model, reality-view, vision-encoder, training-flywheel">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-25">
+<title data-page-node-id="55bIjfR6kSYHSILZAwIPL8" data-pnid-children="8VWbWBhamRLPkBNnntVmqo">特斯拉 FSD V15 工作原理深度解析</title>
+<style data-page-node-id="n7I9uyvTx6VKkjjXsJwfZZ" data-pnid-children="gPKNuNoSu08kYB6cqdaH3b">
+  :root{
+    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#fbfcfd;
+    --ink:#181b20; --ink-2:#4b5563; --ink-3:#8b95a5;
+    --line:#e6e9ef; --line-2:#d6dbe4;
+    --red:#e31937; --red-s:#fff0f3;
+    --blue:#2563eb; --blue-s:#eef4ff;
+    --green:#0e9f6e; --green-s:#e9f8f1;
+    --amber:#d97706; --amber-s:#fff7e6;
+    --purple:#7c3aed; --purple-s:#f3efff;
+    --teal:#0d9488; --teal-s:#e9f7f5;
+    --mono:"SF Mono",ui-monospace,"Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.8;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 24px}
+
+  /* ============ COVER ============ */
+  .cover{
+    background:linear-gradient(160deg,#ffffff 0%,#f3f5f9 100%);
+    border-bottom:1px solid var(--line);
+    padding:72px 0 56px; position:relative; overflow:hidden;
+  }
+  .cover:before{
+    content:""; position:absolute; right:-80px; top:-80px; width:340px; height:340px;
+    background:radial-gradient(circle,rgba(227,25,55,.07),transparent 66%); border-radius:50%;
+  }
+  .kicker{
+    display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:600;
+    letter-spacing:.14em; color:var(--red); text-transform:uppercase;
+    background:var(--red-s); padding:6px 12px; border-radius:6px; margin-bottom:22px;
+  }
+  .kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--red)}
+  .cover h1{
+    font-size:44px; line-height:1.2; margin:0 0 14px; font-weight:800; letter-spacing:-.02em;
+  }
+  .cover h1 span{color:var(--red)}
+  .cover .sub{font-size:18px; color:var(--ink-2); max-width:720px; margin:0 0 26px}
+  .badges{display:flex; flex-wrap:wrap; gap:8px}
+  .badge{
+    font-size:12px; font-weight:600; padding:5px 11px; border-radius:100px;
+    background:var(--surface); border:1px solid var(--line-2); color:var(--ink-2);
+  }
+  .badge.r{background:var(--red-s); color:var(--red); border-color:transparent}
+  .badge.b{background:var(--blue-s); color:var(--blue); border-color:transparent}
+  .badge.g{background:var(--green-s); color:var(--green); border-color:transparent}
+
+  /* ============ NAV ============ */
+  .toc{
+    position:sticky; top:0; z-index:50; background:rgba(255,255,255,.92);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  }
+  .toc-inner{display:flex; gap:4px; overflow-x:auto; padding:10px 0; scrollbar-width:none}
+  .toc-inner::-webkit-scrollbar{display:none}
+  .toc a{
+    white-space:nowrap; font-size:12.5px; font-weight:600; color:var(--ink-2);
+    text-decoration:none; padding:6px 11px; border-radius:6px; transition:.15s;
+  }
+  .toc a:hover{background:var(--bg); color:var(--red)}
+
+  /* ============ SECTION ============ */
+  section{padding:52px 0 8px}
+  .sec-head{display:flex; align-items:flex-start; gap:14px; margin-bottom:26px}
+  .sec-num{
+    flex:none; font-family:var(--mono); font-size:13px; font-weight:700; color:var(--red);
+    background:var(--red-s); width:34px; height:34px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; margin-top:4px;
+  }
+  .sec-head h2{font-size:27px; margin:0; font-weight:800; letter-spacing:-.01em; line-height:1.35}
+  .sec-head .lead{color:var(--ink-2); margin:8px 0 0; font-size:15px}
+  h3{font-size:19px; margin:34px 0 12px; font-weight:750; letter-spacing:-.01em}
+  h4{font-size:15.5px; margin:22px 0 8px; font-weight:700}
+  p{margin:12px 0}
+  strong{font-weight:700; color:var(--ink)}
+  em{font-style:normal; background:linear-gradient(transparent 62%,rgba(227,25,55,.16) 62%); font-weight:600}
+
+  /* ============ CARDS ============ */
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:26px; margin:20px 0; box-shadow:0 1px 3px rgba(16,24,40,.03);
+  }
+  .grid{display:grid; gap:14px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:20px; text-align:left; position:relative; overflow:hidden;
+  }
+  .stat .big{font-size:30px; font-weight:800; line-height:1; letter-spacing:-.03em; margin-bottom:8px}
+  .stat .lbl{font-size:13px; color:var(--ink-2); line-height:1.5}
+  .stat .tag{position:absolute; top:14px; right:14px; font-size:10px; font-weight:700; padding:3px 7px; border-radius:5px}
+  .stat.r .big{color:var(--red)} .stat.r .tag{background:var(--red-s);color:var(--red)}
+  .stat.b .big{color:var(--blue)} .stat.b .tag{background:var(--blue-s);color:var(--blue)}
+  .stat.g .big{color:var(--green)} .stat.g .tag{background:var(--green-s);color:var(--green)}
+  .stat.p .big{color:var(--purple)} .stat.p .tag{background:var(--purple-s);color:var(--purple)}
+
+  /* ============ CALLOUT ============ */
+  .note{
+    border-left:3px solid var(--blue); background:var(--blue-s);
+    padding:16px 20px; border-radius:0 10px 10px 0; margin:18px 0; font-size:14px;
+  }
+  .note.warn{border-color:var(--amber); background:var(--amber-s)}
+  .note.warn b{color:var(--amber)}
+  .note.crit{border-color:var(--red); background:var(--red-s)}
+  .note.crit b{color:var(--red)}
+  .note.ok{border-color:var(--green); background:var(--green-s)}
+  .note.ok b{color:var(--green)}
+  .note .t{display:block; font-weight:700; margin-bottom:4px}
+
+  /* ============ TABLE ============ */
+  .tbl-wrap{overflow-x:auto; margin:18px 0}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; background:var(--surface); border-radius:12px; overflow:hidden; border:1px solid var(--line)}
+  th{background:#f0f2f6; text-align:left; font-weight:700; padding:12px 14px; color:var(--ink); border-bottom:1px solid var(--line-2); white-space:nowrap}
+  td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink-2)}
+  tr:last-child td{border-bottom:none}
+  td strong{color:var(--ink)}
+  .pill{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:5px; white-space:nowrap}
+  .pill.v{background:var(--green-s);color:var(--green)}
+  .pill.c{background:var(--amber-s);color:var(--amber)}
+  .pill.x{background:var(--red-s);color:var(--red)}
+  .pill.n{background:#eef0f4;color:var(--ink-2)}
+
+  /* ============ FIGURE ============ */
+  .figure{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:22px 22px 14px; margin:24px 0;
+  }
+  .figure svg{display:block; width:100%; height:auto}
+  .figure figcaption{
+    font-size:12.5px; color:var(--ink-3); text-align:center; margin-top:14px;
+    padding-top:12px; border-top:1px dashed var(--line);
+  }
+  .figure figcaption b{color:var(--ink-2)}
+
+  /* ============ MISC ============ */
+  .steps{counter-reset:s; margin:18px 0}
+  .step{
+    position:relative; padding:14px 18px 14px 56px; background:var(--surface);
+    border:1px solid var(--line); border-radius:12px; margin-bottom:10px;
+  }
+  .step:before{
+    counter-increment:s; content:counter(s);
+    position:absolute; left:16px; top:14px; width:26px; height:26px; border-radius:8px;
+    background:var(--blue-s); color:var(--blue); font-family:var(--mono); font-size:13px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step b{display:block; margin-bottom:2px}
+  .step span{font-size:13.5px; color:var(--ink-2)}
+  .divider{height:1px; background:var(--line); margin:44px 0 0}
+  ul.clean{list-style:none; padding:0; margin:14px 0}
+  ul.clean li{padding:8px 0 8px 26px; position:relative; color:var(--ink-2)}
+  ul.clean li:before{content:""; position:absolute; left:6px; top:16px; width:6px; height:6px; border-radius:2px; background:var(--red)}
+  .footnote{font-size:12px; color:var(--ink-3); line-height:1.7}
+  .src{font-size:12.5px; color:var(--ink-3)}
+  .src a{color:var(--blue); text-decoration:none}
+  a{color:var(--red)}
+  .endbar{margin-top:40px; padding:24px 0 60px; border-top:1px solid var(--line); color:var(--ink-3); font-size:12px}
+</style>
+</head>
+<body data-page-node-id="fRnqBLWoTqhmfv0BsKGApv">
+
+<!--pnid:waNVLYwb4ZffUdXeE6UraU--><!-- ============ COVER ============ -->
+<header data-page-node-id="DXgOmVNzpNvRsIrFRAYLOc" class="cover">
+  <div data-page-node-id="StN8xCQH9wEGyNwUmNMGk9" class="wrap">
+    <div data-page-node-id="hz1eP54nGCfq0rsEUMfTcF" class="kicker"><span data-page-node-id="Wg6KriFaeh91HMRewLUUlc" class="dot"></span><!--pnid:XivuHf80gouayMyuG0RJrn--> 深度技术解析 · 2026.11</div>
+    <h1 data-page-node-id="ax5htiuRJ8CFdxIAkXepxU"><!--pnid:v65vhbrU0smsoonOFeWlUD-->特斯拉 <span data-page-node-id="GqnZreKd4Okqlff1CemePW"><!--pnid:LxPLwdyapGth5eUSIb4j7G-->FSD V15</span><br data-page-node-id="ydgyoTRTUETaTQcoXgCkoc"><!--pnid:2ZLM5qosRRvvqmTLiYZjmH-->工作原理深度解析</h1>
+    <p data-page-node-id="5g72xWxS49GyC2QdiKMpKP" class="sub"><!--pnid:VTJlwK6CwqHX4Us2dhNy68-->从 8 路摄像头的像素，到方向盘上的一个动作——用图解讲透这套"端到端 + 世界模型 + 生成式渲染"系统到底怎么运转，以及它离真正的无人驾驶还有多远。</p>
+    <div data-page-node-id="fWuxORqiQdYDgPKaCfyd5c" class="badges">
+      <span data-page-node-id="epsTdQVzYST8iVLwE8BgBu" class="badge r"><!--pnid:fSrD2VovEeiHtDnDPj11I6-->端到端神经网络</span>
+      <span data-page-node-id="eazXIHeybAsmK37jVfvya3" class="badge b"><!--pnid:IuxYrc2SqFyem5hcXkbFB7-->世界模型</span>
+      <span data-page-node-id="u53Shhcf2FJxMcef7mg2p3" class="badge g"><!--pnid:gD5nqM9cNyR8SHrcjhbQOC-->Reality View</span>
+      <span data-page-node-id="IOWUTKABFHQhEUoazlIjCX" class="badge"><!--pnid:MrcXV2XdB5CXQ48xacRfEc-->AI4 车端芯片</span>
+      <span data-page-node-id="I6st7JubgWeMDPWQ3Jd0zF" class="badge"><!--pnid:ZEqyTuvvaLyNTNdliaMX4i-->纯视觉路线</span>
+      <span data-page-node-id="JX17t1X2lv6u5eRC2LKvMm" class="badge c"><!--pnid:T0ZbT44tyo5hBV0SeXjzx0-->L2 监督式辅助驾驶</span>
+    </div>
+  </div>
+</header>
+
+<!--pnid:7JWPGf1egUz3eRseWX5OOW--><!-- ============ TOC ============ -->
+<nav data-page-node-id="KF7d2DRCJd2B2ZVOKmNc6y" class="toc">
+  <div data-page-node-id="DwbBTjNTFMZk3AHvuxXw2R" class="wrap toc-inner">
+    <a data-page-node-id="GeJvD6qFN13nrWcGP2oA3X" href="#s0"><!--pnid:Nf5ESKKdUtAUybtFL4At5i-->速览</a>
+    <a data-page-node-id="34JnBVZdpFGq7EySMGugDQ" href="#s1"><!--pnid:VSejuWYn6SpxG5L474gSDO-->① 是什么</a>
+    <a data-page-node-id="QVuDKivoJDbmz6ZdIYDsXU" href="#s2"><!--pnid:kTV9NBozbcxGgHxmqaah47-->② 一句话讲透原理</a>
+    <a data-page-node-id="2MN3j52oD6BpBYTXCBceti" href="#s3"><!--pnid:wDbKIbfEmqvbQA7he3G1Lr-->③ 五大核心部件</a>
+    <a data-page-node-id="dTto6IiPfy37XWpnDJ5j4X" href="#s4"><!--pnid:fJOczvma75hLCcyGM2e2mb-->④ 训练飞轮</a>
+    <a data-page-node-id="NomRUddcSUj8lxki5eluDJ" href="#s5"><!--pnid:teA70xoBHMu4JfEubOys1o-->⑤ Reality View</a>
+    <a data-page-node-id="qPFv50j2luwVXwkR3KzZfw" href="#s6"><!--pnid:ncUQ8BumuhY3NQUrwFdmJx-->⑥ 四代演进</a>
+    <a data-page-node-id="stXINWGnTTLYUVbRSwuO6V" href="#s7"><!--pnid:csBPRzCK6QlXF9HmrKph1B-->⑦ 功能清单</a>
+    <a data-page-node-id="SN32BSbkC8nMPyGiKWrJYB" href="#s8"><!--pnid:dUXAeJ0Ggjk613sjb0HjFd-->⑧ 硬件底座</a>
+    <a data-page-node-id="C9EW4NvMi00QS8myGQctGH" href="#s9"><!--pnid:4DinrkpgNN8h7teJZ2lvvH-->⑨ 横向对比</a>
+    <a data-page-node-id="O8SknkJh9Cg7t8aR9ozgjh" href="#s10"><!--pnid:aqWm5BQrJIGjHSWAjr1wQ1-->⑩ 边界与争议</a>
+    <a data-page-node-id="WZBwxlfWzqtbIEYX3l6QNV" href="#s11"><!--pnid:leoY5KJL41mL50z2cdmK4J-->结语</a>
+  </div>
+</nav>
+
+<main data-page-node-id="hlo4b795FhsWbqL2hns2YR" class="wrap">
+
+<!--pnid:rfbSAma7jEUvpK88YduOZf--><!-- ============ SPEED READ ============ -->
+<section data-page-node-id="bLIPZecBb83SdAM1Wd7Twv" id="s0">
+  <div data-page-node-id="fiMfZlI2FsYxCyU6JmKeNC" class="sec-head">
+    <div data-page-node-id="3yFppUuqb2pmtVZCCoNlKH" class="sec-num"><!--pnid:JZgkHASmkjaupPFdBhmE2E-->TL</div>
+    <div data-page-node-id="ovP86duvAnECPcDRUjVqJt">
+      <h2 data-page-node-id="AHEdxCl2YEDI8hQBFpEGdb"><!--pnid:ZUTSV3jGV53SnyMTQqUvQt-->30 秒速览：先抓住三个数字</h2>
+      <p data-page-node-id="zp9ne5koMX5VEexhXfO0tF" class="lead"><!--pnid:Rgnhen6K3OTXL3voOgeIsX-->如果只看一屏，这三件事概括了 V15 的本质。</p>
+    </div>
+  </div>
+
+  <div data-page-node-id="YeNciL4EqmGrClDjn0yPpO" class="grid g3">
+    <div data-page-node-id="pGPGmu3VyuuHoszoJnhNH2" class="stat r"><span data-page-node-id="zj9L2aIvtu7rqTJEVbdUi4" class="tag"><!--pnid:RMLZHFSKhpnliILpWueJ6m-->压缩比</span><div data-page-node-id="0Us65cCT0yDwYl4bUQYtqI" class="big"><!--pnid:SPZI1U47PvwSNqDIjCkZ8D-->20亿 → 2</div><div data-page-node-id="t9Ov0EK7VlsVXunI6qAXPE" class="lbl"><!--pnid:6nBrPW02YWPA9l6S7MR1KP-->网络吞进约 20 亿个视觉 token，最终只输出<strong data-page-node-id="Khy3X6vDtYpIF9vPa84XS1"><!--pnid:kkj6JOL258LSBOeBlhpbOF-->转向</strong><!--pnid:eiIPXo6AiiMQ2Ob2fHAxjX-->和<strong data-page-node-id="0qhHghs0CcCBiM1H2iEDNP"><!--pnid:e8who2k5VHsmJY1E2TzmG4-->加减速</strong><!--pnid:o9CKNn2kimNwumuHHje8qB-->两个数字。整套系统就是一台极端压缩器。</div></div>
+    <div data-page-node-id="hnjLwQ4W9Dm3GKyAFXp401" class="stat b"><span data-page-node-id="T5zesa8U80cpuUBr9gD2iz" class="tag"><!--pnid:9f3Cf9YSwbnemw1M1eiiHh-->参数规模</span><div data-page-node-id="kTtpWA76lIsxKcz7SpWCNU" class="big"><!--pnid:P5Re2YusnvtgmMWZ6q6VUO-->~10×</div><div data-page-node-id="T1jn2H8INjCkyBUh8SeX46" class="lbl"><!--pnid:mUlTstI9w4mpQaVDlTFsJM-->车端网络参数约从 10 亿级放大到<strong data-page-node-id="B464w9l2TFN3JFSjoQrLO5"><!--pnid:qJUuLLfZohW4dtbXkfEtgP-->百亿级</strong><!--pnid:JT6xMTXW1tc3V0hj8JuZn3-->（高管口径，说法不一）——让"大脑"能看懂更复杂的博弈。</div></div>
+    <div data-page-node-id="SuPJCCE9UG0zkpejP2Btsd" class="stat g"><span data-page-node-id="eVGoIXMiRXk5uBVeGIZBI0" class="tag"><!--pnid:As1QnHTIvLFHSO3hzb1qvK-->官方口径</span><div data-page-node-id="PCREBnAPB5cZT0GuatJDhv" class="big"><!--pnid:2ocYX1M7uzMrt0WUQj1qVO-->25×</div><div data-page-node-id="gaP54u9Uj5e3krD8qC1k0u" class="lbl"><!--pnid:oDpCLHlhx0gCXTiDmjRhtz-->官方称安全关键场景的<strong data-page-node-id="j0LqKuGGABWSmDteruMWIO"><!--pnid:oW71fzQDJQDSUbmGNqCdMs-->关键干预率改善 25 倍</strong><!--pnid:STDbPbaQUl8swxVAT1Ebmh-->——注意这是厂商自测，未独立验证。</div></div>
+  </div>
+
+  <div data-page-node-id="X72vojNfgrS5dSozvLZ71e" class="note ok">
+    <span data-page-node-id="y20wR7rCQCIfysRoXogXZC" class="t"><!--pnid:fRicTef7n2KRXstF0DEZGU-->一句话总结</span><!--pnid:sTwUU1igv8y6lfuuRUX6sh-->
+    V15 不是"又加了几个功能"，而是把自动驾驶从<em data-page-node-id="cHRoDihXI24jAVZrImEB1f"><!--pnid:sj00y4RNS7YCb6Xz1wFFf4-->"看见→识别→按规则决策→执行"的流水线</em><!--pnid:tEpH1xH7CQlLzQM7rlkvRu-->，彻底换成了<em data-page-node-id="UbeU90IlUgFnUxUjuENQHE"><!--pnid:P3zzY4KWWpwYCft58InUVg-->"一个大模型直接从视频学会开车"</em><!--pnid:b1TW6c3D4dBJqCi6F9fpoW-->的单一神经网络，并首次把"世界模型"和"生成式画面"塞进了量产车机。它很强，但仍是<strong data-page-node-id="KXfzmbooDCB877HJsPXphq"><!--pnid:3xOJfE2fKc8X7QyFWaQIxY-->需要你全程盯着路的 L2 辅助驾驶</strong><!--pnid:Q08eFXrxANm8zJzgMhUEPu-->。
+  </div>
+</section>
+
+<div data-page-node-id="k09xfglr25l60wMECN33yv" class="divider"></div>
+
+<!--pnid:AD7WDpjSTu3WDo2yMdRU6P--><!-- ============ SECTION 1 ============ -->
+<section data-page-node-id="6crRLv08ahK3LKqqNU5Urw" id="s1">
+  <div data-page-node-id="96PVXuMLtwBVfQP0ZDl3ov" class="sec-head">
+    <div data-page-node-id="wppxZsq46QPTipgO9Oiw7N" class="sec-num"><!--pnid:J2wjyEgfnGCY3ChPbd9BZ7-->01</div>
+    <div data-page-node-id="rIHHvHX2p0AlQHoaHJnwZz">
+      <h2 data-page-node-id="tSmXATHvxKoSzoozVyJGQe"><!--pnid:kwyP61d6OPWBxGSRvPWzUf-->V15 是什么：一次推送，两条故事线</h2>
+      <p data-page-node-id="e8pwbjHqldqcoQF8HvlcxT" class="lead"><!--pnid:pFzDn1AbHS5pOAUxE2lPCJ-->2026 年 11 月 21 日，FSD v15.0.1 开始推送。表面是驾驶升级，底层是一次架构换代。</p>
+    </div>
+  </div>
+
+  <p data-page-node-id="eL3P8jVvQdKMHuc09XJnQ8"><!--pnid:x6O1UdDGdOBKbAClxn4LQb-->这次真正的主角，不只是某个驾驶功能，而是一套跑在车机里的<strong data-page-node-id="bOK8YkXlO3aOqYKvcXtgzk"><!--pnid:7fWvvbXUJTge5bxsnSpNWV-->实时生成式渲染管线</strong><!--pnid:fysWrGjGkmC8u8HeQTWpcf-->——它把特斯拉积累多年的"世界模型"，第一次完整地下放到了消费级硬件上。理解 V15，要分清明线（功能升级）和暗线（架构重构）。</p>
+
+  <div data-page-node-id="JcybiRK8ZSkJzlTB4AZKeC" class="tbl-wrap">
+  <table data-page-node-id="vNmmKivCFB2MBvr307GO2n">
+    <thead data-page-node-id="GGIkLnDnlCwj5CXZl3VABQ"><tr data-page-node-id="hkRlA3jJanJy9MwT9tmBAB"><th data-page-node-id="NprHWDOGqkuhbGodCcKUxU"><!--pnid:BtTkkn8fQwbBcpgFQLbTu7-->维度</th><th data-page-node-id="bNtAJ0rQ9emf8JrhLT0DHj"><!--pnid:BK76d0myKw339BqeWViIx3-->明线：用户看到的功能</th><th data-page-node-id="J9SufI4pgldTrs2inYhW0E"><!--pnid:Re1qACqMmDxyQVJGHQ5GCw-->暗线：底层发生了什么</th></tr></thead>
+    <tbody data-page-node-id="nQb9pvy2ex7Konu9lnyWrb">
+      <tr data-page-node-id="FEXkOGIl7BpkPCgbo1d4iJ"><td data-page-node-id="qj8Bg0jIx3miqy5jxt8PPC"><strong data-page-node-id="LAx3p0InORAOCvdqw7BVy9"><!--pnid:UYrH4RNX7aovJOuAUEUTF7-->感知</strong></td><td data-page-node-id="Rds4agfYJG4IQbmK23xeUa"><!--pnid:5TOtdUIxWFmiCNdb6xqxYh-->能认出路牌、小动物、铁链、坑洼、深积水</td><td data-page-node-id="qmXxzXF9a33v47BHJF9eRR"><!--pnid:8e34Pr04fLlaj31kFTrLfN-->换上<strong data-page-node-id="usYm3ppjfkdViqb8UIMRjI"><!--pnid:VvGK9YgEQd4QuqmkUtnwfT-->通用视觉编码器 UVE</strong><!--pnid:kP5idMt8IwZYCeRVwxk4IA-->，用数百万互联网视频预训练</td></tr>
+      <tr data-page-node-id="fVV4XhuPgsrFtF8wVuqU42"><td data-page-node-id="98Jq2GTjNEbZAyQCWtpuaw"><strong data-page-node-id="0oqWAvQWbdlUPkQP8eqe2F"><!--pnid:3wzopOg7BI2zdnFI8txUyz-->决策</strong></td><td data-page-node-id="Rp0OTW0xBZpQ16Bowi5L9T"><!--pnid:rbu56NVSVeQTNligmcbAn7-->更早预判危险、车速更自然、可按驾驶风格调节</td><td data-page-node-id="xqQjeBrhEKuSQVexzseTD1"><!--pnid:XVsE33i4BORCjEyfYC4xq4-->网络规模化，从"预测轨迹"走向<strong data-page-node-id="Jkj4ZPaJGBIaMuuFbk6gvI"><!--pnid:zy4J6zrm8HysuzP7ANaM8H-->生成多种可能的未来</strong></td></tr>
+      <tr data-page-node-id="cUrGy9pY29S12H50u0Ljsg"><td data-page-node-id="Q2FTtlAwLBAsIL4rjKOC8a"><strong data-page-node-id="DSn51TTZIhtndNWmBrMKk6"><!--pnid:m8K1OJ062ChzVqbXrZYQ0E-->可视化</strong></td><td data-page-node-id="vr3jOIe4MEeykkTShNU93M"><!--pnid:78xZwdyYLnogV7LM33Z6rM-->中控屏出现写实 3D 场景 Reality View</td><td data-page-node-id="xBKq9RAjO0Pi2IElg2X0cO"><!--pnid:PXuKkZ3DDflTOVZJvkcm39-->世界模型特征的<strong data-page-node-id="pHQT6XRNNpqAQgBxsjbkAV"><!--pnid:ABtFu6fKUIT53VEkQgoM6K-->生成式扩散渲染</strong><!--pnid:kU2rJ1IkMIOB4HPlvpgfI8-->，不再靠游戏引擎</td></tr>
+      <tr data-page-node-id="2eQq9DcSiVkCGSdsdAPa57"><td data-page-node-id="yvzujBenMwr5xY344sox4f"><strong data-page-node-id="UY38A6FoakHgP5jzg2Qn1P"><!--pnid:roCxLqUAT5piakp7cLIqSL-->导航</strong></td><td data-page-node-id="IEJDwOeBshUhkXA2HSp6fy"><!--pnid:FV9BKhJPGnSLHGb8xPvrCg-->起终点路线更聪明、会记住你的停车位</td><td data-page-node-id="PsoHHIEhwwbF9nEjlDBkU6"><!--pnid:mq2kiDIHfAU54xQQ8s3b9Q-->端到端学习模型接入<strong data-page-node-id="HwE2mjWXClRXk88z27YHaw"><!--pnid:giF2ZgF9LSFgF7CAJaNP1f-->车队路线偏好</strong><!--pnid:yylHmy8dBoXVMZH95TzNmb-->与自建 AI 地图</td></tr>
+      <tr data-page-node-id="NYmfQwD82JCjoxSGRwacnW"><td data-page-node-id="loOo3pvkwRE3MvAgrZZtes"><strong data-page-node-id="7uXGlnHMkAtvY2WXGnvR8B"><!--pnid:iuxageCAji1US8KwHkMl2x-->统一性</strong></td><td data-page-node-id="QAFKEUdOfSSHL5GJavCBr6"><!--pnid:3RWjGT6uflKimkhi6wEyMs-->（用户无感）</td><td data-page-node-id="WefeyNKu3vSgVBGMjHvsdR"><!--pnid:ivktpOAIdn9QGI0VptQqtW-->FSD / Robotaxi / Optimus <strong data-page-node-id="CAtPQ5knmpJjBTvqs99YJF"><!--pnid:fVHUEVM7cvUuBgwIcaOVcs-->共用同一套视觉编码器</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 data-page-node-id="gwyyMemrI9TzIoE39BzbyA"><!--pnid:iM5m1IOZYeF7C7Oxaec8eN-->谁能用上？硬件与地区的三道门槛</h3>
+  <div data-page-node-id="5MEdsI7IIwVmhSOZvkcFXv" class="grid g3">
+    <div data-page-node-id="ZbdSSZvnYAoUtOlUHUi9nD" class="card" style="margin:0">
+      <h4 data-page-node-id="AgT8hMSNvsgnW8ZeVhbn6W" style="margin-top:0; color:var(--red)"><!--pnid:10wTL5rDsmvgl1tZ4fWTqZ-->🖥️ 硬件门槛</h4>
+      <p data-page-node-id="An1WgrLaLPwFpEGOlnIowt" style="font-size:13.5px; color:var(--ink-2); margin:0"><!--pnid:Qxxq2nVsjRT80v17AiLM5I-->仅面向 <strong data-page-node-id="CvG3CVmuEtrZ2wmtqbz5tG"><!--pnid:uixvnxszcDX9aV35Vfr0js-->HW4 / AI4</strong><!--pnid:7sBctqRX2B7a2XoyBjuyUG--> 车型。HW3 老车被留在功能精简的 <strong data-page-node-id="w18qXIWXcro9X0FpvOlgxp"><!--pnid:o1qQjkenheeBLGkqDzlDVB-->v14.3 Lite</strong><!--pnid:7e2eDAall80w4F89MjeMee-->——这是本次最大争议点（荷兰约 7000 名 HW3 车主已发起集体索赔）。</p>
+    </div>
+    <div data-page-node-id="lqVTbZiTyvs9yY8KNj1O5m" class="card" style="margin:0">
+      <h4 data-page-node-id="L9o1ZJ7zy3IbUpPsDXYkBm" style="margin-top:0; color:var(--blue)"><!--pnid:gji1GPzXeippVt4DqhHijG-->🌍 地区节奏</h4>
+      <p data-page-node-id="PZdIYRDPCeakDsI8Cgtgte" style="font-size:13.5px; color:var(--ink-2); margin:0"><strong data-page-node-id="yKprUrIVQPjMKNJxEZMOTm"><!--pnid:3ForFiL7HmR5lR7pGksK4L-->北美</strong><!--pnid:xUkKiEqBCytWIw3ADVR3BD-->首发（早期体验用户），马斯克称 12 月随节日更新大范围推送；<strong data-page-node-id="5QihsBLoqkNAceWmuF6zk9"><!--pnid:V9pkWzqoqIcXbl2l55o3S8-->欧洲</strong><!--pnid:SiV6mN3ahewSwgrAFtXefY-->以 Tesla Assisted Driving 名义进入 12 个欧盟国家，版本仍停在 v14.2.x。</p>
+    </div>
+    <div data-page-node-id="2ocb9BYhZDWgMnqdqDVrQH" class="card" style="margin:0">
+      <h4 data-page-node-id="xiknOjuduX3pxs3eReCK3G" style="margin-top:0; color:var(--amber)"><!--pnid:97j2J2NR6nxzA9YFAHCwJd-->🇨🇳 中国大陆</h4>
+      <p data-page-node-id="p4Fjmqq03ypeTVUj07ZnQf" style="font-size:13.5px; color:var(--ink-2); margin:0"><!--pnid:0ZFp3YkSS7MJ3QfVyU9kfZ-->仍停留在 2025 年 2 月推送的城市道路 Autopilot（v13.2 基础）。V14 监督版尚未获批，<strong data-page-node-id="C8d1sHs7YO35gW39chV3ze"><!--pnid:w7EAAcayyo3idWl9n6KBxy-->V15 无入华时间表</strong><!--pnid:PIkXp323LzLd311ysH2rAV-->。</p>
+    </div>
+  </div>
+
+  <div data-page-node-id="LHlaNoRVDAFIwQEg0OGXYx" class="note warn">
+    <span data-page-node-id="DxMvw1FKOgbVnTpCJgpL5s" class="t"><!--pnid:iEmnyrIDbeVVsf08br4afc-->关键定性</span><!--pnid:vAMi3PHONBmSUV2HaBnj7M-->
+    V15 全称仍是 <b data-page-node-id="OvPmH1zmSTBFHQMtDqHEAO"><!--pnid:LmHyz0n3Qby15UBa4CCrpC-->FSD (Supervised)</b><!--pnid:GWe29cD5aVMB2PB8XRTds1-->——监督式全自动驾驶。马斯克说过"无人监督"，但推送说明里写得明明白白：<strong data-page-node-id="2aoDax8VRwIn4dZyRI8JRo"><!--pnid:BrYfjHa36iluddDcmJfYy2-->它是 L2 辅助驾驶，驾驶员必须全程保持注意力、随时准备接管</strong><!--pnid:ewvLnknVUWSHSt1PmXUXxe-->。功能再强，也不等于车能自己负责。
+  </div>
+</section>
+
+<div data-page-node-id="XJzdrxLc1cPDch2jzyvwTf" class="divider"></div>
+
+<!--pnid:3dOC8eLB2JWu50b4zLnpDH--><!-- ============ SECTION 2 ============ -->
+<section data-page-node-id="Ke4bH1KQrltcoZ9KvD3Kfr" id="s2">
+  <div data-page-node-id="5HyvR1TUIAS27UhYrtGadK" class="sec-head">
+    <div data-page-node-id="qZenQGMMz8mxHQPneXtdzf" class="sec-num"><!--pnid:FKXCUfRBbItJjovcKhtnyB-->02</div>
+    <div data-page-node-id="OXtnmm3YDEhaCdRgiYR3yQ">
+      <h2 data-page-node-id="zdq9TPeCEtsJHXBLsLCigL"><!--pnid:gwo7Re3wEeAFMInWrmMjkE-->一句话讲透原理：20 亿进，2 个出</h2>
+      <p data-page-node-id="mkwXoaJP877vk4EL8t3hT7" class="lead"><!--pnid:1gajqb7xELNc42ngyYk20l-->忘掉复杂的术语。先用一张图看懂整套系统从"眼睛"到"手脚"的全流程。</p>
+    </div>
+  </div>
+
+  <p data-page-node-id="JcfSJauRdRBibGKl8XTsqY"><!--pnid:wXRzDfwMFtw1rEWar30uWC-->特斯拉 AI 负责人 Ashok Elluswamy 在 CVPR 2026 上给过一个极简解释：<strong data-page-node-id="LMxV0frOjK6YVLp46Rj159"><!--pnid:bzSG2U0BVXaKMADJcAZtU0-->输入端，7～8 路摄像头连续采集高分辨率画面，折算约 20 亿个 token；输出端，只有 2 个自由度——下一步的转向和加速度。</strong><!--pnid:4xmEBJwCBwc4pKLCsrM770-->整套神经网络要做的，就是把这 20 亿个信息压缩成方向盘上的一个动作。</p>
+
+  <figure data-page-node-id="zRWuBnQVjM3kQWVO4ps5UP" class="figure">
+    <svg data-page-node-id="jZh3RAJfT1QUZULADCG6hd" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
+      <defs data-page-node-id="U1fpgXKAtfae1TFxWFY2TB">
+        <marker data-page-node-id="rYkIgUNicFvgBB7CNI5fNl" id="ar-red" markerHeight="9" markerWidth="9" orient="auto" refX="8" refY="3"><path data-page-node-id="SKAL5enc446AB1CSCjueok" d="M0,0 L8,3 L0,6 Z" fill="#e31937"/></marker>
+        <marker data-page-node-id="pJSwqtVD2buYgeT6ecyXgJ" id="ar-blue" markerHeight="9" markerWidth="9" orient="auto" refX="8" refY="3"><path data-page-node-id="HiDelUAZsuUpHLA2IOvN8i" d="M0,0 L8,3 L0,6 Z" fill="#2563eb"/></marker>
+        <linearGradient data-page-node-id="XVc2bjOl3D3VKQfyQmH6GV" id="netg" x1="0" x2="1" y1="0" y2="1"><stop data-page-node-id="Lq4BIHEMBZmUNCytOB8tIv" offset="0" stop-color="#f3efff"/><stop data-page-node-id="iLC3h8iOWv9vl5CpCkTUDu" offset="1" stop-color="#eef4ff"/></linearGradient>
+      </defs>
+      <!--pnid:8ybj5bz426XBXm67lGJ8Ek--><!-- input cameras -->
+      <text data-page-node-id="aIjBK92QDvs3yX5Ejwckfi" fill="#181b20" font-size="15" font-weight="700" x="20" y="30"><!--pnid:eX4SBl4sqoilVrqMGaNrbC-->① 感知输入 · 纯视觉</text>
+      <g data-page-node-id="KXUYluOchqGfzW8zYjJx8e">
+        <rect data-page-node-id="zFNM8ynE2E2bLd2RO6bJuJ" fill="#fff" height="40" rx="7" stroke="#d6dbe4" width="62" x="20" y="52"/><text data-page-node-id="dlTvayvhBqyM8q4K2MvZ8X" fill="#4b5563" font-size="11" text-anchor="middle" x="51" y="77"><!--pnid:yoVs34YiP56cFOoILmPpcD-->前视</text>
+        <rect data-page-node-id="c3nsnPPWwrpragCweGganL" fill="#fff" height="40" rx="7" stroke="#d6dbe4" width="62" x="20" y="100"/><text data-page-node-id="xPiuFWAikCsr9aM7yBV0aR" fill="#4b5563" font-size="11" text-anchor="middle" x="51" y="125"><!--pnid:dDLxctdJLsSyhBTiGl5mHJ-->前广角</text>
+        <rect data-page-node-id="5B6XzD8oKsJREd3hQZb0gN" fill="#fff" height="40" rx="7" stroke="#d6dbe4" width="62" x="20" y="148"/><text data-page-node-id="d2GSXuG5QB67tRAvjD14me" fill="#4b5563" font-size="11" text-anchor="middle" x="51" y="173"><!--pnid:gIcv6T7giomAL4dewN0LsD-->侧视</text>
+        <rect data-page-node-id="fBAeNnT8k2k9bJ5UvpLajN" fill="#fff" height="40" rx="7" stroke="#d6dbe4" width="62" x="20" y="196"/><text data-page-node-id="Dwz8JlN6TueVnWzy8TYuc8" fill="#4b5563" font-size="11" text-anchor="middle" x="51" y="221"><!--pnid:Jrjphw5CeqWM5zKdzW8dDv-->后视</text>
+      </g>
+      <text data-page-node-id="pAynd5OzIb3OX125gMjYr1" fill="#8b95a5" font-size="11.5" x="20" y="262"><!--pnid:yACaPMCSbwj8VbLpRJp5vj-->7～8 路摄像头 · 36Hz · 无激光雷达</text>
+
+      <!--pnid:5vxLbQDyCCa1O6Piodh8na--><!-- arrow 1 -->
+      <line data-page-node-id="Ab68qv5SSMidtHBb1L5IOA" marker-end="url(#ar-red)" stroke="#e31937" stroke-width="2.5" x1="88" x2="128" y1="145" y2="145"/>
+      <text data-page-node-id="XQGKCg08O2eIBPqpa1UZai" fill="#e31937" font-size="10.5" font-weight="700" text-anchor="middle" x="108" y="135"><!--pnid:zI75dFShATWLssgssIAbJT-->视频流</text>
+
+      <!--pnid:xRAbdryypNdahhZTd3r5Ef--><!-- encoder -->
+      <rect data-page-node-id="DRfQ3RlSKNmaDySTbAp793" fill="#eef4ff" height="150" rx="12" stroke="#2563eb" stroke-width="1.5" width="140" x="132" y="70"/>
+      <text data-page-node-id="pGyMzYqkVxMAsac1OTD7qB" fill="#2563eb" font-size="13" font-weight="700" text-anchor="middle" x="202" y="98"><!--pnid:G6jTnNLRToHXTLdEsBEJhy-->② 视觉编码器</text>
+      <text data-page-node-id="qXDr1sm0L1n4Um3AkNTMM7" fill="#4b5563" font-size="10.5" text-anchor="middle" x="202" y="118"><!--pnid:8F9UAH81QO1B45puecADyJ-->Universal Vision</text>
+      <text data-page-node-id="kl5CLj9Wy1c5WMQ6JmjwoM" fill="#4b5563" font-size="10.5" text-anchor="middle" x="202" y="132"><!--pnid:Cy3QzaWa5GrVyHWpwz4kWt-->Encoder (UVE)</text>
+      <g data-page-node-id="8ctViVWs56K12iOrGJVZPd" fill="#2563eb" opacity=".55">
+        <circle data-page-node-id="PY9PtdgVEHFc7jmu1anfzM" cx="160" cy="160" r="3"/><circle data-page-node-id="yv7hdV2FObhkKAqXk9bxCc" cx="180" cy="160" r="3"/><circle data-page-node-id="Yy4CKF1LWzL9ro8tCSLBsj" cx="200" cy="160" r="3"/><circle data-page-node-id="KZMQm5YE286WbvJn21LSTN" cx="220" cy="160" r="3"/><circle data-page-node-id="WTiJuN8TSH0OTgHwVY7M2a" cx="244" cy="160" r="3"/>
+        <circle data-page-node-id="Xvf7romfMtEgpPOruSa8bh" cx="160" cy="178" r="3"/><circle data-page-node-id="lOPuUeQVL0pycKRMfXzDkY" cx="180" cy="178" r="3"/><circle data-page-node-id="0uI7S2kDIDcTtDqTyjIGnk" cx="200" cy="178" r="3"/><circle data-page-node-id="TrbSikZcKKlmIJx2pRT57d" cx="220" cy="178" r="3"/><circle data-page-node-id="mQyjs8iXjvfGjOxjOWmOyd" cx="244" cy="178" r="3"/>
+        <circle data-page-node-id="MLcKK63CzB4V1mWXq3jRAg" cx="160" cy="196" r="3"/><circle data-page-node-id="nwvvqQybzizHGzR8cakRU3" cx="180" cy="196" r="3"/><circle data-page-node-id="yMsluOI2i7Dhfi35GaUo1j" cx="200" cy="196" r="3"/><circle data-page-node-id="KBzH5swjxfniXFvpcrAaSM" cx="220" cy="196" r="3"/><circle data-page-node-id="oL1iiARLVf2mVL9PcCPNwD" cx="244" cy="196" r="3"/>
+      </g>
+      <text data-page-node-id="MNw9eSYiPzz2NU88cLZPJc" fill="#8b95a5" font-size="10" text-anchor="middle" x="202" y="215"><!--pnid:X575xGkASjoFZ2KcdAuDEX-->→ 场景特征</text>
+
+      <!--pnid:eDw5vq6hkFZ5SvN9rxOUjG--><!-- arrow 2 -->
+      <line data-page-node-id="QbCEGNyvEO4RfW2uN739nL" marker-end="url(#ar-red)" stroke="#e31937" stroke-width="2.5" x1="276" x2="318" y1="145" y2="145"/>
+
+      <!--pnid:8cuMXlAXHAxrgc0pTdpzfb--><!-- brain net -->
+      <rect data-page-node-id="YNA1L1a6ucKSur7sxT5LjO" fill="url(#netg)" height="186" rx="14" stroke="#7c3aed" stroke-width="2" width="270" x="322" y="52"/>
+      <text data-page-node-id="DLPi8W0LXdisMkdQnBbZdR" fill="#7c3aed" font-size="14" font-weight="700" text-anchor="middle" x="457" y="80"><!--pnid:FheWmQB4XooDnWndmrMzkR-->③ 端到端驾驶网络</text>
+      <text data-page-node-id="WfUGz0shIXKnxE4I9bAWta" fill="#4b5563" font-size="10.5" text-anchor="middle" x="457" y="99"><!--pnid:APt76Ur7WC0WK84rpLF8ql-->一个大神经网络直接学会"从视频到动作"</text>
+      <!--pnid:GSTPdU8gomECYdfzxpaWPT--><!-- neural layers -->
+      <g data-page-node-id="7fSDOm7KXwd14r0hT0Gzud" opacity=".4" stroke="#7c3aed" stroke-width="1">
+        <line data-page-node-id="C23RENrjV2BnCTUjfupzQ0" x1="370" x2="410" y1="125" y2="115"/><line data-page-node-id="qNmBL6QnEzKfUfnQfG7p1y" x1="370" x2="410" y1="125" y2="140"/><line data-page-node-id="d4nwmHiyYG1zWqxt02nZxI" x1="370" x2="410" y1="125" y2="165"/>
+        <line data-page-node-id="u3514hkqAFnQ5lzc547764" x1="370" x2="410" y1="150" y2="115"/><line data-page-node-id="2FPJHYRSErYrIeiDEyyy9Q" x1="370" x2="410" y1="150" y2="140"/><line data-page-node-id="ZjRBFGYdX4MCvt0UtyQ68n" x1="370" x2="410" y1="150" y2="165"/>
+        <line data-page-node-id="V62croTJrd7t5raAxZGxDs" x1="370" x2="410" y1="175" y2="115"/><line data-page-node-id="hWo9EU6zgJBnO0s85wjCTY" x1="370" x2="410" y1="175" y2="140"/><line data-page-node-id="ZnGHBZPBDqEMLeFwgL2DkE" x1="370" x2="410" y1="175" y2="165"/>
+        <line data-page-node-id="nrkEPG9CR8DVyj12g6wc5x" x1="410" x2="450" y1="115" y2="130"/><line data-page-node-id="gAxsHcQrwfS3JAuXZOaKua" x1="410" x2="450" y1="140" y2="130"/><line data-page-node-id="OLlyUueZL4kZku2UFdeLG9" x1="410" x2="450" y1="165" y2="130"/>
+        <line data-page-node-id="o98Mwb6jY1XJ02skaeVoAs" x1="410" x2="450" y1="115" y2="158"/><line data-page-node-id="FOzFxYyAhLCE2Yrff5pQhf" x1="410" x2="450" y1="140" y2="158"/><line data-page-node-id="GsU8XQNtVRhBRE5ZpphbdG" x1="410" x2="450" y1="165" y2="158"/>
+        <line data-page-node-id="ah971YqI5cIMaMuWFshgM1" x1="450" x2="490" y1="130" y2="145"/><line data-page-node-id="yJkoBXd3g3lo4gRl2EHe1q" x1="450" x2="490" y1="158" y2="145"/>
+      </g>
+      <g data-page-node-id="Vo6XeOyc9Hrai2tPu1m0Lp" fill="#7c3aed">
+        <circle data-page-node-id="ZVQGrEHvzNHkLsyT9jJ1Fc" cx="370" cy="125" r="4"/><circle data-page-node-id="JvxPUhGO6ElQBDR5x5i3PW" cx="370" cy="150" r="4"/><circle data-page-node-id="aEmdivk44dgZsYF9RVayX6" cx="370" cy="175" r="4"/>
+        <circle data-page-node-id="4VqCoghC0w9pvFMxkzu9ap" cx="410" cy="115" r="4"/><circle data-page-node-id="lLT09GVLfGwFUBSRKgza8H" cx="410" cy="140" r="4"/><circle data-page-node-id="9iP4ohU3Zh6lvWfkZya16z" cx="410" cy="165" r="4"/>
+        <circle data-page-node-id="CfhSbZiZtK6agvwUxhiK5m" cx="450" cy="130" r="4"/><circle data-page-node-id="zgXvSML3Fdyb6CxSUxDgfb" cx="450" cy="158" r="4"/><circle data-page-node-id="lkeoI8rp7WVeWaBhKFobSO" cx="490" cy="145" r="5"/>
+      </g>
+      <rect data-page-node-id="cgyoU9HGAMbaKL421lpGrP" fill="#fff" height="30" rx="7" stroke="#e6e9ef" width="242" x="336" y="196"/>
+      <text data-page-node-id="qlJbAZI5W4yzIlY3caojAp" fill="#4b5563" font-size="10.5" text-anchor="middle" x="457" y="215"><!--pnid:e3zbI5cJbNV7VlsamIzhGw-->世界模型 · 时序记忆 · 强化学习</text>
+
+      <!--pnid:QS6XP338LH0VsPEIl8w0mn--><!-- arrow 3 -->
+      <line data-page-node-id="9QdOuWoEQYHdBOrafC7pfx" marker-end="url(#ar-red)" stroke="#e31937" stroke-width="2.5" x1="596" x2="638" y1="145" y2="145"/>
+      <text data-page-node-id="YPCALtkSwzPlYzG6QYV18S" fill="#e31937" font-size="10.5" font-weight="700" text-anchor="middle" x="617" y="135"><!--pnid:4mn3aAHyCXoMLbKZLtJWeJ-->决策</text>
+
+      <!--pnid:NpWXwz0kt98ls9mnHSIQEe--><!-- output -->
+      <text data-page-node-id="Ngi9ebN57mPOd4whB6GfCN" fill="#181b20" font-size="15" font-weight="700" x="650" y="52"><!--pnid:l0ABHByheMeLFQdlmMztvd-->④ 控制输出 · 只有 2 个量</text>
+      <rect data-page-node-id="J7XoNVSoBj4MfaCUGIwbz7" fill="#fff0f3" height="66" rx="11" stroke="#e31937" stroke-width="1.5" width="230" x="650" y="70"/>
+      <text data-page-node-id="g8FaCgsLCQVDtfFe7rPDK8" fill="#e31937" font-size="12.5" font-weight="700" x="665" y="96"><!--pnid:OzYg11S7dKELxUmoM99A1y-->转向角</text>
+      <text data-page-node-id="lObBLCvWnWaNp3gtIqsc6O" fill="#4b5563" font-size="10.5" x="665" y="118"><!--pnid:sbVfe69ik5hgcTt1EERmOJ-->保持车道 · 变道 · 转弯</text>
+      <rect data-page-node-id="lxRV2y9WpTIsmEscc9xYOq" fill="#fff0f3" height="66" rx="11" stroke="#e31937" stroke-width="1.5" width="230" x="650" y="148"/>
+      <text data-page-node-id="xkXOluBLuTv3A5fxjLmq8s" fill="#e31937" font-size="12.5" font-weight="700" x="665" y="174"><!--pnid:nxkw3KFp6Jd2OBIvx4ZFBT-->加速度 / 减速度</text>
+      <text data-page-node-id="Frp3090VzTP8PdFSlgVz6P" fill="#4b5563" font-size="10.5" x="665" y="196"><!--pnid:MClqjx2laVzDI4ooimqOZm-->起步 · 跟车 · 刹车 · 避让</text>
+      <line data-page-node-id="ljxHpaD2Ap9BxrZHfraVtJ" marker-end="url(#ar-blue)" stroke="#2563eb" stroke-width="2.5" x1="765" x2="765" y1="214" y2="246"/>
+      <rect data-page-node-id="RrxuXtfNu6BzOqUrTAXDWd" fill="#e9f8f1" height="34" rx="9" stroke="#0e9f6e" width="150" x="690" y="250"/>
+      <text data-page-node-id="BcTcxNW2CUFLPgQD6wqpVK" fill="#0e9f6e" font-size="12" font-weight="700" text-anchor="middle" x="765" y="272"><!--pnid:myArTyg0J5ZoLV0eMVoNjC-->车辆执行机构</text>
+    </svg>
+    <figcaption data-page-node-id="uo7CWkWytXf5DPJ2sV2TD8"><b data-page-node-id="40tRI27jUw0G3qAaCcfaBQ"><!--pnid:c37rV4dYD0ZMHMzH6Ajmpl-->图 1 · FSD V15 端到端全流程。</b><!--pnid:Tz2JkZhdeRmsQ8y9VGzSwf--> 从摄像头像素到车辆动作，"感知—决策—控制"由一个统一神经网络完成，而非多个模块串联。</figcaption>
+  </figure>
+
+  <h3 data-page-node-id="Ato6xluhAu9B7LBhNfGJkz"><!--pnid:Xpqb2YEMsmnzF3eVZtA8wO-->关键转变：从"流水线"到"一个大脑"</h3>
+  <p data-page-node-id="1k03sLMUxGbl9MVcEh2fDf"><!--pnid:ZVcq39PzxFUNWJkZ5VrAvM-->要理解 V15 为什么重要，得先看它取代了什么。传统自动驾驶像一条<strong data-page-node-id="ETVe49bN8OVvWzRu8wynPV"><!--pnid:kQWFg9kUkFIoBEIUasGDpc-->流水线</strong><!--pnid:JlfHR9DpLIS6U11NCXg1zr-->：每个环节各司其职，靠工程师写死的规则衔接。而端到端方案把这条流水线压缩成<strong data-page-node-id="VbhWhuLsSVGNEHPvkJuicM"><!--pnid:027FcshbVjnvEHf67MvD48-->一个神经网络</strong><!--pnid:ULCqj5Pg1A6ENsj0NzA5o9-->，中间环节不再人工设计，而是让模型从海量驾驶视频里自己学。</p>
+
+  <figure data-page-node-id="c0pZTcB3aoBvAQUQYcdQZy" class="figure">
+    <svg data-page-node-id="MLvvRQvESc0JS2SD9msVXJ" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+      <defs data-page-node-id="CX81r4QJabwyyjgyOja5LX"><marker data-page-node-id="q2h61p5DI4bHxEaEV6GHTm" id="ar-g" markerHeight="9" markerWidth="9" orient="auto" refX="8" refY="3"><path data-page-node-id="ojPhTZuxdf5GW0oSBslVxh" d="M0,0 L8,3 L0,6 Z" fill="#8b95a5"/></marker></defs>
+      <!--pnid:wYgkqvN0vxJmfwX3BdIsI7--><!-- LEFT: modular -->
+      <text data-page-node-id="iTrenennsUVieW87jqBkMi" fill="#8b95a5" font-size="14" font-weight="700" x="30" y="30"><!--pnid:CJLhJ0rGkKvoLrg63UH0Ch-->传统模块化方案（V11 及以前）</text>
+      <g data-page-node-id="5WkMmhpNzR7U1b3Pk5mbZa" font-size="11" text-anchor="middle">
+        <rect data-page-node-id="qdfkUiRCBhVlkEjmu78WLw" fill="#eef0f4" height="46" rx="8" stroke="#d6dbe4" width="88" x="30" y="60"/><text data-page-node-id="cUwEPELHNDnV65dLCeTWeG" fill="#4b5563" x="74" y="88"><!--pnid:nBZLmPcmA69tM4bTqa8sbu-->摄像头</text>
+        <rect data-page-node-id="JFXWLU8itDTOEz0vjTWB1S" fill="#eef0f4" height="46" rx="8" stroke="#d6dbe4" width="88" x="146" y="60"/><text data-page-node-id="axhWJcFLSBIHpAI4Okr1kE" fill="#4b5563" x="190" y="82"><!--pnid:2CTzhb2VxShHMg9vhU5IUr-->感知</text><text data-page-node-id="bAl8XOCOkAwr2ZhoLWMLhg" fill="#8b95a5" font-size="9" x="190" y="97"><!--pnid:oHeBjgwj3HcXG3PjHmkzcj-->识别物体</text>
+        <rect data-page-node-id="i6LRY9grv0CYROobz7Xcd7" fill="#eef0f4" height="46" rx="8" stroke="#d6dbe4" width="88" x="262" y="60"/><text data-page-node-id="SFKwmQR6LMtjfuGoaJVhU3" fill="#4b5563" x="306" y="82"><!--pnid:827qIzCfNWVLsKloXQ1vL3-->预测</text><text data-page-node-id="hs3Gb97Bp0hbztK4bVei8t" fill="#8b95a5" font-size="9" x="306" y="97"><!--pnid:BsVyTUwGPfCVKZbXSLu2KU-->猜轨迹</text>
+        <rect data-page-node-id="A7QMgMjhMSkjoC4Yw6kcgJ" fill="#eef0f4" height="46" rx="8" stroke="#d6dbe4" width="88" x="378" y="60"/><text data-page-node-id="QxEbEpQdZOtZa3QTir2R1e" fill="#4b5563" x="422" y="82"><!--pnid:PQlMKCxHrOryG221bGSR6C-->规划</text><text data-page-node-id="klBr4WeCT3ChJ9i8cCcUzz" fill="#8b95a5" font-size="9" x="422" y="97"><!--pnid:pc1RBkBPr4qxL2rzcFICYx-->定路线</text>
+        <rect data-page-node-id="H1NGPu8bqS3QocmmsFSzRA" fill="#eef0f4" height="46" rx="8" stroke="#d6dbe4" width="88" x="494" y="60"/><text data-page-node-id="EC7qyTLf33hPbhduA0wM5v" fill="#4b5563" x="538" y="88"><!--pnid:1PRP5fVgYX76lfDInSPmqc-->控制</text>
+      </g>
+      <g data-page-node-id="sCN9ZToOTdnlgzBXQnJXFs" marker-end="url(#ar-g)" stroke="#8b95a5" stroke-width="2">
+        <line data-page-node-id="8wYBm4VhjWj5lcIUtlnzO0" x1="118" x2="144" y1="83" y2="83"/><line data-page-node-id="QqECxKZptgPCv3kAj3Ir8p" x1="234" x2="260" y1="83" y2="83"/><line data-page-node-id="o5P8GOEJgBgTQvzKiQcQss" x1="350" x2="376" y1="83" y2="83"/><line data-page-node-id="wLwpm4IBVVE1XhDHpHAbz5" x1="466" x2="492" y1="83" y2="83"/>
+      </g>
+      <text data-page-node-id="UfMxnTnigbR0H3Ygj5pfD7" fill="#8b95a5" font-size="11" x="74" y="140"><!--pnid:x4CrW8c9y4aqV0beHObIyU-->模块间靠人工规则衔接，一处改动牵一发动全身</text>
+      <text data-page-node-id="5w8xNb3b2NAcs1GgOHIGex" fill="#8b95a5" font-size="12" x="30" y="176"><!--pnid:QrF3QQVQvluJpU4YE1uoSt-->问题：30 万行 C++ 规则代码，遇到没见过的场景就"卡死"，存在语义鸿沟。</text>
+
+      <!--pnid:iDHw7D7bMeAfSR6VfPJk2B--><!-- divider -->
+      <line data-page-node-id="7ghdZ9IFg0QiZbeVMP3XNU" stroke="#e6e9ef" stroke-dasharray="5 5" stroke-width="2" x1="610" x2="610" y1="40" y2="250"/>
+
+      <!--pnid:T86gYXeCmcG5WwWeuVdBmX--><!-- RIGHT: end-to-end -->
+      <text data-page-node-id="3bid5wEwfxP3Cv2Pyiqbao" fill="#7c3aed" font-size="14" font-weight="700" x="646" y="30"><!--pnid:c7bdUCkUTYOZuUuYNc3Qrp-->端到端方案（V12 → V15）</text>
+      <g data-page-node-id="UHJNXP0cSSnyuhukmE8okR">
+        <rect data-page-node-id="WMvk6yOAQZXowm3PnHfgTF" fill="#eef4ff" height="46" rx="8" stroke="#2563eb" width="88" x="646" y="60"/><text data-page-node-id="Z1ZZuhcgIzxLTpGGwKJIzw" fill="#2563eb" font-size="11" text-anchor="middle" x="690" y="88"><!--pnid:Bm3QQFXo5untEcQdfNaGIG-->摄像头</text>
+        <rect data-page-node-id="yz1IMxeFFLi53osBCAdX5V" fill="#f3efff" height="62" rx="10" stroke="#7c3aed" stroke-width="2" width="120" x="762" y="52"/><text data-page-node-id="u4K2l6tYpMcpyIifs1xQZU" fill="#7c3aed" font-size="12" font-weight="700" text-anchor="middle" x="822" y="88"><!--pnid:scYbn5DdAS5oPaSXcPdtsx-->一个神经网络</text>
+      </g>
+      <g data-page-node-id="q0zPqkK7u50qhVaKrA5WTF" marker-end="url(#ar-blue)" stroke="#7c3aed" stroke-width="2.5"><line data-page-node-id="fPs8hVSOWFVvUn7ir6h2sc" x1="734" x2="760" y1="83" y2="83"/></g>
+      <text data-page-node-id="VFDveu5e4cbdtvbrN8G1Pl" fill="#8b95a5" font-size="11" x="646" y="140"><!--pnid:lvJuj4Ab1JG32DYnleiKuQ-->感知到控制全在模型内部完成，无需人工规则</text>
+      <text data-page-node-id="zhvVmC4hsdVg3AImTVN4Y0" fill="#7c3aed" font-size="12" x="646" y="176"><!--pnid:Y9Q6Vx5oRS6hRvah9waPxr-->优势：从数据里自主学习，能处理难以用规则描述的复杂场景。</text>
+      <rect data-page-node-id="dJb0WRnaLSS1JEVzth5JbQ" fill="#e9f8f1" height="52" rx="9" stroke="#0e9f6e" width="240" x="646" y="196"/>
+      <text data-page-node-id="sL5BcHDOH5DnkCNNOBC4Df" fill="#0e9f6e" font-size="11.5" font-weight="700" text-anchor="middle" x="766" y="218"><!--pnid:nuvCWbMvfsbLpqxwOHIsgC-->V12 用 3000 行代码</text>
+      <text data-page-node-id="DiUonfGecZd9KhZekBVALH" fill="#0e9f6e" font-size="11" text-anchor="middle" x="766" y="236"><!--pnid:1Xxf61OD0mMuAHd0yczLFv-->取代了约 30 万行规则代码</text>
+    </svg>
+    <figcaption data-page-node-id="NEoaScvJmGDvK7JsYBRGuI"><b data-page-node-id="ctvvvdLVq9BMSIU3qr9fZl"><!--pnid:IDgZSo2G54ktkICzVFzpTP-->图 2 · 模块化 vs 端到端。</b><!--pnid:FDsoUQWG9wEH1oOEh5h4QC--> 端到端不是某个模块更强，而是取消了模块之间的"人工翻译"，让数据自己说话。</figcaption>
+  </figure>
+
+  <div data-page-node-id="D2JT0DVDV2htnhd0Mj729K" class="note">
+    <span data-page-node-id="AY0AgiLYGC2GEsgydG98FJ" class="t"><!--pnid:JoOwcHSjBmOxs5h2rUwbJC-->一个好懂的类比</span><!--pnid:wyVFKB4KJ8QZjpltJxNviT-->
+    传统方案像"照着说明书开车"——看到红灯→条文规定停车→执行，规则之外就懵。端到端像"跟一位老司机跟车学了几年"——他不会因为没背过某条规则就手足无措，而是凭经验本能地做出正确动作。<strong data-page-node-id="QaSYVBUZvwv36NuILcu0Vv"><!--pnid:Yqu9zMTCoX9oiocRauEt2c-->V15 就是把这位"老司机"的大脑容量扩大了约 10 倍，还给他配了一台能想象"如果……会怎样"的沙盘。</strong>
+  </div>
+</section>
+
+<div data-page-node-id="cUzD5PJGer6o8CFDReXzV4" class="divider"></div>
+
+<!--pnid:Dk0Pt9PHzgbhnPrkWYee14--><!-- ============ SECTION 3 ============ -->
+<section data-page-node-id="6wAu46zMWYLTuGchkyEntl" id="s3">
+  <div data-page-node-id="nTgF52IL5Gmws7iNOQ0YJi" class="sec-head">
+    <div data-page-node-id="k8Gbzd7t9ctztPKEKsqZPm" class="sec-num"><!--pnid:OtyL1IsKozVkvXJAKEfLYD-->03</div>
+    <div data-page-node-id="BDFHHHKaz6BWcJc4bX6h1C">
+      <h2 data-page-node-id="BH6gsxCGblyhRuDWvFgtTC"><!--pnid:dOMrMgSVH6Uonj3BuwlDZu-->拆解五大核心部件</h2>
+      <p data-page-node-id="uSPLAo5cqAINt7BGhZ9zxD" class="lead"><!--pnid:TeFpR2TyxquR9GzLRqfzyi-->把 V15 这台机器拆开，真正决定它能力的是这五个部分。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="LzKdOyEWvys2mEmeIWeu26"><!--pnid:Mj6i7P0Qj0IkX7NJvkoejq-->① 通用视觉编码器 UVE：用整个互联网教车"看世界"</h3>
+  <p data-page-node-id="bXOb5MH9xtSmD3Zo2B00xI"><!--pnid:pqJELnulZjrOuHQnB8uRoy-->这是 V15 <strong data-page-node-id="ng4eMvmmWus529vbfEM4h7"><!--pnid:ijMww7HaEl5WOEAvrOOxzR-->最被低估、也最关键的底层变化</strong><!--pnid:ccNv90HOf8q7qkJYMoHtSd-->。"编码器"就是把摄像头画面翻译成神经网络能理解的特征的那一层，相当于系统的"眼睛"。以往它主要用特斯拉自己的车队数据训练；V15 换上了新的 <strong data-page-node-id="osIWl7UtsS3h9XijcXoND5"><!--pnid:MIJJhJsvnMinikbGdetUZI-->Tesla Universal Vision Encoder（UVE）</strong><!--pnid:Rtr5EFdqmWdhbvMAfNFrDk-->，有两个革命性做法：</p>
+
+  <div data-page-node-id="ywR4vB3dCccQbZON1DqHTH" class="grid g2">
+    <div data-page-node-id="puyaPqRW5KjFbqB7NUmThS" class="card" style="margin:0">
+      <h4 data-page-node-id="TJHHwrWPaVshPybLeMClVJ" style="margin-top:0; color:var(--blue)"><!--pnid:xrKDeOrw4jB6FO7ZDkiQ7F-->🌐 用互联网视频预训练</h4>
+      <p data-page-node-id="Ui0gtAOvytHcbHIMh7X7kv" style="font-size:13.5px; color:var(--ink-2); margin:0"><!--pnid:uG96bdpYqf41PTAjfrv0gL-->先用<strong data-page-node-id="wUeb0SUGcd6Qal6c5nnj2N"><!--pnid:LmL1FGRpg3AdHsxf52f6JE-->数百万条互联网视频</strong><!--pnid:DgRQ8ai9EtYg7azZQeO3DD-->学"物体长什么样、水怎么流、铁链怎么摆动"，再上车队数据学控制。像小动物、路面铁链这类在行车数据里极罕见、人工标注极贵的目标，互联网视频里俯拾皆是——这是修补"长尾"的便宜路径。</p>
+    </div>
+    <div data-page-node-id="Y1OsQh2vtCV4jKQXyeiCsl" class="card" style="margin:0">
+      <h4 data-page-node-id="teIy09wvD4hKOLIPjxBod6" style="margin-top:0; color:var(--purple)"><!--pnid:z0i4WCngZDHAvQqYXWmfOW-->🤖 汽车 / 出租车 / 机器人共用</h4>
+      <p data-page-node-id="f1qmyCXyA1AH1Etq66xxsa" style="font-size:13.5px; color:var(--ink-2); margin:0"><!--pnid:au3e7ZR2A7CS4RjJthKj9n-->同一个编码器装进 <strong data-page-node-id="m92FABY588xYN5aw8duPHf"><!--pnid:t0Pz3vHrhgR3uW7yR0Xl8A-->FSD、Robotaxi 和 Optimus 人形机器人</strong><!--pnid:JijIR9BipKQP75cQTu6yqG-->。这已经不是汽车行业的思路，而是通用具身智能公司的选择——驾驶只是基础模型在四轮载体上的一个实例。</p>
+    </div>
+  </div>
+
+  <figure data-page-node-id="YUHfaC9hyXDril5HJRLgpP" class="figure">
+    <svg data-page-node-id="JBWDTQUNZdEegmDmc8oN0d" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg">
+      <defs data-page-node-id="wHTbwu0GlOQNKy9nSLJ9iK"><marker data-page-node-id="TjhNOUHnrakreBX3b5GmA1" id="ar-p" markerHeight="9" markerWidth="9" orient="auto" refX="8" refY="3"><path data-page-node-id="pXuu4l5T0ocEcGiPhfzNz4" d="M0,0 L8,3 L0,6 Z" fill="#7c3aed"/></marker></defs>
+      <rect data-page-node-id="F2d7RqUEM7qf9T6owM7Wwh" fill="#f3efff" height="72" rx="12" stroke="#7c3aed" stroke-width="2" width="180" x="40" y="90"/>
+      <text data-page-node-id="pu1GKhUBpK14TXdaFnRNft" fill="#7c3aed" font-size="13" font-weight="700" text-anchor="middle" x="130" y="120"><!--pnid:E0d0Za347V555AqPqcLBnb-->统一视觉编码器</text>
+      <text data-page-node-id="k8NBjjVvgO2TshkZD7mz54" fill="#4b5563" font-size="11" text-anchor="middle" x="130" y="142"><!--pnid:QI8lYbVn3BvvKGvmbHfhsT-->UVE · 互联网视频预训练</text>
+      <!--pnid:gU2IvtFUk6nBXrn6prTFep--><!-- three branches -->
+      <g data-page-node-id="38DAuXqgIrzFI2enPYJIDh" fill="none" marker-end="url(#ar-p)" stroke="#7c3aed" stroke-width="2">
+        <path data-page-node-id="mtLvkRnWrFxja4HxxuARSS" d="M220,126 C300,126 300,60 380,60"/>
+        <path data-page-node-id="S0MmHa2agz3JGHS5R6Ndco" d="M220,126 C300,126 300,130 380,130"/>
+        <path data-page-node-id="ZrBhjTcPrd0vx9YKkVG8rh" d="M220,126 C300,126 300,200 380,200"/>
+      </g>
+      <rect data-page-node-id="dk0wrh8MjGIIkg1QpIi6sI" fill="#fff0f3" height="52" rx="10" stroke="#e31937" width="220" x="384" y="34"/>
+      <text data-page-node-id="u7tJjcl8RJSLx7nOVT9H0j" fill="#e31937" font-size="12" font-weight="700" text-anchor="middle" x="494" y="55"><!--pnid:K4aRxvxUydUxPPhaHX1pxw-->🚗 FSD</text>
+      <text data-page-node-id="pxgDrFUUI1ET9Egewl1d8U" fill="#4b5563" font-size="10.5" text-anchor="middle" x="494" y="73"><!--pnid:jSokinTmJS33KTOCwkHQYi-->量产乘用车自动驾驶</text>
+      <rect data-page-node-id="ZYX9QliziRBEZJtwKIopBB" fill="#eef4ff" height="52" rx="10" stroke="#2563eb" width="220" x="384" y="104"/>
+      <text data-page-node-id="ZFl3ngwYEiOeZnbGGgPLod" fill="#2563eb" font-size="12" font-weight="700" text-anchor="middle" x="494" y="125"><!--pnid:596vjMBI0DaRgKmPJlJ8Vh-->🚕 Robotaxi</text>
+      <text data-page-node-id="OhsFUwc0h2dKJBTvVO8HhJ" fill="#4b5563" font-size="10.5" text-anchor="middle" x="494" y="143"><!--pnid:SXqasNM3hKWoorkSFVdKKe-->无人出租车车队</text>
+      <rect data-page-node-id="vAIfWFS7uWnsbwCtxml0k6" fill="#e9f8f1" height="52" rx="10" stroke="#0e9f6e" width="220" x="384" y="174"/>
+      <text data-page-node-id="6rC4p30ByIq92tqdsgCwrD" fill="#0e9f6e" font-size="12" font-weight="700" text-anchor="middle" x="494" y="195"><!--pnid:zG2pb0gWl8SLD6ZgDLn9At-->🦾 Optimus</text>
+      <text data-page-node-id="C1GMDD7vRNc8CLlgw0zdXM" fill="#4b5563" font-size="10.5" text-anchor="middle" x="494" y="213"><!--pnid:9EjdrnBkYt3NKcADKtLxQv-->人形机器人</text>
+      <text data-page-node-id="gd2Exg8ccueCf7uZHVGQZy" fill="#7c3aed" font-size="12" font-weight="700" x="640" y="112"><!--pnid:uhxB7u8UuvUxTNyEG2PxCG-->一套软件栈</text>
+      <text data-page-node-id="kGDlWfeCzal13xI8eb6bAn" fill="#7c3aed" font-size="12" font-weight="700" x="640" y="136"><!--pnid:nfFlkOkqbDoYMTTEhcPFa6-->服务所有机器人</text>
+      <text data-page-node-id="KRnyr8k3vZFFktSNThFLOd" fill="#8b95a5" font-size="11.5" x="40" y="242"><!--pnid:uclftAunjBaGZT9xlT7SNY-->同一组视觉特征，既喂给驾驶模型，也喂给 Reality View 渲染管线——这是"共用"的直接收益。</text>
+    </svg>
+    <figcaption data-page-node-id="xgefhC5XpN2VpzAqRslndv"><b data-page-node-id="WB8yuFHrgWpayG1WuaXZJO"><!--pnid:FS3K1zHx8BBTSnR3sFLMQW-->图 3 · 一个编码器，三条业务线。</b><!--pnid:90X4LARNtR8vZmDcjxPQBy--> 车、Robotaxi、机器人共享底层视觉理解能力，是特斯拉数据飞轮的关键杠杆。</figcaption>
+  </figure>
+
+  <h3 data-page-node-id="fzQYTdOvexyCBXygtIeJiO"><!--pnid:jwpegTEcaGALm2MBdFtwtP-->② 端到端驾驶网络：20 亿进、2 个出的"极端压缩器"</h3>
+  <p data-page-node-id="MQb4YZ3Tkjd6Dg1aRDXsO7"><!--pnid:ifWbuwZAPwTIlwhDHSgr2C-->编码器输出的特征，交给驾驶网络做决策。V15 把网络参数规模放大约 10 倍（<strong data-page-node-id="havnU7RKjdcQA1z0DRiWyX"><!--pnid:ATvTl6vZ5UTBEYTNR9vLvK-->高管口径，说法不一</strong><!--pnid:W9SVGTlLxlGoeTsSCuq2H3-->：马斯克在不同场合说过"约 100 亿"，推送后又提到驾驶模型"约 30 亿"，官方从未公布确切数字）。参数增加的价值不是"多几个功能"，而是让网络内部的<strong data-page-node-id="DqRSny3bVB32v18rij76QY"><!--pnid:8f52cUA2tAWJvYXqYiaUnV-->场景表征更精细</strong><!--pnid:bWkFvu6eZuEWacuOED3JlP-->，视频压缩的信息损失更小，能处理更微妙、更罕见的驾驶博弈。</p>
+
+  <div data-page-node-id="COlhudnkiO8zYfZXMu8STO" class="note warn">
+    <span data-page-node-id="Qanuz9JdOFAwyOG4rxJjF0" class="t"><!--pnid:5D1JUhCDoDhuwxrsQZvJ0H-->别把"10 倍参数"直接当成"10 倍安全"</span><!--pnid:p292euBnLTRJRFPU4In9cn-->
+    参数多只是提供了更大的"脑容量"，实际表现还取决于<strong data-page-node-id="HcOKUOBFOQ30kbir2dTcR2"><!--pnid:qATMxZI9DOR5EATyApIaa7-->训练数据质量、训练方法和部署效率</strong><!--pnid:8RE6yAT57tVwPt5Kor02Bk-->。百亿参数模型也无法原样塞进 16GB 内存的车端芯片——必须靠"知识蒸馏"压缩（见第 4 章）。
+  </div>
+
+  <h3 data-page-node-id="Q8Z7JD8HppqLDjRg6qx8pQ"><!--pnid:SpOh2iFJHjkC9eAc2qxLKY-->③ 世界模型：云端"造梦"，车端"轻量做梦"</h3>
+  <p data-page-node-id="dCgAqfqsoDUaaeDwQYr2c5"><!--pnid:fV9RECOr0hv5xCpRC7HEy0-->这是 V15 最容易被误解、也最激动人心的部分。所谓<strong data-page-node-id="9sQcjboOQt62vbLRcfl3xc"><!--pnid:FPFeSo9yLyqPZqfWGv8s7i-->世界模型（World Model）</strong><!--pnid:aVLzTAu3QaHgTIo3Hp4O1Y-->，就是让 AI 在脑子里建立一个"会按物理规律演化的虚拟世界"——输入"我打了方向盘"，虚拟世界里的其他车辆、行人会随之变化。有了它，AI 就能在想象中推演"如果我现在变道，旁边那辆车会不会撞上来"。特斯拉把这套能力拆成了三层：</p>
+
+  <figure data-page-node-id="3wWlD94gVaz1y8j2CrrPKL" class="figure">
+    <svg data-page-node-id="p4kJiJprMbBxZ5YwFdlqGE" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg">
+      <defs data-page-node-id="2AgoA3TMfCkVXYmhYEMvtB"><marker data-page-node-id="fkVH7ZGYNq4THirxI0tTxj" id="ar-t" markerHeight="9" markerWidth="9" orient="auto" refX="8" refY="3"><path data-page-node-id="EGudWbYqoUUSLVwM6QK52k" d="M0,0 L8,3 L0,6 Z" fill="#0d9488"/></marker></defs>
+      <!--pnid:wfMltuEZ7IMn3goX27bk24--><!-- cloud -->
+      <rect data-page-node-id="EUdelBDIMMeTfkuUUnSX3w" fill="#eef4ff" height="86" rx="12" stroke="#2563eb" stroke-width="1.5" width="820" x="40" y="40"/>
+      <text data-page-node-id="gN0zvR0E6hbA93up38ymTr" fill="#2563eb" font-size="13" font-weight="700" x="60" y="66"><!--pnid:5bKMyQK9XNr39Jut8sAaZq-->☁️ 云端 · 像素级世界模型</text>
+      <text data-page-node-id="0GRkIQfvbXLpIaloykQvYJ" fill="#4b5563" font-size="11.5" x="60" y="90"><!--pnid:4MlLwi7jozK1IRyekG7kPJ-->2025 年起运行，近乎像素级精确地生成合成训练数据——把现实世界"渲染"成训练场景</text>
+      <rect data-page-node-id="AihNcqppmqyU5LntKvmJZa" fill="#fff" height="20" rx="5" stroke="#2563eb" width="120" x="60" y="100"/><text data-page-node-id="wJUwWBqZKCJjBoIWkmPcCQ" fill="#2563eb" font-size="10" text-anchor="middle" x="120" y="114"><!--pnid:1DQC9603wAZly6WldWWbvN-->合成罕见险情</text>
+      <rect data-page-node-id="uAA0e4Jl1x54GnG503tz87" fill="#fff" height="20" rx="5" stroke="#2563eb" width="120" x="190" y="100"/><text data-page-node-id="xRktzERbfWXKvDpRp3rjod" fill="#2563eb" font-size="10" text-anchor="middle" x="250" y="114"><!--pnid:Ds62vCvgt1FVygAuYKtsao-->反事实回放</text>
+      <rect data-page-node-id="aYifTtLomOWwJch5whv9ZJ" fill="#fff" height="20" rx="5" stroke="#2563eb" width="140" x="320" y="100"/><text data-page-node-id="nYgA3iRUPRV1gf8jT5b8s3" fill="#2563eb" font-size="10" text-anchor="middle" x="390" y="114"><!--pnid:GAHw45PxooBmQwv8G2GqTi-->闭环评测新版本</text>
+      <text data-page-node-id="gnwYUk1K5Uvf9VFFxv8kPi" fill="#8b95a5" font-size="11" x="500" y="114"><!--pnid:GQO0owsiK7MwcNwTfk1jFt-->→ 喂给训练，不下发到车</text>
+
+      <!--pnid:j4WZWOBqr7YrG8u143dEPL--><!-- simulator -->
+      <rect data-page-node-id="BzcaIcIncDqIYF039e1e54" fill="#f3efff" height="80" rx="12" stroke="#7c3aed" stroke-width="1.5" width="820" x="40" y="146"/>
+      <text data-page-node-id="KEorTsxLRSkiTbIOjn7kw2" fill="#7c3aed" font-size="13" font-weight="700" x="60" y="172"><!--pnid:IooUhMqCFfCKzG1BzyXaIz-->🎮 训练侧 · 神经世界模拟器 (Neural World Simulator)</text>
+      <text data-page-node-id="PQt7vs1tSoHHg02Guzfc0c" fill="#4b5563" font-size="11.5" x="60" y="196"><!--pnid:6j0g4YsSGJnZuGCsL4PMK1-->纯视频训练，可同时生成 8 路摄像头画面，且"动作条件化"——输入自车动作，虚拟世界随之演化</text>
+      <text data-page-node-id="ZJE5RJ3Gy2qt1tli4y1rGP" fill="#4b5563" font-size="11.5" x="60" y="215"><!--pnid:1H2BOOWfqW7PzEFOxQPOG1-->用途：历史场景"如果当时变道会怎样"、生成对抗性极端场景、支撑大规模强化学习（约每周 200 万次仿真）</text>
+
+      <!--pnid:zUqY89rpBLphjrsGF9nE7T--><!-- car -->
+      <rect data-page-node-id="ZBpoEBRnmawfedJHzu1Uj5" fill="#e9f8f1" height="80" rx="12" stroke="#0e9f6e" stroke-width="1.5" width="820" x="40" y="246"/>
+      <text data-page-node-id="tNEaE0qOScKDO1zGtFWlll" fill="#0e9f6e" font-size="13" font-weight="700" x="60" y="272"><!--pnid:Rhk8UNKffkJkjPxdfLXCGf-->🚗 车端 · 轻量版世界模型（条件均值流模型）</text>
+      <text data-page-node-id="tmvShMHLbMVeWbzMdSIM73" fill="#4b5563" font-size="11.5" x="60" y="296"><!--pnid:aSC3tPTKmFpcovrPoVOpcE-->云端模型的"小版本"，基于 UVE 序列运行——赋予车辆秒级时序记忆与风险预判</text>
+      <text data-page-node-id="Ue1oFMGLyO69KDXyafF2n3" fill="#4b5563" font-size="11.5" x="60" y="315"><!--pnid:HYpm93puI8bwQ2WGaOQnvN-->被货车挡住的行人，系统仍按最后观测位置持续跟踪，并预判他从车尾另一侧出现的时刻</text>
+
+      <line data-page-node-id="Cn9LXdrKj3b9ATW4SamFg4" marker-end="url(#ar-t)" stroke="#0d9488" stroke-width="2" x1="450" x2="450" y1="126" y2="144"/>
+      <line data-page-node-id="QokGrWL3tUtrUeA8Ym0I7w" marker-end="url(#ar-t)" stroke="#0d9488" stroke-width="2" x1="450" x2="450" y1="226" y2="244"/>
+    </svg>
+    <figcaption data-page-node-id="B9pHJr7QOAEoza0LQ7X14O"><b data-page-node-id="pE8OtiSd38F9Nj0aHRDPmi"><!--pnid:shWsjg74Pg4Z1u3SUltoEQ-->图 4 · 世界模型的三层结构。</b><!--pnid:uyVCNlG3ysa8V52WsFeXRB--> 三者同根同源：云端负责"造数据"，模拟器负责"练兵和考试"，车端负责"实时预判"。<b data-page-node-id="8H93t1uYWEpNy4l0QCWVAb"><!--pnid:DHrI67ZpuyBqyQrKb5IiMO-->关键：目前没有证据表明车端拥有"认识这条路"的导航级记忆</b><!--pnid:Xe8di3W2XAzKJDimvAroPE-->——泊车历史、测速摄像头记忆都是产品功能层，不是网络能力。</figcaption>
+  </figure>
+
+  <p data-page-node-id="o914RhPW8AjsUSzng6hgRR"><!--pnid:cgzZRm8zIcq6KBEtYhdpnY-->从 V14 到 V15，一个本质变化是：V14 主要<strong data-page-node-id="ZpyKUm25h2wfyXZ7ixZKVG"><!--pnid:86ddWUzBbVgV8tQflK779F-->预测轨迹</strong><!--pnid:MY9dQdterg3hWmaZV81AMg-->（看到路、识别物体、预测它们会往哪走），而 V15 开始<strong data-page-node-id="UL0WE1auID0AjFYZyqo12U"><!--pnid:B9Pe1uOkv7zqLK9nSyC8Yv-->生成可能的未来</strong><!--pnid:tQ9OU0FlkHKg087M93i1lz-->（通过"视频语言模型"构造多个假设场景，再挑最安全的路径通过）。打个比方：前者是"预测行人会走到哪"，后者是"模拟如果灯变了、车按喇叭了、行人看手机了，他可能怎么做"。</p>
+
+  <h3 data-page-node-id="opxn0mKtohc8nDqdVcHELv"><!--pnid:N8sKdi0aMdNeAq6kDD2mXh-->④ 时序记忆：从"看一眼"到"记住 30 秒"</h3>
+  <p data-page-node-id="9ISH9pA2tcB81yoMcnutSc"><!--pnid:qAn2LAZrqKLhNbL6tZ7loW-->驾驶不是看单张照片，而是理解一段连续的时间。模型能"记住多久"直接决定预判能力。特斯拉的上下文窗口（即模型能回看的历史时长）在快速拉长：</p>
+
+  <div data-page-node-id="Fe8cKwOhYjQ4Wi3ie9oxa7" class="grid g4">
+    <div data-page-node-id="kHJUhB0DK5evUtem8NkGhd" class="stat" style="border-left:3px solid #8b95a5"><div data-page-node-id="B8l8H6vRdZiGDgAgBvgjMq" class="big" style="font-size:24px; color:#8b95a5"><!--pnid:xW4kwR97qXkPK4q8ss7wtB-->~8 s</div><div data-page-node-id="waGZqwZKZtrRgSGmBCPpcG" class="lbl"><!--pnid:FmWCGHNbAIq1REb4WSWLp5-->V13 时代</div></div>
+    <div data-page-node-id="Hl037L1KDjngJVCnq4V463" class="stat" style="border-left:3px solid #2563eb"><div data-page-node-id="kQ4g5ro8FpexVfA5qO0t60" class="big" style="font-size:24px; color:#2563eb"><!--pnid:z6H3cBjJT4lAFkguHe7ILh-->~24 s</div><div data-page-node-id="lyLD76H0ZpVIzhQdRiMDDn" class="lbl"><!--pnid:AkrliOUNUPh5CIPIQQiqOT-->V14 时代</div></div>
+    <div data-page-node-id="eRRvyykRisxzo67ZNB4LZg" class="stat b"><div data-page-node-id="7SVIY2EKTrcpbIGkHHX84P" class="big" style="font-size:24px"><!--pnid:DnaApx1CaTcdrCiXoNPVg9-->~30 s</div><div data-page-node-id="HuuBmEWCpn6IwZ5w69yEc2" class="lbl"><!--pnid:63m56IqgaeZnWNbCUoXm73-->V15（约 3 倍于早期）</div></div>
+    <div data-page-node-id="j6al8zMnAb4vQss8givsSu" class="stat g"><div data-page-node-id="pyLMumy9yHeAEbig1VWgEI" class="big" style="font-size:24px"><!--pnid:WlSVojQYx7bW8kpqghSLmB-->8 帧/批</div><div data-page-node-id="bB407vDSHiqDlWOVoVdaAc" class="lbl"><!--pnid:2HNVhLtMYtTABLrKa1X3hM-->Reality View 以 36Hz 播放</div></div>
+  </div>
+
+  <p data-page-node-id="2BywgfcK9SyV1O23uM4j2P" style="font-size:13.5px; color:var(--ink-2)"><!--pnid:Be1UxDezRHJLTWIYBQyXgw-->更长的上下文意味着：系统能追踪刚被建筑物挡住的行人、记得 30 秒前经过的路面状况、对"横摆角速度异常"这类前兆提前反应。Ashok 举过一例：前车还没打滑、还没撞护栏，系统就从异常运动趋势里判断"不对劲"，提前制动把动能卸掉。</p>
+
+  <h3 data-page-node-id="sRXcK5a7hlldnKaED8y5qF"><!--pnid:1KEC2e8ykOFreNuB0YnlZX-->⑤ 生成式可视化 Reality View：把黑箱撬开一条缝</h3>
+  <p data-page-node-id="a7QKxhQwL286PY7SKJRO1C"><!--pnid:QLIikfYI2dOhslq0WpqCYK-->这是 V15 最直观、也最"出圈"的变化——中控屏上那个像 3D 游戏一样的写实画面。它的原理值得单独一章细讲，我们放到<strong data-page-node-id="7EeLSR9owz9RD3W5C0iQsH"><!--pnid:qq8lhP3HuCISFl6IAHSVyB-->第 5 章</strong><!--pnid:1Gf7jMFUcvlDosgaxaZIcT-->展开。这里先记住一句话：<em data-page-node-id="kXRJKx7UT2pJSBNWRGRMqx"><!--pnid:uqA6MXbzVmN00mpvi9q2FV-->你看到的每一帧都是 AI"推断"出来的，不是摄像头"拍"下来的</em><!--pnid:CFbmwfcNljEdi2zrnZfZrV-->。</p>
+</section>
+
+<div data-page-node-id="3K5FnZArWu4JIxcnsLLhmQ" class="divider"></div>
+
+<!--pnid:u1dcCQgoZJk5caxgrosLgq--><!-- ============ SECTION 4 ============ -->
+<section data-page-node-id="KL7oACtVzKsk8Sxp3pi35N" id="s4">
+  <div data-page-node-id="Q86FWWU1H368NPtjCFcskY" class="sec-head">
+    <div data-page-node-id="Jb29Y0T3hBOqNIwkWJRPVx" class="sec-num"><!--pnid:LgYFcMfBaeWUdH2GLgGtFU-->04</div>
+    <div data-page-node-id="q5W3ySfsdP5TBiwx7KOdHc">
+      <h2 data-page-node-id="G8Uxp617PJ4rkd5hPQ6T4k"><!--pnid:z1W8wu7jugl50edgRf0hsG-->训练飞轮：数据、算力、蒸馏三条战线</h2>
+      <p data-page-node-id="aJKrRbfgvWV7ErzzOxYY4E" class="lead"><!--pnid:QuebioTEHx4tlR7FQchaOL-->上面那套网络之所以能跑起来，背后是三股巨大的工业级投入在支撑。</p>
+    </div>
+  </div>
+
+  <figure data-page-node-id="KLKLsYhzdQl0AkIX0lUt17" class="figure">
+    <svg data-page-node-id="UzI9l5SvT0rGM2eWPjKpv3" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg">
+      <defs data-page-node-id="iV4zPCmXkICwraZ1LQf166">
+        <marker data-page-node-id="5J3i9UvpGX17FYP9GOPoDb" id="ar-f" markerHeight="10" markerWidth="10" orient="auto" refX="8" refY="3"><path data-page-node-id="laCldGNMTIIeXTw8iPbkeS" d="M0,0 L8,3 L0,6 Z" fill="#e31937"/></marker>
+      </defs>
+      <!--pnid:BbxFzuN3c9LAcs0dcLFQjD--><!-- cycle arrows (circle) -->
+      <g data-page-node-id="VXT5SXh2aEpmbYnPbAHgcD" fill="none" marker-end="url(#ar-f)" opacity=".85" stroke="#e31937" stroke-dasharray="1 0" stroke-width="2.2">
+        <path data-page-node-id="Tq5AgrTF21lvLirm3Etk4H" d="M200,90 C300,40 600,40 700,90"/>
+        <path data-page-node-id="iOGIxKQ6YcGSoYWPVqhTxt" d="M700,140 C760,180 760,200 700,240"/>
+        <path data-page-node-id="RR2Mud5FEzz6Dpi8xUDAdU" d="M700,290 C600,330 300,330 200,290"/>
+        <path data-page-node-id="i4AAOpbfLDIo3KHalaKIMK" d="M200,240 C140,200 140,180 200,140"/>
+      </g>
+      <!--pnid:fKSH9PrEc3CNfInCQchSwA--><!-- top -->
+      <rect data-page-node-id="jz1Lx4UTHd26MKXeP8SsjK" fill="#eef4ff" height="60" rx="12" stroke="#2563eb" stroke-width="1.5" width="300" x="300" y="40"/>
+      <text data-page-node-id="y0VCzaOyCvk6MyjZ1eiN2y" fill="#2563eb" font-size="13" font-weight="700" text-anchor="middle" x="450" y="66"><!--pnid:WvHyU93n3I8RYlTY8G5SDG-->① 车队采集真实数据</text>
+      <text data-page-node-id="E8kYG0A3qEDq7nr2dUHzmo" fill="#4b5563" font-size="10.5" text-anchor="middle" x="450" y="86"><!--pnid:iMcE11HWqag3eT9NOmngf2-->数百万辆车 · 累计约 840 亿英里 · FSD 开启约 173 亿英里</text>
+      <!--pnid:Uy67XnErkDaM7mSXHZFksk--><!-- right -->
+      <rect data-page-node-id="go27ORBsY8aetuumgTqVXK" fill="#f3efff" height="70" rx="12" stroke="#7c3aed" stroke-width="1.5" width="220" x="640" y="130"/>
+      <text data-page-node-id="coT65LdCsYCwkPP7xvMmaV" fill="#7c3aed" font-size="13" font-weight="700" text-anchor="middle" x="750" y="156"><!--pnid:ErSsGlbqyczivMiNnCFOGv-->② 自动标注 + 造梦</text>
+      <text data-page-node-id="2FSww5Pkg6Rv1MGCZBZQdy" fill="#4b5563" font-size="10.5" text-anchor="middle" x="750" y="175"><!--pnid:D7sulUaS3PKEMjSZNES1WT-->1 万条行程标注仅需 12 机器小时</text>
+      <text data-page-node-id="EAFBGsd4NQggx7h9ya2dTA" fill="#4b5563" font-size="10.5" text-anchor="middle" x="750" y="190"><!--pnid:51MLlakh1KvgFqqH0bqbHz-->Digital Dreams：1 条真实 → 1 万条合成</text>
+      <!--pnid:51wsMlr2F7rlIZPeG3V5wB--><!-- bottom -->
+      <rect data-page-node-id="BmgZzcfcCLWlNJMitUzSAD" fill="#fff0f3" height="60" rx="12" stroke="#e31937" stroke-width="1.5" width="300" x="300" y="255"/>
+      <text data-page-node-id="f1duv9QkCbRguTlBHj0sef" fill="#e31937" font-size="13" font-weight="700" text-anchor="middle" x="450" y="281"><!--pnid:ungfWaxZTzUJe07HONovUh-->③ Cortex 超算训练</text>
+      <text data-page-node-id="U9UQ8rtbpTGH7WdnKOlaM5" fill="#4b5563" font-size="10.5" text-anchor="middle" x="450" y="301"><!--pnid:IJ4YPb3oL1v10Cr0ORtLqs-->约 20 万张 H100 等效 · 单轮 7 万 GPU 小时 / 1.5PB 数据</text>
+      <!--pnid:vEKL8ULmzpkIPrQTxiY880--><!-- left -->
+      <rect data-page-node-id="6taNrJifk3fKQ3NNaVAPAb" fill="#e9f8f1" height="70" rx="12" stroke="#0e9f6e" stroke-width="1.5" width="220" x="40" y="130"/>
+      <text data-page-node-id="JtIIFCtqeZgXZiC78oMNIy" fill="#0e9f6e" font-size="13" font-weight="700" text-anchor="middle" x="150" y="156"><!--pnid:hQvv0BS4DdlD8S2DaC4Xqh-->④ 蒸馏 + OTA 上车</text>
+      <text data-page-node-id="t77QMQVpmQoxWFfQGsvjk4" fill="#4b5563" font-size="10.5" text-anchor="middle" x="150" y="175"><!--pnid:lZuPAMf50LDEG3RWp7Q2G3-->大模型当"老师"，压缩成车端"学生"</text>
+      <text data-page-node-id="wwamF9FPvPz0Vl2yJbR5FV" fill="#4b5563" font-size="10.5" text-anchor="middle" x="150" y="190"><!--pnid:JaV5qqpsQZgUurItaxctIt-->装进 16～32GB 内存的车载芯片</text>
+      <!--pnid:qGw3K9GJRlZeZ4DOFyg3XB--><!-- center label -->
+      <text data-page-node-id="0r3Lf2UVjdXkM7U32YlLU2" fill="#181b20" font-size="15" font-weight="800" text-anchor="middle" x="450" y="168"><!--pnid:Hs4T13Arj83Ppk4L57awcZ-->数据飞轮</text>
+      <text data-page-node-id="eSYZK8JzD3hlUcPaGCmE9a" fill="#8b95a5" font-size="11" text-anchor="middle" x="450" y="190"><!--pnid:OR5hMe3UNjaAVunHrAwcb2-->越跑越聪明，越聪明跑得越多</text>
+    </svg>
+    <figcaption data-page-node-id="vQAbLOkWOJjjFZY4ux5REg"><b data-page-node-id="NOWf4KrZbpbzmqIWXaizgC"><!--pnid:boLnPLNtG8Vnl1ry1J8Mgq-->图 5 · 特斯拉的数据飞轮。</b><!--pnid:XlnhKZ7nnsJ3MMEuDHnsf8--> 车队产生数据 → 自动标注与合成 → 超算训练 → 蒸馏上车 → OTA 推送 → 车队产生更多数据，循环放大。</figcaption>
+  </figure>
+
+  <div data-page-node-id="48ReZr5wxIKhLdmxEquWoY" class="tbl-wrap">
+  <table data-page-node-id="WcmePdIigyKHiHY9sdE0oE">
+    <thead data-page-node-id="a1IrkbKYyQsbqyzaZhqv73"><tr data-page-node-id="jjUf32rZNCHwDLdAsg1rMX"><th data-page-node-id="SF8d7a2HleBES78OTurt4M"><!--pnid:xwTqESeY4orzGjvPMhvjsQ-->战线</th><th data-page-node-id="npmJCOyWmb1rlqygW4Kqyo"><!--pnid:smuNnDAgtl6FI4CmiMQ0FD-->关键事实</th><th data-page-node-id="H53DcLLCxRhhBBHlVLNNFF"><!--pnid:0KpMXEwuQ68wKdjs2iLwWZ-->为什么重要</th></tr></thead>
+    <tbody data-page-node-id="t3ABNwqaKQtR0uQZBc9DnW">
+      <tr data-page-node-id="pQQGYrhi1iN1SOCMkG33FM"><td data-page-node-id="1PLuKLIeWNZqR5qXpsLlyK"><strong data-page-node-id="ATsCJzWDKbr2WNB8Q7EDDM"><!--pnid:Qqv9PS2xfPb2b9uSwT1rpK-->📊 数据</strong></td><td data-page-node-id="81lm8h5NbAZPpLRcX20T39"><!--pnid:6m0MdvOVnBNgy3nu1o22AO-->超 400 万辆车持续采数据；自动标注把 1 万条行程压缩到 12 机器小时（相当于约 500 万小时人工）</td><td data-page-node-id="VrN0Lk5uOunhy4jEz4bfRE"><!--pnid:07gnFmZ3UAEFg3ghsfKHKN-->规模远超任何单一测试车队；长尾场景靠规模"碰"出来</td></tr>
+      <tr data-page-node-id="4YwHRwmFn87KcYi684tywO"><td data-page-node-id="eF1L2xrtQ7LFaH12VOGsPm"><strong data-page-node-id="YZbp0IKQ30pvXNvLocBtcX"><!--pnid:DSgiTV8IFWozb24JyYF5yh-->🖥️ 训练算力</strong></td><td data-page-node-id="ysfzzBFDSmOEQFm1AUR41c"><!--pnid:JPZ4KYgpV6lPTfIZ8Y4ie6-->Cortex 1 约 10 万张 H100/H200（500MW）；Cortex 2 于 2026 年 4 月上线，合计约 20 万 H100 等效</td><td data-page-node-id="USAIFrzSGZKV0BqQOYgDSJ"><!--pnid:jtd17b7wv76fikre6yIjW7-->约是 Cortex 建成前总算力的 20 倍，支撑更大模型反复训练</td></tr>
+      <tr data-page-node-id="hpCZVIQUwQnA91zU9azJUv"><td data-page-node-id="cDmdKH8vAdVOiWfSWrABBx"><strong data-page-node-id="RyEKA7D15u541Mup2EINPj"><!--pnid:dFKhk4vYSrkXzruWzbMaAJ-->🎓 蒸馏</strong></td><td data-page-node-id="boj2f0Q6iqultDgIAKMci7"><!--pnid:vDr3z74cNMLKlQIL34cfcp-->数据中心训练庞大的 "System 2" 推理模型当老师，把解题能力教给车端快速"学生"模型</td><td data-page-node-id="6IRntX5fsIvXt31LF8L804"><!--pnid:FGTcg8jK0V5TVumhNadl37-->让百亿参数模型的能力能塞进内存有限的车载芯片</td></tr>
+      <tr data-page-node-id="UARfBFHdP4vb7IoIZipkrS"><td data-page-node-id="jyjlZNpqOuf7fSZeviZjxu"><strong data-page-node-id="8tT6kmPsiXWa5STdWoQSfu"><!--pnid:oBLBv4gO5YalhQUtwYUyTG-->🔮 合成数据</strong></td><td data-page-node-id="rXUBO1FlauoZC7qGExVE3c"><!--pnid:aQZ1DMyk7mOtJEpmVRSWt5-->"Digital Dreams" 把 1 条真实演示扩展成 1 万种光照 / 车位 / 角度的物理精确变体</td><td data-page-node-id="dKgOFqSwqpil2ZxyeTdg6X"><!--pnid:MU1I6FLZs46ypXArOREPlr-->不增加真实里程就把有效数据量放大几个数量级</td></tr>
+      <tr data-page-node-id="xDYa5Y5kVUbhQevNQDpg9u"><td data-page-node-id="9HRItpuxdfD49eSAm1yTr1"><strong data-page-node-id="bKaAj4HAQpqaEsKjHtv8qQ"><!--pnid:ugUdLe4yFkNdlmjkqx3DAV-->🧮 Dojo 插曲</strong></td><td data-page-node-id="5f6pZXRTxFDoVvfpoRrpwz"><!--pnid:i2Y51rJRKeOv4rP7L6EKXG-->自研训练芯片 Dojo 于 2025 年 8 月解散（马斯克称"进化死路"），2026 年 1 月又宣布重启 Dojo3</td><td data-page-node-id="MzLv9JKsLTOX0vdegjQT0B"><!--pnid:KNThlplTzlwvnCwbtsyYWo-->训练侧最终全面倒向英伟达 GPU，路线几经反复</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div data-page-node-id="iAmt0EC73kCCNvKYSh1OFB" class="note crit">
+    <span data-page-node-id="qSR3JVgJOZvqy3RnfCQe39" class="t"><!--pnid:yh78jKsd38iJrXnREWFLIG-->蒸馏的隐忧</span><!--pnid:YOhzpfxI99a5PkvMbCF679-->
+    蒸馏能在常见场景保留老师模型大部分性能，但<b data-page-node-id="7UBm06GdE0HIVZ0BJ3z7jI"><!--pnid:EUMrSHsvT3QRaALZBFsRYx-->罕见、意外的边缘场景——恰恰是安全最要紧的部分——可能以难以察觉的方式退化</b><!--pnid:2m2rB4LrG6B1meKNGir0rz-->。特斯拉没有公布 V15 的蒸馏精度基准，外界也无法接触到量产车上那个被压缩的模型。这是"官方 25 倍"之外最值得追问的黑箱。
+  </div>
+</section>
+
+<div data-page-node-id="aaKHOduR9JtttMn3dWRjVi" class="divider"></div>
+
+<!--pnid:Qqv5adyyRuDRrnOxy01hgx--><!-- ============ SECTION 5 ============ -->
+<section data-page-node-id="K5eYUqqOtTZjBDjDcsgkcz" id="s5">
+  <div data-page-node-id="muRjJoHb48x0I0WpGlXYPU" class="sec-head">
+    <div data-page-node-id="ff6wWYCeHPxkdvt4wzkR83" class="sec-num"><!--pnid:ehOhmR0p2GXgWHDeDG8u5W-->05</div>
+    <div data-page-node-id="ZbuX0HNQVJdF2M4S3io5gr">
+      <h2 data-page-node-id="dzKFtpEnFL1TIpfglI7SRd"><!--pnid:EhmUsw54Z5LlkBDJBDNg36-->Reality View 深挖："无中生有"的魔法</h2>
+      <p data-page-node-id="0spKXbajK0q8KVg0jDsTLN" class="lead"><!--pnid:ZKG137MRGkE9u10cwEeV85-->屏幕上那个写实 3D 画面，是理解 V15 架构最好的切入口——它本身就是一个世界模型。</p>
+    </div>
+  </div>
+
+  <p data-page-node-id="oHzt60iHemNIwMT4KAxEVx"><!--pnid:AogybREfcMSciBfZTEWKJe-->先说结论：<strong data-page-node-id="K8i97SZHwlgmuFn9rYzd1F"><!--pnid:9yzWK2VjeuzTAiZdCYzjyw-->Reality View 既不是摄像头实拍拼接，也不是游戏引擎渲染，而是 AI 实时"画"出来的。</strong><!--pnid:FIlX70kjmPbYmhoNNx9tDT-->它模拟了一台<strong data-page-node-id="UVXRWew7OmiyWmRETgkgAG"><!--pnid:lwZtWjWUnzZ1lItMaaxH2a-->悬在你车顶上方的虚拟相机</strong><!--pnid:svr1Z3wrb4Q7YiQruotXLq-->——而车身上根本没有这个视角的摄像头。这在计算机视觉里叫<strong data-page-node-id="KWV89eXmcC7bS7InfuykFy"><!--pnid:1TMxiU2u12nVsqICCjPPzg-->新视角合成（novel view synthesis）</strong><!--pnid:X37gSW30viRc4htLr6IYiw-->，画面只能由模型从多路视频里推断出来。这一点也从原理上排除了"多机位拼接"的可能。</p>
+
+  <figure data-page-node-id="VRp6LwZrvjozNrUMHUQhwy" class="figure">
+    <svg data-page-node-id="BbStGFmvaEKEj3F3fizJrS" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+      <defs data-page-node-id="gM3ucKeGS0oOBCjO75J61K"><marker data-page-node-id="jLetFRkj1tNJsjpw9suuTH" id="ar-d" markerHeight="9" markerWidth="9" orient="auto" refX="8" refY="3"><path data-page-node-id="1bygpE2NpEYLpYvcDCDvne" d="M0,0 L8,3 L0,6 Z" fill="#e31937"/></marker></defs>
+      <text data-page-node-id="hay4wpBphB6IE7XRS9drTP" fill="#181b20" font-size="14" font-weight="700" x="30" y="28"><!--pnid:54R95qywgB4Bp24fmASoSR-->扩散模型如何"一帧一帧画出"当前画面</text>
+      <!--pnid:qjQ17jzD8s7f3WE7wMszGo--><!-- step 1 -->
+      <rect data-page-node-id="Qg0sCOqIViSyyLAfD3K8yt" fill="#eef4ff" height="88" rx="11" stroke="#2563eb" stroke-width="1.5" width="150" x="30" y="56"/>
+      <text data-page-node-id="ygISdGDoTNfusmSDjLUFqd" fill="#2563eb" font-size="12" font-weight="700" text-anchor="middle" x="105" y="82"><!--pnid:GnhMQf3qXgMxTgPB46niol-->上一帧画面</text>
+      <text data-page-node-id="VVaZblcKsvGnzxz4eNCXIr" fill="#4b5563" font-size="10.5" text-anchor="middle" x="105" y="102"><!--pnid:pU0KI5fZPVpJHIt8666wK2-->作为条件，保证</text>
+      <text data-page-node-id="ZOzX59BRHRC8lXzmLw73Ro" fill="#4b5563" font-size="10.5" text-anchor="middle" x="105" y="118"><!--pnid:8wBvaPKtg3za48TWaj3f2t-->帧间连续不闪烁</text>
+      <rect data-page-node-id="OGR0jnrknsMCJ5ZrsHP5Ir" fill="#2563eb" height="8" opacity=".3" rx="4" width="114" x="48" y="128"/>
+      <!--pnid:8rMInLmhi9dAdt9Smz6BAJ--><!-- arrow -->
+      <line data-page-node-id="Gzqe3wx7iaFK8mIJsZ2Meq" marker-end="url(#ar-d)" stroke="#e31937" stroke-width="2.2" x1="184" x2="212" y1="100" y2="100"/>
+      <!--pnid:PyoTma3qJq6wceINRRwtkZ--><!-- step 2 noise -->
+      <rect data-page-node-id="MEwR1S7zIN7xVqxzJsdK7k" fill="#f0f2f6" height="88" rx="11" stroke="#8b95a5" stroke-width="1.5" width="150" x="216" y="56"/>
+      <text data-page-node-id="Uxfqefk4vYWtSYIGJkYbDt" fill="#4b5563" font-size="12" font-weight="700" text-anchor="middle" x="291" y="82"><!--pnid:8BplDklP2sjrclvxvBZEwM-->加入随机噪声</text>
+      <g data-page-node-id="rOUgrh0ens0G5HipqMZepm" fill="#8b95a5" opacity=".5">
+        <circle data-page-node-id="jHCo2SwwFe3xK7A98ATcL9" cx="245" cy="112" r="3"/><circle data-page-node-id="WWPMVuK7jWXFNu6BdkKsX5" cx="265" cy="104" r="4"/><circle data-page-node-id="Os9NcC6YVuJr8xYYg1VEX8" cx="285" cy="116" r="3"/><circle data-page-node-id="EvVndRbnX214wBW29MfWUJ" cx="305" cy="106" r="4"/><circle data-page-node-id="oS4MzNk7p6KCoVPvWhDBxa" cx="325" cy="114" r="3"/>
+        <circle data-page-node-id="g5tTA5omhhlgxz00u2KgUs" cx="255" cy="125" r="3"/><circle data-page-node-id="qf83RjjaF7NVMt2sC2x1zn" cx="300" cy="128" r="3"/><circle data-page-node-id="D6xbbr2X3czLWz504YkjA4" cx="340" cy="122" r="3"/>
+      </g>
+      <text data-page-node-id="5pytZE9Hg33EropkvxJkVc" fill="#8b95a5" font-size="10" text-anchor="middle" x="291" y="137"><!--pnid:brk37c9IUfbrT5Jb10kMBi-->变成一团"雪花"</text>
+      <!--pnid:AiThCJAYEVcHZt8fNooCsm--><!-- arrow -->
+      <line data-page-node-id="OAfaJQNa6O2g3VtXk9GB8C" marker-end="url(#ar-d)" stroke="#e31937" stroke-width="2.2" x1="370" x2="398" y1="100" y2="100"/>
+      <!--pnid:fMC9WUdgFzvUEnORYbSI2u--><!-- step 3 denoise with features -->
+      <rect data-page-node-id="gDToR2FMQyrO8TQaNHwK3M" fill="#f3efff" height="88" rx="11" stroke="#7c3aed" stroke-width="1.5" width="210" x="402" y="56"/>
+      <text data-page-node-id="bIRmPJ4rpVeLfHaXcRBWey" fill="#7c3aed" font-size="12" font-weight="700" text-anchor="middle" x="507" y="82"><!--pnid:Wg6xva5dYe0zB1XfNXewMn-->特征引导下去噪</text>
+      <text data-page-node-id="nmqarDRb9BGmGvwWT1CMOR" fill="#4b5563" font-size="10.5" text-anchor="middle" x="507" y="102"><!--pnid:irSN6smuT76r9MdLGZcRK4-->用世界模型 / UVE 提取的</text>
+      <text data-page-node-id="YJB90lVEiy3JhL9kOFFaEV" fill="#4b5563" font-size="10.5" text-anchor="middle" x="507" y="118"><!--pnid:BBdiPxHNk4CcndIEj1jY7D-->场景特征，一步步还原</text>
+      <text data-page-node-id="rroFjXN1vOpB2akrrpxW3f" fill="#4b5563" font-size="10.5" text-anchor="middle" x="507" y="134"><!--pnid:JDhjceug9eVnGXPFSwT4ic-->→ 输出当前帧（每批 8 帧）</text>
+      <!--pnid:GL7plXypwqlbyoD2W29xN2--><!-- arrow -->
+      <line data-page-node-id="lOkP6KyexNqO1ruDMgq8pJ" marker-end="url(#ar-d)" stroke="#e31937" stroke-width="2.2" x1="616" x2="644" y1="100" y2="100"/>
+      <!--pnid:6oADRpqjJjLkly6TypaPY5--><!-- step 4 output -->
+      <rect data-page-node-id="1JRqUZer0Urg9YKJYiFoKz" fill="#e9f8f1" height="88" rx="11" stroke="#0e9f6e" stroke-width="1.5" width="220" x="648" y="56"/>
+      <text data-page-node-id="sJ0Rz9HDbHivhJdp8YJbK8" fill="#0e9f6e" font-size="12" font-weight="700" text-anchor="middle" x="758" y="82"><!--pnid:VzFb3ueYs9jhF7OfmcIUqZ-->Reality View 画面</text>
+      <text data-page-node-id="Z14vTmJOui13JX0Te80PIu" fill="#4b5563" font-size="10.5" text-anchor="middle" x="758" y="102"><!--pnid:haJ5IGvvOy7nKmsWhYrczr-->车顶虚拟视角 · 36Hz 播放</text>
+      <text data-page-node-id="irKY0ylrDJcuHhBsui7N1L" fill="#4b5563" font-size="10.5" text-anchor="middle" x="758" y="122"><!--pnid:GK6UH5Hp9gDMzE1qdfZ0Of-->显示规划路径与转弯箭头</text>
+      <text data-page-node-id="3JcPGygKxl9ZAJNvzVZ4Gi" fill="#4b5563" font-size="10.5" text-anchor="middle" x="758" y="138"><!--pnid:GMFbgE0afENHveA0DDCMMA-->可触屏指定目标点</text>
+      <!--pnid:F6KvAOtyiODrqz4TQecXfI--><!-- loop back -->
+      <path data-page-node-id="RWd6nGgVyV8hGVbrsXiHeM" d="M758,148 C758,178 105,178 105,148" fill="none" marker-end="url(#ar-d)" stroke="#0e9f6e" stroke-dasharray="5 4" stroke-width="1.8"/>
+      <text data-page-node-id="n4gCRXAuPhyhlepcWpJtMt" fill="#0e9f6e" font-size="10.5" text-anchor="middle" x="430" y="190"><!--pnid:llsJGjKEW0EDdkecKn6PrA-->当前帧成为下一帧的条件，循环往复</text>
+
+      <!--pnid:PItwP886f8JCaPweMRweCy--><!-- route history -->
+      <text data-page-node-id="Xc1LcgVSfFoFCCbq2u33Y0" fill="#8b95a5" font-size="12.5" font-weight="700" x="30" y="228"><!--pnid:WUxjuggERpjFZUrGBN2Ab1-->可视化路线的三次转向：</text>
+      <g data-page-node-id="jSUk44OjtcQf7FijCstKm5" font-size="10.5">
+        <rect data-page-node-id="pbnlgnmcUZnnGjwWHNHIVE" fill="#eef0f4" height="40" rx="7" stroke="#d6dbe4" width="160" x="30" y="242"/><text data-page-node-id="1j5Stem35w0MvfXzyU1IRQ" fill="#4b5563" text-anchor="middle" x="110" y="260"><!--pnid:XPlmvAoJWLJeOHF08Gt1ex-->2019 手绘 2D 图标</text><text data-page-node-id="r0USMYhQQb2A6axi5ws1ee" fill="#8b95a5" text-anchor="middle" x="110" y="275"><!--pnid:NjXYVDrA3M5oEUeQ5z7YHg-->车道线示意动画</text>
+        <rect data-page-node-id="mslJrsgRTfMpYZZvDa3ilG" fill="#eef0f4" height="40" rx="7" stroke="#d6dbe4" width="180" x="210" y="242"/><text data-page-node-id="mbNatHwg9pkoRNSQPRLQkE" fill="#4b5563" text-anchor="middle" x="300" y="260"><!--pnid:JKaMouZ2CoSZ2ffgxUBZFp-->2024–25 占用网络重建</text><text data-page-node-id="tzVls0Q8ja3g5w7hAd2Wn6" fill="#8b95a5" text-anchor="middle" x="300" y="275"><!--pnid:NqaBrnohxQewfDBGgfJm2b-->传感器数据 3D 重建</text>
+        <rect data-page-node-id="hvryx7iKQQJ1o32MWRZNDa" fill="#eef0f4" height="40" rx="7" stroke="#d6dbe4" width="175" x="410" y="242"/><text data-page-node-id="jpQWfJljncQthdJCZUtLTf" fill="#4b5563" text-anchor="middle" x="497" y="260"><!--pnid:pST7RHKwoCfMfpuvQrOwcs-->2025.9 专利：SDF+引擎</text><text data-page-node-id="d5618gSGpI1YVH9z84jtPM" fill="#8b95a5" text-anchor="middle" x="497" y="275"><!--pnid:MkXW2y5PKmS1RcCcL0f0ei-->规划中的重建式渲染</text>
+        <rect data-page-node-id="GVno38xKoNe8FjhgTtZG0u" fill="#fff0f3" height="46" rx="7" stroke="#e31937" width="263" x="605" y="238"/><text data-page-node-id="Nb4m1htWDE6ayyygvXeHu4" fill="#e31937" font-weight="700" text-anchor="middle" x="736" y="258"><!--pnid:sKALs9rLIpr1rub91aumsQ-->2026.11 V15 生成式扩散渲染</text><text data-page-node-id="Eoxmf3hdUlaULQMKsfnbEA" fill="#4b5563" text-anchor="middle" x="736" y="276"><!--pnid:KPtrJbpcp7iosAOUVuwsa5-->抛弃游戏引擎，模型直接画</text>
+      </g>
+    </svg>
+    <figcaption data-page-node-id="XXOBd4k2dVltoQW5FGj7HV"><b data-page-node-id="CfQ10zHamHqKETBavVDXom"><!--pnid:1icmgZjzJpsDudkIbQ3ZZO-->图 6 · Reality View 的扩散渲染流程。</b><!--pnid:Ct990UyGpfGGOyK695cM3q--> 它原本计划走"游戏引擎重建"路线（2025 年专利），一年后落地时却完全抛弃了那条路——改成模型直接生成。</figcaption>
+  </figure>
+
+  <h3 data-page-node-id="a32eTuuW9xhuO0qC1aa3E6"><!--pnid:GyJF39TjkaGWsyu5okVFA4-->最反直觉的算力账：画面越逼真，反而越省</h3>
+  <p data-page-node-id="b6OnhTw0Ebh8HtiSzdSpWW"><!--pnid:JPrKAGzyNzLDUwPup21aaZ-->按马斯克的说法，渲染只占用 AI4 一颗芯片里<strong data-page-node-id="b0C8isgIpMHE8V7sTvYDbv"><!--pnid:jax621ZvwVkuM4VPNIsYJn-->半个 TRIP 加速器</strong><!--pnid:qGjVLMxPv0MmMklMNecUx2-->（AI4 双 SoC 冗余共 6 个 TRIP 核，即约六分之一的单芯片神经网络算力）。特斯拉 AI 芯片工程师甚至说，把微型解码器塞进片上缓存（SRAM）后，逼真画面的算力消耗<strong data-page-node-id="5R0NRK5i5YC378A5D54vX2"><!--pnid:5glgHM60SS9uVkyq23ihcw-->比 2020 年的简陋线框可视化还低</strong><!--pnid:R53FO4NkMALEvyqKKJn91l-->。</p>
+  <div data-page-node-id="4Yih8NMQVChkfZqwGojLPp" class="note ok">
+    <span data-page-node-id="cbwxp8ZkLGUpufltlbqCIB" class="t"><!--pnid:OFl34H5zNvAwNtRSGdu01V-->为什么能做到？</span><!--pnid:rMQjWBQORPY1pEIkSAxne2-->
+    因为它<strong data-page-node-id="pabV5qytoNbV7J7JIKJCx4"><!--pnid:UmEN0MNIIBlycE2lTnwuNd-->复用了驾驶模型已经算好的视觉特征</strong><!--pnid:6fAgkiQLtvWXGvloS5Otgu-->，不必再让渲染管线"单独看一遍路"，省掉了传统方案中"感知结果→传给渲染引擎→贴图打光"的反复数据转换。这正是软硬一体深度协同优化的功劳。
+  </div>
+
+  <h3 data-page-node-id="aBbGncQZkgMsJN2zvRrhzj"><!--pnid:QkbHxuj8S0gi0IUsEkF6bd-->但别被画面迷惑：三个必须知道的边界</h3>
+  <div data-page-node-id="o86dl0DxNHLj9YOTq1XdM6" class="grid g3">
+    <div data-page-node-id="jn7fyekAJv6Mhmin2yXABC" class="card" style="margin:0">
+      <h4 data-page-node-id="G4VNvIaGBeHDiFtzfvqHoA" style="margin-top:0; color:var(--amber)"><!--pnid:z6vZ7sDN06WV9SARQADQgv-->⏱️ 有延迟</h4>
+      <p data-page-node-id="MwFcboDJq0xQV3xWz14ClP" style="font-size:13px; color:var(--ink-2); margin:0"><!--pnid:qwVLx57pNcYJUwwYVMqf9E-->外媒实测画面比车外实景慢约 <strong data-page-node-id="I8HhxQGXFZYs3rC3vLFw9D"><!--pnid:8uNi63kwhlrZnMsJawiFPq-->1 秒</strong><!--pnid:Z3CtLf2Rj6Gt7Vfur9qPac-->，马斯克承认延迟偏高，计划把 UVE 特性穿插进扩散 Transformer 层以削减约 35%。</p>
+    </div>
+    <div data-page-node-id="uPHv6pfc2Qw0Ac4IcCbK6l" class="card" style="margin:0">
+      <h4 data-page-node-id="JpRadDNjsbqEjDYTPhyM0n" style="margin-top:0; color:var(--red)"><!--pnid:v5ke8SB8QHaAVHvCL2wXrc-->🌀 会"幻觉"</h4>
+      <p data-page-node-id="wgM9Iye8Gp8eLEOcO3vaB1" style="font-size:13px; color:var(--ink-2); margin:0"><!--pnid:FzLtrGzGtgzjZDgx1f616v-->被遮挡区域可能被模型"补全"出现实中不存在的东西。生成式渲染天然带幻觉风险——<strong data-page-node-id="ap4jAZjexHUgGO9DqbIfj7"><!--pnid:JK2wqtOcLgAV3DMp7gXdWY-->画面好看≠看得准</strong><!--pnid:AM0eNC6CEJ91dc9x6jXmAT-->。</p>
+    </div>
+    <div data-page-node-id="PlBaMPiiDxNtxb2j4qE7sk" class="card" style="margin:0">
+      <h4 data-page-node-id="60ek6xbj1R2tVBwYGQc4IL" style="margin-top:0; color:var(--blue)"><!--pnid:Ei80iyF0o3qqaz6YZPjtIk-->🎭 可能分散注意</h4>
+      <p data-page-node-id="nqYsQ6gk7YXTpeNqur5uSu" style="font-size:13px; color:var(--ink-2); margin:0"><!--pnid:3qgaMPHRlUgCXo79DEozHj-->斑马线、红绿灯这类平面元素"贴"得很真，反而看不出 FSD 是否真识别到了。评论者认为它可能分散驾驶员注意力。</p>
+    </div>
+  </div>
+
+  <div data-page-node-id="AU8jGKhl0RjKf83PFQNkeX" class="note crit">
+    <span data-page-node-id="S4gJVe8MPHOOMjLsGxxxSp" class="t"><!--pnid:QU3vEEFIoHEr07zHS6e0ju-->一句话定性</span><!--pnid:chDR8EyNwszYnJQTsXIukM-->
+    Reality View 是<b data-page-node-id="j4EI7s8TN1IJIRviFKVgO6"><!--pnid:z8Nu27ER77i8VZRM02z7rI-->人机信任层，不是安全层</b><!--pnid:l42Z79wlpSZNcjmrCK3Ob2-->。它让人第一次能"看见"FSD 的推断过程，但把它画面的逼真度等同于驾驶能力，是对这套系统最大的误读。特斯拉自己也留了后手：提供隐藏可视化的 quiet mode，Robotaxi 上则提供只显示车速和下一转弯的 Calm 模式。
+  </div>
+
+  <p data-page-node-id="IXHDXOykh2fLmljbaTw24h" class="src"><!--pnid:hdc13ymcBDSgeYvJVrzhIs-->补充：技术社区对具体渲染路线仍有争论——一派认为是网络直接输出高斯基元的 <b data-page-node-id="GQhmpsWoItjKFDR4DZIjSp"><!--pnid:3y1wgptwJiphos5sfdPzVS-->3DGS 路线</b><!--pnid:LAxdkL3ffSPPakc64vlsrt-->（据称约 220ms 生成一帧），另一派认为是逐帧生成的<b data-page-node-id="U9hVT2MmSeQG6iXQj8coNC"><!--pnid:Gg9ZRyp6gcsylJ1WDukltg-->视频扩散路线</b><!--pnid:E98GQuSqbt0ookAQfrqpXl-->。已知的边界条件（上一帧条件化、无引擎、特征引导）更符合后者，但这属于推断，特斯拉并未确认。</p>
+</section>
+
+<div data-page-node-id="qxnaEpMsWFNftnyTuYyoeU" class="divider"></div>
+
+<!--pnid:K0DcjXaG1dd6k4HCgJKiWS--><!-- ============ SECTION 6 ============ -->
+<section data-page-node-id="DaeNDK8LnAloqe3wpOtF3b" id="s6">
+  <div data-page-node-id="jyxmhAboGRa2CzBJMWro5R" class="sec-head">
+    <div data-page-node-id="8Tx3PJuPtFvwLImEjcVwPx" class="sec-num"><!--pnid:RAk7BSrbQui5hYcgmSHUpJ-->06</div>
+    <div data-page-node-id="z7e6QhOX7WLETVzjO7uDTF">
+      <h2 data-page-node-id="lGecOOTG66CuZkjadIZMGp"><!--pnid:Bi36gNPiYf5Pdf1Y7hCIJF-->四代演进：从 v12 到 v15，三年三级跳</h2>
+      <p data-page-node-id="gG2IcqL0Typ2mvdMmiGOyu" class="lead"><!--pnid:qvkcMH1Kbc4nwYTQXIqhkC-->V15 不是凭空出现。把它放进时间轴，才能看清特斯拉"一年一代、每代换一种提升手段"的节奏。</p>
+    </div>
+  </div>
+
+  <figure data-page-node-id="TzAhKUBmuZMpSimP15cQLy" class="figure">
+    <svg data-page-node-id="OYqpehWBi5dULOKkghFuCL" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 290" xmlns="http://www.w3.org/2000/svg">
+      <line data-page-node-id="0RMcgo3vwABgaOJCt50a5L" stroke="#d6dbe4" stroke-width="3" x1="70" x2="850" y1="150" y2="150"/>
+      <g data-page-node-id="8wpZgjyYvKKHfpDeHO7oVN">
+        <!--pnid:N2sKzZ1K6n24SSHJE5Wf5Y--><!-- v12 -->
+        <circle data-page-node-id="fGhvYBEZxL7WhKMo6VQjq7" cx="130" cy="150" fill="#8b95a5" r="12" stroke="#fff" stroke-width="3"/>
+        <text data-page-node-id="cAQDa5GxZuZs7arMb270Op" fill="#8b95a5" font-size="14" font-weight="800" text-anchor="middle" x="130" y="112"><!--pnid:zReyBC8BZLkz28hGkV9ugm-->v12</text>
+        <text data-page-node-id="soz3m2cZiAscWzaKBFnP7H" fill="#8b95a5" font-size="10.5" text-anchor="middle" x="130" y="130"><!--pnid:jDMDfRDhUUKN2aG0sFokVu-->2024</text>
+        <text data-page-node-id="HBApvRRxAUVGztz6ozdD77" fill="#4b5563" font-size="11.5" font-weight="700" text-anchor="middle" x="130" y="192"><!--pnid:WMBoxkkeP2n3gyK8iBm3oN-->破局</text>
+        <text data-page-node-id="zBeZ3ACxJbyo9qw5KFWemX" fill="#8b95a5" font-size="10" text-anchor="middle" x="130" y="211"><!--pnid:PfJetRhutaJft8J0uNuuK0-->干掉 30 万行规则</text>
+        <text data-page-node-id="ZPLRt1AoDV1ffE0JciAzNB" fill="#8b95a5" font-size="10" text-anchor="middle" x="130" y="226"><!--pnid:bWEWKuU43Psr07DOLtEPjv-->~200 英里/接管</text>
+        <!--pnid:6I0DA1YUZHDUAq60tP0jdt--><!-- v13 -->
+        <circle data-page-node-id="nfFcuZC1EIxbcx0d5PEodw" cx="360" cy="150" fill="#2563eb" r="12" stroke="#fff" stroke-width="3"/>
+        <text data-page-node-id="Mp2t8kJga9EI1nvPLdP4QR" fill="#2563eb" font-size="14" font-weight="800" text-anchor="middle" x="360" y="112"><!--pnid:gdZKs4SJNQQK1nVjaDTLsI-->v13</text>
+        <text data-page-node-id="KUUdztuDhAWG5tmOH33obp" fill="#2563eb" font-size="10.5" text-anchor="middle" x="360" y="130"><!--pnid:SME6godlX7Z2te1hzlzQP3-->2024末–25</text>
+        <text data-page-node-id="0YS7dhwQEjYz6WTIb5ljdy" fill="#4b5563" font-size="11.5" font-weight="700" text-anchor="middle" x="360" y="192"><!--pnid:n7IdqyYLErVyFslt6VLSoV-->提速</text>
+        <text data-page-node-id="epTs3nuy1iaakqTksX3eRa" fill="#8b95a5" font-size="10" text-anchor="middle" x="360" y="211"><!--pnid:HQJQ2vRt1xoi7ob9hK84jH-->36Hz 高清输入</text>
+        <text data-page-node-id="DjLzUzpXN0q10w7KK7BX6h" fill="#8b95a5" font-size="10" text-anchor="middle" x="360" y="226"><!--pnid:zy94lA0TXUIybCxlBtWjpU-->~400 英里/接管</text>
+        <!--pnid:KKaDc8kyNdT9KZBFPnaSfH--><!-- v14 -->
+        <circle data-page-node-id="77C5C7YOpzlYBgEFnb6FjN" cx="590" cy="150" fill="#7c3aed" r="12" stroke="#fff" stroke-width="3"/>
+        <text data-page-node-id="WOMtnL8uUuRwiTGP237dL2" fill="#7c3aed" font-size="14" font-weight="800" text-anchor="middle" x="590" y="112"><!--pnid:ZVpIyP9uQuXbKcFQNilrO4-->v14</text>
+        <text data-page-node-id="lrz42xGnyiNpLv7tzo3O3y" fill="#7c3aed" font-size="10.5" text-anchor="middle" x="590" y="130"><!--pnid:3mA4BDrj9hsVoxkr6hm3LI-->2025末–26</text>
+        <text data-page-node-id="0JYzR2Xo5mWvIM5SeckoEG" fill="#4b5563" font-size="11.5" font-weight="700" text-anchor="middle" x="590" y="192"><!--pnid:SwcHSrcH7A8TYiuvteVUXv-->推理</text>
+        <text data-page-node-id="R6vtqbHvhhUW8EeIp6Y8uN" fill="#8b95a5" font-size="10" text-anchor="middle" x="590" y="211"><!--pnid:lpvaGh5pADBOKpXHQJN7WQ-->强化学习+编译器</text>
+        <text data-page-node-id="1c6WJcPqd2Mrm21dRbKvqz" fill="#8b95a5" font-size="10" text-anchor="middle" x="590" y="226"><!--pnid:rCHX4cviGfQTiAQRCOVREj-->~1454 英里/接管</text>
+        <!--pnid:XdXKSevxPRBnmFuObPot5s--><!-- v15 -->
+        <circle data-page-node-id="eiXecnY7TPwbGXjtrk95tM" cx="810" cy="150" fill="#e31937" r="14" stroke="#fff" stroke-width="3"/>
+        <text data-page-node-id="jUZSAyaePZLRf6Rv47u3UP" fill="#e31937" font-size="14" font-weight="800" text-anchor="middle" x="810" y="108"><!--pnid:2HlLZ9TQW4VW6x34fV5PQB-->v15</text>
+        <text data-page-node-id="sYcWZ9AXVHlMjcfqLAaZBm" fill="#e31937" font-size="10.5" text-anchor="middle" x="810" y="126"><!--pnid:aPoS98X5lCh3LgagKBJ48A-->2026.11</text>
+        <text data-page-node-id="Lc7lXT2eUboSqHzS2xJ3Ja" fill="#e31937" font-size="11.5" font-weight="700" text-anchor="middle" x="810" y="192"><!--pnid:mp8nhHS0C1rdQjjyVqtE7G-->重构</text>
+        <text data-page-node-id="KRpTriXyW3pqlWT4GzMJme" fill="#4b5563" font-size="10" text-anchor="middle" x="810" y="211"><!--pnid:20HJ2NKy9PlPkYfATsCEw8-->百亿参数+世界模型</text>
+        <text data-page-node-id="isAI1aFj6R9Z1YykwPEsnM" fill="#4b5563" font-size="10" text-anchor="middle" x="810" y="226"><!--pnid:En0a1y6MCaVzpuAnSLk0Je-->官方称 25× 改善</text>
+      </g>
+      <g data-page-node-id="ULUj6J6A6VyM7hDmuzRWYw" fill="#8b95a5" font-size="10.5" text-anchor="middle">
+        <text data-page-node-id="MbRi70DS6ThNXId8s4hp3Y" x="130" y="264"><!--pnid:B5sx7nIiCUUnDzsskXbTKi-->堆规模</text><text data-page-node-id="UcPrBI0bZ435FmW9ZV3RUF" x="360" y="264"><!--pnid:mZn7VwxSmBnJHS0jWRcORA-->吃满硬件</text><text data-page-node-id="pC8Ybm28hZuRKrpnxlSMYV" x="590" y="264"><!--pnid:fyR7FsESbcwJUomSaVDKfc-->改训练法</text><text data-page-node-id="i6PHNc2X7VUCZDDoIRSC57" x="810" y="264"><!--pnid:NW4SaMqKIB6mTLaVWddbrV-->换模型底座</text>
+      </g>
+    </svg>
+    <figcaption data-page-node-id="84STS7duh12nhdNea0WWbj"><b data-page-node-id="d4h6iTMmdMMYob3MRWQqBw"><!--pnid:DgPOFMyqEdBiwvVoRYJDTs-->图 7 · 四代演进脉络。</b><!--pnid:ivqXdR793Es1XxRtae3ghv--> 接管里程为社区众包 / 追踪数据趋势，仅供示意，非精确实测。V15 的提升手段与前几代明显不同。</figcaption>
+  </figure>
+
+  <div data-page-node-id="8GNxjxmALTaDQhDMl4JPlR" class="tbl-wrap">
+  <table data-page-node-id="m5II3vjfUBBp64dXpw490n">
+    <thead data-page-node-id="fMNVejzKP0HngsCDqKTS9i"><tr data-page-node-id="g7m0nKwoiylFTfzmtsb35I"><th data-page-node-id="ZtWd7icdhpffSiuUVpb075"><!--pnid:jiKXOkwty2DVNTQGb1QGK9-->版本</th><th data-page-node-id="MUkVPKmIfUeW0HflAZvFR4"><!--pnid:zZYM65u3kaCZDAMEPUCkbF-->核心手段</th><th data-page-node-id="qZ5jdBc7epM20rVyRPH0rd"><!--pnid:XEn74v3rn0Vli78Zg7HT3c-->关键变化</th><th data-page-node-id="z9Psm1e9RtUbUDszn19jVK"><!--pnid:vppxoppmza7jMENem8AEyZ-->提升来源</th></tr></thead>
+    <tbody data-page-node-id="8RSK8KC9ee4gIU2VamSUbF">
+      <tr data-page-node-id="nF0BUPXINLwx0oxUVKDih0"><td data-page-node-id="AfRuV2T4CFmRIRWuwbB6Sg"><strong data-page-node-id="7eDSVkaYYlFPerJzGaob7E"><!--pnid:jxOSifeyJOdeAB62llKtUx-->v12</strong><br data-page-node-id="HMMyhVjKkOILBb4LTl4mZn"><span data-page-node-id="dwLf1IUox76KNsToHKcyM1" class="pill n"><!--pnid:I56QeaIAk9HeANx64Zw0Xo-->2024</span></td><td data-page-node-id="RQARwsO4Io3vJhp66pjSc0"><!--pnid:WhLcSDstaGG3E9KmNbprcZ-->端到端破局</td><td data-page-node-id="GbWL0OWmji7Zmkx4UReXce"><!--pnid:R6T94LgdgQYshc9eXuzBZl-->用神经网络取代约 30 万行 C++ 规则代码，摄像头直接进、方向盘和油门直接出</td><td data-page-node-id="pHFpjHDP4yYbuWLJNv5pdL"><!--pnid:gelfLSkzCuxhLCNrpQIxs0-->架构范式改变</td></tr>
+      <tr data-page-node-id="l2T4cu7fPGxnIjl9ecAbh7"><td data-page-node-id="2Utt5QHyrq5Opc07Hj3QYs"><strong data-page-node-id="2xdyye1HqTuyyhlpFzUXM3"><!--pnid:j4A2iSpqxPTikywyBgrQ2y-->v13</strong><br data-page-node-id="7jj3VTzxXQOT2iaEySxRSx"><span data-page-node-id="FWtw8I5UKkdapDbsRVov9k" class="pill n"><!--pnid:yPKtfrGXwAHAWyiWXXivkg-->2024末</span></td><td data-page-node-id="Wkmp9B9mvIHUm52Z1Pow9R"><!--pnid:og0c71J1PW9GJ7plUMgXxA-->堆规模</td><td data-page-node-id="ujLwIkJvJ6u3e7ZRmToL2x"><!--pnid:uwhxmGwaZuhqpEK0YDA3DY-->原生 36Hz 全分辨率 AI4 输入，模型/上下文各扩大 3 倍，数据 4.2 倍，打通"车位到车位"</td><td data-page-node-id="k18PCBF7cVBNjVWaXjnuNY"><!--pnid:DOTNyT0YdaOoT0gutohmmg-->数据 + 训练算力</td></tr>
+      <tr data-page-node-id="vJSr9IfnPgwLA2l704pb18"><td data-page-node-id="8VC9clpNrWEHOPdTRBM3lm"><strong data-page-node-id="cXFs4RZ8bVa5OAfrSXPkc5"><!--pnid:wuc1MZlFk7Da1hbWUbgYA9-->v14</strong><br data-page-node-id="fh8rTYzEebgIHIiUvABFEj"><span data-page-node-id="gIiR6ahjrHsHtTMWE4wk6c" class="pill n"><!--pnid:K4rlJPAAfSBmjsbXdPJnvQ-->2025末</span></td><td data-page-node-id="ncqVr6YFnRzBdjoqNHSTBS"><!--pnid:TOO2ExooXTX7rgGTW26rsL-->改方法 + 提效率</td><td data-page-node-id="6PWTAuurzOnx6Pcdb2KpSf"><!--pnid:orcdGNb6WktWPzPVqSoE46-->引入强化学习专啃难例；用 MLIR 重写编译器使反应快约 20%；新增驾驶性格档；同代还蒸馏出 HW3 可用的 Lite 版</td><td data-page-node-id="P5qH33j6tq2REFk30VqKUJ"><!--pnid:ZdzzyaG1oHrSw7bdovihgG-->训练方法 + 编译效率</td></tr>
+      <tr data-page-node-id="jwIOrdtDZJM7DhzktV0ewl"><td data-page-node-id="K8ZCxfqNgNLw4VcwF2h5ri"><strong data-page-node-id="XSWyihZdZC3VDJatVgQ1Kf"><!--pnid:UfjRPkQgYz60YVd1uqGyN2-->v15</strong><br data-page-node-id="Gu2wOGURe9wJfPWIgc70xc"><span data-page-node-id="KB7vsDQgBL5KNqFgyzFYD6" class="pill c"><!--pnid:BkoQTcOJPb6JewLVNgyDKp-->2026.11</span></td><td data-page-node-id="a3uzadjOtoM7q7oNX6dOfk"><!--pnid:YxGGaQqmhA25lRwi6IAv1j-->换模型底座</td><td data-page-node-id="K3z3QG3b33717E3l0Eeg37"><!--pnid:erqQ2SkX2LTiQpE8sWCURd-->互联网视频预训练的共用视觉编码器、十倍参数、世界模型、生成式 Reality View、端到端导航</td><td data-page-node-id="drenMp6zwQxfNYdLk5D7ff"><!--pnid:8KIHqFoLEK1H7eqszCWnTg-->模型底座 + 世界模型</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div data-page-node-id="v3J7M13YIstlt60zRnvse4" class="note">
+    <span data-page-node-id="Lsqqojre62gNbLEkBzW0Tp" class="t"><!--pnid:S3JXSIZfXa16eDyEq46LDC-->一条隐含主线</span><!--pnid:XHw0GVLJjOY2ijY5nlUg1f-->
+    同一块 AI4 芯片从 2023 年装车至今<strong data-page-node-id="OcblFQVnRPTRtmjZdZXdym"><!--pnid:fsH5FFAfsfoj0CnhGQ4VMr-->没换过</strong><!--pnid:ew5PB9nL4SP8q5I86ku1IO-->。V13 靠堆数据、V14 靠改训练法和编译器、V15 靠换更好的模型底座——三代用了三种办法挖潜。到 V15，<strong data-page-node-id="VpPs7BvyuMrwXsGI1VXKgh"><!--pnid:DSoEBFLhD6OPjfTrzt7YaH-->这块芯片的算力余量已接近见底</strong><!--pnid:1EQ1KwA3ha9808oe8X1DrA-->。这意味着后续提升越来越依赖云端训练能力和模型设计，而非单纯堆车端硬件。
+  </div>
+</section>
+
+<div data-page-node-id="hQnnLs5ZtiufmioHeEOFB0" class="divider"></div>
+
+<!--pnid:IVaUbfPtS73ZPFjYeS9KL7--><!-- ============ SECTION 7 ============ -->
+<section data-page-node-id="QjvPrbeOriWs2MHq8oSfFB" id="s7">
+  <div data-page-node-id="ylS9mihJtGggTeA5SzgaC5" class="sec-head">
+    <div data-page-node-id="Ff9HKrB5FejGRarskfkAUo" class="sec-num"><!--pnid:n5Kyq1CXL3YSRCPfDejzqT-->07</div>
+    <div data-page-node-id="YVhNvnflBhMdfA9a1PP7A5">
+      <h2 data-page-node-id="7vacg3N2jsaMtz5KkkchIr"><!--pnid:p27M36CbE2zFTSr5olESJZ-->V15 功能升级全清单</h2>
+      <p data-page-node-id="5hwmZEgMwYbwhZZM8NkRzZ" class="lead"><!--pnid:7S8bFhLpfkum6odAEhE6Xj-->把官方发布说明逐条翻译成大白话，并标注每条的性质。</p>
+    </div>
+  </div>
+
+  <div data-page-node-id="BTb7OMTioOp9inUTDyv85b" class="tbl-wrap">
+  <table data-page-node-id="N4AVrngatJtYBtViPz1CK2">
+    <thead data-page-node-id="Fue2nfvNReGzdNCmqeIPUC"><tr data-page-node-id="w2YpRDv0l9eyERgVqcpkdJ"><th data-page-node-id="Rs7ZwA1SMC0lNXSxccrfHD"><!--pnid:HPEvBv9yRSDMeVxhTRiZ79-->升级项</th><th data-page-node-id="qSQeOdj76OZ91j4b7A4Mu9"><!--pnid:Sq3XLvip4cxGWzvCZYfxUe-->大白话解释</th><th data-page-node-id="VmU0eWoQ02MpiXmrBAULa2"><!--pnid:tT5IbkVWBcQvGajTHYaSRa-->性质</th></tr></thead>
+    <tbody data-page-node-id="7URJhIg3dSYtanHcSXYvZg">
+      <tr data-page-node-id="ErlZNi2y8AnnOVqnFr8W6K"><td data-page-node-id="rEjTK6S7M63FAyhUCRptuE"><strong data-page-node-id="qqY4mL8szdBFI5zpDolG7n"><!--pnid:pwyUs5zvetRZ1ByKFXY1wB-->安全关键场景 25×</strong></td><td data-page-node-id="ARpUL8RfVDzMkGy12Mm0up"><!--pnid:JAvWJKRSls0hIpiSujtXRY-->官方称关键干预率改善 25 倍——但基准、测试里程、"干预"定义都没公开</td><td data-page-node-id="qbyYrX924XL6WtAUJw4pn7"><span data-page-node-id="fsHA6lhKEnxKdYsUluVbEU" class="pill c"><!--pnid:FiOzmZlPWD9wbeCG1LBBVi-->厂商口径</span></td></tr>
+      <tr data-page-node-id="8nuXmhQmO4aTUpDQCUlO4v"><td data-page-node-id="goA8FQs4HkhkpqoH0vuXId"><strong data-page-node-id="Imm8HjliNPooi7amAjSeLL"><!--pnid:T8IiPtGUPt2ch6DeMYtduY-->新视觉编码器</strong></td><td data-page-node-id="f4gDayhHF3I9fl4SaozmF2"><!--pnid:A74WbfBJOKrzhKMUIaRD9e-->用互联网视频训练的"眼睛"，FSD / Robotaxi / Optimus 共用，认得更全</td><td data-page-node-id="2EdWtieCmPyA0wubWTqd5W"><span data-page-node-id="367etlnOUVGCPeEg07eAh2" class="pill v"><!--pnid:UO5Aa2CQsOpIIVmT9M48tA-->核心能力</span></td></tr>
+      <tr data-page-node-id="xigjYddu1406KkaEBIp4yv"><td data-page-node-id="frEeB7invl5ByfPY9MqOaa"><strong data-page-node-id="5fHQEV8KgIFDYDf1payAAq"><!--pnid:pkxFBaSrdjQswVHlyzIDl5-->Reality View</strong></td><td data-page-node-id="vGgU1J5SLS1FVEI6QS0YBe"><!--pnid:wNYpCzQppIl5LaCnrSPTWB-->中控屏出现写实的车顶俯视 3D 画面，能看出车打算怎么走，还能点屏幕指定目的地</td><td data-page-node-id="urpLC577oZ2s0RG7s7PnwF"><span data-page-node-id="MZF0caBm2pfVnDAQ7qfJOM" class="pill v"><!--pnid:wiFH21mSLZnNEeea8pPCpF-->核心功能</span></td></tr>
+      <tr data-page-node-id="UX9AxFKasXNCAqtXNkS09o"><td data-page-node-id="PfFXq0kdovrV3DoKz9HnqY"><strong data-page-node-id="Q2W7L0ZJReCTC1ccxYpHCm"><!--pnid:jwfgKCckjMmTutMVntuzp5-->端到端导航</strong></td><td data-page-node-id="qIMephjqhBb9rjr30nHHq4"><!--pnid:RQTeB0s1VztVCLA9H5VVdR-->起终点路线不再死板按地图走，而是学了车队司机的偏好；后续扩展到全程</td><td data-page-node-id="3l7NshTRohP6VeHofSzTce"><span data-page-node-id="KzwPHG4bkIbluLalXm6dxt" class="pill v"><!--pnid:MIEuTT8K6iK0STTAczUnpC-->核心功能</span></td></tr>
+      <tr data-page-node-id="Vfm1QioRs99DmdmhItZMOL"><td data-page-node-id="t5ik63nupN61gXI1GIJNih"><strong data-page-node-id="oXW97LuEWmQrBR220cbX5f"><!--pnid:91RzkAjzxDt3Unaofo564C-->个性化泊车</strong></td><td data-page-node-id="hzqTmcR4EhOpZ5BAhemcZc"><!--pnid:2nSraAOSiAdsRZUkSeKaDv-->记住你习惯停哪，到达时给出多个停车选项</td><td data-page-node-id="q1FnGTS88odL916e16uvSK"><span data-page-node-id="g65yd5N2pWCKMICH4BmO5h" class="pill n"><!--pnid:5gonUqYN1IVOZSz938CEEi-->体验优化</span></td></tr>
+      <tr data-page-node-id="2FkqH8O8amoWr1N0Afkze0"><td data-page-node-id="3GCvIrzYJMoglx8bgaPn0p"><strong data-page-node-id="ROTWfLb9N9VLdIL2xBj36Q"><!--pnid:E1g8Z9j0PdtaIMKexNP8a5-->长尾识别增强</strong></td><td data-page-node-id="nUFjdUQFmNqz16JIcQiPnA"><!--pnid:1gZ6UGQVswlnkUQT9RNJgG-->路牌、小动物、路面杂物、铁链、坑洼、深积水——认得更好、会避开</td><td data-page-node-id="1pesQV6G4REi2NnAjJ7f9B"><span data-page-node-id="m93rtQ3VMXCMT2GSaZHS78" class="pill v"><!--pnid:aGgjyOo8kkrSZSN87CDX1B-->安全相关</span></td></tr>
+      <tr data-page-node-id="bwqUH47FRE1SIZE5MjRUJT"><td data-page-node-id="QuoEDKqOl4CZY5C9vU2LHj"><strong data-page-node-id="MHZP6utGwr3gSyEXwgqr8S"><!--pnid:M67r5SOc1appIl1DDgI6Th-->速度控制</strong></td><td data-page-node-id="i5qokQVpEQtZ85ObeQdFoj"><!--pnid:i1ncXhE8x38P8ebvbQMZ4F-->按驾驶风格、学校区域、限速、恶劣天气分别调车速；遇测速摄像头会减速</td><td data-page-node-id="yJkssBpQ9G2nF2Ji5e576Q"><span data-page-node-id="YpBuLSdQF4o62NEfhkiahh" class="pill v"><!--pnid:Ql9FBtPdBXryJDtXDsW7JW-->安全相关</span></td></tr>
+      <tr data-page-node-id="EsNIS1qrbR1dbS1ZChtX8D"><td data-page-node-id="G3UsJ0V0rQISaRLYT3Ku62"><strong data-page-node-id="lkupvqkujcePWEvfZPNiil"><!--pnid:I3WBB0gGtYBUA7MWIDWz9v-->测速摄像头减速</strong></td><td data-page-node-id="XxASZxuD4MvmO4hTCoB2QU"><!--pnid:wgqQfhcFO2bEyO73jGVSiF-->检测到摄像头自动减速；踩油门可取消；同一摄像头取消两次后车辆会记住不再减速</td><td data-page-node-id="J6VTgA2IDJuCb96jEtpbmj"><span data-page-node-id="XeW8FRIm3x6Z66bqrt3smP" class="pill n"><!--pnid:JkzeE80CpxdyQjFn5nvyZq-->争议功能</span></td></tr>
+      <tr data-page-node-id="P7FvcaWRHdbHFYBEEQswGR"><td data-page-node-id="dpBFIRCLDBiqgLNXOX4658"><strong data-page-node-id="l3P9dc6e2syiVE72Yeqkha"><!--pnid:xNecrqCuL1wJZ2UrHvptnN-->驾驶员监控增强</strong></td><td data-page-node-id="NeMoBiaoQg3i35sDFVhZ2s"><!--pnid:XhkLwIZgG4aSdfQr7ZFhw9-->戴帽子、墨镜时注意力监测更可用；高速驾驶档下监控放宽</td><td data-page-node-id="LlNyikCzAKLCtx8Oymt9DL"><span data-page-node-id="jGD5YXPwaWJRu7sehRQEXT" class="pill n"><!--pnid:EpYPEjTiN4dwVFl9c0Vzse-->体验优化</span></td></tr>
+      <tr data-page-node-id="IhhnrPibMJivz8Xu4aW3N4"><td data-page-node-id="cPKnO0AJW20q0vd4i55H81"><strong data-page-node-id="X0EEf6YK3rDcYsA59oONV6"><!--pnid:vUujSDXwXPpipvJfz2zRdY-->Bike Rack Mode</strong></td><td data-page-node-id="SmgDJKXy6h9oO9EHynluZV"><!--pnid:oiJyuK4A67eIHFKd6ahT65-->装了自行车架等拖钩配件后也能开 FSD，但到达时只靠边、不倒车，自动泊车和召唤关闭</td><td data-page-node-id="0PIlYjKdNJ20lNhPzyYJIY"><span data-page-node-id="OPOmKaMlo19v6ICgHWDsen" class="pill n"><!--pnid:bnOyrZgiLwbCcY81bjh7tT-->场景适配</span></td></tr>
+      <tr data-page-node-id="lJG9e4rUgYeJGqPV7n8Hq0"><td data-page-node-id="nCF5UCrk4dhcelJUDPBRT3"><strong data-page-node-id="VMnestXznlRORQep7v8L8V"><!--pnid:Y3nSIJkS3lA6EOxRwRbLu1-->Autoshift 统一</strong></td><td data-page-node-id="SrINrgIPR5T7Kgd2qCWUFj"><!--pnid:WJ8yxNilRwSSvNCdv9VVeE-->换挡逻辑与 FSD 的档位预测合并，减少顿挫和误判</td><td data-page-node-id="8NDltge2t4PbZytXyE0xni"><span data-page-node-id="LLThVmpFt5ooq3jNQvz6Sz" class="pill n"><!--pnid:Rc26PFbkhH4ZFdHtCUMGZ9-->体验优化</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<div data-page-node-id="7VCoK7gQ8i1iKRirj5e1QU" class="divider"></div>
+
+<!--pnid:hff1ppj2MEzE6sHrVkod0U--><!-- ============ SECTION 8 ============ -->
+<section data-page-node-id="rkad5E8wu6EaNbkS07t4Sw" id="s8">
+  <div data-page-node-id="rIEXetoL42hgfTgUsOe0RK" class="sec-head">
+    <div data-page-node-id="vXDDorzlvq2U9hbA57Ea7g" class="sec-num"><!--pnid:n4Uq6bsQ9ygEXPAZ1hSOj2-->08</div>
+    <div data-page-node-id="mOGibPyE5UYJT0LjwocYhq">
+      <h2 data-page-node-id="miAntkA7191QOZqm38HLcC"><!--pnid:WlXpcralJOwKjS3KLffMfp-->硬件底座：AI4 还能榨出多少？</h2>
+      <p data-page-node-id="kM789PgBmCbS3uubWPAGlo" class="lead"><!--pnid:c6T4Jw0RejJAmDAWmyQYop-->理解 V15 的能力边界，绕不开承载它的那块车端芯片。</p>
+    </div>
+  </div>
+
+  <figure data-page-node-id="vo2ULt2RQJaQVduiIhZb7q" class="figure">
+    <svg data-page-node-id="xBCIopYL73KBqnfg6jicXl" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+      <!--pnid:JM7j6aG9EPoXt6pnBH9odD--><!-- AI4 chip package -->
+      <rect data-page-node-id="INxurNkPBZjcO4bDIZUAmt" fill="#fbfcfd" height="220" rx="16" stroke="#2563eb" stroke-width="2" width="520" x="40" y="50"/>
+      <text data-page-node-id="mIBAojHzU3Kwnrrb7VVuRq" fill="#2563eb" font-size="14" font-weight="800" x="60" y="80"><!--pnid:ikOWid4noCpnxDW0B383Q0-->AI4 / HW4 芯片组</text>
+      <text data-page-node-id="8179r1DtmqbqNq1APHPjEG" fill="#8b95a5" font-size="10.5" x="60" y="100"><!--pnid:e9W84YBMHljc1w0nzJ7gpi-->双 SoC 冗余 · 三星 7nm · 每颗 3 个 TRIP 加速器（共 6 个）</text>
+      <!--pnid:K884SmM50s8z1yFgo0nZzI--><!-- SoC 1 -->
+      <rect data-page-node-id="O8MpiY3yDOetZ497gwaiUZ" fill="#eef4ff" height="130" rx="12" stroke="#2563eb" width="230" x="60" y="120"/>
+      <text data-page-node-id="zbP8QTg3iUiLXpm49SyU1N" fill="#2563eb" font-size="12" font-weight="700" x="78" y="145"><!--pnid:m172uTx7wVgfd1Lv5kHMRI-->SoC 1 · 主计算</text>
+      <g data-page-node-id="ayFmIDCE0X6sQXb05p5g2S" fill="#2563eb" opacity=".85">
+        <rect data-page-node-id="Q8lIFur0v0ysgCeNFL2gtd" height="26" rx="5" width="60" x="78" y="160"/><rect data-page-node-id="x7FNIcSlW74Zv9fEAcOiwQ" height="26" rx="5" width="60" x="146" y="160"/><rect data-page-node-id="ae2kIN8O8dyzrCqXPXh66q" height="26" rx="5" width="60" x="214" y="160"/>
+      </g>
+      <g data-page-node-id="evwsvt4tk94w33gb3eeKFM" fill="#fff" font-size="9" text-anchor="middle"><text data-page-node-id="NLnRuJmpV0O9l1A5oAQs1H" x="108" y="177"><!--pnid:dPzlkRrAMsLhxRV1Rx5m6a-->TRIP</text><text data-page-node-id="l1tKqr3Z5ldbkeQDYT7Re1" x="176" y="177"><!--pnid:IDSx4LfajjjvcmapojhZOk-->TRIP</text><text data-page-node-id="hPPdkpwPeyPcx8Dd8AbXsM" x="244" y="177"><!--pnid:WwoStJEeISiyU6V9t5tkZr-->TRIP</text></g>
+      <text data-page-node-id="YHoXiIX6HXhiYIcV2RqdlJ" fill="#4b5563" font-size="10.5" x="78" y="214"><!--pnid:e7ight4eZCs1eJeSOFHxPy-->端到端驾驶网络推理</text>
+      <text data-page-node-id="9lJuv0hVjqqdft51nh1KDb" fill="#4b5563" font-size="10.5" x="78" y="232"><!--pnid:KgnWj0xP3fyVsrIHqjpT3H-->主导感知与决策</text>
+      <!--pnid:UzB5XneJcAjn4Jl8SGoeMe--><!-- SoC 2 -->
+      <rect data-page-node-id="vMU7GQHxuceWeF5PpoQEaI" fill="#e9f8f1" height="130" rx="12" stroke="#0e9f6e" width="230" x="310" y="120"/>
+      <text data-page-node-id="pWwPVDAB77smmVLgbephty" fill="#0e9f6e" font-size="12" font-weight="700" x="328" y="145"><!--pnid:IvkKe4JVdgm4XE8dJlLvnt-->SoC 2 · 冗余 + 渲染</text>
+      <g data-page-node-id="dpgXpG2g2en87Ntb5jbrYB" fill="#0e9f6e" opacity=".85">
+        <rect data-page-node-id="GPoxUHNAFTVyjHpdYhzkyj" height="26" rx="5" width="60" x="328" y="160"/><rect data-page-node-id="xX8IH4zNu2gWRTSLIcy61W" height="26" rx="5" width="60" x="396" y="160"/><rect data-page-node-id="OoTZEbOTFJWlT0aGbQGvQC" height="26" rx="5" width="60" x="464" y="160"/>
+      </g>
+      <g data-page-node-id="vR3G4T4fUg0kaDtqyxM2K4" fill="#fff" font-size="9" text-anchor="middle"><text data-page-node-id="M1vH4kY61eGX8s5dsZ2ZLm" x="358" y="177"><!--pnid:SlUa2rBjTNgtnyipco8SjE-->TRIP</text><text data-page-node-id="Ff8n17RYLF6389Ch0BgmMs" x="426" y="177"><!--pnid:fHJueshJd8eVTAHw3NpT9B-->TRIP</text><text data-page-node-id="iAZjZxFTgghom50enhCpL0" x="494" y="177"><!--pnid:X4fafL6CzBOMRqKzPAt0AL-->TRIP</text></g>
+      <rect data-page-node-id="4AJ5D81DG4ar9dX4AESy49" fill="#fff" height="20" rx="5" stroke="#e31937" width="196" x="328" y="194"/><text data-page-node-id="rV9oVx8TuuNrHUJvNgilyc" fill="#e31937" font-size="10" text-anchor="middle" x="426" y="208"><!--pnid:4WydeRImAbPoYcsgnvB08l-->半个 TRIP → Reality View</text>
+      <text data-page-node-id="HDDFYDYsSxHG23XDY3vlhb" fill="#4b5563" font-size="10.5" x="328" y="235"><!--pnid:nGyQ5o5A3oTY12xlRNFIqI-->原本是安全备份，如今分担渲染</text>
+      <!--pnid:aDw7GZMeaVbVzHBZ5LaztV--><!-- specs right -->
+      <text data-page-node-id="oJIbD4ZSmOOeorNxmmL0Dx" fill="#181b20" font-size="13" font-weight="700" x="600" y="70"><!--pnid:aLJKqZwblZ3irtGMYkgeP9-->关键规格（第三方估算）</text>
+      <g data-page-node-id="iIBzaOvTbGV540tY4Z28sa" fill="#4b5563" font-size="11.5">
+        <text data-page-node-id="vuzXEovgxjz4abflrRogAA" x="600" y="100"><!--pnid:HMOZqltIhnJg7A2lknmtDG-->峰值算力：<tspan data-page-node-id="ip8Yjt9Xe1EhfzPNVDPHFk" fill="#e31937" font-weight="700"><!--pnid:ZDes5uZckf7AgmT42N25b8-->约 100–150 TOPS</tspan><!--pnid:ugkTb0qytZIdze2NrcmU5R--> (INT8)</text>
+        <text data-page-node-id="G2hf7shOTpYBFfIdIrIUWN" x="600" y="128"><!--pnid:qmxVSACpb54aRmoeW8EECA-->内存带宽：<tspan data-page-node-id="umYZDJk8HhDqJLefzqMn2Y" fill="#2563eb" font-weight="700"><!--pnid:jEVIqUAEMUaHLJqtZlXzVC-->约 384 GB/s</tspan><!--pnid:FgVJ4Sp4EWNuafbKITBtH2--> (GDDR6)</text>
+        <text data-page-node-id="wkT7XDmUx4Jz7lqiy7Ynq8" x="600" y="156"><!--pnid:HXy4XduwsGi16PRwbn1RXM-->板载内存：16GB / 颗</text>
+        <text data-page-node-id="KnVr62j2VZ0oiIGaRHMRug" fill="#8b95a5" font-size="11" x="600" y="190"><!--pnid:7QdFwUc8DpgIZGFksr2ZxH-->TRIP 主要支持 INT8，</text>
+        <text data-page-node-id="NWmc9fc8POXrjIpm7FSCeJ" fill="#8b95a5" font-size="11" x="600" y="208"><!--pnid:aLwJBm8O9n1QXookLL2QAp-->Transformer 的 softmax 无专用</text>
+        <text data-page-node-id="sSHwdbHVLijOpTyQRQtUGm" fill="#8b95a5" font-size="11" x="600" y="226"><!--pnid:wTvp9EAzQlOUPvRzQEZCI1-->硬件，需 28 步模拟完成。</text>
+      </g>
+      <!--pnid:gUI6hkwwm3mdvR0PJIKDTk--><!-- AI5 note -->
+      <rect data-page-node-id="q7mRI0wcf0tW1GN4p3Ag6p" fill="#fff7e6" height="52" rx="10" stroke="#d97706" width="270" x="600" y="246"/>
+      <text data-page-node-id="jSKdvCUmTEYLQfrCKyqOf0" fill="#d97706" font-size="11.5" font-weight="700" x="615" y="268"><!--pnid:lrtonfZZwRGQP5h10sqVUQ-->AI5：算力约 AI4 的 8–12 倍</text>
+      <text data-page-node-id="1tZKQndDP2U5tQJPtSkoNg" fill="#4b5563" font-size="10.5" x="615" y="286"><!--pnid:b7bLzIdGTUUERGaIfuoykP-->三星 2nm · 预计 2027 量产 · 优先 Optimus</text>
+      <text data-page-node-id="PR0LD8tB9TBsAlJ6FPTF8L" fill="#8b95a5" font-size="10.5" x="40" y="302"><!--pnid:kx1Xhc56KZa6CzpVqP8Uzs-->算力数字特斯拉未官方公布，为 Electrek 等第三方拆解估算；同行英伟达 Thor 单颗标称达 1000 TOPS。</text>
+    </svg>
+    <figcaption data-page-node-id="8nYYZg4kQRNITG3NEHSyyD"><b data-page-node-id="oMKHMrXV56IUoITTvxhqmx"><!--pnid:drEsYBQwzVpfgkWT7dqIkY-->图 8 · AI4 芯片与 V15 的算力分配。</b><!--pnid:U1XZBTHHhZJmZhTBPIAAjs--> 第二颗芯片已从"纯备份"变成"分担渲染"，马斯克称 V15 后 AI4 的算力余量基本见底。</figcaption>
+  </figure>
+
+  <div data-page-node-id="UOy6MuilkYpoLdlSNcDJBG" class="tbl-wrap">
+  <table data-page-node-id="KPdFudJPZ01RxjNkznkG63">
+    <thead data-page-node-id="5qfdMuBhPIrbV709KJhDAp"><tr data-page-node-id="KtaVRvE8SKquxfB14nbLkj"><th data-page-node-id="ZYDkktINrqFg9koSGSNCke"><!--pnid:i6Fl9M1W2XKaxBd7ONHmCf-->平台</th><th data-page-node-id="NE11kG7GTnFu11QvMz3aE9"><!--pnid:69aSj3jncoLxnDmuS3LW79-->关键规格</th><th data-page-node-id="gScVkjUFVRtEHJbbzhwSMh"><!--pnid:3bpSXQUEybttAr4hlXTYd0-->状态</th></tr></thead>
+    <tbody data-page-node-id="dFfnhT9NW6GhQ8QuBuiFWO">
+      <tr data-page-node-id="Vo3dLrJga70FwKGpK8tpH2"><td data-page-node-id="jO9nltydWdM2Js0GWJo8gj"><strong data-page-node-id="URbUqtx0ibzstdM840JaxW"><!--pnid:fFXKoLl4stfy56bvu8lFrd-->HW4 / AI4</strong></td><td data-page-node-id="QDeQUGHt7nakljPFiovNpx"><!--pnid:tS6MplpbifOz5EAN17Yi8c-->双 SoC，6 个 TRIP 核，约 100–150 TOPS，16GB/颗</td><td data-page-node-id="58EHmZgJXTfmCDyaiUXZVR"><span data-page-node-id="LZzp0F1gRMhnw6OE049r5c" class="pill v"><!--pnid:kDZfxVIWpm5B0xYZdogqOt-->V15 运行平台</span></td></tr>
+      <tr data-page-node-id="9EkohSyV80kRoGUEgNuGTA"><td data-page-node-id="IEEcdSwlx0ro5tK8qV9tYx"><strong data-page-node-id="w1CNMIQGOUSvylsBulSYT2"><!--pnid:BVk3zlMwyumxgRn2QbfcNF-->AI4+ (HW4.1)</strong></td><td data-page-node-id="0kLlBnTM2K4o1X0IxZhaSc"><!--pnid:QoKzYT3TAhcPivpsThshv3-->同代换内存，单颗 16→32GB（双颗 64GB），FLOPS 约 +10%</td><td data-page-node-id="0tyCxpLKJh9zoZJ5x5Ocbp"><span data-page-node-id="18RST6owiUK0Yxxput3iGh" class="pill n"><!--pnid:cRfekmBMmFC9hJllaUzrNP-->2026 起装车</span></td></tr>
+      <tr data-page-node-id="fXzCB4MV1C2ARQYuqNxNja"><td data-page-node-id="wqMD2Y2zqOeh3k4HBd5hqc"><strong data-page-node-id="wDFanPefWTT7rv12UuGa0T"><!--pnid:aMbU0T3q8gp8h4rCfOo094-->AI5</strong></td><td data-page-node-id="WS6OAWOhewTTl7BEDs5PLw"><!--pnid:UHuCybhfVGXOAj74sc33fB-->三星 2nm，得州工厂；高管口径特定任务最高 40×，约 8–12 倍算力、9 倍内存、5 倍带宽</td><td data-page-node-id="aLiUxDTLgpoEYXTAhP7fp8"><span data-page-node-id="LLoAx2IsGeqVEn6Als99TC" class="pill c"><!--pnid:7iHkKO8rkcpWdaB6XSTlQk-->2027 量产，优先机器人</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p data-page-node-id="Zzr39btEQt3By8pegwr2BG" class="src"><!--pnid:INgDIfYm4o1lVFqqjpNsyl-->马斯克对"汽车暂不升级 AI5"的解释是一句："AI4 足以实现超越人类的驾驶。"这句话既可当营销话术，也可当信号——如果一百多 TOPS 真够用，"智驾必须堆车端算力"的行业叙事就值得重新审视。</p>
+</section>
+
+<div data-page-node-id="3eSIC5w7kLslnh61JWL5SM" class="divider"></div>
+
+<!--pnid:GQ6AEVRklGfrPJWZlgq8Fw--><!-- ============ SECTION 9 ============ -->
+<section data-page-node-id="d5dIHEDODigmSl6kIHCI6W" id="s9">
+  <div data-page-node-id="vUuEtdrisbZLD941NwSWeF" class="sec-head">
+    <div data-page-node-id="CbUanPYFmXmuKb8elli1FD" class="sec-num"><!--pnid:OKBtQgbbDD8AxPKVKK9NJY-->09</div>
+    <div data-page-node-id="3IBi1r7A0Rqj7ILApAcidB">
+      <h2 data-page-node-id="h6IsGlcVtWQtrO0S5gqVdg"><!--pnid:jdzepTbnIaNzrhuwweqVfS-->横向对比：三个技术分岔口</h2>
+      <p data-page-node-id="mRXaZu0jkX2QI3rT8ppDyi" class="lead"><!--pnid:3wRX4eYlks1b74ZQLhnyHz-->把 V15 放进全球坐标系，分歧一目了然——它在每个岔路口都选了最激进的答案。</p>
+    </div>
+  </div>
+
+  <figure data-page-node-id="9RcM9Pgo5cwmc8nNoik1xt" class="figure">
+    <svg data-page-node-id="NIUenPaMWZRku3BH9xQnZ7" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg">
+      <text data-page-node-id="Tlfpj5cQHAW3k4PG9aQBEy" fill="#181b20" font-size="13" font-weight="700" x="30" y="30"><!--pnid:yNhysRluqkYHd9ZqLhgcwL-->行业的三个关键分歧，与特斯拉的选择</text>
+      <!--pnid:cZ7ZvrTsAXQhP24iC9rbNB--><!-- fork 1 -->
+      <text data-page-node-id="9aq7EyuD1z03QzQYwpog8B" fill="#4b5563" font-size="12" font-weight="700" x="30" y="66"><!--pnid:TDi1iJLq2iTywxWMGyPYbC-->① 世界模型放哪里？</text>
+      <rect data-page-node-id="t2pEZmfzH9d4l4KcHDMGtJ" fill="#eef0f4" height="34" rx="8" stroke="#d6dbe4" width="180" x="30" y="78"/><text data-page-node-id="ABzORMxp3zUXD4huoTVJ3U" fill="#4b5563" font-size="11" text-anchor="middle" x="120" y="99"><!--pnid:HCRtXA3vMakUDAhkBSir3o-->主流：只在云端</text>
+      <rect data-page-node-id="S7EtlRu23vDwNixMqLa4Qa" fill="#fff0f3" height="34" rx="8" stroke="#e31937" width="200" x="222" y="78"/><text data-page-node-id="sYiXOG7T2blnhX71qS9Jda" fill="#e31937" font-size="11" font-weight="700" text-anchor="middle" x="322" y="99"><!--pnid:htIijkPhUFEYiw3VfQaWbJ-->特斯拉：云端 + 车端实时</text>
+      <!--pnid:BlcXv3uIukRdmHXovdWwC7--><!-- fork 2 -->
+      <text data-page-node-id="7FUCCw8TwW9BtvQkPCn7ld" fill="#4b5563" font-size="12" font-weight="700" x="30" y="142"><!--pnid:EvzcXwDxMCUrIXig3nCmFM-->② 要不要把语言模型接进驾驶网络？</text>
+      <rect data-page-node-id="gV2AR0ASKaxlIZuLiq5VsN" fill="#eef0f4" height="34" rx="8" stroke="#d6dbe4" width="180" x="30" y="154"/><text data-page-node-id="fBSZTBEY3Zg94Ab3cz5gFC" fill="#4b5563" font-size="11" text-anchor="middle" x="120" y="175"><!--pnid:U6FdUYgWb5AM0sva1AFcSf-->中国多家：VLA 路线</text>
+      <rect data-page-node-id="s0kThgk0YT29XeoCfuf7oz" fill="#fff0f3" height="34" rx="8" stroke="#e31937" width="200" x="222" y="154"/><text data-page-node-id="BJKgOThvkCqL3QMzdpXf7I" fill="#e31937" font-size="11" font-weight="700" text-anchor="middle" x="322" y="175"><!--pnid:BiIimDtCyCfCY67afEDqc2-->特斯拉：不用语言模型</text>
+      <!--pnid:5ijSlwMLtmly9168lqNz1H--><!-- fork 3 -->
+      <text data-page-node-id="KzvB9NeCEvWYtGcLWcBlna" fill="#4b5563" font-size="12" font-weight="700" x="30" y="218"><!--pnid:1WQ5369BRSS9VhkyUBEmK5-->③ 要不要激光雷达？</text>
+      <rect data-page-node-id="uVQo4EbA4dxsFbU0DnB3Qm" fill="none" height="0" rx="8" stroke="none" width="180" x="30" y="228"/>
+      <text data-page-node-id="ygM82IKOLSKBL38xUkI0HR" fill="#8b95a5" font-size="11" x="30" y="246"><!--pnid:NfWPgZLPcbAb1lPEAwXy6x-->（见下方对比表）</text>
+      <!--pnid:7NjVd2drH9keVQQGFWZAwQ--><!-- right summary -->
+      <rect data-page-node-id="0p7I9USrQJJafxAWzCe7kM" fill="#f3efff" height="170" rx="12" stroke="#7c3aed" stroke-width="1.5" width="400" x="470" y="60"/>
+      <text data-page-node-id="ZKqOieYR8X8mvRADJa6UUJ" fill="#7c3aed" font-size="14" font-weight="800" text-anchor="middle" x="670" y="90"><!--pnid:1ELHfeXdatXcdrvZlFDNkY-->V15 的选择：三个"最激进"</text>
+      <text data-page-node-id="WKbSkn82SHm3wuid6Rj0EI" fill="#4b5563" font-size="12.5" text-anchor="middle" x="670" y="120"><!--pnid:Ogdssyi88ms6P7gCKTYzVg-->✅ 世界模型下放到车端实时渲染</text>
+      <text data-page-node-id="1sDpm9KJfN4MM9okTV1ANL" fill="#4b5563" font-size="12.5" text-anchor="middle" x="670" y="150"><!--pnid:37Jc9HxntknOuAKWbjswwg-->✅ 不接语言模型，做纯视觉端到端</text>
+      <text data-page-node-id="bWRMkREfPxuw6qDDaVK9v1" fill="#4b5563" font-size="12.5" text-anchor="middle" x="670" y="180"><!--pnid:9sufQMXDihfxZpZ4iX4O8H-->✅ 不用激光雷达、不用高精地图</text>
+      <text data-page-node-id="uGbwT1Zwvh2TQUPshUenKi" fill="#8b95a5" font-size="11" text-anchor="middle" x="670" y="210"><!--pnid:qJNQzOSLnXdDBdh5uVB9Gz-->它不是主流路线的又一个变体，而是同时押注三个争议</text>
+    </svg>
+    <figcaption data-page-node-id="6pPb9ECTidAbL2geMHRk31"><b data-page-node-id="RSUamFBlf7a6yR2mv2bTVW"><!--pnid:AWvsDW8vphdfBCkLAK1gmp-->图 9 · 技术路线的三个分岔口。</b><!--pnid:i7vJEkDsQF45cj8G9cQ0bB--> 截至 2026 年 11 月，中国各家的世界模型仍都在云端（造难例、训练验证、闭环评测），尚无一家做成车端实时功能。</figcaption>
+  </figure>
+
+  <div data-page-node-id="HwViIOuFheVote7c8mdMF7" class="tbl-wrap">
+  <table data-page-node-id="fhvN7zYfXwCmhl4qYTMhY2">
+    <thead data-page-node-id="QTHhxv7f8MbIACEEkMe7SQ"><tr data-page-node-id="WtvJrUA1iqGeyJWrqTUtG1"><th data-page-node-id="ruZkl5sxUmU7Fi0m5Y337l"><!--pnid:CUjY7evicoqGm5rIrEbqfA-->方案</th><th data-page-node-id="kUOr14Vk7BHYAkqLKyRBYF"><!--pnid:FgfziSG88CU9VU1zXZxw1u-->传感器</th><th data-page-node-id="JWMvtuPKKIrV5fsrDZdcis"><!--pnid:MZw4sm2IQd0uYu3MtlXpes-->地图</th><th data-page-node-id="M2jxQRsqc559aXQ9pG9Bh5"><!--pnid:GhYkMmqF8UN2rucB6hexXi-->架构范式</th><th data-page-node-id="XEzKUfR0qEMqZp862exJLo"><!--pnid:T6WqW9oUE72NirxzITOc4t-->世界模型用法</th></tr></thead>
+    <tbody data-page-node-id="xqRgNKfzkX1xrNk8u3MJCP">
+      <tr data-page-node-id="huBuppgay2L0AsBBRRsPGE"><td data-page-node-id="YYWYtEg85GH0ELaE4v7UeP"><strong data-page-node-id="AchskjRd6eiBFSf7p0HQ2B"><!--pnid:6Knum1lGcRO3NjE0Vo6H3W-->特斯拉 FSD V15</strong></td><td data-page-node-id="yMqYoQwnSGWb93zutaPKYx"><!--pnid:snp8AoUUZJn5go2ViUdwTw-->纯视觉</td><td data-page-node-id="qHcZYg76RXUNdN85BifgDL"><!--pnid:4ZjJWrv7VVBjPAAhTZMJKJ-->不用高精地图，自建 AI 地图</td><td data-page-node-id="2aGcW2RaL7kOsMiA6pKqls"><!--pnid:NkKmrdEe39iVEsoW7XJnzS-->单基座端到端（百亿参数口径）</td><td data-page-node-id="RjH5HRhWwQsfEFqGkfRnbr"><strong data-page-node-id="z6uSjCfYVys29wWCNZAH1d"><!--pnid:zuCHQsFv7x3ur1BI9JNAfA-->云端训练 + 车端实时渲染</strong></td></tr>
+      <tr data-page-node-id="IaN3B9QY4jfczlzW34MVDm"><td data-page-node-id="p3EJI8ov6lAzQLTute19xm"><strong data-page-node-id="2q0nipBsQ9rRjnKmK6AEc2"><!--pnid:ws4uMWbjqPyuZZH9SN7bVa-->Waymo</strong></td><td data-page-node-id="Sr3VVx9Ihu4Ted6cJwUOMw"><!--pnid:cM481SKDayGbTRJwN91xZg-->激光雷达 + 视觉 + 毫米波</td><td data-page-node-id="wxj2JtbERsVrMjjZ14y0cg"><!--pnid:6mmQKrTyB57soZB5v6r5Cv-->高精地图 + 地理围栏</td><td data-page-node-id="VHOIICuc0SSlV3Vgu1s2iG"><!--pnid:zhH5bcQarrzt7w4aWCJ3x7-->模块化（感知/预测/规划分离）</td><td data-page-node-id="POMptcQ7hzm7Io59uNp8GN"><!--pnid:4kUG3t0WK6jYbVqR6ZoucD-->主要用于仿真</td></tr>
+      <tr data-page-node-id="25x54WKqrNeGWZ76rb7wyP"><td data-page-node-id="2Ncm0Kk7CfMMGnysIHMtGJ"><strong data-page-node-id="gFM5DDz2GHi2UeyDDlrM7k"><!--pnid:NMKEB2ZvFHwr7stBvZ8L2D-->华为 ADS 5</strong></td><td data-page-node-id="Cf2pUOuZxc41qaCQ3vinMF"><!--pnid:XBPyt1Oj0HNiXYLVyCApj7-->激光雷达 + 视觉</td><td data-page-node-id="9ExmefetqLw80Rqmzq92Gm"><!--pnid:cZah2OdiLlLZSCrXYAvZxd-->无图</td><td data-page-node-id="Ez6JeNyQVeJhwxpmdbfowr"><!--pnid:OFvdcLUMGSQwgw5Ol4xyHU-->WEWA 2.0：云端世界引擎 + 车端行为模型</td><td data-page-node-id="ewtO6ecAXZIMsVTLDDteTT"><!--pnid:KXVnI0orKkyz5opPWNMhB1-->云端造难例、多智能体博弈训练</td></tr>
+      <tr data-page-node-id="B1lor1bS9qiJGAP8x4h8DE"><td data-page-node-id="DBdlL6OfJPkJXyiOm4osr8"><strong data-page-node-id="PfIq1bveZ0mzIm7J0FPxmG"><!--pnid:QvZoDcEZ2qGdjSFD7kWfA7-->小鹏第二代 VLA</strong></td><td data-page-node-id="8bHgCFXFy51aXSTpZcHOq9"><!--pnid:Camc9EkglzUum3S69fdRcm-->视觉为主（量产车保留激光雷达）</td><td data-page-node-id="8PIeq7gbgIIFhRYHBI1YZw"><!--pnid:8woN3StnqNzzdE65nY8mwU-->无图</td><td data-page-node-id="qsqVua7OJr7UlGBk9ItLe1"><!--pnid:vZv4URgcpSmwZIDxYWxif2-->VLA（视觉-语言-动作）</td><td data-page-node-id="bU9REaUHT23eW9Wa71LghR"><!--pnid:OnGq8fyF50fOG1bDKjJOn4-->X-World 视频扩散，用于训练验证</td></tr>
+      <tr data-page-node-id="WTxhchesqLdZ7rPSWRs2SO"><td data-page-node-id="Lu7VLcICcdxvAK6xCLqrav"><strong data-page-node-id="YbVqrogV7LQuMrkUR5vk9h"><!--pnid:K2fK1TFKIx5eAlTvaFBxSB-->理想 MindVLA</strong></td><td data-page-node-id="2YMrCi7BvtVi8Vdwffeteb"><!--pnid:V8Q1u3stpqePzde3MfVvS6-->激光雷达 + 视觉</td><td data-page-node-id="9lMCwG1eub7vTRpkrUzGHp"><!--pnid:WyTsOGRS9mM9QVyh0oa53D-->无图</td><td data-page-node-id="RcHAcpezcgrC8TTrBPdIiA"><!--pnid:VlvzataiE8mZz8B3Aea53T-->VLA 司机大模型</td><td data-page-node-id="FqqLHShJhphhrUvoBRGXMa"><!--pnid:sgRvbeFMw2QYR49L4vztrU-->多模态思考 + 闭环强化学习</td></tr>
+      <tr data-page-node-id="vM2Fo5lr3Fgj5WDuIiMmu3"><td data-page-node-id="P51nSZpEKKXJUdtpf9Bd6I"><strong data-page-node-id="F4LSAnH2YD3XzGZxGgVCmV"><!--pnid:KQW5H9Gt9BEqkHyd3DP4rZ-->Momenta</strong></td><td data-page-node-id="6mjdcOHu1xbRzAJVpqNDFw"><!--pnid:dJtuzqripPR0wbwxfTbAwN-->激光雷达 + 视觉</td><td data-page-node-id="bYcrDSGOCsjhOpnmvjhTRo"><!--pnid:OkeBEtN2IhS09RuMiz4fMz-->无图</td><td data-page-node-id="aMxCgXXUdVljBb3wl6wdTS"><!--pnid:0kJsbjlhB60zByCgpfD7dq-->一段式端到端</td><td data-page-node-id="KwJOxBPuctFEBL1vpDXfQG"><!--pnid:iwpWxyi6WKPwN7PduOXiQC-->R7 强化学习世界模型（面向 L4）</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div data-page-node-id="kf7t45x2PDvLT5asHSH4pO" class="note">
+    <span data-page-node-id="EuOFSeyAjnRys1lNGOxqpa" class="t"><!--pnid:IvbHqQK29qpmJqpLIlzZfp-->值得玩味的对照</span><!--pnid:y3xkwABR10mF8Sv1gRJU6z-->
+    Waymo 公开表态过端到端"达不到我们的安全标准"，坚持模块化 + 高精地图；而它的体量——约 4000 台车、15 个城市、每周 50 万+ 全无人付费订单——至今仍是所有纯视觉方案绕不开的参照系。<strong data-page-node-id="OVKkq5NnJnu1eWmpzCVI79"><!--pnid:RTL80pSCuZpvDiIjcMFXZ7-->路线之争远未分出胜负。</strong>
+  </div>
+</section>
+
+<div data-page-node-id="sHUlVnEmCvLam9SSRyBFHR" class="divider"></div>
+
+<!--pnid:jopP4qownBsc2MtaqXhH5y--><!-- ============ SECTION 10 ============ -->
+<section data-page-node-id="FnANvqKEwSgjjsWXGNC3vm" id="s10">
+  <div data-page-node-id="XyPX8NMl4Hmc5HOOFb9MVG" class="sec-head">
+    <div data-page-node-id="RfH0wDrzobdcJFri3jgGH9" class="sec-num"><!--pnid:oBerZwyvDjfEwkVRAKFrCW-->10</div>
+    <div data-page-node-id="WVKgD1sGBsW6sC2ZdgRZrs">
+      <h2 data-page-node-id="LBDkCEdBcIT5cHNnkN934B"><!--pnid:DlkVq1Wa7PpAVdNu7pBfYR-->冷静看待：边界、争议与"25 倍"怎么读</h2>
+      <p data-page-node-id="J1qSDYdNDQHvl86Nq6rYy3" class="lead"><!--pnid:LYMi4u3Hb7YuhDL4cH0gve-->技术是真进步，但数字要打折看。这一章专门给热情降温。</p>
+    </div>
+  </div>
+
+  <h3 data-page-node-id="f9k8pBBunMSH4L4zsdHSb2"><!--pnid:PueyZqEQ6wXcEYvEOwD4ho-->"关键干预率改善 25 倍"到底意味着什么？</h3>
+  <p data-page-node-id="1RNwpzkgWvqTfqcmWZcz3c"><!--pnid:Nr7pE5NtL4WpQBDY6yz1Hg-->这是 V15 最抓眼球、也最容易被误读的数字。特斯拉只给了倍数，没给基准值、样本量和"干预"的定义。外界只能粗略推算：</p>
+
+  <figure data-page-node-id="qX70cH8x2OcGoEsMDyDR14" class="figure">
+    <svg data-page-node-id="lEpYBBgIMXBy49UimasBHK" font-family="Inter,-apple-system,'PingFang SC',sans-serif" viewBox="0 0 900 230" xmlns="http://www.w3.org/2000/svg">
+      <text data-page-node-id="g7x0n2CLUP1wGtF5rq9vBv" fill="#181b20" font-size="13" font-weight="700" x="30" y="28"><!--pnid:Dh2Sb6cqHqxN1ufrXnlDtX-->关键接管间隔里程（众包 / 推算示意，非精确实测）</text>
+      <!--pnid:hQDwEu8RIG9UA4pl5CucQ8--><!-- bars (log-ish visual, labeled) -->
+      <g data-page-node-id="DG8n3nMxXBZmK2UCUbxp8x" font-size="11">
+        <text data-page-node-id="9auqwQhsYkUmQLRKINuh7L" fill="#4b5563" x="30" y="66"><!--pnid:SF2wna9uHfOUTu9g3YBIkm-->v12 早期</text><rect data-page-node-id="Yyi5caSAywTQULxO5Np86R" fill="#8b95a5" height="18" rx="4" width="40" x="150" y="54"/><text data-page-node-id="Xl5JOVoiv3uOpphOL4cNYm" fill="#8b95a5" x="200" y="68"><!--pnid:FgluV7aegMjhIvmuUeX6fD-->~200 英里</text>
+        <text data-page-node-id="LuaEnZfbnXyMKGHoBFes2N" fill="#4b5563" x="30" y="98"><!--pnid:39eexfjxYhICvDhKCFAQlx-->v13</text><rect data-page-node-id="rFM0ZL4lbAi2EDSThhQKYg" fill="#2563eb" height="18" rx="4" width="80" x="150" y="86"/><text data-page-node-id="X4ZL8Zox6fNOgSkOfc3X8n" fill="#2563eb" x="240" y="100"><!--pnid:MTHfYwVAPOnTJV40aYRBpX-->~400 英里</text>
+        <text data-page-node-id="tXqD82Xt61mrZNFG8uAIU3" fill="#4b5563" x="30" y="130"><!--pnid:0Us9mUGTE7MpAyn229Z8vS-->v14</text><rect data-page-node-id="Oml6AQp5bjy7gFpJW3pKAw" fill="#7c3aed" height="18" rx="4" width="290" x="150" y="118"/><text data-page-node-id="MsMKNX91kKX5NdB21fvj1y" fill="#7c3aed" x="450" y="132"><!--pnid:1DpRsjS31rumgjadBjDdRp-->~数千英里（社区追踪约 1454）</text>
+        <text data-page-node-id="MS30Uem2I6GsdAnMZS3hTC" fill="#4b5563" x="30" y="162"><!--pnid:EAgMsUswwlX7RW8C71nNK0-->v15 推算</text><rect data-page-node-id="4KsbckSbn7uLimsiLl2f1o" fill="#e31937" height="18" rx="4" width="600" x="150" y="150"/><text data-page-node-id="5RRI6421jwCYiWBK73VqQr" fill="#e31937" font-weight="700" x="700" y="164"><!--pnid:P0lMaMGahRSktpVdBNdiAm-->~5 万英里？</text>
+      </g>
+      <text data-page-node-id="an33Wd2goozmM19EK5cuKd" fill="#8b95a5" font-size="11" x="30" y="200"><!--pnid:wuayxpPlAPTb3uEY9xm9qZ-->若按官方 25× × v14 数千英里粗算；美国司机年均约 1.3 万英里 → 相当于开三四年才需接管一次。</text>
+      <text data-page-node-id="h0O7U3jAZZNtMu9ISLV5dh" fill="#0e9f6e" font-size="11" x="30" y="220"><!--pnid:49Nd3jfDHjp9tG1Cy8BNpB-->参考：业界估计限定区域开展无人运营，大约需要达到每 1 万英里一次关键接管的水平。</text>
+    </svg>
+    <figcaption data-page-node-id="sNp8e33eN2BCHjEH4HVngW"><b data-page-node-id="UmlRFaLDDnGcej1ckRiABE"><!--pnid:se5eg0oEC0nQLA1igIX8WK-->图 10 · 接管里程的量级变化。</b><!--pnid:Gr7QJLm4qHZWBz6jujhuOl--> v15 为按官方口径的粗略推算，非实测。特斯拉 AI 负责人说差异"要累计数百万英里才看得清"。</figcaption>
+  </figure>
+
+  <div data-page-node-id="k7MFOEq95x16Av9XsZgUIZ" class="note crit">
+    <span data-page-node-id="EDV3ZFHhU2Hnb5TRjtDvUB" class="t"><!--pnid:ISxoXyDhIoNVaoVRgkLpPZ-->三个"不等于"</span><!--pnid:1KLVwKyiOwk3AO8bQay4wo-->
+    ① 25 倍 <b data-page-node-id="iYA34CePV2PNwW7iw0lJhk"><!--pnid:nHOkeLT0tt29bwrq6KFmqu-->不等于</b><!--pnid:0eq2SPJhvmr9NbRb91dz5l--> 事故率下降 25 倍；② 更<b data-page-node-id="0U4piWd2xDt5ayjN5fUPNE"><!--pnid:eHVm7b0ExOOO3CcaqWSfLm-->不等于</b><!--pnid:nUkV60RdnTfkLygEcuuVC2--> 比人类司机安全 25 倍；③ 也<b data-page-node-id="36N05KToCvZjD8j6MElqw9"><!--pnid:jO7HzGDf4z0IXxUWblQ2C5-->不等于</b><!--pnid:tsMBkovNijjwUwVfH5UTto--> 已经可以无人驾驶。它只是一个口径未公开的厂商内部指标。V15 目前仍在少量早期测试车上，真实表现要等 12 月大范围推送、积累足够里程后才能判断。
+  </div>
+
+  <h3 data-page-node-id="2q61LD270aTA7z3wazFgge"><!--pnid:IfZckcU3G3y1EVPgqid7BZ-->六个仍然存在的边界与争议</h3>
+  <ul data-page-node-id="pUthwqqKdixi1PtWkSVtmR" class="clean">
+    <li data-page-node-id="ofDUsVFWSMxk2JoaAOOhZl"><strong data-page-node-id="BQ1h2QZ601t9879uz5xJp3"><!--pnid:rczPeJ3nfDSXBRMGmOZnh0-->仍是 L2 监督式</strong><!--pnid:mmgKtP8p7kBcHdklRNy4mC-->：驾驶员必须全程手握方向盘、保持注意、随时接管。不能脱手、睡觉、分神。</li>
+    <li data-page-node-id="ExRjkNE2oXFcbo9pJuaJyD"><strong data-page-node-id="QWbZRJuEBMHyPi6hsexpMA"><!--pnid:sOqPdSvDmuZrx55agIjJrj-->HW3 被留在旧版本</strong><!--pnid:zNr9ChMv7ez1Y2Jzp2KdPs-->：FSD 是按整车价购买的选装件，老车主无法获得完整 V15，已引发欧美多起集体索赔与诉讼。</li>
+    <li data-page-node-id="kj8lZ6GUU41pMOwYsDCYox"><strong data-page-node-id="9rUgyQ1KtqtROTlpaz4cjS"><!--pnid:7D2gXUfHalqbVsmPniEZsi-->蒸馏黑箱</strong><!--pnid:7TTCGnlb9tEEAfPHtQWBwA-->：车端压缩模型的精度基准未公开，边缘场景能力可能退化且难以被独立验证。</li>
+    <li data-page-node-id="IO4H04DwFSpQhZccVQtReL"><strong data-page-node-id="RygLEiU5vSXkML7bJ2MNiG"><!--pnid:Vj0tYxz8zRjtJDY6H2dIuS-->可视化≠感知</strong><!--pnid:8gnSVkBbGcVwD8KVgX39zO-->：Reality View 画面好看，但可能"画"出不存在的内容，也可能漏画真实识别到的平面元素。</li>
+    <li data-page-node-id="Sg0qVh9KMAFJ27nFSj5M53"><strong data-page-node-id="P4MLPIWU1LRVl5aRW8a8MV"><!--pnid:FgRjOayW3XQ18PkmHHKAOK-->未证明的场景</strong><!--pnid:mRLDusa3eOjVSiQUd2broA-->：极端天气、临时施工管制、从未训练过的复杂场景、无接管长期运行、故障后的安全降级——这些仍是"从辅助驾驶迈向无人驾驶必须回答的问题"。</li>
+    <li data-page-node-id="EhQB6cLnnaTE079SLpbspc"><strong data-page-node-id="ysDp2KJ4dMj9shYBowWQAK"><!--pnid:gomfmmGtL21fHWJQ3o6qdA-->入华无期</strong><!--pnid:3g8Bp9sk0cZjIUE8svfaOW-->：中国大陆仍停留在 v13.2 基础版本，V15 无明确时间表。</li>
+  </ul>
+</section>
+
+<div data-page-node-id="QvRzU8uYJ7DWIZNmJ5snli" class="divider"></div>
+
+<!--pnid:fsYxUJ6kHqgdMEZRn6XYkm--><!-- ============ SECTION 11 ============ -->
+<section data-page-node-id="qU63qHRvqFhRzQqU5uERKh" id="s11">
+  <div data-page-node-id="cj2nQkgZzOMkcnDzTelP4z" class="sec-head">
+    <div data-page-node-id="Af7IxhOTRvsxqksgzBUb9A" class="sec-num"><!--pnid:2Mwcjlk3nRlbXh3y7e2twB-->11</div>
+    <div data-page-node-id="o0djt9QaL4KfGQbaBxLGYi">
+      <h2 data-page-node-id="6y6c40z30qnsOE9GXxNGV7"><!--pnid:SJTYoTHBKnqm1YOfHimuNW-->结语：V15 到底意味着什么</h2>
+      <p data-page-node-id="YRGlULXw0q1Beuuujc0mAJ" class="lead"><!--pnid:rY2KrYzFsq7pdDlMiKvu0h-->把 hype 和实质分开之后，剩下的才是真正值得关注的东西。</p>
+    </div>
+  </div>
+
+  <div data-page-node-id="5SZibOJVHlwx5nXqCxdry4" class="grid g2">
+    <div data-page-node-id="8yL8ComUFcv1I3oJNbjhFj" class="card" style="margin:0">
+      <h4 data-page-node-id="T4snVTGMFLUBRfmgHhisIg" style="margin-top:0; color:var(--green)"><!--pnid:RYMZc8IebhF3fZ2cUc3JgF-->✅ 它确认了什么</h4>
+      <ul data-page-node-id="8R4P7OIJiQSq3dtw6ltITO" class="clean" style="margin-bottom:0">
+        <li data-page-node-id="RRfsHDPQuBou5PHMRqEhA9"><strong data-page-node-id="b3x8CgeeaEvYX7RgTRdiqw"><!--pnid:wl4IVJ34CKM12GJLibT2RS-->端到端取代模块化</strong><!--pnid:II79c35hOjN96wFlJLsi6B-->已成行业共识，V15 是最彻底的执行者。</li>
+        <li data-page-node-id="5F7Hg0SB1zzL9t02lkicQ5"><strong data-page-node-id="Lf3XS3eEz7oarCkeb82aoy"><!--pnid:HO9Pih7nCnCBipFTbpVZmH-->基础模型预训练进入智驾</strong><!--pnid:Sibj5P5EeUp2aO4JZvDI30-->——"先用整个互联网学世界，再学开车"，与 VLA 路线动机相同。</li>
+        <li data-page-node-id="JP9PFrf6idBgyUH0QIg0Le"><strong data-page-node-id="vZZipgiCr0QDtl75Bg7sMP"><!--pnid:SMsdBz8oDL7KjiGNNGnzjP-->世界模型从云端工具走向多用途</strong><!--pnid:QonLCeyOWJuj4KLuwpavzr-->：训练侧模拟器 + 车端实时渲染一体，这是目前最大的范式分野。</li>
+        <li data-page-node-id="fNBwgI4VPb6eTM8pc4HvLY"><strong data-page-node-id="yMcGH9pyw3vwNggbr9le1B"><!--pnid:uo1Mz2TeYLyzpuGV8gEK4Y-->软硬一体的深度协同</strong><!--pnid:Oa2rJww4sHNGmRO8IPMz5V-->：在一块百 TOPS 级芯片上榨出惊人的效果。</li>
+      </ul>
+    </div>
+    <div data-page-node-id="g7nFHOq97VSX6AFjZ3NSDj" class="card" style="margin:0">
+      <h4 data-page-node-id="FDOoSF2jHLvZJelxVkUZXr" style="margin-top:0; color:var(--red)"><!--pnid:klLOc0EjfD6ujyfYUVr1pc-->❌ 它还没证明什么</h4>
+      <ul data-page-node-id="6b6ZNImrO4m0gQ5nb8Jg3n" class="clean" style="margin-bottom:0">
+        <li data-page-node-id="UtL6m7bJvfEl76GeNJ4LrH"><!--pnid:7nujf6mIzC4XUvUyt7XhuM-->25 倍改善缺乏可复核的基准与第三方验证。</li>
+        <li data-page-node-id="zOIJIDg7u6ed1TmBNiQg3p"><!--pnid:poxOWRpxVvC7blyEuUSg3P-->无监督 / 无人驾驶的安全闭环尚未建立。</li>
+        <li data-page-node-id="AkSz25fYLSUOEYDFIcyJhR"><!--pnid:6cgM6OzyVXpcAEKTT2cfgO-->生成式画面能否稳定、无幻觉地反映真实感知。</li>
+        <li data-page-node-id="6iSyUZm8DgxkQjAM9w1f9k"><!--pnid:8LBM9nFPQ2EYWctrHoRFFg-->蒸馏后的车端模型在长尾场景是否保住了老师的能力。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div data-page-node-id="4HtiAi61LZ4EWFwbnF5HcZ" class="note ok" style="margin-top:22px">
+    <span data-page-node-id="1hNAzFAr1K2zbUhRoqmb1O" class="t"><!--pnid:DweNNebWOM4A9DUujWytUc-->最终判断</span><!--pnid:7BDb03zgK4c9rLrXseUxpr-->
+    FSD V15 最重要的意义，可能不是它现在能把车开得多好，而是它在验证一条路径：<b data-page-node-id="WAdkbOVdQzl3FGURiyvKa2"><!--pnid:2Y0DC6GYDBedRmky1FoOVd-->让 AI 通过大量真实世界视频，学会理解环境、预测变化、并采取行动</b><!--pnid:7wihzq7MI1T8GsOws8K5WG-->。这条路线如果走通，影响的不会只是汽车——人形机器人、工业机器人、所有具身智能系统都可能受益。至少到 2026 年 11 月为止，它仍是一份"方向正确、成绩待考"的答卷，而不是一张已经兑现的支票。
+  </div>
+
+  <h3 data-page-node-id="ihtC5HJ0b4nTPFLEAv9MJp"><!--pnid:Vw5ocSPPIrZinb1HuINtox-->主要信息来源</h3>
+  <p data-page-node-id="9FnPuCd3fAd3DNDkd31M82" class="src"><!--pnid:piHYL8brVyGzyhoMLz3otY-->
+    本文综合整理自截至 2026 年 11 月 24 日的公开资料，主要包括：特斯拉官方 FSD v15 发布说明与 @TeslaSI 公布的完整 release notes；马斯克与 AI 软件副总裁 Ashok Elluswamy 在 X、财报电话会、CVPR 2026 / ICCV 2025 上的公开表述；Electrek、Not a Tesla App、GetTesla、Unite.AI 等媒体的报道与实测；以及多家中文技术媒体的深度拆解。所有"官方口径"数据均为厂商表述，未经独立验证；社区众包数据仅供趋势参考。
+  </p>
+</section>
+
+
+</main>
+<div data-page-node-id="IP2d7P4PxY9oVoJWCs8r05" class="footbar endbar wrap"><!--pnid:QjRtfx6aTDcwoomQ7mJGls-->
+  本文档基于截至 2026 年 11 月 24 日的公开资料整理，含官方发布说明、高管公开演讲与第三方报道。文中标注"官方口径"的数据均为厂商自测或表述，未经独立验证。仅供技术学习参考，不构成任何投资或购买建议。
+</div>
+</body>
+</html>
