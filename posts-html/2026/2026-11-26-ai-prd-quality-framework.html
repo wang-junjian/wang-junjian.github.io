@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AI 写 PRD 的瓶颈不在生成端，而在输入的确定性与验收的可判定性。本文给出质量六轴（机器只能可靠校验前四轴）、五层上下文栈、EARS 五句式与五维门禁，附 8% 增益证据、13 条反模式与 90 天落地路径。">
+<meta name="keywords" content="ai-prd, context-engineering, ears-syntax, requirement-quality, spec-driven-development, prd-quality-gate">
+<meta name="author" content="军舰">
+<meta name="date" content="2026-11-26">
+<title>如何让 AI 生成高质量 PRD · 深度研究</title>
+<style>
+:root{
+  --paper:#FBFAF7; --paper2:#F5F3ED; --card:#FFFFFF;
+  --ink:#16181D; --ink2:#333941; --ink3:#4A505A;
+  --border:#E3DFD5; --border2:#D2CCBE;
+  --amber:#B45309; --amber-t:#8F3F06; --amber-bg:#FBF1E4;
+  --blue:#2F6FB0;   --blue-t:#1F5288;  --blue-bg:#EAF1F9;
+  --green:#2E7D32;  --green-t:#1B5820; --green-bg:#EAF3E9;
+  --teal:#0F766E;   --teal-t:#0A5750;  --teal-bg:#E5F1EF;
+  --purple:#6D3FB5; --purple-t:#5A3099;--purple-bg:#F1EBF9;
+  --red:#B3261E;    --red-t:#8E1B15;   --red-bg:#FAEAE8;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px;line-height:1.75;overflow-wrap:break-word;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+code{font-family:var(--mono);font-size:.9em;background:var(--paper2);
+  border:1px solid var(--border);border-radius:4px;padding:1px 5px;overflow-wrap:anywhere}
+pre{background:#1B1D23;color:#E8E6E0;padding:18px 20px;border-radius:10px;
+  overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.7;margin:16px 0}
+pre code{background:none;border:none;padding:0;color:inherit;font-size:13px}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);
+  backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--border)}
+nav .inner{max-width:1060px;margin:0 auto;padding:0 28px;display:flex;
+  align-items:center;gap:6px;overflow-x:auto;height:52px;
+  -ms-overflow-style:none;scrollbar-width:none}
+nav .inner::-webkit-scrollbar{display:none}
+nav a{flex:0 0 auto;color:var(--ink3);text-decoration:none;font-size:13px;
+  padding:5px 9px;border-radius:6px;white-space:nowrap}
+nav a:hover{color:var(--ink);background:var(--paper2)}
+nav .brand{flex:0 0 auto;font-weight:700;font-size:13px;color:var(--ink);
+  letter-spacing:.02em;padding-right:10px;margin-right:4px;border-right:1px solid var(--border2)}
+
+/* ---------- hero ---------- */
+header.hero{padding:72px 0 46px;border-bottom:1px solid var(--border)}
+.kicker{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber-t);margin-bottom:18px}
+h1{font-size:42px;line-height:1.22;margin:0 0 20px;letter-spacing:-.018em;font-weight:800}
+h1 .sub{display:block;font-size:20px;font-weight:500;color:var(--ink2);margin-top:14px;letter-spacing:0}
+.lede{font-size:17.5px;color:var(--ink2);max-width:780px;margin:0 0 26px}
+.meta{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:12.5px;color:var(--ink3);
+  border-top:1px solid var(--border);padding-top:16px}
+.meta b{color:var(--ink2);font-weight:600}
+
+/* ---------- sections ---------- */
+main{padding-bottom:20px}
+section{padding:56px 0 8px;border-bottom:1px solid var(--border);scroll-margin-top:24px}
+section:last-of-type{border-bottom:none}
+h2{font-size:28px;line-height:1.3;margin:0 0 8px;letter-spacing:-.012em;font-weight:750}
+h2 .num{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--amber-t);
+  display:inline-block;min-width:34px;vertical-align:2px;letter-spacing:0}
+.deck{font-size:15.5px;color:var(--ink3);margin:0 0 30px;max-width:800px}
+h3{font-size:18.5px;margin:38px 0 10px;letter-spacing:-.008em;font-weight:700}
+h4{font-size:15.5px;margin:24px 0 6px;font-weight:700;color:var(--ink)}
+p{margin:12px 0}
+ul,ol{margin:12px 0;padding-left:22px}
+li{margin:7px 0}
+li::marker{color:var(--ink3)}
+strong{font-weight:650}
+.hl{background:linear-gradient(180deg,transparent 58%,var(--amber-bg) 58%);padding:0 2px}
+
+/* ---------- components ---------- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:22px 24px;min-width:0}
+.card>h4:first-child,.card>p:first-child{margin-top:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+.g2>*,.g3>*,.card,figure,.fig-box,.axis>div{min-width:0}
+
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;
+  border-radius:999px;letter-spacing:.02em;vertical-align:1px}
+.t-amber{color:var(--amber-t);background:var(--amber-bg);border:1px solid #EDD9BF}
+.t-blue{color:var(--blue-t);background:var(--blue-bg);border:1px solid #CFE0F1}
+.t-green{color:var(--green-t);background:var(--green-bg);border:1px solid #CFE3CE}
+.t-teal{color:var(--teal-t);background:var(--teal-bg);border:1px solid #C8E2DE}
+.t-purple{color:var(--purple-t);background:var(--purple-bg);border:1px solid #DCCEF0}
+.t-red{color:var(--red-t);background:var(--red-bg);border:1px solid #EFCFCB}
+.t-gray{color:var(--ink3);background:var(--paper2);border:1px solid var(--border2)}
+
+.callout{border-left:3px solid var(--amber);background:var(--amber-bg);
+  border-radius:0 8px 8px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+.callout p:first-child{margin-top:0}.callout p:last-child{margin-bottom:0}
+.callout.warn{border-color:var(--red);background:var(--red-bg)}
+.callout.cool{border-color:var(--blue);background:var(--blue-bg)}
+.callout .lbl{display:block;font-size:11.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--amber-t);margin-bottom:6px}
+.callout.warn .lbl{color:var(--red-t)}
+.callout.cool .lbl{color:var(--blue-t)}
+
+/* claims */
+ol.claims{list-style:none;padding:0;margin:24px 0;counter-reset:c}
+ol.claims>li{counter-increment:c;position:relative;padding:16px 20px 16px 58px;
+  border:1px solid var(--border);border-radius:10px;background:var(--card);margin:10px 0}
+ol.claims>li::before{content:counter(c,decimal-leading-zero);position:absolute;left:18px;top:16px;
+  font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--amber-t)}
+ol.claims>li>b{display:block;margin-bottom:3px;font-weight:700}
+ol.claims>li span{font-size:14px;color:var(--ink3)}
+
+/* tables */
+.tw{overflow-x:auto;margin:20px 0;border:1px solid var(--border);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th{text-align:left;font-weight:700;font-size:12.5px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink2);background:var(--paper2);
+  padding:11px 14px;border-bottom:1px solid var(--border2);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--ink2)}
+tr:last-child td{border-bottom:none}
+td b,td strong{color:var(--ink)}
+td.num{font-family:var(--mono);font-size:13px;white-space:nowrap}
+
+/* figures */
+figure{margin:28px 0}
+.fig-box{overflow-x:auto;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:14px 8px}
+svg{display:block;min-width:600px;margin:0 auto}
+figcaption{font-size:12.5px;color:var(--ink3);margin-top:9px;padding-left:2px;line-height:1.6}
+figcaption b{color:var(--ink2);font-weight:650}
+
+/* verdict */
+.verdict{border:1px solid var(--border2);border-left:4px solid var(--ink);
+  border-radius:0 10px 10px 0;background:var(--card);padding:20px 24px;margin:28px 0}
+.verdict h4{margin:0 0 6px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.verdict p{margin:0;font-size:15.5px}
+
+/* src list */
+ol.src{font-size:13.5px;color:var(--ink3);padding-left:24px}
+ol.src li{margin:9px 0}
+ol.src a{color:var(--blue-t);text-decoration:none;word-break:break-all}
+ol.src a:hover{text-decoration:underline}
+
+footer{padding:40px 0 64px;font-size:12.5px;color:var(--ink3);border-top:1px solid var(--border)}
+
+@media (max-width:820px){
+  h1{font-size:31px}h2{font-size:23px}
+  .g2,.g3{grid-template-columns:1fr}
+  .wrap,nav .inner{padding:0 18px}
+  header.hero{padding:48px 0 34px}
+  section{padding:40px 0 6px}
+}
+@media (max-width:760px){
+  table{display:block;overflow-x:auto;min-width:0}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <span class="brand">AI × PRD</span>
+    <a href="#s00">摘要</a>
+    <a href="#s01">范式判定</a>
+    <a href="#s02">失效机理</a>
+    <a href="#s03">质量六轴</a>
+    <a href="#s04">上下文</a>
+    <a href="#s05">工作流</a>
+    <a href="#s06">提示词</a>
+    <a href="#s07">验收标准</a>
+    <a href="#s08">质量门禁</a>
+    <a href="#s09">证据</a>
+    <a href="#s10">度量</a>
+    <a href="#s11">落地</a>
+    <a href="#s12">反模式</a>
+    <a href="#s13">结论</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Deep Research · 2026-11</div>
+    <h1>如何让 AI 生成高质量 PRD
+      <span class="sub">从「漂亮的文档」到「可判定的规格」：一份基于近半年一手证据的工程手册</span>
+    </h1>
+    <p class="lede">大多数团队把 AI 写 PRD 当成写作效率问题，于是优化提示词、换模型、上模板，然后发现产出依然「结构完美、内容空心」。真正的问题不在生成端，而在<strong>输入的确定性</strong>与<strong>验收的可判定性</strong>——前者决定 AI 有没有事实可依据，后者决定「完成」这个词还有没有含义。</p>
+    <div class="meta">
+      <span><b>证据窗口</b>　2026-05 → 2026-11（主体），早期经典方法标注年份</span>
+      <span><b>一手来源</b>　arXiv / 官方文档 / 行业调查</span>
+      <span><b>性质</b>　观点报告，非共识综述</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="s00">
+  <h2><span class="num">00</span>摘要：十条可证伪的判断</h2>
+  <p class="deck">如果只读一页，读这一页。每条判断都附了支撑它的最强证据，以及我给它打的证据强度标签——你可以直接质疑最弱的那几条。</p>
+
+  <ol class="claims">
+    <li><b>瓶颈在输入端，不在生成端。</b><span>同一模型、同一任务，输入从「一句话想法」升级为「语境 + 约束 + 范例 + 非目标」后，可用率发生量级变化。缺的不是更强的模型，是更确定的输入。</span></li>
+    <li><b>「完整」是风险信号，不是质量信号。</b><span>一份结构完备、措辞专业的 AI 文档，其危险性恰恰来自它看起来已经被想清楚了。粗糙的文档会引发讨论，精美的文档只会制造「已对齐」的假象。</span></li>
+    <li><b>PRD 正在分裂成两种产物，混写两头都不合格。</b><span>给人读的<strong>决策文档</strong>（为什么做、给谁做、明确不做什么）与给机器读的<strong>执行规格</strong>（在什么条件下系统必须做什么，可判定）正在分道。2025 年的 spec-driven 工具链是这个分裂的制度化。</span></li>
+    <li><b>六个质量维度里，AI 只能可靠校验其中三个半。</b><span>无歧义、可验证、一致性可以机械判定；完整性半机械；「用户真的需要这个吗」「这个优先级对不对」——AI 没有判据。</span></li>
+    <li><b>验收标准是单点投入产出比最高的改写。</b><span>把「体验流畅」换成「在 X 条件下，Y 指标优于 Z」，是唯一一处「改一句话、整份文档可用性显著变化」的地方。EARS 句式把这件事变成填空题而非作文题。</span></li>
+    <li><b>多智能体自迭代有实证收益，但量级是个位数百分比。</b><span>目前最强的端到端 RE 系统在 8 个前沿模型上比检索增强基线平均高约 8%（文本指标）、人类四分制评分高约 0.8 分。这是「值得做」，不是「可以放手」。</span></li>
+    <li><b>采用率已经饱和，价值远未兑现。</b><span>73% 的产品经理每周或每日使用 AI，但只有约 9% 把它当核心能力，36.9% 停留在零散工作流。写 PRD 是最高频的用法，也是最容易停在「看起来省了时间」的用法。</span></li>
+    <li><b>最大的成本不是返工，是隐性共识的消失。</b><span>传统评审中反复碰撞产生的「某个边界到底多重要」「某个妥协为什么不可避免」，不会出现在任何文档里。AI 跳过了碰撞，也就跳过了共识的生产过程。</span></li>
+    <li><b>规格漂移比没有规格更危险。</b><span>当 spec 成为「真相源」而它与代码长期不一致时，团队会失去对文档的信任，退回到读代码猜意图——比从未写过 spec 更糟。</span></li>
+    <li><b>人的位置在向两端迁移。</b><span>中间环节（整理、成文、补格式、拆任务）被压缩，剩下的是最前端的「定义问题」和最后端的「验收结果」。这两端恰好是 AI 判据最薄弱的地方——这不是巧合。</span></li>
+  </ol>
+
+  <div class="verdict">
+    <h4>一句话结论</h4>
+    <p>把 AI 当「快速写手」用，你得到的是更快产出的技术债；把 AI 当「结构化审问器」用——逼它穷举场景、暴露假设、生成可判定的断言——你才得到一份能被验证的规格。前者省的是打字时间，后者省的才是返工。</p>
+  </div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>范式判定：什么才算「高质量 PRD」</h2>
+  <p class="deck">讨论质量之前必须先定义质量。多数关于「AI 写 PRD 好不好」的争论，实质是双方在用不同的质量定义互相驳斥。</p>
+
+  <h3>1.1 三种常见的错误定义</h3>
+  <div class="g3">
+    <div class="card">
+      <h4>格式完整</h4>
+      <p>章节齐全、有用户故事、有验收标准、有甘特图。「看起来像一份 PRD」。</p>
+      <p><span class="tag t-red">失效</span> 完整度可以零成本伪造。AI 最擅长的正是这件事。</p>
+    </div>
+    <div class="card">
+      <h4>评审通过快</h4>
+      <p>没人提反对意见、会上十分钟过、开发说「清楚」。</p>
+      <p><span class="tag t-red">失效</span> 审阅者对结构完整的文本有系统性高估倾向，这与审阅 AI 代码时漏掉隐含假设是同一种失效。</p>
+    </div>
+    <div class="card">
+      <h4>篇幅够长</h4>
+      <p>二十页、字段级、面面俱到。</p>
+      <p><span class="tag t-red">失效</span> 长度与可执行性无关，甚至负相关：没人读完的文档等于不存在。</p>
+    </div>
+  </div>
+
+  <h3>1.2 可用的定义：三个可判定的性质</h3>
+  <p>把「高质量」落到能被第三方复核的性质上，只剩三条。这三条同时也是<strong>机器可以介入检查</strong>的边界：</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%">性质</th><th style="width:38%">判据</th><th>反例 → 正例</th></tr></thead>
+      <tbody>
+        <tr><td><b>可判定</b></td><td>任意两个人（或一人一机）按同一份文档核对同一结果，结论必然一致</td><td>「响应要快」→「正常负载下查询接口 P95 延迟 &lt; 200ms」</td></tr>
+        <tr><td><b>可执行</b></td><td>研发或编码智能体能仅凭文档产出实现，无需再向作者追问关键事实</td><td>「支持导出」→「导出 CSV，字段为 A/B/C，单次上限 5 万行，超限分片」</td></tr>
+        <tr><td><b>可证伪</b></td><td>文档写明了「什么情况下这个方案是错的」，即存在能推翻它的观察</td><td>「提升留存」→「若上线 4 周后 D7 留存未从 18% 升至 22%，则假设被推翻，回滚」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三条性质里，<span class="hl">「可证伪」是最容易被跳过的一条，也是区分「需求」与「愿望」的唯一分界线</span>。AI 写 PRD 的通病恰恰是产出大量不可证伪的表述——它们听起来都对，因此无法被任何结果否定，也就无法指导任何决策。</p>
+
+  <h3>1.3 五代形态演化：文档正在分裂</h3>
+
+  <figure id="f01">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="PRD 形态的五代演化">
+        <rect x="0" y="0" width="960" height="300" fill="#FFFFFF"/>
+        <text x="32" y="38" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">五代形态：从「给人读的文档」到「人机分读的双产物」</text>
+        <text x="32" y="60" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#4A505A">横轴为代际而非等比例时间；箭头方向代表「机器可消费程度」的提升</text>
+
+        <!-- 5 blocks: w=160 gap=24 start=32 -->
+        <rect x="32" y="96" width="160" height="150" rx="8" fill="#F5F3ED" stroke="#D2CCBE"/>
+        <text x="44" y="120" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#4A505A">2010s</text>
+        <text x="44" y="142" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#16181D">模板化 PRD</text>
+        <text x="44" y="166" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">Word 目录 +</text>
+        <text x="44" y="182" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">字段级描述</text>
+        <text x="44" y="206" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">读者：评审会</text>
+        <text x="44" y="228" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">机器可消费：无</text>
+
+        <path d="M196,171 L206,176 L196,181 Z" fill="#4A505A"/>
+
+        <rect x="216" y="96" width="160" height="150" rx="8" fill="#F5F3ED" stroke="#D2CCBE"/>
+        <text x="228" y="120" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#4A505A">2018s</text>
+        <text x="228" y="142" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#16181D">PRD + 原型</text>
+        <text x="228" y="166" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">原型充当规格</text>
+        <text x="228" y="182" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">图文混排</text>
+        <text x="228" y="206" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">读者：设计 + 研发</text>
+        <text x="228" y="228" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">机器可消费：极低</text>
+
+        <path d="M380,171 L390,176 L380,181 Z" fill="#4A505A"/>
+
+        <rect x="400" y="96" width="160" height="150" rx="8" fill="#FBF1E4" stroke="#B45309"/>
+        <text x="412" y="120" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#8F3F06">2024</text>
+        <text x="412" y="142" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#16181D">AI 起草</text>
+        <text x="412" y="166" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">一句话进，</text>
+        <text x="412" y="182" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">整份文档出</text>
+        <text x="412" y="206" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">读者：人（含 AI）</text>
+        <text x="412" y="228" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06">风险：虚假精确</text>
+
+        <path d="M564,171 L574,176 L564,181 Z" fill="#4A505A"/>
+
+        <rect x="584" y="96" width="160" height="150" rx="8" fill="#EAF1F9" stroke="#2F6FB0"/>
+        <text x="596" y="120" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#1F5288">2025</text>
+        <text x="596" y="142" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#16181D">规格驱动</text>
+        <text x="596" y="166" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">spec / plan /</text>
+        <text x="596" y="182" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">tasks 三段式</text>
+        <text x="596" y="206" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">读者：编码智能体</text>
+        <text x="596" y="228" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#1F5288">形态：EARS 句式</text>
+
+        <path d="M748,171 L758,176 L748,181 Z" fill="#4A505A"/>
+
+        <rect x="768" y="96" width="160" height="150" rx="8" fill="#E5F1EF" stroke="#0F766E"/>
+        <text x="780" y="120" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#0A5750">2026</text>
+        <text x="780" y="142" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#16181D">双产物分流</text>
+        <text x="780" y="166" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">决策文档 +</text>
+        <text x="780" y="182" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">执行规格</text>
+        <text x="780" y="206" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">读者：人 + 机器</text>
+        <text x="780" y="228" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#0A5750">关键：两份互相约束</text>
+
+        <text x="32" y="278" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">注：2025 年 7 月 Kiro 发布、9 月 GitHub Spec Kit 开源，是「规格驱动」从个人习惯变成工具链约束的两个节点。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1</b>　PRD 的五代形态。前三代的核心矛盾是「写得慢」，第四代把矛盾换成了「写得快但写不准」，第五代试图用分流解决它。判断你处在哪一代，看团队是拿同一份文档既做决策又做交付，还是已经分开。</figcaption>
+  </figure>
+
+  <p>这个演化有一个被普遍忽略的后果：<span class="hl">当 PRD 同时承担「说服人」和「指挥机器」两种职能时，它会同时损害两种职能</span>。为了说服人而加入的背景叙事、竞品对比、愿景段落，对机器是噪声；为了指挥机器而要求的精确断言、边界穷举、字段定义，对人是不堪重负的细节。</p>
+
+  <figure id="f02">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 360" role="img" aria-label="双产物模型：决策文档与执行规格由人的判断连接">
+        <rect x="0" y="0" width="960" height="360" fill="#FFFFFF"/>
+        <text x="80" y="42" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">双产物模型：两种文档服务两种读者，由人的判断连接</text>
+
+        <rect x="80" y="70" width="260" height="190" rx="10" fill="#FBF1E4" stroke="#B45309"/>
+        <text x="100" y="98" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#8F3F06">ARTIFACT 1</text>
+        <text x="100" y="122" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="14" font-weight="700" fill="#16181D">决策文档</text>
+        <text x="100" y="148" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 新闻稿式价值陈述</text>
+        <text x="100" y="169" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 明确不做什么（非目标）</text>
+        <text x="100" y="190" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 可证伪的成功判据</text>
+        <text x="100" y="211" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 关键取舍与代价</text>
+        <text x="100" y="240" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06">读者：决策者 · 长度：1–3 页</text>
+
+        <rect x="380" y="70" width="200" height="190" rx="10" fill="#FFFFFF" stroke="#16181D" stroke-width="1.5"/>
+        <text x="480" y="104" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" font-weight="700" fill="#16181D">人的判断</text>
+        <line x1="410" y1="118" x2="550" y2="118" stroke="#D2CCBE"/>
+        <text x="480" y="142" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">这个取舍成立吗</text>
+        <text x="480" y="163" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">用户真的在痛吗</text>
+        <text x="480" y="184" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">现在做对吗</text>
+        <text x="480" y="212" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">签字放行</text>
+        <text x="480" y="240" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">AI 不可代劳</text>
+
+        <rect x="620" y="70" width="260" height="190" rx="10" fill="#EAF1F9" stroke="#2F6FB0"/>
+        <text x="640" y="98" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#1F5288">ARTIFACT 2</text>
+        <text x="640" y="122" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="14" font-weight="700" fill="#16181D">执行规格</text>
+        <text x="640" y="148" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 条件 → 可观察响应</text>
+        <text x="640" y="169" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 边界挂在所属故事下</text>
+        <text x="640" y="190" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 字段、状态、错误码</text>
+        <text x="640" y="211" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">· 每条可映射为断言</text>
+        <text x="640" y="240" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#1F5288">读者：研发 · 智能体 · 测试</text>
+
+        <path d="M340,165 L376,165" stroke="#8F3F06" stroke-width="1.5" fill="none"/>
+        <path d="M370,160 L378,165 L370,170 Z" fill="#8F3F06"/>
+        <path d="M584,165 L616,165" stroke="#1F5288" stroke-width="1.5" fill="none"/>
+        <path d="M610,160 L618,165 L610,170 Z" fill="#1F5288"/>
+
+        <rect x="80" y="292" width="800" height="44" rx="8" fill="#F5F3ED" stroke="#D2CCBE"/>
+        <text x="480" y="319" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">反馈闭环：上线后的实际结果回到决策文档，判定「可证伪的判据」是否被推翻 —— 而不是回到执行规格</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2</b>　双产物模型。关键在于反馈方向：业务结果只应该推翻决策文档的假设，不应该直接改写执行规格——后者是被前者约束出来的。</figcaption>
+  </figure>
+
+  <h3>1.4 概念分野：五个常被混用的东西</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:16%">产物</th><th style="width:26%">回答的问题</th><th style="width:14%">典型长度</th><th>什么时候必须有</th></tr></thead>
+      <tbody>
+        <tr><td><b>PR/FAQ</b></td><td>这东西值得做吗？用户会怎么描述它？</td><td class="num">1–2 页</td><td>立项、方向有分歧、要向上要资源</td></tr>
+        <tr><td><b>一页纸 PRD</b></td><td>这期做什么、不做什么、怎么算成了</td><td class="num">1 页</td><td>小功能迭代、周期 &lt; 2 周</td></tr>
+        <tr><td><b>完整 PRD</b></td><td>多角色、多端、多状态下的行为约定</td><td class="num">5–15 页</td><td>跨团队、涉及资金/权限/合规</td></tr>
+        <tr><td><b>Spec（spec.md）</b></td><td>机器照着能实现的最小无歧义契约</td><td class="num">按故事拆</td><td>交给编码智能体、或需要可追溯验收</td></tr>
+        <tr><td><b>AGENTS.md</b></td><td>这个仓库的长期规则与禁区</td><td class="num">≤ 200 行</td><td>任何多人 + 智能体协作的仓库</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表的实用价值在于：<strong>它把「要不要写 PRD」这个无解争论，换成了「这次该写哪一种」这个可回答的问题</strong>。绝大多数「AI 写的 PRD 没用」的抱怨，本质是用错了产物类型——把一份该是 1 页的决策文档，让 AI 撑成了 12 页的伪规格。</p>
+
+  <div class="callout">
+    <span class="lbl">判别式</span>
+    <p>写之前先问一句：<strong>这份文档的读者，会不会因为它而做出一个可被事后检验的决定？</strong>如果不会，它就不是 PRD，是备忘录；如果会，那么「可判定」就是它的最低门槛，不是加分项。</p>
+  </div>
+</section>
+<section id="s02">
+  <h2><span class="num">02</span>失效机理：为什么 AI 写 PRD 比写代码更容易翻车</h2>
+  <p class="deck">同一个模型，写代码能跑测试，写 PRD 却没人能立刻判断对错。这个差异不是能力问题，是<strong>反馈回路长度</strong>问题。</p>
+
+  <h3>2.1 生成端的真相：它输出的是「互联网平均 PRD」</h3>
+  <p>一个被反复验证的观察：模型在不了解你公司的情况下，会<strong>模仿互联网平均水平的 PRD</strong>。这不是模型缺陷，是它的工作方式——在缺乏具体约束时，最大似然解码必然收敛到最普遍的模式。</p>
+  <p>于是出现了 2026 年被多次记录的现象：<span class="hl">不同公司、不同产业、不同团队写出来的 PRD 开始长得一模一样</span>——同样的用户故事格式、同样的优先级框架、同样模糊的验收条件。一位产品从业者的措辞很准确：这不是巧合，是「平均值」开始主导产品决策。</p>
+
+  <div class="callout cool">
+    <span class="lbl">推论</span>
+    <p>如果 AI 的默认输出是「平均值」，那么让它产出「你的 PRD」的唯一办法，就是<strong>破坏平均性</strong>：喂入只有你才有的东西——真实用户原话、上一版失败的原因、本季度不能碰的技术债、老板上周否掉的方向。这些信息不在训练数据里，因此不可能被「猜」出来。</p>
+  </div>
+
+  <h3>2.2 四类失效模式</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:17%">模式</th><th style="width:30%">症状</th><th>机制</th></tr></thead>
+      <tbody>
+        <tr><td><b>虚假精确</b></td><td>结构完备、术语专业，但每段下面都是未推敲的假设</td><td>「完整」是低成本可生成的；人读到完整文本时会系统性下调审查强度</td></tr>
+        <tr><td><b>语境幻觉</b></td><td>编造业务规则、数值、法务约束；看起来很合理</td><td>模型用「看起来合理」的默认值填补信息空缺，而空缺恰恰是最需要人决策的地方</td></tr>
+        <tr><td><b>边界缺失</b></td><td>只写正常流程，异常路径用「等」概括</td><td>异常场景在训练语料中占比极低；穷举需要业务知识，而模型只有语言知识</td></tr>
+        <tr><td><b>责任转移</b></td><td>作者无法解释当初为什么这样决策</td><td>决策从未真正发生，作者只是输出的搬运工——六个月后问题爆发时无人能回溯</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第四类最容易被低估。它不产生任何当下的错误，只在<strong>最需要判断力的时刻</strong>兑现成本：线上事故复盘、方案被质疑、需求要改。这时团队发现「文档的作者」从未做过决策，而那些决策的逻辑从未存在于任何地方。</p>
+
+  <h3>2.3 根本原因：反馈回路的长度差了一个数量级</h3>
+
+  <figure id="f03">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 290" role="img" aria-label="代码错误与需求错误的反馈延迟对比">
+        <rect x="0" y="0" width="960" height="290" fill="#FFFFFF"/>
+        <text x="40" y="30" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">同一套流程里，代码错误在小时级被发现，需求错误在月级才被发现</text>
+
+        <!-- track 1 -->
+        <text x="40" y="74" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" font-weight="700" fill="#1B5820">代码路径</text>
+        <line x1="100" y1="106" x2="880" y2="106" stroke="#CFE3CE" stroke-width="3"/>
+        <circle cx="100" cy="106" r="7" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+        <circle cx="295" cy="106" r="7" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+        <circle cx="490" cy="106" r="7" fill="#B3261E" stroke="#B3261E" stroke-width="2"/>
+        <circle cx="685" cy="106" r="7" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+        <circle cx="880" cy="106" r="7" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+        <text x="100" y="132" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">写代码</text>
+        <text x="295" y="132" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">编译</text>
+        <text x="490" y="132" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15" font-weight="700">测试失败</text>
+        <text x="685" y="132" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">上线</text>
+        <text x="880" y="132" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">用户使用</text>
+        <text x="490" y="86" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" font-weight="700" fill="#8E1B15">发现点：分钟—小时</text>
+
+        <!-- track 2 -->
+        <text x="40" y="180" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" font-weight="700" fill="#8E1B15">需求路径</text>
+        <line x1="100" y1="212" x2="880" y2="212" stroke="#EFCFCB" stroke-width="3"/>
+        <circle cx="100" cy="212" r="7" fill="#FFFFFF" stroke="#B3261E" stroke-width="2"/>
+        <circle cx="295" cy="212" r="7" fill="#FFFFFF" stroke="#B3261E" stroke-width="2"/>
+        <circle cx="490" cy="212" r="7" fill="#FFFFFF" stroke="#B3261E" stroke-width="2"/>
+        <circle cx="685" cy="212" r="7" fill="#FFFFFF" stroke="#B3261E" stroke-width="2"/>
+        <circle cx="880" cy="212" r="9" fill="#B3261E" stroke="#B3261E" stroke-width="2"/>
+        <text x="100" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">决策</text>
+        <text x="295" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">写 PRD</text>
+        <text x="490" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">开发实现</text>
+        <text x="685" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">上线</text>
+        <text x="880" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15" font-weight="700">数据复盘</text>
+        <text x="860" y="190" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" font-weight="700" fill="#8E1B15">发现点：周—月</text>
+
+        <text x="40" y="272" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">同一条链条上，越往上游出错，修正成本越高——而 AI 恰好把提效集中在上游。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3</b>　反馈回路长度对比。这张图解释了为什么「AI 写代码」的经验不能平移到「AI 写需求」：可以自动验证的环节，AI 的产出能被自己纠错；不能自动验证的环节，AI 的产出只能靠人纠错，而人是最贵的验证器。</figcaption>
+  </figure>
+
+  <p>AWS 在 2026 年复盘其数百个团队的 AI 原生实践时给出的最高杠杆动作是同一件事的反面表述：<strong>给智能体一个能自己跑的 pass/fail 检查</strong>，否则「看起来做完了」就是唯一信号。PRD 的问题恰恰是——它天然缺少可运行的检查。所以必须人为造一个出来。</p>
+
+  <h3>2.4 被忽略的组织成本：隐性共识的消失</h3>
+  <p>传统需求评审里，产品经理和研发反复碰撞，过程本身会沉淀大量<strong>不在文档里的共识</strong>：某个边界为什么可以不管、某个妥协为什么不可避免、下季度要还哪笔债。这些共识存在于参与者的记忆里，是团队真正的执行基础。</p>
+  <p>AI 文档跳过了碰撞，也跳过了共识的生产。文档变得更完整、更规范，但<span class="hl">团队对「我们究竟在做什么」的共同理解反而变薄了</span>。这个损失不会出现在任何指标里，只会在三个月后的某个「咦，我以为这里是这样」的对话里出现。</p>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>质量六轴：哪几轴可以交给机器</h2>
+  <p class="deck">把「质量」拆成六个可分别判定的轴，才可能设计出分层门禁——机器管它管得了的，人管机器管不了的。</p>
+
+  <p>这套六轴来自对 IEEE 830 与 ISO 29148 的工程化裁剪，实践中收敛为五个核心指标（关注「什么」、可验证性、无歧义性、正确性、一致性）。我在此基础上把「完整性」单列，因为它在 AI 场景下的失效频率远高于传统写作。</p>
+
+  <figure id="f04">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 380" role="img" aria-label="六个质量维度的机器可验证程度估算">
+        <rect x="0" y="0" width="960" height="380" fill="#FFFFFF"/>
+        <text x="24" y="28" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">六个质量轴上，机器能承担的比例（建模估算，非实测）</text>
+        <text x="24" y="48" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">数值含义：该轴上的判定工作有多大比例可被规则 + 模型可靠完成，其余必须由人承担</text>
+
+        <!-- grid -->
+        <line x1="320" y1="60" x2="320" y2="306" stroke="#E3DFD5"/>
+        <line x1="465" y1="60" x2="465" y2="306" stroke="#E3DFD5" stroke-dasharray="3 4"/>
+        <line x1="610" y1="60" x2="610" y2="306" stroke="#E3DFD5" stroke-dasharray="3 4"/>
+        <line x1="755" y1="60" x2="755" y2="306" stroke="#E3DFD5" stroke-dasharray="3 4"/>
+        <line x1="900" y1="60" x2="900" y2="306" stroke="#E3DFD5"/>
+
+        <!-- rows -->
+        <text x="300" y="85" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">可验证性</text>
+        <rect x="320" y="72" width="493" height="18" rx="3" fill="#0F766E"/>
+        <text x="821" y="85" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0A5750">85%</text>
+
+        <text x="300" y="127" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">无歧义性</text>
+        <rect x="320" y="114" width="464" height="18" rx="3" fill="#0F766E"/>
+        <text x="792" y="127" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0A5750">80%</text>
+
+        <text x="300" y="169" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">内部一致性</text>
+        <rect x="320" y="156" width="435" height="18" rx="3" fill="#0F766E"/>
+        <text x="763" y="169" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0A5750">75%</text>
+
+        <text x="300" y="211" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">关注「什么」</text>
+        <rect x="320" y="198" width="406" height="18" rx="3" fill="#0F766E"/>
+        <text x="734" y="211" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0A5750">70%</text>
+
+        <text x="300" y="253" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">完整性</text>
+        <rect x="320" y="240" width="319" height="18" rx="3" fill="#B45309"/>
+        <text x="647" y="253" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8F3F06">55%</text>
+
+        <text x="300" y="295" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">正确性 · 价值</text>
+        <rect x="320" y="282" width="116" height="18" rx="3" fill="#B3261E"/>
+        <text x="444" y="295" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8E1B15">20%</text>
+
+        <!-- axis -->
+        <line x1="320" y1="314" x2="900" y2="314" stroke="#D2CCBE"/>
+        <text x="320" y="332" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">0%</text>
+        <text x="465" y="332" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">25%</text>
+        <text x="610" y="332" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">50%</text>
+        <text x="755" y="332" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">75%</text>
+        <text x="900" y="332" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">100%</text>
+
+        <text x="24" y="362" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">前四轴可构成「机器门禁」；后两轴必须留给人类门禁——这条分界线是整个方法论的骨架。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4</b>　六轴的机器可承担比例。数值为本文建模估算（依据各轴的判定是否需要外部业务事实），不是实测结果。<b>关键读法不是具体百分比，而是断层的位置</b>：前四轴与后两轴之间存在明显落差。</figcaption>
+  </figure>
+
+  <p>这个断层不是偶然的。前四轴只需要<strong>文档内部的信息</strong>就能判定——用词是否模糊、条目之间是否矛盾、是否越界写了实现。后两轴需要<strong>文档外部的信息</strong>：用户是否真的在痛、这个功能是否比那个更值得做、这条业务规则是否符合监管。外部信息不在任何模型里，因此无法被模型校验。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:14%">轴</th><th style="width:30%">机检手段</th><th style="width:26%">误判风险</th><th>人的不可替代部分</th></tr></thead>
+      <tbody>
+        <tr><td><b>可验证性</b></td><td>模糊词表扫描、数值/单位识别、验收标准覆盖率</td><td>换词即可绕过（「快」→「流畅」）</td><td>判断该指标是否真的反映用户价值</td></tr>
+        <tr><td><b>无歧义性</b></td><td>指代消解、未定义缩写、多重条件嵌套检测</td><td>把行业术语误判为歧义</td><td>确认「我们内部都懂」的隐含约定</td></tr>
+        <tr><td><b>一致性</b></td><td>参数值比对、行为描述冲突、术语统一</td><td>跨文档比对时找不到对照源</td><td>判定哪个版本才是对的</td></tr>
+        <tr><td><b>关注什么</b></td><td>技术实现词扫描（接口名、库名、表结构）</td><td>把不可协商的设计约束误报为实现越界</td><td>识别哪些约束是真的硬约束</td></tr>
+        <tr><td><b>完整性</b></td><td>场景穷举提示、异常分支覆盖率、占位符检测</td><td>穷举出大量低概率场景淹没重点</td><td>判断哪些边界值得做、哪些可以不管</td></tr>
+        <tr><td><b>正确性</b></td><td>公式与数值核对、法规版本比对、逻辑闭环检查</td><td>无法判断「用户是否真的需要这个功能」</td><td>全部</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="verdict">
+    <h4>由此推出的工程动作</h4>
+    <p>不要问「AI 能不能保证 PRD 质量」——这个问题无解。要问「哪几轴可以前置成自动门禁，剩下的用什么机制兜住」。前四轴做成提交前必过的检查，后两轴做成<strong>必须有人签字、且签字人必须能说出判据</strong>的关卡。</p>
+  </div>
+</section>
+<section id="s04">
+  <h2><span class="num">04</span>上下文工程：把「你不知道你不知道」变成已知</h2>
+  <p class="deck">AI 写 PRD 的质量上限，由你在提示词之外提供的事实量决定。这一章讲的是「喂什么」，而不是「怎么问」。</p>
+
+  <h3>4.1 一个真实的比例</h3>
+  <p>一位用 ChatGPT 写过 50 份以上 PRD 的实践者给过一个粗略但诚实的估计：其中约 45 份是垃圾——<strong>不是模型的问题，是输入的问题</strong>。「帮我写一个社交 App 的 PRD」这种输入，必然得到一份「放到任何真实项目里都没法用」的文档，因为它缺了你脑子里的全部上下文：目标用户、技术栈、几个人、deadline、竞品。</p>
+  <p>另一个可操作的量化建议：<strong>提示词中背景信息的占比不应低于三分之一</strong>，宁可冗余，也不要让模型补全关键事实。这条建议与「AGENTS.md 不超过 200 行」看起来矛盾，实际不矛盾——它们说的是两种不同的上下文。</p>
+
+  <h3>4.2 五层上下文栈</h3>
+
+  <figure id="f05">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 350" role="img" aria-label="PRD 任务所需的五层上下文">
+        <rect x="0" y="0" width="960" height="350" fill="#FFFFFF"/>
+        <text x="24" y="30" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">五层上下文：越靠上越易变，越靠下越稳定</text>
+        <text x="24" y="50" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">规则：同一事实只能有一个权威位置，重复即冲突</text>
+
+        <rect x="24" y="66" width="170" height="46" rx="6" fill="#FBF1E4" stroke="#B45309"/>
+        <text x="109" y="94" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#8F3F06">1 · 任务简报</text>
+        <rect x="206" y="66" width="730" height="46" rx="6" fill="#FFFFFF" stroke="#E3DFD5"/>
+        <text x="222" y="84" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">这次要交付什么：范围、读者、期限、必须回答的 3 个问题</text>
+        <text x="222" y="101" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">常见错误：只写「优化一下」「做个类似 X 的」</text>
+        <text x="925" y="94" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">每次变</text>
+
+        <rect x="24" y="120" width="170" height="46" rx="6" fill="#EAF1F9" stroke="#2F6FB0"/>
+        <text x="109" y="148" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#1F5288">2 · 项目规则</text>
+        <rect x="206" y="120" width="730" height="46" rx="6" fill="#FFFFFF" stroke="#E3DFD5"/>
+        <text x="222" y="138" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">术语表、模板、禁止项、合规边界（AGENTS.md / 团队规范）</text>
+        <text x="222" y="155" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">常见错误：写成十页百科，模型开始忽略真实指令</text>
+        <text x="925" y="148" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">季度变</text>
+
+        <rect x="24" y="174" width="170" height="46" rx="6" fill="#EAF3E9" stroke="#2E7D32"/>
+        <text x="109" y="202" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#1B5820">3 · 证据</text>
+        <rect x="206" y="174" width="730" height="46" rx="6" fill="#FFFFFF" stroke="#E3DFD5"/>
+        <text x="222" y="192" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">用户原话、行为数据、上一版复盘、竞品截图 —— 可核验的一手材料</text>
+        <text x="222" y="209" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">常见错误：用「行业普遍认为」代替数据，模型于是补全成幻觉</text>
+        <text x="925" y="202" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">随调研变</text>
+
+        <rect x="24" y="228" width="170" height="46" rx="6" fill="#F1EBF9" stroke="#6D3FB5"/>
+        <text x="109" y="256" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#5A3099">4 · 工具契约</text>
+        <rect x="206" y="228" width="730" height="46" rx="6" fill="#FFFFFF" stroke="#E3DFD5"/>
+        <text x="222" y="246" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">现有接口、数据表、权限模型、能改与不能改的部分</text>
+        <text x="222" y="263" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">常见错误：只给「系统支持用户管理」，不给字段与状态机</text>
+        <text x="925" y="256" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">随架构变</text>
+
+        <rect x="24" y="282" width="170" height="46" rx="6" fill="#E5F1EF" stroke="#0F766E"/>
+        <text x="109" y="310" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="700" fill="#0A5750">5 · 评测</text>
+        <rect x="206" y="282" width="730" height="46" rx="6" fill="#FFFFFF" stroke="#E3DFD5"/>
+        <text x="222" y="300" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">怎么算交付完成：门禁规则、签字人、可接受的缺口</text>
+        <text x="222" y="317" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">常见错误：没有验收定义，于是「看起来写完了」成为唯一信号</text>
+        <text x="925" y="310" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">一次设定</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5</b>　五层上下文栈。把五件事塞进一段提示词，维护成本会迅速失控；分层之后，每次只需替换第 1 层，其余复用。</figcaption>
+  </figure>
+
+  <h3>4.3 解决那个矛盾：事实层可以厚，规则层必须薄</h3>
+  <p>「背景占比不低于三分之一」与「规则文件不超过 200 行」指向两种不同的内容：</p>
+  <div class="g2">
+    <div class="card">
+      <h4>事实层（第 1、3 层）—— 可以厚</h4>
+      <p>用户原话、数据、上一版失败原因。这些是<strong>不可推断</strong>的信息，模型越多越准，冗余几乎无害。一次任务塞 20 页访谈摘要没问题。</p>
+      <p><span class="tag t-green">推荐</span> 宁多勿缺，但要标注来源与日期。</p>
+    </div>
+    <div class="card">
+      <h4>规则层（第 2 层）—— 必须薄</h4>
+      <p>模板、术语、禁止项。这些是<strong>长期有效</strong>的约定，每一条都在每次会话里占用注意力预算。堆到几百行，模型会开始忽略真实指令。</p>
+      <p><span class="tag t-red">警告</span> 膨胀的规则文件比没有更难排查。</p>
+    </div>
+  </div>
+  <p>实践中还有一条被低估的原则：<strong>低质量的规则文件不如没有</strong>。有研究指出，当规则与仓库实际状况不符时，模型的遵循度下降得比完全没有规则更严重——因为它会同时遵守错误规则和自行推断，产生难以复现的行为。所以规则文件的维护成本必须被正视：它不是「写完就一劳永逸」的资产，是会腐烂的负债。</p>
+
+  <h3>4.4 一个可以直接照抄的动作：先盘点，再动手</h3>
+  <p>不要一上来就让模型「阅读整个仓库然后写 PRD」。先让它做一次最小盘点，把「哪些信息不在上下文里」暴露出来：</p>
+  <pre><code>先不要写文档，也不要修改任何文件。完成以下四件事：
+
+1. 找出与本次需求直接相关的：规则、已有实现、数据表、历史需求文档；
+2. 逐项列出路径、用途、最后修改时间、以及「可能已过期」的风险；
+3. 标出三类东西：相互冲突的结论、无法验证的断言、必须由我补充的信息；
+4. 给出最小执行计划：读什么、写什么、怎么验收。
+
+证据不足时请直接提问，不要补全事实。</code></pre>
+  <p>这一步的价值不在产出，而在<strong>把隐性的信息缺口显性化</strong>。模型列出的「必须由我补充的信息」清单，往往就是 PRD 最终质量的分水岭——那些正是你不知道自己没说的事情。</p>
+
+  <div class="callout">
+    <span class="lbl">反直觉的一点</span>
+    <p>最有效的上下文往往不是「更多背景介绍」，而是<strong>「非目标」和「上一版为什么被否」</strong>。前者收窄搜索空间，后者直接排除了一整类错误答案。这两样恰好是团队最不愿意写、也最不愿意让 AI 看到的东西。</p>
+  </div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>工作流：四阶段，以及一条不该被跨过的回环</h2>
+  <p class="deck">越想一步到位，含糊与幻觉就越多。分阶段的真正作用不是「拆任务」，而是<strong>把纠正点前移</strong>——在成本最低的地方发现错误。</p>
+
+  <figure id="f06">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 310" role="img" aria-label="AI 辅助 PRD 的四阶段工作流">
+        <rect x="0" y="0" width="960" height="310" fill="#FFFFFF"/>
+        <text x="46" y="30" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">四阶段流水线：每一步的产物都可被独立否决</text>
+
+        <rect x="46" y="60" width="190" height="130" rx="8" fill="#FBF1E4" stroke="#B45309"/>
+        <text x="62" y="84" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#8F3F06">STAGE 1</text>
+        <text x="62" y="106" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">定义价值</text>
+        <text x="62" y="128" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">人主导，AI 反问</text>
+        <text x="62" y="148" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">产出：可证伪判据</text>
+        <text x="62" y="168" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06">否决点：说不清给谁</text>
+
+        <path d="M240,125 L262,125" stroke="#8F3F06" stroke-width="1.5"/>
+        <path d="M256,120 L264,125 L256,130 Z" fill="#8F3F06"/>
+
+        <rect x="272" y="60" width="190" height="130" rx="8" fill="#EAF1F9" stroke="#2F6FB0"/>
+        <text x="288" y="84" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#1F5288">STAGE 2</text>
+        <text x="288" y="106" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">搭骨架</text>
+        <text x="288" y="128" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">AI 生成，人删减</text>
+        <text x="288" y="148" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">产出：章节 + 非目标</text>
+        <text x="288" y="168" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#1F5288">否决点：非目标为空</text>
+
+        <path d="M466,125 L488,125" stroke="#1F5288" stroke-width="1.5"/>
+        <path d="M482,120 L490,125 L482,130 Z" fill="#1F5288"/>
+
+        <rect x="498" y="60" width="190" height="130" rx="8" fill="#E5F1EF" stroke="#0F766E"/>
+        <text x="514" y="84" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#0A5750">STAGE 3</text>
+        <text x="514" y="106" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">细化规格</text>
+        <text x="514" y="128" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">AI 穷举，人裁决</text>
+        <text x="514" y="148" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">产出：可判定条目</text>
+        <text x="514" y="168" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#0A5750">否决点：边界堆附录</text>
+
+        <path d="M692,125 L714,125" stroke="#0A5750" stroke-width="1.5"/>
+        <path d="M708,120 L716,125 L708,130 Z" fill="#0A5750"/>
+
+        <rect x="724" y="60" width="190" height="130" rx="8" fill="#F1EBF9" stroke="#6D3FB5"/>
+        <text x="740" y="84" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#5A3099">STAGE 4</text>
+        <text x="740" y="106" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">过门禁</text>
+        <text x="740" y="128" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">机器跑，人签</text>
+        <text x="740" y="148" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">产出：可交付版本</text>
+        <text x="740" y="168" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#5A3099">否决点：无法验收</text>
+
+        <path d="M819,196 L819,238 L141,238 L141,198" stroke="#B3261E" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+        <path d="M136,206 L141,196 L146,206 Z" fill="#B3261E"/>
+        <text x="480" y="262" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#8E1B15">业务结果推翻假设 → 回到阶段 1 重定义价值，而不是直接改阶段 3 的规格</text>
+        <text x="480" y="288" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">跨过这一环、直接从结果改规格，是规格与价值脱钩的起点</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6</b>　四阶段流水线与唯一的合法回环。注意红色回环的起点是<strong>业务结果</strong>而非开发过程中的实现困难——后者应该改规格，前者应该改假设。</figcaption>
+  </figure>
+
+  <h3>5.1 每阶段的真实职责</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:12%">阶段</th><th style="width:30%">人必须做的</th><th style="width:30%">AI 适合做的</th><th>不该做</th></tr></thead>
+      <tbody>
+        <tr><td><b>1 定义价值</b></td><td>判断这是不是真问题；写「如果失败会怎样」；说服关键人</td><td>扮演最难说服的干系人反问；列出你没考虑的替代方案</td><td>让 AI 写价值陈述——它会写出一段谁都不得罪的话</td></tr>
+        <tr><td><b>2 搭骨架</b></td><td>决定哪些章节保留、哪些删掉；写非目标</td><td>按模板生成目录；把散乱笔记归并成结构</td><td>直接采用它给的完整初稿</td></tr>
+        <tr><td><b>3 细化规格</b></td><td>裁决哪些边界值得做；确认业务规则事实</td><td>场景穷举（能一次列 25 个异常场景）；EARS 化改写</td><td>让它编造业务规则、阈值、法务要求</td></tr>
+        <tr><td><b>4 过门禁</b></td><td>签字；能说出每条通过的判据</td><td>跑模糊词扫描、一致性比对、验收覆盖率统计</td><td>把「AI 检查通过」当作「需求正确」</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>5.2 为什么阶段 3 必须「先穷举，后写需求」</h3>
+  <p>一个具体而反直觉的操作顺序：拿到一句话需求时，<strong>不要</strong>让 AI 直接写需求条目——它会只生成三四条正常流程，异常分支全靠脑补。正确的第一步是先做<strong>场景穷举</strong>：</p>
+  <pre><code>请针对「手机号验证码登录」这个功能，穷举所有可能出现的业务场景，
+包括正常流程、异常流程、极端边界条件，每个场景一句话描述。
+
+要求覆盖：输入校验、接口异常、重复操作、状态变化、安全防护、并发与时序。</code></pre>
+  <p>实践中这一步通常能产出 20–30 个场景，覆盖「短信通道超时无响应」「手机号在黑名单」「验证码在填写过程中过期」这类人容易漏掉的路径。AI 在这一步的价值是<strong>穷举速度</strong>，而人在这步的价值是<strong>裁决重要性</strong>——25 个场景里可能只有 8 个值得写进规格，剩下 17 个的处置方式是「明确不管」，而这个「明确不管」必须落到文档里。</p>
+</section>
+<section id="s06">
+  <h2><span class="num">06</span>提示词：六个要素，与四个真正有杠杆的技巧</h2>
+  <p class="deck">网上流传的「PRD 提示词模板」大多正确但无效——它们都在做同一件事：给模型一个目录。真正拉开差距的是另外四件事。</p>
+
+  <h3>6.1 六要素：够用的最小结构</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:14%">要素</th><th style="width:32%">作用</th><th>反例 → 正例</th></tr></thead>
+      <tbody>
+        <tr><td><b>角色</b></td><td>收敛术语密度与专业度</td><td>「你是产品经理」→「你是做过 B 端权限系统的资深 PM」</td></tr>
+        <tr><td><b>任务</b></td><td>说清做什么、<strong>不做什么</strong></td><td>「写一份 PRD」→「生成一期迭代范围的 PRD 初稿，不含远期规划」</td></tr>
+        <tr><td><b>背景</b></td><td>提供不可推断的事实</td><td>「做个记账 App」→「社区小店，2 人使用，要导出给会计」</td></tr>
+        <tr><td><b>输出结构</b></td><td>给出目录级指令，控制颗粒度</td><td>「结构完整」→ 直接列出七级章节名与每章条数</td></tr>
+        <tr><td><b>约束</b></td><td>控制质量下限</td><td>「写得专业」→「细则到字段级；每流程须含正常与异常路径」</td></tr>
+        <tr><td><b>范例</b></td><td>Few-shot，最有效的单点手段</td><td>「按我们的风格」→ 贴一段脱敏后的历史 PRD 章节</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>6.2 四个高杠杆技巧</h3>
+  <div class="g2">
+    <div class="card">
+      <h4>① 强制标注假设</h4>
+      <p>加一句「任何你必须假设的内容，标记为 <code>[ASSUMPTION]</code>」。</p>
+      <p>这一步把「编造」变成「声明」，你可以在十秒内扫完全部假设并逐条确认或删除。不加这句，假设会以陈述句的形式混进正文。</p>
+    </div>
+    <div class="card">
+      <h4>② 要问题，不要答案</h4>
+      <p>加一句「列出不超过 3 个需要我补充的信息，<strong>不要编答案</strong>」。</p>
+      <p>这是让模型做自检的最便宜方式。它列出的问题清单，就是文档里最脆弱的三个点。</p>
+    </div>
+    <div class="card">
+      <h4>③ 逼出取舍的代价</h4>
+      <p>功能清单太长时追问：「压缩到 5 条以内，每条写清<strong>不做它会损失什么</strong>」。</p>
+      <p>「损失什么」这个问法会迫使输出从「功能罗列」变成「优先级论证」，而后者才是 PRD 的核心。</p>
+    </div>
+    <div class="card">
+      <h4>④ 喂一份自己的优秀 PRD</h4>
+      <p>先让它读一两份你团队的模板和优秀范例，再开始写。</p>
+      <p>效果差异最大的一步：不喂范例，它模仿互联网平均值；喂了范例，它模仿你的详略程度与术语习惯。</p>
+    </div>
+  </div>
+
+  <h3>6.3 一份可以直接改的模板</h3>
+  <pre><code>【角色】你是一位做过 8 年以上 B 端系统的资深产品经理，擅长写研发可直接排期的 PRD。
+
+【背景】
+产品：{产品名 / 一句话定位}
+本阶段：{0→1 / 迭代 / 功能扩展}
+目标用户：{2–3 类，每类一句话场景与痛点}
+本次要解决的核心问题：{一句话}
+已知约束：{技术栈 / 人力 / 期限 / 合规}
+历史材料：{附录粘贴访谈原话、数据、上一版复盘}
+
+【任务】
+产出一期范围的 PRD 初稿。范围之外的内容不写，不要写愿景段落。
+
+【输出结构】（每节都要有，不许省略）
+1. 问题与目标：谁在什么场景下遇到什么，现在怎么凑合解决
+2. 成功判据：2–3 条可证伪的指标（含基线值、目标值、观察窗口）
+3. 非目标：本期明确不做的 3 件事，各附一句理由
+4. 用户故事：As a / I want / So that，按角色分组
+5. 功能规格：每个功能含触发条件、正常流程、异常流程、字段定义、状态变化
+6. 边界条件：挂在所属故事下，不要另开附录
+7. 验收标准：每条用「当〔条件〕时，系统应〔可观察响应〕」句式
+8. 待确认问题：不超过 3 条，直接提问，不要编答案
+
+【约束】
+· 禁止出现「体验流畅」「界面美观」「尽快」等不可验收表述
+· 每个数值必须给单位和来源；无来源则标 [ASSUMPTION]
+· 涉及业务规则的地方，若我不曾提供，一律标 [ASSUMPTION] 并列入待确认
+· 每条需求只有一个「应」；需要「并且」就拆条
+
+【范例】
+（粘贴一段你团队历史 PRD 中质量最好的章节，脱敏后使用）</code></pre>
+
+  <p>这份模板里，真正起作用的不是那八节目录，而是约束段的三条：<strong>禁用模糊词、无来源标假设、一条一个「应」</strong>。删掉这三条，产出会立刻退回「结构完整但无法验收」的状态。</p>
+
+  <h3>6.4 三个常见反模式</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:24%">反模式</th><th style="width:38%">为什么有害</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td><b>一句话生成整份文档</b></td><td>信息缺口全部由模型用「合理默认值」填满，你无法分辨哪些是事实、哪些是编的</td><td>拆成三阶段，每阶段只做一件事</td></tr>
+        <tr><td><b>每份产出都开新会话</b></td><td>模型反复丢失背景，你要重复贴同样的上下文，结果也不稳定</td><td>同一线程内迭代：「现在为第 5 节写字段定义」</td></tr>
+        <tr><td><b>不满意就推倒重来</b></td><td>重生成会带回同一批错误，且丢掉上一版里已经对的部分</td><td>定向修改：「第 3 节的第 2 条改成可测的数字」</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <span class="lbl">边界提醒</span>
+    <p>这类模板只适合<strong>功能数在 10 条以内、用户角色不超过 3 类</strong>的 PRD。涉及多端同步、多角色权限、支付合规的系统，AI 给的只能是草稿，结构与边界必须人工重审——不是因为模型不行，而是因为这些系统的正确性依赖于领域事实，而领域事实不在上下文里。</p>
+  </div>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>验收标准：唯一「改一句话，整份文档变可用」的地方</h2>
+  <p class="deck">如果只能做一件事，做这件：把每条需求的验收标准改成可判定的句式。它同时解决了「AI 编造」和「开发追问」两个问题。</p>
+
+  <h3>7.1 为什么是验收标准</h3>
+  <p>一份 PRD 里，验收标准是唯一<strong>同时被四方消费</strong>的段落：产品用它确认需求被满足、研发用它确认实现边界、测试用它生成用例、编码智能体用它判断「做完了」。它写不好，四方全部失准；它写好，另外三方的问题会连带消失大半。</p>
+  <p>这也是实践中被反复验证的：仅加入「每个功能需说明异常处理和边界条件」这一条约束，生成内容的可用率就有明显提升。原因不神秘——<span class="hl">它把模型从「描述功能」推到「定义行为」，而后者必须收敛到具体条件与具体响应</span>。</p>
+
+  <h3>7.2 EARS 五句式：把写作题变成填空题</h3>
+  <p>EARS（Easy Approach to Requirements Syntax）由 Alistair Mavin 于 2009 年在 Rolls-Royce 提出，是当前主流规格驱动工具（Kiro、Spec Kit 生态）普遍采用的需求句式。它的核心不是语法，而是<strong>强迫每条需求都带上触发条件与可观察响应</strong>——这正是「可判定」的最小构成。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:16%">句式</th><th style="width:30%">模板</th><th>示例</th></tr></thead>
+      <tbody>
+        <tr><td><b>普遍型</b></td><td>系统应〔行为〕</td><td>系统应记录所有登录尝试，含时间、账号、结果、来源 IP</td></tr>
+        <tr><td><b>事件驱动</b></td><td>当〔触发〕时，系统应〔行为〕</td><td>当用户提交订单时，系统应校验库存并锁定 15 分钟</td></tr>
+        <tr><td><b>状态驱动</b></td><td>当〔处于某状态〕时，系统应〔行为〕</td><td>当订单处于「待支付」状态时，系统应禁止修改收货地址</td></tr>
+        <tr><td><b>非期望行为</b></td><td>如果〔异常〕，则系统应〔兜底〕</td><td>如果支付回调到达时优惠券已过期，系统应按<strong>下单时刻</strong>的有效性判定并记录审计事件</td></tr>
+        <tr><td><b>可选特性</b></td><td>在〔特性已启用〕时，系统应〔行为〕</td><td>在双因素认证已启用时，系统应在新设备登录后要求二次验证</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>五条硬规则，缺一条就退回模糊：</p>
+  <ol>
+    <li><strong>一条只有一个「应」。</strong>想写「并且」，就拆条。复合条件不得超过两个。</li>
+    <li><strong>主动语态。</strong>写「系统应……」，禁止「错误被显示……」这类被动结构。</li>
+    <li><strong>触发必须具体。</strong>禁用「当有情况发生时」「如果出问题」。</li>
+    <li><strong>响应必须可观察。</strong>显示 / 拒绝 / 写入 / 发送 / 置状态 / 返回码，优先可测试动词。</li>
+    <li><strong>能量化就量化。</strong>不能量化的，显式标注为人工核对项并写明核对方法。</li>
+  </ol>
+
+  <h3>7.3 三层分工：别让一个句式干三件事</h3>
+
+  <figure id="f07">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 300" role="img" aria-label="User Story、EARS、Given-When-Then 三层分工">
+        <rect x="0" y="0" width="960" height="300" fill="#FFFFFF"/>
+        <text x="50" y="32" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">三层各管一段：意图 → 行为 → 验证</text>
+
+        <rect x="50" y="70" width="250" height="130" rx="8" fill="#FBF1E4" stroke="#B45309"/>
+        <text x="66" y="92" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8F3F06">LAYER 1 · 意图</text>
+        <text x="66" y="114" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">User Story</text>
+        <text x="66" y="138" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">作为〔角色〕我希望〔能力〕</text>
+        <text x="66" y="155" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">以便〔价值〕</text>
+        <text x="66" y="180" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06">回答：为什么做、给谁</text>
+
+        <path d="M308,135 L345,135" stroke="#4A505A" stroke-width="1.5"/>
+        <path d="M339,130 L347,135 L339,140 Z" fill="#4A505A"/>
+        <text x="326" y="124" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">翻译</text>
+
+        <rect x="355" y="70" width="250" height="130" rx="8" fill="#EAF1F9" stroke="#2F6FB0"/>
+        <text x="371" y="92" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#1F5288">LAYER 2 · 行为</text>
+        <text x="371" y="114" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">EARS</text>
+        <text x="371" y="138" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">当〔触发〕时，</text>
+        <text x="371" y="155" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">系统应〔可观察响应〕</text>
+        <text x="371" y="180" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#1F5288">回答：系统必须怎样</text>
+
+        <path d="M613,135 L650,135" stroke="#4A505A" stroke-width="1.5"/>
+        <path d="M644,130 L652,135 L644,140 Z" fill="#4A505A"/>
+        <text x="631" y="124" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">翻译</text>
+
+        <rect x="660" y="70" width="250" height="130" rx="8" fill="#E5F1EF" stroke="#0F766E"/>
+        <text x="676" y="92" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#0A5750">LAYER 3 · 验证</text>
+        <text x="676" y="114" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">Given-When-Then</text>
+        <text x="676" y="138" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">Given〔前置〕When〔事件〕</text>
+        <text x="676" y="155" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#333941">Then〔断言〕</text>
+        <text x="676" y="180" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#0A5750">回答：怎么验证</text>
+
+        <text x="480" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#333941">给 AI 写规格，落点就在中间这层——Story 它写得出来，GWT 它也能写，唯独中间的可验证行为需要你定</text>
+        <text x="480" y="264" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">常见错误：直接用 Story 当规格（不可判定），或直接用 GWT 当规格（把实现方式锁死）</text>
+      </svg>
+    </div>
+    <figcaption><b>图 7</b>　三层分工。EARS 定位在中间：它比 Story 精确、比 GWT 抽象，是「意图」到「测试」之间唯一既能被人审、又能被机器解析的一层。</figcaption>
+  </figure>
+
+  <h3>7.4 一个改写对照</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:30%">原始表述</th><th style="width:35%">EARS 改写</th><th>暴露出的信息缺口</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>用户提交订单时校验库存，缺货要提示，体验好一点。</td>
+          <td>当用户提交订单时，系统应校验可用库存并锁定 15 分钟；若库存不足，系统应拒绝下单并提示当前可购数量。</td>
+          <td>锁定时长、超卖策略、并发下单时的判定顺序</td>
+        </tr>
+        <tr>
+          <td>支持导出数据。</td>
+          <td>当用户点击导出时，系统应按当前筛选条件导出 CSV，字段为〔列表〕，单次上限 5 万行；超限时系统应提示并建议缩小范围。</td>
+          <td>字段范围、格式、上限、大数据集的处理方式</td>
+        </tr>
+        <tr>
+          <td>搜索要快。</td>
+          <td>在商品量 ≤ 100 万的条件下，关键词搜索接口的 P95 延迟应低于 300ms。</td>
+          <td>数据量前提、延迟口径、超限时的降级行为</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意第三列：<strong>改写的真正收获不是那段更精确的句子，而是右列那份缺口清单</strong>。每一条缺口都是一个「原本会在开发中期变成返工」的问题，现在被提前到了写作阶段。</p>
+
+  <h3>7.5 边界条件：挂在故事下，不要堆附录</h3>
+  <p>一个高频的结构性错误：在文档末尾开一节「异常处理」，把所有边界堆进去。这在规格驱动开发里是反模式，理由很硬——</p>
+  <div class="callout">
+    <span class="lbl">机制</span>
+    <p>任务清单是按故事组织的。放在附录里的边界条件<strong>不属于任何故事</strong>，因此不会被编译进任何故事的测试任务，最终静静地烂在文档末尾。正确的归属是每条边界挂在它所考验的那个故事之下：重复领取挂在领取故事下，回调迟到挂在退券故事下，脚本刷接口挂在防护故事下。</p>
+    <p>反过来还有一层价值：<strong>一条挂不到任何故事下的边界条件，说明故事集有漏洞</strong>。它在替你检查拆解的完整性。</p>
+  </div>
+</section>
+<section id="s08">
+  <h2><span class="num">08</span>质量门禁：把「写得可验收」变成一道关卡</h2>
+  <p class="deck">门禁的价值不在挑错，而在把「无法验收」提前暴露成一张可回答的问题清单，让评审会聚焦分歧而不是读文档。</p>
+
+  <h3>8.1 五维 rubric</h3>
+  <p>把第 03 章的六轴收敛成可执行的五条判定，每条都给出「抓什么」与「例外」——没有例外的规则会产生大量误报，误报会让团队在三周内放弃整个门禁。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:14%">维度</th><th style="width:34%">判定要点</th><th style="width:22%">例外（不报错）</th><th>阻塞级别</th></tr></thead>
+      <tbody>
+        <tr><td><b>关注「什么」</b></td><td>扫描技术实现词（接口名、库名、表结构）、UI 布局细节</td><td>不可协商的设计约束（合规要求、既有架构边界）</td><td><span class="tag t-amber">标注</span></td></tr>
+        <tr><td><b>可验证</b></td><td>有无客观可量化的验收标准；命中模糊词表</td><td>显式声明为「人工核对项」并写明核对方法</td><td><span class="tag t-red">阻断</span></td></tr>
+        <tr><td><b>无歧义</b></td><td>指代不明的代词、未定义缩写、多重条件嵌套、缺失单位</td><td>术语表内已定义的内部词</td><td><span class="tag t-red">阻断</span></td></tr>
+        <tr><td><b>正确性</b></td><td>公式引用、法规版本、逻辑闭环（状态机是否有死锁）</td><td>无法判断时不报错，转为「需人确认」</td><td><span class="tag t-amber">标注</span></td></tr>
+        <tr><td><b>一致性</b></td><td>参数值矛盾、行为描述冲突、术语不统一</td><td>不同版本间的有意差异（须注明版本号）</td><td><span class="tag t-red">阻断</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.2 一张直接能用的决策树</h3>
+
+  <figure id="f08">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 470" role="img" aria-label="需求条目质量门禁决策树">
+        <rect x="0" y="0" width="960" height="470" fill="#FFFFFF"/>
+        <text x="48" y="30" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">单条需求的四道判定：三个可阻断，一个只标注</text>
+
+        <!-- node 1 -->
+        <rect x="48" y="56" width="330" height="52" rx="7" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5"/>
+        <text x="64" y="78" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8F3F06">Q1</text>
+        <text x="64" y="96" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">能改写成「当〔条件〕时，系统应〔响应〕」吗？</text>
+        <path d="M378,82 L410,82" stroke="#B3261E" stroke-width="1.5"/>
+        <path d="M404,77 L412,82 L404,87 Z" fill="#B3261E"/>
+        <text x="418" y="79" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">否</text>
+        <text x="418" y="96" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15" font-weight="700">BLOCK · 退回重写</text>
+
+        <line x1="213" y1="108" x2="213" y2="130" stroke="#4A505A" stroke-width="1.5"/>
+        <path d="M208,124 L213,132 L218,124 Z" fill="#4A505A"/>
+        <text x="222" y="126" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">是</text>
+
+        <!-- node 2 -->
+        <rect x="48" y="134" width="330" height="52" rx="7" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="1.5"/>
+        <text x="64" y="156" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#1F5288">Q2</text>
+        <text x="64" y="174" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">是否描述了实现方式（库 / 表 / 接口名）？</text>
+        <path d="M378,160 L410,160" stroke="#B45309" stroke-width="1.5"/>
+        <path d="M404,155 L412,160 L404,165 Z" fill="#B45309"/>
+        <text x="418" y="157" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06">是</text>
+        <text x="418" y="174" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06" font-weight="700">WARN · 确认是否硬约束</text>
+
+        <line x1="213" y1="186" x2="213" y2="208" stroke="#4A505A" stroke-width="1.5"/>
+        <path d="M208,202 L213,210 L218,202 Z" fill="#4A505A"/>
+        <text x="222" y="204" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">否</text>
+
+        <!-- node 3 -->
+        <rect x="48" y="212" width="330" height="52" rx="7" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="64" y="234" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#0A5750">Q3</text>
+        <text x="64" y="252" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">能挂到某个用户故事之下吗？</text>
+        <path d="M378,238" stroke="#B3261E" stroke-width="1.5"/>
+        <path d="M378,238 L410,238" stroke="#B3261E" stroke-width="1.5"/>
+        <path d="M404,233 L412,238 L404,243 Z" fill="#B3261E"/>
+        <text x="418" y="235" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15">否</text>
+        <text x="418" y="252" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8E1B15" font-weight="700">BLOCK · 故事集有缺口</text>
+
+        <line x1="213" y1="264" x2="213" y2="286" stroke="#4A505A" stroke-width="1.5"/>
+        <path d="M208,280 L213,288 L218,280 Z" fill="#4A505A"/>
+        <text x="222" y="282" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">是</text>
+
+        <!-- node 4 -->
+        <rect x="48" y="290" width="330" height="52" rx="7" fill="#FFFFFF" stroke="#6D3FB5" stroke-width="1.5"/>
+        <text x="64" y="312" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#5A3099">Q4</text>
+        <text x="64" y="330" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">业务规则 / 数值 / 阈值有可核验的来源吗？</text>
+        <path d="M378,316 L410,316" stroke="#B45309" stroke-width="1.5"/>
+        <path d="M404,311 L412,316 L404,321 Z" fill="#B45309"/>
+        <text x="418" y="313" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06">否</text>
+        <text x="418" y="330" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#8F3F06" font-weight="700">ASSUMPTION · 进人工确认清单</text>
+
+        <line x1="213" y1="342" x2="213" y2="366" stroke="#4A505A" stroke-width="1.5"/>
+        <path d="M208,360 L213,368 L218,360 Z" fill="#4A505A"/>
+        <text x="222" y="362" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">是</text>
+
+        <!-- result -->
+        <rect x="48" y="370" width="330" height="52" rx="7" fill="#EAF3E9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="64" y="392" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#1B5820">PASS</text>
+        <text x="64" y="410" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" font-weight="700" fill="#16181D">机检通过，进入人工签字（唯一放行口）</text>
+
+        <!-- note box -->
+        <rect x="48" y="440" width="860" height="22" rx="4" fill="#F5F3ED"/>
+        <text x="60" y="455" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">注意：机检通过 ≠ 需求正确。它只保证「写得可验收」，不保证「做的是对的事」——后者永远是人的签字责任。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 8</b>　门禁决策树。三道阻断、一道标注、一道转人工——注意 Q4 的「否」不是错误，而是最正常的情况：它把未验证的业务事实显性化，供人逐条确认。</figcaption>
+  </figure>
+
+  <h3>8.3 四条防作弊规则</h3>
+  <p>用模型检查模型，最大的风险是它顺着你的意思编。四条硬约束能挡掉大部分：</p>
+  <div class="g2">
+    <div class="card">
+      <h4>只依据原文</h4>
+      <p>一次只喂一条需求，提示词里写死「只依据原文，不引入外部业务背景」。</p>
+      <p>否则它会用常识补全缺失信息，然后把补全的部分当成本文已有内容来评判。</p>
+    </div>
+    <div class="card">
+      <h4>有歧义必须给两种解释</h4>
+      <p>判定为「有歧义」时，必须列出至少两种具体解释。</p>
+      <p>只下结论不给解释的，一律视为无效输出——这挡掉了绝大多数「为了报错而报错」。</p>
+    </div>
+    <div class="card">
+      <h4>问题必须可回答</h4>
+      <p>问句里必须有「是否 / 哪些 / 多少」这类可回答的词。</p>
+      <p>「请补充业务背景」不是问题，是推卸；「单笔上限是 5 万还是 10 万行」才是问题。</p>
+    </div>
+    <div class="card">
+      <h4>分级要能聚焦</h4>
+      <p>高 = 无法验收；中 = 信息不全；低 = 表述优化。</p>
+      <p>三级足够。分级太细会让评审会变成逐条过清单，反而失去聚焦分歧的能力。</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <span class="lbl">最重要的一条</span>
+    <p><strong>不要把「需求评审」变成「AI 评审」。</strong>AI 只提供线索，签字放行的必须是人，而且这个人必须能说出自己为什么放行。一旦「门禁通过」成为免责理由，整个机制就退化成了新的形式主义——比没有门禁更糟，因为它还额外消耗了信任。</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>证据全景：收益到底有多大</h2>
+  <p class="deck">这一章只做一件事——把「结构化方法能提升多少」量化到可对照的数上，并把反证据放在同一张表里。</p>
+
+  <h3>9.1 目前最强的端到端证据</h3>
+  <p>2026 年 10 月发表的 Agent4RE 是目前少见的、覆盖「需求获取 → 规格生成」全流程的系统性工作。它构建了 RE-E2E 数据集（由人类撰写的完整需求规格构成），并在 8 个不同能力档位的前沿模型上做了评测。核心结果：</p>
+  <ul>
+    <li>三个变体（基础 / 自主自迭代 / 结构化人类反馈）<strong>一致优于「领域上下文增强提示」基线，文本指标平均 +8%</strong>。</li>
+    <li>两个增强变体在 LLM-as-a-judge 与人类评分上取得最高分，<strong>比两个 RE 基线高约 0.8 分（四分制）</strong>。</li>
+  </ul>
+
+  <figure id="f09">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 250" role="img" aria-label="多智能体自迭代相对基线的改进幅度">
+        <rect x="0" y="0" width="960" height="250" fill="#FFFFFF"/>
+        <text x="24" y="30" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">相对「上下文增强提示」基线的改进幅度：两项指标共用同一刻度</text>
+
+        <line x1="300" y1="176" x2="300" y2="184" stroke="#D2CCBE"/>
+        <line x1="420" y1="176" x2="420" y2="184" stroke="#D2CCBE"/>
+        <line x1="540" y1="176" x2="540" y2="184" stroke="#D2CCBE"/>
+        <line x1="660" y1="176" x2="660" y2="184" stroke="#D2CCBE"/>
+        <line x1="780" y1="176" x2="780" y2="184" stroke="#D2CCBE"/>
+        <line x1="900" y1="176" x2="900" y2="184" stroke="#D2CCBE"/>
+
+        <text x="290" y="76" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">文本指标</text>
+        <rect x="300" y="62" width="96" height="22" rx="3" fill="#0F766E"/>
+        <text x="408" y="78" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0A5750">+8%</text>
+
+        <text x="290" y="124" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" fill="#16181D">人类评分</text>
+        <rect x="300" y="110" width="240" height="22" rx="3" fill="#2F6FB0"/>
+        <text x="552" y="126" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#1F5288">+20%（0.8 / 4 分）</text>
+
+        <line x1="300" y1="56" x2="300" y2="184" stroke="#D2CCBE"/>
+
+        <line x1="300" y1="182" x2="900" y2="182" stroke="#D2CCBE"/>
+        <text x="300" y="200" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">0%</text>
+        <text x="420" y="200" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">5%</text>
+        <text x="540" y="200" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">10%</text>
+        <text x="660" y="200" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">15%</text>
+        <text x="780" y="200" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">20%</text>
+        <text x="900" y="200" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">25%</text>
+
+        <text x="24" y="232" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">数据来源：Agent4RE（arXiv 2610.10628，2026-10），8 个前沿 LLM 上的平均结果。人类评分换算为百分比仅便于同图对照。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 9</b>　结构化多智能体流程相对基线的改进。读法：<b>这是「值得做」的量级，不是「可以放手」的量级</b>。个位数到二十个百分点的提升，意味着方法的收益真实存在，但仍需人守住最后一道关。</figcaption>
+  </figure>
+
+  <p>另外两项值得引用的实证，方向一致但强度递减：</p>
+  <ul>
+    <li><strong>跨任务评测</strong>（2026-08）：LLM 在分类、可追溯性识别、规格生成、解释生成五类 RE 活动上的表现<strong>强烈依赖任务类型</strong>，从中等偏上到较高不等，<strong>没有单一模型在所有任务上稳定领先</strong>。含义很直接：不要迷信「最强模型」，要按任务选模型与提示策略。</li>
+    <li><strong>NL → LTL 形式化</strong>（2026-08）：六个现代 LLM 在 15 条异构需求上零微调即可达到「实际有意义」的性能，但采用人工语义评估 + pass@k + 自一致性三重口径。<strong>自一致性（同一需求多次生成的语法可复现度）被单列为指标</strong>，这一点值得借鉴：它衡量的是输出的稳定性，而不只是正确性。</li>
+  </ul>
+
+  <h3>9.2 采用率的真实分布</h3>
+
+  <figure id="f10">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 270" role="img" aria-label="产品经理 AI 采用深度的分层数据">
+        <rect x="0" y="0" width="960" height="270" fill="#FFFFFF"/>
+        <text x="24" y="30" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">采用率的分层：越往下，真正改变工作方式的团队越少</text>
+        <text x="24" y="48" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">横向长度代表占受访者比例；口径不同，跨行不可直接相减</text>
+
+        <text x="290" y="78" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#16181D">报告「一致使用」</text>
+        <rect x="300" y="64" width="576" height="20" rx="3" fill="#0F766E"/>
+        <text x="886" y="79" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0A5750">96%</text>
+
+        <text x="290" y="122" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#16181D">每周 / 每日使用</text>
+        <rect x="300" y="108" width="438" height="20" rx="3" fill="#0F766E"/>
+        <text x="748" y="123" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0A5750">73%</text>
+
+        <text x="290" y="166" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#16181D">用于有限工作流</text>
+        <rect x="300" y="152" width="221" height="20" rx="3" fill="#B45309"/>
+        <text x="531" y="167" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8F3F06">36.9%</text>
+
+        <text x="290" y="210" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#16181D">嵌入大部分工作</text>
+        <rect x="300" y="196" width="113" height="20" rx="3" fill="#B45309"/>
+        <text x="423" y="211" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8F3F06">18.9%</text>
+
+        <text x="290" y="254" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11" fill="#16181D">作为核心能力</text>
+        <rect x="300" y="240" width="54" height="20" rx="3" fill="#B3261E"/>
+        <text x="364" y="255" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8E1B15">9% / 6.1%</text>
+
+        <text x="440" y="255" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">← 两个来源在此处给出口径不同的值（见正文说明）</text>
+      </svg>
+    </div>
+    <figcaption><b>图 10</b>　采用深度的分层。最上面一行说明「几乎人人都在用」，最下面一行说明「几乎没人把工作流重建在它之上」——这两句同时为真，才构成了 2026 年的真实处境。</figcaption>
+  </figure>
+
+  <div class="callout cool">
+    <span class="lbl">来源冲突（必须写明）</span>
+    <p>关于「把 AI 作为核心战略能力」的比例，两个二手引述给出了不同数字：一份行业报告摘要写 <strong>9%</strong>，另一份解读文章写 <strong>6.1%</strong>，并同时给出「18.9% 嵌入大部分工作」这一档。差异很可能来自选项切分方式而非样本差异。<strong>本报告不选用其中任一为定论</strong>，只引用「个位数百分比」这个量级。任何引用这两个数字作为精确结论的场合，都应先回溯原始报告问卷。</p>
+  </div>
+
+  <h3>9.3 价值悖论：省了时间，没改变判断</h3>
+  <p>三组数字放在一起才完整：</p>
+  <div class="g3">
+    <div class="card">
+      <h4>62%</h4>
+      <p>报告每周至少节省 4 小时；近 70% 报告工作成果质量提升。</p>
+      <p>省时集中在「总结反馈」（47.1%）、「起草研究输出」（40.2%）、「起草 PRD」（21.5%）。</p>
+    </div>
+    <div class="card">
+      <h4>14.3%</h4>
+      <p>用 AI 做「优先级排序或问题选择」的比例。</p>
+      <p>对比 21.5% 用它起草 PRD——<strong>用在下游成文远多于上游判断</strong>。这是「采用率饱和、价值未兑现」的机制解释。</p>
+    </div>
+    <div class="card">
+      <h4>95%</h4>
+      <p>企业 AI 试点未产生可衡量 ROI（MIT 口径）。</p>
+      <p>须谨慎：它衡量的是<strong>试点</strong>而非成熟部署，且「可衡量」三字做了很多工作。同期 Deloitte 给出 66% 组织有可感收益——两者并存，说明组织级收益真实但单点 ROI 难隔离。</p>
+    </div>
+  </div>
+  <p>这组数字的联合解读是：<span class="hl">AI 被广泛用于「产出」，很少被用于「判断」</span>。而 PRD 的价值几乎全部在判断里——所以用它写 PRD 的团队，省下的是打字时间，没省下返工。</p>
+
+  <h3>9.4 证据强度表</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:30%">结论</th><th style="width:22%">来源与时间</th><th style="width:14%">类型</th><th>强度与局限</th></tr></thead>
+      <tbody>
+        <tr><td>多智能体自迭代对 RE 有稳定正收益（+8% 文本 / +0.8 分人工）</td><td>Agent4RE，arXiv 2610.10628，2026-10</td><td>受控实验</td><td><span class="tag t-green">较强</span> 8 个模型、有基线、有数据集；但基线是「上下文增强提示」而非人类专家</td></tr>
+        <tr><td>LLM 在 RE 各任务上表现强依赖任务，无单一最优模型</td><td>Cross-Task Empirical Evaluation，2026-08</td><td>受控实验 + 工业案例</td><td><span class="tag t-green">较强</span> 含复现材料；工业案例样本小</td></tr>
+        <tr><td>零微调 LLM 可做 NL → LTL 形式化，且自一致性可测量</td><td>arXiv 2608.06287，2026-08</td><td>受控实验</td><td><span class="tag t-amber">中</span> 基准仅 15 条需求，语义评估靠人工</td></tr>
+        <tr><td>73% PM 每周/每日使用 AI；36.9% 限于有限工作流</td><td>IdeaPlan / Product-Led Alliance 2026</td><td>行业调查</td><td><span class="tag t-amber">中</span> 自报数据，样本与问卷口径未完全公开</td></tr>
+        <tr><td>62% 每周省 ≥4 小时</td><td>Lenny Rachitsky 调查（经二手引述）</td><td>自报调查</td><td><span class="tag t-amber">中偏弱</span> 自报省时普遍高估，且未扣除复核成本</td></tr>
+        <tr><td>50 份 AI PRD 中约 45 份不可用</td><td>行业实践者自述，2026</td><td>单一案例</td><td><span class="tag t-red">弱</span> 无对照、无评分标准，仅作方向性参考</td></tr>
+        <tr><td>AI 制造「虚假精确」与隐性共识消失</td><td>多篇从业者分析，2026-09</td><td>观点 / 案例</td><td><span class="tag t-red">弱—中</span> 机制解释合理，缺乏量化；但多源独立收敛</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<section id="s10">
+  <h2><span class="num">10</span>度量：三层指标，与它们各自被游戏化的方式</h2>
+  <p class="deck">任何被当作目标的指标都会失效。所以这一章不只给指标，还给每个指标的「作弊路径」——知道怎么作弊，才知道怎么防。</p>
+
+  <h3>10.1 三层指标</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:11%">层</th><th style="width:22%">指标</th><th style="width:22%">计算</th><th style="width:16%">建议阈值</th><th>被游戏化的方式</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="2"><b>过程</b></td><td>模糊词密度</td><td>模糊词命中数 / 千字</td><td class="num">≤ 0.5‰</td><td>换同义词（「流畅」→「顺滑」）；词表必须持续校准</td></tr>
+        <tr><td>验收标准覆盖率</td><td>有可判定验收标准的需求数 / 总需求数</td><td class="num">≥ 90%</td><td>给每条都硬凑一句「系统应正常处理」，形式达标而实质空洞</td></tr>
+        <tr><td rowspan="2"><b>产物</b></td><td>一次通过率</td><td>首轮评审无阻断问题的文档数 / 总文档数</td><td class="num">≥ 60%</td><td>降低阻断标准；把问题改判为「标注」</td></tr>
+        <tr><td>待确认问题数</td><td>文档末尾未解决的提问条数</td><td class="num">≤ 3</td><td>为了数字好看而删掉真问题，或写成不可回答的泛问</td></tr>
+        <tr><td rowspan="2"><b>结果</b></td><td>需求变更率</td><td>开发启动后发生实质变更的需求数 / 总需求数</td><td class="num">≤ 15%</td><td>把变更叫「优化」，不计入统计</td></tr>
+        <tr><td>规格漂移率</td><td>spec 与实现不一致且超 30 天未修的条目数 / 总条目数</td><td class="num">≤ 5%</td><td>不维护 spec，于是「无法比对」被算作「无不一致」</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>10.2 为什么「漂移率」必须单独存在</h3>
+  <p>规格驱动开发有一个不写在宣传材料里的代价：<strong>当 spec 被宣布为「真相源」，它就承担了不能失效的责任</strong>。而现实中，实现过程中总有各种合理的小偏离——接口字段多了一个、状态少了一个、边界判定的时机变了。这些偏离如果不在 30 天内回写，spec 就会从「真相源」退化为「历史文档」。</p>
+  <p>退化的后果比从未写过 spec 更严重：团队会经历一次「我们明明有文档，但它说的不对」的信任崩塌，之后所有文档工作都会被默认为形式主义。<span class="hl">这就是为什么漂移率不是可选项，而是这套方法能否存活的前提</span>。</p>
+
+  <h3>10.3 一条反对意见</h3>
+  <p>上面六个指标有一个共同的隐含假设：<strong>文档质量可以从事后指标反推</strong>。这个假设在长周期产品上成立，在快速试错场景下不成立——一个两周就被推翻的方向，写多好的 PRD 都是浪费。</p>
+  <p>所以还要加一条前置判断：<strong>这段代码的生命周期有多长？</strong>本周就丢弃的，用最轻的方式快速迭代；需要维护数月以上的，先花成本消除歧义，总成本反而更低。度量体系只应该施加在后者身上。把它强加给前者，会得到一个指标漂亮但产品死掉的团队。</p>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>落地：五级成熟度与 90 天路径</h2>
+  <p class="deck">不要一次上全套。每一级都有明确的「做到什么程度可以进下一级」，否则会得到一个流程完备但没人遵守的空壳。</p>
+
+  <figure id="f11">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 340" role="img" aria-label="AI 辅助 PRD 的五级成熟度阶梯">
+        <rect x="0" y="0" width="960" height="340" fill="#FFFFFF"/>
+        <text x="35" y="30" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">五级成熟度：每一级的瓶颈不同，跳级会失败</text>
+
+        <!-- step1: x=35 h=80 top=200 -->
+        <rect x="35" y="200" width="170" height="80" rx="5" fill="#F5F3ED" stroke="#D2CCBE"/>
+        <text x="49" y="222" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#4A505A">L0</text>
+        <text x="49" y="242" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" font-weight="700" fill="#16181D">人工 + 模板</text>
+        <text x="49" y="262" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">瓶颈：写作耗时长</text>
+
+        <rect x="215" y="170" width="170" height="110" rx="5" fill="#FBF1E4" stroke="#D2CCBE"/>
+        <text x="229" y="192" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8F3F06">L1</text>
+        <text x="229" y="214" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" font-weight="700" fill="#16181D">单点工具</text>
+        <text x="229" y="236" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#333941">AI 起草，人改</text>
+        <text x="229" y="258" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">瓶颈：虚假精确</text>
+
+        <rect x="395" y="140" width="170" height="140" rx="5" fill="#EAF1F9" stroke="#2F6FB0"/>
+        <text x="409" y="162" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#1F5288">L2</text>
+        <text x="409" y="182" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" font-weight="700" fill="#16181D">上下文结构化</text>
+        <text x="409" y="204" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#333941">事实层 + 规则 + 范例</text>
+        <text x="409" y="230" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">瓶颈：仍靠人逐条审</text>
+        <text x="409" y="252" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">升级：结构稳定可脚本读</text>
+
+        <rect x="575" y="110" width="170" height="170" rx="5" fill="#E5F1EF" stroke="#0F766E"/>
+        <text x="589" y="132" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#0A5750">L3</text>
+        <text x="589" y="152" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" font-weight="700" fill="#16181D">规格化 + 门禁</text>
+        <text x="589" y="174" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#333941">EARS 条目 + 五维机检</text>
+        <text x="589" y="191" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#333941">+ 人工签字</text>
+        <text x="589" y="217" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">瓶颈：门禁误报率</text>
+        <text x="589" y="239" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">升级：降到团队愿意跑</text>
+
+        <rect x="755" y="80" width="170" height="200" rx="5" fill="#F1EBF9" stroke="#6D3FB5"/>
+        <text x="769" y="102" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#5A3099">L4</text>
+        <text x="769" y="122" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="11.5" font-weight="700" fill="#16181D">闭环</text>
+        <text x="769" y="144" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#333941">结果回流修正假设</text>
+        <text x="769" y="161" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#333941">漂移监控与回写</text>
+        <text x="769" y="178" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#333941">规格与实现同源</text>
+        <text x="769" y="206" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">瓶颈：组织纪律而非技术</text>
+        <text x="769" y="228" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="#4A505A">多数团队停在这里</text>
+
+        <line x1="35" y1="284" x2="925" y2="284" stroke="#D2CCBE"/>
+        <text x="35" y="306" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">最常见的失败模式：从 L0 直接跳到 L3 / L4，买到工具但没有前置的事实层与模板纪律，三个月后废弃。</text>
+        <text x="35" y="326" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#4A505A">L2 是最容易被跳过、却最不可跳过的一级——它决定了后两级是「有依据的检查」还是「无意义的格式校验」。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 11</b>　五级成熟度。每一级的「升级条件」都是前一级遗留的瓶颈，不是时间到了就自动升级。</figcaption>
+  </figure>
+
+  <h3>11.1 90 天路径</h3>
+
+  <figure id="f12">
+    <div class="fig-box">
+      <svg viewBox="0 0 960 240" role="img" aria-label="90 天落地甘特图">
+        <rect x="0" y="0" width="960" height="240" fill="#FFFFFF"/>
+        <text x="24" y="26" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="13" font-weight="700" fill="#16181D">90 天：先把事实层和模板做出来，再谈自动化</text>
+
+        <!-- week grid -->
+        <line x1="200" y1="58" x2="200" y2="218" stroke="#E3DFD5"/>
+        <line x1="375" y1="58" x2="375" y2="218" stroke="#E3DFD5" stroke-dasharray="3 4"/>
+        <line x1="550" y1="58" x2="550" y2="218" stroke="#E3DFD5" stroke-dasharray="3 4"/>
+        <line x1="725" y1="58" x2="725" y2="218" stroke="#E3DFD5" stroke-dasharray="3 4"/>
+        <line x1="900" y1="58" x2="900" y2="218" stroke="#E3DFD5"/>
+        <text x="200" y="50" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#4A505A">W1</text>
+        <text x="375" y="50" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#4A505A">W4</text>
+        <text x="550" y="50" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#4A505A">W7</text>
+        <text x="725" y="50" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#4A505A">W10</text>
+        <text x="900" y="50" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#4A505A">W13</text>
+
+        <text x="190" y="74" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#16181D">建事实层</text>
+        <rect x="200" y="62" width="350" height="18" rx="3" fill="#EAF3E9" stroke="#2E7D32"/>
+        <text x="212" y="75" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="9.5" fill="#1B5820">访谈原话 · 数据 · 上版复盘归档</text>
+
+        <text x="190" y="102" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#16181D">定模板与句式</text>
+        <rect x="200" y="90" width="233" height="18" rx="3" fill="#EAF1F9" stroke="#2F6FB0"/>
+        <text x="212" y="103" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="9.5" fill="#1F5288">章节骨架 · EARS 五句式 · 禁用词表</text>
+
+        <text x="190" y="130" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#16181D">写 3 份样例</text>
+        <rect x="258" y="118" width="234" height="18" rx="3" fill="#F1EBF9" stroke="#6D3FB5"/>
+        <text x="270" y="131" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="9.5" fill="#5A3099">人工 / AI / 混合三份对照</text>
+
+        <text x="190" y="158" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#16181D">搭门禁脚本</text>
+        <rect x="375" y="146" width="234" height="18" rx="3" fill="#FBF1E4" stroke="#B45309"/>
+        <text x="387" y="159" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="9.5" fill="#8F3F06">模糊词 · 覆盖率 · 一致性 · 分级</text>
+
+        <text x="190" y="186" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#16181D">试点一个迭代</text>
+        <rect x="550" y="174" width="234" height="18" rx="3" fill="#E5F1EF" stroke="#0F766E"/>
+        <text x="562" y="187" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="9.5" fill="#0A5750">真实需求全程走一遍，记录卡点</text>
+
+        <text x="190" y="214" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10.5" fill="#16181D">基线 + 复盘</text>
+        <rect x="783" y="202" width="117" height="18" rx="3" fill="#FAEAE8" stroke="#B3261E"/>
+        <text x="795" y="215" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="9.5" fill="#8E1B15">取 6 项指标初值</text>
+      </svg>
+    </div>
+    <figcaption><b>图 12</b>　90 天路径。注意顺序：<b>门禁脚本（W4）晚于模板与样例（W1–W5）</b>——先有稳定的文档结构，脚本才有东西可检查。反过来做会得到一堆对不上任何格式的规则。</figcaption>
+  </figure>
+
+  <h3>11.2 投资配比</h3>
+  <p>如果只能给出一个资源配置建议：<strong>把七成精力放在「事实层」和「模板纪律」，两成放在门禁工具，一成放在提示词调优。</strong>这与直觉相反——绝大多数团队的投入顺序正好倒过来，花大量时间收集提示词模板，却没有人去整理上一版为什么失败。</p>
+  <p>理由很直接：提示词解决的是「表达」，事实层解决的是「内容」。一份表达精炼但内容空洞的 PRD，评审时比一份措辞粗糙但有真实洞察的 PRD 危险十倍——因为它更难被否决。</p>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span>反模式清单：分三层，每条给修正</h2>
+  <p class="deck">以下十三条来自 2026 年公开实践中反复出现的失败，按战略 / 工程 / 治理三层归类。每条格式统一：症状 → 机制 → 修正。</p>
+
+  <h3>12.1 战略层</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%">反模式</th><th style="width:32%">症状</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td><b>把 AI 当「更快的打字机」</b></td><td>只在下游成文环节用 AI，上游发现与优先级仍全手工</td><td>把 AI 前移到「穷举场景」「扮演反对者」这类判断辅助环节</td></tr>
+        <tr><td><b>用 AI 替代思考而非加速思考</b></td><td>跳过「逼自己把模糊想法变清晰」的过程，直接要结果</td><td>保留「先自己写三句问题定义，再让 AI 展开」的顺序</td></tr>
+        <tr><td><b>追求「一份文档两个用途」</b></td><td>同一份 PRD 既给决策层看又给编码智能体读</td><td>拆成决策文档 + 执行规格，用非目标与判据连接</td></tr>
+        <tr><td><b>以文档产量衡量效能</b></td><td>PRD 数量上升、评审通过率上升、返工率没降</td><td>改看「开发启动后的实质变更率」，这是唯一难伪造的指标</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>12.2 工程层</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%">反模式</th><th style="width:32%">症状</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td><b>一句话生成整份文档</b></td><td>产出结构完整，但假设全隐形</td><td>四阶段拆分，每阶段单一目标</td></tr>
+        <tr><td><b>把边界堆在附录</b></td><td>末尾一节「异常处理」，无人认领</td><td>边界挂在所属故事下，挂不上的说明故事集有缺口</td></tr>
+        <tr><td><b>用模糊词换同义词绕过门禁</b></td><td>模糊词密度达标，可验收性没变</td><td>词表按团队历史需求校准，季度更新；辅以人工抽检</td></tr>
+        <tr><td><b>规则文件写成百科</b></td><td>AGENTS.md 数百行，模型开始忽略真实指令</td><td>≤ 200 行，只写模型推断不了的信息；事实层另置</td></tr>
+        <tr><td><b>让模型自由发挥业务规则</b></td><td>出现看似合理的阈值、法务要求、竞品数据</td><td>一条硬约束：无来源必标 <code>[ASSUMPTION]</code> 并入待确认清单</td></tr>
+        <tr><td><b>验收标准写成「体验流畅」</b></td><td>开发无法判断完成，测试无法生成用例</td><td>EARS 五句式 + 一条一个「应」+ 响应可观察</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>12.3 治理层</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%">反模式</th><th style="width:32%">症状</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td><b>把「AI 检查通过」当免责</b></td><td>评审会上无人再问「为什么这样做」</td><td>签字人必须能说出判据；门禁只是线索，不是结论</td></tr>
+        <tr><td><b>规格宣布为真相源却不维护</b></td><td>三个月后 spec 与实现全面不符</td><td>30 天漂移回写机制；漂移率进指标</td></tr>
+        <tr><td><b>没有验收定义就开始用 AI</b></td><td>「看起来写完了」成为唯一交付信号</td><td>先定门禁规则与签字人，再引入工具</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s13">
+  <h2><span class="num">13</span>结论：五条判断与一个反面提醒</h2>
+  <p class="deck">以下是我的判断，不是行业共识。它们建立在第 09 章的证据之上，但推断过程包含我的取舍——你可以只接受证据、拒绝结论。</p>
+
+  <div class="verdict">
+    <h4>判断 01</h4>
+    <p><strong>未来两年，「写 PRD」这个动作会分裂成两个职位属性。</strong>一边是「问题定义者」——决定做什么、不做什么、怎么算成；一边是「规格工程师」——把决定翻译成可判定、可追溯、机器可消费的条目。今天这两件事由同一个人做，是因为工具不允许拆分；工具已经允许了，组织还没跟上。</p>
+  </div>
+
+  <div class="verdict">
+    <h4>判断 02</h4>
+    <p><strong>提示词工程的边际收益已经很低，上下文工程的边际收益还很高。</strong>前者在 2023–2024 年被过度开采，模板满天飞、效果趋同；后者需要真实的业务材料整理，难以复制，因此是真正的差异来源。团队之间 PRD 质量的差距，将越来越取决于「谁的事实层更厚」，而不是「谁的提示词更巧」。</p>
+  </div>
+
+  <div class="verdict">
+    <h4>判断 03</h4>
+    <p><strong>「可判定性」会成为产品经理的核心技能，取代「文档能力」。</strong>会写漂亮文档但说不清验收标准的人，在 AI 时代会被迅速暴露——因为以前「漂亮」可以掩盖「不清楚」，现在文档漂亮是零成本，唯一的区别只剩清楚与否。</p>
+  </div>
+
+  <div class="verdict">
+    <h4>判断 04</h4>
+    <p><strong>规格驱动开发不会取代 PRD，但会吃掉 PRD 里最枯燥的那 60%。</strong>字段定义、状态枚举、异常分支、验收断言——这些正好是 AI 最擅长、人也最不愿意写的部分。剩下的 40%（价值判断、取舍、非目标、说服）会变得比以前更重要，因为它成了唯一不可替代的部分。</p>
+  </div>
+
+  <div class="verdict">
+    <h4>判断 05</h4>
+    <p><strong>最大的风险不是 AI 写错，而是团队失去「发现写错」的能力。</strong>当所有人都用同一个模型、同一个模板、同一套句式，产出的同质化会同时发生在文档和思维上。多样性丧失之后，跨团队评审会退化为互相确认——因为大家看的东西长得一样，就都以为它是对的。</p>
+  </div>
+
+  <div class="callout warn">
+    <span class="lbl">反面提醒</span>
+    <p>以上五条判断有一个共同的脆弱点：<strong>它们全部假设「文档仍然重要」</strong>。如果未来两年编码智能体的能力继续按当前速度提升，「读懂模糊意图并自行做合理取舍」可能不再是瓶颈——那时 PRD 的价值会从「消除歧义」转向「留存决策理由」，形态会变得更像决策日志而非规格说明。这个转向尚未发生，但已经可以观察到苗头。任何把本文方法固化成重型流程的团队，都应该为这个可能性留一条退路。</p>
+  </div>
+
+  <h3>参考来源</h3>
+  <p style="font-size:13.5px;color:var(--ink3)">按证据类型分组。标注「二手引述」的条目，其原始数据未直接核验，引用时须回溯一手来源。</p>
+
+  <h4>一手研究（受控实验 / 数据集）</h4>
+  <ol class="src">
+    <li>Tang et al. <em>Agent4RE: A Self-Refining Multi-agent Framework for End-to-End Software Requirements Engineering and Benchmarking</em>. arXiv:2610.10628, 2026-10. <a href="https://arxiv.org/abs/2610.10628">arxiv.org/abs/2610.10628</a></li>
+    <li><em>Large Language Models for Requirements Engineering: A Cross-Task Empirical Evaluation</em>. arXiv:2608.21531, 2026-08. <a href="https://arxiv.org/abs/2608.21531">arxiv.org/abs/2608.21531</a></li>
+    <li><em>Automatic Translation of Unstructured Requirements into Linear Temporal Logic through Large Language Models</em>. arXiv:2608.06287, 2026-08（IEEE 版权）. <a href="https://arxiv.org/abs/2608.06287">arxiv.org/abs/2608.06287</a></li>
+  </ol>
+
+  <h4>官方文档与工具链</h4>
+  <ol class="src">
+    <li>Kiro. <em>Specs 文档</em>：requirements.md / design.md / tasks.md 三阶段工作流、EARS 记法、Analyze Requirements。 <a href="https://kiro.dev/docs/specs">kiro.dev/docs/specs</a></li>
+    <li>GitHub Spec Kit（2025-09 开源）：<code>/specify</code> <code>/plan</code> <code>/tasks</code> 流水线与 constitution 文档。</li>
+    <li>AGENTS.md 开放标准（由 Linux Foundation 下属 Agentic AI Foundation 托管）；Anthropic CLAUDE.md 官方文档（≤200 行、具体可验证、按需加载）。</li>
+  </ol>
+
+  <h4>方法论源流</h4>
+  <ol class="src">
+    <li>Alistair Mavin（Rolls-Royce，2009）：EARS — Easy Approach to Requirements Syntax，五种句式模板。</li>
+    <li>Amazon Working Backwards：PR/FAQ 结构（新闻稿 + 外部 FAQ + 内部 FAQ）。</li>
+    <li>IEEE 830 / ISO 29148：需求质量属性（关注 what、可验证、无歧义、正确、一致）的工程化裁剪来源。</li>
+  </ol>
+
+  <h4>行业调查与工程实践</h4>
+  <ol class="src">
+    <li>Product-Led Alliance / ProductPlan. <em>2026 State of Product Management</em>（108 页）：AI 采用分层 36.9% / 18.9% / 9% 与 6.1% 的口径差异、53.3% 数据安全顾虑、46.7% 幻觉顾虑。经三个皮匠报告与多篇解读二手引述。</li>
+    <li>IdeaPlan, 2026：73% PM 每周或每日使用 AI；「Execution PM」类别收缩。二手引述。</li>
+    <li>Lenny Rachitsky AI 生产力调查：62% 每周节省 ≥4 小时；PRD 起草为最高频用法（21.5%）。二手引述。</li>
+    <li>MIT：95% 企业 AI 试点无可衡量 ROI（注意口径为 pilot）。Deloitte 2026：66% 组织有可感收益。二者并列引用。</li>
+    <li>AWS 机器学习博客，2026：<em>How frontier teams are reinventing AI-native development</em>（pathfinder / structured sprint / in-situ 三条路径的团队级数据）。</li>
+    <li>Anthropic 工程博客，2026：Claude Code 最佳实践——「给智能体一个能自己跑的 pass/fail 检查」为最高杠杆动作。</li>
+  </ol>
+
+  <h4>批评与反证（用于平衡上述正面证据）</h4>
+  <ol class="src">
+    <li>《产品经理用 AI，最不该干的活就是写 PRD》人人都是产品经理，2026：虚假精确机制、粗糙文档引发讨论 vs 精美文档制造假象。</li>
+    <li>《AI 正在生产一种新型「技术债」》，2026：文档里的「幽灵决策」——决策从未真正发生。</li>
+    <li>《AI 生成的 PRD，为什么最后都长一样》，2026-09：产出同质化、「平均值主导产品决策」。</li>
+    <li>《需求文档也是 AI 写的，软件开发上游沦陷》，2026：隐性共识消失、需求层比代码层更危险。</li>
+    <li>《从想法到 PRD》，2026：50 份 AI PRD 中约 45 份不可用的自述（单一案例，仅作方向参考）。</li>
+  </ol>
+
+  <p style="font-size:13px;color:var(--ink3);margin-top:28px">引用说明：本报告对二手引述的数据均标注来源层级；凡两源冲突处（如「核心能力」比例 9% vs 6.1%）不做单一取舍，只取量级判断。所有「建模估算」标注的百分比为本文构造，不可作为实测数据引用。</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>本报告为「论点驱动」研究：先立可证伪的判断，再给证据与反证。所有百分比、阈值若标注「建模」即为估算，不可当作实测引用。</p>
+    <p>生成于 2026-11-26 · 单文件零依赖 HTML · 离线可用</p>
+  </div>
+</footer>
+
+</body>
+</html>
